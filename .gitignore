@@ -1,0 +1,10 @@
+node_modules/
+npm-debug.log*
+.DS_Store
+Thumbs.db
+*.log
+# local test artefacts
+test/out/
+test/*.wav
+.vscode/
+.idea/

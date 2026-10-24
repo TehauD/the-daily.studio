@@ -1,0 +1,36 @@
+const {JSDOM,VirtualConsole}=require('jsdom');const fs=require('fs');
+const FW=require('path').join(__dirname,'..','codepen')+'/';const html=fs.readFileSync(FW+'pen.html','utf8'),css=fs.readFileSync(FW+'pen.css','utf8'),js=fs.readFileSync(FW+'pen.js','utf8');
+const WORKLET=process.argv[2]==='worklet';
+const errs=[];const vc=new VirtualConsole();vc.on('jsdomError',e=>errs.push('jsdomError: '+(e.detail&&e.detail.stack||e.message)));vc.on('error',(...a)=>errs.push('console.error: '+a.map(x=>x&&x.stack||x).join(' ')));vc.on('warn',(...a)=>{});
+const dom=new JSDOM('<!doctype html><html><head><style>'+css+'</style></head><body>'+html+'</body></html>',{runScripts:'outside-only',pretendToBeVisual:true,virtualConsole:vc,url:'https://localhost/'});
+const w=dom.window;
+function mkNode(extra){const store=Object.assign({},extra||{});const f=function(){};return new Proxy(f,{get(t,k){if(typeof k==='symbol')return undefined;if(k in store)return store[k];if(k==='then')return undefined;if(k==='connect'||k==='disconnect')return x=>x;if(k==='frequencyBinCount')return (store.fftSize||2048)/2;if(k==='port')return {postMessage(){},onmessage:null};if(k==='getFloatFrequencyData'||k==='getByteFrequencyData')return a=>a.fill(-100);if(k==='getFloatTimeDomainData')return a=>a.fill(0);if(k==='getChannelData')return ()=>new Float32Array(48000);if(k==='copyToChannel')return ()=>{};if(k==='createBuffer')return (c,n,sr)=>mkNode({length:n,sampleRate:sr,numberOfChannels:c});if(['value','currentTime','baseLatency','outputLatency','sampleRate','fftSize','length'].includes(k)){return {value:0,currentTime:0,baseLatency:.005,outputLatency:.01,sampleRate:48000,fftSize:2048,length:0}[k]}if(k==='state')return 'running';if(k==='destination')return mkNode();if(k==='audioWorklet')return {addModule:()=>WORKLET?Promise.resolve():Promise.reject(new Error('no'))};if(k==='getSettings')return ()=>({deviceId:'x',channelCount:2,sampleRate:48000});if(k==='getAudioTracks'||k==='getVideoTracks'||k==='getTracks')return ()=>[mkNode()];if(k==='resume'||k==='close'||k==='suspend')return ()=>Promise.resolve();if(k.startsWith('create'))return ()=>mkNode();return mkNode();},set(t,k,v){store[k]=v;return true},apply(){return mkNode()}});}
+const ctxCtor=function(){const n=mkNode({currentTime:0,sampleRate:48000,state:'running'});setInterval(()=>{},1e9).unref&&0;return n;};
+w.AudioContext=function(){return mkNode({sampleRate:48000,state:'running',get currentTime(){return performance.now()/1000}})};
+w.AudioWorkletNode=function(){return mkNode()};
+w.URL.createObjectURL=()=>'blob:x';
+w.navigator.mediaDevices={getUserMedia:async()=>mkNode(),enumerateDevices:async()=>[{kind:'audioinput',deviceId:'f1',label:'Focusrite USB Audio'},{kind:'audiooutput',deviceId:'o1',label:'Focusrite Out'},{kind:'videoinput',deviceId:'c1',label:'Cam'}],addEventListener(){}};
+w.HTMLCanvasElement.prototype.getContext=function(){return new Proxy({},{get(t,k){if(k==='measureText')return ()=>({width:10});if(k==='createLinearGradient')return ()=>({addColorStop(){}});if(k==='getImageData')return ()=>({data:new Uint8ClampedArray(4)});if(k in t)return t[k];return ()=>{}},set(t,k,v){t[k]=v;return true}})};
+w.ResizeObserver=class{observe(){}disconnect(){}};w.requestAnimationFrame=cb=>setTimeout(()=>cb(performance.now()),16);
+w.matchMedia=()=>({matches:false,addListener(){}});
+w.HTMLDialogElement.prototype.showModal=function(){};
+w.eval(js.replace("if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();","window.__boot=boot;window.__X={get S(){return S},T,TE,dockGo,play,stopPlay,buildUG,buildMidi,lintSong,buildChordPro,renderTab,renderSong,renderBand,fillTab,voicings,DOCK,TAKES,exportProject,STAT,AN,seek,setTheme,commit,newBar,mkSection,undo,redo,measureRTT,PRESETS,loadPreset,renderFret,updateLab};boot();"));
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+(async()=>{
+ await sleep(300);const X=w.__X;const out=[];
+ const step=async(n,f)=>{try{await f();out.push('ok  '+n)}catch(e){out.push('ERR '+n+': '+(e.stack||e).toString().split('\n').slice(0,4).join(' | '))}};
+ await step('bootGo click',async()=>{w.document.getElementById('bootGo').click();await sleep(500)});
+ for(const [id] of X.DOCK)await step('dock '+id,async()=>{X.dockGo(id);await sleep(120)});
+ await step('play',async()=>{X.dockGo('tab');await X.play();await sleep(600);X.stopPlay(true)});
+ await step('tab fill',async()=>{X.S.sections.forEach(s=>s.bars.forEach(b=>X.fillTab(b,'Fingerstyle pop',(b.chord||'Am').split(' ')[0])));X.commit();X.renderTab()});
+ await step('UG export',async()=>{const t=X.buildUG();if(!t.includes('[ch]')||!t.includes('[tab]'))throw new Error('bad UG');console.log(t.slice(0,1800))});
+ await step('chordpro',async()=>{X.buildChordPro()});
+ await step('midi',async()=>{const b=X.buildMidi();if(b.size<200)throw new Error('tiny midi '+b.size)});
+ await step('lint',async()=>{console.log(JSON.stringify(X.lintSong()).slice(0,500))});
+ await step('theme dark',async()=>{X.setTheme('dark');await sleep(100);X.setTheme('light')});
+ await step('undo/redo',async()=>{X.undo();X.redo()});
+ await step('presets all',async()=>{for(const p of X.PRESETS)X.loadPreset(p)});
+ await step('lab update',async()=>{X.dockGo('lab');X.updateLab(true)});
+ await sleep(800);
+ console.log(out.join('\n'));console.log('ERRORS:',errs.length);errs.slice(0,15).forEach(e=>console.log(e.slice(0,600)));process.exit(errs.length?1:0);
+})();

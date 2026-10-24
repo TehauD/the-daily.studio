@@ -1,0 +1,30 @@
+name: Bug report
+description: Something does not work as expected
+labels: [bug]
+body:
+  - type: markdown
+    attributes: { value: "Thanks for helping. Audio problems depend on your setup, so the details below matter." }
+  - type: textarea
+    id: what
+    attributes: { label: What happened?, description: What did you do, what did you expect, and what happened instead? }
+    validations: { required: true }
+  - type: input
+    id: browser
+    attributes: { label: Browser and version, placeholder: "Chrome 130 on Windows 11" }
+    validations: { required: true }
+  - type: input
+    id: interface
+    attributes: { label: Audio interface / input, placeholder: "Focusrite Scarlett 2i2 (USB) / built-in mic / none" }
+  - type: input
+    id: version
+    attributes: { label: App version, description: "Shown on the welcome card and in Help.", placeholder: "1.1.0" }
+  - type: textarea
+    id: console
+    attributes: { label: Console output, description: "Open the browser developer tools → Console and paste any red errors.", render: shell }
+  - type: checkboxes
+    id: hosted
+    attributes:
+      label: Checks
+      options:
+        - label: I am using HTTPS or localhost (microphone access requires it)
+        - label: I hard-reloaded the page

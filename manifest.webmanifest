@@ -1,0 +1,36 @@
+{
+  "name": "the-daily.studio",
+  "short_name": "The Daily",
+  "description": "The Daily · Songs — a songwriter's workspace in one web page: clean canvas or start from a song, lyrics and chords, guitar + vocal recording, stem separation and a pedal rig. Local-first, no account.",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0e2a30",
+  "theme_color": "#0e2a30",
+  "categories": [
+    "music",
+    "productivity"
+  ],
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
