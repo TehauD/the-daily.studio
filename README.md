@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/screenshots/logo.svg" alt="the-daily.studio hexagon logo" width="84">
+  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/brand/mark-dark.svg"><img src="docs/brand/mark-light.svg" alt="the-daily.studio mark: a hexagon drawn as a cube with the letters T, D and S on its faces" width="96"></picture>
 </p>
 
 <h1 align="center">the-daily.studio</h1>
@@ -12,6 +12,9 @@ Catch an idea · find the chords · record guitar and vocals · split a track in
   <a href="docs/USER_GUIDE.md">User guide</a> ·
   <a href="docs/HOSTING.md">Host it yourself</a> ·
   <a href="docs/ARCHITECTURE.md">Architecture</a> ·
+  <a href="docs/OPERATIONS.md">Operations</a> ·
+  <a href="docs/SECURITY_MODEL.md">Security model</a> ·
+  <a href="docs/README.md">All docs</a> ·
   <a href="CONTRIBUTING.md">Contribute</a>
 </p>
 
@@ -70,8 +73,8 @@ It began as a guitar lab and grew into a place to turn a hum into a finished son
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/screenshots/02-rig-light.png" alt="Studio view, light theme"><br><sub><b>Studio</b> · tone, scenes, signal chain, arrangement and transport (Porcelain, light)</sub></td>
-    <td width="50%"><img src="docs/screenshots/15-appearance.png" alt="Appearance drawer with looks, palettes and accents"><br><sub><b>Appearance</b> · seven looks, fifteen palettes, accents, type, density and high contrast</sub></td>
+    <td width="50%"><img src="docs/screenshots/02-rig-light.png" alt="Studio view, light theme"><br><sub><b>Studio</b> · tone, scenes, signal chain, arrangement and transport (Daily Light)</sub></td>
+    <td width="50%"><img src="docs/screenshots/15-appearance.png" alt="Appearance drawer with looks, palettes and accents"><br><sub><b>Appearance</b> · eight looks, seventeen palettes, accents, type, density and high contrast</sub></td>
   </tr>
   <tr>
     <td><img src="docs/screenshots/13-canvas.png" alt="Canvas zoom: the song as a timeline of sections"><br><sub><b>Canvas</b> · zoom out to see the whole song and rearrange it</sub></td>
@@ -113,7 +116,7 @@ If the page looks like an older version or shows the wrong name, a previous copy
 
 ## Make it yours: appearance (new in 1.6)
 
-The ◐ button (top right; **More ▸ Appearance** on a phone) opens a drawer that restyles the app live: light, dark or match-system; 15 palettes; any accent colour; compact, cosy or roomy density; sharp, soft or round corners; flat, soft or raised surfaces; six typefaces; high contrast; colour-blind-safe data colours; and seven one-click looks (Clinical, Studio night, Notebook, Calm, Midnight, Stage, Accessible). Your choices stay on the device.
+The ◐ button (top right; **More ▸ Appearance** on a phone) opens a drawer that restyles the app live: light, dark or match-system; 17 palettes (the brand pair Daily Light and Daily Night by default); any accent colour; compact, cosy or roomy density; sharp, soft or round corners; flat, soft or raised surfaces; seven typefaces (Inter and Montserrat are built in); high contrast; colour-blind-safe data colours; and eight one-click looks (the-daily.studio, Clinical, Studio night, Notebook, Calm, Midnight, Stage, Accessible). Your choices stay on the device.
 
 ## Your first five minutes
 
@@ -237,7 +240,7 @@ Developed and tested in **Chromium** (Chrome and Edge, desktop and Android) with
 
 ```
 the-daily.studio/
-├── index.html            ← the whole app as one file (built; GitHub Pages serves this)
+├── index.html            ← the whole app as one file (built; the deploy folder is assembled from it)
 ├── src/
 │   ├── parts/            ← source, concatenated in filename order into one script
 │   ├── styles.css        ← all CSS
@@ -247,7 +250,7 @@ the-daily.studio/
 ├── sw.js                 ← offline cache service worker (generated)
 ├── samples/              ← sample tracks shown in Stems and Transcribe (+ manifest.json, info.json)
 ├── icons/                ← app icons (PNG) and their SVG source
-├── scripts/              ← build.mjs (bundler), serve.mjs (static server), make-icons.mjs
+├── scripts/              ← build.mjs (bundler), serve.mjs (static server), make-brand.mjs (logo, icons, social card), brand-mark.mjs, sync-journal.mjs
 ├── test/                 ← smoke test (jsdom), end-to-end and mobile (Playwright), stem benchmark
 ├── docs/                 ← user guide, hosting, architecture, screenshots
 └── .github/              ← CI, Pages deployment, issue / PR templates

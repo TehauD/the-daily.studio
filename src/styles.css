@@ -1,17 +1,17 @@
 /* the-daily.studio — styles (light default, dark via data-theme) */
 :root{
-  --bg:#eceff2;--bg2:#e2e7eb;--panel:#f6f8fa;--panel2:#ffffff;--raise:#ffffff;--line:#d5dce1;--line2:#b6c2c9;--text:#0c181c;--muted:#566b73;
-  --accent:#0a8c97;--accent-ink:#ffffff;--accent2:#e4572e;--accent-soft:#d8eef0;--ok:#16975a;--warn:#c58a0a;--bad:#d03247;--rec:#e0213f;
-  --grid:#dde4e8;--wave:#0a8c97;--shadow:0 0 0 1px rgba(12,24,28,.03),0 1px 2px rgba(12,24,28,.07),0 8px 24px rgba(12,24,28,.05);
-  --meter-bg:#dbe3e7;--cv1:#0a8c97;--cv2:#e4572e;--cv3:#7a5af5;--cv4:#e0a31a;--cv5:#16975a;
+  --bg:#e9e9e6;--bg2:#dededa;--panel:#f4f4f1;--panel2:#fbfbf9;--raise:#ffffff;--line:#d6d8d3;--line2:#b8beb7;--text:#0d0f10;--muted:#4f5c56;
+  --accent:#2f7a58;--accent-ink:#ffffff;--accent2:#b07a1e;--accent-soft:#e0ebe4;--ok:#16975a;--warn:#c58a0a;--bad:#d03247;--rec:#e0213f;
+  --grid:#dcddd8;--wave:#2f7a58;--shadow:0 0 0 1px rgba(13,15,16,.03),0 1px 2px rgba(13,15,16,.07),0 8px 24px rgba(13,15,16,.05);
+  --meter-bg:#dcded9;--cv1:#2f7a58;--cv2:#b8741a;--cv3:#4a67c2;--cv4:#9a7d10;--cv5:#b5486a;
   --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
-  --sans:Inter,"Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;--rad:10px;--ui:1;
+  --sans:"DS Inter",Inter,"Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;--display:"DS Montserrat",Montserrat,var(--sans);--rad:10px;--ui:1;
 }
 [data-theme=dark]{
-  --bg:#070c0f;--bg2:#0a1114;--panel:#0e161a;--panel2:#121d22;--raise:#182429;--line:#1c2a30;--line2:#2c4149;--text:#e5eff1;--muted:#87a0a6;
-  --accent:#3de0cf;--accent-ink:#04201e;--accent2:#ff7b52;--accent-soft:#0d3a3a;--ok:#3ddc84;--warn:#f2b632;--bad:#ff5c70;--rec:#ff3b5c;
-  --grid:#18262b;--wave:#3de0cf;--shadow:0 0 0 1px rgba(255,255,255,.025),0 1px 2px rgba(0,0,0,.5),0 12px 32px rgba(0,0,0,.38);--meter-bg:#18262b;
-  --cv1:#3de0cf;--cv2:#ff7b52;--cv3:#9d86ff;--cv4:#f2b632;--cv5:#3ddc84;
+  --bg:#0d0f10;--bg2:#111413;--panel:#151a18;--panel2:#1b221f;--raise:#232c28;--line:#222b27;--line2:#33423b;--text:#e8e8e6;--muted:#8fa497;
+  --accent:#7dbf9b;--accent-ink:#06100b;--accent2:#d4a25a;--accent-soft:#2d3e35;--ok:#3ddc84;--warn:#f2b632;--bad:#ff5c70;--rec:#ff3b5c;
+  --grid:#1c2420;--wave:#7dbf9b;--shadow:0 0 0 1px rgba(255,255,255,.025),0 1px 2px rgba(0,0,0,.5),0 12px 32px rgba(0,0,0,.38);--meter-bg:#1c2420;
+  --cv1:#7dbf9b;--cv2:#d4a25a;--cv3:#8da9e8;--cv4:#e9d27a;--cv5:#d98aa2;
 }
 [data-accent=cobalt]{--accent:#2f64e0;--accent-soft:#dbe6fc;--cv1:#2f64e0;--wave:#2f64e0}
 [data-theme=dark][data-accent=cobalt]{--accent:#6b9bff;--accent-soft:#14284d;--cv1:#6b9bff;--wave:#6b9bff;--accent-ink:#06142e}
@@ -672,3 +672,15 @@ dialog.lookdlg .dlg-b{max-height:none!important}
 .ab-cr summary{cursor:pointer;font-weight:700;font-size:12px;padding:4px 0}.ab-cr ul{margin:6px 0;padding-left:18px;font-size:12px;line-height:1.5}.ab-cr li{margin:4px 0}
 .pitem.on span,.pitem.on .muted{color:var(--text)}
 .tl-scroll:focus-visible,.chainbar:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+
+/* ---- brand (1.7): Montserrat for titles, Inter for text; the mark follows the accent ---- */
+.brand b,.card>h4,.card-h,.dlg-h,.lk-sec,.ab-name,.ab-me h4,.boot-card h1,.boot-grid b{font-family:var(--display)}
+.brand b{font-weight:700;letter-spacing:-.01em}.brand small{font-family:var(--display);letter-spacing:.2em;font-size:8.5px;font-weight:600;text-transform:uppercase}
+.brand svg{width:36px;height:36px}.boot-card h1 small{font-family:var(--display);letter-spacing:.16em;text-transform:uppercase;font-size:10px}
+[data-font=mono] .brand b{font-family:var(--mono)}
+
+/* ---- audio control (1.7) ---- */
+.btn.aud{gap:7px;font-weight:700}.btn.aud.killed{border-color:var(--bad);color:var(--bad)}
+.auddlg{width:min(460px,94vw)}.aud-b{display:flex;flex-direction:column;gap:10px}.aud-st{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 12px;border:1px solid var(--line);border-radius:var(--r2,10px);background:var(--panel2)}
+.btn.aud-kill{background:#b3202c;border-color:var(--bad);color:#fff;font-weight:800;padding:12px 14px;letter-spacing:.04em}.btn.aud-kill:hover{filter:brightness(1.08)}
+body[data-form=phone] #topR>.aud{display:inline-flex}body[data-form=phone] .btn.aud .lbl{display:none}

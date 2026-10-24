@@ -11,6 +11,8 @@ jobs:
         with: { node-version: 22 }
       - name: Committed build outputs are up to date
         run: npm run build:check
+      - name: Deploy folder builds and passes the release gate
+        run: npm run build:site && npm run verify:site
       - name: Install test dependencies
         run: npm ci --no-audit --no-fund
       - name: Smoke test (boots the app in jsdom, fails on any error)

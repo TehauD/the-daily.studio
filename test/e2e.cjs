@@ -105,14 +105,15 @@ function wav(L, sr) { const n = L.length, b = Buffer.alloc(44 + n * 2); b.write(
     await openReset(); await page.click('#reset button:has-text("Layout only")'); await page.click('#reset button:has-text("Reset 1 item")'); await page.click('#reset button:has-text("Click again")'); await bootAgain();
     ok((await title()).length > 0 && (await page.evaluate(() => (JSON.parse(localStorage.getItem('fw.cfg') || '{}').zoom || '') === '')), 'Reset ▸ Layout only: songs stay, the view goes back to default');
     await page.click('.sb-songs'); await page.click('.pd-menu button:has-text("All songs")'); await wait(400); const kept = (await page.$$('.pd-row')).length; ok(kept === 3, 'Reset ▸ Layout only kept all songs (' + kept + ')'); await page.keyboard.press('Escape');
-    await page.evaluate(() => { window.name = 'noseed'; }); await openReset(); await page.click('#reset button:has-text("Everything")'); await page.click('#reset button:has-text("Reset 6 items")'); await page.click('#reset button:has-text("Click again")'); await wait(5000);
+    await page.evaluate(() => { window.name = 'noseed'; }); await openReset(); await page.click('#reset button:has-text("Everything")'); await page.click('#reset button:has-text("Reset 6 items")'); await page.click('#reset button:has-text("Click again")'); await wait(4000); if (await page.$('#bootGo')) await page.click('#bootGo'); await wait(2500);
     const after = await page.evaluate(async () => ({ open: !!(document.getElementById('origins') || {}).open, keys: Object.keys(localStorage).filter(k => k.startsWith('fw.')).sort().join(','), title: (document.querySelector('.sb-title') || {}).value }));
     ok(after.open && after.title === 'Salt Wind (demo)' && !/fw\.(song|cur|started|presets|layouts|vhist)\b/.test(after.keys), 'Reset ▸ Everything: nothing is written back (the old bug), the start card returns and the demo song is back. Keys left: ' + after.keys);
     await page.keyboard.press('Escape'); await wait(1200); const lib = await page.evaluate(() => new Promise(res => { const r = indexedDB.open('the-daily-songs'); r.onsuccess = () => { const t = r.result.transaction('projects').objectStore('projects').count(); t.onsuccess = () => res(t.result); }; r.onerror = () => res(-1); })); ok(lib <= 1, 'the library holds only the fresh demo song after a factory reset (' + lib + ')'); }
+  if (await page.$('#bootGo')) { await page.click('#bootGo'); await wait(1800); } await page.evaluate(() => { const d = document.getElementById('origins'); if (d && d.open) d.close(); });   // nothing starts by itself: the start overlay waits for a click
   // ---- v1.6: appearance system ----
   { const dset = () => page.evaluate(() => ({ ...document.documentElement.dataset, acc: getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() }));
     await page.click('button[title^="Appearance"]'); await wait(400); ok(await page.$eval('#look', d => d.open), 'the ◐ button opens the Appearance drawer');
-    ok((await page.$$('.lk-pal')).length === 15 && (await page.$$('.lk-look')).length === 7, 'drawer offers 15 palettes and 7 looks');
+    ok((await page.$$('.lk-pal')).length === 17 && (await page.$$('.lk-look')).length === 8, 'drawer offers 17 palettes and 8 looks');
     await page.click('.lk-look:has-text("Midnight")'); await wait(300); let d = await dset(); ok(d.theme === 'dark' && d.palette === 'midnight', 'look "Midnight" switches to the dark Midnight palette: ' + d.theme + '/' + d.palette);
     await page.click('.lk-pal[title="Paper"]'); await wait(300); d = await dset(); ok(d.palette === 'paper' && d.theme === 'light', 'choosing a light palette switches to light: ' + d.palette);
     await page.click('.lk-dot[title="Violet"]'); await wait(300); const v1 = (await dset()).acc; ok(/^#/.test(v1) && v1.toLowerCase() !== '#b4532a', 'accent swatch changes the accent colour: ' + v1);
@@ -122,7 +123,7 @@ function wav(L, sr) { const n = L.length, b = Buffer.alloc(44 + n * 2); b.write(
     d = await dset(); ok(d.corners === 'round' && d.density === 'spacious' && (await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--cv1').trim())) === '#0072B2', 'corners, density and colour-blind-safe data colours apply');
     await page.selectOption('#look select', 'legible'); await wait(200); ok((await dset()).font === 'legible', 'typeface choice applies');
     await page.keyboard.press('Escape'); await page.reload(); await wait(2300); if (await page.$('#bootGo')) await page.click('#bootGo'); await wait(2300); await page.evaluate(() => { const b = document.querySelector('#tourOffer .btn:not(.primary)'); if (b) b.click(); }); d = await dset(); ok(d.palette === 'paper' && d.corners === 'round' && d.density === 'spacious', 'appearance survives a reload: ' + d.palette + '/' + d.corners + '/' + d.density);
-    await page.click('button[title^="Appearance"]'); await wait(300); await page.click('.lk-foot .btn'); await wait(300); d = await dset(); ok(d.corners === 'soft' && d.density === 'comfortable' && d.palette === 'porcelain', 'Reset appearance restores the defaults');
+    await page.click('button[title^="Appearance"]'); await wait(300); await page.click('.lk-foot .btn'); await wait(300); d = await dset(); ok(d.corners === 'soft' && d.density === 'comfortable' && d.palette === 'dsday' && d.font === 'brand', 'Reset appearance restores the defaults (Daily Light, brand type)');
     await page.keyboard.press('Escape'); }
   // ---- v1.7: About & credits, CSP, production assets ----
   { await page.keyboard.press('Escape'); await page.click('.btn.icon[title^="Help"]'); await wait(400);
@@ -134,6 +135,24 @@ function wav(L, sr) { const n = L.length, b = Buffer.alloc(44 + n * 2); b.write(
     ok(!/FRETWORK|Fretwork/.test(await page.evaluate(() => document.documentElement.outerHTML)), 'no old brand name anywhere in the page');
     await page.keyboard.press('Escape');
     ok(await page.evaluate(() => /default-src 'self'/.test((document.querySelector('meta[http-equiv="Content-Security-Policy"]') || {}).content || '')), 'a Content-Security-Policy is set on the page'); }
+  // audio is never switched on for you: no microphone request until you choose, visible Audio control, kill switch
+  { const ap = await ctx0.newPage(), ae = []; ap.on('pageerror', e => ae.push(e.message));
+    await ap.addInitScript(() => { window.__gum = 0; const md = navigator.mediaDevices, g = md.getUserMedia.bind(md); md.getUserMedia = c => { if (c && c.audio) window.__gum++; return g(c).then(st => { (window.__st = window.__st || []).push(st); return st; }); }; });
+    await ap.goto(BASE); await wait(3500);
+    ok(await ap.evaluate(() => window.__gum) === 0 && !!(await ap.$('#boot')), 'nothing asks for the microphone on load; the start overlay waits for you');
+    ok(/Start · microphone stays off/.test(await ap.$eval('#bootNoMic', e => e.textContent)), 'the first choice is to start with the microphone off');
+    await ap.click('#bootNoMic'); await wait(2000);
+    ok(await ap.evaluate(() => window.__gum) === 0 && /No input/.test(await ap.$eval('.aud .lbl', e => e.textContent)), 'starting leaves the microphone off and the header says so');
+    await ap.click('.aud'); await wait(400); ok(await ap.$eval('#audio', d => d.open), 'the header Audio button opens the audio panel');
+    await ap.click('#audio button:has-text("Connect")'); await wait(2000);
+    ok(await ap.evaluate(() => window.__gum) > 0 && /Input live/.test(await ap.$eval('.aud .lbl', e => e.textContent)), 'Connect asks for the input and the header shows it is live');
+    await ap.keyboard.press('Escape'); await ap.keyboard.press('Control+.'); await wait(600);
+    ok(/killed/i.test(await ap.$eval('.aud .lbl', e => e.textContent)), 'Ctrl + . kills audio and the header shows it');
+    ok(await ap.evaluate(() => (window.__st || []).length > 0 && window.__st.every(st => st.getTracks().every(t => t.readyState === 'ended'))), 'the kill switch releases every microphone track');
+    if (await ap.evaluate(() => !!window.__daily && !!window.__daily.esc)) ok(await ap.evaluate(() => window.__daily.esc('<img src=x onerror=alert(1)>&"\'') === '&lt;img src=x onerror=alert(1)&gt;&amp;&quot;&#39;'), 'esc() neutralises markup in untrusted text');
+    await ap.click('.aud'); await wait(300); await ap.click('#audio button:has-text("Resume audio")'); await wait(800);
+    ok(/No input/.test(await ap.$eval('.aud .lbl', e => e.textContent)), 'resuming brings audio back with the microphone still off');
+    ok(ae.length === 0, 'audio control runs without script errors' + (ae.length ? ' ' + ae[0] : '')); await ap.close(); }
   // camera looks: edges-in and the person cut-out (a stub segmenter stands in for the downloadable model)
   { const cp = await ctx0.newPage(), ce = []; cp.on('pageerror', e => ce.push(e.message)); await cp.goto(BASE + '?debug'); await wait(2200);
     await cp.evaluate(() => { const b = document.querySelector('#bootGo') || document.querySelector('#bootNoMic'); if (b) b.click(); }); await wait(1800);

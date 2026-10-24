@@ -5,6 +5,7 @@ All notable changes to the-daily.studio (earlier versions were released under th
 ## 1.7.0 — 2026-10-24 — MVP 1, first production release
 
 ### Added
+- **Audio control and kill switch.** Nothing asks for the microphone until you choose it: the start screen offers “Start · microphone stays off” first. A header **Audio** button (with a status light) opens the audio panel: start the engine, pick and connect an input, turn monitoring on, or stop everything. **Ctrl/Cmd + .** kills audio at any time (stops playback and recording, turns monitoring off, releases the microphone, suspends the engine). Monitoring is off by default; “reconnect my last input on open” is opt-in. Saved settings are kept.
 - **About & credits** in Help & shortcuts: a short intro, "About me" with links to GitHub and LinkedIn, The Daily, the source repository, and a collapsible list of credits and licences.
 - **THIRD_PARTY_NOTICES.md**, **PRIVACY.md**, **CODE_OF_CONDUCT.md** and **samples/LICENSE.md** (the bundled sample track is not MIT-licensed).
 - **Content-Security-Policy** built into the page (script allowed by hash; only optional hand tracking can reach other hosts).
@@ -16,12 +17,26 @@ All notable changes to the-daily.studio (earlier versions were released under th
 - **The Daily now lives at `/journal/`** on the same site (vendored from github.com/TehauD/daily; refresh with `scripts/sync-journal.mjs`). The studio's service worker and reset leave it alone, and the About link points to it.
 - docs/RELEASE.md, a go-live checklist.
 
+### Security and release hardening
+- **Deploy gate.** `npm run build:site` now also writes a `_headers` file: the page's CSP as a header plus `frame-ancestors 'none'`, `X-Frame-Options: DENY`, HSTS, COOP, `nosniff`, no-referrer, a tight Permissions-Policy and cache rules. `npm run verify:site` fails the build if files are missing, the CSP hash is stale, framing is allowed, or any third-party host other than jsDelivr and Google storage appears. CI runs it.
+- **Cloudflare only.** The GitHub Pages workflow and `CNAME` were removed; hosting docs now describe Cloudflare Workers.
+- **Escaping.** Neural-map details panel escapes song data (section names, chord labels) before inserting it as HTML; a shared `esc()` helper and test were added.
+- **Tests.** The kill-switch test now confirms every microphone track ends.
+- **Docs.** New: docs index, OPERATIONS runbook, SECURITY_MODEL, TESTING, AUDIO. HOSTING, RELEASE, PRIVACY and SECURITY updated.
+
+### Brand
+- **New mark:** a hexagon drawn as a cube, with T, D and S on its faces and a small waveform standing on its foot, mirrored around the stem. It is used in the header, start card, About, favicon, app icon (including maskable), social card and README, all from one drawing (`scripts/brand-mark.mjs`; regenerate with `scripts/make-brand.mjs`). In the app the mark follows your accent colour.
+- **New default palettes:** *Daily Light* (paper, charcoal, deep sage) and *Daily Night* (charcoal, sage, gold), with a matching gold secondary colour for charts. Every existing palette, accent, density, corner, surface, contrast and colour-blind option still works; the old teal Porcelain and Ink palettes are still in the list. A new look, **the-daily.studio**, applies the pair in one click.
+- **Type:** Inter (text) and Montserrat (headings) are now built into the page (SIL OFL, about 90 kB), so the app looks the same on every device. The old system-font choice is now "System UI".
+- **Tagline:** "Write. Play. Create."
+- docs/BRAND.md and a brand sheet (docs/brand/brand-sheet.png).
+
 ### Changed
 - README, hosting and security notes describe the finished product; documentation screenshots show the current look.
 - Palette contrast: Paper's muted text and every accent are fitted to meet WCAG AA against their surfaces.
 
 ### Fixed
-- Accessibility (WCAG A/AA, checked with axe on all 15 palettes): labels on selects and zoom controls, keyboard access to scrolling timeline and chain regions, side-tab roles.
+- Accessibility (WCAG A/AA, checked with axe on the palettes, including the two new defaults): labels on selects and zoom controls, keyboard access to scrolling timeline and chain regions, side-tab roles.
 
 ## 1.6.0 — 2026-10-24
 

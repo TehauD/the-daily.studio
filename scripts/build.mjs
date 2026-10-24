@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /* the-daily.studio build: concatenates src/parts/*.js (in filename order) into one IIFE and emits
-     index.html            standalone single-file app (GitHub Pages entry point; also opens from disk)
+     index.html            standalone single-file app (site entry point; also opens from disk)
      codepen/pen.{html,css,js}   the three CodePen panels
    No dependencies. `--check` verifies the committed outputs are up to date and exits 1 if not. */
 import { readFileSync, writeFileSync, readdirSync, mkdirSync, statSync } from 'node:fs';
@@ -8,6 +8,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
 import { createHash } from 'node:crypto';
+import { markInner, markSvg, BRAND as BR } from './brand-mark.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const src = p => readFileSync(join(root, 'src', p), 'utf8');
@@ -19,24 +20,29 @@ for (const f of parts) js += `/* >>> parts/${f} */\n${src('parts/' + f)}\n`;
 js += "if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();\n})();\n";
 try { new vm.Script(js, { filename: 'daily-songs.js' }); } catch (e) { console.error('Syntax error in bundled script:\n' + e.stack); process.exit(1); }
 
-const css = src('styles.css'), body = src('body.html');
-const icon = encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><path d="M20 3l14 8v18l-14 8-14-8V11z" fill="#0e2a30" stroke="#17b3a3" stroke-width="2.6"/><path d="M20 11l7 4v10l-7 4-7-4V15z" fill="#17b3a3"/><path d="M13 26L27 14" stroke="#fff" stroke-width="1.6"/></svg>');
+const MARK = markInner({ hex: 'var(--accent)', ink: 'var(--text)' });
+const MARK_SM = markInner({ hex: 'var(--accent)', ink: 'var(--text)', bars: false, k: 1.45 });
+js = js.replaceAll('__MARK_INNER__', MARK);
+const fontFace = (fam, file) => `@font-face{font-family:"${fam}";src:url(data:font/woff2;base64,${readFileSync(join(root, 'src', 'fonts', file)).toString('base64')}) format("woff2");font-weight:100 900;font-style:normal;font-display:swap}\n`;
+const css = fontFace('DS Inter', 'inter-latin-wght.woff2') + fontFace('DS Montserrat', 'montserrat-latin-wght.woff2') + src('styles.css'), body = src('body.html').replaceAll('__MARK_INNER__', MARK).replaceAll('__MARK_SM__', MARK_SM);
+const favSvg = markSvg({ hex: BR.deep, ink: BR.black, bars: false, k: 1.7, cls: true }).replace('>', `><style>.h{stroke:${BR.deep}}.i{stroke:${BR.black}}@media(prefers-color-scheme:dark){.h{stroke:${BR.sage}}.i{stroke:${BR.paper}}}</style>`);
+const icon = encodeURIComponent(favSvg);
 const head = `<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="the-daily.studio">
 <title>the-daily.studio — a songwriter’s workspace</title><link rel="canonical" href="https://the-daily.studio/"><meta property="og:url" content="https://the-daily.studio/">
 <meta name="description" content="A free, open-source songwriter’s workspace that runs entirely in your browser: capture an idea, write lyrics and chords, record guitar and vocals, split a track into stems, and keep it all on your device.">
-<meta name="theme-color" content="#0e2a30"><meta property="og:title" content="the-daily.studio — a songwriter’s workspace"><meta property="og:type" content="website"><meta property="og:site_name" content="the-daily.studio"><meta property="og:image" content="https://the-daily.studio/icons/social-card.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="the-daily.studio: lyrics, chords, recording and stems in one browser page">
+<meta name="theme-color" content="#0d0f10"><meta property="og:title" content="the-daily.studio — a songwriter’s workspace"><meta property="og:type" content="website"><meta property="og:site_name" content="the-daily.studio"><meta property="og:image" content="https://the-daily.studio/icons/social-card.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="the-daily.studio: lyrics, chords, recording and stems in one browser page">
 <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="the-daily.studio — a songwriter’s workspace"><meta name="twitter:image" content="https://the-daily.studio/icons/social-card.png">
 <meta name="author" content="Tehau DeBarthe"><meta name="referrer" content="no-referrer"><meta name="color-scheme" content="light dark">
 <meta property="og:description" content="Clean canvas or start from a song. Lyrics, chords, tab, recording, stems and a pedal rig. No account, nothing uploaded. the-daily.studio">
 <link rel="icon" href="data:image/svg+xml,${icon}"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png"><link rel="manifest" href="manifest.webmanifest">`;
 const inlineJs = `\n${js.replace(/<\/script>/g, '<\\/script>')}\n`;
-const csp = ["default-src 'self'", `script-src 'sha256-${createHash('sha256').update(inlineJs).digest('base64')}' 'wasm-unsafe-eval' blob: https://cdn.jsdelivr.net`, "worker-src 'self' blob:", "style-src 'self' 'unsafe-inline'", "img-src 'self' data: blob:", "media-src 'self' blob: data:", "connect-src 'self' blob: data: https://cdn.jsdelivr.net https://storage.googleapis.com", "font-src 'self'", "object-src 'none'", "base-uri 'none'", "form-action 'none'"].join('; ');
+const csp = ["default-src 'self'", `script-src 'sha256-${createHash('sha256').update(inlineJs).digest('base64')}' 'wasm-unsafe-eval' blob: https://cdn.jsdelivr.net`, "worker-src 'self' blob:", "style-src 'self' 'unsafe-inline'", "img-src 'self' data: blob:", "media-src 'self' blob: data:", "connect-src 'self' blob: data: https://cdn.jsdelivr.net https://storage.googleapis.com", "font-src 'self' data:", "object-src 'none'", "base-uri 'none'", "form-action 'none'"].join('; ');
 const standalone = `<!doctype html>\n<html lang="en"><head><meta http-equiv="Content-Security-Policy" content="${csp}">${head}\n<style>\n${css}\n</style></head><body>\n${body}\n<noscript>the-daily.studio needs JavaScript. It runs entirely in your browser and sends nothing anywhere.</noscript>\n<script>${inlineJs}</script></body></html>\n`;
 
 /* installable web app: manifest + offline cache (the page registers sw.js only on https / localhost) */
 const manifest = JSON.stringify({
   name: 'the-daily.studio', short_name: 'The Daily', description: pkg.description, id: './', start_url: './', scope: './', display: 'standalone', orientation: 'any',
-  background_color: '#0e2a30', theme_color: '#0e2a30', categories: ['music', 'productivity'],
+  background_color: '#0d0f10', theme_color: '#0d0f10', categories: ['music', 'productivity'],
   icons: [{ src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' }, { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' }, { src: 'icons/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }]
 }, null, 2) + '\n';
 const sw = `/* the-daily.studio service worker (generated by scripts/build.mjs — do not edit). Same-origin files only: the page is fetched network-first (always the newest version, cached copy when offline),

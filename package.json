@@ -19,6 +19,8 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "build:check": "node scripts/build.mjs --check",
+    "build:site": "node scripts/assemble.mjs",
+    "verify:site": "node scripts/verify-site.mjs",
     "start": "node scripts/serve.mjs",
     "test": "node test/smoke.cjs",
     "test:e2e": "node test/e2e.cjs",

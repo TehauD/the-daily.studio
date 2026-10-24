@@ -8,6 +8,8 @@ Contents: [Getting sound](#getting-sound-in-and-out) · [Tones and the Rig](#ton
 
 ## Getting sound in and out
 
+**Audio button and kill switch.** The app never asks for your microphone on its own. Start with the microphone off, or connect it from the start screen. The **Audio** button in the header (light: grey off, green live, amber no input, red killed) opens a panel to start the engine, choose and connect an input, toggle monitoring and optionally reconnect your last input on open. **Ctrl/Cmd + .** (or the red button in that panel) kills audio instantly: playback and recording stop, monitoring turns off, the microphone is released. Press Resume to continue. On a phone, find it in More.
+
 1. Press **Start** on the welcome card. The browser asks for microphone access; allow it. (This is how a web page reads your audio interface.)
 2. Open **I/O** (left sidebar). Choose your **Audio input**; for a two-input interface use **In 1 / L**, **In 2 / R** or **Both** and **Auto-detect channel**. If you hear nothing, press **Diagnose devices**.
 3. Choose the **Audio output** (needs a recent Chromium browser to switch away from the system default).
@@ -223,5 +225,5 @@ Open the **◐** button (or Settings ▸ Customize appearance…; on a phone Mor
 - **Palettes** are grouped light and dark; the one in use is marked. Picking a palette switches to its mode. Choose one light and one dark palette, then press **Match system** to have the app switch between them with your device.
 - **Accent** colours the controls, active tabs, waveforms and highlights. The colour wheel takes any colour and adjusts it so it stays readable on the palette.
 - **Density, corners, surfaces and text size** change spacing, shape and depth.
-- **Typeface** uses fonts installed on your device (nothing is downloaded). **High contrast** strengthens text and borders. **Colour-blind safe** swaps charts, meters, visuals and status lights to a palette that stays distinguishable for red–green and blue–yellow colour-blindness.
+- **Typeface**: the default is Inter with Montserrat headings, built into the page. The other choices use fonts installed on your device (nothing is downloaded). **High contrast** strengthens text and borders. **Colour-blind safe** swaps charts, meters, visuals and status lights to a palette that stays distinguishable for red–green and blue–yellow colour-blindness.
 - **Reset appearance** returns to the defaults.

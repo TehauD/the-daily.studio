@@ -6,7 +6,7 @@
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
 const VERSION = '1.7.0';
-const BRAND = { name: 'the-daily.studio', short: 'the-daily.studio', tag: 'A songwriter’s workspace', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://the-daily.studio/journal/' };
+const BRAND = { name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://the-daily.studio/journal/' };
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 const SVGNS = 'http://www.w3.org/2000/svg';
@@ -52,6 +52,7 @@ const store = {
 const bus = {
   l: {},
   on(e, f) { (this.l[e] = this.l[e] || []).push(f); },
+  off(e, f) { this.l[e] = (this.l[e] || []).filter(x => x !== f); },
   emit(e, ...a) { (this.l[e] || []).forEach(f => { try { f(...a); } catch (err) { console.error('[bus ' + e + ']', err); } }); }
 };
 function toast(msg, kind = '') {
@@ -72,7 +73,7 @@ async function copyText(t) {
 /* ---------- settings ---------- */
 const CFG = Object.assign({
   theme: 'light', a4: 440, flats: false, left: false, fft: 8192, smooth: 0.8, accent: 'lagoon', reduce: false,
-  monitor: true, kpad: true, rtt: null, hint: 'interactive', sr: 'auto', inDev: '', outDev: '', camDev: '', mirror: true, ch: 'auto',
+  monitor: false, autoIn: false, kpad: true, rtt: null, hint: 'interactive', sr: 'auto', inDev: '', outDev: '', camDev: '', mirror: true, ch: 'auto',
   countIn: 1, metroVol: 0.5, ugWidth: 72, ugTags: true, midimap: {}, ui: 1, vq: 1, humanize: 0.15, visMode: 'hex', hfrOn: true,
   rec: { dry: true, wet: true }, fretNames: 'notes',
   vin: 'off', armG: true, armV: true, voxMon: false, voxPolish: true, voxTrim: 0, trackSync: true, trackFill: 'all'
@@ -82,6 +83,8 @@ const saveCfg = () => store.set('cfg', CFG);
 /* ---------- music theory ---------- */
 const NS = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 const NF = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
+/* escape text before it goes into an HTML string (song titles, section names and imported data are untrusted) */
+const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const pcName = (pc, fl = CFG.flats) => (fl ? NF : NS)[((Math.round(pc) % 12) + 12) % 12];
 const midiName = (m, fl) => pcName(m, fl) + (Math.floor(m / 12) - 1);
 const mtof = m => CFG.a4 * Math.pow(2, (m - 69) / 12);
@@ -1296,7 +1299,7 @@ function buildHeader() {
   const R = $('#topR');
   UI.lat = h('span', { class: 'chip', title: 'Round-trip latency estimate. Run the Loopback Test in I/O for a measured value.' }, h('i', { class: 'led' }), h('span', {}, 'audio off'));
   UI.theme = h('button', { class: 'btn icon', title: 'Appearance: light / dark, palettes, accent, density…', onclick: () => lookOpen() }, '◐');
-  R.append(UI.lat, UI.theme, h('button', { class: 'btn icon', title: 'Settings', onclick: openSettings }, '⚙'), h('button', { class: 'btn icon', title: 'Help & shortcuts (?)', onclick: openHelp }, '?'));
+  R.append(audioButton(), UI.lat, UI.theme, h('button', { class: 'btn icon', title: 'Settings', onclick: openSettings }, '⚙'), h('button', { class: 'btn icon', title: 'Help & shortcuts (?)', onclick: openHelp }, '?'));
 }
 function keyChanged() {
   S.key = +UI.key.value; S.minor = UI.mode.value === 'min'; if (/Major|Minor/.test(S.scale) || S.scale.startsWith('Natural')) S.scale = S.minor ? 'Natural Minor (Aeolian)' : 'Major (Ionian)'; CFG.flats = keyUsesFlats(S.key, S.minor) ? true : false; saveCfg(); commit();
@@ -1351,7 +1354,7 @@ function openSettings() {
 }
 function openHelp() {
   const d = $('#help'); d.innerHTML = '';
-  const K = [['Space', 'Play / stop'], ['R', 'Arm / start recording (count-in, dry DI + wet print)'], ['L / M', 'Loop / metronome'], ['D · B · G · T', 'Band on/off: drums · bass · rhythm guitar · lead tab'], ['1…8 · 0', 'Recall pedalboard scene (Stage scene when Stage is focused) · 0 = all pedals off'], ['Home', 'Return to start'], ['Ctrl/⌘ Z · Shift+Z', 'Undo / redo song edits'], ['Ctrl/⌘ S', 'Save project JSON'], ['Alt + 1…9, 0', 'Switch panel by position (tab order is yours to arrange)'], ['[ ]', 'Toggle left / right sidebars'],
+  const K = [['Space', 'Play / stop'], ['Ctrl + .', 'KILL AUDIO: stop playback, monitor off, release the microphone, suspend audio'], ['R', 'Arm / start recording (count-in, dry DI + wet print)'], ['L / M', 'Loop / metronome'], ['D · B · G · T', 'Band on/off: drums · bass · rhythm guitar · lead tab'], ['1…8 · 0', 'Recall pedalboard scene (Stage scene when Stage is focused) · 0 = all pedals off'], ['Home', 'Return to start'], ['Ctrl/⌘ Z · Shift+Z', 'Undo / redo song edits'], ['Ctrl/⌘ S', 'Save project JSON'], ['Alt + 1…9, 0', 'Switch panel by position (tab order is yours to arrange)'], ['[ ]', 'Toggle left / right sidebars'],
     ['Tab editor', 'Click a cell · type fret (0–24) · ←→↑↓ move · Del clear · h p / \\ b ~ x < set technique · Shift+arrows select · Space plays from bar'], ['Knobs', 'Drag · wheel · Shift = fine · double-click reset · right-click = MIDI learn'], ['Rig', 'Drag pedal headers to reorder the signal chain · A/B + Morph to compare tones']];
   d.append(h('div', { class: 'dlg-h' }, 'HELP & SHORTCUTS', h('button', { class: 'btn sm', onclick: () => d.close() }, 'Close')), h('div', { class: 'dlg-b', style: { display: 'block' } }, h('div', { class: 'help-k' }, K.map(([a, b]) => [h('kbd', {}, a), h('span', {}, b)])),
     h('div', { class: 'row', style: { gap: '8px', margin: '2px 0 8px' } }, h('button', { class: 'btn primary', onclick: () => tourStart() }, '▶ Take the guided tour'), h('span', { class: 'tiny muted' }, 'A two-minute spotlight walkthrough of the key areas.')), h('div', { class: 'hr' }), h('p', { class: 'small muted' }, 'Everything runs locally in your browser. Nothing is uploaded. Browsers cannot talk to ASIO drivers, so achievable latency depends on your OS audio stack; use the Loopback Test (I/O panel) for a measured number, and your Focusrite’s Direct Monitor for latency-free headphone monitoring while recording.'),
@@ -1398,10 +1401,11 @@ document.addEventListener('keydown', e => {
    Part 05b · LOOK — appearance system
    Light / dark / follow-system, 15 palettes, accent colours (and any colour you pick), density, corner style, surfaces,
    typeface, contrast and colour-blind-safe data colours, plus one-click "looks". Everything is computed here and written to
-   CSS variables on <html>, so every canvas, meter and panel follows. Nothing is downloaded: fonts are the ones on the device.
+   CSS variables on <html>, so every canvas, meter and panel follows. Fonts are bundled (Inter and Montserrat, SIL OFL) or the ones already on the device.
    ============================================================ */
-const LOOK_DEF = { lookMode: 'auto', palLight: 'porcelain', palDark: 'ink', accent: 'auto', accentC: '', density: 'comfortable', corners: 'soft', surface: 'soft', font: 'system', contrast: 'standard', data: 'standard' };
+const LOOK_DEF = { lookMode: 'auto', palLight: 'dsday', palDark: 'dsnight', accent: 'auto', accentC: '', density: 'comfortable', corners: 'soft', surface: 'soft', font: 'brand', contrast: 'standard', data: 'standard' };
 const PALETTES = [
+  { id: 'dsday', mode: 'light', name: 'Daily Light', a2: '#b07a1e', cv: ['#b8741a', '#4a67c2', '#9a7d10', '#b5486a'], c: { bg: '#e9e9e6', bg2: '#dededa', panel: '#f4f4f1', panel2: '#fbfbf9', raise: '#ffffff', line: '#d6d8d3', line2: '#b8beb7', text: '#0d0f10', muted: '#4f5c56', accent: '#2f7a58' } },
   { id: 'porcelain', mode: 'light', name: 'Porcelain', c: { bg: '#eceff2', bg2: '#e2e7eb', panel: '#f6f8fa', panel2: '#ffffff', raise: '#ffffff', line: '#d5dce1', line2: '#b6c2c9', text: '#0c181c', muted: '#566b73', accent: '#0a8c97' } },
   { id: 'paper', mode: 'light', name: 'Paper', c: { bg: '#f0ebe1', bg2: '#e7e0d1', panel: '#f9f5ec', panel2: '#fffdf8', raise: '#ffffff', line: '#ddd3c0', line2: '#c2b59d', text: '#2a2218', muted: '#6a5d44', accent: '#b4532a' } },
   { id: 'sage', mode: 'light', name: 'Sage', c: { bg: '#e8eee7', bg2: '#dde6dc', panel: '#f3f7f2', panel2: '#fdfefd', raise: '#ffffff', line: '#cdd8ca', line2: '#acbca8', text: '#13231a', muted: '#566a5a', accent: '#2e7d55' } },
@@ -1409,6 +1413,7 @@ const PALETTES = [
   { id: 'harbor', mode: 'light', name: 'Harbor', c: { bg: '#e6eef6', bg2: '#dae5f0', panel: '#f3f7fb', panel2: '#ffffff', raise: '#ffffff', line: '#cbd9e6', line2: '#a8bdd1', text: '#0d1b2a', muted: '#52677c', accent: '#1f6fd1' } },
   { id: 'blush', mode: 'light', name: 'Blush', c: { bg: '#f5ebeb', bg2: '#ecdcdc', panel: '#fcf6f6', panel2: '#fffdfd', raise: '#ffffff', line: '#e5d2d2', line2: '#cdaeb0', text: '#2b1a1c', muted: '#7a5a5e', accent: '#c2415a' } },
   { id: 'daylight', mode: 'light', name: 'Daylight HC', c: { bg: '#ffffff', bg2: '#f0f0f0', panel: '#ffffff', panel2: '#ffffff', raise: '#ffffff', line: '#6a777c', line2: '#1f2a2e', text: '#000000', muted: '#2f3f45', accent: '#005f73' } },
+  { id: 'dsnight', mode: 'dark', name: 'Daily Night', a2: '#d4a25a', cv: ['#d4a25a', '#8da9e8', '#e9d27a', '#d98aa2'], c: { bg: '#0d0f10', bg2: '#111413', panel: '#151a18', panel2: '#1b221f', raise: '#232c28', line: '#222b27', line2: '#33423b', text: '#e8e8e6', muted: '#8fa497', accent: '#7dbf9b' } },
   { id: 'ink', mode: 'dark', name: 'Ink', c: { bg: '#070c0f', bg2: '#0a1114', panel: '#0e161a', panel2: '#121d22', raise: '#182429', line: '#1c2a30', line2: '#2c4149', text: '#e5eff1', muted: '#87a0a6', accent: '#3de0cf' } },
   { id: 'midnight', mode: 'dark', name: 'Midnight', c: { bg: '#080b14', bg2: '#0b1020', panel: '#0f1526', panel2: '#141b30', raise: '#1a2340', line: '#212b47', line2: '#34416a', text: '#e6ebf8', muted: '#8e9bc0', accent: '#6ea8ff' } },
   { id: 'graphite', mode: 'dark', name: 'Graphite', c: { bg: '#0d0e10', bg2: '#121316', panel: '#17181c', panel2: '#1d1f24', raise: '#24272d', line: '#2a2d34', line2: '#3d424b', text: '#ececf0', muted: '#9a9fab', accent: '#5fd4b8' } },
@@ -1424,7 +1429,8 @@ const ACCENTS = [
   { id: 'amber', name: 'Amber', c: '#d99100' }, { id: 'lime', name: 'Lime', c: '#6f9d12' }, { id: 'emerald', name: 'Emerald', c: '#1c9a63' }, { id: 'slate', name: 'Slate', c: '#5b6b79' }
 ];
 const LK_FONTS = {
-  system: ['System (Inter / Segoe UI)', null],
+  brand: ['the-daily.studio (Inter + Montserrat)', null],
+  system: ['System UI', 'system-ui,"Segoe UI Variable Text","Segoe UI",-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif'],
   humanist: ['Humanist', 'Seravek,"Gill Sans Nova","Avenir Next",Candara,Optima,"Trebuchet MS",system-ui,sans-serif'],
   rounded: ['Rounded', 'ui-rounded,"SF Pro Rounded",Nunito,"Varela Round","Hiragino Maru Gothic ProN","Arial Rounded MT Bold",system-ui,sans-serif'],
   editorial: ['Editorial serif', 'Charter,"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif'],
@@ -1432,11 +1438,12 @@ const LK_FONTS = {
   mono: ['Instrument (mono)', 'ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace']
 };
 const LOOKS = [
-  { id: 'clinical', name: 'Clinical', note: 'Cool, flat, precise', set: { lookMode: 'light', palLight: 'porcelain', accent: 'auto', density: 'compact', corners: 'soft', surface: 'flat', font: 'system', contrast: 'standard', data: 'standard', ui: 1 } },
-  { id: 'studio', name: 'Studio night', note: 'Ink teal, softly lit', set: { lookMode: 'dark', palDark: 'ink', accent: 'auto', density: 'comfortable', corners: 'soft', surface: 'soft', font: 'system', contrast: 'standard', data: 'standard', ui: 1 } },
+  { id: 'signature', name: 'the-daily.studio', note: 'Sage and gold on charcoal', set: { lookMode: 'auto', palLight: 'dsday', palDark: 'dsnight', accent: 'auto', density: 'comfortable', corners: 'soft', surface: 'soft', font: 'brand', contrast: 'standard', data: 'standard', ui: 1 } },
+  { id: 'clinical', name: 'Clinical', note: 'Cool, flat, precise', set: { lookMode: 'light', palLight: 'porcelain', accent: 'auto', density: 'compact', corners: 'soft', surface: 'flat', font: 'brand', contrast: 'standard', data: 'standard', ui: 1 } },
+  { id: 'studio', name: 'Studio night', note: 'Ink teal, softly lit', set: { lookMode: 'dark', palDark: 'ink', accent: 'auto', density: 'comfortable', corners: 'soft', surface: 'soft', font: 'brand', contrast: 'standard', data: 'standard', ui: 1 } },
   { id: 'notebook', name: 'Notebook', note: 'Warm paper, serif', set: { lookMode: 'light', palLight: 'paper', accent: 'auto', density: 'comfortable', corners: 'round', surface: 'flat', font: 'editorial', contrast: 'standard', data: 'standard', ui: 1.05 } },
   { id: 'calm', name: 'Calm', note: 'Sage, rounded, airy', set: { lookMode: 'light', palLight: 'sage', accent: 'auto', density: 'spacious', corners: 'round', surface: 'soft', font: 'rounded', contrast: 'standard', data: 'standard', ui: 1.05 } },
-  { id: 'midnightlook', name: 'Midnight', note: 'Deep blue, crisp', set: { lookMode: 'dark', palDark: 'midnight', accent: 'auto', density: 'comfortable', corners: 'soft', surface: 'soft', font: 'system', contrast: 'standard', data: 'standard', ui: 1 } },
+  { id: 'midnightlook', name: 'Midnight', note: 'Deep blue, crisp', set: { lookMode: 'dark', palDark: 'midnight', accent: 'auto', density: 'comfortable', corners: 'soft', surface: 'soft', font: 'brand', contrast: 'standard', data: 'standard', ui: 1 } },
   { id: 'stage', name: 'Stage', note: 'OLED, large, high contrast', set: { lookMode: 'dark', palDark: 'oled', accent: 'amber', density: 'spacious', corners: 'sharp', surface: 'flat', font: 'legible', contrast: 'high', data: 'standard', ui: 1.2 } },
   { id: 'access', name: 'Accessible', note: 'High contrast, colour-blind safe', set: { lookMode: 'light', palLight: 'daylight', accent: 'cobalt', density: 'spacious', corners: 'soft', surface: 'flat', font: 'legible', contrast: 'high', data: 'cvd', ui: 1.15 } }
 ];
@@ -1479,8 +1486,8 @@ function applyAppearance() {
     const cv = dark ? ['#56B4E9', '#F0E442', '#CC79A7', '#2FD0A0', '#E69F00'] : ['#0072B2', '#E69F00', '#CC79A7', '#009E73', '#D55E00'];
     cv.forEach((c, i) => v('--cv' + (i + 1), c)); v('--accent2', dark ? '#E69F00' : '#D55E00'); v('--ok', dark ? '#56B4E9' : '#0072B2'); v('--warn', dark ? '#F0E442' : '#B8860B');
   } else ['--cv1', '--cv2', '--cv3', '--cv4', '--cv5', '--accent2', '--ok', '--warn'].forEach(n => v(n, null));
-  if (CFG.data !== 'cvd') v('--cv1', P.accent);
-  const f = LK_FONTS[CFG.font]; v('--sans', f && f[1]);
+  if (CFG.data !== 'cvd') { v('--cv1', P.accent); if (pal.a2) v('--accent2', pal.a2); if (pal.cv) pal.cv.forEach((c, i) => v('--cv' + (i + 2), c)); }
+  const f = LK_FONTS[CFG.font]; v('--sans', f && f[1]); v('--display', CFG.font === 'brand' ? null : f && f[1]);
   st.setProperty('--ui', CFG.ui); st.colorScheme = mode;
   r.dataset.theme = mode; r.dataset.palette = pal.id; r.dataset.density = CFG.density; r.dataset.corners = CFG.corners; r.dataset.surface = CFG.surface; r.dataset.font = CFG.font; r.dataset.contrast = CFG.contrast; delete r.dataset.accent;
   document.body.classList.toggle('reduce', !!CFG.reduce);
@@ -3326,14 +3333,14 @@ async function boot() {
   // boot overlay: live connection status + input picker
   const bstat = h('div', { id: 'bootStat', style: { font: '700 12px var(--mono)', margin: '0 0 8px' } }), bsel = h('select', { id: 'bootIn', class: 'in', style: { width: '100%', marginBottom: '10px', fontFamily: 'var(--sans)', display: 'none' }, onchange: async e => { await openInput(e.target.value); await listDevices(); fillBootIn(); say(); } });
   const bc = $('#bootChecks'); bc.parentNode.insertBefore(bsel, bc.nextSibling); bc.parentNode.insertBefore(bstat, bc.nextSibling);
-  const say = (m, c) => { if (m) { bstat.textContent = m; bstat.style.color = c || ''; return; } const t = E.stream && E.stream.getAudioTracks()[0]; bstat.textContent = E.hasInput ? '● Audio input connected: ' + (t ? t.label : 'device') + ' — press Start' : '○ ' + (E.lastInErr || 'No input connected yet.'); bstat.style.color = E.hasInput ? 'var(--ok)' : 'var(--warn)'; };
+  const say = (m, c) => { if (m) { bstat.textContent = m; bstat.style.color = c || ''; return; } const t = E.stream && E.stream.getAudioTracks()[0]; bstat.textContent = E.hasInput ? '● Audio input connected: ' + (t ? t.label : 'device') + ' — press Start' : '○ ' + (E.lastInErr || 'Microphone is off. Nothing is requested until you press a button.'); bstat.style.color = E.hasInput ? 'var(--ok)' : 'var(--warn)'; };
   const fillBootIn = () => { const cur = (E.inSettings && E.inSettings.deviceId) || ''; bsel.innerHTML = ''; const list = E.devs.in.filter(d => d.deviceId !== 'communications'); list.forEach((d, i) => bsel.append(h('option', { value: d.deviceId, selected: d.deviceId === cur }, d.label || ('Input ' + (i + 1))))); bsel.style.display = list.length ? '' : 'none'; };
-  const startBtn = $('#bootGo'); startBtn.textContent = '▶ Start';
+  const startBtn = $('#bootGo'); startBtn.textContent = '🎙 Start and connect my input';
   const finish = async () => { startBtn.disabled = true; startBtn.textContent = 'Starting…'; try { await startAudio(); if (!E.hasInput) await pickInput(); initMIDI(); } catch (e) { console.error(e); toast('Startup problem: ' + e.message, 'bad'); } hide(); renderDevices && renderDevices(); };
   startBtn.onclick = finish;
   window.__fwAuto = (async () => {
-    say('Connecting audio… allow the microphone when your browser asks.');
-    try { await startAudio(); await pickInput(); fillBootIn(); say(); await listDevices(); renderDevices(); if (E.hasInput && E.ctx.state === 'running') hide(); } catch (e) { console.warn(e); say('Could not connect automatically: ' + e.message, 'var(--bad)'); }
+    say();   // nothing is started or requested until you press a button (or tick “Reconnect my last input” in Audio)
+    try { await listDevices(); fillBootIn(); if (CFG.autoIn && CFG.inDev) { say('Reconnecting your last input… allow the microphone when your browser asks.'); await startAudio(); await pickInput(); fillBootIn(); say(); renderDevices(); if (E.hasInput && E.ctx.state === 'running') hide(); } } catch (e) { console.warn(e); say('Could not connect: ' + e.message, 'var(--bad)'); }
   })();
   ['pointerdown', 'keydown'].forEach(ev => document.addEventListener(ev, () => { if (E.ctx && E.ctx.state === 'suspended') E.ctx.resume().catch(() => { }); }, true));
   $('#bootNoMic').onclick = async () => { try { await startAudio(); listDevices(); } catch (e) { console.error(e); toast('Audio could not start: ' + e.message, 'bad'); } hide(); };
@@ -3342,7 +3349,7 @@ async function boot() {
   document.addEventListener('visibilitychange', () => { if (!document.hidden && E.ctx && E.ctx.state === 'suspended') E.ctx.resume(); });
   if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener('devicechange', () => { listDevices(); });
   bus.emit('song');
-  if (/[?&]debug\b/.test(location.search)) window.__daily = { get S() { return S; }, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop };   // test hook, only with ?debug
+  if (/[?&]debug\b/.test(location.search)) window.__daily = { get S() { return S; }, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc };   // test hook, only with ?debug
   projInit().catch(e => { console.warn('library', e); PRJ.ready = true; if (PRJ.wantStart) startMaybe(); });
 }
 
@@ -4061,12 +4068,12 @@ function ngPick(x, y) { let best = null, bd = 1e9; (NR.pos || []).forEach(p => {
 function ngPanel() {
   const box = NR.panel; if (!box) return; const sel = NR.sel || NR.hover; let html = '';
   if (!sel) { box.innerHTML = '<div class="tiny muted">Hover a node or note for details. Click to pin and light up its connections. Drag to orbit · right-drag or Shift-drag to pan · wheel to zoom · double-click to reset.</div>'; return; }
-  const row = (a, b) => `<div class="kv"><span>${a}</span><b>${b}</b></div>`;
+  const row = (a, b) => `<div class="kv"><span>${esc(a)}</span><b>${esc(b)}</b></div>`;
   if (sel.e) { const e = sel.e; html += `<h5>Note ${pcName(e.pc)}${Math.floor(e.midi / 12) - 1}</h5>` + row('Source', e.src) + row('Chord', e.chord || '—') + row('Section', e.sec || '—') + row('Velocity', Math.round(e.vel * 100) + '%') + row('Song position', Math.round(e.prog * 100) + '%'); }
   else {
-    const n = sel.n || sel; html += `<h5>${n.label}</h5>` + row('Layer', ['Spectrum', 'Pitch class', 'Chord', 'Function / form', 'Output'][n.layer]) + row('Activation', Math.round(n.act * 100) + '%') + row('Seen', n.seen ? (n.count || 1) + '×' : 'not yet');
+    const n = sel.n || sel; html += `<h5>${esc(n.label)}</h5>` + row('Layer', ['Spectrum', 'Pitch class', 'Chord', 'Function / form', 'Output'][n.layer]) + row('Activation', Math.round(n.act * 100) + '%') + row('Seen', n.seen ? (n.count || 1) + '×' : 'not yet');
     const ins = NR.edges.filter(e => e.b === n).length, outs = NR.edges.filter(e => e.a === n).length; html += row('In / out', ins + ' / ' + outs);
-    if (n.kind === 'chord' && n.cp) { html += row('Notes', n.cp.pcs.map(pcName).join(' · ')) + row('Function', FN[n.fn]) + row('In sections', [...n.secs.keys()].map(id => { const s = NR.sections.find(q => q.id === id); return s ? s.name : ''; }).join(', ') || '—'); const pr = ngPredict(n.sym); if (pr) html += '<div class="tiny muted" style="margin-top:6px">LEARNED NEXT</div>' + pr.list.slice(0, 4).map(x => `<div class="bar"><i style="width:${x.p * 100}%"></i><span>${x.sym}</span><em>${Math.round(x.p * 100)}%</em></div>`).join(''); }
+    if (n.kind === 'chord' && n.cp) { html += row('Notes', n.cp.pcs.map(pcName).join(' · ')) + row('Function', FN[n.fn]) + row('In sections', [...n.secs.keys()].map(id => { const s = NR.sections.find(q => q.id === id); return s ? s.name : ''; }).join(', ') || '—'); const pr = ngPredict(n.sym); if (pr) html += '<div class="tiny muted" style="margin-top:6px">LEARNED NEXT</div>' + pr.list.slice(0, 4).map(x => `<div class="bar"><i style="width:${x.p * 100}%"></i><span>${esc(x.sym)}</span><em>${Math.round(x.p * 100)}%</em></div>`).join(''); }
     if (n.kind === 'pc') { const cnt = NR.events.filter(e => e.pc === n.pc); html += row('Played', cnt.length + '×') + row('Fifths pos', FIFTH(n.pc)); const oc = {}; cnt.forEach(e => { const o = Math.floor(e.midi / 12) - 1; oc[o] = (oc[o] || 0) + 1; }); html += '<div class="tiny muted">OCTAVES ' + Object.keys(oc).map(o => o + ':' + oc[o]).join('  ') + '</div>'; }
     if (n.kind === 'section') html += row('Bars', n.sec.bars.length) + row('Chords', [...new Set(n.sec.bars.flatMap(barChords))].join(' '));
     if (n.kind === 'tension') html += row('Meaning', 'Energy outside the key + dominant pull');
@@ -4706,6 +4713,7 @@ function mSheet() {
     h('div', { class: 'mgrab', onclick: () => mCloseOverlays() }),
     stat,
     h('div', { class: 'mgrid' },
+      tile(msvg('<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/>'), 'Audio · kill switch', () => { mCloseOverlays(); audioOpen(); }),
       tile(msvg('<path d="M21 14.5A8.5 8.5 0 119.5 3a6.7 6.7 0 0011.5 11.5z"/>'), CFG.theme === 'light' ? 'Dark theme' : 'Light theme', () => { setTheme(CFG.theme === 'light' ? 'dark' : 'light'); mSheetRefresh(); }),
       tile(msvg('<circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 000 18z" fill="currentColor"/>'), 'Appearance', () => { mCloseOverlays(); lookOpen(); }),
       mon, wake,
@@ -6068,7 +6076,7 @@ function aboutBlock() {
   const link = (label, href, cls) => h('a', { class: 'btn sm ' + (cls || ''), href, target: '_blank', rel: 'noopener noreferrer' }, label + ' ↗');
   const li = (...kids) => h('li', {}, ...kids);
   const ext = (t, href) => h('a', { href, target: '_blank', rel: 'noopener noreferrer' }, t);
-  const mark = () => { const s = sv('svg', { viewBox: '0 0 40 40', width: 34, height: 34, 'aria-hidden': 'true' }); s.append(sv('path', { d: 'M20 3l14 8v18l-14 8-14-8V11z', fill: 'none', stroke: 'var(--accent)', 'stroke-width': 2.6 }), sv('path', { d: 'M20 11l7 4v10l-7 4-7-4V15z', fill: 'var(--accent)', opacity: .85 }), sv('path', { d: 'M13 26L27 14', stroke: 'var(--accent-ink)', 'stroke-width': 1.6 })); return s; };
+  const mark = () => { const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); s.setAttribute('viewBox', '0 0 100 100'); s.setAttribute('width', 42); s.setAttribute('height', 42); s.setAttribute('aria-hidden', 'true'); s.innerHTML = '<path d="M50 6L88.11 28L88.11 72L50 94L11.89 72L11.89 28Z" fill="none" stroke="var(--accent)" stroke-width="3.3" stroke-linejoin="miter"/><path d="M11.89 28L50 50L88.11 28M50 50L50 94" fill="none" stroke="var(--accent)" stroke-width="2.1" stroke-linecap="butt" stroke-linejoin="miter"/><path d="M35 83.29V77.29M40 86.18V76.18M45 89.06V75.06M55 89.06V75.06M60 86.18V76.18M65 83.29V77.29" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="butt"/><path transform="translate(50 29.5)" d="M-6.4 -6.8H6.4M0 -6.8V7.6" fill="none" stroke="var(--text)" stroke-width="3" stroke-linejoin="miter" stroke-linecap="butt"/><path transform="translate(29.6 55.4)" d="M-3.8 -7.6H.4A7.8 7.6 0 0 1 .4 7.6H-3.8Z" fill="none" stroke="var(--text)" stroke-width="3" stroke-linejoin="miter" stroke-linecap="butt"/><path transform="translate(68.4 55.4)" d="M5 -4.6C4.1 -6.8 2.3 -7.8 0 -7.8C-3.2 -7.8 -5 -6.3 -5 -4C-5 -1.8 -3 -.9 0 0C3 .9 5 1.8 5 4.1C5 6.4 3.2 7.8 0 7.8C-2.3 7.8 -4.1 6.9 -5 4.9" fill="none" stroke="var(--text)" stroke-width="3" stroke-linejoin="miter" stroke-linecap="butt"/>'; return s; };
   return h('section', { class: 'ab', 'aria-label': 'About' },
     h('div', { class: 'ab-top' }, mark(), h('div', {}, h('b', { class: 'ab-name' }, h('span', {}, 'the-daily'), h('span', { class: 'tld' }, '.studio')), h('div', { class: 'tiny muted' }, 'MVP 1 · v' + VERSION + ' · MIT licence'))),
     h('p', {}, 'A songwriter’s workspace that lives in your browser. Catch a lyric, find the chords, record guitar and vocals together, split a favourite track into stems and keep every song on your own device. No account, nothing uploaded, no tracking.'),
@@ -6084,7 +6092,7 @@ function aboutBlock() {
         li(h('b', {}, 'Hand tracking and person cut-out (optional): '), 'use ', ext('MediaPipe Tasks Vision', 'https://developers.google.com/mediapipe'), ' with its hand-landmarker and selfie-segmenter models by Google, Apache-2.0, fetched from jsDelivr and Google Storage only when you switch hand tracking on, or choose “Me in front” for the camera. Motion-only mode and the edges-in look stay offline.'),
         li(h('b', {}, 'Methods: '), 'YIN pitch estimation (de Cheveigné & Kawahara, 2002); harmonic / percussive separation by median filtering (Fitzgerald, 2010); Karplus–Strong string synthesis (1983). Re-implemented here from the published papers.'),
         li(h('b', {}, 'Sample track: '), '“Good Morning” © ' + BRAND.author + ', included so you can try the app. It is not covered by the MIT licence; see samples/LICENSE.md.'),
-        li(h('b', {}, 'Type: '), 'the app uses typefaces already on your device; none are bundled or downloaded.'),
+        li(h('b', {}, 'Type: '), 'Inter and Montserrat (SIL Open Font Licence 1.1) are built into the page; nothing is downloaded. Other typefaces in Appearance use fonts already on your device.'),
         li(h('b', {}, 'Names: '), 'Ultimate Guitar, Focusrite, Scarlett, MIDI, Google and other names are used only to describe compatibility. This project is independent and not affiliated with or endorsed by them.'),
         li(h('b', {}, 'Made with AI assistance: '), 'developed with Claude (Anthropic) under my direction. The design choices, the music and any mistakes are mine.')),
       h('p', { class: 'tiny muted' }, 'Full notices: THIRD_PARTY_NOTICES.md and PRIVACY.md in the repository.')),
@@ -6106,6 +6114,63 @@ function guardReport(err) {
 }
 window.addEventListener('error', e => guardReport(e.error || e.message));
 window.addEventListener('unhandledrejection', e => guardReport(e.reason));
+
+/* >>> parts/30-audio-control.js */
+/* ---------- Audio control: nothing is switched on until you choose, and one kill switch turns it all off ----------
+   Header button (always visible) → this panel: start the engine, pick an input, connect / release the microphone, monitoring,
+   and KILL AUDIO (also Ctrl + .). The app never asks for the microphone by itself unless you tick "Reconnect my last input". */
+const AK = { killed: false };
+function closeInput() {
+  try { if (E.stream) E.stream.getTracks().forEach(t => t.stop()); } catch (e) { }
+  try { if (E.src) E.src.disconnect(); } catch (e) { }
+  E.stream = null; E.src = null; E.hasInput = false; bus.emit('input', null);
+}
+function audioKill(quiet) {
+  try { if (T.rec || T.playing) stopPlay(false); } catch (e) { }
+  try { if (CFG.monitor) setMonitor(false); } catch (e) { }
+  closeInput(); try { if (E.ctx && E.ctx.state === 'running') E.ctx.suspend(); } catch (e) { }
+  AK.killed = true; bus.emit('audiostate'); if (!quiet) toast('Audio killed: playback stopped, monitor off, microphone released. Open Audio to resume.', 'warn');
+}
+async function audioResume() { AK.killed = false; try { await startAudio(); } catch (e) { toast('Audio could not restart: ' + e.message, 'bad'); } bus.emit('audiostate'); }
+function audioState() {
+  if (AK.killed) return ['bad', 'Audio killed']; if (!E.ctx || E.ctx.state !== 'running') return ['', 'Audio off'];
+  return E.hasInput ? ['on', 'Input live'] : ['warn', 'No input'];
+}
+function audioButton() {
+  const led = h('i', { class: 'led' }), txt = h('span', { class: 'lbl' }, 'Audio off');
+  UI.aud = h('button', { class: 'btn sm aud', title: 'Audio: start, choose an input, monitoring and the kill switch (Ctrl + .)', 'aria-haspopup': 'dialog', onclick: audioOpen }, led, txt);
+  const sync = () => { const [c, t] = audioState(); led.className = 'led ' + c; txt.textContent = t; UI.aud.classList.toggle('killed', AK.killed); };
+  ['audio:ready', 'input', 'monitor', 'audiostate', 'devices'].forEach(ev => bus.on(ev, sync)); setInterval(sync, 1000); sync(); return UI.aud;
+}
+function audioOpen() {
+  const body = h('div', { class: 'aud-b' });
+  async function connect(id) {
+    AK.killed = false; try { await startAudio(); } catch (e) { toast('Audio could not start: ' + e.message, 'bad'); return; }
+    const ok = id ? await openInput(id) : await pickInput(); await listDevices(); bus.emit('audiostate'); if (ok && !CFG.monitor) toast('Input connected. Monitoring is off; use headphones, then tick “Hear myself”.', 'ok');
+  }
+  function draw() {
+    const [c, t] = audioState(), on = E.ctx && E.ctx.state === 'running', cur = (E.inSettings && E.inSettings.deviceId) || CFG.inDev || '', list = (E.devs.in || []).filter(d => d.deviceId !== 'communications');
+    const sel = h('select', { class: 'in', 'aria-label': 'Input device', style: { fontFamily: 'var(--sans)', width: '100%' } }, h('option', { value: '' }, list.length ? 'Choose an input…' : 'Default input'), list.map((d, i) => h('option', { value: d.deviceId, selected: d.deviceId === cur && E.hasInput }, d.label || ('Input ' + (i + 1)))));
+    body.innerHTML = ''; body.append(
+      h('div', { class: 'aud-st ' + c }, h('i', { class: 'led ' + c }), h('b', {}, t), h('span', { class: 'muted' }, AK.killed ? ' Everything is stopped and the microphone is released.' : !on ? ' Nothing is running and nothing has been asked of your microphone.' : E.hasInput ? ' ' + ((E.stream && E.stream.getAudioTracks()[0] || {}).label || 'Your input is on.') : ' The engine is on; your microphone is still off.')),
+      AK.killed ? h('button', { class: 'btn primary', onclick: async () => { await audioResume(); draw(); } }, '▶ Resume audio (microphone stays off)') : '',
+      !on && !AK.killed ? h('button', { class: 'btn primary', onclick: async () => { try { await startAudio(); } catch (e) { toast(e.message, 'bad'); } bus.emit('audiostate'); draw(); } }, '▶ Start audio engine (no microphone)') : '',
+      h('div', { class: 'lk-sec' }, 'INPUT'),
+      h('div', { class: 'row', style: { gap: '8px' } }, sel, E.hasInput
+        ? h('button', { class: 'btn', onclick: () => { closeInput(); bus.emit('audiostate'); draw(); } }, 'Disconnect')
+        : h('button', { class: 'btn primary', onclick: async () => { await connect(sel.value); draw(); } }, '🎙 Connect')),
+      E.hasInput ? h('div', { class: 'row', style: { gap: '8px', marginTop: '6px' } }, h('button', { class: 'btn sm', onclick: async () => { await connect(sel.value); draw(); } }, 'Use the selected input')) : '',
+      h('div', { class: 'tiny muted' }, 'Your browser will ask for permission the first time. Guitar and vocal channel routing, trim and the loopback test are in the I/O panel.'),
+      h('div', { class: 'lk-sec' }, 'MONITORING'),
+      h('label', { class: 'row', style: { gap: '8px' } }, h('input', { type: 'checkbox', checked: !!CFG.monitor, onchange: e => { setMonitor(e.target.checked); } }), h('span', {}, 'Hear myself through the app (use headphones)')),
+      h('label', { class: 'row', style: { gap: '8px' } }, h('input', { type: 'checkbox', checked: !!CFG.autoIn, onchange: e => { CFG.autoIn = e.target.checked; saveCfg(); } }), h('span', {}, 'Reconnect my last input when the app opens (off by default)')),
+      h('div', { class: 'lk-sec' }, 'KILL SWITCH'),
+      h('button', { class: 'btn aud-kill', onclick: () => { audioKill(); draw(); } }, '⏹ KILL AUDIO · Ctrl + .'),
+      h('div', { class: 'tiny muted' }, 'Stops playback and recording, turns monitoring off, releases the microphone and suspends the audio engine. Use it for feedback or a runaway sound.'));
+  }
+  const d = pdlg('audio', 'AUDIO', body, { cls: 'auddlg' }); draw(); const redraw = () => { if (document.getElementById('audio')) draw(); }; ['input', 'monitor', 'audiostate', 'devices'].forEach(ev => bus.on(ev, redraw)); d.addEventListener('close', () => ['input', 'monitor', 'audiostate', 'devices'].forEach(ev => bus.off && bus.off(ev, redraw)));
+}
+document.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key === '.') { e.preventDefault(); audioKill(); } }, true);
 
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();

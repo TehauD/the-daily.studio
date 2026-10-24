@@ -6,7 +6,7 @@ the-daily.studio is one self-contained web page written in vanilla JavaScript. T
 
 ```
 src/parts/*.js ─┐
-src/styles.css ─┼─ scripts/build.mjs ─► index.html          (standalone, served by GitHub Pages)
+src/styles.css ─┼─ scripts/build.mjs ─► index.html          (standalone single-file app)
 src/body.html  ─┘                    └► codepen/pen.{html,css,js}
 ```
 

@@ -4,7 +4,7 @@
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
 const VERSION = '1.7.0';
-const BRAND = { name: 'the-daily.studio', short: 'the-daily.studio', tag: 'A songwriter’s workspace', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://the-daily.studio/journal/' };
+const BRAND = { name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://the-daily.studio/journal/' };
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 const SVGNS = 'http://www.w3.org/2000/svg';
@@ -50,6 +50,7 @@ const store = {
 const bus = {
   l: {},
   on(e, f) { (this.l[e] = this.l[e] || []).push(f); },
+  off(e, f) { this.l[e] = (this.l[e] || []).filter(x => x !== f); },
   emit(e, ...a) { (this.l[e] || []).forEach(f => { try { f(...a); } catch (err) { console.error('[bus ' + e + ']', err); } }); }
 };
 function toast(msg, kind = '') {
@@ -70,7 +71,7 @@ async function copyText(t) {
 /* ---------- settings ---------- */
 const CFG = Object.assign({
   theme: 'light', a4: 440, flats: false, left: false, fft: 8192, smooth: 0.8, accent: 'lagoon', reduce: false,
-  monitor: true, kpad: true, rtt: null, hint: 'interactive', sr: 'auto', inDev: '', outDev: '', camDev: '', mirror: true, ch: 'auto',
+  monitor: false, autoIn: false, kpad: true, rtt: null, hint: 'interactive', sr: 'auto', inDev: '', outDev: '', camDev: '', mirror: true, ch: 'auto',
   countIn: 1, metroVol: 0.5, ugWidth: 72, ugTags: true, midimap: {}, ui: 1, vq: 1, humanize: 0.15, visMode: 'hex', hfrOn: true,
   rec: { dry: true, wet: true }, fretNames: 'notes',
   vin: 'off', armG: true, armV: true, voxMon: false, voxPolish: true, voxTrim: 0, trackSync: true, trackFill: 'all'
@@ -80,6 +81,8 @@ const saveCfg = () => store.set('cfg', CFG);
 /* ---------- music theory ---------- */
 const NS = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 const NF = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
+/* escape text before it goes into an HTML string (song titles, section names and imported data are untrusted) */
+const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const pcName = (pc, fl = CFG.flats) => (fl ? NF : NS)[((Math.round(pc) % 12) + 12) % 12];
 const midiName = (m, fl) => pcName(m, fl) + (Math.floor(m / 12) - 1);
 const mtof = m => CFG.a4 * Math.pow(2, (m - 69) / 12);

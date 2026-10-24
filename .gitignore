@@ -8,3 +8,4 @@ test/out/
 test/*.wav
 .vscode/
 .idea/
+dist/

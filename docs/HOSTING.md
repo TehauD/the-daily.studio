@@ -1,94 +1,60 @@
-# Hosting the-daily.studio on your own GitHub
+# Hosting the-daily.studio
 
-the-daily.studio is a **static site**: one `index.html` with everything inside. There is no backend, database or build step at runtime, which makes GitHub Pages a perfect home. This guide takes you from an empty folder to a public HTTPS URL, then covers custom domains, other hosts, hardening and releases.
+the-daily.studio is a **static site**: one `index.html` with everything inside, plus a manifest, a service worker, icons, optional sample tracks, and The Daily journal at `/journal/`. There is no backend, database or server code. **Production runs on Cloudflare Workers static assets**; any static host works.
 
-> **Why HTTPS matters.** Browsers only allow the **microphone, camera and MIDI** on *secure contexts*: `https://…` pages and `http://localhost`. GitHub Pages serves HTTPS automatically, so audio input works for everyone who opens your link. A plain `http://` site, or an `http://192.168.x.x` address on your LAN, will *not* get microphone access.
+> **Why HTTPS matters.** Browsers only allow the **microphone, camera and MIDI** on secure contexts (`https://…` and `http://localhost`). Cloudflare serves HTTPS automatically. A plain `http://` or `http://192.168.x.x` address will not get microphone access.
 
-Contents: [1. Publish on GitHub Pages](#1-publish-on-github-pages) · [2. Check it works](#2-check-it-works) · [3. Custom domain](#3-custom-domain) · [4. Updating](#4-updating-the-site) · [5. Releases](#5-cut-a-release) · [6. Repository polish](#6-repository-polish-checklist) · [7. Other hosts](#7-other-ways-to-run-it) · [8. Hardening](#8-optional-hardening-headers-and-csp) · [9. Self-hosting hand tracking](#9-self-hosting-the-hand-tracking-files) · [10. Troubleshooting](#10-troubleshooting)
+Contents: [1. Deploy on Cloudflare](#1-deploy-on-cloudflare) · [2. Custom domain](#2-custom-domain) · [3. Check it works](#3-check-it-works) · [4. Updating](#4-updating-the-site) · [5. Releases](#5-cut-a-release) · [6. Other hosts](#6-other-hosts) · [7. Headers and CSP](#7-headers-and-csp) · [8. Self-hosting camera models](#8-self-hosting-the-camera-model-files) · [9. Troubleshooting](#9-troubleshooting)
+
+For day-to-day running, rollback and incident steps see [OPERATIONS.md](OPERATIONS.md). For the security design see [SECURITY_MODEL.md](SECURITY_MODEL.md).
 
 ---
 
-## 1. Publish on GitHub Pages
+## 1. Deploy on Cloudflare
 
-You need a free GitHub account and `git`. The `gh` CLI is optional but makes step 1b a single command.
+The repo contains `wrangler.jsonc` and two scripts:
 
-### 1a. Create the repository
+* `npm run build:site` builds the app, copies exactly the files to serve into `dist/`, and writes `dist/_headers` (security headers and the Content-Security-Policy, generated from the page itself).
+* `npm run verify:site` is the release gate: it fails if a required file is missing, the CSP hash no longer matches the script, framing is allowed, or a third-party host appears that should not.
 
-**With the website:** go to <https://github.com/new>, name it `the-daily.studio` (any name works), choose **Public**, and leave "Add a README" **unticked** (this folder already has one). Then in the project folder:
+In **Workers & Pages ▸ Create ▸ Import a repository**, choose the repository and set:
 
-```bash
-git init -b main
-git add .
-git commit -m "the-daily.studio 1.4.0"
-git remote add origin https://github.com/TehauD/the-daily.studio.git
-git push -u origin main
-```
+| Field | Value |
+| --- | --- |
+| Project name | `the-daily-studio` (must match `name` in `wrangler.jsonc`) |
+| Build command | `npm run build:site && npm run verify:site` |
+| Deploy command | `npx wrangler deploy` |
+| Preview command | `npx wrangler versions upload` |
+| Preview builds | on (optional; gives every branch a test URL) |
+| Cloudflare Access | off (the site is public) |
 
-### 1b. …or with the GitHub CLI
+Every push to the production branch builds, verifies and deploys. If `verify:site` fails the build stops and the previous version stays live.
 
-```bash
-gh auth login                      # once
-git init -b main && git add . && git commit -m "the-daily.studio 1.4.0"
-gh repo create TehauD/the-daily.studio --public --source=. --remote=origin --push \
-  --description "A local-first guitar workstation in one web page: rig, band, tab, transcription, stems, visuals."
-```
+## 2. Custom domain
 
-> Replace `TehauD` with your GitHub username everywhere it appears (`README.md`, `package.json`, `docs/`). A quick way:
-> `grep -rl TehauD . --exclude-dir=node_modules --exclude-dir=.git | xargs sed -i 's/TehauD/YOUR-USER/g'`
+1. Add `the-daily.studio` to Cloudflare (Websites ▸ Add a domain) and change the nameservers at your registrar to the two Cloudflare gives you.
+2. Remove any old GitHub Pages `A`, `AAAA` or `CNAME` records so they do not conflict.
+3. On the Worker: **Settings ▸ Domains & Routes ▸ Add ▸ Custom domain** → `the-daily.studio`, then again for `www` (and set a redirect from `www` to the apex if you want one).
+4. HTTPS is issued automatically. In **SSL/TLS** use mode *Full (strict)*; optionally turn on *Always use HTTPS*.
+5. The app is at `/` and The Daily at `/journal/`.
 
-### 1c. Turn on Pages
+Songs are stored per web address. People who used another address will not see their songs here: back up first (☰ Songs ▸ Back up all songs) and import on the new address. If you fork this for another domain, change `robots.txt`, `sitemap.xml`, `manifest.webmanifest` links, and `BRAND` in `src/parts/01-core.js`.
 
-1. Open the repository on GitHub → **Settings → Pages**.
-2. Under **Build and deployment → Source**, choose **GitHub Actions**.
-3. Go to the **Actions** tab. The **Deploy to GitHub Pages** workflow (`.github/workflows/pages.yml`) runs on every push to `main`. The first run takes about a minute.
-4. When it is green, your site is live at:
+## 3. Check it works
 
-   ```
-   https://<your-user>.github.io/<repo-name>/        e.g. https://the-daily.studio/
-   ```
+Open the site in Chrome or Edge:
 
-The workflow publishes `index.html`, the web-app manifest, the service worker, the icons and the `samples/` folder (the README, docs and screenshots stay on the repository page). It does not need any secrets.
+1. The start card appears. **Start · microphone stays off** opens the app with no permission prompt.
+2. Header **Audio** button ▸ **Connect** asks for the microphone; the light turns green. **Ctrl + .** turns it off again.
+3. **?** ▸ **Take the guided tour** runs through all steps.
+4. The console shows no red errors, and the Network tab shows no requests to other hosts until you use camera hand tracking or a person-cutout look.
+5. `https://the-daily.studio/journal/` opens The Daily.
 
-> **Prefer no workflow?** Because `index.html` is committed, you can instead choose **Source: Deploy from a branch → `main` → `/ (root)`**. Delete `.github/workflows/pages.yml` so the two do not compete. The repository's `.nojekyll` file stops GitHub from processing the files with Jekyll.
-
-> **Private repository?** GitHub Pages for *private* repositories requires a paid GitHub plan. Public repositories are free. Remember that "public" exposes the source code, which is the point of sharing it.
-
-## 2. Check it works
-
-Open your Pages URL in Chrome or Edge and check:
-
-1. The welcome card appears and **Start** asks for microphone access (the padlock shows HTTPS).
-2. **I/O** lists your audio interface and the level meters move when you play.
-3. **?** → **Take the guided tour** runs through all steps.
-4. The browser console shows no red errors.
-
-If microphone access is blocked, see [Troubleshooting](#10-troubleshooting).
-
-### Sample tracks
-
-Anything in `samples/` is served beside the page and listed in the app (see the user guide). Keep each file to a few MB; GitHub rejects single files over 100 MB and the Pages site is limited to about 1 GB. If you deploy by copying files to another host, copy `samples/` too, including `manifest.json`.
+Sample tracks in `samples/` are served beside the page and listed in the app. Keep each file to a few MB.
 
 ### Phones and installing as an app
 
-The hosted HTTPS page is also the mobile app: open the URL on a phone and the layout adapts. Chrome and Edge offer **⋯ More ▸ Install app**; on iPhone use **Share ▸ Add to Home Screen**. The service worker (`sw.js`) is only registered on HTTPS or `localhost`, caches the page for offline use and refreshes it on the next visit; after a deploy, close and reopen the app (or reload twice) to pick up the new version. Quick way to share: send the link, or use **⋯ More ▸ Share link**. If you host elsewhere, deploy `index.html`, `manifest.webmanifest`, `sw.js` and the `icons/` folder together at the same path.
-
-## 3. Custom domain
-
-**the-daily.studio (this project's domain).** The repository already contains a `CNAME` file with `the-daily.studio`, so GitHub Pages serves the site there once DNS points at it:
-
-1. At your registrar add four **A** records for the apex (`@`): `185.199.108.153`, `185.199.109.153`, `185.199.110.153`, `185.199.111.153` (optionally the matching four `AAAA` records), and a **CNAME** for `www` → `tehaud.github.io`.
-2. Repository **Settings → Pages → Custom domain** → `the-daily.studio` → **Save**, wait for the DNS check, then tick **Enforce HTTPS**.
-3. Songs are stored per origin: people who used the old `github.io` address will not see their songs on the new domain. Back up first (☰ Songs ▸ Back up all songs) and import the bundle on the new address.
-
-## Any other domain
-
-Using something like `studio.example.com`:
-
-1. In your DNS provider add a **CNAME** record: name `the-daily.studio` → value `<your-user>.github.io` (no repository name). For an apex domain (`example.com`) use GitHub's four `A` records instead; they are listed in [GitHub's custom-domain docs](https://docs.github.com/pages/configuring-a-custom-domain-for-your-github-pages-site).
-2. Repository **Settings → Pages → Custom domain** → enter `studio.example.com` → **Save**. GitHub adds a `CNAME` file and checks DNS.
-3. When the check passes, tick **Enforce HTTPS**. The certificate is issued automatically and can take up to an hour.
-
-The GitHub Actions workflow publishes `CNAME`, `robots.txt`, `sitemap.xml` and `404.html` along with the app, so the custom domain survives each deploy. If you fork this for another domain, change those files (`CNAME`, `robots.txt`, `sitemap.xml`, and `BRAND.domain` / `BRAND.url` in `src/parts/01-core.js`).
+The hosted HTTPS page is also the mobile app. Chrome and Edge offer **⋯ More ▸ Install app**; on iPhone use **Share ▸ Add to Home Screen**. The service worker (`sw.js`) caches the page for offline use and refreshes it on the next visit; after a deploy, close and reopen the app (or reload twice) to pick up the new version.
 
 ## 4. Updating the site
 
@@ -99,10 +65,10 @@ All source lives in `src/`. `index.html` and `codepen/` are **generated** from i
 npm run build            # regenerate index.html and codepen/
 npm test                 # optional: smoke test (needs `npm install` once)
 git add -A && git commit -m "Describe your change"
-git push                 # the Pages workflow redeploys automatically
+git push                 # Cloudflare builds, verifies and deploys automatically
 ```
 
-Continuous integration (`.github/workflows/ci.yml`) runs `npm run build:check` so a pull request that edits `src/` without rebuilding is flagged, then runs the smoke test.
+Continuous integration (`.github/workflows/ci.yml`) runs `npm run build:check` so a pull request that edits `src/` without rebuilding is flagged, builds the deploy folder and runs `npm run verify:site`, then runs the smoke test.
 
 Browsers cache aggressively. After a deploy, hard-reload (<kbd>Ctrl/⌘</kbd>+<kbd>Shift</kbd>+<kbd>R</kbd>) to see the new version; your saved song and settings are kept.
 
@@ -111,83 +77,70 @@ Browsers cache aggressively. After a deploy, hard-reload (<kbd>Ctrl/⌘</kbd>+<k
 Releases give people a stable download (a zip of the repository) and a changelog.
 
 1. Bump the version in `package.json` and in `src/parts/01-core.js` (`const VERSION = '…'`), and add notes to `CHANGELOG.md`.
-2. `npm run build && git add -A && git commit -m "Release v1.4.0" && git push`
+2. `npm run build && npm run build:site && npm run verify:site && git add -A && git commit -m "Release v1.7.0" && git push`
 3. Tag and publish:
 
 ```bash
-git tag -a v1.4.0 -m "the-daily.studio 1.4.0"
-git push origin v1.4.0
-gh release create v1.4.0 --title "the-daily.studio 1.4.0" --notes-file CHANGELOG.md
+git tag -a v1.7.0 -m "the-daily.studio 1.7.0"
+git push origin v1.7.0
+gh release create v1.7.0 --title "the-daily.studio 1.7.0" --notes-file CHANGELOG.md
 # optional: attach the standalone page for people who just want the file
-gh release upload v1.4.0 index.html#the-daily.studio-standalone.html
+gh release upload v1.7.0 index.html#the-daily.studio-standalone.html
 ```
 
-## 6. Repository polish checklist
+## 6. Other hosts
 
-* **About** (right side of the repo page): add the description, your Pages URL as the website, and topics such as `guitar`, `web-audio`, `audioworklet`, `music-transcription`, `tablature`, `guitar-effects`, `javascript`, `pwa-ready`.
-* **Social preview**: *Settings → General → Social preview* → upload `icons/social-card.png` (1200×630).
-* **Issues and Discussions**: the issue templates in `.github/ISSUE_TEMPLATE/` are ready. Enable *Discussions* for questions and tone sharing.
-* **Branch protection** (optional): require the **CI** check on `main` once you accept outside pull requests.
-* **Security**: *Settings → Code security* → enable *Private vulnerability reporting* (see `SECURITY.md`) and Dependabot alerts (only the dev dependencies are affected; nothing ships to users).
-* **License**: `LICENSE` is MIT with your name; edit the copyright line if you want a different holder or licence.
-
-## 7. Other ways to run it
-
-| Option | How |
-|---|---|
-| **Locally** | `npm start` (zero-dependency server on `http://localhost:8080`) or `python3 -m http.server 8080`. Opening `index.html` directly also works in most browsers. |
-| **CodePen** | Create a pen, paste `codepen/pen.html`, `codepen/pen.css`, `codepen/pen.js` into the HTML / CSS / JS panels, then **Change View → Full Page** (or Debug). |
-| **Netlify / Cloudflare Pages / Vercel** | Import the repository; build command *none* (or `npm run build`), publish directory `/` (the repo root). HTTPS is automatic. These hosts can also set the headers in section 8. |
-| **Your own server** | Copy `index.html` to any web root served over HTTPS. A minimal nginx site is below. |
-| **Zip to a friend** | Send `index.html`. It is fully self-contained; they can open it from disk or run it on `localhost`. (Install-as-app and offline caching need the HTTPS site.) |
-| **Try it on your phone from your computer** | Easiest is the Pages URL. For a local test use a tunnel that gives you HTTPS (for example `npx localtunnel --port 8080` or a Cloudflare Tunnel), because microphone access needs HTTPS and a plain `http://192.168.x.x` address will not get it. |
-
-Minimal nginx server block:
+Any static host works: copy the contents of `dist/` (run `npm run build:site`). Serve over HTTPS. Keep `index.html`, `manifest.webmanifest`, `sw.js` and `icons/` together at the same path. `_headers` is Cloudflare/Netlify syntax; translate it for nginx or Apache (the contents are listed in section 7). nginx example:
 
 ```nginx
 server {
   listen 443 ssl http2;
-  server_name studio.example.com;
-  # ssl_certificate / ssl_certificate_key via certbot …
+  server_name the-daily.studio;
   root /var/www/the-daily.studio;
-  index index.html;
-  add_header Permissions-Policy "microphone=(self), camera=(self), midi=(self)" always;
+  location = /sw.js { add_header Cache-Control "no-cache"; }
+  location = / { add_header Cache-Control "no-cache"; }
   add_header X-Content-Type-Options "nosniff" always;
+  add_header X-Frame-Options "DENY" always;
   add_header Referrer-Policy "no-referrer" always;
+  add_header Strict-Transport-Security "max-age=31536000" always;
+  add_header Permissions-Policy "microphone=(self), camera=(self), midi=(self), geolocation=(), payment=()" always;
 }
 ```
 
-## 8. Optional hardening: headers and CSP
+GitHub Pages also works (no custom headers; the meta CSP still applies). It is not used for production here.
 
-GitHub Pages cannot set custom response headers, and the app works fine without them. If you host elsewhere (nginx, Netlify `_headers`, Cloudflare), these are sensible:
+## 7. Headers and CSP
 
-```
-Permissions-Policy: microphone=(self), camera=(self), midi=(self), geolocation=(), payment=()
-X-Content-Type-Options: nosniff
-Referrer-Policy: no-referrer
-```
+`dist/_headers` is generated by `scripts/assemble.mjs`:
 
-A **Content-Security-Policy is already built into `index.html`** (a `<meta>` tag, generated by `scripts/build.mjs`). The inline script is allowed by its SHA-256 hash rather than `unsafe-inline`, so injected scripts cannot run. It permits only what the app genuinely uses: `blob:` workers and worklets (the audio worklet and the stem-separation worker are created from Blob URLs), `data:` images, and, only for optional hand tracking, jsDelivr and Google storage. The worklet's `data:` fallback is intentionally blocked; the Blob path is the one that runs.
+| Header | Value | Why |
+| --- | --- | --- |
+| Content-Security-Policy | the same policy as the page's `<meta>` tag, plus `frame-ancestors 'none'` (studio page only) | `frame-ancestors` only works as a header. The Daily keeps its own policy |
+| X-Frame-Options | `DENY` | no clickjacking |
+| X-Content-Type-Options | `nosniff` | no MIME guessing |
+| Referrer-Policy | `no-referrer` | nothing leaks in referrers |
+| Strict-Transport-Security | `max-age=31536000` | HTTPS only for a year (no `includeSubDomains`, no preload) |
+| Cross-Origin-Opener-Policy | `same-origin` | isolates the window |
+| Permissions-Policy | microphone, camera, MIDI for this site only; geolocation, payment, USB, serial off | least privilege |
+| Cache-Control | `no-cache` for `/`, `index.html`, `sw.js`, manifest, `/journal/*`; one day for icons | new releases show up immediately |
 
-Because the hash changes whenever the script changes, **always deploy the built `index.html`** (`node scripts/build.mjs`) and never hand-edit the script inside it; `node scripts/build.mjs --check` and the CI job verify it. If you edit the page by hand the browser console will show a CSP violation and the app will not start.
+The page's CSP allows the single inline script by its SHA-256 hash (no `unsafe-inline` or `unsafe-eval` for scripts), `blob:` workers and worklets, `data:` images and fonts, and, only for optional camera features, jsDelivr and Google storage. Because the hash changes whenever the script changes, **always deploy a freshly built `index.html`**; `build --check` and `verify:site` enforce it. If you hand-edit the script in `index.html` the console shows a CSP violation and the app will not start.
 
-If you remove hand tracking entirely, drop the two external hosts and `wasm-unsafe-eval` from the `csp` string in `scripts/build.mjs`, and the page makes **no** third-party requests at all.
+If you remove the camera features, drop the two external hosts and `wasm-unsafe-eval` from the `csp` string in `scripts/build.mjs`, and `verify:site`'s host check, and the page makes no third-party requests at all.
 
-## 9. Self-hosting the hand-tracking files
+## 8. Self-hosting the camera model files
 
-Hand tracking (optional) loads three things at runtime: the MediaPipe Tasks Vision script and WASM from jsDelivr (`@mediapipe/tasks-vision@0.10.14`) and the `hand_landmarker.task` model from Google storage. To make the site fully self-contained:
+Optional camera features load, at runtime and only when used: the MediaPipe Tasks Vision script and WASM from jsDelivr (`@mediapipe/tasks-vision@0.10.14`), the `hand_landmarker.task` model, and the `selfie_segmenter.tflite` model (person cut-out look) from Google storage. To make the site fully self-contained:
 
-1. Download the `@mediapipe/tasks-vision` package files (`vision_bundle.mjs` and the `wasm/` folder) and `hand_landmarker.task` into a `vendor/mediapipe/` folder in the repository.
-2. In `src/parts/09-ui-viz.js`, change the three URLs (search for `mediapipe`) to relative paths such as `./vendor/mediapipe/vision_bundle.mjs`, `./vendor/mediapipe/wasm`, and `./vendor/mediapipe/hand_landmarker.task`.
-3. `npm run build`, commit, push. Mind the MediaPipe licence (Apache-2.0): keep its notices with the files.
+1. Download `vision_bundle.mjs`, the `wasm/` folder, `hand_landmarker.task` and `selfie_segmenter.tflite` into `vendor/mediapipe/`.
+2. Change the URLs in `src/parts/09-ui-viz.js` and `src/parts/09d-camfx.js` to relative paths, copy `vendor/` in `scripts/assemble.mjs`, and remove the two hosts from the CSP.
+3. `npm run build`, `npm run build:site`, `npm run verify:site` (update its host check), commit, push. MediaPipe is Apache-2.0: keep its notices with the files.
 
-## 10. Troubleshooting
+## 9. Troubleshooting
 
 | Symptom | Fix |
 |---|---|
-| **No microphone prompt / "permission denied" / interface missing** | You are on `http://` (not HTTPS), or inside an iframe without permission. Use the HTTPS Pages URL or `localhost`. Check the padlock → Site settings → Microphone = Allow. |
-| **Pages shows 404** | Settings → Pages must show a published URL. Confirm the workflow succeeded (Actions tab) and that **Source** is *GitHub Actions* (or *main / root* if you removed the workflow). The URL includes the repository name unless you use a custom domain. |
-| **Workflow fails at "Setup Pages"** | Pages is not enabled yet: do step 1c first, then re-run the failed workflow. |
+| **No microphone prompt / "permission denied" / interface missing** | You are on `http://` (not HTTPS), or inside an iframe without permission. Use the HTTPS URL or `localhost`. Check the padlock → Site settings → Microphone = Allow. |
 | **Old version after a deploy** | Hard-reload. If you use a CDN in front, purge it. The installed app updates on the second launch after a deploy. |
 | **Phone shows the desktop layout (or the reverse)** | **⋯ More ▸ Device layout** (or Settings) overrides the automatic choice. |
 | **No microphone prompt on the phone** | You are on `http://`. Use the HTTPS URL. On iPhone allow the mic under Settings ▸ Safari ▸ Microphone if you denied it. |
@@ -195,3 +148,7 @@ Hand tracking (optional) loads three things at runtime: the MediaPipe Tasks Visi
 | **High latency** | Run the Loopback test. Lower your interface buffer size, use wired headphones, close other audio apps. |
 | **Camera backdrop or hand tracking will not start** | Allow camera access. Hand tracking needs internet unless you self-host the model; choose "motion energy only" for fully offline use. |
 | **`npm run build:check` fails in CI** | You changed `src/` but did not commit the rebuilt `index.html` / `codepen/`. Run `npm run build` and commit. |
+
+| **The microphone light stays red / "Audio killed"** | You pressed Ctrl + . (or the red button). Open the header **Audio** button ▸ **Resume**. |
+| **Deploy failed at `verify:site`** | Read the FAIL line: usually a CSP hash mismatch (run `npm run build` and commit the rebuilt `index.html`) or a missing file. |
+| **`/journal/` shows the studio** | `dist/journal/index.html` is missing; run `npm run build:site` and check `journal/index.html` is committed. |

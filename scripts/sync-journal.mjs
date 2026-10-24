@@ -2,7 +2,7 @@
 /* Vendors The Daily (https://github.com/TehauD/daily) into ./journal/ so it is served at /journal/ on the same site.
  *   node scripts/sync-journal.mjs path/to/daily/public/index.html [source-commit]
  * The page is copied unchanged except for one <meta> Content-Security-Policy tag. On Azure the same policy is sent as a header by
- * Express; GitHub Pages cannot send headers, so the meta tag carries it (frame-ancestors is header-only and is omitted). */
+ * Express; the meta tag carries the policy so it also holds on hosts that cannot send headers (frame-ancestors is header-only and is omitted). */
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';

@@ -57,14 +57,14 @@ async function boot() {
   // boot overlay: live connection status + input picker
   const bstat = h('div', { id: 'bootStat', style: { font: '700 12px var(--mono)', margin: '0 0 8px' } }), bsel = h('select', { id: 'bootIn', class: 'in', style: { width: '100%', marginBottom: '10px', fontFamily: 'var(--sans)', display: 'none' }, onchange: async e => { await openInput(e.target.value); await listDevices(); fillBootIn(); say(); } });
   const bc = $('#bootChecks'); bc.parentNode.insertBefore(bsel, bc.nextSibling); bc.parentNode.insertBefore(bstat, bc.nextSibling);
-  const say = (m, c) => { if (m) { bstat.textContent = m; bstat.style.color = c || ''; return; } const t = E.stream && E.stream.getAudioTracks()[0]; bstat.textContent = E.hasInput ? '● Audio input connected: ' + (t ? t.label : 'device') + ' — press Start' : '○ ' + (E.lastInErr || 'No input connected yet.'); bstat.style.color = E.hasInput ? 'var(--ok)' : 'var(--warn)'; };
+  const say = (m, c) => { if (m) { bstat.textContent = m; bstat.style.color = c || ''; return; } const t = E.stream && E.stream.getAudioTracks()[0]; bstat.textContent = E.hasInput ? '● Audio input connected: ' + (t ? t.label : 'device') + ' — press Start' : '○ ' + (E.lastInErr || 'Microphone is off. Nothing is requested until you press a button.'); bstat.style.color = E.hasInput ? 'var(--ok)' : 'var(--warn)'; };
   const fillBootIn = () => { const cur = (E.inSettings && E.inSettings.deviceId) || ''; bsel.innerHTML = ''; const list = E.devs.in.filter(d => d.deviceId !== 'communications'); list.forEach((d, i) => bsel.append(h('option', { value: d.deviceId, selected: d.deviceId === cur }, d.label || ('Input ' + (i + 1))))); bsel.style.display = list.length ? '' : 'none'; };
-  const startBtn = $('#bootGo'); startBtn.textContent = '▶ Start';
+  const startBtn = $('#bootGo'); startBtn.textContent = '🎙 Start and connect my input';
   const finish = async () => { startBtn.disabled = true; startBtn.textContent = 'Starting…'; try { await startAudio(); if (!E.hasInput) await pickInput(); initMIDI(); } catch (e) { console.error(e); toast('Startup problem: ' + e.message, 'bad'); } hide(); renderDevices && renderDevices(); };
   startBtn.onclick = finish;
   window.__fwAuto = (async () => {
-    say('Connecting audio… allow the microphone when your browser asks.');
-    try { await startAudio(); await pickInput(); fillBootIn(); say(); await listDevices(); renderDevices(); if (E.hasInput && E.ctx.state === 'running') hide(); } catch (e) { console.warn(e); say('Could not connect automatically: ' + e.message, 'var(--bad)'); }
+    say();   // nothing is started or requested until you press a button (or tick “Reconnect my last input” in Audio)
+    try { await listDevices(); fillBootIn(); if (CFG.autoIn && CFG.inDev) { say('Reconnecting your last input… allow the microphone when your browser asks.'); await startAudio(); await pickInput(); fillBootIn(); say(); renderDevices(); if (E.hasInput && E.ctx.state === 'running') hide(); } } catch (e) { console.warn(e); say('Could not connect: ' + e.message, 'var(--bad)'); }
   })();
   ['pointerdown', 'keydown'].forEach(ev => document.addEventListener(ev, () => { if (E.ctx && E.ctx.state === 'suspended') E.ctx.resume().catch(() => { }); }, true));
   $('#bootNoMic').onclick = async () => { try { await startAudio(); listDevices(); } catch (e) { console.error(e); toast('Audio could not start: ' + e.message, 'bad'); } hide(); };
@@ -73,6 +73,6 @@ async function boot() {
   document.addEventListener('visibilitychange', () => { if (!document.hidden && E.ctx && E.ctx.state === 'suspended') E.ctx.resume(); });
   if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener('devicechange', () => { listDevices(); });
   bus.emit('song');
-  if (/[?&]debug\b/.test(location.search)) window.__daily = { get S() { return S; }, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop };   // test hook, only with ?debug
+  if (/[?&]debug\b/.test(location.search)) window.__daily = { get S() { return S; }, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc };   // test hook, only with ?debug
   projInit().catch(e => { console.warn('library', e); PRJ.ready = true; if (PRJ.wantStart) startMaybe(); });
 }

@@ -1,6 +1,6 @@
 # Third-party notices
 
-the-daily.studio is a single static page with **no bundled third-party code**: no frameworks, no npm runtime dependencies, no fonts, no icon sets and no analytics. This file lists everything it builds on or may load, so credit goes where it is due.
+the-daily.studio is a single static page with **no bundled third-party code**: no frameworks, no npm runtime dependencies, no icon sets and no analytics, and just two bundled typefaces (below). This file lists everything it builds on or may load, so credit goes where it is due.
 
 ## Loaded only if you turn it on
 
@@ -28,7 +28,16 @@ Web Audio API, AudioWorklet, Web MIDI, MediaDevices, Canvas, SVG, IndexedDB and 
 
 ## Fonts
 
-The interface asks for typefaces by name (Inter, Segoe UI, system UI fonts and the alternatives in Appearance) and uses whichever your device already has. No font files are included or downloaded.
+Two typefaces are built into the page (latin subset, variable weight, embedded in `index.html`), both under the **SIL Open Font License 1.1** (full texts in `src/fonts/OFL-Inter.txt` and `src/fonts/OFL-Montserrat.txt`):
+
+| Font | Used for | Copyright |
+| --- | --- | --- |
+| [Inter](https://rsms.me/inter/) | Interface text | © 2016 The Inter Project Authors |
+| [Montserrat](https://github.com/JulietaUla/Montserrat) | Headings, wordmark | © 2011 The Montserrat Project Authors |
+
+The other typefaces in Appearance (Humanist, Rounded, Editorial serif, High legibility, System UI, Instrument mono) are requested by name and use whichever fonts your device already has; none are included.
+
+The logo letters (T, D, S) are drawn as strokes in `scripts/brand-mark.mjs`, not set in a font.
 
 ## Sample audio
 

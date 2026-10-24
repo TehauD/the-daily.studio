@@ -2,10 +2,11 @@
    Part 05b · LOOK — appearance system
    Light / dark / follow-system, 15 palettes, accent colours (and any colour you pick), density, corner style, surfaces,
    typeface, contrast and colour-blind-safe data colours, plus one-click "looks". Everything is computed here and written to
-   CSS variables on <html>, so every canvas, meter and panel follows. Nothing is downloaded: fonts are the ones on the device.
+   CSS variables on <html>, so every canvas, meter and panel follows. Fonts are bundled (Inter and Montserrat, SIL OFL) or the ones already on the device.
    ============================================================ */
-const LOOK_DEF = { lookMode: 'auto', palLight: 'porcelain', palDark: 'ink', accent: 'auto', accentC: '', density: 'comfortable', corners: 'soft', surface: 'soft', font: 'system', contrast: 'standard', data: 'standard' };
+const LOOK_DEF = { lookMode: 'auto', palLight: 'dsday', palDark: 'dsnight', accent: 'auto', accentC: '', density: 'comfortable', corners: 'soft', surface: 'soft', font: 'brand', contrast: 'standard', data: 'standard' };
 const PALETTES = [
+  { id: 'dsday', mode: 'light', name: 'Daily Light', a2: '#b07a1e', cv: ['#b8741a', '#4a67c2', '#9a7d10', '#b5486a'], c: { bg: '#e9e9e6', bg2: '#dededa', panel: '#f4f4f1', panel2: '#fbfbf9', raise: '#ffffff', line: '#d6d8d3', line2: '#b8beb7', text: '#0d0f10', muted: '#4f5c56', accent: '#2f7a58' } },
   { id: 'porcelain', mode: 'light', name: 'Porcelain', c: { bg: '#eceff2', bg2: '#e2e7eb', panel: '#f6f8fa', panel2: '#ffffff', raise: '#ffffff', line: '#d5dce1', line2: '#b6c2c9', text: '#0c181c', muted: '#566b73', accent: '#0a8c97' } },
   { id: 'paper', mode: 'light', name: 'Paper', c: { bg: '#f0ebe1', bg2: '#e7e0d1', panel: '#f9f5ec', panel2: '#fffdf8', raise: '#ffffff', line: '#ddd3c0', line2: '#c2b59d', text: '#2a2218', muted: '#6a5d44', accent: '#b4532a' } },
   { id: 'sage', mode: 'light', name: 'Sage', c: { bg: '#e8eee7', bg2: '#dde6dc', panel: '#f3f7f2', panel2: '#fdfefd', raise: '#ffffff', line: '#cdd8ca', line2: '#acbca8', text: '#13231a', muted: '#566a5a', accent: '#2e7d55' } },
@@ -13,6 +14,7 @@ const PALETTES = [
   { id: 'harbor', mode: 'light', name: 'Harbor', c: { bg: '#e6eef6', bg2: '#dae5f0', panel: '#f3f7fb', panel2: '#ffffff', raise: '#ffffff', line: '#cbd9e6', line2: '#a8bdd1', text: '#0d1b2a', muted: '#52677c', accent: '#1f6fd1' } },
   { id: 'blush', mode: 'light', name: 'Blush', c: { bg: '#f5ebeb', bg2: '#ecdcdc', panel: '#fcf6f6', panel2: '#fffdfd', raise: '#ffffff', line: '#e5d2d2', line2: '#cdaeb0', text: '#2b1a1c', muted: '#7a5a5e', accent: '#c2415a' } },
   { id: 'daylight', mode: 'light', name: 'Daylight HC', c: { bg: '#ffffff', bg2: '#f0f0f0', panel: '#ffffff', panel2: '#ffffff', raise: '#ffffff', line: '#6a777c', line2: '#1f2a2e', text: '#000000', muted: '#2f3f45', accent: '#005f73' } },
+  { id: 'dsnight', mode: 'dark', name: 'Daily Night', a2: '#d4a25a', cv: ['#d4a25a', '#8da9e8', '#e9d27a', '#d98aa2'], c: { bg: '#0d0f10', bg2: '#111413', panel: '#151a18', panel2: '#1b221f', raise: '#232c28', line: '#222b27', line2: '#33423b', text: '#e8e8e6', muted: '#8fa497', accent: '#7dbf9b' } },
   { id: 'ink', mode: 'dark', name: 'Ink', c: { bg: '#070c0f', bg2: '#0a1114', panel: '#0e161a', panel2: '#121d22', raise: '#182429', line: '#1c2a30', line2: '#2c4149', text: '#e5eff1', muted: '#87a0a6', accent: '#3de0cf' } },
   { id: 'midnight', mode: 'dark', name: 'Midnight', c: { bg: '#080b14', bg2: '#0b1020', panel: '#0f1526', panel2: '#141b30', raise: '#1a2340', line: '#212b47', line2: '#34416a', text: '#e6ebf8', muted: '#8e9bc0', accent: '#6ea8ff' } },
   { id: 'graphite', mode: 'dark', name: 'Graphite', c: { bg: '#0d0e10', bg2: '#121316', panel: '#17181c', panel2: '#1d1f24', raise: '#24272d', line: '#2a2d34', line2: '#3d424b', text: '#ececf0', muted: '#9a9fab', accent: '#5fd4b8' } },
@@ -28,7 +30,8 @@ const ACCENTS = [
   { id: 'amber', name: 'Amber', c: '#d99100' }, { id: 'lime', name: 'Lime', c: '#6f9d12' }, { id: 'emerald', name: 'Emerald', c: '#1c9a63' }, { id: 'slate', name: 'Slate', c: '#5b6b79' }
 ];
 const LK_FONTS = {
-  system: ['System (Inter / Segoe UI)', null],
+  brand: ['the-daily.studio (Inter + Montserrat)', null],
+  system: ['System UI', 'system-ui,"Segoe UI Variable Text","Segoe UI",-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif'],
   humanist: ['Humanist', 'Seravek,"Gill Sans Nova","Avenir Next",Candara,Optima,"Trebuchet MS",system-ui,sans-serif'],
   rounded: ['Rounded', 'ui-rounded,"SF Pro Rounded",Nunito,"Varela Round","Hiragino Maru Gothic ProN","Arial Rounded MT Bold",system-ui,sans-serif'],
   editorial: ['Editorial serif', 'Charter,"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif'],
@@ -36,11 +39,12 @@ const LK_FONTS = {
   mono: ['Instrument (mono)', 'ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace']
 };
 const LOOKS = [
-  { id: 'clinical', name: 'Clinical', note: 'Cool, flat, precise', set: { lookMode: 'light', palLight: 'porcelain', accent: 'auto', density: 'compact', corners: 'soft', surface: 'flat', font: 'system', contrast: 'standard', data: 'standard', ui: 1 } },
-  { id: 'studio', name: 'Studio night', note: 'Ink teal, softly lit', set: { lookMode: 'dark', palDark: 'ink', accent: 'auto', density: 'comfortable', corners: 'soft', surface: 'soft', font: 'system', contrast: 'standard', data: 'standard', ui: 1 } },
+  { id: 'signature', name: 'the-daily.studio', note: 'Sage and gold on charcoal', set: { lookMode: 'auto', palLight: 'dsday', palDark: 'dsnight', accent: 'auto', density: 'comfortable', corners: 'soft', surface: 'soft', font: 'brand', contrast: 'standard', data: 'standard', ui: 1 } },
+  { id: 'clinical', name: 'Clinical', note: 'Cool, flat, precise', set: { lookMode: 'light', palLight: 'porcelain', accent: 'auto', density: 'compact', corners: 'soft', surface: 'flat', font: 'brand', contrast: 'standard', data: 'standard', ui: 1 } },
+  { id: 'studio', name: 'Studio night', note: 'Ink teal, softly lit', set: { lookMode: 'dark', palDark: 'ink', accent: 'auto', density: 'comfortable', corners: 'soft', surface: 'soft', font: 'brand', contrast: 'standard', data: 'standard', ui: 1 } },
   { id: 'notebook', name: 'Notebook', note: 'Warm paper, serif', set: { lookMode: 'light', palLight: 'paper', accent: 'auto', density: 'comfortable', corners: 'round', surface: 'flat', font: 'editorial', contrast: 'standard', data: 'standard', ui: 1.05 } },
   { id: 'calm', name: 'Calm', note: 'Sage, rounded, airy', set: { lookMode: 'light', palLight: 'sage', accent: 'auto', density: 'spacious', corners: 'round', surface: 'soft', font: 'rounded', contrast: 'standard', data: 'standard', ui: 1.05 } },
-  { id: 'midnightlook', name: 'Midnight', note: 'Deep blue, crisp', set: { lookMode: 'dark', palDark: 'midnight', accent: 'auto', density: 'comfortable', corners: 'soft', surface: 'soft', font: 'system', contrast: 'standard', data: 'standard', ui: 1 } },
+  { id: 'midnightlook', name: 'Midnight', note: 'Deep blue, crisp', set: { lookMode: 'dark', palDark: 'midnight', accent: 'auto', density: 'comfortable', corners: 'soft', surface: 'soft', font: 'brand', contrast: 'standard', data: 'standard', ui: 1 } },
   { id: 'stage', name: 'Stage', note: 'OLED, large, high contrast', set: { lookMode: 'dark', palDark: 'oled', accent: 'amber', density: 'spacious', corners: 'sharp', surface: 'flat', font: 'legible', contrast: 'high', data: 'standard', ui: 1.2 } },
   { id: 'access', name: 'Accessible', note: 'High contrast, colour-blind safe', set: { lookMode: 'light', palLight: 'daylight', accent: 'cobalt', density: 'spacious', corners: 'soft', surface: 'flat', font: 'legible', contrast: 'high', data: 'cvd', ui: 1.15 } }
 ];
@@ -83,8 +87,8 @@ function applyAppearance() {
     const cv = dark ? ['#56B4E9', '#F0E442', '#CC79A7', '#2FD0A0', '#E69F00'] : ['#0072B2', '#E69F00', '#CC79A7', '#009E73', '#D55E00'];
     cv.forEach((c, i) => v('--cv' + (i + 1), c)); v('--accent2', dark ? '#E69F00' : '#D55E00'); v('--ok', dark ? '#56B4E9' : '#0072B2'); v('--warn', dark ? '#F0E442' : '#B8860B');
   } else ['--cv1', '--cv2', '--cv3', '--cv4', '--cv5', '--accent2', '--ok', '--warn'].forEach(n => v(n, null));
-  if (CFG.data !== 'cvd') v('--cv1', P.accent);
-  const f = LK_FONTS[CFG.font]; v('--sans', f && f[1]);
+  if (CFG.data !== 'cvd') { v('--cv1', P.accent); if (pal.a2) v('--accent2', pal.a2); if (pal.cv) pal.cv.forEach((c, i) => v('--cv' + (i + 2), c)); }
+  const f = LK_FONTS[CFG.font]; v('--sans', f && f[1]); v('--display', CFG.font === 'brand' ? null : f && f[1]);
   st.setProperty('--ui', CFG.ui); st.colorScheme = mode;
   r.dataset.theme = mode; r.dataset.palette = pal.id; r.dataset.density = CFG.density; r.dataset.corners = CFG.corners; r.dataset.surface = CFG.surface; r.dataset.font = CFG.font; r.dataset.contrast = CFG.contrast; delete r.dataset.accent;
   document.body.classList.toggle('reduce', !!CFG.reduce);

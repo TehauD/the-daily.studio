@@ -23,7 +23,7 @@ The site also hosts [The Daily](https://the-daily.studio/journal/), a separate j
 
 ## Hosting
 
-The site is served as static files (GitHub Pages at the-daily.studio). Like any web host, the host may keep standard access logs. This project cannot see them.
+The site is served as static files from Cloudflare at the-daily.studio. Like any web host, Cloudflare may keep standard access logs and aggregate traffic statistics; this project adds no analytics, cookies or tracking scripts. The optional camera features (hand tracking, person cut-out) fetch a script and model files from cdn.jsdelivr.net and storage.googleapis.com only when you turn them on; your camera frames are processed on your device and never uploaded. The microphone is never opened until you press a button, and Ctrl/Cmd + . releases it at any time.
 
 ## Children
 
