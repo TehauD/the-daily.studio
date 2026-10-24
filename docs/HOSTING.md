@@ -22,7 +22,7 @@ In **Workers & Pages ▸ Create ▸ Import a repository**, choose the repository
 | Field | Value |
 | --- | --- |
 | Project name | `the-daily-studio` (must match `name` in `wrangler.jsonc`) |
-| Build command | `npm run build:site && npm run verify:site` |
+| Build command | `npm run build:site && npm run verify:site` (`wrangler.jsonc` repeats it, so a deploy still works if this is left as `npm run build`) |
 | Deploy command | `npx wrangler deploy` |
 | Preview command | `npx wrangler versions upload` |
 | Preview builds | on (optional; gives every branch a test URL) |

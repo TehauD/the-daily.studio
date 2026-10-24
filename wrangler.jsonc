@@ -2,6 +2,8 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "the-daily-studio",
   "compatibility_date": "2026-10-01",
+  // Runs on every `wrangler deploy`, so the dist/ folder always exists even if the dashboard build command is wrong.
+  "build": { "command": "npm run build:site && npm run verify:site" },
   "assets": {
     "directory": "./dist",
     "not_found_handling": "404-page"
