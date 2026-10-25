@@ -5,7 +5,7 @@
    or onto the centre tab strip, right-click it for a menu, or use ⇆ → "Where panels live". Desktop only; phones and
    tablets always use the default homes (their drawers and chips already do the same job).
    ============================================================ */
-const SD = { reg: {}, cur: { left: 'tones', right: 'monitor' }, nat: { tones: 'left', io: 'left', theory: 'left', monitor: 'right', refine: 'right' }, ready: false };
+const SD = { reg: {}, cur: { left: 'io', right: 'monitor' }, nat: { tones: 'left', io: 'left', theory: 'left', monitor: 'right', refine: 'right' }, ready: false };
 const SIDE_NAME = { tones: 'Tones', io: 'I/O', theory: 'Theory', monitor: 'Monitor', refine: 'Refine' };
 const SIDE_DEFW = { refine: 430, tones: 250, io: 250, theory: 250, monitor: 292 };
 LAY.side = LAY.side || {}; LAY.sw = LAY.sw || {}; LAY.so = LAY.so || { left: [], right: [] }; LAY.cc = LAY.cc || {}; if (LAY.sc) Object.assign(SD.cur, LAY.sc);
@@ -96,7 +96,7 @@ function swapSides() {
   const c = SD.cur.left; SD.cur.left = SD.cur.right; SD.cur.right = c; const a = LAY.left; LAY.left = LAY.right; LAY.right = a;
   sideApply(); rebuildTabs(); saveLay(); applyLayout(); setTimeout(() => window.dispatchEvent(new Event('resize')), 40);
 }
-function sideReset() { LAY.side = {}; LAY.sw = {}; LAY.so = { left: [], right: [] }; LAY.cc = {}; SD.cur = { left: 'tones', right: 'monitor' }; sideApply(); $$('#left .card, #right .card').forEach(c => c.classList.remove('cc')); }
+function sideReset() { LAY.side = {}; LAY.sw = {}; LAY.so = { left: [], right: [] }; LAY.cc = {}; SD.cur = { left: 'io', right: 'monitor' }; sideApply(); $$('#left .card, #right .card').forEach(c => c.classList.remove('cc')); }
 
 /* ---------- "where panels live" menu ---------- */
 function placeMenu(anchor, focusId) {

@@ -58,12 +58,13 @@ function rebuildTabs() {
   dockVisible().forEach(([id, name], i) => {
     const b = h('button', {
       class: 'tab' + (DOCK.cur === id ? ' on' : ''), 'data-id': id, draggable: 'true', title: 'Click: open · drag: reorder · double-click: float as a window',
-      onclick: () => FLOATS.has(id) ? floatFront(id) : dockGo(id), ondblclick: () => FLOATS.has(id) ? unfloat(id) : floatPane(id),
+      onclick: () => { if (!['vis', 'song', 'band', 'exp'].includes(id)) xpSignal(1); FLOATS.has(id) ? floatFront(id) : dockGo(id); }, ondblclick: () => FLOATS.has(id) ? unfloat(id) : floatPane(id),
       ondragstart: e => { e.dataTransfer.setData('text/plain', 'tab:' + id); e.dataTransfer.effectAllowed = 'move'; b.classList.add('dragging'); }, ondragend: () => b.classList.remove('dragging'),
       ondragover: e => { e.preventDefault(); b.classList.add('dropl'); }, ondragleave: () => b.classList.remove('dropl'),
       ondrop: e => { e.preventDefault(); b.classList.remove('dropl'); const t = e.dataTransfer.getData('text/plain'); if (t.startsWith('tab:')) { const from = t.slice(4); if (sideHosted(from)) { if (movePanel(from, 'dock')) moveTab(from, id); } else moveTab(from, id); } }
-    }, (i + 1) + ' · ' + name + (FLOATS.has(id) ? ' ⧉' : '')); tabs.append(b);
+    }, xpTabText(id, name, i) + (FLOATS.has(id) ? ' ⧉' : '')); tabs.append(b);
   });
+  tabs.append(xpToolsButton());
 }
 function moveTab(id, beforeId) { if (id === beforeId) return; const a = DOCK.findIndex(d => d[0] === id), it = DOCK.splice(a, 1)[0], b = DOCK.findIndex(d => d[0] === beforeId); DOCK.splice(b < 0 ? DOCK.length : b, 0, it); LAY.order = DOCK.map(d => d[0]); saveLay(); rebuildTabs(); }
 function setTabHidden(id, hide) { const i = LAY.hidden.indexOf(id); if (hide && i < 0) { LAY.hidden.push(id); if (DOCK.cur === id) { const n = dockVisible().find(d => !FLOATS.has(d[0])); if (n) dockGo(n[0]); } } else if (!hide && i >= 0) LAY.hidden.splice(i, 1); saveLay(); rebuildTabs(); }

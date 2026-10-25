@@ -21,9 +21,13 @@ Clearing the site's data in your browser, or **Settings ▸ Data ▸ Reset…**,
 
 The site also hosts [The Daily](https://the-daily.studio/journal/), a separate journal app by the same author. It follows the same rule: entries stay in your browser. It only contacts GitHub, Azure DevOps or an AI provider if you enter your own credentials and use those features, and it sends them directly from your browser to that provider, never to this site. Because both apps are on the same web address, your browser keeps their data side by side (the studio under `fw.` names, The Daily under `daily` names). They do not read each other's data, and the studio's reset only removes the studio's own.
 
+## Hum to Song
+
+Humming uses your microphone (and your camera if you leave "center stage" on) only after you press the button. The recording is analysed on your device, kept in memory while you work, and is not uploaded or stored; the saved song contains only the notes, chords and settings that were derived from it.
+
 ## Hosting
 
-The site is served as static files from Cloudflare at the-daily.studio. Like any web host, Cloudflare may keep standard access logs and aggregate traffic statistics; this project adds no analytics, cookies or tracking scripts. The optional camera features (hand tracking, person cut-out) fetch a script and model files from cdn.jsdelivr.net and storage.googleapis.com only when you turn them on; your camera frames are processed on your device and never uploaded. The microphone is never opened until you press a button, and Ctrl/Cmd + . releases it at any time.
+The site is served as static files from Cloudflare at the-daily.studio. Like any web host, Cloudflare may keep standard access logs and aggregate traffic statistics (page requests, approximate visitor counts, countries), which the site owner can view in the Cloudflare dashboard; this project adds no analytics, cookies or tracking scripts. The optional camera features (hand tracking, person cut-out) fetch a script and model files from cdn.jsdelivr.net and storage.googleapis.com only when you turn them on; your camera frames are processed on your device and never uploaded. The microphone is never opened until you press a button, and Ctrl/Cmd + . releases it at any time.
 
 ## Children
 

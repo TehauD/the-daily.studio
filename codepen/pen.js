@@ -6,7 +6,8 @@
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
 const VERSION = '1.7.0';
-const BRAND = { name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://the-daily.studio/journal/' };
+/* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
+const BRAND = { support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://the-daily.studio/journal/' };
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 const SVGNS = 'http://www.w3.org/2000/svg';
@@ -272,6 +273,7 @@ const histStack = { u: [], r: [] };
 let saveT = 0;
 function snap() { return JSON.stringify(S); }
 function commit(push = true) {
+  if (push && typeof xpEdit === 'function') xpEdit();
   if (push) { histStack.u.push(histStack.cur || snap()); if (histStack.u.length > 80) histStack.u.shift(); histStack.r.length = 0; }
   histStack.cur = snap();
   bus.emit('song');
@@ -286,7 +288,7 @@ function stringLabels() { return S.tuning.map(m => tunPc(m)).reverse(); }
 const tunNote = m => tunPc(m) + (Math.floor(m / 12) - 1);
 const tunShort = () => (/^Custom/.test(S.tuningName || '') ? S.tuning.map(m => tunPc(m)).join(' ') : (S.tuningName || '').split(' (')[0].split(' · ')[0]) + (S.capo ? ' · capo ' + S.capo : '');
 function tunMatch(arr) { const k = Object.keys(TUNINGS).find(n => TUNINGS[n].every((m, i) => m === arr[i])); return k || 'Custom (' + arr.map(m => tunPc(m)).join(' ') + ')'; }
-function setTuning(arr, name) { S.tuning = arr.map(m => clamp(Math.round(m), 24, 79)); S.tuningName = name || tunMatch(S.tuning); S.voicePref = {}; if (!name && !TUNINGS[S.tuningName]) S.tuningName = 'Custom (' + S.tuning.map(m => tunPc(m)).join(' ') + ')'; commit(); }
+function setTuning(arr, name) { xpSignal(2); S.tuning = arr.map(m => clamp(Math.round(m), 24, 79)); S.tuningName = name || tunMatch(S.tuning); S.voicePref = {}; if (!name && !TUNINGS[S.tuningName]) S.tuningName = 'Custom (' + S.tuning.map(m => tunPc(m)).join(' ') + ')'; commit(); }
 
 /* tab note helpers */
 const noteMidi = n => S.tuning[n.st] + S.capo + (typeof n.f === 'number' ? n.f : 0);
@@ -526,7 +528,7 @@ async function openInput(deviceId) {
     E.lastInErr = m; toast(m, 'bad'); bus.emit('input', null); return false;
   }
   E.lastInErr = null;
-  E.stream = st; const tr = st.getAudioTracks()[0]; E.inSettings = tr.getSettings(); CFG.inDev = E.inSettings.deviceId || deviceId || ''; saveCfg();
+  xpSignal(2); E.stream = st; const tr = st.getAudioTracks()[0]; E.inSettings = tr.getSettings(); CFG.inDev = E.inSettings.deviceId || deviceId || ''; saveCfg();
   E.src = E.ctx.createMediaStreamSource(st);
   if (!E.split) {
     E.split = E.ctx.createChannelSplitter(2); E.gL = gn(1); E.gR = gn(0);
@@ -1040,7 +1042,7 @@ function recEnd() {
     if (!vox && !CFG.rec.dry && wet) take.mode = 'wet'; TAKES.push(take); made.push(take);
   };
   if (r.g) mk('gtr', r.dry, r.wet); if (r.v) mk('vox', r.vox, null);
-  if (made.length) { bus.emit('takes'); toast(made.map(t => t.name + ' (' + t.dur.toFixed(1) + ' s, peak ' + t.peak.toFixed(1) + ' dBFS)').join('  +  ') + ' recorded', 'ok'); }
+  if (made.length) { xpSignal(3); bus.emit('takes'); toast(made.map(t => t.name + ' (' + t.dur.toFixed(1) + ' s, peak ' + t.peak.toFixed(1) + ' dBFS)').join('  +  ') + ' recorded', 'ok'); }
 }
 function takeBuffer(tk, which) { const d = which === 'wet' ? tk.wet : tk.dry; if (!d) return null; if (!tk['_b' + which]) { const b = E.ctx.createBuffer(1, d.length, tk.sr); b.copyToChannel(d, 0); tk['_b' + which] = b; } return tk['_b' + which]; }
 const takeAudible = tk => TAKES.some(t => t.solo) ? !!tk.solo : !tk.mute;
@@ -1544,7 +1546,7 @@ function lookOpen() {
    ============================================================ */
 const DOCK = [['rig', 'Rig'], ['tab', 'Tab'], ['song', 'Song'], ['band', 'Band'], ['fret', 'Fretboard'], ['vis', 'Visuals'], ['stage', 'Stage'], ['neural', 'Neural'], ['stems', 'Stems'], ['tx', 'Transcribe'], ['cam', 'Vision'], ['lab', 'Research'], ['exp', 'Export']];
 const paneVisible = id => DOCK.cur === id || (typeof FLOATS !== 'undefined' && FLOATS.has(id)) || (typeof sideVisible === 'function' && sideVisible(id));
-const dockVisible = () => DOCK.filter(d => !(typeof LAY !== 'undefined' && LAY.hidden.includes(d[0])) && !(typeof sideHosted === 'function' && sideHosted(d[0])));
+const dockVisible = () => DOCK.filter(d => !(typeof LAY !== 'undefined' && LAY.hidden.includes(d[0])) && !(typeof sideHosted === 'function' && sideHosted(d[0])) && (typeof xpAllowed !== 'function' || xpAllowed(d[0])));
 const PANES = {}, SEL = { sec: 0, bar: 0 };
 function buildDock() {
   const dock = $('#dock'), tabs = h('div', { class: 'tabs' });
@@ -1559,7 +1561,8 @@ bus.on('audio:ready', () => { const p = UI.pending || PRESETS[0]; UI.pending = n
 /* ---------- left sidebar ---------- */
 function buildLeft() {
   const L = $('#left'), names = [['tones', 'Tones'], ['io', 'I/O'], ['theory', 'Theory']], tabs = h('div', { class: 'side-tabs' }), panes = {};
-  names.forEach(([id, n]) => { tabs.append(h('button', { class: 'tab' + (id === 'tones' ? ' on' : ''), 'data-id': id, onclick: () => { $$('.tab', tabs).forEach(t => t.classList.toggle('on', t.dataset.id === id)); Object.entries(panes).forEach(([k, p]) => p.classList.toggle('on', k === id)); } }, n)); panes[id] = h('div', { class: 'pane' + (id === 'tones' ? ' on' : '') }); });
+  const first = 'io';   // input settings first: that is where sound and camera get switched on (the sidebar framework keeps your last choice)
+  names.forEach(([id, n]) => { tabs.append(h('button', { class: 'tab' + (id === first ? ' on' : ''), 'data-id': id, onclick: () => { $$('.tab', tabs).forEach(t => t.classList.toggle('on', t.dataset.id === id)); Object.entries(panes).forEach(([k, p]) => p.classList.toggle('on', k === id)); } }, n)); panes[id] = h('div', { class: 'pane' + (id === first ? ' on' : '') }); });
   L.append(tabs, ...Object.values(panes));
   buildTones(panes.tones); buildIO(panes.io); buildTheory(panes.theory);
 }
@@ -1579,7 +1582,7 @@ function renderTones() {
   if (!l.children.length) l.append(h('div', { class: 'muted small', style: { padding: '8px' } }, 'No tones match.'));
 }
 function buildIO(p) {
-  UI.inSel = h('select', { class: 'in', onchange: async e => { await startAudio(); const ok = await openInput(e.target.value); if (ok) await listDevices(); renderDevices(); } }); UI.outSel = h('select', { class: 'in', onchange: e => setOutputDevice(e.target.value) });
+  UI.inSel = h('select', { class: 'in', 'aria-label': 'Audio input device', onchange: async e => { await startAudio(); const ok = await openInput(e.target.value); if (ok) await listDevices(); renderDevices(); } }); UI.outSel = h('select', { class: 'in', 'aria-label': 'Audio output device', onchange: e => setOutputDevice(e.target.value) });
   const chSeg = h('div', { class: 'seg' }, [['L', 'In 1 / L'], ['R', 'In 2 / R'], ['sum', 'Both']].map(([v, t]) => h('button', { 'data-v': v, class: CFG.ch === v ? 'on' : '', onclick: e => { setChannelMode(v); $$('button', chSeg).forEach(b => b.classList.toggle('on', b === e.target)); } }, t)));
   const trim = mkKnob({ key: 'trim', label: 'Input Trim', min: -24, max: 36, def: 0, step: .5, unit: ' dB', onChange: v => { if (E.ready) tc(E.inTrim.gain, fromDB(v), .02); } });
   const mon = h('button', { class: 'tog' + (CFG.monitor ? ' on' : ''), onclick: e => { setMonitor(!CFG.monitor); e.target.classList.toggle('on', CFG.monitor); } }, 'Monitor'); bus.on('monitor', on => mon.classList.toggle('on', on));
@@ -1593,9 +1596,15 @@ function buildIO(p) {
     h('div', { class: 'card' }, h('h4', {}, 'Latency lab'), h('div', { class: 'card-b' }, UI.lat2, h('div', { class: 'hr' }), h('button', { class: 'btn sm primary', onclick: measureRTT }, '⏱ Run loopback test'), h('div', { style: { height: '6px' } }), UI.latRes, h('div', { class: 'row', style: { marginTop: '6px' } }, h('span', { class: 'small' }, 'RTT used for alignment (ms):'), offs), h('p', { class: 'tiny muted' }, 'Patch a cable from the interface’s Line Out into an input (or hold a mic near a speaker). The test emits six 8 ms chirps and cross-correlates them to find the true round trip. That value shifts recorded takes so they land on the grid, and corrects timing statistics.'))),
     h('div', { class: 'card' }, h('h4', {}, 'MIDI controllers'), h('div', { class: 'card-b' }, UI.midiList, h('div', { class: 'row', style: { marginTop: '6px' } }, h('button', { class: 'btn sm', onclick: initMIDI }, 'Enable MIDI')), h('p', { class: 'tiny muted' }, 'Right-click any knob, then move a CC to bind it (wah pedal, whammy, faders…). Program Change selects tones.'))),
     h('div', { class: 'card' }, h('h4', {}, 'Focusrite / low-latency notes'), h('div', { class: 'card-b tiny muted' }, h('p', { style: { margin: '0 0 6px' } }, 'Browsers can’t use ASIO. Chrome/Edge on Windows use WASAPI, macOS uses CoreAudio. Set the smallest stable buffer in Focusrite Control (Windows) / the interface’s driver panel.'), h('p', { style: { margin: '0 0 6px' } }, 'Plug the guitar into the front Inst jack (Input 1 or 2). Run the Auto-detect. Keep the trim so peaks sit around −12 to −6 dBFS.'), h('p', { style: { margin: 0 } }, 'For zero-latency monitoring, turn on the interface’s Direct Monitor and switch off Monitor here — recording and analysis still work.'))));
+  const camCard = h('div', { class: 'card' }, h('h4', {}, 'Camera'), h('div', { class: 'card-b' },
+    UI.camSel2 = h('select', { class: 'in', 'aria-label': 'Camera', style: { fontFamily: 'var(--sans)' }, onchange: e => { CFG.camDev = e.target.value; saveCfg(); if (CAM.on) startCam(); } }),
+    h('div', { class: 'row', style: { marginTop: '6px' } }, h('button', { class: 'btn sm' + (VZ.cam ? ' on' : ''), id: 'ioCamBtn', onclick: () => vzCamPress() }, '📷 Camera backdrop')),
+    h('div', { class: 'tiny muted', style: { marginTop: '4px' } }, 'Puts you in front of the hexagons. The picture stays on this device.')));
+  p.insertBefore(camCard, p.children[1] || null); refreshCamList();
   bus.on('devices', renderDevices); bus.on('input', renderDevices); buildVoxCard(p);
 }
 function renderDevices() {
+  refreshCamList();
   const fill = (sel, list, cur, none) => { sel.innerHTML = ''; if (!list.length) sel.append(h('option', { value: '' }, none)); list.forEach((d, i) => sel.append(h('option', { value: d.deviceId, selected: d.deviceId === cur }, d.label || ('Input ' + (i + 1) + (E.hasInput ? '' : ' (name hidden until mic allowed)'))))); };
   const cur = (E.inSettings && E.inSettings.deviceId) || CFG.inDev, seen = new Set(), ins0 = E.devs.in.slice(); if (E.hasInput && E.stream && cur && !ins0.some(d => d.deviceId === cur)) ins0.unshift({ deviceId: cur, label: (E.stream.getAudioTracks()[0] || {}).label || 'Active input', groupId: '' });
   const ins = ins0.filter(d => { if (d.deviceId === 'communications') return false; const k = (d.groupId || '') + '|' + (d.label || d.deviceId).replace(/^(Default|Communications) - /, ''); if (d.deviceId === 'default') return true; if (seen.has(k) && d.deviceId !== cur) return false; seen.add(k); return true; });
@@ -2119,7 +2128,7 @@ function secActions(sec, si) {
     b('✕', 'Delete section', () => { if (S.sections.length > 1 || confirm('Delete the last section?')) { S.sections.splice(si, 1); SEL.sec = 0; commit(); } }, 'bad'));
 }
 function addSectionRow(tip) {
-  const ns = h('select', { class: 'in', style: { width: '140px', fontFamily: 'var(--sans)' } }, SECNAMES.map(n => h('option', {}, n)));
+  const ns = h('select', { class: 'in', 'aria-label': 'Section to add', style: { width: '140px', fontFamily: 'var(--sans)' } }, SECNAMES.map(n => h('option', {}, n)));
   return h('div', { class: 'row', style: { gap: '8px', margin: '2px 0 10px' } }, h('b', { class: 'small' }, 'Add section'), ns,
     h('button', { class: 'btn primary sm', onclick: () => { const base = ns.value, n = S.sections.filter(s => s.name.startsWith(base)).length; const nm = base === 'Verse' || base === 'Chorus' ? base + ' ' + (n + 1) : n ? base + ' ' + (n + 1) : base; S.sections.push(mkSection(nm, ['', '', '', ''])); SEL.sec = S.sections.length - 1; commit(); } }, '＋ Add'),
     tip ? h('span', { class: 'muted small' }, tip) : null);
@@ -2155,7 +2164,7 @@ function sectionCard(sec, si, compact) {
     card.append(h('div', { class: 'card-h sec-c', title: 'Open this section', onclick: () => { SEL.sec = si; SEL.bar = 0; TL.dirty = true; bus.emit('sel'); } }, h('b', {}, '▸ ' + sec.name), h('span', { class: 'tiny muted grow', style: { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, sec.bars.length + ' bars · ' + (chords || '—') + (ly ? ' · ' + lyricPlain(ly).slice(0, 30) : ''))));
     return card;
   }
-  const nameIn = h('input', { class: 'in', value: sec.name, style: { width: '150px', fontFamily: 'var(--sans)', fontWeight: 800 }, onfocus: () => { SEL.sec = si; }, oninput: e => { sec.name = e.target.value; SP.lock = true; commit(false); SP.lock = false; } });
+  const nameIn = h('input', { class: 'in', 'aria-label': 'Section name', value: sec.name, style: { width: '150px', fontFamily: 'var(--sans)', fontWeight: 800 }, onfocus: () => { SEL.sec = si; }, oninput: e => { sec.name = e.target.value; SP.lock = true; commit(false); SP.lock = false; } });
   card.append(h('div', { class: 'card-h' }, nameIn, secActions(sec, si)));
   const body = h('div', { class: 'card-b' }), row = h('div', { class: 'barrow' });
   sec.bars.forEach((bar, bi) => {
@@ -2356,7 +2365,7 @@ function buildVisPane() {
   const bar = h('div', { class: 'row', style: { gap: '8px', marginBottom: '8px', flexWrap: 'wrap' } },
     h('div', { class: 'seg' }, VMODES.map(([k, n]) => h('button', { class: k === VZ.mode ? 'on' : '', 'data-m': k, onclick: e => { VZ.mode = k; CFG.visMode = k; saveCfg(); VZ.spec = null; VZ.hexes = null; $$('.seg [data-m]', bar).forEach(b => b.classList.toggle('on', b === e.target)); } }, n))),
     h('select', { class: 'in', style: { width: 'auto', fontFamily: 'var(--sans)' }, title: 'Analysis source', onchange: e => { VZ.src = e.target.value; } }, [['rig', 'Source: rig output'], ['master', 'Source: master mix'], ['di', 'Source: dry DI']].map(([v, n]) => h('option', { value: v }, n))),
-    h('button', { class: 'btn sm', onclick: e => { VZ.cam = !VZ.cam; e.target.classList.toggle('on', VZ.cam); if (VZ.cam && !CAM.video) toast('Start the camera in the Vision tab to use it as a backdrop', 'warn'); } }, '📷 Camera backdrop'), camFxBox(),
+    h('button', { class: 'btn sm' + (VZ.cam ? ' on' : ''), id: 'vzCamBtn', title: 'Put yourself center stage: turns the camera on behind the visuals', onclick: () => vzCamPress() }, '📷 Camera backdrop'), camFxBox(),
     h('button', { class: 'btn sm', onclick: () => { const w = UI.vwrap; (document.fullscreenElement ? document.exitFullscreen() : w.requestFullscreen && w.requestFullscreen()); } }, '⛶ Stage mode'));
   UI.vwrap = h('div', { class: 'vwrap', style: { flex: 1, minHeight: '320px' } }, UI.vcv = h('canvas', { class: 'vcanvas', style: { height: '100%', minHeight: '320px' } }));
   p.append(bar, UI.vwrap); new ResizeObserver(() => { const d = (window.devicePixelRatio || 1) * (CFG.vq || 1), w = UI.vcv.clientWidth, hh = UI.vcv.clientHeight; if (w && (UI.vcv.width !== Math.floor(w * d) || UI.vcv.height !== Math.floor(hh * d))) { UI.vcv.width = Math.floor(w * d); UI.vcv.height = Math.floor(hh * d); VZ.spec = null; VZ.hexes = null; } }).observe(UI.vwrap);
@@ -2395,7 +2404,7 @@ function drawHex(g, W, H, fd, bh, lvl, C, pulse) {
     const x = c * dx + (r % 2 ? dx / 2 : 0) - dx / 2, y = r * dy - R / 2, d = Math.hypot(x - cx, y - cy) / maxd, ang = (Math.atan2(y - cy, x - cx) + Math.PI) / (2 * Math.PI);
     const f = fmin * Math.exp(lr * clamp(d * .92 + ((ang * 5) % 1) * .08, 0, 1)), k = clamp(Math.round(f / bh), 1, fd.length - 1), v = lvl(Math.max(fd[k], fd[k + 1] || -120)), i = r * cols + c;
     VZ.sm[i] = Math.max(v, VZ.sm[i] * .86 - .004); const s = VZ.sm[i], ring = pulse * Math.max(0, 1 - Math.abs(d - (1 - pulse) * 1.05) * 6);
-    const a = clamp(s * 1.15 + ring * .8, 0, 1); if (a < .03) { g.strokeStyle = 'rgba(120,170,170,.07)'; g.lineWidth = 1; hexPath(g, x, y, R * .94); g.stroke(); continue; }
+    const amb = .2 * Math.pow(Math.max(0, Math.sin(d * 11 - performance.now() / 780)), 2) * Math.max(0, 1 - d * .9), a = clamp(s * 1.15 + ring * .8 + amb, 0, 1); if (a < .03) { g.strokeStyle = 'rgba(120,170,170,.07)'; g.lineWidth = 1; hexPath(g, x, y, R * .94); g.stroke(); continue; }
     g.fillStyle = mixc(C.a, C.b, clamp(s * 1.4 - .15 + ring, 0, 1), a * .92); hexPath(g, x, y, R * (.5 + .46 * Math.min(1, a))); g.fill();
   }
 }
@@ -2456,7 +2465,7 @@ function buildCamPane() {
     h('div', { class: 'card' }, h('h4', {}, 'Fusion statistics'), h('div', { class: 'card-b' }, UI.camStats = h('div', { class: 'stat-grid' }), h('div', { style: { marginTop: '8px' } }, h('div', { class: 'small muted' }, 'Fretting-hand usage by fret (frames)'), UI.camChart = h('canvas', { class: 'chart' })))));
   CAM.want = 'hand'; refreshCamList(); bus.on('devices', refreshCamList);
 }
-function refreshCamList() { if (!UI.camSel) return; UI.camSel.innerHTML = ''; UI.camSel.append(h('option', { value: '' }, 'Default camera')); (E.devs.cam || []).forEach((d, i) => UI.camSel.append(h('option', { value: d.deviceId, selected: d.deviceId === CFG.camDev }, d.label || 'Camera ' + (i + 1)))); }
+function refreshCamList() { [UI.camSel, UI.camSel2].forEach(sel => { if (!sel) return; sel.innerHTML = ''; sel.append(h('option', { value: '' }, 'Default camera')); (E.devs.cam || []).forEach((d, i) => sel.append(h('option', { value: d.deviceId, selected: d.deviceId === CFG.camDev }, d.label || 'Camera ' + (i + 1)))); }); }
 async function startCam() {
   stopCam(true);
   try {
@@ -3327,7 +3336,7 @@ async function boot() {
   applyAppearance(); loadInitialSong();
   buildHeader(); buildDock(); buildLeft(); buildRig(); buildTabPane(); buildSongPane(); buildBandPane(); buildFretPane(); buildVisPane(); buildCamPane(); buildLabPane(); buildExportPane(); buildTxPane(); buildStagePane(); buildNeuralPane(); buildStemsPane(); buildVersionCard(); buildCalCard(); buildBoardExtras(); buildRight(); buildSongbar(); buildSides(); buildLayout(); buildTimeline(); buildStatus(); buildMobile(); if (typeof buildTouch === 'function') buildTouch();
   try { if (window.self !== window.top) { const w = h('div', { style: { background: 'color-mix(in srgb,var(--warn) 22%,transparent)', border: '1px solid var(--warn)', borderRadius: '8px', padding: '8px 10px', fontSize: '12px', margin: '0 0 12px', fontWeight: 600 } }, '⚠ This page is embedded in a frame (editor preview). Browsers usually block the microphone, camera and MIDI there, so no audio devices will appear. Open it in its own tab: CodePen → Change View → Full Page (or Debug), or open the standalone file directly in Chrome/Edge.'); const c = $('#bootChecks'); c.parentNode.insertBefore(w, c); } } catch (e) { }
-  dockGo('rig'); syncTransport(); try { runChecks(); } catch (e) { console.warn(e); }
+  dockGo(CFG.startTab || 'vis'); syncTransport(); try { runChecks(); } catch (e) { console.warn(e); }
   $$('#bootTheme button').forEach(b => { b.classList.toggle('on', b.dataset.t === CFG.theme); b.onclick = () => setTheme(b.dataset.t); });
   const hide = () => { const b = $('#boot'); if (!b) return; b.style.opacity = 0; setTimeout(() => { b.remove(); bus.emit('booted'); }, 350); };
   // boot overlay: live connection status + input picker
@@ -3336,20 +3345,21 @@ async function boot() {
   const say = (m, c) => { if (m) { bstat.textContent = m; bstat.style.color = c || ''; return; } const t = E.stream && E.stream.getAudioTracks()[0]; bstat.textContent = E.hasInput ? '● Audio input connected: ' + (t ? t.label : 'device') + ' — press Start' : '○ ' + (E.lastInErr || 'Microphone is off. Nothing is requested until you press a button.'); bstat.style.color = E.hasInput ? 'var(--ok)' : 'var(--warn)'; };
   const fillBootIn = () => { const cur = (E.inSettings && E.inSettings.deviceId) || ''; bsel.innerHTML = ''; const list = E.devs.in.filter(d => d.deviceId !== 'communications'); list.forEach((d, i) => bsel.append(h('option', { value: d.deviceId, selected: d.deviceId === cur }, d.label || ('Input ' + (i + 1))))); bsel.style.display = list.length ? '' : 'none'; };
   const startBtn = $('#bootGo'); startBtn.textContent = '🎙 Start and connect my input';
-  const finish = async () => { startBtn.disabled = true; startBtn.textContent = 'Starting…'; try { await startAudio(); if (!E.hasInput) await pickInput(); initMIDI(); } catch (e) { console.error(e); toast('Startup problem: ' + e.message, 'bad'); } hide(); renderDevices && renderDevices(); };
+  const finish = async () => { startBtn.disabled = true; startBtn.textContent = 'Starting…'; HUM.cam0 = true; try { await startAudio(); if (!E.hasInput) await pickInput(); initMIDI(); } catch (e) { console.error(e); toast('Startup problem: ' + e.message, 'bad'); } hide(); renderDevices && renderDevices(); };
   startBtn.onclick = finish;
   window.__fwAuto = (async () => {
     say();   // nothing is started or requested until you press a button (or tick “Reconnect my last input” in Audio)
     try { await listDevices(); fillBootIn(); if (CFG.autoIn && CFG.inDev) { say('Reconnecting your last input… allow the microphone when your browser asks.'); await startAudio(); await pickInput(); fillBootIn(); say(); renderDevices(); if (E.hasInput && E.ctx.state === 'running') hide(); } } catch (e) { console.warn(e); say('Could not connect: ' + e.message, 'var(--bad)'); }
   })();
   ['pointerdown', 'keydown'].forEach(ev => document.addEventListener(ev, () => { if (E.ctx && E.ctx.state === 'suspended') E.ctx.resume().catch(() => { }); }, true));
-  $('#bootNoMic').onclick = async () => { try { await startAudio(); listDevices(); } catch (e) { console.error(e); toast('Audio could not start: ' + e.message, 'bad'); } hide(); };
+  $('#bootHum').onclick = () => { $('#bootNoMic').onclick(); HUM.cam0 = true; };
+  $('#bootNoMic').onclick = async () => { HUM.cam0 = false; try { await startAudio(); listDevices(); } catch (e) { console.error(e); toast('Audio could not start: ' + e.message, 'bad'); } hide(); };
   setInterval(anaTick, 33); requestAnimationFrame(frame);
   window.addEventListener('beforeunload', () => { try { store.set('song', S); saveCfg(); } catch (e) { } });
   document.addEventListener('visibilitychange', () => { if (!document.hidden && E.ctx && E.ctx.state === 'suspended') E.ctx.resume(); });
   if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener('devicechange', () => { listDevices(); });
   bus.emit('song');
-  if (/[?&]debug\b/.test(location.search)) window.__daily = { get S() { return S; }, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc };   // test hook, only with ?debug
+  if (/[?&]debug\b/.test(location.search)) window.__daily = { get S() { return S; }, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive };   // test hook, only with ?debug
   projInit().catch(e => { console.warn('library', e); PRJ.ready = true; if (PRJ.wantStart) startMaybe(); });
 }
 
@@ -3414,12 +3424,13 @@ function rebuildTabs() {
   dockVisible().forEach(([id, name], i) => {
     const b = h('button', {
       class: 'tab' + (DOCK.cur === id ? ' on' : ''), 'data-id': id, draggable: 'true', title: 'Click: open · drag: reorder · double-click: float as a window',
-      onclick: () => FLOATS.has(id) ? floatFront(id) : dockGo(id), ondblclick: () => FLOATS.has(id) ? unfloat(id) : floatPane(id),
+      onclick: () => { if (!['vis', 'song', 'band', 'exp'].includes(id)) xpSignal(1); FLOATS.has(id) ? floatFront(id) : dockGo(id); }, ondblclick: () => FLOATS.has(id) ? unfloat(id) : floatPane(id),
       ondragstart: e => { e.dataTransfer.setData('text/plain', 'tab:' + id); e.dataTransfer.effectAllowed = 'move'; b.classList.add('dragging'); }, ondragend: () => b.classList.remove('dragging'),
       ondragover: e => { e.preventDefault(); b.classList.add('dropl'); }, ondragleave: () => b.classList.remove('dropl'),
       ondrop: e => { e.preventDefault(); b.classList.remove('dropl'); const t = e.dataTransfer.getData('text/plain'); if (t.startsWith('tab:')) { const from = t.slice(4); if (sideHosted(from)) { if (movePanel(from, 'dock')) moveTab(from, id); } else moveTab(from, id); } }
-    }, (i + 1) + ' · ' + name + (FLOATS.has(id) ? ' ⧉' : '')); tabs.append(b);
+    }, xpTabText(id, name, i) + (FLOATS.has(id) ? ' ⧉' : '')); tabs.append(b);
   });
+  tabs.append(xpToolsButton());
 }
 function moveTab(id, beforeId) { if (id === beforeId) return; const a = DOCK.findIndex(d => d[0] === id), it = DOCK.splice(a, 1)[0], b = DOCK.findIndex(d => d[0] === beforeId); DOCK.splice(b < 0 ? DOCK.length : b, 0, it); LAY.order = DOCK.map(d => d[0]); saveLay(); rebuildTabs(); }
 function setTabHidden(id, hide) { const i = LAY.hidden.indexOf(id); if (hide && i < 0) { LAY.hidden.push(id); if (DOCK.cur === id) { const n = dockVisible().find(d => !FLOATS.has(d[0])); if (n) dockGo(n[0]); } } else if (!hide && i >= 0) LAY.hidden.splice(i, 1); saveLay(); rebuildTabs(); }
@@ -4571,7 +4582,7 @@ function tourPlace() {
 }
 /* first-run offer: one small card, never again once answered */
 function tourOffer() {
-  if (CFG.tourAsked || CFG.tourDone || TOUR.on || $('#tourOffer')) return;
+  if (CFG.tourAsked || CFG.tourDone || TOUR.on || $('#tourOffer') || $('#humbar') || $('#hum')) return;
   const close = () => { const o = $('#tourOffer'); if (o) o.remove(); CFG.tourAsked = true; saveCfg(); };
   const o = h('div', { id: 'tourOffer', class: 'tour-offer' }, h('div', {}, h('b', {}, 'New here?'), h('span', { class: 'muted' }, ' A two-minute tour shows where everything is.')),
     h('div', { class: 'row', style: { gap: '6px' } }, h('button', { class: 'btn sm primary', onclick: () => { close(); tourStart(); } }, 'Take the tour'), h('button', { class: 'btn sm', onclick: close }, 'Not now')));
@@ -4713,6 +4724,7 @@ function mSheet() {
     h('div', { class: 'mgrab', onclick: () => mCloseOverlays() }),
     stat,
     h('div', { class: 'mgrid' },
+      tile(msvg('<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/>'), 'Hum or sing a song', () => { mCloseOverlays(); humOpen(); }),
       tile(msvg('<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/>'), 'Audio · kill switch', () => { mCloseOverlays(); audioOpen(); }),
       tile(msvg('<path d="M21 14.5A8.5 8.5 0 119.5 3a6.7 6.7 0 0011.5 11.5z"/>'), CFG.theme === 'light' ? 'Dark theme' : 'Light theme', () => { setTheme(CFG.theme === 'light' ? 'dark' : 'light'); mSheetRefresh(); }),
       tile(msvg('<circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 000 18z" fill="currentColor"/>'), 'Appearance', () => { mCloseOverlays(); lookOpen(); }),
@@ -5056,7 +5068,7 @@ function sbTrackPop(anchor) {
    or onto the centre tab strip, right-click it for a menu, or use ⇆ → "Where panels live". Desktop only; phones and
    tablets always use the default homes (their drawers and chips already do the same job).
    ============================================================ */
-const SD = { reg: {}, cur: { left: 'tones', right: 'monitor' }, nat: { tones: 'left', io: 'left', theory: 'left', monitor: 'right', refine: 'right' }, ready: false };
+const SD = { reg: {}, cur: { left: 'io', right: 'monitor' }, nat: { tones: 'left', io: 'left', theory: 'left', monitor: 'right', refine: 'right' }, ready: false };
 const SIDE_NAME = { tones: 'Tones', io: 'I/O', theory: 'Theory', monitor: 'Monitor', refine: 'Refine' };
 const SIDE_DEFW = { refine: 430, tones: 250, io: 250, theory: 250, monitor: 292 };
 LAY.side = LAY.side || {}; LAY.sw = LAY.sw || {}; LAY.so = LAY.so || { left: [], right: [] }; LAY.cc = LAY.cc || {}; if (LAY.sc) Object.assign(SD.cur, LAY.sc);
@@ -5147,7 +5159,7 @@ function swapSides() {
   const c = SD.cur.left; SD.cur.left = SD.cur.right; SD.cur.right = c; const a = LAY.left; LAY.left = LAY.right; LAY.right = a;
   sideApply(); rebuildTabs(); saveLay(); applyLayout(); setTimeout(() => window.dispatchEvent(new Event('resize')), 40);
 }
-function sideReset() { LAY.side = {}; LAY.sw = {}; LAY.so = { left: [], right: [] }; LAY.cc = {}; SD.cur = { left: 'tones', right: 'monitor' }; sideApply(); $$('#left .card, #right .card').forEach(c => c.classList.remove('cc')); }
+function sideReset() { LAY.side = {}; LAY.sw = {}; LAY.so = { left: [], right: [] }; LAY.cc = {}; SD.cur = { left: 'io', right: 'monitor' }; sideApply(); $$('#left .card, #right .card').forEach(c => c.classList.remove('cc')); }
 
 /* ---------- "where panels live" menu ---------- */
 function placeMenu(anchor, focusId) {
@@ -5903,6 +5915,7 @@ const ZOOM = { cur: CFG.zoom || 'studio' };
 const ZOOMS = [['canvas', 'Canvas', 'Just the page: chords & lyrics, nothing else'], ['song', 'Song', 'Tab, chords & lyrics side by side'], ['studio', 'Studio', 'Arrangement, stems, takes and rig']];
 const layoutPreset = n => (LAYOUTS.find(l => l[0] === n) || LAYOUTS[0])[2];
 function zoomSet(z, quiet) {
+  if (!quiet && z === 'studio') xpSignal(3);
   if (!ZOOMS.some(x => x[0] === z)) z = 'studio'; ZOOM.cur = z; CFG.zoom = z; saveCfg(); document.body.classList.toggle('zoom-canvas', z === 'canvas');
   if (isDesk()) {
     if (z === 'canvas') { LAY.right = true; saveLay(); applyLayout(); sideShow('refine'); }
@@ -5943,16 +5956,18 @@ function originsOpen(o = {}) {
     h('button', { class: 'btn primary pd-go', onclick: () => pick.click() }, '📂 Choose an audio file…'), pick, h('div', { class: 'tiny muted', style: { margin: '6px 0 8px' } }, 'or drop a file here · stays on this device'), samplesShelf(fl => { close(); projFromTrack(fl); }, 'TRY A SAMPLE'));
   ['dragover', 'dragenter'].forEach(ev => track.addEventListener(ev, e => { e.preventDefault(); track.classList.add('over'); })); ['dragleave', 'drop'].forEach(ev => track.addEventListener(ev, () => track.classList.remove('over')));
   track.addEventListener('drop', e => { e.preventDefault(); const fl = e.dataTransfer.files[0]; if (fl) { close(); projFromTrack(fl); } });
+  const hero = h('section', { class: 'pd-card pd-hero' }, h('div', { class: 'pd-ic' }, '🎤'), h('h3', {}, 'Hum or sing an idea'), h('p', {}, 'No instrument or experience needed. Hum a few seconds and hear a whole song.'),
+    h('div', { class: 'row', style: { gap: '10px', flexWrap: 'wrap' } }, h('button', { class: 'btn primary pd-go', id: 'originsHum', onclick: () => { close(); humOpen(); } }, '● Hum or sing'), h('span', { class: 'tiny muted' }, 'Everything stays on this device.')));
   const bund = h('input', { type: 'file', accept: '.zip,.json,.txt,.md,.lrc', style: { display: 'none' }, onchange: e => { const fl = e.target.files[0]; e.target.value = ''; if (fl) { close(); projImport(fl); } } });
   const more = h('div', { class: 'pd-more' }, PRJ.list.length ? h('button', { class: 'btn', onclick: () => { close(); libraryOpen(); } }, '☰ My songs (' + PRJ.list.length + ')') : null, h('button', { class: 'btn', title: 'A song bundle (.zip), a lyric sheet (.txt/.md) or an older project .json', onclick: () => bund.click() }, '⤒ Open a bundle or lyrics…'), bund,
     h('button', { class: 'btn', onclick: () => { close(); projCreate('demo', { zoom: 'song' }); } }, '♫ Try the demo song'));
-  const d = pdlg('origins', o.first ? 'WELCOME — WHERE DO YOU WANT TO BEGIN?' : 'NEW SONG — WHERE DO YOU WANT TO BEGIN?', h('div', {}, h('div', { class: 'pd-grid' }, blank, track), more,
+  const d = pdlg('origins', o.first ? 'WELCOME — WHAT DO YOU WANT TO MAKE?' : 'NEW SONG — WHAT DO YOU WANT TO MAKE?', h('div', {}, hero, h('div', { class: 'pd-grid' }, blank, track), more,
     h('p', { class: 'tiny muted', style: { margin: '10px 0 0' } }, PRJ.cur ? 'Your current song is saved in My songs before the new one opens.' : 'Everything is saved on this device. Nothing is uploaded.')), {
     wide: true, onclose: () => { if (o.first && !chosen && !PRJ.cur) projCreate('demo', { zoom: 'song' }); }
   });
   setTimeout(() => { const i = $('input.in', blank); if (i) i.focus(); }, 40); return d;
 }
-function startMaybe() { if (PRJ.cur || store.get('started', false) || /[?&]start=0/.test(location.search) || document.getElementById('origins')) return; originsOpen({ first: true }); }
+function startMaybe() { if (PRJ.cur || store.get('started', false) || /[?&]start=0/.test(location.search) || document.getElementById('origins')) return; PRJ.fresh = true; humStageFirst(); }   // (the song on screen is only the built-in demo until the person picks something) the first thing anyone sees is the stage with one panel: hum, guitar, or a song file / blank page / demo
 bus.on('booted', () => { if (PRJ.ready) startMaybe(); else PRJ.wantStart = true; });
 /* a library that is unavailable (private window) still lets you begin */
 function newSongGo() { originsOpen({}); }
@@ -5987,7 +6002,7 @@ function libraryOpen() {
 /* ---------- the song bar: ☰ Songs menu + zoom ---------- */
 function songsMenu(anchor) {
   const box = h('div', { class: 'pd-menu' }), go = fn => () => { closePop(); fn(); };
-  box.append(h('h5', {}, 'Songs'), h('button', { class: 'btn sm primary', onclick: go(newSongGo) }, '＋ New song…'));
+  box.append(h('h5', {}, 'Songs'), h('button', { class: 'btn sm primary', onclick: go(newSongGo) }, '＋ New song…'), h('button', { class: 'btn sm', onclick: go(humOpen) }, '🎤 Hum or sing a song…'));
   if (PRJ.list.length) { box.append(h('div', { class: 'tiny muted', style: { margin: '8px 0 2px', fontWeight: 800, letterSpacing: '.06em' } }, 'RECENT')); PRJ.list.slice(0, 6).forEach(r => box.append(h('button', { class: 'btn sm pd-rec' + (r.id === PRJ.cur ? ' on' : ''), onclick: go(() => { if (r.id !== PRJ.cur) projLoad(r.id); }) }, h('span', {}, (r.origin === 'track' || r.track ? '♪ ' : '✎ ') + (r.title || 'Untitled')), h('i', {}, projAgo(r.modified))))); }
   box.append(h('div', { class: 'hr' }), h('button', { class: 'btn sm', onclick: go(libraryOpen) }, '☰ All songs…'), h('button', { class: 'btn sm', disabled: !PRJ.cur || !PRJ.ok, onclick: go(() => projExport(PRJ.cur)) }, '⤓ Save this song as a bundle'), h('button', { class: 'btn sm', onclick: go(() => liOpen()) }, '📋 Paste lyrics…'), h('button', { class: 'btn sm', onclick: go(resetOpen) }, 'Reset…'));
   popover(anchor, box, { style: { width: '290px', maxWidth: '92vw' } });
@@ -6079,12 +6094,20 @@ function aboutBlock() {
   const mark = () => { const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); s.setAttribute('viewBox', '0 0 100 100'); s.setAttribute('width', 42); s.setAttribute('height', 42); s.setAttribute('aria-hidden', 'true'); s.innerHTML = '<path d="M50 6L88.11 28L88.11 72L50 94L11.89 72L11.89 28Z" fill="none" stroke="var(--accent)" stroke-width="3.3" stroke-linejoin="miter"/><path d="M11.89 28L50 50L88.11 28M50 50L50 94" fill="none" stroke="var(--accent)" stroke-width="2.1" stroke-linecap="butt" stroke-linejoin="miter"/><path d="M35 83.29V77.29M40 86.18V76.18M45 89.06V75.06M55 89.06V75.06M60 86.18V76.18M65 83.29V77.29" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="butt"/><path transform="translate(50 29.5)" d="M-6.4 -6.8H6.4M0 -6.8V7.6" fill="none" stroke="var(--text)" stroke-width="3" stroke-linejoin="miter" stroke-linecap="butt"/><path transform="translate(29.6 55.4)" d="M-3.8 -7.6H.4A7.8 7.6 0 0 1 .4 7.6H-3.8Z" fill="none" stroke="var(--text)" stroke-width="3" stroke-linejoin="miter" stroke-linecap="butt"/><path transform="translate(68.4 55.4)" d="M5 -4.6C4.1 -6.8 2.3 -7.8 0 -7.8C-3.2 -7.8 -5 -6.3 -5 -4C-5 -1.8 -3 -.9 0 0C3 .9 5 1.8 5 4.1C5 6.4 3.2 7.8 0 7.8C-2.3 7.8 -4.1 6.9 -5 4.9" fill="none" stroke="var(--text)" stroke-width="3" stroke-linejoin="miter" stroke-linecap="butt"/>'; return s; };
   return h('section', { class: 'ab', 'aria-label': 'About' },
     h('div', { class: 'ab-top' }, mark(), h('div', {}, h('b', { class: 'ab-name' }, h('span', {}, 'the-daily'), h('span', { class: 'tld' }, '.studio')), h('div', { class: 'tiny muted' }, 'MVP 1 · v' + VERSION + ' · MIT licence'))),
-    h('p', {}, 'A songwriter’s workspace that lives in your browser. Catch a lyric, find the chords, record guitar and vocals together, split a favourite track into stems and keep every song on your own device. No account, nothing uploaded, no tracking.'),
-    h('div', { class: 'ab-me' },
-      h('div', { class: 'lk-sec', style: { margin: 0 } }, 'ABOUT ME'),
-      h('h4', {}, 'I’m Tehau — I play guitar, build things and write down what I learn.'),
-      h('p', {}, 'This began as a guitar lab for my own practice and grew into a place to turn a hum into a finished song. It sits beside ', ext('The Daily', BRAND.journal), ', the journal I use to capture what I learn while building. Both are free and open source, and both keep your data on your device. I’d be delighted if this helps inspire new music and personal discovery.'),
-      h('div', { class: 'row', style: { gap: '6px' } }, link('GitHub', BRAND.github), link('LinkedIn', BRAND.linkedin), link('The Daily', BRAND.journal), link('Source & issues', BRAND.repo))),
+    h('div', { class: 'ab-me ab-story' },
+      h('h4', {}, 'Built from a lifelong love of music.'),
+      h('p', {}, 'My mom taught me to play guitar when I was five years old.'),
+      h('p', {}, 'I grew up loving music, but we didn’t have the money for instruments or gear. You learned to work with what you had, make the most of it, and find your own way to make a sound.'),
+      h('p', {}, 'That spirit stayed with me.'),
+      h('p', {}, 'Today, I’m a software engineer, a musician, and someone who loves building things. the-daily.studio brings those worlds together: using technology to make the music tools I once would have loved to have access to myself.'),
+      h('p', {}, 'I wanted a place where you could plug in a guitar, explore a sound, pull apart a song, chase a melody, or capture an idea without needing an expensive setup or a collection of specialized software.'),
+      h('p', {}, 'Something practical. Something curious. Something that puts the joy of making music first.'),
+      h('p', {}, 'So I built it.'),
+      h('p', {}, 'the-daily.studio is free and open source, designed to run locally in your browser, with your work staying on your device.'),
+      h('p', {}, 'Not everyone has access to a professional studio or the latest equipment. I know that feeling. If this gives someone a way to experiment, learn, create, or fall a little deeper in love with music, then it’s doing what I hoped it would do.'),
+      h('p', {}, 'The best tool is the one that helps you make something you couldn’t make before.'),
+      h('p', { class: 'ab-sig' }, '— Tehau DeBarthe'),
+      h('div', { class: 'row', style: { gap: '6px', flexWrap: 'wrap' } }, BRAND.support ? link('☕ ' + BRAND.supportLabel, BRAND.support, 'primary') : '', link('GitHub', BRAND.github), link('LinkedIn', BRAND.linkedin), link('The Daily', BRAND.journal), link('Source & issues', BRAND.repo))),
     h('details', { class: 'ab-cr' }, h('summary', {}, 'Credits & licences'),
       h('ul', {},
         li(h('b', {}, 'Code: '), 'MIT licence, © 2026 ' + BRAND.author + '. Free to use, copy, change and share; keep the licence notice.'),
@@ -6126,6 +6149,7 @@ function closeInput() {
   E.stream = null; E.src = null; E.hasInput = false; bus.emit('input', null);
 }
 function audioKill(quiet) {
+  try { if (typeof humAbort === 'function') humAbort(); } catch (e) { }
   try { if (T.rec || T.playing) stopPlay(false); } catch (e) { }
   try { if (CFG.monitor) setMonitor(false); } catch (e) { }
   closeInput(); try { if (E.ctx && E.ctx.state === 'running') E.ctx.suspend(); } catch (e) { }
@@ -6171,6 +6195,544 @@ function audioOpen() {
   const d = pdlg('audio', 'AUDIO', body, { cls: 'auddlg' }); draw(); const redraw = () => { if (document.getElementById('audio')) draw(); }; ['input', 'monitor', 'audiostate', 'devices'].forEach(ev => bus.on(ev, redraw)); d.addEventListener('close', () => ['input', 'monitor', 'audiostate', 'devices'].forEach(ev => bus.off && bus.off(ev, redraw)));
 }
 document.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key === '.') { e.preventDefault(); audioKill(); } }, true);
+
+/* >>> parts/31-hum-engine.js */
+/* ============================================================
+   Part 31 · Hum to Song: engine. Everything here runs on the device.
+   hear (pitch track) → notes → tempo → key → chords → sections → band
+   ============================================================ */
+const HUM_STYLES = {
+  Folk: { kit: 'Acoustic', pat: 'Folk Backbeat', bass: 'Root–Fifth', comp: 'Folk D-DU-UDU', compInst: 'Steel', lead: 'Nylon', hint: 'Warm, strummed, backbeat' },
+  Pop: { kit: 'Acoustic', pat: 'Pop Groove', bass: 'Eighths', comp: 'Pop 8ths', compInst: 'Steel', lead: 'Electric', hint: 'Bright, steady, radio-ready' },
+  Rock: { kit: 'Rock Room', pat: 'Rock 8ths', bass: 'Eighths', comp: 'Power Chug 8ths', compInst: 'Electric', lead: 'Electric', hint: 'Driving, palm-muted power chords' },
+  Ballad: { kit: 'Brush (soft)', pat: 'Folk Backbeat', bass: 'Root Whole', comp: 'Ballad Arpeggio', compInst: 'Nylon', lead: 'Nylon', hint: 'Soft brushes, rolling arpeggios' },
+  Dance: { kit: '808', pat: 'Four on the Floor', bass: 'Syncopated', comp: 'Pop 16th shimmer', compInst: 'Steel', lead: 'Steel', hint: 'Four on the floor, shimmering chords' }
+};
+const HUM_FORMS = { full: 'Full song · intro, verses, choruses, bridge, outro', quick: 'Quick sketch · verse and chorus' };
+const HUM_PROGS = {
+  major: { chorus: ['I V vi IV', 'vi IV I V', 'I vi IV V', 'IV I V vi', 'I IV vi V'], bridge: ['vi ii IV V', 'ii V vi IV', 'IV V iii vi'], outro: 'IV I' },
+  minor: { chorus: ['i VI III VII', 'i VII VI VII', 'VI VII i i', 'i iv VII III', 'III VII i VI'], bridge: ['iv i VI VII', 'VI VII III iv', 'iv VI VII i'], outro: 'VI i' }
+};
+/* how pleasing it is to move from one chord function to the next (scale degree → scale degree; 7 is the major V of a minor key) */
+const HUM_TR = {
+  major: { '0>3': .6, '0>4': .6, '0>5': .6, '0>1': .3, '0>2': .2, '1>4': .9, '1>5': .2, '2>5': .6, '2>3': .5, '3>4': .8, '3>0': .6, '3>1': .4, '4>0': .9, '4>5': .6, '4>3': .3, '5>3': .7, '5>1': .5, '5>4': .4 },
+  minor: { '0>5': .6, '0>6': .6, '0>3': .5, '0>2': .4, '6>2': .6, '6>0': .7, '6>5': .4, '5>6': .7, '5>2': .4, '5>7': .5, '2>6': .5, '2>5': .6, '2>3': .4, '3>0': .5, '3>7': .8, '3>6': .4, '7>0': .9, '7>5': .5, '4>0': .6 }
+};
+const humYield = () => new Promise(r => setTimeout(r, 0));
+const humNoteName = m => pcName(((Math.round(m) % 12) + 12) % 12, CFG.flats) + (Math.floor(Math.round(m) / 12) - 1);
+
+/** Mono pitch tracker (YIN) over a whole recording. Returns per-frame f0, clarity and loudness. */
+async function humPitch(x, sr, onProg) {
+  const f = Math.max(1, Math.round(sr / 16000)), fs = sr / f, n = Math.floor(x.length / f), y = new Float32Array(n);
+  for (let i = 0; i < n; i++) { let s = 0; for (let k = 0; k < f; k++) s += x[i * f + k] || 0; y[i] = s / f; }
+  let pi = 0, po = 0; for (let i = 0; i < n; i++) { const v = y[i]; po = .98 * (po + v - pi); pi = v; y[i] = po; }   // drop rumble below ~50 Hz
+  const W = 640, hop = 256, tMin = Math.max(2, Math.floor(fs / 1000)), tMax = Math.floor(fs / 75), nF = Math.max(0, Math.floor((n - W - tMax) / hop));
+  const f0 = new Float32Array(nF), clar = new Float32Array(nF), rms = new Float32Array(nF), d = new Float32Array(tMax + 2);
+  for (let fi = 0; fi < nF; fi++) {
+    const p = fi * hop; let e = 0; for (let i = 0; i < W; i++) e += y[p + i] * y[p + i]; rms[fi] = Math.sqrt(e / W);
+    if (rms[fi] > 1e-4) {
+      for (let tau = 1; tau <= tMax; tau++) { let s = 0; for (let i = 0; i < W; i++) { const t = y[p + i] - y[p + i + tau]; s += t * t; } d[tau] = s; }
+      let run = 0; d[0] = 1; for (let tau = 1; tau <= tMax; tau++) { run += d[tau]; d[tau] = d[tau] * tau / (run || 1); }
+      let tau = -1; for (let t = tMin; t <= tMax; t++) if (d[t] < .15) { while (t + 1 <= tMax && d[t + 1] < d[t]) t++; tau = t; break; }
+      if (tau < 0) { let mn = 1e9, mi = -1; for (let t = tMin; t <= tMax; t++) if (d[t] < mn) { mn = d[t]; mi = t; } if (mn < .3) tau = mi; }
+      if (tau > 1 && tau < tMax) { const a = d[tau - 1], b = d[tau], c = d[tau + 1], den = 2 * (a - 2 * b + c), sh = den ? clamp((a - c) / den, -1, 1) : 0; f0[fi] = fs / (tau + sh); clar[fi] = clamp(1 - b, 0, 1); }
+    }
+    if (fi % 120 === 119) { if (onProg) onProg(fi / nF); await humYield(); }
+  }
+  return { f0, clar, rms, hop, fs, W, dt: hop / fs, lead: W / 2 / fs };
+}
+
+/** Pitch track → a list of sung notes {t, d, m} (seconds, MIDI), with the singer's tuning drift removed. */
+function humNotes(P) {
+  const nF = P.f0.length, rs = Array.from(P.rms).sort((a, b) => a - b), ref = rs[Math.floor(rs.length * .9)] || 0, gate = Math.max(.004, ref * .12);
+  const midi = new Float32Array(nF).fill(NaN);
+  for (let i = 0; i < nF; i++) {
+    let lm = 0; for (let k = Math.max(0, i - 12); k <= Math.min(nF - 1, i + 12); k++) if (P.rms[k] > lm) lm = P.rms[k];
+    if (P.f0[i] > 0 && P.clar[i] > .55 && P.rms[i] > gate && P.rms[i] > .3 * lm) midi[i] = 69 + 12 * Math.log2(P.f0[i] / 440);
+  }
+  let sx = 0, sy = 0, cnt = 0; for (let i = 0; i < nF; i++) if (!isNaN(midi[i])) { sx += Math.cos(2 * Math.PI * midi[i]); sy += Math.sin(2 * Math.PI * midi[i]); cnt++; }
+  const off = cnt ? Math.atan2(sy, sx) / (2 * Math.PI) : 0;       // −.5…+.5 semitone: how flat or sharp the whole hum sat
+  const m = new Float32Array(nF); for (let i = 0; i < nF; i++) m[i] = isNaN(midi[i]) ? NaN : midi[i] - off;
+  const med = (a, i, r) => { const v = []; for (let k = Math.max(0, i - r); k <= Math.min(a.length - 1, i + r); k++) if (!isNaN(a[k])) v.push(a[k]); if (!v.length) return NaN; v.sort((p, q) => p - q); return v[v.length >> 1]; };
+  const sm = new Float32Array(nF); for (let i = 0; i < nF; i++) sm[i] = isNaN(m[i]) ? NaN : med(m, i, 2);
+  const notes = []; let cur = null, gap = 0;
+  const close = () => { if (!cur) return; const dur = (cur.e - cur.s + 1) * P.dt; if (dur >= .09) { const v = cur.v.slice().sort((a, b) => a - b); notes.push({ t: cur.s * P.dt + P.lead, d: dur, m: Math.round(v[v.length >> 1]) }); } cur = null; };
+  for (let i = 0; i < nF; i++) {
+    const v = sm[i];
+    if (isNaN(v)) { gap++; if (gap > 2) close(); continue; }
+    const mean = cur ? cur.v.slice(-8).reduce((a, b) => a + b, 0) / Math.min(8, cur.v.length) : 0;
+    if (cur && Math.abs(v - mean) < .75) { cur.e = i; cur.v.push(v); gap = 0; } else { close(); cur = { s: i, e: i, v: [v] }; gap = 0; }
+  }
+  close(); return { notes, tune: off };
+}
+
+/** Tempo from where the notes start and how long they last (beat and eighth-note comb), nudged toward everyday tempos. */
+function humTempo(notes) {
+  if (notes.length < 4) return 90;
+  const t0 = notes[0].t; let best = 90, bs = -1e9;
+  for (let b = 60; b <= 168; b += .5) {
+    const beat = 60 / b; let so = 0, sd = 0;
+    notes.forEach(n => { const u = (n.t - t0) / beat; so += Math.cos(2 * Math.PI * u) + .6 * Math.cos(4 * Math.PI * u); sd += Math.cos(4 * Math.PI * n.d / beat); });
+    const s = so / notes.length + .4 * sd / notes.length - .6 * Math.pow(Math.log2(b / 100), 2);
+    if (s > bs) { bs = s; best = b; }
+  }
+  return Math.round(best);
+}
+
+/** Snap the notes onto a grid of 16th-note slots. First note = bar 1, beat 1. */
+function humQuant(notes, bpm) {
+  if (!notes.length) return [];
+  const sd = 15 / bpm, t0 = notes[0].t, g = bpm > 100 ? 2 : 1, out = [];
+  for (const n of notes) {
+    const s = Math.round((n.t - t0) / sd / g) * g; let e = Math.round((n.t + n.d - t0) / sd / g) * g; if (e <= s) e = s + g;
+    const p = out[out.length - 1];
+    if (p && s < p.s + p.l) { if (s <= p.s) { if (e - s > p.l) { p.l = e - s; p.m = n.m; } continue; } p.l = s - p.s; }
+    out.push({ s, l: e - s, m: n.m });
+  }
+  return out;
+}
+
+/** Key by weighting pitch classes with how long they were held; the last note counts extra (songs come home). */
+function humKey(q) {
+  const hist = new Array(12).fill(0); q.forEach((n, i) => { hist[((n.m % 12) + 12) % 12] += n.l * (i === q.length - 1 ? 1.8 : 1) * (i === 0 ? 1.25 : 1); });
+  if (!hist.some(v => v > 0)) return { root: 9, minor: true, r: 0 };
+  const r = detectKey(hist), a = r[0], last = ((q[q.length - 1].m % 12) + 12) % 12;
+  const b = r.find(k => k.minor !== a.minor && ((k.root - a.root + 12) % 12 === (a.minor ? 3 : 9)));      // the relative major / minor
+  if (b && a.r - b.r < .04 && b.root === last && a.root !== last) return { root: b.root, minor: b.minor, r: b.r };
+  return { root: a.root, minor: a.minor, r: a.r };
+}
+
+function humCands(root, minor) {
+  const sn = minor ? 'Natural Minor (Aeolian)' : 'Major (Ionian)', fl = keyUsesFlats(root, minor), c = [];
+  diatonic(root, sn).forEach(x => { if (/dim$/.test(x.triad)) return; const mi = /m$/.test(x.triad); c.push({ deg: x.deg, sym: x.triad, pcs: [x.root, (x.root + (mi ? 3 : 4)) % 12, (x.root + 7) % 12], rt: x.root }); });
+  if (minor) { const v = (root + 7) % 12; c.push({ deg: 7, sym: pcName(v, fl), pcs: [v, (v + 4) % 12, (v + 7) % 12], rt: v }); }
+  return c;
+}
+
+/** Choose a chord for every half bar: fit to the melody, favour natural chord movement, avoid fussy changes (Viterbi). Returns one string per bar. */
+function humHarmonize(q, bars, key, seed) {
+  const cands = humCands(key.root, key.minor), TR = HUM_TR[key.minor ? 'minor' : 'major'], sc = SCALES[key.minor ? 'Natural Minor (Aeolian)' : 'Major (Ionian)'], inKey = new Set(sc.map(i => (key.root + i) % 12));
+  const U = bars * 2, us = 8, score = [];
+  for (let u = 0; u < U; u++) {
+    const row = cands.map(() => 0); let tot = 0;
+    q.forEach(n => {
+      const a = Math.max(n.s, u * us), b = Math.min(n.s + n.l, (u + 1) * us), ov = b - a; if (ov <= 0) return; tot += ov; const pc = ((n.m % 12) + 12) % 12, acc = n.s >= u * us && n.s % 4 === 0 ? 1.3 : 1;
+      cands.forEach((c, ci) => { const i = c.pcs.indexOf(pc); row[ci] += ov * acc * (i === 0 ? 1 : i === 1 ? .85 : i === 2 ? .7 : (inKey.has(pc) ? -.15 : -.5)); });
+    });
+    score.push(row.map((v, ci) => (tot ? v / tot : 0) + (seed ? (((seed * 7919 + u * 131 + ci * 31) % 97) / 97) * .25 : 0)));
+  }
+  const V = [], B = [];
+  for (let u = 0; u < U; u++) {
+    const v = [], bp = [];
+    cands.forEach((c, ci) => {
+      let best = -1e9, bi = 0;
+      if (u === 0) best = (c.deg === 0 ? .8 : 0); else cands.forEach((p, pi) => {
+        let t = p === c ? (u % 2 === 0 ? -.1 : .1) : (TR[p.deg + '>' + c.deg] || 0) - (u % 2 ? .5 : 0); const s = V[u - 1][pi] + t; if (s > best) { best = s; bi = pi; }
+      });
+      v.push(best + score[u][ci] + (u === U - 1 ? (c.deg === 0 ? .5 : c.deg === 4 || c.deg === 7 ? .25 : 0) : 0)); bp.push(bi);
+    });
+    V.push(v); B.push(bp);
+  }
+  let ci = V[U - 1].indexOf(Math.max(...V[U - 1])); const path = new Array(U);
+  for (let u = U - 1; u >= 0; u--) { path[u] = ci; ci = B[u][ci]; }
+  const out = []; for (let b = 0; b < bars; b++) { const x = cands[path[b * 2]].sym, y = cands[path[b * 2 + 1]].sym; out.push(x === y ? x : x + ' ' + y); }
+  return out;
+}
+
+/* melody helpers: move notes by scale steps so they stay in key */
+function humSteps(key) {
+  const sc = SCALES[key.minor ? 'Natural Minor (Aeolian)' : 'Major (Ionian)'];
+  return {
+    to: m => { const rel = m - key.root, o = Math.floor(rel / 12), p = ((rel % 12) + 12) % 12; let di = 0, bd = 99; sc.forEach((s, i) => { const dd = Math.abs(s - p); if (dd < bd) { bd = dd; di = i; } }); return o * 7 + di; },
+    from: st => key.root + 12 * Math.floor(st / 7) + sc[((st % 7) + 7) % 7]
+  };
+}
+/** Nudge notes that land on a strong beat onto the nearest chord tone (one scale step at most). */
+function humSnapToChords(mel, chords, key) {
+  const { to, from } = humSteps(key), cm = {}; const pcsOf = sym => { if (!cm[sym]) { const c = parseChord(sym); cm[sym] = c ? c.pcs : []; } return cm[sym]; };
+  return mel.map(n => {
+    if (n.s % 4 !== 0) return n; const bar = Math.floor(n.s / 16), cs = (chords[bar] || '').split(' ').filter(Boolean); if (!cs.length) return n;
+    const sym = cs[Math.min(cs.length - 1, Math.floor((n.s % 16) / (16 / cs.length)))], pcs = pcsOf(sym); if (pcs.includes(((n.m % 12) + 12) % 12)) return n;
+    const st = to(n.m); for (const dlt of [1, -1]) { const m2 = from(st + dlt); if (pcs.includes(((m2 % 12) + 12) % 12)) return Object.assign({}, n, { m: m2 }); } return n;
+  });
+}
+const humCutBars = (mel, bars) => mel.filter(n => n.s < bars * 16);
+
+/** Guitar fingering for a melody note: stay near the previous one, stay low on the neck. */
+function humFret(m, prev) {
+  let best = null, bc = 1e9;
+  for (let st = 0; st < S.tuning.length; st++) {
+    const f = m - (S.tuning[st] + S.capo); if (f < 0 || f > 14) continue;
+    const c = (prev ? Math.abs(st - prev.st) * .6 + Math.abs(f - prev.f) * .25 : st * .05) + (f > 9 ? .5 : 0) + (f === 0 ? -.2 : 0);
+    if (c < bc) { bc = c; best = { st, f }; }
+  }
+  return best;
+}
+function humPlaceMelody(sec, mel) {
+  let prev = null; mel.slice().sort((a, b) => a.s - b.s).forEach(n => {
+    const bi = Math.floor(n.s / 16); if (bi >= sec.bars.length) return; let m = n.m; while (m < S.tuning[0] + S.capo) m += 12; while (m > S.tuning[0] + S.capo + 38) m -= 12;
+    const p = humFret(m, prev); if (!p) return; prev = p; sec.bars[bi].tab.push({ s: n.s % 16, st: p.st, f: p.f, t: '' });
+  });
+}
+
+/** Everything the app needs from a recording, computed once. */
+async function humAnalyze(pcm, sr, onProg) {
+  const P = await humPitch(pcm, sr, onProg), { notes, tune } = humNotes(P);
+  return { notes, tune, dur: pcm.length / sr, bpm: humTempo(notes), key: notes.length ? humKey(humQuant(notes, humTempo(notes))) : { root: 9, minor: true, r: 0 } };
+}
+
+/** Build a complete song object from the analysis and the person's choices (style, form, tempo, key, seed). */
+function humSong(an, o = {}) {
+  const style = HUM_STYLES[o.style] ? o.style : humPickStyle(an), st = HUM_STYLES[style], bpm = clamp(Math.round(o.bpm || an.bpm), 50, 200), form = o.form || 'full', seed = o.seed | 0;
+  const key = { root: o.key != null ? o.key : an.key.root, minor: o.minor != null ? o.minor : an.key.minor };
+  let mel = humQuant(an.notes, bpm); if (!mel.length) mel = [{ s: 0, l: 4, m: 60 + key.root }];
+  const ms = mel.map(n => n.m).sort((a, b) => a - b), shift = 12 * Math.round((62 - ms[ms.length >> 1]) / 12); mel = mel.map(n => Object.assign({}, n, { m: n.m + shift }));
+  let bars = o.verse ? o.verse.length : Math.ceil(Math.max(...mel.map(n => n.s + n.l)) / 16); bars = clamp(bars, 2, 16); if (bars % 2 && bars > 2) bars++; mel = humCutBars(mel, bars);
+  const verse = o.verse || humHarmonize(mel, bars, key, seed), prog = HUM_PROGS[key.minor ? 'minor' : 'major'], tok = s => s.split(' ').map(t => romanToChord(t, key.root, key.minor));
+  const choose = (list, k) => list[(seed + k) % list.length];
+  const chorusP = tok(choose(prog.chorus, 0)), chorusC = bars >= 8 ? chorusP.concat(chorusP) : chorusP, bridgeC = tok(choose(prog.bridge, 1)), outroC = tok(prog.outro), introC = chorusP.slice(0, 2);
+  const { to, from } = humSteps(key), cm = humCutBars(mel, 4);
+  const lift = humSnapToChords(cm.map(n => Object.assign({}, n, { m: from(to(n.m) + 2) })), chorusC, key);
+  const chMel = chorusC.length > 4 ? lift.concat(lift.map(n => Object.assign({}, n, { s: n.s + 64 }))) : lift;
+  const piv = (() => { const a = cm.map(n => to(n.m)).sort((x, y) => x - y); return a.length ? a[a.length >> 1] : 0; })();
+  const brMel = humSnapToChords(cm.map(n => Object.assign({}, n, { m: from(2 * piv - to(n.m)) })), bridgeC, key);
+  const key0 = key, s = blankSong({ title: o.title || 'Hum idea', bpm, key: key0.root, minor: key0.minor, form: 'empty' });
+  const secs = [], add = (name, chords, mel2) => { const sec = mkSection(name, chords); if (mel2) humPlaceMelody(sec, mel2); secs.push(sec); };
+  if (form === 'full') { add('Intro', introC, null); add('Verse 1', verse, mel); add('Chorus', chorusC, chMel); add('Verse 2', verse, mel); add('Chorus', chorusC, chMel); add('Bridge', bridgeC, brMel); add('Chorus', chorusC, chMel); add('Outro', outroC, null); }
+  else { add('Verse 1', verse, mel); add('Chorus', chorusC, chMel); add('Verse 2', verse, mel); add('Chorus', chorusC, chMel); }
+  s.sections = secs; s.swing = 0;
+  Object.assign(s.band, { drumsOn: true, kit: st.kit, patName: st.pat, pat: null, bassOn: true, bassStyle: st.bass, bassTone: style === 'Rock' ? 'Pick' : 'Round', compOn: true, compStyle: st.comp, compInst: st.compInst, leadOn: true, leadInst: st.lead });
+  s.notes = 'Made from a hum with Hum to Song (' + style + ' · ' + pcName(key.root, keyUsesFlats(key.root, key.minor)) + (key.minor ? ' minor' : ' major') + ' · ' + bpm + ' BPM). The melody is yours; chords, sections and band were arranged from it.';
+  return { song: s, style, bpm, key, bars, form, melody: mel };
+}
+function humPickStyle(an) { return an.bpm < 78 ? 'Ballad' : an.bpm > 128 ? 'Dance' : an.key.minor && an.bpm > 108 ? 'Rock' : an.bpm > 100 ? 'Pop' : 'Folk'; }
+
+/* >>> parts/32-hum-ui.js */
+/* ============================================================
+   Part 32 · Hum to Song: the screens. Press, hum, hear a song.
+   Microphone and camera are only requested when the person presses the button.
+   ============================================================ */
+const HUM = { first: false, cam0: null, ph: null, keep: false, g: null, o: { style: null, form: 'full', seed: 0, bpm: null, key: null, minor: null }, an: null, pcm: null, sr: 0, rec: null, bar: null, hear: null, r: null, busy: false };
+const humStageOn = () => CFG.humStage !== false;
+const humFmt = s => Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0');
+
+/** Put the person on stage: the camera behind the visuals, "me in front" (green screen) by default. One tap; asks the browser for the camera only now. */
+/** the person pressed a camera button: remember the choice so the next start follows it */
+function vzCamPress() { CFG.humStage = !VZ.cam; saveCfg(); return vzCenterStage(!VZ.cam); }
+function vzCenterStage(on) {
+  if (on && VZ.camP) return VZ.camP;   // two starts at once share one request
+  const p = vzCenterStage0(on); if (on) { VZ.camP = p; p.then(() => { VZ.camP = null; }, () => { VZ.camP = null; }); } return p;
+}
+async function vzCenterStage0(on) {
+  const bs = ['vzCamBtn', 'ioCamBtn'].map(id => document.getElementById(id)).filter(Boolean), mark = () => bs.forEach(b => b.classList.toggle('on', VZ.cam)); VZ.cam = !!on; mark();
+  if (!on) { if (CAM.on) stopCam(); return; }
+  if (CFG.camFx == null) { CFG.camFx = 'person'; saveCfg(); const s = document.querySelector('select[aria-label="Camera look"]'); if (s) { s.value = 'person'; s.dispatchEvent(new Event('change')); } }
+  if (!CAM.on) { if (CAM.want !== 'motion' && !CAM.tracker) { CAM.want = 'motion'; if (UI.camMode) UI.camMode.value = 'motion'; } await startCam(); }
+  if (!CAM.on) { VZ.cam = false; mark(); }
+}
+async function humStageGo() { try { dockGo('vis'); vzImmersive(true); await vzCenterStage(true); } catch (e) { } }
+
+/* ---------- the front screen ---------- */
+function humOpen() {
+  if (HUM.rec) return; humBarClose();
+  const stage = h('input', { type: 'checkbox', checked: humStageOn(), id: 'humStage', onchange: e => { CFG.humStage = e.target.checked; saveCfg(); } });
+  const pick = h('input', { type: 'file', accept: 'audio/*,.m4a,.mp3,.wav,.ogg,.webm,.flac', style: { display: 'none' }, onchange: e => { const f = e.target.files[0]; e.target.value = ''; if (f) { d.close(); humFromFile(f); } } });
+  const devs = (E.devs.in || []).filter(d => d.deviceId !== 'communications' && d.deviceId !== 'default');
+  const mic = h('select', { class: 'in', id: 'humMic', 'aria-label': 'Microphone', style: { fontFamily: 'var(--sans)', maxWidth: '100%' }, onchange: e => { CFG.inDev = e.target.value; saveCfg(); } },
+    h('option', { value: '' }, 'Default microphone'), devs.map((d, i) => h('option', { value: d.deviceId, selected: d.deviceId === CFG.inDev }, d.label || ('Microphone ' + (i + 1)))));
+  const body = h('div', { class: 'hum-in' },
+    h('p', { class: 'hum-lead' }, 'Hum or sing a few seconds of any melody. You will hear it become a full song with a band.'),
+    h('button', { class: 'btn primary hum-go', id: 'humGo', onclick: () => { d.close(); humRecord(); } }, '● Hum or sing'),
+    h('div', { class: 'tiny muted' }, 'Your browser asks for the microphone only when you press the button. Nothing is uploaded.'),
+    h('details', { class: 'boot-more' }, h('summary', {}, 'Options'), h('div', { class: 'hum-opts' },
+      h('label', { class: 'row hum-stage', style: { gap: '8px' } }, stage, h('span', {}, 'Show me on screen while I sing ', h('span', { class: 'muted' }, '(uses the camera; stays on this device)'))),
+      h('label', { class: 'pd-f' }, h('span', {}, 'Microphone'), mic),
+      h('div', {}, h('button', { class: 'btn sm', onclick: () => pick.click() }, '📂 Use a voice memo or audio file instead'), pick))));
+  const d = pdlg('hum', 'HUM TO SONG', body, { cls: 'humdlg' }); setTimeout(() => { const g = document.getElementById('humGo'); if (g) g.focus(); }, 40); return d;
+}
+
+/** The very first interaction: straight to the stage (camera behind the hexagons) with two big choices. */
+/** the empty "Hum idea" page made for a start panel, still untouched: reuse it instead of making another */
+const humPlaceholder = () => !!HUM.ph && HUM.ph === PRJ.cur && !songHasWork() && !TAKES.length;
+async function humStageFirst() {
+  if (HUM.busy) return; HUM.busy = true; humBarClose();
+  try { if (humPlaceholder()) dockGo('vis'); else await humNewProject(); HUM.keep = true; if (HUM.cam0 !== false && humStageOn()) await humStageGo(); } finally { HUM.busy = false; }
+  humBar('start'); setTimeout(() => { const g = document.getElementById('humGo2'); if (g) g.focus(); }, 60);
+}
+
+/* ---------- capture ---------- */
+async function humNewProject() { await projCreate('blank', { form: 'empty', title: 'Hum idea', zoom: 'song' }); HUM.ph = PRJ.cur; dockGo('vis'); }
+/** a start option other than humming: leave the empty placeholder page behind, then do it */
+async function humInstead(fn) { const ph = humPlaceholder() ? HUM.ph : null; HUM.ph = null; humBarClose(); vzImmersive(false); await fn(); if (ph && ph !== PRJ.cur) { try { await projDelete(ph); } catch (e) { } } }
+async function humRecord() {
+  if (HUM.rec || HUM.busy) return;
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) { toast('This browser cannot record here. Choose “a voice memo or audio file” instead.', 'warn'); return humOpen(); }
+  let stream; const raw = { echoCancellation: false, noiseSuppression: false, autoGainControl: false };
+  try { try { stream = await navigator.mediaDevices.getUserMedia({ audio: CFG.inDev ? Object.assign({ deviceId: { exact: CFG.inDev } }, raw) : raw }); } catch (e) { if (CFG.inDev && e.name !== 'NotAllowedError' && e.name !== 'SecurityError') { stream = await navigator.mediaDevices.getUserMedia({ audio: raw }); toast('Your saved microphone is not available, so the default one is used.', 'warn'); } else throw e; } }
+  catch (e) { toast('Microphone permission was not given. Allow it in the address bar, or choose a voice memo.', 'warn'); return humOpen(); }
+  HUM.busy = true; try { if (HUM.keep) HUM.keep = false; else await humNewProject(); if (humStageOn()) await humStageGo(); } finally { HUM.busy = false; }
+  const AC = window.AudioContext || window.webkitAudioContext, actx = new AC(), src = actx.createMediaStreamSource(stream), an = actx.createAnalyser(); an.fftSize = 2048; src.connect(an);
+  const chunks = [], mr = new MediaRecorder(stream), r = { stream, actx, an, mr, chunks, t0: performance.now(), raf: 0, buf: new Float32Array(2048) };
+  mr.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+  mr.onstop = () => { const keep = r.keep; humRecCleanup(); if (keep) humRecDone(new Blob(chunks, { type: mr.mimeType || 'audio/webm' })); };
+  try { const t = stream.getAudioTracks()[0], id = t && t.getSettings && t.getSettings().deviceId; r.label = (t && t.label) || ''; if (id && CFG.inDev !== id && CFG.inDev) { /* keep the person's choice */ } listDevices(); } catch (e) { }
+  HUM.rec = r; mr.start(250); humBar('rec'); r.raf = requestAnimationFrame(humRecTick);
+}
+function humRecTick() {
+  const r = HUM.rec; if (!r) return; r.an.getFloatTimeDomainData(r.buf); let e = 0; for (let i = 0; i < r.buf.length; i++) e += r.buf[i] * r.buf[i]; const rms = Math.sqrt(e / r.buf.length), sec = (performance.now() - r.t0) / 1000;
+  const lv = document.getElementById('humLv'), nt = document.getElementById('humNote'), tm = document.getElementById('humTime');
+  if (lv) lv.style.width = Math.min(100, Math.round(rms * 600)) + '%'; if (tm) tm.textContent = humFmt(sec);
+  if (nt) { let t = '·'; if (rms > .01) { const y = yin(r.buf, r.actx.sampleRate); if (y && y.clarity > .6 && y.f > 70 && y.f < 1100) t = humNoteName(69 + 12 * Math.log2(y.f / 440)); } nt.textContent = t; }
+  if (sec > 90) { humRecStop(true); return; } r.raf = requestAnimationFrame(humRecTick);
+}
+function humRecStop(keep) { const r = HUM.rec; if (!r) return; r.keep = keep; cancelAnimationFrame(r.raf); try { if (r.mr.state !== 'inactive') r.mr.stop(); else { humRecCleanup(); } } catch (e) { humRecCleanup(); } }
+function humRecCleanup() { const r = HUM.rec; if (!r) return; HUM.rec = null; cancelAnimationFrame(r.raf); try { r.stream.getTracks().forEach(t => t.stop()); } catch (e) { } try { r.actx.close(); } catch (e) { } }
+/** called by the Audio kill switch (Ctrl + .): stop listening, stop playing the original, discard an unfinished recording */
+function humAbort() {
+  if (HUM.hear) { try { HUM.hear.stop(); } catch (e) { } HUM.hear = null; }
+  if (HUM.rec) { humRecStop(false); humBarClose(); toast('Hum recording stopped. Nothing was kept.', 'warn'); }
+}
+async function humDecode(ab) {
+  const O = window.OfflineAudioContext || window.webkitOfflineAudioContext, oc = new O(1, 44100, 44100), b = await oc.decodeAudioData(ab), n = Math.min(b.length, Math.floor(b.sampleRate * 90)), out = new Float32Array(n), ch = b.numberOfChannels;
+  for (let c = 0; c < ch; c++) { const d = b.getChannelData(c); for (let i = 0; i < n; i++) out[i] += d[i] / ch; } return { pcm: out, sr: b.sampleRate };
+}
+async function humRecDone(blob) { try { const { pcm, sr } = await humDecode(await blob.arrayBuffer()); await humRun(pcm, sr); } catch (e) { humBar('err', 'I could not read that recording (' + (e.message || e.name) + '). Try again, or choose an audio file.'); } }
+async function humFromFile(f) {
+  if (HUM.busy) return; HUM.busy = true;
+  try { const { pcm, sr } = await humDecode(await f.arrayBuffer()); await humNewProject(); if (humStageOn()) humStageGo(); await humRun(pcm, sr, cleanTitle(f.name)); }
+  catch (e) { humBar('err', 'I could not read that file (' + (e.message || e.name) + '). Try a WAV, MP3 or M4A voice memo.'); } finally { HUM.busy = false; }
+}
+async function humRun(pcm, sr, title) {
+  HUM.pcm = pcm; HUM.sr = sr; HUM.o = { style: null, form: 'full', seed: 0, bpm: null, key: null, minor: null, title: title || 'Hum idea' }; humBar('work', 0);
+  HUM.an = await humAnalyze(pcm, sr, p => humBar('work', p));
+  if (HUM.an.notes.length < 3) return humBar('few'); await humApply(true);
+}
+
+/* ---------- build, play, tweak ---------- */
+async function humApply(play) {
+  if (!HUM.an) return; if (T.playing) stopPlay(true);
+  const r = humSong(HUM.an, HUM.o); HUM.r = r; HUM.o.style = r.style; r.song.title = HUM.o.title || 'Hum idea';
+  xpQuiet(() => projUse(r.song)); try { if (PRJ.cur) await projSave(); } catch (e) { }
+  humBar('res'); if (play) await humPlay();
+}
+async function humPlay() {
+  if (HUM.hear) { try { HUM.hear.stop(); } catch (e) { } HUM.hear = null; }
+  try { if (typeof AK !== 'undefined' && AK.killed) await audioResume(); } catch (e) { }
+  T.metro = false; T.cursor = 0; await play(); bus.emit('transport');
+}
+function humHear() {
+  if (HUM.hear) { try { HUM.hear.stop(); } catch (e) { } HUM.hear = null; return humBar('res'); } if (!HUM.pcm) return; if (T.playing) stopPlay(true);
+  const AC = window.AudioContext || window.webkitAudioContext, c = new AC(), b = c.createBuffer(1, HUM.pcm.length, HUM.sr); b.copyToChannel(HUM.pcm, 0); const s = c.createBufferSource(); s.buffer = b; s.connect(c.destination);
+  s.onended = () => { if (HUM.hear === s) HUM.hear = null; try { c.close(); } catch (e) { } if (HUM.bar) humBar('res'); }; s.start(); HUM.hear = s; humBar('res');
+}
+
+/* ---------- the bottom panel (not a modal, so you still see yourself on stage) ---------- */
+function humBarClose() { const d = document.getElementById('humbar'); if (d) { try { d.close(); } catch (e) { } d.remove(); } HUM.bar = null; }
+function humBar(mode, arg) {
+  let d = document.getElementById('humbar'); if (!d) { d = document.createElement('dialog'); d.id = 'humbar'; d.className = 'humbar'; d.setAttribute('aria-label', 'Hum to Song'); document.body.append(d); try { d.show(); } catch (e) { d.setAttribute('open', ''); } }
+  HUM.bar = d; d.innerHTML = ''; d.dataset.mode = mode;
+  const x = h('button', { class: 'btn sm hum-x', title: 'Close this panel', 'aria-label': 'Close', onclick: () => { humAbort(); humBarClose(); } }, '✕');
+  if (mode === 'rec') {
+    d.append(h('div', { class: 'hum-row' }, h('button', { class: 'btn primary hum-stop', id: 'humStop', onclick: () => humRecStop(true) }, '■ Stop'), h('b', { id: 'humTime', class: 'hum-t' }, '0:00'),
+      h('div', { class: 'hum-lvw', 'aria-hidden': 'true' }, h('i', { id: 'humLv' })), h('b', { id: 'humNote', class: 'hum-note', 'aria-live': 'off' }, '·'), h('span', { class: 'grow' }), x),
+      h('div', { class: 'hum-msg' }, h('b', {}, 'Listening… '), 'hum or sing your idea. 10–30 seconds is plenty. Tap Stop when you are done.' + (HUM.rec && HUM.rec.label ? ' Using: ' + HUM.rec.label + '.' : '')));
+  } else if (mode === 'start') {
+    const pick = h('input', { type: 'file', accept: 'audio/*,.mp3,.wav,.flac,.m4a,.ogg', style: { display: 'none' }, 'aria-label': 'Choose a song file', onchange: e => { const fl = e.target.files[0]; e.target.value = ''; if (fl) humInstead(() => projFromTrack(fl)); } });
+    d.append(h('div', { class: 'hum-row' }, h('b', { class: 'hum-hi' }, 'Let’s make a song.'), h('span', { class: 'grow' }), x),
+      h('div', { class: 'hum-msg' }, 'Hum a tune, or pick up your guitar. Either way you will hear a whole band play your song in a minute.'),
+      h('div', { class: 'hum-row hum-big2' }, h('button', { class: 'btn primary hum-go', id: 'humGo2', onclick: () => humRecord() }, '● Hum or sing'), h('button', { class: 'btn hum-go', id: 'humGuitar', onclick: () => humGuitar() }, '🎸 I have a guitar')),
+      h('div', { class: 'hum-alt' }, h('span', { class: 'tiny muted' }, 'Or start from'),
+        h('button', { class: 'btn sm', id: 'humAltFile', onclick: () => pick.click() }, '📂 a song file'),
+        h('button', { class: 'btn sm', id: 'humAltBlank', onclick: () => { HUM.ph = null; humBarClose(); vzImmersive(false); zoomSet('song', true); sideShow('refine'); setTimeout(() => { if (SB.f && SB.f.title) { SB.f.title.focus(); SB.f.title.select(); } }, 120); } }, '✎ a blank page'),
+        h('button', { class: 'btn sm', id: 'humAltDemo', onclick: () => humInstead(() => projCreate('demo', { zoom: 'song' })) }, '♫ the demo song'),
+        h('span', { class: 'tiny muted' }, 'Everything stays on this device.'), pick));
+  } else if (mode === 'g') { humGuitarBar(d, x);
+  } else if (mode === 'work') {
+    d.append(h('div', { class: 'hum-row' }, h('b', {}, 'Listening back…'), h('div', { class: 'hum-lvw' }, h('i', { style: { width: Math.round((arg || 0) * 100) + '%' } })), h('span', { class: 'grow' }), x), h('div', { class: 'hum-msg' }, 'Finding your notes, tempo and key. Then the chords and the band.'));
+  } else if (mode === 'few') {
+    d.append(h('div', { class: 'hum-row' }, h('b', {}, 'I only caught ' + (HUM.an ? HUM.an.notes.length : 0) + ' note' + (HUM.an && HUM.an.notes.length === 1 ? '' : 's') + '.'), h('span', { class: 'grow' }), x),
+      h('div', { class: 'hum-msg' }, 'Try humming a little louder and closer to the microphone, in a quiet room, holding each note for a moment.'), h('div', { class: 'hum-row' }, h('button', { class: 'btn primary', onclick: () => { humBarClose(); humRecord(); } }, '● Try again'), h('button', { class: 'btn', onclick: () => { humBarClose(); humOpen(); } }, 'Other options')));
+  } else if (mode === 'err') {
+    d.append(h('div', { class: 'hum-row' }, h('b', {}, 'Something went wrong'), h('span', { class: 'grow' }), x), h('div', { class: 'hum-msg' }, arg || ''), h('div', { class: 'hum-row' }, h('button', { class: 'btn primary', onclick: () => { humBarClose(); humOpen(); } }, 'Try again')));
+  } else { humResult(d, x); }
+}
+function humResult(d, x) {
+  const r = HUM.r, o = HUM.o, an = HUM.an, kn = pcName(r.key.root, keyUsesFlats(r.key.root, r.key.minor)) + (r.key.minor ? ' minor' : ' major');
+  const again = () => humApply(T.playing || true);
+  const chips = h('div', { class: 'hum-chips', role: 'group', 'aria-label': 'Band style' }, Object.keys(HUM_STYLES).map(k => h('button', { class: 'btn sm' + (o.style === k ? ' on' : ''), title: HUM_STYLES[k].hint, 'aria-pressed': String(o.style === k), onclick: () => { o.style = k; again(); } }, k)));
+  const tempo = h('input', { class: 'in hum-bpm', type: 'number', min: 50, max: 200, value: r.bpm, 'aria-label': 'Tempo in BPM', onchange: e => { o.bpm = clamp(+e.target.value || r.bpm, 50, 200); again(); } });
+  const keySel = pSel(NS.map((n, i) => [i, n]), r.key.root, v => { o.key = +v; again(); }), modeSel = pSel([['maj', 'major'], ['min', 'minor']], r.key.minor ? 'min' : 'maj', v => { o.minor = v === 'min'; again(); });
+  keySel.setAttribute('aria-label', 'Key'); modeSel.setAttribute('aria-label', 'Mode');
+  const form = pSel(Object.entries(HUM_FORMS), o.form, v => { o.form = v; again(); }); form.setAttribute('aria-label', 'Song shape');
+  const cv = h('canvas', { class: 'hum-roll', width: 600, height: 56, 'aria-label': 'The notes I heard', role: 'img' });
+  d.append(
+    h('div', { class: 'hum-row' }, h('button', { class: 'btn primary hum-play', id: 'humPlay', onclick: () => { if (T.playing) { stopPlay(true); } else humPlay(); } }, T.playing ? '■ Stop' : '▶ Play my song'),
+      h('button', { class: 'btn', id: 'humHear', onclick: humHear }, HUM.hear ? '■ Stop' : '👂 Hear my hum'),
+      h('span', { class: 'hum-sum' }, h('b', {}, an.notes.length + ' notes'), ' · ', h('b', {}, kn), ' · ', h('b', {}, r.bpm + ' BPM'), ' · ', h('b', {}, totalBars() + ' bars')), h('span', { class: 'grow' }), x),
+    h('div', { class: 'hum-msg' }, 'Your melody plays as the lead guitar. Chords, sections and the band were arranged from it. Change anything below and it re-builds right away.'),
+    cv,
+    h('div', { class: 'hum-grid' }, h('div', {}, h('div', { class: 'hum-l' }, 'STYLE'), chips), h('div', {}, h('div', { class: 'hum-l' }, 'TEMPO'), h('div', { class: 'row', style: { gap: '6px' } }, tempo, h('span', { class: 'muted small' }, 'BPM'))),
+      h('div', {}, h('div', { class: 'hum-l' }, 'KEY'), h('div', { class: 'row', style: { gap: '6px' } }, keySel, modeSel)), h('div', {}, h('div', { class: 'hum-l' }, 'SONG SHAPE'), form)),
+    h('div', { class: 'hum-row hum-acts' }, h('button', { class: 'btn', title: 'Same melody, different chords and a different chorus', onclick: () => { o.seed++; again(); } }, '🎲 Try different chords'),
+      h('button', { class: 'btn', onclick: () => { humStageToggle(); } }, CAM.on ? '📷 Camera off' : '📷 Center stage'), h('span', { class: 'grow' }),
+      h('button', { class: 'btn', onclick: () => { humBarClose(); sideShow('refine'); } }, '✎ Add lyrics'), h('button', { class: 'btn', onclick: () => { humBarClose(); vzImmersive(false); zoomSet('studio'); } }, '🎛 Open in the studio'),
+      h('button', { class: 'btn primary', onclick: () => { humBarClose(); toast('Saved in My songs. Keep going: edit any chord, add lyrics, or record real guitar over it.', 'ok'); } }, 'Done')));
+  const g = cv.getContext('2d'), W = cv.width, H = cv.height, mel = r.melody, end = Math.max(16, ...mel.map(n => n.s + n.l)), lo = Math.min(...mel.map(n => n.m)), hi = Math.max(...mel.map(n => n.m)), span = Math.max(7, hi - lo + 1);
+  g.fillStyle = getComputedStyle(document.body).getPropertyValue('--accent') || '#6fcf97'; g.globalAlpha = .9; mel.forEach(n => { const x0 = n.s / end * W, w = Math.max(3, n.l / end * W - 1), y = H - 6 - (n.m - lo) / span * (H - 12); g.fillRect(x0, y - 3, w, 6); });
+}
+async function humStageToggle() { await vzCenterStage(!CAM.on); if (HUM.bar && HUM.bar.dataset.mode === 'res') humBar('res'); }
+bus.on('transport', () => { const b = document.getElementById('humPlay'); if (b) b.textContent = T.playing ? '■ Stop' : '▶ Play my song'; });
+/* the studio opens on the stage (Visuals) the first time, then on whichever tab you used last */
+bus.on('dock', id => { const c = typeof id === 'string' ? id : DOCK.cur; if (c && c !== CFG.startTab && document.getElementById('app') && !document.getElementById('boot')) { CFG.startTab = c; saveCfg(); } });
+
+/* ============================================================
+   Novice guitar coach: tune each string, learn the chords of the song one at a time, then play along.
+   Listens through the audio engine (needs the guitar input). The song comes from the hum, or a friendly starter.
+   ============================================================ */
+const HUM_STARTER = ['G', 'Em', 'C', 'D'];
+const fcents = (f, t) => 1200 * Math.log2(f / t);
+const humStringHz = st => (CFG.a4 || 440) * Math.pow(2, (S.tuning[st] + S.capo - 69) / 12);
+async function humGuitar() {
+  try { if (typeof AK !== 'undefined') AK.killed = false; await startAudio(); const ok = CFG.inDev ? await openInput(CFG.inDev) : await pickInput(); await listDevices(); bus.emit('audiostate'); if (!ok) throw new Error('no input'); }
+  catch (e) { return humBar('err', 'I could not hear a guitar input (' + (e.message || e.name) + '). Allow the microphone or plug in your interface, then try again. You can also hum instead.'); }
+  if (!HUM.r) { const an = { notes: [{ t: 0, d: .4, m: 67 }], bpm: 84, key: { root: 7, minor: false }, dur: 1 }; HUM.an = an; HUM.o = { style: 'Folk', form: 'full', seed: 0, bpm: 84, key: 7, minor: false, title: 'My first song', verse: HUM_STARTER }; await humApply(false); }
+  HUM.g = { step: 'tune', si: 0, ci: 0, hold: 0, done: [], seen: '', chords: humCoachChords() }; if (HUM.g.t) clearInterval(HUM.g.t); HUM.g.t = setInterval(humGuitarTick, 60); humBar('g');
+}
+function humCoachChords() { const sec = S.sections.find(s => /Verse/.test(s.name)) || S.sections[0], seen = [], out = []; sec.bars.forEach(b => b.chord.split(' ').filter(Boolean).forEach(c => { if (!seen.includes(c)) { seen.push(c); out.push(c); } })); return out.slice(0, 4); }
+function humGuitarTick() {
+  const g = HUM.g; if (!g || !HUM.bar || HUM.bar.dataset.mode !== 'g') { if (g) { clearInterval(g.t); } return; }
+  const live = document.getElementById('gLive'), need = document.getElementById('gNeed'), fill = document.getElementById('gHold');
+  if (g.step === 'tune') {
+    const st = g.si, tf = humStringHz(st), f = AN.f0, ok = f > 0 && AN.clarity > .5 && AN.rms > -50, c = ok ? fcents(f, tf) : null, near = c != null && Math.abs(c) < 60;
+    if (live) live.textContent = ok ? (humNoteName(AN.midi) + (near ? (c > 8 ? '  a bit high ▼' : c < -8 ? '  a bit low ▲' : '  ✓ in tune') : '  (not this string)')) : 'pluck the open string…';
+    if (near && Math.abs(c) < 10) g.hold++; else g.hold = Math.max(0, g.hold - 1);
+    if (fill) fill.style.width = Math.min(100, g.hold / 10 * 100) + '%';
+    if (g.hold >= 10) { g.done[st] = true; g.hold = 0; if (g.si >= S.tuning.length - 1) { g.step = 'chords'; g.ci = 0; } else g.si++; toast('✓ ' + humNoteName(S.tuning[st] + S.capo), 'ok'); humBar('g'); }
+  } else if (g.step === 'chords') {
+    const sym = g.chords[g.ci], tc = parseChord(sym), top = (AN.chord || []).slice(0, 2), heard = top[0] ? top[0].sym : '', hit = AN.active && AN.rms > -45 && top.some(x => tc && x.root === tc.root && (x.q === tc.q || (x.q === '' && tc.q === 'maj') || (tc.q === '' && x.q === 'maj')));
+    if (live) live.textContent = AN.active ? (heard ? 'I hear ' + heard : '…') : 'strum all the strings…';
+    if (hit) g.hold++; else g.hold = Math.max(0, g.hold - 1); if (fill) fill.style.width = Math.min(100, g.hold / 8 * 100) + '%';
+    if (g.hold >= 8) { g.hold = 0; toast('✓ ' + sym + '! Nice.', 'ok'); if (g.ci >= g.chords.length - 1) g.step = 'play'; else g.ci++; humBar('g'); }
+  }
+}
+function humChordCanvas(sym) {
+  const cv = h('canvas', { width: 150, height: 170, class: 'hum-chord', role: 'img', 'aria-label': 'How to play ' + sym }), g = cv.getContext('2d'), v = voicings(sym, S.tuning, S.capo, 1)[0]; if (!v) return cv;
+  const col = getComputedStyle(document.body).getPropertyValue('--text') || '#ddd', acc = getComputedStyle(document.body).getPropertyValue('--accent') || '#6fcf97', fr = v.frets, fs = fr.filter(f => f > 0), lo = fs.length ? Math.min(...fs) : 1, base = Math.max(...fs, 0) > 4 ? lo : 1;
+  const x0 = 24, y0 = 34, dx = 20, dy = 24; g.strokeStyle = col; g.fillStyle = col; g.lineWidth = 1.5; g.font = '12px sans-serif'; g.textAlign = 'center';
+  for (let i = 0; i < 6; i++) { g.beginPath(); g.moveTo(x0 + i * dx, y0); g.lineTo(x0 + i * dx, y0 + 5 * dy); g.stroke(); }
+  for (let j = 0; j <= 5; j++) { g.lineWidth = j === 0 && base === 1 ? 4 : 1.2; g.beginPath(); g.moveTo(x0, y0 + j * dy); g.lineTo(x0 + 5 * dx, y0 + j * dy); g.stroke(); }
+  if (base > 1) { g.textAlign = 'left'; g.fillText(base + 'fr', x0 + 5 * dx + 6, y0 + dy * .7); g.textAlign = 'center'; }
+  fr.forEach((f, i) => { const x = x0 + i * dx; if (f == null) g.fillText('×', x, y0 - 10); else if (f === 0) { g.beginPath(); g.arc(x, y0 - 13, 5, 0, 7); g.stroke(); } else { g.fillStyle = acc; g.beginPath(); g.arc(x, y0 + (f - base + .5) * dy, 8, 0, 7); g.fill(); g.fillStyle = col; } });
+  return cv;
+}
+function humGuitarBar(d, x) {
+  const g = HUM.g; if (!g) return;
+  const head = (t) => h('div', { class: 'hum-row' }, h('b', { class: 'hum-hi' }, t), h('span', { class: 'grow' }), h('button', { class: 'btn sm', onclick: () => { clearInterval(g.t); humBar('start'); } }, 'Back'), x);
+  if (g.step === 'tune') {
+    const names = S.tuning.map((m, i) => humNoteName(m + S.capo));
+    d.append(head('Step 1 · Tune your guitar'), h('div', { class: 'hum-msg' }, 'Pluck the ', h('b', {}, ['lowest (thickest)', '2nd', '3rd', '4th', '5th', 'highest (thinnest)'][g.si] + ' string, open'), '. Turn the tuning peg until it says in tune.'),
+      h('div', { class: 'hum-strs' }, names.map((n, i) => h('span', { class: 'hum-str' + (i === g.si ? ' on' : '') + (g.done[i] ? ' ok' : '') }, g.done[i] ? '✓ ' + n : n))),
+      h('div', { class: 'hum-row' }, h('b', { id: 'gNeed', class: 'hum-note' }, names[g.si]), h('div', { class: 'hum-lvw' }, h('i', { id: 'gHold' })), h('b', { id: 'gLive', class: 'hum-live' }, 'pluck the open string…'), h('span', { class: 'grow' }), h('button', { class: 'btn sm', onclick: () => { g.step = 'chords'; g.ci = 0; humBar('g'); } }, 'Skip tuning')));
+  } else if (g.step === 'chords') {
+    const sym = g.chords[g.ci];
+    d.append(head('Step 2 · Learn your song’s chords (' + (g.ci + 1) + ' of ' + g.chords.length + ')'),
+      h('div', { class: 'hum-row hum-chordrow' }, humChordCanvas(sym), h('div', { class: 'hum-ch' }, h('b', { class: 'hum-note', style: { fontSize: '44px' } }, sym), h('div', { class: 'hum-msg' }, 'Put your fingers on the dots, strum from the thickest string down to the thinnest, and let it ring. A × means skip that string; ○ means play it open.'),
+        h('div', { class: 'hum-lvw' }, h('i', { id: 'gHold' })), h('b', { id: 'gLive', class: 'hum-live' }, 'strum all the strings…'))),
+      h('div', { class: 'hum-row' }, h('button', { class: 'btn sm', onclick: () => { g.hold = 0; g.ci = Math.min(g.chords.length - 1, g.ci + 1); if (g.ci === g.chords.length - 1 && g.chords.length === 1) g.step = 'play'; humBar('g'); } }, 'Skip this chord'), h('button', { class: 'btn sm', onclick: () => { g.step = 'play'; humBar('g'); } }, 'I know these, play along')));
+  } else {
+    d.append(head('Step 3 · Play along'), h('div', { class: 'hum-msg' }, 'You know the chords: ', h('b', {}, g.chords.join('  ·  ')), '. The band will play your song. Strum one chord per bar and watch the chord name on the stage.'),
+      h('div', { class: 'hum-row' }, h('button', { class: 'btn primary hum-play', onclick: () => { if (T.playing) stopPlay(true); else humPlay(); } }, T.playing ? '■ Stop' : '▶ Play the band'), h('button', { class: 'btn', onclick: () => { g.step = 'chords'; g.ci = 0; humBar('g'); } }, 'Practise the chords again'), h('span', { class: 'grow' }),
+        h('button', { class: 'btn', onclick: () => { clearInterval(g.t); humBar('res'); } }, 'Change the song style'), h('button', { class: 'btn primary', onclick: () => { clearInterval(g.t); humBarClose(); } }, 'Done')));
+  }
+}
+
+/* >>> parts/33-adapt.js */
+/* ============================================================
+   Part 33 · Adaptive studio: the studio shows what you have shown you need.
+   Nobody is asked their level. Actions add to a private score kept in this browser (CFG.xp);
+   the score picks Simple, More tools or Everything. "Tools" in the tab strip overrides it.
+   ============================================================ */
+var XP = { quiet: 0, last: null };
+var XP_TABS = { new: ['vis', 'song', 'band', 'exp'], some: ['vis', 'song', 'tab', 'band', 'rig', 'fret', 'stems', 'exp'], pro: null };
+var XP_NAMES = { rig: 'Guitar sound', tab: 'Guitar tab', vis: 'Stage', song: 'Song', band: 'Band', exp: 'Save & export', fret: 'Fretboard', stems: 'Backing track' };
+var XP_LABEL = { new: 'Simple', some: 'More tools', pro: 'Everything' };
+if (CFG.xp == null) { CFG.xp = (store.get('started', false) || store.get('song', null)) ? 40 : 0; saveCfg(); }   // people who already use the app keep the full studio
+function xpLevel() { const m = CFG.xpMode || 'auto'; if (XP_TABS[m] !== undefined) return m; const s = CFG.xp || 0; return s >= 12 ? 'pro' : s >= 4 ? 'some' : 'new'; }
+function xpAllowed(id) { const l = XP_TABS[xpLevel()]; return !l || l.includes(id) || id === DOCK.cur; }
+function xpTabText(id, name, i) { return xpLevel() === 'pro' ? (i + 1) + ' · ' + name : (XP_NAMES[id] || name); }
+function xpSignal(pts) {
+  if (XP.quiet || (CFG.xpMode && CFG.xpMode !== 'auto')) return; const before = xpLevel(); CFG.xp = Math.min(40, (CFG.xp || 0) + pts); clearTimeout(XP.t); XP.t = setTimeout(saveCfg, 800);
+  const now = xpLevel(); if (now !== before) { try { rebuildTabs(); } catch (e) { } toast(now === 'some' ? 'More tools are now on the tab strip. Find the rest under “Tools”.' : 'Everything is unlocked. Welcome to the full studio.', 'ok'); }
+}
+const xpEdit = () => { if (!XP.quiet) xpSignal(.25); };
+/** run a generator (like Hum to Song) without counting its changes as the person's own edits */
+function xpQuiet(fn) { XP.quiet++; try { return fn(); } finally { XP.quiet--; } }
+function xpToolsButton() {
+  const l = xpLevel(), b = h('button', { class: 'btn sm xp-tools', id: 'xpTools', title: 'Choose how much of the studio to show', 'aria-haspopup': 'dialog', onclick: () => {
+    const m = CFG.xpMode || 'auto', opt = (k, t, d) => h('button', { class: 'btn sm xp-opt' + (m === k ? ' on' : ''), 'aria-pressed': String(m === k), onclick: () => { CFG.xpMode = k; saveCfg(); closePop(); rebuildTabs(); if (k !== 'auto') toast((XP_LABEL[k]) + ' tools', ''); } }, h('b', {}, t), h('span', { class: 'muted' }, d));
+    popover(b, h('div', { class: 'xp-pop' }, h('h5', {}, 'How much of the studio?'), opt('auto', 'Automatic', 'Starts simple and adds tools as you use them'), opt('new', 'Simple', 'Hum, Song, Band, Stage, Save'), opt('some', 'More tools', 'Adds guitar sound, tab, fretboard, backing track'), opt('pro', 'Everything', 'All tabs, technical labels, numbered shortcuts')), { style: { width: '320px', maxWidth: '92vw' } });
+  } }, l === 'pro' ? 'Tools' : '＋ More tools'); return b;
+}
+
+/* >>> parts/34-launch.js */
+/* ============================================================
+   First impression: a living hexagon field behind the front screen, and a full-screen "center stage"
+   (camera + hexagons) that the first song starts on. Nothing here touches the microphone or camera;
+   those are requested only by the buttons that say so.
+   ============================================================ */
+(function bootHexInit() {
+  const cv = document.getElementById('bootHex'); if (!cv) return;
+  const g = cv.getContext('2d'), still = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  let W = 0, H = 0, dpr = 1, t0 = performance.now(), last = 0;
+  const size = () => { dpr = Math.min(1.5, window.devicePixelRatio || 1); W = cv.width = Math.floor(innerWidth * dpr); H = cv.height = Math.floor(innerHeight * dpr); };
+  size(); addEventListener('resize', size);
+  const hexPath = (x, y, r) => { g.beginPath(); for (let i = 0; i < 6; i++) { const a = Math.PI / 6 + i * Math.PI / 3; g.lineTo(x + r * Math.cos(a), y + r * Math.sin(a)); } g.closePath(); };
+  function frame(now) {
+    if (!document.getElementById('bootHex')) return;
+    requestAnimationFrame(frame); if (now - last < 33 && !still) return; last = now;
+    try { paint(now); } catch (e) { last = Infinity; }
+  }
+  function paint(now) {
+    const t = (now - t0) / 1000, R = Math.max(26, Math.min(W, H) / 15) * (dpr > 1 ? 1 : 1), dx = R * Math.sqrt(3), dy = R * 1.5, cx = W / 2, cy = H * .46, maxd = Math.hypot(W, H) * .55;
+    g.fillStyle = '#04090a'; g.fillRect(0, 0, W, H);
+    const glow = g.createRadialGradient(cx, cy, 0, cx, cy, maxd); glow.addColorStop(0, 'rgba(61,220,132,.16)'); glow.addColorStop(.5, 'rgba(61,220,132,.04)'); glow.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = glow; g.fillRect(0, 0, W, H);
+    const beat = (t % 1.9) / 1.9;
+    for (let row = -1; row * dy < H + R; row++) for (let col = -1; col * dx < W + dx; col++) {
+      const x = col * dx + (row & 1 ? dx / 2 : 0), y = row * dy, d = Math.hypot(x - cx, y - cy), fall = Math.max(0, 1 - d / maxd);
+      const ring = Math.max(0, 1 - Math.abs(d / maxd - beat * 1.1) * 7), wave = .5 + .5 * Math.sin(d * .011 - t * 1.4 + Math.sin(x * .004 + t * .3) * 2), a = Math.min(1, fall * fall * (.2 + wave * .55) + ring * .85 * fall);
+      const warm = ((col * 7 + row * 13) % 11) === 0;
+      g.fillStyle = (warm ? 'rgba(242,182,50,' : 'rgba(61,220,132,') + (a * (warm ? .5 : .42)).toFixed(3) + ')'; hexPath(x, y, R * (.9 + ring * .08)); g.fill();
+      g.strokeStyle = 'rgba(125,191,155,' + (.05 + a * .5).toFixed(3) + ')'; g.lineWidth = 1; g.stroke();
+    }
+  }
+  requestAnimationFrame(frame);
+})();
+
+/* full-screen center stage */
+function vzImmersive(on) {
+  const b = document.body; if (!!on === b.classList.contains('vz-imm')) return;
+  if (on) { try { dockGo('vis'); } catch (e) { } }
+  b.classList.toggle('vz-imm', !!on);
+  let hud = document.getElementById('vzHud');
+  if (on && !hud) {
+    hud = h('div', { id: 'vzHud', role: 'toolbar', 'aria-label': 'Stage controls' },
+      h('span', { class: 'vzh-brand' }, h('i', { 'aria-hidden': 'true' }, '⬡'), 'the-daily.studio'),
+      h('span', { class: 'grow' }),
+      h('button', { class: 'btn sm', id: 'vzhNew', title: 'Start a new song: hum, guitar, a song file or a blank page', onclick: () => humStageFirst() }, '＋', h('span', { class: 'lbl' }, ' New song')),
+      h('button', { class: 'btn sm', id: 'vzhIo', title: 'Microphone, camera and other inputs', onclick: () => { vzImmersive(false); try { sideShow('io'); } catch (e) { } } }, '⚙', h('span', { class: 'lbl' }, ' Inputs')),
+      h('button', { class: 'btn sm vzh-kill', id: 'vzhKill', title: 'Stop all sound and release the microphone (Ctrl + .)', onclick: () => { try { audioKill(); } catch (e) { } } }, '■', h('span', { class: 'lbl' }, ' Stop audio')),
+      h('button', { class: 'btn sm', id: 'vzhFull', title: 'Full screen', 'aria-label': 'Full screen', onclick: () => { try { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen({ navigationUI: 'hide' }).catch(() => { }); } catch (e) { } } }, '⛶'),
+      h('button', { class: 'btn sm', id: 'vzhExit', title: 'Back to the studio', onclick: () => vzImmersive(false) }, '✕ Studio'));
+    document.body.append(hud);
+  }
+  if (on) setTimeout(() => { try { window.dispatchEvent(new Event('resize')); } catch (e) { } }, 30);
+  else { try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) { } try { window.dispatchEvent(new Event('resize')); } catch (e) { } }
+}
+bus.on('dock', id => { const c = typeof id === 'string' ? id : DOCK.cur; if (c && c !== 'vis' && document.body.classList.contains('vz-imm')) vzImmersive(false); });
+
+/* Pressing Begin or "Start and connect my input" also starts the camera backdrop on the visuals (unless you turned it off earlier).
+   "Start with camera and mic off" never does. */
+bus.on('booted', () => { if (HUM.cam0 !== true) return; if (CFG.humStage !== false && !CAM.on && DOCK.cur === 'vis') vzCenterStage(true); });
 
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();

@@ -208,7 +208,7 @@ function secActions(sec, si) {
     b('✕', 'Delete section', () => { if (S.sections.length > 1 || confirm('Delete the last section?')) { S.sections.splice(si, 1); SEL.sec = 0; commit(); } }, 'bad'));
 }
 function addSectionRow(tip) {
-  const ns = h('select', { class: 'in', style: { width: '140px', fontFamily: 'var(--sans)' } }, SECNAMES.map(n => h('option', {}, n)));
+  const ns = h('select', { class: 'in', 'aria-label': 'Section to add', style: { width: '140px', fontFamily: 'var(--sans)' } }, SECNAMES.map(n => h('option', {}, n)));
   return h('div', { class: 'row', style: { gap: '8px', margin: '2px 0 10px' } }, h('b', { class: 'small' }, 'Add section'), ns,
     h('button', { class: 'btn primary sm', onclick: () => { const base = ns.value, n = S.sections.filter(s => s.name.startsWith(base)).length; const nm = base === 'Verse' || base === 'Chorus' ? base + ' ' + (n + 1) : n ? base + ' ' + (n + 1) : base; S.sections.push(mkSection(nm, ['', '', '', ''])); SEL.sec = S.sections.length - 1; commit(); } }, '＋ Add'),
     tip ? h('span', { class: 'muted small' }, tip) : null);
@@ -244,7 +244,7 @@ function sectionCard(sec, si, compact) {
     card.append(h('div', { class: 'card-h sec-c', title: 'Open this section', onclick: () => { SEL.sec = si; SEL.bar = 0; TL.dirty = true; bus.emit('sel'); } }, h('b', {}, '▸ ' + sec.name), h('span', { class: 'tiny muted grow', style: { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, sec.bars.length + ' bars · ' + (chords || '—') + (ly ? ' · ' + lyricPlain(ly).slice(0, 30) : ''))));
     return card;
   }
-  const nameIn = h('input', { class: 'in', value: sec.name, style: { width: '150px', fontFamily: 'var(--sans)', fontWeight: 800 }, onfocus: () => { SEL.sec = si; }, oninput: e => { sec.name = e.target.value; SP.lock = true; commit(false); SP.lock = false; } });
+  const nameIn = h('input', { class: 'in', 'aria-label': 'Section name', value: sec.name, style: { width: '150px', fontFamily: 'var(--sans)', fontWeight: 800 }, onfocus: () => { SEL.sec = si; }, oninput: e => { sec.name = e.target.value; SP.lock = true; commit(false); SP.lock = false; } });
   card.append(h('div', { class: 'card-h' }, nameIn, secActions(sec, si)));
   const body = h('div', { class: 'card-b' }), row = h('div', { class: 'barrow' });
   sec.bars.forEach((bar, bi) => {

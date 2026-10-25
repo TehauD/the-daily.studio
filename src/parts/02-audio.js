@@ -200,7 +200,7 @@ async function openInput(deviceId) {
     E.lastInErr = m; toast(m, 'bad'); bus.emit('input', null); return false;
   }
   E.lastInErr = null;
-  E.stream = st; const tr = st.getAudioTracks()[0]; E.inSettings = tr.getSettings(); CFG.inDev = E.inSettings.deviceId || deviceId || ''; saveCfg();
+  xpSignal(2); E.stream = st; const tr = st.getAudioTracks()[0]; E.inSettings = tr.getSettings(); CFG.inDev = E.inSettings.deviceId || deviceId || ''; saveCfg();
   E.src = E.ctx.createMediaStreamSource(st);
   if (!E.split) {
     E.split = E.ctx.createChannelSplitter(2); E.gL = gn(1); E.gR = gn(0);

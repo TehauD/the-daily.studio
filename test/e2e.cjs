@@ -12,14 +12,17 @@ function wav(L, sr) { const n = L.length, b = Buffer.alloc(44 + n * 2); b.write(
 (async () => {
   let srv; if (!process.env.BASE_URL) { srv = spawn(process.execPath, [path.join(__dirname, '..', 'scripts', 'serve.mjs')], { env: { ...process.env, PORT: String(PORT) }, stdio: 'ignore' }); await wait(800); }
   const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined, args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream', '--autoplay-policy=no-user-gesture-required', ...(process.env.NO_SANDBOX ? ['--no-sandbox'] : [])] });
-  const ctx0 = await browser.newContext({ viewport: { width: 1500, height: 900 }, permissions: ['microphone'], acceptDownloads: true }); await ctx0.addInitScript(() => { try { if (window.name !== 'noseed') localStorage.setItem('fw.started', 'true'); } catch (e) { } });   // skip the first-run start card
+  const ctx0 = await browser.newContext({ viewport: { width: 1500, height: 900 }, permissions: ['microphone'], acceptDownloads: true }); await ctx0.addInitScript(() => { try { if (window.name !== 'noseed') { localStorage.setItem('fw.started', 'true'); const c = JSON.parse(localStorage.getItem('fw.cfg') || '{}'); c.xpMode = 'pro'; c.humStage = false; localStorage.setItem('fw.cfg', JSON.stringify(c)); } } catch (e) { } });   // skip the first-run start card
   const page = await ctx0.newPage();
   const errs = []; page.on('pageerror', e => errs.push('pageerror: ' + e.message));
   page.on('console', m => { if (m.type() === 'error' && !/audio input|MIDI|favicon/i.test(m.text())) errs.push('console: ' + m.text()); });
   page.on('response', r => { if (r.status() >= 400 && !/favicon/.test(r.url())) errs.push('http ' + r.status() + ' ' + r.url()); });
-  await page.goto(BASE); await wait(2500); if (await page.$('#bootGo')) await page.click('#bootGo'); await wait(1800);
+  await page.goto(BASE); await wait(2500); if (await page.$('#bootGo')) await page.evaluate(() => document.getElementById('bootGo').click()); await wait(1800);
   ok(!!(await page.$('#dock .tab[data-id="rig"]')), 'app boots and the dock renders');
 
+  // the app opens on the stage (Visuals) by default
+  ok(await page.evaluate(() => window.__daily ? true : true) && await page.$eval('#dock .tab.on', e => e.dataset.id) === 'vis', 'the studio opens on the stage (Visuals tab) by default');
+  await page.click('#dock .tab[data-id="rig"]'); await wait(400);
   // rig deck has no empty rows: every row spans the card
   const deck = await page.evaluate(() => { const d = document.querySelector('.rigdeck'), w = d.getBoundingClientRect().width; return [...d.children].map(c => Math.round(c.getBoundingClientRect().width / w * 100)); });
   ok(deck.length >= 4 && deck.every(p => p >= 90), 'rig control deck rows fill the card ' + JSON.stringify(deck));
@@ -75,13 +78,13 @@ function wav(L, sr) { const n = L.length, b = Buffer.alloc(44 + n * 2); b.write(
     const got = await page.evaluate(() => ({ n: document.querySelectorAll('#right .card.sec').length, ly: (document.querySelector('#right textarea.lyr') || {}).value }));
     ok(rows === 3 && got.n === 3 && /^\[[A-G][^\]]*\]Late night/.test(got.ly), `lyric import: ${rows} sections previewed, ${got.n} created, chords placed (${(got.ly || '').split('\n')[0]})`); }
   // ---- v1.4: songs library, two origins, zoom, real reset ----
-  { const bootAgain = async () => { await wait(2300); if (await page.$('#bootGo')) await page.click('#bootGo'); await wait(2300); await page.evaluate(() => { const b = document.querySelector('#tourOffer .btn:not(.primary)'); if (b) b.click(); }); };
+  { const bootAgain = async () => { await wait(2300); if (await page.$('#bootGo')) await page.evaluate(() => document.getElementById('bootGo').click()); await wait(2300); await page.evaluate(() => { const b = document.querySelector('#tourOffer .btn:not(.primary)'); if (b) b.click(); }); };
     const title = () => page.$eval('.sb-title', e => e.value);
     await page.evaluate(() => { const b = document.querySelector('#tourOffer .btn:not(.primary)'); if (b) b.click(); }); await page.click('.sb-zoom button[data-z="studio"]'); await wait(500);
     // work done before any song was chosen is kept: record a take, then start a new song; the take comes back when the first song is reopened
     await page.click('.sb-new'); await wait(300); ok(await page.$eval('#origins', d => d.open), 'New song opens the start card with two origins');
-    const cards = await page.$$eval('#origins .pd-card h3', e => e.map(x => x.textContent)); ok(cards.join('|') === 'Clean canvas|Start from a song', 'origins are "Clean canvas" and "Start from a song": ' + cards.join(' | '));
-    await page.fill('#origins input.in', 'Porch Light'); await page.click('#origins .pd-card:first-child .pd-go'); await wait(1500);
+    const cards = await page.$$eval('#origins .pd-card h3', e => e.map(x => x.textContent)); ok(cards.join('|') === 'Hum or sing an idea|Clean canvas|Start from a song', 'origins lead with "Hum or sing an idea", then "Clean canvas" and "Start from a song": ' + cards.join(' | '));
+    await page.fill('#origins input.in', 'Porch Light'); await page.click('#origins .pd-grid .pd-card:first-child .pd-go'); await wait(1500);
     ok((await title()) === 'Porch Light', 'clean canvas starts a new blank song with the given title');
     ok((await page.$$('.tl-head[data-id^="take:"]')).length === 0, 'the new song has no takes from the previous one');
     const nsec = await page.evaluate(() => document.querySelectorAll('#right .card.sec').length); ok(nsec === 1, 'a clean canvas has one empty section (' + nsec + ')');
@@ -105,11 +108,13 @@ function wav(L, sr) { const n = L.length, b = Buffer.alloc(44 + n * 2); b.write(
     await openReset(); await page.click('#reset button:has-text("Layout only")'); await page.click('#reset button:has-text("Reset 1 item")'); await page.click('#reset button:has-text("Click again")'); await bootAgain();
     ok((await title()).length > 0 && (await page.evaluate(() => (JSON.parse(localStorage.getItem('fw.cfg') || '{}').zoom || '') === '')), 'Reset ▸ Layout only: songs stay, the view goes back to default');
     await page.click('.sb-songs'); await page.click('.pd-menu button:has-text("All songs")'); await wait(400); const kept = (await page.$$('.pd-row')).length; ok(kept === 3, 'Reset ▸ Layout only kept all songs (' + kept + ')'); await page.keyboard.press('Escape');
-    await page.evaluate(() => { window.name = 'noseed'; }); await openReset(); await page.click('#reset button:has-text("Everything")'); await page.click('#reset button:has-text("Reset 6 items")'); await page.click('#reset button:has-text("Click again")'); await wait(4000); if (await page.$('#bootGo')) await page.click('#bootGo'); await wait(2500);
-    const after = await page.evaluate(async () => ({ open: !!(document.getElementById('origins') || {}).open, keys: Object.keys(localStorage).filter(k => k.startsWith('fw.')).sort().join(','), title: (document.querySelector('.sb-title') || {}).value }));
-    ok(after.open && after.title === 'Salt Wind (demo)' && !/fw\.(song|cur|started|presets|layouts|vhist)\b/.test(after.keys), 'Reset ▸ Everything: nothing is written back (the old bug), the start card returns and the demo song is back. Keys left: ' + after.keys);
-    await page.keyboard.press('Escape'); await wait(1200); const lib = await page.evaluate(() => new Promise(res => { const r = indexedDB.open('the-daily-songs'); r.onsuccess = () => { const t = r.result.transaction('projects').objectStore('projects').count(); t.onsuccess = () => res(t.result); }; r.onerror = () => res(-1); })); ok(lib <= 1, 'the library holds only the fresh demo song after a factory reset (' + lib + ')'); }
-  if (await page.$('#bootGo')) { await page.click('#bootGo'); await wait(1800); } await page.evaluate(() => { const d = document.getElementById('origins'); if (d && d.open) d.close(); });   // nothing starts by itself: the start overlay waits for a click
+    await page.evaluate(() => { window.name = 'noseed'; }); await openReset(); await page.click('#reset button:has-text("Everything")'); await page.click('#reset button:has-text("Reset 6 items")'); await page.click('#reset button:has-text("Click again")'); await page.waitForFunction(() => !!document.getElementById('bootNoMic'), null, { timeout: 20000 }).catch(() => { }); await wait(1500); const keys0 = await keys(); if (await page.$('#bootNoMic')) await page.evaluate(() => document.getElementById('bootNoMic').click()); await page.waitForSelector('#humbar[data-mode="start"]', { timeout: 15000 }).catch(() => { }); await wait(800);
+    const after = await page.evaluate(async () => ({ open: !!document.querySelector('#humbar[data-mode="start"]'), keys: Object.keys(localStorage).filter(k => k.startsWith('fw.')).sort().join(','), title: (document.querySelector('.sb-title') || {}).value }));
+    ok(after.open && after.title === 'Hum idea' && !/fw\.(song|cur|started|presets|layouts|vhist)\b/.test(keys0), 'Reset ▸ Everything: nothing is written back (the old bug) and the start panel returns on the stage. State: ' + JSON.stringify(after) + ' before start: ' + keys0);
+    await page.evaluate(() => document.getElementById('humAltDemo').click()); await wait(2500);
+    ok(await page.evaluate(() => (document.querySelector('.sb-title') || {}).value === 'Salt Wind (demo)' && !document.getElementById('humbar')), 'the start panel offers the demo song instead of humming (and closes)');
+    await page.keyboard.press('Escape'); await wait(1200); const lib = await page.evaluate(() => new Promise(res => { const r = indexedDB.open('the-daily-songs'); r.onsuccess = () => { const t = r.result.transaction('projects').objectStore('projects').count(); t.onsuccess = () => res(t.result); }; r.onerror = () => res(-1); })); ok(lib <= 1, 'the library holds only the demo song after a factory reset: the empty placeholder page is not left behind (' + lib + ')'); }
+  if (await page.$('#bootGo')) { await page.evaluate(() => document.getElementById('bootGo').click()); await wait(1800); } await page.evaluate(() => { const d = document.getElementById('origins'); if (d && d.open) d.close(); });   // nothing starts by itself: the start overlay waits for a click
   // ---- v1.6: appearance system ----
   { const dset = () => page.evaluate(() => ({ ...document.documentElement.dataset, acc: getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() }));
     await page.click('button[title^="Appearance"]'); await wait(400); ok(await page.$eval('#look', d => d.open), 'the ◐ button opens the Appearance drawer');
@@ -122,7 +127,7 @@ function wav(L, sr) { const n = L.length, b = Buffer.alloc(44 + n * 2); b.write(
     await page.click('.lk-seg button:has-text("Round")'); await page.click('.lk-seg button:has-text("Roomy")'); await page.click('.lk-seg button:has-text("Colour-blind safe")'); await wait(300);
     d = await dset(); ok(d.corners === 'round' && d.density === 'spacious' && (await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--cv1').trim())) === '#0072B2', 'corners, density and colour-blind-safe data colours apply');
     await page.selectOption('#look select', 'legible'); await wait(200); ok((await dset()).font === 'legible', 'typeface choice applies');
-    await page.keyboard.press('Escape'); await page.reload(); await wait(2300); if (await page.$('#bootGo')) await page.click('#bootGo'); await wait(2300); await page.evaluate(() => { const b = document.querySelector('#tourOffer .btn:not(.primary)'); if (b) b.click(); }); d = await dset(); ok(d.palette === 'paper' && d.corners === 'round' && d.density === 'spacious', 'appearance survives a reload: ' + d.palette + '/' + d.corners + '/' + d.density);
+    await page.keyboard.press('Escape'); await page.reload(); await wait(2300); if (await page.$('#bootGo')) await page.evaluate(() => document.getElementById('bootGo').click()); await wait(2300); await page.evaluate(() => { const b = document.querySelector('#tourOffer .btn:not(.primary)'); if (b) b.click(); }); d = await dset(); ok(d.palette === 'paper' && d.corners === 'round' && d.density === 'spacious', 'appearance survives a reload: ' + d.palette + '/' + d.corners + '/' + d.density);
     await page.click('button[title^="Appearance"]'); await wait(300); await page.click('.lk-foot .btn'); await wait(300); d = await dset(); ok(d.corners === 'soft' && d.density === 'comfortable' && d.palette === 'dsday' && d.font === 'brand', 'Reset appearance restores the defaults (Daily Light, brand type)');
     await page.keyboard.press('Escape'); }
   // ---- v1.7: About & credits, CSP, production assets ----
@@ -140,8 +145,8 @@ function wav(L, sr) { const n = L.length, b = Buffer.alloc(44 + n * 2); b.write(
     await ap.addInitScript(() => { window.__gum = 0; const md = navigator.mediaDevices, g = md.getUserMedia.bind(md); md.getUserMedia = c => { if (c && c.audio) window.__gum++; return g(c).then(st => { (window.__st = window.__st || []).push(st); return st; }); }; });
     await ap.goto(BASE); await wait(3500);
     ok(await ap.evaluate(() => window.__gum) === 0 && !!(await ap.$('#boot')), 'nothing asks for the microphone on load; the start overlay waits for you');
-    ok(/Start · microphone stays off/.test(await ap.$eval('#bootNoMic', e => e.textContent)), 'the first choice is to start with the microphone off');
-    await ap.click('#bootNoMic'); await wait(2000);
+    ok(/Start with camera and mic off/.test(await ap.$eval('#bootNoMic', e => e.textContent)), 'the first choice is to start with the microphone off');
+    await ap.evaluate(() => document.getElementById('bootNoMic').click()); await wait(2000);
     ok(await ap.evaluate(() => window.__gum) === 0 && /No input/.test(await ap.$eval('.aud .lbl', e => e.textContent)), 'starting leaves the microphone off and the header says so');
     await ap.click('.aud'); await wait(400); ok(await ap.$eval('#audio', d => d.open), 'the header Audio button opens the audio panel');
     await ap.click('#audio button:has-text("Connect")'); await wait(2000);
@@ -153,6 +158,105 @@ function wav(L, sr) { const n = L.length, b = Buffer.alloc(44 + n * 2); b.write(
     await ap.click('.aud'); await wait(300); await ap.click('#audio button:has-text("Resume audio")'); await wait(800);
     ok(/No input/.test(await ap.$eval('.aud .lbl', e => e.textContent)), 'resuming brings audio back with the microphone still off');
     ok(ae.length === 0, 'audio control runs without script errors' + (ae.length ? ' ' + ae[0] : '')); await ap.close(); }
+  // Hum to Song: front door, nothing asked before the button, a synthetic hum becomes a whole song, the kill switch stops listening
+  { const hp = await ctx0.newPage(), he = []; hp.on('pageerror', e => he.push(e.message));
+    await hp.addInitScript(() => { try { const c = JSON.parse(localStorage.getItem('fw.cfg') || '{}'); delete c.humStage; localStorage.setItem('fw.cfg', JSON.stringify(c)); } catch (e) { } window.__gum = 0; window.__st = []; const md = navigator.mediaDevices, g = md.getUserMedia.bind(md); md.getUserMedia = c => { if (c && c.audio) window.__gum++; return g(c).then(st => { window.__st.push(st); return st; }); }; });
+    await hp.goto(BASE + (BASE.includes('?') ? '&' : '?') + 'debug&start=1'); await wait(3500);
+    ok(/Hum a melody/.test(await hp.$eval('#boot', e => e.textContent)), 'the welcome card leads with "Hum a melody. Get a song."');
+    await hp.evaluate(() => document.getElementById('bootNoMic').click()); await wait(2500); await hp.evaluate(() => { const b = document.querySelector('#tourOffer .btn:not(.primary)'); if (b) b.click(); document.querySelectorAll('#origins').forEach(d => d.close()); }); await hp.click('.sb-new'); await wait(500);
+    const hero = await hp.$('#originsHum'); ok(!!hero, 'the first screen offers "Hum or sing" before anything else');
+    if (hero) { await hero.click(); await wait(500); }
+    ok(await hp.evaluate(() => !!document.getElementById('hum') && window.__gum === 0), 'the hum screen opens without asking for the microphone');
+    ok(await hp.evaluate(() => document.getElementById('humStage').checked), 'center stage (camera, me in front) is ticked by default on the hum screen');
+    await hp.evaluate(() => { document.getElementById('humStage').click(); });   // camera off for this run
+    await hp.click('#humGo'); await wait(2500);
+    ok(await hp.evaluate(() => window.__gum === 1 && !!document.getElementById('humStop')), 'pressing the button asks for the microphone once and starts listening');
+    await hp.keyboard.press('Control+.'); await wait(700);
+    ok(await hp.evaluate(() => !document.getElementById('humbar') && window.__st.every(st => st.getTracks().every(t => t.readyState === 'ended'))), 'Ctrl + . stops the hum recording and releases the microphone');
+    await hp.evaluate(() => { window.__daily.humOpen(); }); await wait(300);
+    await hp.click('#humGo'); await wait(4200); await hp.click('#humStop'); await wait(5000);
+    ok(await hp.evaluate(() => { const m = (document.getElementById('humbar') || {}).dataset; return !!m && (m.mode === 'res' || m.mode === 'few'); }), 'recording, listening back and arranging finish with a result or a helpful retry');
+    const R = await hp.evaluate(async () => {
+      const D = window.__daily, sr = 44100, notes = [60, 62, 64, 60, 64, 65, 67, 67, 67, 69, 67, 65, 64, 60, 62, 60], beat = .6, N = Math.ceil((notes.length * beat + 1) * sr), x = new Float32Array(N);
+      notes.forEach((m, i) => { const f = 440 * Math.pow(2, (m - 69 + .25) / 12), t0 = .4 + i * beat, len = beat * .9; for (let k = 0; k < len * sr; k++) { const t = k / sr, env = Math.min(1, t / .03) * Math.min(1, (len - t) / .05); x[Math.floor(t0 * sr) + k] += .3 * env * Math.sin(2 * Math.PI * f * t) + .08 * env * Math.sin(4 * Math.PI * f * t); } });
+      const an = await D.humAnalyze(x, sr, () => { }), full = D.humSong(an, {}), q = D.humSong(an, { form: 'quick' }), rock = D.humSong(an, { style: 'Rock' }), mi = D.humSong(an, { key: 9, minor: true });
+      D.HUM.an = an; D.HUM.o = { style: null, form: 'full', seed: 0, bpm: null, key: null, minor: null, title: 'Hum idea' }; await D.humApply(false);
+      return { n: an.notes.length, midi: an.notes.map(n => n.m).join(), bpm: an.bpm, key: an.key, secs: full.song.sections.map(c => c.name), bad: full.song.sections.flatMap(c => c.bars.map(b => b.chord)).filter(c => !c || c.split(' ').some(z => !D.parseChord(z))).length,
+        tab: full.song.sections.map(c => c.bars.reduce((a, b) => a + b.tab.length, 0)), rock: rock.song.band.patName, q: q.song.sections.length, mi: mi.key, now: D.S.sections.length, btn: (document.getElementById('humPlay') || {}).textContent, last: full.song.sections[1].bars.slice(-1)[0].chord };
+    });
+    ok(R.n === 16 && R.midi === '60,62,64,60,64,65,67,67,67,69,67,65,64,60,62,60', 'a hummed melody (25 cents sharp) is heard note for note: ' + R.midi);
+    ok(Math.abs(R.bpm - 100) <= 6 && R.key.root === 0 && !R.key.minor, 'tempo (' + R.bpm + ') and key (C major) are found');
+    ok(R.secs.join() === 'Intro,Verse 1,Chorus,Verse 2,Chorus,Bridge,Chorus,Outro' && R.q === 4, 'the full song has intro, verses, choruses, bridge and outro; the quick sketch has verse and chorus');
+    ok(R.bad === 0 && R.last === 'C', 'every chord is a real chord and the verse comes home to C (' + R.last + ')');
+    ok(R.tab[1] === 16 && R.tab[2] > 0 && R.tab[5] > 0 && R.tab[0] === 0, 'the melody is on the lead guitar in the verse, chorus lift and bridge');
+    ok(R.rock === 'Rock 8ths' && R.mi.minor === true, 'style and key changes re-arrange the band');
+    ok(R.now === 8 && /Play my song/.test(R.btn), 'the song is built into the studio and the panel offers Play');
+    await hp.click('#humbar .hum-chips button:has-text("Ballad")'); await wait(600);
+    ok(await hp.evaluate(() => window.__daily.S.band.kit === 'Brush (soft)'), 'choosing a style re-builds the band right away');
+    ok(await hp.evaluate(() => !window.__daily.CAM.on), 'the camera stays off until you ask for center stage');
+    await hp.evaluate(() => { const b = document.getElementById('vzCamBtn'); if (b) b.click(); }); await wait(3500);
+    ok(await hp.evaluate(() => window.__daily.CAM.on && window.__daily.VZ.cam && window.__daily.CFG.camFx === 'person'), 'one tap on Camera backdrop starts the camera and puts you in front (green screen)');
+    await hp.evaluate(() => { const b = document.getElementById('vzCamBtn'); if (b) b.click(); }); await wait(500);
+    ok(await hp.evaluate(() => !window.__daily.CAM.on && !window.__daily.VZ.cam), 'tapping again turns the camera off');
+    await hp.evaluate(() => window.__daily.vzImmersive(true)); await wait(400);
+    const IM = await hp.evaluate(() => { const w = document.querySelector('.vwrap').getBoundingClientRect(), x = document.getElementById('vzhExit'), k = document.getElementById('vzhKill'); return { on: document.body.classList.contains('vz-imm'), full: Math.round(w.width) === innerWidth && Math.round(w.height) === innerHeight, hud: !!x && !!k && x.offsetParent !== null }; });
+    ok(IM.on && IM.full && IM.hud, 'center stage fills the whole screen with a Stop audio and a Studio button');
+    await hp.click('#vzhExit'); await wait(300);
+    ok(await hp.evaluate(() => !document.body.classList.contains('vz-imm') && document.getElementById('vzHud').offsetParent === null), 'the Studio button brings the studio back');
+        // the novice guitar coach: tune six strings, learn the song's chords, then play along (a stand-in guitar drives the listener)
+    await hp.evaluate(() => { window.__daily.HUM.r = null; }); await hp.evaluate(async () => { await window.__daily.humGuitar(); }); await wait(800);
+    const GC = await hp.evaluate(() => {
+      const D = window.__daily, g = D.HUM.g, out = { start: g && g.step, chords: g && g.chords.join(), mode: document.getElementById('humbar').dataset.mode }; clearInterval(g.t);
+      for (let st = 0; st < 6; st++) { for (let k = 0; k < 11; k++) { D.AN.f0 = D.humStringHz(st) * Math.pow(2, 3 / 1200); D.AN.clarity = .9; D.AN.rms = -20; D.AN.midi = 40; D.humGuitarTick(); } }
+      out.afterTune = D.HUM.g.step; const syms = D.HUM.g.chords.slice();
+      syms.forEach(sym => { const c = D.parseChord(sym); for (let k = 0; k < 9; k++) { D.AN.active = true; D.AN.rms = -20; D.AN.chord = [{ sym, root: c.root, q: c.q === 'maj' ? '' : c.q, score: .95 }]; D.humGuitarTick(); } });
+      out.afterChords = D.HUM.g.step; out.canvas = !!document.querySelector('.hum-chord') || D.HUM.g.step === 'play'; return out; });
+    ok(GC.start === 'tune' && GC.mode === 'g' && GC.chords === 'G,Em,C,D', 'the guitar coach starts at tuning with a friendly first song: ' + GC.chords);
+    ok(GC.afterTune === 'chords', 'six in-tune strings move on to learning chords');
+    ok(GC.afterChords === 'play', 'playing each chord correctly leads to playing along with the band');
+ok(he.length === 0, 'hum to song runs without script errors' + (he.length ? ' ' + he[0] : '')); await hp.evaluate(() => { window.__daily.CFG.humStage = false; const c = JSON.parse(localStorage.getItem('fw.cfg') || '{}'); c.humStage = false; localStorage.setItem('fw.cfg', JSON.stringify(c)); }); await hp.close(); }
+  // the studio adapts: a brand-new visitor sees a simple studio and more appears as they use it; "Tools" overrides
+  { const nctx = await browser.newContext({ viewport: { width: 1500, height: 900 }, permissions: ['microphone'] }), np = await nctx.newPage(), ne = []; np.on('pageerror', e => ne.push(e.message));
+    await np.goto(BASE + (BASE.includes('?') ? '&' : '?') + 'start=0'); await wait(3000); await np.evaluate(() => document.getElementById('bootNoMic').click()); await wait(2500);
+    await np.evaluate(() => { document.querySelectorAll('dialog').forEach(d => d.close()); const b = document.querySelector('#tourOffer .btn:not(.primary)'); if (b) b.click(); });
+    const ids = () => np.$$eval('#dock .tab', t => t.map(x => x.dataset.id).sort().join());
+    ok(await ids() === 'band,exp,song,vis', 'a brand-new visitor sees four plain tabs: ' + await ids());
+    ok(/Save & export/.test(await np.$eval('#dock .tabs', e => e.textContent)) && !/1 · /.test(await np.$eval('#dock .tabs', e => e.textContent)), 'tab names are plain words, not numbered technical names');
+    await np.click('.sb-zoom button[data-z="studio"]'); await wait(300); await np.click('.sb-zoom button[data-z="song"]'); await wait(300); await np.click('.sb-zoom button[data-z="studio"]'); await wait(600);
+    ok((await ids()).split(',').includes('rig') && (await ids()).split(',').includes('tab'), 'using the studio adds more tools by itself: ' + await ids());
+    await np.click('#xpTools'); await wait(300); await np.click('.xp-opt:has(b:text-is("Everything"))'); await wait(500);
+    ok((await ids()).split(',').length >= 12 && /1 · Rig/.test(await np.$eval('#dock .tabs', e => e.textContent)), 'Tools ▸ Everything shows every tab with the technical names');
+    await np.click('#xpTools'); await wait(300); await np.click('.xp-opt:has(b:text-is("Simple"))'); await wait(500);
+    ok((await ids()).split(',').length <= 5, 'Tools ▸ Simple brings the short list back: ' + await ids());
+    ok(ne.length === 0, 'the adaptive studio runs without script errors' + (ne.length ? ' ' + ne[0] : '')); await nctx.close(); }
+
+
+  // the default start: pressing a Start button puts you on the stage (camera backdrop on Hex Resonance) and I/O is the first left tab
+  { const dctx = await browser.newContext({ viewport: { width: 1500, height: 900 }, permissions: ['microphone', 'camera'] }); await dctx.addInitScript(() => { try { localStorage.setItem('fw.started', 'true'); } catch (e) { } });
+    await dctx.route(/jsdelivr|googleapis/, r => r.abort()); const dp = await dctx.newPage(); await dp.goto(BASE + '?debug'); await wait(2500);
+    ok(await dp.evaluate(() => !window.__daily.CAM.on), 'nothing touches the camera before a button is pressed');
+    { const lt = await dp.evaluate(() => document.querySelector('#left .side-tabs .tab.on').dataset.id); ok(lt === 'io', 'the left rail opens on I/O (audio and camera inputs) instead of Tones (' + lt + ')'); }
+    await dp.evaluate(() => document.getElementById('bootGo').click()); await wait(4500);
+    const DS = await dp.evaluate(() => { const D = window.__daily; return { cam: D.CAM.on, vz: D.VZ.cam, mode: D.VZ.mode, tab: !!document.querySelector('#dock .tab.on[data-id="vis"]'), btn: document.getElementById('ioCamBtn') && document.getElementById('ioCamBtn').classList.contains('on'), look: D.CFG.camFx }; });
+    ok(DS.cam && DS.vz && DS.mode === 'hex' && DS.tab && DS.btn && DS.look === 'person', 'Start and connect starts the camera backdrop on Hex Resonance, me in front (' + JSON.stringify(DS) + ')');
+    await dp.evaluate(() => document.getElementById('ioCamBtn').click()); await wait(600);
+    ok(await dp.evaluate(() => !window.__daily.CAM.on && window.__daily.CFG.humStage === false), 'the camera button in I/O turns it off and the choice is remembered');
+    await dctx.close(); }
+  // first run: one panel on the stage, no second welcome dialog
+  { const fctx = await browser.newContext({ viewport: { width: 1500, height: 900 }, permissions: ['microphone', 'camera'] }); await fctx.route(/jsdelivr|googleapis/, r => r.abort());
+    const fp = await fctx.newPage(); await fp.goto(BASE + '?debug'); await wait(2500); await fp.evaluate(() => document.getElementById('bootNoMic').click()); await wait(2500);
+    const F1 = await fp.evaluate(() => ({ panel: !!document.querySelector('#humbar[data-mode="start"]'), alts: ['humGo2', 'humGuitar', 'humAltFile', 'humAltBlank', 'humAltDemo'].every(i => document.getElementById(i)), origins: !!document.getElementById('origins'), cam: window.__daily.CAM.on, imm: document.body.classList.contains('vz-imm') }));
+    ok(F1.panel && F1.alts && !F1.origins && !F1.cam && !F1.imm, 'first run with camera and mic off: one start panel on the stage with hum, guitar, song file, blank page and demo (' + JSON.stringify(F1) + ')');
+    await fp.evaluate(() => document.getElementById('humAltBlank').click()); await wait(800);
+    ok(await fp.evaluate(() => !document.getElementById('humbar') && (document.querySelector('.sb-title') || {}).value === 'Hum idea'), 'a blank page keeps the new song and closes the panel');
+    await fp.close(); await fctx.close();
+    const gctx = await browser.newContext({ viewport: { width: 1500, height: 900 }, permissions: ['microphone', 'camera'] }); await gctx.route(/jsdelivr|googleapis/, r => r.abort());
+    const gp = await gctx.newPage(); await gp.goto(BASE + '?debug'); await wait(2500); await gp.evaluate(() => document.getElementById('bootHum').click()); await wait(4500);
+    const G1 = await gp.evaluate(() => ({ panel: !!document.querySelector('#humbar[data-mode="start"]'), imm: document.body.classList.contains('vz-imm'), cam: window.__daily.CAM.on, origins: !!document.getElementById('origins') }));
+    ok(G1.panel && G1.imm && G1.cam && !G1.origins, 'Begin: full-screen stage, camera on, one start panel (' + JSON.stringify(G1) + ')');
+    await gp.evaluate(() => document.getElementById('vzhNew').click()); await wait(1500);
+    ok(await gp.evaluate(() => new Promise(res => { const r = indexedDB.open('the-daily-songs'); r.onsuccess = () => { const t = r.result.transaction('projects').objectStore('projects').count(); t.onsuccess = () => res(t.result === 1); }; r.onerror = () => res(false); })), '＋ New song on the stage reuses the untouched page instead of piling up empty songs');
+    await gp.close(); await gctx.close(); }
   // camera looks: edges-in and the person cut-out (a stub segmenter stands in for the downloadable model)
   { const cp = await ctx0.newPage(), ce = []; cp.on('pageerror', e => ce.push(e.message)); await cp.goto(BASE + '?debug'); await wait(2200);
     await cp.evaluate(() => { const b = document.querySelector('#bootGo') || document.querySelector('#bootNoMic'); if (b) b.click(); }); await wait(1800);

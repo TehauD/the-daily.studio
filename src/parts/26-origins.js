@@ -10,6 +10,7 @@ const ZOOM = { cur: CFG.zoom || 'studio' };
 const ZOOMS = [['canvas', 'Canvas', 'Just the page: chords & lyrics, nothing else'], ['song', 'Song', 'Tab, chords & lyrics side by side'], ['studio', 'Studio', 'Arrangement, stems, takes and rig']];
 const layoutPreset = n => (LAYOUTS.find(l => l[0] === n) || LAYOUTS[0])[2];
 function zoomSet(z, quiet) {
+  if (!quiet && z === 'studio') xpSignal(3);
   if (!ZOOMS.some(x => x[0] === z)) z = 'studio'; ZOOM.cur = z; CFG.zoom = z; saveCfg(); document.body.classList.toggle('zoom-canvas', z === 'canvas');
   if (isDesk()) {
     if (z === 'canvas') { LAY.right = true; saveLay(); applyLayout(); sideShow('refine'); }
@@ -50,16 +51,18 @@ function originsOpen(o = {}) {
     h('button', { class: 'btn primary pd-go', onclick: () => pick.click() }, '📂 Choose an audio file…'), pick, h('div', { class: 'tiny muted', style: { margin: '6px 0 8px' } }, 'or drop a file here · stays on this device'), samplesShelf(fl => { close(); projFromTrack(fl); }, 'TRY A SAMPLE'));
   ['dragover', 'dragenter'].forEach(ev => track.addEventListener(ev, e => { e.preventDefault(); track.classList.add('over'); })); ['dragleave', 'drop'].forEach(ev => track.addEventListener(ev, () => track.classList.remove('over')));
   track.addEventListener('drop', e => { e.preventDefault(); const fl = e.dataTransfer.files[0]; if (fl) { close(); projFromTrack(fl); } });
+  const hero = h('section', { class: 'pd-card pd-hero' }, h('div', { class: 'pd-ic' }, '🎤'), h('h3', {}, 'Hum or sing an idea'), h('p', {}, 'No instrument or experience needed. Hum a few seconds and hear a whole song.'),
+    h('div', { class: 'row', style: { gap: '10px', flexWrap: 'wrap' } }, h('button', { class: 'btn primary pd-go', id: 'originsHum', onclick: () => { close(); humOpen(); } }, '● Hum or sing'), h('span', { class: 'tiny muted' }, 'Everything stays on this device.')));
   const bund = h('input', { type: 'file', accept: '.zip,.json,.txt,.md,.lrc', style: { display: 'none' }, onchange: e => { const fl = e.target.files[0]; e.target.value = ''; if (fl) { close(); projImport(fl); } } });
   const more = h('div', { class: 'pd-more' }, PRJ.list.length ? h('button', { class: 'btn', onclick: () => { close(); libraryOpen(); } }, '☰ My songs (' + PRJ.list.length + ')') : null, h('button', { class: 'btn', title: 'A song bundle (.zip), a lyric sheet (.txt/.md) or an older project .json', onclick: () => bund.click() }, '⤒ Open a bundle or lyrics…'), bund,
     h('button', { class: 'btn', onclick: () => { close(); projCreate('demo', { zoom: 'song' }); } }, '♫ Try the demo song'));
-  const d = pdlg('origins', o.first ? 'WELCOME — WHERE DO YOU WANT TO BEGIN?' : 'NEW SONG — WHERE DO YOU WANT TO BEGIN?', h('div', {}, h('div', { class: 'pd-grid' }, blank, track), more,
+  const d = pdlg('origins', o.first ? 'WELCOME — WHAT DO YOU WANT TO MAKE?' : 'NEW SONG — WHAT DO YOU WANT TO MAKE?', h('div', {}, hero, h('div', { class: 'pd-grid' }, blank, track), more,
     h('p', { class: 'tiny muted', style: { margin: '10px 0 0' } }, PRJ.cur ? 'Your current song is saved in My songs before the new one opens.' : 'Everything is saved on this device. Nothing is uploaded.')), {
     wide: true, onclose: () => { if (o.first && !chosen && !PRJ.cur) projCreate('demo', { zoom: 'song' }); }
   });
   setTimeout(() => { const i = $('input.in', blank); if (i) i.focus(); }, 40); return d;
 }
-function startMaybe() { if (PRJ.cur || store.get('started', false) || /[?&]start=0/.test(location.search) || document.getElementById('origins')) return; originsOpen({ first: true }); }
+function startMaybe() { if (PRJ.cur || store.get('started', false) || /[?&]start=0/.test(location.search) || document.getElementById('origins')) return; PRJ.fresh = true; humStageFirst(); }   // (the song on screen is only the built-in demo until the person picks something) the first thing anyone sees is the stage with one panel: hum, guitar, or a song file / blank page / demo
 bus.on('booted', () => { if (PRJ.ready) startMaybe(); else PRJ.wantStart = true; });
 /* a library that is unavailable (private window) still lets you begin */
 function newSongGo() { originsOpen({}); }
@@ -94,7 +97,7 @@ function libraryOpen() {
 /* ---------- the song bar: ☰ Songs menu + zoom ---------- */
 function songsMenu(anchor) {
   const box = h('div', { class: 'pd-menu' }), go = fn => () => { closePop(); fn(); };
-  box.append(h('h5', {}, 'Songs'), h('button', { class: 'btn sm primary', onclick: go(newSongGo) }, '＋ New song…'));
+  box.append(h('h5', {}, 'Songs'), h('button', { class: 'btn sm primary', onclick: go(newSongGo) }, '＋ New song…'), h('button', { class: 'btn sm', onclick: go(humOpen) }, '🎤 Hum or sing a song…'));
   if (PRJ.list.length) { box.append(h('div', { class: 'tiny muted', style: { margin: '8px 0 2px', fontWeight: 800, letterSpacing: '.06em' } }, 'RECENT')); PRJ.list.slice(0, 6).forEach(r => box.append(h('button', { class: 'btn sm pd-rec' + (r.id === PRJ.cur ? ' on' : ''), onclick: go(() => { if (r.id !== PRJ.cur) projLoad(r.id); }) }, h('span', {}, (r.origin === 'track' || r.track ? '♪ ' : '✎ ') + (r.title || 'Untitled')), h('i', {}, projAgo(r.modified))))); }
   box.append(h('div', { class: 'hr' }), h('button', { class: 'btn sm', onclick: go(libraryOpen) }, '☰ All songs…'), h('button', { class: 'btn sm', disabled: !PRJ.cur || !PRJ.ok, onclick: go(() => projExport(PRJ.cur)) }, '⤓ Save this song as a bundle'), h('button', { class: 'btn sm', onclick: go(() => liOpen()) }, '📋 Paste lyrics…'), h('button', { class: 'btn sm', onclick: go(resetOpen) }, 'Reset…'));
   popover(anchor, box, { style: { width: '290px', maxWidth: '92vw' } });

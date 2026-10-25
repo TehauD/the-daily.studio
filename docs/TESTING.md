@@ -11,6 +11,10 @@
 
 In sandboxes: `CHROMIUM_PATH=/path/to/chromium NO_SANDBOX=1 npm run test:e2e`.
 
+## Hum to Song checks
+
+The e2e suite runs a synthetic hummed melody (16 notes, 25 cents sharp) through the real analysis and arranger and asserts every note, the tempo, key, section list, valid chords, lead-guitar notes in verse, chorus and bridge, style and key re-arrangement, the Ctrl + . stop, and the center-stage defaults. It also drives the **guitar coach** with stand-in guitar readings (tune six strings, play four chords, reach play-along), the **adaptive studio** (four plain tabs for a new visitor, more after use, the Tools override) and the **full-screen center stage** (fills the screen; Studio button returns). axe-core (WCAG A/AA) was run on the first screen, the start panel and the coach in light and dark with no violations. Real voices are noisier: also try humming, singing with words, and a voice memo on the deployed site.
+
 ## Manual checks before a release
 
 Automated tests use a fake microphone and do not reach the third-party camera hosts. Do these on the deployed site:

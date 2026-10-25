@@ -3,7 +3,7 @@
    ============================================================ */
 const DOCK = [['rig', 'Rig'], ['tab', 'Tab'], ['song', 'Song'], ['band', 'Band'], ['fret', 'Fretboard'], ['vis', 'Visuals'], ['stage', 'Stage'], ['neural', 'Neural'], ['stems', 'Stems'], ['tx', 'Transcribe'], ['cam', 'Vision'], ['lab', 'Research'], ['exp', 'Export']];
 const paneVisible = id => DOCK.cur === id || (typeof FLOATS !== 'undefined' && FLOATS.has(id)) || (typeof sideVisible === 'function' && sideVisible(id));
-const dockVisible = () => DOCK.filter(d => !(typeof LAY !== 'undefined' && LAY.hidden.includes(d[0])) && !(typeof sideHosted === 'function' && sideHosted(d[0])));
+const dockVisible = () => DOCK.filter(d => !(typeof LAY !== 'undefined' && LAY.hidden.includes(d[0])) && !(typeof sideHosted === 'function' && sideHosted(d[0])) && (typeof xpAllowed !== 'function' || xpAllowed(d[0])));
 const PANES = {}, SEL = { sec: 0, bar: 0 };
 function buildDock() {
   const dock = $('#dock'), tabs = h('div', { class: 'tabs' });
@@ -18,7 +18,8 @@ bus.on('audio:ready', () => { const p = UI.pending || PRESETS[0]; UI.pending = n
 /* ---------- left sidebar ---------- */
 function buildLeft() {
   const L = $('#left'), names = [['tones', 'Tones'], ['io', 'I/O'], ['theory', 'Theory']], tabs = h('div', { class: 'side-tabs' }), panes = {};
-  names.forEach(([id, n]) => { tabs.append(h('button', { class: 'tab' + (id === 'tones' ? ' on' : ''), 'data-id': id, onclick: () => { $$('.tab', tabs).forEach(t => t.classList.toggle('on', t.dataset.id === id)); Object.entries(panes).forEach(([k, p]) => p.classList.toggle('on', k === id)); } }, n)); panes[id] = h('div', { class: 'pane' + (id === 'tones' ? ' on' : '') }); });
+  const first = 'io';   // input settings first: that is where sound and camera get switched on (the sidebar framework keeps your last choice)
+  names.forEach(([id, n]) => { tabs.append(h('button', { class: 'tab' + (id === first ? ' on' : ''), 'data-id': id, onclick: () => { $$('.tab', tabs).forEach(t => t.classList.toggle('on', t.dataset.id === id)); Object.entries(panes).forEach(([k, p]) => p.classList.toggle('on', k === id)); } }, n)); panes[id] = h('div', { class: 'pane' + (id === first ? ' on' : '') }); });
   L.append(tabs, ...Object.values(panes));
   buildTones(panes.tones); buildIO(panes.io); buildTheory(panes.theory);
 }
@@ -38,7 +39,7 @@ function renderTones() {
   if (!l.children.length) l.append(h('div', { class: 'muted small', style: { padding: '8px' } }, 'No tones match.'));
 }
 function buildIO(p) {
-  UI.inSel = h('select', { class: 'in', onchange: async e => { await startAudio(); const ok = await openInput(e.target.value); if (ok) await listDevices(); renderDevices(); } }); UI.outSel = h('select', { class: 'in', onchange: e => setOutputDevice(e.target.value) });
+  UI.inSel = h('select', { class: 'in', 'aria-label': 'Audio input device', onchange: async e => { await startAudio(); const ok = await openInput(e.target.value); if (ok) await listDevices(); renderDevices(); } }); UI.outSel = h('select', { class: 'in', 'aria-label': 'Audio output device', onchange: e => setOutputDevice(e.target.value) });
   const chSeg = h('div', { class: 'seg' }, [['L', 'In 1 / L'], ['R', 'In 2 / R'], ['sum', 'Both']].map(([v, t]) => h('button', { 'data-v': v, class: CFG.ch === v ? 'on' : '', onclick: e => { setChannelMode(v); $$('button', chSeg).forEach(b => b.classList.toggle('on', b === e.target)); } }, t)));
   const trim = mkKnob({ key: 'trim', label: 'Input Trim', min: -24, max: 36, def: 0, step: .5, unit: ' dB', onChange: v => { if (E.ready) tc(E.inTrim.gain, fromDB(v), .02); } });
   const mon = h('button', { class: 'tog' + (CFG.monitor ? ' on' : ''), onclick: e => { setMonitor(!CFG.monitor); e.target.classList.toggle('on', CFG.monitor); } }, 'Monitor'); bus.on('monitor', on => mon.classList.toggle('on', on));
@@ -52,9 +53,15 @@ function buildIO(p) {
     h('div', { class: 'card' }, h('h4', {}, 'Latency lab'), h('div', { class: 'card-b' }, UI.lat2, h('div', { class: 'hr' }), h('button', { class: 'btn sm primary', onclick: measureRTT }, '⏱ Run loopback test'), h('div', { style: { height: '6px' } }), UI.latRes, h('div', { class: 'row', style: { marginTop: '6px' } }, h('span', { class: 'small' }, 'RTT used for alignment (ms):'), offs), h('p', { class: 'tiny muted' }, 'Patch a cable from the interface’s Line Out into an input (or hold a mic near a speaker). The test emits six 8 ms chirps and cross-correlates them to find the true round trip. That value shifts recorded takes so they land on the grid, and corrects timing statistics.'))),
     h('div', { class: 'card' }, h('h4', {}, 'MIDI controllers'), h('div', { class: 'card-b' }, UI.midiList, h('div', { class: 'row', style: { marginTop: '6px' } }, h('button', { class: 'btn sm', onclick: initMIDI }, 'Enable MIDI')), h('p', { class: 'tiny muted' }, 'Right-click any knob, then move a CC to bind it (wah pedal, whammy, faders…). Program Change selects tones.'))),
     h('div', { class: 'card' }, h('h4', {}, 'Focusrite / low-latency notes'), h('div', { class: 'card-b tiny muted' }, h('p', { style: { margin: '0 0 6px' } }, 'Browsers can’t use ASIO. Chrome/Edge on Windows use WASAPI, macOS uses CoreAudio. Set the smallest stable buffer in Focusrite Control (Windows) / the interface’s driver panel.'), h('p', { style: { margin: '0 0 6px' } }, 'Plug the guitar into the front Inst jack (Input 1 or 2). Run the Auto-detect. Keep the trim so peaks sit around −12 to −6 dBFS.'), h('p', { style: { margin: 0 } }, 'For zero-latency monitoring, turn on the interface’s Direct Monitor and switch off Monitor here — recording and analysis still work.'))));
+  const camCard = h('div', { class: 'card' }, h('h4', {}, 'Camera'), h('div', { class: 'card-b' },
+    UI.camSel2 = h('select', { class: 'in', 'aria-label': 'Camera', style: { fontFamily: 'var(--sans)' }, onchange: e => { CFG.camDev = e.target.value; saveCfg(); if (CAM.on) startCam(); } }),
+    h('div', { class: 'row', style: { marginTop: '6px' } }, h('button', { class: 'btn sm' + (VZ.cam ? ' on' : ''), id: 'ioCamBtn', onclick: () => vzCamPress() }, '📷 Camera backdrop')),
+    h('div', { class: 'tiny muted', style: { marginTop: '4px' } }, 'Puts you in front of the hexagons. The picture stays on this device.')));
+  p.insertBefore(camCard, p.children[1] || null); refreshCamList();
   bus.on('devices', renderDevices); bus.on('input', renderDevices); buildVoxCard(p);
 }
 function renderDevices() {
+  refreshCamList();
   const fill = (sel, list, cur, none) => { sel.innerHTML = ''; if (!list.length) sel.append(h('option', { value: '' }, none)); list.forEach((d, i) => sel.append(h('option', { value: d.deviceId, selected: d.deviceId === cur }, d.label || ('Input ' + (i + 1) + (E.hasInput ? '' : ' (name hidden until mic allowed)'))))); };
   const cur = (E.inSettings && E.inSettings.deviceId) || CFG.inDev, seen = new Set(), ins0 = E.devs.in.slice(); if (E.hasInput && E.stream && cur && !ins0.some(d => d.deviceId === cur)) ins0.unshift({ deviceId: cur, label: (E.stream.getAudioTracks()[0] || {}).label || 'Active input', groupId: '' });
   const ins = ins0.filter(d => { if (d.deviceId === 'communications') return false; const k = (d.groupId || '') + '|' + (d.label || d.deviceId).replace(/^(Default|Communications) - /, ''); if (d.deviceId === 'default') return true; if (seen.has(k) && d.deviceId !== cur) return false; seen.add(k); return true; });

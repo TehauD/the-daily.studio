@@ -2,28 +2,32 @@
   <radialGradient id="kcap" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="var(--raise)"/><stop offset="1" stop-color="var(--bg2)"/></radialGradient>
 </defs></svg>
 <div id="app">
-  <div id="boot">
-    <div class="boot-card">
+  <div id="boot" class="boot-live">
+    <canvas id="bootHex" aria-hidden="true"></canvas>
+    <div class="boot-card boot-simple">
       <div class="row" style="gap:14px">
         <svg viewBox="0 0 100 100" width="64" height="64" aria-hidden="true"><path d="M50 6L88.11 28L88.11 72L50 94L11.89 72L11.89 28Z" fill="none" stroke="var(--accent)" stroke-width="3.3" stroke-linejoin="miter"/><path d="M11.89 28L50 50L88.11 28M50 50L50 94" fill="none" stroke="var(--accent)" stroke-width="2.1" stroke-linecap="butt" stroke-linejoin="miter"/><path d="M35 83.29V77.29M40 86.18V76.18M45 89.06V75.06M55 89.06V75.06M60 86.18V76.18M65 83.29V77.29" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="butt"/><path transform="translate(50 29.5)" d="M-6.4 -6.8H6.4M0 -6.8V7.6" fill="none" stroke="var(--text)" stroke-width="3" stroke-linejoin="miter" stroke-linecap="butt"/><path transform="translate(29.6 55.4)" d="M-3.8 -7.6H.4A7.8 7.6 0 0 1 .4 7.6H-3.8Z" fill="none" stroke="var(--text)" stroke-width="3" stroke-linejoin="miter" stroke-linecap="butt"/><path transform="translate(68.4 55.4)" d="M5 -4.6C4.1 -6.8 2.3 -7.8 0 -7.8C-3.2 -7.8 -5 -6.3 -5 -4C-5 -1.8 -3 -.9 0 0C3 .9 5 1.8 5 4.1C5 6.4 3.2 7.8 0 7.8C-2.3 7.8 -4.1 6.9 -5 4.9" fill="none" stroke="var(--text)" stroke-width="3" stroke-linejoin="miter" stroke-linecap="butt"/></svg>
-        <h1><span>the-daily</span><span class="tld">.studio</span><small>Write. Play. Create. · MVP 1 · MIT</small></h1>
+        <h1><span>the-daily</span><span class="tld">.studio</span><small>Write. Play. Create.</small></h1>
       </div>
-      <p class="muted" style="margin:14px 0 0;font-size:13.5px">A full guitar workstation in one web page: low-latency amp &amp; pedal rig, a DAW timeline with a backing band, a tab / chord / lyric composer that exports Ultimate&nbsp;Guitar-ready text, polyphonic audio-to-tab transcription, backing-track stem separation, any tuning, a webcam fretting-hand vision lab, and audio-reactive visuals.</p>
-      <div class="boot-grid">
-        <div><b>LOW-LATENCY RIG</b><span>16 reorderable FX units, 5 amp models, procedural cab / IR loading, 6 reverbs, worklet pitch-shift, gate and flanger. 27 presets.</span></div>
-        <div><b>COMPOSE END-TO-END</b><span>Tab grid with techniques, auto-voicing for any tuning, lyrics with rhyme/syllable analysis, UG / ChordPro / MIDI / WAV / JSON export with a lint report.</span></div>
-        <div><b>RESEARCH-GRADE</b><span>YIN f0 with cents, vibrato, HFR, key &amp; chord detection, timing jitter vs. click, loopback latency measurement, CSV session log.</span></div>
-        <div><b>VISION + AUDIO FUSION</b><span>Calibrate your neck, track the fretting hand (optional MediaPipe), and cross-check finger positions against what you actually played.</span></div>
-      </div>
-      <div class="row" style="gap:18px;margin-bottom:12px" id="bootChecks"></div>
-      <div class="row">
-        <button class="btn primary" id="bootNoMic" style="padding:10px 22px;font-size:14px">▶ Start · microphone stays off</button>
-        <button class="btn" id="bootGo" style="padding:10px 16px">🎙 Start and connect my input</button>
-        <span class="grow"></span>
-        <div class="seg" id="bootTheme"><button data-t="light" class="on">Light</button><button data-t="dark">Dark</button></div>
-      </div>
-      <p class="muted tiny" style="margin:12px 0 0">Tip: in CodePen open <b>Change View → Full Page / Debug</b> for best audio performance, allow microphone &amp; camera access, and use headphones. With a Focusrite, set its buffer size in Focusrite Control (or your OS) as low as is stable, and prefer the interface's hardware Direct Monitor for zero-latency monitoring (mute the in-app monitor then).</p>
-      <p class="muted tiny boot-phone" style="margin:8px 0 0"><b>On a phone or tablet:</b> use headphones. In-app monitoring starts off to avoid speaker feedback (switch it on in ⋯ More). Landscape suits the Stage and Neural views, and ⋯ More ▸ Install app puts the-daily.studio on your home screen.</p>
+      <p class="boot-lead">Hum a melody. Get a song.</p>
+      <p class="boot-sub">Hum a tune or pick up a guitar and hear a whole band play your song. No experience needed.</p>
+      <button class="btn primary boot-big" id="bootHum">● Begin</button>
+      <p class="muted tiny" style="margin:10px 0 0">Next, your browser asks to use your camera so you can see yourself on stage. Nothing leaves your device.</p>
+      <ul class="boot-feats" aria-label="What is inside">
+        <li><b>Stem splitting</b><span>Split any track and play over the backing.</span></li>
+        <li><b>Guitar + microphone</b><span>Record both at once on a two-channel interface.</span></li>
+        <li><b>Tab maker</b><span>Turn what you play into tablature, chords and lyrics.</span></li>
+        <li><b>Neural graph and visuals</b><span>See your song as a living map and hexagons.</span></li>
+      </ul>
+      <details class="boot-more"><summary>Other ways to start</summary>
+        <div class="row" style="gap:10px;margin:10px 0">
+          <button class="btn" id="bootNoMic" style="padding:10px 18px">▶ Start with camera and mic off</button>
+          <button class="btn" id="bootGo" style="padding:10px 16px">🎙 Start and connect my input</button>
+          <span class="grow"></span>
+          <div class="seg" id="bootTheme"><button data-t="light" class="on">Light</button><button data-t="dark">Dark</button></div>
+        </div>
+        <div class="row" style="gap:18px" id="bootChecks"></div>
+      </details>
     </div>
   </div>
   <header id="top">

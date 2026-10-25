@@ -6,6 +6,28 @@ Contents: [Getting sound](#getting-sound-in-and-out) · [Tones and the Rig](#ton
 
 ---
 
+## Hum to Song (start here)
+
+**The first screen.** Press **● Begin**. The app goes full screen with your camera and the hexagons, and offers **● Hum or sing** or **🎸 I have a guitar**. Prefer to start another way? Under them: **a song file** (it is split into stems and the chords fill in), **a blank page** or **the demo song**. **＋ New song** (top right of the stage) brings this panel back; **⚙ Inputs** opens I/O, where you choose the microphone and camera once and the app remembers. "Start with camera and mic off" (under Other ways to start) never asks for either. ✕ Studio (top right) returns to the normal studio any time; ■ Stop audio stops all sound and releases the microphone.
+
+**I have a guitar.** The coach walks you through three steps: **1 · Tune** each string (pluck it open; the bar fills when it is in tune), **2 · Learn the chords** of your song one at a time (the diagram shows where your fingers go; it says what it hears), **3 · Play along** with the band. You need an audio input for the guitar (the browser asks when you press the button). Skip any step with the buttons.
+
+**The studio grows with you.** New visitors see four tabs with plain names. As you use the studio (open Studio view, edit, record, connect an input) more tabs appear. **Tools** on the tab row changes this: Automatic, Simple, More tools, Everything.
+
+The fastest way in: **hum or sing a few seconds of melody and get a whole song back.**
+
+1. On the first screen (or ☰ Songs ▸ 🎤 Hum or sing a song…, or More on a phone) press **● Hum or sing**. Your browser asks for the microphone, and for the camera if "Show me center stage" is ticked (it is by default). Nothing is asked before you press the button.
+2. Hum or sing for 10–30 seconds. No words or instrument needed. The big letter shows the note you are singing. Press **■ Stop**. You can also choose a voice memo or audio file instead.
+3. In a few seconds the app has found your notes, tempo and key, chosen chords, built **Intro, Verse, Chorus, Verse, Chorus, Bridge, Chorus, Outro**, and starts playing it with a band. Your melody plays as the lead guitar.
+4. Change anything in the panel at the bottom and it re-builds right away: **Style** (Folk, Pop, Rock, Ballad, Dance), **Tempo**, **Key** and mode, **Song shape** (full song or quick verse + chorus), and 🎲 **Try different chords**. **👂 Hear my hum** plays your original recording.
+5. Make it yours: **✎ Add lyrics**, edit any chord, or **🎛 Open in the studio** for the rig, tab, stems and export. The song is saved in My songs automatically.
+
+**Center stage.** With "Show me center stage" on, the app opens the Visuals tab with your camera behind the hexagons, "me in front" (green screen), so you see yourself while you sing. Turn it off with **📷 Camera off** in the panel or the **📷 Camera backdrop** button in Visuals. The person cut-out needs a small model from the internet the first time; offline it falls back to an outline look.
+
+**Microphone.** The Hum screen uses the same microphone as the Audio button (names appear after you first allow access). **Ctrl/Cmd + .** stops a recording in progress and releases the microphone.
+
+**What it can and cannot do.** It tracks one voice at a time, so hum single notes in a quiet room. It assumes 4/4. The song is arranged by rules from music theory and played by the app's own band; it is not an AI audio model, and nothing is sent anywhere. The first tab you see is the stage; after that the app remembers the last tab you used.
+
 ## Getting sound in and out
 
 **Audio button and kill switch.** The app never asks for your microphone on its own. Start with the microphone off, or connect it from the start screen. The **Audio** button in the header (light: grey off, green live, amber no input, red killed) opens a panel to start the engine, choose and connect an input, toggle monitoring and optionally reconnect your last input on open. **Ctrl/Cmd + .** (or the red button in that panel) kills audio instantly: playback and recording stop, monitoring turns off, the microphone is released. Press Resume to continue. On a phone, find it in More.
@@ -227,3 +249,7 @@ Open the **◐** button (or Settings ▸ Customize appearance…; on a phone Mor
 - **Density, corners, surfaces and text size** change spacing, shape and depth.
 - **Typeface**: the default is Inter with Montserrat headings, built into the page. The other choices use fonts installed on your device (nothing is downloaded). **High contrast** strengthens text and borders. **Colour-blind safe** swaps charts, meters, visuals and status lights to a palette that stays distinguishable for red–green and blue–yellow colour-blindness.
 - **Reset appearance** returns to the defaults.
+
+## Support
+
+The app is free and open source. If it helps you make something, a coffee keeps it going (never expected). The link, when set, is in About inside the app.

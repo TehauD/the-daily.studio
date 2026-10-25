@@ -37,6 +37,13 @@ Catch an idea · find the chords · record guitar and vocals · split a track in
 
 ## What it is
 
+> **Hum a melody. Get a song.** Press **● Hum or sing**, hum 10–30 seconds, and the app finds your notes, key and tempo, writes the chords, builds intro, verses, choruses, bridge and outro, and plays it back with a band, with you on camera center stage. Then change the style, edit anything, add lyrics, or record real guitar. No account, no upload, no experience needed. See the [user guide](docs/USER_GUIDE.md#hum-to-song-start-here).
+
+<p align="center"><img src="docs/screenshots/20-boot.png" alt="The first screen: a living hexagon field and one Begin button" width="860"></p>
+<p align="center"><img src="docs/screenshots/21-center-stage.png" alt="Center stage: you in front of the hexagons, with Hum or sing and I have a guitar" width="860"></p>
+<p align="center"><img src="docs/screenshots/22-guitar-coach.png" alt="The guitar coach teaching the first chord" width="860"></p>
+<p align="center"><img src="docs/screenshots/19-hum-stage.png" alt="Hum to Song: listening on the stage with the live note" width="860"></p>
+
 the-daily.studio is a songwriter's workspace and full guitar workstation that runs **entirely in your browser**: plug in your guitar (or a microphone), choose a tone, and play along with a backing band while the app listens, analyses, transcribes and visualises what you play.
 
 It began as a guitar lab and grew into a place to turn a hum into a finished song. The numbers behind your playing stay available: the numbers behind your playing (pitch to the cent, timing against a click, vibrato, attack harshness, latency) are visible, exportable and honest about their uncertainty.
@@ -120,6 +127,7 @@ The ◐ button (top right; **More ▸ Appearance** on a phone) opens a drawer th
 
 ## Your first five minutes
 
+0. **Fastest start:** press **Start**, then **● Hum or sing**. A few seconds later you have a song.
 1. **Press Start** on the welcome card. If your interface does not appear, open **I/O** in the left sidebar, pick it, and press the refresh button.
 2. **Take the tour.** Accept the offer that appears on first run, or press **?** and choose **Take the guided tour**. It highlights each key area in about two minutes.
 3. **Pick a tone** from **Tones** (left) and play. Watch the **Tuner** (right) and the level meters; aim for peaks around −12 to −6 dBFS.

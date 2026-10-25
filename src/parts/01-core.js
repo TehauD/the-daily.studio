@@ -4,7 +4,8 @@
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
 const VERSION = '1.7.0';
-const BRAND = { name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://the-daily.studio/journal/' };
+/* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
+const BRAND = { support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://the-daily.studio/journal/' };
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 const SVGNS = 'http://www.w3.org/2000/svg';
@@ -270,6 +271,7 @@ const histStack = { u: [], r: [] };
 let saveT = 0;
 function snap() { return JSON.stringify(S); }
 function commit(push = true) {
+  if (push && typeof xpEdit === 'function') xpEdit();
   if (push) { histStack.u.push(histStack.cur || snap()); if (histStack.u.length > 80) histStack.u.shift(); histStack.r.length = 0; }
   histStack.cur = snap();
   bus.emit('song');
@@ -284,7 +286,7 @@ function stringLabels() { return S.tuning.map(m => tunPc(m)).reverse(); }
 const tunNote = m => tunPc(m) + (Math.floor(m / 12) - 1);
 const tunShort = () => (/^Custom/.test(S.tuningName || '') ? S.tuning.map(m => tunPc(m)).join(' ') : (S.tuningName || '').split(' (')[0].split(' · ')[0]) + (S.capo ? ' · capo ' + S.capo : '');
 function tunMatch(arr) { const k = Object.keys(TUNINGS).find(n => TUNINGS[n].every((m, i) => m === arr[i])); return k || 'Custom (' + arr.map(m => tunPc(m)).join(' ') + ')'; }
-function setTuning(arr, name) { S.tuning = arr.map(m => clamp(Math.round(m), 24, 79)); S.tuningName = name || tunMatch(S.tuning); S.voicePref = {}; if (!name && !TUNINGS[S.tuningName]) S.tuningName = 'Custom (' + S.tuning.map(m => tunPc(m)).join(' ') + ')'; commit(); }
+function setTuning(arr, name) { xpSignal(2); S.tuning = arr.map(m => clamp(Math.round(m), 24, 79)); S.tuningName = name || tunMatch(S.tuning); S.voicePref = {}; if (!name && !TUNINGS[S.tuningName]) S.tuningName = 'Custom (' + S.tuning.map(m => tunPc(m)).join(' ') + ')'; commit(); }
 
 /* tab note helpers */
 const noteMidi = n => S.tuning[n.st] + S.capo + (typeof n.f === 'number' ? n.f : 0);

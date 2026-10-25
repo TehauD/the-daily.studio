@@ -11,7 +11,7 @@ Design notes for how the-daily.studio treats the microphone and sound output.
 
 ## Start screen
 
-* **▶ Start · microphone stays off** (primary): opens the app with the audio engine idle.
+* **▶ Start with camera and mic off** (primary): opens the app with the audio engine idle.
 * **🎙 Start and connect my input** (secondary): starts the engine and asks the browser for the microphone.
 
 ## Audio panel (header button; on phones, More ▸ Audio · kill switch)
@@ -32,6 +32,10 @@ In order: stops playback and recording, turns monitoring off, stops every input 
 * `src/parts/10-main.js`: boot (no auto-connect unless `CFG.autoIn && CFG.inDev`), start-screen buttons, status line.
 * `src/parts/01-core.js`: defaults `monitor: false`, `autoIn: false`.
 * Tests: `test/e2e.cjs` "audio control" block.
+
+## Hum to Song
+
+The Hum screen has its own short recording (microphone only, optional camera) that does not use the audio engine. It follows the same rules: nothing is requested until **● Hum or sing** is pressed, the microphone is the one chosen for the Audio button, the recording lives in memory, and **Ctrl/Cmd + .** discards it and releases the microphone. Code: `src/parts/31-hum-engine.js` (analysis and arrangement) and `32-hum-ui.js` (screens).
 
 ## Upgrading users
 

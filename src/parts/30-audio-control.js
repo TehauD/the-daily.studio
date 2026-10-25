@@ -8,6 +8,7 @@ function closeInput() {
   E.stream = null; E.src = null; E.hasInput = false; bus.emit('input', null);
 }
 function audioKill(quiet) {
+  try { if (typeof humAbort === 'function') humAbort(); } catch (e) { }
   try { if (T.rec || T.playing) stopPlay(false); } catch (e) { }
   try { if (CFG.monitor) setMonitor(false); } catch (e) { }
   closeInput(); try { if (E.ctx && E.ctx.state === 'running') E.ctx.suspend(); } catch (e) { }

@@ -15,7 +15,8 @@ Release 1 (v1.7.0). The app is a static page that runs entirely in the visitor's
 | --- | --- | --- |
 | Microphone | Only after the user presses **Connect** / "Start and connect my input" (or has opted in to "reconnect my last input on open") | Header **Audio** button; **Ctrl/Cmd + .** kills audio and releases the microphone; browser site settings |
 | Audio output and monitoring | Monitoring is **off by default** | Audio panel ▸ "Hear myself" |
-| Camera | Only when a Visuals / Vision camera feature is started | Stop button; browser site settings |
+| Microphone for Hum to Song | Only when the person presses **● Hum or sing**; recorded in memory, never saved or uploaded | Stop; Ctrl/Cmd + . discards the recording and releases the microphone |
+| Camera | Only when a Visuals / Vision camera feature is started, or when **● Begin** (first screen) or **Hum or sing** is pressed with "center stage" ticked (default); the first screen says so before the button is pressed | Camera off / backdrop button; browser site settings |
 | MIDI | Only when the user enables MIDI | Browser site settings |
 | Location, payment, USB, serial | Never (disabled by Permissions-Policy) | n/a |
 
@@ -27,7 +28,7 @@ Release 1 (v1.7.0). The app is a static page that runs entirely in the visitor's
 | Songs, takes and stems | IndexedDB database `the-daily-songs` | No | Reset, or deleting a song |
 | Offline copy of the app | Cache Storage `daily-songs-<version>` (service worker) | No | Reset, or a new version |
 | Backups and exports | Files the user downloads | Only where the user puts them | n/a |
-| Camera frames and microphone audio | Memory only while in use | No | Stop, kill switch, closing the tab |
+| Camera frames and microphone audio (including a hum recording) | Memory only while in use; the song built from a hum keeps only the notes and chords | No | Stop, kill switch, closing the tab |
 | The Daily entries | `localStorage` keys beginning `daily` | Only to a provider the user configures | The Daily's own controls |
 
 The studio's reset removes only the studio's `fw.*` data and its own caches; it leaves The Daily alone.

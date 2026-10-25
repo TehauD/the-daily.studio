@@ -71,7 +71,7 @@ function buildVisPane() {
   const bar = h('div', { class: 'row', style: { gap: '8px', marginBottom: '8px', flexWrap: 'wrap' } },
     h('div', { class: 'seg' }, VMODES.map(([k, n]) => h('button', { class: k === VZ.mode ? 'on' : '', 'data-m': k, onclick: e => { VZ.mode = k; CFG.visMode = k; saveCfg(); VZ.spec = null; VZ.hexes = null; $$('.seg [data-m]', bar).forEach(b => b.classList.toggle('on', b === e.target)); } }, n))),
     h('select', { class: 'in', style: { width: 'auto', fontFamily: 'var(--sans)' }, title: 'Analysis source', onchange: e => { VZ.src = e.target.value; } }, [['rig', 'Source: rig output'], ['master', 'Source: master mix'], ['di', 'Source: dry DI']].map(([v, n]) => h('option', { value: v }, n))),
-    h('button', { class: 'btn sm', onclick: e => { VZ.cam = !VZ.cam; e.target.classList.toggle('on', VZ.cam); if (VZ.cam && !CAM.video) toast('Start the camera in the Vision tab to use it as a backdrop', 'warn'); } }, '📷 Camera backdrop'), camFxBox(),
+    h('button', { class: 'btn sm' + (VZ.cam ? ' on' : ''), id: 'vzCamBtn', title: 'Put yourself center stage: turns the camera on behind the visuals', onclick: () => vzCamPress() }, '📷 Camera backdrop'), camFxBox(),
     h('button', { class: 'btn sm', onclick: () => { const w = UI.vwrap; (document.fullscreenElement ? document.exitFullscreen() : w.requestFullscreen && w.requestFullscreen()); } }, '⛶ Stage mode'));
   UI.vwrap = h('div', { class: 'vwrap', style: { flex: 1, minHeight: '320px' } }, UI.vcv = h('canvas', { class: 'vcanvas', style: { height: '100%', minHeight: '320px' } }));
   p.append(bar, UI.vwrap); new ResizeObserver(() => { const d = (window.devicePixelRatio || 1) * (CFG.vq || 1), w = UI.vcv.clientWidth, hh = UI.vcv.clientHeight; if (w && (UI.vcv.width !== Math.floor(w * d) || UI.vcv.height !== Math.floor(hh * d))) { UI.vcv.width = Math.floor(w * d); UI.vcv.height = Math.floor(hh * d); VZ.spec = null; VZ.hexes = null; } }).observe(UI.vwrap);
@@ -110,7 +110,7 @@ function drawHex(g, W, H, fd, bh, lvl, C, pulse) {
     const x = c * dx + (r % 2 ? dx / 2 : 0) - dx / 2, y = r * dy - R / 2, d = Math.hypot(x - cx, y - cy) / maxd, ang = (Math.atan2(y - cy, x - cx) + Math.PI) / (2 * Math.PI);
     const f = fmin * Math.exp(lr * clamp(d * .92 + ((ang * 5) % 1) * .08, 0, 1)), k = clamp(Math.round(f / bh), 1, fd.length - 1), v = lvl(Math.max(fd[k], fd[k + 1] || -120)), i = r * cols + c;
     VZ.sm[i] = Math.max(v, VZ.sm[i] * .86 - .004); const s = VZ.sm[i], ring = pulse * Math.max(0, 1 - Math.abs(d - (1 - pulse) * 1.05) * 6);
-    const a = clamp(s * 1.15 + ring * .8, 0, 1); if (a < .03) { g.strokeStyle = 'rgba(120,170,170,.07)'; g.lineWidth = 1; hexPath(g, x, y, R * .94); g.stroke(); continue; }
+    const amb = .2 * Math.pow(Math.max(0, Math.sin(d * 11 - performance.now() / 780)), 2) * Math.max(0, 1 - d * .9), a = clamp(s * 1.15 + ring * .8 + amb, 0, 1); if (a < .03) { g.strokeStyle = 'rgba(120,170,170,.07)'; g.lineWidth = 1; hexPath(g, x, y, R * .94); g.stroke(); continue; }
     g.fillStyle = mixc(C.a, C.b, clamp(s * 1.4 - .15 + ring, 0, 1), a * .92); hexPath(g, x, y, R * (.5 + .46 * Math.min(1, a))); g.fill();
   }
 }
@@ -171,7 +171,7 @@ function buildCamPane() {
     h('div', { class: 'card' }, h('h4', {}, 'Fusion statistics'), h('div', { class: 'card-b' }, UI.camStats = h('div', { class: 'stat-grid' }), h('div', { style: { marginTop: '8px' } }, h('div', { class: 'small muted' }, 'Fretting-hand usage by fret (frames)'), UI.camChart = h('canvas', { class: 'chart' })))));
   CAM.want = 'hand'; refreshCamList(); bus.on('devices', refreshCamList);
 }
-function refreshCamList() { if (!UI.camSel) return; UI.camSel.innerHTML = ''; UI.camSel.append(h('option', { value: '' }, 'Default camera')); (E.devs.cam || []).forEach((d, i) => UI.camSel.append(h('option', { value: d.deviceId, selected: d.deviceId === CFG.camDev }, d.label || 'Camera ' + (i + 1)))); }
+function refreshCamList() { [UI.camSel, UI.camSel2].forEach(sel => { if (!sel) return; sel.innerHTML = ''; sel.append(h('option', { value: '' }, 'Default camera')); (E.devs.cam || []).forEach((d, i) => sel.append(h('option', { value: d.deviceId, selected: d.deviceId === CFG.camDev }, d.label || 'Camera ' + (i + 1)))); }); }
 async function startCam() {
   stopCam(true);
   try {

@@ -51,7 +51,7 @@ async function boot() {
   applyAppearance(); loadInitialSong();
   buildHeader(); buildDock(); buildLeft(); buildRig(); buildTabPane(); buildSongPane(); buildBandPane(); buildFretPane(); buildVisPane(); buildCamPane(); buildLabPane(); buildExportPane(); buildTxPane(); buildStagePane(); buildNeuralPane(); buildStemsPane(); buildVersionCard(); buildCalCard(); buildBoardExtras(); buildRight(); buildSongbar(); buildSides(); buildLayout(); buildTimeline(); buildStatus(); buildMobile(); if (typeof buildTouch === 'function') buildTouch();
   try { if (window.self !== window.top) { const w = h('div', { style: { background: 'color-mix(in srgb,var(--warn) 22%,transparent)', border: '1px solid var(--warn)', borderRadius: '8px', padding: '8px 10px', fontSize: '12px', margin: '0 0 12px', fontWeight: 600 } }, '⚠ This page is embedded in a frame (editor preview). Browsers usually block the microphone, camera and MIDI there, so no audio devices will appear. Open it in its own tab: CodePen → Change View → Full Page (or Debug), or open the standalone file directly in Chrome/Edge.'); const c = $('#bootChecks'); c.parentNode.insertBefore(w, c); } } catch (e) { }
-  dockGo('rig'); syncTransport(); try { runChecks(); } catch (e) { console.warn(e); }
+  dockGo(CFG.startTab || 'vis'); syncTransport(); try { runChecks(); } catch (e) { console.warn(e); }
   $$('#bootTheme button').forEach(b => { b.classList.toggle('on', b.dataset.t === CFG.theme); b.onclick = () => setTheme(b.dataset.t); });
   const hide = () => { const b = $('#boot'); if (!b) return; b.style.opacity = 0; setTimeout(() => { b.remove(); bus.emit('booted'); }, 350); };
   // boot overlay: live connection status + input picker
@@ -60,19 +60,20 @@ async function boot() {
   const say = (m, c) => { if (m) { bstat.textContent = m; bstat.style.color = c || ''; return; } const t = E.stream && E.stream.getAudioTracks()[0]; bstat.textContent = E.hasInput ? '● Audio input connected: ' + (t ? t.label : 'device') + ' — press Start' : '○ ' + (E.lastInErr || 'Microphone is off. Nothing is requested until you press a button.'); bstat.style.color = E.hasInput ? 'var(--ok)' : 'var(--warn)'; };
   const fillBootIn = () => { const cur = (E.inSettings && E.inSettings.deviceId) || ''; bsel.innerHTML = ''; const list = E.devs.in.filter(d => d.deviceId !== 'communications'); list.forEach((d, i) => bsel.append(h('option', { value: d.deviceId, selected: d.deviceId === cur }, d.label || ('Input ' + (i + 1))))); bsel.style.display = list.length ? '' : 'none'; };
   const startBtn = $('#bootGo'); startBtn.textContent = '🎙 Start and connect my input';
-  const finish = async () => { startBtn.disabled = true; startBtn.textContent = 'Starting…'; try { await startAudio(); if (!E.hasInput) await pickInput(); initMIDI(); } catch (e) { console.error(e); toast('Startup problem: ' + e.message, 'bad'); } hide(); renderDevices && renderDevices(); };
+  const finish = async () => { startBtn.disabled = true; startBtn.textContent = 'Starting…'; HUM.cam0 = true; try { await startAudio(); if (!E.hasInput) await pickInput(); initMIDI(); } catch (e) { console.error(e); toast('Startup problem: ' + e.message, 'bad'); } hide(); renderDevices && renderDevices(); };
   startBtn.onclick = finish;
   window.__fwAuto = (async () => {
     say();   // nothing is started or requested until you press a button (or tick “Reconnect my last input” in Audio)
     try { await listDevices(); fillBootIn(); if (CFG.autoIn && CFG.inDev) { say('Reconnecting your last input… allow the microphone when your browser asks.'); await startAudio(); await pickInput(); fillBootIn(); say(); renderDevices(); if (E.hasInput && E.ctx.state === 'running') hide(); } } catch (e) { console.warn(e); say('Could not connect: ' + e.message, 'var(--bad)'); }
   })();
   ['pointerdown', 'keydown'].forEach(ev => document.addEventListener(ev, () => { if (E.ctx && E.ctx.state === 'suspended') E.ctx.resume().catch(() => { }); }, true));
-  $('#bootNoMic').onclick = async () => { try { await startAudio(); listDevices(); } catch (e) { console.error(e); toast('Audio could not start: ' + e.message, 'bad'); } hide(); };
+  $('#bootHum').onclick = () => { $('#bootNoMic').onclick(); HUM.cam0 = true; };
+  $('#bootNoMic').onclick = async () => { HUM.cam0 = false; try { await startAudio(); listDevices(); } catch (e) { console.error(e); toast('Audio could not start: ' + e.message, 'bad'); } hide(); };
   setInterval(anaTick, 33); requestAnimationFrame(frame);
   window.addEventListener('beforeunload', () => { try { store.set('song', S); saveCfg(); } catch (e) { } });
   document.addEventListener('visibilitychange', () => { if (!document.hidden && E.ctx && E.ctx.state === 'suspended') E.ctx.resume(); });
   if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener('devicechange', () => { listDevices(); });
   bus.emit('song');
-  if (/[?&]debug\b/.test(location.search)) window.__daily = { get S() { return S; }, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc };   // test hook, only with ?debug
+  if (/[?&]debug\b/.test(location.search)) window.__daily = { get S() { return S; }, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive };   // test hook, only with ?debug
   projInit().catch(e => { console.warn('library', e); PRJ.ready = true; if (PRJ.wantStart) startMaybe(); });
 }

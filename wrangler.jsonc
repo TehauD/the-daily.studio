@@ -2,6 +2,8 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "the-daily-studio",
   "compatibility_date": "2026-10-01",
+  // Serves https://the-daily-studio.<your-subdomain>.workers.dev. The custom domain is attached in the dashboard (Settings > Domains & Routes).
+  "workers_dev": true,
   // Runs on every `wrangler deploy`, so the dist/ folder always exists even if the dashboard build command is wrong.
   "build": { "command": "npm run build:site && npm run verify:site" },
   "assets": {

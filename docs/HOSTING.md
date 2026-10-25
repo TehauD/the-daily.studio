@@ -44,7 +44,7 @@ Songs are stored per web address. People who used another address will not see t
 
 Open the site in Chrome or Edge:
 
-1. The start card appears. **Start · microphone stays off** opens the app with no permission prompt.
+1. The start card appears. **Start with camera and mic off** opens the app with no permission prompt.
 2. Header **Audio** button ▸ **Connect** asks for the microphone; the light turns green. **Ctrl + .** turns it off again.
 3. **?** ▸ **Take the guided tour** runs through all steps.
 4. The console shows no red errors, and the Network tab shows no requests to other hosts until you use camera hand tracking or a person-cutout look.
