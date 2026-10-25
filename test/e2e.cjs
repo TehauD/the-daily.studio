@@ -136,7 +136,7 @@ function wav(L, sr) { const n = L.length, b = Buffer.alloc(44 + n * 2); b.write(
     const hs = links.map(l => l.h);
     ok(hs.includes('https://github.com/TehauD') && hs.includes('https://www.linkedin.com/in/tehau/'), 'Help ▸ About links to github.com/TehauD and linkedin.com/in/tehau');
     ok(links.every(l => /noopener/.test(l.r) && l.t === '_blank'), 'every external link opens in a new tab with rel=noopener');
-    ok(/MIT/.test(await page.$eval('#help .ab', e => e.textContent)) && /MediaPipe/.test(await page.$eval('#help .ab', e => e.textContent)) && /Built from a lifelong love of music/.test(await page.$eval('#help .ab', e => e.textContent)) && !/Good Morning/.test(await page.$eval('#help .ab', e => e.textContent)), 'About tells the story and lists the licence and MediaPipe; no bundled sample is credited');
+    ok(/MIT/.test(await page.$eval('#help .ab', e => e.textContent)) && /MediaPipe/.test(await page.$eval('#help .ab', e => e.textContent)) && /Made for people who love making music/.test(await page.$eval('#help .ab', e => e.textContent)) && !/Good Morning/.test(await page.$eval('#help .ab', e => e.textContent)), 'About tells the story and lists the licence and MediaPipe; no bundled sample is credited');
     ok(!/FRETWORK|Fretwork/.test(await page.evaluate(() => document.documentElement.outerHTML)), 'no old brand name anywhere in the page');
     await page.keyboard.press('Escape');
     ok(await page.evaluate(() => /default-src 'self'/.test((document.querySelector('meta[http-equiv="Content-Security-Policy"]') || {}).content || '')), 'a Content-Security-Policy is set on the page'); }
@@ -180,7 +180,7 @@ function wav(L, sr) { const n = L.length, b = Buffer.alloc(44 + n * 2); b.write(
       const D = window.__daily, sr = 44100, notes = [60, 62, 64, 60, 64, 65, 67, 67, 67, 69, 67, 65, 64, 60, 62, 60], beat = .6, N = Math.ceil((notes.length * beat + 1) * sr), x = new Float32Array(N);
       notes.forEach((m, i) => { const f = 440 * Math.pow(2, (m - 69 + .25) / 12), t0 = .4 + i * beat, len = beat * .9; for (let k = 0; k < len * sr; k++) { const t = k / sr, env = Math.min(1, t / .03) * Math.min(1, (len - t) / .05); x[Math.floor(t0 * sr) + k] += .3 * env * Math.sin(2 * Math.PI * f * t) + .08 * env * Math.sin(4 * Math.PI * f * t); } });
       const an = await D.humAnalyze(x, sr, () => { }), full = D.humSong(an, {}), q = D.humSong(an, { form: 'quick' }), rock = D.humSong(an, { style: 'Rock' }), mi = D.humSong(an, { key: 9, minor: true });
-      D.HUM.an = an; D.HUM.o = { style: null, form: 'full', seed: 0, bpm: null, key: null, minor: null, title: 'Hum idea' }; await D.humApply(false);
+      D.HUM.an = an; D.HUM.pcm = x; D.HUM.sr = sr; D.HUM.o = { style: null, form: 'full', seed: 0, bpm: null, key: null, minor: null, title: 'Hum idea' }; await D.humApply(false);
       return { n: an.notes.length, midi: an.notes.map(n => n.m).join(), bpm: an.bpm, key: an.key, secs: full.song.sections.map(c => c.name), bad: full.song.sections.flatMap(c => c.bars.map(b => b.chord)).filter(c => !c || c.split(' ').some(z => !D.parseChord(z))).length,
         tab: full.song.sections.map(c => c.bars.reduce((a, b) => a + b.tab.length, 0)), rock: rock.song.band.patName, q: q.song.sections.length, mi: mi.key, now: D.S.sections.length, btn: (document.getElementById('humPlay') || {}).textContent, last: full.song.sections[1].bars.slice(-1)[0].chord };
     });
@@ -191,8 +191,14 @@ function wav(L, sr) { const n = L.length, b = Buffer.alloc(44 + n * 2); b.write(
     ok(R.tab[1] === 16 && R.tab[2] > 0 && R.tab[5] > 0 && R.tab[0] === 0, 'the melody is on the lead guitar in the verse, chorus lift and bridge');
     ok(R.rock === 'Rock 8ths' && R.mi.minor === true, 'style and key changes re-arrange the band');
     ok(R.now === 8 && /Play my song/.test(R.btn), 'the song is built into the studio and the panel offers Play');
+    const HT = await hp.evaluate(() => { const D = window.__daily, tk = D.TAKES.filter(t => t.hum), v = D.S.sections.findIndex(x => /^Verse/.test(x.name)), vs = D.S.sections.slice(0, v).reduce((a, x) => a + x.bars.length, 0) * 16 * (15 / D.S.bpm);
+      return { n: tk.length, kind: tk[0] && tk[0].kind, dur: tk[0] && tk[0].dur, first: tk[0] && vs - tk[0].startSec - D.HUM.an.notes[0].t, band: [D.S.band.drumsOn, D.S.band.bassOn, D.S.band.compOn, D.S.band.leadOn], btn: !!document.getElementById('humVoice') }; });
+    ok(HT.n === 1 && HT.kind === 'vox' && HT.dur > 8, 'the hummed recording is added to the arrangement as one Vocal take (' + HT.n + ')');
+    ok(Math.abs(HT.first) < .01, 'its first note lines up with the first melody note of Verse 1');
+    ok(HT.band.every(Boolean) && HT.btn, 'the band is on with it, and the panel has a My hum on/off button');
     await hp.click('#humbar .hum-chips button:has-text("Ballad")'); await wait(600);
     ok(await hp.evaluate(() => window.__daily.S.band.kit === 'Brush (soft)'), 'choosing a style re-builds the band right away');
+    ok(await hp.evaluate(() => window.__daily.TAKES.filter(t => t.hum).length === 1), 're-arranging replaces the hum take instead of stacking another');
     ok(await hp.evaluate(() => !window.__daily.CAM.on), 'the camera stays off until you ask for center stage');
     await hp.evaluate(() => { const b = document.getElementById('vzCamBtn'); if (b) b.click(); }); await wait(3500);
     ok(await hp.evaluate(() => window.__daily.CAM.on && window.__daily.VZ.cam && window.__daily.CFG.camFx === 'person'), 'one tap on Camera backdrop starts the camera and puts you in front (green screen)');

@@ -5687,7 +5687,7 @@ function normSong(saved) {
   const d = newSong(), s = Object.assign(d, saved || {}); s.band = Object.assign(d.band, (saved && saved.band) || {}); s.mix = Object.assign(d.mix, (saved && saved.mix) || {}); s.voicePref = (saved && saved.voicePref) || {};
   s.tuning = ((saved && saved.tuning) || d.tuning).slice(); if (!Array.isArray(s.sections)) s.sections = []; if (!Array.isArray(s.ts) || s.ts.length < 2) s.ts = [4, 4]; return s;
 }
-const takeMeta = t => { const m = { id: t.id, kind: t.kind || 'gtr', name: t.name, startSec: t.startSec, sr: t.sr, g: t.g, pan: t.pan || 0, mute: !!t.mute, solo: !!t.solo, mode: t.mode, bpm: t.bpm, preset: t.preset || '', peak: t.peak, rms: t.rms, dur: t.dur, t: t.t, hasWet: !!t.wet, hasCam: !!(t.cam && t.cam.length) }; try { m.stats = t.stats ? JSON.parse(JSON.stringify(t.stats)) : null; } catch (e) { m.stats = null; } return m; };
+const takeMeta = t => { const m = { hum: !!t.hum, id: t.id, kind: t.kind || 'gtr', name: t.name, startSec: t.startSec, sr: t.sr, g: t.g, pan: t.pan || 0, mute: !!t.mute, solo: !!t.solo, mode: t.mode, bpm: t.bpm, preset: t.preset || '', peak: t.peak, rms: t.rms, dur: t.dur, t: t.t, hasWet: !!t.wet, hasCam: !!(t.cam && t.cam.length) }; try { m.stats = t.stats ? JSON.parse(JSON.stringify(t.stats)) : null; } catch (e) { m.stats = null; } return m; };
 
 /* ---------- save ---------- */
 function projDirty() {
@@ -6096,18 +6096,16 @@ function aboutBlock() {
   return h('section', { class: 'ab', 'aria-label': 'About' },
     h('div', { class: 'ab-top' }, mark(), h('div', {}, h('b', { class: 'ab-name' }, h('span', {}, 'the-daily'), h('span', { class: 'tld' }, '.studio')), h('div', { class: 'tiny muted' }, 'MVP 1 · v' + VERSION + ' · MIT licence'))),
     h('div', { class: 'ab-me ab-story' },
-      h('h4', {}, 'Built from a lifelong love of music.'),
-      h('p', {}, 'My mom taught me to play guitar when I was five years old.'),
-      h('p', {}, 'I grew up loving music, but we didn’t have the money for instruments or gear. You learned to work with what you had, make the most of it, and find your own way to make a sound.'),
-      h('p', {}, 'That spirit stayed with me.'),
-      h('p', {}, 'Today, I’m a software engineer, a musician, and someone who loves building things. the-daily.studio brings those worlds together: using technology to make the music tools I once would have loved to have access to myself.'),
-      h('p', {}, 'I wanted a place where you could plug in a guitar, explore a sound, pull apart a song, chase a melody, or capture an idea without needing an expensive setup or a collection of specialized software.'),
-      h('p', {}, 'Something practical. Something curious. Something that puts the joy of making music first.'),
-      h('p', {}, 'So I built it.'),
-      h('p', {}, 'the-daily.studio is free and open source, designed to run locally in your browser, with your work staying on your device.'),
-      h('p', {}, 'Not everyone has access to a professional studio or the latest equipment. I know that feeling. If this gives someone a way to experiment, learn, create, or fall a little deeper in love with music, then it’s doing what I hoped it would do.'),
-      h('p', {}, 'The best tool is the one that helps you make something you couldn’t make before.'),
-      h('p', { class: 'ab-sig' }, '— Tehau DeBarthe'),
+      h('h4', {}, 'Made for people who love making music.'),
+      h('p', {}, 'My mom put a guitar in my hands when I was five. It changed my life.'),
+      h('p', {}, 'I didn’t grow up with a lot of instruments, gear, or technology, so music taught me something else along the way: be resourceful, experiment, and don’t let what you don’t have get in the way of what you can create.'),
+      h('p', {}, 'Years later, I’m still a musician, but I’m also a software engineer and a dad. the-daily.studio is where those parts of my life come together.'),
+      h('p', {}, 'I built the kind of place I wish I’d had growing up. Somewhere to plug in a guitar, chase a melody, explore a sound, understand a song, or capture an idea before it disappears.'),
+      h('p', {}, 'No expensive studio required. No perfect setup. Just a place to start.'),
+      h('p', {}, 'And that part feels especially meaningful now. My mom put the guitar in my hands. Today, I get to put new tools for creating into my kids’ hands.'),
+      h('p', {}, 'Maybe that’s what the daily is really about.'),
+      h('p', {}, 'Keep playing. Keep exploring. Keep making something.'),
+      h('p', { class: 'ab-sig' }, '— Tehau.'),
       h('div', { class: 'row', style: { gap: '6px', flexWrap: 'wrap' } }, BRAND.support ? link('☕ ' + BRAND.supportLabel, BRAND.support, 'primary') : '', link('GitHub', BRAND.github), link('LinkedIn', BRAND.linkedin), link('The Daily', BRAND.journal), link('Source & issues', BRAND.repo))),
     h('details', { class: 'ab-cr' }, h('summary', {}, 'Credits & licences'),
       h('ul', {},
@@ -6512,8 +6510,20 @@ async function humRun(pcm, sr, title) {
 async function humApply(play) {
   if (!HUM.an) return; if (T.playing) stopPlay(true);
   const r = humSong(HUM.an, HUM.o); HUM.r = r; HUM.o.style = r.style; r.song.title = HUM.o.title || 'Hum idea';
-  xpQuiet(() => projUse(r.song)); try { if (PRJ.cur) await projSave(); } catch (e) { }
+  xpQuiet(() => projUse(r.song)); humAddTake(); try { if (PRJ.cur) await projSave(); } catch (e) { }
   humBar('res'); if (play) await humPlay();
+}
+/** Put the recording itself in the arrangement: a Vocal take whose first note lands on the first melody note of Verse 1,
+ *  so the hum, the lead tab and the band are all in one timeline and play together. Re-arranging replaces it. */
+function humAddTake() {
+  for (let i = TAKES.length - 1; i >= 0; i--) if (TAKES[i].hum) TAKES.splice(i, 1);
+  if (!HUM.pcm || !HUM.an || !HUM.an.notes.length) { bus.emit('takes'); return null; }
+  const si = Math.max(0, S.sections.findIndex(x => /^Verse/.test(x.name))), sr = HUM.sr;
+  let start = secStart(si) * spb() * slotDur() - HUM.an.notes[0].t, d = HUM.pcm;
+  if (start < 0) { d = d.subarray(Math.min(d.length, Math.round(-start * sr))); start = 0; }
+  d = new Float32Array(d); let pk = 0, e = 0; for (let i = 0; i < d.length; i++) { const a = Math.abs(d[i]); if (a > pk) pk = a; e += d[i] * d[i]; }
+  const tk = { id: uid(), kind: 'vox', hum: true, name: 'My hum', startSec: start, sr, dry: d, wet: null, peaks: peaksOf(d), g: 1, pan: 0, mute: false, solo: false, mode: 'wet', bpm: S.bpm, preset: '', peak: dB(pk), rms: dB(Math.sqrt(e / Math.max(1, d.length))), dur: d.length / sr, t: Date.now(), stats: null, cam: [] };
+  TAKES.push(tk); bus.emit('takes'); return tk;
 }
 async function humPlay() {
   if (HUM.hear) { try { HUM.hear.stop(); } catch (e) { } HUM.hear = null; }
@@ -6568,6 +6578,7 @@ function humResult(d, x) {
   d.append(
     h('div', { class: 'hum-row' }, h('button', { class: 'btn primary hum-play', id: 'humPlay', onclick: () => { if (T.playing) { stopPlay(true); } else humPlay(); } }, T.playing ? '■ Stop' : '▶ Play my song'),
       h('button', { class: 'btn', id: 'humHear', onclick: humHear }, HUM.hear ? '■ Stop' : '👂 Hear my hum'),
+      h('button', { class: 'btn', id: 'humVoice', title: 'Play your own recording along with the band, lined up with the melody. Turn it off to hear just the arrangement.', onclick: e => { const tk = TAKES.find(t => t.hum); if (!tk) return; tk.mute = !tk.mute; takeLive(tk); bus.emit('takes'); try { projSave(); } catch (x) { } e.currentTarget.textContent = tk.mute ? '🎤 My hum: off' : '🎤 My hum: on'; } }, (() => { const tk = TAKES.find(t => t.hum); return tk && tk.mute ? '🎤 My hum: off' : '🎤 My hum: on'; })()),
       h('button', { class: 'btn', id: 'humBand', title: 'Turn the drums, bass and rhythm guitar on or off. Your melody keeps playing.', onclick: e => { const on = !(S.band.drumsOn || S.band.bassOn || S.band.compOn); setRehearsal({ drumsOn: on, bassOn: on, compOn: on }); e.currentTarget.textContent = on ? '🥁 Band: on' : '🥁 Band: off'; } }, (S.band.drumsOn || S.band.bassOn || S.band.compOn) ? '🥁 Band: on' : '🥁 Band: off'),
       h('span', { class: 'hum-sum' }, h('b', {}, an.notes.length + ' notes'), ' · ', h('b', {}, kn), ' · ', h('b', {}, r.bpm + ' BPM'), ' · ', h('b', {}, totalBars() + ' bars')), h('span', { class: 'grow' }), x),
     h('div', { class: 'hum-msg' }, 'Your melody plays as the lead guitar. Chords, sections and the band were arranged from it. Change anything below and it re-builds right away.'),

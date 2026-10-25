@@ -102,8 +102,20 @@ async function humRun(pcm, sr, title) {
 async function humApply(play) {
   if (!HUM.an) return; if (T.playing) stopPlay(true);
   const r = humSong(HUM.an, HUM.o); HUM.r = r; HUM.o.style = r.style; r.song.title = HUM.o.title || 'Hum idea';
-  xpQuiet(() => projUse(r.song)); try { if (PRJ.cur) await projSave(); } catch (e) { }
+  xpQuiet(() => projUse(r.song)); humAddTake(); try { if (PRJ.cur) await projSave(); } catch (e) { }
   humBar('res'); if (play) await humPlay();
+}
+/** Put the recording itself in the arrangement: a Vocal take whose first note lands on the first melody note of Verse 1,
+ *  so the hum, the lead tab and the band are all in one timeline and play together. Re-arranging replaces it. */
+function humAddTake() {
+  for (let i = TAKES.length - 1; i >= 0; i--) if (TAKES[i].hum) TAKES.splice(i, 1);
+  if (!HUM.pcm || !HUM.an || !HUM.an.notes.length) { bus.emit('takes'); return null; }
+  const si = Math.max(0, S.sections.findIndex(x => /^Verse/.test(x.name))), sr = HUM.sr;
+  let start = secStart(si) * spb() * slotDur() - HUM.an.notes[0].t, d = HUM.pcm;
+  if (start < 0) { d = d.subarray(Math.min(d.length, Math.round(-start * sr))); start = 0; }
+  d = new Float32Array(d); let pk = 0, e = 0; for (let i = 0; i < d.length; i++) { const a = Math.abs(d[i]); if (a > pk) pk = a; e += d[i] * d[i]; }
+  const tk = { id: uid(), kind: 'vox', hum: true, name: 'My hum', startSec: start, sr, dry: d, wet: null, peaks: peaksOf(d), g: 1, pan: 0, mute: false, solo: false, mode: 'wet', bpm: S.bpm, preset: '', peak: dB(pk), rms: dB(Math.sqrt(e / Math.max(1, d.length))), dur: d.length / sr, t: Date.now(), stats: null, cam: [] };
+  TAKES.push(tk); bus.emit('takes'); return tk;
 }
 async function humPlay() {
   if (HUM.hear) { try { HUM.hear.stop(); } catch (e) { } HUM.hear = null; }
@@ -158,6 +170,7 @@ function humResult(d, x) {
   d.append(
     h('div', { class: 'hum-row' }, h('button', { class: 'btn primary hum-play', id: 'humPlay', onclick: () => { if (T.playing) { stopPlay(true); } else humPlay(); } }, T.playing ? '■ Stop' : '▶ Play my song'),
       h('button', { class: 'btn', id: 'humHear', onclick: humHear }, HUM.hear ? '■ Stop' : '👂 Hear my hum'),
+      h('button', { class: 'btn', id: 'humVoice', title: 'Play your own recording along with the band, lined up with the melody. Turn it off to hear just the arrangement.', onclick: e => { const tk = TAKES.find(t => t.hum); if (!tk) return; tk.mute = !tk.mute; takeLive(tk); bus.emit('takes'); try { projSave(); } catch (x) { } e.currentTarget.textContent = tk.mute ? '🎤 My hum: off' : '🎤 My hum: on'; } }, (() => { const tk = TAKES.find(t => t.hum); return tk && tk.mute ? '🎤 My hum: off' : '🎤 My hum: on'; })()),
       h('button', { class: 'btn', id: 'humBand', title: 'Turn the drums, bass and rhythm guitar on or off. Your melody keeps playing.', onclick: e => { const on = !(S.band.drumsOn || S.band.bassOn || S.band.compOn); setRehearsal({ drumsOn: on, bassOn: on, compOn: on }); e.currentTarget.textContent = on ? '🥁 Band: on' : '🥁 Band: off'; } }, (S.band.drumsOn || S.band.bassOn || S.band.compOn) ? '🥁 Band: on' : '🥁 Band: off'),
       h('span', { class: 'hum-sum' }, h('b', {}, an.notes.length + ' notes'), ' · ', h('b', {}, kn), ' · ', h('b', {}, r.bpm + ' BPM'), ' · ', h('b', {}, totalBars() + ' bars')), h('span', { class: 'grow' }), x),
     h('div', { class: 'hum-msg' }, 'Your melody plays as the lead guitar. Chords, sections and the band were arranged from it. Change anything below and it re-builds right away.'),
