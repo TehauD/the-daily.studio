@@ -3,6 +3,13 @@
    ============================================================ */
 
 /* ---------------- FRETBOARD ---------------- */
+/** What the SONG is playing right now (band, lead tab, chords). The fretboard, hexes and chroma wheel read this as well as the live input,
+ *  so they move for playback too. Fed from the playhead in ngCapture(). */
+const PB = { hits: [], seq: 0, chroma: new Float32Array(12), sym: '', at: 0 };
+function pbHit(st, f, midi, v) {
+  const now = performance.now(); PB.at = now; PB.seq++; if (st != null && st >= 0) { PB.hits.push({ st, f, t: now, v }); if (PB.hits.length > 28) PB.hits.shift(); }
+  if (midi != null) { const pc = ((midi % 12) + 12) % 12; PB.chroma[pc] = Math.max(PB.chroma[pc], v || .8); }
+}
 const FB = { mode: 'scale', follow: true, nodes: [], W: 1180, H: 230, frets: 22 };
 function buildFretPane() {
   const p = PANES.fret, sel = (opts, val, fn) => h('select', { class: 'in', style: { width: 'auto', fontFamily: 'var(--sans)' }, onchange: e => fn(e.target.value) }, opts.map(o => h('option', { value: o[0], selected: o[0] === val }, o[1])));
@@ -34,10 +41,10 @@ function renderFret() {
     for (let n = 0; n <= NF_; n++) {
       const midi = open + S.capo + n, pc = midi % 12, x = n === 0 ? posX(0) + (left ? 14 : -14) : (posX(n) + posX(n - 1)) / 2;
       const g = sv('g', { class: 'fn', transform: `translate(${x.toFixed(1)},${y.toFixed(1)})`, style: 'cursor:pointer', 'data-st': st, 'data-f': n }), r = 9.5;
-      const poly = sv('polygon', { points: hexPts(0, 0, r + 1), fill: 'var(--accent)', stroke: 'var(--accent)', 'stroke-width': 1.5 }), ring = sv('circle', { r: r + 4, fill: 'none', stroke: 'var(--accent2)', 'stroke-width': 3, opacity: 0 }), cam = sv('circle', { r: r + 6, fill: 'none', stroke: 'var(--cv3)', 'stroke-width': 2, 'stroke-dasharray': '3 3', opacity: 0 });
-      const txt = sv('text', { class: 'fnote', 'text-anchor': 'middle', y: 3.4, fill: '#fff' }, ''); g.append(cam, ring, poly, txt);
+      const poly = sv('polygon', { points: hexPts(0, 0, r + 1), fill: 'var(--accent)', stroke: 'var(--accent)', 'stroke-width': 1.5 }), ring = sv('circle', { r: r + 4, fill: 'none', stroke: 'var(--accent2)', 'stroke-width': 3, opacity: 0 }), cam = sv('circle', { r: r + 6, fill: 'none', stroke: 'var(--cv3)', 'stroke-width': 2, 'stroke-dasharray': '3 3', opacity: 0 }), gh = sv('circle', { r: r + 5, fill: 'var(--accent2)', 'fill-opacity': .18, stroke: 'var(--accent2)', 'stroke-width': 2, 'stroke-dasharray': '4 3', opacity: 0 }), vo = sv('circle', { r: r + 6, fill: 'none', stroke: '#ff5fc8', 'stroke-width': 3.5, opacity: 0 });
+      const txt = sv('text', { class: 'fnote', 'text-anchor': 'middle', y: 3.4, fill: '#fff' }, ''); g.append(cam, gh, vo, ring, poly, txt);
       g.addEventListener('pointerdown', async () => { await startAudio(); pluck('lead', E.ctx.currentTime + .01, midi, .85, { id: 'l' + st, pan: (st - 2.5) * .08 }); });
-      svg.append(g); FB.nodes[st][n] = { g, poly, ring, cam, txt, midi, pc, st, n };
+      svg.append(g); FB.nodes[st][n] = { g, poly, ring, cam, gh, vo, txt, midi, pc, st, n };
     }
   });
   UI.fb.innerHTML = ''; UI.fb.append(svg); FB.scPcs = scPcs; FB.root = root; paintFret(true);
@@ -48,18 +55,19 @@ function paintFret(force) {
     let sym = null; if (FB.follow) { const ph = playheadSlot(), sp = spb(), bi = Math.floor(ph / sp), cd = chordAt(Math.max(0, bi), Math.max(0, Math.floor(ph) - bi * sp)); sym = cd && cd.sym; }
     if (!sym) sym = (barChords((flatBars()[0] || { bar: { chord: '' } }).bar)[0]); const pc = sym && parseChord(sym); if (pc) { chordPcs = new Set(pc.pcs); chordRoot = pc.root; chName = sym; }
   }
-  const key = [FB.mode, root, chName, CFG.fretNames, AN.midi, VIS.cands.length ? VIS.cands[VIS.cands.length - 1].t | 0 : 0].join();
+  const nowT = performance.now(), mk = neckMarks(nowT), mkMap = new Map(); mk.forEach(m => { const q = m.st + ':' + m.f; const o = mkMap.get(q) || {}; o[m.k] = Math.max(o[m.k] || 0, m.a); mkMap.set(q, o); });
+  const pbOn = mk.length > 0, key = [FB.mode, root, chName, CFG.fretNames, AN.midi, VIS.cands.length ? VIS.cands[VIS.cands.length - 1].t | 0 : 0, pbOn ? PB.seq + ':' + Math.floor(nowT / 70) + ':' + mk.length : 0].join();
   if (!force && key === FB.key) return; FB.key = key; const info = $('#fbinfo'); if (info) info.textContent = (FB.mode === 'chord' || FB.mode === 'both' ? chName + ' · ' : '') + pcName(root) + ' ' + S.scale;
   const now = performance.now(), cams = VIS.cands.filter(c => now - c.t < 500);
   FB.nodes.forEach(row => row.forEach(nd => {
     const inS = FB.scPcs.has(nd.pc), inC = chordPcs.has(nd.pc), show = FB.mode === 'scale' ? inS : FB.mode === 'chord' ? inC : FB.mode === 'both' ? (inS || inC) : false;
-    const live = AN.midi != null && AN.midi === nd.midi, camHit = cams.some(c => c.st === nd.st && c.fret === nd.n);
-    nd.g.style.display = (show || live || camHit) ? '' : 'none'; if (!show && !live && !camHit) return;
+    const mm = mkMap.get(nd.st + ':' + nd.n) || {}, pbA = Math.max(mm.hit || 0, mm.pin || 0), live = (AN.midi != null && AN.midi === nd.midi) || pbA > .02, camHit = cams.some(c => c.st === nd.st && c.fret === nd.n);
+    const gA = mm.ghost || 0, vA = mm.voice || 0; nd.g.style.display = (show || live || camHit || gA || vA) ? '' : 'none'; nd.gh.setAttribute('opacity', gA); nd.vo.setAttribute('opacity', vA); if (!show && !live && !camHit && !gA && !vA) return;
     const isRoot = nd.pc === root, isChordRoot = chordRoot != null && nd.pc === chordRoot && FB.mode !== 'scale'; const hl = FB.mode === 'both' ? inC : (FB.mode === 'chord' ? inC : isRoot);
     nd.poly.setAttribute('fill', isRoot || isChordRoot ? 'var(--accent)' : 'var(--panel2)'); nd.poly.setAttribute('stroke', inC && FB.mode === 'both' ? 'var(--accent2)' : 'var(--accent)'); nd.poly.setAttribute('opacity', show ? 1 : .35); nd.poly.setAttribute('stroke-width', hl && !isRoot ? 2.5 : 1.5);
     nd.txt.setAttribute('fill', isRoot || isChordRoot ? '#fff' : 'var(--text)');
     nd.txt.textContent = CFG.fretNames === 'frets' ? nd.n : CFG.fretNames === 'degrees' ? (IVNAMES[(nd.pc - root + 12) % 12]) : pcName(nd.pc);
-    nd.ring.setAttribute('opacity', live ? .95 : 0); nd.cam.setAttribute('opacity', camHit ? .95 : 0);
+    nd.ring.setAttribute('opacity', pbA > .02 ? Math.max(.25, pbA) : live ? .95 : 0); nd.cam.setAttribute('opacity', camHit ? .95 : 0);
   }));
 }
 
@@ -69,22 +77,25 @@ const VMODES = [['hex', 'Hex Resonance'], ['tunnel', 'Hex Tunnel'], ['spectro', 
 function buildVisPane() {
   const p = PANES.vis; p.classList.add('flex');
   const bar = h('div', { class: 'row', style: { gap: '8px', marginBottom: '8px', flexWrap: 'wrap' } },
-    h('div', { class: 'seg' }, VMODES.map(([k, n]) => h('button', { class: k === VZ.mode ? 'on' : '', 'data-m': k, onclick: e => { VZ.mode = k; CFG.visMode = k; saveCfg(); VZ.spec = null; VZ.hexes = null; $$('.seg [data-m]', bar).forEach(b => b.classList.toggle('on', b === e.target)); } }, n))),
-    h('select', { class: 'in', style: { width: 'auto', fontFamily: 'var(--sans)' }, title: 'Analysis source', onchange: e => { VZ.src = e.target.value; } }, [['rig', 'Source: rig output'], ['master', 'Source: master mix'], ['di', 'Source: dry DI']].map(([v, n]) => h('option', { value: v }, n))),
+    h('div', { class: 'seg' }, VMODES.map(([k, n]) => h('button', { class: k === VZ.mode ? 'on' : '', 'data-m': k, onclick: e => { vzSetMode(k); $$('.seg [data-m]', bar).forEach(b => b.classList.toggle('on', b === e.target)); } }, n))),
+    h('select', { class: 'in', style: { width: 'auto', fontFamily: 'var(--sans)' }, title: 'Analysis source', onchange: e => { VZ.src = e.target.value; } }, [['auto', 'Source: auto (follows playback)'], ['rig', 'Source: rig output'], ['master', 'Source: master mix'], ['di', 'Source: dry DI']].map(([v, n]) => h('option', { value: v }, n))),
     h('button', { class: 'btn sm' + (VZ.cam ? ' on' : ''), id: 'vzCamBtn', title: 'Put yourself center stage: turns the camera on behind the visuals', onclick: () => vzCamPress() }, '📷 Camera backdrop'), camFxBox(),
+    h('button', { class: 'btn sm' + (CFG.vzNeck !== false ? ' on' : ''), id: 'vzNeckBtn', title: 'Show a small guitar neck on the visuals: what is playing, what is coming next, the note you are singing', onclick: e => { CFG.vzNeck = CFG.vzNeck === false; saveCfg(); e.currentTarget.classList.toggle('on', CFG.vzNeck !== false); } }, '🎸 Neck'),
     h('button', { class: 'btn sm', onclick: () => { const w = UI.vwrap; (document.fullscreenElement ? document.exitFullscreen() : w.requestFullscreen && w.requestFullscreen()); } }, '⛶ Stage mode'));
   UI.vwrap = h('div', { class: 'vwrap', style: { flex: 1, minHeight: '320px' } }, UI.vcv = h('canvas', { class: 'vcanvas', style: { height: '100%', minHeight: '320px' } }));
   p.append(bar, UI.vwrap); new ResizeObserver(() => { const d = (window.devicePixelRatio || 1) * (CFG.vq || 1), w = UI.vcv.clientWidth, hh = UI.vcv.clientHeight; if (w && (UI.vcv.width !== Math.floor(w * d) || UI.vcv.height !== Math.floor(hh * d))) { UI.vcv.width = Math.floor(w * d); UI.vcv.height = Math.floor(hh * d); VZ.spec = null; VZ.hexes = null; } }).observe(UI.vwrap);
   bus.on('onset', () => { VZ.pulses.push({ t: performance.now(), a: clamp((AN.rms + 50) / 40, .2, 1) }); if (VZ.pulses.length > 12) VZ.pulses.shift(); });
 }
 const vcol = () => { const cs = getComputedStyle(document.documentElement); return { a: cs.getPropertyValue('--accent').trim(), b: cs.getPropertyValue('--accent2').trim(), c: cs.getPropertyValue('--cv3').trim(), d: cs.getPropertyValue('--cv4').trim() }; };
-function visAna() { return VZ.src === 'master' ? E.anaMaster : VZ.src === 'di' ? E.anaDI : E.anaRig; }
+/** 'auto' follows what is sounding: the mix while the song, a hum or a backing track plays, the guitar rig otherwise */
+const vzPlaying = () => T.playing || (typeof STP !== 'undefined' && STP.playing);
+function visAna() { const s = VZ.src || 'auto'; return s === 'master' || (s === 'auto' && vzPlaying()) ? E.anaMaster : s === 'di' ? E.anaDI : E.anaRig; }
 function drawVis(cvo, o) {
   o = o || {}; const cv = cvo || UI.vcv; if (!cv || !E.ready || (!cvo && !paneVisible('vis'))) return; const MODE = o.mode || VZ.mode; const g = cv.getContext('2d'), W = cv.width, H = cv.height, now = performance.now(), dt = Math.min(.1, (now - (VZ.last || now)) / 1000); VZ.last = now; VZ.t += dt;
   const an = visAna(); if (!an) return; if (!VZ.fd || VZ.fd.length !== an.frequencyBinCount) VZ.fd = new Float32Array(an.frequencyBinCount); an.getFloatFrequencyData(VZ.fd); const fd = VZ.fd, bh = E.ctx.sampleRate / an.fftSize;
   const light = CFG.theme === 'light', C = o.C || vcol();
   // background (always dark stage for contrast, tinted by theme)
-  if (MODE !== 'spectro') { g.globalAlpha = o.bgA == null ? 1 : o.bgA; g.fillStyle = light && !cvo ? '#0c1a1b' : '#050b0c'; g.fillRect(0, 0, W, H); g.globalAlpha = 1; }
+  if (MODE !== 'spectro' && MODE !== 'kaleido') { g.globalAlpha = o.bgA == null ? 1 : o.bgA; g.fillStyle = light && !cvo ? '#0c1a1b' : '#050b0c'; g.fillRect(0, 0, W, H); g.globalAlpha = 1; }
   const camOn = !!((o.cam != null ? o.cam : VZ.cam) && CAM.video && CAM.video.readyState >= 2 && MODE !== 'spectro');
   if (camOn && (CFG.camFx || 'over') === 'over') { g.save(); g.globalAlpha = .32; if (CFG.mirror) { g.translate(W, 0); g.scale(-1, 1); } const vr = CAM.video.videoWidth / CAM.video.videoHeight, cr = W / H; let dw = W, dh = H, dx = 0, dy = 0; if (vr > cr) { dw = H * vr; dx = (W - dw) / 2; } else { dh = W / vr; dy = (H - dh) / 2; } g.drawImage(CAM.video, dx, dy, dw, dh); g.restore(); }
   const lvl = x => clamp((x + 88 + (o.gain || 0)) / 62, 0, 1), bin = f => clamp(Math.round(f / bh), 1, fd.length - 1);
@@ -97,7 +108,9 @@ function drawVis(cvo, o) {
   else if (MODE === 'scope') drawScope(g, W, H, C);
   else if (MODE === 'strings') drawStringField(g, W, H, fd, bin, lvl, C);
   else if (typeof stageExtra === 'function') stageExtra(MODE, g, W, H, { fd, bin, lvl, C, pulse, energy, dt, o });
-  if (camOn && !cvo) camTop(g, W, H);   // stage draws its own camera layer after trails and kaleidoscope
+  if (camOn && !cvo) camTop(g, W, H);
+  if (MODE === 'halo' && !cvo) haloFront(g);   // stage draws its own camera layer after trails and kaleidoscope
+  if (!cvo && CFG.vzNeck !== false) { const r = neckRect(W, H); drawMiniNeck(g, r[0], r[1], r[2], r[3], { C }); }
   if (o.noText) return;
   g.fillStyle = 'rgba(255,255,255,.55)'; g.font = `${Math.round(11 * H / 400 + 6)}px ui-monospace,Menlo,monospace`; g.textBaseline = 'top';
   if (AN.midi != null && AN.active) { g.fillStyle = 'rgba(255,255,255,.85)'; g.font = `800 ${Math.round(28 * Math.min(W, H * 2) / 900 + 10)}px ui-monospace,Menlo,monospace`; g.fillText(pcName(AN.midi) + (Math.floor(AN.midi / 12) - 1) + '  ' + (AN.cents >= 0 ? '+' : '') + AN.cents.toFixed(0) + '¢', 14, 12); }
@@ -131,13 +144,13 @@ function drawSpectro(g, W, H, fd, bin, lvl, C) {
   g.drawImage(VZ.spec, 0, 0); g.fillStyle = 'rgba(255,255,255,.5)'; g.font = '11px ui-monospace,monospace'; [110, 220, 440, 880, 1760, 3520, 7040].forEach(f => { const y = (1 - Math.log(f / fmin) / lr) * H; g.fillRect(W - 8, y, 8, 1); g.fillText(f < 1000 ? f : (f / 1000) + 'k', W - 34, y - 12); });
 }
 function drawChroma(g, W, H, C) {
-  const cx = W / 2, cy = H / 2, R = Math.min(W, H) * .42, ch = AN.chroma, mx = Math.max(.001, ...ch), key = AN.key && AN.key[0];
+  const cx = W / 2, cy = H / 2, R = Math.min(W, H) * .42, ch0 = AN.chroma, m0 = Math.max(.001, ...ch0), play = T.playing, ch = play ? Array.from(ch0, (x, i) => Math.max(x / m0 * (AN.active ? 1 : 0), PB.chroma[i])) : ch0, mx = Math.max(.001, ...ch), key = AN.key && AN.key[0];
   for (let i = 0; i < 12; i++) {
     const pc = (i * 7) % 12, a0 = (i / 12) * Math.PI * 2 - Math.PI / 2 - Math.PI / 12, a1 = a0 + Math.PI / 6, v = ch[pc] / mx, inKey = key && SCALES[key.minor ? 'Natural Minor (Aeolian)' : 'Major (Ionian)'].includes(((pc - key.root) + 12) % 12);
     g.beginPath(); g.moveTo(cx, cy); g.arc(cx, cy, R * (.28 + .72 * v), a0, a1); g.closePath(); g.fillStyle = mixc(C.a, C.b, v, .25 + .7 * v); g.fill(); g.strokeStyle = 'rgba(255,255,255,.18)'; g.stroke();
     const am = (a0 + a1) / 2; g.fillStyle = (AN.midi != null && AN.midi % 12 === pc) ? C.b : inKey ? 'rgba(255,255,255,.95)' : 'rgba(255,255,255,.45)'; g.font = `800 ${Math.round(R * .1)}px ui-monospace,monospace`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(pcName(pc), cx + Math.cos(am) * R * 1.12, cy + Math.sin(am) * R * 1.12);
   }
-  g.fillStyle = 'rgba(255,255,255,.9)'; g.font = `800 ${Math.round(R * .22)}px ui-monospace,monospace`; g.fillText(AN.active && AN.chord[0] ? AN.chord[0].sym : '—', cx, cy - R * .04); g.font = `600 ${Math.round(R * .085)}px ui-monospace,monospace`; g.fillStyle = 'rgba(255,255,255,.55)';
+  g.fillStyle = 'rgba(255,255,255,.9)'; g.font = `800 ${Math.round(R * .22)}px ui-monospace,monospace`; g.fillText(play && PB.sym ? PB.sym : AN.active && AN.chord[0] ? AN.chord[0].sym : '—', cx, cy - R * .04); g.font = `600 ${Math.round(R * .085)}px ui-monospace,monospace`; g.fillStyle = 'rgba(255,255,255,.55)';
   g.fillText(key ? 'key ' + pcName(key.root) + (key.minor ? 'm' : '') + '  r=' + key.r.toFixed(2) : 'circle of fifths · play to estimate key', cx, cy + R * .16); g.textAlign = 'left';
 }
 function drawScope(g, W, H, C) {

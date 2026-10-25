@@ -72,7 +72,7 @@ function humRecTick() {
   const r = HUM.rec; if (!r) return; r.an.getFloatTimeDomainData(r.buf); let e = 0; for (let i = 0; i < r.buf.length; i++) e += r.buf[i] * r.buf[i]; const rms = Math.sqrt(e / r.buf.length), sec = (performance.now() - r.t0) / 1000;
   const lv = document.getElementById('humLv'), nt = document.getElementById('humNote'), tm = document.getElementById('humTime');
   if (lv) lv.style.width = Math.min(100, Math.round(rms * 600)) + '%'; if (tm) tm.textContent = humFmt(sec);
-  if (nt) { let t = '·'; if (rms > .01) { const y = yin(r.buf, r.actx.sampleRate); if (y && y.clarity > .6 && y.f > 70 && y.f < 1100) t = humNoteName(69 + 12 * Math.log2(y.f / 440)); } nt.textContent = t; }
+  if (nt) { let t = '·'; if (rms > .01) { const y = yin(r.buf, r.actx.sampleRate); if (y && y.clarity > .6 && y.f > 70 && y.f < 1100) { const mf = 69 + 12 * Math.log2(y.f / 440); t = humNoteName(mf); HUM.live = { m: Math.round(mf), t: performance.now() }; } } nt.textContent = t; }
   if (sec > 90) { humRecStop(true); return; } r.raf = requestAnimationFrame(humRecTick);
 }
 function humRecStop(keep) { const r = HUM.rec; if (!r) return; r.keep = keep; cancelAnimationFrame(r.raf); try { if (r.mr.state !== 'inactive') r.mr.stop(); else { humRecCleanup(); } } catch (e) { humRecCleanup(); } }
@@ -117,6 +117,15 @@ function humAddTake() {
   const tk = { id: uid(), kind: 'vox', hum: true, name: 'My hum', startSec: start, sr, dry: d, wet: null, peaks: peaksOf(d), g: 1, pan: 0, mute: false, solo: false, mode: 'wet', bpm: S.bpm, preset: '', peak: dB(pk), rms: dB(Math.sqrt(e / Math.max(1, d.length))), dur: d.length / sr, t: Date.now(), stats: null, cam: [] };
   TAKES.push(tk); bus.emit('takes'); return tk;
 }
+function humSaveMenu(anchor) {
+  const tk = TAKES.find(t => t.hum), box = h('div', { style: { minWidth: '240px', display: 'grid', gap: '6px' } }, h('h5', {}, 'Save to this device'),
+    h('button', { class: 'btn', onclick: () => { closePop(); bounceMaster(); } }, '⤓ The whole song (WAV)'),
+    tk ? h('button', { class: 'btn', onclick: () => { closePop(); dlTake(tk); } }, '⤓ My hum (WAV)') : '',
+    h('button', { class: 'btn', onclick: () => { closePop(); bounceAllParts(); } }, '⤓ Each band part (WAVs)'),
+    h('button', { class: 'btn', onclick: () => { closePop(); download((S.title || 'song').replace(/\W+/g, '_') + '.mid', buildMidi()); toast('MIDI saved', 'ok'); } }, '⤓ MIDI (to open in any music app)'),
+    h('div', { class: 'tiny muted' }, 'Everything is made and saved here. Nothing is uploaded. WAV saves play the song once in real time.'));
+  popover(anchor, box);
+}
 async function humPlay() {
   if (HUM.hear) { try { HUM.hear.stop(); } catch (e) { } HUM.hear = null; }
   try { if (typeof AK !== 'undefined' && AK.killed) await audioResume(); } catch (e) { }
@@ -125,7 +134,7 @@ async function humPlay() {
 function humHear() {
   if (HUM.hear) { try { HUM.hear.stop(); } catch (e) { } HUM.hear = null; return humBar('res'); } if (!HUM.pcm) return; if (T.playing) stopPlay(true);
   const AC = window.AudioContext || window.webkitAudioContext, c = new AC(), b = c.createBuffer(1, HUM.pcm.length, HUM.sr); b.copyToChannel(HUM.pcm, 0); const s = c.createBufferSource(); s.buffer = b; s.connect(c.destination);
-  s.onended = () => { if (HUM.hear === s) HUM.hear = null; try { c.close(); } catch (e) { } if (HUM.bar) humBar('res'); }; s.start(); HUM.hear = s; humBar('res');
+  s.onended = () => { if (HUM.hear === s) HUM.hear = null; try { c.close(); } catch (e) { } if (HUM.bar) humBar('res'); }; s.start(); HUM.hear = s; HUM.hearT0 = performance.now(); humBar('res');
 }
 
 /* ---------- the bottom panel (not a modal, so you still see yourself on stage) ---------- */
@@ -170,6 +179,7 @@ function humResult(d, x) {
   d.append(
     h('div', { class: 'hum-row' }, h('button', { class: 'btn primary hum-play', id: 'humPlay', onclick: () => { if (T.playing) { stopPlay(true); } else humPlay(); } }, T.playing ? '■ Stop' : '▶ Play my song'),
       h('button', { class: 'btn', id: 'humHear', onclick: humHear }, HUM.hear ? '■ Stop' : '👂 Hear my hum'),
+      h('button', { class: 'btn', id: 'humSave', title: 'Save your song, your hum or the parts to this device', onclick: e => humSaveMenu(e.currentTarget) }, '⤓ Save'),
       h('button', { class: 'btn', id: 'humVoice', title: 'Play your own recording along with the band, lined up with the melody. Turn it off to hear just the arrangement.', onclick: e => { const tk = TAKES.find(t => t.hum); if (!tk) return; tk.mute = !tk.mute; takeLive(tk); bus.emit('takes'); try { projSave(); } catch (x) { } e.currentTarget.textContent = tk.mute ? '🎤 My hum: off' : '🎤 My hum: on'; } }, (() => { const tk = TAKES.find(t => t.hum); return tk && tk.mute ? '🎤 My hum: off' : '🎤 My hum: on'; })()),
       h('button', { class: 'btn', id: 'humBand', title: 'Turn the drums, bass and rhythm guitar on or off. Your melody keeps playing.', onclick: e => { const on = !(S.band.drumsOn || S.band.bassOn || S.band.compOn); setRehearsal({ drumsOn: on, bassOn: on, compOn: on }); e.currentTarget.textContent = on ? '🥁 Band: on' : '🥁 Band: off'; } }, (S.band.drumsOn || S.band.bassOn || S.band.compOn) ? '🥁 Band: on' : '🥁 Band: off'),
       h('span', { class: 'hum-sum' }, h('b', {}, an.notes.length + ' notes'), ' · ', h('b', {}, kn), ' · ', h('b', {}, r.bpm + ' BPM'), ' · ', h('b', {}, totalBars() + ' bars')), h('span', { class: 'grow' }), x),

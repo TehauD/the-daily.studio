@@ -74,6 +74,6 @@ async function boot() {
   document.addEventListener('visibilitychange', () => { if (!document.hidden && E.ctx && E.ctx.state === 'suspended') E.ctx.resume(); });
   if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener('devicechange', () => { listDevices(); });
   bus.emit('song');
-  if (/[?&]debug\b/.test(location.search)) window.__daily = { get S() { return S; }, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive };   // test hook, only with ?debug
+  if (/[?&]debug\b/.test(location.search)) window.__daily = { get S() { return S; }, PB, FB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, vzSetMode, haloDraw, HL, KS, nkNext, nkPinChord, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive };   // test hook, only with ?debug
   projInit().catch(e => { console.warn('library', e); PRJ.ready = true; if (PRJ.wantStart) startMaybe(); });
 }

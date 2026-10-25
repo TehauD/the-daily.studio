@@ -105,6 +105,7 @@ function ngEntropy() { const rows = new Map(); NR.trans.forEach((c, k) => { cons
 
 function ngCapture() {
   if (!E.ready) return;
+  for (let i = 0; i < 12; i++) PB.chroma[i] *= .94;
   if (T.playing && E.ctx) {
     const sp = spb(), ph = playheadSlot(), total = Math.max(1, songSlots()), cur = Math.floor(ph);
     if (NR.lastSlot == null || cur < NR.lastSlot || cur - NR.lastSlot > 96) NR.lastSlot = cur - 1;
@@ -112,11 +113,12 @@ function ngCapture() {
       if (s < 0) continue; const bi = Math.floor(s / sp), sib = s - bi * sp, fb = barsCache()[bi]; if (!fb) continue; const cd = chordAt(bi, sib), prog = s / total, sec = fb.sec.name; NR.curSec = fb.sec.id;
       if (cd && cd.sym) {
         if (cd.rel === 0) {
-          ngChordChange(cd.sym, 'song'); const c = parseChord(cd.sym), v = voicingFor(cd.sym);
-          if (S.band.compOn && v) v.frets.forEach((f, i) => { if (f != null) ngAddEvent(S.tuning[i] + S.capo + f, .62, 'song', cd.sym, sec, prog); });
-          if (S.band.bassOn && c) ngAddEvent(36 + c.root, .8, 'song', cd.sym, sec, prog);
+          ngChordChange(cd.sym, 'song'); PB.sym = cd.sym; const c = parseChord(cd.sym), v = voicingFor(cd.sym);
+          if (S.band.compOn && v) v.frets.forEach((f, i) => { if (f != null) { ngAddEvent(S.tuning[i] + S.capo + f, .62, 'song', cd.sym, sec, prog); pbHit(i, f, S.tuning[i] + S.capo + f, .6); } });
+          if (S.band.bassOn && c) { ngAddEvent(36 + c.root, .8, 'song', cd.sym, sec, prog); pbHit(null, null, 36 + c.root, .9); }
         }
-        if (S.band.leadOn) fb.bar.tab.forEach(n => { if (n.s === sib) ngAddEvent(n.f === 'x' ? S.tuning[n.st] + S.capo : noteMidi(n), .85, 'song', cd.sym, sec, prog); });
+        if (S.band.leadOn) fb.bar.tab.forEach(n => { if (n.s === sib) { const mm = n.f === 'x' ? S.tuning[n.st] + S.capo : noteMidi(n); ngAddEvent(mm, .85, 'song', cd.sym, sec, prog); if (n.f !== 'x') pbHit(n.st, +n.f, mm, 1); VZ.pulses.push({ t: performance.now(), a: .7 }); if (VZ.pulses.length > 12) VZ.pulses.shift(); } });
+        if (S.band.drumsOn && sib % 4 === 0) { VZ.pulses.push({ t: performance.now(), a: sib === 0 ? .8 : .45 }); if (VZ.pulses.length > 12) VZ.pulses.shift(); }
       }
     }
     NR.lastSlot = cur;
@@ -210,7 +212,7 @@ function ngRender(g, W, H, cam, opt) {
 const NC = { yaw: .6, pit: .45, zoom: 1, px: 0, py: 0 };   // stage camera
 function ngStageDraw(g, W, H, info) { ngFrameCommon(); NC.yaw += .0025; NC.pit = .38 + Math.sin(VZ.t * .12) * .12; NC.zoom = Math.max(1, Math.min(W, H) / 700 * 1.1); const was = NR.sel; NR.sel = null; ngRender(g, W, H, NC, { noBg: true, noHit: true, dark: true, noCaps: false }); NR.sel = was; }
 function ngFrameCommon() { const now = performance.now(); if (NR.tickAt === now) return; const dt = Math.min(.1, (now - (NR.last || now)) / 1000); NR.last = now; NR.tickAt = now; if (NR.dirty) ngBuild(); if (NG.layout !== 'force') ngLayout(); ngUpdate(dt); }
-function neuralFrame() { if (!E.ready) return; if (NR.dirty && S.sections) ngBuild(); ngCapture(); if (!paneVisible('neural')) return; ngFrameCommon(); if (!NR.cv) return; const cv = NR.cv, g = cv.getContext('2d'); NR.hudT = (NR.hudT || 0) + 1; ngRender(g, cv.width, cv.height, NG, {}); ngHud(g, cv.width, cv.height); if (NR.hudT % 8 === 0) ngPanel(); }
+function neuralFrame() { if (!E.ready) return; if (NR.dirty && S.sections) ngBuild(); ngCapture(); if (!paneVisible('neural')) return; ngFrameCommon(); if (!NR.cv) return; const cv = NR.cv, g = cv.getContext('2d'); NR.hudT = (NR.hudT || 0) + 1; ngRender(g, cv.width, cv.height, NG, {}); ngHud(g, cv.width, cv.height); if (CFG.vzNeck !== false && nkActive()) { const W = cv.width, H = cv.height, w = Math.min(W * .5, 520 * (W / 900 || 1)), hh = Math.max(50, w * .15); drawMiniNeck(g, W - w - 12, 12, w, hh, {}); } if (NR.hudT % 8 === 0) ngPanel(); }
 function ngHud(g, W, H) {
   const L_ = light_(), u = Math.min(W, H * 1.5), mono = 'ui-monospace,Menlo,monospace'; g.font = `700 ${Math.round(u * .024)}px ${mono}`; g.fillStyle = L_ ? 'rgba(20,30,35,.75)' : 'rgba(225,248,248,.8)'; g.textAlign = 'left';
   const lines = [`events ${NR.events.length}   chords ${[...NR.nodes.values()].filter(n => n.kind === 'chord' && n.seen).length}/${[...NR.nodes.values()].filter(n => n.kind === 'chord').length}   transitions ${NR.trans.size}`, `entropy ${ngEntropy().toFixed(2)} bits   next-chord ${NR.hit + NR.miss ? Math.round(NR.hit / (NR.hit + NR.miss) * 100) + '% (' + NR.hit + '/' + (NR.hit + NR.miss) + ')' : '—'}`];
@@ -255,7 +257,7 @@ function buildNeuralPane() {
   cv.addEventListener('contextmenu', e => e.preventDefault());
   cv.addEventListener('pointermove', e => { if (pts.has(e.pointerId)) pts.set(e.pointerId, [e.clientX, e.clientY]); if (pin && pts.size >= 2) { const st = pinStat(), k = cv.width / cv.getBoundingClientRect().width; NG.zoom = clamp(pin.z * st.d / pin.d, .35, 4); NG.px += (st.mx - pin.mx) * k; NG.py += (st.my - pin.my) * k; pin.mx = st.mx; pin.my = st.my; return; } const [x, y, r] = xy(e); if (down) { const dx = e.clientX - down.x, dy = e.clientY - down.y; if (Math.abs(dx) + Math.abs(dy) > 3) down.moved = true; if (down.pan) { NG.px += dx * (cv.width / r.width); NG.py += dy * (cv.width / r.width); } else { NG.yaw += dx * .007; NG.pit = clamp(NG.pit + dy * .006, -1.4, 1.4); } down.x = e.clientX; down.y = e.clientY; return; } const hit = ngPick(x, y); NR.hover = hit ? (hit.e ? hit : hit.n) : null; cv.style.cursor = hit ? 'pointer' : 'grab'; if (hit) { NR.tip.style.display = 'block'; NR.tip.style.left = (e.clientX - r.left + 14) + 'px'; NR.tip.style.top = (e.clientY - r.top + 10) + 'px'; NR.tip.textContent = hit.e ? pcName(hit.e.pc) + (Math.floor(hit.e.midi / 12) - 1) + ' · ' + (hit.e.chord || hit.e.src) : hit.n.label; } else NR.tip.style.display = 'none'; });
   cv.addEventListener('pointercancel', e => { pts.delete(e.pointerId); if (!pts.size) { pin = null; down = null; NR.drag = false; } });
-  cv.addEventListener('pointerup', e => { pts.delete(e.pointerId); if (pin) { if (pts.size < 2) pin = null; if (down) down.moved = true; if (!pts.size) { down = null; NR.drag = false; cv.style.cursor = 'grab'; } return; } const [x, y] = xy(e); if (down && !down.moved) { const hit = ngPick(x, y); NR.sel = hit ? (hit.e ? hit : hit.n) : null; ngPanel(); } down = null; NR.drag = false; cv.style.cursor = 'grab'; });
+  cv.addEventListener('pointerup', e => { pts.delete(e.pointerId); if (pin) { if (pts.size < 2) pin = null; if (down) down.moved = true; if (!pts.size) { down = null; NR.drag = false; cv.style.cursor = 'grab'; } return; } const [x, y] = xy(e); if (down && !down.moved) { const hit = ngPick(x, y); NR.sel = hit ? (hit.e ? hit : hit.n) : null; ngPanel(); if (hit && !hit.e && hit.n && hit.n.kind === 'chord' && hit.n.sym) nkPinChord(hit.n.sym); } down = null; NR.drag = false; cv.style.cursor = 'grab'; });
   cv.addEventListener('pointerleave', () => { NR.hover = null; NR.tip.style.display = 'none'; });
   cv.addEventListener('wheel', e => { e.preventDefault(); NG.zoom = clamp(NG.zoom * Math.exp(-e.deltaY * .0012), .35, 4); }, { passive: false });
   cv.addEventListener('dblclick', () => { NG.yaw = -.6; NG.pit = .38; NG.zoom = 1; NG.px = NG.py = 0; NR.sel = null; });

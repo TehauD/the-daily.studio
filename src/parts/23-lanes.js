@@ -75,7 +75,7 @@ function renderHeads() {
         mute(() => m.m, v => { m.m = v ? 1 : 0; applyMix(); commit(false); }), solo(() => m.s, v => { m.s = v ? 1 : 0; applyMix(); commit(false); }), vol(() => m.g, v => { m.g = v; applyMix(); }, 1.4, 1, 'Vocal track level'));
     } else if (l.type === 'take') {
       const tk = l.take; const vx = tk.kind === 'vox'; t.append(more);
-      b.append(mute(() => tk.mute, v => { tk.mute = v; takeLive(tk); }), solo(() => tk.solo, v => { tk.solo = v; takeLive(tk); }),
+      b.append(bt('⤓', 'dl', 'Save this recording as a WAV file on your device', () => dlTake(tk)), mute(() => tk.mute, v => { tk.mute = v; takeLive(tk); }), solo(() => tk.solo, v => { tk.solo = v; takeLive(tk); }),
         vx ? null : bt('RE-AMP', tk.mode === 'reamp' ? 'on' : '', 'Re-amp: play the dry DI through the CURRENT rig. Off: the wet print as recorded.', e => { tk.mode = tk.mode === 'reamp' ? 'wet' : 'reamp'; e.currentTarget.classList.toggle('on', tk.mode === 'reamp'); if (tk.mode === 'reamp' && !tk.dry) tk.mode = 'wet'; toast(tk.mode === 'reamp' ? 'Re-amp: playing dry DI through the live rig' : 'Playing the wet print as recorded'); }),
         vol(() => tk.g, v => { tk.g = v; takeLive(tk); }, 1.5, 1, 'Take volume'), h('input', { type: 'range', min: -1, max: 1, step: .05, value: tk.pan || 0, title: 'Pan', style: { width: '40px', flex: 'none' }, oninput: e => { tk.pan = +e.target.value; takeLive(tk); } }));
     } else if (l.type === 'trk') {
@@ -84,10 +84,10 @@ function renderHeads() {
         vol(() => STM.vol, v => { STM.vol = v; spBus(); }, 1.5, 1, 'Whole-track level'));
     } else if (l.type === 'stem') {
       const sm = STM.mix[l.idx]; t.append(more);
-      b.append(mute(() => sm.m, v => { sm.m = v; spGains(); renderStemStrips(); TL.dirty = true; }), solo(() => sm.s, v => { sm.s = v; spGains(); renderStemStrips(); TL.dirty = true; }), vol(() => sm.g, v => { sm.g = v; spGains(); }, 1.5, 1, 'Stem level'));
+      b.append(bt('⤓', 'dl', 'Save this stem as a WAV file', () => stemExport(l.idx)), mute(() => sm.m, v => { sm.m = v; spGains(); renderStemStrips(); TL.dirty = true; }), solo(() => sm.s, v => { sm.s = v; spGains(); renderStemStrips(); TL.dirty = true; }), vol(() => sm.g, v => { sm.g = v; spGains(); }, 1.5, 1, 'Stem level'));
     } else {
       t.append(more); const key = BANDMAP[l.id];
-      b.append(key ? h('button', { class: 'pw' + (S.band[key] ? ' on' : ''), 'data-k': key, title: 'Enable / disable this instrument in the band', onclick: () => toggleBand(key) }, '⏻') : null,
+      b.append(key ? bt('⤓', 'dl', 'Save just this part as a WAV (plays the song once in real time)', () => bouncePart(l.id)) : null, key ? h('button', { class: 'pw' + (S.band[key] ? ' on' : ''), 'data-k': key, title: 'Enable / disable this instrument in the band', onclick: () => toggleBand(key) }, '⏻') : null,
         mute(() => m.m, v => { m.m = v ? 1 : 0; applyMix(); commit(false); }), solo(() => m.s, v => { m.s = v ? 1 : 0; applyMix(); commit(false); }), vol(() => m.g, v => { m.g = v; applyMix(); }),
         h('input', { type: 'range', min: -1, max: 1, step: .05, value: m.p, title: 'Pan', style: { width: '40px', flex: 'none' }, oninput: e => { m.p = +e.target.value; applyMix(); } }));
     }
@@ -112,6 +112,8 @@ function laneMenu(anchor, l) {
   box.append(h('div', { class: 'lrow' }, h('span', { style: { width: '54px' } }, 'Colour'), h('div', { class: 'swatches' }, LANE_COLS.map(c => h('button', { class: 'swatch' + (c === l.c ? ' on' : ''), style: { background: c }, 'aria-label': c, onclick: () => { LN.col[l.id] = c; saveLn(); closePop(); renderHeads(); TL.dirty = true; } })))));
   box.append(h('div', { class: 'row', style: { gap: '6px', margin: '4px 0' } }, h('button', { class: 'btn sm', onclick: () => { laneStep(l.id, -1); closePop(); } }, '↑ Up'), h('button', { class: 'btn sm', onclick: () => { laneStep(l.id, 1); closePop(); } }, '↓ Down'),
     h('button', { class: 'btn sm', onclick: () => { LN.hide[l.id] = true; saveLn(); closePop(); renderHeads(); tlSize(); } }, 'Hide')));
+  if (BANDMAP[l.id]) box.append(h('div', { class: 'row', style: { gap: '6px', marginTop: '4px' } }, h('button', { class: 'btn sm', title: 'Plays the song once in real time with only this part on, and saves it', onclick: () => { closePop(); bouncePart(l.id); } }, '⤓ Save this part (WAV)')));
+  if (l.type === 'stem') box.append(h('div', { class: 'row', style: { gap: '6px', marginTop: '4px' } }, h('button', { class: 'btn sm', onclick: () => { closePop(); stemExport(l.idx); } }, '⤓ Save this stem (WAV)')));
   if (l.type === 'take') box.append(h('div', { class: 'row', style: { gap: '6px' } }, h('button', { class: 'btn sm', onclick: () => { closePop(); dlTake(l.take); } }, '⤓ WAV'), h('button', { class: 'btn sm', onclick: () => { closePop(); const i = TAKES.indexOf(l.take); if (i >= 0) TAKES.splice(i, 1); bus.emit('takes'); } }, '✕ Delete take'), h('button', { class: 'btn sm', onclick: () => { closePop(); dockGo('tx'); TX.src = l.take.id; txRefreshSrc(); } }, '♬ Transcribe')));
   if (l.type === 'trk') box.append(h('div', { class: 'row', style: { gap: '6px' } }, h('button', { class: 'btn sm', onclick: () => { closePop(); dockGo('stems'); } }, 'Open Stems'), h('button', { class: 'btn sm bad', onclick: () => { closePop(); stemUnload(); } }, '✕ Unload')));
   if (l.type === 'live' || l.type === 'vox') box.append(h('div', { class: 'tiny muted', style: { marginTop: '4px' } }, 'Input routing and the vocal strip are in the I/O panel (left).'), h('button', { class: 'btn sm', style: { marginTop: '4px' }, onclick: () => { closePop(); sideShow('io'); } }, 'Open I/O'));

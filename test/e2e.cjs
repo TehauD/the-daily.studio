@@ -199,6 +199,32 @@ function wav(L, sr) { const n = L.length, b = Buffer.alloc(44 + n * 2); b.write(
     await hp.click('#humbar .hum-chips button:has-text("Ballad")'); await wait(600);
     ok(await hp.evaluate(() => window.__daily.S.band.kit === 'Brush (soft)'), 'choosing a style re-builds the band right away');
     ok(await hp.evaluate(() => window.__daily.TAKES.filter(t => t.hum).length === 1), 're-arranging replaces the hum take instead of stacking another');
+    await hp.evaluate(async () => { const D = window.__daily; D.dockGo('fret'); D.FB.mode = 'none'; D.S.band.leadOn = true; await D.humPlay(); }); await wait(3500);
+    const PBR = await hp.evaluate(() => { const D = window.__daily, rings = [...document.querySelectorAll('#fretsvg g')].filter(g => [...g.querySelectorAll('*')].some(e => e.getAttribute('opacity') && +e.getAttribute('opacity') > .2 && e.getAttribute('fill') === 'none')).length;
+      return { hits: D.PB.seq, src: D.visAna() === D.E.anaMaster, shown: [...document.querySelectorAll('#fretsvg g')].filter(g => g.style.display !== 'none' && g.querySelector('circle,polygon')).length, rings }; });
+    ok(PBR.hits > 5 && PBR.src, 'while the song plays, the visuals follow the mix and the playhead feeds the fretboard (' + PBR.hits + ' note hits)');
+    const GH = await hp.evaluate(() => { const D = window.__daily, g = D.nkNext(), k = D.neckMarks().map(m => m.k); return { lead: !!(g && g.lead), kinds: [...new Set(k)].join(), eta: g && g.eta }; });
+    ok(GH.lead && GH.eta >= 0 && GH.eta < 2.5, 'while playing, the neck knows the next lead note and how soon it arrives (' + (GH.eta && GH.eta.toFixed(2)) + ' s)');
+    await hp.evaluate(() => { const D = window.__daily; if (D.T.playing) D.stopPlay(true); });
+    const NKR = await hp.evaluate(async () => { const D = window.__daily; await D.nkPinChord('C'); const pin = D.neckMarks().filter(m => m.k === 'pin').length;
+      D.HUM.rec = {}; D.HUM.live = { m: 64, t: performance.now() }; const vo = D.neckMarks().filter(m => m.k === 'voice'); D.HUM.rec = null; D.HUM.live = null; D.NK.pin = null;
+      return { pin, vo: vo.length, ok: vo.every(m => 40 + m.f + 0 >= 0) }; });
+    ok(NKR.pin >= 4, 'picking a chord shows its shape on the neck (' + NKR.pin + ' notes)');
+    ok(NKR.vo >= 2, 'the note you sing is shown at every place it can be played on the neck (' + NKR.vo + ')');
+    for (const mode of ['halo', 'kaleido']) {
+      await hp.evaluate(async m => { const D = window.__daily; D.dockGo('vis'); D.vzSetMode(m); await D.humPlay(); }, mode); await wait(2600);
+      const lit = await hp.evaluate(() => { const cv = document.querySelector('.vcanvas'), g = cv.getContext('2d'), d = g.getImageData(0, 0, cv.width, cv.height).data; let n = 0, tot = 0; for (let i = 0; i < d.length; i += 64) { tot++; if (d[i] + d[i + 1] + d[i + 2] > 120) n++; } return n / tot; });
+      ok(lit > .004 && lit < .97, 'the ' + mode + ' look draws something (' + (lit * 100).toFixed(1) + '% of pixels lit)');
+      await hp.evaluate(() => { const D = window.__daily; if (D.T.playing) D.stopPlay(true); });
+    }
+    await hp.evaluate(() => window.__daily.vzSetMode('hex'));
+    ok(await hp.evaluate(() => { const D = window.__daily; D.dockGo('song'); return !!document.querySelector('.tl-head.take button.dl') && !!document.querySelector('.tl-head.bass button.dl, .tl-head.drums button.dl'); }), 'every recording and band track has a Save (⤓) button on its lane');
+    const dlp = hp.waitForEvent('download', { timeout: 60000 });
+    await hp.evaluate(() => { const D = window.__daily; window.__keep = { sec: D.S.sections.slice(), bpm: D.S.bpm }; D.S.sections = D.S.sections.slice(0, 1); D.S.sections[0].bars = D.S.sections[0].bars.slice(0, 2); D.S.bpm = 200; D.bouncePart('bass'); });
+    const dl = await dlp.catch(() => null);
+    ok(!!dl && /bass\.wav$/.test(dl.suggestedFilename()), 'Save on the Bass lane downloads that part alone as a WAV (' + (dl && dl.suggestedFilename()) + ')');
+    await wait(500);
+    ok(await hp.evaluate(() => { const D = window.__daily; D.S.sections = window.__keep.sec; D.S.bpm = window.__keep.bpm; return D.S.band.drumsOn && D.S.band.bassOn && D.S.band.compOn && D.S.band.leadOn && D.TAKES.every(t => !t.mute); }), 'after saving one part the band and takes are switched back on');
     ok(await hp.evaluate(() => !window.__daily.CAM.on), 'the camera stays off until you ask for center stage');
     await hp.evaluate(() => { const b = document.getElementById('vzCamBtn'); if (b) b.click(); }); await wait(3500);
     ok(await hp.evaluate(() => window.__daily.CAM.on && window.__daily.VZ.cam && window.__daily.CFG.camFx === 'person'), 'one tap on Camera backdrop starts the camera and puts you in front (green screen)');

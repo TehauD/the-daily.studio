@@ -242,13 +242,22 @@ function encodeWav(chs, sr, bits = 24) {
   return new Blob([buf], { type: 'audio/wav' });
 }
 let BOUNCE = null;
-async function bounceMaster() {
-  await startAudio(); if (T.playing) stopPlay(true);
+async function bounceMaster(tag) {
+  if (BOUNCE) return toast('A bounce is already running', 'warn'); await startAudio(); if (T.playing) stopPlay(true);
   BOUNCE = { l: [], r: [], t0: 0 }; const was = { loop: T.loop, metro: T.metro }; T.loop = false; T.metro = false; T.cursor = 0;
   toast('Bouncing master in real time…'); await play(); BOUNCE.t0 = E.ctx.currentTime + .08; E.tapMaster.on(true);
   const total = songSlots() * slotDur();
   await new Promise(r => setTimeout(r, (total + 3.2) * 1000)); E.tapMaster.on(false); stopPlay(true); T.loop = was.loop; T.metro = was.metro;
   const B = BOUNCE; BOUNCE = null; if (!B.l.length) return toast('Nothing captured', 'bad');
-  const l = cat(B.l), r = cat(B.r); download((S.title || 'song').replace(/\W+/g, '_') + '_master.wav', encodeWav([l, r], E.ctx.sampleRate, 24)); toast('Master bounce saved', 'ok');
+  const l = cat(B.l), r = cat(B.r); download((S.title || 'song').replace(/\W+/g, '_') + '_' + (tag || 'master') + '.wav', encodeWav([l, r], E.ctx.sampleRate, 24)); toast((tag ? 'Saved ' + tag : 'Master bounce saved'), 'ok');
 }
+/** Save one band part (Drums, Bass, Rhythm Gtr or Lead) as its own stereo WAV: everything else is silenced for one real-time pass, then put back. */
+async function bouncePart(id) {
+  const key = BANDMAP[id]; if (!key) return; if (!S.band[key]) return toast('Switch this part on first (the ⏻ button on its lane)', 'warn');
+  const keys = Object.values(BANDMAP), was = keys.map(k => S.band[k]), tm = TAKES.map(t => t.mute), sm = STM.mute;
+  keys.forEach(k => { S.band[k] = k === key; }); TAKES.forEach(t => { t.mute = true; }); STM.mute = true; try { spBus(); } catch (e) { }
+  try { await bounceMaster(({ drums: 'drums', bass: 'bass', rhythm: 'rhythm_guitar', lead: 'lead' })[id]); }
+  finally { keys.forEach((k, i) => { S.band[k] = was[i]; }); TAKES.forEach((t, i) => { t.mute = tm[i]; }); STM.mute = sm; try { spBus(); } catch (e) { } bus.emit('song', 'band'); bus.emit('takes'); }
+}
+async function bounceAllParts() { for (const id of Object.keys(BANDMAP)) if (S.band[BANDMAP[id]]) await bouncePart(id); }
 bus.on('tap:master', m => { if (!BOUNCE) return; const sr = E.ctx.sampleRate; let off = Math.round((BOUNCE.t0 - m.t) * sr); if (off < 0) off = 0; if (off >= m.l.length) return; BOUNCE.l.push(m.l.subarray(off)); BOUNCE.r.push((m.r || m.l).subarray(off)); });

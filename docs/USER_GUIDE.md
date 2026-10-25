@@ -157,7 +157,7 @@ A node graph of the music as it plays: notes, chords, functions (tonic, subdomin
 
 ## Visuals and Stage
 
-**Visuals** (6) offers Hex Resonance, Hex Tunnel, Spectrogram, Chroma Wheel, Oscilloscope, String Field, Chord Bloom, Harmonic Orrery, Ridgeline, Beat Grid, a Prompter and the Neural map, driven by the rig output, the master mix or your dry DI. Add a **camera backdrop** or go **⛶ Stage mode**.
+**Visuals** (6) offers Hex Resonance, Hex Tunnel, Spectrogram, Chroma Wheel, Oscilloscope, String Field, Chord Bloom, Harmonic Orrery, Ridgeline, Beat Grid, a Prompter, the Neural map, **Fifths Halo** (the circle of fifths as a ring around you, with the song's chords on it and your notes flying in) and **Prism** (a kaleidoscope that changes on the off-beat; flashes and spin are limited while Stage ▸ safe is on). In full-screen, **✦ Look** cycles Hex Resonance, Fifths Halo, Prism and Tunnel. **🎸 Neck** puts a small guitar neck on the visuals and the Neural map: what is playing, a dashed ghost of the note coming next, the note you are singing (pink, at every place it can be played) and any chord you click in the Neural map, driven by the rig output, the master mix or your dry DI. Add a **camera backdrop** or go **⛶ Stage mode**.
 
 **Camera look.** Turn on **📷 Camera backdrop** (Visuals tab, or per scene in Stage) after starting the camera in the Vision tab, then pick how it sits with the visuals: *Dimmed behind the visuals*; *Visuals frame me (edges in)*, where you stay clear in a soft oval and the visuals live around the edges (drag the slider to size the clear area); or *Me in front (green screen)*, which cuts you out so the visuals play behind you. The cut-out downloads a small model the first time (Google's selfie segmenter, nothing is uploaded); offline it falls back to edges-in. Good light and a plain-ish background help the cut-out.
 
@@ -178,7 +178,7 @@ Live and session measurements: pitch-class usage and intonation (mean cents devi
 ## Export, history and backup
 
 * **Ultimate Guitar** text with `[ch]` / `[tab]` tags (toggle off for plain text), **ChordPro**, lyrics-only, and tab-only, each with **Copy** and **Download**. A **submission lint** warns about unreadable chords, over-wide lines and similar problems.
-* **MIDI**, **Bounce master WAV (real time)**, **All takes (dry DI + wet)**, **Project JSON** (<kbd>Ctrl/⌘</kbd>+<kbd>S</kbd>), **Import project**, **Load demo song**, **New blank song**.
+* **MIDI**, **Bounce master WAV (real time)**, **Each band part (WAVs)**, **All takes (dry DI + wet)**, **Project JSON** (<kbd>Ctrl/⌘</kbd>+<kbd>S</kbd>), **Import project**, **Load demo song**, **New blank song**.
 * **Version history** snapshots your song automatically (before each play, periodically and when you leave the page) and keeps the last 30 in this browser. **Restoring** first snapshots the current state, so it is reversible. **＋ Snapshot now** makes one on demand.
 * Your song autosaves to this browser. **Project JSON is your portable backup**; clearing browser data deletes the autosave.
 

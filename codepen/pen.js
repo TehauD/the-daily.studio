@@ -1068,15 +1068,24 @@ function encodeWav(chs, sr, bits = 24) {
   return new Blob([buf], { type: 'audio/wav' });
 }
 let BOUNCE = null;
-async function bounceMaster() {
-  await startAudio(); if (T.playing) stopPlay(true);
+async function bounceMaster(tag) {
+  if (BOUNCE) return toast('A bounce is already running', 'warn'); await startAudio(); if (T.playing) stopPlay(true);
   BOUNCE = { l: [], r: [], t0: 0 }; const was = { loop: T.loop, metro: T.metro }; T.loop = false; T.metro = false; T.cursor = 0;
   toast('Bouncing master in real time…'); await play(); BOUNCE.t0 = E.ctx.currentTime + .08; E.tapMaster.on(true);
   const total = songSlots() * slotDur();
   await new Promise(r => setTimeout(r, (total + 3.2) * 1000)); E.tapMaster.on(false); stopPlay(true); T.loop = was.loop; T.metro = was.metro;
   const B = BOUNCE; BOUNCE = null; if (!B.l.length) return toast('Nothing captured', 'bad');
-  const l = cat(B.l), r = cat(B.r); download((S.title || 'song').replace(/\W+/g, '_') + '_master.wav', encodeWav([l, r], E.ctx.sampleRate, 24)); toast('Master bounce saved', 'ok');
+  const l = cat(B.l), r = cat(B.r); download((S.title || 'song').replace(/\W+/g, '_') + '_' + (tag || 'master') + '.wav', encodeWav([l, r], E.ctx.sampleRate, 24)); toast((tag ? 'Saved ' + tag : 'Master bounce saved'), 'ok');
 }
+/** Save one band part (Drums, Bass, Rhythm Gtr or Lead) as its own stereo WAV: everything else is silenced for one real-time pass, then put back. */
+async function bouncePart(id) {
+  const key = BANDMAP[id]; if (!key) return; if (!S.band[key]) return toast('Switch this part on first (the ⏻ button on its lane)', 'warn');
+  const keys = Object.values(BANDMAP), was = keys.map(k => S.band[k]), tm = TAKES.map(t => t.mute), sm = STM.mute;
+  keys.forEach(k => { S.band[k] = k === key; }); TAKES.forEach(t => { t.mute = true; }); STM.mute = true; try { spBus(); } catch (e) { }
+  try { await bounceMaster(({ drums: 'drums', bass: 'bass', rhythm: 'rhythm_guitar', lead: 'lead' })[id]); }
+  finally { keys.forEach((k, i) => { S.band[k] = was[i]; }); TAKES.forEach((t, i) => { t.mute = tm[i]; }); STM.mute = sm; try { spBus(); } catch (e) { } bus.emit('song', 'band'); bus.emit('takes'); }
+}
+async function bounceAllParts() { for (const id of Object.keys(BANDMAP)) if (S.band[BANDMAP[id]]) await bouncePart(id); }
 bus.on('tap:master', m => { if (!BOUNCE) return; const sr = E.ctx.sampleRate; let off = Math.round((BOUNCE.t0 - m.t) * sr); if (off < 0) off = 0; if (off >= m.l.length) return; BOUNCE.l.push(m.l.subarray(off)); BOUNCE.r.push((m.r || m.l).subarray(off)); });
 
 /* >>> parts/04-analysis.js */
@@ -2284,6 +2293,7 @@ function buildExportPane() {
     h('div', { class: 'card' }, h('h4', {}, 'Files'), h('div', { class: 'card-b row', style: { gap: '8px', flexWrap: 'wrap' } },
       h('button', { class: 'btn', onclick: () => { download(fn('.mid'), buildMidi()); toast('MIDI saved (rhythm, lead, bass, drums on separate tracks)', 'ok'); } }, '⤓ MIDI'),
       h('button', { class: 'btn', onclick: () => bounceMaster() }, '⤓ Bounce master WAV (real time)'),
+      h('button', { class: 'btn', title: 'One WAV per band part (drums, bass, rhythm, lead). Plays the song once for each, in real time.', onclick: () => bounceAllParts() }, '⤓ Each band part (WAVs)'),
       h('button', { class: 'btn', onclick: () => { if (!TAKES.length) return toast('No takes recorded yet', 'warn'); TAKES.forEach((t, i) => setTimeout(() => dlTake(t), i * 700)); } }, '⤓ All takes (dry DI + wet)'),
       h('button', { class: 'btn', onclick: exportProject }, '⤓ Project JSON (Ctrl+S)'), h('button', { class: 'btn', onclick: () => imp.click() }, '⤒ Import project'), imp,
       h('button', { class: 'btn bad', onclick: () => { if (confirm('Replace the current song with the demo? (Undo with Ctrl+Z)')) { S = demoSong(); commit(true); bus.emit('song', 'reload'); } } }, 'Load demo song'),
@@ -2297,6 +2307,13 @@ function buildExportPane() {
    ============================================================ */
 
 /* ---------------- FRETBOARD ---------------- */
+/** What the SONG is playing right now (band, lead tab, chords). The fretboard, hexes and chroma wheel read this as well as the live input,
+ *  so they move for playback too. Fed from the playhead in ngCapture(). */
+const PB = { hits: [], seq: 0, chroma: new Float32Array(12), sym: '', at: 0 };
+function pbHit(st, f, midi, v) {
+  const now = performance.now(); PB.at = now; PB.seq++; if (st != null && st >= 0) { PB.hits.push({ st, f, t: now, v }); if (PB.hits.length > 28) PB.hits.shift(); }
+  if (midi != null) { const pc = ((midi % 12) + 12) % 12; PB.chroma[pc] = Math.max(PB.chroma[pc], v || .8); }
+}
 const FB = { mode: 'scale', follow: true, nodes: [], W: 1180, H: 230, frets: 22 };
 function buildFretPane() {
   const p = PANES.fret, sel = (opts, val, fn) => h('select', { class: 'in', style: { width: 'auto', fontFamily: 'var(--sans)' }, onchange: e => fn(e.target.value) }, opts.map(o => h('option', { value: o[0], selected: o[0] === val }, o[1])));
@@ -2328,10 +2345,10 @@ function renderFret() {
     for (let n = 0; n <= NF_; n++) {
       const midi = open + S.capo + n, pc = midi % 12, x = n === 0 ? posX(0) + (left ? 14 : -14) : (posX(n) + posX(n - 1)) / 2;
       const g = sv('g', { class: 'fn', transform: `translate(${x.toFixed(1)},${y.toFixed(1)})`, style: 'cursor:pointer', 'data-st': st, 'data-f': n }), r = 9.5;
-      const poly = sv('polygon', { points: hexPts(0, 0, r + 1), fill: 'var(--accent)', stroke: 'var(--accent)', 'stroke-width': 1.5 }), ring = sv('circle', { r: r + 4, fill: 'none', stroke: 'var(--accent2)', 'stroke-width': 3, opacity: 0 }), cam = sv('circle', { r: r + 6, fill: 'none', stroke: 'var(--cv3)', 'stroke-width': 2, 'stroke-dasharray': '3 3', opacity: 0 });
-      const txt = sv('text', { class: 'fnote', 'text-anchor': 'middle', y: 3.4, fill: '#fff' }, ''); g.append(cam, ring, poly, txt);
+      const poly = sv('polygon', { points: hexPts(0, 0, r + 1), fill: 'var(--accent)', stroke: 'var(--accent)', 'stroke-width': 1.5 }), ring = sv('circle', { r: r + 4, fill: 'none', stroke: 'var(--accent2)', 'stroke-width': 3, opacity: 0 }), cam = sv('circle', { r: r + 6, fill: 'none', stroke: 'var(--cv3)', 'stroke-width': 2, 'stroke-dasharray': '3 3', opacity: 0 }), gh = sv('circle', { r: r + 5, fill: 'var(--accent2)', 'fill-opacity': .18, stroke: 'var(--accent2)', 'stroke-width': 2, 'stroke-dasharray': '4 3', opacity: 0 }), vo = sv('circle', { r: r + 6, fill: 'none', stroke: '#ff5fc8', 'stroke-width': 3.5, opacity: 0 });
+      const txt = sv('text', { class: 'fnote', 'text-anchor': 'middle', y: 3.4, fill: '#fff' }, ''); g.append(cam, gh, vo, ring, poly, txt);
       g.addEventListener('pointerdown', async () => { await startAudio(); pluck('lead', E.ctx.currentTime + .01, midi, .85, { id: 'l' + st, pan: (st - 2.5) * .08 }); });
-      svg.append(g); FB.nodes[st][n] = { g, poly, ring, cam, txt, midi, pc, st, n };
+      svg.append(g); FB.nodes[st][n] = { g, poly, ring, cam, gh, vo, txt, midi, pc, st, n };
     }
   });
   UI.fb.innerHTML = ''; UI.fb.append(svg); FB.scPcs = scPcs; FB.root = root; paintFret(true);
@@ -2342,18 +2359,19 @@ function paintFret(force) {
     let sym = null; if (FB.follow) { const ph = playheadSlot(), sp = spb(), bi = Math.floor(ph / sp), cd = chordAt(Math.max(0, bi), Math.max(0, Math.floor(ph) - bi * sp)); sym = cd && cd.sym; }
     if (!sym) sym = (barChords((flatBars()[0] || { bar: { chord: '' } }).bar)[0]); const pc = sym && parseChord(sym); if (pc) { chordPcs = new Set(pc.pcs); chordRoot = pc.root; chName = sym; }
   }
-  const key = [FB.mode, root, chName, CFG.fretNames, AN.midi, VIS.cands.length ? VIS.cands[VIS.cands.length - 1].t | 0 : 0].join();
+  const nowT = performance.now(), mk = neckMarks(nowT), mkMap = new Map(); mk.forEach(m => { const q = m.st + ':' + m.f; const o = mkMap.get(q) || {}; o[m.k] = Math.max(o[m.k] || 0, m.a); mkMap.set(q, o); });
+  const pbOn = mk.length > 0, key = [FB.mode, root, chName, CFG.fretNames, AN.midi, VIS.cands.length ? VIS.cands[VIS.cands.length - 1].t | 0 : 0, pbOn ? PB.seq + ':' + Math.floor(nowT / 70) + ':' + mk.length : 0].join();
   if (!force && key === FB.key) return; FB.key = key; const info = $('#fbinfo'); if (info) info.textContent = (FB.mode === 'chord' || FB.mode === 'both' ? chName + ' · ' : '') + pcName(root) + ' ' + S.scale;
   const now = performance.now(), cams = VIS.cands.filter(c => now - c.t < 500);
   FB.nodes.forEach(row => row.forEach(nd => {
     const inS = FB.scPcs.has(nd.pc), inC = chordPcs.has(nd.pc), show = FB.mode === 'scale' ? inS : FB.mode === 'chord' ? inC : FB.mode === 'both' ? (inS || inC) : false;
-    const live = AN.midi != null && AN.midi === nd.midi, camHit = cams.some(c => c.st === nd.st && c.fret === nd.n);
-    nd.g.style.display = (show || live || camHit) ? '' : 'none'; if (!show && !live && !camHit) return;
+    const mm = mkMap.get(nd.st + ':' + nd.n) || {}, pbA = Math.max(mm.hit || 0, mm.pin || 0), live = (AN.midi != null && AN.midi === nd.midi) || pbA > .02, camHit = cams.some(c => c.st === nd.st && c.fret === nd.n);
+    const gA = mm.ghost || 0, vA = mm.voice || 0; nd.g.style.display = (show || live || camHit || gA || vA) ? '' : 'none'; nd.gh.setAttribute('opacity', gA); nd.vo.setAttribute('opacity', vA); if (!show && !live && !camHit && !gA && !vA) return;
     const isRoot = nd.pc === root, isChordRoot = chordRoot != null && nd.pc === chordRoot && FB.mode !== 'scale'; const hl = FB.mode === 'both' ? inC : (FB.mode === 'chord' ? inC : isRoot);
     nd.poly.setAttribute('fill', isRoot || isChordRoot ? 'var(--accent)' : 'var(--panel2)'); nd.poly.setAttribute('stroke', inC && FB.mode === 'both' ? 'var(--accent2)' : 'var(--accent)'); nd.poly.setAttribute('opacity', show ? 1 : .35); nd.poly.setAttribute('stroke-width', hl && !isRoot ? 2.5 : 1.5);
     nd.txt.setAttribute('fill', isRoot || isChordRoot ? '#fff' : 'var(--text)');
     nd.txt.textContent = CFG.fretNames === 'frets' ? nd.n : CFG.fretNames === 'degrees' ? (IVNAMES[(nd.pc - root + 12) % 12]) : pcName(nd.pc);
-    nd.ring.setAttribute('opacity', live ? .95 : 0); nd.cam.setAttribute('opacity', camHit ? .95 : 0);
+    nd.ring.setAttribute('opacity', pbA > .02 ? Math.max(.25, pbA) : live ? .95 : 0); nd.cam.setAttribute('opacity', camHit ? .95 : 0);
   }));
 }
 
@@ -2363,22 +2381,25 @@ const VMODES = [['hex', 'Hex Resonance'], ['tunnel', 'Hex Tunnel'], ['spectro', 
 function buildVisPane() {
   const p = PANES.vis; p.classList.add('flex');
   const bar = h('div', { class: 'row', style: { gap: '8px', marginBottom: '8px', flexWrap: 'wrap' } },
-    h('div', { class: 'seg' }, VMODES.map(([k, n]) => h('button', { class: k === VZ.mode ? 'on' : '', 'data-m': k, onclick: e => { VZ.mode = k; CFG.visMode = k; saveCfg(); VZ.spec = null; VZ.hexes = null; $$('.seg [data-m]', bar).forEach(b => b.classList.toggle('on', b === e.target)); } }, n))),
-    h('select', { class: 'in', style: { width: 'auto', fontFamily: 'var(--sans)' }, title: 'Analysis source', onchange: e => { VZ.src = e.target.value; } }, [['rig', 'Source: rig output'], ['master', 'Source: master mix'], ['di', 'Source: dry DI']].map(([v, n]) => h('option', { value: v }, n))),
+    h('div', { class: 'seg' }, VMODES.map(([k, n]) => h('button', { class: k === VZ.mode ? 'on' : '', 'data-m': k, onclick: e => { vzSetMode(k); $$('.seg [data-m]', bar).forEach(b => b.classList.toggle('on', b === e.target)); } }, n))),
+    h('select', { class: 'in', style: { width: 'auto', fontFamily: 'var(--sans)' }, title: 'Analysis source', onchange: e => { VZ.src = e.target.value; } }, [['auto', 'Source: auto (follows playback)'], ['rig', 'Source: rig output'], ['master', 'Source: master mix'], ['di', 'Source: dry DI']].map(([v, n]) => h('option', { value: v }, n))),
     h('button', { class: 'btn sm' + (VZ.cam ? ' on' : ''), id: 'vzCamBtn', title: 'Put yourself center stage: turns the camera on behind the visuals', onclick: () => vzCamPress() }, '📷 Camera backdrop'), camFxBox(),
+    h('button', { class: 'btn sm' + (CFG.vzNeck !== false ? ' on' : ''), id: 'vzNeckBtn', title: 'Show a small guitar neck on the visuals: what is playing, what is coming next, the note you are singing', onclick: e => { CFG.vzNeck = CFG.vzNeck === false; saveCfg(); e.currentTarget.classList.toggle('on', CFG.vzNeck !== false); } }, '🎸 Neck'),
     h('button', { class: 'btn sm', onclick: () => { const w = UI.vwrap; (document.fullscreenElement ? document.exitFullscreen() : w.requestFullscreen && w.requestFullscreen()); } }, '⛶ Stage mode'));
   UI.vwrap = h('div', { class: 'vwrap', style: { flex: 1, minHeight: '320px' } }, UI.vcv = h('canvas', { class: 'vcanvas', style: { height: '100%', minHeight: '320px' } }));
   p.append(bar, UI.vwrap); new ResizeObserver(() => { const d = (window.devicePixelRatio || 1) * (CFG.vq || 1), w = UI.vcv.clientWidth, hh = UI.vcv.clientHeight; if (w && (UI.vcv.width !== Math.floor(w * d) || UI.vcv.height !== Math.floor(hh * d))) { UI.vcv.width = Math.floor(w * d); UI.vcv.height = Math.floor(hh * d); VZ.spec = null; VZ.hexes = null; } }).observe(UI.vwrap);
   bus.on('onset', () => { VZ.pulses.push({ t: performance.now(), a: clamp((AN.rms + 50) / 40, .2, 1) }); if (VZ.pulses.length > 12) VZ.pulses.shift(); });
 }
 const vcol = () => { const cs = getComputedStyle(document.documentElement); return { a: cs.getPropertyValue('--accent').trim(), b: cs.getPropertyValue('--accent2').trim(), c: cs.getPropertyValue('--cv3').trim(), d: cs.getPropertyValue('--cv4').trim() }; };
-function visAna() { return VZ.src === 'master' ? E.anaMaster : VZ.src === 'di' ? E.anaDI : E.anaRig; }
+/** 'auto' follows what is sounding: the mix while the song, a hum or a backing track plays, the guitar rig otherwise */
+const vzPlaying = () => T.playing || (typeof STP !== 'undefined' && STP.playing);
+function visAna() { const s = VZ.src || 'auto'; return s === 'master' || (s === 'auto' && vzPlaying()) ? E.anaMaster : s === 'di' ? E.anaDI : E.anaRig; }
 function drawVis(cvo, o) {
   o = o || {}; const cv = cvo || UI.vcv; if (!cv || !E.ready || (!cvo && !paneVisible('vis'))) return; const MODE = o.mode || VZ.mode; const g = cv.getContext('2d'), W = cv.width, H = cv.height, now = performance.now(), dt = Math.min(.1, (now - (VZ.last || now)) / 1000); VZ.last = now; VZ.t += dt;
   const an = visAna(); if (!an) return; if (!VZ.fd || VZ.fd.length !== an.frequencyBinCount) VZ.fd = new Float32Array(an.frequencyBinCount); an.getFloatFrequencyData(VZ.fd); const fd = VZ.fd, bh = E.ctx.sampleRate / an.fftSize;
   const light = CFG.theme === 'light', C = o.C || vcol();
   // background (always dark stage for contrast, tinted by theme)
-  if (MODE !== 'spectro') { g.globalAlpha = o.bgA == null ? 1 : o.bgA; g.fillStyle = light && !cvo ? '#0c1a1b' : '#050b0c'; g.fillRect(0, 0, W, H); g.globalAlpha = 1; }
+  if (MODE !== 'spectro' && MODE !== 'kaleido') { g.globalAlpha = o.bgA == null ? 1 : o.bgA; g.fillStyle = light && !cvo ? '#0c1a1b' : '#050b0c'; g.fillRect(0, 0, W, H); g.globalAlpha = 1; }
   const camOn = !!((o.cam != null ? o.cam : VZ.cam) && CAM.video && CAM.video.readyState >= 2 && MODE !== 'spectro');
   if (camOn && (CFG.camFx || 'over') === 'over') { g.save(); g.globalAlpha = .32; if (CFG.mirror) { g.translate(W, 0); g.scale(-1, 1); } const vr = CAM.video.videoWidth / CAM.video.videoHeight, cr = W / H; let dw = W, dh = H, dx = 0, dy = 0; if (vr > cr) { dw = H * vr; dx = (W - dw) / 2; } else { dh = W / vr; dy = (H - dh) / 2; } g.drawImage(CAM.video, dx, dy, dw, dh); g.restore(); }
   const lvl = x => clamp((x + 88 + (o.gain || 0)) / 62, 0, 1), bin = f => clamp(Math.round(f / bh), 1, fd.length - 1);
@@ -2391,7 +2412,9 @@ function drawVis(cvo, o) {
   else if (MODE === 'scope') drawScope(g, W, H, C);
   else if (MODE === 'strings') drawStringField(g, W, H, fd, bin, lvl, C);
   else if (typeof stageExtra === 'function') stageExtra(MODE, g, W, H, { fd, bin, lvl, C, pulse, energy, dt, o });
-  if (camOn && !cvo) camTop(g, W, H);   // stage draws its own camera layer after trails and kaleidoscope
+  if (camOn && !cvo) camTop(g, W, H);
+  if (MODE === 'halo' && !cvo) haloFront(g);   // stage draws its own camera layer after trails and kaleidoscope
+  if (!cvo && CFG.vzNeck !== false) { const r = neckRect(W, H); drawMiniNeck(g, r[0], r[1], r[2], r[3], { C }); }
   if (o.noText) return;
   g.fillStyle = 'rgba(255,255,255,.55)'; g.font = `${Math.round(11 * H / 400 + 6)}px ui-monospace,Menlo,monospace`; g.textBaseline = 'top';
   if (AN.midi != null && AN.active) { g.fillStyle = 'rgba(255,255,255,.85)'; g.font = `800 ${Math.round(28 * Math.min(W, H * 2) / 900 + 10)}px ui-monospace,Menlo,monospace`; g.fillText(pcName(AN.midi) + (Math.floor(AN.midi / 12) - 1) + '  ' + (AN.cents >= 0 ? '+' : '') + AN.cents.toFixed(0) + '¢', 14, 12); }
@@ -2425,13 +2448,13 @@ function drawSpectro(g, W, H, fd, bin, lvl, C) {
   g.drawImage(VZ.spec, 0, 0); g.fillStyle = 'rgba(255,255,255,.5)'; g.font = '11px ui-monospace,monospace'; [110, 220, 440, 880, 1760, 3520, 7040].forEach(f => { const y = (1 - Math.log(f / fmin) / lr) * H; g.fillRect(W - 8, y, 8, 1); g.fillText(f < 1000 ? f : (f / 1000) + 'k', W - 34, y - 12); });
 }
 function drawChroma(g, W, H, C) {
-  const cx = W / 2, cy = H / 2, R = Math.min(W, H) * .42, ch = AN.chroma, mx = Math.max(.001, ...ch), key = AN.key && AN.key[0];
+  const cx = W / 2, cy = H / 2, R = Math.min(W, H) * .42, ch0 = AN.chroma, m0 = Math.max(.001, ...ch0), play = T.playing, ch = play ? Array.from(ch0, (x, i) => Math.max(x / m0 * (AN.active ? 1 : 0), PB.chroma[i])) : ch0, mx = Math.max(.001, ...ch), key = AN.key && AN.key[0];
   for (let i = 0; i < 12; i++) {
     const pc = (i * 7) % 12, a0 = (i / 12) * Math.PI * 2 - Math.PI / 2 - Math.PI / 12, a1 = a0 + Math.PI / 6, v = ch[pc] / mx, inKey = key && SCALES[key.minor ? 'Natural Minor (Aeolian)' : 'Major (Ionian)'].includes(((pc - key.root) + 12) % 12);
     g.beginPath(); g.moveTo(cx, cy); g.arc(cx, cy, R * (.28 + .72 * v), a0, a1); g.closePath(); g.fillStyle = mixc(C.a, C.b, v, .25 + .7 * v); g.fill(); g.strokeStyle = 'rgba(255,255,255,.18)'; g.stroke();
     const am = (a0 + a1) / 2; g.fillStyle = (AN.midi != null && AN.midi % 12 === pc) ? C.b : inKey ? 'rgba(255,255,255,.95)' : 'rgba(255,255,255,.45)'; g.font = `800 ${Math.round(R * .1)}px ui-monospace,monospace`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(pcName(pc), cx + Math.cos(am) * R * 1.12, cy + Math.sin(am) * R * 1.12);
   }
-  g.fillStyle = 'rgba(255,255,255,.9)'; g.font = `800 ${Math.round(R * .22)}px ui-monospace,monospace`; g.fillText(AN.active && AN.chord[0] ? AN.chord[0].sym : '—', cx, cy - R * .04); g.font = `600 ${Math.round(R * .085)}px ui-monospace,monospace`; g.fillStyle = 'rgba(255,255,255,.55)';
+  g.fillStyle = 'rgba(255,255,255,.9)'; g.font = `800 ${Math.round(R * .22)}px ui-monospace,monospace`; g.fillText(play && PB.sym ? PB.sym : AN.active && AN.chord[0] ? AN.chord[0].sym : '—', cx, cy - R * .04); g.font = `600 ${Math.round(R * .085)}px ui-monospace,monospace`; g.fillStyle = 'rgba(255,255,255,.55)';
   g.fillText(key ? 'key ' + pcName(key.root) + (key.minor ? 'm' : '') + '  r=' + key.r.toFixed(2) : 'circle of fifths · play to estimate key', cx, cy + R * .16); g.textAlign = 'left';
 }
 function drawScope(g, W, H, C) {
@@ -3359,7 +3382,7 @@ async function boot() {
   document.addEventListener('visibilitychange', () => { if (!document.hidden && E.ctx && E.ctx.state === 'suspended') E.ctx.resume(); });
   if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener('devicechange', () => { listDevices(); });
   bus.emit('song');
-  if (/[?&]debug\b/.test(location.search)) window.__daily = { get S() { return S; }, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive };   // test hook, only with ?debug
+  if (/[?&]debug\b/.test(location.search)) window.__daily = { get S() { return S; }, PB, FB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, vzSetMode, haloDraw, HL, KS, nkNext, nkPinChord, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive };   // test hook, only with ?debug
   projInit().catch(e => { console.warn('library', e); PRJ.ready = true; if (PRJ.wantStart) startMaybe(); });
 }
 
@@ -3695,6 +3718,7 @@ function stageInfo() {
 /* ---------- extra visual modes (dispatched from drawVis) ---------- */
 function stageExtra(mode, g, W, H, X) {
   if (mode === 'neural') return ngStageDraw(g, W, H, X);
+  if (mode === 'halo' || mode === 'kaleido') return vzExtra2(mode, g, W, H, X);
   const { fd, bin, lvl, C, pulse, energy, dt } = X, cx = W / 2, cy = H / 2, R = Math.min(W, H), ch = AN.chroma || new Array(12).fill(0), mx = Math.max(.001, ...ch), t = VZ.t;
   if (mode === 'bloom') {
     const rot = t * (.12 + energy * .5); g.save(); g.translate(cx, cy); g.globalCompositeOperation = 'lighter';
@@ -3750,6 +3774,7 @@ function stageFrame(ts) {
     }
   } else g.drawImage(off, 0, 0);
   if (sc.cam && sc.mode !== 'spectro') camTop(g, w, hh);
+  if (sc.mode === 'halo') haloFront(g);
   if (sc.glow > .02) { const q = SG.small.getContext('2d'); q.globalCompositeOperation = 'source-over'; q.clearRect(0, 0, SG.small.width, SG.small.height); q.drawImage(SG.cv, 0, 0, SG.small.width, SG.small.height); g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = sc.glow * .9; g.imageSmoothingQuality = 'high'; g.drawImage(SG.small, 0, 0, w, hh); g.globalAlpha = sc.glow * .5; g.drawImage(SG.small, -w * .02, -hh * .02, w * 1.04, hh * 1.04); g.restore(); }
   if (sc.flash > 0 && SG.flash > .01) { g.fillStyle = 'rgba(255,255,255,' + (SG.flash * sc.flash * (STG.safe ? .22 : .6)).toFixed(3) + ')'; g.fillRect(0, 0, w, hh); SG.flash *= .88; }
   if (STG.hud !== false) drawStageHUD(g, w, hh, sc, info, C);
@@ -3964,6 +3989,7 @@ function ngEntropy() { const rows = new Map(); NR.trans.forEach((c, k) => { cons
 
 function ngCapture() {
   if (!E.ready) return;
+  for (let i = 0; i < 12; i++) PB.chroma[i] *= .94;
   if (T.playing && E.ctx) {
     const sp = spb(), ph = playheadSlot(), total = Math.max(1, songSlots()), cur = Math.floor(ph);
     if (NR.lastSlot == null || cur < NR.lastSlot || cur - NR.lastSlot > 96) NR.lastSlot = cur - 1;
@@ -3971,11 +3997,12 @@ function ngCapture() {
       if (s < 0) continue; const bi = Math.floor(s / sp), sib = s - bi * sp, fb = barsCache()[bi]; if (!fb) continue; const cd = chordAt(bi, sib), prog = s / total, sec = fb.sec.name; NR.curSec = fb.sec.id;
       if (cd && cd.sym) {
         if (cd.rel === 0) {
-          ngChordChange(cd.sym, 'song'); const c = parseChord(cd.sym), v = voicingFor(cd.sym);
-          if (S.band.compOn && v) v.frets.forEach((f, i) => { if (f != null) ngAddEvent(S.tuning[i] + S.capo + f, .62, 'song', cd.sym, sec, prog); });
-          if (S.band.bassOn && c) ngAddEvent(36 + c.root, .8, 'song', cd.sym, sec, prog);
+          ngChordChange(cd.sym, 'song'); PB.sym = cd.sym; const c = parseChord(cd.sym), v = voicingFor(cd.sym);
+          if (S.band.compOn && v) v.frets.forEach((f, i) => { if (f != null) { ngAddEvent(S.tuning[i] + S.capo + f, .62, 'song', cd.sym, sec, prog); pbHit(i, f, S.tuning[i] + S.capo + f, .6); } });
+          if (S.band.bassOn && c) { ngAddEvent(36 + c.root, .8, 'song', cd.sym, sec, prog); pbHit(null, null, 36 + c.root, .9); }
         }
-        if (S.band.leadOn) fb.bar.tab.forEach(n => { if (n.s === sib) ngAddEvent(n.f === 'x' ? S.tuning[n.st] + S.capo : noteMidi(n), .85, 'song', cd.sym, sec, prog); });
+        if (S.band.leadOn) fb.bar.tab.forEach(n => { if (n.s === sib) { const mm = n.f === 'x' ? S.tuning[n.st] + S.capo : noteMidi(n); ngAddEvent(mm, .85, 'song', cd.sym, sec, prog); if (n.f !== 'x') pbHit(n.st, +n.f, mm, 1); VZ.pulses.push({ t: performance.now(), a: .7 }); if (VZ.pulses.length > 12) VZ.pulses.shift(); } });
+        if (S.band.drumsOn && sib % 4 === 0) { VZ.pulses.push({ t: performance.now(), a: sib === 0 ? .8 : .45 }); if (VZ.pulses.length > 12) VZ.pulses.shift(); }
       }
     }
     NR.lastSlot = cur;
@@ -4069,7 +4096,7 @@ function ngRender(g, W, H, cam, opt) {
 const NC = { yaw: .6, pit: .45, zoom: 1, px: 0, py: 0 };   // stage camera
 function ngStageDraw(g, W, H, info) { ngFrameCommon(); NC.yaw += .0025; NC.pit = .38 + Math.sin(VZ.t * .12) * .12; NC.zoom = Math.max(1, Math.min(W, H) / 700 * 1.1); const was = NR.sel; NR.sel = null; ngRender(g, W, H, NC, { noBg: true, noHit: true, dark: true, noCaps: false }); NR.sel = was; }
 function ngFrameCommon() { const now = performance.now(); if (NR.tickAt === now) return; const dt = Math.min(.1, (now - (NR.last || now)) / 1000); NR.last = now; NR.tickAt = now; if (NR.dirty) ngBuild(); if (NG.layout !== 'force') ngLayout(); ngUpdate(dt); }
-function neuralFrame() { if (!E.ready) return; if (NR.dirty && S.sections) ngBuild(); ngCapture(); if (!paneVisible('neural')) return; ngFrameCommon(); if (!NR.cv) return; const cv = NR.cv, g = cv.getContext('2d'); NR.hudT = (NR.hudT || 0) + 1; ngRender(g, cv.width, cv.height, NG, {}); ngHud(g, cv.width, cv.height); if (NR.hudT % 8 === 0) ngPanel(); }
+function neuralFrame() { if (!E.ready) return; if (NR.dirty && S.sections) ngBuild(); ngCapture(); if (!paneVisible('neural')) return; ngFrameCommon(); if (!NR.cv) return; const cv = NR.cv, g = cv.getContext('2d'); NR.hudT = (NR.hudT || 0) + 1; ngRender(g, cv.width, cv.height, NG, {}); ngHud(g, cv.width, cv.height); if (CFG.vzNeck !== false && nkActive()) { const W = cv.width, H = cv.height, w = Math.min(W * .5, 520 * (W / 900 || 1)), hh = Math.max(50, w * .15); drawMiniNeck(g, W - w - 12, 12, w, hh, {}); } if (NR.hudT % 8 === 0) ngPanel(); }
 function ngHud(g, W, H) {
   const L_ = light_(), u = Math.min(W, H * 1.5), mono = 'ui-monospace,Menlo,monospace'; g.font = `700 ${Math.round(u * .024)}px ${mono}`; g.fillStyle = L_ ? 'rgba(20,30,35,.75)' : 'rgba(225,248,248,.8)'; g.textAlign = 'left';
   const lines = [`events ${NR.events.length}   chords ${[...NR.nodes.values()].filter(n => n.kind === 'chord' && n.seen).length}/${[...NR.nodes.values()].filter(n => n.kind === 'chord').length}   transitions ${NR.trans.size}`, `entropy ${ngEntropy().toFixed(2)} bits   next-chord ${NR.hit + NR.miss ? Math.round(NR.hit / (NR.hit + NR.miss) * 100) + '% (' + NR.hit + '/' + (NR.hit + NR.miss) + ')' : '—'}`];
@@ -4114,7 +4141,7 @@ function buildNeuralPane() {
   cv.addEventListener('contextmenu', e => e.preventDefault());
   cv.addEventListener('pointermove', e => { if (pts.has(e.pointerId)) pts.set(e.pointerId, [e.clientX, e.clientY]); if (pin && pts.size >= 2) { const st = pinStat(), k = cv.width / cv.getBoundingClientRect().width; NG.zoom = clamp(pin.z * st.d / pin.d, .35, 4); NG.px += (st.mx - pin.mx) * k; NG.py += (st.my - pin.my) * k; pin.mx = st.mx; pin.my = st.my; return; } const [x, y, r] = xy(e); if (down) { const dx = e.clientX - down.x, dy = e.clientY - down.y; if (Math.abs(dx) + Math.abs(dy) > 3) down.moved = true; if (down.pan) { NG.px += dx * (cv.width / r.width); NG.py += dy * (cv.width / r.width); } else { NG.yaw += dx * .007; NG.pit = clamp(NG.pit + dy * .006, -1.4, 1.4); } down.x = e.clientX; down.y = e.clientY; return; } const hit = ngPick(x, y); NR.hover = hit ? (hit.e ? hit : hit.n) : null; cv.style.cursor = hit ? 'pointer' : 'grab'; if (hit) { NR.tip.style.display = 'block'; NR.tip.style.left = (e.clientX - r.left + 14) + 'px'; NR.tip.style.top = (e.clientY - r.top + 10) + 'px'; NR.tip.textContent = hit.e ? pcName(hit.e.pc) + (Math.floor(hit.e.midi / 12) - 1) + ' · ' + (hit.e.chord || hit.e.src) : hit.n.label; } else NR.tip.style.display = 'none'; });
   cv.addEventListener('pointercancel', e => { pts.delete(e.pointerId); if (!pts.size) { pin = null; down = null; NR.drag = false; } });
-  cv.addEventListener('pointerup', e => { pts.delete(e.pointerId); if (pin) { if (pts.size < 2) pin = null; if (down) down.moved = true; if (!pts.size) { down = null; NR.drag = false; cv.style.cursor = 'grab'; } return; } const [x, y] = xy(e); if (down && !down.moved) { const hit = ngPick(x, y); NR.sel = hit ? (hit.e ? hit : hit.n) : null; ngPanel(); } down = null; NR.drag = false; cv.style.cursor = 'grab'; });
+  cv.addEventListener('pointerup', e => { pts.delete(e.pointerId); if (pin) { if (pts.size < 2) pin = null; if (down) down.moved = true; if (!pts.size) { down = null; NR.drag = false; cv.style.cursor = 'grab'; } return; } const [x, y] = xy(e); if (down && !down.moved) { const hit = ngPick(x, y); NR.sel = hit ? (hit.e ? hit : hit.n) : null; ngPanel(); if (hit && !hit.e && hit.n && hit.n.kind === 'chord' && hit.n.sym) nkPinChord(hit.n.sym); } down = null; NR.drag = false; cv.style.cursor = 'grab'; });
   cv.addEventListener('pointerleave', () => { NR.hover = null; NR.tip.style.display = 'none'; });
   cv.addEventListener('wheel', e => { e.preventDefault(); NG.zoom = clamp(NG.zoom * Math.exp(-e.deltaY * .0012), .35, 4); }, { passive: false });
   cv.addEventListener('dblclick', () => { NG.yaw = -.6; NG.pit = .38; NG.zoom = 1; NG.px = NG.py = 0; NR.sel = null; });
@@ -5282,7 +5309,7 @@ function renderHeads() {
         mute(() => m.m, v => { m.m = v ? 1 : 0; applyMix(); commit(false); }), solo(() => m.s, v => { m.s = v ? 1 : 0; applyMix(); commit(false); }), vol(() => m.g, v => { m.g = v; applyMix(); }, 1.4, 1, 'Vocal track level'));
     } else if (l.type === 'take') {
       const tk = l.take; const vx = tk.kind === 'vox'; t.append(more);
-      b.append(mute(() => tk.mute, v => { tk.mute = v; takeLive(tk); }), solo(() => tk.solo, v => { tk.solo = v; takeLive(tk); }),
+      b.append(bt('⤓', 'dl', 'Save this recording as a WAV file on your device', () => dlTake(tk)), mute(() => tk.mute, v => { tk.mute = v; takeLive(tk); }), solo(() => tk.solo, v => { tk.solo = v; takeLive(tk); }),
         vx ? null : bt('RE-AMP', tk.mode === 'reamp' ? 'on' : '', 'Re-amp: play the dry DI through the CURRENT rig. Off: the wet print as recorded.', e => { tk.mode = tk.mode === 'reamp' ? 'wet' : 'reamp'; e.currentTarget.classList.toggle('on', tk.mode === 'reamp'); if (tk.mode === 'reamp' && !tk.dry) tk.mode = 'wet'; toast(tk.mode === 'reamp' ? 'Re-amp: playing dry DI through the live rig' : 'Playing the wet print as recorded'); }),
         vol(() => tk.g, v => { tk.g = v; takeLive(tk); }, 1.5, 1, 'Take volume'), h('input', { type: 'range', min: -1, max: 1, step: .05, value: tk.pan || 0, title: 'Pan', style: { width: '40px', flex: 'none' }, oninput: e => { tk.pan = +e.target.value; takeLive(tk); } }));
     } else if (l.type === 'trk') {
@@ -5291,10 +5318,10 @@ function renderHeads() {
         vol(() => STM.vol, v => { STM.vol = v; spBus(); }, 1.5, 1, 'Whole-track level'));
     } else if (l.type === 'stem') {
       const sm = STM.mix[l.idx]; t.append(more);
-      b.append(mute(() => sm.m, v => { sm.m = v; spGains(); renderStemStrips(); TL.dirty = true; }), solo(() => sm.s, v => { sm.s = v; spGains(); renderStemStrips(); TL.dirty = true; }), vol(() => sm.g, v => { sm.g = v; spGains(); }, 1.5, 1, 'Stem level'));
+      b.append(bt('⤓', 'dl', 'Save this stem as a WAV file', () => stemExport(l.idx)), mute(() => sm.m, v => { sm.m = v; spGains(); renderStemStrips(); TL.dirty = true; }), solo(() => sm.s, v => { sm.s = v; spGains(); renderStemStrips(); TL.dirty = true; }), vol(() => sm.g, v => { sm.g = v; spGains(); }, 1.5, 1, 'Stem level'));
     } else {
       t.append(more); const key = BANDMAP[l.id];
-      b.append(key ? h('button', { class: 'pw' + (S.band[key] ? ' on' : ''), 'data-k': key, title: 'Enable / disable this instrument in the band', onclick: () => toggleBand(key) }, '⏻') : null,
+      b.append(key ? bt('⤓', 'dl', 'Save just this part as a WAV (plays the song once in real time)', () => bouncePart(l.id)) : null, key ? h('button', { class: 'pw' + (S.band[key] ? ' on' : ''), 'data-k': key, title: 'Enable / disable this instrument in the band', onclick: () => toggleBand(key) }, '⏻') : null,
         mute(() => m.m, v => { m.m = v ? 1 : 0; applyMix(); commit(false); }), solo(() => m.s, v => { m.s = v ? 1 : 0; applyMix(); commit(false); }), vol(() => m.g, v => { m.g = v; applyMix(); }),
         h('input', { type: 'range', min: -1, max: 1, step: .05, value: m.p, title: 'Pan', style: { width: '40px', flex: 'none' }, oninput: e => { m.p = +e.target.value; applyMix(); } }));
     }
@@ -5319,6 +5346,8 @@ function laneMenu(anchor, l) {
   box.append(h('div', { class: 'lrow' }, h('span', { style: { width: '54px' } }, 'Colour'), h('div', { class: 'swatches' }, LANE_COLS.map(c => h('button', { class: 'swatch' + (c === l.c ? ' on' : ''), style: { background: c }, 'aria-label': c, onclick: () => { LN.col[l.id] = c; saveLn(); closePop(); renderHeads(); TL.dirty = true; } })))));
   box.append(h('div', { class: 'row', style: { gap: '6px', margin: '4px 0' } }, h('button', { class: 'btn sm', onclick: () => { laneStep(l.id, -1); closePop(); } }, '↑ Up'), h('button', { class: 'btn sm', onclick: () => { laneStep(l.id, 1); closePop(); } }, '↓ Down'),
     h('button', { class: 'btn sm', onclick: () => { LN.hide[l.id] = true; saveLn(); closePop(); renderHeads(); tlSize(); } }, 'Hide')));
+  if (BANDMAP[l.id]) box.append(h('div', { class: 'row', style: { gap: '6px', marginTop: '4px' } }, h('button', { class: 'btn sm', title: 'Plays the song once in real time with only this part on, and saves it', onclick: () => { closePop(); bouncePart(l.id); } }, '⤓ Save this part (WAV)')));
+  if (l.type === 'stem') box.append(h('div', { class: 'row', style: { gap: '6px', marginTop: '4px' } }, h('button', { class: 'btn sm', onclick: () => { closePop(); stemExport(l.idx); } }, '⤓ Save this stem (WAV)')));
   if (l.type === 'take') box.append(h('div', { class: 'row', style: { gap: '6px' } }, h('button', { class: 'btn sm', onclick: () => { closePop(); dlTake(l.take); } }, '⤓ WAV'), h('button', { class: 'btn sm', onclick: () => { closePop(); const i = TAKES.indexOf(l.take); if (i >= 0) TAKES.splice(i, 1); bus.emit('takes'); } }, '✕ Delete take'), h('button', { class: 'btn sm', onclick: () => { closePop(); dockGo('tx'); TX.src = l.take.id; txRefreshSrc(); } }, '♬ Transcribe')));
   if (l.type === 'trk') box.append(h('div', { class: 'row', style: { gap: '6px' } }, h('button', { class: 'btn sm', onclick: () => { closePop(); dockGo('stems'); } }, 'Open Stems'), h('button', { class: 'btn sm bad', onclick: () => { closePop(); stemUnload(); } }, '✕ Unload')));
   if (l.type === 'live' || l.type === 'vox') box.append(h('div', { class: 'tiny muted', style: { marginTop: '4px' } }, 'Input routing and the vocal strip are in the I/O panel (left).'), h('button', { class: 'btn sm', style: { marginTop: '4px' }, onclick: () => { closePop(); sideShow('io'); } }, 'Open I/O'));
@@ -6476,7 +6505,7 @@ function humRecTick() {
   const r = HUM.rec; if (!r) return; r.an.getFloatTimeDomainData(r.buf); let e = 0; for (let i = 0; i < r.buf.length; i++) e += r.buf[i] * r.buf[i]; const rms = Math.sqrt(e / r.buf.length), sec = (performance.now() - r.t0) / 1000;
   const lv = document.getElementById('humLv'), nt = document.getElementById('humNote'), tm = document.getElementById('humTime');
   if (lv) lv.style.width = Math.min(100, Math.round(rms * 600)) + '%'; if (tm) tm.textContent = humFmt(sec);
-  if (nt) { let t = '·'; if (rms > .01) { const y = yin(r.buf, r.actx.sampleRate); if (y && y.clarity > .6 && y.f > 70 && y.f < 1100) t = humNoteName(69 + 12 * Math.log2(y.f / 440)); } nt.textContent = t; }
+  if (nt) { let t = '·'; if (rms > .01) { const y = yin(r.buf, r.actx.sampleRate); if (y && y.clarity > .6 && y.f > 70 && y.f < 1100) { const mf = 69 + 12 * Math.log2(y.f / 440); t = humNoteName(mf); HUM.live = { m: Math.round(mf), t: performance.now() }; } } nt.textContent = t; }
   if (sec > 90) { humRecStop(true); return; } r.raf = requestAnimationFrame(humRecTick);
 }
 function humRecStop(keep) { const r = HUM.rec; if (!r) return; r.keep = keep; cancelAnimationFrame(r.raf); try { if (r.mr.state !== 'inactive') r.mr.stop(); else { humRecCleanup(); } } catch (e) { humRecCleanup(); } }
@@ -6521,6 +6550,15 @@ function humAddTake() {
   const tk = { id: uid(), kind: 'vox', hum: true, name: 'My hum', startSec: start, sr, dry: d, wet: null, peaks: peaksOf(d), g: 1, pan: 0, mute: false, solo: false, mode: 'wet', bpm: S.bpm, preset: '', peak: dB(pk), rms: dB(Math.sqrt(e / Math.max(1, d.length))), dur: d.length / sr, t: Date.now(), stats: null, cam: [] };
   TAKES.push(tk); bus.emit('takes'); return tk;
 }
+function humSaveMenu(anchor) {
+  const tk = TAKES.find(t => t.hum), box = h('div', { style: { minWidth: '240px', display: 'grid', gap: '6px' } }, h('h5', {}, 'Save to this device'),
+    h('button', { class: 'btn', onclick: () => { closePop(); bounceMaster(); } }, '⤓ The whole song (WAV)'),
+    tk ? h('button', { class: 'btn', onclick: () => { closePop(); dlTake(tk); } }, '⤓ My hum (WAV)') : '',
+    h('button', { class: 'btn', onclick: () => { closePop(); bounceAllParts(); } }, '⤓ Each band part (WAVs)'),
+    h('button', { class: 'btn', onclick: () => { closePop(); download((S.title || 'song').replace(/\W+/g, '_') + '.mid', buildMidi()); toast('MIDI saved', 'ok'); } }, '⤓ MIDI (to open in any music app)'),
+    h('div', { class: 'tiny muted' }, 'Everything is made and saved here. Nothing is uploaded. WAV saves play the song once in real time.'));
+  popover(anchor, box);
+}
 async function humPlay() {
   if (HUM.hear) { try { HUM.hear.stop(); } catch (e) { } HUM.hear = null; }
   try { if (typeof AK !== 'undefined' && AK.killed) await audioResume(); } catch (e) { }
@@ -6529,7 +6567,7 @@ async function humPlay() {
 function humHear() {
   if (HUM.hear) { try { HUM.hear.stop(); } catch (e) { } HUM.hear = null; return humBar('res'); } if (!HUM.pcm) return; if (T.playing) stopPlay(true);
   const AC = window.AudioContext || window.webkitAudioContext, c = new AC(), b = c.createBuffer(1, HUM.pcm.length, HUM.sr); b.copyToChannel(HUM.pcm, 0); const s = c.createBufferSource(); s.buffer = b; s.connect(c.destination);
-  s.onended = () => { if (HUM.hear === s) HUM.hear = null; try { c.close(); } catch (e) { } if (HUM.bar) humBar('res'); }; s.start(); HUM.hear = s; humBar('res');
+  s.onended = () => { if (HUM.hear === s) HUM.hear = null; try { c.close(); } catch (e) { } if (HUM.bar) humBar('res'); }; s.start(); HUM.hear = s; HUM.hearT0 = performance.now(); humBar('res');
 }
 
 /* ---------- the bottom panel (not a modal, so you still see yourself on stage) ---------- */
@@ -6574,6 +6612,7 @@ function humResult(d, x) {
   d.append(
     h('div', { class: 'hum-row' }, h('button', { class: 'btn primary hum-play', id: 'humPlay', onclick: () => { if (T.playing) { stopPlay(true); } else humPlay(); } }, T.playing ? '■ Stop' : '▶ Play my song'),
       h('button', { class: 'btn', id: 'humHear', onclick: humHear }, HUM.hear ? '■ Stop' : '👂 Hear my hum'),
+      h('button', { class: 'btn', id: 'humSave', title: 'Save your song, your hum or the parts to this device', onclick: e => humSaveMenu(e.currentTarget) }, '⤓ Save'),
       h('button', { class: 'btn', id: 'humVoice', title: 'Play your own recording along with the band, lined up with the melody. Turn it off to hear just the arrangement.', onclick: e => { const tk = TAKES.find(t => t.hum); if (!tk) return; tk.mute = !tk.mute; takeLive(tk); bus.emit('takes'); try { projSave(); } catch (x) { } e.currentTarget.textContent = tk.mute ? '🎤 My hum: off' : '🎤 My hum: on'; } }, (() => { const tk = TAKES.find(t => t.hum); return tk && tk.mute ? '🎤 My hum: off' : '🎤 My hum: on'; })()),
       h('button', { class: 'btn', id: 'humBand', title: 'Turn the drums, bass and rhythm guitar on or off. Your melody keeps playing.', onclick: e => { const on = !(S.band.drumsOn || S.band.bassOn || S.band.compOn); setRehearsal({ drumsOn: on, bassOn: on, compOn: on }); e.currentTarget.textContent = on ? '🥁 Band: on' : '🥁 Band: off'; } }, (S.band.drumsOn || S.band.bassOn || S.band.compOn) ? '🥁 Band: on' : '🥁 Band: off'),
       h('span', { class: 'hum-sum' }, h('b', {}, an.notes.length + ' notes'), ' · ', h('b', {}, kn), ' · ', h('b', {}, r.bpm + ' BPM'), ' · ', h('b', {}, totalBars() + ' bars')), h('span', { class: 'grow' }), x),
@@ -6727,6 +6766,7 @@ function vzImmersive(on) {
       h('span', { class: 'vzh-brand' }, h('i', { 'aria-hidden': 'true' }, '⬡'), 'the-daily.studio'),
       h('span', { class: 'grow' }),
       h('button', { class: 'btn sm', id: 'vzhNew', title: 'Start a new song: hum, guitar, a song file or a blank page', onclick: () => humStageFirst() }, '＋', h('span', { class: 'lbl' }, ' New song')),
+      h('button', { class: 'btn sm', id: 'vzhLook', title: 'Change the look: Hex Resonance, Fifths Halo, Prism, Tunnel', onclick: () => vzCycleLook() }, '✦', h('span', { class: 'lbl' }, ' Look')),
       h('button', { class: 'btn sm', id: 'vzhIo', title: 'Microphone, camera and other inputs', onclick: () => { vzImmersive(false); try { sideShow('io'); } catch (e) { } } }, '⚙', h('span', { class: 'lbl' }, ' Inputs')),
       h('button', { class: 'btn sm vzh-kill', id: 'vzhKill', title: 'Stop all sound and release the microphone (Ctrl + .)', onclick: () => { try { audioKill(); } catch (e) { } } }, '■', h('span', { class: 'lbl' }, ' Stop audio')),
       h('button', { class: 'btn sm', id: 'vzhFull', title: 'Full screen', 'aria-label': 'Full screen', onclick: () => { try { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen({ navigationUI: 'hide' }).catch(() => { }); } catch (e) { } } }, '⛶'),
@@ -6748,6 +6788,219 @@ function bandHint() {
   if (BAND_HINT_DONE || S.band.drumsOn || S.band.bassOn || S.band.compOn || S.band.leadOn || TAKES.length || (typeof STM !== 'undefined' && STM.ch) || !songHasWork()) return;
   BAND_HINT_DONE = true; toast('The band is off in this song. Turn on Drums, Bass or Rhythm in the BAND row to hear it.', 'ok');
 }
+
+/* >>> parts/35-neck.js */
+/* =====================================================================
+   Part 35 · The neck, wired to everything
+   One list of "marks" on the neck (what is sounding, what is coming, what you are singing, a chord you picked in the
+   neural graph) feeds the Fretboard pane AND a small neck drawn on top of the Visuals and the Neural graph, so the
+   three stay in step and you still see the neck when the dock is hidden (full-screen stage).
+   ===================================================================== */
+const NK = { pin: null, ghost: null, ghostSlot: -9, voiceAt: 0 };
+var NECK_FRETS = 22;
+
+/** The next lead-guitar note (and the next chord change) after the playhead, with how long until it arrives. */
+function nkNext() {
+  if (!T.playing || !E.ctx) { NK.ghost = null; return null; }
+  const ph = playheadSlot(), s0 = Math.floor(ph) + 1;
+  if (NK.ghost && NK.ghostSlot === s0) { NK.ghost.eta = (NK.ghost.slot - ph) * slotDur(); NK.ghost.cEta = NK.ghost.cslot != null ? (NK.ghost.cslot - ph) * slotDur() : null; return NK.ghost; }
+  const sp = spb(), bc = barsCache(), g = { lead: null, chord: null, slot: 0, cslot: null, eta: 9 }; let ln = null, ch = null;
+  for (let s = s0; s < s0 + sp * 2 && !(ln && ch); s++) {
+    const bi = Math.floor(s / sp), sib = s - bi * sp, fb = bc[bi]; if (!fb) break;
+    if (!ln && S.band.leadOn) { const n = fb.bar.tab.find(x => x.s === sib && x.f !== 'x'); if (n) ln = { st: n.st, f: n.f, slot: s }; }
+    if (!ch && s < s0 + sp) { const cd = chordAt(bi, sib); if (cd && cd.sym && cd.rel === 0 && (S.band.compOn || !S.band.leadOn)) ch = { sym: cd.sym, slot: s }; }
+  }
+  if (ln) { g.lead = { st: ln.st, f: ln.f }; g.slot = ln.slot; }
+  if (ch) { const v = voicingFor(ch.sym); g.chord = v ? { sym: ch.sym, frets: v.frets } : null; g.cslot = ch.slot; }
+  NK.ghost = g; NK.ghostSlot = s0; g.eta = (g.slot - ph) * slotDur(); g.cEta = g.cslot != null ? (g.cslot - ph) * slotDur() : null; return g;
+}
+
+/** Where the note you are singing (or hearing back) can be played on the neck. */
+function nkVoice(now) {
+  let m = null;
+  if (HUM.rec && HUM.live && now - HUM.live.t < 350) m = HUM.live.m;
+  else if (HUM.hear && HUM.hearT0 && HUM.an) { const tt = (now - HUM.hearT0) / 1000, n = HUM.an.notes.find(x => tt >= x.t && tt < x.t + x.d); if (n) m = n.m; }
+  if (m == null) return [];
+  const lo = S.tuning[0] + S.capo; while (m < lo) m += 12; while (m > lo + 38) m -= 12;
+  const out = []; S.tuning.forEach((open, st) => { const f = m - (open + S.capo); if (f >= 0 && f <= 15) out.push({ st, f, k: 'voice', a: 1 }); });
+  return out;
+}
+
+/** Everything lit on the neck right now: [{st, f, k: hit|ghost|voice|pin, a}] */
+function neckMarks(now) {
+  now = now || performance.now(); const out = [];
+  PB.hits.forEach(p => { const a = 1 - (now - p.t) / 420; if (a > .02) out.push({ st: p.st, f: p.f, k: 'hit', a }); });
+  const g = nkNext(); if (g) {
+    if (g.lead && g.eta < 2.2) out.push({ st: g.lead.st, f: g.lead.f, k: 'ghost', a: clamp(1.15 - g.eta / 1.6, .3, 1) });
+    if (g.chord && g.cEta != null && g.cEta < 1.6) g.chord.frets.forEach((f, st) => { if (f != null) out.push({ st, f, k: 'ghost', a: clamp(.9 - g.cEta / 2, .2, .55) }); });
+  }
+  nkVoice(now).forEach(x => out.push(x));
+  if (NK.pin) { const left = NK.pin.until - now; if (left <= -900) NK.pin = null; else NK.pin.frets.forEach((f, st) => { if (f != null) out.push({ st, f, k: 'pin', a: clamp(1 + left / 900, 0, 1) }); }); }
+  return out;
+}
+const nkActive = () => !!(NK.pin || T.playing || HUM.rec || HUM.hear);
+
+/** Pick a chord (from the neural graph, say): show its shape on every neck and strum it. */
+async function nkPinChord(sym) {
+  const v = voicingFor(sym); if (!v) return; NK.pin = { sym, frets: v.frets.slice(), until: performance.now() + 5200 };
+  try { await startAudio(); const t = E.ctx.currentTime + .02; let k = 0; v.frets.forEach((f, st) => { if (f != null) pluck('lead', t + (k++) * .028, S.tuning[st] + S.capo + f, .62, { id: 'p' + st, pan: (st - 2.5) * .08 }); }); } catch (e) { }
+  toast(sym + ' is on the fretboard', 'ok');
+}
+
+/** A small neck drawn into any canvas. */
+function drawMiniNeck(g, x, y, w, h, o) {
+  o = o || {}; const marks = neckMarks(), on = nkActive(); NK.fade = clamp((NK.fade || 0) + (on ? .08 : -.05), 0, 1); if (NK.fade <= 0.01) return;
+  const maxF = clamp(Math.max(12, ...marks.map(m => m.f + 1)), 12, NECK_FRETS), left = !!CFG.left, ns = S.tuning.length, pad = h * .12, gx = x + w * .05, gw = w * .9, top = y + pad, sh = (h - pad * 2) / (ns - 1);
+  const px = n => { const t = (1 - Math.pow(2, -n / 12)) / (1 - Math.pow(2, -maxF / 12)); return gx + gw * (left ? 1 - t : t); };
+  const rr = Math.min(sh * .46, w / maxF * .3), C = o.C || vcol();
+  g.save(); g.globalAlpha = NK.fade * .96; g.fillStyle = 'rgba(5,11,12,.72)'; g.beginPath(); g.roundRect ? g.roundRect(x, y, w, h, h * .18) : g.rect(x, y, w, h); g.fill(); g.strokeStyle = 'rgba(160,210,210,.22)'; g.lineWidth = 1; g.stroke();
+  g.strokeStyle = 'rgba(200,230,230,.2)'; for (let n = 0; n <= maxF; n++) { g.lineWidth = n === 0 ? 3 : 1; g.beginPath(); g.moveTo(px(n), top - sh * .25); g.lineTo(px(n), top + sh * (ns - 1) + sh * .25); g.stroke(); }
+  g.fillStyle = 'rgba(200,230,230,.28)'; [3, 5, 7, 9, 12, 15, 17, 19, 21].forEach(n => { if (n <= maxF) { g.beginPath(); g.arc((px(n) + px(n - 1)) / 2, y + h - pad * .45, rr * .22, 0, 6.3); g.fill(); } });
+  for (let st = 0; st < ns; st++) { const yy = top + (ns - 1 - st) * sh; g.strokeStyle = 'rgba(225,245,245,.5)'; g.lineWidth = .8 + (ns - 1 - st) * .0 + (st < 2 ? 1.8 : st < 4 ? 1.1 : .6); g.beginPath(); g.moveTo(gx, yy); g.lineTo(gx + gw, yy); g.stroke(); }
+  const KC = { hit: C.b, ghost: C.a, voice: '#ff5fc8', pin: '#ffd23f' };
+  marks.sort((p, q) => (p.k === 'ghost') - (q.k === 'ghost')).forEach(m => {
+    if (m.st >= ns || m.f > maxF) return; const cx = m.f === 0 ? px(0) + (left ? 1 : -1) * rr * 1.3 : (px(m.f) + px(m.f - 1)) / 2, cy = top + (ns - 1 - m.st) * sh, col = KC[m.k] || '#fff';
+    g.globalAlpha = NK.fade * clamp(m.a, 0, 1);
+    if (m.k === 'ghost') { g.setLineDash([rr * .5, rr * .4]); g.strokeStyle = col; g.lineWidth = 2; g.beginPath(); g.arc(cx, cy, rr * (1.1 + (1 - m.a) * .5), 0, 6.3); g.stroke(); g.setLineDash([]); g.fillStyle = col; g.globalAlpha *= .22; g.beginPath(); g.arc(cx, cy, rr, 0, 6.3); g.fill(); }
+    else { g.fillStyle = col; g.shadowColor = col; g.shadowBlur = rr * 1.6; g.beginPath(); g.arc(cx, cy, rr * (m.k === 'hit' ? 1 + m.a * .25 : 1), 0, 6.3); g.fill(); g.shadowBlur = 0; }
+  });
+  g.globalAlpha = NK.fade * .8; g.fillStyle = 'rgba(235,250,250,.85)'; g.font = `700 ${Math.round(h * .17)}px ui-monospace,Menlo,monospace`; g.textAlign = 'left'; g.textBaseline = 'top';
+  const lab = NK.pin ? NK.pin.sym : marks.some(m => m.k === 'voice') ? 'you' : ''; if (lab) g.fillText(lab, x + 8, y + 4);
+  g.restore();
+}
+/** where the neck sits on a canvas: bottom centre, never wider than the stage */
+function neckRect(W, H) { const u = Math.min(W, H * 2.2), w = Math.min(W * .94, u * .78), h = clamp(w * .15, 56, H * .3); return [(W - w) / 2, H - h - Math.max(10, H * .03), w, h]; }
+
+/* >>> parts/36-halo.js */
+/* =====================================================================
+   Part 36 · Two new looks for the center stage
+   · Fifths Halo: the circle of fifths from the Neural map, laid out as a tilted ring AROUND the player. The player (camera
+     cut-out) stands in the middle; the pitch classes, the song's chords and the progression arcs orbit them, and every
+     note you play (or the song plays) spirals in toward you. Back half of the ring is drawn behind the player, the front
+     half in front, so you are inside it.
+   · Prism: a feedback kaleidoscope that accents the off-beat. The mirror count, hue and spin change on the "and" of the
+     beat (or on your own onsets), with a zoom-tunnel feedback loop. Flash and spin are limited when Stage ▸ safe is on.
+   ===================================================================== */
+VMODES.push(['halo', 'Fifths Halo'], ['kaleido', 'Prism']);
+const HL = { rot: 0, kick: 0, pv: 0, hi: false, parts: [], dirty: true, chords: [], pairs: [], items: [], t: 0 };
+bus.on('song', () => { HL.dirty = true; });
+/** a note flies in from its place on the circle of fifths toward the player */
+function haloSpark(midi, v, kind) {
+  if (midi == null) return; HL.parts.push({ pc: ((midi % 12) + 12) % 12, v: v || .8, k: kind || 'song', t0: performance.now(), spin: (Math.random() - .5) * .6, oct: clamp((midi - 36) / 48, 0, 1) });
+  if (HL.parts.length > 140) HL.parts.splice(0, HL.parts.length - 140);
+}
+bus.on('onset', () => { if (!T.playing && AN.midi != null && AN.active) haloSpark(AN.midi, clamp((AN.rms + 50) / 40, .3, 1), 'live'); });
+function haloChords() {
+  if (!HL.dirty) return; HL.dirty = false; const seen = new Map(), seq = [];
+  (S.sections || []).forEach(sec => sec.bars.forEach(b => barChords(b).forEach(sym => { const c = parseChord(sym); if (!c) return; if (!seen.has(sym)) seen.set(sym, { sym, c }); seq.push(sym); })));
+  HL.chords = [...seen.values()]; const pr = new Map(); for (let i = 1; i < seq.length; i++) if (seq[i] !== seq[i - 1]) { const k = seq[i - 1] + '>' + seq[i]; pr.set(k, (pr.get(k) || 0) + 1); }
+  HL.pairs = [...pr].map(([k, n]) => { const [a, b] = k.split('>'); return { a, b, n }; });
+}
+const haloEase = u => u * u * (3 - 2 * u);
+function haloDraw(g, W, H, X) {
+  const { C, pulse, energy, dt } = X, camOn = !!(VZ.cam && CAM.video && CAM.video.readyState >= 2), t = VZ.t;
+  haloChords(); HL.t = t;
+  // rotation: slow drift + a kick on every beat / onset, so the ring moves in rhythm
+  if (pulse > HL.pv + .25) HL.kick = Math.min(1.4, HL.kick + .5 + pulse * .4); HL.pv = pulse; HL.kick *= Math.pow(.04, dt || .016);
+  HL.rot += (dt || .016) * (.16 + energy * .5 + HL.kick * (STG.safe ? 1.2 : 2.2));
+  const Rx = Math.min(W * .47, H * .95), tilt = .3 + .05 * Math.sin(t * .23), Ry = Rx * tilt, cx = W / 2, cy = H * .5, rot = HL.rot, now = performance.now();
+  const P = (a, rad, lift) => { const s = Math.sin(a); return { x: cx + Math.cos(a) * rad * Rx, y: cy + s * rad * Ry - (lift || 0) * Rx * .8, z: s, k: 1 + .24 * s }; };
+  const ch = AN.chroma || [], cm = Math.max(.001, ...ch), live = AN.active, playing = T.playing;
+  const curSym = playing ? PB.sym : live && AN.chord && AN.chord[0] ? AN.chord[0].sym : '', cur = curSym && parseChord(curSym), curPcs = cur ? cur.pcs : [];
+  const nx = playing ? nkNext() : null, nextSym = nx && nx.chord ? nx.chord.sym : '';
+  const items = HL.items = [];   // {z, draw(g)} collected once, drawn in two passes
+  const add = (z, fn) => items.push({ z, fn });
+  // guide rings (halves)
+  [[.92, .16], [.62, .10], [.3, .07]].forEach(([rad, al]) => add(0, (g, pass) => { g.strokeStyle = 'rgba(160,220,225,' + (pass ? al * 1.4 : al) + ')'; g.lineWidth = pass ? 1.6 : 1; g.beginPath(); g.ellipse(cx, cy, rad * Rx, rad * Ry, 0, pass ? 0 : Math.PI, pass ? Math.PI : Math.PI * 2); g.stroke(); }));
+  // the spiral of fifths: twelve steps, centre to ring
+  { const N = 96; let prev = null; for (let i = 0; i <= N; i++) { const u = i / N, a = rot * -.6 - Math.PI / 2 + u * Math.PI * 2, p = P(a, .22 + .7 * haloEase(u), u * .1); if (prev) { const pp = prev, z = (p.z + pp.z) / 2, uu = u; add(z, (g, pass) => { if ((z > 0) !== !!pass) return; g.strokeStyle = mixc(C.a, C.b, uu, (.2 + .6 * uu) * (pass ? 1 : .7) * (.8 + energy)); g.lineWidth = (1 + uu * 2.4) * p.k; g.beginPath(); g.moveTo(pp.x, pp.y); g.lineTo(p.x, p.y); g.stroke(); }); } prev = p; } }
+  // pitch classes on the ring
+  const pcPos = [];
+  for (let pc = 0; pc < 12; pc++) {
+    const a = FANG(pc) + rot, p = P(a, .92, 0), v = Math.max(PB.chroma[pc] || 0, live ? (ch[pc] || 0) / cm * .9 : 0), inC = curPcs.includes(pc), r0 = Rx * (.016 + .034 * v + (inC ? .012 : 0)) * p.k; pcPos[pc] = p;
+    add(p.z, (g, pass) => { if ((p.z > 0) !== !!pass) return; const a2 = (.55 + .45 * Math.min(1, v + (inC ? .4 : 0))) * (pass ? 1 : .8); g.shadowColor = pcCol(pc, 1); g.shadowBlur = 6 + v * 26; g.fillStyle = pcCol(pc, a2); hexPath(g, p.x, p.y, r0 + Rx * .008); g.fill(); g.shadowBlur = 0;
+      g.fillStyle = 'rgba(235,250,250,' + (.45 + .5 * v + (inC ? .3 : 0)).toFixed(2) + ')'; g.font = `700 ${Math.round(Rx * .03 * p.k)}px ui-monospace,Menlo,monospace`; g.textAlign = 'center'; g.textBaseline = 'middle'; const o = pcOut(a); g.fillText(pcName(pc), p.x + o[0] * (r0 + Rx * .034), p.y + o[1] * (r0 + Rx * .034) * .6); });
+  }
+  // chords of the song: major outside, minor inside, extended chords float higher
+  const cp = {}; HL.chords.forEach(({ sym, c }) => { const q = QH(c.q), p = P(FANG(c.root) + rot, .6 + q * .2, q * .12); cp[sym] = p; });
+  // progression arcs, bending over the player
+  HL.pairs.forEach(({ a, b, n }) => {
+    const A = cp[a], B = cp[b]; if (!A || !B) return; const hot = a === curSym && (b === nextSym || !nextSym), z = (A.z + B.z) / 2, mx = (A.x + B.x) / 2, my = (A.y + B.y) / 2 - Rx * .1 + (cy - (A.y + B.y) / 2) * .35;
+    add(z, (g, pass) => { if ((z > 0) !== !!pass) return; g.strokeStyle = hot ? mixc(C.b, C.a, .3, .9) : mixc(C.a, C.c, .5, Math.min(.5, .1 + n * .06) * (pass ? 1 : .6)); g.lineWidth = (hot ? 3 : 1 + Math.min(2, n * .3)) * (pass ? 1.15 : 1); g.beginPath(); g.moveTo(A.x, A.y); g.quadraticCurveTo(mx, my, B.x, B.y); g.stroke(); });
+  });
+  HL.chords.forEach(({ sym, c }) => {
+    const p = cp[sym], isCur = sym === curSym, isNext = sym === nextSym, r0 = Rx * (isCur ? .05 : .034) * p.k;
+    add(p.z + .001, (g, pass) => { if ((p.z > 0) !== !!pass) return;
+      if (isCur) c.pcs.forEach(pc => { const q = pcPos[pc]; if (!q) return; g.strokeStyle = pcCol(pc, .75); g.lineWidth = 2 * p.k; g.beginPath(); g.moveTo(p.x, p.y); g.lineTo(q.x, q.y); g.stroke(); });
+      g.shadowColor = pcCol(c.root, 1); g.shadowBlur = isCur ? 30 : 8; g.fillStyle = isCur ? pcCol(c.root, .95, 70) : pcCol(c.root, pass ? .55 : .38, 52); hexPath(g, p.x, p.y, r0); g.fill(); g.shadowBlur = 0;
+      if (isNext) { g.setLineDash([5, 4]); g.strokeStyle = mixc(C.b, C.a, .5, .95); g.lineWidth = 2; hexPath(g, p.x, p.y, r0 * 1.5); g.stroke(); g.setLineDash([]); }
+      g.fillStyle = isCur ? '#06100f' : 'rgba(240,252,252,.88)'; g.font = `800 ${Math.round(Rx * (isCur ? .034 : .026) * p.k)}px ui-monospace,Menlo,monospace`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(sym, p.x, p.y + 1); });
+  });
+  // notes spiral in toward the player
+  HL.parts = HL.parts.filter(q => now - q.t0 < 2300);
+  HL.parts.forEach(q => { const u = (now - q.t0) / 2300, e = haloEase(u), a = FANG(q.pc) + rot + q.spin * u * 5 + u * u * 3.2, rad = .92 - .74 * e, p = P(a, rad, q.oct * .16 * (1 - e)), r0 = Rx * (.008 + .016 * q.v) * (1 - u * .6) * p.k;
+    add(p.z, (g, pass) => { if ((p.z > 0) !== !!pass) return; g.globalAlpha = Math.max(0, 1 - u * u) * (pass ? 1 : .75); g.fillStyle = q.k === 'live' ? '#ff5fc8' : pcCol(q.pc, 1, 70); g.shadowColor = g.fillStyle; g.shadowBlur = 12; g.beginPath(); g.arc(p.x, p.y, r0, 0, 6.3); g.fill(); g.shadowBlur = 0; g.globalAlpha = 1; }); });
+  // a beat ring that breathes out from the player
+  if (pulse > .02) add(0, (g, pass) => { const rr = (1 - pulse) * .95; g.strokeStyle = mixc(C.b, C.a, 1 - pulse, pulse * .55); g.lineWidth = 2 + pulse * 3; g.beginPath(); g.ellipse(cx, cy, rr * Rx, rr * Ry, 0, pass ? 0 : Math.PI, pass ? Math.PI : Math.PI * 2); g.stroke(); });
+  items.sort((p, q) => p.z - q.z);
+  if (!camOn) { const r0 = Rx * (.07 + pulse * .02); g.save(); g.strokeStyle = mixc(C.a, C.b, .5, .5); g.lineWidth = 2; g.shadowColor = C.a; g.shadowBlur = 18; hexPath(g, cx, cy - Rx * .08, r0); g.stroke(); g.restore(); }
+  g.save(); items.forEach(it => it.fn(g, 0)); g.restore();
+  HL.drawn = true;
+}
+/** second pass, after the camera cut-out: the near half of the ring passes in front of the player */
+function haloFront(g) { if (!HL.drawn) return; g.save(); HL.items.forEach(it => it.fn(g, 1)); g.restore(); HL.drawn = false; }
+const pcOut = a => [Math.cos(a), Math.sin(a)];
+
+/* ---------------- Prism: syncopated feedback kaleidoscope ---------------- */
+const KS = { out: null, src: null, ow: 0, oh: 0, n: 8, ni: 0, folds: [6, 8, 12, 10, 6, 16], rot: 0, dir: 1, hue: 0, zoom: 0, rings: [], step: -9, acc: 0, lastAcc: 0, pv: 0, glints: [] };
+function ksAccent(strong, now) {
+  const gap = STG.safe ? 340 : 110; if (now - KS.lastAcc < gap) return; KS.lastAcc = now;
+  if (strong) { KS.ni = (KS.ni + 1) % KS.folds.length; KS.n = KS.folds[KS.ni]; KS.hue += 34 + Math.random() * 40; if (Math.random() < .35) KS.dir *= -1; KS.zoom = STG.safe ? .035 : .09; }
+  KS.rings.push({ r: 0, v: strong ? 1 : .55, n: 3 + ((Math.random() * 3) | 0) });
+  if (KS.rings.length > 8) KS.rings.shift();
+}
+function kaleidoDraw(g, W, H, X) {
+  const { fd, bin, lvl, C, pulse, energy, dt } = X, now = performance.now(), t = VZ.t, sc = Math.min(1, 860 / W), ow = Math.max(160, Math.round(W * sc)), oh = Math.max(90, Math.round(H * sc)), L = Math.round(Math.hypot(ow, oh));
+  if (!KS.out || KS.ow !== ow || KS.oh !== oh) { KS.out = document.createElement('canvas'); KS.out.width = ow; KS.out.height = oh; KS.src = document.createElement('canvas'); KS.src.width = L; KS.src.height = L; KS.ow = ow; KS.oh = oh; KS.out.getContext('2d').fillStyle = '#050b0c'; KS.out.getContext('2d').fillRect(0, 0, ow, oh); }
+  const o = KS.out.getContext('2d'), s = KS.src.getContext('2d'), cx = L / 2, cy = L / 2, filt = (() => { try { return 'filter' in s; } catch (e) { return false; } })();
+  // --- syncopation: the "and" of the beat (or your own onsets) changes the fold, hue and spin; the downbeat only breathes
+  if (T.playing && E.ctx) { const ph = playheadSlot(), st = Math.floor(ph); if (st !== KS.step) { KS.step = st; const m = ((st % 4) + 4) % 4; if (m === 2) ksAccent(true, now); else if (m === 0) ksAccent(false, now); else if (S.band.drumsOn || S.band.leadOn) KS.glints.push({ a: Math.random() * 6.3, r: .2 + Math.random() * .5, t: now }); } }
+  else if (pulse > KS.pv + .25) ksAccent(pulse > .6, now); KS.pv = pulse;
+  KS.glints = KS.glints.filter(q => now - q.t < 600);
+  const spin = (.07 + energy * .5 + pulse * .6) * (STG.safe ? .6 : 1) * KS.dir; KS.rot += (dt || .016) * spin; KS.zoom *= Math.pow(.05, dt || .016);
+  // --- feedback: last frame, zoomed in and turned a little, becomes the new canvas (the infinite tunnel)
+  s.save(); s.globalCompositeOperation = 'copy'; s.globalAlpha = 1; s.translate(cx + Math.sin(t * .7) * L * .006, cy + Math.cos(t * .5) * L * .006); s.rotate(spin * .06 + .004 * KS.dir); const z = 1.012 + energy * .02 + KS.zoom; s.scale(z, z);
+  if (filt) s.filter = 'hue-rotate(' + (2 + energy * 9) + 'deg) saturate(1.05) brightness(.95)'; s.drawImage(KS.out, -ow / 2, -oh / 2); s.restore(); if (filt) s.filter = 'none';
+  s.fillStyle = 'rgba(2,6,8,' + (STG.safe ? .16 : .11) + ')'; s.fillRect(0, 0, L, L);
+  // --- new light, drawn once into the wedge that gets mirrored
+  const n = KS.n, wedge = Math.PI / n; s.save(); s.translate(cx, cy); s.globalCompositeOperation = 'source-over';
+  const hueC = k => 'hsla(' + ((KS.hue + k) % 360).toFixed(0) + ',90%,' + (58 + (k % 3) * 4) + '%,';
+  for (let i = 0; i < 28; i++) { const u = i / 27, f = 70 * Math.pow(86, u), v = lvl(fd[bin(f)]); if (v < .08) continue; const a = (.04 + u * .92) * wedge, r0 = L * (.05 + .46 * u), r1 = r0 + L * (.02 + .16 * v);
+    s.strokeStyle = hueC(u * 120) + (.25 + .55 * v).toFixed(2) + ')'; s.lineWidth = 1 + v * L * .006; s.beginPath(); s.moveTo(Math.cos(a) * r0, Math.sin(a) * r0); s.lineTo(Math.cos(a + .06 * v) * r1, Math.sin(a + .06 * v) * r1); s.stroke(); }
+  { const cr = L * (.014 + energy * .04 + pulse * .035); const gr = s.createRadialGradient(0, 0, 0, 0, 0, cr * 2.4); gr.addColorStop(0, hueC(20) + '.85)'); gr.addColorStop(.45, hueC(80) + '.45)'); gr.addColorStop(1, hueC(140) + '0)'); s.fillStyle = gr; s.beginPath(); s.arc(0, 0, cr * 2.4, 0, 6.3); s.fill(); s.fillStyle = hueC(10) + '.9)'; hexPath(s, 0, 0, cr); s.fill(); }
+  KS.rings.forEach(q => { q.r += (dt || .016) * (.42 + q.v * .3); const rr = q.r * L * .55; if (q.r > 1) return; s.strokeStyle = hueC(q.n * 40) + ((1 - q.r) * .8 * q.v).toFixed(2) + ')'; s.lineWidth = 1.5 + (1 - q.r) * 5; hexPath(s, 0, 0, rr); s.stroke(); }); KS.rings = KS.rings.filter(q => q.r <= 1);
+  KS.glints.forEach(q => { const u = (now - q.t) / 600, a = (q.a % wedge), r = (q.r + u * .25) * L * .5; s.fillStyle = hueC(200) + (1 - u).toFixed(2) + ')'; s.beginPath(); s.arc(Math.cos(a) * r, Math.sin(a) * r, L * .006 * (1 - u * .5) + 1, 0, 6.3); s.fill(); });
+  // notes: a blob whose angle in the wedge is its place on the circle of fifths, radius its octave
+  PB.hits.forEach(p => { const age = now - p.t; if (age > 500) return; const midi = S.tuning[p.st] + S.capo + (typeof p.f === 'number' ? p.f : 0), pc = midi % 12, a = (.08 + FIFTH(pc) / 11 * .84) * wedge, r = L * (.1 + (midi - 36) / 60 * .34), k = 1 - age / 500;
+    s.fillStyle = pcCol(pc, .9 * k, 66); s.shadowColor = s.fillStyle; s.shadowBlur = 16; s.beginPath(); s.arc(Math.cos(a) * r, Math.sin(a) * r, L * (.008 + .012 * p.v) * (1 + k), 0, 6.3); s.fill(); s.shadowBlur = 0; });
+  if (!T.playing && AN.midi != null && AN.active) { const pc = AN.midi % 12, a = (.08 + FIFTH(pc) / 11 * .84) * wedge, r = L * (.1 + (AN.midi - 36) / 60 * .34); s.fillStyle = pcCol(pc, .95, 68); s.shadowColor = s.fillStyle; s.shadowBlur = 20; s.beginPath(); s.arc(Math.cos(a) * r, Math.sin(a) * r, L * .018, 0, 6.3); s.fill(); s.shadowBlur = 0; }
+  s.restore();
+  // --- mirror the wedge n times (alternate copies flipped, so the seams are invisible)
+  const R = L * .72; o.save(); o.globalCompositeOperation = 'source-over'; o.fillStyle = '#030708'; o.fillRect(0, 0, ow, oh);
+  for (let k = 0; k < n; k++) for (let f = 0; f < 2; f++) { o.save(); o.translate(ow / 2, oh / 2); o.rotate(KS.rot + k * 2 * wedge); if (f) o.scale(1, -1); o.beginPath(); o.moveTo(0, 0); o.arc(0, 0, R, 0, wedge); o.closePath(); o.clip(); o.drawImage(KS.src, -cx, -cy); o.restore(); }
+  o.restore();
+  // --- to the screen, with a soft fringe of colour on the edges
+  g.save(); g.globalCompositeOperation = 'source-over'; g.drawImage(KS.out, 0, 0, W, H);
+  const ab = 1 + .004 + pulse * .006; g.globalCompositeOperation = 'lighter'; g.globalAlpha = .16 + pulse * .1;
+  try { if (filt) { g.filter = 'hue-rotate(70deg)'; g.drawImage(KS.out, -W * (ab - 1) / 2, -H * (ab - 1) / 2, W * ab, H * ab); g.filter = 'hue-rotate(-70deg)'; g.drawImage(KS.out, W * (ab - 1) / 2, H * (ab - 1) / 2, W / ab, H / ab); g.filter = 'none'; } else g.drawImage(KS.out, -W * (ab - 1) / 2, -H * (ab - 1) / 2, W * ab, H * ab); } catch (e) { }
+  g.restore();
+}
+function vzExtra2(mode, g, W, H, X) { if (mode === 'halo') return haloDraw(g, W, H, X); return kaleidoDraw(g, W, H, X); }
+
+/** change the visual look from anywhere (the full-screen ✦ button, keys) and keep the Visuals buttons in step */
+const VZ_FAVS = ['hex', 'halo', 'kaleido', 'tunnel'];
+function vzSetMode(k) { VZ.mode = k; CFG.visMode = k; saveCfg(); VZ.spec = null; VZ.hexes = null; document.querySelectorAll('#pane-vis .seg [data-m]').forEach(b => b.classList.toggle('on', b.dataset.m === k)); const n = (VMODES.find(m => m[0] === k) || [0, k])[1]; toast(n, 'ok'); }
+function vzCycleLook() { const i = VZ_FAVS.indexOf(VZ.mode); vzSetMode(VZ_FAVS[(i + 1) % VZ_FAVS.length]); }
 
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();

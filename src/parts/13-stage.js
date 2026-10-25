@@ -37,6 +37,7 @@ function stageInfo() {
 /* ---------- extra visual modes (dispatched from drawVis) ---------- */
 function stageExtra(mode, g, W, H, X) {
   if (mode === 'neural') return ngStageDraw(g, W, H, X);
+  if (mode === 'halo' || mode === 'kaleido') return vzExtra2(mode, g, W, H, X);
   const { fd, bin, lvl, C, pulse, energy, dt } = X, cx = W / 2, cy = H / 2, R = Math.min(W, H), ch = AN.chroma || new Array(12).fill(0), mx = Math.max(.001, ...ch), t = VZ.t;
   if (mode === 'bloom') {
     const rot = t * (.12 + energy * .5); g.save(); g.translate(cx, cy); g.globalCompositeOperation = 'lighter';
@@ -92,6 +93,7 @@ function stageFrame(ts) {
     }
   } else g.drawImage(off, 0, 0);
   if (sc.cam && sc.mode !== 'spectro') camTop(g, w, hh);
+  if (sc.mode === 'halo') haloFront(g);
   if (sc.glow > .02) { const q = SG.small.getContext('2d'); q.globalCompositeOperation = 'source-over'; q.clearRect(0, 0, SG.small.width, SG.small.height); q.drawImage(SG.cv, 0, 0, SG.small.width, SG.small.height); g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = sc.glow * .9; g.imageSmoothingQuality = 'high'; g.drawImage(SG.small, 0, 0, w, hh); g.globalAlpha = sc.glow * .5; g.drawImage(SG.small, -w * .02, -hh * .02, w * 1.04, hh * 1.04); g.restore(); }
   if (sc.flash > 0 && SG.flash > .01) { g.fillStyle = 'rgba(255,255,255,' + (SG.flash * sc.flash * (STG.safe ? .22 : .6)).toFixed(3) + ')'; g.fillRect(0, 0, w, hh); SG.flash *= .88; }
   if (STG.hud !== false) drawStageHUD(g, w, hh, sc, info, C);
