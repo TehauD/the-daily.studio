@@ -136,7 +136,7 @@ function wav(L, sr) { const n = L.length, b = Buffer.alloc(44 + n * 2); b.write(
     const hs = links.map(l => l.h);
     ok(hs.includes('https://github.com/TehauD') && hs.includes('https://www.linkedin.com/in/tehau/'), 'Help ▸ About links to github.com/TehauD and linkedin.com/in/tehau');
     ok(links.every(l => /noopener/.test(l.r) && l.t === '_blank'), 'every external link opens in a new tab with rel=noopener');
-    ok(/MIT/.test(await page.$eval('#help .ab', e => e.textContent)) && /MediaPipe/.test(await page.$eval('#help .ab', e => e.textContent)) && /Made for people who love making music/.test(await page.$eval('#help .ab', e => e.textContent)) && !/Good Morning/.test(await page.$eval('#help .ab', e => e.textContent)), 'About tells the story and lists the licence and MediaPipe; no bundled sample is credited');
+    ok(/MIT/.test(await page.$eval('#help .ab', e => e.textContent)) && /MediaPipe/.test(await page.$eval('#help .ab', e => e.textContent)) && /Made for creators/.test(await page.$eval('#help .ab', e => e.textContent)) && !/Good Morning/.test(await page.$eval('#help .ab', e => e.textContent)), 'About tells the story and lists the licence and MediaPipe; no bundled sample is credited');
     ok(!/FRETWORK|Fretwork/.test(await page.evaluate(() => document.documentElement.outerHTML)), 'no old brand name anywhere in the page');
     await page.keyboard.press('Escape');
     ok(await page.evaluate(() => /default-src 'self'/.test((document.querySelector('meta[http-equiv="Content-Security-Policy"]') || {}).content || '')), 'a Content-Security-Policy is set on the page'); }

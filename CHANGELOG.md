@@ -11,7 +11,7 @@ All notable changes to the-daily.studio (earlier versions were released under th
 
 ### Added
 - **Your hum is in the arrangement.** Hum to Song now adds the recording itself as a **My hum** Vocal take, lined up so its first note lands on the first melody note of Verse 1. Band, lead tab and voice play together; re-arranging replaces it, and **🎤 My hum** turns it on or off.
-- **About rewritten** as a personal note: "Made for people who love making music." The credits, links and (optional) support button stay below it.
+- **About rewritten** as a personal note: "Made for creators." (shorter: five short paragraphs and the signature) The credits, links and (optional) support button stay below it.
 - **One front door, no repeats.** Every start button now lands on the same place: the stage with one panel. **Hum or sing** and **I have a guitar** are the two big choices; a quiet row below offers **a song file**, **a blank page** and **the demo song**. The separate welcome dialog, the extra "more ways to start" hop and the long feature grid are gone from the first run (the New song dialog in the studio stays). Choosing something other than humming removes the empty placeholder page instead of leaving it in My songs.
 - **Camera backdrop by default.** **● Begin** and **Start and connect my input** switch on the camera backdrop on Hex Resonance, "me in front". **Start with camera and mic off** never does. Turning the camera off (on the stage, or in I/O) is remembered.
 - **I/O is the first left tab**, with a new **Camera** card (device and backdrop button) beside the audio input and output, so sound and picture are enabled in one place. These choices are saved on your device.
