@@ -180,8 +180,9 @@ async function projRestoreTrack() {
 
 /* ---------- creating ---------- */
 const FORMS = { empty: ['Verse 1'], vc: ['Verse 1', 'Chorus'], vcb: ['Verse 1', 'Chorus', 'Verse 2', 'Chorus', 'Bridge', 'Chorus'] };
+/* a new, blank song starts with the band off, so playback is only what the person records or writes; Hum to Song turns it on for the song it builds */
 function blankSong(o = {}) {
-  const s = newSong(); s.title = String(o.title || '').trim() || 'Untitled Idea'; s.artist = o.artist || ''; s.bpm = clamp(+o.bpm || 92, 30, 260); s.ts = o.ts || [4, 4]; s.band.drumLen = Math.min(32, s.ts[0] * 16 / s.ts[1]);
+  const s = newSong(); Object.assign(s.band, { drumsOn: false, bassOn: false, compOn: false, leadOn: false }); s.title = String(o.title || '').trim() || 'Untitled Idea'; s.artist = o.artist || ''; s.bpm = clamp(+o.bpm || 92, 30, 260); s.ts = o.ts || [4, 4]; s.band.drumLen = Math.min(32, s.ts[0] * 16 / s.ts[1]);
   s.key = o.key == null ? 9 : +o.key; s.minor = o.minor == null ? true : !!o.minor; s.scale = s.minor ? 'Natural Minor (Aeolian)' : 'Major (Ionian)';
   if (o.tuning && TUNINGS[o.tuning]) { s.tuningName = o.tuning; s.tuning = TUNINGS[o.tuning].slice(); }
   s.sections = (FORMS[o.form] || FORMS.empty).map(n => mkSection(n, ['', '', '', ''])); return s;

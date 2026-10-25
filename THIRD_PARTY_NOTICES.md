@@ -41,7 +41,7 @@ The logo letters (T, D, S) are drawn as strokes in `scripts/brand-mark.mjs`, not
 
 ## Sample audio
 
-`samples/Good_Morning.m4a` is original music by Tehau DeBarthe and is **not** under the MIT licence. See [samples/LICENSE.md](samples/LICENSE.md).
+No music is bundled. If you add sample tracks to `samples/`, describe their licence in `samples/LICENSE.md`.
 
 ## Names and trademarks
 

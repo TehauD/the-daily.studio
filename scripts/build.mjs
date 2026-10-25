@@ -67,7 +67,7 @@ self.addEventListener('fetch', e => {
 const AUDIO = /\.(m4a|mp3|wav|ogg|flac|aac)$/i; let info = {}; try { info = JSON.parse(readFileSync(join(root, 'samples', 'info.json'), 'utf8')); } catch { }
 let sampleFiles = []; try { sampleFiles = readdirSync(join(root, 'samples')).filter(f => AUDIO.test(f)).sort(); } catch { }
 const samples = JSON.stringify({ tracks: sampleFiles.map(f => ({ file: f, title: (info[f] && info[f].title) || f.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim(), note: (info[f] && info[f].note) || '', mb: +(statSync(join(root, 'samples', f)).size / 1048576).toFixed(1) })) }, null, 2) + '\n';
-const outputs = { 'index.html': standalone, 'codepen/pen.html': body, 'codepen/pen.css': css, 'codepen/pen.js': js, 'manifest.webmanifest': manifest, 'sw.js': sw, ...(sampleFiles.length ? { 'samples/manifest.json': samples } : {}) };
+const outputs = { 'index.html': standalone, 'codepen/pen.html': body, 'codepen/pen.css': css, 'codepen/pen.js': js, 'manifest.webmanifest': manifest, 'sw.js': sw, 'samples/manifest.json': samples };
 if (process.argv.includes('--check')) {
   let bad = 0;
   for (const [f, c] of Object.entries(outputs)) { let cur = ''; try { cur = readFileSync(join(root, f), 'utf8'); } catch { } if (cur !== c) { console.error('out of date: ' + f); bad++; } }

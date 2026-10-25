@@ -56,3 +56,10 @@ bus.on('dock', id => { const c = typeof id === 'string' ? id : DOCK.cur; if (c &
 /* Pressing Begin or "Start and connect my input" also starts the camera backdrop on the visuals (unless you turned it off earlier).
    "Start with camera and mic off" never does. */
 bus.on('booted', () => { if (HUM.cam0 !== true) return; if (CFG.humStage !== false && !CAM.on && DOCK.cur === 'vis') vzCenterStage(true); });
+
+/** a new song starts with the band off: say so once, the first time someone presses Play on chords with nothing else to hear */
+var BAND_HINT_DONE = false;
+function bandHint() {
+  if (BAND_HINT_DONE || S.band.drumsOn || S.band.bassOn || S.band.compOn || S.band.leadOn || TAKES.length || (typeof STM !== 'undefined' && STM.ch) || !songHasWork()) return;
+  BAND_HINT_DONE = true; toast('The band is off in this song. Turn on Drums, Bass or Rhythm in the BAND row to hear it.', 'ok');
+}

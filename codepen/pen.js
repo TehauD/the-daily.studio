@@ -980,7 +980,7 @@ function scheduleSlot(slot, time) {
   if (S.band.leadOn) fb.bar.tab.forEach(n => { if (n.s === sib) playTabNote(fb.bar, n, tt, dur); });
 }
 async function play(fromRec) {
-  if (T.playing) return; await startAudio(); const c = E.ctx; applyMix(); if (!S.sections.length || !songSlots()) { toast('Add a section with at least one bar first', 'warn'); return; }
+  if (T.playing) return; try { bandHint(); } catch (e) { } await startAudio(); const c = E.ctx; applyMix(); if (!S.sections.length || !songSlots()) { toast('Add a section with at least one bar first', 'warn'); return; }
   T.rec = !!fromRec || T.rec; T.playing = true; T.ending = false; T.q = []; T.startCursor = T.cursor;
   const ci = T.rec && CFG.countIn > 0 ? CFG.countIn * spb() : 0; T.slot = T.cursor - ci; T.next = c.currentTime + .08; T.wantRec = T.rec; T.recFrom = T.cursor;
   if (!T.loopB) T.loopB = null; scheduleTakes(T.next + ci * slotDur(), T.cursor * slotDur()); trackStart(T.next + ci * slotDur(), T.cursor, true);
@@ -4689,7 +4689,7 @@ function mSync() {
   $$('.msc', M.chips).forEach(x => x.classList.toggle('on', x.dataset.s === M.s));
   const on = M.chips.querySelector('.msc.on'); if (on && on.scrollIntoView) on.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   if (M.songBtn) M.songBtn.textContent = '♪ ' + ((S && S.title) || 'Song').slice(0, 14);
-  M.tlBtn.textContent = tlv === 'full' ? '▾ Tracks' : tlv === 'off' ? '▸ Tracks' : '▴ Tracks';
+  M.tlBtn.textContent = tlv === 'full' ? '▾ Panel' : tlv === 'off' ? '▴ Tracks' : '⤢ Tracks'; M.tlBtn.title = tlv === 'mini' ? 'Give the tracks the whole screen' : tlv === 'full' ? 'Back to the panel (tracks hidden)' : 'Show the tracks';
   M.tlBtn.style.display = M.view === 'center' && M.g !== 'see' ? '' : 'none';
   setTimeout(() => { if (typeof tlSize === 'function') tlSize(); window.dispatchEvent(new Event('fw:fit')); }, 50);
 }
@@ -5779,8 +5779,9 @@ async function projRestoreTrack() {
 
 /* ---------- creating ---------- */
 const FORMS = { empty: ['Verse 1'], vc: ['Verse 1', 'Chorus'], vcb: ['Verse 1', 'Chorus', 'Verse 2', 'Chorus', 'Bridge', 'Chorus'] };
+/* a new, blank song starts with the band off, so playback is only what the person records or writes; Hum to Song turns it on for the song it builds */
 function blankSong(o = {}) {
-  const s = newSong(); s.title = String(o.title || '').trim() || 'Untitled Idea'; s.artist = o.artist || ''; s.bpm = clamp(+o.bpm || 92, 30, 260); s.ts = o.ts || [4, 4]; s.band.drumLen = Math.min(32, s.ts[0] * 16 / s.ts[1]);
+  const s = newSong(); Object.assign(s.band, { drumsOn: false, bassOn: false, compOn: false, leadOn: false }); s.title = String(o.title || '').trim() || 'Untitled Idea'; s.artist = o.artist || ''; s.bpm = clamp(+o.bpm || 92, 30, 260); s.ts = o.ts || [4, 4]; s.band.drumLen = Math.min(32, s.ts[0] * 16 / s.ts[1]);
   s.key = o.key == null ? 9 : +o.key; s.minor = o.minor == null ? true : !!o.minor; s.scale = s.minor ? 'Natural Minor (Aeolian)' : 'Major (Ionian)';
   if (o.tuning && TUNINGS[o.tuning]) { s.tuningName = o.tuning; s.tuning = TUNINGS[o.tuning].slice(); }
   s.sections = (FORMS[o.form] || FORMS.empty).map(n => mkSection(n, ['', '', '', ''])); return s;
@@ -6114,7 +6115,6 @@ function aboutBlock() {
         li(h('b', {}, 'Built with: '), 'the Web Audio API, AudioWorklet, Canvas, SVG and IndexedDB. No frameworks, no tracking, no analytics.'),
         li(h('b', {}, 'Hand tracking and person cut-out (optional): '), 'use ', ext('MediaPipe Tasks Vision', 'https://developers.google.com/mediapipe'), ' with its hand-landmarker and selfie-segmenter models by Google, Apache-2.0, fetched from jsDelivr and Google Storage only when you switch hand tracking on, or choose “Me in front” for the camera. Motion-only mode and the edges-in look stay offline.'),
         li(h('b', {}, 'Methods: '), 'YIN pitch estimation (de Cheveigné & Kawahara, 2002); harmonic / percussive separation by median filtering (Fitzgerald, 2010); Karplus–Strong string synthesis (1983). Re-implemented here from the published papers.'),
-        li(h('b', {}, 'Sample track: '), '“Good Morning” © ' + BRAND.author + ', included so you can try the app. It is not covered by the MIT licence; see samples/LICENSE.md.'),
         li(h('b', {}, 'Type: '), 'Inter and Montserrat (SIL Open Font Licence 1.1) are built into the page; nothing is downloaded. Other typefaces in Appearance use fonts already on your device.'),
         li(h('b', {}, 'Names: '), 'Ultimate Guitar, Focusrite, Scarlett, MIDI, Google and other names are used only to describe compatibility. This project is independent and not affiliated with or endorsed by them.'),
         li(h('b', {}, 'Made with AI assistance: '), 'developed with Claude (Anthropic) under my direction. The design choices, the music and any mistakes are mine.')),
@@ -6568,6 +6568,7 @@ function humResult(d, x) {
   d.append(
     h('div', { class: 'hum-row' }, h('button', { class: 'btn primary hum-play', id: 'humPlay', onclick: () => { if (T.playing) { stopPlay(true); } else humPlay(); } }, T.playing ? '■ Stop' : '▶ Play my song'),
       h('button', { class: 'btn', id: 'humHear', onclick: humHear }, HUM.hear ? '■ Stop' : '👂 Hear my hum'),
+      h('button', { class: 'btn', id: 'humBand', title: 'Turn the drums, bass and rhythm guitar on or off. Your melody keeps playing.', onclick: e => { const on = !(S.band.drumsOn || S.band.bassOn || S.band.compOn); setRehearsal({ drumsOn: on, bassOn: on, compOn: on }); e.currentTarget.textContent = on ? '🥁 Band: on' : '🥁 Band: off'; } }, (S.band.drumsOn || S.band.bassOn || S.band.compOn) ? '🥁 Band: on' : '🥁 Band: off'),
       h('span', { class: 'hum-sum' }, h('b', {}, an.notes.length + ' notes'), ' · ', h('b', {}, kn), ' · ', h('b', {}, r.bpm + ' BPM'), ' · ', h('b', {}, totalBars() + ' bars')), h('span', { class: 'grow' }), x),
     h('div', { class: 'hum-msg' }, 'Your melody plays as the lead guitar. Chords, sections and the band were arranged from it. Change anything below and it re-builds right away.'),
     cv,
@@ -6733,6 +6734,13 @@ bus.on('dock', id => { const c = typeof id === 'string' ? id : DOCK.cur; if (c &
 /* Pressing Begin or "Start and connect my input" also starts the camera backdrop on the visuals (unless you turned it off earlier).
    "Start with camera and mic off" never does. */
 bus.on('booted', () => { if (HUM.cam0 !== true) return; if (CFG.humStage !== false && !CAM.on && DOCK.cur === 'vis') vzCenterStage(true); });
+
+/** a new song starts with the band off: say so once, the first time someone presses Play on chords with nothing else to hear */
+var BAND_HINT_DONE = false;
+function bandHint() {
+  if (BAND_HINT_DONE || S.band.drumsOn || S.band.bassOn || S.band.compOn || S.band.leadOn || TAKES.length || (typeof STM !== 'undefined' && STM.ch) || !songHasWork()) return;
+  BAND_HINT_DONE = true; toast('The band is off in this song. Turn on Drums, Bass or Rhythm in the BAND row to hear it.', 'ok');
+}
 
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();

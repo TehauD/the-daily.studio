@@ -8,6 +8,8 @@ Contents: [Getting sound](#getting-sound-in-and-out) · [Tones and the Rig](#ton
 
 ## Hum to Song (start here)
 
+**The band.** A new blank song starts with the band off, so pressing Play plays only what you recorded or wrote. The song that Hum to Song builds comes with the band; its panel has a **🥁 Band** button to switch drums, bass and rhythm off or on (your melody keeps playing), and the BAND row in the studio has the same switches.
+
 **The first screen.** Press **● Begin**. The app goes full screen with your camera and the hexagons, and offers **● Hum or sing** or **🎸 I have a guitar**. Prefer to start another way? Under them: **a song file** (it is split into stems and the chords fill in), **a blank page** or **the demo song**. **＋ New song** (top right of the stage) brings this panel back; **⚙ Inputs** opens I/O, where you choose the microphone and camera once and the app remembers. "Start with camera and mic off" (under Other ways to start) never asks for either. ✕ Studio (top right) returns to the normal studio any time; ■ Stop audio stops all sound and releases the microphone.
 
 **I have a guitar.** The coach walks you through three steps: **1 · Tune** each string (pluck it open; the bar fills when it is in tune), **2 · Learn the chords** of your song one at a time (the diagram shows where your fingers go; it says what it hears), **3 · Play along** with the band. You need an audio input for the guitar (the browser asks when you press the button). Skip any step with the buttons.
@@ -145,7 +147,7 @@ Be realistic: this is classical signal processing (harmonic / percussive separat
 
 ### Sample tracks
 
-Under the *Load backing track* button, **Sample tracks** lists the songs bundled with the site (for example *Good Morning*). Tap one to load it into Stems; **Transcribe** has the same shelf under *Import audio*. The file is fetched from the site only when you tap it, so a 5 MB track costs nothing until used. The shelf is hidden when the page is opened straight from disk, in CodePen, or from a single emailed `index.html`, because those have no `samples/` folder beside them.
+Under the *Load backing track* button, **Sample tracks** lists any songs the site owner has bundled (none ship with the app). Tap one to load it into Stems; **Transcribe** has the same shelf under *Import audio*. The file is fetched from the site only when you tap it, so a 5 MB track costs nothing until used. The shelf is hidden when the page is opened straight from disk, in CodePen, or from a single emailed `index.html`, because those have no `samples/` folder beside them.
 
 **Add your own (repo owners):** copy the audio into `samples/`, optionally name it in `samples/info.json`, run `npm run build`, commit and push. Only add music you have the right to share: a public repository is public.
 
@@ -198,7 +200,7 @@ The app switches layout by itself; **⋯ More ▸ Device layout** (or Settings) 
 | **Stems** | Stems · Transcribe |
 | **More** | Research · Export |
 
-The **Tracks** button at the right of the chip row cycles the arrangement between a mini view, a tall view and hidden. The band strip (drums, bass, rhythm, lead) sits under the chips in *Play* and *Write*.
+The **Tracks** button at the right of the chip row cycles the arrangement between a mini strip, a **full-screen tracks view** (no other panel competing; the button then reads **▾ Panel**) and hidden. The band strip (drums, bass, rhythm, lead) sits under the chips in *Play* and *Write*.
 
 **Landscape** puts the sections on a left rail and the transport in the header, which leaves the most room for the Fretboard, Stage and Neural map. The arrangement starts hidden there; bring it back with **Tracks**.
 

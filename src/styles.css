@@ -743,3 +743,9 @@ body.vz-imm .humbar .btn.primary{background:linear-gradient(180deg,#3fbf7a,#2f9a
 .hum-alt{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 @media (max-width:520px){#vzHud .lbl{display:none}#vzhFull{display:none}}
 .ab-story{gap:9px;padding:14px 16px}.ab-story h4{font-size:17px}.ab-story .ab-sig{font:italic 600 13px var(--display);margin-top:2px}
+
+/* phone: Tracks gives the arrangement the whole work area (no other panel competing); Panel returns */
+body[data-form=phone][data-tl=full] #center{--tlp:100%;grid-template-rows:0 minmax(0,1fr)}
+body[data-form=phone][data-tl=full] #center #dock{display:none!important}
+body[data-form=phone][data-tl=full] #timeline{border-top:0}
+body[data-form=phone][data-tl=full] .tl-body{grid-template-columns:128px 1fr}

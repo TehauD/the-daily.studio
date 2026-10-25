@@ -64,7 +64,7 @@ It began as a guitar lab and grew into a place to turn a hum into a finished son
 | **Band** | Drums, bass, rhythm guitar and lead-tab playback in many styles, always one click away in the band strip. Rehearsal mixes mute whoever you are replacing. |
 | **Compose** | Tab editor with techniques (hammer, pull, slides, bends, vibrato, mutes), chord and lyric lanes, automatic voicings for any tuning and capo, Ultimate Guitar-ready text, ChordPro, MIDI, WAV and project JSON export with a submission lint report. |
 | **Transcribe** | Record or load audio and get **polyphonic tab** placed on strings and frets for your tuning, with per-note confidence, review and accept / reject, timing auto-align and a built-in self-test. |
-| **Stems** | One-tap **sample tracks** (drop files in `samples/`), or load a backing track: separate **drums, bass, vocals and guitar / other**, estimate tempo, key and chords, import the chords into your song, copy the drum groove to the band, and mute stems to play along. |
+| **Stems** | Load a backing track (you can also ship one-tap **sample tracks** by dropping files in `samples/`): separate **drums, bass, vocals and guitar / other**, estimate tempo, key and chords, import the chords into your song, copy the drum groove to the band, and mute stems to play along. |
 | **Neural map** | An interactive node graph of the music: notes and harmony take shape as the song progresses. |
 | **Stage and visuals** | Audio-reactive full-screen visuals (hex resonance, tunnels, spectrogram, chroma wheel, orrery, ridgeline, prompter) with scenes you can switch from the keyboard or a MIDI controller. |
 | **Camera look** | Put yourself in the visuals: dimmed behind them, framed by them (visuals grow in from the edges) or a green-screen style cut-out with the visuals playing behind you. |
@@ -222,7 +222,7 @@ The same page adapts to the device it is on. It picks a layout from the screen s
 |---|---|---|---|
 | Navigation | Five sections along the bottom (**Play · Write · See · Stems · More**) with a chip row for the panels inside each; landscape moves them to a side rail | The familiar tab bar and band strip; **Tones** and **Tuner** slide in as drawers (☰) | Everything visible, resizable and floatable |
 | Transport | Fixed bar at the bottom, in thumb reach; tempo, signature and key stay in the header | Header, on two rows | Header |
-| Arrangement | **Tracks** button cycles mini → tall → hidden (hidden by default in landscape and in *See*) | Always visible | Always visible |
+| Arrangement | **Tracks** button cycles mini strip → full-screen tracks → hidden (hidden by default in landscape and in *See*) | Always visible | Always visible |
 | Writing tab | **On-screen keypad**: 0–9, **10s / 20s** for two-digit frets, arrows, delete, techniques, auto-advance | Same keypad | Keyboard |
 | Gestures | Press and hold = right-click (MIDI-learn on knobs, band chip menus); pinch and two-finger pan on the Neural map; pedals move earlier / later from **⚙** | Same | Mouse and keyboard |
 | While playing | The screen stays awake (switchable); **in-app monitoring starts off** to avoid speaker feedback | Same | Unchanged |
@@ -301,7 +301,6 @@ Code: **[MIT License](LICENSE)**, © 2026 Tehau DeBarthe. You may use, copy, cha
 * **About me and credits** are inside the app under *Help & shortcuts*. Maker: [Tehau DeBarthe](https://github.com/TehauD) · [LinkedIn](https://www.linkedin.com/in/tehau/). A sibling project, [The Daily](https://the-daily.studio/journal/), a developer journal in the same spirit, is hosted at `/journal/` (source: [TehauD/daily](https://github.com/TehauD/daily)).
 * **[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)**: optional hand tracking uses [MediaPipe Tasks Vision](https://developers.google.com/mediapipe) (Apache-2.0), loaded from a CDN only when you switch it on. Techniques: YIN pitch estimation (de Cheveigné and Kawahara, 2002), harmonic / percussive separation by median filtering (Fitzgerald, 2010), Karplus–Strong synthesis (1983).
 * **[PRIVACY.md](PRIVACY.md)**: what stays on your device (everything) and the only optional network requests.
-* **[samples/LICENSE.md](samples/LICENSE.md)**: the bundled sample track is not covered by the MIT licence.
 * Developed with AI assistance (Claude, Anthropic) under the author’s direction.
 
 the-daily.studio is an independent project. It is not affiliated with or endorsed by Ultimate Guitar, Focusrite, Google or any amplifier or effects manufacturer; product and brand names are used only to describe compatibility.

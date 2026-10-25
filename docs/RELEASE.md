@@ -3,7 +3,7 @@
 ## Before you publish
 - [ ] `node scripts/build.mjs --check` passes; `npm test`, `npm run test:e2e`, `npm run test:mobile` pass; `npm run build:site && npm run verify:site` prints `site verified`.
 - [ ] Manual checks in [TESTING.md](TESTING.md) done on the live site (real microphone, kill switch, camera models, Safari/iOS).
-- [ ] **Sample track rights.** `samples/LICENSE.md` says "Good Morning" is © Tehau DeBarthe and not MIT. If it was made with an AI music service, confirm that service's terms allow public redistribution. If unsure, delete the file and `samples/manifest.json` entry and rebuild.
+- [ ] **Sample track rights.** No music is bundled. If you add a file to `samples/`, record its licence in `samples/LICENSE.md` and, if it came from an AI music service, confirm that service's terms allow public redistribution.
 - [ ] Read `THIRD_PARTY_NOTICES.md` and `PRIVACY.md` once; they should match what you intend.
 - [ ] Optional: delete the "Made with AI assistance" line in `src/parts/28-about.js` if you would rather not state it.
 

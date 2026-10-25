@@ -96,12 +96,22 @@ const DEV = { phone: { viewport: { width: 390, height: 844 }, deviceScaleFactor:
   ok(await p.evaluate(async () => { const r = await navigator.serviceWorker.getRegistration(); return !!r; }), 'service worker registered (offline cache)');
   await p.close(); await p.ctx.close();
 
-  /* ---- bundled sample track ---- */
+  /* ---- phone: Tracks gets the whole work area ---- */
+  p = await open('phone'); await goto(p, 'play', 'rig');
+  await p.evaluate(() => { const b = document.querySelector('.msc.tl'); b.click(); if (document.body.dataset.tl !== 'full') b.click(); }); await wait(500);
+  { const T1 = await p.evaluate(() => ({ tl: document.body.dataset.tl, dock: getComputedStyle(document.getElementById('dock')).display, h: Math.round(document.getElementById('timeline').getBoundingClientRect().height), vh: innerHeight, btn: document.querySelector('.msc.tl').textContent }));
+    ok(T1.tl === 'full' && T1.dock === 'none' && T1.h > T1.vh * .5 && /Panel/.test(T1.btn), 'phone: Tracks takes the whole work area and the button offers Panel (' + JSON.stringify(T1) + ')'); }
+  await p.close(); await p.ctx.close();
+
+  /* ---- loading a track into Stems (a synthetic file made here; nothing is bundled) ---- */
   p = await open('phone'); await goto(p, 'stems', 'stems');
-  ok(await p.evaluate(() => !!document.querySelector('.smp-shelf .smp')), 'Stems shows the Sample tracks shelf');
-  await p.tap('.smp-shelf .smp');
-  const loaded = await p.waitForFunction(() => /Stems ready|Good Morning ·/.test(document.querySelector('#pane-stems').innerText) && !!document.querySelector('#pane-stems .mono'), null, { timeout: 120000 }).then(() => true, () => false);
-  ok(loaded, 'tapping a sample loads and separates it into stems');
+  ok(await p.evaluate(() => !document.querySelector('.smp-shelf .smp')), 'no sample track is bundled with the app');
+  { const fs = require('node:fs'), os = require('node:os'), sr = 22050, n = sr * 6, buf = Buffer.alloc(44 + n * 2), wv = path.join(os.tmpdir(), 'daily-test-track.wav');
+    buf.write('RIFF', 0); buf.writeUInt32LE(36 + n * 2, 4); buf.write('WAVEfmt ', 8); buf.writeUInt32LE(16, 16); buf.writeUInt16LE(1, 20); buf.writeUInt16LE(1, 22); buf.writeUInt32LE(sr, 24); buf.writeUInt32LE(sr * 2, 28); buf.writeUInt16LE(2, 32); buf.writeUInt16LE(16, 34); buf.write('data', 36); buf.writeUInt32LE(n * 2, 40);
+    for (let k = 0; k < n; k++) { const t = k / sr, beat = (t * 2) % 1, v = .35 * Math.sin(2 * Math.PI * 220 * t) * Math.exp(-beat * 3) + .25 * Math.sin(2 * Math.PI * 330 * t) * .6 + (beat < .02 ? .5 * (Math.random() - .5) : 0); buf.writeInt16LE(Math.max(-32767, Math.min(32767, Math.round(v * 32767))), 44 + k * 2); }
+    fs.writeFileSync(wv, buf); await p.setInputFiles('#pane-stems input[type=file]', wv); }
+  const loaded = await p.waitForFunction(() => /daily-test-track ·/.test(document.querySelector('#pane-stems').innerText) && /Guitar · keys · other/.test(document.querySelector('#pane-stems').innerText), null, { timeout: 120000 }).then(() => true, () => false);
+  ok(loaded, 'a loaded track is separated into stems');
   await p.close(); await p.ctx.close();
 
   /* ---- landscape phone ---- */

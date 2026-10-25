@@ -4,6 +4,11 @@ All notable changes to the-daily.studio (earlier versions were released under th
 
 ## 1.7.0 — 2026-10-24 — MVP 1, first production release
 
+### Changed
+- **New songs start with the band off.** A blank song (the empty page made for Hum or sing, Clean canvas, or a blank page) no longer plays a drum, bass and rhythm band over what you record or write. Hum to Song still builds and plays a band for the song it makes, and its panel has a **Band on/off** button (your melody keeps playing). The first time you press Play on chords with the band off, a toast says where to turn it on.
+- **Phone: Tracks has its own view.** **⤢ Tracks** gives the arrangement the whole work area instead of sharing it with the open panel; **▾ Panel** goes back.
+- **No bundled sample track.** "Good Morning" and its licence file are gone from the app, the About credits and the notices. The `samples/` mechanism stays for anything you add.
+
 ### Added
 - **About rewritten** as a personal note: "Built from a lifelong love of music." The credits, links and (optional) support button stay below it.
 - **One front door, no repeats.** Every start button now lands on the same place: the stage with one panel. **Hum or sing** and **I have a guitar** are the two big choices; a quiet row below offers **a song file**, **a blank page** and **the demo song**. The separate welcome dialog, the extra "more ways to start" hop and the long feature grid are gone from the first run (the New song dialog in the studio stays). Choosing something other than humming removes the empty placeholder page instead of leaving it in My songs.

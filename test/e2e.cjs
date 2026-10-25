@@ -136,7 +136,7 @@ function wav(L, sr) { const n = L.length, b = Buffer.alloc(44 + n * 2); b.write(
     const hs = links.map(l => l.h);
     ok(hs.includes('https://github.com/TehauD') && hs.includes('https://www.linkedin.com/in/tehau/'), 'Help ▸ About links to github.com/TehauD and linkedin.com/in/tehau');
     ok(links.every(l => /noopener/.test(l.r) && l.t === '_blank'), 'every external link opens in a new tab with rel=noopener');
-    ok(/MIT/.test(await page.$eval('#help .ab', e => e.textContent)) && /MediaPipe/.test(await page.$eval('#help .ab', e => e.textContent)) && /Good Morning/.test(await page.$eval('#help .ab', e => e.textContent)), 'About lists the licence, MediaPipe and the sample-track notice');
+    ok(/MIT/.test(await page.$eval('#help .ab', e => e.textContent)) && /MediaPipe/.test(await page.$eval('#help .ab', e => e.textContent)) && /Built from a lifelong love of music/.test(await page.$eval('#help .ab', e => e.textContent)) && !/Good Morning/.test(await page.$eval('#help .ab', e => e.textContent)), 'About tells the story and lists the licence and MediaPipe; no bundled sample is credited');
     ok(!/FRETWORK|Fretwork/.test(await page.evaluate(() => document.documentElement.outerHTML)), 'no old brand name anywhere in the page');
     await page.keyboard.press('Escape');
     ok(await page.evaluate(() => /default-src 'self'/.test((document.querySelector('meta[http-equiv="Content-Security-Policy"]') || {}).content || '')), 'a Content-Security-Policy is set on the page'); }
@@ -249,6 +249,7 @@ ok(he.length === 0, 'hum to song runs without script errors' + (he.length ? ' ' 
     ok(F1.panel && F1.alts && !F1.origins && !F1.cam && !F1.imm, 'first run with camera and mic off: one start panel on the stage with hum, guitar, song file, blank page and demo (' + JSON.stringify(F1) + ')');
     await fp.evaluate(() => document.getElementById('humAltBlank').click()); await wait(800);
     ok(await fp.evaluate(() => !document.getElementById('humbar') && (document.querySelector('.sb-title') || {}).value === 'Hum idea'), 'a blank page keeps the new song and closes the panel');
+    ok(await fp.evaluate(() => { const b = window.__daily.S.band; return !b.drumsOn && !b.bassOn && !b.compOn && !b.leadOn; }), 'a new blank song starts with the band off (playback is only what you record)');
     await fp.close(); await fctx.close();
     const gctx = await browser.newContext({ viewport: { width: 1500, height: 900 }, permissions: ['microphone', 'camera'] }); await gctx.route(/jsdelivr|googleapis/, r => r.abort());
     const gp = await gctx.newPage(); await gp.goto(BASE + '?debug'); await wait(2500); await gp.evaluate(() => document.getElementById('bootHum').click()); await wait(4500);

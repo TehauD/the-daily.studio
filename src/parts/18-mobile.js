@@ -70,7 +70,7 @@ function mSync() {
   $$('.msc', M.chips).forEach(x => x.classList.toggle('on', x.dataset.s === M.s));
   const on = M.chips.querySelector('.msc.on'); if (on && on.scrollIntoView) on.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   if (M.songBtn) M.songBtn.textContent = '♪ ' + ((S && S.title) || 'Song').slice(0, 14);
-  M.tlBtn.textContent = tlv === 'full' ? '▾ Tracks' : tlv === 'off' ? '▸ Tracks' : '▴ Tracks';
+  M.tlBtn.textContent = tlv === 'full' ? '▾ Panel' : tlv === 'off' ? '▴ Tracks' : '⤢ Tracks'; M.tlBtn.title = tlv === 'mini' ? 'Give the tracks the whole screen' : tlv === 'full' ? 'Back to the panel (tracks hidden)' : 'Show the tracks';
   M.tlBtn.style.display = M.view === 'center' && M.g !== 'see' ? '' : 'none';
   setTimeout(() => { if (typeof tlSize === 'function') tlSize(); window.dispatchEvent(new Event('fw:fit')); }, 50);
 }
