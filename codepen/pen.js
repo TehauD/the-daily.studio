@@ -6041,7 +6041,7 @@ function originsOpen(o = {}) {
   });
   setTimeout(() => { const i = $('input.in', blank); if (i) i.focus(); }, 40); return d;
 }
-function startMaybe() { if (PRJ.cur || store.get('started', false) || /[?&]start=0/.test(location.search) || document.getElementById('origins')) return; PRJ.fresh = true; humStageFirst(); }   // (the song on screen is only the built-in demo until the person picks something) the first thing anyone sees is the stage with one panel: hum, guitar, or a song file / blank page / demo
+function startMaybe() { if (PRJ.cur || store.get('started', false) || /[?&]start=0/.test(location.search) || document.getElementById('origins')) return; PRJ.fresh = true; if (CFG.route === 'stage') humStageFirst(); else humCanvasFirst(); }   // (the song on screen is only the built-in demo until the person picks something) the first thing anyone sees is the stage with one panel: hum, guitar, or a song file / blank page / demo
 bus.on('booted', () => { if (PRJ.ready) startMaybe(); else PRJ.wantStart = true; });
 /* a library that is unavailable (private window) still lets you begin */
 function newSongGo() { originsOpen({}); }
@@ -6532,6 +6532,13 @@ async function humStageFirst() {
   humBar('start'); setTimeout(() => { const g = document.getElementById('humGo2'); if (g) g.focus(); }, 60);
 }
 
+/** The studio route's first screen: a clean canvas (the page, nothing else) with the cursor in the lyrics, and a slim bar to sing, hum or play instead. No camera, no full screen. */
+async function humCanvasFirst() {
+  if (HUM.busy) return; HUM.busy = true; humBarClose();
+  try { await projCreate('blank', { form: 'empty', title: 'Untitled idea', zoom: 'canvas' }); HUM.ph = PRJ.cur; HUM.keep = true; zoomSet('canvas', true); sideShow('refine'); } finally { HUM.busy = false; }
+  humBar('canvas'); setTimeout(() => { const t = document.querySelector('textarea.lyr'); if (t) t.focus({ preventScroll: true }); }, 120);
+}
+
 /* ---------- capture ---------- */
 async function humNewProject() { await projCreate('blank', { form: 'empty', title: 'Hum idea', zoom: 'song' }); HUM.ph = PRJ.cur; dockGo('vis'); }
 /** a start option other than humming: leave the empty placeholder page behind, then do it */
@@ -6584,7 +6591,7 @@ async function humRun(pcm, sr, title) {
 async function humApply(play) {
   if (!HUM.an) return; if (T.playing) stopPlay(true);
   const r = humSong(HUM.an, HUM.o); HUM.r = r; HUM.o.style = r.style; r.song.title = HUM.o.title || 'Hum idea';
-  xpQuiet(() => projUse(r.song)); humAddTake(); try { if (PRJ.cur) await projSave(); } catch (e) { }
+  xpQuiet(() => projUse(r.song)); if (ZOOM.cur === 'canvas') zoomSet('song', true); humAddTake(); try { if (PRJ.cur) await projSave(); } catch (e) { }
   humBar('res'); if (play) await humPlay();
 }
 /** Put the recording itself in the arrangement: a Vocal take whose first note lands on the first melody note of Verse 1,
@@ -6623,12 +6630,22 @@ function humHear() {
 function humBarClose() { const d = document.getElementById('humbar'); if (d) { try { d.close(); } catch (e) { } d.remove(); } HUM.bar = null; }
 function humBar(mode, arg) {
   let d = document.getElementById('humbar'); if (!d) { d = document.createElement('dialog'); d.id = 'humbar'; d.className = 'humbar'; d.setAttribute('aria-label', 'Hum to Song'); document.body.append(d); try { d.show(); } catch (e) { d.setAttribute('open', ''); } }
+  if (mode === 'start' && CFG.route !== 'stage') mode = 'canvas';
   HUM.bar = d; d.innerHTML = ''; d.dataset.mode = mode;
   const x = h('button', { class: 'btn sm hum-x', title: 'Close this panel', 'aria-label': 'Close', onclick: () => { humAbort(); humBarClose(); } }, '✕');
   if (mode === 'rec') {
     d.append(h('div', { class: 'hum-row' }, h('button', { class: 'btn primary hum-stop', id: 'humStop', onclick: () => humRecStop(true) }, '■ Stop'), h('b', { id: 'humTime', class: 'hum-t' }, '0:00'),
       h('div', { class: 'hum-lvw', 'aria-hidden': 'true' }, h('i', { id: 'humLv' })), h('b', { id: 'humNote', class: 'hum-note', 'aria-live': 'off' }, '·'), h('span', { class: 'grow' }), x),
       h('div', { class: 'hum-msg' }, h('b', {}, 'Listening… '), 'hum or sing your idea. 10–30 seconds is plenty. Tap Stop when you are done.' + (HUM.rec && HUM.rec.label ? ' Using: ' + HUM.rec.label + '.' : '')));
+  } else if (mode === 'canvas') {
+    const pick = h('input', { type: 'file', accept: 'audio/*,.mp3,.wav,.flac,.m4a,.ogg', style: { display: 'none' }, 'aria-label': 'Choose a song file', onchange: e => { const fl = e.target.files[0]; e.target.value = ''; if (fl) humInstead(() => projFromTrack(fl)); } });
+    d.append(h('div', { class: 'hum-row' }, h('b', { class: 'hum-hi' }, 'A clean page.'), h('span', { class: 'hum-sub muted' }, 'Write lyrics, chords or thoughts above, or sing it:'), h('span', { class: 'grow' }), x),
+      h('div', { class: 'hum-row hum-big2' }, h('button', { class: 'btn primary hum-go', id: 'humGo2', onclick: () => humRecord() }, '● Sing or hum an idea'), h('button', { class: 'btn hum-go', id: 'humGuitar', onclick: () => humGuitar() }, '🎸 I have a guitar')),
+      h('div', { class: 'hum-alt' }, h('span', { class: 'tiny muted' }, 'Or start from'),
+        h('button', { class: 'btn sm', id: 'humAltFile', onclick: () => pick.click() }, '📂 a song file'),
+        h('button', { class: 'btn sm', id: 'humAltDemo', onclick: () => humInstead(() => projCreate('demo', { zoom: 'song' })) }, '♫ the demo song'),
+        h('button', { class: 'btn sm', id: 'humAltStage', title: 'Full-screen visuals with the camera', onclick: () => { humBarClose(); goOnStage(); } }, '🎥 the stage'),
+        h('span', { class: 'tiny muted' }, 'Everything stays on this device.'), pick));
   } else if (mode === 'start') {
     const pick = h('input', { type: 'file', accept: 'audio/*,.mp3,.wav,.flac,.m4a,.ogg', style: { display: 'none' }, 'aria-label': 'Choose a song file', onchange: e => { const fl = e.target.files[0]; e.target.value = ''; if (fl) humInstead(() => projFromTrack(fl)); } });
     d.append(h('div', { class: 'hum-row' }, h('b', { class: 'hum-hi' }, 'Let’s make a song.'), h('span', { class: 'grow' }), x),
@@ -6834,7 +6851,7 @@ bus.on('booted', () => { if (HUM.cam0 !== true) return; if (CFG.humStage !== fal
 /* ---------- the two routes: the studio, or the stage (full-screen visuals with the camera) ---------- */
 function setRoute(r) { CFG.route = r === 'stage' ? 'stage' : 'studio'; saveCfg(); bus.emit('route-pref', CFG.route); }
 /** go on stage now, from anywhere in the studio: full-screen visuals, and the camera unless you turned it off there */
-async function goOnStage() { setRoute('stage'); HUM.cam0 = true; try { await humStageGo(); } catch (e) { } }
+async function goOnStage() { setRoute('stage'); HUM.cam0 = true; if (ZOOM.cur === 'canvas') zoomSet('song', true); try { await humStageGo(); } catch (e) { } }
 /** the same two-way switch wherever it is shown (Settings, I/O ▸ Camera) */
 function routeControl() {
   const seg = h('div', { class: 'seg', role: 'radiogroup', 'aria-label': 'Where to start' }), sync = () => { seg.innerHTML = ''; [['studio', '🎛 Studio'], ['stage', '🎥 Stage']].forEach(([v, t]) => { const on = (CFG.route === 'stage') === (v === 'stage'); seg.append(h('button', { type: 'button', role: 'radio', 'aria-checked': String(on), class: on ? 'on' : '', title: v === 'stage' ? 'Start on the stage: full-screen visuals with the camera (asked for when you start)' : 'Start in the studio: no camera', onclick: () => setRoute(v) }, t)); }); };

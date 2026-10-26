@@ -62,7 +62,7 @@ function originsOpen(o = {}) {
   });
   setTimeout(() => { const i = $('input.in', blank); if (i) i.focus(); }, 40); return d;
 }
-function startMaybe() { if (PRJ.cur || store.get('started', false) || /[?&]start=0/.test(location.search) || document.getElementById('origins')) return; PRJ.fresh = true; humStageFirst(); }   // (the song on screen is only the built-in demo until the person picks something) the first thing anyone sees is the stage with one panel: hum, guitar, or a song file / blank page / demo
+function startMaybe() { if (PRJ.cur || store.get('started', false) || /[?&]start=0/.test(location.search) || document.getElementById('origins')) return; PRJ.fresh = true; if (CFG.route === 'stage') humStageFirst(); else humCanvasFirst(); }   // (the song on screen is only the built-in demo until the person picks something) the first thing anyone sees is the stage with one panel: hum, guitar, or a song file / blank page / demo
 bus.on('booted', () => { if (PRJ.ready) startMaybe(); else PRJ.wantStart = true; });
 /* a library that is unavailable (private window) still lets you begin */
 function newSongGo() { originsOpen({}); }

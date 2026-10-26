@@ -61,7 +61,7 @@ bus.on('booted', () => { if (HUM.cam0 !== true) return; if (CFG.humStage !== fal
 /* ---------- the two routes: the studio, or the stage (full-screen visuals with the camera) ---------- */
 function setRoute(r) { CFG.route = r === 'stage' ? 'stage' : 'studio'; saveCfg(); bus.emit('route-pref', CFG.route); }
 /** go on stage now, from anywhere in the studio: full-screen visuals, and the camera unless you turned it off there */
-async function goOnStage() { setRoute('stage'); HUM.cam0 = true; try { await humStageGo(); } catch (e) { } }
+async function goOnStage() { setRoute('stage'); HUM.cam0 = true; if (ZOOM.cur === 'canvas') zoomSet('song', true); try { await humStageGo(); } catch (e) { } }
 /** the same two-way switch wherever it is shown (Settings, I/O ▸ Camera) */
 function routeControl() {
   const seg = h('div', { class: 'seg', role: 'radiogroup', 'aria-label': 'Where to start' }), sync = () => { seg.innerHTML = ''; [['studio', '🎛 Studio'], ['stage', '🎥 Stage']].forEach(([v, t]) => { const on = (CFG.route === 'stage') === (v === 'stage'); seg.append(h('button', { type: 'button', role: 'radio', 'aria-checked': String(on), class: on ? 'on' : '', title: v === 'stage' ? 'Start on the stage: full-screen visuals with the camera (asked for when you start)' : 'Start in the studio: no camera', onclick: () => setRoute(v) }, t)); }); };
