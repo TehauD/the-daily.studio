@@ -5,7 +5,7 @@
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.2.0';
+const VERSION = '2.2.1';
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://the-daily.studio/journal/' };
 const $ = (s, r = document) => r.querySelector(s);
@@ -77,7 +77,7 @@ const CFG = Object.assign({
   monitor: false, autoIn: false, kpad: true, rtt: null, hint: 'interactive', sr: 'auto', inDev: '', outDev: '', camDev: '', mirror: true, ch: 'auto',
   countIn: 1, metroVol: 0.5, ugWidth: 72, ugTags: true, midimap: {}, ui: 1, vq: 1, humanize: 0.15, visMode: 'hex', hfrOn: true,
   rec: { dry: true, wet: true }, fretNames: 'notes', lufsTarget: 0, gTrim: 0, ioLeveled: false, dropKind: 'track',
-  vin: 'off', armG: true, armV: true, voxMon: false, voxPolish: true, voxTrim: 0, trackSync: true, trackFill: 'all', renderFast: true
+  vin: 'off', armG: true, armV: true, voxMon: false, voxPolish: true, voxTrim: 0, trackSync: true, trackFill: 'all', renderFast: true, recEnd: 'grow'
 }, store.get('cfg', {}));
 const saveCfg = () => store.set('cfg', CFG);
 
@@ -1021,7 +1021,7 @@ function scheduleSlot(slot, time) {
 }
 async function play(fromRec) {
   if (T.playing || OFR.busy) return; try { bandHint(); } catch (e) { } await startAudio(); const c = E.ctx; applyMix(); if (!S.sections.length || !songSlots()) { toast('Add a section with at least one bar first', 'warn'); return; }
-  T.rec = !!fromRec || T.rec; T.playing = true; T.ending = false; T.q = []; T.startCursor = T.cursor;
+  T.rec = !!fromRec || T.rec; T.playing = true; T.ending = false; T.grew = 0; T.q = []; T.startCursor = T.cursor;
   const ci = T.rec && CFG.countIn > 0 ? CFG.countIn * spb() : 0; T.slot = T.cursor - ci; T.next = c.currentTime + .08; T.wantRec = T.rec; T.recFrom = T.cursor;
   if (!T.loopB) T.loopB = null; scheduleTakes(T.next + ci * slotDur(), T.cursor * slotDur()); trackStart(T.next + ci * slotDur(), T.cursor, true);
   clearInterval(T.timer); T.timer = setInterval(tick, 25); tick(); bus.emit('transport');
@@ -1031,6 +1031,7 @@ function tick() {
   while (T.next < ahead && T.playing && !T.ending) {
     const total = songSlots(), end = T.loop ? (T.loopB != null ? Math.min(T.loopB, total) : total) : total;
     if (T.slot >= end) {
+      if (REC && !(T.loop && T.loopB != null)) { const how = CFG.recEnd || 'grow'; if (how === 'grow' && recGrow()) continue; if (how === 'stop') { T.ending = true; T.endAt = T.next; setTimeout(() => { if (T.playing && T.ending && REC) stopPlay(true); }, Math.max(0, (T.next - E.ctx.currentTime) * 1000) + 60); break; } }
       if (T.loop && end > 0) { if (T.loopA >= end) T.loopA = 0; if (REC) recEnd(); T.slot = T.loopA; stopTakes(); scheduleTakes(T.next, T.loopA * dur); trackStart(T.next, T.loopA); if (T.rec) { T.wantRec = true; T.recFrom = T.loopA; } if (T.slot >= end) { T.ending = true; T.endAt = T.next; break; } continue; }
       T.ending = true; T.endAt = T.next; break;
     }
@@ -1038,10 +1039,22 @@ function tick() {
     scheduleSlot(T.slot, T.next); T.q.push({ slot: T.slot, time: T.next }); if (T.q.length > 256) T.q.shift(); T.slot++; T.next += dur;
   }
 }
+/** Recording reached the end of the song: add a bar so the click and the band carry on, and the take stays one take. Returns false when it should not (a safety limit). */
+function recGrow() {
+  const last = S.sections[S.sections.length - 1]; if (!last || (T.grew || 0) >= 1200) return false;
+  last.bars.push(newBar('')); T.grew = (T.grew || 0) + 1; T.bars = null; return true;
+}
+/** When recording stops, take back the bars that were added but not used (at most the last, part-played one), and save the song once. */
+function recGrowDone() {
+  let n = T.grew || 0; if (!n) return; T.grew = 0; const last = S.sections[S.sections.length - 1];
+  let end = 0; TAKES.forEach(t => { end = Math.max(end, tkEnd(t)); });
+  while (n-- > 0 && last && last.bars.length > 1) { const b = last.bars[last.bars.length - 1]; if (b.chord || (b.tab && b.tab.length) || (songSlots() - spb()) * slotDur() < end + .01) break; last.bars.pop(); T.bars = null; }
+  T.bars = null; commit(false);
+}
 function stopPlay(keep) {
   if (!T.playing) { if (!keep) { T.cursor = 0; bus.emit('transport'); } return; }
   T.playing = false; clearInterval(T.timer); stopTakes(); trackStop(); if (E.pl && E.worklet) Object.values(E.pl).forEach(n => n.port.postMessage({ t: 'kill' }));
-  const was = T.rec; if (REC) recEnd(); T.rec = false; T.cursor = T.startCursor; bus.emit('transport'); if (was) bus.emit('rec:done');
+  const was = T.rec; if (REC) recEnd(); recGrowDone(); T.rec = false; T.cursor = T.startCursor; bus.emit('transport'); if (was) bus.emit('rec:done');
 }
 const slotAtTime = time => {
   const q = T.q; if (!q.length) return T.cursor; let e = q[0]; for (let i = q.length - 1; i >= 0; i--) if (q[i].time <= time) { e = q[i]; break; }
@@ -1074,15 +1087,19 @@ function peaksOf(d, per = 256) { const n = Math.ceil(d.length / per), mn = new F
 function recEnd() {
   const r = REC; REC = null; E.tapDI.on(false); E.tapWet.on(false); E.tapVox.on(false); bus.emit('rec:state', false);
   if (!r) return; const sr = E.ctx.sampleRate, start = r.startSec - rttMs() / 1000, made = [];
+  // two lanes armed but only one input has anything on it (a microphone on one input, nothing on the other): keep the one that was played
+  const pkOf = parts => { let m = 0; for (const a of parts) for (let i = 0; i < a.length; i++) { const v = Math.abs(a[i]); if (v > m) m = v; } return m; };
+  const pG = r.g && r.v ? pkOf(r.dry) : 0, pV = r.g && r.v ? pkOf(r.vox) : 0, skipped = [];
+  const quietLane = (me, other) => r.g && r.v && me < .001 && other > .03;      // below −60 dBFS next to a lane that is above −30 dBFS
   const mk = (kind, parts, wetParts) => {
-    if (!parts.length) return; const dry = cat(parts), wet = wetParts && wetParts.length ? cat(wetParts) : null; if (dry.length < sr * .25) return;
+    if (!parts.length) return; if (kind === 'gtr' ? quietLane(pG, pV) : quietLane(pV, pG)) { skipped.push(kind === 'gtr' ? 'guitar' : 'vocal'); return; } const dry = cat(parts), wet = wetParts && wetParts.length ? cat(wetParts) : null; if (dry.length < sr * .25) return;
     let pk = 0, e = 0; for (let i = 0; i < dry.length; i++) { const a = Math.abs(dry[i]); if (a > pk) pk = a; e += dry[i] * dry[i]; }
     const vox = kind === 'vox', nth = TAKES.filter(t => (t.kind === 'vox') === vox).length + 1;
     const take = { id: uid(), kind, name: (vox ? 'Vocal ' : 'Take ') + nth, startSec: start, sr, dry, wet, peaks: peaksOf(dry), g: 1, pan: 0, mute: false, solo: false, mode: vox ? 'wet' : (wet && CFG.rec.dry ? 'reamp' : 'wet'), bpm: r.bpm, preset: r.preset, peak: dB(pk), rms: dB(Math.sqrt(e / dry.length)), dur: dry.length / sr, t: Date.now(), stats: vox ? null : statsSnapshot(), cam: vox ? [] : r.cam };
     if (!vox && !CFG.rec.dry && wet) take.mode = 'wet'; TAKES.push(take); made.push(take);
   };
   if (r.g) mk('gtr', r.dry, r.wet); if (r.v) mk('vox', r.vox, null);
-  if (made.length) { xpSignal(3); bus.emit('takes'); toast(made.map(t => t.name + ' (' + t.dur.toFixed(1) + ' s, peak ' + t.peak.toFixed(1) + ' dBFS)').join('  +  ') + ' recorded', 'ok'); }
+  if (made.length) { xpSignal(3); bus.emit('takes'); toast(made.map(t => t.name + ' (' + t.dur.toFixed(1) + ' s, peak ' + t.peak.toFixed(1) + ' dBFS)').join('  +  ') + ' recorded' + (skipped.length ? ' · the ' + skipped.join(' and ') + ' input was silent, so it was not kept' : ''), 'ok'); }
 }
 const TK_BUFS = new WeakMap();    // one AudioBuffer per recording, shared by every clip that plays it
 function takeBuffer(tk, which) { const d = which === 'wet' ? tk.wet : tk.dry; if (!d) return null; let c = TK_BUFS.get(d); if (!c || c.ctx !== E.ctx) { const b = E.ctx.createBuffer(1, d.length, tk.sr); b.copyToChannel(d, 0); c = { ctx: E.ctx, b }; TK_BUFS.set(d, c); } return c.b; }
@@ -1421,6 +1438,7 @@ function openSettings() {
       h('h5', {}, 'Recording & practice'),
       F('Count-in (bars)', sel('countIn', [0, 1, 2, 4])), F('Metronome level', h('input', { type: 'range', min: 0, max: 1, step: .05, value: CFG.metroVol, oninput: e => { CFG.metroVol = +e.target.value; saveCfg(); } })),
       F('Humanize (timing/velocity)', h('input', { type: 'range', min: 0, max: 1, step: .05, value: CFG.humanize, oninput: e => { CFG.humanize = +e.target.value; saveCfg(); } })), F('Timing analysis grid', sel('timingGrid', [[4, '16th notes'], [2, '8th notes'], [1, 'Quarter notes']])),
+      F('When recording reaches the end of the song', sel('recEnd', [['grow', 'Keep going (the song grows to fit)'], ['stop', 'Stop at the end'], ['loop', 'Loop back, one take per pass']])),
       h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!CFG.rec.dry, onchange: e => { CFG.rec.dry = e.target.checked; saveCfg(); } }), 'Record dry DI (enables re-amping)'),
       h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!CFG.rec.wet, onchange: e => { CFG.rec.wet = e.target.checked; saveCfg(); } }), 'Record wet print'),
       h('h5', {}, 'Ultimate Guitar export'),
@@ -1433,7 +1451,7 @@ function openSettings() {
 }
 function openHelp() {
   const d = $('#help'); d.innerHTML = '';
-  const K = [['Space', 'Play / stop'], ['Ctrl + .', 'KILL AUDIO: stop playback, monitor off, release the microphone, suspend audio'], ['R', 'Arm / start recording (count-in, dry DI + wet print)'], ['L / M', 'Loop / metronome'], ['D · B · G · T', 'Band on/off: drums · bass · rhythm guitar · lead tab'], ['1…8 · 0', 'Recall pedalboard scene (Stage scene when Stage is focused) · 0 = all pedals off'], ['Home', 'Return to start'], ['Ctrl/⌘ Z · Shift+Z', 'Undo / redo: song edits, clips and the stem mix share one history'], ['Ctrl/⌘ E · D · Del', 'Selected clip: split at the playhead · duplicate · delete. ← → nudge a beat (Shift = a bar). Hold Alt while dragging for no snapping'], ['Drop a file', 'Audio, lyrics, MIDI (.mid, .kar) or a song file anywhere on the page'], ['Ctrl/⌘ S', 'Save project JSON'], ['Alt + 1…9, 0', 'Switch panel by position (tab order is yours to arrange)'], ['[ ]', 'Toggle left / right sidebars'],
+  const K = [['Space', 'Play / stop'], ['Ctrl + .', 'KILL AUDIO: stop playback, monitor off, release the microphone, suspend audio'], ['R', 'Record: one press, one take. It keeps going past the end of the song until you press R or Stop again'], ['L / M', 'Loop / metronome'], ['D · B · G · T', 'Band on/off: drums · bass · rhythm guitar · lead tab'], ['1…8 · 0', 'Recall pedalboard scene (Stage scene when Stage is focused) · 0 = all pedals off'], ['Home', 'Return to start'], ['Ctrl/⌘ Z · Shift+Z', 'Undo / redo: song edits, clips and the stem mix share one history'], ['Ctrl/⌘ E · D · Del', 'Selected clip: split at the playhead · duplicate · delete. ← → nudge a beat (Shift = a bar). Hold Alt while dragging for no snapping'], ['Drop a file', 'Audio, lyrics, MIDI (.mid, .kar) or a song file anywhere on the page'], ['Ctrl/⌘ S', 'Save project JSON'], ['Alt + 1…9, 0', 'Switch panel by position (tab order is yours to arrange)'], ['[ ]', 'Toggle left / right sidebars'],
     ['Tab editor', 'Click a cell · type fret (0–24) · ←→↑↓ move · Del clear · h p / \\ b ~ x < set technique · Shift+arrows select · Space plays from bar'], ['Knobs', 'Drag · wheel · Shift = fine · double-click reset · right-click = MIDI learn'], ['Rig', 'Drag pedal headers to reorder the signal chain · A/B + Morph to compare tones']];
   d.append(h('div', { class: 'dlg-h' }, 'HELP & SHORTCUTS', h('button', { class: 'btn sm', onclick: () => d.close() }, 'Close')), h('div', { class: 'dlg-b', style: { display: 'block' } }, h('div', { class: 'help-k' }, K.map(([a, b]) => [h('kbd', {}, a), h('span', {}, b)])),
     h('div', { class: 'row', style: { gap: '8px', margin: '2px 0 8px' } }, h('button', { class: 'btn primary', onclick: () => tourStart() }, '▶ Take the guided tour'), h('span', { class: 'tiny muted' }, 'A two-minute spotlight walkthrough of the key areas.')), h('div', { class: 'hr' }), h('p', { class: 'small muted' }, 'Everything runs locally in your browser. Nothing is uploaded. Browsers cannot talk to ASIO drivers, so achievable latency depends on your OS audio stack; use the Loopback Test (I/O panel) for a measured number, and your Focusrite’s Direct Monitor for latency-free headphone monitoring while recording.'),
@@ -3462,7 +3480,7 @@ async function boot() {
   document.addEventListener('visibilitychange', () => { if (!document.hidden && E.ctx && !OFR.busy && E.ctx.state === 'suspended') E.ctx.resume(); });
   if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener('devicechange', () => { ioDeviceChange().catch(e => console.warn(e)); });
   bus.emit('song');
-  if (/[?&]debug\b/.test(location.search)) window.__daily = { projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, srecStart, srecStop, get S() { return S; }, PB, FB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, vzSetMode, sideShow, chSetRoles, chRoles, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive };   // test hook, only with ?debug
+  if (/[?&]debug\b/.test(location.search)) window.__daily = { projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, srecStart, srecStop, get S() { return S; }, get REC() { return REC; }, PB, FB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, vzSetMode, sideShow, chSetRoles, chRoles, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive };   // test hook, only with ?debug
   projInit().catch(e => { console.warn('library', e); PRJ.ready = true; if (PRJ.wantStart) startMaybe(); });
 }
 

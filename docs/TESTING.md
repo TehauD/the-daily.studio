@@ -31,6 +31,7 @@ Each file starts its **own** static server, its own Chromium (fake microphone an
 | `e2e-render.cjs` | Fast render: a stereo 24-bit WAV that is not silent, the same loudness and loudness shape as the real-time bounce, one band part on its own, takes included, the progress window, **Cancel**, the kill switch, and the live engine put back afterwards |
 | `e2e-midi.cjs` | MIDI import: track picker, chords, melody, tempo, time signature, karaoke words, format-0 files, running status, files that cannot be opened, the New song window |
 | `e2e-keep.cjs` | Keep songs safe: the iPhone case, the card and its Add to Home Screen steps, the one-time tip, the backup reminder and its timing, the installed-app case, desktop Chrome |
+| `e2e-record.cjs` | Recording: one press is one take (loop on or off), the song grows to fit and takes the spare bar back, a loop region stacks takes, the three Settings choices, a silent second input is not kept |
 | `e2e-layout.cjs` | Nothing clipped or squeezed: time display from 1280 px, the beat, key and mode boxes and the song bar from 1440 to 1920 px, lane headers and clip bar on a phone, no stray “null” |
 | `mobile.cjs` | Phone, tablet and desktop layouts, the keypad, drawers, gestures, installable-app files |
 

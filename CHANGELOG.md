@@ -2,6 +2,16 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.2.1 — 2026-10-26 — One press, one take
+
+### Fixed
+- **Recording a short song made a pile of takes.** With **Loop** on (the default) and a short song, recording ended and restarted at the end of every pass, so a few seconds of singing over a 4-bar song produced Take 1, Take 2, Take 3… and a Vocal take for each. Now one press of **R** is one take: recording keeps going past the end of the song until you press **R** or **Stop**, the song grows a bar at a time so the click and the band carry on, and the spare bar is taken back at the end. With Loop off the song also grows now (before, the take ran on in silence after the click had stopped).
+- **A silent second input is not kept.** With both the Guitar and Vocal lanes armed and a microphone on only one input, the other lane used to record an empty take. If one lane is below −60 dBFS while the other is above −30 dBFS, only the played one is kept and a message says so.
+
+### Changed
+- **A loop region you set is cycle recording.** **Loop 4 bars here** (or Shift-drag across the ruler) records a new take on every pass of that region, as before. The whole-song Loop no longer does.
+- **Settings ▸ Recording & practice ▸ When recording reaches the end of the song**: *Keep going (the song grows to fit)* (default), *Stop at the end*, or *Loop back, one take per pass* (the old behaviour).
+
 ## 2.2.0 — 2026-10-26 — Clips, Fast Render and MIDI
 
 The follow-up to I/O and Lanes: every gap that release left open, plus the polish that the new features needed. Everything still runs on your device.

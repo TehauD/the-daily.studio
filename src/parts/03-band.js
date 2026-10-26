@@ -155,7 +155,7 @@ function scheduleSlot(slot, time) {
 }
 async function play(fromRec) {
   if (T.playing || OFR.busy) return; try { bandHint(); } catch (e) { } await startAudio(); const c = E.ctx; applyMix(); if (!S.sections.length || !songSlots()) { toast('Add a section with at least one bar first', 'warn'); return; }
-  T.rec = !!fromRec || T.rec; T.playing = true; T.ending = false; T.q = []; T.startCursor = T.cursor;
+  T.rec = !!fromRec || T.rec; T.playing = true; T.ending = false; T.grew = 0; T.q = []; T.startCursor = T.cursor;
   const ci = T.rec && CFG.countIn > 0 ? CFG.countIn * spb() : 0; T.slot = T.cursor - ci; T.next = c.currentTime + .08; T.wantRec = T.rec; T.recFrom = T.cursor;
   if (!T.loopB) T.loopB = null; scheduleTakes(T.next + ci * slotDur(), T.cursor * slotDur()); trackStart(T.next + ci * slotDur(), T.cursor, true);
   clearInterval(T.timer); T.timer = setInterval(tick, 25); tick(); bus.emit('transport');
@@ -165,6 +165,7 @@ function tick() {
   while (T.next < ahead && T.playing && !T.ending) {
     const total = songSlots(), end = T.loop ? (T.loopB != null ? Math.min(T.loopB, total) : total) : total;
     if (T.slot >= end) {
+      if (REC && !(T.loop && T.loopB != null)) { const how = CFG.recEnd || 'grow'; if (how === 'grow' && recGrow()) continue; if (how === 'stop') { T.ending = true; T.endAt = T.next; setTimeout(() => { if (T.playing && T.ending && REC) stopPlay(true); }, Math.max(0, (T.next - E.ctx.currentTime) * 1000) + 60); break; } }
       if (T.loop && end > 0) { if (T.loopA >= end) T.loopA = 0; if (REC) recEnd(); T.slot = T.loopA; stopTakes(); scheduleTakes(T.next, T.loopA * dur); trackStart(T.next, T.loopA); if (T.rec) { T.wantRec = true; T.recFrom = T.loopA; } if (T.slot >= end) { T.ending = true; T.endAt = T.next; break; } continue; }
       T.ending = true; T.endAt = T.next; break;
     }
@@ -172,10 +173,22 @@ function tick() {
     scheduleSlot(T.slot, T.next); T.q.push({ slot: T.slot, time: T.next }); if (T.q.length > 256) T.q.shift(); T.slot++; T.next += dur;
   }
 }
+/** Recording reached the end of the song: add a bar so the click and the band carry on, and the take stays one take. Returns false when it should not (a safety limit). */
+function recGrow() {
+  const last = S.sections[S.sections.length - 1]; if (!last || (T.grew || 0) >= 1200) return false;
+  last.bars.push(newBar('')); T.grew = (T.grew || 0) + 1; T.bars = null; return true;
+}
+/** When recording stops, take back the bars that were added but not used (at most the last, part-played one), and save the song once. */
+function recGrowDone() {
+  let n = T.grew || 0; if (!n) return; T.grew = 0; const last = S.sections[S.sections.length - 1];
+  let end = 0; TAKES.forEach(t => { end = Math.max(end, tkEnd(t)); });
+  while (n-- > 0 && last && last.bars.length > 1) { const b = last.bars[last.bars.length - 1]; if (b.chord || (b.tab && b.tab.length) || (songSlots() - spb()) * slotDur() < end + .01) break; last.bars.pop(); T.bars = null; }
+  T.bars = null; commit(false);
+}
 function stopPlay(keep) {
   if (!T.playing) { if (!keep) { T.cursor = 0; bus.emit('transport'); } return; }
   T.playing = false; clearInterval(T.timer); stopTakes(); trackStop(); if (E.pl && E.worklet) Object.values(E.pl).forEach(n => n.port.postMessage({ t: 'kill' }));
-  const was = T.rec; if (REC) recEnd(); T.rec = false; T.cursor = T.startCursor; bus.emit('transport'); if (was) bus.emit('rec:done');
+  const was = T.rec; if (REC) recEnd(); recGrowDone(); T.rec = false; T.cursor = T.startCursor; bus.emit('transport'); if (was) bus.emit('rec:done');
 }
 const slotAtTime = time => {
   const q = T.q; if (!q.length) return T.cursor; let e = q[0]; for (let i = q.length - 1; i >= 0; i--) if (q[i].time <= time) { e = q[i]; break; }
@@ -208,15 +221,19 @@ function peaksOf(d, per = 256) { const n = Math.ceil(d.length / per), mn = new F
 function recEnd() {
   const r = REC; REC = null; E.tapDI.on(false); E.tapWet.on(false); E.tapVox.on(false); bus.emit('rec:state', false);
   if (!r) return; const sr = E.ctx.sampleRate, start = r.startSec - rttMs() / 1000, made = [];
+  // two lanes armed but only one input has anything on it (a microphone on one input, nothing on the other): keep the one that was played
+  const pkOf = parts => { let m = 0; for (const a of parts) for (let i = 0; i < a.length; i++) { const v = Math.abs(a[i]); if (v > m) m = v; } return m; };
+  const pG = r.g && r.v ? pkOf(r.dry) : 0, pV = r.g && r.v ? pkOf(r.vox) : 0, skipped = [];
+  const quietLane = (me, other) => r.g && r.v && me < .001 && other > .03;      // below −60 dBFS next to a lane that is above −30 dBFS
   const mk = (kind, parts, wetParts) => {
-    if (!parts.length) return; const dry = cat(parts), wet = wetParts && wetParts.length ? cat(wetParts) : null; if (dry.length < sr * .25) return;
+    if (!parts.length) return; if (kind === 'gtr' ? quietLane(pG, pV) : quietLane(pV, pG)) { skipped.push(kind === 'gtr' ? 'guitar' : 'vocal'); return; } const dry = cat(parts), wet = wetParts && wetParts.length ? cat(wetParts) : null; if (dry.length < sr * .25) return;
     let pk = 0, e = 0; for (let i = 0; i < dry.length; i++) { const a = Math.abs(dry[i]); if (a > pk) pk = a; e += dry[i] * dry[i]; }
     const vox = kind === 'vox', nth = TAKES.filter(t => (t.kind === 'vox') === vox).length + 1;
     const take = { id: uid(), kind, name: (vox ? 'Vocal ' : 'Take ') + nth, startSec: start, sr, dry, wet, peaks: peaksOf(dry), g: 1, pan: 0, mute: false, solo: false, mode: vox ? 'wet' : (wet && CFG.rec.dry ? 'reamp' : 'wet'), bpm: r.bpm, preset: r.preset, peak: dB(pk), rms: dB(Math.sqrt(e / dry.length)), dur: dry.length / sr, t: Date.now(), stats: vox ? null : statsSnapshot(), cam: vox ? [] : r.cam };
     if (!vox && !CFG.rec.dry && wet) take.mode = 'wet'; TAKES.push(take); made.push(take);
   };
   if (r.g) mk('gtr', r.dry, r.wet); if (r.v) mk('vox', r.vox, null);
-  if (made.length) { xpSignal(3); bus.emit('takes'); toast(made.map(t => t.name + ' (' + t.dur.toFixed(1) + ' s, peak ' + t.peak.toFixed(1) + ' dBFS)').join('  +  ') + ' recorded', 'ok'); }
+  if (made.length) { xpSignal(3); bus.emit('takes'); toast(made.map(t => t.name + ' (' + t.dur.toFixed(1) + ' s, peak ' + t.peak.toFixed(1) + ' dBFS)').join('  +  ') + ' recorded' + (skipped.length ? ' · the ' + skipped.join(' and ') + ' input was silent, so it was not kept' : ''), 'ok'); }
 }
 const TK_BUFS = new WeakMap();    // one AudioBuffer per recording, shared by every clip that plays it
 function takeBuffer(tk, which) { const d = which === 'wet' ? tk.wet : tk.dry; if (!d) return null; let c = TK_BUFS.get(d); if (!c || c.ctx !== E.ctx) { const b = E.ctx.createBuffer(1, d.length, tk.sr); b.copyToChannel(d, 0); c = { ctx: E.ctx, b }; TK_BUFS.set(d, c); } return c.b; }

@@ -1,4 +1,4 @@
-# Documentation index (v2.2.0)
+# Documentation index (v2.2.1)
 
 | Document | For | Contents |
 | --- | --- | --- |

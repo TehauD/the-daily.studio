@@ -5,7 +5,7 @@
 <h1 align="center">the-daily.studio</h1>
 <p align="center"><b>A songwriter’s workspace that lives in one web page.</b><br>
 Catch an idea · find the chords · record guitar and vocals · split a track into stems · keep every song on your own device</p>
-<p align="center"><sub>v2.2.0 · free, open source (MIT) · no account, no upload, no tracking</sub></p>
+<p align="center"><sub>v2.2.1 · free, open source (MIT) · no account, no upload, no tracking</sub></p>
 
 <p align="center">
   <a href="https://the-daily.studio/"><b>▶ Open the live app</b></a> ·
@@ -319,7 +319,7 @@ npm run build          # src/ → index.html + codepen/
 npm run build:check    # fails if the committed outputs are stale (CI runs this)
 npm start              # serve on http://localhost:8080
 npm test               # smoke test: boots the app in jsdom, fails on any error
-npm run test:e2e       # every Playwright suite in parallel: core flows, I/O, drop, balance, lanes, camera, clips, session, render, MIDI, keep-safe, layout and phone
+npm run test:e2e       # every Playwright suite in parallel: core flows, I/O, drop, balance, lanes, camera, clips, session, render, MIDI, keep-safe, recording, layout and phone
 npm run test:e2e:core  # just the core flows (tunings, tour, rig, transcription, stems)
 npm run test:mobile    # phone / tablet / desktop layouts, keypad, drawers, gestures, install files
 npm run test:all       # smoke test, then every suite

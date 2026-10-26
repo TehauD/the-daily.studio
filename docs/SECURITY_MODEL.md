@@ -1,6 +1,6 @@
 # Security and privacy model
 
-Version 2.2 (v2.2.0). The app is a static page that runs entirely in the visitor's browser. This document records what it can access, what it stores, what it contacts, and the controls that keep it that way.
+Version 2.2 (v2.2.1). The app is a static page that runs entirely in the visitor's browser. This document records what it can access, what it stores, what it contacts, and the controls that keep it that way.
 
 ## Trust boundaries
 

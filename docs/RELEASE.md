@@ -1,4 +1,4 @@
-# Release and go-live checklist (v2.2.0)
+# Release and go-live checklist (v2.2.1)
 
 ## Before you publish
 - [ ] `node scripts/build.mjs --check` passes; `npm test`, `npm run test:e2e`, `npm run test:mobile` pass; `npm run build:site && npm run verify:site` prints `site verified`.
@@ -28,10 +28,10 @@ The page is already vendored at `journal/index.html` and deploys with the site (
 
 ## Tag and release
 ```
-git tag -a v2.2.0 -m "Clips, Fast Render and MIDI"
-git push origin v2.2.0
+git tag -a v2.2.1 -m "Recording keeps one take"
+git push origin v2.2.1
 ```
-Create a GitHub release from the tag using the 2.2.0 CHANGELOG entry.
+Create a GitHub release from the tag using the 2.2.1 CHANGELOG entry.
 
 ## Smoke test on the live site (desktop and a phone)
 - [ ] Page loads over HTTPS with no console errors; start card appears and **no microphone prompt** shows until you choose.
