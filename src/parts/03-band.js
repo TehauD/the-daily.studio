@@ -202,7 +202,7 @@ function pushBlock(arr, m, t0) {
 function livePeaks(pk, b) { for (let i = 0; i < b.length; i += 1024) { let mn = 1, mx = -1; for (let k = i, e = Math.min(b.length, i + 1024); k < e; k++) { const v = b[k]; if (v < mn) mn = v; if (v > mx) mx = v; } pk.push(mn, mx); } }
 bus.on('tap:di', m => { if (m.onset || !REC || !REC.g) return; const b = pushBlock(REC.dry, m, REC.t0); if (b) livePeaks(REC.pkG, b); });
 bus.on('tap:wet', m => { if (!REC || !REC.g) return; pushBlock(REC.wet, m, REC.t0); });
-bus.on('tap:vox', m => { if (!REC || !REC.v) return; const b = pushBlock(REC.vox, m, REC.t0); if (b) livePeaks(REC.pkV, b); });
+bus.on('tap:vox', m => { if (m.onset || !REC || !REC.v) return; const b = pushBlock(REC.vox, m, REC.t0); if (b) livePeaks(REC.pkV, b); });
 function cat(parts) { let n = 0; parts.forEach(p => n += p.length); const o = new Float32Array(n); let k = 0; parts.forEach(p => { o.set(p, k); k += p.length; }); return o; }
 function peaksOf(d, per = 256) { const n = Math.ceil(d.length / per), mn = new Float32Array(n), mx = new Float32Array(n); for (let i = 0; i < n; i++) { let a = 1e9, b = -1e9; for (let k = i * per, e = Math.min(d.length, k + per); k < e; k++) { const v = d[k]; if (v < a) a = v; if (v > b) b = v; } mn[i] = a; mx[i] = b; } return { mn, mx, per }; }
 function recEnd() {

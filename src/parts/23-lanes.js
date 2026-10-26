@@ -64,7 +64,7 @@ function renderHeads() {
     const solo = (get, set) => bt('S', get() ? 'on' : '', 'Solo', e => { set(!get()); e.target.classList.toggle('on', !!get()); });
     const vol = (get, set, max, def, title) => h('input', { type: 'range', min: 0, max: max || 1.4, step: .01, value: get(), title: title || 'Volume (double-click: reset)', oninput: e => set(+e.target.value), ondblclick: e => { set(def == null ? .8 : def); e.target.value = def == null ? .8 : def; } });
     if (l.type === 'live') {
-      t.append(h('span', { class: 'tag', title: 'Which interface input feeds the guitar' }, CFG.vin === 'R' ? 'In 1' : CFG.vin === 'L' ? 'In 2' : CFG.ch === 'R' ? 'In 2' : CFG.ch === 'sum' ? 'In 1+2' : 'In 1'), more);
+      t.append(h('span', { class: 'tag', title: 'Which interface input feeds the guitar (change it in I/O ▸ Channels)' }, (() => { const r = chRoles(); return r[0] === 'g' && r[1] === 'g' ? 'In 1+2' : r[0] === 'g' ? 'In 1' : r[1] === 'g' ? 'In 2' : 'Off'; })()), more);
       b.append(bt('●', 'arm' + (armedG() ? ' on' : ''), 'Arm the guitar for recording (dry DI + wet print)', e => { CFG.armG = !armedG(); saveCfg(); e.currentTarget.classList.toggle('on', armedG()); TL.dirty = true; }),
         bt('🎧', CFG.monitor ? 'on' : '', 'Hear the guitar through the app (use headphones; or use the interface’s Direct Monitor)', e => { setMonitor(!CFG.monitor); e.currentTarget.classList.toggle('on', CFG.monitor); }), lm(), vol(() => m.g, v => { m.g = v; applyMix(); }, 1.4, 1, 'Guitar monitor level'));
     } else if (l.type === 'vox') {
@@ -143,6 +143,11 @@ function stemLaneEnv() {
   return STM.envL = { dt, n, a, mix, sc: a.map(nrm), scm: nrm(mix) };
 }
 bus.on('track', () => { STM.envL = null; renderHeads(); tlSize(); });
+/** the two per-input level meters in I/O ▸ Channels */
+function chMeters() {
+  if (!UI.chM || !E.anaL) return;
+  [E.anaL, E.anaR].forEach((an, i) => { const bar = UI.chM[i]; if (!bar || !bar.isConnected) return; const b = (UI.chBuf || (UI.chBuf = new Float32Array(1024))); an.getFloatTimeDomainData(b); let e = 0; for (let k = 0; k < b.length; k++) e += b[k] * b[k]; bar.style.width = dbw(dB(Math.sqrt(e / b.length))); });
+}
 function spBus() { if (!STP.bus) return; tc(STP.bus.gain, STM.mute ? 0 : (STM.vol == null ? 1 : STM.vol), .015); }
 
 /* ---------- drawing ---------- */
@@ -193,23 +198,29 @@ function drawLanes(g, V) {
 
 /* ---------- I/O → "Guitar + vocal" card: which interface input is which, vocal trim, monitoring, polish ---------- */
 function buildVoxCard(p) {
-  const route = h('div', { class: 'seg' }), note = h('div', { class: 'tiny muted', style: { marginTop: '6px', lineHeight: 1.45 } });
+  const route = h('div', { class: 'chmx' }), follow = h('div', { class: 'seg' }), note = h('div', { class: 'tiny muted', style: { marginTop: '6px', lineHeight: 1.45 } });
   const mt = () => { const i = h('i'), u = h('u'), v = h('span', { class: 'mono tiny' }, '–∞ dB'); UI.mVox = { i, u, v, hold: -120 }; return h('div', { style: { margin: '8px 0 4px' } }, h('div', { class: 'row sp tiny muted' }, h('span', {}, 'Vocal level (post-trim)'), v), h('div', { class: 'meter' }, i, u)); };
   const trim = mkKnob({ key: 'voxTrim', label: 'Vocal Trim', min: -24, max: 36, def: 0, step: .5, unit: ' dB', onChange: v => setVoxTrim(v) });
   const tog = (label, get, set, title) => { const b = h('button', { class: 'tog' + (get() ? ' on' : ''), title, onclick: () => { set(!get()); b.classList.toggle('on', get()); } }, label); return b; };
   const sync = () => {
-    route.innerHTML = '';
-    [['off', 'Guitar only'], ['R', 'Guitar 1 · Vocal 2'], ['L', 'Vocal 1 · Guitar 2']].forEach(([v, t]) => route.append(h('button', { class: CFG.vin === v ? 'on' : '', onclick: () => { setVoxInput(v); } }, t)));
+    route.innerHTML = ''; follow.innerHTML = ''; const roles = chRoles(), nch0 = E.inSettings && E.inSettings.channelCount; UI.chM = [];
+    [0, 1].forEach(i => {
+      const sel = h('select', { class: 'in', 'aria-label': 'What input ' + (i + 1) + ' is', disabled: nch0 === 1 && i === 1, onchange: e => { const v = e.target.value; const r = chRoles(); r[i] = v; if (v === 'v') r[1 - i] = r[1 - i] === 'v' ? 'g' : r[1 - i]; chSetRoles(r[0], r[1]); if (v === 'v' && CFG.vin !== 'off') toast('Input ' + (i + 1) + ' is the vocal. Use headphones, or the interface’s Direct Monitor, to avoid feedback.', 'ok'); } },
+        [['g', '🎸 Guitar'], ['v', '🎤 Vocal'], ['o', 'Off']].map(([v, t]) => h('option', { value: v, selected: roles[i] === v }, t)));
+      const bar = h('i'); UI.chM[i] = bar;
+      route.append(h('div', { class: 'chrow', title: 'Guitar goes through the rig; Vocal goes through the vocal strip' }, h('b', {}, 'Input ' + (i + 1)), sel, h('div', { class: 'meter chm', 'aria-hidden': 'true' }, bar)));
+    });
+    [['g', 'Guitar'], ['v', 'Vocal'], ['b', 'Both']].forEach(([v, t]) => follow.append(h('button', { class: (CFG.anSrc || 'g') === v ? 'on' : '', title: v === 'g' ? 'Note detection, tuner, chords, neck and visuals follow the guitar' : v === 'v' ? 'They follow the singing voice: the neck shows the note you sing, the visuals move with your voice' : 'They follow both (works best for visuals; note detection is best with one source)', onclick: () => setAnaSource(v) }, t)));
     const nch = E.inSettings && E.inSettings.channelCount;
     note.textContent = !E.hasInput ? 'Open an input above first. A 2-channel interface (Focusrite Scarlett/Solo/2i2 and similar) shows up here as one device with two channels.'
       : nch === 1 ? 'This device is mono, so it only has one channel: the vocal can’t be split from the guitar. Choose the interface itself (not “default” or a webcam mic) in the list above.'
-        : CFG.vin === 'off' ? 'Plug the mic into one input and the guitar into the other, then choose a route. Each gets its own lane in the arrangement and its own take.'
-          : 'Guitar is on input ' + (CFG.vin === 'R' ? '1' : '2') + ', the vocal on input ' + (CFG.vin === 'R' ? '2' : '1') + '. Arm both lanes (●) and press R: both record on the same clock. Use headphones, or the interface’s Direct Monitor, to avoid feedback.';
+        : CFG.vin === 'off' ? 'Set each input to what is plugged into it. A guitar on one input and a mic on the other gives each its own lane and take; “Guitar” on both sums them into one guitar.'
+          : 'Guitar and vocal are on separate inputs. Arm both lanes (●) and press R: both record on the same clock. Use headphones, or the interface’s Direct Monitor, to avoid feedback.';
   };
-  const card = h('div', { class: 'card' }, h('h4', {}, 'Guitar + vocal', h('span', { class: 'badge' }, 'two inputs')), h('div', { class: 'card-b' }, route, note, mt(),
+  const card = h('div', { class: 'card' }, h('h4', {}, 'Channels'), h('div', { class: 'card-b' }, route, h('div', { class: 'row sp', style: { margin: '8px 0 4px' } }, h('span', { class: 'tiny muted', title: 'Which channel the note detector, tuner, chord finder, neck and visuals listen to' }, 'Detect & visualise'), follow), note, mt(),
     h('div', { class: 'row', style: { gap: '6px', margin: '6px 0', flexWrap: 'wrap' } }, tog('Hear vocal', () => !!CFG.voxMon, v => { CFG.voxMon = v; saveCfg(); applyMix(); renderHeads(); }, 'Monitor the vocal through the app (headphones only)'), tog('Vocal polish', () => CFG.voxPolish !== false, v => { CFG.voxPolish = v; saveCfg(); voxPolishApply(); }, 'High-pass at 90 Hz and gentle compression on the vocal track')),
     h('div', { class: 'row', style: { justifyContent: 'center' } }, trim.el)));
-  trim.set(CFG.voxTrim || 0); sync(); bus.on('route', sync); bus.on('input', sync); bus.on('route', renderHeads);
+  UI.chSync = sync; trim.set(CFG.voxTrim || 0); sync(); bus.on('route', sync); bus.on('input', sync); bus.on('route', renderHeads);
   const first = p.firstElementChild; if (first) first.after(card); else p.append(card);
 }
 /** live level meters in the Guitar and Vocal lane headers, and the Vocal card */

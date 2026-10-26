@@ -27,6 +27,7 @@ function nkNext() {
 function nkVoice(now) {
   let m = null;
   if (HUM.rec && HUM.live && now - HUM.live.t < 350) m = HUM.live.m;
+  else if (CFG.anSrc === 'v' && AN.active && AN.midi != null && !T.playing) m = AN.midi;   // singing live, with the detector following the vocal
   else if (HUM.hear && HUM.hearT0 && HUM.an) { const tt = (now - HUM.hearT0) / 1000, n = HUM.an.notes.find(x => tt >= x.t && tt < x.t + x.d); if (n) m = n.m; }
   if (m == null) return [];
   const lo = S.tuning[0] + S.capo; while (m < lo) m += 12; while (m > lo + 38) m -= 12;

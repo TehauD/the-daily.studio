@@ -749,3 +749,6 @@ body[data-form=phone][data-tl=full] #center{--tlp:100%;grid-template-rows:0 minm
 body[data-form=phone][data-tl=full] #center #dock{display:none!important}
 body[data-form=phone][data-tl=full] #timeline{border-top:0}
 body[data-form=phone][data-tl=full] .tl-body{grid-template-columns:128px 1fr}
+
+/* I/O ▸ Channels */
+.chrow{display:grid;grid-template-columns:54px minmax(96px,1fr) minmax(36px,56px);gap:8px;align-items:center;margin:5px 0}.chrow b{font-size:12px}.chrow select{width:100%;min-width:0}.chrow .meter.chm{height:8px}

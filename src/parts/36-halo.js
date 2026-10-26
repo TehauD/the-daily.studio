@@ -15,7 +15,7 @@ function haloSpark(midi, v, kind) {
   if (midi == null) return; HL.parts.push({ pc: ((midi % 12) + 12) % 12, v: v || .8, k: kind || 'song', t0: performance.now(), spin: (Math.random() - .5) * .6, oct: clamp((midi - 36) / 48, 0, 1) });
   if (HL.parts.length > 140) HL.parts.splice(0, HL.parts.length - 140);
 }
-bus.on('onset', () => { if (!T.playing && AN.midi != null && AN.active) haloSpark(AN.midi, clamp((AN.rms + 50) / 40, .3, 1), 'live'); });
+bus.on('onset', () => { if (!T.playing && AN.midi != null && AN.active) haloSpark(AN.midi, clamp((AN.rms + 50) / 40, .3, 1), CFG.anSrc === 'v' ? 'voice' : 'live'); });
 function haloChords() {
   if (!HL.dirty) return; HL.dirty = false; const seen = new Map(), seq = [];
   (S.sections || []).forEach(sec => sec.bars.forEach(b => barChords(b).forEach(sym => { const c = parseChord(sym); if (!c) return; if (!seen.has(sym)) seen.set(sym, { sym, c }); seq.push(sym); })));
@@ -65,7 +65,7 @@ function haloDraw(g, W, H, X) {
   // notes spiral in toward the player
   HL.parts = HL.parts.filter(q => now - q.t0 < 2300);
   HL.parts.forEach(q => { const u = (now - q.t0) / 2300, e = haloEase(u), a = FANG(q.pc) + rot + q.spin * u * 5 + u * u * 3.2, rad = .92 - .74 * e, p = P(a, rad, q.oct * .16 * (1 - e)), r0 = Rx * (.008 + .016 * q.v) * (1 - u * .6) * p.k;
-    add(p.z, (g, pass) => { if ((p.z > 0) !== !!pass) return; g.globalAlpha = Math.max(0, 1 - u * u) * (pass ? 1 : .75); g.fillStyle = q.k === 'live' ? '#ff5fc8' : pcCol(q.pc, 1, 70); g.shadowColor = g.fillStyle; g.shadowBlur = 12; g.beginPath(); g.arc(p.x, p.y, r0, 0, 6.3); g.fill(); g.shadowBlur = 0; g.globalAlpha = 1; }); });
+    add(p.z, (g, pass) => { if ((p.z > 0) !== !!pass) return; g.globalAlpha = Math.max(0, 1 - u * u) * (pass ? 1 : .75); g.fillStyle = q.k === 'voice' ? '#ff5fc8' : pcCol(q.pc, 1, 70); g.shadowColor = g.fillStyle; g.shadowBlur = 12; g.beginPath(); g.arc(p.x, p.y, r0, 0, 6.3); g.fill(); g.shadowBlur = 0; g.globalAlpha = 1; }); });
   // a beat ring that breathes out from the player
   if (pulse > .02) add(0, (g, pass) => { const rr = (1 - pulse) * .95; g.strokeStyle = mixc(C.b, C.a, 1 - pulse, pulse * .55); g.lineWidth = 2 + pulse * 3; g.beginPath(); g.ellipse(cx, cy, rr * Rx, rr * Ry, 0, pass ? 0 : Math.PI, pass ? Math.PI : Math.PI * 2); g.stroke(); });
   items.sort((p, q) => p.z - q.z);

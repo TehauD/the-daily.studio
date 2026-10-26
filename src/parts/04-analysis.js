@@ -95,15 +95,17 @@ function sample() {
   STAT.centsHist.push(AN.f0 ? AN.cents : null); if (STAT.centsHist.length > 240) STAT.centsHist.shift();
   if (AN.active) { STAT.activeS += .1; STAT.actRms.push(AN.rms); if (STAT.actRms.length > 3000) STAT.actRms.shift(); } else if (AN.rms < -45) { STAT.noise.push(AN.rms); if (STAT.noise.length > 600) STAT.noise.shift(); }
 }
-bus.on('tap:di', m => {
-  if (!m.onset) return; AN.onsetT = m.t; STAT.onsets++; bus.emit('onset', m);
+bus.on('tap:di', m => anOnset(m, 'g'));
+bus.on('tap:vox', m => anOnset(m, 'v'));
+function anOnset(m, who) {
+  if (!m.onset) return; const f = CFG.anSrc || 'g'; if (f !== 'b' && f !== who) return; AN.onsetT = m.t; STAT.onsets++; bus.emit('onset', m);
   if (T.playing && T.q.length) {
     const g = 16 / (CFG.timingGrid || 4) / 4 || 1, want = CFG.timingGrid || 2; /* grid: slots per grid step */
     const step = want === 4 ? 1 : want === 2 ? 2 : 4, tt = m.t - rttMs() / 1000; let best = null, bd = 1e9;
     for (const e of T.q) { if (e.slot < 0 || e.slot % step) continue; const d = tt - e.time; if (Math.abs(d) < Math.abs(bd)) { bd = d; best = e; } }
     if (best && Math.abs(bd) < slotDur() * step * .5) { STAT.timing.push(bd * 1000); if (STAT.timing.length > 800) STAT.timing.shift(); bus.emit('timing', bd * 1000); }
   }
-});
+}
 function statsSnapshot() {
   const ca = STAT.noteCents.map(n => n.abs), tm = STAT.timing;
   return { notes: STAT.notes, centsAbs: ca.length ? +mean(ca).toFixed(1) : null, timingMean: tm.length ? +mean(tm).toFixed(1) : null, timingSD: tm.length > 2 ? +sd(tm).toFixed(1) : null, key: AN.key ? pcName(AN.key[0].root) + (AN.key[0].minor ? 'm' : '') : null };

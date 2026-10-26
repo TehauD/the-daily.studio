@@ -35,7 +35,7 @@ The fastest way in: **hum or sing a few seconds of melody and get a whole song b
 **Audio button and kill switch.** The app never asks for your microphone on its own. Start with the microphone off, or connect it from the start screen. The **Audio** button in the header (light: grey off, green live, amber no input, red killed) opens a panel to start the engine, choose and connect an input, toggle monitoring and optionally reconnect your last input on open. **Ctrl/Cmd + .** (or the red button in that panel) kills audio instantly: playback and recording stop, monitoring turns off, the microphone is released. Press Resume to continue. On a phone, find it in More.
 
 1. Press **Start** on the welcome card. The browser asks for microphone access; allow it. (This is how a web page reads your audio interface.)
-2. Open **I/O** (left sidebar). Choose your **Audio input**; for a two-input interface use **In 1 / L**, **In 2 / R** or **Both** and **Auto-detect channel**. If you hear nothing, press **Diagnose devices**.
+2. Open **I/O** (left sidebar). Choose your **Audio input**; for a two-input interface open **Channels** and say what each input is (**Guitar**, **Vocal** or **Off**), or use **Auto-detect guitar channel**. If you hear nothing, press **Diagnose devices**.
 3. Choose the **Audio output** (needs a recent Chromium browser to switch away from the system default).
 4. **Monitor** lets you hear yourself through the rig. With an interface that has its own **Direct Monitor**, turn the app's monitor *off* to avoid doubling, or wear headphones.
 5. Set levels so peaks in **Levels** sit around **−12 to −6 dBFS**; the **Input trim** knob helps if your interface gain is awkward. The red LED is the clip indicator (click to clear).
@@ -80,7 +80,7 @@ The lower strip is the **arrangement**, laid out like a DAW's track list: chord 
 A two-input interface (a Focusrite Scarlett Solo / 2i2 / 4i4, for example) shows up in the browser as **one device with two channels**. The app reads input 1 and input 2 separately, so:
 
 1. Plug the guitar into one input and the microphone into the other.
-2. In **I/O → Audio input**, choose the interface itself (not "Default"); in **Guitar + vocal** choose **Guitar 1 · Vocal 2** (or **Vocal 1 · Guitar 2**). The Vocal lane appears with its own meter.
+2. In **I/O → Audio input**, choose the interface itself (not "Default"); in **Channels** set one input to **Guitar** and the other to **Vocal**. **Detect & visualise** chooses what the note detector, tuner, neck and visuals follow: **Guitar**, **Vocal** (the neck shows the note you sing) or **Both**; the visuals Source menu can also listen to the vocal microphone directly. The Vocal lane appears with its own meter.
 3. Arm both lanes with ● (guitar and vocal), then press <kbd>R</kbd>. You get two takes, aligned to each other and to the band.
 4. **Hear vocal** monitors the microphone through the app; use headphones (or your interface's Direct Monitor with the app's monitor off) or the microphone will feed back. **Vocal polish** adds a 90 Hz high-pass and gentle compression.
 

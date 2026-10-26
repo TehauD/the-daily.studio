@@ -61,7 +61,7 @@ function paintFret(force) {
   const now = performance.now(), cams = VIS.cands.filter(c => now - c.t < 500);
   FB.nodes.forEach(row => row.forEach(nd => {
     const inS = FB.scPcs.has(nd.pc), inC = chordPcs.has(nd.pc), show = FB.mode === 'scale' ? inS : FB.mode === 'chord' ? inC : FB.mode === 'both' ? (inS || inC) : false;
-    const mm = mkMap.get(nd.st + ':' + nd.n) || {}, pbA = Math.max(mm.hit || 0, mm.pin || 0), live = (AN.midi != null && AN.midi === nd.midi) || pbA > .02, camHit = cams.some(c => c.st === nd.st && c.fret === nd.n);
+    const mm = mkMap.get(nd.st + ':' + nd.n) || {}, pbA = Math.max(mm.hit || 0, mm.pin || 0), live = (AN.midi != null && CFG.anSrc !== 'v' && AN.midi === nd.midi) || pbA > .02, camHit = cams.some(c => c.st === nd.st && c.fret === nd.n);
     const gA = mm.ghost || 0, vA = mm.voice || 0; nd.g.style.display = (show || live || camHit || gA || vA) ? '' : 'none'; nd.gh.setAttribute('opacity', gA); nd.vo.setAttribute('opacity', vA); if (!show && !live && !camHit && !gA && !vA) return;
     const isRoot = nd.pc === root, isChordRoot = chordRoot != null && nd.pc === chordRoot && FB.mode !== 'scale'; const hl = FB.mode === 'both' ? inC : (FB.mode === 'chord' ? inC : isRoot);
     nd.poly.setAttribute('fill', isRoot || isChordRoot ? 'var(--accent)' : 'var(--panel2)'); nd.poly.setAttribute('stroke', inC && FB.mode === 'both' ? 'var(--accent2)' : 'var(--accent)'); nd.poly.setAttribute('opacity', show ? 1 : .35); nd.poly.setAttribute('stroke-width', hl && !isRoot ? 2.5 : 1.5);
@@ -78,7 +78,7 @@ function buildVisPane() {
   const p = PANES.vis; p.classList.add('flex');
   const bar = h('div', { class: 'row', style: { gap: '8px', marginBottom: '8px', flexWrap: 'wrap' } },
     h('div', { class: 'seg' }, VMODES.map(([k, n]) => h('button', { class: k === VZ.mode ? 'on' : '', 'data-m': k, onclick: e => { vzSetMode(k); $$('.seg [data-m]', bar).forEach(b => b.classList.toggle('on', b === e.target)); } }, n))),
-    h('select', { class: 'in', style: { width: 'auto', fontFamily: 'var(--sans)' }, title: 'Analysis source', onchange: e => { VZ.src = e.target.value; } }, [['auto', 'Source: auto (follows playback)'], ['rig', 'Source: rig output'], ['master', 'Source: master mix'], ['di', 'Source: dry DI']].map(([v, n]) => h('option', { value: v }, n))),
+    h('select', { class: 'in', style: { width: 'auto', fontFamily: 'var(--sans)' }, title: 'Analysis source', onchange: e => { VZ.src = e.target.value; } }, [['auto', 'Source: auto (follows playback)'], ['rig', 'Source: guitar after the rig'], ['master', 'Source: master mix'], ['di', 'Source: what the detector hears'], ['vox', 'Source: vocal microphone']].map(([v, n]) => h('option', { value: v }, n))),
     h('button', { class: 'btn sm' + (VZ.cam ? ' on' : ''), id: 'vzCamBtn', title: 'Put yourself center stage: turns the camera on behind the visuals', onclick: () => vzCamPress() }, '📷 Camera backdrop'), camFxBox(),
     h('button', { class: 'btn sm' + (CFG.vzNeck !== false ? ' on' : ''), id: 'vzNeckBtn', title: 'Show a small guitar neck on the visuals: what is playing, what is coming next, the note you are singing', onclick: e => { CFG.vzNeck = CFG.vzNeck === false; saveCfg(); e.currentTarget.classList.toggle('on', CFG.vzNeck !== false); } }, '🎸 Neck'),
     h('button', { class: 'btn sm', onclick: () => { const w = UI.vwrap; (document.fullscreenElement ? document.exitFullscreen() : w.requestFullscreen && w.requestFullscreen()); } }, '⛶ Stage mode'));
@@ -89,7 +89,7 @@ function buildVisPane() {
 const vcol = () => { const cs = getComputedStyle(document.documentElement); return { a: cs.getPropertyValue('--accent').trim(), b: cs.getPropertyValue('--accent2').trim(), c: cs.getPropertyValue('--cv3').trim(), d: cs.getPropertyValue('--cv4').trim() }; };
 /** 'auto' follows what is sounding: the mix while the song, a hum or a backing track plays, the guitar rig otherwise */
 const vzPlaying = () => T.playing || (typeof STP !== 'undefined' && STP.playing);
-function visAna() { const s = VZ.src || 'auto'; return s === 'master' || (s === 'auto' && vzPlaying()) ? E.anaMaster : s === 'di' ? E.anaDI : E.anaRig; }
+function visAna() { const s = VZ.src || 'auto'; if (s === 'vox' && E.anaVox) return E.anaVox; return s === 'master' || (s === 'auto' && vzPlaying()) ? E.anaMaster : s === 'di' ? E.anaDI : E.anaRig; }
 function drawVis(cvo, o) {
   o = o || {}; const cv = cvo || UI.vcv; if (!cv || !E.ready || (!cvo && !paneVisible('vis'))) return; const MODE = o.mode || VZ.mode; const g = cv.getContext('2d'), W = cv.width, H = cv.height, now = performance.now(), dt = Math.min(.1, (now - (VZ.last || now)) / 1000); VZ.last = now; VZ.t += dt;
   const an = visAna(); if (!an) return; if (!VZ.fd || VZ.fd.length !== an.frequencyBinCount) VZ.fd = new Float32Array(an.frequencyBinCount); an.getFloatFrequencyData(VZ.fd); const fd = VZ.fd, bh = E.ctx.sampleRate / an.fftSize;

@@ -65,7 +65,8 @@ function wav(L, sr) { const n = L.length, b = Buffer.alloc(44 + n * 2); b.write(
   await page.click('#right .side-tabs .tab[data-id="refine"]'); await wait(300);
   ok(await page.evaluate(() => !!document.querySelector('#right .refine') && document.querySelector('#right .refine').getClientRects().length > 0), 'Refine panel (lyrics + chords) shows in the right sidebar');
   // two-input recording: guitar on 1, vocal on 2 → two takes from one pass
-  await page.click('#left .side-tabs .tab[data-id="io"]'); await wait(200); await page.click('button:has-text("Guitar 1 · Vocal 2")'); await wait(300);
+  await page.click('#left .side-tabs .tab[data-id="io"]'); await wait(200); await page.selectOption('select[aria-label="What input 2 is"]', 'v'); await wait(300);
+  ok(await page.evaluate(() => document.querySelector('select[aria-label="What input 1 is"]').value === 'g' && document.querySelector('select[aria-label="What input 2 is"]').value === 'v'), 'Channels card: input 1 is the guitar, input 2 the vocal');
   ok(await page.evaluate(() => !!document.querySelector('.tl-head[data-id="vox"]')), 'vocal lane present once the vocal input is routed');
   await page.keyboard.press('r'); await wait(9500); await page.keyboard.press(' '); await wait(900);
   { const names = await page.$$eval('.tl-head[data-id^="take:"] .nm', e => e.map(x => x.textContent)); ok(names.some(n => /^Take/.test(n)) && names.some(n => /^Vocal/.test(n)), 'one record pass made a guitar take and a vocal take: ' + names.join(' | ')); }
@@ -211,6 +212,14 @@ function wav(L, sr) { const n = L.length, b = Buffer.alloc(44 + n * 2); b.write(
       return { pin, vo: vo.length, ok: vo.every(m => 40 + m.f + 0 >= 0) }; });
     ok(NKR.pin >= 4, 'picking a chord shows its shape on the neck (' + NKR.pin + ' notes)');
     ok(NKR.vo >= 2, 'the note you sing is shown at every place it can be played on the neck (' + NKR.vo + ')');
+    const CH = await hp.evaluate(async () => { const D = window.__daily, out = {}, sl = () => new Promise(r => setTimeout(r, 400)), gn = () => D.E.anTarget.join(); D.chSetRoles('g', 'v'); out.gv = [D.chRoles().join(), D.CFG.ch, D.CFG.vin, D.CFG.gOff, D.CFG.anSrc].join();
+      D.chSetRoles('v', 'o'); await sl(); out.vo = [D.chRoles().join(), D.CFG.gOff, D.CFG.anSrc, gn()].join();
+      D.setAnaSource('b'); await sl(); out.both = gn(); D.chSetRoles('g', 'g'); await sl(); out.gg = [D.chRoles().join(), D.CFG.ch, D.CFG.vin, D.CFG.anSrc, gn()].join();
+      D.chSetRoles('v', 'v'); out.vv = D.chRoles().join(); D.chSetRoles('g', 'o'); out.go = [D.chRoles().join(), D.CFG.gOff].join(); D.chSetRoles('g', 'g'); return out; });
+    ok(CH.gv === 'g,v,L,R,false,g', 'guitar on input 1 and vocal on input 2 routes correctly (' + CH.gv + ')');
+    ok(CH.vo === 'v,o,true,v,0,1', 'vocal only: the rig gets nothing and the detector follows the voice (' + CH.vo + ')');
+    ok(CH.both === '1,1' && CH.gg === 'g,g,sum,off,g,1,0', 'following both, then two guitars summed, set the detector and routing (' + CH.both + ' / ' + CH.gg + ')');
+    ok(CH.vv === 'v,g' && CH.go === 'g,o,false', 'one vocal at most; a guitar on one input and nothing on the other (' + CH.vv + ' / ' + CH.go + ')');
     for (const mode of ['halo', 'kaleido']) {
       await hp.evaluate(async m => { const D = window.__daily; D.dockGo('vis'); D.vzSetMode(m); await D.humPlay(); }, mode); await wait(2600);
       const lit = await hp.evaluate(() => { const cv = document.querySelector('.vcanvas'), g = cv.getContext('2d'), d = g.getImageData(0, 0, cv.width, cv.height).data; let n = 0, tot = 0; for (let i = 0; i < d.length; i += 64) { tot++; if (d[i] + d[i + 1] + d[i + 2] > 120) n++; } return n / tot; });

@@ -135,7 +135,9 @@ function buildGraph() {
   E.limiter = c.createDynamicsCompressor(); Object.assign(E.limiter.threshold, { value: -1.5 }); E.limiter.knee.value = 0; E.limiter.ratio.value = 20; E.limiter.attack.value = 0.001; E.limiter.release.value = 0.08;
   const mkAna = (fft, sm) => { const a = c.createAnalyser(); a.fftSize = fft; a.smoothingTimeConstant = sm; a.minDecibels = -110; a.maxDecibels = -10; return a; };
   E.anaDI = mkAna(4096, 0); E.anaChroma = mkAna(16384, 0.5); E.anaRig = mkAna(CFG.fft, CFG.smooth); E.anaMaster = mkAna(CFG.fft, CFG.smooth);
-  E.inSum.connect(E.inTrim); E.inTrim.connect(E.anaDI); E.inTrim.connect(E.anaChroma); E.inTrim.connect(E.rigIn);
+  E.inSum.connect(E.inTrim); E.inTrim.connect(E.rigIn);
+  /* what the note detector, tuner, chord/key finder, onset pulses and the Input meter listen to: the guitar, the vocal, or both (CFG.anSrc) */
+  E.anSrc = gn(1); E.aG = gn(CFG.anSrc === 'v' ? 0 : 1); E.aV = gn(CFG.anSrc === 'v' || CFG.anSrc === 'b' ? 1 : 0); E.inTrim.connect(E.aG); E.aG.connect(E.anSrc); E.anSrc.connect(E.anaDI); E.anSrc.connect(E.anaChroma);
   E.rigOut.connect(E.anaRig);
   TRACKS.forEach(([id]) => {
     const t = { id, in: gn(1), g: gn(1), pan: c.createStereoPanner(), ana: mkAna(512, 0.4) };
@@ -144,7 +146,7 @@ function buildGraph() {
   E.takesIn = gn(1); E.takesIn.connect(E.mix);
   /* vocal path: the second input channel → trim → (meter · recorder tap) and → monitor switch → polish strip → Vocal track */
   E.voxIn = gn(1); E.voxTrim = gn(fromDB(CFG.voxTrim || 0)); E.voxMon = gn(0); E.anaVox = mkAna(2048, 0.3);
-  E.voxIn.connect(E.voxTrim); E.voxTrim.connect(E.anaVox); E.voxTrim.connect(E.voxMon);
+  E.voxIn.connect(E.voxTrim); E.voxTrim.connect(E.anaVox); E.voxTrim.connect(E.aV); E.voxTrim.connect(E.voxMon);
   { const sIn = gn(1), sOut = gn(1), hp = bq('highpass', 90), cmp = c.createDynamicsCompressor(), mk = gn(1.35), pr = gn(1), by = gn(0);
     cmp.threshold.value = -24; cmp.knee.value = 14; cmp.ratio.value = 3; cmp.attack.value = .008; cmp.release.value = .2;
     chainN(sIn, hp, cmp, mk, pr, sOut); sIn.connect(by); by.connect(sOut); E.voxStrip = { in: sIn, out: sOut, proc: pr, byp: by }; sOut.connect(E.tr.vox.in); E.voxMon.connect(sIn); }
@@ -153,7 +155,7 @@ function buildGraph() {
   E.mix.connect(E.master); E.master.connect(E.limiter); E.limiter.connect(E.anaMaster); E.limiter.connect(c.destination);
   E.testOut = gn(.5); E.testOut.connect(c.destination);
   E.tapDI = makeTap(E.inTrim, { onset: true }, m => bus.emit('tap:di', m));
-  E.tapWet = makeTap(E.rigOut, {}, m => bus.emit('tap:wet', m)); E.tapVox = makeTap(E.voxTrim, {}, m => bus.emit('tap:vox', m));
+  E.tapWet = makeTap(E.rigOut, {}, m => bus.emit('tap:wet', m)); E.tapVox = makeTap(E.voxTrim, { onset: true }, m => bus.emit('tap:vox', m));
   E.tapMaster = makeTap(E.limiter, { stereo: true }, m => bus.emit('tap:master', m));
   rigBuild(); applyMix(); setMonitor(CFG.monitor);
 }
@@ -205,6 +207,7 @@ async function openInput(deviceId) {
   if (!E.split) {
     E.split = E.ctx.createChannelSplitter(2); E.gL = gn(1); E.gR = gn(0);
     E.split.connect(E.gL, 0); E.split.connect(E.gR, 1); E.gL.connect(E.inSum); E.gR.connect(E.inSum);
+    E.anaL = c0().createAnalyser(); E.anaR = c0().createAnalyser(); E.anaL.fftSize = E.anaR.fftSize = 1024; E.split.connect(E.anaL, 0); E.split.connect(E.anaR, 1);
     E.vL = gn(0); E.vR = gn(0); E.split.connect(E.vL, 0); E.split.connect(E.vR, 1); E.vL.connect(E.voxIn); E.vR.connect(E.voxIn);
   }
   E.src.connect(E.split); E.hasInput = true; setChannelMode(CFG.ch);
@@ -219,10 +222,32 @@ function setChannelMode(m) {
   let l = 1, r = 0;
   if (m === 'R') { l = 0; r = 1; } else if (m === 'sum') { l = .5; r = .5; } else if (m === 'auto') { l = 1; r = nch > 1 ? 0 : 0; }
   if (CFG.vin === 'R') { l = 1; r = 0; } else if (CFG.vin === 'L') { l = 0; r = 1; }
+  if (CFG.gOff) { l = 0; r = 0; }   // both inputs given to the vocal, or switched off: nothing goes to the guitar rig
   tc(E.gL.gain, l, .01); tc(E.gR.gain, r, .01);
   if (E.vL) { tc(E.vL.gain, CFG.vin === 'L' ? 1 : 0, .01); tc(E.vR.gain, CFG.vin === 'R' ? 1 : 0, .01); }
   applyMix(); bus.emit('route');
 }
+const c0 = () => E.ctx;
+/** What each interface input is: ['g'|'v'|'o', 'g'|'v'|'o'] = Guitar (through the rig), Vocal (through the vocal strip) or Off. Derived from CFG.ch / CFG.vin / CFG.gOff. */
+function chRoles() {
+  const v = CFG.vin; let a = 'o', b = 'o';
+  if (v === 'L') a = 'v'; else if (v === 'R') b = 'v';
+  if (!CFG.gOff) { if (v === 'L') b = 'g'; else if (v === 'R') a = 'g'; else if (CFG.ch === 'sum') { a = 'g'; b = 'g'; } else if (CFG.ch === 'R') b = 'g'; else a = 'g'; }
+  return [a, b];
+}
+/** Set both inputs at once. A second Vocal input is not possible, so choosing Vocal on one input hands the other back to the guitar. */
+function chSetRoles(a, b) {
+  if (a === 'v' && b === 'v') b = 'g';
+  const wasOff = !!CFG.gOff;
+  const g1 = a === 'g', g2 = b === 'g'; CFG.vin = a === 'v' ? 'L' : b === 'v' ? 'R' : 'off';
+  CFG.gOff = !g1 && !g2; if (g1 && g2) CFG.ch = 'sum'; else if (g2) CFG.ch = 'R'; else if (g1) CFG.ch = 'L';
+  if (CFG.vin !== 'off') CFG.armV = true;
+  // the detector follows what is plugged in, unless the person already chose
+  if (CFG.gOff && CFG.vin !== 'off') CFG.anSrc = 'v'; else if (CFG.vin === 'off' || wasOff || !CFG.anSrc) CFG.anSrc = 'g';
+  saveCfg(); setChannelMode(CFG.ch); applyAnaSource();
+}
+function applyAnaSource() { const s = CFG.anSrc || 'g'; if (E.aG) { E.anTarget = [s === 'v' ? 0 : 1, s === 'g' ? 0 : 1]; tc(E.aG.gain, E.anTarget[0], .02); tc(E.aV.gain, E.anTarget[1], .02); } bus.emit('route'); }
+function setAnaSource(s) { CFG.anSrc = s; saveCfg(); applyAnaSource(); }
 /** vin: 'off' | 'L' (input 1) | 'R' (input 2) */
 function setVoxInput(v) {
   if (v !== 'off' && E.hasInput && E.inSettings && E.inSettings.channelCount === 1) toast('This device exposes a single input channel, so a separate vocal channel is not possible. Pick a 2-channel input (e.g. the Focusrite) in I/O.', 'warn');
@@ -241,7 +266,7 @@ async function autoDetectChannel() {
   try { E.split.disconnect(aL); E.split.disconnect(aR); } catch (e) { }
   if (pl < .005 && pr < .005) { toast('No signal detected on either channel', 'warn'); return; }
   const pick = pr > pl * 1.5 ? 'R' : (pl > pr * 1.5 ? 'L' : 'sum');
-  setChannelMode(pick); bus.emit('input', E.inSettings); toast('Input channel: ' + (pick === 'sum' ? 'both (summed)' : pick === 'L' ? 'Input 1 / Left' : 'Input 2 / Right'), 'ok');
+  CFG.gOff = false; setChannelMode(pick); bus.emit('input', E.inSettings); toast('Input channel: ' + (pick === 'sum' ? 'both (summed)' : pick === 'L' ? 'Input 1 / Left' : 'Input 2 / Right'), 'ok');
 }
 async function setOutputDevice(id) {
   CFG.outDev = id; saveCfg();

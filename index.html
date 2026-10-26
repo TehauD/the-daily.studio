@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en"><head><meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-ukjagmqE4UjeynGRQDx3csuw9ytKr/nePT5djSodEOU=' 'wasm-unsafe-eval' blob: https://cdn.jsdelivr.net; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; connect-src 'self' blob: data: https://cdn.jsdelivr.net https://storage.googleapis.com; font-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="the-daily.studio">
+<html lang="en"><head><meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-43+lsu1TQ64IaxpX7Q2eLyBDkwBi84fvvVpahWXx4Qs=' 'wasm-unsafe-eval' blob: https://cdn.jsdelivr.net; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; connect-src 'self' blob: data: https://cdn.jsdelivr.net https://storage.googleapis.com; font-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="the-daily.studio">
 <title>the-daily.studio — a songwriter’s workspace</title><link rel="canonical" href="https://the-daily.studio/"><meta property="og:url" content="https://the-daily.studio/">
 <meta name="description" content="A free, open-source songwriter’s workspace that runs entirely in your browser: capture an idea, write lyrics and chords, record guitar and vocals, split a track into stems, and keep it all on your device.">
 <meta name="theme-color" content="#0d0f10"><meta property="og:title" content="the-daily.studio — a songwriter’s workspace"><meta property="og:type" content="website"><meta property="og:site_name" content="the-daily.studio"><meta property="og:image" content="https://the-daily.studio/icons/social-card.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="the-daily.studio: lyrics, chords, recording and stems in one browser page">
@@ -762,6 +762,9 @@ body[data-form=phone][data-tl=full] #center #dock{display:none!important}
 body[data-form=phone][data-tl=full] #timeline{border-top:0}
 body[data-form=phone][data-tl=full] .tl-body{grid-template-columns:128px 1fr}
 
+/* I/O ▸ Channels */
+.chrow{display:grid;grid-template-columns:54px minmax(96px,1fr) minmax(36px,56px);gap:8px;align-items:center;margin:5px 0}.chrow b{font-size:12px}.chrow select{width:100%;min-width:0}.chrow .meter.chm{height:8px}
+
 </style></head><body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
   <radialGradient id="kcap" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="var(--raise)"/><stop offset="1" stop-color="var(--bg2)"/></radialGradient>
@@ -1282,7 +1285,9 @@ function buildGraph() {
   E.limiter = c.createDynamicsCompressor(); Object.assign(E.limiter.threshold, { value: -1.5 }); E.limiter.knee.value = 0; E.limiter.ratio.value = 20; E.limiter.attack.value = 0.001; E.limiter.release.value = 0.08;
   const mkAna = (fft, sm) => { const a = c.createAnalyser(); a.fftSize = fft; a.smoothingTimeConstant = sm; a.minDecibels = -110; a.maxDecibels = -10; return a; };
   E.anaDI = mkAna(4096, 0); E.anaChroma = mkAna(16384, 0.5); E.anaRig = mkAna(CFG.fft, CFG.smooth); E.anaMaster = mkAna(CFG.fft, CFG.smooth);
-  E.inSum.connect(E.inTrim); E.inTrim.connect(E.anaDI); E.inTrim.connect(E.anaChroma); E.inTrim.connect(E.rigIn);
+  E.inSum.connect(E.inTrim); E.inTrim.connect(E.rigIn);
+  /* what the note detector, tuner, chord/key finder, onset pulses and the Input meter listen to: the guitar, the vocal, or both (CFG.anSrc) */
+  E.anSrc = gn(1); E.aG = gn(CFG.anSrc === 'v' ? 0 : 1); E.aV = gn(CFG.anSrc === 'v' || CFG.anSrc === 'b' ? 1 : 0); E.inTrim.connect(E.aG); E.aG.connect(E.anSrc); E.anSrc.connect(E.anaDI); E.anSrc.connect(E.anaChroma);
   E.rigOut.connect(E.anaRig);
   TRACKS.forEach(([id]) => {
     const t = { id, in: gn(1), g: gn(1), pan: c.createStereoPanner(), ana: mkAna(512, 0.4) };
@@ -1291,7 +1296,7 @@ function buildGraph() {
   E.takesIn = gn(1); E.takesIn.connect(E.mix);
   /* vocal path: the second input channel → trim → (meter · recorder tap) and → monitor switch → polish strip → Vocal track */
   E.voxIn = gn(1); E.voxTrim = gn(fromDB(CFG.voxTrim || 0)); E.voxMon = gn(0); E.anaVox = mkAna(2048, 0.3);
-  E.voxIn.connect(E.voxTrim); E.voxTrim.connect(E.anaVox); E.voxTrim.connect(E.voxMon);
+  E.voxIn.connect(E.voxTrim); E.voxTrim.connect(E.anaVox); E.voxTrim.connect(E.aV); E.voxTrim.connect(E.voxMon);
   { const sIn = gn(1), sOut = gn(1), hp = bq('highpass', 90), cmp = c.createDynamicsCompressor(), mk = gn(1.35), pr = gn(1), by = gn(0);
     cmp.threshold.value = -24; cmp.knee.value = 14; cmp.ratio.value = 3; cmp.attack.value = .008; cmp.release.value = .2;
     chainN(sIn, hp, cmp, mk, pr, sOut); sIn.connect(by); by.connect(sOut); E.voxStrip = { in: sIn, out: sOut, proc: pr, byp: by }; sOut.connect(E.tr.vox.in); E.voxMon.connect(sIn); }
@@ -1300,7 +1305,7 @@ function buildGraph() {
   E.mix.connect(E.master); E.master.connect(E.limiter); E.limiter.connect(E.anaMaster); E.limiter.connect(c.destination);
   E.testOut = gn(.5); E.testOut.connect(c.destination);
   E.tapDI = makeTap(E.inTrim, { onset: true }, m => bus.emit('tap:di', m));
-  E.tapWet = makeTap(E.rigOut, {}, m => bus.emit('tap:wet', m)); E.tapVox = makeTap(E.voxTrim, {}, m => bus.emit('tap:vox', m));
+  E.tapWet = makeTap(E.rigOut, {}, m => bus.emit('tap:wet', m)); E.tapVox = makeTap(E.voxTrim, { onset: true }, m => bus.emit('tap:vox', m));
   E.tapMaster = makeTap(E.limiter, { stereo: true }, m => bus.emit('tap:master', m));
   rigBuild(); applyMix(); setMonitor(CFG.monitor);
 }
@@ -1352,6 +1357,7 @@ async function openInput(deviceId) {
   if (!E.split) {
     E.split = E.ctx.createChannelSplitter(2); E.gL = gn(1); E.gR = gn(0);
     E.split.connect(E.gL, 0); E.split.connect(E.gR, 1); E.gL.connect(E.inSum); E.gR.connect(E.inSum);
+    E.anaL = c0().createAnalyser(); E.anaR = c0().createAnalyser(); E.anaL.fftSize = E.anaR.fftSize = 1024; E.split.connect(E.anaL, 0); E.split.connect(E.anaR, 1);
     E.vL = gn(0); E.vR = gn(0); E.split.connect(E.vL, 0); E.split.connect(E.vR, 1); E.vL.connect(E.voxIn); E.vR.connect(E.voxIn);
   }
   E.src.connect(E.split); E.hasInput = true; setChannelMode(CFG.ch);
@@ -1366,10 +1372,32 @@ function setChannelMode(m) {
   let l = 1, r = 0;
   if (m === 'R') { l = 0; r = 1; } else if (m === 'sum') { l = .5; r = .5; } else if (m === 'auto') { l = 1; r = nch > 1 ? 0 : 0; }
   if (CFG.vin === 'R') { l = 1; r = 0; } else if (CFG.vin === 'L') { l = 0; r = 1; }
+  if (CFG.gOff) { l = 0; r = 0; }   // both inputs given to the vocal, or switched off: nothing goes to the guitar rig
   tc(E.gL.gain, l, .01); tc(E.gR.gain, r, .01);
   if (E.vL) { tc(E.vL.gain, CFG.vin === 'L' ? 1 : 0, .01); tc(E.vR.gain, CFG.vin === 'R' ? 1 : 0, .01); }
   applyMix(); bus.emit('route');
 }
+const c0 = () => E.ctx;
+/** What each interface input is: ['g'|'v'|'o', 'g'|'v'|'o'] = Guitar (through the rig), Vocal (through the vocal strip) or Off. Derived from CFG.ch / CFG.vin / CFG.gOff. */
+function chRoles() {
+  const v = CFG.vin; let a = 'o', b = 'o';
+  if (v === 'L') a = 'v'; else if (v === 'R') b = 'v';
+  if (!CFG.gOff) { if (v === 'L') b = 'g'; else if (v === 'R') a = 'g'; else if (CFG.ch === 'sum') { a = 'g'; b = 'g'; } else if (CFG.ch === 'R') b = 'g'; else a = 'g'; }
+  return [a, b];
+}
+/** Set both inputs at once. A second Vocal input is not possible, so choosing Vocal on one input hands the other back to the guitar. */
+function chSetRoles(a, b) {
+  if (a === 'v' && b === 'v') b = 'g';
+  const wasOff = !!CFG.gOff;
+  const g1 = a === 'g', g2 = b === 'g'; CFG.vin = a === 'v' ? 'L' : b === 'v' ? 'R' : 'off';
+  CFG.gOff = !g1 && !g2; if (g1 && g2) CFG.ch = 'sum'; else if (g2) CFG.ch = 'R'; else if (g1) CFG.ch = 'L';
+  if (CFG.vin !== 'off') CFG.armV = true;
+  // the detector follows what is plugged in, unless the person already chose
+  if (CFG.gOff && CFG.vin !== 'off') CFG.anSrc = 'v'; else if (CFG.vin === 'off' || wasOff || !CFG.anSrc) CFG.anSrc = 'g';
+  saveCfg(); setChannelMode(CFG.ch); applyAnaSource();
+}
+function applyAnaSource() { const s = CFG.anSrc || 'g'; if (E.aG) { E.anTarget = [s === 'v' ? 0 : 1, s === 'g' ? 0 : 1]; tc(E.aG.gain, E.anTarget[0], .02); tc(E.aV.gain, E.anTarget[1], .02); } bus.emit('route'); }
+function setAnaSource(s) { CFG.anSrc = s; saveCfg(); applyAnaSource(); }
 /** vin: 'off' | 'L' (input 1) | 'R' (input 2) */
 function setVoxInput(v) {
   if (v !== 'off' && E.hasInput && E.inSettings && E.inSettings.channelCount === 1) toast('This device exposes a single input channel, so a separate vocal channel is not possible. Pick a 2-channel input (e.g. the Focusrite) in I/O.', 'warn');
@@ -1388,7 +1416,7 @@ async function autoDetectChannel() {
   try { E.split.disconnect(aL); E.split.disconnect(aR); } catch (e) { }
   if (pl < .005 && pr < .005) { toast('No signal detected on either channel', 'warn'); return; }
   const pick = pr > pl * 1.5 ? 'R' : (pl > pr * 1.5 ? 'L' : 'sum');
-  setChannelMode(pick); bus.emit('input', E.inSettings); toast('Input channel: ' + (pick === 'sum' ? 'both (summed)' : pick === 'L' ? 'Input 1 / Left' : 'Input 2 / Right'), 'ok');
+  CFG.gOff = false; setChannelMode(pick); bus.emit('input', E.inSettings); toast('Input channel: ' + (pick === 'sum' ? 'both (summed)' : pick === 'L' ? 'Input 1 / Left' : 'Input 2 / Right'), 'ok');
 }
 async function setOutputDevice(id) {
   CFG.outDev = id; saveCfg();
@@ -1847,7 +1875,7 @@ function pushBlock(arr, m, t0) {
 function livePeaks(pk, b) { for (let i = 0; i < b.length; i += 1024) { let mn = 1, mx = -1; for (let k = i, e = Math.min(b.length, i + 1024); k < e; k++) { const v = b[k]; if (v < mn) mn = v; if (v > mx) mx = v; } pk.push(mn, mx); } }
 bus.on('tap:di', m => { if (m.onset || !REC || !REC.g) return; const b = pushBlock(REC.dry, m, REC.t0); if (b) livePeaks(REC.pkG, b); });
 bus.on('tap:wet', m => { if (!REC || !REC.g) return; pushBlock(REC.wet, m, REC.t0); });
-bus.on('tap:vox', m => { if (!REC || !REC.v) return; const b = pushBlock(REC.vox, m, REC.t0); if (b) livePeaks(REC.pkV, b); });
+bus.on('tap:vox', m => { if (m.onset || !REC || !REC.v) return; const b = pushBlock(REC.vox, m, REC.t0); if (b) livePeaks(REC.pkV, b); });
 function cat(parts) { let n = 0; parts.forEach(p => n += p.length); const o = new Float32Array(n); let k = 0; parts.forEach(p => { o.set(p, k); k += p.length; }); return o; }
 function peaksOf(d, per = 256) { const n = Math.ceil(d.length / per), mn = new Float32Array(n), mx = new Float32Array(n); for (let i = 0; i < n; i++) { let a = 1e9, b = -1e9; for (let k = i * per, e = Math.min(d.length, k + per); k < e; k++) { const v = d[k]; if (v < a) a = v; if (v > b) b = v; } mn[i] = a; mx[i] = b; } return { mn, mx, per }; }
 function recEnd() {
@@ -2005,15 +2033,17 @@ function sample() {
   STAT.centsHist.push(AN.f0 ? AN.cents : null); if (STAT.centsHist.length > 240) STAT.centsHist.shift();
   if (AN.active) { STAT.activeS += .1; STAT.actRms.push(AN.rms); if (STAT.actRms.length > 3000) STAT.actRms.shift(); } else if (AN.rms < -45) { STAT.noise.push(AN.rms); if (STAT.noise.length > 600) STAT.noise.shift(); }
 }
-bus.on('tap:di', m => {
-  if (!m.onset) return; AN.onsetT = m.t; STAT.onsets++; bus.emit('onset', m);
+bus.on('tap:di', m => anOnset(m, 'g'));
+bus.on('tap:vox', m => anOnset(m, 'v'));
+function anOnset(m, who) {
+  if (!m.onset) return; const f = CFG.anSrc || 'g'; if (f !== 'b' && f !== who) return; AN.onsetT = m.t; STAT.onsets++; bus.emit('onset', m);
   if (T.playing && T.q.length) {
     const g = 16 / (CFG.timingGrid || 4) / 4 || 1, want = CFG.timingGrid || 2; /* grid: slots per grid step */
     const step = want === 4 ? 1 : want === 2 ? 2 : 4, tt = m.t - rttMs() / 1000; let best = null, bd = 1e9;
     for (const e of T.q) { if (e.slot < 0 || e.slot % step) continue; const d = tt - e.time; if (Math.abs(d) < Math.abs(bd)) { bd = d; best = e; } }
     if (best && Math.abs(bd) < slotDur() * step * .5) { STAT.timing.push(bd * 1000); if (STAT.timing.length > 800) STAT.timing.shift(); bus.emit('timing', bd * 1000); }
   }
-});
+}
 function statsSnapshot() {
   const ca = STAT.noteCents.map(n => n.abs), tm = STAT.timing;
   return { notes: STAT.notes, centsAbs: ca.length ? +mean(ca).toFixed(1) : null, timingMean: tm.length ? +mean(tm).toFixed(1) : null, timingSD: tm.length > 2 ? +sd(tm).toFixed(1) : null, key: AN.key ? pcName(AN.key[0].root) + (AN.key[0].minor ? 'm' : '') : null };
@@ -2419,7 +2449,7 @@ function buildIO(p) {
   bus.on('latency', r => { UI.latRes.textContent = 'Measured ' + r.m.toFixed(2) + ' ms · σ ' + r.s.toFixed(2) + ' ms · n=' + r.n; offs.value = CFG.rtt; });
   UI.midiList = h('div', { class: 'small muted' }, 'MIDI not enabled.'); bus.on('midi', renderMidi);
   p.append(
-    h('div', { class: 'card' }, h('h4', {}, 'Audio input ', h('button', { class: 'btn sm', title: 'Re-scan devices (asks for microphone permission if needed so device names appear)', onclick: refreshInputs }, '↻')), h('div', { class: 'card-b' }, UI.inSel, UI.inStat = h('div', { class: 'tiny', style: { marginTop: '4px', lineHeight: 1.4 } }), UI.diag = h('pre', { class: 'tiny', style: { whiteSpace: 'pre-wrap', margin: '6px 0 0', padding: '6px', border: '1px dashed var(--line2)', borderRadius: '6px', display: 'none', font: '600 10px/1.45 var(--mono)' } }), h('button', { class: 'btn sm', style: { marginTop: '6px' }, onclick: () => diagnoseInputs(true) }, '🩺 Diagnose devices'), h('div', { style: { height: '8px' } }), chSeg, h('div', { style: { height: '8px' } }), h('div', { class: 'row' }, h('button', { class: 'btn sm', onclick: autoDetectChannel }, '⚡ Auto-detect channel'), mon), h('div', { class: 'row', style: { marginTop: '8px', justifyContent: 'center' } }, trim.el))),
+    h('div', { class: 'card' }, h('h4', {}, 'Audio input ', h('button', { class: 'btn sm', title: 'Re-scan devices (asks for microphone permission if needed so device names appear)', onclick: refreshInputs }, '↻')), h('div', { class: 'card-b' }, UI.inSel, UI.inStat = h('div', { class: 'tiny', style: { marginTop: '4px', lineHeight: 1.4 } }), UI.diag = h('pre', { class: 'tiny', style: { whiteSpace: 'pre-wrap', margin: '6px 0 0', padding: '6px', border: '1px dashed var(--line2)', borderRadius: '6px', display: 'none', font: '600 10px/1.45 var(--mono)' } }), h('button', { class: 'btn sm', style: { marginTop: '6px' }, onclick: () => diagnoseInputs(true) }, '🩺 Diagnose devices'), h('div', { style: { height: '8px' } }), h('div', { class: 'row' }, h('button', { class: 'btn sm', title: 'Strum the guitar: finds which interface input it is on', onclick: autoDetectChannel }, '⚡ Auto-detect guitar channel'), mon), h('div', { class: 'row', style: { marginTop: '8px', justifyContent: 'center' } }, trim.el))),
     h('div', { class: 'card' }, h('h4', {}, 'Audio output'), h('div', { class: 'card-b' }, UI.outSel, h('div', { class: 'muted tiny', style: { marginTop: '6px' } }, 'Output device selection needs a recent Chromium browser (AudioContext.setSinkId).'))),
     h('div', { class: 'card' }, h('h4', {}, 'Latency lab'), h('div', { class: 'card-b' }, UI.lat2, h('div', { class: 'hr' }), h('button', { class: 'btn sm primary', onclick: measureRTT }, '⏱ Run loopback test'), h('div', { style: { height: '6px' } }), UI.latRes, h('div', { class: 'row', style: { marginTop: '6px' } }, h('span', { class: 'small' }, 'RTT used for alignment (ms):'), offs), h('p', { class: 'tiny muted' }, 'Patch a cable from the interface’s Line Out into an input (or hold a mic near a speaker). The test emits six 8 ms chirps and cross-correlates them to find the true round trip. That value shifts recorded takes so they land on the grid, and corrects timing statistics.'))),
     h('div', { class: 'card' }, h('h4', {}, 'MIDI controllers'), h('div', { class: 'card-b' }, UI.midiList, h('div', { class: 'row', style: { marginTop: '6px' } }, h('button', { class: 'btn sm', onclick: initMIDI }, 'Enable MIDI')), h('p', { class: 'tiny muted' }, 'Right-click any knob, then move a CC to bind it (wah pedal, whammy, faders…). Program Change selects tones.'))),
@@ -2560,7 +2590,7 @@ const dbw = d => clamp((d + 60) / 60, 0, 1) * 100 + '%';
 const bufs = {}; const getBuf = (a, k) => bufs[k] || (bufs[k] = new Float32Array(a.fftSize));
 function peakOf(an, k, last = 2048) { const b = getBuf(an, k); if (b.length !== an.fftSize) bufs[k] = new Float32Array(an.fftSize); an.getFloatTimeDomainData(bufs[k]); let pk = 0, e = 0; const n = Math.min(last, bufs[k].length), s = bufs[k].length - n; for (let i = s; i < bufs[k].length; i++) { const v = bufs[k][i], a = Math.abs(v); if (a > pk) pk = a; e += v * v; } return { pk: dB(pk), rms: dB(Math.sqrt(e / n)) }; }
 function updateMeters() {
-  if (!E.ready) return;
+  if (!E.ready) return; if (typeof chMeters === 'function') chMeters();
   [['mIn', E.anaDI], ['mRig', E.anaRig], ['mMaster', E.anaMaster]].forEach(([id, an]) => { const m = peakOf(an, id), u = UI[id]; u.i.style.width = dbw(m.rms); u.hold = Math.max(m.pk, u.hold - .6); u.u.style.left = dbw(Math.max(u.hold, -60)); u.v.textContent = 'pk ' + (m.pk < -90 ? '−∞' : m.pk.toFixed(1)) + ' · rms ' + (m.rms < -90 ? '−∞' : m.rms.toFixed(1)); if (id === 'mIn' && m.pk > -.5) UI.clip.className = 'led bad'; }); laneMeters();
   const g = $('#gainhint'); if (g && E.hasInput) g.textContent = AN.peak > -2 ? '⚠ Too hot — lower the interface gain or trim.' : AN.active && AN.peak < -30 ? 'Signal is low — raise gain (aim DI peaks around −12…−6 dBFS).' : 'Aim for DI peaks around −12…−6 dBFS.';
 }
@@ -3184,7 +3214,7 @@ function paintFret(force) {
   const now = performance.now(), cams = VIS.cands.filter(c => now - c.t < 500);
   FB.nodes.forEach(row => row.forEach(nd => {
     const inS = FB.scPcs.has(nd.pc), inC = chordPcs.has(nd.pc), show = FB.mode === 'scale' ? inS : FB.mode === 'chord' ? inC : FB.mode === 'both' ? (inS || inC) : false;
-    const mm = mkMap.get(nd.st + ':' + nd.n) || {}, pbA = Math.max(mm.hit || 0, mm.pin || 0), live = (AN.midi != null && AN.midi === nd.midi) || pbA > .02, camHit = cams.some(c => c.st === nd.st && c.fret === nd.n);
+    const mm = mkMap.get(nd.st + ':' + nd.n) || {}, pbA = Math.max(mm.hit || 0, mm.pin || 0), live = (AN.midi != null && CFG.anSrc !== 'v' && AN.midi === nd.midi) || pbA > .02, camHit = cams.some(c => c.st === nd.st && c.fret === nd.n);
     const gA = mm.ghost || 0, vA = mm.voice || 0; nd.g.style.display = (show || live || camHit || gA || vA) ? '' : 'none'; nd.gh.setAttribute('opacity', gA); nd.vo.setAttribute('opacity', vA); if (!show && !live && !camHit && !gA && !vA) return;
     const isRoot = nd.pc === root, isChordRoot = chordRoot != null && nd.pc === chordRoot && FB.mode !== 'scale'; const hl = FB.mode === 'both' ? inC : (FB.mode === 'chord' ? inC : isRoot);
     nd.poly.setAttribute('fill', isRoot || isChordRoot ? 'var(--accent)' : 'var(--panel2)'); nd.poly.setAttribute('stroke', inC && FB.mode === 'both' ? 'var(--accent2)' : 'var(--accent)'); nd.poly.setAttribute('opacity', show ? 1 : .35); nd.poly.setAttribute('stroke-width', hl && !isRoot ? 2.5 : 1.5);
@@ -3201,7 +3231,7 @@ function buildVisPane() {
   const p = PANES.vis; p.classList.add('flex');
   const bar = h('div', { class: 'row', style: { gap: '8px', marginBottom: '8px', flexWrap: 'wrap' } },
     h('div', { class: 'seg' }, VMODES.map(([k, n]) => h('button', { class: k === VZ.mode ? 'on' : '', 'data-m': k, onclick: e => { vzSetMode(k); $$('.seg [data-m]', bar).forEach(b => b.classList.toggle('on', b === e.target)); } }, n))),
-    h('select', { class: 'in', style: { width: 'auto', fontFamily: 'var(--sans)' }, title: 'Analysis source', onchange: e => { VZ.src = e.target.value; } }, [['auto', 'Source: auto (follows playback)'], ['rig', 'Source: rig output'], ['master', 'Source: master mix'], ['di', 'Source: dry DI']].map(([v, n]) => h('option', { value: v }, n))),
+    h('select', { class: 'in', style: { width: 'auto', fontFamily: 'var(--sans)' }, title: 'Analysis source', onchange: e => { VZ.src = e.target.value; } }, [['auto', 'Source: auto (follows playback)'], ['rig', 'Source: guitar after the rig'], ['master', 'Source: master mix'], ['di', 'Source: what the detector hears'], ['vox', 'Source: vocal microphone']].map(([v, n]) => h('option', { value: v }, n))),
     h('button', { class: 'btn sm' + (VZ.cam ? ' on' : ''), id: 'vzCamBtn', title: 'Put yourself center stage: turns the camera on behind the visuals', onclick: () => vzCamPress() }, '📷 Camera backdrop'), camFxBox(),
     h('button', { class: 'btn sm' + (CFG.vzNeck !== false ? ' on' : ''), id: 'vzNeckBtn', title: 'Show a small guitar neck on the visuals: what is playing, what is coming next, the note you are singing', onclick: e => { CFG.vzNeck = CFG.vzNeck === false; saveCfg(); e.currentTarget.classList.toggle('on', CFG.vzNeck !== false); } }, '🎸 Neck'),
     h('button', { class: 'btn sm', onclick: () => { const w = UI.vwrap; (document.fullscreenElement ? document.exitFullscreen() : w.requestFullscreen && w.requestFullscreen()); } }, '⛶ Stage mode'));
@@ -3212,7 +3242,7 @@ function buildVisPane() {
 const vcol = () => { const cs = getComputedStyle(document.documentElement); return { a: cs.getPropertyValue('--accent').trim(), b: cs.getPropertyValue('--accent2').trim(), c: cs.getPropertyValue('--cv3').trim(), d: cs.getPropertyValue('--cv4').trim() }; };
 /** 'auto' follows what is sounding: the mix while the song, a hum or a backing track plays, the guitar rig otherwise */
 const vzPlaying = () => T.playing || (typeof STP !== 'undefined' && STP.playing);
-function visAna() { const s = VZ.src || 'auto'; return s === 'master' || (s === 'auto' && vzPlaying()) ? E.anaMaster : s === 'di' ? E.anaDI : E.anaRig; }
+function visAna() { const s = VZ.src || 'auto'; if (s === 'vox' && E.anaVox) return E.anaVox; return s === 'master' || (s === 'auto' && vzPlaying()) ? E.anaMaster : s === 'di' ? E.anaDI : E.anaRig; }
 function drawVis(cvo, o) {
   o = o || {}; const cv = cvo || UI.vcv; if (!cv || !E.ready || (!cvo && !paneVisible('vis'))) return; const MODE = o.mode || VZ.mode; const g = cv.getContext('2d'), W = cv.width, H = cv.height, now = performance.now(), dt = Math.min(.1, (now - (VZ.last || now)) / 1000); VZ.last = now; VZ.t += dt;
   const an = visAna(); if (!an) return; if (!VZ.fd || VZ.fd.length !== an.frequencyBinCount) VZ.fd = new Float32Array(an.frequencyBinCount); an.getFloatFrequencyData(VZ.fd); const fd = VZ.fd, bh = E.ctx.sampleRate / an.fftSize;
@@ -4201,7 +4231,7 @@ async function boot() {
   document.addEventListener('visibilitychange', () => { if (!document.hidden && E.ctx && E.ctx.state === 'suspended') E.ctx.resume(); });
   if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener('devicechange', () => { listDevices(); });
   bus.emit('song');
-  if (/[?&]debug\b/.test(location.search)) window.__daily = { get S() { return S; }, PB, FB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, vzSetMode, haloDraw, HL, KS, nkNext, nkPinChord, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive };   // test hook, only with ?debug
+  if (/[?&]debug\b/.test(location.search)) window.__daily = { get S() { return S; }, PB, FB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, vzSetMode, sideShow, chSetRoles, chRoles, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive };   // test hook, only with ?debug
   projInit().catch(e => { console.warn('library', e); PRJ.ready = true; if (PRJ.wantStart) startMaybe(); });
 }
 
@@ -6117,7 +6147,7 @@ function renderHeads() {
     const solo = (get, set) => bt('S', get() ? 'on' : '', 'Solo', e => { set(!get()); e.target.classList.toggle('on', !!get()); });
     const vol = (get, set, max, def, title) => h('input', { type: 'range', min: 0, max: max || 1.4, step: .01, value: get(), title: title || 'Volume (double-click: reset)', oninput: e => set(+e.target.value), ondblclick: e => { set(def == null ? .8 : def); e.target.value = def == null ? .8 : def; } });
     if (l.type === 'live') {
-      t.append(h('span', { class: 'tag', title: 'Which interface input feeds the guitar' }, CFG.vin === 'R' ? 'In 1' : CFG.vin === 'L' ? 'In 2' : CFG.ch === 'R' ? 'In 2' : CFG.ch === 'sum' ? 'In 1+2' : 'In 1'), more);
+      t.append(h('span', { class: 'tag', title: 'Which interface input feeds the guitar (change it in I/O ▸ Channels)' }, (() => { const r = chRoles(); return r[0] === 'g' && r[1] === 'g' ? 'In 1+2' : r[0] === 'g' ? 'In 1' : r[1] === 'g' ? 'In 2' : 'Off'; })()), more);
       b.append(bt('●', 'arm' + (armedG() ? ' on' : ''), 'Arm the guitar for recording (dry DI + wet print)', e => { CFG.armG = !armedG(); saveCfg(); e.currentTarget.classList.toggle('on', armedG()); TL.dirty = true; }),
         bt('🎧', CFG.monitor ? 'on' : '', 'Hear the guitar through the app (use headphones; or use the interface’s Direct Monitor)', e => { setMonitor(!CFG.monitor); e.currentTarget.classList.toggle('on', CFG.monitor); }), lm(), vol(() => m.g, v => { m.g = v; applyMix(); }, 1.4, 1, 'Guitar monitor level'));
     } else if (l.type === 'vox') {
@@ -6196,6 +6226,11 @@ function stemLaneEnv() {
   return STM.envL = { dt, n, a, mix, sc: a.map(nrm), scm: nrm(mix) };
 }
 bus.on('track', () => { STM.envL = null; renderHeads(); tlSize(); });
+/** the two per-input level meters in I/O ▸ Channels */
+function chMeters() {
+  if (!UI.chM || !E.anaL) return;
+  [E.anaL, E.anaR].forEach((an, i) => { const bar = UI.chM[i]; if (!bar || !bar.isConnected) return; const b = (UI.chBuf || (UI.chBuf = new Float32Array(1024))); an.getFloatTimeDomainData(b); let e = 0; for (let k = 0; k < b.length; k++) e += b[k] * b[k]; bar.style.width = dbw(dB(Math.sqrt(e / b.length))); });
+}
 function spBus() { if (!STP.bus) return; tc(STP.bus.gain, STM.mute ? 0 : (STM.vol == null ? 1 : STM.vol), .015); }
 
 /* ---------- drawing ---------- */
@@ -6246,23 +6281,29 @@ function drawLanes(g, V) {
 
 /* ---------- I/O → "Guitar + vocal" card: which interface input is which, vocal trim, monitoring, polish ---------- */
 function buildVoxCard(p) {
-  const route = h('div', { class: 'seg' }), note = h('div', { class: 'tiny muted', style: { marginTop: '6px', lineHeight: 1.45 } });
+  const route = h('div', { class: 'chmx' }), follow = h('div', { class: 'seg' }), note = h('div', { class: 'tiny muted', style: { marginTop: '6px', lineHeight: 1.45 } });
   const mt = () => { const i = h('i'), u = h('u'), v = h('span', { class: 'mono tiny' }, '–∞ dB'); UI.mVox = { i, u, v, hold: -120 }; return h('div', { style: { margin: '8px 0 4px' } }, h('div', { class: 'row sp tiny muted' }, h('span', {}, 'Vocal level (post-trim)'), v), h('div', { class: 'meter' }, i, u)); };
   const trim = mkKnob({ key: 'voxTrim', label: 'Vocal Trim', min: -24, max: 36, def: 0, step: .5, unit: ' dB', onChange: v => setVoxTrim(v) });
   const tog = (label, get, set, title) => { const b = h('button', { class: 'tog' + (get() ? ' on' : ''), title, onclick: () => { set(!get()); b.classList.toggle('on', get()); } }, label); return b; };
   const sync = () => {
-    route.innerHTML = '';
-    [['off', 'Guitar only'], ['R', 'Guitar 1 · Vocal 2'], ['L', 'Vocal 1 · Guitar 2']].forEach(([v, t]) => route.append(h('button', { class: CFG.vin === v ? 'on' : '', onclick: () => { setVoxInput(v); } }, t)));
+    route.innerHTML = ''; follow.innerHTML = ''; const roles = chRoles(), nch0 = E.inSettings && E.inSettings.channelCount; UI.chM = [];
+    [0, 1].forEach(i => {
+      const sel = h('select', { class: 'in', 'aria-label': 'What input ' + (i + 1) + ' is', disabled: nch0 === 1 && i === 1, onchange: e => { const v = e.target.value; const r = chRoles(); r[i] = v; if (v === 'v') r[1 - i] = r[1 - i] === 'v' ? 'g' : r[1 - i]; chSetRoles(r[0], r[1]); if (v === 'v' && CFG.vin !== 'off') toast('Input ' + (i + 1) + ' is the vocal. Use headphones, or the interface’s Direct Monitor, to avoid feedback.', 'ok'); } },
+        [['g', '🎸 Guitar'], ['v', '🎤 Vocal'], ['o', 'Off']].map(([v, t]) => h('option', { value: v, selected: roles[i] === v }, t)));
+      const bar = h('i'); UI.chM[i] = bar;
+      route.append(h('div', { class: 'chrow', title: 'Guitar goes through the rig; Vocal goes through the vocal strip' }, h('b', {}, 'Input ' + (i + 1)), sel, h('div', { class: 'meter chm', 'aria-hidden': 'true' }, bar)));
+    });
+    [['g', 'Guitar'], ['v', 'Vocal'], ['b', 'Both']].forEach(([v, t]) => follow.append(h('button', { class: (CFG.anSrc || 'g') === v ? 'on' : '', title: v === 'g' ? 'Note detection, tuner, chords, neck and visuals follow the guitar' : v === 'v' ? 'They follow the singing voice: the neck shows the note you sing, the visuals move with your voice' : 'They follow both (works best for visuals; note detection is best with one source)', onclick: () => setAnaSource(v) }, t)));
     const nch = E.inSettings && E.inSettings.channelCount;
     note.textContent = !E.hasInput ? 'Open an input above first. A 2-channel interface (Focusrite Scarlett/Solo/2i2 and similar) shows up here as one device with two channels.'
       : nch === 1 ? 'This device is mono, so it only has one channel: the vocal can’t be split from the guitar. Choose the interface itself (not “default” or a webcam mic) in the list above.'
-        : CFG.vin === 'off' ? 'Plug the mic into one input and the guitar into the other, then choose a route. Each gets its own lane in the arrangement and its own take.'
-          : 'Guitar is on input ' + (CFG.vin === 'R' ? '1' : '2') + ', the vocal on input ' + (CFG.vin === 'R' ? '2' : '1') + '. Arm both lanes (●) and press R: both record on the same clock. Use headphones, or the interface’s Direct Monitor, to avoid feedback.';
+        : CFG.vin === 'off' ? 'Set each input to what is plugged into it. A guitar on one input and a mic on the other gives each its own lane and take; “Guitar” on both sums them into one guitar.'
+          : 'Guitar and vocal are on separate inputs. Arm both lanes (●) and press R: both record on the same clock. Use headphones, or the interface’s Direct Monitor, to avoid feedback.';
   };
-  const card = h('div', { class: 'card' }, h('h4', {}, 'Guitar + vocal', h('span', { class: 'badge' }, 'two inputs')), h('div', { class: 'card-b' }, route, note, mt(),
+  const card = h('div', { class: 'card' }, h('h4', {}, 'Channels'), h('div', { class: 'card-b' }, route, h('div', { class: 'row sp', style: { margin: '8px 0 4px' } }, h('span', { class: 'tiny muted', title: 'Which channel the note detector, tuner, chord finder, neck and visuals listen to' }, 'Detect & visualise'), follow), note, mt(),
     h('div', { class: 'row', style: { gap: '6px', margin: '6px 0', flexWrap: 'wrap' } }, tog('Hear vocal', () => !!CFG.voxMon, v => { CFG.voxMon = v; saveCfg(); applyMix(); renderHeads(); }, 'Monitor the vocal through the app (headphones only)'), tog('Vocal polish', () => CFG.voxPolish !== false, v => { CFG.voxPolish = v; saveCfg(); voxPolishApply(); }, 'High-pass at 90 Hz and gentle compression on the vocal track')),
     h('div', { class: 'row', style: { justifyContent: 'center' } }, trim.el)));
-  trim.set(CFG.voxTrim || 0); sync(); bus.on('route', sync); bus.on('input', sync); bus.on('route', renderHeads);
+  UI.chSync = sync; trim.set(CFG.voxTrim || 0); sync(); bus.on('route', sync); bus.on('input', sync); bus.on('route', renderHeads);
   const first = p.firstElementChild; if (first) first.after(card); else p.append(card);
 }
 /** live level meters in the Guitar and Vocal lane headers, and the Vocal card */
@@ -6946,9 +6987,13 @@ function aboutBlock() {
     h('div', { class: 'ab-me ab-story' },
       h('h4', {}, 'Made for creators.'),
       h('p', {}, 'My mom put a guitar in my hands when I was five. It changed my life.'),
-      h('p', {}, 'I didn’t grow up with a lot of instruments, gear, or technology, so music taught me something else along the way: be resourceful, experiment, and don’t let what you don’t have get in the way of what you can create.'),
-      h('p', {}, 'Years later, I’m still making songs, but I’m also a software engineer and a dad. the-daily.studio is where those parts of my life come together.'),
-      h('p', {}, 'I built the kind of place I wish I’d had growing up. Somewhere to plug in a guitar, chase a melody, explore a sound, understand a song, or capture an idea before it disappears.'),
+      h('p', {}, 'I didn’t grow up surrounded by instruments, studios, or technology. What I had was curiosity, persistence, and a desire to make music anyway.'),
+      h('p', {}, 'the-daily.studio is built around that same idea.'),
+      h('p', {}, 'It’s a place to explore sounds, understand songs, develop your ear, and capture ideas while inspiration is still fresh. The tools are simple, practical, and designed for people who want to create more than they want to learn software.'),
+      h('p', {}, 'Built by a musician, software engineer, and dad who still believes great ideas can start with a guitar and a little curiosity.'),
+      h('p', {}, 'Because sometimes all it takes is one spark, one melody, or one small breakthrough to change the direction of a day, a song, or even a life.'),
+      h('p', {}, 'May this bring you joy!'),
+      h('p', {}, 'Welcome to the-daily.studio'),
       h('p', { class: 'ab-sig' }, '— Tehau.'),
       h('div', { class: 'row', style: { gap: '6px', flexWrap: 'wrap' } }, BRAND.support ? link('☕ ' + BRAND.supportLabel, BRAND.support, 'primary') : '', link('GitHub', BRAND.github), link('LinkedIn', BRAND.linkedin), link('The Daily', BRAND.journal), link('Source & issues', BRAND.repo))),
     h('details', { class: 'ab-cr' }, h('summary', {}, 'Credits & licences'),
@@ -7638,6 +7683,7 @@ function nkNext() {
 function nkVoice(now) {
   let m = null;
   if (HUM.rec && HUM.live && now - HUM.live.t < 350) m = HUM.live.m;
+  else if (CFG.anSrc === 'v' && AN.active && AN.midi != null && !T.playing) m = AN.midi;   // singing live, with the detector following the vocal
   else if (HUM.hear && HUM.hearT0 && HUM.an) { const tt = (now - HUM.hearT0) / 1000, n = HUM.an.notes.find(x => tt >= x.t && tt < x.t + x.d); if (n) m = n.m; }
   if (m == null) return [];
   const lo = S.tuning[0] + S.capo; while (m < lo) m += 12; while (m > lo + 38) m -= 12;
@@ -7708,7 +7754,7 @@ function haloSpark(midi, v, kind) {
   if (midi == null) return; HL.parts.push({ pc: ((midi % 12) + 12) % 12, v: v || .8, k: kind || 'song', t0: performance.now(), spin: (Math.random() - .5) * .6, oct: clamp((midi - 36) / 48, 0, 1) });
   if (HL.parts.length > 140) HL.parts.splice(0, HL.parts.length - 140);
 }
-bus.on('onset', () => { if (!T.playing && AN.midi != null && AN.active) haloSpark(AN.midi, clamp((AN.rms + 50) / 40, .3, 1), 'live'); });
+bus.on('onset', () => { if (!T.playing && AN.midi != null && AN.active) haloSpark(AN.midi, clamp((AN.rms + 50) / 40, .3, 1), CFG.anSrc === 'v' ? 'voice' : 'live'); });
 function haloChords() {
   if (!HL.dirty) return; HL.dirty = false; const seen = new Map(), seq = [];
   (S.sections || []).forEach(sec => sec.bars.forEach(b => barChords(b).forEach(sym => { const c = parseChord(sym); if (!c) return; if (!seen.has(sym)) seen.set(sym, { sym, c }); seq.push(sym); })));
@@ -7758,7 +7804,7 @@ function haloDraw(g, W, H, X) {
   // notes spiral in toward the player
   HL.parts = HL.parts.filter(q => now - q.t0 < 2300);
   HL.parts.forEach(q => { const u = (now - q.t0) / 2300, e = haloEase(u), a = FANG(q.pc) + rot + q.spin * u * 5 + u * u * 3.2, rad = .92 - .74 * e, p = P(a, rad, q.oct * .16 * (1 - e)), r0 = Rx * (.008 + .016 * q.v) * (1 - u * .6) * p.k;
-    add(p.z, (g, pass) => { if ((p.z > 0) !== !!pass) return; g.globalAlpha = Math.max(0, 1 - u * u) * (pass ? 1 : .75); g.fillStyle = q.k === 'live' ? '#ff5fc8' : pcCol(q.pc, 1, 70); g.shadowColor = g.fillStyle; g.shadowBlur = 12; g.beginPath(); g.arc(p.x, p.y, r0, 0, 6.3); g.fill(); g.shadowBlur = 0; g.globalAlpha = 1; }); });
+    add(p.z, (g, pass) => { if ((p.z > 0) !== !!pass) return; g.globalAlpha = Math.max(0, 1 - u * u) * (pass ? 1 : .75); g.fillStyle = q.k === 'voice' ? '#ff5fc8' : pcCol(q.pc, 1, 70); g.shadowColor = g.fillStyle; g.shadowBlur = 12; g.beginPath(); g.arc(p.x, p.y, r0, 0, 6.3); g.fill(); g.shadowBlur = 0; g.globalAlpha = 1; }); });
   // a beat ring that breathes out from the player
   if (pulse > .02) add(0, (g, pass) => { const rr = (1 - pulse) * .95; g.strokeStyle = mixc(C.b, C.a, 1 - pulse, pulse * .55); g.lineWidth = 2 + pulse * 3; g.beginPath(); g.ellipse(cx, cy, rr * Rx, rr * Ry, 0, pass ? 0 : Math.PI, pass ? Math.PI : Math.PI * 2); g.stroke(); });
   items.sort((p, q) => p.z - q.z);
