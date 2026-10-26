@@ -146,7 +146,7 @@ function wav(L, sr) { const n = L.length, b = Buffer.alloc(44 + n * 2); b.write(
     await ap.addInitScript(() => { window.__gum = 0; const md = navigator.mediaDevices, g = md.getUserMedia.bind(md); md.getUserMedia = c => { if (c && c.audio) window.__gum++; return g(c).then(st => { (window.__st = window.__st || []).push(st); return st; }); }; });
     await ap.goto(BASE); await wait(3500);
     ok(await ap.evaluate(() => window.__gum) === 0 && !!(await ap.$('#boot')), 'nothing asks for the microphone on load; the start overlay waits for you');
-    ok(/Start with camera and mic off/.test(await ap.$eval('#bootNoMic', e => e.textContent)), 'the first choice is to start with the microphone off');
+    ok(/Begin in the studio/.test(await ap.$eval('#bootNoMic', e => e.textContent)) && /Begin on stage/.test(await ap.$eval('#bootStage', e => e.textContent)), 'the first choice is a route: the studio (no camera) or the stage (camera and visuals)');
     await ap.evaluate(() => document.getElementById('bootNoMic').click()); await wait(2000);
     ok(await ap.evaluate(() => window.__gum) === 0 && /No input/.test(await ap.$eval('.aud .lbl', e => e.textContent)), 'starting leaves the microphone off and the header says so');
     await ap.click('.aud'); await wait(400); ok(await ap.$eval('#audio', d => d.open), 'the header Audio button opens the audio panel');
@@ -168,8 +168,7 @@ function wav(L, sr) { const n = L.length, b = Buffer.alloc(44 + n * 2); b.write(
     const hero = await hp.$('#originsHum'); ok(!!hero, 'the first screen offers "Hum or sing" before anything else');
     if (hero) { await hero.click(); await wait(500); }
     ok(await hp.evaluate(() => !!document.getElementById('hum') && window.__gum === 0), 'the hum screen opens without asking for the microphone');
-    ok(await hp.evaluate(() => document.getElementById('humStage').checked), 'center stage (camera, me in front) is ticked by default on the hum screen');
-    await hp.evaluate(() => { document.getElementById('humStage').click(); });   // camera off for this run
+    ok(await hp.evaluate(() => !document.getElementById('humStage').checked), 'going on stage (camera, me in front) is not ticked by default in the studio route');
     await hp.click('#humGo'); await wait(2500);
     ok(await hp.evaluate(() => window.__gum === 1 && !!document.getElementById('humStop')), 'pressing the button asks for the microphone once and starts listening');
     await hp.keyboard.press('Control+.'); await wait(700);
@@ -272,14 +271,16 @@ ok(he.length === 0, 'hum to song runs without script errors' + (he.length ? ' ' 
     ok(ne.length === 0, 'the adaptive studio runs without script errors' + (ne.length ? ' ' + ne[0] : '')); await nctx.close(); }
 
 
-  // the default start: pressing a Start button puts you on the stage (camera backdrop on Hex Resonance) and I/O is the first left tab
+  // the stage route: choosing it puts you on the stage (camera backdrop on Hex Resonance) and I/O is the first left tab; the studio route never touches the camera
   { const dctx = await browser.newContext({ viewport: { width: 1500, height: 900 }, permissions: ['microphone', 'camera'] }); await dctx.addInitScript(() => { try { localStorage.setItem('fw.started', 'true'); } catch (e) { } });
     await dctx.route(/jsdelivr|googleapis/, r => r.abort()); const dp = await dctx.newPage(); await dp.goto(BASE + '?debug'); await wait(2500);
     ok(await dp.evaluate(() => !window.__daily.CAM.on), 'nothing touches the camera before a button is pressed');
     { const lt = await dp.evaluate(() => document.querySelector('#left .side-tabs .tab.on').dataset.id); ok(lt === 'io', 'the left rail opens on I/O (audio and camera inputs) instead of Tones (' + lt + ')'); }
-    await dp.evaluate(() => document.getElementById('bootGo').click()); await wait(4500);
-    const DS = await dp.evaluate(() => { const D = window.__daily; return { cam: D.CAM.on, vz: D.VZ.cam, mode: D.VZ.mode, tab: !!document.querySelector('#dock .tab.on[data-id="vis"]'), btn: document.getElementById('ioCamBtn') && document.getElementById('ioCamBtn').classList.contains('on'), look: D.CFG.camFx }; });
-    ok(DS.cam && DS.vz && DS.mode === 'hex' && DS.tab && DS.btn && DS.look === 'person', 'Start and connect starts the camera backdrop on Hex Resonance, me in front (' + JSON.stringify(DS) + ')');
+    await dp.evaluate(() => document.getElementById('bootGo').click()); await wait(3500);
+    ok(await dp.evaluate(() => !window.__daily.CAM.on && window.__daily.CFG.route === 'studio' && !document.body.classList.contains('vz-imm')), 'Start and connect my input is the studio route: no camera, not full-screen');
+    await dp.evaluate(() => document.getElementById('vzGoStage').click()); await wait(4500);
+    const DS = await dp.evaluate(() => { const D = window.__daily; return { cam: D.CAM.on, vz: D.VZ.cam, mode: D.VZ.mode, tab: !!document.querySelector('#dock .tab.on[data-id="vis"]'), btn: document.getElementById('ioCamBtn') && document.getElementById('ioCamBtn').classList.contains('on'), look: D.CFG.camFx, route: D.CFG.route }; });
+    ok(DS.cam && DS.vz && DS.mode === 'hex' && DS.tab && DS.btn && DS.look === 'person' && DS.route === 'stage', '🎥 Go on stage starts the camera backdrop on Hex Resonance, me in front (' + JSON.stringify(DS) + ')');
     await dp.evaluate(() => document.getElementById('ioCamBtn').click()); await wait(600);
     ok(await dp.evaluate(() => !window.__daily.CAM.on && window.__daily.CFG.humStage === false), 'the camera button in I/O turns it off and the choice is remembered');
     await dctx.close(); }
@@ -293,12 +294,23 @@ ok(he.length === 0, 'hum to song runs without script errors' + (he.length ? ' ' 
     ok(await fp.evaluate(() => { const b = window.__daily.S.band; return !b.drumsOn && !b.bassOn && !b.compOn && !b.leadOn; }), 'a new blank song starts with the band off (playback is only what you record)');
     await fp.close(); await fctx.close();
     const gctx = await browser.newContext({ viewport: { width: 1500, height: 900 }, permissions: ['microphone', 'camera'] }); await gctx.route(/jsdelivr|googleapis/, r => r.abort());
-    const gp = await gctx.newPage(); await gp.goto(BASE + '?debug'); await wait(2500); await gp.evaluate(() => document.getElementById('bootHum').click()); await wait(4500);
+    const gp = await gctx.newPage(); await gp.goto(BASE + '?debug'); await wait(2500); await gp.evaluate(() => document.getElementById('bootStage').click()); await wait(4500);
     const G1 = await gp.evaluate(() => ({ panel: !!document.querySelector('#humbar[data-mode="start"]'), imm: document.body.classList.contains('vz-imm'), cam: window.__daily.CAM.on, origins: !!document.getElementById('origins') }));
-    ok(G1.panel && G1.imm && G1.cam && !G1.origins, 'Begin: full-screen stage, camera on, one start panel (' + JSON.stringify(G1) + ')');
+    ok(G1.panel && G1.imm && G1.cam && !G1.origins, 'Begin on stage: full-screen stage, camera on, one start panel (' + JSON.stringify(G1) + ')');
     await gp.evaluate(() => document.getElementById('vzhNew').click()); await wait(1500);
     ok(await gp.evaluate(() => new Promise(res => { const r = indexedDB.open('the-daily-songs'); r.onsuccess = () => { const t = r.result.transaction('projects').objectStore('projects').count(); t.onsuccess = () => res(t.result === 1); }; r.onerror = () => res(false); })), '＋ New song on the stage reuses the untouched page instead of piling up empty songs');
-    await gp.close(); await gctx.close(); }
+    await gp.close(); await gctx.close();
+    // the studio route never asks for the camera or goes full-screen, and the route is remembered
+    const vctx = await browser.newContext({ viewport: { width: 1500, height: 900 }, permissions: ['microphone', 'camera'] }); await vctx.route(/jsdelivr|googleapis/, r => r.abort());
+    const vp = await vctx.newPage(); await vp.goto(BASE + '?debug'); await wait(2500);
+    ok(await vp.evaluate(() => document.getElementById('bootNoMic').classList.contains('primary') && !document.getElementById('bootStage').classList.contains('primary')), 'the studio route is the default first choice');
+    await vp.evaluate(() => document.getElementById('bootNoMic').click()); await wait(4500);
+    const V1 = await vp.evaluate(() => { const D = window.__daily; return { cam: D.CAM.on, route: D.CFG.route, imm: document.body.classList.contains('vz-imm'), panel: !!document.querySelector('#humbar[data-mode="start"]'), stageBox: document.getElementById('humStage') ? document.getElementById('humStage').checked : null, goBtn: !!document.getElementById('vzGoStage') }; });
+    ok(!V1.cam && V1.route === 'studio' && !V1.imm && V1.panel && V1.goBtn, 'Begin in the studio: start panel, no camera, not full-screen, a Go on stage button is there (' + JSON.stringify(V1) + ')');
+    await vp.evaluate(() => document.getElementById('vzGoStage').click()); await wait(3500);
+    await vp.reload(); await wait(2500);
+    ok(await vp.evaluate(() => document.getElementById('bootStage').classList.contains('primary') && window.__daily.CFG.route === 'stage'), 'the route you used last is highlighted on the next visit');
+    await vp.evaluate(() => { window.__daily.CFG.route = 'studio'; }); await vp.close(); await vctx.close(); }
   // camera looks: edges-in and the person cut-out (a stub segmenter stands in for the downloadable model)
   { const cp = await ctx0.newPage(), ce = []; cp.on('pageerror', e => ce.push(e.message)); await cp.goto(BASE + '?debug'); await wait(2200);
     await cp.evaluate(() => { const b = document.querySelector('#bootGo') || document.querySelector('#bootNoMic'); if (b) b.click(); }); await wait(1800);

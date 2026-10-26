@@ -58,6 +58,15 @@ bus.on('dock', id => { const c = typeof id === 'string' ? id : DOCK.cur; if (c &
    "Start with camera and mic off" never does. */
 bus.on('booted', () => { if (HUM.cam0 !== true) return; if (CFG.humStage !== false && !CAM.on && DOCK.cur === 'vis') vzCenterStage(true); });
 
+/* ---------- the two routes: the studio, or the stage (full-screen visuals with the camera) ---------- */
+function setRoute(r) { CFG.route = r === 'stage' ? 'stage' : 'studio'; saveCfg(); bus.emit('route-pref', CFG.route); }
+/** go on stage now, from anywhere in the studio: full-screen visuals, and the camera unless you turned it off there */
+async function goOnStage() { setRoute('stage'); HUM.cam0 = true; try { await humStageGo(); } catch (e) { } }
+/** the same two-way switch wherever it is shown (Settings, I/O ▸ Camera) */
+function routeControl() {
+  const seg = h('div', { class: 'seg', role: 'radiogroup', 'aria-label': 'Where to start' }), sync = () => { seg.innerHTML = ''; [['studio', '🎛 Studio'], ['stage', '🎥 Stage']].forEach(([v, t]) => { const on = (CFG.route === 'stage') === (v === 'stage'); seg.append(h('button', { type: 'button', role: 'radio', 'aria-checked': String(on), class: on ? 'on' : '', title: v === 'stage' ? 'Start on the stage: full-screen visuals with the camera (asked for when you start)' : 'Start in the studio: no camera', onclick: () => setRoute(v) }, t)); }); };
+  sync(); bus.on('route-pref', sync); return seg;
+}
 /** a new song starts with the band off: say so once, the first time someone presses Play on chords with nothing else to hear */
 var BAND_HINT_DONE = false;
 function bandHint() {

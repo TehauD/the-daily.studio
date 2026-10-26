@@ -66,5 +66,5 @@ function camFxBox() {
   const clr = h('input', { type: 'range', min: .25, max: .9, step: .05, value: CFG.camClear == null ? .55 : CFG.camClear, title: 'Size of the clear centre', 'aria-label': 'Size of the clear centre', style: { width: '90px' }, oninput: e => { CFG.camClear = +e.target.value; }, onchange: () => saveCfg() });
   const sync = () => { clr.style.display = (CFG.camFx || 'over') === 'edges' ? '' : 'none'; };
   const sel = h('select', { class: 'in', style: { width: 'auto', fontFamily: 'var(--sans)' }, title: 'How the camera sits with the visuals', 'aria-label': 'Camera look', onchange: e => { CFG.camFx = e.target.value; saveCfg(); if (CF.state === 'failed') CF.state = 'idle'; sync(); } }, CAMFX.map(([v, n]) => h('option', { value: v, selected: (CFG.camFx || 'over') === v }, '📷 ' + n)));
-  sync(); return h('span', { class: 'row', style: { gap: '6px' } }, sel, clr);
+  sync(); return h('span', { class: 'row camfx', style: { gap: '6px' } }, sel, clr);
 }

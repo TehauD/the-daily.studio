@@ -60,15 +60,17 @@ async function boot() {
   const say = (m, c) => { if (m) { bstat.textContent = m; bstat.style.color = c || ''; return; } const t = E.stream && E.stream.getAudioTracks()[0]; bstat.textContent = E.hasInput ? '● Audio input connected: ' + (t ? t.label : 'device') + ' — press Start' : '○ ' + (E.lastInErr || 'Microphone is off. Nothing is requested until you press a button.'); bstat.style.color = E.hasInput ? 'var(--ok)' : 'var(--warn)'; };
   const fillBootIn = () => { const cur = (E.inSettings && E.inSettings.deviceId) || ''; bsel.innerHTML = ''; const list = E.devs.in.filter(d => d.deviceId !== 'communications'); list.forEach((d, i) => bsel.append(h('option', { value: d.deviceId, selected: d.deviceId === cur }, d.label || ('Input ' + (i + 1))))); bsel.style.display = list.length ? '' : 'none'; };
   const startBtn = $('#bootGo'); startBtn.textContent = '🎙 Start and connect my input';
-  const finish = async () => { startBtn.disabled = true; startBtn.textContent = 'Starting…'; HUM.cam0 = true; try { await startAudio(); if (!E.hasInput) await pickInput(); initMIDI(); } catch (e) { console.error(e); toast('Startup problem: ' + e.message, 'bad'); } hide(); renderDevices && renderDevices(); };
+  const finish = async () => { startBtn.disabled = true; startBtn.textContent = 'Starting…'; CFG.route = 'studio'; saveCfg(); HUM.cam0 = false; try { await startAudio(); if (!E.hasInput) await pickInput(); initMIDI(); } catch (e) { console.error(e); toast('Startup problem: ' + e.message, 'bad'); } hide(); renderDevices && renderDevices(); };
   startBtn.onclick = finish;
   window.__fwAuto = (async () => {
     say();   // nothing is started or requested until you press a button (or tick “Reconnect my last input” in Audio)
     try { await listDevices(); fillBootIn(); if (CFG.autoIn && CFG.inDev) { say('Reconnecting your last input… allow the microphone when your browser asks.'); await startAudio(); await pickInput(); fillBootIn(); say(); renderDevices(); if (E.hasInput && E.ctx.state === 'running') hide(); } } catch (e) { console.warn(e); say('Could not connect: ' + e.message, 'var(--bad)'); }
   })();
   ['pointerdown', 'keydown'].forEach(ev => document.addEventListener(ev, () => { if (E.ctx && E.ctx.state === 'suspended') E.ctx.resume().catch(() => { }); }, true));
-  $('#bootHum').onclick = () => { $('#bootNoMic').onclick(); HUM.cam0 = true; };
-  $('#bootNoMic').onclick = async () => { HUM.cam0 = false; try { await startAudio(); listDevices(); } catch (e) { console.error(e); toast('Audio could not start: ' + e.message, 'bad'); } hide(); };
+  // two routes: the studio (no camera) or the stage (full-screen visuals with the camera). Nothing is requested until one is pressed.
+  const bootStart = async route => { CFG.route = route; saveCfg(); HUM.cam0 = route === 'stage'; try { await startAudio(); listDevices(); } catch (e) { console.error(e); toast('Audio could not start: ' + e.message, 'bad'); } hide(); };
+  $('#bootNoMic').onclick = () => bootStart('studio'); $('#bootStage').onclick = () => bootStart('stage');
+  if (CFG.route === 'stage') { $('#bootStage').classList.add('primary'); $('#bootNoMic').classList.remove('primary'); }
   setInterval(anaTick, 33); requestAnimationFrame(frame);
   window.addEventListener('beforeunload', () => { try { store.set('song', S); saveCfg(); } catch (e) { } });
   document.addEventListener('visibilitychange', () => { if (!document.hidden && E.ctx && E.ctx.state === 'suspended') E.ctx.resume(); });

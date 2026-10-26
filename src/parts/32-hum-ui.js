@@ -3,7 +3,8 @@
    Microphone and camera are only requested when the person presses the button.
    ============================================================ */
 const HUM = { first: false, cam0: null, ph: null, keep: false, g: null, o: { style: null, form: 'full', seed: 0, bpm: null, key: null, minor: null }, an: null, pcm: null, sr: 0, rec: null, bar: null, hear: null, r: null, busy: false };
-const humStageOn = () => CFG.humStage !== false;
+/** the stage route (full-screen visuals + camera) is chosen on the start card or in Settings; the camera inside it can be switched off (CFG.humStage) */
+const humStageOn = () => CFG.route === 'stage';
 const humFmt = s => Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0');
 
 /** Put the person on stage: the camera behind the visuals, "me in front" (green screen) by default. One tap; asks the browser for the camera only now. */
@@ -20,12 +21,12 @@ async function vzCenterStage0(on) {
   if (!CAM.on) { if (CAM.want !== 'motion' && !CAM.tracker) { CAM.want = 'motion'; if (UI.camMode) UI.camMode.value = 'motion'; } await startCam(); }
   if (!CAM.on) { VZ.cam = false; mark(); }
 }
-async function humStageGo() { try { dockGo('vis'); vzImmersive(true); await vzCenterStage(true); } catch (e) { } }
+async function humStageGo() { try { dockGo('vis'); vzImmersive(true); if (CFG.humStage !== false) await vzCenterStage(true); } catch (e) { } }
 
 /* ---------- the front screen ---------- */
 function humOpen() {
   if (HUM.rec) return; humBarClose();
-  const stage = h('input', { type: 'checkbox', checked: humStageOn(), id: 'humStage', onchange: e => { CFG.humStage = e.target.checked; saveCfg(); } });
+  const stage = h('input', { type: 'checkbox', checked: humStageOn(), id: 'humStage', onchange: e => setRoute(e.target.checked ? 'stage' : 'studio') });
   const pick = h('input', { type: 'file', accept: 'audio/*,.m4a,.mp3,.wav,.ogg,.webm,.flac', style: { display: 'none' }, onchange: e => { const f = e.target.files[0]; e.target.value = ''; if (f) { d.close(); humFromFile(f); } } });
   const devs = (E.devs.in || []).filter(d => d.deviceId !== 'communications' && d.deviceId !== 'default');
   const mic = h('select', { class: 'in', id: 'humMic', 'aria-label': 'Microphone', style: { fontFamily: 'var(--sans)', maxWidth: '100%' }, onchange: e => { CFG.inDev = e.target.value; saveCfg(); } },
@@ -35,7 +36,7 @@ function humOpen() {
     h('button', { class: 'btn primary hum-go', id: 'humGo', onclick: () => { d.close(); humRecord(); } }, '● Hum or sing'),
     h('div', { class: 'tiny muted' }, 'Your browser asks for the microphone only when you press the button. Nothing is uploaded.'),
     h('details', { class: 'boot-more' }, h('summary', {}, 'Options'), h('div', { class: 'hum-opts' },
-      h('label', { class: 'row hum-stage', style: { gap: '8px' } }, stage, h('span', {}, 'Show me on screen while I sing ', h('span', { class: 'muted' }, '(uses the camera; stays on this device)'))),
+      h('label', { class: 'row hum-stage', style: { gap: '8px' } }, stage, h('span', {}, 'Go on stage while I sing ', h('span', { class: 'muted' }, '(full-screen visuals with the camera; stays on this device)'))),
       h('label', { class: 'pd-f' }, h('span', {}, 'Microphone'), mic),
       h('div', {}, h('button', { class: 'btn sm', onclick: () => pick.click() }, '📂 Use a voice memo or audio file instead'), pick))));
   const d = pdlg('hum', 'HUM TO SONG', body, { cls: 'humdlg' }); setTimeout(() => { const g = document.getElementById('humGo'); if (g) g.focus(); }, 40); return d;

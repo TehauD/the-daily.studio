@@ -95,6 +95,8 @@ function openSettings() {
       F('Device layout', sel('form', [['auto', 'Auto (fit this device)'], ['phone', 'Phone'], ['tablet', 'Tablet'], ['desktop', 'Desktop']], () => applyForm())),
       chk('On-screen tab keypad on phones and tablets', 'kpad', () => mSync()),
       chk('Reduce motion', 'reduce', applyAppearance),
+      h('h5', {}, 'Workflow'),
+      F('Start in', routeControl()),
       h('h5', {}, 'Music'),
       F('Reference pitch A4 (Hz)', num('a4', 415, 466, .1, () => bus.emit('song'))), F('Accidentals', sel('flats', [[false, 'Sharps (C#)'], [true, 'Flats (Db)']], () => { CFG.flats = String(CFG.flats) === 'true'; saveCfg(); bus.emit('song'); })),
       chk('Left-handed fretboard', 'left', () => bus.emit('fret')), F('Fretboard labels', sel('fretNames', [['notes', 'Note names'], ['degrees', 'Scale degrees'], ['frets', 'Fret numbers']], () => bus.emit('fret'))),

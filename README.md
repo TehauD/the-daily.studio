@@ -37,9 +37,9 @@ Catch an idea · find the chords · record guitar and vocals · split a track in
 
 ## What it is
 
-> **Hum a melody. Get a song.** Press **● Hum or sing**, hum 10–30 seconds, and the app finds your notes, key and tempo, writes the chords, builds intro, verses, choruses, bridge and outro, and plays it back with a band, with you on camera center stage. Then change the style, edit anything, add lyrics, or record real guitar. No account, no upload, no experience needed. See the [user guide](docs/USER_GUIDE.md#hum-to-song-start-here).
+> **Hum a melody. Get a song.** Press **● Hum or sing**, hum 10–30 seconds, and the app finds your notes, key and tempo, writes the chords, builds intro, verses, choruses, bridge and outro, and plays it back with a band, with you on camera center stage if you choose the stage route. Then change the style, edit anything, add lyrics, or record real guitar. No account, no upload, no experience needed. See the [user guide](docs/USER_GUIDE.md#hum-to-song-start-here).
 
-<p align="center"><img src="docs/screenshots/20-boot.png" alt="The first screen: a living hexagon field and one Begin button" width="860"></p>
+<p align="center"><img src="docs/screenshots/20-boot.png" alt="The first screen: a living hexagon field and two routes: the studio or the stage" width="860"></p>
 <p align="center"><img src="docs/screenshots/21-center-stage.png" alt="Center stage: you in front of the hexagons, with Hum or sing and I have a guitar" width="860"></p>
 <p align="center"><img src="docs/screenshots/22-guitar-coach.png" alt="The guitar coach teaching the first chord" width="860"></p>
 <p align="center"><img src="docs/screenshots/19-hum-stage.png" alt="Hum to Song: listening on the stage with the live note" width="860"></p>

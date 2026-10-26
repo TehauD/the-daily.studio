@@ -1370,6 +1370,8 @@ function openSettings() {
       F('Device layout', sel('form', [['auto', 'Auto (fit this device)'], ['phone', 'Phone'], ['tablet', 'Tablet'], ['desktop', 'Desktop']], () => applyForm())),
       chk('On-screen tab keypad on phones and tablets', 'kpad', () => mSync()),
       chk('Reduce motion', 'reduce', applyAppearance),
+      h('h5', {}, 'Workflow'),
+      F('Start in', routeControl()),
       h('h5', {}, 'Music'),
       F('Reference pitch A4 (Hz)', num('a4', 415, 466, .1, () => bus.emit('song'))), F('Accidentals', sel('flats', [[false, 'Sharps (C#)'], [true, 'Flats (Db)']], () => { CFG.flats = String(CFG.flats) === 'true'; saveCfg(); bus.emit('song'); })),
       chk('Left-handed fretboard', 'left', () => bus.emit('fret')), F('Fretboard labels', sel('fretNames', [['notes', 'Note names'], ['degrees', 'Scale degrees'], ['frets', 'Fret numbers']], () => bus.emit('fret'))),
@@ -1635,7 +1637,8 @@ function buildIO(p) {
   const camCard = h('div', { class: 'card' }, h('h4', {}, 'Camera'), h('div', { class: 'card-b' },
     UI.camSel2 = h('select', { class: 'in', 'aria-label': 'Camera', style: { fontFamily: 'var(--sans)' }, onchange: e => { CFG.camDev = e.target.value; saveCfg(); if (CAM.on) startCam(); } }),
     h('div', { class: 'row', style: { marginTop: '6px' } }, h('button', { class: 'btn sm' + (VZ.cam ? ' on' : ''), id: 'ioCamBtn', onclick: () => vzCamPress() }, '📷 Camera backdrop')),
-    h('div', { class: 'tiny muted', style: { marginTop: '4px' } }, 'Puts you in front of the hexagons. The picture stays on this device.')));
+    h('div', { class: 'tiny muted', style: { marginTop: '4px' } }, 'Puts you in front of the hexagons. The picture stays on this device.'),
+    h('div', { class: 'row', style: { marginTop: '8px', gap: '8px', flexWrap: 'wrap' } }, h('span', { class: 'tiny muted' }, 'Start in'), routeControl())));
   p.insertBefore(camCard, p.children[1] || null); refreshCamList();
   bus.on('devices', renderDevices); bus.on('input', renderDevices); buildVoxCard(p);
 }
@@ -2410,6 +2413,7 @@ function buildVisPane() {
   const bar = h('div', { class: 'row', style: { gap: '8px', marginBottom: '8px', flexWrap: 'wrap' } },
     h('div', { class: 'seg' }, VMODES.map(([k, n]) => h('button', { class: k === VZ.mode ? 'on' : '', 'data-m': k, onclick: e => { vzSetMode(k); $$('.seg [data-m]', bar).forEach(b => b.classList.toggle('on', b === e.target)); } }, n))),
     h('select', { class: 'in', style: { width: 'auto', fontFamily: 'var(--sans)' }, title: 'Analysis source', onchange: e => { VZ.src = e.target.value; } }, [['auto', 'Source: auto (follows playback)'], ['rig', 'Source: guitar after the rig'], ['master', 'Source: master mix'], ['di', 'Source: what the detector hears'], ['vox', 'Source: vocal microphone']].map(([v, n]) => h('option', { value: v }, n))),
+    h('button', { class: 'btn sm', id: 'vzGoStage', title: 'Full-screen visuals with the camera: you in front of the hexagons', onclick: () => goOnStage() }, '🎥 Go on stage'),
     h('button', { class: 'btn sm' + (VZ.cam ? ' on' : ''), id: 'vzCamBtn', title: 'Put yourself center stage: turns the camera on behind the visuals', onclick: () => vzCamPress() }, '📷 Camera backdrop'), camFxBox(),
     h('button', { class: 'btn sm' + (CFG.vzNeck !== false ? ' on' : ''), id: 'vzNeckBtn', title: 'Show a small guitar neck on the visuals: what is playing, what is coming next, the note you are singing', onclick: e => { CFG.vzNeck = CFG.vzNeck === false; saveCfg(); e.currentTarget.classList.toggle('on', CFG.vzNeck !== false); } }, '🎸 Neck'),
     h('button', { class: 'btn sm', onclick: () => { const w = UI.vwrap; (document.fullscreenElement ? document.exitFullscreen() : w.requestFullscreen && w.requestFullscreen()); } }, '⛶ Stage mode'));
@@ -3329,7 +3333,7 @@ function camFxBox() {
   const clr = h('input', { type: 'range', min: .25, max: .9, step: .05, value: CFG.camClear == null ? .55 : CFG.camClear, title: 'Size of the clear centre', 'aria-label': 'Size of the clear centre', style: { width: '90px' }, oninput: e => { CFG.camClear = +e.target.value; }, onchange: () => saveCfg() });
   const sync = () => { clr.style.display = (CFG.camFx || 'over') === 'edges' ? '' : 'none'; };
   const sel = h('select', { class: 'in', style: { width: 'auto', fontFamily: 'var(--sans)' }, title: 'How the camera sits with the visuals', 'aria-label': 'Camera look', onchange: e => { CFG.camFx = e.target.value; saveCfg(); if (CF.state === 'failed') CF.state = 'idle'; sync(); } }, CAMFX.map(([v, n]) => h('option', { value: v, selected: (CFG.camFx || 'over') === v }, '📷 ' + n)));
-  sync(); return h('span', { class: 'row', style: { gap: '6px' } }, sel, clr);
+  sync(); return h('span', { class: 'row camfx', style: { gap: '6px' } }, sel, clr);
 }
 
 /* >>> parts/10-main.js */
@@ -3395,15 +3399,17 @@ async function boot() {
   const say = (m, c) => { if (m) { bstat.textContent = m; bstat.style.color = c || ''; return; } const t = E.stream && E.stream.getAudioTracks()[0]; bstat.textContent = E.hasInput ? '● Audio input connected: ' + (t ? t.label : 'device') + ' — press Start' : '○ ' + (E.lastInErr || 'Microphone is off. Nothing is requested until you press a button.'); bstat.style.color = E.hasInput ? 'var(--ok)' : 'var(--warn)'; };
   const fillBootIn = () => { const cur = (E.inSettings && E.inSettings.deviceId) || ''; bsel.innerHTML = ''; const list = E.devs.in.filter(d => d.deviceId !== 'communications'); list.forEach((d, i) => bsel.append(h('option', { value: d.deviceId, selected: d.deviceId === cur }, d.label || ('Input ' + (i + 1))))); bsel.style.display = list.length ? '' : 'none'; };
   const startBtn = $('#bootGo'); startBtn.textContent = '🎙 Start and connect my input';
-  const finish = async () => { startBtn.disabled = true; startBtn.textContent = 'Starting…'; HUM.cam0 = true; try { await startAudio(); if (!E.hasInput) await pickInput(); initMIDI(); } catch (e) { console.error(e); toast('Startup problem: ' + e.message, 'bad'); } hide(); renderDevices && renderDevices(); };
+  const finish = async () => { startBtn.disabled = true; startBtn.textContent = 'Starting…'; CFG.route = 'studio'; saveCfg(); HUM.cam0 = false; try { await startAudio(); if (!E.hasInput) await pickInput(); initMIDI(); } catch (e) { console.error(e); toast('Startup problem: ' + e.message, 'bad'); } hide(); renderDevices && renderDevices(); };
   startBtn.onclick = finish;
   window.__fwAuto = (async () => {
     say();   // nothing is started or requested until you press a button (or tick “Reconnect my last input” in Audio)
     try { await listDevices(); fillBootIn(); if (CFG.autoIn && CFG.inDev) { say('Reconnecting your last input… allow the microphone when your browser asks.'); await startAudio(); await pickInput(); fillBootIn(); say(); renderDevices(); if (E.hasInput && E.ctx.state === 'running') hide(); } } catch (e) { console.warn(e); say('Could not connect: ' + e.message, 'var(--bad)'); }
   })();
   ['pointerdown', 'keydown'].forEach(ev => document.addEventListener(ev, () => { if (E.ctx && E.ctx.state === 'suspended') E.ctx.resume().catch(() => { }); }, true));
-  $('#bootHum').onclick = () => { $('#bootNoMic').onclick(); HUM.cam0 = true; };
-  $('#bootNoMic').onclick = async () => { HUM.cam0 = false; try { await startAudio(); listDevices(); } catch (e) { console.error(e); toast('Audio could not start: ' + e.message, 'bad'); } hide(); };
+  // two routes: the studio (no camera) or the stage (full-screen visuals with the camera). Nothing is requested until one is pressed.
+  const bootStart = async route => { CFG.route = route; saveCfg(); HUM.cam0 = route === 'stage'; try { await startAudio(); listDevices(); } catch (e) { console.error(e); toast('Audio could not start: ' + e.message, 'bad'); } hide(); };
+  $('#bootNoMic').onclick = () => bootStart('studio'); $('#bootStage').onclick = () => bootStart('stage');
+  if (CFG.route === 'stage') { $('#bootStage').classList.add('primary'); $('#bootNoMic').classList.remove('primary'); }
   setInterval(anaTick, 33); requestAnimationFrame(frame);
   window.addEventListener('beforeunload', () => { try { store.set('song', S); saveCfg(); } catch (e) { } });
   document.addEventListener('visibilitychange', () => { if (!document.hidden && E.ctx && E.ctx.state === 'suspended') E.ctx.resume(); });
@@ -6478,7 +6484,8 @@ function humPickStyle(an) { return an.bpm < 78 ? 'Ballad' : an.bpm > 128 ? 'Danc
    Microphone and camera are only requested when the person presses the button.
    ============================================================ */
 const HUM = { first: false, cam0: null, ph: null, keep: false, g: null, o: { style: null, form: 'full', seed: 0, bpm: null, key: null, minor: null }, an: null, pcm: null, sr: 0, rec: null, bar: null, hear: null, r: null, busy: false };
-const humStageOn = () => CFG.humStage !== false;
+/** the stage route (full-screen visuals + camera) is chosen on the start card or in Settings; the camera inside it can be switched off (CFG.humStage) */
+const humStageOn = () => CFG.route === 'stage';
 const humFmt = s => Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0');
 
 /** Put the person on stage: the camera behind the visuals, "me in front" (green screen) by default. One tap; asks the browser for the camera only now. */
@@ -6495,12 +6502,12 @@ async function vzCenterStage0(on) {
   if (!CAM.on) { if (CAM.want !== 'motion' && !CAM.tracker) { CAM.want = 'motion'; if (UI.camMode) UI.camMode.value = 'motion'; } await startCam(); }
   if (!CAM.on) { VZ.cam = false; mark(); }
 }
-async function humStageGo() { try { dockGo('vis'); vzImmersive(true); await vzCenterStage(true); } catch (e) { } }
+async function humStageGo() { try { dockGo('vis'); vzImmersive(true); if (CFG.humStage !== false) await vzCenterStage(true); } catch (e) { } }
 
 /* ---------- the front screen ---------- */
 function humOpen() {
   if (HUM.rec) return; humBarClose();
-  const stage = h('input', { type: 'checkbox', checked: humStageOn(), id: 'humStage', onchange: e => { CFG.humStage = e.target.checked; saveCfg(); } });
+  const stage = h('input', { type: 'checkbox', checked: humStageOn(), id: 'humStage', onchange: e => setRoute(e.target.checked ? 'stage' : 'studio') });
   const pick = h('input', { type: 'file', accept: 'audio/*,.m4a,.mp3,.wav,.ogg,.webm,.flac', style: { display: 'none' }, onchange: e => { const f = e.target.files[0]; e.target.value = ''; if (f) { d.close(); humFromFile(f); } } });
   const devs = (E.devs.in || []).filter(d => d.deviceId !== 'communications' && d.deviceId !== 'default');
   const mic = h('select', { class: 'in', id: 'humMic', 'aria-label': 'Microphone', style: { fontFamily: 'var(--sans)', maxWidth: '100%' }, onchange: e => { CFG.inDev = e.target.value; saveCfg(); } },
@@ -6510,7 +6517,7 @@ function humOpen() {
     h('button', { class: 'btn primary hum-go', id: 'humGo', onclick: () => { d.close(); humRecord(); } }, '● Hum or sing'),
     h('div', { class: 'tiny muted' }, 'Your browser asks for the microphone only when you press the button. Nothing is uploaded.'),
     h('details', { class: 'boot-more' }, h('summary', {}, 'Options'), h('div', { class: 'hum-opts' },
-      h('label', { class: 'row hum-stage', style: { gap: '8px' } }, stage, h('span', {}, 'Show me on screen while I sing ', h('span', { class: 'muted' }, '(uses the camera; stays on this device)'))),
+      h('label', { class: 'row hum-stage', style: { gap: '8px' } }, stage, h('span', {}, 'Go on stage while I sing ', h('span', { class: 'muted' }, '(full-screen visuals with the camera; stays on this device)'))),
       h('label', { class: 'pd-f' }, h('span', {}, 'Microphone'), mic),
       h('div', {}, h('button', { class: 'btn sm', onclick: () => pick.click() }, '📂 Use a voice memo or audio file instead'), pick))));
   const d = pdlg('hum', 'HUM TO SONG', body, { cls: 'humdlg' }); setTimeout(() => { const g = document.getElementById('humGo'); if (g) g.focus(); }, 40); return d;
@@ -6824,6 +6831,15 @@ bus.on('dock', id => { const c = typeof id === 'string' ? id : DOCK.cur; if (c &
    "Start with camera and mic off" never does. */
 bus.on('booted', () => { if (HUM.cam0 !== true) return; if (CFG.humStage !== false && !CAM.on && DOCK.cur === 'vis') vzCenterStage(true); });
 
+/* ---------- the two routes: the studio, or the stage (full-screen visuals with the camera) ---------- */
+function setRoute(r) { CFG.route = r === 'stage' ? 'stage' : 'studio'; saveCfg(); bus.emit('route-pref', CFG.route); }
+/** go on stage now, from anywhere in the studio: full-screen visuals, and the camera unless you turned it off there */
+async function goOnStage() { setRoute('stage'); HUM.cam0 = true; try { await humStageGo(); } catch (e) { } }
+/** the same two-way switch wherever it is shown (Settings, I/O ▸ Camera) */
+function routeControl() {
+  const seg = h('div', { class: 'seg', role: 'radiogroup', 'aria-label': 'Where to start' }), sync = () => { seg.innerHTML = ''; [['studio', '🎛 Studio'], ['stage', '🎥 Stage']].forEach(([v, t]) => { const on = (CFG.route === 'stage') === (v === 'stage'); seg.append(h('button', { type: 'button', role: 'radio', 'aria-checked': String(on), class: on ? 'on' : '', title: v === 'stage' ? 'Start on the stage: full-screen visuals with the camera (asked for when you start)' : 'Start in the studio: no camera', onclick: () => setRoute(v) }, t)); }); };
+  sync(); bus.on('route-pref', sync); return seg;
+}
 /** a new song starts with the band off: say so once, the first time someone presses Play on chords with nothing else to hear */
 var BAND_HINT_DONE = false;
 function bandHint() {

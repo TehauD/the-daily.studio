@@ -754,3 +754,9 @@ body[data-form=phone][data-tl=full] .tl-body{grid-template-columns:128px 1fr}
 
 /* I/O ▸ Channels */
 .chrow{display:grid;grid-template-columns:54px minmax(96px,1fr) minmax(36px,56px);gap:8px;align-items:center;margin:5px 0}.chrow b{font-size:12px}.chrow select{width:100%;min-width:0}.chrow .meter.chm{height:8px}
+
+/* the two routes on the start card */
+.boot-routes{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:0 0 4px}
+.btn.boot-route{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;padding:16px 18px;border-radius:14px;height:auto;white-space:normal}
+.btn.boot-route b{font:800 17px var(--display)}.btn.boot-route span{font:500 12.5px/1.4 var(--sans);opacity:.85}
+@media (max-width:520px){.boot-routes{grid-template-columns:1fr}}
