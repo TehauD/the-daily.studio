@@ -3,7 +3,7 @@
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.1.0';
+const VERSION = '2.2.0';
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://the-daily.studio/journal/' };
 const $ = (s, r = document) => r.querySelector(s);
@@ -75,7 +75,7 @@ const CFG = Object.assign({
   monitor: false, autoIn: false, kpad: true, rtt: null, hint: 'interactive', sr: 'auto', inDev: '', outDev: '', camDev: '', mirror: true, ch: 'auto',
   countIn: 1, metroVol: 0.5, ugWidth: 72, ugTags: true, midimap: {}, ui: 1, vq: 1, humanize: 0.15, visMode: 'hex', hfrOn: true,
   rec: { dry: true, wet: true }, fretNames: 'notes', lufsTarget: 0, gTrim: 0, ioLeveled: false, dropKind: 'track',
-  vin: 'off', armG: true, armV: true, voxMon: false, voxPolish: true, voxTrim: 0, trackSync: true, trackFill: 'all'
+  vin: 'off', armG: true, armV: true, voxMon: false, voxPolish: true, voxTrim: 0, trackSync: true, trackFill: 'all', renderFast: true
 }, store.get('cfg', {}));
 const saveCfg = () => store.set('cfg', CFG);
 
@@ -269,7 +269,13 @@ const totalBars = () => S.sections.reduce((a, s) => a + s.bars.length, 0);
 const barChords = bar => (bar.chord || '').split(/\s+/).filter(Boolean);
 const histStack = { u: [], r: [] };
 let saveT = 0;
-function snap() { return JSON.stringify(S); }
+/* One undo history for the whole song: the song itself, plus the levels, pans, effects and clips of recorded lanes and the backing track.
+   A snapshot is the JSON of { s: song, t: lane/clip state, m: backing-track mix } (tkHistGet / stmHistGet live in part 45). */
+function snap() { let t = null, m = null; try { t = tkHistGet(); m = stmHistGet(); } catch (e) { } return JSON.stringify({ s: S, t, m }); }
+function histApply(str) {
+  const o = JSON.parse(str);
+  if (o && o.s && Array.isArray(o.s.sections)) { S = o.s; try { if (o.t) tkHistSet(o.t); if (o.m) stmHistSet(o.m); applyMix(); } catch (e) { console.warn(e); } } else S = o;   // (a plain song, from an older snapshot)
+}
 function commit(push = true) {
   if (push && typeof xpEdit === 'function') xpEdit();
   if (push) { histStack.u.push(histStack.cur || snap()); if (histStack.u.length > 80) histStack.u.shift(); histStack.r.length = 0; }
@@ -277,8 +283,14 @@ function commit(push = true) {
   bus.emit('song');
   clearTimeout(saveT); saveT = setTimeout(() => { store.set('song', S); store.set('songAt', Date.now()); }, 600);
 }
-function undo() { if (!histStack.u.length) return; histStack.r.push(histStack.cur); const s = histStack.u.pop(); S = JSON.parse(s); histStack.cur = s; bus.emit('song', 'reload'); }
-function redo() { if (!histStack.r.length) return; histStack.u.push(histStack.cur); const s = histStack.r.pop(); S = JSON.parse(s); histStack.cur = s; bus.emit('song', 'reload'); }
+/** record one undo step for a change that has just been made. `before` is a snap() taken just before it. */
+function histPush(before) { if (before == null || before === snap()) return false; histStack.cur = before; commit(true); return true; }
+/** a gesture (dragging a fader) is one undo step: histBegin() on the first movement, histEnd() when it is released */
+let histGest = null;
+function histBegin() { if (histGest == null) histGest = snap(); }
+function histEnd() { if (histGest == null) return false; const b = histGest; histGest = null; return histPush(b); }
+function undo() { if (!histStack.u.length) return; histGest = null; histStack.r.push(histStack.cur); const s = histStack.u.pop(); histApply(s); histStack.cur = s; bus.emit('song', 'reload'); }
+function redo() { if (!histStack.r.length) return; histGest = null; histStack.u.push(histStack.cur); const s = histStack.r.pop(); histApply(s); histStack.cur = s; bus.emit('song', 'reload'); }
 /* tuning spelling: flat tunings (Eb, Bb…) read with flats, everything else with sharps unless the user prefers flats */
 const tunFlat = () => !!CFG.flats || (/(^|[^A-Za-z#])[A-G]b/.test(S.tuningName || '') && (S.tuningName || '').indexOf('#') < 0);
 const tunPc = m => pcName(m, tunFlat());

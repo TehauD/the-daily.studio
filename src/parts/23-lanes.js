@@ -19,11 +19,11 @@ function tlAll() {
   if (STM.ch) { add({ id: 'trk', name: 'Track', type: 'trk', c: '#7f9a9c', dh: 46 }); STMS.forEach(([, , col], i) => add({ id: 'stem:' + i, name: '♪ ' + STEM_SHORT[i], type: 'stem', idx: i, c: col, dh: 34 })); }
   add({ id: 'rhythm', name: 'Rhythm Gtr', type: 'chords', c: c[0] }); add({ id: 'lead', name: 'Lead / Tab', type: 'tab', c: c[3] }); add({ id: 'bass', name: 'Bass', type: 'bass', c: c[2] }); add({ id: 'drums', name: 'Drums', type: 'drums', c: c[1] });
   add({ id: 'live', name: 'Guitar', type: 'live', c: c[4], dh: 52 }); add({ id: 'vox', name: 'Vocal', type: 'vox', c: VOX_COL, dh: 52 });
-  TAKES.forEach(tk => add({ id: 'take:' + tk.id, name: tk.name, type: 'take', take: tk, c: tk.kind === 'vox' ? VOX_COL : c[4] }));
+  tkLeads().forEach(tk => add({ id: 'take:' + tkKey(tk), name: tk.name, type: 'take', take: tk, c: tk.kind === 'vox' ? VOX_COL : c[4] }));
   return L;
 }
 function laneDefaultOrder(L) {
-  const o = ['trk', 'stem:0', 'stem:1', 'stem:2', 'stem:3', 'rhythm', 'lead', 'bass', 'drums', 'live']; TAKES.filter(t => t.kind !== 'vox').forEach(t => o.push('take:' + t.id)); o.push('vox'); TAKES.filter(t => t.kind === 'vox').forEach(t => o.push('take:' + t.id));
+  const o = ['trk', 'stem:0', 'stem:1', 'stem:2', 'stem:3', 'rhythm', 'lead', 'bass', 'drums', 'live']; tkLeads().filter(t => t.kind !== 'vox').forEach(t => o.push('take:' + tkKey(t))); o.push('vox'); tkLeads().filter(t => t.kind === 'vox').forEach(t => o.push('take:' + tkKey(t)));
   return o.filter(id => L[id]);
 }
 /** every lane (hidden ones too) in display order */
@@ -64,7 +64,7 @@ function renderHeads() {
     const lm = () => { const el = h('div', { class: 'lmeter', title: 'Input level' }, h('i')); UI.lm[l.id] = el.firstChild; return el; };
     const mute = (get, set) => bt('M', 'mute' + (get() ? ' on' : ''), 'Mute', e => { set(!get()); e.target.classList.toggle('on', !!get()); });
     const solo = (get, set) => bt('S', get() ? 'on' : '', 'Solo', e => { set(!get()); e.target.classList.toggle('on', !!get()); });
-    const vol = (get, set, max, def, title) => h('input', { type: 'range', min: 0, max: max || 1.4, step: .01, value: get(), title: title || 'Volume (double-click: reset)', oninput: e => set(+e.target.value), ondblclick: e => { set(def == null ? .8 : def); e.target.value = def == null ? .8 : def; } });
+    const vol = (get, set, max, def, title) => h('input', { type: 'range', min: 0, max: max || 1.4, step: .01, value: get(), title: title || 'Volume (double-click: reset)', oninput: e => { histBegin(); set(+e.target.value); }, onchange: () => { histEnd(); }, ondblclick: e => { histBegin(); set(def == null ? .8 : def); e.target.value = def == null ? .8 : def; histEnd(); } });
     if (l.type === 'live') {
       t.append(h('span', { class: 'tag', title: 'Which interface input feeds the guitar (change it in I/O ▸ Channels)' }, (() => { const r = chRoles(); return r[0] === 'g' && r[1] === 'g' ? 'In 1+2' : r[0] === 'g' ? 'In 1' : r[1] === 'g' ? 'In 2' : 'Off'; })()), more);
       b.append(bt('●', 'arm' + (armedG() ? ' on' : ''), 'Arm the guitar for recording (dry DI + wet print)', e => { CFG.armG = !armedG(); saveCfg(); e.currentTarget.classList.toggle('on', armedG()); TL.dirty = true; }),
@@ -74,24 +74,24 @@ function renderHeads() {
       t.append(sel, more);
       b.append(bt('●', 'arm' + (armedV() ? ' on' : ''), 'Arm the vocal for recording', e => { if (CFG.vin === 'off') { setVoxInput('R'); } else { CFG.armV = !armedV(); saveCfg(); } e.currentTarget.classList.toggle('on', armedV()); TL.dirty = true; }),
         bt('🎧', CFG.voxMon ? 'on' : '', 'Hear the vocal through the app — headphones only, or the microphone will feed back', e => { CFG.voxMon = !CFG.voxMon; saveCfg(); applyMix(); e.currentTarget.classList.toggle('on', CFG.voxMon); }), lm(),
-        mute(() => m.m, v => { m.m = v ? 1 : 0; applyMix(); commit(false); }), solo(() => m.s, v => { m.s = v ? 1 : 0; applyMix(); commit(false); }), vol(() => m.g, v => { m.g = v; applyMix(); }, 1.4, 1, 'Vocal track level'), fxPan(() => m.p || 0, v => { m.p = v; applyMix(); }), fxChip(() => m, () => applyMix(), 'Vocal', true));
+        mute(() => m.m, v => { const bf = snap(); m.m = v ? 1 : 0; applyMix(); histPush(bf); }), solo(() => m.s, v => { const bf = snap(); m.s = v ? 1 : 0; applyMix(); histPush(bf); }), vol(() => m.g, v => { m.g = v; applyMix(); }, 1.4, 1, 'Vocal track level'), fxPan(() => m.p || 0, v => { m.p = v; applyMix(); }), fxChip(() => m, () => applyMix(), 'Vocal', true));
     } else if (l.type === 'take') {
       const tk = l.take; const vx = tk.kind === 'vox'; t.append(more);
-      b.append(mute(() => tk.mute, v => { tk.mute = v; takeLive(tk); }), solo(() => tk.solo, v => { tk.solo = v; takeLive(tk); }),
-        vx ? null : bt('RE-AMP', tk.mode === 'reamp' ? 'on' : '', 'Re-amp: play the dry DI through the CURRENT rig. Off: the wet print as recorded.', e => { tk.mode = tk.mode === 'reamp' ? 'wet' : 'reamp'; e.currentTarget.classList.toggle('on', tk.mode === 'reamp'); if (tk.mode === 'reamp' && !tk.dry) tk.mode = 'wet'; toast(tk.mode === 'reamp' ? 'Re-amp: playing dry DI through the live rig' : 'Playing the wet print as recorded'); }),
-        vol(() => Math.sqrt(tk.g == null ? 1 : tk.g), v => { tk.g = v * v; takeLive(tk); }, 2, 1, 'Take volume (up to +12 dB)'), h('input', { type: 'range', min: -1, max: 1, step: .05, value: tk.pan || 0, title: 'Pan', style: { width: '40px', flex: 'none' }, oninput: e => { tk.pan = +e.target.value; takeLive(tk); } }), vx ? fxChip(() => S.mix.vox || (S.mix.vox = { g: 1, p: 0, m: 0, s: 0 }), () => applyMix(), 'Vocal', true) : fxChip(() => tk, () => takeLive(tk), tk.name, true));
+      b.append(mute(() => tk.mute, v => { const bf = snap(); tk.mute = v; takeLive(tk); histPush(bf); }), solo(() => tk.solo, v => { const bf = snap(); tk.solo = v; takeLive(tk); histPush(bf); }),
+        vx ? '' : bt(document.body.dataset.form === 'phone' ? 'RE' : 'RE-AMP', tk.mode === 'reamp' ? 'on' : '', 'Re-amp: play the dry DI through the CURRENT rig. Off: the wet print as recorded.', e => { const bf = snap(); tk.mode = tk.mode === 'reamp' ? 'wet' : 'reamp'; e.currentTarget.classList.toggle('on', tk.mode === 'reamp'); if (tk.mode === 'reamp' && !tk.dry) tk.mode = 'wet'; tkResched(); histPush(bf); toast(tk.mode === 'reamp' ? 'Re-amp: playing dry DI through the live rig' : 'Playing the wet print as recorded'); }),
+        vol(() => Math.sqrt(tk.g == null ? 1 : tk.g), v => { tk.g = v * v; takeLive(tk); }, 2, 1, 'Take volume (up to +12 dB)'), h('input', { type: 'range', min: -1, max: 1, step: .05, value: tk.pan || 0, title: 'Pan', style: { width: '40px', flex: 'none' }, oninput: e => { histBegin(); tk.pan = +e.target.value; takeLive(tk); }, onchange: () => { histEnd(); } }), vx ? fxChip(() => S.mix.vox || (S.mix.vox = { g: 1, p: 0, m: 0, s: 0 }), () => applyMix(), 'Vocal', true) : fxChip(() => tk, () => takeLive(tk), tk.name, true));
     } else if (l.type === 'trk') {
       t.append(h('span', { class: 'tag', title: 'The loaded backing track' }, fmtT(STM.dur)), more);
-      b.append(mute(() => STM.mute, v => { STM.mute = v; spBus(); }), bt('⟲ sync', CFG.trackSync !== false ? 'on' : '', 'Track follows the transport: play / stop / seek / loop move the track with the arrangement', e => { CFG.trackSync = CFG.trackSync === false; saveCfg(); e.currentTarget.classList.toggle('on', CFG.trackSync !== false); }),
-        vol(() => STM.vol, v => { STM.vol = v; spBus(); }, 1.5, 1, 'Whole-track level'), fxChip(() => STM, () => spFx(), 'Backing track', false));
+      b.append(mute(() => STM.mute, v => { const bf = snap(); STM.mute = v; spBus(); histPush(bf); }), bt('⟲ sync', CFG.trackSync !== false ? 'on' : '', 'Track follows the transport: play / stop / seek / loop move the track with the arrangement', e => { CFG.trackSync = CFG.trackSync === false; saveCfg(); e.currentTarget.classList.toggle('on', CFG.trackSync !== false); }),
+        vol(() => STM.vol, v => { STM.vol = v; spBus(); stmDirty(); }, 1.5, 1, 'Whole-track level'), fxChip(() => STM, () => spFx(), 'Backing track', false));
     } else if (l.type === 'stem') {
       const sm = STM.mix[l.idx]; t.append(more);
-      b.append(mute(() => sm.m, v => { sm.m = v; spGains(); renderStemStrips(); TL.dirty = true; }), solo(() => sm.s, v => { sm.s = v; spGains(); renderStemStrips(); TL.dirty = true; }), vol(() => sm.g, v => { sm.g = v; spGains(); }, 1.5, 1, 'Stem level'), fxPan(() => sm.p || 0, v => { sm.p = v; spFx(); }), fxChip(() => sm, () => spFx(), l.name, false));
+      b.append(mute(() => sm.m, v => { const bf = snap(); sm.m = v; spGains(); renderStemStrips(); TL.dirty = true; histPush(bf); }), solo(() => sm.s, v => { const bf = snap(); sm.s = v; spGains(); renderStemStrips(); TL.dirty = true; histPush(bf); }), vol(() => sm.g, v => { sm.g = v; spGains(); stmDirty(); }, 1.5, 1, 'Stem level'), fxPan(() => sm.p || 0, v => { sm.p = v; spFx(); stmDirty(); }), fxChip(() => sm, () => spFx(), l.name, false));
     } else {
       t.append(more); const key = BANDMAP[l.id];
-      b.append(key ? h('button', { class: 'pw' + (S.band[key] ? ' on' : ''), 'data-k': key, title: 'Enable / disable this instrument in the band', onclick: () => toggleBand(key) }, '⏻') : null,
-        mute(() => m.m, v => { m.m = v ? 1 : 0; applyMix(); commit(false); }), solo(() => m.s, v => { m.s = v ? 1 : 0; applyMix(); commit(false); }), vol(() => m.g, v => { m.g = v; applyMix(); }),
-        h('input', { type: 'range', min: -1, max: 1, step: .05, value: m.p, title: 'Pan', style: { width: '40px', flex: 'none' }, oninput: e => { m.p = +e.target.value; applyMix(); } }), FX_TRACKS.includes(l.id) ? fxChip(() => m, () => applyMix(), l.name, true) : null);
+      b.append(key ? h('button', { class: 'pw' + (S.band[key] ? ' on' : ''), 'data-k': key, title: 'Enable / disable this instrument in the band', onclick: () => toggleBand(key) }, '⏻') : '',
+        mute(() => m.m, v => { const bf = snap(); m.m = v ? 1 : 0; applyMix(); histPush(bf); }), solo(() => m.s, v => { const bf = snap(); m.s = v ? 1 : 0; applyMix(); histPush(bf); }), vol(() => m.g, v => { m.g = v; applyMix(); }),
+        h('input', { type: 'range', min: -1, max: 1, step: .05, value: m.p, title: 'Pan', style: { width: '40px', flex: 'none' }, oninput: e => { histBegin(); m.p = +e.target.value; applyMix(); }, onchange: () => { histEnd(); } }), FX_TRACKS.includes(l.id) ? fxChip(() => m, () => applyMix(), l.name, true) : '');
     }
     if (cmp && l.type !== 'live' && l.type !== 'vox') { box.append(t); [...b.children].filter(x => x && (x.classList.contains('mute') || x.title === 'Solo' || x.classList.contains('pw'))).forEach(x => t.insertBefore(x, t.lastChild)); }
     else if (cmp) { box.append(t); [...b.children].filter(x => x && x.classList.contains('arm')).forEach(x => t.insertBefore(x, t.lastChild)); }
@@ -122,9 +122,17 @@ function laneMenu(anchor, l) {
   box.append(h('div', { class: 'lrow' }, h('span', { style: { width: '54px' } }, 'Colour'), h('div', { class: 'swatches' }, LANE_COLS.map(c => h('button', { class: 'swatch' + (c === l.c ? ' on' : ''), style: { background: c }, 'aria-label': c, onclick: () => { LN.col[l.id] = c; saveLn(); closePop(); renderHeads(); TL.dirty = true; } })))));
   box.append(h('div', { class: 'row', style: { gap: '6px', margin: '4px 0' } }, h('button', { class: 'btn sm', onclick: () => { laneStep(l.id, -1); closePop(); } }, '↑ Up'), h('button', { class: 'btn sm', onclick: () => { laneStep(l.id, 1); closePop(); } }, '↓ Down'),
     h('button', { class: 'btn sm', onclick: () => { LN.hide[l.id] = true; saveLn(); closePop(); renderHeads(); tlSize(); } }, 'Hide')));
-  if (BANDMAP[l.id]) box.append(h('div', { class: 'row', style: { gap: '6px', marginTop: '4px' } }, h('button', { class: 'btn sm', title: 'Plays the song once in real time with only this part on, and saves it', onclick: () => { closePop(); bouncePart(l.id); } }, '⤓ Save this part (WAV)')));
+  if (BANDMAP[l.id]) box.append(h('div', { class: 'row', style: { gap: '6px', marginTop: '4px' } }, h('button', { class: 'btn sm', title: 'Renders the song with only this part on, and saves it as a WAV', onclick: () => { closePop(); bouncePart(l.id); } }, '⤓ Save this part (WAV)')));
   if (l.type === 'stem') box.append(h('div', { class: 'row', style: { gap: '6px', marginTop: '4px' } }, h('button', { class: 'btn sm', onclick: () => { closePop(); stemExport(l.idx); } }, '⤓ Save this stem (WAV)')));
-  if (l.type === 'take') box.append(h('div', { class: 'row', style: { gap: '6px' } }, h('button', { class: 'btn sm', onclick: () => { closePop(); dlTake(l.take); } }, '⤓ WAV'), h('button', { class: 'btn sm', onclick: () => { closePop(); const i = TAKES.indexOf(l.take); if (i >= 0) TAKES.splice(i, 1); bus.emit('takes'); } }, '✕ Delete take'), h('button', { class: 'btn sm', onclick: () => { closePop(); dockGo('tx'); TX.src = l.take.id; txRefreshSrc(); } }, '♬ Transcribe')));
+  if (l.type === 'take') {
+    const lead = l.take, n = tkClips(lead).length, pick = () => tkPick(lead);
+    box.append(h('div', { class: 'tiny muted', style: { marginTop: '6px' } }, n > 1 ? n + ' clips in this lane' : '1 clip in this lane'),
+      h('div', { class: 'row', style: { gap: '6px', margin: '4px 0', flexWrap: 'wrap' } },
+        h('button', { class: 'btn sm', id: 'lmSplit', title: 'Cut a clip in two at the playhead (Ctrl+E)', onclick: () => { closePop(); const c = pick(); if (c) { tkSelect(c.id); tkSplit(c); } } }, '✂ Split at playhead'),
+        h('button', { class: 'btn sm', id: 'lmDup', title: 'Copy a clip so it starts where the original ends (Ctrl+D)', onclick: () => { closePop(); const c = pick(); if (c) { tkSelect(c.id); tkDup(c); } } }, '⧉ Duplicate clip'),
+        h('button', { class: 'btn sm', id: 'lmClip', title: 'Fades, reset trim, save one clip', onclick: () => { const c = pick(); if (c) { tkSelect(c.id); closePop(); setTimeout(() => tkMenu(anchor, c), 0); } } }, 'Clip options…')),
+      h('div', { class: 'row', style: { gap: '6px' } }, h('button', { class: 'btn sm', onclick: () => { closePop(); tkDownload(lead); } }, '⤓ WAV'), h('button', { class: 'btn sm', id: 'lmDelLane', onclick: () => { closePop(); tkDeleteLane(lead); } }, '✕ Delete lane'), h('button', { class: 'btn sm', onclick: () => { closePop(); dockGo('tx'); TX.src = lead.id; txRefreshSrc(); } }, '♬ Transcribe')));
+  }
   if (l.type === 'trk') box.append(h('div', { class: 'row', style: { gap: '6px' } }, h('button', { class: 'btn sm', onclick: () => { closePop(); dockGo('stems'); } }, 'Open Stems'), h('button', { class: 'btn sm bad', onclick: () => { closePop(); stemUnload(); } }, '✕ Unload')));
   if (l.type === 'live' || l.type === 'vox') box.append(h('div', { class: 'tiny muted', style: { marginTop: '4px' } }, 'Input routing and the vocal strip are in the I/O panel (left).'), h('button', { class: 'btn sm', style: { marginTop: '4px' }, onclick: () => { closePop(); sideShow('io'); } }, 'Open I/O'));
   { const fx = laneFx(l); if (fx) box.append(h('div', { class: 'row', style: { gap: '6px', marginTop: '4px' } }, h('button', { class: 'btn sm', onclick: () => { closePop(); setTimeout(() => fxPanel(anchor, fx[0], fx[1], fx[2], fx[3], () => { }), 0); } }, '🎛 Effects…'))); }
@@ -191,11 +199,7 @@ function drawLanes(g, V) {
           : (rec ? '● recording dry DI + wet print…' : armed ? 'armed · press R to record (count-in ' + CFG.countIn + ' bar)' : 'not armed — click ● to arm'); g.fillText(msg, ox + 12, y + (hh >= 40 ? hh - 12 : hh / 2));
       }
     }
-    else if (l.type === 'take') {
-      const tk = l.take, pk = tk.peaks, x0 = tk.startSec / slotDur() * sw, wpx = tk.dur / slotDur() * sw, mute = !takeAudible(tk); g.fillStyle = l.c; g.globalAlpha = mute ? .2 : .85; const amp = hh / 2 - 4, xa = Math.max(x0, ox), xb = Math.min(x0 + wpx, ox + vw);
-      for (let x = Math.floor(xa); x < xb; x++) { const t = (x - x0) / wpx, i0 = Math.floor(t * pk.mn.length), i1 = Math.max(i0 + 1, Math.floor((t + 1 / wpx) * pk.mn.length)); let mn = 1, mx = -1; for (let k = i0; k < Math.min(i1, pk.mn.length); k++) { if (pk.mn[k] < mn) mn = pk.mn[k]; if (pk.mx[k] > mx) mx = pk.mx[k]; } if (mx >= mn) g.fillRect(x, mid - mx * amp * 2.2, 1, Math.max(1, (mx - mn) * amp * 2.2)); }
-      g.globalAlpha = 1; g.strokeStyle = l.c; g.strokeRect(x0 + .5, y + 3.5, wpx, hh - 7); if (hh >= 40 && wpx > 60) { g.fillStyle = l.c; g.font = sans; g.fillText(tk.name, Math.max(x0, ox) + 6, y + 12); }
-    }
+    else if (l.type === 'take') tkDraw(g, l, { y, hh, mid, ox, vw, sw, sans });
     else if (l.type === 'trk' || l.type === 'stem') {
       const env = stemLaneEnv(); if (!env) return; const idx = l.type === 'stem' ? l.idx : -1, arr = idx < 0 ? env.mix : env.a[idx], scl = idx < 0 ? env.scm : env.sc[idx], t0 = trkT0(), sd = slotDur(), amp = hh / 2 - 3, an = STM.an;
       const sm = idx >= 0 ? STM.mix[idx] : null, aud = idx < 0 ? !STM.mute : (STM.mix.some(x => x.s) ? sm.s : !sm.m);

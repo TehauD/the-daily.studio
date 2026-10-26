@@ -154,7 +154,7 @@ function scheduleSlot(slot, time) {
   if (S.band.leadOn) fb.bar.tab.forEach(n => { if (n.s === sib) playTabNote(fb.bar, n, tt, dur); });
 }
 async function play(fromRec) {
-  if (T.playing) return; try { bandHint(); } catch (e) { } await startAudio(); const c = E.ctx; applyMix(); if (!S.sections.length || !songSlots()) { toast('Add a section with at least one bar first', 'warn'); return; }
+  if (T.playing || OFR.busy) return; try { bandHint(); } catch (e) { } await startAudio(); const c = E.ctx; applyMix(); if (!S.sections.length || !songSlots()) { toast('Add a section with at least one bar first', 'warn'); return; }
   T.rec = !!fromRec || T.rec; T.playing = true; T.ending = false; T.q = []; T.startCursor = T.cursor;
   const ci = T.rec && CFG.countIn > 0 ? CFG.countIn * spb() : 0; T.slot = T.cursor - ci; T.next = c.currentTime + .08; T.wantRec = T.rec; T.recFrom = T.cursor;
   if (!T.loopB) T.loopB = null; scheduleTakes(T.next + ci * slotDur(), T.cursor * slotDur()); trackStart(T.next + ci * slotDur(), T.cursor, true);
@@ -218,17 +218,24 @@ function recEnd() {
   if (r.g) mk('gtr', r.dry, r.wet); if (r.v) mk('vox', r.vox, null);
   if (made.length) { xpSignal(3); bus.emit('takes'); toast(made.map(t => t.name + ' (' + t.dur.toFixed(1) + ' s, peak ' + t.peak.toFixed(1) + ' dBFS)').join('  +  ') + ' recorded', 'ok'); }
 }
-function takeBuffer(tk, which) { const d = which === 'wet' ? tk.wet : tk.dry; if (!d) return null; if (!tk['_b' + which]) { const b = E.ctx.createBuffer(1, d.length, tk.sr); b.copyToChannel(d, 0); tk['_b' + which] = b; } return tk['_b' + which]; }
-const takeAudible = tk => TAKES.some(t => t.solo) ? !!tk.solo : !tk.mute;
+const TK_BUFS = new WeakMap();    // one AudioBuffer per recording, shared by every clip that plays it
+function takeBuffer(tk, which) { const d = which === 'wet' ? tk.wet : tk.dry; if (!d) return null; let c = TK_BUFS.get(d); if (!c || c.ctx !== E.ctx) { const b = E.ctx.createBuffer(1, d.length, tk.sr); b.copyToChannel(d, 0); c = { ctx: E.ctx, b }; TK_BUFS.set(d, c); } return c.b; }
+/* a lane (its first clip is the “lead”) owns the level, pan, mute, solo, re-amp switch and effects; every clip in it follows the lead */
+const takeAudible = tk => { const l = tkLead(tk); return TAKES.some(t => t.solo) ? !!l.solo : !l.mute; };
 /** live gain / mute / solo changes while the take is playing */
-function takeLive(tk) { const anySolo = TAKES.some(t => t.solo); TAKES.forEach(t => { if (t._g) tc(t._g.gain, (anySolo ? t.solo : !t.mute) ? t.g : 0, .015); }); if (tk && tk._pn) tc(tk._pn.pan, tk.pan || 0, .02); if (tk && tk._fx) tk._fx.set(tk.fx); }
+function takeLive(tk) {
+  const anySolo = TAKES.some(t => t.solo);
+  TAKES.forEach(t => { const l = tkLead(t); if (t._g) tc(t._g.gain, (anySolo ? l.solo : !l.mute) ? (l.g == null ? 1 : l.g) : 0, .015); if (t._pn && (!tk || tkLead(tk) === l)) tc(t._pn.pan, l.pan || 0, .02); if (t._fx && (!tk || tkLead(tk) === l)) t._fx.set(l.fx); });
+}
 function scheduleTakes(atTime, fromSec) {
   TAKES.forEach(tk => {
-    tk._g = null; tk._pn = null; if (tk._fx) { tk._fx.dispose(); tk._fx = null; } const vox = tk.kind === 'vox', which = tk.mode === 'reamp' ? 'dry' : 'wet', buf = takeBuffer(tk, which) || takeBuffer(tk, 'dry'); if (!buf) return;
-    const end = tk.startSec + buf.duration; if (end <= fromSec) return; const when = Math.max(atTime, atTime + (tk.startSec - fromSec)), off = Math.max(0, fromSec - tk.startSec);
-    const src = E.ctx.createBufferSource(), g = gn(takeAudible(tk) ? tk.g : 0), pn = E.ctx.createStereoPanner(); pn.pan.value = tk.pan || 0; src.buffer = buf; src.connect(g); g.connect(pn); tk._g = g; tk._pn = pn;
-    if (vox) pn.connect(E.voxStrip.in); else if (which === 'dry' && tk.mode === 'reamp') pn.connect(E.rigIn); else { tk._fx = fxStrip(E.takesIn); tk._fx.set(tk.fx); pn.connect(tk._fx.in); }
-    src.start(when, off); T.srcs.push(src);
+    tk._g = null; tk._pn = null; if (tk._fx) { tk._fx.dispose(); tk._fx = null; } const L = tkLead(tk), vox = L.kind === 'vox', which = L.mode === 'reamp' ? 'dry' : 'wet', buf = takeBuffer(tk, which) || takeBuffer(tk, 'dry'); if (!buf) return;
+    const len = tkLen(tk); if (len <= 0 || tk.startSec + len <= fromSec) return;
+    const rel = fromSec - tk.startSec, c0 = Math.max(0, rel), when = atTime + c0 - rel, tm = c => atTime + c - rel;        // c0: where in the clip we start; tm(c): when clip-second c is heard
+    const src = E.ctx.createBufferSource(), fd = gn(1), g = gn(takeAudible(tk) ? (L.g == null ? 1 : L.g) : 0), pn = E.ctx.createStereoPanner(); pn.pan.value = L.pan || 0; src.buffer = buf; src.connect(fd); fd.connect(g); g.connect(pn); tk._g = g; tk._pn = pn;
+    const [fi, fo] = tkFades(tk); if (fi > 0 || fo > 0) { const gf = c => Math.max(0, Math.min(1, fi > 0 ? c / fi : 1, fo > 0 ? (len - c) / fo : 1)), p = fd.gain; p.setValueAtTime(gf(c0), Math.max(0, when)); [fi, len - fo, len].forEach(c => { if (c > c0 + 1e-6) p.linearRampToValueAtTime(gf(c), tm(c)); }); }
+    if (vox) pn.connect(E.voxStrip.in); else if (which === 'dry' && L.mode === 'reamp') pn.connect(E.rigIn); else { tk._fx = fxStrip(E.takesIn); tk._fx.set(L.fx); pn.connect(tk._fx.in); }
+    src.start(when, tkIn(tk) + c0, len - c0); T.srcs.push(src);
   });
 }
 function stopTakes() { T.srcs.forEach(s => { try { s.stop(); } catch (e) { } }); T.srcs = []; TAKES.forEach(t => { if (t._fx) { t._fx.dispose(); t._fx = null; } }); }
@@ -243,7 +250,11 @@ function encodeWav(chs, sr, bits = 24) {
 }
 let BOUNCE = null;
 async function bounceMaster(tag) {
-  if (BOUNCE) return toast('A bounce is already running', 'warn'); await startAudio(); if (T.playing) stopPlay(true);
+  if (BOUNCE || OFR.busy) return toast('A bounce is already running', 'warn'); await startAudio(); if (T.playing) stopPlay(true);
+  if (CFG.renderFast !== false && ofrAvailable() && !(typeof SREC !== 'undefined' && SREC && SREC.on)) {
+    const ok = await bounceFast(tag); if (ok) return;                                                       // saved, or cancelled by the person
+    toast('Fast render was not available here, so this bounce runs in real time.', 'warn');
+  }
   BOUNCE = { l: [], r: [], t0: 0 }; const was = { loop: T.loop, metro: T.metro }; T.loop = false; T.metro = false; T.cursor = 0;
   toast('Bouncing master in real time…'); await play(); BOUNCE.t0 = E.ctx.currentTime + .08; E.tapMaster.on(true);
   const total = songSlots() * slotDur();

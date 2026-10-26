@@ -14,7 +14,9 @@ Clearing the site's data in your browser, or **Settings ▸ Data ▸ Reset…**,
 ## What can leave your device
 
 - **Only if you switch on hand tracking** in the Vision panel, or choose the **“Me in front (green screen)”** camera look, your browser downloads the MediaPipe runtime from jsDelivr and the hand or person-cut-out model from Google Cloud Storage. Those services see your IP address and browser details as with any download; your camera frames are processed locally and are not uploaded.
-- **Files you choose to export** (bundles, WAV, text, MIDI) are saved to your device. What you do with them afterwards is up to you.
+- **Files you choose to export or open** (backup zips, bundles, WAV, text, MIDI) are saved to or read from your device. A MIDI file you open is read in the page and never uploaded. What you do with an exported file afterwards is up to you.
+- **A backup folder**, if you choose one in Settings (Chrome and Edge), receives a copy of each song you edit. It is a folder on your own computer that the browser has been given access to; you can remove the access at any time.
+- **Persistent storage.** The app may ask the browser to keep its library (the browser decides; nothing is shown to anyone but you). Safari can still clear a site's data after about a week without a visit unless the site is added to the Home Screen; the app tells you when that applies.
 - **Links** to GitHub, LinkedIn and The Daily open in a new tab only when you click them.
 
 ## The Daily at /journal/

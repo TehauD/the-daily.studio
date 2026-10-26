@@ -21,7 +21,7 @@ function dropKind(f) {
   if (/\.zip$/.test(n) || /^application\/(x-)?zip(-compressed)?$/.test(t)) return 'bundle';
   if (/\.(txt|md|lrc)$/.test(n) || t === 'text/plain' || t === 'text/markdown') return 'lyrics';
   if (/\.json$/.test(n) || t === 'application/json') return 'json';
-  if (/\.(mid|midi)$/.test(n) || t === 'audio/midi' || t === 'audio/x-midi') return 'midi';
+  if (/\.(mid|midi|kar)$/.test(n) || t === 'audio/midi' || t === 'audio/x-midi') return 'midi';
   if (DROP_AUDIO.test(n) || /^(audio|video)\//.test(t)) return 'audio';
   return 'other';
 }
@@ -32,7 +32,7 @@ function dropBlocked() { return !!document.getElementById('boot') || !!document.
 function dropOvShow(on) {
   if (on && !DROP.ov) {
     DROP.ov = h('div', { id: 'dropOv', class: 'drop-ov', 'aria-hidden': 'true' }, h('div', { class: 'drop-in' }, h('div', { class: 'drop-ic' }, '⤓'), h('b', {}, 'Drop to add it here'),
-      h('span', { class: 'muted' }, 'Audio · lyrics (.txt .md .lrc) · song file (.zip) · rig (.json)')));
+      h('span', { class: 'muted' }, 'Audio · lyrics (.txt .md .lrc) · MIDI (.mid) · song file (.zip) · rig (.json)')));
     document.body.append(DROP.ov);
   }
   if (DROP.ov) DROP.ov.classList.toggle('on', !!on);
@@ -61,8 +61,8 @@ async function dropFiles(files) {
   if (by.bundle.length) { if (by.bundle.length > 1) toast('Opening “' + by.bundle[0].name + '” first. Drop the others one at a time.', 'warn'); await projImport(by.bundle[0]); handled++; }
   if (by.json.length) { await dropJson(by.json[0]); handled++; }
   if (by.lyrics.length) { await projImport(by.lyrics[0]); handled++; }
-  if (by.midi.length) toast('MIDI files cannot be opened here yet. Export audio from your music app instead, or drop it as a recording.', 'warn');
-  if (by.other.length && !handled && !by.audio.length) toast('“' + by.other[0].name + '” is not something ' + BRAND.name + ' can open. Try audio (MP3, WAV, M4A…), lyrics (.txt, .md, .lrc) or a song file (.zip).', 'warn');
+  if (by.midi.length) { if (by.midi.length > 1) toast('Opening “' + by.midi[0].name + '” first. Drop the others one at a time.', 'warn'); await smfOpen(by.midi[0]); handled++; }
+  if (by.other.length && !handled && !by.audio.length) toast('“' + by.other[0].name + '” is not something ' + BRAND.name + ' can open. Try audio (MP3, WAV, M4A…), lyrics (.txt, .md, .lrc) a song file (.zip) or a MIDI file (.mid).', 'warn');
   if (by.audio.length) { dropAudioChoose(by.audio); handled++; }
   return { handled, by };
 }
@@ -93,25 +93,24 @@ async function dropAudio(files, kind) {
   if (n && ZOOM.cur === 'canvas') zoomSet('song', true);
   return n;
 }
-/** an audio file as a Vocal or Guitar take at the start of the song; bars are added so the whole recording plays */
+/** an audio file as a Vocal or Guitar take (a new lane) that starts at the playhead; bars are added so the whole recording plays */
 async function dropTake(file, kind) {
   try {
     const vox = kind === 'vox', { pcm, sr } = await humDecode(await file.arrayBuffer(), 600);
     let pk = 0, e = 0; for (let i = 0; i < pcm.length; i++) { const a = Math.abs(pcm[i]); if (a > pk) pk = a; e += pcm[i] * pcm[i]; }
     if (!pcm.length || pk < 1e-4) { toast('“' + file.name + '” is silent.', 'warn'); return null; }
-    const nth = TAKES.filter(t => (t.kind === 'vox') === vox).length + 1, nm = (cleanTitle(file.name) || (vox ? 'Vocal ' : 'Take ') + nth).slice(0, 40);
-    const tk = { id: uid(), kind: vox ? 'vox' : 'gtr', name: nm, startSec: 0, sr, dry: pcm, wet: null, peaks: peaksOf(pcm), g: 1, pan: 0, mute: false, solo: false, mode: 'wet', bpm: S.bpm, preset: '', peak: dB(pk), rms: dB(Math.sqrt(e / pcm.length)), dur: pcm.length / sr, t: Date.now(), stats: null, cam: [], imported: true };
-    TAKES.push(tk); const last = S.sections[S.sections.length - 1]; let guard = 0; while (last && songSlots() * slotDur() < tk.dur + .5 && guard++ < 400) last.bars.push(newBar(''));
-    T.bars = null; commit(false); bus.emit('takes'); toast('Added “' + tk.name + '” (' + fmtT(tk.dur) + ') as a ' + (vox ? 'Vocal' : 'Guitar') + ' take', 'ok');
+    const nth = TAKES.filter(t => tkIsLead(t) && (t.kind === 'vox') === vox).length + 1, nm = (cleanTitle(file.name) || (vox ? 'Vocal ' : 'Take ') + nth).slice(0, 40), at = Math.max(0, tkNowSec()), before = snap();
+    const tk = { id: uid(), kind: vox ? 'vox' : 'gtr', name: nm, startSec: at, sr, dry: pcm, wet: null, peaks: peaksOf(pcm), g: 1, pan: 0, mute: false, solo: false, mode: 'wet', bpm: S.bpm, preset: '', peak: dB(pk), rms: dB(Math.sqrt(e / pcm.length)), dur: pcm.length / sr, t: Date.now(), stats: null, cam: [], imported: true };
+    TAKES.push(tk); tkSelect(tk.id); tkDone(before); toast('Added “' + tk.name + '” (' + fmtT(tk.dur) + ') as a ' + (vox ? 'Vocal' : 'Guitar') + ' take at ' + tkFmt(at), 'ok');
     return tk;
   } catch (err) { console.warn(err); toast('Could not read “' + file.name + '” (' + (err.message || err.name) + '). Try a WAV, MP3 or M4A.', 'warn'); return null; }
 }
 
 /** the drop row under the arrangement: only while there is nothing in it yet */
 function dropRowMake() {
-  const inp = h('input', { type: 'file', multiple: true, accept: 'audio/*,video/*,.mp3,.wav,.flac,.m4a,.aac,.ogg,.opus,.aif,.aiff,.txt,.md,.lrc,.zip,.json', style: { display: 'none' }, 'aria-label': 'Choose files to add', onchange: e => { const fl = [...e.target.files]; e.target.value = ''; if (fl.length) dropFiles(fl); } });
+  const inp = h('input', { type: 'file', multiple: true, accept: 'audio/*,video/*,.mp3,.wav,.flac,.m4a,.aac,.ogg,.opus,.aif,.aiff,.txt,.md,.lrc,.mid,.midi,.kar,.zip,.json', style: { display: 'none' }, 'aria-label': 'Choose files to add', onchange: e => { const fl = [...e.target.files]; e.target.value = ''; if (fl.length) dropFiles(fl); } });
   DROP.row = h('div', { class: 'tl-drop', id: 'tlDrop' }, inp, h('span', { class: 'tl-drop-ic', 'aria-hidden': 'true' }, '⤓'),
-    h('span', { class: 'tl-drop-t' }, h('b', {}, h('span', { class: 'dr-d' }, 'Drop audio, lyrics or a song file anywhere'), h('span', { class: 'dr-t' }, 'Add audio, lyrics or a song file')), h('span', { class: 'muted' }, ' · it stays on this device')),
+    h('span', { class: 'tl-drop-t' }, h('b', {}, h('span', { class: 'dr-d' }, 'Drop audio, lyrics, MIDI or a song file anywhere'), h('span', { class: 'dr-t' }, 'Add audio, lyrics, MIDI or a song file')), h('span', { class: 'muted' }, ' · it stays on this device')),
     h('button', { class: 'btn sm', id: 'dropPick', onclick: () => inp.click() }, 'Choose a file…'), h('button', { class: 'btn sm', id: 'dropMemo', title: 'Record your voice as it is', onclick: () => humRecord(true) }, '🎤 Voice memo'));
   dropRowSync(); return DROP.row;
 }

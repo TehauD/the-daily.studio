@@ -47,6 +47,26 @@ src/body.html  ─┘                    └► codepen/pen.{html,css,js}
 | `24-lyrics.js` | Lyric intake: `lyricParse` (headings, stanzas, .lrc), `liBuild` (pure plan: reuse, repeat, new sections), `liPlace` (chords over words), the import dialog |
 | `23-lanes.js` | DAW lane model for the arrangement (`LN`: order, heights, colours, hidden), lane headers and menu, lane drawing (chords, tab, bass, drums, live input, vocal, takes, track and stems), the Guitar + vocal I/O card, level meters, expand modes, and the track-follows-transport hooks (`trackStart` / `trackStop`) |
 
+### Parts 25–49 (added from 1.4 to 2.2)
+
+| File | Responsibility |
+|---|---|
+| `25-projects.js` – `27-reset.js` | Song library (IndexedDB), start card / library dialog / zoom, selective reset (see "Projects, origins, zoom and reset" below) |
+| `28-about.js`, `29-guard.js` | About and credits; the last-line error guard that says, once in a while, that your songs are safe |
+| `30-audio-control.js`, `41-io2.js` | The header Audio button and panel; the single **Connect** component (device, meter, Set my level, Hear myself, signal path, channel mapping) reused by the I/O panel, header and start card |
+| `31-hum-engine.js`, `32-hum-ui.js` | Hum to Song: the on-device engine and the screens |
+| `33-adapt.js`, `34-launch.js`, `35-neck.js`, `36-halo.js` | Adaptive studio, front screen and centre stage, the neck wired to everything, two more stage looks |
+| `37-stage-rec.js`, `38-perform.js` | Record the stage (canvas + song audio to a video file); Perform |
+| `39-export.js`, `40-sync.js` | Export and share (WAV, stems, MIDI, share page, bundle); backup folder (File System Access API) |
+| `42-mixer.js` | Lane strips: 3-band EQ, one-knob compressor, sends, mute / solo, stem mix |
+| `43-drop.js` | Drop anywhere: classify a dropped file (audio, lyrics, MIDI, song bundle) and ask the one question that matters |
+| `44-balance.js` | Auto-balance: measure each lane, propose level and pan, apply as one undo step |
+| `45-clips.js` | **Clips.** Every take carries a clip (`startSec`, `inS`, `outS`, `fadeIn`, `fadeOut`); move (whole beats), trim, fade, split, duplicate, delete, nudge, on desktop and on the phone clip bar. `tkKey` / `tkLead` name a take's buffers. The composite history `snap()` stores song + takes + stem mix, with `histBegin` / `histEnd` grouping a drag into one step |
+| `46-render.js` | **Fast render.** `ofrRender()` builds the same graph a second time on an `OfflineAudioContext` (`ofrSwapIn` / `ofrRestore` set the live engine aside), posts plucked notes in 2.5 s batches confirmed by `ofrSync`, and renders as fast as the processor allows. `bounceFast()` adds the progress window and Cancel. `bounceMaster` tries it first and falls back to real time. The kill switch calls `ofrAbort()` |
+| `47-midi-import.js` | **MIDI in.** `smfParse` (formats 0 / 1, running status, tempo and meter maps, text and lyric events), `smfParts` (melody / bass / chord / drum guesses), `smfBuild` (chords, key, lead tab, `.kar` words), and the track-picking window `smfOpen` |
+| `48-keepsafe.js` | **Keep songs safe.** `keepRisk()` (is this a browser that may clear storage?), `keepCard()`, `keepOpen()`, `keepToast()` and the first-recording backup nudge `projNudge()`; requests persistent storage; offers Add to Home Screen steps and **Back up all songs** |
+| `49-phone-extras.js` | Phone and tablet extras: the mix tiles (`mixOpen`), the files window (`filesOpen`) and the clip bar |
+
 ## Runtime model
 
 * **State.** One mutable song object `S` (title, tuning, capo, sections → bars → chord + tab notes, band settings, mix). `commit(push)` records an undo step, autosaves and emits `bus.emit('song')`. Panes re-render on that event. Settings live in `CFG`; both persist through `store` (localStorage, with an in-memory fallback if storage is unavailable).
@@ -112,10 +132,14 @@ A step list (`tourSteps()`) of `{ t: target, pane, pre, title, b, side, tip }`. 
 
 ## Testing
 
+Full details are in [TESTING.md](TESTING.md). In outline:
+
 * `npm test` boots the page in **jsdom** with a stubbed Web Audio layer, exercises exports, undo, presets and rendering, and fails on any uncaught error. It cannot hear audio.
-* `npm run test:e2e` drives a real Chromium with a fake audio device through tunings, the tour, the rig layout, a transcription self-test and a stem-separation run.
-* `npm run test:mobile` emulates a phone (portrait, small, landscape), tablets and a desktop window: layouts must not scroll sideways, the keypad writes tab, the More sheet and drawers work, the tour completes, long-press, pinch, wake lock and the service worker register, and the desktop shell is unchanged.
+* `npm run test:e2e` runs **every real-Chromium suite in parallel** (`test/run.cjs`): each `test/e2e-*.cjs` file starts its own static server, browser and contexts through `test/lib.cjs` (`suite(name, fn)`), so a failure names the file, and every file ends with a "no console, page or network errors" check. Name a few to run only those: `node test/run.cjs clips midi`.
+* `npm run test:mobile` emulates a phone (portrait, small, landscape), tablets and a desktop window: layouts must not scroll sideways, the keypad writes tab, the More sheet and drawers work, the tour completes, long-press opens menus.
 * `npm run test:stems` runs the separation DSP in Node on a synthetic mix with known stems and fails if SI-SDR falls below a floor.
+* `npm run shots` regenerates the pictures in `docs/screenshots/` from the running app (`test/shots.cjs`), so the documentation cannot drift from the product.
+* What no script can check (a real interface, camera, MIDI controller, Safari on an iPhone) is in [HARDWARE_CHECKLIST.md](HARDWARE_CHECKLIST.md).
 
 ## Design principles
 

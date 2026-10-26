@@ -2,6 +2,39 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.2.0 — 2026-10-26 — Clips, Fast Render and MIDI
+
+The follow-up to I/O and Lanes: every gap that release left open, plus the polish that the new features needed. Everything still runs on your device.
+
+### Added
+- **Editable takes (clips).** A recording is now a clip you can shape. Click it to select it (the **clip bar** under the arrangement names it); **drag** it to move it (it snaps to the beat; hold <kbd>Alt</kbd> for no snapping); drag an **edge** to trim; drag the **corner squares** for a fade in or out. **✂ Split** cuts at the playhead (<kbd>Ctrl/⌘</kbd>+<kbd>E</kbd>), **⧉ Duplicate** (<kbd>Ctrl/⌘</kbd>+<kbd>D</kbd>) places a copy right after, <kbd>Del</kbd> removes, and ← → nudge by a beat (<kbd>Shift</kbd>: a bar). Right-click a clip (or the **⋯** in the bar) for fades, nudge, **Reset trim**, **Save clip (WAV)** and **Delete clip**. A split shares one recording in memory, a lane keeps one level, pan, mute and effects strip however many clips it holds, and clips are saved with the song, in bundles and in backups.
+- **WAVs render faster than the song plays.** **Bounce master WAV** and **Bounce this part** now build the same engine a second time offline and mix the song as fast as your processor allows (on a small two-core test server it ran about 3× faster than real time; your device will differ). Same strips, effects, master tone and limiter as you hear; a progress window with **Cancel**; the kill switch (<kbd>Ctrl/⌘</kbd>+<kbd>.</kbd>) stops it. If the browser cannot do it, the app says so and bounces in real time as before. Compressed audio and the share page still record while the song plays, and say so. Settings ▸ Export ▸ **Render WAVs faster than real time** turns it off.
+- **MIDI import.** Drop a `.mid`, `.midi` or `.kar` file on the page (or choose one in **＋ New ▸ Start from a song**). A window lists the tracks with their note counts and range, picks the melody for you, ticks the others to decide the chords, and shows the file's tempo and time signature. **Create song** makes a new song: tempo and time signature from the file, key worked out from the notes, chords per half bar, the melody on the lead tab, karaoke words under the chords, and a band style. A melody-only file gets chords worked out from the notes. Drum tracks are not copied (the band plays its own pattern). Files with SMPTE time, no notes, or more than 8 MB / 300,000 notes / 128 tracks are explained instead of opened.
+- **Keep my songs safe.** Safari on an iPhone, iPad or Mac clears a site's storage after about a week away unless the site is added to the Home Screen or Dock. The app now says so, in plain steps: **⋯ More ▸ Keep songs safe** (and a card at the top of **My songs**) explains **Add to Home Screen** and has one **Back up all songs** button; a one-time tip appears after your first recording in Safari on an iPhone or iPad; and the backup reminder comes after 7 days (not 30) where the risk is high. Nothing is sent anywhere; the backup is one zip you keep.
+- **One history for everything.** <kbd>Ctrl/⌘</kbd>+<kbd>Z</kbd> and ↶ ↷ now step through song edits, clip edits (move, trim, fade, split, duplicate, delete) and the stem mix together, in the order you made them. **Auto-balance** is one step.
+- **The stem mix is saved.** Stem faders, mutes, solos and effects are kept with the song, in bundles and in the backup, and come back when you reopen it.
+- **Phone: Open a file, Master · balance · click, My songs.** Four new tiles in **⋯ More**: **My songs**, **Open a file** (audio, lyrics, MIDI or a song file), **Master · balance · click** (master preset, Auto-balance, count-in and click level), and **Keep songs safe**.
+- **Help and tour.** The guided tour has a new stop, **Drop things in, edit them as clips**, and mentions faster WAVs, backups and Open a file. **Help & shortcuts** lists the clip keys and the drop targets.
+- **Hardware checklist.** [docs/HARDWARE_CHECKLIST.md](docs/HARDWARE_CHECKLIST.md): about 45 minutes with your own interface, microphone, camera, MIDI keyboard and phone, for the things an automated test with a fake microphone cannot tell you.
+
+### Changed
+- **The test suite is now parallel and isolated.** The one long script is split into independent files (`e2e.cjs` core flows, `e2e-io`, `e2e-drop`, `e2e-balance`, `e2e-lanes`, `e2e-camera`, `e2e-clips`, `e2e-session`, `e2e-render`, `e2e-midi`, `e2e-keep`, `e2e-layout` and `mobile`), each with its own server, browser and context, run together by `npm run test:e2e`. The fake-camera check polls instead of sleeping. `npm run shots` regenerates the pictures in the documentation.
+- **Header and song bar at laptop and desktop widths.** Below 1660 px the Loop and Click buttons and the master label drop their words and the time display tightens; below 1520 px the latency chip hides (it is still in I/O); the song bar's field labels hide below 1900 px and its boxes shrink a little below 1660 px. From 1440 px up, the BPM, signature, key and mode boxes show their whole value and the Canvas | Song | Studio switch is never cut off.
+- **Re-amp** reads **RE** on a phone, so the lane header stays on one row.
+- **The New song window** accepts a MIDI file (choose or drop), and its song card says so. **Back up all songs** is one button in the My songs card (the footer copy is gone).
+- **Help & shortcuts** describes the shared history, Back up all songs and Add to Home Screen.
+
+### Fixed
+- **“null” in lane headers.** A lane header could print the word *null* after the name (the vocal take lane, the power and effects chips). Fixed, and a layout test scans for it.
+- **Phone vocal lane header was cramped.** The input selector overlapped the name, **RE-AMP** wrapped, and the clip bar was clipped. The selector now lives in I/O only, the clip bar has a row of its own, and every header is checked to fit its column.
+- **Time display clipped at about 1280 px.** The position and time readouts kept their width and no longer lose a digit.
+- **The MIDI window on a phone** no longer runs its column titles together (the range column is dropped on narrow screens).
+- **Test flakiness.** Drawer animations on busy machines (waits are now for the state, not for a fixed time), the fake-camera pixel comparison and a service-worker unregister that could hang the old script.
+
+### Notes
+- Still not in the app: pitch correction, a groove picker, hosted loop libraries, accounts and collaboration. Dragging a clip onto a different lane is not built yet (clips stay on their lane).
+- Fast render needs `OfflineAudioContext` with AudioWorklet support, which every current browser has.
+
 ## 2.1.0 — 2026-10-26 — I/O and Lanes
 
 ### Added

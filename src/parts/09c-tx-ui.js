@@ -11,8 +11,10 @@ const TXG = { 1: '16th', 2: '8th', 4: 'quarter' };
 function txSource(id) {
   id = id || TX.src;
   if (id === 'file' && TX.file) return { id: 'file', name: TX.file.name, mono: TX.file.mono, sr: TX.file.sr, startSec: 0, cam: null, file: true };
-  const tk = TAKES.find(t => t.id === id) || (id ? null : TAKES[TAKES.length - 1]); if (!tk) return null;
-  return { id: tk.id, name: tk.name, mono: tk.dry || tk.wet, sr: tk.sr, startSec: tk.startSec, cam: tk.cam && tk.cam.length ? tk.cam : null, take: tk };
+  const t0 = TAKES.find(t => t.id === id) || (id ? null : TAKES[TAKES.length - 1]); if (!t0) return null;
+  const tk = tkLead(t0), r = tkRender(tk, 'dry') || tkRender(tk, 'wet'); if (!r) return null;      // the whole lane as it plays: trimmed clips in place
+  const cs = tkClips(tk); let cam = null; if (cs.length === 1 && tk.cam && tk.cam.length) { const a = tkIn(cs[0]), b = tkOut(cs[0]); cam = tk.cam.filter(e => e.t >= a && e.t <= b).map(e => Object.assign({}, e, { t: e.t - a })); if (!cam.length) cam = null; }
+  return { id: tk.id, name: tk.name, mono: r.data, sr: r.sr, startSec: r.startSec, cam, take: tk };
 }
 async function txImport(file) {
   try {
@@ -52,7 +54,7 @@ async function txRun(srcs) {
   TX.busy = false; txBusyUI(false);
 }
 function txGo() {
-  const picked = TAKES.filter(t => TX.cons.has(t.id));
+  const picked = tkLeads().filter(t => TX.cons.has(t.id));
   if (picked.length > 1) return txRun(picked.map(t => txSource(t.id)));
   txRun([txSource()]);
 }
@@ -139,10 +141,10 @@ function txProg(f, m) { if (UI.txBar) { UI.txBar.style.width = clamp(f * 100, 0,
 function txRefreshSrc() {
   const sel = UI.txSrc; if (!sel) return; const cur = TX.src; sel.innerHTML = '';
   if (!TAKES.length && !TX.file) sel.append(h('option', { value: '' }, 'No takes yet — record one or import audio'));
-  TAKES.forEach(t => sel.append(h('option', { value: t.id, selected: t.id === cur }, (t.kind === 'vox' ? '🎤 ' : '') + t.name + ' · ' + t.dur.toFixed(1) + ' s' + (t.cam && t.cam.length ? ' · 📷 fret log' : ''))));
+  tkLeads().forEach(t => sel.append(h('option', { value: t.id, selected: t.id === cur }, (t.kind === 'vox' ? '🎤 ' : '') + t.name + ' · ' + (() => { const sp = tkSpan(t); return (sp.b - sp.a).toFixed(1); })() + ' s' + (t.cam && t.cam.length ? ' · 📷 fret log' : ''))));
   if (TX.file) sel.append(h('option', { value: 'file', selected: cur === 'file' }, '📁 ' + TX.file.name + ' · ' + TX.file.dur.toFixed(1) + ' s'));
-  if (!cur && TAKES.length) { TX.src = (TAKES.filter(x => x.kind !== 'vox').pop() || TAKES[TAKES.length - 1]).id; sel.value = TX.src; }
-  const L = UI.txCons; if (L) { L.innerHTML = ''; if (TAKES.length < 2) L.append(h('div', { class: 'tiny muted' }, 'Record two or more takes of the same part to unlock consensus transcription — notes that most takes agree on survive; random misses and ghosts drop out.')); TAKES.forEach(t => L.append(h('label', { class: 'chk', style: { display: 'flex', gap: '5px', alignItems: 'center', fontSize: '12px', fontWeight: 600 } }, h('input', { type: 'checkbox', checked: TX.cons.has(t.id), onchange: e => { e.target.checked ? TX.cons.add(t.id) : TX.cons.delete(t.id); UI.txGo.textContent = TX.cons.size > 1 ? '✦ Transcribe ' + TX.cons.size + ' takes (consensus)' : '✦ Transcribe'; } }), t.name))); }
+  if (!cur && TAKES.length) { TX.src = (tkLeads().filter(x => x.kind !== 'vox').pop() || tkLeads().pop()).id; sel.value = TX.src; }
+  const L = UI.txCons; if (L) { L.innerHTML = ''; if (tkLeads().length < 2) L.append(h('div', { class: 'tiny muted' }, 'Record two or more takes of the same part to unlock consensus transcription — notes that most takes agree on survive; random misses and ghosts drop out.')); tkLeads().forEach(t => L.append(h('label', { class: 'chk', style: { display: 'flex', gap: '5px', alignItems: 'center', fontSize: '12px', fontWeight: 600 } }, h('input', { type: 'checkbox', checked: TX.cons.has(t.id), onchange: e => { e.target.checked ? TX.cons.add(t.id) : TX.cons.delete(t.id); UI.txGo.textContent = TX.cons.size > 1 ? '✦ Transcribe ' + TX.cons.size + ' takes (consensus)' : '✦ Transcribe'; } }), t.name))); }
   if (UI.txFileBox) UI.txFileBox.style.display = cur === 'file' ? '' : 'none';
 }
 
@@ -249,7 +251,7 @@ function buildTxPane() {
   p.append(h('div', { style: { display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'flex-start' } }, left, right));
   txRefreshSrc(); txBenchRender(); txDraw();
   bus.on('takes', txRefreshSrc);
-  bus.on('rec:done', () => { if (!TX.auto) return; TX.auto = false; const t = TAKES.filter(x => x.kind !== 'vox').pop(); if (!t) return; TX.src = t.id; txRefreshSrc(); dockGo('tx'); setTimeout(() => txRun([txSource(t.id)]), 120); });
+  bus.on('rec:done', () => { if (!TX.auto) return; TX.auto = false; const t = tkLeads().filter(x => x.kind !== 'vox').pop(); if (!t) return; TX.src = t.id; txRefreshSrc(); dockGo('tx'); setTimeout(() => txRun([txSource(t.id)]), 120); });
   bus.on('dock', id => { if (id === 'tx') setTimeout(() => { txDraw(); txStats(); }, 30); });
   bus.on('theme', () => setTimeout(() => { txDraw(); txStats(); }, 30));
   new ResizeObserver(() => { if (paneVisible('tx')) txDraw(); }).observe(p);

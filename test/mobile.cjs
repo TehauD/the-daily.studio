@@ -6,6 +6,8 @@ const path = require('node:path');
 const PORT = 9123 + Math.floor(Math.random() * 500), BASE = process.env.BASE_URL || `http://localhost:${PORT}/`;
 let fails = 0; const ok = (c, m) => { console.log((c ? 'ok   ' : 'FAIL ') + m); if (!c) fails++; };
 const wait = ms => new Promise(r => setTimeout(r, ms));
+/** true as soon as fn() is truthy, false after ms (animations take longer on a busy machine, so wait for the state instead of a fixed time) */
+const poll = async (fn, ms = 4000) => { const end = Date.now() + ms; for (;;) { let v; try { v = await fn(); } catch (e) { v = false; } if (v) return true; if (Date.now() > end) return false; await wait(100); } };
 const errs = [];
 const DEV = { phone: { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }, small: { viewport: { width: 360, height: 740 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true },
   land: { viewport: { width: 844, height: 390 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }, tablet: { viewport: { width: 820, height: 1180 }, deviceScaleFactor: 1.5, isMobile: true, hasTouch: true },
@@ -125,9 +127,9 @@ const DEV = { phone: { viewport: { width: 390, height: 844 }, deviceScaleFactor:
     p = await open(dev); ok(await p.evaluate(() => document.body.dataset.form === 'tablet'), dev + ' selects the tablet layout');
     const bad = []; for (const id of ['rig', 'tab', 'song', 'band', 'fret', 'vis', 'stage', 'neural', 'stems', 'tx', 'cam', 'lab', 'exp']) { await p.evaluate(i => document.querySelector('#dock .tab[data-id="' + i + '"]').click(), id); await wait(350); const o = await overflow(p); if (o.sw > o.W + 1 || o.bad.length) bad.push(id + JSON.stringify(o.bad)); }
     ok(bad.length === 0, dev + ': every dock panel fits' + (bad.length ? ' ' + bad : ''));
-    await p.tap('.mdraw.l'); await wait(450); ok(await p.evaluate(() => { const l = document.querySelector('#left').getBoundingClientRect(); return l.left >= -1 && l.width > 200 && l.right < innerWidth; }), dev + ': ☰ opens the Tones drawer');
-    await p.tap('#mback'); await wait(450); ok(await p.evaluate(() => document.querySelector('#left').getBoundingClientRect().right <= 1), dev + ': tapping outside closes the drawer');
-    await p.tap('.mdraw.r'); await wait(450); ok(await p.evaluate(() => document.querySelector('#right').getBoundingClientRect().left < innerWidth - 200), dev + ': tuner drawer opens'); await p.tap('#mback'); await wait(300);
+    await p.tap('.mdraw.l'); ok(await poll(() => p.evaluate(() => { const l = document.querySelector('#left').getBoundingClientRect(); return l.left >= -1 && l.width > 200 && l.right < innerWidth; })), dev + ': ☰ opens the Tones drawer');
+    await p.tap('#mback'); ok(await poll(() => p.evaluate(() => document.querySelector('#left').getBoundingClientRect().right <= 1)), dev + ': tapping outside closes the drawer');
+    await p.tap('.mdraw.r'); ok(await poll(() => p.evaluate(() => document.querySelector('#right').getBoundingClientRect().left < innerWidth - 200)), dev + ': tuner drawer opens'); await p.tap('#mback'); await poll(() => p.evaluate(() => document.querySelector('#right').getBoundingClientRect().left >= innerWidth - 2));
     await p.evaluate(() => document.querySelector('#dock .tab[data-id="tab"]').click()); await wait(300);
     ok(await p.evaluate(() => getComputedStyle(document.querySelector('#kpad')).display === 'flex'), dev + ': tab keypad available');
     await p.close(); await p.ctx.close();

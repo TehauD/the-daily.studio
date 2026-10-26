@@ -77,15 +77,15 @@ Browsers cache aggressively. After a deploy, hard-reload (<kbd>Ctrl/⌘</kbd>+<k
 Releases give people a stable download (a zip of the repository) and a changelog.
 
 1. Bump the version in `package.json` and in `src/parts/01-core.js` (`const VERSION = '…'`), and add notes to `CHANGELOG.md`.
-2. `npm run build && npm run build:site && npm run verify:site && git add -A && git commit -m "Release v2.1.0" && git push`
+2. `npm run build && npm run build:site && npm run verify:site && git add -A && git commit -m "Release v2.2.0" && git push`
 3. Tag and publish:
 
 ```bash
-git tag -a v2.1.0 -m "the-daily.studio 2.1.0"
-git push origin v2.1.0
+git tag -a v2.2.0 -m "the-daily.studio 2.2.0"
+git push origin v2.2.0
 gh release create v2.1.0 --title "the-daily.studio 2.1.0" --notes-file CHANGELOG.md
 # optional: attach the standalone page for people who just want the file
-gh release upload v2.1.0 index.html#the-daily.studio-standalone.html
+gh release upload v2.2.0 index.html#the-daily.studio-standalone.html
 ```
 
 ## 6. Other hosts

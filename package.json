@@ -1,6 +1,6 @@
 {
   "name": "the-daily.studio",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "The Daily · Songs — a songwriter's workspace in one web page: clean canvas or start from a song, lyrics and chords, guitar + vocal recording, stem separation and a pedal rig. Local-first, no account.",
   "type": "module",
   "private": true,
@@ -23,9 +23,12 @@
     "verify:site": "node scripts/verify-site.mjs",
     "start": "node scripts/serve.mjs",
     "test": "node test/smoke.cjs",
-    "test:e2e": "node test/e2e.cjs",
+    "test:e2e": "node test/run.cjs",
     "test:stems": "node test/stem_eval.cjs",
-    "test:mobile": "node test/mobile.cjs"
+    "test:mobile": "node test/mobile.cjs",
+    "test:e2e:core": "node test/e2e.cjs",
+    "test:all": "npm test && node test/run.cjs",
+    "shots": "node test/shots.cjs"
   },
   "devDependencies": {
     "jsdom": "^29.1.1",

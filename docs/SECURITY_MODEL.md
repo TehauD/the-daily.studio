@@ -1,6 +1,6 @@
 # Security and privacy model
 
-Version 2.1 (v2.1.0). The app is a static page that runs entirely in the visitor's browser. This document records what it can access, what it stores, what it contacts, and the controls that keep it that way.
+Version 2.2 (v2.2.0). The app is a static page that runs entirely in the visitor's browser. This document records what it can access, what it stores, what it contacts, and the controls that keep it that way.
 
 ## Trust boundaries
 
@@ -17,7 +17,7 @@ Version 2.1 (v2.1.0). The app is a static page that runs entirely in the visitor
 | Audio output and monitoring | Monitoring is **off by default** | Audio panel ▸ "Hear myself" |
 | Microphone for Hum to Song | Only when the person presses **● Hum or sing**; recorded in memory, never saved or uploaded | Stop; Ctrl/Cmd + . discards the recording and releases the microphone |
 | Camera | Only when a Visuals / Vision camera feature is started, or when **● Begin** (first screen) or **Hum or sing** is pressed with "center stage" ticked (default); the first screen says so before the button is pressed | Camera off / backdrop button; browser site settings |
-| Files the user drops or chooses | Only when the person drops files on the page or presses **Choose a file…**; read with the browser's File API in memory, never uploaded. Drops are declined while a window is open, and the page never navigates to a dropped file | n/a |
+| Files the user drops or chooses (audio, lyrics, MIDI, song files) | Only when the person drops files on the page or presses **Choose a file…** / **Open a file**; read with the browser's File API in memory, never uploaded. MIDI files are size-limited (8 MB, 300,000 notes, 128 tracks) before they are parsed. Drops are declined while a window is open, and the page never navigates to a dropped file | n/a |
 | MIDI | Only when the user enables MIDI | Browser site settings |
 | Location, payment, USB, serial | Never (disabled by Permissions-Policy) | n/a |
 
@@ -28,7 +28,9 @@ Version 2.1 (v2.1.0). The app is a static page that runs entirely in the visitor
 | Settings, appearance, calibration, tour state | `localStorage` keys `fw.cfg`, `fw.cal`, `fw.tour`, `fw.toured` | No | Reset (Help ▸ Reset) |
 | Songs, takes and stems | IndexedDB database `the-daily-songs` | No | Reset, or deleting a song |
 | Offline copy of the app | Cache Storage `daily-songs-<version>` (service worker) | No | Reset, or a new version |
-| Backups and exports | Files the user downloads | Only where the user puts them | n/a |
+| Backups and exports (including **Back up all songs**, WAV bounces and clips saved as WAV) | Files the user downloads. A fast WAV render runs in an offline audio engine in the page and writes nothing until the file is saved | Only where the user puts them | n/a |
+| Backup folder (Chrome, Edge) | A folder handle the person chose, kept in IndexedDB; songs are written as `.daily-song.zip` | Only into that folder (a cloud-drive folder syncs under that drive's own rules) | Reset, or choosing another folder |
+| Storage-persistence request | The app asks the browser once to keep its storage (`navigator.storage.persist()`); on Safari it also explains Add to Home Screen | No | n/a |
 | Camera frames and microphone audio (including a hum recording) | Memory only while in use; the song built from a hum keeps only the notes and chords | No | Stop, kill switch, closing the tab |
 | The Daily entries | `localStorage` keys beginning `daily` | Only to a provider the user configures | The Daily's own controls |
 

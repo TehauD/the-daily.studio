@@ -5,11 +5,12 @@
 <h1 align="center">the-daily.studio</h1>
 <p align="center"><b>A songwriter’s workspace that lives in one web page.</b><br>
 Catch an idea · find the chords · record guitar and vocals · split a track into stems · keep every song on your own device</p>
-<p align="center"><sub>v2.1.0 · free, open source (MIT) · no account, no upload, no tracking</sub></p>
+<p align="center"><sub>v2.2.0 · free, open source (MIT) · no account, no upload, no tracking</sub></p>
 
 <p align="center">
   <a href="https://the-daily.studio/"><b>▶ Open the live app</b></a> ·
   <a href="docs/USER_GUIDE.md">User guide</a> ·
+  <a href="CHANGELOG.md">What's new</a> ·
   <a href="docs/HOSTING.md">Host it yourself</a> ·
   <a href="docs/ARCHITECTURE.md">Architecture</a> ·
   <a href="docs/OPERATIONS.md">Operations</a> ·
@@ -26,14 +27,14 @@ Catch an idea · find the chords · record guitar and vocals · split a track in
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/01-rig-dark.png" alt="the-daily.studio rig tab with pedalboard, arrangement and tuner" width="920">
+  <img src="docs/screenshots/01-rig-dark.png" alt="the-daily.studio: the pedalboard, and the arrangement with a vocal take and a guitar take as clips" width="920">
 </p>
 
 ---
 
 ## Contents
 
-[What it is](#what-it-is) · [Highlights](#highlights) · [Quick start](#quick-start) · [Your first five minutes](#your-first-five-minutes) · [Tour of the panels](#tour-of-the-panels) · [Tunings](#tunings) · [Phone and tablet](#phone-and-tablet) · [Keyboard shortcuts](#keyboard-shortcuts) · [Audio setup](#audio-setup) · [Privacy](#privacy-and-data) · [Accuracy and honest limits](#accuracy-and-honest-limits) · [Browser support](#browser-support) · [Project layout](#project-layout) · [Develop](#develop) · [Host it](#host-it-on-your-github) · [Roadmap](#roadmap-ideas) · [License](#license-and-credits)
+[What it is](#what-it-is) · [Highlights](#highlights) · [What's new in 2.2](#whats-new-in-22) · [Quick start](#quick-start) · [Your first five minutes](#your-first-five-minutes) · [Tour of the panels](#tour-of-the-panels) · [Tunings](#tunings) · [Phone and tablet](#phone-and-tablet) · [Keyboard shortcuts](#keyboard-shortcuts) · [Audio setup](#audio-setup) · [Privacy](#privacy-and-data) · [Accuracy and honest limits](#accuracy-and-honest-limits) · [Browser support](#browser-support) · [Project layout](#project-layout) · [Develop](#develop) · [Host it](#host-it-on-your-github) · [Roadmap](#roadmap-ideas) · [License](#license-and-credits)
 
 ## What it is
 
@@ -59,6 +60,7 @@ It began as a guitar lab and grew into a place to turn a hum into a finished son
 | Area | What you get |
 |---|---|
 | **Rig** | 16 reorderable effect units (gate, compressor, wah, overdrive, distortion, fuzz, pitch / harmony, amp, cabinet / IR, parametric EQ, chorus, phaser, flanger, tremolo, delay, reverb), 5 amp models, procedural cabinets and impulse-response loading, 6 reverbs, 27 presets, A/B morph, mutate, scenes, per-pedal footswitch keys and MIDI bindings, Stomp view for live use. |
+| **Clips, fast render, MIDI (2.2)** | A recording is a **clip**: drag it, trim its edges, fade it, **split** (<kbd>Ctrl/⌘</kbd>+<kbd>E</kbd>), duplicate, delete, with one undo history shared with song edits and the stem mix. **WAV bounces render faster than the song plays**, with a progress window. **Drop a MIDI file** and get a song with chords, key, tempo and a lead tab. **Keep songs safe** explains Add to Home Screen on iPhone and iPad and backs everything up in one tap. |
 | **I/O and lanes (2.1)** | One **Connect** card with **Set my level** and a live **signal path**, channels that follow your interface, and permission help that names the exact steps for your browser. A mixer strip on every lane (**M S**, volume, pan, **+Fx**: EQ, compressor, reverb and delay sends), **drop-anywhere import** for audio, lyrics, song files and rigs, **⚖ Auto-balance**, a **master chip** with presets, visible undo / redo and a **Saved** mark. |
 | **Perform and share (2.0)** | **Perform** (full-screen chords, lyrics and a count-in with a readiness check), **Voice memo**, **Auto look** per section, **Record the stage** as a video, loudness (LUFS) with a target, compressed audio, a one-file **share page**, a **print or PDF sheet**, and a **backup folder** that saves your songs as you work. |
 | **Arrangement** | A DAW-style track list: chord, tab, bass and drum lanes, your **Guitar** and **Vocal** inputs, recorded takes, and a loaded track with its four stems, all on one bar grid. Reorder, resize, recolour and hide lanes; arm guitar and vocals and **record both at once** from a two-input interface (guitar on input 1, microphone on input 2). |
@@ -76,9 +78,36 @@ It began as a guitar lab and grew into a place to turn a hum into a finished son
 | **Guided tour** | A spotlight walkthrough of every key area, offered on first run and available from **?**. |
 | **Phone, tablet, desktop** | One responsive app. On a phone: bottom transport, five-section navigation, an on-screen tab keypad, pinch-to-zoom Neural map and a wake lock while you play. Installable as an app (PWA). See [Phone and tablet](#phone-and-tablet). |
 
+## What's new in 2.2
+
+<p align="center"><img src="docs/screenshots/24-clips.png" alt="The arrangement with a vocal take split into two clips; the clip bar names the selected clip" width="920"><br><sub><b>Clips</b> · every take is a clip: move, trim, fade, split, duplicate, delete, and undo any of it</sub></p>
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/25-clip-menu.png" alt="The clip menu: split, duplicate, fades, nudge, reset trim, save clip, delete"><br><sub><b>Clip menu</b> · right-click a clip: fades, nudge, reset trim, save the clip as a WAV</sub></td>
+    <td width="50%"><img src="docs/screenshots/34-lane-fx.png" alt="The effects strip for a take lane: EQ, squeeze, reverb and echo"><br><sub><b>Lane effects</b> · a strip on every lane: EQ, compressor, reverb and delay, saved with the song</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/30-render.png" alt="The render window: a progress bar and a Cancel button"><br><sub><b>Fast render</b> · WAVs are mixed faster than the song plays, with the same effects and limiter</sub></td>
+    <td><img src="docs/screenshots/31-midi.png" alt="Open MIDI file: tracks, melody choice and the chord tracks"><br><sub><b>MIDI import</b> · pick the melody, tick the chord tracks, <b>Create song</b></sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/28-balance.png" alt="Auto-balance: measured loudness and the proposed level and pan for each lane"><br><sub><b>Auto-balance</b> · measure, review, apply, undo (2.1)</sub></td>
+    <td><img src="docs/screenshots/27-drop.png" alt="Drop anywhere: what is this recording?"><br><sub><b>Drop anywhere</b> · audio, lyrics, MIDI or a song file (2.1, MIDI in 2.2)</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/26-io.png" alt="The I/O card: connect, set my level, channels and the signal path"><br><sub><b>I/O</b> · one Connect card, Set my level and the signal path (2.1)</sub></td>
+    <td><img src="docs/screenshots/29-master.png" alt="The master menu: presets and Auto-balance"><br><sub><b>Master</b> · presets for tone, glue and the loudness target (2.1)</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/32-keep.png" alt="Keep my songs safe: Add to Home Screen steps and a Back up all songs button"><br><sub><b>Keep songs safe</b> · what Safari does to a site's storage, the steps, and one backup button</sub></td>
+    <td><img src="docs/screenshots/33-phone-new.png" alt="On a phone: the clip bar, the MIDI window and the Keep songs safe sheet"><br><sub><b>On a phone</b> · the clip bar, the MIDI window and the backup sheet</sub></td>
+  </tr>
+</table>
+
 ## Screenshots
 
-<p align="center"><img src="docs/screenshots/11-mobile.png" alt="the-daily.studio on a phone: Play, Write and the Appearance drawer" width="900"><br><sub><b>On a phone</b> · Play (rig and scenes) · Write (tab with keypad while the song plays) · Appearance (looks, palettes, accents)</sub></p>
+<p align="center"><img src="docs/screenshots/11-mobile.png" alt="the-daily.studio on a phone: Play with the clip bar, Write with the tab keypad, and the More sheet" width="900"><br><sub><b>On a phone</b> · Play (rig, scenes, clip bar) · Write (tab with keypad while the song plays) · More (Open a file, Master · balance · click, Keep songs safe)</sub></p>
 
 <table>
   <tr>
@@ -86,14 +115,20 @@ It began as a guitar lab and grew into a place to turn a hum into a finished son
     <td width="50%"><img src="docs/screenshots/15-appearance.png" alt="Appearance drawer with looks, palettes and accents"><br><sub><b>Appearance</b> · eight looks, seventeen palettes, accents, type, density and high contrast</sub></td>
   </tr>
   <tr>
-    <td><img src="docs/screenshots/13-canvas.png" alt="Canvas zoom: the song as a timeline of sections"><br><sub><b>Canvas</b> · zoom out to see the whole song and rearrange it</sub></td>
-    <td><img src="docs/screenshots/14-songs.png" alt="Songs library"><br><sub><b>Songs</b> · every song lives on your device; export or import a bundle any time</sub></td>
+    <td><img src="docs/screenshots/13-canvas.png" alt="Canvas zoom: the song as a timeline of sections"><br><sub><b>Canvas</b> · just the page: lyrics and chords, nothing else</sub></td>
+    <td><img src="docs/screenshots/14-songs.png" alt="My songs: the library and the backup card"><br><sub><b>My songs</b> · every song lives on your device; back them all up with one button</sub></td>
   </tr>
   <tr>
-    <td><img src="docs/screenshots/12-start.png" alt="First-run start card"><br><sub><b>Start</b> · begin with a blank song or the sample track</sub></td>
+    <td><img src="docs/screenshots/17-hum-start.png" alt="New song: hum or sing an idea, a clean canvas, or start from a song"><br><sub><b>New song</b> · hum an idea, start on a clean canvas, or start from a song (audio or MIDI)</sub></td>
+    <td><img src="docs/screenshots/12-start.png" alt="The clean canvas on first run"><br><sub><b>First run</b> · the clean canvas: write lyrics and chords, sing, or load a song</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/18-hum-screen.png" alt="Hum to song: three steps and one button"><br><sub><b>Hum to song</b> · hum 10 to 30 seconds and get a whole song</sub></td>
     <td><img src="docs/screenshots/16-about.png" alt="About, credits and licences in Help"><br><sub><b>About &amp; credits</b> · in Help &amp; shortcuts: who made it, what it uses, which licences apply</sub></td>
   </tr>
 </table>
+
+Every picture is made by `npm run shots`, which drives the real app with a fake microphone and the same two synthetic recordings, so they stay true to the version they sit beside.
 
 ## Quick start
 
@@ -182,7 +217,9 @@ Flat tunings are spelled with flats (Eb Ab Db Gb Bb Eb) and the rest with sharps
 | <kbd>D</kbd> <kbd>B</kbd> <kbd>G</kbd> <kbd>T</kbd> | Band on / off: drums · bass · rhythm guitar · lead tab |
 | <kbd>1</kbd>…<kbd>8</kbd> · <kbd>0</kbd> | Recall pedalboard scene (Stage scene when Stage is focused) · all pedals off |
 | <kbd>Home</kbd> | Return to start |
-| <kbd>Ctrl/⌘</kbd>+<kbd>Z</kbd> · +<kbd>Shift</kbd> | Undo · redo |
+| <kbd>Ctrl/⌘</kbd>+<kbd>Z</kbd> · +<kbd>Shift</kbd> | Undo · redo (song edits, clips and the stem mix share one history) |
+| <kbd>Ctrl/⌘</kbd>+<kbd>E</kbd> · <kbd>Ctrl/⌘</kbd>+<kbd>D</kbd> · <kbd>Del</kbd> | Selected clip: split at the playhead · duplicate · delete (← → nudge; <kbd>Alt</kbd> while dragging = no snapping) |
+| <kbd>Ctrl/⌘</kbd>+<kbd>.</kbd> | Kill switch: stops playback, recording, rendering and the microphone at once |
 | <kbd>Ctrl/⌘</kbd>+<kbd>S</kbd> | Save project JSON |
 | <kbd>Alt</kbd>+<kbd>1…9, 0</kbd> | Jump to panel by position |
 | <kbd>[</kbd> <kbd>]</kbd> | Toggle left / right sidebar |
@@ -202,9 +239,9 @@ Knobs: drag, mouse wheel, <kbd>Shift</kbd> for fine, double-click to reset, righ
 ## Privacy and data
 
 * Audio, camera frames, songs, takes and settings are processed **on your device**. There is no server, account or analytics.
-* Your song, presets and settings autosave to **this browser's local storage**. Recorded takes live in memory only; export them as WAV. Use **Export → Project JSON** for a portable, git-friendly copy.
+* Your songs, recordings, presets and settings autosave to **this browser** (local storage and IndexedDB). Use **☰ Songs ▸ All songs ▸ Back up all songs** for one zip with everything, **Export → Project JSON** for a portable, git-friendly copy, or **Settings ▸ Export ▸ Backup folder** (Chrome and Edge) to save as you work.
 * The only network requests the app can make are the optional hand-tracking model and runtime, fetched from jsDelivr and Google storage **only if you choose MediaPipe hand tracking** in the Vision panel. The "motion energy only" mode is fully offline. To self-host those files, see [docs/HOSTING.md](docs/HOSTING.md#9-self-hosting-the-hand-tracking-files).
-* Clearing site data in your browser removes the saved project. Export first.
+* Clearing site data in your browser removes your songs. Safari on an iPhone, iPad or Mac also clears a site's storage after about a week away unless you **Add to Home Screen** (or the Dock); **⋯ More ▸ Keep songs safe** explains it and backs everything up in one tap.
 
 ## Accuracy and honest limits
 
@@ -235,6 +272,8 @@ The same page adapts to the device it is on. It picks a layout from the screen s
 
 **Install it.** Open the hosted page over HTTPS, then use **⋯ More ▸ Install app** (Chrome, Edge, Samsung Internet) or the browser's **Share ▸ Add to Home Screen** (iPhone and iPad). The installed app opens full screen and keeps working offline after the first visit; your songs and settings stay on the device. Optional hand tracking still needs internet unless you [self-host it](docs/HOSTING.md#9-self-hosting-the-hand-tracking-files).
 
+**Keep songs safe (iPhone and iPad).** Safari clears a website's saved data after about a week without a visit, unless the site is on the Home Screen. Add it (**Share ▸ Add to Home Screen**), open it from that icon, and your songs and recordings stay. **⋯ More ▸ Keep songs safe** shows the steps and has one **Back up all songs** button; **My songs**, **Open a file** (audio, lyrics, MIDI or a song file) and **Master · balance · click** are in the same sheet.
+
 **Phone audio notes.** Use headphones. iPhones and iPads take a USB audio interface through the charging port; Web MIDI is not available in iOS browsers. Latency depends on the device's audio stack, so run the loopback test in **I/O**.
 
 ## Browser support
@@ -246,6 +285,9 @@ Developed and tested in **Chromium** (Chrome and Edge, desktop and Android) with
 | Audio, rig, band, tab, transcription, stems | Web Audio and AudioWorklet (all current browsers) |
 | Microphone, camera, MIDI | HTTPS or `localhost`; **Web MIDI** is available in Chromium browsers, behind a permission prompt in Firefox, and not in Safari |
 | Choosing an output device | Recent Chromium (`AudioContext.setSinkId`) |
+| WAV bounce faster than real time | `OfflineAudioContext` with AudioWorklet (every current browser); otherwise it bounces in real time |
+| Backup folder | Chrome and Edge on a computer (File System Access) |
+| Keeping songs on iPhone, iPad, Safari | **Add to Home Screen** (or the Dock on a Mac); see *Keep songs safe* |
 
 ## Project layout
 
@@ -262,8 +304,8 @@ the-daily.studio/
 ├── samples/              ← sample tracks shown in Stems and Transcribe (+ manifest.json, info.json)
 ├── icons/                ← app icons (PNG) and their SVG source
 ├── scripts/              ← build.mjs (bundler), serve.mjs (static server), make-brand.mjs (logo, icons, social card), brand-mark.mjs, sync-journal.mjs
-├── test/                 ← smoke test (jsdom), end-to-end and mobile (Playwright), stem benchmark
-├── docs/                 ← user guide, hosting, architecture, screenshots
+├── test/                 ← smoke test (jsdom), end-to-end suites and mobile (Playwright; lib.cjs and run.cjs run them in parallel), shots.cjs (documentation pictures), stem benchmark
+├── docs/                 ← user guide, hosting, architecture, hardware checklist, screenshots
 └── .github/              ← CI, Pages deployment, issue / PR templates
 ```
 
@@ -277,12 +319,15 @@ npm run build          # src/ → index.html + codepen/
 npm run build:check    # fails if the committed outputs are stale (CI runs this)
 npm start              # serve on http://localhost:8080
 npm test               # smoke test: boots the app in jsdom, fails on any error
-npm run test:e2e       # Playwright flows (tunings, tour, rig, transcription, stems)
+npm run test:e2e       # every Playwright suite in parallel: core flows, I/O, drop, balance, lanes, camera, clips, session, render, MIDI, keep-safe, layout and phone
+npm run test:e2e:core  # just the core flows (tunings, tour, rig, transcription, stems)
 npm run test:mobile    # phone / tablet / desktop layouts, keypad, drawers, gestures, install files
+npm run test:all       # smoke test, then every suite
+npm run shots          # regenerate docs/screenshots (add words to pick some: npm run shots -- clips io)
 npm run test:stems     # offline stem-separation benchmark on synthetic audio
 ```
 
-Edit files in `src/`, run `npm run build`, and commit the regenerated `index.html` and `codepen/` together with your change. See [CONTRIBUTING.md](CONTRIBUTING.md).
+Edit files in `src/`, run `npm run build`, and commit the regenerated `index.html` and `codepen/` together with your change. See [CONTRIBUTING.md](CONTRIBUTING.md). Before a release, work through the [real-hardware checklist](docs/HARDWARE_CHECKLIST.md): automated tests use a fake microphone and camera.
 
 ## Host it on your GitHub
 
@@ -292,7 +337,8 @@ The short version: push this folder to a new repository, then **Settings → Pag
 
 * Seven- and eight-string guitar and bass support
 * An optional machine-learning separator and transcriber (loaded on demand) alongside the classical DSP
-* Tempo and key changes inside a song, MusicXML and Guitar Pro import and export
+* Tempo and key changes inside a song, MusicXML and Guitar Pro import and export (MIDI import is in 2.2)
+* Dragging a clip onto another lane; copy and paste of clips between songs
 * Sidechain ducking, pitch correction and a groove picker
 * Shareable song links and a gallery of community presets
 * More amp and cabinet models, impulse-response library browser

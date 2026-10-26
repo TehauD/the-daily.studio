@@ -1,7 +1,7 @@
 /* ============================================================
    Part 07 · DAW timeline (canvas, virtualized) and the tablature editor
    ============================================================ */
-const TL = { bw: 150, lh: 46, rh: 22, sh: 20, follow: true, cache: null, dirty: true, col: {}, drag: null };
+const TL = { bw: 150, lh: 46, rh: 22, sh: 20, follow: true, cache: null, dirty: true, col: {}, drag: null, clip: null };
 function tlColors() {
   const cs = getComputedStyle(document.documentElement), g = n => cs.getPropertyValue(n).trim();
   TL.col = { bg: g('--panel'), bg2: g('--bg2'), grid: g('--grid'), line: g('--line'), line2: g('--line2'), text: g('--text'), muted: g('--muted'), accent: g('--accent'), accent2: g('--accent2'), wave: g('--wave'), p2: g('--panel2'), cv: [g('--cv1'), g('--cv2'), g('--cv3'), g('--cv4'), g('--cv5')] }; TL.dirty = true;
@@ -16,7 +16,7 @@ function buildTimeline() {
   UI.tlinfo = h('span', { class: 'chip' });
   bar.append(h('b', { class: 'small', title: 'Click ruler = seek · Shift-drag = loop · Double-click ruler = clear loop · click section strip = select section' }, 'ARRANGEMENT'), UI.follow, h('span', { class: 'small muted' }, 'Zoom'), zoom, h('span', { class: 'small muted' }, 'Swing'), sw,
     h('button', { class: 'btn sm', title: 'Clear loop region (double-click ruler)', onclick: () => { T.loopA = 0; T.loopB = null; TL.dirty = true; } }, 'Clear loop'),
-    h('button', { class: 'btn sm', onclick: () => { T.loop = true; T.loopA = Math.floor(playheadSlot() / spb()) * spb(); T.loopB = Math.min(songSlots(), T.loopA + spb() * 4); syncTransport(); TL.dirty = true; } }, 'Loop 4 bars here'), h('span', { class: 'grow' }), UI.tlinfo,
+    h('button', { class: 'btn sm', onclick: () => { T.loop = true; T.loopA = Math.floor(playheadSlot() / spb()) * spb(); T.loopB = Math.min(songSlots(), T.loopA + spb() * 4); syncTransport(); TL.dirty = true; } }, 'Loop 4 bars here'), clipBarMake(), h('span', { class: 'grow' }), UI.tlinfo,
     h('span', { class: 'small muted' }, 'Lanes'), h('button', { class: 'btn sm', title: 'Shorter lanes', 'aria-label': 'Shorter lanes', onclick: () => laneScale(-.2) }, '−'), h('button', { class: 'btn sm', title: 'Taller lanes', 'aria-label': 'Taller lanes', onclick: () => laneScale(.2) }, '+'),
     h('button', { class: 'btn sm', title: 'Show / hide lanes, add a vocal or guitar lane, reorder', onclick: e => lanesMenu(e.currentTarget) }, 'Lanes ▾'),
     h('button', { class: 'btn sm', title: 'Cycle timeline height', onclick: () => { TL.hi = ((TL.hi || 0) + 1) % 4; $('#center').style.setProperty('--tlh', ['minmax(200px,40%)', 'minmax(200px,58%)', 'minmax(200px,82%)', '120px'][TL.hi]); setTimeout(tlSize, 30); } }, '↕'), h('button', { class: 'btn sm cmax', 'data-m': 'tl', title: 'Give the arrangement the whole centre (Esc to go back)', onclick: () => centerMax('tl') }, '⤢'));
@@ -26,7 +26,7 @@ function buildTimeline() {
   hwh.addEventListener('pointerdown', e => { e.preventDefault(); hwh.setPointerCapture(e.pointerId); const x0 = e.clientX, w0 = LN.hw; const mv = ev => { LN.hw = clamp(w0 + ev.clientX - x0, 120, 360); body.style.setProperty('--hw', LN.hw + 'px'); tlSize(); }; const up = () => { hwh.removeEventListener('pointermove', mv); hwh.removeEventListener('pointerup', up); saveLn(); renderHeads(); }; hwh.addEventListener('pointermove', mv); hwh.addEventListener('pointerup', up); });
   hwh.addEventListener('dblclick', () => { LN.hw = 216; body.style.setProperty('--hw', '216px'); saveLn(); renderHeads(); tlSize(); });
   UI.tls.addEventListener('scroll', () => { UI.heads.scrollTop = UI.tls.scrollTop; TL.dirty = true; });
-  UI.tlc.addEventListener('pointerdown', tlDown); UI.tlc.addEventListener('pointermove', tlMove); UI.tlc.addEventListener('pointerup', tlUp); UI.tlc.addEventListener('dblclick', e => { const y = e.offsetY + UI.tls.scrollTop; if (y < TL.rh) { T.loopA = 0; T.loopB = null; TL.dirty = true; } });
+  UI.tlc.addEventListener('pointerdown', tlDown); UI.tlc.addEventListener('pointermove', tlMove); UI.tlc.addEventListener('pointerup', tlUp); UI.tlc.addEventListener('pointercancel', tlUp); UI.tlc.addEventListener('contextmenu', tkContext); UI.tlc.addEventListener('dblclick', e => { const y = e.offsetY + UI.tls.scrollTop; if (y < TL.rh) { T.loopA = 0; T.loopB = null; TL.dirty = true; } });
   new ResizeObserver(() => { tlSize(); }).observe(UI.tls); bus.on('song', () => { tlSize(); renderHeads(); }); bus.on('takes', () => { renderHeads(); tlSize(); }); renderHeads(); tlSize();
 }
 function tlSize() {
@@ -34,9 +34,7 @@ function tlSize() {
   UI.tlsp.style.width = W + 'px'; UI.tlsp.style.height = Math.max(H, vh) + 'px'; const dpr = window.devicePixelRatio || 1; const cw = Math.floor(vw * dpr), ch = Math.floor(vh * dpr);
   if (UI.tlc.width !== cw || UI.tlc.height !== ch) { UI.tlc.width = cw; UI.tlc.height = ch; UI.tlc.style.width = vw + 'px'; UI.tlc.style.height = vh + 'px'; } TL.dirty = true;
 }
-function dlTake(tk) {
-  const n = tk.name.replace(/\W+/g, '_'); if (tk.kind === 'vox') return download(n + '.wav', encodeWav([tk.dry], tk.sr, 24)); download(n + '_dry_DI.wav', encodeWav([tk.dry], tk.sr, 24)); if (tk.wet) setTimeout(() => download(n + '_wet.wav', encodeWav([tk.wet], tk.sr, 24)), 300);
-}
+function dlTake(tk) { tkDownload(tkLead(tk)); }
 function tlPoint(e) { return { x: e.offsetX + UI.tls.scrollLeft, y: e.offsetY + UI.tls.scrollTop }; }
 function tlDown(e) {
   const { x, y } = tlPoint(e), sp = spb(), sw = TL.bw / sp, bs = 16 / S.ts[1], bars = totalBars();
@@ -45,11 +43,12 @@ function tlDown(e) {
   }
   const bi = Math.floor(x / TL.bw); if (bi < 0 || bi >= bars) return; const fb = flatBars()[bi];
   if (y < TL.rh + TL.sh) { SEL.sec = fb.si; SEL.bar = 0; TL.dirty = true; dockGo('song'); bus.emit('sel'); return; }
-  const lo = laneAt(y), lane = lo && lo.l; SEL.sec = fb.si; SEL.bar = fb.bi; if (lane && lane.type === 'tab') { TE.sec = fb.si; TE.bi = fb.bi; dockGo('tab'); renderTab(); } else if (lane && lane.type === 'chords') { dockGo('song'); bus.emit('sel'); }
+  const lo = laneAt(y), lane = lo && lo.l; SEL.sec = fb.si; SEL.bar = fb.bi; if (lane && lane.type === 'take' && tkDown(e, lo, x, y)) { TL.dirty = true; return; } tkSelect(null);
+  if (lane && lane.type === 'tab') { TE.sec = fb.si; TE.bi = fb.bi; dockGo('tab'); renderTab(); } else if (lane && lane.type === 'chords') { dockGo('song'); bus.emit('sel'); }
   TL.dirty = true;
 }
-function tlMove(e) { if (!TL.drag) return; const { x } = tlPoint(e), sp = spb(), b = clamp(Math.round(x / TL.bw) * sp, 0, totalBars() * sp); T.loopA = Math.min(TL.drag.a, b); T.loopB = Math.max(TL.drag.a, b); if (T.loopB === T.loopA) T.loopB = null; TL.dirty = true; }
-function tlUp() { if (TL.drag) { TL.drag = null; if (T.loopB != null) { T.loop = true; syncTransport(); } } }
+function tlMove(e) { if (TL.clip) { tkMove(e); return; } if (!TL.drag) { tkHover(e); return; } const { x } = tlPoint(e), sp = spb(), b = clamp(Math.round(x / TL.bw) * sp, 0, totalBars() * sp); T.loopA = Math.min(TL.drag.a, b); T.loopB = Math.max(TL.drag.a, b); if (T.loopB === T.loopA) T.loopB = null; TL.dirty = true; }
+function tlUp() { if (TL.clip) { tkUp(); return; } if (TL.drag) { TL.drag = null; if (T.loopB != null) { T.loop = true; syncTransport(); } } }
 function tlCache() {
   if (TL.cache) return TL.cache; const sp = spb(), n = totalBars(), bass = []; T.bars = null;
   for (let bi = 0; bi < n; bi++) for (let sib = 0; sib < sp; sib++) { const cd = chordAt(bi, sib); if (!cd || !cd.sym || !S.band.bassOn) continue; const e = bassEvent(S.band.bassStyle, cd.sym, cd.rel, cd.len, cd.next); if (e) bass.push({ s: bi * sp + sib, m: e.m, len: e.len }); }

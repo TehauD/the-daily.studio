@@ -1,4 +1,4 @@
-# Documentation index (v2.1.0)
+# Documentation index (v2.2.0)
 
 | Document | For | Contents |
 | --- | --- | --- |
@@ -10,6 +10,7 @@
 | [OPERATIONS.md](OPERATIONS.md) | whoever runs it | release procedure, rollback, monitoring, incident playbook |
 | [RELEASE.md](RELEASE.md) | release manager | go-live checklist and live smoke test |
 | [TESTING.md](TESTING.md) | contributors | test suites, quality gates, manual checks, known gaps |
+| [HARDWARE_CHECKLIST.md](HARDWARE_CHECKLIST.md) | release manager, testers | the 45-minute pass with a real interface, microphone, camera, MIDI keyboard and phone |
 | [SECURITY_MODEL.md](SECURITY_MODEL.md) | reviewers | trust boundaries, permissions, data inventory, controls, residual risk |
 | [BRAND.md](BRAND.md) | designers | logo, palette, type, assets |
 | [../PRIVACY.md](../PRIVACY.md), [../SECURITY.md](../SECURITY.md), [../THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md), [../CHANGELOG.md](../CHANGELOG.md) | everyone | policies, licences, history |

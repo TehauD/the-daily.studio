@@ -845,3 +845,67 @@ body[data-form=phone] .mst-chip,body[data-form=phone] .sb-saved{display:none}
 @media (max-width:1339px){.mst-lab{display:none}.mst-chip .btn{padding-left:8px;padding-right:8px}}
 @media (max-width:1239px){#topR>.chip{display:none}}
 body[data-form=phone] .metro-more{display:none}
+
+/* ---------- 2.2 · clips: the selected-clip bar and its menu ---------- */
+.clipbar{display:inline-flex;align-items:center;gap:6px;padding:2px 6px;border:1px solid var(--accent2);border-radius:9px;background:var(--panel2);flex:none}
+.clipbar[hidden]{display:none}
+.clipbar b{max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.clipmenu .lrow{display:flex;align-items:center;gap:8px;margin:4px 0}
+.clipmenu .lrow input[type=range]{min-width:120px}
+
+/* fast render window */
+.rnd{display:grid;gap:10px;min-width:min(340px,86vw)}
+.rnd-bar{height:8px;border-radius:99px;background:var(--line,#2a3a33);overflow:hidden}
+.rnd-bar i{display:block;height:100%;width:0;background:var(--acc,#7dbf9b);border-radius:99px;transition:width .2s ease}
+@media (prefers-reduced-motion:reduce){.rnd-bar i{transition:none}}
+
+/* open a MIDI file */
+.smf{display:grid;gap:10px;min-width:min(520px,88vw)}
+.smf-tbl{display:grid;border:1px solid var(--line,#2a3a33);border-radius:10px;overflow:hidden}
+.smf-r{display:grid;grid-template-columns:64px minmax(0,1fr) 56px 92px 64px;gap:8px;align-items:center;padding:7px 10px;border-top:1px solid var(--line,#2a3a33);font-size:13px}
+.smf-r:first-child{border-top:0}
+.smf-r.on{background:color-mix(in srgb,var(--acc,#7dbf9b) 14%,transparent)}
+.smf-h{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut,#9db3a5)}
+.smf-n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.smf-r input{width:18px;height:18px;margin:0}
+.smf-act{gap:8px;margin-top:2px}
+@media (max-width:560px){.smf-r{grid-template-columns:52px minmax(0,1fr) 40px 58px;gap:6px;padding:7px 8px;font-size:12px}.smf-r>:nth-child(4){display:none}.smf-h{font-size:9px;letter-spacing:.02em}.smf-r>*{min-width:0}}
+
+/* keeping songs safe */
+.keep{border:1px solid var(--line,#2a3a33);border-left:3px solid var(--warn,#d9a441);border-radius:10px;padding:10px 12px;margin:-2px 0 10px;display:grid;gap:6px;background:color-mix(in srgb,var(--warn,#d9a441) 8%,transparent)}
+.keep.low{border-left-color:var(--line2,#3a4a43)}
+.keep p{margin:0;font-size:13px}
+.keep ol{margin:0;padding-left:20px;font-size:13px;display:grid;gap:2px}
+.keep-dlg{display:grid;gap:8px;min-width:min(380px,86vw)}
+.keep-toast{display:flex;gap:8px;align-items:center;flex-wrap:wrap;max-width:min(420px,92vw)}
+.keep-toast span{flex:1 1 220px}
+
+/* phone: lane headers fit the narrow column; the clip bar gets a row of its own */
+body[data-form=phone] .tl-head{padding:3px 5px}
+body[data-form=phone] .tl-head .b{gap:2px;flex-wrap:nowrap}
+body[data-form=phone] .tl-head .b button{padding:0 4px;min-width:0;min-height:0;white-space:nowrap;font-size:9px}
+body[data-form=phone] .tl-head select.vin{display:none}
+body[data-form=phone] .tl-head .lmeter{width:18px}
+body[data-form=phone] .tl-bar:has(.clipbar:not([hidden])){flex-wrap:wrap;overflow-x:visible}
+body[data-form=phone] .tl-bar:has(.clipbar:not([hidden])) .clipbar{order:-1;flex:1 1 100%;justify-content:space-between}
+body[data-form=phone] .clipbar b{max-width:90px}
+/* the time display never clips; the transport gives way before it does */
+.lcd{flex:none;white-space:nowrap}
+@media (max-width:1339px){#transport .lcd{min-width:0;padding:3px 8px}#transport .lcd b{font-size:15px}}
+body[data-form=phone] .tl-head.vox .lmeter,body[data-form=phone] .tl-head.live .lmeter{display:none}
+@media (max-width:1439px){body[data-form=desktop] #songbar{padding-right:34px;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 30px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 30px),transparent)}}
+.keep-toast,.keep-toast button{pointer-events:auto}
+
+/* 2.2.0 · the header and song bar between 1340 and 1799 px: they give way in steps (labels first, then the latency pill), so no field is squeezed and nothing is cut off */
+@media (max-width:1899px){body[data-form=desktop] .sbf>span{display:none}}
+@media (max-width:1659px){.sbf.f-title .in{width:clamp(110px,11vw,190px)}.sbf.f-artist .in{width:clamp(90px,7.5vw,130px)}.sbf.f-tun .in{width:clamp(100px,9vw,150px)}.sbf.f-scale .in{width:clamp(96px,8vw,130px)}}
+@media (max-width:1659px){
+  #transport .btn .lbl{display:none}#transport .btn.sm{padding-left:8px;padding-right:8px}
+  #transport .lcd{min-width:0;padding:3px 8px}#transport .lcd b{font-size:15px}
+  .mst-lab{display:none}.mst-chip .btn{padding-left:8px;padding-right:8px}
+  body[data-form=desktop] #top{gap:10px}
+}
+@media (max-width:1519px){body[data-form=desktop] #topR>.chip{display:none}}
+body[data-form=desktop] #transport .btn.icon,body[data-form=desktop] #transport .btn.sm{flex:none}
+body[data-form=desktop] #transport .field{flex:0 1 auto;min-width:46px}
+body[data-form=desktop] #transport .field select,body[data-form=desktop] #transport .field input{min-width:0}

@@ -2,7 +2,7 @@
 
 A practical walkthrough of every panel. For a ten-minute orientation, press **?** in the app and choose **Take the guided tour**.
 
-Contents: [Perform, share and back up](#perform-share-and-back-up-20) · [Getting sound](#getting-sound-in-and-out) · [Tones and the Rig](#tones-and-the-rig) · [The band](#the-band) · [Arrangement and recording](#arrangement-and-recording) · [Tab editor](#tab-editor) · [Song, tunings and capo](#song-tunings-and-capo) · [Fretboard and tuner](#fretboard-and-tuner) · [Transcribe](#transcribe-audio-to-tab) · [Stems](#stems-and-backing-tracks) · [Neural map](#neural-map) · [Visuals and Stage](#visuals-and-stage) · [Vision](#vision-lab) · [Research](#research-panel) · [Export, history and backup](#export-history-and-backup) · [MIDI](#midi) · [Layout](#layout-and-themes)
+Contents: [Clips and the mix](#clips-move-trim-fade-split-22) · [Fast WAV render](#faster-than-real-time-wav-render-22) · [Open a MIDI file](#open-a-midi-file-22) · [Keep songs safe](#keep-songs-safe-22) · [Perform, share and back up](#perform-share-and-back-up-20) · [Getting sound](#getting-sound-in-and-out) · [Tones and the Rig](#tones-and-the-rig) · [The band](#the-band) · [Arrangement and recording](#arrangement-and-recording) · [Tab editor](#tab-editor) · [Song, tunings and capo](#song-tunings-and-capo) · [Fretboard and tuner](#fretboard-and-tuner) · [Transcribe](#transcribe-audio-to-tab) · [Stems](#stems-and-backing-tracks) · [Neural map](#neural-map) · [Visuals and Stage](#visuals-and-stage) · [Vision](#vision-lab) · [Research](#research-panel) · [Export, history and backup](#export-history-and-backup) · [MIDI](#midi) · [Layout](#layout-and-themes)
 
 ---
 
@@ -74,21 +74,21 @@ The lower strip is the **arrangement**, laid out like a DAW's track list: chord 
 * Click a bar to select it; the **Tab** panel opens on that bar (click the chord lane to refine that bar in **Refine**). **Follow** keeps the playhead visible; **Zoom** and **Swing** change the view and feel.
 * **Loop 4 bars here** and **Clear loop** set a practice loop; <kbd>L</kbd> toggles it.
 * **Lanes.** Drag a lane's grip (⠿) to reorder it, drag its bottom edge to make it taller or shorter (double-click to reset), double-click its name to collapse it, or use **⋯** for height presets, colour, order and hide. **Lanes ▾** in the bar shows hidden lanes, adds the vocal or guitar lane and resets the arrangement; **− / +** scale every lane; drag the right edge of the headers to widen them. **⤢** gives the arrangement the whole centre (<kbd>Esc</kbd> returns).
-* **Record** (<kbd>R</kbd>) starts after a count-in and captures every **armed** lane on the same clock. The Guitar lane records **both the dry DI and the processed (wet) signal**, so you can re-amp or export either; the Vocal lane records the microphone. Waveforms draw live while recording. Takes are kept in memory only; export them as WAV from **Export** or a lane's **⋯** menu.
-* **Takes** each have a lane with mute, solo, level and pan (guitar takes also have **RE-AMP**: play the dry DI through the current rig instead of the wet print). Double-click a take's name to rename it.
+* **Record** (<kbd>R</kbd>) starts after a count-in and captures every **armed** lane on the same clock. The Guitar lane records **both the dry DI and the processed (wet) signal**, so you can re-amp or export either; the Vocal lane records the microphone. Waveforms draw live while recording. Takes are saved with the song in this browser (and in bundles and backups); you can also export them as WAV from **Export** or a lane's **⋯** menu.
+* **Takes** each have a lane with mute, solo, level and pan (guitar takes also have **RE-AMP**: play the dry DI through the current rig instead of the wet print; **RE** on a phone). Double-click a take's name to rename it. Each recording is a **clip** you can move, trim, fade and split: see [Clips](#clips-move-trim-fade-split-22).
 * Drag the divider between the arrangement and the panels to resize, double-click it to reset. The **↕** button cycles the arrangement height. Double-click the ruler to clear the loop.
 
 ### Lane strips, Auto-balance and the master (2.1)
 
 * **Every lane has a strip.** Band lanes, the vocal lane, takes, stems and the backing track show **M** (mute), **S** (solo), a volume fader, **pan** and **+Fx**. Click a lane's name to select it (it is tinted in the arrangement).
-* **+Fx** opens that lane's effects: **EQ** (low, mid, high), **compressor**, a **reverb** send and a **delay** send, with quick looks (Flat, Warm, Bright, Punch, Room, Hall, Echo). The chip lights when anything is on. Settings are saved with the song, and with each take. Stems and the backing track are not saved in a project, so their strips reset when you reload.
+* **+Fx** opens that lane's effects: **EQ** (low, mid, high), **compressor**, a **reverb** send and a **delay** send, with quick looks (Flat, Warm, Bright, Punch, Room, Hall, Echo). The chip lights when anything is on. Settings are saved with the song, and with each take. The stem and backing-track strips (levels, mutes, solos and effects) are saved too, and come back when you reopen the song.
 * **Take faders go to +12 dB** (a squared fader, so it is finer near the middle) for quiet recordings.
 * **⚖ Auto-balance** (**Lanes ▾**, or the master menu) measures your takes and backing track on this device and shows a plan before it changes anything: vocal about −16 LUFS, guitar about −19, backing track about −21 (about −16 when it is alone), two or more guitar takes spread left and right, band parts back at their reference levels. **Apply** it, **Undo** it. A restore point is saved first. A take that is too quiet to reach its target is raised as far as its fader goes, and the plan says how far short it is.
 * **Master chip** (header): the master level, a clip light and a preset (**Off**, **Clean**, **Warm**, **Bright**, **Loud**) that sets the tone, a touch of glue and the loudness target used when you save audio.
-* **↶ ↷** in the song bar undo and redo changes to the song (<kbd>Ctrl/Cmd</kbd> + <kbd>Z</kbd>); the **✓ Saved** mark confirms your work is stored in this browser (it says *Saving…* for a moment after a change, or *Not saved* if the browser refuses).
+* **↶ ↷** in the song bar undo and redo changes to the song, its clips and the stem mix, in the order you made them (<kbd>Ctrl/Cmd</kbd> + <kbd>Z</kbd>; <kbd>Shift</kbd> to redo); the **✓ Saved** mark confirms your work is stored in this browser (it says *Saving…* for a moment after a change, or *Not saved* if the browser refuses).
 * **Count-in.** The **▾** beside **Click** sets the count-in (none, 1, 2 or 4 bars) and the click volume.
 
-### Drop it in (2.1)
+### Drop it in (2.1, MIDI in 2.2)
 
 Drag files onto the page, or press **Choose a file…** in the row under an empty arrangement.
 
@@ -97,9 +97,69 @@ Drag files onto the page, or press **Choose a file…** in the row under an empt
 | Audio or video (MP3, WAV, M4A, FLAC, OGG, MP4…) | A short question: **Backing track** (split into stems, sets tempo and key, a restore point first), **Vocal take**, **Guitar take** or **Hum → new song**. Several files at once become takes. |
 | Lyrics (.txt, .md, .lrc) | The lyrics import opens with the text. |
 | A song file (.daily-song.zip or a backup) or a song .json | The song (or songs) are imported. |
+| A MIDI file (.mid, .midi, .kar) | The track picker opens, then **Create song** (see [Open a MIDI file](#open-a-midi-file-22)). |
 | A rig .json | The rig is loaded. |
 
 Takes land at the start of the song and the page grows enough bars to play all of them. Everything is read on your device. While a window is open, drops are declined with a note, and the browser never leaves the page for a dropped file.
+
+### Clips: move, trim, fade, split (2.2)
+
+Every recording on a take lane is a **clip**. Click one to select it (its outline turns gold and the **clip bar** under the arrangement toolbar names it); everything below is one undo step.
+
+![Clips](screenshots/24-clips.png)
+
+| To do this | Do this |
+| --- | --- |
+| **Move** a clip | Drag its body. It jumps by whole beats; hold <kbd>Alt</kbd> for no snapping. Nudge from the keyboard with ← → (<kbd>Shift</kbd> = a bar) while the arrangement has focus, or with the arrows in the clip menu. |
+| **Trim** it | Drag its left or right edge. The audio is not changed; **Reset trim** in the clip menu brings it all back. |
+| **Fade** it | Drag the small square at the top-left or top-right corner, or set **Fade in / Fade out** in the clip menu. The fade is shown as a ramp on the waveform. |
+| **Split** it | Put the playhead where you want the cut and press **✂ Split** (<kbd>Ctrl/⌘</kbd>+<kbd>E</kbd>). Both halves share one recording in memory, so nothing is copied. |
+| **Duplicate** it | **⧉ Duplicate** (<kbd>Ctrl/⌘</kbd>+<kbd>D</kbd>) puts a copy right after the clip. |
+| **Delete** it | **✕ Delete** or <kbd>Del</kbd>. Undo brings it back with its audio. |
+| **Save** a clip | Right-click ▸ **Save clip (WAV)**. |
+
+![The clip menu](screenshots/25-clip-menu.png)
+
+* A lane keeps **one** level, pan, mute, solo and effects strip however many clips it holds. Delete the first clip and the lane's settings pass to the next.
+* **Auto-balance** and **Bounce** use the lane as it plays: trimmed parts are silent, fades are applied.
+* On a phone the clip bar has a row of its own above the arrangement; the same actions are there, with **⋯** for the rest.
+* A clip stays on its own lane. Dragging a clip to a different lane is not built yet.
+* **One history.** <kbd>Ctrl/⌘</kbd>+<kbd>Z</kbd> steps back through clip edits, song edits, the stem mix and Auto-balance together, newest first.
+
+### Faster-than-real-time WAV render (2.2)
+
+**Bounce master WAV** and **Bounce this part** no longer wait for the song to play. The app builds a second copy of its sound engine that is not connected to your speakers, schedules every note, take and backing-track stem on it, and mixes the song as fast as your processor allows: the same strips, effects, master tone and limiter that you hear, in the same order.
+
+![Fast render](screenshots/30-render.png)
+
+* A window shows progress and a **Cancel** button. <kbd>Ctrl/⌘</kbd>+<kbd>.</kbd> stops it too. While it runs, the sound engine you were using is set aside and put back when it ends.
+* The saved file is identical in level and tone to a real-time bounce. The window ends with the render time.
+* If the browser cannot do it, a message says so and the bounce runs in real time as before. **Compressed audio**, the **share page** and **Record the stage** still record while the song plays, and say so on their buttons.
+* **Settings ▸ Export ▸ Render WAVs faster than real time** turns the fast path off (for example, to compare the two files).
+* Speed depends on your device: on a small two-core test server it ran about three times faster than real time.
+
+### Open a MIDI file (2.2)
+
+Drop a `.mid`, `.midi` or `.kar` (karaoke) file on the page, or choose one in **＋ New ▸ Start from a song**, or **⋯ More ▸ Open a file** on a phone.
+
+![Open MIDI file](screenshots/31-midi.png)
+
+1. **The window** lists the pitched tracks with their note counts and range, and shows the file's tempo and time signature. The track most likely to be the melody is chosen for you; change it with the round buttons. The other tracks are ticked to decide the **chords**. Untick any you do not want. Drum tracks are not copied: the band plays its own pattern.
+2. **Create song** makes a new song (your current song is saved first): tempo and time signature from the file; the key worked out from the notes (the file's own key signature is used when it is one of the best fits); chords for every half bar from the notes that sound together, with the lowest note counted most; the melody on the lead tab; karaoke words as lyrics under the chords; and a band style chosen from the tempo and key (Ballad, Folk, Pop, Rock or Dance). With only a melody, chords are suggested from the melody.
+3. The song is limited to 160 bars. Very large files (more than 8 MB, 300,000 notes or 128 tracks) and files with SMPTE time are explained instead of opened.
+
+Everything is read on your device. The result is an ordinary song: edit the chords, change the style, add lyrics, record over it.
+
+### Keep songs safe (2.2)
+
+Your songs live in your browser. Chrome and Edge keep them unless you clear site data. **Safari on an iPhone, iPad or Mac clears a website's saved data after about a week without a visit**, unless the site has been added to the Home Screen (or the Dock on a Mac).
+
+![Keep my songs safe](screenshots/32-keep.png)
+
+* **⋯ More ▸ Keep songs safe** (and the card at the top of **My songs**) explains it in three steps (Share ▸ Add to Home Screen ▸ Add), and has one **Back up all songs** button that saves every song and recording as one zip. **Open a file** brings that zip back.
+* The first time you record a take in Safari on an iPhone or iPad, a one-time tip offers the same.
+* A backup reminder appears after a while away: 7 days where the risk is high (Safari not on the Home Screen), 30 days elsewhere. It only reminds; nothing is uploaded.
+* On a computer, **Settings ▸ Export ▸ Backup folder** (Chrome and Edge) writes each song to a folder as you work.
 
 ### Recording guitar and vocals together
 
@@ -210,7 +270,7 @@ Live and session measurements: pitch-class usage and intonation (mean cents devi
 **Auto look.** **🎬 Auto look** in the Visuals bar makes the look follow the section while the song plays (choruses open into the Fifths Halo, bridges into Prism, intros and outros into the Tunnel). When playback stops, your own look comes back.
 
 **Export and share** (the Export panel, and the Save menu on the hum result):
-* **Bounce master WAV** now reports the song's loudness (LUFS) and true peak. **Settings ▸ Export ▸ Loudness target** can bring song WAVs to −14 (streaming), −16 or −23 LUFS, never past −1 dBTP. Part WAVs are left as they are.
+* **Bounce master WAV** is rendered faster than the song plays (see [above](#faster-than-real-time-wav-render-22)) and reports the song's loudness (LUFS) and true peak. **Settings ▸ Export ▸ Loudness target** can bring song WAVs to −14 (streaming), −16 or −23 LUFS, never past −1 dBTP. Part WAVs are left as they are.
 * **Compressed audio** saves M4A (or Opus in a .webm where the browser cannot make M4A). It plays once in real time, like a bounce.
 * **Share page** saves **one HTML file** with the sound, lyrics, chords and a small player. Open it in any browser or send it. Click a lyric line to jump there. It loads nothing from anywhere.
 * **Print or PDF sheet** makes a clean sheet with chords over the words for the browser's Print dialog (choose **Save as PDF** there).
@@ -221,9 +281,9 @@ Live and session measurements: pitch-class usage and intonation (mean cents devi
 ## Export, history and backup
 
 * **Ultimate Guitar** text with `[ch]` / `[tab]` tags (toggle off for plain text), **ChordPro**, lyrics-only, and tab-only, each with **Copy** and **Download**. A **submission lint** warns about unreadable chords, over-wide lines and similar problems.
-* **MIDI**, **Bounce master WAV (real time)**, **Each band part (WAVs)**, **All takes (dry DI + wet)**, **Project JSON** (<kbd>Ctrl/⌘</kbd>+<kbd>S</kbd>), **Import project**, **Load demo song**, **New blank song**.
+* **MIDI**, **Bounce master WAV** (rendered faster than real time), **Each band part (WAVs)**, **All takes (dry DI + wet)**, **Project JSON** (<kbd>Ctrl/⌘</kbd>+<kbd>S</kbd>), **Import project**, **Load demo song**, **New blank song**.
 * **Version history** snapshots your song automatically (before each play, periodically and when you leave the page) and keeps the last 30 in this browser. **Restoring** first snapshots the current state, so it is reversible. **＋ Snapshot now** makes one on demand.
-* Your song autosaves to this browser. **Project JSON is your portable backup**; clearing browser data deletes the autosave.
+* Your song autosaves to this browser. **Back up all songs** (☰ Songs ▸ All songs) is your portable backup of everything; **Project JSON** is one song as plain text. Clearing browser data deletes the autosave.
 
 ## MIDI
 
@@ -242,6 +302,8 @@ The app switches layout by itself; **⋯ More ▸ Device layout** (or Settings) 
 | **See** | Visuals · Stage · Neural · Vision |
 | **Stems** | Stems · Transcribe |
 | **More** | Research · Export |
+
+The **⋯** button (top right) opens the **More sheet**: **Hum or sing a song**, **Audio · kill switch**, **Light theme**, **Appearance**, **Monitor**, **Screen awake**, **Settings**, **Help**, **Guided tour**, **Save project**, **Share link**, **My songs**, **Open a file** (audio, lyrics, MIDI or a song file), **Master · balance · click** (master preset, Auto-balance, count-in and click level), **Keep songs safe**, **Install app** (when the browser offers it), **Full screen** and **Device layout**.
 
 The **Tracks** button at the right of the chip row cycles the arrangement between a mini strip, a **full-screen tracks view** (no other panel competing; the button then reads **▾ Panel**) and hidden. The band strip (drums, bass, rhythm, lead) sits under the chips in *Play* and *Write*.
 
@@ -270,13 +332,13 @@ The **Tracks** button at the right of the chip row cycles the arrangement betwee
 
 ## Songs, new songs and reset (1.4)
 
-**Where your songs live.** Every song is saved automatically in this browser (IndexedDB), with its takes and, for a song started from a track, the backing track. Nothing leaves the device. Browsers can clear site data when storage is low or if you clear cookies, so use bundles to keep copies.
+**Where your songs live.** Every song is saved automatically in this browser (IndexedDB), with its takes and, for a song started from a track, the backing track. Nothing leaves the device. Browsers can clear site data when storage is low or if you clear cookies, and Safari does it after about a week away, so use **Back up all songs** to keep a copy (see [Keep songs safe](#keep-songs-safe-22)).
 
 **Starting.** **＋ New** (song bar; on a phone Settings ▸ Data ▸ My songs ▸ ＋ New song) asks how to begin:
 - *Clean canvas*: a blank page. Give it a working title; **Set it up first** lets you choose tempo, key, mode, time signature, tuning and shape.
-- *Start from a song*: choose or drop an audio file, or pick a sample. It is split into stems; the title, artist, tempo, key and chords are filled in, and the Studio opens.
+- *Start from a song*: choose or drop an audio file, or pick a sample. It is split into stems; the title, artist, tempo, key and chords are filled in, and the Studio opens. A **MIDI file** works here too: see [Open a MIDI file](#open-a-midi-file-22).
 
-**My songs.** ☰ Songs ▸ All songs: Open, Rename (✎), Duplicate, Bundle (export) and Delete (click twice). **Back up all songs** gives one zip. **Open a bundle or lyrics…** imports a `.daily-song.zip`, a `.txt` / `.md` / `.lrc` lyric file (goes through Paste lyrics), or an older `.daily-song.json`.
+**My songs.** ☰ Songs ▸ All songs: Open, Rename (✎), Duplicate, Bundle (export) and Delete (click twice). **Back up all songs** (the button in the card at the top) gives one zip with every song, take and backing track; **Open a bundle or lyrics…** imports a `.daily-song.zip`, a `.txt` / `.md` / `.lrc` lyric file (goes through Paste lyrics), or an older `.daily-song.json`.
 
 **Backing tracks.** The original file is stored and separated again when you reopen the song. On phones you tap **Restore track** (Settings ▸ Data ▸ Restore track changes this).
 

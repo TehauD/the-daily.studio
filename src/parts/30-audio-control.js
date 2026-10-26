@@ -10,6 +10,7 @@ function closeInput() {
 function audioKill(quiet) {
   try { if (typeof humAbort === 'function') humAbort(); } catch (e) { }
   try { if (typeof srecAbort === 'function') srecAbort(); } catch (e) { }
+  try { if (typeof ofrAbort === 'function') ofrAbort(); } catch (e) { }
   try { if (T.rec || T.playing) stopPlay(false); } catch (e) { }
   try { if (CFG.monitor) setMonitor(false); } catch (e) { }
   closeInput(); try { if (E.ctx && E.ctx.state === 'running') E.ctx.suspend(); } catch (e) { }

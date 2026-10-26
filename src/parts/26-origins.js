@@ -40,17 +40,18 @@ function originsOpen(o = {}) {
   let chosen = false; if (o.first && !PRJ.cur) PRJ.fresh = true;
   const close = () => { chosen = true; const d = document.getElementById('origins'); if (d) d.close(); };
   const startBlank = async () => { close(); await projCreate('blank', Object.assign({}, f, { ts: f.ts.split('/').map(Number), zoom: 'song' })); sideShow('refine'); setTimeout(() => { if (SB.f.title) { SB.f.title.focus(); SB.f.title.select(); } }, 80); };
-  const pick = h('input', { type: 'file', accept: 'audio/*,.mp3,.wav,.flac,.m4a,.ogg', style: { display: 'none' }, onchange: e => { const fl = e.target.files[0]; e.target.value = ''; if (fl) { close(); projFromTrack(fl); } } });
+  const isMidi = fl => /\.(mid|midi|kar)$/i.test(fl.name), intake = fl => { close(); if (isMidi(fl)) dropFiles([fl]); else projFromTrack(fl); };   // a MIDI file opens the track picker; anything else is a backing track
+  const pick = h('input', { type: 'file', accept: 'audio/*,.mp3,.wav,.flac,.m4a,.ogg,.mid,.midi,.kar', style: { display: 'none' }, onchange: e => { const fl = e.target.files[0]; e.target.value = ''; if (fl) intake(fl); } });
   const opt = h('details', { class: 'pd-opt' }, h('summary', {}, 'Set it up first (optional)'), h('div', { class: 'pd-form' },
     pField('Tempo', h('input', { class: 'in', type: 'number', min: 30, max: 260, value: f.bpm, onchange: e => { f.bpm = +e.target.value || 92; } })), pField('Key', pSel(NS.map((n, i) => [i, n]), f.key, v => { f.key = +v; })), pField('Mode', pSel([['min', 'minor'], ['maj', 'major']], 'min', v => { f.minor = v === 'min'; })),
     pField('Time', pSel(['4/4', '3/4', '2/4', '5/4', '6/8', '12/8', '7/8'].map(x => [x, x]), f.ts, v => { f.ts = v; })), pField('Tuning', pSel(Object.keys(TUNINGS).map(k => [k, k]), f.tuning, v => { f.tuning = v; })),
     pField('Shape', pSel([['empty', 'An empty page (one section)'], ['vc', 'Verse · Chorus'], ['vcb', 'Verse · Chorus · Bridge']], f.form, v => { f.form = v; }))));
   const blank = h('section', { class: 'pd-card' }, h('div', { class: 'pd-ic' }, '✎'), h('h3', {}, 'Clean canvas'), h('p', { class: 'muted' }, 'A blank page for a brand-new song. Write lyrics and chords, hum an idea, record a take — nothing is pre-filled.'),
     pField('Working title', h('input', { class: 'in', placeholder: 'Untitled Idea', oninput: e => { f.title = e.target.value; }, onkeydown: e => { if (e.key === 'Enter') startBlank(); } })), opt, h('button', { class: 'btn primary pd-go', onclick: startBlank }, 'Start writing →'));
-  const track = h('section', { class: 'pd-card pd-drop' }, h('div', { class: 'pd-ic' }, '♪'), h('h3', {}, 'Start from a song'), h('p', { class: 'muted' }, 'Load a track (a demo, a recording, a song you want to learn). It is split into stems and the title, tempo, key and chords fill the song in.'),
-    h('button', { class: 'btn primary pd-go', onclick: () => pick.click() }, '📂 Choose an audio file…'), pick, h('div', { class: 'tiny muted', style: { margin: '6px 0 8px' } }, 'or drop a file here · stays on this device'), samplesShelf(fl => { close(); projFromTrack(fl); }, 'TRY A SAMPLE'));
+  const track = h('section', { class: 'pd-card pd-drop' }, h('div', { class: 'pd-ic' }, '♪'), h('h3', {}, 'Start from a song'), h('p', { class: 'muted' }, 'Load a track (a demo, a recording, a song you want to learn). It is split into stems and the title, tempo, key and chords fill the song in. Or open a MIDI file and get chords and a lead tab.'),
+    h('button', { class: 'btn primary pd-go', onclick: () => pick.click() }, '📂 Choose an audio or MIDI file…'), pick, h('div', { class: 'tiny muted', style: { margin: '6px 0 8px' } }, 'or drop a file here · stays on this device'), samplesShelf(fl => { close(); projFromTrack(fl); }, 'TRY A SAMPLE'));
   ['dragover', 'dragenter'].forEach(ev => track.addEventListener(ev, e => { e.preventDefault(); track.classList.add('over'); })); ['dragleave', 'drop'].forEach(ev => track.addEventListener(ev, () => track.classList.remove('over')));
-  track.addEventListener('drop', e => { e.preventDefault(); const fl = e.dataTransfer.files[0]; if (fl) { close(); projFromTrack(fl); } });
+  track.addEventListener('drop', e => { e.preventDefault(); const fl = e.dataTransfer.files[0]; if (fl) intake(fl); });
   const hero = h('section', { class: 'pd-card pd-hero' }, h('div', { class: 'pd-ic' }, '🎤'), h('h3', {}, 'Hum or sing an idea'), h('p', {}, 'No instrument or experience needed. Hum a few seconds and hear a whole song.'),
     h('div', { class: 'row', style: { gap: '10px', flexWrap: 'wrap' } }, h('button', { class: 'btn primary pd-go', id: 'originsHum', onclick: () => { close(); humOpen(); } }, '● Hum or sing'), h('span', { class: 'tiny muted' }, 'Everything stays on this device.')));
   const bund = h('input', { type: 'file', accept: '.zip,.json,.txt,.md,.lrc', style: { display: 'none' }, onchange: e => { const fl = e.target.files[0]; e.target.value = ''; if (fl) { close(); projImport(fl); } } });
@@ -74,7 +75,7 @@ function libraryOpen() {
     box.innerHTML = ''; await projRefresh(); const tot = PRJ.list.reduce((a, r) => a + (r.size || 0), 0);
     box.append(h('div', { class: 'pd-head' }, h('span', { class: 'muted small' }, PRJ.ok ? PRJ.list.length + (PRJ.list.length === 1 ? ' song' : ' songs') + ' · ' + projBytes(tot) + ' on this device' : 'This browser is not keeping a library (private window?). Export bundles to keep your work.'), h('span', { class: 'grow' }),
       h('button', { class: 'btn sm primary', onclick: () => { d.close(); newSongGo(); } }, '＋ New song'), h('button', { class: 'btn sm', onclick: () => { d.close(); resetOpen(); } }, 'Reset…')));
-    box.append(h('div', { class: 'tiny muted', style: { margin: '-2px 0 8px' } }, (PRJ.persisted ? '🛡 Your browser keeps this library' : 'Your browser may clear this if disk space runs low') + ' · Last backup: ' + (CFG.lastBackup ? new Date(CFG.lastBackup).toLocaleDateString() : 'never')));
+    box.append(keepCard({ onDone: draw }));
     if (!PRJ.list.length) box.append(h('div', { class: 'muted', style: { padding: '18px 4px' } }, 'No songs yet.'));
     PRJ.list.forEach(r => {
       const cur = r.id === PRJ.cur, name = h('b', { class: 'pd-name' }, r.title || 'Untitled'), row = h('div', { class: 'pd-row' + (cur ? ' cur' : '') });
@@ -88,7 +89,7 @@ function libraryOpen() {
       box.append(row);
     });
     const imp = h('input', { type: 'file', accept: '.zip,.json,.txt,.md,.lrc', style: { display: 'none' }, onchange: e => { const fl = e.target.files[0]; e.target.value = ''; if (fl) { d.close(); projImport(fl); } } });
-    box.append(h('div', { class: 'pd-foot' }, h('button', { class: 'btn sm', onclick: () => imp.click() }, '⤒ Open a bundle…'), imp, PRJ.list.length > 1 ? h('button', { class: 'btn sm', title: 'One .zip with every song in its own folder', onclick: projExportAll }, '⤓ Back up all songs') : null,
+    box.append(h('div', { class: 'pd-foot' }, h('button', { class: 'btn sm', onclick: () => imp.click() }, '⤒ Open a bundle…'), imp, 
       h('span', { class: 'tiny muted' }, 'A bundle is a plain folder of files — song.md opens in any text editor or Obsidian.')));
   }
   const d = pdlg('library', 'MY SONGS', box, { wide: true }); draw(); return d;

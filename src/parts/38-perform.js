@@ -71,7 +71,7 @@ function perfSync() {
   if (!PF.el) return; const q = id => document.getElementById(id), on = (id, v) => { const b = q(id); if (b) b.classList.toggle('on', !!v); };
   const p = q('pfPlay'); if (p) p.textContent = T.playing ? '■ Stop' : '▶ Play'; const r = q('pfRec'); if (r) { r.classList.toggle('on', T.rec && T.playing); r.classList.toggle('armed', T.rec && !T.playing); r.textContent = T.rec && T.playing ? '● Recording' : '● Record'; }
   on('pfLoop', T.loop); on('pfMetro', T.metro); const b = q('pfBpm'); if (b) b.textContent = Math.round(S.bpm) + ' BPM';
-  const tk = q('pfTakes'); if (tk) tk.textContent = TAKES.length ? TAKES.length + ' take' + (TAKES.length === 1 ? '' : 's') + ' in this song' : '';
+  const tk = q('pfTakes'); if (tk) { const n = tkLeads().length; tk.textContent = n ? n + ' take' + (n === 1 ? '' : 's') + ' in this song' : ''; }
 }
 function perfTick() {
   if (!PF.on || !PF.el) return; PF.raf = requestAnimationFrame(perfTick);

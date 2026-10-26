@@ -99,7 +99,7 @@ function spSched() {
 
 /* ---------- loading ---------- */
 async function stemLoad(file, opt) {
-  opt = opt || {}; if (STM.busy) return; if (!file) return; const tk = STM.ticket = (STM.ticket || 0) + 1; STM.file = file; STM._saved = !!opt.restore; STM.busy = true; if (STP.playing) spPause(); STM.ch = null; STM.an = null; STM.env = null; STM.beatShift = 0; STM.tempoMul = 1; setStemStatus('Decoding ' + file.name + '…', 0);
+  opt = opt || {}; if (STM.busy) return; if (!file) return; const tk = STM.ticket = (STM.ticket || 0) + 1; STM.file = file; STM._saved = !!opt.restore; if (!opt.restore) stmReset(); STM.busy = true; if (STP.playing) spPause(); STM.ch = null; STM.an = null; STM.env = null; STM.beatShift = 0; STM.tempoMul = 1; setStemStatus('Decoding ' + file.name + '…', 0);
   try {
     await startAudio(); const ab = await file.arrayBuffer(), buf = await E.ctx.decodeAudioData(ab); if (tk !== STM.ticket) return; let n = buf.length, sr = buf.sampleRate; const cap = Math.floor(sr * 600); if (n > cap) { n = cap; toast('Only the first 10 minutes are analysed', 'warn'); }
     const L = new Float32Array(n), R = new Float32Array(n); L.set(buf.getChannelData(0).subarray(0, n)); R.set((buf.numberOfChannels > 1 ? buf.getChannelData(1) : buf.getChannelData(0)).subarray(0, n));
@@ -140,7 +140,7 @@ function buildStemsPane() {
   SU.status = h('span', { class: 'small muted' }, 'Drop an audio file here, or choose one →'); SU.bar = h('i', { style: { display: 'block', height: '100%', width: '0%', background: 'var(--accent)', transition: 'width .2s' } }); SU.barw = h('div', { style: { height: '4px', background: 'var(--panel2)', borderRadius: '4px', overflow: 'hidden', flex: '1 1 160px', maxWidth: '260px', display: 'none' } }, SU.bar);
   SU.play = h('button', { class: 'btn primary', style: { width: '44px' }, onclick: () => STP.playing ? spPause() : spPlay() }, '▶');
   SU.time = h('span', { class: 'mono small', style: { minWidth: '92px' } }, '0:00 / 0:00');
-  const preset = (mutes) => { STM.mix.forEach((m, i) => { m.m = mutes.includes(i); m.s = false; }); spGains(); renderStemStrips(); };
+  const preset = (mutes) => { const bf = snap(); STM.mix.forEach((m, i) => { m.m = mutes.includes(i); m.s = false; }); spGains(); renderStemStrips(); histPush(bf); };
   SU.file = file; SU.top = h('div', { class: 'row', style: { gap: '10px', flexWrap: 'wrap', alignItems: 'center', margin: '0 0 8px' } }, h('button', { class: 'btn primary', onclick: () => file.click() }, '📂 Load backing track'), file, SU.barw, SU.status);
   SU.tr = h('div', { class: 'row', style: { gap: '8px', flexWrap: 'wrap', alignItems: 'center', margin: '8px 0' } }, h('button', { class: 'btn', title: 'Back to start', onclick: () => spSeek(0) }, '⏮'), SU.play, SU.time,
     h('span', { class: 'tiny muted', style: { marginLeft: '6px', fontWeight: 800, letterSpacing: '.08em' } }, 'JAM'), h('button', { class: 'btn sm', title: 'Hear everything', onclick: () => preset([]) }, 'All'), h('button', { class: 'btn sm', title: 'Mute the guitar / keys stem so you can play that part', onclick: () => preset([3]) }, 'Play the guitar'), h('button', { class: 'btn sm', title: 'Mute the bass', onclick: () => preset([1]) }, 'Play the bass'), h('button', { class: 'btn sm', title: 'Mute the vocal (karaoke)', onclick: () => preset([2]) }, 'Karaoke'), h('button', { class: 'btn sm', title: 'Mute the drums', onclick: () => preset([0]) }, 'Drummer’s out'),
@@ -161,11 +161,11 @@ function renderStems() {
 function renderStemStrips() {
   const s = SU.strips; s.innerHTML = ''; const an = STM.an;
   STMS.forEach(([id, name, col], i) => {
-    const m = STM.mix[i], inf = an && an.info[i], mb = (l, k, t) => h('button', { class: 'btn sm' + (m[k] ? ' on' : ''), style: { width: '30px', padding: '0' }, title: t, onclick: () => { m[k] = !m[k]; spGains(); renderStemStrips(); } }, l);
+    const m = STM.mix[i], inf = an && an.info[i], mb = (l, k, t) => h('button', { class: 'btn sm' + (m[k] ? ' on' : ''), style: { width: '30px', padding: '0' }, title: t, onclick: () => { const bf = snap(); m[k] = !m[k]; spGains(); renderStemStrips(); histPush(bf); } }, l);
     s.append(h('div', { class: 'row', style: { gap: '10px', alignItems: 'center', padding: '6px 10px', background: 'var(--panel2)', borderRadius: '10px', opacity: (m.m && !STM.mix.some(x => x.s)) || (STM.mix.some(x => x.s) && !m.s) ? .5 : 1 } },
       h('i', { style: { width: '10px', height: '10px', borderRadius: '50%', background: col, flex: 'none' } }), h('b', { style: { width: '150px', fontSize: '13px' } }, name),
       h('span', { class: 'tiny', style: { width: '170px', color: inf && inf.found ? 'var(--text)' : 'var(--muted)' } }, inf ? (inf.found ? inf.strength + ' · ' + Math.round(inf.cov * 100) + '% of track' + (inf.first > 1 ? ' · enters ' + fmtT(inf.first) : '') : 'not detected') : ''),
-      mb('M', 'm', 'Mute'), mb('S', 's', 'Solo'), h('input', { type: 'range', min: 0, max: 1.5, step: .01, value: m.g, style: { flex: 1, maxWidth: '260px' }, oninput: e => { m.g = +e.target.value; spGains(); } }), h('button', { class: 'btn sm', title: 'Download this stem as a WAV', onclick: () => stemExport(i) }, '⤓ WAV')));
+      mb('M', 'm', 'Mute'), mb('S', 's', 'Solo'), h('input', { type: 'range', min: 0, max: 1.5, step: .01, value: m.g, style: { flex: 1, maxWidth: '260px' }, oninput: e => { histBegin(); m.g = +e.target.value; spGains(); stmDirty(); }, onchange: () => { histEnd(); } }), h('button', { class: 'btn sm', title: 'Download this stem as a WAV', onclick: () => stemExport(i) }, '⤓ WAV')));
   });
 }
 function renderStemInfo() {

@@ -44,7 +44,7 @@ registerProcessor('fw-flange',Flange);
 
 class Pluck extends AudioWorkletProcessor{
   constructor(){super();this.v=[];this.q=[];this.seed=987654321;
-    this.port.onmessage=e=>{const m=e.data;if(m.t==='on')this.q.push(m);else if(m.t==='kill'){this.v.length=0;this.q.length=0;}};}
+    this.port.onmessage=e=>{const m=e.data;if(m.t==='on')this.q.push(m);else if(m.t==='kill'){this.v.length=0;this.q.length=0;}else if(m.t==='sync')this.port.postMessage({sync:m.n});};}
   rnd(){this.seed=(Math.imul(this.seed,1664525)+1013904223)>>>0;return this.seed/2147483648-1;}
   start(m,off){const sr=sampleRate,s=m.s,Lf=sr/m.f+s,N=Math.max(4,Math.floor(Lf)),d=Lf-N,c=(1-d)/(1+d);
     const buf=new Float32Array(N),ex=new Float32Array(N);let lp=0;const a=m.br;
@@ -113,6 +113,7 @@ function makeTap(src, opt, cb) {
 }
 
 async function startAudio() {
+  if (OFR.busy) return;                                    // a fast render has the engine for a moment
   const gest = !navigator.userActivation || navigator.userActivation.hasBeenActive, kick = async c => { const r = c.resume(); if (gest) await r; else r.catch(() => { }); };
   if (E.ctx) { if (E.ctx.state === 'suspended') await kick(E.ctx); return; }
   const Ctor = window.AudioContext || window.webkitAudioContext;

@@ -36,9 +36,10 @@ Commit the regenerated files together with your source change.
 npm run build
 npm test                    # smoke test in jsdom; must print "ERRORS: 0"
 npx playwright install chromium     # once
-npm run test:e2e            # real browser flows (about two minutes)
+npm run test:e2e            # every real-browser suite, in parallel (about five minutes; name a few to run less: node test/run.cjs clips)
 npm run test:mobile         # phone / tablet / desktop layouts and gestures (about a minute)
 npm run test:stems          # only if you touched the stem DSP
+npm run shots               # only if the look of a screen changed: refreshes docs/screenshots
 ```
 
 Then try the change in the browser in **light and dark** themes, at a normal laptop width (1280–1440 px), and with the **guided tour** (it must still point at the right things if you moved or renamed UI).

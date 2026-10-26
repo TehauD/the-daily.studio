@@ -32,11 +32,11 @@ function abTrackLufs() {
 }
 /** work out what to change. Pure with respect to the app: it only reads. */
 async function abMeasure() {
-  const rows = [], notes = [], haveTakes = TAKES.length > 0, vox = TAKES.filter(t => t.kind === 'vox'), gtr = TAKES.filter(t => t.kind !== 'vox');
+  const rows = [], notes = [], leads = tkLeads(), haveTakes = leads.length > 0, vox = leads.filter(t => t.kind === 'vox'), gtr = leads.filter(t => t.kind !== 'vox');
   const aim = (base, n) => base - (n > 1 ? 10 * Math.log10(n) : 0);
   const take = (tk, base, n, pan) => {
-    const buf = tk.dry || tk.wet; if (!buf) return;
-    const lufs = abLufs(buf, null, tk.sr, 60), g0 = tk.g == null ? 1 : tk.g;
+    const r = tkRender(tk, 'dry') || tkRender(tk, 'wet'); if (!r) return;                 // the lane as it plays: trimmed clips in place, fades applied
+    const lufs = abLufs(r.data, null, r.sr, 60), g0 = tk.g == null ? 1 : tk.g;
     if (!isFinite(lufs)) { notes.push('“' + tk.name + '” is too quiet or too short to measure, so it was left as it is.'); return; }
     const want = aim(base, n), raw = Math.pow(10, (want - lufs) / 20), g1 = clamp(raw, AB_MIN, AB_MAX);
     if (raw > AB_MAX * 1.01) notes.push('“' + tk.name + '” is very quiet. It is raised as far as its fader goes, which is ' + (abDb(raw) - abDb(AB_MAX)).toFixed(1) + ' dB short of the target. Re-record it a little louder if you can.');
@@ -62,23 +62,25 @@ function abSnapshot(plan) {
   plan.rows.forEach(r => { if (r.type === 'take') { const tk = TAKES.find(t => t.id === r.id); if (tk) s.takes[r.id] = [tk.g == null ? 1 : tk.g, tk.pan || 0]; } else if (r.type === 'band') s.band[r.id] = [S.mix[r.id].g, S.mix[r.id].p || 0]; });
   return s;
 }
-function abRefresh() { try { TAKES.forEach(t => takeLive(t)); } catch (e) { } try { spBus(); } catch (e) { } try { applyMix(); } catch (e) { } commit(false); bus.emit('takes'); TL.dirty = true; }
-/** apply a plan (rows that already sit right are skipped). Returns the number of lanes changed. */
+function abLive() { try { TAKES.forEach(t => takeLive(t)); } catch (e) { } try { spBus(); } catch (e) { } try { applyMix(); } catch (e) { } bus.emit('takes'); TL.dirty = true; }
+/** apply a plan (rows that already sit right are skipped). Returns the number of lanes changed. One step in Undo / Redo. */
 function abApply(plan) {
-  BAL.snap = abSnapshot(plan); let n = 0; try { vhSnap('before Auto-balance', true); } catch (e) { }
+  BAL.snap = abSnapshot(plan); const before = snap(); let n = 0; try { vhSnap('before Auto-balance', true); } catch (e) { }
   plan.rows.forEach(r => {
     if (r.same) return; n++;
     if (r.type === 'take') { const tk = TAKES.find(t => t.id === r.id); if (tk) { tk.g = +r.g1.toFixed(3); tk.pan = +r.p1.toFixed(2); } }
     else if (r.type === 'trk') STM.vol = +r.g1.toFixed(3);
     else { S.mix[r.id].g = r.g1; S.mix[r.id].p = r.p1; }
   });
-  abRefresh(); return n;
+  abLive(); if (!histPush(before)) commit(false); BAL.hist = histStack.cur; return n;
 }
 function abUndo() {
   const s = BAL.snap; if (!s) return false;
+  if (BAL.hist && histStack.cur === BAL.hist && histStack.u.length) { BAL.snap = null; BAL.hist = null; undo(); abLive(); return true; }   // nothing else has changed since: step back through the shared history
+  const before = snap();
   Object.keys(s.takes).forEach(id => { const tk = TAKES.find(t => t.id === id); if (tk) { tk.g = s.takes[id][0]; tk.pan = s.takes[id][1]; } });
   STM.vol = s.trk; Object.keys(s.band).forEach(k => { S.mix[k].g = s.band[k][0]; S.mix[k].p = s.band[k][1]; });
-  BAL.snap = null; abRefresh(); return true;
+  BAL.snap = null; BAL.hist = null; abLive(); if (!histPush(before)) commit(false); return true;
 }
 
 /** the dialog: measure → show the plan → apply → undo */

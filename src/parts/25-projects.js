@@ -88,7 +88,9 @@ function normSong(saved) {
   const d = newSong(), s = Object.assign(d, saved || {}); s.band = Object.assign(d.band, (saved && saved.band) || {}); s.mix = Object.assign(d.mix, (saved && saved.mix) || {}); s.voicePref = (saved && saved.voicePref) || {};
   s.tuning = ((saved && saved.tuning) || d.tuning).slice(); if (!Array.isArray(s.sections)) s.sections = []; if (!Array.isArray(s.ts) || s.ts.length < 2) s.ts = [4, 4]; return s;
 }
-const takeMeta = t => { const m = { hum: !!t.hum, id: t.id, kind: t.kind || 'gtr', name: t.name, startSec: t.startSec, sr: t.sr, g: t.g, pan: t.pan || 0, fx: fxOn(t.fx) ? Object.assign({}, t.fx) : null, mute: !!t.mute, solo: !!t.solo, mode: t.mode, bpm: t.bpm, preset: t.preset || '', peak: t.peak, rms: t.rms, dur: t.dur, t: t.t, hasWet: !!t.wet, hasCam: !!(t.cam && t.cam.length) }; try { m.stats = t.stats ? JSON.parse(JSON.stringify(t.stats)) : null; } catch (e) { m.stats = null; } return m; };
+const takeMeta = t => { const m = { hum: !!t.hum, id: t.id, kind: t.kind || 'gtr', name: t.name, startSec: t.startSec, sr: t.sr, g: t.g, pan: t.pan || 0, fx: fxOn(t.fx) ? Object.assign({}, t.fx) : null, mute: !!t.mute, solo: !!t.solo, mode: t.mode, bpm: t.bpm, preset: t.preset || '', peak: t.peak, rms: t.rms, dur: t.dur, t: t.t, hasWet: !!t.wet, hasCam: !!(t.cam && t.cam.length) };
+  if (t.grp && t.grp !== t.id) m.grp = t.grp; if (t.src && t.src !== t.id) m.src = t.src; if (t.inS > 0) m.inS = t.inS; if (t.outS != null) m.outS = t.outS; if (t.fadeIn > 0) m.fadeIn = t.fadeIn; if (t.fadeOut > 0) m.fadeOut = t.fadeOut;
+  try { m.stats = t.stats ? JSON.parse(JSON.stringify(t.stats)) : null; } catch (e) { m.stats = null; } return m; };
 
 /* ---------- save ---------- */
 function projDirty() {
@@ -112,25 +114,18 @@ async function projPersist() {
     if (!PRJ.persisted && !CFG.persistAsked) { CFG.persistAsked = true; saveCfg(); PRJ.persisted = await navigator.storage.persist(); }
   } catch (e) { }
 }
-/** a gentle, rare reminder to keep a copy: only when there is real work and no recent backup */
-function projNudge() {
-  setTimeout(() => {
-    try {
-      const real = PRJ.list.some(r => r.nTakes || r.track) || PRJ.list.length > 2, day = 864e5, now = Date.now();
-      if (real && (!CFG.lastBackup || now - CFG.lastBackup > 30 * day) && (!CFG.nudgeAt || now - CFG.nudgeAt > 7 * day)) { CFG.nudgeAt = now; saveCfg(); toast('Tip: keep a copy of your songs. ☰ Songs ▸ Back up all songs saves one zip.'); }
-    } catch (e) { }
-  }, 25000);
-}
 async function projSaveNow() {
   const id = PRJ.cur, rec = PRJ.rec || (PRJ.rec = { id, created: Date.now(), origin: 'blank' });
   rec.song = JSON.parse(JSON.stringify(S)); rec.title = S.title || 'Untitled'; rec.artist = S.artist || ''; rec.modified = Date.now(); rec.v = 1; rec.zoom = typeof ZOOM !== 'undefined' ? ZOOM.cur : 'studio';
-  let bytes = 0; const live = new Set(TAKES.map(t => t.id));
-  for (const old of (rec.takes || []).map(t => t.id).filter(x => !live.has(x))) await pdbDelPrefix('blobs', id + '/take/' + old + '/');
-  for (const t of TAKES) {
-    if (!t._saved) { const k = id + '/take/' + t.id + '/'; await pdbPut('blobs', toI16(t.dry), k + 'dry'); if (t.wet) await pdbPut('blobs', toI16(t.wet), k + 'wet'); if (t.cam && t.cam.length) { try { await pdbPut('blobs', JSON.stringify(t.cam), k + 'cam'); } catch (e) { } } t._saved = true; }
+  let bytes = 0; const live = new Set(TAKES.map(tkSrc));
+  for (const old of new Set((rec.takes || []).map(t => t.src || t.id))) if (!live.has(old)) await pdbDelPrefix('blobs', id + '/take/' + old + '/');
+  const done = new Set();
+  for (const t of TAKES) {                                            // clips that came from one recording share its blobs, so each recording is written once
+    const sid = tkSrc(t); if (done.has(sid)) continue; done.add(sid); const grp = TAKES.filter(x => tkSrc(x) === sid);
+    if (grp.some(x => !x._saved)) { const k = id + '/take/' + sid + '/'; await pdbPut('blobs', toI16(t.dry), k + 'dry'); if (t.wet) await pdbPut('blobs', toI16(t.wet), k + 'wet'); if (t.cam && t.cam.length) { try { await pdbPut('blobs', JSON.stringify(t.cam), k + 'cam'); } catch (e) { } } grp.forEach(x => { x._saved = true; }); }
     bytes += (t.dry.length + (t.wet ? t.wet.length : 0)) * 2;
   }
-  rec.takes = TAKES.map(takeMeta);
+  rec.takes = TAKES.map(takeMeta); rec.stemMix = stmHistGet();
   if (STM.ch && STM.file && !STM._saved && !STM.busy) {
     const buf = await STM.file.arrayBuffer(); await pdbPut('blobs', { buf, type: STM.file.type || 'audio/mp4', name: STM.file.name || 'track' }, id + '/track'); STM._saved = true;
     rec.track = { name: STM.name, title: STM.title, artist: STM.artist, dur: STM.dur, fileName: STM.file.name || 'track', type: STM.file.type || 'audio/mp4', bytes: buf.byteLength }; PRJ.pending = null;
@@ -145,8 +140,8 @@ async function projRefresh() { try { PRJ.list = (await pdbAll('projects')).sort(
 function projQuiet() {
   try { if (T.playing) stopPlay(true); } catch (e) { }
   try { if (STP.playing) spPause(); } catch (e) { }
-  STM.ticket = (STM.ticket || 0) + 1; STM.busy = false; STM.restoring = false; TAKES.length = 0; PRJ.pending = null;
-  if (STM.ch) stemUnload(); STM.file = null; STM._saved = false;
+  STM.ticket = (STM.ticket || 0) + 1; STM.busy = false; STM.restoring = false; TAKES.length = 0; TK_BIN.clear(); TKSEL.id = null; PRJ.pending = null;
+  if (STM.ch) stemUnload(); STM.file = null; STM._saved = false; stmReset();
 }
 function projUse(song) {
   S = normSong(song); histStack.u.length = 0; histStack.r.length = 0; histStack.cur = snap();
@@ -159,10 +154,16 @@ async function projLoad(id, o = {}) {
   PRJ.loading = true;
   try {
     projQuiet(); PRJ.cur = id; PRJ.rec = rec; store.set('cur', id);
+    const srcs = new Map();                                              // each recording is read once, however many clips use it
     for (const m of rec.takes || []) {
-      const k = id + '/take/' + m.id + '/', dry = await pdbGet('blobs', k + 'dry'); if (!dry) continue;
-      const wet = m.hasWet ? await pdbGet('blobs', k + 'wet') : null, cam = m.hasCam ? await pdbGet('blobs', k + 'cam') : null; let cm = []; try { cm = cam ? JSON.parse(cam) : []; } catch (e) { }
-      const t = Object.assign({}, m, { dry: fromI16(dry), wet: wet ? fromI16(wet) : null, cam: cm, _saved: true }); t.peaks = peaksOf(t.dry); TAKES.push(t);
+      const sid = m.src || m.id; let r = srcs.get(sid);
+      if (!r) {
+        const k = id + '/take/' + sid + '/', dry = await pdbGet('blobs', k + 'dry'); if (!dry) { srcs.set(sid, false); continue; }
+        const wet = m.hasWet ? await pdbGet('blobs', k + 'wet') : null, cam = m.hasCam ? await pdbGet('blobs', k + 'cam') : null; let cm = []; try { cm = cam ? JSON.parse(cam) : []; } catch (e) { }
+        const d = fromI16(dry); r = { dry: d, wet: wet ? fromI16(wet) : null, cam: cm, peaks: peaksOf(d) }; srcs.set(sid, r);
+      }
+      if (!r) continue;
+      TAKES.push(Object.assign({}, m, { dry: r.dry, wet: r.wet, cam: r.cam, peaks: r.peaks, _saved: true }));
     }
     projUse(rec.song);
     if (rec.zoom && typeof zoomSet === 'function' && !o.keepZoom) zoomSet(rec.zoom, true);
@@ -175,7 +176,7 @@ async function projRestoreTrack() {
   const id = PRJ.cur, tm = PRJ.pending; if (!id || !tm || STM.busy) return;
   const b = await pdbGet('blobs', id + '/track'); if (!b || PRJ.cur !== id) { PRJ.pending = null; bus.emit('track'); return; }
   STM.restoring = true; try { await stemLoad(new File([b.buf], b.name || tm.fileName || 'track', { type: b.type }), { restore: true }); } finally { STM.restoring = false; }
-  if (STM.ch) PRJ.pending = null; bus.emit('track');
+  if (STM.ch) { PRJ.pending = null; const rec = PRJ.rec; if (rec && rec.stemMix && PRJ.cur === id) { stmHistSet(rec.stemMix); histStack.cur = snap(); } } bus.emit('track');
 }
 
 /* ---------- creating ---------- */
@@ -235,12 +236,17 @@ function songMarkdown(s, rec) {
 }
 /** every file of a project, read back from storage: [{name, data}] under the given folder */
 async function projEntries(id, dir) {
-  const rec = await pdbGet('projects', id); if (!rec) throw new Error('song not found'); const enc = new TextEncoder(), files = [], arr = { format: 'the-daily-song', version: 1, app: BRAND.name + ' ' + VERSION, exported: new Date().toISOString(), id, origin: rec.origin || 'blank', created: rec.created, modified: rec.modified, zoom: rec.zoom || 'song', song: rec.song, takes: [], track: null, lanes: CFG.lanes || null };
+  const rec = await pdbGet('projects', id); if (!rec) throw new Error('song not found'); const enc = new TextEncoder(), files = [], arr = { format: 'the-daily-song', version: 1, app: BRAND.name + ' ' + VERSION, exported: new Date().toISOString(), id, origin: rec.origin || 'blank', created: rec.created, modified: rec.modified, zoom: rec.zoom || 'song', song: rec.song, stemMix: rec.stemMix || null, takes: [], track: null, lanes: CFG.lanes || null };
+  const used = new Set(), cache = new Map();                              // a clip is written as the audio it plays (trimmed); clips of one recording read its blobs once
   for (const m of rec.takes || []) {
-    const k = id + '/take/' + m.id + '/', dry = await pdbGet('blobs', k + 'dry'); if (!dry) continue; const base = slug(m.name), e = Object.assign({}, m, { files: { dry: 'audio/' + base + (m.hasWet ? '-dry' : '') + '.wav' } });
-    files.push({ name: dir + e.files.dry, data: wavI16(dry, m.sr) });
-    if (m.hasWet) { const wet = await pdbGet('blobs', k + 'wet'); if (wet) { e.files.wet = 'audio/' + base + '-wet.wav'; files.push({ name: dir + e.files.wet, data: wavI16(wet, m.sr) }); } }
-    if (m.hasCam) { const cam = await pdbGet('blobs', k + 'cam'); if (cam) { e.files.cam = 'audio/' + base + '-fret-log.json'; files.push({ name: dir + e.files.cam, data: enc.encode(cam) }); } }
+    const sid = m.src || m.id, k = id + '/take/' + sid + '/'; let r = cache.get(sid);
+    if (!r) { const dry = await pdbGet('blobs', k + 'dry'); if (!dry) continue; r = { dry, wet: m.hasWet ? await pdbGet('blobs', k + 'wet') : null, cam: m.hasCam ? await pdbGet('blobs', k + 'cam') : null }; cache.set(sid, r); }
+    let base = slug(m.name), n = 1; while (used.has(base)) base = slug(m.name) + '-' + (++n); used.add(base);
+    const i0 = Math.min(r.dry.length, Math.round((m.inS || 0) * m.sr)), i1 = m.outS == null ? r.dry.length : Math.min(r.dry.length, Math.round(m.outS * m.sr)), e = Object.assign({}, m, { files: { dry: 'audio/' + base + (m.hasWet ? '-dry' : '') + '.wav' } });
+    delete e.src; delete e.inS; delete e.outS; e.dur = Math.max(0, i1 - i0) / m.sr;
+    files.push({ name: dir + e.files.dry, data: wavI16(r.dry.subarray(i0, i1), m.sr) });
+    if (r.wet) { const w1 = m.outS == null ? r.wet.length : Math.min(r.wet.length, i1); e.files.wet = 'audio/' + base + '-wet.wav'; files.push({ name: dir + e.files.wet, data: wavI16(r.wet.subarray(Math.min(i0, r.wet.length), w1), m.sr) }); }
+    if (r.cam) { let cm = []; try { cm = JSON.parse(r.cam); } catch (x) { } const t0 = m.inS || 0, t1 = e.dur + t0; cm = cm.filter(c => c.t >= t0 && c.t <= t1).map(c => Object.assign({}, c, { t: +(c.t - t0).toFixed(4) })); if (cm.length) { e.files.cam = 'audio/' + base + '-fret-log.json'; files.push({ name: dir + e.files.cam, data: enc.encode(JSON.stringify(cm)) }); } else e.hasCam = false; }
     arr.takes.push(e);
   }
   if (rec.track) { const b = await pdbGet('blobs', id + '/track'); if (b) { const ext = (String(b.name).match(/\.[A-Za-z0-9]+$/) || ['.m4a'])[0], fn = 'audio/track' + ext; files.push({ name: dir + fn, data: new Uint8Array(b.buf) }); arr.track = Object.assign({}, rec.track, { file: fn }); } }
@@ -273,7 +279,7 @@ async function projImport(file) {
     let last = null; const dec = new TextDecoder();
     for (const ak of arrs) {
       const pre = ak.slice(0, ak.length - 'arrangement.json'.length), arr = JSON.parse(dec.decode(await z.get(ak).get())), id = projId(); if (!arr.song) continue;
-      const rec = { id, v: 1, origin: 'import', created: Date.now(), modified: Date.now(), zoom: arr.zoom || 'song', song: normSong(arr.song), takes: [], track: null }; let bytes = 0;
+      const rec = { id, v: 1, origin: 'import', created: Date.now(), modified: Date.now(), zoom: arr.zoom || 'song', song: normSong(arr.song), stemMix: arr.stemMix || null, takes: [], track: null }; let bytes = 0;
       for (const m of arr.takes || []) {
         const f = m.files && z.get(pre + m.files.dry); if (!f) continue; const w = wavParse(await f.get()), k = id + '/take/' + m.id + '/', meta = Object.assign({}, m); delete meta.files; meta.sr = w.sr; meta.hasWet = false;
         await pdbPut('blobs', w.i16, k + 'dry'); bytes += w.i16.length * 2;

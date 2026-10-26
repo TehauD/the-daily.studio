@@ -115,6 +115,7 @@ function openSettings() {
       h('div', { class: 'row', style: { gridColumn: '1/-1' } }, h('button', { class: 'btn', onclick: () => { d.close(); restartAudio(); } }, '↻ Restart audio engine'), h('span', { class: 'muted small' }, 'Required after changing latency hint, sample rate or output routing.')),
       h('h5', {}, 'Export'),
       F('Loudness target for song WAVs', sel('lufsTarget', LOUD_TARGETS)),
+      chk('Render WAVs faster than real time', 'renderFast'), h('div', { class: 'tiny muted', style: { gridColumn: '1/-1' } }, 'Mixes the song in a few seconds instead of playing it through. Turn this off if a render ever sounds different from playback; the bounce then plays the song once in real time.'),
       F('Backup folder', syncControl()),
       h('h5', {}, 'Recording & practice'),
       F('Count-in (bars)', sel('countIn', [0, 1, 2, 4])), F('Metronome level', h('input', { type: 'range', min: 0, max: 1, step: .05, value: CFG.metroVol, oninput: e => { CFG.metroVol = +e.target.value; saveCfg(); } })),
@@ -131,11 +132,11 @@ function openSettings() {
 }
 function openHelp() {
   const d = $('#help'); d.innerHTML = '';
-  const K = [['Space', 'Play / stop'], ['Ctrl + .', 'KILL AUDIO: stop playback, monitor off, release the microphone, suspend audio'], ['R', 'Arm / start recording (count-in, dry DI + wet print)'], ['L / M', 'Loop / metronome'], ['D · B · G · T', 'Band on/off: drums · bass · rhythm guitar · lead tab'], ['1…8 · 0', 'Recall pedalboard scene (Stage scene when Stage is focused) · 0 = all pedals off'], ['Home', 'Return to start'], ['Ctrl/⌘ Z · Shift+Z', 'Undo / redo song edits'], ['Ctrl/⌘ S', 'Save project JSON'], ['Alt + 1…9, 0', 'Switch panel by position (tab order is yours to arrange)'], ['[ ]', 'Toggle left / right sidebars'],
+  const K = [['Space', 'Play / stop'], ['Ctrl + .', 'KILL AUDIO: stop playback, monitor off, release the microphone, suspend audio'], ['R', 'Arm / start recording (count-in, dry DI + wet print)'], ['L / M', 'Loop / metronome'], ['D · B · G · T', 'Band on/off: drums · bass · rhythm guitar · lead tab'], ['1…8 · 0', 'Recall pedalboard scene (Stage scene when Stage is focused) · 0 = all pedals off'], ['Home', 'Return to start'], ['Ctrl/⌘ Z · Shift+Z', 'Undo / redo: song edits, clips and the stem mix share one history'], ['Ctrl/⌘ E · D · Del', 'Selected clip: split at the playhead · duplicate · delete. ← → nudge a beat (Shift = a bar). Hold Alt while dragging for no snapping'], ['Drop a file', 'Audio, lyrics, MIDI (.mid, .kar) or a song file anywhere on the page'], ['Ctrl/⌘ S', 'Save project JSON'], ['Alt + 1…9, 0', 'Switch panel by position (tab order is yours to arrange)'], ['[ ]', 'Toggle left / right sidebars'],
     ['Tab editor', 'Click a cell · type fret (0–24) · ←→↑↓ move · Del clear · h p / \\ b ~ x < set technique · Shift+arrows select · Space plays from bar'], ['Knobs', 'Drag · wheel · Shift = fine · double-click reset · right-click = MIDI learn'], ['Rig', 'Drag pedal headers to reorder the signal chain · A/B + Morph to compare tones']];
   d.append(h('div', { class: 'dlg-h' }, 'HELP & SHORTCUTS', h('button', { class: 'btn sm', onclick: () => d.close() }, 'Close')), h('div', { class: 'dlg-b', style: { display: 'block' } }, h('div', { class: 'help-k' }, K.map(([a, b]) => [h('kbd', {}, a), h('span', {}, b)])),
     h('div', { class: 'row', style: { gap: '8px', margin: '2px 0 8px' } }, h('button', { class: 'btn primary', onclick: () => tourStart() }, '▶ Take the guided tour'), h('span', { class: 'tiny muted' }, 'A two-minute spotlight walkthrough of the key areas.')), h('div', { class: 'hr' }), h('p', { class: 'small muted' }, 'Everything runs locally in your browser. Nothing is uploaded. Browsers cannot talk to ASIO drivers, so achievable latency depends on your OS audio stack; use the Loopback Test (I/O panel) for a measured number, and your Focusrite’s Direct Monitor for latency-free headphone monitoring while recording.'),
-    h('p', { class: 'small muted' }, 'Your work is autosaved to this browser. Use ☰ Songs → Save as bundle, or Export → Project JSON, for a copy you can keep anywhere. Songs, recordings and backing tracks are kept in this browser (☰ Songs). Save a song as a bundle (.zip) to move it to another device or keep a copy.'), h('div', { class: 'hr' }), aboutBlock()));
+    h('p', { class: 'small muted' }, 'Your work is autosaved to this browser: songs, recordings and backing tracks stay on this device (☰ Songs). For a copy you can keep anywhere, use ☰ Songs → All songs → Back up all songs (one zip with everything, which Open a file brings back), or save one song as a bundle. On an iPhone or iPad, add the site to the Home Screen so Safari keeps your songs.'), h('div', { class: 'hr' }), aboutBlock()));
   d.showModal();
 }
 
@@ -160,6 +161,12 @@ document.addEventListener('keydown', e => {
   if (mod && e.key.toLowerCase() === 'z' && !typing) { e.preventDefault(); e.shiftKey ? redo() : undo(); return; }
   if (mod && e.key.toLowerCase() === 'y' && !typing) { e.preventDefault(); redo(); return; }
   if (e.altKey && /^[0-9]$/.test(e.key)) { e.preventDefault(); const t2 = dockVisible()[e.key === '0' ? 9 : +e.key - 1]; if (t2) { FLOATS.has(t2[0]) ? floatFront(t2[0]) : dockGo(t2[0]); } return; }
+  if (!typing && TKSEL.id && !(t && t.closest && t.closest('dialog,.pop')) && (document.activeElement === document.body || (UI.tls && UI.tls.contains(document.activeElement)))) {
+    if (mod && e.key.toLowerCase() === 'd') { e.preventDefault(); tkDup(); return; }
+    if (mod && e.key.toLowerCase() === 'e') { e.preventDefault(); tkSplit(); return; }
+    if (!mod && (e.key === 'Delete' || e.key === 'Backspace')) { e.preventDefault(); tkDelete(); return; }
+    if (!mod && !e.altKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight') && UI.tls && document.activeElement === UI.tls) { e.preventDefault(); tkNudge(null, (e.key === 'ArrowLeft' ? -1 : 1) * (e.shiftKey ? S.ts[0] : 1)); return; }
+  }
   if (typing || mod) return;
   if (t && t.classList && t.classList.contains('tcell')) return;
   switch (e.key) {
