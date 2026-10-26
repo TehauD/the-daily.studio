@@ -26,6 +26,8 @@ The fastest way in: **hum or sing a few seconds of melody and get a whole song b
 
 **Center stage.** On the stage route (or when "Go on stage while I sing" is ticked), the app opens the Visuals tab with your camera behind the hexagons, "me in front" (green screen), so you see yourself while you sing. Turn it off with **📷 Camera off** in the panel or the **📷 Camera backdrop** button in Visuals. The person cut-out needs a small model from the internet the first time; offline it falls back to an outline look.
 
+**Record the stage.** **⏺ Record** (Visuals bar, and the bar on the full-screen stage) saves a video of the visuals with the song's sound to your device (.webm, or .mp4 where the browser makes that). Choose **Record now** or **The whole song, from the top** (no metronome, one pass). The camera is in the video only if you already turned it on; recording never starts it. Live guitar is in the sound when monitoring is on. Keep the tab in front while recording. Ctrl/Cmd + . stops it and discards it. Nothing is uploaded.
+
 **Microphone.** The Hum screen uses the same microphone as the Audio button (names appear after you first allow access). **Ctrl/Cmd + .** stops a recording in progress and releases the microphone.
 
 **What it can and cannot do.** It tracks one voice at a time, so hum single notes in a quiet room. It assumes 4/4. The song is arranged by rules from music theory and played by the app's own band; it is not an AI audio model, and nothing is sent anywhere. The first tab you see is the stage; after that the app remembers the last tab you used.

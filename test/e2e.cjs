@@ -109,7 +109,7 @@ function wav(L, sr) { const n = L.length, b = Buffer.alloc(44 + n * 2); b.write(
     await openReset(); await page.click('#reset button:has-text("Layout only")'); await page.click('#reset button:has-text("Reset 1 item")'); await page.click('#reset button:has-text("Click again")'); await bootAgain();
     ok((await title()).length > 0 && (await page.evaluate(() => (JSON.parse(localStorage.getItem('fw.cfg') || '{}').zoom || '') === '')), 'Reset ▸ Layout only: songs stay, the view goes back to default');
     await page.click('.sb-songs'); await page.click('.pd-menu button:has-text("All songs")'); await wait(400); const kept = (await page.$$('.pd-row')).length; ok(kept === 3, 'Reset ▸ Layout only kept all songs (' + kept + ')'); await page.keyboard.press('Escape');
-    await page.evaluate(() => { window.name = 'noseed'; }); await openReset(); await page.click('#reset button:has-text("Everything")'); await page.click('#reset button:has-text("Reset 6 items")'); await page.click('#reset button:has-text("Click again")'); await page.waitForFunction(() => !!document.getElementById('bootNoMic'), null, { timeout: 20000 }).catch(() => { }); await wait(1500); const keys0 = await keys(); if (await page.$('#bootNoMic')) await page.evaluate(() => document.getElementById('bootNoMic').click()); await page.waitForSelector('#humbar[data-mode="start"]', { timeout: 15000 }).catch(() => { }); await wait(800);
+    await page.evaluate(() => { window.name = 'noseed'; }); await openReset(); await page.click('#reset button:has-text("Everything")'); await page.click('#reset button:has-text("Reset 6 items")'); await page.click('#reset button:has-text("Click again")'); await page.waitForFunction(() => !!document.getElementById('bootNoMic'), null, { timeout: 20000 }).catch(() => { }); await wait(1500); const keys0 = await keys(); if (await page.$('#bootNoMic')) await page.evaluate(() => document.getElementById('bootNoMic').click()); await page.waitForSelector('#humbar[data-mode="canvas"]', { timeout: 15000 }).catch(() => { }); await wait(800);
     const after = await page.evaluate(async () => ({ open: !!document.querySelector('#humbar[data-mode="canvas"]'), keys: Object.keys(localStorage).filter(k => k.startsWith('fw.')).sort().join(','), title: (document.querySelector('.sb-title') || {}).value }));
     ok(after.open && after.title === 'Untitled idea' && !/fw\.(song|cur|started|presets|layouts|vhist)\b/.test(keys0), 'Reset ▸ Everything: nothing is written back (the old bug) and the clean canvas returns. State: ' + JSON.stringify(after) + ' before start: ' + keys0);
     await page.evaluate(() => document.getElementById('humAltDemo').click()); await wait(2500);
@@ -311,6 +311,22 @@ ok(he.length === 0, 'hum to song runs without script errors' + (he.length ? ' ' 
     await vp.reload(); await wait(2500);
     ok(await vp.evaluate(() => document.getElementById('bootStage').classList.contains('primary') && window.__daily.CFG.route === 'stage'), 'the route you used last is highlighted on the next visit');
     await vp.evaluate(() => { window.__daily.CFG.route = 'studio'; }); await vp.close(); await vctx.close(); }
+  // record the stage: a video with the song's sound is saved locally; whole-song mode plays from the top; the kill switch discards
+  { const rp = await ctx0.newPage(), re = []; rp.on('pageerror', e => re.push(e.message)); await rp.goto(BASE + '?debug'); await wait(2500);
+    await rp.evaluate(() => document.getElementById('bootNoMic').click()); await wait(2500);
+    await rp.evaluate(() => { document.querySelectorAll('#humbar').forEach(d => d.remove()); const b = document.querySelector('#tourOffer .btn:not(.primary)'); if (b) b.click(); });
+    ok(await rp.evaluate(() => !!document.getElementById('vzRecBtn') && typeof window.__daily.srecStart === 'function'), 'the Visuals bar has a Record button');
+    await rp.evaluate(() => window.__daily.srecStart(false)); await wait(2600);
+    ok(await rp.evaluate(() => window.__daily.SREC.on && /Stop|■/.test(document.getElementById('vzRecBtn').textContent) && document.getElementById('vzRecBtn').classList.contains('bad')), 'recording shows on the button with a running clock');
+    const dl = rp.waitForEvent('download', { timeout: 8000 }); await rp.evaluate(() => window.__daily.srecStop(true));
+    const d1 = await dl.catch(() => null), f1 = d1 && await d1.path().catch(() => null), sz = f1 ? fs.statSync(f1).size : 0;
+    ok(!!d1 && /_stage\.(webm|mp4)$/.test(d1.suggestedFilename()) && sz > 3000, 'Record stage saves a video file on this device (' + (d1 ? d1.suggestedFilename() : 'no download') + ', ' + sz + ' bytes)');
+    ok(await rp.evaluate(() => !window.__daily.SREC.on && !window.__daily.SREC.dest), 'stopping releases the recorder and audio tap');
+    await rp.evaluate(() => window.__daily.srecStart(true)); await wait(1500);
+    ok(await rp.evaluate(() => window.__daily.SREC.on && window.__daily.SREC.whole && window.__daily.T.playing === true), 'whole-song recording plays the song from the top');
+    let got = false; rp.once('download', () => { got = true; }); await rp.keyboard.press('Control+.'); await wait(1800);
+    ok(!got && await rp.evaluate(() => !window.__daily.SREC.on && !window.__daily.T.playing), 'the kill switch stops a recording and discards it');
+    ok(re.length === 0, 'stage recording runs without script errors' + (re.length ? ' ' + re[0] : '')); await rp.close(); }
   // camera looks: edges-in and the person cut-out (a stub segmenter stands in for the downloadable model)
   { const cp = await ctx0.newPage(), ce = []; cp.on('pageerror', e => ce.push(e.message)); await cp.goto(BASE + '?debug'); await wait(2200);
     await cp.evaluate(() => { const b = document.querySelector('#bootGo') || document.querySelector('#bootNoMic'); if (b) b.click(); }); await wait(1800);
