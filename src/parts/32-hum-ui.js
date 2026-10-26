@@ -62,17 +62,17 @@ async function humCanvasFirst() {
 async function humNewProject() { await projCreate('blank', { form: 'empty', title: 'Hum idea', zoom: 'song' }); HUM.ph = PRJ.cur; dockGo('vis'); }
 /** a start option other than humming: leave the empty placeholder page behind, then do it */
 async function humInstead(fn) { const ph = humPlaceholder() ? HUM.ph : null; HUM.ph = null; humBarClose(); vzImmersive(false); await fn(); if (ph && ph !== PRJ.cur) { try { await projDelete(ph); } catch (e) { } } }
-async function humRecord() {
-  if (HUM.rec || HUM.busy) return;
+async function humRecord(memo) {
+  if (HUM.rec || HUM.busy) return; memo = memo === true;
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) { toast('This browser cannot record here. Choose “a voice memo or audio file” instead.', 'warn'); return humOpen(); }
   let stream; const raw = { echoCancellation: false, noiseSuppression: false, autoGainControl: false };
   try { try { stream = await navigator.mediaDevices.getUserMedia({ audio: CFG.inDev ? Object.assign({ deviceId: { exact: CFG.inDev } }, raw) : raw }); } catch (e) { if (CFG.inDev && e.name !== 'NotAllowedError' && e.name !== 'SecurityError') { stream = await navigator.mediaDevices.getUserMedia({ audio: raw }); toast('Your saved microphone is not available, so the default one is used.', 'warn'); } else throw e; } }
   catch (e) { toast('Microphone permission was not given. Allow it in the address bar, or choose a voice memo.', 'warn'); return humOpen(); }
-  HUM.busy = true; try { if (HUM.keep) HUM.keep = false; else await humNewProject(); if (humStageOn()) await humStageGo(); } finally { HUM.busy = false; }
+  HUM.busy = true; try { if (memo) { HUM.keep = false; } else { if (HUM.keep) HUM.keep = false; else await humNewProject(); if (humStageOn()) await humStageGo(); } } finally { HUM.busy = false; }
   const AC = window.AudioContext || window.webkitAudioContext, actx = new AC(), src = actx.createMediaStreamSource(stream), an = actx.createAnalyser(); an.fftSize = 2048; src.connect(an);
-  const chunks = [], mr = new MediaRecorder(stream), r = { stream, actx, an, mr, chunks, t0: performance.now(), raf: 0, buf: new Float32Array(2048) };
+  const chunks = [], mr = new MediaRecorder(stream), r = { stream, actx, an, mr, chunks, memo, t0: performance.now(), raf: 0, buf: new Float32Array(2048) };
   mr.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
-  mr.onstop = () => { const keep = r.keep; humRecCleanup(); if (keep) humRecDone(new Blob(chunks, { type: mr.mimeType || 'audio/webm' })); };
+  mr.onstop = () => { const keep = r.keep, mm = r.memo; humRecCleanup(); if (keep) (mm ? humMemoDone : humRecDone)(new Blob(chunks, { type: mr.mimeType || 'audio/webm' })); };
   try { const t = stream.getAudioTracks()[0], id = t && t.getSettings && t.getSettings().deviceId; r.label = (t && t.label) || ''; if (id && CFG.inDev !== id && CFG.inDev) { /* keep the person's choice */ } listDevices(); } catch (e) { }
   HUM.rec = r; mr.start(250); humBar('rec'); r.raf = requestAnimationFrame(humRecTick);
 }
@@ -81,7 +81,7 @@ function humRecTick() {
   const lv = document.getElementById('humLv'), nt = document.getElementById('humNote'), tm = document.getElementById('humTime');
   if (lv) lv.style.width = Math.min(100, Math.round(rms * 600)) + '%'; if (tm) tm.textContent = humFmt(sec);
   if (nt) { let t = '·'; if (rms > .01) { const y = yin(r.buf, r.actx.sampleRate); if (y && y.clarity > .6 && y.f > 70 && y.f < 1100) { const mf = 69 + 12 * Math.log2(y.f / 440); t = humNoteName(mf); HUM.live = { m: Math.round(mf), t: performance.now() }; } } nt.textContent = t; }
-  if (sec > 90) { humRecStop(true); return; } r.raf = requestAnimationFrame(humRecTick);
+  if (sec > (r.memo ? 600 : 90)) { humRecStop(true); return; } r.raf = requestAnimationFrame(humRecTick);
 }
 function humRecStop(keep) { const r = HUM.rec; if (!r) return; r.keep = keep; cancelAnimationFrame(r.raf); try { if (r.mr.state !== 'inactive') r.mr.stop(); else { humRecCleanup(); } } catch (e) { humRecCleanup(); } }
 function humRecCleanup() { const r = HUM.rec; if (!r) return; HUM.rec = null; cancelAnimationFrame(r.raf); try { r.stream.getTracks().forEach(t => t.stop()); } catch (e) { } try { r.actx.close(); } catch (e) { } }
@@ -90,8 +90,8 @@ function humAbort() {
   if (HUM.hear) { try { HUM.hear.stop(); } catch (e) { } HUM.hear = null; }
   if (HUM.rec) { humRecStop(false); humBarClose(); toast('Hum recording stopped. Nothing was kept.', 'warn'); }
 }
-async function humDecode(ab) {
-  const O = window.OfflineAudioContext || window.webkitOfflineAudioContext, oc = new O(1, 44100, 44100), b = await oc.decodeAudioData(ab), n = Math.min(b.length, Math.floor(b.sampleRate * 90)), out = new Float32Array(n), ch = b.numberOfChannels;
+async function humDecode(ab, cap) {
+  const O = window.OfflineAudioContext || window.webkitOfflineAudioContext, oc = new O(1, 44100, 44100), b = await oc.decodeAudioData(ab), n = Math.min(b.length, Math.floor(b.sampleRate * (cap || 90))), out = new Float32Array(n), ch = b.numberOfChannels;
   for (let c = 0; c < ch; c++) { const d = b.getChannelData(c); for (let i = 0; i < n; i++) out[i] += d[i] / ch; } return { pcm: out, sr: b.sampleRate };
 }
 async function humRecDone(blob) { try { const { pcm, sr } = await humDecode(await blob.arrayBuffer()); await humRun(pcm, sr); } catch (e) { humBar('err', 'I could not read that recording (' + (e.message || e.name) + '). Try again, or choose an audio file.'); } }
@@ -125,11 +125,21 @@ function humAddTake() {
   const tk = { id: uid(), kind: 'vox', hum: true, name: 'My hum', startSec: start, sr, dry: d, wet: null, peaks: peaksOf(d), g: 1, pan: 0, mute: false, solo: false, mode: 'wet', bpm: S.bpm, preset: '', peak: dB(pk), rms: dB(Math.sqrt(e / Math.max(1, d.length))), dur: d.length / sr, t: Date.now(), stats: null, cam: [] };
   TAKES.push(tk); bus.emit('takes'); return tk;
 }
+/** A voice memo: the recording goes in as one Vocal take at the start of the page, with no analysis and no band; bars are added so the whole memo plays. */
+async function humMemoDone(blob) {
+  try {
+    const { pcm, sr } = await humDecode(await blob.arrayBuffer(), 600); let pk = 0, e = 0; for (let i = 0; i < pcm.length; i++) { const a = Math.abs(pcm[i]); if (a > pk) pk = a; e += pcm[i] * pcm[i]; }
+    if (!pcm.length || pk < 1e-4) { humBarClose(); return toast('That memo was silent. Check your microphone and try again.', 'warn'); }
+    const n = TAKES.filter(t => t.memo).length + 1, tk = { id: uid(), kind: 'vox', memo: true, name: 'Voice memo' + (n > 1 ? ' ' + n : ''), startSec: 0, sr, dry: pcm, wet: null, peaks: peaksOf(pcm), g: 1, pan: 0, mute: false, solo: false, mode: 'wet', bpm: S.bpm, preset: '', peak: dB(pk), rms: dB(Math.sqrt(e / Math.max(1, pcm.length))), dur: pcm.length / sr, t: Date.now(), stats: null, cam: [] };
+    TAKES.push(tk); const last = S.sections[S.sections.length - 1]; let guard = 0; while (last && songSlots() * slotDur() < tk.dur + .5 && guard++ < 400) last.bars.push(newBar('')); T.bars = null; commit(false); bus.emit('song', 'memo'); bus.emit('takes');
+    humBarClose(); humBar(CFG.route === 'stage' ? 'start' : 'canvas'); toast('Saved “' + tk.name + '” (' + humFmt(tk.dur) + ') as a Vocal take.', 'ok'); try { await projSave(); } catch (x) { }
+  } catch (e) { humBar('err', 'I could not read that recording (' + (e.message || e.name) + '). Try again.'); }
+}
 function humSaveMenu(anchor) {
   const tk = TAKES.find(t => t.hum), box = h('div', { style: { minWidth: '240px', display: 'grid', gap: '6px' } }, h('h5', {}, 'Save to this device'),
     h('button', { class: 'btn', onclick: () => { closePop(); bounceMaster(); } }, '⤓ The whole song (WAV)'),
     tk ? h('button', { class: 'btn', onclick: () => { closePop(); dlTake(tk); } }, '⤓ My hum (WAV)') : '',
-    h('button', { class: 'btn', onclick: () => { closePop(); bounceAllParts(); } }, '⤓ Each band part (WAVs)'),
+    h('button', { class: 'btn', onclick: () => { closePop(); bounceAllParts(); } }, '⤓ Each band part (WAVs)'), exportExtras(closePop),
     h('button', { class: 'btn', onclick: () => { closePop(); download((S.title || 'song').replace(/\W+/g, '_') + '.mid', buildMidi()); toast('MIDI saved', 'ok'); } }, '⤓ MIDI (to open in any music app)'),
     h('div', { class: 'tiny muted' }, 'Everything is made and saved here. Nothing is uploaded. WAV saves play the song once in real time.'));
   popover(anchor, box);
@@ -155,11 +165,11 @@ function humBar(mode, arg) {
   if (mode === 'rec') {
     d.append(h('div', { class: 'hum-row' }, h('button', { class: 'btn primary hum-stop', id: 'humStop', onclick: () => humRecStop(true) }, '■ Stop'), h('b', { id: 'humTime', class: 'hum-t' }, '0:00'),
       h('div', { class: 'hum-lvw', 'aria-hidden': 'true' }, h('i', { id: 'humLv' })), h('b', { id: 'humNote', class: 'hum-note', 'aria-live': 'off' }, '·'), h('span', { class: 'grow' }), x),
-      h('div', { class: 'hum-msg' }, h('b', {}, 'Listening… '), 'hum or sing your idea. 10–30 seconds is plenty. Tap Stop when you are done.' + (HUM.rec && HUM.rec.label ? ' Using: ' + HUM.rec.label + '.' : '')));
+      h('div', { class: 'hum-msg' }, HUM.rec && HUM.rec.memo ? [h('b', {}, 'Recording a voice memo… '), 'sing, speak or play. Tap Stop when you are done. It is added to your song as a Vocal take.'] : [h('b', {}, 'Listening… '), 'hum or sing your idea. 10–30 seconds is plenty. Tap Stop when you are done.'], HUM.rec && HUM.rec.label ? ' Using: ' + HUM.rec.label + '.' : ''));
   } else if (mode === 'canvas') {
     const pick = h('input', { type: 'file', accept: 'audio/*,.mp3,.wav,.flac,.m4a,.ogg', style: { display: 'none' }, 'aria-label': 'Choose a song file', onchange: e => { const fl = e.target.files[0]; e.target.value = ''; if (fl) humInstead(() => projFromTrack(fl)); } });
     d.append(h('div', { class: 'hum-row' }, h('b', { class: 'hum-hi' }, 'A clean page.'), h('span', { class: 'hum-sub muted' }, 'Write lyrics, chords or thoughts above, or sing it:'), h('span', { class: 'grow' }), x),
-      h('div', { class: 'hum-row hum-big2' }, h('button', { class: 'btn primary hum-go', id: 'humGo2', onclick: () => humRecord() }, '● Sing or hum an idea'), h('button', { class: 'btn hum-go', id: 'humGuitar', onclick: () => humGuitar() }, '🎸 I have a guitar')),
+      h('div', { class: 'hum-row hum-big2' }, h('button', { class: 'btn primary hum-go', id: 'humGo2', onclick: () => humRecord() }, '● Sing or hum an idea'), h('button', { class: 'btn hum-go', id: 'humMemo', title: 'Record your voice as it is, with no band and no song built around it', onclick: () => humRecord(true) }, '🎤 Voice memo'), h('button', { class: 'btn hum-go', id: 'humGuitar', onclick: () => humGuitar() }, '🎸 I have a guitar')),
       h('div', { class: 'hum-alt' }, h('span', { class: 'tiny muted' }, 'Or start from'),
         h('button', { class: 'btn sm', id: 'humAltFile', onclick: () => pick.click() }, '📂 a song file'),
         h('button', { class: 'btn sm', id: 'humAltDemo', onclick: () => humInstead(() => projCreate('demo', { zoom: 'song' })) }, '♫ the demo song'),

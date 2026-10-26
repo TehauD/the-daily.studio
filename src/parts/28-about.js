@@ -9,7 +9,7 @@ function aboutBlock() {
   const ext = (t, href) => h('a', { href, target: '_blank', rel: 'noopener noreferrer' }, t);
   const mark = () => { const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); s.setAttribute('viewBox', '0 0 100 100'); s.setAttribute('width', 42); s.setAttribute('height', 42); s.setAttribute('aria-hidden', 'true'); s.innerHTML = '__MARK_INNER__'; return s; };
   return h('section', { class: 'ab', 'aria-label': 'About' },
-    h('div', { class: 'ab-top' }, mark(), h('div', {}, h('b', { class: 'ab-name' }, h('span', {}, 'the-daily'), h('span', { class: 'tld' }, '.studio')), h('div', { class: 'tiny muted' }, 'MVP 1 · v' + VERSION + ' · MIT licence'))),
+    h('div', { class: 'ab-top' }, mark(), h('div', {}, h('b', { class: 'ab-name' }, h('span', {}, 'the-daily'), h('span', { class: 'tld' }, '.studio')), h('div', { class: 'tiny muted' }, 'v' + VERSION + ' · MIT licence'))),
     h('div', { class: 'ab-me ab-story' },
       h('h4', {}, 'Made for creators.'),
       h('p', {}, 'My mom put a guitar in my hands when I was five. It changed my life.'),

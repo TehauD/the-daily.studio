@@ -139,7 +139,7 @@ const DEV = { phone: { viewport: { width: 390, height: 844 }, deviceScaleFactor:
   ok(await p.evaluate(() => ['#mnav', '#mtrans', '#msub', '.mmore', '.mdraw.l', '#kpad'].every(s => getComputedStyle(document.querySelector(s)).display === 'none')), 'no phone / tablet chrome is visible on desktop');
   ok(await p.evaluate(() => { const g = id => document.querySelector(id).getBoundingClientRect(); return g('#left').width > 200 && g('#right').width > 250 && g('#timeline').height > 150 && !!document.querySelector('#transport .btn.play') && !!document.querySelector('#dock .tabs .tab') && g('#status').height > 20; }), 'desktop keeps both sidebars, the tab bar, timeline, status bar and header transport');
   await p.setViewportSize({ width: 560, height: 800 }); await wait(500); ok(await p.evaluate(() => document.body.dataset.form === 'phone'), 'narrowing the window switches to the phone layout live');
-  await p.setViewportSize({ width: 1440, height: 900 }); await wait(500); ok(await p.evaluate(() => document.body.dataset.form === 'desktop' && !!document.querySelector('#transport .btn.play') && document.querySelectorAll('#transport > *').length === 12), 'widening again restores the desktop header exactly (12 transport items)');
+  await p.setViewportSize({ width: 1440, height: 900 }); await wait(500); ok(await p.evaluate(() => document.body.dataset.form === 'desktop' && !!document.querySelector('#transport .btn.play') && document.querySelectorAll('#transport > *').length === 13), 'widening again restores the desktop header exactly (13 transport items)');
   await p.close(); await p.ctx.close();
 
   ok(errs.length === 0, 'no page errors or failed requests' + (errs.length ? ': ' + errs.slice(0, 4).join(' | ') : ''));

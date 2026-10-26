@@ -1,6 +1,6 @@
 # Operations runbook
 
-How Release 1 (v1.7.0) is built, shipped, watched and rolled back. The site is static, so there are no servers to patch and no database to restore.
+How version 2.1 (v2.1.0) is built, shipped, watched and rolled back. The site is static, so there are no servers to patch and no database to restore.
 
 ## Moving parts
 

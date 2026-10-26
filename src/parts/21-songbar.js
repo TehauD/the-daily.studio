@@ -92,13 +92,22 @@ function buildSongbar() {
   SB.f.scale = h('select', { class: 'in sb-scale', 'aria-label': 'Scale for overlays', title: 'Scale used for the fretboard and tab overlays', onchange: e => { S.scale = e.target.value; commit(false); bus.emit('scale'); } }, Object.keys(SCALES).map(n => h('option', {}, n)));
   SB.f.more = h('button', { class: 'btn sm', title: 'Notes, custom tuning, per-string tuning…', onclick: () => sbDetails(SB.f.more) }, 'Notes & tuning ▾');
   SB.trk = h('div', { class: 'sb-trk' });
+  SB.saved = h('span', { class: 'sb-saved', role: 'status', 'aria-live': 'polite', title: 'Your work is saved in this browser as you go' });
+  UI.undo = h('button', { class: 'btn sm sb-hist', title: 'Undo (Ctrl/Cmd + Z)', 'aria-label': 'Undo', onclick: () => undo() }, '↶'); UI.redo = h('button', { class: 'btn sm sb-hist', title: 'Redo (Shift + Ctrl/Cmd + Z)', 'aria-label': 'Redo', onclick: () => redo() }, '↷'); SB.hist = h('span', { class: 'sb-histg' }, UI.undo, UI.redo, SB.saved);
+  bus.on('savestate', (k, t) => sbSaved(k, t)); sbSaved('ok', null);
   SB.f.refine = h('button', { class: 'btn sm sb-ref', title: 'Open the Refine panel — chords & lyrics beside whatever you are doing', onclick: () => sideShow('refine') }, '✎ Refine');
   el.append(h('div', { class: 'sb-hex', 'aria-hidden': 'true' }, sv('svg', { viewBox: '0 0 24 24', width: 18, height: 18 }, sv('path', { d: 'M12 2l9 5v10l-9 5-9-5V7z', fill: 'none', stroke: 'currentColor', 'stroke-width': 2 }))), sbProject(),
     sbField('Song', txt('title', 'Title', '', 'Song title'), 'f-title'), sbField('Artist', txt('artist', 'Artist / author', '', 'Artist or author'), 'f-artist'),
     sbField('Tuning', SB.f.tun, 'f-tun'), sbField('Capo', SB.f.capo, 'f-capo'), sbField('Scale', SB.f.scale, 'f-scale'), SB.f.more,
-    h('span', { class: 'grow' }), SB.trk, zoomCtl(), SB.f.refine);
+    h('span', { class: 'grow' }), SB.hist, SB.trk, zoomCtl(), SB.f.refine);
   bus.on('song', () => { if (SP.lock) return; sbSync(); }); bus.on('track', sbChip); bus.on('scale', sbSync); bus.on('projects', sbChip);
   sbSync();
+}
+/** “Saved ✓ 14:02” beside the song details: autosave is quiet, so show that it happened */
+function sbSaved(k, t) {
+  const el = SB.saved; if (!el) return; el.dataset.k = k;
+  el.innerHTML = ''; if (k === 'dirty') el.append(h('b', {}, '…'), h('span', { class: 'sb-st' }, ' Saving')); else if (k === 'err') el.append(h('b', {}, '⚠'), h('span', { class: 'sb-st' }, ' Not saved')); else { if (t) SB.savedAt = t; el.append(h('b', {}, '✓'), h('span', { class: 'sb-st' }, ' Saved')); }
+  el.title = k === 'err' ? 'This browser would not store your work. Export a song bundle from ☰ Songs to keep it.' : SB.savedAt ? 'Saved in this browser at ' + new Date(SB.savedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) + '. Autosave keeps it up to date.' : 'Your work is saved in this browser as you go';
 }
 function sbSync() {
   if (!SB.el) return; const act = document.activeElement, set = (el, v) => { if (el && el !== act && el.value !== String(v)) el.value = v; };
@@ -140,6 +149,7 @@ function sbChip() {
     t.append(h('button', { class: 'sb-chip', title: 'Load a backing track — it is split into stems and fills in this song (title, tempo, key, chords)', onclick: () => { dockGo('stems'); const f = SU && SU.file; if (f) f.click(); } }, '♪ Load a track…'));
     if (S.track) t.append(h('span', { class: 'tiny muted', title: 'This song was built from a track. Load it again to play along with it.' }, 'from “' + S.track.name + '”'));
   }
+  t.append(h('button', { class: 'sb-chip', id: 'sbPerform', title: 'Perform: full-screen chords and lyrics with a count-in, record and play', onclick: e => perfOpen(e.currentTarget) }, '🎤 Perform'));
 }
 function sbTrackPop(anchor) {
   const an = STM.an, box = h('div', { style: { display: 'grid', gap: '6px' } });

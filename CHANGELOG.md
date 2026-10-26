@@ -2,6 +2,51 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.1.0 — 2026-10-26 — I/O and Lanes
+
+### Added
+- **One Connect card for your input.** I/O ▸ **Audio input** is now one card: pick the interface, press **Connect**, and the card shows the live level with **Set my level** and **Hear myself**. The same card opens from the header Audio button, the full-screen stage and Perform. Nothing asks the browser for the microphone until you press **Connect**.
+- **Set my level.** A guided check: play or sing as loud as you will, and the **Input trim** is set so your peaks land near −9 dBFS (−10 for voice), with an Undo. It says plainly when the interface gain itself is too low or too hot.
+- **Signal path strip.** Input → Trim → Rig → Master → Out as four live bars with the loudest point named, a one-sentence verdict ("Peaks are hot — turn the interface gain down"), and a **Test sound** for the output. A small level bar lives on the header Audio button, so you can see the input without opening anything.
+- **Channels that follow your interface.** A one-input microphone shows one row; a two-input interface offers *Guitar*, *Guitar + voice*, *Swap* and *Voice* in one tap. If the interface sends one channel only, it says so.
+- **New-interface prompt.** Plug in an interface while the app is open and a small prompt offers to use it, with **Set my level** one tap away. Unplug and the app says the input is gone and how to reconnect.
+- **Permission help that knows your browser.** If the microphone is blocked, not found, busy or unplugged, the card names the exact steps for your browser and system (Chrome, Edge, Firefox, Safari, iPhone and iPad, Mac, Windows) instead of a generic error.
+- **Per-lane mixer strip.** Every band lane, vocal lane, take, stem and the whole backing track has a header with **M**, **S**, volume, pan and **+Fx**. **+Fx** opens a small strip: three-band EQ, compressor, reverb send and delay send, with quick looks (Flat, Warm, Bright, Punch, Room, Hall, Echo). Settings are saved with the song and with each take. Click a lane header to select it; the lane is tinted in the arrangement.
+- **Drop anywhere.** Drag audio, lyrics (.txt, .md, .lrc), a song file (.zip), a song or rig .json onto the page. Lyrics, song files and rigs go straight to their importers. Audio asks what it is: **Backing track** (stems, tempo, key), **Vocal take**, **Guitar take** or **Hum → new song**; several files at once become takes. Your last choice is highlighted. A dashed **Drop audio, lyrics or a song file** row sits under an empty arrangement, with **Choose a file…** and **Voice memo**. Nothing is uploaded, and a drop is politely declined while a window is open.
+- **Auto-balance.** **⚖ Auto-balance** (Lanes ▾, and the master menu) measures your takes and backing track with the same loudness meter the exporter uses and shows a plan first: vocal near −16 LUFS, guitar near −19, backing track near −21, guitar takes spread left and right when there are two or more, and the band parts back at their reference balance. **Apply**, then **Undo** if you prefer it as it was. A restore point is saved first.
+- **Master chip.** The header shows the master level and a preset menu (**Off**, **Clean**, **Warm**, **Bright**, **Loud**: tone, glue and the loudness target used when you save audio), with a clip light. It is the same control as the Master knob in the Rig tab.
+- **Visible undo and redo, and a Saved indicator.** ↶ ↷ buttons in the song bar (greyed when there is nothing to undo) and a quiet "✓ Saved" that reads "Saving…" for a moment after you change something, and "Not saved" if the browser refuses to store your work.
+- **Count-in menu.** The ▾ beside Click chooses the count-in (none, 1, 2 or 4 bars) and the click volume.
+
+### Changed
+- **Take faders reach +12 dB.** Take volume is now a squared fader (finer near unity, up to four times the recorded level) so a quiet recording can be brought up to match the rest.
+- **Lane headers are wider** (216 px by default; double-click the divider to reset) to fit the new strip. Lanes ▾ no longer shows a per-lane ⤓; use the lane ⋯ menu.
+- **Laptop-width header.** Below 1440 px the Loop and Click buttons drop their words, below 1340 px the master chip shortens, and below 1240 px the latency chip hides (it is still in I/O), so the header fits from 1100 px up.
+- **I/O ▸ Advanced** now holds the latency lab, diagnostics, MIDI details and the rarely used controls, closed by default.
+
+### Fixed
+- **Reset could stall on a stuck service worker.** Reset ▸ Everything waited without limit for the browser to confirm that the offline copy was removed. Each of those steps now gives up after a moment and the app restarts regardless.
+
+### Notes
+- Not in this release: pitch correction, a groove picker, hosted loop libraries, accounts and collaboration. Everything here runs on your device.
+
+## 2.0.0 — 2026-10-26 — Perform and Share
+
+### Added
+- **Perform.** **🎤 Perform** (the song bar, and on the full-screen stage) opens one full-screen view for a run-through or a take: a readiness check first (audio, input and its level, camera, lyrics, count-in), then the chord huge, the next chord, the lyrics scrolling with the song, a big count-in, and Play, Record, Loop, Click and tempo within reach. Show the stage visuals behind it or keep a plain dark page. Space, R, L, M and Esc work; Ctrl/Cmd + . still stops everything.
+- **Voice memo.** On the clean canvas, **🎤 Voice memo** records your voice as it is: one Vocal take at the start of the page, no analysis and no band, and the page grows enough bars to play all of it (up to 10 minutes).
+- **Loudness meter and target.** Song WAV bounces report integrated loudness (LUFS, ITU-R BS.1770 with gating) and true peak. Settings ▸ Export can bring a bounce to −14, −16 or −23 LUFS, never past −1 dBTP.
+- **Compressed audio.** **⤓ Compressed audio** saves the whole song as M4A (or Opus in a .webm where the browser cannot make M4A). It plays once in real time.
+- **Share page.** **🔗 Share page** saves one HTML file with the song's sound, lyrics, chords and a small player with a moving ring. Open it in any browser or send it; it loads nothing from anywhere.
+- **Print or PDF sheet.** **🖨 Print or PDF sheet** makes a clean lyric and chord sheet (chords over the words) for the browser's Print or Save as PDF.
+- **Backup folder.** In Chrome and Edge, Settings ▸ Export ▸ **Backup folder** saves each song to a folder you pick (a cloud-drive folder works) as a .daily-song.zip after you change it. No account; the browser writes the files directly.
+- **Auto look.** **🎬 Auto look** in the Visuals bar makes the look follow the section while the song plays: Fifths Halo in choruses, Prism in bridges, Tunnel in intros and outros. Your own look returns when it stops.
+- **⏺ Record the stage.** A video of the Visuals (hexagons, Halo, you in front when the camera is on) with the song's sound, saved to your device as .webm or .mp4. **⏺ Record** is in the Visuals bar and on the full-screen stage: record now, or the whole song from the top. Nothing is uploaded, recording never starts the camera, and Ctrl/Cmd + . stops it and throws it away.
+- **Two routes: the studio, or the stage.** The start card asks first: **● Begin in the studio** (the default) opens a clean canvas with the cursor in the lyrics and a slim bar to sing or hum, play guitar or load a song, with no camera and no full screen; **🎥 Begin on stage** goes full screen with your camera and the visuals. The camera is requested only on the stage route. Switch any time with **🎥 Go on stage** in the Visuals bar or **Start in** in Settings and I/O ▸ Camera; the route you used last is remembered.
+
+### Fixed
+- **Reset ▸ Everything test race.** The end-to-end test could act on the old page while a reset was still finishing. It now waits for the new page.
+
 ## 1.7.0 — 2026-10-24 — MVP 1, first production release
 
 ### Changed
@@ -10,8 +55,6 @@ All notable changes to the-daily.studio (earlier versions were released under th
 - **No bundled sample track.** "Good Morning" and its licence file are gone from the app, the About credits and the notices. The `samples/` mechanism stays for anything you add.
 
 ### Added
-- **⏺ Record the stage.** A video of the Visuals (hexagons, Halo, you in front when the camera is on) with the song's sound, saved to your device as .webm or .mp4. **⏺ Record** is in the Visuals bar and on the full-screen stage: record now, or the whole song from the top. Nothing is uploaded, recording never starts the camera, and Ctrl/Cmd + . stops it and throws it away.
-- **Two routes: the studio, or the stage.** The start card asks first: **● Begin in the studio** (the default: a clean canvas with the cursor in the lyrics and a slim bar to sing or hum, play guitar or load a song; no camera, no full screen) or **🎥 Begin on stage** (full-screen visuals with your camera, you in front of the hexagons). The camera is requested only on the stage route. Switch any time with **🎥 Go on stage** in the Visuals bar or **Start in** in Settings and I/O ▸ Camera; the route you used last is remembered and highlighted.
 - **One Channels card for the inputs.** I/O ▸ **Channels** replaces the separate guitar-channel buttons and the Guitar + vocal buttons: each interface input is **Guitar** (through the rig), **Vocal** (through the vocal strip) or **Off**, with a live level meter per input. **Detect & visualise** chooses what the note detector, tuner, chord finder, onset pulses, neck and visuals follow: Guitar, Vocal or Both. Singing live with it set to Vocal shows your note on the neck and sends pink notes into the Fifths Halo. The visuals Source menu gains **vocal microphone**.
 - **Fifths Halo (new look).** The circle of fifths from the Neural map as a tilted ring around you: with the camera cut-out you stand in the middle, the back of the ring passes behind you and the front in front. Pitch classes glow as they sound, the song's chords sit on the ring (major outside, minor inside, extended chords float), arcs show the progression, the next chord is ringed, and every note spirals in toward you. The ring kicks on the beat.
 - **Prism (new look).** A feedback kaleidoscope: the fold count, hue and spin change on the off-beat ("the and") when the song plays, or on your own onsets when you play live; the downbeat only breathes. Notes land in the wedge by their place on the circle of fifths. Flash and spin are limited while Stage ▸ safe is on.

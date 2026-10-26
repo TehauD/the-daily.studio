@@ -54,15 +54,23 @@ function buildHeader() {
   UI.rec = B('rec', '●', 'Record guitar take (R)', toggleRec);
   UI.loop = h('button', { class: 'btn sm', title: 'Loop (L)', onclick: () => { T.loop = !T.loop; syncTransport(); } }, '⟲', h('span', { class: 'lbl' }, ' Loop'));
   UI.metro = h('button', { class: 'btn sm', title: 'Metronome (M)', onclick: () => { T.metro = !T.metro; syncTransport(); } }, '♩', h('span', { class: 'lbl' }, ' Click'));
+  UI.metroMore = h('button', { class: 'btn sm metro-more', title: 'Count-in and click volume', 'aria-label': 'Count-in and click volume', 'aria-haspopup': 'dialog', onclick: e => clickMenu(e.currentTarget) }, '▾');
   UI.pos = h('div', { class: 'lcd' }, h('b', {}, '1·1·1'), h('i', {}, 'BAR·BEAT·SLOT')); UI.tim = h('div', { class: 'lcd', style: { minWidth: '88px' } }, h('b', {}, '00:00.00'), h('i', {}, 'TIME'));
   UI.bpm = h('input', { type: 'number', min: 30, max: 260, step: 1, value: S.bpm, onchange: e => { S.bpm = clamp(+e.target.value || 90, 30, 260); e.target.value = S.bpm; commit(false); bus.emit('bpm'); } });
   UI.ts = h('select', { onchange: e => { const [n, d] = e.target.value.split('/').map(Number); S.ts = [n, d]; S.band.drumLen = Math.min(32, spb()); commit(); } }, ['4/4', '3/4', '2/4', '5/4', '6/8', '12/8', '7/8'].map(x => h('option', { value: x }, x)));
   UI.key = h('select', { onchange: () => keyChanged() }, NS.map((n, i) => h('option', { value: i }, n))); UI.mode = h('select', { onchange: () => keyChanged() }, [h('option', { value: 'maj' }, 'maj'), h('option', { value: 'min' }, 'min')]);
-  tr.append(UI.rew, UI.play, UI.stop, UI.rec, UI.loop, UI.metro, UI.pos, UI.tim, h('label', { class: 'field', style: { width: '58px' } }, 'BPM', UI.bpm), h('label', { class: 'field', style: { width: '54px' } }, 'Sig', UI.ts), h('label', { class: 'field', style: { width: '56px' } }, 'Key', UI.key), h('label', { class: 'field', style: { width: '56px' } }, 'Mode', UI.mode));
+  tr.append(UI.rew, UI.play, UI.stop, UI.rec, UI.loop, UI.metro, UI.metroMore, UI.pos, UI.tim, h('label', { class: 'field', style: { width: '58px' } }, 'BPM', UI.bpm), h('label', { class: 'field', style: { width: '54px' } }, 'Sig', UI.ts), h('label', { class: 'field', style: { width: '56px' } }, 'Key', UI.key), h('label', { class: 'field', style: { width: '56px' } }, 'Mode', UI.mode));
   const R = $('#topR');
   UI.lat = h('span', { class: 'chip', title: 'Round-trip latency estimate. Run the Loopback Test in I/O for a measured value.' }, h('i', { class: 'led' }), h('span', {}, 'audio off'));
   UI.theme = h('button', { class: 'btn icon', title: 'Appearance: light / dark, palettes, accent, density…', onclick: () => lookOpen() }, '◐');
-  R.append(audioButton(), UI.lat, UI.theme, h('button', { class: 'btn icon', title: 'Settings', onclick: openSettings }, '⚙'), h('button', { class: 'btn icon', title: 'Help & shortcuts (?)', onclick: openHelp }, '?'));
+  R.append(mstChip(), audioButton(), UI.lat, UI.theme, h('button', { class: 'btn icon', title: 'Settings', onclick: openSettings }, '⚙'), h('button', { class: 'btn icon', title: 'Help & shortcuts (?)', onclick: openHelp }, '?'));
+}
+/** count-in and click volume, next to the Click button */
+function clickMenu(anchor) {
+  const box = h('div', { class: 'clkm' }, h('h5', {}, 'Click'), h('div', { class: 'lrow' }, h('span', { style: { width: '66px' } }, 'Count-in'), h('div', { class: 'seg', role: 'group', 'aria-label': 'Count-in bars' }, [[0, 'None'], [1, '1 bar'], [2, '2 bars'], [4, '4 bars']].map(([n, t]) => h('button', { class: CFG.countIn === n ? 'on' : '', onclick: e => { CFG.countIn = n; saveCfg(); $$('button', e.target.parentNode).forEach(b => b.classList.toggle('on', b === e.target)); } }, t)))),
+    h('div', { class: 'lrow' }, h('span', { style: { width: '66px' } }, 'Volume'), h('input', { type: 'range', min: 0, max: 1, step: .05, value: CFG.metroVol == null ? .5 : CFG.metroVol, 'aria-label': 'Click volume', style: { flex: 1 }, oninput: e => { CFG.metroVol = +e.target.value; saveCfg(); } })),
+    h('div', { class: 'tiny muted' }, 'The count-in plays before recording starts, so you can get your hands ready.'));
+  popover(anchor, box, { style: { width: '270px' } });
 }
 function keyChanged() {
   S.key = +UI.key.value; S.minor = UI.mode.value === 'min'; if (/Major|Minor/.test(S.scale) || S.scale.startsWith('Natural')) S.scale = S.minor ? 'Natural Minor (Aeolian)' : 'Major (Ionian)'; CFG.flats = keyUsesFlats(S.key, S.minor) ? true : false; saveCfg(); commit();
@@ -76,6 +84,7 @@ function syncTransport() {
   if (!UI.play) return; UI.play.textContent = T.playing ? '⏸' : '▶'; UI.play.classList.toggle('on', T.playing);
   UI.rec.classList.toggle('armed', T.rec && !T.playing); UI.rec.classList.toggle('on', T.rec && T.playing); UI.loop.classList.toggle('on', T.loop); UI.metro.classList.toggle('on', T.metro);
   UI.bpm.value = S.bpm; UI.ts.value = S.ts.join('/'); UI.key.value = S.key; UI.mode.value = S.minor ? 'min' : 'maj';
+  if (UI.undo) { UI.undo.disabled = !histStack.u.length; UI.redo.disabled = !histStack.r.length; }
 }
 bus.on('transport', syncTransport); bus.on('song', syncTransport); bus.on('rec:state', syncTransport);
 
@@ -104,6 +113,9 @@ function openSettings() {
       F('Latency hint', sel('hint', [['interactive', 'interactive (lowest)'], ['balanced', 'balanced'], ['playback', 'playback'], ['0', '0 (request minimum)']])), F('Sample rate', sel('sr', [['auto', 'Device default'], ['44100', '44.1 kHz'], ['48000', '48 kHz'], ['96000', '96 kHz']])),
       F('Analyzer FFT size', sel('fft', [2048, 4096, 8192, 16384, 32768], () => { if (E.ready) { E.anaRig.fftSize = E.anaMaster.fftSize = CFG.fft; } })), F('Analyzer smoothing', h('input', { type: 'range', min: 0, max: .95, step: .01, value: CFG.smooth, oninput: e => { CFG.smooth = +e.target.value; saveCfg(); if (E.ready) E.anaRig.smoothingTimeConstant = E.anaMaster.smoothingTimeConstant = CFG.smooth; } })),
       h('div', { class: 'row', style: { gridColumn: '1/-1' } }, h('button', { class: 'btn', onclick: () => { d.close(); restartAudio(); } }, '↻ Restart audio engine'), h('span', { class: 'muted small' }, 'Required after changing latency hint, sample rate or output routing.')),
+      h('h5', {}, 'Export'),
+      F('Loudness target for song WAVs', sel('lufsTarget', LOUD_TARGETS)),
+      F('Backup folder', syncControl()),
       h('h5', {}, 'Recording & practice'),
       F('Count-in (bars)', sel('countIn', [0, 1, 2, 4])), F('Metronome level', h('input', { type: 'range', min: 0, max: 1, step: .05, value: CFG.metroVol, oninput: e => { CFG.metroVol = +e.target.value; saveCfg(); } })),
       F('Humanize (timing/velocity)', h('input', { type: 'range', min: 0, max: 1, step: .05, value: CFG.humanize, oninput: e => { CFG.humanize = +e.target.value; saveCfg(); } })), F('Timing analysis grid', sel('timingGrid', [[4, '16th notes'], [2, '8th notes'], [1, 'Quarter notes']])),

@@ -34,8 +34,9 @@ async function resetRun(sel) {
   } catch (e) { console.warn('reset: storage', e); }
   if (sel.has('songs')) await new Promise(res => { try { if (PRJ.db) PRJ.db.close(); } catch (e) { } let r; try { r = indexedDB.deleteDatabase(PDB_NAME); } catch (e) { return res(); } r.onsuccess = r.onerror = r.onblocked = () => res(); setTimeout(res, 1800); });
   if (sel.has('cache')) {
-    try { if (window.caches) for (const k of await caches.keys()) if (/^(daily-songs-|fretwork-)/.test(k)) await caches.delete(k); } catch (e) { }
-    try { if (navigator.serviceWorker) for (const r of await navigator.serviceWorker.getRegistrations()) await r.unregister(); } catch (e) { }
+    const lim = (p, ms) => Promise.race([p, new Promise(res => setTimeout(res, ms || 1500))]);   // a browser can leave these pending; never let that stop the restart
+    try { if (window.caches) for (const k of await lim(caches.keys())) if (/^(daily-songs-|fretwork-)/.test(k)) await lim(caches.delete(k)); } catch (e) { }
+    try { if (navigator.serviceWorker) for (const r of await lim(navigator.serviceWorker.getRegistrations()) || []) await lim(r.unregister()); } catch (e) { }
   }
   location.replace(rstHome());
 }

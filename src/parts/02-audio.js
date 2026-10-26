@@ -131,17 +131,17 @@ async function startAudio() {
 
 function buildGraph() {
   const c = E.ctx;
-  E.inTrim = gn(1); E.inSum = gn(1); E.rigIn = gn(1); E.rigOut = gn(1); E.mix = gn(1); E.master = gn(.9);
+  E.inTrim = gn(fromDB(CFG.gTrim || 0)); E.inSum = gn(1); E.rigIn = gn(1); E.rigOut = gn(1); E.mix = gn(1); E.master = gn(CFG.master != null ? CFG.master : .9);
   E.limiter = c.createDynamicsCompressor(); Object.assign(E.limiter.threshold, { value: -1.5 }); E.limiter.knee.value = 0; E.limiter.ratio.value = 20; E.limiter.attack.value = 0.001; E.limiter.release.value = 0.08;
   const mkAna = (fft, sm) => { const a = c.createAnalyser(); a.fftSize = fft; a.smoothingTimeConstant = sm; a.minDecibels = -110; a.maxDecibels = -10; return a; };
   E.anaDI = mkAna(4096, 0); E.anaChroma = mkAna(16384, 0.5); E.anaRig = mkAna(CFG.fft, CFG.smooth); E.anaMaster = mkAna(CFG.fft, CFG.smooth);
-  E.inSum.connect(E.inTrim); E.inTrim.connect(E.rigIn);
+  E.inSum.connect(E.inTrim); E.inTrim.connect(E.rigIn); E.anaIn = mkAna(2048, 0); E.inTrim.connect(E.anaIn);
   /* what the note detector, tuner, chord/key finder, onset pulses and the Input meter listen to: the guitar, the vocal, or both (CFG.anSrc) */
   E.anSrc = gn(1); E.aG = gn(CFG.anSrc === 'v' ? 0 : 1); E.aV = gn(CFG.anSrc === 'v' || CFG.anSrc === 'b' ? 1 : 0); E.inTrim.connect(E.aG); E.aG.connect(E.anSrc); E.anSrc.connect(E.anaDI); E.anSrc.connect(E.anaChroma);
   E.rigOut.connect(E.anaRig);
   TRACKS.forEach(([id]) => {
     const t = { id, in: gn(1), g: gn(1), pan: c.createStereoPanner(), ana: mkAna(512, 0.4) };
-    t.in.connect(t.g); t.g.connect(t.pan); t.pan.connect(t.ana); t.pan.connect(E.mix); E.tr[id] = t;
+    t.in.connect(t.g); t.g.connect(t.pan); t.pan.connect(t.ana); E.tr[id] = t; if (FX_TRACKS.includes(id)) { t.fx = fxStrip(E.mix); t.pan.connect(t.fx.in); } else t.pan.connect(E.mix);
   });
   E.takesIn = gn(1); E.takesIn.connect(E.mix);
   /* vocal path: the second input channel → trim → (meter · recorder tap) and → monitor switch → polish strip → Vocal track */
@@ -152,7 +152,8 @@ function buildGraph() {
     chainN(sIn, hp, cmp, mk, pr, sOut); sIn.connect(by); by.connect(sOut); E.voxStrip = { in: sIn, out: sOut, proc: pr, byp: by }; sOut.connect(E.tr.vox.in); E.voxMon.connect(sIn); }
   voxPolishApply();
   E.rigOut.connect(E.tr.live.in);
-  E.mix.connect(E.master); E.master.connect(E.limiter); E.limiter.connect(E.anaMaster); E.limiter.connect(c.destination);
+  { const ms = mstBuild(); E.mix.connect(ms.in); ms.out.connect(E.master); mstApply(); }
+  E.master.connect(E.limiter); E.limiter.connect(E.anaMaster); E.limiter.connect(c.destination);
   E.testOut = gn(.5); E.testOut.connect(c.destination);
   E.tapDI = makeTap(E.inTrim, { onset: true }, m => bus.emit('tap:di', m));
   E.tapWet = makeTap(E.rigOut, {}, m => bus.emit('tap:wet', m)); E.tapVox = makeTap(E.voxTrim, { onset: true }, m => bus.emit('tap:vox', m));
@@ -166,7 +167,7 @@ function applyMix() {
   Object.keys(E.tr).forEach(id => {
     const x = m[id]; if (!x) return;
     const a = solo ? (x.s ? 1 : 0) : (x.m ? 0 : 1);
-    tc(E.tr[id].g.gain, x.g * a * (id === 'live' && !CFG.monitor ? 0 : 1)); tc(E.tr[id].pan.pan, x.p);
+    tc(E.tr[id].g.gain, x.g * a * (id === 'live' && !CFG.monitor ? 0 : 1)); tc(E.tr[id].pan.pan, x.p); if (E.tr[id].fx) E.tr[id].fx.set(x.fx);
   });
   if (E.voxMon) tc(E.voxMon.gain, CFG.voxMon && CFG.vin !== 'off' && E.hasInput ? 1 : 0);
 }
@@ -198,11 +199,12 @@ async function openInput(deviceId) {
     if (deviceId && e.name !== 'NotAllowedError' && e.name !== 'SecurityError') { try { st = await attempt(''); err = null; CFG.inDev = ''; toast('That input is not available any more (device IDs change between sessions) — using the system default input instead', 'warn'); } catch (e2) { err = e2; } }
   }
   if (!st) {
-    const m = err && (err.name === 'NotAllowedError' || err.name === 'SecurityError') ? 'Microphone permission blocked. Click the camera/lock icon in the address bar and allow the microphone for this page (in CodePen use Change View → Full Page or Debug), then press ↻.' : 'Could not open audio input (' + (err ? err.name + ': ' + err.message : 'unknown') + '). Is another app using the interface exclusively?';
+    const m = err ? ioErrMsg(err.name) + (/^(NotAllowed|Security)/.test(err.name) ? '' : ' (' + err.name + (err.message ? ': ' + err.message : '') + ')') : 'Could not open the audio input.'; E.lastInKind = (err && err.name) || 'Error';
     E.lastInErr = m; toast(m, 'bad'); bus.emit('input', null); return false;
   }
-  E.lastInErr = null;
-  xpSignal(2); E.stream = st; const tr = st.getAudioTracks()[0]; E.inSettings = tr.getSettings(); CFG.inDev = E.inSettings.deviceId || deviceId || ''; saveCfg();
+  E.lastInErr = null; E.lastInKind = null;
+  xpSignal(2); E.stream = st; const tr = st.getAudioTracks()[0]; E.inSettings = tr.getSettings(); try { const cp = tr.getCapabilities && tr.getCapabilities(); E.inMax = (cp && cp.channelCount && cp.channelCount.max) || 0; } catch (e) { E.inMax = 0; }
+  tr.addEventListener('ended', () => { if (E.stream !== st) return; E.stream = null; try { if (E.src) E.src.disconnect(); } catch (e) { } E.src = null; E.hasInput = false; E.lastInKind = 'ended'; E.lastInErr = '“' + (tr.label || 'The input') + '” was unplugged or taken by another app. Check the cable and press Connect.'; bus.emit('input', null); bus.emit('audiostate'); toast(E.lastInErr, 'warn'); }); CFG.inDev = E.inSettings.deviceId || deviceId || ''; saveCfg();
   E.src = E.ctx.createMediaStreamSource(st);
   if (!E.split) {
     E.split = E.ctx.createChannelSplitter(2); E.gL = gn(1); E.gR = gn(0);

@@ -2,7 +2,7 @@
 
 A practical walkthrough of every panel. For a ten-minute orientation, press **?** in the app and choose **Take the guided tour**.
 
-Contents: [Getting sound](#getting-sound-in-and-out) · [Tones and the Rig](#tones-and-the-rig) · [The band](#the-band) · [Arrangement and recording](#arrangement-and-recording) · [Tab editor](#tab-editor) · [Song, tunings and capo](#song-tunings-and-capo) · [Fretboard and tuner](#fretboard-and-tuner) · [Transcribe](#transcribe-audio-to-tab) · [Stems](#stems-and-backing-tracks) · [Neural map](#neural-map) · [Visuals and Stage](#visuals-and-stage) · [Vision](#vision-lab) · [Research](#research-panel) · [Export, history and backup](#export-history-and-backup) · [MIDI](#midi) · [Layout](#layout-and-themes)
+Contents: [Perform, share and back up](#perform-share-and-back-up-20) · [Getting sound](#getting-sound-in-and-out) · [Tones and the Rig](#tones-and-the-rig) · [The band](#the-band) · [Arrangement and recording](#arrangement-and-recording) · [Tab editor](#tab-editor) · [Song, tunings and capo](#song-tunings-and-capo) · [Fretboard and tuner](#fretboard-and-tuner) · [Transcribe](#transcribe-audio-to-tab) · [Stems](#stems-and-backing-tracks) · [Neural map](#neural-map) · [Visuals and Stage](#visuals-and-stage) · [Vision](#vision-lab) · [Research](#research-panel) · [Export, history and backup](#export-history-and-backup) · [MIDI](#midi) · [Layout](#layout-and-themes)
 
 ---
 
@@ -36,12 +36,13 @@ The fastest way in: **hum or sing a few seconds of melody and get a whole song b
 
 **Audio button and kill switch.** The app never asks for your microphone on its own. Start with the microphone off, or connect it from the start screen. The **Audio** button in the header (light: grey off, green live, amber no input, red killed) opens a panel to start the engine, choose and connect an input, toggle monitoring and optionally reconnect your last input on open. **Ctrl/Cmd + .** (or the red button in that panel) kills audio instantly: playback and recording stop, monitoring turns off, the microphone is released. Press Resume to continue. On a phone, find it in More.
 
-1. Press **Start** on the welcome card. The browser asks for microphone access; allow it. (This is how a web page reads your audio interface.)
-2. Open **I/O** (left sidebar). Choose your **Audio input**; for a two-input interface open **Channels** and say what each input is (**Guitar**, **Vocal** or **Off**), or use **Auto-detect guitar channel**. If you hear nothing, press **Diagnose devices**.
-3. Choose the **Audio output** (needs a recent Chromium browser to switch away from the system default).
-4. **Monitor** lets you hear yourself through the rig. With an interface that has its own **Direct Monitor**, turn the app's monitor *off* to avoid doubling, or wear headphones.
-5. Set levels so peaks in **Levels** sit around **−12 to −6 dBFS**; the **Input trim** knob helps if your interface gain is awkward. The red LED is the clip indicator (click to clear).
-6. **Latency lab → Run loopback test** measures your real round-trip delay by sending a pulse out and listening for it. Patch an output to an input (or let a speaker feed a mic) first. The header chip shows an *estimate* until you run it.
+1. Open **I/O** (left sidebar) or press the header **Audio** button. The **Audio input** card says *Not connected* and asks nothing of the browser yet.
+2. Pick your interface in the list and press **Connect**. The browser asks for microphone access; allow it. (This is how a web page reads your audio interface.) If it is blocked, the card shows the steps for your browser and system.
+3. Press **Set my level**, play or sing as loud as you will, and the **Input trim** is set for you. **Undo** puts it back. The **signal path** under the card (Input → Trim → Rig → Master → Out) shows where the loudest point is and says in one sentence if peaks are hot or low.
+4. For a two-input interface, **Channels** offers *Guitar*, *Guitar + voice*, *Swap* and *Voice*; each input can also be set to Guitar, Vocal or Off.
+5. Choose the **Audio output** (needs a recent Chromium browser to switch away from the system default) and press **Test sound** to hear it. **Hear myself** lets you hear the rig live; with an interface that has its own **Direct Monitor**, leave the app's monitor *off* to avoid doubling, or wear headphones.
+6. **Advanced** (closed by default) has **Latency lab → Run loopback test** (a measured round-trip delay: patch an output to an input first), **Diagnose devices** and the rarely used controls. The header chip shows an *estimate* until you run it.
+7. Plug in a different interface while the app is open and a small prompt offers to use it.
 
 ## Tones and the Rig
 
@@ -76,6 +77,29 @@ The lower strip is the **arrangement**, laid out like a DAW's track list: chord 
 * **Record** (<kbd>R</kbd>) starts after a count-in and captures every **armed** lane on the same clock. The Guitar lane records **both the dry DI and the processed (wet) signal**, so you can re-amp or export either; the Vocal lane records the microphone. Waveforms draw live while recording. Takes are kept in memory only; export them as WAV from **Export** or a lane's **⋯** menu.
 * **Takes** each have a lane with mute, solo, level and pan (guitar takes also have **RE-AMP**: play the dry DI through the current rig instead of the wet print). Double-click a take's name to rename it.
 * Drag the divider between the arrangement and the panels to resize, double-click it to reset. The **↕** button cycles the arrangement height. Double-click the ruler to clear the loop.
+
+### Lane strips, Auto-balance and the master (2.1)
+
+* **Every lane has a strip.** Band lanes, the vocal lane, takes, stems and the backing track show **M** (mute), **S** (solo), a volume fader, **pan** and **+Fx**. Click a lane's name to select it (it is tinted in the arrangement).
+* **+Fx** opens that lane's effects: **EQ** (low, mid, high), **compressor**, a **reverb** send and a **delay** send, with quick looks (Flat, Warm, Bright, Punch, Room, Hall, Echo). The chip lights when anything is on. Settings are saved with the song, and with each take. Stems and the backing track are not saved in a project, so their strips reset when you reload.
+* **Take faders go to +12 dB** (a squared fader, so it is finer near the middle) for quiet recordings.
+* **⚖ Auto-balance** (**Lanes ▾**, or the master menu) measures your takes and backing track on this device and shows a plan before it changes anything: vocal about −16 LUFS, guitar about −19, backing track about −21 (about −16 when it is alone), two or more guitar takes spread left and right, band parts back at their reference levels. **Apply** it, **Undo** it. A restore point is saved first. A take that is too quiet to reach its target is raised as far as its fader goes, and the plan says how far short it is.
+* **Master chip** (header): the master level, a clip light and a preset (**Off**, **Clean**, **Warm**, **Bright**, **Loud**) that sets the tone, a touch of glue and the loudness target used when you save audio.
+* **↶ ↷** in the song bar undo and redo changes to the song (<kbd>Ctrl/Cmd</kbd> + <kbd>Z</kbd>); the **✓ Saved** mark confirms your work is stored in this browser (it says *Saving…* for a moment after a change, or *Not saved* if the browser refuses).
+* **Count-in.** The **▾** beside **Click** sets the count-in (none, 1, 2 or 4 bars) and the click volume.
+
+### Drop it in (2.1)
+
+Drag files onto the page, or press **Choose a file…** in the row under an empty arrangement.
+
+| You drop | What happens |
+| --- | --- |
+| Audio or video (MP3, WAV, M4A, FLAC, OGG, MP4…) | A short question: **Backing track** (split into stems, sets tempo and key, a restore point first), **Vocal take**, **Guitar take** or **Hum → new song**. Several files at once become takes. |
+| Lyrics (.txt, .md, .lrc) | The lyrics import opens with the text. |
+| A song file (.daily-song.zip or a backup) or a song .json | The song (or songs) are imported. |
+| A rig .json | The rig is loaded. |
+
+Takes land at the start of the song and the page grows enough bars to play all of them. Everything is read on your device. While a window is open, drops are declined with a note, and the browser never leaves the page for a dropped file.
 
 ### Recording guitar and vocals together
 
@@ -176,6 +200,23 @@ Uses your webcam to relate what your hand does to what you play.
 ## Research panel
 
 Live and session measurements: pitch-class usage and intonation (mean cents deviation per note), timing against the click (mean, standard deviation, 95th percentile), vibrato events, attack harshness (HFR), noise floor and SNR, crest factor, clipping, key estimate, latency and camera agreement. **⏱ Loopback latency test** measures round-trip delay. **CSV** and **Session JSON** export everything for your own analysis.
+
+## Perform, share and back up (2.0)
+
+**Perform.** Press **🎤 Perform** in the song bar (or on the full-screen stage). A readiness check comes first: audio is running, your input is connected (with a live level), the camera if you want it, lyrics to follow, and the count-in length. **Start performing** then shows the chord huge with the next one under it, the lyrics scrolling with the song, a big count-in, and **Play**, **● Record**, **Loop**, **Click** and tempo −/+ within reach. Tick **Show the visuals behind** to put the stage behind the words, or leave it for a plain dark page. <kbd>Space</kbd> plays or stops, <kbd>R</kbd> records, <kbd>Esc</kbd> leaves, and <kbd>Ctrl/⌘</kbd>+<kbd>.</kbd> stops everything. A finished take goes straight into your song.
+
+**Voice memo.** On a clean canvas, **🎤 Voice memo** records your voice as it is: one Vocal take at the start of the page, no analysis and no band. The page grows enough bars to play all of it.
+
+**Auto look.** **🎬 Auto look** in the Visuals bar makes the look follow the section while the song plays (choruses open into the Fifths Halo, bridges into Prism, intros and outros into the Tunnel). When playback stops, your own look comes back.
+
+**Export and share** (the Export panel, and the Save menu on the hum result):
+* **Bounce master WAV** now reports the song's loudness (LUFS) and true peak. **Settings ▸ Export ▸ Loudness target** can bring song WAVs to −14 (streaming), −16 or −23 LUFS, never past −1 dBTP. Part WAVs are left as they are.
+* **Compressed audio** saves M4A (or Opus in a .webm where the browser cannot make M4A). It plays once in real time, like a bounce.
+* **Share page** saves **one HTML file** with the sound, lyrics, chords and a small player. Open it in any browser or send it. Click a lyric line to jump there. It loads nothing from anywhere.
+* **Print or PDF sheet** makes a clean sheet with chords over the words for the browser's Print dialog (choose **Save as PDF** there).
+* **⏺ Record the stage** (Visuals bar) saves a video of the visuals with the song's sound.
+
+**Backup folder** (Chrome and Edge on a computer). **Settings ▸ Export ▸ Backup folder ▸ Choose a folder…** Each song is written there as a `.daily-song.zip` shortly after you change it, and **Save all songs now** writes them all. A folder inside a cloud drive works with that drive's own sync. After a browser restart it may ask once to allow access again. No account is involved: the browser writes the files directly. Renaming a song leaves its old file in the folder.
 
 ## Export, history and backup
 

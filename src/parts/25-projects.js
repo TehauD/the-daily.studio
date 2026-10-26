@@ -88,19 +88,19 @@ function normSong(saved) {
   const d = newSong(), s = Object.assign(d, saved || {}); s.band = Object.assign(d.band, (saved && saved.band) || {}); s.mix = Object.assign(d.mix, (saved && saved.mix) || {}); s.voicePref = (saved && saved.voicePref) || {};
   s.tuning = ((saved && saved.tuning) || d.tuning).slice(); if (!Array.isArray(s.sections)) s.sections = []; if (!Array.isArray(s.ts) || s.ts.length < 2) s.ts = [4, 4]; return s;
 }
-const takeMeta = t => { const m = { hum: !!t.hum, id: t.id, kind: t.kind || 'gtr', name: t.name, startSec: t.startSec, sr: t.sr, g: t.g, pan: t.pan || 0, mute: !!t.mute, solo: !!t.solo, mode: t.mode, bpm: t.bpm, preset: t.preset || '', peak: t.peak, rms: t.rms, dur: t.dur, t: t.t, hasWet: !!t.wet, hasCam: !!(t.cam && t.cam.length) }; try { m.stats = t.stats ? JSON.parse(JSON.stringify(t.stats)) : null; } catch (e) { m.stats = null; } return m; };
+const takeMeta = t => { const m = { hum: !!t.hum, id: t.id, kind: t.kind || 'gtr', name: t.name, startSec: t.startSec, sr: t.sr, g: t.g, pan: t.pan || 0, fx: fxOn(t.fx) ? Object.assign({}, t.fx) : null, mute: !!t.mute, solo: !!t.solo, mode: t.mode, bpm: t.bpm, preset: t.preset || '', peak: t.peak, rms: t.rms, dur: t.dur, t: t.t, hasWet: !!t.wet, hasCam: !!(t.cam && t.cam.length) }; try { m.stats = t.stats ? JSON.parse(JSON.stringify(t.stats)) : null; } catch (e) { m.stats = null; } return m; };
 
 /* ---------- save ---------- */
 function projDirty() {
   if (!PRJ.ok || PRJ.loading || store.locked) return;
   if (!PRJ.cur) { if (PRJ.ready && !document.getElementById('origins') && (songHasWork() || TAKES.length || STM.ch)) projAdoptCurrent(); return; }   // work done before any song was chosen is kept as a song
-  clearTimeout(PRJ.timer); PRJ.timer = setTimeout(projSave, 1200);
+  clearTimeout(PRJ.timer); PRJ.timer = setTimeout(projSave, 1200); bus.emit('savestate', 'dirty');
 }
 function projSave() {
   clearTimeout(PRJ.timer); if (!PRJ.ok || !PRJ.cur || PRJ.loading || store.locked) return Promise.resolve();
   if (PRJ.saving) { PRJ.again = true; return PRJ.saving; }
   PRJ.saving = (async () => {
-    try { await projSaveNow(); projPersist(); } catch (e) { console.warn('project save', e); if (!PRJ.warned) { PRJ.warned = true; toast('This browser would not store your work (storage full or private window?). Export a song bundle from ☰ Songs to keep it.', 'warn'); } }
+    try { await projSaveNow(); projPersist(); try { syncKick(); } catch (e) { } bus.emit('savestate', 'ok', Date.now()); } catch (e) { bus.emit('savestate', 'err'); console.warn('project save', e); if (!PRJ.warned) { PRJ.warned = true; toast('This browser would not store your work (storage full or private window?). Export a song bundle from ☰ Songs to keep it.', 'warn'); } }
     finally { PRJ.saving = null; if (PRJ.again) { PRJ.again = false; projDirty(); } }
   })();
   return PRJ.saving;
@@ -290,7 +290,7 @@ async function projImport(file) {
 
 /* ---------- start-up ---------- */
 async function projInit() {
-  PRJ.db = await pdbOpen(); PRJ.ok = !!PRJ.db;
+  PRJ.db = await pdbOpen(); PRJ.ok = !!PRJ.db; try { syncLoad(); } catch (e) { }
   if (!PRJ.ok) { PRJ.ready = true; bus.emit('projects'); if (PRJ.wantStart) startMaybe(); return; }
   await projRefresh();
   const cur = store.get('cur', null), loc = store.get('song', null), locAt = store.get('songAt', 0), hasLoc = loc && Array.isArray(loc.sections) && loc.sections.length;

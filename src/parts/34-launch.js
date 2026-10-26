@@ -43,8 +43,9 @@ function vzImmersive(on) {
       h('span', { class: 'grow' }),
       h('button', { class: 'btn sm', id: 'vzhNew', title: 'Start a new song: hum, guitar, a song file or a blank page', onclick: () => humStageFirst() }, '＋', h('span', { class: 'lbl' }, ' New song')),
       h('button', { class: 'btn sm', id: 'vzhRec', 'data-srec': '1', title: 'Record the stage as a video with the song’s sound (saved on this device)', onclick: e => srecMenu(e.currentTarget) }, '⏺', h('span', { class: 'lbl' }, ' Record')),
+      h('button', { class: 'btn sm', id: 'vzhPerf', title: 'Perform: chords and lyrics over the stage, with a count-in', onclick: e => perfOpen(e.currentTarget) }, '🎤', h('span', { class: 'lbl' }, ' Perform')),
       h('button', { class: 'btn sm', id: 'vzhLook', title: 'Change the look: Hex Resonance, Fifths Halo, Prism, Tunnel', onclick: () => vzCycleLook() }, '✦', h('span', { class: 'lbl' }, ' Look')),
-      h('button', { class: 'btn sm', id: 'vzhIo', title: 'Microphone, camera and other inputs', onclick: () => { vzImmersive(false); try { sideShow('io'); } catch (e) { } } }, '⚙', h('span', { class: 'lbl' }, ' Inputs')),
+      h('button', { class: 'btn sm', id: 'vzhIo', title: 'Connect your input, set your level, monitor and test the sound', onclick: () => audioOpen() }, '⚙', h('span', { class: 'lbl' }, ' Inputs')),
       h('button', { class: 'btn sm vzh-kill', id: 'vzhKill', title: 'Stop all sound and release the microphone (Ctrl + .)', onclick: () => { try { audioKill(); } catch (e) { } } }, '■', h('span', { class: 'lbl' }, ' Stop audio')),
       h('button', { class: 'btn sm', id: 'vzhFull', title: 'Full screen', 'aria-label': 'Full screen', onclick: () => { try { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen({ navigationUI: 'hide' }).catch(() => { }); } catch (e) { } } }, '⛶'),
       h('button', { class: 'btn sm', id: 'vzhExit', title: 'Back to the studio', onclick: () => vzImmersive(false) }, '✕ Studio'));

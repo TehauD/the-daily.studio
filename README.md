@@ -5,7 +5,7 @@
 <h1 align="center">the-daily.studio</h1>
 <p align="center"><b>A songwriter’s workspace that lives in one web page.</b><br>
 Catch an idea · find the chords · record guitar and vocals · split a track into stems · keep every song on your own device</p>
-<p align="center"><sub>MVP 1 · v1.7.0 · free, open source (MIT) · no account, no upload, no tracking</sub></p>
+<p align="center"><sub>v2.1.0 · free, open source (MIT) · no account, no upload, no tracking</sub></p>
 
 <p align="center">
   <a href="https://the-daily.studio/"><b>▶ Open the live app</b></a> ·
@@ -59,6 +59,8 @@ It began as a guitar lab and grew into a place to turn a hum into a finished son
 | Area | What you get |
 |---|---|
 | **Rig** | 16 reorderable effect units (gate, compressor, wah, overdrive, distortion, fuzz, pitch / harmony, amp, cabinet / IR, parametric EQ, chorus, phaser, flanger, tremolo, delay, reverb), 5 amp models, procedural cabinets and impulse-response loading, 6 reverbs, 27 presets, A/B morph, mutate, scenes, per-pedal footswitch keys and MIDI bindings, Stomp view for live use. |
+| **I/O and lanes (2.1)** | One **Connect** card with **Set my level** and a live **signal path**, channels that follow your interface, and permission help that names the exact steps for your browser. A mixer strip on every lane (**M S**, volume, pan, **+Fx**: EQ, compressor, reverb and delay sends), **drop-anywhere import** for audio, lyrics, song files and rigs, **⚖ Auto-balance**, a **master chip** with presets, visible undo / redo and a **Saved** mark. |
+| **Perform and share (2.0)** | **Perform** (full-screen chords, lyrics and a count-in with a readiness check), **Voice memo**, **Auto look** per section, **Record the stage** as a video, loudness (LUFS) with a target, compressed audio, a one-file **share page**, a **print or PDF sheet**, and a **backup folder** that saves your songs as you work. |
 | **Arrangement** | A DAW-style track list: chord, tab, bass and drum lanes, your **Guitar** and **Vocal** inputs, recorded takes, and a loaded track with its four stems, all on one bar grid. Reorder, resize, recolour and hide lanes; arm guitar and vocals and **record both at once** from a two-input interface (guitar on input 1, microphone on input 2). |
 | **Song strip** | Title, artist, tuning, capo and scale in one strip above every panel. Load a track and it fills in the title, tempo, key and chords for you. **Refine** (right sidebar) is the shared lyric and chord canvas, and any panel can be moved between the centre and either sidebar. |
 | **Band** | Drums, bass, rhythm guitar and lead-tab playback in many styles, always one click away in the band strip. Rehearsal mixes mute whoever you are replacing. |
@@ -190,7 +192,8 @@ Knobs: drag, mouse wheel, <kbd>Shift</kbd> for fine, double-click to reset, righ
 
 ## Audio setup
 
-* **Guitar + vocal at once.** A two-input interface appears in the browser as one device with two channels. In **I/O → Guitar + vocal** pick *Guitar 1 · Vocal 2* (or the reverse), arm both lanes in the arrangement and press <kbd>R</kbd>. A mono device cannot be split. Wear headphones when you monitor the vocal.
+* **Guitar + vocal at once.** A two-input interface appears in the browser as one device with two channels. In **I/O → Channels** pick *Guitar & voice* (or *Swap*), arm both lanes in the arrangement and press <kbd>R</kbd>. A mono device cannot be split. Wear headphones when you monitor the vocal.
+* **Connect, then Set my level.** In **I/O** press **Connect**, then **Set my level** and play or sing as loud as you will; the trim is set for you and the signal-path strip shows where the loudest point is.
 * **Use headphones** or your interface's hardware **Direct Monitor** for zero-latency monitoring, and mute the in-app monitor while recording to avoid doubled sound and feedback.
 * Browsers cannot talk to ASIO drivers, so achievable latency depends on your operating system's audio stack. Run the **Loopback test** (I/O panel) for a *measured* round-trip number instead of a guess.
 * With a Focusrite or similar interface, set its buffer size as low as stays stable (Focusrite Control or your OS). Wired headphones beat Bluetooth by a large margin.
@@ -289,6 +292,8 @@ The short version: push this folder to a new repository, then **Settings → Pag
 
 * Seven- and eight-string guitar and bass support
 * An optional machine-learning separator and transcriber (loaded on demand) alongside the classical DSP
+* Tempo and key changes inside a song, MusicXML and Guitar Pro import and export
+* Sidechain ducking, pitch correction and a groove picker
 * Shareable song links and a gallery of community presets
 * More amp and cabinet models, impulse-response library browser
 

@@ -28,7 +28,7 @@ function detectForm() {
 function mMoveTransport(phone) {
   const tr = $('#transport'); if (!tr || !M.trans) return;
   if (!M.kids) M.kids = [...tr.children];
-  if (phone) { const k = M.kids; M.trans.append(k[0], k[1], k[2], k[3], k[4], k[5], k[6], k[7]); tr.append(k[8], k[9], k[10], k[11]); }
+  if (phone) { const k = M.kids.filter(x => !x.classList.contains('metro-more')); M.trans.append(k[0], k[1], k[2], k[3], k[4], k[5], k[6], k[7]); tr.append(k[8], k[9], k[10], k[11], ...M.kids.filter(x => x.classList.contains('metro-more'))); }   // the count-in arrow stays in the header (hidden on phones)
   else tr.append(...M.kids);
 }
 

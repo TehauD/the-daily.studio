@@ -1,6 +1,6 @@
 # Security and privacy model
 
-Release 1 (v1.7.0). The app is a static page that runs entirely in the visitor's browser. This document records what it can access, what it stores, what it contacts, and the controls that keep it that way.
+Version 2.1 (v2.1.0). The app is a static page that runs entirely in the visitor's browser. This document records what it can access, what it stores, what it contacts, and the controls that keep it that way.
 
 ## Trust boundaries
 
@@ -17,6 +17,7 @@ Release 1 (v1.7.0). The app is a static page that runs entirely in the visitor's
 | Audio output and monitoring | Monitoring is **off by default** | Audio panel ▸ "Hear myself" |
 | Microphone for Hum to Song | Only when the person presses **● Hum or sing**; recorded in memory, never saved or uploaded | Stop; Ctrl/Cmd + . discards the recording and releases the microphone |
 | Camera | Only when a Visuals / Vision camera feature is started, or when **● Begin** (first screen) or **Hum or sing** is pressed with "center stage" ticked (default); the first screen says so before the button is pressed | Camera off / backdrop button; browser site settings |
+| Files the user drops or chooses | Only when the person drops files on the page or presses **Choose a file…**; read with the browser's File API in memory, never uploaded. Drops are declined while a window is open, and the page never navigates to a dropped file | n/a |
 | MIDI | Only when the user enables MIDI | Browser site settings |
 | Location, payment, USB, serial | Never (disabled by Permissions-Policy) | n/a |
 

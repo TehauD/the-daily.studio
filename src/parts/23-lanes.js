@@ -4,7 +4,8 @@
    can be reordered by dragging their grip, resized by dragging their bottom edge, recoloured, hidden and re-added.
    Guitar and Vocal lanes have an arm button; R records every armed lane at once, sample-aligned.
    ============================================================ */
-const LN = Object.assign({ order: [], h: {}, hide: {}, col: {}, scale: 1, hw: 188 }, CFG.lanes || {});
+const LN = Object.assign({ order: [], h: {}, hide: {}, col: {}, scale: 1, hw: 216 }, CFG.lanes || {}); if (LN.hw === 188) LN.hw = 216;   // the old default made room for fewer controls
+const LANE_SEL = { id: null };
 const saveLn = () => { CFG.lanes = LN; saveCfg(); };
 const VOX_COL = '#ff5fa2', LANE_COLS = ['#0a9aa6', '#e4572e', '#8a5cf5', '#e0a31a', '#2e9d57', '#ff5fa2', '#3b82f6', '#9aa5a6'];
 STM.vol = 1; STM.mute = false;
@@ -50,7 +51,8 @@ function renderHeads() {
   if (!UI.heads) return; const hd = UI.heads, keep = hd.scrollTop; hd.innerHTML = ''; UI.lm = {};
   hd.append(h('div', { class: 'tl-corner', style: { height: (TL.rh + TL.sh) + 'px' } }, tunShort() + ' · ' + S.ts.join('/')));
   tlLayout().ls.forEach(({ l, h: hh }) => {
-    const cmp = hh < 40, box = h('div', { class: 'tl-head ' + l.type + (cmp ? ' cmp' : ''), 'data-id': l.id, style: { height: hh + 'px' } });
+    const cmp = hh < 40, box = h('div', { class: 'tl-head ' + l.type + (cmp ? ' cmp' : '') + (LANE_SEL.id === l.id ? ' sel' : ''), 'data-id': l.id, style: { height: hh + 'px' } });
+    box.addEventListener('pointerdown', e => { if (e.target.closest && e.target.closest('button,input,select,.grip,.lgrip')) return; laneSelect(l.id); });
     const grip = h('span', { class: 'grip', draggable: 'true', title: 'Drag to reorder this lane', ondragstart: e => { e.dataTransfer.setData('text/plain', 'lane:' + l.id); e.dataTransfer.effectAllowed = 'move'; try { e.dataTransfer.setDragImage(box, 12, 12); } catch (er) { } box.classList.add('dragging'); }, ondragend: () => box.classList.remove('dragging') }, '⠿');
     box.addEventListener('dragover', e => { if (![...e.dataTransfer.types].includes('text/plain')) return; e.preventDefault(); const r = box.getBoundingClientRect(); box.classList.toggle('dropa', e.clientY < r.top + r.height / 2); box.classList.toggle('dropb', e.clientY >= r.top + r.height / 2); });
     box.addEventListener('dragleave', () => box.classList.remove('dropa', 'dropb'));
@@ -72,24 +74,24 @@ function renderHeads() {
       t.append(sel, more);
       b.append(bt('●', 'arm' + (armedV() ? ' on' : ''), 'Arm the vocal for recording', e => { if (CFG.vin === 'off') { setVoxInput('R'); } else { CFG.armV = !armedV(); saveCfg(); } e.currentTarget.classList.toggle('on', armedV()); TL.dirty = true; }),
         bt('🎧', CFG.voxMon ? 'on' : '', 'Hear the vocal through the app — headphones only, or the microphone will feed back', e => { CFG.voxMon = !CFG.voxMon; saveCfg(); applyMix(); e.currentTarget.classList.toggle('on', CFG.voxMon); }), lm(),
-        mute(() => m.m, v => { m.m = v ? 1 : 0; applyMix(); commit(false); }), solo(() => m.s, v => { m.s = v ? 1 : 0; applyMix(); commit(false); }), vol(() => m.g, v => { m.g = v; applyMix(); }, 1.4, 1, 'Vocal track level'));
+        mute(() => m.m, v => { m.m = v ? 1 : 0; applyMix(); commit(false); }), solo(() => m.s, v => { m.s = v ? 1 : 0; applyMix(); commit(false); }), vol(() => m.g, v => { m.g = v; applyMix(); }, 1.4, 1, 'Vocal track level'), fxPan(() => m.p || 0, v => { m.p = v; applyMix(); }), fxChip(() => m, () => applyMix(), 'Vocal', true));
     } else if (l.type === 'take') {
       const tk = l.take; const vx = tk.kind === 'vox'; t.append(more);
-      b.append(bt('⤓', 'dl', 'Save this recording as a WAV file on your device', () => dlTake(tk)), mute(() => tk.mute, v => { tk.mute = v; takeLive(tk); }), solo(() => tk.solo, v => { tk.solo = v; takeLive(tk); }),
+      b.append(mute(() => tk.mute, v => { tk.mute = v; takeLive(tk); }), solo(() => tk.solo, v => { tk.solo = v; takeLive(tk); }),
         vx ? null : bt('RE-AMP', tk.mode === 'reamp' ? 'on' : '', 'Re-amp: play the dry DI through the CURRENT rig. Off: the wet print as recorded.', e => { tk.mode = tk.mode === 'reamp' ? 'wet' : 'reamp'; e.currentTarget.classList.toggle('on', tk.mode === 'reamp'); if (tk.mode === 'reamp' && !tk.dry) tk.mode = 'wet'; toast(tk.mode === 'reamp' ? 'Re-amp: playing dry DI through the live rig' : 'Playing the wet print as recorded'); }),
-        vol(() => tk.g, v => { tk.g = v; takeLive(tk); }, 1.5, 1, 'Take volume'), h('input', { type: 'range', min: -1, max: 1, step: .05, value: tk.pan || 0, title: 'Pan', style: { width: '40px', flex: 'none' }, oninput: e => { tk.pan = +e.target.value; takeLive(tk); } }));
+        vol(() => Math.sqrt(tk.g == null ? 1 : tk.g), v => { tk.g = v * v; takeLive(tk); }, 2, 1, 'Take volume (up to +12 dB)'), h('input', { type: 'range', min: -1, max: 1, step: .05, value: tk.pan || 0, title: 'Pan', style: { width: '40px', flex: 'none' }, oninput: e => { tk.pan = +e.target.value; takeLive(tk); } }), vx ? fxChip(() => S.mix.vox || (S.mix.vox = { g: 1, p: 0, m: 0, s: 0 }), () => applyMix(), 'Vocal', true) : fxChip(() => tk, () => takeLive(tk), tk.name, true));
     } else if (l.type === 'trk') {
       t.append(h('span', { class: 'tag', title: 'The loaded backing track' }, fmtT(STM.dur)), more);
       b.append(mute(() => STM.mute, v => { STM.mute = v; spBus(); }), bt('⟲ sync', CFG.trackSync !== false ? 'on' : '', 'Track follows the transport: play / stop / seek / loop move the track with the arrangement', e => { CFG.trackSync = CFG.trackSync === false; saveCfg(); e.currentTarget.classList.toggle('on', CFG.trackSync !== false); }),
-        vol(() => STM.vol, v => { STM.vol = v; spBus(); }, 1.5, 1, 'Whole-track level'));
+        vol(() => STM.vol, v => { STM.vol = v; spBus(); }, 1.5, 1, 'Whole-track level'), fxChip(() => STM, () => spFx(), 'Backing track', false));
     } else if (l.type === 'stem') {
       const sm = STM.mix[l.idx]; t.append(more);
-      b.append(bt('⤓', 'dl', 'Save this stem as a WAV file', () => stemExport(l.idx)), mute(() => sm.m, v => { sm.m = v; spGains(); renderStemStrips(); TL.dirty = true; }), solo(() => sm.s, v => { sm.s = v; spGains(); renderStemStrips(); TL.dirty = true; }), vol(() => sm.g, v => { sm.g = v; spGains(); }, 1.5, 1, 'Stem level'));
+      b.append(mute(() => sm.m, v => { sm.m = v; spGains(); renderStemStrips(); TL.dirty = true; }), solo(() => sm.s, v => { sm.s = v; spGains(); renderStemStrips(); TL.dirty = true; }), vol(() => sm.g, v => { sm.g = v; spGains(); }, 1.5, 1, 'Stem level'), fxPan(() => sm.p || 0, v => { sm.p = v; spFx(); }), fxChip(() => sm, () => spFx(), l.name, false));
     } else {
       t.append(more); const key = BANDMAP[l.id];
-      b.append(key ? bt('⤓', 'dl', 'Save just this part as a WAV (plays the song once in real time)', () => bouncePart(l.id)) : null, key ? h('button', { class: 'pw' + (S.band[key] ? ' on' : ''), 'data-k': key, title: 'Enable / disable this instrument in the band', onclick: () => toggleBand(key) }, '⏻') : null,
+      b.append(key ? h('button', { class: 'pw' + (S.band[key] ? ' on' : ''), 'data-k': key, title: 'Enable / disable this instrument in the band', onclick: () => toggleBand(key) }, '⏻') : null,
         mute(() => m.m, v => { m.m = v ? 1 : 0; applyMix(); commit(false); }), solo(() => m.s, v => { m.s = v ? 1 : 0; applyMix(); commit(false); }), vol(() => m.g, v => { m.g = v; applyMix(); }),
-        h('input', { type: 'range', min: -1, max: 1, step: .05, value: m.p, title: 'Pan', style: { width: '40px', flex: 'none' }, oninput: e => { m.p = +e.target.value; applyMix(); } }));
+        h('input', { type: 'range', min: -1, max: 1, step: .05, value: m.p, title: 'Pan', style: { width: '40px', flex: 'none' }, oninput: e => { m.p = +e.target.value; applyMix(); } }), FX_TRACKS.includes(l.id) ? fxChip(() => m, () => applyMix(), l.name, true) : null);
     }
     if (cmp && l.type !== 'live' && l.type !== 'vox') { box.append(t); [...b.children].filter(x => x && (x.classList.contains('mute') || x.title === 'Solo' || x.classList.contains('pw'))).forEach(x => t.insertBefore(x, t.lastChild)); }
     else if (cmp) { box.append(t); [...b.children].filter(x => x && x.classList.contains('arm')).forEach(x => t.insertBefore(x, t.lastChild)); }
@@ -105,6 +107,14 @@ function laneRename(l, el) {
   const tk = l.take, inp = h('input', { class: 'in', value: tk.name, style: { width: '100%', height: '18px', fontSize: '11px' }, onblur: () => { tk.name = inp.value.trim() || tk.name; renderHeads(); TL.dirty = true; }, onkeydown: e => { if (e.key === 'Enter') inp.blur(); if (e.key === 'Escape') { inp.value = tk.name; inp.blur(); } } });
   el.replaceWith(inp); inp.focus(); inp.select();
 }
+/** click a lane header to select it: the lane is tinted in the arrangement */
+function laneSelect(id) { LANE_SEL.id = LANE_SEL.id === id ? null : id; $$('.tl-head').forEach(x => x.classList.toggle('sel', x.dataset.id === LANE_SEL.id)); TL.dirty = true; bus.emit('lanesel', LANE_SEL.id); }
+/** the strip settings object, apply function and name for a lane (null when the lane has none) */
+function laneFx(l) {
+  if (l.type === 'take') { const tk = l.take; return tk.kind === 'vox' ? [() => S.mix.vox || (S.mix.vox = { g: 1, p: 0, m: 0, s: 0 }), () => applyMix(), 'Vocal', true] : [() => tk, () => takeLive(tk), tk.name, true]; }
+  if (l.type === 'trk') return [() => STM, () => spFx(), 'Backing track', false]; if (l.type === 'stem') { const sm = STM.mix[l.idx]; return [() => sm, () => spFx(), l.name, false]; }
+  if (l.type === 'vox') return [() => S.mix.vox, () => applyMix(), 'Vocal', true]; if (FX_TRACKS.includes(l.id)) return [() => S.mix[l.id] || (S.mix[l.id] = { g: 1, p: 0, m: 0, s: 0 }), () => applyMix(), l.name, true]; return null;
+}
 function laneMenu(anchor, l) {
   const box = h('div', { style: { minWidth: '230px' } }); box.append(h('h5', {}, l.name));
   const hh = laneH(l);
@@ -117,6 +127,7 @@ function laneMenu(anchor, l) {
   if (l.type === 'take') box.append(h('div', { class: 'row', style: { gap: '6px' } }, h('button', { class: 'btn sm', onclick: () => { closePop(); dlTake(l.take); } }, '⤓ WAV'), h('button', { class: 'btn sm', onclick: () => { closePop(); const i = TAKES.indexOf(l.take); if (i >= 0) TAKES.splice(i, 1); bus.emit('takes'); } }, '✕ Delete take'), h('button', { class: 'btn sm', onclick: () => { closePop(); dockGo('tx'); TX.src = l.take.id; txRefreshSrc(); } }, '♬ Transcribe')));
   if (l.type === 'trk') box.append(h('div', { class: 'row', style: { gap: '6px' } }, h('button', { class: 'btn sm', onclick: () => { closePop(); dockGo('stems'); } }, 'Open Stems'), h('button', { class: 'btn sm bad', onclick: () => { closePop(); stemUnload(); } }, '✕ Unload')));
   if (l.type === 'live' || l.type === 'vox') box.append(h('div', { class: 'tiny muted', style: { marginTop: '4px' } }, 'Input routing and the vocal strip are in the I/O panel (left).'), h('button', { class: 'btn sm', style: { marginTop: '4px' }, onclick: () => { closePop(); sideShow('io'); } }, 'Open I/O'));
+  { const fx = laneFx(l); if (fx) box.append(h('div', { class: 'row', style: { gap: '6px', marginTop: '4px' } }, h('button', { class: 'btn sm', onclick: () => { closePop(); setTimeout(() => fxPanel(anchor, fx[0], fx[1], fx[2], fx[3], () => { }), 0); } }, '🎛 Effects…'))); }
   popover(anchor, box, { style: { maxWidth: '320px' } });
 }
 /** + Track / Lanes manager: show hidden lanes, re-order, reset */
@@ -125,7 +136,8 @@ function lanesMenu(anchor) {
   const quick = h('div', { class: 'row', style: { gap: '6px', marginBottom: '8px' } },
     h('button', { class: 'btn sm primary', title: 'Show the vocal lane and route the second input to it', onclick: () => { delete LN.hide.vox; delete LN.hide.live; saveLn(); if (CFG.vin === 'off') setVoxInput('R'); closePop(); renderHeads(); tlSize(); } }, '🎤 Add vocal'),
     h('button', { class: 'btn sm', onclick: () => { delete LN.hide.live; saveLn(); closePop(); renderHeads(); tlSize(); } }, '🎸 Add guitar'),
-    h('button', { class: 'btn sm', onclick: () => { closePop(); dockGo('stems'); if (SU.file) SU.file.click(); } }, '♪ Load track…'));
+    h('button', { class: 'btn sm', onclick: () => { closePop(); dockGo('stems'); if (SU.file) SU.file.click(); } }, '♪ Load track…'),
+    h('button', { class: 'btn sm', id: 'lanesBal', title: 'Measure your recordings and set every lane’s level and pan so they sit together', onclick: () => { closePop(); autoBalance(); } }, '⚖ Auto-balance'));
   box.append(quick);
   tlOrder().forEach(l => box.append(h('div', { class: 'lrow' }, h('input', { type: 'checkbox', checked: !LN.hide[l.id], onchange: e => { if (e.target.checked) delete LN.hide[l.id]; else LN.hide[l.id] = true; saveLn(); renderHeads(); tlSize(); } }), h('i', { class: 'sw', style: { background: l.c, width: '8px', height: '14px', borderRadius: '2px' } }), h('span', { class: 'grow' }, l.name),
     h('button', { class: 'btn sm', style: { padding: '0 6px' }, onclick: () => { laneStep(l.id, -1); lanesMenu(anchor); lanesMenu(anchor); } }, '↑'), h('button', { class: 'btn sm', style: { padding: '0 6px' }, onclick: () => { laneStep(l.id, 1); lanesMenu(anchor); lanesMenu(anchor); } }, '↓'))));
@@ -153,7 +165,7 @@ function spBus() { if (!STP.bus) return; tc(STP.bus.gain, STM.mute ? 0 : (STM.vo
 /* ---------- drawing ---------- */
 function laneBg(g, V) {
   const { ox, vw, C, LY } = V;
-  LY.ls.forEach(({ y, h: hh }, i) => { g.fillStyle = i % 2 ? C.bg2 : C.bg; g.globalAlpha = i % 2 ? .45 : 1; g.fillRect(ox, y, vw, hh); g.globalAlpha = 1; g.fillStyle = C.line; g.fillRect(ox, y + hh - 1, vw, 1); });
+  LY.ls.forEach(({ l, y, h: hh }, i) => { g.fillStyle = i % 2 ? C.bg2 : C.bg; g.globalAlpha = i % 2 ? .45 : 1; g.fillRect(ox, y, vw, hh); g.globalAlpha = 1; if (l && LANE_SEL.id === l.id) { g.fillStyle = C.accent; g.globalAlpha = .1; g.fillRect(ox, y, vw, hh - 1); g.globalAlpha = 1; } g.fillStyle = C.line; g.fillRect(ox, y + hh - 1, vw, 1); });
 }
 function drawLanes(g, V) {
   const { ox, vw, sw, sp, b0, b1, fb, C, sans, LY } = V, cache = tlCache(), hasRec = !!REC;
@@ -202,22 +214,23 @@ function buildVoxCard(p) {
   const mt = () => { const i = h('i'), u = h('u'), v = h('span', { class: 'mono tiny' }, '–∞ dB'); UI.mVox = { i, u, v, hold: -120 }; return h('div', { style: { margin: '8px 0 4px' } }, h('div', { class: 'row sp tiny muted' }, h('span', {}, 'Vocal level (post-trim)'), v), h('div', { class: 'meter' }, i, u)); };
   const trim = mkKnob({ key: 'voxTrim', label: 'Vocal Trim', min: -24, max: 36, def: 0, step: .5, unit: ' dB', onChange: v => setVoxTrim(v) });
   const tog = (label, get, set, title) => { const b = h('button', { class: 'tog' + (get() ? ' on' : ''), title, onclick: () => { set(!get()); b.classList.toggle('on', get()); } }, label); return b; };
+  const presets = h('div', { class: 'row io-presets', style: { gap: '6px', flexWrap: 'wrap', margin: '0 0 6px' } });
   const sync = () => {
-    route.innerHTML = ''; follow.innerHTML = ''; const roles = chRoles(), nch0 = E.inSettings && E.inSettings.channelCount; UI.chM = [];
-    [0, 1].forEach(i => {
-      const sel = h('select', { class: 'in', 'aria-label': 'What input ' + (i + 1) + ' is', disabled: nch0 === 1 && i === 1, onchange: e => { const v = e.target.value; const r = chRoles(); r[i] = v; if (v === 'v') r[1 - i] = r[1 - i] === 'v' ? 'g' : r[1 - i]; chSetRoles(r[0], r[1]); if (v === 'v' && CFG.vin !== 'off') toast('Input ' + (i + 1) + ' is the vocal. Use headphones, or the interface’s Direct Monitor, to avoid feedback.', 'ok'); } },
+    route.innerHTML = ''; follow.innerHTML = ''; presets.innerHTML = ''; const roles = chRoles(), nch0 = ioNch(), mono = nch0 === 1; UI.chM = [];
+    (mono ? [0] : [0, 1]).forEach(i => {
+      const sel = h('select', { class: 'in', 'aria-label': 'What input ' + (i + 1) + ' is', onchange: e => { const v = e.target.value; if (mono) { chSetRoles(v, 'o'); return; } const r = chRoles(); r[i] = v; if (v === 'v') r[1 - i] = r[1 - i] === 'v' ? 'g' : r[1 - i]; chSetRoles(r[0], r[1]); if (v === 'v' && CFG.vin !== 'off') toast('Input ' + (i + 1) + ' is the vocal. Use headphones, or the interface’s Direct Monitor, to avoid feedback.', 'ok'); } },
         [['g', '🎸 Guitar'], ['v', '🎤 Vocal'], ['o', 'Off']].map(([v, t]) => h('option', { value: v, selected: roles[i] === v }, t)));
       const bar = h('i'); UI.chM[i] = bar;
-      route.append(h('div', { class: 'chrow', title: 'Guitar goes through the rig; Vocal goes through the vocal strip' }, h('b', {}, 'Input ' + (i + 1)), sel, h('div', { class: 'meter chm', 'aria-hidden': 'true' }, bar)));
+      route.append(h('div', { class: 'chrow', title: 'Guitar goes through the rig; Vocal goes through the vocal strip' }, h('b', {}, mono ? 'Input' : 'Input ' + (i + 1)), sel, h('div', { class: 'meter chm', 'aria-hidden': 'true' }, bar)));
     });
-    [['g', 'Guitar'], ['v', 'Vocal'], ['b', 'Both']].forEach(([v, t]) => follow.append(h('button', { class: (CFG.anSrc || 'g') === v ? 'on' : '', title: v === 'g' ? 'Note detection, tuner, chords, neck and visuals follow the guitar' : v === 'v' ? 'They follow the singing voice: the neck shows the note you sing, the visuals move with your voice' : 'They follow both (works best for visuals; note detection is best with one source)', onclick: () => setAnaSource(v) }, t)));
-    const nch = E.inSettings && E.inSettings.channelCount;
-    note.textContent = !E.hasInput ? 'Open an input above first. A 2-channel interface (Focusrite Scarlett/Solo/2i2 and similar) shows up here as one device with two channels.'
-      : nch === 1 ? 'This device is mono, so it only has one channel: the vocal can’t be split from the guitar. Choose the interface itself (not “default” or a webcam mic) in the list above.'
-        : CFG.vin === 'off' ? 'Set each input to what is plugged into it. A guitar on one input and a mic on the other gives each its own lane and take; “Guitar” on both sums them into one guitar.'
-          : 'Guitar and vocal are on separate inputs. Arm both lanes (●) and press R: both record on the same clock. Use headphones, or the interface’s Direct Monitor, to avoid feedback.';
+    ioChannelPresets().forEach(b => presets.append(b));
+    if (E.hasInput && !mono) presets.append(h('button', { class: 'btn sm', title: 'Strum the guitar: finds which interface input it is on', onclick: autoDetectChannel }, '⚡ Find my guitar'));
+    if (mono && roles[1] !== 'o') presets.append(h('button', { class: 'btn sm io-mono1', onclick: () => chSetRoles(roles[0] !== 'o' ? roles[0] : roles[1], 'o') }, 'Use input 1 only'));
+    if (!mono) [['g', 'Guitar'], ['v', 'Vocal'], ['b', 'Both']].forEach(([v, t]) => follow.append(h('button', { class: (CFG.anSrc || 'g') === v ? 'on' : '', title: v === 'g' ? 'Note detection, tuner, chords, neck and visuals follow the guitar' : v === 'v' ? 'They follow the singing voice: the neck shows the note you sing, the visuals move with your voice' : 'They follow both (works best for visuals; note detection is best with one source)', onclick: () => setAnaSource(v) }, t)));
+    else [['g', 'Guitar'], ['v', 'Vocal']].forEach(([v, t]) => follow.append(h('button', { class: (CFG.anSrc || 'g') === v ? 'on' : '', onclick: () => setAnaSource(v) }, t)));
+    note.textContent = ioChannelNote();
   };
-  const card = h('div', { class: 'card' }, h('h4', {}, 'Channels'), h('div', { class: 'card-b' }, route, h('div', { class: 'row sp', style: { margin: '8px 0 4px' } }, h('span', { class: 'tiny muted', title: 'Which channel the note detector, tuner, chord finder, neck and visuals listen to' }, 'Detect & visualise'), follow), note, mt(),
+  const card = h('div', { class: 'card' }, h('h4', {}, 'Channels'), h('div', { class: 'card-b' }, presets, route, h('div', { class: 'row sp', style: { margin: '8px 0 4px' } }, h('span', { class: 'tiny muted', title: 'Which channel the note detector, tuner, chord finder, neck and visuals listen to' }, 'Detect & visualise'), follow), note, mt(),
     h('div', { class: 'row', style: { gap: '6px', margin: '6px 0', flexWrap: 'wrap' } }, tog('Hear vocal', () => !!CFG.voxMon, v => { CFG.voxMon = v; saveCfg(); applyMix(); renderHeads(); }, 'Monitor the vocal through the app (headphones only)'), tog('Vocal polish', () => CFG.voxPolish !== false, v => { CFG.voxPolish = v; saveCfg(); voxPolishApply(); }, 'High-pass at 90 Hz and gentle compression on the vocal track')),
     h('div', { class: 'row', style: { justifyContent: 'center' } }, trim.el)));
   UI.chSync = sync; trim.set(CFG.voxTrim || 0); sync(); bus.on('route', sync); bus.on('input', sync); bus.on('route', renderHeads);

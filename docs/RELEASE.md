@@ -1,4 +1,4 @@
-# Release and go-live checklist (Release 1, v1.7.0)
+# Release and go-live checklist (v2.1.0)
 
 ## Before you publish
 - [ ] `node scripts/build.mjs --check` passes; `npm test`, `npm run test:e2e`, `npm run test:mobile` pass; `npm run build:site && npm run verify:site` prints `site verified`.
@@ -27,10 +27,10 @@ The page is already vendored at `journal/index.html` and deploys with the site (
 
 ## Tag and release
 ```
-git tag -a v1.7.0 -m "Release 1"
-git push origin v1.7.0
+git tag -a v2.1.0 -m "I/O and Lanes"
+git push origin v2.1.0
 ```
-Create a GitHub release from the tag using the 1.7.0 CHANGELOG entry.
+Create a GitHub release from the tag using the 2.1.0 CHANGELOG entry.
 
 ## Smoke test on the live site (desktop and a phone)
 - [ ] Page loads over HTTPS with no console errors; start card appears and **no microphone prompt** shows until you choose.
@@ -43,7 +43,7 @@ Create a GitHub release from the tag using the 1.7.0 CHANGELOG entry.
 - [ ] Install to home screen / offline reload works.
 - [ ] Hand tracking (Vision panel) and the camera **person** look start; these load from jsDelivr and Google storage and are not covered by the automated tests. Confirm the segmenter model URL resolves.
 
-## Known limits at Release 1
+## Known limits at 2.0
 - Songs live in the browser of the device that made them; there is no sync by design. Back up from Songs.
 - Hand tracking and the person cut-out depend on jsDelivr and Google storage being reachable (self-hosting is described in HOSTING.md §8).
 - Not covered by tests: very long sessions, large stems on low-memory phones, full screen-reader pass, non-Chromium audio latency.

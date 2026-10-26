@@ -221,17 +221,17 @@ function recEnd() {
 function takeBuffer(tk, which) { const d = which === 'wet' ? tk.wet : tk.dry; if (!d) return null; if (!tk['_b' + which]) { const b = E.ctx.createBuffer(1, d.length, tk.sr); b.copyToChannel(d, 0); tk['_b' + which] = b; } return tk['_b' + which]; }
 const takeAudible = tk => TAKES.some(t => t.solo) ? !!tk.solo : !tk.mute;
 /** live gain / mute / solo changes while the take is playing */
-function takeLive(tk) { const anySolo = TAKES.some(t => t.solo); TAKES.forEach(t => { if (t._g) tc(t._g.gain, (anySolo ? t.solo : !t.mute) ? t.g : 0, .015); }); if (tk && tk._pn) tc(tk._pn.pan, tk.pan || 0, .02); }
+function takeLive(tk) { const anySolo = TAKES.some(t => t.solo); TAKES.forEach(t => { if (t._g) tc(t._g.gain, (anySolo ? t.solo : !t.mute) ? t.g : 0, .015); }); if (tk && tk._pn) tc(tk._pn.pan, tk.pan || 0, .02); if (tk && tk._fx) tk._fx.set(tk.fx); }
 function scheduleTakes(atTime, fromSec) {
   TAKES.forEach(tk => {
-    tk._g = null; tk._pn = null; const vox = tk.kind === 'vox', which = tk.mode === 'reamp' ? 'dry' : 'wet', buf = takeBuffer(tk, which) || takeBuffer(tk, 'dry'); if (!buf) return;
+    tk._g = null; tk._pn = null; if (tk._fx) { tk._fx.dispose(); tk._fx = null; } const vox = tk.kind === 'vox', which = tk.mode === 'reamp' ? 'dry' : 'wet', buf = takeBuffer(tk, which) || takeBuffer(tk, 'dry'); if (!buf) return;
     const end = tk.startSec + buf.duration; if (end <= fromSec) return; const when = Math.max(atTime, atTime + (tk.startSec - fromSec)), off = Math.max(0, fromSec - tk.startSec);
     const src = E.ctx.createBufferSource(), g = gn(takeAudible(tk) ? tk.g : 0), pn = E.ctx.createStereoPanner(); pn.pan.value = tk.pan || 0; src.buffer = buf; src.connect(g); g.connect(pn); tk._g = g; tk._pn = pn;
-    if (vox) pn.connect(E.voxStrip.in); else if (which === 'dry' && tk.mode === 'reamp') pn.connect(E.rigIn); else pn.connect(E.takesIn);
+    if (vox) pn.connect(E.voxStrip.in); else if (which === 'dry' && tk.mode === 'reamp') pn.connect(E.rigIn); else { tk._fx = fxStrip(E.takesIn); tk._fx.set(tk.fx); pn.connect(tk._fx.in); }
     src.start(when, off); T.srcs.push(src);
   });
 }
-function stopTakes() { T.srcs.forEach(s => { try { s.stop(); } catch (e) { } }); T.srcs = []; }
+function stopTakes() { T.srcs.forEach(s => { try { s.stop(); } catch (e) { } }); T.srcs = []; TAKES.forEach(t => { if (t._fx) { t._fx.dispose(); t._fx = null; } }); }
 
 /* ---------- WAV ---------- */
 function encodeWav(chs, sr, bits = 24) {
@@ -249,7 +249,7 @@ async function bounceMaster(tag) {
   const total = songSlots() * slotDur();
   await new Promise(r => setTimeout(r, (total + 3.2) * 1000)); E.tapMaster.on(false); stopPlay(true); T.loop = was.loop; T.metro = was.metro;
   const B = BOUNCE; BOUNCE = null; if (!B.l.length) return toast('Nothing captured', 'bad');
-  const l = cat(B.l), r = cat(B.r); download((S.title || 'song').replace(/\W+/g, '_') + '_' + (tag || 'master') + '.wav', encodeWav([l, r], E.ctx.sampleRate, 24)); toast((tag ? 'Saved ' + tag : 'Master bounce saved'), 'ok');
+  const l = cat(B.l), r = cat(B.r), note = tag || typeof loudAfterBounce !== 'function' ? '' : loudAfterBounce(l, r, E.ctx.sampleRate); download((S.title || 'song').replace(/\W+/g, '_') + '_' + (tag || 'master') + '.wav', encodeWav([l, r], E.ctx.sampleRate, 24)); toast((tag ? 'Saved ' + tag : 'Master bounce saved' + note), 'ok');
 }
 /** Save one band part (Drums, Bass, Rhythm Gtr or Lead) as its own stereo WAV: everything else is silenced for one real-time pass, then put back. */
 async function bouncePart(id) {

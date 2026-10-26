@@ -72,7 +72,9 @@ function stemBeatGrid(an, feat, chAt) {
 }
 
 /* ---------- player ---------- */
-function spEnsure() { if (STP.bus) return; STP.bus = gn(1); STP.bus.connect(E.mix); STP.sg = STMS.map(() => { const g = gn(1); g.connect(STP.bus); return g; }); spGains(); }
+function spEnsure() { if (STP.bus) return; STP.bus = gn(1); STP.tfx = fxStrip(E.mix); STP.bus.connect(STP.tfx.in); STP.fx = STMS.map(() => fxStrip(STP.bus, { pan: true })); STP.sg = STMS.map((_, i) => { const g = gn(1); g.connect(STP.fx[i].in); return g; }); spGains(); spFx(); }
+/** per-stem and whole-track strips: EQ, squeeze, reverb, echo and pan */
+function spFx() { if (!STP.bus || !STP.fx) return; STP.tfx.set(STM.fx); STM.mix.forEach((m, i) => { STP.fx[i].set(m.fx); STP.fx[i].pan(m.p || 0); }); }
 function spGains() { if (!STP.bus) return; const anyS = STM.mix.some(m => m.s); STM.mix.forEach((m, i) => { const aud = anyS ? m.s : !m.m; tc(STP.sg[i].gain, aud ? m.g : 0, .015); }); }
 function spData(i) { const c = STM.ch; return i === 0 ? [c.drumsL, c.drumsR] : i === 1 ? [c.bass, c.bass] : i === 2 ? [c.vox, c.vox] : [c.otherL, c.otherR]; }
 function spPos() { if (!STP.playing) return STP.pos; const now = E.ctx.currentTime; for (let i = STP.segs.length - 1; i >= 0; i--) { const s = STP.segs[i]; if (now >= s.t) return Math.min(s.from + (now - s.t), s.from + s.dur); } return STP.pos; }
