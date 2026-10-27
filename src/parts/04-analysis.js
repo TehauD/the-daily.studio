@@ -60,6 +60,7 @@ function anaTick() {
   if (AN.f0 && centsRing.length >= 24) vibrato();
   if (anaN % 3 === 0) spectral(sr);
   if (anaN % 3 === 0) sample();
+  if (typeof voxTick === 'function') voxTick();
 }
 function vibrato() {
   const a = centsRing, n = a.length, k = 12, hp = a.map((v, i) => { let s = 0, c = 0; for (let j = Math.max(0, i - k); j <= Math.min(n - 1, i + k); j++) { s += a[j]; c++; } return v - s / c; });
@@ -69,13 +70,13 @@ function vibrato() {
 }
 function noteOn(m) {
   if (CUR) noteOff(); const t = E.ctx.currentTime, onT = (t - AN.onsetT < .3 && AN.onsetT > 0) ? AN.onsetT : t - .05;
-  CUR = { midi: m, t0: t, onT, cs: [], n: 0, rms: AN.rms }; STAT.notes++; STAT.pcN[m % 12]++; const o = Math.floor(m / 12) - 1; STAT.oct[o] = (STAT.oct[o] || 0) + 1;
+  CUR = { midi: m, t0: t, onT, cs: [], n: 0, rms: AN.rms, cam: (VIS.active ? VIS.cands.filter(c => performance.now() - c.t < 500).map(c => ({ st: c.st, fret: c.fret })) : []) }; STAT.notes++; STAT.pcN[m % 12]++; const o = Math.floor(m / 12) - 1; STAT.oct[o] = (STAT.oct[o] || 0) + 1;
   bus.emit('note', { midi: m, t: onT });
   if (VIS.active) { const rec = VIS.cands.filter(c => performance.now() - c.t < 500); STAT.fuseT++; const open = S.tuning.some(o => o + S.capo === m); if (rec.some(c => c.midi === m) || (open && !rec.some(c => c.st === S.tuning.findIndex(o => o + S.capo === m)))) STAT.fuseA++; }
   if (CAP.on && T.playing) captureNote(m, onT);
 }
 function noteOff() {
-  const c = CUR; CUR = null; if (!c) return; const dur = E.ctx.currentTime - c.t0; STAT.pcDur[c.midi % 12] += dur;
+  const c = CUR; CUR = null; if (!c) return; const dur = E.ctx.currentTime - c.t0; STAT.pcDur[c.midi % 12] += dur; heatLive(c, dur);
   const cs = c.cs.slice(Math.floor(c.cs.length * .25)); if (cs.length > 4) STAT.noteCents.push({ midi: c.midi, mean: mean(cs), sd: sd(cs), abs: mean(cs.map(Math.abs)) });
   if (STAT.pcN.reduce((a, b) => a + b, 0) >= 8) { const k = detectKey(STAT.pcDur.map((d, i) => d + STAT.pcN[i] * .15)); AN.key = k.slice(0, 3); }
   bus.emit('noteoff', c);

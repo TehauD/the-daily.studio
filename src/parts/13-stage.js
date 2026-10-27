@@ -81,11 +81,11 @@ function stageExtra(mode, g, W, H, X) {
 function stageFrame(ts) {
   stageMidiTick();
   if (!SG.cv || !E.ready || !(paneVisible('stage') || document.fullscreenElement === SG.wrap || SG.pop)) return;
-  const sc = scn(), wrap = SG.wrap, d = (window.devicePixelRatio || 1) * STG.q, cw = wrap.clientWidth, chh = wrap.clientHeight; if (!cw || !chh) return;
+  const sc0 = scn(), wrap = SG.wrap, d = (window.devicePixelRatio || 1) * STG.q, cw = wrap.clientWidth, chh = wrap.clientHeight; if (!cw || !chh) return;
   const w = Math.min(1920, Math.floor(cw * d)), hh = Math.min(1080 * 1.4, Math.floor(chh * d));
   if (SG.cv.width !== w || SG.cv.height !== hh) { SG.cv.width = w; SG.cv.height = hh; SG.off.width = w; SG.off.height = hh; SG.small.width = Math.max(2, w >> 2); SG.small.height = Math.max(2, hh >> 2); VZ.spec = null; SG.joy = []; }
-  const info = SG.info = stageInfo(), t = VZ.t, C = stagePal(sc, t), off = SG.off, g = SG.cv.getContext('2d');
-  drawVis(off, { mode: sc.mode, C, bgA: sc.mode === 'joy' || sc.mode === 'spectro' ? 1 : clamp(1 - sc.trail * .93, .05, 1), noText: true, cam: sc.cam, gain: (sc.sens - 1) * 20 });
+  const info = SG.info = stageInfo(), sc = pbScene(sc0, info), t = VZ.t, C = stagePal(sc, t), off = SG.off, g = SG.cv.getContext('2d');
+  if (pbSolid()) pbFill(off); else drawVis(off, { mode: sc.mode, C, bgA: sc.mode === 'joy' || sc.mode === 'spectro' ? 1 : clamp(1 - sc.trail * .93, .05, 1), noText: true, cam: sc.cam, gain: (sc.sens - 1) * 20 });
   g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1; g.fillStyle = '#000'; g.fillRect(0, 0, w, hh);
   if (sc.kal >= 3) {
     const n = sc.kal, cx = w / 2, cy = hh / 2, R = Math.hypot(cx, cy); for (let i = 0; i < n; i++) {
@@ -93,10 +93,11 @@ function stageFrame(ts) {
     }
   } else g.drawImage(off, 0, 0);
   if (sc.cam && sc.mode !== 'spectro') camTop(g, w, hh);
-  if (sc.mode === 'halo') haloFront(g);
+  if (sc.mode === 'halo' && !pbSolid()) haloFront(g);
   if (sc.glow > .02) { const q = SG.small.getContext('2d'); q.globalCompositeOperation = 'source-over'; q.clearRect(0, 0, SG.small.width, SG.small.height); q.drawImage(SG.cv, 0, 0, SG.small.width, SG.small.height); g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = sc.glow * .9; g.imageSmoothingQuality = 'high'; g.drawImage(SG.small, 0, 0, w, hh); g.globalAlpha = sc.glow * .5; g.drawImage(SG.small, -w * .02, -hh * .02, w * 1.04, hh * 1.04); g.restore(); }
+  pbDim(g, w, hh);
   if (sc.flash > 0 && SG.flash > .01) { g.fillStyle = 'rgba(255,255,255,' + (SG.flash * sc.flash * (STG.safe ? .22 : .6)).toFixed(3) + ')'; g.fillRect(0, 0, w, hh); SG.flash *= .88; }
-  if (STG.hud !== false) drawStageHUD(g, w, hh, sc, info, C);
+  if (pbOn()) { if (STG.pb.lower) drawLowerThird(g, w, hh, info, C); } else if (STG.hud !== false) drawStageHUD(g, w, hh, sc, info, C);
   if (SG.idle && ts - SG.idleT > 2800 && document.fullscreenElement === wrap) wrap.classList.add('idle');
 }
 function drawStageHUD(g, W, H, sc, info, C) {
@@ -154,7 +155,7 @@ function stagePop() {
   try {
     const w = window.open('', 'fw_stage', 'width=1024,height=576'); if (!w) throw 0; w.document.title = BRAND.short + ' Stage'; w.document.body.style.cssText = 'margin:0;background:#000;overflow:hidden;height:100vh';
     const v = w.document.createElement('video'); v.autoplay = true; v.muted = true; v.playsInline = true; v.style.cssText = 'width:100%;height:100%;object-fit:contain'; v.srcObject = SG.cv.captureStream(30); w.document.body.append(v); v.ondblclick = () => (w.document.fullscreenElement ? w.document.exitFullscreen() : v.requestFullscreen());
-    w.document.body.title = 'Double-click for fullscreen'; SG.pop = w; w.addEventListener('pagehide', () => { SG.pop = null; }); toast('Pop-out ready — drag it to the projector, then double-click it for fullscreen', 'ok');
+    w.document.body.title = 'Double-click for fullscreen'; SG.pop = w; pbPopSetup(w); w.addEventListener('pagehide', () => { SG.pop = null; }); toast('Pop-out ready — drag it to the projector, then double-click it for fullscreen', 'ok');
   } catch (e) { toast('The browser blocked the pop-out window — allow pop-ups for this page', 'warn'); }
 }
 
@@ -178,6 +179,7 @@ function renderStageUI() {
         field('Sensitivity', rng('sens', .4, 2.5, .05, x => '×' + x.toFixed(2))), field('Beat flash', rng('flash', 0, 1, .05, x => x ? Math.round(x * 100) + '%' : 'off')),
         field('Auto-switch on section', h('input', { class: 'in', value: sc.sect, placeholder: 'e.g. chorus', style: { fontFamily: 'var(--sans)' }, onchange: e => { sc.sect = e.target.value.trim(); saveStg(); } }))),
       h('div', { class: 'row', style: { gap: '14px', marginTop: '8px', flexWrap: 'wrap' } }, chk(sc, 'cam', '📷 Camera backdrop'), camFxBox(), chk(sc.ov, 'chord', 'Chord'), chk(sc.ov, 'lyric', 'Lyric line'), chk(sc.ov, 'beat', 'Beat dots'), chk(sc.ov, 'info', 'Section · BPM · key'), chk(sc.ov, 'tuner', 'Tuner'))),
+    pbCard(),
     h('div', { class: 'card', style: { padding: '10px' } }, h('h4', { style: { margin: '0 0 8px' } }, 'Show settings'),
       h('div', { class: 'row', style: { gap: '14px', flexWrap: 'wrap', alignItems: 'center' } },
         chk(STG, 'safe', 'Reduce flashing (≤3 Hz, softer)'), chk(STG, 'auto', 'Auto-switch scenes by section name'),

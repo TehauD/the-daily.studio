@@ -5,7 +5,7 @@
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.2.1';
+const VERSION = '2.3.0';
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://the-daily.studio/journal/' };
 const $ = (s, r = document) => r.querySelector(s);
@@ -77,7 +77,7 @@ const CFG = Object.assign({
   monitor: false, autoIn: false, kpad: true, rtt: null, hint: 'interactive', sr: 'auto', inDev: '', outDev: '', camDev: '', mirror: true, ch: 'auto',
   countIn: 1, metroVol: 0.5, ugWidth: 72, ugTags: true, midimap: {}, ui: 1, vq: 1, humanize: 0.15, visMode: 'hex', hfrOn: true,
   rec: { dry: true, wet: true }, fretNames: 'notes', lufsTarget: 0, gTrim: 0, ioLeveled: false, dropKind: 'track',
-  vin: 'off', armG: true, armV: true, voxMon: false, voxPolish: true, voxTrim: 0, trackSync: true, trackFill: 'all', renderFast: true, recEnd: 'grow'
+  vin: 'off', armG: true, armV: true, voxMon: false, voxPolish: true, voxTrim: 0, trackSync: true, trackFill: 'all', renderFast: true, recEnd: 'grow', vzRibbon: false, vrange: null
 }, store.get('cfg', {}));
 const saveCfg = () => store.set('cfg', CFG);
 
@@ -982,7 +982,7 @@ function strumAt(t, sym, ch, style) {
   const p = parseChord(sym); if (!p) return; const useSym = style.power ? (pcName(p.root, false) + '5') : sym; const v = voicingFor(useSym) || voicingFor(sym); if (!v) return;
   const notes = []; v.frets.forEach((f, i) => { if (f != null) notes.push({ st: i, m: S.tuning[i] + S.capo + f }); });
   if (style.arp) { const d = +ch; if (!d) return; const n = notes[(d - 1) % notes.length]; pluck('rhythm', t, n.m, .62, { id: 'r' + n.st, pan: (n.st - 2.5) * .05 }); return; }
-  if (ch === '.') return; const lc = ch.toLowerCase(), down = lc === 'd' || lc === 'm', acc = ch === ch.toUpperCase() ? 1 : 0;
+  if (!ch || ch === '.') return; const lc = ch.toLowerCase(), down = lc === 'd' || lc === 'm', acc = ch === ch.toUpperCase() ? 1 : 0;
   const order = down ? notes : notes.slice().reverse(), gap = .0105 + Math.random() * .003, take = down ? order : order.slice(0, Math.max(3, order.length - 2));
   take.forEach((n, k) => pluck('rhythm', t + k * gap, n.m, (lc === 'm' ? .55 : acc ? .85 : .6) * (down ? 1 : .8) * (.92 + Math.random() * .16), { id: 'r' + n.st, dead: lc === 'm' && k > 0 ? true : false, t60m: lc === 'm' ? .3 : 1, pan: (n.st - 2.5) * .06 }));
 }
@@ -1022,7 +1022,7 @@ function scheduleSlot(slot, time) {
 async function play(fromRec) {
   if (T.playing || OFR.busy) return; try { bandHint(); } catch (e) { } await startAudio(); const c = E.ctx; applyMix(); if (!S.sections.length || !songSlots()) { toast('Add a section with at least one bar first', 'warn'); return; }
   T.rec = !!fromRec || T.rec; T.playing = true; T.ending = false; T.grew = 0; T.q = []; T.startCursor = T.cursor;
-  const ci = T.rec && CFG.countIn > 0 ? CFG.countIn * spb() : 0; T.slot = T.cursor - ci; T.next = c.currentTime + .08; T.wantRec = T.rec; T.recFrom = T.cursor;
+  const ci = T.rec && !PUNCH.on && CFG.countIn > 0 ? CFG.countIn * spb() : 0; T.slot = T.cursor - ci; T.next = c.currentTime + .08; T.wantRec = T.rec; T.recFrom = PUNCH.on ? PUNCH.startSlot : T.cursor;
   if (!T.loopB) T.loopB = null; scheduleTakes(T.next + ci * slotDur(), T.cursor * slotDur()); trackStart(T.next + ci * slotDur(), T.cursor, true);
   clearInterval(T.timer); T.timer = setInterval(tick, 25); tick(); bus.emit('transport');
 }
@@ -1036,6 +1036,7 @@ function tick() {
       T.ending = true; T.endAt = T.next; break;
     }
     if (T.wantRec && T.slot === T.recFrom) { recBegin(T.slot, T.next); T.wantRec = false; }
+    if (REC && REC.punch && !REC.tEnd && T.slot >= REC.punch.endSlot) { const r = REC; r.tEnd = T.next; setTimeout(() => { if (REC === r) { recEnd(); T.rec = false; bus.emit('transport'); } }, Math.max(0, (r.tEnd - E.ctx.currentTime) * 1000) + 150); }
     scheduleSlot(T.slot, T.next); T.q.push({ slot: T.slot, time: T.next }); if (T.q.length > 256) T.q.shift(); T.slot++; T.next += dur;
   }
 }
@@ -1054,7 +1055,7 @@ function recGrowDone() {
 function stopPlay(keep) {
   if (!T.playing) { if (!keep) { T.cursor = 0; bus.emit('transport'); } return; }
   T.playing = false; clearInterval(T.timer); stopTakes(); trackStop(); if (E.pl && E.worklet) Object.values(E.pl).forEach(n => n.port.postMessage({ t: 'kill' }));
-  const was = T.rec; if (REC) recEnd(); recGrowDone(); T.rec = false; T.cursor = T.startCursor; bus.emit('transport'); if (was) bus.emit('rec:done');
+  const was = T.rec; if (REC) recEnd(); recGrowDone(); T.rec = false; PUNCH.on = false; T.cursor = T.startCursor; bus.emit('transport'); if (was) bus.emit('rec:done');
 }
 const slotAtTime = time => {
   const q = T.q; if (!q.length) return T.cursor; let e = q[0]; for (let i = q.length - 1; i >= 0; i--) if (q[i].time <= time) { e = q[i]; break; }
@@ -1069,9 +1070,9 @@ const TAKES = []; let REC = null;
 /* Recording captures whatever is armed, all on the same clock: the guitar (dry DI + wet print) and/or the vocal (input 2). */
 function recBegin(slot, ctxTime) {
   if (!E.hasInput) { toast('No audio input is open — recording the backing/tab only', 'warn'); return; }
-  const g = armedG(), v = armedV();
+  let g = armedG(), v = armedV(); if (PUNCH.on) { g = PUNCH.kind === 'gtr'; v = PUNCH.kind === 'vox'; }       // a punch-in records the lane being punched, nothing else
   if (!g && !v) { toast('Nothing is armed — arm the Guitar or Vocal lane (the ● button at the left of the arrangement) to record', 'warn'); return; }
-  REC = { dry: [], wet: [], vox: [], g, v, t0: ctxTime, startSec: slot * slotDur(), bpm: S.bpm, preset: RIG.cur, n: 0, cam: [], pkG: [], pkV: [], perf0: performance.now() + (ctxTime - E.ctx.currentTime) * 1000 };
+  REC = { dry: [], wet: [], vox: [], g, v, t0: ctxTime, startSec: slot * slotDur(), bpm: S.bpm, preset: RIG.cur, n: 0, cam: [], pkG: [], pkV: [], perf0: performance.now() + (ctxTime - E.ctx.currentTime) * 1000, punch: PUNCH.on ? Object.assign({}, PUNCH) : null, tEnd: 0 };
   if (g) { E.tapDI.on(true); if (CFG.rec.wet) E.tapWet.on(true); } if (v) E.tapVox.on(true); bus.emit('rec:state', true);
 }
 function pushBlock(arr, m, t0) {
@@ -1092,13 +1093,15 @@ function recEnd() {
   const pG = r.g && r.v ? pkOf(r.dry) : 0, pV = r.g && r.v ? pkOf(r.vox) : 0, skipped = [];
   const quietLane = (me, other) => r.g && r.v && me < .001 && other > .03;      // below −60 dBFS next to a lane that is above −30 dBFS
   const mk = (kind, parts, wetParts) => {
-    if (!parts.length) return; if (kind === 'gtr' ? quietLane(pG, pV) : quietLane(pV, pG)) { skipped.push(kind === 'gtr' ? 'guitar' : 'vocal'); return; } const dry = cat(parts), wet = wetParts && wetParts.length ? cat(wetParts) : null; if (dry.length < sr * .25) return;
+    if (!parts.length) return; if (kind === 'gtr' ? quietLane(pG, pV) : quietLane(pV, pG)) { skipped.push(kind === 'gtr' ? 'guitar' : 'vocal'); return; } let dry = cat(parts), wet = wetParts && wetParts.length ? cat(wetParts) : null; const lim = r.tEnd ? Math.max(0, Math.round((r.tEnd - r.t0) * sr)) : 0; if (lim && lim < dry.length) { dry = dry.slice(0, lim); if (wet) wet = wet.slice(0, lim); }       // a punch-in ends exactly at its out point
+    if (dry.length < sr * (r.punch ? .05 : .25)) return;
     let pk = 0, e = 0; for (let i = 0; i < dry.length; i++) { const a = Math.abs(dry[i]); if (a > pk) pk = a; e += dry[i] * dry[i]; }
     const vox = kind === 'vox', nth = TAKES.filter(t => (t.kind === 'vox') === vox).length + 1;
     const take = { id: uid(), kind, name: (vox ? 'Vocal ' : 'Take ') + nth, startSec: start, sr, dry, wet, peaks: peaksOf(dry), g: 1, pan: 0, mute: false, solo: false, mode: vox ? 'wet' : (wet && CFG.rec.dry ? 'reamp' : 'wet'), bpm: r.bpm, preset: r.preset, peak: dB(pk), rms: dB(Math.sqrt(e / dry.length)), dur: dry.length / sr, t: Date.now(), stats: vox ? null : statsSnapshot(), cam: vox ? [] : r.cam };
-    if (!vox && !CFG.rec.dry && wet) take.mode = 'wet'; TAKES.push(take); made.push(take);
+    if (!vox && !CFG.rec.dry && wet) take.mode = 'wet'; made.push(take); if (!(r.punch && tkrPunchApply(take, r.punch))) TAKES.push(take);
   };
   if (r.g) mk('gtr', r.dry, r.wet); if (r.v) mk('vox', r.vox, null);
+  if (r.punch && made.length) { PUNCH.on = false; try { tkFit(); tkResched(); histPush(r.punch.before); } catch (e) { console.warn(e); } TL.dirty = true; bus.emit('takes'); toast('Punched in ' + made[0].dur.toFixed(1) + ' s · Undo (Ctrl/⌘+Z) puts the old take back', 'ok'); return; }
   if (made.length) { xpSignal(3); bus.emit('takes'); toast(made.map(t => t.name + ' (' + t.dur.toFixed(1) + ' s, peak ' + t.peak.toFixed(1) + ' dBFS)').join('  +  ') + ' recorded' + (skipped.length ? ' · the ' + skipped.join(' and ') + ' input was silent, so it was not kept' : ''), 'ok'); }
 }
 const TK_BUFS = new WeakMap();    // one AudioBuffer per recording, shared by every clip that plays it
@@ -1115,7 +1118,7 @@ function scheduleTakes(atTime, fromSec) {
     tk._g = null; tk._pn = null; if (tk._fx) { tk._fx.dispose(); tk._fx = null; } const L = tkLead(tk), vox = L.kind === 'vox', which = L.mode === 'reamp' ? 'dry' : 'wet', buf = takeBuffer(tk, which) || takeBuffer(tk, 'dry'); if (!buf) return;
     const len = tkLen(tk); if (len <= 0 || tk.startSec + len <= fromSec) return;
     const rel = fromSec - tk.startSec, c0 = Math.max(0, rel), when = atTime + c0 - rel, tm = c => atTime + c - rel;        // c0: where in the clip we start; tm(c): when clip-second c is heard
-    const src = E.ctx.createBufferSource(), fd = gn(1), g = gn(takeAudible(tk) ? (L.g == null ? 1 : L.g) : 0), pn = E.ctx.createStereoPanner(); pn.pan.value = L.pan || 0; src.buffer = buf; src.connect(fd); fd.connect(g); g.connect(pn); tk._g = g; tk._pn = pn;
+    const src = E.ctx.createBufferSource(), cgn = gn(tk.cg == null ? 1 : tk.cg), fd = gn(1), g = gn(takeAudible(tk) ? (L.g == null ? 1 : L.g) : 0), pn = E.ctx.createStereoPanner(); pn.pan.value = L.pan || 0; src.buffer = buf; src.connect(cgn); cgn.connect(fd); fd.connect(g); g.connect(pn); tk._g = g; tk._cg = cgn; tk._pn = pn;
     const [fi, fo] = tkFades(tk); if (fi > 0 || fo > 0) { const gf = c => Math.max(0, Math.min(1, fi > 0 ? c / fi : 1, fo > 0 ? (len - c) / fo : 1)), p = fd.gain; p.setValueAtTime(gf(c0), Math.max(0, when)); [fi, len - fo, len].forEach(c => { if (c > c0 + 1e-6) p.linearRampToValueAtTime(gf(c), tm(c)); }); }
     if (vox) pn.connect(E.voxStrip.in); else if (which === 'dry' && L.mode === 'reamp') pn.connect(E.rigIn); else { tk._fx = fxStrip(E.takesIn); tk._fx.set(L.fx); pn.connect(tk._fx.in); }
     src.start(when, tkIn(tk) + c0, len - c0); T.srcs.push(src);
@@ -1219,6 +1222,7 @@ function anaTick() {
   if (AN.f0 && centsRing.length >= 24) vibrato();
   if (anaN % 3 === 0) spectral(sr);
   if (anaN % 3 === 0) sample();
+  if (typeof voxTick === 'function') voxTick();
 }
 function vibrato() {
   const a = centsRing, n = a.length, k = 12, hp = a.map((v, i) => { let s = 0, c = 0; for (let j = Math.max(0, i - k); j <= Math.min(n - 1, i + k); j++) { s += a[j]; c++; } return v - s / c; });
@@ -1228,13 +1232,13 @@ function vibrato() {
 }
 function noteOn(m) {
   if (CUR) noteOff(); const t = E.ctx.currentTime, onT = (t - AN.onsetT < .3 && AN.onsetT > 0) ? AN.onsetT : t - .05;
-  CUR = { midi: m, t0: t, onT, cs: [], n: 0, rms: AN.rms }; STAT.notes++; STAT.pcN[m % 12]++; const o = Math.floor(m / 12) - 1; STAT.oct[o] = (STAT.oct[o] || 0) + 1;
+  CUR = { midi: m, t0: t, onT, cs: [], n: 0, rms: AN.rms, cam: (VIS.active ? VIS.cands.filter(c => performance.now() - c.t < 500).map(c => ({ st: c.st, fret: c.fret })) : []) }; STAT.notes++; STAT.pcN[m % 12]++; const o = Math.floor(m / 12) - 1; STAT.oct[o] = (STAT.oct[o] || 0) + 1;
   bus.emit('note', { midi: m, t: onT });
   if (VIS.active) { const rec = VIS.cands.filter(c => performance.now() - c.t < 500); STAT.fuseT++; const open = S.tuning.some(o => o + S.capo === m); if (rec.some(c => c.midi === m) || (open && !rec.some(c => c.st === S.tuning.findIndex(o => o + S.capo === m)))) STAT.fuseA++; }
   if (CAP.on && T.playing) captureNote(m, onT);
 }
 function noteOff() {
-  const c = CUR; CUR = null; if (!c) return; const dur = E.ctx.currentTime - c.t0; STAT.pcDur[c.midi % 12] += dur;
+  const c = CUR; CUR = null; if (!c) return; const dur = E.ctx.currentTime - c.t0; STAT.pcDur[c.midi % 12] += dur; heatLive(c, dur);
   const cs = c.cs.slice(Math.floor(c.cs.length * .25)); if (cs.length > 4) STAT.noteCents.push({ midi: c.midi, mean: mean(cs), sd: sd(cs), abs: mean(cs.map(Math.abs)) });
   if (STAT.pcN.reduce((a, b) => a + b, 0) >= 8) { const k = detectKey(STAT.pcDur.map((d, i) => d + STAT.pcN[i] * .15)); AN.key = k.slice(0, 3); }
   bus.emit('noteoff', c);
@@ -1480,7 +1484,9 @@ document.addEventListener('keydown', e => {
   if (mod && e.key.toLowerCase() === 'z' && !typing) { e.preventDefault(); e.shiftKey ? redo() : undo(); return; }
   if (mod && e.key.toLowerCase() === 'y' && !typing) { e.preventDefault(); redo(); return; }
   if (e.altKey && /^[0-9]$/.test(e.key)) { e.preventDefault(); const t2 = dockVisible()[e.key === '0' ? 9 : +e.key - 1]; if (t2) { FLOATS.has(t2[0]) ? floatFront(t2[0]) : dockGo(t2[0]); } return; }
-  if (!typing && TKSEL.id && !(t && t.closest && t.closest('dialog,.pop')) && (document.activeElement === document.body || (UI.tls && UI.tls.contains(document.activeElement)))) {
+  if (!typing && (TKSEL.id || TKR.on) && !(t && t.closest && t.closest('dialog,.pop')) && (document.activeElement === document.body || (UI.tls && UI.tls.contains(document.activeElement)) || (document.activeElement && document.activeElement.closest && document.activeElement.closest('.clipbar')))) {
+    if (TKR.on && !mod && (e.key === 'Delete' || e.key === 'Backspace')) { e.preventDefault(); tkrApply(true); return; }
+    if (TKR.on && e.key === 'Escape') { e.preventDefault(); tkrClear(); return; }
     if (mod && e.key.toLowerCase() === 'd') { e.preventDefault(); tkDup(); return; }
     if (mod && e.key.toLowerCase() === 'e') { e.preventDefault(); tkSplit(); return; }
     if (!mod && (e.key === 'Delete' || e.key === 'Backspace')) { e.preventDefault(); tkDelete(); return; }
@@ -1899,12 +1905,13 @@ function tlDown(e) {
   }
   const bi = Math.floor(x / TL.bw); if (bi < 0 || bi >= bars) return; const fb = flatBars()[bi];
   if (y < TL.rh + TL.sh) { SEL.sec = fb.si; SEL.bar = 0; TL.dirty = true; dockGo('song'); bus.emit('sel'); return; }
-  const lo = laneAt(y), lane = lo && lo.l; SEL.sec = fb.si; SEL.bar = fb.bi; if (lane && lane.type === 'take' && tkDown(e, lo, x, y)) { TL.dirty = true; return; } tkSelect(null);
+  const lo = laneAt(y), lane = lo && lo.l; SEL.sec = fb.si; SEL.bar = fb.bi; if (lane && lane.type === 'take' && e.shiftKey && tkrDown(e, lo, x)) return; if (TKR.on) tkrClear();
+  if (lane && lane.type === 'take' && tkDown(e, lo, x, y)) { TL.dirty = true; return; } tkSelect(null);
   if (lane && lane.type === 'tab') { TE.sec = fb.si; TE.bi = fb.bi; dockGo('tab'); renderTab(); } else if (lane && lane.type === 'chords') { dockGo('song'); bus.emit('sel'); }
   TL.dirty = true;
 }
-function tlMove(e) { if (TL.clip) { tkMove(e); return; } if (!TL.drag) { tkHover(e); return; } const { x } = tlPoint(e), sp = spb(), b = clamp(Math.round(x / TL.bw) * sp, 0, totalBars() * sp); T.loopA = Math.min(TL.drag.a, b); T.loopB = Math.max(TL.drag.a, b); if (T.loopB === T.loopA) T.loopB = null; TL.dirty = true; }
-function tlUp() { if (TL.clip) { tkUp(); return; } if (TL.drag) { TL.drag = null; if (T.loopB != null) { T.loop = true; syncTransport(); } } }
+function tlMove(e) { if (TKR.drag) { tkrMove(e); return; } if (TL.clip) { tkMove(e); return; } if (!TL.drag) { tkHover(e); return; } const { x } = tlPoint(e), sp = spb(), b = clamp(Math.round(x / TL.bw) * sp, 0, totalBars() * sp); T.loopA = Math.min(TL.drag.a, b); T.loopB = Math.max(TL.drag.a, b); if (T.loopB === T.loopA) T.loopB = null; TL.dirty = true; }
+function tlUp() { if (TKR.drag) { tkrUp(); return; } if (TL.clip) { tkUp(); return; } if (TL.drag) { TL.drag = null; if (T.loopB != null) { T.loop = true; syncTransport(); } } }
 function tlCache() {
   if (TL.cache) return TL.cache; const sp = spb(), n = totalBars(), bass = []; T.bars = null;
   for (let bi = 0; bi < n; bi++) for (let sib = 0; sib < sp; sib++) { const cd = chordAt(bi, sib); if (!cd || !cd.sym || !S.band.bassOn) continue; const e = bassEvent(S.band.bassStyle, cd.sym, cd.rel, cd.len, cd.next); if (e) bass.push({ s: bi * sp + sib, m: e.m, len: e.len }); }
@@ -2410,13 +2417,13 @@ function buildFretPane() {
   const p = PANES.fret, sel = (opts, val, fn) => h('select', { class: 'in', style: { width: 'auto', fontFamily: 'var(--sans)' }, onchange: e => fn(e.target.value) }, opts.map(o => h('option', { value: o[0], selected: o[0] === val }, o[1])));
   UI.fbRoot = sel(NS.map((n, i) => [i, n]), S.key, v => { FB.root = +v; renderFret(); }); FB.root = S.key;
   UI.fbScale = sel(Object.keys(SCALES).map(n => [n, n]), S.scale, v => { S.scale = v; commit(false); renderFret(); });
-  UI.fbMode = sel([['scale', 'Scale'], ['chord', 'Chord tones (current chord)'], ['both', 'Scale + chord'], ['none', 'Live only']], FB.mode, v => { FB.mode = v; renderFret(); });
+  UI.fbMode = sel([['scale', 'Scale'], ['chord', 'Chord tones (current chord)'], ['both', 'Scale + chord'], ['none', 'Live only'], ['heat', 'Heatmap (where you play)']], FB.mode, v => { FB.mode = v; FB.key = null; renderFret(); });
   const lab = sel([['notes', 'Note names'], ['degrees', 'Scale degrees'], ['frets', 'Fret numbers']], CFG.fretNames, v => { CFG.fretNames = v; saveCfg(); renderFret(); });
   p.append(h('div', { class: 'card' }, h('h4', {}, 'Fretboard · tuning-, capo- and scale-aware'), h('div', { class: 'card-b' },
     h('div', { class: 'row', style: { gap: '8px', flexWrap: 'wrap', marginBottom: '8px' } }, h('span', { class: 'small muted' }, 'Root'), UI.fbRoot, UI.fbScale, UI.fbMode, lab,
       h('button', { class: 'btn sm' + (FB.follow ? ' on' : ''), onclick: e => { FB.follow = !FB.follow; e.target.classList.toggle('on', FB.follow); }, title: 'Chord tones follow the chord under the playhead' }, 'Follow song'),
       h('button', { class: 'btn sm', onclick: () => { CFG.left = !CFG.left; saveCfg(); renderFret(); } }, '⇄ Handedness'), h('span', { class: 'grow' }), h('span', { class: 'chip', id: 'fbinfo' })),
-    UI.fb = h('div', { class: 'fbscroll' }), h('div', { class: 'tiny muted', style: { marginTop: '6px' } }, 'Click any position to hear it. Orange ring = what you are playing right now (audio f0). Dashed ring = where the camera believes your fretting fingers are. Root = filled hexagon.'))));
+    UI.fbHeat = heatBar(), UI.fb = h('div', { class: 'fbscroll' }), h('div', { class: 'tiny muted', style: { marginTop: '6px' } }, 'Click any position to hear it. Orange ring = what you are playing right now (audio f0). Dashed ring = where the camera believes your fretting fingers are. Root = filled hexagon.'))));
   bus.on('song', () => { FB.root = S.key; UI.fbRoot.value = S.key; UI.fbScale.value = S.scale; renderFret(); }); bus.on('fret', renderFret); bus.on('scale', renderFret); bus.on('dock', id => { if (id === 'fret') renderFret(); }); renderFret();
 }
 function hexPts(cx, cy, r) { let s = ''; for (let i = 0; i < 6; i++) { const a = Math.PI / 3 * i + Math.PI / 6; s += (cx + r * Math.cos(a)).toFixed(1) + ',' + (cy + r * Math.sin(a)).toFixed(1) + ' '; } return s; }
@@ -2445,7 +2452,8 @@ function renderFret() {
   UI.fb.innerHTML = ''; UI.fb.append(svg); FB.scPcs = scPcs; FB.root = root; paintFret(true);
 }
 function paintFret(force) {
-  if (!FB.nodes.length) return; const root = FB.root, left = CFG.left; let chordPcs = new Set(), chordRoot = null, chName = '';
+  if (UI.fbHeat) UI.fbHeat.style.display = FB.mode === 'heat' ? '' : 'none';
+  if (!FB.nodes.length) return; if (FB.mode === 'heat') return paintHeat(force); const root = FB.root, left = CFG.left; let chordPcs = new Set(), chordRoot = null, chName = '';
   if (FB.mode !== 'scale' && FB.mode !== 'none') {
     let sym = null; if (FB.follow) { const ph = playheadSlot(), sp = spb(), bi = Math.floor(ph / sp), cd = chordAt(Math.max(0, bi), Math.max(0, Math.floor(ph) - bi * sp)); sym = cd && cd.sym; }
     if (!sym) sym = (barChords((flatBars()[0] || { bar: { chord: '' } }).bar)[0]); const pc = sym && parseChord(sym); if (pc) { chordPcs = new Set(pc.pcs); chordRoot = pc.root; chName = sym; }
@@ -2479,6 +2487,7 @@ function buildVisPane() {
     h('button', { class: 'btn sm', id: 'vzGoStage', title: 'Full-screen visuals with the camera: you in front of the hexagons', onclick: () => goOnStage() }, '🎥 Go on stage'),
     h('button', { class: 'btn sm' + (VZ.cam ? ' on' : ''), id: 'vzCamBtn', title: 'Put yourself center stage: turns the camera on behind the visuals', onclick: () => vzCamPress() }, '📷 Camera backdrop'), camFxBox(),
     h('button', { class: 'btn sm' + (CFG.vzNeck !== false ? ' on' : ''), id: 'vzNeckBtn', title: 'Show a small guitar neck on the visuals: what is playing, what is coming next, the note you are singing', onclick: e => { CFG.vzNeck = CFG.vzNeck === false; saveCfg(); e.currentTarget.classList.toggle('on', CFG.vzNeck !== false); } }, '🎸 Neck'),
+    h('button', { class: 'btn sm' + (CFG.vzRibbon ? ' on' : ''), id: 'vzRibbonBtn', 'aria-pressed': String(!!CFG.vzRibbon), title: 'Show your pitch on the visuals: the note you sing against the notes of the key and the chord that is playing', onclick: e => { CFG.vzRibbon = !CFG.vzRibbon; saveCfg(); e.currentTarget.classList.toggle('on', !!CFG.vzRibbon); e.currentTarget.setAttribute('aria-pressed', String(!!CFG.vzRibbon)); if (CFG.vzRibbon) voxReset(); } }, '〰 Pitch'),
     h('button', { class: 'btn sm', onclick: () => { const w = UI.vwrap; (document.fullscreenElement ? document.exitFullscreen() : w.requestFullscreen && w.requestFullscreen()); } }, '⛶ Stage mode'));
   UI.vwrap = h('div', { class: 'vwrap', style: { flex: 1, minHeight: '320px' } }, UI.vcv = h('canvas', { class: 'vcanvas', style: { height: '100%', minHeight: '320px' } }));
   p.append(bar, UI.vwrap); new ResizeObserver(() => { const d = (window.devicePixelRatio || 1) * (CFG.vq || 1), w = UI.vcv.clientWidth, hh = UI.vcv.clientHeight; if (w && (UI.vcv.width !== Math.floor(w * d) || UI.vcv.height !== Math.floor(hh * d))) { UI.vcv.width = Math.floor(w * d); UI.vcv.height = Math.floor(hh * d); VZ.spec = null; VZ.hexes = null; } }).observe(UI.vwrap);
@@ -2509,6 +2518,7 @@ function drawVis(cvo, o) {
   if (camOn && !cvo) camTop(g, W, H);
   if (MODE === 'halo' && !cvo) haloFront(g);   // stage draws its own camera layer after trails and kaleidoscope
   if (!cvo && CFG.vzNeck !== false && !document.body.classList.contains('perform-on')) { const r = neckRect(W, H); drawMiniNeck(g, r[0], r[1], r[2], r[3], { C }); }
+  if (!cvo && CFG.vzRibbon && !document.body.classList.contains('perform-on') && typeof voxDraw === 'function') { const r = voxRect(W, H); voxDraw(g, r[0], r[1], r[2], r[3], { C, labels: H > 260 }); }
   if (o.noText) return;
   g.fillStyle = 'rgba(255,255,255,.55)'; g.font = `${Math.round(11 * H / 400 + 6)}px ui-monospace,Menlo,monospace`; g.textBaseline = 'top';
   if (AN.midi != null && AN.active) { g.fillStyle = 'rgba(255,255,255,.85)'; g.font = `800 ${Math.round(28 * Math.min(W, H * 2) / 900 + 10)}px ui-monospace,Menlo,monospace`; g.fillText(pcName(AN.midi) + (Math.floor(AN.midi / 12) - 1) + '  ' + (AN.cents >= 0 ? '+' : '') + AN.cents.toFixed(0) + '¢', 14, 12); }
@@ -3480,7 +3490,7 @@ async function boot() {
   document.addEventListener('visibilitychange', () => { if (!document.hidden && E.ctx && !OFR.busy && E.ctx.state === 'suspended') E.ctx.resume(); });
   if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener('devicechange', () => { ioDeviceChange().catch(e => console.warn(e)); });
   bus.emit('song');
-  if (/[?&]debug\b/.test(location.search)) window.__daily = { projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, srecStart, srecStop, get S() { return S; }, get REC() { return REC; }, PB, FB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, vzSetMode, sideShow, chSetRoles, chRoles, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive };   // test hook, only with ?debug
+  if (/[?&]debug\b/.test(location.search)) window.__daily = { pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, srecStart, srecStop, get S() { return S; }, get REC() { return REC; }, tkSetGain, TL, tkKey, tkFades, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, FB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, vzSetMode, sideShow, chSetRoles, chRoles, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive };   // test hook, only with ?debug
   projInit().catch(e => { console.warn('library', e); PRJ.ready = true; if (PRJ.wantStart) startMaybe(); });
 }
 
@@ -3860,11 +3870,11 @@ function stageExtra(mode, g, W, H, X) {
 function stageFrame(ts) {
   stageMidiTick();
   if (!SG.cv || !E.ready || !(paneVisible('stage') || document.fullscreenElement === SG.wrap || SG.pop)) return;
-  const sc = scn(), wrap = SG.wrap, d = (window.devicePixelRatio || 1) * STG.q, cw = wrap.clientWidth, chh = wrap.clientHeight; if (!cw || !chh) return;
+  const sc0 = scn(), wrap = SG.wrap, d = (window.devicePixelRatio || 1) * STG.q, cw = wrap.clientWidth, chh = wrap.clientHeight; if (!cw || !chh) return;
   const w = Math.min(1920, Math.floor(cw * d)), hh = Math.min(1080 * 1.4, Math.floor(chh * d));
   if (SG.cv.width !== w || SG.cv.height !== hh) { SG.cv.width = w; SG.cv.height = hh; SG.off.width = w; SG.off.height = hh; SG.small.width = Math.max(2, w >> 2); SG.small.height = Math.max(2, hh >> 2); VZ.spec = null; SG.joy = []; }
-  const info = SG.info = stageInfo(), t = VZ.t, C = stagePal(sc, t), off = SG.off, g = SG.cv.getContext('2d');
-  drawVis(off, { mode: sc.mode, C, bgA: sc.mode === 'joy' || sc.mode === 'spectro' ? 1 : clamp(1 - sc.trail * .93, .05, 1), noText: true, cam: sc.cam, gain: (sc.sens - 1) * 20 });
+  const info = SG.info = stageInfo(), sc = pbScene(sc0, info), t = VZ.t, C = stagePal(sc, t), off = SG.off, g = SG.cv.getContext('2d');
+  if (pbSolid()) pbFill(off); else drawVis(off, { mode: sc.mode, C, bgA: sc.mode === 'joy' || sc.mode === 'spectro' ? 1 : clamp(1 - sc.trail * .93, .05, 1), noText: true, cam: sc.cam, gain: (sc.sens - 1) * 20 });
   g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1; g.fillStyle = '#000'; g.fillRect(0, 0, w, hh);
   if (sc.kal >= 3) {
     const n = sc.kal, cx = w / 2, cy = hh / 2, R = Math.hypot(cx, cy); for (let i = 0; i < n; i++) {
@@ -3872,10 +3882,11 @@ function stageFrame(ts) {
     }
   } else g.drawImage(off, 0, 0);
   if (sc.cam && sc.mode !== 'spectro') camTop(g, w, hh);
-  if (sc.mode === 'halo') haloFront(g);
+  if (sc.mode === 'halo' && !pbSolid()) haloFront(g);
   if (sc.glow > .02) { const q = SG.small.getContext('2d'); q.globalCompositeOperation = 'source-over'; q.clearRect(0, 0, SG.small.width, SG.small.height); q.drawImage(SG.cv, 0, 0, SG.small.width, SG.small.height); g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = sc.glow * .9; g.imageSmoothingQuality = 'high'; g.drawImage(SG.small, 0, 0, w, hh); g.globalAlpha = sc.glow * .5; g.drawImage(SG.small, -w * .02, -hh * .02, w * 1.04, hh * 1.04); g.restore(); }
+  pbDim(g, w, hh);
   if (sc.flash > 0 && SG.flash > .01) { g.fillStyle = 'rgba(255,255,255,' + (SG.flash * sc.flash * (STG.safe ? .22 : .6)).toFixed(3) + ')'; g.fillRect(0, 0, w, hh); SG.flash *= .88; }
-  if (STG.hud !== false) drawStageHUD(g, w, hh, sc, info, C);
+  if (pbOn()) { if (STG.pb.lower) drawLowerThird(g, w, hh, info, C); } else if (STG.hud !== false) drawStageHUD(g, w, hh, sc, info, C);
   if (SG.idle && ts - SG.idleT > 2800 && document.fullscreenElement === wrap) wrap.classList.add('idle');
 }
 function drawStageHUD(g, W, H, sc, info, C) {
@@ -3933,7 +3944,7 @@ function stagePop() {
   try {
     const w = window.open('', 'fw_stage', 'width=1024,height=576'); if (!w) throw 0; w.document.title = BRAND.short + ' Stage'; w.document.body.style.cssText = 'margin:0;background:#000;overflow:hidden;height:100vh';
     const v = w.document.createElement('video'); v.autoplay = true; v.muted = true; v.playsInline = true; v.style.cssText = 'width:100%;height:100%;object-fit:contain'; v.srcObject = SG.cv.captureStream(30); w.document.body.append(v); v.ondblclick = () => (w.document.fullscreenElement ? w.document.exitFullscreen() : v.requestFullscreen());
-    w.document.body.title = 'Double-click for fullscreen'; SG.pop = w; w.addEventListener('pagehide', () => { SG.pop = null; }); toast('Pop-out ready — drag it to the projector, then double-click it for fullscreen', 'ok');
+    w.document.body.title = 'Double-click for fullscreen'; SG.pop = w; pbPopSetup(w); w.addEventListener('pagehide', () => { SG.pop = null; }); toast('Pop-out ready — drag it to the projector, then double-click it for fullscreen', 'ok');
   } catch (e) { toast('The browser blocked the pop-out window — allow pop-ups for this page', 'warn'); }
 }
 
@@ -3957,6 +3968,7 @@ function renderStageUI() {
         field('Sensitivity', rng('sens', .4, 2.5, .05, x => '×' + x.toFixed(2))), field('Beat flash', rng('flash', 0, 1, .05, x => x ? Math.round(x * 100) + '%' : 'off')),
         field('Auto-switch on section', h('input', { class: 'in', value: sc.sect, placeholder: 'e.g. chorus', style: { fontFamily: 'var(--sans)' }, onchange: e => { sc.sect = e.target.value.trim(); saveStg(); } }))),
       h('div', { class: 'row', style: { gap: '14px', marginTop: '8px', flexWrap: 'wrap' } }, chk(sc, 'cam', '📷 Camera backdrop'), camFxBox(), chk(sc.ov, 'chord', 'Chord'), chk(sc.ov, 'lyric', 'Lyric line'), chk(sc.ov, 'beat', 'Beat dots'), chk(sc.ov, 'info', 'Section · BPM · key'), chk(sc.ov, 'tuner', 'Tuner'))),
+    pbCard(),
     h('div', { class: 'card', style: { padding: '10px' } }, h('h4', { style: { margin: '0 0 8px' } }, 'Show settings'),
       h('div', { class: 'row', style: { gap: '14px', flexWrap: 'wrap', alignItems: 'center' } },
         chk(STG, 'safe', 'Reduce flashing (≤3 Hz, softer)'), chk(STG, 'auto', 'Auto-switch scenes by section name'),
@@ -4865,6 +4877,7 @@ function mSheet() {
       tile(msvg('<path d="M4 7a2 2 0 012-2h4l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H6a2 2 0 01-2-2z"/>'), 'My songs', () => { mCloseOverlays(); libraryOpen(); }),
       tile(msvg('<path d="M12 16V4M7 9l5-5 5 5M5 20h14"/>'), 'Open a file', () => { mCloseOverlays(); filesOpen(); }),
       tile(msvg('<path d="M5 20V9M12 20V4M19 20v-7"/>'), 'Master · balance · click', () => { mCloseOverlays(); mixOpen(); }),
+      tile(msvg('<path d="M3 12c3-8 5-8 8 0s5 8 8 0"/>'), 'Voice · pitch · key', () => { mCloseOverlays(); voxOpen(); }),
       tile(msvg('<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>'), keepRisk().level === 'ok' ? 'Back up songs' : 'Keep songs safe', () => { mCloseOverlays(); keepOpen(); }, keepRisk().level === 'high'),
       M.installEvt ? tile(msvg('<rect x="7" y="2.5" width="10" height="19" rx="2.4"/><path d="M12 8v7M9 12.5l3 3 3-3"/>'), 'Install app', () => { mInstall(); }) : null,
       document.fullscreenEnabled ? tile(msvg('<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>'), 'Full screen', () => { mCloseOverlays(); mFullscreen(); }) : null
@@ -5189,6 +5202,7 @@ function sbChip() {
     if (S.track) t.append(h('span', { class: 'tiny muted', title: 'This song was built from a track. Load it again to play along with it.' }, 'from “' + S.track.name + '”'));
   }
   t.append(h('button', { class: 'sb-chip', id: 'sbPerform', title: 'Perform: full-screen chords and lyrics with a count-in, record and play', onclick: e => perfOpen(e.currentTarget) }, '🎤 Perform'));
+  t.append(h('button', { class: 'sb-chip', id: 'sbVoice', 'aria-label': 'Voice', title: 'Voice: see your pitch against the key, find your range, and find the key that suits your voice', onclick: e => voxOpen(e.currentTarget) }, '〰', h('span', { class: 'sb-lbl' }, 'Voice')));
 }
 function sbTrackPop(anchor) {
   const an = STM.an, box = h('div', { style: { display: 'grid', gap: '6px' } });
@@ -5860,7 +5874,7 @@ function normSong(saved) {
   s.tuning = ((saved && saved.tuning) || d.tuning).slice(); if (!Array.isArray(s.sections)) s.sections = []; if (!Array.isArray(s.ts) || s.ts.length < 2) s.ts = [4, 4]; return s;
 }
 const takeMeta = t => { const m = { hum: !!t.hum, id: t.id, kind: t.kind || 'gtr', name: t.name, startSec: t.startSec, sr: t.sr, g: t.g, pan: t.pan || 0, fx: fxOn(t.fx) ? Object.assign({}, t.fx) : null, mute: !!t.mute, solo: !!t.solo, mode: t.mode, bpm: t.bpm, preset: t.preset || '', peak: t.peak, rms: t.rms, dur: t.dur, t: t.t, hasWet: !!t.wet, hasCam: !!(t.cam && t.cam.length) };
-  if (t.grp && t.grp !== t.id) m.grp = t.grp; if (t.src && t.src !== t.id) m.src = t.src; if (t.inS > 0) m.inS = t.inS; if (t.outS != null) m.outS = t.outS; if (t.fadeIn > 0) m.fadeIn = t.fadeIn; if (t.fadeOut > 0) m.fadeOut = t.fadeOut;
+  if (t.grp && t.grp !== t.id) m.grp = t.grp; if (t.src && t.src !== t.id) m.src = t.src; if (t.inS > 0) m.inS = t.inS; if (t.outS != null) m.outS = t.outS; if (t.fadeIn > 0) m.fadeIn = t.fadeIn; if (t.fadeOut > 0) m.fadeOut = t.fadeOut; if (t.cg != null && Math.abs(t.cg - 1) > 1e-6) m.cg = t.cg;
   try { m.stats = t.stats ? JSON.parse(JSON.stringify(t.stats)) : null; } catch (e) { m.stats = null; } return m; };
 
 /* ---------- save ---------- */
@@ -8287,6 +8301,8 @@ function tkNudge(tk, beats) {
   tk = tk || tkSel(); if (!tk) return false; const before = snap(), to = Math.max(0, tk.startSec + beats * tkBeat()); if (Math.abs(to - tk.startSec) < 1e-6) return false;
   tk.startSec = to; tkDone(before); return true;
 }
+/** a clip's own level in dB (0 = as recorded), on top of the lane's level */
+function tkSetGain(tk, db, quiet) { tk.cg = db === 0 ? 1 : Math.pow(10, db / 20); try { if (tk._cg) tc(tk._cg.gain, tk.cg, .015); } catch (e) { } const v = document.getElementById('cmLevelV'); if (v) v.textContent = db.toFixed(1) + ' dB'; TL.dirty = true; if (!quiet) bus.emit('takes'); }
 const tkFmt = sec => { const sp = spb(), slot = sec / slotDur(), bar = Math.floor(slot / sp) + 1, beat = Math.floor((slot % sp) / (16 / S.ts[1])) + 1; return 'bar ' + bar + ' · beat ' + beat; };
 
 /* ---------- save a lane or a clip as audio ---------- */
@@ -8302,13 +8318,13 @@ function tkDownloadClip(tk) {
 
 /* ---------- Undo / Redo ---------- */
 function tkHistGet() {
-  return TAKES.map(t => ({ id: t.id, grp: t.grp || null, name: t.name, kind: t.kind, startSec: t.startSec, inS: t.inS || 0, outS: t.outS == null ? null : t.outS, fadeIn: t.fadeIn || 0, fadeOut: t.fadeOut || 0, g: t.g == null ? 1 : t.g, pan: t.pan || 0, mute: !!t.mute, solo: !!t.solo, mode: t.mode, fx: t.fx ? JSON.parse(JSON.stringify(t.fx)) : null }));
+  return TAKES.map(t => ({ id: t.id, grp: t.grp || null, name: t.name, kind: t.kind, startSec: t.startSec, inS: t.inS || 0, outS: t.outS == null ? null : t.outS, fadeIn: t.fadeIn || 0, fadeOut: t.fadeOut || 0, cg: t.cg == null ? 1 : t.cg, g: t.g == null ? 1 : t.g, pan: t.pan || 0, mute: !!t.mute, solo: !!t.solo, mode: t.mode, fx: t.fx ? JSON.parse(JSON.stringify(t.fx)) : null }));
 }
 function tkHistSet(list) {
   if (!Array.isArray(list)) return; const have = new Map(TAKES.map(t => [t.id, t])), next = [], back = new Set();
   list.forEach(s => {
     let t = have.get(s.id); if (!t) { t = TK_BIN.get(s.id); if (t) back.add(t.id); } if (!t) return;
-    t.grp = s.grp || null; t.name = s.name; t.kind = s.kind; t.startSec = s.startSec; t.inS = s.inS; t.outS = s.outS; t.fadeIn = s.fadeIn; t.fadeOut = s.fadeOut; t.g = s.g; t.pan = s.pan; t.mute = s.mute; t.solo = s.solo; t.mode = s.mode; if (s.fx) t.fx = s.fx; else delete t.fx; next.push(t);
+    t.grp = s.grp || null; t.name = s.name; t.kind = s.kind; t.startSec = s.startSec; t.inS = s.inS; t.outS = s.outS; t.fadeIn = s.fadeIn; t.fadeOut = s.fadeOut; t.cg = s.cg == null ? 1 : s.cg; t.g = s.g; t.pan = s.pan; t.mute = s.mute; t.solo = s.solo; t.mode = s.mode; if (s.fx) t.fx = s.fx; else delete t.fx; next.push(t);
   });
   const keep = new Set(next.map(t => t.id)); TAKES.forEach(t => { if (!keep.has(t.id)) tkBinPut(t); }); next.forEach(t => TK_BIN.delete(t.id));
   TAKES.length = 0; next.forEach(t => TAKES.push(t)); next.forEach(t => { if (back.has(t.id)) t._saved = false; });   // a clip that came back is written to the song file again
@@ -8355,6 +8371,7 @@ function tkDraw(g, l, k) {
       g.fillStyle = C.bg2; g.globalAlpha = .92; g.fillRect(bx, by, w, 18); g.globalAlpha = 1; g.strokeStyle = C.accent2; g.strokeRect(bx + .5, by + .5, w - 1, 17); g.fillStyle = C.text; g.fillText(dr.label, bx + 6, by + 13);
     }
   });
+  if (typeof tkrDrawLane === 'function') tkrDrawLane(g, l, k);
 }
 
 /* ---------- pointer: select, move, trim, fade ---------- */
@@ -8420,6 +8437,7 @@ function tkMenu(anchor, tk) {
   const fade = (lab, v, which) => h('div', { class: 'lrow' }, h('span', { style: { width: '62px' } }, lab), h('input', { type: 'range', min: 0, max: mx, step: .01, value: Math.min(v, mx), 'aria-label': lab, style: { flex: 1 }, oninput: e => { histBegin(); tkSetFade(tk, which, +e.target.value, true); }, onchange: () => { tkResched(); if (!histEnd()) bus.emit('takes'); } }));
   box.append(row(h('button', { class: 'btn sm', id: 'cmSplit', title: 'Cut the clip in two at the playhead (Ctrl+E)', onclick: () => { closePop(); tkSplit(tk); } }, '✂ Split at playhead'), h('button', { class: 'btn sm', id: 'cmDup', title: 'Copy the clip so it starts where this one ends (Ctrl+D)', onclick: () => { closePop(); tkDup(tk); } }, '⧉ Duplicate')),
     fade('Fade in', fi, 'in'), fade('Fade out', fo, 'out'),
+    h('div', { class: 'lrow' }, h('span', { style: { width: '62px' } }, 'Clip level'), h('input', { type: 'range', id: 'cmLevel', min: -24, max: 12, step: .5, value: Math.round(20 * Math.log10(Math.max(.0631, tk.cg == null ? 1 : tk.cg)) * 2) / 2, 'aria-label': 'Clip level in dB', title: 'Louder or quieter for this clip only (double-click to reset); the lane’s own level still applies', style: { flex: 1 }, ondblclick: e => { histBegin(); tkSetGain(tk, 0, true); e.target.value = 0; if (!histEnd()) bus.emit('takes'); }, oninput: e => { histBegin(); tkSetGain(tk, +e.target.value, true); }, onchange: () => { if (!histEnd()) bus.emit('takes'); } }), h('span', { class: 'tiny muted', id: 'cmLevelV', style: { width: '44px', textAlign: 'right' } }, ((tk.cg == null ? 1 : tk.cg) === 1 ? '0' : (20 * Math.log10(tk.cg)).toFixed(1)) + ' dB')),
     row(h('span', { class: 'tiny muted', style: { width: '62px' } }, 'Move'), ...[['◀◀', -S.ts[0], 'A bar earlier'], ['◀', -1, 'A beat earlier'], ['▶', 1, 'A beat later'], ['▶▶', S.ts[0], 'A bar later']].map(([t, d, ti]) => h('button', { class: 'btn sm', title: ti, 'aria-label': ti, onclick: () => tkNudge(tk, d) }, t))),
     row(h('button', { class: 'btn sm', id: 'cmReset', disabled: !tkEdited(tk), title: 'Put the whole recording back: no trim, no fades', onclick: () => { closePop(); tkReset(tk); } }, '↺ Reset trim'), h('button', { class: 'btn sm', onclick: () => { closePop(); tkDownloadClip(tk); } }, '⤓ Save clip (WAV)')),
     row(h('button', { class: 'btn sm bad', id: 'cmDel', title: 'Delete (Del). Undo brings it back.', onclick: () => { closePop(); tkDelete(tk); } }, '✕ Delete clip')),
@@ -8429,13 +8447,20 @@ function tkMenu(anchor, tk) {
 function clipBarMake() {
   const b = (id, label, title, fn) => h('button', { class: 'btn sm', id, title, onclick: fn }, label);
   UI.clipbar = h('span', { class: 'clipbar', id: 'clipBar', hidden: true, role: 'group', 'aria-label': 'Selected clip' }, h('b', { class: 'small', id: 'clipName' }, 'Clip'),
-    b('clipSplit', '✂ Split', 'Split the selected clip at the playhead (Ctrl+E)', () => tkSplit()), b('clipDup', '⧉ Duplicate', 'Duplicate the selected clip (Ctrl+D)', () => tkDup()),
-    b('clipDel', '✕ Delete', 'Delete the selected clip (Del). Undo brings it back.', () => tkDelete()), b('clipMore', '⋯', 'More: fades, reset trim, save the clip', e => { const t = tkSel(); if (t) tkMenu(e.currentTarget, t); }));
+    h('span', { class: 'cb-grp', id: 'clipAct' }, b('clipSplit', '✂ Split', 'Split the selected clip at the playhead (Ctrl+E)', () => tkSplit()), b('clipDup', '⧉ Duplicate', 'Duplicate the selected clip (Ctrl+D)', () => tkDup()),
+      b('clipDel', '✕ Delete', 'Delete the selected clip (Del). Undo brings it back.', () => tkDelete()), b('clipMore', '⋯', 'More: fades, reset trim, save the clip', e => { const t = tkSel(); if (t) tkMenu(e.currentTarget, t); })),
+    h('span', { class: 'cb-grp' }, b('rngIn', '⟦ In', 'Mark the start of a stretch at the playhead (or Shift-drag across a take)', () => tkrMark('in')), b('rngOut', 'Out ⟧', 'Mark the end of the stretch at the playhead', () => tkrMark('out'))),
+    h('span', { class: 'cb-grp', id: 'rngAct', hidden: true }, b('rngCut', '⌫ Cut out', 'Take the stretch out and close the gap (Del). The band and chords do not move.', () => tkrApply(true)), b('rngSil', '◻ Silence', 'Take the stretch out and leave a gap', () => tkrApply(false)),
+      b('rngPunch', '● Punch in', 'Play from a bar before the stretch and record only inside it, replacing what was there', () => tkrPunch()),
+      h('button', { class: 'btn sm on', id: 'rngAll', 'aria-pressed': 'true', title: 'On: every take lane is edited together, so a guitar and a vocal recorded as one pass stay in step', onclick: e => { TKR.all = !TKR.all; e.currentTarget.classList.toggle('on', TKR.all); e.currentTarget.setAttribute('aria-pressed', String(TKR.all)); TL.dirty = true; } }, '⛓ All lanes'),
+      b('rngClr', '✕', 'Clear the marked stretch (Esc)', () => tkrClear())));
   return UI.clipbar;
 }
 function clipBarSync() {
-  const bar = UI.clipbar; if (!bar) return; const t = tkSel(); bar.hidden = !t; if (!t) return;
-  const n = tkClips(tkLead(t)).length; $('#clipName', bar).textContent = tkLead(t).name + (n > 1 ? ' · clip ' + (tkClips(tkLead(t)).indexOf(t) + 1) + '/' + n : '');
+  const bar = UI.clipbar; if (!bar) return; const t = tkSel(), r = TKR.on && !TKR.drag; bar.hidden = !t && !TKR.on; if (bar.hidden) return;
+  $('#clipAct', bar).hidden = !t; $('#rngAct', bar).hidden = !r; const rl = TKR.on ? ' · ' + (TKR.b - TKR.a).toFixed(1) + ' s marked' : '';
+  if (!t) { $('#clipName', bar).textContent = (TKR.lead ? TKR.lead.name : 'Range') + rl; return; }
+  const n = tkClips(tkLead(t)).length; $('#clipName', bar).textContent = tkLead(t).name + (n > 1 ? ' · clip ' + (tkClips(tkLead(t)).indexOf(t) + 1) + '/' + n : '') + rl;
 }
 bus.on('clipsel', clipBarSync); bus.on('takes', clipBarSync);
 
@@ -8842,6 +8867,445 @@ function mixOpen() {
 function filesOpen() {
   const inp = h('input', { type: 'file', multiple: true, accept: 'audio/*,video/*,.mp3,.wav,.flac,.m4a,.aac,.ogg,.opus,.aif,.aiff,.txt,.md,.lrc,.mid,.midi,.kar,.zip,.json', style: { display: 'none' }, 'aria-label': 'Choose files to open', onchange: e => { const fl = [...e.target.files]; e.target.value = ''; inp.remove(); if (fl.length) dropFiles(fl); } });
   document.body.append(inp); inp.click(); setTimeout(() => { try { inp.remove(); } catch (e) { } }, 120000);
+}
+
+/* >>> parts/50-voice.js */
+/* ============================================================
+   Part 50 · Voice — see your pitch, know your range, find your key
+   A pitch ribbon (what you sing against the notes of the song's key and the chord that is playing), a range finder (lowest, highest and
+   comfortable notes, kept on this device) and "Find my key" (which key puts this song where your voice is happiest, with a one-step
+   transpose). Everything is measured in the page from the vocal input (or the main input when no vocal channel is set).
+   ============================================================ */
+const VOX = { on: false, hist: [], buf: null, last: 0, m: null, cents: 0, f: [], hit: {}, voiced: 0, inTune: 0, inKey: 0, capt: false, panel: null, raf: 0, vlo: 55, vhi: 72, mode: 'ribbon' };
+const VOX_WIN = 8;            // seconds of ribbon
+
+const voxNote = m => pcName(m) + (Math.floor(Math.round(m) / 12) - 1);
+const voxSrc = () => (CFG.vin && CFG.vin !== 'off' && E.anaVox) ? E.anaVox : E.anaDI;
+const voxWant = () => !!(CFG.vzRibbon || VOX.panel || VOX.capt);
+/** the pitch classes of the song's scale and, while it plays, of the chord under the playhead */
+function voxScale() { const iv = SCALES[S.scale] || SCALES['Major (Ionian)']; return new Set(iv.map(i => (S.key + i) % 12)); }
+function voxChordPcs() { try { const i = stageInfo(), c = i && i.sym ? parseChord(i.sym) : null; return c ? new Set(c.pcs) : null; } catch (e) { return null; } }
+/** the nearest note of the key to a (fractional) MIDI pitch: { n: note, err: cents sharp (+) or flat (−) } */
+function voxTarget(m, sc) {
+  sc = sc || voxScale(); let best = null; for (let n = Math.floor(m) - 2; n <= Math.ceil(m) + 2; n++) { if (!sc.has(((n % 12) + 12) % 12)) continue; const e = (m - n) * 100; if (!best || Math.abs(e) < Math.abs(best.err)) best = { n, err: e }; }
+  return best || { n: Math.round(m), err: (m - Math.round(m)) * 100 };
+}
+
+/** called from the analysis tick: one pitch reading of the voice */
+function voxTick() {
+  if (!voxWant() || !E.ready || !E.hasInput) return; const an = voxSrc(); if (!an) return; const now = performance.now(); if (now - VOX.last < 28) return;
+  const dt = Math.min(.12, (now - VOX.last) / 1000); VOX.last = now; const n = an.fftSize; if (!VOX.buf || VOX.buf.length !== n) VOX.buf = new Float32Array(n);
+  an.getFloatTimeDomainData(VOX.buf); let e = 0; for (let i = 0; i < n; i++) e += VOX.buf[i] * VOX.buf[i]; const db = dB(Math.sqrt(e / n));
+  let m = null, cl = 0; if (db > (CFG.gateDb != null ? Math.min(CFG.gateDb, -48) : -52)) { const r = yin(VOX.buf, E.ctx.sampleRate, .15); if (r && r.f > 65 && r.f < 1250 && r.clarity > .72) { VOX.f.push(r.f); if (VOX.f.length > 3) VOX.f.shift(); m = ftom(median(VOX.f)); cl = r.clarity; } else VOX.f = []; } else VOX.f = [];
+  VOX.m = m; VOX.hist.push({ t: now, m, c: cl }); while (VOX.hist.length && now - VOX.hist[0].t > (VOX_WIN + 2) * 1000) VOX.hist.shift();
+  if (m != null) {
+    VOX.cents = (m - Math.round(m)) * 100; const r = Math.round(m); VOX.hit[r] = (VOX.hit[r] || 0) + dt;
+    if (!VOX.capt) { VOX.voiced += dt; const t = voxTarget(m); if (Math.abs(t.n - m) < .5) VOX.inKey += dt; if (Math.abs(t.err) <= 25) VOX.inTune += dt; }
+  }
+}
+/** an empty tally for a new session or range pass */
+function voxReset() { VOX.hit = {}; VOX.voiced = 0; VOX.inTune = 0; VOX.inKey = 0; }
+
+/** lowest, highest and comfortable notes from the time spent on each note (a note must be held about a quarter second to count) */
+function voxRange(hit) {
+  hit = hit || VOX.hit; const ks = Object.keys(hit).map(Number).filter(k => hit[k] >= .25).sort((a, b) => a - b); if (!ks.length) return null;
+  let tot = 0; ks.forEach(k => { tot += hit[k]; }); if (tot < 1.5) return null; let acc = 0, c0 = ks[0], c1 = ks[ks.length - 1], got0 = false;
+  ks.forEach(k => { acc += hit[k]; if (!got0 && acc >= tot * .1) { c0 = k; got0 = true; } if (acc <= tot * .9) c1 = k; });
+  c1 = Math.max(c1, c0); return { lo: ks[0], hi: ks[ks.length - 1], c0, c1, secs: tot };
+}
+/** which move of the song (in semitones) suits a voice: range = { lo, hi, c0, c1 }, mel = { lo, hi } of the melody (or null), key = the song's key. Returns the three best, best first. */
+function voxPlan(r, mel, key) {
+  if (!mel) { const mid = (r.c0 + r.c1) / 2; let t = key; while (t < mid - 6) t += 12; while (t > mid + 6) t -= 12; mel = { lo: t - 4, hi: t + 8 }; }     // no melody to measure: a tune usually runs from just under the tonic to about an octave and a half above it
+  const out = [];
+  for (let d = -9; d <= 9; d++) {
+    const lo = mel.lo + d, hi = mel.hi + d, over = Math.max(0, hi - r.c1) + Math.max(0, r.c0 - lo), hard = Math.max(0, hi - r.hi) + Math.max(0, r.lo - lo), cen = Math.abs((lo + hi) / 2 - (r.c0 + r.c1) / 2);
+    out.push({ d, key: ((key + d) % 12 + 12) % 12, lo, hi, fit: !over, score: over ? over * 2 + hard * 5 + cen * .5 + Math.abs(d) * .2 + 1 : Math.abs(d) * .35 + cen * .1 });      // anything that fits beats anything that does not; of those, the smallest move wins
+  }
+  out.sort((a, b) => a.score - b.score); const best = [], seen = new Set(); out.forEach(o => { if (best.length < 3 && !seen.has(o.key)) { seen.add(o.key); best.push(o); } }); return best;
+}
+/** the lead-guitar tab's highest and lowest notes, as MIDI, or null when there are too few to say */
+function voxMelody() {
+  let lo = 999, hi = -1, n = 0; S.sections.forEach(sec => sec.bars.forEach(b => (b.tab || []).forEach(x => { if (typeof x.f === 'number' && S.tuning[x.st] != null) { const m = S.tuning[x.st] + S.capo + x.f; if (m < lo) lo = m; if (m > hi) hi = m; n++; } })));
+  return n >= 4 ? { lo, hi, n } : null;
+}
+/** a chord symbol moved by d semitones (roots and slash basses) */
+function voxXSym(sym, d, fl) {
+  return String(sym).replace(/(^|\/)([A-G][#b]?)/g, (m, p, r) => { const pc = parsePc(r); return pc == null ? m : p + pcName(((pc + d) % 12 + 12) % 12, fl); });
+}
+/** move the whole song by d semitones: key, chords (and the [chords] in lyrics), tab frets; recorded takes are not touched. One undo step. */
+function voxTranspose(d) {
+  if (!d) return false; const before = snap(), key = ((S.key + d) % 12 + 12) % 12, fl = keyUsesFlats(key, S.minor); let off = 0;
+  S.sections.forEach(sec => {
+    sec.bars.forEach(b => { if (b.chord) b.chord = b.chord.split(/\s+/).map(c => voxXSym(c, d, fl)).join(' '); (b.tab || []).forEach(x => { if (typeof x.f === 'number') { let f = x.f + d; while (f < 0) f += 12; while (f > 24) f -= 12; if (f !== x.f + d) off++; x.f = f; } }); });
+    if (sec.lyrics) sec.lyrics = sec.lyrics.replace(/\[([^\]]+)\]/g, (m, c) => '[' + voxXSym(c, d, fl) + ']');
+  });
+  S.key = key; CFG.flats = fl; T.bars = null; saveCfg(); if (!histPush(before)) commit(true); bus.emit('song', 'reload');
+  toast('Song moved ' + (d > 0 ? 'up ' : 'down ') + Math.abs(d) + ' semitone' + (Math.abs(d) === 1 ? '' : 's') + ' to ' + pcName(key) + (S.minor ? ' minor' : ' major') + (off ? ' · ' + off + ' tab note' + (off === 1 ? '' : 's') + ' moved an octave to stay on the neck' : '') + ' · recorded takes were not changed', 'ok'); return true;
+}
+
+/* ---------- drawing ---------- */
+/** the pitch ribbon, drawn into any canvas context */
+function voxDraw(g, x, y, w, h, o) {
+  o = o || {}; const now = performance.now(), sc = voxScale(), cp = voxChordPcs(), C = o.C || vcol(), lbl = o.labels !== false;
+  const ph = VOX.hist.filter(p => now - p.t <= VOX_WIN * 1000); let lo = 1e9, hi = -1e9; ph.forEach(p => { if (p.m != null) { lo = Math.min(lo, p.m); hi = Math.max(hi, p.m); } });
+  const rg = CFG.vrange; let tl = lo < 1e8 ? lo : (rg ? rg.c0 : 55), th = hi > -1e8 ? hi : (rg ? rg.c1 : 72); if (th - tl < 11) { const c = (th + tl) / 2; tl = c - 5.5; th = c + 5.5; }
+  tl -= 2; th += 2; VOX.vlo += (tl - VOX.vlo) * .12; VOX.vhi += (th - VOX.vhi) * .12; const vlo = VOX.vlo, vhi = VOX.vhi, py = m => y + h - (m - vlo) / (vhi - vlo) * h, px = t => x + w - (now - t) / (VOX_WIN * 1000) * w, rowH = h / (vhi - vlo);
+  g.save(); g.beginPath(); g.roundRect ? g.roundRect(x, y, w, h, Math.min(14, h * .12)) : g.rect(x, y, w, h); g.fillStyle = 'rgba(5,11,12,.74)'; g.fill(); g.clip();
+  for (let n = Math.floor(vlo); n <= Math.ceil(vhi); n++) {
+    const pc = ((n % 12) + 12) % 12; if (!sc.has(pc)) continue; const tonic = pc === S.key, ct = cp && cp.has(pc);
+    g.fillStyle = ct ? 'rgba(120,230,180,.20)' : tonic ? 'rgba(255,210,90,.13)' : 'rgba(180,215,220,.06)'; g.fillRect(x, py(n + .5), w, rowH);
+    g.fillStyle = ct ? 'rgba(150,255,200,.55)' : tonic ? 'rgba(255,210,90,.45)' : 'rgba(200,230,230,.22)'; g.fillRect(x, py(n) - .5, w, 1);
+    if (lbl && rowH > 9) { g.fillStyle = ct ? 'rgba(190,255,220,.9)' : 'rgba(215,240,240,.5)'; g.font = `600 ${Math.min(12, Math.round(rowH * .75))}px ui-monospace,Menlo,monospace`; g.textAlign = 'left'; g.textBaseline = 'middle'; g.fillText(voxNote(n), x + 6, py(n)); }
+  }
+  g.lineCap = 'round'; g.lineJoin = 'round'; g.lineWidth = Math.max(3, h * .03); let prev = null;
+  ph.forEach(p => {
+    if (p.m == null) { prev = null; return; } const t = voxTarget(p.m, sc), a = Math.abs(t.err), col = a <= 20 ? '#5fe3a1' : a <= 35 ? '#ffd23f' : '#ff6b6b', age = (now - p.t) / (VOX_WIN * 1000);
+    if (prev) { g.globalAlpha = clamp(1.1 - age, .15, 1); g.strokeStyle = col; g.beginPath(); g.moveTo(px(prev.t), py(prev.m)); g.lineTo(px(p.t), py(p.m)); g.stroke(); } prev = p;
+  });
+  g.globalAlpha = 1; const last = ph[ph.length - 1];
+  if (last && last.m != null && now - last.t < 250) { const t = voxTarget(last.m, sc), a = Math.abs(t.err), col = a <= 20 ? '#5fe3a1' : a <= 35 ? '#ffd23f' : '#ff6b6b'; g.fillStyle = col; g.shadowColor = col; g.shadowBlur = 14; g.beginPath(); g.arc(x + w - 4, py(last.m), Math.max(4, h * .035), 0, 6.3); g.fill(); g.shadowBlur = 0;
+    g.fillStyle = 'rgba(240,252,252,.92)'; g.font = `800 ${Math.round(clamp(h * .17, 13, 26))}px ui-monospace,Menlo,monospace`; g.textAlign = 'right'; g.textBaseline = 'top'; g.fillText(voxNote(last.m) + '  ' + (t.err >= 0 ? '+' : '') + Math.round(t.err) + '¢', x + w - 12, y + 8); }
+  else if (!ph.length || ph.every(p => p.m == null)) { g.fillStyle = 'rgba(220,240,240,.55)'; g.font = `600 ${Math.round(clamp(h * .09, 11, 15))}px system-ui,sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(E.hasInput ? 'sing or hum: your pitch draws here' : 'connect an input to see your pitch', x + w / 2, y + h / 2); }
+  if (VOX.voiced > 4) { g.fillStyle = 'rgba(220,240,240,.6)'; g.font = `600 ${Math.round(clamp(h * .075, 10, 13))}px ui-monospace,Menlo,monospace`; g.textAlign = 'left'; g.textBaseline = 'bottom'; g.fillText('in key ' + Math.round(VOX.inKey / VOX.voiced * 100) + '% · in tune ' + Math.round(VOX.inTune / VOX.voiced * 100) + '%', x + 8, y + h - 5); }
+  g.restore();
+}
+/** where the ribbon sits on the stage: across the top third, above the neck */
+function voxRect(W, H) { const w = Math.min(W * .9, H * 2.6), h = clamp(H * .26, 70, 220); return [(W - w) / 2, Math.max(8, H * .035), w, h]; }
+
+/* ---------- the Voice window ---------- */
+const voxPc = m => voxNote(m);
+function voxOpen(anchor) {
+  if (VOX.panel) { voxClose(); return; }
+  VOX.mode = VOX.mode || 'ribbon'; const cv = h('canvas', { id: 'voxCv', width: 440, height: 170, role: 'img', 'aria-label': 'Pitch ribbon: the note you are singing against the notes of the key' }), body = h('div', { class: 'vx-body', id: 'voxBody' });
+  const close = h('button', { class: 'btn sm', id: 'voxClose', onclick: () => voxClose() }, 'Close');
+  const p = h('section', { id: 'voxPanel', class: 'vx', role: 'dialog', 'aria-label': 'Voice' }, h('div', { class: 'vx-h' }, h('b', {}, '🎤 Voice'), h('span', { class: 'grow' }), close), cv, body);
+  document.body.append(p); VOX.panel = p; VOX.cv = cv; voxReset(); voxBuild(); voxLoop(); bus.emit('vox'); }
+function voxClose() { if (!VOX.panel) return; VOX.capt = false; VOX.panel.remove(); VOX.panel = null; cancelAnimationFrame(VOX.raf); bus.emit('vox'); }
+function voxLoop() {
+  if (!VOX.panel) return; const cv = VOX.cv, g = cv.getContext('2d'), r = cv.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1), W = Math.max(200, Math.round(r.width * dpr)), H = Math.max(80, Math.round(r.height * dpr));
+  if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; } g.clearRect(0, 0, W, H); voxDraw(g, 0, 0, W, H, {}); voxLive();
+  VOX.raf = requestAnimationFrame(voxLoop);
+}
+/** small live readouts inside the window (range while capturing) */
+function voxLive() {
+  const el = document.getElementById('voxLive'); if (!el || !VOX.capt) return; const r = voxRange();
+  el.textContent = r ? voxPc(r.lo) + ' – ' + voxPc(r.hi) + '   ·   comfortable ' + voxPc(r.c0) + ' – ' + voxPc(r.c1) : (VOX.m != null ? 'hearing ' + voxPc(VOX.m) + '…' : 'sing from your lowest note to your highest');
+}
+function voxBuild() {
+  const b = document.getElementById('voxBody'); if (!b) return; b.innerHTML = '';
+  const conn = E.hasInput ? null : h('div', { class: 'vx-note' }, 'No input is connected yet. ', h('button', { class: 'btn sm', id: 'voxConnect', onclick: async () => { try { await ioConnectFlow(); } catch (e) { } voxBuild(); } }, 'Connect my input'));
+  const rg = CFG.vrange, mel = voxMelody(), key = pcName(S.key) + (S.minor ? ' minor' : ' major');
+  const cap = h('button', { class: 'btn sm' + (VOX.capt ? ' on' : ''), id: 'voxCapture', onclick: () => {
+    if (!VOX.capt) { if (!E.hasInput) { toast('Connect an input first', 'warn'); return; } voxReset(); VOX.capt = true; } else { VOX.capt = false; const r = voxRange(); if (r) { CFG.vrange = { lo: r.lo, hi: r.hi, c0: r.c0, c1: r.c1 }; saveCfg(); toast('Your range is kept on this device: ' + voxPc(r.lo) + ' to ' + voxPc(r.hi), 'ok'); } else toast('Not enough singing was heard. Hold a few notes for a second each.', 'warn'); voxReset(); }
+    voxBuild(); } }, VOX.capt ? '■ Done' : '● Find my range');
+  const plan = rg ? voxPlan(rg, mel, S.key) : null;
+  b.append(...[conn,
+    h('div', { class: 'vx-row' }, cap, h('span', { class: 'tiny muted' }, VOX.capt ? 'Sing from your lowest note to your highest, then press Done.' : 'Sing low to high once. It is kept on this device.')),
+    h('div', { class: 'vx-live', id: 'voxLive', 'aria-live': 'polite' }, VOX.capt ? 'sing from your lowest note to your highest' : (rg ? 'Your range ' + voxPc(rg.lo) + ' – ' + voxPc(rg.hi) + ' · comfortable ' + voxPc(rg.c0) + ' – ' + voxPc(rg.c1) : 'No range kept yet'))].filter(Boolean));
+  if (plan) {
+    const top = plan[0], same = top.d === 0, keyName = k => pcName(k, keyUsesFlats(k, S.minor)) + (S.minor ? ' minor' : ' major');
+    b.append(h('h5', { class: 'vx-h5' }, 'Find my key'),
+      h('div', { class: 'vx-res', id: 'voxRes' },
+        h('div', {}, 'This song is in ', h('b', {}, key), mel ? ', and its tab melody runs ' + voxPc(mel.lo) + ' – ' + voxPc(mel.hi) + '.' : '. It has no lead tab to measure, so this assumes a typical tune around the tonic.'),
+        same ? h('div', { class: 'vx-good' }, '✓ That sits well in your voice. No change needed.') : h('div', { class: 'vx-adv' }, 'Try ', h('b', {}, keyName(top.key)), ' (' + (top.d > 0 ? 'up ' : 'down ') + Math.abs(top.d) + ' semitone' + (Math.abs(top.d) === 1 ? '' : 's') + '): the melody would run ' + voxPc(top.lo) + ' – ' + voxPc(top.hi) + (top.fit ? ', inside your comfortable range.' : ', as close as it gets.')),
+        h('div', { class: 'vx-row' }, same ? null : h('button', { class: 'btn sm primary', id: 'voxXpose', onclick: () => { voxTranspose(top.d); voxBuild(); } }, 'Move the song to ' + keyName(top.key)),
+          ...plan.slice(1).filter(o => o.d !== 0 || !same).slice(0, 2).map(o => h('button', { class: 'btn sm', 'data-d': o.d, onclick: () => { voxTranspose(o.d); voxBuild(); } }, keyName(o.key) + ' (' + (o.d > 0 ? '+' : '') + o.d + ')'))),
+        h('div', { class: 'tiny muted' }, 'Chords, [chords] in lyrics and tab frets move together; recorded takes stay as they were. Undo (Ctrl/⌘+Z) puts it back.')));
+  }
+  b.append(h('div', { class: 'tiny muted' }, 'Green is within 20 cents of a note in the key, yellow within 35, red beyond. Bright rows are the chord that is playing. Nothing leaves this device.'));
+}
+bus.on('audiostate', () => { if (!E.hasInput) VOX.capt = false; if (VOX.panel) voxBuild(); });
+bus.on('song', () => { if (VOX.panel && !VOX.capt) voxBuild(); });
+
+/* >>> parts/51-clip-range.js */
+/* ============================================================
+   Part 51 · Ranges — cut a stretch out of a recording, silence it, or punch in over it
+   Shift-drag across a take lane (or press “Mark in” / “Mark out” on the clip bar, which works with a finger too) to mark a stretch of time.
+   Then:  Cut out  takes it out of the recording and closes the gap · Silence  takes it out and leaves the gap · Punch in  plays the song
+   from a bar before it, records only inside it, and drops the new audio into the same lane where the old stretch was.
+   By default every take lane is edited together, so a guitar and a vocal that were recorded as one pass stay in step; switch “All lanes” off to edit one.
+   The band and the chords do not move. Everything is one Undo step.
+   ============================================================ */
+const TKR = { on: false, lead: null, a: 0, b: 0, drag: null, all: true };
+const PUNCH = { on: false, leadId: null, kind: 'gtr', a: 0, b: 0, startSlot: 0, endSlot: 0, before: null };
+const TKR_FADE = .008;                 // a few milliseconds of fade at every new edge, so a cut never clicks
+
+const tkByKey = key => TAKES.filter(t => tkKey(t) === key).sort((a, b) => a.startSec - b.startSec);
+/** remove one clip from its lane; if it carried the lane's settings they pass to the next clip. No history, no redraw. */
+function tkRemoveRaw(tk) {
+  const lead = tkLead(tk), key = tkKey(tk), i = TAKES.indexOf(tk); if (i < 0) return false;
+  TAKES.splice(i, 1); tkBinPut(tk);
+  const nl = lead === tk ? TAKES.find(t => tkKey(t) === key) : null;
+  if (nl) ['kind', 'name', 'g', 'pan', 'mute', 'solo', 'mode', 'fx', 'preset', 'bpm'].forEach(k => { nl[k] = k === 'fx' && tk.fx ? Object.assign({}, tk.fx) : tk[k]; });
+  return true;
+}
+const tkrSnap = (t, alt) => alt ? Math.max(0, t) : Math.max(0, tkSnapAbs(t, null, 10));
+function tkrSet(lead, a, b) {
+  if (b < a) [a, b] = [b, a]; if (b - a < TKMIN) { tkrClear(); return false; }
+  TKR.on = true; TKR.lead = lead; TKR.a = a; TKR.b = b; TL.dirty = true; bus.emit('clipsel', TKSEL.id); return true;
+}
+function tkrClear() { if (!TKR.on && !TKR.drag) return; TKR.on = false; TKR.drag = null; TL.dirty = true; bus.emit('clipsel', TKSEL.id); }
+/** the lanes an edit applies to (each as its key, so a lane that vanishes midway is not a problem) */
+function tkrKeys() { return TKR.all ? [...new Set(tkLeads().map(tkKey))] : [tkKey(TKR.lead)]; }
+
+/** take [a,b] seconds out of one lane. close: everything after it moves left by b−a. Returns true if anything changed. */
+function tkrLane(key, a, b, close) {
+  const len = b - a; let changed = false, left = null, right = null;
+  tkByKey(key).forEach(c => {
+    const s = c.startSec, e = tkEnd(c);
+    if (e <= a + 1e-6) return;
+    if (s >= b - 1e-6) { if (close) { c.startSec = Math.max(0, s - len); changed = true; } return; }
+    changed = true;
+    if (s >= a - 1e-6 && e <= b + 1e-6) { tkRemoveRaw(c); return; }
+    if (s < a - 1e-6 && e > b + 1e-6) {
+      const r = tkNew(c, { startSec: close ? a : b, inS: tkIn(c) + (b - s), outS: c.outS == null ? null : c.outS, fadeIn: TKR_FADE, fadeOut: c.fadeOut || 0 });
+      c.outS = tkIn(c) + (a - s); c.fadeOut = TKR_FADE; TAKES.splice(TAKES.indexOf(c) + 1, 0, r); return;
+    }
+    if (s < a - 1e-6) { c.outS = tkIn(c) + (a - s); c.fadeOut = TKR_FADE; return; }
+    c.inS = tkIn(c) + (b - s); c.startSec = close ? a : b; c.fadeIn = TKR_FADE;
+  });
+  tkByKey(key).forEach(c => { if (tkLen(c) < TKMIN) { tkRemoveRaw(c); changed = true; } });
+  return changed;
+}
+/** Cut out (close = true) or Silence (close = false) the marked range, in every lane or the chosen one */
+function tkrApply(close) {
+  if (!TKR.on) { toast('Mark a stretch first: Shift-drag across a take, or use Mark in / Mark out.', 'warn'); return false; }
+  const before = snap(), a = TKR.a, b = TKR.b; let any = false; tkrKeys().forEach(k => { if (tkrLane(k, a, b, close)) any = true; });
+  if (!any) { toast('There is no recording in that stretch.', 'warn'); return false; }
+  if (TKSEL.id && !TAKES.some(t => t.id === TKSEL.id)) TKSEL.id = null; tkrClear();
+  tkDone(before, (close ? 'Cut out ' : 'Silenced ') + (b - a).toFixed(1) + ' s' + (close ? ' · the gap is closed' : '')); return true;
+}
+/** Mark in / Mark out at the playhead (the lane is the selected clip's, else the first take lane) */
+function tkrMark(which) {
+  const tk = tkSel(), lead = TKR.on && TKR.lead ? TKR.lead : (tk ? tkLead(tk) : tkLeads()[0]); if (!lead) { toast('Record or drop in a take first.', 'warn'); return false; }
+  const t = Math.max(0, Math.round(tkNowSec() / tkBeat()) * tkBeat()); let a = TKR.on ? TKR.a : t, b = TKR.on ? TKR.b : t + tkBeat() * S.ts[0];
+  if (which === 'in') { a = t; if (b <= a + TKMIN) b = a + tkBeat() * S.ts[0]; } else { b = t; if (a >= b - TKMIN) a = Math.max(0, b - tkBeat() * S.ts[0]); }
+  return tkrSet(lead, a, b);
+}
+
+/* ---------- Shift-drag on a lane ---------- */
+function tkrDown(e, lo, x) {
+  if (!e.shiftKey || !lo || lo.l.type !== 'take') return false; const t = tkrSnap(x / tkPps(), e.altKey);
+  TKR.drag = { lead: lo.l.take, t0: t, alt: e.altKey }; TKR.on = true; TKR.lead = lo.l.take; TKR.a = t; TKR.b = t; try { UI.tlc.setPointerCapture(e.pointerId); } catch (er) { } TL.dirty = true; return true;
+}
+function tkrMove(e) {
+  const d = TKR.drag; if (!d) return false; const { x } = tlPoint(e), t = tkrSnap(x / tkPps(), e.altKey || d.alt); TKR.a = Math.min(d.t0, t); TKR.b = Math.max(d.t0, t); TL.dirty = true; return true;
+}
+function tkrUp() {
+  const d = TKR.drag; if (!d) return false; TKR.drag = null; if (TKR.b - TKR.a < TKMIN) { TKR.on = false; TL.dirty = true; } bus.emit('clipsel', TKSEL.id); return true;
+}
+/** the range, drawn over a lane */
+function tkrDrawLane(g, l, k) {
+  if (!TKR.on) return; const lead = l.take; if (!TKR.all && tkKey(lead) !== tkKey(TKR.lead)) return; const { y, hh, sw } = k, pps = sw / slotDur(), x0 = TKR.a * pps, w = Math.max(2, (TKR.b - TKR.a) * pps), C = TL.col;
+  g.save(); g.fillStyle = C.accent2; g.globalAlpha = .2; g.fillRect(x0, y + 1, w, hh - 2); g.globalAlpha = .9; g.fillRect(x0, y + 1, 2, hh - 2); g.fillRect(x0 + w - 2, y + 1, 2, hh - 2);
+  if (hh >= 34 && w > 46) { g.globalAlpha = 1; g.font = '700 11px ui-monospace,Menlo,Consolas,monospace'; g.fillStyle = C.text; g.fillText((TKR.b - TKR.a).toFixed(1) + ' s', x0 + 6, y + hh - 8); }
+  g.restore();
+}
+
+/* ---------- punch in ---------- */
+/** Play from a bar before the range, record only inside it. The new audio replaces that stretch in the same lane. */
+async function tkrPunch() {
+  if (!TKR.on) { toast('Mark the stretch to re-record first (Shift-drag across the lane).', 'warn'); return false; }
+  if (T.playing) stopPlay(true); if (!E.hasInput) { try { await startAudio(); } catch (e) { } }
+  if (!E.hasInput) { toast('Connect an input first (I/O), then punch in.', 'warn'); return false; }
+  const lead = TKR.lead, sd = slotDur(), s0 = Math.max(0, Math.round(TKR.a / sd)), s1 = Math.max(s0 + 1, Math.round(TKR.b / sd));
+  Object.assign(PUNCH, { on: true, leadId: lead.id, kind: lead.kind === 'vox' ? 'vox' : 'gtr', a: s0 * sd, b: s1 * sd, startSlot: s0, endSlot: s1, before: snap() });
+  T.cursor = Math.max(0, s0 - spb()); await play(true); if (!T.playing) { PUNCH.on = false; return false; }
+  toast('Punching in over ' + (PUNCH.b - PUNCH.a).toFixed(1) + ' s: play along, it records only inside the marked stretch.', 'ok'); return true;
+}
+/** called by recEnd for a punched recording: put the new clip where the range was. Returns the clip, or null when the lane is gone. */
+function tkrPunchApply(take, p) {
+  const lead = TAKES.find(t => t.id === p.leadId); if (!lead) return null; const key = tkKey(lead), a = p.a, dur = take.dur, b = Math.min(p.b, Math.max(a + TKMIN, take.startSec + dur));
+  let from = Math.max(take.startSec, a); take.inS = Math.max(0, from - take.startSec); take.startSec = from; take.outS = null;
+  if (tkLen(take) > b - from + 1e-6) take.outS = take.inS + (b - from);
+  take.grp = key; take.src = take.id; take.name = lead.name; take.fadeIn = TKR_FADE; take.fadeOut = TKR_FADE;
+  ['g', 'pan', 'mute', 'solo', 'mode', 'fx', 'preset'].forEach(k => { if (k === 'fx') { if (lead.fx) take.fx = Object.assign({}, lead.fx); } else if (lead[k] !== undefined) take[k] = lead[k]; });
+  tkrLane(key, from, from + tkLen(take), false); TAKES.push(take);                  // the old stretch is silenced, then the new clip fills it
+  return take;
+}
+
+/* >>> parts/52-heat.js */
+/* ============================================================
+   Part 52 · Fretboard heatmap — where you play, how in tune it is, and which notes belong
+   Three views on the Fretboard pane (mode “Heatmap”):
+     Where you play   time spent on each string and fret
+     How in tune      average cents flat / sharp at each position
+     Which notes belong   every position coloured by the key and the current chord, sized by how much you used it
+   Two sources: Live (what the microphone heard, kept for the session) and Song (the tab and the chord shapes of the song).
+   Honest limit: one pitch can be played in several places on the neck, and a microphone hears the pitch, not the place.
+   So live time is placed exactly only when the camera sees the hand, or the note has one possible place; otherwise it is shared out
+   evenly across every place that note can be played, and the summary says how much was shared. Nothing here leaves the device.
+   ============================================================ */
+const HEAT = { view: 'where', src: 'live', t: {}, a: {}, cs: {}, cw: {}, tot: 0, amb: 0, tun: '', rev: 0, song: null, saved: 0, bar: null };
+const heatTun = () => S.tuning.join(',') + '/' + S.capo;
+(function heatLoad() { const d = store.get('heat', null); if (d && d.t && d.tun) { ['t', 'a', 'cs', 'cw'].forEach(k => { HEAT[k] = d[k] || {}; }); HEAT.tot = d.tot || 0; HEAT.amb = d.amb || 0; HEAT.tun = d.tun; } })();
+function heatSave(force) {
+  const n = performance.now(); if (!force && n - HEAT.saved < 4000) return; HEAT.saved = n;
+  store.set('heat', { tun: HEAT.tun, t: HEAT.t, a: HEAT.a, cs: HEAT.cs, cw: HEAT.cw, tot: HEAT.tot, amb: HEAT.amb });
+}
+function heatReset() { HEAT.t = {}; HEAT.a = {}; HEAT.cs = {}; HEAT.cw = {}; HEAT.tot = 0; HEAT.amb = 0; HEAT.tun = heatTun(); HEAT.rev++; heatSave(true); paintFret(true); }
+/** every (string, fret) that sounds this MIDI note with the current tuning and capo */
+function heatCands(midi) { const out = []; S.tuning.forEach((o, st) => { const f = midi - o - S.capo; if (f >= 0 && f <= FB.frets) out.push({ st, f }); }); return out; }
+function heatAdd(st, f, sec, cents, amb) {
+  const k = st + ':' + f; HEAT.t[k] = (HEAT.t[k] || 0) + sec; if (amb) HEAT.a[k] = (HEAT.a[k] || 0) + sec;
+  if (cents != null && isFinite(cents)) { HEAT.cs[k] = (HEAT.cs[k] || 0) + cents * sec; HEAT.cw[k] = (HEAT.cw[k] || 0) + sec; }
+}
+/** called when a live note ends (04-analysis noteOff): c = {midi, cs[], cam[]}, dur in seconds */
+function heatLive(c, dur) {
+  if (!c || !(dur > .05) || c.midi == null) return; if (HEAT.tun !== heatTun()) { HEAT.t = {}; HEAT.a = {}; HEAT.cs = {}; HEAT.cw = {}; HEAT.tot = 0; HEAT.amb = 0; HEAT.tun = heatTun(); }
+  const cs = c.cs.slice(Math.floor(c.cs.length * .25)), cents = cs.length > 4 ? mean(cs) : null;
+  const cam = (c.cam || []).filter(p => S.tuning[p.st] != null && S.tuning[p.st] + S.capo + p.fret === c.midi), exact = cam.length > 0;
+  const pos = exact ? cam.map(p => ({ st: p.st, f: p.fret })) : heatCands(c.midi); if (!pos.length) return;
+  const one = exact || pos.length === 1, w = dur / pos.length; pos.forEach(p => heatAdd(p.st, p.f, w, cents, !one));
+  HEAT.tot += dur; if (!one) HEAT.amb += dur; HEAT.rev++; heatSave(false);
+}
+/** the song itself: every lead-tab note and the chord shapes, one slot of time each */
+function heatSongBuild() {
+  const t = {}, sd = slotDur(), N = spb(), add = (st, f, w) => { const k = st + ':' + f; t[k] = (t[k] || 0) + w; };
+  flatBars().forEach(fb => {
+    fb.bar.tab.forEach(n => { if (n.f !== 'x' && n.f != null && S.tuning[n.st] != null) add(n.st, +n.f, sd); });
+    const ch = barChords(fb.bar); ch.forEach(sym => { const v = voicingFor(sym); if (v) v.frets.forEach((f, i) => { if (f != null) add(i, f, sd * N / ch.length * .5); }); });
+  });
+  return t;
+}
+/** position → { v (0..1 share of the busiest spot), t seconds, c mean cents or null, a ambiguous share } for the active source */
+function heatMap() {
+  const out = new Map(); let src, mx = 0;
+  if (HEAT.src === 'song') { if (!HEAT.song) HEAT.song = heatSongBuild(); src = HEAT.song; }
+  else { if (HEAT.tun !== heatTun()) { HEAT.t = {}; HEAT.a = {}; HEAT.cs = {}; HEAT.cw = {}; HEAT.tot = 0; HEAT.amb = 0; HEAT.tun = heatTun(); } src = HEAT.t; }
+  Object.keys(src).forEach(k => { if (src[k] > mx) mx = src[k]; });
+  Object.keys(src).forEach(k => { const live = HEAT.src !== 'song', w = live ? HEAT.cw[k] : 0; out.set(k, { v: mx ? src[k] / mx : 0, t: src[k], c: live && w > .15 ? HEAT.cs[k] / w : null, a: live ? (HEAT.a[k] || 0) / src[k] : 0 }); });
+  return out;
+}
+const heatFmt = s => s < 90 ? s.toFixed(0) + ' s' : (s / 60).toFixed(1) + ' min';
+const HEAT_COL = { flat: '#4a90d9', sharp: '#e8833a', ok: '#3fb27f', out: '#d64545' };
+function paintHeat(force) {
+  const root = FB.root == null ? S.key : FB.root, scPcs = FB.scPcs || new Set(), mp = heatMap(), v = HEAT.view; let chordPcs = new Set(), chordRoot = null;
+  if (v === 'key') { let sym = null; if (FB.follow) { const ph = playheadSlot(), sp = spb(), bi = Math.floor(ph / sp), cd = chordAt(Math.max(0, bi), Math.max(0, Math.floor(ph) - bi * sp)); sym = cd && cd.sym; } if (!sym) sym = barChords((flatBars()[0] || { bar: { chord: '' } }).bar)[0]; const pc = sym && parseChord(sym); if (pc) { chordPcs = new Set(pc.pcs); chordRoot = pc.root; } }
+  const key = ['H', v, HEAT.src, HEAT.rev, root, S.scale, [...chordPcs].join(), AN.midi, CFG.fretNames, S.tuning.join(), S.capo].join();
+  if (!force && key === FB.key) return; FB.key = key;
+  FB.nodes.forEach(row => row.forEach(nd => {
+    const k = nd.st + ':' + nd.n, d = mp.get(k), has = !!d && d.t > 0, s = has ? Math.sqrt(d.v) : 0, inS = scPcs.has(nd.pc), inC = chordPcs.has(nd.pc);
+    nd.g.style.display = ''; nd.gh.setAttribute('opacity', 0); nd.vo.setAttribute('opacity', 0); nd.cam.setAttribute('opacity', 0); nd.ring.setAttribute('opacity', AN.midi != null && AN.midi === nd.midi && HEAT.src === 'live' ? .95 : 0);
+    let fill = 'var(--panel2)', stroke = 'var(--line2)', op = .5, sw = 1.2, tx = 'var(--muted)';
+    if (v === 'where') { if (has) { fill = 'var(--accent)'; stroke = 'var(--accent)'; op = .2 + .8 * s; tx = s > .35 ? '#fff' : 'var(--text)'; } }
+    else if (v === 'tune') {
+      if (has && d.c != null) { const m = Math.abs(d.c); fill = m <= 7 ? HEAT_COL.ok : d.c < 0 ? HEAT_COL.flat : HEAT_COL.sharp; stroke = fill; op = .35 + .65 * Math.min(1, s + .15); tx = '#fff'; }
+      else if (has) { fill = 'var(--muted)'; stroke = 'var(--muted)'; op = .25; }
+    } else {
+      const base = inC ? 'var(--accent)' : inS ? 'var(--accent2)' : HEAT_COL.out; fill = (inC || inS) ? base : 'var(--panel2)'; stroke = base; sw = nd.pc === root || nd.pc === chordRoot ? 3 : 1.5;
+      op = has ? .6 + .4 * s : (inC || inS ? .3 : .16); tx = has && (inC || inS) ? '#fff' : 'var(--text)'; if (has && !inS && !inC) { fill = HEAT_COL.out; op = .5 + .5 * s; tx = '#fff'; }
+    }
+    nd.poly.setAttribute('fill', fill); nd.poly.setAttribute('stroke', stroke); nd.poly.setAttribute('opacity', op); nd.poly.setAttribute('stroke-width', sw);
+    nd.txt.setAttribute('fill', tx); nd.txt.textContent = CFG.fretNames === 'frets' ? nd.n : CFG.fretNames === 'degrees' ? (IVNAMES[(nd.pc - root + 12) % 12]) : pcName(nd.pc);
+  }));
+  heatSummary(mp, root, scPcs);
+}
+function heatSummary(mp, root, scPcs) {
+  const el = $('#fbheatsum'), info = $('#fbinfo'); if (!el) return; let tot = 0, ins = 0, cw = 0, ca = 0;
+  mp.forEach((d, k) => { tot += d.t; const st = +k.split(':')[0], f = +k.split(':')[1], pc = (S.tuning[st] + S.capo + f) % 12; if (scPcs.has(pc)) ins += d.t; if (d.c != null) { cw += d.t; ca += Math.abs(d.c) * d.t; } });
+  let msg;
+  if (!tot) msg = HEAT.src === 'song' ? 'The song has no tab or chords yet.' : 'Nothing yet. Press Listen, play, and the places you use light up. Or switch Source to Song.';
+  else if (HEAT.view === 'where') msg = HEAT.src === 'song' ? 'Every tab note and chord shape in the song. Brighter = more of the song lives there.' : heatFmt(HEAT.tot) + ' of playing · ' + (HEAT.tot ? Math.round(100 * (1 - HEAT.amb / HEAT.tot)) : 100) + '% placed exactly. The rest is shared across every place that note can be played, because a microphone hears the pitch, not the place (turn on the camera for exact positions).';
+  else if (HEAT.view === 'tune') msg = HEAT.src === 'song' ? 'The song is written, not played, so there is no tuning data. Switch Source to Live.' : (cw ? 'Average ' + (ca / cw).toFixed(1) + '¢ off. Blue = flat, green = within 7¢, orange = sharp. Grey = played but too briefly to measure.' : 'No sustained notes measured yet. Hold a few notes for half a second or more.');
+  else msg = Math.round(100 * ins / tot) + '% of ' + (HEAT.src === 'song' ? 'the song' : 'your playing') + ' is inside ' + pcName(root) + ' ' + S.scale + '. Red = outside the key, ring = root. Bright accent = chord tone of the chord under the playhead.';
+  el.textContent = msg; if (info) info.textContent = pcName(root) + ' ' + S.scale + ' · ' + { where: 'where', tune: 'tuning', key: 'in key' }[HEAT.view];
+  const lg = $('#fbheatlg'); if (lg) lg.dataset.v = HEAT.view;
+}
+function heatBar() {
+  const sel = (opts, val, fn) => h('select', { class: 'in', style: { width: 'auto', fontFamily: 'var(--sans)' }, onchange: e => fn(e.target.value) }, opts.map(o => h('option', { value: o[0], selected: o[0] === val }, o[1])));
+  const redo = () => { HEAT.rev++; FB.key = null; paintFret(true); };
+  HEAT.bar = h('div', { class: 'heatbar', style: { display: 'none' } },
+    h('div', { class: 'row', style: { gap: '8px', flexWrap: 'wrap', marginBottom: '6px' } },
+      h('span', { class: 'small muted' }, 'Show'), sel([['where', 'Where you play'], ['tune', 'How in tune'], ['key', 'Which notes belong']], HEAT.view, v => { HEAT.view = v; redo(); }),
+      h('span', { class: 'small muted' }, 'Source'), sel([['live', 'Live (microphone)'], ['song', 'Song (tab + chords)']], HEAT.src, v => { HEAT.src = v; HEAT.song = null; redo(); }),
+      h('button', { class: 'btn sm', title: 'Clear the live heatmap', onclick: () => { heatReset(); toast('Heatmap cleared.', 'ok'); } }, 'Reset heatmap')),
+    h('div', { class: 'tiny muted', id: 'fbheatsum', style: { marginBottom: '6px' } }),
+    h('div', { class: 'heatlg', id: 'fbheatlg', 'data-v': HEAT.view }, h('i', { class: 'lg-where' }), h('i', { class: 'lg-tune' }), h('i', { class: 'lg-key' })));
+  bus.on('song', () => { HEAT.song = null; HEAT.rev++; });
+  bus.on('stats:reset', () => { HEAT.t = {}; HEAT.a = {}; HEAT.cs = {}; HEAT.cw = {}; HEAT.tot = 0; HEAT.amb = 0; HEAT.rev++; heatSave(true); });
+  return HEAT.bar;
+}
+
+/* >>> parts/53-backdrop.js */
+/* ============================================================
+   Part 53 · Performer backdrop — visuals that sit behind a person, not in front of them
+   A mode of the Stage (part 13) rather than a new screen. With it on:
+     · the picture is calmer and dimmer: slower trails, no flashing, gentler glow, and it eases to a new colour when the section changes
+     · it still breathes with the music: a little brighter when you play loud, darker when you stop
+     · a lower third carries what the audience (or the band) needs: the chord and the next one, the section, the lyric line and the one after
+     · the background can be the visuals, plain black, or chroma-key green, for a projector or for OBS to key out
+     · “Clean output window” opens a bare window with no controls on it, which you drag to the projector and make full screen
+   Nothing is sent anywhere: the window is fed from this page’s own canvas.
+   ============================================================ */
+const PBK_DEF = { on: false, bg: 'visuals', dim: .45, calm: true, lower: true, size: 1, pos: 'bottom' };
+STG.pb = Object.assign({}, PBK_DEF, STG.pb || {});
+const PBK = { lv: 0, hue: 0, sec: '' };
+const PBK_BG = { visuals: '#000000', black: '#000000', green: '#00b140' };
+const pbOn = () => !!(STG.pb && STG.pb.on);
+const pbSolid = () => pbOn() && STG.pb.bg !== 'visuals';
+const pbBgColor = () => pbOn() ? PBK_BG[STG.pb.bg] || '#000' : '#000';
+/** the scene as the backdrop wants it: same look, calmer, nudged in hue by the section, plus the smoothed loudness for pbDim */
+function pbScene(sc, info) {
+  if (!pbOn()) return sc;
+  const pb = STG.pb, si = Math.max(0, S.sections.findIndex(s => s.name === info.sec)), target = si * 52;
+  let d = ((target - PBK.hue + 540) % 360) - 180; PBK.hue += d * .015;                      // ease around the colour wheel, a few seconds per change
+  const db = AN.active ? AN.rms : -90, lv = clamp((db + 60) / 50, 0, 1); PBK.lv += (lv - PBK.lv) * (lv > PBK.lv ? .25 : .04);   // quick to rise, slow to fall
+  const o = Object.assign({}, sc, { hue: sc.hue + PBK.hue, flash: 0 });
+  if (pb.calm) { o.trail = Math.max(sc.trail, .8); o.glow = sc.glow * .45; o.sens = Math.min(sc.sens, 1) * .75; o.drift = Math.min(sc.drift || 0, .25); }
+  if (pbSolid()) { o.cam = false; o.kal = 0; o.glow = 0; }
+  return o;
+}
+/** dim the picture; louder playing lifts it a little */
+function pbDim(g, w, h) {
+  if (!pbOn() || pbSolid()) return; const a = clamp(STG.pb.dim - (STG.pb.calm ? .22 : .1) * PBK.lv, 0, .92); if (a < .01) return;
+  g.save(); g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1; g.fillStyle = 'rgba(0,0,0,' + a.toFixed(3) + ')'; g.fillRect(0, 0, w, h); g.restore();
+}
+function pbFill(off) { const g = off.getContext('2d'); g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1; g.fillStyle = pbBgColor(); g.fillRect(0, 0, off.width, off.height); }
+/** chord + next, section, lyric + next lyric, in a panel along the bottom (or the top) */
+function drawLowerThird(g, W, H, info, C) {
+  const pb = STG.pb, lyr = info.lyric, sym = info.sym; if (!sym && !lyr && !(info.playing && info.sec)) return;
+  const u = Math.min(W, H * 1.6) * (pb.size || 1), mono = 'ui-monospace,Menlo,Consolas,monospace', sans = 'system-ui,-apple-system,Segoe UI,Roboto,sans-serif';
+  const ph = u * .2, pw = W * .94, x = W * .03, y = pb.pos === 'top' ? H * .04 : H - ph - H * .05, r = u * .02, cw = u * .34;
+  g.save(); g.shadowColor = 'rgba(0,0,0,.55)'; g.shadowBlur = u * .015;
+  g.beginPath(); g.roundRect ? g.roundRect(x, y, pw, ph, r) : g.rect(x, y, pw, ph); g.fillStyle = 'rgba(8,10,16,.72)'; g.fill(); g.shadowBlur = 0;
+  g.fillStyle = C.a; g.fillRect(x, y + ph * .12, u * .006, ph * .76);                        // accent edge
+  g.textBaseline = 'alphabetic'; g.textAlign = 'left';
+  const csz = Math.round(ph * .44); g.font = `800 ${csz}px ${mono}`; g.fillStyle = '#fff'; g.fillText(sym || '·', x + u * .03, y + ph * .7, cw - u * .05);
+  if (info.next && info.playing) { g.font = `700 ${Math.round(ph * .14)}px ${mono}`; g.fillStyle = C.b; g.fillText('NEXT  ' + info.next, x + u * .03, y + ph * .91, cw - u * .05); }
+  if (info.sec) { g.font = `700 ${Math.round(ph * .12)}px ${sans}`; g.fillStyle = 'rgba(255,255,255,.6)'; g.fillText(info.sec.toUpperCase() + (info.nBars ? '  ' + info.barIn + '/' + info.nBars : ''), x + u * .03, y + ph * .2, cw - u * .05); }
+  const lx = x + cw, lw = pw - cw - u * .03; g.textAlign = 'left';
+  if (lyr) {
+    g.font = `700 ${Math.round(ph * .3)}px ${sans}`; g.fillStyle = '#fff'; g.fillText(lyr, lx, y + ph * (info.lyricNext ? .46 : .6), lw);
+    if (info.lyricNext) { g.font = `600 ${Math.round(ph * .2)}px ${sans}`; g.fillStyle = 'rgba(255,255,255,.55)'; g.fillText(info.lyricNext, lx, y + ph * .8, lw); }
+  } else if (info.playing) { g.font = `600 ${Math.round(ph * .2)}px ${sans}`; g.fillStyle = 'rgba(255,255,255,.4)'; g.fillText('♪', lx, y + ph * .6, lw); }
+  g.restore(); g.textAlign = 'left';
+}
+/** the settings card on the Stage pane */
+function pbCard() {
+  const pb = STG.pb, save = () => { saveStg(); SG.hudDirty = 1; if (SG.pop && !SG.pop.closed) pbPopTint(); };
+  const row = (label, ctl) => h('label', { class: 'small', style: { display: 'flex', flexDirection: 'column', gap: '3px', fontWeight: 700 } }, label, ctl);
+  const chk = (k, label, title) => h('label', { class: 'chk small', title: title || '', style: { display: 'flex', gap: '4px', alignItems: 'center', fontWeight: 700 } }, h('input', { type: 'checkbox', id: 'pb_' + k, checked: pb[k], onchange: e => { pb[k] = e.target.checked; save(); renderStageUI(); } }), label);
+  const sel = (k, opts) => h('select', { class: 'in', id: 'pb_' + k, style: { fontFamily: 'var(--sans)' }, onchange: e => { pb[k] = e.target.value; save(); } }, opts.map(o => h('option', { value: o[0], selected: String(o[0]) === String(pb[k]) }, o[1])));
+  return h('div', { class: 'card', id: 'pbCard', style: { padding: '10px' } }, h('h4', { style: { margin: '0 0 8px' } }, 'Performer backdrop'),
+    h('div', { class: 'tiny muted', style: { marginBottom: '8px' } }, 'For when people are looking at you, not at the picture: calmer and dimmer, still moving with the music, with the chord and lyric in a lower third. Plain black or green for a projector or OBS.'),
+    h('div', { class: 'row', style: { gap: '14px', flexWrap: 'wrap', alignItems: 'center', marginBottom: '8px' } }, chk('on', 'Performer backdrop on', 'Turns the backdrop mode on for the stage, the full screen and the output window'), chk('calm', 'Calm motion', 'Slower trails, no flashing, softer glow'), chk('lower', 'Lower third (chord · lyric)')),
+    h('div', { class: 'sgrid', style: { marginTop: 0 } },
+      row('Background', sel('bg', [['visuals', 'The visuals (dimmed)'], ['black', 'Plain black'], ['green', 'Chroma-key green']])),
+      row('Dimming', h('input', { type: 'range', id: 'pb_dim', min: 0, max: .9, step: .05, value: pb.dim, oninput: e => { pb.dim = +e.target.value; save(); } })),
+      row('Lower third size', sel('size', [[.8, 'Small'], [1, 'Normal'], [1.25, 'Large']])), row('Lower third position', sel('pos', [['bottom', 'Bottom'], ['top', 'Top']]))),
+    h('div', { class: 'row', style: { gap: '8px', marginTop: '8px', flexWrap: 'wrap' } },
+      h('button', { class: 'btn sm', id: 'pbOut', title: 'A bare window with just the picture: drag it to the projector, then double-click it for full screen. Turns the backdrop on.', onclick: () => { pb.on = true; save(); renderStageUI(); stagePop(); } }, '▢ Clean output window'),
+      h('button', { class: 'btn sm', id: 'pbFull', title: 'Fill this screen with the backdrop (Esc to leave)', onclick: () => { pb.on = true; save(); renderStageUI(); stageFull(); } }, '⛶ Full screen')),
+    h('div', { class: 'tiny muted', style: { marginTop: '6px' } }, 'OBS: add the output window as a Window Capture, then Filters → Chroma Key (green). Nothing is uploaded; the window is fed from this page.'));
+}
+/** the output window’s own background follows the choice, and the pointer hides itself when it is still */
+function pbPopTint() { const w = SG.pop; if (!w || w.closed) return; try { w.document.body.style.background = pbBgColor(); } catch (e) { } }
+function pbPopSetup(w) {
+  try {
+    w.document.body.style.background = pbBgColor(); let tm = 0; const hide = () => { w.document.body.style.cursor = 'none'; }; const show = () => { w.document.body.style.cursor = ''; clearTimeout(tm); tm = setTimeout(hide, 2500); };
+    w.document.addEventListener('mousemove', show); tm = setTimeout(hide, 2500);
+  } catch (e) { }
 }
 
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();

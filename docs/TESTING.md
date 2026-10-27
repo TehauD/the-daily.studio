@@ -32,6 +32,10 @@ Each file starts its **own** static server, its own Chromium (fake microphone an
 | `e2e-midi.cjs` | MIDI import: track picker, chords, melody, tempo, time signature, karaoke words, format-0 files, running status, files that cannot be opened, the New song window |
 | `e2e-keep.cjs` | Keep songs safe: the iPhone case, the card and its Add to Home Screen steps, the one-time tip, the backup reminder and its timing, the installed-app case, desktop Chrome |
 | `e2e-record.cjs` | Recording: one press is one take (loop on or off), the song grows to fit and takes the spare bar back, a loop region stacks takes, the three Settings choices, a silent second input is not kept |
+| `e2e-voice.cjs` | Voice: the key's notes, matching a pitch to a note, transposing chords, a range from a spread of notes, the plan for a melody that is too high or fits, transposing the song as one undo step, the window with the fake microphone, the Pitch ribbon on the Visuals, the kill switch |
+| `e2e-edit.cjs` | Range editing: Shift-drag and Mark in / out, Cut out (closes the gap), Silence, all lanes or one, splitting across clips, fades at the cuts, punch in recording only inside the stretch, clip level, one undo step each, keys, phone clip bar |
+| `e2e-heat.cjs` | Heatmap: one place is exact, several are shared and counted as shared, the camera decides, a blip is ignored, the three views and their colours, the summary wording, the Song source, a new tuning starts fresh, Reset, switching back to Scale |
+| `e2e-backdrop.cjs` | Performer backdrop: off by default, calm scene values, the colour easing between sections, dimming and loudness, green and black backgrounds on the real stage canvas, the lower third (bottom, top, nothing to show), the clean output window and its colour, the kill switch |
 | `e2e-layout.cjs` | Nothing clipped or squeezed: time display from 1280 px, the beat, key and mode boxes and the song bar from 1440 to 1920 px, lane headers and clip bar on a phone, no stray “null” |
 | `mobile.cjs` | Phone, tablet and desktop layouts, the keypad, drawers, gestures, installable-app files |
 

@@ -116,7 +116,7 @@ function strumAt(t, sym, ch, style) {
   const p = parseChord(sym); if (!p) return; const useSym = style.power ? (pcName(p.root, false) + '5') : sym; const v = voicingFor(useSym) || voicingFor(sym); if (!v) return;
   const notes = []; v.frets.forEach((f, i) => { if (f != null) notes.push({ st: i, m: S.tuning[i] + S.capo + f }); });
   if (style.arp) { const d = +ch; if (!d) return; const n = notes[(d - 1) % notes.length]; pluck('rhythm', t, n.m, .62, { id: 'r' + n.st, pan: (n.st - 2.5) * .05 }); return; }
-  if (ch === '.') return; const lc = ch.toLowerCase(), down = lc === 'd' || lc === 'm', acc = ch === ch.toUpperCase() ? 1 : 0;
+  if (!ch || ch === '.') return; const lc = ch.toLowerCase(), down = lc === 'd' || lc === 'm', acc = ch === ch.toUpperCase() ? 1 : 0;
   const order = down ? notes : notes.slice().reverse(), gap = .0105 + Math.random() * .003, take = down ? order : order.slice(0, Math.max(3, order.length - 2));
   take.forEach((n, k) => pluck('rhythm', t + k * gap, n.m, (lc === 'm' ? .55 : acc ? .85 : .6) * (down ? 1 : .8) * (.92 + Math.random() * .16), { id: 'r' + n.st, dead: lc === 'm' && k > 0 ? true : false, t60m: lc === 'm' ? .3 : 1, pan: (n.st - 2.5) * .06 }));
 }
@@ -156,7 +156,7 @@ function scheduleSlot(slot, time) {
 async function play(fromRec) {
   if (T.playing || OFR.busy) return; try { bandHint(); } catch (e) { } await startAudio(); const c = E.ctx; applyMix(); if (!S.sections.length || !songSlots()) { toast('Add a section with at least one bar first', 'warn'); return; }
   T.rec = !!fromRec || T.rec; T.playing = true; T.ending = false; T.grew = 0; T.q = []; T.startCursor = T.cursor;
-  const ci = T.rec && CFG.countIn > 0 ? CFG.countIn * spb() : 0; T.slot = T.cursor - ci; T.next = c.currentTime + .08; T.wantRec = T.rec; T.recFrom = T.cursor;
+  const ci = T.rec && !PUNCH.on && CFG.countIn > 0 ? CFG.countIn * spb() : 0; T.slot = T.cursor - ci; T.next = c.currentTime + .08; T.wantRec = T.rec; T.recFrom = PUNCH.on ? PUNCH.startSlot : T.cursor;
   if (!T.loopB) T.loopB = null; scheduleTakes(T.next + ci * slotDur(), T.cursor * slotDur()); trackStart(T.next + ci * slotDur(), T.cursor, true);
   clearInterval(T.timer); T.timer = setInterval(tick, 25); tick(); bus.emit('transport');
 }
@@ -170,6 +170,7 @@ function tick() {
       T.ending = true; T.endAt = T.next; break;
     }
     if (T.wantRec && T.slot === T.recFrom) { recBegin(T.slot, T.next); T.wantRec = false; }
+    if (REC && REC.punch && !REC.tEnd && T.slot >= REC.punch.endSlot) { const r = REC; r.tEnd = T.next; setTimeout(() => { if (REC === r) { recEnd(); T.rec = false; bus.emit('transport'); } }, Math.max(0, (r.tEnd - E.ctx.currentTime) * 1000) + 150); }
     scheduleSlot(T.slot, T.next); T.q.push({ slot: T.slot, time: T.next }); if (T.q.length > 256) T.q.shift(); T.slot++; T.next += dur;
   }
 }
@@ -188,7 +189,7 @@ function recGrowDone() {
 function stopPlay(keep) {
   if (!T.playing) { if (!keep) { T.cursor = 0; bus.emit('transport'); } return; }
   T.playing = false; clearInterval(T.timer); stopTakes(); trackStop(); if (E.pl && E.worklet) Object.values(E.pl).forEach(n => n.port.postMessage({ t: 'kill' }));
-  const was = T.rec; if (REC) recEnd(); recGrowDone(); T.rec = false; T.cursor = T.startCursor; bus.emit('transport'); if (was) bus.emit('rec:done');
+  const was = T.rec; if (REC) recEnd(); recGrowDone(); T.rec = false; PUNCH.on = false; T.cursor = T.startCursor; bus.emit('transport'); if (was) bus.emit('rec:done');
 }
 const slotAtTime = time => {
   const q = T.q; if (!q.length) return T.cursor; let e = q[0]; for (let i = q.length - 1; i >= 0; i--) if (q[i].time <= time) { e = q[i]; break; }
@@ -203,9 +204,9 @@ const TAKES = []; let REC = null;
 /* Recording captures whatever is armed, all on the same clock: the guitar (dry DI + wet print) and/or the vocal (input 2). */
 function recBegin(slot, ctxTime) {
   if (!E.hasInput) { toast('No audio input is open — recording the backing/tab only', 'warn'); return; }
-  const g = armedG(), v = armedV();
+  let g = armedG(), v = armedV(); if (PUNCH.on) { g = PUNCH.kind === 'gtr'; v = PUNCH.kind === 'vox'; }       // a punch-in records the lane being punched, nothing else
   if (!g && !v) { toast('Nothing is armed — arm the Guitar or Vocal lane (the ● button at the left of the arrangement) to record', 'warn'); return; }
-  REC = { dry: [], wet: [], vox: [], g, v, t0: ctxTime, startSec: slot * slotDur(), bpm: S.bpm, preset: RIG.cur, n: 0, cam: [], pkG: [], pkV: [], perf0: performance.now() + (ctxTime - E.ctx.currentTime) * 1000 };
+  REC = { dry: [], wet: [], vox: [], g, v, t0: ctxTime, startSec: slot * slotDur(), bpm: S.bpm, preset: RIG.cur, n: 0, cam: [], pkG: [], pkV: [], perf0: performance.now() + (ctxTime - E.ctx.currentTime) * 1000, punch: PUNCH.on ? Object.assign({}, PUNCH) : null, tEnd: 0 };
   if (g) { E.tapDI.on(true); if (CFG.rec.wet) E.tapWet.on(true); } if (v) E.tapVox.on(true); bus.emit('rec:state', true);
 }
 function pushBlock(arr, m, t0) {
@@ -226,13 +227,15 @@ function recEnd() {
   const pG = r.g && r.v ? pkOf(r.dry) : 0, pV = r.g && r.v ? pkOf(r.vox) : 0, skipped = [];
   const quietLane = (me, other) => r.g && r.v && me < .001 && other > .03;      // below −60 dBFS next to a lane that is above −30 dBFS
   const mk = (kind, parts, wetParts) => {
-    if (!parts.length) return; if (kind === 'gtr' ? quietLane(pG, pV) : quietLane(pV, pG)) { skipped.push(kind === 'gtr' ? 'guitar' : 'vocal'); return; } const dry = cat(parts), wet = wetParts && wetParts.length ? cat(wetParts) : null; if (dry.length < sr * .25) return;
+    if (!parts.length) return; if (kind === 'gtr' ? quietLane(pG, pV) : quietLane(pV, pG)) { skipped.push(kind === 'gtr' ? 'guitar' : 'vocal'); return; } let dry = cat(parts), wet = wetParts && wetParts.length ? cat(wetParts) : null; const lim = r.tEnd ? Math.max(0, Math.round((r.tEnd - r.t0) * sr)) : 0; if (lim && lim < dry.length) { dry = dry.slice(0, lim); if (wet) wet = wet.slice(0, lim); }       // a punch-in ends exactly at its out point
+    if (dry.length < sr * (r.punch ? .05 : .25)) return;
     let pk = 0, e = 0; for (let i = 0; i < dry.length; i++) { const a = Math.abs(dry[i]); if (a > pk) pk = a; e += dry[i] * dry[i]; }
     const vox = kind === 'vox', nth = TAKES.filter(t => (t.kind === 'vox') === vox).length + 1;
     const take = { id: uid(), kind, name: (vox ? 'Vocal ' : 'Take ') + nth, startSec: start, sr, dry, wet, peaks: peaksOf(dry), g: 1, pan: 0, mute: false, solo: false, mode: vox ? 'wet' : (wet && CFG.rec.dry ? 'reamp' : 'wet'), bpm: r.bpm, preset: r.preset, peak: dB(pk), rms: dB(Math.sqrt(e / dry.length)), dur: dry.length / sr, t: Date.now(), stats: vox ? null : statsSnapshot(), cam: vox ? [] : r.cam };
-    if (!vox && !CFG.rec.dry && wet) take.mode = 'wet'; TAKES.push(take); made.push(take);
+    if (!vox && !CFG.rec.dry && wet) take.mode = 'wet'; made.push(take); if (!(r.punch && tkrPunchApply(take, r.punch))) TAKES.push(take);
   };
   if (r.g) mk('gtr', r.dry, r.wet); if (r.v) mk('vox', r.vox, null);
+  if (r.punch && made.length) { PUNCH.on = false; try { tkFit(); tkResched(); histPush(r.punch.before); } catch (e) { console.warn(e); } TL.dirty = true; bus.emit('takes'); toast('Punched in ' + made[0].dur.toFixed(1) + ' s · Undo (Ctrl/⌘+Z) puts the old take back', 'ok'); return; }
   if (made.length) { xpSignal(3); bus.emit('takes'); toast(made.map(t => t.name + ' (' + t.dur.toFixed(1) + ' s, peak ' + t.peak.toFixed(1) + ' dBFS)').join('  +  ') + ' recorded' + (skipped.length ? ' · the ' + skipped.join(' and ') + ' input was silent, so it was not kept' : ''), 'ok'); }
 }
 const TK_BUFS = new WeakMap();    // one AudioBuffer per recording, shared by every clip that plays it
@@ -249,7 +252,7 @@ function scheduleTakes(atTime, fromSec) {
     tk._g = null; tk._pn = null; if (tk._fx) { tk._fx.dispose(); tk._fx = null; } const L = tkLead(tk), vox = L.kind === 'vox', which = L.mode === 'reamp' ? 'dry' : 'wet', buf = takeBuffer(tk, which) || takeBuffer(tk, 'dry'); if (!buf) return;
     const len = tkLen(tk); if (len <= 0 || tk.startSec + len <= fromSec) return;
     const rel = fromSec - tk.startSec, c0 = Math.max(0, rel), when = atTime + c0 - rel, tm = c => atTime + c - rel;        // c0: where in the clip we start; tm(c): when clip-second c is heard
-    const src = E.ctx.createBufferSource(), fd = gn(1), g = gn(takeAudible(tk) ? (L.g == null ? 1 : L.g) : 0), pn = E.ctx.createStereoPanner(); pn.pan.value = L.pan || 0; src.buffer = buf; src.connect(fd); fd.connect(g); g.connect(pn); tk._g = g; tk._pn = pn;
+    const src = E.ctx.createBufferSource(), cgn = gn(tk.cg == null ? 1 : tk.cg), fd = gn(1), g = gn(takeAudible(tk) ? (L.g == null ? 1 : L.g) : 0), pn = E.ctx.createStereoPanner(); pn.pan.value = L.pan || 0; src.buffer = buf; src.connect(cgn); cgn.connect(fd); fd.connect(g); g.connect(pn); tk._g = g; tk._cg = cgn; tk._pn = pn;
     const [fi, fo] = tkFades(tk); if (fi > 0 || fo > 0) { const gf = c => Math.max(0, Math.min(1, fi > 0 ? c / fi : 1, fo > 0 ? (len - c) / fo : 1)), p = fd.gain; p.setValueAtTime(gf(c0), Math.max(0, when)); [fi, len - fo, len].forEach(c => { if (c > c0 + 1e-6) p.linearRampToValueAtTime(gf(c), tm(c)); }); }
     if (vox) pn.connect(E.voxStrip.in); else if (which === 'dry' && L.mode === 'reamp') pn.connect(E.rigIn); else { tk._fx = fxStrip(E.takesIn); tk._fx.set(L.fx); pn.connect(tk._fx.in); }
     src.start(when, tkIn(tk) + c0, len - c0); T.srcs.push(src);

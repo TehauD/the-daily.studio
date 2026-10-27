@@ -2,6 +2,21 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.3.0 — 2026-10-26 — Voice, editing, heatmap and performer backdrop
+
+### Added
+- **Voice.** A **〰 Voice** chip in the song bar (and a tile on a phone) opens the Voice window. **Pitch ribbon**: the note you are singing, drawn against the notes of the song's key, green within 20 cents of one, yellow within 35, red beyond; bright rows are the chord that is playing. **Find my range**: sing from your lowest note to your highest once and it is kept on this device. **Find my key**: it compares your range with the song's melody and offers the keys that fit, and **Move the song to …** moves the key, the chords, the `[chords]` in the lyrics and the tab in one undo step (recorded takes stay as they were). The ribbon can also sit over the Visuals (**Pitch** button).
+- **Cut a stretch out of a recording.** Shift-drag across a take lane (or **[ In** / **Out ]** at the playhead, which works with a finger) to mark a stretch. **Cut out** (<kbd>Del</kbd>) takes it out and closes the gap; **Silence** takes it out and leaves the gap; **Punch in** plays from a bar before it and records only inside it, then drops the new audio into the same lane. **All lanes** (on by default) edits a guitar and a vocal recorded together as one, so they stay in step. Every cut gets an 8 ms fade so it never clicks. One undo step each.
+- **Clip level.** A level for one clip, separate from the lane's level, in the clip bar and the clip menu.
+- **Fretboard heatmap.** Fretboard ▸ the third menu ▸ **Heatmap**. **Where you play** (time on each string and fret), **How in tune** (average cents at each position: blue flat, green within 7 cents, orange sharp) and **Which notes belong** (key and chord tones lit, notes outside the key in red, with the share of your playing that is inside the key). Source is **Live** (the microphone, kept for the session and across reloads) or **Song** (the tab and chord shapes). A microphone hears the pitch, not the string, so live time is placed exactly only when the camera sees your hand or the note has one possible place; otherwise it is shared across every place the note can be played, and the summary says how much was shared. **Reset heatmap** clears it; a new tuning or capo starts a fresh one.
+- **Performer backdrop.** Stage ▸ **Performer backdrop**: the visuals calmer and dimmer (long trails, no flashing, softer glow), easing to a new colour on each section and a little brighter when you play loud; a **lower third** with the chord and the next one, the section, and the lyric line and the one after; and a background of **the visuals**, **plain black** or **chroma-key green**. **Clean output window** opens a bare window (just the picture, a hidden pointer, and the same background colour) to drag to a projector or capture in OBS.
+
+### Changed
+- A plain click on a lane clears a marked stretch; <kbd>Del</kbd> and <kbd>Esc</kbd> work while the clip bar has focus. The Help text for recording was updated for the 2.2.1 behaviour.
+
+### Not built
+- Dragging a clip onto a different lane.
+
 ## 2.2.1 — 2026-10-26 — One press, one take
 
 ### Fixed

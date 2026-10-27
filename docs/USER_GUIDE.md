@@ -2,7 +2,7 @@
 
 A practical walkthrough of every panel. For a ten-minute orientation, press **?** in the app and choose **Take the guided tour**.
 
-Contents: [Clips and the mix](#clips-move-trim-fade-split-22) · [Fast WAV render](#faster-than-real-time-wav-render-22) · [Open a MIDI file](#open-a-midi-file-22) · [Keep songs safe](#keep-songs-safe-22) · [Perform, share and back up](#perform-share-and-back-up-20) · [Getting sound](#getting-sound-in-and-out) · [Tones and the Rig](#tones-and-the-rig) · [The band](#the-band) · [Arrangement and recording](#arrangement-and-recording) · [Tab editor](#tab-editor) · [Song, tunings and capo](#song-tunings-and-capo) · [Fretboard and tuner](#fretboard-and-tuner) · [Transcribe](#transcribe-audio-to-tab) · [Stems](#stems-and-backing-tracks) · [Neural map](#neural-map) · [Visuals and Stage](#visuals-and-stage) · [Vision](#vision-lab) · [Research](#research-panel) · [Export, history and backup](#export-history-and-backup) · [MIDI](#midi) · [Layout](#layout-and-themes)
+Contents: [Voice](#voice-pitch-ribbon-your-range-find-my-key-23) · [Cut, silence and punch in](#cut-silence-and-punch-in-23) · [Heatmap](#heatmap-23) · [Performer backdrop](#performer-backdrop-23) · [Clips and the mix](#clips-move-trim-fade-split-22) · [Fast WAV render](#faster-than-real-time-wav-render-22) · [Open a MIDI file](#open-a-midi-file-22) · [Keep songs safe](#keep-songs-safe-22) · [Perform, share and back up](#perform-share-and-back-up-20) · [Getting sound](#getting-sound-in-and-out) · [Tones and the Rig](#tones-and-the-rig) · [The band](#the-band) · [Arrangement and recording](#arrangement-and-recording) · [Tab editor](#tab-editor) · [Song, tunings and capo](#song-tunings-and-capo) · [Fretboard and tuner](#fretboard-and-tuner) · [Transcribe](#transcribe-audio-to-tab) · [Stems](#stems-and-backing-tracks) · [Neural map](#neural-map) · [Visuals and Stage](#visuals-and-stage) · [Vision](#vision-lab) · [Research](#research-panel) · [Export, history and backup](#export-history-and-backup) · [MIDI](#midi) · [Layout](#layout-and-themes)
 
 ---
 
@@ -126,6 +126,32 @@ Every recording on a take lane is a **clip**. Click one to select it (its outlin
 * A clip stays on its own lane. Dragging a clip to a different lane is not built yet.
 * **One history.** <kbd>Ctrl/⌘</kbd>+<kbd>Z</kbd> steps back through clip edits, song edits, the stem mix and Auto-balance together, newest first.
 
+### Voice: pitch ribbon, your range, Find my key (2.3)
+
+![The Voice window](screenshots/35-voice.png)
+
+Press the **〰 Voice** chip in the song bar (next to Perform). With an input connected (the Vocal channel, or the guitar input if that is where the microphone is) the window draws the **pitch ribbon**: the note you are singing, over the last few seconds, against the notes of the song's key. Green is within 20 cents of a note in the key, yellow within 35, red beyond. The brighter rows are the chord that is playing.
+
+* **Find my range.** Press it, sing from your lowest note to your highest once, then **Done**. The range is kept on this device only.
+* **Find my key.** It compares your range with the song's melody (the lead tab) and suggests the key that sits best in your voice, plus two alternatives, each with how many semitones it moves. **Move the song to …** changes the key, every chord, the `[chords]` in the lyrics and the tab frets together, as one undo step. Recorded takes stay as they were (they are audio). If the song already fits, it says so and changes nothing.
+* The ribbon can also sit over the Visuals: the **Pitch** button in the Visuals bar.
+* Nothing is recorded by the Voice window and nothing leaves the device. The kill switch (<kbd>Ctrl/⌘</kbd>+<kbd>.</kbd>) stops it.
+
+### Cut, silence and punch in (2.3)
+
+![A marked stretch](screenshots/36-range.png)
+
+Mark a stretch of a take: **Shift-drag** across its lane (hold <kbd>Alt</kbd> for no snapping), or put the playhead down and press **[ In** and **Out ]** in the clip bar, which also works with a finger. The clip bar then shows its length and the actions:
+
+| Button | What it does |
+| --- | --- |
+| **Cut out** (<kbd>Del</kbd>) | Takes the stretch out of the recording and **closes the gap**; everything after it moves earlier. |
+| **Silence** | Takes it out and **leaves the gap**. |
+| **Punch in** | Plays from a bar before the stretch, records **only inside it**, and puts the new audio in the same lane where the old stretch was. |
+| **All lanes** | On (the default): every take lane is edited together, so a guitar and a vocal recorded as one pass stay in step. Off: only the lane you marked. |
+
+The band and the chords do not move. Every cut has an 8 ms fade, so it never clicks. Each action is one undo step. <kbd>Esc</kbd> or a click on empty lane clears the mark. **Clip level** in the clip bar and the clip menu sets one clip's level, on top of the lane's own.
+
 ### Faster-than-real-time WAV render (2.2)
 
 **Bounce master WAV** and **Bounce this part** no longer wait for the song to play. The app builds a second copy of its sound engine that is not connected to your speakers, schedules every note, take and backing-track stem on it, and mixes the song as fast as your processor allows: the same strips, effects, master tone and limiter that you hear, in the same order.
@@ -200,6 +226,22 @@ Everything follows: the tuner's string circles (click one to hear its reference 
 
 The **Fretboard** (5) draws a hexagon fretboard for your tuning and capo. Pick a **Root** and a **Scale** (major, minor, pentatonics, blues, the modes, harmonic and melodic minor, Phrygian dominant, whole tone, diminished, Hirajoshi), then choose what to overlay: **Scale**, **Chord tones (current chord)**, **Scale + chord**, or **Live only** (just what you play). Label notes as **Note names**, **Scale degrees** or **Fret numbers**; **Follow song** tracks the song's key and chord; **⇄ Handedness** mirrors the board for left-handed players. Click any note to hear it. With Vision active, tracked finger positions overlay too.
 
+### Heatmap (2.3)
+
+![Where you play](screenshots/37-heatmap.png)
+
+Choose **Heatmap (where you play)** in the third menu of the Fretboard. Three views:
+
+* **Where you play**: time spent on each string and fret. Brighter is more.
+* **How in tune**: the average cents at each position. Blue is flat, green is within 7 cents, orange is sharp, grey was played too briefly to measure.
+* **Which notes belong**: every position coloured by the key and the chord under the playhead (chord tones in the accent colour, key notes in the second colour, notes outside the key in red), sized by how much you used it, with the share of your playing that is inside the key.
+
+![How in tune](screenshots/38-heatmap-tuning.png)
+
+**Source** is **Live (microphone)**, kept for the session and across reloads on this device, or **Song (tab + chords)**, which counts the lead tab and the chord shapes. **Reset heatmap** clears the live one; changing the tuning or capo starts a fresh one, because the old frets would be wrong.
+
+**An honest limit.** A microphone hears a pitch, not a string. The same note can be played in several places on the neck, so live time is placed **exactly** only when the camera sees your hand (Vision tab) or the note has one possible place. Otherwise it is shared evenly across every place that note can be played, and the summary line says how much of your playing was shared. For exact positions, turn the camera on, or use the **Song** source, which is written down and so is exact.
+
 The **Tuner** (right sidebar) shows the detected note, frequency, cents and clarity. A note within ±5 ¢ turns green. Click a string circle for a reference pitch. Below it are the level meters, **Live analysis** (chord, key, centroid, rolloff, vibrato and more) and a spectrum.
 
 ## Transcribe: audio to tab
@@ -248,6 +290,19 @@ A node graph of the music as it plays: notes, chords, functions (tonic, subdomin
 **Camera look.** Turn on **📷 Camera backdrop** (Visuals tab, or per scene in Stage) after starting the camera in the Vision tab, then pick how it sits with the visuals: *Dimmed behind the visuals*; *Visuals frame me (edges in)*, where you stay clear in a soft oval and the visuals live around the edges (drag the slider to size the clear area); or *Me in front (green screen)*, which cuts you out so the visuals play behind you. The cut-out downloads a small model the first time (Google's selfie segmenter, nothing is uploaded); offline it falls back to edges-in. Good light and a plain-ish background help the cut-out.
 
 **Stage** (7) is the performance surface: full-screen visuals with **eight scenes** (<kbd>1</kbd>…<kbd>8</kbd> when Stage is focused, or MIDI notes 48–55). Each scene picks a visual and sets hue and hue drift, trails, glow, kaleidoscope, sensitivity and beat flash, plus overlays for the current chord, lyric, beat, tuner and song info. **Auto-switch on section** changes scene by section name as the song plays. Move the mouse to show the controls; they fade when idle.
+
+### Performer backdrop (2.3)
+
+![The performer backdrop](screenshots/39-backdrop.png)
+
+For when people are looking at you and not at the picture. In **Stage ▸ Performer backdrop**:
+
+* **Calm motion** and **Dimming**: long trails, no flashing, a softer glow, and the picture eases to a new colour when the section changes. It still breathes with you: a little brighter when you play loud, darker when you stop.
+* **Lower third**: the chord and the next one, the section and bar, and the lyric line with the one after it, in a panel along the bottom (or the top). Three sizes.
+* **Background**: the visuals (dimmed), **plain black**, or **chroma-key green**.
+* **Clean output window** opens a bare window with only the picture, no buttons, the pointer hides after a moment and the edges match the background. Drag it to the projector and double-click it for full screen. In OBS, add it as a **Window Capture** and use **Filters ▸ Chroma Key** on the green. **Full screen** does the same for this window.
+
+Nothing is sent anywhere: the output window is fed from this page's own canvas. The kill switch still stops everything.
 
 ## Vision lab
 

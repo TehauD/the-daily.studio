@@ -162,7 +162,9 @@ document.addEventListener('keydown', e => {
   if (mod && e.key.toLowerCase() === 'z' && !typing) { e.preventDefault(); e.shiftKey ? redo() : undo(); return; }
   if (mod && e.key.toLowerCase() === 'y' && !typing) { e.preventDefault(); redo(); return; }
   if (e.altKey && /^[0-9]$/.test(e.key)) { e.preventDefault(); const t2 = dockVisible()[e.key === '0' ? 9 : +e.key - 1]; if (t2) { FLOATS.has(t2[0]) ? floatFront(t2[0]) : dockGo(t2[0]); } return; }
-  if (!typing && TKSEL.id && !(t && t.closest && t.closest('dialog,.pop')) && (document.activeElement === document.body || (UI.tls && UI.tls.contains(document.activeElement)))) {
+  if (!typing && (TKSEL.id || TKR.on) && !(t && t.closest && t.closest('dialog,.pop')) && (document.activeElement === document.body || (UI.tls && UI.tls.contains(document.activeElement)) || (document.activeElement && document.activeElement.closest && document.activeElement.closest('.clipbar')))) {
+    if (TKR.on && !mod && (e.key === 'Delete' || e.key === 'Backspace')) { e.preventDefault(); tkrApply(true); return; }
+    if (TKR.on && e.key === 'Escape') { e.preventDefault(); tkrClear(); return; }
     if (mod && e.key.toLowerCase() === 'd') { e.preventDefault(); tkDup(); return; }
     if (mod && e.key.toLowerCase() === 'e') { e.preventDefault(); tkSplit(); return; }
     if (!mod && (e.key === 'Delete' || e.key === 'Backspace')) { e.preventDefault(); tkDelete(); return; }

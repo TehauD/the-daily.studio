@@ -15,13 +15,13 @@ function buildFretPane() {
   const p = PANES.fret, sel = (opts, val, fn) => h('select', { class: 'in', style: { width: 'auto', fontFamily: 'var(--sans)' }, onchange: e => fn(e.target.value) }, opts.map(o => h('option', { value: o[0], selected: o[0] === val }, o[1])));
   UI.fbRoot = sel(NS.map((n, i) => [i, n]), S.key, v => { FB.root = +v; renderFret(); }); FB.root = S.key;
   UI.fbScale = sel(Object.keys(SCALES).map(n => [n, n]), S.scale, v => { S.scale = v; commit(false); renderFret(); });
-  UI.fbMode = sel([['scale', 'Scale'], ['chord', 'Chord tones (current chord)'], ['both', 'Scale + chord'], ['none', 'Live only']], FB.mode, v => { FB.mode = v; renderFret(); });
+  UI.fbMode = sel([['scale', 'Scale'], ['chord', 'Chord tones (current chord)'], ['both', 'Scale + chord'], ['none', 'Live only'], ['heat', 'Heatmap (where you play)']], FB.mode, v => { FB.mode = v; FB.key = null; renderFret(); });
   const lab = sel([['notes', 'Note names'], ['degrees', 'Scale degrees'], ['frets', 'Fret numbers']], CFG.fretNames, v => { CFG.fretNames = v; saveCfg(); renderFret(); });
   p.append(h('div', { class: 'card' }, h('h4', {}, 'Fretboard · tuning-, capo- and scale-aware'), h('div', { class: 'card-b' },
     h('div', { class: 'row', style: { gap: '8px', flexWrap: 'wrap', marginBottom: '8px' } }, h('span', { class: 'small muted' }, 'Root'), UI.fbRoot, UI.fbScale, UI.fbMode, lab,
       h('button', { class: 'btn sm' + (FB.follow ? ' on' : ''), onclick: e => { FB.follow = !FB.follow; e.target.classList.toggle('on', FB.follow); }, title: 'Chord tones follow the chord under the playhead' }, 'Follow song'),
       h('button', { class: 'btn sm', onclick: () => { CFG.left = !CFG.left; saveCfg(); renderFret(); } }, '⇄ Handedness'), h('span', { class: 'grow' }), h('span', { class: 'chip', id: 'fbinfo' })),
-    UI.fb = h('div', { class: 'fbscroll' }), h('div', { class: 'tiny muted', style: { marginTop: '6px' } }, 'Click any position to hear it. Orange ring = what you are playing right now (audio f0). Dashed ring = where the camera believes your fretting fingers are. Root = filled hexagon.'))));
+    UI.fbHeat = heatBar(), UI.fb = h('div', { class: 'fbscroll' }), h('div', { class: 'tiny muted', style: { marginTop: '6px' } }, 'Click any position to hear it. Orange ring = what you are playing right now (audio f0). Dashed ring = where the camera believes your fretting fingers are. Root = filled hexagon.'))));
   bus.on('song', () => { FB.root = S.key; UI.fbRoot.value = S.key; UI.fbScale.value = S.scale; renderFret(); }); bus.on('fret', renderFret); bus.on('scale', renderFret); bus.on('dock', id => { if (id === 'fret') renderFret(); }); renderFret();
 }
 function hexPts(cx, cy, r) { let s = ''; for (let i = 0; i < 6; i++) { const a = Math.PI / 3 * i + Math.PI / 6; s += (cx + r * Math.cos(a)).toFixed(1) + ',' + (cy + r * Math.sin(a)).toFixed(1) + ' '; } return s; }
@@ -50,7 +50,8 @@ function renderFret() {
   UI.fb.innerHTML = ''; UI.fb.append(svg); FB.scPcs = scPcs; FB.root = root; paintFret(true);
 }
 function paintFret(force) {
-  if (!FB.nodes.length) return; const root = FB.root, left = CFG.left; let chordPcs = new Set(), chordRoot = null, chName = '';
+  if (UI.fbHeat) UI.fbHeat.style.display = FB.mode === 'heat' ? '' : 'none';
+  if (!FB.nodes.length) return; if (FB.mode === 'heat') return paintHeat(force); const root = FB.root, left = CFG.left; let chordPcs = new Set(), chordRoot = null, chName = '';
   if (FB.mode !== 'scale' && FB.mode !== 'none') {
     let sym = null; if (FB.follow) { const ph = playheadSlot(), sp = spb(), bi = Math.floor(ph / sp), cd = chordAt(Math.max(0, bi), Math.max(0, Math.floor(ph) - bi * sp)); sym = cd && cd.sym; }
     if (!sym) sym = (barChords((flatBars()[0] || { bar: { chord: '' } }).bar)[0]); const pc = sym && parseChord(sym); if (pc) { chordPcs = new Set(pc.pcs); chordRoot = pc.root; chName = sym; }
@@ -84,6 +85,7 @@ function buildVisPane() {
     h('button', { class: 'btn sm', id: 'vzGoStage', title: 'Full-screen visuals with the camera: you in front of the hexagons', onclick: () => goOnStage() }, '🎥 Go on stage'),
     h('button', { class: 'btn sm' + (VZ.cam ? ' on' : ''), id: 'vzCamBtn', title: 'Put yourself center stage: turns the camera on behind the visuals', onclick: () => vzCamPress() }, '📷 Camera backdrop'), camFxBox(),
     h('button', { class: 'btn sm' + (CFG.vzNeck !== false ? ' on' : ''), id: 'vzNeckBtn', title: 'Show a small guitar neck on the visuals: what is playing, what is coming next, the note you are singing', onclick: e => { CFG.vzNeck = CFG.vzNeck === false; saveCfg(); e.currentTarget.classList.toggle('on', CFG.vzNeck !== false); } }, '🎸 Neck'),
+    h('button', { class: 'btn sm' + (CFG.vzRibbon ? ' on' : ''), id: 'vzRibbonBtn', 'aria-pressed': String(!!CFG.vzRibbon), title: 'Show your pitch on the visuals: the note you sing against the notes of the key and the chord that is playing', onclick: e => { CFG.vzRibbon = !CFG.vzRibbon; saveCfg(); e.currentTarget.classList.toggle('on', !!CFG.vzRibbon); e.currentTarget.setAttribute('aria-pressed', String(!!CFG.vzRibbon)); if (CFG.vzRibbon) voxReset(); } }, '〰 Pitch'),
     h('button', { class: 'btn sm', onclick: () => { const w = UI.vwrap; (document.fullscreenElement ? document.exitFullscreen() : w.requestFullscreen && w.requestFullscreen()); } }, '⛶ Stage mode'));
   UI.vwrap = h('div', { class: 'vwrap', style: { flex: 1, minHeight: '320px' } }, UI.vcv = h('canvas', { class: 'vcanvas', style: { height: '100%', minHeight: '320px' } }));
   p.append(bar, UI.vwrap); new ResizeObserver(() => { const d = (window.devicePixelRatio || 1) * (CFG.vq || 1), w = UI.vcv.clientWidth, hh = UI.vcv.clientHeight; if (w && (UI.vcv.width !== Math.floor(w * d) || UI.vcv.height !== Math.floor(hh * d))) { UI.vcv.width = Math.floor(w * d); UI.vcv.height = Math.floor(hh * d); VZ.spec = null; VZ.hexes = null; } }).observe(UI.vwrap);
@@ -114,6 +116,7 @@ function drawVis(cvo, o) {
   if (camOn && !cvo) camTop(g, W, H);
   if (MODE === 'halo' && !cvo) haloFront(g);   // stage draws its own camera layer after trails and kaleidoscope
   if (!cvo && CFG.vzNeck !== false && !document.body.classList.contains('perform-on')) { const r = neckRect(W, H); drawMiniNeck(g, r[0], r[1], r[2], r[3], { C }); }
+  if (!cvo && CFG.vzRibbon && !document.body.classList.contains('perform-on') && typeof voxDraw === 'function') { const r = voxRect(W, H); voxDraw(g, r[0], r[1], r[2], r[3], { C, labels: H > 260 }); }
   if (o.noText) return;
   g.fillStyle = 'rgba(255,255,255,.55)'; g.font = `${Math.round(11 * H / 400 + 6)}px ui-monospace,Menlo,monospace`; g.textBaseline = 'top';
   if (AN.midi != null && AN.active) { g.fillStyle = 'rgba(255,255,255,.85)'; g.font = `800 ${Math.round(28 * Math.min(W, H * 2) / 900 + 10)}px ui-monospace,Menlo,monospace`; g.fillText(pcName(AN.midi) + (Math.floor(AN.midi / 12) - 1) + '  ' + (AN.cents >= 0 ? '+' : '') + AN.cents.toFixed(0) + '¢', 14, 12); }

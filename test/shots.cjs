@@ -92,6 +92,30 @@ suite('shots', async t => {
       const m = midi(); await p.evaluate(b64 => { window.__daily.dropFiles([new File([Uint8Array.from(atob(b64), c => c.charCodeAt(0))], 'Evening Light.mid', { type: 'audio/midi' })]); }, m.toString('base64'));
       await poll(() => p.$('#smfDlg'), 6000); await wait(400); await save(p, '31-midi'); await clean(p);
     }
+    if (want('35-voice')) {   // the Voice window: the pitch ribbon against the notes of the key
+      await p.evaluate(async () => { const d = window.__daily; try { await d.ioConnect(); } catch (e) { } d.S.key = 0; d.S.minor = false; d.S.scale = 'Major (Ionian)'; d.voxOpen(); });
+      await wait(500);
+      await p.evaluate(() => { const d = window.__daily, now = performance.now(), mel = [64, 64, 65, 67, 67, 65, 64, 62, 60, 60, 62, 64, 64, 62, 62]; d.VOX.hist.length = 0; for (let i = 0; i < 150; i++) { const k = Math.floor(i / 10), w = Math.sin(i * .9) * .12, off = (k % 5 === 3 ? .3 : 0); d.VOX.hist.push({ t: now - (150 - i) * 40, m: mel[k] + w + off, c: Math.round((w + off) * 100) }); } });
+      await wait(150); await p.evaluate(() => { const d = window.__daily, now = performance.now(); d.VOX.hist.forEach((e, i) => { e.t = now - (150 - i) * 40; }); }); await wait(60);
+      await quiet(p); await save(p, '35-voice'); await p.evaluate(() => window.__daily.voxClose()); await wait(300);
+    }
+    if (want('36-range')) {   // a marked stretch of a take, with the clip bar
+      await p.evaluate(() => { const b = document.querySelector('.cmax[data-m="tl"]'); if (b) b.click(); }); await wait(700);
+      await p.evaluate(() => { const d = window.__daily, lead = d.tkLeads()[0]; d.tkSelect(lead.id); d.tkrSet(lead, 5.2, 11.4); }); await wait(500); await quiet(p);
+      await save(p, '36-range'); await p.evaluate(() => window.__daily.tkrClear()); await p.keyboard.press('Escape'); await wait(500);
+    }
+    if (want('37-heatmap')) {   // the fretboard heatmap: where a player spends their time
+      await p.evaluate(() => { const d = window.__daily; d.dockGo('fret'); d.S.key = 0; d.S.minor = false; d.S.scale = 'Major (Ionian)'; d.FB.root = 0; d.heatReset(); d.bus.emit('song'); const sel = [...document.querySelectorAll('select')].find(x => [...x.options].some(o => o.value === 'heat')); if (sel) { sel.value = 'heat'; sel.dispatchEvent(new Event('change')); }
+        const spots = [[3, 2, 5, 4], [2, 2, 3, 2], [2, 0, 2, 3], [1, 3, 4, 3], [1, 1, 1.5, 2], [0, 3, 3, 3], [4, 1, 2.5, 0], [3, 0, 1, 1], [2, 4, 2, 2], [4, 3, 1, 8], [5, 0, 1.5, 3], [1, 5, 1, 1], [0, 5, 1, 2], [5, 3, 1, 3], [3, 5, 2, 1]];
+        spots.forEach(([st, f, sec, cents]) => d.heatLive({ midi: d.S.tuning[st] + d.S.capo + f, cs: new Array(10).fill(cents), cam: [{ st, fret: f }] }, sec));
+        d.heatLive({ midi: d.S.tuning[2] + 6, cs: new Array(10).fill(14), cam: [{ st: 2, fret: 6 }] }, 1.2); d.FB.mode = 'heat'; d.HEAT.view = 'where'; d.HEAT.src = 'live'; d.renderFret(); }); await wait(600); await quiet(p);
+      await save(p, '37-heatmap'); await p.evaluate(() => { const d = window.__daily; d.HEAT.view = 'tune'; d.renderFret(); }); await wait(300); await save(p, '38-heatmap-tuning');
+      await p.evaluate(() => { const d = window.__daily; d.heatReset(); d.FB.mode = 'scale'; d.renderFret(); });
+    }
+    if (want('39-backdrop')) {   // the performer backdrop on the stage: dimmed visuals and a lower third
+      await p.evaluate(async () => { const d = window.__daily; try { await d.ioConnect(); } catch (e) { } d.S.sections = [{ id: 'a', name: 'Verse', lyrics: 'Morning light on the window sill\nSomething waits and I stand still', bars: [{ chord: 'G', tab: [] }, { chord: 'Em', tab: [] }, { chord: 'C', tab: [] }, { chord: 'D', tab: [] }] }]; d.commit(false); d.STG.pb.on = true; d.STG.pb.bg = 'visuals'; d.STG.pb.lower = true; d.dockGo('stage'); d.T.cursor = 0; await d.play(); });
+      await wait(3200); await p.evaluate(() => { const w = document.querySelector('.stagewrap'); if (w) w.scrollIntoView({ block: 'center' }); const hb = document.querySelector('.stagehud'); if (hb) hb.style.display = 'none'; }); await wait(400); await quiet(p); await save(p, '39-backdrop'); await p.evaluate(() => { const d = window.__daily; d.stopPlay(true); d.STG.pb.on = false; });
+    }
     await p.ctx.close();
   }
 

@@ -5,7 +5,7 @@
 <h1 align="center">the-daily.studio</h1>
 <p align="center"><b>A songwriter’s workspace that lives in one web page.</b><br>
 Catch an idea · find the chords · record guitar and vocals · split a track into stems · keep every song on your own device</p>
-<p align="center"><sub>v2.2.1 · free, open source (MIT) · no account, no upload, no tracking</sub></p>
+<p align="center"><sub>v2.3.0 · free, open source (MIT) · no account, no upload, no tracking</sub></p>
 
 <p align="center">
   <a href="https://the-daily.studio/"><b>▶ Open the live app</b></a> ·
@@ -34,7 +34,7 @@ Catch an idea · find the chords · record guitar and vocals · split a track in
 
 ## Contents
 
-[What it is](#what-it-is) · [Highlights](#highlights) · [What's new in 2.2](#whats-new-in-22) · [Quick start](#quick-start) · [Your first five minutes](#your-first-five-minutes) · [Tour of the panels](#tour-of-the-panels) · [Tunings](#tunings) · [Phone and tablet](#phone-and-tablet) · [Keyboard shortcuts](#keyboard-shortcuts) · [Audio setup](#audio-setup) · [Privacy](#privacy-and-data) · [Accuracy and honest limits](#accuracy-and-honest-limits) · [Browser support](#browser-support) · [Project layout](#project-layout) · [Develop](#develop) · [Host it](#host-it-on-your-github) · [Roadmap](#roadmap-ideas) · [License](#license-and-credits)
+[What it is](#what-it-is) · [Highlights](#highlights) · [What's new in 2.3](#whats-new-in-23) · [2.2](#whats-new-in-22) · [Quick start](#quick-start) · [Your first five minutes](#your-first-five-minutes) · [Tour of the panels](#tour-of-the-panels) · [Tunings](#tunings) · [Phone and tablet](#phone-and-tablet) · [Keyboard shortcuts](#keyboard-shortcuts) · [Audio setup](#audio-setup) · [Privacy](#privacy-and-data) · [Accuracy and honest limits](#accuracy-and-honest-limits) · [Browser support](#browser-support) · [Project layout](#project-layout) · [Develop](#develop) · [Host it](#host-it-on-your-github) · [Roadmap](#roadmap-ideas) · [License](#license-and-credits)
 
 ## What it is
 
@@ -60,6 +60,7 @@ It began as a guitar lab and grew into a place to turn a hum into a finished son
 | Area | What you get |
 |---|---|
 | **Rig** | 16 reorderable effect units (gate, compressor, wah, overdrive, distortion, fuzz, pitch / harmony, amp, cabinet / IR, parametric EQ, chorus, phaser, flanger, tremolo, delay, reverb), 5 amp models, procedural cabinets and impulse-response loading, 6 reverbs, 27 presets, A/B morph, mutate, scenes, per-pedal footswitch keys and MIDI bindings, Stomp view for live use. |
+| **Voice, editing, heatmap, backdrop (2.3)** | A **Voice** window with a live **pitch ribbon** against the key, **Find my range** and **Find my key** (then transpose the whole song in one step). **Cut out**, **Silence** or **Punch in** over a marked stretch of a take, and a level for each clip. A **fretboard heatmap** of where you play, how in tune each spot is and which notes belong to the key. A **performer backdrop** that dims and calms the visuals, adds a chord-and-lyric lower third, and gives you plain black or chroma-key green and a clean output window for a projector or OBS. |
 | **Clips, fast render, MIDI (2.2)** | A recording is a **clip**: drag it, trim its edges, fade it, **split** (<kbd>Ctrl/⌘</kbd>+<kbd>E</kbd>), duplicate, delete, with one undo history shared with song edits and the stem mix. **WAV bounces render faster than the song plays**, with a progress window. **Drop a MIDI file** and get a song with chords, key, tempo and a lead tab. **Keep songs safe** explains Add to Home Screen on iPhone and iPad and backs everything up in one tap. |
 | **I/O and lanes (2.1)** | One **Connect** card with **Set my level** and a live **signal path**, channels that follow your interface, and permission help that names the exact steps for your browser. A mixer strip on every lane (**M S**, volume, pan, **+Fx**: EQ, compressor, reverb and delay sends), **drop-anywhere import** for audio, lyrics, song files and rigs, **⚖ Auto-balance**, a **master chip** with presets, visible undo / redo and a **Saved** mark. |
 | **Perform and share (2.0)** | **Perform** (full-screen chords, lyrics and a count-in with a readiness check), **Voice memo**, **Auto look** per section, **Record the stage** as a video, loudness (LUFS) with a target, compressed audio, a one-file **share page**, a **print or PDF sheet**, and a **backup folder** that saves your songs as you work. |
@@ -78,6 +79,14 @@ It began as a guitar lab and grew into a place to turn a hum into a finished son
 | **Guided tour** | A spotlight walkthrough of every key area, offered on first run and available from **?**. |
 | **Phone, tablet, desktop** | One responsive app. On a phone: bottom transport, five-section navigation, an on-screen tab keypad, pinch-to-zoom Neural map and a wake lock while you play. Installable as an app (PWA). See [Phone and tablet](#phone-and-tablet). |
 
+## What's new in 2.3
+
+Voice (pitch ribbon, your range, Find my key), cutting and punching in over a stretch of a take, a fretboard heatmap, and a performer backdrop with a lower third and a clean output window. Details are in the [user guide](docs/USER_GUIDE.md) and the [changelog](CHANGELOG.md).
+
+<p align="center"><img src="docs/screenshots/35-voice.png" alt="The Voice window: the pitch ribbon against the notes of the key, Find my range and Find my key" width="860"></p>
+<p align="center"><img src="docs/screenshots/36-range.png" alt="A marked stretch of a take, with Cut out, Silence and Punch in in the clip bar" width="860"></p>
+<p align="center"><img src="docs/screenshots/37-heatmap.png" alt="The fretboard heatmap: where you play" width="860"></p>
+<p align="center"><img src="docs/screenshots/39-backdrop.png" alt="The performer backdrop: dimmed visuals with the chord and the lyric in a lower third" width="860"></p>
 ## What's new in 2.2
 
 <p align="center"><img src="docs/screenshots/24-clips.png" alt="The arrangement with a vocal take split into two clips; the clip bar names the selected clip" width="920"><br><sub><b>Clips</b> · every take is a clip: move, trim, fade, split, duplicate, delete, and undo any of it</sub></p>
@@ -319,7 +328,7 @@ npm run build          # src/ → index.html + codepen/
 npm run build:check    # fails if the committed outputs are stale (CI runs this)
 npm start              # serve on http://localhost:8080
 npm test               # smoke test: boots the app in jsdom, fails on any error
-npm run test:e2e       # every Playwright suite in parallel: core flows, I/O, drop, balance, lanes, camera, clips, session, render, MIDI, keep-safe, recording, layout and phone
+npm run test:e2e       # every Playwright suite in parallel: core flows, I/O, drop, balance, lanes, camera, clips, session, render, MIDI, keep-safe, recording, voice, range editing, heatmap, backdrop, layout and phone
 npm run test:e2e:core  # just the core flows (tunings, tour, rig, transcription, stems)
 npm run test:mobile    # phone / tablet / desktop layouts, keypad, drawers, gestures, install files
 npm run test:all       # smoke test, then every suite

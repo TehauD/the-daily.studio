@@ -123,6 +123,8 @@ function tkNudge(tk, beats) {
   tk = tk || tkSel(); if (!tk) return false; const before = snap(), to = Math.max(0, tk.startSec + beats * tkBeat()); if (Math.abs(to - tk.startSec) < 1e-6) return false;
   tk.startSec = to; tkDone(before); return true;
 }
+/** a clip's own level in dB (0 = as recorded), on top of the lane's level */
+function tkSetGain(tk, db, quiet) { tk.cg = db === 0 ? 1 : Math.pow(10, db / 20); try { if (tk._cg) tc(tk._cg.gain, tk.cg, .015); } catch (e) { } const v = document.getElementById('cmLevelV'); if (v) v.textContent = db.toFixed(1) + ' dB'; TL.dirty = true; if (!quiet) bus.emit('takes'); }
 const tkFmt = sec => { const sp = spb(), slot = sec / slotDur(), bar = Math.floor(slot / sp) + 1, beat = Math.floor((slot % sp) / (16 / S.ts[1])) + 1; return 'bar ' + bar + ' · beat ' + beat; };
 
 /* ---------- save a lane or a clip as audio ---------- */
@@ -138,13 +140,13 @@ function tkDownloadClip(tk) {
 
 /* ---------- Undo / Redo ---------- */
 function tkHistGet() {
-  return TAKES.map(t => ({ id: t.id, grp: t.grp || null, name: t.name, kind: t.kind, startSec: t.startSec, inS: t.inS || 0, outS: t.outS == null ? null : t.outS, fadeIn: t.fadeIn || 0, fadeOut: t.fadeOut || 0, g: t.g == null ? 1 : t.g, pan: t.pan || 0, mute: !!t.mute, solo: !!t.solo, mode: t.mode, fx: t.fx ? JSON.parse(JSON.stringify(t.fx)) : null }));
+  return TAKES.map(t => ({ id: t.id, grp: t.grp || null, name: t.name, kind: t.kind, startSec: t.startSec, inS: t.inS || 0, outS: t.outS == null ? null : t.outS, fadeIn: t.fadeIn || 0, fadeOut: t.fadeOut || 0, cg: t.cg == null ? 1 : t.cg, g: t.g == null ? 1 : t.g, pan: t.pan || 0, mute: !!t.mute, solo: !!t.solo, mode: t.mode, fx: t.fx ? JSON.parse(JSON.stringify(t.fx)) : null }));
 }
 function tkHistSet(list) {
   if (!Array.isArray(list)) return; const have = new Map(TAKES.map(t => [t.id, t])), next = [], back = new Set();
   list.forEach(s => {
     let t = have.get(s.id); if (!t) { t = TK_BIN.get(s.id); if (t) back.add(t.id); } if (!t) return;
-    t.grp = s.grp || null; t.name = s.name; t.kind = s.kind; t.startSec = s.startSec; t.inS = s.inS; t.outS = s.outS; t.fadeIn = s.fadeIn; t.fadeOut = s.fadeOut; t.g = s.g; t.pan = s.pan; t.mute = s.mute; t.solo = s.solo; t.mode = s.mode; if (s.fx) t.fx = s.fx; else delete t.fx; next.push(t);
+    t.grp = s.grp || null; t.name = s.name; t.kind = s.kind; t.startSec = s.startSec; t.inS = s.inS; t.outS = s.outS; t.fadeIn = s.fadeIn; t.fadeOut = s.fadeOut; t.cg = s.cg == null ? 1 : s.cg; t.g = s.g; t.pan = s.pan; t.mute = s.mute; t.solo = s.solo; t.mode = s.mode; if (s.fx) t.fx = s.fx; else delete t.fx; next.push(t);
   });
   const keep = new Set(next.map(t => t.id)); TAKES.forEach(t => { if (!keep.has(t.id)) tkBinPut(t); }); next.forEach(t => TK_BIN.delete(t.id));
   TAKES.length = 0; next.forEach(t => TAKES.push(t)); next.forEach(t => { if (back.has(t.id)) t._saved = false; });   // a clip that came back is written to the song file again
@@ -191,6 +193,7 @@ function tkDraw(g, l, k) {
       g.fillStyle = C.bg2; g.globalAlpha = .92; g.fillRect(bx, by, w, 18); g.globalAlpha = 1; g.strokeStyle = C.accent2; g.strokeRect(bx + .5, by + .5, w - 1, 17); g.fillStyle = C.text; g.fillText(dr.label, bx + 6, by + 13);
     }
   });
+  if (typeof tkrDrawLane === 'function') tkrDrawLane(g, l, k);
 }
 
 /* ---------- pointer: select, move, trim, fade ---------- */
@@ -256,6 +259,7 @@ function tkMenu(anchor, tk) {
   const fade = (lab, v, which) => h('div', { class: 'lrow' }, h('span', { style: { width: '62px' } }, lab), h('input', { type: 'range', min: 0, max: mx, step: .01, value: Math.min(v, mx), 'aria-label': lab, style: { flex: 1 }, oninput: e => { histBegin(); tkSetFade(tk, which, +e.target.value, true); }, onchange: () => { tkResched(); if (!histEnd()) bus.emit('takes'); } }));
   box.append(row(h('button', { class: 'btn sm', id: 'cmSplit', title: 'Cut the clip in two at the playhead (Ctrl+E)', onclick: () => { closePop(); tkSplit(tk); } }, '✂ Split at playhead'), h('button', { class: 'btn sm', id: 'cmDup', title: 'Copy the clip so it starts where this one ends (Ctrl+D)', onclick: () => { closePop(); tkDup(tk); } }, '⧉ Duplicate')),
     fade('Fade in', fi, 'in'), fade('Fade out', fo, 'out'),
+    h('div', { class: 'lrow' }, h('span', { style: { width: '62px' } }, 'Clip level'), h('input', { type: 'range', id: 'cmLevel', min: -24, max: 12, step: .5, value: Math.round(20 * Math.log10(Math.max(.0631, tk.cg == null ? 1 : tk.cg)) * 2) / 2, 'aria-label': 'Clip level in dB', title: 'Louder or quieter for this clip only (double-click to reset); the lane’s own level still applies', style: { flex: 1 }, ondblclick: e => { histBegin(); tkSetGain(tk, 0, true); e.target.value = 0; if (!histEnd()) bus.emit('takes'); }, oninput: e => { histBegin(); tkSetGain(tk, +e.target.value, true); }, onchange: () => { if (!histEnd()) bus.emit('takes'); } }), h('span', { class: 'tiny muted', id: 'cmLevelV', style: { width: '44px', textAlign: 'right' } }, ((tk.cg == null ? 1 : tk.cg) === 1 ? '0' : (20 * Math.log10(tk.cg)).toFixed(1)) + ' dB')),
     row(h('span', { class: 'tiny muted', style: { width: '62px' } }, 'Move'), ...[['◀◀', -S.ts[0], 'A bar earlier'], ['◀', -1, 'A beat earlier'], ['▶', 1, 'A beat later'], ['▶▶', S.ts[0], 'A bar later']].map(([t, d, ti]) => h('button', { class: 'btn sm', title: ti, 'aria-label': ti, onclick: () => tkNudge(tk, d) }, t))),
     row(h('button', { class: 'btn sm', id: 'cmReset', disabled: !tkEdited(tk), title: 'Put the whole recording back: no trim, no fades', onclick: () => { closePop(); tkReset(tk); } }, '↺ Reset trim'), h('button', { class: 'btn sm', onclick: () => { closePop(); tkDownloadClip(tk); } }, '⤓ Save clip (WAV)')),
     row(h('button', { class: 'btn sm bad', id: 'cmDel', title: 'Delete (Del). Undo brings it back.', onclick: () => { closePop(); tkDelete(tk); } }, '✕ Delete clip')),
@@ -265,12 +269,19 @@ function tkMenu(anchor, tk) {
 function clipBarMake() {
   const b = (id, label, title, fn) => h('button', { class: 'btn sm', id, title, onclick: fn }, label);
   UI.clipbar = h('span', { class: 'clipbar', id: 'clipBar', hidden: true, role: 'group', 'aria-label': 'Selected clip' }, h('b', { class: 'small', id: 'clipName' }, 'Clip'),
-    b('clipSplit', '✂ Split', 'Split the selected clip at the playhead (Ctrl+E)', () => tkSplit()), b('clipDup', '⧉ Duplicate', 'Duplicate the selected clip (Ctrl+D)', () => tkDup()),
-    b('clipDel', '✕ Delete', 'Delete the selected clip (Del). Undo brings it back.', () => tkDelete()), b('clipMore', '⋯', 'More: fades, reset trim, save the clip', e => { const t = tkSel(); if (t) tkMenu(e.currentTarget, t); }));
+    h('span', { class: 'cb-grp', id: 'clipAct' }, b('clipSplit', '✂ Split', 'Split the selected clip at the playhead (Ctrl+E)', () => tkSplit()), b('clipDup', '⧉ Duplicate', 'Duplicate the selected clip (Ctrl+D)', () => tkDup()),
+      b('clipDel', '✕ Delete', 'Delete the selected clip (Del). Undo brings it back.', () => tkDelete()), b('clipMore', '⋯', 'More: fades, reset trim, save the clip', e => { const t = tkSel(); if (t) tkMenu(e.currentTarget, t); })),
+    h('span', { class: 'cb-grp' }, b('rngIn', '⟦ In', 'Mark the start of a stretch at the playhead (or Shift-drag across a take)', () => tkrMark('in')), b('rngOut', 'Out ⟧', 'Mark the end of the stretch at the playhead', () => tkrMark('out'))),
+    h('span', { class: 'cb-grp', id: 'rngAct', hidden: true }, b('rngCut', '⌫ Cut out', 'Take the stretch out and close the gap (Del). The band and chords do not move.', () => tkrApply(true)), b('rngSil', '◻ Silence', 'Take the stretch out and leave a gap', () => tkrApply(false)),
+      b('rngPunch', '● Punch in', 'Play from a bar before the stretch and record only inside it, replacing what was there', () => tkrPunch()),
+      h('button', { class: 'btn sm on', id: 'rngAll', 'aria-pressed': 'true', title: 'On: every take lane is edited together, so a guitar and a vocal recorded as one pass stay in step', onclick: e => { TKR.all = !TKR.all; e.currentTarget.classList.toggle('on', TKR.all); e.currentTarget.setAttribute('aria-pressed', String(TKR.all)); TL.dirty = true; } }, '⛓ All lanes'),
+      b('rngClr', '✕', 'Clear the marked stretch (Esc)', () => tkrClear())));
   return UI.clipbar;
 }
 function clipBarSync() {
-  const bar = UI.clipbar; if (!bar) return; const t = tkSel(); bar.hidden = !t; if (!t) return;
-  const n = tkClips(tkLead(t)).length; $('#clipName', bar).textContent = tkLead(t).name + (n > 1 ? ' · clip ' + (tkClips(tkLead(t)).indexOf(t) + 1) + '/' + n : '');
+  const bar = UI.clipbar; if (!bar) return; const t = tkSel(), r = TKR.on && !TKR.drag; bar.hidden = !t && !TKR.on; if (bar.hidden) return;
+  $('#clipAct', bar).hidden = !t; $('#rngAct', bar).hidden = !r; const rl = TKR.on ? ' · ' + (TKR.b - TKR.a).toFixed(1) + ' s marked' : '';
+  if (!t) { $('#clipName', bar).textContent = (TKR.lead ? TKR.lead.name : 'Range') + rl; return; }
+  const n = tkClips(tkLead(t)).length; $('#clipName', bar).textContent = tkLead(t).name + (n > 1 ? ' · clip ' + (tkClips(tkLead(t)).indexOf(t) + 1) + '/' + n : '') + rl;
 }
 bus.on('clipsel', clipBarSync); bus.on('takes', clipBarSync);

@@ -66,6 +66,10 @@ src/body.html  ─┘                    └► codepen/pen.{html,css,js}
 | `47-midi-import.js` | **MIDI in.** `smfParse` (formats 0 / 1, running status, tempo and meter maps, text and lyric events), `smfParts` (melody / bass / chord / drum guesses), `smfBuild` (chords, key, lead tab, `.kar` words), and the track-picking window `smfOpen` |
 | `48-keepsafe.js` | **Keep songs safe.** `keepRisk()` (is this a browser that may clear storage?), `keepCard()`, `keepOpen()`, `keepToast()` and the first-recording backup nudge `projNudge()`; requests persistent storage; offers Add to Home Screen steps and **Back up all songs** |
 | `49-phone-extras.js` | Phone and tablet extras: the mix tiles (`mixOpen`), the files window (`filesOpen`) and the clip bar |
+| `50-voice.js` | **Voice.** `VOX` (a pitch history fed by `voxTick()` from `anaTick`), the ribbon (`voxDraw`, also drawn over the Visuals), the window (`voxOpen`), range capture (`voxRange`), `voxPlan` / `voxTarget` / `voxMelody` (which keys fit), and `voxTranspose` (key, chords, `[chords]` in lyrics and tab frets, one history step) |
+| `51-clip-range.js` | **Ranges.** `TKR` (the marked stretch), `tkrLane` (cut or silence in one lane), `tkrApply`, `tkrMark`, Shift-drag, and `PUNCH` / `tkrPunch` / `tkrPunchApply` (record only inside the stretch; `recBegin` / `recEnd` in part 03 honour it) |
+| `52-heat.js` | **Fretboard heatmap.** `HEAT` (time, shared time and cents per string and fret), `heatLive` (called from `noteOff`; exact when the camera has the hand, otherwise shared across `heatCands`), `heatSongBuild`, `heatMap`, `paintHeat` (called from `paintFret` when the mode is Heatmap) and its controls |
+| `53-backdrop.js` | **Performer backdrop.** `STG.pb`, `pbScene` (calm, section hue, smoothed loudness), `pbDim`, `pbFill`, `drawLowerThird`, the Stage-pane card and the output-window tint. `stageFrame` in part 13 calls it |
 
 ## Runtime model
 

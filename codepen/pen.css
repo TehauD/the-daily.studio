@@ -911,3 +911,35 @@ body[data-form=phone] .tl-head.vox .lmeter,body[data-form=phone] .tl-head.live .
 body[data-form=desktop] #transport .btn.icon,body[data-form=desktop] #transport .btn.sm{flex:none}
 body[data-form=desktop] #transport .field{flex:0 1 auto;min-width:46px}
 body[data-form=desktop] #transport .field select,body[data-form=desktop] #transport .field input{min-width:0}
+
+/* 2.3.0 · Voice: the pitch ribbon window */
+.vx{position:fixed;right:14px;bottom:14px;z-index:60;width:min(460px,calc(100vw - 28px));max-height:calc(100dvh - 90px);overflow:auto;background:var(--panel);border:1px solid var(--line2);border-radius:14px;box-shadow:0 18px 50px rgba(0,0,0,.45);padding:10px 12px 12px;display:grid;gap:8px}
+.vx-h{display:flex;align-items:center;gap:8px;font:800 13px var(--sans)}
+.vx #voxCv{width:100%;height:170px;border-radius:12px;display:block;background:#050b0c}
+.vx-body{display:grid;gap:8px;font:500 12.5px/1.45 var(--sans)}
+.vx-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.vx-live{font:700 12.5px ui-monospace,Menlo,monospace;color:var(--text)}
+.vx-h5{margin:4px 0 0;font:800 12px var(--sans);letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.vx-res{display:grid;gap:7px;padding:9px 10px;border:1px solid var(--line2);border-radius:10px;background:var(--panel2)}
+.vx-good{color:var(--ok);font-weight:700}.vx-note{padding:7px 9px;border-radius:9px;background:var(--panel2);border:1px dashed var(--line2)}
+body[data-form=phone] .vx{left:8px;right:8px;bottom:calc(64px + env(safe-area-inset-bottom));width:auto;max-height:calc(100dvh - 150px)}
+body[data-form=phone] .vx #voxCv{height:140px}
+
+/* 2.3.0 · ranges on take lanes */
+.clipbar .cb-grp{display:inline-flex;align-items:center;gap:6px}.clipbar .cb-grp[hidden]{display:none}
+.clipbar .cb-grp+.cb-grp{padding-left:6px;border-left:1px solid var(--line2)}
+body[data-form=phone] .clipbar{flex-wrap:wrap}
+
+/* heatmap (part 52) */
+.heatbar{margin-bottom:6px}
+.heatlg{display:flex;gap:4px;align-items:center;height:10px;max-width:260px;margin-bottom:6px}
+.heatlg i{display:none;flex:1;height:8px;border-radius:4px}
+.heatlg[data-v="where"] .lg-where{display:block;background:linear-gradient(90deg,color-mix(in srgb,var(--accent) 20%,transparent),var(--accent))}
+.heatlg[data-v="tune"] .lg-tune{display:block;background:linear-gradient(90deg,#4a90d9,#3fb27f 45%,#3fb27f 55%,#e8833a)}
+.heatlg[data-v="key"] .lg-key{display:block;background:linear-gradient(90deg,var(--accent),var(--accent2) 50%,#d64545)}
+
+/* the Voice chip shows its word only where the song bar has room */
+#sbVoice .sb-lbl{display:none;margin-left:4px}
+#sbVoice{padding:3px 9px}
+@media (min-width:2100px){#sbVoice .sb-lbl{display:inline}}
+body:not([data-form=phone]) #songbar{gap:8px}
