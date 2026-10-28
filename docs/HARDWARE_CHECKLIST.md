@@ -83,6 +83,31 @@ Gear: an audio interface with a guitar (a Focusrite Scarlett, say) **or** a USB 
 - [ ] **My songs ▸ Back up all songs** saves one zip. Reset the app (**Reset…**), then **Open a file** with the zip: every song and recording returns.
 - [ ] (Chrome or Edge) **Settings ▸ Backup folder**: choose a folder; edit a song; a `.daily-song.zip` appears there.
 
+## 10 · The first page, the Concert visual and the Show setup (2.4, 2.6)
+
+- [ ] On a phone, open the site in a private tab: the headline, the three lead features and **Begin in the studio** are on the first screen without scrolling, and nothing asks for the microphone or camera until you press a button.
+- [ ] **Try the demo song** opens a finished song with no microphone or camera prompt.
+- [ ] Stage ▸ Concert on a projector or a second monitor (drag the **Clean output window** across and double-click it): the picture is smooth, the beams and the LED wall follow the chord and the drums, and the colour changes when the song moves to a new key.
+- [ ] **Light comfort**: in Full show, on a real projector or TV in a dim room, the chorus never flashes more than about three times a second and nothing is uncomfortable to look at for a whole song; in Calm there is no strobe at all and the movement is slow and soft.
+- [ ] **The six looks**: on the projector or second monitor, play the demo song through with each look (Stage ▸ Show setup ▸ Looks). Each looks different from the others, not just in colour: Theatre has no lasers or strobe; Backlight's beams come from the floor; Blades follow the spectrum; the Laser room's patterns land on the groove and change at the start of a phrase, not at random.
+- [ ] **Output**: with the real projector, choose **Test pattern ▸ Bars** and **Grid** and line the picture up; check **Mirror** (rear projection) and **Flip** (ceiling mount) are the right way round; press <kbd>0</kbd> for blackout (it fades and returns) and <kbd>9</kbd> to freeze, and check the flash meter stays under 3. **Frame rate 30** is smooth on the slowest computer you will use.
+- [ ] **Cues**: set a chorus cue, press **Preview** with no song and watch the picture on the real screen; then play the song and check the chorus does what you set.
+- [ ] **Your pictures**: add a band photo as a backdrop, a logo and a picture as the LED wall; they show on the projector, change at each new section (two backdrops), and are still there after a reload. Remove one: it disappears everywhere.
+- [ ] On a slow or old machine the show drops its laser halos and some lights rather than stuttering, and comes back when you stop other work.
+- [ ] **Teach** lens on a TV across the room: the chord, its numeral and the next chords can be read from where the audience sits. **Sky** after a few minutes of playing: **⤓ Save sky** gives a picture you would print.
+
+## 11 · Guided sessions and the Show preflight (2.7)
+
+The sessions are tested against the app's own state. These need a real microphone, interface and projector, and ideally a person who has never seen the app.
+
+- [ ] **Hum to a song, with a real microphone**: from the first page choose *Turn a hum into a song*. The card points at *Sing or hum*; the browser asks for the microphone only after you press it; humming 10–30 seconds and pressing Stop ticks the next steps; the band plays; changing the style ticks the step; *Done* finishes with the outro text.
+- [ ] **Record guitar and voice, with an interface**: the sessions menu ▸ *Record guitar and voice* ▸ Connect ▸ your interface appears ▸ arm ▸ play ▸ Stop ▸ the take is heard back. Each step ticks without you touching the card.
+- [ ] **Loop & layer, with a real guitar**: *Record, loop and layer* ▸ connect the interface ▸ ⟲ Loop & layer, 4 bars, band off ▸ play chords for one pass ▸ play a lead on the second pass. Listen: do the chords stay in time with the click on the next pass? Is a note in the last beat before the loop point clipped? (Expected: a little, within your interface's delay.) Try *Keep looping*, *Add a layer*, *Undo layer*, and then export the mix.
+- [ ] **Learn a song**: load a real song file. The session waits for the split to finish before it ticks *Load a song*; muting a part and pressing play ticks the next steps.
+- [ ] **Show preflight, on the real output**: open the pop-out on the projector, run Bars, set the master level, press <kbd>0</kbd> twice, play the song. Each line ticks as it is done, and *Start over* clears them.
+- [ ] **A first-time user** (a friend, a bandmate): without any help, can they hear something they made within about two minutes? Note where they hesitate, which word they do not know, and which card they close without reading. This is the measure that matters.
+- [ ] **On a phone**: the first page shows all four goals and the way in on one screen; the session card is a slim strip above the bottom navigation and does not hide the control it points at.
+
 ## What to send back
 
 For each failed line: the line, what you saw, the device, browser and version, and — if you can — the browser’s console text (right-click ▸ Inspect ▸ Console). Screenshots help. Nothing in the app collects or sends this for you.

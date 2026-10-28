@@ -1,7 +1,7 @@
 {
   "name": "the-daily.studio",
   "short_name": "The Daily",
-  "description": "The Daily · Songs — a songwriter's workspace in one web page: clean canvas or start from a song, lyrics and chords, guitar + vocal recording, stem separation and a pedal rig. Local-first, no account.",
+  "description": "the-daily.studio — a guitar and voice studio in one web page: record guitar and mic, split any song into stems, get chords, tab and lyrics, with a pedal rig, presets and live visuals. Local-first, no account.",
   "id": "./",
   "start_url": "./",
   "scope": "./",

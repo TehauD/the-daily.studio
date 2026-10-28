@@ -2,6 +2,142 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.8.0 — 2026-10-27 — Loop & layer: record chords, loop them, play a lead on top
+
+A looper-pedal way of working, built on the recording engine that already made one take per pass of a loop.
+
+### Added
+- **⟲ Loop & layer** (Arrangement tab; More ▸ Loop & layer on a phone). One window sets a 1, 2, 4 or 8 bar loop, clears the band away (or keeps it), counts you in and records. Each pass of the loop records a new layer while the earlier layers play back (`src/parts/61-looper.js`).
+- **A strip while the loop runs**: what is happening (count-in, recording layer N, looping N layers), the loop length and pass number, **Keep looping** (stop recording, keep playing), **● Add a layer**, **↶ Undo layer** and **■ Stop**.
+- **A fifth guided session**, *Record, loop and layer* (six steps), now the second goal on the first page in place of *Record guitar and voice*, which is still in the sessions menu.
+- `test/e2e-looper.cjs` (22 checks) and extra checks for the new session in `test/e2e-guide.cjs`.
+
+### Changed
+- Takes recorded on a looped pass are named **Layer N** (**Vocal layer N** for a voice), and a pass on which nothing was played is no longer kept as a silent take.
+- The song is extended automatically to fit the loop.
+
+### Honest limits
+- Tested in a headless browser with a fake microphone, not with a real guitar and interface. Your interface's delay is compensated, but a note played in the last few milliseconds before the loop point can be clipped by about that delay.
+- Layers are separate takes, not a destructive overdub, so they can be moved, trimmed, muted and exported but not "baked" into one track here.
+
+## 2.7.0 — 2026-10-27 — Goals on the first page, guided sessions, first-open tab notes, plain words and a Show preflight
+
+The studio was too hard to use straight away. It still adapts quietly to how much you use it, but now it also teaches: it asks what you want to **do** (never how good you are) and walks you through it on the real controls.
+
+### Added
+- **Four goals on the first page** instead of the three feature boxes: *Turn a hum into a song*, *Record guitar and voice*, *Learn a song*, *Run a show*. Each opens the right place (a clean page, the Record layout, the Backing track tab, or the Show layout on the demo song) and starts a guided session. **I know my way around** opens the studio with every tool showing and no coaching. People who already have songs see one button, as before.
+- **Guided sessions** (`src/parts/60-guide.js`). A small card names one step, outlines the control it means, and ticks the step off when the app sees it done: a hum recorded, a take stopped, a stem muted, a test pattern shown. **Show me** takes you to the control, **Skip** moves on, **–** folds the card, **✕** leaves and keeps your place. The card moves out of the way of the control it points at, can be dragged, and is a slim strip on a phone. Finishing a session adds the tools it used to the tab strip (and says which). Under **? ▸ Guided sessions**, and on the phone's More sheet: all four, with Start, Resume and Again.
+- **A note the first time a tab opens**: what it is in a sentence, one thing to try, **Got it**. It then folds into a small “What is this tab?” line. Never shown on *Everything*, while a session is running, or when switched off in the sessions menu.
+- **DAW words, in guitar terms** (lane, clip, take, arm, dry and wet, input level, monitor, latency, count-in, loop, stem, snap, master, render, scene): a searchable list under ? ▸ Guided sessions.
+- **Show preflight.** Seven checks a technician makes before doors: pick a look, check the rig, open the output, run a test pattern, set the master level, try the blackout, play the song once and watch the flash meter. The app ticks each when it sees it done. It is the *Set up a show* session and also sits at the top of the Output tab in Show setup, with **Start over** for the next room.
+- A **Getting started** page for search (`guide/getting-started/`), linked from the guide pages and the sitemap.
+- `test/e2e-guide.cjs` (41 checks), and six new screenshots (`59`–`65`).
+
+### Changed
+- The first page asks “What would you like to do first?” first; **Begin in the studio**, **Try the demo song** and **I know my way around** follow as quieter choices. Nothing asks for the microphone or camera on load.
+- The tour offer does not appear on top of a guided session.
+
+### Honest limits
+- A step is ticked from the app's own state, so a step the app cannot observe is worded as an instruction and ticked by the thing it causes (for example, the hum step ticks when a hum has been recorded, not when the button is pressed).
+- The sessions are tested by driving the same state the guide watches; they have not been watched with first-time users. Watching five people try it cold, and timing how long until they hear something they made, is the next thing to do.
+- The preflight is a checklist the app ticks, not a guarantee the room is safe or the projector is aligned.
+
+## 2.6.0 — 2026-10-27 — Search-friendly pages, nine distinct layouts, optional Monitor widgets and a show-setup console for a stage or AV technician
+
+### Added
+- **Search and sharing.** The first page now has a precise title and description, one canonical address, Open Graph and Twitter preview tags, structured data (a website and a free software application, with no invented ratings or reviews), an explanation for visitors and crawlers that do not run scripts, and a sitemap and `robots.txt`. Five plain, fast guide pages are generated into the deploy folder (`/guide/`: record guitar and voice, split a song into stems, chords/tab/lyrics from audio, hum to song, live visuals and show), each with its own title, description, canonical address, one heading, a short FAQ, breadcrumbs and links to the app. `npm run verify:site` checks all of it.
+- **Show setup console** (Stage tab, under the picture, or beside it on a wide pane; **🎛 Show setup** in the Visuals bar). Nine tabs, every change visible as it is made:
+  **Looks** (six finished looks built differently; save your own looks, up to 24; carry them to another device as a file, checked on the way in) · **Rig** (where the lights stand: truss, floor, towers, wash or none; how many, beam style, spread, floor lights, room, haze, backdrop, laser amount, starburst, brightness, blinder, confetti, motion) · **Colour** (six colours, one-, two- or full-colour treatment, palettes borrowed from another look) · **Cues** (a cue sheet for intro, verse, pre-chorus, chorus, bridge, solo and outro: level, how many lights, haze, floor lights, backdrop, confetti and blinder, which light patterns and which laser patterns, and a silent band to rehearse each cue without a song) · **Response** (how strongly kick, snare, hi-hat, bass, strums and lead notes drive the lights, with live meters and a Fire button for each) · **Pictures** · **Output** · **Scene** · **MIDI**.
+- **Output controls** for a room: master level, **blackout** (key <kbd>0</kbd>, eased) and **freeze** (key <kbd>9</kbd>) while the Stage is showing, mirror and flip for rear or ceiling projection, safe-frame guides on the screen, test patterns (bars, grid, ramp, grey, white, black), a 30 or 60 frames-a-second limit, light comfort and a live **flash meter** (flashes per second against the limit of three, the governor, and the highest this session).
+- **Nine layouts, each a whole workspace for one job:** Studio, Write, Arrange, Record, Tone, Practice, Show, Focus and Classic. A layout sets where the sidebars are and what is in them, how tall the arrangement is, which panel is open, which tabs are on the strip and which Monitor widgets show, and replaces the last layout completely. The picker shows a small wireframe of each. Your own saved layouts keep all of it.
+- **Optional Monitor widgets.** The Monitor opens with the Tuner and Levels. **Analysis**, **Spectrum** and **Views** are chips you add; a ✕ removes a widget. A widget that is not showing is not drawn or updated at all.
+- **`test/e2e-workspace.cjs`** (layouts and Monitor widgets) and **`test/e2e-seo.cjs`** (what a crawler sees); `test/e2e-show.cjs` rewritten for the console.
+
+### Changed
+- **The six starter shows are replaced by six looks that differ in construction, not just colour:** **Theatre** (warm front light, haze with dust, no strobe, no lasers), **Backlight** (hard beams from the floor behind the band through heavy haze), **Blades** (tall hard-edged bars that follow the spectrum, with a few precise lasers), **Pixel field** (a generative LED wall), **Horizon** (a low sun, rays and a sky) and **Laser room** (haze and lasers, with a different laser kit for each section). The old names still work: a song, a scene or a setting that names Arena, Neon Laser, Campfire, Aurora, Noir Club or Golden Hour gets the nearest new look.
+- **The eight default Stage scenes** are Theatre, Backlight, Blades, Pixel field, Horizon, Laser room, Lyric prompter and Me in front. Scenes you never changed are replaced; if you changed even one scene, all of them stay as they were. **Restore starter scenes** (Stage ▸ Show setup ▸ Scene) brings the new ones back.
+- **Layouts.** Perform, Pedalboard, Light show, Songwriting, Track study and Compose are replaced by the nine above; **Canvas | Song | Studio** now picks Write (Song) or Record / Arrange (Studio). Saved layouts from earlier versions still open.
+- **Monitor views** no longer add a long scroll by default: Views, Spectrum and Analysis start off.
+- **Tools ▸ Everything** also brings back any tab a layout had left off the strip.
+
+### Removed
+- **The six example songs and the "▶ Example song" buttons** (part 60). The first-page demo song is still there. Nothing in the app now ships with song words other than that one demo.
+- The Stage designer drawer (its controls are in the console).
+
+### Honest limits
+- The lasers, lights and haze are a simulation on a screen. The app does not drive DMX, ILDA or any lighting hardware; the **MIDI** tab sends notes, clock and controllers only.
+- A MIDI note does not trigger blackout yet (keys <kbd>0</kbd> and <kbd>9</kbd> and the buttons do).
+- The three-flashes-a-second limit and the governor are engineering safeguards tested against the web accessibility guidelines' definition of a flash. They are not certified, not a medical guarantee and not legal advice.
+- Looks files carry the look's settings, not pictures. Pictures stay in the browser they were added in.
+
+## 2.5.0 — 2026-10-27 — Six starter light shows, lasers that play with the band, a stage designer and your own pictures
+
+### Added
+- **Six starter shows**, each with its own palette, lights, lasers and motion, and each with an **example song** written for it (original chords, words and lead line, marked "(example)"):
+  **Arena** (gold and crimson stadium rock, *Hold the Sky Up*), **Neon Laser** (magenta, cyan and violet synth, *Midnight Grid*), **Campfire** (ember orange, no lasers, no strobe, *Slow River Home*), **Aurora** (green, blue and violet curtains, *Northern Quiet*), **Noir Club** (ice white and steel with one hot pink, *Back Booth*) and **Golden Hour** (honey gold on a dusk-blue sky, *Better Than Yesterday*). They are the first six Stage scenes (keys <kbd>1</kbd>…<kbd>6</kbd>). The Visuals tab chooses one from the song's feel (kit, groove, key, tempo) until you pick one yourself or the song names its show.
+- **One musical clock.** Everything on the stage moves with the song's position in bars, not with a timer: beams, sweeps and chases are locked to the bar, so the same moment in a song always looks the same and a four-bar sweep returns to where it started every four bars. **Move in steps that land on the beat** makes the beams step on the grid. Drum hits, bass notes, chords and lead notes arrive from the band on the audio clock, so syncopation shows exactly where it is played. With no song playing, your own notes move the show (an eighth of a bar per note); an idle stage drifts almost imperceptibly instead of looping.
+- **Lasers.** Eight patterns (fan, cone, zipper, curtain, lattice, scribble, tunnel, starburst on the drop). Each section calls for a combination, and the combination changes on four-bar phrases (the second phrase of a section drops one pattern, and the last chorus runs a little brighter), so it keeps changing without ever changing at a random moment. Beams swell on real kicks, snares, strums and lead notes. The lasers are drawn on the screen: nothing in the app drives laser hardware.
+- **Stage designer** (**🎛 Show design** in the Visuals bar, and a Show design card on Stage): the starter shows with a poster each, six colours (the room, three lights, two lasers), moving lights, haze, brightness, blinder, confetti, floor lights, embers, the LED wall, laser amount and each pattern, how long a sweep takes, stepping on the beat, your pictures and light comfort. Changes are kept as differences from the starter, so **Reset changes** always has somewhere to go back to. It works on the Visuals tab or on the Stage scene you are on, and a change shows on the picture behind the drawer as you make it.
+- **Your own pictures.** Add a band photo, a poster, a logo or a venue: as a **backdrop** (several pictures change at each new section), as the **LED wall** (the picture becomes a pixel wall the music plays across) or as a **logo** (lit by the band, six positions, size). They are reduced to 1920 px, stored in this browser's own database and never uploaded. JPEG, PNG, WebP and GIF; SVG is refused. Up to 24 pictures.
+- **Light comfort: Calm, Standard, Full show.** Standard is the default; **Calm** is the default when your device asks for reduced motion (and has no strobe, slower movement and softer pulses). Whatever the setting, the show keeps to **no more than three flashes in any second**: the blinder fires at most once a bar and never closer than 340 ms (a second in Calm), every flashing visual obeys the same gap, and a **governor** looks at the finished picture (brightness swings of 7% or more in the whole picture and in each quarter, and saturated red) and pulls every pulse back when it gets near. This is a safeguard built into the app, not a medical guarantee.
+- **A lighter picture on a slow machine.** If frames are slow for a few seconds the show drops its laser halos and some moving lights, then comes back by itself once frames are quick again.
+- **`test/e2e-show.cjs`** (71 checks): the six designs and the example songs, the auto look, comfort levels, the governor on made-up pictures, events on the audio clock, lasers locked to the bar, laser combinations changing only on phrases, the designer, pictures (reduced, kept in the browser's own database, nothing sent to another site, SVG refused, removed everywhere), the drawer on a phone and scene migration. Its flash test is independent of the governor: it samples the finished picture at 190 BPM with 16th-note funk and counts opposing brightness swings of 10% or more, in the whole picture and each quarter, in all three comfort levels.
+- Seven new screenshots (`46`–`52`): the six shows playing their example songs, and the designer.
+
+### Changed
+- **The eight default Stage scenes** are now Arena, Neon Laser, Campfire, Aurora, Noir Club, Golden Hour, Lyric prompter and Me in front. Scenes you never touched are replaced; if you changed even one of the old scenes they are all left exactly as they were. **Restore starter shows** (Stage ▸ Show design) brings the new ones back whenever you want them.
+- **Reduce flashing is now Light comfort.** If you had turned Reduce flashing off you are on Full show; everyone else is on Standard.
+- **Concert's colours belong to the design.** The harmony still moves the colour (each step round the circle of fifths leans the lights towards the design's other colours, and tension pulls towards its third light), but inside the design's own palette instead of round the whole colour wheel. The Teach lens still colours the circle of fifths by hue.
+- Prism and Fifths Halo follow Light comfort too: their kick pulses, spin, zoom and flashes are scaled, never closer than the comfort gap, and softer in Calm.
+- The lasers' brightness swell on hits is shallower and its depth is scaled by Light comfort and the governor, so they never blink on every sixteenth note.
+- The new parts are 56 (colours, designs, comfort, the governor, the band's events), 57 (lasers), 58 (lights, wall, pictures), 59 (the designer, pictures, the Visuals-tab auto look) and 60 (the example songs).
+
+### Honest limits
+- The lasers are a simulation on a screen. Real lasers, real strobes and real haze have their own safety rules and need their own controllers.
+- The three-flashes-a-second limit and the governor are engineering safeguards, tested here against the web accessibility guidelines' definition of a flash. They are not certified, not a medical guarantee and not legal advice. If lights or motion bother you, choose Calm or stop the show.
+- Pictures are not part of a song's `.zip` and not in a backup; clearing the site's data removes them.
+- The example songs' words are original; a web check of each chorus line (27 October 2026) found nothing, which is a sanity check and not a clearance.
+
+## 2.4.0 — 2026-10-26 — Concert visuals, and a first page that says what it is for
+
+### Added
+- **Concert.** A new visual, and the new default: a lighting rig that listens, built like a touring show instead of a screen saver.
+  - **Colour is the harmony.** The home chord has one colour (warm for a major key, deep violet for a minor one) and every step round the circle of fifths moves the hue by 30°, so a modulation is a colour change you can see. The gradient stage, haze, floor glow and LED wall all follow it.
+  - **Mood you can see.** Energy (how loud, how dense, where the section is heading), valence (major bright, minor sad), tension (diminished, augmented and dominant chords, and distance from home) and brightness (timbre) set saturation, speed, how many beams are lit, haze and glow. They are smoothed, so it moves like a person reading the room instead of a meter.
+  - **Lights on the band's real drum hits.** The kick pumps the floor lights, the snare flicks alternate fixtures and fires the blinder, every hat steps the chase and toms jump it. The hits are scheduled on the audio clock, so the syncopation of the groove (ghost notes, off-beat hats) is exactly what you see. Without the band, your own playing drives it.
+  - **A cue list written from the song.** Intro haze, verse low, a build in the last bars before a chorus, a drop on the chorus (flash, beams wide, confetti), a cool sparse bridge, tight spots for a solo. Section names are read, so a section called "Hook" or "Pre-Chorus" does the right thing.
+  - **Reduce flashing** (a checkbox on the Stage pane, on by default) keeps the strobe to at most about 3 flashes a second and softens it to a wash.
+- **Three lenses** on the same show, in the Visuals bar and in Stage ▸ Performer backdrop:
+  - **Perform**: big and calm, for an audience.
+  - **Teach**: the circle of fifths as a lit floor ring with your key's notes, the chord that is playing, the path to the next one, a card with **roman numerals** for what is playing and the next four chords, one line on why the next chord pulls the way it does ("Dominant → home: the strongest resolution"), the key and tempo, and energy, mood and tension meters.
+  - **Sky**: every chord you play becomes a star, every move a line, and lines that repeat glow brighter. **⤓ Save sky** saves the session as a 1800 × 1200 PNG poster; **New sky** starts again.
+  - Teach and Sky draw in the room the lower third leaves them, so the chord card, the ring and the lyric line never sit on top of each other.
+- **Monitor ▸ Views.** The pitch wheel, spectrogram and scope, for looking at your sound rather than projecting it, now live on the Monitor tab under the tuner. They are still Stage scenes.
+- **A first page that says what it is for.** The start card now reads **Record it. Split it. Write it down.** and shows, in this order: **Record guitar + mic**, **Split any song** and **Chords, tab and lyrics**; then **Begin in the studio** and, for first-timers, **Try the demo song** (a finished song, no microphone or camera needed); then **Presets and effects** and **Neural graph and visuals**. The camera is an optional line at the bottom, a small text link that says it stays off unless you choose it. The page title, the search and link-preview descriptions, the guided tour and the README say the same thing.
+- **A one-time question before anything leaves the page.** Hand tracking and the **Me in front** look (which the stage route chooses by default) used to fetch MediaPipe from jsDelivr and Google as soon as the camera started. They now ask first ("One-time download": the two hosts, what they see, about 10 MB, and that the camera picture is never sent). **Download and turn it on** is remembered; **Not now, stay offline** uses the edges-in look or motion mode and does not ask again until the feature is chosen again. **Help ▸ About ▸ Credits ▸ Ask me again** takes a yes back.
+- **Privacy at a glance** in Help ▸ About, and a full statement at `/legal/` on the site together with the licence, the third-party notices and both font licences (the font licence asks that its text travel with the fonts).
+- **`docs/LICENSING.md`**, a register of every file the site serves, font, dependency, model and downloadable output, with its source and licence and a short list of what only the owner can confirm. **`npm run audit`** checks it against the real build (and runs at the end of `npm run verify:site`, so the deploy carries it): no runtime dependencies, permissive licences only, every shipped file registered, no audio or binary hidden in a page, a licence for every font and sample, every host and network call site known, no over-claiming wording.
+- **`test/e2e-privacy.cjs`**, a real-browser count of every request: a whole session makes none to another site, sets no cookie and stores only under the app's own names. Run it against the live site after a deploy.
+- Short notices where material comes in or goes out: the Stems panel, the lyric importer, the Export panel and the share page's footer, and a "Your music" line in About. Stems, chords and tab are described as derived from the loaded file.
+
+### Changed
+- **Concert is the default visual** and the first scene on the Stage. If you have already chosen a visual it is kept; pick Concert in the Visuals bar.
+- **Hex Tunnel is retired.** A saved Tunnel look (the Visuals choice or a Stage scene) opens as Concert; scenes you made yourself, and each scene's section link, are left alone. The new Resonance scene takes its place in the default scene list.
+- The pitch wheel, spectrogram and oscilloscope left the Visuals bar (see Monitor ▸ Views).
+- The performer backdrop's lower third now reports where it sits, so the lenses can keep clear of it.
+- The About text, `PRIVACY.md` and the notices no longer say the models are "Apache-2.0" as if checked: the MediaPipe code is, the hand model's card is reported as Apache-2.0, and Google states no separate licence for the selfie segmenter. The project hosts neither file. `PRIVACY.md` now has a table of what is processed, sent and kept, and says the stage route asks before it downloads.
+
+### Fixed
+- The chord strum no longer throws when it is given a rest ('.') or an empty bar.
+- A broken link in the README (self-hosting the camera files) and a stale note in the security model about the segmenter URL.
+- On the full-screen stage, notices (including the one-time download question) sit under the top bar instead of over the start panel.
+- The camera picture keeps running in motion mode while the one-time download question waits for an answer.
+
+### Not built
+- A performer cut-out (the person lifted out of the camera picture and placed in the show).
+- Dragging a clip onto a different lane.
+- Lyrics are not read from audio. The lyric sheet is yours to type, paste or drop in (.txt, .md, .lrc); chords and tab are what the app extracts from sound.
+
 ## 2.3.0 — 2026-10-26 — Voice, editing, heatmap and performer backdrop
 
 ### Added

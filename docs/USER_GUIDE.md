@@ -2,7 +2,46 @@
 
 A practical walkthrough of every panel. For a ten-minute orientation, press **?** in the app and choose **Take the guided tour**.
 
-Contents: [Voice](#voice-pitch-ribbon-your-range-find-my-key-23) · [Cut, silence and punch in](#cut-silence-and-punch-in-23) · [Heatmap](#heatmap-23) · [Performer backdrop](#performer-backdrop-23) · [Clips and the mix](#clips-move-trim-fade-split-22) · [Fast WAV render](#faster-than-real-time-wav-render-22) · [Open a MIDI file](#open-a-midi-file-22) · [Keep songs safe](#keep-songs-safe-22) · [Perform, share and back up](#perform-share-and-back-up-20) · [Getting sound](#getting-sound-in-and-out) · [Tones and the Rig](#tones-and-the-rig) · [The band](#the-band) · [Arrangement and recording](#arrangement-and-recording) · [Tab editor](#tab-editor) · [Song, tunings and capo](#song-tunings-and-capo) · [Fretboard and tuner](#fretboard-and-tuner) · [Transcribe](#transcribe-audio-to-tab) · [Stems](#stems-and-backing-tracks) · [Neural map](#neural-map) · [Visuals and Stage](#visuals-and-stage) · [Vision](#vision-lab) · [Research](#research-panel) · [Export, history and backup](#export-history-and-backup) · [MIDI](#midi) · [Layout](#layout-and-themes)
+Contents: [Getting started](#getting-started-and-guided-sessions-27) · [Show setup](#show-setup-26) · [Layouts](#layout-and-themes) · [Monitor widgets](#monitor-widgets-26) · [Concert](#concert-24) · [Voice](#voice-pitch-ribbon-your-range-find-my-key-23) · [Cut, silence and punch in](#cut-silence-and-punch-in-23) · [Heatmap](#heatmap-23) · [Performer backdrop](#performer-backdrop-23) · [Clips and the mix](#clips-move-trim-fade-split-22) · [Fast WAV render](#faster-than-real-time-wav-render-22) · [Open a MIDI file](#open-a-midi-file-22) · [Keep songs safe](#keep-songs-safe-22) · [Perform, share and back up](#perform-share-and-back-up-20) · [Getting sound](#getting-sound-in-and-out) · [Tones and the Rig](#tones-and-the-rig) · [The band](#the-band) · [Arrangement and recording](#arrangement-and-recording) · [Tab editor](#tab-editor) · [Song, tunings and capo](#song-tunings-and-capo) · [Fretboard and tuner](#fretboard-and-tuner) · [Transcribe](#transcribe-audio-to-tab) · [Stems](#stems-and-backing-tracks) · [Neural map](#neural-map) · [Visuals and Stage](#visuals-and-stage) · [Vision](#vision-lab) · [Research](#research-panel) · [Export, history and backup](#export-history-and-backup) · [MIDI](#midi) · [Layout](#layout-and-themes)
+
+---
+
+## Getting started and guided sessions (2.7)
+
+The first page asks **what you would like to do first**, not how good you are:
+
+| Goal | Opens | The session |
+|---|---|---|
+| Turn a hum into a song | A clean page with the Sing or hum button | Start listening · hum 10–30 seconds · hear the band · change the feel · keep it |
+| Record, loop and layer | A new page in the Record layout | Connect your input · set the loop · play chords · play a lead on top · keep looping · stop (see [Loop & layer](#loop--layer-28)) |
+| Learn a song | The Backing track tab | Open it · load a song · mute your part · play along · loop a hard bit |
+| Run a show | The demo song in the Show layout, Show setup open | The seven-line preflight below |
+
+A small card names one step and outlines the control. The step ticks off when the app sees you do it (it watches its own state; nothing is faked). **Show me** takes you to the control, **Skip** moves on, **–** folds the card, **✕** leaves and keeps your place, and you can drag the card anywhere. Finishing a session adds the tools it used to the tab strip and tells you which. Start, resume or repeat any of them from **? ▸ Guided sessions** (on a phone: More ▸ Guided sessions).
+
+**I know my way around** on the first page opens every tool with no coaching. You can also pick **Tools ▸ Everything** at any time.
+
+**Notes on tabs.** The first time a tab opens, a short note says what it is and gives one thing to try. **Got it** folds it into a small “What is this tab?” line; it never comes back as a full note. Turn them all off in the sessions menu. They are not shown on *Everything* or during a session.
+
+**DAW words, in guitar terms.** ? ▸ Guided sessions ▸ *DAW words, in guitar terms*: lane, clip, take, arm, dry and wet, input level, monitor, latency, count-in, loop, stem, snap, master, render and scene, each in a sentence a guitarist would use. The list is searchable.
+
+**Show preflight.** At the top of the Output tab in Show setup, and the *Set up a show* session: pick a look · check the rig · open the output · run a test pattern · set the master level · try the blackout (0, then again) · play the song once and watch the flash meter. The app ticks each line when it sees it done; **Start over** clears the ticks for the next room. It is not saved, because it belongs to the room you are in.
+
+---
+
+## Loop & layer (2.8)
+
+A looper-pedal way of working: record a track of chords, hear it come round, and play an instrumental part on top in a second track.
+
+1. Plug in your guitar and connect the input (**Audio** at the top right). Use headphones if you play through speakers.
+2. Press **⟲ Loop & layer** (Arrangement tab; on a phone, More ▸ Loop & layer). Choose a loop of 1, 2, 4 or 8 bars and whether the backing band plays (the default is **Off · click only**), then **● Start looping**.
+3. A bar of clicks counts you in. Play your chords for one pass. That is **Layer 1**.
+4. The loop comes round by itself. Layer 1 plays back while you play a lead on top. That is **Layer 2**, and each further pass records another layer.
+5. In the strip at the bottom, **Keep looping** stops recording at the end of the pass and keeps the loop playing so you can listen; **● Add a layer** records on the next pass; **↶ Undo layer** takes the last layer back; **■ Stop** ends it.
+
+Layers are ordinary tracks (named *Layer 1*, *Layer 2*; *Vocal layer N* for a voice), so afterwards you can move, trim, mute, solo, mix and export them like any other take. A pass on which nothing was played is not kept. The guided session *Record, loop and layer* walks you through the same steps.
+
+Limits: your interface's delay is compensated, but a note played in the last few milliseconds before the loop point can be clipped by about that delay. Use the loop-length choice and play slightly ahead of the beat as a looper player does.
 
 ---
 
@@ -10,7 +49,9 @@ Contents: [Voice](#voice-pitch-ribbon-your-range-find-my-key-23) · [Cut, silenc
 
 **The band.** A new blank song starts with the band off, so pressing Play plays only what you recorded or wrote. The song that Hum to Song builds comes with the band; its panel has a **🥁 Band** button to switch drums, bass and rhythm off or on (your melody keeps playing), and the BAND row in the studio has the same switches.
 
-**The first screen: pick a route.** **● Begin in the studio** (the default) opens a clean canvas: a blank page with the cursor in the lyrics, no camera and no full screen, to write your thoughts down. A slim bar underneath lets you **sing or hum an idea**, plug in a guitar, or load a song file instead. **🎥 Begin on stage** goes full screen with your camera and the hexagons, you in front. The camera is asked for only when you choose the stage, and you can switch any time with **🎥 Go on stage** in the Visuals bar, or **Start in** under Settings ▸ Workflow or I/O ▸ Camera. The app remembers the route you used last. Either way you are offered **● Hum or sing** or **🎸 I have a guitar**; under them: **a song file…**** (it is split into stems and the chords fill in), **a blank page** or **the demo song**. **＋ New song** (top right of the stage) brings this panel back; **⚙ Inputs** opens I/O, where you choose the microphone and camera once and the app remembers. "Start with camera and mic off" (under Other ways to start) never asks for either. ✕ Studio (top right) returns to the normal studio any time; ■ Stop audio stops all sound and releases the microphone.
+**The first page.** It says what the app is for: **Record it. Split it. Write it down.** Three things first: **Record guitar + mic** (plug in an interface or use any microphone; both inputs at once, dry and wet takes, count-in, punch-in), **Split any song** (drums, bass, vocals and guitar come apart; mute the part you play and jam over the rest) and **Chords, tab and lyrics** (from a song or from your own playing, with a lyric sheet that sits under the chords). Then the way in: **● Begin in the studio** opens a clean canvas: a blank page with the cursor in the lyrics, no camera and no full screen. A slim bar underneath lets you **sing or hum an idea**, plug in a guitar, or load a song file instead. First-timers also get **♫ Try the demo song**, a finished song that needs no microphone and no camera. Below that: **Presets and effects** and **Neural graph and visuals**.
+
+**The camera is an optional extra.** It is never asked for on the first page. A small **Begin on stage** link at the bottom goes full screen with the visuals and your camera, you in front; you can also switch any time with **🎥 Go on stage** in the Visuals bar, or **Start in** under Settings ▸ Workflow or I/O ▸ Camera. The app remembers the route you used last. Either way you are offered **● Hum or sing** or **🎸 I have a guitar**; under them: **a song file…** (it is split into stems and the chords fill in), **a blank page** or **the demo song**. **＋ New song** (top right of the stage) brings this panel back; **⚙ Inputs** opens I/O, where you choose the microphone and camera once and the app remembers. "Start with camera and mic off" (under Other ways to start) never asks for either. ✕ Studio (top right) returns to the normal studio any time; ■ Stop audio stops all sound and releases the microphone.
 
 **I have a guitar.** The coach walks you through three steps: **1 · Tune** each string (pluck it open; the bar fills when it is in tune), **2 · Learn the chords** of your song one at a time (the diagram shows where your fingers go; it says what it hears), **3 · Play along** with the band. You need an audio input for the guitar (the browser asks when you press the button). Skip any step with the buttons.
 
@@ -24,7 +65,7 @@ The fastest way in: **hum or sing a few seconds of melody and get a whole song b
 4. Change anything in the panel at the bottom and it re-builds right away: **Style** (Folk, Pop, Rock, Ballad, Dance), **Tempo**, **Key** and mode, **Song shape** (full song or quick verse + chorus), and 🎲 **Try different chords**. **👂 Hear my hum** plays your original recording.
 5. Make it yours: **✎ Add lyrics**, edit any chord, or **🎛 Open in the studio** for the rig, tab, stems and export. The song is saved in My songs automatically.
 
-**Center stage.** On the stage route (or when "Go on stage while I sing" is ticked), the app opens the Visuals tab with your camera behind the hexagons, "me in front" (green screen), so you see yourself while you sing. Turn it off with **📷 Camera off** in the panel or the **📷 Camera backdrop** button in Visuals. The person cut-out needs a small model from the internet the first time; offline it falls back to an outline look.
+**Center stage.** On the stage route (or when "Go on stage while I sing" is ticked), the app opens the Visuals tab with your camera behind the hexagons, "me in front" (green screen), so you see yourself while you sing. Turn it off with **📷 Camera off** in the panel or the **📷 Camera backdrop** button in Visuals. The person cut-out needs a small model from the internet, so the first time it asks ("One-time download"): **Download and turn it on** fetches MediaPipe's code from jsDelivr and its model from Google storage, about 10 MB, and remembers your yes; **Not now, stay offline** keeps everything on the device and uses the outline look. Your camera picture is never uploaded either way. **Help ▸ About ▸ Credits ▸ Ask me again** takes your yes back.
 
 **Record the stage.** **⏺ Record** (Visuals bar, and the bar on the full-screen stage) saves a video of the visuals with the song's sound to your device (.webm, or .mp4 where the browser makes that). Choose **Record now** or **The whole song, from the top** (no metronome, one pass). The camera is in the video only if you already turned it on; recording never starts it. Live guitar is in the sound when monitoring is on. Keep the tab in front while recording. Ctrl/Cmd + . stops it and discards it. Nothing is uploaded.
 
@@ -285,11 +326,99 @@ A node graph of the music as it plays: notes, chords, functions (tonic, subdomin
 
 ## Visuals and Stage
 
-**Visuals** (6) offers Hex Resonance, Hex Tunnel, Spectrogram, Chroma Wheel, Oscilloscope, String Field, Chord Bloom, Harmonic Orrery, Ridgeline, Beat Grid, a Prompter, the Neural map, **Fifths Halo** (the circle of fifths as a ring around you, with the song's chords on it and your notes flying in) and **Prism** (a kaleidoscope that changes on the off-beat; flashes and spin are limited while Stage ▸ safe is on). In full-screen, **✦ Look** cycles Hex Resonance, Fifths Halo, Prism and Tunnel. **🎸 Neck** puts a small guitar neck on the visuals and the Neural map: what is playing, a dashed ghost of the note coming next, the note you are singing (pink, at every place it can be played) and any chord you click in the Neural map, driven by the rig output, the master mix or your dry DI. Add a **camera backdrop** or go **⛶ Stage mode**.
+**Visuals** (6) offers **Concert** (the default), Hex Resonance, String Field, Chord Bloom, Harmonic Orrery, Ridgeline, Beat Grid, a Prompter, the Neural map, **Fifths Halo** (the circle of fifths as a ring around you, with the song's chords on it and your notes flying in) and **Prism** (a kaleidoscope that changes on the off-beat; its flashes and spin follow Light comfort). In full-screen, **✦ Look** cycles Concert, Hex Resonance, Fifths Halo and Prism. The pitch wheel, spectrogram and scope are readouts rather than shows, so they are on **Monitor ▸ Views** (and are still Stage scenes). **🎸 Neck** puts a small guitar neck on the visuals and the Neural map: what is playing, a dashed ghost of the note coming next, the note you are singing (pink, at every place it can be played) and any chord you click in the Neural map, driven by the rig output, the master mix or your dry DI. Add a **camera backdrop** or go **⛶ Stage mode**.
 
 **Camera look.** Turn on **📷 Camera backdrop** (Visuals tab, or per scene in Stage) after starting the camera in the Vision tab, then pick how it sits with the visuals: *Dimmed behind the visuals*; *Visuals frame me (edges in)*, where you stay clear in a soft oval and the visuals live around the edges (drag the slider to size the clear area); or *Me in front (green screen)*, which cuts you out so the visuals play behind you. The cut-out downloads a small model the first time (Google's selfie segmenter, nothing is uploaded); offline it falls back to edges-in. Good light and a plain-ish background help the cut-out.
 
-**Stage** (7) is the performance surface: full-screen visuals with **eight scenes** (<kbd>1</kbd>…<kbd>8</kbd> when Stage is focused, or MIDI notes 48–55). Each scene picks a visual and sets hue and hue drift, trails, glow, kaleidoscope, sensitivity and beat flash, plus overlays for the current chord, lyric, beat, tuner and song info. **Auto-switch on section** changes scene by section name as the song plays. Move the mouse to show the controls; they fade when idle.
+**Stage** (7) is the performance surface: full-screen visuals with **eight scenes** (<kbd>1</kbd>…<kbd>8</kbd> when Stage is focused, or MIDI notes 48–55). The first six are the six looks (Theatre, Backlight, Blades, Pixel field, Horizon, Laser room), then a lyric prompter and you in front. Each scene picks a visual and sets hue and hue drift, trails, glow, kaleidoscope, sensitivity and beat flash, plus overlays for the current chord, lyric, beat, tuner and song info. **Auto-switch on section** changes scene by section name as the song plays. Move the mouse to show the controls; they fade when idle.
+
+### Show setup (2.6)
+
+![The Show setup console on the Stage tab](screenshots/52-show-setup.png)
+
+The console is for the person who sets up the show in a room: a stage manager, a lighting or video technician, or a band doing its own. It lives in the **Stage** tab, under the picture it changes (beside it when the pane is wide), so every change is seen as it is made. **🎛 Show setup** in the Visuals bar opens it too. The buttons at its top say what it is changing: the **Stage scene** on the screen, or the **Visuals tab**'s look.
+
+Your changes are kept as differences from the look you started from, so **Reset** always has somewhere to go back to. Nothing about a show is stored in a song.
+
+**Looks.** Six finished looks, built differently (where the lights stand, what is behind the band, how it all moves), not six colourings of one rig. On the Visuals tab, **Match the look to the song** picks one from the song's feel (kit, groove, key and tempo) until you choose one yourself.
+
+| Look | What it is |
+| --- | --- |
+| **Theatre** | Warm front light: tungsten washes and pools of light, haze with dust in it. No strobe, no lasers. Voice, acoustic guitar, quiet rooms |
+| **Backlight** | Contre-jour: hard beams from the floor behind the band through heavy haze, one saturated colour against white, a blinder on the big moments |
+| **Blades** | Architectural LED: tall hard-edged bars across the stage that rise and fall with the spectrum, cool white and steel, a few precise lasers |
+| **Pixel field** | A generative LED wall: the spectrum climbs it, every note ripples out from a point, the kick pulses its centre |
+| **Horizon** | Cinematic: a low sun on a long horizon with rays over the haze that rises into the chorus and sinks in the outro |
+| **Laser room** | A black room with thick haze, side towers and lasers, with a different laser kit for every section |
+
+![Backlight at a chorus](screenshots/47-look-backlight.png)
+
+**Your looks.** Name the look as it is now, with all your changes (not your pictures), and bring it back on any scene. Up to 24. **Save all as a file** and **Open a looks file** carry them to another device; a file is checked on the way in, and anything that is not a known setting is dropped.
+
+**Rig.** Where the moving lights stand (a truss over the stage, the floor behind the band, towers at the sides, a wash, or none), how many, beam style and spread, floor lights, the room (quiet or sky and horizon), drifting colour fields, haze, dust and embers, what is behind the band (nothing, spectrum columns, blades, a pixel field, a horizon and sun, or your own picture as a pixel wall), laser amount and the starburst on the drop, overall brightness, the blinder, confetti, how long one sweep takes and whether movement steps on the beat.
+
+**Colour.** Six colours (the room, three lights, two lasers), a colour treatment (full colour, two colours or one colour, for a disciplined stage) and the palettes of the other looks to borrow.
+
+**Cues.** A cue sheet for each kind of section (intro, verse, pre-chorus, chorus, bridge, solo, outro; a section takes its kind from its name). For each: the level, how many lights are on, haze, floor lights, the backdrop, whether it starts with confetti or a blinder, which light patterns the moving lights take (several move on every four bars) and which laser patterns run. **Preview** plays a silent band for that kind of section, so a cue can be set and rehearsed without a song; tick **As the last time through** to see the biggest version.
+
+**Response.** How strongly the kick, snare, hi-hat, bass notes, guitar strums and lead notes drive the lights, from nothing to 150 %. A live meter beside each shows what is arriving now, and **Fire** sends one hit so you can see what it does.
+
+**Pictures.** Your own pictures (below).
+
+**Output.** What goes to the screen, the full-screen view and the pop-out window:
+
+* **Master level**, **blackout** (<kbd>0</kbd> while the Stage is showing; it fades) and **freeze** (<kbd>9</kbd>; the picture is held for the output while the lights go on behind it).
+* **Mirror** left to right (a projector behind the screen) and **flip** upside down (a projector hung from the ceiling).
+* **Safe-frame guides** at 90 % and 80 % on this screen (not drawn on the output).
+* **Test patterns**: bars, grid (with a circle, diagonals and the pixel size), ramp, grey, white and black, to line up a projector and check colours. White is very bright.
+* **Frame rate** of 60 or 30 a second, render quality, and **Light comfort**.
+* A **flash meter**: flashes per second against the limit of three, the governor, and the highest this session.
+
+**Scene** holds the Stage scene's own settings (the name, hue, trails, glow, kaleidoscope, sensitivity, beat flash, overlays and switching by section name) and **MIDI** is the MIDI output for lights, synths and a DAW. **Restore starter scenes** puts the eight scenes back as they shipped. If you changed any of the old scenes, they were left as they were.
+
+The show is a picture on a screen. Nothing here sends DMX, ILDA or any lighting-control signal, and a MIDI note does not trigger blackout yet.
+
+**Why it moves the way it does.** Everything follows one clock: where the song is, in bars. Beams and sweeps are locked to the bar (a four-bar sweep is back where it started four bars later), the band's drum hits, bass notes, chords and lead notes light the rig at the moment they sound, and each section calls for a combination of lasers that changes on four-bar phrases. It is never a timer on a loop. With no song playing, your own notes move the show.
+
+**Lasers.** Eight patterns (fan, cone, zipper, curtain, lattice, scribble, tunnel, and a starburst on the drop) are drawn on the screen and brighten on real kicks, snares, strums and lead notes. They are a picture; nothing here controls laser hardware.
+
+#### Your own pictures
+
+Drop a band photo, a poster, a logo or a venue into the **Pictures** tab, then say what each is for: **Back** (behind the lights; several pictures change at each new section), **Wall** (shown as a pixel wall that the music plays across) or **Logo** (lit by the band; choose its size and corner). Pictures are reduced to 1920 px and kept in this browser only. They are never uploaded, they are not part of a song's `.zip` or a backup, and clearing the site's data removes them. JPEG, PNG, WebP and GIF work; SVG is refused. Up to 24. Only use pictures you have the right to show.
+
+#### Light comfort
+
+Choose **Calm**, **Standard** or **Full show** on the Output tab. Calm has no strobe, slower movement and softer pulses, and it is the default if your device asks for reduced motion. Standard has soft pulses on the beat and a gentle flash at the top of a chorus. Full show is the whole production at full strength.
+
+In every setting the show keeps to **no more than three flashes in any second**: the blinder fires at most once a bar and never closer than a third of a second (a second in Calm), and the show watches its own picture and eases every pulse and flash back if brightness starts to swing too often. This is a safeguard built into the app, not a medical guarantee; if lights or motion ever bother you, choose Calm or stop the show. On a slow computer the show drops its laser halos and some moving lights until frames are quick again.
+
+### Concert (2.4)
+
+![Concert, Perform lens](screenshots/40-concert-perform.png)
+
+A lighting rig that listens, and the default visual. It is built like a touring show:
+
+* **Colour is the harmony.** Each look has its own palette. As the song moves round the circle of fifths the lights lean towards the palette's other colours, and tension pulls towards its third light, so a modulation is a colour change you can see. (The Teach lens still colours the circle of fifths itself by hue.)
+* **Mood you can see.** Loudness and density, major against minor, tension (diminished, augmented and dominant chords, and how far from home you are) and brightness set the saturation, speed, number of beams, haze and glow. It is smoothed, so it moves like a person reading the room.
+* **Lights on the band's real drum hits.** Kick pumps the floor lights, snare flicks the beams and fires the blinder, hats step the chase, toms jump it. Because the hits are scheduled on the audio clock, off-beat hats and ghost notes show up exactly where they are played. With the band off, your own playing drives it.
+* **A cue list from the song.** A build before a chorus, a drop on it (flash, wide beams, confetti), a cool sparse bridge, tight spots for a solo. Name your sections (Verse, Pre-Chorus, Chorus, Bridge, Solo, Outro) and it follows.
+* **Light comfort** (Calm, Standard or Full show; see [below](#light-comfort)) decides how hard the lights hit, and the show never flashes more than three times a second.
+
+Three **lenses** on the same show, in the Visuals bar and in Stage ▸ Performer backdrop:
+
+![Concert, Teach lens](screenshots/41-concert-teach.png)
+
+* **Perform**: big and calm, for an audience.
+* **Teach**: the circle of fifths as a lit ring (home marked, your key's notes bright, the chord's notes joined, a dashed path to the next chord, and the note you are playing circled), a card with the **roman numeral** of what is playing and of the next four chords, and one line on why the next chord pulls the way it does. Energy, mood and tension are shown as meters.
+* **Sky**: every chord you play becomes a star and every move a line; lines that repeat glow brighter. **⤓ Save sky** downloads the session as a PNG poster, **New sky** starts again.
+
+![Concert, Sky lens](screenshots/42-concert-sky.png)
+
+With the performer backdrop's lower third on, Teach and Sky draw in the room above it.
+
+### Monitor widgets (2.6)
+
+The Monitor opens short: the **Tuner** and **Levels**. A row of chips at the top adds the others, and a **✕** on a widget takes it away again: **Analysis** (chord, key, brightness, vibrato, crest), **Spectrum** (the rig output) and **Views** (the pitch wheel, spectrogram and scope, switched with three buttons). A widget you have removed is not drawn or updated at all, so it costs nothing. Drag a widget by its title to reorder, click the title to collapse it. Each layout brings the widgets that suit it (Record: tuner and levels; Tone: tuner, analysis and spectrum).
 
 ### Performer backdrop (2.3)
 
@@ -310,7 +439,7 @@ Uses your webcam to relate what your hand does to what you play.
 
 1. **Camera on/off**, choose **Hand tracking (MediaPipe via CDN)** or **Motion energy only (offline)**.
 2. **Calibrate neck**: frame the neck head-on, press ⌖, then click the nut on the low-E string, the 12th-fret marker on the low-E string, and the nut on the high-e string. Fret spacing uses the equal-temperament rule `d(n) = L·(1 − 2^(−n/12))`.
-3. Fusion statistics compare camera-estimated fingering with detected notes. Camera frames never leave the page; the hand-tracking model downloads from a CDN only if you choose it (see [HOSTING.md](HOSTING.md#9-self-hosting-the-hand-tracking-files) to self-host it).
+3. Fusion statistics compare camera-estimated fingering with detected notes. Camera frames never leave the page; the hand-tracking model downloads from a CDN only after you choose it and answer yes to the one-time question (see [HOSTING.md](HOSTING.md#8-self-hosting-the-camera-model-files) to self-host it).
 
 ## Research panel
 
@@ -378,7 +507,8 @@ The **Tracks** button at the right of the chip row cycles the arrangement betwee
 
 ## Layout and themes
 
-* **Drag** dock tabs to reorder; **double-click** a tab to float it as a window and again to dock it back. **▦** opens layout presets (including *Songwriting*, *Track study* and *Record*), show / hide for each panel and a reset.
+* **Drag** dock tabs to reorder; **double-click** a tab to float it as a window and again to dock it back. **▦** opens the layout picker (below), a box to name and keep your own layout, show / hide for each panel and a reset.
+* **Layouts.** Each layout is a whole workspace for one job, and choosing one replaces the last completely: where the sidebars are and what is in them, how tall the arrangement is, which panel is open, which tabs are on the strip (the rest are under **☰**) and which Monitor widgets show. **Studio** (everything in reach, panels above the arrangement), **Write** (tab in the middle, chords and lyrics and theory beside it, a short arrangement), **Arrange** (a tall arrangement on top, the band and song panels below, refine on the right), **Record** (inputs on the left, levels on the right, a tall arrangement for guitar and voice), **Tone** (the pedalboard fills the middle, tones to pick on the left, tuner and spectrum on the right), **Practice** (tab and fretboard side by side, loop and transport at hand), **Show** (the Stage and the show setup, no sidebars, the arrangement reduced to the transport), **Focus** (just the panel you are on) and **Classic** (the original: arrangement above, panels below). **Canvas | Song | Studio** chooses Write or Record / Arrange for you. Your own layouts keep all of it.
 * **☰** at the end of the tab strip lists every panel (nothing is hidden when the strip scrolls). **⤢** expands the current panel to the whole centre; <kbd>Esc</kbd> goes back.
 * **Interchangeable panels.** **⇆** on a sidebar (or **☰ → Where panels live…**) lets you put any panel in the centre, the left sidebar or the right sidebar, swap the two sidebars, collapse or expand all cards and reset. Sidebar cards collapse with their ▾ and remember it.
 * Drag the vertical splitters to resize the sidebars (double-click to reset); each sidebar tab remembers its own width. <kbd>[</kbd> and <kbd>]</kbd> toggle them. In a desktop window narrower than 1180 px the right sidebar opens as an overlay when you choose Refine or the Monitor.
@@ -411,6 +541,16 @@ Open the **◐** button (or Settings ▸ Customize appearance…; on a phone Mor
 - **Density, corners, surfaces and text size** change spacing, shape and depth.
 - **Typeface**: the default is Inter with Montserrat headings, built into the page. The other choices use fonts installed on your device (nothing is downloaded). **High contrast** strengthens text and borders. **Colour-blind safe** swaps charts, meters, visuals and status lights to a palette that stays distinguishable for red–green and blue–yellow colour-blindness.
 - **Reset appearance** returns to the defaults.
+
+## Your music, and what you share
+
+The app ships no recordings and no one else's lyrics, and it never uploads anything, so what is in it is what you put there. A few things worth knowing before you share:
+
+* **Stems, chords and tab are worked out from your file.** If the recording is not yours, they are based on someone else's work. Use them to practise and write; check the rights holder before you post them.
+* **Lyrics are yours to bring.** The app does not read words from audio. Paste, type or open lyrics you wrote or have the right to use.
+* **Files that carry sound carry the loaded track.** If a backing track is loaded, the bounce, compressed audio, share page and stage video contain it, and so do backups. Send them only where you have the right to.
+* **Ultimate Guitar and other sites** have their own submission rules. A chart of your own song is yours to post; a chart of someone else's song is based on theirs.
+* The demo song is an original sketch. Credits and licences are under **Help ▸ About**, and at `/legal/` on the site; the file-by-file register is [LICENSING.md](LICENSING.md).
 
 ## Support
 

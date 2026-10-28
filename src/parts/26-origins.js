@@ -14,8 +14,9 @@ function zoomSet(z, quiet) {
   if (!ZOOMS.some(x => x[0] === z)) z = 'studio'; ZOOM.cur = z; CFG.zoom = z; saveCfg(); document.body.classList.toggle('zoom-canvas', z === 'canvas');
   if (isDesk()) {
     if (z === 'canvas') { LAY.right = true; saveLay(); applyLayout(); sideShow('refine'); }
-    else if (z === 'song') applyPreset(layoutPreset('Songwriting'));
-    else applyPreset(layoutPreset(STM.ch ? 'Track study' : 'Record'));
+    else if (z === 'song') applyPreset(layoutPreset('Write'), 'Write');
+    else if (STM.ch) applyPreset(Object.assign({}, layoutPreset('Arrange'), { dock: 'stems' }), 'Arrange');
+    else applyPreset(layoutPreset('Record'), 'Record');
   }
   zoomSync(); if (!quiet) toast(ZOOMS.find(x => x[0] === z)[1] + ' view', ''); setTimeout(() => { try { tlSize(); } catch (e) { } window.dispatchEvent(new Event('resize')); }, 60);
 }
@@ -63,7 +64,7 @@ function originsOpen(o = {}) {
   });
   setTimeout(() => { const i = $('input.in', blank); if (i) i.focus(); }, 40); return d;
 }
-function startMaybe() { if (PRJ.cur || store.get('started', false) || /[?&]start=0/.test(location.search) || document.getElementById('origins')) return; PRJ.fresh = true; if (CFG.route === 'stage') humStageFirst(); else humCanvasFirst(); }   // (the song on screen is only the built-in demo until the person picks something) the first thing anyone sees is the stage with one panel: hum, guitar, or a song file / blank page / demo
+function startMaybe() { if (PRJ.cur || store.get('started', false) || /[?&]start=0/.test(location.search) || document.getElementById('origins')) return; PRJ.fresh = true; if (guideRoute()) return; if (PRJ.bootDemo) { PRJ.bootDemo = false; projCreate('demo', { zoom: 'song' }); return; } if (CFG.route === 'stage') humStageFirst(); else humCanvasFirst(); }   // (the song on screen is only the built-in demo until the person picks something) the first thing anyone sees is the stage with one panel: hum, guitar, or a song file / blank page / demo
 bus.on('booted', () => { if (PRJ.ready) startMaybe(); else PRJ.wantStart = true; });
 /* a library that is unavailable (private window) still lets you begin */
 function newSongGo() { originsOpen({}); }

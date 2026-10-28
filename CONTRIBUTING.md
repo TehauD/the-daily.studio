@@ -50,7 +50,8 @@ Then try the change in the browser in **light and dark** themes, at a normal lap
 * Match the surrounding style: two-space indent, `const` / `let`, single quotes, compact one-line handlers are fine.
 * Keep names unique across `src/parts/` (they share one scope). Prefix new subsystems (the stem player is `STP`, the tour is `TOUR`) to avoid clashes.
 * Keep the DSP files DOM-free (`09b`, `16a`) so they stay testable in Node.
-* Respect the privacy model: **no analytics, no network calls, no external fonts or scripts** unless the user opts in and the README documents it.
+* Respect the privacy model: **no analytics, no network calls, no external fonts or scripts** unless the user opts in and the README documents it. The only reach beyond this site is MediaPipe, behind the one-time question (`mpConsent()`). A new network call, host, font, image, sample, model or dependency needs a row in `docs/LICENSING.md`, a line in `THIRD_PARTY_NOTICES.md`, a matching `PRIVACY.md` entry (for a host) and a pass of `npm run audit` and `test/e2e-privacy.cjs` in the same change; the audit fails until they agree.
+* Never add music, lyrics or samples you do not own or have a licence for. Anything under `samples/` needs its licence in `samples/LICENSE.md`.
 * Prefer extending to rewriting. Do not remove features without discussion.
 
 ## Accuracy claims

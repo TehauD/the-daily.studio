@@ -8,6 +8,7 @@ suite('e2e-backdrop', async t => {
 
   // off by default: nothing changes
   ok(await ev(() => { const d = window.__daily; return d.STG.pb && d.STG.pb.on === false && d.pbScene(d.STG.scenes[0], { sec: 'Verse' }) === d.STG.scenes[0]; }), 'the backdrop is off until you turn it on, and then the scene is untouched');
+  await ev(() => { const d = window.__daily; d.shOpen('scene', 'scene'); }); await wait(400);
   ok(await ev(() => !!document.getElementById('pbCard') && !!document.getElementById('pbOut') && !!document.getElementById('pbFull')), 'the Stage pane has a Performer backdrop card with the clean-output and full-screen buttons');
 
   // calm + section colour + loudness

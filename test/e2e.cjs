@@ -129,7 +129,7 @@ function wav(L, sr) { const n = L.length, b = Buffer.alloc(44 + n * 2); b.write(
     d = await dset(); ok(d.corners === 'round' && d.density === 'spacious' && (await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--cv1').trim())) === '#0072B2', 'corners, density and colour-blind-safe data colours apply');
     await page.selectOption('#look select', 'legible'); await wait(200); ok((await dset()).font === 'legible', 'typeface choice applies');
     await page.keyboard.press('Escape'); await page.reload(); await wait(2300); if (await page.$('#bootGo')) await page.evaluate(() => document.getElementById('bootGo').click()); await wait(2300); await page.evaluate(() => { const b = document.querySelector('#tourOffer .btn:not(.primary)'); if (b) b.click(); }); d = await dset(); ok(d.palette === 'paper' && d.corners === 'round' && d.density === 'spacious', 'appearance survives a reload: ' + d.palette + '/' + d.corners + '/' + d.density);
-    await page.click('button[title^="Appearance"]'); await wait(300); await page.click('.lk-foot .btn'); await wait(300); d = await dset(); ok(d.corners === 'soft' && d.density === 'comfortable' && d.palette === 'dsday' && d.font === 'brand', 'Reset appearance restores the defaults (Daily Light, brand type)');
+    await page.click('button[title^="Appearance"]'); await wait(300); await page.click('dialog[open] .lk-foot .btn'); await wait(300); d = await dset(); ok(d.corners === 'soft' && d.density === 'comfortable' && d.palette === 'dsday' && d.font === 'brand', 'Reset appearance restores the defaults (Daily Light, brand type)');
     await page.keyboard.press('Escape'); }
   // ---- v1.7: About & credits, CSP, production assets ----
   { await page.keyboard.press('Escape'); await page.click('.btn.icon[title^="Help"]'); await wait(400);
@@ -163,7 +163,7 @@ function wav(L, sr) { const n = L.length, b = Buffer.alloc(44 + n * 2); b.write(
   { const hp = await ctx0.newPage(), he = []; hp.on('pageerror', e => he.push(e.message));
     await hp.addInitScript(() => { try { const c = JSON.parse(localStorage.getItem('fw.cfg') || '{}'); delete c.humStage; localStorage.setItem('fw.cfg', JSON.stringify(c)); } catch (e) { } window.__gum = 0; window.__st = []; const md = navigator.mediaDevices, g = md.getUserMedia.bind(md); md.getUserMedia = c => { if (c && c.audio) window.__gum++; return g(c).then(st => { window.__st.push(st); return st; }); }; });
     await hp.goto(BASE + (BASE.includes('?') ? '&' : '?') + 'debug&start=1'); await wait(3500);
-    ok(/Hum a melody/.test(await hp.$eval('#boot', e => e.textContent)), 'the welcome card leads with "Hum a melody. Get a song."');
+    ok(/Record it\. Split it\. Write it down\./.test(await hp.$eval('#boot', e => e.textContent)), 'the welcome card leads with "Record it. Split it. Write it down."');
     await hp.evaluate(() => document.getElementById('bootNoMic').click()); await wait(2500); await hp.evaluate(() => { const b = document.querySelector('#tourOffer .btn:not(.primary)'); if (b) b.click(); document.querySelectorAll('#origins').forEach(d => d.close()); }); await hp.click('.sb-new'); await wait(500);
     const hero = await hp.$('#originsHum'); ok(!!hero, 'the first screen offers "Hum or sing" before anything else');
     if (hero) { await hero.click(); await wait(500); }
@@ -283,7 +283,7 @@ ok(he.length === 0, 'hum to song runs without script errors' + (he.length ? ' ' 
     ok(await dp.evaluate(() => !window.__daily.CAM.on && window.__daily.CFG.route === 'studio' && !document.body.classList.contains('vz-imm')), 'Start and connect my input is the studio route: no camera, not full-screen');
     await dp.evaluate(() => document.getElementById('vzGoStage').click()); await wait(4500);
     const DS = await dp.evaluate(() => { const D = window.__daily; return { cam: D.CAM.on, vz: D.VZ.cam, mode: D.VZ.mode, tab: !!document.querySelector('#dock .tab.on[data-id="vis"]'), btn: document.getElementById('ioCamBtn') && document.getElementById('ioCamBtn').classList.contains('on'), look: D.CFG.camFx, route: D.CFG.route }; });
-    ok(DS.cam && DS.vz && DS.mode === 'hex' && DS.tab && DS.btn && DS.look === 'person' && DS.route === 'stage', '🎥 Go on stage starts the camera backdrop on Hex Resonance, me in front (' + JSON.stringify(DS) + ')');
+    ok(DS.cam && DS.vz && DS.mode === 'concert' && DS.tab && DS.btn && DS.look === 'person' && DS.route === 'stage', '🎥 Go on stage starts the camera backdrop on Concert, me in front (' + JSON.stringify(DS) + ')');
     await dp.evaluate(() => document.getElementById('ioCamBtn').click()); await wait(600);
     ok(await dp.evaluate(() => !window.__daily.CAM.on && window.__daily.CFG.humStage === false), 'the camera button in I/O turns it off and the choice is remembered');
     await dctx.close(); }
@@ -306,7 +306,7 @@ ok(he.length === 0, 'hum to song runs without script errors' + (he.length ? ' ' 
     // the studio route never asks for the camera or goes full-screen, and the route is remembered
     const vctx = await browser.newContext({ viewport: { width: 1500, height: 900 }, permissions: ['microphone', 'camera'] }); await vctx.route(/jsdelivr|googleapis/, r => r.abort());
     const vp = await vctx.newPage(); await vp.goto(BASE + '?debug'); await wait(2500);
-    ok(await vp.evaluate(() => document.getElementById('bootNoMic').classList.contains('primary') && !document.getElementById('bootStage').classList.contains('primary')), 'the studio route is the default first choice');
+    ok(await vp.evaluate(() => !document.getElementById('bootStage').classList.contains('primary') && !!document.getElementById('bootNoMic') && document.querySelectorAll('.boot-goal').length === 4), 'the studio route is the default way in (the camera route is never the highlighted one), under the four goals');
     await vp.evaluate(() => document.getElementById('bootNoMic').click()); await wait(4500);
     const V1 = await vp.evaluate(() => { const D = window.__daily; return { cam: D.CAM.on, route: D.CFG.route, imm: document.body.classList.contains('vz-imm'), panel: !!document.querySelector('#humbar[data-mode="canvas"]'), stageBox: document.getElementById('humStage') ? document.getElementById('humStage').checked : null, goBtn: !!document.getElementById('vzGoStage') }; });
     ok(!V1.cam && V1.route === 'studio' && !V1.imm && V1.panel && V1.goBtn, 'Begin in the studio: clean canvas bar, no camera, not full-screen, a Go on stage button is there (' + JSON.stringify(V1) + ')');

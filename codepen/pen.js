@@ -5,7 +5,7 @@
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.3.0';
+const VERSION = '2.8.0';
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://the-daily.studio/journal/' };
 const $ = (s, r = document) => r.querySelector(s);
@@ -75,9 +75,10 @@ async function copyText(t) {
 const CFG = Object.assign({
   theme: 'light', a4: 440, flats: false, left: false, fft: 8192, smooth: 0.8, accent: 'lagoon', reduce: false,
   monitor: false, autoIn: false, kpad: true, rtt: null, hint: 'interactive', sr: 'auto', inDev: '', outDev: '', camDev: '', mirror: true, ch: 'auto',
-  countIn: 1, metroVol: 0.5, ugWidth: 72, ugTags: true, midimap: {}, ui: 1, vq: 1, humanize: 0.15, visMode: 'hex', hfrOn: true,
+  countIn: 1, metroVol: 0.5, ugWidth: 72, ugTags: true, midimap: {}, ui: 1, vq: 1, humanize: 0.15, visMode: 'concert', lens: 'perform', hfrOn: true,
   rec: { dry: true, wet: true }, fretNames: 'notes', lufsTarget: 0, gTrim: 0, ioLeveled: false, dropKind: 'track',
-  vin: 'off', armG: true, armV: true, voxMon: false, voxPolish: true, voxTrim: 0, trackSync: true, trackFill: 'all', renderFast: true, recEnd: 'grow', vzRibbon: false, vrange: null
+  vin: 'off', armG: true, armV: true, voxMon: false, voxPolish: true, voxTrim: 0, trackSync: true, trackFill: 'all', renderFast: true, recEnd: 'grow', vzRibbon: false, vrange: null,
+  mpOk: false   // true once the person has said yes to the one-time MediaPipe download (see mpConsent); nothing leaves the page before that
 }, store.get('cfg', {}));
 const saveCfg = () => store.set('cfg', CFG);
 
@@ -940,7 +941,7 @@ function drumHit(row, t, v) {
     const o = c.createOscillator(), g = gn(0); o.frequency.setValueAtTime(K.t[0] * 1.5, t); o.frequency.exponentialRampToValueAtTime(K.t[0], t + .1); env(g, K.t[1], .5 * vol); o.connect(g); g.connect(out); o.start(t); o.stop(t + K.t[1] + .05);
   }
 }
-function drumStep(sib, t) { const pat = dpat(), L = Math.min(S.band.drumLen || 16, 32); const i = sib % L; pat.forEach((row, r) => { const v = row[i]; if (v) drumHit(r, t + (Math.random() * 2 - 1) * CFG.humanize * .006, v); }); }
+function drumStep(sib, t) { const pat = dpat(), L = Math.min(S.band.drumLen || 16, 32); const i = sib % L; pat.forEach((row, r) => { const v = row[i]; if (v && typeof lxHit === 'function') lxHit(r, t, v); if (v) drumHit(r, t + (Math.random() * 2 - 1) * CFG.humanize * .006, v); }); }
 function click(t, accent) {
   const c = E.ctx, o = c.createOscillator(), g = gn(0); o.frequency.value = accent ? 1700 : 1150; g.gain.setValueAtTime(CFG.metroVol * (accent ? 1 : .6), t); g.gain.exponentialRampToValueAtTime(.0001, t + .035);
   o.connect(g); g.connect(E.tr.click.in); o.start(t); o.stop(t + .05);
@@ -1011,13 +1012,14 @@ function scheduleSlot(slot, time) {
   if (slot < 0) { const sib = ((slot % sp) + sp) % sp; if (sib % beatSlots === 0) click(time, sib === 0); return; }
   const bi = Math.floor(slot / sp), sib = slot % sp, fb = barsCache()[bi]; if (!fb) return;
   if (T.metro && sib % beatSlots === 0) click(tt, sib === 0);
+  if (typeof lxEvt === 'function' && sib % beatSlots === 0) lxEvt('beat', tt, sib === 0 ? 1 : 0);   // the show listens on the audio clock
   if (S.band.drumsOn) drumStep(sib, tt);
   const cd = chordAt(bi, sib);
   if (cd && cd.sym) {
-    if (S.band.bassOn) { const e = bassEvent(S.band.bassStyle, cd.sym, cd.rel, cd.len, cd.next); if (e) pluck('bass', tt, e.m, e.v, { id: 'b', pan: 0 }); }
-    if (S.band.compOn) { const st = STRUMS[S.band.compStyle] || STRUMS['Down 4s'], L = Math.min(16, sp); strumAt(tt, cd.sym, st.p[sib % L], st); }
+    if (S.band.bassOn) { const e = bassEvent(S.band.bassStyle, cd.sym, cd.rel, cd.len, cd.next); if (e) { pluck('bass', tt, e.m, e.v, { id: 'b', pan: 0 }); if (typeof lxEvt === 'function') lxEvt('bass', tt, e.m, e.v); } }
+    if (S.band.compOn) { const st = STRUMS[S.band.compStyle] || STRUMS['Down 4s'], L = Math.min(16, sp), ch = st.p[sib % L]; strumAt(tt, cd.sym, ch, st); if (ch && ch !== '.' && typeof lxEvt === 'function') lxEvt('chord', tt, cd.sym, ch === ch.toUpperCase() ? 1 : .6); }
   }
-  if (S.band.leadOn) fb.bar.tab.forEach(n => { if (n.s === sib) playTabNote(fb.bar, n, tt, dur); });
+  if (S.band.leadOn) fb.bar.tab.forEach(n => { if (n.s === sib) { playTabNote(fb.bar, n, tt, dur); if (typeof lxEvt === 'function') lxEvt('lead', tt, S.tuning[n.st] + S.capo + n.f, .8); } });
 }
 async function play(fromRec) {
   if (T.playing || OFR.busy) return; try { bandHint(); } catch (e) { } await startAudio(); const c = E.ctx; applyMix(); if (!S.sections.length || !songSlots()) { toast('Add a section with at least one bar first', 'warn'); return; }
@@ -1032,7 +1034,7 @@ function tick() {
     const total = songSlots(), end = T.loop ? (T.loopB != null ? Math.min(T.loopB, total) : total) : total;
     if (T.slot >= end) {
       if (REC && !(T.loop && T.loopB != null)) { const how = CFG.recEnd || 'grow'; if (how === 'grow' && recGrow()) continue; if (how === 'stop') { T.ending = true; T.endAt = T.next; setTimeout(() => { if (T.playing && T.ending && REC) stopPlay(true); }, Math.max(0, (T.next - E.ctx.currentTime) * 1000) + 60); break; } }
-      if (T.loop && end > 0) { if (T.loopA >= end) T.loopA = 0; if (REC) recEnd(); T.slot = T.loopA; stopTakes(); scheduleTakes(T.next, T.loopA * dur); trackStart(T.next, T.loopA); if (T.rec) { T.wantRec = true; T.recFrom = T.loopA; } if (T.slot >= end) { T.ending = true; T.endAt = T.next; break; } continue; }
+      if (T.loop && end > 0) { if (T.loopA >= end) T.loopA = 0; if (REC) recEnd(); if (typeof lpWrap === 'function') lpWrap(); T.slot = T.loopA; stopTakes(); scheduleTakes(T.next, T.loopA * dur); trackStart(T.next, T.loopA); if (T.rec) { T.wantRec = true; T.recFrom = T.loopA; } if (T.slot >= end) { T.ending = true; T.endAt = T.next; break; } continue; }
       T.ending = true; T.endAt = T.next; break;
     }
     if (T.wantRec && T.slot === T.recFrom) { recBegin(T.slot, T.next); T.wantRec = false; }
@@ -1072,7 +1074,7 @@ function recBegin(slot, ctxTime) {
   if (!E.hasInput) { toast('No audio input is open — recording the backing/tab only', 'warn'); return; }
   let g = armedG(), v = armedV(); if (PUNCH.on) { g = PUNCH.kind === 'gtr'; v = PUNCH.kind === 'vox'; }       // a punch-in records the lane being punched, nothing else
   if (!g && !v) { toast('Nothing is armed — arm the Guitar or Vocal lane (the ● button at the left of the arrangement) to record', 'warn'); return; }
-  REC = { dry: [], wet: [], vox: [], g, v, t0: ctxTime, startSec: slot * slotDur(), bpm: S.bpm, preset: RIG.cur, n: 0, cam: [], pkG: [], pkV: [], perf0: performance.now() + (ctxTime - E.ctx.currentTime) * 1000, punch: PUNCH.on ? Object.assign({}, PUNCH) : null, tEnd: 0 };
+  REC = { dry: [], wet: [], vox: [], g, v, t0: ctxTime, startSec: slot * slotDur(), bpm: S.bpm, preset: RIG.cur, n: 0, cam: [], pkG: [], pkV: [], perf0: performance.now() + (ctxTime - E.ctx.currentTime) * 1000, punch: PUNCH.on ? Object.assign({}, PUNCH) : null, tEnd: 0, cycle: !!(T.loop && T.loopB != null && !PUNCH.on) };
   if (g) { E.tapDI.on(true); if (CFG.rec.wet) E.tapWet.on(true); } if (v) E.tapVox.on(true); bus.emit('rec:state', true);
 }
 function pushBlock(arr, m, t0) {
@@ -1096,8 +1098,9 @@ function recEnd() {
     if (!parts.length) return; if (kind === 'gtr' ? quietLane(pG, pV) : quietLane(pV, pG)) { skipped.push(kind === 'gtr' ? 'guitar' : 'vocal'); return; } let dry = cat(parts), wet = wetParts && wetParts.length ? cat(wetParts) : null; const lim = r.tEnd ? Math.max(0, Math.round((r.tEnd - r.t0) * sr)) : 0; if (lim && lim < dry.length) { dry = dry.slice(0, lim); if (wet) wet = wet.slice(0, lim); }       // a punch-in ends exactly at its out point
     if (dry.length < sr * (r.punch ? .05 : .25)) return;
     let pk = 0, e = 0; for (let i = 0; i < dry.length; i++) { const a = Math.abs(dry[i]); if (a > pk) pk = a; e += dry[i] * dry[i]; }
+    if (r.cycle && pk < .002) return;      // a pass nobody played on is not a layer: loop recording never stacks silent takes
     const vox = kind === 'vox', nth = TAKES.filter(t => (t.kind === 'vox') === vox).length + 1;
-    const take = { id: uid(), kind, name: (vox ? 'Vocal ' : 'Take ') + nth, startSec: start, sr, dry, wet, peaks: peaksOf(dry), g: 1, pan: 0, mute: false, solo: false, mode: vox ? 'wet' : (wet && CFG.rec.dry ? 'reamp' : 'wet'), bpm: r.bpm, preset: r.preset, peak: dB(pk), rms: dB(Math.sqrt(e / dry.length)), dur: dry.length / sr, t: Date.now(), stats: vox ? null : statsSnapshot(), cam: vox ? [] : r.cam };
+    const take = { id: uid(), kind, name: (vox ? (r.cycle ? 'Vocal layer ' : 'Vocal ') : (r.cycle ? 'Layer ' : 'Take ')) + nth, startSec: start, sr, dry, wet, peaks: peaksOf(dry), g: 1, pan: 0, mute: false, solo: false, mode: vox ? 'wet' : (wet && CFG.rec.dry ? 'reamp' : 'wet'), bpm: r.bpm, preset: r.preset, peak: dB(pk), rms: dB(Math.sqrt(e / dry.length)), dur: dry.length / sr, t: Date.now(), stats: vox ? null : statsSnapshot(), cam: vox ? [] : r.cam };
     if (!vox && !CFG.rec.dry && wet) take.mode = 'wet'; made.push(take); if (!(r.punch && tkrPunchApply(take, r.punch))) TAKES.push(take);
   };
   if (r.g) mk('gtr', r.dry, r.wet); if (r.v) mk('vox', r.vox, null);
@@ -1458,7 +1461,7 @@ function openHelp() {
   const K = [['Space', 'Play / stop'], ['Ctrl + .', 'KILL AUDIO: stop playback, monitor off, release the microphone, suspend audio'], ['R', 'Record: one press, one take. It keeps going past the end of the song until you press R or Stop again'], ['L / M', 'Loop / metronome'], ['D · B · G · T', 'Band on/off: drums · bass · rhythm guitar · lead tab'], ['1…8 · 0', 'Recall pedalboard scene (Stage scene when Stage is focused) · 0 = all pedals off'], ['Home', 'Return to start'], ['Ctrl/⌘ Z · Shift+Z', 'Undo / redo: song edits, clips and the stem mix share one history'], ['Ctrl/⌘ E · D · Del', 'Selected clip: split at the playhead · duplicate · delete. ← → nudge a beat (Shift = a bar). Hold Alt while dragging for no snapping'], ['Drop a file', 'Audio, lyrics, MIDI (.mid, .kar) or a song file anywhere on the page'], ['Ctrl/⌘ S', 'Save project JSON'], ['Alt + 1…9, 0', 'Switch panel by position (tab order is yours to arrange)'], ['[ ]', 'Toggle left / right sidebars'],
     ['Tab editor', 'Click a cell · type fret (0–24) · ←→↑↓ move · Del clear · h p / \\ b ~ x < set technique · Shift+arrows select · Space plays from bar'], ['Knobs', 'Drag · wheel · Shift = fine · double-click reset · right-click = MIDI learn'], ['Rig', 'Drag pedal headers to reorder the signal chain · A/B + Morph to compare tones']];
   d.append(h('div', { class: 'dlg-h' }, 'HELP & SHORTCUTS', h('button', { class: 'btn sm', onclick: () => d.close() }, 'Close')), h('div', { class: 'dlg-b', style: { display: 'block' } }, h('div', { class: 'help-k' }, K.map(([a, b]) => [h('kbd', {}, a), h('span', {}, b)])),
-    h('div', { class: 'row', style: { gap: '8px', margin: '2px 0 8px' } }, h('button', { class: 'btn primary', onclick: () => tourStart() }, '▶ Take the guided tour'), h('span', { class: 'tiny muted' }, 'A two-minute spotlight walkthrough of the key areas.')), h('div', { class: 'hr' }), h('p', { class: 'small muted' }, 'Everything runs locally in your browser. Nothing is uploaded. Browsers cannot talk to ASIO drivers, so achievable latency depends on your OS audio stack; use the Loopback Test (I/O panel) for a measured number, and your Focusrite’s Direct Monitor for latency-free headphone monitoring while recording.'),
+    h('div', { class: 'row', style: { gap: '8px', margin: '2px 0 8px' } }, h('button', { class: 'btn primary', id: 'helpSessions', onclick: () => { d.close(); guideMenu(); } }, '✦ Guided sessions'), h('button', { class: 'btn', onclick: () => tourStart() }, '▶ Take the guided tour'), h('span', { class: 'tiny muted' }, 'Short tasks that teach by doing, or a two-minute spotlight walkthrough.')), h('div', { class: 'hr' }), h('p', { class: 'small muted' }, 'Everything runs locally in your browser. Nothing is uploaded. Browsers cannot talk to ASIO drivers, so achievable latency depends on your OS audio stack; use the Loopback Test (I/O panel) for a measured number, and your Focusrite’s Direct Monitor for latency-free headphone monitoring while recording.'),
     h('p', { class: 'small muted' }, 'Your work is autosaved to this browser: songs, recordings and backing tracks stay on this device (☰ Songs). For a copy you can keep anywhere, use ☰ Songs → All songs → Back up all songs (one zip with everything, which Open a file brings back), or save one song as a bundle. On an iPhone or iPad, add the site to the Home Screen so Safari keeps your songs.'), h('div', { class: 'hr' }), aboutBlock()));
   d.showModal();
 }
@@ -1500,7 +1503,7 @@ document.addEventListener('keydown', e => {
     case 'Home': UI.rew.click(); break; case '?': openHelp(); break;
     case '[': toggleSide('left'); break; case ']': toggleSide('right'); break;
     case 'd': case 'D': toggleBand('drumsOn'); break; case 'b': case 'B': toggleBand('bassOn'); break; case 'g': case 'G': toggleBand('compOn'); break; case 't': case 'T': toggleBand('leadOn'); break;
-    case '0': if (typeof boardKey === 'function') boardKey('0'); break; case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': if (typeof digitKey === 'function') digitKey(+e.key); break;
+    case '0': if (typeof stageOwnsKeys === 'function' && stageOwnsKeys()) { shBlackout(); break; } if (typeof boardKey === 'function') boardKey('0'); break; case '9': if (typeof stageOwnsKeys === 'function' && stageOwnsKeys()) { shFreeze(); break; } if (typeof boardKey === 'function') boardKey('9'); break; case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': if (typeof digitKey === 'function') digitKey(+e.key); break;
     default: if (typeof boardKey === 'function') boardKey(e.key);
   }
 });
@@ -1832,7 +1835,7 @@ function buildRight() {
   const mc = h('div', { class: 'card' }, h('h4', {}, 'Levels (dBFS)', UI.clip), h('div', { class: 'card-b' }, mt('mIn', 'Input (DI, post-trim)'), mt('mRig', 'Rig output'), mt('mMaster', 'Master (post-limiter)'), h('div', { class: 'tiny muted', id: 'gainhint' }, 'Aim for DI peaks around −12…−6 dBFS.')));
   UI.live = h('div', { class: 'kv' }); const lc = h('div', { class: 'card' }, h('h4', {}, 'Live analysis'), h('div', { class: 'card-b' }, UI.live));
   UI.mini = h('canvas', { class: 'vcanvas', height: 90, style: { height: '90px' } }); const sp = h('div', { class: 'card' }, h('h4', {}, 'Spectrum (rig out)'), h('div', { class: 'card-b', style: { padding: '6px' } }, UI.mini));
-  p.append(UI.tunerCard, mc, lc, sp); renderStrings(); bus.on('song', renderStrings);
+  p.append(UI.tunerCard, mc, lc, sp, monitorViewsCard()); renderStrings(); bus.on('song', renderStrings);
 }
 function renderStrings() { if (!UI.tuner) return; const s = UI.tuner.str; s.innerHTML = ''; S.tuning.forEach((m, i) => s.append(h('span', { 'data-m': m + S.capo, title: 'Click to hear this string (reference tone)', style: { cursor: 'pointer' }, onclick: async () => { await startAudio(); if (E.ready) pluck('lead', E.ctx.currentTime + .01, m + S.capo, .8, { id: 'ref', pan: 0 }); } }, tunPc(m + S.capo)))); const b = $('#tunName'); if (b) b.textContent = tunShort(); }
 const dbw = d => clamp((d + 60) / 60, 0, 1) * 100 + '%';
@@ -1878,6 +1881,7 @@ function buildTimeline() {
   UI.tlinfo = h('span', { class: 'chip' });
   bar.append(h('b', { class: 'small', title: 'Click ruler = seek · Shift-drag = loop · Double-click ruler = clear loop · click section strip = select section' }, 'ARRANGEMENT'), UI.follow, h('span', { class: 'small muted' }, 'Zoom'), zoom, h('span', { class: 'small muted' }, 'Swing'), sw,
     h('button', { class: 'btn sm', title: 'Clear loop region (double-click ruler)', onclick: () => { T.loopA = 0; T.loopB = null; TL.dirty = true; } }, 'Clear loop'),
+    h('button', { class: 'btn sm lp-btn', id: 'lpBtn', title: 'Record a part, loop it, and play the next part on top, like a looper pedal', onclick: () => looperOpen() }, '⟲ Loop & layer'),
     h('button', { class: 'btn sm', onclick: () => { T.loop = true; T.loopA = Math.floor(playheadSlot() / spb()) * spb(); T.loopB = Math.min(songSlots(), T.loopA + spb() * 4); syncTransport(); TL.dirty = true; } }, 'Loop 4 bars here'), clipBarMake(), h('span', { class: 'grow' }), UI.tlinfo,
     h('span', { class: 'small muted' }, 'Lanes'), h('button', { class: 'btn sm', title: 'Shorter lanes', 'aria-label': 'Shorter lanes', onclick: () => laneScale(-.2) }, '−'), h('button', { class: 'btn sm', title: 'Taller lanes', 'aria-label': 'Taller lanes', onclick: () => laneScale(.2) }, '+'),
     h('button', { class: 'btn sm', title: 'Show / hide lanes, add a vocal or guitar lane, reorder', onclick: e => lanesMenu(e.currentTarget) }, 'Lanes ▾'),
@@ -2386,9 +2390,9 @@ function buildExportPane() {
   p.append(h('div', { class: 'card' }, h('h4', {}, 'Ultimate Guitar / chart export'), h('div', { class: 'card-b' },
     h('div', { class: 'row', style: { gap: '12px', marginBottom: '8px', flexWrap: 'wrap' } }, seg, chk('header', 'Header'), chk('bars', 'Chord line'), chk('lyrics', 'Lyrics'), chk('tabs', 'Tab'), chk('tags', '[ch] / [tab] tags'), h('span', { class: 'grow' }),
       h('button', { class: 'btn primary', onclick: () => copyText(UI.exOut.value) }, 'Copy'), h('button', { class: 'btn', onclick: () => download(fn(EX.fmt === 'cp' ? '.cho' : '.txt'), UI.exOut.value) }, 'Download')),
-    UI.exOut, h('div', { class: 'tiny muted', style: { marginTop: '5px' } }, 'Paste into the Ultimate Guitar submission editor. Chords use [ch] tags and monospaced blocks use [tab] so alignment survives. Turn tags off for plain text.'))),
+    UI.exOut, h('div', { class: 'tiny muted', style: { marginTop: '5px' } }, 'Paste into the Ultimate Guitar submission editor. Chords use [ch] tags and monospaced blocks use [tab] so alignment survives. Turn tags off for plain text. Your own song: share it freely. A chart, lyrics or tab of someone else’s song is based on their work, so check the rules of the site you post to, and the rights holder, first.'))),
     h('div', { class: 'card' }, h('h4', {}, 'Submission lint'), h('div', { class: 'card-b' }, UI.exLint)),
-    h('div', { class: 'card' }, h('h4', {}, 'Files'), h('div', { class: 'card-b row', style: { gap: '8px', flexWrap: 'wrap' } },
+    h('div', { class: 'card' }, h('h4', {}, 'Files'), h('div', { class: 'card-b row', style: { gap: '8px', flexWrap: 'wrap' } }, h('div', { class: 'tiny muted', style: { flexBasis: '100%' } }, 'Audio, share pages and project files carry your words and sound, and anything you brought in. Send them only where you have the right to.'),
       h('button', { class: 'btn', onclick: () => { download(fn('.mid'), buildMidi()); toast('MIDI saved (rhythm, lead, bass, drums on separate tracks)', 'ok'); } }, '⤓ MIDI'),
       h('button', { class: 'btn', onclick: () => bounceMaster() }, '⤓ Bounce master WAV'), exportExtras(),
       h('button', { class: 'btn', title: 'One WAV per band part (drums, bass, rhythm, lead). Each one is rendered faster than it plays, with the other parts silenced.', onclick: () => bounceAllParts() }, '⤓ Each band part (WAVs)'),
@@ -2475,12 +2479,16 @@ function paintFret(force) {
 }
 
 /* ---------------- VISUALS ---------------- */
-const VZ = { mode: CFG.visMode || 'hex', cam: false, spec: null, pulses: [], hexes: null, last: 0, fd: null, td: null, sm: null, t: 0, ring: [] };
-const VMODES = [['hex', 'Hex Resonance'], ['tunnel', 'Hex Tunnel'], ['spectro', 'Spectrogram'], ['chroma', 'Chroma Wheel'], ['scope', 'Oscilloscope'], ['strings', 'String Field']];
+const VZ_RETIRED = { tunnel: 'concert' }; if (VZ_RETIRED[CFG.visMode]) CFG.visMode = VZ_RETIRED[CFG.visMode];
+const VZ = { mode: CFG.visMode || 'concert', cam: false, spec: null, pulses: [], hexes: null, last: 0, fd: null, td: null, sm: null, t: 0, ring: [] };
+const VMODES = [['hex', 'Hex Resonance'], ['spectro', 'Spectrogram'], ['chroma', 'Chroma Wheel'], ['scope', 'Oscilloscope'], ['strings', 'String Field']];
+/** the readout views live on the Monitor tab now; they stay available as Stage scenes */
+const VZ_MONITOR = new Set(['spectro', 'chroma', 'scope']);
 function buildVisPane() {
   const p = PANES.vis; p.classList.add('flex');
   const bar = h('div', { class: 'row', style: { gap: '8px', marginBottom: '8px', flexWrap: 'wrap' } },
-    h('div', { class: 'seg' }, VMODES.map(([k, n]) => h('button', { class: k === VZ.mode ? 'on' : '', 'data-m': k, onclick: e => { vzSetMode(k); $$('.seg [data-m]', bar).forEach(b => b.classList.toggle('on', b === e.target)); } }, n))),
+    h('div', { class: 'seg' }, VMODES.filter(m => !VZ_MONITOR.has(m[0])).map(([k, n]) => h('button', { class: k === VZ.mode ? 'on' : '', 'data-m': k, onclick: e => { vzSetMode(k); $$('.seg [data-m]', bar).forEach(b => b.classList.toggle('on', b === e.target)); } }, n))),
+    lxLensBar(),
     h('select', { class: 'in', style: { width: 'auto', fontFamily: 'var(--sans)' }, title: 'Analysis source', onchange: e => { VZ.src = e.target.value; } }, [['auto', 'Source: auto (follows playback)'], ['rig', 'Source: guitar after the rig'], ['master', 'Source: master mix'], ['di', 'Source: what the detector hears'], ['vox', 'Source: vocal microphone']].map(([v, n]) => h('option', { value: v }, n))),
     h('button', { class: 'btn sm', id: 'vzRecBtn', 'data-srec': '1', title: 'Record the stage as a video with the song’s sound (saved on this device)', onclick: e => srecMenu(e.currentTarget) }, '⏺ Record'),
     h('button', { class: 'btn sm' + (CFG.vzAuto ? ' on' : ''), id: 'vzAutoBtn', 'aria-pressed': String(!!CFG.vzAuto), title: 'Auto look: while the song plays, the look follows the section (verse calm, chorus wide, bridge strange)', onclick: e => { CFG.vzAuto = !CFG.vzAuto; saveCfg(); e.currentTarget.classList.toggle('on', !!CFG.vzAuto); e.currentTarget.setAttribute('aria-pressed', String(!!CFG.vzAuto)); toast('Auto look ' + (CFG.vzAuto ? 'on: the look follows the song’s sections' : 'off'), 'ok'); } }, '🎬 Auto look'),
@@ -2517,9 +2525,9 @@ function drawVis(cvo, o) {
   else if (typeof stageExtra === 'function') stageExtra(MODE, g, W, H, { fd, bin, lvl, C, pulse, energy, dt, o });
   if (camOn && !cvo) camTop(g, W, H);
   if (MODE === 'halo' && !cvo) haloFront(g);   // stage draws its own camera layer after trails and kaleidoscope
-  if (!cvo && CFG.vzNeck !== false && !document.body.classList.contains('perform-on')) { const r = neckRect(W, H); drawMiniNeck(g, r[0], r[1], r[2], r[3], { C }); }
+  if (!cvo && CFG.vzNeck !== false && !document.body.classList.contains('perform-on') && MODE !== 'concert') { const r = neckRect(W, H); drawMiniNeck(g, r[0], r[1], r[2], r[3], { C }); }
   if (!cvo && CFG.vzRibbon && !document.body.classList.contains('perform-on') && typeof voxDraw === 'function') { const r = voxRect(W, H); voxDraw(g, r[0], r[1], r[2], r[3], { C, labels: H > 260 }); }
-  if (o.noText) return;
+  if (o.noText || MODE === 'concert') return;
   g.fillStyle = 'rgba(255,255,255,.55)'; g.font = `${Math.round(11 * H / 400 + 6)}px ui-monospace,Menlo,monospace`; g.textBaseline = 'top';
   if (AN.midi != null && AN.active) { g.fillStyle = 'rgba(255,255,255,.85)'; g.font = `800 ${Math.round(28 * Math.min(W, H * 2) / 900 + 10)}px ui-monospace,Menlo,monospace`; g.fillText(pcName(AN.midi) + (Math.floor(AN.midi / 12) - 1) + '  ' + (AN.cents >= 0 ? '+' : '') + AN.cents.toFixed(0) + '¢', 14, 12); }
   if (AN.chord && AN.chord[0] && AN.active) { g.fillStyle = C.b; g.font = `800 ${Math.round(20 * Math.min(W, H * 2) / 900 + 8)}px ui-monospace,Menlo,monospace`; g.fillText(AN.chord[0].sym, 14, H * .13 + 20); }
@@ -2588,7 +2596,7 @@ function buildCamPane() {
     h('div', { class: 'row', style: { gap: '8px', flexWrap: 'wrap', marginBottom: '8px' } }, UI.camSel, h('button', { class: 'btn primary sm', onclick: () => CAM.on ? stopCam() : startCam() }, '⏻ Camera on/off'), UI.camMode, UI.camCal,
       h('button', { class: 'btn sm', onclick: e => { CFG.mirror = !CFG.mirror; saveCfg(); CAM.video.classList.toggle('mirror', CFG.mirror); UI.camOv.classList.toggle('mirror', CFG.mirror); if (CAM.cal) { toast('Mirror changed — recalibrate the neck', 'warn'); } } }, '⇋ Mirror'),
       h('button', { class: 'btn sm', onclick: () => { CAM.cal = null; store.set('cal', null); VIS.active = false; toast('Calibration cleared'); } }, 'Clear calibration'), h('span', { class: 'grow' }), UI.camInfo),
-    UI.camWrap, h('div', { class: 'tiny muted', style: { marginTop: '6px', lineHeight: 1.5 } }, h('b', {}, 'Calibrate: '), 'frame the neck, press ⌖, then click (1) the nut on the LOW-E string, (2) the 12th-fret marker on the LOW-E string, (3) the nut on the HIGH-e string. Fret spacing uses the 12-TET rule d(n)=L·(1−2^(−n/12)) with L = 2·|nut→12|; strings are assumed parallel (perspective error grows with camera tilt — film head-on). Camera frames never leave this page; hand tracking downloads its model from a CDN only if you choose it.'))),
+    UI.camWrap, h('div', { class: 'tiny muted', style: { marginTop: '6px', lineHeight: 1.5 } }, h('b', {}, 'Calibrate: '), 'frame the neck, press ⌖, then click (1) the nut on the LOW-E string, (2) the 12th-fret marker on the LOW-E string, (3) the nut on the HIGH-e string. Fret spacing uses the 12-TET rule d(n)=L·(1−2^(−n/12)) with L = 2·|nut→12|; strings are assumed parallel (perspective error grows with camera tilt — film head-on). Camera frames never leave this page; hand tracking downloads its model from a CDN only if you choose it and agree to a one-time download.'))),
     h('div', { class: 'card' }, h('h4', {}, 'Fusion statistics'), h('div', { class: 'card-b' }, UI.camStats = h('div', { class: 'stat-grid' }), h('div', { style: { marginTop: '8px' } }, h('div', { class: 'small muted' }, 'Fretting-hand usage by fret (frames)'), UI.camChart = h('canvas', { class: 'chart' })))));
   CAM.want = 'hand'; refreshCamList(); bus.on('devices', refreshCamList);
 }
@@ -2602,7 +2610,8 @@ async function startCam() {
     if (!CAM.stream) throw lastErr || new Error('no camera');
     CAM.video.srcObject = CAM.stream; await CAM.video.play().catch(() => { }); CAM.on = true; const st = CAM.stream.getVideoTracks()[0].getSettings(); UI.camInfo.textContent = (st.width || '?') + '×' + (st.height || '?') + ' @ ' + Math.round(st.frameRate || 0) + ' fps'; bus.emit('devices');
     try { const d = await navigator.mediaDevices.enumerateDevices(); E.devs.cam = d.filter(x => x.kind === 'videoinput'); refreshCamList(); } catch (e) { }
-    await setupTracker(); if (!CAM.loopOn) { CAM.loopOn = true; requestAnimationFrame(camLoop); }
+    if (!CAM.loopOn) { CAM.loopOn = true; requestAnimationFrame(camLoop); }   // the picture runs in motion mode at once; the hand model (and the question before it downloads) may take a while
+    await setupTracker();
   } catch (e) { toast('Camera unavailable: ' + (e.message || e.name) + '. In CodePen, use Full Page view and allow camera access.', 'bad'); UI.camInfo.textContent = 'camera error'; }
 }
 function stopCam(keep) { if (CAM.stream) CAM.stream.getTracks().forEach(t => t.stop()); CAM.stream = null; CAM.on = false; VIS.active = false; if (!keep && UI.camInfo) UI.camInfo.textContent = 'camera off'; }
@@ -2613,7 +2622,7 @@ async function setupTracker() {
       UI.camInfo.textContent += ' · loading hand model…'; const { mod, fs } = await mpVision();
       CAM.tracker = await mod.HandLandmarker.createFromOptions(fs, { baseOptions: { modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task', delegate: 'GPU' }, runningMode: 'VIDEO', numHands: 2, minHandDetectionConfidence: .5, minTrackingConfidence: .5 });
       CAM.track = 'hand'; toast('Hand tracking ready', 'ok');
-    } catch (e) { console.warn('MediaPipe unavailable', e); toast('Hand model could not load (offline or blocked) — using motion-energy mode', 'warn'); CAM.track = 'motion'; }
+    } catch (e) { CAM.track = 'motion'; if (e && e.declined) toast('Staying offline: using motion-energy mode', 'ok'); else { console.warn('MediaPipe unavailable', e); toast('Hand model could not load (offline or blocked) — using motion-energy mode', 'warn'); } }
   }
   VIS.active = !!(CAM.cal && CAM.track === 'hand'); const st = CAM.stream && CAM.stream.getVideoTracks()[0].getSettings(); UI.camInfo.textContent = (st ? st.width + '×' + st.height + ' · ' : '') + 'tracker: ' + CAM.track;
 }
@@ -3344,12 +3353,28 @@ function buildTxPane() {
    'over'   the camera is a dim layer under the visuals (the original look)
    'edges'  the camera shows clearly in a soft oval in the middle; the visuals live around it
    'person' a green-screen cut-out: the visuals sit behind you. Uses MediaPipe's selfie segmenter, fetched only when this look is chosen
-            (same hosts as hand tracking). If the model cannot load, the edges look is used instead. */
+            and the person has said yes to the one-time download (mpConsent; same hosts as hand tracking). If the model cannot load, the edges look is used instead. */
 const CAMFX = [['over', 'Dimmed behind the visuals'], ['edges', 'Visuals frame me (edges in)'], ['person', 'Me in front (green screen)']];
 const CF = { state: 'idle', seg: null, mask: null, acc: null, inv: null, t: 0, busy: false, fg: null, ed: null, mc: null, errN: 0 };
 let mpCache = null;
+/** The one place this page can reach another site, and only after a yes. Until then: no request to jsDelivr or Google, nothing at all.
+    A yes is remembered (CFG.mpOk). A no lasts until the feature is asked for again (Camera look, or the hand-tracking choice). */
+const MPC = { p: null };
+function mpConsent() {
+  if (CFG.mpOk === true) return Promise.resolve(true);
+  if (MPC.p) return MPC.p;
+  const box = $('#toasts'); if (!box) return Promise.resolve(false);
+  return MPC.p = new Promise(res => {
+    const done = v => { MPC.p = null; card.remove(); if (v) { CFG.mpOk = true; saveCfg(); } res(v); };
+    const card = h('div', { class: 'toast warn keep-toast mp-ask', id: 'mpAsk', role: 'alertdialog', 'aria-label': 'One-time download' },
+      h('span', {}, h('b', {}, 'One-time download. '), 'This uses MediaPipe, Google’s open-source vision library. Your browser fetches its code (cdn.jsdelivr.net) and a small model (storage.googleapis.com), about 10 MB. Those two sites see your IP address, as with any web page. Your camera picture is never sent anywhere.'),
+      h('button', { class: 'btn sm primary', id: 'mpAskYes', onclick: () => done(true) }, 'Download and turn it on'),
+      h('button', { class: 'btn sm', id: 'mpAskNo', onclick: () => done(false) }, 'Not now, stay offline'));
+    box.append(card);
+  });
+}
 function mpVision() {
-  return mpCache || (mpCache = import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs')
+  return mpCache || (mpCache = mpConsent().then(ok => { if (!ok) throw Object.assign(new Error('declined'), { declined: true }); return import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs'); })
     .then(async mod => ({ mod, fs: await mod.FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm') }))
     .catch(e => { mpCache = null; throw e; }));
 }
@@ -3394,7 +3419,7 @@ async function cfSegInit() {
     const opt = d => ({ baseOptions: { modelAssetPath: base, delegate: d }, runningMode: 'VIDEO', outputConfidenceMasks: true, outputCategoryMask: false });
     try { CF.seg = await mod.ImageSegmenter.createFromOptions(fs, opt('GPU')); } catch (e) { CF.seg = await mod.ImageSegmenter.createFromOptions(fs, opt('CPU')); }
     CF.state = 'ready'; CF.errN = 0; toast('Person cut-out ready', 'ok');
-  } catch (e) { CF.state = 'failed'; console.warn('segmenter unavailable', e); toast('The person cut-out model could not load (offline or blocked), so the edges-in look is used instead', 'warn'); }
+  } catch (e) { CF.state = 'failed'; if (e && e.declined) toast('Staying offline: the edges-in look is used instead', 'ok'); else { console.warn('segmenter unavailable', e); toast('The person cut-out model could not load (offline or blocked), so the edges-in look is used instead', 'warn'); } if (UI.camInfo) UI.camInfo.textContent = UI.camInfo.textContent.replace(' · loading cut-out…', ''); }
 }
 function cfWanted() { if ((CFG.camFx || 'over') !== 'person' || !CAM.on) return false; let st = false; try { st = !!(typeof scn === 'function' && scn() && scn().cam); } catch (e) { } return !!VZ.cam || st; }
 function cfTick(ts) {
@@ -3431,7 +3456,7 @@ function frame(ts) {
   requestAnimationFrame(frame); frameN++; fpsN++; if (ts - fpsT >= 1000) { FPS = fpsN; fpsN = 0; fpsT = ts; }
   if (document.hidden) return;
   if (E.ready) {
-    updateMeters(); updateTuner(); if (frameN % 6 === 0) updateLive(); if (frameN % 2 === 0) drawMini();
+    updateMeters(); if (monShown('tuner')) updateTuner(); if (frameN % 6 === 0 && monShown('live')) updateLive(); if (frameN % 2 === 0) { if (monShown('spectrum')) drawMini(); if (monShown('views')) drawMonView(); }
     if (AN.clip && UI.clip) UI.clip.className = 'led bad';
   }
   // transport LCD
@@ -3483,14 +3508,16 @@ async function boot() {
   ['pointerdown', 'keydown'].forEach(ev => document.addEventListener(ev, () => { if (E.ctx && !OFR.busy && E.ctx.state === 'suspended') E.ctx.resume().catch(() => { }); }, true));
   // two routes: the studio (no camera) or the stage (full-screen visuals with the camera). Nothing is requested until one is pressed.
   const bootStart = async route => { CFG.route = route; saveCfg(); HUM.cam0 = route === 'stage'; try { await startAudio(); listDevices(); } catch (e) { console.error(e); toast('Audio could not start: ' + e.message, 'bad'); } hide(); };
-  $('#bootNoMic').onclick = () => bootStart('studio'); $('#bootStage').onclick = () => bootStart('stage');
-  if (CFG.route === 'stage') { $('#bootStage').classList.add('primary'); $('#bootNoMic').classList.remove('primary'); }
+  $('#bootNoMic').onclick = () => bootStart('studio'); $('#bootStage').onclick = () => bootStart('stage'); guideBoot(bootStart);
+  if (CFG.route === 'stage') { $('#bootStage').classList.add('primary'); $('#bootNoMic').classList.remove('primary'); } else if (CFG.route === 'studio') $('#bootNoMic').classList.add('primary');
+  // first-timers can look at a finished song before they give anything (no microphone, no camera); people who already have songs just carry on
+  const demoBtn = $('#bootDemo'); if (store.get('started', false)) { demoBtn.remove(); $('#bootRoutes').classList.add('solo'); ['#bootGoals', '#bootQ', '#bootPro'].forEach(q => { const e = $(q); if (e) e.remove(); }); $('#bootNoMic').classList.add('primary'); } else demoBtn.onclick = () => { PRJ.bootDemo = true; bootStart('studio'); };
   setInterval(anaTick, 33); requestAnimationFrame(frame);
   window.addEventListener('beforeunload', () => { try { store.set('song', S); saveCfg(); } catch (e) { } });
   document.addEventListener('visibilitychange', () => { if (!document.hidden && E.ctx && !OFR.busy && E.ctx.state === 'suspended') E.ctx.resume(); });
   if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener('devicechange', () => { ioDeviceChange().catch(e => console.warn(e)); });
   bus.emit('song');
-  if (/[?&]debug\b/.test(location.search)) window.__daily = { pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, srecStart, srecStop, get S() { return S; }, get REC() { return REC; }, tkSetGain, TL, tkKey, tkFades, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, FB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, vzSetMode, sideShow, chSetRoles, chRoles, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive };   // test hook, only with ?debug
+  if (/[?&]debug\b/.test(location.search)) window.__daily = { LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, STP, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfort, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, srecStart, srecStop, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, tkFades, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, FB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, vzSetMode, sideShow, chSetRoles, chRoles, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive };   // test hook, only with ?debug
   projInit().catch(e => { console.warn('library', e); PRJ.ready = true; if (PRJ.wantStart) startMaybe(); });
 }
 
@@ -3502,6 +3529,8 @@ async function boot() {
    ============================================================ */
 const LAY = Object.assign({ flip: true, left: true, right: true, lw: 250, rw: 292, tlh: null, hidden: [], order: [], floats: {}, fl: [], rc: { order: [], col: {}, hide: {} } }, CFG.layout || {});
 LAY.rc = Object.assign({ order: [], col: {}, hide: {} }, LAY.rc || {});
+/* 2.6: the Monitor is a short list of widgets you choose, not one long scroll. Until you chose differently, only the Tuner and the Levels show; the readouts that used to follow them are one click away. */
+if ((LAY.rc.v | 0) < 2) { ['live', 'spectrum', 'views'].forEach(n => { if (LAY.rc.hide[n] !== false) LAY.rc.hide[n] = true; }); LAY.rc.v = 2; }
 const FLOATS = new Map();
 const saveLay = () => { CFG.layout = LAY; saveCfg(); };
 const TLH_DEFAULT = 'minmax(200px,40%)';
@@ -3579,8 +3608,17 @@ let _slt = 0; const saveLayLater = () => { clearTimeout(_slt); _slt = setTimeout
 let _zf = 41; function floatFront(id) { const w = FLOATS.get(id); if (w) w.style.zIndex = ++_zf; }
 function unfloat(id) { const w = FLOATS.get(id); if (!w) return; w._ro.disconnect(); $('#dock').append(PANES[id]); w.remove(); FLOATS.delete(id); LAY.fl = [...FLOATS.keys()]; saveLay(); rebuildTabs(); dockGo(id); setTimeout(() => window.dispatchEvent(new Event('resize')), 50); }
 
-/* ---------- sidebar cards: drag to reorder, click title to collapse ---------- */
-const RCARDS = ['tuner', 'levels', 'live', 'spectrum'];
+/* ---------- Monitor widgets: a chooser on top, the cards you chose below ---------- */
+const RCARDS = ['tuner', 'levels', 'live', 'spectrum', 'views'];
+const RC_INFO = { tuner: ['Tuner', 'Pitch, cents and the strings of your tuning'], levels: ['Levels', 'Input, rig and master meters'], live: ['Analysis', 'Chord, key, brightness, vibrato and crest'], spectrum: ['Spectrum', 'The rig output as a spectrum'], views: ['Views', 'Pitch wheel, spectrogram and scope'] };
+/** is this Monitor widget showing? The frame loop skips the drawing of the ones that are not */
+function monShown(n) { return !LAY.rc.hide[n]; }
+function monChips() {
+  const bar = UI.monBar = UI.monBar || h('div', { class: 'mon-wid', role: 'group', 'aria-label': 'Monitor widgets' }); bar.innerHTML = '';
+  bar.append(h('span', { class: 'mon-wl' }, 'Widgets'));
+  RCARDS.forEach(n => { const on = monShown(n); bar.append(h('button', { class: 'mon-chip' + (on ? ' on' : ''), 'aria-pressed': on ? 'true' : 'false', title: RC_INFO[n][1] + (on ? ' — click to remove' : ' — click to add'), 'data-w': n, onclick: () => setCardHidden(n, monShown(n)) }, (on ? '' : '+ ') + RC_INFO[n][0])); });
+  return bar;
+}
 function setupCards() {
   const p = UI.monPane; if (!p) return; const cards = [...p.children]; cards.forEach((c, i) => { c.dataset.card = RCARDS[i] || ('c' + i); });
   const byName = n => cards.find(c => c.dataset.card === n);
@@ -3588,49 +3626,70 @@ function setupCards() {
   cards.forEach(c => {
     const n = c.dataset.card, hd = c.firstChild; c.classList.toggle('cc', !!LAY.rc.col[n]); c.style.display = LAY.rc.hide[n] ? 'none' : '';
     hd.setAttribute('draggable', 'true'); hd.title = 'Click: collapse · drag: reorder'; hd.addEventListener('click', e => { if (e.target.closest('button,select,input,.led')) return; c.classList.toggle('cc'); LAY.rc.col[n] = c.classList.contains('cc'); saveLay(); });
+    if (RC_INFO[n]) hd.append(h('button', { class: 'wx', title: 'Remove this widget (add it back from Widgets, above)', 'aria-label': 'Remove ' + RC_INFO[n][0], onclick: e => { e.stopPropagation(); setCardHidden(n, true); } }, '✕'));
     hd.addEventListener('dragstart', e => { e.dataTransfer.setData('text/plain', 'card:' + n); });
     c.addEventListener('dragover', e => { e.preventDefault(); c.classList.add('dropt'); }); c.addEventListener('dragleave', () => c.classList.remove('dropt'));
-    c.addEventListener('drop', e => { e.preventDefault(); c.classList.remove('dropt'); const t = e.dataTransfer.getData('text/plain'); if (!t.startsWith('card:')) return; const f = byName(t.slice(5)); if (f && f !== c) { p.insertBefore(f, c); LAY.rc.order = [...p.children].map(x => x.dataset.card); saveLay(); } });
+    c.addEventListener('drop', e => { e.preventDefault(); c.classList.remove('dropt'); const t = e.dataTransfer.getData('text/plain'); if (!t.startsWith('card:')) return; const f = byName(t.slice(5)); if (f && f !== c) { p.insertBefore(f, c); LAY.rc.order = [...p.children].filter(x => x.dataset.card).map(x => x.dataset.card); saveLay(); } });
   });
+  p.prepend(monChips());
 }
-function setCardHidden(n, hide) { LAY.rc.hide[n] = hide; const c = $('[data-card="' + n + '"]', UI.monPane); if (c) c.style.display = hide ? 'none' : ''; saveLay(); }
+function setCardHidden(n, hide) { LAY.rc.hide[n] = !!hide; const c = $('[data-card="' + n + '"]', UI.monPane); if (c) c.style.display = hide ? 'none' : ''; saveLay(); monChips(); if (!hide && n === 'views') MV.spec = null; }
 
-/* ---------- presets ---------- */
+/* ---------- layouts: each one is a complete workspace, for one kind of job ---------- */
+/* A layout sets everything that makes a workspace look the way it does: where the panels sit (above or below the arrangement), which sidebars show and what is in them,
+   how tall the arrangement is, which tabs are on the strip (the rest are one click away under ☰), and which panel is open. Choosing one replaces the last one completely,
+   so nothing from the previous layout leaks into the next.
+   spec: flip · left · right (sidebars on or off) · tlh (arrangement height) · dock (the open panel; null leaves it) · order (tabs to put first) · hidden (tabs left off the strip)
+         side {panel: 'left' | 'right'} (panels that live in a sidebar) · so {left: [], right: []} (their order) · cur {left, right} (which sidebar tab is open) · mon (Monitor widgets shown) · board */
+const DOCK_DEFAULT = ['rig', 'tab', 'song', 'band', 'fret', 'vis', 'stage', 'neural', 'stems', 'tx', 'cam', 'lab', 'exp'];
 const LAYOUTS = [
-  ['Compose', 'Tabs on top, arrangement below, both sidebars', { flip: true, left: true, right: true, tlh: null, dock: 'tab' }],
-  ['Perform', 'Pedalboard stomps on top, slim arrangement, tuner & meters at right', { flip: true, left: false, right: true, tlh: '132px', dock: 'rig', board: 'stomp' }],
-  ['Pedalboard', 'All the room for pedals — sidebars away, thin arrangement', { flip: true, left: false, right: false, tlh: '96px', dock: 'rig', board: 'board' }],
-  ['Light show', 'Stage visuals with a thin arrangement', { flip: true, left: false, right: false, tlh: '104px', dock: 'stage' }],
-  ['Studio (classic)', 'Original look: arrangement above, tabs below', { flip: false, left: true, right: true, tlh: null, dock: 'tab' }],
-  ['Songwriting', 'Tab above, chords & lyrics (Refine) beside it', { flip: true, left: false, right: true, tlh: 'minmax(150px,30%)', dock: 'tab', cur: { right: 'refine' } }],
-  ['Track study', 'Stems above, big arrangement showing the track lanes', { flip: true, left: false, right: true, tlh: 'minmax(260px,54%)', dock: 'stems', cur: { right: 'refine' } }],
-  ['Record', 'I/O at left, big arrangement with guitar + vocal lanes', { flip: true, left: true, right: true, tlh: 'minmax(260px,56%)', dock: 'rig', cur: { left: 'io', right: 'monitor' } }],
-  ['Focus', 'Just the panel — no sidebars, slim arrangement', { flip: true, left: false, right: false, tlh: '90px', dock: null }]
+  ['Studio', 'Everything in reach: panels above the arrangement, a sidebar each side.', { flip: true, left: true, right: true, tlh: null, dock: 'tab', cur: { left: 'io', right: 'monitor' } }],
+  ['Write', 'Tab in the middle, chords and lyrics beside it, theory at hand. The arrangement stays short.', { flip: true, left: true, right: true, tlh: 'minmax(150px,28%)', dock: 'tab', order: ['tab', 'song', 'fret', 'band', 'rig'], hidden: ['stage', 'neural', 'stems', 'tx', 'cam', 'lab'], cur: { left: 'theory', right: 'refine' } }],
+  ['Arrange', 'The arrangement on top and tall, the band and song panels below it.', { flip: false, left: false, right: true, tlh: 'minmax(260px,58%)', dock: 'band', order: ['band', 'song', 'tab', 'stems', 'rig'], hidden: ['stage', 'neural', 'tx', 'cam', 'lab', 'fret'], cur: { right: 'refine' } }],
+  ['Record', 'Inputs and levels either side, a tall arrangement for the guitar and voice lanes.', { flip: true, left: true, right: true, tlh: 'minmax(260px,56%)', dock: 'rig', order: ['rig', 'tab', 'song', 'band'], hidden: ['stage', 'neural', 'tx', 'cam', 'lab', 'fret'], cur: { left: 'io', right: 'monitor' }, mon: ['tuner', 'levels'] }],
+  ['Tone', 'The pedalboard fills the middle, with tones to pick from and the tuner and spectrum alongside.', { flip: true, left: true, right: true, tlh: '96px', dock: 'rig', board: 'board', order: ['rig', 'fret', 'band', 'song', 'tab'], hidden: ['stage', 'neural', 'stems', 'tx', 'cam', 'lab'], cur: { left: 'tones', right: 'monitor' }, mon: ['tuner', 'spectrum', 'live'] }],
+  ['Practice', 'Tab and fretboard side by side, with the loop and transport in reach.', { flip: true, left: false, right: true, tlh: 'minmax(170px,34%)', dock: 'tab', order: ['tab', 'song', 'band', 'rig'], hidden: ['stage', 'neural', 'stems', 'tx', 'cam', 'lab'], side: { fret: 'right' }, so: { left: [], right: ['fret', 'refine', 'monitor'] }, cur: { right: 'fret' } }],
+  ['Show', 'The stage picture with the show setup beside it. Sidebars away, arrangement reduced to the transport.', { flip: true, left: false, right: false, tlh: '84px', dock: 'stage', order: ['stage', 'vis', 'song', 'band'], hidden: ['rig', 'tab', 'fret', 'neural', 'stems', 'tx', 'cam', 'lab'] }],
+  ['Focus', 'Just the panel you are on. No sidebars, a slim arrangement.', { flip: true, left: false, right: false, tlh: '90px', dock: null }],
+  ['Classic', 'The original: the arrangement above, the panels below, a sidebar each side.', { flip: false, left: true, right: true, tlh: null, dock: 'tab', cur: { left: 'io', right: 'monitor' } }]
 ];
-function applyPreset(s) {
-  Object.assign(LAY, { flip: s.flip, left: s.left, right: s.right, tlh: s.tlh }); if (s.lw) LAY.lw = s.lw; if (s.rw) LAY.rw = s.rw;
-  if (s.hidden) LAY.hidden = s.hidden.slice(); if (s.order) { LAY.order = s.order.slice(); applyTabOrder(); } if (s.rc) LAY.rc = JSON.parse(JSON.stringify(s.rc));
-  if (s.side) LAY.side = JSON.parse(JSON.stringify(s.side)); if (s.cur) Object.assign(SD.cur, s.cur); if (typeof sideApply === 'function') sideApply();
+const MON_DEFAULT = ['tuner', 'levels'];
+function applyPreset(s, name) {
+  Object.assign(LAY, { flip: s.flip, left: s.left, right: s.right, tlh: s.tlh == null ? null : s.tlh }); if (s.lw) LAY.lw = s.lw; if (s.rw) LAY.rw = s.rw;
+  /* the tab strip: which tabs, in which order (the shipped order when the layout names none) */
+  LAY.hidden = (s.hidden || []).filter(id => id !== s.dock); LAY.order = s.order ? s.order.slice() : [];
+  { const cur = DOCK.cur, ord = LAY.order.length ? LAY.order : DOCK_DEFAULT, ix = id => { const i = ord.indexOf(id); return i < 0 ? 999 : i; }; DOCK.sort((a, b) => ix(a[0]) - ix(b[0]) || DOCK_DEFAULT.indexOf(a[0]) - DOCK_DEFAULT.indexOf(b[0])); DOCK.cur = cur; }
+  /* the sidebars: which panels live in them, in what order, and which one is open */
+  LAY.side = JSON.parse(JSON.stringify(s.side || {})); LAY.so = JSON.parse(JSON.stringify(s.so || { left: [], right: [] }));
+  SD.cur = Object.assign({ left: 'io', right: 'monitor' }, s.cur || {});
+  if (s.rc && !s.mon) LAY.rc = JSON.parse(JSON.stringify(s.rc)); else { const mon = s.mon || MON_DEFAULT; RCARDS.forEach(n => { LAY.rc.hide[n] = !mon.includes(n); }); }
+  LAY.name = name || ''; if (typeof sideApply === 'function') sideApply();
   saveLay(); applyLayout(); setupCardsRefresh(); rebuildTabs(); if (s.dock) { if (FLOATS.has(s.dock)) floatFront(s.dock); else dockGo(s.dock); } if (s.board && typeof boardView === 'function') boardView(s.board);
 }
-function setupCardsRefresh() { $$('[data-card]', UI.monPane).forEach(c => { const n = c.dataset.card; c.classList.toggle('cc', !!LAY.rc.col[n]); c.style.display = LAY.rc.hide[n] ? 'none' : ''; }); const p = UI.monPane; LAY.rc.order.forEach(n => { const c = $('[data-card="' + n + '"]', p); if (c) p.append(c); }); }
+function setupCardsRefresh() { $$('[data-card]', UI.monPane).forEach(c => { const n = c.dataset.card; c.classList.toggle('cc', !!LAY.rc.col[n]); c.style.display = LAY.rc.hide[n] ? 'none' : ''; }); const p = UI.monPane; LAY.rc.order.forEach(n => { const c = $('[data-card="' + n + '"]', p); if (c) p.append(c); }); monChips(); }
+/** a little wireframe of a layout: the sidebars, the open panel, and the arrangement above or below it */
+function layThumb(s) {
+  const fr = (() => { const t = s.tlh; if (!t) return .4; let m = /(\d+)%\)?$/.exec(t); if (m) return clamp(+m[1] / 100, .1, .7); m = /^(\d+)px$/.exec(t); return m ? clamp(+m[1] / 640, .1, .6) : .4; })();
+  const name = id => id ? panelName(id) : '', cur = s.cur || {}, side = (sd, on) => on ? h('i', { class: 'lt-s' }, name(cur[sd] || (sd === 'left' ? 'io' : 'monitor'))) : null;
+  const dk = h('i', { class: 'lt-dk', style: { flex: String(1 - fr) } }, name(s.dock)), tl = h('i', { class: 'lt-tl', style: { flex: String(fr) } });
+  return h('span', { class: 'lay-th', 'aria-hidden': 'true' }, side('left', s.left), h('i', { class: 'lt-c' }, ...(s.flip === false ? [tl, dk] : [dk, tl])), side('right', s.right));
+}
+function layCard(n, d, s, on, fn) { return h('button', { class: 'lay-card' + (on ? ' on' : ''), 'aria-pressed': String(!!on), title: d, onclick: fn }, layThumb(s), h('span', { class: 'lay-t' }, h('b', {}, n), h('span', {}, d))); }
 function layoutMenu(btn) {
-  const saved = store.get('layouts', []), box = h('div');
-  box.append(h('h5', {}, 'Layouts'));
-  LAYOUTS.forEach(([n, d, s]) => box.append(h('button', { class: 'pbtn', onclick: () => { applyPreset(s); closePop(); } }, h('b', {}, n), h('span', {}, d))));
-  saved.forEach((l, i) => box.append(h('div', { class: 'lrow' }, h('button', { class: 'pbtn', style: { margin: 0, flex: 1 }, onclick: () => { applyPreset(l.s); closePop(); } }, h('b', {}, '★ ' + l.n), h('span', {}, 'your layout')), h('button', { class: 'btn sm bad', title: 'Delete', onclick: () => { saved.splice(i, 1); store.set('layouts', saved); closePop(); } }, '✕'))));
+  const saved = store.get('layouts', []), box = h('div', { class: 'lay-menu' });
+  box.append(h('h5', {}, 'Layouts'), h('div', { class: 'lay-grid' }, LAYOUTS.map(([n, d, s]) => layCard(n, d, s, LAY.name === n, () => { applyPreset(s, n); closePop(); }))));
+  if (saved.length) box.append(h('h5', {}, 'Your layouts'), h('div', { class: 'lay-grid' }, saved.map((l, i) => h('div', { class: 'lay-own' }, layCard('★ ' + l.n, 'Your own layout', l.s, LAY.name === '★ ' + l.n, () => { applyPreset(l.s, '★ ' + l.n); closePop(); }), h('button', { class: 'btn sm bad lay-del', title: 'Delete this layout', 'aria-label': 'Delete ' + l.n, onclick: () => { saved.splice(i, 1); store.set('layouts', saved); closePop(); } }, '✕')))));
   const nm = h('input', { class: 'in', placeholder: 'Name this layout…', style: { flex: 1, fontFamily: 'var(--sans)' } });
-  box.append(h('div', { class: 'lrow' }, nm, h('button', { class: 'btn sm primary', onclick: () => { const n = nm.value.trim(); if (!n) return toast('Name your layout', 'warn'); const s = { flip: LAY.flip, left: LAY.left, right: LAY.right, lw: LAY.lw, rw: LAY.rw, tlh: LAY.tlh, hidden: LAY.hidden.slice(), order: DOCK.map(d => d[0]), rc: JSON.parse(JSON.stringify(LAY.rc)), dock: DOCK.cur, side: JSON.parse(JSON.stringify(LAY.side)), cur: { left: SD.cur.left, right: SD.cur.right } }; const a = saved.filter(x => x.n !== n); a.push({ n, s }); store.set('layouts', a); toast('Layout “' + n + '” saved', 'ok'); closePop(); } }, 'Save current')));
+  box.append(h('h5', {}, 'Keep this one'), h('div', { class: 'lrow' }, nm, h('button', { class: 'btn sm primary', onclick: () => { const n = nm.value.trim(); if (!n) return toast('Name your layout', 'warn'); const s = { flip: LAY.flip, left: LAY.left, right: LAY.right, lw: LAY.lw, rw: LAY.rw, tlh: LAY.tlh, hidden: LAY.hidden.slice(), order: DOCK.map(d => d[0]), rc: JSON.parse(JSON.stringify(LAY.rc)), dock: DOCK.cur, side: JSON.parse(JSON.stringify(LAY.side)), so: JSON.parse(JSON.stringify(LAY.so)), cur: { left: SD.cur.left, right: SD.cur.right } }; const a = saved.filter(x => x.n !== n); a.push({ n, s }); store.set('layouts', a); LAY.name = '★ ' + n; saveLay(); toast('Layout “' + n + '” saved', 'ok'); closePop(); } }, 'Save current')));
   box.append(h('h5', {}, 'Workspace'));
   const chk = (label, get, set) => h('label', { class: 'lrow' }, h('input', { type: 'checkbox', checked: get(), onchange: e => set(e.target.checked) }), label);
   box.append(chk('Panels above the arrangement', () => LAY.flip, v => { LAY.flip = v; saveLay(); applyLayout(); }), chk('Left sidebar  [', () => LAY.left, v => { LAY.left = v; saveLay(); applyLayout(); }), chk('Right sidebar  ]', () => LAY.right, v => { LAY.right = v; saveLay(); applyLayout(); }));
   box.append(h('button', { class: 'pbtn', onclick: () => placeMenu(btn) }, h('b', {}, '⇆ Where panels live…'), h('span', {}, 'Move any panel to the left sidebar, the right sidebar or the centre · swap the sidebars')));
-  box.append(h('h5', {}, 'Panels — show / hide · double-click a tab to float it'));
-  DOCK.forEach(([id, name]) => box.append(h('div', { class: 'lrow' }, h('input', { type: 'checkbox', checked: !LAY.hidden.includes(id), onchange: e => setTabHidden(id, !e.target.checked) }), h('span', { class: 'grow' }, name), h('button', { class: 'btn sm', onclick: () => { FLOATS.has(id) ? unfloat(id) : floatPane(id); closePop(); } }, FLOATS.has(id) ? '⤓ dock' : '⧉ float'))));
-  box.append(h('h5', {}, 'Right-sidebar cards'));
-  RCARDS.forEach(n => box.append(h('label', { class: 'lrow' }, h('input', { type: 'checkbox', checked: !LAY.rc.hide[n], onchange: e => setCardHidden(n, !e.target.checked) }), n[0].toUpperCase() + n.slice(1))));
-  box.append(h('div', { class: 'row', style: { marginTop: '10px' } }, h('button', { class: 'btn sm', onclick: () => { [...FLOATS.keys()].forEach(unfloat); LAY.hidden = []; LAY.order = []; LAY.rc = { order: [], col: {}, hide: {} }; LAY.floats = {}; sideReset(); DOCK.sort((a, b) => ['rig', 'tab', 'song', 'band', 'fret', 'vis', 'stage', 'neural', 'stems', 'tx', 'cam', 'lab', 'exp'].indexOf(a[0]) - ['rig', 'tab', 'song', 'band', 'fret', 'vis', 'stage', 'neural', 'stems', 'tx', 'cam', 'lab', 'exp'].indexOf(b[0])); applyPreset(LAYOUTS[0][2]); closePop(); } }, 'Reset layout')));
-  popover(btn, box, { right: true });
+  const det = h('details', { class: 'lay-panels' }, h('summary', {}, 'Panels: show or hide, or float as a window'));
+  DOCK.forEach(([id, name]) => det.append(h('div', { class: 'lrow' }, h('input', { type: 'checkbox', checked: !LAY.hidden.includes(id), 'aria-label': 'Show ' + name, onchange: e => setTabHidden(id, !e.target.checked) }), h('span', { class: 'grow' }, name), h('button', { class: 'btn sm', onclick: () => { FLOATS.has(id) ? unfloat(id) : floatPane(id); closePop(); } }, FLOATS.has(id) ? '⤓ dock' : '⧉ float'))));
+  box.append(det, h('div', { class: 'tiny muted', style: { marginTop: '6px' } }, 'The Monitor’s widgets (Tuner, Levels, Analysis, Spectrum, Views) are chosen on the Monitor itself.'));
+  box.append(h('div', { class: 'row', style: { marginTop: '10px' } }, h('button', { class: 'btn sm', onclick: () => { [...FLOATS.keys()].forEach(unfloat); LAY.rc = { order: [], col: {}, hide: {}, v: 2 }; RCARDS.forEach(n => { LAY.rc.hide[n] = !MON_DEFAULT.includes(n); }); LAY.floats = {}; sideReset(); applyPreset(LAYOUTS[0][2], LAYOUTS[0][0]); closePop(); } }, 'Reset layout')));
+  popover(btn, box, { right: true, style: { maxWidth: 'min(640px,96vw)', width: '640px' } });
 }
 
 /* ---------- band strip: always-visible instrument switches ---------- */
@@ -3788,18 +3847,22 @@ function buildBoardExtras() {
 
 /* >>> parts/13-stage.js */
 /* ============================================================
-   Part 13 · LIVE STAGE — show-ready visuals: 8 scenes, post-FX (trails / kaleidoscope / glow / hue),
+   Part 13 · LIVE STAGE — show-ready visuals: 8 scenes (six looks, a prompter, you in front), post-FX (trails / kaleidoscope / glow / hue),
    song HUD (chord, section, lyric, beat), fullscreen + pop-out, MIDI out (clock, chord roots, onsets)
    ============================================================ */
 VMODES.push(['bloom', 'Chord Bloom'], ['orbit', 'Harmonic Orrery'], ['joy', 'Ridgeline'], ['pulse', 'Beat Grid'], ['prompter', 'Prompter']);
 const SCN0 = (name, mode, hue, o) => Object.assign({ name, mode, hue, drift: 0, trail: .5, kal: 0, glow: .5, sens: 1, cam: false, flash: 0, sect: '', ov: { chord: true, lyric: false, beat: false, tuner: false, info: false } }, o || {});
-const STG = Object.assign({
-  cur: 0, safe: true, q: 1, out: '', clock: false, roots: false, trig: false, ccs: false, ch: 0, auto: false, hud: true,
-  scenes: [SCN0('Resonance', 'hex', 175, { trail: .35, glow: .6 }), SCN0('Kaleido bloom', 'bloom', 300, { kal: 6, trail: .7, glow: .8, ov: { chord: true, lyric: false, beat: false, tuner: false, info: false } }),
-    SCN0('Tunnel', 'tunnel', 200, { trail: .5, glow: .7, flash: .5 }), SCN0('Orrery', 'orbit', 40, { trail: .8, glow: .5, ov: { chord: true, lyric: false, beat: true, tuner: false, info: true } }),
-    SCN0('Ridgeline', 'joy', 150, { trail: 0, glow: .4 }), SCN0('Beat grid', 'pulse', 20, { trail: .4, glow: .7, flash: .4, ov: { chord: true, lyric: false, beat: true, tuner: false, info: false } }),
-    SCN0('Lyric prompter', 'prompter', 175, { glow: .3, ov: { chord: true, lyric: true, beat: true, tuner: false, info: true } }), SCN0('Strings + cam', 'strings', 175, { cam: true, glow: .5, ov: { chord: true, lyric: false, beat: false, tuner: true, info: false } })]
-}, CFG.stage || {});
+/** a scene that runs a starter show (a Concert design: palette, rig, lasers, motion; see part 56) */
+const SHOWSC = (name, id, o) => SCN0(name, 'concert', 38, Object.assign({ trail: 0, glow: .45, show: { design: id, ovr: {} }, ov: { chord: true, lyric: true, beat: false, tuner: false, info: true } }, o || {}));
+const starterScenes = () => [SHOWSC('Theatre', 'theatre'), SHOWSC('Backlight', 'backlight'), SHOWSC('Blades', 'blades'), SHOWSC('Pixel field', 'pixels'), SHOWSC('Horizon', 'horizon'), SHOWSC('Laser room', 'lasers'),
+  SCN0('Lyric prompter', 'prompter', 175, { glow: .3, ov: { chord: true, lyric: true, beat: true, tuner: false, info: true } }), SHOWSC('Me in front', 'theatre', { cam: true, ov: { chord: true, lyric: false, beat: false, tuner: true, info: false } })];
+const STG_V = 4, STG_LEGACY = 'Concert|concert|38,Kaleido bloom|bloom|300,Resonance|hex|175,Orrery|orbit|40,Ridgeline|joy|150,Beat grid|pulse|20,Lyric prompter|prompter|175,Strings + cam|strings|175';
+/** the eight scenes 2.5.0 shipped (six starter shows, the prompter, you in front), recognised by name, mode and design */
+const STG_V25 = 'Arena|concert|arena,Neon Laser|concert|neon,Campfire|concert|campfire,Aurora|concert|aurora,Noir Club|concert|noir,Golden Hour|concert|golden,Lyric prompter|prompter|,Me in front|concert|golden';
+const STG = Object.assign({ cur: 0, safe: true, q: 1, out: '', clock: false, roots: false, trig: false, ccs: false, ch: 0, auto: false, hud: true, scenes: starterScenes() }, CFG.stage || {});
+STG.scenes.forEach(s => { if (s.mode === 'tunnel') { s.mode = 'concert'; if (s.name === 'Tunnel') s.name = 'Concert'; s.trail = 0; s.flash = 0; } });
+/* scenes nobody has touched become the starter shows; scenes you made or changed are left exactly as they are (Stage ▸ Starter shows brings the new ones back) */
+if ((STG.v || 0) < STG_V) { if (STG.scenes.map(s => [s.name, s.mode, s.hue].join('|')).join(',') === STG_LEGACY || STG.scenes.map(s => [s.name, s.mode, (s.show && s.show.design) || ''].join('|')).join(',') === STG_V25) STG.scenes = starterScenes(); STG.v = STG_V; }
 while (STG.scenes.length < 8) STG.scenes.push(SCN0('Scene ' + (STG.scenes.length + 1), 'hex', 175));
 const saveStg = () => { CFG.stage = STG; saveCfg(); };
 const SG = { off: null, small: null, wrap: null, cv: null, flash: 0, lastFlash: 0, idleT: 0, pop: null, wl: null, tick: -1, lastSym: '', lastSec: '', playPrev: false, noteOn: null, ccT: 0, joy: [], lastPos: '', hudDirty: 1 };
@@ -3825,6 +3888,7 @@ function stageInfo() {
 
 /* ---------- extra visual modes (dispatched from drawVis) ---------- */
 function stageExtra(mode, g, W, H, X) {
+  if (mode === 'concert') return concertDraw(g, W, H, X);
   if (mode === 'neural') return ngStageDraw(g, W, H, X);
   if (mode === 'halo' || mode === 'kaleido') return vzExtra2(mode, g, W, H, X);
   const { fd, bin, lvl, C, pulse, energy, dt } = X, cx = W / 2, cy = H / 2, R = Math.min(W, H), ch = AN.chroma || new Array(12).fill(0), mx = Math.max(.001, ...ch), t = VZ.t;
@@ -3873,8 +3937,13 @@ function stageFrame(ts) {
   const sc0 = scn(), wrap = SG.wrap, d = (window.devicePixelRatio || 1) * STG.q, cw = wrap.clientWidth, chh = wrap.clientHeight; if (!cw || !chh) return;
   const w = Math.min(1920, Math.floor(cw * d)), hh = Math.min(1080 * 1.4, Math.floor(chh * d));
   if (SG.cv.width !== w || SG.cv.height !== hh) { SG.cv.width = w; SG.cv.height = hh; SG.off.width = w; SG.off.height = hh; SG.small.width = Math.max(2, w >> 2); SG.small.height = Math.max(2, hh >> 2); VZ.spec = null; SG.joy = []; }
-  const info = SG.info = stageInfo(), sc = pbScene(sc0, info), t = VZ.t, C = stagePal(sc, t), off = SG.off, g = SG.cv.getContext('2d');
-  if (pbSolid()) pbFill(off); else drawVis(off, { mode: sc.mode, C, bgA: sc.mode === 'joy' || sc.mode === 'spectro' ? 1 : clamp(1 - sc.trail * .93, .05, 1), noText: true, cam: sc.cam, gain: (sc.sens - 1) * 20 });
+  /* output: a frame-rate cap, a frozen picture and the test patterns are decided before anything is drawn (Show setup ▸ Output, part 59) */
+  const OUT = CFG.show.out, g0 = SG.cv.getContext('2d');
+  if (OUT.fps > 0 && OUT.fps < 60 && SG.drawT && ts - SG.drawT < 1000 / OUT.fps - 4) return; SG.drawT = ts;
+  if (SG.freeze && SG.frz) { g0.drawImage(SG.frz, 0, 0, w, hh); shOutFrame(g0, w, hh); return; }
+  if (SG.test) { shTestPattern(g0, w, hh, SG.test); shOutFrame(g0, w, hh); return; }
+  const info = SG.info = stageInfo(), sc = pbScene(sc0, info), t = VZ.t, C = sc.mode === 'concert' ? lxHudPal(sc) : stagePal(sc, t), off = SG.off, g = SG.cv.getContext('2d');
+  if (pbSolid()) pbFill(off); else drawVis(off, { mode: sc.mode, C, bgA: sc.mode === 'joy' || sc.mode === 'spectro' ? 1 : clamp(1 - sc.trail * .93, .05, 1), noText: true, cam: sc.cam, gain: (sc.sens - 1) * 20, show: sc.show, stage: true });
   g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1; g.fillStyle = '#000'; g.fillRect(0, 0, w, hh);
   if (sc.kal >= 3) {
     const n = sc.kal, cx = w / 2, cy = hh / 2, R = Math.hypot(cx, cy); for (let i = 0; i < n; i++) {
@@ -3885,27 +3954,32 @@ function stageFrame(ts) {
   if (sc.mode === 'halo' && !pbSolid()) haloFront(g);
   if (sc.glow > .02) { const q = SG.small.getContext('2d'); q.globalCompositeOperation = 'source-over'; q.clearRect(0, 0, SG.small.width, SG.small.height); q.drawImage(SG.cv, 0, 0, SG.small.width, SG.small.height); g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = sc.glow * .9; g.imageSmoothingQuality = 'high'; g.drawImage(SG.small, 0, 0, w, hh); g.globalAlpha = sc.glow * .5; g.drawImage(SG.small, -w * .02, -hh * .02, w * 1.04, hh * 1.04); g.restore(); }
   pbDim(g, w, hh);
-  if (sc.flash > 0 && SG.flash > .01) { g.fillStyle = 'rgba(255,255,255,' + (SG.flash * sc.flash * (STG.safe ? .22 : .6)).toFixed(3) + ')'; g.fillRect(0, 0, w, hh); SG.flash *= .88; }
+  if (sc.flash > 0 && SG.flash > .01) { g.fillStyle = 'rgba(255,255,255,' + (SG.flash * sc.flash * lxComfort().flash * LX.gov).toFixed(3) + ')'; g.fillRect(0, 0, w, hh); SG.flash *= .88; }
+  if (sc.mode === 'concert' && !pbSolid()) lxGovMeasure(SG.cv, performance.now());   // the governor looks at the finished picture
   if (pbOn()) { if (STG.pb.lower) drawLowerThird(g, w, hh, info, C); } else if (STG.hud !== false) drawStageHUD(g, w, hh, sc, info, C);
+  if (SG.freezeReq) { const f = SG.frz || (SG.frz = document.createElement('canvas')); f.width = w; f.height = hh; f.getContext('2d').drawImage(SG.cv, 0, 0); SG.freeze = true; SG.freezeReq = false; }
+  shOutFrame(g, w, hh);   // master level, blackout, mirror, flip
   if (SG.idle && ts - SG.idleT > 2800 && document.fullscreenElement === wrap) wrap.classList.add('idle');
 }
 function drawStageHUD(g, W, H, sc, info, C) {
+  const lens = sc.mode === 'concert' ? (CFG.lens || 'perform') : '', teach = lens === 'teach'; if (lens === 'sky') return;       // the Sky lens is a picture; the Teach lens carries its own chord card, so only the lyric stays
   const ov = sc.ov, u = Math.min(W, H * 1.6), mono = 'ui-monospace,Menlo,monospace', pr = sc.mode === 'prompter', sh = 'rgba(0,0,0,.65)'; g.save(); g.shadowColor = sh; g.shadowBlur = u * .02; g.textBaseline = 'alphabetic';
-  if (ov.chord) {
+  if (ov.chord && !teach) {
     const sym = info.sym || '', sz = u * (pr ? .26 : .14); g.font = `800 ${Math.round(sz)}px ${mono}`; g.textAlign = pr ? 'center' : 'left'; g.fillStyle = '#fff';
     const x = pr ? W / 2 : W * .04, y = pr ? H * .46 : H * .84; g.fillText(sym, x, y);
     if (info.next && info.playing) { g.font = `700 ${Math.round(sz * .34)}px ${mono}`; g.fillStyle = C.b; g.fillText('next  ' + info.next, x, y + (pr ? sz * .38 : -sz * .92)); }
   }
-  if (ov.info || ov.beat) {
+  if ((ov.info || ov.beat) && !teach) {
     g.textAlign = 'right'; g.font = `700 ${Math.round(u * .03)}px ${mono}`; g.fillStyle = 'rgba(255,255,255,.85)';
     if (ov.info) { const key = AN.key && AN.key[0]; g.fillText((info.sec ? info.sec.toUpperCase() + (info.nBars ? '  ' + info.barIn + '/' + info.nBars : '') : '') , W * .97, H * .07); g.fillStyle = 'rgba(255,255,255,.6)'; g.fillText(Math.round(S.bpm) + ' BPM · ' + S.ts[0] + '/' + S.ts[1] + (key ? ' · ' + pcName(key.root) + (key.minor ? 'm' : '') : ''), W * .97, H * .07 + u * .042); }
     if (ov.beat) { const n = S.ts[0], r = u * .016, gap = r * 3.2, x0 = W * .97 - (n - 1) * gap - r; for (let i = 0; i < n; i++) { const on = info.playing && i === info.beat; g.beginPath(); g.arc(x0 + i * gap, H * (ov.info ? .07 + .09 : .07), r * (on ? 1.5 : 1), 0, 7); g.fillStyle = on ? (i === 0 ? C.b : '#fff') : 'rgba(255,255,255,.22)'; g.fill(); } }
   }
-  if (ov.lyric && info.lyric) { g.textAlign = 'center'; g.font = `700 ${Math.round(u * (pr ? .06 : .045))}px ${mono}`; g.fillStyle = '#fff'; g.fillText(info.lyric, W / 2, H * (pr ? .72 : .76), W * .92); if (info.lyricNext) { g.font = `600 ${Math.round(u * .03)}px ${mono}`; g.fillStyle = 'rgba(255,255,255,.5)'; g.fillText(info.lyricNext, W / 2, H * (pr ? .72 : .76) + u * .065, W * .92); } }
+  if (ov.lyric && info.lyric && teach) { g.textAlign = 'center'; g.font = `700 ${Math.round(u * .04)}px ${mono}`; g.fillStyle = '#fff'; g.fillText(info.lyric, W / 2, H * .955, W * .92); }
+  else if (ov.lyric && info.lyric) { g.textAlign = 'center'; g.font = `700 ${Math.round(u * (pr ? .06 : .045))}px ${mono}`; g.fillStyle = '#fff'; g.fillText(info.lyric, W / 2, H * (pr ? .72 : .76), W * .92); if (info.lyricNext) { g.font = `600 ${Math.round(u * .03)}px ${mono}`; g.fillStyle = 'rgba(255,255,255,.5)'; g.fillText(info.lyricNext, W / 2, H * (pr ? .72 : .76) + u * .065, W * .92); } }
   if (ov.tuner && AN.active && AN.midi != null) { g.textAlign = 'right'; g.font = `800 ${Math.round(u * .06)}px ${mono}`; g.fillStyle = Math.abs(AN.cents) < 6 ? '#3ddc84' : '#fff'; g.fillText(pcName(AN.midi) + ' ' + (AN.cents >= 0 ? '+' : '') + AN.cents.toFixed(0) + '¢', W * .97, H * .93); }
   g.restore(); g.textAlign = 'left';
 }
-bus.on('onset', () => { const now = performance.now(); if (now - SG.lastFlash > (STG.safe ? 340 : 80)) { SG.flash = 1; SG.lastFlash = now; } });
+bus.on('onset', () => { const now = performance.now(); if (now - SG.lastFlash > lxComfort().gap) { SG.flash = 1; SG.lastFlash = now; } });
 
 /* ---------- MIDI out ---------- */
 function midiOut() { if (!MIDI.access) return null; const o = [...MIDI.access.outputs.values()]; return o.find(x => x.id === STG.out) || null; }
@@ -3952,42 +4026,19 @@ function stagePop() {
 function renderStageUI() {
   if (!SG.hudbar) return; const sc = scn();
   SG.hudbar.innerHTML = ''; STG.scenes.forEach((s, i) => SG.hudbar.append(h('button', { class: 'sbtn' + (i === STG.cur ? ' on' : ''), title: s.name + ' — key ' + (i + 1) + ' · MIDI note ' + (48 + i), onclick: () => stageScene(i) }, (i + 1) + ' ' + s.name)));
-  SG.hudbar.append(h('span', { style: { flex: 1 } }), ...(document.body.dataset.form && document.body.dataset.form !== 'desktop' ? [h('button', { class: 'sbtn', title: 'Fill the screen', onclick: stageFull }, SG.wrap.classList.contains('pfs') ? '✕ Exit' : '⛶ Full')] : []), h('button', { class: 'sbtn', onclick: () => { STG.hud = !(STG.hud !== false); saveStg(); renderStageUI(); } }, STG.hud !== false ? 'HUD on' : 'HUD off'), h('button', { class: 'sbtn', title: 'Separate window for a projector / second screen', onclick: stagePop }, '⧉ Pop-out'), h('button', { class: 'sbtn', onclick: stageFull }, '⛶ Fullscreen'));
-  const E_ = SG.editor; E_.innerHTML = '';
-  const field = (label, ctl) => h('label', { class: 'small', style: { display: 'flex', flexDirection: 'column', gap: '3px', fontWeight: 700 } }, label, ctl);
-  const rng = (k, min, max, step, fmt) => { const v = h('span', { class: 'mono tiny' }, (fmt || (x => x))(sc[k])); return h('div', { class: 'row', style: { gap: '6px' } }, h('input', { type: 'range', min, max, step, value: sc[k], style: { flex: 1 }, oninput: e => { sc[k] = +e.target.value; v.textContent = (fmt || (x => x))(sc[k]); saveStg(); } }), v); };
-  const chk = (o, k, label) => h('label', { class: 'chk small', style: { display: 'flex', gap: '4px', alignItems: 'center', fontWeight: 700 } }, h('input', { type: 'checkbox', checked: o[k], onchange: e => { o[k] = e.target.checked; saveStg(); } }), label);
-  E_.append(
-    h('div', { class: 'card', style: { padding: '10px' } }, h('h4', { style: { margin: '0 0 8px' } }, 'Scene ' + (STG.cur + 1)),
-      h('div', { class: 'sgrid', style: { marginTop: 0 } },
-        field('Name', h('input', { class: 'in', value: sc.name, style: { fontFamily: 'var(--sans)' }, onchange: e => { sc.name = e.target.value || 'Scene'; saveStg(); renderStageUI(); } })),
-        field('Visual', h('select', { class: 'in', style: { fontFamily: 'var(--sans)' }, onchange: e => { sc.mode = e.target.value; VZ.spec = null; SG.joy = []; saveStg(); } }, VMODES.map(([k, n]) => h('option', { value: k, selected: k === sc.mode }, n)))),
-        field('Hue', rng('hue', 0, 359, 1, x => x + '°')), field('Hue drift', rng('drift', 0, 3, .05, x => x ? x.toFixed(2) : 'off')),
-        field('Trails', rng('trail', 0, 1, .01, x => Math.round(x * 100) + '%')), field('Glow', rng('glow', 0, 1, .01, x => Math.round(x * 100) + '%')),
-        field('Kaleidoscope', h('select', { class: 'in', style: { fontFamily: 'var(--sans)' }, onchange: e => { sc.kal = +e.target.value; saveStg(); } }, [[0, 'Off'], [3, '3 wedges'], [4, '4'], [6, '6'], [8, '8'], [12, '12']].map(([v, n]) => h('option', { value: v, selected: v === sc.kal }, n)))),
-        field('Sensitivity', rng('sens', .4, 2.5, .05, x => '×' + x.toFixed(2))), field('Beat flash', rng('flash', 0, 1, .05, x => x ? Math.round(x * 100) + '%' : 'off')),
-        field('Auto-switch on section', h('input', { class: 'in', value: sc.sect, placeholder: 'e.g. chorus', style: { fontFamily: 'var(--sans)' }, onchange: e => { sc.sect = e.target.value.trim(); saveStg(); } }))),
-      h('div', { class: 'row', style: { gap: '14px', marginTop: '8px', flexWrap: 'wrap' } }, chk(sc, 'cam', '📷 Camera backdrop'), camFxBox(), chk(sc.ov, 'chord', 'Chord'), chk(sc.ov, 'lyric', 'Lyric line'), chk(sc.ov, 'beat', 'Beat dots'), chk(sc.ov, 'info', 'Section · BPM · key'), chk(sc.ov, 'tuner', 'Tuner'))),
-    pbCard(),
-    h('div', { class: 'card', style: { padding: '10px' } }, h('h4', { style: { margin: '0 0 8px' } }, 'Show settings'),
-      h('div', { class: 'row', style: { gap: '14px', flexWrap: 'wrap', alignItems: 'center' } },
-        chk(STG, 'safe', 'Reduce flashing (≤3 Hz, softer)'), chk(STG, 'auto', 'Auto-switch scenes by section name'),
-        h('label', { class: 'small', style: { fontWeight: 700 } }, 'Render quality ', h('select', { class: 'in', style: { width: 'auto', fontFamily: 'var(--sans)' }, onchange: e => { STG.q = +e.target.value; saveStg(); } }, [[.5, 'Low (fast)'], [.75, 'Medium'], [1, 'High']].map(([v, n]) => h('option', { value: v, selected: v === STG.q }, n))))),
-      h('div', { class: 'tiny muted', style: { marginTop: '6px' } }, 'Keys 1–8 pick scenes while this panel (or fullscreen) is showing · MIDI notes 48–55 pick scenes anywhere. Lyric lines advance with the bar position of the section.')),
-    h('div', { class: 'card', style: { padding: '10px' } }, h('h4', { style: { margin: '0 0 8px' } }, 'MIDI out → lights, synths, DAW'),
-      h('div', { class: 'row', style: { gap: '14px', flexWrap: 'wrap', alignItems: 'center' } },
-        (() => { const sel = h('select', { class: 'in', style: { width: 'auto', fontFamily: 'var(--sans)' }, onchange: e => { STG.out = e.target.value; saveStg(); } }); const fill = () => { sel.innerHTML = ''; sel.append(h('option', { value: '' }, MIDI.access ? 'No output' : 'Enable MIDI first')); if (MIDI.access) MIDI.access.outputs.forEach(o => sel.append(h('option', { value: o.id, selected: o.id === STG.out }, o.name))); }; fill(); bus.on('midi', fill); return h('div', { class: 'row', style: { gap: '6px' } }, sel, h('button', { class: 'btn sm', onclick: () => { initMIDI(); } }, 'Enable MIDI')); })(),
-        h('label', { class: 'small', style: { fontWeight: 700 } }, 'Channel ', h('input', { class: 'in', type: 'number', min: 1, max: 16, value: (STG.ch | 0) + 1, style: { width: '56px' }, onchange: e => { STG.ch = clamp((+e.target.value || 1) - 1, 0, 15); saveStg(); } })),
-        chk(STG, 'clock', 'Clock + start/stop'), chk(STG, 'roots', 'Chord root notes'), chk(STG, 'trig', 'Note on every pick (note 60)'), chk(STG, 'ccs', 'CC20 loudness · CC21 brightness')),
-      h('div', { class: 'tiny muted', style: { marginTop: '6px' } }, 'Clock is derived from the song playhead and sent per frame, so expect a little jitter — fine for lights and arpeggiators, not for tight audio sync.')));
+  SG.hudbar.append(h('span', { style: { flex: 1 } }), ...(document.body.dataset.form && document.body.dataset.form !== 'desktop' ? [h('button', { class: 'sbtn', title: 'Fill the screen', onclick: stageFull }, SG.wrap.classList.contains('pfs') ? '✕ Exit' : '⛶ Full')] : []), h('button', { class: 'sbtn' + (SG.boOn ? ' on' : ''), id: 'stgBo', title: 'Fade the output to black and back (key 0)', 'aria-pressed': String(!!SG.boOn), onclick: () => { shBlackout(); renderStageUI(); } }, '■ Blackout'), h('button', { class: 'sbtn', onclick: () => { STG.hud = !(STG.hud !== false); saveStg(); renderStageUI(); } }, STG.hud !== false ? 'HUD on' : 'HUD off'), h('button', { class: 'sbtn', title: 'Separate window for a projector / second screen', onclick: stagePop }, '⧉ Pop-out'), h('button', { class: 'sbtn', onclick: stageFull }, '⛶ Fullscreen'));
+  const E_ = SG.editor; E_.innerHTML = ''; E_.append(shcRoot());   // the Show setup console (part 59)
 }
 function buildStagePane() {
   const p = PANES.stage; if (!p) return; SG.off = document.createElement('canvas'); SG.small = document.createElement('canvas');
-  SG.cv = h('canvas'); SG.hudbar = h('div', { class: 'stagehud' }); SG.wrap = h('div', { class: 'stagewrap', style: { minHeight: '340px', aspectRatio: '16/8' } }, SG.cv, SG.hudbar);
-  SG.editor = h('div', { style: { display: 'grid', gap: '10px', marginTop: '10px' } });
+  SG.cv = h('canvas'); SG.hudbar = h('div', { class: 'stagehud' }); SG.guides = h('div', { class: 'sg-guides', 'aria-hidden': 'true' }, h('i', { class: 'a' }), h('i', { class: 't' }), h('b'));
+  SG.wrap = h('div', { class: 'stagewrap' + (CFG.show.out.safe ? ' guides' : ''), style: { minHeight: '340px', aspectRatio: '16/8' } }, SG.cv, SG.guides, SG.hudbar);
+  SG.editor = h('div', { class: 'stg-ed' });
   const kick = () => { SG.idleT = performance.now(); SG.wrap.classList.remove('idle'); }; ['mousemove', 'mousedown', 'touchstart'].forEach(ev => SG.wrap.addEventListener(ev, kick, { passive: true })); SG.idle = true;
   SG.wrap.addEventListener('dblclick', e => { if (!e.target.closest('.sbtn')) stageFull(); });
-  p.append(h('div', { class: 'row', style: { margin: '0 0 8px', gap: '10px' } }, h('div', { class: 'tiny muted' }, 'Show-ready visuals: pick a scene, go fullscreen (double-click), or pop it out to a projector. Play the song or just play — it follows both.')), SG.wrap, SG.editor);
+  const grid = h('div', { class: 'stg-grid' }, SG.wrap, SG.editor);
+  p.append(h('div', { class: 'row', style: { margin: '0 0 8px', gap: '10px' } }, h('div', { class: 'tiny muted' }, 'Show-ready visuals: pick a scene, go fullscreen (double-click), or pop it out to a projector. Play the song or just play — it follows both. Set the show up below.')), grid);
+  if (typeof ResizeObserver === 'function') new ResizeObserver(() => grid.classList.toggle('wide', p.clientWidth >= 1000)).observe(p);
   renderStageUI();
 }
 
@@ -4466,7 +4517,7 @@ function buildStemsPane() {
     h('span', { style: { flex: 1 } }), h('label', { class: 'chk small', style: { display: 'flex', gap: '4px', alignItems: 'center', fontWeight: 700 } }, h('input', { type: 'checkbox', onchange: e => { STM.loop.on = e.target.checked; if (STP.playing) spPlay(null, spPos()); } }), 'Loop'), h('button', { class: 'btn sm', title: 'Click lane to seek · Shift-click sets loop start · Alt-click sets loop end', onclick: () => { STM.loop = { on: STM.loop.on, a: null, b: null }; } }, 'Clear loop'));
   SU.cv = h('canvas', { style: { width: '100%', height: '100%', display: 'block', cursor: 'pointer' } }); SU.cvw = h('div', { style: { position: 'relative', height: 'clamp(150px,27vh,300px)', flex: 'none', background: '#050b0c', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--line)' } }, SU.cv);
   SU.strips = h('div', { style: { display: 'grid', gap: '6px', margin: '10px 0' } }); SU.info = h('div', { class: 'card', style: { padding: '12px', margin: '0 0 10px' } }); SU.music = h('div', { class: 'card', style: { padding: '12px' } });
-  SU.empty = h('div', { class: 'card', style: { padding: '22px', textAlign: 'center', color: 'var(--muted)' } }, h('div', { style: { fontSize: '30px' } }, '🎚'), h('div', { style: { fontWeight: 800, margin: '4px 0' } }, 'Bring a song in'), h('div', { class: 'small' }, 'Load any audio file. It is split into drums, bass, vocals and guitar/keys on your machine — nothing is uploaded. You get which instruments are in it and when, the tempo, key and chords, the drum groove, and a player where you can mute a part and play it yourself.'));
+  SU.empty = h('div', { class: 'card', style: { padding: '22px', textAlign: 'center', color: 'var(--muted)' } }, h('div', { style: { fontSize: '30px' } }, '🎚'), h('div', { style: { fontWeight: 800, margin: '4px 0' } }, 'Bring a song in'), h('div', { class: 'small' }, 'Load any audio file. It is split into drums, bass, vocals and guitar/keys on your machine — nothing is uploaded. You get which instruments are in it and when, the tempo, key and chords, the drum groove, and a player where you can mute a part and play it yourself.'), h('div', { class: 'tiny', style: { marginTop: '8px' } }, 'Use music you made or have the right to use. The stems, chords and tab are worked out from your file, so they are based on it.'));
   SU.samples = samplesShelf(f => stemLoad(f));
   p.append(h('div', { class: 'stm-wrap' }, SU.top, SU.samples, SU.empty, SU.tr, h('div', { class: 'stm-cols' }, h('div', { class: 'stm-l' }, SU.cvw, SU.strips), h('div', { class: 'stm-r' }, SU.info, SU.music)))); ['dragover', 'dragenter'].forEach(ev => p.addEventListener(ev, e => { e.preventDefault(); p.classList.add('dropt'); })); p.addEventListener('dragleave', () => p.classList.remove('dropt')); p.addEventListener('drop', e => { e.preventDefault(); p.classList.remove('dropt'); const f = e.dataTransfer.files && e.dataTransfer.files[0]; if (f) stemLoad(f); });
   new ResizeObserver(() => { const d = window.devicePixelRatio || 1, w = SU.cv.clientWidth, hh = SU.cv.clientHeight; if (w && (SU.cv.width !== Math.floor(w * d) || SU.cv.height !== Math.floor(hh * d))) { SU.cv.width = Math.floor(w * d); SU.cv.height = Math.floor(hh * d); } }).observe(SU.cv);
@@ -4640,7 +4691,7 @@ function tourSteps() { return document.body.dataset.form === 'phone' ? tourSteps
 function tourStepsDesk() {
   const tab = document.body.dataset.form === 'tablet';
   return [
-    { t: null, title: 'Welcome to the-daily.studio', b: 'A guitar workstation that runs entirely in this browser tab: a pedal rig, a backing band, a tab and chord composer, live analysis, a transcriber, stem separation and live visuals.<br><br>This tour takes about two minutes. Use <kbd>→</kbd> <kbd>←</kbd> to move and <kbd>Esc</kbd> to leave. It never changes your song. Reopen it any time from <b>?</b> in the top bar.' },
+    { t: null, title: 'Welcome to the-daily.studio', b: 'A guitar and voice studio that runs entirely in this browser tab. <b>Record</b> your guitar and mic, <b>split</b> any song into stems to play along with, and <b>write it down</b> as chords, tab and lyrics. Around that: a pedal rig with presets, a backing band, and a neural map and light show of your music.<br><br>This tour takes about two minutes. Use <kbd>→</kbd> <kbd>←</kbd> to move and <kbd>Esc</kbd> to leave. It never changes your song. Reopen it any time from <b>?</b> in the top bar.' },
     { t: tq('#left'), pre: tourSide('io'), drawer: 'left', side: 'right', title: '1 · Connect your guitar', b: 'Open <b>I/O</b> and choose your audio interface (a Focusrite, say) or microphone. If the list is blank, allow microphone access in the browser and press the refresh button (⟳). The <b>Loopback test</b> measures your real round-trip latency.<br><br>Use headphones, or your interface\'s hardware Direct Monitor, to avoid feedback.', tip: 'Wired headphones give the lowest delay. Bluetooth adds a lot.' },
     { t: tq('#transport'), side: 'bottom', title: '2 · Transport', b: 'Play, stop, loop, click, <b>record</b> (with a count-in and dry plus wet takes), position, tempo, time signature and key. <kbd>Space</kbd> plays and stops. The latency chip at the top right shows the current round-trip estimate.' },
     { t: tq('#dock > .dockbar, #dock .tabs'), side: 'bottom', title: '3 · Panels are tabs', b: 'Everything lives in these tabs. <b>Drag</b> a tab to reorder, <b>double-click</b> to float it as a window, and use <b>▦</b> in the top bar for layout presets and show / hide. <kbd>Alt</kbd>+<kbd>1…9</kbd> jumps by position.' },
@@ -4658,7 +4709,7 @@ function tourStepsDesk() {
     { t: tq('#pane-tx'), pane: 'tx', side: 'left', title: '15 · Transcribe', b: 'Record yourself or load an audio file and get <b>polyphonic tab</b>: chords, bass and melody mapped to strings and frets for your tuning. Review, accept, then apply to the song. <b>Measure noise</b> and <b>Calibrate to my guitar</b> improve accuracy, and <b>Run self-test</b> scores the engine on synthetic guitar.' },
     { t: tq('#pane-stems'), pane: 'stems', side: 'left', title: '16 · Stems and backing tracks', b: 'Load a song and The app separates <b>drums, bass, vocals and guitar / other</b>, finds the tempo, key and chords, and lets you mute stems to play along. Send the chords or the drum groove to the band. Separation is DSP-based and runs on your machine; expect good drums and vocals, rougher guitar.' },
     { t: tq('#pane-neural'), pane: 'neural', side: 'left', title: '17 · Neural map', b: 'The music as a living network: notes become nodes and harmony forms the layers as the song progresses. Rotate, scrub through time and click nodes to inspect them.' },
-    { t: tq('#pane-stage'), pane: 'stage', side: 'left', title: '18 · Stage', b: 'Full-screen, audio-reactive visuals for performing: hex resonance, tunnels, a prompter, and a neural mode. With Stage focused, <kbd>1</kbd>…<kbd>8</kbd> change scenes.' },
+    { t: tq('#pane-stage'), pane: 'stage', side: 'left', title: '18 · Stage', b: 'Full-screen, audio-reactive visuals for performing: the Concert light show, hex resonance, a prompter, and a neural mode. Your camera is optional and stays off unless you turn it on. With Stage focused, <kbd>1</kbd>…<kbd>8</kbd> change scenes.' },
     { t: tq('#top #topR'), side: 'bottom', title: '19 · Settings, help and saving', b: '<b>⚙</b> Settings (A4 pitch, flats, input options), <b>◐</b> light / dark, <b>?</b> shortcuts. Your song autosaves in this browser. Use <b>Export</b> for Project JSON, tab text, ChordPro, MIDI or WAV (rendered faster than the song plays) so nothing is stuck in the page. Press <b>Back up all songs</b> (in <b>☰ Songs</b>) now and then: browsers can clear a site\'s storage, and on an iPhone, Add to Home Screen keeps it.' },
     { t: null, title: 'You are ready', b: 'A good first session: pick a tone, press <kbd>Space</kbd>, play along with the band, then try <b>Transcribe</b> or load a backing track in <b>Stems</b>.<br><br>Reopen this tour from <b>?</b> whenever you like.', last: true }
   ];
@@ -4722,7 +4773,7 @@ function tourPlace() {
 }
 /* first-run offer: one small card, never again once answered */
 function tourOffer() {
-  if (CFG.tourAsked || CFG.tourDone || TOUR.on || $('#tourOffer') || $('#humbar') || $('#hum')) return;
+  if (CFG.tourAsked || CFG.tourDone || TOUR.on || $('#tourOffer') || $('#humbar') || $('#hum') || (typeof GD !== 'undefined' && (GD.id || gdc().sess))) return;
   const close = () => { const o = $('#tourOffer'); if (o) o.remove(); CFG.tourAsked = true; saveCfg(); };
   const o = h('div', { id: 'tourOffer', class: 'tour-offer' }, h('div', {}, h('b', {}, 'New here?'), h('span', { class: 'muted' }, ' A two-minute tour shows where everything is.')),
     h('div', { class: 'row', style: { gap: '6px' } }, h('button', { class: 'btn sm primary', onclick: () => { close(); tourStart(); } }, 'Take the tour'), h('button', { class: 'btn sm', onclick: close }, 'Not now')));
@@ -4735,7 +4786,7 @@ function tourStepsPhone() {
   const go = (g, sid) => () => { mCloseOverlays(); if (M.g !== g || M.s !== sid) mGo(g, sid); };
   const tl = () => { mCloseOverlays(); if (document.body.dataset.tl === 'off') { M.tl[document.body.dataset.land === '1' ? 'l' : 'p'] = 'mini'; mSync(); } };
   return [
-    { t: null, title: 'Welcome to the-daily.studio', b: 'A guitar workstation that runs entirely in this browser tab: a pedal rig, a backing band, a tab composer, live analysis, a transcriber, stem separation and live visuals. Everything stays on your phone.<br><br>This tour takes a minute and never changes your song. Tap <b>Next</b> to move on.' },
+    { t: null, title: 'Welcome to the-daily.studio', b: 'A guitar and voice studio that runs entirely in this browser tab: record guitar and mic, split a song into stems, get the chords and tab, with a pedal rig and live visuals. Everything stays on your phone.<br><br>This tour takes a minute and never changes your song. Tap <b>Next</b> to move on.' },
     { t: tq('#top'), pre: go('play', 'rig'), side: 'bottom', title: '1 · Tempo, signature and key', b: 'The song\'s <b>BPM</b>, time signature, key and mode live up here and drive the band, the fretboard and the tab.' },
     { t: tq('#mtrans'), side: 'top', title: '2 · Transport', b: 'Rewind, <b>play</b>, stop, <b>record</b> (with a count-in, dry plus wet takes), <b>loop</b> and the <b>click</b>. The readout shows bar · beat · slot.', tip: 'Use headphones when recording so the speaker does not feed back into the mic.' },
     { t: tq('#mnav'), side: 'top', title: '3 · Five sections', b: '<b>Play</b> (rig, tones, tuner, I/O), <b>Write</b> (tab, song, band, fretboard, theory), <b>See</b> (visuals, stage, neural map, vision), <b>Stems</b> and <b>More</b> (research, export). The chips at the top switch between the panels of a section.' },
@@ -4865,12 +4916,14 @@ function mSheet() {
     stat,
     h('div', { class: 'mgrid' },
       tile(msvg('<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/>'), 'Hum or sing a song', () => { mCloseOverlays(); humOpen(); }),
+      tile(msvg('<path d="M17 2l4 4-4 4M3 11V9a3 3 0 013-3h15M7 22l-4-4 4-4M21 13v2a3 3 0 01-3 3H3"/>'), 'Loop & layer', () => { mCloseOverlays(); looperOpen(); }),
       tile(msvg('<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/>'), 'Audio · kill switch', () => { mCloseOverlays(); audioOpen(); }),
       tile(msvg('<path d="M21 14.5A8.5 8.5 0 119.5 3a6.7 6.7 0 0011.5 11.5z"/>'), CFG.theme === 'light' ? 'Dark theme' : 'Light theme', () => { setTheme(CFG.theme === 'light' ? 'dark' : 'light'); mSheetRefresh(); }),
       tile(msvg('<circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 000 18z" fill="currentColor"/>'), 'Appearance', () => { mCloseOverlays(); lookOpen(); }),
       mon, wake,
       tile(msvg('<circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 00-.1-1.2l2-1.5-2-3.4-2.3 1a7 7 0 00-2-1.2L14.2 3h-4l-.4 2.7a7 7 0 00-2 1.2l-2.3-1-2 3.4 2 1.5A7 7 0 005 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.4 2.3-1a7 7 0 002 1.2l.4 2.7h4l.4-2.7a7 7 0 002-1.2l2.3 1 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z"/>'), 'Settings', () => { mCloseOverlays(); openSettings(); }),
       tile(msvg('<path d="M12 3a9 9 0 100 18 9 9 0 000-18zM9.5 9.5a2.5 2.5 0 115 0c0 1.7-2.5 2-2.5 4M12 17h.01"/>'), 'Help', () => { mCloseOverlays(); openHelp(); }),
+      tile(msvg('<path d="M5 13l4 4L19 7"/>'), 'Guided sessions', () => { mCloseOverlays(); guideMenu(); }),
       tile(msvg('<path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/>'), 'Guided tour', () => { mCloseOverlays(); tourStart(); }),
       tile(msvg('<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>'), 'Save project', () => { exportProject(); }),
       tile(msvg('<circle cx="18" cy="5" r="2.6"/><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/><path d="M8.3 10.8l7.4-4.4M8.3 13.2l7.4 4.4"/>'), 'Share link', mShare),
@@ -5767,7 +5820,7 @@ function liOpen(text) {
         h('button', { class: 'btn sm', onclick: () => file.click() }, 'Open a .txt / .lrc file…'), file, h('button', { class: 'btn sm', onclick: () => { st.text = ''; ta.value = ''; draw(); ta.focus(); } }, 'Clear')),
       h('div', { class: 'lyi-opts' }, h('label', {}, 'Where it goes'), modeSel, h('label', {}, 'New sections'), bplSel, h('label', { class: 'lyi-chk' }, chk, ' Put the chords over the words')),
       prev),
-    h('div', { class: 'lyi-f' }, h('span', { class: 'tiny muted grow' }, 'Lyrics stay on this device. Nothing is uploaded.'), h('button', { class: 'btn', onclick: liClose }, 'Cancel'), go));
+    h('div', { class: 'lyi-f' }, h('span', { class: 'tiny muted grow' }, 'Lyrics stay on this device. Nothing is uploaded. Use words you wrote or have the right to use.'), h('button', { class: 'btn', onclick: liClose }, 'Cancel'), go));
   LI.ov = h('div', { class: 'lyi', onpointerdown: e => { if (e.target === LI.ov) liClose(); } }, box); document.body.append(LI.ov); document.addEventListener('keydown', liKeys, true); draw(); setTimeout(() => ta.focus(), 30);
 }
 /** pasting a whole lyric sheet into any section box offers to split it */
@@ -6112,8 +6165,9 @@ function zoomSet(z, quiet) {
   if (!ZOOMS.some(x => x[0] === z)) z = 'studio'; ZOOM.cur = z; CFG.zoom = z; saveCfg(); document.body.classList.toggle('zoom-canvas', z === 'canvas');
   if (isDesk()) {
     if (z === 'canvas') { LAY.right = true; saveLay(); applyLayout(); sideShow('refine'); }
-    else if (z === 'song') applyPreset(layoutPreset('Songwriting'));
-    else applyPreset(layoutPreset(STM.ch ? 'Track study' : 'Record'));
+    else if (z === 'song') applyPreset(layoutPreset('Write'), 'Write');
+    else if (STM.ch) applyPreset(Object.assign({}, layoutPreset('Arrange'), { dock: 'stems' }), 'Arrange');
+    else applyPreset(layoutPreset('Record'), 'Record');
   }
   zoomSync(); if (!quiet) toast(ZOOMS.find(x => x[0] === z)[1] + ' view', ''); setTimeout(() => { try { tlSize(); } catch (e) { } window.dispatchEvent(new Event('resize')); }, 60);
 }
@@ -6161,7 +6215,7 @@ function originsOpen(o = {}) {
   });
   setTimeout(() => { const i = $('input.in', blank); if (i) i.focus(); }, 40); return d;
 }
-function startMaybe() { if (PRJ.cur || store.get('started', false) || /[?&]start=0/.test(location.search) || document.getElementById('origins')) return; PRJ.fresh = true; if (CFG.route === 'stage') humStageFirst(); else humCanvasFirst(); }   // (the song on screen is only the built-in demo until the person picks something) the first thing anyone sees is the stage with one panel: hum, guitar, or a song file / blank page / demo
+function startMaybe() { if (PRJ.cur || store.get('started', false) || /[?&]start=0/.test(location.search) || document.getElementById('origins')) return; PRJ.fresh = true; if (guideRoute()) return; if (PRJ.bootDemo) { PRJ.bootDemo = false; projCreate('demo', { zoom: 'song' }); return; } if (CFG.route === 'stage') humStageFirst(); else humCanvasFirst(); }   // (the song on screen is only the built-in demo until the person picks something) the first thing anyone sees is the stage with one panel: hum, guitar, or a song file / blank page / demo
 bus.on('booted', () => { if (PRJ.ready) startMaybe(); else PRJ.wantStart = true; });
 /* a library that is unavailable (private window) still lets you begin */
 function newSongGo() { originsOpen({}); }
@@ -6301,17 +6355,25 @@ function aboutBlock() {
       h('p', {}, 'Welcome to the-daily.studio'),
       h('p', { class: 'ab-sig' }, '— Tehau.'),
       h('div', { class: 'row', style: { gap: '6px', flexWrap: 'wrap' } }, BRAND.support ? link('☕ ' + BRAND.supportLabel, BRAND.support, 'primary') : '', link('GitHub', BRAND.github), link('LinkedIn', BRAND.linkedin), link('The Daily', BRAND.journal), link('Source & issues', BRAND.repo))),
+    h('details', { class: 'ab-cr', id: 'abPriv' }, h('summary', {}, 'Privacy at a glance'),
+      h('ul', {},
+        li(h('b', {}, 'Stays on this device: '), 'everything you play, sing, record, drop in or type: audio, camera pictures, songs, takes, lyrics and settings. Nothing is uploaded, and there is no account, analytics or advertising.'),
+        li(h('b', {}, 'Sent over the network: '), 'nothing from your music. The page, its offline copy and the sample list come from this site. Only if you say yes to the one-time MediaPipe download does your browser also fetch code and a model from jsDelivr and Google Storage; those two sites see your IP address and browser type, like any web request.'),
+        li(h('b', {}, 'Kept here, in this browser: '), 'songs and takes (IndexedDB), settings (local storage) and an offline copy of the app (Cache Storage). Settings ▸ Data ▸ Reset erases them. Files you export are yours to keep or share.'),
+        li(h('b', {}, 'Seen by the host: '), 'the site is served by Cloudflare, which keeps ordinary access logs and traffic counts, as any web host does. The app itself sets no cookies.')),
+      h('p', { class: 'tiny muted' }, 'The full statement: ', ext('privacy and notices', 'legal/#privacy'), '.')),
     h('details', { class: 'ab-cr' }, h('summary', {}, 'Credits & licences'),
       h('ul', {},
         li(h('b', {}, 'Code: '), 'MIT licence, © 2026 ' + BRAND.author + '. Free to use, copy, change and share; keep the licence notice.'),
         li(h('b', {}, 'Built with: '), 'the Web Audio API, AudioWorklet, Canvas, SVG and IndexedDB. No frameworks, no tracking, no analytics.'),
-        li(h('b', {}, 'Hand tracking and person cut-out (optional): '), 'use ', ext('MediaPipe Tasks Vision', 'https://developers.google.com/mediapipe'), ' with its hand-landmarker and selfie-segmenter models by Google, Apache-2.0, fetched from jsDelivr and Google Storage only when you switch hand tracking on, or choose “Me in front” for the camera. Motion-only mode and the edges-in look stay offline.'),
+        li(h('b', {}, 'Hand tracking and person cut-out (optional): '), 'use ', ext('MediaPipe Tasks Vision', 'https://developers.google.com/mediapipe'), ' (Apache-2.0) with Google’s hand-landmarker and selfie-segmenter models. They are fetched from jsDelivr and Google Storage only after you say yes to a one-time download; this site does not host or copy them, and Google publishes them with model cards rather than a separate licence file. Motion-only mode and the edges-in look stay offline. ', CFG.mpOk ? h('button', { class: 'btn sm', id: 'mpForget', onclick: e => { CFG.mpOk = false; saveCfg(); e.target.remove(); toast('OK. It will ask again before downloading anything.', 'ok'); } }, 'Ask me again next time') : ''),
         li(h('b', {}, 'Methods: '), 'YIN pitch estimation (de Cheveigné & Kawahara, 2002); harmonic / percussive separation by median filtering (Fitzgerald, 2010); Karplus–Strong string synthesis (1983). Re-implemented here from the published papers.'),
+        li(h('b', {}, 'Your music: '), 'the app ships with no recordings and no one else’s lyrics. Audio, lyrics and tab you bring in stay yours and stay on this device; you are responsible for having the right to use and share them. Chords, tab and stems are computed from your file and are derivative of it, so share them only as far as the original allows. The demo song is original.'),
         li(h('b', {}, 'Type: '), 'Inter and Montserrat (SIL Open Font Licence 1.1) are built into the page; nothing is downloaded. Other typefaces in Appearance use fonts already on your device.'),
         li(h('b', {}, 'Names: '), 'Ultimate Guitar, Focusrite, Scarlett, MIDI, Google and other names are used only to describe compatibility. This project is independent and not affiliated with or endorsed by them.'),
         li(h('b', {}, 'Made with AI assistance: '), 'developed with Claude (Anthropic) under my direction. The design choices, the music and any mistakes are mine.')),
-      h('p', { class: 'tiny muted' }, 'Full notices: THIRD_PARTY_NOTICES.md and PRIVACY.md in the repository.')),
-    h('p', { class: 'tiny muted', style: { marginBottom: 0 } }, 'Your songs, recordings and settings stay in this browser. The only requests this page can make are the optional hand-tracking and cut-out files above.'));
+      h('p', { class: 'tiny muted' }, 'Full text: ', ext('licences, third-party notices and privacy statement', 'legal/'), '.')),
+    h('p', { class: 'tiny muted', style: { marginBottom: 0 } }, 'Your songs, recordings and settings stay in this browser. Nothing is uploaded. The only other sites this page can contact are jsDelivr and Google Storage, and only after you agree to the optional MediaPipe download.'));
 }
 
 /* >>> parts/29-guard.js */
@@ -6905,7 +6967,8 @@ const xpEdit = () => { if (!XP.quiet) xpSignal(.25); };
 function xpQuiet(fn) { XP.quiet++; try { return fn(); } finally { XP.quiet--; } }
 function xpToolsButton() {
   const l = xpLevel(), b = h('button', { class: 'btn sm xp-tools', id: 'xpTools', title: 'Choose how much of the studio to show', 'aria-haspopup': 'dialog', onclick: () => {
-    const m = CFG.xpMode || 'auto', opt = (k, t, d) => h('button', { class: 'btn sm xp-opt' + (m === k ? ' on' : ''), 'aria-pressed': String(m === k), onclick: () => { CFG.xpMode = k; saveCfg(); closePop(); rebuildTabs(); if (k !== 'auto') toast((XP_LABEL[k]) + ' tools', ''); } }, h('b', {}, t), h('span', { class: 'muted' }, d));
+    const m = CFG.xpMode || 'auto', opt = (k, t, d) => h('button', { class: 'btn sm xp-opt' + (m === k ? ' on' : ''), 'aria-pressed': String(m === k), onclick: () => { CFG.xpMode = k; saveCfg(); closePop(); if (k === 'pro' && LAY.hidden.length) { LAY.hidden = []; saveLay(); }   /* “Everything” brings back any tab a layout had left off the strip */
+      rebuildTabs(); if (k !== 'auto') toast((XP_LABEL[k]) + ' tools', ''); } }, h('b', {}, t), h('span', { class: 'muted' }, d));
     popover(b, h('div', { class: 'xp-pop' }, h('h5', {}, 'How much of the studio?'), opt('auto', 'Automatic', 'Starts simple and adds tools as you use them'), opt('new', 'Simple', 'Hum, Song, Band, Stage, Save'), opt('some', 'More tools', 'Adds guitar sound, tab, fretboard, backing track'), opt('pro', 'Everything', 'All tabs, technical labels, numbered shortcuts')), { style: { width: '320px', maxWidth: '92vw' } });
   } }, l === 'pro' ? 'Tools' : '＋ More tools'); return b;
 }
@@ -6957,7 +7020,7 @@ function vzImmersive(on) {
       h('button', { class: 'btn sm', id: 'vzhNew', title: 'Start a new song: hum, guitar, a song file or a blank page', onclick: () => humStageFirst() }, '＋', h('span', { class: 'lbl' }, ' New song')),
       h('button', { class: 'btn sm', id: 'vzhRec', 'data-srec': '1', title: 'Record the stage as a video with the song’s sound (saved on this device)', onclick: e => srecMenu(e.currentTarget) }, '⏺', h('span', { class: 'lbl' }, ' Record')),
       h('button', { class: 'btn sm', id: 'vzhPerf', title: 'Perform: chords and lyrics over the stage, with a count-in', onclick: e => perfOpen(e.currentTarget) }, '🎤', h('span', { class: 'lbl' }, ' Perform')),
-      h('button', { class: 'btn sm', id: 'vzhLook', title: 'Change the look: Hex Resonance, Fifths Halo, Prism, Tunnel', onclick: () => vzCycleLook() }, '✦', h('span', { class: 'lbl' }, ' Look')),
+      h('button', { class: 'btn sm', id: 'vzhLook', title: 'Change the look: Concert, Hex Resonance, Fifths Halo, Prism', onclick: () => vzCycleLook() }, '✦', h('span', { class: 'lbl' }, ' Look')),
       h('button', { class: 'btn sm', id: 'vzhIo', title: 'Connect your input, set your level, monitor and test the sound', onclick: () => audioOpen() }, '⚙', h('span', { class: 'lbl' }, ' Inputs')),
       h('button', { class: 'btn sm vzh-kill', id: 'vzhKill', title: 'Stop all sound and release the microphone (Ctrl + .)', onclick: () => { try { audioKill(); } catch (e) { } } }, '■', h('span', { class: 'lbl' }, ' Stop audio')),
       h('button', { class: 'btn sm', id: 'vzhFull', title: 'Full screen', 'aria-label': 'Full screen', onclick: () => { try { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen({ navigationUI: 'hide' }).catch(() => { }); } catch (e) { } } }, '⛶'),
@@ -7080,7 +7143,7 @@ function neckRect(W, H) { const u = Math.min(W, H * 2.2), w = Math.min(W * .94, 
      note you play (or the song plays) spirals in toward you. Back half of the ring is drawn behind the player, the front
      half in front, so you are inside it.
    · Prism: a feedback kaleidoscope that accents the off-beat. The mirror count, hue and spin change on the "and" of the
-     beat (or on your own onsets), with a zoom-tunnel feedback loop. Flash and spin are limited when Stage ▸ safe is on.
+     beat (or on your own onsets), with a zoom-tunnel feedback loop. Its accents never come closer than the light-comfort gap (three a second at most), and spin and zoom follow the Calm / Standard / Full choice.
    ===================================================================== */
 VMODES.push(['halo', 'Fifths Halo'], ['kaleido', 'Prism']);
 const HL = { rot: 0, kick: 0, pv: 0, hi: false, parts: [], dirty: true, chords: [], pairs: [], items: [], t: 0 };
@@ -7103,7 +7166,7 @@ function haloDraw(g, W, H, X) {
   haloChords(); HL.t = t;
   // rotation: slow drift + a kick on every beat / onset, so the ring moves in rhythm
   if (pulse > HL.pv + .25) HL.kick = Math.min(1.4, HL.kick + .5 + pulse * .4); HL.pv = pulse; HL.kick *= Math.pow(.04, dt || .016);
-  HL.rot += (dt || .016) * (.16 + energy * .5 + HL.kick * (STG.safe ? 1.2 : 2.2));
+  HL.rot += (dt || .016) * (.16 + energy * .5 + HL.kick * (lxComfortKey() === 'full' ? 2.2 : lxComfortKey() === 'calm' ? .7 : 1.2));
   const Rx = Math.min(W * .47, H * .95), tilt = .3 + .05 * Math.sin(t * .23), Ry = Rx * tilt, cx = W / 2, cy = H * .5, rot = HL.rot, now = performance.now();
   const P = (a, rad, lift) => { const s = Math.sin(a); return { x: cx + Math.cos(a) * rad * Rx, y: cy + s * rad * Ry - (lift || 0) * Rx * .8, z: s, k: 1 + .24 * s }; };
   const ch = AN.chroma || [], cm = Math.max(.001, ...ch), live = AN.active, playing = T.playing;
@@ -7155,8 +7218,8 @@ const pcOut = a => [Math.cos(a), Math.sin(a)];
 /* ---------------- Prism: syncopated feedback kaleidoscope ---------------- */
 const KS = { out: null, src: null, ow: 0, oh: 0, n: 8, ni: 0, folds: [6, 8, 12, 10, 6, 16], rot: 0, dir: 1, hue: 0, zoom: 0, rings: [], step: -9, acc: 0, lastAcc: 0, pv: 0, glints: [] };
 function ksAccent(strong, now) {
-  const gap = STG.safe ? 340 : 110; if (now - KS.lastAcc < gap) return; KS.lastAcc = now;
-  if (strong) { KS.ni = (KS.ni + 1) % KS.folds.length; KS.n = KS.folds[KS.ni]; KS.hue += 34 + Math.random() * 40; if (Math.random() < .35) KS.dir *= -1; KS.zoom = STG.safe ? .035 : .09; }
+  const gap = lxComfort().gap; if (now - KS.lastAcc < gap) return; KS.lastAcc = now;
+  if (strong) { KS.ni = (KS.ni + 1) % KS.folds.length; KS.n = KS.folds[KS.ni]; KS.hue += 34 + Math.random() * 40; if (Math.random() < .35) KS.dir *= -1; KS.zoom = lxComfortKey() === 'full' ? .09 : lxComfortKey() === 'calm' ? .015 : .035; }
   KS.rings.push({ r: 0, v: strong ? 1 : .55, n: 3 + ((Math.random() * 3) | 0) });
   if (KS.rings.length > 8) KS.rings.shift();
 }
@@ -7168,11 +7231,11 @@ function kaleidoDraw(g, W, H, X) {
   if (T.playing && E.ctx) { const ph = playheadSlot(), st = Math.floor(ph); if (st !== KS.step) { KS.step = st; const m = ((st % 4) + 4) % 4; if (m === 2) ksAccent(true, now); else if (m === 0) ksAccent(false, now); else if (S.band.drumsOn || S.band.leadOn) KS.glints.push({ a: Math.random() * 6.3, r: .2 + Math.random() * .5, t: now }); } }
   else if (pulse > KS.pv + .25) ksAccent(pulse > .6, now); KS.pv = pulse;
   KS.glints = KS.glints.filter(q => now - q.t < 600);
-  const spin = (.07 + energy * .5 + pulse * .6) * (STG.safe ? .6 : 1) * KS.dir; KS.rot += (dt || .016) * spin; KS.zoom *= Math.pow(.05, dt || .016);
+  const spin = (.07 + energy * .5 + pulse * .6) * lxComfort().motion * KS.dir; KS.rot += (dt || .016) * spin; KS.zoom *= Math.pow(.05, dt || .016);
   // --- feedback: last frame, zoomed in and turned a little, becomes the new canvas (the infinite tunnel)
   s.save(); s.globalCompositeOperation = 'copy'; s.globalAlpha = 1; s.translate(cx + Math.sin(t * .7) * L * .006, cy + Math.cos(t * .5) * L * .006); s.rotate(spin * .06 + .004 * KS.dir); const z = 1.012 + energy * .02 + KS.zoom; s.scale(z, z);
   if (filt) s.filter = 'hue-rotate(' + (2 + energy * 9) + 'deg) saturate(1.05) brightness(.95)'; s.drawImage(KS.out, -ow / 2, -oh / 2); s.restore(); if (filt) s.filter = 'none';
-  s.fillStyle = 'rgba(2,6,8,' + (STG.safe ? .16 : .11) + ')'; s.fillRect(0, 0, L, L);
+  s.fillStyle = 'rgba(2,6,8,' + (lxComfortKey() === 'full' ? .11 : .16) + ')'; s.fillRect(0, 0, L, L);
   // --- new light, drawn once into the wedge that gets mirrored
   const n = KS.n, wedge = Math.PI / n; s.save(); s.translate(cx, cy); s.globalCompositeOperation = 'source-over';
   const hueC = k => 'hsla(' + ((KS.hue + k) % 360).toFixed(0) + ',90%,' + (58 + (k % 3) * 4) + '%,';
@@ -7199,14 +7262,15 @@ function kaleidoDraw(g, W, H, X) {
 function vzExtra2(mode, g, W, H, X) { if (mode === 'halo') return haloDraw(g, W, H, X); return kaleidoDraw(g, W, H, X); }
 
 /** change the visual look from anywhere (the full-screen ✦ button, keys) and keep the Visuals buttons in step */
-const VZ_FAVS = ['hex', 'halo', 'kaleido', 'tunnel'];
+const VZ_FAVS = ['concert', 'hex', 'halo', 'kaleido'];
 function vzSetMode(k, quiet) { VZ.mode = k; if (!quiet) { CFG.visMode = k; saveCfg(); } VZ.spec = null; VZ.hexes = null; document.querySelectorAll('#pane-vis .seg [data-m]').forEach(b => b.classList.toggle('on', b.dataset.m === k)); const n = (VMODES.find(m => m[0] === k) || [0, k])[1]; if (!quiet) toast(n, 'ok'); }
 /** Auto look: while the song plays, the look follows the section: calm in verses, wide in choruses, strange in bridges. Your own look comes back when it stops. */
-const VZ_BY_SECTION = [[/chorus|hook|refrain/i, 'halo'], [/bridge|break|solo/i, 'kaleido'], [/intro|outro|tag|coda/i, 'tunnel']];
+const VZ_BY_SECTION = [[/chorus|hook|refrain/i, 'halo'], [/bridge|break|solo/i, 'kaleido'], [/intro|outro|tag|coda/i, 'hex']];
 let vzSecLast = '';
 function vzSectionLook() {
-  if (!CFG.vzAuto || !T.playing || !E.ctx) { if (vzSecLast) { vzSecLast = ''; if (VZ.mode !== CFG.visMode) vzSetMode(CFG.visMode || 'hex', true); } return; }
+  if (!CFG.vzAuto || !T.playing || !E.ctx) { if (vzSecLast) { vzSecLast = ''; if (VZ.mode !== CFG.visMode) vzSetMode(CFG.visMode || 'concert', true); } return; }
   const fb = barsCache()[Math.max(0, Math.floor(playheadSlot() / spb()))]; if (!fb) return; const id = fb.sec.id || fb.sec.name; if (id === vzSecLast) return; vzSecLast = id;
+  if (CFG.visMode === 'concert') return;   // the Concert cues itself from the song
   const hit = VZ_BY_SECTION.find(([re]) => re.test(fb.sec.name)), m = hit ? hit[1] : (CFG.visMode && !/^(halo|kaleido|tunnel)$/.test(CFG.visMode) ? CFG.visMode : 'hex'); if (m !== VZ.mode) vzSetMode(m, true);
 }
 setInterval(() => { try { vzSectionLook(); } catch (e) { } }, 250);
@@ -7443,7 +7507,7 @@ function shareHtml(audioUri, d) {
   const css = ':root{color-scheme:dark;--bg:#0b100e;--panel:#141a17;--line:#27332d;--text:#e9efeb;--mut:#9db3a5;--acc:#7dbf9b}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}main{max-width:760px;margin:0 auto;padding:28px 18px 60px}h1{font-size:clamp(26px,5vw,40px);margin:0;line-height:1.1}.sub{color:var(--mut);margin:6px 0 18px;font-size:14px}canvas{width:100%;height:220px;display:block;border-radius:16px;background:radial-gradient(circle at 50% 50%,#13201a,#080c0a);border:1px solid var(--line)}.pl{display:flex;align-items:center;gap:12px;margin:14px 0 26px}button{font:inherit;border:0;border-radius:999px;background:var(--acc);color:#07120c;font-weight:700;width:52px;height:52px;cursor:pointer;font-size:20px}input[type=range]{flex:1;accent-color:var(--acc)}.tm{font:13px ui-monospace,monospace;color:var(--mut);min-width:88px;text-align:right}h2{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--acc);margin:26px 0 6px}.ch{font:600 14px ui-monospace,Menlo,monospace;color:var(--mut)}.ln{margin:2px 0;padding:2px 8px;border-radius:8px;cursor:pointer}.ln pre{margin:0;font:600 14px ui-monospace,Menlo,monospace;color:var(--acc)}.ln div{font-size:18px}.ln.on{background:#1b2a22;outline:1px solid var(--line)}footer{margin-top:40px;color:var(--mut);font-size:12px}@media print{body{background:#fff;color:#000}canvas,.pl,audio,footer{display:none}h2{color:#000}.ln pre,.ch{color:#333}}';
   const js = "(function(){var D=JSON.parse(document.getElementById('d').textContent),au=document.getElementById('au'),pl=document.getElementById('pl'),sk=document.getElementById('sk'),tm=document.getElementById('tm'),cv=document.getElementById('cv'),g=cv.getContext('2d'),an=null,buf=null,L=[].slice.call(document.querySelectorAll('.ln'));function f(t){t=Math.max(0,t||0);return Math.floor(t/60)+':'+('0'+Math.floor(t%60)).slice(-2)}function ac(){if(an)return;try{var C=window.AudioContext||window.webkitAudioContext,c=new C(),s=c.createMediaElementSource(au);an=c.createAnalyser();an.fftSize=256;s.connect(an);an.connect(c.destination);buf=new Uint8Array(an.frequencyBinCount)}catch(e){an=null}}pl.onclick=function(){if(au.paused){ac();au.play()}else au.pause()};au.onplay=function(){pl.textContent='❚❚'};au.onpause=au.onended=function(){pl.textContent='▶'};function du(){return isFinite(au.duration)&&au.duration>0?au.duration:D.dur}sk.oninput=function(){au.currentTime=sk.value/1000*du()};L.forEach(function(el){el.onclick=function(){au.currentTime=+el.getAttribute('data-t');ac();au.play()}});function draw(){requestAnimationFrame(draw);var w=cv.width=cv.clientWidth*(devicePixelRatio||1),h=cv.height=cv.clientHeight*(devicePixelRatio||1),cx=w/2,cy=h/2,R=Math.min(w,h)*.22,n=64,i,v;g.clearRect(0,0,w,h);if(an&&!au.paused)an.getByteFrequencyData(buf);g.lineWidth=Math.max(2,w/320);g.strokeStyle='#7dbf9b';g.lineCap='round';for(i=0;i<n;i++){v=an&&!au.paused?buf[Math.floor(i/n*buf.length*.8)]/255:.04+.02*Math.sin(i);var a=i/n*Math.PI*2-Math.PI/2,r1=R,r2=R+v*R*1.4+3;g.globalAlpha=.35+v*.65;g.beginPath();g.moveTo(cx+Math.cos(a)*r1,cy+Math.sin(a)*r1);g.lineTo(cx+Math.cos(a)*r2,cy+Math.sin(a)*r2);g.stroke()}g.globalAlpha=1;var t=au.currentTime,cur=-1;for(i=0;i<L.length;i++){if(+L[i].getAttribute('data-t')<=t+.05)cur=i}L.forEach(function(el,k){el.classList.toggle('on',k===cur&&!au.paused)});if(du()){sk.value=Math.min(1000,t/du()*1000);tm.textContent=f(t)+' / '+f(du())}}draw();})();";
   const sections = d.secs.map(s => '<h2>' + shareEsc(s.name) + '</h2><div class="ch">' + s.chords.map(shareEsc).join(' &nbsp;|&nbsp; ') + '</div>' + s.lines.map(l => '<div class="ln" data-t="' + l.t.toFixed(2) + '">' + (l.chords ? '<pre>' + shareEsc(l.chords) + '</pre>' : '') + '<div>' + shareEsc(l.text) + '</div></div>').join('')).join('');
-  return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + shareEsc(d.title) + (d.artist ? ' · ' + shareEsc(d.artist) : '') + '</title><style>' + css + '</style></head><body><main><h1>' + shareEsc(d.title) + '</h1><div class="sub">' + shareEsc([d.artist, d.key, d.bpm + ' BPM', d.ts].filter(Boolean).join(' · ')) + '</div><canvas id="cv" aria-hidden="true"></canvas><div class="pl"><button id="pl" aria-label="Play or pause">▶</button><input id="sk" type="range" min="0" max="1000" value="0" aria-label="Seek"><span class="tm" id="tm">0:00</span></div>' + sections + (d.notes ? '<h2>Notes</h2><div class="ch">' + shareEsc(d.notes) + '</div>' : '') + '<footer>Made with the-daily.studio. This page is one file: the sound, words and chords are all inside it.</footer></main><audio id="au" preload="auto" src="' + audioUri + '"></audio><script type="application/json" id="d">' + json + '</script><script>' + js + '</script></body></html>';
+  return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + shareEsc(d.title) + (d.artist ? ' · ' + shareEsc(d.artist) : '') + '</title><style>' + css + '</style></head><body><main><h1>' + shareEsc(d.title) + '</h1><div class="sub">' + shareEsc([d.artist, d.key, d.bpm + ' BPM', d.ts].filter(Boolean).join(' · ')) + '</div><canvas id="cv" aria-hidden="true"></canvas><div class="pl"><button id="pl" aria-label="Play or pause">▶</button><input id="sk" type="range" min="0" max="1000" value="0" aria-label="Seek"><span class="tm" id="tm">0:00</span></div>' + sections + (d.notes ? '<h2>Notes</h2><div class="ch">' + shareEsc(d.notes) + '</div>' : '') + '<footer>Made with the-daily.studio. This page is one file: the sound, words and chords are all inside it. The words and music belong to their authors.</footer></main><audio id="au" preload="auto" src="' + audioUri + '"></audio><script type="application/json" id="d">' + json + '</script><script>' + js + '</script></body></html>';
 }
 function shareMake() {
   if (!songHasWork() && !TAKES.length) return toast('Add some chords or lyrics first, then make a share page.', 'warn');
@@ -9262,11 +9326,17 @@ function pbDim(g, w, h) {
   g.save(); g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1; g.fillStyle = 'rgba(0,0,0,' + a.toFixed(3) + ')'; g.fillRect(0, 0, w, h); g.restore();
 }
 function pbFill(off) { const g = off.getContext('2d'); g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1; g.fillStyle = pbBgColor(); g.fillRect(0, 0, off.width, off.height); }
+/** where the lower third sits, whatever the switches say; and (null when it is off) for a lens that has to keep its own drawing clear of it */
+function pbLowerGeom(W, H) {
+  const pb = STG.pb, u = Math.min(W, H * 1.6) * (pb.size || 1), ph = u * .2, top = pb.pos === 'top';
+  return { u, x: W * .03, y: top ? H * .04 : H - ph - H * .05, w: W * .94, h: ph, top };
+}
+const pbLowerRect = (W, H) => pbOn() && STG.pb.lower ? pbLowerGeom(W, H) : null;
 /** chord + next, section, lyric + next lyric, in a panel along the bottom (or the top) */
 function drawLowerThird(g, W, H, info, C) {
   const pb = STG.pb, lyr = info.lyric, sym = info.sym; if (!sym && !lyr && !(info.playing && info.sec)) return;
-  const u = Math.min(W, H * 1.6) * (pb.size || 1), mono = 'ui-monospace,Menlo,Consolas,monospace', sans = 'system-ui,-apple-system,Segoe UI,Roboto,sans-serif';
-  const ph = u * .2, pw = W * .94, x = W * .03, y = pb.pos === 'top' ? H * .04 : H - ph - H * .05, r = u * .02, cw = u * .34;
+  const lr = pbLowerGeom(W, H), u = lr.u, mono = 'ui-monospace,Menlo,Consolas,monospace', sans = 'system-ui,-apple-system,Segoe UI,Roboto,sans-serif';
+  const ph = lr.h, pw = lr.w, x = lr.x, y = lr.y, r = u * .02, cw = u * .34;
   g.save(); g.shadowColor = 'rgba(0,0,0,.55)'; g.shadowBlur = u * .015;
   g.beginPath(); g.roundRect ? g.roundRect(x, y, pw, ph, r) : g.rect(x, y, pw, ph); g.fillStyle = 'rgba(8,10,16,.72)'; g.fill(); g.shadowBlur = 0;
   g.fillStyle = C.a; g.fillRect(x, y + ph * .12, u * .006, ph * .76);                        // accent edge
@@ -9293,7 +9363,8 @@ function pbCard() {
     h('div', { class: 'sgrid', style: { marginTop: 0 } },
       row('Background', sel('bg', [['visuals', 'The visuals (dimmed)'], ['black', 'Plain black'], ['green', 'Chroma-key green']])),
       row('Dimming', h('input', { type: 'range', id: 'pb_dim', min: 0, max: .9, step: .05, value: pb.dim, oninput: e => { pb.dim = +e.target.value; save(); } })),
-      row('Lower third size', sel('size', [[.8, 'Small'], [1, 'Normal'], [1.25, 'Large']])), row('Lower third position', sel('pos', [['bottom', 'Bottom'], ['top', 'Top']]))),
+      row('Lower third size', sel('size', [[.8, 'Small'], [1, 'Normal'], [1.25, 'Large']])), row('Lower third position', sel('pos', [['bottom', 'Bottom'], ['top', 'Top']])),
+      row('Concert lens', h('select', { class: 'in', id: 'pb_lens', style: { fontFamily: 'var(--sans)' }, title: 'Perform: big and calm · Teach: circle of fifths, numerals, what comes next · Sky: your session as a constellation', onchange: e => lxSetLens(e.target.value) }, LX_LENSES.map(o => h('option', { value: o[0], selected: o[0] === (CFG.lens || 'perform') }, o[1]))))),
     h('div', { class: 'row', style: { gap: '8px', marginTop: '8px', flexWrap: 'wrap' } },
       h('button', { class: 'btn sm', id: 'pbOut', title: 'A bare window with just the picture: drag it to the projector, then double-click it for full screen. Turns the backdrop on.', onclick: () => { pb.on = true; save(); renderStageUI(); stagePop(); } }, '▢ Clean output window'),
       h('button', { class: 'btn sm', id: 'pbFull', title: 'Fill this screen with the backdrop (Esc to leave)', onclick: () => { pb.on = true; save(); renderStageUI(); stageFull(); } }, '⛶ Full screen')),
@@ -9306,6 +9377,1578 @@ function pbPopSetup(w) {
     w.document.body.style.background = pbBgColor(); let tm = 0; const hide = () => { w.document.body.style.cursor = 'none'; }; const show = () => { w.document.body.style.cursor = ''; clearTimeout(tm); tm = setTimeout(hide, 2500); };
     w.document.addEventListener('mousemove', show); tm = setTimeout(hide, 2500);
   } catch (e) { }
+}
+
+/* >>> parts/54-concert.js */
+/* ============================================================
+   Part 54 · CONCERT — a lighting rig that listens
+   One visual (Visuals ▸ Concert, and the Stage) built like a touring show rather than a screen saver. The pieces:
+     · part 56 — the brain: one musical clock, the show designs, the cues, the comfort limiter (three flashes a second at most)
+     · part 57 — the lasers: eight patterns that combine, every angle a function of the bar
+     · part 58 — the layers: stage, haze, LED wall, moving heads, floor lights, sparks, your pictures, the blinder
+     · part 59 — the Show setup console (the Stage tab) and your pictures
+   This part keeps what is shared by the lenses:
+     · the band's drum hits, scheduled on the audio clock (lxHit), so the syncopation of the groove (the ghost notes, the off-beat hats) is what you see
+     · harmony: valence (major / minor) and tension of each chord, steps round the circle of fifths, roman numerals, what comes next and why
+     · three lenses: Perform (calm and big), Teach (the circle of fifths as a lit floor ring, roman numerals, what is coming next, and why it pulls),
+       Sky (every chord you play becomes a star and every move a line: the session as a constellation, savable as a poster)
+   Nothing is loaded from anywhere and nothing leaves the device.
+   ============================================================ */
+VMODES.unshift(['concert', 'Concert']);
+const lxHsl = (h, s, l, a) => `hsla(${(((h % 360) + 360) % 360) | 0},${Math.round(clamp(s, 0, 100))}%,${Math.round(clamp(l, 0, 100))}%,${clamp(a == null ? 1 : a, 0, 1).toFixed(3)})`;
+const LX_LENSES = [['perform', 'Perform'], ['teach', 'Teach'], ['sky', 'Sky']];
+const LX = {
+  q: [], kick: 0, snare: 0, hat: 0, perc: 0, tom: 0, onset: 0, note: 0, strobe: 0, drop: 0, build: 0, strobeReq: false, lastStrobe: -1e9, chase: 0, pbSeq: 0,
+  e: 0, v: 0, tn: 0, br: .4, hue: 38, ph: 0, sec: '', kind: 'ambient', int: .3, n: 4, pat: 'fan', sym: null, symT: 0, info: null, prog: null, pal: null,
+  beams: Array.from({ length: 12 }, () => ({ ang: 0, I: 0, imp: 0, on: 0 })), pars: Array.from({ length: 8 }, () => ({ I: 0 })), eq: new Float32Array(56), parts: [],
+  mesh: null, fog: null, ghost: null, band: null, W: 1280, H: 720, last: 0, beat: 0, bar: 0, barIdx: 0, lastPresent: 0,
+  sky: { nodes: new Map(), edges: new Map(), last: null, moves: 0, dust: null, lastEdge: '', lastT: 0 }
+};
+/** section kinds → the show's program: intensity, beams on, movement, haze, lasers, confetti, strobe, LED wall */
+const LX_PROG = {
+  intro: { int: .32, n: 3, pats: ['converge'], haze: 1, laser: 0, conf: 0, strobe: 0, wall: .25, pars: .5 },
+  verse: { int: .46, n: 5, pats: ['fan', 'sweep'], haze: .85, laser: 0, conf: 0, strobe: 0, wall: .4, pars: .7 },
+  pre: { int: .66, n: 8, pats: ['chase', 'fan'], haze: .8, laser: 0, conf: 0, strobe: 0, wall: .55, pars: .9 },
+  chorus: { int: .95, n: 12, pats: ['fan', 'sweep', 'cross', 'sweep'], haze: .7, laser: 1, conf: 1, strobe: 1, wall: .75, pars: 1 },
+  bridge: { int: .38, n: 4, pats: ['cross', 'converge'], haze: 1, laser: 0, conf: 0, strobe: 0, wall: .3, pars: .5 },
+  solo: { int: .82, n: 6, pats: ['spot', 'converge'], haze: .8, laser: 0, conf: .4, strobe: 0, wall: .5, pars: .8 },
+  outro: { int: .3, n: 4, pats: ['fan'], haze: 1, laser: 0, conf: 0, strobe: 0, wall: .2, pars: .4 },
+  ambient: { int: .3, n: 4, pats: ['fan', 'sweep'], haze: .9, laser: 0, conf: 0, strobe: 0, wall: .35, pars: .6 }
+};
+const lxKind = name => { const s = String(name || ''); return /pre[\s-]?chorus|build|lift/i.test(s) ? 'pre' : /chorus|hook|refrain|drop/i.test(s) ? 'chorus' : /bridge|break|middle/i.test(s) ? 'bridge' : /solo|instrumental/i.test(s) ? 'solo' : /intro/i.test(s) ? 'intro' : /outro|tag|coda|end/i.test(s) ? 'outro' : 'verse'; };
+
+/* ---------- the band's drum hits, on the audio clock (called from drumStep in part 03) ---------- */
+function lxHit(row, t, v) { LX.q.push({ t, row, v: v || 2 }); if (LX.q.length > 240) LX.q.splice(0, LX.q.length - 240); }
+function lxFire(ev) {
+  if (ev.type) return lxFireX(ev);
+  const v = clamp((ev.v || 2) / 3, .3, 1), R = LX.R || LX_R1;
+  if (ev.row === 0) LX.kick = Math.max(LX.kick, (.55 + .45 * v) * R.kick);
+  else if (ev.row === 1) { LX.snare = Math.max(LX.snare, (.6 + .4 * v) * R.snare); if (R.snare > .2) LX.strobeReq = true; }
+  else if (ev.row === 2 || ev.row === 3) { LX.hat = Math.max(LX.hat, (.5 + .5 * v) * R.hat); LX.chase += 1; }
+  else if (ev.row === 4) LX.perc = 1;
+  else { LX.tom = 1; LX.chase += 2; }
+}
+bus.on('onset', () => { LX.onset = 1; if (!(T.playing && S.band.drumsOn)) { LX.kick = Math.max(LX.kick, .5); LX.chase += 1; } });
+
+/* ---------- harmony → colour, mood, roman numerals ---------- */
+const LX_NUM_MAJ = ['I', '♭II', 'II', '♭III', 'III', 'IV', '♯IV', 'V', '♭VI', 'VI', '♭VII', 'VII'], LX_NUM_MIN = ['I', '♭II', 'II', 'III', '♯III', 'IV', '♭V', 'V', 'VI', '♯VI', 'VII', '♯VII'];
+function lxNumeral(sym) {
+  const p = parseChord(sym); if (!p) return ''; const iv = ((p.root - S.key) % 12 + 12) % 12, set = S.minor ? LX_NUM_MIN : LX_NUM_MAJ; let n = set[iv];
+  const minor = p.iv.includes(3) && !p.iv.includes(4), dim = p.iv.includes(3) && p.iv.includes(6), aug = p.iv.includes(4) && p.iv.includes(8);
+  if (minor || dim) n = n.replace(/[IV]+/, m => m.toLowerCase());
+  let suf = dim ? (p.iv.includes(9) ? '°7' : p.iv.includes(10) ? 'ø7' : '°') : aug ? '+' : ''; if (!suf) { if (p.iv.includes(11)) suf = 'maj7'; else if (p.iv.includes(10)) suf = '7'; else if (p.iv.includes(2) && !p.iv.includes(3) && !p.iv.includes(4)) suf = 'sus2'; else if (p.iv.includes(5) && !p.iv.includes(4) && !p.iv.includes(3)) suf = 'sus4'; }
+  return n + suf;
+}
+/** valence (−1 sad … +1 bright) and tension (0..1) of one chord, from its notes */
+function lxQual(p) {
+  if (!p) return { val: 0, ten: 0 }; const iv = p.iv, has = x => iv.includes(x); let val = 0, ten = .08;
+  if (has(3) && has(6)) { val = -.5; ten = has(9) ? .85 : .75; } else if (has(4) && has(8)) { val = .1; ten = .6; } else if (has(3)) { val = -.38; ten = .12; } else if (has(4)) { val = .32; ten = .1; } else { val = 0; ten = .38; }
+  if (has(10) && has(4)) ten += .3; if (has(10) && has(3)) ten += .08; if (has(11)) { val += .12; ten += .08; } if (has(2) && !has(3) && !has(4)) ten += .1;
+  return { val: clamp(val, -1, 1), ten: clamp(ten, 0, 1) };
+}
+/** steps round the circle of fifths from the song's home chord, −5…+6 (V is +1, IV is −1) */
+function lxFifths(root) { const rel = ((root - S.key) % 12 + 12) % 12, fi = (rel * 7) % 12; return fi > 6 ? fi - 12 : fi; }
+const lxHueOf = fs => (S.minor ? 262 : 38) + fs * 30;
+
+/* ---------- what is coming: the next few chords from the playhead (or the cursor) ---------- */
+function lxUpcoming(n) {
+  const bars = barsCache(), sp = spb(); if (!bars.length) return []; const ph = T.playing && E.ctx ? playheadSlot() : T.cursor, bi0 = clamp(Math.floor(Math.max(0, ph) / sp), 0, bars.length - 1), sib = Math.max(0, ph) - bi0 * sp;
+  const out = []; for (let k = 0; k < 10 && out.length < n; k++) {
+    const bi = (bi0 + k) % bars.length, cs = barChords(bars[bi].bar), m = Math.max(1, cs.length); let from = 0; if (k === 0) from = Math.min(m - 1, Math.floor(sib / (sp / m)));
+    for (let c = from; c < cs.length && out.length < n; c++) if (cs[c] && (!out.length || out[out.length - 1].sym !== cs[c] || k > 0)) out.push({ sym: cs[c], bars: k, section: bars[bi].sec.name });
+  }
+  return out;
+}
+/** one line of why the next chord pulls the way it does */
+function lxCaption(cur, next) {
+  const a = parseChord(cur), b = parseChord(next); if (!a || !b) return ''; const ia = ((a.root - S.key) % 12 + 12) % 12, ib = ((b.root - S.key) % 12 + 12) % 12, d = (ib - ia + 12) % 12, q = lxQual(a);
+  if (ib === 0 && ia === 7) return 'Dominant → home: the strongest resolution';
+  if (ib === 0 && ia === 5) return 'Plagal: the “amen” cadence';
+  if (ib === 0 && ia === 11) return 'Leading tone → home';
+  if (ib === 0) return 'Coming home';
+  if (ia === 0 && ib === 7) return 'Leaving home for the dominant';
+  if (ia === 0) return 'Stepping away from home';
+  if (d === 5) return 'Falling fifth: the pull most songs are built on';
+  if (d === 7) return 'Rising fifth: lifts the mood';
+  if (q.ten > .5) return 'A tension chord: it wants to resolve';
+  if (d === 3 || d === 9) return 'A third apart: the colour changes, the key does not';
+  if (d === 2 || d === 10) return 'Step by step: a stepwise move';
+  return 'A shift of ' + d + ' semitone' + (d === 1 ? '' : 's');
+}
+
+/* ---------- the per-frame brain is in part 56, the lasers in 57, the layers (stage, haze, wall, heads, sparks, strobe) in 58 ---------- */
+function lxMeshCanvas(key, W, H, div) { const w = Math.max(48, Math.ceil(W / div)), h = Math.max(32, Math.ceil(H / div)); let c = LX[key]; if (!c || c.width !== w || c.height !== h) { c = LX[key] = document.createElement('canvas'); c.width = w; c.height = h; } return c; }
+
+/* ---------- Teach lens: the circle of fifths as a lit floor ring, what is coming, and why ---------- */
+function lxRing(g, W, H, cx, cy, rx) {
+  const ry = rx * .4, pal = LX.pal, pc = LX.sym ? parseChord(LX.sym) : null, key = S.key, scl = SCALES[S.scale] || SCALES['Major (Ionian)'], inKey = new Set(scl.map(i => (key + i) % 12)), cur = pc ? new Set(pc.pcs) : new Set(), nx = LX.info && LX.info.next ? parseChord(LX.info.next) : null;
+  const pos = k => { const a = -Math.PI / 2 + k * Math.PI / 6; return { x: cx + Math.cos(a) * rx, y: cy + Math.sin(a) * ry, s: .78 + .22 * (Math.sin(a) + 1) / 2, a }; }, idxOf = r => (((r - key) % 12 + 12) % 12 * 7) % 12;
+  g.save(); g.lineWidth = Math.max(1, H * .002); g.strokeStyle = 'rgba(255,255,255,.16)'; g.beginPath(); g.ellipse(cx, cy, rx, ry, 0, 0, 7); g.stroke(); g.beginPath(); g.ellipse(cx, cy, rx * 1.12, ry * 1.12, 0, 0, 7); g.strokeStyle = 'rgba(255,255,255,.06)'; g.stroke();
+  const pl = g.createRadialGradient(cx, cy, 0, cx, cy, rx * 1.2); pl.addColorStop(0, lxHsl(pal.h[0], 70, 50, .16 + .1 * LX.kick)); pl.addColorStop(1, lxHsl(pal.h[0], 70, 50, 0)); g.fillStyle = pl; g.fillRect(cx - rx * 1.3, cy - ry * 1.6, rx * 2.6, ry * 3.2);
+  if (pc) { const pts = pc.pcs.map(p => pos(idxOf(p))); g.beginPath(); pts.forEach((p, i) => i ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y)); g.closePath(); g.fillStyle = lxHsl(pal.h[0], 80, 55, .2 + .15 * LX.kick); g.fill(); g.strokeStyle = lxHsl(pal.h[0], 80, 70, .55); g.lineWidth = Math.max(1.5, H * .003); g.stroke(); }
+  if (pc) { const a = pos(idxOf(pc.root)), t0 = pos(0); g.strokeStyle = lxHsl(lerp(pal.h[0], 0, LX.tn), 90, 62, .15 + .5 * LX.tn); g.lineWidth = Math.max(1, H * .002) + LX.tn * H * .006; g.setLineDash([H * .01, H * .008]); g.beginPath(); g.moveTo(t0.x, t0.y); g.lineTo(a.x, a.y); g.stroke(); g.setLineDash([]); }
+  if (pc && nx) { const a = pos(idxOf(pc.root)), b = pos(idxOf(nx.root)), mx = (a.x + b.x) / 2 * .55 + cx * .45, my = (a.y + b.y) / 2 * .55 + cy * .45, gr = g.createLinearGradient(a.x, a.y, b.x, b.y); gr.addColorStop(0, lxHsl(pal.h[0], 90, 70, .9)); gr.addColorStop(1, lxHsl(pal.h[2], 90, 70, .35)); g.strokeStyle = gr; g.lineWidth = Math.max(2, H * .0045); g.setLineDash([H * .022, H * .012]); g.lineDashOffset = -LX.ph * H * .1; g.beginPath(); g.moveTo(a.x, a.y); g.quadraticCurveTo(mx, my, b.x, b.y); g.stroke(); g.setLineDash([]); }
+  const live = AN.midi != null && AN.active ? AN.midi % 12 : -1, fz = Math.round(H * .03);
+  for (let k = 0; k < 12; k++) {
+    const p = pos(k), pcn = (key + k * 7) % 12, ink = inKey.has(pcn), on = cur.has(pcn), isRoot = pc && pc.root === pcn, r = H * .026 * p.s * (on ? 1.25 : 1) * (isRoot ? 1.18 : 1), hue = lxHueOf(k > 6 ? k - 12 : k);
+    if (on) { const gl = g.createRadialGradient(p.x, p.y, 0, p.x, p.y, r * 3.2); gl.addColorStop(0, lxHsl(hue, 90, 60, .6 + .3 * LX.kick)); gl.addColorStop(1, lxHsl(hue, 90, 60, 0)); g.fillStyle = gl; g.fillRect(p.x - r * 3.2, p.y - r * 3.2, r * 6.4, r * 6.4); }
+    g.beginPath(); g.arc(p.x, p.y, r, 0, 7); g.fillStyle = on ? lxHsl(hue, 85, 58, .95) : ink ? lxHsl(hue, 55, 44, .95) : 'rgba(20,24,30,.7)'; g.fill(); g.lineWidth = Math.max(1.5, H * .0025); g.strokeStyle = on ? 'rgba(255,255,255,.9)' : ink ? lxHsl(hue, 60, 62, .7) : 'rgba(255,255,255,.14)'; g.stroke();
+    if (pcn === live) { g.beginPath(); g.arc(p.x, p.y, r * 1.55, 0, 7); g.strokeStyle = 'rgba(255,255,255,.95)'; g.lineWidth = Math.max(2, H * .004); g.stroke(); }
+    g.font = `800 ${Math.round(fz * (on ? 1.02 : .9) * p.s)}px ui-monospace,Menlo,Consolas,monospace`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = on ? '#fff' : ink ? 'rgba(255,255,255,.88)' : 'rgba(255,255,255,.38)'; g.fillText(pcName(pcn, keyUsesFlats(key, S.minor)), p.x, p.y + 1);
+    if (k === 0) { g.font = `800 ${Math.round(H * .018)}px ui-monospace,Menlo,monospace`; g.fillStyle = lxHsl(hue, 80, 75, .9); g.fillText('HOME', p.x, p.y - r * 1.9); }
+  }
+  g.restore(); g.textAlign = 'left'; g.textBaseline = 'alphabetic';
+}
+function lxCard(g, W, H, x, y, w) {
+  const up = lxUpcoming(5), pal = LX.pal, u = H, cur = up[0], mono = 'ui-monospace,Menlo,Consolas,monospace', pad = u * .02; if (!cur) return; const nxt = up[1], hue = lxHueOf(lxFifths((parseChord(cur.sym) || { root: S.key }).root));
+  g.save(); g.fillStyle = 'rgba(8,10,16,.62)'; g.beginPath(); g.roundRect ? g.roundRect(x, y, w, u * .62, u * .02) : g.rect(x, y, w, u * .62); g.fill(); g.fillStyle = lxHsl(hue, 85, 60, .95); g.fillRect(x, y + u * .02, u * .006, u * .58);
+  g.textBaseline = 'alphabetic'; g.textAlign = 'left'; g.font = `800 ${Math.round(u * .015)}px ui-monospace,Menlo,monospace`; g.fillStyle = 'rgba(255,255,255,.55)'; const inf = LX.info || {}; g.fillText('NOW' + (inf.sec && inf.nBars ? '  ·  ' + inf.sec.toUpperCase() + ' ' + inf.barIn + '/' + inf.nBars : ''), x + pad * 1.4, y + u * .045, w - pad * 2.4);
+  g.font = `800 ${Math.round(u * .115)}px ${mono}`; g.fillStyle = '#fff'; g.fillText(cur.sym, x + pad * 1.4, y + u * .15, w * .62); g.font = `800 ${Math.round(u * .05)}px ${mono}`; g.fillStyle = lxHsl(hue, 90, 72, 1); g.textAlign = 'right'; g.fillText(lxNumeral(cur.sym), x + w - pad, y + u * .15); g.textAlign = 'left';
+  g.font = `700 ${Math.round(u * .015)}px ui-monospace,Menlo,monospace`; g.fillStyle = 'rgba(255,255,255,.55)'; g.fillText('NEXT', x + pad * 1.4, y + u * .215);
+  up.slice(1, 5).forEach((c, i) => { const cy = y + u * .235 + i * u * .062, h2 = lxHueOf(lxFifths((parseChord(c.sym) || { root: S.key }).root)); g.fillStyle = lxHsl(h2, 70, 45, .28 - i * .04); g.beginPath(); g.roundRect ? g.roundRect(x + pad * 1.4, cy, w - pad * 2.4, u * .052, u * .012) : g.rect(x + pad * 1.4, cy, w - pad * 2.4, u * .052); g.fill();
+    g.font = `800 ${Math.round(u * .03)}px ${mono}`; g.fillStyle = `rgba(255,255,255,${(.95 - i * .13).toFixed(2)})`; g.fillText(c.sym, x + pad * 2.2, cy + u * .037); g.textAlign = 'right'; g.font = `700 ${Math.round(u * .022)}px ${mono}`; g.fillStyle = lxHsl(h2, 90, 74, .9 - i * .12); g.fillText(lxNumeral(c.sym) + (c.bars ? '  +' + c.bars : ''), x + w - pad * 1.6, cy + u * .035); g.textAlign = 'left'; });
+  if (nxt) { const cap = lxCaption(cur.sym, nxt.sym); if (cap) { g.font = `700 ${Math.round(u * .0195)}px system-ui,-apple-system,Segoe UI,sans-serif`; g.fillStyle = 'rgba(255,255,255,.82)'; g.fillText(cap, x + pad * 1.4, y + u * .58, w - pad * 2.4); } }
+  g.restore();
+}
+function lxMeters(g, W, H, x, y) {
+  const u = H, rows = [['ENERGY', LX.e, 0], ['MOOD', (LX.v + 1) / 2, 1], ['TENSION', LX.tn, 0]], w = u * .22; g.save(); g.textBaseline = 'middle'; g.textAlign = 'left';
+  g.font = `800 ${Math.round(u * .018)}px ui-monospace,Menlo,monospace`; g.fillStyle = 'rgba(255,255,255,.85)'; g.fillText(pcName(S.key, keyUsesFlats(S.key, S.minor)).toUpperCase() + (S.minor ? ' MINOR' : ' MAJOR') + '  ·  ' + Math.round(S.bpm) + ' BPM', x, y);
+  rows.forEach(([n, v, c], i) => { const yy = y + u * .04 + i * u * .034; g.font = `800 ${Math.round(u * .014)}px ui-monospace,Menlo,monospace`; g.fillStyle = 'rgba(255,255,255,.6)'; g.fillText(n, x, yy); g.fillStyle = 'rgba(255,255,255,.1)'; g.fillRect(x + u * .075, yy - u * .005, w, u * .01);
+    const gr = g.createLinearGradient(x + u * .075, 0, x + u * .075 + w, 0); gr.addColorStop(0, lxHsl(c ? 215 : LX.pal.h[0], 80, 58, 1)); gr.addColorStop(1, lxHsl(c ? 38 : LX.pal.h[1], 90, 60, 1)); g.fillStyle = gr; g.fillRect(x + u * .075, yy - u * .005, w * clamp(v, 0, 1), u * .01); if (c) { g.fillStyle = 'rgba(255,255,255,.7)'; g.fillRect(x + u * .075 + w / 2 - 1, yy - u * .008, 2, u * .016); } });
+  g.restore();
+}
+
+/* ---------- Sky lens: the session as a constellation ---------- */
+function lxSkyAdd(sym) {
+  const sk = LX.sky, p = parseChord(sym); if (!p) return; let n = sk.nodes.get(sym); if (!n) sk.nodes.set(sym, n = { n: 0, born: performance.now() }); n.n++; n.t = performance.now();
+  if (sk.last && sk.last !== sym) { const key = sk.last + '>' + sym; sk.edges.set(key, (sk.edges.get(key) || 0) + 1); sk.lastEdge = key; sk.moves++; sk.lastT = performance.now(); } sk.last = sym;
+}
+function lxSkyClear() { LX.sky.nodes.clear(); LX.sky.edges.clear(); LX.sky.last = null; LX.sky.moves = 0; LX.sky.lastEdge = ''; }
+/** the part of the picture a lens may draw in: clear of the lower third and the lyric line (null = all of it) */
+function lxBandOf(H) { const b = LX.band; return b ? [b[0], b[1]] : [0, H]; }
+/** the sky's oval: as wide as the picture allows within the band, with the circle of fifths stretched to fit */
+function lxSkyGeom(W, H) { const bd = lxBandOf(H), R = (bd[1] - bd[0]) * .46; return { cx: W / 2, cy: (bd[0] + bd[1]) / 2, R, xs: clamp(W * .46 / R, 1.25, 1.95) }; }
+function lxSkyPos(sym, W, H) {
+  const gm = lxSkyGeom(W, H), p = parseChord(sym), fi = ((p.root - S.key) % 12 + 12) % 12 * 7 % 12, minor = p.iv.includes(3) && !p.iv.includes(4), major = p.iv.includes(4) && !p.iv.includes(3), hs = (sym.length * 7 + sym.charCodeAt(sym.length - 1)) % 9;
+  const a = -Math.PI / 2 + fi * Math.PI / 6 + (hs - 4) * .018, r = gm.R * ((major ? .8 : minor ? .5 : .66) + (hs % 3 - 1) * .045); return { x: gm.cx + Math.cos(a) * r * gm.xs, y: gm.cy + Math.sin(a) * r, fi };
+}
+function lxSky(g, W, H, t, still) {
+  const sk = LX.sky, u = LX.U || H; if (!LX.sky.dust) { LX.sky.dust = Array.from({ length: 170 }, (_, i) => ({ x: ((i * 9301 + 49297) % 233280) / 233280, y: ((i * 7919 + 1237) % 104729) / 104729, s: .4 + ((i * 31) % 7) / 6, p: i })); }
+  g.save(); sk.dust.forEach(d => { g.fillStyle = `rgba(255,255,255,${(.12 + .2 * (still ? .6 : Math.sin(t * .8 + d.p) * .5 + .5)).toFixed(2)})`; g.beginPath(); g.arc(d.x * W, d.y * H, d.s * (H / 900 + .3), 0, 7); g.fill(); });
+  const gm = lxSkyGeom(W, H), bcy = gm.cy; g.strokeStyle = 'rgba(255,255,255,.06)'; g.lineWidth = 1; [.5, .66, .8].forEach(f => { g.beginPath(); g.ellipse(gm.cx, gm.cy, gm.R * f * gm.xs, gm.R * f, 0, 0, 7); g.stroke(); });
+  g.globalCompositeOperation = 'lighter'; const now = performance.now();
+  sk.edges.forEach((c, key) => { const [a, b] = key.split('>'), pa = lxSkyPos(a, W, H), pb = lxSkyPos(b, W, H), mx = (pa.x + pb.x) / 2 * .6 + W / 2 * .4, my = (pa.y + pb.y) / 2 * .6 + bcy * .4, hot = key === sk.lastEdge ? clamp(1 - (now - sk.lastT) / 2500, 0, 1) : 0, hue = lxHueOf(pa.fi > 6 ? pa.fi - 12 : pa.fi);
+    g.strokeStyle = lxHsl(hue, 80, 68, clamp(.12 + .16 * c + hot * .5, 0, .9)); g.lineWidth = Math.max(1, u * (.0016 + .0012 * Math.min(c, 6))) + hot * u * .003; g.beginPath(); g.moveTo(pa.x, pa.y); g.quadraticCurveTo(mx, my, pb.x, pb.y); g.stroke(); });
+  sk.nodes.forEach((n, sym) => { const p = lxSkyPos(sym, W, H), hue = lxHueOf(p.fi > 6 ? p.fi - 12 : p.fi), cur = sym === sk.last, r = u * (.016 + .007 * Math.sqrt(n.n)) * (cur ? 1.5 : 1) * (still ? 1 : .92 + .08 * Math.sin(t * 3 + p.fi)), gr = g.createRadialGradient(p.x, p.y, 0, p.x, p.y, r * 5);
+    gr.addColorStop(0, lxHsl(hue, 90, 75, .95)); gr.addColorStop(.25, lxHsl(hue, 90, 60, .4)); gr.addColorStop(1, lxHsl(hue, 90, 55, 0)); g.fillStyle = gr; g.fillRect(p.x - r * 5, p.y - r * 5, r * 10, r * 10); g.fillStyle = 'rgba(255,255,255,.95)'; g.beginPath(); g.arc(p.x, p.y, r * .5, 0, 7); g.fill(); });
+  g.globalCompositeOperation = 'source-over'; g.textAlign = 'center'; sk.nodes.forEach((n, sym) => { const p = lxSkyPos(sym, W, H); g.font = `800 ${Math.round(u * (sym === sk.last ? .042 : .032))}px ui-monospace,Menlo,monospace`; g.fillStyle = sym === sk.last ? '#fff' : 'rgba(255,255,255,.78)'; g.fillText(sym, p.x, p.y - u * (sym === sk.last ? .05 : .042)); });
+  g.textAlign = 'left'; g.font = `800 ${Math.round(u * .024)}px ui-monospace,Menlo,monospace`; g.fillStyle = 'rgba(255,255,255,.75)'; g.fillText('SESSION SKY', u * .03, u * .05); g.font = `600 ${Math.round(u * .02)}px system-ui,sans-serif`; g.fillStyle = 'rgba(255,255,255,.55)';
+  g.fillText(sk.nodes.size ? sk.nodes.size + ' chords · ' + sk.moves + ' moves · lines that repeat glow brighter' : 'Play or press Play: every chord becomes a star and every move a line', u * .03, u * .078); g.restore();
+}
+/** save the sky as a poster (PNG) */
+function lxSkySave() {
+  const keepU = LX.U, keepB = LX.band; LX.U = 1200; LX.band = null; const c = document.createElement('canvas'); c.width = 1800; c.height = 1200; const g = c.getContext('2d'), pal = LX.pal || { h: [38, 10, 82, 190], sat: 70, lit: 52 };
+  const bg = g.createLinearGradient(0, 0, 0, c.height); bg.addColorStop(0, lxHsl(pal.h[0] + 12, 55, 5)); bg.addColorStop(1, lxHsl(pal.h[2], 60, 10)); g.fillStyle = bg; g.fillRect(0, 0, c.width, c.height);
+  const hz = g.createRadialGradient(c.width / 2, c.height * .5, 0, c.width / 2, c.height * .5, c.width * .5); hz.addColorStop(0, lxHsl(pal.h[0], 70, 40, .22)); hz.addColorStop(1, lxHsl(pal.h[0], 70, 40, 0)); g.fillStyle = hz; g.fillRect(0, 0, c.width, c.height);
+  lxSky(g, c.width, c.height, 0, true); LX.U = keepU; LX.band = keepB; g.fillStyle = 'rgba(255,255,255,.5)'; g.font = '600 22px system-ui,sans-serif'; g.textAlign = 'right'; g.fillText((S.title || 'Untitled') + ' · ' + pcName(S.key) + (S.minor ? ' minor' : ' major') + ' · ' + new Date().toLocaleDateString(), c.width - 40, c.height - 36);
+  c.toBlob(b => { if (!b) return; const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'the-daily-studio-sky.png'; document.body.append(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500); }, 'image/png');
+}
+
+/* ---------- the visual ---------- */
+/** the band the Teach and Sky lenses draw in: below the top margin, above the lower third (or the one lyric line the HUD keeps) */
+function lxMakeBand(W, H) {
+  let y0 = H * .05, y1 = STG.hud === false && !pbOn() ? H * .95 : H * .9; const lr = pbLowerRect(W, H);
+  if (lr) { if (lr.top) y0 = lr.y + lr.h + H * .025; else y1 = lr.y - H * .025; }
+  return [y0, Math.max(y1, y0 + H * .3)];
+}
+function concertDraw(g, W, H, X) {
+  LX.W = W; LX.H = H; LX.U = Math.max(H, Math.min(W * .42, H * 1.45)); LX.band = lxMakeBand(W, H); LX.D = lxResolve(X.o && X.o.show); lxUpdate(X.dt, X); const lens = CFG.lens || 'perform', dt = clamp(X.dt || .016, .001, .1), teach = lens === 'teach';
+  if (lens === 'sky') { lxStage(g, W, H, .55, .5); lxHaze(g, W, H, .5, true); lxSky(g, W, H, VZ.t, false); lxVignette(g, W, H, .5); lxStrobe(g, W, H); if (!(X.o && X.o.stage)) lxGovMeasure(g.canvas, performance.now()); return; }
+  lxPerform(g, W, H, X, dt, teach);
+  if (teach) {
+    const [y0, y1] = LX.band, bh = y1 - y0, tu = Math.min(LX.U, bh / .64), cw = Math.min(W * .28, tu * .62), rx = Math.min(W * .19, (bh * .5 - tu * .075) / .46);   // everything sized to the free band
+    lxRing(g, W, tu, W * .235, y0 + bh * .52, rx); lxCard(g, W, tu, W - cw - W * .035, y0 + bh * .02, cw); lxMeters(g, W, tu, W * .03, y0 + tu * .02);
+  }
+  lxStrobe(g, W, H); lxVignette(g, W, H, .55); if (X.o && X.o.stage && STG.hud !== false && !teach) lxScrim(g, W, H);
+  if (!(X.o && X.o.stage)) lxGovMeasure(g.canvas, performance.now());   // the stage measures its finished picture instead (part 13)
+}
+/** the lens switch (Visuals bar) */
+function lxLensBar() {
+  const bar = h('div', { class: 'seg', id: 'lxLens', role: 'group', 'aria-label': 'Concert lens', title: 'Perform: big and calm · Teach: the circle of fifths, roman numerals and what comes next · Sky: your session as a constellation' },
+    LX_LENSES.map(([k, n]) => h('button', { 'data-lens': k, class: (CFG.lens || 'perform') === k ? 'on' : '', onclick: () => lxSetLens(k) }, n)));
+  const save = h('button', { class: 'btn sm', id: 'lxSkySave', title: 'Save the session sky as a picture', style: { display: (CFG.lens === 'sky') ? '' : 'none' }, onclick: () => lxSkySave() }, '⤓ Save sky'), clr = h('button', { class: 'btn sm', id: 'lxSkyClear', title: 'Clear the sky and start a new one', style: { display: (CFG.lens === 'sky') ? '' : 'none' }, onclick: () => { lxSkyClear(); toast('Sky cleared.', 'ok'); } }, 'New sky');
+  return h('div', { class: 'row', style: { gap: '6px' } }, bar, save, clr, sgdBarButton());
+}
+function lxSetLens(k) {
+  CFG.lens = LX_LENSES.some(l => l[0] === k) ? k : 'perform'; saveCfg(); document.querySelectorAll('#lxLens [data-lens]').forEach(b => b.classList.toggle('on', b.dataset.lens === CFG.lens));
+  ['lxSkySave', 'lxSkyClear'].forEach(id => { const b = document.getElementById(id); if (b) b.style.display = CFG.lens === 'sky' ? '' : 'none'; }); const sel = document.getElementById('pb_lens'); if (sel) sel.value = CFG.lens;
+}
+
+/* >>> parts/55-monitor-views.js */
+/* ============================================================
+   Part 55 · Monitor views — the instrument readouts, moved off the show
+   The pitch wheel (chroma), a scrolling spectrogram and the oscilloscope are for looking at your sound, not for projecting it, so they live on the
+   Monitor tab under the tuner. They are still available as Stage scenes.
+   ============================================================ */
+const MV = { mode: 'chroma', cv: null, spec: null, fd: null, btns: [] };
+function monitorViewsCard() {
+  const modes = [['chroma', 'Pitch wheel'], ['spectro', 'Spectrogram'], ['scope', 'Scope']];
+  MV.cv = h('canvas', { class: 'vcanvas', id: 'mvCanvas', height: 150, style: { height: '150px', width: '100%' }, role: 'img', 'aria-label': 'Sound readout' });
+  const seg = h('div', { class: 'seg', style: { marginBottom: '6px' } }, modes.map(([k, n]) => h('button', { class: k === MV.mode ? 'on' : '', 'data-mv': k, onclick: e => { MV.mode = k; MV.spec = null; seg.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === e.currentTarget)); } }, n)));
+  return h('div', { class: 'card', id: 'mvCard' }, h('h4', {}, 'Views'), h('div', { class: 'card-b', style: { padding: '6px' } }, seg, MV.cv));
+}
+function drawMonView() {
+  const cv = MV.cv; if (!cv || !E.ready || !cv.clientWidth || !cv.isConnected) return; const d = window.devicePixelRatio || 1, w = cv.clientWidth, hh = 150;
+  if (cv.width !== Math.floor(w * d) || cv.height !== Math.floor(hh * d)) { cv.width = Math.floor(w * d); cv.height = Math.floor(hh * d); MV.spec = null; }
+  const g = cv.getContext('2d'), W = cv.width, H = cv.height, C = vcol(); g.globalAlpha = 1; g.textAlign = 'left';
+  if (MV.mode === 'chroma') { g.fillStyle = '#050b0c'; g.fillRect(0, 0, W, H); drawChroma(g, W, H, C); }
+  else if (MV.mode === 'scope') { if (!E.anaDI) return; g.fillStyle = '#050b0c'; g.fillRect(0, 0, W, H); drawScope(g, W, H, C); g.shadowBlur = 0; }
+  else {
+    const an = visAna(); if (!an) return; if (!MV.fd || MV.fd.length !== an.frequencyBinCount) MV.fd = new Float32Array(an.frequencyBinCount); an.getFloatFrequencyData(MV.fd); const fd = MV.fd, bh = E.ctx.sampleRate / an.fftSize;
+    if (!MV.spec || MV.spec.width !== W || MV.spec.height !== H) { MV.spec = document.createElement('canvas'); MV.spec.width = W; MV.spec.height = H; const q = MV.spec.getContext('2d'); q.fillStyle = '#050b0c'; q.fillRect(0, 0, W, H); }
+    const q = MV.spec.getContext('2d'), sp = Math.max(1, Math.round(2 * d)), fmin = 60, fmax = 9000, lr = Math.log(fmax / fmin); q.drawImage(MV.spec, -sp, 0);
+    for (let y = 0; y < H; y++) { const f = fmin * Math.exp(lr * (1 - y / H)), k = clamp(Math.round(f / bh), 1, fd.length - 1), v = clamp((fd[k] + 88) / 62, 0, 1); q.fillStyle = v < .04 ? '#050b0c' : mixc('#12303a', v > .6 ? C.b : C.a, clamp(v * 1.2, 0, 1), clamp(.25 + v * .9, 0, 1)); q.fillRect(W - sp, y, sp, 1); }
+    g.drawImage(MV.spec, 0, 0); g.fillStyle = 'rgba(255,255,255,.5)'; g.font = `${Math.round(9 * d)}px ui-monospace,monospace`; [110, 440, 1760, 7040].forEach(f => { const y = (1 - Math.log(f / fmin) / lr) * H; g.fillText(f >= 1000 ? f / 1000 + 'k' : String(f), 3, y - 2); });
+  }
+}
+
+/* >>> parts/56-show.js */
+/* ============================================================
+   Part 56 · SHOW — the brain of Concert's Perform lens
+   Everything the lights do has a musical reason, and nothing moves on a timer of its own:
+     · ONE CLOCK. While the song plays, every angle, step and pulse is a function of the bar position, and every hit comes from the band
+       on the audio clock: kick, snare and hats, the bass note, each guitar strum, each lead note, each beat and bar line. Playing live with
+       no song, the lights step on your notes. With nothing playing they only breathe, very slowly.
+     · A LOOK is a finished way of lighting: a palette, a rig (where the lights stand and what they are), a backdrop element, a laser kit per
+       section, a way of moving. Six ship, and they differ in how the stage is built, not only in colour: a warm theatre wash, floor backlight,
+       architectural blades, a pixel field, a horizon, and a laser room. Section names pick the programme (and the setup panel can change any
+       cue); repeats escalate (the last chorus is the biggest); patterns change on phrase boundaries, never mid-bar; the same song always gets the same show.
+     · A PREVIEW plays a section's cue with a silent synthetic band (kick, snare, hats, bass, strums), so a technician can set the lights without a song.
+     · COLOUR is designed, not rainbow: the harmony chooses between the design's own colours (home = the key light, the dominant side
+       leans to the second colour, the subdominant side to the third, tension to the accent).
+     · COMFORT is a hard limit, not a hope: never more than three flashes a second in any mode. A governor measures the real picture and
+       pulls the light back when it gets near the limit. Calm removes the strobe and slows the motion.
+   Nothing is loaded from anywhere and nothing leaves the device.
+   ============================================================ */
+
+/* ---------- colour ---------- */
+const LXC = new Map();
+/** '#rrggbb' → [hue 0..360, sat 0..100, light 0..100, chroma 0..100] (cached). Chroma is how coloured it really is: near white or steel it stays small however the lightness is changed. */
+function lxHexHsl(hex) {
+  let v = LXC.get(hex); if (v) return v; const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || '')), n = m ? parseInt(m[1], 16) : 0x808080;
+  const r = (n >> 16 & 255) / 255, g = (n >> 8 & 255) / 255, b = (n & 255) / 255, mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn, l = (mx + mn) / 2; let hh = 0, s = 0;
+  if (d > 1e-6) { s = d / (1 - Math.abs(2 * l - 1)); hh = mx === r ? (g - b) / d + (g < b ? 6 : 0) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; hh *= 60; }
+  v = [hh, s * 100, l * 100, d * 100]; LXC.set(hex, v); return v;
+}
+const lxHueMix = (a, b, t) => a + (((b - a + 540) % 360) - 180) * t;
+const lxCh = c => c[3] != null ? c[3] : c[1] * (1 - Math.abs(2 * c[2] / 100 - 1));
+const lxMix3 = (A, B, t) => [lxHueMix(A[0], B[0], t), lerp(A[1], B[1], t), lerp(A[2], B[2], t), lerp(lxCh(A), lxCh(B), t)];
+/** a palette colour as a css colour: alpha, lightness offset, saturation offset */
+const lxCl = (c, a, dl, ds) => lxHsl(c[0], c[1] + (ds || 0), c[2] + (dl || 0), a);
+/** the same colour at another lightness, keeping how coloured it is (a steel white stays steel white when it is dimmed to a light's mid-tone) */
+const lxAt = (c, l, a, k) => lxHsl(c[0], Math.min(100, lxCh(c) * (k == null ? 1 : k) / Math.max(.06, 1 - Math.abs(2 * l / 100 - 1))), l, a);
+const lxHash = s => { let x = 2166136261; s = String(s); for (let i = 0; i < s.length; i++) { x ^= s.charCodeAt(i); x = Math.imul(x, 16777619); } return x >>> 0; };
+const lxFrac = x => x - Math.floor(x);
+const lxSmooth = x => { x = clamp(x, 0, 1); return x * x * (3 - 2 * x); };
+/** quantised phase: x advances in n steps per unit, each step eased in over its first third (motion that lands on the grid) */
+const lxStep = (x, n) => { const f = x * n, i = Math.floor(f), r = f - i; return (i + lxSmooth(r / .34)) / n; };
+
+/* ---------- the patterns the laser engine knows (part 57) and what each section gets by default ---------- */
+const SHOW_PATS = ['fan', 'cone', 'zipper', 'sheet', 'grid', 'lissa', 'tunnel', 'burst'];
+const SHOW_PAT_NAMES = { fan: 'Fan', cone: 'Cone', zipper: 'Zipper', sheet: 'Curtain', grid: 'Lattice', lissa: 'Scribble', tunnel: 'Tunnel', burst: 'Starburst' };
+const LX_KIT = { intro: '', verse: '', pre: 'sheet', chorus: 'fan zipper', bridge: '', solo: 'fan', outro: '', ambient: '' };
+
+/* ---------- the looks ---------- */
+/* rig.layout: where the moving lights stand: top (a truss over the stage) · floor (upstage, shining at the audience: contre-jour) · sides (two towers) · wash (broad soft fixtures over the stage) · none.
+   rig.wall: the backdrop element: off · spectrum (lit columns) · blades (tall architectural bars) · field (a pixel field) · horizon (a low sun and its rays) · image (your picture as a pixel wall).
+   rig.bg: how the room itself is lit: fields (drifting colour) · flat (a quiet gradient) · sky (a sky above a horizon).  rig.beam: soft · hard · wash.  rig.grade: full · duo · mono. */
+const SHOW_DESIGNS = [
+  { id: 'theatre', name: 'Theatre', tag: 'Warm front light', blurb: 'Tungsten washes and pools of light on the stage, haze with dust in it, no strobe and no lasers. For voice, acoustic guitar and quiet rooms.',
+    pal: { base: '#120b07', a: '#ffb866', b: '#ffe2b8', c: '#e8964a', l1: '#fff0d6', l2: '#ffd199' },
+    rig: { layout: 'wash', heads: 5, pars: 0, haze: .55, wall: 'off', conf: 0, flash: 0, int: .8, embers: 0, bg: 'flat', field: .3, beam: 'wash', dust: 1, spread: .8 }, mot: { sweep: 8, snap: 0 },
+    laser: { amt: 0, intro: '', verse: '', pre: '', chorus: '', bridge: '', solo: '', outro: '' },
+    heads: { intro: 'converge', verse: 'spot', pre: 'converge', chorus: 'fan', solo: 'spot', bridge: 'converge', outro: 'converge' } },
+  { id: 'backlight', name: 'Backlight', tag: 'Contre-jour beams', blurb: 'Hard beams from the floor behind the band, pointing at the audience through heavy haze. One saturated colour against white, a blinder on the big moments.',
+    pal: { base: '#06080e', a: '#ff4b2b', b: '#ffffff', c: '#ffb12b', l1: '#ffffff', l2: '#ff4b2b' },
+    rig: { layout: 'floor', heads: 10, pars: 0, haze: 1.1, wall: 'off', conf: 0, flash: .6, int: 1, embers: 0, bg: 'flat', field: .25, beam: 'soft', dust: 0, spread: .62 }, mot: { sweep: 4, snap: 0 },
+    laser: { amt: 0, intro: '', verse: '', pre: '', chorus: '', bridge: '', solo: '', outro: '' },
+    heads: { intro: 'converge', verse: 'fan', pre: 'chase', chorus: 'fan cross sweep', solo: 'spot converge', bridge: 'converge', outro: 'fan' } },
+  { id: 'blades', name: 'Blades', tag: 'Architectural LED', blurb: 'Tall hard-edged bars of light across the stage that rise and fall with the spectrum, in cool white and steel with a single accent. Clean, graphic, precise.',
+    pal: { base: '#05070b', a: '#e8f1ff', b: '#8aa4c8', c: '#5b7bb0', l1: '#ffffff', l2: '#7fd4ff' },
+    rig: { layout: 'none', heads: 0, pars: 0, haze: .3, wall: 'blades', conf: 0, flash: .4, int: 1, embers: 0, bg: 'flat', field: .12, beam: 'hard', dust: 0, spread: 1 }, mot: { sweep: 2, snap: 1 },
+    laser: { amt: .5, intro: '', verse: '', pre: 'zipper', chorus: 'zipper grid', bridge: '', solo: 'grid cone', outro: '' },
+    heads: { verse: 'chase', chorus: 'cross chase', solo: 'cross' } },
+  { id: 'pixels', name: 'Pixel field', tag: 'Generative LED wall', blurb: 'The whole back of the stage is a pixel field: the spectrum climbs it, every note ripples out from a point, and the kick pulses its centre. Teal, amber and indigo.',
+    pal: { base: '#07060f', a: '#2ee6c8', b: '#ffb454', c: '#6a7bff', l1: '#c8fff3', l2: '#ffd9a0' },
+    rig: { layout: 'none', heads: 0, pars: 0, haze: .2, wall: 'field', conf: 0, flash: 0, int: 1, embers: 0, bg: 'flat', field: .1, beam: 'soft', dust: 0, spread: 1 }, mot: { sweep: 4, snap: 1 },
+    laser: { amt: 0, intro: '', verse: '', pre: '', chorus: '', bridge: '', solo: '', outro: '' },
+    heads: {} },
+  { id: 'horizon', name: 'Horizon', tag: 'Cinematic sun and rays', blurb: 'A low sun on a long horizon with rays that fan out over the haze. It rises into the chorus and sinks in the outro. Orange, apricot and dusk violet.',
+    pal: { base: '#0a1020', a: '#ff9a5a', b: '#ffcf8a', c: '#8a7bff', l1: '#ffe9c4', l2: '#9ad0ff' },
+    rig: { layout: 'wash', heads: 4, pars: 1, haze: .9, wall: 'horizon', conf: 0, flash: .15, int: .9, embers: 0, bg: 'sky', field: .25, beam: 'wash', dust: 1, spread: 1 }, mot: { sweep: 8, snap: 0 },
+    laser: { amt: .35, intro: '', verse: '', pre: 'sheet', chorus: 'sheet fan', bridge: '', solo: 'sheet', outro: '' },
+    heads: { intro: 'converge', verse: 'converge', pre: 'fan', chorus: 'fan sweep', solo: 'spot', bridge: 'converge', outro: 'converge' } },
+  { id: 'lasers', name: 'Laser room', tag: 'Haze and beams', blurb: 'A black room with thick haze and nothing but lasers and a few narrow searchlights from the side towers. Green, cyan and white. Every section calls a different kit.',
+    pal: { base: '#010403', a: '#35ff9a', b: '#2ee6ff', c: '#ffffff', l1: '#35ff9a', l2: '#2ee6ff' },
+    rig: { layout: 'sides', heads: 6, pars: 0, haze: 1.2, wall: 'off', conf: 0, flash: .3, int: .75, embers: 0, bg: 'flat', field: 0, beam: 'hard', dust: 0, spread: 1 }, mot: { sweep: 4, snap: 1 },
+    laser: { amt: 1, intro: 'sheet', verse: 'sheet', pre: 'tunnel', chorus: 'fan zipper cone', bridge: 'lissa', solo: 'grid zipper', outro: 'sheet' },
+    heads: { intro: 'converge', verse: 'cross', pre: 'cross chase', chorus: 'cross sweep', solo: 'cross chase', bridge: 'converge', outro: 'cross' } }
+];
+/** the names the 2.5 starter shows had, so a song or a Stage scene that named one still gets a look */
+const SHOW_ALIAS = { arena: 'backlight', neon: 'lasers', campfire: 'theatre', aurora: 'horizon', noir: 'blades', golden: 'horizon' };
+const lxDesign = id => SHOW_DESIGNS.find(d => d.id === id) || SHOW_DESIGNS.find(d => d.id === SHOW_ALIAS[id]) || SHOW_DESIGNS[0];
+CFG.show = Object.assign({ design: 'backlight', auto: true, ovr: {}, imgs: [], saved: [], out: {} }, CFG.show || {});
+if (SHOW_ALIAS[CFG.show.design]) CFG.show.design = SHOW_ALIAS[CFG.show.design];
+CFG.show.saved = Array.isArray(CFG.show.saved) ? CFG.show.saved : []; CFG.show.out = Object.assign({ master: 1, mirror: false, flip: false, safe: false, fps: 60 }, CFG.show.out || {});
+const LX_SECS = ['intro', 'verse', 'pre', 'chorus', 'bridge', 'solo', 'outro'], LX_SEC_NAMES = { intro: 'Intro', verse: 'Verse', pre: 'Pre-chorus', chorus: 'Chorus', bridge: 'Bridge', solo: 'Solo', outro: 'Outro' };
+const LX_R1 = { kick: 1, snare: 1, hat: 1, bass: 1, strum: 1, lead: 1 };
+/** a palette's colours with the colour treatment applied: full keeps them, duo gives the third light the first light's colour, mono makes every light one colour in different lightness */
+function lxGrade(pal, grade) {
+  if (!grade || grade === 'full') return pal; const A = lxHexHsl(pal.a), f = (h, s, l) => hsl(h, s, l), o = Object.assign({}, pal);
+  if (grade === 'duo') { o.c = pal.a; o.l1 = pal.l1; return o; }
+  o.b = f(A[0], Math.min(A[1], 45), Math.min(92, A[2] + 22)); o.c = f(A[0], A[1], Math.max(24, A[2] - 16)); o.l1 = f(A[0], Math.min(A[1], 30), 90); o.l2 = pal.a; return o;
+}
+/** the cue for a kind of section: the programme (part 54) with this design's changes laid over it */
+function lxProg(D, kind) { const P = LX_PROG[kind] || LX_PROG.verse, c = D.cue && D.cue[kind]; return c ? Object.assign({}, P, c) : P; }
+/** the look in force for a scene (or the Visuals tab when spec is null), with the person's changes laid over it */
+function lxResolve(spec) {
+  const sh = CFG.show, vis = !spec || spec === sh || !spec.design, s = vis ? sh : spec, id = vis && sh.auto !== false ? lxAutoDesign() : (s.design || sh.design), base = lxDesign(id), o = s.ovr || {}, ol = o.laser || {}, kits = {};
+  Object.keys(ol).forEach(k => { if (typeof ol[k] === 'string') kits[k] = ol[k]; });
+  const rig = Object.assign({}, base.rig, o.rig), D = Object.assign({}, base, { pal: lxGrade(Object.assign({}, base.pal, o.pal), rig.grade), rig, mot: Object.assign({}, base.mot, o.mot), laser: Object.assign({}, base.laser, kits, ol.amt != null ? { amt: ol.amt } : null), heads: Object.assign({}, base.heads, o.heads) });
+  D.allow = ol.allow || null; D.noBurst = ol.burst === 0 || ol.burst === false; D.use = o.use || null; D.cue = o.cue || null; D.resp = o.resp || null; D.spec = s; return D;
+}
+
+/** the colours the stage's chord / lyric overlay uses, taken from the show design so the text belongs to the picture */
+function lxHudPal(sc) { const D = lxResolve(sc && sc.show); return { a: D.pal.a, b: D.pal.l2, c: D.pal.b, d: D.pal.c }; }
+
+/* ---------- comfort ---------- */
+const lxReduced = () => { try { return !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches); } catch (e) { return false; } };
+const LX_COMFORT = {
+  calm: { name: 'Calm', blurb: 'No strobe. Slower, softer movement and gentler pulses. The choice if flashing or fast motion bothers you.', strobe: 0, flash: .05, impulse: .45, motion: .55, laser: .7, gap: 1000 },
+  standard: { name: 'Standard', blurb: 'Soft pulses on the beat and a gentle flash at the top of a chorus.', strobe: .2, flash: .2, impulse: .8, motion: .85, laser: 1, gap: 340 },
+  full: { name: 'Full show', blurb: 'The whole production, at full strength. Still never more than three flashes a second.', strobe: .42, flash: .45, impulse: 1, motion: 1, laser: 1, gap: 340 }
+};
+function lxComfortKey() { const c = STG.comfort; return LX_COMFORT[c] ? c : STG.safe === false ? 'full' : lxReduced() ? 'calm' : 'standard'; }
+const lxComfort = () => LX_COMFORT[lxComfortKey()];
+function lxSetComfort(k) { if (!LX_COMFORT[k]) return; STG.comfort = k; STG.safe = k !== 'full'; saveStg(); }
+
+/** the governor: looks at the picture itself (a 24×14 sample, 25 times a second), counts how often the brightness swings by 7% or more
+    (whole picture and each quarter, and the amount of red), and when that gets near three a second it pulls every pulse and flash back.
+    Three flashes a second is the line the web accessibility guidelines draw for photosensitive viewers. */
+const LXG = { c: null, x: null, t: 0, s: [], tgt: 1, n: 0, maxN: 0, lum: 0, lut: null };
+function lxGovMeasure(cv, now) {
+  const G = LXG; if (now - G.t < 40 || !cv || !cv.width || !cv.height) return; G.t = now;
+  if (!G.x) { G.c = document.createElement('canvas'); G.c.width = 24; G.c.height = 14; G.x = G.c.getContext('2d', { willReadFrequently: true }); G.lut = new Float32Array(256); for (let i = 0; i < 256; i++) { const v = i / 255; G.lut[i] = v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); } for (let i = 0; i < 6; i++) G.s.push({ ref: 0, dir: 0, ts: [], init: false }); }
+  let d; try { G.x.drawImage(cv, 0, 0, 24, 14); d = G.x.getImageData(0, 0, 24, 14).data; } catch (e) { return; }
+  const q = [0, 0, 0, 0, 0], lut = G.lut; let red = 0;
+  for (let y = 0; y < 14; y++) for (let x = 0; x < 24; x++) {
+    const o = (y * 24 + x) * 4, r = lut[d[o]], g = lut[d[o + 1]], b = lut[d[o + 2]], Y = .2126 * r + .7152 * g + .0722 * b; q[0] += Y; q[1 + (y >= 7 ? 2 : 0) + (x >= 12 ? 1 : 0)] += Y;
+    const sum = r + g + b; if (sum > .01 && r / sum >= .8) red += Math.max(0, r - g - b);
+  }
+  const v = [q[0] / 336, q[1] / 84, q[2] / 84, q[3] / 84, q[4] / 84, red / 336]; G.lum = v[0]; let n = 0;
+  for (let i = 0; i < 6; i++) {
+    const s = G.s[i], x = v[i], thr = i === 5 ? .1 : .07; if (!s.init) { s.ref = x; s.init = true; }
+    if (s.dir === 0) { if (Math.abs(x - s.ref) >= thr) { s.dir = x > s.ref ? 1 : -1; s.ref = x; } }
+    else if (s.dir === 1) { if (x >= s.ref) s.ref = x; else if (s.ref - x >= thr) { s.dir = -1; s.ref = x; s.ts.push(now); } }
+    else { if (x <= s.ref) s.ref = x; else if (x - s.ref >= thr) { s.dir = 1; s.ref = x; s.ts.push(now); } }
+    while (s.ts.length && now - s.ts[0] > 1000) s.ts.shift(); n = Math.max(n, s.ts.length);
+  }
+  G.n = n; if (n > G.maxN) G.maxN = n; G.tgt = n <= 2 ? 1 : clamp(1 - (n - 2) * .3, .1, 1);
+}
+
+/* ---------- events from the band, on the audio clock (called from part 03) ---------- */
+Object.assign(LX, {
+  bass: 0, bassM: 40, strum: 0, lead: 0, leadM: 64, beatP: 0, down: 0, mode: 'idle', pos: 0, lastPos: 0, phAcc: 0, noteN: 0, onsetAt: 0, gov: 1, occ: 0, occTot: 1, occSec: -1, occN: -1, seed: 1,
+  D: null, palD: null, key: [38, 70, 55, 63], ft: null, slowT: 0, fastT: 0, lite: 0, laserKit: [], laserAmt: 0, lastStrobeBar: -1, fb: null, burst: 0, wallImgK: ''
+});
+function lxEvt(type, t, a, b) { LX.q.push({ t, type, a, b }); if (LX.q.length > 400) LX.q.splice(0, LX.q.length - 400); }
+function lxFireX(ev) {
+  const v = clamp(ev.b == null ? .8 : ev.b, .2, 1), R = LX.R || LX_R1;
+  if (ev.type === 'beat') { LX.beatP = 1; if (ev.a === 1) LX.down = 1; }
+  else if (ev.type === 'bass') { LX.bass = Math.max(LX.bass, (.45 + .55 * v) * R.bass); LX.bassM = ev.a; }
+  else if (ev.type === 'chord') { LX.strum = Math.max(LX.strum, (.5 + .5 * v) * R.strum); if (R.strum > .2) lxSpark(2 + Math.round(v * 3), 0); }
+  else if (ev.type === 'lead') { LX.lead = Math.min(1, R.lead); LX.leadM = ev.a; if (R.lead > .2) lxSpark(2, 1); }
+}
+bus.on('onset', () => { LX.noteN++; LX.onsetAt = performance.now(); });
+
+/* ---------- the per-frame brain ---------- */
+function lxUpdate(dt, X) {
+  dt = clamp(dt || .016, .001, .1); const now = performance.now(), ctx = E.ctx, ct = ctx ? ctx.currentTime : 0, lat = ctx ? (ctx.outputLatency || ctx.baseLatency || 0) : 0, k = x => Math.exp(-dt * x), CM = lxComfort();
+  const D = LX.D || (LX.D = lxResolve(null)); LX.R = D.resp ? Object.assign({}, LX_R1, D.resp) : LX_R1;
+  /* a slow machine gets a lighter picture (no laser halos, fewer moving lights) instead of a slideshow; it comes back by itself once frames are quick again */
+  LX.ft = LX.ft == null ? dt : LX.ft + (dt - LX.ft) * Math.min(1, dt * .8); if (document.hidden) { LX.slowT = 0; } else if (LX.ft > .045) LX.slowT += dt; else LX.slowT = Math.max(0, LX.slowT - dt * 2);
+  if (!LX.lite && LX.slowT > 2.5) { LX.lite = 1; LX.fastT = 0; } else if (LX.lite) { LX.fastT = LX.ft < .026 ? LX.fastT + dt : 0; if (LX.fastT > 8) { LX.lite = 0; LX.slowT = 0; } }
+  for (let i = 0; i < LX.q.length;) { const ev = LX.q[i]; if (ev.t <= ct - lat + .016) { lxFire(ev); LX.q.splice(i, 1); } else if (ev.t < ct - 2) LX.q.splice(i, 1); else i++; }
+  if (PB.seq !== LX.pbSeq) { LX.pbSeq = PB.seq; LX.note = 1; }
+  ['kick', 'snare', 'perc', 'tom'].forEach(n => { LX[n] *= k(n === 'snare' ? 9 : n === 'kick' ? 7 : 6); }); LX.hat *= k(14); LX.onset *= k(8); LX.note *= k(5); LX.strobe *= k(22); LX.drop *= k(1.5);
+  LX.bass *= k(5); LX.strum *= k(9); LX.lead *= k(4); LX.beatP *= k(6); LX.down *= k(3); LX.burst = Math.max(0, LX.burst - dt / Math.max(.8, spb() * slotDur()));
+  /* the governor eases: fast down, slow up */
+  const G = LXG; LX.gov += (G.tgt - LX.gov) * (1 - k(G.tgt < LX.gov ? 14 : 1.1));
+  const info = LX.info = stageInfo(), bars = barsCache(), playing = !!(T.playing && ctx), sp = spb(), slotNow = playing ? playheadSlot() : T.cursor;
+  if (playing && LX.pv) LX.pv = null; else if (LX.pv && now > LX.pv.until) LX.pv = null;
+  const sim = !playing && !!LX.pv, loud = AN.active ? clamp((AN.rms + 60) / 50, 0, 1) : 0; LX.mode = playing || sim ? 'song' : (AN.active && (now - LX.onsetAt < 5000 || loud > .25)) ? 'live' : 'idle';
+  /* one position, in bars: the playhead, or (in a preview) the silent band's clock, or one eighth of a bar per note you play, or a barely perceptible drift */
+  if (playing) LX.pos = Math.max(0, slotNow / sp); else if (sim) { LX.pos += dt * (S.bpm / 60) / S.ts[0]; lxPreviewBand(); } else if (LX.mode === 'live') LX.pos += (LX.noteN / 8 - LX.pos) * (1 - k(7)); else LX.pos += dt * .006;
+  const dp = LX.pos - LX.lastPos; LX.lastPos = LX.pos; if (dp > 0 && dp < .5) LX.phAcc += dp; LX.ph = LX.phAcc * 2.2 * CM.motion;
+  LX.beat = LX.pos * S.ts[0]; LX.bar = LX.pos - Math.floor(LX.pos);
+  /* where we are in the song */
+  const bi = clamp(Math.floor(slotNow / sp), 0, Math.max(0, bars.length - 1)), fb = bars.length ? bars[bi] : null; LX.fb = fb;
+  const kind = sim ? LX.pv.kind : playing && fb ? lxKind(fb.sec.name) : 'ambient'; LX.kind = kind; const secId = sim ? 'pv' + LX.pv.n + kind : playing && fb ? (fb.sec.id || fb.sec.name) : '';
+  if ((playing || sim) && secId !== LX.sec) { const first = LX.sec === ''; LX.sec = secId; if (sim || !first || playheadSlot() > 1) { const P0 = lxProg(D, kind); LX.drop = Math.max(LX.drop, kind === 'chorus' ? 1 : kind === 'solo' ? .8 : .35); if (P0.conf && LX.W && D.rig.conf > 0) lxBurst(Math.round((kind === 'chorus' ? 150 : 60) * D.rig.conf)); if (P0.strobe) LX.strobeReq = true; if (kind === 'chorus' || kind === 'solo') LX.burst = 1; lxSlide(); } } else if (!playing && !sim) LX.sec = '';
+  const barsLeft = playing && fb ? fb.sec.bars.length - fb.bi - 1 : 9, nxt = playing && fb && bars[bi + barsLeft + 1] ? lxKind(bars[bi + barsLeft + 1].sec.name) : '', bt = (playing && barsLeft <= 1 && /chorus|solo/.test(nxt) && !/chorus|solo/.test(kind)) ? 1 - barsLeft * .45 : 0; LX.build += (bt - LX.build) * (1 - k(2.5));
+  if (sim) { LX.occ = LX.pv.final ? 1 : 0; LX.occTot = 2; LX.occSec = -1; LX.seed = lxHash('pv' + kind); }
+  else if (playing && fb) { if (LX.occSec !== fb.si || LX.occN !== S.sections.length) { LX.occSec = fb.si; LX.occN = S.sections.length; let n = 0, tot = 0; S.sections.forEach((s, j) => { if (lxKind(s.name) === kind) { if (j < fb.si) n++; tot++; } }); LX.occ = n; LX.occTot = Math.max(1, tot); LX.seed = lxHash((S.title || '') + '|' + fb.si); } } else { LX.occ = 0; LX.occTot = 1; LX.occSec = -1; }
+  const P = LX.prog = lxProg(D, kind), ph4 = fb ? Math.floor(fb.bi / 4) : sim ? Math.floor(LX.pos / 4) : 0, finalCh = kind === 'chorus' && LX.occTot > 1 && LX.occ === LX.occTot - 1, idx = fb ? fb.idx : sim ? Math.floor(LX.pos) : 0; LX.barIdx = idx;
+  /* the cue: which head pattern, which lasers, how big, for this section on this pass */
+  const pats = D.heads && D.heads[kind] ? D.heads[kind].split(' ') : P.pats; LX.pat = pats[(ph4 + LX.occ + (LX.seed & 3)) % pats.length];
+  let kit = String(D.laser && D.laser[kind] != null ? D.laser[kind] : (LX_KIT[kind] || '')).split(/\s+/).filter(Boolean);
+  if (D.allow) { const own = new Set(SHOW_PATS.filter(p => Object.keys(D.laser).some(kk => kk !== 'amt' && String(D.laser[kk]).split(/\s+/).includes(p)))); kit = kit.filter(p => D.allow.includes(p)); if (/^(pre|chorus|solo)$/.test(kind)) D.allow.forEach(p => { if (!own.has(p) && p !== 'burst' && !kit.includes(p)) kit.push(p); }); }
+  if (kit.length >= 3 && ph4 % 2 === 1) kit = kit.filter((_, i) => i !== (ph4 + LX.occ) % kit.length);   // the second phrase of a section drops one, so the combination keeps changing
+  LX.laserKit = kit; LX.laserAmt = (D.laser && D.laser.amt || 0) * CM.laser * (1 + (finalCh ? .15 : 0)); LX.finalCh = finalCh;
+  const intT = clamp((P.int + Math.min(LX.occ, 2) * .06 + (finalCh ? .06 : 0) + .3 * LX.build) * (D.rig.int == null ? 1 : D.rig.int), 0, 1.15), nT = Math.min(12, P.n * (D.rig.heads || 12) / 12) + 3 * LX.build * (D.rig.heads || 12) / 12;
+  LX.int += (intT - LX.int) * (1 - k(1.8)); LX.n += (nT - LX.n) * (1 - k(1.4));
+  /* harmony picks between the design's own colours */
+  const sym = sim ? lxPreviewChord() : playing ? info.sym : (AN.active && AN.chord && AN.chord[0] ? AN.chord[0].sym : null); if (sym) { if (sym !== LX.sym && !sim) lxSkyAdd(sym); LX.sym = sym; LX.symT = now; } else if (now - LX.symT > 4000) LX.sym = null;
+  const pc = LX.sym ? parseChord(LX.sym) : null, ql = lxQual(pc), fs = pc ? lxFifths(pc.root) : 0, PD = LX.palD = { base: lxHexHsl(D.pal.base), a: lxHexHsl(D.pal.a), b: lxHexHsl(D.pal.b), c: lxHexHsl(D.pal.c), l1: lxHexHsl(D.pal.l1), l2: lxHexHsl(D.pal.l2) };
+  const side = clamp(fs / 3, -1, 1), tk = side >= 0 ? lxMix3(PD.a, PD.b, side) : lxMix3(PD.a, PD.c, -side), kt = lxMix3(tk, PD.c, ql.ten * .3), kk = 1 - k(3.2);
+  LX.key = [lxHueMix(LX.key[0], kt[0], kk), lerp(LX.key[1], kt[1], kk), lerp(LX.key[2], kt[2], kk), lerp(lxCh(LX.key), lxCh(kt), kk)];
+  const tv = clamp((S.minor ? -.45 : .45) + ql.val, -1, 1), tt = clamp(ql.ten * .62 + Math.min(Math.abs(fs), 6) / 6 * .38, 0, 1); LX.v += (tv - LX.v) * (1 - k(1.1)); LX.tn += (tt - LX.tn) * (1 - k(1.6)); LX.hue = LX.key[0];
+  const src = sim ? .8 : playing ? clamp(X.energy * 1.7, 0, 1) : Math.max(loud, clamp(X.energy * 1.4, 0, 1)), et = clamp(.6 * src + .4 * LX.int + .18 * LX.kick, 0, 1) * (LX.mode === 'idle' ? .55 : 1);
+  LX.e += (et - LX.e) * (1 - k(et > LX.e ? 6 : 1.1)); const bt2 = AN.active && AN.centroid > 0 ? clamp(Math.log(AN.centroid / 300) / Math.log(5000 / 300), 0, 1) : .4; LX.br += (bt2 - LX.br) * (1 - k(1.2));
+  const e = LX.e, mood = (LX.v + 1) / 2; LX.pal = { key: LX.key, a: PD.a, b: PD.b, c: PD.c, base: PD.base, l1: PD.l1, l2: PD.l2, h: [LX.key[0], PD.b[0], PD.c[0], PD.l1[0]], sat: 62 + 30 * e, lit: 50 + 10 * LX.br, mood };
+  /* flashes: at most one blinder per bar, never closer together than the comfort gap, none at all in Calm */
+  const flashOk = D.rig.flash > 0 && CM.strobe > 0 && now - LX.lastStrobe > CM.gap;
+  if (LX.strobeReq) { LX.strobeReq = false; if (P.strobe && flashOk && LX.lastStrobeBar !== idx) { LX.strobe = 1; LX.lastStrobe = now; LX.lastStrobeBar = idx; } }
+  if (LX.drop > .6 && LX.strobe < .5 && flashOk && LX.lastStrobeBar !== idx) { LX.strobe = .9; LX.lastStrobe = now; LX.lastStrobeBar = idx; }
+  for (let i = LX.parts.length - 1; i >= 0; i--) { const p = LX.parts[i]; p.life -= dt; if (p.life <= 0) { LX.parts.splice(i, 1); continue; } p.vy += p.g * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= k(.4); }
+  if (D.rig.embers && LX.parts.length < 90 && LX.mode !== 'idle' && LX.strum > .5 && Math.random() < .5) lxSpark(1, 2);
+  LX.fb = fb;
+}
+/** a few sparks; kind 0 = bright glints (strum), 1 = lead-note glints, 2 = embers that drift up */
+function lxSpark(n, kind) {
+  const W = LX.W, H = LX.H, pal = LX.pal; if (!pal || !W || LX.parts.length > 260) return;
+  for (let i = 0; i < n; i++) {
+    const c = [pal.key, pal.a, pal.b, pal.c][(Math.random() * 4) | 0], ember = kind === 2, x = ember ? W * (.2 + Math.random() * .6) : W * (.1 + Math.random() * .8), y = ember ? H * (.82 + Math.random() * .15) : H * (.25 + Math.random() * .5);
+    LX.parts.push({ x, y, vx: (Math.random() - .5) * (ember ? 14 : 22), vy: ember ? -(H * .05 + Math.random() * H * .08) : -(Math.random() * 14), g: ember ? -H * .004 : 0, life: ember ? 2.6 + Math.random() * 3 : .5 + Math.random() * .7, max: ember ? 5 : 1.1, s: ember ? .9 + Math.random() * 1.4 : .8 + Math.random() * 1.6, c3: c, c: false });
+  }
+}
+/** confetti, in the design's colours */
+function lxBurst(n) {
+  const W = LX.W, H = LX.H, pal = LX.pal; if (!pal) return; for (let i = 0; i < n && LX.parts.length < 420; i++) {
+    const a = -Math.PI / 2 + (Math.random() - .5) * 2.1, sp = H * (.5 + Math.random() * .9), c = [pal.key, pal.a, pal.b, pal.c, pal.l1][(Math.random() * 5) | 0];
+    LX.parts.push({ x: W * (.15 + Math.random() * .7), y: H * (.95 + Math.random() * .06), vx: Math.cos(a) * sp * .6, vy: Math.sin(a) * sp, g: H * .8, life: 2.2 + Math.random() * 2, max: 4, s: 2 + Math.random() * 4, c3: c, c: true, rot: Math.random() * 6 });
+  }
+}
+/** the images, if any, move on to the next one at each new section */
+function lxSlide() { LX.slide = (LX.slide || 0) + 1; }
+
+/* ---------- preview: a silent band that plays one section's cue, so the lights can be set without a song ---------- */
+const LX_PVB = { intro: [1, 0, 0, 0, 1], verse: [1, 1, 0, 1, 1], pre: [1, 1, 1, 1, 1], chorus: [1, 1, 1, 1, 1], bridge: [1, 0, 0, 1, 0], solo: [1, 1, 1, 1, 1], outro: [1, 0, 0, 0, 0] };   // kick, snare, hats, bass, strum
+function lxPreview(kind, o) { LX.pv = { kind: LX_SECS.includes(kind) ? kind : 'chorus', until: performance.now() + ((o && o.sec) || 30) * 1000, n: (LX.pv ? LX.pv.n : (LX.pvN || 0)) + 1, final: !!(o && o.final) }; LX.pvN = LX.pv.n; LX.pvB = -1; LX.pos = Math.max(0, Math.floor(LX.pos / 4) * 4); bus.emit('show'); }
+function lxPreviewStop() { LX.pv = null; bus.emit('show'); }
+/** the chord of the bar being previewed: the usual four in the song's key */
+function lxPreviewChord() { const bar = Math.floor(LX.pos) % 4, deg = S.minor ? [0, 8, 3, 10] : [0, 7, 9, 5], q = S.minor ? ['m', '', '', ''] : ['', '', 'm', '']; return pcName((S.key + deg[bar]) % 12) + q[bar]; }
+/** the synthetic hits on each new eighth of a bar */
+function lxPreviewBand() {
+  const pv = LX.pv, ts = S.ts[0], eighth = Math.floor(LX.pos * ts * 2); if (eighth === LX.pvB) return; const from = LX.pvB < 0 ? eighth : LX.pvB + 1; LX.pvB = eighth;
+  const m = LX_PVB[pv.kind] || LX_PVB.verse;
+  for (let e = from; e <= eighth; e++) {
+    const pos = ((e % (ts * 2)) + ts * 2) % (ts * 2), beat = pos / 2, on = pos % 2 === 0;
+    if (on) { LX.beatP = 1; if (pos === 0) LX.down = 1; }
+    if (on && m[0] && (beat === 0 || (ts === 4 && beat === 2))) lxFire({ row: 0, v: 3 });
+    if (on && m[1] && (ts === 4 ? beat === 1 || beat === 3 : beat === 1)) lxFire({ row: 1, v: 3 });
+    if (m[2] && (on || pv.kind === 'chorus' || pv.kind === 'solo')) lxFire({ row: 2, v: on ? 3 : 1 });
+    if (m[3] && on && (beat === 0 || beat === 2)) lxFireX({ type: 'bass', a: 36 + S.key, b: .85 });
+    if (m[4] && on && beat === 0) lxFireX({ type: 'chord', b: .9 });
+    if ((pv.kind === 'chorus' || pv.kind === 'solo') && e % 3 === 0) lxFireX({ type: 'lead', a: 62 + ((e >> 1) * 5) % 12, b: .8 });
+  }
+}
+
+/* >>> parts/57-lasers.js */
+/* ============================================================
+   Part 57 · LASERS — thin, hard-edged beams through the haze, built from the music's own phase
+   Eight patterns that combine (a chorus runs two to five at once) and that the show design chooses per section:
+     fan · cone · zipper · curtain (sheet) · lattice (grid) · scribble (a Lissajous figure) · tunnel (hexagon rings) · starburst (on the drop)
+   Every angle is a function of the bar position (LX.pos) or the beat (LX.beat), never of time, so the picture cannot drift off the grid.
+   Designs with snap = 1 move in steps that land on the beat. The beams brighten on the band's real hits (kick, snare, hats, strums,
+   lead notes), so a syncopated groove draws a syncopated show. A pattern fades in and out over half a beat when the kit changes.
+   These are pictures of lasers on the screen. Nothing here drives a real laser.
+   ============================================================ */
+const LZ = { amp: {} };
+const LZ_RATIO = [[3, 2], [5, 4], [3, 4], [2, 3], [5, 6], [1, 2]];
+const lxTri = x => 1 - Math.abs(2 * lxFrac(x) - 1);
+/** one beam: a faint wide halo (skipped in lite mode), a brighter body and a near-white core */
+function lxLB(g, x0, y0, x1, y1, col, a, w) {
+  if (a < .015) return; a = Math.min(a, 1); g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1);
+  if (!LX.lite) { g.strokeStyle = lxCl(col, a * .1); g.lineWidth = w * 4.5; g.stroke(); }
+  g.strokeStyle = lxCl(col, a * .32, 8); g.lineWidth = w * 2.1; g.stroke();
+  g.strokeStyle = lxCl(col, a * .9, 30, -30); g.lineWidth = w; g.stroke();
+}
+/** a path (Path2D), stroked as a halo, a body and a core */
+function lxStroke3(g, P, col, a, w) {
+  if (a < .015) return; a = Math.min(a, 1);
+  if (!LX.lite) { g.strokeStyle = lxCl(col, a * .1); g.lineWidth = w * 4.5; g.stroke(P); }
+  g.strokeStyle = lxCl(col, a * .32, 8); g.lineWidth = w * 2.1; g.stroke(P);
+  g.strokeStyle = lxCl(col, a * .9, 30, -30); g.lineWidth = w; g.stroke(P);
+}
+function lzFan(c, a) {
+  const { g, W, H } = c, n = 7, sw = (c.snap ? lxStep(LX.pos / 4, 8) : LX.pos / 4) * Math.PI * 2, open = .055 + .045 * a + .1 * LX.kick * c.imp, mir = (LX.fb ? Math.floor(LX.fb.bi / 4) : 0) % 2 === 0, s = Math.sin(sw) * .4, len = H * 2.4;
+  [[.17, 1], [.83, -1]].forEach(([fx, sg], bi) => {
+    const ox = W * fx, oy = -H * .02, base = mir ? sg * (.28 + s) : sg * .28 + s;
+    for (let i = 0; i < n; i++) { const ang = base + (i - (n - 1) / 2) * open; lxLB(g, ox, oy, ox + Math.sin(ang) * len, oy + Math.cos(ang) * len, (i + bi) % 2 ? c.l2 : c.l1, c.gate * a * c.amt, c.lw); }
+  });
+}
+function lzZipper(c, a) {
+  const { g, W, H } = c, n = 4, ph = c.snap ? lxStep(LX.beat / 4, 8) : LX.beat / 4, len = H * 2.4;
+  [[.03, 1], [.97, -1]].forEach(([fx, sg], bi) => {
+    for (let i = 0; i < n; i++) { const t = lxTri(ph + i / n * .5 + bi * .08), ang = sg * lerp(-.12, 1.12, t), ox = W * fx; lxLB(g, ox, 0, ox + Math.sin(ang) * len, Math.cos(ang) * len, (i + bi) % 2 ? c.l1 : c.l2, c.gate * a * c.amt * (.55 + .45 * t), c.lw); }
+  });
+}
+function lzCone(c, a) {
+  const { g, W, H } = c, n = 14, cx = W / 2, oy = -H * .02, rot = (c.snap ? lxStep(LX.beat / 2, 2) : LX.beat / 2) * (Math.PI * 2 / n), R = W * (.32 + .1 * LX.beatP * c.imp + .06 * a), RY = H * .34;
+  for (let i = 0; i < n; i++) { const th = i * 2 * Math.PI / n + rot, ex = cx + Math.cos(th) * R, ey = H * .42 + Math.sin(th) * RY, dx = ex - cx, dy = ey - oy; lxLB(g, cx, oy, cx + dx * 1.9, oy + dy * 1.9, i % 2 ? c.l2 : c.l1, c.gate * a * c.amt * .9, c.lw); }
+}
+function lzSheet(c, a) {
+  const { g, W, H } = c, K = 3, N = Math.max(40, Math.round(W / 17)), ph = LX.pos * Math.PI * 2 / 4, pulse = .55 + .45 * Math.max(c.gate, LX.beatP * c.imp);
+  g.lineCap = 'butt';
+  for (let k = 0; k < K; k++) {
+    const col = k % 2 ? c.l2 : c.l1, base = H * (.3 + .13 * k), amp = H * (.045 + .015 * k), fq = 1.3 + .45 * k, sp = ph * (k % 2 ? -1 : 1) * (1 + k * .3) + k * 1.9, hmax = H * (.2 + .06 * k), al = a * c.amt * pulse * (1 - k * .18), xs = [], ys = [];
+    const gr = g.createLinearGradient(0, base - amp - hmax, 0, base + amp); gr.addColorStop(0, lxCl(col, 0)); gr.addColorStop(.7, lxCl(col, al * .3)); gr.addColorStop(1, lxCl(col, al * .8, 14, -10));
+    g.beginPath();
+    for (let i = 0; i <= N; i++) {
+      const u = i / N, x = W * (.02 + .96 * u), env = Math.pow(Math.sin(Math.PI * u), .6), y = base + Math.sin(u * 6.283 * fq + sp) * amp + Math.sin(u * 15.7 + sp * 1.7) * amp * .25, hh = hmax * env * (.55 + .45 * Math.sin(u * 23 + sp * 2.3 + k));
+      g.moveTo(x, y - hh); g.lineTo(x, y); xs.push(x); ys.push(y);
+    }
+    g.strokeStyle = gr; g.lineWidth = Math.max(1.2, W / N * .58); g.stroke();
+    const P = new Path2D(); for (let i = 0; i <= N; i++) { if (i) P.lineTo(xs[i], ys[i]); else P.moveTo(xs[i], ys[i]); } g.lineCap = 'round'; lxStroke3(g, P, col, al, c.lw * .8); g.lineCap = 'butt';
+  }
+}
+function lzGrid(c, a) {
+  const { g, W, H } = c, n = 6, sw = Math.sin((c.snap ? lxStep(LX.pos / 2, 8) : LX.pos / 2) * Math.PI * 2) * .1, len = H * 2.4;
+  [[0, 1], [W, -1]].forEach(([ox, sg], bi) => { for (let i = 0; i < n; i++) { const ang = sg * (.2 + i * .13 + sw + LX.kick * .04 * c.imp); lxLB(g, ox, 0, ox + Math.sin(ang) * len, Math.cos(ang) * len, bi ? c.l2 : c.l1, c.gate * a * c.amt * .85, c.lw); } });
+}
+function lzLissa(c, a) {
+  const { g, W, H } = c, r = LZ_RATIO[(LX.seed + LX.occ + (LX.fb ? Math.floor(LX.fb.bi / 2) : 0)) % LZ_RATIO.length], cx = W / 2, cy = H * .4, R = Math.min(W * .3, H * .46) * (.78 + .22 * a + .16 * LX.kick * c.imp);
+  const del = (c.snap ? lxStep(LX.pos / 4, 8) : LX.pos / 4) * Math.PI * 2, rot = LX.pos / 16 * Math.PI * 2, cr = Math.cos(rot), sr = Math.sin(rot);
+  for (let pass = 0; pass < 2; pass++) {
+    const P = new Path2D(), N = 200; for (let i = 0; i <= N; i++) { const u = i / N * Math.PI * 2, x0 = Math.sin(r[0] * u + del + pass * .9) * R, y0 = Math.sin(r[1] * u) * R * .72, x = cx + x0 * cr - y0 * sr, y = cy + x0 * sr + y0 * cr; if (i) P.lineTo(x, y); else P.moveTo(x, y); }
+    lxStroke3(g, P, pass ? c.l2 : c.l1, c.gate * a * c.amt * .8, c.lw * .9);
+  }
+}
+function lzTunnel(c, a) {
+  const { g, W, H } = c, K = 9, cx = W / 2, cy = H * .42, Rm = Math.hypot(W, H) * .5, f = lxFrac(c.snap ? lxStep(LX.beat, 1) : LX.beat);
+  for (let k = 0; k < K; k++) {
+    const t = (k + f) / K, r = Rm * t * t, rot = LX.pos / 24 * Math.PI * 2 + k * .05, al = Math.sin(Math.PI * t) * a * c.amt * (.5 + .5 * Math.max(c.gate, LX.beatP * c.imp)); if (al < .02 || r < 4) continue;
+    const P = new Path2D(); for (let i = 0; i <= 6; i++) { const th = rot + i * Math.PI / 3; if (i) P.lineTo(cx + Math.cos(th) * r, cy + Math.sin(th) * r * .8); else P.moveTo(cx + Math.cos(th) * r, cy + Math.sin(th) * r * .8); }
+    lxStroke3(g, P, k % 2 ? c.l2 : c.l1, al, c.lw * (.6 + 1.2 * t));
+  }
+}
+function lzBurst(c, b) {
+  const { g, W, H } = c, n = 28, cx = W / 2, cy = H * .4, Rm = Math.hypot(W, H) * .55, len = Rm * (.15 + 1.1 * (1 - b)), inner = len * .12 * (1 - b);
+  for (let i = 0; i < n; i++) { const ang = i / n * Math.PI * 2 + LX.pos * .05, ca = Math.cos(ang), sa = Math.sin(ang); lxLB(g, cx + ca * inner, cy + sa * inner * .8, cx + ca * len, cy + sa * len * .8, i % 2 ? c.l2 : c.l1, Math.pow(b, 1.2) * c.amt, c.lw * 1.2); }
+}
+function lxLasers(g, W, H, dt) {
+  const D = LX.D, kit = LX.laserKit || [], amt = LX.laserAmt || 0, barSec = spb() * slotDur(), kk = 1 - Math.exp(-dt / Math.max(.15, barSec / 8)); let any = false;
+  SHOW_PATS.forEach(p => { const want = (LX.mode !== 'idle' && LX.e > .2 && kit.includes(p) && amt > 0) ? 1 : 0, a = LZ.amp[p] || 0; LZ.amp[p] = a + (want - a) * kk; if (LZ.amp[p] > .02) any = true; });
+  const bz = (amt > 0 && !D.noBurst && !(D.allow && !D.allow.includes('burst'))) ? LX.burst : 0; if (!any && bz < .02) return;
+  const pal = LX.pal, c = { g, W, H, snap: !!(D.mot && D.mot.snap), imp: LX.gov * lxComfort().impulse, amt: Math.min(1.1, amt), l1: pal.l1, l2: pal.l2, lw: Math.max(1.3, H * .0022), gate: 1 };
+  /* the beams swell with each hit, but how deep that swell goes belongs to the comfort level and the governor: the lasers never blink on and off with every 16th note */
+  c.gate = 1 - (1 - clamp(.3 + .7 * Math.max(LX.snare, LX.kick * .85, LX.hat * .35, LX.strum * .6, LX.lead * .6), 0, 1)) * clamp(c.imp, 0, 1);
+  g.save(); g.globalCompositeOperation = 'lighter'; g.lineCap = 'round'; g.lineJoin = 'round';
+  const A = LZ.amp; if (A.sheet > .02) lzSheet(c, A.sheet); if (A.tunnel > .02) lzTunnel(c, A.tunnel); if (A.lissa > .02) lzLissa(c, A.lissa); if (A.grid > .02) lzGrid(c, A.grid);
+  if (A.cone > .02) lzCone(c, A.cone); if (A.zipper > .02) lzZipper(c, A.zipper); if (A.fan > .02) lzFan(c, A.fan); if (bz > .02) lzBurst(c, bz);
+  g.restore();
+}
+
+/* >>> parts/58-lights.js */
+/* ============================================================
+   Part 58 · LIGHTS — the layers of the Perform lens, drawn from the show design and the musical clock
+   Back to front: the room (the look's base colour: drifting colour fields, a quiet gradient, or a sky over a horizon) · your backdrop image ·
+   haze and slow motes · the backdrop element (the spectrum as lit columns, tall blades, a pixel field, a horizon with a low sun, or your own
+   picture as a pixel wall) · moving lights (from a truss over the stage, from the floor behind the band, from side towers, or as broad washes) and floor washes ·
+   lasers (part 57) · sparks and confetti · your logo · the blinder (comfort-limited) · vignette.
+   ============================================================ */
+/** a light colour: never darker than a stage light would be */
+const lxLt = (c, a, dl) => lxHsl(c[0], c[1], clamp(Math.max(c[2], 50) + (dl || 0), 0, 96), a);
+const lxImpulse = () => LX.gov * lxComfort().impulse;
+
+/** the gradient stage: the design's base colour, six drifting colour fields, a floor glow; rendered small and scaled up so it is silky and cheap */
+function lxStage(g, W, H, dim, haze) {
+  const c = lxMeshCanvas('mesh', W, H, 8), m = c.getContext('2d'), w = c.width, h = c.height, pal = LX.pal, e = LX.e, ph = LX.ph, a0 = dim == null ? 1 : dim, imp = lxImpulse(), B = pal.base, key = pal.key, R = LX.D && LX.D.rig || {}, fa = R.field == null ? 1 : R.field;
+  m.globalCompositeOperation = 'source-over'; const bg = m.createLinearGradient(0, 0, 0, h);
+  if (R.bg === 'sky') {   // a sky above a horizon at 62%: dark overhead, a glow where the sky meets the ground, a dark floor
+    const gl = [pal.a[0], pal.a[1] * .75, 50]; bg.addColorStop(0, lxHsl(B[0], B[1] * .9, Math.max(1.5, B[2] * .5), 1)); bg.addColorStop(.4, lxHsl(B[0], B[1], B[2] + 2 + 3 * e, 1)); bg.addColorStop(.62, lxHsl(gl[0], gl[1] * .9, 22 + 14 * e + 5 * LX.build, 1)); bg.addColorStop(.635, lxHsl(B[0], B[1] * .8, B[2] * .35 + 1, 1)); bg.addColorStop(1, lxHsl(B[0], B[1], B[2] * .6 + 2 + 4 * e, 1));
+  } else { bg.addColorStop(0, lxHsl(B[0], B[1] * .8, Math.max(1.5, B[2] * .35 + 2 * e), 1)); bg.addColorStop(.55, lxHsl(B[0], B[1], B[2] * .8 + 4 * e, 1)); bg.addColorStop(1, lxHsl(lxHueMix(B[0], key[0], .35), B[1] * .9 + 10, B[2] + 5 + 8 * e, 1)); }
+  m.fillStyle = bg; m.fillRect(0, 0, w, h);
+  m.globalCompositeOperation = 'lighter'; const cols = [key, pal.a, pal.b, pal.c, key, pal.b];
+  for (let i = 0; i < 6; i++) {
+    const x = w * (.5 + .44 * Math.sin(ph * (.17 + .05 * i) + i * 2.1)), y = h * (.42 + .34 * Math.sin(ph * (.13 + .06 * i) + i * 1.3)), r = w * (.36 + .13 * Math.sin(ph * .31 + i)) * (1 + (i === 0 ? LX.kick * .2 * imp : 0) + LX.drop * .25 * imp);
+    const a = (.15 + .22 * e) * (i === 0 ? 1 + LX.kick * .7 * imp : 1) * (.75 + .25 * Math.sin(ph * .4 + i * 1.7)) * a0 * fa, col = cols[i], gr = m.createRadialGradient(x, y, 0, x, y, r);
+    gr.addColorStop(0, lxAt(col, clamp(col[2], 40, 62), a)); gr.addColorStop(.5, lxAt(col, clamp(col[2], 40, 62) - 12, a * .4)); gr.addColorStop(1, lxAt(col, 40, 0)); m.fillStyle = gr; m.fillRect(0, 0, w, h);
+  }
+  const fl = m.createLinearGradient(0, h, 0, h * .5); fl.addColorStop(0, lxAt(key, clamp(key[2], 40, 60), (.1 + .2 * e + .16 * LX.kick * imp) * a0 * Math.max(.4, fa))); fl.addColorStop(1, lxAt(key, 50, 0)); m.fillStyle = fl; m.fillRect(0, h * .5, w, h * .5);
+  if (haze > 0) lxHazeBlobs(m, w, h, haze);
+  g.save(); g.globalCompositeOperation = 'source-over'; g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'low'; g.drawImage(c, 0, 0, W, H); g.restore();
+}
+/** fog blobs the beams light up, drawn into any small canvas (the stage's own, when there is no backdrop picture, so the haze costs no extra full-frame pass) */
+function lxHazeBlobs(f, w, h, amt) {
+  const pal = LX.pal, imp = lxImpulse(), cols = [pal.b, pal.c, pal.key, pal.a]; f.globalCompositeOperation = 'lighter';
+  for (let i = 0; i < 7; i++) {
+    const x = w * (.5 + .55 * Math.sin(LX.ph * (.07 + .02 * i) + i * 1.9)), y = h * (.35 + .4 * Math.sin(LX.ph * (.05 + .03 * i) + i * 2.7)), r = w * (.28 + .12 * Math.sin(LX.ph * .2 + i * 1.1)), a = (.05 + .08 * LX.e + .05 * LX.kick * imp) * amt, col = cols[i % 4], gr = f.createRadialGradient(x, y, 0, x, y, r);
+    gr.addColorStop(0, lxAt(col, 62, a, .8)); gr.addColorStop(1, lxAt(col, 62, 0, .8)); f.fillStyle = gr; f.fillRect(0, 0, w, h);
+  }
+}
+/** haze: the fog (unless the stage already drew it) and a few motes drifting in it (positions come from the song's phase, not a random walk) */
+function lxHaze(g, W, H, amt, motesOnly) {
+  const pal = LX.pal, cols = [pal.b, pal.c, pal.key, pal.a];
+  if (!motesOnly) { const c = lxMeshCanvas('fog', W, H, 10), f = c.getContext('2d'); f.clearRect(0, 0, c.width, c.height); lxHazeBlobs(f, c.width, c.height, amt); g.save(); g.globalCompositeOperation = 'lighter'; g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'low'; g.drawImage(c, 0, 0, W, H); g.restore(); }
+  if (amt > .15) { g.save(); g.globalCompositeOperation = 'lighter'; const dust = LX.D && LX.D.rig.dust ? 1 : 0, n = (LX.lite ? 20 : 46) * (dust ? 2 : 1), r0 = Math.max(1, H / 700) * (dust ? 1.5 : 1); for (let i = 0; i < n; i++) { const x = lxFrac(((i * 9301 + 49297) % 233280) / 233280 + LX.ph * .004 * (1 + i % 3)), y = lxFrac(((i * 7919 + 1237) % 104729) / 104729 - LX.ph * .003 * (1 + i % 2)), tw = .5 + .5 * Math.sin(LX.ph * .9 + i * 1.7); g.fillStyle = lxLt(cols[i % 4], (.05 + .1 * LX.e) * tw * amt * (dust ? 1.8 : 1), 22); g.beginPath(); g.arc(x * W, y * H, r0 * (1 + (i % 3) * .6), 0, 7); g.fill(); } g.restore(); }
+}
+/** an LED wall behind the band: the spectrum as lit columns, or your own picture as a pixel wall that the music plays across */
+function lxWall(g, W, H, X, amt) {
+  if (amt < .02) return; const cols = LX.eq.length, rows = 14, x0 = W * .16, x1 = W * .84, yt = H * .1, yb = H * .6, cw = (x1 - x0) / cols, ch = (yb - yt) / rows, pal = LX.pal, { fd, bin, lvl } = X, imp = lxImpulse();
+  const lr = Math.log(8000 / 70); for (let i = 0; i < cols; i++) { const f = 70 * Math.exp(lr * i / (cols - 1)), b = bin(f), v = lvl(Math.max(fd[b], fd[Math.min(fd.length - 1, b + 1)])); LX.eq[i] = Math.max(v, LX.eq[i] * .9 - .006); }
+  const wm = LX.D && LX.D.rig.wall;
+  if (wm === 'blades') return lxWallBlades(g, W, H, amt); if (wm === 'field') return lxWallField(g, W, H, amt); if (wm === 'horizon') return lxWallHorizon(g, W, H, amt);
+  if (lxWallImage(g, W, H, amt, x0, x1, yt, yb, cols, imp)) return;
+  if (!LX.ghost || LX.ghost.width !== W || LX.ghost.height !== H) { const c = LX.ghost = document.createElement('canvas'); c.width = W; c.height = H; const q = c.getContext('2d'); q.fillStyle = 'rgba(255,255,255,.05)'; for (let r = 0; r < rows; r++) for (let i = 0; i < cols; i++) q.fillRect(x0 + i * cw + cw * .14, yt + r * ch + ch * .14, cw * .72, ch * .72); }
+  g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = amt * .8; g.drawImage(LX.ghost, 0, 0); g.globalAlpha = amt;
+  for (let i = 0; i < cols; i++) {
+    const n = Math.min(rows, Math.floor(LX.eq[i] * rows * 1.15)); if (n <= 0) continue; const col = lxMix3(pal.a, pal.b, i / (cols - 1)), tw = lxMix3(col, pal.c, LX.tn * .35);
+    for (let r = 0; r < n; r++) { const top = r === n - 1; g.fillStyle = lxAt(tw, clamp(tw[2], 40, 62) - 6 + r * 2.5 + (top ? 14 : 0), top ? .95 : .55); g.fillRect(x0 + i * cw + cw * .14, yb - (r + 1) * ch + ch * .14, cw * .72, ch * .72); }
+  }
+  g.restore();
+}
+/** a faint, cached grid of unlit cells (the LED hardware you can see when it is dark) */
+function lxGhost(key, W, H, draw) { const k = key + '|' + W + 'x' + H; LX.gh = LX.gh || {}; let c = LX.gh[key]; if (!c || c.k !== k) { c = LX.gh[key] = document.createElement('canvas'); c.width = W; c.height = H; c.k = k; draw(c.getContext('2d')); } return c; }
+/** blades: tall, hard-edged bars of light across the stage that rise and fall with the spectrum */
+function lxWallBlades(g, W, H, amt) {
+  const n = LX.lite ? 24 : 40, x0 = W * .07, x1 = W * .93, pitch = (x1 - x0) / n, bw = pitch * .36, y0 = H * .05, y1 = H * .9, pal = LX.pal, imp = lxImpulse(), ne = LX.eq.length;
+  const gh = lxGhost('bl' + n, W, H, q => { q.fillStyle = 'rgba(255,255,255,.045)'; for (let i = 0; i < n; i++) q.fillRect(x0 + i * pitch + (pitch - bw) / 2, y0, bw, y1 - y0); });
+  g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = amt * .9; g.drawImage(gh, 0, 0); g.globalAlpha = amt;
+  for (let i = 0; i < n; i++) {
+    const t = i / (n - 1), band = LX.eq[Math.min(ne - 1, Math.floor(t * ne))], v = clamp(band * 1.2 + LX.kick * .22 * imp * (i % 4 === 0 ? 1 : .35), 0, 1); if (v < .03) continue;
+    const hh = (y1 - y0) * (.05 + .95 * Math.pow(v, 1.1)), x = x0 + i * pitch + (pitch - bw) / 2, col = lxMix3(lxMix3(pal.a, pal.b, t), pal.c, LX.tn * .3), top = y1 - hh, gr = g.createLinearGradient(0, top, 0, y1);
+    gr.addColorStop(0, lxAt(col, 80, .96)); gr.addColorStop(.2, lxAt(col, 62, .8)); gr.addColorStop(1, lxAt(col, 46, .3)); g.fillStyle = gr; g.fillRect(x, top, bw, hh);
+    g.fillStyle = lxAt(pal.l1, 92, Math.min(1, v * 1.1)); g.fillRect(x, top - bw * .55, bw, bw * .55);
+    if (i % 8 === 3 && LX.snare > .1) { g.fillStyle = lxAt(pal.l2, 70, LX.snare * imp * .9); g.fillRect(x - bw * .3, y0, bw * 1.6, y1 - y0); }
+  }
+  g.restore();
+}
+/** a pixel field: the whole back of the stage as a grid. The spectrum climbs it, every hit rings out from a point, the kick pulses the centre. */
+function lxWallField(g, W, H, amt) {
+  const cols = LX.lite ? 32 : 48, rows = Math.max(8, Math.round(cols * H / W * .86)), x0 = W * .04, x1 = W * .96, y0 = H * .05, y1 = H * .9, cw = (x1 - x0) / cols, ch = (y1 - y0) / rows, sz = Math.min(cw, ch) * .72, pal = LX.pal, imp = lxImpulse(), ne = LX.eq.length, e = LX.e;
+  const gh = lxGhost('fd' + cols, W, H, q => { q.fillStyle = 'rgba(255,255,255,.05)'; for (let r = 0; r < rows; r++) for (let i = 0; i < cols; i++) q.fillRect(x0 + i * cw + (cw - sz) / 2, y0 + r * ch + (ch - sz) / 2, sz, sz); });
+  /* ripples start on the band's hits: kick at the foot, snare off to a side, a lead note where its pitch sits, a strum from the middle */
+  const R = LX.rip = LX.rip || [], P = LX.ripP = LX.ripP || {}, now = LX.pos, spawn = (k, cx, cy, sp, life, ci) => { if (R.length < 7) R.push({ cx, cy, t: 0, sp, life, ci, k }); };
+  const edge = (k, on) => { const was = P[k]; P[k] = on; return on && !was; };
+  if (edge('kick', LX.kick > .9)) spawn('kick', .5, .86, 17, 1.5, 0); if (edge('snare', LX.snare > .9)) spawn('snare', .25 + .5 * lxFrac(lxHash('s' + LX.noteN) / 4294967296 + now * .37), .45, 22, 1.2, 1);
+  if (edge('lead', LX.lead > .95)) spawn('lead', clamp((LX.leadM - 48) / 40, .06, .94), .35, 15, 1.4, 2); if (edge('strum', LX.strum > .9)) spawn('strum', .5, .5, 12, 1.8, 0);
+  const dt = clamp(LX.dtF || .016, .004, .08); for (let i = R.length - 1; i >= 0; i--) { R[i].t += dt; if (R[i].t > R[i].life) R.splice(i, 1); }
+  const cs = [pal.a, pal.b, pal.c], Ls = [36, 48, 60, 74], As = [.2, .42, .7, .96], sty = cs.map(c => Ls.map((l, k) => lxAt(c, l, As[k]))), tip = lxAt(pal.l1, 92, .98), ph = LX.ph;
+  g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = amt * .9; g.drawImage(gh, 0, 0); g.globalAlpha = amt; let last = '';
+  for (let i = 0; i < cols; i++) {
+    const lvl = LX.eq[Math.min(ne - 1, Math.floor(i / cols * ne))], top = lvl * rows * .92, ci0 = Math.min(2, Math.floor(i / cols * 3));
+    for (let r = 0; r < rows; r++) {
+      const fromBottom = rows - 1 - r; let v = fromBottom < top ? .3 + .3 * (fromBottom / Math.max(1, top)) + (top - fromBottom < 1.5 ? .35 : 0) : 0;
+      v += (.5 + .5 * Math.sin(i * .33 + ph * .9) * Math.sin(r * .41 - ph * .7)) * .2 * (.3 + e);
+      let ci = ci0; for (let k = 0; k < R.length; k++) { const q = R[k], dx = (i + .5) / cols - q.cx, dy = ((r + .5) / rows - q.cy) * (rows / cols) * (W / H) * .56, d = Math.hypot(dx * cols, dy * cols), rr = q.t * q.sp, ring = 1 - Math.abs(d - rr) / 1.7; if (ring > 0) { const f = ring * (1 - q.t / q.life) * (q.k === 'kick' ? 1 : .9); if (f > v) { v = f; ci = q.ci; } } }
+      v += LX.kick * .35 * imp * Math.max(0, 1 - Math.hypot((i - cols / 2) / cols * 3, (r - rows * .8) / rows * 2.2));
+      if (v < .06) continue; const li = v > .92 ? 4 : v > .62 ? 3 : v > .36 ? 2 : v > .16 ? 1 : 0, st = li === 4 ? tip : sty[ci][Math.max(0, li - (li === 4 ? 0 : 0))];
+      if (st !== last) { g.fillStyle = st; last = st; } g.fillRect(x0 + i * cw + (cw - sz) / 2, y0 + r * ch + (ch - sz) / 2, sz, sz);
+    }
+  }
+  g.restore();
+}
+/** a horizon: a low sun and the rays that fan out of it, and its reflection in the floor. The sun rises with the section's intensity. */
+function lxWallHorizon(g, W, H, amt) {
+  const pal = LX.pal, imp = lxImpulse(), e = LX.e, hy = H * .62, cx = W * .5, up = clamp(LX.int + LX.build * .4, 0, 1.1), r = H * (.07 + .04 * up + .025 * LX.build + .02 * LX.kick * imp), sy = hy - r * (.1 + .75 * up);
+  g.save(); g.globalCompositeOperation = 'lighter';
+  g.save(); g.beginPath(); g.rect(0, 0, W, hy); g.clip();
+  const gl = g.createRadialGradient(cx, sy, r * .6, cx, sy, r * 4.2); gl.addColorStop(0, lxAt(pal.a, 58, .34 * amt + .1 * LX.kick * imp)); gl.addColorStop(1, lxAt(pal.a, 50, 0)); g.fillStyle = gl; g.fillRect(0, 0, W, hy);
+  const n = LX.lite ? 12 : 22, rot = LX.pos / 40 * Math.PI * 2, len = Math.hypot(W, H);
+  for (let i = 0; i < n; i++) {
+    const a = -Math.PI + (i + .5) / n * Math.PI + Math.sin(rot + i * .7) * .02, wd = (.012 + .008 * (i % 3) + .01 * e) * (1 + .5 * LX.snare * imp), col = i % 2 ? pal.b : pal.a, al = (.05 + .07 * e + .09 * LX.int * (i % 4 === 0 ? 1 : .5) + .08 * LX.kick * imp) * amt, ex = cx + Math.cos(a) * len, ey = sy + Math.sin(a) * len, nx = -Math.sin(a) * wd * len, ny = Math.cos(a) * wd * len, gr = g.createLinearGradient(cx, sy, ex, ey);
+    gr.addColorStop(0, lxAt(col, 72, al)); gr.addColorStop(.6, lxAt(col, 62, al * .4)); gr.addColorStop(1, lxAt(col, 55, 0)); g.fillStyle = gr; g.beginPath(); g.moveTo(cx, sy); g.lineTo(ex + nx, ey + ny); g.lineTo(ex - nx, ey - ny); g.closePath(); g.fill();
+  }
+  g.globalCompositeOperation = 'source-over'; const dg = g.createLinearGradient(0, sy - r, 0, sy + r); dg.addColorStop(0, lxAt(pal.l1, 86, .96 * amt)); dg.addColorStop(.55, lxAt(pal.b, 70, .94 * amt)); dg.addColorStop(1, lxAt(pal.a, 58, .94 * amt)); g.fillStyle = dg; g.beginPath(); g.arc(cx, sy, r, 0, 7); g.fill();
+  g.restore();
+  const hl = g.createLinearGradient(0, 0, W, 0); hl.addColorStop(0, lxAt(pal.b, 78, 0)); hl.addColorStop(.5, lxAt(pal.b, 82, .55 * amt)); hl.addColorStop(1, lxAt(pal.b, 78, 0)); g.fillStyle = hl; g.fillRect(0, hy - 1, W, Math.max(2, H * .003));
+  const rg = g.createLinearGradient(0, hy, 0, hy + H * .3); rg.addColorStop(0, lxAt(pal.a, 62, .34 * amt)); rg.addColorStop(1, lxAt(pal.a, 50, 0)); g.save(); g.translate(cx, hy); g.scale(1, .34); g.fillStyle = rg; g.beginPath(); g.arc(0, 0, r * 1.15, Math.PI, 0); g.fill(); g.restore();
+  for (let k = 0; k < 9; k++) { const wv = .5 + .5 * Math.sin(LX.ph * 1.1 + k * 1.9), y = hy + H * (.012 + k * .026), w2 = r * (1.5 - k * .12) * (.45 + .55 * wv); g.fillStyle = lxAt(pal.b, 74, (.2 - k * .017) * amt * (.5 + .5 * e)); g.fillRect(cx - w2 / 2, y, w2, Math.max(1, H * .0036)); }
+  g.restore();
+}
+/** the pixel wall: the picture reduced to a grid of lit squares (made once), then played over by the spectrum */
+function lxWallImage(g, W, H, amt, x0, x1, yt, yb, cols, imp) {
+  const D = LX.D, im = lxImgFor('wall'); if (!im || !D || D.rig.wall !== 'image') return false;
+  const px = Math.max(5, Math.round(H * .0115)), ww = Math.floor((x1 - x0) / px) * px, wh = Math.floor((yb - yt) / px) * px, nc = ww / px, nr = wh / px, key = im.id + '|' + nc + 'x' + nr;
+  if (LX.wallImgK !== key || !LX.wallC) {
+    const tiny = document.createElement('canvas'); tiny.width = nc; tiny.height = nr; const t = tiny.getContext('2d', { willReadFrequently: true }), iw = im.im.width, ih = im.im.height, s = Math.max(nc / iw, nr / ih), dw = iw * s, dh = ih * s; t.drawImage(im.im, (nc - dw) / 2, (nr - dh) / 2, dw, dh);
+    const d = t.getImageData(0, 0, nc, nr).data, c = LX.wallC = document.createElement('canvas'); c.width = ww; c.height = wh; const q = c.getContext('2d');
+    for (let y = 0; y < nr; y++) for (let x = 0; x < nc; x++) { const o = (y * nc + x) * 4; q.fillStyle = 'rgb(' + d[o] + ',' + d[o + 1] + ',' + d[o + 2] + ')'; q.fillRect(x * px + px * .12, y * px + px * .12, px * .76, px * .76); }
+    LX.wallImgK = key;
+  }
+  const c = LX.wallC, sx = x0 + (x1 - x0 - ww) / 2; g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = amt * (.4 + .3 * LX.e + .25 * LX.kick * imp); g.drawImage(c, sx, yt);
+  const strips = 28, sw = ww / strips; for (let i = 0; i < strips; i++) { const v = LX.eq[Math.floor(i / strips * cols)]; g.globalAlpha = amt * (.05 + .5 * v + .2 * LX.snare * imp); g.drawImage(c, i * sw, 0, sw, wh, sx + i * sw, yt, sw, wh); }
+  g.restore(); return true;
+}
+
+/* ---------- your pictures ---------- */
+function lxImgFor(role) {
+  const D = LX.D, u = D && D.use; if (!u) return null; const ids = role === 'back' ? u.back : role === 'wall' ? u.wall : (u.logo ? [u.logo] : null); if (!ids || !ids.length) return null;
+  const id = ids[(LX.slide || 0) % ids.length], im = typeof shImg === 'function' ? shImg(id) : null; return im ? { im, id } : null;
+}
+function lxCover(g, im, W, H, sc, ox, oy, a) { const s = Math.max(W / im.width, H / im.height) * sc, dw = im.width * s, dh = im.height * s; g.globalAlpha = a; g.drawImage(im, (W - dw) / 2 + ox, (H - dh) / 2 + oy, dw, dh); g.globalAlpha = 1; }
+/** a full-frame picture behind the lights, drifting very slowly with the song and cross-fading when the section changes */
+function lxBackdrop(g, W, H, dt) {
+  const D = LX.D, im = lxImgFor('back'); if (!im) { LX.bkId = null; return; } const u = D.use || {}, amt = clamp(u.backAmt == null ? .6 : u.backAmt, 0, 1), tint = clamp(u.backTint == null ? .35 : u.backTint, 0, 1);
+  if (LX.bkId !== im.id) { LX.bkPrev = LX.bkIm || null; LX.bkIm = im.im; LX.bkId = im.id; LX.bkT = LX.bkPrev ? 0 : 1; }
+  LX.bkT = Math.min(1, LX.bkT + dt / Math.max(.4, spb() * slotDur()));
+  const ph = LX.pos / 16 * Math.PI * 2, sc = 1.05 + .035 * Math.sin(ph), ox = Math.sin(ph * .5) * W * .012, oy = Math.cos(ph * .7) * H * .01 - LX.kick * H * .002 * lxImpulse();
+  g.save(); g.globalCompositeOperation = 'source-over'; if (LX.bkPrev && LX.bkT < 1) lxCover(g, LX.bkPrev, W, H, sc, ox, oy, amt * (1 - LX.bkT)); lxCover(g, LX.bkIm, W, H, sc, ox, oy, amt * lxSmooth(LX.bkT));
+  if (tint > .01) { g.globalCompositeOperation = 'multiply'; g.fillStyle = lxHsl(LX.pal.key[0], Math.min(LX.pal.key[1], 85), 46, tint); g.fillRect(0, 0, W, H); }
+  g.restore();
+}
+/** a logo, lit by the band */
+function lxLogo(g, W, H) {
+  const im = lxImgFor('logo'); if (!im) return; const u = LX.D.use || {}, sz = clamp(u.logoSize == null ? .16 : u.logoSize, .05, .5) * H, s = Math.min(sz / im.im.height, sz * 2 / im.im.width), dw = im.im.width * s, dh = im.im.height * s, pos = u.logoPos || 'tr', m = H * .04;
+  const x = /l/.test(pos) ? m : /r/.test(pos) ? W - dw - m : (W - dw) / 2, y = /^t/.test(pos) ? m : /^b/.test(pos) ? H - dh - m : pos === 'c' ? (H - dh) / 2 : m;
+  g.save(); g.shadowColor = lxLt(LX.pal.key, .8, 10); g.shadowBlur = H * (.012 + .02 * LX.kick * lxImpulse()); g.globalAlpha = clamp(.82 + .18 * LX.kick * lxImpulse(), 0, 1); g.drawImage(im.im, x, y, dw, dh); g.restore();
+}
+
+/* ---------- moving heads and floor washes ---------- */
+/** where head i stands, and which way is "straight ahead" for it (θ from straight down, so 0 = down, π = up, π/2 = to the right); sg mirrors the right-hand tower */
+function lxHeadGeom(i, lay, W, H) {
+  switch (lay) {
+    case 'floor': return { ox: W * (.07 + .86 * i / 11), oy: H * 1.03, base: Math.PI, sg: 1, up: 1 };
+    case 'sides': { const L = i < 6, k = L ? i : i - 6; return { ox: L ? -W * .02 : W * 1.02, oy: H * (.1 + .13 * k), base: L ? Math.PI / 2 - .1 : -Math.PI / 2 + .1, sg: L ? 1 : -1, up: 0 }; }
+    case 'wash': return { ox: W * (.1 + .8 * i / 11), oy: -H * .05, base: 0, sg: 1, up: 0 };
+    default: return { ox: (i + .5) / 12 * W, oy: -H * .02, base: 0, sg: 1, up: 0 };
+  }
+}
+const LX_ORDER = { top: [5, 6, 4, 7, 3, 8, 2, 9, 1, 10, 0, 11], floor: [5, 6, 4, 7, 3, 8, 2, 9, 1, 10, 0, 11], sides: [0, 6, 1, 7, 2, 8, 3, 9, 4, 10, 5, 11], wash: [1, 10, 4, 7, 5, 6, 2, 9, 3, 8, 0, 11] };
+const lxNorm = a => { a = (a + Math.PI) % (Math.PI * 2); if (a < 0) a += Math.PI * 2; return a - Math.PI; };
+/** the angle (relative to the head's own straight-ahead) the head should take for a movement pattern */
+function lxTarget(i, pat, W, H, spread, G) {
+  const D = LX.D, sw = Math.max(1, (D.mot && D.mot.sweep) || 4), snap = D.mot && D.mot.snap, s = (snap ? lxStep(LX.pos / sw, sw * S.ts[0]) : LX.pos / sw) * Math.PI * 2;
+  const fx = i / 11 - .5, aim = (px, py) => lxNorm(Math.atan2(px - G.ox, py - G.oy) - G.base) * G.sg, ty = G.up ? .3 : .66;
+  switch (pat) {
+    case 'sweep': return Math.sin(s) * .75 + fx * .5;
+    case 'cross': return (i < 6 ? 1 : -1) * (.12 + .6 * (.5 + .5 * Math.sin(s))) * (1 - Math.abs(fx) * .3);
+    case 'converge': return aim(W / 2 + Math.sin(s) * W * .03, H * ty);
+    case 'spot': return aim(W / 2 + (i % 2 ? 1 : -1) * W * (.03 + .04 * Math.sin(s * 2)), H * (ty + .04));
+    case 'chase': return fx * (.9 + .4 * LX.e) + .1 * Math.sin(s * 2);
+    case 'wave': return Math.sin(s * 2 + i * .55) * (.38 + .3 * LX.e) + fx * .25;
+    default: return fx * spread * 2 + .22 * Math.sin(s + i * .5);
+  }
+}
+function lxBeams(g, W, H, dt) {
+  const P = LX.prog, D = LX.D, pal = LX.pal, e = LX.e, imp = lxImpulse(), mot = lxComfort().motion, R = D.rig, lay = R.layout || 'top', order = LX_ORDER[lay] || LX_ORDER.top, pat = LX.pat, style = R.beam || (lay === 'wash' ? 'wash' : 'soft'), sp0 = R.spread == null ? 1 : R.spread;
+  const spread = (.42 + .3 * e + (.55 * LX.drop + .12 * LX.kick) * imp) * sp0, floorY = H * .93, Lb = lay === 'sides' ? W * 1.25 : H * 1.6, maxH = lay === 'none' ? 0 : LX.lite ? Math.min(8, R.heads == null ? 12 : R.heads) : (R.heads == null ? 12 : R.heads);
+  const cols = [LX.key, pal.b, pal.a, pal.c], lpos = clamp((LX.leadM - 40) / 48, 0, 1), wk = (style === 'hard' ? .55 : style === 'wash' ? 1.9 : 1) * (lay === 'sides' ? .5 : 1);
+  g.save(); g.globalCompositeOperation = 'lighter';
+  for (let i = 0; i < 12 && maxH > 0; i++) {
+    const b = LX.beams[i], rank = order.indexOf(i), on = rank < maxH ? clamp(LX.n - rank, 0, 1) : 0, G = lxHeadGeom(i, lay, W, H), ox = G.ox, oy = G.oy; b.on += (on - b.on) * Math.min(1, dt * 3);
+    const tgt = lxTarget(i, pat, W, H, spread, G), rate = (5 + e * 7 + LX.kick * 4) * mot * (lay === 'wash' ? .7 : 1); b.ang += (tgt - b.ang) * Math.min(1, dt * rate);
+    const odd = i % 2, hit = ((odd ? LX.snare : LX.kick) * .9 + LX.hat * .25 * ((i + (LX.chase | 0)) % 3 === 0 ? 1 : 0) + LX.perc * .3 * (i % 4 === 0 ? 1 : 0) + LX.tom * .5 * (i % 3 === 0 ? 1 : 0)) * imp;
+    let ch = 0; if (pat === 'chase') { const df = Math.abs(i - (LX.chase % 12)), cd = Math.min(df, 12 - df); ch = clamp(1 - cd * .5, 0, 1) * .9; }
+    const lead = LX.lead * .9 * clamp(1 - Math.abs(i / 11 - lpos) * 6, 0, 1), strum = LX.strum * .4 * (i % 3 === 1 ? 1 : 0);
+    b.I = clamp((.3 + .45 * e) * (.45 + .55 * LX.int) + hit * .7 + ch * .6 * imp + LX.drop * .5 * imp + LX.onset * .15 * (i % 5 === 0 ? 1 : 0) + (lead + strum) * imp, 0, 1.5) * b.on;
+    if (b.I < .03) continue; const th = G.base + b.ang * G.sg, col = cols[i % 4], hue = col[0] + (i - 5.5) * 2, w = (.02 + .02 * (1 - (pat === 'spot' || pat === 'converge' ? .6 : 0)) + .02 * e + .02 * LX.snare * imp + .015 * LX.drop * imp) * wk, tx = ox + Math.sin(th) * Lb, ty = oy + Math.cos(th) * Lb, nx = Math.cos(th) * Math.tan(w) * Lb, ny = -Math.sin(th) * Math.tan(w) * Lb, L0 = clamp(Math.max(col[2], 50), 50, 80), cc = [hue, col[1], col[2], lxCh(col)], bl = (dl, a, k) => lxAt(cc, L0 + dl, a, k);
+    const a0 = clamp(b.I * (.3 + .22 * e) * (style === 'hard' ? 1.15 : style === 'wash' ? .7 : 1), 0, .85);
+    if (style === 'wash') {   // broad, soft: three nested cones, each fading further than the one inside it
+      [[1, .42], [.62, .5], [.3, .55]].forEach(([k, am]) => { const gr = g.createLinearGradient(ox, oy, tx, ty); gr.addColorStop(0, bl(8, a0 * am)); gr.addColorStop(.5, bl(0, a0 * am * .5)); gr.addColorStop(1, bl(-6, 0)); g.fillStyle = gr; g.beginPath(); g.moveTo(ox, oy); g.lineTo(tx + nx * k, ty + ny * k); g.lineTo(tx - nx * k, ty - ny * k); g.closePath(); g.fill(); });
+    } else {
+      const gr = g.createLinearGradient(ox, oy, tx, ty); gr.addColorStop(0, bl(8, a0)); gr.addColorStop(style === 'hard' ? .7 : .45, bl(0, a0 * (style === 'hard' ? .6 : .42))); gr.addColorStop(1, bl(-6, 0));
+      g.fillStyle = gr; g.beginPath(); g.moveTo(ox, oy); g.lineTo(tx + nx, ty + ny); g.lineTo(tx - nx, ty - ny); g.closePath(); g.fill();
+      const gc = g.createLinearGradient(ox, oy, tx, ty); gc.addColorStop(0, lxAt(cc, 88, a0 * .95, .35)); gc.addColorStop(.5, lxAt(cc, 75, a0 * (style === 'hard' ? .5 : .25), .6)); gc.addColorStop(1, lxAt(cc, 70, 0, .6)); g.fillStyle = gc; g.beginPath(); g.moveTo(ox, oy); g.lineTo(tx + nx * .3, ty + ny * .3); g.lineTo(tx - nx * .3, ty - ny * .3); g.closePath(); g.fill();
+    }
+    const lr = H * (G.up ? .1 : .07), lcx = clamp(ox, 0, W), lcy = clamp(oy, 0, H), lg = g.createRadialGradient(lcx, lcy, 0, lcx, lcy, lr); lg.addColorStop(0, lxAt(cc, 92, (G.up ? 1 : .9) * Math.min(1, b.I), .3)); lg.addColorStop(1, lxAt(cc, 60, 0, .6)); g.fillStyle = lg; g.fillRect(lcx - lr, lcy - lr, lr * 2, lr * 2);
+    const dy = floorY - oy, px = ox + Math.tan(th) * dy; if (!LX.lite && !G.up && lay !== 'sides' && Math.abs(th) < 1.15 && px > -W * .1 && px < W * 1.1) { const rx = H * (.1 + w * 5), pg = g.createRadialGradient(px, floorY, 0, px, floorY, rx); pg.addColorStop(0, bl(8, a0 * .8)); pg.addColorStop(1, bl(0, 0)); g.save(); g.translate(px, floorY); g.scale(1, .22); g.translate(-px, -floorY); g.fillStyle = pg; g.fillRect(px - rx, floorY - rx, rx * 2, rx * 2); g.restore(); }
+  }
+  if (R.pars !== 0) {
+    const bp = (LX.bassM % 12) / 12 * 7;
+    for (let i = 0; i < 8; i++) {
+      const p = LX.pars[i], x = (i + .5) / 8 * W, col = [pal.a, pal.b, pal.c, LX.key][(i + 1) % 4], bassNear = LX.bass * .7 * clamp(1 - Math.abs(i - bp) * .55, 0, 1);
+      p.I = clamp(((.12 + .3 * e) * P.pars + LX.kick * .9 * P.pars + LX.note * .15 * (i % 2) + LX.drop * .6 + bassNear + LX.beatP * .1) * (.6 + .4 * imp), 0, 1.3);
+      const a = clamp(p.I * .38, 0, .6), rr = H * (.4 + .18 * LX.kick * imp), rx = W * .1, gr = g.createRadialGradient(0, 0, 0, 0, 0, rx);
+      gr.addColorStop(0, lxLt(col, a, 4)); gr.addColorStop(.55, lxLt(col, a * .35, 2)); gr.addColorStop(1, lxLt(col, 0, 0)); g.save(); g.translate(x, H); g.scale(1, rr / rx); g.fillStyle = gr; g.fillRect(-rx, -rx, rx * 2, rx); g.restore();
+    }
+  }
+  g.restore();
+}
+function lxParticles(g, W, H) {
+  if (!LX.parts.length) return; g.save(); g.globalCompositeOperation = 'lighter'; LX.parts.forEach(p => {
+    const a = clamp(p.life / p.max * 1.6, 0, 1) * (p.c ? .9 : .6); g.fillStyle = lxLt(p.c3 || LX.pal.key, a, p.c ? 6 : 24);
+    if (p.c) { g.save(); g.translate(p.x, p.y); g.rotate(p.rot + p.life * 4); g.fillRect(-p.s, -p.s * .5, p.s * 2, p.s); g.restore(); } else { g.beginPath(); g.arc(p.x, p.y, p.s * (H / 900 + .4), 0, 7); g.fill(); }
+  }); g.restore();
+}
+/** the blinder: at most once a bar, never closer than the comfort gap, scaled by the design, the comfort setting and the governor */
+function lxStrobe(g, W, H) {
+  if (LX.strobe < .03) return; const D = LX.D, a = LX.strobe * lxComfort().strobe * (D && D.rig.flash != null ? D.rig.flash : .5) * LX.gov * 1.4; if (a < .01) return;
+  g.save(); g.globalCompositeOperation = 'lighter'; g.fillStyle = lxHsl(LX.key[0], 25, 92, Math.min(a, .5)); g.fillRect(0, 0, W, H); g.restore();
+}
+/** a soft dark floor under the lower third, so the chord and the lyric stay readable through the lasers */
+function lxScrim(g, W, H) { const y = H * .52, gr = g.createLinearGradient(0, y, 0, H); gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(0,0,0,.52)'); g.fillStyle = gr; g.fillRect(0, y, W, H - y); }
+function lxVignette(g, W, H, k) { const gr = g.createRadialGradient(W / 2, H * .5, Math.min(W, H) * .25, W / 2, H * .5, Math.hypot(W, H) * .6); gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, `rgba(0,0,0,${k})`); g.fillStyle = gr; g.fillRect(0, 0, W, H); }
+/** the whole Perform picture */
+function lxPerform(g, W, H, X, dt, teach) {
+  const P = LX.prog, D = LX.D; LX.dtF = dt;
+  const hz = P.haze * (D.rig.haze == null ? 1 : D.rig.haze), merged = !lxImgFor('back');   // with no backdrop picture the fog is painted into the stage itself
+  lxStage(g, W, H, 1, merged ? hz : 0); lxBackdrop(g, W, H, dt); lxHaze(g, W, H, hz, merged);
+  lxWall(g, W, H, X, P.wall * (D.rig.wall === 'off' ? 0 : 1) * (teach ? .55 : 1) * (.4 + .6 * LX.e) * (1 - .4 * Math.min(1, LX.laserAmt) * (LX.laserKit.length ? 1 : 0)));
+  lxBeams(g, W, H, dt); lxLasers(g, W, H, dt); lxParticles(g, W, H); lxLogo(g, W, H);
+}
+
+/* >>> parts/59-designer.js */
+/* ============================================================
+   Part 59 · SHOW SETUP — the console a stage or AV technician sets a show up with
+   It lives in the Stage tab, under the picture it changes (beside it on a wide pane), so every change is seen as it is made:
+     Looks (six built differently, your own saved looks, show files) · Rig (where the lights stand, the room, the backdrop, lasers, motion) ·
+     Colour · Cues (each kind of section: how big, how many lights, which patterns, which lasers, with a silent band to rehearse it) ·
+     Response (how strongly the kick, snare, hats, bass, strums and lead notes drive the lights, with live meters) · Pictures ·
+     Output (master, blackout, freeze, mirror, flip, guides, test patterns, frame rate, light comfort, the flash meter) · Scene · MIDI.
+   It edits the look of the Stage scene you are on, or the Visuals tab's look. Your changes are kept as differences from the look you started
+   from (CFG.show.ovr, or a scene's show.ovr), so "Reset" always has somewhere to go back to.
+   PICTURES: reduced here (longest edge 1920 px, JPEG unless it needs transparency) and stored as blobs in this browser's own database
+   ('the-daily-songs', key stage/img/<id>). Nothing is uploaded or sent anywhere; they are not part of a song's .zip.
+   ============================================================ */
+const SHIMG = { map: new Map(), busy: new Set() }, SH_MAXIMGS = 24, SH_EDGE = 1920, SH_MAXFILE = 14e6, SH_MAXKB = 160000;
+CFG.show.imgs = Array.isArray(CFG.show.imgs) ? CFG.show.imgs : [];
+
+/* ---------- pictures: a stored picture as something canvas can draw, or null while it loads (the show asks every frame and never waits) ---------- */
+function shImg(id) {
+  if (SHIMG.map.has(id)) return SHIMG.map.get(id);
+  if (!SHIMG.busy.has(id)) { SHIMG.busy.add(id); shLoad(id).then(c => { SHIMG.map.set(id, c || null); SHIMG.busy.delete(id); bus.emit('shimg', id); }).catch(() => { SHIMG.busy.delete(id); }); }
+  return null;
+}
+async function shLoad(id) { if (!PRJ.db) return null; const blob = await pdbGet('blobs', 'stage/img/' + id); return blob ? await createImageBitmap(blob) : null; }
+const shHasAlpha = cv => { try { const t = document.createElement('canvas'); t.width = t.height = 40; const q = t.getContext('2d', { willReadFrequently: true }); q.drawImage(cv, 0, 0, 40, 40); const d = q.getImageData(0, 0, 40, 40).data; for (let i = 3; i < d.length; i += 4) if (d[i] < 250) return true; } catch (e) { } return false; };
+async function shAdd(files) {
+  if (!PRJ.db) return toast('This browser is not keeping files for this site (a private window, or storage turned off), so pictures cannot be stored.', 'warn');
+  const list = [...files].filter(f => /^image\//.test(f.type) && !/svg/.test(f.type)); if (!list.length) return toast('Choose pictures: JPEG, PNG, WebP or GIF.', 'warn');
+  let n = 0;
+  for (const f of list) {
+    if (CFG.show.imgs.length >= SH_MAXIMGS) { toast('Up to ' + SH_MAXIMGS + ' pictures. Remove one to add another.', 'warn'); break; }
+    if (f.size > SH_MAXFILE) { toast('“' + f.name + '” is over 14 MB. Pick a smaller one.', 'warn'); continue; }
+    if (CFG.show.imgs.reduce((a, i) => a + (i.kb || 0), 0) > SH_MAXKB) { toast('That is a lot of pictures already. Remove some first.', 'warn'); break; }
+    try {
+      const bmp = await createImageBitmap(f), k = Math.min(1, SH_EDGE / Math.max(bmp.width, bmp.height)), w = Math.max(1, Math.round(bmp.width * k)), hh = Math.max(1, Math.round(bmp.height * k)), cv = document.createElement('canvas'); cv.width = w; cv.height = hh;
+      cv.getContext('2d').drawImage(bmp, 0, 0, w, hh); if (bmp.close) bmp.close();
+      const png = /png|webp|gif/.test(f.type) && shHasAlpha(cv), blob = await new Promise(r => cv.toBlob(r, png ? 'image/png' : 'image/jpeg', .88)); if (!blob) throw new Error('encode');
+      const id = 'i' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); await pdbPut('blobs', blob, 'stage/img/' + id);
+      CFG.show.imgs.push({ id, name: f.name.replace(/\.[^.]+$/, '').slice(0, 40) || 'Picture', w, h: hh, kb: Math.round(blob.size / 1024), alpha: png }); n++;
+    } catch (e) { toast('“' + f.name + '” could not be read as a picture.', 'warn'); }
+  }
+  if (n) { saveCfg(); bus.emit('show'); toast(n + (n === 1 ? ' picture' : ' pictures') + ' added. They stay on this device.', 'ok'); }
+}
+function shUseOf(spec) { const o = spec.ovr || (spec.ovr = {}); return o.use || (o.use = { back: [], wall: [], logo: null }); }
+async function shRemove(id) {
+  CFG.show.imgs = CFG.show.imgs.filter(i => i.id !== id); SHIMG.map.delete(id); try { await pdbDel('blobs', 'stage/img/' + id); } catch (e) { }
+  [CFG.show].concat(STG.scenes.map(s => s.show).filter(Boolean)).forEach(sp => { const u = sp.ovr && sp.ovr.use; if (!u) return; u.back = (u.back || []).filter(x => x !== id); u.wall = (u.wall || []).filter(x => x !== id); if (u.logo === id) u.logo = null; if (!u.wall.length && sp.ovr.rig && sp.ovr.rig.wall === 'image') sp.ovr.rig.wall = 'spectrum'; });
+  saveCfg(); saveStg(); bus.emit('show');
+}
+/** drop pictures whose file is gone (for example after a reset that cleared the songs database) */
+async function shPrune() { try { if (!PRJ.db || !CFG.show.imgs.length) return; const keys = new Set(await pdbKeys('blobs', 'stage/img/')); const gone = CFG.show.imgs.filter(i => !keys.has('stage/img/' + i.id)); for (const i of gone) await shRemove(i.id); } catch (e) { } }
+
+/* ---------- which look a song wants, when nobody has chosen ---------- */
+function lxAutoDesign() {
+  const b = S.band || {}, bpm = S.bpm || 100, kit = b.kit || '', pat = b.patName || '', cs = b.compStyle || '';
+  if (S.show && (SHOW_DESIGNS.some(d => d.id === S.show) || SHOW_ALIAS[S.show])) return lxDesign(S.show).id;
+  const soft = !b.drumsOn || kit === 'Brush (soft)' || pat === 'Ballad Half-Time' || bpm < 80;
+  if (soft) return (S.minor && bpm < 84) || /Arpeggio|Pad/.test(cs) ? 'horizon' : 'theatre';
+  if (kit === '808' || pat === 'Four on the Floor' || (S.minor && bpm >= 118 && kit !== 'Rock Room')) return 'lasers';
+  if (/Funk|Boom Bap/.test(pat) || cs === 'Funk Chuck') return 'blades';
+  if (kit === 'Rock Room' || /Chug|Metal/.test(cs + pat)) return 'backlight';
+  if (pat === 'Folk Backbeat' || /Folk/.test(cs)) return 'theatre';
+  return S.minor ? 'pixels' : 'horizon';
+}
+
+/* ---------- a poster for each look, painted from how it is built (where its lights stand, what is behind the band), not only from its colours ---------- */
+function shPoster(cv, d) {
+  const w = cv.width = 320, hh = cv.height = 180, g = cv.getContext('2d'), P = d.pal, R = d.rig, c = k => lxHexHsl(P[k]), B = c('base'), L = R.layout || 'top', hz = hh * .62, rnd = i => lxFrac(Math.sin(i * 127.1 + 311.7) * 43758.5453);
+  const bg = g.createLinearGradient(0, 0, 0, hh);
+  if (R.bg === 'sky') { const gl = c('a'); bg.addColorStop(0, lxHsl(B[0], B[1], Math.max(2, B[2] * .6), 1)); bg.addColorStop(.4, lxHsl(B[0], B[1], B[2] + 5, 1)); bg.addColorStop(.62, lxHsl(gl[0], gl[1] * .8, 30, 1)); bg.addColorStop(.621, lxHsl(B[0], B[1], B[2] * .7 + 1, 1)); bg.addColorStop(1, lxHsl(B[0], B[1], Math.max(2, B[2] * .45), 1)); }
+  else { bg.addColorStop(0, lxHsl(B[0], B[1], Math.max(1.5, B[2] * .55), 1)); bg.addColorStop(1, lxHsl(B[0], B[1], B[2] * 1.4 + 3, 1)); }
+  g.fillStyle = bg; g.fillRect(0, 0, w, hh); g.globalCompositeOperation = 'lighter';
+  const fa = R.field == null ? 1 : R.field;
+  if (fa > .02) [['a', .25, .55], ['b', .8, .42], ['c', .5, .9]].forEach(([k, x, y]) => { const col = c(k), gr = g.createRadialGradient(w * x, hh * y, 0, w * x, hh * y, w * .5); gr.addColorStop(0, lxAt(col, 48, .42 * fa)); gr.addColorStop(1, lxAt(col, 48, 0)); g.fillStyle = gr; g.fillRect(0, 0, w, hh); });
+  if (R.wall === 'blades') { const n = 15, x0 = w * .1, cw = w * .8 / n; for (let i = 0; i < n; i++) { const v = .3 + .62 * Math.abs(Math.sin(i * 1.9 + 1)); g.fillStyle = lxAt(i % 5 === 2 ? c('l2') : c('a'), 76, .8); g.fillRect(x0 + i * cw + 1.5, hh * .92 - v * hh * .8, cw - 3, v * hh * .8); } }
+  else if (R.wall === 'field') { const nx = 26, ny = 12, x0 = w * .06, cw = w * .88 / nx, ch = hh * .78 / ny; for (let i = 0; i < nx; i++) for (let j = 0; j < ny; j++) { const v = .5 + .5 * Math.sin(i * .7 + j * .5 + 1.3 * Math.sin(j * .9)), col = lxMix3(c('a'), lxMix3(c('b'), c('c'), i / nx), j / ny); g.fillStyle = lxAt(col, 30 + v * 36, .16 + .7 * v * v); g.beginPath(); g.arc(x0 + (i + .5) * cw, hh * .1 + (j + .5) * ch, Math.min(cw, ch) * (.2 + .22 * v), 0, 7); g.fill(); } }
+  else if (R.wall === 'horizon') {
+    const sx = w * .5, r = hh * .15;
+    for (let i = 0; i < 17; i++) { const a = -Math.PI * (.04 + .92 * i / 16), len = hh * (1.1 + .5 * rnd(i)), gr = g.createLinearGradient(sx, hz, sx + Math.cos(a) * len, hz + Math.sin(a) * len); gr.addColorStop(0, lxAt(c('b'), 70, .3)); gr.addColorStop(1, lxAt(c('b'), 60, 0)); g.fillStyle = gr; g.beginPath(); g.moveTo(sx, hz); g.lineTo(sx + Math.cos(a - .025) * len, hz + Math.sin(a - .025) * len); g.lineTo(sx + Math.cos(a + .025) * len, hz + Math.sin(a + .025) * len); g.closePath(); g.fill(); }
+    g.save(); g.beginPath(); g.rect(0, 0, w, hz); g.clip(); const sg = g.createRadialGradient(sx, hz, 0, sx, hz, r * 1.6); sg.addColorStop(0, lxAt(c('l1'), 92, 1)); sg.addColorStop(.45, lxAt(c('b'), 72, .9)); sg.addColorStop(1, lxAt(c('a'), 55, 0)); g.fillStyle = sg; g.fillRect(sx - r * 2, hz - r * 2, r * 4, r * 2); g.restore();
+  } else if (R.wall === 'spectrum') { const n = 18, x0 = w * .2, cw = w * .6 / n; for (let i = 0; i < n; i++) { const rows = Math.round((.25 + .6 * Math.abs(Math.sin(i * 1.7 + 2))) * 8), col = lxMix3(c('a'), c('b'), i / n); for (let r = 0; r < rows; r++) { g.fillStyle = lxAt(col, 52 + r * 2, .55); g.fillRect(x0 + i * cw + 1, hh * .62 - r * 6, cw - 2, 4.5); } } }
+  const beam = (ox, oy, tx, ty, wd, col, a) => { const gr = g.createLinearGradient(ox, oy, tx, ty), dx = tx - ox, dy = ty - oy, len = Math.hypot(dx, dy) || 1, nx = -dy / len * wd, ny = dx / len * wd; gr.addColorStop(0, lxAt(col, 68, a)); gr.addColorStop(1, lxAt(col, 55, 0)); g.fillStyle = gr; g.beginPath(); g.moveTo(ox - nx * .08, oy - ny * .08); g.lineTo(tx + nx, ty + ny); g.lineTo(tx - nx, ty - ny); g.lineTo(ox + nx * .08, oy + ny * .08); g.closePath(); g.fill(); };
+  const nb = Math.min(R.heads || 0, 10), sp = R.spread == null ? 1 : R.spread, bw = R.beam === 'hard' ? .03 : R.beam === 'wash' ? .17 : .06, ba = R.beam === 'hard' ? .6 : R.beam === 'wash' ? .2 : .42;
+  for (let i = 0; i < nb && L !== 'none'; i++) {
+    const t = nb > 1 ? i / (nb - 1) : .5, col = c(i % 3 === 2 ? 'c' : i % 2 ? 'b' : 'a');
+    if (L === 'floor') beam(w * (.08 + .84 * t), hh * 1.03, w * (.5 + (t - .5) * 1.6 * sp), -hh * .2, hh * bw, col, ba);
+    else if (L === 'sides') { const j = i >> 1, left = i % 2 === 0; beam(left ? 0 : w, hh * (.3 + .1 * j), left ? w * (.9 - .12 * j) : w * (.1 + .12 * j), hh * (.02 + .15 * j), hh * bw, col, ba); }
+    else beam(w * (.1 + .8 * t), -2, w * (.5 + (t - .5) * (L === 'wash' ? .7 : .9) * sp), hh * 1.05, hh * bw, col, ba);
+  }
+  if (R.pars) for (let i = 0; i < 5; i++) { const x = w * (.14 + .18 * i), gr = g.createRadialGradient(x, hh * .98, 0, x, hh * .98, w * .16); gr.addColorStop(0, lxAt(c(i % 2 ? 'b' : 'a'), 55, .4)); gr.addColorStop(1, lxAt(c('a'), 55, 0)); g.fillStyle = gr; g.fillRect(x - w * .17, hh * .6, w * .34, hh * .45); }
+  const la = d.laser.amt || 0; if (la > 0) { const n = Math.round(4 + la * 12); g.lineWidth = 1; for (let i = 0; i < n; i++) { const left = i % 2 === 0; g.strokeStyle = lxAt(c(i % 3 ? 'l1' : 'l2'), 66, .5 + .4 * la); g.beginPath(); g.moveTo(left ? 0 : w, hh * (.04 + .1 * (i % 3))); g.lineTo(left ? w * (.35 + .65 * rnd(i + 9)) : w * (.65 - .65 * rnd(i + 9)), hh * (.5 + .6 * rnd(i + 5))); g.stroke(); } }
+  if (R.dust) for (let i = 0; i < 40; i++) { g.fillStyle = lxAt(c('l1'), 80, .22); g.beginPath(); g.arc(w * rnd(i), hh * rnd(i + 50), .7 + rnd(i + 90) * 1.1, 0, 7); g.fill(); }
+  g.globalCompositeOperation = 'source-over'; const vg = g.createRadialGradient(w / 2, hh / 2, hh * .3, w / 2, hh / 2, w * .62); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.5)'); g.fillStyle = vg; g.fillRect(0, 0, w, hh);
+}
+
+/* ---------- the options the console offers (every one of them is a value the show engine already understands) ---------- */
+const SH_LAYOUTS = [['top', 'Truss', 'A truss of moving lights over the stage'], ['floor', 'Floor', 'Lights upstage on the floor, shining at the audience (contre-jour)'], ['sides', 'Towers', 'Two towers, one on each side of the stage'], ['wash', 'Wash', 'Broad soft fixtures over the stage'], ['none', 'None', 'No moving lights: the backdrop and the lasers carry the show']];
+const SH_BEAMS = [['soft', 'Soft'], ['hard', 'Hard'], ['wash', 'Wash']], SH_GRADES = [['full', 'Full colour', 'All the colours of the look'], ['duo', 'Two colours', 'The third light takes the first light’s colour'], ['mono', 'One colour', 'Every light is the first colour, in different lightness']];
+const SH_WALLS = [['off', 'Nothing'], ['spectrum', 'Spectrum (lit columns)'], ['blades', 'Blades (tall bars)'], ['field', 'Pixel field'], ['horizon', 'Horizon and sun'], ['image', 'Your picture, as a pixel wall']];
+const SH_HEADS = [['converge', 'Converge'], ['fan', 'Fan'], ['sweep', 'Sweep'], ['cross', 'Cross'], ['chase', 'Chase'], ['spot', 'Spot']];
+const SH_RESP = [['kick', 'Kick', 'Floor lights, the room’s glow, the lasers’ pulse'], ['snare', 'Snare', 'The blinder, side sparks, the backdrop’s flashes'], ['hat', 'Hi-hat', 'The chase running across the lights'], ['bass', 'Bass note', 'The floor lights nearest the note'], ['strum', 'Guitar strum', 'Glints and colour on the wall'], ['lead', 'Lead note', 'A bright point that follows the melody']];
+const SH_TESTS = [['', 'Off'], ['bars', 'Bars'], ['grid', 'Grid'], ['ramp', 'Ramp'], ['grey', 'Grey'], ['white', 'White'], ['black', 'Black']];
+
+/* ---------- reading and writing a look's changes ---------- */
+const SHC = { tab: 'looks', target: 'scene', kind: 'chorus', final: false, root: null, head: null, tabsEl: null, body: null };
+const SHC_TABS = [['looks', 'Looks'], ['rig', 'Rig'], ['col', 'Colour'], ['cues', 'Cues'], ['resp', 'Response'], ['pics', 'Pictures'], ['out', 'Output'], ['scene', 'Scene'], ['midi', 'MIDI']];
+/** the spec being edited, created on first change (a scene that follows the Visuals tab gets a look of its own the moment you change it) */
+function shcSpec() {
+  if (SHC.target === 'scene') { const sc = scn(); if (!sc.show) sc.show = { design: lxResolve(null).id, ovr: {} }; if (!sc.show.design) sc.show.design = lxResolve(null).id; if (!sc.show.ovr) sc.show.ovr = {}; return sc.show; }
+  if (!CFG.show.ovr) CFG.show.ovr = {}; return CFG.show;
+}
+const shcSave = () => { if (SHC.target === 'scene') saveStg(); else saveCfg(); bus.emit('show'); };
+function shcSet(group, key, v) { const o = shcSpec().ovr, g = o[group] || (o[group] = {}); if (v === undefined) delete g[key]; else g[key] = v; if (!Object.keys(g).length) delete o[group]; shcSave(); }
+function shcCueSet(kind, key, v) { const o = shcSpec().ovr, cu = o.cue || (o.cue = {}), g = cu[kind] || (cu[kind] = {}); if (v === undefined) delete g[key]; else g[key] = v; if (!Object.keys(g).length) delete cu[kind]; if (!Object.keys(cu).length) delete o.cue; shcSave(); }
+function shcPick(id) { GD.pf.look = 1; const spec = shcSpec(), u = spec.ovr && spec.ovr.use; spec.design = id; spec.ovr = u ? { use: u } : {}; if (SHC.target !== 'scene') CFG.show.auto = false; shcSave(); shcDraw(); }
+
+/* ---------- saved looks, and look files you can carry to another device ---------- */
+/** a look from a file or from storage, with only values the engine understands (numbers clamped, colours checked, names from the lists) */
+function shClean(l) {
+  if (!l || typeof l !== 'object') return null;
+  const design = SHOW_DESIGNS.some(x => x.id === l.design) ? l.design : SHOW_ALIAS[l.design]; if (!design) return null;
+  const num = (v, a, b) => typeof v === 'number' && isFinite(v) ? clamp(v, a, b) : null, hex = v => typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v) ? v.toLowerCase() : null, pick = (v, list) => list.includes(v) ? v : null, toks = (v, list) => typeof v === 'string' ? v.split(/\s+/).filter(x => list.includes(x)).join(' ') : null;
+  const o = l.ovr && typeof l.ovr === 'object' ? l.ovr : {}, out = {}, put = (grp, key, v) => { if (v != null) (out[grp] || (out[grp] = {}))[key] = v; };
+  const RN = { heads: [0, 12], pars: [0, 1], haze: [0, 1.2], conf: [0, 1.5], flash: [0, 1], int: [.3, 1.15], embers: [0, 1], field: [0, 1], dust: [0, 1], spread: [.3, 1.2] };
+  ['base', 'a', 'b', 'c', 'l1', 'l2'].forEach(k => put('pal', k, o.pal && hex(o.pal[k])));
+  Object.keys(RN).forEach(k => put('rig', k, o.rig && num(o.rig[k], RN[k][0], RN[k][1])));
+  put('rig', 'layout', o.rig && pick(o.rig.layout, SH_LAYOUTS.map(x => x[0]))); put('rig', 'wall', o.rig && pick(o.rig.wall, SH_WALLS.map(x => x[0]).filter(x => x !== 'image')));
+  put('rig', 'bg', o.rig && pick(o.rig.bg, ['flat', 'sky'])); put('rig', 'beam', o.rig && pick(o.rig.beam, SH_BEAMS.map(x => x[0]))); put('rig', 'grade', o.rig && pick(o.rig.grade, SH_GRADES.map(x => x[0])));
+  put('mot', 'sweep', o.mot && pick(o.mot.sweep, [2, 4, 8])); put('mot', 'snap', o.mot && num(o.mot.snap, 0, 1));
+  put('laser', 'amt', o.laser && num(o.laser.amt, 0, 1)); put('laser', 'burst', o.laser && num(o.laser.burst, 0, 1)); LX_SECS.forEach(k => { put('laser', k, o.laser && toks(o.laser[k], SHOW_PATS)); put('heads', k, o.heads && toks(o.heads[k], SH_HEADS.map(x => x[0]))); });
+  const CN = { int: [0, 1.15], n: [0, 12], haze: [0, 1.2], wall: [0, 1], pars: [0, 1], conf: [0, 1], strobe: [0, 1] };
+  LX_SECS.forEach(k => Object.keys(CN).forEach(f => { const v = o.cue && o.cue[k] && num(o.cue[k][f], CN[f][0], CN[f][1]); if (v != null) { const cu = out.cue || (out.cue = {}); (cu[k] || (cu[k] = {}))[f] = v; } }));
+  Object.keys(LX_R1).forEach(k => put('resp', k, o.resp && num(o.resp[k], 0, 1.5)));
+  return { id: 'l' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), name: String(l.name || SHOW_DESIGNS.find(x => x.id === design).name).replace(/[\u0000-\u001f<>]/g, '').slice(0, 40) || 'Look', design, ovr: out };
+}
+function shSaveLook(name) {
+  if (CFG.show.saved.length >= 24) return toast('Up to 24 saved looks. Delete one to save another.', 'warn');
+  const spec = shcSpec(), D = lxResolve(SHC.target === 'scene' ? spec : null), o = JSON.parse(JSON.stringify(spec.ovr || {})); delete o.use;
+  const l = shClean({ name: String(name || '').trim() || D.name + ' (mine)', design: D.id, ovr: o }); CFG.show.saved.push(l); saveCfg(); toast('Saved “' + l.name + '”.', 'ok'); shcDraw();
+}
+function shUseLook(id) { GD.pf.look = 1;
+  const l = CFG.show.saved.find(x => x.id === id); if (!l) return; const spec = shcSpec(), u = spec.ovr && spec.ovr.use, o = JSON.parse(JSON.stringify(l.ovr || {})); if (u) o.use = u;
+  spec.design = lxDesign(l.design).id; spec.ovr = o; if (SHC.target !== 'scene') CFG.show.auto = false; shcSave(); shcDraw();
+}
+function shDelLook(id) { CFG.show.saved = CFG.show.saved.filter(x => x.id !== id); saveCfg(); shcDraw(); }
+function shExportLooks(ids) { const looks = CFG.show.saved.filter(l => !ids || ids.includes(l.id)).map(l => ({ name: l.name, design: l.design, ovr: l.ovr })); download('the-daily-studio-looks.json', JSON.stringify({ app: BRAND.name, kind: 'show-looks', v: 1, looks }, null, 1), 'application/json'); }
+async function shImportLooks(file) {
+  try {
+    if (!file || file.size > 2e6) throw new Error('size'); const j = JSON.parse(await file.text()), arr = Array.isArray(j.looks) ? j.looks : j && j.design ? [j] : []; let n = 0;
+    arr.slice(0, 24).forEach(l => { const c = shClean(l); if (c && CFG.show.saved.length < 24) { CFG.show.saved.push(c); n++; } }); if (!n) throw new Error('empty');
+    saveCfg(); toast(n + (n === 1 ? ' look' : ' looks') + ' added.', 'ok'); shcDraw();
+  } catch (e) { toast('That is not a look file from this app.', 'warn'); }
+}
+
+/* ---------- output: master, blackout, freeze, mirror, flip, test patterns (called from the Stage's frame, part 13) ---------- */
+function shBlackout(on) { SG.boOn = on == null ? !SG.boOn : !!on; if (SG.boOn) GD.pf.bo = 1; if (SHC.root && SHC.tab === 'out') shcDraw(); }
+function shFreeze(on) { const to = on == null ? !(SG.freeze || SG.freezeReq) : !!on; if (to) { if (!SG.freeze) SG.freezeReq = true; } else { SG.freeze = false; SG.freezeReq = false; SG.frz = null; } if (SHC.root && SHC.tab === 'out') shcDraw(); }
+function shTestPattern(g, w, hh, k) {
+  g.save(); g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1; g.shadowBlur = 0;
+  if (k === 'bars') { const cols = ['#ffffff', '#ffff00', '#00ffff', '#00ff00', '#ff00ff', '#ff0000', '#0000ff', '#000000']; cols.forEach((c, i) => { g.fillStyle = c; g.fillRect(Math.round(i * w / 8), 0, Math.ceil(w / 8), hh * .8); }); const gr = g.createLinearGradient(0, 0, w, 0); gr.addColorStop(0, '#000'); gr.addColorStop(1, '#fff'); g.fillStyle = gr; g.fillRect(0, hh * .8, w, hh * .2); }
+  else if (k === 'grid') { g.fillStyle = '#000'; g.fillRect(0, 0, w, hh); g.strokeStyle = '#fff'; g.lineWidth = Math.max(1, hh / 540); const n = 16; for (let i = 0; i <= n; i++) { g.beginPath(); g.moveTo(i * w / n, 0); g.lineTo(i * w / n, hh); g.stroke(); } for (let j = 0; j <= 9; j++) { g.beginPath(); g.moveTo(0, j * hh / 9); g.lineTo(w, j * hh / 9); g.stroke(); } g.beginPath(); g.arc(w / 2, hh / 2, hh * .45, 0, 7); g.stroke(); g.beginPath(); g.moveTo(0, 0); g.lineTo(w, hh); g.moveTo(w, 0); g.lineTo(0, hh); g.stroke(); g.strokeRect(w * .05, hh * .05, w * .9, hh * .9); }
+  else if (k === 'ramp') { const gr = g.createLinearGradient(0, 0, w, 0); gr.addColorStop(0, '#000'); gr.addColorStop(1, '#fff'); g.fillStyle = gr; g.fillRect(0, 0, w, hh); }
+  else g.fillStyle = k === 'white' ? '#fff' : k === 'grey' ? '#808080' : '#000', g.fillRect(0, 0, w, hh);
+  if (k === 'bars' || k === 'grid') { g.fillStyle = k === 'grid' ? '#000' : '#fff'; g.fillRect(w / 2 - hh * .17, hh / 2 - hh * .035, hh * .34, hh * .07); g.fillStyle = k === 'grid' ? '#fff' : '#000'; g.font = '700 ' + Math.round(hh * .04) + 'px ui-monospace,monospace'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(w + ' × ' + hh, w / 2, hh / 2); }
+  g.restore();
+}
+/** master level, blackout (eased over a quarter of a second) and the mirror and flip, applied to the finished picture */
+function shOutFrame(g, w, hh) {
+  const O = CFG.show.out, now = performance.now(), dt = clamp((now - (SG.boT0 || now)) / 1000, 0, .1); SG.boT0 = now; SG.bo = clamp((SG.bo || 0) + (SG.boOn ? 1 : -1) * dt * 4, 0, 1);
+  const m = clamp(O.master == null ? 1 : O.master, 0, 1) * (1 - SG.bo);
+  if (m < .998) { g.save(); g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1 - m; g.fillStyle = '#000'; g.fillRect(0, 0, w, hh); g.restore(); }
+  if (O.mirror || O.flip) { const t = SG.mir || (SG.mir = document.createElement('canvas')); if (t.width !== w || t.height !== hh) { t.width = w; t.height = hh; } t.getContext('2d').drawImage(SG.cv, 0, 0); g.save(); g.setTransform(O.mirror ? -1 : 1, 0, 0, O.flip ? -1 : 1, O.mirror ? w : 0, O.flip ? hh : 0); g.drawImage(t, 0, 0); g.restore(); }
+}
+
+/* ---------- the console ---------- */
+function shOpen(target, tab) { SHC.target = target === 'vis' ? 'vis' : 'scene'; if (tab) SHC.tab = tab; dockGo('stage'); if (SHC.root) { shcDraw(); try { SHC.root.scrollIntoView({ block: 'nearest' }); } catch (e) { } } }
+function shcRoot() {
+  if (!SHC.root) {
+    SHC.tabsEl = h('div', { class: 'shc-tabs', role: 'tablist', 'aria-label': 'Show setup' }, SHC_TABS.map(([k, n]) => h('button', { class: 'shc-tab', role: 'tab', 'data-t': k, onclick: () => { SHC.tab = k; shcDraw(); }, onkeydown: e => { if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); const i = SHC_TABS.findIndex(t => t[0] === SHC.tab), j = (i + (e.key === 'ArrowRight' ? 1 : SHC_TABS.length - 1)) % SHC_TABS.length; SHC.tab = SHC_TABS[j][0]; shcDraw(); const b = SHC.tabsEl.querySelector('[data-t="' + SHC.tab + '"]'); if (b) b.focus(); } } }, n)));
+    SHC.head = h('div', { class: 'shc-head' }); SHC.body = h('div', { class: 'shc-body lk sg', role: 'tabpanel' });
+    SHC.root = h('div', { class: 'shc', id: 'shc' }, h('h4', { class: 'shc-title' }, 'Show setup'), SHC.head, SHC.tabsEl, SHC.body);
+  }
+  shcDraw(); return SHC.root;
+}
+function shcHead() {
+  const el = SHC.head, sc = scn(); if (!el) return; el.innerHTML = '';
+  el.append(h('div', { class: 'seg', role: 'group', 'aria-label': 'What the setup changes' }, [['scene', 'Scene ' + (STG.cur + 1) + ' · ' + sc.name], ['vis', 'Visuals tab']].map(([k, n]) => h('button', { class: SHC.target === k ? 'on' : '', 'aria-pressed': String(SHC.target === k), title: k === 'scene' ? 'Change the look of the scene on the screen above' : 'Change the look the Visuals tab uses (and the Stage scenes that follow it)', onclick: () => { SHC.target = k; shcDraw(); } }, n))),
+    h('span', { class: 'shc-flash mono tiny', id: 'shcFl', title: 'Flashes per second, measured on the finished picture. The limit is three.' }), h('span', { style: { flex: 1 } }),
+    h('button', { class: 'btn sm', id: 'sgdPlay', onclick: () => { if (T.playing) stopPlay(true); else play(); setTimeout(shcHead, 90); } }, T.playing ? '■ Stop' : '▶ Play song'));
+}
+function shcCtx() {
+  const scene = SHC.target === 'scene', sc = scn(), follows = scene && !(sc.show && sc.show.design), D = lxResolve(scene ? sc.show : null), ov = (scene ? (sc.show && sc.show.ovr) : CFG.show.ovr) || {};
+  const sec = t => h('div', { class: 'lk-sec' }, t), note = (t, cls) => h('div', { class: 'lk-note' + (cls ? ' ' + cls : '') }, t), pct = x => Math.round(x * 100) + '%';
+  const slider = (label, val, min, max, step, fmt, on, tip) => { const v = h('span', { class: 'mono tiny' }, fmt(val)); return h('label', { class: 'sg-sl', title: tip || '' }, h('span', {}, label), h('div', { class: 'row', style: { gap: '6px' } }, h('input', { type: 'range', min, max, step, value: val, style: { flex: 1 }, oninput: e => { const x = +e.target.value; v.textContent = fmt(x); on(x); } }), v)); };
+  const chk = (label, on, fn, tip) => h('label', { class: 'chk small', title: tip || '', style: { display: 'flex', gap: '5px', alignItems: 'center', fontWeight: 700 } }, h('input', { type: 'checkbox', checked: on, onchange: e => fn(e.target.checked) }), label);
+  const seg = (opts, cur, fn, label) => h('div', { class: 'seg lk-seg shc-seg', role: 'group', 'aria-label': label || '' }, opts.map(([k, n, tip]) => h('button', { class: String(k) === String(cur) ? 'on' : '', 'aria-pressed': String(String(k) === String(cur)), title: tip || '', onclick: () => fn(k) }, n)));
+  const sel = (label, opts, cur, fn) => h('label', { class: 'sg-sl' }, h('span', {}, label), h('select', { class: 'in', onchange: e => fn(e.target.value) }, opts.map(([k, n, dis]) => h('option', { value: k, selected: String(k) === String(cur), disabled: !!dis }, n))));
+  return { scene, sc, follows, D, ov, sec, note, pct, slider, chk, seg, sel };
+}
+const SHC_TAB = { looks: c => shcLooks(c), rig: c => shcRig(c), col: c => shcColour(c), cues: c => shcCues(c), resp: c => shcResp(c), pics: c => shcPics(c), out: c => shcOut(c), scene: c => shcScene(c), midi: c => shcMidi(c) };
+function shcDraw() {
+  if (!SHC.body) return; const pane = SHC.root.closest ? SHC.root.closest('.pane') : null, st = pane ? pane.scrollTop : 0;
+  SHC.tabsEl.querySelectorAll('.shc-tab').forEach(b => { const on = b.dataset.t === SHC.tab; b.classList.toggle('on', on); b.setAttribute('aria-selected', String(on)); b.tabIndex = on ? 0 : -1; });
+  shcHead(); const c = shcCtx(); SHC.body.innerHTML = ''; SHC.body.append(...(SHC_TAB[SHC.tab] || SHC_TAB.looks)(c).filter(Boolean)); if (pane) pane.scrollTop = st; shcMeters();
+}
+/** the live readouts: flashes per second, the governor, and the six band sources */
+function shcMeters() {
+  const r = SHC.root; if (!r || !r.isConnected) return; const fl = r.querySelector('#shcFl'), n = LXG.n | 0;
+  if (fl) { fl.textContent = n + (n === 1 ? ' flash' : ' flashes') + '/s · limit 3 · governor ' + Math.round(LX.gov * 100) + '%'; fl.classList.toggle('warn', n >= 3 || LX.gov < .8); }
+  r.querySelectorAll('[data-meter]').forEach(m => { const k = m.dataset.meter, v = k === 'flash' ? n / 3 : k === 'gov' ? LX.gov : LX[k] || 0; m.firstChild.style.width = Math.round(clamp(v, 0, 1) * 100) + '%'; m.classList.toggle('hot', k === 'flash' && n >= 3); });
+  const pk = r.querySelector('#shcPeak'); if (pk) pk.textContent = LXG.maxN + ' per second';
+}
+setInterval(() => { const r = SHC.root; if (!r || document.hidden || !r.isConnected || !r.offsetParent) return; shcMeters(); }, 160);
+
+/* ---------- Looks ---------- */
+function shcLooks(c) {
+  const { D, scene, sc, follows, note, sec } = c, out = [];
+  if (scene && sc.mode !== 'concert') out.push(h('div', { class: 'lk-note shc-warn' }, 'Scene “' + sc.name + '” is not a Concert scene, so no show is drawn there. ', h('button', { class: 'btn sm', onclick: () => { sc.mode = 'concert'; VZ.spec = null; saveStg(); shcDraw(); } }, 'Make it a Concert scene')));
+  if (!scene) out.push(c.chk('Match the look to the song (feel, tempo, band)', CFG.show.auto !== false, v => { CFG.show.auto = v; saveCfg(); shcDraw(); }), (CFG.show.auto !== false ? note('Now matched to this song: ' + D.name + '.') : null));
+  if (scene && follows) out.push(note('This scene follows the Visuals tab’s look. Choosing or changing a look here gives it one of its own.'));
+  else if (scene) out.push(h('div', { class: 'row', style: { gap: '8px', flexWrap: 'wrap', alignItems: 'center' } }, note('This scene has its own look.'), h('button', { class: 'btn sm', onclick: () => { delete sc.show; saveStg(); shcDraw(); } }, 'Follow the Visuals tab instead')));
+  if (!scene && scn().show && scn().show.design) out.push(note('The scene on the screen has its own look, so changes to the Visuals tab’s look show on the Visuals tab, not here.'));
+  out.push(sec('LOOKS'), note('Six finished looks, built differently: where the lights stand, what is behind the band, how it all moves. Pick one, then change anything.'),
+    h('div', { class: 'row', style: { gap: '6px', flexWrap: 'wrap' } }, h('button', { class: 'btn sm', disabled: !!T.playing, title: T.playing ? 'Stop the song to rehearse with the silent band' : 'The look at chorus strength, with a silent band', onclick: () => { lxPreview('chorus', { sec: 60 }); } }, '▶ Preview a chorus'), h('button', { class: 'btn sm', onclick: () => lxPreviewStop() }, '■ Stop preview')),
+    h('div', { class: 'sg-cards' }, SHOW_DESIGNS.map(d => {
+      const cv = h('canvas', { width: 320, height: 180, 'aria-hidden': 'true' }); shPoster(cv, d); const on = d.id === D.id;
+      return h('div', { class: 'sg-card' + (on ? ' on' : ''), role: 'group', 'aria-label': d.name }, h('button', { class: 'sg-pick', title: 'Use ' + d.name + ' (keeps your pictures, clears other changes)', onclick: () => shcPick(d.id) }, cv), h('b', {}, d.name), h('span', { class: 't' }, d.tag.toUpperCase()), h('p', {}, d.blurb),
+        h('div', { class: 'sg-row' }, h('button', { class: 'btn sm' + (on ? ' on' : ''), onclick: () => shcPick(d.id) }, on ? '✓ In use' : 'Use')));
+    })));
+  const nm = h('input', { class: 'in', placeholder: 'Name this look…', maxlength: 40, 'aria-label': 'Name for the saved look', style: { fontFamily: 'var(--sans)' } }), pick = h('input', { type: 'file', accept: '.json,application/json', style: { display: 'none' }, onchange: async e => { const f = e.target.files[0]; e.target.value = ''; await shImportLooks(f); } });
+  out.push(sec('YOUR LOOKS'), note('Save the look as it is now, with all your changes (not your pictures), then bring it back on any scene, or carry it to another device as a file.'),
+    h('div', { class: 'row', style: { gap: '6px' } }, nm, h('button', { class: 'btn sm', id: 'shSaveLook', onclick: () => shSaveLook(nm.value) }, 'Save look')),
+    CFG.show.saved.length ? h('div', { class: 'shc-saved' }, CFG.show.saved.map(l => h('div', { class: 'shc-sv' }, h('b', { title: l.name }, l.name), h('span', { class: 'tiny muted' }, lxDesign(l.design).name), h('span', { style: { flex: 1 } }),
+      h('button', { class: 'btn sm', onclick: () => shUseLook(l.id) }, 'Use'), h('button', { class: 'btn sm', title: 'Save this look as a file', onclick: () => shExportLooks([l.id]) }, '⤓'), h('button', { class: 'btn sm', title: 'Delete this saved look', 'aria-label': 'Delete ' + l.name, onclick: () => shDelLook(l.id) }, '✕')))) : note('Nothing saved yet.'),
+    h('div', { class: 'row', style: { gap: '6px', flexWrap: 'wrap' } }, h('button', { class: 'btn sm', onclick: () => pick.click() }, '⤒ Open a looks file'), CFG.show.saved.length ? h('button', { class: 'btn sm', onclick: () => shExportLooks() }, '⤓ Save all as a file') : null, pick));
+  out.push(h('div', { class: 'lk-foot' }, h('button', { class: 'btn', title: 'Back to the look as it started (your pictures stay)', onclick: () => { const spec = shcSpec(), u = spec.ovr && spec.ovr.use; spec.ovr = u ? { use: u } : {}; shcSave(); shcDraw(); } }, 'Reset all changes'),
+    scene ? h('button', { class: 'btn', title: 'Give every other Concert scene this look, with its changes', onclick: () => { const src = shcSpec(), copy = JSON.parse(JSON.stringify({ design: src.design, ovr: src.ovr || {} })); let n = 0; STG.scenes.forEach(s => { if (s !== sc && s.mode === 'concert') { s.show = JSON.parse(JSON.stringify(copy)); n++; } }); saveStg(); toast('Look copied to ' + n + ' other Concert ' + (n === 1 ? 'scene' : 'scenes') + '.', 'ok'); } }, 'Copy to all Concert scenes') : null));
+  return out;
+}
+
+/* ---------- Rig ---------- */
+function shcRig(c) {
+  const { D, ov, sec, note, slider, chk, seg, sel, pct } = c, R = D.rig, set = (k, v) => shcSet('rig', k, v), lay = SH_LAYOUTS.find(x => x[0] === (R.layout || 'top')) || SH_LAYOUTS[0], hasWall = !!((D.use && D.use.wall) || []).length;
+  return [
+    sec('MOVING LIGHTS'), note('Where the lights stand decides what the show looks like.'),
+    seg(SH_LAYOUTS, R.layout || 'top', k => { set('layout', k); if (k !== 'none' && !(R.heads > 0)) set('heads', 6); shcDraw(); }, 'Where the moving lights stand'), note(lay[2]),
+    slider('How many', R.heads == null ? 12 : R.heads, 0, 12, 1, String, x => set('heads', x), 'The number of moving lights'),
+    seg(SH_BEAMS, R.beam || (R.layout === 'wash' ? 'wash' : 'soft'), k => { set('beam', k); shcDraw(); }, 'Beam style'),
+    slider('Spread', R.spread == null ? 1 : R.spread, .3, 1.2, .02, pct, x => set('spread', x), 'How wide the fan of beams opens'),
+    chk('Floor lights', R.pars !== 0, v => set('pars', v ? 1 : 0), 'The soft pools of light along the floor'),
+    sec('ROOM'), seg([['flat', 'Quiet'], ['sky', 'Sky and horizon']], R.bg === 'sky' ? 'sky' : 'flat', k => { set('bg', k); shcDraw(); }, 'How the room is lit'),
+    slider('Drifting colour fields', R.field == null ? 1 : R.field, 0, 1, .05, x => x ? pct(x) : 'off', x => set('field', x)),
+    slider('Haze', R.haze == null ? 1 : R.haze, 0, 1.2, .05, pct, x => set('haze', x)),
+    h('div', { class: 'row', style: { gap: '14px', flexWrap: 'wrap' } }, chk('Dust in the light', !!R.dust, v => set('dust', v ? 1 : 0)), chk('Drifting embers', !!R.embers, v => set('embers', v ? 1 : 0))),
+    sec('BACKDROP'), sel('Behind the band', SH_WALLS.map(([k, n]) => [k, n, k === 'image' && !hasWall]), R.wall || 'spectrum', v => { set('wall', v); shcDraw(); }), hasWall ? null : note('“Your picture” appears here once you give a picture the Wall role on the Pictures tab.'),
+    sec('LASERS'), note('Lasers are drawn on the screen and follow the band: brighter on the kick, snare and strums, every angle locked to the bar. Which patterns play in which section is set on the Cues tab.'),
+    slider('Amount', D.laser.amt == null ? 0 : D.laser.amt, 0, 1, .05, x => x ? pct(x) : 'off', x => shcSet('laser', 'amt', x)),
+    chk('Starburst on the drop', !D.noBurst, v => { shcSet('laser', 'burst', v ? undefined : 0); }),
+    sec('BRIGHTNESS AND PUNCH'),
+    slider('Overall brightness', R.int == null ? 1 : R.int, .4, 1.15, .05, pct, x => set('int', x)),
+    slider('Blinder on big moments', R.flash == null ? .5 : R.flash, 0, 1, .05, x => x ? pct(x) : 'off', x => set('flash', x), 'Never more than three flashes a second, and none at all in Calm'),
+    slider('Confetti on the chorus', R.conf == null ? 1 : R.conf, 0, 1.5, .05, x => x ? pct(x) : 'off', x => set('conf', x)),
+    sec('MOTION'), sel('How long one sweep takes', [[2, 'Two bars (lively)'], [4, 'Four bars'], [8, 'Eight bars (slow)']], D.mot.sweep || 4, v => shcSet('mot', 'sweep', +v)),
+    chk('Move in steps that land on the beat', !!D.mot.snap, v => shcSet('mot', 'snap', v ? 1 : 0)),
+    h('div', { class: 'lk-foot' }, h('button', { class: 'btn', onclick: () => { delete ov.rig; delete ov.mot; if (ov.laser) { delete ov.laser.amt; delete ov.laser.burst; if (!Object.keys(ov.laser).length) delete ov.laser; } shcSave(); shcDraw(); } }, 'Reset the rig'))
+  ];
+}
+
+/* ---------- Colour ---------- */
+function shcColour(c) {
+  const { D, ov, sec, note, seg } = c, base = Object.assign({}, lxDesign(D.id).pal, ov.pal), set = (k, v) => shcSet('pal', k, v);
+  return [
+    sec('COLOURS'), note('Six colours make the whole show: the room, three stage lights and two laser colours. Near-white and steel colours stay that way.'),
+    h('div', { class: 'sg-cols' }, [['base', 'Room'], ['a', 'Light 1'], ['b', 'Light 2'], ['c', 'Light 3'], ['l1', 'Laser 1'], ['l2', 'Laser 2']].map(([k, n]) => h('label', { class: 'sg-col' }, n, h('input', { type: 'color', value: base[k], 'aria-label': n + ' colour', oninput: e => set(k, e.target.value) })))),
+    sec('COLOUR TREATMENT'), seg(SH_GRADES, D.rig.grade || 'full', k => { shcSet('rig', 'grade', k === 'full' ? undefined : k); shcDraw(); }, 'Colour treatment'), note('Two or one colour keeps a show disciplined: the same palette, fewer hues on stage at once.'),
+    sec('PALETTES'), note('Borrow the colours of another look. Your lights and rig stay as they are.'),
+    h('div', { class: 'shc-pals' }, SHOW_DESIGNS.map(d => h('button', { class: 'shc-pal', title: 'Use the colours of ' + d.name, onclick: () => { const o = shcSpec().ovr; o.pal = Object.assign({}, d.pal); shcSave(); shcDraw(); } }, h('span', { class: 'sw' }, ['base', 'a', 'b', 'c', 'l1', 'l2'].map(k => h('i', { style: { background: d.pal[k] } }))), h('span', {}, d.name)))),
+    h('div', { class: 'lk-foot' }, h('button', { class: 'btn', onclick: () => { delete ov.pal; shcSave(); shcDraw(); } }, 'Reset the colours'))
+  ];
+}
+
+/* ---------- Cues: what each kind of section gets ---------- */
+function shcCues(c) {
+  const { D, ov, sec, note, slider, chk, pct } = c, k = SHC.kind, P = lxProg(D, k), nH = D.rig.heads == null ? 12 : D.rig.heads, nm = LX_SEC_NAMES[k], cue = (key, v) => shcCueSet(k, key, v), playing = !!T.playing, pv = !!(LX.pv && LX.pv.kind === k);
+  const patName = x => (SH_HEADS.find(y => y[0] === x) || [0, x])[1], kitOf = s => String(D.laser[s] != null ? D.laser[s] : (LX_KIT[s] || '')).split(/\s+/).filter(Boolean);
+  const rows = LX_SECS.map(s => { const p = lxProg(D, s), hp = (D.heads && D.heads[s] ? D.heads[s] : p.pats.join(' ')).split(' ').map(patName).join(' · '), kit = D.laser.amt > 0 ? kitOf(s).map(x => SHOW_PAT_NAMES[x] || x).join(' · ') : '';
+    return h('tr', { class: s === k ? 'on' : '', tabindex: 0, 'aria-label': LX_SEC_NAMES[s] + ' cue', onclick: () => { SHC.kind = s; shcDraw(); }, onkeydown: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); SHC.kind = s; shcDraw(); } } },
+      h('td', {}, LX_SEC_NAMES[s]), h('td', {}, h('span', { class: 'shc-bar' }, h('i', { style: { width: Math.round(clamp(p.int, 0, 1) * 100) + '%' } }))), h('td', { class: 'mono' }, nH ? String(Math.round(Math.min(nH, p.n * nH / 12))) : '–'), h('td', {}, nH ? hp : '–'), h('td', {}, kit || '–')); });
+  const heads = (D.heads && D.heads[k] ? D.heads[k] : P.pats.join(' ')).split(' '), kit = kitOf(k);
+  return [
+    sec('CUE SHEET'), note('What each kind of section gets. A section takes its kind from its name (Verse, Chorus, Bridge…). Choose a row to change it.'),
+    h('table', { class: 'shc-tbl' }, h('thead', {}, h('tr', {}, ['Section', 'Level', 'Lights', 'Pattern', 'Lasers'].map(t => h('th', { scope: 'col' }, t)))), h('tbody', {}, rows)),
+    sec(nm.toUpperCase() + ' CUE'),
+    h('div', { class: 'row', style: { gap: '6px', flexWrap: 'wrap', alignItems: 'center' } },
+      h('button', { class: 'btn' + (pv ? ' on' : ''), id: 'shPv', disabled: playing, onclick: () => { lxPreview(k, { final: SHC.final, sec: 60 }); shcDraw(); } }, '▶ Preview ' + nm), h('button', { class: 'btn sm', onclick: () => { lxPreviewStop(); shcDraw(); } }, '■ Stop'),
+      chk('As the last time through', !!SHC.final, v => { SHC.final = v; if (LX.pv && LX.pv.kind === k) lxPreview(k, { final: v, sec: 60 }); }, 'The last chorus is the biggest')),
+    note(playing ? 'Stop the song to rehearse a cue: the preview plays a silent band (kick, snare, hats, bass, strums) so the lights can be set without a song.' : 'The preview plays a silent band for this kind of section, so the lights can be set without a song. Watch the picture above.'),
+    slider('Level', P.int, 0, 1.15, .01, pct, x => cue('int', x), 'How bright and busy this kind of section is'),
+    slider('Lights on', Math.min(12, P.n), 0, 12, 1, x => nH ? Math.round(Math.min(nH, x * nH / 12)) + ' of ' + nH : 'no moving lights', x => cue('n', x)),
+    slider('Haze', P.haze, 0, 1.2, .05, pct, x => cue('haze', x)), slider('Floor lights', P.pars, 0, 1, .05, pct, x => cue('pars', x)), slider('Backdrop level', P.wall, 0, 1, .05, pct, x => cue('wall', x)),
+    h('div', { class: 'row', style: { gap: '14px', flexWrap: 'wrap' } }, chk('Confetti when it starts', !!P.conf, v => cue('conf', v ? 1 : 0)), chk('Blinder when it starts', !!P.strobe, v => cue('strobe', v ? 1 : 0))),
+    note('The blinder and confetti also need an amount on the Rig tab, and Calm turns the blinder off.'),
+    h('div', { class: 'lk-sec' }, 'LIGHT PATTERNS'), note('The patterns the moving lights take in this section. With several chosen it moves on to the next one every four bars.'),
+    h('div', { class: 'sg-chips' }, SH_HEADS.map(([p, n]) => { const on = heads.includes(p); return h('button', { class: 'btn sm' + (on ? ' on' : ''), 'aria-pressed': String(on), onclick: () => { const nx = on ? heads.filter(x => x !== p) : heads.concat(p); shcSet('heads', k, nx.length ? nx.join(' ') : undefined); shcDraw(); } }, n); })),
+    h('div', { class: 'lk-sec' }, 'LASER PATTERNS'),
+    D.laser.amt > 0 ? [note('Which laser patterns run in this section. They combine, and the second phrase of a section drops one so the mix keeps changing.'), h('div', { class: 'sg-chips' }, SHOW_PATS.filter(p => p !== 'burst').map(p => { const on = kit.includes(p); return h('button', { class: 'btn sm' + (on ? ' on' : ''), 'aria-pressed': String(on), onclick: () => { const nx = on ? kit.filter(x => x !== p) : kit.concat(p); shcSet('laser', k, nx.join(' ')); shcDraw(); } }, SHOW_PAT_NAMES[p]); }))]
+      : [note('Lasers are off in this look. '), h('button', { class: 'btn sm', onclick: () => { shcSet('laser', 'amt', .6); shcDraw(); } }, 'Turn lasers on')],
+    h('div', { class: 'lk-foot' }, h('button', { class: 'btn', onclick: () => { if (ov.cue) delete ov.cue[k]; if (ov.heads) delete ov.heads[k]; if (ov.laser) delete ov.laser[k]; shcSave(); shcDraw(); } }, 'Reset ' + nm.toLowerCase() + ' cue'), h('button', { class: 'btn', onclick: () => { delete ov.cue; delete ov.heads; if (ov.laser) LX_SECS.forEach(s => delete ov.laser[s]); shcSave(); shcDraw(); } }, 'Reset all cues'))
+  ].flat();
+}
+
+/* ---------- Response: how the lights follow the band ---------- */
+function shcResp(c) {
+  const { D, ov, sec, note, slider, pct } = c, R = Object.assign({}, LX_R1, D.resp);
+  return [
+    sec('RESPONSE'), note('How strongly each part of the band drives the lights. 100% is how the look was made. Zero cuts that part off; more makes it lead. The bars show what is arriving now.'),
+    h('div', { class: 'shc-resp' }, SH_RESP.map(([k, n, what]) => h('div', { class: 'shc-rrow' }, h('div', { class: 'shc-rn' }, h('b', {}, n), h('span', { class: 'tiny muted' }, what)), h('div', { class: 'shc-meter', 'data-meter': k, 'aria-hidden': 'true' }, h('i')),
+      slider('', R[k], 0, 1.5, .05, x => Math.round(x * 100) + '%', x => shcSet('resp', k, x === 1 ? undefined : x), n + ' strength'),
+      h('button', { class: 'btn sm', title: 'Fire one ' + n.toLowerCase() + ' now', onclick: () => { if (k === 'kick') lxFire({ row: 0, v: 3 }); else if (k === 'snare') lxFire({ row: 1, v: 3 }); else if (k === 'hat') lxFire({ row: 2, v: 3 }); else if (k === 'bass') lxFireX({ type: 'bass', a: 36 + S.key, b: .9 }); else if (k === 'strum') lxFireX({ type: 'chord', b: .9 }); else lxFireX({ type: 'lead', a: 62 + S.key % 12, b: .9 }); } }, 'Fire')))),
+    note('With no song playing, the band is silent. “Fire” sends one hit, and Cues ▸ Preview plays a whole silent band.'),
+    h('div', { class: 'lk-foot' }, h('button', { class: 'btn', onclick: () => { delete ov.resp; shcSave(); shcDraw(); } }, 'Reset the response'))
+  ];
+}
+
+/* ---------- Pictures ---------- */
+function shcPics(c) {
+  const { D, sec, note, slider, pct, scene } = c, imgs = CFG.show.imgs, use = D.use || { back: [], wall: [], logo: null }, u = () => shUseOf(shcSpec());
+  const toggle = (role, id) => { const x = u(); if (role === 'logo') x.logo = x.logo === id ? null : id; else { const a = x[role] || (x[role] = []); x[role] = a.includes(id) ? a.filter(v => v !== id) : a.concat(id); if (role === 'wall') { const o = shcSpec().ovr, g = o.rig || (o.rig = {}); if (x.wall.length) g.wall = 'image'; else if (D.rig.wall === 'image') g.wall = 'spectrum'; } } shcSave(); shcDraw(); };
+  const pick = h('input', { type: 'file', accept: 'image/png,image/jpeg,image/webp,image/gif', multiple: true, style: { display: 'none' }, onchange: async e => { const f = [...e.target.files]; e.target.value = ''; await shAdd(f); shcDraw(); } });
+  const drop = h('div', { class: 'sg-drop', tabindex: 0, role: 'button', 'aria-label': 'Add pictures', onclick: () => pick.click(), onkeydown: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick.click(); } },
+    ondragover: e => { e.preventDefault(); e.stopPropagation(); drop.classList.add('over'); }, ondragleave: () => drop.classList.remove('over'), ondrop: async e => { e.preventDefault(); e.stopPropagation(); drop.classList.remove('over'); await shAdd(e.dataTransfer.files || []); shcDraw(); } }, 'Drop pictures here, or click to choose them', pick);
+  const thumbs = h('div', { class: 'sg-thumbs' }, imgs.map(m => {
+    const cv = h('canvas', { width: 160, height: 90, 'aria-label': m.name }), paint = () => { const im = shImg(m.id); if (!im) return false; const g = cv.getContext('2d'), s = Math.max(160 / im.width, 90 / im.height); g.fillStyle = '#111'; g.fillRect(0, 0, 160, 90); g.drawImage(im, (160 - im.width * s) / 2, (90 - im.height * s) / 2, im.width * s, im.height * s); return true; };
+    if (!paint()) { let tries = 0; const again = () => { if (!paint() && ++tries < 12 && cv.isConnected) setTimeout(again, 250); }; setTimeout(again, 250); }
+    const role = (r, label, on, title) => h('button', { class: 'btn sm' + (on ? ' on' : ''), 'aria-pressed': String(on), title, onclick: () => toggle(r, m.id) }, label);
+    return h('div', { class: 'sg-thumb' }, cv, h('div', { class: 'sg-tn', title: m.name }, m.name), h('div', { class: 'sg-row' }, role('back', 'Back', (use.back || []).includes(m.id), 'Behind the lights. Several pictures change at each new section.'), role('wall', 'Wall', (use.wall || []).includes(m.id), 'On the light wall, as a pixel picture the music plays across'), role('logo', 'Logo', use.logo === m.id, 'A logo, lit by the band')),
+      h('button', { class: 'sg-x', title: 'Remove this picture from this device', 'aria-label': 'Remove ' + m.name, onclick: () => shRemove(m.id).then(() => shcDraw()) }, '✕'));
+  }));
+  return [sec('YOUR PICTURES'), note('Add your own pictures: a band photo, a poster, a logo, a venue. They are reduced and kept in this browser only, never uploaded, and they are not part of a song’s .zip. Only use pictures you have the right to show.'), drop, imgs.length ? thumbs : null,
+    (use.back || []).length ? h('div', { class: 'lk' }, slider('Backdrop strength', use.backAmt == null ? .6 : use.backAmt, 0, 1, .05, pct, x => { u().backAmt = x; shcSave(); }), slider('Colour wash over the backdrop', use.backTint == null ? .35 : use.backTint, 0, 1, .05, x => x ? pct(x) : 'off', x => { u().backTint = x; shcSave(); })) : null,
+    use.logo ? h('div', { class: 'lk' }, slider('Logo size', use.logoSize == null ? .16 : use.logoSize, .05, .4, .01, x => pct(x / .4), x => { u().logoSize = x; shcSave(); }),
+      h('label', { class: 'sg-sl' }, h('span', {}, 'Logo position'), h('select', { class: 'in', onchange: e => { u().logoPos = e.target.value; shcSave(); } }, [['tl', 'Top left'], ['tc', 'Top centre'], ['tr', 'Top right'], ['bl', 'Bottom left'], ['bc', 'Bottom centre'], ['br', 'Bottom right'], ['c', 'Centre']].map(([k, n]) => h('option', { value: k, selected: (use.logoPos || 'tr') === k }, n))))) : null];
+}
+
+/* ---------- Output ---------- */
+function shcOut(c) {
+  const { sec, note, slider, chk, seg, pct } = c, O = CFG.show.out, save = () => saveCfg(), frozen = !!(SG.freeze || SG.freezeReq), cur = lxComfortKey();
+  return [
+    sec('PREFLIGHT'), gdPfBlock(),
+    sec('OUTPUT'), note('What goes to the screen, the full-screen view and the pop-out window. These belong to this device, not to a scene.'),
+    slider('Master level', O.master == null ? 1 : O.master, 0, 1, .01, pct, x => { O.master = x; save(); }),
+    h('div', { class: 'row', style: { gap: '8px', flexWrap: 'wrap' } },
+      h('button', { class: 'btn' + (SG.boOn ? ' on' : ''), id: 'shBo', 'aria-pressed': String(!!SG.boOn), title: 'Fade the whole output to black and back (key 0 while the Stage is showing)', onclick: () => shBlackout() }, '■ Blackout · 0'),
+      h('button', { class: 'btn' + (frozen ? ' on' : ''), id: 'shFreeze', 'aria-pressed': String(frozen), title: 'Hold the picture as it is, for the output (key 9 while the Stage is showing)', onclick: () => shFreeze() }, '❄ Freeze · 9')),
+    h('div', { class: 'row', style: { gap: '14px', flexWrap: 'wrap' } }, chk('Mirror left–right', !!O.mirror, v => { O.mirror = v; save(); }, 'For a projector behind the screen'), chk('Flip upside down', !!O.flip, v => { O.flip = v; save(); }, 'For a projector hung from the ceiling')),
+    chk('Safe-frame guides on this screen', !!O.safe, v => { O.safe = v; save(); if (SG.wrap) SG.wrap.classList.toggle('guides', v); }, 'Dashed lines at 90% (action) and 80% (titles). Not drawn in full screen or in the pop-out window.'),
+    c.sel('Frame rate', [[60, '60 frames a second'], [30, '30 frames a second (lighter on the computer)']], O.fps || 60, v => { O.fps = +v; save(); }),
+    sec('TEST PATTERNS'), note('Fills the output with a pattern so the projector can be lined up and the colours checked. The show goes on behind it once you turn it off. White is very bright.'), seg(SH_TESTS, SG.test || '', k => { SG.test = k || null; if (k) GD.pf.test = 1; shcDraw(); }, 'Test pattern'),
+    sec('SCREEN'), h('div', { class: 'row', style: { gap: '8px', flexWrap: 'wrap', alignItems: 'center' } }, h('button', { class: 'btn sm', id: 'shFull', onclick: () => { GD.pf.out = 1; stageFull(); } }, '⛶ Full screen'), h('button', { class: 'btn sm', id: 'shPop', onclick: () => { GD.pf.out = 1; stagePop(); } }, '⧉ Pop-out window'), h('button', { class: 'btn sm' + (STG.hud !== false ? ' on' : ''), onclick: () => { STG.hud = !(STG.hud !== false); saveStg(); renderStageUI(); } }, STG.hud !== false ? 'Chord and lyric on' : 'Chord and lyric off'),
+      c.sel('Render quality', [[.5, 'Low (fast)'], [.75, 'Medium'], [1, 'High']], STG.q, v => { STG.q = +v; saveStg(); })),
+    sec('LIGHT COMFORT'), seg(Object.entries(LX_COMFORT).map(([k, m]) => [k, m.name, m.blurb]), cur, k => { lxSetComfort(k); shcDraw(); }, 'Light comfort'),
+    note(LX_COMFORT[cur].blurb + (lxReduced() && !STG.comfort ? ' Your device asks for less motion, so Calm is the default.' : '')),
+    sec('FLASH METER'),
+    h('div', { class: 'shc-gauge' }, h('span', {}, 'Flashes per second'), h('div', { class: 'shc-meter lim', 'data-meter': 'flash', 'aria-hidden': 'true' }, h('i')), h('span', { class: 'tiny muted' }, 'the line is 3'), h('span', {}, 'Governor'), h('div', { class: 'shc-meter', 'data-meter': 'gov', 'aria-hidden': 'true' }, h('i')), h('span', { class: 'tiny muted' }, '100% = untouched')),
+    h('div', { class: 'row', style: { gap: '8px', alignItems: 'center' } }, h('span', { class: 'small' }, 'Highest this session: '), h('b', { id: 'shcPeak', class: 'mono' }, LXG.maxN + ' per second'), h('button', { class: 'btn sm', onclick: () => { LXG.maxN = 0; shcMeters(); } }, 'Reset')),
+    note('However you set the show, it never flashes more than three times a second: the engine limits itself, and a governor watches the finished picture and eases the lights off if it gets close. This is a safeguard built into the app, not a medical guarantee. If lights or motion ever bother you, choose Calm or stop the show.')
+  ];
+}
+
+/* ---------- Scene: the Stage scene's own settings ---------- */
+function stgRestoreStarters() { STG.scenes = starterScenes(); STG.cur = Math.min(STG.cur, STG.scenes.length - 1); VZ.spec = null; saveStg(); renderStageUI(); toast('The starter scenes are back.', 'ok'); }
+function shcScene(c) {
+  const { sc, sec, note } = c, field = (label, ctl) => h('label', { class: 'small', style: { display: 'flex', flexDirection: 'column', gap: '3px', fontWeight: 700 } }, label, ctl);
+  const rng = (k, min, max, step, fmt) => { const v = h('span', { class: 'mono tiny' }, (fmt || (x => x))(sc[k])); return h('div', { class: 'row', style: { gap: '6px' } }, h('input', { type: 'range', min, max, step, value: sc[k], style: { flex: 1 }, oninput: e => { sc[k] = +e.target.value; v.textContent = (fmt || (x => x))(sc[k]); saveStg(); } }), v); };
+  const chk = (o, k, label) => h('label', { class: 'chk small', style: { display: 'flex', gap: '4px', alignItems: 'center', fontWeight: 700 } }, h('input', { type: 'checkbox', checked: o[k], onchange: e => { o[k] = e.target.checked; saveStg(); } }), label);
+  return [
+    sec('SCENE ' + (STG.cur + 1)),
+    h('div', { class: 'sgrid', style: { marginTop: 0 } },
+      field('Name', h('input', { class: 'in', value: sc.name, style: { fontFamily: 'var(--sans)' }, onchange: e => { sc.name = e.target.value || 'Scene'; saveStg(); renderStageUI(); } })),
+      field('Visual', h('select', { class: 'in', style: { fontFamily: 'var(--sans)' }, onchange: e => { sc.mode = e.target.value; VZ.spec = null; SG.joy = []; saveStg(); shcDraw(); } }, VMODES.map(([k, n]) => h('option', { value: k, selected: k === sc.mode }, n)))),
+      field('Hue', rng('hue', 0, 359, 1, x => x + '°')), field('Hue drift', rng('drift', 0, 3, .05, x => x ? x.toFixed(2) : 'off')),
+      field('Trails', rng('trail', 0, 1, .01, x => Math.round(x * 100) + '%')), field('Glow', rng('glow', 0, 1, .01, x => Math.round(x * 100) + '%')),
+      field('Kaleidoscope', h('select', { class: 'in', style: { fontFamily: 'var(--sans)' }, onchange: e => { sc.kal = +e.target.value; saveStg(); } }, [[0, 'Off'], [3, '3 wedges'], [4, '4'], [6, '6'], [8, '8'], [12, '12']].map(([v, n]) => h('option', { value: v, selected: v === sc.kal }, n)))),
+      field('Sensitivity', rng('sens', .4, 2.5, .05, x => '×' + x.toFixed(2))), field('Beat flash', rng('flash', 0, 1, .05, x => x ? Math.round(x * 100) + '%' : 'off')),
+      field('Switch to this scene on section', h('input', { class: 'in', value: sc.sect, placeholder: 'e.g. chorus', style: { fontFamily: 'var(--sans)' }, onchange: e => { sc.sect = e.target.value.trim(); saveStg(); } }))),
+    h('div', { class: 'row', style: { gap: '14px', marginTop: '8px', flexWrap: 'wrap' } }, chk(sc, 'cam', '📷 Camera backdrop'), camFxBox(), chk(sc.ov, 'chord', 'Chord'), chk(sc.ov, 'lyric', 'Lyric line'), chk(sc.ov, 'beat', 'Beat dots'), chk(sc.ov, 'info', 'Section · BPM · key'), chk(sc.ov, 'tuner', 'Tuner')),
+    sec('SWITCHING'), chk(STG, 'auto', 'Switch scenes by section name'), note('Keys 1–8 pick scenes, 0 is blackout and 9 freezes the picture, while this tab (or full screen) is showing. MIDI notes 48–55 pick scenes anywhere. Lyric lines advance with the bar position of the section.'),
+    pbCard(),
+    h('div', { class: 'lk-foot' }, h('button', { class: 'btn', title: 'Put the eight scenes back as they shipped', onclick: e => { if (SHC.arm && Date.now() - SHC.arm < 4000) { SHC.arm = 0; stgRestoreStarters(); } else { SHC.arm = Date.now(); e.currentTarget.textContent = 'Click again to replace all 8'; } } }, 'Restore starter scenes'))
+  ];
+}
+
+/* ---------- MIDI out ---------- */
+function shcMidi(c) {
+  const { sec, note } = c, chk = (o, k, label) => h('label', { class: 'chk small', style: { display: 'flex', gap: '4px', alignItems: 'center', fontWeight: 700 } }, h('input', { type: 'checkbox', checked: o[k], onchange: e => { o[k] = e.target.checked; saveStg(); } }), label);
+  const sel = h('select', { class: 'in', style: { width: 'auto', fontFamily: 'var(--sans)' }, onchange: e => { STG.out = e.target.value; saveStg(); } }), fill = () => { sel.innerHTML = ''; sel.append(h('option', { value: '' }, MIDI.access ? 'No output' : 'Enable MIDI first')); if (MIDI.access) MIDI.access.outputs.forEach(o => sel.append(h('option', { value: o.id, selected: o.id === STG.out }, o.name))); }; fill();
+  const again = () => { if (sel.isConnected) fill(); else bus.off('midi', again); }; bus.on('midi', again);
+  return [sec('MIDI OUT → LIGHTS, SYNTHS, DAW'),
+    h('div', { class: 'row', style: { gap: '14px', flexWrap: 'wrap', alignItems: 'center' } }, h('div', { class: 'row', style: { gap: '6px' } }, sel, h('button', { class: 'btn sm', onclick: () => { initMIDI(); } }, 'Enable MIDI')),
+      h('label', { class: 'small', style: { fontWeight: 700 } }, 'Channel ', h('input', { class: 'in', type: 'number', min: 1, max: 16, value: (STG.ch | 0) + 1, style: { width: '56px' }, onchange: e => { STG.ch = clamp((+e.target.value || 1) - 1, 0, 15); saveStg(); } })),
+      chk(STG, 'clock', 'Clock + start/stop'), chk(STG, 'roots', 'Chord root notes'), chk(STG, 'trig', 'Note on every pick (note 60)'), chk(STG, 'ccs', 'CC20 loudness · CC21 brightness')),
+    note('Clock is derived from the song playhead and sent per frame, so expect a little jitter: fine for lights and arpeggiators, not for tight audio sync.')];
+}
+
+/* ---------- the Visuals bar ---------- */
+function sgdBarButton() {
+  return h('button', { class: 'btn sm', id: 'sgdOpen', title: 'Show setup: looks, rig, colours, cues, lasers, your pictures, output', onclick: () => shOpen('vis', 'looks') }, '🎛 Show setup');
+}
+
+/* >>> parts/60-guide.js */
+/* ============================================================
+   Part 60 · Guide: goals, guided sessions, first-open hints, plain words, and the Show preflight.
+   The first page asks what you want to DO (never how good you are). Each goal starts a short session: a small card that
+   names one step at a time, points at the control, and ticks the step off when you really do it (the app watches its own
+   state; nothing is faked). Finishing sessions is what adds tools to the tab strip. Tabs explain themselves the first time
+   they open, once. Nothing here sends anything anywhere; progress is kept in this browser (CFG.guide).
+   ============================================================ */
+const GD = { id: null, i: 0, el: null, timer: 0, min: false, seen: {}, base: null, pf: {}, hintEl: null, pulse: null, done: false };
+function gdc() { const g = CFG.guide || (CFG.guide = {}); g.done = g.done || {}; g.hints = g.hints || {}; g.prog = g.prog || {}; return g; }
+
+/* ---------- the Show preflight: what a technician checks before doors, each ticked by the app when it sees it done ---------- */
+const GD_PF = [
+  ['look', 'Pick a look for the scene', 'Looks tab: choose one of the six, or one of your saved looks.', () => GD.pf.look, () => shOpen('scene', 'looks'), '#shc .shc-tab[data-t="looks"]'],
+  ['rig', 'Check the rig against the room', 'Rig tab: how many lights, where they stand, haze, lasers on or off.', () => GD.pf.rig, () => shOpen('scene', 'rig'), '#shc .shc-tab[data-t="rig"]'],
+  ['out', 'Open the output', 'Output tab: Full screen, or the pop-out window for the projector or LED wall.', () => GD.pf.out, () => shOpen('scene', 'out'), '#shc .shc-tab[data-t="out"]'],
+  ['test', 'Run a test pattern', 'Bars or grid lines up the projector and shows the colours as they really are. Turn it off when done.', () => GD.pf.test, () => shOpen('scene', 'out'), '#shc .shc-seg'],
+  ['master', 'Set the master level for the room', 'Output tab: drag Master level. It dims the whole picture, like a house dimmer.', () => GD.pf.master, () => shOpen('scene', 'out'), '#shc .sg-sl'],
+  ['bo', 'Try the blackout', 'Press 0 or the Blackout button, then press it again to bring the picture back. Know where it is before you need it.', () => GD.pf.bo, () => shOpen('scene', 'out'), '#shBo'],
+  ['run', 'Play the song once and watch the flash meter', 'Press Play with Show setup open. The meter shows flashes per second; it stays under three.', () => GD.pf.run, () => shOpen('scene', 'out'), '#sgdPlay']
+];
+function gdSniff() {
+  try {
+    const O = (CFG.show && CFG.show.out) || {}, pf = GD.pf;
+    if (typeof SG !== 'undefined' && SG) { if (SG.test) pf.test = 1; if (SG.boOn) pf.bo = 1; }
+    if (GD.mBase === undefined) GD.mBase = O.master; else if (O.master !== GD.mBase) pf.master = 1;
+    const visible = typeof SHC !== 'undefined' && SHC.root && SHC.root.isConnected && SHC.root.offsetParent;
+    if (visible) { if (SHC.tab === 'rig') pf.rig = 1; if (T.playing) pf.run = 1; }
+    if (T.playing) GD.seen.played = 1; if (T.rec && !T.playing) GD.seen.armed = 1; if (typeof STP !== 'undefined' && STP.playing) GD.seen.splay = 1;
+  } catch (e) { }
+}
+function gdPfRender() {
+  const box = document.getElementById('gdPf'); if (!box || !box.isConnected) return;
+  const n = GD_PF.filter(x => x[3]()).length; box.dataset.n = n;
+  box.querySelector('.gd-pf-h b').textContent = n + ' of ' + GD_PF.length + ' checked';
+  box.querySelectorAll('li').forEach((li, i) => { const ok = !!GD_PF[i][3](); li.classList.toggle('ok', ok); li.querySelector('.gd-tick').textContent = ok ? '✓' : String(i + 1); });
+}
+/** the checklist as it appears in the Output tab (and the Show session reuses the same items) */
+function gdPfBlock() {
+  const ul = h('ol', { class: 'gd-pf-list' }, GD_PF.map(([id, t, d, ok, go]) => h('li', { 'data-id': id, class: ok() ? 'ok' : '' }, h('span', { class: 'gd-tick', 'aria-hidden': 'true' }, ok() ? '✓' : String(GD_PF.findIndex(x => x[0] === id) + 1)), h('div', {}, h('b', {}, t), h('span', {}, d)),
+    h('button', { class: 'btn sm', title: 'Take me to it', onclick: () => { try { go(); } catch (e) { } } }, 'Go'))));
+  const box = h('div', { class: 'gd-pf', id: 'gdPf' }, h('div', { class: 'gd-pf-h' }, h('b', {}, ''), h('span', { class: 'grow' }), h('button', { class: 'btn sm', title: 'Clear the ticks and start the checks again for the next room', onclick: () => { GD.pf = {}; GD.mBase = undefined; gdPfRender(); } }, 'Start over')), ul,
+    h('p', { class: 'tiny muted' }, 'The app ticks each line when it sees you do it. This list is for the room you are in; it is not saved.'));
+  setTimeout(gdPfRender, 0); return box;
+}
+setInterval(() => { gdSniff(); gdPfRender(); }, 500);
+
+/* ---------- the sessions ---------- */
+const GD_SESSIONS = {
+  hum: {
+    name: 'Turn a hum into a song', mins: 2, icon: '🎤', blurb: 'Hum or sing a few seconds. A whole band plays it back.',
+    outro: 'You made a song from a sound. It is saved in My songs. Next, try recording real guitar over it.', next: 'record',
+    steps: [
+      { id: 'start', short: 'Start listening', text: 'Press ● Sing or hum an idea. Your browser will ask to use the microphone; say yes. It only listens while you are recording.', target: '#humGo2', go: () => { if (!document.getElementById('humbar')) { try { humCanvasFirst(); } catch (e) { } } }, done: () => !!(HUM.rec || HUM.pcm || HUM.r) },
+      { id: 'hum', short: 'Hum 10–30 seconds', text: 'Hum or sing any tune for 10 to 30 seconds, then press ■ Stop. It does not have to be good; the app listens for the notes.', target: '#humStop', done: () => !!(HUM.pcm || HUM.r) },
+      { id: 'play', short: 'Hear the band', text: 'Your song is ready. Press ▶ Play my song. The chords and the band were built from your tune.', target: '#humPlay', done: () => !!GD.seen.played },
+      { id: 'change', short: 'Change the feel', text: 'Make it yours: pick another Style, change the tempo, or press 🎲 Try different chords. It rebuilds right away.', target: '.hum-chips', setup: () => { GD.base = HUM.o ? [HUM.o.style, HUM.o.seed, HUM.o.bpm, HUM.o.key, HUM.o.minor, HUM.o.form].join() : ''; }, done: () => !!(HUM.o && GD.base != null && [HUM.o.style, HUM.o.seed, HUM.o.bpm, HUM.o.key, HUM.o.minor, HUM.o.form].join() !== GD.base) },
+      { id: 'keep', short: 'Keep it', text: 'Press Done to keep it. Add lyrics or open it in the studio whenever you like.', target: '.hum-acts .btn.primary', done: () => !!HUM.r && !document.getElementById('humbar') }
+    ]
+  },
+  record: {
+    name: 'Record guitar and voice', mins: 3, icon: '⏺', blurb: 'Plug in or use your mic, record one take, hear it back.',
+    outro: 'That is a recorded take, saved on this device. Next, loop it and play a second part on top.', next: 'loop',
+    steps: [
+      { id: 'input', short: 'Connect your input', text: () => (isDesk() ? 'Press Connect (in the panel on the left, or Audio at the top right)' : 'Tap the round Audio button at the top') + ' and allow the microphone when asked. Then choose your guitar interface or microphone. Use headphones so the speakers do not feed back into it.', target: () => { const c = document.querySelector('#left .btn.primary'); return c && c.getClientRects().length ? c : UI.aud; }, go: () => { if (!document.querySelector('#left .btn.primary')) { try { audioOpen(); } catch (e) { } } }, done: () => !!(E && E.hasInput && E.ctx && E.ctx.state === 'running') },
+      { id: 'arm', short: 'Arm recording', text: 'Press ● in the transport (or the R key) to arm a take. The count-in clicks before it starts.', target: () => UI.rec, done: () => !!(T.rec || REC || GD.seen.armed || TAKES.length) },
+      { id: 'rec', short: 'Play something', text: 'After the count-in, play or sing. One press of R makes one take; it keeps going until you stop it.', target: () => UI.rec, done: () => !!(REC || TAKES.length) },
+      { id: 'stop', short: 'Stop', text: 'Press ■ Stop (or R again) to end the take.', target: () => UI.stop, done: () => !REC && TAKES.length > 0 },
+      { id: 'hear', short: 'Hear it back', text: 'Press Space to hear what you played. Takes appear as clips in the Guitar and Vocal lanes; click one to move or trim it.', target: () => UI.play, setup: () => { GD.seen.played = 0; }, done: () => !!GD.seen.played }
+    ]
+  },
+  loop: {
+    name: 'Record, loop and layer', mins: 4, icon: '⟲', blurb: 'Record chords, hear them loop, then play a lead on top, like a looper pedal.',
+    outro: 'That is the looper workflow: every layer is its own track you can move, mute, solo and export. Try Add a layer for a third part.', next: 'split',
+    steps: [
+      { id: 'input', short: 'Connect your input', text: () => (isDesk() ? 'Press Connect (in the panel on the left, or Audio at the top right)' : 'Tap the round Audio button at the top') + ' and allow the microphone when asked. Use headphones so the speakers do not feed back into it.', target: () => { const c = document.querySelector('#left .btn.primary'); return c && c.getClientRects().length ? c : UI.aud; }, go: () => { if (!document.querySelector('#left .btn.primary')) { try { audioOpen(); } catch (e) { } } }, done: () => !!(E && E.hasInput && E.ctx && E.ctx.state === 'running') },
+      { id: 'set', short: 'Set the loop', text: 'Press ⟲ Loop & layer, choose how long the loop is (4 bars is a good start) and press Start looping. A bar of clicks counts you in.', target: '#lpBtn, #lpGo', go: () => { if (!document.getElementById('lpDlg')) { try { looperOpen(); } catch (e) { } } }, done: () => !!LP.on },
+      { id: 'chords', short: 'Play your chords', text: 'After the count-in, play your chords for one full pass of the loop. When it comes round, that pass is saved as Layer 1 and starts playing back.', target: '#lpState', done: () => lpLayers().length >= 1 },
+      { id: 'lead', short: 'Play a lead on top', text: 'The chords now loop by themselves. Play a lead or a melody over them: this pass records Layer 2 while Layer 1 keeps playing.', target: '#lpState', done: () => lpLayers().length >= 2 },
+      { id: 'keep', short: 'Just listen', text: 'Press Keep looping to stop recording at the end of this pass. The loop carries on so you can listen to both layers together.', target: '#lpKeep', done: () => !!(LP.on && !T.rec && T.playing && lpLayers().length >= 2) },
+      { id: 'mix', short: 'Hear each layer', text: 'Mute or solo a layer with M and S on its lane to hear each part alone, then press ■ Stop. Add a layer lets you go again.', target: '#lpStop', done: () => !LP.on && TAKES.length >= LP.n0 + 2 && !T.playing }
+    ]
+  },
+  split: {
+    name: 'Learn a song', mins: 3, icon: '🎚', blurb: 'Split a song into drums, bass, vocals and guitar. Mute yours and play along.',
+    outro: 'You can now practise any song with your part taken out. Loop a hard bar and slow it down in the same tab.', next: 'show',
+    steps: [
+      { id: 'open', short: 'Open Backing track', text: 'Open the Backing track tab (also called Stems).', target: '#dock .tab[data-id="stems"]', go: () => dockGo('stems'), done: () => DOCK.cur === 'stems' },
+      { id: 'load', short: 'Load a song', text: 'Choose a song file from your computer, or drop one anywhere on the page. It is split on this device and never uploaded; expect about as long as the song lasts.', target: '#pane-stems .btn.primary', done: () => !!(STM.dur > 0 && !STM.busy) },
+      { id: 'mute', short: 'Mute your part', text: 'Mute the part you play: press M on that strip, or use a preset such as No guitar. Everything else keeps playing.', target: '#pane-stems', done: () => STM.mix.some(m => m.m) },
+      { id: 'play', short: 'Play along', text: 'Press ▶ and play along with the rest of the band.', target: () => SU.play, done: () => !!GD.seen.splay },
+      { id: 'loop', short: 'Loop a hard bit', text: 'Tick Loop, then drag across the section you want to drill. It repeats until you stop it.', target: '#pane-stems', done: () => !!(STM.loop && STM.loop.on) }
+    ]
+  },
+  show: {
+    name: 'Set up a show', corner: 'bl', mins: 5, icon: '✦', blurb: 'A preflight for the room: look, rig, output, test pattern, blackout, rehearsal.',
+    outro: 'Preflight done. The output is open, tested and you know where the blackout is. Save the look so it is there next time.', next: null,
+    steps: GD_PF.map(([id, short, text, ok, go, target]) => ({ id, short, text: text, target, go, done: ok, pf: true }))
+  }
+};
+const GD_ORDER = ['hum', 'record', 'loop', 'split', 'show'];
+
+/* ---------- starting from a goal on the first page ---------- */
+const GD_GOALS = {
+  hum: () => { /* the default first screen is already the hum bar on a clean page */ },
+  record: async () => { await projCreate('blank', { form: 'empty', title: 'My first take', zoom: 'studio' }); zoomSet('studio', true); if (!isDesk()) mGo('play'); },
+  loop: async () => { await projCreate('blank', { form: 'empty', title: 'My first loop', zoom: 'studio' }); zoomSet('studio', true); if (!isDesk()) mGo('play'); },
+  split: async () => { await projCreate('blank', { form: 'empty', title: 'Learn a song', zoom: 'studio' }); if (isDesk()) dockGo('stems'); else mGo('stems', 'stems'); },
+  show: async () => { await projCreate('demo', { zoom: 'song' }); if (isDesk()) { const L = LAYOUTS.find(l => l[0] === 'Show'); if (L) applyPreset(L[2], 'Show'); } else mGo('see', 'stage'); dockGo('stage'); try { shOpen('scene', 'looks'); } catch (e) { } }
+};
+/** called by startMaybe: true when a goal took over the first screen */
+function guideRoute() {
+  const goal = CFG.goal || PRJ.goal; if (!goal || !GD_SESSIONS[goal]) return false;
+  PRJ.goal = null; CFG.goal = null; saveCfg();
+  if (goal === 'hum') { guideStart('hum', { fresh: true }); return false; }   // the hum bar still opens as usual
+  (async () => { try { await GD_GOALS[goal](); } catch (e) { console.warn(e); } guideStart(goal, { fresh: true }); })(); return true;
+}
+
+/* ---------- the card ---------- */
+function guideStart(id, o = {}) {
+  const S0 = GD_SESSIONS[id]; if (!S0) return; guideStop(true);
+  const g = gdc(); GD.id = id; GD.i = o.fresh ? 0 : Math.min(g.prog[id] || 0, S0.steps.length - 1); GD.min = false; GD.seen = {}; GD.base = null; GD.done = false;
+  g.sess = id; saveCfg(); gdHintClear(); GD.manual = false; gdEnter(); gdBuild(); GD.timer = setInterval(gdTick, 400); gdTick();
+  if (o.go) { const st = S0.steps[GD.i]; try { if (st.go) st.go(); } catch (e) { } }
+}
+function guideStop(quiet) {
+  clearInterval(GD.timer); GD.timer = 0; if (GD.id) { const g = gdc(); if (!GD.done) g.prog[GD.id] = GD.i; }
+  GD.id = null; gdPulse(null); if (GD.el) { GD.el.remove(); GD.el = null; }
+  const g = gdc(); if (g.sess) { g.sess = null; saveCfg(); } document.body.classList.remove('gd-on');
+  if (!quiet) toast('Guided session closed. Find it again under ? ▸ Guided sessions.', '');
+}
+function gdEnter() { const st = GD_SESSIONS[GD.id].steps[GD.i]; GD.seen = {}; GD.base = null; try { if (st && st.setup) st.setup(); } catch (e) { } }
+function gdPulse(el) {
+  if (GD.pulse && GD.pulse !== el) GD.pulse.classList.remove('gd-pulse'); GD.pulse = el || null; if (el) el.classList.add('gd-pulse');
+}
+function gdTarget(st) { try { const t = typeof st.target === 'function' ? st.target() : (st.target ? document.querySelector(st.target) : null); return t && t.getClientRects && t.getClientRects().length ? t : null; } catch (e) { return null; } }
+function gdTick() {
+  if (!GD.id) return; const S0 = GD_SESSIONS[GD.id]; gdSniff();
+  let moved = false;
+  while (GD.i < S0.steps.length) { let ok = false; try { ok = !!S0.steps[GD.i].done(); } catch (e) { } if (!ok) break; GD.i++; moved = true; GD.seen = GD.seen || {}; if (GD.i < S0.steps.length) gdEnter(); }
+  if (moved) { const g = gdc(); g.prog[GD.id] = GD.i; saveCfg(); }
+  if (GD.i >= S0.steps.length) return gdFinish();
+  gdBuild(); const tg = GD.min ? null : gdTarget(S0.steps[GD.i]); gdPulse(tg); gdPlace(tg);
+}
+/** keep the card off the control it is pointing at (and off the hum panel); a card the person has dragged stays where they put it */
+function gdPlace(tg) {
+  const el = GD.el; if (!el || !el.isConnected || GD.manual || document.body.dataset.form === 'phone') return;
+  const w = el.offsetWidth, hh = el.offsetHeight, vw = innerWidth, vh = innerHeight, M = 14, rects = [];
+  if (tg) rects.push([tg.getBoundingClientRect(), 10]); const hb = document.getElementById('humbar'); if (hb && hb.open) rects.push([hb.getBoundingClientRect(), 3]);
+  const cost = (x, y) => rects.reduce((a, [r, k]) => a + k * Math.max(0, Math.min(x + w, r.right) - Math.max(x, r.left)) * Math.max(0, Math.min(y + hh, r.bottom) - Math.max(y, r.top)), 0);
+  const cur = el.getBoundingClientRect(), have = el.style.left !== '';
+  if (have && cost(cur.left, cur.top) === 0) return;
+  const bl = [M, vh - hh - 40], tr = [vw - w - M, 62], cands = GD.id && GD_SESSIONS[GD.id].corner === 'bl' ? [bl, tr, [M, 62], [vw - w - M, vh - hh - 40]] : [tr, bl, [M, 62], [vw - w - M, vh - hh - 40]]; let best = cands[0], bc = Infinity; for (const c of cands) { const k = cost(c[0], c[1]); if (k < bc) { bc = k; best = c; } }
+  el.style.left = Math.max(M, best[0]) + 'px'; el.style.top = Math.max(M, best[1]) + 'px'; el.style.right = 'auto'; el.style.bottom = 'auto';
+}
+function gdDrag(e) {
+  if (e.target.closest('button') || document.body.dataset.form === 'phone') return; const el = GD.el, r = el.getBoundingClientRect(), dx = e.clientX - r.left, dy = e.clientY - r.top;
+  const mv = ev => { GD.manual = true; el.style.left = Math.max(0, Math.min(innerWidth - 60, ev.clientX - dx)) + 'px'; el.style.top = Math.max(0, Math.min(innerHeight - 40, ev.clientY - dy)) + 'px'; el.style.right = 'auto'; el.style.bottom = 'auto'; };
+  const up = () => { removeEventListener('pointermove', mv); removeEventListener('pointerup', up); }; addEventListener('pointermove', mv); addEventListener('pointerup', up);
+}
+function gdFinish() {
+  const id = GD.id, S0 = GD_SESSIONS[id], g = gdc(), first = !g.done[id]; GD.done = true; g.done[id] = Date.now(); g.prog[id] = 0; saveCfg();
+  clearInterval(GD.timer); GD.timer = 0; gdPulse(null);
+  let unlocked = []; if (first) { const was = new Set(DOCK.filter(d => xpAllowed(d[0])).map(d => d[0])); try { xpSignal(5); } catch (e) { } unlocked = DOCK.filter(d => xpAllowed(d[0]) && !was.has(d[0])).map(d => XP_NAMES[d[0]] || d[1]); }
+  const nx = S0.next && !g.done[S0.next] ? GD_SESSIONS[S0.next] : GD_ORDER.map(k => GD_SESSIONS[k]).find((s, i) => !g.done[GD_ORDER[i]]);
+  const nxId = nx ? GD_ORDER.find(k => GD_SESSIONS[k] === nx) : null;
+  if (!GD.el) gdBuild(); const el = GD.el; el.innerHTML = ''; el.classList.remove('min'); el.dataset.state = 'done';
+  el.append(h('div', { class: 'gd-h' }, h('span', { class: 'gd-t' }, '✓ ' + S0.name), h('button', { class: 'gd-x', 'aria-label': 'Close', title: 'Close', onclick: () => guideStop(true) }, '✕')),
+    h('p', { class: 'gd-text' }, S0.outro), unlocked.length ? h('p', { class: 'gd-unlock' }, h('b', {}, 'Added to your tabs: '), unlocked.join(', '), '. Find the rest under Tools.') : null,
+    h('div', { class: 'gd-act' }, nxId ? h('button', { class: 'btn sm primary', id: 'gdNext', onclick: () => guideStart(nxId, { fresh: true, go: true }) }, 'Next: ' + nx.name) : null, h('button', { class: 'btn sm', onclick: () => guideStop(true) }, 'Done')));
+  GD.id = null; document.body.classList.add('gd-on');
+}
+function gdBuild() {
+  const S0 = GD_SESSIONS[GD.id]; if (!S0) return; const st = S0.steps[GD.i], n = S0.steps.length;
+  if (!GD.el || !GD.el.isConnected) { GD.el = h('aside', { id: 'gd', class: 'gd', role: 'region', 'aria-label': 'Guided session', 'aria-live': 'polite' }); document.body.append(GD.el); }
+  const el = GD.el, key = GD.id + ':' + GD.i + ':' + GD.min; if (el.dataset.key === key) return; el.dataset.key = key; el.dataset.state = 'run'; el.classList.toggle('min', GD.min); el.innerHTML = ''; document.body.classList.add('gd-on');
+  el.append(h('div', { class: 'gd-h', title: 'Drag to move', onpointerdown: gdDrag }, h('span', { class: 'gd-t' }, S0.icon + ' ' + S0.name), h('span', { class: 'gd-n' }, (GD.i + 1) + ' of ' + n),
+    h('button', { class: 'gd-m', id: 'gdMin', 'aria-label': GD.min ? 'Expand' : 'Minimise', title: GD.min ? 'Expand' : 'Minimise', onclick: () => { GD.min = !GD.min; gdBuild(); gdPulse(GD.min ? null : gdTarget(st)); } }, GD.min ? '▢' : '–'),
+    h('button', { class: 'gd-x', id: 'gdEnd', 'aria-label': 'End this session', title: 'End this session (your place is kept)', onclick: () => guideStop() }, '✕')),
+  h('div', { class: 'gd-bar', role: 'progressbar', 'aria-valuemin': 0, 'aria-valuemax': n, 'aria-valuenow': GD.i }, h('i', { style: { width: Math.round(GD.i / n * 100) + '%' } })));
+  if (GD.min) return;
+  el.append(h('ol', { class: 'gd-steps' }, S0.steps.map((s, i) => h('li', { class: i < GD.i ? 'ok' : i === GD.i ? 'cur' : '' }, h('span', { class: 'gd-tick', 'aria-hidden': 'true' }, i < GD.i ? '✓' : String(i + 1)), s.short))),
+    h('p', { class: 'gd-text', id: 'gdText' }, typeof st.text === 'function' ? st.text() : st.text),
+    h('div', { class: 'gd-act' }, h('button', { class: 'btn sm primary', id: 'gdShow', title: 'Take me to the control for this step', onclick: () => { try { if (st.go) st.go(); } catch (e) { } const t = gdTarget(st); if (t) { try { t.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) { } gdPulse(t); } } }, 'Show me'),
+      h('button', { class: 'btn sm', id: 'gdSkip', title: 'Skip this step', onclick: () => { GD.i++; const g = gdc(); g.prog[GD.id] = GD.i; saveCfg(); if (GD.i >= S0.steps.length) return gdFinish(); gdEnter(); gdBuild(); gdTick(); } }, 'Skip')));
+}
+
+/* ---------- the menu: all sessions, one place ---------- */
+function guideMenu() {
+  const g = gdc(), body = h('div', { class: 'gd-menu' }, h('p', { class: 'muted small' }, 'Short, real tasks. Each one ticks off as you do it, and finishing one adds tools to your tab strip. You can leave at any point and come back to where you were.'),
+    GD_ORDER.map(k => { const s = GD_SESSIONS[k], done = !!g.done[k], part = (g.prog[k] || 0) > 0 && !done; return h('div', { class: 'gd-row' + (done ? ' ok' : '') }, h('span', { class: 'gd-ic', 'aria-hidden': 'true' }, s.icon), h('div', { class: 'grow' }, h('b', {}, s.name, done ? h('span', { class: 'gd-done' }, ' ✓ done') : null), h('span', { class: 'small muted' }, s.blurb + ' About ' + s.mins + ' min.')),
+      h('button', { class: 'btn sm' + (done ? '' : ' primary'), 'data-s': k, onclick: () => { d.close(); guideStart(k, { fresh: !part, go: true }); } }, done ? 'Again' : part ? 'Resume' : 'Start')); }),
+    h('div', { class: 'hr' }), h('div', { class: 'row', style: { gap: '8px', flexWrap: 'wrap' } },
+      h('button', { class: 'btn sm', id: 'gdWords', onclick: () => { d.close(); guideWords(); } }, 'DAW words, in guitar terms'),
+      h('button', { class: 'btn sm', id: 'gdTour', onclick: () => { d.close(); tourStart(); } }, '▶ Take the full tour'),
+      h('label', { class: 'chk small', style: { display: 'flex', gap: '5px', alignItems: 'center', fontWeight: 700 } }, h('input', { type: 'checkbox', id: 'gdHintsOn', checked: !g.off, onchange: e => { g.off = !e.target.checked; saveCfg(); if (g.off) gdHintClear(); } }), 'Show a note the first time I open a tab')));
+  const d = pdlg('gdMenu', 'GUIDED SESSIONS', body); return d;
+}
+
+/* ---------- plain words ---------- */
+const GD_WORDS = [
+  ['Track / lane', 'One row in the arrangement for one sound, like one channel on a four-track recorder. Chords, drums, your guitar and your voice each get a lane.'],
+  ['Clip', 'A piece of recorded audio sitting in a lane. Drag it to move it, pull its edge to trim it. Think of a length of tape you can cut and slide.'],
+  ['Take', 'One pass of playing. Record again and you get another take; keep the good one, mute the rest.'],
+  ['Arm', 'Tell a lane it will be recorded next. Like pressing record on one channel before you hit the big record button.'],
+  ['Dry and wet', 'Dry is the clean signal straight from your guitar. Wet is the sound after the amp and pedals. The app records both so you can change the tone later.'],
+  ['Input level / gain', 'How hot the signal is when it comes in, like the volume knob on your interface. If the meter hits red the sound distorts, so turn it down.'],
+  ['Monitor', 'Hearing yourself while you play. Use the interface’s direct monitor or headphones so there is no delay.'],
+  ['Latency', 'The tiny delay between playing and hearing. Under about 12 ms feels instant. A smaller buffer lowers it.'],
+  ['Count-in', 'The clicks before a take starts, like a drummer counting in the band.'],
+  ['Loop', 'Repeat one section over and over, the way you would drill a hard lick.'],
+  ['Stem', 'One instrument pulled out of a mixed song: drums, bass, vocals, or guitar and the rest. Mute yours and you have a backing track.'],
+  ['Snap / quantise', 'Pull timing onto the beat grid. Clips snap to the beat so they line up without nudging by eye.'],
+  ['Master', 'The final volume of everything together. On the show output it is the house dimmer.'],
+  ['Render / export', 'Turn the song into a file you can send: a WAV, MIDI, a chord sheet or a tab.'],
+  ['Scene', 'A saved snapshot: on the Rig, a whole pedalboard setting; on the Stage, a whole look. One key switches between them, like a patch change.']
+];
+function guideWords() {
+  const q = h('input', { class: 'in', type: 'search', placeholder: 'Find a word…', 'aria-label': 'Find a word', style: { width: '100%', margin: '0 0 8px' } });
+  const list = h('dl', { class: 'gd-words' }, GD_WORDS.map(([t, d]) => [h('dt', {}, t), h('dd', {}, d)]));
+  q.oninput = () => { const v = q.value.toLowerCase(); list.querySelectorAll('dt').forEach(dt => { const dd = dt.nextSibling, hit = !v || (dt.textContent + ' ' + dd.textContent).toLowerCase().includes(v); dt.hidden = dd.hidden = !hit; }); };
+  return pdlg('gdWordsDlg', 'DAW WORDS, IN GUITAR TERMS', h('div', {}, q, list));
+}
+
+/* ---------- a note the first time a tab opens ---------- */
+const GD_HINTS = {
+  rig: ['Your amp and pedals, in the order the sound passes through them, like cables on a real board.', 'Pick a tone from the list on the left, then strum.'],
+  tab: ['Write what you play as numbers on six lines, one line for each string.', 'Click a cell and type a fret number. Space plays it.'],
+  song: ['The song’s title, key, tempo and structure: verses, choruses, a bridge.', 'Change the key and the whole song moves with it.'],
+  band: ['A drummer, bassist and rhythm guitarist who follow your chords.', 'Press D, B or G to turn each of them on or off while you play.'],
+  fret: ['A map of the neck. It shows scale notes and chord shapes for your tuning.', 'Choose a scale and play inside the lit notes.'],
+  stage: ['The control desk for a live show: looks, lights, cues and the output to a projector.', 'Open the Output tab and run a test pattern first.'],
+  neural: ['Your song drawn as a living map of notes and chords.', 'Press Play, then drag to turn it.'],
+  stems: ['Drop in any song and it splits into drums, bass, vocals and guitar, so you can mute the part you play.', 'Choose a file, then use a preset such as No guitar.'],
+  tx: ['Play or load a recording and the app writes the chords and tab for you.', 'Load a recording, then review and accept what it found.'],
+  cam: ['Optional. Your camera can follow your hand on the neck. It stays off until you start it.', 'Leave this alone unless you want it.'],
+  lab: ['Measurements for people who like to dig in: timing, pitch, level, latency.', 'Press the loopback latency test to see your real delay.'],
+  exp: ['Take your song out: audio, MIDI, a chord sheet, tab, or a backup of everything.', 'Use Back up all songs now and then. It is one file.']
+};
+function gdHintClear() { document.querySelectorAll('.gd-hint').forEach(e => e.remove()); GD.hintEl = null; }
+function guideHint(id) {
+  const g = gdc(); if (g.off || !GD_HINTS[id] || typeof xpLevel !== 'function' || xpLevel() === 'pro' || GD.id) return; const p = PANES[id]; if (!p || p.querySelector('.gd-hint')) return;
+  const [what, tryIt] = GD_HINTS[id], name = (XP_NAMES[id] || (DOCK.find(d => d[0] === id) || [])[1] || id), seen = g.hints[id];
+  const el = h('div', { class: 'gd-hint' + (seen ? ' small' : ''), role: 'note', 'data-id': id });
+  const open = () => { el.className = 'gd-hint'; el.innerHTML = ''; el.append(h('div', {}, h('b', {}, name + ': '), what, ' ', h('span', { class: 'gd-try' }, 'Try: '), tryIt), h('button', { class: 'btn sm', onclick: () => { g.hints[id] = 1; saveCfg(); shut(); } }, 'Got it')); };
+  const shut = () => { el.className = 'gd-hint small'; el.innerHTML = ''; el.append(h('button', { class: 'gd-info', onclick: open, title: 'What is this tab?' }, 'ⓘ What is this tab?')); };
+  if (seen) shut(); else open(); p.prepend(el);
+}
+bus.on('dock', id => { setTimeout(() => { try { guideHint(typeof id === 'string' ? id : DOCK.cur); } catch (e) { } }, 60); });
+
+/* ---------- the way in: the goal cards on the first page ---------- */
+function guideBoot(bootStart) {
+  const box = document.getElementById('bootGoals'); if (!box) return;
+  box.querySelectorAll('.boot-goal').forEach(b => b.onclick = () => {
+    const goal = b.dataset.goal; CFG.goal = goal; PRJ.goal = goal; saveCfg();
+    if (goal === 'show') PRJ.bootDemo = false;   // the show goal makes its own demo project
+    bootStart('studio');
+  });
+  const pro = document.getElementById('bootPro'); if (pro) pro.onclick = () => { CFG.xpMode = 'pro'; CFG.xp = 40; saveCfg(); try { rebuildTabs(); } catch (e) { } bootStart('studio'); };
+}
+bus.on('booted', () => { const g = gdc(); if (g.sess && GD_SESSIONS[g.sess] && !GD.id && !(CFG.goal || PRJ.goal)) setTimeout(() => guideStart(g.sess, {}), 1200); });
+
+/* >>> parts/61-looper.js */
+/* ============================================================
+   Part 61 · Loop & layer: a looper-pedal way of working on top of the recording engine.
+   The engine already records one take per pass of a loop region and plays the earlier takes back while it records the next
+   (03-band: tick / recBegin / recEnd). This part adds what a looper player expects around it: one button that sets the loop,
+   arms the guitar, clears the band away and starts; layers that are named and counted; a way to stop recording but keep the
+   loop playing; a way to take back the last layer; and a pass on which nobody played is never kept.
+   Nothing is uploaded. Layers are ordinary takes: move, trim, mute, solo and export them like any other.
+   ============================================================ */
+const LP = { on: false, bars: 4, pass: 1, finish: false, arm: false, n0: 0, band: false, timer: 0, el: null, starting: false };
+
+/** called by the transport each time the loop comes round (see tick in 03-band) */
+function lpWrap() {
+  if (!LP.on) return; LP.pass++;
+  if (LP.finish) { LP.finish = false; T.rec = false; bus.emit('transport'); }
+  else if (LP.arm) { LP.arm = false; T.rec = true; bus.emit('transport'); }
+}
+/** layers recorded since the loop was started */
+const lpLayers = () => TAKES.slice(LP.n0);
+
+async function looperStart(o = {}) {
+  const bars = [1, 2, 4, 8].includes(+o.bars) ? +o.bars : (CFG.loopBars || 4), band = o.band != null ? !!o.band : !!CFG.loopBand;
+  CFG.loopBars = bars; CFG.loopBand = band; saveCfg();
+  try { await startAudio(); } catch (e) { toast('Audio could not start: ' + e.message, 'bad'); return false; }
+  if (!E.hasInput) { toast('Connect your guitar or microphone first (Audio at the top right), then start the loop.', 'warn'); try { audioOpen(); } catch (e) { } return false; }
+  if (T.playing) stopPlay(true);
+  const A = Math.floor(playheadSlot() / spb()) * spb(), need = A / spb() + bars; let guard = 0;
+  while (totalBars() < need && guard++ < 64) S.sections[S.sections.length - 1].bars.push(newBar('')); T.bars = null;
+  T.loop = true; T.loopA = A; T.loopB = A + bars * spb(); T.cursor = A; T.metro = true; CFG.armG = true;
+  if (!band) setRehearsal({ drumsOn: false, bassOn: false, compOn: false, leadOn: false, click: true });
+  else setRehearsal({ drumsOn: true, bassOn: true, compOn: true, click: true });
+  if (CFG.countIn < 1) CFG.countIn = 1;
+  commit(false); LP.on = true; LP.bars = bars; LP.band = band; LP.pass = 1; LP.finish = false; LP.arm = false; LP.n0 = TAKES.length; T.rec = true;
+  syncTransport(); TL.dirty = true; lpHud(true); LP.starting = true; try { await play(true); } finally { LP.starting = false; } return true;
+}
+function looperKeep() { if (!LP.on || !T.rec) return; LP.finish = true; LP.arm = false; lpHudDraw(); }          // stop recording at the end of this pass; the loop keeps playing
+function looperMore() { if (!LP.on || T.rec) return; LP.arm = true; LP.finish = false; lpHudDraw(); }          // the next pass records another layer
+function looperUndo() {
+  const l = lpLayers(), last = l[l.length - 1]; if (!last) { toast('No layer to take back yet.', 'warn'); return false; }
+  const ok = tkDelete(last); lpHudDraw(); return ok;
+}
+function looperEnd() { if (T.playing) stopPlay(true); LP.on = false; lpHud(false); }
+bus.on('transport', () => { if (LP.on && !T.playing && !LP.starting) { LP.on = false; lpHud(false); } });
+
+/* ---------- the strip while the loop runs ---------- */
+function lpState() {
+  if (!LP.on) return null; const n = lpLayers().length;
+  if (!T.playing) return { t: 'Starting…', rec: true, n };
+  if (T.rec && !REC && T.slot < T.loopA) return { t: 'Count-in…', rec: true, n };
+  if (REC && REC.cycle) return { t: 'Recording layer ' + (n + 1), rec: true, n };
+  if (T.rec) return { t: 'Recording starts on the next pass', rec: true, n };
+  if (LP.arm) return { t: 'Next pass records a layer', rec: false, n };
+  return { t: n ? 'Looping ' + n + ' layer' + (n === 1 ? '' : 's') : 'Looping', rec: false, n };
+}
+function lpHud(on) {
+  clearInterval(LP.timer); LP.timer = 0; if (!on) { if (LP.el) { LP.el.remove(); LP.el = null; } return; }
+  if (!LP.el || !LP.el.isConnected) { LP.el = h('div', { id: 'lpHud', class: 'lp-hud', role: 'group', 'aria-label': 'Loop and layer' }); document.body.append(LP.el); }
+  lpHudDraw(true); LP.timer = setInterval(lpHudDraw, 250);
+}
+function lpHudDraw(force) {
+  const el = LP.el; if (!el || !el.isConnected) return; const s = lpState(); if (!s) return;
+  const key = [s.t, s.rec, s.n, LP.pass, LP.finish, LP.arm].join('|'); if (!force && el.dataset.key === key) return; el.dataset.key = key; el.classList.toggle('rec', !!s.rec); el.innerHTML = '';
+  el.append(h('span', { class: 'lp-dot', 'aria-hidden': 'true' }), h('b', { class: 'lp-t', id: 'lpState' }, s.t), h('span', { class: 'lp-m' }, '⟲ ' + LP.bars + ' bar' + (LP.bars === 1 ? '' : 's') + ' · pass ' + LP.pass),
+    T.rec ? h('button', { class: 'btn sm', id: 'lpKeep', disabled: LP.finish, title: 'Stop recording at the end of this pass. The loop keeps playing so you can listen.', onclick: looperKeep }, LP.finish ? 'Stops after this pass' : 'Keep looping') : h('button', { class: 'btn sm', id: 'lpMore', disabled: LP.arm, title: 'Record another layer on the next pass', onclick: looperMore }, LP.arm ? 'Records next pass' : '● Add a layer'),
+    h('button', { class: 'btn sm', id: 'lpUndo', disabled: !s.n, title: 'Take back the last layer', onclick: looperUndo }, '↶ Undo layer'),
+    h('button', { class: 'btn sm', id: 'lpStop', title: 'Stop everything. Your layers stay in the arrangement.', onclick: looperEnd }, '■ Stop'));
+}
+
+/* ---------- the window that starts it ---------- */
+function looperOpen() {
+  const st = { bars: CFG.loopBars || 4, band: !!CFG.loopBand };
+  const seg = (opts, get, set) => { const row = h('div', { class: 'seg', role: 'group' }); const draw = () => { row.innerHTML = ''; opts.forEach(([k, n]) => row.append(h('button', { class: String(get()) === String(k) ? 'on' : '', 'aria-pressed': String(String(get()) === String(k)), onclick: () => { set(k); draw(); } }, n))); }; draw(); return row; };
+  const body = h('div', { class: 'lp-dlg' },
+    h('p', { class: 'muted small' }, 'Record a part, hear it come round, and play the next part on top, the way a looper pedal works. Each pass of the loop records one layer and the earlier layers keep playing. Layers are ordinary tracks, so you can move, trim, mute and export them afterwards.'),
+    h('div', { class: 'pd-form' }, pField('Loop length', seg([[1, '1 bar'], [2, '2 bars'], [4, '4 bars'], [8, '8 bars']], () => st.bars, v => { st.bars = +v; })),
+      pField('Backing band', seg([[false, 'Off · click only'], [true, 'On']], () => st.band, v => { st.band = v === true || v === 'true'; }))),
+    h('ol', { class: 'lp-how small' }, h('li', {}, 'Press Start. A bar of clicks counts you in.'), h('li', {}, 'Play your chords for one pass. That is layer 1.'), h('li', {}, 'It loops back by itself. Play a lead on top. That is layer 2, and so on.'), h('li', {}, 'Press Keep looping to stop recording and just listen. Undo layer takes the last one back.')),
+    h('div', { class: 'row', style: { gap: '8px' } }, h('button', { class: 'btn primary', id: 'lpGo', onclick: async () => { d.close(); await looperStart({ bars: st.bars, band: st.band }); } }, '● Start looping'), h('span', { class: 'tiny muted' }, 'Use headphones if you play through speakers.')));
+  const d = pdlg('lpDlg', 'LOOP & LAYER', body); return d;
 }
 
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();

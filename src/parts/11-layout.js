@@ -5,6 +5,8 @@
    ============================================================ */
 const LAY = Object.assign({ flip: true, left: true, right: true, lw: 250, rw: 292, tlh: null, hidden: [], order: [], floats: {}, fl: [], rc: { order: [], col: {}, hide: {} } }, CFG.layout || {});
 LAY.rc = Object.assign({ order: [], col: {}, hide: {} }, LAY.rc || {});
+/* 2.6: the Monitor is a short list of widgets you choose, not one long scroll. Until you chose differently, only the Tuner and the Levels show; the readouts that used to follow them are one click away. */
+if ((LAY.rc.v | 0) < 2) { ['live', 'spectrum', 'views'].forEach(n => { if (LAY.rc.hide[n] !== false) LAY.rc.hide[n] = true; }); LAY.rc.v = 2; }
 const FLOATS = new Map();
 const saveLay = () => { CFG.layout = LAY; saveCfg(); };
 const TLH_DEFAULT = 'minmax(200px,40%)';
@@ -82,8 +84,17 @@ let _slt = 0; const saveLayLater = () => { clearTimeout(_slt); _slt = setTimeout
 let _zf = 41; function floatFront(id) { const w = FLOATS.get(id); if (w) w.style.zIndex = ++_zf; }
 function unfloat(id) { const w = FLOATS.get(id); if (!w) return; w._ro.disconnect(); $('#dock').append(PANES[id]); w.remove(); FLOATS.delete(id); LAY.fl = [...FLOATS.keys()]; saveLay(); rebuildTabs(); dockGo(id); setTimeout(() => window.dispatchEvent(new Event('resize')), 50); }
 
-/* ---------- sidebar cards: drag to reorder, click title to collapse ---------- */
-const RCARDS = ['tuner', 'levels', 'live', 'spectrum'];
+/* ---------- Monitor widgets: a chooser on top, the cards you chose below ---------- */
+const RCARDS = ['tuner', 'levels', 'live', 'spectrum', 'views'];
+const RC_INFO = { tuner: ['Tuner', 'Pitch, cents and the strings of your tuning'], levels: ['Levels', 'Input, rig and master meters'], live: ['Analysis', 'Chord, key, brightness, vibrato and crest'], spectrum: ['Spectrum', 'The rig output as a spectrum'], views: ['Views', 'Pitch wheel, spectrogram and scope'] };
+/** is this Monitor widget showing? The frame loop skips the drawing of the ones that are not */
+function monShown(n) { return !LAY.rc.hide[n]; }
+function monChips() {
+  const bar = UI.monBar = UI.monBar || h('div', { class: 'mon-wid', role: 'group', 'aria-label': 'Monitor widgets' }); bar.innerHTML = '';
+  bar.append(h('span', { class: 'mon-wl' }, 'Widgets'));
+  RCARDS.forEach(n => { const on = monShown(n); bar.append(h('button', { class: 'mon-chip' + (on ? ' on' : ''), 'aria-pressed': on ? 'true' : 'false', title: RC_INFO[n][1] + (on ? ' — click to remove' : ' — click to add'), 'data-w': n, onclick: () => setCardHidden(n, monShown(n)) }, (on ? '' : '+ ') + RC_INFO[n][0])); });
+  return bar;
+}
 function setupCards() {
   const p = UI.monPane; if (!p) return; const cards = [...p.children]; cards.forEach((c, i) => { c.dataset.card = RCARDS[i] || ('c' + i); });
   const byName = n => cards.find(c => c.dataset.card === n);
@@ -91,49 +102,70 @@ function setupCards() {
   cards.forEach(c => {
     const n = c.dataset.card, hd = c.firstChild; c.classList.toggle('cc', !!LAY.rc.col[n]); c.style.display = LAY.rc.hide[n] ? 'none' : '';
     hd.setAttribute('draggable', 'true'); hd.title = 'Click: collapse · drag: reorder'; hd.addEventListener('click', e => { if (e.target.closest('button,select,input,.led')) return; c.classList.toggle('cc'); LAY.rc.col[n] = c.classList.contains('cc'); saveLay(); });
+    if (RC_INFO[n]) hd.append(h('button', { class: 'wx', title: 'Remove this widget (add it back from Widgets, above)', 'aria-label': 'Remove ' + RC_INFO[n][0], onclick: e => { e.stopPropagation(); setCardHidden(n, true); } }, '✕'));
     hd.addEventListener('dragstart', e => { e.dataTransfer.setData('text/plain', 'card:' + n); });
     c.addEventListener('dragover', e => { e.preventDefault(); c.classList.add('dropt'); }); c.addEventListener('dragleave', () => c.classList.remove('dropt'));
-    c.addEventListener('drop', e => { e.preventDefault(); c.classList.remove('dropt'); const t = e.dataTransfer.getData('text/plain'); if (!t.startsWith('card:')) return; const f = byName(t.slice(5)); if (f && f !== c) { p.insertBefore(f, c); LAY.rc.order = [...p.children].map(x => x.dataset.card); saveLay(); } });
+    c.addEventListener('drop', e => { e.preventDefault(); c.classList.remove('dropt'); const t = e.dataTransfer.getData('text/plain'); if (!t.startsWith('card:')) return; const f = byName(t.slice(5)); if (f && f !== c) { p.insertBefore(f, c); LAY.rc.order = [...p.children].filter(x => x.dataset.card).map(x => x.dataset.card); saveLay(); } });
   });
+  p.prepend(monChips());
 }
-function setCardHidden(n, hide) { LAY.rc.hide[n] = hide; const c = $('[data-card="' + n + '"]', UI.monPane); if (c) c.style.display = hide ? 'none' : ''; saveLay(); }
+function setCardHidden(n, hide) { LAY.rc.hide[n] = !!hide; const c = $('[data-card="' + n + '"]', UI.monPane); if (c) c.style.display = hide ? 'none' : ''; saveLay(); monChips(); if (!hide && n === 'views') MV.spec = null; }
 
-/* ---------- presets ---------- */
+/* ---------- layouts: each one is a complete workspace, for one kind of job ---------- */
+/* A layout sets everything that makes a workspace look the way it does: where the panels sit (above or below the arrangement), which sidebars show and what is in them,
+   how tall the arrangement is, which tabs are on the strip (the rest are one click away under ☰), and which panel is open. Choosing one replaces the last one completely,
+   so nothing from the previous layout leaks into the next.
+   spec: flip · left · right (sidebars on or off) · tlh (arrangement height) · dock (the open panel; null leaves it) · order (tabs to put first) · hidden (tabs left off the strip)
+         side {panel: 'left' | 'right'} (panels that live in a sidebar) · so {left: [], right: []} (their order) · cur {left, right} (which sidebar tab is open) · mon (Monitor widgets shown) · board */
+const DOCK_DEFAULT = ['rig', 'tab', 'song', 'band', 'fret', 'vis', 'stage', 'neural', 'stems', 'tx', 'cam', 'lab', 'exp'];
 const LAYOUTS = [
-  ['Compose', 'Tabs on top, arrangement below, both sidebars', { flip: true, left: true, right: true, tlh: null, dock: 'tab' }],
-  ['Perform', 'Pedalboard stomps on top, slim arrangement, tuner & meters at right', { flip: true, left: false, right: true, tlh: '132px', dock: 'rig', board: 'stomp' }],
-  ['Pedalboard', 'All the room for pedals — sidebars away, thin arrangement', { flip: true, left: false, right: false, tlh: '96px', dock: 'rig', board: 'board' }],
-  ['Light show', 'Stage visuals with a thin arrangement', { flip: true, left: false, right: false, tlh: '104px', dock: 'stage' }],
-  ['Studio (classic)', 'Original look: arrangement above, tabs below', { flip: false, left: true, right: true, tlh: null, dock: 'tab' }],
-  ['Songwriting', 'Tab above, chords & lyrics (Refine) beside it', { flip: true, left: false, right: true, tlh: 'minmax(150px,30%)', dock: 'tab', cur: { right: 'refine' } }],
-  ['Track study', 'Stems above, big arrangement showing the track lanes', { flip: true, left: false, right: true, tlh: 'minmax(260px,54%)', dock: 'stems', cur: { right: 'refine' } }],
-  ['Record', 'I/O at left, big arrangement with guitar + vocal lanes', { flip: true, left: true, right: true, tlh: 'minmax(260px,56%)', dock: 'rig', cur: { left: 'io', right: 'monitor' } }],
-  ['Focus', 'Just the panel — no sidebars, slim arrangement', { flip: true, left: false, right: false, tlh: '90px', dock: null }]
+  ['Studio', 'Everything in reach: panels above the arrangement, a sidebar each side.', { flip: true, left: true, right: true, tlh: null, dock: 'tab', cur: { left: 'io', right: 'monitor' } }],
+  ['Write', 'Tab in the middle, chords and lyrics beside it, theory at hand. The arrangement stays short.', { flip: true, left: true, right: true, tlh: 'minmax(150px,28%)', dock: 'tab', order: ['tab', 'song', 'fret', 'band', 'rig'], hidden: ['stage', 'neural', 'stems', 'tx', 'cam', 'lab'], cur: { left: 'theory', right: 'refine' } }],
+  ['Arrange', 'The arrangement on top and tall, the band and song panels below it.', { flip: false, left: false, right: true, tlh: 'minmax(260px,58%)', dock: 'band', order: ['band', 'song', 'tab', 'stems', 'rig'], hidden: ['stage', 'neural', 'tx', 'cam', 'lab', 'fret'], cur: { right: 'refine' } }],
+  ['Record', 'Inputs and levels either side, a tall arrangement for the guitar and voice lanes.', { flip: true, left: true, right: true, tlh: 'minmax(260px,56%)', dock: 'rig', order: ['rig', 'tab', 'song', 'band'], hidden: ['stage', 'neural', 'tx', 'cam', 'lab', 'fret'], cur: { left: 'io', right: 'monitor' }, mon: ['tuner', 'levels'] }],
+  ['Tone', 'The pedalboard fills the middle, with tones to pick from and the tuner and spectrum alongside.', { flip: true, left: true, right: true, tlh: '96px', dock: 'rig', board: 'board', order: ['rig', 'fret', 'band', 'song', 'tab'], hidden: ['stage', 'neural', 'stems', 'tx', 'cam', 'lab'], cur: { left: 'tones', right: 'monitor' }, mon: ['tuner', 'spectrum', 'live'] }],
+  ['Practice', 'Tab and fretboard side by side, with the loop and transport in reach.', { flip: true, left: false, right: true, tlh: 'minmax(170px,34%)', dock: 'tab', order: ['tab', 'song', 'band', 'rig'], hidden: ['stage', 'neural', 'stems', 'tx', 'cam', 'lab'], side: { fret: 'right' }, so: { left: [], right: ['fret', 'refine', 'monitor'] }, cur: { right: 'fret' } }],
+  ['Show', 'The stage picture with the show setup beside it. Sidebars away, arrangement reduced to the transport.', { flip: true, left: false, right: false, tlh: '84px', dock: 'stage', order: ['stage', 'vis', 'song', 'band'], hidden: ['rig', 'tab', 'fret', 'neural', 'stems', 'tx', 'cam', 'lab'] }],
+  ['Focus', 'Just the panel you are on. No sidebars, a slim arrangement.', { flip: true, left: false, right: false, tlh: '90px', dock: null }],
+  ['Classic', 'The original: the arrangement above, the panels below, a sidebar each side.', { flip: false, left: true, right: true, tlh: null, dock: 'tab', cur: { left: 'io', right: 'monitor' } }]
 ];
-function applyPreset(s) {
-  Object.assign(LAY, { flip: s.flip, left: s.left, right: s.right, tlh: s.tlh }); if (s.lw) LAY.lw = s.lw; if (s.rw) LAY.rw = s.rw;
-  if (s.hidden) LAY.hidden = s.hidden.slice(); if (s.order) { LAY.order = s.order.slice(); applyTabOrder(); } if (s.rc) LAY.rc = JSON.parse(JSON.stringify(s.rc));
-  if (s.side) LAY.side = JSON.parse(JSON.stringify(s.side)); if (s.cur) Object.assign(SD.cur, s.cur); if (typeof sideApply === 'function') sideApply();
+const MON_DEFAULT = ['tuner', 'levels'];
+function applyPreset(s, name) {
+  Object.assign(LAY, { flip: s.flip, left: s.left, right: s.right, tlh: s.tlh == null ? null : s.tlh }); if (s.lw) LAY.lw = s.lw; if (s.rw) LAY.rw = s.rw;
+  /* the tab strip: which tabs, in which order (the shipped order when the layout names none) */
+  LAY.hidden = (s.hidden || []).filter(id => id !== s.dock); LAY.order = s.order ? s.order.slice() : [];
+  { const cur = DOCK.cur, ord = LAY.order.length ? LAY.order : DOCK_DEFAULT, ix = id => { const i = ord.indexOf(id); return i < 0 ? 999 : i; }; DOCK.sort((a, b) => ix(a[0]) - ix(b[0]) || DOCK_DEFAULT.indexOf(a[0]) - DOCK_DEFAULT.indexOf(b[0])); DOCK.cur = cur; }
+  /* the sidebars: which panels live in them, in what order, and which one is open */
+  LAY.side = JSON.parse(JSON.stringify(s.side || {})); LAY.so = JSON.parse(JSON.stringify(s.so || { left: [], right: [] }));
+  SD.cur = Object.assign({ left: 'io', right: 'monitor' }, s.cur || {});
+  if (s.rc && !s.mon) LAY.rc = JSON.parse(JSON.stringify(s.rc)); else { const mon = s.mon || MON_DEFAULT; RCARDS.forEach(n => { LAY.rc.hide[n] = !mon.includes(n); }); }
+  LAY.name = name || ''; if (typeof sideApply === 'function') sideApply();
   saveLay(); applyLayout(); setupCardsRefresh(); rebuildTabs(); if (s.dock) { if (FLOATS.has(s.dock)) floatFront(s.dock); else dockGo(s.dock); } if (s.board && typeof boardView === 'function') boardView(s.board);
 }
-function setupCardsRefresh() { $$('[data-card]', UI.monPane).forEach(c => { const n = c.dataset.card; c.classList.toggle('cc', !!LAY.rc.col[n]); c.style.display = LAY.rc.hide[n] ? 'none' : ''; }); const p = UI.monPane; LAY.rc.order.forEach(n => { const c = $('[data-card="' + n + '"]', p); if (c) p.append(c); }); }
+function setupCardsRefresh() { $$('[data-card]', UI.monPane).forEach(c => { const n = c.dataset.card; c.classList.toggle('cc', !!LAY.rc.col[n]); c.style.display = LAY.rc.hide[n] ? 'none' : ''; }); const p = UI.monPane; LAY.rc.order.forEach(n => { const c = $('[data-card="' + n + '"]', p); if (c) p.append(c); }); monChips(); }
+/** a little wireframe of a layout: the sidebars, the open panel, and the arrangement above or below it */
+function layThumb(s) {
+  const fr = (() => { const t = s.tlh; if (!t) return .4; let m = /(\d+)%\)?$/.exec(t); if (m) return clamp(+m[1] / 100, .1, .7); m = /^(\d+)px$/.exec(t); return m ? clamp(+m[1] / 640, .1, .6) : .4; })();
+  const name = id => id ? panelName(id) : '', cur = s.cur || {}, side = (sd, on) => on ? h('i', { class: 'lt-s' }, name(cur[sd] || (sd === 'left' ? 'io' : 'monitor'))) : null;
+  const dk = h('i', { class: 'lt-dk', style: { flex: String(1 - fr) } }, name(s.dock)), tl = h('i', { class: 'lt-tl', style: { flex: String(fr) } });
+  return h('span', { class: 'lay-th', 'aria-hidden': 'true' }, side('left', s.left), h('i', { class: 'lt-c' }, ...(s.flip === false ? [tl, dk] : [dk, tl])), side('right', s.right));
+}
+function layCard(n, d, s, on, fn) { return h('button', { class: 'lay-card' + (on ? ' on' : ''), 'aria-pressed': String(!!on), title: d, onclick: fn }, layThumb(s), h('span', { class: 'lay-t' }, h('b', {}, n), h('span', {}, d))); }
 function layoutMenu(btn) {
-  const saved = store.get('layouts', []), box = h('div');
-  box.append(h('h5', {}, 'Layouts'));
-  LAYOUTS.forEach(([n, d, s]) => box.append(h('button', { class: 'pbtn', onclick: () => { applyPreset(s); closePop(); } }, h('b', {}, n), h('span', {}, d))));
-  saved.forEach((l, i) => box.append(h('div', { class: 'lrow' }, h('button', { class: 'pbtn', style: { margin: 0, flex: 1 }, onclick: () => { applyPreset(l.s); closePop(); } }, h('b', {}, '★ ' + l.n), h('span', {}, 'your layout')), h('button', { class: 'btn sm bad', title: 'Delete', onclick: () => { saved.splice(i, 1); store.set('layouts', saved); closePop(); } }, '✕'))));
+  const saved = store.get('layouts', []), box = h('div', { class: 'lay-menu' });
+  box.append(h('h5', {}, 'Layouts'), h('div', { class: 'lay-grid' }, LAYOUTS.map(([n, d, s]) => layCard(n, d, s, LAY.name === n, () => { applyPreset(s, n); closePop(); }))));
+  if (saved.length) box.append(h('h5', {}, 'Your layouts'), h('div', { class: 'lay-grid' }, saved.map((l, i) => h('div', { class: 'lay-own' }, layCard('★ ' + l.n, 'Your own layout', l.s, LAY.name === '★ ' + l.n, () => { applyPreset(l.s, '★ ' + l.n); closePop(); }), h('button', { class: 'btn sm bad lay-del', title: 'Delete this layout', 'aria-label': 'Delete ' + l.n, onclick: () => { saved.splice(i, 1); store.set('layouts', saved); closePop(); } }, '✕')))));
   const nm = h('input', { class: 'in', placeholder: 'Name this layout…', style: { flex: 1, fontFamily: 'var(--sans)' } });
-  box.append(h('div', { class: 'lrow' }, nm, h('button', { class: 'btn sm primary', onclick: () => { const n = nm.value.trim(); if (!n) return toast('Name your layout', 'warn'); const s = { flip: LAY.flip, left: LAY.left, right: LAY.right, lw: LAY.lw, rw: LAY.rw, tlh: LAY.tlh, hidden: LAY.hidden.slice(), order: DOCK.map(d => d[0]), rc: JSON.parse(JSON.stringify(LAY.rc)), dock: DOCK.cur, side: JSON.parse(JSON.stringify(LAY.side)), cur: { left: SD.cur.left, right: SD.cur.right } }; const a = saved.filter(x => x.n !== n); a.push({ n, s }); store.set('layouts', a); toast('Layout “' + n + '” saved', 'ok'); closePop(); } }, 'Save current')));
+  box.append(h('h5', {}, 'Keep this one'), h('div', { class: 'lrow' }, nm, h('button', { class: 'btn sm primary', onclick: () => { const n = nm.value.trim(); if (!n) return toast('Name your layout', 'warn'); const s = { flip: LAY.flip, left: LAY.left, right: LAY.right, lw: LAY.lw, rw: LAY.rw, tlh: LAY.tlh, hidden: LAY.hidden.slice(), order: DOCK.map(d => d[0]), rc: JSON.parse(JSON.stringify(LAY.rc)), dock: DOCK.cur, side: JSON.parse(JSON.stringify(LAY.side)), so: JSON.parse(JSON.stringify(LAY.so)), cur: { left: SD.cur.left, right: SD.cur.right } }; const a = saved.filter(x => x.n !== n); a.push({ n, s }); store.set('layouts', a); LAY.name = '★ ' + n; saveLay(); toast('Layout “' + n + '” saved', 'ok'); closePop(); } }, 'Save current')));
   box.append(h('h5', {}, 'Workspace'));
   const chk = (label, get, set) => h('label', { class: 'lrow' }, h('input', { type: 'checkbox', checked: get(), onchange: e => set(e.target.checked) }), label);
   box.append(chk('Panels above the arrangement', () => LAY.flip, v => { LAY.flip = v; saveLay(); applyLayout(); }), chk('Left sidebar  [', () => LAY.left, v => { LAY.left = v; saveLay(); applyLayout(); }), chk('Right sidebar  ]', () => LAY.right, v => { LAY.right = v; saveLay(); applyLayout(); }));
   box.append(h('button', { class: 'pbtn', onclick: () => placeMenu(btn) }, h('b', {}, '⇆ Where panels live…'), h('span', {}, 'Move any panel to the left sidebar, the right sidebar or the centre · swap the sidebars')));
-  box.append(h('h5', {}, 'Panels — show / hide · double-click a tab to float it'));
-  DOCK.forEach(([id, name]) => box.append(h('div', { class: 'lrow' }, h('input', { type: 'checkbox', checked: !LAY.hidden.includes(id), onchange: e => setTabHidden(id, !e.target.checked) }), h('span', { class: 'grow' }, name), h('button', { class: 'btn sm', onclick: () => { FLOATS.has(id) ? unfloat(id) : floatPane(id); closePop(); } }, FLOATS.has(id) ? '⤓ dock' : '⧉ float'))));
-  box.append(h('h5', {}, 'Right-sidebar cards'));
-  RCARDS.forEach(n => box.append(h('label', { class: 'lrow' }, h('input', { type: 'checkbox', checked: !LAY.rc.hide[n], onchange: e => setCardHidden(n, !e.target.checked) }), n[0].toUpperCase() + n.slice(1))));
-  box.append(h('div', { class: 'row', style: { marginTop: '10px' } }, h('button', { class: 'btn sm', onclick: () => { [...FLOATS.keys()].forEach(unfloat); LAY.hidden = []; LAY.order = []; LAY.rc = { order: [], col: {}, hide: {} }; LAY.floats = {}; sideReset(); DOCK.sort((a, b) => ['rig', 'tab', 'song', 'band', 'fret', 'vis', 'stage', 'neural', 'stems', 'tx', 'cam', 'lab', 'exp'].indexOf(a[0]) - ['rig', 'tab', 'song', 'band', 'fret', 'vis', 'stage', 'neural', 'stems', 'tx', 'cam', 'lab', 'exp'].indexOf(b[0])); applyPreset(LAYOUTS[0][2]); closePop(); } }, 'Reset layout')));
-  popover(btn, box, { right: true });
+  const det = h('details', { class: 'lay-panels' }, h('summary', {}, 'Panels: show or hide, or float as a window'));
+  DOCK.forEach(([id, name]) => det.append(h('div', { class: 'lrow' }, h('input', { type: 'checkbox', checked: !LAY.hidden.includes(id), 'aria-label': 'Show ' + name, onchange: e => setTabHidden(id, !e.target.checked) }), h('span', { class: 'grow' }, name), h('button', { class: 'btn sm', onclick: () => { FLOATS.has(id) ? unfloat(id) : floatPane(id); closePop(); } }, FLOATS.has(id) ? '⤓ dock' : '⧉ float'))));
+  box.append(det, h('div', { class: 'tiny muted', style: { marginTop: '6px' } }, 'The Monitor’s widgets (Tuner, Levels, Analysis, Spectrum, Views) are chosen on the Monitor itself.'));
+  box.append(h('div', { class: 'row', style: { marginTop: '10px' } }, h('button', { class: 'btn sm', onclick: () => { [...FLOATS.keys()].forEach(unfloat); LAY.rc = { order: [], col: {}, hide: {}, v: 2 }; RCARDS.forEach(n => { LAY.rc.hide[n] = !MON_DEFAULT.includes(n); }); LAY.floats = {}; sideReset(); applyPreset(LAYOUTS[0][2], LAYOUTS[0][0]); closePop(); } }, 'Reset layout')));
+  popover(btn, box, { right: true, style: { maxWidth: 'min(640px,96vw)', width: '640px' } });
 }
 
 /* ---------- band strip: always-visible instrument switches ---------- */

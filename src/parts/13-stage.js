@@ -1,16 +1,20 @@
 /* ============================================================
-   Part 13 · LIVE STAGE — show-ready visuals: 8 scenes, post-FX (trails / kaleidoscope / glow / hue),
+   Part 13 · LIVE STAGE — show-ready visuals: 8 scenes (six looks, a prompter, you in front), post-FX (trails / kaleidoscope / glow / hue),
    song HUD (chord, section, lyric, beat), fullscreen + pop-out, MIDI out (clock, chord roots, onsets)
    ============================================================ */
 VMODES.push(['bloom', 'Chord Bloom'], ['orbit', 'Harmonic Orrery'], ['joy', 'Ridgeline'], ['pulse', 'Beat Grid'], ['prompter', 'Prompter']);
 const SCN0 = (name, mode, hue, o) => Object.assign({ name, mode, hue, drift: 0, trail: .5, kal: 0, glow: .5, sens: 1, cam: false, flash: 0, sect: '', ov: { chord: true, lyric: false, beat: false, tuner: false, info: false } }, o || {});
-const STG = Object.assign({
-  cur: 0, safe: true, q: 1, out: '', clock: false, roots: false, trig: false, ccs: false, ch: 0, auto: false, hud: true,
-  scenes: [SCN0('Resonance', 'hex', 175, { trail: .35, glow: .6 }), SCN0('Kaleido bloom', 'bloom', 300, { kal: 6, trail: .7, glow: .8, ov: { chord: true, lyric: false, beat: false, tuner: false, info: false } }),
-    SCN0('Tunnel', 'tunnel', 200, { trail: .5, glow: .7, flash: .5 }), SCN0('Orrery', 'orbit', 40, { trail: .8, glow: .5, ov: { chord: true, lyric: false, beat: true, tuner: false, info: true } }),
-    SCN0('Ridgeline', 'joy', 150, { trail: 0, glow: .4 }), SCN0('Beat grid', 'pulse', 20, { trail: .4, glow: .7, flash: .4, ov: { chord: true, lyric: false, beat: true, tuner: false, info: false } }),
-    SCN0('Lyric prompter', 'prompter', 175, { glow: .3, ov: { chord: true, lyric: true, beat: true, tuner: false, info: true } }), SCN0('Strings + cam', 'strings', 175, { cam: true, glow: .5, ov: { chord: true, lyric: false, beat: false, tuner: true, info: false } })]
-}, CFG.stage || {});
+/** a scene that runs a starter show (a Concert design: palette, rig, lasers, motion; see part 56) */
+const SHOWSC = (name, id, o) => SCN0(name, 'concert', 38, Object.assign({ trail: 0, glow: .45, show: { design: id, ovr: {} }, ov: { chord: true, lyric: true, beat: false, tuner: false, info: true } }, o || {}));
+const starterScenes = () => [SHOWSC('Theatre', 'theatre'), SHOWSC('Backlight', 'backlight'), SHOWSC('Blades', 'blades'), SHOWSC('Pixel field', 'pixels'), SHOWSC('Horizon', 'horizon'), SHOWSC('Laser room', 'lasers'),
+  SCN0('Lyric prompter', 'prompter', 175, { glow: .3, ov: { chord: true, lyric: true, beat: true, tuner: false, info: true } }), SHOWSC('Me in front', 'theatre', { cam: true, ov: { chord: true, lyric: false, beat: false, tuner: true, info: false } })];
+const STG_V = 4, STG_LEGACY = 'Concert|concert|38,Kaleido bloom|bloom|300,Resonance|hex|175,Orrery|orbit|40,Ridgeline|joy|150,Beat grid|pulse|20,Lyric prompter|prompter|175,Strings + cam|strings|175';
+/** the eight scenes 2.5.0 shipped (six starter shows, the prompter, you in front), recognised by name, mode and design */
+const STG_V25 = 'Arena|concert|arena,Neon Laser|concert|neon,Campfire|concert|campfire,Aurora|concert|aurora,Noir Club|concert|noir,Golden Hour|concert|golden,Lyric prompter|prompter|,Me in front|concert|golden';
+const STG = Object.assign({ cur: 0, safe: true, q: 1, out: '', clock: false, roots: false, trig: false, ccs: false, ch: 0, auto: false, hud: true, scenes: starterScenes() }, CFG.stage || {});
+STG.scenes.forEach(s => { if (s.mode === 'tunnel') { s.mode = 'concert'; if (s.name === 'Tunnel') s.name = 'Concert'; s.trail = 0; s.flash = 0; } });
+/* scenes nobody has touched become the starter shows; scenes you made or changed are left exactly as they are (Stage ▸ Starter shows brings the new ones back) */
+if ((STG.v || 0) < STG_V) { if (STG.scenes.map(s => [s.name, s.mode, s.hue].join('|')).join(',') === STG_LEGACY || STG.scenes.map(s => [s.name, s.mode, (s.show && s.show.design) || ''].join('|')).join(',') === STG_V25) STG.scenes = starterScenes(); STG.v = STG_V; }
 while (STG.scenes.length < 8) STG.scenes.push(SCN0('Scene ' + (STG.scenes.length + 1), 'hex', 175));
 const saveStg = () => { CFG.stage = STG; saveCfg(); };
 const SG = { off: null, small: null, wrap: null, cv: null, flash: 0, lastFlash: 0, idleT: 0, pop: null, wl: null, tick: -1, lastSym: '', lastSec: '', playPrev: false, noteOn: null, ccT: 0, joy: [], lastPos: '', hudDirty: 1 };
@@ -36,6 +40,7 @@ function stageInfo() {
 
 /* ---------- extra visual modes (dispatched from drawVis) ---------- */
 function stageExtra(mode, g, W, H, X) {
+  if (mode === 'concert') return concertDraw(g, W, H, X);
   if (mode === 'neural') return ngStageDraw(g, W, H, X);
   if (mode === 'halo' || mode === 'kaleido') return vzExtra2(mode, g, W, H, X);
   const { fd, bin, lvl, C, pulse, energy, dt } = X, cx = W / 2, cy = H / 2, R = Math.min(W, H), ch = AN.chroma || new Array(12).fill(0), mx = Math.max(.001, ...ch), t = VZ.t;
@@ -84,8 +89,13 @@ function stageFrame(ts) {
   const sc0 = scn(), wrap = SG.wrap, d = (window.devicePixelRatio || 1) * STG.q, cw = wrap.clientWidth, chh = wrap.clientHeight; if (!cw || !chh) return;
   const w = Math.min(1920, Math.floor(cw * d)), hh = Math.min(1080 * 1.4, Math.floor(chh * d));
   if (SG.cv.width !== w || SG.cv.height !== hh) { SG.cv.width = w; SG.cv.height = hh; SG.off.width = w; SG.off.height = hh; SG.small.width = Math.max(2, w >> 2); SG.small.height = Math.max(2, hh >> 2); VZ.spec = null; SG.joy = []; }
-  const info = SG.info = stageInfo(), sc = pbScene(sc0, info), t = VZ.t, C = stagePal(sc, t), off = SG.off, g = SG.cv.getContext('2d');
-  if (pbSolid()) pbFill(off); else drawVis(off, { mode: sc.mode, C, bgA: sc.mode === 'joy' || sc.mode === 'spectro' ? 1 : clamp(1 - sc.trail * .93, .05, 1), noText: true, cam: sc.cam, gain: (sc.sens - 1) * 20 });
+  /* output: a frame-rate cap, a frozen picture and the test patterns are decided before anything is drawn (Show setup ▸ Output, part 59) */
+  const OUT = CFG.show.out, g0 = SG.cv.getContext('2d');
+  if (OUT.fps > 0 && OUT.fps < 60 && SG.drawT && ts - SG.drawT < 1000 / OUT.fps - 4) return; SG.drawT = ts;
+  if (SG.freeze && SG.frz) { g0.drawImage(SG.frz, 0, 0, w, hh); shOutFrame(g0, w, hh); return; }
+  if (SG.test) { shTestPattern(g0, w, hh, SG.test); shOutFrame(g0, w, hh); return; }
+  const info = SG.info = stageInfo(), sc = pbScene(sc0, info), t = VZ.t, C = sc.mode === 'concert' ? lxHudPal(sc) : stagePal(sc, t), off = SG.off, g = SG.cv.getContext('2d');
+  if (pbSolid()) pbFill(off); else drawVis(off, { mode: sc.mode, C, bgA: sc.mode === 'joy' || sc.mode === 'spectro' ? 1 : clamp(1 - sc.trail * .93, .05, 1), noText: true, cam: sc.cam, gain: (sc.sens - 1) * 20, show: sc.show, stage: true });
   g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1; g.fillStyle = '#000'; g.fillRect(0, 0, w, hh);
   if (sc.kal >= 3) {
     const n = sc.kal, cx = w / 2, cy = hh / 2, R = Math.hypot(cx, cy); for (let i = 0; i < n; i++) {
@@ -96,27 +106,32 @@ function stageFrame(ts) {
   if (sc.mode === 'halo' && !pbSolid()) haloFront(g);
   if (sc.glow > .02) { const q = SG.small.getContext('2d'); q.globalCompositeOperation = 'source-over'; q.clearRect(0, 0, SG.small.width, SG.small.height); q.drawImage(SG.cv, 0, 0, SG.small.width, SG.small.height); g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = sc.glow * .9; g.imageSmoothingQuality = 'high'; g.drawImage(SG.small, 0, 0, w, hh); g.globalAlpha = sc.glow * .5; g.drawImage(SG.small, -w * .02, -hh * .02, w * 1.04, hh * 1.04); g.restore(); }
   pbDim(g, w, hh);
-  if (sc.flash > 0 && SG.flash > .01) { g.fillStyle = 'rgba(255,255,255,' + (SG.flash * sc.flash * (STG.safe ? .22 : .6)).toFixed(3) + ')'; g.fillRect(0, 0, w, hh); SG.flash *= .88; }
+  if (sc.flash > 0 && SG.flash > .01) { g.fillStyle = 'rgba(255,255,255,' + (SG.flash * sc.flash * lxComfort().flash * LX.gov).toFixed(3) + ')'; g.fillRect(0, 0, w, hh); SG.flash *= .88; }
+  if (sc.mode === 'concert' && !pbSolid()) lxGovMeasure(SG.cv, performance.now());   // the governor looks at the finished picture
   if (pbOn()) { if (STG.pb.lower) drawLowerThird(g, w, hh, info, C); } else if (STG.hud !== false) drawStageHUD(g, w, hh, sc, info, C);
+  if (SG.freezeReq) { const f = SG.frz || (SG.frz = document.createElement('canvas')); f.width = w; f.height = hh; f.getContext('2d').drawImage(SG.cv, 0, 0); SG.freeze = true; SG.freezeReq = false; }
+  shOutFrame(g, w, hh);   // master level, blackout, mirror, flip
   if (SG.idle && ts - SG.idleT > 2800 && document.fullscreenElement === wrap) wrap.classList.add('idle');
 }
 function drawStageHUD(g, W, H, sc, info, C) {
+  const lens = sc.mode === 'concert' ? (CFG.lens || 'perform') : '', teach = lens === 'teach'; if (lens === 'sky') return;       // the Sky lens is a picture; the Teach lens carries its own chord card, so only the lyric stays
   const ov = sc.ov, u = Math.min(W, H * 1.6), mono = 'ui-monospace,Menlo,monospace', pr = sc.mode === 'prompter', sh = 'rgba(0,0,0,.65)'; g.save(); g.shadowColor = sh; g.shadowBlur = u * .02; g.textBaseline = 'alphabetic';
-  if (ov.chord) {
+  if (ov.chord && !teach) {
     const sym = info.sym || '', sz = u * (pr ? .26 : .14); g.font = `800 ${Math.round(sz)}px ${mono}`; g.textAlign = pr ? 'center' : 'left'; g.fillStyle = '#fff';
     const x = pr ? W / 2 : W * .04, y = pr ? H * .46 : H * .84; g.fillText(sym, x, y);
     if (info.next && info.playing) { g.font = `700 ${Math.round(sz * .34)}px ${mono}`; g.fillStyle = C.b; g.fillText('next  ' + info.next, x, y + (pr ? sz * .38 : -sz * .92)); }
   }
-  if (ov.info || ov.beat) {
+  if ((ov.info || ov.beat) && !teach) {
     g.textAlign = 'right'; g.font = `700 ${Math.round(u * .03)}px ${mono}`; g.fillStyle = 'rgba(255,255,255,.85)';
     if (ov.info) { const key = AN.key && AN.key[0]; g.fillText((info.sec ? info.sec.toUpperCase() + (info.nBars ? '  ' + info.barIn + '/' + info.nBars : '') : '') , W * .97, H * .07); g.fillStyle = 'rgba(255,255,255,.6)'; g.fillText(Math.round(S.bpm) + ' BPM · ' + S.ts[0] + '/' + S.ts[1] + (key ? ' · ' + pcName(key.root) + (key.minor ? 'm' : '') : ''), W * .97, H * .07 + u * .042); }
     if (ov.beat) { const n = S.ts[0], r = u * .016, gap = r * 3.2, x0 = W * .97 - (n - 1) * gap - r; for (let i = 0; i < n; i++) { const on = info.playing && i === info.beat; g.beginPath(); g.arc(x0 + i * gap, H * (ov.info ? .07 + .09 : .07), r * (on ? 1.5 : 1), 0, 7); g.fillStyle = on ? (i === 0 ? C.b : '#fff') : 'rgba(255,255,255,.22)'; g.fill(); } }
   }
-  if (ov.lyric && info.lyric) { g.textAlign = 'center'; g.font = `700 ${Math.round(u * (pr ? .06 : .045))}px ${mono}`; g.fillStyle = '#fff'; g.fillText(info.lyric, W / 2, H * (pr ? .72 : .76), W * .92); if (info.lyricNext) { g.font = `600 ${Math.round(u * .03)}px ${mono}`; g.fillStyle = 'rgba(255,255,255,.5)'; g.fillText(info.lyricNext, W / 2, H * (pr ? .72 : .76) + u * .065, W * .92); } }
+  if (ov.lyric && info.lyric && teach) { g.textAlign = 'center'; g.font = `700 ${Math.round(u * .04)}px ${mono}`; g.fillStyle = '#fff'; g.fillText(info.lyric, W / 2, H * .955, W * .92); }
+  else if (ov.lyric && info.lyric) { g.textAlign = 'center'; g.font = `700 ${Math.round(u * (pr ? .06 : .045))}px ${mono}`; g.fillStyle = '#fff'; g.fillText(info.lyric, W / 2, H * (pr ? .72 : .76), W * .92); if (info.lyricNext) { g.font = `600 ${Math.round(u * .03)}px ${mono}`; g.fillStyle = 'rgba(255,255,255,.5)'; g.fillText(info.lyricNext, W / 2, H * (pr ? .72 : .76) + u * .065, W * .92); } }
   if (ov.tuner && AN.active && AN.midi != null) { g.textAlign = 'right'; g.font = `800 ${Math.round(u * .06)}px ${mono}`; g.fillStyle = Math.abs(AN.cents) < 6 ? '#3ddc84' : '#fff'; g.fillText(pcName(AN.midi) + ' ' + (AN.cents >= 0 ? '+' : '') + AN.cents.toFixed(0) + '¢', W * .97, H * .93); }
   g.restore(); g.textAlign = 'left';
 }
-bus.on('onset', () => { const now = performance.now(); if (now - SG.lastFlash > (STG.safe ? 340 : 80)) { SG.flash = 1; SG.lastFlash = now; } });
+bus.on('onset', () => { const now = performance.now(); if (now - SG.lastFlash > lxComfort().gap) { SG.flash = 1; SG.lastFlash = now; } });
 
 /* ---------- MIDI out ---------- */
 function midiOut() { if (!MIDI.access) return null; const o = [...MIDI.access.outputs.values()]; return o.find(x => x.id === STG.out) || null; }
@@ -163,41 +178,18 @@ function stagePop() {
 function renderStageUI() {
   if (!SG.hudbar) return; const sc = scn();
   SG.hudbar.innerHTML = ''; STG.scenes.forEach((s, i) => SG.hudbar.append(h('button', { class: 'sbtn' + (i === STG.cur ? ' on' : ''), title: s.name + ' — key ' + (i + 1) + ' · MIDI note ' + (48 + i), onclick: () => stageScene(i) }, (i + 1) + ' ' + s.name)));
-  SG.hudbar.append(h('span', { style: { flex: 1 } }), ...(document.body.dataset.form && document.body.dataset.form !== 'desktop' ? [h('button', { class: 'sbtn', title: 'Fill the screen', onclick: stageFull }, SG.wrap.classList.contains('pfs') ? '✕ Exit' : '⛶ Full')] : []), h('button', { class: 'sbtn', onclick: () => { STG.hud = !(STG.hud !== false); saveStg(); renderStageUI(); } }, STG.hud !== false ? 'HUD on' : 'HUD off'), h('button', { class: 'sbtn', title: 'Separate window for a projector / second screen', onclick: stagePop }, '⧉ Pop-out'), h('button', { class: 'sbtn', onclick: stageFull }, '⛶ Fullscreen'));
-  const E_ = SG.editor; E_.innerHTML = '';
-  const field = (label, ctl) => h('label', { class: 'small', style: { display: 'flex', flexDirection: 'column', gap: '3px', fontWeight: 700 } }, label, ctl);
-  const rng = (k, min, max, step, fmt) => { const v = h('span', { class: 'mono tiny' }, (fmt || (x => x))(sc[k])); return h('div', { class: 'row', style: { gap: '6px' } }, h('input', { type: 'range', min, max, step, value: sc[k], style: { flex: 1 }, oninput: e => { sc[k] = +e.target.value; v.textContent = (fmt || (x => x))(sc[k]); saveStg(); } }), v); };
-  const chk = (o, k, label) => h('label', { class: 'chk small', style: { display: 'flex', gap: '4px', alignItems: 'center', fontWeight: 700 } }, h('input', { type: 'checkbox', checked: o[k], onchange: e => { o[k] = e.target.checked; saveStg(); } }), label);
-  E_.append(
-    h('div', { class: 'card', style: { padding: '10px' } }, h('h4', { style: { margin: '0 0 8px' } }, 'Scene ' + (STG.cur + 1)),
-      h('div', { class: 'sgrid', style: { marginTop: 0 } },
-        field('Name', h('input', { class: 'in', value: sc.name, style: { fontFamily: 'var(--sans)' }, onchange: e => { sc.name = e.target.value || 'Scene'; saveStg(); renderStageUI(); } })),
-        field('Visual', h('select', { class: 'in', style: { fontFamily: 'var(--sans)' }, onchange: e => { sc.mode = e.target.value; VZ.spec = null; SG.joy = []; saveStg(); } }, VMODES.map(([k, n]) => h('option', { value: k, selected: k === sc.mode }, n)))),
-        field('Hue', rng('hue', 0, 359, 1, x => x + '°')), field('Hue drift', rng('drift', 0, 3, .05, x => x ? x.toFixed(2) : 'off')),
-        field('Trails', rng('trail', 0, 1, .01, x => Math.round(x * 100) + '%')), field('Glow', rng('glow', 0, 1, .01, x => Math.round(x * 100) + '%')),
-        field('Kaleidoscope', h('select', { class: 'in', style: { fontFamily: 'var(--sans)' }, onchange: e => { sc.kal = +e.target.value; saveStg(); } }, [[0, 'Off'], [3, '3 wedges'], [4, '4'], [6, '6'], [8, '8'], [12, '12']].map(([v, n]) => h('option', { value: v, selected: v === sc.kal }, n)))),
-        field('Sensitivity', rng('sens', .4, 2.5, .05, x => '×' + x.toFixed(2))), field('Beat flash', rng('flash', 0, 1, .05, x => x ? Math.round(x * 100) + '%' : 'off')),
-        field('Auto-switch on section', h('input', { class: 'in', value: sc.sect, placeholder: 'e.g. chorus', style: { fontFamily: 'var(--sans)' }, onchange: e => { sc.sect = e.target.value.trim(); saveStg(); } }))),
-      h('div', { class: 'row', style: { gap: '14px', marginTop: '8px', flexWrap: 'wrap' } }, chk(sc, 'cam', '📷 Camera backdrop'), camFxBox(), chk(sc.ov, 'chord', 'Chord'), chk(sc.ov, 'lyric', 'Lyric line'), chk(sc.ov, 'beat', 'Beat dots'), chk(sc.ov, 'info', 'Section · BPM · key'), chk(sc.ov, 'tuner', 'Tuner'))),
-    pbCard(),
-    h('div', { class: 'card', style: { padding: '10px' } }, h('h4', { style: { margin: '0 0 8px' } }, 'Show settings'),
-      h('div', { class: 'row', style: { gap: '14px', flexWrap: 'wrap', alignItems: 'center' } },
-        chk(STG, 'safe', 'Reduce flashing (≤3 Hz, softer)'), chk(STG, 'auto', 'Auto-switch scenes by section name'),
-        h('label', { class: 'small', style: { fontWeight: 700 } }, 'Render quality ', h('select', { class: 'in', style: { width: 'auto', fontFamily: 'var(--sans)' }, onchange: e => { STG.q = +e.target.value; saveStg(); } }, [[.5, 'Low (fast)'], [.75, 'Medium'], [1, 'High']].map(([v, n]) => h('option', { value: v, selected: v === STG.q }, n))))),
-      h('div', { class: 'tiny muted', style: { marginTop: '6px' } }, 'Keys 1–8 pick scenes while this panel (or fullscreen) is showing · MIDI notes 48–55 pick scenes anywhere. Lyric lines advance with the bar position of the section.')),
-    h('div', { class: 'card', style: { padding: '10px' } }, h('h4', { style: { margin: '0 0 8px' } }, 'MIDI out → lights, synths, DAW'),
-      h('div', { class: 'row', style: { gap: '14px', flexWrap: 'wrap', alignItems: 'center' } },
-        (() => { const sel = h('select', { class: 'in', style: { width: 'auto', fontFamily: 'var(--sans)' }, onchange: e => { STG.out = e.target.value; saveStg(); } }); const fill = () => { sel.innerHTML = ''; sel.append(h('option', { value: '' }, MIDI.access ? 'No output' : 'Enable MIDI first')); if (MIDI.access) MIDI.access.outputs.forEach(o => sel.append(h('option', { value: o.id, selected: o.id === STG.out }, o.name))); }; fill(); bus.on('midi', fill); return h('div', { class: 'row', style: { gap: '6px' } }, sel, h('button', { class: 'btn sm', onclick: () => { initMIDI(); } }, 'Enable MIDI')); })(),
-        h('label', { class: 'small', style: { fontWeight: 700 } }, 'Channel ', h('input', { class: 'in', type: 'number', min: 1, max: 16, value: (STG.ch | 0) + 1, style: { width: '56px' }, onchange: e => { STG.ch = clamp((+e.target.value || 1) - 1, 0, 15); saveStg(); } })),
-        chk(STG, 'clock', 'Clock + start/stop'), chk(STG, 'roots', 'Chord root notes'), chk(STG, 'trig', 'Note on every pick (note 60)'), chk(STG, 'ccs', 'CC20 loudness · CC21 brightness')),
-      h('div', { class: 'tiny muted', style: { marginTop: '6px' } }, 'Clock is derived from the song playhead and sent per frame, so expect a little jitter — fine for lights and arpeggiators, not for tight audio sync.')));
+  SG.hudbar.append(h('span', { style: { flex: 1 } }), ...(document.body.dataset.form && document.body.dataset.form !== 'desktop' ? [h('button', { class: 'sbtn', title: 'Fill the screen', onclick: stageFull }, SG.wrap.classList.contains('pfs') ? '✕ Exit' : '⛶ Full')] : []), h('button', { class: 'sbtn' + (SG.boOn ? ' on' : ''), id: 'stgBo', title: 'Fade the output to black and back (key 0)', 'aria-pressed': String(!!SG.boOn), onclick: () => { shBlackout(); renderStageUI(); } }, '■ Blackout'), h('button', { class: 'sbtn', onclick: () => { STG.hud = !(STG.hud !== false); saveStg(); renderStageUI(); } }, STG.hud !== false ? 'HUD on' : 'HUD off'), h('button', { class: 'sbtn', title: 'Separate window for a projector / second screen', onclick: stagePop }, '⧉ Pop-out'), h('button', { class: 'sbtn', onclick: stageFull }, '⛶ Fullscreen'));
+  const E_ = SG.editor; E_.innerHTML = ''; E_.append(shcRoot());   // the Show setup console (part 59)
 }
 function buildStagePane() {
   const p = PANES.stage; if (!p) return; SG.off = document.createElement('canvas'); SG.small = document.createElement('canvas');
-  SG.cv = h('canvas'); SG.hudbar = h('div', { class: 'stagehud' }); SG.wrap = h('div', { class: 'stagewrap', style: { minHeight: '340px', aspectRatio: '16/8' } }, SG.cv, SG.hudbar);
-  SG.editor = h('div', { style: { display: 'grid', gap: '10px', marginTop: '10px' } });
+  SG.cv = h('canvas'); SG.hudbar = h('div', { class: 'stagehud' }); SG.guides = h('div', { class: 'sg-guides', 'aria-hidden': 'true' }, h('i', { class: 'a' }), h('i', { class: 't' }), h('b'));
+  SG.wrap = h('div', { class: 'stagewrap' + (CFG.show.out.safe ? ' guides' : ''), style: { minHeight: '340px', aspectRatio: '16/8' } }, SG.cv, SG.guides, SG.hudbar);
+  SG.editor = h('div', { class: 'stg-ed' });
   const kick = () => { SG.idleT = performance.now(); SG.wrap.classList.remove('idle'); }; ['mousemove', 'mousedown', 'touchstart'].forEach(ev => SG.wrap.addEventListener(ev, kick, { passive: true })); SG.idle = true;
   SG.wrap.addEventListener('dblclick', e => { if (!e.target.closest('.sbtn')) stageFull(); });
-  p.append(h('div', { class: 'row', style: { margin: '0 0 8px', gap: '10px' } }, h('div', { class: 'tiny muted' }, 'Show-ready visuals: pick a scene, go fullscreen (double-click), or pop it out to a projector. Play the song or just play — it follows both.')), SG.wrap, SG.editor);
+  const grid = h('div', { class: 'stg-grid' }, SG.wrap, SG.editor);
+  p.append(h('div', { class: 'row', style: { margin: '0 0 8px', gap: '10px' } }, h('div', { class: 'tiny muted' }, 'Show-ready visuals: pick a scene, go fullscreen (double-click), or pop it out to a projector. Play the song or just play — it follows both. Set the show up below.')), grid);
+  if (typeof ResizeObserver === 'function') new ResizeObserver(() => grid.classList.toggle('wide', p.clientWidth >= 1000)).observe(p);
   renderStageUI();
 }

@@ -5,7 +5,7 @@
      note you play (or the song plays) spirals in toward you. Back half of the ring is drawn behind the player, the front
      half in front, so you are inside it.
    · Prism: a feedback kaleidoscope that accents the off-beat. The mirror count, hue and spin change on the "and" of the
-     beat (or on your own onsets), with a zoom-tunnel feedback loop. Flash and spin are limited when Stage ▸ safe is on.
+     beat (or on your own onsets), with a zoom-tunnel feedback loop. Its accents never come closer than the light-comfort gap (three a second at most), and spin and zoom follow the Calm / Standard / Full choice.
    ===================================================================== */
 VMODES.push(['halo', 'Fifths Halo'], ['kaleido', 'Prism']);
 const HL = { rot: 0, kick: 0, pv: 0, hi: false, parts: [], dirty: true, chords: [], pairs: [], items: [], t: 0 };
@@ -28,7 +28,7 @@ function haloDraw(g, W, H, X) {
   haloChords(); HL.t = t;
   // rotation: slow drift + a kick on every beat / onset, so the ring moves in rhythm
   if (pulse > HL.pv + .25) HL.kick = Math.min(1.4, HL.kick + .5 + pulse * .4); HL.pv = pulse; HL.kick *= Math.pow(.04, dt || .016);
-  HL.rot += (dt || .016) * (.16 + energy * .5 + HL.kick * (STG.safe ? 1.2 : 2.2));
+  HL.rot += (dt || .016) * (.16 + energy * .5 + HL.kick * (lxComfortKey() === 'full' ? 2.2 : lxComfortKey() === 'calm' ? .7 : 1.2));
   const Rx = Math.min(W * .47, H * .95), tilt = .3 + .05 * Math.sin(t * .23), Ry = Rx * tilt, cx = W / 2, cy = H * .5, rot = HL.rot, now = performance.now();
   const P = (a, rad, lift) => { const s = Math.sin(a); return { x: cx + Math.cos(a) * rad * Rx, y: cy + s * rad * Ry - (lift || 0) * Rx * .8, z: s, k: 1 + .24 * s }; };
   const ch = AN.chroma || [], cm = Math.max(.001, ...ch), live = AN.active, playing = T.playing;
@@ -80,8 +80,8 @@ const pcOut = a => [Math.cos(a), Math.sin(a)];
 /* ---------------- Prism: syncopated feedback kaleidoscope ---------------- */
 const KS = { out: null, src: null, ow: 0, oh: 0, n: 8, ni: 0, folds: [6, 8, 12, 10, 6, 16], rot: 0, dir: 1, hue: 0, zoom: 0, rings: [], step: -9, acc: 0, lastAcc: 0, pv: 0, glints: [] };
 function ksAccent(strong, now) {
-  const gap = STG.safe ? 340 : 110; if (now - KS.lastAcc < gap) return; KS.lastAcc = now;
-  if (strong) { KS.ni = (KS.ni + 1) % KS.folds.length; KS.n = KS.folds[KS.ni]; KS.hue += 34 + Math.random() * 40; if (Math.random() < .35) KS.dir *= -1; KS.zoom = STG.safe ? .035 : .09; }
+  const gap = lxComfort().gap; if (now - KS.lastAcc < gap) return; KS.lastAcc = now;
+  if (strong) { KS.ni = (KS.ni + 1) % KS.folds.length; KS.n = KS.folds[KS.ni]; KS.hue += 34 + Math.random() * 40; if (Math.random() < .35) KS.dir *= -1; KS.zoom = lxComfortKey() === 'full' ? .09 : lxComfortKey() === 'calm' ? .015 : .035; }
   KS.rings.push({ r: 0, v: strong ? 1 : .55, n: 3 + ((Math.random() * 3) | 0) });
   if (KS.rings.length > 8) KS.rings.shift();
 }
@@ -93,11 +93,11 @@ function kaleidoDraw(g, W, H, X) {
   if (T.playing && E.ctx) { const ph = playheadSlot(), st = Math.floor(ph); if (st !== KS.step) { KS.step = st; const m = ((st % 4) + 4) % 4; if (m === 2) ksAccent(true, now); else if (m === 0) ksAccent(false, now); else if (S.band.drumsOn || S.band.leadOn) KS.glints.push({ a: Math.random() * 6.3, r: .2 + Math.random() * .5, t: now }); } }
   else if (pulse > KS.pv + .25) ksAccent(pulse > .6, now); KS.pv = pulse;
   KS.glints = KS.glints.filter(q => now - q.t < 600);
-  const spin = (.07 + energy * .5 + pulse * .6) * (STG.safe ? .6 : 1) * KS.dir; KS.rot += (dt || .016) * spin; KS.zoom *= Math.pow(.05, dt || .016);
+  const spin = (.07 + energy * .5 + pulse * .6) * lxComfort().motion * KS.dir; KS.rot += (dt || .016) * spin; KS.zoom *= Math.pow(.05, dt || .016);
   // --- feedback: last frame, zoomed in and turned a little, becomes the new canvas (the infinite tunnel)
   s.save(); s.globalCompositeOperation = 'copy'; s.globalAlpha = 1; s.translate(cx + Math.sin(t * .7) * L * .006, cy + Math.cos(t * .5) * L * .006); s.rotate(spin * .06 + .004 * KS.dir); const z = 1.012 + energy * .02 + KS.zoom; s.scale(z, z);
   if (filt) s.filter = 'hue-rotate(' + (2 + energy * 9) + 'deg) saturate(1.05) brightness(.95)'; s.drawImage(KS.out, -ow / 2, -oh / 2); s.restore(); if (filt) s.filter = 'none';
-  s.fillStyle = 'rgba(2,6,8,' + (STG.safe ? .16 : .11) + ')'; s.fillRect(0, 0, L, L);
+  s.fillStyle = 'rgba(2,6,8,' + (lxComfortKey() === 'full' ? .11 : .16) + ')'; s.fillRect(0, 0, L, L);
   // --- new light, drawn once into the wedge that gets mirrored
   const n = KS.n, wedge = Math.PI / n; s.save(); s.translate(cx, cy); s.globalCompositeOperation = 'source-over';
   const hueC = k => 'hsla(' + ((KS.hue + k) % 360).toFixed(0) + ',90%,' + (58 + (k % 3) * 4) + '%,';
@@ -124,14 +124,15 @@ function kaleidoDraw(g, W, H, X) {
 function vzExtra2(mode, g, W, H, X) { if (mode === 'halo') return haloDraw(g, W, H, X); return kaleidoDraw(g, W, H, X); }
 
 /** change the visual look from anywhere (the full-screen ✦ button, keys) and keep the Visuals buttons in step */
-const VZ_FAVS = ['hex', 'halo', 'kaleido', 'tunnel'];
+const VZ_FAVS = ['concert', 'hex', 'halo', 'kaleido'];
 function vzSetMode(k, quiet) { VZ.mode = k; if (!quiet) { CFG.visMode = k; saveCfg(); } VZ.spec = null; VZ.hexes = null; document.querySelectorAll('#pane-vis .seg [data-m]').forEach(b => b.classList.toggle('on', b.dataset.m === k)); const n = (VMODES.find(m => m[0] === k) || [0, k])[1]; if (!quiet) toast(n, 'ok'); }
 /** Auto look: while the song plays, the look follows the section: calm in verses, wide in choruses, strange in bridges. Your own look comes back when it stops. */
-const VZ_BY_SECTION = [[/chorus|hook|refrain/i, 'halo'], [/bridge|break|solo/i, 'kaleido'], [/intro|outro|tag|coda/i, 'tunnel']];
+const VZ_BY_SECTION = [[/chorus|hook|refrain/i, 'halo'], [/bridge|break|solo/i, 'kaleido'], [/intro|outro|tag|coda/i, 'hex']];
 let vzSecLast = '';
 function vzSectionLook() {
-  if (!CFG.vzAuto || !T.playing || !E.ctx) { if (vzSecLast) { vzSecLast = ''; if (VZ.mode !== CFG.visMode) vzSetMode(CFG.visMode || 'hex', true); } return; }
+  if (!CFG.vzAuto || !T.playing || !E.ctx) { if (vzSecLast) { vzSecLast = ''; if (VZ.mode !== CFG.visMode) vzSetMode(CFG.visMode || 'concert', true); } return; }
   const fb = barsCache()[Math.max(0, Math.floor(playheadSlot() / spb()))]; if (!fb) return; const id = fb.sec.id || fb.sec.name; if (id === vzSecLast) return; vzSecLast = id;
+  if (CFG.visMode === 'concert') return;   // the Concert cues itself from the song
   const hit = VZ_BY_SECTION.find(([re]) => re.test(fb.sec.name)), m = hit ? hit[1] : (CFG.visMode && !/^(halo|kaleido|tunnel)$/.test(CFG.visMode) ? CFG.visMode : 'hex'); if (m !== VZ.mode) vzSetMode(m, true);
 }
 setInterval(() => { try { vzSectionLook(); } catch (e) { } }, 250);

@@ -20,7 +20,8 @@ const xpEdit = () => { if (!XP.quiet) xpSignal(.25); };
 function xpQuiet(fn) { XP.quiet++; try { return fn(); } finally { XP.quiet--; } }
 function xpToolsButton() {
   const l = xpLevel(), b = h('button', { class: 'btn sm xp-tools', id: 'xpTools', title: 'Choose how much of the studio to show', 'aria-haspopup': 'dialog', onclick: () => {
-    const m = CFG.xpMode || 'auto', opt = (k, t, d) => h('button', { class: 'btn sm xp-opt' + (m === k ? ' on' : ''), 'aria-pressed': String(m === k), onclick: () => { CFG.xpMode = k; saveCfg(); closePop(); rebuildTabs(); if (k !== 'auto') toast((XP_LABEL[k]) + ' tools', ''); } }, h('b', {}, t), h('span', { class: 'muted' }, d));
+    const m = CFG.xpMode || 'auto', opt = (k, t, d) => h('button', { class: 'btn sm xp-opt' + (m === k ? ' on' : ''), 'aria-pressed': String(m === k), onclick: () => { CFG.xpMode = k; saveCfg(); closePop(); if (k === 'pro' && LAY.hidden.length) { LAY.hidden = []; saveLay(); }   /* “Everything” brings back any tab a layout had left off the strip */
+      rebuildTabs(); if (k !== 'auto') toast((XP_LABEL[k]) + ' tools', ''); } }, h('b', {}, t), h('span', { class: 'muted' }, d));
     popover(b, h('div', { class: 'xp-pop' }, h('h5', {}, 'How much of the studio?'), opt('auto', 'Automatic', 'Starts simple and adds tools as you use them'), opt('new', 'Simple', 'Hum, Song, Band, Stage, Save'), opt('some', 'More tools', 'Adds guitar sound, tab, fretboard, backing track'), opt('pro', 'Everything', 'All tabs, technical labels, numbered shortcuts')), { style: { width: '320px', maxWidth: '92vw' } });
   } }, l === 'pro' ? 'Tools' : '＋ More tools'); return b;
 }

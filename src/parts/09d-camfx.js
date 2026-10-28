@@ -2,12 +2,28 @@
    'over'   the camera is a dim layer under the visuals (the original look)
    'edges'  the camera shows clearly in a soft oval in the middle; the visuals live around it
    'person' a green-screen cut-out: the visuals sit behind you. Uses MediaPipe's selfie segmenter, fetched only when this look is chosen
-            (same hosts as hand tracking). If the model cannot load, the edges look is used instead. */
+            and the person has said yes to the one-time download (mpConsent; same hosts as hand tracking). If the model cannot load, the edges look is used instead. */
 const CAMFX = [['over', 'Dimmed behind the visuals'], ['edges', 'Visuals frame me (edges in)'], ['person', 'Me in front (green screen)']];
 const CF = { state: 'idle', seg: null, mask: null, acc: null, inv: null, t: 0, busy: false, fg: null, ed: null, mc: null, errN: 0 };
 let mpCache = null;
+/** The one place this page can reach another site, and only after a yes. Until then: no request to jsDelivr or Google, nothing at all.
+    A yes is remembered (CFG.mpOk). A no lasts until the feature is asked for again (Camera look, or the hand-tracking choice). */
+const MPC = { p: null };
+function mpConsent() {
+  if (CFG.mpOk === true) return Promise.resolve(true);
+  if (MPC.p) return MPC.p;
+  const box = $('#toasts'); if (!box) return Promise.resolve(false);
+  return MPC.p = new Promise(res => {
+    const done = v => { MPC.p = null; card.remove(); if (v) { CFG.mpOk = true; saveCfg(); } res(v); };
+    const card = h('div', { class: 'toast warn keep-toast mp-ask', id: 'mpAsk', role: 'alertdialog', 'aria-label': 'One-time download' },
+      h('span', {}, h('b', {}, 'One-time download. '), 'This uses MediaPipe, Google’s open-source vision library. Your browser fetches its code (cdn.jsdelivr.net) and a small model (storage.googleapis.com), about 10 MB. Those two sites see your IP address, as with any web page. Your camera picture is never sent anywhere.'),
+      h('button', { class: 'btn sm primary', id: 'mpAskYes', onclick: () => done(true) }, 'Download and turn it on'),
+      h('button', { class: 'btn sm', id: 'mpAskNo', onclick: () => done(false) }, 'Not now, stay offline'));
+    box.append(card);
+  });
+}
 function mpVision() {
-  return mpCache || (mpCache = import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs')
+  return mpCache || (mpCache = mpConsent().then(ok => { if (!ok) throw Object.assign(new Error('declined'), { declined: true }); return import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs'); })
     .then(async mod => ({ mod, fs: await mod.FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm') }))
     .catch(e => { mpCache = null; throw e; }));
 }
@@ -52,7 +68,7 @@ async function cfSegInit() {
     const opt = d => ({ baseOptions: { modelAssetPath: base, delegate: d }, runningMode: 'VIDEO', outputConfidenceMasks: true, outputCategoryMask: false });
     try { CF.seg = await mod.ImageSegmenter.createFromOptions(fs, opt('GPU')); } catch (e) { CF.seg = await mod.ImageSegmenter.createFromOptions(fs, opt('CPU')); }
     CF.state = 'ready'; CF.errN = 0; toast('Person cut-out ready', 'ok');
-  } catch (e) { CF.state = 'failed'; console.warn('segmenter unavailable', e); toast('The person cut-out model could not load (offline or blocked), so the edges-in look is used instead', 'warn'); }
+  } catch (e) { CF.state = 'failed'; if (e && e.declined) toast('Staying offline: the edges-in look is used instead', 'ok'); else { console.warn('segmenter unavailable', e); toast('The person cut-out model could not load (offline or blocked), so the edges-in look is used instead', 'warn'); } if (UI.camInfo) UI.camInfo.textContent = UI.camInfo.textContent.replace(' · loading cut-out…', ''); }
 }
 function cfWanted() { if ((CFG.camFx || 'over') !== 'person' || !CAM.on) return false; let st = false; try { st = !!(typeof scn === 'function' && scn() && scn().cam); } catch (e) { } return !!VZ.cam || st; }
 function cfTick(ts) {

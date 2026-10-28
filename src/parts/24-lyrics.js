@@ -125,7 +125,7 @@ function liOpen(text) {
         h('button', { class: 'btn sm', onclick: () => file.click() }, 'Open a .txt / .lrc file…'), file, h('button', { class: 'btn sm', onclick: () => { st.text = ''; ta.value = ''; draw(); ta.focus(); } }, 'Clear')),
       h('div', { class: 'lyi-opts' }, h('label', {}, 'Where it goes'), modeSel, h('label', {}, 'New sections'), bplSel, h('label', { class: 'lyi-chk' }, chk, ' Put the chords over the words')),
       prev),
-    h('div', { class: 'lyi-f' }, h('span', { class: 'tiny muted grow' }, 'Lyrics stay on this device. Nothing is uploaded.'), h('button', { class: 'btn', onclick: liClose }, 'Cancel'), go));
+    h('div', { class: 'lyi-f' }, h('span', { class: 'tiny muted grow' }, 'Lyrics stay on this device. Nothing is uploaded. Use words you wrote or have the right to use.'), h('button', { class: 'btn', onclick: liClose }, 'Cancel'), go));
   LI.ov = h('div', { class: 'lyi', onpointerdown: e => { if (e.target === LI.ov) liClose(); } }, box); document.body.append(LI.ov); document.addEventListener('keydown', liKeys, true); draw(); setTimeout(() => ta.focus(), 30);
 }
 /** pasting a whole lyric sheet into any section box offers to split it */

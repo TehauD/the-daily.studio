@@ -1,4 +1,4 @@
-# Release and go-live checklist (v2.3.0)
+# Release and go-live checklist (v2.8.0)
 
 ## Before you publish
 - [ ] `node scripts/build.mjs --check` passes; `npm test`, `npm run test:e2e`, `npm run test:mobile` pass; `npm run build:site && npm run verify:site` prints `site verified`.
@@ -28,10 +28,10 @@ The page is already vendored at `journal/index.html` and deploys with the site (
 
 ## Tag and release
 ```
-git tag -a v2.3.0 -m "Voice, editing, heatmap and performer backdrop"
-git push origin v2.3.0
+git tag -a v2.8.0 -m "Loop & layer: record chords, loop them, play a lead on top"
+git push origin v2.8.0
 ```
-Create a GitHub release from the tag using the 2.3.0 CHANGELOG entry.
+Create a GitHub release from the tag using the 2.8.0 CHANGELOG entry.
 
 ## Smoke test on the live site (desktop and a phone)
 - [ ] Page loads over HTTPS with no console errors; start card appears and **no microphone prompt** shows until you choose.
@@ -44,7 +44,9 @@ Create a GitHub release from the tag using the 2.3.0 CHANGELOG entry.
 - [ ] Drop a short WAV, choose **Vocal take**, split it with **Ctrl/⌘ + E**, press **Bounce master WAV**: the render window ends in seconds and the file plays.
 - [ ] On an iPhone in Safari, **⋯ More ▸ Keep songs safe** shows the Add to Home Screen steps.
 - [ ] Install to home screen / offline reload works.
-- [ ] Hand tracking (Vision panel) and the camera **person** look start; these load from jsDelivr and Google storage and are not covered by the automated tests. Confirm the segmenter model URL resolves.
+- [ ] Hand tracking (Vision panel) and the camera **person** look: the one-time question appears first; **Download** then loads from jsDelivr and Google storage (the real download is not covered by the automated tests, the question and the refusal are). Confirm the segmenter model URL resolves.
+- [ ] `BASE_URL=https://the-daily.studio/ node test/e2e-privacy.cjs` passes against the live site (no request to any other site, no cookie).
+- [ ] `https://the-daily.studio/legal/` opens and shows the licence, notices, privacy statement and both font licences.
 
 ## Known limits at 2.2
 - Songs live in the browser of the device that made them; there is no sync by design. Back up from Songs. Safari clears a site's storage after about a week away unless the site is on the Home Screen; the app says so.

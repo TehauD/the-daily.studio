@@ -1,6 +1,6 @@
 # Operations runbook
 
-How version 2.3 (v2.3.0) is built, shipped, watched and rolled back. The site is static, so there are no servers to patch and no database to restore.
+How version 2.8 (v2.8.0) is built, shipped, watched and rolled back. The site is static, so there are no servers to patch and no database to restore.
 
 ## Moving parts
 
@@ -35,7 +35,7 @@ There are no secrets, API keys or environment variables anywhere.
 
 No telemetry exists in the app by design. Use:
 
-* Cloudflare **Workers & Pages ▸ Metrics** (requests, errors) and **Analytics** for aggregate traffic; no cookies or scripts are added to the pages.
+* Cloudflare **Workers & Pages ▸ Metrics** (requests, errors) and **Analytics** for aggregate traffic; no cookies or scripts are added to the pages. Keep **Web Analytics' automatic setup off**: it injects a script into the page, which would contradict the privacy statement. The live-site check (`BASE_URL=https://the-daily.studio/ node test/e2e-privacy.cjs`) fails if anything like it appears.
 * An external uptime check on `https://the-daily.studio/` and `/journal/` (any free monitor; expect HTTP 200).
 * GitHub Issues for user reports. Security reports go through private vulnerability reporting (see [SECURITY.md](../SECURITY.md)).
 

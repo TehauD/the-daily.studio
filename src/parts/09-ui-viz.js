@@ -73,12 +73,16 @@ function paintFret(force) {
 }
 
 /* ---------------- VISUALS ---------------- */
-const VZ = { mode: CFG.visMode || 'hex', cam: false, spec: null, pulses: [], hexes: null, last: 0, fd: null, td: null, sm: null, t: 0, ring: [] };
-const VMODES = [['hex', 'Hex Resonance'], ['tunnel', 'Hex Tunnel'], ['spectro', 'Spectrogram'], ['chroma', 'Chroma Wheel'], ['scope', 'Oscilloscope'], ['strings', 'String Field']];
+const VZ_RETIRED = { tunnel: 'concert' }; if (VZ_RETIRED[CFG.visMode]) CFG.visMode = VZ_RETIRED[CFG.visMode];
+const VZ = { mode: CFG.visMode || 'concert', cam: false, spec: null, pulses: [], hexes: null, last: 0, fd: null, td: null, sm: null, t: 0, ring: [] };
+const VMODES = [['hex', 'Hex Resonance'], ['spectro', 'Spectrogram'], ['chroma', 'Chroma Wheel'], ['scope', 'Oscilloscope'], ['strings', 'String Field']];
+/** the readout views live on the Monitor tab now; they stay available as Stage scenes */
+const VZ_MONITOR = new Set(['spectro', 'chroma', 'scope']);
 function buildVisPane() {
   const p = PANES.vis; p.classList.add('flex');
   const bar = h('div', { class: 'row', style: { gap: '8px', marginBottom: '8px', flexWrap: 'wrap' } },
-    h('div', { class: 'seg' }, VMODES.map(([k, n]) => h('button', { class: k === VZ.mode ? 'on' : '', 'data-m': k, onclick: e => { vzSetMode(k); $$('.seg [data-m]', bar).forEach(b => b.classList.toggle('on', b === e.target)); } }, n))),
+    h('div', { class: 'seg' }, VMODES.filter(m => !VZ_MONITOR.has(m[0])).map(([k, n]) => h('button', { class: k === VZ.mode ? 'on' : '', 'data-m': k, onclick: e => { vzSetMode(k); $$('.seg [data-m]', bar).forEach(b => b.classList.toggle('on', b === e.target)); } }, n))),
+    lxLensBar(),
     h('select', { class: 'in', style: { width: 'auto', fontFamily: 'var(--sans)' }, title: 'Analysis source', onchange: e => { VZ.src = e.target.value; } }, [['auto', 'Source: auto (follows playback)'], ['rig', 'Source: guitar after the rig'], ['master', 'Source: master mix'], ['di', 'Source: what the detector hears'], ['vox', 'Source: vocal microphone']].map(([v, n]) => h('option', { value: v }, n))),
     h('button', { class: 'btn sm', id: 'vzRecBtn', 'data-srec': '1', title: 'Record the stage as a video with the song’s sound (saved on this device)', onclick: e => srecMenu(e.currentTarget) }, '⏺ Record'),
     h('button', { class: 'btn sm' + (CFG.vzAuto ? ' on' : ''), id: 'vzAutoBtn', 'aria-pressed': String(!!CFG.vzAuto), title: 'Auto look: while the song plays, the look follows the section (verse calm, chorus wide, bridge strange)', onclick: e => { CFG.vzAuto = !CFG.vzAuto; saveCfg(); e.currentTarget.classList.toggle('on', !!CFG.vzAuto); e.currentTarget.setAttribute('aria-pressed', String(!!CFG.vzAuto)); toast('Auto look ' + (CFG.vzAuto ? 'on: the look follows the song’s sections' : 'off'), 'ok'); } }, '🎬 Auto look'),
@@ -115,9 +119,9 @@ function drawVis(cvo, o) {
   else if (typeof stageExtra === 'function') stageExtra(MODE, g, W, H, { fd, bin, lvl, C, pulse, energy, dt, o });
   if (camOn && !cvo) camTop(g, W, H);
   if (MODE === 'halo' && !cvo) haloFront(g);   // stage draws its own camera layer after trails and kaleidoscope
-  if (!cvo && CFG.vzNeck !== false && !document.body.classList.contains('perform-on')) { const r = neckRect(W, H); drawMiniNeck(g, r[0], r[1], r[2], r[3], { C }); }
+  if (!cvo && CFG.vzNeck !== false && !document.body.classList.contains('perform-on') && MODE !== 'concert') { const r = neckRect(W, H); drawMiniNeck(g, r[0], r[1], r[2], r[3], { C }); }
   if (!cvo && CFG.vzRibbon && !document.body.classList.contains('perform-on') && typeof voxDraw === 'function') { const r = voxRect(W, H); voxDraw(g, r[0], r[1], r[2], r[3], { C, labels: H > 260 }); }
-  if (o.noText) return;
+  if (o.noText || MODE === 'concert') return;
   g.fillStyle = 'rgba(255,255,255,.55)'; g.font = `${Math.round(11 * H / 400 + 6)}px ui-monospace,Menlo,monospace`; g.textBaseline = 'top';
   if (AN.midi != null && AN.active) { g.fillStyle = 'rgba(255,255,255,.85)'; g.font = `800 ${Math.round(28 * Math.min(W, H * 2) / 900 + 10)}px ui-monospace,Menlo,monospace`; g.fillText(pcName(AN.midi) + (Math.floor(AN.midi / 12) - 1) + '  ' + (AN.cents >= 0 ? '+' : '') + AN.cents.toFixed(0) + '¢', 14, 12); }
   if (AN.chord && AN.chord[0] && AN.active) { g.fillStyle = C.b; g.font = `800 ${Math.round(20 * Math.min(W, H * 2) / 900 + 8)}px ui-monospace,Menlo,monospace`; g.fillText(AN.chord[0].sym, 14, H * .13 + 20); }
@@ -186,7 +190,7 @@ function buildCamPane() {
     h('div', { class: 'row', style: { gap: '8px', flexWrap: 'wrap', marginBottom: '8px' } }, UI.camSel, h('button', { class: 'btn primary sm', onclick: () => CAM.on ? stopCam() : startCam() }, '⏻ Camera on/off'), UI.camMode, UI.camCal,
       h('button', { class: 'btn sm', onclick: e => { CFG.mirror = !CFG.mirror; saveCfg(); CAM.video.classList.toggle('mirror', CFG.mirror); UI.camOv.classList.toggle('mirror', CFG.mirror); if (CAM.cal) { toast('Mirror changed — recalibrate the neck', 'warn'); } } }, '⇋ Mirror'),
       h('button', { class: 'btn sm', onclick: () => { CAM.cal = null; store.set('cal', null); VIS.active = false; toast('Calibration cleared'); } }, 'Clear calibration'), h('span', { class: 'grow' }), UI.camInfo),
-    UI.camWrap, h('div', { class: 'tiny muted', style: { marginTop: '6px', lineHeight: 1.5 } }, h('b', {}, 'Calibrate: '), 'frame the neck, press ⌖, then click (1) the nut on the LOW-E string, (2) the 12th-fret marker on the LOW-E string, (3) the nut on the HIGH-e string. Fret spacing uses the 12-TET rule d(n)=L·(1−2^(−n/12)) with L = 2·|nut→12|; strings are assumed parallel (perspective error grows with camera tilt — film head-on). Camera frames never leave this page; hand tracking downloads its model from a CDN only if you choose it.'))),
+    UI.camWrap, h('div', { class: 'tiny muted', style: { marginTop: '6px', lineHeight: 1.5 } }, h('b', {}, 'Calibrate: '), 'frame the neck, press ⌖, then click (1) the nut on the LOW-E string, (2) the 12th-fret marker on the LOW-E string, (3) the nut on the HIGH-e string. Fret spacing uses the 12-TET rule d(n)=L·(1−2^(−n/12)) with L = 2·|nut→12|; strings are assumed parallel (perspective error grows with camera tilt — film head-on). Camera frames never leave this page; hand tracking downloads its model from a CDN only if you choose it and agree to a one-time download.'))),
     h('div', { class: 'card' }, h('h4', {}, 'Fusion statistics'), h('div', { class: 'card-b' }, UI.camStats = h('div', { class: 'stat-grid' }), h('div', { style: { marginTop: '8px' } }, h('div', { class: 'small muted' }, 'Fretting-hand usage by fret (frames)'), UI.camChart = h('canvas', { class: 'chart' })))));
   CAM.want = 'hand'; refreshCamList(); bus.on('devices', refreshCamList);
 }
@@ -200,7 +204,8 @@ async function startCam() {
     if (!CAM.stream) throw lastErr || new Error('no camera');
     CAM.video.srcObject = CAM.stream; await CAM.video.play().catch(() => { }); CAM.on = true; const st = CAM.stream.getVideoTracks()[0].getSettings(); UI.camInfo.textContent = (st.width || '?') + '×' + (st.height || '?') + ' @ ' + Math.round(st.frameRate || 0) + ' fps'; bus.emit('devices');
     try { const d = await navigator.mediaDevices.enumerateDevices(); E.devs.cam = d.filter(x => x.kind === 'videoinput'); refreshCamList(); } catch (e) { }
-    await setupTracker(); if (!CAM.loopOn) { CAM.loopOn = true; requestAnimationFrame(camLoop); }
+    if (!CAM.loopOn) { CAM.loopOn = true; requestAnimationFrame(camLoop); }   // the picture runs in motion mode at once; the hand model (and the question before it downloads) may take a while
+    await setupTracker();
   } catch (e) { toast('Camera unavailable: ' + (e.message || e.name) + '. In CodePen, use Full Page view and allow camera access.', 'bad'); UI.camInfo.textContent = 'camera error'; }
 }
 function stopCam(keep) { if (CAM.stream) CAM.stream.getTracks().forEach(t => t.stop()); CAM.stream = null; CAM.on = false; VIS.active = false; if (!keep && UI.camInfo) UI.camInfo.textContent = 'camera off'; }
@@ -211,7 +216,7 @@ async function setupTracker() {
       UI.camInfo.textContent += ' · loading hand model…'; const { mod, fs } = await mpVision();
       CAM.tracker = await mod.HandLandmarker.createFromOptions(fs, { baseOptions: { modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task', delegate: 'GPU' }, runningMode: 'VIDEO', numHands: 2, minHandDetectionConfidence: .5, minTrackingConfidence: .5 });
       CAM.track = 'hand'; toast('Hand tracking ready', 'ok');
-    } catch (e) { console.warn('MediaPipe unavailable', e); toast('Hand model could not load (offline or blocked) — using motion-energy mode', 'warn'); CAM.track = 'motion'; }
+    } catch (e) { CAM.track = 'motion'; if (e && e.declined) toast('Staying offline: using motion-energy mode', 'ok'); else { console.warn('MediaPipe unavailable', e); toast('Hand model could not load (offline or blocked) — using motion-energy mode', 'warn'); } }
   }
   VIS.active = !!(CAM.cal && CAM.track === 'hand'); const st = CAM.stream && CAM.stream.getVideoTracks()[0].getSettings(); UI.camInfo.textContent = (st ? st.width + '×' + st.height + ' · ' : '') + 'tracker: ' + CAM.track;
 }

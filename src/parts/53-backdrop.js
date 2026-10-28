@@ -32,11 +32,17 @@ function pbDim(g, w, h) {
   g.save(); g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1; g.fillStyle = 'rgba(0,0,0,' + a.toFixed(3) + ')'; g.fillRect(0, 0, w, h); g.restore();
 }
 function pbFill(off) { const g = off.getContext('2d'); g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1; g.fillStyle = pbBgColor(); g.fillRect(0, 0, off.width, off.height); }
+/** where the lower third sits, whatever the switches say; and (null when it is off) for a lens that has to keep its own drawing clear of it */
+function pbLowerGeom(W, H) {
+  const pb = STG.pb, u = Math.min(W, H * 1.6) * (pb.size || 1), ph = u * .2, top = pb.pos === 'top';
+  return { u, x: W * .03, y: top ? H * .04 : H - ph - H * .05, w: W * .94, h: ph, top };
+}
+const pbLowerRect = (W, H) => pbOn() && STG.pb.lower ? pbLowerGeom(W, H) : null;
 /** chord + next, section, lyric + next lyric, in a panel along the bottom (or the top) */
 function drawLowerThird(g, W, H, info, C) {
   const pb = STG.pb, lyr = info.lyric, sym = info.sym; if (!sym && !lyr && !(info.playing && info.sec)) return;
-  const u = Math.min(W, H * 1.6) * (pb.size || 1), mono = 'ui-monospace,Menlo,Consolas,monospace', sans = 'system-ui,-apple-system,Segoe UI,Roboto,sans-serif';
-  const ph = u * .2, pw = W * .94, x = W * .03, y = pb.pos === 'top' ? H * .04 : H - ph - H * .05, r = u * .02, cw = u * .34;
+  const lr = pbLowerGeom(W, H), u = lr.u, mono = 'ui-monospace,Menlo,Consolas,monospace', sans = 'system-ui,-apple-system,Segoe UI,Roboto,sans-serif';
+  const ph = lr.h, pw = lr.w, x = lr.x, y = lr.y, r = u * .02, cw = u * .34;
   g.save(); g.shadowColor = 'rgba(0,0,0,.55)'; g.shadowBlur = u * .015;
   g.beginPath(); g.roundRect ? g.roundRect(x, y, pw, ph, r) : g.rect(x, y, pw, ph); g.fillStyle = 'rgba(8,10,16,.72)'; g.fill(); g.shadowBlur = 0;
   g.fillStyle = C.a; g.fillRect(x, y + ph * .12, u * .006, ph * .76);                        // accent edge
@@ -63,7 +69,8 @@ function pbCard() {
     h('div', { class: 'sgrid', style: { marginTop: 0 } },
       row('Background', sel('bg', [['visuals', 'The visuals (dimmed)'], ['black', 'Plain black'], ['green', 'Chroma-key green']])),
       row('Dimming', h('input', { type: 'range', id: 'pb_dim', min: 0, max: .9, step: .05, value: pb.dim, oninput: e => { pb.dim = +e.target.value; save(); } })),
-      row('Lower third size', sel('size', [[.8, 'Small'], [1, 'Normal'], [1.25, 'Large']])), row('Lower third position', sel('pos', [['bottom', 'Bottom'], ['top', 'Top']]))),
+      row('Lower third size', sel('size', [[.8, 'Small'], [1, 'Normal'], [1.25, 'Large']])), row('Lower third position', sel('pos', [['bottom', 'Bottom'], ['top', 'Top']])),
+      row('Concert lens', h('select', { class: 'in', id: 'pb_lens', style: { fontFamily: 'var(--sans)' }, title: 'Perform: big and calm · Teach: circle of fifths, numerals, what comes next · Sky: your session as a constellation', onchange: e => lxSetLens(e.target.value) }, LX_LENSES.map(o => h('option', { value: o[0], selected: o[0] === (CFG.lens || 'perform') }, o[1]))))),
     h('div', { class: 'row', style: { gap: '8px', marginTop: '8px', flexWrap: 'wrap' } },
       h('button', { class: 'btn sm', id: 'pbOut', title: 'A bare window with just the picture: drag it to the projector, then double-click it for full screen. Turns the backdrop on.', onclick: () => { pb.on = true; save(); renderStageUI(); stagePop(); } }, '▢ Clean output window'),
       h('button', { class: 'btn sm', id: 'pbFull', title: 'Fill this screen with the backdrop (Esc to leave)', onclick: () => { pb.on = true; save(); renderStageUI(); stageFull(); } }, '⛶ Full screen')),

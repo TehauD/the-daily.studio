@@ -119,6 +119,90 @@ suite('shots', async t => {
     await p.ctx.close();
   }
 
+  /* ---------- Concert: the three lenses at 16:9, and the Monitor views card ---------- */
+  if (want('40-concert') || want('41-concert') || want('42-concert') || want('43-monitor')) {
+    const p = await t.open({ w: 1920, h: 1080, init: asInit(DARK) });
+    await p.evaluate(async () => { const d = window.__daily; try { await d.ioConnect(); } catch (e) { } d.S.key = 0; d.S.minor = false; d.S.title = 'Morning Light'; d.S.sections = [{ id: 'a', name: 'Verse', lyrics: 'Morning light on the window sill\nSomething waits and I stand still', bars: [{ chord: 'C', tab: [] }, { chord: 'Am', tab: [] }, { chord: 'F', tab: [] }, { chord: 'G', tab: [] }] }, { id: 'b', name: 'Chorus', lyrics: 'Oh we rise\nInto the light', bars: [{ chord: 'F', tab: [] }, { chord: 'G', tab: [] }, { chord: 'Em', tab: [] }, { chord: 'Am', tab: [] }] }]; d.commit(false); d.STG.pb.on = false; d.STG.pb.lower = true; d.STG.pb.bg = 'visuals'; d.STG.pb.dim = .1; d.STG.cur = 0; d.dockGo('stage'); d.T.cursor = 4 * 16 - 8; await d.play(); });
+    await wait(3000);
+    const grab = async (name, lens, pb) => {
+      if (!want(name)) return;
+      await p.evaluate(([lens, pb]) => { const d = window.__daily; d.STG.pb.on = pb; d.lxSetLens(lens); const w = document.querySelector('.stagewrap'); w.style.aspectRatio = '16/9'; document.querySelectorAll('#toasts .toast').forEach(x => x.remove()); }, [lens, pb]); await wait(2200);
+      const url = await p.evaluate(() => document.querySelector('.stagewrap canvas').toDataURL('image/png')); const f = path.join(OUT, name + '.png'); fs.writeFileSync(f, Buffer.from(url.split(',')[1], 'base64')); console.log('shot ' + name + ' ' + Math.round(fs.statSync(f).size / 1024) + ' kB');
+    };
+    await grab('40-concert-perform', 'perform', true); await grab('41-concert-teach', 'teach', false); await grab('42-concert-sky', 'sky', false);
+    await p.evaluate(() => { const d = window.__daily; d.lxSetLens('perform'); d.STG.pb.on = false; d.stopPlay(true); });
+    if (want('43-monitor')) {
+      await p.evaluate(() => { const d = window.__daily; d.dockGo('vis'); d.sideShow('monitor'); const c = document.querySelector('.mon-chip[data-w="views"]'); if (c && !c.classList.contains('on')) c.click(); }); await wait(2500); await quiet(p);
+      const box = await p.evaluate(() => { const c = document.getElementById('mvCard'); if (!c) return null; c.scrollIntoView({ block: 'center' }); const r = document.getElementById('right').getBoundingClientRect(); return { x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height) }; });
+      if (box) { await wait(500); await save(p, '43-monitor-views', { clip: { x: box.x, y: box.y, width: Math.min(box.w, 520), height: Math.min(box.h, 1000) } }); }
+    }
+    await p.ctx.close();
+  }
+
+  /* ---------- the six looks on the demo song, and the Show setup console ---------- */
+  const SHOWS = [['46-look-theatre', 'theatre'], ['47-look-backlight', 'backlight'], ['48-look-blades', 'blades'], ['49-look-pixels', 'pixels'], ['50-look-horizon', 'horizon'], ['51-look-lasers', 'lasers']];
+  const CONSOLE = [['52-show-setup', 'looks'], ['53-show-cues', 'cues'], ['54-show-output', 'out']];
+  if (SHOWS.some(x => want(x[0])) || CONSOLE.some(x => want(x[0]))) {
+    const p = await t.open({ w: 1280, h: 720, init: asInit(DARK) });
+    await p.evaluate(async () => { const d = window.__daily; try { await d.ioConnect(); } catch (e) { } d.STG.comfort = 'full'; });
+    for (const [name, id] of SHOWS) {
+      if (!want(name)) continue;
+      await p.evaluate(async id => {
+        const d = window.__daily; d.STG.cur = d.SHOW_DESIGNS.findIndex(x => x.id === id); d.dockGo('stage'); const w = document.querySelector('.stagewrap'); if (w) w.style.aspectRatio = '16/9';
+        let bi = 0; for (const s of d.S.sections) { if (d.lxKind(s.name) === 'chorus') break; bi += s.bars.length; } d.stopPlay(true); d.T.cursor = bi * 16; d.LX.lastStrobeBar = -1; await d.play(); document.querySelectorAll('#toasts .toast').forEach(x => x.remove());
+      }, id);
+      await wait(4600);
+      const url = await p.evaluate(() => document.querySelector('.stagewrap canvas').toDataURL('image/png')); const f = path.join(OUT, name + '.png'); fs.writeFileSync(f, Buffer.from(url.split(',')[1], 'base64')); ok(fs.statSync(f).size > 20000, 'wrote ' + name + '.png (' + Math.round(fs.statSync(f).size / 1024) + ' KB)');
+      await p.evaluate(() => window.__daily.stopPlay(true));
+    }
+    await p.ctx.close();
+    if (CONSOLE.some(x => want(x[0]))) {
+      const q = await t.open({ w: 1500, h: 1000, init: asInit(DARK) });
+      await q.evaluate(async () => { const d = window.__daily; try { await d.ioConnect(); } catch (e) { } d.STG.comfort = 'standard'; d.applyPreset(d.LAYOUTS.find(l => l[0] === 'Show')[2], 'Show'); d.shOpen('scene', 'looks'); });
+      await wait(1500); await q.evaluate(() => document.activeElement && document.activeElement.blur()); await q.keyboard.press('6'); await wait(1200);
+      for (const [name, tab] of CONSOLE) {
+        if (!want(name)) continue;
+        await q.evaluate(([tab]) => { const d = window.__daily; d.SHC.tab = tab; d.shcDraw(); if (tab === 'cues') { d.SHC.kind = 'chorus'; d.shcDraw(); d.lxPreview('chorus', { sec: 60 }); } document.querySelectorAll('#toasts .toast').forEach(x => x.remove()); }, [tab]);
+        await wait(tab === 'cues' ? 3200 : 1500); await quiet(q); await save(q, name);
+      }
+      await q.ctx.close();
+    }
+  }
+
+  /* ---------- the layout picker and four of the layouts ---------- */
+  if (['55-layouts', '56-layout-write', '57-layout-arrange', '58-layout-show'].some(want)) {
+    const p = await t.open({ w: 1600, h: 950, init: asInit(DARK) }); await takes(p);
+    const go = async n => { await p.evaluate(n => { const d = window.__daily, l = d.LAYOUTS.find(x => x[0] === n); d.applyPreset(l[2], n); document.querySelectorAll('#toasts .toast').forEach(x => x.remove()); }, n); await wait(1500); await quiet(p); };
+    for (const [name, lay] of [['56-layout-write', 'Write'], ['57-layout-arrange', 'Arrange'], ['58-layout-show', 'Show']]) { if (!want(name)) continue; await go(lay); await save(p, name); }
+    if (want('55-layouts')) { await go('Studio'); await p.evaluate(() => document.querySelector('button[title^="Layout"]').click()); await wait(700); await save(p, '55-layouts'); }
+    await p.ctx.close();
+  }
+
+  /* ---------- 2.7: the goals on the first page, a guided session, the Show preflight, a note on a tab ---------- */
+  if (['59-goals', '60-session-record', '61-session-hum', '62-show-preflight', '63-tab-note', '64-goals-phone', '65-session-phone'].some(want)) {
+    const FR = new Function(`try { localStorage.removeItem('fw.started'); localStorage.setItem('fw.cfg', ${JSON.stringify(JSON.stringify(DARK))}); } catch (e) { }`);
+    const first = async (o, goal) => { const p = await t.open({ boot: false, init: FR, ...o }); await p.goto(t.BASE + '?debug'); await wait(3800); if (!goal) return p; await p.evaluate(g => document.querySelector('.boot-goal[data-goal="' + g + '"]').click(), goal); await poll(() => p.evaluate(() => !!document.getElementById('gd')), 9000); await wait(1500); await p.evaluate(() => document.querySelectorAll('#toasts .toast').forEach(x => x.remove())); return p; };
+    if (want('59-goals')) { const p = await first({ w: 1440, h: 900 }); await save(p, '59-goals'); await p.ctx.close(); }
+    if (want('64-goals-phone')) { const p = await first({ w: 390, h: 844, mobile: true, dpr: 2 }); await save(p, '64-goals-phone'); await p.ctx.close(); }
+    if (want('65-session-phone')) { const p = await first({ w: 390, h: 844, mobile: true, dpr: 2 }, 'loop'); await save(p, '65-session-phone'); await p.ctx.close(); }
+    if (want('60-session-record')) { const p = await first({ w: 1440, h: 900 }, 'loop'); await save(p, '60-session-record'); await p.ctx.close(); }
+    if (want('61-session-hum')) { const p = await first({ w: 1440, h: 900 }, 'hum'); await poll(() => p.$('#humGo2'), 6000); await wait(500); await save(p, '61-session-hum'); await p.ctx.close(); }
+    if (want('62-show-preflight')) {
+      const p = await first({ w: 1500, h: 1000 }, 'show'); await p.evaluate(() => { const d = window.__daily; d.shOpen('scene', 'out'); d.GD.pf.look = 1; d.GD.pf.rig = 1; d.GD.pf.out = 1; d.GD.pf.test = 1; }); await wait(1400); await p.evaluate(() => document.querySelector('#gdPf').scrollIntoView({ block: 'center' })); await wait(700); await save(p, '62-show-preflight'); await p.ctx.close();
+    }
+    if (want('63-tab-note')) {
+      const p = await first({ w: 1440, h: 900 }); await p.evaluate(() => document.getElementById('bootNoMic').click()); await wait(3200); await p.evaluate(() => { const d = window.__daily; d.guideStop(true); d.zoomSet('song', true); d.dockGo('band'); }); await wait(900); await p.evaluate(() => document.querySelectorAll('#toasts .toast,#tourOffer').forEach(x => x.remove())); await save(p, '63-tab-note'); await p.ctx.close();
+    }
+  }
+
+  /* ---------- 2.8: Loop & layer, two layers and the strip ---------- */
+  if (want('66-loop-layer')) {
+    const p = await t.open({ w: 1440, h: 900, debug: true, init: asInit(DARK) });
+    await p.evaluate(async () => { const d = window.__daily; d.S.bpm = 150; d.S.sections = [Object.assign({}, d.S.sections[0], { bars: d.S.sections[0].bars.slice(0, 2) })]; d.CFG.countIn = 1; d.CFG.vin = 'off'; d.commit(false); await d.ioConnect(); await d.looperStart({ bars: 1, band: false }); });
+    await poll(() => p.evaluate(() => window.__daily.TAKES.length >= 2 && window.__daily.LP.pass >= 3), 20000); await p.evaluate(() => { const d = window.__daily, l = d.LAYOUTS.find(x => x[0] === 'Arrange'); d.applyPreset(l[2], 'Arrange'); }); await wait(1500); await quiet(p);
+    await save(p, '66-loop-layer'); await p.evaluate(() => window.__daily.looperEnd()); await p.ctx.close();
+  }
+
   /* ---------- the light theme, the start card, the canvas, the songs window, appearance and about ---------- */
   {
     const p = await t.open({ w: 1500, h: 900, init: asInit(LIGHT) }); await takes(p);
@@ -134,7 +218,14 @@ suite('shots', async t => {
     }
     if (want('15-appearance')) { await byTitle(p, /^Appearance/); await wait(800); await save(p, '15-appearance'); await clean(p); }
     if (want('16-about')) { await byTitle(p, /^Help & shortcuts/); await wait(700); await p.evaluate(() => { const a = document.querySelector('dialog[open] .ab'); if (a) a.scrollIntoView({ block: 'start' }); }); await wait(600); await save(p, '16-about'); await clean(p); }
+    if (want('45-privacy')) { await byTitle(p, /^Help & shortcuts/); await wait(700); await p.evaluate(() => { const d = document.getElementById('abPriv'); if (d) { d.open = true; d.scrollIntoView({ block: 'center' }); } }); await wait(600); await save(p, '45-privacy'); await clean(p); }
     await p.ctx.close();
+  }
+  if (want('44-consent')) {   // the stage route: the camera is on, and the one-time download is a question, not a surprise
+    const p = await t.open({ w: 1500, h: 900, boot: false, init: new Function(`try { localStorage.removeItem('fw.started'); localStorage.setItem('fw.cfg', ${JSON.stringify(JSON.stringify(DARK))}); } catch (e) { }`) });
+    await p.ctx.grantPermissions(['camera', 'microphone']); await p.ctx.route(/jsdelivr|googleapis/, r => r.abort());
+    await p.goto(t.BASE + '?debug'); await wait(3600); await p.evaluate(() => document.getElementById('bootStage').click());
+    await poll(() => p.evaluate(() => !!document.getElementById('mpAsk')), 20000); await wait(1500); await save(p, '44-consent'); await p.ctx.close();
   }
   if (want('12-start')) {
     const p = await t.open({ w: 1500, h: 900, boot: false, init: new Function(`try { localStorage.removeItem('fw.started'); localStorage.setItem('fw.cfg', ${JSON.stringify(JSON.stringify(DARK))}); } catch (e) { }`) });

@@ -74,7 +74,7 @@ function drumHit(row, t, v) {
     const o = c.createOscillator(), g = gn(0); o.frequency.setValueAtTime(K.t[0] * 1.5, t); o.frequency.exponentialRampToValueAtTime(K.t[0], t + .1); env(g, K.t[1], .5 * vol); o.connect(g); g.connect(out); o.start(t); o.stop(t + K.t[1] + .05);
   }
 }
-function drumStep(sib, t) { const pat = dpat(), L = Math.min(S.band.drumLen || 16, 32); const i = sib % L; pat.forEach((row, r) => { const v = row[i]; if (v) drumHit(r, t + (Math.random() * 2 - 1) * CFG.humanize * .006, v); }); }
+function drumStep(sib, t) { const pat = dpat(), L = Math.min(S.band.drumLen || 16, 32); const i = sib % L; pat.forEach((row, r) => { const v = row[i]; if (v && typeof lxHit === 'function') lxHit(r, t, v); if (v) drumHit(r, t + (Math.random() * 2 - 1) * CFG.humanize * .006, v); }); }
 function click(t, accent) {
   const c = E.ctx, o = c.createOscillator(), g = gn(0); o.frequency.value = accent ? 1700 : 1150; g.gain.setValueAtTime(CFG.metroVol * (accent ? 1 : .6), t); g.gain.exponentialRampToValueAtTime(.0001, t + .035);
   o.connect(g); g.connect(E.tr.click.in); o.start(t); o.stop(t + .05);
@@ -145,13 +145,14 @@ function scheduleSlot(slot, time) {
   if (slot < 0) { const sib = ((slot % sp) + sp) % sp; if (sib % beatSlots === 0) click(time, sib === 0); return; }
   const bi = Math.floor(slot / sp), sib = slot % sp, fb = barsCache()[bi]; if (!fb) return;
   if (T.metro && sib % beatSlots === 0) click(tt, sib === 0);
+  if (typeof lxEvt === 'function' && sib % beatSlots === 0) lxEvt('beat', tt, sib === 0 ? 1 : 0);   // the show listens on the audio clock
   if (S.band.drumsOn) drumStep(sib, tt);
   const cd = chordAt(bi, sib);
   if (cd && cd.sym) {
-    if (S.band.bassOn) { const e = bassEvent(S.band.bassStyle, cd.sym, cd.rel, cd.len, cd.next); if (e) pluck('bass', tt, e.m, e.v, { id: 'b', pan: 0 }); }
-    if (S.band.compOn) { const st = STRUMS[S.band.compStyle] || STRUMS['Down 4s'], L = Math.min(16, sp); strumAt(tt, cd.sym, st.p[sib % L], st); }
+    if (S.band.bassOn) { const e = bassEvent(S.band.bassStyle, cd.sym, cd.rel, cd.len, cd.next); if (e) { pluck('bass', tt, e.m, e.v, { id: 'b', pan: 0 }); if (typeof lxEvt === 'function') lxEvt('bass', tt, e.m, e.v); } }
+    if (S.band.compOn) { const st = STRUMS[S.band.compStyle] || STRUMS['Down 4s'], L = Math.min(16, sp), ch = st.p[sib % L]; strumAt(tt, cd.sym, ch, st); if (ch && ch !== '.' && typeof lxEvt === 'function') lxEvt('chord', tt, cd.sym, ch === ch.toUpperCase() ? 1 : .6); }
   }
-  if (S.band.leadOn) fb.bar.tab.forEach(n => { if (n.s === sib) playTabNote(fb.bar, n, tt, dur); });
+  if (S.band.leadOn) fb.bar.tab.forEach(n => { if (n.s === sib) { playTabNote(fb.bar, n, tt, dur); if (typeof lxEvt === 'function') lxEvt('lead', tt, S.tuning[n.st] + S.capo + n.f, .8); } });
 }
 async function play(fromRec) {
   if (T.playing || OFR.busy) return; try { bandHint(); } catch (e) { } await startAudio(); const c = E.ctx; applyMix(); if (!S.sections.length || !songSlots()) { toast('Add a section with at least one bar first', 'warn'); return; }
@@ -166,7 +167,7 @@ function tick() {
     const total = songSlots(), end = T.loop ? (T.loopB != null ? Math.min(T.loopB, total) : total) : total;
     if (T.slot >= end) {
       if (REC && !(T.loop && T.loopB != null)) { const how = CFG.recEnd || 'grow'; if (how === 'grow' && recGrow()) continue; if (how === 'stop') { T.ending = true; T.endAt = T.next; setTimeout(() => { if (T.playing && T.ending && REC) stopPlay(true); }, Math.max(0, (T.next - E.ctx.currentTime) * 1000) + 60); break; } }
-      if (T.loop && end > 0) { if (T.loopA >= end) T.loopA = 0; if (REC) recEnd(); T.slot = T.loopA; stopTakes(); scheduleTakes(T.next, T.loopA * dur); trackStart(T.next, T.loopA); if (T.rec) { T.wantRec = true; T.recFrom = T.loopA; } if (T.slot >= end) { T.ending = true; T.endAt = T.next; break; } continue; }
+      if (T.loop && end > 0) { if (T.loopA >= end) T.loopA = 0; if (REC) recEnd(); if (typeof lpWrap === 'function') lpWrap(); T.slot = T.loopA; stopTakes(); scheduleTakes(T.next, T.loopA * dur); trackStart(T.next, T.loopA); if (T.rec) { T.wantRec = true; T.recFrom = T.loopA; } if (T.slot >= end) { T.ending = true; T.endAt = T.next; break; } continue; }
       T.ending = true; T.endAt = T.next; break;
     }
     if (T.wantRec && T.slot === T.recFrom) { recBegin(T.slot, T.next); T.wantRec = false; }
@@ -206,7 +207,7 @@ function recBegin(slot, ctxTime) {
   if (!E.hasInput) { toast('No audio input is open — recording the backing/tab only', 'warn'); return; }
   let g = armedG(), v = armedV(); if (PUNCH.on) { g = PUNCH.kind === 'gtr'; v = PUNCH.kind === 'vox'; }       // a punch-in records the lane being punched, nothing else
   if (!g && !v) { toast('Nothing is armed — arm the Guitar or Vocal lane (the ● button at the left of the arrangement) to record', 'warn'); return; }
-  REC = { dry: [], wet: [], vox: [], g, v, t0: ctxTime, startSec: slot * slotDur(), bpm: S.bpm, preset: RIG.cur, n: 0, cam: [], pkG: [], pkV: [], perf0: performance.now() + (ctxTime - E.ctx.currentTime) * 1000, punch: PUNCH.on ? Object.assign({}, PUNCH) : null, tEnd: 0 };
+  REC = { dry: [], wet: [], vox: [], g, v, t0: ctxTime, startSec: slot * slotDur(), bpm: S.bpm, preset: RIG.cur, n: 0, cam: [], pkG: [], pkV: [], perf0: performance.now() + (ctxTime - E.ctx.currentTime) * 1000, punch: PUNCH.on ? Object.assign({}, PUNCH) : null, tEnd: 0, cycle: !!(T.loop && T.loopB != null && !PUNCH.on) };
   if (g) { E.tapDI.on(true); if (CFG.rec.wet) E.tapWet.on(true); } if (v) E.tapVox.on(true); bus.emit('rec:state', true);
 }
 function pushBlock(arr, m, t0) {
@@ -230,8 +231,9 @@ function recEnd() {
     if (!parts.length) return; if (kind === 'gtr' ? quietLane(pG, pV) : quietLane(pV, pG)) { skipped.push(kind === 'gtr' ? 'guitar' : 'vocal'); return; } let dry = cat(parts), wet = wetParts && wetParts.length ? cat(wetParts) : null; const lim = r.tEnd ? Math.max(0, Math.round((r.tEnd - r.t0) * sr)) : 0; if (lim && lim < dry.length) { dry = dry.slice(0, lim); if (wet) wet = wet.slice(0, lim); }       // a punch-in ends exactly at its out point
     if (dry.length < sr * (r.punch ? .05 : .25)) return;
     let pk = 0, e = 0; for (let i = 0; i < dry.length; i++) { const a = Math.abs(dry[i]); if (a > pk) pk = a; e += dry[i] * dry[i]; }
+    if (r.cycle && pk < .002) return;      // a pass nobody played on is not a layer: loop recording never stacks silent takes
     const vox = kind === 'vox', nth = TAKES.filter(t => (t.kind === 'vox') === vox).length + 1;
-    const take = { id: uid(), kind, name: (vox ? 'Vocal ' : 'Take ') + nth, startSec: start, sr, dry, wet, peaks: peaksOf(dry), g: 1, pan: 0, mute: false, solo: false, mode: vox ? 'wet' : (wet && CFG.rec.dry ? 'reamp' : 'wet'), bpm: r.bpm, preset: r.preset, peak: dB(pk), rms: dB(Math.sqrt(e / dry.length)), dur: dry.length / sr, t: Date.now(), stats: vox ? null : statsSnapshot(), cam: vox ? [] : r.cam };
+    const take = { id: uid(), kind, name: (vox ? (r.cycle ? 'Vocal layer ' : 'Vocal ') : (r.cycle ? 'Layer ' : 'Take ')) + nth, startSec: start, sr, dry, wet, peaks: peaksOf(dry), g: 1, pan: 0, mute: false, solo: false, mode: vox ? 'wet' : (wet && CFG.rec.dry ? 'reamp' : 'wet'), bpm: r.bpm, preset: r.preset, peak: dB(pk), rms: dB(Math.sqrt(e / dry.length)), dur: dry.length / sr, t: Date.now(), stats: vox ? null : statsSnapshot(), cam: vox ? [] : r.cam };
     if (!vox && !CFG.rec.dry && wet) take.mode = 'wet'; made.push(take); if (!(r.punch && tkrPunchApply(take, r.punch))) TAKES.push(take);
   };
   if (r.g) mk('gtr', r.dry, r.wet); if (r.v) mk('vox', r.vox, null);

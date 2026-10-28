@@ -182,7 +182,7 @@ function buildRight() {
   const mc = h('div', { class: 'card' }, h('h4', {}, 'Levels (dBFS)', UI.clip), h('div', { class: 'card-b' }, mt('mIn', 'Input (DI, post-trim)'), mt('mRig', 'Rig output'), mt('mMaster', 'Master (post-limiter)'), h('div', { class: 'tiny muted', id: 'gainhint' }, 'Aim for DI peaks around −12…−6 dBFS.')));
   UI.live = h('div', { class: 'kv' }); const lc = h('div', { class: 'card' }, h('h4', {}, 'Live analysis'), h('div', { class: 'card-b' }, UI.live));
   UI.mini = h('canvas', { class: 'vcanvas', height: 90, style: { height: '90px' } }); const sp = h('div', { class: 'card' }, h('h4', {}, 'Spectrum (rig out)'), h('div', { class: 'card-b', style: { padding: '6px' } }, UI.mini));
-  p.append(UI.tunerCard, mc, lc, sp); renderStrings(); bus.on('song', renderStrings);
+  p.append(UI.tunerCard, mc, lc, sp, monitorViewsCard()); renderStrings(); bus.on('song', renderStrings);
 }
 function renderStrings() { if (!UI.tuner) return; const s = UI.tuner.str; s.innerHTML = ''; S.tuning.forEach((m, i) => s.append(h('span', { 'data-m': m + S.capo, title: 'Click to hear this string (reference tone)', style: { cursor: 'pointer' }, onclick: async () => { await startAudio(); if (E.ready) pluck('lead', E.ctx.currentTime + .01, m + S.capo, .8, { id: 'ref', pan: 0 }); } }, tunPc(m + S.capo)))); const b = $('#tunName'); if (b) b.textContent = tunShort(); }
 const dbw = d => clamp((d + 60) / 60, 0, 1) * 100 + '%';

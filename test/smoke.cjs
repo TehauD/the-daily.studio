@@ -10,7 +10,7 @@ w.AudioContext=function(){return mkNode({sampleRate:48000,state:'running',get cu
 w.AudioWorkletNode=function(){return mkNode()};
 w.URL.createObjectURL=()=>'blob:x';
 w.navigator.mediaDevices={getUserMedia:async()=>mkNode(),enumerateDevices:async()=>[{kind:'audioinput',deviceId:'f1',label:'Focusrite USB Audio'},{kind:'audiooutput',deviceId:'o1',label:'Focusrite Out'},{kind:'videoinput',deviceId:'c1',label:'Cam'}],addEventListener(){}};try{w.HTMLMediaElement.prototype.play=async()=>{};}catch(e){}
-w.HTMLCanvasElement.prototype.getContext=function(){return new Proxy({},{get(t,k){if(k==='measureText')return ()=>({width:10});if(k==='createLinearGradient')return ()=>({addColorStop(){}});if(k==='getImageData')return ()=>({data:new Uint8ClampedArray(4)});if(k in t)return t[k];return ()=>{}},set(t,k,v){t[k]=v;return true}})};
+w.HTMLCanvasElement.prototype.getContext=function(){return new Proxy({},{get(t,k){if(k==='measureText')return ()=>({width:10});if(k==='createLinearGradient'||k==='createRadialGradient'||k==='createConicGradient')return ()=>({addColorStop(){}});if(k==='getImageData')return ()=>({data:new Uint8ClampedArray(4)});if(k in t)return t[k];return ()=>{}},set(t,k,v){t[k]=v;return true}})};
 w.ResizeObserver=class{observe(){}disconnect(){}};w.requestAnimationFrame=cb=>setTimeout(()=>cb(performance.now()),16);
 w.matchMedia=()=>({matches:false,addListener(){}});
 w.HTMLDialogElement.prototype.showModal=function(){};

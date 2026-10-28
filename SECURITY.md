@@ -1,6 +1,6 @@
 # Security policy
 
-the-daily.studio runs entirely in the browser and has no server component, accounts or telemetry. The relevant risks are therefore about **what the page can access** (microphone, camera, MIDI, local storage) and **what it loads**.
+the-daily.studio runs entirely in the browser and has no server component, accounts or telemetry. The relevant risks are therefore about **what the page can access** (microphone, camera, MIDI, local storage) and **what it loads**. The only other sites it can reach are jsDelivr and Google storage, only after the visitor agrees to a one-time MediaPipe download; see [docs/SECURITY_MODEL.md](docs/SECURITY_MODEL.md).
 
 ## Supported versions
 

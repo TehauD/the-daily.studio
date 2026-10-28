@@ -3,9 +3,9 @@
 </p>
 
 <h1 align="center">the-daily.studio</h1>
-<p align="center"><b>A songwriter’s workspace that lives in one web page.</b><br>
-Catch an idea · find the chords · record guitar and vocals · split a track into stems · keep every song on your own device</p>
-<p align="center"><sub>v2.3.0 · free, open source (MIT) · no account, no upload, no tracking</sub></p>
+<p align="center"><b>Record it. Split it. Write it down.</b><br>
+A guitar and voice studio in one web page: record your guitar and mic · split any song into stems to play along with · get the chords, tab and lyrics · pedals, presets and live visuals</p>
+<p align="center"><sub>v2.8.0 · free, open source (MIT) · no account, no upload, no tracking</sub></p>
 
 <p align="center">
   <a href="https://the-daily.studio/"><b>▶ Open the live app</b></a> ·
@@ -34,20 +34,26 @@ Catch an idea · find the chords · record guitar and vocals · split a track in
 
 ## Contents
 
-[What it is](#what-it-is) · [Highlights](#highlights) · [What's new in 2.3](#whats-new-in-23) · [2.2](#whats-new-in-22) · [Quick start](#quick-start) · [Your first five minutes](#your-first-five-minutes) · [Tour of the panels](#tour-of-the-panels) · [Tunings](#tunings) · [Phone and tablet](#phone-and-tablet) · [Keyboard shortcuts](#keyboard-shortcuts) · [Audio setup](#audio-setup) · [Privacy](#privacy-and-data) · [Accuracy and honest limits](#accuracy-and-honest-limits) · [Browser support](#browser-support) · [Project layout](#project-layout) · [Develop](#develop) · [Host it](#host-it-on-your-github) · [Roadmap](#roadmap-ideas) · [License](#license-and-credits)
+[What it is](#what-it-is) · [Highlights](#highlights) · [What's new in 2.4](#whats-new-in-24) · [2.3](#whats-new-in-23) · [2.2](#whats-new-in-22) · [Quick start](#quick-start) · [Your first five minutes](#your-first-five-minutes) · [Tour of the panels](#tour-of-the-panels) · [Tunings](#tunings) · [Phone and tablet](#phone-and-tablet) · [Keyboard shortcuts](#keyboard-shortcuts) · [Audio setup](#audio-setup) · [Privacy](#privacy-and-data) · [Accuracy and honest limits](#accuracy-and-honest-limits) · [Browser support](#browser-support) · [Project layout](#project-layout) · [Develop](#develop) · [Host it](#host-it-on-your-github) · [Roadmap](#roadmap-ideas) · [License](#license-and-credits)
 
 ## What it is
 
-> **Hum a melody. Get a song.** Press **● Hum or sing**, hum 10–30 seconds, and the app finds your notes, key and tempo, writes the chords, builds intro, verses, choruses, bridge and outro, and plays it back with a band, with you on camera center stage if you choose the stage route. Then change the style, edit anything, add lyrics, or record real guitar. No account, no upload, no experience needed. See the [user guide](docs/USER_GUIDE.md#hum-to-song-start-here).
+the-daily.studio is a guitar and voice studio that runs **entirely in your browser**. Three things come first:
 
-<p align="center"><img src="docs/screenshots/20-boot.png" alt="The first screen: a living hexagon field and two routes: the studio or the stage" width="860"></p>
-<p align="center"><img src="docs/screenshots/21-center-stage.png" alt="Center stage: you in front of the hexagons, with Hum or sing and I have a guitar" width="860"></p>
+| | |
+|---|---|
+| **Record your guitar and your voice** | Plug in an audio interface (a Focusrite, say) or use any microphone. Guitar and mic at once on a two-channel interface, dry and wet takes, a count-in, punch-in over a mistake. Your instrument, your sound, kept on your device. |
+| **Split any song into stems** | Load a track: **drums, bass, vocals and guitar / other** come apart. Mute the part you play and jam over the rest, loop the hard bar, copy the drum groove to the band. Backing tracks you can practise with, isolate and experiment on. |
+| **Get the chords, tab and lyrics** | The tempo, key and chords of a song, and **polyphonic tab** from audio (a track or your own playing), placed on strings and frets for your tuning. A lyric sheet that you type, paste or drop in (.txt, .lrc) keeps the chords over the words. Export to Ultimate Guitar text, ChordPro, MIDI or a print sheet. |
+
+Around that: **presets and effects** (a pedalboard, five amps, 27 tones, A/B morph and mutate to experiment), a **neural graph and live visuals** (your song as a living map, and the Concert light show that moves with it), a backing band, and a performer view. If you like, there is also a **camera on stage**, an optional extra that stays off unless you choose it.
+
+<p align="center"><img src="docs/screenshots/20-boot.png" alt="The first page: Record it. Split it. Write it down. Three features, then Begin in the studio and Try the demo song" width="860"></p>
+<p align="center"><img src="docs/screenshots/40-concert-perform.png" alt="Concert: beams, an LED wall and a gradient stage that follow the chord and the drums" width="860"></p>
+<p align="center"><img src="docs/screenshots/41-concert-teach.png" alt="Concert, Teach lens: the circle of fifths as a lit ring, roman numerals and the next four chords" width="860"></p>
 <p align="center"><img src="docs/screenshots/22-guitar-coach.png" alt="The guitar coach teaching the first chord" width="860"></p>
-<p align="center"><img src="docs/screenshots/19-hum-stage.png" alt="Hum to Song: listening on the stage with the live note" width="860"></p>
 
-the-daily.studio is a songwriter's workspace and full guitar workstation that runs **entirely in your browser**: plug in your guitar (or a microphone), choose a tone, and play along with a backing band while the app listens, analyses, transcribes and visualises what you play.
-
-It began as a guitar lab and grew into a place to turn a hum into a finished song. The numbers behind your playing stay available: the numbers behind your playing (pitch to the cent, timing against a click, vibrato, attack harshness, latency) are visible, exportable and honest about their uncertainty.
+It began as a guitar lab and grew into a place to turn an idea into a song. **Hum a melody and get a song**: press **● Hum or sing**, hum 10–30 seconds, and the app finds your notes, key and tempo, writes the chords, builds intro, verses, choruses, bridge and outro, and plays it back with a band. The numbers behind your playing (pitch to the cent, timing against a click, vibrato, attack harshness, latency) are visible, exportable and honest about their uncertainty.
 
 * **One page, no install, no account, no server.** Open `index.html` or the hosted page and play.
 * **Local first.** Audio, video, projects and settings never leave your machine. See [Privacy](#privacy-and-data).
@@ -59,6 +65,9 @@ It began as a guitar lab and grew into a place to turn a hum into a finished son
 
 | Area | What you get |
 |---|---|
+| **Show setup, layouts, Monitor widgets (2.6)** | A **Show setup console** in the Stage tab for the person who sets up a show: six **looks** built differently (Theatre, Backlight, Blades, Pixel field, Horizon, Laser room) that you can save and carry as files; the **rig** (where the lights stand, the room, the backdrop, lasers, motion); **colour**; a **cue sheet** for each kind of section with a silent band to rehearse it; **response** to kick, snare, hats, bass, strums and lead notes with live meters; **your own pictures**; and **output** controls: master level, blackout and freeze keys, mirror and flip, safe-frame guides, test patterns, a frame-rate limit and a live flash meter. **Nine layouts** (Studio, Write, Arrange, Record, Tone, Practice, Show, Focus, Classic), each a whole workspace for one job, and **optional Monitor widgets**. Plain **guide pages and structured data** so the app can be found. The show is a picture on a screen; the flash limit is an engineering safeguard, not a medical guarantee. |
+| **Lasers and light comfort (2.5)** | **Lasers** in eight patterns that play in combinations and change on the phrase, locked to the song's bars and brightening on the band's real hits, and **Calm, Standard and Full** light comfort with a governor that holds the show to three flashes a second. |
+| **Concert, Teach and Sky (2.4)** | A **Concert** light show as the default visual: colour from the harmony (every step round the circle of fifths moves the hue), mood from loudness, major / minor and tension, and lights on the band's real drum hits, with a cue list from your section names. **Teach** shows the circle of fifths, roman numerals and what comes next; **Sky** turns a session into a constellation you can save as a poster. The pitch wheel, spectrogram and scope moved to **Monitor ▸ Views** (an optional widget since 2.6). |
 | **Rig** | 16 reorderable effect units (gate, compressor, wah, overdrive, distortion, fuzz, pitch / harmony, amp, cabinet / IR, parametric EQ, chorus, phaser, flanger, tremolo, delay, reverb), 5 amp models, procedural cabinets and impulse-response loading, 6 reverbs, 27 presets, A/B morph, mutate, scenes, per-pedal footswitch keys and MIDI bindings, Stomp view for live use. |
 | **Voice, editing, heatmap, backdrop (2.3)** | A **Voice** window with a live **pitch ribbon** against the key, **Find my range** and **Find my key** (then transpose the whole song in one step). **Cut out**, **Silence** or **Punch in** over a marked stretch of a take, and a level for each clip. A **fretboard heatmap** of where you play, how in tune each spot is and which notes belong to the key. A **performer backdrop** that dims and calms the visuals, adds a chord-and-lyric lower third, and gives you plain black or chroma-key green and a clean output window for a projector or OBS. |
 | **Clips, fast render, MIDI (2.2)** | A recording is a **clip**: drag it, trim its edges, fade it, **split** (<kbd>Ctrl/⌘</kbd>+<kbd>E</kbd>), duplicate, delete, with one undo history shared with song edits and the stem mix. **WAV bounces render faster than the song plays**, with a progress window. **Drop a MIDI file** and get a song with chords, key, tempo and a lead tab. **Keep songs safe** explains Add to Home Screen on iPhone and iPad and backs everything up in one tap. |
@@ -69,15 +78,57 @@ It began as a guitar lab and grew into a place to turn a hum into a finished son
 | **Band** | Drums, bass, rhythm guitar and lead-tab playback in many styles, always one click away in the band strip. Rehearsal mixes mute whoever you are replacing. |
 | **Compose** | Tab editor with techniques (hammer, pull, slides, bends, vibrato, mutes), chord and lyric lanes, automatic voicings for any tuning and capo, Ultimate Guitar-ready text, ChordPro, MIDI, WAV and project JSON export with a submission lint report. |
 | **Transcribe** | Record or load audio and get **polyphonic tab** placed on strings and frets for your tuning, with per-note confidence, review and accept / reject, timing auto-align and a built-in self-test. |
-| **Stems** | Load a backing track (you can also ship one-tap **sample tracks** by dropping files in `samples/`): separate **drums, bass, vocals and guitar / other**, estimate tempo, key and chords, import the chords into your song, copy the drum groove to the band, and mute stems to play along. |
+| **Stems** | Load a backing track: separate **drums, bass, vocals and guitar / other**, estimate tempo, key and chords, import the chords into your song, copy the drum groove to the band, and mute stems to play along. |
 | **Neural map** | An interactive node graph of the music: notes and harmony take shape as the song progresses. |
-| **Stage and visuals** | Audio-reactive full-screen visuals (hex resonance, tunnels, spectrogram, chroma wheel, orrery, ridgeline, prompter) with scenes you can switch from the keyboard or a MIDI controller. |
+| **Stage and visuals** | Audio-reactive full-screen visuals (Concert, hex resonance, orrery, ridgeline, prompter, spectrogram and chroma wheel as scenes) with scenes you can switch from the keyboard or a MIDI controller. |
 | **Camera look** | Put yourself in the visuals: dimmed behind them, framed by them (visuals grow in from the edges) or a green-screen style cut-out with the visuals playing behind you. |
 | **Research** | YIN pitch tracking with cents, vibrato rate and extent, attack harshness, key and chord detection, timing jitter against the click, loopback latency measurement, session CSV / JSON. |
 | **Vision** | Calibrate the neck with your webcam and track the fretting hand (optional MediaPipe), then cross-check finger positions against the notes you actually played. |
 | **Safety nets** | Version history with automatic snapshots, calibration to *your* guitar, undo / redo, autosave. |
-| **Guided tour** | A spotlight walkthrough of every key area, offered on first run and available from **?**. |
+| **Guided sessions and tour (2.7)** | Five short sessions that tick off as you do each step (hum a song, record, loop and layer, learn a song, run a show), a note the first time each tab opens, studio words in guitar terms, and the spotlight tour from **?**. |
+| **Loop & layer (2.8)** | Record a track of chords, hear it loop, and play a lead on top in a new track on each pass. Keep looping, add a layer, undo a layer. Layers are ordinary tracks. |
 | **Phone, tablet, desktop** | One responsive app. On a phone: bottom transport, five-section navigation, an on-screen tab keypad, pinch-to-zoom Neural map and a wake lock while you play. Installable as an app (PWA). See [Phone and tablet](#phone-and-tablet). |
+
+## What's new in 2.8
+
+**Loop & layer.** Record a track of chords on the guitar, let it loop, and play an instrumental part on top in another track, the way a looper pedal works. One button sets the loop, counts you in and records a layer on every pass; the earlier layers keep playing. *Keep looping* stops recording and keeps the loop going, *Add a layer* records another, *Undo layer* takes the last one back. Layers are ordinary tracks you can mix and export afterwards, and a first guided session walks you through it. Details are in the [user guide](docs/USER_GUIDE.md#loop--layer-28) and the [changelog](CHANGELOG.md).
+
+<p align="center"><img src="docs/screenshots/66-loop-layer.png" width="720" alt="Loop and layer: Layer 1 and Layer 2 as lanes while the strip shows Recording layer 3"></p>
+
+## What was new in 2.7
+
+The first page now asks what you want to **do** (hum a song, record, learn a song, run a show) and a short **guided session** takes you through it on the real controls, ticking each step when the app sees it done. Tabs explain themselves the first time they open, the studio's words are explained in guitar terms, and Show setup has a seven-line **preflight** for a technician. People who know the studio choose **I know my way around** and get every tool and no coaching. Details are in the [user guide](docs/USER_GUIDE.md#getting-started-and-guided-sessions-27).
+
+<p align="center"><img src="docs/screenshots/59-goals.png" width="720" alt="The first page: four cards asking what you would like to do first"></p>
+
+## What was new in 2.6
+
+A **Show setup** console in the Stage tab, six looks that are built differently, nine layouts that are each a different workspace, optional Monitor widgets, and pages a search engine can read. Details are in the [user guide](docs/USER_GUIDE.md#show-setup-26) and the [changelog](CHANGELOG.md). The lasers and lights are drawn on the screen; nothing here drives lighting or laser hardware, and the flash limit is an engineering safeguard, not a medical guarantee.
+
+<table>
+  <tr>
+    <td width="33%"><img src="docs/screenshots/46-look-theatre.png" alt="Theatre: warm front light and haze with dust in it"><br><sub><b>Theatre</b> · warm front light</sub></td>
+    <td width="33%"><img src="docs/screenshots/47-look-backlight.png" alt="Backlight: hard beams from the floor behind the band through haze"><br><sub><b>Backlight</b> · contre-jour beams</sub></td>
+    <td width="33%"><img src="docs/screenshots/48-look-blades.png" alt="Blades: tall hard-edged bars of light that follow the spectrum"><br><sub><b>Blades</b> · architectural LED</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/49-look-pixels.png" alt="Pixel field: a generative LED wall behind the band"><br><sub><b>Pixel field</b> · generative LED wall</sub></td>
+    <td><img src="docs/screenshots/50-look-horizon.png" alt="Horizon: a low sun and rays over a long horizon"><br><sub><b>Horizon</b> · cinematic sun and rays</sub></td>
+    <td><img src="docs/screenshots/51-look-lasers.png" alt="Laser room: haze and a laser kit for every section"><br><sub><b>Laser room</b> · haze and beams</sub></td>
+  </tr>
+</table>
+
+<p align="center"><img src="docs/screenshots/52-show-setup.png" alt="The Show setup console: looks, rig, colour, cues, response, pictures, output, scene and MIDI" width="860"></p>
+<p align="center"><img src="docs/screenshots/53-show-cues.png" alt="The cue sheet: level, lights, pattern and lasers for each kind of section, with a silent band to rehearse it" width="860"></p>
+<p align="center"><img src="docs/screenshots/54-show-output.png" alt="Output: master level, blackout, freeze, mirror, flip, test patterns, frame rate, light comfort and the flash meter" width="860"></p>
+<p align="center"><img src="docs/screenshots/55-layouts.png" alt="The layout picker: nine layouts, each with a wireframe of its workspace" width="860"></p>
+
+## What's new in 2.4
+
+A first page that says what the app is for, a **Concert** visual with three lenses (Perform, Teach, Sky), and the instrument readouts moved to the Monitor tab. The camera is now an optional extra at the bottom of the first page. Details are in the [user guide](docs/USER_GUIDE.md) and the [changelog](CHANGELOG.md).
+
+<p align="center"><img src="docs/screenshots/42-concert-sky.png" alt="Concert, Sky lens: every chord you play is a star and every move a line" width="860"></p>
+<p align="center"><img src="docs/screenshots/43-monitor-views.png" alt="Monitor tab: the tuner, levels and the optional Views widget with the pitch wheel, spectrogram and scope" width="520"></p>
 
 ## What's new in 2.3
 
@@ -183,7 +234,7 @@ The ◐ button (top right; **More ▸ Appearance** on a phone) opens a drawer th
 
 ## Tour of the panels
 
-The dock at the top of the centre column holds every panel as a tab. **Drag** tabs to reorder them, **double-click** one to float it as a window, and use **▦** for layout presets.
+The dock at the top of the centre column holds every panel as a tab. **Drag** tabs to reorder them, **double-click** one to float it as a window, and use **▦** to choose a layout (Studio, Write, Arrange, Record, Tone, Practice, Show, Focus or Classic).
 
 | # | Panel | What it is for |
 |---|---|---|
@@ -249,7 +300,8 @@ Knobs: drag, mouse wheel, <kbd>Shift</kbd> for fine, double-click to reset, righ
 
 * Audio, camera frames, songs, takes and settings are processed **on your device**. There is no server, account or analytics.
 * Your songs, recordings, presets and settings autosave to **this browser** (local storage and IndexedDB). Use **☰ Songs ▸ All songs ▸ Back up all songs** for one zip with everything, **Export → Project JSON** for a portable, git-friendly copy, or **Settings ▸ Export ▸ Backup folder** (Chrome and Edge) to save as you work.
-* The only network requests the app can make are the optional hand-tracking model and runtime, fetched from jsDelivr and Google storage **only if you choose MediaPipe hand tracking** in the Vision panel. The "motion energy only" mode is fully offline. To self-host those files, see [docs/HOSTING.md](docs/HOSTING.md#9-self-hosting-the-hand-tracking-files).
+* The page can reach exactly two other hosts, and **only after you say yes** to a one-time download: MediaPipe's code from jsDelivr and its model from Google storage, used by hand tracking and by the **Me in front** camera look (the stage route chooses that look, so it asks the first time). Your camera pictures are never uploaded. If you say no, or use motion-only mode or the edges-in look, nothing is requested. The host (Cloudflare) keeps ordinary access logs like any web host. [PRIVACY.md](PRIVACY.md) lists what is processed, what can be sent and what is kept; `test/e2e-privacy.cjs` checks it in a real browser, and `npm run audit` checks the licences and hosts. To self-host those files, see [docs/HOSTING.md](docs/HOSTING.md#8-self-hosting-the-camera-model-files).
+* **Your music stays yours.** No recordings and no one else's lyrics are bundled; what you bring in stays on your device, and stems, chords and tab are worked out from your file. Share only what you have the right to share. The register of every file, font, dependency and download is [docs/LICENSING.md](docs/LICENSING.md); the licences and notices are also on the site at `/legal/`.
 * Clearing site data in your browser removes your songs. Safari on an iPhone, iPad or Mac also clears a site's storage after about a week away unless you **Add to Home Screen** (or the Dock); **⋯ More ▸ Keep songs safe** explains it and backs everything up in one tap.
 
 ## Accuracy and honest limits
@@ -359,8 +411,9 @@ Ideas and pull requests are welcome.
 Code: **[MIT License](LICENSE)**, © 2026 Tehau DeBarthe. You may use, copy, change and share it; keep the licence notice.
 
 * **About me and credits** are inside the app under *Help & shortcuts*. Maker: [Tehau DeBarthe](https://github.com/TehauD) · [LinkedIn](https://www.linkedin.com/in/tehau/). A sibling project, [The Daily](https://the-daily.studio/journal/), a developer journal in the same spirit, is hosted at `/journal/` (source: [TehauD/daily](https://github.com/TehauD/daily)).
-* **[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)**: optional hand tracking uses [MediaPipe Tasks Vision](https://developers.google.com/mediapipe) (Apache-2.0), loaded from a CDN only when you switch it on. Techniques: YIN pitch estimation (de Cheveigné and Kawahara, 2002), harmonic / percussive separation by median filtering (Fitzgerald, 2010), Karplus–Strong synthesis (1983).
-* **[PRIVACY.md](PRIVACY.md)**: what stays on your device (everything) and the only optional network requests.
+* **[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)**: optional hand tracking uses [MediaPipe Tasks Vision](https://developers.google.com/mediapipe) (Apache-2.0), loaded from a CDN only after you agree to a one-time download. Techniques: YIN pitch estimation (de Cheveigné and Kawahara, 2002), harmonic / percussive separation by median filtering (Fitzgerald, 2010), Karplus–Strong synthesis (1983).
+* **[PRIVACY.md](PRIVACY.md)**: what is processed on your device, what can travel over the network and when, and what is kept.
+* **[docs/LICENSING.md](docs/LICENSING.md)**: the licence and provenance register: every shipped file, font, dependency, model and downloadable output, and what is still open.
 * Developed with AI assistance (Claude, Anthropic) under the author’s direction.
 
 the-daily.studio is an independent project. It is not affiliated with or endorsed by Ultimate Guitar, Focusrite, Google or any amplifier or effects manufacturer; product and brand names are used only to describe compatibility.

@@ -77,15 +77,15 @@ Browsers cache aggressively. After a deploy, hard-reload (<kbd>Ctrl/⌘</kbd>+<k
 Releases give people a stable download (a zip of the repository) and a changelog.
 
 1. Bump the version in `package.json` and in `src/parts/01-core.js` (`const VERSION = '…'`), and add notes to `CHANGELOG.md`.
-2. `npm run build && npm run build:site && npm run verify:site && git add -A && git commit -m "Release v2.3.0" && git push`
+2. `npm run build && npm run build:site && npm run verify:site && git add -A && git commit -m "Release v2.8.0" && git push`
 3. Tag and publish:
 
 ```bash
-git tag -a v2.3.0 -m "the-daily.studio 2.2.1"
-git push origin v2.3.0
+git tag -a v2.8.0 -m "the-daily.studio 2.8.0"
+git push origin v2.8.0
 gh release create v2.1.0 --title "the-daily.studio 2.1.0" --notes-file CHANGELOG.md
 # optional: attach the standalone page for people who just want the file
-gh release upload v2.3.0 index.html#the-daily.studio-standalone.html
+gh release upload v2.8.0 index.html#the-daily.studio-standalone.html
 ```
 
 ## 6. Other hosts
@@ -134,7 +134,9 @@ Optional camera features load, at runtime and only when used: the MediaPipe Task
 
 1. Download `vision_bundle.mjs`, the `wasm/` folder, `hand_landmarker.task` and `selfie_segmenter.tflite` into `vendor/mediapipe/`.
 2. Change the URLs in `src/parts/09-ui-viz.js` and `src/parts/09d-camfx.js` to relative paths, copy `vendor/` in `scripts/assemble.mjs`, and remove the two hosts from the CSP.
-3. `npm run build`, `npm run build:site`, `npm run verify:site` (update its host check), commit, push. MediaPipe is Apache-2.0: keep its notices with the files.
+3. Change `mpConsent()` in `src/parts/09d-camfx.js` and the wording in `PRIVACY.md`, About and the notices: once the files come from your own site, nothing leaves it and the one-time question is no longer true. Update the host lists in `scripts/audit.mjs` and `scripts/verify-site.mjs`.
+4. `npm run build`, `npm run build:site`, `npm run verify:site`, `npm run audit`, commit, push. MediaPipe's code is Apache-2.0: keep its licence and notices with the files.
+5. **Serving the models makes you their distributor.** Google publishes the hand model with a model card (reported as Apache-2.0) and the selfie segmenter with none that states a licence. Confirm their current terms first, and add each file to `docs/LICENSING.md`. Until then the project fetches them from Google instead, which needs no licence from you.
 
 ## 9. Troubleshooting
 
