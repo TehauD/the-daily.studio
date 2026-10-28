@@ -55,7 +55,7 @@ async function humStageFirst() {
 async function humCanvasFirst() {
   if (HUM.busy) return; HUM.busy = true; humBarClose();
   try { await projCreate('blank', { form: 'empty', title: 'Untitled idea', zoom: 'canvas' }); HUM.ph = PRJ.cur; HUM.keep = true; zoomSet('canvas', true); sideShow('refine'); } finally { HUM.busy = false; }
-  humBar('canvas'); setTimeout(() => { const t = document.querySelector('textarea.lyr'); if (t) t.focus({ preventScroll: true }); }, 120);
+  humBar('canvas'); setTimeout(() => { const t = [...document.querySelectorAll('textarea.lyr')].find(x => x.offsetParent) || document.querySelector('textarea.lyr'); if (t) t.focus({ preventScroll: true }); }, 120);
 }
 
 /* ---------- capture ---------- */

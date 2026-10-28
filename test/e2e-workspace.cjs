@@ -1,4 +1,4 @@
-/* Workspace: the nine layouts (each one a whole workspace that replaces the last), the layout picker, and the Monitor's optional widgets.
+/* Workspace: the twelve layouts (each one a whole workspace that replaces the last), the layout picker, and the Monitor's optional widgets.
    Own browser contexts; see test/lib.cjs. */
 const { suite } = require('./lib.cjs');
 suite('e2e-workspace', async t => {
@@ -7,7 +7,7 @@ suite('e2e-workspace', async t => {
 
   // ---- the nine layouts
   const names = await ev(() => window.__daily.LAYOUTS.map(l => l[0]));
-  ok(names.join() === 'Studio,Write,Arrange,Record,Tone,Practice,Show,Focus,Classic', 'nine layouts, each for one job: ' + names.join(', '));
+  ok(names.join() === 'Studio,Play,Create,Learn,Write,Arrange,Record,Tone,Practice,Show,Focus,Classic', 'twelve layouts, each for one job: ' + names.join(', '));
   ok(!names.some(n => /Perform|Light show|Track study|Songwriting|Pedalboard|Compose/.test(n)), 'the old, overlapping layouts are gone');
   const fp = await ev(async () => {
     const d = window.__daily, out = {};
@@ -20,7 +20,7 @@ suite('e2e-workspace', async t => {
   });
   ok(names.every(n => fp[n].name === n), 'choosing a layout names it in the workspace state');
   const sig = n => [fp[n].flip, fp[n].left, fp[n].right, fp[n].tlh, fp[n].dock, fp[n].lcur, fp[n].rcur, fp[n].mon, fp[n].tabs, fp[n].side].join(' / ');
-  ok(new Set(names.map(sig)).size === 9, 'no two layouts are the same workspace');
+  ok(new Set(names.map(sig)).size === 12, 'no two layouts are the same workspace');
   const aspects = n => [fp[n].flip, fp[n].left && fp[n].right ? 'both' : fp[n].left ? 'L' : fp[n].right ? 'R' : 'none', fp[n].tlh, fp[n].dock, fp[n].rcur + '/' + fp[n].lcur, fp[n].mon, fp[n].tabs, fp[n].side];
   let weak = [];
   for (let i = 0; i < names.length; i++) for (let j = i + 1; j < names.length; j++) { if ([names[i], names[j]].sort().join() === 'Classic,Studio') continue; const a = aspects(names[i]), b = aspects(names[j]), diff = a.filter((x, k) => x !== b[k]).length; if (diff < 2) weak.push(names[i] + '~' + names[j] + ':' + diff); }
@@ -48,7 +48,7 @@ suite('e2e-workspace', async t => {
   await ev(() => { const d = window.__daily; d.applyPreset(d.LAYOUTS[0][2], 'Studio'); document.querySelector('button[title^="Layout"]').click(); });
   await wait(500);
   const menu = await ev(() => { const m = document.querySelector('.lay-menu'); return { cards: m ? m.querySelectorAll('.lay-card').length : 0, thumbs: m ? m.querySelectorAll('.lay-th').length : 0, on: m ? [...m.querySelectorAll('.lay-card.on b')].map(b => b.textContent).join() : '', head: m ? m.querySelector('h5').textContent : '', cols: m ? getComputedStyle(m.querySelector('.lay-grid')).gridTemplateColumns.split(' ').length : 0, over: m ? m.scrollWidth - m.clientWidth : 9, wire: m ? [...m.querySelectorAll('.lay-th')].every(x => { const r = x.getBoundingClientRect(); return r.width > 40 && r.height > 24; }) : false, checks: m ? m.querySelectorAll('input[type=checkbox]').length : 0, panels: m && /Right-sidebar cards/i.test(m.textContent) }; });
-  ok(menu.cards === 9 && menu.thumbs === 9 && menu.on === 'Studio' && menu.head === 'Layouts' && menu.cols === 3 && menu.over <= 1 && menu.wire, 'the layout picker shows nine cards, each with a wireframe of the workspace, and marks the one in use (' + JSON.stringify(menu) + ')');
+  ok(menu.cards === 12 && menu.thumbs === 12 && menu.on === 'Studio' && menu.head === 'Layouts' && menu.cols === 3 && menu.over <= 1 && menu.wire, 'the layout picker shows twelve cards, each with a wireframe of the workspace, and marks the one in use (' + JSON.stringify(menu) + ')');
   ok(!menu.panels, 'the old “Right-sidebar cards” checkboxes are gone from it (Monitor widgets are chosen on the Monitor)');
   await ev(() => [...document.querySelectorAll('.lay-card')].find(c => /Record/.test(c.textContent)).click()); await wait(500);
   ok(await ev(() => window.__daily.LAY.name === 'Record' && !document.querySelector('.lay-menu')), 'clicking a card applies the layout and closes the picker');

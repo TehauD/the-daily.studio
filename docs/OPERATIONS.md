@@ -1,6 +1,6 @@
 # Operations runbook
 
-How version 2.8 (v2.8.0) is built, shipped, watched and rolled back. The site is static, so there are no servers to patch and no database to restore.
+How version 2.10 (v2.10.0) is built, shipped, watched and rolled back. The site is static, so there are no servers to patch and no database to restore.
 
 ## Moving parts
 

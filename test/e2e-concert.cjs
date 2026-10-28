@@ -122,7 +122,7 @@ suite('e2e-concert', async t => {
 
   // ---- the Visuals bar and the lens switch
   const bar = await ev(() => { const d = window.__daily; return { modes: [...document.querySelectorAll('.seg [data-m]')].map(b => b.dataset.m), on: [...document.querySelectorAll('.seg [data-m].on')].map(b => b.dataset.m), lens: [...document.querySelectorAll('#lxLens [data-lens]')].map(b => b.dataset.lens), vmodes: d.VMODES.map(m => m[0]), mode: d.VZ.mode }; });
-  ok(bar.modes[0] === 'concert' && bar.on.join() === 'concert' && bar.mode === 'concert', 'Concert is the first visual and the one that starts selected (' + bar.modes.join(' ') + ')');
+  ok(bar.modes[0] === 'hex' && bar.modes[1] === 'concert' && bar.on.join() === 'hex' && bar.mode === 'hex', 'Hex Resonance is the first visual and the one that starts selected, with Concert next to it (' + bar.modes.join(' ') + ')');
   ok(!bar.modes.includes('tunnel') && !bar.vmodes.includes('tunnel') && ['chroma', 'spectro', 'scope'].every(m => !bar.modes.includes(m) && bar.vmodes.includes(m)), 'Hex Tunnel is retired; the pitch wheel, spectrogram and scope left the bar but are still Stage scenes');
   ok(bar.lens.join() === 'perform,teach,sky', 'the lens switch offers Perform, Teach and Sky');
   const ls = await ev(() => { const d = window.__daily, r = {}; d.lxSetLens('sky'); r.sky = { cfg: d.CFG.lens, on: document.querySelector('#lxLens .on').dataset.lens, save: getComputedStyle(document.getElementById('lxSkySave')).display, sel: document.getElementById('pb_lens') ? document.getElementById('pb_lens').value : 'n/a' }; d.lxSetLens('teach'); r.teach = { cfg: d.CFG.lens, save: getComputedStyle(document.getElementById('lxSkySave')).display }; d.lxSetLens('bogus'); r.bogus = d.CFG.lens; d.lxSetLens('teach'); return r; });
@@ -142,7 +142,7 @@ suite('e2e-concert', async t => {
   const old = await t.open({ debug: true, boot: false, init: new Function(`try { localStorage.setItem('fw.cfg', JSON.stringify({ visMode: 'tunnel', stage: { cur: 1, scenes: [ { name: 'Mine', mode: 'orbit', hue: 40, trail: .5, glow: .5, sens: 1, ov: { chord: true } }, { name: 'Tunnel', mode: 'tunnel', hue: 120, drift: .3, trail: .6, kal: 0, glow: .5, sens: 1, cam: false, flash: .5, sect: 'Chorus', ov: { chord: true } } ] } })); } catch (e) { }`) });
   await old.goto(t.BASE + '?debug'); await wait(3500);
   const mg = await old.evaluate(() => { const d = window.__daily; return { vis: d.CFG.visMode, vz: d.VZ.mode, modes: d.STG.scenes.map(s => s.mode), names: d.STG.scenes.slice(0, 2).map(s => s.name), tr: d.STG.scenes[1].trail, fl: d.STG.scenes[1].flash, sect: d.STG.scenes[1].sect, n: d.STG.scenes.length }; });
-  ok(mg.vis === 'concert' && mg.vz === 'concert', 'a saved Hex Tunnel look opens as Concert (' + mg.vis + ')');
+  ok(mg.vis === 'hex' && mg.vz === 'hex', 'a saved Hex Tunnel look opens as the default Hex Resonance (' + mg.vis + ')');
   ok(mg.modes.every(m => m !== 'tunnel') && mg.names.join() === 'Mine,Concert' && mg.modes[0] === 'orbit' && mg.modes[1] === 'concert' && mg.tr === 0 && mg.fl === 0 && mg.sect === 'Chorus' && mg.n === 8, 'a Tunnel scene becomes a Concert scene, keeping its section link, and scenes you made yourself are left alone (' + mg.names.join('/') + ')');
   await old.ctx.close();
 

@@ -43,10 +43,10 @@ function tlDown(e) {
     const slot = Math.round(x / sw / bs) * bs; if (e.shiftKey) { TL.drag = { a: clamp(Math.round(x / TL.bw) * sp, 0, bars * sp) }; UI.tlc.setPointerCapture(e.pointerId); } else seek(clamp(slot, 0, bars * sp - 1)); return;
   }
   const bi = Math.floor(x / TL.bw); if (bi < 0 || bi >= bars) return; const fb = flatBars()[bi];
-  if (y < TL.rh + TL.sh) { SEL.sec = fb.si; SEL.bar = 0; TL.dirty = true; dockGo('song'); bus.emit('sel'); return; }
+  if (y < TL.rh + TL.sh) { SEL.sec = fb.si; SEL.bar = 0; TL.dirty = true; dockGo('tab'); bus.emit('sel'); return; }
   const lo = laneAt(y), lane = lo && lo.l; SEL.sec = fb.si; SEL.bar = fb.bi; if (lane && lane.type === 'take' && e.shiftKey && tkrDown(e, lo, x)) return; if (TKR.on) tkrClear();
   if (lane && lane.type === 'take' && tkDown(e, lo, x, y)) { TL.dirty = true; return; } tkSelect(null);
-  if (lane && lane.type === 'tab') { TE.sec = fb.si; TE.bi = fb.bi; dockGo('tab'); renderTab(); } else if (lane && lane.type === 'chords') { dockGo('song'); bus.emit('sel'); }
+  if (lane && lane.type === 'tab') { TE.sec = fb.si; TE.bi = fb.bi; dockGo('tab'); renderTab(); } else if (lane && lane.type === 'chords') { dockGo('tab'); bus.emit('sel'); }
   TL.dirty = true;
 }
 function tlMove(e) { if (TKR.drag) { tkrMove(e); return; } if (TL.clip) { tkMove(e); return; } if (!TL.drag) { tkHover(e); return; } const { x } = tlPoint(e), sp = spb(), b = clamp(Math.round(x / TL.bw) * sp, 0, totalBars() * sp); T.loopA = Math.min(TL.drag.a, b); T.loopB = Math.max(TL.drag.a, b); if (T.loopB === T.loopA) T.loopB = null; TL.dirty = true; }
@@ -101,7 +101,7 @@ function buildTabPane() {
     h('span', { class: 'muted small tech' }, 'Technique:'), T_('h', 'h', 'Hammer-on to next note'), T_('p', 'p', 'Pull-off to next note'), T_('/', '/', 'Slide up'), T_('\\', '\\', 'Slide down'), T_('b', 'b', 'Bend (whole step)'), T_('~', '~', 'Vibrato'), T_('x', 'x', 'Dead / muted note'), T_('<>', '<n>', 'Natural harmonic'),
     h('span', { class: 'grow' }), UI.teFill, h('button', { class: 'btn sm', onclick: () => fillBar(false) }, 'Fill bar'), h('button', { class: 'btn sm', onclick: () => fillBar(true) }, 'Fill section'),
     h('button', { class: 'btn sm', onclick: () => { const b = curBar(); if (b) TE.clip = JSON.stringify(b.tab); toast('Bar copied'); } }, 'Copy'), h('button', { class: 'btn sm', onclick: () => { const b = curBar(); if (b && TE.clip) { b.tab = JSON.parse(TE.clip); commit(); } } }, 'Paste'), h('button', { class: 'btn sm bad', onclick: () => { const b = curBar(); if (b) { b.tab = []; commit(); } } }, 'Clear bar'), UI.capBtn),
-    h('div', { class: 'tiny muted', style: { marginBottom: '8px' } }, 'Click a cell, type a fret (0–24). Arrows move · Del clears · Alt+↑/↓ transposes · Space plays from this bar. Chord names above each bar come from the Song panel; click one to edit.'),
+    h('div', { class: 'tiny muted', style: { marginBottom: '8px' } }, 'Click a cell and type a fret (0–24) · arrows move · Del clears · Space plays from this bar · click a chord name to change it'),
     UI.tabwrap = h('div', { class: 'tabwrap' }));
   bus.on('song', e => { if (paneVisible('tab') || e) renderTab(true); }); bus.on('dock', id => { if (id === 'tab') renderTab(); });
 }

@@ -102,11 +102,27 @@ The sessions are tested against the app's own state. These need a real microphon
 
 - [ ] **Hum to a song, with a real microphone**: from the first page choose *Turn a hum into a song*. The card points at *Sing or hum*; the browser asks for the microphone only after you press it; humming 10–30 seconds and pressing Stop ticks the next steps; the band plays; changing the style ticks the step; *Done* finishes with the outro text.
 - [ ] **Record guitar and voice, with an interface**: the sessions menu ▸ *Record guitar and voice* ▸ Connect ▸ your interface appears ▸ arm ▸ play ▸ Stop ▸ the take is heard back. Each step ticks without you touching the card.
+- [ ] **Capture, with a real guitar**: Write ▸ ● Capture ▸ play single notes on each string, then open chords (E, A, D, G, C, Am, Em) and a barre chord. Check each lands on the right string and fret and the bar is named correctly. Repeat with a chord still ringing, with a dirty tone and with the interface gain high and low. Known limit: a quiet low note under a loud ringing chord may be missed.
+- [ ] **Write on a phone**: Capture on a phone with the guitar plugged in; the tab and fretboard fit together and the keypad steps aside.
+- [ ] **A first-time guitarist, five minutes**: without help, can they open *Play with a band* or *Write down what you play* and finish it? Note where they hesitate.
 - [ ] **Loop & layer, with a real guitar**: *Record, loop and layer* ▸ connect the interface ▸ ⟲ Loop & layer, 4 bars, band off ▸ play chords for one pass ▸ play a lead on the second pass. Listen: do the chords stay in time with the click on the next pass? Is a note in the last beat before the loop point clipped? (Expected: a little, within your interface's delay.) Try *Keep looping*, *Add a layer*, *Undo layer*, and then export the mix.
 - [ ] **Learn a song**: load a real song file. The session waits for the split to finish before it ticks *Load a song*; muting a part and pressing play ticks the next steps.
 - [ ] **Show preflight, on the real output**: open the pop-out on the projector, run Bars, set the master level, press <kbd>0</kbd> twice, play the song. Each line ticks as it is done, and *Start over* clears them.
 - [ ] **A first-time user** (a friend, a bandmate): without any help, can they hear something they made within about two minutes? Note where they hesitate, which word they do not know, and which card they close without reading. This is the measure that matters.
 - [ ] **On a phone**: the first page shows all four goals and the way in on one screen; the session card is a slim strip above the bottom navigation and does not hide the control it points at.
+
+## 12 · The harmony looks (2.10)
+
+The ten looks were checked on simulated notes. These need a real voice and guitar.
+
+- [ ] **Hex Resonance is the default**: a fresh browser profile opens on it, glowing like the start screen. After choosing another look and reloading, that look is still chosen.
+- [ ] **Harmonic Gravity and Improv Field, with a real voice**: play a chord on the band (Gmaj7), sing the chord notes, then a half-step above one. The note should move out and turn red, and fall back in when you sing a chord note. Does the sentence match what you hear?
+- [ ] **Voice & Guitar, with two inputs**: set a voice input and a guitar input. The voice swarm should follow your singing and the guitar swarm your playing; play a clash and see them push apart. Then try one input: the sung or played line is the voice.
+- [ ] **Constellation**: sing a held note slightly flat, in tune, then slightly sharp. Stars should land left, centre and right. Compare with the tuner.
+- [ ] **Rhythm Flow**: with the band running, play on the beat, then rush, then drag. Do the ripples fall where you would say the notes were?
+- [ ] **Session Painting**: play for a minute and press Save picture. Does the PNG open and look like the screen?
+- [ ] **Lightning comfort**: Mood Colour on a dominant chord with Light comfort on Calm (no lightning), Standard and Full. Never more than three flashes a second.
+- [ ] **On a phone**: the look name, the focus line and the New session buttons do not overlap.
 
 ## What to send back
 

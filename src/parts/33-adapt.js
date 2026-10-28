@@ -4,12 +4,12 @@
    the score picks Simple, More tools or Everything. "Tools" in the tab strip overrides it.
    ============================================================ */
 var XP = { quiet: 0, last: null };
-var XP_TABS = { new: ['vis', 'song', 'band', 'exp'], some: ['vis', 'song', 'tab', 'band', 'rig', 'fret', 'stems', 'exp'], pro: null };
-var XP_NAMES = { rig: 'Guitar sound', tab: 'Guitar tab', vis: 'Stage', song: 'Song', band: 'Band', exp: 'Save & export', fret: 'Fretboard', stems: 'Backing track' };
+var XP_TABS = { new: ['vis', 'tab', 'band', 'exp'], some: ['vis', 'tab', 'band', 'rig', 'stems', 'exp'], pro: null };
+var XP_NAMES = { rig: 'Guitar sound', tab: 'Write', vis: 'Stage', song: 'Song', band: 'Band', exp: 'Save & export', fret: 'Fretboard', stems: 'Backing track' };
 var XP_LABEL = { new: 'Simple', some: 'More tools', pro: 'Everything' };
 if (CFG.xp == null) { CFG.xp = (store.get('started', false) || store.get('song', null)) ? 40 : 0; saveCfg(); }   // people who already use the app keep the full studio
 function xpLevel() { const m = CFG.xpMode || 'auto'; if (XP_TABS[m] !== undefined) return m; const s = CFG.xp || 0; return s >= 12 ? 'pro' : s >= 4 ? 'some' : 'new'; }
-function xpAllowed(id) { const l = XP_TABS[xpLevel()]; return !l || l.includes(id) || id === DOCK.cur; }
+function xpAllowed(id) { const l = XP_TABS[xpLevel()]; return !l || l.includes(id) || id === DOCK.cur || (typeof journeyShows === 'function' && journeyShows(id)); }
 function xpTabText(id, name, i) { return xpLevel() === 'pro' ? (i + 1) + ' · ' + name : (XP_NAMES[id] || name); }
 function xpSignal(pts) {
   if (XP.quiet || (CFG.xpMode && CFG.xpMode !== 'auto')) return; const before = xpLevel(); CFG.xp = Math.min(40, (CFG.xp || 0) + pts); clearTimeout(XP.t); XP.t = setTimeout(saveCfg, 800);
@@ -22,6 +22,6 @@ function xpToolsButton() {
   const l = xpLevel(), b = h('button', { class: 'btn sm xp-tools', id: 'xpTools', title: 'Choose how much of the studio to show', 'aria-haspopup': 'dialog', onclick: () => {
     const m = CFG.xpMode || 'auto', opt = (k, t, d) => h('button', { class: 'btn sm xp-opt' + (m === k ? ' on' : ''), 'aria-pressed': String(m === k), onclick: () => { CFG.xpMode = k; saveCfg(); closePop(); if (k === 'pro' && LAY.hidden.length) { LAY.hidden = []; saveLay(); }   /* “Everything” brings back any tab a layout had left off the strip */
       rebuildTabs(); if (k !== 'auto') toast((XP_LABEL[k]) + ' tools', ''); } }, h('b', {}, t), h('span', { class: 'muted' }, d));
-    popover(b, h('div', { class: 'xp-pop' }, h('h5', {}, 'How much of the studio?'), opt('auto', 'Automatic', 'Starts simple and adds tools as you use them'), opt('new', 'Simple', 'Hum, Song, Band, Stage, Save'), opt('some', 'More tools', 'Adds guitar sound, tab, fretboard, backing track'), opt('pro', 'Everything', 'All tabs, technical labels, numbered shortcuts')), { style: { width: '320px', maxWidth: '92vw' } });
+    popover(b, h('div', { class: 'xp-pop' }, h('h5', {}, 'How much of the studio?'), opt('auto', 'Automatic', 'Starts simple and adds tools as you use them'), opt('new', 'Simple', 'Hum, Song, Band, Stage, Save'), opt('some', 'More tools', 'Adds guitar sound, tab, fretboard, backing track'), opt('pro', 'Everything', 'All tabs, technical labels, numbered shortcuts'), h('label', { class: 'xp-sep tiny', style: { display: 'flex', gap: '8px', alignItems: 'center', marginTop: '8px', cursor: 'pointer' } }, h('input', { type: 'checkbox', id: 'xpSep', checked: !!CFG.sepTabs, onchange: e => { CFG.sepTabs = e.target.checked; saveCfg(); rebuildTabs(); toast(CFG.sepTabs ? 'Song and Fretboard are separate tabs again' : 'Song and Fretboard live inside Write', ''); } }), h('span', {}, 'Show Song and Fretboard as separate tabs'))), { style: { width: '320px', maxWidth: '92vw' } });
   } }, l === 'pro' ? 'Tools' : '＋ More tools'); return b;
 }

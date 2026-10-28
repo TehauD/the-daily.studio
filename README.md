@@ -5,7 +5,7 @@
 <h1 align="center">the-daily.studio</h1>
 <p align="center"><b>Record it. Split it. Write it down.</b><br>
 A guitar and voice studio in one web page: record your guitar and mic · split any song into stems to play along with · get the chords, tab and lyrics · pedals, presets and live visuals</p>
-<p align="center"><sub>v2.8.0 · free, open source (MIT) · no account, no upload, no tracking</sub></p>
+<p align="center"><sub>v2.10.0 · free, open source (MIT) · no account, no upload, no tracking</sub></p>
 
 <p align="center">
   <a href="https://the-daily.studio/"><b>▶ Open the live app</b></a> ·
@@ -34,7 +34,7 @@ A guitar and voice studio in one web page: record your guitar and mic · split a
 
 ## Contents
 
-[What it is](#what-it-is) · [Highlights](#highlights) · [What's new in 2.4](#whats-new-in-24) · [2.3](#whats-new-in-23) · [2.2](#whats-new-in-22) · [Quick start](#quick-start) · [Your first five minutes](#your-first-five-minutes) · [Tour of the panels](#tour-of-the-panels) · [Tunings](#tunings) · [Phone and tablet](#phone-and-tablet) · [Keyboard shortcuts](#keyboard-shortcuts) · [Audio setup](#audio-setup) · [Privacy](#privacy-and-data) · [Accuracy and honest limits](#accuracy-and-honest-limits) · [Browser support](#browser-support) · [Project layout](#project-layout) · [Develop](#develop) · [Host it](#host-it-on-your-github) · [Roadmap](#roadmap-ideas) · [License](#license-and-credits)
+[What it is](#what-it-is) · [Highlights](#highlights) · [What's new in 2.10](#whats-new-in-210) · [2.4](#whats-new-in-24) · [2.3](#whats-new-in-23) · [2.2](#whats-new-in-22) · [Quick start](#quick-start) · [Your first five minutes](#your-first-five-minutes) · [Tour of the panels](#tour-of-the-panels) · [Tunings](#tunings) · [Phone and tablet](#phone-and-tablet) · [Keyboard shortcuts](#keyboard-shortcuts) · [Audio setup](#audio-setup) · [Privacy](#privacy-and-data) · [Accuracy and honest limits](#accuracy-and-honest-limits) · [Browser support](#browser-support) · [Project layout](#project-layout) · [Develop](#develop) · [Host it](#host-it-on-your-github) · [Roadmap](#roadmap-ideas) · [License](#license-and-credits)
 
 ## What it is
 
@@ -67,7 +67,7 @@ It began as a guitar lab and grew into a place to turn an idea into a song. **Hu
 |---|---|
 | **Show setup, layouts, Monitor widgets (2.6)** | A **Show setup console** in the Stage tab for the person who sets up a show: six **looks** built differently (Theatre, Backlight, Blades, Pixel field, Horizon, Laser room) that you can save and carry as files; the **rig** (where the lights stand, the room, the backdrop, lasers, motion); **colour**; a **cue sheet** for each kind of section with a silent band to rehearse it; **response** to kick, snare, hats, bass, strums and lead notes with live meters; **your own pictures**; and **output** controls: master level, blackout and freeze keys, mirror and flip, safe-frame guides, test patterns, a frame-rate limit and a live flash meter. **Nine layouts** (Studio, Write, Arrange, Record, Tone, Practice, Show, Focus, Classic), each a whole workspace for one job, and **optional Monitor widgets**. Plain **guide pages and structured data** so the app can be found. The show is a picture on a screen; the flash limit is an engineering safeguard, not a medical guarantee. |
 | **Lasers and light comfort (2.5)** | **Lasers** in eight patterns that play in combinations and change on the phrase, locked to the song's bars and brightening on the band's real hits, and **Calm, Standard and Full** light comfort with a governor that holds the show to three flashes a second. |
-| **Concert, Teach and Sky (2.4)** | A **Concert** light show as the default visual: colour from the harmony (every step round the circle of fifths moves the hue), mood from loudness, major / minor and tension, and lights on the band's real drum hits, with a cue list from your section names. **Teach** shows the circle of fifths, roman numerals and what comes next; **Sky** turns a session into a constellation you can save as a poster. The pitch wheel, spectrogram and scope moved to **Monitor ▸ Views** (an optional widget since 2.6). |
+| **Concert, Teach and Sky (2.4)** | A **Concert** light show (the default until 2.10): colour from the harmony (every step round the circle of fifths moves the hue), mood from loudness, major / minor and tension, and lights on the band's real drum hits, with a cue list from your section names. **Teach** shows the circle of fifths, roman numerals and what comes next; **Sky** turns a session into a constellation you can save as a poster. The pitch wheel, spectrogram and scope moved to **Monitor ▸ Views** (an optional widget since 2.6). |
 | **Rig** | 16 reorderable effect units (gate, compressor, wah, overdrive, distortion, fuzz, pitch / harmony, amp, cabinet / IR, parametric EQ, chorus, phaser, flanger, tremolo, delay, reverb), 5 amp models, procedural cabinets and impulse-response loading, 6 reverbs, 27 presets, A/B morph, mutate, scenes, per-pedal footswitch keys and MIDI bindings, Stomp view for live use. |
 | **Voice, editing, heatmap, backdrop (2.3)** | A **Voice** window with a live **pitch ribbon** against the key, **Find my range** and **Find my key** (then transpose the whole song in one step). **Cut out**, **Silence** or **Punch in** over a marked stretch of a take, and a level for each clip. A **fretboard heatmap** of where you play, how in tune each spot is and which notes belong to the key. A **performer backdrop** that dims and calms the visuals, adds a chord-and-lyric lower third, and gives you plain black or chroma-key green and a clean output window for a projector or OBS. |
 | **Clips, fast render, MIDI (2.2)** | A recording is a **clip**: drag it, trim its edges, fade it, **split** (<kbd>Ctrl/⌘</kbd>+<kbd>E</kbd>), duplicate, delete, with one undo history shared with song edits and the stem mix. **WAV bounces render faster than the song plays**, with a progress window. **Drop a MIDI file** and get a song with chords, key, tempo and a lead tab. **Keep songs safe** explains Add to Home Screen on iPhone and iPad and backs everything up in one tap. |
@@ -85,11 +85,28 @@ It began as a guitar lab and grew into a place to turn an idea into a song. **Hu
 | **Research** | YIN pitch tracking with cents, vibrato rate and extent, attack harshness, key and chord detection, timing jitter against the click, loopback latency measurement, session CSV / JSON. |
 | **Vision** | Calibrate the neck with your webcam and track the fretting hand (optional MediaPipe), then cross-check finger positions against the notes you actually played. |
 | **Safety nets** | Version history with automatic snapshots, calibration to *your* guitar, undo / redo, autosave. |
-| **Guided sessions and tour (2.7)** | Five short sessions that tick off as you do each step (hum a song, record, loop and layer, learn a song, run a show), a note the first time each tab opens, studio words in guitar terms, and the spotlight tour from **?**. |
+| **Guided sessions and tour (2.7)** | Seven short sessions that tick off as you do each step (play with a band, write down what you play, hum a song, record, loop and layer, learn a song, run a show), a note the first time each tab opens, studio words in guitar terms, and the spotlight tour from **?**. |
+| **Write and Capture (2.9)** | One canvas for the tab, the words and a fretboard that follows the bar; ● Capture writes what you play, notes and chords, as you play. Three journeys (Play, Create, Learn) organise the studio around three jobs. |
 | **Loop & layer (2.8)** | Record a track of chords, hear it loop, and play a lead on top in a new track on each pass. Keep looping, add a layer, undo a layer. Layers are ordinary tracks. |
 | **Phone, tablet, desktop** | One responsive app. On a phone: bottom transport, five-section navigation, an on-screen tab keypad, pinch-to-zoom Neural map and a wake lock while you play. Installable as an app (PWA). See [Phone and tablet](#phone-and-tablet). |
 
-## What's new in 2.8
+## What's new in 2.10
+
+**The hexagon is the default again, and ten ways to see harmony.** Hex Resonance opens first, in the same glow as the start screen, with **Concert** next to it. Then ten looks that turn the chord, your voice and your playing into pictures: **Harmonic Gravity**, **Improv Field**, **Voice & Guitar** swarms, **Chord Landscape**, **Mood Colour**, **Chord DNA**, a **Constellation** of sung notes, **Rhythm Flow**, an **Ecosystem** and a **Session Painting** you can save.
+
+<p align="center"><img src="docs/screenshots/70-harmony-looks.png" width="720" alt="The ten harmony looks, drawn from simulated notes over Gmaj7"></p>
+
+They were checked on simulated notes, not a real voice or guitar, and "tension" is a simple model (distance from the chord's notes), not a rule. See the CHANGELOG for the limits.
+
+## What's new in 2.9
+
+**One page to write on, and three journeys.** *Write* is the tab, the words and a fretboard in one canvas: choose Tab, Words or Both, see the neck light up as you play, and press **● Capture** to have the notes and chords you play written into the bar that is playing. **Play**, **Create** and **Learn** sit above the tabs and set the studio up for one job each, so a first-time guitarist sees only what that job needs. Two new guided sessions, *Play with a band* and *Write down what you play*, walk through a first task on the real controls.
+
+<p align="center"><img src="docs/screenshots/67-write-canvas.png" width="720" alt="The Write canvas in the Create journey: tab, lyrics, the fretboard strip and a capture in progress"></p>
+
+Capture was measured on synthetic string-like audio, not a real guitar; see the CHANGELOG for its limits.
+
+## What was new in 2.8
 
 **Loop & layer.** Record a track of chords on the guitar, let it loop, and play an instrumental part on top in another track, the way a looper pedal works. One button sets the loop, counts you in and records a layer on every pass; the earlier layers keep playing. *Keep looping* stops recording and keeps the loop going, *Add a layer* records another, *Undo layer* takes the last one back. Layers are ordinary tracks you can mix and export afterwards, and a first guided session walks you through it. Details are in the [user guide](docs/USER_GUIDE.md#loop--layer-28) and the [changelog](CHANGELOG.md).
 
@@ -103,7 +120,7 @@ The first page now asks what you want to **do** (hum a song, record, learn a son
 
 ## What was new in 2.6
 
-A **Show setup** console in the Stage tab, six looks that are built differently, nine layouts that are each a different workspace, optional Monitor widgets, and pages a search engine can read. Details are in the [user guide](docs/USER_GUIDE.md#show-setup-26) and the [changelog](CHANGELOG.md). The lasers and lights are drawn on the screen; nothing here drives lighting or laser hardware, and the flash limit is an engineering safeguard, not a medical guarantee.
+A **Show setup** console in the Stage tab, six looks that are built differently, twelve layouts that are each a different workspace, optional Monitor widgets, and pages a search engine can read. Details are in the [user guide](docs/USER_GUIDE.md#show-setup-26) and the [changelog](CHANGELOG.md). The lasers and lights are drawn on the screen; nothing here drives lighting or laser hardware, and the flash limit is an engineering safeguard, not a medical guarantee.
 
 <table>
   <tr>
@@ -121,7 +138,7 @@ A **Show setup** console in the Stage tab, six looks that are built differently,
 <p align="center"><img src="docs/screenshots/52-show-setup.png" alt="The Show setup console: looks, rig, colour, cues, response, pictures, output, scene and MIDI" width="860"></p>
 <p align="center"><img src="docs/screenshots/53-show-cues.png" alt="The cue sheet: level, lights, pattern and lasers for each kind of section, with a silent band to rehearse it" width="860"></p>
 <p align="center"><img src="docs/screenshots/54-show-output.png" alt="Output: master level, blackout, freeze, mirror, flip, test patterns, frame rate, light comfort and the flash meter" width="860"></p>
-<p align="center"><img src="docs/screenshots/55-layouts.png" alt="The layout picker: nine layouts, each with a wireframe of its workspace" width="860"></p>
+<p align="center"><img src="docs/screenshots/55-layouts.png" alt="The layout picker: twelve layouts, each with a wireframe of its workspace" width="860"></p>
 
 ## What's new in 2.4
 

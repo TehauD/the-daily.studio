@@ -124,13 +124,13 @@ function kaleidoDraw(g, W, H, X) {
 function vzExtra2(mode, g, W, H, X) { if (mode === 'halo') return haloDraw(g, W, H, X); return kaleidoDraw(g, W, H, X); }
 
 /** change the visual look from anywhere (the full-screen ✦ button, keys) and keep the Visuals buttons in step */
-const VZ_FAVS = ['concert', 'hex', 'halo', 'kaleido'];
+const VZ_FAVS = ['hex', 'concert', 'halo', 'kaleido'];
 function vzSetMode(k, quiet) { VZ.mode = k; if (!quiet) { CFG.visMode = k; saveCfg(); } VZ.spec = null; VZ.hexes = null; document.querySelectorAll('#pane-vis .seg [data-m]').forEach(b => b.classList.toggle('on', b.dataset.m === k)); const n = (VMODES.find(m => m[0] === k) || [0, k])[1]; if (!quiet) toast(n, 'ok'); }
 /** Auto look: while the song plays, the look follows the section: calm in verses, wide in choruses, strange in bridges. Your own look comes back when it stops. */
 const VZ_BY_SECTION = [[/chorus|hook|refrain/i, 'halo'], [/bridge|break|solo/i, 'kaleido'], [/intro|outro|tag|coda/i, 'hex']];
 let vzSecLast = '';
 function vzSectionLook() {
-  if (!CFG.vzAuto || !T.playing || !E.ctx) { if (vzSecLast) { vzSecLast = ''; if (VZ.mode !== CFG.visMode) vzSetMode(CFG.visMode || 'concert', true); } return; }
+  if (!CFG.vzAuto || !T.playing || !E.ctx) { if (vzSecLast) { vzSecLast = ''; if (VZ.mode !== CFG.visMode) vzSetMode(CFG.visMode || 'hex', true); } return; }
   const fb = barsCache()[Math.max(0, Math.floor(playheadSlot() / spb()))]; if (!fb) return; const id = fb.sec.id || fb.sec.name; if (id === vzSecLast) return; vzSecLast = id;
   if (CFG.visMode === 'concert') return;   // the Concert cues itself from the song
   const hit = VZ_BY_SECTION.find(([re]) => re.test(fb.sec.name)), m = hit ? hit[1] : (CFG.visMode && !/^(halo|kaleido|tunnel)$/.test(CFG.visMode) ? CFG.visMode : 'hex'); if (m !== VZ.mode) vzSetMode(m, true);

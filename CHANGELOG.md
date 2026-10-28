@@ -2,6 +2,60 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.10.0 — 2026-10-28 — The hexagon is the default again, and ten ways to see harmony
+
+### Changed
+- **Hex Resonance is the default look again**, first in the bar, drawn like the start screen: a soft glow behind a field of hexagons, with a few warm gold cells. **Concert** is still there, second in the bar. Everyone's look is reset to Hex **once** on first opening 2.10 (the reset is keyed on a stored version, so it does not repeat). Choose any other look afterwards and it stays chosen.
+- **✦ Look** and the favourites list start with Hex, then Concert, Fifths Halo and Prism.
+
+### Added: ten harmony looks (`src/parts/65-harmony.js`, `src/parts/66-looks.js`)
+All ten draw from one small model of the chord that is sounding (the song's, else the one heard, else the key's): each of the twelve notes is a **chord note**, a **colour** or **tension**. They are in the Visuals bar and in the Stage designer's list, and they work full-screen.
+- **Harmonic Gravity**: the chord is a sun; chord notes orbit close, colours further out, tense notes sit far off in red. Your note pulls toward or away from the centre, with a plain sentence about it.
+- **Improv Field**: a map of the twelve notes (safe, character, tension) with a trail of what you played; a tense note that moves to a chord note is marked as resolved.
+- **Voice & Guitar**: two swarms, one for the voice and one for the guitar. They draw together when the notes agree and push apart when they clash. With one input, the line you sing or play is the voice.
+- **Chord Landscape**: the song's chords become places (mountain, forest, lake, canyon, dunes, crater, meadow and more by chord quality), and a walker moves along them as the song plays.
+- **Mood Colour**: the colour and light follow the chord (warm gold for major, blue for minor), with a bloom when tension resolves and lightning on dominant and tense moments. Lightning follows the Light comfort setting and never comes closer together than its gap; **Calm has none**.
+- **Chord DNA**: each chord is a flower whose petals and symmetry come from its notes; chords played in this session gather in a row.
+- **Constellation**: a star for each steady sung note, flat to the left, sharp to the right, brighter when in tune; stars that are close in time are joined.
+- **Rhythm Flow**: a surface of waves where each note you strike makes a ripple placed by its position in the bar; the downbeat is large, off-beats make whirlpools, rushing and dragging stir the water, and a steady groove draws calm streamlines.
+- **Ecosystem**: creatures by note class (gold lights, teal jellyfish, red thorns), colonies per chord, a plant that grows each time a four-note phrase repeats, and a climate that follows major or minor.
+- **Session Painting**: the session painted as it goes (height is pitch, colour is harmony, speckle is timing, stroke weight is how hard you played). **New session** clears it and **Save picture** writes a 1920 × 1080 PNG.
+- The Constellation, Ecosystem and Painting have **↺ New session** and **⬇ Save picture** buttons. Nothing is stored beyond the page; closing it clears them.
+- The voice tracker now also runs while any of these looks is on screen, so no ribbon is needed.
+- `test/e2e-harmony.cjs` (22 checks) and two screenshots (`69-hex-default`, `70-harmony-looks`).
+
+### Honest limits
+- The looks were checked on **simulated pitch and onset data in a headless browser**, not a real voice, guitar or interface. How they read with real playing is a thing for a person to judge (`docs/HARDWARE_CHECKLIST.md` has the steps).
+- "Tension" is a **simplification**: distance from the chord's own notes, with a small penalty outside the key. It is not a universal rule; in jazz a note called tense here can be exactly the colour you want, which is why the looks say *tension* and not *wrong*.
+- **Voice & Guitar** only separates the two with **two inputs** (a voice input and a guitar input). With one input the sung or played line is the voice, and the guitar swarm stays quiet.
+- Rhythm Flow places each note by where it falls against the playing band, so it needs the band (or a click) running; without it the ripples have no bar to sit in.
+- Lasers and lights are a screen simulation (no DMX or ILDA output). The flash limit is an engineering safeguard, not a medical guarantee.
+
+## 2.9.0 — 2026-10-27 — One Write canvas, a capture that listens, and three journeys: Play, Create, Learn
+
+The studio had grown a lot of tabs. This release organises it around three complete jobs and gives writing a song one page instead of three, and it rebuilds tab capture, which was not reliably writing what was played.
+
+### Added
+- **Write**: one canvas for the tab, the words and the neck. **Tab**, **Words** or **Both** (tab with the lyrics and chords beside it), section chips across the top, and a **fretboard strip** underneath that follows the bar you are writing: the chord's notes, what is already written, and what you are playing now. Click a position on the neck to put that note in the selected cell; click it again to take it out. *Song* and *Fretboard* are part of Write now; **Tools** has *Show Song and Fretboard as separate tabs* if you prefer them apart.
+- **● Capture** (`src/parts/62-capture.js`): counts you in, loops the section and writes what you play into the bar that is playing, on the sixteenth-note grid. A strip shows the level, what it heard ("Em: E2 B2 E3 G3 B3 E4", "E3 → string 3, fret 2") and a count. A chord is written as a library shape when it matches, otherwise as the nearest playable fingering, and an empty bar is named after it. One **Undo** takes the whole capture back. ⚙ has count-in, loop, replace-on-the-next-pass and chord naming.
+- **Three journeys** above the tab strip: **Play** (plug in, pick a tone, play with a backing track), **Create** (write, record, loop and layer, save), **Learn** (load a song, split it, read the chords and tab, practise). Each is a layout that shows only the tabs that job uses; they are also in the Layouts menu (twelve layouts now). **Tools ▸ Everything** still shows everything.
+- **Two guided sessions for a first task**: *Play with a band* (connect, pick a tone, start the band, play along) and *Write down what you play* (open Write, Capture, play, stop, switch the canvas). The first page has six goals, Play and Write first; seven sessions in the menu.
+- `test/e2e-capture.cjs` (38 checks): the engine on synthetic strings (single notes, ten chords, clean and over a ringing chord, at 48 000 and 44 100 Hz), fingering, the Write canvas, live capture through the input, one-step Undo, and the Write session ticking off.
+
+### Changed
+- **Capture was rewritten.** It used to follow one note at a time, ignored a note played again, depended on the bar being on screen and gave no sign of what it heard. Now each attack opens a short window; the notes in that window are found together (harmonic summation, with the sound before the attack subtracted so a ringing chord is not re-read), then written. If the input's own onset detector misses a soft note, an energy rise counts as one. A pass of a loop on which nothing was played is no longer kept as a silent layer, and the loop strip says so.
+- The tab strip is shorter: *Song* and *Fretboard* no longer have their own tabs unless asked for. The phone's *Write* group lists Write, Refine, Band and Theory.
+- The tab hint line is shorter; on a phone the Write canvas keeps the fretboard for while you capture, and the number keypad steps aside during a capture.
+
+### Fixed
+- A single note could be written twice, a beat or two apart, when the single-note tracker noticed a note that was still ringing.
+- On the clean first screen the cursor goes to the lyrics box that is showing.
+
+### Honest limits
+- Measured on **synthetic string-like audio**, not a real guitar: single notes came out exactly (11 of 11), chords were named correctly 9 of 10 clean and 8 of 10 over a ringing chord, precision about 0.99. About a fifth of the notes inside a chord are missed (octave doubles are cancelled), which the library shapes put back when the chord is recognised.
+- A **quiet low note struck right under a loud ringing chord** is not reliably heard. Notes are placed on a sixteenth-note grid, so very fast playing is simplified. Distortion and heavy effects, a noisy room and a badly gained input all lower accuracy; the strip says when the input is too quiet.
+- Lasers and lights are a screen simulation (no DMX or ILDA output). The flash limit is an engineering safeguard, not a medical guarantee.
+
 ## 2.8.0 — 2026-10-27 — Loop & layer: record chords, loop them, play a lead on top
 
 A looper-pedal way of working, built on the recording engine that already made one take per pass of a loop.

@@ -25,7 +25,7 @@ function gdSniff() {
     if (GD.mBase === undefined) GD.mBase = O.master; else if (O.master !== GD.mBase) pf.master = 1;
     const visible = typeof SHC !== 'undefined' && SHC.root && SHC.root.isConnected && SHC.root.offsetParent;
     if (visible) { if (SHC.tab === 'rig') pf.rig = 1; if (T.playing) pf.run = 1; }
-    if (T.playing) GD.seen.played = 1; if (T.rec && !T.playing) GD.seen.armed = 1; if (typeof STP !== 'undefined' && STP.playing) GD.seen.splay = 1;
+    if (T.playing) GD.seen.played = 1; if (T.playing && AN.rms > -55) GD.seen.heard = 1; if (T.rec && !T.playing) GD.seen.armed = 1; if (typeof STP !== 'undefined' && STP.playing) GD.seen.splay = 1;
   } catch (e) { }
 }
 function gdPfRender() {
@@ -42,10 +42,33 @@ function gdPfBlock() {
     h('p', { class: 'tiny muted' }, 'The app ticks each line when it sees you do it. This list is for the room you are in; it is not saved.'));
   setTimeout(gdPfRender, 0); return box;
 }
+bus.on('preset', () => { GD.seen.tone = 1; });
 setInterval(() => { gdSniff(); gdPfRender(); }, 500);
 
 /* ---------- the sessions ---------- */
 const GD_SESSIONS = {
+  play: {
+    name: 'Play with a band', mins: 3, icon: '🎸', blurb: 'Plug in, pick a tone and play along with a drummer and bassist.',
+    outro: 'That is the whole Play journey: your guitar, a tone, and a band following you. Load a song in Backing track to play along with a real recording.', next: 'write',
+    steps: [
+      { id: 'input', short: 'Connect your input', text: () => (isDesk() ? 'Press Connect (in the panel on the left, or Audio at the top right)' : 'Tap the round Audio button at the top') + ' and allow the microphone when asked. Use headphones so the speakers do not feed back into it.', target: () => { const c = document.querySelector('#left .btn.primary'); return c && c.getClientRects().length ? c : UI.aud; }, go: () => { if (!document.querySelector('#left .btn.primary')) { try { audioOpen(); } catch (e) { } } }, done: () => !!(E && E.hasInput && E.ctx && E.ctx.state === 'running') },
+      { id: 'tone', short: 'Pick a tone', text: 'Choose a tone from the list on the left: a clean, a crunch, a lead. Strum and listen; try another if you like.', target: '#left .pitem', go: () => { try { sideShow('tones'); } catch (e) { } }, setup: () => { GD.seen.tone = 0; }, done: () => !!GD.seen.tone },
+      { id: 'band', short: 'Start the band', text: 'Press ▶ (or Space). A drummer, bassist and rhythm guitarist play the chords of the song. D, B and G turn each one on or off.', target: () => UI.play, setup: () => { GD.seen.played = 0; }, done: () => !!GD.seen.played },
+      { id: 'along', short: 'Play along', text: 'Play along with the band. The meter on the right moves when the app hears you. When you are done, press ■ Stop.', target: '#right', setup: () => { GD.seen.heard = 0; }, done: () => !!GD.seen.heard && !T.playing }
+    ]
+  },
+  write: {
+    name: 'Write down what you play', mins: 3, icon: '✎', blurb: 'Press Capture, play a riff or a chord, and watch it appear as tab.',
+    outro: 'Your playing is in the tab and on the fretboard. Click any cell to fix a number, or click the neck to place a note. Words lets you write lyrics under it.', next: 'loop',
+    steps: [
+      { id: 'input', short: 'Connect your input', text: () => (isDesk() ? 'Press Connect (in the panel on the left, or Audio at the top right)' : 'Tap the round Audio button at the top') + ' and allow the microphone when asked. Use headphones so the speakers do not feed back into it.', target: () => { const c = document.querySelector('#left .btn.primary'); return c && c.getClientRects().length ? c : UI.aud; }, go: () => { if (!document.querySelector('#left .btn.primary')) { try { audioOpen(); } catch (e) { } } }, done: () => !!(E && E.hasInput && E.ctx && E.ctx.state === 'running') },
+      { id: 'open', short: 'Open Write', text: 'Open the Write tab. It is one page for the tab, the words and a fretboard, so you do not have to go between tabs.', target: '#dock .tab[data-id="tab"]', go: () => dockGo('tab'), done: () => DOCK.cur === 'tab' },
+      { id: 'cap', short: 'Press Capture', text: 'Press ● Capture. The metronome counts you in, then the app listens and writes what you play into the bar that is playing.', target: '#wrCap', done: () => !!CAP.on },
+      { id: 'play', short: 'Play a note or a chord', text: 'Play a single note, a riff or a chord. Let each one ring for a moment. It lands on the nearest beat in the tab and lights up on the fretboard.', target: '#wrSay', done: () => CX.writes > 0 },
+      { id: 'stop', short: 'Stop capturing', text: 'Press ■ Stop capture. Undo takes the whole capture back in one go if you do not like it.', target: '#wrCap', done: () => !CAP.on && CX.writes > 0 },
+      { id: 'words', short: 'Try Words', text: 'Switch the page with Tab, Words or Both, depending on how you write. Pick Words to write lyrics, or leave it on Both.', target: '.wr-mode', setup: () => { GD.base = WR.mode; }, done: () => WR.mode !== GD.base }
+    ]
+  },
   hum: {
     name: 'Turn a hum into a song', mins: 2, icon: '🎤', blurb: 'Hum or sing a few seconds. A whole band plays it back.',
     outro: 'You made a song from a sound. It is saved in My songs. Next, try recording real guitar over it.', next: 'record',
@@ -97,10 +120,12 @@ const GD_SESSIONS = {
     steps: GD_PF.map(([id, short, text, ok, go, target]) => ({ id, short, text: text, target, go, done: ok, pf: true }))
   }
 };
-const GD_ORDER = ['hum', 'record', 'loop', 'split', 'show'];
+const GD_ORDER = ['play', 'write', 'hum', 'record', 'loop', 'split', 'show'];
 
 /* ---------- starting from a goal on the first page ---------- */
 const GD_GOALS = {
+  play: async () => { await projCreate('demo', { zoom: 'studio' }); zoomSet('studio', true); if (isDesk()) { journeyGo('play'); } else mGo('play'); },
+  write: async () => { await projCreate('blank', { form: 'empty', title: 'My first riff', zoom: 'studio' }); zoomSet('studio', true); if (isDesk()) { journeyGo('create'); dockGo('tab'); } else mGo('write', 'tab'); },
   hum: () => { /* the default first screen is already the hum bar on a clean page */ },
   record: async () => { await projCreate('blank', { form: 'empty', title: 'My first take', zoom: 'studio' }); zoomSet('studio', true); if (!isDesk()) mGo('play'); },
   loop: async () => { await projCreate('blank', { form: 'empty', title: 'My first loop', zoom: 'studio' }); zoomSet('studio', true); if (!isDesk()) mGo('play'); },
@@ -224,7 +249,7 @@ function guideWords() {
 /* ---------- a note the first time a tab opens ---------- */
 const GD_HINTS = {
   rig: ['Your amp and pedals, in the order the sound passes through them, like cables on a real board.', 'Pick a tone from the list on the left, then strum.'],
-  tab: ['Write what you play as numbers on six lines, one line for each string.', 'Click a cell and type a fret number. Space plays it.'],
+  tab: ['One page to write on: tablature, lyrics, or both, with a fretboard that lights up as you play. Switch with Tab, Words or Both.', 'Press Capture and play; it writes what it hears. Or click a cell and type a fret number.'],
   song: ['The song’s title, key, tempo and structure: verses, choruses, a bridge.', 'Change the key and the whole song moves with it.'],
   band: ['A drummer, bassist and rhythm guitarist who follow your chords.', 'Press D, B or G to turn each of them on or off while you play.'],
   fret: ['A map of the neck. It shows scale notes and chord shapes for your tuning.', 'Choose a scale and play inside the lit notes.'],

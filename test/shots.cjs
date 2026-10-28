@@ -203,6 +203,38 @@ suite('shots', async t => {
     await save(p, '66-loop-layer'); await p.evaluate(() => window.__daily.looperEnd()); await p.ctx.close();
   }
 
+  /* ---------- 2.9: the Write canvas inside the Create journey, and on a phone ---------- */
+  if (['67-write-canvas', '68-write-phone'].some(want)) {
+    const prep = async p => p.evaluate(async () => {
+      const d = window.__daily; await d.ioConnect(); d.journeyGo('create'); d.dockGo('tab'); d.wrMode('both'); d.TE.sec = 0; d.TE.bi = 0; d.TE.slot = 0;
+      d.S.sections[0].bars.forEach(b => { b.tab = []; b.chord = ''; });
+      const put = (slot, notes, sym) => { const r = d.capInterpret(notes, null) || { items: d.capAssign(notes), sym }; d.capPut(slot, r.items, { sym: r.sym || sym }); };
+      put(0, [40, 47, 52, 55, 59, 64], 'Em'); put(6, [45]); put(8, [52]); put(10, [55]); put(12, [57]); put(14, [59]);
+      d.CAP.on = true; d.capSay('Em: E2 B2 E3 G3 B3 E4', 'ok'); d.CAP.count0 = 0; d.CAP.count = 11; d.wrCapUI(); d.renderTab();
+    });
+    if (want('67-write-canvas')) { const p = await t.open({ w: 1440, h: 900, debug: true, init: asInit(DARK) }); await prep(p); await wait(1200); await quiet(p); await save(p, '67-write-canvas'); await p.ctx.close(); }
+    if (want('68-write-phone')) { const p = await t.open({ w: 390, h: 844, debug: true, mobile: true, dpr: 2, init: asInit(DARK) }); await prep(p); await p.evaluate(() => window.__daily.mGo && window.__daily.mGo('write', 'tab')); await wait(1200); await quiet(p); await save(p, '68-write-phone'); await p.ctx.close(); }
+  }
+
+  /* ---------- 2.10: the default hexagon again, and a sheet of the ten harmony looks ---------- */
+  if (want('69-hex-default')) {
+    const p = await t.open({ w: 1440, h: 900, debug: true, init: asInit(DARK) });
+    await p.evaluate(async () => { const d = window.__daily; await d.ioConnect(); d.dockGo('vis'); }); await wait(2500); await quiet(p); await save(p, '69-hex-default'); await p.ctx.close();
+  }
+  if (want('70-harmony-looks')) {
+    const p = await t.open({ w: 1280, h: 720, debug: true, init: asInit(DARK) });
+    await p.evaluate(async () => {
+      const d = window.__daily; await d.ioConnect(); d.CFG.rtt = 0; d.dockGo('vis'); d.CFG.vzNeck = false; d.vzImmersive(true); d.HM.force = 'Gmaj7';
+      window.__sim = setInterval(() => { const tt = performance.now() / 1000, notes = [67, 71, 72, 71, 69, 74, 66, 71], k = Math.floor(tt / 1.1), m = notes[k % 8] + Math.sin(tt * 5) * .06 + (k % 3 === 0 ? .18 : 0); d.VOX.m = m; d.VOX.cents = (m - Math.round(m)) * 100; d.VOX.f = [1, 2, 3]; d.VOX.hist.push({ t: performance.now(), m, c: .9 }); d.VOX.db = -22; d.VOX.vlo = 55; d.VOX.vhi = 78; }, 30);
+      window.__ons = setInterval(() => d.bus.emit('onset', {}), 260);
+    });
+    const tiles = [], names = ['gravity', 'field', 'swarms', 'terrain', 'mood', 'dna', 'stars', 'fluid', 'eco', 'paint'];
+    for (const m of names) { await p.evaluate(m => window.__daily.vzSetMode(m), m); await wait(3500); const f = path.join(OUT, '.tile-' + m + '.png'); await p.screenshot({ path: f }); tiles.push(f); }
+    const out = path.join(OUT, '70-harmony-looks.png');
+    require('node:child_process').execFileSync('python3', ['-c', 'import sys\nfrom PIL import Image\nout=sys.argv[1]; fs=sys.argv[2:]\nW,H=640,360\nsh=Image.new("RGB",(W*2,H*5),(7,7,10))\nfor i,f in enumerate(fs):\n    im=Image.open(f).convert("RGB").resize((W,H),Image.LANCZOS); sh.paste(im,((i%2)*W,(i//2)*H))\nsh.save(out,optimize=True)', out, ...tiles]);
+    tiles.forEach(f => fs.unlinkSync(f)); const n = fs.statSync(out).size; ok(n > 20000, 'wrote 70-harmony-looks.png (' + Math.round(n / 1024) + ' KB)'); await p.ctx.close();
+  }
+
   /* ---------- the light theme, the start card, the canvas, the songs window, appearance and about ---------- */
   {
     const p = await t.open({ w: 1500, h: 900, init: asInit(LIGHT) }); await takes(p);

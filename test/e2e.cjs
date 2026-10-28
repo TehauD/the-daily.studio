@@ -28,7 +28,7 @@ function wav(L, sr) { const n = L.length, b = Buffer.alloc(44 + n * 2); b.write(
   ok(deck.length >= 4 && deck.every(p => p >= 90), 'rig control deck rows fill the card ' + JSON.stringify(deck));
 
   // tunings
-  await page.click('#dock .tab[data-id="song"]'); await wait(300);
+  await page.click('#dock .tab[data-id="tab"]'); await wait(300);
   const strs = () => page.evaluate(() => [...document.querySelectorAll('.strs span')].map(s => s.textContent).join(' '));
   for (const [name, want] of [['C# standard (1½ steps down)', 'C# F# B E G# C#'], ['Drop B', 'B F# B E G# C#'], ['Half-step down (Eb)', 'Eb Ab Db Gb Bb Eb'], ['Drop D', 'D A D G B E']]) {
     await page.selectOption('#songbar select.sb-tun', name); await wait(250); const got = await strs(); ok(got === want, `tuning "${name}" → ${got}`);
@@ -43,7 +43,7 @@ function wav(L, sr) { const n = L.length, b = Buffer.alloc(44 + n * 2); b.write(
   ok(steps >= 15 && steps < 30, `tour walked ${steps} steps and closed`);
 
   // transcription self-test in Drop C#
-  await page.click('#dock .tab[data-id="song"]'); await page.selectOption('#songbar select.sb-tun', 'Drop C# (C# G# C# F# A# D#)'); await wait(250);
+  await page.click('#dock .tab[data-id="tab"]'); await page.selectOption('#songbar select.sb-tun', 'Drop C# (C# G# C# F# A# D#)'); await wait(250);
   await page.click('#dock .tab[data-id="tx"]'); await wait(250); await page.click('button:has-text("Run self-test")');
   await page.waitForFunction(() => /All cases/.test(document.querySelector('#pane-tx').innerText), null, { timeout: 120000 });
   const f1 = await page.evaluate(() => { const r = [...document.querySelectorAll('#pane-tx table tr')].find(x => /^All cases/.test(x.innerText.trim())); return r ? r.innerText.replace(/\s+/g, ' ') : ''; });
@@ -263,12 +263,12 @@ ok(he.length === 0, 'hum to song runs without script errors' + (he.length ? ' ' 
     await np.goto(BASE + (BASE.includes('?') ? '&' : '?') + 'start=0'); await wait(3000); await np.evaluate(() => document.getElementById('bootNoMic').click()); await wait(2500);
     await np.evaluate(() => { document.querySelectorAll('dialog').forEach(d => d.close()); const b = document.querySelector('#tourOffer .btn:not(.primary)'); if (b) b.click(); });
     const ids = () => np.$$eval('#dock .tab', t => t.map(x => x.dataset.id).sort().join());
-    ok(await ids() === 'band,exp,song,vis', 'a brand-new visitor sees four plain tabs: ' + await ids());
+    ok(await ids() === 'band,exp,tab,vis', 'a brand-new visitor sees four plain tabs: ' + await ids());
     ok(/Save & export/.test(await np.$eval('#dock .tabs', e => e.textContent)) && !/1 · /.test(await np.$eval('#dock .tabs', e => e.textContent)), 'tab names are plain words, not numbered technical names');
     await np.click('.sb-zoom button[data-z="studio"]'); await wait(300); await np.click('.sb-zoom button[data-z="song"]'); await wait(300); await np.click('.sb-zoom button[data-z="studio"]'); await wait(600);
     ok((await ids()).split(',').includes('rig') && (await ids()).split(',').includes('tab'), 'using the studio adds more tools by itself: ' + await ids());
     await np.click('#xpTools'); await wait(300); await np.click('.xp-opt:has(b:text-is("Everything"))'); await wait(500);
-    ok((await ids()).split(',').length >= 12 && /1 · Rig/.test(await np.$eval('#dock .tabs', e => e.textContent)), 'Tools ▸ Everything shows every tab with the technical names');
+    ok((await ids()).split(',').length >= 11 && /1 · Rig/.test(await np.$eval('#dock .tabs', e => e.textContent)), 'Tools ▸ Everything shows every tab with the technical names');
     await np.click('#xpTools'); await wait(300); await np.click('.xp-opt:has(b:text-is("Simple"))'); await wait(500);
     ok((await ids()).split(',').length <= 5, 'Tools ▸ Simple brings the short list back: ' + await ids());
     ok(ne.length === 0, 'the adaptive studio runs without script errors' + (ne.length ? ' ' + ne[0] : '')); await nctx.close(); }
@@ -283,7 +283,7 @@ ok(he.length === 0, 'hum to song runs without script errors' + (he.length ? ' ' 
     ok(await dp.evaluate(() => !window.__daily.CAM.on && window.__daily.CFG.route === 'studio' && !document.body.classList.contains('vz-imm')), 'Start and connect my input is the studio route: no camera, not full-screen');
     await dp.evaluate(() => document.getElementById('vzGoStage').click()); await wait(4500);
     const DS = await dp.evaluate(() => { const D = window.__daily; return { cam: D.CAM.on, vz: D.VZ.cam, mode: D.VZ.mode, tab: !!document.querySelector('#dock .tab.on[data-id="vis"]'), btn: document.getElementById('ioCamBtn') && document.getElementById('ioCamBtn').classList.contains('on'), look: D.CFG.camFx, route: D.CFG.route }; });
-    ok(DS.cam && DS.vz && DS.mode === 'concert' && DS.tab && DS.btn && DS.look === 'person' && DS.route === 'stage', '🎥 Go on stage starts the camera backdrop on Concert, me in front (' + JSON.stringify(DS) + ')');
+    ok(DS.cam && DS.vz && DS.mode === 'hex' && DS.tab && DS.btn && DS.look === 'person' && DS.route === 'stage', '🎥 Go on stage starts the camera backdrop on the default hexagons, me in front (' + JSON.stringify(DS) + ')');
     await dp.evaluate(() => document.getElementById('ioCamBtn').click()); await wait(600);
     ok(await dp.evaluate(() => !window.__daily.CAM.on && window.__daily.CFG.humStage === false), 'the camera button in I/O turns it off and the choice is remembered');
     await dctx.close(); }
@@ -306,7 +306,7 @@ ok(he.length === 0, 'hum to song runs without script errors' + (he.length ? ' ' 
     // the studio route never asks for the camera or goes full-screen, and the route is remembered
     const vctx = await browser.newContext({ viewport: { width: 1500, height: 900 }, permissions: ['microphone', 'camera'] }); await vctx.route(/jsdelivr|googleapis/, r => r.abort());
     const vp = await vctx.newPage(); await vp.goto(BASE + '?debug'); await wait(2500);
-    ok(await vp.evaluate(() => !document.getElementById('bootStage').classList.contains('primary') && !!document.getElementById('bootNoMic') && document.querySelectorAll('.boot-goal').length === 4), 'the studio route is the default way in (the camera route is never the highlighted one), under the four goals');
+    ok(await vp.evaluate(() => !document.getElementById('bootStage').classList.contains('primary') && !!document.getElementById('bootNoMic') && document.querySelectorAll('.boot-goal').length === 6), 'the studio route is the default way in (the camera route is never the highlighted one), under the six goals');
     await vp.evaluate(() => document.getElementById('bootNoMic').click()); await wait(4500);
     const V1 = await vp.evaluate(() => { const D = window.__daily; return { cam: D.CAM.on, route: D.CFG.route, imm: document.body.classList.contains('vz-imm'), panel: !!document.querySelector('#humbar[data-mode="canvas"]'), stageBox: document.getElementById('humStage') ? document.getElementById('humStage').checked : null, goBtn: !!document.getElementById('vzGoStage') }; });
     ok(!V1.cam && V1.route === 'studio' && !V1.imm && V1.panel && V1.goBtn, 'Begin in the studio: clean canvas bar, no camera, not full-screen, a Go on stage button is there (' + JSON.stringify(V1) + ')');

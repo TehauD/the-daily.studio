@@ -29,6 +29,16 @@ A small card names one step and outlines the control. The step ticks off when th
 
 ---
 
+## Write and Capture (2.9)
+
+**Write** is one page for the tab, the words and the fretboard. The switch at the top chooses what it shows: **Tab** (just the tablature), **Words** (lyrics with the chords over them) or **Both**. Section chips (Intro, Verse, Chorus…) pick the part you are writing. The **Fretboard** strip underneath shows the chord's notes, the notes you have written in this bar and, while you play, the note it hears; click a position to put that note into the selected cell, click it again to remove it.
+
+**● Capture**: connect your input, press Capture, and play after the count-in. The section loops and each note or chord you play is written into the bar that is playing, on the nearest sixteenth. The strip says what it heard. Press **■ Stop capture** when you are done; **Undo** takes the whole capture back. ⚙ chooses the count-in, whether the section loops, whether a new pass replaces the last, and whether an empty bar is named after your chord. Let each note or chord ring for a moment; a soft low note right under a loud ringing chord may be missed.
+
+**Play · Create · Learn** (above the tabs) set the studio up for one job: *Play* (tone, band, backing track, tuner), *Create* (Write, band, tone, save) and *Learn* (backing track and Transcribe, the tab, the fretboard beside it). **Tools ▸ Everything** shows every tab; **Tools** also has *Show Song and Fretboard as separate tabs*.
+
+---
+
 ## Loop & layer (2.8)
 
 A looper-pedal way of working: record a track of chords, hear it come round, and play an instrumental part on top in a second track.
@@ -326,11 +336,30 @@ A node graph of the music as it plays: notes, chords, functions (tonic, subdomin
 
 ## Visuals and Stage
 
-**Visuals** (6) offers **Concert** (the default), Hex Resonance, String Field, Chord Bloom, Harmonic Orrery, Ridgeline, Beat Grid, a Prompter, the Neural map, **Fifths Halo** (the circle of fifths as a ring around you, with the song's chords on it and your notes flying in) and **Prism** (a kaleidoscope that changes on the off-beat; its flashes and spin follow Light comfort). In full-screen, **✦ Look** cycles Concert, Hex Resonance, Fifths Halo and Prism. The pitch wheel, spectrogram and scope are readouts rather than shows, so they are on **Monitor ▸ Views** (and are still Stage scenes). **🎸 Neck** puts a small guitar neck on the visuals and the Neural map: what is playing, a dashed ghost of the note coming next, the note you are singing (pink, at every place it can be played) and any chord you click in the Neural map, driven by the rig output, the master mix or your dry DI. Add a **camera backdrop** or go **⛶ Stage mode**.
+**Visuals** (6) offers **Hex Resonance** (the default), **Concert**, String Field, Chord Bloom, Harmonic Orrery, Ridgeline, Beat Grid, a Prompter, the Neural map, **Fifths Halo** (the circle of fifths as a ring around you, with the song's chords on it and your notes flying in) and **Prism** (a kaleidoscope that changes on the off-beat; its flashes and spin follow Light comfort). In full-screen, **✦ Look** cycles Hex Resonance, Concert, Fifths Halo and Prism. The pitch wheel, spectrogram and scope are readouts rather than shows, so they are on **Monitor ▸ Views** (and are still Stage scenes). **🎸 Neck** puts a small guitar neck on the visuals and the Neural map: what is playing, a dashed ghost of the note coming next, the note you are singing (pink, at every place it can be played) and any chord you click in the Neural map, driven by the rig output, the master mix or your dry DI. Add a **camera backdrop** or go **⛶ Stage mode**.
 
 **Camera look.** Turn on **📷 Camera backdrop** (Visuals tab, or per scene in Stage) after starting the camera in the Vision tab, then pick how it sits with the visuals: *Dimmed behind the visuals*; *Visuals frame me (edges in)*, where you stay clear in a soft oval and the visuals live around the edges (drag the slider to size the clear area); or *Me in front (green screen)*, which cuts you out so the visuals play behind you. The cut-out downloads a small model the first time (Google's selfie segmenter, nothing is uploaded); offline it falls back to edges-in. Good light and a plain-ish background help the cut-out.
 
 **Stage** (7) is the performance surface: full-screen visuals with **eight scenes** (<kbd>1</kbd>…<kbd>8</kbd> when Stage is focused, or MIDI notes 48–55). The first six are the six looks (Theatre, Backlight, Blades, Pixel field, Horizon, Laser room), then a lyric prompter and you in front. Each scene picks a visual and sets hue and hue drift, trails, glow, kaleidoscope, sensitivity and beat flash, plus overlays for the current chord, lyric, beat, tuner and song info. **Auto-switch on section** changes scene by section name as the song plays. Move the mouse to show the controls; they fade when idle.
+
+### Harmony looks (2.10)
+
+Ten looks that draw what the chord is doing. Each works out, from the chord that is sounding (the song's while it plays, otherwise the one heard, otherwise the key's), which notes are **chord notes** (gold), **colours** (teal) and **tension** (red), and shows your note against that. Tension is a simple measure, distance from the chord's own notes with a small penalty outside the key, so a red note means *use it, then resolve it*, not *wrong*.
+
+| Look | What you see | What to try |
+| --- | --- | --- |
+| **Harmonic Gravity** | The chord as a sun; notes orbit near, far or out in red. | Sing a note a half-step above a chord note and watch it pulled out; let it fall onto a chord note. |
+| **Improv Field** | A map of the twelve notes: safe, character, tension, with your trail. | Play a line and look for where it rests. |
+| **Voice & Guitar** | Two swarms that attract when they agree and push apart when they clash. | Needs two inputs (Inputs ▸ a voice input and a guitar input). With one, the line you sing or play is the voice. |
+| **Chord Landscape** | Your song's chords as places; a walker follows the song. | Load a song with a dominant chord and find the canyon. |
+| **Mood Colour** | Warm gold for major, blue for minor, a bloom when tension resolves, lightning on tense dominant moments. | Lightning follows **Light comfort**; **Calm** has none, and it never comes more often than the gap allows. |
+| **Chord DNA** | Each chord a flower; its notes decide petals and symmetry. | Play four different chords and compare the row. |
+| **Constellation** | A star for each steady sung note: flat to the left, sharp to the right, brighter in tune. | Hold a note; the star lands where you were. **New session** and **Save picture** are on the screen. |
+| **Rhythm Flow** | Ripples for each note, placed by where it falls in the bar; calm streamlines when the groove is steady. | Run the band (or click), then play on the beat and then rush it. |
+| **Ecosystem** | Creatures by note type, colonies per chord, a plant that grows when you repeat a phrase. | Repeat a four-note phrase three times. |
+| **Session Painting** | The session as a painting: height is pitch, colour is harmony, speckle is timing, stroke weight is how hard you played. | **Save picture** writes a 1920 × 1080 PNG. |
+
+The Constellation, Painting and Ecosystem keep a record of the session in memory only. **↺ New session** clears it; closing the page clears it too.
 
 ### Show setup (2.6)
 

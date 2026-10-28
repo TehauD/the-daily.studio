@@ -157,7 +157,7 @@ function scheduleSlot(slot, time) {
 async function play(fromRec) {
   if (T.playing || OFR.busy) return; try { bandHint(); } catch (e) { } await startAudio(); const c = E.ctx; applyMix(); if (!S.sections.length || !songSlots()) { toast('Add a section with at least one bar first', 'warn'); return; }
   T.rec = !!fromRec || T.rec; T.playing = true; T.ending = false; T.grew = 0; T.q = []; T.startCursor = T.cursor;
-  const ci = T.rec && !PUNCH.on && CFG.countIn > 0 ? CFG.countIn * spb() : 0; T.slot = T.cursor - ci; T.next = c.currentTime + .08; T.wantRec = T.rec; T.recFrom = PUNCH.on ? PUNCH.startSlot : T.cursor;
+  const ci = ((T.rec && !PUNCH.on) || (typeof CAP !== 'undefined' && CAP.on && CAP.countIn)) && CFG.countIn > 0 ? CFG.countIn * spb() : 0; T.slot = T.cursor - ci; T.next = c.currentTime + .08; T.wantRec = T.rec; T.recFrom = PUNCH.on ? PUNCH.startSlot : T.cursor;
   if (!T.loopB) T.loopB = null; scheduleTakes(T.next + ci * slotDur(), T.cursor * slotDur()); trackStart(T.next + ci * slotDur(), T.cursor, true);
   clearInterval(T.timer); T.timer = setInterval(tick, 25); tick(); bus.emit('transport');
 }
@@ -167,7 +167,7 @@ function tick() {
     const total = songSlots(), end = T.loop ? (T.loopB != null ? Math.min(T.loopB, total) : total) : total;
     if (T.slot >= end) {
       if (REC && !(T.loop && T.loopB != null)) { const how = CFG.recEnd || 'grow'; if (how === 'grow' && recGrow()) continue; if (how === 'stop') { T.ending = true; T.endAt = T.next; setTimeout(() => { if (T.playing && T.ending && REC) stopPlay(true); }, Math.max(0, (T.next - E.ctx.currentTime) * 1000) + 60); break; } }
-      if (T.loop && end > 0) { if (T.loopA >= end) T.loopA = 0; if (REC) recEnd(); if (typeof lpWrap === 'function') lpWrap(); T.slot = T.loopA; stopTakes(); scheduleTakes(T.next, T.loopA * dur); trackStart(T.next, T.loopA); if (T.rec) { T.wantRec = true; T.recFrom = T.loopA; } if (T.slot >= end) { T.ending = true; T.endAt = T.next; break; } continue; }
+      if (T.loop && end > 0) { if (T.loopA >= end) T.loopA = 0; if (REC) recEnd(); if (typeof lpWrap === 'function') lpWrap(); if (typeof capWrap === 'function') capWrap(); T.slot = T.loopA; stopTakes(); scheduleTakes(T.next, T.loopA * dur); trackStart(T.next, T.loopA); if (T.rec) { T.wantRec = true; T.recFrom = T.loopA; } if (T.slot >= end) { T.ending = true; T.endAt = T.next; break; } continue; }
       T.ending = true; T.endAt = T.next; break;
     }
     if (T.wantRec && T.slot === T.recFrom) { recBegin(T.slot, T.next); T.wantRec = false; }
@@ -231,12 +231,13 @@ function recEnd() {
     if (!parts.length) return; if (kind === 'gtr' ? quietLane(pG, pV) : quietLane(pV, pG)) { skipped.push(kind === 'gtr' ? 'guitar' : 'vocal'); return; } let dry = cat(parts), wet = wetParts && wetParts.length ? cat(wetParts) : null; const lim = r.tEnd ? Math.max(0, Math.round((r.tEnd - r.t0) * sr)) : 0; if (lim && lim < dry.length) { dry = dry.slice(0, lim); if (wet) wet = wet.slice(0, lim); }       // a punch-in ends exactly at its out point
     if (dry.length < sr * (r.punch ? .05 : .25)) return;
     let pk = 0, e = 0; for (let i = 0; i < dry.length; i++) { const a = Math.abs(dry[i]); if (a > pk) pk = a; e += dry[i] * dry[i]; }
-    if (r.cycle && pk < .002) return;      // a pass nobody played on is not a layer: loop recording never stacks silent takes
+    if (r.cycle && pk < .002) { r.silentPass = true; return; }      // a pass nobody played on is not a layer: loop recording never stacks silent takes (and it says so, below)
     const vox = kind === 'vox', nth = TAKES.filter(t => (t.kind === 'vox') === vox).length + 1;
     const take = { id: uid(), kind, name: (vox ? (r.cycle ? 'Vocal layer ' : 'Vocal ') : (r.cycle ? 'Layer ' : 'Take ')) + nth, startSec: start, sr, dry, wet, peaks: peaksOf(dry), g: 1, pan: 0, mute: false, solo: false, mode: vox ? 'wet' : (wet && CFG.rec.dry ? 'reamp' : 'wet'), bpm: r.bpm, preset: r.preset, peak: dB(pk), rms: dB(Math.sqrt(e / dry.length)), dur: dry.length / sr, t: Date.now(), stats: vox ? null : statsSnapshot(), cam: vox ? [] : r.cam };
     if (!vox && !CFG.rec.dry && wet) take.mode = 'wet'; made.push(take); if (!(r.punch && tkrPunchApply(take, r.punch))) TAKES.push(take);
   };
   if (r.g) mk('gtr', r.dry, r.wet); if (r.v) mk('vox', r.vox, null);
+  if (r.silentPass && !made.length) { if (typeof LP !== 'undefined') LP.silent = (LP.silent || 0) + 1; toast('Nothing was heard on that pass, so no layer was kept. Is your guitar plugged in and the input level up? Check Audio at the top right.', 'warn'); }
   if (r.punch && made.length) { PUNCH.on = false; try { tkFit(); tkResched(); histPush(r.punch.before); } catch (e) { console.warn(e); } TL.dirty = true; bus.emit('takes'); toast('Punched in ' + made[0].dur.toFixed(1) + ' s · Undo (Ctrl/⌘+Z) puts the old take back', 'ok'); return; }
   if (made.length) { xpSignal(3); bus.emit('takes'); toast(made.map(t => t.name + ' (' + t.dur.toFixed(1) + ' s, peak ' + t.peak.toFixed(1) + ' dBFS)').join('  +  ') + ' recorded' + (skipped.length ? ' · the ' + skipped.join(' and ') + ' input was silent, so it was not kept' : ''), 'ok'); }
 }

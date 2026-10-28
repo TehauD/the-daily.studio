@@ -237,17 +237,18 @@ function renderRefine() {
   S.sections.forEach((sec, si) => box.append(sectionCard(sec, si, RF.acc && SEL.sec !== si)));
   box.append(addSectionRow());
 }
-function sectionCard(sec, si, compact) {
+function sectionCard(sec, si, compact, opt) {
+  const lean = !!(opt && opt.lean);                 // lean: only the words (the Write canvas shows the bars and chords itself, in the tab)
   const card = h('div', { class: 'card sec' + (SEL.sec === si ? ' sel' : '') });
   if (compact) {
     const chords = [...new Set(sec.bars.flatMap(barChords))].slice(0, 6).join(' '), ly = (sec.lyrics || '').split('\n').find(l => l.trim());
     card.append(h('div', { class: 'card-h sec-c', title: 'Open this section', onclick: () => { SEL.sec = si; SEL.bar = 0; TL.dirty = true; bus.emit('sel'); } }, h('b', {}, '▸ ' + sec.name), h('span', { class: 'tiny muted grow', style: { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, sec.bars.length + ' bars · ' + (chords || '—') + (ly ? ' · ' + lyricPlain(ly).slice(0, 30) : ''))));
     return card;
   }
-  const nameIn = h('input', { class: 'in', 'aria-label': 'Section name', value: sec.name, style: { width: '150px', fontFamily: 'var(--sans)', fontWeight: 800 }, onfocus: () => { SEL.sec = si; }, oninput: e => { sec.name = e.target.value; SP.lock = true; commit(false); SP.lock = false; } });
-  card.append(h('div', { class: 'card-h' }, nameIn, secActions(sec, si)));
+  const nameIn = lean ? null : h('input', { class: 'in', 'aria-label': 'Section name', value: sec.name, style: { width: '150px', fontFamily: 'var(--sans)', fontWeight: 800 }, onfocus: () => { SEL.sec = si; }, oninput: e => { sec.name = e.target.value; SP.lock = true; commit(false); SP.lock = false; } });
+  if (!lean) card.append(h('div', { class: 'card-h' }, nameIn, secActions(sec, si)));
   const body = h('div', { class: 'card-b' }), row = h('div', { class: 'barrow' });
-  sec.bars.forEach((bar, bi) => {
+  if (!lean) sec.bars.forEach((bar, bi) => {
     const inp = h('input', { value: bar.chord, placeholder: '—', spellcheck: false, class: bar.chord && barChords(bar).some(c => !parseChord(c)) ? 'bad' : '', onfocus: () => { SEL.sec = si; SEL.bar = bi; },
       oninput: e => { bar.chord = e.target.value; e.target.classList.toggle('bad', barChords(bar).some(c => !parseChord(c))); SP.lock = true; commit(false); SP.lock = false; renderChordLibrary(); }, onchange: () => commit(true) });
     const rn = barChords(bar).map(c => { const pc = parseChord(c); return pc ? ['I', '♭II', 'II', '♭III', 'III', 'IV', '♭V', 'V', '♭VI', 'VI', '♭VII', 'VII'][(pc.root - S.key + 12) % 12] : '?'; }).join(' ');
@@ -256,7 +257,7 @@ function sectionCard(sec, si, compact) {
       h('button', { class: 'btn sm', style: { padding: '0 5px', height: '16px', fontSize: '10px' }, title: 'Edit this bar in the Tab editor', onclick: () => { TE.sec = si; TE.bi = bi; dockGo('tab'); } }, '𝄞'),
       h('button', { class: 'btn sm bad', style: { padding: '0 5px', height: '16px', fontSize: '10px' }, title: 'Delete bar', onclick: () => { if (sec.bars.length > 1) { sec.bars.splice(bi, 1); commit(); } } }, '✕'))));
   });
-  body.append(row, h('div', { class: 'tiny muted', style: { margin: '4px 0 10px' } }, 'Two chords in one bar: type them with a space (“Am G”). Slash chords (“C/G”), sus, add9, 7ths, 9ths, 11ths and 13ths are all supported.'));
+  if (!lean) body.append(row, h('div', { class: 'tiny muted', style: { margin: '4px 0 10px' } }, 'Two chords in one bar: type them with a space (“Am G”). Slash chords (“C/G”), sus, add9, 7ths, 9ths, 11ths and 13ths are all supported.'));
   // lyrics
   const used = [...new Set(sec.bars.flatMap(barChords))].filter(c => parseChord(c));
   const ta = h('textarea', { class: 'lyr in', spellcheck: true, onpaste: liPaste, placeholder: 'Type lyrics. Put chords inline in square brackets right before the syllable they land on:\n[Am]Salt wind on the [F]water…', style: { fontFamily: 'var(--mono)' }, oninput: () => { sec.lyrics = ta.value; SP.lock = true; commit(false); SP.lock = false; refresh(); } }, sec.lyrics || '');

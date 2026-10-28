@@ -29,7 +29,7 @@ async function looperStart(o = {}) {
   if (!band) setRehearsal({ drumsOn: false, bassOn: false, compOn: false, leadOn: false, click: true });
   else setRehearsal({ drumsOn: true, bassOn: true, compOn: true, click: true });
   if (CFG.countIn < 1) CFG.countIn = 1;
-  commit(false); LP.on = true; LP.bars = bars; LP.band = band; LP.pass = 1; LP.finish = false; LP.arm = false; LP.n0 = TAKES.length; T.rec = true;
+  commit(false); LP.on = true; LP.bars = bars; LP.band = band; LP.pass = 1; LP.silent = 0; LP.finish = false; LP.arm = false; LP.n0 = TAKES.length; T.rec = true;
   syncTransport(); TL.dirty = true; lpHud(true); LP.starting = true; try { await play(true); } finally { LP.starting = false; } return true;
 }
 function looperKeep() { if (!LP.on || !T.rec) return; LP.finish = true; LP.arm = false; lpHudDraw(); }          // stop recording at the end of this pass; the loop keeps playing
@@ -49,6 +49,7 @@ function lpState() {
   if (REC && REC.cycle) return { t: 'Recording layer ' + (n + 1), rec: true, n };
   if (T.rec) return { t: 'Recording starts on the next pass', rec: true, n };
   if (LP.arm) return { t: 'Next pass records a layer', rec: false, n };
+  if (LP.silent && !n) return { t: 'Nothing heard yet · check your input', rec: !!T.rec, n };
   return { t: n ? 'Looping ' + n + ' layer' + (n === 1 ? '' : 's') : 'Looping', rec: false, n };
 }
 function lpHud(on) {

@@ -12,7 +12,7 @@
        Sky (every chord you play becomes a star and every move a line: the session as a constellation, savable as a poster)
    Nothing is loaded from anywhere and nothing leaves the device.
    ============================================================ */
-VMODES.unshift(['concert', 'Concert']);
+VMODES.splice(1, 0, ['concert', 'Concert']);   /* Hex Resonance stays first: it is the default look */
 const lxHsl = (h, s, l, a) => `hsla(${(((h % 360) + 360) % 360) | 0},${Math.round(clamp(s, 0, 100))}%,${Math.round(clamp(l, 0, 100))}%,${clamp(a == null ? 1 : a, 0, 1).toFixed(3)})`;
 const LX_LENSES = [['perform', 'Perform'], ['teach', 'Teach'], ['sky', 'Sky']];
 const LX = {

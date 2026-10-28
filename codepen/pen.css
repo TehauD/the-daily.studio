@@ -419,8 +419,8 @@ body[data-form=phone] #mtrans .lbl{display:none}body[data-form=phone] #mtrans .b
 body[data-form=phone][data-land="0"] #mtrans .lcd:last-child{display:none}
 body[data-form=phone][data-land="0"] #mtrans .lcd{flex:1 1 auto;text-align:center}
 body[data-form=phone] .tl-head .b input[type=range]{display:none}
-body[data-form=phone] #pane-tab>.row{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding-bottom:4px}body[data-form=phone] #pane-tab>.row>*{flex:none}
-body[data-form=phone] #pane-tab>.tiny{display:none}
+body[data-form=phone] #pane-tab .wr-tabcol>.row{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding-bottom:4px}body[data-form=phone] #pane-tab .wr-tabcol>.row>*{flex:none}
+body[data-form=phone] #pane-tab .wr-tabcol>.tiny{display:none}
 
 body[data-form=phone] .fbscroll,body[data-form=tablet] .fbscroll{overflow-x:auto;-webkit-overflow-scrolling:touch}body[data-form=phone] .fbscroll>*{min-width:760px}
 body[data-form=phone] #pane-neural .stagewrap{flex-direction:column;min-height:0}body[data-form=phone] #pane-neural .stagewrap>div:first-child{min-height:260px}
@@ -1075,3 +1075,63 @@ body.sheet-open .gd{display:none}
 body[data-form=phone] .lp-hud{top:auto;bottom:calc(132px + env(safe-area-inset-bottom));border-radius:14px;width:calc(100vw - 16px)}
 .lp-btn{border-color:color-mix(in srgb,var(--accent) 60%,var(--line));color:var(--accent);font-weight:800}
 .lp-how{margin:0 0 12px;padding-left:20px;line-height:1.6}
+
+/* ===== 2.9 · Write: one canvas for the tab, the words and the neck ===== */
+#pane-tab.on{display:flex;flex-direction:column;gap:9px;overflow:hidden}
+.floatwin>#pane-tab{overflow:auto}
+.wr-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.wr-secs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:thin;flex:1 1 200px;min-width:0;padding:1px 0 3px}
+.wr-sec{flex:none;border:1px solid var(--line2);background:var(--panel2);color:var(--muted);border-radius:999px;padding:3px 11px;font:700 11.5px var(--sans);cursor:pointer;white-space:nowrap}
+.wr-sec:hover{color:var(--text)}.wr-sec.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}.wr-sec.add{padding:3px 9px}
+.wr-mode button{font-size:12px;padding:5px 11px}
+.wr-capg{display:inline-flex;gap:4px;align-items:center}
+.wr-cb{font-weight:800;border-color:color-mix(in srgb,var(--rec) 55%,var(--line2))}.wr-cb.on{background:var(--rec);border-color:var(--rec);color:#fff}
+.wr-strip{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);padding:5px 10px;font:600 12px var(--sans);min-height:30px}
+.wr-lvl{display:inline-block;width:72px;height:7px;border-radius:4px;background:var(--line);overflow:hidden;flex:none}.wr-lvl b{display:block;height:100%;width:0;background:var(--accent);transition:width .08s}.wr-lvl.hot b{background:var(--bad)}
+.wr-say{flex:1;min-width:0;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.wr-say[data-st=ok]{color:var(--text)}.wr-say[data-st=bad]{color:var(--bad)}
+.wr-n{font:700 11px var(--mono);color:var(--accent);flex:none}
+.wr-capturing .wr-strip{border-color:var(--rec);box-shadow:0 0 0 1px color-mix(in srgb,var(--rec) 40%,transparent)}
+.wr-main{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;align-items:start;flex:1 1 auto;min-height:96px;overflow:auto;align-content:start}
+.wr-fret{flex:none}.wr-bar,.wr-strip{flex:none}
+.pane[data-wr=both] .wr-main{grid-template-columns:minmax(0,1.45fr) minmax(280px,1fr)}
+.pane[data-wr=words] .wr-tabcol,.pane[data-wr=tab] .wr-words{display:none}
+.wr-hide{display:none!important}
+.wr-wh{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.wr-words .card{margin-bottom:0}
+.wr-fret{border:1px solid var(--line);border-radius:10px;background:var(--panel2);padding:6px 9px 8px}
+.wr-fh{display:flex;align-items:center;gap:6px;margin-bottom:3px}
+.wr-fbs{overflow-x:auto;-webkit-overflow-scrolling:touch}.wr-svg{width:100%;height:auto;max-height:118px;display:block;margin:0 auto}
+.wr-fhint{margin-top:2px}
+.wf{cursor:pointer}.wf-bg{fill:var(--accent);opacity:0}.wf:hover .wf-bg{opacity:.3}.wf-t{font:700 9px var(--mono);fill:var(--text);pointer-events:none;text-anchor:middle}
+.wf-ring{stroke:var(--accent2);stroke-width:3;opacity:0}
+.wf.tn .wf-bg{opacity:.28;fill:var(--accent2)}
+.wf.wn .wf-bg{opacity:1;fill:var(--accent)}.wf.wn .wf-t{fill:var(--accent-ink)}
+.wf.now .wf-bg{fill:var(--accent2)}.wf.now .wf-t{fill:#fff}
+.wf.sl .wf-ring{opacity:1;stroke:var(--text);stroke-dasharray:3 3}
+.wf.lv .wf-ring{opacity:.95;stroke:var(--accent2);stroke-dasharray:none}.wf.pk .wf-ring{stroke-width:4.5}
+.wf.cf .wf-bg{opacity:1;fill:var(--ok)}.wf.cf .wf-t{fill:#fff}
+.tcell.wph{background:color-mix(in srgb,var(--accent2) 26%,transparent)}
+.tcell.capflash .n{background:var(--accent);color:var(--accent-ink);border-radius:4px}
+@media (prefers-reduced-motion:no-preference){.tcell.capflash{animation:wrflash .9s ease-out}}
+@keyframes wrflash{from{background:color-mix(in srgb,var(--ok) 55%,transparent)}to{background:transparent}}
+.wr-opt .lrow{margin:4px 0}
+@media (max-width:900px){.pane[data-wr=both] .wr-main{grid-template-columns:minmax(0,1fr)}}
+body[data-form=phone] .wr-bar{gap:6px}body[data-form=phone] .wr-secs{flex-basis:100%;order:1}body[data-form=phone] .wr-mode{order:2}body[data-form=phone] .wr-fb{order:3}body[data-form=phone] .wr-capg{order:4;margin-left:auto}
+body[data-form=phone] .wr-sp{display:none}body[data-form=phone] .wr-fhint{display:none}
+.jny{display:inline-flex;flex:none;gap:2px;padding:2px;margin-right:8px;border:1px solid var(--line2);border-radius:999px;background:var(--panel2);align-self:center}
+.jny-b{border:0;background:transparent;color:var(--muted);font:800 12px var(--sans);padding:4px 13px;border-radius:999px;cursor:pointer;letter-spacing:.02em}
+.jny-b:hover{color:var(--text)}.jny-b.on{background:var(--accent);color:var(--accent-ink)}
+
+.wr-fs{display:none}.wr-ic{margin-right:4px}
+body[data-form=phone] .wr-fl{display:none}body[data-form=phone] .wr-fs{display:inline}body[data-form=phone] .wr-ic{display:none}
+body[data-form=phone] .wr-secs{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch}
+body[data-form=phone] .wr-mode button{padding:6px 9px;font-size:13px}body[data-form=phone] .wr-fb{padding:6px 10px}
+body[data-form=phone] .wr-capg{display:flex;gap:6px;margin-left:auto}body[data-form=phone] .wr-cb{padding:8px 12px}
+body[data-form=phone] .wr-strip{padding:4px 8px;min-height:26px}
+body[data-form=phone]:has(#pane-tab.wr-capturing) #kpad{display:none!important}
+body[data-form=phone] #pane-tab.wr-capturing .wr-tabcol>.row,body[data-form=phone] #pane-tab.wr-capturing .wr-tabcol>.tiny,body[data-form=phone] #pane-tab.wr-capturing .wr-fh .btn{display:none}
+body[data-form=phone] #pane-tab.wr-capturing .wr-fret{padding:4px 6px}
+
+/* ===== 2.10 · harmony looks: the session controls over the visuals canvas ===== */
+.hm-ctl{position:absolute;right:10px;top:10px;display:flex;gap:6px;z-index:3}.hm-ctl[hidden]{display:none}
+body.vz-imm .hm-ctl{top:92px}

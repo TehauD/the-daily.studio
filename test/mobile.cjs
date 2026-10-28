@@ -29,7 +29,7 @@ const DEV = { phone: { viewport: { width: 390, height: 844 }, deviceScaleFactor:
   let p = await open('phone');
   ok(await p.evaluate(() => document.body.dataset.form === 'phone' && document.body.dataset.land === '0'), 'phone width selects the phone layout');
   ok(await p.evaluate(() => !!document.querySelector('#mtrans #mtrans, #mtrans .btn.play') && !!document.querySelector('#top #transport .field')), 'transport buttons moved to the bottom bar, tempo/key stay in the header');
-  const subs = [['play', 'rig'], ['play', 'tones'], ['play', 'tuner'], ['play', 'io'], ['write', 'tab'], ['write', 'song'], ['write', 'band'], ['write', 'fret'], ['write', 'theory'], ['see', 'vis'], ['see', 'stage'], ['see', 'neural'], ['see', 'cam'], ['stems', 'stems'], ['stems', 'tx'], ['more', 'lab'], ['more', 'exp']];
+  const subs = [['play', 'rig'], ['play', 'tones'], ['play', 'tuner'], ['play', 'io'], ['write', 'tab'], ['write', 'band'], ['write', 'theory'], ['see', 'vis'], ['see', 'stage'], ['see', 'neural'], ['see', 'cam'], ['stems', 'stems'], ['stems', 'tx'], ['more', 'lab'], ['more', 'exp']];
   for (const dev of ['phone', 'small']) {
     const q = dev === 'phone' ? p : await open('small'); const bad = [];
     for (const [g, s] of subs) { await goto(q, g, s); const o = await overflow(q); const vis = await q.evaluate(() => { const v = document.body.dataset.view; const el = v === 'center' ? document.querySelector('#dock .pane.on') : document.querySelector('#' + v); return !!el && el.getBoundingClientRect().height > 120; }); if (o.sw > o.W + 1 || o.bad.length || !vis) bad.push(s + ':' + JSON.stringify(o.bad) + (vis ? '' : ' empty')); }
@@ -118,14 +118,14 @@ const DEV = { phone: { viewport: { width: 390, height: 844 }, deviceScaleFactor:
 
   /* ---- landscape phone ---- */
   p = await open('land'); ok(await p.evaluate(() => document.body.dataset.form === 'phone' && document.body.dataset.land === '1' && getComputedStyle(document.querySelector('#mnav')).flexDirection === 'column'), 'landscape phone uses the side rail');
-  { const bad = []; for (const [g, s] of [['play', 'rig'], ['write', 'tab'], ['write', 'fret'], ['see', 'neural'], ['see', 'stage'], ['stems', 'stems']]) { await goto(p, g, s); const o = await overflow(p); if (o.sw > o.W + 1 || o.bad.length) bad.push(s + JSON.stringify(o.bad)); } ok(bad.length === 0, 'landscape: panels fit' + (bad.length ? ' ' + bad : '')); }
+  { const bad = []; for (const [g, s] of [['play', 'rig'], ['write', 'tab'], ['write', 'band'], ['see', 'neural'], ['see', 'stage'], ['stems', 'stems']]) { await goto(p, g, s); const o = await overflow(p); if (o.sw > o.W + 1 || o.bad.length) bad.push(s + JSON.stringify(o.bad)); } ok(bad.length === 0, 'landscape: panels fit' + (bad.length ? ' ' + bad : '')); }
   const hts = await p.evaluate(() => { const w = document.querySelector('#work').getBoundingClientRect(); return w.height; }); ok(hts >= 240, 'landscape: content area is at least 240px tall (' + Math.round(hts) + ')');
   await p.close(); await p.ctx.close();
 
   /* ---- tablet ---- */
   for (const dev of ['tablet', 'tabletL']) {
     p = await open(dev); ok(await p.evaluate(() => document.body.dataset.form === 'tablet'), dev + ' selects the tablet layout');
-    const bad = []; for (const id of ['rig', 'tab', 'song', 'band', 'fret', 'vis', 'stage', 'neural', 'stems', 'tx', 'cam', 'lab', 'exp']) { await p.evaluate(i => document.querySelector('#dock .tab[data-id="' + i + '"]').click(), id); await wait(350); const o = await overflow(p); if (o.sw > o.W + 1 || o.bad.length) bad.push(id + JSON.stringify(o.bad)); }
+    const bad = []; for (const id of ['rig', 'tab', 'band', 'vis', 'stage', 'neural', 'stems', 'tx', 'cam', 'lab', 'exp']) { await p.evaluate(i => document.querySelector('#dock .tab[data-id="' + i + '"]').click(), id); await wait(350); const o = await overflow(p); if (o.sw > o.W + 1 || o.bad.length) bad.push(id + JSON.stringify(o.bad)); }
     ok(bad.length === 0, dev + ': every dock panel fits' + (bad.length ? ' ' + bad : ''));
     await p.tap('.mdraw.l'); ok(await poll(() => p.evaluate(() => { const l = document.querySelector('#left').getBoundingClientRect(); return l.left >= -1 && l.width > 200 && l.right < innerWidth; })), dev + ': ☰ opens the Tones drawer');
     await p.tap('#mback'); ok(await poll(() => p.evaluate(() => document.querySelector('#left').getBoundingClientRect().right <= 1)), dev + ': tapping outside closes the drawer');

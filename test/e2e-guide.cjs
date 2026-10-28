@@ -14,7 +14,7 @@ suite('e2e-guide', async t => {
   // ---- the first page: goals, not levels
   const p = await open({ w: 1440, h: 900 });
   const f = await p.evaluate(() => ({ q: (document.getElementById('bootQ') || {}).textContent, goals: [...document.querySelectorAll('.boot-goal')].map(b => b.dataset.goal + ':' + b.querySelector('b').textContent), pro: !!document.getElementById('bootPro'), over: document.documentElement.scrollWidth > innerWidth, gum: window.__gum, lvl: /level|beginner|expert|skill/i.test(document.querySelector('.boot-card').textContent) }));
-  ok(/what would you like to do first/i.test(f.q) && f.goals.join('|') === 'hum:Turn a hum into a song|loop:Record, loop and layer|split:Learn a song|show:Run a show', 'the first page asks what you want to do, with four goals (' + f.goals.join(' | ') + ')');
+  ok(/what would you like to do first/i.test(f.q) && f.goals.join('|') === 'play:Play with a band|write:Write down what you play|hum:Turn a hum into a song|loop:Record, loop and layer|split:Learn a song|show:Run a show', 'the first page asks what you want to do, with six goals (Play, Create, Learn first) (' + f.goals.join(' | ') + ')');
   ok(!f.lvl && f.pro && !f.over && f.gum.audio === 0 && f.gum.video === 0, 'it never asks how good you are, offers a way to open everything, and asks for neither microphone nor camera');
   await p.ctx.close();
 
@@ -62,7 +62,7 @@ suite('e2e-guide', async t => {
   await r.evaluate(() => { const D = window.__daily; D.STP.playing = false; D.STM.dur = 0; D.STM.mix[1].m = false; });
   await r.evaluate(() => window.__daily.guideMenu()); await wait(300);
   const mn = await r.evaluate(() => [...document.querySelectorAll('#gdMenu .gd-row')].map(x => x.querySelector('b').textContent.trim().replace(/\s*✓ done/, '') + ':' + x.querySelector('button').textContent));
-  ok(mn.length === 5 && mn.some(x => /Record guitar and voice:Again/.test(x)) && mn.some(x => /Learn a song:Resume/.test(x)) && mn.some(x => /Turn a hum into a song:Start/.test(x)), 'the menu lists all five, with Again, Resume and Start as they apply (' + mn.join(' | ') + ')');
+  ok(mn.length === 7 && mn.some(x => /Record guitar and voice:Again/.test(x)) && mn.some(x => /Learn a song:Resume/.test(x)) && mn.some(x => /Turn a hum into a song:Start/.test(x)), 'the menu lists all seven, with Again, Resume and Start as they apply (' + mn.join(' | ') + ')');
   await r.click('#gdMenu button[data-s="split"]'); await wait(700); s = await st(r);
   ok(s.id === 'split' && s.i === 4, 'Resume picks the session up where it was');
   await r.evaluate(() => window.__daily.guideStop(true));
@@ -149,7 +149,7 @@ suite('e2e-guide', async t => {
   // ---- a phone
   const ph = await open({ w: 390, h: 844, mobile: true, dpr: 2 });
   const pm = await ph.evaluate(() => { const r = e => document.querySelector(e).getBoundingClientRect(); return { first: Math.round(r('.boot-goal').bottom), last: Math.round(r('.boot-goal[data-goal="show"]').bottom), no: Math.round(r('#bootNoMic').bottom), vh: innerHeight, over: document.documentElement.scrollWidth > innerWidth }; });
-  ok(pm.last < pm.vh && pm.no <= pm.vh && !pm.over, 'on a phone all four goals and the way in are on the first screen (goals end at ' + pm.last + ', way in at ' + pm.no + ' of ' + pm.vh + ')');
+  ok(pm.last < pm.vh && pm.no <= pm.vh && !pm.over, 'on a phone all six goals and the way in are on the first screen (goals end at ' + pm.last + ', way in at ' + pm.no + ' of ' + pm.vh + ')');
   await goal(ph, 'loop'); await wait(600);
   const pc = await ph.evaluate(() => { const a = document.getElementById('gd').getBoundingClientRect(); return { inside: a.left >= 0 && a.right <= innerWidth && a.top >= 0 && a.bottom <= innerHeight, steps: getComputedStyle(document.querySelector('#gd .gd-steps')).display, over: document.documentElement.scrollWidth > innerWidth, w: Math.round(a.width) }; });
   ok(pc.inside && pc.steps === 'none' && !pc.over, 'on a phone the session card is a compact strip inside the screen (' + pc.w + ' px wide)');

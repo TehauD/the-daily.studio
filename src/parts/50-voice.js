@@ -9,7 +9,7 @@ const VOX_WIN = 8;            // seconds of ribbon
 
 const voxNote = m => pcName(m) + (Math.floor(Math.round(m) / 12) - 1);
 const voxSrc = () => (CFG.vin && CFG.vin !== 'off' && E.anaVox) ? E.anaVox : E.anaDI;
-const voxWant = () => !!(CFG.vzRibbon || VOX.panel || VOX.capt);
+const voxWant = () => !!(CFG.vzRibbon || VOX.panel || VOX.capt || (typeof HM !== 'undefined' && performance.now() - HM.on < 700));   /* the harmony looks listen to the voice too */
 /** the pitch classes of the song's scale and, while it plays, of the chord under the playhead */
 function voxScale() { const iv = SCALES[S.scale] || SCALES['Major (Ionian)']; return new Set(iv.map(i => (S.key + i) % 12)); }
 function voxChordPcs() { try { const i = stageInfo(), c = i && i.sym ? parseChord(i.sym) : null; return c ? new Set(c.pcs) : null; } catch (e) { return null; } }
@@ -23,7 +23,7 @@ function voxTarget(m, sc) {
 function voxTick() {
   if (!voxWant() || !E.ready || !E.hasInput) return; const an = voxSrc(); if (!an) return; const now = performance.now(); if (now - VOX.last < 28) return;
   const dt = Math.min(.12, (now - VOX.last) / 1000); VOX.last = now; const n = an.fftSize; if (!VOX.buf || VOX.buf.length !== n) VOX.buf = new Float32Array(n);
-  an.getFloatTimeDomainData(VOX.buf); let e = 0; for (let i = 0; i < n; i++) e += VOX.buf[i] * VOX.buf[i]; const db = dB(Math.sqrt(e / n));
+  an.getFloatTimeDomainData(VOX.buf); let e = 0; for (let i = 0; i < n; i++) e += VOX.buf[i] * VOX.buf[i]; const db = dB(Math.sqrt(e / n)); VOX.db = db;
   let m = null, cl = 0; if (db > (CFG.gateDb != null ? Math.min(CFG.gateDb, -48) : -52)) { const r = yin(VOX.buf, E.ctx.sampleRate, .15); if (r && r.f > 65 && r.f < 1250 && r.clarity > .72) { VOX.f.push(r.f); if (VOX.f.length > 3) VOX.f.shift(); m = ftom(median(VOX.f)); cl = r.clarity; } else VOX.f = []; } else VOX.f = [];
   VOX.m = m; VOX.hist.push({ t: now, m, c: cl }); while (VOX.hist.length && now - VOX.hist[0].t > (VOX_WIN + 2) * 1000) VOX.hist.shift();
   if (m != null) {

@@ -61,6 +61,7 @@ function anaTick() {
   if (anaN % 3 === 0) spectral(sr);
   if (anaN % 3 === 0) sample();
   if (typeof voxTick === 'function') voxTick();
+  if (CAP.on && typeof capTick === 'function') capTick();
 }
 function vibrato() {
   const a = centsRing, n = a.length, k = 12, hp = a.map((v, i) => { let s = 0, c = 0; for (let j = Math.max(0, i - k); j <= Math.min(n - 1, i + k); j++) { s += a[j]; c++; } return v - s / c; });
@@ -73,7 +74,7 @@ function noteOn(m) {
   CUR = { midi: m, t0: t, onT, cs: [], n: 0, rms: AN.rms, cam: (VIS.active ? VIS.cands.filter(c => performance.now() - c.t < 500).map(c => ({ st: c.st, fret: c.fret })) : []) }; STAT.notes++; STAT.pcN[m % 12]++; const o = Math.floor(m / 12) - 1; STAT.oct[o] = (STAT.oct[o] || 0) + 1;
   bus.emit('note', { midi: m, t: onT });
   if (VIS.active) { const rec = VIS.cands.filter(c => performance.now() - c.t < 500); STAT.fuseT++; const open = S.tuning.some(o => o + S.capo === m); if (rec.some(c => c.midi === m) || (open && !rec.some(c => c.st === S.tuning.findIndex(o => o + S.capo === m)))) STAT.fuseA++; }
-  if (CAP.on && T.playing) captureNote(m, onT);
+  if (CAP.on && T.playing) { if (typeof capHeardNote === 'function') capHeardNote(m, onT); else captureNote(m, onT); }
 }
 function noteOff() {
   const c = CUR; CUR = null; if (!c) return; const dur = E.ctx.currentTime - c.t0; STAT.pcDur[c.midi % 12] += dur; heatLive(c, dur);
@@ -99,7 +100,7 @@ function sample() {
 bus.on('tap:di', m => anOnset(m, 'g'));
 bus.on('tap:vox', m => anOnset(m, 'v'));
 function anOnset(m, who) {
-  if (!m.onset) return; const f = CFG.anSrc || 'g'; if (f !== 'b' && f !== who) return; AN.onsetT = m.t; STAT.onsets++; bus.emit('onset', m);
+  if (!m.onset) return; const f = CFG.anSrc || 'g'; if (f !== 'b' && f !== who) return; AN.onsetT = m.t; STAT.onsets++; bus.emit('onset', m); if (CAP.on && typeof capOnset === 'function') capOnset(m.t, 'tap');
   if (T.playing && T.q.length) {
     const g = 16 / (CFG.timingGrid || 4) / 4 || 1, want = CFG.timingGrid || 2; /* grid: slots per grid step */
     const step = want === 4 ? 1 : want === 2 ? 2 : 4, tt = m.t - rttMs() / 1000; let best = null, bd = 1e9;
