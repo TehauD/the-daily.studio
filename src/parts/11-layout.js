@@ -18,7 +18,7 @@ function applyLayout() {
   c.classList.toggle('flip', !!LAY.flip);
   w.classList.remove('collapsed-l', 'collapsed-r');
   w.style.setProperty('--lw', (LAY.left ? sideW('left') : 0) + 'px'); w.style.setProperty('--rw', (LAY.right ? sideW('right') : 0) + 'px');
-  c.style.setProperty('--tlh', LAY.tlh || TLH_DEFAULT); if (typeof edgeSync === 'function') edgeSync();
+  c.style.setProperty('--tlh', LAY.tlh || TLH_DEFAULT); if (typeof edgeSync === 'function') edgeSync(); if (typeof goalPlace === 'function') goalPlace();
   { const dsk = !document.body.dataset.form || document.body.dataset.form === 'desktop'; $('#left').style.visibility = !dsk || LAY.left ? '' : 'hidden'; $('#right').style.visibility = !dsk || LAY.right ? '' : 'hidden'; }
   setTimeout(() => { if (typeof tlSize === 'function') tlSize(); window.dispatchEvent(new Event('resize')); }, 40);
 }
@@ -151,19 +151,8 @@ function layThumb(s) {
   return h('span', { class: 'lay-th', 'aria-hidden': 'true' }, side('left', s.left), h('i', { class: 'lt-c' }, ...(s.flip === false ? [tl, dk] : [dk, tl])), side('right', s.right));
 }
 function layCard(n, d, s, on, fn) { return h('button', { class: 'lay-card' + (on ? ' on' : ''), 'aria-pressed': String(!!on), title: d, onclick: fn }, layThumb(s), h('span', { class: 'lay-t' }, h('b', {}, n), h('span', {}, d))); }
-function layoutMenu(btn) {
-  const box = h('div', { class: 'lay-menu view-menu' });
-  box.append(h('h5', {}, 'Workspace'));
-  const chk = (label, get, set) => h('label', { class: 'lrow' }, h('input', { type: 'checkbox', checked: get(), onchange: e => set(e.target.checked) }), label);
-  box.append(chk('Panels above the arrangement', () => LAY.flip, v => { LAY.flip = v; saveLay(); applyLayout(); }), chk('Left sidebar  [', () => LAY.left, v => { LAY.left = v; saveLay(); applyLayout(); }), chk('Right sidebar  ]', () => LAY.right, v => { LAY.right = v; saveLay(); applyLayout(); }));
-  box.append(h('div', { class: 'tiny muted', style: { margin: '2px 0 6px', lineHeight: 1.45 } }, 'Every panel area has a labelled tab on its edge: click it to collapse or open it. Light or dark is in Appearance (⚙); how many tools show is on the Tools button.'));
-  box.append(h('button', { class: 'pbtn', onclick: () => placeMenu(btn) }, h('b', {}, '⇆ Where panels live…'), h('span', {}, 'Move any panel to the left sidebar, the right sidebar or the centre · swap the sidebars')));
-  const det = h('details', { class: 'lay-panels' }, h('summary', {}, 'Panels: show or hide, or float as a window'));
-  DOCK.forEach(([id, name]) => det.append(h('div', { class: 'lrow' }, h('input', { type: 'checkbox', checked: !LAY.hidden.includes(id), 'aria-label': 'Show ' + name, onchange: e => setTabHidden(id, !e.target.checked) }), h('span', { class: 'grow' }, name), h('button', { class: 'btn sm', onclick: () => { FLOATS.has(id) ? unfloat(id) : floatPane(id); closePop(); } }, FLOATS.has(id) ? '⤓ dock' : '⧉ float'))));
-  box.append(det, h('div', { class: 'tiny muted', style: { marginTop: '6px' } }, 'The Monitor’s widgets (Tuner, Levels, Analysis, Spectrum, Views) are chosen on the Monitor itself.'));
-  box.append(h('div', { class: 'row', style: { marginTop: '10px' } }, h('button', { class: 'btn sm', onclick: () => { [...FLOATS.keys()].forEach(unfloat); LAY.rc = { order: [], col: {}, hide: {}, v: 2 }; RCARDS.forEach(n => { LAY.rc.hide[n] = !MON_DEFAULT.includes(n); }); LAY.floats = {}; sideReset(); applyPreset(LAYOUTS[0][2], LAYOUTS[0][0]); closePop(); } }, 'Reset layout')));
-  popover(btn, box, { right: true, style: { maxWidth: 'min(420px,96vw)', width: '380px' } });
-}
+/** the ▦ menu is the Workspace dialog now (part 64); this name stays for the callers that open it on the panels */
+function layoutMenu() { workspaceOpen('panels'); }
 
 /* ---------- labelled tabs on the edge of every panel area (like the journal's): collapse it, open it, always within reach ----------
    Each sidebar has a vertical tab named for the panel that is open (click it to collapse the sidebar). While the sidebar is collapsed
@@ -231,7 +220,7 @@ function buildBandStrip() {
 function buildLayout() {
   const dock = $('#dock'), tabs = $('.tabs', dock), bar = h('div', { class: 'dockbar' }); dock.insertBefore(bar, tabs); bar.append(tabs, dockMore(), buildBandStrip()); if (typeof goalBar === 'function') dock.insertBefore(goalBar(), bar);
   applyTabOrder(); rebuildTabs(); buildSplitters(); edgeBuild(); setupCards(); applyLayout();
-  const btn = h('button', { class: 'btn icon', title: 'Layout and view — light or dark, experience, panels', onclick: () => layoutMenu(btn) }, '▦'); const tr = $('#topR'); tr.insertBefore(btn, tr.firstChild);
+  const btn = h('button', { class: 'btn icon', id: 'wsBtn', title: 'Workspace: goals and panels', 'aria-haspopup': 'dialog', onclick: () => workspaceOpen() }, '▦'); const tr = $('#topR'); tr.insertBefore(btn, tr.firstChild);
   bus.on('song', syncBandStrip); bus.on('transport', syncBandStrip); bus.on('dock', () => { $$('#dock .tab').forEach(t => t.classList.toggle('on', t.dataset.id === DOCK.cur)); }); syncBandStrip();
   LAY.fl.slice().forEach(id => { try { floatPane(id, LAY.floats[id]); } catch (e) { console.warn(e); } });
 }

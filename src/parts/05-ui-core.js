@@ -62,8 +62,8 @@ function buildHeader() {
   tr.append(UI.rew, UI.play, UI.stop, UI.rec, UI.loop, UI.metro, UI.metroMore, UI.pos, UI.tim, h('label', { class: 'field', style: { width: '58px' } }, 'BPM', UI.bpm), h('label', { class: 'field', style: { width: '54px' } }, 'Sig', UI.ts), h('label', { class: 'field', style: { width: '56px' } }, 'Key', UI.key), h('label', { class: 'field', style: { width: '56px' } }, 'Mode', UI.mode));
   const R = $('#topR');
   UI.lat = h('span', { class: 'chip', title: 'Round-trip latency estimate. Run the Loopback Test in I/O for a measured value.' }, h('i', { class: 'led' }), h('span', {}, 'audio off'));
-  UI.theme = h('button', { class: 'btn icon', title: 'Appearance: light / dark, palettes, accent, density…', onclick: () => lookOpen() }, '◐');
-  R.append(mstChip(), audioButton(), UI.lat, UI.theme, h('button', { class: 'btn icon', title: 'Settings', onclick: openSettings }, '⚙'), h('button', { class: 'btn icon', title: 'Help & shortcuts (?)', onclick: openHelp }, '?'));
+  UI.theme = h('button', { class: 'btn icon', title: 'Appearance: light / dark, palettes, accent, density…', 'aria-haspopup': 'dialog', onclick: () => lookOpen() }, '◐');
+  R.append(mstChip(), audioButton(), UI.lat, UI.theme, h('button', { class: 'btn icon', title: 'Settings', 'aria-haspopup': 'dialog', onclick: () => openSettings() }, '⚙'), h('button', { class: 'btn icon', title: 'Help & shortcuts (?)', 'aria-haspopup': 'dialog', onclick: () => openHelp() }, '?'));
 }
 /** count-in and click volume, next to the Click button */
 function clickMenu(anchor) {
@@ -89,56 +89,70 @@ function syncTransport() {
 bus.on('transport', syncTransport); bus.on('song', syncTransport); bus.on('rec:state', syncTransport);
 
 /* ---------- settings / help ---------- */
-function openSettings() {
-  const d = $('#settings'); d.innerHTML = '';
-  const F = (label, el) => h('label', { class: 'field' }, label, el);
-  const sel = (key, opts, cb) => h('select', { onchange: e => { const v = e.target.value; CFG[key] = isNaN(+v) || v === '' ? v : (key === 'hint' ? v : +v); saveCfg(); cb && cb(); } }, opts.map(o => { const [v, t] = Array.isArray(o) ? o : [o, o]; return h('option', { value: v, selected: String(CFG[key]) === String(v) }, t); }));
+/** ⚙ Settings (part 05c's dialog). at: the section to open on */
+function openSettings(at) {
+  const close = () => { const d = $('#settings'); if (d) d.close(); };
+  const F = (label, el) => h('label', { class: 'field' }, h('span', {}, label), el);
+  const sel = (key, opts, cb) => h('select', { class: 'in', onchange: e => { const v = e.target.value; CFG[key] = isNaN(+v) || v === '' ? v : (key === 'hint' ? v : +v); saveCfg(); cb && cb(); } }, opts.map(o => { const [v, t] = Array.isArray(o) ? o : [o, o]; return h('option', { value: v, selected: String(CFG[key]) === String(v) }, t); }));
   const chk = (label, key, cb) => h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!CFG[key], onchange: e => { CFG[key] = e.target.checked; saveCfg(); cb && cb(); } }), label);
-  const num = (key, min, max, step, cb) => h('input', { type: 'number', min, max, step, value: CFG[key], onchange: e => { CFG[key] = +e.target.value; saveCfg(); cb && cb(); } });
-  d.append(h('div', { class: 'dlg-h' }, 'SETTINGS', h('button', { class: 'btn sm', onclick: () => d.close() }, 'Close')),
-    h('div', { class: 'dlg-b' },
-      h('h5', {}, 'Appearance'),
-      F('Theme', h('div', { class: 'seg' }, [['light', 'Light'], ['dark', 'Dark'], ['auto', 'System']].map(([t, n]) => h('button', { 'data-t': t, class: CFG.lookMode === t ? 'on' : '', onclick: () => setTheme(t) }, n)))),
-      F('Palette, accent, density…', h('button', { class: 'btn', onclick: () => { d.close(); lookOpen(); } }, '🎨 Customize appearance…')),
-      F('UI scale', h('input', { type: 'range', min: .85, max: 1.3, step: .05, value: CFG.ui, oninput: e => { CFG.ui = +e.target.value; saveCfg(); applyAppearance(); } })),
-      F('Device layout', sel('form', [['auto', 'Auto (fit this device)'], ['phone', 'Phone'], ['tablet', 'Tablet'], ['desktop', 'Desktop']], () => applyForm())),
-      chk('On-screen tab keypad on phones and tablets', 'kpad', () => mSync()),
-      chk('Reduce motion', 'reduce', applyAppearance),
-      h('h5', {}, 'Workflow'),
+  const num = (key, min, max, step, cb) => h('input', { class: 'in', type: 'number', min, max, step, value: CFG[key], onchange: e => { CFG[key] = +e.target.value; saveCfg(); cb && cb(); } });
+  const range = (key, min, max, step, cb) => h('input', { type: 'range', min, max, step, value: CFG[key], oninput: e => { CFG[key] = +e.target.value; saveCfg(); cb && cb(); } });
+  const note = t => h('p', { class: 'hub-note' }, t);
+  return hubOpen('settings', { ico: '⚙', title: 'Settings', sub: 'How the studio looks, sounds, records and keeps your work.', at, sections: [
+    { key: 'look', label: 'Appearance', ico: '🎨', sub: 'Light or dark first, then a palette made for it.', body: () => [lookQuick(), h('button', { class: 'btn', id: 'setLook', onclick: () => { close(); lookOpen(); } }, '🎨 Looks, accent, density and type…')] },
+    { key: 'work', label: 'Workflow', ico: '▦', sub: 'Where the studio starts and how it fits this device.', body: () => [
       F('Start in', routeControl()),
-      h('h5', {}, 'Music'),
-      F('Reference pitch A4 (Hz)', num('a4', 415, 466, .1, () => bus.emit('song'))), F('Accidentals', sel('flats', [[false, 'Sharps (C#)'], [true, 'Flats (Db)']], () => { CFG.flats = String(CFG.flats) === 'true'; saveCfg(); bus.emit('song'); })),
-      chk('Left-handed fretboard', 'left', () => bus.emit('fret')), F('Fretboard labels', sel('fretNames', [['notes', 'Note names'], ['degrees', 'Scale degrees'], ['frets', 'Fret numbers']], () => bus.emit('fret'))),
-      h('h5', {}, 'Audio engine (restart to apply)'),
-      F('Latency hint', sel('hint', [['interactive', 'interactive (lowest)'], ['balanced', 'balanced'], ['playback', 'playback'], ['0', '0 (request minimum)']])), F('Sample rate', sel('sr', [['auto', 'Device default'], ['44100', '44.1 kHz'], ['48000', '48 kHz'], ['96000', '96 kHz']])),
-      F('Analyzer FFT size', sel('fft', [2048, 4096, 8192, 16384, 32768], () => { if (E.ready) { E.anaRig.fftSize = E.anaMaster.fftSize = CFG.fft; } })), F('Analyzer smoothing', h('input', { type: 'range', min: 0, max: .95, step: .01, value: CFG.smooth, oninput: e => { CFG.smooth = +e.target.value; saveCfg(); if (E.ready) E.anaRig.smoothingTimeConstant = E.anaMaster.smoothingTimeConstant = CFG.smooth; } })),
-      h('div', { class: 'row', style: { gridColumn: '1/-1' } }, h('button', { class: 'btn', onclick: () => { d.close(); restartAudio(); } }, '↻ Restart audio engine'), h('span', { class: 'muted small' }, 'Required after changing latency hint, sample rate or output routing.')),
-      h('h5', {}, 'Export'),
-      F('Loudness target for song WAVs', sel('lufsTarget', LOUD_TARGETS)),
-      chk('Render WAVs faster than real time', 'renderFast'), h('div', { class: 'tiny muted', style: { gridColumn: '1/-1' } }, 'Mixes the song in a few seconds instead of playing it through. Turn this off if a render ever sounds different from playback; the bounce then plays the song once in real time.'),
-      F('Backup folder', syncControl()),
-      h('h5', {}, 'Recording & practice'),
-      F('Count-in (bars)', sel('countIn', [0, 1, 2, 4])), F('Metronome level', h('input', { type: 'range', min: 0, max: 1, step: .05, value: CFG.metroVol, oninput: e => { CFG.metroVol = +e.target.value; saveCfg(); } })),
-      F('Humanize (timing/velocity)', h('input', { type: 'range', min: 0, max: 1, step: .05, value: CFG.humanize, oninput: e => { CFG.humanize = +e.target.value; saveCfg(); } })), F('Timing analysis grid', sel('timingGrid', [[4, '16th notes'], [2, '8th notes'], [1, 'Quarter notes']])),
+      F('Workspace', h('button', { class: 'btn', onclick: () => { close(); workspaceOpen(); } }, (goalNow() ? goalNow().ico + ' ' + goalNow().name : 'Choose a goal') + ' ▸')),
+      F('Device layout', sel('form', [['auto', 'Auto (fit this device)'], ['phone', 'Phone'], ['tablet', 'Tablet'], ['desktop', 'Desktop']], () => applyForm())),
+      chk('On-screen tab keypad on phones and tablets', 'kpad', () => mSync())] },
+    { key: 'music', label: 'Music', ico: '♪', sub: 'Tuning reference, note names and the fretboard.', body: () => [
+      F('Reference pitch A4 (Hz)', num('a4', 415, 466, .1, () => bus.emit('song'))),
+      F('Accidentals', sel('flats', [[false, 'Sharps (C#)'], [true, 'Flats (Db)']], () => { CFG.flats = String(CFG.flats) === 'true'; saveCfg(); bus.emit('song'); })),
+      F('Fretboard labels', sel('fretNames', [['notes', 'Note names'], ['degrees', 'Scale degrees'], ['frets', 'Fret numbers']], () => bus.emit('fret'))),
+      chk('Left-handed fretboard', 'left', () => bus.emit('fret'))] },
+    { key: 'audio', label: 'Audio engine', ico: '🔊', sub: 'Latency and analysis. Restart the engine to apply the first two.', body: () => [
+      F('Latency hint', sel('hint', [['interactive', 'interactive (lowest)'], ['balanced', 'balanced'], ['playback', 'playback'], ['0', '0 (request minimum)']])),
+      F('Sample rate', sel('sr', [['auto', 'Device default'], ['44100', '44.1 kHz'], ['48000', '48 kHz'], ['96000', '96 kHz']])),
+      F('Analyzer FFT size', sel('fft', [2048, 4096, 8192, 16384, 32768], () => { if (E.ready) { E.anaRig.fftSize = E.anaMaster.fftSize = CFG.fft; } })),
+      F('Analyzer smoothing', range('smooth', 0, .95, .01, () => { if (E.ready) E.anaRig.smoothingTimeConstant = E.anaMaster.smoothingTimeConstant = CFG.smooth; })),
+      h('div', { class: 'hub-acts' }, h('button', { class: 'btn', onclick: () => { close(); restartAudio(); } }, '↻ Restart audio engine'), note('Needed after changing the latency hint, sample rate or output routing.'))] },
+    { key: 'rec', label: 'Recording & practice', ico: '●', sub: 'Count-in, the click and what a take keeps.', body: () => [
+      F('Count-in (bars)', sel('countIn', [0, 1, 2, 4])),
+      F('Metronome level', range('metroVol', 0, 1, .05)),
+      F('Humanize (timing/velocity)', range('humanize', 0, 1, .05)),
+      F('Timing analysis grid', sel('timingGrid', [[4, '16th notes'], [2, '8th notes'], [1, 'Quarter notes']])),
       F('When recording reaches the end of the song', sel('recEnd', [['grow', 'Keep going (the song grows to fit)'], ['stop', 'Stop at the end'], ['loop', 'Loop back, one take per pass']])),
       h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!CFG.rec.dry, onchange: e => { CFG.rec.dry = e.target.checked; saveCfg(); } }), 'Record dry DI (enables re-amping)'),
-      h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!CFG.rec.wet, onchange: e => { CFG.rec.wet = e.target.checked; saveCfg(); } }), 'Record wet print'),
-      h('h5', {}, 'Ultimate Guitar export'),
-      F('Max line width (chars)', num('ugWidth', 40, 120, 1, () => bus.emit('export'))), chk('Include [tab] / [ch] tags', 'ugTags', () => bus.emit('export')),
-      h('h5', {}, 'Data'),
-      h('div', { class: 'row', style: { gridColumn: '1/-1', gap: '8px', flexWrap: 'wrap' } }, h('button', { class: 'btn', onclick: () => { d.close(); libraryOpen(); } }, '☰ My songs'), h('button', { class: 'btn', onclick: () => { d.close(); progressOpen(); } }, '📈 My progress'), h('button', { class: 'btn bad', title: 'Choose what to erase: layout, settings, songs, offline copy…', onclick: () => { d.close(); resetOpen(); } }, 'Reset…'), h('button', { class: 'btn', onclick: () => download('daily-songs-settings.json', JSON.stringify(CFG, null, 2), 'application/json') }, 'Export settings JSON')),
-      F('Backing track when a song opens', sel('trackRestore', [['auto', 'Restore it automatically'], ['tap', 'Wait until I tap Restore']])), h('div', { class: 'tiny muted', style: { gridColumn: '1/-1' } }, 'Songs and recordings are kept in this browser (My songs). Stems are separated again when a song with a track opens; the song itself opens instantly.')
-    ));
-  d.showModal();
+      h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!CFG.rec.wet, onchange: e => { CFG.rec.wet = e.target.checked; saveCfg(); } }), 'Record wet print')] },
+    { key: 'export', label: 'Export', ico: '⇩', sub: 'Song bounces, tab text and an automatic backup folder.', body: () => [
+      F('Loudness target for song WAVs', sel('lufsTarget', LOUD_TARGETS)),
+      chk('Render WAVs faster than real time', 'renderFast'), note('Mixes the song in a few seconds instead of playing it through. Turn this off if a render ever sounds different from playback.'),
+      F('Ultimate Guitar line width (chars)', num('ugWidth', 40, 120, 1, () => bus.emit('export'))), chk('Include [tab] / [ch] tags in Ultimate Guitar text', 'ugTags', () => bus.emit('export')),
+      F('Backup folder', syncControl())] },
+    { key: 'data', label: 'Songs & data', ico: '☰', sub: 'Everything stays in this browser. Nothing is uploaded.', body: () => [
+      F('Backing track when a song opens', sel('trackRestore', [['auto', 'Restore it automatically'], ['tap', 'Wait until I tap Restore']])),
+      note('Songs and recordings are kept in this browser (My songs). Stems are separated again when a song with a track opens; the song itself opens instantly.'),
+      h('div', { class: 'hub-acts' }, h('button', { class: 'btn', onclick: () => { close(); libraryOpen(); } }, '☰ My songs'), h('button', { class: 'btn', onclick: () => { close(); progressOpen(); } }, '📈 My progress'), h('button', { class: 'btn', onclick: () => download('daily-songs-settings.json', JSON.stringify(CFG, null, 2), 'application/json') }, 'Export settings JSON'), h('button', { class: 'btn bad', title: 'Choose what to erase: layout, settings, songs, offline copy…', onclick: () => { close(); resetOpen(); } }, 'Reset…'))] }
+  ] });
 }
-function openHelp() {
-  const d = $('#help'); d.innerHTML = '';
+/** ? Help (part 05c's dialog) */
+function openHelp(at) {
   const K = [['Space', 'Play / stop'], ['Ctrl + .', 'KILL AUDIO: stop playback, monitor off, release the microphone, suspend audio'], ['R', 'Record: one press, one take. It keeps going past the end of the song until you press R or Stop again'], ['L / M', 'Loop / metronome'], ['D · B · G · T', 'Band on/off: drums · bass · rhythm guitar · lead tab'], ['1…8 · 0', 'Recall pedalboard scene (Stage scene when Stage is focused) · 0 = all pedals off'], ['Home', 'Return to start'], ['Ctrl/⌘ Z · Shift+Z', 'Undo / redo: song edits, clips and the stem mix share one history'], ['Ctrl/⌘ E · D · Del', 'Selected clip: split at the playhead · duplicate · delete. ← → nudge a beat (Shift = a bar). Hold Alt while dragging for no snapping'], ['Drop a file', 'Audio, lyrics, MIDI (.mid, .kar) or a song file anywhere on the page'], ['Ctrl/⌘ S', 'Save project JSON'], ['Alt + 1…9, 0', 'Switch panel by position (tab order is yours to arrange)'], ['[ ]', 'Toggle left / right sidebars'],
     ['Tab editor', 'Click a cell · type fret (0–24) · ←→↑↓ move · Del clear · h p / \\ b ~ x < set technique · Shift+arrows select · Space plays from bar'], ['Knobs', 'Drag · wheel · Shift = fine · double-click reset · right-click = MIDI learn'], ['Rig', 'Drag pedal headers to reorder the signal chain · A/B + Morph to compare tones']];
-  d.append(h('div', { class: 'dlg-h' }, 'HELP & SHORTCUTS', h('button', { class: 'btn sm', onclick: () => d.close() }, 'Close')), h('div', { class: 'dlg-b', style: { display: 'block' } }, h('div', { class: 'help-k' }, K.map(([a, b]) => [h('kbd', {}, a), h('span', {}, b)])),
-    h('div', { class: 'row', style: { gap: '8px', margin: '2px 0 8px' } }, h('button', { class: 'btn primary', id: 'helpSessions', onclick: () => { d.close(); guideMenu(); } }, '✦ Guided sessions'), h('button', { class: 'btn', onclick: () => tourStart() }, '▶ Take the guided tour'), h('span', { class: 'tiny muted' }, 'Short tasks that teach by doing, or a two-minute spotlight walkthrough.')), h('div', { class: 'hr' }), h('p', { class: 'small muted' }, 'Everything runs locally in your browser. Nothing is uploaded. Browsers cannot talk to ASIO drivers, so achievable latency depends on your OS audio stack; use the Loopback Test (I/O panel) for a measured number, and your Focusrite’s Direct Monitor for latency-free headphone monitoring while recording.'),
-    h('p', { class: 'small muted' }, 'Your work is autosaved to this browser: songs, recordings and backing tracks stay on this device (☰ Songs). For a copy you can keep anywhere, use ☰ Songs → All songs → Back up all songs (one zip with everything, which Open a file brings back), or save one song as a bundle. On an iPhone or iPad, add the site to the Home Screen so Safari keeps your songs.'), h('div', { class: 'hr' }), aboutBlock()));
-  d.showModal();
+  const close = () => { const d = $('#help'); if (d) d.close(); };
+  return hubOpen('help', { ico: '?', title: 'Help', sub: 'Get going, find a shortcut, or read how the studio treats your work.', at, sections: [
+    { key: 'start', label: 'Get started', ico: '✦', sub: 'Short tasks that teach by doing, or a two-minute spotlight walkthrough.', wide: true, body: () => [
+      h('div', { class: 'hub-tiles' },
+        h('button', { class: 'hub-tile primary', id: 'helpSessions', onclick: () => { close(); guideMenu(); } }, h('b', {}, '✦ Guided sessions'), h('span', {}, 'Play with a band, write a riff down, hum a song, loop and layer…')),
+        h('button', { class: 'hub-tile', id: 'helpTour', onclick: () => { close(); tourStart(); } }, h('b', {}, '▶ Take the guided tour'), h('span', {}, 'A spotlight on each part of the screen.')),
+        h('button', { class: 'hub-tile', onclick: () => { close(); workspaceOpen(); } }, h('b', {}, '▦ Pick a workspace'), h('span', {}, 'Songwriter, Performer, Creator Studio, Practice, Teacher or Full Rig.')))] },
+    { key: 'keys', label: 'Shortcuts', ico: '⌨', wide: true, body: () => [h('div', { class: 'help-k' }, K.map(([a, b]) => [h('kbd', {}, a), h('span', {}, b)]))] },
+    { key: 'data', label: 'Your work', ico: '🔒', sub: 'Local, private, kept on this device.', wide: true, body: () => [
+      h('p', { class: 'small' }, 'Everything runs locally in your browser. Nothing is uploaded. Your work is autosaved to this browser: songs, recordings and backing tracks stay on this device (☰ Songs).'),
+      h('p', { class: 'small muted' }, 'For a copy you can keep anywhere, use ☰ Songs → All songs → Back up all songs (one zip with everything, which Open a file brings back), or save one song as a bundle. On an iPhone or iPad, add the site to the Home Screen so Safari keeps your songs.')] },
+    { key: 'audio', label: 'Latency', ico: '⏱', wide: true, body: () => [h('p', { class: 'small muted' }, 'Browsers cannot talk to ASIO drivers, so achievable latency depends on your OS audio stack. Use the Loopback Test (I/O panel) for a measured number, and your interface’s direct monitor for latency-free headphone monitoring while recording.')] },
+    { key: 'about', label: 'About', ico: '♥', wide: true, body: () => [aboutBlock()] }
+  ] });
 }
 
 /* ---------- status bar ---------- */

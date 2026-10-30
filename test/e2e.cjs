@@ -118,10 +118,11 @@ function wav(L, sr) { const n = L.length, b = Buffer.alloc(44 + n * 2); b.write(
   if (await page.$('#bootGo')) { await page.evaluate(() => document.getElementById('bootGo').click()); await wait(1800); } await page.evaluate(() => { const d = document.getElementById('origins'); if (d && d.open) d.close(); });   // nothing starts by itself: the start overlay waits for a click
   // ---- v1.6: appearance system ----
   { const dset = () => page.evaluate(() => ({ ...document.documentElement.dataset, acc: getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() }));
-    await page.click('button[title^="Appearance"]'); await wait(400); ok(await page.$eval('#look', d => d.open), 'the ◐ button opens the Appearance drawer');
-    ok((await page.$$('.lk-pal')).length === 17 && (await page.$$('.lk-look')).length === 8, 'drawer offers 17 palettes and 8 looks');
+    await page.click('button[title^="Appearance"]'); await wait(400); ok(await page.$eval('#look', d => d.open && d.classList.contains('hub')), 'the ◐ button opens the Appearance dialog');
+    await page.click('#look .lk-mode button[data-t="dark"]'); await wait(300);
+    ok((await page.$$('#look .lk-pal')).length === 9 && (await page.$$('#look .lk-look')).length >= 3, 'in Dark the Appearance dialog offers only the 9 dark palettes and the dark looks');
     await page.click('.lk-look:has-text("Midnight")'); await wait(300); let d = await dset(); ok(d.theme === 'dark' && d.palette === 'midnight', 'look "Midnight" switches to the dark Midnight palette: ' + d.theme + '/' + d.palette);
-    await page.click('.lk-pal[title="Paper"]'); await wait(300); d = await dset(); ok(d.palette === 'paper' && d.theme === 'light', 'choosing a light palette switches to light: ' + d.palette);
+    await page.click('#look .lk-mode button[data-t="light"]'); await wait(300); await page.click('#look .lk-dds'); await page.click('.lk-pal[title="Paper"]'); await wait(300); d = await dset(); ok(d.palette === 'paper' && d.theme === 'light', 'Light, then the palette dropdown, then Paper: ' + d.palette);
     await page.click('.lk-dot[title="Violet"]'); await wait(300); const v1 = (await dset()).acc; ok(/^#/.test(v1) && v1.toLowerCase() !== '#b4532a', 'accent swatch changes the accent colour: ' + v1);
     await page.evaluate(() => { const i = document.querySelector('.lk-dot.custom input'); i.value = '#e83e8c'; i.dispatchEvent(new Event('input', { bubbles: true })); i.dispatchEvent(new Event('change', { bubbles: true })); }); await wait(300);
     const cacc = (await dset()).acc; ok(/^#/.test(cacc) && cacc !== v1, 'a custom colour is accepted and adjusted for legibility: ' + cacc);
@@ -129,7 +130,7 @@ function wav(L, sr) { const n = L.length, b = Buffer.alloc(44 + n * 2); b.write(
     d = await dset(); ok(d.corners === 'round' && d.density === 'spacious' && (await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--cv1').trim())) === '#0072B2', 'corners, density and colour-blind-safe data colours apply');
     await page.selectOption('#look select', 'legible'); await wait(200); ok((await dset()).font === 'legible', 'typeface choice applies');
     await page.keyboard.press('Escape'); await page.reload(); await wait(2300); if (await page.$('#bootGo')) await page.evaluate(() => document.getElementById('bootGo').click()); await wait(2300); await page.evaluate(() => { const b = document.querySelector('#tourOffer .btn:not(.primary)'); if (b) b.click(); }); d = await dset(); ok(d.palette === 'paper' && d.corners === 'round' && d.density === 'spacious', 'appearance survives a reload: ' + d.palette + '/' + d.corners + '/' + d.density);
-    await page.click('button[title^="Appearance"]'); await wait(300); await page.click('dialog[open] .lk-foot .btn'); await wait(300); d = await dset(); ok(d.corners === 'soft' && d.density === 'comfortable' && d.palette === 'dsday' && d.font === 'brand', 'Reset appearance restores the defaults (Daily Light, brand type)');
+    await page.click('button[title^="Appearance"]'); await wait(300); await page.click('#look .lk-foot .btn'); await wait(300); d = await dset(); ok(d.corners === 'soft' && d.density === 'comfortable' && d.palette === 'dsday' && d.font === 'brand', 'Reset appearance restores the defaults (Daily Light, brand type)');
     await page.keyboard.press('Escape'); }
   // ---- v1.7: About & credits, CSP, production assets ----
   { await page.keyboard.press('Escape'); await page.click('.btn.icon[title^="Help"]'); await wait(400);

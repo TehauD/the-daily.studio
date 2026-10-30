@@ -8,16 +8,16 @@ Contents: [Getting started](#getting-started-and-guided-sessions-27) · [Show se
 
 ## Goal workspaces (2.13)
 
-The row at the top of the panels holds six goals. Each one is a whole workspace: which panels are on the tab strip and which one is open, what the sidebars show, how tall the arrangement is, which Monitor widgets are on, and a row of the tools that goal is about. Choosing one replaces the last completely. Nothing is removed: every panel is still under **☰**, and **▦** still moves panels anywhere.
+The row at the top of the centre holds six goals. Each one is a whole workspace with its own shape: which panel fills the middle, whether the arrangement sits above or below it, which sidebars show and what is in them, which Monitor widgets are on. Each also has its own colour, a one-line mission with three steps, and a row of the tools that goal is about, the main one highlighted. Choosing one replaces the last completely. Nothing is removed: every panel is still under **☰**, and **▦ Workspace** shows the six goals as cards with a picture of each shape, then lets you move panels anywhere.
 
 | Goal | Opens on | Its tools |
 | --- | --- | --- |
-| 🎸 **Songwriter** | Write, with Theory on the left and the Monitor's chord analysis on the right | ● Capture idea · ✎ Lyrics & tab · ♯ Chords & scales · ⏺ Record idea |
-| 🎤 **Performer** | Visuals (the stage), Tones on the left, Tuner, Levels and Audience on the right | ⏺ Record video · 📷 Camera · 🎤 Perform view · ● Record take · ▶ Replay |
-| 🎬 **Creator Studio** | Visuals with no left sidebar, a slim arrangement, Levels, Views (waveform, spectrogram, pitch wheel) and Audience | ⏺ Record MP4 · ▶ Studio Replay · 📷 Webcam · ✨ Overlays · 🖼 Thumbnail · ⇩ Export |
-| 🎼 **Practice** | Write, Theory (scales) on the left, the Fretboard on the right | ⟲ Loop · ♩ Metronome · − 5 / BPM / + 5 · ♯ Scales · ▦ Chords |
-| 🎓 **Teacher** | Write, Transcribe next to it, the Fretboard on the right | ✎ Annotate · 📝 Lesson notes · ⏺ Record screen · ▦ Fretboard · ♪ Transcribe |
-| ⚙️ **Full Rig** | The Rig, both sidebars, every tab and every Monitor widget | ▦ Workspace… · ⇆ Where panels live… |
+| 🎸 **Songwriter** — *Write the song* | A notebook: Write in Both (words and tab), Theory on the left, no right sidebar, the arrangement a strip | **● Capture idea** · ✎ Lyrics & tab · ♯ Chords & scales · ⏺ Record idea |
+| 🎤 **Performer** — *Play it for real* | A stage: Visuals large, Tones on the left, Tuner and Levels on the right, lanes for takes below | **⏺ Record video** · 📷 Camera · 🎤 Perform view · ● Record take · ▶ Replay |
+| 🎬 **Creator Studio** — *Make it postable* | An edit bay: Visuals as the picture, no left sidebar, the Audience view, Views (waveform, spectrogram, pitch wheel) and Levels on the right, a slim arrangement | **⏺ Record MP4** · ▶ Studio Replay · 📷 Webcam · ✨ Overlays · 🖼 Thumbnail · ⇩ Export |
+| 🎼 **Practice** — *Get it under your fingers* | A practice room: the Fretboard large in the middle, Theory (scales) on the left, Tuner and Levels on the right | **⟲ Loop** · ♩ Metronome · − 5 / BPM / + 5 · ♯ Scales · ▦ Chords |
+| 🎓 **Teacher** — *Show someone how* | A whiteboard: the arrangement on top, Write below it, the Fretboard on the right, the lesson notes open | **✎ Annotate** · 📝 Lesson notes · ⏺ Record screen · ▦ Fretboard · ♪ Transcribe |
+| ⚙️ **Full Rig** — *Everything, your way* | The Rig, both sidebars, every tab and every Monitor widget | ▦ Workspace… · ⇆ Where panels live… |
 
 **Create → Perform → Share.** The three steps at the right of the row light up for the goal you are in, and each goal ends with a button to the next step: Songwriter and Practice → **Perform it**, Performer → **Share it**, Creator Studio → **Write the next one**. A first visit on a computer opens the **Performer**; anyone who has been here before keeps the workspace they had, and **I know my way around** on the start page opens the Full Rig. On a phone the bottom navigation does this job and the row is not shown.
 
@@ -579,7 +579,9 @@ The **Tracks** button at the right of the chip row cycles the arrangement betwee
 
 ## Layout and themes
 
-* **Drag** dock tabs to reorder; **double-click** a tab to float it as a window and again to dock it back. **▦** (top right) opens the workspace menu: the sidebars, where each panel lives, show / hide or float for each panel, and a reset. Light / Dark / Match system is in **Appearance** (the ⚙ menu) and **Experience** (Automatic, Simple, More tools, Everything) is on the **Tools** button. There are no preset layouts any more; use the edge tabs.
+* **The header's dialogs (2.13).** **▦ Workspace**, **◐ Appearance**, **⚙ Settings** and **? Help** open the same kind of window: a header with ✕, the sections listed on the left (chips along the top on a phone) and the settings as cards in one scrolling column. Pick a section to jump to it; the list follows as you scroll. <kbd>Esc</kbd> or a click outside closes it.
+* **Appearance (2.13)** starts with **Light · Dark · System**. Under it, a dropdown shows the palette in use; open it to see only the palettes made for that mode (System shows a daytime and a night dropdown). **Looks** lists only the looks for that mode, then Accent, Feel and Type & access. Settings ▸ Appearance has the same mode switch and dropdown.
+* **Drag** dock tabs to reorder; **double-click** a tab to float it as a window and again to dock it back. **▦** (top right) opens Workspace: the six goals, then the sidebars, where each panel lives, show / hide or float for each panel, and a reset. Light / Dark / Match system is in **Appearance** (the ⚙ menu) and **Experience** (Automatic, Simple, More tools, Everything) is on the **Tools** button. There are no preset layouts any more; use the edge tabs.
 * **Edge tabs (2.12).** Every panel area has a labelled tab on its own edge that is always there. Each sidebar's tab is named for the panel that is open (I/O, Monitor, Theory…): click it to collapse the sidebar. While a sidebar is collapsed its edge lists the panels that live there, so one click opens exactly the one you want. The divider between the arrangement and the panels has two tabs, **Arrangement** (collapses it to the transport) and **Panels** (collapses them to their tab strip). Click to collapse, click again to open. What you collapsed is remembered. On phones and tablets the drawers do this job instead.
 * **☰** at the end of the tab strip lists every panel (nothing is hidden when the strip scrolls). **⤢** expands the current panel to the whole centre; <kbd>Esc</kbd> goes back.
 * **Interchangeable panels.** **⇆** on a sidebar (or **☰ → Where panels live…**) lets you put any panel in the centre, the left sidebar or the right sidebar, swap the two sidebars, collapse or expand all cards and reset. Sidebar cards collapse with their ▾ and remember it.
