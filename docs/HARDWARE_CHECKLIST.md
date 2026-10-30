@@ -124,6 +124,33 @@ The ten looks were checked on simulated notes. These need a real voice and guita
 - [ ] **Lightning comfort**: Mood Colour on a dominant chord with Light comfort on Calm (no lightning), Standard and Full. Never more than three flashes a second.
 - [ ] **On a phone**: the look name, the focus line and the New session buttons do not overlap.
 
+## 13 · The Audience view and the video take (2.11)
+
+Checked with a fake camera, a fake microphone and simulated notes. These need real ones.
+
+- [ ] **The video take, with a real guitar**: connect the interface, arm the Guitar lane, ⏺ Record the stage, play for a while, stop. The video is saved and a Guitar lane appears in the arrangement, lining up with the playhead where you started. Play it back with the video's sound off: does it sit where you played? Undo removes it.
+- [ ] **The whole song, from the top**: the lane starts at the first beat, not the count-in, and lines up with the band.
+- [ ] **No input connected**: only the video is saved, and the menu says how to add the input.
+- [ ] **Audience view, with a real camera**: Monitor ▸ Widgets ▸ Audience ▸ Camera on, then *Me in front*. Is it the side the audience sees (text the right way round), and are you cut out cleanly?
+- [ ] **A phone**: the widget fits the Monitor.
+
+## 14 · Welcome Back, the progress journal and the hexagon field (2.12)
+
+Checked with invented history and simulated chords. These need real use over real days.
+
+- [ ] **A real return**: play for a few days, close the app, open it a week later (and, if you can, after a month). Does the first page feel like yours: the song, the layout, *Working on*, the latest recording? Is the wording kind after a gap?
+- [ ] **Sessions and minutes are honest**: open the app and leave it alone for ten minutes; nothing should count. Play for two minutes; one session should.
+- [ ] **A chord learned**: with a real guitar, play and hold a chord cleanly five times. Does it appear under *Chords you have learned*, and does a chord you only strummed past not?
+- [ ] **A chord change, with headphones**: play along to a song with a G → C change a few times. Does *Progress* match how it felt, after five tries? Then try with speakers and no headphones: note whether the band is counted as you.
+- [ ] **Ideas and finished songs**: a recorded take, a hum and a Capture each add an idea. Mark a song finished, then take it back.
+- [ ] **The journal survives**: close and reopen the browser; Download my journal; Erase my journal (songs and recordings must stay).
+- [ ] **White and dark-green hexagons**: start screen in Light and Dark; Hex Resonance on a real projector or TV in both; is the text readable on the white field?
+- [ ] **Edge tabs**: on a laptop and a large monitor, are the tabs easy to find and never in the way? Do collapsing the sidebars, the arrangement and the panels feel natural with a mouse and with a trackpad? On a tablet there should be none.
+- [ ] **Light or dark, from Appearance**: flip several times; do the screens, the visuals and the start page all follow at once?
+- [ ] **Hexagon colours**: try each swatch and your own three on the start screen and on a projector or TV; is anything hard to read? Do the tabs named for each panel (I/O, Monitor…) read well down the edge, and does a collapsed sidebar list its panels clearly?
+- [ ] **Behind you**: with your own camera and room light, set Camera look to *Me in front (green screen)* and try each of the six backdrops while you play. Do they sit well behind you, do any distract from the playing, and does anything feel too fast or too bright (try Calm)?
+- [ ] **A phone**: Welcome Back fits (the labels stack above their values), and My progress is reachable from More.
+
 ## What to send back
 
 For each failed line: the line, what you saw, the device, browser and version, and — if you can — the browser’s console text (right-click ▸ Inspect ▸ Console). Screenshots help. Nothing in the app collects or sends this for you.

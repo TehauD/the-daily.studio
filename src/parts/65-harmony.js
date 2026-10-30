@@ -7,7 +7,7 @@
    a note the model calls tense can be a colour you want, so the looks call it tension, not wrong.
    Nothing here leaves the page; the session record is held in memory and lasts until the page closes or you press New session.
    ============================================================ */
-const HM_MODES = new Set(['gravity', 'field', 'swarms', 'terrain', 'mood', 'dna', 'stars', 'fluid', 'eco', 'paint']);
+const HM_MODES = new Set(['gravity', 'field', 'swarms', 'mood', 'dna', 'stars', 'fluid', 'paint']);
 const HM = {
   on: 0, stamp: -1, now: 0, dt: .016,
   sym: null, chord: null, prevSym: null, chT: -99, q: { val: 0, ten: 0 }, d: new Float32Array(12), cls: new Array(12).fill('tone'),

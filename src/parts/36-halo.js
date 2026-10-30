@@ -125,7 +125,7 @@ function vzExtra2(mode, g, W, H, X) { if (mode === 'halo') return haloDraw(g, W,
 
 /** change the visual look from anywhere (the full-screen ✦ button, keys) and keep the Visuals buttons in step */
 const VZ_FAVS = ['hex', 'concert', 'halo', 'kaleido'];
-function vzSetMode(k, quiet) { VZ.mode = k; if (!quiet) { CFG.visMode = k; saveCfg(); } VZ.spec = null; VZ.hexes = null; document.querySelectorAll('#pane-vis .seg [data-m]').forEach(b => b.classList.toggle('on', b.dataset.m === k)); const n = (VMODES.find(m => m[0] === k) || [0, k])[1]; if (!quiet) toast(n, 'ok'); }
+function vzSetMode(k, quiet) { VZ.mode = k; if (!quiet) { CFG.visMode = k; saveCfg(); } VZ.spec = null; VZ.hexes = null; document.querySelectorAll('#pane-vis .seg [data-m]').forEach(b => b.classList.toggle('on', b.dataset.m === k)); const n = (VMODES.find(m => m[0] === k) || [0, k])[1]; if (!quiet) toast(n, 'ok'); if (typeof hexToneSync === 'function') hexToneSync(); }
 /** Auto look: while the song plays, the look follows the section: calm in verses, wide in choruses, strange in bridges. Your own look comes back when it stops. */
 const VZ_BY_SECTION = [[/chorus|hook|refrain/i, 'halo'], [/bridge|break|solo/i, 'kaleido'], [/intro|outro|tag|coda/i, 'hex']];
 let vzSecLast = '';

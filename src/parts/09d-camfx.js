@@ -70,7 +70,7 @@ async function cfSegInit() {
     CF.state = 'ready'; CF.errN = 0; toast('Person cut-out ready', 'ok');
   } catch (e) { CF.state = 'failed'; if (e && e.declined) toast('Staying offline: the edges-in look is used instead', 'ok'); else { console.warn('segmenter unavailable', e); toast('The person cut-out model could not load (offline or blocked), so the edges-in look is used instead', 'warn'); } if (UI.camInfo) UI.camInfo.textContent = UI.camInfo.textContent.replace(' · loading cut-out…', ''); }
 }
-function cfWanted() { if ((CFG.camFx || 'over') !== 'person' || !CAM.on) return false; let st = false; try { st = !!(typeof scn === 'function' && scn() && scn().cam); } catch (e) { } return !!VZ.cam || st; }
+function cfWanted() { if ((CFG.camFx || 'over') !== 'person' || !CAM.on) return false; let st = false; try { st = !!(typeof scn === 'function' && scn() && scn().cam); } catch (e) { } return !!VZ.cam || st || !!(typeof AUD !== 'undefined' && AUD.live && monShown('audience')); }
 function cfTick(ts) {
   if (!cfWanted()) return; if (CF.state === 'idle') { cfSegInit(); return; }
   if (CF.state !== 'ready' || CF.busy || ts - CF.t < (CFG.vq >= 1 ? 45 : 90)) return; CF.t = ts; CF.busy = true;

@@ -2,7 +2,7 @@
    Part 13 · LIVE STAGE — show-ready visuals: 8 scenes (six looks, a prompter, you in front), post-FX (trails / kaleidoscope / glow / hue),
    song HUD (chord, section, lyric, beat), fullscreen + pop-out, MIDI out (clock, chord roots, onsets)
    ============================================================ */
-VMODES.push(['bloom', 'Chord Bloom'], ['orbit', 'Harmonic Orrery'], ['joy', 'Ridgeline'], ['pulse', 'Beat Grid'], ['prompter', 'Prompter']);
+VMODES.push(['bloom', 'Chord Bloom'], ['orbit', 'Harmonic Orrery'], ['pulse', 'Beat Grid'], ['prompter', 'Prompter']);
 const SCN0 = (name, mode, hue, o) => Object.assign({ name, mode, hue, drift: 0, trail: .5, kal: 0, glow: .5, sens: 1, cam: false, flash: 0, sect: '', ov: { chord: true, lyric: false, beat: false, tuner: false, info: false } }, o || {});
 /** a scene that runs a starter show (a Concert design: palette, rig, lasers, motion; see part 56) */
 const SHOWSC = (name, id, o) => SCN0(name, 'concert', 38, Object.assign({ trail: 0, glow: .45, show: { design: id, ovr: {} }, ov: { chord: true, lyric: true, beat: false, tuner: false, info: true } }, o || {}));
@@ -15,9 +15,10 @@ const STG = Object.assign({ cur: 0, safe: true, q: 1, out: '', clock: false, roo
 STG.scenes.forEach(s => { if (s.mode === 'tunnel') { s.mode = 'concert'; if (s.name === 'Tunnel') s.name = 'Concert'; s.trail = 0; s.flash = 0; } });
 /* scenes nobody has touched become the starter shows; scenes you made or changed are left exactly as they are (Stage ▸ Starter shows brings the new ones back) */
 if ((STG.v || 0) < STG_V) { if (STG.scenes.map(s => [s.name, s.mode, s.hue].join('|')).join(',') === STG_LEGACY || STG.scenes.map(s => [s.name, s.mode, (s.show && s.show.design) || ''].join('|')).join(',') === STG_V25) STG.scenes = starterScenes(); STG.v = STG_V; }
+STG.scenes.forEach(s => { if (VZ_RETIRED[s.mode]) s.mode = VZ_RETIRED[s.mode]; });   // looks that were taken out become Hex Resonance
 while (STG.scenes.length < 8) STG.scenes.push(SCN0('Scene ' + (STG.scenes.length + 1), 'hex', 175));
 const saveStg = () => { CFG.stage = STG; saveCfg(); };
-const SG = { off: null, small: null, wrap: null, cv: null, flash: 0, lastFlash: 0, idleT: 0, pop: null, wl: null, tick: -1, lastSym: '', lastSec: '', playPrev: false, noteOn: null, ccT: 0, joy: [], lastPos: '', hudDirty: 1 };
+const SG = { off: null, small: null, wrap: null, cv: null, flash: 0, lastFlash: 0, idleT: 0, pop: null, wl: null, tick: -1, lastSym: '', lastSec: '', playPrev: false, noteOn: null, ccT: 0, lastPos: '', hudDirty: 1 };
 const scn = () => STG.scenes[STG.cur];
 const hex2 = n => ('0' + Math.round(n).toString(16)).slice(-2);
 function hsl(hh, s, l) { hh = ((hh % 360) + 360) % 360; s /= 100; l /= 100; const k = n => (n + hh / 30) % 12, a = s * Math.min(l, 1 - l), f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1))); return '#' + hex2(f(0) * 255) + hex2(f(8) * 255) + hex2(f(4) * 255); }
@@ -41,6 +42,7 @@ function stageInfo() {
 /* ---------- extra visual modes (dispatched from drawVis) ---------- */
 function stageExtra(mode, g, W, H, X) {
   if (typeof HM_MODES !== 'undefined' && HM_MODES.has(mode)) return hmDraw(mode, g, W, H, X);
+  if (typeof BK_MODES !== 'undefined' && BK_MODES.has(mode)) return bkDraw(mode, g, W, H, X);
   if (mode === 'concert') return concertDraw(g, W, H, X);
   if (mode === 'neural') return ngStageDraw(g, W, H, X);
   if (mode === 'halo' || mode === 'kaleido') return vzExtra2(mode, g, W, H, X);
@@ -64,14 +66,6 @@ function stageExtra(mode, g, W, H, X) {
     }
     if (pts.length > 1) { g.beginPath(); pts.forEach((q, i) => g[i ? 'lineTo' : 'moveTo'](q[0], q[1])); g.closePath(); g.fillStyle = mixc(C.b, C.a, .5, .16); g.fill(); g.strokeStyle = mixc(C.b, C.a, .5, .8); g.lineWidth = 2; g.stroke(); }
     g.fillStyle = mixc(C.a, C.b, .5, .9); hexPath(g, 0, 0, R * (.02 + pulse * .02)); g.fill(); g.restore(); g.textAlign = 'left';
-  } else if (mode === 'joy') {
-    const N = 96, rows = 30, fmin = 70, fmax = 6000, lr = Math.log(fmax / fmin), row = new Float32Array(N); for (let i = 0; i < N; i++) { const f = fmin * Math.exp(i / (N - 1) * lr); row[i] = lvl(fd[bin(f)]); }
-    SG.joy.unshift(row); if (SG.joy.length > rows) SG.joy.pop(); g.fillStyle = '#050b0c'; g.fillRect(0, 0, W, H);
-    for (let r = SG.joy.length - 1; r >= 0; r--) {
-      const rw = SG.joy[r], y0 = H * .34 + (r / rows) * H * .58, k = 1 - r / rows, amp = H * .2 * (.5 + k * .7); g.beginPath(); g.moveTo(W * .05, y0);
-      for (let i = 0; i < N; i++) g.lineTo(W * .05 + i / (N - 1) * W * .9, y0 - Math.pow(rw[i], 1.6) * amp); g.lineTo(W * .95, y0); g.closePath(); g.fillStyle = 'rgba(5,11,12,.92)'; g.fill();
-      g.lineWidth = 1 + k * 1.6; g.strokeStyle = mixc(C.c, C.a, k, .25 + .75 * k); g.stroke();
-    }
   } else if (mode === 'pulse') {
     const sz = Math.max(26, R / 12), hw = sz * Math.sqrt(3), cols = Math.ceil(W / hw) + 2, rows = Math.ceil(H / (sz * 1.5)) + 2, info = SG.info || {}, beatP = (info.playing ? ((info.slot % (16 / S.ts[1])) / (16 / S.ts[1])) : (t * 1.5) % 1), dn = 1 - beatP;
     for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
@@ -89,14 +83,14 @@ function stageFrame(ts) {
   if (!SG.cv || !E.ready || !(paneVisible('stage') || document.fullscreenElement === SG.wrap || SG.pop)) return;
   const sc0 = scn(), wrap = SG.wrap, d = (window.devicePixelRatio || 1) * STG.q, cw = wrap.clientWidth, chh = wrap.clientHeight; if (!cw || !chh) return;
   const w = Math.min(1920, Math.floor(cw * d)), hh = Math.min(1080 * 1.4, Math.floor(chh * d));
-  if (SG.cv.width !== w || SG.cv.height !== hh) { SG.cv.width = w; SG.cv.height = hh; SG.off.width = w; SG.off.height = hh; SG.small.width = Math.max(2, w >> 2); SG.small.height = Math.max(2, hh >> 2); VZ.spec = null; SG.joy = []; }
+  if (SG.cv.width !== w || SG.cv.height !== hh) { SG.cv.width = w; SG.cv.height = hh; SG.off.width = w; SG.off.height = hh; SG.small.width = Math.max(2, w >> 2); SG.small.height = Math.max(2, hh >> 2); VZ.spec = null;  }
   /* output: a frame-rate cap, a frozen picture and the test patterns are decided before anything is drawn (Show setup ▸ Output, part 59) */
   const OUT = CFG.show.out, g0 = SG.cv.getContext('2d');
   if (OUT.fps > 0 && OUT.fps < 60 && SG.drawT && ts - SG.drawT < 1000 / OUT.fps - 4) return; SG.drawT = ts;
   if (SG.freeze && SG.frz) { g0.drawImage(SG.frz, 0, 0, w, hh); shOutFrame(g0, w, hh); return; }
   if (SG.test) { shTestPattern(g0, w, hh, SG.test); shOutFrame(g0, w, hh); return; }
   const info = SG.info = stageInfo(), sc = pbScene(sc0, info), t = VZ.t, C = sc.mode === 'concert' ? lxHudPal(sc) : stagePal(sc, t), off = SG.off, g = SG.cv.getContext('2d');
-  if (pbSolid()) pbFill(off); else drawVis(off, { mode: sc.mode, C, bgA: sc.mode === 'joy' || sc.mode === 'spectro' ? 1 : clamp(1 - sc.trail * .93, .05, 1), noText: true, cam: sc.cam, gain: (sc.sens - 1) * 20, show: sc.show, stage: true });
+  if (pbSolid()) pbFill(off); else drawVis(off, { mode: sc.mode, C, bgA: sc.mode === 'spectro' ? 1 : clamp(1 - sc.trail * .93, .05, 1), noText: true, cam: sc.cam, gain: (sc.sens - 1) * 20, show: sc.show, stage: true });
   g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1; g.fillStyle = '#000'; g.fillRect(0, 0, w, hh);
   if (sc.kal >= 3) {
     const n = sc.kal, cx = w / 2, cy = hh / 2, R = Math.hypot(cx, cy); for (let i = 0; i < n; i++) {

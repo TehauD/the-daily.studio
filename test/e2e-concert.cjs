@@ -79,7 +79,7 @@ suite('e2e-concert', async t => {
 
   // ---- the picture: not blank, colour follows the chord, the kick lifts it
   const pic = await ev(() => {
-    const d = window.__daily, L = d.LX; d.stopPlay && d.stopPlay(true); d.CFG.lens = 'perform';
+    const d = window.__daily, L = d.LX; d.AN.active = false; d.stopPlay && d.stopPlay(true); d.CFG.lens = 'perform';
     const cv = document.createElement('canvas'); cv.width = 640; cv.height = 360; const g = cv.getContext('2d');
     const stat = () => { const a = g.getImageData(0, 0, 640, 360).data; let r = 0, gg = 0, b = 0, l = 0, l2 = 0, n = 0; for (let i = 0; i < a.length; i += 40) { r += a[i]; gg += a[i + 1]; b += a[i + 2]; const y = .3 * a[i] + .59 * a[i + 1] + .11 * a[i + 2]; l += y; l2 += y * y; n++; } const m = l / n; return { r: r / n, g: gg / n, b: b / n, lum: m, sd: Math.sqrt(Math.max(0, l2 / n - m * m)) }; };
     const run = sym => { for (let i = 0; i < 160; i++) { L.sym = sym; L.symT = performance.now(); d.concertDraw(g, 640, 360, window.__mkX(.05)); } return stat(); };
@@ -134,7 +134,7 @@ suite('e2e-concert', async t => {
   await ev(() => window.__daily.lxSetLens('perform'));
 
   // ---- Monitor views card
-  const mv = await ev(() => { const d = window.__daily, c = document.getElementById('mvCard'); if (!c) return null; const par = c.parentElement; const btns = [...c.querySelectorAll('[data-mv]')]; btns.find(b => b.dataset.mv === 'spectro').click(); const m1 = d.MV.mode, on1 = [...c.querySelectorAll('[data-mv].on')].map(b => b.dataset.mv).join(); btns.find(b => b.dataset.mv === 'chroma').click(); return { last: par.lastElementChild === c, card: c.dataset.card, kinds: btns.map(b => b.dataset.mv).join(), m1, on1, back: d.MV.mode, canvas: !!c.querySelector('canvas') }; });
+  const mv = await ev(() => { const d = window.__daily, c = document.getElementById('mvCard'); if (!c) return null; const par = c.parentElement; const btns = [...c.querySelectorAll('[data-mv]')]; btns.find(b => b.dataset.mv === 'spectro').click(); const m1 = d.MV.mode, on1 = [...c.querySelectorAll('[data-mv].on')].map(b => b.dataset.mv).join(); btns.find(b => b.dataset.mv === 'chroma').click(); return { last: par.lastElementChild === c || par.lastElementChild.id === 'audCard', card: c.dataset.card, kinds: btns.map(b => b.dataset.mv).join(), m1, on1, back: d.MV.mode, canvas: !!c.querySelector('canvas') }; });
   ok(mv && mv.last && mv.card === 'views' && mv.kinds === 'chroma,spectro,scope' && mv.canvas, 'the Monitor tab has a Views card, below the tuner, levels, live and spectrum (' + (mv && mv.kinds) + ')');
   ok(mv && mv.m1 === 'spectro' && mv.on1 === 'spectro' && mv.back === 'chroma', 'its three buttons switch the readout between pitch wheel, spectrogram and scope');
 

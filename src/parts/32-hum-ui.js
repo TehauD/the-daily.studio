@@ -111,6 +111,7 @@ async function humApply(play) {
   if (!HUM.an) return; if (T.playing) stopPlay(true);
   const r = humSong(HUM.an, HUM.o); HUM.r = r; HUM.o.style = r.style; r.song.title = HUM.o.title || 'Hum idea';
   xpQuiet(() => projUse(r.song)); if (ZOOM.cur === 'canvas') zoomSet('song', true); humAddTake(); try { if (PRJ.cur) await projSave(); } catch (e) { }
+  if (HUM.pcm && HUM.jn !== HUM.pcm && typeof jnIdea === 'function') { HUM.jn = HUM.pcm; jnIdea(r.song.title || 'Hum idea', 'hum'); }
   humBar('res'); if (play) await humPlay();
 }
 /** Put the recording itself in the arrangement: a Vocal take whose first note lands on the first melody note of Verse 1,

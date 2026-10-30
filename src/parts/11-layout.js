@@ -7,6 +7,7 @@ const LAY = Object.assign({ flip: true, left: true, right: true, lw: 250, rw: 29
 LAY.rc = Object.assign({ order: [], col: {}, hide: {} }, LAY.rc || {});
 /* 2.6: the Monitor is a short list of widgets you choose, not one long scroll. Until you chose differently, only the Tuner and the Levels show; the readouts that used to follow them are one click away. */
 if ((LAY.rc.v | 0) < 2) { ['live', 'spectrum', 'views'].forEach(n => { if (LAY.rc.hide[n] !== false) LAY.rc.hide[n] = true; }); LAY.rc.v = 2; }
+if ((LAY.rc.v | 0) < 3) { if (LAY.rc.hide.audience !== false) LAY.rc.hide.audience = true; LAY.rc.v = 3; }   /* the Audience view is added, not forced on */
 const FLOATS = new Map();
 const saveLay = () => { CFG.layout = LAY; saveCfg(); };
 const TLH_DEFAULT = 'minmax(200px,40%)';
@@ -17,7 +18,7 @@ function applyLayout() {
   c.classList.toggle('flip', !!LAY.flip);
   w.classList.remove('collapsed-l', 'collapsed-r');
   w.style.setProperty('--lw', (LAY.left ? sideW('left') : 0) + 'px'); w.style.setProperty('--rw', (LAY.right ? sideW('right') : 0) + 'px');
-  c.style.setProperty('--tlh', LAY.tlh || TLH_DEFAULT);
+  c.style.setProperty('--tlh', LAY.tlh || TLH_DEFAULT); if (typeof edgeSync === 'function') edgeSync();
   { const dsk = !document.body.dataset.form || document.body.dataset.form === 'desktop'; $('#left').style.visibility = !dsk || LAY.left ? '' : 'hidden'; $('#right').style.visibility = !dsk || LAY.right ? '' : 'hidden'; }
   setTimeout(() => { if (typeof tlSize === 'function') tlSize(); window.dispatchEvent(new Event('resize')); }, 40);
 }
@@ -85,8 +86,8 @@ let _zf = 41; function floatFront(id) { const w = FLOATS.get(id); if (w) w.style
 function unfloat(id) { const w = FLOATS.get(id); if (!w) return; w._ro.disconnect(); $('#dock').append(PANES[id]); w.remove(); FLOATS.delete(id); LAY.fl = [...FLOATS.keys()]; saveLay(); rebuildTabs(); dockGo(id); setTimeout(() => window.dispatchEvent(new Event('resize')), 50); }
 
 /* ---------- Monitor widgets: a chooser on top, the cards you chose below ---------- */
-const RCARDS = ['tuner', 'levels', 'live', 'spectrum', 'views'];
-const RC_INFO = { tuner: ['Tuner', 'Pitch, cents and the strings of your tuning'], levels: ['Levels', 'Input, rig and master meters'], live: ['Analysis', 'Chord, key, brightness, vibrato and crest'], spectrum: ['Spectrum', 'The rig output as a spectrum'], views: ['Views', 'Pitch wheel, spectrogram and scope'] };
+const RCARDS = ['tuner', 'levels', 'live', 'spectrum', 'views', 'audience'];
+const RC_INFO = { tuner: ['Tuner', 'Pitch, cents and the strings of your tuning'], levels: ['Levels', 'Input, rig and master meters'], live: ['Analysis', 'Chord, key, brightness, vibrato and crest'], spectrum: ['Spectrum', 'The rig output as a spectrum'], views: ['Views', 'Pitch wheel, spectrogram and scope'], audience: ['Audience', 'You and the show, as the audience sees them'] };
 /** is this Monitor widget showing? The frame loop skips the drawing of the ones that are not */
 function monShown(n) { return !LAY.rc.hide[n]; }
 function monChips() {
@@ -122,7 +123,7 @@ const LAYOUTS = [
   ['Studio', 'Everything in reach: panels above the arrangement, a sidebar each side.', { flip: true, left: true, right: true, tlh: null, dock: 'tab', cur: { left: 'io', right: 'monitor' } }],
   ['Write', 'Tab in the middle, chords and lyrics beside it, theory at hand. The arrangement stays short.', { flip: true, left: true, right: true, tlh: 'minmax(130px,24%)', dock: 'tab', order: ['tab', 'band', 'rig'], hidden: ['song', 'fret', 'stage', 'neural', 'stems', 'tx', 'cam', 'lab'], cur: { left: 'theory', right: 'refine' } }],
   ['Arrange', 'The arrangement on top and tall, the band and song panels below it.', { flip: false, left: false, right: true, tlh: 'minmax(260px,58%)', dock: 'band', order: ['band', 'song', 'tab', 'stems', 'rig'], hidden: ['stage', 'neural', 'tx', 'cam', 'lab', 'fret'], cur: { right: 'refine' } }],
-  ['Record', 'Inputs and levels either side, a tall arrangement for the guitar and voice lanes.', { flip: true, left: true, right: true, tlh: 'minmax(260px,56%)', dock: 'rig', order: ['rig', 'tab', 'song', 'band'], hidden: ['stage', 'neural', 'tx', 'cam', 'lab', 'fret'], cur: { left: 'io', right: 'monitor' }, mon: ['tuner', 'levels'] }],
+  ['Record', 'Inputs and levels either side, a tall arrangement for the guitar and voice lanes.', { flip: true, left: true, right: true, tlh: 'minmax(260px,56%)', dock: 'rig', order: ['rig', 'tab', 'song', 'band'], hidden: ['stage', 'neural', 'tx', 'cam', 'lab', 'fret'], cur: { left: 'io', right: 'monitor' }, mon: ['tuner', 'levels', 'audience'] }],
   ['Tone', 'The pedalboard fills the middle, with tones to pick from and the tuner and spectrum alongside.', { flip: true, left: true, right: true, tlh: '96px', dock: 'rig', board: 'board', order: ['rig', 'fret', 'band', 'song', 'tab'], hidden: ['stage', 'neural', 'stems', 'tx', 'cam', 'lab'], cur: { left: 'tones', right: 'monitor' }, mon: ['tuner', 'spectrum', 'live'] }],
   ['Practice', 'Tab and fretboard side by side, with the loop and transport in reach.', { flip: true, left: false, right: true, tlh: 'minmax(170px,34%)', dock: 'tab', order: ['tab', 'song', 'band', 'rig'], hidden: ['stage', 'neural', 'stems', 'tx', 'cam', 'lab'], side: { fret: 'right' }, so: { left: [], right: ['fret', 'refine', 'monitor'] }, cur: { right: 'fret' } }],
   ['Show', 'The stage picture with the show setup beside it. Sidebars away, arrangement reduced to the transport.', { flip: true, left: false, right: false, tlh: '84px', dock: 'stage', order: ['stage', 'vis', 'song', 'band'], hidden: ['rig', 'tab', 'fret', 'neural', 'stems', 'tx', 'cam', 'lab'] }],
@@ -152,20 +153,48 @@ function layThumb(s) {
 }
 function layCard(n, d, s, on, fn) { return h('button', { class: 'lay-card' + (on ? ' on' : ''), 'aria-pressed': String(!!on), title: d, onclick: fn }, layThumb(s), h('span', { class: 'lay-t' }, h('b', {}, n), h('span', {}, d))); }
 function layoutMenu(btn) {
-  const saved = store.get('layouts', []), box = h('div', { class: 'lay-menu' });
-  box.append(h('h5', {}, 'Layouts'), h('div', { class: 'lay-grid' }, LAYOUTS.map(([n, d, s]) => layCard(n, d, s, LAY.name === n, () => { applyPreset(s, n); closePop(); }))));
-  if (saved.length) box.append(h('h5', {}, 'Your layouts'), h('div', { class: 'lay-grid' }, saved.map((l, i) => h('div', { class: 'lay-own' }, layCard('★ ' + l.n, 'Your own layout', l.s, LAY.name === '★ ' + l.n, () => { applyPreset(l.s, '★ ' + l.n); closePop(); }), h('button', { class: 'btn sm bad lay-del', title: 'Delete this layout', 'aria-label': 'Delete ' + l.n, onclick: () => { saved.splice(i, 1); store.set('layouts', saved); closePop(); } }, '✕')))));
-  const nm = h('input', { class: 'in', placeholder: 'Name this layout…', style: { flex: 1, fontFamily: 'var(--sans)' } });
-  box.append(h('h5', {}, 'Keep this one'), h('div', { class: 'lrow' }, nm, h('button', { class: 'btn sm primary', onclick: () => { const n = nm.value.trim(); if (!n) return toast('Name your layout', 'warn'); const s = { flip: LAY.flip, left: LAY.left, right: LAY.right, lw: LAY.lw, rw: LAY.rw, tlh: LAY.tlh, hidden: LAY.hidden.slice(), order: DOCK.map(d => d[0]), rc: JSON.parse(JSON.stringify(LAY.rc)), dock: DOCK.cur, side: JSON.parse(JSON.stringify(LAY.side)), so: JSON.parse(JSON.stringify(LAY.so)), cur: { left: SD.cur.left, right: SD.cur.right } }; const a = saved.filter(x => x.n !== n); a.push({ n, s }); store.set('layouts', a); LAY.name = '★ ' + n; saveLay(); toast('Layout “' + n + '” saved', 'ok'); closePop(); } }, 'Save current')));
+  const box = h('div', { class: 'lay-menu view-menu' });
   box.append(h('h5', {}, 'Workspace'));
   const chk = (label, get, set) => h('label', { class: 'lrow' }, h('input', { type: 'checkbox', checked: get(), onchange: e => set(e.target.checked) }), label);
   box.append(chk('Panels above the arrangement', () => LAY.flip, v => { LAY.flip = v; saveLay(); applyLayout(); }), chk('Left sidebar  [', () => LAY.left, v => { LAY.left = v; saveLay(); applyLayout(); }), chk('Right sidebar  ]', () => LAY.right, v => { LAY.right = v; saveLay(); applyLayout(); }));
+  box.append(h('div', { class: 'tiny muted', style: { margin: '2px 0 6px', lineHeight: 1.45 } }, 'Every panel area has a labelled tab on its edge: click it to collapse or open it. Light or dark is in Appearance (⚙); how many tools show is on the Tools button.'));
   box.append(h('button', { class: 'pbtn', onclick: () => placeMenu(btn) }, h('b', {}, '⇆ Where panels live…'), h('span', {}, 'Move any panel to the left sidebar, the right sidebar or the centre · swap the sidebars')));
   const det = h('details', { class: 'lay-panels' }, h('summary', {}, 'Panels: show or hide, or float as a window'));
   DOCK.forEach(([id, name]) => det.append(h('div', { class: 'lrow' }, h('input', { type: 'checkbox', checked: !LAY.hidden.includes(id), 'aria-label': 'Show ' + name, onchange: e => setTabHidden(id, !e.target.checked) }), h('span', { class: 'grow' }, name), h('button', { class: 'btn sm', onclick: () => { FLOATS.has(id) ? unfloat(id) : floatPane(id); closePop(); } }, FLOATS.has(id) ? '⤓ dock' : '⧉ float'))));
   box.append(det, h('div', { class: 'tiny muted', style: { marginTop: '6px' } }, 'The Monitor’s widgets (Tuner, Levels, Analysis, Spectrum, Views) are chosen on the Monitor itself.'));
   box.append(h('div', { class: 'row', style: { marginTop: '10px' } }, h('button', { class: 'btn sm', onclick: () => { [...FLOATS.keys()].forEach(unfloat); LAY.rc = { order: [], col: {}, hide: {}, v: 2 }; RCARDS.forEach(n => { LAY.rc.hide[n] = !MON_DEFAULT.includes(n); }); LAY.floats = {}; sideReset(); applyPreset(LAYOUTS[0][2], LAYOUTS[0][0]); closePop(); } }, 'Reset layout')));
-  popover(btn, box, { right: true, style: { maxWidth: 'min(640px,96vw)', width: '640px' } });
+  popover(btn, box, { right: true, style: { maxWidth: 'min(420px,96vw)', width: '380px' } });
+}
+
+/* ---------- labelled tabs on the edge of every panel area (like the journal's): collapse it, open it, always within reach ----------
+   Each sidebar has a vertical tab named for the panel that is open (click it to collapse the sidebar). While the sidebar is collapsed
+   the same edge lists all of its panels, so one click opens exactly the one you want. The divider carries "Arrangement" and "Panels". */
+const EDGE = { tabs: {}, rails: {} };
+function edgeTab(key, onclick) { const b = h('button', { type: 'button', class: 'edge-tab et-' + key, 'data-edge': key, onclick: e => { e.stopPropagation(); onclick(); } }); b.addEventListener('pointerdown', e => e.stopPropagation()); EDGE.tabs[key] = b; return b; }
+function arrangeToggle() { const slim = '84px'; if (LAY.tlh === slim) { LAY.tlh = LAY.tlhPrev === undefined ? null : LAY.tlhPrev; delete LAY.tlhPrev; } else { LAY.tlhPrev = LAY.tlh == null ? null : LAY.tlh; LAY.tlh = slim; } saveLay(); applyLayout(); }
+function panelsToggle() { const tot = ($('#center') || {}).clientHeight || 600; if (LAY.tlhFull) { LAY.tlh = LAY.tlhFull.v; delete LAY.tlhFull; } else { LAY.tlhFull = { v: LAY.tlh == null ? null : LAY.tlh }; LAY.tlh = Math.max(200, tot - 44) + 'px'; } saveLay(); applyLayout(); }
+function edgeBuild() {
+  const w = $('#work'), tl = $('#timeline'); if (!w || !tl || EDGE.built) return; EDGE.built = true;
+  ['left', 'right'].forEach(side => { const r = h('div', { class: 'edge-rail er-' + side, 'data-rail': side }, edgeTab(side, () => toggleSide(side))); EDGE.rails[side] = r; w.append(r); });
+  const sh = $('.split-h', tl); if (sh) { sh.append(edgeTab('arr', arrangeToggle), edgeTab('pan', panelsToggle)); }
+  edgeSync();
+}
+/** name each tab for what it holds and say what a click will do */
+function edgeSync() {
+  const lab = (b, arrow, name) => { b.textContent = ''; b.append(h('span', { class: 'et-ar', 'aria-hidden': 'true' }, arrow), h('span', { class: 'et-nm' }, name)); };
+  const set = (k, arrow, name, tip, on) => { const b = EDGE.tabs[k]; if (!b) return; lab(b, arrow, name); b.title = tip; b.setAttribute('aria-label', tip); b.setAttribute('aria-expanded', String(!!on)); b.classList.toggle('on', !!on); };
+  ['left', 'right'].forEach(side => {
+    const rail = EDGE.rails[side]; if (!rail) return;
+    const open = !!LAY[side], ids = (typeof SD !== 'undefined' && SD.ready && typeof sideIds === 'function') ? sideIds(side) : [], cur = (typeof SD !== 'undefined' && SD.cur[side]) || (side === 'left' ? 'io' : 'monitor');
+    const nm = typeof panelName === 'function' ? panelName(cur) : cur, key = side === 'left' ? '[' : ']';
+    set(side, open ? (side === 'left' ? '◂' : '▸') : (side === 'left' ? '▸' : '◂'), nm, (open ? 'Collapse the ' + side + ' sidebar (' + nm + ') ' : 'Open the ' + side + ' sidebar (' + nm + ') ') + '(' + key + ')', open);
+    [...rail.querySelectorAll('.et-more')].forEach(x => x.remove());
+    if (!open) ids.filter(id => id !== cur).forEach(id => { const n = panelName(id), b = h('button', { type: 'button', class: 'edge-tab et-more', 'data-panel': id, title: 'Open ' + n, 'aria-label': 'Open ' + n, onclick: e => { e.stopPropagation(); sideShow(id); } }, h('span', { class: 'et-nm' }, n)); b.addEventListener('pointerdown', e => e.stopPropagation()); rail.append(b); });
+  });
+  const slim = LAY.tlh === '84px', flip = !!LAY.flip;
+  set('arr', slim ? (flip ? '▴' : '▾') : (flip ? '▾' : '▴'), 'Arrangement', slim ? 'Open the arrangement' : 'Collapse the arrangement to the transport', !slim);
+  const full = !!LAY.tlhFull; set('pan', full ? (flip ? '▾' : '▴') : (flip ? '▴' : '▾'), 'Panels', full ? 'Open the panels again' : 'Collapse the panels to their tab strip', !full);
+  const w = $('#work'); if (w) { w.dataset.l = LAY.left ? '1' : '0'; w.dataset.r = LAY.right ? '1' : '0'; }
 }
 
 /* ---------- band strip: always-visible instrument switches ---------- */
@@ -202,8 +231,8 @@ function buildBandStrip() {
 /* ---------- build ---------- */
 function buildLayout() {
   const dock = $('#dock'), tabs = $('.tabs', dock), bar = h('div', { class: 'dockbar' }); dock.insertBefore(bar, tabs); bar.append(tabs, dockMore(), buildBandStrip());
-  applyTabOrder(); rebuildTabs(); buildSplitters(); setupCards(); applyLayout();
-  const btn = h('button', { class: 'btn icon', title: 'Layout — presets, panel order, floating windows', onclick: () => layoutMenu(btn) }, '▦'); const tr = $('#topR'); tr.insertBefore(btn, tr.firstChild);
+  applyTabOrder(); rebuildTabs(); buildSplitters(); edgeBuild(); setupCards(); applyLayout();
+  const btn = h('button', { class: 'btn icon', title: 'Layout and view — light or dark, experience, panels', onclick: () => layoutMenu(btn) }, '▦'); const tr = $('#topR'); tr.insertBefore(btn, tr.firstChild);
   bus.on('song', syncBandStrip); bus.on('transport', syncBandStrip); bus.on('dock', () => { $$('#dock .tab').forEach(t => t.classList.toggle('on', t.dataset.id === DOCK.cur)); }); syncBandStrip();
   LAY.fl.slice().forEach(id => { try { floatPane(id, LAY.floats[id]); } catch (e) { console.warn(e); } });
 }

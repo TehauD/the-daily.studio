@@ -5,7 +5,7 @@
 <h1 align="center">the-daily.studio</h1>
 <p align="center"><b>Record it. Split it. Write it down.</b><br>
 A guitar and voice studio in one web page: record your guitar and mic · split any song into stems to play along with · get the chords, tab and lyrics · pedals, presets and live visuals</p>
-<p align="center"><sub>v2.10.0 · free, open source (MIT) · no account, no upload, no tracking</sub></p>
+<p align="center"><sub>v2.12.0 · free, open source (MIT) · no account, no upload, no tracking</sub></p>
 
 <p align="center">
   <a href="https://the-daily.studio/"><b>▶ Open the live app</b></a> ·
@@ -34,7 +34,7 @@ A guitar and voice studio in one web page: record your guitar and mic · split a
 
 ## Contents
 
-[What it is](#what-it-is) · [Highlights](#highlights) · [What's new in 2.10](#whats-new-in-210) · [2.4](#whats-new-in-24) · [2.3](#whats-new-in-23) · [2.2](#whats-new-in-22) · [Quick start](#quick-start) · [Your first five minutes](#your-first-five-minutes) · [Tour of the panels](#tour-of-the-panels) · [Tunings](#tunings) · [Phone and tablet](#phone-and-tablet) · [Keyboard shortcuts](#keyboard-shortcuts) · [Audio setup](#audio-setup) · [Privacy](#privacy-and-data) · [Accuracy and honest limits](#accuracy-and-honest-limits) · [Browser support](#browser-support) · [Project layout](#project-layout) · [Develop](#develop) · [Host it](#host-it-on-your-github) · [Roadmap](#roadmap-ideas) · [License](#license-and-credits)
+[What it is](#what-it-is) · [Highlights](#highlights) · [What's new in 2.12](#whats-new-in-212) · [2.11](#whats-new-in-211) · [2.10](#whats-new-in-210) · [2.4](#whats-new-in-24) · [2.3](#whats-new-in-23) · [2.2](#whats-new-in-22) · [Quick start](#quick-start) · [Your first five minutes](#your-first-five-minutes) · [Tour of the panels](#tour-of-the-panels) · [Tunings](#tunings) · [Phone and tablet](#phone-and-tablet) · [Keyboard shortcuts](#keyboard-shortcuts) · [Audio setup](#audio-setup) · [Privacy](#privacy-and-data) · [Accuracy and honest limits](#accuracy-and-honest-limits) · [Browser support](#browser-support) · [Project layout](#project-layout) · [Develop](#develop) · [Host it](#host-it-on-your-github) · [Roadmap](#roadmap-ideas) · [License](#license-and-credits)
 
 ## What it is
 
@@ -90,9 +90,41 @@ It began as a guitar lab and grew into a place to turn an idea into a song. **Hu
 | **Loop & layer (2.8)** | Record a track of chords, hear it loop, and play a lead on top in a new track on each pass. Keep looping, add a layer, undo a layer. Layers are ordinary tracks. |
 | **Phone, tablet, desktop** | One responsive app. On a phone: bottom transport, five-section navigation, an on-screen tab keypad, pinch-to-zoom Neural map and a wake lock while you play. Installable as an app (PWA). See [Phone and tablet](#phone-and-tablet). |
 
+## What's new in 2.12
+
+**Welcome Back, and the white or dark-green hexagons.** Come back after a week or after ninety days and the first page tells you where you are: when you last practiced, your streak (gently, after a long gap), what you are working on, your latest recording, how a chord change you have been practicing is going, and the year in one line: *Played 87 sessions · Learned 14 chords · Recorded 23 ideas · Completed 4 songs*. **Pick up where I left off** opens the song you were on. **My progress** (Songs menu) has the twelve-week strip and the details. It is a small journal of counts and dates kept only on this device, never sound.
+
+<p align="center"><img src="docs/screenshots/74-welcome-back-light.png" width="720" alt="Welcome Back after three months away, on the white hexagon start screen"></p>
+
+The hexagon field is back in both of its looks, **white** and **dark green**, on the start screen and in Hex Resonance, and now in **any colours you like**: Visuals ▸ the Hexagons swatches (Ocean, Ember, Violet, Mono, Blush, Daylight, or pick your own three).
+
+<p align="center"><img src="docs/screenshots/84-hex-colours.png" width="720" alt="Hex Resonance in colours picked by the user"></p>
+
+**Behind you.** Six backdrops made to sit behind the camera cut-out: **Light Ribbons**, **Aurora**, **Warp Stars**, **Pulse Rings**, **Nebula** and **Skyline**. Set Camera look to *Me in front (green screen)* and you stand inside the picture. The colour follows the chord, the movement follows the sound, and none of it flashes.
+
+<p align="center"><img src="docs/screenshots/78-behind-ribbons.png" width="720" alt="Light Ribbons, a Behind you look"></p>
+
+<p align="center"><img src="docs/screenshots/75-my-progress.png" width="720" alt="My progress: four counts, a twelve-week strip, chord changes and the chords learned"></p>
+
+Checked with invented history and simulated chords, not months of real use. Chord detection is a guide; see the CHANGELOG for the limits.
+
+**Simpler to move around.** The twelve preset layouts are gone, and the ▦ menu is only about where panels go (light / dark is in Appearance; Experience is on the Tools button). Every panel area has a **labelled tab on its own edge**, like the journal's: each sidebar's tab is named for the panel that is open (click it to collapse), a collapsed sidebar lists its panels so one click opens the one you want, and the divider carries **Arrangement** and **Panels** tabs. **Video 2086, String Field, Ridgeline, Chord Landscape and Ecosystem were taken out**; a saved choice of one opens as Hex Resonance.
+
+<p align="center"><img src="docs/screenshots/76-view-menu.png" width="720" alt="The ▦ menu: workspace only, with labelled tabs on the edges"></p>
+
+## What's new in 2.11
+
+**An Audience view, and your playing from the video in the arrangement.** (Video 2086 was tried in 2.11 and taken out in 2.12.)
+
+A new **Audience view** on the Monitor shows you in front of the show as the room sees it (not mirrored), with a crowd lit by the screen. And when you record the stage as a video, **what you play also becomes a lane in the arrangement**, starting where the video started.
+
+<p align="center"><img src="docs/screenshots/72-audience-view.png" width="720" alt="The Audience view widget on the Monitor, with the camera on"></p>
+
+Checked with a fake camera, a fake microphone and simulated notes, not real hardware; see the CHANGELOG for the limits.
+
 ## What's new in 2.10
 
-**The hexagon is the default again, and ten ways to see harmony.** Hex Resonance opens first, in the same glow as the start screen, with **Concert** next to it. Then ten looks that turn the chord, your voice and your playing into pictures: **Harmonic Gravity**, **Improv Field**, **Voice & Guitar** swarms, **Chord Landscape**, **Mood Colour**, **Chord DNA**, a **Constellation** of sung notes, **Rhythm Flow**, an **Ecosystem** and a **Session Painting** you can save.
+**The hexagon is the default again, and ten ways to see harmony (eight since 2.12: Chord Landscape and Ecosystem were taken out).** Hex Resonance opens first, in the same glow as the start screen, with **Concert** next to it. Then ten looks that turn the chord, your voice and your playing into pictures: **Harmonic Gravity**, **Improv Field**, **Voice & Guitar** swarms, **Chord Landscape**, **Mood Colour**, **Chord DNA**, a **Constellation** of sung notes, **Rhythm Flow**, an **Ecosystem** and a **Session Painting** you can save.
 
 <p align="center"><img src="docs/screenshots/70-harmony-looks.png" width="720" alt="The ten harmony looks, drawn from simulated notes over Gmaj7"></p>
 
@@ -120,7 +152,7 @@ The first page now asks what you want to **do** (hum a song, record, learn a son
 
 ## What was new in 2.6
 
-A **Show setup** console in the Stage tab, six looks that are built differently, twelve layouts that are each a different workspace, optional Monitor widgets, and pages a search engine can read. Details are in the [user guide](docs/USER_GUIDE.md#show-setup-26) and the [changelog](CHANGELOG.md). The lasers and lights are drawn on the screen; nothing here drives lighting or laser hardware, and the flash limit is an engineering safeguard, not a medical guarantee.
+A **Show setup** console in the Stage tab, six looks that are built differently, a collapse-and-open tab on every panel, optional Monitor widgets, and pages a search engine can read. Details are in the [user guide](docs/USER_GUIDE.md#show-setup-26) and the [changelog](CHANGELOG.md). The lasers and lights are drawn on the screen; nothing here drives lighting or laser hardware, and the flash limit is an engineering safeguard, not a medical guarantee.
 
 <table>
   <tr>
@@ -138,7 +170,7 @@ A **Show setup** console in the Stage tab, six looks that are built differently,
 <p align="center"><img src="docs/screenshots/52-show-setup.png" alt="The Show setup console: looks, rig, colour, cues, response, pictures, output, scene and MIDI" width="860"></p>
 <p align="center"><img src="docs/screenshots/53-show-cues.png" alt="The cue sheet: level, lights, pattern and lasers for each kind of section, with a silent band to rehearse it" width="860"></p>
 <p align="center"><img src="docs/screenshots/54-show-output.png" alt="Output: master level, blackout, freeze, mirror, flip, test patterns, frame rate, light comfort and the flash meter" width="860"></p>
-<p align="center"><img src="docs/screenshots/55-layouts.png" alt="The layout picker: twelve layouts, each with a wireframe of its workspace" width="860"></p>
+<p align="center"><img src="docs/screenshots/76-view-menu.png" alt="The ▦ menu: workspace only, with labelled tabs on the edges" width="860"></p>
 
 ## What's new in 2.4
 

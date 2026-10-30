@@ -8,7 +8,7 @@ const RESET_ITEMS = [
   ['layout', 'Layout & arrangement lanes', 'Panel places, sidebar widths, lane order/colours/heights, view (Canvas / Song / Studio).'],
   ['settings', 'Settings & calibration', 'Appearance, audio and MIDI settings, input choices, camera calibration, tour progress.'],
   ['presets', 'My presets & saved layouts', 'Rig presets and layouts you saved.'],
-  ['notes', 'Notebook & version history', 'Your lab notebook and the automatic song snapshots.'],
+  ['notes', 'Notebook, history & progress journal', 'Your lab notebook, the automatic song snapshots and your progress journal (days played, chords learned).'],
   ['songs', 'All songs & recordings', 'Every song in My songs, its takes and backing tracks. Back them up first if you want to keep any.'],
   ['cache', 'Offline copy of the app', 'The saved copy that lets the app open offline; it downloads again next visit.']
 ];
@@ -28,7 +28,7 @@ async function resetRun(sel) {
       if (sel.has('settings')) { const keep = {}; if (!sel.has('layout')) { if (c.layout) keep.layout = c.layout; if (c.lanes) keep.lanes = c.lanes; if (c.zoom) keep.zoom = c.zoom; } ls.setItem('fw.cfg', JSON.stringify(keep)); ls.removeItem('fw.cal'); ls.removeItem('fw.tour'); ls.removeItem('fw.toured'); }
       else if (sel.has('layout')) { delete c.layout; delete c.lanes; delete c.zoom; ls.setItem('fw.cfg', JSON.stringify(c)); }
       if (sel.has('presets')) ['presets', 'layouts'].forEach(k => ls.removeItem('fw.' + k));
-      if (sel.has('notes')) ['notebook', 'vhist'].forEach(k => ls.removeItem('fw.' + k));
+      if (sel.has('notes')) ['notebook', 'vhist', 'jn'].forEach(k => ls.removeItem('fw.' + k));
       if (sel.has('songs')) ['song', 'songAt', 'cur', 'started'].forEach(k => ls.removeItem('fw.' + k));
     }
   } catch (e) { console.warn('reset: storage', e); }

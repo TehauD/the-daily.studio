@@ -146,7 +146,7 @@ function wav(L, sr) { const n = L.length, b = Buffer.alloc(44 + n * 2); b.write(
     await ap.addInitScript(() => { window.__gum = 0; const md = navigator.mediaDevices, g = md.getUserMedia.bind(md); md.getUserMedia = c => { if (c && c.audio) window.__gum++; return g(c).then(st => { (window.__st = window.__st || []).push(st); return st; }); }; });
     await ap.goto(BASE); await wait(3500);
     ok(await ap.evaluate(() => window.__gum) === 0 && !!(await ap.$('#boot')), 'nothing asks for the microphone on load; the start overlay waits for you');
-    ok(/Begin in the studio/.test(await ap.$eval('#bootNoMic', e => e.textContent)) && /Begin on stage/.test(await ap.$eval('#bootStage', e => e.textContent)), 'the first choice is a route: the studio (no camera) or the stage (camera and visuals)');
+    ok(/Begin in the studio|Pick up where I left off/.test(await ap.$eval('#bootNoMic', e => e.textContent)) && /Begin on stage/.test(await ap.$eval('#bootStage', e => e.textContent)), 'the first choice is a route: the studio (no camera) or the stage (camera and visuals)');
     await ap.evaluate(() => document.getElementById('bootNoMic').click()); await wait(2000);
     ok(await ap.evaluate(() => window.__gum) === 0 && /No input/.test(await ap.$eval('.aud .lbl', e => e.textContent)), 'starting leaves the microphone off and the header says so');
     await ap.click('.aud'); await wait(400); ok(await ap.$eval('#audio', d => d.open), 'the header Audio button opens the audio panel');

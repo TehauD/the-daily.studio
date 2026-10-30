@@ -19,6 +19,7 @@ function srecMenu(anchor) {
   const box = h('div', { style: { minWidth: '250px', display: 'grid', gap: '6px' } }, h('h5', {}, 'Record the stage'),
     h('button', { class: 'btn', id: 'srecNow', onclick: () => { closePop(); srecStart(false); } }, '⏺ Record now'),
     h('button', { class: 'btn', id: 'srecWhole', onclick: () => { closePop(); srecStart(true); } }, '⏺ The whole song, from the top'),
+    E.hasInput ? h('label', { class: 'row', style: { gap: '6px', alignItems: 'flex-start' }, title: 'The armed guitar and voice inputs are recorded as a lane in the arrangement, starting where the video starts' }, h('input', { type: 'checkbox', id: 'srecTake', checked: CFG.srecTake !== false, onchange: e => { CFG.srecTake = e.target.checked; saveCfg(); } }), h('span', { class: 'tiny' }, 'Also put what I play into the arrangement (a new lane, starting where the video starts)')) : h('div', { class: 'tiny muted' }, 'Connect your guitar or microphone (Inputs) and your playing can land in the arrangement as well.'),
     h('div', { class: 'tiny muted' }, 'Saved on this device as a video with sound. The camera is only in it if you already turned it on. Keep this tab in front while recording.'));
   popover(anchor, box);
 }
@@ -46,15 +47,18 @@ async function srecStart(whole, o) {
   SREC.was = { loop: T.loop, metro: T.metro };
   if (whole) { if (T.playing) stopPlay(true); T.loop = false; T.metro = false; T.cursor = 0; }
   SREC.mr.start(500); SREC.on = true; SREC.t0 = performance.now(); SREC.tick = setInterval(srecSync, 500); srecSync(); bus.emit('srec', true);
+  if (!whole && typeof srecTakeBegin === 'function') srecTakeBegin(false);     /* your playing becomes a lane in the arrangement (part 67) */
   if (!audio) toast(whole ? 'Recording the whole song…' : 'Recording the stage… press ■ to stop and save.', 'ok');
   if (whole) {
     try { await play(); } catch (e) { }
+    if (typeof srecTakeBegin === 'function') srecTakeBegin(true);
     const total = songSlots() * slotDur() + 1.8;
     SREC.watch = setInterval(() => { const el = (performance.now() - SREC.t0) / 1000; if (el >= total || (!T.playing && el > 2.5)) srecStop(true); }, 250);
   }
 }
 function srecStop(save) {
   if (!SREC.on) return; SREC.save = save !== false; SREC.on = false;
+  if (typeof srecTakeEnd === 'function') srecTakeEnd(SREC.save);
   clearInterval(SREC.tick); clearInterval(SREC.watch);
   try { if (SREC.mr && SREC.mr.state !== 'inactive') SREC.mr.stop(); else srecDone(); } catch (e) { srecDone(); }
 }

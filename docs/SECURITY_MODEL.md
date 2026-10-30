@@ -1,6 +1,6 @@
 # Security and privacy model
 
-Version 2.10 (v2.10.0). The app is a static page that runs entirely in the visitor's browser. This document records what it can access, what it stores, what it contacts, and the controls that keep it that way.
+Version 2.12 (v2.12.0). The app is a static page that runs entirely in the visitor's browser. This document records what it can access, what it stores, what it contacts, and the controls that keep it that way.
 
 ## Trust boundaries
 
@@ -26,6 +26,7 @@ Version 2.10 (v2.10.0). The app is a static page that runs entirely in the visit
 | Data | Stored in | Leaves the device? | Cleared by |
 | --- | --- | --- | --- |
 | Settings, appearance, calibration, tour state | `localStorage` keys `fw.cfg`, `fw.cal`, `fw.tour`, `fw.toured` | No | Reset (Help ▸ Reset) |
+| Progress journal (2.12): days played and minutes, chords held steady, ideas recorded, songs marked finished, how often chord changes landed, the song and recording last worked on, and a line you may type (“Working on”) | `localStorage` key `fw.jn`. Counts and dates only: no audio, no notes, no file names. A few hundred bytes to a few tens of kilobytes | No | Reset (Notebook, history & progress journal), **Erase my journal** in My progress, or the whole reset |
 | Songs, takes and stems | IndexedDB database `the-daily-songs` | No | Reset, or deleting a song |
 | Stage pictures (backdrops, a pixel wall, a logo) | IndexedDB database `the-daily-songs`, store `blobs`, keys `stage/img/<id>`; their names and sizes are in `fw.cfg` | No | Removing the picture in the stage designer, or Reset. They are not in a song's zip or a backup |
 | Offline copy of the app | Cache Storage `daily-songs-<version>` (service worker) | No | Reset, or a new version |

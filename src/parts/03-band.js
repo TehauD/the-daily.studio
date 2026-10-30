@@ -239,7 +239,7 @@ function recEnd() {
   if (r.g) mk('gtr', r.dry, r.wet); if (r.v) mk('vox', r.vox, null);
   if (r.silentPass && !made.length) { if (typeof LP !== 'undefined') LP.silent = (LP.silent || 0) + 1; toast('Nothing was heard on that pass, so no layer was kept. Is your guitar plugged in and the input level up? Check Audio at the top right.', 'warn'); }
   if (r.punch && made.length) { PUNCH.on = false; try { tkFit(); tkResched(); histPush(r.punch.before); } catch (e) { console.warn(e); } TL.dirty = true; bus.emit('takes'); toast('Punched in ' + made[0].dur.toFixed(1) + ' s · Undo (Ctrl/⌘+Z) puts the old take back', 'ok'); return; }
-  if (made.length) { xpSignal(3); bus.emit('takes'); toast(made.map(t => t.name + ' (' + t.dur.toFixed(1) + ' s, peak ' + t.peak.toFixed(1) + ' dBFS)').join('  +  ') + ' recorded' + (skipped.length ? ' · the ' + skipped.join(' and ') + ' input was silent, so it was not kept' : ''), 'ok'); }
+  if (made.length) { xpSignal(3); if (typeof jnIdea === 'function') jnIdea((S.title || 'Idea') + ': ' + made.map(t => t.name).join(' + '), 'take'); bus.emit('takes'); toast(made.map(t => t.name + ' (' + t.dur.toFixed(1) + ' s, peak ' + t.peak.toFixed(1) + ' dBFS)').join('  +  ') + ' recorded' + (skipped.length ? ' · the ' + skipped.join(' and ') + ' input was silent, so it was not kept' : ''), 'ok'); }
 }
 const TK_BUFS = new WeakMap();    // one AudioBuffer per recording, shared by every clip that plays it
 function takeBuffer(tk, which) { const d = which === 'wet' ? tk.wet : tk.dry; if (!d) return null; let c = TK_BUFS.get(d); if (!c || c.ctx !== E.ctx) { const b = E.ctx.createBuffer(1, d.length, tk.sr); b.copyToChannel(d, 0); c = { ctx: E.ctx, b }; TK_BUFS.set(d, c); } return c.b; }

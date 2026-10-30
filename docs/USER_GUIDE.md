@@ -6,6 +6,16 @@ Contents: [Getting started](#getting-started-and-guided-sessions-27) · [Show se
 
 ---
 
+## Welcome Back and My progress (2.12)
+
+When you open the app again, the first page tells you where you are, in plain text: **Last practiced**, **Current streak**, **Working on**, **Latest recording**, **Progress**, and a line for the year (*Played 87 sessions · Learned 14 chords · Recorded 23 ideas · Completed 4 songs*). **Pick up where I left off** opens the song you were on, with your layout. The pencil next to *Working on* lets you type what you are working on (“90s alternative guitar”). After a long gap there is no scolding: the streak says it starts again the next time you play and shows your best run.
+
+**My progress** is in the Songs menu, the phone's More sheet, Settings ▸ Data and on Welcome Back. It shows the last 90 days, this year or all time; a twelve-week strip (a square a day, darker for more minutes); each chord change you have practiced and how often it landed in time; the chords you have learned; and **Mark this song finished**.
+
+How things are counted: a **session** is a visit with at least a minute of playing, recording or editing. A chord is **learned** once the app has heard you hold it steady five times. An **idea** is a take you recorded, a hum turned into a song, or a Capture. A **song completed** is one you marked finished. A **chord change** counts when you were holding the old chord as the song moved on, and lands if the new chord is heard within two beats; it appears after five tries. Use headphones when you play along, or the band can be heard as you. Chord detection is a guide, not a grade.
+
+It is kept on this device only (counts and dates, never sound), is not part of song bundles or the folder backup, and can be downloaded or erased in My progress. Reset ▸ “Notebook, history & progress journal” erases it too.
+
 ## Getting started and guided sessions (2.7)
 
 The first page asks **what you would like to do first**, not how good you are:
@@ -336,7 +346,9 @@ A node graph of the music as it plays: notes, chords, functions (tonic, subdomin
 
 ## Visuals and Stage
 
-**Visuals** (6) offers **Hex Resonance** (the default), **Concert**, String Field, Chord Bloom, Harmonic Orrery, Ridgeline, Beat Grid, a Prompter, the Neural map, **Fifths Halo** (the circle of fifths as a ring around you, with the song's chords on it and your notes flying in) and **Prism** (a kaleidoscope that changes on the off-beat; its flashes and spin follow Light comfort). In full-screen, **✦ Look** cycles Hex Resonance, Concert, Fifths Halo and Prism. The pitch wheel, spectrogram and scope are readouts rather than shows, so they are on **Monitor ▸ Views** (and are still Stage scenes). **🎸 Neck** puts a small guitar neck on the visuals and the Neural map: what is playing, a dashed ghost of the note coming next, the note you are singing (pink, at every place it can be played) and any chord you click in the Neural map, driven by the rig output, the master mix or your dry DI. Add a **camera backdrop** or go **⛶ Stage mode**.
+**Visuals** (6) offers **Hex Resonance** (the default; the **Hexagons** swatches pick the colours: *Match the theme* (the default), Dark green, White, Ocean, Ember, Violet, Mono, Blush, Daylight, or *Pick your own* for a background, cell and gold-cell colour; the start screen uses the same choice), **Concert**, Chord Bloom, Harmonic Orrery, Beat Grid, a Prompter, the Neural map, **Fifths Halo** (the circle of fifths as a ring around you, with the song's chords on it and your notes flying in) and **Prism** (a kaleidoscope that changes on the off-beat; its flashes and spin follow Light comfort). In full-screen, **✦ Look** cycles Hex Resonance, Concert, Fifths Halo and Prism. The pitch wheel, spectrogram and scope are readouts rather than shows, so they are on **Monitor ▸ Views** (and are still Stage scenes). **🎸 Neck** puts a small guitar neck on the visuals and the Neural map: what is playing, a dashed ghost of the note coming next, the note you are singing (pink, at every place it can be played) and any chord you click in the Neural map, driven by the rig output, the master mix or your dry DI. Add a **camera backdrop** or go **⛶ Stage mode**.
+
+**Behind you (2.12).** A second row in the Visuals bar holds six backdrops made to sit behind you: **Light Ribbons**, **Aurora**, **Warp Stars**, **Pulse Rings**, **Nebula** and **Skyline**. Choose one, then set **Camera look** to *Me in front (green screen)* and you stand inside the picture (the first time you need an internet connection to fetch the small segmentation model; see Privacy). The colour follows the chord and glides when it changes; the movement follows the sound; **Light comfort ▸ Calm** slows it to about half. Nothing flashes. They also work full screen, in the stage designer and in recordings.
 
 **Camera look.** Turn on **📷 Camera backdrop** (Visuals tab, or per scene in Stage) after starting the camera in the Vision tab, then pick how it sits with the visuals: *Dimmed behind the visuals*; *Visuals frame me (edges in)*, where you stay clear in a soft oval and the visuals live around the edges (drag the slider to size the clear area); or *Me in front (green screen)*, which cuts you out so the visuals play behind you. The cut-out downloads a small model the first time (Google's selfie segmenter, nothing is uploaded); offline it falls back to edges-in. Good light and a plain-ish background help the cut-out.
 
@@ -351,15 +363,13 @@ Ten looks that draw what the chord is doing. Each works out, from the chord that
 | **Harmonic Gravity** | The chord as a sun; notes orbit near, far or out in red. | Sing a note a half-step above a chord note and watch it pulled out; let it fall onto a chord note. |
 | **Improv Field** | A map of the twelve notes: safe, character, tension, with your trail. | Play a line and look for where it rests. |
 | **Voice & Guitar** | Two swarms that attract when they agree and push apart when they clash. | Needs two inputs (Inputs ▸ a voice input and a guitar input). With one, the line you sing or play is the voice. |
-| **Chord Landscape** | Your song's chords as places; a walker follows the song. | Load a song with a dominant chord and find the canyon. |
 | **Mood Colour** | Warm gold for major, blue for minor, a bloom when tension resolves, lightning on tense dominant moments. | Lightning follows **Light comfort**; **Calm** has none, and it never comes more often than the gap allows. |
 | **Chord DNA** | Each chord a flower; its notes decide petals and symmetry. | Play four different chords and compare the row. |
 | **Constellation** | A star for each steady sung note: flat to the left, sharp to the right, brighter in tune. | Hold a note; the star lands where you were. **New session** and **Save picture** are on the screen. |
 | **Rhythm Flow** | Ripples for each note, placed by where it falls in the bar; calm streamlines when the groove is steady. | Run the band (or click), then play on the beat and then rush it. |
-| **Ecosystem** | Creatures by note type, colonies per chord, a plant that grows when you repeat a phrase. | Repeat a four-note phrase three times. |
 | **Session Painting** | The session as a painting: height is pitch, colour is harmony, speckle is timing, stroke weight is how hard you played. | **Save picture** writes a 1920 × 1080 PNG. |
 
-The Constellation, Painting and Ecosystem keep a record of the session in memory only. **↺ New session** clears it; closing the page clears it too.
+The Constellation and Painting keep a record of the session in memory only. **↺ New session** clears it; closing the page clears it too.
 
 ### Show setup (2.6)
 
@@ -445,9 +455,17 @@ Three **lenses** on the same show, in the Visuals bar and in Stage ▸ Performer
 
 With the performer backdrop's lower third on, Teach and Sky draw in the room above it.
 
+### Audience view (2.11)
+
+A Monitor widget that shows the show the way the room sees it: the visuals on a big screen, **you in front of them** (from the camera, **not mirrored**, which is the side the audience sees) and a crowd lit by the screen. Add it from **Widgets** at the top of the Monitor (the Record layout already has it). Its **📷 Camera on** button starts the camera; choose **Me in front (green screen)** in its Camera look menu to stand in front of the show, or **Visuals frame me** for a soft oval. **⤢ Taller** makes the picture 4:3. It works while you are on any tab; when the Visuals tab is open it simply copies that picture, which is mirrored if your camera is.
+
+### Your playing from the video goes into the arrangement (2.11)
+
+When you **⏺ Record the stage** as a video, the menu has **Also put what I play into the arrangement**. With it on (the default once an input is connected), what comes in on your armed guitar and voice inputs becomes a lane in the arrangement, **starting where the video starts**, as if you had pressed Record. The band is not in it (it is already in the arrangement). For *The whole song, from the top*, the lane starts at the song's first beat. **Undo** takes the lane out. The kill switch (<kbd>Ctrl/⌘</kbd>+<kbd>.</kbd>) throws the video and the lane away together. If no lane is armed, the guitar lane is armed for you.
+
 ### Monitor widgets (2.6)
 
-The Monitor opens short: the **Tuner** and **Levels**. A row of chips at the top adds the others, and a **✕** on a widget takes it away again: **Analysis** (chord, key, brightness, vibrato, crest), **Spectrum** (the rig output) and **Views** (the pitch wheel, spectrogram and scope, switched with three buttons). A widget you have removed is not drawn or updated at all, so it costs nothing. Drag a widget by its title to reorder, click the title to collapse it. Each layout brings the widgets that suit it (Record: tuner and levels; Tone: tuner, analysis and spectrum).
+The Monitor opens short: the **Tuner** and **Levels**. A row of chips at the top adds the others, and a **✕** on a widget takes it away again: **Analysis** (chord, key, brightness, vibrato, crest), **Spectrum** (the rig output) and **Views** (the pitch wheel, spectrogram and scope, switched with three buttons) and **Audience** (2.11: you and the show as the room sees it). A widget you have removed is not drawn or updated at all, so it costs nothing. Drag a widget by its title to reorder, click the title to collapse it. Each layout brings the widgets that suit it (Record: tuner and levels; Tone: tuner, analysis and spectrum).
 
 ### Performer backdrop (2.3)
 
@@ -536,8 +554,8 @@ The **Tracks** button at the right of the chip row cycles the arrangement betwee
 
 ## Layout and themes
 
-* **Drag** dock tabs to reorder; **double-click** a tab to float it as a window and again to dock it back. **▦** opens the layout picker (below), a box to name and keep your own layout, show / hide for each panel and a reset.
-* **Layouts.** Each layout is a whole workspace for one job, and choosing one replaces the last completely: where the sidebars are and what is in them, how tall the arrangement is, which panel is open, which tabs are on the strip (the rest are under **☰**) and which Monitor widgets show. **Studio** (everything in reach, panels above the arrangement), **Write** (tab in the middle, chords and lyrics and theory beside it, a short arrangement), **Arrange** (a tall arrangement on top, the band and song panels below, refine on the right), **Record** (inputs on the left, levels on the right, a tall arrangement for guitar and voice), **Tone** (the pedalboard fills the middle, tones to pick on the left, tuner and spectrum on the right), **Practice** (tab and fretboard side by side, loop and transport at hand), **Show** (the Stage and the show setup, no sidebars, the arrangement reduced to the transport), **Focus** (just the panel you are on) and **Classic** (the original: arrangement above, panels below). **Canvas | Song | Studio** chooses Write or Record / Arrange for you. Your own layouts keep all of it.
+* **Drag** dock tabs to reorder; **double-click** a tab to float it as a window and again to dock it back. **▦** (top right) opens the workspace menu: the sidebars, where each panel lives, show / hide or float for each panel, and a reset. Light / Dark / Match system is in **Appearance** (the ⚙ menu) and **Experience** (Automatic, Simple, More tools, Everything) is on the **Tools** button. There are no preset layouts any more; use the edge tabs.
+* **Edge tabs (2.12).** Every panel area has a labelled tab on its own edge that is always there. Each sidebar's tab is named for the panel that is open (I/O, Monitor, Theory…): click it to collapse the sidebar. While a sidebar is collapsed its edge lists the panels that live there, so one click opens exactly the one you want. The divider between the arrangement and the panels has two tabs, **Arrangement** (collapses it to the transport) and **Panels** (collapses them to their tab strip). Click to collapse, click again to open. What you collapsed is remembered. On phones and tablets the drawers do this job instead.
 * **☰** at the end of the tab strip lists every panel (nothing is hidden when the strip scrolls). **⤢** expands the current panel to the whole centre; <kbd>Esc</kbd> goes back.
 * **Interchangeable panels.** **⇆** on a sidebar (or **☰ → Where panels live…**) lets you put any panel in the centre, the left sidebar or the right sidebar, swap the two sidebars, collapse or expand all cards and reset. Sidebar cards collapse with their ▾ and remember it.
 * Drag the vertical splitters to resize the sidebars (double-click to reset); each sidebar tab remembers its own width. <kbd>[</kbd> and <kbd>]</kbd> toggle them. In a desktop window narrower than 1180 px the right sidebar opens as an overlay when you choose Refine or the Monitor.

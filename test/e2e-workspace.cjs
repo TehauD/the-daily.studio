@@ -1,4 +1,4 @@
-/* Workspace: the twelve layouts (each one a whole workspace that replaces the last), the layout picker, and the Monitor's optional widgets.
+/* Workspace: the twelve layouts (each one a whole workspace that replaces the last), the view menu, and the Monitor's optional widgets.
    Own browser contexts; see test/lib.cjs. */
 const { suite } = require('./lib.cjs');
 suite('e2e-workspace', async t => {
@@ -47,19 +47,22 @@ suite('e2e-workspace', async t => {
   ok(leak.hid === 0, 'Studio shows every tab again after Show hid most of them');
   await ev(() => { const d = window.__daily; d.applyPreset(d.LAYOUTS[0][2], 'Studio'); document.querySelector('button[title^="Layout"]').click(); });
   await wait(500);
-  const menu = await ev(() => { const m = document.querySelector('.lay-menu'); return { cards: m ? m.querySelectorAll('.lay-card').length : 0, thumbs: m ? m.querySelectorAll('.lay-th').length : 0, on: m ? [...m.querySelectorAll('.lay-card.on b')].map(b => b.textContent).join() : '', head: m ? m.querySelector('h5').textContent : '', cols: m ? getComputedStyle(m.querySelector('.lay-grid')).gridTemplateColumns.split(' ').length : 0, over: m ? m.scrollWidth - m.clientWidth : 9, wire: m ? [...m.querySelectorAll('.lay-th')].every(x => { const r = x.getBoundingClientRect(); return r.width > 40 && r.height > 24; }) : false, checks: m ? m.querySelectorAll('input[type=checkbox]').length : 0, panels: m && /Right-sidebar cards/i.test(m.textContent) }; });
-  ok(menu.cards === 12 && menu.thumbs === 12 && menu.on === 'Studio' && menu.head === 'Layouts' && menu.cols === 3 && menu.over <= 1 && menu.wire, 'the layout picker shows twelve cards, each with a wireframe of the workspace, and marks the one in use (' + JSON.stringify(menu) + ')');
-  ok(!menu.panels, 'the old “Right-sidebar cards” checkboxes are gone from it (Monitor widgets are chosen on the Monitor)');
-  await ev(() => [...document.querySelectorAll('.lay-card')].find(c => /Record/.test(c.textContent)).click()); await wait(500);
-  ok(await ev(() => window.__daily.LAY.name === 'Record' && !document.querySelector('.lay-menu')), 'clicking a card applies the layout and closes the picker');
-  await ev(() => { const b = document.querySelector('button[title^="Layout"]'); b.click(); }); await wait(300);
-  await ev(() => { const i = document.querySelector('.lay-menu input[placeholder^="Name this layout"]'); i.value = 'My vocals'; [...document.querySelectorAll('.lay-menu .btn')].find(b => b.textContent === 'Save current').click(); }); await wait(300);
-  await ev(() => { window.__daily.applyPreset(window.__daily.LAYOUTS[6][2], 'Show'); }); await wait(300);
-  await ev(() => { document.querySelector('button[title^="Layout"]').click(); }); await wait(300);
-  await ev(() => [...document.querySelectorAll('.lay-card')].find(c => /My vocals/.test(c.textContent)).click()); await wait(500);
-  const own = await ev(() => { const d = window.__daily; return { name: d.LAY.name, left: d.LAY.left, right: d.LAY.right, dock: d.DOCK.cur, mon: ['tuner', 'levels', 'live', 'spectrum', 'views'].filter(w => !d.LAY.rc.hide[w]).join('+') }; });
-  ok(own.name === '★ My vocals' && own.left && own.right && own.dock === 'rig' && own.mon === 'tuner+levels', 'your own layout keeps the sidebars, the open panel and the Monitor widgets it was saved with (' + JSON.stringify(own) + ')');
-  ok(await ev(() => { document.querySelector('button[title^="Layout"]').click(); return new Promise(r => setTimeout(() => { const ok = !!document.querySelector('.lay-own'); document.querySelector('.lay-own .lay-del').click(); r(ok && window.__daily.CFG && true); }, 300)); }), 'it appears under “Your layouts” and can be deleted');
+  const menu = await ev(() => { const m = document.querySelector('.lay-menu'); return { cards: m ? m.querySelectorAll('.lay-card').length : 0, heads: m ? [...m.querySelectorAll('h5')].map(h => h.textContent).join('|') : '', theme: m ? m.querySelectorAll('#vmTheme').length : 0, xp: m ? m.querySelectorAll('#vmXp').length : 0, boxes: m ? m.querySelectorAll('input[type=checkbox]').length : 0, over: m ? m.scrollWidth - m.clientWidth : 99 }; });
+  ok(menu.cards === 0 && menu.heads === 'Workspace' && menu.theme === 0 && menu.xp === 0 && menu.boxes >= 3 && menu.over <= 1, 'the top-right menu is only about where panels go: no layout cards, and light/dark and Experience live elsewhere (' + JSON.stringify(menu) + ')');
+  await ev(() => { document.body.click(); window.__daily.closePop && window.__daily.closePop(); }); await wait(200);
+  // light/dark belongs to Appearance; Experience to the Tools button
+  await ev(() => window.__daily.setTheme('light')); await wait(300);
+  ok(await ev(() => window.__daily.CFG.lookMode === 'light' && document.documentElement.dataset.theme === 'light'), 'Appearance’s Light switches the whole app at once');
+  await ev(() => window.__daily.setTheme('dark')); await wait(300);
+  ok(await ev(() => window.__daily.CFG.lookMode === 'dark' && document.documentElement.dataset.theme === 'dark'), 'and Dark switches it back');
+  await ev(() => document.getElementById('xpTools') && document.getElementById('xpTools').click()); await wait(300);
+  const xpo = await ev(() => [...document.querySelectorAll('.xp-pop .xp-opt')].map(b => b.querySelector('b').textContent).join());
+  ok(/Automatic,Simple,More tools/.test(xpo), 'Experience stays on the Tools button (' + xpo + ')');
+  await ev(() => { const o = [...document.querySelectorAll('.xp-pop .xp-opt')].find(b => b.querySelector('b').textContent === 'Simple'); if (o) o.click(); }); await wait(300);
+  ok(await ev(() => window.__daily.xpLevel() === 'new'), 'Simple narrows the studio');
+  await ev(() => window.__daily.CFG.xpMode = 'pro'); await wait(100);
+  ok(await ev(() => window.__daily.xpLevel() === 'pro'), 'and Everything opens it all up again');
+  await ev(() => { document.body.click(); window.__daily.closePop && window.__daily.closePop(); }); await wait(200);
 
   // zoom levels pick a layout, too
   const zl = await ev(async () => { const d = window.__daily, out = {}; d.applyPreset(d.LAYOUTS[0][2], 'Studio'); document.querySelectorAll('.seg button').forEach(b => { if (b.textContent.trim() === 'Song') out.songBtn = true; }); const song = [...document.querySelectorAll('#songbar button')].find(b => b.textContent.trim() === 'Song'), canvas = [...document.querySelectorAll('#songbar button')].find(b => b.textContent.trim() === 'Canvas'), studio = [...document.querySelectorAll('#songbar button')].find(b => b.textContent.trim() === 'Studio'); song.click(); await new Promise(r => setTimeout(r, 500)); out.song = d.LAY.name; studio.click(); await new Promise(r => setTimeout(r, 500)); out.studio = d.LAY.name; return out; });
@@ -68,7 +71,7 @@ suite('e2e-workspace', async t => {
   // ---- the Monitor's optional widgets
   await ev(() => { const d = window.__daily; localStorage.removeItem('fw.lay'); d.applyPreset(d.LAYOUTS[0][2], 'Studio'); d.SD.cur.right = 'monitor'; });
   const m0 = await ev(() => { const d = window.__daily; d.applyPreset(d.LAYOUTS[0][2], 'Studio'); const chips = [...document.querySelectorAll('.mon-chip')], card = n => document.querySelector('[data-card="' + n + '"]'); return { chips: chips.map(c => c.textContent + ':' + c.getAttribute('aria-pressed')).join(' '), shown: ['tuner', 'levels', 'live', 'spectrum', 'views'].map(n => card(n) && card(n).style.display !== 'none').join(), label: !!document.querySelector('.mon-wl'), group: document.querySelector('.mon-wid') && document.querySelector('.mon-wid').getAttribute('role') }; });
-  ok(m0.chips === 'Tuner:true Levels:true + Analysis:false + Spectrum:false + Views:false' && m0.shown === 'true,true,false,false,false' && m0.label && m0.group === 'group', 'the Monitor opens with the Tuner and Levels, and a row of widget chips to add the rest (' + m0.chips + ')');
+  ok(m0.chips === 'Tuner:true Levels:true + Analysis:false + Spectrum:false + Views:false + Audience:false' && m0.shown === 'true,true,false,false,false' && m0.label && m0.group === 'group', 'the Monitor opens with the Tuner and Levels, and a row of widget chips to add the rest (' + m0.chips + ')');
   const cardH = n => ev(n => { const c = document.querySelector('[data-card="' + n + '"]'); return c && c.style.display !== 'none' ? Math.round(c.getBoundingClientRect().height) : 0; }, n);
   ok(await cardH('views') === 0 && await cardH('spectrum') === 0 && await cardH('live') === 0, 'so the Monitor is short: no extra scroll');
   await ev(() => document.querySelector('.mon-chip[data-w="views"]').click()); await wait(400);
@@ -106,5 +109,5 @@ suite('e2e-workspace', async t => {
   // ---- a phone has the Monitor in its drawer: the same widgets, nothing leaking sideways
   const pm = await t.open({ w: 390, h: 800, mobile: true, debug: true });
   const mm = await pm.evaluate(() => { const d = window.__daily; return { chips: document.querySelectorAll('.mon-chip').length, over: document.scrollingElement.scrollWidth - innerWidth, hidden: ['live', 'spectrum', 'views'].every(n => d.LAY.rc.hide[n]) }; });
-  ok(mm.chips === 5 && mm.over <= 1 && mm.hidden, 'on a phone the Monitor starts short too (' + JSON.stringify(mm) + ')');
+  ok(mm.chips === 6 && mm.over <= 1 && mm.hidden, 'on a phone the Monitor starts short too (' + JSON.stringify(mm) + ')');
 });

@@ -126,7 +126,7 @@ function openSettings() {
       h('h5', {}, 'Ultimate Guitar export'),
       F('Max line width (chars)', num('ugWidth', 40, 120, 1, () => bus.emit('export'))), chk('Include [tab] / [ch] tags', 'ugTags', () => bus.emit('export')),
       h('h5', {}, 'Data'),
-      h('div', { class: 'row', style: { gridColumn: '1/-1', gap: '8px', flexWrap: 'wrap' } }, h('button', { class: 'btn', onclick: () => { d.close(); libraryOpen(); } }, '☰ My songs'), h('button', { class: 'btn bad', title: 'Choose what to erase: layout, settings, songs, offline copy…', onclick: () => { d.close(); resetOpen(); } }, 'Reset…'), h('button', { class: 'btn', onclick: () => download('daily-songs-settings.json', JSON.stringify(CFG, null, 2), 'application/json') }, 'Export settings JSON')),
+      h('div', { class: 'row', style: { gridColumn: '1/-1', gap: '8px', flexWrap: 'wrap' } }, h('button', { class: 'btn', onclick: () => { d.close(); libraryOpen(); } }, '☰ My songs'), h('button', { class: 'btn', onclick: () => { d.close(); progressOpen(); } }, '📈 My progress'), h('button', { class: 'btn bad', title: 'Choose what to erase: layout, settings, songs, offline copy…', onclick: () => { d.close(); resetOpen(); } }, 'Reset…'), h('button', { class: 'btn', onclick: () => download('daily-songs-settings.json', JSON.stringify(CFG, null, 2), 'application/json') }, 'Export settings JSON')),
       F('Backing track when a song opens', sel('trackRestore', [['auto', 'Restore it automatically'], ['tap', 'Wait until I tap Restore']])), h('div', { class: 'tiny muted', style: { gridColumn: '1/-1' } }, 'Songs and recordings are kept in this browser (My songs). Stems are separated again when a song with a track opens; the song itself opens instantly.')
     ));
   d.showModal();

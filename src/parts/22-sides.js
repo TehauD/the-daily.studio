@@ -63,7 +63,7 @@ function sideApply() {
     box.dataset.cur = SD.cur[side] || '';
   });
   const dock = $('#dock'); DOCK.forEach(([id]) => { if (homeOf(id) !== 'dock') return; const p = PANES[id]; if (p && !FLOATS.has(id) && p.parentNode !== dock) { dock.append(p); p.classList.toggle('on', DOCK.cur === id); } });
-  LAY.sc = { left: SD.cur.left, right: SD.cur.right };
+  LAY.sc = { left: SD.cur.left, right: SD.cur.right }; if (typeof edgeSync === 'function') edgeSync();
 }
 function sideShow(id) {
   const hm = homeOf(id); if (hm === 'dock') { dockGo(id); return; }

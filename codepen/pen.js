@@ -5,7 +5,7 @@
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.10.0';
+const VERSION = '2.12.0';
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://the-daily.studio/journal/' };
 const $ = (s, r = document) => r.querySelector(s);
@@ -1106,7 +1106,7 @@ function recEnd() {
   if (r.g) mk('gtr', r.dry, r.wet); if (r.v) mk('vox', r.vox, null);
   if (r.silentPass && !made.length) { if (typeof LP !== 'undefined') LP.silent = (LP.silent || 0) + 1; toast('Nothing was heard on that pass, so no layer was kept. Is your guitar plugged in and the input level up? Check Audio at the top right.', 'warn'); }
   if (r.punch && made.length) { PUNCH.on = false; try { tkFit(); tkResched(); histPush(r.punch.before); } catch (e) { console.warn(e); } TL.dirty = true; bus.emit('takes'); toast('Punched in ' + made[0].dur.toFixed(1) + ' s · Undo (Ctrl/⌘+Z) puts the old take back', 'ok'); return; }
-  if (made.length) { xpSignal(3); bus.emit('takes'); toast(made.map(t => t.name + ' (' + t.dur.toFixed(1) + ' s, peak ' + t.peak.toFixed(1) + ' dBFS)').join('  +  ') + ' recorded' + (skipped.length ? ' · the ' + skipped.join(' and ') + ' input was silent, so it was not kept' : ''), 'ok'); }
+  if (made.length) { xpSignal(3); if (typeof jnIdea === 'function') jnIdea((S.title || 'Idea') + ': ' + made.map(t => t.name).join(' + '), 'take'); bus.emit('takes'); toast(made.map(t => t.name + ' (' + t.dur.toFixed(1) + ' s, peak ' + t.peak.toFixed(1) + ' dBFS)').join('  +  ') + ' recorded' + (skipped.length ? ' · the ' + skipped.join(' and ') + ' input was silent, so it was not kept' : ''), 'ok'); }
 }
 const TK_BUFS = new WeakMap();    // one AudioBuffer per recording, shared by every clip that plays it
 function takeBuffer(tk, which) { const d = which === 'wet' ? tk.wet : tk.dry; if (!d) return null; let c = TK_BUFS.get(d); if (!c || c.ctx !== E.ctx) { const b = E.ctx.createBuffer(1, d.length, tk.sr); b.copyToChannel(d, 0); c = { ctx: E.ctx, b }; TK_BUFS.set(d, c); } return c.b; }
@@ -1453,7 +1453,7 @@ function openSettings() {
       h('h5', {}, 'Ultimate Guitar export'),
       F('Max line width (chars)', num('ugWidth', 40, 120, 1, () => bus.emit('export'))), chk('Include [tab] / [ch] tags', 'ugTags', () => bus.emit('export')),
       h('h5', {}, 'Data'),
-      h('div', { class: 'row', style: { gridColumn: '1/-1', gap: '8px', flexWrap: 'wrap' } }, h('button', { class: 'btn', onclick: () => { d.close(); libraryOpen(); } }, '☰ My songs'), h('button', { class: 'btn bad', title: 'Choose what to erase: layout, settings, songs, offline copy…', onclick: () => { d.close(); resetOpen(); } }, 'Reset…'), h('button', { class: 'btn', onclick: () => download('daily-songs-settings.json', JSON.stringify(CFG, null, 2), 'application/json') }, 'Export settings JSON')),
+      h('div', { class: 'row', style: { gridColumn: '1/-1', gap: '8px', flexWrap: 'wrap' } }, h('button', { class: 'btn', onclick: () => { d.close(); libraryOpen(); } }, '☰ My songs'), h('button', { class: 'btn', onclick: () => { d.close(); progressOpen(); } }, '📈 My progress'), h('button', { class: 'btn bad', title: 'Choose what to erase: layout, settings, songs, offline copy…', onclick: () => { d.close(); resetOpen(); } }, 'Reset…'), h('button', { class: 'btn', onclick: () => download('daily-songs-settings.json', JSON.stringify(CFG, null, 2), 'application/json') }, 'Export settings JSON')),
       F('Backing track when a song opens', sel('trackRestore', [['auto', 'Restore it automatically'], ['tap', 'Wait until I tap Restore']])), h('div', { class: 'tiny muted', style: { gridColumn: '1/-1' } }, 'Songs and recordings are kept in this browser (My songs). Stems are separated again when a song with a track opens; the song itself opens instantly.')
     ));
   d.showModal();
@@ -1839,7 +1839,7 @@ function buildRight() {
   const mc = h('div', { class: 'card' }, h('h4', {}, 'Levels (dBFS)', UI.clip), h('div', { class: 'card-b' }, mt('mIn', 'Input (DI, post-trim)'), mt('mRig', 'Rig output'), mt('mMaster', 'Master (post-limiter)'), h('div', { class: 'tiny muted', id: 'gainhint' }, 'Aim for DI peaks around −12…−6 dBFS.')));
   UI.live = h('div', { class: 'kv' }); const lc = h('div', { class: 'card' }, h('h4', {}, 'Live analysis'), h('div', { class: 'card-b' }, UI.live));
   UI.mini = h('canvas', { class: 'vcanvas', height: 90, style: { height: '90px' } }); const sp = h('div', { class: 'card' }, h('h4', {}, 'Spectrum (rig out)'), h('div', { class: 'card-b', style: { padding: '6px' } }, UI.mini));
-  p.append(UI.tunerCard, mc, lc, sp, monitorViewsCard()); renderStrings(); bus.on('song', renderStrings);
+  p.append(UI.tunerCard, mc, lc, sp, monitorViewsCard(), audienceCard()); renderStrings(); bus.on('song', renderStrings);
 }
 function renderStrings() { if (!UI.tuner) return; const s = UI.tuner.str; s.innerHTML = ''; S.tuning.forEach((m, i) => s.append(h('span', { 'data-m': m + S.capo, title: 'Click to hear this string (reference tone)', style: { cursor: 'pointer' }, onclick: async () => { await startAudio(); if (E.ready) pluck('lead', E.ctx.currentTime + .01, m + S.capo, .8, { id: 'ref', pan: 0 }); } }, tunPc(m + S.capo)))); const b = $('#tunName'); if (b) b.textContent = tunShort(); }
 const dbw = d => clamp((d + 60) / 60, 0, 1) * 100 + '%';
@@ -2484,18 +2484,20 @@ function paintFret(force) {
 }
 
 /* ---------------- VISUALS ---------------- */
-const VZ_RETIRED = { tunnel: 'concert' }; if (VZ_RETIRED[CFG.visMode]) CFG.visMode = VZ_RETIRED[CFG.visMode];
+const VZ_RETIRED = { tunnel: 'concert', strings: 'hex', joy: 'hex', v86: 'hex', terrain: 'hex', eco: 'hex' }; if (VZ_RETIRED[CFG.visMode]) CFG.visMode = VZ_RETIRED[CFG.visMode];
 /* 2.10: the hexagon field is the default look again (it matches the start screen); a one-time reset for people who had Concert chosen by default */
 if ((CFG.visV || 0) < 210) { CFG.visV = 210; CFG.visMode = 'hex'; try { saveCfg(); } catch (e) { } }
 const VZ = { mode: CFG.visMode || 'hex', cam: false, spec: null, pulses: [], hexes: null, last: 0, fd: null, td: null, sm: null, t: 0, ring: [] };
-const VMODES = [['hex', 'Hex Resonance'], ['spectro', 'Spectrogram'], ['chroma', 'Chroma Wheel'], ['scope', 'Oscilloscope'], ['strings', 'String Field']];
+const VMODES = [['hex', 'Hex Resonance'], ['spectro', 'Spectrogram'], ['chroma', 'Chroma Wheel'], ['scope', 'Oscilloscope']];
 /** the readout views live on the Monitor tab now; they stay available as Stage scenes */
 const VZ_MONITOR = new Set(['spectro', 'chroma', 'scope']);
 function buildVisPane() {
   const p = PANES.vis; p.classList.add('flex');
   const bar = h('div', { class: 'row', style: { gap: '8px', marginBottom: '8px', flexWrap: 'wrap' } },
-    h('div', { class: 'seg' }, VMODES.filter(m => !VZ_MONITOR.has(m[0])).map(([k, n]) => h('button', { class: k === VZ.mode ? 'on' : '', 'data-m': k, onclick: e => { vzSetMode(k); $$('.seg [data-m]', bar).forEach(b => b.classList.toggle('on', b === e.target)); } }, n))),
+    h('div', { class: 'seg' }, VMODES.filter(m => !VZ_MONITOR.has(m[0]) && !BK_MODES.has(m[0])).map(([k, n]) => h('button', { class: k === VZ.mode ? 'on' : '', 'data-m': k, onclick: e => { vzSetMode(k); $$('.seg [data-m]', bar).forEach(b => b.classList.toggle('on', b === e.target)); } }, n))),
+    h('div', { class: 'vz-back', id: 'vzBack' }, h('span', { class: 'hx-l', title: 'Looks made to sit behind you: set Camera look to “Me in front (green screen)” and you stand inside the picture' }, 'Behind you'), h('div', { class: 'seg', role: 'group', 'aria-label': 'Looks that sit behind you' }, VBACK.map(([k, n]) => h('button', { class: k === VZ.mode ? 'on' : '', 'data-m': k, onclick: e => { vzSetMode(k); $$('.seg [data-m]', bar).forEach(b => b.classList.toggle('on', b === e.currentTarget)); try { backTip(); } catch (er) { } } }, n)))),
     lxLensBar(),
+    hexSwatches(),
     h('select', { class: 'in', style: { width: 'auto', fontFamily: 'var(--sans)' }, title: 'Analysis source', onchange: e => { VZ.src = e.target.value; } }, [['auto', 'Source: auto (follows playback)'], ['rig', 'Source: guitar after the rig'], ['master', 'Source: master mix'], ['di', 'Source: what the detector hears'], ['vox', 'Source: vocal microphone']].map(([v, n]) => h('option', { value: v }, n))),
     h('button', { class: 'btn sm', id: 'vzRecBtn', 'data-srec': '1', title: 'Record the stage as a video with the song’s sound (saved on this device)', onclick: e => srecMenu(e.currentTarget) }, '⏺ Record'),
     h('button', { class: 'btn sm' + (CFG.vzAuto ? ' on' : ''), id: 'vzAutoBtn', 'aria-pressed': String(!!CFG.vzAuto), title: 'Auto look: while the song plays, the look follows the section (verse calm, chorus wide, bridge strange)', onclick: e => { CFG.vzAuto = !CFG.vzAuto; saveCfg(); e.currentTarget.classList.toggle('on', !!CFG.vzAuto); e.currentTarget.setAttribute('aria-pressed', String(!!CFG.vzAuto)); toast('Auto look ' + (CFG.vzAuto ? 'on: the look follows the song’s sections' : 'off'), 'ok'); } }, '🎬 Auto look'),
@@ -2512,44 +2514,94 @@ const vcol = () => { const cs = getComputedStyle(document.documentElement); retu
 /** 'auto' follows what is sounding: the mix while the song, a hum or a backing track plays, the guitar rig otherwise */
 const vzPlaying = () => T.playing || (typeof STP !== 'undefined' && STP.playing);
 function visAna() { const s = VZ.src || 'auto'; if (s === 'vox' && E.anaVox) return E.anaVox; return s === 'master' || (s === 'auto' && vzPlaying()) ? E.anaMaster : s === 'di' ? E.anaDI : E.anaRig; }
+/** looks that draw their whole picture themselves: no pitch read-out or mini fretboard on top */
+const vzBare = m => m === 'concert' || HM_MODES.has(m) || (typeof BK_MODES !== 'undefined' && BK_MODES.has(m));
 function drawVis(cvo, o) {
   o = o || {}; const cv = cvo || UI.vcv; if (!cv || !E.ready || (!cvo && !paneVisible('vis'))) return; const MODE = o.mode || VZ.mode; const g = cv.getContext('2d'), W = cv.width, H = cv.height, now = performance.now(), dt = Math.min(.1, (now - (VZ.last || now)) / 1000); VZ.last = now; VZ.t += dt;
   const an = visAna(); if (!an) return; if (!VZ.fd || VZ.fd.length !== an.frequencyBinCount) VZ.fd = new Float32Array(an.frequencyBinCount); an.getFloatFrequencyData(VZ.fd); const fd = VZ.fd, bh = E.ctx.sampleRate / an.fftSize;
-  const light = CFG.theme === 'light', C = o.C || vcol();
+  const light = CFG.theme === 'light', C = o.C || vcol(), HP = MODE === 'hex' && !cvo ? hexPal() : null, HEXL = !!(HP && HP.lt);
   // background (always dark stage for contrast, tinted by theme)
-  if (MODE !== 'spectro' && MODE !== 'kaleido') { g.globalAlpha = o.bgA == null ? 1 : o.bgA; g.fillStyle = light && !cvo ? '#0c1a1b' : '#050b0c'; g.fillRect(0, 0, W, H); g.globalAlpha = 1; }
+  if (MODE !== 'spectro' && MODE !== 'kaleido') { g.globalAlpha = o.bgA == null ? 1 : o.bgA; g.fillStyle = HP ? HP.bg : light && !cvo ? '#0c1a1b' : '#050b0c'; g.fillRect(0, 0, W, H); g.globalAlpha = 1; }
   const camOn = !!((o.cam != null ? o.cam : VZ.cam) && CAM.video && CAM.video.readyState >= 2 && MODE !== 'spectro');
   if (camOn && (CFG.camFx || 'over') === 'over') { g.save(); g.globalAlpha = .32; if (CFG.mirror) { g.translate(W, 0); g.scale(-1, 1); } const vr = CAM.video.videoWidth / CAM.video.videoHeight, cr = W / H; let dw = W, dh = H, dx = 0, dy = 0; if (vr > cr) { dw = H * vr; dx = (W - dw) / 2; } else { dh = W / vr; dy = (H - dh) / 2; } g.drawImage(CAM.video, dx, dy, dw, dh); g.restore(); }
   const lvl = x => clamp((x + 88 + (o.gain || 0)) / 62, 0, 1), bin = f => clamp(Math.round(f / bh), 1, fd.length - 1);
   const energy = (() => { let s = 0, n = 0; for (let k = bin(80); k < bin(5000); k += 2) { s += lvl(fd[k]); n++; } return s / n; })();
   const pulse = VZ.pulses.reduce((a, p) => Math.max(a, (1 - (now - p.t) / 900) * p.a), 0);
-  if (MODE === 'hex') drawHex(g, W, H, fd, bh, lvl, C, pulse);
+  if (MODE === 'hex') drawHex(g, W, H, fd, bh, lvl, C, pulse, HP || hexPal(true));
   else if (MODE === 'tunnel') drawTunnel(g, W, H, energy, C, pulse, dt);
   else if (MODE === 'spectro') drawSpectro(g, W, H, fd, bin, lvl, C);
   else if (MODE === 'chroma') drawChroma(g, W, H, C);
   else if (MODE === 'scope') drawScope(g, W, H, C);
-  else if (MODE === 'strings') drawStringField(g, W, H, fd, bin, lvl, C);
   else if (typeof stageExtra === 'function') stageExtra(MODE, g, W, H, { fd, bin, lvl, C, pulse, energy, dt, o });
   if (camOn && !cvo) camTop(g, W, H);
   if (MODE === 'halo' && !cvo) haloFront(g);   // stage draws its own camera layer after trails and kaleidoscope
-  if (!cvo && CFG.vzNeck !== false && !document.body.classList.contains('perform-on') && MODE !== 'concert' && !HM_MODES.has(MODE)) { const r = neckRect(W, H); drawMiniNeck(g, r[0], r[1], r[2], r[3], { C }); }
+  if (!cvo && CFG.vzNeck !== false && !document.body.classList.contains('perform-on') && !vzBare(MODE)) { const r = neckRect(W, H); drawMiniNeck(g, r[0], r[1], r[2], r[3], { C }); }
   if (!cvo && CFG.vzRibbon && !document.body.classList.contains('perform-on') && typeof voxDraw === 'function') { const r = voxRect(W, H); voxDraw(g, r[0], r[1], r[2], r[3], { C, labels: H > 260 }); }
-  if (o.noText || MODE === 'concert' || HM_MODES.has(MODE)) return;
-  g.fillStyle = 'rgba(255,255,255,.55)'; g.font = `${Math.round(11 * H / 400 + 6)}px ui-monospace,Menlo,monospace`; g.textBaseline = 'top';
-  if (AN.midi != null && AN.active) { g.fillStyle = 'rgba(255,255,255,.85)'; g.font = `800 ${Math.round(28 * Math.min(W, H * 2) / 900 + 10)}px ui-monospace,Menlo,monospace`; g.fillText(pcName(AN.midi) + (Math.floor(AN.midi / 12) - 1) + '  ' + (AN.cents >= 0 ? '+' : '') + AN.cents.toFixed(0) + '¢', 14, 12); }
+  if (o.noText || vzBare(MODE)) return;
+  const ink = HP ? HP.ink : '255,255,255'; g.fillStyle = `rgba(${ink},.55)`; g.font = `${Math.round(11 * H / 400 + 6)}px ui-monospace,Menlo,monospace`; g.textBaseline = 'top';
+  if (AN.midi != null && AN.active) { g.fillStyle = `rgba(${ink},.85)`; g.font = `800 ${Math.round(28 * Math.min(W, H * 2) / 900 + 10)}px ui-monospace,Menlo,monospace`; g.fillText(pcName(AN.midi) + (Math.floor(AN.midi / 12) - 1) + '  ' + (AN.cents >= 0 ? '+' : '') + AN.cents.toFixed(0) + '¢', 14, 12); }
   if (AN.chord && AN.chord[0] && AN.active) { g.fillStyle = C.b; g.font = `800 ${Math.round(20 * Math.min(W, H * 2) / 900 + 8)}px ui-monospace,Menlo,monospace`; g.fillText(AN.chord[0].sym, 14, H * .13 + 20); }
 }
-function drawHex(g, W, H, fd, bh, lvl, C, pulse) {
+/** The hexagon field is one design in many colourings: dark green and white are the original two; the others, and any three colours you pick, use the same drawing.
+    “Match the theme” (the default) follows the app's light/dark choice and its accent colours. Only the main and full-screen canvases take the choice; a stage scene keeps its own palette. */
+const HEX_PALS = [   /* id, name, background, cells, gold cells, outline (optional; otherwise worked out) */
+  ['green', 'Dark green', '#04090a', '#3ddc84', '#f2b632', '#7dbf9b'], ['white', 'White', '#f4f8f3', '#1f8a56', '#e0a21a', '#2d6e50'],
+  ['ocean', 'Ocean', '#041018', '#3db8ff', '#ffd166'], ['ember', 'Ember', '#120804', '#ff7a3d', '#ffd166'], ['violet', 'Violet', '#0a0614', '#a07bff', '#ff8fd0'],
+  ['mono', 'Mono', '#0b0b0b', '#d8d8d8', '#ffffff'], ['blush', 'Blush', '#fbf1f3', '#d9487a', '#e0a21a'], ['sky', 'Daylight', '#eef6fb', '#2b7fd0', '#e0a21a']];
+const hexRgbS = c => rgbOf(c).join(',');
+function hexPalBuild(row, useC) {
+  const [id, name, bg, cell, warm, line] = row, B = rgbOf(bg), lum = (.2126 * B[0] + .7152 * B[1] + .0722 * B[2]) / 255, lt = lum > .55;
+  const mx = (a, b, t) => { const A = rgbOf(a), Z = rgbOf(b); return A.map((v, i) => Math.round(lerp(v, Z[i], t))).join(','); };
+  return { id, name, bg, lt, useC: !!useC, a: cell, b: mixHex(cell, warm, .35), cell: hexRgbS(cell), warm: hexRgbS(warm), glow: hexRgbS(cell), line: line ? hexRgbS(line) : (lt ? mx(cell, '#000000', .3) : mx(cell, '#ffffff', .45)), ink: lt ? '20,45,32' : '255,255,255' };
+}
+function mixHex(a, b, t) { const A = rgbOf(a), Z = rgbOf(b); return '#' + A.map((v, i) => Math.round(lerp(v, Z[i], t)).toString(16).padStart(2, '0')).join(''); }
+const _hp = {};
+/** the palette in force. hexPal(true) is the plain dark-green design (what a stage scene uses) */
+function hexPal(plain) {
+  let t = CFG.hexTone || 'auto'; if (t === 'light') t = 'white'; else if (t === 'dark') t = 'green';
+  if (plain) t = 'green';
+  let row, useC = false;
+  if (t === 'custom') { const c = CFG.hexCol || {}; row = ['custom', 'Your colours', c.bg || '#04090a', c.cell || '#3ddc84', c.warm || '#f2b632']; }
+  else if (t === 'auto') { row = CFG.theme === 'light' ? HEX_PALS[1] : HEX_PALS[0]; useC = true; }
+  else row = HEX_PALS.find(r => r[0] === t) || (CFG.theme === 'light' ? HEX_PALS[1] : HEX_PALS[0]);
+  if (plain) useC = true;
+  const key = row.join('|') + useC; return _hp[key] || (_hp[key] = hexPalBuild(row, useC));
+}
+function hexLight() { return hexPal().lt; }
+function hexSet(k) {
+  if (k === 'auto') delete CFG.hexTone; else CFG.hexTone = k;
+  if (k === 'custom' && !CFG.hexCol) { const P = hexPal(); CFG.hexCol = { bg: P.bg, cell: P.a, warm: '#' + P.warm.split(',').map(v => (+v).toString(16).padStart(2, '0')).join('') }; }
+  saveCfg(); hexToneSync();
+}
+function hexSwatches() {
+  const dot = (k, name, bg, cell, extra) => h('button', { type: 'button', class: 'hx-sw', 'data-k': k, role: 'radio', title: name, 'aria-label': 'Hexagon colours: ' + name, onclick: () => hexSet(k), style: { background: bg } }, h('i', { style: { background: cell } }), extra || null);
+  const cur = () => CFG.hexTone === 'light' ? 'white' : CFG.hexTone === 'dark' ? 'green' : (CFG.hexTone || 'auto');
+  const box = h('div', { class: 'hx-pal', id: 'hexTone', role: 'radiogroup', 'aria-label': 'Hexagon colours', style: { display: VZ.mode === 'hex' ? '' : 'none' } });
+  box.append(h('span', { class: 'hx-l' }, 'Hexagons'), dot('auto', 'Match the theme', 'linear-gradient(135deg,#f4f8f3 50%,#04090a 50%)', '#3ddc84'));
+  HEX_PALS.forEach(([id, name, bg, cell]) => box.append(dot(id, name, bg, cell)));
+  box.append(dot('custom', 'Pick your own colours', 'conic-gradient(#ff5d5d,#ffd24d,#4dff88,#4dc3ff,#b36bff,#ff5d5d)', 'transparent'));
+  const mk = (key, label) => h('label', { class: 'hx-c', title: label }, h('span', {}, label), h('input', { type: 'color', 'aria-label': 'Hexagon ' + label.toLowerCase() + ' colour', 'data-c': key, value: (CFG.hexCol || {})[key] || '#3ddc84', oninput: e => { CFG.hexCol = Object.assign({}, CFG.hexCol || {}, { [key]: e.target.value }); saveCfg(); } }));
+  box.append(h('span', { class: 'hx-custom' }, mk('bg', 'Background'), mk('cell', 'Cells'), mk('warm', 'Gold cells')));
+  box._cur = cur; return box;
+}
+function hexToneSync() {
+  const box = document.getElementById('hexTone'); if (!box) return; box.style.display = VZ.mode === 'hex' ? '' : 'none';
+  const cur = box._cur ? box._cur() : (CFG.hexTone || 'auto'), P = hexPal();
+  box.querySelectorAll('.hx-sw').forEach(b => { const on = b.dataset.k === cur; b.classList.toggle('on', on); b.setAttribute('aria-checked', String(on)); });
+  const cu = box.querySelector('.hx-custom'); if (cu) { cu.style.display = cur === 'custom' ? '' : 'none'; const c = CFG.hexCol || {}; cu.querySelectorAll('input').forEach(i => { i.value = c[i.dataset.c] || (i.dataset.c === 'bg' ? P.bg : i.dataset.c === 'cell' ? P.a : '#f2b632'); }); }
+}
+function drawHex(g, W, H, fd, bh, lvl, C, pulse, P) {
+  const lt = P.lt, CA = P.useC ? C.a : P.a, CB = P.useC ? C.b : P.b;
   const R = Math.max(14, Math.min(W, H) / 15), dx = R * Math.sqrt(3), dy = R * 1.5, cols = Math.ceil(W / dx) + 2, rows = Math.ceil(H / dy) + 2, cx = W / 2, cy = H / 2, maxd = Math.hypot(cx, cy);
   if (!VZ.sm || VZ.sm.length !== cols * rows) VZ.sm = new Float32Array(cols * rows); const fmin = 70, fmax = 7000, lr = Math.log(fmax / fmin);
   const bt = ((performance.now() / 1000) % 1.9) / 1.9;   /* a slow ring even when nothing is playing, like the start screen */
-  { const gl = g.createRadialGradient(cx, cy * .92, 0, cx, cy * .92, Math.hypot(W, H) * .55); gl.addColorStop(0, 'rgba(61,220,132,.16)'); gl.addColorStop(.5, 'rgba(61,220,132,.04)'); gl.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gl; g.fillRect(0, 0, W, H); }   /* the start screen's glow */
+  { const gl = g.createRadialGradient(cx, cy * .92, 0, cx, cy * .92, Math.hypot(W, H) * .55); gl.addColorStop(0, `rgba(${P.glow},${lt ? .12 : .16})`); gl.addColorStop(.5, `rgba(${P.glow},.04)`); gl.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gl; g.fillRect(0, 0, W, H); }   /* the start screen's glow */
   for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
     const x = c * dx + (r % 2 ? dx / 2 : 0) - dx / 2, y = r * dy - R / 2, d = Math.hypot(x - cx, y - cy) / maxd, ang = (Math.atan2(y - cy, x - cx) + Math.PI) / (2 * Math.PI);
     const f = fmin * Math.exp(lr * clamp(d * .92 + ((ang * 5) % 1) * .08, 0, 1)), k = clamp(Math.round(f / bh), 1, fd.length - 1), v = lvl(Math.max(fd[k], fd[k + 1] || -120)), i = r * cols + c;
     VZ.sm[i] = Math.max(v, VZ.sm[i] * .86 - .004); const s = VZ.sm[i], ring = pulse * Math.max(0, 1 - Math.abs(d - (1 - pulse) * 1.05) * 6);
-    const amb = .2 * Math.pow(Math.max(0, Math.sin(d * 11 - performance.now() / 780)), 2) * Math.max(0, 1 - d * .9), idle = .42 * Math.max(0, 1 - Math.abs(d - bt * 1.1) * 7) * Math.max(0, 1 - d * .9), a = clamp(s * 1.15 + ring * .8 + amb + idle, 0, 1); if (a < .03) { g.strokeStyle = 'rgba(120,170,170,.07)'; g.lineWidth = 1; hexPath(g, x, y, R * .94); g.stroke(); continue; }
-    const warm = ((c * 7 + r * 13) % 11) === 0; g.fillStyle = warm ? mixc(C.b, '#f2b632', .55, a * .8) : mixc(C.a, C.b, clamp(s * 1.4 - .15 + ring, 0, 1), a * .92); hexPath(g, x, y, R * (.5 + .46 * Math.min(1, a))); g.fill(); g.strokeStyle = 'rgba(125,191,155,' + (.05 + a * .45).toFixed(3) + ')'; g.lineWidth = 1; g.stroke();   /* gold cells and outlines, as on the start screen */
+    const amb = .2 * Math.pow(Math.max(0, Math.sin(d * 11 - performance.now() / 780)), 2) * Math.max(0, 1 - d * .9), idle = .42 * Math.max(0, 1 - Math.abs(d - bt * 1.1) * 7) * Math.max(0, 1 - d * .9), a = clamp(s * 1.15 + ring * .8 + amb + idle, 0, 1); if (a < .03) { g.strokeStyle = `rgba(${P.line},${lt ? .13 : .07})`; g.lineWidth = 1; hexPath(g, x, y, R * .94); g.stroke(); continue; }
+    const warm = ((c * 7 + r * 13) % 11) === 0; g.fillStyle = warm ? mixc(CB, '#' + P.warm.split(',').map(v => (+v).toString(16).padStart(2, '0')).join(''), .55, a * (lt ? .9 : .8)) : mixc(CA, CB, clamp(s * 1.4 - .15 + ring, 0, 1), a * .92); hexPath(g, x, y, R * (.5 + .46 * Math.min(1, a))); g.fill(); g.strokeStyle = `rgba(${P.line},` + (.05 + a * (lt ? .4 : .45)).toFixed(3) + ')'; g.lineWidth = 1; g.stroke();   /* gold cells and outlines, as on the start screen */
   }
 }
 function hexPath(g, x, y, r) { g.beginPath(); for (let i = 0; i < 6; i++) { const a = Math.PI / 3 * i + Math.PI / 6; g[i ? 'lineTo' : 'moveTo'](x + r * Math.cos(a), y + r * Math.sin(a)); } g.closePath(); }
@@ -2583,15 +2635,6 @@ function drawScope(g, W, H, C) {
   g.strokeStyle = 'rgba(255,255,255,.08)'; g.lineWidth = 1; for (let i = 1; i < 8; i++) { g.beginPath(); g.moveTo(0, H * i / 8); g.lineTo(W, H * i / 8); g.stroke(); g.beginPath(); g.moveTo(W * i / 8, 0); g.lineTo(W * i / 8, H); g.stroke(); }
   const len = Math.min(d.length - s, 1600); g.lineWidth = 2.2; g.strokeStyle = C.a; g.shadowColor = C.a; g.shadowBlur = 12; g.beginPath(); for (let i = 0; i < len; i++) { const x = i / len * W, y = H / 2 - d[s + i] * H * .45 * 2.2; i ? g.lineTo(x, y) : g.moveTo(x, y); } g.stroke(); g.shadowBlur = 0;
 }
-function drawStringField(g, W, H, fd, bin, lvl, C) {
-  const n = 6, mh = H / (n + 1); S.tuning.forEach((open, st) => {
-    const y = H - (st + 1) * mh, f0 = mtof(open + S.capo); let e = 0; for (let h_ = 1; h_ <= 4; h_++) e = Math.max(e, lvl(fd[bin(f0 * h_)]) / Math.sqrt(h_)); const live = AN.midi != null && AN.midi % 12 === (open + S.capo) % 12 ? 1 : 0;
-    const amp = (6 + e * mh * .75) * (1 + live * .3), ph = VZ.t * (4 + st * 1.3) * Math.PI; g.lineWidth = 1.2 + (6 - st) * .45; g.strokeStyle = mixc(C.a, C.b, e, .35 + .6 * e); g.shadowColor = C.a; g.shadowBlur = e * 16; g.beginPath();
-    for (let x = 0; x <= W; x += 6) { const u = x / W, yy = y + Math.sin(u * Math.PI) * Math.sin(u * Math.PI * (2 + (st % 3)) + ph) * amp * e; x ? g.lineTo(x, yy) : g.moveTo(x, yy); } g.stroke(); g.shadowBlur = 0;
-    g.fillStyle = 'rgba(255,255,255,.55)'; g.font = '700 12px ui-monospace,monospace'; g.fillText(pcName(open + S.capo), 8, y - 16);
-  });
-}
-
 /* ---------------- VISION (webcam fretting-hand lab) ---------------- */
 const CAM = { video: null, stream: null, on: false, cal: store.get('cal', null), pts: [], calMode: false, hands: null, tracker: null, track: 'off', fps: 0, frames: 0, handFrames: 0, fretHist: new Array(25).fill(0), stringHist: new Array(6).fill(0), lastT: 0, prevGray: null, motion: new Array(13).fill(0), vel: {}, loopOn: false, fingerLast: {} };
 function buildCamPane() {
@@ -3430,7 +3473,7 @@ async function cfSegInit() {
     CF.state = 'ready'; CF.errN = 0; toast('Person cut-out ready', 'ok');
   } catch (e) { CF.state = 'failed'; if (e && e.declined) toast('Staying offline: the edges-in look is used instead', 'ok'); else { console.warn('segmenter unavailable', e); toast('The person cut-out model could not load (offline or blocked), so the edges-in look is used instead', 'warn'); } if (UI.camInfo) UI.camInfo.textContent = UI.camInfo.textContent.replace(' · loading cut-out…', ''); }
 }
-function cfWanted() { if ((CFG.camFx || 'over') !== 'person' || !CAM.on) return false; let st = false; try { st = !!(typeof scn === 'function' && scn() && scn().cam); } catch (e) { } return !!VZ.cam || st; }
+function cfWanted() { if ((CFG.camFx || 'over') !== 'person' || !CAM.on) return false; let st = false; try { st = !!(typeof scn === 'function' && scn() && scn().cam); } catch (e) { } return !!VZ.cam || st || !!(typeof AUD !== 'undefined' && AUD.live && monShown('audience')); }
 function cfTick(ts) {
   if (!cfWanted()) return; if (CF.state === 'idle') { cfSegInit(); return; }
   if (CF.state !== 'ready' || CF.busy || ts - CF.t < (CFG.vq >= 1 ? 45 : 90)) return; CF.t = ts; CF.busy = true;
@@ -3465,7 +3508,7 @@ function frame(ts) {
   requestAnimationFrame(frame); frameN++; fpsN++; if (ts - fpsT >= 1000) { FPS = fpsN; fpsN = 0; fpsT = ts; }
   if (document.hidden) return;
   if (E.ready) {
-    updateMeters(); if (monShown('tuner')) updateTuner(); if (frameN % 6 === 0 && monShown('live')) updateLive(); if (frameN % 2 === 0) { if (monShown('spectrum')) drawMini(); if (monShown('views')) drawMonView(); }
+    updateMeters(); if (monShown('tuner')) updateTuner(); if (frameN % 6 === 0 && monShown('live')) updateLive(); if (frameN % 2 === 0) { if (monShown('spectrum')) drawMini(); if (monShown('views')) drawMonView(); if (monShown('audience') && typeof audDraw === 'function') audDraw(); }
     if (AN.clip && UI.clip) UI.clip.className = 'led bad';
   }
   // transport LCD
@@ -3520,13 +3563,13 @@ async function boot() {
   $('#bootNoMic').onclick = () => bootStart('studio'); $('#bootStage').onclick = () => bootStart('stage'); guideBoot(bootStart);
   if (CFG.route === 'stage') { $('#bootStage').classList.add('primary'); $('#bootNoMic').classList.remove('primary'); } else if (CFG.route === 'studio') $('#bootNoMic').classList.add('primary');
   // first-timers can look at a finished song before they give anything (no microphone, no camera); people who already have songs just carry on
-  const demoBtn = $('#bootDemo'); if (store.get('started', false)) { demoBtn.remove(); $('#bootRoutes').classList.add('solo'); ['#bootGoals', '#bootQ', '#bootPro'].forEach(q => { const e = $(q); if (e) e.remove(); }); $('#bootNoMic').classList.add('primary'); } else demoBtn.onclick = () => { PRJ.bootDemo = true; bootStart('studio'); };
+  const demoBtn = $('#bootDemo'); if (store.get('started', false)) { demoBtn.remove(); $('#bootRoutes').classList.add('solo'); ['#bootGoals', '#bootQ', '#bootPro'].forEach(q => { const e = $(q); if (e) e.remove(); }); $('#bootNoMic').classList.add('primary'); if (typeof wbBoot === 'function') { try { wbBoot(); } catch (e) { console.warn('welcome back', e); } } } else demoBtn.onclick = () => { PRJ.bootDemo = true; bootStart('studio'); };
   setInterval(anaTick, 33); requestAnimationFrame(frame);
   window.addEventListener('beforeunload', () => { try { store.set('song', S); saveCfg(); } catch (e) { } });
   document.addEventListener('visibilitychange', () => { if (!document.hidden && E.ctx && !OFR.busy && E.ctx.state === 'suspended') E.ctx.resume(); });
   if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener('devicechange', () => { ioDeviceChange().catch(e => console.warn(e)); });
   bus.emit('song');
-  if (/[?&]debug\b/.test(location.search)) window.__daily = { LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, STP, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfort, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, srecStart, srecStop, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, tkFades, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, FB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, vzSetMode, sideShow, chSetRoles, chRoles, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, slotAtTime, SEL, mtof, spb, playheadSlot, WR, HM, HMX, HM_MODES, vzImmersive, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmTerrainMap, hmPaintRender, hmKind, writeBuild, journeyGo, journeyNow, JOURNEYS, mGo, GD_SESSIONS, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard};   // test hook, only with ?debug
+  if (/[?&]debug\b/.test(location.search)) window.__daily = { S, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, STP, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfort, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, srecStart, srecStop, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, tkFades, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, FB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, vzSetMode, sideShow, chSetRoles, chRoles, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, slotAtTime, SEL, mtof, spb, playheadSlot, WR, HM, HMX, HM_MODES, vzImmersive, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, journeyGo, journeyNow, JOURNEYS, mGo, GD_SESSIONS, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard};   // test hook, only with ?debug
   projInit().catch(e => { console.warn('library', e); PRJ.ready = true; if (PRJ.wantStart) startMaybe(); });
 }
 
@@ -3540,6 +3583,7 @@ const LAY = Object.assign({ flip: true, left: true, right: true, lw: 250, rw: 29
 LAY.rc = Object.assign({ order: [], col: {}, hide: {} }, LAY.rc || {});
 /* 2.6: the Monitor is a short list of widgets you choose, not one long scroll. Until you chose differently, only the Tuner and the Levels show; the readouts that used to follow them are one click away. */
 if ((LAY.rc.v | 0) < 2) { ['live', 'spectrum', 'views'].forEach(n => { if (LAY.rc.hide[n] !== false) LAY.rc.hide[n] = true; }); LAY.rc.v = 2; }
+if ((LAY.rc.v | 0) < 3) { if (LAY.rc.hide.audience !== false) LAY.rc.hide.audience = true; LAY.rc.v = 3; }   /* the Audience view is added, not forced on */
 const FLOATS = new Map();
 const saveLay = () => { CFG.layout = LAY; saveCfg(); };
 const TLH_DEFAULT = 'minmax(200px,40%)';
@@ -3550,7 +3594,7 @@ function applyLayout() {
   c.classList.toggle('flip', !!LAY.flip);
   w.classList.remove('collapsed-l', 'collapsed-r');
   w.style.setProperty('--lw', (LAY.left ? sideW('left') : 0) + 'px'); w.style.setProperty('--rw', (LAY.right ? sideW('right') : 0) + 'px');
-  c.style.setProperty('--tlh', LAY.tlh || TLH_DEFAULT);
+  c.style.setProperty('--tlh', LAY.tlh || TLH_DEFAULT); if (typeof edgeSync === 'function') edgeSync();
   { const dsk = !document.body.dataset.form || document.body.dataset.form === 'desktop'; $('#left').style.visibility = !dsk || LAY.left ? '' : 'hidden'; $('#right').style.visibility = !dsk || LAY.right ? '' : 'hidden'; }
   setTimeout(() => { if (typeof tlSize === 'function') tlSize(); window.dispatchEvent(new Event('resize')); }, 40);
 }
@@ -3618,8 +3662,8 @@ let _zf = 41; function floatFront(id) { const w = FLOATS.get(id); if (w) w.style
 function unfloat(id) { const w = FLOATS.get(id); if (!w) return; w._ro.disconnect(); $('#dock').append(PANES[id]); w.remove(); FLOATS.delete(id); LAY.fl = [...FLOATS.keys()]; saveLay(); rebuildTabs(); dockGo(id); setTimeout(() => window.dispatchEvent(new Event('resize')), 50); }
 
 /* ---------- Monitor widgets: a chooser on top, the cards you chose below ---------- */
-const RCARDS = ['tuner', 'levels', 'live', 'spectrum', 'views'];
-const RC_INFO = { tuner: ['Tuner', 'Pitch, cents and the strings of your tuning'], levels: ['Levels', 'Input, rig and master meters'], live: ['Analysis', 'Chord, key, brightness, vibrato and crest'], spectrum: ['Spectrum', 'The rig output as a spectrum'], views: ['Views', 'Pitch wheel, spectrogram and scope'] };
+const RCARDS = ['tuner', 'levels', 'live', 'spectrum', 'views', 'audience'];
+const RC_INFO = { tuner: ['Tuner', 'Pitch, cents and the strings of your tuning'], levels: ['Levels', 'Input, rig and master meters'], live: ['Analysis', 'Chord, key, brightness, vibrato and crest'], spectrum: ['Spectrum', 'The rig output as a spectrum'], views: ['Views', 'Pitch wheel, spectrogram and scope'], audience: ['Audience', 'You and the show, as the audience sees them'] };
 /** is this Monitor widget showing? The frame loop skips the drawing of the ones that are not */
 function monShown(n) { return !LAY.rc.hide[n]; }
 function monChips() {
@@ -3655,7 +3699,7 @@ const LAYOUTS = [
   ['Studio', 'Everything in reach: panels above the arrangement, a sidebar each side.', { flip: true, left: true, right: true, tlh: null, dock: 'tab', cur: { left: 'io', right: 'monitor' } }],
   ['Write', 'Tab in the middle, chords and lyrics beside it, theory at hand. The arrangement stays short.', { flip: true, left: true, right: true, tlh: 'minmax(130px,24%)', dock: 'tab', order: ['tab', 'band', 'rig'], hidden: ['song', 'fret', 'stage', 'neural', 'stems', 'tx', 'cam', 'lab'], cur: { left: 'theory', right: 'refine' } }],
   ['Arrange', 'The arrangement on top and tall, the band and song panels below it.', { flip: false, left: false, right: true, tlh: 'minmax(260px,58%)', dock: 'band', order: ['band', 'song', 'tab', 'stems', 'rig'], hidden: ['stage', 'neural', 'tx', 'cam', 'lab', 'fret'], cur: { right: 'refine' } }],
-  ['Record', 'Inputs and levels either side, a tall arrangement for the guitar and voice lanes.', { flip: true, left: true, right: true, tlh: 'minmax(260px,56%)', dock: 'rig', order: ['rig', 'tab', 'song', 'band'], hidden: ['stage', 'neural', 'tx', 'cam', 'lab', 'fret'], cur: { left: 'io', right: 'monitor' }, mon: ['tuner', 'levels'] }],
+  ['Record', 'Inputs and levels either side, a tall arrangement for the guitar and voice lanes.', { flip: true, left: true, right: true, tlh: 'minmax(260px,56%)', dock: 'rig', order: ['rig', 'tab', 'song', 'band'], hidden: ['stage', 'neural', 'tx', 'cam', 'lab', 'fret'], cur: { left: 'io', right: 'monitor' }, mon: ['tuner', 'levels', 'audience'] }],
   ['Tone', 'The pedalboard fills the middle, with tones to pick from and the tuner and spectrum alongside.', { flip: true, left: true, right: true, tlh: '96px', dock: 'rig', board: 'board', order: ['rig', 'fret', 'band', 'song', 'tab'], hidden: ['stage', 'neural', 'stems', 'tx', 'cam', 'lab'], cur: { left: 'tones', right: 'monitor' }, mon: ['tuner', 'spectrum', 'live'] }],
   ['Practice', 'Tab and fretboard side by side, with the loop and transport in reach.', { flip: true, left: false, right: true, tlh: 'minmax(170px,34%)', dock: 'tab', order: ['tab', 'song', 'band', 'rig'], hidden: ['stage', 'neural', 'stems', 'tx', 'cam', 'lab'], side: { fret: 'right' }, so: { left: [], right: ['fret', 'refine', 'monitor'] }, cur: { right: 'fret' } }],
   ['Show', 'The stage picture with the show setup beside it. Sidebars away, arrangement reduced to the transport.', { flip: true, left: false, right: false, tlh: '84px', dock: 'stage', order: ['stage', 'vis', 'song', 'band'], hidden: ['rig', 'tab', 'fret', 'neural', 'stems', 'tx', 'cam', 'lab'] }],
@@ -3685,20 +3729,48 @@ function layThumb(s) {
 }
 function layCard(n, d, s, on, fn) { return h('button', { class: 'lay-card' + (on ? ' on' : ''), 'aria-pressed': String(!!on), title: d, onclick: fn }, layThumb(s), h('span', { class: 'lay-t' }, h('b', {}, n), h('span', {}, d))); }
 function layoutMenu(btn) {
-  const saved = store.get('layouts', []), box = h('div', { class: 'lay-menu' });
-  box.append(h('h5', {}, 'Layouts'), h('div', { class: 'lay-grid' }, LAYOUTS.map(([n, d, s]) => layCard(n, d, s, LAY.name === n, () => { applyPreset(s, n); closePop(); }))));
-  if (saved.length) box.append(h('h5', {}, 'Your layouts'), h('div', { class: 'lay-grid' }, saved.map((l, i) => h('div', { class: 'lay-own' }, layCard('★ ' + l.n, 'Your own layout', l.s, LAY.name === '★ ' + l.n, () => { applyPreset(l.s, '★ ' + l.n); closePop(); }), h('button', { class: 'btn sm bad lay-del', title: 'Delete this layout', 'aria-label': 'Delete ' + l.n, onclick: () => { saved.splice(i, 1); store.set('layouts', saved); closePop(); } }, '✕')))));
-  const nm = h('input', { class: 'in', placeholder: 'Name this layout…', style: { flex: 1, fontFamily: 'var(--sans)' } });
-  box.append(h('h5', {}, 'Keep this one'), h('div', { class: 'lrow' }, nm, h('button', { class: 'btn sm primary', onclick: () => { const n = nm.value.trim(); if (!n) return toast('Name your layout', 'warn'); const s = { flip: LAY.flip, left: LAY.left, right: LAY.right, lw: LAY.lw, rw: LAY.rw, tlh: LAY.tlh, hidden: LAY.hidden.slice(), order: DOCK.map(d => d[0]), rc: JSON.parse(JSON.stringify(LAY.rc)), dock: DOCK.cur, side: JSON.parse(JSON.stringify(LAY.side)), so: JSON.parse(JSON.stringify(LAY.so)), cur: { left: SD.cur.left, right: SD.cur.right } }; const a = saved.filter(x => x.n !== n); a.push({ n, s }); store.set('layouts', a); LAY.name = '★ ' + n; saveLay(); toast('Layout “' + n + '” saved', 'ok'); closePop(); } }, 'Save current')));
+  const box = h('div', { class: 'lay-menu view-menu' });
   box.append(h('h5', {}, 'Workspace'));
   const chk = (label, get, set) => h('label', { class: 'lrow' }, h('input', { type: 'checkbox', checked: get(), onchange: e => set(e.target.checked) }), label);
   box.append(chk('Panels above the arrangement', () => LAY.flip, v => { LAY.flip = v; saveLay(); applyLayout(); }), chk('Left sidebar  [', () => LAY.left, v => { LAY.left = v; saveLay(); applyLayout(); }), chk('Right sidebar  ]', () => LAY.right, v => { LAY.right = v; saveLay(); applyLayout(); }));
+  box.append(h('div', { class: 'tiny muted', style: { margin: '2px 0 6px', lineHeight: 1.45 } }, 'Every panel area has a labelled tab on its edge: click it to collapse or open it. Light or dark is in Appearance (⚙); how many tools show is on the Tools button.'));
   box.append(h('button', { class: 'pbtn', onclick: () => placeMenu(btn) }, h('b', {}, '⇆ Where panels live…'), h('span', {}, 'Move any panel to the left sidebar, the right sidebar or the centre · swap the sidebars')));
   const det = h('details', { class: 'lay-panels' }, h('summary', {}, 'Panels: show or hide, or float as a window'));
   DOCK.forEach(([id, name]) => det.append(h('div', { class: 'lrow' }, h('input', { type: 'checkbox', checked: !LAY.hidden.includes(id), 'aria-label': 'Show ' + name, onchange: e => setTabHidden(id, !e.target.checked) }), h('span', { class: 'grow' }, name), h('button', { class: 'btn sm', onclick: () => { FLOATS.has(id) ? unfloat(id) : floatPane(id); closePop(); } }, FLOATS.has(id) ? '⤓ dock' : '⧉ float'))));
   box.append(det, h('div', { class: 'tiny muted', style: { marginTop: '6px' } }, 'The Monitor’s widgets (Tuner, Levels, Analysis, Spectrum, Views) are chosen on the Monitor itself.'));
   box.append(h('div', { class: 'row', style: { marginTop: '10px' } }, h('button', { class: 'btn sm', onclick: () => { [...FLOATS.keys()].forEach(unfloat); LAY.rc = { order: [], col: {}, hide: {}, v: 2 }; RCARDS.forEach(n => { LAY.rc.hide[n] = !MON_DEFAULT.includes(n); }); LAY.floats = {}; sideReset(); applyPreset(LAYOUTS[0][2], LAYOUTS[0][0]); closePop(); } }, 'Reset layout')));
-  popover(btn, box, { right: true, style: { maxWidth: 'min(640px,96vw)', width: '640px' } });
+  popover(btn, box, { right: true, style: { maxWidth: 'min(420px,96vw)', width: '380px' } });
+}
+
+/* ---------- labelled tabs on the edge of every panel area (like the journal's): collapse it, open it, always within reach ----------
+   Each sidebar has a vertical tab named for the panel that is open (click it to collapse the sidebar). While the sidebar is collapsed
+   the same edge lists all of its panels, so one click opens exactly the one you want. The divider carries "Arrangement" and "Panels". */
+const EDGE = { tabs: {}, rails: {} };
+function edgeTab(key, onclick) { const b = h('button', { type: 'button', class: 'edge-tab et-' + key, 'data-edge': key, onclick: e => { e.stopPropagation(); onclick(); } }); b.addEventListener('pointerdown', e => e.stopPropagation()); EDGE.tabs[key] = b; return b; }
+function arrangeToggle() { const slim = '84px'; if (LAY.tlh === slim) { LAY.tlh = LAY.tlhPrev === undefined ? null : LAY.tlhPrev; delete LAY.tlhPrev; } else { LAY.tlhPrev = LAY.tlh == null ? null : LAY.tlh; LAY.tlh = slim; } saveLay(); applyLayout(); }
+function panelsToggle() { const tot = ($('#center') || {}).clientHeight || 600; if (LAY.tlhFull) { LAY.tlh = LAY.tlhFull.v; delete LAY.tlhFull; } else { LAY.tlhFull = { v: LAY.tlh == null ? null : LAY.tlh }; LAY.tlh = Math.max(200, tot - 44) + 'px'; } saveLay(); applyLayout(); }
+function edgeBuild() {
+  const w = $('#work'), tl = $('#timeline'); if (!w || !tl || EDGE.built) return; EDGE.built = true;
+  ['left', 'right'].forEach(side => { const r = h('div', { class: 'edge-rail er-' + side, 'data-rail': side }, edgeTab(side, () => toggleSide(side))); EDGE.rails[side] = r; w.append(r); });
+  const sh = $('.split-h', tl); if (sh) { sh.append(edgeTab('arr', arrangeToggle), edgeTab('pan', panelsToggle)); }
+  edgeSync();
+}
+/** name each tab for what it holds and say what a click will do */
+function edgeSync() {
+  const lab = (b, arrow, name) => { b.textContent = ''; b.append(h('span', { class: 'et-ar', 'aria-hidden': 'true' }, arrow), h('span', { class: 'et-nm' }, name)); };
+  const set = (k, arrow, name, tip, on) => { const b = EDGE.tabs[k]; if (!b) return; lab(b, arrow, name); b.title = tip; b.setAttribute('aria-label', tip); b.setAttribute('aria-expanded', String(!!on)); b.classList.toggle('on', !!on); };
+  ['left', 'right'].forEach(side => {
+    const rail = EDGE.rails[side]; if (!rail) return;
+    const open = !!LAY[side], ids = (typeof SD !== 'undefined' && SD.ready && typeof sideIds === 'function') ? sideIds(side) : [], cur = (typeof SD !== 'undefined' && SD.cur[side]) || (side === 'left' ? 'io' : 'monitor');
+    const nm = typeof panelName === 'function' ? panelName(cur) : cur, key = side === 'left' ? '[' : ']';
+    set(side, open ? (side === 'left' ? '◂' : '▸') : (side === 'left' ? '▸' : '◂'), nm, (open ? 'Collapse the ' + side + ' sidebar (' + nm + ') ' : 'Open the ' + side + ' sidebar (' + nm + ') ') + '(' + key + ')', open);
+    [...rail.querySelectorAll('.et-more')].forEach(x => x.remove());
+    if (!open) ids.filter(id => id !== cur).forEach(id => { const n = panelName(id), b = h('button', { type: 'button', class: 'edge-tab et-more', 'data-panel': id, title: 'Open ' + n, 'aria-label': 'Open ' + n, onclick: e => { e.stopPropagation(); sideShow(id); } }, h('span', { class: 'et-nm' }, n)); b.addEventListener('pointerdown', e => e.stopPropagation()); rail.append(b); });
+  });
+  const slim = LAY.tlh === '84px', flip = !!LAY.flip;
+  set('arr', slim ? (flip ? '▴' : '▾') : (flip ? '▾' : '▴'), 'Arrangement', slim ? 'Open the arrangement' : 'Collapse the arrangement to the transport', !slim);
+  const full = !!LAY.tlhFull; set('pan', full ? (flip ? '▾' : '▴') : (flip ? '▴' : '▾'), 'Panels', full ? 'Open the panels again' : 'Collapse the panels to their tab strip', !full);
+  const w = $('#work'); if (w) { w.dataset.l = LAY.left ? '1' : '0'; w.dataset.r = LAY.right ? '1' : '0'; }
 }
 
 /* ---------- band strip: always-visible instrument switches ---------- */
@@ -3735,8 +3807,8 @@ function buildBandStrip() {
 /* ---------- build ---------- */
 function buildLayout() {
   const dock = $('#dock'), tabs = $('.tabs', dock), bar = h('div', { class: 'dockbar' }); dock.insertBefore(bar, tabs); bar.append(tabs, dockMore(), buildBandStrip());
-  applyTabOrder(); rebuildTabs(); buildSplitters(); setupCards(); applyLayout();
-  const btn = h('button', { class: 'btn icon', title: 'Layout — presets, panel order, floating windows', onclick: () => layoutMenu(btn) }, '▦'); const tr = $('#topR'); tr.insertBefore(btn, tr.firstChild);
+  applyTabOrder(); rebuildTabs(); buildSplitters(); edgeBuild(); setupCards(); applyLayout();
+  const btn = h('button', { class: 'btn icon', title: 'Layout and view — light or dark, experience, panels', onclick: () => layoutMenu(btn) }, '▦'); const tr = $('#topR'); tr.insertBefore(btn, tr.firstChild);
   bus.on('song', syncBandStrip); bus.on('transport', syncBandStrip); bus.on('dock', () => { $$('#dock .tab').forEach(t => t.classList.toggle('on', t.dataset.id === DOCK.cur)); }); syncBandStrip();
   LAY.fl.slice().forEach(id => { try { floatPane(id, LAY.floats[id]); } catch (e) { console.warn(e); } });
 }
@@ -3859,7 +3931,7 @@ function buildBoardExtras() {
    Part 13 · LIVE STAGE — show-ready visuals: 8 scenes (six looks, a prompter, you in front), post-FX (trails / kaleidoscope / glow / hue),
    song HUD (chord, section, lyric, beat), fullscreen + pop-out, MIDI out (clock, chord roots, onsets)
    ============================================================ */
-VMODES.push(['bloom', 'Chord Bloom'], ['orbit', 'Harmonic Orrery'], ['joy', 'Ridgeline'], ['pulse', 'Beat Grid'], ['prompter', 'Prompter']);
+VMODES.push(['bloom', 'Chord Bloom'], ['orbit', 'Harmonic Orrery'], ['pulse', 'Beat Grid'], ['prompter', 'Prompter']);
 const SCN0 = (name, mode, hue, o) => Object.assign({ name, mode, hue, drift: 0, trail: .5, kal: 0, glow: .5, sens: 1, cam: false, flash: 0, sect: '', ov: { chord: true, lyric: false, beat: false, tuner: false, info: false } }, o || {});
 /** a scene that runs a starter show (a Concert design: palette, rig, lasers, motion; see part 56) */
 const SHOWSC = (name, id, o) => SCN0(name, 'concert', 38, Object.assign({ trail: 0, glow: .45, show: { design: id, ovr: {} }, ov: { chord: true, lyric: true, beat: false, tuner: false, info: true } }, o || {}));
@@ -3872,9 +3944,10 @@ const STG = Object.assign({ cur: 0, safe: true, q: 1, out: '', clock: false, roo
 STG.scenes.forEach(s => { if (s.mode === 'tunnel') { s.mode = 'concert'; if (s.name === 'Tunnel') s.name = 'Concert'; s.trail = 0; s.flash = 0; } });
 /* scenes nobody has touched become the starter shows; scenes you made or changed are left exactly as they are (Stage ▸ Starter shows brings the new ones back) */
 if ((STG.v || 0) < STG_V) { if (STG.scenes.map(s => [s.name, s.mode, s.hue].join('|')).join(',') === STG_LEGACY || STG.scenes.map(s => [s.name, s.mode, (s.show && s.show.design) || ''].join('|')).join(',') === STG_V25) STG.scenes = starterScenes(); STG.v = STG_V; }
+STG.scenes.forEach(s => { if (VZ_RETIRED[s.mode]) s.mode = VZ_RETIRED[s.mode]; });   // looks that were taken out become Hex Resonance
 while (STG.scenes.length < 8) STG.scenes.push(SCN0('Scene ' + (STG.scenes.length + 1), 'hex', 175));
 const saveStg = () => { CFG.stage = STG; saveCfg(); };
-const SG = { off: null, small: null, wrap: null, cv: null, flash: 0, lastFlash: 0, idleT: 0, pop: null, wl: null, tick: -1, lastSym: '', lastSec: '', playPrev: false, noteOn: null, ccT: 0, joy: [], lastPos: '', hudDirty: 1 };
+const SG = { off: null, small: null, wrap: null, cv: null, flash: 0, lastFlash: 0, idleT: 0, pop: null, wl: null, tick: -1, lastSym: '', lastSec: '', playPrev: false, noteOn: null, ccT: 0, lastPos: '', hudDirty: 1 };
 const scn = () => STG.scenes[STG.cur];
 const hex2 = n => ('0' + Math.round(n).toString(16)).slice(-2);
 function hsl(hh, s, l) { hh = ((hh % 360) + 360) % 360; s /= 100; l /= 100; const k = n => (n + hh / 30) % 12, a = s * Math.min(l, 1 - l), f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1))); return '#' + hex2(f(0) * 255) + hex2(f(8) * 255) + hex2(f(4) * 255); }
@@ -3898,6 +3971,7 @@ function stageInfo() {
 /* ---------- extra visual modes (dispatched from drawVis) ---------- */
 function stageExtra(mode, g, W, H, X) {
   if (typeof HM_MODES !== 'undefined' && HM_MODES.has(mode)) return hmDraw(mode, g, W, H, X);
+  if (typeof BK_MODES !== 'undefined' && BK_MODES.has(mode)) return bkDraw(mode, g, W, H, X);
   if (mode === 'concert') return concertDraw(g, W, H, X);
   if (mode === 'neural') return ngStageDraw(g, W, H, X);
   if (mode === 'halo' || mode === 'kaleido') return vzExtra2(mode, g, W, H, X);
@@ -3921,14 +3995,6 @@ function stageExtra(mode, g, W, H, X) {
     }
     if (pts.length > 1) { g.beginPath(); pts.forEach((q, i) => g[i ? 'lineTo' : 'moveTo'](q[0], q[1])); g.closePath(); g.fillStyle = mixc(C.b, C.a, .5, .16); g.fill(); g.strokeStyle = mixc(C.b, C.a, .5, .8); g.lineWidth = 2; g.stroke(); }
     g.fillStyle = mixc(C.a, C.b, .5, .9); hexPath(g, 0, 0, R * (.02 + pulse * .02)); g.fill(); g.restore(); g.textAlign = 'left';
-  } else if (mode === 'joy') {
-    const N = 96, rows = 30, fmin = 70, fmax = 6000, lr = Math.log(fmax / fmin), row = new Float32Array(N); for (let i = 0; i < N; i++) { const f = fmin * Math.exp(i / (N - 1) * lr); row[i] = lvl(fd[bin(f)]); }
-    SG.joy.unshift(row); if (SG.joy.length > rows) SG.joy.pop(); g.fillStyle = '#050b0c'; g.fillRect(0, 0, W, H);
-    for (let r = SG.joy.length - 1; r >= 0; r--) {
-      const rw = SG.joy[r], y0 = H * .34 + (r / rows) * H * .58, k = 1 - r / rows, amp = H * .2 * (.5 + k * .7); g.beginPath(); g.moveTo(W * .05, y0);
-      for (let i = 0; i < N; i++) g.lineTo(W * .05 + i / (N - 1) * W * .9, y0 - Math.pow(rw[i], 1.6) * amp); g.lineTo(W * .95, y0); g.closePath(); g.fillStyle = 'rgba(5,11,12,.92)'; g.fill();
-      g.lineWidth = 1 + k * 1.6; g.strokeStyle = mixc(C.c, C.a, k, .25 + .75 * k); g.stroke();
-    }
   } else if (mode === 'pulse') {
     const sz = Math.max(26, R / 12), hw = sz * Math.sqrt(3), cols = Math.ceil(W / hw) + 2, rows = Math.ceil(H / (sz * 1.5)) + 2, info = SG.info || {}, beatP = (info.playing ? ((info.slot % (16 / S.ts[1])) / (16 / S.ts[1])) : (t * 1.5) % 1), dn = 1 - beatP;
     for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
@@ -3946,14 +4012,14 @@ function stageFrame(ts) {
   if (!SG.cv || !E.ready || !(paneVisible('stage') || document.fullscreenElement === SG.wrap || SG.pop)) return;
   const sc0 = scn(), wrap = SG.wrap, d = (window.devicePixelRatio || 1) * STG.q, cw = wrap.clientWidth, chh = wrap.clientHeight; if (!cw || !chh) return;
   const w = Math.min(1920, Math.floor(cw * d)), hh = Math.min(1080 * 1.4, Math.floor(chh * d));
-  if (SG.cv.width !== w || SG.cv.height !== hh) { SG.cv.width = w; SG.cv.height = hh; SG.off.width = w; SG.off.height = hh; SG.small.width = Math.max(2, w >> 2); SG.small.height = Math.max(2, hh >> 2); VZ.spec = null; SG.joy = []; }
+  if (SG.cv.width !== w || SG.cv.height !== hh) { SG.cv.width = w; SG.cv.height = hh; SG.off.width = w; SG.off.height = hh; SG.small.width = Math.max(2, w >> 2); SG.small.height = Math.max(2, hh >> 2); VZ.spec = null;  }
   /* output: a frame-rate cap, a frozen picture and the test patterns are decided before anything is drawn (Show setup ▸ Output, part 59) */
   const OUT = CFG.show.out, g0 = SG.cv.getContext('2d');
   if (OUT.fps > 0 && OUT.fps < 60 && SG.drawT && ts - SG.drawT < 1000 / OUT.fps - 4) return; SG.drawT = ts;
   if (SG.freeze && SG.frz) { g0.drawImage(SG.frz, 0, 0, w, hh); shOutFrame(g0, w, hh); return; }
   if (SG.test) { shTestPattern(g0, w, hh, SG.test); shOutFrame(g0, w, hh); return; }
   const info = SG.info = stageInfo(), sc = pbScene(sc0, info), t = VZ.t, C = sc.mode === 'concert' ? lxHudPal(sc) : stagePal(sc, t), off = SG.off, g = SG.cv.getContext('2d');
-  if (pbSolid()) pbFill(off); else drawVis(off, { mode: sc.mode, C, bgA: sc.mode === 'joy' || sc.mode === 'spectro' ? 1 : clamp(1 - sc.trail * .93, .05, 1), noText: true, cam: sc.cam, gain: (sc.sens - 1) * 20, show: sc.show, stage: true });
+  if (pbSolid()) pbFill(off); else drawVis(off, { mode: sc.mode, C, bgA: sc.mode === 'spectro' ? 1 : clamp(1 - sc.trail * .93, .05, 1), noText: true, cam: sc.cam, gain: (sc.sens - 1) * 20, show: sc.show, stage: true });
   g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1; g.fillStyle = '#000'; g.fillRect(0, 0, w, hh);
   if (sc.kal >= 3) {
     const n = sc.kal, cx = w / 2, cy = hh / 2, R = Math.hypot(cx, cy); for (let i = 0; i < n; i++) {
@@ -4938,6 +5004,7 @@ function mSheet() {
       tile(msvg('<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>'), 'Save project', () => { exportProject(); }),
       tile(msvg('<circle cx="18" cy="5" r="2.6"/><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/><path d="M8.3 10.8l7.4-4.4M8.3 13.2l7.4 4.4"/>'), 'Share link', mShare),
       tile(msvg('<path d="M4 7a2 2 0 012-2h4l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H6a2 2 0 01-2-2z"/>'), 'My songs', () => { mCloseOverlays(); libraryOpen(); }),
+      tile(msvg('<path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/>'), 'My progress', () => { mCloseOverlays(); progressOpen(); }),
       tile(msvg('<path d="M12 16V4M7 9l5-5 5 5M5 20h14"/>'), 'Open a file', () => { mCloseOverlays(); filesOpen(); }),
       tile(msvg('<path d="M5 20V9M12 20V4M19 20v-7"/>'), 'Master · balance · click', () => { mCloseOverlays(); mixOpen(); }),
       tile(msvg('<path d="M3 12c3-8 5-8 8 0s5 8 8 0"/>'), 'Voice · pitch · key', () => { mCloseOverlays(); voxOpen(); }),
@@ -5345,7 +5412,7 @@ function sideApply() {
     box.dataset.cur = SD.cur[side] || '';
   });
   const dock = $('#dock'); DOCK.forEach(([id]) => { if (homeOf(id) !== 'dock') return; const p = PANES[id]; if (p && !FLOATS.has(id) && p.parentNode !== dock) { dock.append(p); p.classList.toggle('on', DOCK.cur === id); } });
-  LAY.sc = { left: SD.cur.left, right: SD.cur.right };
+  LAY.sc = { left: SD.cur.left, right: SD.cur.right }; if (typeof edgeSync === 'function') edgeSync();
 }
 function sideShow(id) {
   const hm = homeOf(id); if (hm === 'dock') { dockGo(id); return; }
@@ -6262,7 +6329,7 @@ function songsMenu(anchor) {
   const box = h('div', { class: 'pd-menu' }), go = fn => () => { closePop(); fn(); };
   box.append(h('h5', {}, 'Songs'), h('button', { class: 'btn sm primary', onclick: go(newSongGo) }, '＋ New song…'), h('button', { class: 'btn sm', onclick: go(humOpen) }, '🎤 Hum or sing a song…'));
   if (PRJ.list.length) { box.append(h('div', { class: 'tiny muted', style: { margin: '8px 0 2px', fontWeight: 800, letterSpacing: '.06em' } }, 'RECENT')); PRJ.list.slice(0, 6).forEach(r => box.append(h('button', { class: 'btn sm pd-rec' + (r.id === PRJ.cur ? ' on' : ''), onclick: go(() => { if (r.id !== PRJ.cur) projLoad(r.id); }) }, h('span', {}, (r.origin === 'track' || r.track ? '♪ ' : '✎ ') + (r.title || 'Untitled')), h('i', {}, projAgo(r.modified))))); }
-  box.append(h('div', { class: 'hr' }), h('button', { class: 'btn sm', onclick: go(libraryOpen) }, '☰ All songs…'), h('button', { class: 'btn sm', disabled: !PRJ.cur || !PRJ.ok, onclick: go(() => projExport(PRJ.cur)) }, '⤓ Save this song as a bundle'), h('button', { class: 'btn sm', onclick: go(() => liOpen()) }, '📋 Paste lyrics…'), h('button', { class: 'btn sm', onclick: go(resetOpen) }, 'Reset…'));
+  box.append(h('div', { class: 'hr' }), h('button', { class: 'btn sm', id: 'smProgress', onclick: go(progressOpen) }, '📈 My progress…'), h('button', { class: 'btn sm', id: 'smFinish', onclick: go(() => { const v = jnFinish(); toast(v ? '“' + (S.title || 'This song') + '” is marked finished.' : 'Marked as still in progress.', 'ok'); }) }, jnIsFinished() ? '↺ Mark as still in progress' : '✓ Mark this song finished'), h('button', { class: 'btn sm', onclick: go(libraryOpen) }, '☰ All songs…'), h('button', { class: 'btn sm', disabled: !PRJ.cur || !PRJ.ok, onclick: go(() => projExport(PRJ.cur)) }, '⤓ Save this song as a bundle'), h('button', { class: 'btn sm', onclick: go(() => liOpen()) }, '📋 Paste lyrics…'), h('button', { class: 'btn sm', onclick: go(resetOpen) }, 'Reset…'));
   popover(anchor, box, { style: { width: '290px', maxWidth: '92vw' } });
 }
 function sbProject() {
@@ -6282,7 +6349,7 @@ const RESET_ITEMS = [
   ['layout', 'Layout & arrangement lanes', 'Panel places, sidebar widths, lane order/colours/heights, view (Canvas / Song / Studio).'],
   ['settings', 'Settings & calibration', 'Appearance, audio and MIDI settings, input choices, camera calibration, tour progress.'],
   ['presets', 'My presets & saved layouts', 'Rig presets and layouts you saved.'],
-  ['notes', 'Notebook & version history', 'Your lab notebook and the automatic song snapshots.'],
+  ['notes', 'Notebook, history & progress journal', 'Your lab notebook, the automatic song snapshots and your progress journal (days played, chords learned).'],
   ['songs', 'All songs & recordings', 'Every song in My songs, its takes and backing tracks. Back them up first if you want to keep any.'],
   ['cache', 'Offline copy of the app', 'The saved copy that lets the app open offline; it downloads again next visit.']
 ];
@@ -6302,7 +6369,7 @@ async function resetRun(sel) {
       if (sel.has('settings')) { const keep = {}; if (!sel.has('layout')) { if (c.layout) keep.layout = c.layout; if (c.lanes) keep.lanes = c.lanes; if (c.zoom) keep.zoom = c.zoom; } ls.setItem('fw.cfg', JSON.stringify(keep)); ls.removeItem('fw.cal'); ls.removeItem('fw.tour'); ls.removeItem('fw.toured'); }
       else if (sel.has('layout')) { delete c.layout; delete c.lanes; delete c.zoom; ls.setItem('fw.cfg', JSON.stringify(c)); }
       if (sel.has('presets')) ['presets', 'layouts'].forEach(k => ls.removeItem('fw.' + k));
-      if (sel.has('notes')) ['notebook', 'vhist'].forEach(k => ls.removeItem('fw.' + k));
+      if (sel.has('notes')) ['notebook', 'vhist', 'jn'].forEach(k => ls.removeItem('fw.' + k));
       if (sel.has('songs')) ['song', 'songAt', 'cur', 'started'].forEach(k => ls.removeItem('fw.' + k));
     }
   } catch (e) { console.warn('reset: storage', e); }
@@ -6777,6 +6844,7 @@ async function humApply(play) {
   if (!HUM.an) return; if (T.playing) stopPlay(true);
   const r = humSong(HUM.an, HUM.o); HUM.r = r; HUM.o.style = r.style; r.song.title = HUM.o.title || 'Hum idea';
   xpQuiet(() => projUse(r.song)); if (ZOOM.cur === 'canvas') zoomSet('song', true); humAddTake(); try { if (PRJ.cur) await projSave(); } catch (e) { }
+  if (HUM.pcm && HUM.jn !== HUM.pcm && typeof jnIdea === 'function') { HUM.jn = HUM.pcm; jnIdea(r.song.title || 'Hum idea', 'hum'); }
   humBar('res'); if (play) await humPlay();
 }
 /** Put the recording itself in the arrangement: a Vocal take whose first note lands on the first melody note of Verse 1,
@@ -6972,9 +7040,10 @@ function xpSignal(pts) {
   if (XP.quiet || (CFG.xpMode && CFG.xpMode !== 'auto')) return; const before = xpLevel(); CFG.xp = Math.min(40, (CFG.xp || 0) + pts); clearTimeout(XP.t); XP.t = setTimeout(saveCfg, 800);
   const now = xpLevel(); if (now !== before) { try { rebuildTabs(); } catch (e) { } toast(now === 'some' ? 'More tools are now on the tab strip. Find the rest under “Tools”.' : 'Everything is unlocked. Welcome to the full studio.', 'ok'); }
 }
-const xpEdit = () => { if (!XP.quiet) xpSignal(.25); };
+const xpEdit = () => { if (!XP.quiet) { xpSignal(.25); try { if (performance.now() - JN.inp < 3000) JN.edit = performance.now(); } catch (e) { } } };       // a change the person made (a key or a tap just before it, not the app loading a song) counts as activity in the journal
 /** run a generator (like Hum to Song) without counting its changes as the person's own edits */
 function xpQuiet(fn) { XP.quiet++; try { return fn(); } finally { XP.quiet--; } }
+function xpSetMode(k) { CFG.xpMode = k; saveCfg(); if (k === 'pro' && LAY.hidden.length) { LAY.hidden = []; saveLay(); } rebuildTabs(); if (k !== 'auto') toast((XP_LABEL[k]) + ' tools', ''); }
 function xpToolsButton() {
   const l = xpLevel(), b = h('button', { class: 'btn sm xp-tools', id: 'xpTools', title: 'Choose how much of the studio to show', 'aria-haspopup': 'dialog', onclick: () => {
     const m = CFG.xpMode || 'auto', opt = (k, t, d) => h('button', { class: 'btn sm xp-opt' + (m === k ? ' on' : ''), 'aria-pressed': String(m === k), onclick: () => { CFG.xpMode = k; saveCfg(); closePop(); if (k === 'pro' && LAY.hidden.length) { LAY.hidden = []; saveLay(); }   /* “Everything” brings back any tab a layout had left off the strip */
@@ -7003,15 +7072,16 @@ function xpToolsButton() {
   }
   function paint(now) {
     const t = (now - t0) / 1000, R = Math.max(26, Math.min(W, H) / 15) * (dpr > 1 ? 1 : 1), dx = R * Math.sqrt(3), dy = R * 1.5, cx = W / 2, cy = H * .46, maxd = Math.hypot(W, H) * .55;
-    g.fillStyle = '#04090a'; g.fillRect(0, 0, W, H);
-    const glow = g.createRadialGradient(cx, cy, 0, cx, cy, maxd); glow.addColorStop(0, 'rgba(61,220,132,.16)'); glow.addColorStop(.5, 'rgba(61,220,132,.04)'); glow.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = glow; g.fillRect(0, 0, W, H);
+    const P = typeof hexPal === 'function' ? hexPal() : { lt: false, bg: '#04090a', glow: '61,220,132', cell: '61,220,132', warm: '242,182,50', line: '125,191,155' }, lt = P.lt;   /* the palette you chose for the hexagons; light (white) and dark green are the original two looks */
+    g.fillStyle = P.bg; g.fillRect(0, 0, W, H);
+    const glow = g.createRadialGradient(cx, cy, 0, cx, cy, maxd); glow.addColorStop(0, `rgba(${P.glow},${lt ? .12 : .16})`); glow.addColorStop(.5, `rgba(${P.glow},.04)`); glow.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = glow; g.fillRect(0, 0, W, H);
     const beat = (t % 1.9) / 1.9;
     for (let row = -1; row * dy < H + R; row++) for (let col = -1; col * dx < W + dx; col++) {
       const x = col * dx + (row & 1 ? dx / 2 : 0), y = row * dy, d = Math.hypot(x - cx, y - cy), fall = Math.max(0, 1 - d / maxd);
       const ring = Math.max(0, 1 - Math.abs(d / maxd - beat * 1.1) * 7), wave = .5 + .5 * Math.sin(d * .011 - t * 1.4 + Math.sin(x * .004 + t * .3) * 2), a = Math.min(1, fall * fall * (.2 + wave * .55) + ring * .85 * fall);
       const warm = ((col * 7 + row * 13) % 11) === 0;
-      g.fillStyle = (warm ? 'rgba(242,182,50,' : 'rgba(61,220,132,') + (a * (warm ? .5 : .42)).toFixed(3) + ')'; hexPath(x, y, R * (.9 + ring * .08)); g.fill();
-      g.strokeStyle = 'rgba(125,191,155,' + (.05 + a * .5).toFixed(3) + ')'; g.lineWidth = 1; g.stroke();
+      g.fillStyle = `rgba(${warm ? P.warm : P.cell},` + (a * (warm ? (lt ? .55 : .5) : (lt ? .3 : .42))).toFixed(3) + ')'; hexPath(x, y, R * (.9 + ring * .08)); g.fill();
+      g.strokeStyle = `rgba(${P.line},` + (.05 + a * (lt ? .4 : .5)).toFixed(3) + ')'; g.lineWidth = 1; g.stroke();
     }
   }
   requestAnimationFrame(frame);
@@ -7273,7 +7343,7 @@ function vzExtra2(mode, g, W, H, X) { if (mode === 'halo') return haloDraw(g, W,
 
 /** change the visual look from anywhere (the full-screen ✦ button, keys) and keep the Visuals buttons in step */
 const VZ_FAVS = ['hex', 'concert', 'halo', 'kaleido'];
-function vzSetMode(k, quiet) { VZ.mode = k; if (!quiet) { CFG.visMode = k; saveCfg(); } VZ.spec = null; VZ.hexes = null; document.querySelectorAll('#pane-vis .seg [data-m]').forEach(b => b.classList.toggle('on', b.dataset.m === k)); const n = (VMODES.find(m => m[0] === k) || [0, k])[1]; if (!quiet) toast(n, 'ok'); }
+function vzSetMode(k, quiet) { VZ.mode = k; if (!quiet) { CFG.visMode = k; saveCfg(); } VZ.spec = null; VZ.hexes = null; document.querySelectorAll('#pane-vis .seg [data-m]').forEach(b => b.classList.toggle('on', b.dataset.m === k)); const n = (VMODES.find(m => m[0] === k) || [0, k])[1]; if (!quiet) toast(n, 'ok'); if (typeof hexToneSync === 'function') hexToneSync(); }
 /** Auto look: while the song plays, the look follows the section: calm in verses, wide in choruses, strange in bridges. Your own look comes back when it stops. */
 const VZ_BY_SECTION = [[/chorus|hook|refrain/i, 'halo'], [/bridge|break|solo/i, 'kaleido'], [/intro|outro|tag|coda/i, 'hex']];
 let vzSecLast = '';
@@ -7308,6 +7378,7 @@ function srecMenu(anchor) {
   const box = h('div', { style: { minWidth: '250px', display: 'grid', gap: '6px' } }, h('h5', {}, 'Record the stage'),
     h('button', { class: 'btn', id: 'srecNow', onclick: () => { closePop(); srecStart(false); } }, '⏺ Record now'),
     h('button', { class: 'btn', id: 'srecWhole', onclick: () => { closePop(); srecStart(true); } }, '⏺ The whole song, from the top'),
+    E.hasInput ? h('label', { class: 'row', style: { gap: '6px', alignItems: 'flex-start' }, title: 'The armed guitar and voice inputs are recorded as a lane in the arrangement, starting where the video starts' }, h('input', { type: 'checkbox', id: 'srecTake', checked: CFG.srecTake !== false, onchange: e => { CFG.srecTake = e.target.checked; saveCfg(); } }), h('span', { class: 'tiny' }, 'Also put what I play into the arrangement (a new lane, starting where the video starts)')) : h('div', { class: 'tiny muted' }, 'Connect your guitar or microphone (Inputs) and your playing can land in the arrangement as well.'),
     h('div', { class: 'tiny muted' }, 'Saved on this device as a video with sound. The camera is only in it if you already turned it on. Keep this tab in front while recording.'));
   popover(anchor, box);
 }
@@ -7335,15 +7406,18 @@ async function srecStart(whole, o) {
   SREC.was = { loop: T.loop, metro: T.metro };
   if (whole) { if (T.playing) stopPlay(true); T.loop = false; T.metro = false; T.cursor = 0; }
   SREC.mr.start(500); SREC.on = true; SREC.t0 = performance.now(); SREC.tick = setInterval(srecSync, 500); srecSync(); bus.emit('srec', true);
+  if (!whole && typeof srecTakeBegin === 'function') srecTakeBegin(false);     /* your playing becomes a lane in the arrangement (part 67) */
   if (!audio) toast(whole ? 'Recording the whole song…' : 'Recording the stage… press ■ to stop and save.', 'ok');
   if (whole) {
     try { await play(); } catch (e) { }
+    if (typeof srecTakeBegin === 'function') srecTakeBegin(true);
     const total = songSlots() * slotDur() + 1.8;
     SREC.watch = setInterval(() => { const el = (performance.now() - SREC.t0) / 1000; if (el >= total || (!T.playing && el > 2.5)) srecStop(true); }, 250);
   }
 }
 function srecStop(save) {
   if (!SREC.on) return; SREC.save = save !== false; SREC.on = false;
+  if (typeof srecTakeEnd === 'function') srecTakeEnd(SREC.save);
   clearInterval(SREC.tick); clearInterval(SREC.watch);
   try { if (SREC.mr && SREC.mr.state !== 'inactive') SREC.mr.stop(); else srecDone(); } catch (e) { srecDone(); }
 }
@@ -11173,6 +11247,7 @@ function capStop(why) {
   if (CX.prevLoop) { [T.loop, T.loopA, T.loopB] = CX.prevLoop; CX.prevLoop = null; }
   if (CX.started && T.playing && why !== 'transport') stopPlay(true);
   CX.started = false; let undo = false; try { undo = n > 0 && histPush(CX.before); } catch (e) { console.warn(e); } CX.before = null;
+  if (n > 0 && typeof jnIdea === 'function') jnIdea((S.title || 'Idea') + ': captured ' + n + ' note' + (n === 1 ? '' : 's'), 'capture');
   capSay(n ? n + ' note' + (n === 1 ? '' : 's') + ' written' + (ch ? ' (' + ch + ' chord' + (ch === 1 ? '' : 's') + ')' : '') : 'Nothing was written', n ? 'ok' : 'dim');
   toast(n ? 'Capture stopped: ' + n + ' note' + (n === 1 ? '' : 's') + ' in the tab. Undo (Ctrl/⌘+Z) takes the whole capture back.' : 'Capture stopped. Nothing was heard clearly enough to write. Is the input level up?', n ? 'ok' : 'warn');
   TL.dirty = true; bus.emit('capture'); return true;
@@ -11372,7 +11447,7 @@ function journeyBar() {
    a note the model calls tense can be a colour you want, so the looks call it tension, not wrong.
    Nothing here leaves the page; the session record is held in memory and lasts until the page closes or you press New session.
    ============================================================ */
-const HM_MODES = new Set(['gravity', 'field', 'swarms', 'terrain', 'mood', 'dna', 'stars', 'fluid', 'eco', 'paint']);
+const HM_MODES = new Set(['gravity', 'field', 'swarms', 'mood', 'dna', 'stars', 'fluid', 'paint']);
 const HM = {
   on: 0, stamp: -1, now: 0, dt: .016,
   sym: null, chord: null, prevSym: null, chT: -99, q: { val: 0, ten: 0 }, d: new Float32Array(12), cls: new Array(12).fill('tone'),
@@ -11449,17 +11524,15 @@ function hmClear() { HM.stars = []; HM.paint = []; HM.t0 = performance.now(); HM
      Harmonic Gravity   chord tones glow in a golden cluster, extensions orbit it, clashing notes sit far out, resolving makes the picture converge
      Improv Field       the same idea as a map of what to play now: safe notes, character notes, tension notes around the chord
      Voice & Guitar     two swarms: blue guitar, gold voice; they merge when in harmony, repel when they clash, and bridge on extensions
-     Chord Landscape    each chord is a place; playing a progression travels across the map
      Mood Colour        brightness, colour, density and speed follow the chord's feeling; suspended mist, dominant lightning, resolution bloom
      Chord DNA          every chord grows its own geometric flower
      Constellation      every sung note is a star; sharp drifts right, flat drifts left; a session draws a sky
      Rhythm Flow        beats as waves in a liquid; syncopation as whirlpools; a steady groove as a steady current
-     Ecosystem          notes spawn creatures, chords make colonies, repeated phrases grow habitats, a key change changes the weather
      Session Painting   the whole session as one picture you can save
    All of them read the harmony state in part 65 and draw on the visuals canvas, so they also work in the stage designer and full screen.
    Lightning and bursts obey the comfort setting (Calm has none, and nothing is ever closer than the comfort gap).
    ============================================================ */
-VMODES.push(['gravity', 'Harmonic Gravity'], ['field', 'Improv Field'], ['swarms', 'Voice & Guitar'], ['terrain', 'Chord Landscape'], ['mood', 'Mood Colour'], ['dna', 'Chord DNA'], ['stars', 'Constellation'], ['fluid', 'Rhythm Flow'], ['eco', 'Ecosystem'], ['paint', 'Session Painting']);
+VMODES.push(['gravity', 'Harmonic Gravity'], ['field', 'Improv Field'], ['swarms', 'Voice & Guitar'], ['mood', 'Mood Colour'], ['dna', 'Chord DNA'], ['stars', 'Constellation'], ['fluid', 'Rhythm Flow'], ['paint', 'Session Painting']);
 const HMX = {
   ripples: [], lastRip: 0, fpos: [], trail: [], sw: null, align: .6, terr: { sig: '', map: [], cam: 0, from: null, fromT: -99 }, bolts: [], lastBolt: -99, bloomT: -99, mood: { b: [], v: 0, s: 0, d: 0, sp: 0 },
   dnaHist: [], wave: null, vort: [], onsDone: 0, flow: [], eco: { cr: [], col: [], hab: {}, motif: [], lastPc: null, climate: 0 }, paintCv: null, paintN: -1, paintAt: 0, paintSpan: 0, err: 0, ctl: null,
@@ -11562,42 +11635,6 @@ function hmSwarms(g, W, H, X) {
   if (!CFG.vin || CFG.vin === 'off') hmText(g, 'One input: the line you sing or play is the voice. Choose a voice input in I/O to keep them apart.', 14, H - 14 - fs * 1.6, fs * .9, 'rgba(255,255,255,.35)', 'left', 600);
 }
 
-/* ---------- 3 · Chord Landscape ---------- */
-const HM_PLACES = { dom: ['canyon', 'dunes'], min: ['forest', 'pines'], dim: ['crater'], maj7: ['mountain', 'lake', 'glacier', 'mountain'], maj: ['lake', 'meadow', 'hills'], sus: ['mist', 'plateau'], other: ['dunes', 'hills'] };
-function hmKind(ch) { const h = x => ch.iv.includes(x); return h(3) && h(6) ? 'dim' : h(4) && h(10) ? 'dom' : h(3) ? 'min' : h(4) && h(11) ? 'maj7' : h(4) ? 'maj' : (h(2) || h(5)) ? 'sus' : 'other'; }
-function hmTerrainMap() {
-  const syms = []; try { barsCache().forEach(b => barChords(b.bar).forEach(c => { if (c && !syms.includes(c) && parseChord(c)) syms.push(c); })); } catch (e) { }
-  if (HM.sym && !syms.includes(HM.sym) && HM.chord) syms.push(HM.sym); const sig = syms.join('|'); if (sig === HMX.terr.sig) return HMX.terr.map;
-  const used = {}; HMX.terr.sig = sig; HMX.terr.map = syms.map((sym, i) => { const ch = parseChord(sym), k = hmKind(ch), list = HM_PLACES[k], n = used[k] = (used[k] || 0) + 1; return { sym, kind: list[(n - 1) % list.length], ch, i, seed: hmHash(i * 5.7 + 1) }; }); return HMX.terr.map;
-}
-function hmLand(g, p, x, base, s, t, on) {
-  const al = on ? 1 : .72; g.save(); g.translate(x, base); const sd = p.seed, k = p.kind;
-  if (k === 'mountain' || k === 'glacier') { const pale = k === 'glacier'; [[-.55, .55, .6], [.1, .8, 1], [.62, .5, .62]].forEach(([dx, h, w], j) => { const bx = dx * s, hh = h * s * (.85 + sd * .3), ww = w * s * .65; g.fillStyle = pale ? `hsla(200,35%,${72 - j * 5}%,${al})` : `hsla(${222 + j * 5},22%,${30 + j * 6}%,${al})`; g.beginPath(); g.moveTo(bx - ww, 0); g.lineTo(bx, -hh); g.lineTo(bx + ww, 0); g.closePath(); g.fill(); g.fillStyle = `rgba(255,255,255,${.85 * al})`; g.beginPath(); g.moveTo(bx - ww * .3, -hh * .7); g.lineTo(bx, -hh); g.lineTo(bx + ww * .3, -hh * .7); g.lineTo(bx + ww * .1, -hh * .76); g.lineTo(bx - ww * .05, -hh * .66); g.closePath(); g.fill(); }); }
-  else if (k === 'forest' || k === 'pines') { for (let j = 0; j < 34; j++) { const tx = (hmHash(j * 3 + sd * 9) - .5) * s * 1.7, th = s * (.16 + hmHash(j + sd) * .22), ty = -hmHash(j * 7 + 2) * s * .1; g.fillStyle = `hsla(${130 + hmHash(j) * 30},${k === 'pines' ? 30 : 45}%,${16 + hmHash(j + 4) * 14}%,${al})`; g.beginPath(); g.moveTo(tx - th * .28, ty); g.lineTo(tx, ty - th); g.lineTo(tx + th * .28, ty); g.closePath(); g.fill(); g.fillRect(tx - 1.5, ty, 3, th * .1); } }
-  else if (k === 'lake') { const w = s * 1.05, hgt = s * .2; const gr = g.createLinearGradient(0, -hgt, 0, hgt); gr.addColorStop(0, `rgba(120,200,235,${.85 * al})`); gr.addColorStop(1, `rgba(20,70,110,${.9 * al})`); g.fillStyle = gr; g.beginPath(); g.ellipse(0, 0, w, hgt, 0, 0, 7); g.fill(); for (let j = 0; j < 4; j++) { const q = ((t * .25 + j / 4 + sd) % 1); g.strokeStyle = `rgba(255,255,255,${(1 - q) * .28 * al})`; g.lineWidth = 1; g.beginPath(); g.ellipse((hmHash(j + sd * 3) - .5) * w * .8, (hmHash(j + 8) - .5) * hgt, q * w * .35, q * hgt * .35, 0, 0, 7); g.stroke(); } }
-  else if (k === 'canyon') { const w = s * .95; [[-1, 1], [1, 1]].forEach(([sg]) => { for (let j = 0; j < 6; j++) { g.fillStyle = `hsla(${14 + j * 5},${55 - j * 4}%,${30 + j * 4}%,${al})`; const top = -s * (.55 - j * .03) + j * s * .04, off = sg * (s * .1 + j * s * .05 + (hmHash(j + sd * 4) * s * .04)); g.beginPath(); g.moveTo(sg * w, 0); g.lineTo(sg * w, top); g.lineTo(off + sg * s * .25, top + s * .02); g.lineTo(off, -s * .1 * j * .2); g.lineTo(off * .6, 0); g.closePath(); g.fill(); } }); g.fillStyle = `rgba(10,5,5,${.45 * al})`; g.fillRect(-s * .08, -s * .25, s * .16, s * .25); }
-  else if (k === 'dunes') { for (let j = 0; j < 3; j++) { g.fillStyle = `hsla(${34 - j * 4},${60 - j * 6}%,${52 - j * 8}%,${al})`; g.beginPath(); g.moveTo(-s, 0); for (let u = -s; u <= s; u += 12) g.lineTo(u, -s * (.12 + j * .05) * (1 + Math.sin(u / (s * .35) + j * 1.7 + sd * 5) * .6)); g.lineTo(s, 0); g.closePath(); g.fill(); } }
-  else if (k === 'mist' || k === 'plateau') { if (k === 'plateau') { g.fillStyle = `hsla(260,15%,34%,${al})`; g.fillRect(-s * .7, -s * .32, s * 1.4, s * .32); } for (let j = 0; j < 6; j++) { const mx = (hmHash(j + sd * 5) - .5) * s * 1.6 + Math.sin(t * .15 + j) * 30, my = -hmHash(j + 3) * s * .26; hmGlow(g, mx, my, s * .45, 'hsla(215,40%,82%,A)', .2 * al); } }
-  else if (k === 'crater') { g.fillStyle = `hsla(18,30%,26%,${al})`; g.beginPath(); g.ellipse(0, 0, s * .85, s * .24, 0, 0, 7); g.fill(); g.fillStyle = `rgba(8,4,8,${.85 * al})`; g.beginPath(); g.ellipse(0, s * .01, s * .6, s * .15, 0, 0, 7); g.fill(); for (let j = 0; j < 5; j++) { g.strokeStyle = `rgba(150,200,255,${.4 * al})`; g.beginPath(); g.moveTo((hmHash(j) - .5) * s * .6, -s * .02); g.lineTo((hmHash(j) - .5) * s * .6 + 6, -s * (.18 + hmHash(j + 5) * .2)); g.stroke(); } }
-  else { for (let j = 0; j < 3; j++) { g.fillStyle = `hsla(${96 + j * 12},40%,${34 - j * 4}%,${al})`; g.beginPath(); g.ellipse((j - 1) * s * .5, 0, s * .6, s * (.2 + sd * .1 + j * .03), 0, Math.PI, 0); g.fill(); } if (k === 'meadow') for (let j = 0; j < 28; j++) { g.fillStyle = `hsla(${hmHash(j) * 360},80%,70%,${.8 * al})`; g.beginPath(); g.arc((hmHash(j + 1) - .5) * s * 1.4, -hmHash(j + 2) * s * .1, 2, 0, 7); g.fill(); } }
-  g.restore();
-}
-function hmTerrain(g, W, H, X) {
-  const map = hmTerrainMap(), t = VZ.t, now = HM.now, sp = W * .6, idx = Math.max(0, map.findIndex(m => m.sym === HM.sym)), T0 = HMX.terr;
-  if (T0.last !== idx) { T0.from = T0.last == null ? null : map[T0.last] || null; T0.fromT = now; T0.last = idx; }
-  T0.cam = lerp(T0.cam, idx * sp, 1 - Math.exp(-1.8 * HM.dt)); const cam = T0.cam, hor = H * .6, val = (HM.q.val + 1) / 2, sh = hmMoodHue(HM.q.val), ms = hmMoodSat(HM.q.val), s = Math.min(W * .7, H * .62);
-  const sky = g.createLinearGradient(0, 0, 0, hor); sky.addColorStop(0, `hsl(${sh},${(35 + HM.q.ten * 30) * ms}%,${10 + val * 8}%)`); sky.addColorStop(1, `hsl(${sh + 14},${45 * ms}%,${24 + val * 18}%)`); g.fillStyle = sky; g.fillRect(0, 0, W, hor);
-  hmGlow(g, W * .5, hor, W * .5, `hsla(${sh + 10},80%,65%,A)`, .22);
-  [[.25, .2, 214], [.55, .3, 226]].forEach(([par, hh, hue]) => { g.fillStyle = `hsla(${hue},25%,${14 + par * 14}%,.9)`; g.beginPath(); g.moveTo(0, hor); for (let x = 0; x <= W; x += 14) { const wx = x + cam * par; g.lineTo(x, hor - H * hh * (.4 + .6 * Math.abs(Math.sin(wx / (W * .23) + par * 8)) * (.6 + .4 * Math.sin(wx / (W * .07))))); } g.lineTo(W, hor); g.closePath(); g.fill(); });
-  const gr = g.createLinearGradient(0, hor, 0, H); gr.addColorStop(0, `hsl(${sh + 70},22%,16%)`); gr.addColorStop(1, `hsl(${sh + 90},20%,7%)`); g.fillStyle = gr; g.fillRect(0, hor, W, H - hor);
-  // the path between places
-  g.strokeStyle = 'rgba(255,230,170,.35)'; g.lineWidth = 3; g.setLineDash([2, 9]); g.beginPath(); map.forEach((m, i) => { const x = W / 2 + i * sp - cam, y = hor + H * .17 + Math.sin(i * 1.7) * H * .03; i ? g.lineTo(x, y) : g.moveTo(x, y); }); g.stroke(); g.setLineDash([]);
-  map.forEach((m, i) => { const x = W / 2 + i * sp - cam; if (x < -s * 1.4 || x > W + s * 1.4) return; const on = i === idx; hmLand(g, m, x, hor + H * .13, s * (on ? 1 : .9), t, on); hmText(g, m.sym, x, hor + H * .27, hmFz(W, H, on ? 22 : 15), on ? '#fff' : 'rgba(255,255,255,.5)', 'center', 800); hmText(g, m.kind, x, hor + H * .27 + hmFz(W, H, 14), hmFz(W, H, 11), `rgba(255,255,255,${on ? .6 : .32})`, 'center', 600); });
-  const px = W / 2, py = hor + H * .17 + Math.sin(idx * 1.7) * H * .03; g.save(); g.globalCompositeOperation = 'lighter'; hmGlow(g, px, py - 6, 26, 'hsla(48,100%,70%,A)', .7); g.restore(); g.fillStyle = '#fff'; g.beginPath(); g.arc(px, py - 6, 4, 0, 7); g.fill();
-  const cur = map[idx]; if (cur) { const trip = T0.from && T0.from.sym !== cur.sym && now - T0.fromT < 6000; hmText(g, trip ? `You travelled from ${T0.from.sym} to ${cur.sym}` : `You are in ${cur.sym}`, 14, hmY(H, hmFz(W, H, 16)), hmFz(W, H, 16), 'rgba(255,255,255,.9)', 'left', 800); hmText(g, trip ? `${T0.from.kind} → ${cur.kind}` : cur.kind, 14, hmY(H, hmFz(W, H, 16)) + hmFz(W, H, 16) + 6, hmFz(W, H, 12), 'rgba(255,255,255,.55)', 'left', 600); }
-  if (!map.length) hmText(g, 'Add chords to the song and each one becomes a place', W / 2, H / 2, hmFz(W, H, 16), 'rgba(255,255,255,.6)', 'center', 700);
-}
-
 /* ---------- 4 · Mood Colour ---------- */
 function hmMood(g, W, H, X) {
   const M = HMX.mood, now = HM.now, t = VZ.t, cm = hmCm(), ch = HM.chord, val = HM.q.val, ten = HM.q.ten, en = clamp(AN.active ? (AN.rms + 60) / 45 : (T.playing ? X.energy * 1.1 : .18), .08, 1), dt = HM.dt;
@@ -11689,32 +11726,6 @@ function hmFlow(g, W, H, X) {
   const fs = hmFz(W, H, 12), dev = HM.dev; hmText(g, T.playing ? (Math.abs(dev) < .12 ? 'Steady groove: a stable current' : dev < 0 ? 'Rushing: the flow is disturbed' : 'Dragging: the flow is disturbed') : 'Press play and strike notes: each one is a wave', 14, hmY(H, hmFz(W, H, 14)), hmFz(W, H, 14), 'rgba(255,255,255,.85)', 'left', 700); hmText(g, 'Downbeat: big wave · beat: wave · off-beat: whirlpool', 14, H - 12, fs, 'rgba(255,255,255,.45)', 'left', 600);
 }
 
-/* ---------- 9 · Harmonic Ecosystem ---------- */
-function hmEco(g, W, H, X) {
-  const E0 = HMX.eco, now = HM.now, dt = HM.dt, mo = hmCm().motion, t = VZ.t, minor = S.minor ? 1 : 0;
-  E0.climate = lerp(E0.climate, minor, 1 - Math.exp(-.5 * dt)); const warm = 1 - E0.climate;
-  const sky = g.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, `hsl(${lerp(228, 24, warm)},${lerp(40, 55, warm)}%,${lerp(9, 16, warm)}%)`); sky.addColorStop(1, `hsl(${lerp(215, 160, warm)},35%,${lerp(6, 10, warm)}%)`); g.fillStyle = sky; g.fillRect(0, 0, W, H);
-  // weather: warm pollen drifts up in a major key, cool rain falls in a minor one; a key change shows as a few seconds of both
-  g.save(); g.globalCompositeOperation = 'lighter'; for (let i = 0; i < 36; i++) { const x = hmHash(i) * W, ph = (t * (.04 + hmHash(i + 3) * .05) * mo + hmHash(i + 8)) % 1; if (warm > .1) { g.fillStyle = `hsla(46,90%,70%,${.18 * warm})`; g.fillRect((x + Math.sin(t + i) * 12) % W, H * (1 - ph), 2, 2); } if (E0.climate > .1) { g.strokeStyle = `hsla(210,70%,75%,${.16 * E0.climate})`; g.beginPath(); g.moveTo(x, H * ph); g.lineTo(x - 3, H * ph + 14); g.stroke(); } } g.restore();
-  // a note is a creature: kind by how it sits in the chord
-  const spawn = (pc, m, kind, hue, big) => { const c = E0.col[E0.col.length - 1]; E0.cr.push({ x: clamp((m - 36) / 60, .03, .97) * W, y: H * (.12 + Math.random() * .6), vx: 0, vy: 0, a: Math.random() * 7, hue, kind, sz: (big ? 7 : 4.5) * Math.min(W, H) / 500, born: now, life: 16 + Math.random() * 14, col: c ? c.id : 0, ph: Math.random() * 6 }); if (E0.cr.length > 220) E0.cr.shift(); };
-  for (const o of HM.onsets) { if (o.t <= (E0.lastOn || 0)) continue; E0.lastOn = o.t; if (o.m != null) { const pc = ((Math.round(o.m) % 12) + 12) % 12, cl = HM.cls[pc]; spawn(pc, o.m, cl, hmHue(HM.d[pc]), o.a > .6); E0.motif.push(pc); if (E0.motif.length > 4) E0.motif.shift(); if (E0.motif.length === 4) { const key = E0.motif.join('-'), hb = E0.hab[key] || (E0.hab[key] = { n: 0, x: hmHash(key.length * 7 + E0.motif[0] * 13 + E0.motif[1]) * W * .9 + W * .05, hue: lxHueOf(HM.chord ? lxFifths(HM.chord.root) : 0), grow: 0 }); hb.n++; if (hb.n >= 2) hb.grow = Math.min(1, hb.grow + .18); } } }
-  if (HM.vm != null) { const pc = ((Math.round(HM.vm) % 12) + 12) % 12; if (pc !== E0.lastPc) { E0.lastPc = pc; spawn(pc, HM.vm, HM.cls[pc], hmHue(HM.d[pc]), true); } } else E0.lastPc = null;
-  if (HM.sym && (!E0.col.length || E0.col[E0.col.length - 1].sym !== HM.sym)) { E0.col.push({ id: (E0.colId = (E0.colId || 0) + 1), sym: HM.sym, x: W * (.15 + Math.random() * .7), y: H * (.25 + Math.random() * .4), born: now, hue: lxHueOf(HM.chord ? lxFifths(HM.chord.root) : 0) }); if (E0.col.length > 6) E0.col.shift(); }
-  E0.col.forEach(c => { const age = (now - c.born) / 1000, al = clamp(1 - age / 40, .15, 1); g.save(); g.globalCompositeOperation = 'lighter'; hmGlow(g, c.x, c.y, Math.min(W, H) * .2, `hsla(${c.hue},70%,55%,A)`, .1 * al); g.restore(); });
-  // habitats: a repeated phrase grows a plant at the bottom
-  Object.values(E0.hab).forEach((hb, i) => { const hh = H * (.06 + hb.grow * .26), sw = Math.sin(t * .7 * mo + i) * 8 * hb.grow; g.strokeStyle = `hsla(${hb.hue},55%,${35 + hb.grow * 22}%,.85)`; g.lineWidth = 2 + hb.grow * 2; g.beginPath(); g.moveTo(hb.x, H); g.quadraticCurveTo(hb.x + sw, H - hh * .5, hb.x + sw * 1.6, H - hh); g.stroke(); for (let k = 1; k <= 3 + Math.floor(hb.grow * 5); k++) { const f = k / (4 + hb.grow * 5), lx = hb.x + sw * (f * 1.6), ly = H - hh * f; g.fillStyle = `hsla(${hb.hue + 20},70%,${50 + k * 2}%,.8)`; g.beginPath(); g.ellipse(lx + (k % 2 ? 9 : -9), ly, 7 + hb.grow * 4, 3 + hb.grow * 2, k % 2 ? -.5 : .5, 0, 7); g.fill(); } });
-  E0.cr = E0.cr.filter(c => (now - c.born) / 1000 < c.life);
-  g.save(); g.globalCompositeOperation = 'lighter';
-  E0.cr.forEach(c => { const age = (now - c.born) / 1000, al = clamp(Math.min(age * 2, 1) * (1 - age / c.life) * 1.4, 0, 1), col = E0.col.find(k => k.id === c.col); c.a += (Math.sin(t * .8 + c.ph) * .6) * dt * 2; c.vx += (Math.cos(c.a) * 12 + (col ? (col.x - c.x) * .04 : 0)) * dt * mo; c.vy += (Math.sin(c.a) * 12 + (col ? (col.y - c.y) * .04 : 0)) * dt * mo; c.vx *= .96; c.vy *= .96; c.x = clamp(c.x + c.vx * dt, 4, W - 4); c.y = clamp(c.y + c.vy * dt, 4, H * .9);
-    const s = c.sz, fl = Math.sin(t * 5 + c.ph);
-    if (c.kind === 'tone') { hmGlow(g, c.x, c.y, s * 4.5, `hsla(${c.hue},95%,62%,A)`, .5 * al); g.fillStyle = `hsla(${c.hue},95%,78%,${al})`; g.beginPath(); g.arc(c.x, c.y, s * .7, 0, 7); g.fill(); }
-    else if (c.kind === 'colour') { g.fillStyle = `hsla(${c.hue},80%,66%,${al * .6})`; g.beginPath(); g.ellipse(c.x, c.y, s * 1.4, s * (1 + fl * .15), 0, Math.PI, 0); g.fill(); g.strokeStyle = `hsla(${c.hue},80%,76%,${al * .45})`; g.lineWidth = 1; for (let k = -2; k <= 2; k++) { g.beginPath(); g.moveTo(c.x + k * s * .5, c.y); g.quadraticCurveTo(c.x + k * s * .5 + fl * 3, c.y + s * 1.6, c.x + k * s * .5 - fl * 2, c.y + s * 2.8); g.stroke(); } }
-    else { g.fillStyle = `hsla(${c.hue},85%,58%,${al * .8})`; g.beginPath(); for (let k = 0; k < 8; k++) { const a = k / 8 * Math.PI * 2 + c.a, r = k % 2 ? s * .8 : s * 1.9; g[k ? 'lineTo' : 'moveTo'](c.x + Math.cos(a) * r, c.y + Math.sin(a) * r); } g.closePath(); g.fill(); } });
-  g.restore();
-  const fs = hmFz(W, H, 12), hab = Object.values(E0.hab).filter(x => x.n >= 2).length; hmText(g, `${E0.cr.length} creatures · ${E0.col.length} colonies · ${hab} habitats · ${warm > .5 ? 'major: warm' : 'minor: cool, rainy'}`, 14, hmY(H, hmFz(W, H, 14)), hmFz(W, H, 14), 'rgba(255,255,255,.82)', 'left', 700); hmText(g, E0.cr.length ? 'Gold lights: chord notes · teal jellyfish: colour notes · red thorns: tension. Repeat a phrase and a plant grows.' : 'Play or sing: every note becomes a creature', 14, H - 12, fs, 'rgba(255,255,255,.45)', 'left', 600);
-}
-
 /* ---------- 10 · Session Painting ---------- */
 function hmPaintRender(c, w, h, pts, span, o) {
   o = o || {}; c.fillStyle = '#0b0e12'; c.fillRect(0, 0, w, h); const gr = c.createLinearGradient(0, 0, w, h); gr.addColorStop(0, 'rgba(40,60,70,.35)'); gr.addColorStop(1, 'rgba(70,40,60,.25)'); c.fillStyle = gr; c.fillRect(0, 0, w, h);
@@ -11746,12 +11757,433 @@ function hmSave() {
 function hmCtl(mode, g) {
   if (g.canvas !== UI.vcv || !UI.vwrap) return; let c = HMX.ctl;
   if (!c || !c.isConnected) { c = HMX.ctl = h('div', { class: 'hm-ctl', role: 'group', 'aria-label': 'Session' }, h('button', { class: 'btn sm', id: 'hmNew', title: 'Start again: a clear sky, a blank painting, an empty world', onclick: () => hmClear() }, '↺ New session'), h('button', { class: 'btn sm', id: 'hmSave', title: 'Save this picture as an image on this device', onclick: () => hmSave() }, '⬇ Save picture')); UI.vwrap.style.position = 'relative'; UI.vwrap.append(c); }
-  const show = mode === 'stars' || mode === 'paint' || mode === 'eco'; if (c.hidden === show) c.hidden = !show;
+  const show = mode === 'stars' || mode === 'paint'; if (c.hidden === show) c.hidden = !show;
 }
-const HM_DRAW = { gravity: hmGravity, field: hmField, swarms: hmSwarms, terrain: hmTerrain, mood: hmMood, dna: hmDna, stars: hmStars, fluid: hmFlow, eco: hmEco, paint: hmPaint };
+const HM_DRAW = { gravity: hmGravity, field: hmField, swarms: hmSwarms, mood: hmMood, dna: hmDna, stars: hmStars, fluid: hmFlow, paint: hmPaint };
 function hmDraw(mode, g, W, H, X) {
   hmUpdate(); hmCtl(mode, g); g.save(); g.textBaseline = 'alphabetic';
   try { HM_DRAW[mode](g, W, H, X); } catch (e) { if (!HMX.err) { HMX.err = 1; console.warn('harmony look', mode, e); } } g.restore(); g.textAlign = 'left'; g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1;
+}
+
+/* >>> parts/67-audience.js */
+/* ============================================================
+   Part 67 · Audience view, and the video take (2.11)
+   AUDIENCE VIEW  A Monitor widget that shows the show the way the room sees it: the visuals on a screen, you in front of them (the camera, not mirrored),
+   and a crowd's silhouettes at the bottom lit by the screen. It draws its own copy of the show, small, so it works while you are on the Tab or Write
+   panels. When the Visuals tab is open it copies that picture instead, so nothing is drawn twice. Nothing is recorded or sent anywhere.
+   VIDEO TAKE     When you record the stage as a video, the take recorder runs beside it: what comes in on the armed guitar and voice inputs becomes a
+   lane in the arrangement, starting where the video started (what you play, not the band, which is already in the arrangement). Undo removes it.
+   ============================================================ */
+const mtRnd = n => { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };      // a steady pseudo-random number for a seed
+const AUD = { cv: null, off: null, sm: null, big: false, live: false, cam: null, note: null, last: 0, seen: 0 };
+
+function audienceCard() {
+  AUD.cv = h('canvas', { class: 'vcanvas', id: 'audCanvas', style: { width: '100%', aspectRatio: '16 / 9', height: 'auto' }, role: 'img', 'aria-label': 'You and the show, as the audience sees them' });
+  AUD.cam = h('button', { class: 'btn sm', id: 'audCam', title: 'Start or stop the camera (it stays on this device)', onclick: async () => { if (CAM.on) stopCam(); else await startCam(); audSync(); } }, '📷 Camera on');
+  const big = h('button', { class: 'btn sm', id: 'audBig', 'aria-pressed': 'false', title: 'Make the picture taller', onclick: e => { AUD.big = !AUD.big; e.currentTarget.setAttribute('aria-pressed', AUD.big ? 'true' : 'false'); AUD.cv.style.aspectRatio = AUD.big ? '4 / 3' : '16 / 9'; } }, '⤢ Taller');
+  AUD.note = h('div', { class: 'tiny muted', id: 'audNote', style: { marginTop: '4px', lineHeight: 1.45 } });
+  return h('div', { class: 'card', id: 'audCard' }, h('h4', {}, 'Audience view', h('span', { class: 'badge' }, 'as they see you')),
+    h('div', { class: 'card-b', style: { padding: '6px' } }, AUD.cv, h('div', { class: 'row', style: { gap: '6px', marginTop: '6px', flexWrap: 'wrap', alignItems: 'center' } }, AUD.cam, big, camFxBox()), AUD.note));
+}
+function audSync() {
+  if (!AUD.cam) return; AUD.cam.textContent = CAM.on ? '📷 Camera off' : '📷 Camera on'; AUD.cam.classList.toggle('on', !!CAM.on);
+  const copy = typeof paneVisible === 'function' && paneVisible('vis');
+  AUD.note.textContent = !CAM.on ? 'The camera is off, so you are not in the picture yet. Turn it on and pick “Me in front” to stand in front of the show.'
+    : copy && CFG.mirror ? 'Mirrored here because the Visuals tab is open. On other tabs the audience’s side is shown, unmirrored.' : 'Not mirrored: this is the side the audience sees.';
+}
+/** a crowd: rows of heads and shoulders, a few with an arm up or a phone, swaying a little with the music, lit from the screen */
+function audCrowd(g, W, H, t, e, hue) {
+  const y0 = H * .70; g.save();
+  const sp = g.createLinearGradient(0, y0 - H * .06, 0, H); sp.addColorStop(0, hmHsl(hue, 85, 55, .42 + e * .22)); sp.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = sp; g.fillRect(0, y0 - H * .06, W, H - y0 + H * .06);
+  for (let row = 0; row < 3; row++) {
+    const n = 15 + row * 4, base = y0 + H * (.1 + row * .075), sc = .72 + row * .26, shade = row === 0 ? '#2a1d3d' : row === 1 ? '#190f29' : '#0c0716';
+    for (let i = 0; i < n; i++) {
+      const r1 = mtRnd(row * 97 + i * 3.1), r2 = mtRnd(row * 53 + i * 7.7), x = ((i + .5 + (r1 - .5) * .6) / n) * W, sway = Math.sin(t * (1 + r2) * 1.6 + i) * e * H * .012, hr = H * .036 * sc * (.9 + r2 * .2), y = base - hr * 1.2 + sway - (r2 > .8 ? H * .02 : 0);
+      g.fillStyle = shade; g.beginPath(); g.ellipse(x, y + hr * 2.4, hr * 2.1, hr * 1.9, 0, Math.PI, 0); g.fill(); g.beginPath(); g.arc(x, y, hr, 0, 7); g.fill();
+      g.strokeStyle = hmHsl(hue + r1 * 40, 90, 66, .75 - row * .18); g.lineWidth = Math.max(1, H * .004); g.beginPath(); g.arc(x, y, hr, Math.PI * 1.1, Math.PI * 1.9); g.stroke();
+      if (r1 > .78) { const ax = x + (r2 > .5 ? 1 : -1) * hr * 1.5, ay = y - hr * (2.4 + Math.sin(t * 3 + i) * e * .5); g.strokeStyle = shade; g.lineWidth = hr * .7; g.lineCap = 'round'; g.beginPath(); g.moveTo(x + (ax - x) * .5, y + hr * 1.6); g.lineTo(ax, ay); g.stroke();
+        if (r1 > .93) { g.fillStyle = 'rgba(210,235,255,.85)'; g.fillRect(ax - hr * .4, ay - hr * .9, hr * .8, hr * 1.2); } }
+    }
+  }
+  g.restore();
+}
+function audDraw() {
+  const cv = AUD.cv; if (!cv || !cv.isConnected || !E.ready) return; const w = cv.clientWidth; if (!w) return;
+  const nowp = performance.now(); if (nowp - AUD.seen > 400) { AUD.seen = nowp; audSync(); }
+  AUD.live = !!CAM.on;
+  const d = Math.min(2, window.devicePixelRatio || 1), W = Math.round(w * d), H = Math.round(w * (AUD.big ? 3 / 4 : 9 / 16) * d);
+  if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+  const g = cv.getContext('2d'), sx = Math.round(W * .07), sy = Math.round(H * .05), sw = Math.round(W * .86), sh = Math.round(H * (AUD.big ? .62 : .64)), t = performance.now() / 1000;
+  const copy = typeof paneVisible === 'function' && paneVisible('vis') && UI.vcv && UI.vcv.width > 8;      // the Visuals tab is already drawing the show
+  let src = UI.vcv;
+  if (!copy) {
+    const off = AUD.off || (AUD.off = document.createElement('canvas')); if (off.width !== sw || off.height !== sh) { off.width = sw; off.height = sh; }
+    const cam = !!(CAM.on && CAM.video && CAM.video.readyState >= 2), mir = CFG.mirror, keep = VZ.sm; src = off;
+    CFG.mirror = false; VZ.sm = AUD.sm;           // the audience is not looking in a mirror; the hexagon field keeps its own smoothing
+    try { drawVis(off, { mode: VZ.mode, cam, bgA: 1, noText: false }); if (cam && (CFG.camFx || 'over') !== 'over') camTop(off.getContext('2d'), sw, sh); }
+    catch (e) { if (!AUD.err) { AUD.err = 1; console.warn('audience view', e); } } finally { CFG.mirror = mir; AUD.sm = VZ.sm; VZ.sm = keep; }
+  }
+  const C = vcol(), hue = (typeof HM !== 'undefined' && HM.chord ? lxHueOf(lxFifths(HM.chord.root)) : 38), e = clamp((AN.rms + 60) / 50, 0, 1) * (AN.active ? 1 : .3) + (T.playing ? .25 : 0);
+  g.globalAlpha = 1; g.fillStyle = '#04030a'; g.fillRect(0, 0, W, H);
+  const hz = g.createRadialGradient(W / 2, sy + sh * .5, sh * .2, W / 2, sy + sh * .5, W * .62); hz.addColorStop(0, hmHsl(hue, 80, 45, .22)); hz.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = hz; g.fillRect(0, 0, W, H);
+  g.fillStyle = '#16121f'; g.fillRect(sx - 5, sy - 5, sw + 10, sh + 10);                      // the screen's frame
+  try { g.drawImage(src, sx, sy, sw, sh); } catch (er) { }
+  g.save(); g.globalAlpha = .16; g.translate(0, sy + sh * 2 + 2); g.scale(1, -1); try { g.drawImage(src, sx, sy + sh - Math.round(sh * .14), sw, Math.round(sh * .14), sx, sy + sh, sw, Math.round(sh * .14)); } catch (er) { } g.restore();   // its reflection on the floor
+  audCrowd(g, W, H, t, e, hue);
+  if (!CAM.on) { g.font = `600 ${Math.max(10, Math.round(H * .036))}px system-ui,sans-serif`; g.textAlign = 'center'; g.fillStyle = 'rgba(255,255,255,.7)'; g.fillText('Camera off · you are not in the picture', W / 2, sy + sh - H * .03); g.textAlign = 'left'; }
+  const vg = g.createRadialGradient(W / 2, H / 2, H * .45, W / 2, H / 2, W * .75); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.5)'); g.fillStyle = vg; g.fillRect(0, 0, W, H);
+}
+
+/* ---------- the video take: your playing goes into the arrangement while the stage is recorded ---------- */
+/** called as the stage recording starts (after the band, if the whole song is being recorded) */
+function srecTakeBegin(whole) {
+  SREC.take = null;
+  if (CFG.srecTake === false || SREC.audio || !E.hasInput || REC || T.rec) return;
+  if (!armedG() && !armedV()) { CFG.armG = true; try { saveCfg(); } catch (e) { } }       // nothing armed: keep the guitar, the usual lane
+  let slot = T.playing ? playheadSlot() : T.cursor, tm = E.ctx.currentTime;
+  if (whole && T.q && T.q.length) { slot = T.q[0].slot; tm = T.q[0].time; }                 // the count-in is not part of the take
+  const before = snap(); recBegin(slot, tm); if (REC) SREC.take = { before, n0: TAKES.length };
+}
+/** called as the recording stops; keep=false throws the take away with the video */
+function srecTakeEnd(keep) {
+  const k = SREC.take; SREC.take = null; if (!k) return;
+  if (!REC) return;
+  if (!keep) { REC = null; try { E.tapDI.on(false); E.tapWet.on(false); E.tapVox.on(false); } catch (e) { } bus.emit('rec:state', false); return; }
+  recEnd();
+  if (TAKES.length > k.n0) { tkDone(k.before); toast('Your playing from the video is in the arrangement, starting where the video started. Undo (Ctrl/⌘+Z) takes it out.', 'ok'); }
+}
+
+/* >>> parts/69-journal.js */
+/* ============================================================
+   Part 69 · Progress journal and Welcome Back (2.12)
+   THE JOURNAL  A small record, kept only on this device, of what you did and when: the days you played, the minutes, the chords the app heard you
+   hold steady, the ideas you recorded, the songs you marked finished, and how often you landed a chord change in time. It stores counts and dates,
+   not sound and not the notes you played. It is read by Welcome Back (the first page for someone who has been here before) and by My progress.
+   A “session” is a visit with at least a minute of playing, recording or editing in it. A chord is “learned” once it has been held steady five times.
+   A chord change counts as an attempt when you were holding the old chord as the song moved on, and as a hit when the new chord was heard within
+   two beats. It depends on chord detection, so it is a guide, not a grade; with speakers instead of headphones the band can be heard as you.
+   ============================================================ */
+const JN = { d: null, t0: 0, vis: 0, counted: false, lastAct: 0, edit: -1e9, inp: -1e9, run: null, seen: {}, win: null, prev: null, saveT: 0 };
+const JN_FRESH = () => ({ v: 1, since: Date.now(), days: {}, old: { t: 0, s: 0, i: 0 }, heard: {}, learned: {}, songs: {}, pairs: {}, last: {}, focus: '' });
+
+const jnDay = t => { const d = new Date(t == null ? Date.now() : t); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+const jnDate = k => { const m = /^(\d+)-(\d+)-(\d+)$/.exec(k); return m ? new Date(+m[1], +m[2] - 1, +m[3]) : new Date(NaN); };
+const jnShift = (k, n) => { const d = jnDate(k); d.setDate(d.getDate() + n); return jnDay(d.getTime()); };
+const jnDiff = (a, b) => Math.round((jnDate(b) - jnDate(a)) / 864e5);       // whole calendar days from a to b
+
+function jnLoad() {
+  if (JN.d) return JN.d;
+  let d = store.get('jn', null);
+  if (!d || d.v !== 1 || typeof d.days !== 'object' || !d.days) d = JN_FRESH();
+  ['heard', 'learned', 'songs', 'pairs', 'last'].forEach(k => { if (!d[k] || typeof d[k] !== 'object') d[k] = {}; }); if (!d.old) d.old = { t: 0, s: 0, i: 0 };
+  const keys = Object.keys(d.days).sort();                                   // three years of days are kept one by one; older ones are folded into totals
+  if (keys.length > 1100) keys.slice(0, keys.length - 1100).forEach(k => { const r = d.days[k]; d.old.t += r.t || 0; d.old.s += r.s || 0; d.old.i += r.i || 0; delete d.days[k]; });
+  return (JN.d = d);
+}
+function jnSave(now) { clearTimeout(JN.saveT); JN.saveT = 0; if (now) { if (JN.d) store.set('jn', JN.d); return; } JN.saveT = setTimeout(() => { JN.saveT = 0; if (JN.d) store.set('jn', JN.d); }, 4000); }
+function jnBump(field, n = 1) { const d = jnLoad(), k = jnDay(), r = d.days[k] || (d.days[k] = { t: 0, s: 0, i: 0 }); r[field] = (r[field] || 0) + n; if (!JN.saveT) jnSave(); return r; }
+function jnWhere() { const d = jnLoad(); d.last.song = { title: String(S.title || '').slice(0, 80), artist: String(S.artist || '').slice(0, 80), at: Date.now() }; }
+/** an idea: a recording, a hum, or a capture of what you played */
+function jnIdea(name, kind) { const d = jnLoad(); jnBump('i'); jnWhere(); d.last.rec = { name: String(name || 'Idea').slice(0, 90), kind: kind || 'take', at: Date.now(), song: (S.title || '').slice(0, 80) }; jnSave(true); }
+/** the current song is finished (or not). Returns the new state. */
+function jnFinish(on) {
+  const d = jnLoad(), id = PRJ.cur || 'current'; const was = !!d.songs[id]; if (on == null) on = !was;
+  if (on && !was) d.songs[id] = { title: String(S.title || 'Untitled').slice(0, 80), at: Date.now(), day: jnDay() }; if (!on) delete d.songs[id];
+  jnSave(true); bus.emit('journal'); return on;
+}
+const jnIsFinished = () => !!jnLoad().songs[PRJ.cur || 'current'];
+
+function jnChange(from, to, hit) {
+  const d = jnLoad(), k = from + '>' + to, p = d.pairs[k] || (d.pairs[k] = { n: 0, h: '', f: '' });
+  p.n++; p.h = (p.h + (hit ? 1 : 0)).slice(-30); if (p.f.length < 10) p.f += hit ? 1 : 0; p.at = Date.now(); jnSave(); return p;
+}
+function jnHeard(c) {
+  const d = jnLoad(); d.heard[c] = (d.heard[c] || 0) + 1;
+  if (!d.learned[c] && d.heard[c] >= 5) { d.learned[c] = jnDay(); jnSave(true); toast('New chord: ' + c + '. You have now held it steady five times.', 'ok'); }
+  else jnSave();
+}
+const jnName = s => { const p = s ? parseChord(s) : null; return p ? p.name.replace(/\/.*$/, '') : null; };
+
+/** one look at what is happening, about four times a second. o = { sym: the song's chord now, live: the chord heard, playing, bpm } */
+function jnStep(now, o) {
+  const live = jnName(o.live), song = o.playing ? jnName(o.sym) : null;
+  if (live) { JN.seen[live] = now; if (JN.run && JN.run.c === live) { JN.run.k++; if (JN.run.k === 4) jnHeard(live); } else JN.run = { c: live, k: 1 }; } else JN.run = null;
+  if (!song) { JN.win = null; JN.prev = null; return; }
+  if (JN.win) {
+    if (live === JN.win.to) { jnChange(JN.win.from, JN.win.to, true); JN.win = null; }
+    else if (now > JN.win.end || song !== JN.win.to) { jnChange(JN.win.from, JN.win.to, false); JN.win = null; }
+  }
+  if (JN.prev && song !== JN.prev && JN.seen[JN.prev] != null && now - JN.seen[JN.prev] <= 1500) JN.win = { from: JN.prev, to: song, end: now + 120000 / (o.bpm || 90) + 250 };
+  JN.prev = song;
+}
+function jnTick() {
+  if (!E.ready || store.locked) return;
+  const now = performance.now(), dt = JN.t0 ? Math.min(1, (now - JN.t0) / 1000) : 0; JN.t0 = now;
+  const snd = !!(E.hasInput && AN.active), act = snd || !!REC || now - JN.edit < 20000;
+  if (act && dt) {
+    if (JN.lastAct && Date.now() - JN.lastAct > 30 * 60000) { JN.vis = 0; JN.counted = false; }
+    JN.lastAct = Date.now(); JN.vis += dt; jnBump('t', dt);
+    if (!JN.counted && JN.vis >= 60) { JN.counted = true; jnBump('s'); jnWhere(); jnSave(true); }
+  }
+  let sym = null, bpm = S.bpm; if (T.playing && E.ctx) { try { sym = stageInfo().sym; } catch (e) { } }
+  jnStep(now, { sym, live: snd && AN.chord && AN.chord[0] ? AN.chord[0].sym : null, playing: !!T.playing && !!sym, bpm });
+}
+
+/* ---------- reading it back ---------- */
+const jnPracticed = r => !!r && ((r.t || 0) >= 60 || (r.s || 0) > 0 || (r.i || 0) > 0);
+function jnLastDay() { const d = jnLoad(); let best = null; for (const k in d.days) if (jnPracticed(d.days[k]) && (!best || k > best)) best = k; return best; }
+function jnStreak() {
+  const d = jnLoad(), today = jnDay(); let cur = 0, k = jnPracticed(d.days[today]) ? today : jnShift(today, -1);
+  while (jnPracticed(d.days[k])) { cur++; k = jnShift(k, -1); }
+  let best = 0, run = 0, prev = null; Object.keys(d.days).sort().forEach(x => { if (!jnPracticed(d.days[x])) return; run = prev && jnDiff(prev, x) === 1 ? run + 1 : 1; prev = x; if (run > best) best = run; });
+  return { cur, best: Math.max(best, cur) };
+}
+/** counts from a day onward ('' = from the beginning) */
+function jnSum(from) {
+  const d = jnLoad(); const o = { sessions: 0, minutes: 0, chords: 0, ideas: 0, songs: 0, days: 0 };
+  if (!from) { o.sessions += d.old.s || 0; o.ideas += d.old.i || 0; o.minutes += (d.old.t || 0) / 60; }
+  for (const k in d.days) if (k >= from) { const r = d.days[k]; o.sessions += r.s || 0; o.ideas += r.i || 0; o.minutes += (r.t || 0) / 60; if (jnPracticed(r)) o.days++; }
+  for (const c in d.learned) if (d.learned[c] >= from) o.chords++;
+  for (const s in d.songs) if ((d.songs[s].day || '') >= from) o.songs++;
+  o.minutes = Math.round(o.minutes); return o;
+}
+const jnPct = p => { const n = p.h.length; return n ? Math.round(100 * [...p.h].filter(x => x === '1').length / n) : 0; };
+/** the chord change with the most attempts (at least five), with how it started if there is enough to tell */
+function jnBestPair() {
+  const d = jnLoad(); let best = null;
+  for (const k in d.pairs) { const p = d.pairs[k]; if (p.n < 5) continue; if (!best || p.n > best.p.n) best = { k, p }; }
+  if (!best) return null; const [a, b] = best.k.split('>'), now = jnPct(best.p), first = best.p.f.length >= 10 ? Math.round(100 * [...best.p.f].filter(x => x === '1').length / 10) : null;
+  return { from: a, to: b, now, n: best.p.n, first: best.p.n >= 20 && first != null && now - first >= 10 ? first : null };
+}
+function jnAgo(k) {
+  if (!k) return ''; const n = jnDiff(k, jnDay()); if (n <= 0) return 'today'; if (n === 1) return 'yesterday'; if (n < 14) return n + ' days ago';
+  if (n < 60) return Math.round(n / 7) + ' weeks ago'; if (n < 700) return Math.round(n / 30.4) + ' months ago'; return Math.round(n / 365) + ' years ago';
+}
+const jnPlural = (n, one, many) => n + ' ' + (n === 1 ? one : many || one + 's');
+function jnWorking() {
+  const d = jnLoad(); if (d.focus) return { text: d.focus, mine: true };
+  let t = d.last.song && d.last.song.title; if (!t) { const sv = store.get('song', null); t = sv && sv.title; } if (t === 'Untitled Idea') t = '';
+  return { text: t || '', mine: false };
+}
+function jnHasAny() { const d = jnLoad(); return Object.keys(d.days).length > 0 || Object.keys(d.songs).length > 0; }
+
+/* ---------- Welcome Back: the first page for someone who has been here before ---------- */
+function wbRows() {
+  const d = jnLoad(), rows = [], last = jnLastDay(), st = jnStreak(), wk = jnWorking(), pr = jnBestPair();
+  if (last) rows.push(['Last practiced', jnAgo(last) + (jnDiff(last, jnDay()) > 6 ? ' (' + jnDate(last).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) + ')' : '')]);
+  else { const at = +store.get('songAt', 0); if (at) rows.push(['Last worked on', jnAgo(jnDay(at))]); }
+  if (last) rows.push(['Current streak', st.cur ? jnPlural(st.cur, 'day') : 'Starts again the next time you play' + (st.best > 1 ? ' · best so far ' + jnPlural(st.best, 'day') : '')]);
+  rows.push(['Working on', wk.text || 'Nothing named yet', 'focus']);
+  if (d.last.rec) rows.push(['Latest recording', d.last.rec.name + ' · ' + jnAgo(jnDay(d.last.rec.at))]);
+  if (pr) rows.push(['Progress', pr.from + ' → ' + pr.to + ' changes now ' + pr.now + '% on time' + (pr.first != null ? ', up from ' + pr.first + '%' : '')]);
+  else { const nc = Object.keys(d.learned).length; if (nc) rows.push(['Progress', jnPlural(nc, 'chord') + ' learned so far']); }
+  return rows;
+}
+function wbSummary() {
+  const y = new Date().getFullYear(), yr = jnSum(y + '-01-01'), all = jnSum(''), use = (yr.sessions || yr.ideas || yr.chords || yr.songs) ? yr : all, label = use === yr ? String(y) : 'All time';
+  if (!(use.sessions || use.ideas || use.chords || use.songs)) return null;
+  return label + ': ' + ['Played ' + jnPlural(use.sessions, 'session'), 'Learned ' + jnPlural(use.chords, 'chord'), 'Recorded ' + jnPlural(use.ideas, 'idea'), 'Completed ' + jnPlural(use.songs, 'song')].join(' · ');
+}
+function wbCard(start) {
+  const d = jnLoad(), last = jnLastDay(), gap = last ? jnDiff(last, jnDay()) : 0;
+  const head = gap >= 60 ? 'Welcome back. It has been ' + (gap >= 365 ? 'over a year' : Math.round(gap / 30.4) + ' months') + '.' : gap >= 14 ? 'Welcome back. It has been ' + Math.round(gap / 7) + ' weeks.' : 'Welcome back.';
+  const sub = gap >= 14 ? 'Everything is saved on this device, just as you left it. Pick up where you stopped, or start something new.' : 'Pick up where you left off.';
+  const dl = h('dl', { class: 'wb-list' }); const fillRows = () => {
+    dl.innerHTML = '';
+    wbRows().forEach(([k, v, f]) => {
+      const dd = h('dd', {}, v); dl.append(h('dt', {}, k), dd);
+      if (f) { dd.append(' ', h('button', { class: 'wb-edit', type: 'button', 'aria-label': 'Change what you are working on', title: 'Change what you are working on', onclick: () => {
+        const inp = h('input', { class: 'in wb-in', value: jnLoad().focus || '', maxlength: 60, placeholder: 'For example: 90s alternative guitar', 'aria-label': 'What you are working on' }); dd.textContent = ''; dd.append(inp); inp.focus();
+        const fin = ok => { inp.onblur = null; if (ok) { jnLoad().focus = inp.value.trim().slice(0, 60); jnSave(true); } fillRows(); }; inp.onblur = () => fin(true); inp.onkeydown = e => { if (e.key === 'Enter') fin(true); else if (e.key === 'Escape') fin(false); };
+      } }, '✎')); }
+    });
+  };
+  fillRows(); const sum = wbSummary();
+  return h('section', { id: 'welcomeBack', class: 'wb', 'aria-label': 'Welcome back' }, h('h3', { class: 'wb-h' }, head), h('p', { class: 'wb-sub' }, sub), dl,
+    sum ? h('p', { class: 'wb-sum', id: 'wbSummary' }, sum) : h('p', { class: 'wb-sum', id: 'wbSummary' }, jnHasAny() ? '' : 'Your journal starts now. It keeps counts and dates on this device, never sound.'),
+    h('div', { class: 'row', style: { gap: '8px', marginTop: '8px' } }, h('button', { class: 'btn sm', id: 'wbProgress', type: 'button', onclick: () => progressOpen() }, 'My progress…')));
+}
+/** called from the boot screen for people who have been here before */
+function wbBoot() {
+  const host = document.getElementById('bootRoutes'); if (!host || document.getElementById('welcomeBack')) return;
+  host.parentNode.insertBefore(wbCard(), host);
+  const wk = jnWorking(), nb = document.getElementById('bootNoMic');
+  if (nb && wk.text) { const b = nb.querySelector('b'), s = nb.querySelector('span'); if (b) b.textContent = '● Pick up where I left off'; if (s) s.textContent = 'Opens ' + (jnLoad().last.song && jnLoad().last.song.title ? '“' + jnLoad().last.song.title + '”' : 'your last song') + ' and your last layout. Nothing is asked for until you choose.'; }
+}
+
+/* ---------- My progress ---------- */
+function progressOpen() {
+  const d = jnLoad(), box = h('div', { class: 'jn-dlg' }); let range = 'y';
+  const from = () => range === 'a' ? '' : range === 'y' ? new Date().getFullYear() + '-01-01' : jnShift(jnDay(), -89);
+  const draw = () => {
+    box.innerHTML = ''; const s = jnSum(from()), st = jnStreak(), seg = (k, t) => h('button', { class: 'btn sm' + (range === k ? ' on' : ''), type: 'button', 'aria-pressed': String(range === k), onclick: () => { range = k; draw(); } }, t);
+    box.append(h('div', { class: 'row', style: { gap: '6px', flexWrap: 'wrap', alignItems: 'center' } }, h('b', {}, 'Showing'), seg('d', 'Last 90 days'), seg('y', 'This year'), seg('a', 'All time')));
+    const big = (n, t) => h('div', { class: 'jn-n' }, h('b', {}, String(n)), h('span', {}, t));
+    box.append(h('div', { class: 'jn-nums', id: 'jnNums' }, big(s.sessions, s.sessions === 1 ? 'session played' : 'sessions played'), big(s.chords, s.chords === 1 ? 'chord learned' : 'chords learned'), big(s.ideas, s.ideas === 1 ? 'idea recorded' : 'ideas recorded'), big(s.songs, s.songs === 1 ? 'song completed' : 'songs completed')));
+    box.append(h('p', { class: 'tiny muted', style: { margin: '2px 0 8px' } }, (s.minutes >= 120 ? Math.floor(s.minutes / 60) + ' hours ' + (s.minutes % 60) + ' minutes' : jnPlural(s.minutes, 'minute')) + ' of playing, recording and editing · streak ' + jnPlural(st.cur, 'day') + (st.best > st.cur ? ' · best ' + jnPlural(st.best, 'day') : '')));
+    // the last twelve weeks, one square a day, so a quiet stretch and a steady one look different at a glance
+    const today = jnDay(), dow = jnDate(today).getDay(), start = jnShift(today, -(dow + 77)), grid = h('div', { class: 'jn-grid', id: 'jnGrid', role: 'img' }); let on = 0, tot = 0;
+    for (let c = 0; c < 12; c++) for (let r = 0; r < 7; r++) {
+      const k = jnShift(start, c * 7 + r); if (k > today) { grid.append(h('i', { class: 'jn-c fut' })); continue; } const rec = d.days[k], m = rec ? Math.round((rec.t || 0) / 60) : 0, lv = !jnPracticed(rec) ? 0 : m < 10 ? 1 : m < 30 ? 2 : 3;
+      tot++; if (lv) on++; grid.append(h('i', { class: 'jn-c l' + lv, title: jnDate(k).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }) + (lv ? ': ' + (m ? m + ' min' : 'played') : ': no practice') }));
+    }
+    grid.setAttribute('aria-label', 'Practice in the last twelve weeks: ' + on + ' of ' + tot + ' days'); box.append(h('h5', {}, 'The last twelve weeks'), grid, h('p', { class: 'tiny muted', style: { margin: '4px 0 0' } }, on + ' of the last ' + tot + ' days. Darker means more minutes.'));
+    const pairs = Object.keys(d.pairs).filter(k => d.pairs[k].n >= 5).sort((a, b) => d.pairs[b].n - d.pairs[a].n).slice(0, 6);
+    box.append(h('h5', {}, 'Chord changes'));
+    if (!pairs.length) box.append(h('p', { class: 'tiny muted' }, 'Play along with a song using headphones and the app will notice how often you land each chord change in time. It shows a change here after five tries.'));
+    else { const ul = h('ul', { class: 'jn-pairs', id: 'jnPairs' }); pairs.forEach(k => { const p = d.pairs[k], [a, b] = k.split('>'); ul.append(h('li', {}, h('b', {}, a + ' → ' + b), ' ' + jnPct(p) + '% on time', h('span', { class: 'muted' }, ' · ' + jnPlural(p.n, 'try', 'tries') + ' so far'))); }); box.append(ul); }
+    const lc = Object.keys(d.learned).sort((a, b) => d.learned[a] < d.learned[b] ? 1 : -1);
+    box.append(h('h5', {}, 'Chords you have learned'), lc.length ? h('div', { class: 'jn-chips', id: 'jnChords' }, lc.map(c => h('span', { class: 'jn-chip', title: 'First held steady five times on ' + jnDate(d.learned[c]).toLocaleDateString() }, c))) : h('p', { class: 'tiny muted' }, 'A chord shows here once the app has heard you hold it steady five times.'));
+    const wk = jnWorking(), inp = h('input', { class: 'in', id: 'jnFocus', value: d.focus || '', maxlength: 60, placeholder: wk.text || 'For example: 90s alternative guitar', 'aria-label': 'What you are working on', style: { flex: '1', minWidth: '160px' }, onchange: e => { d.focus = e.target.value.trim().slice(0, 60); jnSave(true); } });
+    const fin = h('button', { class: 'btn sm' + (jnIsFinished() ? ' on' : ''), id: 'jnFinish', type: 'button', 'aria-pressed': String(jnIsFinished()), onclick: () => { const v = jnFinish(); toast(v ? '“' + (S.title || 'This song') + '” is marked finished.' : 'Marked as still in progress.', 'ok'); draw(); } }, jnIsFinished() ? '✓ This song is finished' : 'Mark this song finished');
+    box.append(h('h5', {}, 'Working on'), h('div', { class: 'row', style: { gap: '8px', flexWrap: 'wrap', alignItems: 'center' } }, inp, fin));
+    box.append(h('div', { class: 'row', style: { gap: '8px', marginTop: '14px', flexWrap: 'wrap', alignItems: 'center' } },
+      h('button', { class: 'btn sm', type: 'button', onclick: () => download('daily-journal.json', JSON.stringify(jnLoad(), null, 2), 'application/json') }, '⤓ Download my journal'),
+      h('button', { class: 'btn sm bad', id: 'jnErase', type: 'button', onclick: e => { if (!e.currentTarget.dataset.arm) { e.currentTarget.dataset.arm = '1'; e.currentTarget.textContent = 'Press again to erase'; setTimeout(() => { try { e.target.dataset.arm = ''; e.target.textContent = 'Erase my journal'; } catch (x) { } }, 4000); return; } JN.d = JN_FRESH(); jnSave(true); toast('Journal erased. Your songs and recordings are untouched.', 'ok'); draw(); } }, 'Erase my journal')));
+    box.append(h('p', { class: 'tiny muted', style: { marginTop: '10px', lineHeight: 1.5 } }, 'Kept only on this device: counts and dates, never sound or the notes you played. A session is a visit with at least a minute of playing, recording or editing. Chord detection is a guide, so treat the accuracy as a rough sense of direction. With speakers instead of headphones the band can be heard as you.'));
+  };
+  draw(); return pdlg('progress', 'MY PROGRESS', box, { wide: true });
+}
+
+setInterval(() => { try { jnTick(); } catch (e) { if (!JN.err) { JN.err = 1; console.warn('journal', e); } } }, 250);
+['pointerdown', 'keydown'].forEach(ev => document.addEventListener(ev, e => { if (e.isTrusted) JN.inp = performance.now(); }, true));
+document.addEventListener('visibilitychange', () => { if (document.hidden) jnSave(true); });
+window.addEventListener('pagehide', () => jnSave(true));
+
+/* >>> parts/70-backdrops.js */
+/* ============================================================
+   Part 70 · Behind you (2.12) — six integrated backdrops for the camera cut-out
+   Light Ribbons · Aurora · Warp Stars · Pulse Rings · Nebula · Skyline
+   They are made to sit behind the person: set Camera look to “Me in front (green screen)” and you stand inside the picture,
+   the way a performer stands in front of a lit backdrop. Each one is plain 2D drawing on the visuals canvas, so it also works
+   in full screen, in the stage designer and in a recorded video.
+   · The colour follows the chord: it glides to a new hue over about a second when the harmony changes (the circle of fifths
+     walks round the colour wheel), and rests on a calm blue when nothing is playing.
+   · The movement follows the sound (a few frequency bands set the size and brightness of its parts) and the comfort setting
+     (Calm moves at about half the speed and softens every pulse).
+   · Nothing here flashes: brightness only ever changes by gliding, and rings and pulses fade over a second or more.
+   ============================================================ */
+const BK_MODES = new Set(['ribbons', 'aurora', 'warp', 'rings', 'nebula', 'skyline']);
+const VBACK = [['ribbons', 'Light Ribbons'], ['aurora', 'Aurora'], ['warp', 'Warp Stars'], ['rings', 'Pulse Rings'], ['nebula', 'Nebula'], ['skyline', 'Skyline']];
+VMODES.push(...VBACK);
+const BK = { hue: 215, en: .2, bands: new Float32Array(8), t: 0, st: null, rings: [], lastRing: 0, held: false, chord: '', tgt: 215 };
+const bkH = n => { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+const bkHsl = (h, s, l, a) => `hsla(${((h % 360) + 360) % 360},${s}%,${l}%,${a.toFixed(3)})`;
+const bkSmooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+
+/** hue for a chord root: C rests on blue, and every fifth moves 30° round the wheel */
+function bkHueFor(sym) { const ch = sym ? parseChord(sym) : null; if (!ch) return 215; return (215 + ((ch.root * 7) % 12) * 30) % 360; }
+
+/** per-frame shared state: eight log-spaced bands (smoothed, quick up and slow down), overall energy, the chord's hue, comfort */
+function bkTick(X) {
+  const dt = Math.min(.1, X.dt || .016), cm = hmCm(), im = (typeof lxComfort === 'function' && lxComfort().impulse) || .8;
+  const edges = [70, 140, 250, 450, 800, 1500, 2800, 5200]; let k0 = X.bin(60);
+  for (let i = 0; i < 8; i++) {
+    const k1 = Math.max(k0 + 1, X.bin(edges[i] * 1.55)); let s = 0, n = 0; for (let k = k0; k <= k1; k++) { s += X.lvl(X.fd[k]); n++; } k0 = k1 + 1;
+    const v = n ? s / n : 0, b = BK.bands[i]; BK.bands[i] = v > b ? lerp(b, v, Math.min(1, dt * 14)) : lerp(b, v, Math.min(1, dt * 3));
+  }
+  BK.en = lerp(BK.en, clamp(X.energy * 1.25, 0, 1), Math.min(1, dt * 3)); BK.t += dt * cm.motion;
+  let sym = null; try { sym = hmChordSym(); } catch (e) { }
+  const live = !!(AN.active || (typeof T !== 'undefined' && T.playing)); BK.tgt = live ? bkHueFor(sym) : 215;
+  let d = ((BK.tgt - BK.hue + 540) % 360) - 180; BK.hue = (BK.hue + d * Math.min(1, dt * 1.6) + 360) % 360;
+  return { dt, mo: cm.motion, gap: cm.gap, im, en: Math.max(.16, BK.en), b: BK.bands, hue: BK.hue, t: BK.t, pulse: (X.pulse || 0) * im, rawPulse: X.pulse || 0 };
+}
+
+function bkDraw(mode, g, W, H, X) {
+  const B = bkTick(X); g.save(); g.lineCap = 'round'; g.lineJoin = 'round';
+  ({ ribbons: bkRibbons, aurora: bkAurora, warp: bkWarp, rings: bkRings, nebula: bkNebula, skyline: bkSkyline })[mode](g, W, H, B);
+  g.restore(); g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1;
+}
+/** a deep tinted sky to sit under the light: the same hue, very dark, so the lights read against it */
+function bkSky(g, W, H, hue, l0, l1) { const gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, bkHsl(hue, 70, l0, 1)); gr.addColorStop(1, bkHsl(hue + 25, 75, l1, 1)); g.fillStyle = gr; g.fillRect(0, 0, W, H); }
+
+/* ----- Light Ribbons: long glowing ribbons that swim across the picture, as in a lit stage backdrop ----- */
+function bkRibbons(g, W, H, B) {
+  bkSky(g, W, H, B.hue, 4, 11); g.globalCompositeOperation = 'lighter';
+  const n = 7, t = B.t, steps = 56;
+  for (let i = 0; i < n; i++) {
+    const bd = B.b[1 + (i % 6)], amp = H * (.06 + .15 * bd + .04 * B.en) * (1 - i * .05), base = H * (.26 + .5 * (i / (n - 1))), hue = B.hue + (i - 3) * 13, f1 = 1.7 + i * .33, f2 = 4.2 + i * .9;
+    const pts = []; for (let s = 0; s <= steps; s++) { const u = s / steps, x = -W * .04 + u * W * 1.08, edge = Math.sin(u * Math.PI); pts.push([x, base + (Math.sin(u * f1 * 3 + t * (.45 + i * .09) + i * 1.9) * amp + Math.sin(u * f2 + t * (.8 + i * .06) + i) * amp * .33) * (.45 + .55 * edge)]); }
+    const glow = .6 + .4 * bd + B.pulse * .25;
+    [[H * .06, .05], [H * .026, .12], [H * .009, .45 * glow], [H * .0032, .8 * glow]].forEach(([w, a], k) => {
+      g.beginPath(); pts.forEach((p, s) => g[s ? 'lineTo' : 'moveTo'](p[0], p[1])); g.lineWidth = w * (1 + .2 * Math.sin(t + i)); g.strokeStyle = bkHsl(hue, 92 - k * 6, 52 + k * 10, a * (1 - i * .06)); g.stroke();
+    });
+  }
+}
+
+/* ----- Aurora: slow curtains of light hung from the top, over a dark horizon ----- */
+function bkAurora(g, W, H, B) {
+  bkSky(g, W, H, B.hue + 40, 2, 7); const t = B.t;
+  for (let s = 0; s < 70; s++) { const x = bkH(s) * W, y = bkH(s + 70) * H * .6, a = .3 + .3 * Math.sin(t * .5 + bkH(s + 9) * 9); g.fillStyle = `rgba(255,255,255,${(a * .5).toFixed(3)})`; g.fillRect(x, y, 1.4, 1.4); }
+  g.globalCompositeOperation = 'lighter'; const cols = 84, cw = W / cols;
+  for (let c = 0; c < cols; c++) {
+    const u = c / cols, n = Math.sin(u * 6 + t * .4) + Math.sin(u * 11.3 - t * .27) * .6 + Math.sin(u * 2.1 + t * .15) * .5, bd = B.b[(c * 8 / cols) | 0], hgt = H * (.2 + .3 * clamp(.5 + n / 3.2, 0, 1) * (.55 + .8 * bd + .15 * B.en)), y0 = H * (.08 + .1 * Math.sin(u * 3.2 + t * .22));
+    const gr = g.createLinearGradient(0, y0, 0, y0 + hgt), hue = B.hue + 20 + u * 90 + Math.sin(t * .2 + u * 4) * 14; gr.addColorStop(0, bkHsl(hue, 90, 60, 0)); gr.addColorStop(.28, bkHsl(hue, 90, 62, .3 + .2 * bd)); gr.addColorStop(1, bkHsl(hue + 30, 90, 55, 0)); g.fillStyle = gr; g.fillRect(c * cw, y0, cw + 1, hgt);
+  }
+  g.globalCompositeOperation = 'source-over'; g.fillStyle = bkHsl(B.hue, 40, 3, 1); g.beginPath(); g.moveTo(0, H); for (let s = 0; s <= 40; s++) { const u = s / 40; g.lineTo(u * W, H * (.9 - .06 * Math.sin(u * 5 + 1) - .035 * Math.sin(u * 13))); } g.lineTo(W, H); g.fill();
+}
+
+/* ----- Warp Stars: flying through a field of stars; louder is faster, but never more than a brisk drift ----- */
+function bkWarp(g, W, H, B) {
+  bkSky(g, W, H, B.hue + 10, 2, 6); const N = 320, cx = W / 2, cy = H / 2, maxR = Math.hypot(cx, cy);
+  if (!BK.st || BK.st.length !== N) BK.st = Array.from({ length: N }, (_, i) => ({ a: bkH(i) * 6.2832, r: bkH(i + 300), z: .3 + bkH(i + 600) * .7 }));
+  const gl = g.createRadialGradient(cx, cy, 0, cx, cy, maxR * .55); gl.addColorStop(0, bkHsl(B.hue, 85, 48, .26 + .14 * B.en)); gl.addColorStop(1, bkHsl(B.hue, 85, 48, 0)); g.fillStyle = gl; g.fillRect(0, 0, W, H);
+  g.globalCompositeOperation = 'lighter'; const sp = (.05 + .5 * B.en) * B.mo * B.dt;
+  BK.st.forEach(s => {
+    const v = sp * s.z * (.2 + s.r * 1.6); const r0 = s.r; s.r += v; if (s.r > 1.1) { s.r = .02 + bkH(s.a * 91) * .08; s.a = (s.a + 2.4) % 6.2832; return; }
+    const tl = Math.max(v * 5, .002 + s.r * .02), ra = Math.max(0, s.r - tl); const x0 = cx + Math.cos(s.a) * ra * maxR, y0 = cy + Math.sin(s.a) * ra * maxR, x1 = cx + Math.cos(s.a) * s.r * maxR, y1 = cy + Math.sin(s.a) * s.r * maxR;
+    g.strokeStyle = bkHsl(B.hue + s.z * 50, 70, 78, clamp(s.r * 1.6, 0, 1) * .9); g.lineWidth = (.6 + s.r * 2.2) * Math.max(1, H / 620); g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke();
+  });
+}
+
+/* ----- Pulse Rings: a ring leaves the middle on a strong beat (and now and then on its own) and fades as it widens ----- */
+function bkRings(g, W, H, B) {
+  bkSky(g, W, H, B.hue, 3, 9); const cx = W / 2, cy = H * .5, R = Math.hypot(W, H) * .5, now = performance.now();
+  const strong = B.rawPulse > .55; if (strong && !BK.held && now - BK.lastRing > Math.max(B.gap, 450)) { BK.rings.push({ t0: now, hue: B.hue, a: .8 }); BK.lastRing = now; }
+  BK.held = strong; if (now - BK.lastRing > 2800 / Math.max(.5, B.mo)) { BK.rings.push({ t0: now, hue: B.hue, a: .45 }); BK.lastRing = now; }
+  BK.rings = BK.rings.filter(r => now - r.t0 < 4200).slice(-14);
+  const orb = g.createRadialGradient(cx, cy, 0, cx, cy, R * (.18 + .08 * B.en)); orb.addColorStop(0, bkHsl(B.hue, 90, 60, .32 + .12 * B.en)); orb.addColorStop(1, bkHsl(B.hue, 90, 60, 0)); g.fillStyle = orb; g.fillRect(0, 0, W, H);
+  g.globalCompositeOperation = 'lighter';
+  BK.rings.forEach(r => { const age = (now - r.t0) / (3800 / Math.max(.5, B.mo)); if (age >= 1) return; const rad = R * (.04 + age * .95), fade = Math.pow(1 - age, 1.6) * r.a; [[R * .05, .1], [R * .018, .3], [R * .005, .8]].forEach(([w, a]) => { g.beginPath(); g.arc(cx, cy, rad, 0, 6.2832); g.lineWidth = w * (1 - age * .5); g.strokeStyle = bkHsl(r.hue + age * 40, 92, 62, a * fade); g.stroke(); }); });
+  for (let i = 0; i < 3; i++) { const bd = B.b[i * 2 + 1], rad = R * (.1 + i * .06 + .03 * bd); g.beginPath(); g.arc(cx, cy, rad, 0, 6.2832); g.lineWidth = R * .004; g.strokeStyle = bkHsl(B.hue + i * 30, 85, 66, .12 + .3 * bd); g.stroke(); }
+}
+
+/* ----- Nebula: big soft clouds of colour that drift and breathe, and a scatter of slowly twinkling stars ----- */
+function bkNebula(g, W, H, B) {
+  bkSky(g, W, H, B.hue + 15, 2, 6); const t = B.t, R = Math.min(W, H); g.globalCompositeOperation = 'lighter';
+  for (let i = 0; i < 8; i++) {
+    const bd = B.b[i % 8], x = W * (.5 + (bkH(i) - .5) * .8 + Math.sin(t * .07 + i * 1.7) * .1), y = H * (.5 + (bkH(i + 40) - .5) * .7 + Math.cos(t * .05 + i * 2.3) * .09), rad = R * (.34 + .2 * bkH(i + 80) + .1 * bd);
+    const gr = g.createRadialGradient(x, y, 0, x, y, rad), hue = B.hue + (i - 4) * 17; gr.addColorStop(0, bkHsl(hue, 85, 55, .26 + .18 * bd)); gr.addColorStop(.55, bkHsl(hue + 12, 80, 45, .09 + .05 * bd)); gr.addColorStop(1, bkHsl(hue, 80, 40, 0)); g.fillStyle = gr; g.fillRect(x - rad, y - rad, rad * 2, rad * 2);
+  }
+  for (let s = 0; s < 110; s++) { const a = .25 + .45 * (.5 + .5 * Math.sin(t * .7 + bkH(s + 5) * 20)); g.fillStyle = `rgba(255,255,255,${a.toFixed(3)})`; const z = 1 + bkH(s + 7) * 1.6; g.fillRect(bkH(s + 11) * W, bkH(s + 13) * H, z, z); }
+}
+
+/* ----- Skyline: a city at dusk; the windows glow and fade slowly with the music, and the sky takes the chord's colour ----- */
+function bkSkyline(g, W, H, B) {
+  bkSky(g, W, H, B.hue, 6, 26); const R = Math.min(W, H), t = B.t;
+  for (let s = 0; s < 60; s++) { g.fillStyle = `rgba(255,255,255,${(.2 + .3 * (.5 + .5 * Math.sin(t * .5 + s))).toFixed(3)})`; g.fillRect(bkH(s) * W, bkH(s + 50) * H * .45, 1.3, 1.3); }
+  const mx = W * .74, my = H * .26, mr = R * .07, mg = g.createRadialGradient(mx, my, mr * .5, mx, my, mr * 4); mg.addColorStop(0, bkHsl(B.hue + 30, 80, 80, .5)); mg.addColorStop(1, bkHsl(B.hue + 30, 80, 70, 0)); g.fillStyle = mg; g.fillRect(mx - mr * 4, my - mr * 4, mr * 8, mr * 8); g.fillStyle = bkHsl(B.hue + 30, 60, 88, .95); g.beginPath(); g.arc(mx, my, mr, 0, 6.2832); g.fill();
+  g.globalCompositeOperation = 'lighter';   /* two slow searchlight beams sweeping the sky */
+  for (let k = 0; k < 2; k++) { const ox = W * (.26 + .48 * k), ang = -Math.PI / 2 + Math.sin(t * .22 + k * 2.4) * .55, len = H * 1.1, sp = .09 + .05 * B.b[2 + k * 3], x1 = ox + Math.cos(ang - sp) * len, y1 = H + Math.sin(ang - sp) * len, x2 = ox + Math.cos(ang + sp) * len, y2 = H + Math.sin(ang + sp) * len, gr = g.createLinearGradient(ox, H, (x1 + x2) / 2, (y1 + y2) / 2); gr.addColorStop(0, bkHsl(B.hue + 15, 80, 70, .22 + .12 * B.b[2 + k * 3])); gr.addColorStop(1, bkHsl(B.hue + 15, 80, 70, 0)); g.fillStyle = gr; g.beginPath(); g.moveTo(ox, H); g.lineTo(x1, y1); g.lineTo(x2, y2); g.closePath(); g.fill(); }
+  g.globalCompositeOperation = 'source-over';
+  [[0, .52, 18, 'back'], [1, .66, 14, 'front']].forEach(([row, topFrac, count]) => {
+    let x = -W * .02; const base = H, shade = row ? 3 : 10; for (let i = 0; i < count + 6 && x < W; i++) {
+      const sd = i + row * 100, bw = (W / count) * (.75 + bkH(sd) * .7), bh = H * (row ? .12 + bkH(sd + 5) * .22 : .2 + bkH(sd + 5) * .3), y = base - bh;
+      g.fillStyle = bkHsl(B.hue + 10, row ? 35 : 45, shade + (row ? 0 : 4), 1); g.fillRect(x, y, bw - 1, bh);
+      const wc = Math.max(2, Math.floor(bw / (R * .028))), wr = Math.max(2, Math.floor(bh / (R * .04)));
+      for (let a = 0; a < wc; a++) for (let b = 0; b < wr; b++) {
+        const id = sd * 1000 + a * 31 + b, slow = .5 + .5 * Math.sin(t * .3 + bkH(id) * 40), lit = bkSmooth(.45 + .25 * (1 - B.b[(a + b + i) % 8]), .8, slow) * (row ? .55 : .8);
+        if (lit < .04) continue; g.fillStyle = bkHsl(bkH(id + 3) > .6 ? 42 : B.hue + 25, 85, 68, lit * (.55 + .4 * B.b[(a + i) % 8])); g.fillRect(x + (a + .4) * bw / wc, y + (b + .4) * bh / wr, bw / wc * .5, bh / wr * .5);
+      }
+      x += bw + R * .004;
+    }
+  });
+}
+
+/** the first time one of these is chosen with the camera showing you dimmed behind the visuals, say how to stand inside the picture */
+function backTip() {
+  if (!CAM.on || (CFG.camFx || 'over') === 'person' || store.get('backTip')) return;
+  store.set('backTip', 1); toast('Tip: set Camera look to “Me in front (green screen)” and you stand inside this picture.', '');
 }
 
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();

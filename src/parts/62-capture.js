@@ -183,6 +183,7 @@ function capStop(why) {
   if (CX.prevLoop) { [T.loop, T.loopA, T.loopB] = CX.prevLoop; CX.prevLoop = null; }
   if (CX.started && T.playing && why !== 'transport') stopPlay(true);
   CX.started = false; let undo = false; try { undo = n > 0 && histPush(CX.before); } catch (e) { console.warn(e); } CX.before = null;
+  if (n > 0 && typeof jnIdea === 'function') jnIdea((S.title || 'Idea') + ': captured ' + n + ' note' + (n === 1 ? '' : 's'), 'capture');
   capSay(n ? n + ' note' + (n === 1 ? '' : 's') + ' written' + (ch ? ' (' + ch + ' chord' + (ch === 1 ? '' : 's') + ')' : '') : 'Nothing was written', n ? 'ok' : 'dim');
   toast(n ? 'Capture stopped: ' + n + ' note' + (n === 1 ? '' : 's') + ' in the tab. Undo (Ctrl/⌘+Z) takes the whole capture back.' : 'Capture stopped. Nothing was heard clearly enough to write. Is the input level up?', n ? 'ok' : 'warn');
   TL.dirty = true; bus.emit('capture'); return true;

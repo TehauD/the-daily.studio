@@ -118,6 +118,7 @@ function mSheet() {
       tile(msvg('<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>'), 'Save project', () => { exportProject(); }),
       tile(msvg('<circle cx="18" cy="5" r="2.6"/><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/><path d="M8.3 10.8l7.4-4.4M8.3 13.2l7.4 4.4"/>'), 'Share link', mShare),
       tile(msvg('<path d="M4 7a2 2 0 012-2h4l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H6a2 2 0 01-2-2z"/>'), 'My songs', () => { mCloseOverlays(); libraryOpen(); }),
+      tile(msvg('<path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/>'), 'My progress', () => { mCloseOverlays(); progressOpen(); }),
       tile(msvg('<path d="M12 16V4M7 9l5-5 5 5M5 20h14"/>'), 'Open a file', () => { mCloseOverlays(); filesOpen(); }),
       tile(msvg('<path d="M5 20V9M12 20V4M19 20v-7"/>'), 'Master · balance · click', () => { mCloseOverlays(); mixOpen(); }),
       tile(msvg('<path d="M3 12c3-8 5-8 8 0s5 8 8 0"/>'), 'Voice · pitch · key', () => { mCloseOverlays(); voxOpen(); }),

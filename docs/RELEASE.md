@@ -1,4 +1,4 @@
-# Release and go-live checklist (v2.10.0)
+# Release and go-live checklist (v2.12.0)
 
 ## Before you publish
 - [ ] `node scripts/build.mjs --check` passes; `npm test`, `npm run test:e2e`, `npm run test:mobile` pass; `npm run build:site && npm run verify:site` prints `site verified`.
@@ -28,8 +28,8 @@ The page is already vendored at `journal/index.html` and deploys with the site (
 
 ## Tag and release
 ```
-git tag -a v2.10.0 -m "The hexagon is the default again, and ten ways to see harmony"
-git push origin v2.10.0
+git tag -a v2.12.0 -m "Welcome Back and a progress journal, and the white or dark-green hexagon field"
+git push origin v2.12.0
 ```
 Create a GitHub release from the tag using the 2.8.0 CHANGELOG entry.
 

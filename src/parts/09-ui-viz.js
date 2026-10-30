@@ -73,18 +73,20 @@ function paintFret(force) {
 }
 
 /* ---------------- VISUALS ---------------- */
-const VZ_RETIRED = { tunnel: 'concert' }; if (VZ_RETIRED[CFG.visMode]) CFG.visMode = VZ_RETIRED[CFG.visMode];
+const VZ_RETIRED = { tunnel: 'concert', strings: 'hex', joy: 'hex', v86: 'hex', terrain: 'hex', eco: 'hex' }; if (VZ_RETIRED[CFG.visMode]) CFG.visMode = VZ_RETIRED[CFG.visMode];
 /* 2.10: the hexagon field is the default look again (it matches the start screen); a one-time reset for people who had Concert chosen by default */
 if ((CFG.visV || 0) < 210) { CFG.visV = 210; CFG.visMode = 'hex'; try { saveCfg(); } catch (e) { } }
 const VZ = { mode: CFG.visMode || 'hex', cam: false, spec: null, pulses: [], hexes: null, last: 0, fd: null, td: null, sm: null, t: 0, ring: [] };
-const VMODES = [['hex', 'Hex Resonance'], ['spectro', 'Spectrogram'], ['chroma', 'Chroma Wheel'], ['scope', 'Oscilloscope'], ['strings', 'String Field']];
+const VMODES = [['hex', 'Hex Resonance'], ['spectro', 'Spectrogram'], ['chroma', 'Chroma Wheel'], ['scope', 'Oscilloscope']];
 /** the readout views live on the Monitor tab now; they stay available as Stage scenes */
 const VZ_MONITOR = new Set(['spectro', 'chroma', 'scope']);
 function buildVisPane() {
   const p = PANES.vis; p.classList.add('flex');
   const bar = h('div', { class: 'row', style: { gap: '8px', marginBottom: '8px', flexWrap: 'wrap' } },
-    h('div', { class: 'seg' }, VMODES.filter(m => !VZ_MONITOR.has(m[0])).map(([k, n]) => h('button', { class: k === VZ.mode ? 'on' : '', 'data-m': k, onclick: e => { vzSetMode(k); $$('.seg [data-m]', bar).forEach(b => b.classList.toggle('on', b === e.target)); } }, n))),
+    h('div', { class: 'seg' }, VMODES.filter(m => !VZ_MONITOR.has(m[0]) && !BK_MODES.has(m[0])).map(([k, n]) => h('button', { class: k === VZ.mode ? 'on' : '', 'data-m': k, onclick: e => { vzSetMode(k); $$('.seg [data-m]', bar).forEach(b => b.classList.toggle('on', b === e.target)); } }, n))),
+    h('div', { class: 'vz-back', id: 'vzBack' }, h('span', { class: 'hx-l', title: 'Looks made to sit behind you: set Camera look to “Me in front (green screen)” and you stand inside the picture' }, 'Behind you'), h('div', { class: 'seg', role: 'group', 'aria-label': 'Looks that sit behind you' }, VBACK.map(([k, n]) => h('button', { class: k === VZ.mode ? 'on' : '', 'data-m': k, onclick: e => { vzSetMode(k); $$('.seg [data-m]', bar).forEach(b => b.classList.toggle('on', b === e.currentTarget)); try { backTip(); } catch (er) { } } }, n)))),
     lxLensBar(),
+    hexSwatches(),
     h('select', { class: 'in', style: { width: 'auto', fontFamily: 'var(--sans)' }, title: 'Analysis source', onchange: e => { VZ.src = e.target.value; } }, [['auto', 'Source: auto (follows playback)'], ['rig', 'Source: guitar after the rig'], ['master', 'Source: master mix'], ['di', 'Source: what the detector hears'], ['vox', 'Source: vocal microphone']].map(([v, n]) => h('option', { value: v }, n))),
     h('button', { class: 'btn sm', id: 'vzRecBtn', 'data-srec': '1', title: 'Record the stage as a video with the song’s sound (saved on this device)', onclick: e => srecMenu(e.currentTarget) }, '⏺ Record'),
     h('button', { class: 'btn sm' + (CFG.vzAuto ? ' on' : ''), id: 'vzAutoBtn', 'aria-pressed': String(!!CFG.vzAuto), title: 'Auto look: while the song plays, the look follows the section (verse calm, chorus wide, bridge strange)', onclick: e => { CFG.vzAuto = !CFG.vzAuto; saveCfg(); e.currentTarget.classList.toggle('on', !!CFG.vzAuto); e.currentTarget.setAttribute('aria-pressed', String(!!CFG.vzAuto)); toast('Auto look ' + (CFG.vzAuto ? 'on: the look follows the song’s sections' : 'off'), 'ok'); } }, '🎬 Auto look'),
@@ -101,44 +103,94 @@ const vcol = () => { const cs = getComputedStyle(document.documentElement); retu
 /** 'auto' follows what is sounding: the mix while the song, a hum or a backing track plays, the guitar rig otherwise */
 const vzPlaying = () => T.playing || (typeof STP !== 'undefined' && STP.playing);
 function visAna() { const s = VZ.src || 'auto'; if (s === 'vox' && E.anaVox) return E.anaVox; return s === 'master' || (s === 'auto' && vzPlaying()) ? E.anaMaster : s === 'di' ? E.anaDI : E.anaRig; }
+/** looks that draw their whole picture themselves: no pitch read-out or mini fretboard on top */
+const vzBare = m => m === 'concert' || HM_MODES.has(m) || (typeof BK_MODES !== 'undefined' && BK_MODES.has(m));
 function drawVis(cvo, o) {
   o = o || {}; const cv = cvo || UI.vcv; if (!cv || !E.ready || (!cvo && !paneVisible('vis'))) return; const MODE = o.mode || VZ.mode; const g = cv.getContext('2d'), W = cv.width, H = cv.height, now = performance.now(), dt = Math.min(.1, (now - (VZ.last || now)) / 1000); VZ.last = now; VZ.t += dt;
   const an = visAna(); if (!an) return; if (!VZ.fd || VZ.fd.length !== an.frequencyBinCount) VZ.fd = new Float32Array(an.frequencyBinCount); an.getFloatFrequencyData(VZ.fd); const fd = VZ.fd, bh = E.ctx.sampleRate / an.fftSize;
-  const light = CFG.theme === 'light', C = o.C || vcol();
+  const light = CFG.theme === 'light', C = o.C || vcol(), HP = MODE === 'hex' && !cvo ? hexPal() : null, HEXL = !!(HP && HP.lt);
   // background (always dark stage for contrast, tinted by theme)
-  if (MODE !== 'spectro' && MODE !== 'kaleido') { g.globalAlpha = o.bgA == null ? 1 : o.bgA; g.fillStyle = light && !cvo ? '#0c1a1b' : '#050b0c'; g.fillRect(0, 0, W, H); g.globalAlpha = 1; }
+  if (MODE !== 'spectro' && MODE !== 'kaleido') { g.globalAlpha = o.bgA == null ? 1 : o.bgA; g.fillStyle = HP ? HP.bg : light && !cvo ? '#0c1a1b' : '#050b0c'; g.fillRect(0, 0, W, H); g.globalAlpha = 1; }
   const camOn = !!((o.cam != null ? o.cam : VZ.cam) && CAM.video && CAM.video.readyState >= 2 && MODE !== 'spectro');
   if (camOn && (CFG.camFx || 'over') === 'over') { g.save(); g.globalAlpha = .32; if (CFG.mirror) { g.translate(W, 0); g.scale(-1, 1); } const vr = CAM.video.videoWidth / CAM.video.videoHeight, cr = W / H; let dw = W, dh = H, dx = 0, dy = 0; if (vr > cr) { dw = H * vr; dx = (W - dw) / 2; } else { dh = W / vr; dy = (H - dh) / 2; } g.drawImage(CAM.video, dx, dy, dw, dh); g.restore(); }
   const lvl = x => clamp((x + 88 + (o.gain || 0)) / 62, 0, 1), bin = f => clamp(Math.round(f / bh), 1, fd.length - 1);
   const energy = (() => { let s = 0, n = 0; for (let k = bin(80); k < bin(5000); k += 2) { s += lvl(fd[k]); n++; } return s / n; })();
   const pulse = VZ.pulses.reduce((a, p) => Math.max(a, (1 - (now - p.t) / 900) * p.a), 0);
-  if (MODE === 'hex') drawHex(g, W, H, fd, bh, lvl, C, pulse);
+  if (MODE === 'hex') drawHex(g, W, H, fd, bh, lvl, C, pulse, HP || hexPal(true));
   else if (MODE === 'tunnel') drawTunnel(g, W, H, energy, C, pulse, dt);
   else if (MODE === 'spectro') drawSpectro(g, W, H, fd, bin, lvl, C);
   else if (MODE === 'chroma') drawChroma(g, W, H, C);
   else if (MODE === 'scope') drawScope(g, W, H, C);
-  else if (MODE === 'strings') drawStringField(g, W, H, fd, bin, lvl, C);
   else if (typeof stageExtra === 'function') stageExtra(MODE, g, W, H, { fd, bin, lvl, C, pulse, energy, dt, o });
   if (camOn && !cvo) camTop(g, W, H);
   if (MODE === 'halo' && !cvo) haloFront(g);   // stage draws its own camera layer after trails and kaleidoscope
-  if (!cvo && CFG.vzNeck !== false && !document.body.classList.contains('perform-on') && MODE !== 'concert' && !HM_MODES.has(MODE)) { const r = neckRect(W, H); drawMiniNeck(g, r[0], r[1], r[2], r[3], { C }); }
+  if (!cvo && CFG.vzNeck !== false && !document.body.classList.contains('perform-on') && !vzBare(MODE)) { const r = neckRect(W, H); drawMiniNeck(g, r[0], r[1], r[2], r[3], { C }); }
   if (!cvo && CFG.vzRibbon && !document.body.classList.contains('perform-on') && typeof voxDraw === 'function') { const r = voxRect(W, H); voxDraw(g, r[0], r[1], r[2], r[3], { C, labels: H > 260 }); }
-  if (o.noText || MODE === 'concert' || HM_MODES.has(MODE)) return;
-  g.fillStyle = 'rgba(255,255,255,.55)'; g.font = `${Math.round(11 * H / 400 + 6)}px ui-monospace,Menlo,monospace`; g.textBaseline = 'top';
-  if (AN.midi != null && AN.active) { g.fillStyle = 'rgba(255,255,255,.85)'; g.font = `800 ${Math.round(28 * Math.min(W, H * 2) / 900 + 10)}px ui-monospace,Menlo,monospace`; g.fillText(pcName(AN.midi) + (Math.floor(AN.midi / 12) - 1) + '  ' + (AN.cents >= 0 ? '+' : '') + AN.cents.toFixed(0) + '¢', 14, 12); }
+  if (o.noText || vzBare(MODE)) return;
+  const ink = HP ? HP.ink : '255,255,255'; g.fillStyle = `rgba(${ink},.55)`; g.font = `${Math.round(11 * H / 400 + 6)}px ui-monospace,Menlo,monospace`; g.textBaseline = 'top';
+  if (AN.midi != null && AN.active) { g.fillStyle = `rgba(${ink},.85)`; g.font = `800 ${Math.round(28 * Math.min(W, H * 2) / 900 + 10)}px ui-monospace,Menlo,monospace`; g.fillText(pcName(AN.midi) + (Math.floor(AN.midi / 12) - 1) + '  ' + (AN.cents >= 0 ? '+' : '') + AN.cents.toFixed(0) + '¢', 14, 12); }
   if (AN.chord && AN.chord[0] && AN.active) { g.fillStyle = C.b; g.font = `800 ${Math.round(20 * Math.min(W, H * 2) / 900 + 8)}px ui-monospace,Menlo,monospace`; g.fillText(AN.chord[0].sym, 14, H * .13 + 20); }
 }
-function drawHex(g, W, H, fd, bh, lvl, C, pulse) {
+/** The hexagon field is one design in many colourings: dark green and white are the original two; the others, and any three colours you pick, use the same drawing.
+    “Match the theme” (the default) follows the app's light/dark choice and its accent colours. Only the main and full-screen canvases take the choice; a stage scene keeps its own palette. */
+const HEX_PALS = [   /* id, name, background, cells, gold cells, outline (optional; otherwise worked out) */
+  ['green', 'Dark green', '#04090a', '#3ddc84', '#f2b632', '#7dbf9b'], ['white', 'White', '#f4f8f3', '#1f8a56', '#e0a21a', '#2d6e50'],
+  ['ocean', 'Ocean', '#041018', '#3db8ff', '#ffd166'], ['ember', 'Ember', '#120804', '#ff7a3d', '#ffd166'], ['violet', 'Violet', '#0a0614', '#a07bff', '#ff8fd0'],
+  ['mono', 'Mono', '#0b0b0b', '#d8d8d8', '#ffffff'], ['blush', 'Blush', '#fbf1f3', '#d9487a', '#e0a21a'], ['sky', 'Daylight', '#eef6fb', '#2b7fd0', '#e0a21a']];
+const hexRgbS = c => rgbOf(c).join(',');
+function hexPalBuild(row, useC) {
+  const [id, name, bg, cell, warm, line] = row, B = rgbOf(bg), lum = (.2126 * B[0] + .7152 * B[1] + .0722 * B[2]) / 255, lt = lum > .55;
+  const mx = (a, b, t) => { const A = rgbOf(a), Z = rgbOf(b); return A.map((v, i) => Math.round(lerp(v, Z[i], t))).join(','); };
+  return { id, name, bg, lt, useC: !!useC, a: cell, b: mixHex(cell, warm, .35), cell: hexRgbS(cell), warm: hexRgbS(warm), glow: hexRgbS(cell), line: line ? hexRgbS(line) : (lt ? mx(cell, '#000000', .3) : mx(cell, '#ffffff', .45)), ink: lt ? '20,45,32' : '255,255,255' };
+}
+function mixHex(a, b, t) { const A = rgbOf(a), Z = rgbOf(b); return '#' + A.map((v, i) => Math.round(lerp(v, Z[i], t)).toString(16).padStart(2, '0')).join(''); }
+const _hp = {};
+/** the palette in force. hexPal(true) is the plain dark-green design (what a stage scene uses) */
+function hexPal(plain) {
+  let t = CFG.hexTone || 'auto'; if (t === 'light') t = 'white'; else if (t === 'dark') t = 'green';
+  if (plain) t = 'green';
+  let row, useC = false;
+  if (t === 'custom') { const c = CFG.hexCol || {}; row = ['custom', 'Your colours', c.bg || '#04090a', c.cell || '#3ddc84', c.warm || '#f2b632']; }
+  else if (t === 'auto') { row = CFG.theme === 'light' ? HEX_PALS[1] : HEX_PALS[0]; useC = true; }
+  else row = HEX_PALS.find(r => r[0] === t) || (CFG.theme === 'light' ? HEX_PALS[1] : HEX_PALS[0]);
+  if (plain) useC = true;
+  const key = row.join('|') + useC; return _hp[key] || (_hp[key] = hexPalBuild(row, useC));
+}
+function hexLight() { return hexPal().lt; }
+function hexSet(k) {
+  if (k === 'auto') delete CFG.hexTone; else CFG.hexTone = k;
+  if (k === 'custom' && !CFG.hexCol) { const P = hexPal(); CFG.hexCol = { bg: P.bg, cell: P.a, warm: '#' + P.warm.split(',').map(v => (+v).toString(16).padStart(2, '0')).join('') }; }
+  saveCfg(); hexToneSync();
+}
+function hexSwatches() {
+  const dot = (k, name, bg, cell, extra) => h('button', { type: 'button', class: 'hx-sw', 'data-k': k, role: 'radio', title: name, 'aria-label': 'Hexagon colours: ' + name, onclick: () => hexSet(k), style: { background: bg } }, h('i', { style: { background: cell } }), extra || null);
+  const cur = () => CFG.hexTone === 'light' ? 'white' : CFG.hexTone === 'dark' ? 'green' : (CFG.hexTone || 'auto');
+  const box = h('div', { class: 'hx-pal', id: 'hexTone', role: 'radiogroup', 'aria-label': 'Hexagon colours', style: { display: VZ.mode === 'hex' ? '' : 'none' } });
+  box.append(h('span', { class: 'hx-l' }, 'Hexagons'), dot('auto', 'Match the theme', 'linear-gradient(135deg,#f4f8f3 50%,#04090a 50%)', '#3ddc84'));
+  HEX_PALS.forEach(([id, name, bg, cell]) => box.append(dot(id, name, bg, cell)));
+  box.append(dot('custom', 'Pick your own colours', 'conic-gradient(#ff5d5d,#ffd24d,#4dff88,#4dc3ff,#b36bff,#ff5d5d)', 'transparent'));
+  const mk = (key, label) => h('label', { class: 'hx-c', title: label }, h('span', {}, label), h('input', { type: 'color', 'aria-label': 'Hexagon ' + label.toLowerCase() + ' colour', 'data-c': key, value: (CFG.hexCol || {})[key] || '#3ddc84', oninput: e => { CFG.hexCol = Object.assign({}, CFG.hexCol || {}, { [key]: e.target.value }); saveCfg(); } }));
+  box.append(h('span', { class: 'hx-custom' }, mk('bg', 'Background'), mk('cell', 'Cells'), mk('warm', 'Gold cells')));
+  box._cur = cur; return box;
+}
+function hexToneSync() {
+  const box = document.getElementById('hexTone'); if (!box) return; box.style.display = VZ.mode === 'hex' ? '' : 'none';
+  const cur = box._cur ? box._cur() : (CFG.hexTone || 'auto'), P = hexPal();
+  box.querySelectorAll('.hx-sw').forEach(b => { const on = b.dataset.k === cur; b.classList.toggle('on', on); b.setAttribute('aria-checked', String(on)); });
+  const cu = box.querySelector('.hx-custom'); if (cu) { cu.style.display = cur === 'custom' ? '' : 'none'; const c = CFG.hexCol || {}; cu.querySelectorAll('input').forEach(i => { i.value = c[i.dataset.c] || (i.dataset.c === 'bg' ? P.bg : i.dataset.c === 'cell' ? P.a : '#f2b632'); }); }
+}
+function drawHex(g, W, H, fd, bh, lvl, C, pulse, P) {
+  const lt = P.lt, CA = P.useC ? C.a : P.a, CB = P.useC ? C.b : P.b;
   const R = Math.max(14, Math.min(W, H) / 15), dx = R * Math.sqrt(3), dy = R * 1.5, cols = Math.ceil(W / dx) + 2, rows = Math.ceil(H / dy) + 2, cx = W / 2, cy = H / 2, maxd = Math.hypot(cx, cy);
   if (!VZ.sm || VZ.sm.length !== cols * rows) VZ.sm = new Float32Array(cols * rows); const fmin = 70, fmax = 7000, lr = Math.log(fmax / fmin);
   const bt = ((performance.now() / 1000) % 1.9) / 1.9;   /* a slow ring even when nothing is playing, like the start screen */
-  { const gl = g.createRadialGradient(cx, cy * .92, 0, cx, cy * .92, Math.hypot(W, H) * .55); gl.addColorStop(0, 'rgba(61,220,132,.16)'); gl.addColorStop(.5, 'rgba(61,220,132,.04)'); gl.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gl; g.fillRect(0, 0, W, H); }   /* the start screen's glow */
+  { const gl = g.createRadialGradient(cx, cy * .92, 0, cx, cy * .92, Math.hypot(W, H) * .55); gl.addColorStop(0, `rgba(${P.glow},${lt ? .12 : .16})`); gl.addColorStop(.5, `rgba(${P.glow},.04)`); gl.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gl; g.fillRect(0, 0, W, H); }   /* the start screen's glow */
   for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
     const x = c * dx + (r % 2 ? dx / 2 : 0) - dx / 2, y = r * dy - R / 2, d = Math.hypot(x - cx, y - cy) / maxd, ang = (Math.atan2(y - cy, x - cx) + Math.PI) / (2 * Math.PI);
     const f = fmin * Math.exp(lr * clamp(d * .92 + ((ang * 5) % 1) * .08, 0, 1)), k = clamp(Math.round(f / bh), 1, fd.length - 1), v = lvl(Math.max(fd[k], fd[k + 1] || -120)), i = r * cols + c;
     VZ.sm[i] = Math.max(v, VZ.sm[i] * .86 - .004); const s = VZ.sm[i], ring = pulse * Math.max(0, 1 - Math.abs(d - (1 - pulse) * 1.05) * 6);
-    const amb = .2 * Math.pow(Math.max(0, Math.sin(d * 11 - performance.now() / 780)), 2) * Math.max(0, 1 - d * .9), idle = .42 * Math.max(0, 1 - Math.abs(d - bt * 1.1) * 7) * Math.max(0, 1 - d * .9), a = clamp(s * 1.15 + ring * .8 + amb + idle, 0, 1); if (a < .03) { g.strokeStyle = 'rgba(120,170,170,.07)'; g.lineWidth = 1; hexPath(g, x, y, R * .94); g.stroke(); continue; }
-    const warm = ((c * 7 + r * 13) % 11) === 0; g.fillStyle = warm ? mixc(C.b, '#f2b632', .55, a * .8) : mixc(C.a, C.b, clamp(s * 1.4 - .15 + ring, 0, 1), a * .92); hexPath(g, x, y, R * (.5 + .46 * Math.min(1, a))); g.fill(); g.strokeStyle = 'rgba(125,191,155,' + (.05 + a * .45).toFixed(3) + ')'; g.lineWidth = 1; g.stroke();   /* gold cells and outlines, as on the start screen */
+    const amb = .2 * Math.pow(Math.max(0, Math.sin(d * 11 - performance.now() / 780)), 2) * Math.max(0, 1 - d * .9), idle = .42 * Math.max(0, 1 - Math.abs(d - bt * 1.1) * 7) * Math.max(0, 1 - d * .9), a = clamp(s * 1.15 + ring * .8 + amb + idle, 0, 1); if (a < .03) { g.strokeStyle = `rgba(${P.line},${lt ? .13 : .07})`; g.lineWidth = 1; hexPath(g, x, y, R * .94); g.stroke(); continue; }
+    const warm = ((c * 7 + r * 13) % 11) === 0; g.fillStyle = warm ? mixc(CB, '#' + P.warm.split(',').map(v => (+v).toString(16).padStart(2, '0')).join(''), .55, a * (lt ? .9 : .8)) : mixc(CA, CB, clamp(s * 1.4 - .15 + ring, 0, 1), a * .92); hexPath(g, x, y, R * (.5 + .46 * Math.min(1, a))); g.fill(); g.strokeStyle = `rgba(${P.line},` + (.05 + a * (lt ? .4 : .45)).toFixed(3) + ')'; g.lineWidth = 1; g.stroke();   /* gold cells and outlines, as on the start screen */
   }
 }
 function hexPath(g, x, y, r) { g.beginPath(); for (let i = 0; i < 6; i++) { const a = Math.PI / 3 * i + Math.PI / 6; g[i ? 'lineTo' : 'moveTo'](x + r * Math.cos(a), y + r * Math.sin(a)); } g.closePath(); }
@@ -172,15 +224,6 @@ function drawScope(g, W, H, C) {
   g.strokeStyle = 'rgba(255,255,255,.08)'; g.lineWidth = 1; for (let i = 1; i < 8; i++) { g.beginPath(); g.moveTo(0, H * i / 8); g.lineTo(W, H * i / 8); g.stroke(); g.beginPath(); g.moveTo(W * i / 8, 0); g.lineTo(W * i / 8, H); g.stroke(); }
   const len = Math.min(d.length - s, 1600); g.lineWidth = 2.2; g.strokeStyle = C.a; g.shadowColor = C.a; g.shadowBlur = 12; g.beginPath(); for (let i = 0; i < len; i++) { const x = i / len * W, y = H / 2 - d[s + i] * H * .45 * 2.2; i ? g.lineTo(x, y) : g.moveTo(x, y); } g.stroke(); g.shadowBlur = 0;
 }
-function drawStringField(g, W, H, fd, bin, lvl, C) {
-  const n = 6, mh = H / (n + 1); S.tuning.forEach((open, st) => {
-    const y = H - (st + 1) * mh, f0 = mtof(open + S.capo); let e = 0; for (let h_ = 1; h_ <= 4; h_++) e = Math.max(e, lvl(fd[bin(f0 * h_)]) / Math.sqrt(h_)); const live = AN.midi != null && AN.midi % 12 === (open + S.capo) % 12 ? 1 : 0;
-    const amp = (6 + e * mh * .75) * (1 + live * .3), ph = VZ.t * (4 + st * 1.3) * Math.PI; g.lineWidth = 1.2 + (6 - st) * .45; g.strokeStyle = mixc(C.a, C.b, e, .35 + .6 * e); g.shadowColor = C.a; g.shadowBlur = e * 16; g.beginPath();
-    for (let x = 0; x <= W; x += 6) { const u = x / W, yy = y + Math.sin(u * Math.PI) * Math.sin(u * Math.PI * (2 + (st % 3)) + ph) * amp * e; x ? g.lineTo(x, yy) : g.moveTo(x, yy); } g.stroke(); g.shadowBlur = 0;
-    g.fillStyle = 'rgba(255,255,255,.55)'; g.font = '700 12px ui-monospace,monospace'; g.fillText(pcName(open + S.capo), 8, y - 16);
-  });
-}
-
 /* ---------------- VISION (webcam fretting-hand lab) ---------------- */
 const CAM = { video: null, stream: null, on: false, cal: store.get('cal', null), pts: [], calMode: false, hands: null, tracker: null, track: 'off', fps: 0, frames: 0, handFrames: 0, fretHist: new Array(25).fill(0), stringHist: new Array(6).fill(0), lastT: 0, prevGray: null, motion: new Array(13).fill(0), vel: {}, loopOn: false, fingerLast: {} };
 function buildCamPane() {

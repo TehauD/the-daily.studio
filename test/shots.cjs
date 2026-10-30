@@ -228,11 +228,56 @@ suite('shots', async t => {
       window.__sim = setInterval(() => { const tt = performance.now() / 1000, notes = [67, 71, 72, 71, 69, 74, 66, 71], k = Math.floor(tt / 1.1), m = notes[k % 8] + Math.sin(tt * 5) * .06 + (k % 3 === 0 ? .18 : 0); d.VOX.m = m; d.VOX.cents = (m - Math.round(m)) * 100; d.VOX.f = [1, 2, 3]; d.VOX.hist.push({ t: performance.now(), m, c: .9 }); d.VOX.db = -22; d.VOX.vlo = 55; d.VOX.vhi = 78; }, 30);
       window.__ons = setInterval(() => d.bus.emit('onset', {}), 260);
     });
-    const tiles = [], names = ['gravity', 'field', 'swarms', 'terrain', 'mood', 'dna', 'stars', 'fluid', 'eco', 'paint'];
+    const tiles = [], names = ['gravity', 'field', 'swarms', 'mood', 'dna', 'stars', 'fluid', 'paint'];
     for (const m of names) { await p.evaluate(m => window.__daily.vzSetMode(m), m); await wait(3500); const f = path.join(OUT, '.tile-' + m + '.png'); await p.screenshot({ path: f }); tiles.push(f); }
     const out = path.join(OUT, '70-harmony-looks.png');
-    require('node:child_process').execFileSync('python3', ['-c', 'import sys\nfrom PIL import Image\nout=sys.argv[1]; fs=sys.argv[2:]\nW,H=640,360\nsh=Image.new("RGB",(W*2,H*5),(7,7,10))\nfor i,f in enumerate(fs):\n    im=Image.open(f).convert("RGB").resize((W,H),Image.LANCZOS); sh.paste(im,((i%2)*W,(i//2)*H))\nsh.save(out,optimize=True)', out, ...tiles]);
+    require('node:child_process').execFileSync('python3', ['-c', 'import sys\nfrom PIL import Image\nout=sys.argv[1]; fs=sys.argv[2:]\nW,H=640,360\nsh=Image.new("RGB",(W*2,H*4),(7,7,10))\nfor i,f in enumerate(fs):\n    im=Image.open(f).convert("RGB").resize((W,H),Image.LANCZOS); sh.paste(im,((i%2)*W,(i//2)*H))\nsh.save(out,optimize=True)', out, ...tiles]);
     tiles.forEach(f => fs.unlinkSync(f)); const n = fs.statSync(out).size; ok(n > 20000, 'wrote 70-harmony-looks.png (' + Math.round(n / 1024) + ' KB)'); await p.ctx.close();
+  }
+
+  /* ---------- 2.11: the audience view ---------- */
+  if (want('72-audience-view')) {
+    const p = await t.open({ w: 1440, h: 900, debug: true, init: asInit(DARK) });
+    await p.evaluate(async () => { const d = window.__daily; await d.ioConnect(); const L = d.LAYOUTS.find(x => x[0] === 'Record'); d.applyPreset(L[2], 'Record'); d.dockGo('tab'); d.vzSetMode('concert'); d.play(); document.getElementById('audCam').click(); });
+    await wait(1800); await p.evaluate(() => { const b = document.getElementById('mpAskNo'); if (b) b.click(); }); await p.selectOption('#audCard select[aria-label="Camera look"]', 'edges'); await wait(2500); await quiet(p); await save(p, '72-audience-view'); await p.ctx.close();
+  }
+
+  if (want('73-welcome-back') || want('74-welcome-back-light') || want('75-my-progress')) {
+    const day = n => { const d = new Date(); d.setDate(d.getDate() - n); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+    const mkJ = (gap, recent) => {                  // an invented history for the picture: 87 sessions, 14 chords, 23 ideas, 4 finished songs
+      const days = {}; let s = 0; for (let i = gap; i < gap + 5; i++) { days[day(i)] = { t: 1500, s: 1, i: 0 }; s++; }
+      for (let i = 0; s < 87; i++) { const k = day(gap + 6 + i * (recent ? 1 : 2)); if (!days[k]) { days[k] = { t: 600 + (i * 137) % 2400, s: 1, i: 0 }; s++; } }
+      const ks = Object.keys(days).sort(); for (let n = 0; n < 23; n++) days[ks[(n * 3) % ks.length]].i += 1;
+      const cs = ['C', 'G', 'Am', 'F', 'Em', 'Dm', 'D', 'A', 'E', 'Bm', 'G7', 'Cmaj7', 'Am7', 'Dsus4'], learned = {}, heard = {}; cs.forEach((c, i) => { learned[c] = day(gap + 20 + i * 6); heard[c] = 9; });
+      const songs = {}; [gap + 5, gap + 40, gap + 80, gap + 120].forEach((n, i) => { songs['s' + i] = { title: 'Song ' + i, at: Date.now() - n * 864e5, day: day(n) }; });
+      return { v: 1, since: Date.now() - 400 * 864e5, days, old: { t: 0, s: 0, i: 0 }, heard, learned, songs, focus: '90s Alternative Guitar',
+        pairs: { 'G>C': { n: 34, h: '110111111110111111101111111111', f: '0100100010', at: Date.now() }, 'Am>F': { n: 18, h: '101101110111110111', f: '0110100110', at: Date.now() }, 'D>A': { n: 9, h: '110101111', f: '110101111', at: Date.now() } },
+        last: { song: { title: 'Maybe Today Demo', artist: '', at: Date.now() - gap * 864e5 }, rec: { name: 'Maybe Today Demo', kind: 'take', at: Date.now() - gap * 864e5, song: 'Maybe Today Demo' } } };
+    };
+    const seedJ = (J, look) => `try{localStorage.setItem('fw.jn',${JSON.stringify(JSON.stringify(J))});${look ? `localStorage.setItem('fw.cfg',JSON.stringify({lookMode:'${look}'}));` : ''}}catch(e){}`;
+    const first = async (j, look) => { const p = await t.open({ w: 1280, h: 900, boot: false, init: seedJ(j, look) }); await p.goto(t.BASE + (t.BASE.includes('?') ? '&' : '?') + 'debug'); await wait(3500); return p; };
+    if (want('73-welcome-back')) { const p = await first(mkJ(2, true), 'dark'); await save(p, '73-welcome-back'); await p.ctx.close(); }
+    if (want('74-welcome-back-light')) { const p = await first(mkJ(90, false), 'light'); await save(p, '74-welcome-back-light'); await p.ctx.close(); }
+    if (want('75-my-progress')) {
+      const p = await t.open({ w: 1280, h: 900, debug: true, init: seedJ(mkJ(0, true), 'dark') }); await p.evaluate(() => window.__daily.progressOpen()); await wait(700); await save(p, '75-my-progress'); await p.ctx.close();
+    }
+  }
+
+  if (want('76-view-menu') || want('77-edge-tabs')) {
+    const p = await t.open({ w: 1440, h: 900, debug: true, init: asInit(DARK) }); await takes(p); await quiet(p);
+    if (want('77-edge-tabs')) { await wait(400); await save(p, '77-edge-tabs'); }
+    if (want('76-view-menu')) { await p.evaluate(() => document.querySelector('button[title^="Layout"]').click()); await wait(500); await save(p, '76-view-menu'); }
+    await p.ctx.close();
+  }
+
+  // 2.12: hexagon colours and the "Behind you" looks
+  const BACK = [['78-behind-ribbons', 'ribbons'], ['79-behind-aurora', 'aurora'], ['80-behind-warp', 'warp'], ['81-behind-rings', 'rings'], ['82-behind-nebula', 'nebula'], ['83-behind-skyline', 'skyline']];
+  if (want('84-hex-colours') || BACK.some(([n]) => want(n))) {
+    const p = await t.open({ w: 1440, h: 810, debug: true, init: asInit(DARK) }); await takes(p);
+    await p.evaluate(async () => { const d = window.__daily; await d.ioConnect(); d.CFG.vzNeck = false; d.dockGo('vis'); d.HM.force = 'Am'; d.play && d.play(); window.__sim = setInterval(() => d.bus.emit('onset', {}), 400); });
+    for (const [n, m] of BACK) if (want(n)) { await p.evaluate(m => window.__daily.vzSetMode(m), m); await wait(2600); await save(p, n); }
+    if (want('84-hex-colours')) { await p.evaluate(() => { const d = window.__daily; d.vzSetMode('hex'); d.hexSet('custom'); const i = document.querySelector('#hexTone input[data-c="bg"]'); i.value = '#0b1a3a'; i.dispatchEvent(new Event('input', { bubbles: true })); const j = document.querySelector('#hexTone input[data-c="cell"]'); j.value = '#ff6a3d'; j.dispatchEvent(new Event('input', { bubbles: true })); }); await wait(1800); await save(p, '84-hex-colours'); }
+    await p.ctx.close();
   }
 
   /* ---------- the light theme, the start card, the canvas, the songs window, appearance and about ---------- */
