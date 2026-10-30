@@ -29,27 +29,27 @@ suite('e2e-workspace', async t => {
   ok(fp.Arrange.tlH > fp.Write.tlH * 1.5 && fp.Arrange.tlH > 300 && fp.Write.tlH < 330, 'Arrange makes the arrangement tall (' + fp.Arrange.tlH + ' px) and Write keeps it short (' + fp.Write.tlH + ' px)');
   ok(fp.Show.tlH < 140 && fp.Focus.tlH < 160 && fp.Tone.tlH < 140, 'Show, Focus and Tone reduce the arrangement to a strip (' + [fp.Show.tlH, fp.Focus.tlH, fp.Tone.tlH].join(', ') + ' px)');
   ok(fp.Show.lvis === 'hidden' && fp.Show.rvis === 'hidden' && fp.Focus.lvis === 'hidden' && fp.Focus.rvis === 'hidden' && fp.Practice.lvis === 'visible' && fp.Practice.rvis === 'visible' && fp.Teacher.lvis === 'hidden' && fp.Write.lvis === 'visible' && fp.Arrange.lvis === 'hidden' && fp.Arrange.rvis === 'visible', 'the sidebars are where each layout says (Show and Focus have none, Teacher and Arrange have the right, Practice and Write both)');
-  ok(fp.Show.dock === 'stage' && fp.Write.dock === 'tab' && fp.Arrange.dock === 'band' && fp.Record.dock === 'rig' && fp.Tone.dock === 'rig' && fp.Practice.dock === 'tab', 'each opens on the panel for its job (Show on the Stage, Write on the Tab, Arrange on the Band, Record and Tone on the Rig)');
+  ok(fp.Show.dock === 'stage' && fp.Write.dock === 'tab' && fp.Arrange.dock === 'band' && fp.Record.dock === 'rig' && fp.Tone.dock === 'rig' && fp.Practice.dock === 'fret', 'each opens on the panel for its job (Show on the Stage, Write on the Tab, Arrange on the Band, Record and Tone on the Rig, Practice on the Fretboard)');
   ok(!/Stage|Neural|Stems|Camera/.test(fp.Write.tabs) && /Stage/.test(fp.Show.tabs) && !/\bTab\b/.test(fp.Show.tabs) && fp.Write.tabs.split('|').length < fp.Studio.tabs.split('|').length, 'the tab strip shows what the job needs: Write has no Stage or Stems, Show has no Tab (' + fp.Write.tabs + ' ‖ ' + fp.Show.tabs + ')');
   ok(fp.Record.mon === 'tuner+levels' && fp.Tone.mon === 'tuner+live+spectrum' && fp.Studio.mon === 'tuner+levels', 'each layout brings its own Monitor widgets (Record: tuner and levels · Tone: tuner, analysis and spectrum)');
-  ok(fp.Practice.side === '{"fret":"right"}' && fp.Studio.side === '{}' && fp.Write.rcur === 'refine' && fp.Write.lcur === 'theory', 'Practice puts the fretboard in the right sidebar and Write puts theory and refine beside the tab');
+  ok(fp.Teacher.side === '{"fret":"right"}' && fp.Studio.side === '{}' && fp.Write.rcur === 'refine' && fp.Write.lcur === 'theory', 'Teacher puts the fretboard in the right sidebar and Write puts theory and refine beside the tab');
 
   // nothing carries over from the last layout
   const leak = await ev(async () => {
     const d = window.__daily, go = async n => { const l = d.LAYOUTS.find(x => x[0] === n); d.applyPreset(l[2], n); await new Promise(r => setTimeout(r, 300)); }, out = {};
     await go('Tone'); const tone = ['spectrum', 'live'].map(w => !d.LAY.rc.hide[w]); await go('Record'); out.rec = ['tuner', 'levels', 'live', 'spectrum', 'views'].map(w => !d.LAY.rc.hide[w]).join(); out.toneHad = tone.join();
-    await go('Practice'); out.pr = JSON.stringify(d.LAY.side); await go('Write'); out.wr = JSON.stringify(d.LAY.side) + ' ' + JSON.stringify(d.LAY.so); out.panesPerSide = [document.querySelectorAll('#right [data-pane]').length];
+    await go('Teacher'); out.pr = JSON.stringify(d.LAY.side); await go('Write'); out.wr = JSON.stringify(d.LAY.side) + ' ' + JSON.stringify(d.LAY.so); out.panesPerSide = [document.querySelectorAll('#right [data-pane]').length];
     await go('Show'); await go('Studio'); out.hid = d.LAY.hidden.length; out.cur = d.DOCK.cur;
     return out;
   });
   ok(leak.toneHad === 'true,true' && leak.rec === 'true,true,false,false,false', 'moving from Tone to Record takes the spectrum and analysis away again (' + leak.rec + ')');
-  ok(leak.pr === '{"fret":"right"}' && leak.wr === '{} {"left":[],"right":[]}', 'moving from Practice to Write gives the fretboard back to the panel strip');
+  ok(leak.pr === '{"fret":"right"}' && leak.wr === '{} {"left":[],"right":[]}', 'moving from Teacher to Write gives the fretboard back to the panel strip');
   ok(leak.hid === 0, 'Studio shows every tab again after Show hid most of them');
-  await ev(() => { const d = window.__daily; d.applyPreset(d.LAYOUTS[0][2], 'Studio'); document.querySelector('button[title^="Layout"]').click(); });
+  await ev(() => { const d = window.__daily; d.applyPreset(d.LAYOUTS[0][2], 'Studio'); document.getElementById('wsBtn').click(); });
   await wait(500);
-  const menu = await ev(() => { const m = document.querySelector('.lay-menu'); return { cards: m ? m.querySelectorAll('.lay-card').length : 0, heads: m ? [...m.querySelectorAll('h5')].map(h => h.textContent).join('|') : '', theme: m ? m.querySelectorAll('#vmTheme').length : 0, xp: m ? m.querySelectorAll('#vmXp').length : 0, boxes: m ? m.querySelectorAll('input[type=checkbox]').length : 0, over: m ? m.scrollWidth - m.clientWidth : 99 }; });
-  ok(menu.cards === 0 && menu.heads === 'Workspace' && menu.theme === 0 && menu.xp === 0 && menu.boxes >= 3 && menu.over <= 1, 'the top-right menu is only about where panels go: no layout cards, and light/dark and Experience live elsewhere (' + JSON.stringify(menu) + ')');
-  await ev(() => { document.body.click(); window.__daily.closePop && window.__daily.closePop(); }); await wait(200);
+  const menu = await ev(() => { const m = document.getElementById('workspace'); return { open: !!m && m.open, secs: m ? [...m.querySelectorAll('.hub-sec')].map(x => x.dataset.sec).join() : '', cards: m ? m.querySelectorAll('.ws-card').length : 0, theme: m ? m.querySelectorAll('.lk-mode').length : 0, xp: m ? m.querySelectorAll('#vmXp').length : 0, boxes: m ? m.querySelectorAll('input[type=checkbox]').length : 0, over: m ? m.querySelector('.hub-body').scrollWidth - m.querySelector('.hub-body').clientWidth : 99 }; });
+  ok(menu.open && menu.secs === 'goal,panels,list,reset' && menu.cards === 6 && menu.theme === 0 && menu.xp === 0 && menu.boxes >= 3 && menu.over <= 1, 'the ▦ Workspace dialog holds the goals and where panels go; light/dark and Experience live elsewhere (' + JSON.stringify(menu) + ')');
+  await ev(() => document.getElementById('workspace').close()); await wait(200);
   // light/dark belongs to Appearance; Experience to the Tools button
   await ev(() => window.__daily.setTheme('light')); await wait(300);
   ok(await ev(() => window.__daily.CFG.lookMode === 'light' && document.documentElement.dataset.theme === 'light'), 'Appearance’s Light switches the whole app at once');

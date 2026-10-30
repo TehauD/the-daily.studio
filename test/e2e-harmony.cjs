@@ -33,8 +33,8 @@ suite('e2e-harmony', async t => {
   ok(await ev(() => { const d = window.__daily; d.vzSetMode('stars'); return !document.querySelector('.hm-ctl').hidden; }), 'the New session and Save picture buttons show on the sky and the painting');
   await ev(() => window.__daily.vzSetMode('mood')); await wait(300); ok(await ev(() => document.querySelector('.hm-ctl').hidden), '...and stay out of the way on the others');
   // ---- new session clears everything
-  await ev(() => { const d = window.__daily; d.HM.paint.push({ t: 1, m: 60, h: 40, lv: .5, v: 1, ten: 0, d: 0 }); d.hmClear(); });
-  ok(await ev(() => { const d = window.__daily; return d.HM.stars.length === 0 && d.HM.paint.length === 0; }), 'New session clears the sky, the painting and the creatures');
+  // checked in the same call as the clear: the simulated voice keeps adding a point every 100 ms, so a later call can find a new one
+  ok(await ev(() => { const d = window.__daily; d.HM.paint.push({ t: 1, m: 60, h: 40, lv: .5, v: 1, ten: 0, d: 0 }); d.hmClear(); return d.HM.stars.length === 0 && d.HM.paint.length === 0; }), 'New session clears the sky, the painting and the creatures');
   // ---- the painting renders from the session, and saving makes a picture
   const paint = await ev(() => { const d = window.__daily, c = document.createElement('canvas'); c.width = 640; c.height = 360; const pts = []; for (let i = 0; i < 200; i++) pts.push({ t: i * 100, m: 55 + Math.sin(i / 9) * 8, h: (i * 4) % 360, lv: .6, v: i % 2, ten: .2, d: 0 }); pts.push({ t: 5000, m: 60, h: 40, o: 1, a: .8, dev: .3 }); d.hmPaintRender(c.getContext('2d'), 640, 360, pts, 25000, {}); const px = c.getContext('2d').getImageData(0, 0, 640, 360).data; const seen = new Set(); for (let i = 0; i < px.length; i += 4 * 211) seen.add((px[i] >> 5) + ',' + (px[i + 1] >> 5) + ',' + (px[i + 2] >> 5)); return seen.size; });
   ok(paint >= 6, 'the painting draws colour and texture from a session (' + paint + ' distinct tones sampled)');

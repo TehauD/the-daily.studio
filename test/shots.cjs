@@ -174,7 +174,7 @@ suite('shots', async t => {
     const p = await t.open({ w: 1600, h: 950, init: asInit(DARK) }); await takes(p);
     const go = async n => { await p.evaluate(n => { const d = window.__daily, l = d.LAYOUTS.find(x => x[0] === n); d.applyPreset(l[2], n); document.querySelectorAll('#toasts .toast').forEach(x => x.remove()); }, n); await wait(1500); await quiet(p); };
     for (const [name, lay] of [['56-layout-write', 'Write'], ['57-layout-arrange', 'Arrange'], ['58-layout-show', 'Show']]) { if (!want(name)) continue; await go(lay); await save(p, name); }
-    if (want('55-layouts')) { await go('Studio'); await p.evaluate(() => document.querySelector('button[title^="Layout"]').click()); await wait(700); await save(p, '55-layouts'); }
+    if (want('55-layouts')) { await go('Studio'); await p.evaluate(() => document.getElementById('wsBtn').click()); await wait(700); await save(p, '55-layouts'); }
     await p.ctx.close();
   }
 
@@ -266,7 +266,7 @@ suite('shots', async t => {
   if (want('76-view-menu') || want('77-edge-tabs')) {
     const p = await t.open({ w: 1440, h: 900, debug: true, init: asInit(DARK) }); await takes(p); await quiet(p);
     if (want('77-edge-tabs')) { await wait(400); await save(p, '77-edge-tabs'); }
-    if (want('76-view-menu')) { await p.evaluate(() => document.querySelector('button[title^="Layout"]').click()); await wait(500); await save(p, '76-view-menu'); }
+    if (want('76-view-menu')) { await p.evaluate(() => document.getElementById('wsBtn').click()); await wait(500); await save(p, '76-view-menu'); }
     await p.ctx.close();
   }
 

@@ -1389,8 +1389,8 @@ function buildHeader() {
   tr.append(UI.rew, UI.play, UI.stop, UI.rec, UI.loop, UI.metro, UI.metroMore, UI.pos, UI.tim, h('label', { class: 'field', style: { width: '58px' } }, 'BPM', UI.bpm), h('label', { class: 'field', style: { width: '54px' } }, 'Sig', UI.ts), h('label', { class: 'field', style: { width: '56px' } }, 'Key', UI.key), h('label', { class: 'field', style: { width: '56px' } }, 'Mode', UI.mode));
   const R = $('#topR');
   UI.lat = h('span', { class: 'chip', title: 'Round-trip latency estimate. Run the Loopback Test in I/O for a measured value.' }, h('i', { class: 'led' }), h('span', {}, 'audio off'));
-  UI.theme = h('button', { class: 'btn icon', title: 'Appearance: light / dark, palettes, accent, density…', onclick: () => lookOpen() }, '◐');
-  R.append(mstChip(), audioButton(), UI.lat, UI.theme, h('button', { class: 'btn icon', title: 'Settings', onclick: openSettings }, '⚙'), h('button', { class: 'btn icon', title: 'Help & shortcuts (?)', onclick: openHelp }, '?'));
+  UI.theme = h('button', { class: 'btn icon', title: 'Appearance: light / dark, palettes, accent, density…', 'aria-haspopup': 'dialog', onclick: () => lookOpen() }, '◐');
+  R.append(mstChip(), audioButton(), UI.lat, UI.theme, h('button', { class: 'btn icon', title: 'Settings', 'aria-haspopup': 'dialog', onclick: () => openSettings() }, '⚙'), h('button', { class: 'btn icon', title: 'Help & shortcuts (?)', 'aria-haspopup': 'dialog', onclick: () => openHelp() }, '?'));
 }
 /** count-in and click volume, next to the Click button */
 function clickMenu(anchor) {
@@ -1416,56 +1416,70 @@ function syncTransport() {
 bus.on('transport', syncTransport); bus.on('song', syncTransport); bus.on('rec:state', syncTransport);
 
 /* ---------- settings / help ---------- */
-function openSettings() {
-  const d = $('#settings'); d.innerHTML = '';
-  const F = (label, el) => h('label', { class: 'field' }, label, el);
-  const sel = (key, opts, cb) => h('select', { onchange: e => { const v = e.target.value; CFG[key] = isNaN(+v) || v === '' ? v : (key === 'hint' ? v : +v); saveCfg(); cb && cb(); } }, opts.map(o => { const [v, t] = Array.isArray(o) ? o : [o, o]; return h('option', { value: v, selected: String(CFG[key]) === String(v) }, t); }));
+/** ⚙ Settings (part 05c's dialog). at: the section to open on */
+function openSettings(at) {
+  const close = () => { const d = $('#settings'); if (d) d.close(); };
+  const F = (label, el) => h('label', { class: 'field' }, h('span', {}, label), el);
+  const sel = (key, opts, cb) => h('select', { class: 'in', onchange: e => { const v = e.target.value; CFG[key] = isNaN(+v) || v === '' ? v : (key === 'hint' ? v : +v); saveCfg(); cb && cb(); } }, opts.map(o => { const [v, t] = Array.isArray(o) ? o : [o, o]; return h('option', { value: v, selected: String(CFG[key]) === String(v) }, t); }));
   const chk = (label, key, cb) => h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!CFG[key], onchange: e => { CFG[key] = e.target.checked; saveCfg(); cb && cb(); } }), label);
-  const num = (key, min, max, step, cb) => h('input', { type: 'number', min, max, step, value: CFG[key], onchange: e => { CFG[key] = +e.target.value; saveCfg(); cb && cb(); } });
-  d.append(h('div', { class: 'dlg-h' }, 'SETTINGS', h('button', { class: 'btn sm', onclick: () => d.close() }, 'Close')),
-    h('div', { class: 'dlg-b' },
-      h('h5', {}, 'Appearance'),
-      F('Theme', h('div', { class: 'seg' }, [['light', 'Light'], ['dark', 'Dark'], ['auto', 'System']].map(([t, n]) => h('button', { 'data-t': t, class: CFG.lookMode === t ? 'on' : '', onclick: () => setTheme(t) }, n)))),
-      F('Palette, accent, density…', h('button', { class: 'btn', onclick: () => { d.close(); lookOpen(); } }, '🎨 Customize appearance…')),
-      F('UI scale', h('input', { type: 'range', min: .85, max: 1.3, step: .05, value: CFG.ui, oninput: e => { CFG.ui = +e.target.value; saveCfg(); applyAppearance(); } })),
-      F('Device layout', sel('form', [['auto', 'Auto (fit this device)'], ['phone', 'Phone'], ['tablet', 'Tablet'], ['desktop', 'Desktop']], () => applyForm())),
-      chk('On-screen tab keypad on phones and tablets', 'kpad', () => mSync()),
-      chk('Reduce motion', 'reduce', applyAppearance),
-      h('h5', {}, 'Workflow'),
+  const num = (key, min, max, step, cb) => h('input', { class: 'in', type: 'number', min, max, step, value: CFG[key], onchange: e => { CFG[key] = +e.target.value; saveCfg(); cb && cb(); } });
+  const range = (key, min, max, step, cb) => h('input', { type: 'range', min, max, step, value: CFG[key], oninput: e => { CFG[key] = +e.target.value; saveCfg(); cb && cb(); } });
+  const note = t => h('p', { class: 'hub-note' }, t);
+  return hubOpen('settings', { ico: '⚙', title: 'Settings', sub: 'How the studio looks, sounds, records and keeps your work.', at, sections: [
+    { key: 'look', label: 'Appearance', ico: '🎨', sub: 'Light or dark first, then a palette made for it.', body: () => [lookQuick(), h('button', { class: 'btn', id: 'setLook', onclick: () => { close(); lookOpen(); } }, '🎨 Looks, accent, density and type…')] },
+    { key: 'work', label: 'Workflow', ico: '▦', sub: 'Where the studio starts and how it fits this device.', body: () => [
       F('Start in', routeControl()),
-      h('h5', {}, 'Music'),
-      F('Reference pitch A4 (Hz)', num('a4', 415, 466, .1, () => bus.emit('song'))), F('Accidentals', sel('flats', [[false, 'Sharps (C#)'], [true, 'Flats (Db)']], () => { CFG.flats = String(CFG.flats) === 'true'; saveCfg(); bus.emit('song'); })),
-      chk('Left-handed fretboard', 'left', () => bus.emit('fret')), F('Fretboard labels', sel('fretNames', [['notes', 'Note names'], ['degrees', 'Scale degrees'], ['frets', 'Fret numbers']], () => bus.emit('fret'))),
-      h('h5', {}, 'Audio engine (restart to apply)'),
-      F('Latency hint', sel('hint', [['interactive', 'interactive (lowest)'], ['balanced', 'balanced'], ['playback', 'playback'], ['0', '0 (request minimum)']])), F('Sample rate', sel('sr', [['auto', 'Device default'], ['44100', '44.1 kHz'], ['48000', '48 kHz'], ['96000', '96 kHz']])),
-      F('Analyzer FFT size', sel('fft', [2048, 4096, 8192, 16384, 32768], () => { if (E.ready) { E.anaRig.fftSize = E.anaMaster.fftSize = CFG.fft; } })), F('Analyzer smoothing', h('input', { type: 'range', min: 0, max: .95, step: .01, value: CFG.smooth, oninput: e => { CFG.smooth = +e.target.value; saveCfg(); if (E.ready) E.anaRig.smoothingTimeConstant = E.anaMaster.smoothingTimeConstant = CFG.smooth; } })),
-      h('div', { class: 'row', style: { gridColumn: '1/-1' } }, h('button', { class: 'btn', onclick: () => { d.close(); restartAudio(); } }, '↻ Restart audio engine'), h('span', { class: 'muted small' }, 'Required after changing latency hint, sample rate or output routing.')),
-      h('h5', {}, 'Export'),
-      F('Loudness target for song WAVs', sel('lufsTarget', LOUD_TARGETS)),
-      chk('Render WAVs faster than real time', 'renderFast'), h('div', { class: 'tiny muted', style: { gridColumn: '1/-1' } }, 'Mixes the song in a few seconds instead of playing it through. Turn this off if a render ever sounds different from playback; the bounce then plays the song once in real time.'),
-      F('Backup folder', syncControl()),
-      h('h5', {}, 'Recording & practice'),
-      F('Count-in (bars)', sel('countIn', [0, 1, 2, 4])), F('Metronome level', h('input', { type: 'range', min: 0, max: 1, step: .05, value: CFG.metroVol, oninput: e => { CFG.metroVol = +e.target.value; saveCfg(); } })),
-      F('Humanize (timing/velocity)', h('input', { type: 'range', min: 0, max: 1, step: .05, value: CFG.humanize, oninput: e => { CFG.humanize = +e.target.value; saveCfg(); } })), F('Timing analysis grid', sel('timingGrid', [[4, '16th notes'], [2, '8th notes'], [1, 'Quarter notes']])),
+      F('Workspace', h('button', { class: 'btn', onclick: () => { close(); workspaceOpen(); } }, (goalNow() ? goalNow().ico + ' ' + goalNow().name : 'Choose a goal') + ' ▸')),
+      F('Device layout', sel('form', [['auto', 'Auto (fit this device)'], ['phone', 'Phone'], ['tablet', 'Tablet'], ['desktop', 'Desktop']], () => applyForm())),
+      chk('On-screen tab keypad on phones and tablets', 'kpad', () => mSync())] },
+    { key: 'music', label: 'Music', ico: '♪', sub: 'Tuning reference, note names and the fretboard.', body: () => [
+      F('Reference pitch A4 (Hz)', num('a4', 415, 466, .1, () => bus.emit('song'))),
+      F('Accidentals', sel('flats', [[false, 'Sharps (C#)'], [true, 'Flats (Db)']], () => { CFG.flats = String(CFG.flats) === 'true'; saveCfg(); bus.emit('song'); })),
+      F('Fretboard labels', sel('fretNames', [['notes', 'Note names'], ['degrees', 'Scale degrees'], ['frets', 'Fret numbers']], () => bus.emit('fret'))),
+      chk('Left-handed fretboard', 'left', () => bus.emit('fret'))] },
+    { key: 'audio', label: 'Audio engine', ico: '🔊', sub: 'Latency and analysis. Restart the engine to apply the first two.', body: () => [
+      F('Latency hint', sel('hint', [['interactive', 'interactive (lowest)'], ['balanced', 'balanced'], ['playback', 'playback'], ['0', '0 (request minimum)']])),
+      F('Sample rate', sel('sr', [['auto', 'Device default'], ['44100', '44.1 kHz'], ['48000', '48 kHz'], ['96000', '96 kHz']])),
+      F('Analyzer FFT size', sel('fft', [2048, 4096, 8192, 16384, 32768], () => { if (E.ready) { E.anaRig.fftSize = E.anaMaster.fftSize = CFG.fft; } })),
+      F('Analyzer smoothing', range('smooth', 0, .95, .01, () => { if (E.ready) E.anaRig.smoothingTimeConstant = E.anaMaster.smoothingTimeConstant = CFG.smooth; })),
+      h('div', { class: 'hub-acts' }, h('button', { class: 'btn', onclick: () => { close(); restartAudio(); } }, '↻ Restart audio engine'), note('Needed after changing the latency hint, sample rate or output routing.'))] },
+    { key: 'rec', label: 'Recording & practice', ico: '●', sub: 'Count-in, the click and what a take keeps.', body: () => [
+      F('Count-in (bars)', sel('countIn', [0, 1, 2, 4])),
+      F('Metronome level', range('metroVol', 0, 1, .05)),
+      F('Humanize (timing/velocity)', range('humanize', 0, 1, .05)),
+      F('Timing analysis grid', sel('timingGrid', [[4, '16th notes'], [2, '8th notes'], [1, 'Quarter notes']])),
       F('When recording reaches the end of the song', sel('recEnd', [['grow', 'Keep going (the song grows to fit)'], ['stop', 'Stop at the end'], ['loop', 'Loop back, one take per pass']])),
       h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!CFG.rec.dry, onchange: e => { CFG.rec.dry = e.target.checked; saveCfg(); } }), 'Record dry DI (enables re-amping)'),
-      h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!CFG.rec.wet, onchange: e => { CFG.rec.wet = e.target.checked; saveCfg(); } }), 'Record wet print'),
-      h('h5', {}, 'Ultimate Guitar export'),
-      F('Max line width (chars)', num('ugWidth', 40, 120, 1, () => bus.emit('export'))), chk('Include [tab] / [ch] tags', 'ugTags', () => bus.emit('export')),
-      h('h5', {}, 'Data'),
-      h('div', { class: 'row', style: { gridColumn: '1/-1', gap: '8px', flexWrap: 'wrap' } }, h('button', { class: 'btn', onclick: () => { d.close(); libraryOpen(); } }, '☰ My songs'), h('button', { class: 'btn', onclick: () => { d.close(); progressOpen(); } }, '📈 My progress'), h('button', { class: 'btn bad', title: 'Choose what to erase: layout, settings, songs, offline copy…', onclick: () => { d.close(); resetOpen(); } }, 'Reset…'), h('button', { class: 'btn', onclick: () => download('daily-songs-settings.json', JSON.stringify(CFG, null, 2), 'application/json') }, 'Export settings JSON')),
-      F('Backing track when a song opens', sel('trackRestore', [['auto', 'Restore it automatically'], ['tap', 'Wait until I tap Restore']])), h('div', { class: 'tiny muted', style: { gridColumn: '1/-1' } }, 'Songs and recordings are kept in this browser (My songs). Stems are separated again when a song with a track opens; the song itself opens instantly.')
-    ));
-  d.showModal();
+      h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!CFG.rec.wet, onchange: e => { CFG.rec.wet = e.target.checked; saveCfg(); } }), 'Record wet print')] },
+    { key: 'export', label: 'Export', ico: '⇩', sub: 'Song bounces, tab text and an automatic backup folder.', body: () => [
+      F('Loudness target for song WAVs', sel('lufsTarget', LOUD_TARGETS)),
+      chk('Render WAVs faster than real time', 'renderFast'), note('Mixes the song in a few seconds instead of playing it through. Turn this off if a render ever sounds different from playback.'),
+      F('Ultimate Guitar line width (chars)', num('ugWidth', 40, 120, 1, () => bus.emit('export'))), chk('Include [tab] / [ch] tags in Ultimate Guitar text', 'ugTags', () => bus.emit('export')),
+      F('Backup folder', syncControl())] },
+    { key: 'data', label: 'Songs & data', ico: '☰', sub: 'Everything stays in this browser. Nothing is uploaded.', body: () => [
+      F('Backing track when a song opens', sel('trackRestore', [['auto', 'Restore it automatically'], ['tap', 'Wait until I tap Restore']])),
+      note('Songs and recordings are kept in this browser (My songs). Stems are separated again when a song with a track opens; the song itself opens instantly.'),
+      h('div', { class: 'hub-acts' }, h('button', { class: 'btn', onclick: () => { close(); libraryOpen(); } }, '☰ My songs'), h('button', { class: 'btn', onclick: () => { close(); progressOpen(); } }, '📈 My progress'), h('button', { class: 'btn', onclick: () => download('daily-songs-settings.json', JSON.stringify(CFG, null, 2), 'application/json') }, 'Export settings JSON'), h('button', { class: 'btn bad', title: 'Choose what to erase: layout, settings, songs, offline copy…', onclick: () => { close(); resetOpen(); } }, 'Reset…'))] }
+  ] });
 }
-function openHelp() {
-  const d = $('#help'); d.innerHTML = '';
+/** ? Help (part 05c's dialog) */
+function openHelp(at) {
   const K = [['Space', 'Play / stop'], ['Ctrl + .', 'KILL AUDIO: stop playback, monitor off, release the microphone, suspend audio'], ['R', 'Record: one press, one take. It keeps going past the end of the song until you press R or Stop again'], ['L / M', 'Loop / metronome'], ['D · B · G · T', 'Band on/off: drums · bass · rhythm guitar · lead tab'], ['1…8 · 0', 'Recall pedalboard scene (Stage scene when Stage is focused) · 0 = all pedals off'], ['Home', 'Return to start'], ['Ctrl/⌘ Z · Shift+Z', 'Undo / redo: song edits, clips and the stem mix share one history'], ['Ctrl/⌘ E · D · Del', 'Selected clip: split at the playhead · duplicate · delete. ← → nudge a beat (Shift = a bar). Hold Alt while dragging for no snapping'], ['Drop a file', 'Audio, lyrics, MIDI (.mid, .kar) or a song file anywhere on the page'], ['Ctrl/⌘ S', 'Save project JSON'], ['Alt + 1…9, 0', 'Switch panel by position (tab order is yours to arrange)'], ['[ ]', 'Toggle left / right sidebars'],
     ['Tab editor', 'Click a cell · type fret (0–24) · ←→↑↓ move · Del clear · h p / \\ b ~ x < set technique · Shift+arrows select · Space plays from bar'], ['Knobs', 'Drag · wheel · Shift = fine · double-click reset · right-click = MIDI learn'], ['Rig', 'Drag pedal headers to reorder the signal chain · A/B + Morph to compare tones']];
-  d.append(h('div', { class: 'dlg-h' }, 'HELP & SHORTCUTS', h('button', { class: 'btn sm', onclick: () => d.close() }, 'Close')), h('div', { class: 'dlg-b', style: { display: 'block' } }, h('div', { class: 'help-k' }, K.map(([a, b]) => [h('kbd', {}, a), h('span', {}, b)])),
-    h('div', { class: 'row', style: { gap: '8px', margin: '2px 0 8px' } }, h('button', { class: 'btn primary', id: 'helpSessions', onclick: () => { d.close(); guideMenu(); } }, '✦ Guided sessions'), h('button', { class: 'btn', onclick: () => tourStart() }, '▶ Take the guided tour'), h('span', { class: 'tiny muted' }, 'Short tasks that teach by doing, or a two-minute spotlight walkthrough.')), h('div', { class: 'hr' }), h('p', { class: 'small muted' }, 'Everything runs locally in your browser. Nothing is uploaded. Browsers cannot talk to ASIO drivers, so achievable latency depends on your OS audio stack; use the Loopback Test (I/O panel) for a measured number, and your Focusrite’s Direct Monitor for latency-free headphone monitoring while recording.'),
-    h('p', { class: 'small muted' }, 'Your work is autosaved to this browser: songs, recordings and backing tracks stay on this device (☰ Songs). For a copy you can keep anywhere, use ☰ Songs → All songs → Back up all songs (one zip with everything, which Open a file brings back), or save one song as a bundle. On an iPhone or iPad, add the site to the Home Screen so Safari keeps your songs.'), h('div', { class: 'hr' }), aboutBlock()));
-  d.showModal();
+  const close = () => { const d = $('#help'); if (d) d.close(); };
+  return hubOpen('help', { ico: '?', title: 'Help', sub: 'Get going, find a shortcut, or read how the studio treats your work.', at, sections: [
+    { key: 'start', label: 'Get started', ico: '✦', sub: 'Short tasks that teach by doing, or a two-minute spotlight walkthrough.', wide: true, body: () => [
+      h('div', { class: 'hub-tiles' },
+        h('button', { class: 'hub-tile primary', id: 'helpSessions', onclick: () => { close(); guideMenu(); } }, h('b', {}, '✦ Guided sessions'), h('span', {}, 'Play with a band, write a riff down, hum a song, loop and layer…')),
+        h('button', { class: 'hub-tile', id: 'helpTour', onclick: () => { close(); tourStart(); } }, h('b', {}, '▶ Take the guided tour'), h('span', {}, 'A spotlight on each part of the screen.')),
+        h('button', { class: 'hub-tile', onclick: () => { close(); workspaceOpen(); } }, h('b', {}, '▦ Pick a workspace'), h('span', {}, 'Songwriter, Performer, Creator Studio, Practice, Teacher or Full Rig.')))] },
+    { key: 'keys', label: 'Shortcuts', ico: '⌨', wide: true, body: () => [h('div', { class: 'help-k' }, K.map(([a, b]) => [h('kbd', {}, a), h('span', {}, b)]))] },
+    { key: 'data', label: 'Your work', ico: '🔒', sub: 'Local, private, kept on this device.', wide: true, body: () => [
+      h('p', { class: 'small' }, 'Everything runs locally in your browser. Nothing is uploaded. Your work is autosaved to this browser: songs, recordings and backing tracks stay on this device (☰ Songs).'),
+      h('p', { class: 'small muted' }, 'For a copy you can keep anywhere, use ☰ Songs → All songs → Back up all songs (one zip with everything, which Open a file brings back), or save one song as a bundle. On an iPhone or iPad, add the site to the Home Screen so Safari keeps your songs.')] },
+    { key: 'audio', label: 'Latency', ico: '⏱', wide: true, body: () => [h('p', { class: 'small muted' }, 'Browsers cannot talk to ASIO drivers, so achievable latency depends on your OS audio stack. Use the Loopback Test (I/O panel) for a measured number, and your interface’s direct monitor for latency-free headphone monitoring while recording.')] },
+    { key: 'about', label: 'About', ico: '♥', wide: true, body: () => [aboutBlock()] }
+  ] });
 }
 
 /* ---------- status bar ---------- */
@@ -1611,46 +1625,124 @@ function applyAppearance() {
 function setTheme(t) { CFG.lookMode = t; saveCfg(); applyAppearance(); $$('.seg [data-t]').forEach(b => b.classList.toggle('on', b.dataset.t === t)); bus.emit('look'); }
 try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (CFG.lookMode === 'auto') applyAppearance(); }); } catch (e) { }
 
-/* ---------- the Appearance panel (a side drawer, so you watch the app change as you choose) ---------- */
+/* ---------- applying a choice ---------- */
 function lookApply(set) { Object.assign(CFG, set); saveCfg(); applyAppearance(); bus.emit('look'); }
 function lookReset() { const keep = { ui: 1 }; lookApply(Object.assign({}, LOOK_DEF, keep, { accentC: '', reduce: false })); }
-function lookOpen() {
-  lookInit();
-  const body = h('div', { class: 'lk' });
-  const sw = (p, on) => h('button', { class: 'lk-pal' + (on ? ' on' : ''), title: p.name, onclick: () => { lookApply(p.mode === 'dark' ? { palDark: p.id, lookMode: 'dark' } : { palLight: p.id, lookMode: 'light' }); draw(); } },
-    h('span', { class: 'lk-prev', style: { background: p.c.bg } }, h('i', { style: { background: p.c.panel2, borderColor: p.c.line } }, h('b', { style: { background: p.c.accent } }), h('u', { style: { background: p.c.line2 } }), h('u', { style: { background: p.c.line2, width: '60%' } }))), h('span', { class: 'lk-n' }, p.name));
-  const seg = (key, opts, extra) => h('div', { class: 'seg lk-seg' }, opts.map(([k, t]) => h('button', { class: CFG[key] === k ? 'on' : '', onclick: () => { lookApply(Object.assign({ [key]: k }, extra || {})); draw(); } }, t)));
-  const row = (label, el, hint) => h('div', { class: 'lk-row' }, h('div', { class: 'lk-l' }, h('b', {}, label), hint ? h('span', {}, hint) : null), el);
-  function draw() {
-    const sc = body.parentElement ? body.parentElement.scrollTop : 0; body.innerHTML = '';
-    const effLight = CFG.theme === 'light';
-    body.append(
-      h('div', { class: 'lk-sec' }, 'LOOKS'), h('div', { class: 'lk-looks' }, LOOKS.map(l => {
-        const pl = PALETTES.find(p => p.id === (l.set.lookMode === 'dark' ? l.set.palDark : l.set.palLight)); const ac = ACCENTS.find(a => a.id === l.set.accent);
-        return h('button', { class: 'lk-look', onclick: () => { lookApply(Object.assign({ accentC: '' }, l.set)); draw(); } }, h('span', { class: 'lk-prev sm', style: { background: pl.c.bg } }, h('i', { style: { background: pl.c.panel2, borderColor: pl.c.line } }, h('b', { style: { background: (ac && ac.c) || pl.c.accent } }), h('u', { style: { background: pl.c.line2 } }))), h('span', { class: 'lk-n' }, l.name), h('span', { class: 'lk-s' }, l.note));
-      })),
-      h('div', { class: 'lk-sec' }, 'MODE'), h('div', { class: 'lk-note' }, 'Match system uses your chosen light palette by day and dark palette by night.'), seg('lookMode', [['light', 'Light'], ['dark', 'Dark'], ['auto', 'Match system']]),
-      h('div', { class: 'lk-sec' }, 'LIGHT PALETTES' + (effLight ? ' · in use' : '')), h('div', { class: 'lk-pals' }, PALETTES.filter(p => p.mode === 'light').map(p => sw(p, CFG.palLight === p.id))),
-      h('div', { class: 'lk-sec' }, 'DARK PALETTES' + (!effLight ? ' · in use' : '')), h('div', { class: 'lk-pals' }, PALETTES.filter(p => p.mode === 'dark').map(p => sw(p, CFG.palDark === p.id))),
-      h('div', { class: 'lk-sec' }, 'ACCENT'),
-      h('div', { class: 'lk-acc' }, ACCENTS.map(a => h('button', { class: 'lk-dot' + (CFG.accent === a.id ? ' on' : ''), title: a.name, style: a.c ? { background: a.c } : {}, onclick: () => { lookApply({ accent: a.id }); draw(); } }, a.c ? '' : 'A')),
-        h('label', { class: 'lk-dot custom' + (CFG.accent === 'custom' ? ' on' : ''), title: 'Pick any colour' }, h('input', { type: 'color', value: /^#[0-9a-f]{6}$/i.test(CFG.accentC) ? CFG.accentC : '#0a8c97', oninput: e => { CFG.accent = 'custom'; CFG.accentC = e.target.value; saveCfg(); applyAppearance(); }, onchange: () => draw() }), '+')),
-      h('div', { class: 'lk-note' }, 'Any colour works: it is automatically adjusted so text and controls stay readable on the palette you chose.'),
-      h('div', { class: 'lk-sec' }, 'FEEL'),
-      row('Density', seg('density', [['compact', 'Compact'], ['comfortable', 'Cosy'], ['spacious', 'Roomy']])),
-      row('Corners', seg('corners', [['sharp', 'Sharp'], ['soft', 'Soft'], ['round', 'Round']])),
-      row('Surfaces', seg('surface', [['flat', 'Flat'], ['soft', 'Soft'], ['raised', 'Raised']]), 'Shadows and depth'),
-      row('Text size', h('input', { type: 'range', min: .85, max: 1.4, step: .05, value: CFG.ui, oninput: e => { CFG.ui = +e.target.value; saveCfg(); applyAppearance(); } })),
-      h('div', { class: 'lk-sec' }, 'TYPE & ACCESSIBILITY'),
-      row('Typeface', h('select', { class: 'in', onchange: e => { lookApply({ font: e.target.value }); } }, Object.entries(LK_FONTS).map(([k, [t]]) => h('option', { value: k, selected: CFG.font === k }, t))), 'Uses fonts already on your device'),
-      row('Contrast', seg('contrast', [['standard', 'Standard'], ['high', 'High']])),
-      row('Data colours', seg('data', [['standard', 'Standard'], ['cvd', 'Colour-blind safe']]), 'Charts, meters, visuals, status lights'),
-      h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!CFG.reduce, onchange: e => { CFG.reduce = e.target.checked; saveCfg(); applyAppearance(); } }), 'Reduce motion'),
-      h('div', { class: 'lk-foot' }, h('button', { class: 'btn', onclick: () => { lookReset(); draw(); } }, 'Reset appearance'), h('span', { class: 'tiny muted' }, 'Saved on this device.')));
-    if (body.parentElement) body.parentElement.scrollTop = sc;
-  }
-  const d = pdlg('look', 'APPEARANCE', body, { cls: 'lookdlg' }); draw(); return d;
+/* ---------- choosing: light or dark first, then only the palettes and looks made for it ---------- */
+const lkMode = () => CFG.lookMode === 'auto' ? (lkSys() ? 'dark' : 'light') : CFG.lookMode;
+const lkPrev = (p, acc, sm) => h('span', { class: 'lk-prev' + (sm ? ' sm' : ''), style: { background: p.c.bg } }, h('i', { style: { background: p.c.panel2, borderColor: p.c.line } }, h('b', { style: { background: acc || p.c.accent } }), h('u', { style: { background: p.c.line2 } }), h('u', { style: { background: p.c.line2, width: '60%' } })));
+/** a palette dropdown for one mode: the one in use on the button, the others (and only that mode's) when it opens */
+function lkPalPick(mode, label, redraw) {
+  const key = mode === 'dark' ? 'palDark' : 'palLight', cur = PALETTES.find(p => p.id === CFG[key]) || PALETTES.find(p => p.mode === mode);
+  const dd = h('details', { class: 'lk-dd', 'data-mode': mode });
+  dd.append(h('summary', { class: 'lk-dds', 'aria-label': label + ': ' + cur.name }, lkPrev(cur, null, true), h('span', { class: 'lk-ddt' }, h('small', {}, label), h('b', {}, cur.name)), h('span', { class: 'lk-chev', 'aria-hidden': 'true' }, '▾')),
+    h('div', { class: 'lk-pals' }, PALETTES.filter(p => p.mode === mode).map(p => h('button', { type: 'button', class: 'lk-pal' + (p.id === cur.id ? ' on' : ''), title: p.name, 'aria-pressed': String(p.id === cur.id), onclick: () => { lookApply(CFG.lookMode === 'auto' ? { [key]: p.id } : { [key]: p.id, lookMode: mode }); redraw && redraw(); } }, lkPrev(p), h('span', { class: 'lk-n' }, p.name)))));
+  return dd;
 }
+/** the mode switch and the palette dropdown(s): what Settings shows, and the top of Appearance */
+function lookQuick(redraw) {
+  lookInit(); const box = h('div', { class: 'lk-quick' });
+  const draw = () => {
+    const open = [...box.querySelectorAll('details[open]')].map(x => x.dataset.mode); box.innerHTML = '';
+    box.append(h('div', { class: 'seg lk-seg lk-mode', role: 'radiogroup', 'aria-label': 'Light or dark' }, [['light', '☀ Light'], ['dark', '☾ Dark'], ['auto', 'System']].map(([k, t]) => h('button', { type: 'button', 'data-t': k, role: 'radio', 'aria-checked': String(CFG.lookMode === k), class: CFG.lookMode === k ? 'on' : '', onclick: () => { lookApply({ lookMode: k }); draw(); redraw && redraw(); } }, t))));
+    const both = CFG.lookMode === 'auto', modes = both ? [['light', 'Daytime palette'], ['dark', 'Night palette']] : [[CFG.lookMode, CFG.lookMode === 'dark' ? 'Dark palette' : 'Light palette']];
+    modes.forEach(([m, l]) => { const dd = lkPalPick(m, l, () => { draw(); redraw && redraw(); }); if (open.includes(m)) dd.open = true; box.append(dd); });
+    if (both) box.append(h('p', { class: 'hub-note' }, 'System follows your device: the daytime palette by day, the night palette after dark.'));
+  };
+  draw(); return box;
+}
+/** ◐ Appearance (part 05c's dialog, without dimming, so the app changes behind it as you choose) */
+function lookOpen(at) {
+  lookInit();
+  const seg = (key, opts, label) => h('div', { class: 'seg lk-seg', role: 'radiogroup', 'aria-label': label }, opts.map(([k, t]) => h('button', { type: 'button', class: CFG[key] === k ? 'on' : '', 'aria-checked': String(CFG[key] === k), role: 'radio', onclick: () => { lookApply({ [key]: k }); draw(); } }, t)));
+  const box = { quick: h('div'), looks: h('div'), acc: h('div'), feel: h('div'), type: h('div') };
+  function draw() {
+    const mode = lkMode();
+    if (!box.quick.firstChild) box.quick.append(lookQuick(() => draw()));
+    box.looks.innerHTML = ''; box.looks.append(h('div', { class: 'lk-looks' }, LOOKS.filter(l => l.set.lookMode === 'auto' || l.set.lookMode === mode).map(l => {
+      const pl = PALETTES.find(p => p.id === (l.set.lookMode === 'dark' || (l.set.lookMode === 'auto' && mode === 'dark') ? l.set.palDark : l.set.palLight)), ac = ACCENTS.find(a => a.id === l.set.accent);
+      return h('button', { type: 'button', class: 'lk-look', onclick: () => { lookApply(Object.assign({ accentC: '' }, l.set)); box.quick.innerHTML = ''; draw(); } }, lkPrev(pl, ac && ac.c, true), h('span', { class: 'lk-n' }, l.name), h('span', { class: 'lk-s' }, l.note));
+    })));
+    box.acc.innerHTML = ''; box.acc.append(h('div', { class: 'lk-acc' }, ACCENTS.map(a => h('button', { type: 'button', class: 'lk-dot' + (CFG.accent === a.id ? ' on' : ''), title: a.name, 'aria-label': 'Accent ' + a.name, style: a.c ? { background: a.c } : {}, onclick: () => { lookApply({ accent: a.id }); draw(); } }, a.c ? '' : 'A')),
+      h('label', { class: 'lk-dot custom' + (CFG.accent === 'custom' ? ' on' : ''), title: 'Pick any colour' }, h('input', { type: 'color', 'aria-label': 'Pick any accent colour', value: /^#[0-9a-f]{6}$/i.test(CFG.accentC) ? CFG.accentC : '#0a8c97', oninput: e => { CFG.accent = 'custom'; CFG.accentC = e.target.value; saveCfg(); applyAppearance(); }, onchange: () => draw() }), '+')),
+      h('p', { class: 'hub-note' }, 'Any colour works: it is adjusted so text and controls stay readable on the palette you chose.'));
+    box.feel.innerHTML = ''; box.feel.append(
+      hubRow('Density', seg('density', [['compact', 'Compact'], ['comfortable', 'Cosy'], ['spacious', 'Roomy']], 'Density')),
+      hubRow('Corners', seg('corners', [['sharp', 'Sharp'], ['soft', 'Soft'], ['round', 'Round']], 'Corners')),
+      hubRow('Surfaces', seg('surface', [['flat', 'Flat'], ['soft', 'Soft'], ['raised', 'Raised']], 'Surfaces'), 'Shadows and depth'),
+      hubRow('Text size', h('input', { type: 'range', min: .85, max: 1.4, step: .05, value: CFG.ui, 'aria-label': 'Text size', oninput: e => { CFG.ui = +e.target.value; saveCfg(); applyAppearance(); } })));
+    box.type.innerHTML = ''; box.type.append(
+      hubRow('Typeface', h('select', { class: 'in', 'aria-label': 'Typeface', onchange: e => { lookApply({ font: e.target.value }); } }, Object.entries(LK_FONTS).map(([k, [t]]) => h('option', { value: k, selected: CFG.font === k }, t))), 'Uses fonts already on your device'),
+      hubRow('Contrast', seg('contrast', [['standard', 'Standard'], ['high', 'High']], 'Contrast')),
+      hubRow('Data colours', seg('data', [['standard', 'Standard'], ['cvd', 'Colour-blind safe']], 'Data colours'), 'Charts, meters, visuals, status lights'),
+      h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!CFG.reduce, onchange: e => { CFG.reduce = e.target.checked; saveCfg(); applyAppearance(); } }), 'Reduce motion'));
+  }
+  draw();
+  const foot = h('div', { class: 'lk-foot' }, h('button', { class: 'btn', onclick: () => { lookReset(); box.quick.innerHTML = ''; draw(); } }, 'Reset appearance'), h('span', { class: 'tiny muted' }, 'Saved on this device.'));
+  return hubOpen('look', { ico: '🎨', title: 'Appearance', sub: 'Pick light or dark, then a palette and a look made for it. The studio changes as you choose.', preview: true, at, foot, sections: [
+    { key: 'mode', label: 'Light & dark', ico: '☀', sub: 'Choose the mode first: the palettes below are the ones made for it.', wide: true, body: () => box.quick },
+    { key: 'looks', label: 'Looks', ico: '✦', sub: 'Ready-made combinations of palette, accent, corners and type for this mode.', wide: true, body: () => box.looks },
+    { key: 'accent', label: 'Accent', ico: '●', wide: true, body: () => box.acc },
+    { key: 'feel', label: 'Feel', ico: '▢', wide: true, body: () => box.feel },
+    { key: 'type', label: 'Type & access', ico: 'Aa', wide: true, body: () => box.type }
+  ] });
+}
+
+/* >>> parts/05c-hub.js */
+/* ============================================================
+   Part 05c · One dialog for the header's buttons: ▦ Workspace, ◐ Appearance, ⚙ Settings and ? Help.
+   They share one shape so they feel like one place: a header (icon, title, one line saying what it is for, ✕), a list of
+   sections down the left (chips along the top on a phone) and the sections themselves as cards in one scrolling column.
+   Every section stays in the page, so a link to a section simply scrolls there, and the list follows the scroll.
+   ============================================================ */
+/**
+ * hubOpen(id, o) → the open <dialog>
+ *   o.ico · o.title · o.sub      the header
+ *   o.sections                    [{ key, label, ico, sub, body: () => Node | Node[] , wide }]  (wide: one column inside the card)
+ *   o.at                          the section to open on
+ *   o.foot                        Node for the footer (optional)
+ *   o.preview                     no dimming behind (Appearance: you watch the app change)
+ */
+function hubOpen(id, o) {
+  let d = document.getElementById(id);
+  if (d && d.open) { try { d.close(); } catch (e) { } }
+  if (!d) { d = h('dialog', { id }); document.body.append(d); }
+  d.className = 'hub' + (o.preview ? ' hub-preview' : ''); d.innerHTML = ''; d.setAttribute('aria-labelledby', id + '-t');
+  const body = h('div', { class: 'hub-body' }), nav = h('nav', { class: 'hub-nav', 'aria-label': o.title + ' sections' });
+  const secs = o.sections.filter(Boolean);
+  secs.forEach(s => {
+    const kids = [].concat(s.body ? s.body() : []).filter(Boolean);
+    body.append(h('section', { class: 'hub-sec', id: id + '-' + s.key, 'data-sec': s.key, 'aria-labelledby': id + '-' + s.key + '-h' },
+      h('div', { class: 'hub-sh' }, h('h3', { id: id + '-' + s.key + '-h' }, s.label), s.sub ? h('p', {}, s.sub) : null),
+      h('div', { class: 'hub-card' + (s.wide ? ' wide' : '') }, ...kids)));
+    nav.append(h('button', { type: 'button', class: 'hub-nb', 'data-sec': s.key, onclick: () => hubGo(d, s.key, true) }, h('span', { class: 'hub-ni', 'aria-hidden': 'true' }, s.ico || '•'), h('span', {}, s.label)));
+  });
+  d.append(
+    h('header', { class: 'hub-h' }, h('span', { class: 'hub-ico', 'aria-hidden': 'true' }, o.ico), h('div', { class: 'hub-ht' }, h('h2', { id: id + '-t' }, o.title), o.sub ? h('p', {}, o.sub) : null),
+      h('button', { type: 'button', class: 'hub-x', 'aria-label': 'Close', title: 'Close (Esc)', onclick: () => d.close() }, '✕')),
+    h('div', { class: 'hub-main' }, nav, body));
+  if (o.foot) d.append(h('footer', { class: 'hub-f' }, o.foot));
+  body.addEventListener('scroll', () => hubSpy(d), { passive: true });
+  d.addEventListener('click', e => { if (e.target === d) d.close(); });   // a click on the backdrop closes it
+  if (!d.open) { if (d.showModal) d.showModal(); else d.setAttribute('open', ''); }
+  hubGo(d, o.at || secs[0].key, false); return d;
+}
+/** scroll to a section (smoothly when asked by a click) and light it in the list */
+function hubGo(d, key, smooth) {
+  const sec = d.querySelector('.hub-sec[data-sec="' + key + '"]'), body = d.querySelector('.hub-body'); if (!sec || !body) return;
+  d._hubLock = Date.now() + (smooth ? 600 : 0);
+  body.scrollTo({ top: Math.max(0, sec.offsetTop - body.offsetTop - 4), behavior: smooth && !CFG.reduce ? 'smooth' : 'auto' }); hubMark(d, key);
+}
+function hubMark(d, key) { d.querySelectorAll('.hub-nb').forEach(b => { const on = b.dataset.sec === key; b.classList.toggle('on', on); if (on) { b.setAttribute('aria-current', 'true'); if (b.scrollIntoView && b.parentElement.scrollWidth > b.parentElement.clientWidth) b.scrollIntoView({ block: 'nearest', inline: 'nearest' }); } else b.removeAttribute('aria-current'); }); }
+function hubSpy(d) {
+  if (d._hubLock && Date.now() < d._hubLock) return; const body = d.querySelector('.hub-body'); if (!body) return;
+  const top = body.scrollTop + body.offsetTop + 40, secs = [...d.querySelectorAll('.hub-sec')]; let cur = secs[0];
+  secs.forEach(s => { if (s.offsetTop <= top) cur = s; });
+  if (body.scrollTop + body.clientHeight >= body.scrollHeight - 2) cur = secs[secs.length - 1];
+  if (cur) hubMark(d, cur.dataset.sec);
+}
+/** a labelled row for a hub card: the label (and a hint under it) on the left, the control on the right */
+function hubRow(label, el, hint) { return h('div', { class: 'hub-row' }, h('div', { class: 'hub-rl' }, h('b', {}, label), hint ? h('span', {}, hint) : null), h('div', { class: 'hub-rc' }, el)); }
 
 /* >>> parts/06-ui-panels.js */
 /* ============================================================
@@ -3569,7 +3661,7 @@ async function boot() {
   document.addEventListener('visibilitychange', () => { if (!document.hidden && E.ctx && !OFR.busy && E.ctx.state === 'suspended') E.ctx.resume(); });
   if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener('devicechange', () => { ioDeviceChange().catch(e => console.warn(e)); });
   bus.emit('song');
-  if (/[?&]debug\b/.test(location.search)) window.__daily = { S, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, STP, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfort, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, srecStart, srecStop, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, tkFades, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, FB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, vzSetMode, sideShow, chSetRoles, chRoles, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, slotAtTime, SEL, mtof, spb, playheadSlot, WR, HM, HMX, HM_MODES, vzImmersive, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GOALS, KIT, kitKeep, kitReplay, kitThumb, kitInk, kitNotes, kitRecord, srecMime, mGo, GD_SESSIONS, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard};   // test hook, only with ?debug
+  if (/[?&]debug\b/.test(location.search)) window.__daily = { S, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, STP, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfort, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, srecStart, srecStop, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, tkFades, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, FB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, vzSetMode, sideShow, chSetRoles, chRoles, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, slotAtTime, SEL, mtof, spb, playheadSlot, WR, HM, HMX, HM_MODES, vzImmersive, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitThumb, kitInk, kitNotes, kitRecord, srecMime, mGo, GD_SESSIONS, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard};   // test hook, only with ?debug
   projInit().catch(e => { console.warn('library', e); PRJ.ready = true; if (PRJ.wantStart) startMaybe(); });
 }
 
@@ -3594,7 +3686,7 @@ function applyLayout() {
   c.classList.toggle('flip', !!LAY.flip);
   w.classList.remove('collapsed-l', 'collapsed-r');
   w.style.setProperty('--lw', (LAY.left ? sideW('left') : 0) + 'px'); w.style.setProperty('--rw', (LAY.right ? sideW('right') : 0) + 'px');
-  c.style.setProperty('--tlh', LAY.tlh || TLH_DEFAULT); if (typeof edgeSync === 'function') edgeSync();
+  c.style.setProperty('--tlh', LAY.tlh || TLH_DEFAULT); if (typeof edgeSync === 'function') edgeSync(); if (typeof goalPlace === 'function') goalPlace();
   { const dsk = !document.body.dataset.form || document.body.dataset.form === 'desktop'; $('#left').style.visibility = !dsk || LAY.left ? '' : 'hidden'; $('#right').style.visibility = !dsk || LAY.right ? '' : 'hidden'; }
   setTimeout(() => { if (typeof tlSize === 'function') tlSize(); window.dispatchEvent(new Event('resize')); }, 40);
 }
@@ -3727,19 +3819,8 @@ function layThumb(s) {
   return h('span', { class: 'lay-th', 'aria-hidden': 'true' }, side('left', s.left), h('i', { class: 'lt-c' }, ...(s.flip === false ? [tl, dk] : [dk, tl])), side('right', s.right));
 }
 function layCard(n, d, s, on, fn) { return h('button', { class: 'lay-card' + (on ? ' on' : ''), 'aria-pressed': String(!!on), title: d, onclick: fn }, layThumb(s), h('span', { class: 'lay-t' }, h('b', {}, n), h('span', {}, d))); }
-function layoutMenu(btn) {
-  const box = h('div', { class: 'lay-menu view-menu' });
-  box.append(h('h5', {}, 'Workspace'));
-  const chk = (label, get, set) => h('label', { class: 'lrow' }, h('input', { type: 'checkbox', checked: get(), onchange: e => set(e.target.checked) }), label);
-  box.append(chk('Panels above the arrangement', () => LAY.flip, v => { LAY.flip = v; saveLay(); applyLayout(); }), chk('Left sidebar  [', () => LAY.left, v => { LAY.left = v; saveLay(); applyLayout(); }), chk('Right sidebar  ]', () => LAY.right, v => { LAY.right = v; saveLay(); applyLayout(); }));
-  box.append(h('div', { class: 'tiny muted', style: { margin: '2px 0 6px', lineHeight: 1.45 } }, 'Every panel area has a labelled tab on its edge: click it to collapse or open it. Light or dark is in Appearance (⚙); how many tools show is on the Tools button.'));
-  box.append(h('button', { class: 'pbtn', onclick: () => placeMenu(btn) }, h('b', {}, '⇆ Where panels live…'), h('span', {}, 'Move any panel to the left sidebar, the right sidebar or the centre · swap the sidebars')));
-  const det = h('details', { class: 'lay-panels' }, h('summary', {}, 'Panels: show or hide, or float as a window'));
-  DOCK.forEach(([id, name]) => det.append(h('div', { class: 'lrow' }, h('input', { type: 'checkbox', checked: !LAY.hidden.includes(id), 'aria-label': 'Show ' + name, onchange: e => setTabHidden(id, !e.target.checked) }), h('span', { class: 'grow' }, name), h('button', { class: 'btn sm', onclick: () => { FLOATS.has(id) ? unfloat(id) : floatPane(id); closePop(); } }, FLOATS.has(id) ? '⤓ dock' : '⧉ float'))));
-  box.append(det, h('div', { class: 'tiny muted', style: { marginTop: '6px' } }, 'The Monitor’s widgets (Tuner, Levels, Analysis, Spectrum, Views) are chosen on the Monitor itself.'));
-  box.append(h('div', { class: 'row', style: { marginTop: '10px' } }, h('button', { class: 'btn sm', onclick: () => { [...FLOATS.keys()].forEach(unfloat); LAY.rc = { order: [], col: {}, hide: {}, v: 2 }; RCARDS.forEach(n => { LAY.rc.hide[n] = !MON_DEFAULT.includes(n); }); LAY.floats = {}; sideReset(); applyPreset(LAYOUTS[0][2], LAYOUTS[0][0]); closePop(); } }, 'Reset layout')));
-  popover(btn, box, { right: true, style: { maxWidth: 'min(420px,96vw)', width: '380px' } });
-}
+/** the ▦ menu is the Workspace dialog now (part 64); this name stays for the callers that open it on the panels */
+function layoutMenu() { workspaceOpen('panels'); }
 
 /* ---------- labelled tabs on the edge of every panel area (like the journal's): collapse it, open it, always within reach ----------
    Each sidebar has a vertical tab named for the panel that is open (click it to collapse the sidebar). While the sidebar is collapsed
@@ -3807,7 +3888,7 @@ function buildBandStrip() {
 function buildLayout() {
   const dock = $('#dock'), tabs = $('.tabs', dock), bar = h('div', { class: 'dockbar' }); dock.insertBefore(bar, tabs); bar.append(tabs, dockMore(), buildBandStrip()); if (typeof goalBar === 'function') dock.insertBefore(goalBar(), bar);
   applyTabOrder(); rebuildTabs(); buildSplitters(); edgeBuild(); setupCards(); applyLayout();
-  const btn = h('button', { class: 'btn icon', title: 'Layout and view — light or dark, experience, panels', onclick: () => layoutMenu(btn) }, '▦'); const tr = $('#topR'); tr.insertBefore(btn, tr.firstChild);
+  const btn = h('button', { class: 'btn icon', id: 'wsBtn', title: 'Workspace: goals and panels', 'aria-haspopup': 'dialog', onclick: () => workspaceOpen() }, '▦'); const tr = $('#topR'); tr.insertBefore(btn, tr.firstChild);
   bus.on('song', syncBandStrip); bus.on('transport', syncBandStrip); bus.on('dock', () => { $$('#dock .tab').forEach(t => t.classList.toggle('on', t.dataset.id === DOCK.cur)); }); syncBandStrip();
   LAY.fl.slice().forEach(id => { try { floatPane(id, LAY.floats[id]); } catch (e) { console.warn(e); } });
 }
@@ -11407,77 +11488,89 @@ function wrPlayhead() {
 /* >>> parts/64-goals.js */
 /* ============================================================
    Part 64 · Goal workspaces: the studio arranged around what a musician wants to do, not around its features.
-   Each goal is a complete workspace (a layout): which panels are on the strip and which is open, what the sidebars hold, how tall the
-   arrangement is, which Monitor widgets show, and a row of the few tools that goal is about, one click each.
-     🎸 Songwriter      lyrics, chords, progression building, idea capture
-     🎤 Performer       recording, webcam, stage visuals, performance playback
-     🎬 Creator Studio  Studio Replay, webcam, waveform views, overlays, thumbnails, export to MP4 for social sharing
-     🎼 Practice        looping, tempo, metronome, scales, chord display
-     🎓 Teacher         annotations, lesson notes, screen recording, educational overlays (fretboard, transcription)
-     ⚙️ Full Rig        every panel and widget, for people who know their way around
-   The goals run Create → Perform → Share: each workspace ends with the one button that takes you to the next step, so a
-   musician gets from an idea to a shareable video in the fewest clicks. Nothing is removed: every panel is still one click away
-   (☰ on the strip, ▦ in the header), and the goal only decides what shows first. The tools behind the buttons are in part 68.
+   Each goal is a complete workspace with its own shape, so the six do not look alike:
+     🎸 Songwriter      a notebook: the words and the tab together in the middle, theory beside it, no meters, the arrangement a strip
+     🎤 Performer       a stage: the visuals large, your tones on the left, tuner and levels on the right, lanes for your takes below
+     🎬 Creator Studio  an edit bay: the stage as the picture, the audience view and waveform views beside it, record → replay → post
+     🎼 Practice        a practice room: the fretboard large in the middle, scales on the left, the loop and the click in reach
+     🎓 Teacher         a whiteboard: the arrangement on top, the tab below to point at, the fretboard beside, notes open
+     ⚙️ Full Rig        everything: every panel, both sidebars, every Monitor widget
+   Each has a colour, a one-line mission with three steps, a row of its tools (the main one highlighted), and the button to
+   the next step of Create → Perform → Share. Nothing is removed: every panel is still under ☰ and ▦. The tools are in part 68.
    ============================================================ */
 const GOAL_STEPS = [['create', 'Create', 'songwriter'], ['perform', 'Perform', 'performer'], ['share', 'Share', 'creator']];
 const GOALS = [
-  { id: 'songwriter', ico: '🎸', name: 'Songwriter', layout: 'Songwriter', step: 'create', next: ['performer', 'Perform it'],
+  { id: 'songwriter', ico: '🎸', name: 'Songwriter', layout: 'Songwriter', step: 'create', hue: '#d08a2e', next: ['performer', 'Perform it'],
     blurb: 'Lyrics, chords and progressions, and a quick way to catch an idea before it goes.',
-    spec: { flip: true, left: true, right: true, tlh: 'minmax(120px,22%)', dock: 'tab', order: ['tab', 'band', 'song', 'rig', 'exp'], hidden: ['fret', 'vis', 'stage', 'neural', 'stems', 'tx', 'cam', 'lab'], cur: { left: 'theory', right: 'monitor' }, mon: ['tuner', 'live'] },
+    mission: 'Write the song', steps: ['Pick a key and a progression', 'Capture the riff', 'Put the words under the chords'],
+    shape: 'Words and tab in the middle · Theory on the left · the arrangement a strip',
+    spec: { flip: true, left: true, right: false, tlh: '84px', dock: 'tab', order: ['tab', 'band', 'song', 'exp'], hidden: ['rig', 'fret', 'vis', 'stage', 'neural', 'stems', 'tx', 'cam', 'lab'], cur: { left: 'theory' }, mon: ['tuner', 'live'] },
+    enter: () => { try { wrMode('both'); } catch (e) { } },
     tools: () => [
-      ['gtCap', '● Capture idea', 'Play, and the notes and chords you play are written into the tab', () => { dockGo('tab'); capToggle(); }, () => !!CAP.on],
+      ['gtCap', '● Capture idea', 'Play, and the notes and chords you play are written into the tab', () => { dockGo('tab'); capToggle(); }, () => !!CAP.on, 1],
       ['gtWords', '✎ Lyrics & tab', 'The words and the tab side by side', () => { dockGo('tab'); wrMode('both'); }],
       ['gtTheory', '♯ Chords & scales', 'Build a progression from the key: chords, scales and what comes next', () => sideShow('theory')],
       ['gtRec', '⏺ Record idea', 'Arm a take: it records when you press play (R)', () => toggleRec(), () => !!T.rec]
     ] },
-  { id: 'performer', ico: '🎤', name: 'Performer', layout: 'Performer', step: 'perform', next: ['creator', 'Share it'],
+  { id: 'performer', ico: '🎤', name: 'Performer', layout: 'Performer', step: 'perform', hue: '#d6355a', next: ['creator', 'Share it'],
     blurb: 'Your tone, the band and the stage visuals, with the camera and the record button in reach.',
-    spec: { flip: true, left: true, right: true, tlh: 'minmax(150px,30%)', dock: 'vis', order: ['vis', 'rig', 'band', 'stage', 'exp'], hidden: ['tab', 'song', 'fret', 'neural', 'stems', 'tx', 'cam', 'lab'], cur: { left: 'tones', right: 'monitor' }, mon: ['tuner', 'levels', 'audience'] },
+    mission: 'Play it for real', steps: ['Pick a tone', 'Turn the camera on', 'Record the take'],
+    shape: 'The stage large · Tones on the left · Tuner and levels on the right · lanes for your takes',
+    spec: { flip: true, left: true, right: true, tlh: 'minmax(150px,30%)', dock: 'vis', order: ['vis', 'rig', 'band', 'stage', 'exp'], hidden: ['tab', 'song', 'fret', 'neural', 'stems', 'tx', 'cam', 'lab'], cur: { left: 'tones', right: 'monitor' }, mon: ['tuner', 'levels'] },
     tools: () => [
-      ['gtVideo', '⏺ Record video', 'Record the stage, you and the sound as a video; Studio Replay opens when you stop', b => kitRecord(b), () => !!SREC.on],
+      ['gtVideo', '⏺ Record video', 'Record the stage, you and the sound as a video; Studio Replay opens when you stop', b => kitRecord(b), () => !!SREC.on, 1],
       ['gtCam', '📷 Camera', 'Put yourself centre stage, in front of the visuals', () => vzCamPress(), () => !!VZ.cam],
       ['gtPerf', '🎤 Perform view', 'Full screen: the chord huge, the lyrics scrolling, a count-in', b => perfOpen(b)],
       ['gtTake', '● Record take', 'Record your guitar and voice into the arrangement (R)', () => toggleRec(), () => !!T.rec],
-      ['gtReplay', '▶ Replay', 'Watch the last video you recorded', () => kitReplay(), null, () => !KIT.last]
+      ['gtReplay', '▶ Replay', 'Watch the last video you recorded', () => kitReplay(), null, 0, () => !KIT.last]
     ] },
-  { id: 'creator', ico: '🎬', name: 'Creator Studio', layout: 'Creator Studio', step: 'share', next: ['songwriter', 'Write the next one'],
+  { id: 'creator', ico: '🎬', name: 'Creator Studio', layout: 'Creator Studio', step: 'share', hue: '#6a45e0', next: ['songwriter', 'Write the next one'],
     blurb: 'Record, replay, add overlays and a thumbnail, and save an MP4 to post.',
-    spec: { flip: true, left: false, right: true, tlh: '96px', dock: 'vis', order: ['vis', 'exp', 'stage', 'band', 'rig'], hidden: ['tab', 'song', 'fret', 'neural', 'stems', 'tx', 'cam', 'lab'], cur: { right: 'monitor' }, mon: ['levels', 'views', 'audience'] },
+    mission: 'Make it postable', steps: ['Record an MP4', 'Watch it in Studio Replay', 'Save it with a thumbnail'],
+    shape: 'The stage as the picture · the audience view and waveforms beside it · no left sidebar',
+    spec: { flip: true, left: false, right: true, tlh: '96px', dock: 'vis', order: ['vis', 'exp', 'stage', 'band'], hidden: ['rig', 'tab', 'song', 'fret', 'neural', 'stems', 'tx', 'cam', 'lab'], cur: { right: 'monitor' }, mon: ['audience', 'views', 'levels'] },
     tools: () => [
-      ['gtVideo', '⏺ Record MP4', 'Record the stage, the camera and the sound; MP4 where this browser can make it', b => kitRecord(b), () => !!SREC.on],
-      ['gtReplay', '▶ Studio Replay', 'Watch the last recording, then save it, share it or make a thumbnail from any frame', () => kitReplay(), null, () => !KIT.last],
+      ['gtVideo', '⏺ Record MP4', 'Record the stage, the camera and the sound; MP4 where this browser can make it', b => kitRecord(b), () => !!SREC.on, 1],
+      ['gtReplay', '▶ Studio Replay', 'Watch the last recording, then save it, share it or make a thumbnail from any frame', () => kitReplay(), null, 0, () => !KIT.last],
       ['gtCam', '📷 Webcam', 'You in the picture, in front of or framed by the visuals', () => vzCamPress(), () => !!VZ.cam],
       ['gtFx', '✨ Overlays', 'How the camera sits with the visuals: dimmed behind, framed, or you in front', b => popover(b, h('div', { style: { display: 'grid', gap: '8px', minWidth: '240px' } }, h('h5', {}, 'Overlays'), camFxBox(), h('div', { class: 'tiny muted' }, 'Pick a look in the Visuals panel for what moves behind you.')))],
       ['gtThumb', '🖼 Thumbnail', 'Save a 1280 × 720 picture of the stage with the song title, for the post', () => kitThumb()],
       ['gtExp', '⇩ Export', 'Audio, the share page, the lyric sheet and more', () => dockGo('exp')]
     ] },
-  { id: 'practice', ico: '🎼', name: 'Practice', layout: 'Practice', step: 'create', next: ['performer', 'Perform it'],
+  { id: 'practice', ico: '🎼', name: 'Practice', layout: 'Practice', step: 'create', hue: '#1c9a63', next: ['performer', 'Perform it'],
     blurb: 'Loop a part, slow it down, keep time with the click, and see the scale and the chord on the neck.',
-    spec: { flip: true, left: true, right: true, tlh: 'minmax(170px,32%)', dock: 'tab', order: ['tab', 'stems', 'band', 'rig'], hidden: ['song', 'vis', 'stage', 'neural', 'tx', 'cam', 'lab', 'exp'], side: { fret: 'right' }, so: { left: [], right: ['fret', 'monitor', 'refine'] }, cur: { left: 'theory', right: 'fret' }, mon: ['tuner', 'levels'] },
+    mission: 'Get it under your fingers', steps: ['Loop the hard bars', 'Slow it down, add the click', 'Speed it up 5 at a time'],
+    shape: 'The fretboard large in the middle · Theory (scales) on the left · Tuner and levels on the right',
+    spec: { flip: true, left: true, right: true, tlh: 'minmax(170px,32%)', dock: 'fret', order: ['fret', 'tab', 'stems', 'band', 'rig'], hidden: ['song', 'vis', 'stage', 'neural', 'tx', 'cam', 'lab', 'exp'], cur: { left: 'theory', right: 'monitor' }, mon: ['tuner', 'levels'] },
     tools: () => [
-      ['gtLoop', '⟲ Loop', 'Loop the song or the selected bars (L)', () => { T.loop = !T.loop; syncTransport(); }, () => !!T.loop],
+      ['gtLoop', '⟲ Loop', 'Loop the song or the selected bars (L)', () => { T.loop = !T.loop; syncTransport(); }, () => !!T.loop, 1],
       ['gtClick', '♩ Metronome', 'The click (M)', () => { T.metro = !T.metro; syncTransport(); }, () => !!T.metro],
       ['gtSlow', '− 5', 'Slower by 5 BPM', () => goalTempo(-5)],
       ['gtBpm', () => S.bpm + ' BPM', 'The tempo', () => { if (UI.bpm) UI.bpm.focus(); }],
       ['gtFast', '+ 5', 'Faster by 5 BPM', () => goalTempo(5)],
       ['gtScale', '♯ Scales', 'The scale for the key, on the theory panel', () => sideShow('theory')],
-      ['gtChord', '▦ Chords', 'The chord that is playing, on the fretboard', () => sideShow('fret')]
+      ['gtChord', '▦ Chords', 'The chord that is playing, on the fretboard', () => dockGo('fret')]
     ] },
-  { id: 'teacher', ico: '🎓', name: 'Teacher', layout: 'Teacher', step: 'share', next: null,
+  { id: 'teacher', ico: '🎓', name: 'Teacher', layout: 'Teacher', step: 'share', hue: '#0b84d8', next: null,
     blurb: 'Draw on the screen, keep lesson notes, and record the screen with your voice.',
-    spec: { flip: true, left: false, right: true, tlh: 'minmax(130px,26%)', dock: 'tab', order: ['tab', 'tx', 'stems', 'vis', 'band'], hidden: ['rig', 'song', 'fret', 'stage', 'neural', 'cam', 'lab'], side: { fret: 'right' }, so: { left: [], right: ['fret', 'refine', 'monitor'] }, cur: { right: 'fret' }, mon: ['tuner', 'live'] },
+    mission: 'Show someone how', steps: ['Open the lesson notes', 'Draw on what you explain', 'Record the screen'],
+    shape: 'The arrangement on top · the tab below to point at · the fretboard on the right · notes open',
+    spec: { flip: false, left: false, right: true, tlh: 'minmax(200px,40%)', dock: 'tab', order: ['tab', 'tx', 'stems', 'vis', 'band'], hidden: ['rig', 'song', 'fret', 'stage', 'neural', 'cam', 'lab'], side: { fret: 'right' }, so: { left: [], right: ['fret', 'refine', 'monitor'] }, cur: { right: 'fret' }, mon: ['tuner', 'live'] },
+    enter: () => { if (typeof KIT !== 'undefined' && !KIT.notesEl) kitNotes(); },
     tools: () => [
-      ['gtInk', '✎ Annotate', 'Draw over anything on the page; it stays until you clear it', () => kitInk(), () => !!KIT.inkOn],
+      ['gtInk', '✎ Annotate', 'Draw over anything on the page; it stays until you clear it', () => kitInk(), () => !!KIT.inkOn, 1],
       ['gtNotes', '📝 Lesson notes', 'Notes for this song, kept in this browser', () => kitNotes(), () => !!KIT.notesEl],
       ['gtScreen', '⏺ Record screen', 'Record this tab or your screen, with the studio’s sound and your voice', () => kitScreen(), () => !!KIT.scr],
       ['gtFret', '▦ Fretboard', 'Show the chord and scale on the neck', () => sideShow('fret')],
       ['gtTx', '♪ Transcribe', 'Turn a recording into notes and chords to teach from', () => dockGo('tx')]
     ] },
-  { id: 'fullrig', ico: '⚙️', name: 'Full Rig', layout: 'Full Rig', step: null, next: null, all: true,
+  { id: 'fullrig', ico: '⚙️', name: 'Full Rig', layout: 'Full Rig', step: null, hue: '#5b6b79', next: null, all: true,
     blurb: 'Every panel, both sidebars and every Monitor widget.',
+    mission: 'Everything, your way', steps: ['Every panel on the strip', 'Both sidebars', 'Every Monitor widget'],
+    shape: 'The rig in the middle · I/O and the Monitor either side · every panel on the strip',
     spec: { flip: true, left: true, right: true, tlh: 'minmax(200px,38%)', dock: 'rig', order: [], hidden: [], cur: { left: 'io', right: 'monitor' }, mon: ['tuner', 'levels', 'live', 'spectrum', 'views', 'audience'] },
     tools: () => [
-      ['gtLay', '▦ Workspace…', 'Sidebars, floating panels, which tabs show', b => layoutMenu(b)],
+      ['gtLay', '▦ Workspace…', 'Sidebars, floating panels, which tabs show', () => workspaceOpen('panels')],
       ['gtPlace', '⇆ Where panels live…', 'Move any panel to either sidebar or the centre', b => placeMenu(b)]
     ] }
 ];
@@ -11491,27 +11584,36 @@ const goalNow = () => GOALS.find(g => g.layout === LAY.name) || null;
 /** tabs the goal in use needs, even when the experience level has not unlocked them (Full Rig needs them all) */
 const goalShows = id => { const g = goalNow(); return !!g && (g.all || g.spec.order.includes(id)); };
 function goalTempo(d) { S.bpm = clamp(S.bpm + d, 30, 260); commit(false); bus.emit('bpm'); syncTransport(); goalSync(); }
-function goalGo(id) {
+/** o.keepZoom: leave the Canvas view as it is (the first-visit default); a goal you pick always shows the studio */
+function goalGo(id, o) {
   const g = goalById(id); if (!g) return false; CFG.ws = g.id; saveCfg();
+  if (!(o && o.keepZoom) && typeof ZOOM !== 'undefined' && ZOOM.cur === 'canvas') { ZOOM.cur = CFG.zoom = 'studio'; saveCfg(); document.body.classList.remove('zoom-canvas'); try { zoomSync(); } catch (e) { } }
   applyPreset(g.spec, g.layout); if (typeof xpSignal === 'function') xpSignal(1);
   if (g.spec.side && g.spec.side.fret && typeof sideShow === 'function') { try { sideShow('fret'); } catch (e) { } }
-  bus.emit('goal', g.id); goalBarBuild(); return true;
+  if (g.enter) { try { g.enter(); } catch (e) { console.warn('goal', e); } }
+  goalMark(); bus.emit('goal', g.id); goalBarBuild(); return true;
 }
-/* ---------- the goal bar: the six goals, Create → Perform → Share, the goal's tools and its next step ---------- */
+/** the goal's colour, on the page (the goal bar, the open tab) */
+function goalMark() { const g = goalNow(); document.body.dataset.goal = g ? g.id : ''; document.documentElement.style.setProperty('--goal', g ? g.hue : 'var(--accent)'); }
+bus.on('dock', () => { if (document.body.dataset.goal !== ((goalNow() || {}).id || '')) { goalMark(); goalBarBuild(); } });
+/* ---------- the goal bar: the six goals, Create → Perform → Share, the mission, the goal's tools and its next step ---------- */
 function goalBar() { const box = h('div', { class: 'goalbar', id: 'goalbar' }); GOALBAR.el = box; goalBarBuild(); return box; }
 const GOALBAR = { el: null };
+/** the bar sits at the top of the centre, whichever of the panels or the arrangement is on top */
+function goalPlace() { const el = GOALBAR.el, top = LAY.flip === false ? $('#timeline') : $('#dock'); if (el && top && (el.parentNode !== top || top.firstChild !== el)) top.insertBefore(el, top.firstChild); }
 function goalBarBuild() {
-  const box = GOALBAR.el; if (!box) return; box.innerHTML = ''; const cur = goalNow();
-  const pick = h('div', { class: 'gl-pick', role: 'group', 'aria-label': 'What do you want to do?' }, GOALS.map(g => h('button', { class: 'gl-b' + (cur === g ? ' on' : ''), 'data-goal': g.id, 'aria-pressed': String(cur === g), title: g.name + ': ' + g.blurb, onclick: () => goalGo(g.id) }, h('span', { class: 'gl-i', 'aria-hidden': 'true' }, g.ico), h('span', { class: 'gl-t' }, g.name))));
+  const box = GOALBAR.el; if (!box) return; box.innerHTML = ''; const cur = goalNow(); goalMark();
+  const pick = h('div', { class: 'gl-pick', role: 'group', 'aria-label': 'What do you want to do?' }, GOALS.map(g => h('button', { class: 'gl-b' + (cur === g ? ' on' : ''), 'data-goal': g.id, style: '--gh:' + g.hue, 'aria-pressed': String(cur === g), title: g.name + ': ' + g.blurb, onclick: () => goalGo(g.id) }, h('span', { class: 'gl-i', 'aria-hidden': 'true' }, g.ico), h('span', { class: 'gl-t' }, g.name))));
   const flow = h('ol', { class: 'gl-flow', 'aria-label': 'Create, perform, share' }, GOAL_STEPS.map(([k, n, gid]) => h('li', {}, h('button', { class: 'gl-st' + (cur && cur.step === k ? ' on' : ''), 'data-step': k, 'aria-current': cur && cur.step === k ? 'step' : null, title: n + ': open ' + goalById(gid).name, onclick: () => goalGo(gid) }, n))));
   box.append(h('div', { class: 'gl-row' }, pick, flow));
   if (!cur) { box.append(h('div', { class: 'gl-row gl-tools' }, h('span', { class: 'tiny muted' }, 'Pick what you want to do, and the studio arranges itself for it. Everything stays one click away.'))); return; }
   const tools = h('div', { class: 'gl-row gl-tools', role: 'toolbar', 'aria-label': cur.name + ' tools' });
-  cur.tools().forEach(([id, label, title, fn, on, off]) => {
-    const b = h('button', { class: 'btn sm gl-tool', id, type: 'button', title, onclick: e => { fn(e.currentTarget); setTimeout(goalSync, 60); } }, typeof label === 'function' ? label() : label);
+  tools.append(h('div', { class: 'gl-mis', title: cur.shape }, h('b', {}, cur.mission), h('span', { class: 'gl-steps' }, cur.steps.map((s, i) => h('span', {}, h('i', {}, i + 1), s)))));
+  cur.tools().forEach(([id, label, title, fn, on, main, off]) => {
+    const b = h('button', { class: 'btn sm gl-tool' + (main ? ' gl-main' : ''), id, type: 'button', title, onclick: e => { fn(e.currentTarget); setTimeout(goalSync, 60); } }, typeof label === 'function' ? label() : label);
     b._on = on; b._off = off; b._label = label; tools.append(b);
   });
-  if (cur.next) { const n = goalById(cur.next[0]); tools.append(h('span', { class: 'grow' }), h('button', { class: 'btn sm primary gl-next', id: 'gtNext', title: 'Next: ' + n.name, onclick: () => goalGo(n.id) }, cur.next[1] + ' → ' + n.ico)); }
+  if (cur.next) { const n = goalById(cur.next[0]); tools.append(h('span', { class: 'grow' }), h('button', { class: 'btn sm gl-next', id: 'gtNext', style: '--gh:' + n.hue, title: 'Next: ' + n.name, onclick: () => goalGo(n.id) }, cur.next[1] + ' → ' + n.ico)); }
   box.append(tools); goalSync();
 }
 /** refresh the on/off state of the goal's tools (recording, camera, loop, click…) */
@@ -11525,13 +11627,41 @@ function goalSync() {
 }
 ['transport', 'srec', 'kit', 'bpm', 'song', 'cam'].forEach(e => bus.on(e, goalSync));
 setInterval(() => { if (GOALBAR.el && !document.hidden) goalSync(); }, 1000);
+
+/* ---------- ▦ Workspace (part 05c's dialog): the six goals as cards, then where the panels go ---------- */
+function workspaceOpen(at) {
+  const close = () => { const d = $('#workspace'); if (d) d.close(); }, cur = goalNow();
+  const card = g => h('button', { type: 'button', class: 'ws-card' + (cur === g ? ' on' : ''), 'data-goal': g.id, style: '--gh:' + g.hue, 'aria-pressed': String(cur === g), onclick: () => { goalGo(g.id); close(); } },
+    h('span', { class: 'ws-top' }, h('span', { class: 'ws-ico', 'aria-hidden': 'true' }, g.ico), h('span', { class: 'ws-nm' }, h('b', {}, g.name), h('small', {}, g.step ? GOAL_STEPS.find(s => s[0] === g.step)[1] : 'Advanced')), cur === g ? h('span', { class: 'ws-on' }, 'In use') : null),
+    h('span', { class: 'ws-mis' }, g.mission), h('span', { class: 'ws-blurb' }, g.blurb),
+    goalThumb(g), h('span', { class: 'ws-shape' }, g.shape));
+  const chk = (label, get, set) => h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: get(), onchange: e => set(e.target.checked) }), label);
+  const hub = $('#wsBtn');
+  return hubOpen('workspace', { ico: '▦', title: 'Workspace', sub: 'Pick what you are here to do, and the studio arranges itself for it. Nothing is ever taken away.', at, sections: [
+    { key: 'goal', label: 'Goal', ico: '◎', sub: 'Create → Perform → Share. Each goal shows the panels and tools for one job.', wide: true, body: () => [h('div', { class: 'ws-grid' }, GOALS.map(card))] },
+    { key: 'panels', label: 'Panels', ico: '▤', sub: 'Fine-tune the workspace you are in. Every panel area also has a labelled tab on its edge.', body: () => [
+      chk('Panels above the arrangement', () => LAY.flip, v => { LAY.flip = v; saveLay(); applyLayout(); }),
+      chk('Left sidebar  [', () => LAY.left, v => { LAY.left = v; saveLay(); applyLayout(); }),
+      chk('Right sidebar  ]', () => LAY.right, v => { LAY.right = v; saveLay(); applyLayout(); }),
+      h('div', { class: 'hub-acts' }, h('button', { class: 'btn', onclick: () => { close(); placeMenu(hub || document.body); } }, '⇆ Where panels live…'), h('span', { class: 'hub-note' }, 'Move any panel to the left sidebar, the right sidebar or the centre, or swap the sidebars.'))] },
+    { key: 'list', label: 'Show & float', ico: '⧉', sub: 'Which panels are on the tab strip, and which float as a window.', wide: true, body: () => [h('div', { class: 'ws-list' }, DOCK.map(([id, name]) => h('div', { class: 'ws-li' },
+      h('label', { class: 'chk grow' }, h('input', { type: 'checkbox', checked: !LAY.hidden.includes(id), 'aria-label': 'Show ' + name, onchange: e => setTabHidden(id, !e.target.checked) }), name),
+      h('button', { class: 'btn sm', onclick: () => { FLOATS.has(id) ? unfloat(id) : floatPane(id); close(); } }, FLOATS.has(id) ? '⤓ dock' : '⧉ float')))),
+      h('p', { class: 'hub-note' }, 'The Monitor’s widgets (Tuner, Levels, Analysis, Spectrum, Views, Audience) are chosen on the Monitor itself.')] },
+    { key: 'reset', label: 'Reset', ico: '↺', body: () => [h('div', { class: 'hub-acts' }, h('button', { class: 'btn', id: 'wsReset', onclick: () => { [...FLOATS.keys()].forEach(unfloat); LAY.rc = { order: [], col: {}, hide: {}, v: 2 }; RCARDS.forEach(n => { LAY.rc.hide[n] = !MON_DEFAULT.includes(n); }); LAY.floats = {}; sideReset(); applyPreset(LAYOUTS[0][2], LAYOUTS[0][0]); goalMark(); goalBarBuild(); close(); } }, 'Reset layout'), h('span', { class: 'hub-note' }, 'Back to the Studio layout: panels above the arrangement, a sidebar each side, every float docked.'))] }
+  ] });
+}
+/** a small picture of a goal's shape: the sidebars, the open panel, the arrangement above or below */
+function goalThumb(g) { const t = layThumb(g.spec); t.classList.add('ws-th'); return t; }
+
 /* a first visit on a computer opens the Performer: the shortest way to a performance you can share.
    Anyone who has been here before keeps the workspace they had, and a layout you chose is never replaced. */
 const GOAL_FIRST = !store.get('started', false);
 bus.on('booted', () => {
+  goalMark();
   if (CFG.ws !== undefined || !isDesk()) return;
   if (!GOAL_FIRST || LAY.name) { CFG.ws = (goalNow() || {}).id || null; saveCfg(); return; }
-  goalGo(CFG.xpMode === 'pro' ? 'fullrig' : 'performer');
+  goalGo(CFG.xpMode === 'pro' ? 'fullrig' : 'performer', { keepZoom: true });
 });
 
 /* >>> parts/65-harmony.js */

@@ -98,43 +98,65 @@ function applyAppearance() {
 function setTheme(t) { CFG.lookMode = t; saveCfg(); applyAppearance(); $$('.seg [data-t]').forEach(b => b.classList.toggle('on', b.dataset.t === t)); bus.emit('look'); }
 try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (CFG.lookMode === 'auto') applyAppearance(); }); } catch (e) { }
 
-/* ---------- the Appearance panel (a side drawer, so you watch the app change as you choose) ---------- */
+/* ---------- applying a choice ---------- */
 function lookApply(set) { Object.assign(CFG, set); saveCfg(); applyAppearance(); bus.emit('look'); }
 function lookReset() { const keep = { ui: 1 }; lookApply(Object.assign({}, LOOK_DEF, keep, { accentC: '', reduce: false })); }
-function lookOpen() {
+/* ---------- choosing: light or dark first, then only the palettes and looks made for it ---------- */
+const lkMode = () => CFG.lookMode === 'auto' ? (lkSys() ? 'dark' : 'light') : CFG.lookMode;
+const lkPrev = (p, acc, sm) => h('span', { class: 'lk-prev' + (sm ? ' sm' : ''), style: { background: p.c.bg } }, h('i', { style: { background: p.c.panel2, borderColor: p.c.line } }, h('b', { style: { background: acc || p.c.accent } }), h('u', { style: { background: p.c.line2 } }), h('u', { style: { background: p.c.line2, width: '60%' } })));
+/** a palette dropdown for one mode: the one in use on the button, the others (and only that mode's) when it opens */
+function lkPalPick(mode, label, redraw) {
+  const key = mode === 'dark' ? 'palDark' : 'palLight', cur = PALETTES.find(p => p.id === CFG[key]) || PALETTES.find(p => p.mode === mode);
+  const dd = h('details', { class: 'lk-dd', 'data-mode': mode });
+  dd.append(h('summary', { class: 'lk-dds', 'aria-label': label + ': ' + cur.name }, lkPrev(cur, null, true), h('span', { class: 'lk-ddt' }, h('small', {}, label), h('b', {}, cur.name)), h('span', { class: 'lk-chev', 'aria-hidden': 'true' }, '▾')),
+    h('div', { class: 'lk-pals' }, PALETTES.filter(p => p.mode === mode).map(p => h('button', { type: 'button', class: 'lk-pal' + (p.id === cur.id ? ' on' : ''), title: p.name, 'aria-pressed': String(p.id === cur.id), onclick: () => { lookApply(CFG.lookMode === 'auto' ? { [key]: p.id } : { [key]: p.id, lookMode: mode }); redraw && redraw(); } }, lkPrev(p), h('span', { class: 'lk-n' }, p.name)))));
+  return dd;
+}
+/** the mode switch and the palette dropdown(s): what Settings shows, and the top of Appearance */
+function lookQuick(redraw) {
+  lookInit(); const box = h('div', { class: 'lk-quick' });
+  const draw = () => {
+    const open = [...box.querySelectorAll('details[open]')].map(x => x.dataset.mode); box.innerHTML = '';
+    box.append(h('div', { class: 'seg lk-seg lk-mode', role: 'radiogroup', 'aria-label': 'Light or dark' }, [['light', '☀ Light'], ['dark', '☾ Dark'], ['auto', 'System']].map(([k, t]) => h('button', { type: 'button', 'data-t': k, role: 'radio', 'aria-checked': String(CFG.lookMode === k), class: CFG.lookMode === k ? 'on' : '', onclick: () => { lookApply({ lookMode: k }); draw(); redraw && redraw(); } }, t))));
+    const both = CFG.lookMode === 'auto', modes = both ? [['light', 'Daytime palette'], ['dark', 'Night palette']] : [[CFG.lookMode, CFG.lookMode === 'dark' ? 'Dark palette' : 'Light palette']];
+    modes.forEach(([m, l]) => { const dd = lkPalPick(m, l, () => { draw(); redraw && redraw(); }); if (open.includes(m)) dd.open = true; box.append(dd); });
+    if (both) box.append(h('p', { class: 'hub-note' }, 'System follows your device: the daytime palette by day, the night palette after dark.'));
+  };
+  draw(); return box;
+}
+/** ◐ Appearance (part 05c's dialog, without dimming, so the app changes behind it as you choose) */
+function lookOpen(at) {
   lookInit();
-  const body = h('div', { class: 'lk' });
-  const sw = (p, on) => h('button', { class: 'lk-pal' + (on ? ' on' : ''), title: p.name, onclick: () => { lookApply(p.mode === 'dark' ? { palDark: p.id, lookMode: 'dark' } : { palLight: p.id, lookMode: 'light' }); draw(); } },
-    h('span', { class: 'lk-prev', style: { background: p.c.bg } }, h('i', { style: { background: p.c.panel2, borderColor: p.c.line } }, h('b', { style: { background: p.c.accent } }), h('u', { style: { background: p.c.line2 } }), h('u', { style: { background: p.c.line2, width: '60%' } }))), h('span', { class: 'lk-n' }, p.name));
-  const seg = (key, opts, extra) => h('div', { class: 'seg lk-seg' }, opts.map(([k, t]) => h('button', { class: CFG[key] === k ? 'on' : '', onclick: () => { lookApply(Object.assign({ [key]: k }, extra || {})); draw(); } }, t)));
-  const row = (label, el, hint) => h('div', { class: 'lk-row' }, h('div', { class: 'lk-l' }, h('b', {}, label), hint ? h('span', {}, hint) : null), el);
+  const seg = (key, opts, label) => h('div', { class: 'seg lk-seg', role: 'radiogroup', 'aria-label': label }, opts.map(([k, t]) => h('button', { type: 'button', class: CFG[key] === k ? 'on' : '', 'aria-checked': String(CFG[key] === k), role: 'radio', onclick: () => { lookApply({ [key]: k }); draw(); } }, t)));
+  const box = { quick: h('div'), looks: h('div'), acc: h('div'), feel: h('div'), type: h('div') };
   function draw() {
-    const sc = body.parentElement ? body.parentElement.scrollTop : 0; body.innerHTML = '';
-    const effLight = CFG.theme === 'light';
-    body.append(
-      h('div', { class: 'lk-sec' }, 'LOOKS'), h('div', { class: 'lk-looks' }, LOOKS.map(l => {
-        const pl = PALETTES.find(p => p.id === (l.set.lookMode === 'dark' ? l.set.palDark : l.set.palLight)); const ac = ACCENTS.find(a => a.id === l.set.accent);
-        return h('button', { class: 'lk-look', onclick: () => { lookApply(Object.assign({ accentC: '' }, l.set)); draw(); } }, h('span', { class: 'lk-prev sm', style: { background: pl.c.bg } }, h('i', { style: { background: pl.c.panel2, borderColor: pl.c.line } }, h('b', { style: { background: (ac && ac.c) || pl.c.accent } }), h('u', { style: { background: pl.c.line2 } }))), h('span', { class: 'lk-n' }, l.name), h('span', { class: 'lk-s' }, l.note));
-      })),
-      h('div', { class: 'lk-sec' }, 'MODE'), h('div', { class: 'lk-note' }, 'Match system uses your chosen light palette by day and dark palette by night.'), seg('lookMode', [['light', 'Light'], ['dark', 'Dark'], ['auto', 'Match system']]),
-      h('div', { class: 'lk-sec' }, 'LIGHT PALETTES' + (effLight ? ' · in use' : '')), h('div', { class: 'lk-pals' }, PALETTES.filter(p => p.mode === 'light').map(p => sw(p, CFG.palLight === p.id))),
-      h('div', { class: 'lk-sec' }, 'DARK PALETTES' + (!effLight ? ' · in use' : '')), h('div', { class: 'lk-pals' }, PALETTES.filter(p => p.mode === 'dark').map(p => sw(p, CFG.palDark === p.id))),
-      h('div', { class: 'lk-sec' }, 'ACCENT'),
-      h('div', { class: 'lk-acc' }, ACCENTS.map(a => h('button', { class: 'lk-dot' + (CFG.accent === a.id ? ' on' : ''), title: a.name, style: a.c ? { background: a.c } : {}, onclick: () => { lookApply({ accent: a.id }); draw(); } }, a.c ? '' : 'A')),
-        h('label', { class: 'lk-dot custom' + (CFG.accent === 'custom' ? ' on' : ''), title: 'Pick any colour' }, h('input', { type: 'color', value: /^#[0-9a-f]{6}$/i.test(CFG.accentC) ? CFG.accentC : '#0a8c97', oninput: e => { CFG.accent = 'custom'; CFG.accentC = e.target.value; saveCfg(); applyAppearance(); }, onchange: () => draw() }), '+')),
-      h('div', { class: 'lk-note' }, 'Any colour works: it is automatically adjusted so text and controls stay readable on the palette you chose.'),
-      h('div', { class: 'lk-sec' }, 'FEEL'),
-      row('Density', seg('density', [['compact', 'Compact'], ['comfortable', 'Cosy'], ['spacious', 'Roomy']])),
-      row('Corners', seg('corners', [['sharp', 'Sharp'], ['soft', 'Soft'], ['round', 'Round']])),
-      row('Surfaces', seg('surface', [['flat', 'Flat'], ['soft', 'Soft'], ['raised', 'Raised']]), 'Shadows and depth'),
-      row('Text size', h('input', { type: 'range', min: .85, max: 1.4, step: .05, value: CFG.ui, oninput: e => { CFG.ui = +e.target.value; saveCfg(); applyAppearance(); } })),
-      h('div', { class: 'lk-sec' }, 'TYPE & ACCESSIBILITY'),
-      row('Typeface', h('select', { class: 'in', onchange: e => { lookApply({ font: e.target.value }); } }, Object.entries(LK_FONTS).map(([k, [t]]) => h('option', { value: k, selected: CFG.font === k }, t))), 'Uses fonts already on your device'),
-      row('Contrast', seg('contrast', [['standard', 'Standard'], ['high', 'High']])),
-      row('Data colours', seg('data', [['standard', 'Standard'], ['cvd', 'Colour-blind safe']]), 'Charts, meters, visuals, status lights'),
-      h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!CFG.reduce, onchange: e => { CFG.reduce = e.target.checked; saveCfg(); applyAppearance(); } }), 'Reduce motion'),
-      h('div', { class: 'lk-foot' }, h('button', { class: 'btn', onclick: () => { lookReset(); draw(); } }, 'Reset appearance'), h('span', { class: 'tiny muted' }, 'Saved on this device.')));
-    if (body.parentElement) body.parentElement.scrollTop = sc;
+    const mode = lkMode();
+    if (!box.quick.firstChild) box.quick.append(lookQuick(() => draw()));
+    box.looks.innerHTML = ''; box.looks.append(h('div', { class: 'lk-looks' }, LOOKS.filter(l => l.set.lookMode === 'auto' || l.set.lookMode === mode).map(l => {
+      const pl = PALETTES.find(p => p.id === (l.set.lookMode === 'dark' || (l.set.lookMode === 'auto' && mode === 'dark') ? l.set.palDark : l.set.palLight)), ac = ACCENTS.find(a => a.id === l.set.accent);
+      return h('button', { type: 'button', class: 'lk-look', onclick: () => { lookApply(Object.assign({ accentC: '' }, l.set)); box.quick.innerHTML = ''; draw(); } }, lkPrev(pl, ac && ac.c, true), h('span', { class: 'lk-n' }, l.name), h('span', { class: 'lk-s' }, l.note));
+    })));
+    box.acc.innerHTML = ''; box.acc.append(h('div', { class: 'lk-acc' }, ACCENTS.map(a => h('button', { type: 'button', class: 'lk-dot' + (CFG.accent === a.id ? ' on' : ''), title: a.name, 'aria-label': 'Accent ' + a.name, style: a.c ? { background: a.c } : {}, onclick: () => { lookApply({ accent: a.id }); draw(); } }, a.c ? '' : 'A')),
+      h('label', { class: 'lk-dot custom' + (CFG.accent === 'custom' ? ' on' : ''), title: 'Pick any colour' }, h('input', { type: 'color', 'aria-label': 'Pick any accent colour', value: /^#[0-9a-f]{6}$/i.test(CFG.accentC) ? CFG.accentC : '#0a8c97', oninput: e => { CFG.accent = 'custom'; CFG.accentC = e.target.value; saveCfg(); applyAppearance(); }, onchange: () => draw() }), '+')),
+      h('p', { class: 'hub-note' }, 'Any colour works: it is adjusted so text and controls stay readable on the palette you chose.'));
+    box.feel.innerHTML = ''; box.feel.append(
+      hubRow('Density', seg('density', [['compact', 'Compact'], ['comfortable', 'Cosy'], ['spacious', 'Roomy']], 'Density')),
+      hubRow('Corners', seg('corners', [['sharp', 'Sharp'], ['soft', 'Soft'], ['round', 'Round']], 'Corners')),
+      hubRow('Surfaces', seg('surface', [['flat', 'Flat'], ['soft', 'Soft'], ['raised', 'Raised']], 'Surfaces'), 'Shadows and depth'),
+      hubRow('Text size', h('input', { type: 'range', min: .85, max: 1.4, step: .05, value: CFG.ui, 'aria-label': 'Text size', oninput: e => { CFG.ui = +e.target.value; saveCfg(); applyAppearance(); } })));
+    box.type.innerHTML = ''; box.type.append(
+      hubRow('Typeface', h('select', { class: 'in', 'aria-label': 'Typeface', onchange: e => { lookApply({ font: e.target.value }); } }, Object.entries(LK_FONTS).map(([k, [t]]) => h('option', { value: k, selected: CFG.font === k }, t))), 'Uses fonts already on your device'),
+      hubRow('Contrast', seg('contrast', [['standard', 'Standard'], ['high', 'High']], 'Contrast')),
+      hubRow('Data colours', seg('data', [['standard', 'Standard'], ['cvd', 'Colour-blind safe']], 'Data colours'), 'Charts, meters, visuals, status lights'),
+      h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!CFG.reduce, onchange: e => { CFG.reduce = e.target.checked; saveCfg(); applyAppearance(); } }), 'Reduce motion'));
   }
-  const d = pdlg('look', 'APPEARANCE', body, { cls: 'lookdlg' }); draw(); return d;
+  draw();
+  const foot = h('div', { class: 'lk-foot' }, h('button', { class: 'btn', onclick: () => { lookReset(); box.quick.innerHTML = ''; draw(); } }, 'Reset appearance'), h('span', { class: 'tiny muted' }, 'Saved on this device.'));
+  return hubOpen('look', { ico: '🎨', title: 'Appearance', sub: 'Pick light or dark, then a palette and a look made for it. The studio changes as you choose.', preview: true, at, foot, sections: [
+    { key: 'mode', label: 'Light & dark', ico: '☀', sub: 'Choose the mode first: the palettes below are the ones made for it.', wide: true, body: () => box.quick },
+    { key: 'looks', label: 'Looks', ico: '✦', sub: 'Ready-made combinations of palette, accent, corners and type for this mode.', wide: true, body: () => box.looks },
+    { key: 'accent', label: 'Accent', ico: '●', wide: true, body: () => box.acc },
+    { key: 'feel', label: 'Feel', ico: '▢', wide: true, body: () => box.feel },
+    { key: 'type', label: 'Type & access', ico: 'Aa', wide: true, body: () => box.type }
+  ] });
 }

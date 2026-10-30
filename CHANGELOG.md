@@ -2,7 +2,7 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
-## 2.13.0 — 2026-10-30 — Workspaces built around what a musician wants to do: Songwriter, Performer, Creator Studio, Practice, Teacher, Full Rig
+## 2.13.0 — 2026-10-30 — Workspaces built around what a musician wants to do, and one dialog for the header's buttons
 
 ### Added
 - **Six goal workspaces** (`src/parts/64-goals.js`, replacing `64-journeys.js`) in a row at the top of the panels: **🎸 Songwriter**, **🎤 Performer**, **🎬 Creator Studio**, **🎼 Practice**, **🎓 Teacher** and **⚙️ Full Rig**. Each is a complete layout (tab strip, open panel, sidebars and what is in them, arrangement height, Monitor widgets) plus a row of the tools that goal uses, one click each. Every panel stays under ☰ and ▦; a goal only decides what shows first.
@@ -13,10 +13,17 @@ All notable changes to the-daily.studio (earlier versions were released under th
 - **Thumbnail**: a 1280 × 720 PNG of the stage or a Replay frame with the title, key and tempo.
 - **Teacher tools**: **Annotate** (ink over the whole page, five colours, Undo, Clear; the ink stays when you are done), **Lesson notes** (per song, kept in `fw.lessons`), **Record screen** (getDisplayMedia, with the studio's sound and, if allowed, the microphone; opens in Studio Replay).
 - **Practice tools** on the row: Loop, Metronome, −5 / +5 BPM with the tempo shown, Scales (Theory) and Chords (Fretboard).
-- `test/e2e-goals.cjs` (32 checks).
+- `test/e2e-goals.cjs` (44 checks: the goals, their shapes and colours, the four dialogs, Appearance's mode-first palettes, the kit).
+- `test/e2e-harmony.cjs` checks *New session clears* in the same call as the clear (it raced the simulated voice before).
 - The site's `Permissions-Policy` header now names `display-capture=(self)` alongside the microphone, camera and MIDI.
 
+- **One dialog for the header's buttons** (`src/parts/05c-hub.js`): **▦ Workspace** (was a popover), **◐ Appearance** (was a side drawer), **⚙ Settings** and **? Help** now open the same modal: a header with an icon, a line saying what it is for and ✕; the sections listed on the left (chips on a phone); each section a card in one scrolling column that the list follows. Settings is regrouped into Appearance, Workflow, Music, Audio engine, Recording & practice, Export, and Songs & data; Help into Get started, Shortcuts, Your work, Latency and About.
+- **Appearance: light or dark first.** The mode switch comes first; a dropdown under it shows the palette in use and opens to only that mode's palettes (8 light or 9 dark; System shows a daytime and a night dropdown). Looks are filtered to the mode too. The same switch and dropdown are at the top of Settings.
+- **▦ Workspace shows the goals as cards**: each with its colour, step (Create, Perform, Share), mission, a picture of its shape, and what goes where.
+
 ### Changed
+- **The goals are distinct workspaces, not tab filters.** Songwriter is a notebook (Write in Both, Theory left, no right sidebar, the arrangement a strip); Performer a stage (Visuals large, Tones, Tuner and Levels); Creator Studio an edit bay (the picture, the Audience view and Views beside it); Practice a practice room (the Fretboard large in the middle); Teacher a whiteboard (the arrangement on top, Write below, the Fretboard beside, lesson notes open). Each has a colour (on the goal bar, its main tool and the open tab), a mission with three steps, and its main tool highlighted. The goal bar stays at the top of the centre whichever way round the workspace is.
+- Choosing a goal leaves the Canvas view, so the workspace is always visible; the first-visit default does not.
 - **Play, Create and Learn** (2.9) are replaced by the goals; `journeyGo('play' | 'create' | 'learn')` callers now use `goalGo`, and the old ids are aliases (Performer, Songwriter, Practice). The guided sessions open the Performer and the Songwriter.
 - The **Practice layout** is now the Practice goal (Theory on the left for scales, the Fretboard on the right). The layout list is Studio, the six goals, Write, Arrange, Record, Tone, Show, Focus, Classic.
 - A brand-new visitor's simple tab strip is the Performer's: Visuals, Rig, Band, Stage, Save & export.
