@@ -67,7 +67,7 @@ const common = `  X-Content-Type-Options: nosniff
   Referrer-Policy: no-referrer
   Strict-Transport-Security: max-age=31536000
   Cross-Origin-Opener-Policy: same-origin
-  Permissions-Policy: microphone=(self), camera=(self), midi=(self), geolocation=(), payment=(), usb=(), serial=()`;
+  Permissions-Policy: microphone=(self), camera=(self), midi=(self), display-capture=(self), geolocation=(), payment=(), usb=(), serial=()`;
 writeFileSync(join(out, '_headers'), `/*
 ${common}
 /

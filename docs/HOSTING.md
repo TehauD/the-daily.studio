@@ -77,15 +77,15 @@ Browsers cache aggressively. After a deploy, hard-reload (<kbd>Ctrl/⌘</kbd>+<k
 Releases give people a stable download (a zip of the repository) and a changelog.
 
 1. Bump the version in `package.json` and in `src/parts/01-core.js` (`const VERSION = '…'`), and add notes to `CHANGELOG.md`.
-2. `npm run build && npm run build:site && npm run verify:site && git add -A && git commit -m "Release v2.12.0" && git push`
+2. `npm run build && npm run build:site && npm run verify:site && git add -A && git commit -m "Release v2.13.0" && git push`
 3. Tag and publish:
 
 ```bash
-git tag -a v2.12.0 -m "the-daily.studio 2.12.0"
-git push origin v2.12.0
+git tag -a v2.13.0 -m "the-daily.studio 2.13.0"
+git push origin v2.13.0
 gh release create v2.1.0 --title "the-daily.studio 2.1.0" --notes-file CHANGELOG.md
 # optional: attach the standalone page for people who just want the file
-gh release upload v2.12.0 index.html#the-daily.studio-standalone.html
+gh release upload v2.13.0 index.html#the-daily.studio-standalone.html
 ```
 
 ## 6. Other hosts
@@ -103,7 +103,7 @@ server {
   add_header X-Frame-Options "DENY" always;
   add_header Referrer-Policy "no-referrer" always;
   add_header Strict-Transport-Security "max-age=31536000" always;
-  add_header Permissions-Policy "microphone=(self), camera=(self), midi=(self), geolocation=(), payment=()" always;
+  add_header Permissions-Policy "microphone=(self), camera=(self), midi=(self), display-capture=(self), geolocation=(), payment=()" always;
 }
 ```
 
@@ -121,7 +121,7 @@ GitHub Pages also works (no custom headers; the meta CSP still applies). It is n
 | Referrer-Policy | `no-referrer` | nothing leaks in referrers |
 | Strict-Transport-Security | `max-age=31536000` | HTTPS only for a year (no `includeSubDomains`, no preload) |
 | Cross-Origin-Opener-Policy | `same-origin` | isolates the window |
-| Permissions-Policy | microphone, camera, MIDI for this site only; geolocation, payment, USB, serial off | least privilege |
+| Permissions-Policy | microphone, camera, MIDI and screen capture for this site only; geolocation, payment, USB, serial off | least privilege |
 | Cache-Control | `no-cache` for `/`, `index.html`, `sw.js`, manifest, `/journal/*`; one day for icons | new releases show up immediately |
 
 The page's CSP allows the single inline script by its SHA-256 hash (no `unsafe-inline` or `unsafe-eval` for scripts), `blob:` workers and worklets, `data:` images and fonts, and, only for optional camera features, jsDelivr and Google storage. Because the hash changes whenever the script changes, **always deploy a freshly built `index.html`**; `build --check` and `verify:site` enforce it. If you hand-edit the script in `index.html` the console shows a CSP violation and the app will not start.

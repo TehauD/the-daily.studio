@@ -1122,9 +1122,29 @@ body[data-form=phone] .lp-hud{top:auto;bottom:calc(132px + env(safe-area-inset-b
 @media (max-width:900px){.pane[data-wr=both] .wr-main{grid-template-columns:minmax(0,1fr)}}
 body[data-form=phone] .wr-bar{gap:6px}body[data-form=phone] .wr-secs{flex-basis:100%;order:1}body[data-form=phone] .wr-mode{order:2}body[data-form=phone] .wr-fb{order:3}body[data-form=phone] .wr-capg{order:4;margin-left:auto}
 body[data-form=phone] .wr-sp{display:none}body[data-form=phone] .wr-fhint{display:none}
-.jny{display:inline-flex;flex:none;gap:2px;padding:2px;margin-right:8px;border:1px solid var(--line2);border-radius:999px;background:var(--panel2);align-self:center}
-.jny-b{border:0;background:transparent;color:var(--muted);font:800 12px var(--sans);padding:4px 13px;border-radius:999px;cursor:pointer;letter-spacing:.02em}
-.jny-b:hover{color:var(--text)}.jny-b.on{background:var(--accent);color:var(--accent-ink)}
+/* goal workspaces (part 64): the six goals, Create → Perform → Share, and the goal's own tools */
+.goalbar{flex:none;display:flex;flex-direction:column;gap:5px;padding:6px 10px 6px;background:var(--bg2);border-bottom:1px solid var(--line);min-width:0;container-type:inline-size}
+.gl-row{display:flex;align-items:center;gap:8px;min-width:0;flex-wrap:wrap}
+.gl-pick{display:inline-flex;flex-wrap:wrap;gap:2px;padding:2px;border:1px solid var(--line2);border-radius:999px;background:var(--panel2)}
+.gl-b{display:inline-flex;align-items:center;gap:5px;border:0;background:transparent;color:var(--muted);font:800 12px var(--sans);padding:4px 11px;border-radius:999px;cursor:pointer;letter-spacing:.02em;white-space:nowrap}
+.gl-b:hover{color:var(--text)}.gl-b.on{background:var(--accent);color:var(--accent-ink)}.gl-i{font-size:13px;line-height:1}
+.gl-flow{display:inline-flex;align-items:center;gap:0;margin:0 0 0 auto;padding:0;list-style:none}
+.gl-flow li{display:flex;align-items:center}.gl-flow li+li::before{content:'→';color:var(--muted);font-size:11px;padding:0 4px}
+.gl-st{border:1px solid transparent;background:transparent;color:var(--muted);font:700 11px var(--sans);text-transform:uppercase;letter-spacing:.08em;padding:2px 7px;border-radius:6px;cursor:pointer}
+.gl-st:hover{color:var(--text)}.gl-st.on{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 55%,transparent)}
+.gl-tools{gap:6px}.gl-tool.on{background:color-mix(in srgb,var(--accent) 22%,var(--panel2));border-color:var(--accent);color:var(--text)}
+#gtVideo.on,#gtScreen.on{background:color-mix(in srgb,var(--bad) 26%,var(--panel2));border-color:var(--bad)}
+.gl-next{white-space:nowrap}
+@container (max-width:820px){.gl-b:not(.on) .gl-t{display:none}.gl-flow{display:none}}
+body[data-form=phone] .goalbar{display:none}
+/* Studio Replay, lesson notes, annotate (part 68) */
+.kit-replay{display:grid;gap:10px}.kit-v{width:100%;max-height:62vh;background:#000;border-radius:10px}.kit-acts{gap:8px;flex-wrap:wrap}
+.kit-notes{position:fixed;right:18px;bottom:56px;z-index:45;width:min(360px,92vw);display:flex;flex-direction:column;gap:6px;padding:10px;background:var(--panel);border:1px solid var(--line2);border-radius:12px;box-shadow:0 14px 40px rgba(0,0,0,.35)}
+.kit-nh{display:flex;align-items:center;gap:6px;font-size:12px;min-width:0}.kit-nh b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kit-ta{min-height:160px;resize:vertical;font:13px/1.5 var(--sans);width:100%;box-sizing:border-box}
+.kit-ink{position:fixed;inset:0;width:100vw;height:100vh;z-index:70;pointer-events:none}.kit-ink.drawing{pointer-events:auto;cursor:crosshair;touch-action:none}
+.kit-inkbar{position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:71;display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--panel);border:1px solid var(--line2);border-radius:999px;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+.kit-inkbar[hidden]{display:none}.kit-pens{display:flex;gap:4px}.kit-pen{width:20px;height:20px;border-radius:50%;border:2px solid var(--line2);cursor:pointer;padding:0}.kit-pen.on{border-color:var(--text);box-shadow:0 0 0 2px var(--accent)}
 
 .wr-fs{display:none}.wr-ic{margin-right:4px}
 body[data-form=phone] .wr-fl{display:none}body[data-form=phone] .wr-fs{display:inline}body[data-form=phone] .wr-ic{display:none}
