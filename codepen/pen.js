@@ -3569,7 +3569,7 @@ async function boot() {
   document.addEventListener('visibilitychange', () => { if (!document.hidden && E.ctx && !OFR.busy && E.ctx.state === 'suspended') E.ctx.resume(); });
   if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener('devicechange', () => { ioDeviceChange().catch(e => console.warn(e)); });
   bus.emit('song');
-  if (/[?&]debug\b/.test(location.search)) window.__daily = { S, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, STP, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfort, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, srecStart, srecStop, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, tkFades, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, FB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, vzSetMode, sideShow, chSetRoles, chRoles, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, slotAtTime, SEL, mtof, spb, playheadSlot, WR, HM, HMX, HM_MODES, vzImmersive, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, journeyGo, journeyNow, JOURNEYS, mGo, GD_SESSIONS, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard};   // test hook, only with ?debug
+  if (/[?&]debug\b/.test(location.search)) window.__daily = { S, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, STP, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfort, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, srecStart, srecStop, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, tkFades, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, FB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, vzSetMode, sideShow, chSetRoles, chRoles, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, slotAtTime, SEL, mtof, spb, playheadSlot, WR, HM, HMX, HM_MODES, vzImmersive, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GOALS, KIT, kitKeep, kitReplay, kitThumb, kitInk, kitNotes, kitRecord, srecMime, mGo, GD_SESSIONS, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard};   // test hook, only with ?debug
   projInit().catch(e => { console.warn('library', e); PRJ.ready = true; if (PRJ.wantStart) startMaybe(); });
 }
 
@@ -3643,7 +3643,7 @@ function rebuildTabs() {
       ondrop: e => { e.preventDefault(); b.classList.remove('dropl'); const t = e.dataTransfer.getData('text/plain'); if (t.startsWith('tab:')) { const from = t.slice(4); if (sideHosted(from)) { if (movePanel(from, 'dock')) moveTab(from, id); } else moveTab(from, id); } }
     }, xpTabText(id, name, i) + (FLOATS.has(id) ? ' ⧉' : '')); tabs.append(b);
   });
-  tabs.append(xpToolsButton()); if (typeof journeyBar === 'function') tabs.prepend(journeyBar());
+  tabs.append(xpToolsButton());
 }
 function moveTab(id, beforeId) { if (id === beforeId) return; const a = DOCK.findIndex(d => d[0] === id), it = DOCK.splice(a, 1)[0], b = DOCK.findIndex(d => d[0] === beforeId); DOCK.splice(b < 0 ? DOCK.length : b, 0, it); LAY.order = DOCK.map(d => d[0]); saveLay(); rebuildTabs(); }
 function setTabHidden(id, hide) { const i = LAY.hidden.indexOf(id); if (hide && i < 0) { LAY.hidden.push(id); if (DOCK.cur === id) { const n = dockVisible().find(d => !FLOATS.has(d[0])); if (n) dockGo(n[0]); } } else if (!hide && i >= 0) LAY.hidden.splice(i, 1); saveLay(); rebuildTabs(); }
@@ -3701,7 +3701,6 @@ const LAYOUTS = [
   ['Arrange', 'The arrangement on top and tall, the band and song panels below it.', { flip: false, left: false, right: true, tlh: 'minmax(260px,58%)', dock: 'band', order: ['band', 'song', 'tab', 'stems', 'rig'], hidden: ['stage', 'neural', 'tx', 'cam', 'lab', 'fret'], cur: { right: 'refine' } }],
   ['Record', 'Inputs and levels either side, a tall arrangement for the guitar and voice lanes.', { flip: true, left: true, right: true, tlh: 'minmax(260px,56%)', dock: 'rig', order: ['rig', 'tab', 'song', 'band'], hidden: ['stage', 'neural', 'tx', 'cam', 'lab', 'fret'], cur: { left: 'io', right: 'monitor' }, mon: ['tuner', 'levels', 'audience'] }],
   ['Tone', 'The pedalboard fills the middle, with tones to pick from and the tuner and spectrum alongside.', { flip: true, left: true, right: true, tlh: '96px', dock: 'rig', board: 'board', order: ['rig', 'fret', 'band', 'song', 'tab'], hidden: ['stage', 'neural', 'stems', 'tx', 'cam', 'lab'], cur: { left: 'tones', right: 'monitor' }, mon: ['tuner', 'spectrum', 'live'] }],
-  ['Practice', 'Tab and fretboard side by side, with the loop and transport in reach.', { flip: true, left: false, right: true, tlh: 'minmax(170px,34%)', dock: 'tab', order: ['tab', 'song', 'band', 'rig'], hidden: ['stage', 'neural', 'stems', 'tx', 'cam', 'lab'], side: { fret: 'right' }, so: { left: [], right: ['fret', 'refine', 'monitor'] }, cur: { right: 'fret' } }],
   ['Show', 'The stage picture with the show setup beside it. Sidebars away, arrangement reduced to the transport.', { flip: true, left: false, right: false, tlh: '84px', dock: 'stage', order: ['stage', 'vis', 'song', 'band'], hidden: ['rig', 'tab', 'fret', 'neural', 'stems', 'tx', 'cam', 'lab'] }],
   ['Focus', 'Just the panel you are on. No sidebars, a slim arrangement.', { flip: true, left: false, right: false, tlh: '90px', dock: null }],
   ['Classic', 'The original: the arrangement above, the panels below, a sidebar each side.', { flip: false, left: true, right: true, tlh: null, dock: 'tab', cur: { left: 'io', right: 'monitor' } }]
@@ -3806,7 +3805,7 @@ function buildBandStrip() {
 
 /* ---------- build ---------- */
 function buildLayout() {
-  const dock = $('#dock'), tabs = $('.tabs', dock), bar = h('div', { class: 'dockbar' }); dock.insertBefore(bar, tabs); bar.append(tabs, dockMore(), buildBandStrip());
+  const dock = $('#dock'), tabs = $('.tabs', dock), bar = h('div', { class: 'dockbar' }); dock.insertBefore(bar, tabs); bar.append(tabs, dockMore(), buildBandStrip()); if (typeof goalBar === 'function') dock.insertBefore(goalBar(), bar);
   applyTabOrder(); rebuildTabs(); buildSplitters(); edgeBuild(); setupCards(); applyLayout();
   const btn = h('button', { class: 'btn icon', title: 'Layout and view — light or dark, experience, panels', onclick: () => layoutMenu(btn) }, '▦'); const tr = $('#topR'); tr.insertBefore(btn, tr.firstChild);
   bus.on('song', syncBandStrip); bus.on('transport', syncBandStrip); bus.on('dock', () => { $$('#dock .tab').forEach(t => t.classList.toggle('on', t.dataset.id === DOCK.cur)); }); syncBandStrip();
@@ -7034,7 +7033,7 @@ var XP_NAMES = { rig: 'Guitar sound', tab: 'Write', vis: 'Stage', song: 'Song', 
 var XP_LABEL = { new: 'Simple', some: 'More tools', pro: 'Everything' };
 if (CFG.xp == null) { CFG.xp = (store.get('started', false) || store.get('song', null)) ? 40 : 0; saveCfg(); }   // people who already use the app keep the full studio
 function xpLevel() { const m = CFG.xpMode || 'auto'; if (XP_TABS[m] !== undefined) return m; const s = CFG.xp || 0; return s >= 12 ? 'pro' : s >= 4 ? 'some' : 'new'; }
-function xpAllowed(id) { const l = XP_TABS[xpLevel()]; return !l || l.includes(id) || id === DOCK.cur || (typeof journeyShows === 'function' && journeyShows(id)); }
+function xpAllowed(id) { const l = XP_TABS[xpLevel()]; return !l || l.includes(id) || id === DOCK.cur || (typeof goalShows === 'function' && goalShows(id)); }
 function xpTabText(id, name, i) { return xpLevel() === 'pro' ? (i + 1) + ' · ' + name : (XP_NAMES[id] || name); }
 function xpSignal(pts) {
   if (XP.quiet || (CFG.xpMode && CFG.xpMode !== 'auto')) return; const before = xpLevel(); CFG.xp = Math.min(40, (CFG.xp || 0) + pts); clearTimeout(XP.t); XP.t = setTimeout(saveCfg, 800);
@@ -7364,9 +7363,11 @@ function vzCycleLook() { const i = VZ_FAVS.indexOf(VZ.mode); vzSetMode(VZ_FAVS[(
    to this device as .webm or .mp4. Nothing is uploaded; the camera is never started by recording; Ctrl/Cmd+. discards it.
    ============================================================ */
 const SREC = { on: false, mr: null, chunks: [], t0: 0, tick: 0, watch: 0, dest: null, stream: null, mime: '', whole: false, save: true, was: null, name: '' };
-function srecMime(audio) {
+/** mp4: put MP4 first for a video (social sites take it as it is); otherwise WebM first, as before */
+function srecMime(audio, mp4) {
   if (!window.MediaRecorder) return null;
-  const c = audio ? ['audio/mp4;codecs=mp4a.40.2', 'audio/mp4', 'audio/webm;codecs=opus', 'audio/webm'] : ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm', 'video/mp4;codecs=avc1.42E01E,mp4a.40.2', 'video/mp4'];
+  const wv = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'], mv = ['video/mp4;codecs=avc1.42E01E,mp4a.40.2', 'video/mp4'];
+  const c = audio ? ['audio/mp4;codecs=mp4a.40.2', 'audio/mp4', 'audio/webm;codecs=opus', 'audio/webm'] : mp4 ? mv.concat(wv) : wv.concat(mv);
   return c.find(t => { try { return MediaRecorder.isTypeSupported(t); } catch (e) { return false; } }) || '';
 }
 const srecClock = () => { const s = Math.floor((performance.now() - SREC.t0) / 1000); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
@@ -7382,10 +7383,10 @@ function srecMenu(anchor) {
     h('div', { class: 'tiny muted' }, 'Saved on this device as a video with sound. The camera is only in it if you already turned it on. Keep this tab in front while recording.'));
   popover(anchor, box);
 }
-/** o.audio: sound only (compressed audio, share page); o.onBlob(blob): hand the result on instead of saving it */
+/** o.audio: sound only (compressed audio, share page); o.mp4: prefer MP4 video; o.onBlob(blob): hand the result on instead of saving it */
 async function srecStart(whole, o) {
   if (SREC.on) return; o = o || {}; const audio = !!o.audio;
-  const cvOk = audio || (typeof HTMLCanvasElement !== 'undefined' && HTMLCanvasElement.prototype.captureStream), mime = srecMime(audio);
+  const cvOk = audio || (typeof HTMLCanvasElement !== 'undefined' && HTMLCanvasElement.prototype.captureStream), mime = srecMime(audio, !!o.mp4);
   if (!cvOk || mime === null) return toast(audio ? 'This browser cannot record audio here. Try a recent Chrome, Edge, Firefox or Safari.' : 'This browser cannot record video here. Try a recent Chrome, Edge, Firefox or Safari.', 'warn');
   if (typeof AK !== 'undefined' && AK.killed) return toast('Audio is stopped. Open Audio to resume, then record.', 'warn');
   try { await startAudio(); } catch (e) { return toast('Audio could not start: ' + e.message, 'bad'); }
@@ -7427,6 +7428,7 @@ function srecDone() {
   if (SREC.was) { T.loop = SREC.was.loop; T.metro = SREC.was.metro; if (SREC.whole) { try { stopPlay(true); } catch (e) { } } SREC.was = null; }
   SREC.mr = null; SREC.dest = null; SREC.stream = null; SREC.on = false; SREC.chunks = []; srecSync(); bus.emit('srec', false);
   const cb = SREC.onBlob; SREC.onBlob = null;
+  if (save && blob && blob.size > 1000 && !SREC.audio) bus.emit('srec:blob', blob);   /* Studio Replay keeps the newest video (part 68) */
   if (save && blob && blob.size > 1000 && cb) cb(blob);
   else if (save && blob && blob.size > 1000) { download(SREC.name + (SREC.audio ? (/mp4/.test(blob.type) ? '.m4a' : '.webm') : (/mp4/.test(blob.type) ? '.mp4' : '.webm')), blob); toast('Saved ' + (SREC.audio ? 'the audio' : 'the stage video') + ' to this device (' + (blob.size / 1048576).toFixed(1) + ' MB)', 'ok'); }
   else if (save) toast('Nothing was recorded.', 'warn');
@@ -10744,7 +10746,7 @@ setInterval(() => { gdSniff(); gdPfRender(); }, 500);
 const GD_SESSIONS = {
   play: {
     name: 'Play with a band', mins: 3, icon: '🎸', blurb: 'Plug in, pick a tone and play along with a drummer and bassist.',
-    outro: 'That is the whole Play journey: your guitar, a tone, and a band following you. Load a song in Backing track to play along with a real recording.', next: 'write',
+    outro: 'That is the whole Performer workspace: your guitar, a tone, and a band following you. Load a song in Backing track to play along with a real recording.', next: 'write',
     steps: [
       { id: 'input', short: 'Connect your input', text: () => (isDesk() ? 'Press Connect (in the panel on the left, or Audio at the top right)' : 'Tap the round Audio button at the top') + ' and allow the microphone when asked. Use headphones so the speakers do not feed back into it.', target: () => { const c = document.querySelector('#left .btn.primary'); return c && c.getClientRects().length ? c : UI.aud; }, go: () => { if (!document.querySelector('#left .btn.primary')) { try { audioOpen(); } catch (e) { } } }, done: () => !!(E && E.hasInput && E.ctx && E.ctx.state === 'running') },
       { id: 'tone', short: 'Pick a tone', text: 'Choose a tone from the list on the left: a clean, a crunch, a lead. Strum and listen; try another if you like.', target: '#left .pitem', go: () => { try { sideShow('tones'); } catch (e) { } }, setup: () => { GD.seen.tone = 0; }, done: () => !!GD.seen.tone },
@@ -10819,8 +10821,8 @@ const GD_ORDER = ['play', 'write', 'hum', 'record', 'loop', 'split', 'show'];
 
 /* ---------- starting from a goal on the first page ---------- */
 const GD_GOALS = {
-  play: async () => { await projCreate('demo', { zoom: 'studio' }); zoomSet('studio', true); if (isDesk()) { journeyGo('play'); } else mGo('play'); },
-  write: async () => { await projCreate('blank', { form: 'empty', title: 'My first riff', zoom: 'studio' }); zoomSet('studio', true); if (isDesk()) { journeyGo('create'); dockGo('tab'); } else mGo('write', 'tab'); },
+  play: async () => { await projCreate('demo', { zoom: 'studio' }); zoomSet('studio', true); if (isDesk()) { goalGo('performer'); } else mGo('play'); },
+  write: async () => { await projCreate('blank', { form: 'empty', title: 'My first riff', zoom: 'studio' }); zoomSet('studio', true); if (isDesk()) { goalGo('songwriter'); dockGo('tab'); } else mGo('write', 'tab'); },
   hum: () => { /* the default first screen is already the hum bar on a clean page */ },
   record: async () => { await projCreate('blank', { form: 'empty', title: 'My first take', zoom: 'studio' }); zoomSet('studio', true); if (!isDesk()) mGo('play'); },
   loop: async () => { await projCreate('blank', { form: 'empty', title: 'My first loop', zoom: 'studio' }); zoomSet('studio', true); if (!isDesk()) mGo('play'); },
@@ -10975,7 +10977,7 @@ function guideBoot(bootStart) {
     if (goal === 'show') PRJ.bootDemo = false;   // the show goal makes its own demo project
     bootStart('studio');
   });
-  const pro = document.getElementById('bootPro'); if (pro) pro.onclick = () => { CFG.xpMode = 'pro'; CFG.xp = 40; saveCfg(); try { rebuildTabs(); } catch (e) { } bootStart('studio'); };
+  const pro = document.getElementById('bootPro'); if (pro) pro.onclick = () => { CFG.xpMode = 'pro'; CFG.xp = 40; saveCfg(); try { rebuildTabs(); } catch (e) { } bootStart('studio'); };   /* opens on the Full Rig (part 64) */
 }
 bus.on('booted', () => { const g = gdc(); if (g.sess && GD_SESSIONS[g.sess] && !GD.id && !(CFG.goal || PRJ.goal)) setTimeout(() => guideStart(g.sess, {}), 1200); });
 
@@ -11402,40 +11404,135 @@ function wrPlayhead() {
   WR.ph.forEach(c => c.classList.remove('wph')); WR.ph = $$(`#pane-tab .tcell[data-b="${fb.bi}"][data-s="${sib}"]`); WR.ph.forEach(c => c.classList.add('wph'));
 }
 
-/* >>> parts/64-journeys.js */
+/* >>> parts/64-goals.js */
 /* ============================================================
-   Part 64 · Three journeys: Play, Create, Learn.
-   The studio has a lot in it, and a person who just wants to play should not have to learn how it is divided. Each journey is a complete workspace
-   (a layout) built around one job, with only the tabs that job uses, and the right one open:
-     Play    plug in, pick a tone, play along with a backing track      (Guitar sound · Band · Backing track · Stage)
-     Create  write, record, loop and layer, and save the song            (Write · Band · Guitar sound · Save)
-     Learn   load a song, split it into parts, see the chords and tab   (Backing track · Transcribe · Write · Band, with the fretboard beside)
-   They sit above the tab strip, are always one click away, and are also in the Layouts menu. Everything else is still there: pick Tools ▸ Everything.
+   Part 64 · Goal workspaces: the studio arranged around what a musician wants to do, not around its features.
+   Each goal is a complete workspace (a layout): which panels are on the strip and which is open, what the sidebars hold, how tall the
+   arrangement is, which Monitor widgets show, and a row of the few tools that goal is about, one click each.
+     🎸 Songwriter      lyrics, chords, progression building, idea capture
+     🎤 Performer       recording, webcam, stage visuals, performance playback
+     🎬 Creator Studio  Studio Replay, webcam, waveform views, overlays, thumbnails, export to MP4 for social sharing
+     🎼 Practice        looping, tempo, metronome, scales, chord display
+     🎓 Teacher         annotations, lesson notes, screen recording, educational overlays (fretboard, transcription)
+     ⚙️ Full Rig        every panel and widget, for people who know their way around
+   The goals run Create → Perform → Share: each workspace ends with the one button that takes you to the next step, so a
+   musician gets from an idea to a shareable video in the fewest clicks. Nothing is removed: every panel is still one click away
+   (☰ on the strip, ▦ in the header), and the goal only decides what shows first. The tools behind the buttons are in part 68.
    ============================================================ */
-const JOURNEYS = [
-  ['play', 'Play', 'Plug in, pick a tone and play along with a backing track', 'Play', 'Guitar sound, band and backing track, with the tones on the left and a tuner on the right.',
-    { flip: true, left: true, right: true, tlh: 'minmax(110px,22%)', dock: 'rig', order: ['rig', 'band', 'stems', 'vis'], hidden: ['tab', 'song', 'fret', 'stage', 'neural', 'tx', 'cam', 'lab', 'exp'], cur: { left: 'tones', right: 'monitor' }, mon: ['tuner', 'levels'] }, ['rig', 'band', 'stems', 'vis']],
-  ['create', 'Create', 'Write a song, record it, loop and layer it, and save it', 'Create', 'Write, record, loop and layer. The canvas for the tab, the words and the fretboard in the middle; your input on the left.',
-    { flip: true, left: true, right: false, tlh: 'minmax(120px,24%)', dock: 'tab', order: ['tab', 'band', 'rig', 'exp'], hidden: ['song', 'fret', 'vis', 'stage', 'neural', 'stems', 'tx', 'cam', 'lab'], cur: { left: 'io' } }, ['tab', 'band', 'rig', 'exp']],
-  ['learn', 'Learn', 'Load a song, split it into parts, see its chords and tab, and practise', 'Learn', 'Backing track and Transcribe first, the tab to read, and the fretboard beside it.',
-    { flip: true, left: false, right: true, tlh: 'minmax(150px,28%)', dock: 'stems', order: ['stems', 'tx', 'tab', 'band'], hidden: ['rig', 'song', 'fret', 'vis', 'stage', 'neural', 'cam', 'lab', 'exp'], side: { fret: 'right' }, so: { left: [], right: ['fret', 'refine', 'monitor'] }, cur: { right: 'fret' } }, ['stems', 'tx', 'tab', 'band']]
+const GOAL_STEPS = [['create', 'Create', 'songwriter'], ['perform', 'Perform', 'performer'], ['share', 'Share', 'creator']];
+const GOALS = [
+  { id: 'songwriter', ico: '🎸', name: 'Songwriter', layout: 'Songwriter', step: 'create', next: ['performer', 'Perform it'],
+    blurb: 'Lyrics, chords and progressions, and a quick way to catch an idea before it goes.',
+    spec: { flip: true, left: true, right: true, tlh: 'minmax(120px,22%)', dock: 'tab', order: ['tab', 'band', 'song', 'rig', 'exp'], hidden: ['fret', 'vis', 'stage', 'neural', 'stems', 'tx', 'cam', 'lab'], cur: { left: 'theory', right: 'monitor' }, mon: ['tuner', 'live'] },
+    tools: () => [
+      ['gtCap', '● Capture idea', 'Play, and the notes and chords you play are written into the tab', () => { dockGo('tab'); capToggle(); }, () => !!CAP.on],
+      ['gtWords', '✎ Lyrics & tab', 'The words and the tab side by side', () => { dockGo('tab'); wrMode('both'); }],
+      ['gtTheory', '♯ Chords & scales', 'Build a progression from the key: chords, scales and what comes next', () => sideShow('theory')],
+      ['gtRec', '⏺ Record idea', 'Arm a take: it records when you press play (R)', () => toggleRec(), () => !!T.rec]
+    ] },
+  { id: 'performer', ico: '🎤', name: 'Performer', layout: 'Performer', step: 'perform', next: ['creator', 'Share it'],
+    blurb: 'Your tone, the band and the stage visuals, with the camera and the record button in reach.',
+    spec: { flip: true, left: true, right: true, tlh: 'minmax(150px,30%)', dock: 'vis', order: ['vis', 'rig', 'band', 'stage', 'exp'], hidden: ['tab', 'song', 'fret', 'neural', 'stems', 'tx', 'cam', 'lab'], cur: { left: 'tones', right: 'monitor' }, mon: ['tuner', 'levels', 'audience'] },
+    tools: () => [
+      ['gtVideo', '⏺ Record video', 'Record the stage, you and the sound as a video; Studio Replay opens when you stop', b => kitRecord(b), () => !!SREC.on],
+      ['gtCam', '📷 Camera', 'Put yourself centre stage, in front of the visuals', () => vzCamPress(), () => !!VZ.cam],
+      ['gtPerf', '🎤 Perform view', 'Full screen: the chord huge, the lyrics scrolling, a count-in', b => perfOpen(b)],
+      ['gtTake', '● Record take', 'Record your guitar and voice into the arrangement (R)', () => toggleRec(), () => !!T.rec],
+      ['gtReplay', '▶ Replay', 'Watch the last video you recorded', () => kitReplay(), null, () => !KIT.last]
+    ] },
+  { id: 'creator', ico: '🎬', name: 'Creator Studio', layout: 'Creator Studio', step: 'share', next: ['songwriter', 'Write the next one'],
+    blurb: 'Record, replay, add overlays and a thumbnail, and save an MP4 to post.',
+    spec: { flip: true, left: false, right: true, tlh: '96px', dock: 'vis', order: ['vis', 'exp', 'stage', 'band', 'rig'], hidden: ['tab', 'song', 'fret', 'neural', 'stems', 'tx', 'cam', 'lab'], cur: { right: 'monitor' }, mon: ['levels', 'views', 'audience'] },
+    tools: () => [
+      ['gtVideo', '⏺ Record MP4', 'Record the stage, the camera and the sound; MP4 where this browser can make it', b => kitRecord(b), () => !!SREC.on],
+      ['gtReplay', '▶ Studio Replay', 'Watch the last recording, then save it, share it or make a thumbnail from any frame', () => kitReplay(), null, () => !KIT.last],
+      ['gtCam', '📷 Webcam', 'You in the picture, in front of or framed by the visuals', () => vzCamPress(), () => !!VZ.cam],
+      ['gtFx', '✨ Overlays', 'How the camera sits with the visuals: dimmed behind, framed, or you in front', b => popover(b, h('div', { style: { display: 'grid', gap: '8px', minWidth: '240px' } }, h('h5', {}, 'Overlays'), camFxBox(), h('div', { class: 'tiny muted' }, 'Pick a look in the Visuals panel for what moves behind you.')))],
+      ['gtThumb', '🖼 Thumbnail', 'Save a 1280 × 720 picture of the stage with the song title, for the post', () => kitThumb()],
+      ['gtExp', '⇩ Export', 'Audio, the share page, the lyric sheet and more', () => dockGo('exp')]
+    ] },
+  { id: 'practice', ico: '🎼', name: 'Practice', layout: 'Practice', step: 'create', next: ['performer', 'Perform it'],
+    blurb: 'Loop a part, slow it down, keep time with the click, and see the scale and the chord on the neck.',
+    spec: { flip: true, left: true, right: true, tlh: 'minmax(170px,32%)', dock: 'tab', order: ['tab', 'stems', 'band', 'rig'], hidden: ['song', 'vis', 'stage', 'neural', 'tx', 'cam', 'lab', 'exp'], side: { fret: 'right' }, so: { left: [], right: ['fret', 'monitor', 'refine'] }, cur: { left: 'theory', right: 'fret' }, mon: ['tuner', 'levels'] },
+    tools: () => [
+      ['gtLoop', '⟲ Loop', 'Loop the song or the selected bars (L)', () => { T.loop = !T.loop; syncTransport(); }, () => !!T.loop],
+      ['gtClick', '♩ Metronome', 'The click (M)', () => { T.metro = !T.metro; syncTransport(); }, () => !!T.metro],
+      ['gtSlow', '− 5', 'Slower by 5 BPM', () => goalTempo(-5)],
+      ['gtBpm', () => S.bpm + ' BPM', 'The tempo', () => { if (UI.bpm) UI.bpm.focus(); }],
+      ['gtFast', '+ 5', 'Faster by 5 BPM', () => goalTempo(5)],
+      ['gtScale', '♯ Scales', 'The scale for the key, on the theory panel', () => sideShow('theory')],
+      ['gtChord', '▦ Chords', 'The chord that is playing, on the fretboard', () => sideShow('fret')]
+    ] },
+  { id: 'teacher', ico: '🎓', name: 'Teacher', layout: 'Teacher', step: 'share', next: null,
+    blurb: 'Draw on the screen, keep lesson notes, and record the screen with your voice.',
+    spec: { flip: true, left: false, right: true, tlh: 'minmax(130px,26%)', dock: 'tab', order: ['tab', 'tx', 'stems', 'vis', 'band'], hidden: ['rig', 'song', 'fret', 'stage', 'neural', 'cam', 'lab'], side: { fret: 'right' }, so: { left: [], right: ['fret', 'refine', 'monitor'] }, cur: { right: 'fret' }, mon: ['tuner', 'live'] },
+    tools: () => [
+      ['gtInk', '✎ Annotate', 'Draw over anything on the page; it stays until you clear it', () => kitInk(), () => !!KIT.inkOn],
+      ['gtNotes', '📝 Lesson notes', 'Notes for this song, kept in this browser', () => kitNotes(), () => !!KIT.notesEl],
+      ['gtScreen', '⏺ Record screen', 'Record this tab or your screen, with the studio’s sound and your voice', () => kitScreen(), () => !!KIT.scr],
+      ['gtFret', '▦ Fretboard', 'Show the chord and scale on the neck', () => sideShow('fret')],
+      ['gtTx', '♪ Transcribe', 'Turn a recording into notes and chords to teach from', () => dockGo('tx')]
+    ] },
+  { id: 'fullrig', ico: '⚙️', name: 'Full Rig', layout: 'Full Rig', step: null, next: null, all: true,
+    blurb: 'Every panel, both sidebars and every Monitor widget.',
+    spec: { flip: true, left: true, right: true, tlh: 'minmax(200px,38%)', dock: 'rig', order: [], hidden: [], cur: { left: 'io', right: 'monitor' }, mon: ['tuner', 'levels', 'live', 'spectrum', 'views', 'audience'] },
+    tools: () => [
+      ['gtLay', '▦ Workspace…', 'Sidebars, floating panels, which tabs show', b => layoutMenu(b)],
+      ['gtPlace', '⇆ Where panels live…', 'Move any panel to either sidebar or the centre', b => placeMenu(b)]
+    ] }
 ];
-/* they are layouts too: after Studio in the Layouts menu */
-LAYOUTS.splice(1, 0, ...JOURNEYS.map(j => [j[3], j[4], j[5]]));
-/** the journey whose workspace is showing (null when it is some other layout) */
-const journeyNow = () => JOURNEYS.find(j => j[3] === LAY.name) || null;
-/** tabs the journey in use needs, even when the experience level has not unlocked them */
-const journeyShows = id => { const j = journeyNow(); return !!j && j[6].includes(id); };
-function journeyGo(id) {
-  const j = JOURNEYS.find(x => x[0] === id); if (!j) return false; CFG.journey = id; saveCfg();
-  applyPreset(j[5], j[3]); if (typeof xpSignal === 'function') xpSignal(1);
-  if (id === 'learn' && typeof sideShow === 'function') { try { sideShow('fret'); } catch (e) { } } bus.emit('journey', id); return true;
+/* the goals that came before (2.9's journeys, and the guided sessions that still name them) */
+const GOAL_ALIAS = { play: 'performer', create: 'songwriter', learn: 'practice', write: 'songwriter', perform: 'performer', share: 'creator' };
+/* they are layouts too: after Studio in the layout list (the Practice goal replaces the old Practice layout) */
+LAYOUTS.splice(1, 0, ...GOALS.map(g => [g.layout, g.blurb, g.spec]));
+const goalById = id => GOALS.find(g => g.id === (GOAL_ALIAS[id] || id)) || null;
+/** the goal whose workspace is showing (null when it is some other layout) */
+const goalNow = () => GOALS.find(g => g.layout === LAY.name) || null;
+/** tabs the goal in use needs, even when the experience level has not unlocked them (Full Rig needs them all) */
+const goalShows = id => { const g = goalNow(); return !!g && (g.all || g.spec.order.includes(id)); };
+function goalTempo(d) { S.bpm = clamp(S.bpm + d, 30, 260); commit(false); bus.emit('bpm'); syncTransport(); goalSync(); }
+function goalGo(id) {
+  const g = goalById(id); if (!g) return false; CFG.ws = g.id; saveCfg();
+  applyPreset(g.spec, g.layout); if (typeof xpSignal === 'function') xpSignal(1);
+  if (g.spec.side && g.spec.side.fret && typeof sideShow === 'function') { try { sideShow('fret'); } catch (e) { } }
+  bus.emit('goal', g.id); goalBarBuild(); return true;
 }
-function journeyBar() {
-  const cur = journeyNow(), box = h('div', { class: 'jny', role: 'group', 'aria-label': 'What do you want to do?' });
-  JOURNEYS.forEach(j => box.append(h('button', { class: 'jny-b' + (cur && cur[0] === j[0] ? ' on' : ''), 'data-j': j[0], 'aria-pressed': String(!!cur && cur[0] === j[0]), title: j[2], onclick: () => journeyGo(j[0]) }, j[1])));
-  return box;
+/* ---------- the goal bar: the six goals, Create → Perform → Share, the goal's tools and its next step ---------- */
+function goalBar() { const box = h('div', { class: 'goalbar', id: 'goalbar' }); GOALBAR.el = box; goalBarBuild(); return box; }
+const GOALBAR = { el: null };
+function goalBarBuild() {
+  const box = GOALBAR.el; if (!box) return; box.innerHTML = ''; const cur = goalNow();
+  const pick = h('div', { class: 'gl-pick', role: 'group', 'aria-label': 'What do you want to do?' }, GOALS.map(g => h('button', { class: 'gl-b' + (cur === g ? ' on' : ''), 'data-goal': g.id, 'aria-pressed': String(cur === g), title: g.name + ': ' + g.blurb, onclick: () => goalGo(g.id) }, h('span', { class: 'gl-i', 'aria-hidden': 'true' }, g.ico), h('span', { class: 'gl-t' }, g.name))));
+  const flow = h('ol', { class: 'gl-flow', 'aria-label': 'Create, perform, share' }, GOAL_STEPS.map(([k, n, gid]) => h('li', {}, h('button', { class: 'gl-st' + (cur && cur.step === k ? ' on' : ''), 'data-step': k, 'aria-current': cur && cur.step === k ? 'step' : null, title: n + ': open ' + goalById(gid).name, onclick: () => goalGo(gid) }, n))));
+  box.append(h('div', { class: 'gl-row' }, pick, flow));
+  if (!cur) { box.append(h('div', { class: 'gl-row gl-tools' }, h('span', { class: 'tiny muted' }, 'Pick what you want to do, and the studio arranges itself for it. Everything stays one click away.'))); return; }
+  const tools = h('div', { class: 'gl-row gl-tools', role: 'toolbar', 'aria-label': cur.name + ' tools' });
+  cur.tools().forEach(([id, label, title, fn, on, off]) => {
+    const b = h('button', { class: 'btn sm gl-tool', id, type: 'button', title, onclick: e => { fn(e.currentTarget); setTimeout(goalSync, 60); } }, typeof label === 'function' ? label() : label);
+    b._on = on; b._off = off; b._label = label; tools.append(b);
+  });
+  if (cur.next) { const n = goalById(cur.next[0]); tools.append(h('span', { class: 'grow' }), h('button', { class: 'btn sm primary gl-next', id: 'gtNext', title: 'Next: ' + n.name, onclick: () => goalGo(n.id) }, cur.next[1] + ' → ' + n.ico)); }
+  box.append(tools); goalSync();
 }
+/** refresh the on/off state of the goal's tools (recording, camera, loop, click…) */
+function goalSync() {
+  if (!GOALBAR.el) return;
+  $$('.gl-tool', GOALBAR.el).forEach(b => {
+    if (b._on) { const on = !!b._on(); b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); }
+    if (b._off) b.disabled = !!b._off();
+    if (typeof b._label === 'function') b.textContent = b._label();
+  });
+}
+['transport', 'srec', 'kit', 'bpm', 'song', 'cam'].forEach(e => bus.on(e, goalSync));
+setInterval(() => { if (GOALBAR.el && !document.hidden) goalSync(); }, 1000);
+/* a first visit on a computer opens the Performer: the shortest way to a performance you can share.
+   Anyone who has been here before keeps the workspace they had, and a layout you chose is never replaced. */
+const GOAL_FIRST = !store.get('started', false);
+bus.on('booted', () => {
+  if (CFG.ws !== undefined || !isDesk()) return;
+  if (!GOAL_FIRST || LAY.name) { CFG.ws = (goalNow() || {}).id || null; saveCfg(); return; }
+  goalGo(CFG.xpMode === 'pro' ? 'fullrig' : 'performer');
+});
 
 /* >>> parts/65-harmony.js */
 /* ============================================================
@@ -11851,6 +11948,135 @@ function srecTakeEnd(keep) {
   if (!keep) { REC = null; try { E.tapDI.on(false); E.tapWet.on(false); E.tapVox.on(false); } catch (e) { } bus.emit('rec:state', false); return; }
   recEnd();
   if (TAKES.length > k.n0) { tkDone(k.before); toast('Your playing from the video is in the arrangement, starting where the video started. Undo (Ctrl/⌘+Z) takes it out.', 'ok'); }
+}
+
+/* >>> parts/68-kit.js */
+/* ============================================================
+   Part 68 · The creator's and the teacher's kit, behind the goal workspaces' buttons (part 64).
+     Studio Replay   the last stage video (or screen recording) plays back in place: save it, share it, or make a thumbnail from any frame
+     Record video    the stage recorder (part 37), asking for MP4 where the browser can make it, opening Studio Replay when it stops
+     Thumbnail       a 1280 × 720 PNG of the stage (or of the replay's frame) with the song's title on it
+     Screen record   this tab or the screen (the browser asks which), with the studio's sound and, if you like, your microphone
+     Lesson notes    a small note card per song, kept in this browser
+     Annotate        draw over the page; the ink stays (and shows in a screen recording) until you clear it
+   Everything is made and kept on this device. Share hands the file to your device's own share sheet only when you press it.
+   ============================================================ */
+const KIT = { last: null, lastKind: '', url: '', scr: null, notesEl: null, ink: null, inkOn: false, strokes: [], pen: '#ffd23f' };
+const kitMb = b => (b.size / 1048576).toFixed(1) + ' MB';
+const kitExt = b => (/mp4/.test(b.type) ? '.mp4' : '.webm');
+const kitName = kind => (S.title || 'song').replace(/\W+/g, '_') + '_' + (kind || 'stage');
+/** keep a recording for Studio Replay (only the newest one is kept, in memory) */
+function kitKeep(blob, kind) {
+  if (!blob || blob === KIT.last) return; if (KIT.url) { try { URL.revokeObjectURL(KIT.url); } catch (e) { } }
+  KIT.last = blob; KIT.lastKind = kind || 'stage'; KIT.url = URL.createObjectURL(blob); bus.emit('kit');
+}
+bus.on('srec:blob', b => kitKeep(b, 'stage'));
+/** one button: start the stage video; press again to stop, and Studio Replay opens with it */
+function kitRecord() {
+  if (SREC.on) { srecStop(true); return; }
+  srecStart(false, { mp4: true, onBlob: b => { kitKeep(b, 'stage'); kitReplay(); } });
+}
+function kitSave() { const b = KIT.last; if (!b) return; download(kitName(KIT.lastKind) + kitExt(b), b); toast('Saved the video to this device (' + kitMb(b) + ')', 'ok'); }
+async function kitShare() {
+  const b = KIT.last; if (!b) return; const f = new File([b], kitName(KIT.lastKind) + kitExt(b), { type: b.type });
+  try { if (navigator.canShare && navigator.canShare({ files: [f] })) { await navigator.share({ files: [f], title: S.title || 'My performance' }); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
+  kitSave(); toast('This browser has no share sheet for videos here, so it was saved instead: post it from your files.', 'warn');
+}
+function kitReplay() {
+  if (!KIT.last) return toast('Record a video first: ⏺ Record video, then ■ to stop.', 'warn');
+  const b = KIT.last, mp4 = /mp4/.test(b.type);
+  const v = h('video', { class: 'kit-v', id: 'kitVideo', src: KIT.url, controls: true, playsinline: true, autoplay: true });
+  const canShare = (() => { try { return !!(navigator.canShare && navigator.canShare({ files: [new File([b], 'x' + kitExt(b), { type: b.type })] })); } catch (e) { return false; } })();
+  const body = h('div', { class: 'kit-replay' }, v,
+    h('div', { class: 'tiny muted kit-meta' }, (mp4 ? 'MP4' : 'WebM') + ' · ' + kitMb(b) + (mp4 ? ' · ready for social posts' : ' · this browser records WebM; most sites take it, or convert it to MP4')),
+    h('div', { class: 'row kit-acts' },
+      h('button', { class: 'btn primary', id: 'kitSave', onclick: kitSave }, '⇩ Save ' + (mp4 ? 'MP4' : 'video')),
+      canShare ? h('button', { class: 'btn', id: 'kitShare', onclick: kitShare }, '↗ Share…') : null,
+      h('button', { class: 'btn', id: 'kitThumbFrame', title: 'Pause on the frame you want first', onclick: () => kitThumb(v) }, '🖼 Thumbnail from this frame'),
+      KIT.lastKind === 'stage' ? h('button', { class: 'btn', id: 'kitAgain', onclick: () => { d.close(); kitRecord(); } }, '⏺ Record again') : null));
+  const d = pdlg('kitReplayDlg', 'Studio Replay', body, { wide: true, onclose: () => { try { v.pause(); } catch (e) { } } });
+  return d;
+}
+/** a 1280 × 720 picture: the stage (or a video frame), darkened at the foot, with the title and the key and tempo */
+function kitThumb(src) {
+  src = src || UI.vcv; const W = 1280, H = 720, c = h('canvas'); c.width = W; c.height = H; const g = c.getContext('2d');
+  const sw = src && (src.videoWidth || src.width), sh = src && (src.videoHeight || src.height);
+  g.fillStyle = '#0d0f10'; g.fillRect(0, 0, W, H);
+  if (sw && sh) { const k = Math.max(W / sw, H / sh), dw = sw * k, dh = sh * k; try { g.drawImage(src, (W - dw) / 2, (H - dh) / 2, dw, dh); } catch (e) { } }
+  const gr = g.createLinearGradient(0, H * .45, 0, H); gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(0,0,0,.78)'); g.fillStyle = gr; g.fillRect(0, 0, W, H);
+  const title = S.title || 'New song', sub = [NS[S.key] + (S.minor ? ' minor' : ' major'), S.bpm + ' BPM'].filter(Boolean).join(' · ');
+  g.fillStyle = '#fff'; g.textBaseline = 'alphabetic'; let fs = 92; g.font = '800 ' + fs + 'px "DS Montserrat", system-ui, sans-serif'; while (g.measureText(title).width > W - 120 && fs > 40) { fs -= 4; g.font = '800 ' + fs + 'px "DS Montserrat", system-ui, sans-serif'; }
+  g.fillText(title, 60, H - 92); g.font = '600 34px "DS Inter", system-ui, sans-serif'; g.fillStyle = 'rgba(255,255,255,.82)'; g.fillText(sub, 62, H - 44);
+  c.toBlob(bl => { if (!bl) return toast('The thumbnail could not be made here.', 'bad'); download(kitName('thumbnail') + '.png', bl); toast('Saved a 1280 × 720 thumbnail', 'ok'); }, 'image/png');
+  return c;
+}
+/* ---------- screen recording ---------- */
+async function kitScreen() {
+  if (KIT.scr) { try { KIT.scr.mr.stop(); } catch (e) { kitScreenDone(); } return; }
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia || !window.MediaRecorder) return toast('This browser cannot record the screen. Try a recent Chrome, Edge or Firefox on a computer.', 'warn');
+  let disp; try { disp = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 30 }, audio: true }); } catch (e) { return toast(e && e.name === 'NotAllowedError' ? 'Screen recording was not started.' : 'Screen recording could not start: ' + (e.message || e.name), 'warn'); }
+  const out = new MediaStream(disp.getVideoTracks()), r = { disp, mic: null, dest: null, chunks: [], mr: null, links: [] };
+  try {
+    await startAudio(); r.dest = E.ctx.createMediaStreamDestination(); E.limiter.connect(r.dest); r.links.push(E.limiter);
+    if (disp.getAudioTracks().length) { const s = E.ctx.createMediaStreamSource(new MediaStream(disp.getAudioTracks())); s.connect(r.dest); r.links.push(s); }
+    if (CFG.kitMic !== false) { try { r.mic = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }); const m = E.ctx.createMediaStreamSource(r.mic); m.connect(r.dest); r.links.push(m); } catch (e) { toast('Recording without your voice: the microphone was not allowed.', 'warn'); } }
+    r.dest.stream.getAudioTracks().forEach(t => out.addTrack(t));
+  } catch (e) { console.warn('screen audio', e); }
+  const mime = ['video/mp4;codecs=avc1.42E01E,mp4a.40.2', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'].find(t => { try { return MediaRecorder.isTypeSupported(t); } catch (e) { return false; } }) || '';
+  try { r.mr = new MediaRecorder(out, Object.assign({ videoBitsPerSecond: 6e6, audioBitsPerSecond: 160e3 }, mime ? { mimeType: mime } : {})); } catch (e) { disp.getTracks().forEach(t => t.stop()); return toast('Screen recording could not start: ' + (e.message || e.name), 'bad'); }
+  r.mime = r.mr.mimeType || mime || 'video/webm'; r.mr.ondataavailable = e => { if (e.data && e.data.size) r.chunks.push(e.data); }; r.mr.onstop = kitScreenDone;
+  disp.getVideoTracks().forEach(t => t.addEventListener('ended', () => { if (KIT.scr === r && r.mr.state !== 'inactive') r.mr.stop(); }));
+  KIT.scr = r; r.mr.start(500); bus.emit('kit'); toast('Recording the screen… press ⏺ Record screen again (or the browser’s Stop sharing) to finish.', 'ok');
+}
+function kitScreenDone() {
+  const r = KIT.scr; if (!r) return; KIT.scr = null;
+  r.links.forEach(n => { try { n.disconnect(r.dest); } catch (e) { } }); [r.disp, r.mic].forEach(s => { try { s && s.getTracks().forEach(t => t.stop()); } catch (e) { } });
+  const blob = r.chunks.length ? new Blob(r.chunks, { type: r.mime.split(';')[0] }) : null; bus.emit('kit');
+  if (blob && blob.size > 1000) { kitKeep(blob, 'lesson'); kitReplay(); } else toast('Nothing was recorded.', 'warn');
+}
+/* ---------- lesson notes: one card per song, kept in this browser ---------- */
+const kitNoteKey = () => (S.title || 'Untitled').slice(0, 80);
+function kitNotes() {
+  if (KIT.notesEl) { KIT.notesEl.remove(); KIT.notesEl = null; bus.emit('kit'); return; }
+  const all = store.get('lessons', {}), ta = h('textarea', { class: 'in kit-ta', id: 'kitNotesText', 'aria-label': 'Lesson notes', placeholder: 'What to practise, the bars that need work, the next lesson…' });
+  ta.value = all[kitNoteKey()] || '';
+  ta.addEventListener('input', () => { const a = store.get('lessons', {}); if (ta.value.trim()) a[kitNoteKey()] = ta.value; else delete a[kitNoteKey()]; store.set('lessons', a); });
+  const el = h('div', { class: 'kit-notes', id: 'kitNotes', role: 'dialog', 'aria-label': 'Lesson notes' },
+    h('div', { class: 'kit-nh' }, h('b', {}, '📝 Lesson notes · ', h('span', { class: 'muted' }, kitNoteKey())), h('span', { class: 'grow' }),
+      h('button', { class: 'btn sm', title: 'Copy the notes', onclick: () => copyText(ta.value) }, 'Copy'),
+      h('button', { class: 'btn sm', title: 'Save the notes as a text file', onclick: () => download(kitName('lesson_notes') + '.txt', ta.value) }, '⇩ .txt'),
+      h('button', { class: 'btn sm', 'aria-label': 'Close the lesson notes', onclick: kitNotes }, '✕')), ta);
+  document.body.append(el); KIT.notesEl = el; ta.focus(); bus.emit('kit');
+}
+/* ---------- annotate: ink over the whole page ---------- */
+const KIT_PENS = ['#ffd23f', '#ff5a5f', '#3ddc97', '#4cc9f0', '#ffffff'];
+function kitInkDraw() {
+  const c = KIT.ink && KIT.ink.cv; if (!c) return; const dpr = devicePixelRatio || 1, W = innerWidth, H = innerHeight;
+  if (c.width !== Math.round(W * dpr) || c.height !== Math.round(H * dpr)) { c.width = Math.round(W * dpr); c.height = Math.round(H * dpr); }
+  const g = c.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H); g.lineCap = g.lineJoin = 'round';
+  KIT.strokes.forEach(s => { g.strokeStyle = s.c; g.lineWidth = s.w; g.beginPath(); s.p.forEach(([x, y], i) => i ? g.lineTo(x * W, y * H) : g.moveTo(x * W, y * H)); if (s.p.length === 1) g.lineTo(s.p[0][0] * W + .1, s.p[0][1] * H); g.stroke(); });
+}
+function kitInkBuild() {
+  if (KIT.ink) return KIT.ink; const cv = h('canvas', { class: 'kit-ink', id: 'kitInk', 'aria-hidden': 'true' });
+  let cur = null;
+  cv.addEventListener('pointerdown', e => { if (!KIT.inkOn) return; cv.setPointerCapture(e.pointerId); cur = { c: KIT.pen, w: 4, p: [[e.clientX / innerWidth, e.clientY / innerHeight]] }; KIT.strokes.push(cur); kitInkDraw(); e.preventDefault(); });
+  cv.addEventListener('pointermove', e => { if (!cur) return; cur.p.push([e.clientX / innerWidth, e.clientY / innerHeight]); kitInkDraw(); });
+  ['pointerup', 'pointercancel'].forEach(t => cv.addEventListener(t, () => { cur = null; }));
+  const pens = h('div', { class: 'kit-pens', role: 'group', 'aria-label': 'Pen colour' }, KIT_PENS.map(c => h('button', { class: 'kit-pen' + (c === KIT.pen ? ' on' : ''), style: { background: c }, 'aria-label': 'Pen ' + c, onclick: e => { KIT.pen = c; $$('.kit-pen', bar).forEach(b => b.classList.toggle('on', b === e.currentTarget)); } })));
+  const bar = h('div', { class: 'kit-inkbar', id: 'kitInkBar', role: 'toolbar', 'aria-label': 'Annotate' }, h('b', {}, '✎'), pens,
+    h('button', { class: 'btn sm', id: 'kitUndo', onclick: () => { KIT.strokes.pop(); kitInkDraw(); } }, '↶ Undo'),
+    h('button', { class: 'btn sm', id: 'kitClear', onclick: () => { KIT.strokes = []; kitInkDraw(); } }, 'Clear'),
+    h('button', { class: 'btn sm primary', id: 'kitInkDone', onclick: () => kitInk(false) }, 'Done'));
+  document.body.append(cv, bar); addEventListener('resize', kitInkDraw);
+  return (KIT.ink = { cv, bar });
+}
+addEventListener('keydown', e => { if (e.key === 'Escape' && KIT.inkOn) kitInk(false); });
+/** on: draw (the page underneath does not get the clicks); off: the ink stays where it is and the page works again */
+function kitInk(on) {
+  const k = kitInkBuild(); KIT.inkOn = on == null ? !KIT.inkOn : !!on;
+  k.cv.classList.toggle('drawing', KIT.inkOn); k.bar.hidden = !KIT.inkOn; kitInkDraw();
+  if (!KIT.inkOn && !KIT.strokes.length) { k.cv.remove(); k.bar.remove(); removeEventListener('resize', kitInkDraw); KIT.ink = null; }
+  bus.emit('kit');
 }
 
 /* >>> parts/69-journal.js */

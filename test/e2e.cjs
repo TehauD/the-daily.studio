@@ -263,7 +263,7 @@ ok(he.length === 0, 'hum to song runs without script errors' + (he.length ? ' ' 
     await np.goto(BASE + (BASE.includes('?') ? '&' : '?') + 'start=0'); await wait(3000); await np.evaluate(() => document.getElementById('bootNoMic').click()); await wait(2500);
     await np.evaluate(() => { document.querySelectorAll('dialog').forEach(d => d.close()); const b = document.querySelector('#tourOffer .btn:not(.primary)'); if (b) b.click(); });
     const ids = () => np.$$eval('#dock .tab', t => t.map(x => x.dataset.id).sort().join());
-    ok(await ids() === 'band,exp,tab,vis', 'a brand-new visitor sees four plain tabs: ' + await ids());
+    ok(await ids() === 'band,exp,rig,stage,vis', 'a brand-new visitor opens on the Performer, with its few plain tabs: ' + await ids());
     ok(/Save & export/.test(await np.$eval('#dock .tabs', e => e.textContent)) && !/1 · /.test(await np.$eval('#dock .tabs', e => e.textContent)), 'tab names are plain words, not numbered technical names');
     await np.click('.sb-zoom button[data-z="studio"]'); await wait(300); await np.click('.sb-zoom button[data-z="song"]'); await wait(300); await np.click('.sb-zoom button[data-z="studio"]'); await wait(600);
     ok((await ids()).split(',').includes('rig') && (await ids()).split(',').includes('tab'), 'using the studio adds more tools by itself: ' + await ids());

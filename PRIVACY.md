@@ -17,6 +17,9 @@ That sentence is a claim about how the software behaves, so this page also says 
 | The app itself | Cached so it opens offline | No | This browser's Cache Storage |
 | Hum to Song recordings | Analysed in memory | No | Not stored. Only the notes, chords and settings derived from it are saved |
 | Exports (WAV, M4A, MIDI, share page, print sheet, Sky poster, stage video, backup zips) | Built in the page | No | A file in your downloads. What you do with it afterwards is up to you |
+| Screen recordings (Teacher ▸ ⏺ Record screen) | Your browser asks which tab, window or screen to share; the picture, the studio's sound and (if you allow it) your microphone are recorded in the page | No | In memory for Studio Replay until you record another or close the page; saved only as a file you download |
+| Studio Replay, thumbnails and ↗ Share | The newest recording is played back from memory; a thumbnail is drawn in the page | No. **↗ Share** hands the file to your device's own share sheet, and only when you press it | Nowhere, unless you save it or pick an app to share it with |
+| Lesson notes (Teacher ▸ 📝 Lesson notes) | Typed and kept per song title | No | This browser's local storage (`fw.lessons`) |
 
 Clearing the site's data in your browser, or **Settings ▸ Data ▸ Reset…**, removes all of it. Browsers can also clear site data when disk space is low, so keep copies: **☰ Songs ▸ Back up all songs** makes one zip.
 

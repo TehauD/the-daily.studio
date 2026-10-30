@@ -5,7 +5,7 @@
 <h1 align="center">the-daily.studio</h1>
 <p align="center"><b>Record it. Split it. Write it down.</b><br>
 A guitar and voice studio in one web page: record your guitar and mic · split any song into stems to play along with · get the chords, tab and lyrics · pedals, presets and live visuals</p>
-<p align="center"><sub>v2.12.0 · free, open source (MIT) · no account, no upload, no tracking</sub></p>
+<p align="center"><sub>v2.13.0 · free, open source (MIT) · no account, no upload, no tracking</sub></p>
 
 <p align="center">
   <a href="https://the-daily.studio/"><b>▶ Open the live app</b></a> ·
@@ -86,9 +86,16 @@ It began as a guitar lab and grew into a place to turn an idea into a song. **Hu
 | **Vision** | Calibrate the neck with your webcam and track the fretting hand (optional MediaPipe), then cross-check finger positions against the notes you actually played. |
 | **Safety nets** | Version history with automatic snapshots, calibration to *your* guitar, undo / redo, autosave. |
 | **Guided sessions and tour (2.7)** | Seven short sessions that tick off as you do each step (play with a band, write down what you play, hum a song, record, loop and layer, learn a song, run a show), a note the first time each tab opens, studio words in guitar terms, and the spotlight tour from **?**. |
-| **Write and Capture (2.9)** | One canvas for the tab, the words and a fretboard that follows the bar; ● Capture writes what you play, notes and chords, as you play. Three journeys (Play, Create, Learn) organise the studio around three jobs. |
+| **Write and Capture (2.9)** | One canvas for the tab, the words and a fretboard that follows the bar; ● Capture writes what you play, notes and chords, as you play. Its three journeys became the six goal workspaces in 2.13. |
+| **Goal workspaces (2.13)** | 🎸 Songwriter · 🎤 Performer · 🎬 Creator Studio · 🎼 Practice · 🎓 Teacher · ⚙️ Full Rig. Each one arranges the panels, sidebars and Monitor for that goal and puts its few tools in one row, with Create → Perform → Share leading to the next step. Creator Studio adds Studio Replay, MP4 recording and thumbnails; Teacher adds annotations, lesson notes and screen recording. |
 | **Loop & layer (2.8)** | Record a track of chords, hear it loop, and play a lead on top in a new track on each pass. Keep looping, add a layer, undo a layer. Layers are ordinary tracks. |
 | **Phone, tablet, desktop** | One responsive app. On a phone: bottom transport, five-section navigation, an on-screen tab keypad, pinch-to-zoom Neural map and a wake lock while you play. Installable as an app (PWA). See [Phone and tablet](#phone-and-tablet). |
+
+## What's new in 2.13
+
+**Workspaces built around what you want to do.** A row at the top of the panels asks one question: *what are you here for?* **🎸 Songwriter** (lyrics, chords, progressions, ● Capture an idea), **🎤 Performer** (the stage, your tone, the camera, a take, a video), **🎬 Creator Studio** (record an MP4, watch it in **Studio Replay**, add overlays, save a thumbnail, export), **🎼 Practice** (loop, metronome, ±5 BPM, scales, the chord on the neck), **🎓 Teacher** (draw on the screen, lesson notes, record the screen with your voice) and **⚙️ Full Rig** (every panel and widget). Each one shows, hides and arranges the panels for that goal; nothing is taken away, it is all under ☰. The goals run **Create → Perform → Share**, and each ends with the button for the next step. A first visit on a computer opens the Performer: **⏺ Record video**, play, **■**, and Studio Replay is open with **Save MP4** and **Share**.
+
+MP4 depends on the browser: recent Chrome and Edge, and Safari, record MP4; Firefox records WebM, and Replay says so.
 
 ## What's new in 2.12
 

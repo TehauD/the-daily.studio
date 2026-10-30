@@ -5,9 +5,11 @@
    to this device as .webm or .mp4. Nothing is uploaded; the camera is never started by recording; Ctrl/Cmd+. discards it.
    ============================================================ */
 const SREC = { on: false, mr: null, chunks: [], t0: 0, tick: 0, watch: 0, dest: null, stream: null, mime: '', whole: false, save: true, was: null, name: '' };
-function srecMime(audio) {
+/** mp4: put MP4 first for a video (social sites take it as it is); otherwise WebM first, as before */
+function srecMime(audio, mp4) {
   if (!window.MediaRecorder) return null;
-  const c = audio ? ['audio/mp4;codecs=mp4a.40.2', 'audio/mp4', 'audio/webm;codecs=opus', 'audio/webm'] : ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm', 'video/mp4;codecs=avc1.42E01E,mp4a.40.2', 'video/mp4'];
+  const wv = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'], mv = ['video/mp4;codecs=avc1.42E01E,mp4a.40.2', 'video/mp4'];
+  const c = audio ? ['audio/mp4;codecs=mp4a.40.2', 'audio/mp4', 'audio/webm;codecs=opus', 'audio/webm'] : mp4 ? mv.concat(wv) : wv.concat(mv);
   return c.find(t => { try { return MediaRecorder.isTypeSupported(t); } catch (e) { return false; } }) || '';
 }
 const srecClock = () => { const s = Math.floor((performance.now() - SREC.t0) / 1000); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
@@ -23,10 +25,10 @@ function srecMenu(anchor) {
     h('div', { class: 'tiny muted' }, 'Saved on this device as a video with sound. The camera is only in it if you already turned it on. Keep this tab in front while recording.'));
   popover(anchor, box);
 }
-/** o.audio: sound only (compressed audio, share page); o.onBlob(blob): hand the result on instead of saving it */
+/** o.audio: sound only (compressed audio, share page); o.mp4: prefer MP4 video; o.onBlob(blob): hand the result on instead of saving it */
 async function srecStart(whole, o) {
   if (SREC.on) return; o = o || {}; const audio = !!o.audio;
-  const cvOk = audio || (typeof HTMLCanvasElement !== 'undefined' && HTMLCanvasElement.prototype.captureStream), mime = srecMime(audio);
+  const cvOk = audio || (typeof HTMLCanvasElement !== 'undefined' && HTMLCanvasElement.prototype.captureStream), mime = srecMime(audio, !!o.mp4);
   if (!cvOk || mime === null) return toast(audio ? 'This browser cannot record audio here. Try a recent Chrome, Edge, Firefox or Safari.' : 'This browser cannot record video here. Try a recent Chrome, Edge, Firefox or Safari.', 'warn');
   if (typeof AK !== 'undefined' && AK.killed) return toast('Audio is stopped. Open Audio to resume, then record.', 'warn');
   try { await startAudio(); } catch (e) { return toast('Audio could not start: ' + e.message, 'bad'); }
@@ -68,6 +70,7 @@ function srecDone() {
   if (SREC.was) { T.loop = SREC.was.loop; T.metro = SREC.was.metro; if (SREC.whole) { try { stopPlay(true); } catch (e) { } } SREC.was = null; }
   SREC.mr = null; SREC.dest = null; SREC.stream = null; SREC.on = false; SREC.chunks = []; srecSync(); bus.emit('srec', false);
   const cb = SREC.onBlob; SREC.onBlob = null;
+  if (save && blob && blob.size > 1000 && !SREC.audio) bus.emit('srec:blob', blob);   /* Studio Replay keeps the newest video (part 68) */
   if (save && blob && blob.size > 1000 && cb) cb(blob);
   else if (save && blob && blob.size > 1000) { download(SREC.name + (SREC.audio ? (/mp4/.test(blob.type) ? '.m4a' : '.webm') : (/mp4/.test(blob.type) ? '.mp4' : '.webm')), blob); toast('Saved ' + (SREC.audio ? 'the audio' : 'the stage video') + ' to this device (' + (blob.size / 1048576).toFixed(1) + ' MB)', 'ok'); }
   else if (save) toast('Nothing was recorded.', 'warn');

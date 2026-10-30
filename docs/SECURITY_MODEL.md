@@ -1,6 +1,6 @@
 # Security and privacy model
 
-Version 2.12 (v2.12.0). The app is a static page that runs entirely in the visitor's browser. This document records what it can access, what it stores, what it contacts, and the controls that keep it that way.
+Version 2.13 (v2.13.0). The app is a static page that runs entirely in the visitor's browser. This document records what it can access, what it stores, what it contacts, and the controls that keep it that way.
 
 ## Trust boundaries
 
@@ -17,6 +17,7 @@ Version 2.12 (v2.12.0). The app is a static page that runs entirely in the visit
 | Audio output and monitoring | Monitoring is **off by default** | Audio panel ▸ "Hear myself" |
 | Microphone for Hum to Song | Only when the person presses **● Hum or sing**; recorded in memory, never saved or uploaded | Stop; Ctrl/Cmd + . discards the recording and releases the microphone |
 | Camera | Only when a Visuals / Vision camera feature is started, when **Begin on stage** (the small optional link on the first screen) is chosen, or when **Hum or sing** is pressed with "center stage" ticked (default). The first screen says it stays off unless chosen | Camera off / backdrop button; browser site settings |
+| Screen capture | Only when the person presses **⏺ Record screen** (Teacher); the browser asks which tab, window or screen to share, and the microphone is added only if allowed. Recorded in memory for Studio Replay, saved only as a file the person downloads | Press the button again or the browser's *Stop sharing*; closing the tab |
 | Files the user drops or chooses (audio, lyrics, MIDI, song files) | Only when the person drops files on the page or presses **Choose a file…** / **Open a file**; read with the browser's File API in memory, never uploaded. MIDI files are size-limited (8 MB, 300,000 notes, 128 tracks) before they are parsed. Drops are declined while a window is open, and the page never navigates to a dropped file | n/a |
 | MIDI | Only when the user enables MIDI | Browser site settings |
 | Location, payment, USB, serial | Never (disabled by Permissions-Policy) | n/a |
@@ -34,6 +35,8 @@ Version 2.12 (v2.12.0). The app is a static page that runs entirely in the visit
 | Backup folder (Chrome, Edge) | A folder handle the person chose, kept in IndexedDB; songs are written as `.daily-song.zip` | Only into that folder (a cloud-drive folder syncs under that drive's own rules) | Reset, or choosing another folder |
 | Storage-persistence request | The app asks the browser once to keep its storage (`navigator.storage.persist()`); on Safari it also explains Add to Home Screen | No | n/a |
 | Camera frames and microphone audio (including a hum recording) | Memory only while in use; the song built from a hum keeps only the notes and chords | No | Stop, kill switch, closing the tab |
+| Lesson notes | `fw.lessons` (per song title) | No | Clear the note, or Reset |
+| Studio Replay (the newest stage video or screen recording) | Memory only, until the next recording or closing the tab | No (↗ Share hands it to the device's share sheet only when pressed) | Close the tab |
 | Consent to the MediaPipe download | `fw.cfg` (`mpOk`) | No | Reset, or About ▸ Credits ▸ Ask me again |
 | The Daily entries | `localStorage` keys beginning `daily` | Only to a provider the user configures | The Daily's own controls |
 

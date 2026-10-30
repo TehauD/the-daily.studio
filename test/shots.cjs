@@ -203,10 +203,10 @@ suite('shots', async t => {
     await save(p, '66-loop-layer'); await p.evaluate(() => window.__daily.looperEnd()); await p.ctx.close();
   }
 
-  /* ---------- 2.9: the Write canvas inside the Create journey, and on a phone ---------- */
+  /* ---------- 2.9: the Write canvas inside the Songwriter workspace, and on a phone ---------- */
   if (['67-write-canvas', '68-write-phone'].some(want)) {
     const prep = async p => p.evaluate(async () => {
-      const d = window.__daily; await d.ioConnect(); d.journeyGo('create'); d.dockGo('tab'); d.wrMode('both'); d.TE.sec = 0; d.TE.bi = 0; d.TE.slot = 0;
+      const d = window.__daily; await d.ioConnect(); d.goalGo('songwriter'); d.dockGo('tab'); d.wrMode('both'); d.TE.sec = 0; d.TE.bi = 0; d.TE.slot = 0;
       d.S.sections[0].bars.forEach(b => { b.tab = []; b.chord = ''; });
       const put = (slot, notes, sym) => { const r = d.capInterpret(notes, null) || { items: d.capAssign(notes), sym }; d.capPut(slot, r.items, { sym: r.sym || sym }); };
       put(0, [40, 47, 52, 55, 59, 64], 'Em'); put(6, [45]); put(8, [52]); put(10, [55]); put(12, [57]); put(14, [59]);

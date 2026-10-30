@@ -1,4 +1,4 @@
-/* Workspace: the twelve layouts (each one a whole workspace that replaces the last), the view menu, and the Monitor's optional widgets.
+/* Workspace: the fourteen layouts (six of them the goal workspaces, see e2e-goals) (each one a whole workspace that replaces the last), the view menu, and the Monitor's optional widgets.
    Own browser contexts; see test/lib.cjs. */
 const { suite } = require('./lib.cjs');
 suite('e2e-workspace', async t => {
@@ -7,8 +7,8 @@ suite('e2e-workspace', async t => {
 
   // ---- the nine layouts
   const names = await ev(() => window.__daily.LAYOUTS.map(l => l[0]));
-  ok(names.join() === 'Studio,Play,Create,Learn,Write,Arrange,Record,Tone,Practice,Show,Focus,Classic', 'twelve layouts, each for one job: ' + names.join(', '));
-  ok(!names.some(n => /Perform|Light show|Track study|Songwriting|Pedalboard|Compose/.test(n)), 'the old, overlapping layouts are gone');
+  ok(names.join() === 'Studio,Songwriter,Performer,Creator Studio,Practice,Teacher,Full Rig,Write,Arrange,Record,Tone,Show,Focus,Classic', 'fourteen layouts, each for one job, the six goals first: ' + names.join(', '));
+  ok(!names.some(n => /^(Perform|Light show|Track study|Songwriting|Pedalboard|Compose|Play|Create|Learn)$/.test(n)), 'the old, overlapping layouts and journeys are gone');
   const fp = await ev(async () => {
     const d = window.__daily, out = {};
     for (const [n, , s] of d.LAYOUTS) {
@@ -20,7 +20,7 @@ suite('e2e-workspace', async t => {
   });
   ok(names.every(n => fp[n].name === n), 'choosing a layout names it in the workspace state');
   const sig = n => [fp[n].flip, fp[n].left, fp[n].right, fp[n].tlh, fp[n].dock, fp[n].lcur, fp[n].rcur, fp[n].mon, fp[n].tabs, fp[n].side].join(' / ');
-  ok(new Set(names.map(sig)).size === 12, 'no two layouts are the same workspace');
+  ok(new Set(names.map(sig)).size === 14, 'no two layouts are the same workspace');
   const aspects = n => [fp[n].flip, fp[n].left && fp[n].right ? 'both' : fp[n].left ? 'L' : fp[n].right ? 'R' : 'none', fp[n].tlh, fp[n].dock, fp[n].rcur + '/' + fp[n].lcur, fp[n].mon, fp[n].tabs, fp[n].side];
   let weak = [];
   for (let i = 0; i < names.length; i++) for (let j = i + 1; j < names.length; j++) { if ([names[i], names[j]].sort().join() === 'Classic,Studio') continue; const a = aspects(names[i]), b = aspects(names[j]), diff = a.filter((x, k) => x !== b[k]).length; if (diff < 2) weak.push(names[i] + '~' + names[j] + ':' + diff); }
@@ -28,7 +28,7 @@ suite('e2e-workspace', async t => {
   ok(fp.Studio.dockY < fp.Studio.tlY && fp.Write.dockY < fp.Write.tlY && fp.Arrange.tlY < fp.Arrange.dockY && fp.Classic.tlY < fp.Classic.dockY, 'Write and Studio put the panels above the arrangement; Arrange and Classic put the arrangement on top');
   ok(fp.Arrange.tlH > fp.Write.tlH * 1.5 && fp.Arrange.tlH > 300 && fp.Write.tlH < 330, 'Arrange makes the arrangement tall (' + fp.Arrange.tlH + ' px) and Write keeps it short (' + fp.Write.tlH + ' px)');
   ok(fp.Show.tlH < 140 && fp.Focus.tlH < 160 && fp.Tone.tlH < 140, 'Show, Focus and Tone reduce the arrangement to a strip (' + [fp.Show.tlH, fp.Focus.tlH, fp.Tone.tlH].join(', ') + ' px)');
-  ok(fp.Show.lvis === 'hidden' && fp.Show.rvis === 'hidden' && fp.Focus.lvis === 'hidden' && fp.Focus.rvis === 'hidden' && fp.Practice.lvis === 'hidden' && fp.Practice.rvis === 'visible' && fp.Write.lvis === 'visible' && fp.Arrange.lvis === 'hidden' && fp.Arrange.rvis === 'visible', 'the sidebars are where each layout says (Show and Focus have none, Practice and Arrange have the right, Write both)');
+  ok(fp.Show.lvis === 'hidden' && fp.Show.rvis === 'hidden' && fp.Focus.lvis === 'hidden' && fp.Focus.rvis === 'hidden' && fp.Practice.lvis === 'visible' && fp.Practice.rvis === 'visible' && fp.Teacher.lvis === 'hidden' && fp.Write.lvis === 'visible' && fp.Arrange.lvis === 'hidden' && fp.Arrange.rvis === 'visible', 'the sidebars are where each layout says (Show and Focus have none, Teacher and Arrange have the right, Practice and Write both)');
   ok(fp.Show.dock === 'stage' && fp.Write.dock === 'tab' && fp.Arrange.dock === 'band' && fp.Record.dock === 'rig' && fp.Tone.dock === 'rig' && fp.Practice.dock === 'tab', 'each opens on the panel for its job (Show on the Stage, Write on the Tab, Arrange on the Band, Record and Tone on the Rig)');
   ok(!/Stage|Neural|Stems|Camera/.test(fp.Write.tabs) && /Stage/.test(fp.Show.tabs) && !/\bTab\b/.test(fp.Show.tabs) && fp.Write.tabs.split('|').length < fp.Studio.tabs.split('|').length, 'the tab strip shows what the job needs: Write has no Stage or Stems, Show has no Tab (' + fp.Write.tabs + ' ‖ ' + fp.Show.tabs + ')');
   ok(fp.Record.mon === 'tuner+levels' && fp.Tone.mon === 'tuner+live+spectrum' && fp.Studio.mon === 'tuner+levels', 'each layout brings its own Monitor widgets (Record: tuner and levels · Tone: tuner, analysis and spectrum)');

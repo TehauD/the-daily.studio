@@ -6,6 +6,31 @@ Contents: [Getting started](#getting-started-and-guided-sessions-27) · [Show se
 
 ---
 
+## Goal workspaces (2.13)
+
+The row at the top of the panels holds six goals. Each one is a whole workspace: which panels are on the tab strip and which one is open, what the sidebars show, how tall the arrangement is, which Monitor widgets are on, and a row of the tools that goal is about. Choosing one replaces the last completely. Nothing is removed: every panel is still under **☰**, and **▦** still moves panels anywhere.
+
+| Goal | Opens on | Its tools |
+| --- | --- | --- |
+| 🎸 **Songwriter** | Write, with Theory on the left and the Monitor's chord analysis on the right | ● Capture idea · ✎ Lyrics & tab · ♯ Chords & scales · ⏺ Record idea |
+| 🎤 **Performer** | Visuals (the stage), Tones on the left, Tuner, Levels and Audience on the right | ⏺ Record video · 📷 Camera · 🎤 Perform view · ● Record take · ▶ Replay |
+| 🎬 **Creator Studio** | Visuals with no left sidebar, a slim arrangement, Levels, Views (waveform, spectrogram, pitch wheel) and Audience | ⏺ Record MP4 · ▶ Studio Replay · 📷 Webcam · ✨ Overlays · 🖼 Thumbnail · ⇩ Export |
+| 🎼 **Practice** | Write, Theory (scales) on the left, the Fretboard on the right | ⟲ Loop · ♩ Metronome · − 5 / BPM / + 5 · ♯ Scales · ▦ Chords |
+| 🎓 **Teacher** | Write, Transcribe next to it, the Fretboard on the right | ✎ Annotate · 📝 Lesson notes · ⏺ Record screen · ▦ Fretboard · ♪ Transcribe |
+| ⚙️ **Full Rig** | The Rig, both sidebars, every tab and every Monitor widget | ▦ Workspace… · ⇆ Where panels live… |
+
+**Create → Perform → Share.** The three steps at the right of the row light up for the goal you are in, and each goal ends with a button to the next step: Songwriter and Practice → **Perform it**, Performer → **Share it**, Creator Studio → **Write the next one**. A first visit on a computer opens the **Performer**; anyone who has been here before keeps the workspace they had, and **I know my way around** on the start page opens the Full Rig. On a phone the bottom navigation does this job and the row is not shown.
+
+**Studio Replay.** **⏺ Record video** (Performer) or **⏺ Record MP4** (Creator Studio) records the stage, the camera if it is on, and the sound. Press it again to stop and Studio Replay opens: watch it, **⇩ Save MP4**, **↗ Share…** (your device's share sheet, where the browser has one), **🖼 Thumbnail from this frame** or **⏺ Record again**. Videos made with the Visuals panel's own ● Record are kept for Replay too. Only the newest recording is kept, in memory. MP4 is used where the browser can make it (recent Chrome, Edge and Safari); otherwise the file is WebM and Replay says so.
+
+**Thumbnail.** A 1280 × 720 PNG of the stage (or of the paused Replay frame) with the song title, key and tempo, for the post.
+
+**Annotate.** Draw over anything on the page in one of five colours; **↶ Undo**, **Clear**, and **Done** (or <kbd>Esc</kbd>) to use the page again with the ink left in place. The ink shows in a screen recording of this tab.
+
+**Lesson notes.** A small card of notes for the song you are on, saved in this browser as you type; **Copy** or **⇩ .txt** to hand them to a student.
+
+**Record screen.** The browser asks which tab, window or screen to share. The recording has the picture, the studio's sound and, if you allow the microphone, your voice. Press the button again (or the browser's *Stop sharing*) and it opens in Studio Replay.
+
 ## Welcome Back and My progress (2.12)
 
 When you open the app again, the first page tells you where you are, in plain text: **Last practiced**, **Current streak**, **Working on**, **Latest recording**, **Progress**, and a line for the year (*Played 87 sessions · Learned 14 chords · Recorded 23 ideas · Completed 4 songs*). **Pick up where I left off** opens the song you were on, with your layout. The pencil next to *Working on* lets you type what you are working on (“90s alternative guitar”). After a long gap there is no scolding: the streak says it starts again the next time you play and shows your best run.

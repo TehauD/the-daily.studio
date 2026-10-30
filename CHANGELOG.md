@@ -2,6 +2,30 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.13.0 — 2026-10-30 — Workspaces built around what a musician wants to do: Songwriter, Performer, Creator Studio, Practice, Teacher, Full Rig
+
+### Added
+- **Six goal workspaces** (`src/parts/64-goals.js`, replacing `64-journeys.js`) in a row at the top of the panels: **🎸 Songwriter**, **🎤 Performer**, **🎬 Creator Studio**, **🎼 Practice**, **🎓 Teacher** and **⚙️ Full Rig**. Each is a complete layout (tab strip, open panel, sidebars and what is in them, arrangement height, Monitor widgets) plus a row of the tools that goal uses, one click each. Every panel stays under ☰ and ▦; a goal only decides what shows first.
+- **Create → Perform → Share**: the three steps sit at the right of the row, lit for the goal you are in, and each goal ends with the button to the next one (Perform it → · Share it → · Write the next one →).
+- **The first visit on a computer opens the Performer**, so the shortest route to a shareable performance is ⏺ Record video, play, ■, Save. A returning visitor keeps the workspace they had; *I know my way around* opens the Full Rig.
+- **Studio Replay** (`src/parts/68-kit.js`): the newest stage video or screen recording plays back in place, with Save, Share (the device's share sheet, only when pressed), Thumbnail from this frame, and Record again.
+- **MP4 first** for videos recorded from the Performer and Creator Studio (`srecMime(audio, mp4)`), where the browser can make it; other recordings keep WebM first, as before.
+- **Thumbnail**: a 1280 × 720 PNG of the stage or a Replay frame with the title, key and tempo.
+- **Teacher tools**: **Annotate** (ink over the whole page, five colours, Undo, Clear; the ink stays when you are done), **Lesson notes** (per song, kept in `fw.lessons`), **Record screen** (getDisplayMedia, with the studio's sound and, if allowed, the microphone; opens in Studio Replay).
+- **Practice tools** on the row: Loop, Metronome, −5 / +5 BPM with the tempo shown, Scales (Theory) and Chords (Fretboard).
+- `test/e2e-goals.cjs` (32 checks).
+- The site's `Permissions-Policy` header now names `display-capture=(self)` alongside the microphone, camera and MIDI.
+
+### Changed
+- **Play, Create and Learn** (2.9) are replaced by the goals; `journeyGo('play' | 'create' | 'learn')` callers now use `goalGo`, and the old ids are aliases (Performer, Songwriter, Practice). The guided sessions open the Performer and the Songwriter.
+- The **Practice layout** is now the Practice goal (Theory on the left for scales, the Fretboard on the right). The layout list is Studio, the six goals, Write, Arrange, Record, Tone, Show, Focus, Classic.
+- A brand-new visitor's simple tab strip is the Performer's: Visuals, Rig, Band, Stage, Save & export.
+- Part 37 emits `srec:blob` with each saved stage video so Studio Replay can keep it.
+
+### Limits
+- Whether the file is MP4 or WebM is the browser's choice: recent Chrome, Edge and Safari record MP4; Firefox records WebM. Replay says which you got.
+- Screen recording needs a desktop browser with `getDisplayMedia`. Only the newest recording is kept for Replay, in memory; close the page and it is gone unless you saved it.
+
 ## 2.12.0 — 2026-10-29 — Welcome Back, a progress journal, labelled panel tabs, hexagon colours and six looks that sit behind you
 
 ### Added
