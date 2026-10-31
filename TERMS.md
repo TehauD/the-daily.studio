@@ -21,7 +21,7 @@ the-daily.studio is free software that runs in your web browser. By using it, yo
 ## Tips
 
 - **The tip jar shows your own link.** When you set up the tip jar, the app turns the tip or payment link you enter into a QR code and shows it where you choose: on the visuals and in stage videos, on the stage, on share pages, on a printed sign or in a picture. The link must be yours, or one you are allowed to use, and it must not mislead anyone about who receives the money or what it is for.
-- **The project is not part of the payment.** A tip goes straight from the person who scans the code to the service you chose (for example Ko-fi, PayPal or Cash App), under that service's terms. The project does not process, receive, hold or refund any money, takes no fee or share, and is not a party to any payment or arrangement between you and the people who tip you.
+- **The project is not part of the payment.** A tip goes straight from the person who scans the code to the service you chose (for example Ko-fi, PayPal, Venmo or Cash App), under that service's terms. The project does not process, receive, hold or refund any money, takes no fee or share, and is not a party to any payment or arrangement between you and the people who tip you.
 - **You are responsible** for your link, for following the rules of the payment service you use, and for any taxes, reporting or permissions that apply to money you receive (playing for tips in a public place, for example, can need a permit).
 - The app asks you to confirm this before the tip jar can be switched on.
 

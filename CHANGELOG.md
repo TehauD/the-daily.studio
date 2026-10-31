@@ -18,7 +18,7 @@ All notable changes to the-daily.studio (earlier versions were released under th
 ## 2.17.0 — 2026-10-31 — A tip jar: let your audience tip you
 
 ### Added
-- **🎸 Tips** (`src/parts/39b-tip.js`): an artist's own tip link as a QR code in a small open guitar case. Paste a Ko-fi, PayPal.me, Cash App, Buy Me a Coffee, Patreon or Bandcamp page, or any `https` address (`ko-fi.com/name` gets `https://`; a `$cashtag` becomes a Cash App link), add a name and a message, and choose where it shows:
+- **🎸 Tips** (`src/parts/39b-tip.js`): an artist's own tip link as a QR code in a small open guitar case. Paste a Ko-fi, PayPal.me, Venmo, Cash App, Buy Me a Coffee, Patreon or Bandcamp page, or any `https` address (`ko-fi.com/name` gets `https://`; a `@venmo-name` becomes a Venmo profile link, `venmo.com/u/name`; a `$cashtag` becomes a Cash App link), add a name and a message, and choose where it shows:
   - **on the Visuals**, so it is in every stage video and in the Audience view;
   - **on the Stage**, so the room can scan it from the projector or the pop-out window (it steps around the chord, tuner, song info and lower third);
   - **on share pages**, as a button and a code beside the player;
@@ -34,7 +34,7 @@ All notable changes to the-daily.studio (earlier versions were released under th
 - The studio never opens the link itself and sees no payment. Terms of use gain a **Tips** section; the privacy statement lists the tip jar.
 
 ### Tests
-- `test/e2e-tip.cjs` (36 checks): the codes match the fingerprints of codes checked with an independent reader; every module drawn in the case matches the link; unsafe links are refused; off by default (no button outside Creator Studio until it is set up); nothing shows before the confirmation; the dialog, the corners, stepping around the neck and the lower third, "only between songs", the Stage, share pages (escaped, and absent when turned off), the printed sign, the picture, the agent tools not seeing the link, and the dialog on a phone.
+- `test/e2e-tip.cjs` (38 checks): the codes match the fingerprints of codes checked with an independent reader; every module drawn in the case matches the link; unsafe links are refused; off by default (no button outside Creator Studio until it is set up); nothing shows before the confirmation; the dialog, the corners, stepping around the neck and the lower third, "only between songs", the Stage, share pages (escaped, and absent when turned off), the printed sign, the picture, the agent tools not seeing the link, and the dialog on a phone.
 
 ## 2.16.1 — 2026-10-31 — A smaller page and steadier tests
 

@@ -23,6 +23,9 @@ suite('e2e-tip', async t => {
 
   /* ---- the link is made safe ---- */
   const L = await ev(() => { const f = window.__daily.tipLink; return ['ko-fi.com/name', '$Tehau', 'https://paypal.me/someone', 'http://ko-fi.com/x', 'javascript:alert(1)', 'https://me:pw@ko-fi.com/x', 'data:text/html,hi', 'not a link', '', 'https://localhost/x'].map(x => f(x)); });
+  const VN = await ev(() => { const f = window.__daily.tipLink; return ['@Tehau-Music', 'venmo.com/u/Tehau-Music', '@abc', '@bad name', '@' + 'x'.repeat(31)].map(x => f(x)); });
+  ok(VN[0] === 'https://venmo.com/u/Tehau-Music' && VN[1] === 'https://venmo.com/u/Tehau-Music', 'a @venmo-name becomes the Venmo profile link, and a pasted Venmo link is kept (' + VN.slice(0, 2).join(' · ') + ')');
+  ok(VN.slice(2).every(x => x === null), 'a handle too short, too long or with a space is not taken for a Venmo name (' + JSON.stringify(VN.slice(2)) + ')');
   ok(L[0] === 'https://ko-fi.com/name' && L[1] === 'https://cash.app/$Tehau' && L[2] === 'https://paypal.me/someone', 'a bare address gets https:// and a $cashtag becomes a Cash App link (' + L.slice(0, 3).join(' · ') + ')');
   ok(L.slice(3, 8).every(x => x === null) && L[8] === '' && L[9] === null, 'plain http, javascript:, data:, a password in the link and things that are not addresses are refused (' + JSON.stringify(L.slice(3)) + ')');
 

@@ -1,7 +1,7 @@
 /* ============================================================
    Part 39b · THE TIP JAR (an open guitar case)
-   An artist pastes their own tip link (a Ko-fi, PayPal.me, Cash App, Buy Me a Coffee, Patreon or Bandcamp page, any https
-   address, or a $cashtag) and the studio shows it as a QR code in a small open guitar case:
+   An artist pastes their own tip link (a Ko-fi, PayPal.me, Venmo, Cash App, Buy Me a Coffee, Patreon or Bandcamp page, any https
+   address, a @venmo-name or a $cashtag) and the studio shows it as a QR code in a small open guitar case:
      · on the Visuals, so it is in every stage video (and the Audience view);
      · on the Stage, so the room can scan it from the projector or the pop-out window;
      · on share pages, as a button and a code;
@@ -20,10 +20,12 @@ const TIP = { qr: null, qrFor: '', cards: new Map(), a: { vis: 0, aud: 0, stage:
 const TIP_SIZES = [['s', 'Small', .26], ['m', 'Medium', .34], ['l', 'Large', .46]];
 const TIP_CORNERS = [['br', 'Bottom right'], ['bl', 'Bottom left'], ['tr', 'Top right'], ['tl', 'Top left']];
 
-/** a tip link made safe: https only, no user name or password in it. '$name' becomes a Cash App link and 'ko-fi.com/x' gets the https scheme added. '' when empty, null when not usable */
+/** a tip link made safe: https only, no user name or password in it. '@name' becomes a Venmo profile link (venmo.com/u/name, Venmo's share-link
+    form; Venmo names are 5 to 30 letters, digits, - and _), '$name' a Cash App link, and 'ko-fi.com/x' gets the https scheme added. '' when empty, null when not usable */
 function tipLink(raw) {
   let s = String(raw == null ? '' : raw).trim(); if (!s) return '';
-  if (/^\$[A-Za-z][A-Za-z0-9_-]{0,29}$/.test(s)) s = 'https://cash.app/' + s;
+  if (/^@[A-Za-z0-9][A-Za-z0-9_-]{4,29}$/.test(s)) s = 'https://venmo.com/u/' + s.slice(1);
+  else if (/^\$[A-Za-z][A-Za-z0-9_-]{0,29}$/.test(s)) s = 'https://cash.app/' + s;
   else if (!/^[a-z][a-z0-9+.-]*:/i.test(s) && /^[^\s/:@]+\.[^\s/:@]{2,}/.test(s)) s = 'https://' + s;
   let u; try { u = new URL(s); } catch (e) { return null; }
   if (u.protocol !== 'https:' || !/\.[a-z]{2,}$/i.test(u.hostname) || u.username || u.password) return null;
@@ -149,7 +151,7 @@ function tipOpen() {
   const msgLine = h('div', { class: 'tiny', id: 'tipLinkNote', 'aria-live': 'polite' });
   const onChk = h('input', { type: 'checkbox', id: 'tipOn', checked: !!T0.on, onchange: e => { T0.on = e.target.checked; save(); } });
   const agree = h('input', { type: 'checkbox', id: 'tipAgree', checked: tipOk(), onchange: e => { if (e.target.checked) CFG.tipOk = TIP_TERMS; else delete CFG.tipOk; save(); } });
-  const linkIn = h('input', { class: 'in', id: 'tipLink', type: 'url', inputmode: 'url', autocomplete: 'off', spellcheck: false, maxlength: 300, value: T0.link || '', placeholder: 'ko-fi.com/yourname · paypal.me/yourname · $cashtag',
+  const linkIn = h('input', { class: 'in', id: 'tipLink', type: 'url', inputmode: 'url', autocomplete: 'off', spellcheck: false, maxlength: 300, value: T0.link || '', placeholder: 'ko-fi.com/you · paypal.me/you · @venmo-name · $cashtag',
     oninput: e => { T0.link = e.target.value.trim(); save(); } });
   const test = h('button', { class: 'btn sm', id: 'tipTest', title: 'Open your link in a new tab to check it goes to the right place', onclick: () => { const l = tipLink(T0.link); if (l) window.open(l, '_blank', 'noopener,noreferrer'); } }, 'Test the link ↗');
   const nameIn = h('input', { class: 'in', id: 'tipName', maxlength: 48, value: T0.name || '', placeholder: S.artist || 'Your name or band', oninput: e => { T0.name = e.target.value; save(); } });
@@ -158,7 +160,7 @@ function tipOpen() {
   const seg = (opts, k, id) => h('div', { class: 'seg', role: 'group', id }, opts.map(([v, t]) => h('button', { type: 'button', class: T0[k] === v ? 'on' : '', 'data-v': v, onclick: e => { T0[k] = v; $$('button', e.currentTarget.parentNode).forEach(b => b.classList.toggle('on', b === e.currentTarget)); save(); } }, t)));
   function paint() {
     const l = tipLink(T0.link), ready = tipReady();
-    msgLine.textContent = l === null ? 'That does not look like a web address. Use the https link of your tip page, or a $cashtag.' : l ? 'The code opens ' + l : 'Paste the link people should go to.';
+    msgLine.textContent = l === null ? 'That does not look like a web address. Use the https link of your tip page, your @venmo-name or your $cashtag.' : l ? 'The code opens ' + l : 'Paste the link people should go to.';
     msgLine.style.color = l === null ? 'var(--bad)' : ''; test.disabled = !l; onChk.disabled = !l || !tipOk();
     if (onChk.disabled && T0.on) onChk.checked = false; else onChk.checked = !!T0.on;
     $$('[data-tipneed]', box).forEach(b => { b.disabled = !l; });

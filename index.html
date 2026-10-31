@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en"><head><meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-UXemDOx4WRFuKAu0RxdqJBO49NGudx4TYZaMESsTa6Q=' 'wasm-unsafe-eval' blob: https://cdn.jsdelivr.net; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; connect-src 'self' blob: data: https://cdn.jsdelivr.net https://storage.googleapis.com; font-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="the-daily.studio">
+<html lang="en"><head><meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-pYMriRXpcblGxXKF93zwLgmxFCyrih3bZ725s40oZKY=' 'wasm-unsafe-eval' blob: https://cdn.jsdelivr.net; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; connect-src 'self' blob: data: https://cdn.jsdelivr.net https://storage.googleapis.com; font-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="the-daily.studio">
 <title>the-daily.studio — free guitar and voice studio in your browser</title><link rel="canonical" href="https://the-daily.studio/"><meta name="description" content="Record guitar and voice, split a song into stems, get chords, tab and lyrics, and run a live light show. Free, private, in your browser: no account, no uploads."><meta name="robots" content="index,follow,max-image-preview:large">
 <meta name="theme-color" content="#0d0f10"><meta property="og:title" content="the-daily.studio — free guitar and voice studio in your browser"><meta property="og:type" content="website"><meta property="og:site_name" content="the-daily.studio"><meta property="og:locale" content="en_US"><meta property="og:url" content="https://the-daily.studio/"><meta property="og:description" content="Record guitar and mic, split any song into stems, get the chords and tab, and run a live light show. Free, private, nothing to install."><meta property="og:image" content="https://the-daily.studio/icons/social-card.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="the-daily.studio: lyrics, chords, recording and stems in one browser page">
 <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="the-daily.studio — free guitar and voice studio in your browser"><meta name="twitter:description" content="Record guitar and mic, split any song into stems, get the chords and tab, and run a live light show. Free, private, nothing to install."><meta name="twitter:image" content="https://the-daily.studio/icons/social-card.png"><meta name="twitter:image:alt" content="the-daily.studio: lyrics, chords, recording and stems in one browser page">
@@ -75,7 +75,7 @@
 <noscript><div style="max-width:40rem;margin:0 auto;padding:24px 16px;font:16px/1.5 system-ui,sans-serif"><h2>the-daily.studio needs JavaScript</h2><p>It is a guitar and voice studio that runs entirely in your browser: record guitar and voice, split a song into stems, get chords, tab and lyrics, and run a live light show. It sends nothing anywhere, so it needs JavaScript to do the work on your device.</p><p>Read about it: <a href="guide/">Guide</a> · <a href="guide/getting-started/">Start here</a> · <a href="guide/record-guitar-and-voice/">Record</a> · <a href="guide/split-song-into-stems/">Stems</a> · <a href="guide/chords-tab-and-lyrics/">Chords &amp; tab</a> · <a href="guide/hum-to-song/">Hum to song</a> · <a href="guide/live-visuals-and-stage-show/">Stage &amp; show</a></p></div></noscript>
 <script>
 (()=>{'use strict';
-const VERSION='2.18.0',BUILD='4898e0a';
+const VERSION='2.18.0',BUILD='a1a856e';
 const BRAND={support:'',supportLabel:'Buy me a coffee',name:'the-daily.studio',short:'the-daily.studio',tag:'Write. Play. Create.',domain:'the-daily.studio',url:'https://the-daily.studio/',author:'Tehau DeBarthe',github:'https://github.com/TehauD',linkedin:'https://www.linkedin.com/in/tehau/',repo:'https://github.com/TehauD/the-daily.studio',journal:'https://the-daily.studio/journal/'};
 const $=(s,r=document)=>r.querySelector(s);
 const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
@@ -7463,7 +7463,8 @@ const TIP_SIZES=[['s','Small',.26],['m','Medium',.34],['l','Large',.46]];
 const TIP_CORNERS=[['br','Bottom right'],['bl','Bottom left'],['tr','Top right'],['tl','Top left']];
 function tipLink(raw){
 let s=String(raw==null?'':raw).trim();if(!s)return'';
-if(/^\$[A-Za-z][A-Za-z0-9_-]{0,29}$/.test(s))s='https://cash.app/'+s;
+if(/^@[A-Za-z0-9][A-Za-z0-9_-]{4,29}$/.test(s))s='https://venmo.com/u/'+s.slice(1);
+else if(/^\$[A-Za-z][A-Za-z0-9_-]{0,29}$/.test(s))s='https://cash.app/'+s;
 else if(!/^[a-z][a-z0-9+.-]*:/i.test(s)&&/^[^\s/:@]+\.[^\s/:@]{2,}/.test(s))s='https://'+s;
 let u;try{u=new URL(s);}catch(e){return null;}
 if(u.protocol!=='https:'||!/\.[a-z]{2,}$/i.test(u.hostname)||u.username||u.password)return null;
@@ -7568,7 +7569,7 @@ const prev=h('canvas',{class:'tip-prev',width:234,height:300,role:'img','aria-la
 const msgLine=h('div',{class:'tiny',id:'tipLinkNote','aria-live':'polite'});
 const onChk=h('input',{type:'checkbox',id:'tipOn',checked:!!T0.on,onchange:e=>{T0.on=e.target.checked;save();}});
 const agree=h('input',{type:'checkbox',id:'tipAgree',checked:tipOk(),onchange:e=>{if(e.target.checked)CFG.tipOk=TIP_TERMS;else delete CFG.tipOk;save();}});
-const linkIn=h('input',{class:'in',id:'tipLink',type:'url',inputmode:'url',autocomplete:'off',spellcheck:false,maxlength:300,value:T0.link||'',placeholder:'ko-fi.com/yourname · paypal.me/yourname · $cashtag',
+const linkIn=h('input',{class:'in',id:'tipLink',type:'url',inputmode:'url',autocomplete:'off',spellcheck:false,maxlength:300,value:T0.link||'',placeholder:'ko-fi.com/you · paypal.me/you · @venmo-name · $cashtag',
 oninput:e=>{T0.link=e.target.value.trim();save();}});
 const test=h('button',{class:'btn sm',id:'tipTest',title:'Open your link in a new tab to check it goes to the right place',onclick:()=>{const l=tipLink(T0.link);if(l)window.open(l,'_blank','noopener,noreferrer');}},'Test the link ↗');
 const nameIn=h('input',{class:'in',id:'tipName',maxlength:48,value:T0.name||'',placeholder:S.artist||'Your name or band',oninput:e=>{T0.name=e.target.value;save();}});
@@ -7577,7 +7578,7 @@ const where=(k,label)=>h('label',{class:'chk'},h('input',{type:'checkbox','data-
 const seg=(opts,k,id)=>h('div',{class:'seg',role:'group',id},opts.map(([v,t])=>h('button',{type:'button',class:T0[k]===v?'on':'','data-v':v,onclick:e=>{T0[k]=v;$$('button',e.currentTarget.parentNode).forEach(b=>b.classList.toggle('on',b===e.currentTarget));save();}},t)));
 function paint(){
 const l=tipLink(T0.link),ready=tipReady();
-msgLine.textContent=l===null?'That does not look like a web address. Use the https link of your tip page, or a $cashtag.':l?'The code opens '+l:'Paste the link people should go to.';
+msgLine.textContent=l===null?'That does not look like a web address. Use the https link of your tip page, your @venmo-name or your $cashtag.':l?'The code opens '+l:'Paste the link people should go to.';
 msgLine.style.color=l===null?'var(--bad)':'';test.disabled=!l;onChk.disabled=!l||!tipOk();
 if(onChk.disabled&&T0.on)onChk.checked=false;else onChk.checked=!!T0.on;
 $$('[data-tipneed]',box).forEach(b=>{b.disabled=!l;});
