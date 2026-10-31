@@ -28,7 +28,13 @@ suite('e2e-seo', async t => {
 
   const fs = t.fs, path = t.path, root = path.join(__dirname, '..'), dist = path.join(root, 'dist');
   const rd = f => fs.readFileSync(path.join(root, f), 'utf8');
-  ok(/Sitemap: https:\/\/the-daily\.studio\/sitemap\.xml/.test(rd('robots.txt')) && !/Disallow: \/\s*$/m.test(rd('robots.txt')), 'robots.txt allows crawling and points to the sitemap');
+  { /* robots.txt groups: consecutive User-agent lines share the rules under them; a bot without its own group follows * */
+    const groups = []; let g = null, rules = false;
+    rd('robots.txt').split('\n').map(l => l.replace(/#.*/, '').trim()).filter(Boolean).forEach(l => { const m = /^([A-Za-z-]+)\s*:\s*(.*)$/.exec(l); if (!m) return; const k = m[1].toLowerCase(), v = m[2].trim();
+      if (k === 'user-agent') { if (!g || rules) { g = { ua: [], dis: [] }; groups.push(g); rules = false; } g.ua.push(v.toLowerCase()); } else if (g && (k === 'disallow' || k === 'allow')) { rules = true; if (k === 'disallow' && v) g.dis.push(v); } });
+    const blocked = ua => { const gr = groups.find(x => x.ua.includes(ua.toLowerCase())) || groups.find(x => x.ua.includes('*')); return !!gr && gr.dis.includes('/'); };
+    ok(/Sitemap: https:\/\/the-daily\.studio\/sitemap\.xml/.test(rd('robots.txt')) && !blocked('*') && !blocked('Googlebot') && !blocked('Bingbot'), 'robots.txt allows crawling and points to the sitemap');
+    ok(['OAI-SearchBot', 'ChatGPT-User', 'Claude-SearchBot', 'PerplexityBot'].every(u => !blocked(u)) && ['GPTBot', 'ClaudeBot', 'Google-Extended', 'CCBot'].every(blocked), 'robots.txt: AI search bots allowed, AI training crawlers turned away'); }
   const sm = rd('sitemap.xml'), urls = [...sm.matchAll(/<loc>([^<]+)<\/loc>/g)].map(x => x[1]);
   ok(urls.length >= 8 && urls.every(u => /^https:\/\/the-daily\.studio\//.test(u)) && new Set(urls).size === urls.length && urls[0] === 'https://the-daily.studio/', 'the sitemap lists the first page and the guide pages, each once (' + urls.length + ' addresses)');
   if (fs.existsSync(path.join(dist, 'guide'))) {
