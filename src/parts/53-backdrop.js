@@ -51,7 +51,10 @@ function drawLowerThird(g, W, H, info, C) {
   if (info.next && info.playing) { g.font = `700 ${Math.round(ph * .14)}px ${mono}`; g.fillStyle = C.b; g.fillText('NEXT  ' + info.next, x + u * .03, y + ph * .91, cw - u * .05); }
   if (info.sec) { g.font = `700 ${Math.round(ph * .12)}px ${sans}`; g.fillStyle = 'rgba(255,255,255,.6)'; g.fillText(info.sec.toUpperCase() + (info.nBars ? '  ' + info.barIn + '/' + info.nBars : ''), x + u * .03, y + ph * .2, cw - u * .05); }
   const lx = x + cw, lw = pw - cw - u * .03; g.textAlign = 'left';
-  if (lyr) {
+  if (info.ly && info.ly.chords.length) {   // chords over the words, the playing one lit (part 13b)
+    lyDraw(g, { x: lx, y: y + ph * (info.lyricNext ? .56 : .66), w: lw, px: Math.round(ph * (info.lyricNext ? .24 : .28)), font: sans, align: 'left', ly: info.ly, hi: C.b });
+    if (info.lyricNext) { g.font = `600 ${Math.round(ph * .15)}px ${sans}`; g.fillStyle = 'rgba(255,255,255,.55)'; g.fillText(info.lyricNext, lx, y + ph * .86, lw); }
+  } else if (lyr) {
     g.font = `700 ${Math.round(ph * .3)}px ${sans}`; g.fillStyle = '#fff'; g.fillText(lyr, lx, y + ph * (info.lyricNext ? .46 : .6), lw);
     if (info.lyricNext) { g.font = `600 ${Math.round(ph * .2)}px ${sans}`; g.fillStyle = 'rgba(255,255,255,.55)'; g.fillText(info.lyricNext, lx, y + ph * .8, lw); }
   } else if (info.playing) { g.font = `600 ${Math.round(ph * .2)}px ${sans}`; g.fillStyle = 'rgba(255,255,255,.4)'; g.fillText('♪', lx, y + ph * .6, lw); }

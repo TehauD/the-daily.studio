@@ -3701,7 +3701,7 @@ async function boot() {
   document.addEventListener('visibilitychange', () => { if (!document.hidden && E.ctx && !OFR.busy && E.ctx.state === 'suspended') E.ctx.resume(); });
   if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener('devicechange', () => { ioDeviceChange().catch(e => console.warn(e)); });
   bus.emit('song');
-  if (/[?&]debug\b/.test(location.search)) window.__daily = { S, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, STP, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfort, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, srecStart, srecStop, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, tkFades, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, FB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, vzSetMode, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, slotAtTime, SEL, mtof, spb, playheadSlot, WR, HM, HMX, HM_MODES, vzImmersive, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitThumb, kitInk, kitNotes, kitRecord, srecMime, mGo, GD_SESSIONS, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard};   // test hook, only with ?debug
+  if (/[?&]debug\b/.test(location.search)) window.__daily = { S, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, STP, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfort, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, srecStart, srecStop, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, tkFades, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, FB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, vzSetMode, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, slotAtTime, SEL, mtof, spb, playheadSlot, WR, HM, HMX, HM_MODES, vzImmersive, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitThumb, kitInk, kitNotes, kitRecord, srecMime, mGo, GD_SESSIONS, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard};   // test hook, only with ?debug
   projInit().catch(e => { console.warn('library', e); PRJ.ready = true; if (PRJ.wantStart) startMaybe(); });
 }
 
@@ -4083,7 +4083,11 @@ function stageInfo() {
     const sp = spb(), ph = playheadSlot(); o.slot = ph; if (ph < 0) { o.beat = Math.floor(((ph % sp) + sp) % sp / (16 / S.ts[1])); o.sec = 'Count-in'; return o; }
     const bi = Math.floor(ph / sp), sib = ph - bi * sp, fb = barsCache()[bi]; if (!fb) return o; const cd = chordAt(bi, Math.floor(sib));
     o.sym = cd && cd.sym; o.next = cd && cd.next; o.sec = fb.sec.name; o.barIn = fb.bi + 1; o.nBars = fb.sec.bars.length; o.beat = Math.floor(sib / (16 / S.ts[1]));
-    const ls = (fb.sec.lyrics || '').split('\n').filter(l => l.trim()); if (ls.length) { const idx = Math.min(ls.length - 1, Math.floor(fb.bi / fb.sec.bars.length * ls.length)); o.lyric = parseLyricLine(ls[idx]).text; o.lyricNext = ls[idx + 1] ? parseLyricLine(ls[idx + 1]).text : ''; }
+    const L = lyAt(fb.sec, fb.bi, sib);   // the line being sung, timed by the chords written in it (part 13b)
+    if (L.idx >= 0) { let nx = L.lines[L.idx + 1]; const cur = L.lines[L.idx];
+      /* on the last line of a section, the next section's first line comes next */
+      if (!nx) { const si = S.sections.indexOf(fb.sec), ns = S.sections[si + 1]; nx = ns ? (ns.lyrics || '').split('\n').find(l => l.trim()) : null; }
+      o.lyric = lyPlain(cur); o.ly = lyLayout(cur); o.ly.cur = L.mi; o.lyricNext = nx ? lyPlain(nx) : ''; o.lyN = nx ? lyLayout(nx) : null; }
   } else { o.sym = live; o.sec = 'Listening'; }
   return o;
 }
@@ -4160,7 +4164,8 @@ function stageFrame(ts) {
 function drawStageHUD(g, W, H, sc, info, C) {
   const lens = sc.mode === 'concert' ? (CFG.lens || 'perform') : '', teach = lens === 'teach'; if (lens === 'sky') return;       // the Sky lens is a picture; the Teach lens carries its own chord card, so only the lyric stays
   const ov = sc.ov, u = Math.min(W, H * 1.6), mono = 'ui-monospace,Menlo,monospace', pr = sc.mode === 'prompter', sh = 'rgba(0,0,0,.65)'; g.save(); g.shadowColor = sh; g.shadowBlur = u * .02; g.textBaseline = 'alphabetic';
-  if (ov.chord && !teach) {
+  const lyCh = !!(ov.lyric && info.ly && info.ly.chords.length);   // the line carries its chords: they are shown over the words instead of in the corner
+  if (ov.chord && !teach && !lyCh) {
     const sym = info.sym || '', sz = u * (pr ? .26 : .14); g.font = `800 ${Math.round(sz)}px ${mono}`; g.textAlign = pr ? 'center' : 'left'; g.fillStyle = '#fff';
     const x = pr ? W / 2 : W * .04, y = pr ? H * .46 : H * .84; g.fillText(sym, x, y);
     if (info.next && info.playing) { g.font = `700 ${Math.round(sz * .34)}px ${mono}`; g.fillStyle = C.b; g.fillText('next  ' + info.next, x, y + (pr ? sz * .38 : -sz * .92)); }
@@ -4171,6 +4176,11 @@ function drawStageHUD(g, W, H, sc, info, C) {
     if (ov.beat) { const n = S.ts[0], r = u * .016, gap = r * 3.2, x0 = W * .97 - (n - 1) * gap - r; for (let i = 0; i < n; i++) { const on = info.playing && i === info.beat; g.beginPath(); g.arc(x0 + i * gap, H * (ov.info ? .07 + .09 : .07), r * (on ? 1.5 : 1), 0, 7); g.fillStyle = on ? (i === 0 ? C.b : '#fff') : 'rgba(255,255,255,.22)'; g.fill(); } }
   }
   if (ov.lyric && info.lyric && teach) { g.textAlign = 'center'; g.font = `700 ${Math.round(u * .04)}px ${mono}`; g.fillStyle = '#fff'; g.fillText(info.lyric, W / 2, H * .955, W * .92); }
+  else if (lyCh || (ov.lyric && info.ly && info.lyN && info.lyN.chords.length && (info.lyric || info.ly.chords.length))) {
+    const px = Math.round(u * (pr ? .06 : .045)), y = H * (pr ? .72 : .76);
+    lyDraw(g, { x: W / 2, y, w: W * .92, px, font: mono, ly: info.ly, hi: C.b });
+    if (info.lyN && (info.lyN.text || info.lyN.chords.length)) lyDraw(g, { x: W / 2, y: y + px * .55 + Math.round(u * .03) * (info.lyN.chords.length ? 2.1 : 1.2), w: W * .92, px: Math.round(u * .03), weight: 600, font: mono, ly: info.lyN, dim: true });
+  }
   else if (ov.lyric && info.lyric) { g.textAlign = 'center'; g.font = `700 ${Math.round(u * (pr ? .06 : .045))}px ${mono}`; g.fillStyle = '#fff'; g.fillText(info.lyric, W / 2, H * (pr ? .72 : .76), W * .92); if (info.lyricNext) { g.font = `600 ${Math.round(u * .03)}px ${mono}`; g.fillStyle = 'rgba(255,255,255,.5)'; g.fillText(info.lyricNext, W / 2, H * (pr ? .72 : .76) + u * .065, W * .92); } }
   if (ov.tuner && AN.active && AN.midi != null) { g.textAlign = 'right'; g.font = `800 ${Math.round(u * .06)}px ${mono}`; g.fillStyle = Math.abs(AN.cents) < 6 ? '#3ddc84' : '#fff'; g.fillText(pcName(AN.midi) + ' ' + (AN.cents >= 0 ? '+' : '') + AN.cents.toFixed(0) + '¢', W * .97, H * .93); }
   g.restore(); g.textAlign = 'left';
@@ -4236,6 +4246,102 @@ function buildStagePane() {
   p.append(h('div', { class: 'row', style: { margin: '0 0 8px', gap: '10px' } }, h('div', { class: 'tiny muted' }, 'Show-ready visuals: pick a scene, go fullscreen (double-click), or pop it out to a projector. Play the song or just play — it follows both. Set the show up below.')), grid);
   if (typeof ResizeObserver === 'function') new ResizeObserver(() => grid.classList.toggle('wide', p.clientWidth >= 1000)).observe(p);
   renderStageUI();
+}
+
+/* >>> parts/13b-lyrics-live.js */
+/* ============================================================
+   Part 13b · LYRICS IN TIME, WITH THEIR CHORDS OVER THE WORDS
+   While the song plays, the stage, the lower third and Perform show the line being sung with its chords above the words,
+   each one over the syllable it was written over (as on the chord sheet), and the chord being played lit up.
+   Which line is "now" comes from the chords written in the lyrics: a line with [E]…[B]…[F#m]…[A] is on screen while the
+   bars E, B, F#m and A play. A section whose lyrics carry no chords keeps the old way: its lines share its bars evenly.
+   ============================================================ */
+const LYT = new WeakMap();
+const lyPlain = l => parseLyricLine(l).text.trim();
+/** a lyric line laid out for display: { text, chords: [{ col, sym }] }. Each chord sits over the character it was written
+    before; when two chords would touch, the words are spaced out so each chord still sits over its own syllable. */
+function lyLayout(line) {
+  const { text, chords } = parseLyricLine(line || ''); let t = text, shift = 0, end = -1; const out = [];
+  chords.forEach(c => {
+    let col = c.pos + shift; if (col > t.length) { t = t.padEnd(col); }
+    if (end >= 0 && col < end + 1) { const add = end + 1 - col; t = t.slice(0, col) + ' '.repeat(add) + t.slice(col); shift += add; col += add; }
+    out.push({ col, sym: c.sym }); end = col + c.sym.length;
+  });
+  const lead = Math.min((t.match(/^ */) || [''])[0].length, out.length ? out[0].col : 1e9);
+  return { text: t.slice(lead).replace(/\s+$/, ''), chords: out.map(c => ({ col: c.col - lead, sym: c.sym })) };
+}
+const lySame = (a, b) => { if (a === b) return true; const x = parseChord(a), y = parseChord(b); return !!(x && y && x.name === y.name); };
+/** when each lyric line of a section is sung: for every chord event of the section (a bar, or half a bar for "Am G"), the
+    line on screen and which of its chords is playing. null when the lyrics carry no chords. Cached per section. */
+function lyTimeline(sec) {
+  const key = (sec.lyrics || '') + '\u0001' + sec.bars.map(b => b.chord || '').join('|'), hit = LYT.get(sec); if (hit && hit.key === key) return hit.v;
+  const lines = (sec.lyrics || '').split('\n').filter(l => l.trim()), mk = [], ev = [], first = [];
+  lines.forEach((l, li) => parseLyricLine(l).chords.forEach((c, mi) => mk.push({ li, mi, sym: c.sym })));
+  sec.bars.forEach((b, bi) => { const cs = barChords(b), n = Math.max(1, cs.length); first[bi] = ev.length; for (let k = 0; k < n; k++) ev.push({ bi, sym: cs[k] || '' }); });
+  let v = null;
+  if (mk.length && ev.length) {
+    /* walk the bars and the written chords together: a bar that plays the next written chord moves on to it; a bar that
+       repeats it (a chord held for two bars) or has no chord stays where it is */
+    let j = 0, got = 0; const at = ev.map(e => {
+      if (e.sym && j < mk.length && lySame(e.sym, mk[j].sym)) { got++; return j++; }
+      if (e.sym && j + 1 < mk.length && lySame(e.sym, mk[j + 1].sym) && !(j > 0 && lySame(e.sym, mk[j - 1].sym))) { got++; j += 2; return j - 1; }   // a written chord with no bar of its own
+      return j - 1;
+    });
+    const m = got >= mk.length * .6 ? at : ev.map((e, i) => Math.floor(i * mk.length / ev.length));   // bars edited away from the words: spread them evenly
+    const lineOf = m.map(x => x < 0 ? mk[0].li : mk[x].li), mkOf = m.map(x => x < 0 ? -1 : mk[x].mi), chorded = new Set(mk.map(x => x.li));
+    /* lines without chords: those before the first chord take the bars before it; those after a line take turns with that
+       line's last chord when it lasts long enough to share */
+    const pre = []; for (let li = 0; li < mk[0].li; li++) pre.push(li);
+    const lead = m.map((x, i) => x < 0 ? i : -1).filter(i => i >= 0); if (pre.length && lead.length) lead.forEach((i, k) => { lineOf[i] = pre[Math.min(pre.length - 1, Math.floor(k * pre.length / lead.length))]; mkOf[i] = -1; });
+    lines.forEach((l, li) => {
+      if (!chorded.has(li)) return; const after = []; for (let q = li + 1; q < lines.length && !chorded.has(q); q++) after.push(q); if (!after.length) return;
+      const last = mk.reduce((a, x, gi) => x.li === li ? gi : a, -1), run = m.map((x, i) => x === last ? i : -1).filter(i => i >= 0); if (run.length < 2) return;
+      const parts = Math.min(after.length + 1, run.length); run.forEach((i, k) => { const p = Math.floor(k * parts / run.length); if (p > 0) { lineOf[i] = after[p - 1]; mkOf[i] = -1; } });
+    });
+    v = { lineOf, mkOf, first };
+  }
+  LYT.set(sec, { key, v }); return v;
+}
+/** the line on screen at bar bi (of the section), slot sib within the bar: { lines, idx, mi } (mi: the playing chord in that line, -1 none) */
+function lyAt(sec, bi, sib) {
+  const lines = (sec.lyrics || '').split('\n').filter(l => l.trim()); if (!lines.length) return { lines, idx: -1, mi: -1 };
+  const v = lyTimeline(sec);
+  if (!v) return { lines, idx: Math.min(lines.length - 1, Math.floor(bi / sec.bars.length * lines.length)), mi: -1 };
+  const cs = barChords(sec.bars[bi] || { chord: '' }), n = Math.max(1, cs.length), k = Math.min(n - 1, Math.floor((sib || 0) / (spb() / n))), e = (v.first[bi] || 0) + k;
+  return { lines, idx: v.lineOf[e] != null ? v.lineOf[e] : 0, mi: v.mkOf[e] != null ? v.mkOf[e] : -1 };
+}
+/** draw a line with its chords above the words on a canvas. o: { x, y (baseline of the words), w (widest it may be), px (size of
+    the words), font, weight, align ('center' | 'left'), ly (from lyLayout, with .cur = the playing chord), hi (colour of the
+    playing chord), dim (true for the next line) }. Shrinks to fit. Returns the height it used above y. */
+function lyDraw(g, o) {
+  const ly = o.ly, cs = ly.chords, mx = cs.reduce((a, c) => Math.max(a, c.col), 0), pad = ly.text.padEnd(mx);
+  let px = o.px, cpx, xs, tw;
+  const lay = () => {
+    cpx = Math.round(px * .78); g.font = `${o.weight || 700} ${px}px ${o.font}`; tw = g.measureText(ly.text).width; xs = cs.map(c => g.measureText(pad.slice(0, c.col)).width);
+    g.font = `800 ${cpx}px ${o.font}`; return cs.reduce((a, c, i) => Math.max(a, xs[i] + g.measureText(c.sym).width * 1.12), tw);
+  };
+  let full = lay(); if (full > o.w) { px = Math.max(8, Math.floor(px * o.w / full)); full = lay(); }
+  const x0 = o.align === 'left' ? o.x : o.x - full / 2, cy = o.y - px * (cs.length ? 1.02 : 0), a = o.dim ? .5 : 1;
+  g.save(); g.textAlign = 'left';
+  if (ly.text) { g.font = `${o.weight || 700} ${px}px ${o.font}`; g.fillStyle = 'rgba(255,255,255,' + a + ')'; g.fillText(ly.text, x0, o.y); }
+  cs.forEach((c, i) => {
+    const now = !o.dim && i === ly.cur, past = !o.dim && ly.cur != null && ly.cur >= 0 && i < ly.cur;
+    g.font = `800 ${Math.round(cpx * (now ? 1.12 : 1))}px ${o.font}`; g.fillStyle = now ? (o.hi || '#ffd166') : 'rgba(255,255,255,' + (o.dim ? .45 : past ? .42 : .9) + ')';
+    g.fillText(c.sym, x0 + xs[i], cy);
+    if (now) { const wd = g.measureText(c.sym).width; g.fillRect(x0 + xs[i], cy + px * .1, wd, Math.max(2, px * .06)); }
+  });
+  g.restore(); return cs.length ? px * 2.05 : px * 1.1;
+}
+/** the same line for the page (Perform): segments with the chord above the words; the playing chord gets the class "cur" */
+function lyNodes(line, cur) {
+  const ly = lyLayout(line); if (!ly.chords.length) return [ly.text || ' '];
+  const out = [], cols = ly.chords.map(c => c.col);
+  if (cols[0] > 0) out.push(h('span', { class: 'ly-seg' }, h('b', { class: 'ly-c' }, ' '), h('span', { class: 'ly-w' }, ly.text.slice(0, cols[0]))));
+  ly.chords.forEach((c, i) => {
+    const w = ly.text.slice(c.col, i + 1 < cols.length ? cols[i + 1] : undefined);
+    out.push(h('span', { class: 'ly-seg' }, h('b', { class: 'ly-c' + (i === cur ? ' cur' : cur != null && cur >= 0 && i < cur ? ' past' : '') }, c.sym), h('span', { class: 'ly-w' }, w || ' ')));
+  });
+  return out;
 }
 
 /* >>> parts/14-neural.js */
@@ -7820,7 +7926,7 @@ function perfLevel() {
 function perfInfo() {
   const i = stageInfo(), sp = spb(); let bi = Math.floor((T.playing && E.ctx ? playheadSlot() : T.cursor) / sp); if (bi < 0) bi = 0;
   const fb = barsCache()[Math.min(bi, barsCache().length - 1)]; i.lines = []; i.idx = -1; i.secName = i.sec;
-  if (fb) { const ls = (fb.sec.lyrics || '').split('\n').filter(l => l.trim()); i.lines = ls.map(l => parseLyricLine(l).text); i.idx = T.playing && ls.length ? Math.min(ls.length - 1, Math.floor(fb.bi / fb.sec.bars.length * ls.length)) : (ls.length ? 0 : -1); i.secName = fb.sec.name; if (!T.playing) { const c = chordAt(bi, 0); i.sym = c && c.sym; i.next = c && c.next; i.barIn = fb.bi + 1; i.nBars = fb.sec.bars.length; } }
+  if (fb) { const sib = T.playing && E.ctx ? Math.max(0, playheadSlot() - bi * sp) : 0, L = lyAt(fb.sec, fb.bi, sib); i.raw = L.lines; i.lines = L.lines.map(lyPlain); i.idx = T.playing ? L.idx : (L.lines.length ? 0 : -1); i.mi = T.playing ? L.mi : -1; i.secName = fb.sec.name; if (!T.playing) { const c = chordAt(bi, 0); i.sym = c && c.sym; i.next = c && c.next; i.barIn = fb.bi + 1; i.nBars = fb.sec.bars.length; } }
   return i;
 }
 function perfReady() {
@@ -7891,7 +7997,7 @@ function perfTick() {
   set('pfSong', S.title || 'Untitled'); set('pfSec', i.secName ? i.secName + (i.nBars ? ' · bar ' + i.barIn + '/' + i.nBars : '') : ''); set('pfMeta', Math.round(S.bpm) + ' BPM · ' + S.ts[0] + '/' + S.ts[1]);
   const dots = q('pfDots'); if (dots) { const n = S.ts[0]; if (dots.children.length !== n) { dots.innerHTML = ''; for (let k = 0; k < n; k++) dots.append(h('i', {})); } [...dots.children].forEach((d, k) => d.classList.toggle('on', T.playing && k === i.beat)); }
   set('pfChord', cnt ? String(i.beat + 1) : (i.sym || '·')); q('pfChord').classList.toggle('pf-count', !!cnt); set('pfNext', cnt ? 'count-in' : (i.next && T.playing ? 'next  ' + i.next : (T.playing ? '' : 'press Play when you are ready')));
-  const L = q('pfLyr'); if (L) { L.innerHTML = ''; if (i.lines.length) { const a = Math.max(0, i.idx - 1), z = Math.min(i.lines.length, Math.max(i.idx, 0) + 4); for (let k = a; k < z; k++) L.append(h('div', { class: 'pf-l' + (k === i.idx ? ' cur' : k < i.idx ? ' past' : '') }, i.lines[k])); } else L.append(h('div', { class: 'pf-l past' }, 'No lyrics in this section')); }
+  const L = q('pfLyr'); if (L) { L.innerHTML = ''; if (i.lines.length) { const a = Math.max(0, i.idx - 1), z = Math.min(i.lines.length, Math.max(i.idx, 0) + 4); for (let k = a; k < z; k++) L.append(h('div', { class: 'pf-l' + (k === i.idx ? ' cur' : k < i.idx ? ' past' : '') }, ...lyNodes(i.raw[k], k === i.idx ? i.mi : k < i.idx ? 1e9 : -1))); } else L.append(h('div', { class: 'pf-l past' }, 'No lyrics in this section')); }
   perfSync();
 }
 bus.on('transport', () => { PF.key = ''; perfSync(); }); bus.on('song', () => { PF.key = ''; }); bus.on('takes', () => { PF.key = ''; });
@@ -9798,7 +9904,10 @@ function drawLowerThird(g, W, H, info, C) {
   if (info.next && info.playing) { g.font = `700 ${Math.round(ph * .14)}px ${mono}`; g.fillStyle = C.b; g.fillText('NEXT  ' + info.next, x + u * .03, y + ph * .91, cw - u * .05); }
   if (info.sec) { g.font = `700 ${Math.round(ph * .12)}px ${sans}`; g.fillStyle = 'rgba(255,255,255,.6)'; g.fillText(info.sec.toUpperCase() + (info.nBars ? '  ' + info.barIn + '/' + info.nBars : ''), x + u * .03, y + ph * .2, cw - u * .05); }
   const lx = x + cw, lw = pw - cw - u * .03; g.textAlign = 'left';
-  if (lyr) {
+  if (info.ly && info.ly.chords.length) {   // chords over the words, the playing one lit (part 13b)
+    lyDraw(g, { x: lx, y: y + ph * (info.lyricNext ? .56 : .66), w: lw, px: Math.round(ph * (info.lyricNext ? .24 : .28)), font: sans, align: 'left', ly: info.ly, hi: C.b });
+    if (info.lyricNext) { g.font = `600 ${Math.round(ph * .15)}px ${sans}`; g.fillStyle = 'rgba(255,255,255,.55)'; g.fillText(info.lyricNext, lx, y + ph * .86, lw); }
+  } else if (lyr) {
     g.font = `700 ${Math.round(ph * .3)}px ${sans}`; g.fillStyle = '#fff'; g.fillText(lyr, lx, y + ph * (info.lyricNext ? .46 : .6), lw);
     if (info.lyricNext) { g.font = `600 ${Math.round(ph * .2)}px ${sans}`; g.fillStyle = 'rgba(255,255,255,.55)'; g.fillText(info.lyricNext, lx, y + ph * .8, lw); }
   } else if (info.playing) { g.font = `600 ${Math.round(ph * .2)}px ${sans}`; g.fillStyle = 'rgba(255,255,255,.4)'; g.fillText('♪', lx, y + ph * .6, lw); }

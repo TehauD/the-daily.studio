@@ -14,7 +14,7 @@ function perfLevel() {
 function perfInfo() {
   const i = stageInfo(), sp = spb(); let bi = Math.floor((T.playing && E.ctx ? playheadSlot() : T.cursor) / sp); if (bi < 0) bi = 0;
   const fb = barsCache()[Math.min(bi, barsCache().length - 1)]; i.lines = []; i.idx = -1; i.secName = i.sec;
-  if (fb) { const ls = (fb.sec.lyrics || '').split('\n').filter(l => l.trim()); i.lines = ls.map(l => parseLyricLine(l).text); i.idx = T.playing && ls.length ? Math.min(ls.length - 1, Math.floor(fb.bi / fb.sec.bars.length * ls.length)) : (ls.length ? 0 : -1); i.secName = fb.sec.name; if (!T.playing) { const c = chordAt(bi, 0); i.sym = c && c.sym; i.next = c && c.next; i.barIn = fb.bi + 1; i.nBars = fb.sec.bars.length; } }
+  if (fb) { const sib = T.playing && E.ctx ? Math.max(0, playheadSlot() - bi * sp) : 0, L = lyAt(fb.sec, fb.bi, sib); i.raw = L.lines; i.lines = L.lines.map(lyPlain); i.idx = T.playing ? L.idx : (L.lines.length ? 0 : -1); i.mi = T.playing ? L.mi : -1; i.secName = fb.sec.name; if (!T.playing) { const c = chordAt(bi, 0); i.sym = c && c.sym; i.next = c && c.next; i.barIn = fb.bi + 1; i.nBars = fb.sec.bars.length; } }
   return i;
 }
 function perfReady() {
@@ -85,7 +85,7 @@ function perfTick() {
   set('pfSong', S.title || 'Untitled'); set('pfSec', i.secName ? i.secName + (i.nBars ? ' · bar ' + i.barIn + '/' + i.nBars : '') : ''); set('pfMeta', Math.round(S.bpm) + ' BPM · ' + S.ts[0] + '/' + S.ts[1]);
   const dots = q('pfDots'); if (dots) { const n = S.ts[0]; if (dots.children.length !== n) { dots.innerHTML = ''; for (let k = 0; k < n; k++) dots.append(h('i', {})); } [...dots.children].forEach((d, k) => d.classList.toggle('on', T.playing && k === i.beat)); }
   set('pfChord', cnt ? String(i.beat + 1) : (i.sym || '·')); q('pfChord').classList.toggle('pf-count', !!cnt); set('pfNext', cnt ? 'count-in' : (i.next && T.playing ? 'next  ' + i.next : (T.playing ? '' : 'press Play when you are ready')));
-  const L = q('pfLyr'); if (L) { L.innerHTML = ''; if (i.lines.length) { const a = Math.max(0, i.idx - 1), z = Math.min(i.lines.length, Math.max(i.idx, 0) + 4); for (let k = a; k < z; k++) L.append(h('div', { class: 'pf-l' + (k === i.idx ? ' cur' : k < i.idx ? ' past' : '') }, i.lines[k])); } else L.append(h('div', { class: 'pf-l past' }, 'No lyrics in this section')); }
+  const L = q('pfLyr'); if (L) { L.innerHTML = ''; if (i.lines.length) { const a = Math.max(0, i.idx - 1), z = Math.min(i.lines.length, Math.max(i.idx, 0) + 4); for (let k = a; k < z; k++) L.append(h('div', { class: 'pf-l' + (k === i.idx ? ' cur' : k < i.idx ? ' past' : '') }, ...lyNodes(i.raw[k], k === i.idx ? i.mi : k < i.idx ? 1e9 : -1))); } else L.append(h('div', { class: 'pf-l past' }, 'No lyrics in this section')); }
   perfSync();
 }
 bus.on('transport', () => { PF.key = ''; perfSync(); }); bus.on('song', () => { PF.key = ''; }); bus.on('takes', () => { PF.key = ''; });
