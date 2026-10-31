@@ -9,7 +9,7 @@ All notable changes to the-daily.studio (earlier versions were released under th
 - It reads **chords over words**, **inline chords** (`[Am]words`), **ChordPro** (`{title}`, `{key}`, `{tempo}`, `{c: …}`, `{soc}`/`{eoc}`), **chord-only lines** with `|` bar lines and `x2` repeats, and **`Capo:`, `Key:`, `Tempo:`, `Time:`** and **`Title - Artist`** lines. Slash chords, 7ths, 9ths, sus and add chords are kept as written; a chord the app cannot play becomes the nearest simpler one (a sus2 never turns into a sus4), and the preview says which.
 - **Choices before loading**: a new song (the default; the current song stays in ☰ Songs), replace this song's sections, or add after them; each chord 1 bar, 2 bars or half a bar; the key (from the chords, or pick one); the guitar part (any of the tab fill patterns, or none). With no title in the sheet, the first line of the chorus is offered.
 - **Ways in**: ☰ Songs ▸ **🎸 Paste a chord sheet…**, **🎸 Paste chords** in the Songwriter workspace, and the existing **📋 Paste lyrics** box, lyric boxes and dropped .txt files, which switch to the chord sheet import when the text has chords in it.
-- `test/e2e-chordsheet.cjs` (36 checks, on invented sheets).
+- `test/e2e-chordsheet.cjs` (37 checks, on invented sheets).
 
 ### Limits
 - ASCII tab in a sheet (`e|--0--3--|`) is recognised and left out; the tab is written from the chords. How long each chord lasts is your choice (1 bar, 2 bars or half a bar for the whole sheet), because chord sheets do not say; a line with `|` bar lines keeps its own bars.

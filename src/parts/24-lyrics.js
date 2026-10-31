@@ -114,7 +114,7 @@ function liOpen(text) {
     if (csP) { const o = csUI.read(); liClose(); await chordSheetApply(csP, o); return; }
     const p = lyricParse(st.text); if (!p.length) return; liApply(p, st); liClose(); } }, 'Import lyrics');
   function draw() {
-    csP = typeof chordSheetLike === 'function' ? chordSheetLike(st.text) : null; lyOpts.hidden = !!csP; lyOpts.style.display = csP ? 'none' : ''; ta.wrap = csP ? 'off' : 'soft';   // chord columns line up only unwrapped prev.innerHTML = '';
+    csP = typeof chordSheetLike === 'function' ? chordSheetLike(st.text) : null; lyOpts.hidden = !!csP; lyOpts.style.display = csP ? 'none' : ''; ta.wrap = csP ? 'off' : 'soft'; prev.innerHTML = '';   // chord columns line up only unwrapped
     if (csP) { csUI = csPanel(csP, st, draw); prev.append(csUI.opts, csUI.box); go.disabled = false; go.textContent = st.csMode === 'A' || st.csMode === 'C' ? 'Import chord sheet' : 'Load as a new song'; hd.textContent = '🎸 Import a chord sheet'; return; }
     go.textContent = 'Import lyrics'; hd.textContent = '📋 Import lyrics or a chord sheet';
     const p = lyricParse(st.text); go.disabled = !p.length;
