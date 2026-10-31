@@ -235,9 +235,10 @@ function buildVoxCard(p) {
     note.textContent = ioChannelNote();
   };
   const card = h('div', { class: 'card' }, h('h4', {}, 'Channels'), h('div', { class: 'card-b' }, presets, route, h('div', { class: 'row sp', style: { margin: '8px 0 4px' } }, h('span', { class: 'tiny muted', title: 'Which channel the note detector, tuner, chord finder, neck and visuals listen to' }, 'Detect & visualise'), follow), note, mt(),
-    h('div', { class: 'row', style: { gap: '6px', margin: '6px 0', flexWrap: 'wrap' } }, tog('Hear vocal', () => !!CFG.voxMon, v => { CFG.voxMon = v; saveCfg(); applyMix(); renderHeads(); }, 'Monitor the vocal through the app (headphones only)'), tog('Vocal polish', () => CFG.voxPolish !== false, v => { CFG.voxPolish = v; saveCfg(); voxPolishApply(); }, 'High-pass at 90 Hz and gentle compression on the vocal track')),
+    h('div', { class: 'row', style: { gap: '6px', margin: '6px 0', flexWrap: 'wrap' } }, UI.hearVox = tog('Hear vocal', () => !!CFG.voxMon, v => { CFG.voxMon = v; saveCfg(); applyMix(); renderHeads(); }, 'Monitor the vocal through the app (headphones only). Hear myself turns this on too.'), tog('Vocal polish', () => CFG.voxPolish !== false, v => { CFG.voxPolish = v; saveCfg(); voxPolishApply(); }, 'High-pass at 90 Hz and gentle compression on the vocal track')),
     h('div', { class: 'row', style: { justifyContent: 'center' } }, trim.el)));
   UI.chSync = sync; trim.set(CFG.voxTrim || 0); sync(); bus.on('route', sync); bus.on('input', sync); bus.on('route', renderHeads);
+  bus.on('monitor', () => { if (UI.hearVox) UI.hearVox.classList.toggle('on', !!CFG.voxMon); renderHeads(); });   // Hear myself switches the vocal too
   const first = p.firstElementChild; if (first) first.after(card); else p.append(card);
 }
 /** live level meters in the Guitar and Vocal lane headers, and the Vocal card */

@@ -2,6 +2,20 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.13.1 — 2026-10-31 — Hearing yourself through a Focusrite, and voice on input 1 by default
+
+### Fixed
+- **“Hear myself” was silent for a microphone.** It only switched on the guitar; the vocal needed a second switch (the vocal lane's 🎧, off by default), so with a mic on the interface nothing came out. Hear myself now carries the guitar **and** the vocal. The vocal lane's 🎧 and *Hear vocal* in I/O ▸ Channels still turn the vocal alone on or off, and the kill switch turns both off.
+- **The output you chose was not used after a reload.** The output device (a Focusrite, say) was saved and shown in I/O, but the engine started on the system default output, so the sound went somewhere you were not listening. The saved output is now applied when the engine starts. An output that is gone, refuses, or does not answer within 4 s falls back to the system default with a message, instead of leaving the app silent.
+- **An input the engine could not take left the audio half-connected.** Firefox refuses an input when the engine runs at a sample rate it did not choose (Settings ▸ Sample rate other than Auto). The device stayed open, nothing came through and the error escaped. Now the input is released, the engine switches to Auto and reconnects, and if it still cannot, it says what to do.
+
+### Changed
+- **A Focusrite starts as voice on input 1 and guitar on input 2** (Scarlett, Solo, Clarett, Vocaster and other Focusrite names): the mic / XLR is the vocal, the Inst jack the guitar. It stays that way until you choose otherwise in I/O ▸ Channels (a preset, an input's menu, ⚡ Find my guitar or the vocal lane's input), and from then on your choice is kept. Other interfaces are unchanged.
+- `test/e2e-monitor.cjs` (18 checks): Hear myself and the vocal, the kill switch, the Focusrite default and keeping your choice, the saved output and its fallback, and an input the engine refuses.
+
+### Limits
+- Checked in a headless browser with a simulated input and simulated device names, not with a real Focusrite. Which physical jack the browser calls input 1 depends on the interface's driver; on the Scarlett range input 1 is the left jack.
+
 ## 2.13.0 — 2026-10-30 — Workspaces built around what a musician wants to do, and one dialog for the header's buttons
 
 ### Added

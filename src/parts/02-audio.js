@@ -128,6 +128,21 @@ async function startAudio() {
   buildGraph();
   if (c.state === 'suspended') await kick(c);
   E.ready = true; bus.emit('audio:ready');
+  if (CFG.outDev) await outApply(CFG.outDev, true);   // the output chosen last time (a Focusrite, say); before, it was only shown, not used
+}
+/** send the engine to output device `id` ('' = the system default). A device that is gone or refuses falls back to the default,
+    so the app never sits silent on an output that is not there. setSinkId can hang on a busy device, so it gets 4 s. */
+async function outApply(id, quiet) {
+  const c = E.ctx; if (!c || !c.setSinkId) return false;
+  try {
+    await Promise.race([c.setSinkId(id || ''), new Promise((_, no) => setTimeout(() => no(new Error('the device did not answer')), 4000))]);
+    if (c.state === 'suspended' && !AK.killed) c.resume().catch(() => { });
+    return true;
+  } catch (e) {
+    console.warn('output', e); CFG.outDev = ''; saveCfg(); try { await c.setSinkId(''); } catch (e2) { }
+    if (!quiet || id) toast('Could not play through that output (' + (e.message || e.name) + '). Using the system default output instead.', 'warn');
+    bus.emit('devices'); return false;
+  }
 }
 
 function buildGraph() {
@@ -172,7 +187,9 @@ function applyMix() {
   });
   if (E.voxMon) tc(E.voxMon.gain, CFG.voxMon && CFG.vin !== 'off' && E.hasInput ? 1 : 0);
 }
-function setMonitor(on) { CFG.monitor = on; saveCfg(); applyMix(); bus.emit('monitor', on); }
+/** "Hear myself": the guitar through the rig and, when an input is the vocal, the vocal too. Before, it was only the guitar, so with
+    a mic on the interface nothing came out. The vocal lane's 🎧 and the Channels card's Hear vocal still turn the vocal alone on or off. */
+function setMonitor(on) { CFG.monitor = on; CFG.voxMon = !!on; saveCfg(); applyMix(); bus.emit('monitor', on); }
 
 /* ---------- input device handling ---------- */
 async function listDevices() {
@@ -206,14 +223,23 @@ async function openInput(deviceId) {
   E.lastInErr = null; E.lastInKind = null;
   xpSignal(2); E.stream = st; const tr = st.getAudioTracks()[0]; E.inSettings = tr.getSettings(); try { const cp = tr.getCapabilities && tr.getCapabilities(); E.inMax = (cp && cp.channelCount && cp.channelCount.max) || 0; } catch (e) { E.inMax = 0; }
   tr.addEventListener('ended', () => { if (E.stream !== st) return; E.stream = null; try { if (E.src) E.src.disconnect(); } catch (e) { } E.src = null; E.hasInput = false; E.lastInKind = 'ended'; E.lastInErr = '“' + (tr.label || 'The input') + '” was unplugged or taken by another app. Check the cable and press Connect.'; bus.emit('input', null); bus.emit('audiostate'); toast(E.lastInErr, 'warn'); }); CFG.inDev = E.inSettings.deviceId || deviceId || ''; saveCfg();
-  E.src = E.ctx.createMediaStreamSource(st);
+  try { E.src = E.ctx.createMediaStreamSource(st); }
+  catch (e) {
+    /* Firefox will not connect an input to an engine at a sample rate it did not choose ("different sample-rate is not supported").
+       Before, this was thrown away half done: the device showed as chosen, nothing came through and the audio stopped. */
+    console.warn('input source', e); st.getTracks().forEach(t => t.stop()); E.stream = null; E.src = null; E.hasInput = false;
+    const fixable = CFG.sr !== 'auto' && !E.srRetry;
+    if (fixable) { E.srRetry = true; CFG.sr = 'auto'; saveCfg(); toast('This browser cannot use the input at the sample rate set in Settings. Switching the engine to Auto and reconnecting…', 'warn'); try { await restartAudio(); return E.hasInput; } finally { E.srRetry = false; } }
+    E.lastInKind = e.name || 'Error'; E.lastInErr = 'The input opened but could not be connected to the audio engine (' + (e.message || e.name) + '). Set Settings ▸ Audio engine ▸ Sample rate to Auto, or try Chrome or Edge.';
+    toast(E.lastInErr, 'bad'); bus.emit('input', null); bus.emit('audiostate'); return false;
+  }
   if (!E.split) {
     E.split = E.ctx.createChannelSplitter(2); E.gL = gn(1); E.gR = gn(0);
     E.split.connect(E.gL, 0); E.split.connect(E.gR, 1); E.gL.connect(E.inSum); E.gR.connect(E.inSum);
     E.anaL = c0().createAnalyser(); E.anaR = c0().createAnalyser(); E.anaL.fftSize = E.anaR.fftSize = 1024; E.split.connect(E.anaL, 0); E.split.connect(E.anaR, 1);
     E.vL = gn(0); E.vR = gn(0); E.split.connect(E.vL, 0); E.split.connect(E.vR, 1); E.vL.connect(E.voxIn); E.vR.connect(E.voxIn);
   }
-  E.src.connect(E.split); E.hasInput = true; setChannelMode(CFG.ch);
+  E.src.connect(E.split); E.hasInput = true; setChannelMode(CFG.ch); chFocusriteDefault(tr.label);
   await listDevices(); bus.emit('input', E.inSettings);
   return true;
 }
@@ -239,8 +265,9 @@ function chRoles() {
   return [a, b];
 }
 /** Set both inputs at once. A second Vocal input is not possible, so choosing Vocal on one input hands the other back to the guitar. */
-function chSetRoles(a, b) {
+function chSetRoles(a, b, auto) {
   if (a === 'v' && b === 'v') b = 'g';
+  if (!auto) CFG.chUser = true;   // the person chose: the Focusrite default below leaves it alone from now on
   const wasOff = !!CFG.gOff;
   const g1 = a === 'g', g2 = b === 'g'; CFG.vin = a === 'v' ? 'L' : b === 'v' ? 'R' : 'off';
   CFG.gOff = !g1 && !g2; if (g1 && g2) CFG.ch = 'sum'; else if (g2) CFG.ch = 'R'; else if (g1) CFG.ch = 'L';
@@ -249,12 +276,20 @@ function chSetRoles(a, b) {
   if (CFG.gOff && CFG.vin !== 'off') CFG.anSrc = 'v'; else if (CFG.vin === 'off' || wasOff || !CFG.anSrc) CFG.anSrc = 'g';
   saveCfg(); setChannelMode(CFG.ch); applyAnaSource();
 }
+/** A Focusrite (Scarlett, Solo, Clarett, Vocaster…) with two inputs starts as voice on input 1 (the mic / XLR) and guitar on
+    input 2 (the Inst jack), until the person picks something else in I/O ▸ Channels. */
+function chFocusriteDefault(label) {
+  if (CFG.chUser || !FOCUSRITE_RE.test(label || '')) return false;
+  const nch = (E.inSettings && E.inSettings.channelCount) || 2; if (nch < 2) return false;
+  const r = chRoles(); if (r[0] === 'v' && r[1] === 'g') return false;
+  chSetRoles('v', 'g', true); return true;
+}
 function applyAnaSource() { const s = CFG.anSrc || 'g'; if (E.aG) { E.anTarget = [s === 'v' ? 0 : 1, s === 'g' ? 0 : 1]; tc(E.aG.gain, E.anTarget[0], .02); tc(E.aV.gain, E.anTarget[1], .02); } bus.emit('route'); }
 function setAnaSource(s) { CFG.anSrc = s; saveCfg(); applyAnaSource(); }
 /** vin: 'off' | 'L' (input 1) | 'R' (input 2) */
 function setVoxInput(v) {
   if (v !== 'off' && E.hasInput && E.inSettings && E.inSettings.channelCount === 1) toast('This device exposes a single input channel, so a separate vocal channel is not possible. Pick a 2-channel input (e.g. the Focusrite) in I/O.', 'warn');
-  CFG.vin = v; if (v !== 'off') CFG.armV = true; saveCfg(); setChannelMode(CFG.ch);
+  CFG.vin = v; CFG.chUser = true; if (v !== 'off') CFG.armV = true; saveCfg(); setChannelMode(CFG.ch);
   if (v !== 'off') toast('Guitar on input ' + (v === 'R' ? '1' : '2') + ' · vocal on input ' + (v === 'R' ? '2' : '1') + ' — arm both lanes and press R to record them together', 'ok');
 }
 function setVoxTrim(db) { CFG.voxTrim = db; saveCfg(); if (E.voxTrim) tc(E.voxTrim.gain, fromDB(db), .02); }
@@ -269,11 +304,13 @@ async function autoDetectChannel() {
   try { E.split.disconnect(aL); E.split.disconnect(aR); } catch (e) { }
   if (pl < .005 && pr < .005) { toast('No signal detected on either channel', 'warn'); return; }
   const pick = pr > pl * 1.5 ? 'R' : (pl > pr * 1.5 ? 'L' : 'sum');
-  CFG.gOff = false; setChannelMode(pick); bus.emit('input', E.inSettings); toast('Input channel: ' + (pick === 'sum' ? 'both (summed)' : pick === 'L' ? 'Input 1 / Left' : 'Input 2 / Right'), 'ok');
+  CFG.gOff = false; CFG.chUser = true; setChannelMode(pick); bus.emit('input', E.inSettings); toast('Input channel: ' + (pick === 'sum' ? 'both (summed)' : pick === 'L' ? 'Input 1 / Left' : 'Input 2 / Right'), 'ok');
 }
 async function setOutputDevice(id) {
   CFG.outDev = id; saveCfg();
-  try { if (E.ctx.setSinkId) await E.ctx.setSinkId(id || ''); else toast('Output selection needs a recent Chromium browser', 'warn'); } catch (e) { toast('Could not switch output: ' + e.message, 'bad'); }
+  if (!E.ctx) return;   // applied when the engine starts
+  if (!E.ctx.setSinkId) return toast('Output selection needs a recent Chromium browser', 'warn');
+  await outApply(id);
 }
 function latencyInfo() {
   const c = E.ctx; if (!c) return null;
