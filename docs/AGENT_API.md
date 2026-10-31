@@ -1,6 +1,6 @@
 # Agent API
 
-the-daily.studio offers its main actions as tools for an AI agent running in the person's browser. Everything runs inside the page: there is no server, nothing is sent anywhere, and the tools cannot reach the microphone, the camera, recording, deleting songs or Settings. The code is `src/parts/72-agent.js`.
+the-daily.studio offers its main actions as tools for an AI agent running in the person's browser. Everything runs inside the page: there is no server, nothing is sent anywhere, and the tools cannot reach the microphone, the camera, recording, deleting songs, Settings or the tip jar (an artist's payment link is never something an agent can read or change). The code is `src/parts/72-agent.js`.
 
 ## Two ways in
 

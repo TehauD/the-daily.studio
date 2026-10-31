@@ -2,6 +2,26 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.17.0 — 2026-10-31 — A tip jar: let your audience tip you
+
+### Added
+- **🎸 Tips** (`src/parts/39b-tip.js`): an artist's own tip link as a QR code in a small open guitar case. Paste a Ko-fi, PayPal.me, Cash App, Buy Me a Coffee, Patreon or Bandcamp page, or any `https` address (`ko-fi.com/name` gets `https://`; a `$cashtag` becomes a Cash App link), add a name and a message, and choose where it shows:
+  - **on the Visuals**, so it is in every stage video and in the Audience view;
+  - **on the Stage**, so the room can scan it from the projector or the pop-out window (it steps around the chord, tuner, song info and lower third);
+  - **on share pages**, as a button and a code beside the player;
+  - **on a printed sign** for a real guitar case, and **as a picture** (PNG) to post.
+  It can show all the time or only between songs, in any corner, at three sizes. In the Visuals bar, the Stage bar and **Settings ▸ Tip jar**.
+- **A QR code maker** (`src/parts/39a-qr.js`), with no library and nothing downloaded: byte mode, error correction level M, versions 1 to 40, the mask chosen by the standard's penalty rules. Every version was checked with an independent QR reader while it was written, and the codes drawn on the Visuals and the Stage scan back to the link.
+
+### Safeguards
+- **Links are made safe**: `https` only; `javascript:`, `data:`, plain `http` and links carrying a user name or password are refused. **Test the link** opens it in a new tab so the artist can check where it goes.
+- **Nothing shows until the artist confirms** that it is their own link and that the payment is between them, their audience and the service they chose (the studio is not part of it, takes nothing, and is not responsible for the service, the payments or taxes). Share pages say the same beside the button.
+- **The link stays in this browser's settings**: not in songs, song backups or project files, and **the AI agent tools cannot read or change it**, so an agent cannot swap in another payment link.
+- The studio never opens the link itself and sees no payment. Terms of use gain a **Tips** section; the privacy statement lists the tip jar.
+
+### Tests
+- `test/e2e-tip.cjs` (35 checks): the codes match the fingerprints of codes checked with an independent reader; every module drawn in the case matches the link; unsafe links are refused; nothing shows before the confirmation; the dialog, the corners, stepping around the neck and the lower third, "only between songs", the Stage, share pages (escaped, and absent when turned off), the printed sign, the picture, Settings, the agent tools not seeing the link, and the dialog on a phone.
+
 ## 2.16.1 — 2026-10-31 — A smaller page and steadier tests
 
 Maintenance only: nothing a person can see or use changes.

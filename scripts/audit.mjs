@@ -84,7 +84,7 @@ ok(anyAudio.length === sa.length, 'no stray audio files anywhere else in the rep
 /* ---------- 3 · hosts and network call sites ---------- */
 console.log('\nNetwork surface');
 const LOAD = ['cdn.jsdelivr.net', 'storage.googleapis.com'];                       // the only hosts the page may fetch from, only after a yes
-const LINKS = ['the-daily.studio', 'github.com', 'www.linkedin.com', 'developers.google.com', 'www.w3.org'];   // links the person clicks, or XML namespaces; never loaded
+const LINKS = ['the-daily.studio', 'github.com', 'www.linkedin.com', 'developers.google.com', 'www.w3.org', 'cash.app'];   // links the person clicks, or XML namespaces; never loaded (cash.app: a $cashtag in the tip jar becomes a link there, for the audience to follow)
 const srcFiles = [...readdirSync(join(root, 'src/parts')).filter(f => /\.js$/.test(f)).map(f => 'src/parts/' + f), 'src/body.html', 'src/styles.css', 'scripts/build.mjs'].filter(has);
 const seen = new Map();
 for (const f of srcFiles) for (const m of rd(f).matchAll(/https?:\/\/([a-z0-9.-]+)/gi)) { const h = m[1].toLowerCase().replace(/\.$/, ''); (seen.get(h) || seen.set(h, new Set()).get(h)).add(f.replace('src/parts/', '')); }

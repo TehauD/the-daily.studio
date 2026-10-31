@@ -665,6 +665,25 @@ Open the **◐** button (or Settings ▸ Customize appearance…; on a phone Mor
 - **Typeface**: the default is Inter with Montserrat headings, built into the page. The other choices use fonts installed on your device (nothing is downloaded). **High contrast** strengthens text and borders. **Colour-blind safe** swaps charts, meters, visuals and status lights to a palette that stays distinguishable for red–green and blue–yellow colour-blindness.
 - **Reset appearance** returns to the defaults.
 
+## Tip jar: let your audience tip you (2.17)
+
+**🎸 Tips** (in the Visuals bar and the Stage bar, and **Settings ▸ Tip jar**) puts your own tip link on screen as a QR code in a small open guitar case. Anyone with a phone camera can scan it and tip you directly.
+
+1. **Paste your link**: a Ko-fi, PayPal.me, Cash App, Buy Me a Coffee, Patreon or Bandcamp page, or any `https` address. `ko-fi.com/yourname` gets the `https://` added for you, and a `$cashtag` becomes a Cash App link. Press **Test the link** to check it goes to the right place.
+2. Add **your name or band** and a short **message** if you like ("Enjoying the music? Leave a tip" is the default).
+3. **Confirm** that it is your own link and that the payment is between you, your audience and the service you chose. Then tick **Show the tip jar**.
+
+**Where it shows** (each can be turned off):
+- **On the Visuals**, so it is in every stage video you record, and in the Audience view.
+- **On the Stage**, so the room can scan it from the projector or the pop-out window. It steps around the chord, the tuner, the song info and the lower third.
+- **On share pages**, as a button and a code beside the player.
+
+**When, where and how big:** all the time, or only between songs (it fades out while the song plays); any corner; small, medium or large. Large suits a projector at the back of a room.
+
+**For a real guitar case:** **🖨 Print a sign** prints a page with a large code, your name and the link. **⤓ Save as a picture** saves the case as a PNG to post or put in a video.
+
+The code is made on your device and the studio never opens your link or sees a payment. The link is kept in this browser's settings, not in your songs or backups, and AI agent tools cannot read or change it.
+
 ## Your music, and what you share
 
 The app ships no recordings and no one else's lyrics, and it never uploads anything, so what is in it is what you put there. A few things worth knowing before you share:

@@ -1333,3 +1333,18 @@ body[data-goal]:not([data-goal=""]) #dock .tab.on{box-shadow:inset 0 -3px 0 var(
   .boot-also{gap:8px;padding-top:10px}.boot-also li{font-size:11.5px}
   .boot-opt,.boot-guides{font-size:11px}
 }
+
+/* ---------- the tip jar (part 39b) ---------- */
+.tip-grid{display:grid;grid-template-columns:minmax(0,1fr) 240px;gap:18px;align-items:start}
+.tip-f{display:grid;gap:8px;min-width:0}.tip-f .in{width:100%}
+.tip-side{display:flex;flex-direction:column;gap:8px;align-items:stretch}
+.tip-prev{width:234px;height:300px;max-width:100%;align-self:center}
+.dlg-b label.chk.tip-agree{align-items:flex-start;font-weight:500;font-size:12px;line-height:1.45;padding:8px 10px;border-radius:10px;background:color-mix(in srgb,var(--accent) 8%,transparent)}
+.dlg-b label.chk.tip-agree input{margin-top:3px}
+@media (max-width:640px){.tip-grid{grid-template-columns:1fr}.tip-side{flex-direction:row;flex-wrap:wrap;justify-content:center}.tip-prev{width:156px;height:200px}}
+#printSheet.tip-sign{text-align:center;padding-top:1.2cm;font-family:system-ui,sans-serif}
+#printSheet.tip-sign .ts-m{font:800 30px system-ui,sans-serif;margin:0 0 6px}
+#printSheet.tip-sign h1{font:800 46px system-ui,sans-serif;margin:0 0 18px}
+#printSheet.tip-sign .ts-q svg{width:12cm;height:12cm;display:block;margin:0 auto}
+#printSheet.tip-sign .ts-l{font:700 22px ui-monospace,Menlo,monospace;margin:14px 0 6px}
+#printSheet.tip-sign .ts-n{font:14px system-ui,sans-serif;color:#444}
