@@ -420,7 +420,7 @@ the-daily.studio/
 ├── sw.js                 ← offline cache service worker (generated)
 ├── samples/              ← sample tracks shown in Stems and Transcribe (+ manifest.json, info.json)
 ├── icons/                ← app icons (PNG) and their SVG source
-├── scripts/              ← build.mjs (bundler), serve.mjs (static server), make-brand.mjs (logo, icons, social card), brand-mark.mjs, sync-journal.mjs
+├── scripts/              ← build.mjs (bundler), minify.mjs (dependency-free minifier for index.html), serve.mjs (static server), make-brand.mjs (logo, icons, social card), brand-mark.mjs, sync-journal.mjs
 ├── test/                 ← smoke test (jsdom), end-to-end suites and mobile (Playwright; lib.cjs and run.cjs run them in parallel), shots.cjs (documentation pictures), stem benchmark
 ├── docs/                 ← user guide, hosting, architecture, hardware checklist, screenshots
 └── .github/              ← CI, Pages deployment, issue / PR templates

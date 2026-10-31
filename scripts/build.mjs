@@ -10,6 +10,7 @@ import vm from 'node:vm';
 import { createHash } from 'node:crypto';
 import { markInner, markSvg, BRAND as BR } from './brand-mark.mjs';
 import { SITE, appJsonLd, sitemap, guideLinks } from './seo-pages.mjs';
+import { minifyJS, minifyCSS, tokens } from './minify.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const src = p => readFileSync(join(root, 'src', p), 'utf8');
@@ -27,6 +28,18 @@ js = js.replaceAll('__MARK_INNER__', MARK);
 /* the version the app shows, and a build code taken from the code itself: the same source always gives the same code */
 const BUILD = createHash('sha256').update(js).digest('hex').slice(0, 7);
 js = js.replaceAll('__VERSION__', pkg.version).replaceAll('__BUILD__', BUILD);
+/* index.html carries a minified copy (comments, indentation and needless spaces out; nothing else). The CodePen files keep the
+   readable source. `node scripts/build.mjs --pretty` writes an unminified index.debug.html for debugging (not committed). */
+const PRETTY = process.argv.includes('--pretty');
+let jsMin = js;
+if (!PRETTY) {
+  jsMin = minifyJS(js);
+  try { new vm.Script(jsMin, { filename: 'daily-songs.min.js' }); } catch (e) { console.error('The minified script does not compile:\n' + e.stack); process.exit(1); }
+  /* proof: the same words, numbers, strings, templates, regexes and punctuation, in the same order; only whitespace and comments differ */
+  const sig = x => tokens(x).filter(t => t.t !== 'ws' && t.t !== 'nl'), a = sig(js), b = sig(jsMin);
+  const k = a.findIndex((t, i) => !b[i] || b[i].t !== t.t || b[i].v !== t.v);
+  if (k >= 0 || a.length !== b.length) { console.error('Minifying changed the script at token ' + (k < 0 ? Math.min(a.length, b.length) : k) + ': ' + JSON.stringify(a[k]) + ' → ' + JSON.stringify(b[k])); process.exit(1); }
+}
 const fontFace = (fam, file) => `@font-face{font-family:"${fam}";src:url(data:font/woff2;base64,${readFileSync(join(root, 'src', 'fonts', file)).toString('base64')}) format("woff2");font-weight:100 900;font-style:normal;font-display:swap}\n`;
 const css = fontFace('DS Inter', 'inter-latin-wght.woff2') + fontFace('DS Montserrat', 'montserrat-latin-wght.woff2') + src('styles.css'), bodyRaw = src('body.html').replaceAll('__MARK_INNER__', MARK).replaceAll('__MARK_SM__', MARK_SM), body = bodyRaw.replaceAll('__GUIDE_LINKS__', guideLinks()), bodyPen = bodyRaw.replaceAll('__GUIDE_LINKS__', guideLinks(SITE.origin + '/'));
 const chlog = readFileSync(join(root, 'CHANGELOG.md'), 'utf8').match(/^## (\d+\.\d+\.\d+) — (\d{4}-\d{2}-\d{2})/m), modified = chlog ? chlog[2] : new Date().toISOString().slice(0, 10);
@@ -40,9 +53,11 @@ const head = `<meta charset="utf-8"><meta name="viewport" content="width=device-
 <meta name="author" content="${SITE.author}"><meta name="referrer" content="no-referrer"><meta name="color-scheme" content="light dark">
 <script type="application/ld+json">${appJsonLd(pkg.version, modified)}</script>
 <link rel="icon" href="data:image/svg+xml,${icon}"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png"><link rel="manifest" href="manifest.webmanifest">`;
-const inlineJs = `\n${js.replace(/<\/script>/g, '<\\/script>')}\n`;
+const cssMin = PRETTY ? css : minifyCSS(css);
+{ const br = x => [(x.match(/\{/g) || []).length, (x.match(/\}/g) || []).length].join(); if (br(cssMin) !== br(css.replace(/\/\*[\s\S]*?\*\//g, ''))) { console.error('Minifying the stylesheet changed its braces'); process.exit(1); } }
+const inlineJs = `\n${jsMin.replace(/<\/script>/g, '<\\/script>')}\n`;
 const csp = ["default-src 'self'", `script-src 'sha256-${createHash('sha256').update(inlineJs).digest('base64')}' 'wasm-unsafe-eval' blob: https://cdn.jsdelivr.net`, "worker-src 'self' blob:", "style-src 'self' 'unsafe-inline'", "img-src 'self' data: blob:", "media-src 'self' blob: data:", "connect-src 'self' blob: data: https://cdn.jsdelivr.net https://storage.googleapis.com", "font-src 'self' data:", "object-src 'none'", "base-uri 'none'", "form-action 'none'"].join('; ');
-const standalone = `<!doctype html>\n<html lang="en"><head><meta http-equiv="Content-Security-Policy" content="${csp}">${head}\n<style>\n${css}\n</style></head><body>\n${body}\n<noscript><div style="max-width:40rem;margin:0 auto;padding:24px 16px;font:16px/1.5 system-ui,sans-serif"><h2>the-daily.studio needs JavaScript</h2><p>It is a guitar and voice studio that runs entirely in your browser: record guitar and voice, split a song into stems, get chords, tab and lyrics, and run a live light show. It sends nothing anywhere, so it needs JavaScript to do the work on your device.</p><p>Read about it: ${guideLinks()}</p></div></noscript>\n<script>${inlineJs}</script></body></html>\n`;
+const standalone = `<!doctype html>\n<html lang="en"><head><meta http-equiv="Content-Security-Policy" content="${csp}">${head}\n<style>\n${cssMin}\n</style></head><body>\n${body}\n<noscript><div style="max-width:40rem;margin:0 auto;padding:24px 16px;font:16px/1.5 system-ui,sans-serif"><h2>the-daily.studio needs JavaScript</h2><p>It is a guitar and voice studio that runs entirely in your browser: record guitar and voice, split a song into stems, get chords, tab and lyrics, and run a live light show. It sends nothing anywhere, so it needs JavaScript to do the work on your device.</p><p>Read about it: ${guideLinks()}</p></div></noscript>\n<script>${inlineJs}</script></body></html>\n`;
 
 /* installable web app: manifest + offline cache (the page registers sw.js only on https / localhost) */
 const manifest = JSON.stringify({
@@ -77,6 +92,8 @@ if (process.argv.includes('--check')) {
   let bad = 0;
   for (const [f, c] of Object.entries(outputs)) { let cur = ''; try { cur = readFileSync(join(root, f), 'utf8'); } catch { } if (cur !== c) { console.error('out of date: ' + f); bad++; } }
   if (bad) { console.error('Run `npm run build` and commit the result.'); process.exit(1); } else console.log('build outputs are up to date');
+} else if (PRETTY) {
+  writeFileSync(join(root, 'index.debug.html'), standalone); console.log('index.debug.html written (unminified, for debugging; not committed)');
 } else {
   mkdirSync(join(root, 'codepen'), { recursive: true });
   for (const [f, c] of Object.entries(outputs)) writeFileSync(join(root, f), c);

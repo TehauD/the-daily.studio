@@ -89,7 +89,7 @@ suite('e2e-goals', async t => {
   const hv = Object.values(hubs);
   ok(hv.every(x => x.open && x.head && x.close && x.nav >= 4 && x.nav === x.secs && x.over <= 1) && new Set(hv.map(x => x.w + 'x' + x.h)).size === 1, '▦ Workspace, ◐ Appearance, ⚙ Settings and ? Help are one kind of modal: same size, a header with ✕, a section list and cards (' + JSON.stringify(hubs) + ')');
   await p.click('.btn.icon[title^="Help"]'); await wait(300); await p.click('#help .hub-nb[data-sec="about"]'); await wait(800);
-  ok(await ev(() => { const d = document.getElementById('help'), a = d.querySelector('.hub-sec[data-sec="about"]').getBoundingClientRect(), b = d.querySelector('.hub-body').getBoundingClientRect(); return a.top < b.bottom - 40 && d.querySelector('.hub-nb.on').dataset.sec === 'about'; }), 'a section in the list scrolls into view and lights up');
+  ok(await poll(() => ev(() => { const d = document.getElementById('help'), a = d.querySelector('.hub-sec[data-sec="about"]').getBoundingClientRect(), b = d.querySelector('.hub-body').getBoundingClientRect(); return a.top < b.bottom - 40 && d.querySelector('.hub-nb.on').dataset.sec === 'about'; }), 6000), 'a section in the list scrolls into view and lights up');
   await p.keyboard.press('Escape'); await wait(200);
   await p.click('#wsBtn'); await wait(300);
   ok(await ev(() => document.querySelectorAll('#workspace .ws-card').length === 6 && document.querySelectorAll('#workspace .ws-card .ws-th').length === 6), 'Workspace shows the six goals as cards, each with a picture of its shape');

@@ -2,6 +2,17 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.16.1 — 2026-10-31 — A smaller page and steadier tests
+
+Maintenance only: nothing a person can see or use changes.
+
+### Changed
+- **The page is about a fifth smaller.** `index.html` now carries a minified copy of the script and stylesheet: 1766 kB → 1424 kB (612 → 538 kB compressed, which is what a visitor downloads). The minifier (`scripts/minify.mjs`) needs no packages and only removes comments, indentation and the spaces around punctuation: line breaks stay, no name is shortened, and every string, template and regular expression is copied byte for byte. The build compiles the minified script and compares it token by token with the readable one, and stops if anything but whitespace differs. The CodePen panels keep the readable code; `node scripts/build.mjs --pretty` writes an unminified `index.debug.html` for debugging.
+- **A size budget**: the release gate now also fails if `index.html` passes 700 kB compressed (alongside the 2 MB limit), so growth is a decision, not drift.
+- **Steadier tests.** The frame-rate check in `e2e-show` measured the wrong thing on a slow machine (a machine that already draws near 30 frames a second "failed" the 30 fps cap); it now checks that the cap holds near 30 and that drawing goes on. The drawing-cost check in `e2e-concert` uses the 25th-percentile frame, so a frame delayed by other work does not decide it. The start-route checks in `e2e` and the scroll check in `e2e-goals` wait until the app is ready instead of sleeping a fixed time.
+- **The test runner** (`test/run.cjs`) runs the suites that time drawing on their own after the rest, and runs a file that failed beside others once more alone, naming it as flaky if it then passes (`STRICT=1` counts that as a failure).
+- **CI** uses `actions/checkout@v5` and `actions/setup-node@v5` (the v4 actions run on a Node version GitHub is retiring).
+
 ## 2.16.0 — 2026-10-31 — More for AI agents, and an agent layer built to last
 
 ### Added

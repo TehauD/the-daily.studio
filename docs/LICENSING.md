@@ -1,6 +1,6 @@
 # Licensing and provenance register
 
-Audited for **v2.16.0** (31 October 2026). Every file the site serves, everything it can fetch, every dependency and every file a person can download is listed here with where it came from and what licence covers it. `npm run audit` checks this page against the real build and fails if a shipped file, a host or a dependency is not accounted for, so it stays true.
+Audited for **v2.16.1** (31 October 2026). Every file the site serves, everything it can fetch, every dependency and every file a person can download is listed here with where it came from and what licence covers it. `npm run audit` checks this page against the real build and fails if a shipped file, a host or a dependency is not accounted for, so it stays true.
 
 This is an engineering audit of the project, written by its maintainers. It is not legal advice. The items only a person can settle (authorship of the demo words, terms for a commercial launch, trademark clearance) are collected in [Open items](#open-items-for-the-maintainer).
 

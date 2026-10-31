@@ -3,6 +3,7 @@
    Fails (exit 1) if anything a visitor depends on is missing or the security posture drifted. */
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { createHash } from 'node:crypto';
+import { gzipSync } from 'node:zlib';
 import { dirname, join, posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PAGES, SITE, pageUrl } from './seo-pages.mjs';
@@ -31,6 +32,10 @@ const man = JSON.parse(rd('manifest.webmanifest')); ok(man.name && man.start_url
 ok(!/fretwork/i.test(rd('manifest.webmanifest') + rd('404.html')), 'no old product name in manifest or 404 page');
 const j = rd('journal/index.html'); ok(/Content-Security-Policy/.test(j), 'The Daily page keeps its own CSP');
 ok(statSync(join(d, 'index.html')).size < 2_000_000, 'index.html is under 2 MB');
+{ /* what a visitor downloads: the page travels compressed, so this is the number that sets the first load. Raise it on purpose, not by drift. */
+  const gz = gzipSync(readFileSync(join(d, 'index.html')), { level: 9 }).length;
+  ok(gz < 700_000, 'index.html is under 700 kB compressed (' + (gz / 1024).toFixed(0) + ' kB gzip)');
+}
 
 /* ---- search engines: the first page and every guide page ---- */
 const metaOf = (h, n) => (h.match(new RegExp('<meta (?:name|property)="' + n + '" content="([^"]*)"')) || [])[1] || '';
