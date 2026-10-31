@@ -2,6 +2,27 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.16.0 — 2026-10-31 — More for AI agents, and an agent layer built to last
+
+### Added
+- **Three agent tools** (`src/parts/72-agent.js`): **`set_visuals`** (the look, speed, size and zoom; never the camera), **`perform`** (open or close Perform and pick its display: shapes, big or sheet; never the microphone or recording) and **`get_chord_shape`** (the frets of a chord for the song's tuning and capo, lowest fret, barre, and other ways to play it; the song's chosen voicing first). `get_studio_state` now also gives the visuals, Perform, the API version, the app version and the build. 19 tools in all.
+- **`window.dailyStudio.describe()`**: the API version, app version and build, how WebMCP is used, whether agent access is on, the aliases and the limits.
+- **[docs/AGENT_API.md](docs/AGENT_API.md)**: the tools, answers, error codes, limits and versioning, for people building agents.
+
+### Changed: hardening and future-proofing the agent layer
+- **Answers** carry `structuredContent` (the data as an object) as well as text, for MCP clients that read it.
+- **Errors** carry a code an agent can act on: `unknown_tool`, `disabled`, `loading`, `invalid_input`, `busy`, `timeout`, `rejected`.
+- **Inputs** are copied before use (nothing the agent holds can change mid-call), must be an object, and are checked more strictly: list items, minimum lengths and a cap on text size.
+- **Changes run one at a time**, in the order they arrive; reads do not wait. **Limits**: 20 changes and 40 reads a second (more are answered `busy`), 20 s per call, answers capped at 250,000 characters.
+- **A burst of changes is one note** on screen ("… and 2 more") instead of a stack of them.
+- **WebMCP**: each tool is registered on its own, so one refusal does not lose the rest; a name the browser already holds is taken back through `unregisterTool` and offered again; a `navigator.modelContext` that arrives after the page (an extension, say) is picked up; tools carry a title and `openWorldHint: false`.
+- **A contract that catches breaking changes**: the API version (`AG_API`, now **2**) rises only when a tool is removed or renamed or a required input changes; renamed tools keep their old names in `AG_ALIAS`; `test/agent-contract.json` lists the published tools and their required inputs, and the tests fail if one disappears or changes.
+- `test/e2e-agent.cjs` grows to 52 checks (the contract, structured answers and error codes, the three tools, ordering, the one note, the rate limit, late and duplicate WebMCP).
+
+### Limits
+- WebMCP is still a draft and few browsers and agents support it; both of its forms are handled, and the contract keeps the tools stable for agents written against them. Checked with stand-ins for `navigator.modelContext`, not a real browser agent.
+- Desktop MCP clients reach the tools through a browser extension that relays WebMCP, not directly: the studio has no server.
+
 ## 2.15.0 — 2026-10-31 — AI agents can use the studio; AI search welcome, AI training not
 
 ### Added

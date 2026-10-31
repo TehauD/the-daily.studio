@@ -120,8 +120,8 @@ suite('e2e-agent', async t => {
   ok(order === 'Order A,Order B,Order C', 'changes sent at once are made one at a time, in the order they came (' + order + ')');
   ok(await p.evaluate(() => { const ts = [...document.querySelectorAll('#toasts .toast')].filter(x => /🤖/.test(x.textContent)); return ts.length === 1 && /and 2 more/.test(ts[0].textContent); }), 'a burst of agent changes shows as one note (“… and 2 more”)');
   await wait(1100);
-  const burst = await p.evaluate(async () => { const rs = await Promise.all(Array.from({ length: 45 }, () => window.dailyStudio.call('get_song', { include_lyrics: false }))); return rs.filter(r => r.isError && r.structuredContent.error.code === 'busy').length; });
-  ok(burst >= 10 && burst < 45, 'more than 30 reads in a second: the extra ones are told to wait (' + burst + ' of 45 were “busy”)');
+  const burst = await p.evaluate(async () => { const rs = await Promise.all(Array.from({ length: 60 }, () => window.dailyStudio.call('get_song', { include_lyrics: false }))); return rs.filter(r => r.isError && r.structuredContent.error.code === 'busy').length; });
+  ok(burst >= 15 && burst < 60, 'more than 40 reads in a second: the extra ones are told to wait (' + burst + ' of 60 were “busy”)');
   await wait(1100); ok(!(await raw('get_song')).isError, 'a moment later it answers again');
 
   /* ---- 2.16: WebMCP that arrives late, or refuses a name it already has ---- */

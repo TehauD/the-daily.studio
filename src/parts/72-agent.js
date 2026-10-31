@@ -223,7 +223,7 @@ agTool('get_chord_shape', 'How to play a chord on the guitar in this song\'s tun
    test/agent-contract.json holds the published tools and their required inputs; the tests fail if one disappears or changes. */
 const AG_API = '2';
 const AG_ALIAS = {};
-const AG_LIMIT = { change: 8, read: 30, timeout: 20000, maxOut: 250000 };   /* calls per second (changes / reads), ms per call, characters per answer */
+const AG_LIMIT = { change: 20, read: 40, timeout: 20000, maxOut: 250000 };   /* calls per second (changes / reads), ms per call, characters per answer */
 /** an error an agent can act on: code is one of unknown_tool, disabled, loading, invalid_input, busy, timeout, rejected (the studio refused, with the reason) */
 function agErr(code, msg) { const e = new Error(msg); e.code = code; return e; }
 const agFail = (code, msg) => ({ content: [{ type: 'text', text: 'Error (' + code + '): ' + msg }], structuredContent: { error: { code, message: msg } }, isError: true });

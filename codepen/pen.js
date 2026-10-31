@@ -5,7 +5,7 @@
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.15.0', BUILD = '967ee81';   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.16.0', BUILD = 'ae3988d';   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://the-daily.studio/journal/' };
 const $ = (s, r = document) => r.querySelector(s);
@@ -13299,7 +13299,7 @@ agTool('get_chord_shape', 'How to play a chord on the guitar in this song\'s tun
    test/agent-contract.json holds the published tools and their required inputs; the tests fail if one disappears or changes. */
 const AG_API = '2';
 const AG_ALIAS = {};
-const AG_LIMIT = { change: 8, read: 30, timeout: 20000, maxOut: 250000 };   /* calls per second (changes / reads), ms per call, characters per answer */
+const AG_LIMIT = { change: 20, read: 40, timeout: 20000, maxOut: 250000 };   /* calls per second (changes / reads), ms per call, characters per answer */
 /** an error an agent can act on: code is one of unknown_tool, disabled, loading, invalid_input, busy, timeout, rejected (the studio refused, with the reason) */
 function agErr(code, msg) { const e = new Error(msg); e.code = code; return e; }
 const agFail = (code, msg) => ({ content: [{ type: 'text', text: 'Error (' + code + '): ' + msg }], structuredContent: { error: { code, message: msg } }, isError: true });
