@@ -85,7 +85,7 @@ function buildVisPane() {
   const bar = h('div', { class: 'row', style: { gap: '8px', marginBottom: '8px', flexWrap: 'wrap' } },
     h('div', { class: 'seg' }, VMODES.filter(m => !VZ_MONITOR.has(m[0]) && !BK_MODES.has(m[0])).map(([k, n]) => h('button', { class: k === VZ.mode ? 'on' : '', 'data-m': k, onclick: e => { vzSetMode(k); $$('.seg [data-m]', bar).forEach(b => b.classList.toggle('on', b === e.target)); } }, n))),
     h('div', { class: 'vz-back', id: 'vzBack' }, h('span', { class: 'hx-l', title: 'Looks made to sit behind you: set Camera look to “Me in front (green screen)” and you stand inside the picture' }, 'Behind you'), h('div', { class: 'seg', role: 'group', 'aria-label': 'Looks that sit behind you' }, VBACK.map(([k, n]) => h('button', { class: k === VZ.mode ? 'on' : '', 'data-m': k, onclick: e => { vzSetMode(k); $$('.seg [data-m]', bar).forEach(b => b.classList.toggle('on', b === e.currentTarget)); try { backTip(); } catch (er) { } } }, n)))),
-    lxLensBar(),
+    lxLensBar(), vzAdjustBtn(),
     hexSwatches(),
     h('select', { class: 'in', style: { width: 'auto', fontFamily: 'var(--sans)' }, title: 'Analysis source', onchange: e => { VZ.src = e.target.value; } }, [['auto', 'Source: auto (follows playback)'], ['rig', 'Source: guitar after the rig'], ['master', 'Source: master mix'], ['di', 'Source: what the detector hears'], ['vox', 'Source: vocal microphone']].map(([v, n]) => h('option', { value: v }, n))),
     h('button', { class: 'btn sm', id: 'vzRecBtn', 'data-srec': '1', title: 'Record the stage as a video with the song’s sound (saved on this device)', onclick: e => srecMenu(e.currentTarget) }, '⏺ Record'),
@@ -106,7 +106,7 @@ function visAna() { const s = VZ.src || 'auto'; if (s === 'vox' && E.anaVox) ret
 /** looks that draw their whole picture themselves: no pitch read-out or mini fretboard on top */
 const vzBare = m => m === 'concert' || HM_MODES.has(m) || (typeof BK_MODES !== 'undefined' && BK_MODES.has(m));
 function drawVis(cvo, o) {
-  o = o || {}; const cv = cvo || UI.vcv; if (!cv || !E.ready || (!cvo && !paneVisible('vis'))) return; const MODE = o.mode || VZ.mode; const g = cv.getContext('2d'), W = cv.width, H = cv.height, now = performance.now(), dt = Math.min(.1, (now - (VZ.last || now)) / 1000); VZ.last = now; VZ.t += dt;
+  o = o || {}; const cv = cvo || UI.vcv; if (!cv || !E.ready || (!cvo && !paneVisible('vis'))) return; const MODE = o.mode || VZ.mode; const g = cv.getContext('2d'), W = cv.width, H = cv.height, now = performance.now(), dt = Math.min(.1, (now - (VZ.last || now)) / 1000) * vzSpeed(); VZ.last = now; VZ.t += dt;
   const an = visAna(); if (!an) return; if (!VZ.fd || VZ.fd.length !== an.frequencyBinCount) VZ.fd = new Float32Array(an.frequencyBinCount); an.getFloatFrequencyData(VZ.fd); const fd = VZ.fd, bh = E.ctx.sampleRate / an.fftSize;
   const light = CFG.theme === 'light', C = o.C || vcol(), HP = MODE === 'hex' && !cvo ? hexPal() : null, HEXL = !!(HP && HP.lt);
   // background (always dark stage for contrast, tinted by theme)
@@ -116,12 +116,17 @@ function drawVis(cvo, o) {
   const lvl = x => clamp((x + 88 + (o.gain || 0)) / 62, 0, 1), bin = f => clamp(Math.round(f / bh), 1, fd.length - 1);
   const energy = (() => { let s = 0, n = 0; for (let k = bin(80); k < bin(5000); k += 2) { s += lvl(fd[k]); n++; } return s / n; })();
   const pulse = VZ.pulses.reduce((a, p) => Math.max(a, (1 - (now - p.t) / 900) * p.a), 0);
-  if (MODE === 'hex') drawHex(g, W, H, fd, bh, lvl, C, pulse, HP || hexPal(true));
-  else if (MODE === 'tunnel') drawTunnel(g, W, H, energy, C, pulse, dt);
-  else if (MODE === 'spectro') drawSpectro(g, W, H, fd, bin, lvl, C);
-  else if (MODE === 'chroma') drawChroma(g, W, H, C);
-  else if (MODE === 'scope') drawScope(g, W, H, C);
-  else if (typeof stageExtra === 'function') stageExtra(MODE, g, W, H, { fd, bin, lvl, C, pulse, energy, dt, o });
+  /* zoom (part 09e): the look is pushed in from the middle of the picture; size is applied by the looks made of tiles (drawHex, the pulse grid) */
+  const vk = vzZoom(), tf = vk !== 1, VW = W, VH = H;
+  if (tf) { g.save(); g.translate(W / 2, H / 2); g.scale(vk, vk); g.translate(-W / 2, -H / 2); }
+  try {
+    if (MODE === 'hex') drawHex(g, VW, VH, fd, bh, lvl, C, pulse, HP || hexPal(true));
+    else if (MODE === 'tunnel') drawTunnel(g, VW, VH, energy, C, pulse, dt);
+    else if (MODE === 'spectro') drawSpectro(g, VW, VH, fd, bin, lvl, C);
+    else if (MODE === 'chroma') drawChroma(g, VW, VH, C);
+    else if (MODE === 'scope') drawScope(g, VW, VH, C);
+    else if (typeof stageExtra === 'function') stageExtra(MODE, g, VW, VH, { fd, bin, lvl, C, pulse, energy, dt, o });
+  } finally { if (tf) g.restore(); }
   if (camOn && !cvo) camTop(g, W, H);
   if (MODE === 'halo' && !cvo) haloFront(g);   // stage draws its own camera layer after trails and kaleidoscope
   if (!cvo && CFG.vzNeck !== false && !document.body.classList.contains('perform-on') && !vzBare(MODE)) { const r = neckRect(W, H); drawMiniNeck(g, r[0], r[1], r[2], r[3], { C }); }
@@ -181,7 +186,7 @@ function hexToneSync() {
 }
 function drawHex(g, W, H, fd, bh, lvl, C, pulse, P) {
   const lt = P.lt, CA = P.useC ? C.a : P.a, CB = P.useC ? C.b : P.b;
-  const R = Math.max(14, Math.min(W, H) / 15), dx = R * Math.sqrt(3), dy = R * 1.5, cols = Math.ceil(W / dx) + 2, rows = Math.ceil(H / dy) + 2, cx = W / 2, cy = H / 2, maxd = Math.hypot(cx, cy);
+  const R = Math.max(14, Math.min(W, H) / 15) * vzSize(), dx = R * Math.sqrt(3), dy = R * 1.5, cols = Math.ceil(W / dx) + 2, rows = Math.ceil(H / dy) + 2, cx = W / 2, cy = H / 2, maxd = Math.hypot(cx, cy);
   if (!VZ.sm || VZ.sm.length !== cols * rows) VZ.sm = new Float32Array(cols * rows); const fmin = 70, fmax = 7000, lr = Math.log(fmax / fmin);
   const bt = ((performance.now() / 1000) % 1.9) / 1.9;   /* a slow ring even when nothing is playing, like the start screen */
   { const gl = g.createRadialGradient(cx, cy * .92, 0, cx, cy * .92, Math.hypot(W, H) * .55); gl.addColorStop(0, `rgba(${P.glow},${lt ? .12 : .16})`); gl.addColorStop(.5, `rgba(${P.glow},.04)`); gl.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gl; g.fillRect(0, 0, W, H); }   /* the start screen's glow */

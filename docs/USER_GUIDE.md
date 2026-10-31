@@ -515,7 +515,16 @@ With the performer backdrop's lower third on, Teach and Sky draw in the room abo
 
 ### Audience view (2.11)
 
-A Monitor widget that shows the show the way the room sees it: the visuals on a big screen, **you in front of them** (from the camera, **not mirrored**, which is the side the audience sees) and a crowd lit by the screen. Add it from **Widgets** at the top of the Monitor (the Record layout already has it). Its **📷 Camera on** button starts the camera; choose **Me in front (green screen)** in its Camera look menu to stand in front of the show, or **Visuals frame me** for a soft oval. **⤢ Taller** makes the picture 4:3. It works while you are on any tab; when the Visuals tab is open it simply copies that picture, which is mirrored if your camera is.
+A Monitor widget that shows the show the way the room sees it: the visuals with **you in front of them** (from the camera, **not mirrored**, which is the side the audience sees), so you can watch your own expression while you record. Add it from **Widgets** at the top of the Monitor (the Record layout already has it). Its **📷 Camera on** button starts the camera; choose **Me in front (green screen)** in its Camera look menu to stand in front of the show, or **Visuals frame me** for a soft oval. It works while you are on any tab; when the Visuals tab is open it simply copies that picture, which is mirrored if your camera is.
+
+### Speed, size and zoom (2.15)
+
+**🎚 Speed · size · zoom**, in the Visuals bar and the Stage's scene bar, opens three sliders that apply wherever the visuals are drawn (the Visuals tab, the Stage, Perform's backdrop, the Audience view) and are remembered:
+- **Speed** (¼× to 3×): how fast every look moves.
+- **Size** (½× to 2½×): how big the hexagons are in Hex Resonance and the Stage's pulse grid: fewer, larger tiles, or a fine mesh.
+- **Zoom** (1× to 3×): pushes in on the middle of any look, like a camera.
+
+The camera, the chord, the words and the small neck are not changed. **Reset** puts all three back to 1×; double-click a slider to reset just that one.
 
 ### Your playing from the video goes into the arrangement (2.11)
 
