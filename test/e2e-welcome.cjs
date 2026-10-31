@@ -47,7 +47,7 @@ suite('e2e-welcome', async t => {
   const ph = await open({ w: 390, h: 844, mobile: true, dpr: 2 });
   const m = await ph.evaluate(() => { const r = e => document.querySelector(e).getBoundingClientRect(); return { goBottom: Math.round(r('#bootNoMic').bottom), vh: innerHeight, over: document.documentElement.scrollWidth > innerWidth, keyW: Math.round(r('.boot-goal').width), cardW: Math.round(r('.boot-card').width) }; });
   ok(m.goBottom <= m.vh && !m.over, 'on a phone the way in is on the first screen and nothing scrolls sideways (button ends at ' + m.goBottom + ' of ' + m.vh + ')');
-  ok(m.keyW > m.cardW * .85, 'the goal cards use the full width of the card on a phone');
+  ok(m.keyW > m.cardW * .4 && m.keyW < m.cardW * .55, 'on a phone the goal cards sit two to a row and fill the width between them (' + m.keyW + ' of ' + m.cardW + ')');
   await ph.ctx.close();
   ok(t.errors ? t.errors().length === 0 : true, 'no console errors');
 });

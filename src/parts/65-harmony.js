@@ -42,7 +42,7 @@ function hmDiss(pc, ch, inKey) {
 }
 /** per frame: the one call every harmony look makes first */
 function hmUpdate() {
-  if (HM.stamp === VZ.t) return HM; HM.stamp = VZ.t; const now = performance.now(); HM.dt = Math.min(.1, (now - (HM.now || now)) / 1000); HM.now = now; HM.on = now;
+  if (HM.stamp === VZ.t) return HM; HM.stamp = VZ.t; const now = performance.now(); HM.dt = Math.min(.1, (now - (HM.now || now)) / 1000) * vzSpeed(); HM.now = now; HM.on = now;
   const sym = hmChordSym(), ch = parseChord(sym);
   if (sym !== HM.sym) { HM.prevSym = HM.sym; HM.sym = sym; HM.chord = ch; HM.chT = now; HM.q = ch ? lxQual(ch) : { val: 0, ten: 0 }; }
   const sc = (() => { try { return voxScale(); } catch (e) { return new Set(); } })();

@@ -13,7 +13,8 @@ suite('e2e-video', async t => {
   const px = await ev(() => { const cv = document.getElementById('audCanvas'), g = cv.getContext('2d'), w = cv.width, h = cv.height, top = g.getImageData(0, Math.floor(h * .06), w, Math.floor(h * .5)).data, low = g.getImageData(0, Math.floor(h * .74), w, Math.floor(h * .24)).data; const lit = (a, th) => { let n = 0, k = 0; for (let i = 0; i < a.length; i += 4 * 7) { k++; if (a[i] + a[i + 1] + a[i + 2] > th) n++; } return n / k; }; return { w, h, show: lit(top, 60), crowd: lit(low, 70), err: window.__daily.AUD.err || 0 }; });
   ok(px.w > 100 && px.h > 50 && Math.abs(px.w / px.h - 16 / 9) < .1, 'it is a 16:9 picture (' + px.w + '×' + px.h + ')');
   ok(px.show > .05, 'the show is on the screen (' + Math.round(px.show * 100) + '% of the screen is lit)');
-  ok(px.crowd > .015, 'a crowd is lit at the bottom (' + Math.round(px.crowd * 1000) / 10 + '% of the lower strip)');
+  ok(!(await ev(() => !!document.getElementById('audBig'))) && !(await ev(() => typeof window.__daily.audCrowd === 'function')), 'no crowd and no Taller button: the picture is the show and you');
+  ok(await ev(() => { const cv = document.getElementById('audCanvas'), d = cv.getContext('2d').getImageData(0, 0, cv.width, 2).data; let lit = 0; for (let i = 0; i < d.length; i += 4) if (d[i] + d[i + 1] + d[i + 2] > 30) lit++; return lit > cv.width * .2; }), 'the picture fills the card to its top edge (no stage frame around it)');
   ok(await ev(() => /camera is off/i.test(document.getElementById('audNote').textContent)), 'with the camera off it says you are not in the picture yet');
   // not mirrored: the setting is put back and the picture is drawn with it off
   const mir = await ev(() => { const d = window.__daily; d.CFG.mirror = true; d.audDraw(); return d.CFG.mirror; });
@@ -25,8 +26,6 @@ suite('e2e-video', async t => {
   const green = () => ev(() => { const cv = document.getElementById('audCanvas'), g = cv.getContext('2d'), w = cv.width, h = cv.height, a = g.getImageData(Math.floor(w * .3), Math.floor(h * .12), Math.floor(w * .4), Math.floor(h * .4)).data; let n = 0; for (let i = 0; i < a.length; i += 4) if (a[i + 1] > a[i] + 50 && a[i + 1] > a[i + 2] + 50) n++; return n; });
   ok(await poll(async () => (await green()) > 40, 10000), 'with the camera on and “Visuals frame me”, you are in the picture, in front of the show');
   ok(await ev(() => /Not mirrored/.test(document.getElementById('audNote').textContent) && document.getElementById('audCam').textContent.includes('off')), 'the note says it is the audience side, and the button now turns the camera off');
-  await ev(() => document.getElementById('audBig').click()); await wait(500);
-  ok(await ev(() => { const c = document.getElementById('audCanvas'); return Math.abs(c.width / c.height - 4 / 3) < .08; }), 'Taller makes the picture 4:3');
   await ev(() => { document.getElementById('audCam').click(); }); ok(await poll(() => ev(() => !window.__daily.CAM.on), 6000), 'the same button turns the camera off again');
   // while the Visuals tab is open the widget copies that picture instead of drawing the show a second time
   await ev(() => { const d = window.__daily; d.dockGo('vis'); }); await wait(1200);

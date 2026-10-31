@@ -123,7 +123,7 @@ Checked with invented history and simulated chords, not months of real use. Chor
 
 **An Audience view, and your playing from the video in the arrangement.** (Video 2086 was tried in 2.11 and taken out in 2.12.)
 
-A new **Audience view** on the Monitor shows you in front of the show as the room sees it (not mirrored), with a crowd lit by the screen. And when you record the stage as a video, **what you play also becomes a lane in the arrangement**, starting where the video started.
+A new **Audience view** on the Monitor shows you in front of the show as the room sees it (not mirrored), so you can watch your own expression while you record. And when you record the stage as a video, **what you play also becomes a lane in the arrangement**, starting where the video started.
 
 <p align="center"><img src="docs/screenshots/72-audience-view.png" width="720" alt="The Audience view widget on the Monitor, with the camera on"></p>
 

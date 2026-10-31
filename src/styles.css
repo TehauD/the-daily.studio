@@ -1299,3 +1299,37 @@ body[data-form=phone] dialog.hub{width:100vw;height:92dvh;max-height:92dvh;margi
 body[data-goal]:not([data-goal=""]) #dock .tab.on{box-shadow:inset 0 -3px 0 var(--goal)}
 @container (max-width:1100px){.gl-steps{display:none}}
 @container (max-width:720px){.gl-mis{display:none}}
+/* ---- phones: the header dialogs fill the screen, and the welcome screen fits its choices on the first screen (2.15) ---- */
+@media (max-width:760px){
+  dialog.hub,body[data-form=phone] dialog.hub{position:fixed;inset:0;width:100%;max-width:100%;height:100%;height:100dvh;max-height:100dvh;margin:0;border:0;border-radius:0}
+  .hub-h{gap:10px;padding:calc(8px + env(safe-area-inset-top)) 8px 8px 14px}
+  .hub-ico{width:30px;height:30px;font-size:15px;border-radius:9px}
+  .hub-ht h2{font-size:18px}.hub-ht p{display:none}
+  .hub-x{width:40px;height:40px;font-size:16px}
+  .hub-nav{padding:6px 10px;gap:6px}
+  .hub-nb{padding:7px 12px;font-size:13.5px}
+  .hub-body{padding:10px 14px calc(24px + env(safe-area-inset-bottom))}
+  .hub-sec{padding:2px 0 12px}.hub-sec+.hub-sec{padding-top:12px}
+  .hub-sh{margin:0 0 8px}.hub-sh h3{font-size:15px}.hub-sh p{font-size:12.5px}
+  .hub-card{padding:0;border:0;border-radius:0;background:none;gap:12px}
+  .hub-f{padding:8px 14px calc(8px + env(safe-area-inset-bottom))}
+}
+@media (max-width:660px){
+  #boot{padding:0;align-items:stretch}
+  #boot .boot-card,#boot.boot-live .boot-card,[data-theme=light] #boot.boot-live .boot-card{width:100%;max-width:none;min-height:100%;min-height:100dvh;border:0;border-radius:0;box-shadow:none;padding:calc(12px + env(safe-area-inset-top)) 14px calc(16px + env(safe-area-inset-bottom))}
+  .boot-card>.row:first-child{gap:10px!important;flex-wrap:nowrap}.boot-card>.row:first-child>svg{width:40px;height:40px}
+  .boot-card h1{font-size:21px}.boot-card h1 small{font-size:9px;margin-top:2px}
+  #boot.boot-live .boot-lead,.boot-lead{font-size:23px;line-height:1.12;margin:10px 0 0}
+  .boot-sub{font-size:13.5px;line-height:1.4;margin:4px 0 10px}
+  .boot-q{font-size:14px;margin:0 0 6px}
+  .boot-goals{grid-template-columns:1fr 1fr;gap:6px;margin:0 0 10px}
+  .boot-goal{flex-direction:column;gap:4px;padding:9px 10px;border-radius:12px}
+  .boot-goal svg{width:20px;height:20px}
+  .boot-goal b{font-size:13.5px;line-height:1.2;margin:0}
+  .boot-goal span{font-size:11.5px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .boot-cta,.boot-cta.solo{grid-template-columns:1fr 1fr;gap:6px;margin:0 0 12px}
+  .boot-cta #bootNoMic{grid-column:1/-1}
+  .boot-cta .btn.boot-route{padding:10px 12px}.boot-cta .btn.boot-route b{font-size:14.5px}.boot-cta #bootNoMic span{font-size:12px}
+  .boot-also{gap:8px;padding-top:10px}.boot-also li{font-size:11.5px}
+  .boot-opt,.boot-guides{font-size:11px}
+}

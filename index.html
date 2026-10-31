@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en"><head><meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-Wyapu55538Gxmuw+TdJJNTPRcoFRrnubEx6vsU0rb8Y=' 'wasm-unsafe-eval' blob: https://cdn.jsdelivr.net; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; connect-src 'self' blob: data: https://cdn.jsdelivr.net https://storage.googleapis.com; font-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="the-daily.studio">
+<html lang="en"><head><meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-ASassjJGHxF2Nm4uej4u66PqqaFdESVUV87wrTDa6i4=' 'wasm-unsafe-eval' blob: https://cdn.jsdelivr.net; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; connect-src 'self' blob: data: https://cdn.jsdelivr.net https://storage.googleapis.com; font-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="the-daily.studio">
 <title>the-daily.studio — free guitar and voice studio in your browser</title><link rel="canonical" href="https://the-daily.studio/"><meta name="description" content="Record guitar and voice, split a song into stems, get chords, tab and lyrics, and run a live light show. Free, private, in your browser: no account, no uploads."><meta name="robots" content="index,follow,max-image-preview:large">
 <meta name="theme-color" content="#0d0f10"><meta property="og:title" content="the-daily.studio — free guitar and voice studio in your browser"><meta property="og:type" content="website"><meta property="og:site_name" content="the-daily.studio"><meta property="og:locale" content="en_US"><meta property="og:url" content="https://the-daily.studio/"><meta property="og:description" content="Record guitar and mic, split any song into stems, get the chords and tab, and run a live light show. Free, private, nothing to install."><meta property="og:image" content="https://the-daily.studio/icons/social-card.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="the-daily.studio: lyrics, chords, recording and stems in one browser page">
 <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="the-daily.studio — free guitar and voice studio in your browser"><meta name="twitter:description" content="Record guitar and mic, split any song into stems, get the chords and tab, and run a live light show. Free, private, nothing to install."><meta name="twitter:image" content="https://the-daily.studio/icons/social-card.png"><meta name="twitter:image:alt" content="the-daily.studio: lyrics, chords, recording and stems in one browser page">
@@ -1310,6 +1310,40 @@ body[data-form=phone] dialog.hub{width:100vw;height:92dvh;max-height:92dvh;margi
 body[data-goal]:not([data-goal=""]) #dock .tab.on{box-shadow:inset 0 -3px 0 var(--goal)}
 @container (max-width:1100px){.gl-steps{display:none}}
 @container (max-width:720px){.gl-mis{display:none}}
+/* ---- phones: the header dialogs fill the screen, and the welcome screen fits its choices on the first screen (2.15) ---- */
+@media (max-width:760px){
+  dialog.hub,body[data-form=phone] dialog.hub{position:fixed;inset:0;width:100%;max-width:100%;height:100%;height:100dvh;max-height:100dvh;margin:0;border:0;border-radius:0}
+  .hub-h{gap:10px;padding:calc(8px + env(safe-area-inset-top)) 8px 8px 14px}
+  .hub-ico{width:30px;height:30px;font-size:15px;border-radius:9px}
+  .hub-ht h2{font-size:18px}.hub-ht p{display:none}
+  .hub-x{width:40px;height:40px;font-size:16px}
+  .hub-nav{padding:6px 10px;gap:6px}
+  .hub-nb{padding:7px 12px;font-size:13.5px}
+  .hub-body{padding:10px 14px calc(24px + env(safe-area-inset-bottom))}
+  .hub-sec{padding:2px 0 12px}.hub-sec+.hub-sec{padding-top:12px}
+  .hub-sh{margin:0 0 8px}.hub-sh h3{font-size:15px}.hub-sh p{font-size:12.5px}
+  .hub-card{padding:0;border:0;border-radius:0;background:none;gap:12px}
+  .hub-f{padding:8px 14px calc(8px + env(safe-area-inset-bottom))}
+}
+@media (max-width:660px){
+  #boot{padding:0;align-items:stretch}
+  #boot .boot-card,#boot.boot-live .boot-card,[data-theme=light] #boot.boot-live .boot-card{width:100%;max-width:none;min-height:100%;min-height:100dvh;border:0;border-radius:0;box-shadow:none;padding:calc(12px + env(safe-area-inset-top)) 14px calc(16px + env(safe-area-inset-bottom))}
+  .boot-card>.row:first-child{gap:10px!important;flex-wrap:nowrap}.boot-card>.row:first-child>svg{width:40px;height:40px}
+  .boot-card h1{font-size:21px}.boot-card h1 small{font-size:9px;margin-top:2px}
+  #boot.boot-live .boot-lead,.boot-lead{font-size:23px;line-height:1.12;margin:10px 0 0}
+  .boot-sub{font-size:13.5px;line-height:1.4;margin:4px 0 10px}
+  .boot-q{font-size:14px;margin:0 0 6px}
+  .boot-goals{grid-template-columns:1fr 1fr;gap:6px;margin:0 0 10px}
+  .boot-goal{flex-direction:column;gap:4px;padding:9px 10px;border-radius:12px}
+  .boot-goal svg{width:20px;height:20px}
+  .boot-goal b{font-size:13.5px;line-height:1.2;margin:0}
+  .boot-goal span{font-size:11.5px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .boot-cta,.boot-cta.solo{grid-template-columns:1fr 1fr;gap:6px;margin:0 0 12px}
+  .boot-cta #bootNoMic{grid-column:1/-1}
+  .boot-cta .btn.boot-route{padding:10px 12px}.boot-cta .btn.boot-route b{font-size:14.5px}.boot-cta #bootNoMic span{font-size:12px}
+  .boot-also{gap:8px;padding-top:10px}.boot-also li{font-size:11.5px}
+  .boot-opt,.boot-guides{font-size:11px}
+}
 
 </style></head><body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
@@ -1384,7 +1418,7 @@ body[data-goal]:not([data-goal=""]) #dock .tab.on{box-shadow:inset 0 -3px 0 var(
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.15.0', BUILD = 'f752d8b';   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.15.0', BUILD = 'b303c94';   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://the-daily.studio/journal/' };
 const $ = (s, r = document) => r.querySelector(s);
@@ -4007,7 +4041,7 @@ function buildVisPane() {
   const bar = h('div', { class: 'row', style: { gap: '8px', marginBottom: '8px', flexWrap: 'wrap' } },
     h('div', { class: 'seg' }, VMODES.filter(m => !VZ_MONITOR.has(m[0]) && !BK_MODES.has(m[0])).map(([k, n]) => h('button', { class: k === VZ.mode ? 'on' : '', 'data-m': k, onclick: e => { vzSetMode(k); $$('.seg [data-m]', bar).forEach(b => b.classList.toggle('on', b === e.target)); } }, n))),
     h('div', { class: 'vz-back', id: 'vzBack' }, h('span', { class: 'hx-l', title: 'Looks made to sit behind you: set Camera look to “Me in front (green screen)” and you stand inside the picture' }, 'Behind you'), h('div', { class: 'seg', role: 'group', 'aria-label': 'Looks that sit behind you' }, VBACK.map(([k, n]) => h('button', { class: k === VZ.mode ? 'on' : '', 'data-m': k, onclick: e => { vzSetMode(k); $$('.seg [data-m]', bar).forEach(b => b.classList.toggle('on', b === e.currentTarget)); try { backTip(); } catch (er) { } } }, n)))),
-    lxLensBar(),
+    lxLensBar(), vzAdjustBtn(),
     hexSwatches(),
     h('select', { class: 'in', style: { width: 'auto', fontFamily: 'var(--sans)' }, title: 'Analysis source', onchange: e => { VZ.src = e.target.value; } }, [['auto', 'Source: auto (follows playback)'], ['rig', 'Source: guitar after the rig'], ['master', 'Source: master mix'], ['di', 'Source: what the detector hears'], ['vox', 'Source: vocal microphone']].map(([v, n]) => h('option', { value: v }, n))),
     h('button', { class: 'btn sm', id: 'vzRecBtn', 'data-srec': '1', title: 'Record the stage as a video with the song’s sound (saved on this device)', onclick: e => srecMenu(e.currentTarget) }, '⏺ Record'),
@@ -4028,7 +4062,7 @@ function visAna() { const s = VZ.src || 'auto'; if (s === 'vox' && E.anaVox) ret
 /** looks that draw their whole picture themselves: no pitch read-out or mini fretboard on top */
 const vzBare = m => m === 'concert' || HM_MODES.has(m) || (typeof BK_MODES !== 'undefined' && BK_MODES.has(m));
 function drawVis(cvo, o) {
-  o = o || {}; const cv = cvo || UI.vcv; if (!cv || !E.ready || (!cvo && !paneVisible('vis'))) return; const MODE = o.mode || VZ.mode; const g = cv.getContext('2d'), W = cv.width, H = cv.height, now = performance.now(), dt = Math.min(.1, (now - (VZ.last || now)) / 1000); VZ.last = now; VZ.t += dt;
+  o = o || {}; const cv = cvo || UI.vcv; if (!cv || !E.ready || (!cvo && !paneVisible('vis'))) return; const MODE = o.mode || VZ.mode; const g = cv.getContext('2d'), W = cv.width, H = cv.height, now = performance.now(), dt = Math.min(.1, (now - (VZ.last || now)) / 1000) * vzSpeed(); VZ.last = now; VZ.t += dt;
   const an = visAna(); if (!an) return; if (!VZ.fd || VZ.fd.length !== an.frequencyBinCount) VZ.fd = new Float32Array(an.frequencyBinCount); an.getFloatFrequencyData(VZ.fd); const fd = VZ.fd, bh = E.ctx.sampleRate / an.fftSize;
   const light = CFG.theme === 'light', C = o.C || vcol(), HP = MODE === 'hex' && !cvo ? hexPal() : null, HEXL = !!(HP && HP.lt);
   // background (always dark stage for contrast, tinted by theme)
@@ -4038,12 +4072,17 @@ function drawVis(cvo, o) {
   const lvl = x => clamp((x + 88 + (o.gain || 0)) / 62, 0, 1), bin = f => clamp(Math.round(f / bh), 1, fd.length - 1);
   const energy = (() => { let s = 0, n = 0; for (let k = bin(80); k < bin(5000); k += 2) { s += lvl(fd[k]); n++; } return s / n; })();
   const pulse = VZ.pulses.reduce((a, p) => Math.max(a, (1 - (now - p.t) / 900) * p.a), 0);
-  if (MODE === 'hex') drawHex(g, W, H, fd, bh, lvl, C, pulse, HP || hexPal(true));
-  else if (MODE === 'tunnel') drawTunnel(g, W, H, energy, C, pulse, dt);
-  else if (MODE === 'spectro') drawSpectro(g, W, H, fd, bin, lvl, C);
-  else if (MODE === 'chroma') drawChroma(g, W, H, C);
-  else if (MODE === 'scope') drawScope(g, W, H, C);
-  else if (typeof stageExtra === 'function') stageExtra(MODE, g, W, H, { fd, bin, lvl, C, pulse, energy, dt, o });
+  /* zoom (part 09e): the look is pushed in from the middle of the picture; size is applied by the looks made of tiles (drawHex, the pulse grid) */
+  const vk = vzZoom(), tf = vk !== 1, VW = W, VH = H;
+  if (tf) { g.save(); g.translate(W / 2, H / 2); g.scale(vk, vk); g.translate(-W / 2, -H / 2); }
+  try {
+    if (MODE === 'hex') drawHex(g, VW, VH, fd, bh, lvl, C, pulse, HP || hexPal(true));
+    else if (MODE === 'tunnel') drawTunnel(g, VW, VH, energy, C, pulse, dt);
+    else if (MODE === 'spectro') drawSpectro(g, VW, VH, fd, bin, lvl, C);
+    else if (MODE === 'chroma') drawChroma(g, VW, VH, C);
+    else if (MODE === 'scope') drawScope(g, VW, VH, C);
+    else if (typeof stageExtra === 'function') stageExtra(MODE, g, VW, VH, { fd, bin, lvl, C, pulse, energy, dt, o });
+  } finally { if (tf) g.restore(); }
   if (camOn && !cvo) camTop(g, W, H);
   if (MODE === 'halo' && !cvo) haloFront(g);   // stage draws its own camera layer after trails and kaleidoscope
   if (!cvo && CFG.vzNeck !== false && !document.body.classList.contains('perform-on') && !vzBare(MODE)) { const r = neckRect(W, H); drawMiniNeck(g, r[0], r[1], r[2], r[3], { C }); }
@@ -4103,7 +4142,7 @@ function hexToneSync() {
 }
 function drawHex(g, W, H, fd, bh, lvl, C, pulse, P) {
   const lt = P.lt, CA = P.useC ? C.a : P.a, CB = P.useC ? C.b : P.b;
-  const R = Math.max(14, Math.min(W, H) / 15), dx = R * Math.sqrt(3), dy = R * 1.5, cols = Math.ceil(W / dx) + 2, rows = Math.ceil(H / dy) + 2, cx = W / 2, cy = H / 2, maxd = Math.hypot(cx, cy);
+  const R = Math.max(14, Math.min(W, H) / 15) * vzSize(), dx = R * Math.sqrt(3), dy = R * 1.5, cols = Math.ceil(W / dx) + 2, rows = Math.ceil(H / dy) + 2, cx = W / 2, cy = H / 2, maxd = Math.hypot(cx, cy);
   if (!VZ.sm || VZ.sm.length !== cols * rows) VZ.sm = new Float32Array(cols * rows); const fmin = 70, fmax = 7000, lr = Math.log(fmax / fmin);
   const bt = ((performance.now() / 1000) % 1.9) / 1.9;   /* a slow ring even when nothing is playing, like the start screen */
   { const gl = g.createRadialGradient(cx, cy * .92, 0, cx, cy * .92, Math.hypot(W, H) * .55); gl.addColorStop(0, `rgba(${P.glow},${lt ? .12 : .16})`); gl.addColorStop(.5, `rgba(${P.glow},.04)`); gl.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gl; g.fillRect(0, 0, W, H); }   /* the start screen's glow */
@@ -4999,6 +5038,40 @@ function camFxBox() {
   sync(); return h('span', { class: 'row camfx', style: { gap: '6px' } }, sel, clr);
 }
 
+/* >>> parts/09e-vz-adjust.js */
+/* ============================================================
+   Part 09e · SPEED, SIZE AND ZOOM FOR THE VISUALS
+   Three settings for every look, wherever the visuals are drawn (the Visuals tab, the Stage, Perform's backdrop, the
+   Audience view): Speed (how fast things move: ¼× to 3×), Size (how big the tiles are in the looks made of tiles, Hex
+   Resonance and the pulse grid: fewer and larger, or more and smaller) and Zoom (push in on the middle of any look). The camera,
+   the chord, the words and the small neck are not changed. Remembered in this browser.
+   ============================================================ */
+const VZA = [['vzSpeed', 'Speed', .25, 3, 'How fast the visuals move'], ['vzSize', 'Size', .5, 2.5, 'How big the hexagons are in Hex Resonance and the pulse grid: bigger means fewer, larger tiles'], ['vzZoom', 'Zoom', 1, 3, 'Push in on the middle of the picture']];
+const vzSet = k => { const d = VZA.find(x => x[0] === k), v = +CFG[k]; return d && isFinite(v) && v > 0 ? clamp(v, d[2], d[3]) : 1; };
+const vzSpeed = () => vzSet('vzSpeed'), vzSize = () => vzSet('vzSize'), vzZoom = () => vzSet('vzZoom');
+const vzAdjusted = () => VZA.some(([k]) => vzSet(k) !== 1);
+/** the button that opens the three sliders; cls: the bar's button class */
+function vzAdjustBtn(cls) {
+  const b = h('button', { class: (cls || 'btn sm') + (vzAdjusted() ? ' on' : ''), 'data-vza': '1', title: 'Speed, size and zoom of the visuals', onclick: e => vzAdjustOpen(e.currentTarget) }, '🎚 Speed · size · zoom');
+  return b;
+}
+function vzAdjustOpen(anchor) {
+  let saveT = 0; const rows = {}, mark = () => $$('[data-vza]').forEach(x => x.classList.toggle('on', vzAdjusted()));
+  const box = h('div', { class: 'vza', style: { display: 'grid', gap: '8px', minWidth: '250px' } }, h('h5', {}, 'Visuals: speed, size, zoom'));
+  VZA.forEach(([k, label, lo, hi, tip]) => {
+    const val = h('b', { class: 'mono tiny', style: { minWidth: '44px', textAlign: 'right' } }, vzSet(k).toFixed(2) + '×');
+    const r = h('input', { type: 'range', id: k + 'In', min: lo, max: hi, step: .05, value: vzSet(k), 'aria-label': label, title: tip, style: { flex: 1 },
+      oninput: e => { CFG[k] = +e.target.value; val.textContent = vzSet(k).toFixed(2) + '×'; VZ.spec = null; clearTimeout(saveT); saveT = setTimeout(saveCfg, 300); mark(); },
+      ondblclick: e => { CFG[k] = 1; e.target.value = 1; val.textContent = '1.00×'; saveCfg(); mark(); } });
+    rows[k] = { r, val }; box.append(h('label', { class: 'lrow', style: { gap: '8px', alignItems: 'center' }, title: tip }, h('span', { style: { width: '44px' } }, label), r, val));
+  });
+  box.append(h('div', { class: 'row', style: { gap: '8px', alignItems: 'center' } },
+    h('button', { class: 'btn sm', id: 'vzaReset', onclick: () => { VZA.forEach(([k]) => { CFG[k] = 1; rows[k].r.value = 1; rows[k].val.textContent = '1.00×'; }); VZ.spec = null; saveCfg(); mark(); } }, 'Reset'),
+    h('span', { class: 'tiny muted' }, 'Double-click a slider to reset it.')),
+    h('div', { class: 'tiny muted', style: { lineHeight: 1.45 } }, 'Speed and Zoom work on every look; Size sets the hexagons of Hex Resonance and the pulse grid. On the Visuals tab, the Stage and in Perform. The camera, the chord, the words and the small neck stay as they are.'));
+  popover(anchor, box);
+}
+
 /* >>> parts/10-main.js */
 /* ============================================================
    Part 10 · boot, frame loop, wiring
@@ -5080,7 +5153,7 @@ async function boot() {
   document.addEventListener('visibilitychange', () => { if (!document.hidden && E.ctx && !OFR.busy && E.ctx.state === 'suspended') E.ctx.resume(); });
   if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener('devicechange', () => { ioDeviceChange().catch(e => console.warn(e)); });
   bus.emit('song');
-  if (/[?&]debug\b/.test(location.search)) window.__daily = { S, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, STP, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfort, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, srecStart, srecStop, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, tkFades, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, FB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, vzSetMode, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, perfClose, voicings, peaksOf, uid, shareGate, shareData, shareHtml, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, slotAtTime, SEL, mtof, spb, playheadSlot, WR, HM, HMX, HM_MODES, vzImmersive, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitThumb, kitInk, kitNotes, kitRecord, srecMime, mGo, GD_SESSIONS, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard};   // test hook, only with ?debug
+  if (/[?&]debug\b/.test(location.search)) window.__daily = { S, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, STP, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfort, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, srecStart, srecStop, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, tkFades, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, FB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, vzSetMode, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, drawVis, perfClose, voicings, peaksOf, uid, shareGate, shareData, shareHtml, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, slotAtTime, SEL, mtof, spb, playheadSlot, WR, HM, HMX, HM_MODES, vzImmersive, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitThumb, kitInk, kitNotes, kitRecord, srecMime, mGo, GD_SESSIONS, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard};   // test hook, only with ?debug
   projInit().catch(e => { console.warn('library', e); PRJ.ready = true; if (PRJ.wantStart) startMaybe(); });
 }
 
@@ -5499,7 +5572,7 @@ function stageExtra(mode, g, W, H, X) {
     if (pts.length > 1) { g.beginPath(); pts.forEach((q, i) => g[i ? 'lineTo' : 'moveTo'](q[0], q[1])); g.closePath(); g.fillStyle = mixc(C.b, C.a, .5, .16); g.fill(); g.strokeStyle = mixc(C.b, C.a, .5, .8); g.lineWidth = 2; g.stroke(); }
     g.fillStyle = mixc(C.a, C.b, .5, .9); hexPath(g, 0, 0, R * (.02 + pulse * .02)); g.fill(); g.restore(); g.textAlign = 'left';
   } else if (mode === 'pulse') {
-    const sz = Math.max(26, R / 12), hw = sz * Math.sqrt(3), cols = Math.ceil(W / hw) + 2, rows = Math.ceil(H / (sz * 1.5)) + 2, info = SG.info || {}, beatP = (info.playing ? ((info.slot % (16 / S.ts[1])) / (16 / S.ts[1])) : (t * 1.5) % 1), dn = 1 - beatP;
+    const sz = Math.max(26, R / 12) * vzSize(), hw = sz * Math.sqrt(3), cols = Math.ceil(W / hw) + 2, rows = Math.ceil(H / (sz * 1.5)) + 2, info = SG.info || {}, beatP = (info.playing ? ((info.slot % (16 / S.ts[1])) / (16 / S.ts[1])) : (t * 1.5) % 1), dn = 1 - beatP;
     for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
       const x = c * hw + (r % 2 ? hw / 2 : 0) - hw / 2, y = r * sz * 1.5, u = x / W, d = Math.hypot(x - cx, y - cy) / (Math.hypot(cx, cy)), band = lvl(fd[bin(80 * Math.pow(60, clamp(u, 0, 1)))]), ring = pulse * Math.max(0, 1 - Math.abs(d - (1 - pulse) * 1.1) * 7), downb = (info.beat === 0 && info.playing ? Math.max(0, 1 - d * 1.4) * dn * dn : 0), v = clamp(band * .9 + ring + downb * .8, 0, 1.2);
       hexPath(g, x, y, sz * .93 * (.55 + .45 * Math.min(1, v + .15))); g.fillStyle = mixc(C.c, C.b, clamp(v, 0, 1), .06 + .8 * clamp(v, 0, 1)); g.fill();
@@ -5611,7 +5684,7 @@ function stagePop() {
 function renderStageUI() {
   if (!SG.hudbar) return; const sc = scn();
   SG.hudbar.innerHTML = ''; STG.scenes.forEach((s, i) => SG.hudbar.append(h('button', { class: 'sbtn' + (i === STG.cur ? ' on' : ''), title: s.name + ' — key ' + (i + 1) + ' · MIDI note ' + (48 + i), onclick: () => stageScene(i) }, (i + 1) + ' ' + s.name)));
-  SG.hudbar.append(h('span', { style: { flex: 1 } }), ...(document.body.dataset.form && document.body.dataset.form !== 'desktop' ? [h('button', { class: 'sbtn', title: 'Fill the screen', onclick: stageFull }, SG.wrap.classList.contains('pfs') ? '✕ Exit' : '⛶ Full')] : []), h('button', { class: 'sbtn' + (SG.boOn ? ' on' : ''), id: 'stgBo', title: 'Fade the output to black and back (key 0)', 'aria-pressed': String(!!SG.boOn), onclick: () => { shBlackout(); renderStageUI(); } }, '■ Blackout'), h('button', { class: 'sbtn', onclick: () => { STG.hud = !(STG.hud !== false); saveStg(); renderStageUI(); } }, STG.hud !== false ? 'HUD on' : 'HUD off'), h('button', { class: 'sbtn', title: 'Separate window for a projector / second screen', onclick: stagePop }, '⧉ Pop-out'), h('button', { class: 'sbtn', onclick: stageFull }, '⛶ Fullscreen'));
+  SG.hudbar.append(h('span', { style: { flex: 1 } }), ...(document.body.dataset.form && document.body.dataset.form !== 'desktop' ? [h('button', { class: 'sbtn', title: 'Fill the screen', onclick: stageFull }, SG.wrap.classList.contains('pfs') ? '✕ Exit' : '⛶ Full')] : []), vzAdjustBtn('sbtn'), h('button', { class: 'sbtn' + (SG.boOn ? ' on' : ''), id: 'stgBo', title: 'Fade the output to black and back (key 0)', 'aria-pressed': String(!!SG.boOn), onclick: () => { shBlackout(); renderStageUI(); } }, '■ Blackout'), h('button', { class: 'sbtn', onclick: () => { STG.hud = !(STG.hud !== false); saveStg(); renderStageUI(); } }, STG.hud !== false ? 'HUD on' : 'HUD off'), h('button', { class: 'sbtn', title: 'Separate window for a projector / second screen', onclick: stagePop }, '⧉ Pop-out'), h('button', { class: 'sbtn', onclick: stageFull }, '⛶ Fullscreen'));
   const E_ = SG.editor; E_.innerHTML = ''; E_.append(shcRoot());   // the Show setup console (part 59)
 }
 function buildStagePane() {
@@ -13551,7 +13624,7 @@ function hmDiss(pc, ch, inKey) {
 }
 /** per frame: the one call every harmony look makes first */
 function hmUpdate() {
-  if (HM.stamp === VZ.t) return HM; HM.stamp = VZ.t; const now = performance.now(); HM.dt = Math.min(.1, (now - (HM.now || now)) / 1000); HM.now = now; HM.on = now;
+  if (HM.stamp === VZ.t) return HM; HM.stamp = VZ.t; const now = performance.now(); HM.dt = Math.min(.1, (now - (HM.now || now)) / 1000) * vzSpeed(); HM.now = now; HM.on = now;
   const sym = hmChordSym(), ch = parseChord(sym);
   if (sym !== HM.sym) { HM.prevSym = HM.sym; HM.sym = sym; HM.chord = ch; HM.chT = now; HM.q = ch ? lxQual(ch) : { val: 0, ten: 0 }; }
   const sc = (() => { try { return voxScale(); } catch (e) { return new Set(); } })();
@@ -13837,22 +13910,20 @@ function hmDraw(mode, g, W, H, X) {
 /* >>> parts/67-audience.js */
 /* ============================================================
    Part 67 · Audience view, and the video take (2.11)
-   AUDIENCE VIEW  A Monitor widget that shows the show the way the room sees it: the visuals on a screen, you in front of them (the camera, not mirrored),
-   and a crowd's silhouettes at the bottom lit by the screen. It draws its own copy of the show, small, so it works while you are on the Tab or Write
+   AUDIENCE VIEW  A Monitor widget that shows the show the way the room sees it: the visuals, with you in front of them (the camera, not mirrored), so
+   you can watch your own expression while you record. It draws its own copy of the show, small, so it works while you are on the Tab or Write
    panels. When the Visuals tab is open it copies that picture instead, so nothing is drawn twice. Nothing is recorded or sent anywhere.
    VIDEO TAKE     When you record the stage as a video, the take recorder runs beside it: what comes in on the armed guitar and voice inputs becomes a
    lane in the arrangement, starting where the video started (what you play, not the band, which is already in the arrangement). Undo removes it.
    ============================================================ */
-const mtRnd = n => { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };      // a steady pseudo-random number for a seed
-const AUD = { cv: null, off: null, sm: null, big: false, live: false, cam: null, note: null, last: 0, seen: 0 };
+const AUD = { cv: null, off: null, sm: null, live: false, cam: null, note: null, last: 0, seen: 0 };
 
 function audienceCard() {
   AUD.cv = h('canvas', { class: 'vcanvas', id: 'audCanvas', style: { width: '100%', aspectRatio: '16 / 9', height: 'auto' }, role: 'img', 'aria-label': 'You and the show, as the audience sees them' });
   AUD.cam = h('button', { class: 'btn sm', id: 'audCam', title: 'Start or stop the camera (it stays on this device)', onclick: async () => { if (CAM.on) stopCam(); else await startCam(); audSync(); } }, '📷 Camera on');
-  const big = h('button', { class: 'btn sm', id: 'audBig', 'aria-pressed': 'false', title: 'Make the picture taller', onclick: e => { AUD.big = !AUD.big; e.currentTarget.setAttribute('aria-pressed', AUD.big ? 'true' : 'false'); AUD.cv.style.aspectRatio = AUD.big ? '4 / 3' : '16 / 9'; } }, '⤢ Taller');
   AUD.note = h('div', { class: 'tiny muted', id: 'audNote', style: { marginTop: '4px', lineHeight: 1.45 } });
   return h('div', { class: 'card', id: 'audCard' }, h('h4', {}, 'Audience view', h('span', { class: 'badge' }, 'as they see you')),
-    h('div', { class: 'card-b', style: { padding: '6px' } }, AUD.cv, h('div', { class: 'row', style: { gap: '6px', marginTop: '6px', flexWrap: 'wrap', alignItems: 'center' } }, AUD.cam, big, camFxBox()), AUD.note));
+    h('div', { class: 'card-b', style: { padding: '6px' } }, AUD.cv, h('div', { class: 'row', style: { gap: '6px', marginTop: '6px', flexWrap: 'wrap', alignItems: 'center' } }, AUD.cam, camFxBox()), AUD.note));
 }
 function audSync() {
   if (!AUD.cam) return; AUD.cam.textContent = CAM.on ? '📷 Camera off' : '📷 Camera on'; AUD.cam.classList.toggle('on', !!CAM.on);
@@ -13860,47 +13931,24 @@ function audSync() {
   AUD.note.textContent = !CAM.on ? 'The camera is off, so you are not in the picture yet. Turn it on and pick “Me in front” to stand in front of the show.'
     : copy && CFG.mirror ? 'Mirrored here because the Visuals tab is open. On other tabs the audience’s side is shown, unmirrored.' : 'Not mirrored: this is the side the audience sees.';
 }
-/** a crowd: rows of heads and shoulders, a few with an arm up or a phone, swaying a little with the music, lit from the screen */
-function audCrowd(g, W, H, t, e, hue) {
-  const y0 = H * .70; g.save();
-  const sp = g.createLinearGradient(0, y0 - H * .06, 0, H); sp.addColorStop(0, hmHsl(hue, 85, 55, .42 + e * .22)); sp.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = sp; g.fillRect(0, y0 - H * .06, W, H - y0 + H * .06);
-  for (let row = 0; row < 3; row++) {
-    const n = 15 + row * 4, base = y0 + H * (.1 + row * .075), sc = .72 + row * .26, shade = row === 0 ? '#2a1d3d' : row === 1 ? '#190f29' : '#0c0716';
-    for (let i = 0; i < n; i++) {
-      const r1 = mtRnd(row * 97 + i * 3.1), r2 = mtRnd(row * 53 + i * 7.7), x = ((i + .5 + (r1 - .5) * .6) / n) * W, sway = Math.sin(t * (1 + r2) * 1.6 + i) * e * H * .012, hr = H * .036 * sc * (.9 + r2 * .2), y = base - hr * 1.2 + sway - (r2 > .8 ? H * .02 : 0);
-      g.fillStyle = shade; g.beginPath(); g.ellipse(x, y + hr * 2.4, hr * 2.1, hr * 1.9, 0, Math.PI, 0); g.fill(); g.beginPath(); g.arc(x, y, hr, 0, 7); g.fill();
-      g.strokeStyle = hmHsl(hue + r1 * 40, 90, 66, .75 - row * .18); g.lineWidth = Math.max(1, H * .004); g.beginPath(); g.arc(x, y, hr, Math.PI * 1.1, Math.PI * 1.9); g.stroke();
-      if (r1 > .78) { const ax = x + (r2 > .5 ? 1 : -1) * hr * 1.5, ay = y - hr * (2.4 + Math.sin(t * 3 + i) * e * .5); g.strokeStyle = shade; g.lineWidth = hr * .7; g.lineCap = 'round'; g.beginPath(); g.moveTo(x + (ax - x) * .5, y + hr * 1.6); g.lineTo(ax, ay); g.stroke();
-        if (r1 > .93) { g.fillStyle = 'rgba(210,235,255,.85)'; g.fillRect(ax - hr * .4, ay - hr * .9, hr * .8, hr * 1.2); } }
-    }
-  }
-  g.restore();
-}
 function audDraw() {
   const cv = AUD.cv; if (!cv || !cv.isConnected || !E.ready) return; const w = cv.clientWidth; if (!w) return;
   const nowp = performance.now(); if (nowp - AUD.seen > 400) { AUD.seen = nowp; audSync(); }
   AUD.live = !!CAM.on;
-  const d = Math.min(2, window.devicePixelRatio || 1), W = Math.round(w * d), H = Math.round(w * (AUD.big ? 3 / 4 : 9 / 16) * d);
+  const d = Math.min(2, window.devicePixelRatio || 1), W = Math.round(w * d), H = Math.round(w * 9 / 16 * d);
   if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
-  const g = cv.getContext('2d'), sx = Math.round(W * .07), sy = Math.round(H * .05), sw = Math.round(W * .86), sh = Math.round(H * (AUD.big ? .62 : .64)), t = performance.now() / 1000;
-  const copy = typeof paneVisible === 'function' && paneVisible('vis') && UI.vcv && UI.vcv.width > 8;      // the Visuals tab is already drawing the show
+  const g = cv.getContext('2d'), copy = typeof paneVisible === 'function' && paneVisible('vis') && UI.vcv && UI.vcv.width > 8;      // the Visuals tab is already drawing the show
   let src = UI.vcv;
   if (!copy) {
-    const off = AUD.off || (AUD.off = document.createElement('canvas')); if (off.width !== sw || off.height !== sh) { off.width = sw; off.height = sh; }
+    const off = AUD.off || (AUD.off = document.createElement('canvas')); if (off.width !== W || off.height !== H) { off.width = W; off.height = H; }
     const cam = !!(CAM.on && CAM.video && CAM.video.readyState >= 2), mir = CFG.mirror, keep = VZ.sm; src = off;
     CFG.mirror = false; VZ.sm = AUD.sm;           // the audience is not looking in a mirror; the hexagon field keeps its own smoothing
-    try { drawVis(off, { mode: VZ.mode, cam, bgA: 1, noText: false }); if (cam && (CFG.camFx || 'over') !== 'over') camTop(off.getContext('2d'), sw, sh); }
+    try { drawVis(off, { mode: VZ.mode, cam, bgA: 1, noText: false }); if (cam && (CFG.camFx || 'over') !== 'over') camTop(off.getContext('2d'), W, H); }
     catch (e) { if (!AUD.err) { AUD.err = 1; console.warn('audience view', e); } } finally { CFG.mirror = mir; AUD.sm = VZ.sm; VZ.sm = keep; }
   }
-  const C = vcol(), hue = (typeof HM !== 'undefined' && HM.chord ? lxHueOf(lxFifths(HM.chord.root)) : 38), e = clamp((AN.rms + 60) / 50, 0, 1) * (AN.active ? 1 : .3) + (T.playing ? .25 : 0);
   g.globalAlpha = 1; g.fillStyle = '#04030a'; g.fillRect(0, 0, W, H);
-  const hz = g.createRadialGradient(W / 2, sy + sh * .5, sh * .2, W / 2, sy + sh * .5, W * .62); hz.addColorStop(0, hmHsl(hue, 80, 45, .22)); hz.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = hz; g.fillRect(0, 0, W, H);
-  g.fillStyle = '#16121f'; g.fillRect(sx - 5, sy - 5, sw + 10, sh + 10);                      // the screen's frame
-  try { g.drawImage(src, sx, sy, sw, sh); } catch (er) { }
-  g.save(); g.globalAlpha = .16; g.translate(0, sy + sh * 2 + 2); g.scale(1, -1); try { g.drawImage(src, sx, sy + sh - Math.round(sh * .14), sw, Math.round(sh * .14), sx, sy + sh, sw, Math.round(sh * .14)); } catch (er) { } g.restore();   // its reflection on the floor
-  audCrowd(g, W, H, t, e, hue);
-  if (!CAM.on) { g.font = `600 ${Math.max(10, Math.round(H * .036))}px system-ui,sans-serif`; g.textAlign = 'center'; g.fillStyle = 'rgba(255,255,255,.7)'; g.fillText('Camera off · you are not in the picture', W / 2, sy + sh - H * .03); g.textAlign = 'left'; }
-  const vg = g.createRadialGradient(W / 2, H / 2, H * .45, W / 2, H / 2, W * .75); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.5)'); g.fillStyle = vg; g.fillRect(0, 0, W, H);
+  try { g.drawImage(src, 0, 0, W, H); } catch (er) { }
+  if (!CAM.on) { g.font = `600 ${Math.max(10, Math.round(H * .045))}px system-ui,sans-serif`; g.textAlign = 'center'; g.fillStyle = 'rgba(255,255,255,.75)'; g.fillText('Camera off · you are not in the picture', W / 2, H * .92); g.textAlign = 'left'; }
 }
 
 /* ---------- the video take: your playing goes into the arrangement while the stage is recorded ---------- */
