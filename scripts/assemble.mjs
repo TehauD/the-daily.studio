@@ -46,10 +46,11 @@ mkdirSync(join(out, 'legal'), { recursive: true });
   };
   const pre = t => '<pre>' + esc(t.trim()) + '</pre>';
   const page = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'">
-<meta name="robots" content="noindex"><title>Licences, notices and privacy — the-daily.studio</title>
+<meta name="robots" content="noindex"><title>Terms, licences, notices and privacy — the-daily.studio</title>
 <style>:root{color-scheme:light dark}body{margin:0;font:16px/1.55 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:Canvas;color:CanvasText}main{max-width:820px;margin:0 auto;padding:24px 16px 64px}h1{font-size:26px;margin:.2em 0}h2{font-size:21px;margin:1.6em 0 .4em;padding-top:.6em;border-top:1px solid color-mix(in srgb,CanvasText 18%,transparent)}h3,h4{margin:1.2em 0 .3em}a{color:LinkText}code,pre{font:13px/1.45 ui-monospace,Menlo,Consolas,monospace}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:color-mix(in srgb,CanvasText 7%,transparent);padding:12px;border-radius:8px}table{border-collapse:collapse;width:100%;font-size:14px;display:block;overflow-x:auto}th,td{border:1px solid color-mix(in srgb,CanvasText 22%,transparent);padding:6px 9px;text-align:left;vertical-align:top}nav a{margin-right:14px}</style></head><body><main>
-<p><a href="../">← the-daily.studio</a></p><h1>Licences, notices and privacy</h1>
-<nav><a href="#licence">Licence</a><a href="#notices">Third-party notices</a><a href="#privacy">Privacy</a><a href="#fonts">Font licences</a></nav>
+<p><a href="../">← the-daily.studio</a></p><h1>Terms, licences, notices and privacy</h1>
+<nav><a href="#terms">Terms of use</a><a href="#licence">Licence</a><a href="#notices">Third-party notices</a><a href="#privacy">Privacy</a><a href="#fonts">Font licences</a></nav>
+<section id="terms">${md(rd('TERMS.md').replace(/^# /, '## '))}</section>
 <section id="licence"><h2>Licence</h2>${pre(rd('LICENSE'))}</section>
 <section id="notices">${md(rd('THIRD_PARTY_NOTICES.md').replace(/^# /, '## '))}</section>
 <section id="privacy">${md(rd('PRIVACY.md').replace(/^# /, '## '))}</section>

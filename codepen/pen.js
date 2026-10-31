@@ -3701,7 +3701,7 @@ async function boot() {
   document.addEventListener('visibilitychange', () => { if (!document.hidden && E.ctx && !OFR.busy && E.ctx.state === 'suspended') E.ctx.resume(); });
   if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener('devicechange', () => { ioDeviceChange().catch(e => console.warn(e)); });
   bus.emit('song');
-  if (/[?&]debug\b/.test(location.search)) window.__daily = { S, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, STP, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfort, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, srecStart, srecStop, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, tkFades, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, FB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, vzSetMode, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, slotAtTime, SEL, mtof, spb, playheadSlot, WR, HM, HMX, HM_MODES, vzImmersive, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitThumb, kitInk, kitNotes, kitRecord, srecMime, mGo, GD_SESSIONS, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard};   // test hook, only with ?debug
+  if (/[?&]debug\b/.test(location.search)) window.__daily = { S, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, STP, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfort, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, srecStart, srecStop, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, tkFades, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, FB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, vzSetMode, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, peaksOf, uid, shareGate, shareData, shareHtml, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, slotAtTime, SEL, mtof, spb, playheadSlot, WR, HM, HMX, HM_MODES, vzImmersive, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitThumb, kitInk, kitNotes, kitRecord, srecMime, mGo, GD_SESSIONS, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard};   // test hook, only with ?debug
   projInit().catch(e => { console.warn('library', e); PRJ.ready = true; if (PRJ.wantStart) startMaybe(); });
 }
 
@@ -4083,7 +4083,11 @@ function stageInfo() {
     const sp = spb(), ph = playheadSlot(); o.slot = ph; if (ph < 0) { o.beat = Math.floor(((ph % sp) + sp) % sp / (16 / S.ts[1])); o.sec = 'Count-in'; return o; }
     const bi = Math.floor(ph / sp), sib = ph - bi * sp, fb = barsCache()[bi]; if (!fb) return o; const cd = chordAt(bi, Math.floor(sib));
     o.sym = cd && cd.sym; o.next = cd && cd.next; o.sec = fb.sec.name; o.barIn = fb.bi + 1; o.nBars = fb.sec.bars.length; o.beat = Math.floor(sib / (16 / S.ts[1]));
-    const ls = (fb.sec.lyrics || '').split('\n').filter(l => l.trim()); if (ls.length) { const idx = Math.min(ls.length - 1, Math.floor(fb.bi / fb.sec.bars.length * ls.length)); o.lyric = parseLyricLine(ls[idx]).text; o.lyricNext = ls[idx + 1] ? parseLyricLine(ls[idx + 1]).text : ''; }
+    const L = lyAt(fb.sec, fb.bi, sib);   // the line being sung, timed by the chords written in it (part 13b)
+    if (L.idx >= 0) { let nx = L.lines[L.idx + 1]; const cur = L.lines[L.idx];
+      /* on the last line of a section, the next section's first line comes next */
+      if (!nx) { const si = S.sections.indexOf(fb.sec), ns = S.sections[si + 1]; nx = ns ? (ns.lyrics || '').split('\n').find(l => l.trim()) : null; }
+      o.lyric = lyPlain(cur); o.ly = lyLayout(cur); o.ly.cur = L.mi; o.lyricNext = nx ? lyPlain(nx) : ''; o.lyN = nx ? lyLayout(nx) : null; }
   } else { o.sym = live; o.sec = 'Listening'; }
   return o;
 }
@@ -4160,7 +4164,8 @@ function stageFrame(ts) {
 function drawStageHUD(g, W, H, sc, info, C) {
   const lens = sc.mode === 'concert' ? (CFG.lens || 'perform') : '', teach = lens === 'teach'; if (lens === 'sky') return;       // the Sky lens is a picture; the Teach lens carries its own chord card, so only the lyric stays
   const ov = sc.ov, u = Math.min(W, H * 1.6), mono = 'ui-monospace,Menlo,monospace', pr = sc.mode === 'prompter', sh = 'rgba(0,0,0,.65)'; g.save(); g.shadowColor = sh; g.shadowBlur = u * .02; g.textBaseline = 'alphabetic';
-  if (ov.chord && !teach) {
+  const lyCh = !!(ov.lyric && info.ly && info.ly.chords.length);   // the line carries its chords: they are shown over the words instead of in the corner
+  if (ov.chord && !teach && !lyCh) {
     const sym = info.sym || '', sz = u * (pr ? .26 : .14); g.font = `800 ${Math.round(sz)}px ${mono}`; g.textAlign = pr ? 'center' : 'left'; g.fillStyle = '#fff';
     const x = pr ? W / 2 : W * .04, y = pr ? H * .46 : H * .84; g.fillText(sym, x, y);
     if (info.next && info.playing) { g.font = `700 ${Math.round(sz * .34)}px ${mono}`; g.fillStyle = C.b; g.fillText('next  ' + info.next, x, y + (pr ? sz * .38 : -sz * .92)); }
@@ -4171,6 +4176,11 @@ function drawStageHUD(g, W, H, sc, info, C) {
     if (ov.beat) { const n = S.ts[0], r = u * .016, gap = r * 3.2, x0 = W * .97 - (n - 1) * gap - r; for (let i = 0; i < n; i++) { const on = info.playing && i === info.beat; g.beginPath(); g.arc(x0 + i * gap, H * (ov.info ? .07 + .09 : .07), r * (on ? 1.5 : 1), 0, 7); g.fillStyle = on ? (i === 0 ? C.b : '#fff') : 'rgba(255,255,255,.22)'; g.fill(); } }
   }
   if (ov.lyric && info.lyric && teach) { g.textAlign = 'center'; g.font = `700 ${Math.round(u * .04)}px ${mono}`; g.fillStyle = '#fff'; g.fillText(info.lyric, W / 2, H * .955, W * .92); }
+  else if (lyCh || (ov.lyric && info.ly && info.lyN && info.lyN.chords.length && (info.lyric || info.ly.chords.length))) {
+    const px = Math.round(u * (pr ? .06 : .045)), y = H * (pr ? .72 : .76);
+    lyDraw(g, { x: W / 2, y, w: W * .92, px, font: mono, ly: info.ly, hi: C.b });
+    if (info.lyN && (info.lyN.text || info.lyN.chords.length)) lyDraw(g, { x: W / 2, y: y + px * .55 + Math.round(u * .03) * (info.lyN.chords.length ? 2.1 : 1.2), w: W * .92, px: Math.round(u * .03), weight: 600, font: mono, ly: info.lyN, dim: true });
+  }
   else if (ov.lyric && info.lyric) { g.textAlign = 'center'; g.font = `700 ${Math.round(u * (pr ? .06 : .045))}px ${mono}`; g.fillStyle = '#fff'; g.fillText(info.lyric, W / 2, H * (pr ? .72 : .76), W * .92); if (info.lyricNext) { g.font = `600 ${Math.round(u * .03)}px ${mono}`; g.fillStyle = 'rgba(255,255,255,.5)'; g.fillText(info.lyricNext, W / 2, H * (pr ? .72 : .76) + u * .065, W * .92); } }
   if (ov.tuner && AN.active && AN.midi != null) { g.textAlign = 'right'; g.font = `800 ${Math.round(u * .06)}px ${mono}`; g.fillStyle = Math.abs(AN.cents) < 6 ? '#3ddc84' : '#fff'; g.fillText(pcName(AN.midi) + ' ' + (AN.cents >= 0 ? '+' : '') + AN.cents.toFixed(0) + '¢', W * .97, H * .93); }
   g.restore(); g.textAlign = 'left';
@@ -4236,6 +4246,102 @@ function buildStagePane() {
   p.append(h('div', { class: 'row', style: { margin: '0 0 8px', gap: '10px' } }, h('div', { class: 'tiny muted' }, 'Show-ready visuals: pick a scene, go fullscreen (double-click), or pop it out to a projector. Play the song or just play — it follows both. Set the show up below.')), grid);
   if (typeof ResizeObserver === 'function') new ResizeObserver(() => grid.classList.toggle('wide', p.clientWidth >= 1000)).observe(p);
   renderStageUI();
+}
+
+/* >>> parts/13b-lyrics-live.js */
+/* ============================================================
+   Part 13b · LYRICS IN TIME, WITH THEIR CHORDS OVER THE WORDS
+   While the song plays, the stage, the lower third and Perform show the line being sung with its chords above the words,
+   each one over the syllable it was written over (as on the chord sheet), and the chord being played lit up.
+   Which line is "now" comes from the chords written in the lyrics: a line with [E]…[B]…[F#m]…[A] is on screen while the
+   bars E, B, F#m and A play. A section whose lyrics carry no chords keeps the old way: its lines share its bars evenly.
+   ============================================================ */
+const LYT = new WeakMap();
+const lyPlain = l => parseLyricLine(l).text.trim();
+/** a lyric line laid out for display: { text, chords: [{ col, sym }] }. Each chord sits over the character it was written
+    before; when two chords would touch, the words are spaced out so each chord still sits over its own syllable. */
+function lyLayout(line) {
+  const { text, chords } = parseLyricLine(line || ''); let t = text, shift = 0, end = -1; const out = [];
+  chords.forEach(c => {
+    let col = c.pos + shift; if (col > t.length) { t = t.padEnd(col); }
+    if (end >= 0 && col < end + 1) { const add = end + 1 - col; t = t.slice(0, col) + ' '.repeat(add) + t.slice(col); shift += add; col += add; }
+    out.push({ col, sym: c.sym }); end = col + c.sym.length;
+  });
+  const lead = Math.min((t.match(/^ */) || [''])[0].length, out.length ? out[0].col : 1e9);
+  return { text: t.slice(lead).replace(/\s+$/, ''), chords: out.map(c => ({ col: c.col - lead, sym: c.sym })) };
+}
+const lySame = (a, b) => { if (a === b) return true; const x = parseChord(a), y = parseChord(b); return !!(x && y && x.name === y.name); };
+/** when each lyric line of a section is sung: for every chord event of the section (a bar, or half a bar for "Am G"), the
+    line on screen and which of its chords is playing. null when the lyrics carry no chords. Cached per section. */
+function lyTimeline(sec) {
+  const key = (sec.lyrics || '') + '\u0001' + sec.bars.map(b => b.chord || '').join('|'), hit = LYT.get(sec); if (hit && hit.key === key) return hit.v;
+  const lines = (sec.lyrics || '').split('\n').filter(l => l.trim()), mk = [], ev = [], first = [];
+  lines.forEach((l, li) => parseLyricLine(l).chords.forEach((c, mi) => mk.push({ li, mi, sym: c.sym })));
+  sec.bars.forEach((b, bi) => { const cs = barChords(b), n = Math.max(1, cs.length); first[bi] = ev.length; for (let k = 0; k < n; k++) ev.push({ bi, sym: cs[k] || '' }); });
+  let v = null;
+  if (mk.length && ev.length) {
+    /* walk the bars and the written chords together: a bar that plays the next written chord moves on to it; a bar that
+       repeats it (a chord held for two bars) or has no chord stays where it is */
+    let j = 0, got = 0; const at = ev.map(e => {
+      if (e.sym && j < mk.length && lySame(e.sym, mk[j].sym)) { got++; return j++; }
+      if (e.sym && j + 1 < mk.length && lySame(e.sym, mk[j + 1].sym) && !(j > 0 && lySame(e.sym, mk[j - 1].sym))) { got++; j += 2; return j - 1; }   // a written chord with no bar of its own
+      return j - 1;
+    });
+    const m = got >= mk.length * .6 ? at : ev.map((e, i) => Math.floor(i * mk.length / ev.length));   // bars edited away from the words: spread them evenly
+    const lineOf = m.map(x => x < 0 ? mk[0].li : mk[x].li), mkOf = m.map(x => x < 0 ? -1 : mk[x].mi), chorded = new Set(mk.map(x => x.li));
+    /* lines without chords: those before the first chord take the bars before it; those after a line take turns with that
+       line's last chord when it lasts long enough to share */
+    const pre = []; for (let li = 0; li < mk[0].li; li++) pre.push(li);
+    const lead = m.map((x, i) => x < 0 ? i : -1).filter(i => i >= 0); if (pre.length && lead.length) lead.forEach((i, k) => { lineOf[i] = pre[Math.min(pre.length - 1, Math.floor(k * pre.length / lead.length))]; mkOf[i] = -1; });
+    lines.forEach((l, li) => {
+      if (!chorded.has(li)) return; const after = []; for (let q = li + 1; q < lines.length && !chorded.has(q); q++) after.push(q); if (!after.length) return;
+      const last = mk.reduce((a, x, gi) => x.li === li ? gi : a, -1), run = m.map((x, i) => x === last ? i : -1).filter(i => i >= 0); if (run.length < 2) return;
+      const parts = Math.min(after.length + 1, run.length); run.forEach((i, k) => { const p = Math.floor(k * parts / run.length); if (p > 0) { lineOf[i] = after[p - 1]; mkOf[i] = -1; } });
+    });
+    v = { lineOf, mkOf, first };
+  }
+  LYT.set(sec, { key, v }); return v;
+}
+/** the line on screen at bar bi (of the section), slot sib within the bar: { lines, idx, mi } (mi: the playing chord in that line, -1 none) */
+function lyAt(sec, bi, sib) {
+  const lines = (sec.lyrics || '').split('\n').filter(l => l.trim()); if (!lines.length) return { lines, idx: -1, mi: -1 };
+  const v = lyTimeline(sec);
+  if (!v) return { lines, idx: Math.min(lines.length - 1, Math.floor(bi / sec.bars.length * lines.length)), mi: -1 };
+  const cs = barChords(sec.bars[bi] || { chord: '' }), n = Math.max(1, cs.length), k = Math.min(n - 1, Math.floor((sib || 0) / (spb() / n))), e = (v.first[bi] || 0) + k;
+  return { lines, idx: v.lineOf[e] != null ? v.lineOf[e] : 0, mi: v.mkOf[e] != null ? v.mkOf[e] : -1 };
+}
+/** draw a line with its chords above the words on a canvas. o: { x, y (baseline of the words), w (widest it may be), px (size of
+    the words), font, weight, align ('center' | 'left'), ly (from lyLayout, with .cur = the playing chord), hi (colour of the
+    playing chord), dim (true for the next line) }. Shrinks to fit. Returns the height it used above y. */
+function lyDraw(g, o) {
+  const ly = o.ly, cs = ly.chords, mx = cs.reduce((a, c) => Math.max(a, c.col), 0), pad = ly.text.padEnd(mx);
+  let px = o.px, cpx, xs, tw;
+  const lay = () => {
+    cpx = Math.round(px * .78); g.font = `${o.weight || 700} ${px}px ${o.font}`; tw = g.measureText(ly.text).width; xs = cs.map(c => g.measureText(pad.slice(0, c.col)).width);
+    g.font = `800 ${cpx}px ${o.font}`; return cs.reduce((a, c, i) => Math.max(a, xs[i] + g.measureText(c.sym).width * 1.12), tw);
+  };
+  let full = lay(); if (full > o.w) { px = Math.max(8, Math.floor(px * o.w / full)); full = lay(); }
+  const x0 = o.align === 'left' ? o.x : o.x - full / 2, cy = o.y - px * (cs.length ? 1.02 : 0), a = o.dim ? .5 : 1;
+  g.save(); g.textAlign = 'left';
+  if (ly.text) { g.font = `${o.weight || 700} ${px}px ${o.font}`; g.fillStyle = 'rgba(255,255,255,' + a + ')'; g.fillText(ly.text, x0, o.y); }
+  cs.forEach((c, i) => {
+    const now = !o.dim && i === ly.cur, past = !o.dim && ly.cur != null && ly.cur >= 0 && i < ly.cur;
+    g.font = `800 ${Math.round(cpx * (now ? 1.12 : 1))}px ${o.font}`; g.fillStyle = now ? (o.hi || '#ffd166') : 'rgba(255,255,255,' + (o.dim ? .45 : past ? .42 : .9) + ')';
+    g.fillText(c.sym, x0 + xs[i], cy);
+    if (now) { const wd = g.measureText(c.sym).width; g.fillRect(x0 + xs[i], cy + px * .1, wd, Math.max(2, px * .06)); }
+  });
+  g.restore(); return cs.length ? px * 2.05 : px * 1.1;
+}
+/** the same line for the page (Perform): segments with the chord above the words; the playing chord gets the class "cur" */
+function lyNodes(line, cur) {
+  const ly = lyLayout(line); if (!ly.chords.length) return [ly.text || ' '];
+  const out = [], cols = ly.chords.map(c => c.col);
+  if (cols[0] > 0) out.push(h('span', { class: 'ly-seg' }, h('b', { class: 'ly-c' }, ' '), h('span', { class: 'ly-w' }, ly.text.slice(0, cols[0]))));
+  ly.chords.forEach((c, i) => {
+    const w = ly.text.slice(c.col, i + 1 < cols.length ? cols[i + 1] : undefined);
+    out.push(h('span', { class: 'ly-seg' }, h('b', { class: 'ly-c' + (i === cur ? ' cur' : cur != null && cur >= 0 && i < cur ? ' past' : '') }, c.sym), h('span', { class: 'ly-w' }, w || ' ')));
+  });
+  return out;
 }
 
 /* >>> parts/14-neural.js */
@@ -5744,7 +5850,7 @@ function laneMenu(anchor, l) {
         h('button', { class: 'btn sm', id: 'lmSplit', title: 'Cut a clip in two at the playhead (Ctrl+E)', onclick: () => { closePop(); const c = pick(); if (c) { tkSelect(c.id); tkSplit(c); } } }, '✂ Split at playhead'),
         h('button', { class: 'btn sm', id: 'lmDup', title: 'Copy a clip so it starts where the original ends (Ctrl+D)', onclick: () => { closePop(); const c = pick(); if (c) { tkSelect(c.id); tkDup(c); } } }, '⧉ Duplicate clip'),
         h('button', { class: 'btn sm', id: 'lmClip', title: 'Fades, reset trim, save one clip', onclick: () => { const c = pick(); if (c) { tkSelect(c.id); closePop(); setTimeout(() => tkMenu(anchor, c), 0); } } }, 'Clip options…')),
-      h('div', { class: 'row', style: { gap: '6px' } }, h('button', { class: 'btn sm', onclick: () => { closePop(); tkDownload(lead); } }, '⤓ WAV'), h('button', { class: 'btn sm', id: 'lmDelLane', onclick: () => { closePop(); tkDeleteLane(lead); } }, '✕ Delete lane'), h('button', { class: 'btn sm', onclick: () => { closePop(); dockGo('tx'); TX.src = lead.id; txRefreshSrc(); } }, '♬ Transcribe')));
+      h('div', { class: 'row', style: { gap: '6px' } }, h('button', { class: 'btn sm', onclick: () => { closePop(); tkDownload(lead); } }, '⤓ WAV'), h('button', { class: 'btn sm', id: 'lmShare', title: 'A small M4A of this lane to send or post, or a one-file share page with the words and chords', onclick: () => { closePop(); kitTake(lead, false); } }, '↗ Share…'), h('button', { class: 'btn sm', id: 'lmDelLane', onclick: () => { closePop(); tkDeleteLane(lead); } }, '✕ Delete lane'), h('button', { class: 'btn sm', onclick: () => { closePop(); dockGo('tx'); TX.src = lead.id; txRefreshSrc(); } }, '♬ Transcribe')));
   }
   if (l.type === 'trk') box.append(h('div', { class: 'row', style: { gap: '6px' } }, h('button', { class: 'btn sm', onclick: () => { closePop(); dockGo('stems'); } }, 'Open Stems'), h('button', { class: 'btn sm bad', onclick: () => { closePop(); stemUnload(); } }, '✕ Unload')));
   if (l.type === 'live' || l.type === 'vox') box.append(h('div', { class: 'tiny muted', style: { marginTop: '4px' } }, 'Input routing and the vocal strip are in the I/O panel (left).'), h('button', { class: 'btn sm', style: { marginTop: '4px' }, onclick: () => { closePop(); sideShow('io'); } }, 'Open I/O'));
@@ -6811,7 +6917,7 @@ function aboutBlock() {
         li(h('b', {}, 'Built with: '), 'the Web Audio API, AudioWorklet, Canvas, SVG and IndexedDB. No frameworks, no tracking, no analytics.'),
         li(h('b', {}, 'Hand tracking and person cut-out (optional): '), 'use ', ext('MediaPipe Tasks Vision', 'https://developers.google.com/mediapipe'), ' (Apache-2.0) with Google’s hand-landmarker and selfie-segmenter models. They are fetched from jsDelivr and Google Storage only after you say yes to a one-time download; this site does not host or copy them, and Google publishes them with model cards rather than a separate licence file. Motion-only mode and the edges-in look stay offline. ', CFG.mpOk ? h('button', { class: 'btn sm', id: 'mpForget', onclick: e => { CFG.mpOk = false; saveCfg(); e.target.remove(); toast('OK. It will ask again before downloading anything.', 'ok'); } }, 'Ask me again next time') : ''),
         li(h('b', {}, 'Methods: '), 'YIN pitch estimation (de Cheveigné & Kawahara, 2002); harmonic / percussive separation by median filtering (Fitzgerald, 2010); Karplus–Strong string synthesis (1983). Re-implemented here from the published papers.'),
-        li(h('b', {}, 'Your music: '), 'the app ships with no recordings and no one else’s lyrics. Audio, lyrics and tab you bring in stay yours and stay on this device; you are responsible for having the right to use and share them. Chords, tab and stems are computed from your file and are derivative of it, so share them only as far as the original allows. The demo song is original.'),
+        li(h('b', {}, 'Your music: '), 'the app ships with no recordings and no one else’s lyrics. Audio, lyrics and tab you bring in stay yours and stay on this device; you are responsible for having the right to use and share them. Chords, tab and stems are computed from your file and are derivative of it, so share them only as far as the original allows. The demo song is original. See the ', ext('terms of use', 'legal/#terms'), '.'),
         li(h('b', {}, 'Type: '), 'Inter and Montserrat (SIL Open Font Licence 1.1) are built into the page; nothing is downloaded. Other typefaces in Appearance use fonts already on your device.'),
         li(h('b', {}, 'Names: '), 'Ultimate Guitar, Focusrite, Scarlett, MIDI, Google and other names are used only to describe compatibility. This project is independent and not affiliated with or endorsed by them.'),
         li(h('b', {}, 'Made with AI assistance: '), 'developed with Claude (Anthropic) under my direction. The design choices, the music and any mistakes are mine.')),
@@ -7820,7 +7926,7 @@ function perfLevel() {
 function perfInfo() {
   const i = stageInfo(), sp = spb(); let bi = Math.floor((T.playing && E.ctx ? playheadSlot() : T.cursor) / sp); if (bi < 0) bi = 0;
   const fb = barsCache()[Math.min(bi, barsCache().length - 1)]; i.lines = []; i.idx = -1; i.secName = i.sec;
-  if (fb) { const ls = (fb.sec.lyrics || '').split('\n').filter(l => l.trim()); i.lines = ls.map(l => parseLyricLine(l).text); i.idx = T.playing && ls.length ? Math.min(ls.length - 1, Math.floor(fb.bi / fb.sec.bars.length * ls.length)) : (ls.length ? 0 : -1); i.secName = fb.sec.name; if (!T.playing) { const c = chordAt(bi, 0); i.sym = c && c.sym; i.next = c && c.next; i.barIn = fb.bi + 1; i.nBars = fb.sec.bars.length; } }
+  if (fb) { const sib = T.playing && E.ctx ? Math.max(0, playheadSlot() - bi * sp) : 0, L = lyAt(fb.sec, fb.bi, sib); i.raw = L.lines; i.lines = L.lines.map(lyPlain); i.idx = T.playing ? L.idx : (L.lines.length ? 0 : -1); i.mi = T.playing ? L.mi : -1; i.secName = fb.sec.name; if (!T.playing) { const c = chordAt(bi, 0); i.sym = c && c.sym; i.next = c && c.next; i.barIn = fb.bi + 1; i.nBars = fb.sec.bars.length; } }
   return i;
 }
 function perfReady() {
@@ -7891,7 +7997,7 @@ function perfTick() {
   set('pfSong', S.title || 'Untitled'); set('pfSec', i.secName ? i.secName + (i.nBars ? ' · bar ' + i.barIn + '/' + i.nBars : '') : ''); set('pfMeta', Math.round(S.bpm) + ' BPM · ' + S.ts[0] + '/' + S.ts[1]);
   const dots = q('pfDots'); if (dots) { const n = S.ts[0]; if (dots.children.length !== n) { dots.innerHTML = ''; for (let k = 0; k < n; k++) dots.append(h('i', {})); } [...dots.children].forEach((d, k) => d.classList.toggle('on', T.playing && k === i.beat)); }
   set('pfChord', cnt ? String(i.beat + 1) : (i.sym || '·')); q('pfChord').classList.toggle('pf-count', !!cnt); set('pfNext', cnt ? 'count-in' : (i.next && T.playing ? 'next  ' + i.next : (T.playing ? '' : 'press Play when you are ready')));
-  const L = q('pfLyr'); if (L) { L.innerHTML = ''; if (i.lines.length) { const a = Math.max(0, i.idx - 1), z = Math.min(i.lines.length, Math.max(i.idx, 0) + 4); for (let k = a; k < z; k++) L.append(h('div', { class: 'pf-l' + (k === i.idx ? ' cur' : k < i.idx ? ' past' : '') }, i.lines[k])); } else L.append(h('div', { class: 'pf-l past' }, 'No lyrics in this section')); }
+  const L = q('pfLyr'); if (L) { L.innerHTML = ''; if (i.lines.length) { const a = Math.max(0, i.idx - 1), z = Math.min(i.lines.length, Math.max(i.idx, 0) + 4); for (let k = a; k < z; k++) L.append(h('div', { class: 'pf-l' + (k === i.idx ? ' cur' : k < i.idx ? ' past' : '') }, ...lyNodes(i.raw[k], k === i.idx ? i.mi : k < i.idx ? 1e9 : -1))); } else L.append(h('div', { class: 'pf-l past' }, 'No lyrics in this section')); }
   perfSync();
 }
 bus.on('transport', () => { PF.key = ''; perfSync(); }); bus.on('song', () => { PF.key = ''; }); bus.on('takes', () => { PF.key = ''; });
@@ -7946,24 +8052,56 @@ function loudAfterBounce(l, r, sr) {
 
 /* ---------- the share page ---------- */
 const shareEsc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-function shareData() {
-  const sp = spb(), sd = slotDur(), secs = []; let bars0 = 0;
+/** the song for a share page. off: the song time (s) at the start of the recording; len: its length (s). With both, only the
+    sections the recording covers are kept and every time is measured from the start of the recording. */
+function shareData(off, len) {
+  const sp = spb(), sd = slotDur(), secs = [], o = off || 0; let bars0 = 0;
   S.sections.forEach(sec => {
-    const ls = (sec.lyrics || '').split('\n').filter(l => l.trim()), n = sec.bars.length;
-    secs.push({ name: sec.name, t: bars0 * sp * sd, chords: sec.bars.map(b => barChords(b).join(' ') || '·'), lines: ls.map((l, k) => { const o = chordOverLine(l); return { t: (bars0 + k / ls.length * n) * sp * sd, text: o.text, chords: o.hasChords ? o.chordLine : '' }; }) });
+    const ls = (sec.lyrics || '').split('\n').filter(l => l.trim()), n = sec.bars.length, t0 = bars0 * sp * sd, t1 = (bars0 + n) * sp * sd;
+    /* when each line comes up: from the chords written in it (part 13b), as on the stage */
+    const at = ls.map(() => null), v = lyTimeline(sec);
+    if (v) sec.bars.forEach((b, bi) => { const nc = Math.max(1, barChords(b).length); for (let k = 0; k < nc; k++) { const li = v.lineOf[v.first[bi] + k]; if (li != null && at[li] == null) at[li] = (bars0 + bi + k / nc) * sp * sd; } });
+    for (let k = ls.length - 1; k >= 0; k--) if (at[k] == null) at[k] = v ? (k + 1 < ls.length ? at[k + 1] : t1) : (bars0 + k / ls.length * n) * sp * sd;
+    const keep = len == null || (t1 > o && t0 < o + len);
+    if (keep) secs.push({ name: sec.name, t: t0 - o, chords: sec.bars.map(b => barChords(b).join(' ') || '·'), lines: ls.map((l, k) => { const y = lyLayout(l); let cl = ''; y.chords.forEach(c => { cl = cl.padEnd(c.col) + c.sym; }); const segs = y.chords.length ? (y.chords[0].col > 0 ? [['', y.text.slice(0, y.chords[0].col)]] : []).concat(y.chords.map((c, i) => [c.sym, y.text.slice(c.col, i + 1 < y.chords.length ? y.chords[i + 1].col : undefined)])) : null; return { t: at[k] - o, text: y.text, chords: y.chords.length ? cl : '', segs }; }) });
     bars0 += n;
   });
-  return { dur: bars0 * sp * sd, title: S.title || 'Untitled', artist: S.artist || '', key: keyName(), bpm: Math.round(S.bpm), ts: S.ts.join('/'), notes: S.notes || '', secs };
+  return { dur: len != null ? len : bars0 * sp * sd, title: S.title || 'Untitled', artist: S.artist || '', key: keyName(), bpm: Math.round(S.bpm), ts: S.ts.join('/'), notes: S.notes || '', secs };
 }
-function shareHtml(audioUri, d) {
-  const json = JSON.stringify(d).replace(/</g, '\\u003c');
-  const css = ':root{color-scheme:dark;--bg:#0b100e;--panel:#141a17;--line:#27332d;--text:#e9efeb;--mut:#9db3a5;--acc:#7dbf9b}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}main{max-width:760px;margin:0 auto;padding:28px 18px 60px}h1{font-size:clamp(26px,5vw,40px);margin:0;line-height:1.1}.sub{color:var(--mut);margin:6px 0 18px;font-size:14px}canvas{width:100%;height:220px;display:block;border-radius:16px;background:radial-gradient(circle at 50% 50%,#13201a,#080c0a);border:1px solid var(--line)}.pl{display:flex;align-items:center;gap:12px;margin:14px 0 26px}button{font:inherit;border:0;border-radius:999px;background:var(--acc);color:#07120c;font-weight:700;width:52px;height:52px;cursor:pointer;font-size:20px}input[type=range]{flex:1;accent-color:var(--acc)}.tm{font:13px ui-monospace,monospace;color:var(--mut);min-width:88px;text-align:right}h2{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--acc);margin:26px 0 6px}.ch{font:600 14px ui-monospace,Menlo,monospace;color:var(--mut)}.ln{margin:2px 0;padding:2px 8px;border-radius:8px;cursor:pointer}.ln pre{margin:0;font:600 14px ui-monospace,Menlo,monospace;color:var(--acc)}.ln div{font-size:18px}.ln.on{background:#1b2a22;outline:1px solid var(--line)}footer{margin-top:40px;color:var(--mut);font-size:12px}@media print{body{background:#fff;color:#000}canvas,.pl,audio,footer{display:none}h2{color:#000}.ln pre,.ch{color:#333}}';
-  const js = "(function(){var D=JSON.parse(document.getElementById('d').textContent),au=document.getElementById('au'),pl=document.getElementById('pl'),sk=document.getElementById('sk'),tm=document.getElementById('tm'),cv=document.getElementById('cv'),g=cv.getContext('2d'),an=null,buf=null,L=[].slice.call(document.querySelectorAll('.ln'));function f(t){t=Math.max(0,t||0);return Math.floor(t/60)+':'+('0'+Math.floor(t%60)).slice(-2)}function ac(){if(an)return;try{var C=window.AudioContext||window.webkitAudioContext,c=new C(),s=c.createMediaElementSource(au);an=c.createAnalyser();an.fftSize=256;s.connect(an);an.connect(c.destination);buf=new Uint8Array(an.frequencyBinCount)}catch(e){an=null}}pl.onclick=function(){if(au.paused){ac();au.play()}else au.pause()};au.onplay=function(){pl.textContent='❚❚'};au.onpause=au.onended=function(){pl.textContent='▶'};function du(){return isFinite(au.duration)&&au.duration>0?au.duration:D.dur}sk.oninput=function(){au.currentTime=sk.value/1000*du()};L.forEach(function(el){el.onclick=function(){au.currentTime=+el.getAttribute('data-t');ac();au.play()}});function draw(){requestAnimationFrame(draw);var w=cv.width=cv.clientWidth*(devicePixelRatio||1),h=cv.height=cv.clientHeight*(devicePixelRatio||1),cx=w/2,cy=h/2,R=Math.min(w,h)*.22,n=64,i,v;g.clearRect(0,0,w,h);if(an&&!au.paused)an.getByteFrequencyData(buf);g.lineWidth=Math.max(2,w/320);g.strokeStyle='#7dbf9b';g.lineCap='round';for(i=0;i<n;i++){v=an&&!au.paused?buf[Math.floor(i/n*buf.length*.8)]/255:.04+.02*Math.sin(i);var a=i/n*Math.PI*2-Math.PI/2,r1=R,r2=R+v*R*1.4+3;g.globalAlpha=.35+v*.65;g.beginPath();g.moveTo(cx+Math.cos(a)*r1,cy+Math.sin(a)*r1);g.lineTo(cx+Math.cos(a)*r2,cy+Math.sin(a)*r2);g.stroke()}g.globalAlpha=1;var t=au.currentTime,cur=-1;for(i=0;i<L.length;i++){if(+L[i].getAttribute('data-t')<=t+.05)cur=i}L.forEach(function(el,k){el.classList.toggle('on',k===cur&&!au.paused)});if(du()){sk.value=Math.min(1000,t/du()*1000);tm.textContent=f(t)+' / '+f(du())}}draw();})();";
-  const sections = d.secs.map(s => '<h2>' + shareEsc(s.name) + '</h2><div class="ch">' + s.chords.map(shareEsc).join(' &nbsp;|&nbsp; ') + '</div>' + s.lines.map(l => '<div class="ln" data-t="' + l.t.toFixed(2) + '">' + (l.chords ? '<pre>' + shareEsc(l.chords) + '</pre>' : '') + '<div>' + shareEsc(l.text) + '</div></div>').join('')).join('');
-  return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + shareEsc(d.title) + (d.artist ? ' · ' + shareEsc(d.artist) : '') + '</title><style>' + css + '</style></head><body><main><h1>' + shareEsc(d.title) + '</h1><div class="sub">' + shareEsc([d.artist, d.key, d.bpm + ' BPM', d.ts].filter(Boolean).join(' · ')) + '</div><canvas id="cv" aria-hidden="true"></canvas><div class="pl"><button id="pl" aria-label="Play or pause">▶</button><input id="sk" type="range" min="0" max="1000" value="0" aria-label="Seek"><span class="tm" id="tm">0:00</span></div>' + sections + (d.notes ? '<h2>Notes</h2><div class="ch">' + shareEsc(d.notes) + '</div>' : '') + '<footer>Made with the-daily.studio. This page is one file: the sound, words and chords are all inside it. The words and music belong to their authors.</footer></main><audio id="au" preload="auto" src="' + audioUri + '"></audio><script type="application/json" id="d">' + json + '</script><script>' + js + '</script></body></html>';
+/* ---------- your content, your responsibility: the notice and the one-time acknowledgement before sharing ---------- */
+const SHARE_TERMS = 1;   /* raise when the wording changes, so it is asked again */
+function shareNotice() {
+  return h('div', { class: 'share-note', role: 'note' }, h('b', {}, 'You are responsible for what you share. '),
+    'Share only songs, words and recordings that are yours or that you have permission to share. Covers, other people’s lyrics and backing tracks usually need the owners’ permission before you post them. This app makes the file on your device; it does not upload, host or publish anything. ',
+    h('a', { href: 'legal/#terms', target: '_blank', rel: 'noopener' }, 'Terms of use'));
+}
+/** run fn once the person has said they have the right to share (asked once, remembered on this device) */
+function shareGate(fn) {
+  if (CFG.shareOk === SHARE_TERMS) return fn();
+  const chk = h('input', { type: 'checkbox', id: 'shareOkChk', onchange: () => { go.disabled = !chk.checked; } });
+  const go = h('button', { class: 'btn primary', id: 'shareOkGo', disabled: true, onclick: () => { CFG.shareOk = SHARE_TERMS; saveCfg(); d.close(); fn(); } }, 'Continue');
+  const d = pdlg('shareOk', 'BEFORE YOU SHARE', h('div', { class: 'share-gate' },
+    h('p', {}, 'Recordings and share pages you make here can be sent, posted and copied once they leave this device.'),
+    h('ul', {}, h('li', {}, 'Share only your own songs, words and recordings, or other people’s work with their permission. A cover, someone else’s lyrics or a backing track you did not make usually needs the owners’ permission before you post it publicly.'),
+      h('li', {}, 'You are the one sharing it: you are responsible for it, and for following the rules of the places you post it.'),
+      h('li', {}, 'the-daily.studio makes the file on this device. It does not upload, host, publish or review what you share, and is not responsible for it.')),
+    h('label', { class: 'chk' }, chk, ' I own this content or have permission to share it, and I accept responsibility for sharing it.'),
+    h('p', { class: 'tiny muted' }, h('a', { href: 'legal/#terms', target: '_blank', rel: 'noopener' }, 'Terms of use'), ' · asked once on this device.'),
+    h('div', { class: 'row', style: { gap: '8px', justifyContent: 'flex-end' } }, h('button', { class: 'btn', onclick: () => d.close() }, 'Cancel'), go)));
+  return null;
+}
+/** kind: 'audio' (default) or 'video' */
+function shareHtml(audioUri, d, kind) {
+  const vid = kind === 'video';
+  const json = JSON.stringify(Object.assign({ kind: vid ? 'video' : 'audio' }, d)).replace(/</g, '\\u003c');
+  const css = ':root{color-scheme:dark;--bg:#0b100e;--panel:#141a17;--line:#27332d;--text:#e9efeb;--mut:#9db3a5;--acc:#7dbf9b}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}main{max-width:760px;margin:0 auto;padding:28px 18px 60px}h1{font-size:clamp(26px,5vw,40px);margin:0;line-height:1.1}.sub{color:var(--mut);margin:6px 0 18px;font-size:14px}video{width:100%;max-height:70vh;display:block;border-radius:16px;background:#000}canvas{width:100%;height:220px;display:block;border-radius:16px;background:radial-gradient(circle at 50% 50%,#13201a,#080c0a);border:1px solid var(--line)}.pl{display:flex;align-items:center;gap:12px;margin:14px 0 26px}button{font:inherit;border:0;border-radius:999px;background:var(--acc);color:#07120c;font-weight:700;width:52px;height:52px;cursor:pointer;font-size:20px}input[type=range]{flex:1;accent-color:var(--acc)}.tm{font:13px ui-monospace,monospace;color:var(--mut);min-width:88px;text-align:right}h2{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--acc);margin:26px 0 6px}.ch{font:600 14px ui-monospace,Menlo,monospace;color:var(--mut)}.ln{margin:2px 0;padding:2px 8px;border-radius:8px;cursor:pointer}.ln pre{margin:0;font:600 14px ui-monospace,Menlo,monospace;color:var(--acc)}.sg{display:inline-flex;flex-direction:column;vertical-align:bottom;white-space:pre}.sg b{font:600 14px/1.3 ui-monospace,Menlo,monospace;color:var(--acc);padding-right:.35em;min-height:1.3em}.ln div{font-size:18px}.ln.on{background:#1b2a22;outline:1px solid var(--line)}footer{margin-top:40px;color:var(--mut);font-size:12px;line-height:1.5}footer p{margin:0 0 6px}@media print{body{background:#fff;color:#000}canvas,.pl,audio,footer{display:none}h2{color:#000}.ln pre,.ch{color:#333}}';
+  const js = "(function(){var D=JSON.parse(document.getElementById('d').textContent),au=document.getElementById('au'),pl=document.getElementById('pl'),sk=document.getElementById('sk'),tm=document.getElementById('tm'),cv=document.getElementById('cv'),g=cv.getContext('2d'),an=null,buf=null,L=[].slice.call(document.querySelectorAll('.ln'));function f(t){t=Math.max(0,t||0);return Math.floor(t/60)+':'+('0'+Math.floor(t%60)).slice(-2)}function ac(){if(an)return;try{var C=window.AudioContext||window.webkitAudioContext,c=new C(),s=c.createMediaElementSource(au);an=c.createAnalyser();an.fftSize=256;s.connect(an);an.connect(c.destination);buf=new Uint8Array(an.frequencyBinCount)}catch(e){an=null}}pl.onclick=function(){if(au.paused){ac();au.play()}else au.pause()};au.onplay=function(){pl.textContent='❚❚'};au.onpause=au.onended=function(){pl.textContent='▶'};function du(){return isFinite(au.duration)&&au.duration>0?au.duration:D.dur}sk.oninput=function(){au.currentTime=sk.value/1000*du()};if(!D.nosync)L.forEach(function(el){el.onclick=function(){au.currentTime=Math.max(0,+el.getAttribute('data-t'));ac();au.play()}});function draw(){requestAnimationFrame(draw);var w=cv.width=cv.clientWidth*(devicePixelRatio||1),h=cv.height=cv.clientHeight*(devicePixelRatio||1),cx=w/2,cy=h/2,R=Math.min(w,h)*.22,n=64,i,v;g.clearRect(0,0,w,h);if(an&&!au.paused)an.getByteFrequencyData(buf);g.lineWidth=Math.max(2,w/320);g.strokeStyle='#7dbf9b';g.lineCap='round';for(i=0;i<n;i++){v=an&&!au.paused?buf[Math.floor(i/n*buf.length*.8)]/255:.04+.02*Math.sin(i);var a=i/n*Math.PI*2-Math.PI/2,r1=R,r2=R+v*R*1.4+3;g.globalAlpha=.35+v*.65;g.beginPath();g.moveTo(cx+Math.cos(a)*r1,cy+Math.sin(a)*r1);g.lineTo(cx+Math.cos(a)*r2,cy+Math.sin(a)*r2);g.stroke()}g.globalAlpha=1;var t=au.currentTime,cur=-1;if(!D.nosync)for(i=0;i<L.length;i++){if(+L[i].getAttribute('data-t')<=t+.05)cur=i}L.forEach(function(el,k){el.classList.toggle('on',k===cur&&!au.paused)});if(du()){sk.value=Math.min(1000,t/du()*1000);tm.textContent=f(t)+' / '+f(du())}}draw();})();";
+  const sections = d.secs.map(s => '<h2>' + shareEsc(s.name) + '</h2><div class="ch">' + s.chords.map(shareEsc).join(' &nbsp;|&nbsp; ') + '</div>' + s.lines.map(l => '<div class="ln" data-t="' + l.t.toFixed(2) + '">' + (l.segs ? '<div>' + l.segs.map(g => '<span class="sg"><b>' + (shareEsc(g[0]) || '&nbsp;') + '</b>' + (shareEsc(g[1]) || '&nbsp;') + '</span>').join('') + '</div>' : (l.chords ? '<pre>' + shareEsc(l.chords) + '</pre>' : '') + '<div>' + shareEsc(l.text) + '</div>') + '</div>').join('')).join('');
+  return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + shareEsc(d.title) + (d.artist ? ' · ' + shareEsc(d.artist) : '') + '</title><style>' + css + '</style></head><body><main><h1>' + shareEsc(d.title) + '</h1><div class="sub">' + shareEsc([d.artist, d.key, d.bpm + ' BPM', d.ts].filter(Boolean).join(' · ')) + '</div>' + (vid ? '<video id="au" playsinline preload="auto" src="' + audioUri + '"></video><canvas id="cv" aria-hidden="true" style="display:none"></canvas>' : '<canvas id="cv" aria-hidden="true"></canvas>') + '<div class="pl"><button id="pl" aria-label="Play or pause">▶</button><input id="sk" type="range" min="0" max="1000" value="0" aria-label="Seek"><span class="tm" id="tm">0:00</span></div>' + sections + (d.notes ? '<h2>Notes</h2><div class="ch">' + shareEsc(d.notes) + '</div>' : '') + '<footer><p>Shared by the person who made this page, who is responsible for having the right to share the recording, music and words in it. All rights in the songs, lyrics and recordings belong to their owners.</p><p>This page is one file: everything is inside it. It was made with the-daily.studio on the maker’s own device; the-daily.studio does not host, publish or review it and is not responsible for its content.</p></footer></main>' + (vid ? '' : '<audio id="au" preload="auto" src="' + audioUri + '"></audio>') + '<script type="application/json" id="d">' + json + '</script><script>' + js + '</script></body></html>';
 }
 function shareMake() {
   if (!songHasWork() && !TAKES.length) return toast('Add some chords or lyrics first, then make a share page.', 'warn');
+  if (CFG.shareOk !== SHARE_TERMS) return shareGate(shareMake);
   toast('Recording the song for the share page. It plays once in real time.', 'ok');
   srecStart(true, { audio: true, onBlob: blob => {
     const fr = new FileReader(); fr.onload = () => { const html = shareHtml(fr.result, shareData()); download((S.title || 'song').replace(/\W+/g, '_') + '_share.html', new Blob([html], { type: 'text/html' })); toast('Saved the share page (' + (html.length / 1048576).toFixed(1) + ' MB). Open it in any browser, or send it to someone.', 'ok'); }; fr.onerror = () => toast('Could not build the share page.', 'bad'); fr.readAsDataURL(blob);
@@ -8956,7 +9094,7 @@ function tkMenu(anchor, tk) {
     fade('Fade in', fi, 'in'), fade('Fade out', fo, 'out'),
     h('div', { class: 'lrow' }, h('span', { style: { width: '62px' } }, 'Clip level'), h('input', { type: 'range', id: 'cmLevel', min: -24, max: 12, step: .5, value: Math.round(20 * Math.log10(Math.max(.0631, tk.cg == null ? 1 : tk.cg)) * 2) / 2, 'aria-label': 'Clip level in dB', title: 'Louder or quieter for this clip only (double-click to reset); the lane’s own level still applies', style: { flex: 1 }, ondblclick: e => { histBegin(); tkSetGain(tk, 0, true); e.target.value = 0; if (!histEnd()) bus.emit('takes'); }, oninput: e => { histBegin(); tkSetGain(tk, +e.target.value, true); }, onchange: () => { if (!histEnd()) bus.emit('takes'); } }), h('span', { class: 'tiny muted', id: 'cmLevelV', style: { width: '44px', textAlign: 'right' } }, ((tk.cg == null ? 1 : tk.cg) === 1 ? '0' : (20 * Math.log10(tk.cg)).toFixed(1)) + ' dB')),
     row(h('span', { class: 'tiny muted', style: { width: '62px' } }, 'Move'), ...[['◀◀', -S.ts[0], 'A bar earlier'], ['◀', -1, 'A beat earlier'], ['▶', 1, 'A beat later'], ['▶▶', S.ts[0], 'A bar later']].map(([t, d, ti]) => h('button', { class: 'btn sm', title: ti, 'aria-label': ti, onclick: () => tkNudge(tk, d) }, t))),
-    row(h('button', { class: 'btn sm', id: 'cmReset', disabled: !tkEdited(tk), title: 'Put the whole recording back: no trim, no fades', onclick: () => { closePop(); tkReset(tk); } }, '↺ Reset trim'), h('button', { class: 'btn sm', onclick: () => { closePop(); tkDownloadClip(tk); } }, '⤓ Save clip (WAV)')),
+    row(h('button', { class: 'btn sm', id: 'cmReset', disabled: !tkEdited(tk), title: 'Put the whole recording back: no trim, no fades', onclick: () => { closePop(); tkReset(tk); } }, '↺ Reset trim'), h('button', { class: 'btn sm', onclick: () => { closePop(); tkDownloadClip(tk); } }, '⤓ Save clip (WAV)'), h('button', { class: 'btn sm', id: 'cmShare', title: 'A small M4A of this clip to send or post, or a one-file share page', onclick: () => { closePop(); kitTake(tk, true); } }, '↗ Share clip…')),
     row(h('button', { class: 'btn sm bad', id: 'cmDel', title: 'Delete (Del). Undo brings it back.', onclick: () => { closePop(); tkDelete(tk); } }, '✕ Delete clip')),
     h('div', { class: 'tiny muted' }, 'Drag a clip to move it · drag its edges to trim · drag the top corners to fade · hold Alt for no snapping.'));
   popover(anchor, box, { style: { maxWidth: '330px' } });
@@ -9798,7 +9936,10 @@ function drawLowerThird(g, W, H, info, C) {
   if (info.next && info.playing) { g.font = `700 ${Math.round(ph * .14)}px ${mono}`; g.fillStyle = C.b; g.fillText('NEXT  ' + info.next, x + u * .03, y + ph * .91, cw - u * .05); }
   if (info.sec) { g.font = `700 ${Math.round(ph * .12)}px ${sans}`; g.fillStyle = 'rgba(255,255,255,.6)'; g.fillText(info.sec.toUpperCase() + (info.nBars ? '  ' + info.barIn + '/' + info.nBars : ''), x + u * .03, y + ph * .2, cw - u * .05); }
   const lx = x + cw, lw = pw - cw - u * .03; g.textAlign = 'left';
-  if (lyr) {
+  if (info.ly && info.ly.chords.length) {   // chords over the words, the playing one lit (part 13b)
+    lyDraw(g, { x: lx, y: y + ph * (info.lyricNext ? .56 : .66), w: lw, px: Math.round(ph * (info.lyricNext ? .24 : .28)), font: sans, align: 'left', ly: info.ly, hi: C.b });
+    if (info.lyricNext) { g.font = `600 ${Math.round(ph * .15)}px ${sans}`; g.fillStyle = 'rgba(255,255,255,.55)'; g.fillText(info.lyricNext, lx, y + ph * .86, lw); }
+  } else if (lyr) {
     g.font = `700 ${Math.round(ph * .3)}px ${sans}`; g.fillStyle = '#fff'; g.fillText(lyr, lx, y + ph * (info.lyricNext ? .46 : .6), lw);
     if (info.lyricNext) { g.font = `600 ${Math.round(ph * .2)}px ${sans}`; g.fillStyle = 'rgba(255,255,255,.55)'; g.fillText(info.lyricNext, lx, y + ph * .8, lw); }
   } else if (info.playing) { g.font = `600 ${Math.round(ph * .2)}px ${sans}`; g.fillStyle = 'rgba(255,255,255,.4)'; g.fillText('♪', lx, y + ph * .6, lw); }
@@ -12370,7 +12511,8 @@ function srecTakeEnd(keep) {
 /* >>> parts/68-kit.js */
 /* ============================================================
    Part 68 · The creator's and the teacher's kit, behind the goal workspaces' buttons (part 64).
-     Studio Replay   the last stage video (or screen recording) plays back in place: save it, share it, or make a thumbnail from any frame
+     Studio Replay   the last stage video (or screen recording, or a track made small to share) plays back in place: save it, share it,
+                     make a one-file share page of it, or make a thumbnail from any frame
      Record video    the stage recorder (part 37), asking for MP4 where the browser can make it, opening Studio Replay when it stops
      Thumbnail       a 1280 × 720 PNG of the stage (or of the replay's frame) with the song's title on it
      Screen record   this tab or the screen (the browser asks which), with the studio's sound and, if you like, your microphone
@@ -12378,40 +12520,91 @@ function srecTakeEnd(keep) {
      Annotate        draw over the page; the ink stays (and shows in a screen recording) until you clear it
    Everything is made and kept on this device. Share hands the file to your device's own share sheet only when you press it.
    ============================================================ */
-const KIT = { last: null, lastKind: '', url: '', scr: null, notesEl: null, ink: null, inkOn: false, strokes: [], pen: '#ffd23f' };
-const kitMb = b => (b.size / 1048576).toFixed(1) + ' MB';
-const kitExt = b => (/mp4/.test(b.type) ? '.mp4' : '.webm');
+const KIT = { last: null, lastKind: '', meta: {}, sync: null, enc: null, url: '', scr: null, notesEl: null, ink: null, inkOn: false, strokes: [], pen: '#ffd23f' };
+const kitMb = b => b.size < 1048576 ? Math.max(1, Math.round(b.size / 1024)) + ' KB' : (b.size / 1048576).toFixed(1) + ' MB';
+const kitExt = b => /^audio\/mp4/.test(b.type) ? '.m4a' : /mp4/.test(b.type) ? '.mp4' : /ogg/.test(b.type) ? '.ogg' : '.webm';
+const kitAudio = b => /^audio\//.test(b.type);
 const kitName = kind => (S.title || 'song').replace(/\W+/g, '_') + '_' + (kind || 'stage');
 /** keep a recording for Studio Replay (only the newest one is kept, in memory) */
-function kitKeep(blob, kind) {
+function kitKeep(blob, kind, meta) {
   if (!blob || blob === KIT.last) return; if (KIT.url) { try { URL.revokeObjectURL(KIT.url); } catch (e) { } }
-  KIT.last = blob; KIT.lastKind = kind || 'stage'; KIT.url = URL.createObjectURL(blob); bus.emit('kit');
+  KIT.last = blob; KIT.lastKind = kind || 'stage'; KIT.meta = meta || {}; KIT.url = URL.createObjectURL(blob); bus.emit('kit');
 }
-bus.on('srec:blob', b => kitKeep(b, 'stage'));
+/* where the song was when a stage video started, so its share page can follow the words (meta.off: song seconds at the video's start) */
+bus.on('srec', on => { KIT.sync = on && T.playing ? { m: 0, s: playheadSlot() * slotDur() } : null; });
+bus.on('transport', () => { if (SREC.on && !SREC.audio && T.playing && !KIT.sync) KIT.sync = { m: (performance.now() - SREC.t0) / 1000, s: T.cursor * slotDur() }; });
+bus.on('srec:blob', b => kitKeep(b, 'stage', { off: KIT.sync ? KIT.sync.s - KIT.sync.m : null }));
 /** one button: start the stage video; press again to stop, and Studio Replay opens with it */
 function kitRecord() {
   if (SREC.on) { srecStop(true); return; }
   srecStart(false, { mp4: true, onBlob: b => { kitKeep(b, 'stage'); kitReplay(); } });
 }
-function kitSave() { const b = KIT.last; if (!b) return; download(kitName(KIT.lastKind) + kitExt(b), b); toast('Saved the video to this device (' + kitMb(b) + ')', 'ok'); }
+const kitFile = b => (KIT.meta.name || kitName(KIT.lastKind)) + kitExt(b);
+function kitSave() { const b = KIT.last; if (!b) return; download(kitFile(b), b); toast('Saved the ' + (kitAudio(b) ? 'audio' : 'video') + ' to this device (' + kitMb(b) + ')', 'ok'); }
 async function kitShare() {
-  const b = KIT.last; if (!b) return; const f = new File([b], kitName(KIT.lastKind) + kitExt(b), { type: b.type });
+  if (CFG.shareOk !== SHARE_TERMS) return shareGate(kitShare);
+  const b = KIT.last; if (!b) return; const f = new File([b], kitFile(b), { type: b.type });
   try { if (navigator.canShare && navigator.canShare({ files: [f] })) { await navigator.share({ files: [f], title: S.title || 'My performance' }); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
-  kitSave(); toast('This browser has no share sheet for videos here, so it was saved instead: post it from your files.', 'warn');
+  kitSave(); toast('This browser has no share sheet for this file here, so it was saved instead: send or post it from your files.', 'warn');
+}
+/** one file with this recording, a player and the words and chords in time (the share page of part 39, for one recording) */
+function kitPage() {
+  if (CFG.shareOk !== SHARE_TERMS) return shareGate(kitPage);
+  const b = KIT.last; if (!b) return; const m = KIT.meta || {}, fr = new FileReader();
+  fr.onload = () => {
+    const d = shareData(m.off == null ? 0 : m.off, m.len); if (m.off == null) d.nosync = true;
+    const html = shareHtml(fr.result, d, kitAudio(b) ? 'audio' : 'video'); download((m.name || kitName(KIT.lastKind)) + '_share.html', new Blob([html], { type: 'text/html' }));
+    toast('Saved the share page (' + (html.length / 1048576).toFixed(1) + ' MB). Send it as a file, or put it on any web host and embed it with an iframe.', 'ok');
+  };
+  fr.readAsDataURL(b);
+}
+/** a track made small to share: the lane (or one clip) as M4A where the browser can (else Opus), made silently in real time */
+function kitEncode(r, tick) {
+  return new Promise(async (res, rej) => {
+    try { await startAudio(); } catch (e) { return rej(e); }
+    const c = E.ctx, mime = srecMime(true); if (mime === null || !c.createMediaStreamDestination) return rej(new Error('this browser cannot make compressed audio here'));
+    const buf = c.createBuffer(1, r.data.length, r.sr); buf.copyToChannel(r.data, 0);
+    const src = c.createBufferSource(), dst = c.createMediaStreamDestination(), parts = []; src.buffer = buf; src.connect(dst);
+    let mr; try { mr = new MediaRecorder(dst.stream, Object.assign({ audioBitsPerSecond: 160e3 }, mime ? { mimeType: mime } : {})); } catch (e) { return rej(e); }
+    let tm = 0, stopped = false; const t0 = c.currentTime + .1;
+    const end = () => { if (mr.state !== 'inactive') mr.stop(); };
+    mr.ondataavailable = e => { if (e.data && e.data.size) parts.push(e.data); };
+    mr.onstop = () => { clearInterval(tm); try { src.disconnect(); } catch (e) { } KIT.enc = null; if (stopped) rej(new Error('cancelled')); else res(new Blob(parts, { type: (mr.mimeType || mime || 'audio/webm').split(';')[0] })); };
+    src.onended = () => setTimeout(end, 300);
+    KIT.enc = { cancel: () => { stopped = true; try { src.stop(); } catch (e) { } end(); } };
+    mr.start(500); src.start(t0); tm = setInterval(() => tick && tick(Math.max(0, c.currentTime - t0), buf.duration), 200);
+  });
+}
+async function kitTake(tk, one) {
+  if (KIT.enc) return toast('A track is already being made. Wait for it, or cancel it.', 'warn');
+  if (typeof AK !== 'undefined' && AK.killed) return toast('Audio is stopped. Open Audio to resume, then share.', 'warn');
+  const lead = tkLead(tk), r = one ? (tkRenderClip(tk, 'wet') || tkRenderClip(tk, 'dry')) : (tkRender(lead, 'wet') || tkRender(lead, 'dry')); if (!r) return toast('There is no audio in this ' + (one ? 'clip' : 'lane') + '.', 'warn');
+  const name = ((S.title || 'song') + '_' + (one ? tk.name + '_clip' : lead.name)).replace(/\W+/g, '_'), fmt = x => Math.floor(x / 60) + ':' + String(Math.floor(x % 60)).padStart(2, '0');
+  const bar = h('i'), txt = h('span', { class: 'mono tiny' }, '0:00 / ' + fmt(r.dur));
+  const dlg = pdlg('kitEnc', 'MAKING A SMALL AUDIO FILE', h('div', { style: { display: 'grid', gap: '8px' } },
+    h('div', { class: 'small' }, 'Turning “' + (one ? tk.name : lead.name) + '” into a small file to share. It plays through once, silently, so it takes as long as the recording.'),
+    h('div', { class: 'meter' }, bar), txt), { onclose: () => { if (KIT.enc) KIT.enc.cancel(); } });
+  try {
+    const b = await kitEncode(r, (t, d) => { bar.style.width = Math.min(100, t / d * 100).toFixed(1) + '%'; txt.textContent = fmt(Math.min(t, d)) + ' / ' + fmt(d); });
+    try { dlg.close(); } catch (e) { } if (!b || b.size < 200) return toast('The audio came out empty. Try again.', 'warn');
+    kitKeep(b, 'take', { off: r.startSec, len: r.dur, name }); kitReplay();
+  } catch (e) { try { dlg.close(); } catch (x) { } if (!/cancel/.test(e && e.message || '')) toast('Could not make the audio file: ' + (e && e.message || e), 'bad'); }
 }
 function kitReplay() {
   if (!KIT.last) return toast('Record a video first: ⏺ Record video, then ■ to stop.', 'warn');
-  const b = KIT.last, mp4 = /mp4/.test(b.type);
-  const v = h('video', { class: 'kit-v', id: 'kitVideo', src: KIT.url, controls: true, playsinline: true, autoplay: true });
+  const b = KIT.last, mp4 = /mp4/.test(b.type), aud = kitAudio(b);
+  const v = aud ? h('audio', { class: 'kit-a', id: 'kitAudio', src: KIT.url, controls: true }) : h('video', { class: 'kit-v', id: 'kitVideo', src: KIT.url, controls: true, playsinline: true, autoplay: true });
   const canShare = (() => { try { return !!(navigator.canShare && navigator.canShare({ files: [new File([b], 'x' + kitExt(b), { type: b.type })] })); } catch (e) { return false; } })();
   const body = h('div', { class: 'kit-replay' }, v,
-    h('div', { class: 'tiny muted kit-meta' }, (mp4 ? 'MP4' : 'WebM') + ' · ' + kitMb(b) + (mp4 ? ' · ready for social posts' : ' · this browser records WebM; most sites take it, or convert it to MP4')),
+    h('div', { class: 'tiny muted kit-meta' }, (aud ? (KIT.meta.name || 'Track') + ' · ' + (mp4 ? 'M4A' : kitExt(b).slice(1).toUpperCase()) + ' · ' + kitMb(b) : (mp4 ? 'MP4' : 'WebM') + ' · ' + kitMb(b) + (mp4 ? ' · ready for social posts' : ' · this browser records WebM; most sites take it, or convert it to MP4'))),
     h('div', { class: 'row kit-acts' },
-      h('button', { class: 'btn primary', id: 'kitSave', onclick: kitSave }, '⇩ Save ' + (mp4 ? 'MP4' : 'video')),
+      h('button', { class: 'btn primary', id: 'kitSave', onclick: kitSave }, '⇩ Save ' + (aud ? (mp4 ? 'M4A' : 'audio') : mp4 ? 'MP4' : 'video')),
       canShare ? h('button', { class: 'btn', id: 'kitShare', onclick: kitShare }, '↗ Share…') : null,
-      h('button', { class: 'btn', id: 'kitThumbFrame', title: 'Pause on the frame you want first', onclick: () => kitThumb(v) }, '🖼 Thumbnail from this frame'),
+      h('button', { class: 'btn', id: 'kitPage', title: 'One HTML file with this recording, a player and the words and chords in time. Send it, or put it on any web host and embed it.', onclick: kitPage }, '🔗 Share page'),
+      aud ? null : h('button', { class: 'btn', id: 'kitThumbFrame', title: 'Pause on the frame you want first', onclick: () => kitThumb(v) }, '🖼 Thumbnail from this frame'),
       KIT.lastKind === 'stage' ? h('button', { class: 'btn', id: 'kitAgain', onclick: () => { d.close(); kitRecord(); } }, '⏺ Record again') : null));
-  const d = pdlg('kitReplayDlg', 'Studio Replay', body, { wide: true, onclose: () => { try { v.pause(); } catch (e) { } } });
+  body.append(shareNotice());
+  const d = pdlg('kitReplayDlg', aud ? 'Share a track' : 'Studio Replay', body, { wide: true, onclose: () => { try { v.pause(); } catch (e) { } } });
   return d;
 }
 /** a 1280 × 720 picture: the stage (or a video frame), darkened at the foot, with the title and the key and tempo */

@@ -34,7 +34,11 @@ function stageInfo() {
     const sp = spb(), ph = playheadSlot(); o.slot = ph; if (ph < 0) { o.beat = Math.floor(((ph % sp) + sp) % sp / (16 / S.ts[1])); o.sec = 'Count-in'; return o; }
     const bi = Math.floor(ph / sp), sib = ph - bi * sp, fb = barsCache()[bi]; if (!fb) return o; const cd = chordAt(bi, Math.floor(sib));
     o.sym = cd && cd.sym; o.next = cd && cd.next; o.sec = fb.sec.name; o.barIn = fb.bi + 1; o.nBars = fb.sec.bars.length; o.beat = Math.floor(sib / (16 / S.ts[1]));
-    const ls = (fb.sec.lyrics || '').split('\n').filter(l => l.trim()); if (ls.length) { const idx = Math.min(ls.length - 1, Math.floor(fb.bi / fb.sec.bars.length * ls.length)); o.lyric = parseLyricLine(ls[idx]).text; o.lyricNext = ls[idx + 1] ? parseLyricLine(ls[idx + 1]).text : ''; }
+    const L = lyAt(fb.sec, fb.bi, sib);   // the line being sung, timed by the chords written in it (part 13b)
+    if (L.idx >= 0) { let nx = L.lines[L.idx + 1]; const cur = L.lines[L.idx];
+      /* on the last line of a section, the next section's first line comes next */
+      if (!nx) { const si = S.sections.indexOf(fb.sec), ns = S.sections[si + 1]; nx = ns ? (ns.lyrics || '').split('\n').find(l => l.trim()) : null; }
+      o.lyric = lyPlain(cur); o.ly = lyLayout(cur); o.ly.cur = L.mi; o.lyricNext = nx ? lyPlain(nx) : ''; o.lyN = nx ? lyLayout(nx) : null; }
   } else { o.sym = live; o.sec = 'Listening'; }
   return o;
 }
@@ -111,7 +115,8 @@ function stageFrame(ts) {
 function drawStageHUD(g, W, H, sc, info, C) {
   const lens = sc.mode === 'concert' ? (CFG.lens || 'perform') : '', teach = lens === 'teach'; if (lens === 'sky') return;       // the Sky lens is a picture; the Teach lens carries its own chord card, so only the lyric stays
   const ov = sc.ov, u = Math.min(W, H * 1.6), mono = 'ui-monospace,Menlo,monospace', pr = sc.mode === 'prompter', sh = 'rgba(0,0,0,.65)'; g.save(); g.shadowColor = sh; g.shadowBlur = u * .02; g.textBaseline = 'alphabetic';
-  if (ov.chord && !teach) {
+  const lyCh = !!(ov.lyric && info.ly && info.ly.chords.length);   // the line carries its chords: they are shown over the words instead of in the corner
+  if (ov.chord && !teach && !lyCh) {
     const sym = info.sym || '', sz = u * (pr ? .26 : .14); g.font = `800 ${Math.round(sz)}px ${mono}`; g.textAlign = pr ? 'center' : 'left'; g.fillStyle = '#fff';
     const x = pr ? W / 2 : W * .04, y = pr ? H * .46 : H * .84; g.fillText(sym, x, y);
     if (info.next && info.playing) { g.font = `700 ${Math.round(sz * .34)}px ${mono}`; g.fillStyle = C.b; g.fillText('next  ' + info.next, x, y + (pr ? sz * .38 : -sz * .92)); }
@@ -122,6 +127,11 @@ function drawStageHUD(g, W, H, sc, info, C) {
     if (ov.beat) { const n = S.ts[0], r = u * .016, gap = r * 3.2, x0 = W * .97 - (n - 1) * gap - r; for (let i = 0; i < n; i++) { const on = info.playing && i === info.beat; g.beginPath(); g.arc(x0 + i * gap, H * (ov.info ? .07 + .09 : .07), r * (on ? 1.5 : 1), 0, 7); g.fillStyle = on ? (i === 0 ? C.b : '#fff') : 'rgba(255,255,255,.22)'; g.fill(); } }
   }
   if (ov.lyric && info.lyric && teach) { g.textAlign = 'center'; g.font = `700 ${Math.round(u * .04)}px ${mono}`; g.fillStyle = '#fff'; g.fillText(info.lyric, W / 2, H * .955, W * .92); }
+  else if (lyCh || (ov.lyric && info.ly && info.lyN && info.lyN.chords.length && (info.lyric || info.ly.chords.length))) {
+    const px = Math.round(u * (pr ? .06 : .045)), y = H * (pr ? .72 : .76);
+    lyDraw(g, { x: W / 2, y, w: W * .92, px, font: mono, ly: info.ly, hi: C.b });
+    if (info.lyN && (info.lyN.text || info.lyN.chords.length)) lyDraw(g, { x: W / 2, y: y + px * .55 + Math.round(u * .03) * (info.lyN.chords.length ? 2.1 : 1.2), w: W * .92, px: Math.round(u * .03), weight: 600, font: mono, ly: info.lyN, dim: true });
+  }
   else if (ov.lyric && info.lyric) { g.textAlign = 'center'; g.font = `700 ${Math.round(u * (pr ? .06 : .045))}px ${mono}`; g.fillStyle = '#fff'; g.fillText(info.lyric, W / 2, H * (pr ? .72 : .76), W * .92); if (info.lyricNext) { g.font = `600 ${Math.round(u * .03)}px ${mono}`; g.fillStyle = 'rgba(255,255,255,.5)'; g.fillText(info.lyricNext, W / 2, H * (pr ? .72 : .76) + u * .065, W * .92); } }
   if (ov.tuner && AN.active && AN.midi != null) { g.textAlign = 'right'; g.font = `800 ${Math.round(u * .06)}px ${mono}`; g.fillStyle = Math.abs(AN.cents) < 6 ? '#3ddc84' : '#fff'; g.fillText(pcName(AN.midi) + ' ' + (AN.cents >= 0 ? '+' : '') + AN.cents.toFixed(0) + '¢', W * .97, H * .93); }
   g.restore(); g.textAlign = 'left';
