@@ -7,6 +7,8 @@
      · on share pages, as a button and a code;
      · on a printed sign for a real guitar case, and as a picture to post.
    It can show all the time or only between songs, in any corner, in three sizes.
+   OFF BY DEFAULT. It is set up from 🎬 Creator Studio ▸ 🎸 Tip jar; until then nothing about it shows anywhere else. Once it is
+   set up (a link saved and the terms agreed), a 🎸 Tips button appears in the Visuals and Stage bars to switch it on and off.
    Money goes straight from the audience to the service the artist chose. The studio never opens the link, never sees a
    payment and takes nothing. The link lives in this browser's settings, not in songs, backups or share files other than
    the share page itself, and the AI agent tools cannot read or change it (a payment link is not something to hand to an agent).
@@ -33,6 +35,8 @@ const tipOk = () => CFG.tipOk === TIP_TERMS;
 /** the saved link, made safe (worked out again only when it changes: this is asked on every frame) */
 const TIPL = { raw: null, out: '' };
 const tipNow = () => { if (TIPL.raw !== CFG.tip.link) { TIPL.raw = CFG.tip.link; TIPL.out = tipLink(CFG.tip.link); } return TIPL.out; };
+/** set up in Creator Studio: a usable link saved and the terms agreed (the 🎸 Tips buttons in the Visuals and Stage bars appear only then) */
+const tipSetUp = () => !!(tipOk() && tipNow());
 /** set up, agreed to and switched on */
 const tipReady = () => !!(CFG.tip.on && tipOk() && tipNow());
 const tipName = () => String(CFG.tip.name || '').trim();
@@ -134,11 +138,11 @@ function tipPng() {
 }
 
 /* ---------- setting it up ---------- */
-/** the 🎸 Tips button for a toolbar (lit while the case is showing); cls: the bar's button class */
+/** the 🎸 Tips button for a toolbar (lit while the case is showing); cls: the bar's button class. Hidden until the tip jar is set up in Creator Studio */
 function tipBtn(cls) {
-  return h('button', { class: (cls || 'btn sm') + (tipReady() ? ' on' : ''), 'data-tipbtn': '1', title: 'Tip jar: a QR code your audience can scan to tip you', onclick: () => tipOpen() }, '🎸 Tips');
+  return h('button', { class: (cls || 'btn sm') + (tipReady() ? ' on' : ''), 'data-tipbtn': '1', title: 'Tip jar: a QR code your audience can scan to tip you', style: { display: tipSetUp() ? '' : 'none' }, onclick: () => tipOpen() }, '🎸 Tips');
 }
-const tipSync = () => { $$('[data-tipbtn]').forEach(b => b.classList.toggle('on', tipReady())); TIP.cards.clear(); };
+const tipSync = () => { $$('[data-tipbtn]').forEach(b => { b.classList.toggle('on', tipReady()); b.style.display = tipSetUp() ? '' : 'none'; }); TIP.cards.clear(); if (typeof goalSync === 'function') goalSync(); };
 function tipOpen() {
   const T0 = CFG.tip, save = () => { saveCfg(); tipSync(); paint(); };
   const prev = h('canvas', { class: 'tip-prev', width: 234, height: 300, role: 'img', 'aria-label': 'How the tip jar looks' });
@@ -165,7 +169,7 @@ function tipOpen() {
   }
   const stat = h('div', { class: 'tiny muted', id: 'tipStatus' });
   const box = h('div', { class: 'tip-set' },
-    h('p', { class: 'tiny muted', style: { margin: '0 0 10px', lineHeight: 1.5 } }, 'Put your tip link on the stage, in your videos and on your share pages as a QR code in an open guitar case. Your audience scans it with a phone camera and tips you directly.'),
+    h('p', { class: 'tiny muted', style: { margin: '0 0 10px', lineHeight: 1.5 } }, 'Put your tip link on the stage, in your videos and on your share pages as a QR code in an open guitar case. Your audience scans it with a phone camera and tips you directly. It stays off until you switch it on here; once it is set up, a 🎸 Tips button in the Visuals and Stage bars brings you back.'),
     h('div', { class: 'tip-grid' },
       h('div', { class: 'tip-f' },
         pField('Your tip link', linkIn), h('div', { class: 'row', style: { gap: '8px', alignItems: 'center', margin: '-4px 0 8px', flexWrap: 'wrap' } }, test, msgLine),

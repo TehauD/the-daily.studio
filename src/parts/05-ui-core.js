@@ -126,9 +126,6 @@ function openSettings(at) {
       F('When recording reaches the end of the song', sel('recEnd', [['grow', 'Keep going (the song grows to fit)'], ['stop', 'Stop at the end'], ['loop', 'Loop back, one take per pass']])),
       h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!CFG.rec.dry, onchange: e => { CFG.rec.dry = e.target.checked; saveCfg(); } }), 'Record dry DI (enables re-amping)'),
       h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!CFG.rec.wet, onchange: e => { CFG.rec.wet = e.target.checked; saveCfg(); } }), 'Record wet print')] },
-    { key: 'tip', label: 'Tip jar', ico: '🎸', sub: 'A QR code your audience can scan to tip you, on the stage, in videos and on share pages.', body: () => [
-      h('div', { class: 'hub-acts' }, h('button', { class: 'btn', id: 'setTip', onclick: () => { close(); tipOpen(); } }, (tipReady() ? '🎸 Tip jar: showing' : '🎸 Set up the tip jar') + ' ▸')),
-      note('Tips go straight from your audience to the tip page you choose (Ko-fi, PayPal.me, Cash App and the like). The studio never sees a payment and takes nothing.')] },
     { key: 'export', label: 'Export', ico: '⇩', sub: 'Song bounces, tab text and an automatic backup folder.', body: () => [
       F('Loudness target for song WAVs', sel('lufsTarget', LOUD_TARGETS)),
       chk('Render WAVs faster than real time', 'renderFast'), note('Mixes the song in a few seconds instead of playing it through. Turn this off if a render ever sounds different from playback.'),

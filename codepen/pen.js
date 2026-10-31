@@ -5,7 +5,7 @@
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.17.0', BUILD = '251c7ec';   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.17.0', BUILD = '76bc828';   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://the-daily.studio/journal/' };
 const $ = (s, r = document) => r.querySelector(s);
@@ -1491,9 +1491,6 @@ function openSettings(at) {
       F('When recording reaches the end of the song', sel('recEnd', [['grow', 'Keep going (the song grows to fit)'], ['stop', 'Stop at the end'], ['loop', 'Loop back, one take per pass']])),
       h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!CFG.rec.dry, onchange: e => { CFG.rec.dry = e.target.checked; saveCfg(); } }), 'Record dry DI (enables re-amping)'),
       h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!CFG.rec.wet, onchange: e => { CFG.rec.wet = e.target.checked; saveCfg(); } }), 'Record wet print')] },
-    { key: 'tip', label: 'Tip jar', ico: '🎸', sub: 'A QR code your audience can scan to tip you, on the stage, in videos and on share pages.', body: () => [
-      h('div', { class: 'hub-acts' }, h('button', { class: 'btn', id: 'setTip', onclick: () => { close(); tipOpen(); } }, (tipReady() ? '🎸 Tip jar: showing' : '🎸 Set up the tip jar') + ' ▸')),
-      note('Tips go straight from your audience to the tip page you choose (Ko-fi, PayPal.me, Cash App and the like). The studio never sees a payment and takes nothing.')] },
     { key: 'export', label: 'Export', ico: '⇩', sub: 'Song bounces, tab text and an automatic backup folder.', body: () => [
       F('Loudness target for song WAVs', sel('lufsTarget', LOUD_TARGETS)),
       chk('Render WAVs faster than real time', 'renderFast'), note('Mixes the song in a few seconds instead of playing it through. Turn this off if a render ever sounds different from playback.'),
@@ -8300,6 +8297,8 @@ function qrDraw(g, qr, x, y, cell) {
      · on share pages, as a button and a code;
      · on a printed sign for a real guitar case, and as a picture to post.
    It can show all the time or only between songs, in any corner, in three sizes.
+   OFF BY DEFAULT. It is set up from 🎬 Creator Studio ▸ 🎸 Tip jar; until then nothing about it shows anywhere else. Once it is
+   set up (a link saved and the terms agreed), a 🎸 Tips button appears in the Visuals and Stage bars to switch it on and off.
    Money goes straight from the audience to the service the artist chose. The studio never opens the link, never sees a
    payment and takes nothing. The link lives in this browser's settings, not in songs, backups or share files other than
    the share page itself, and the AI agent tools cannot read or change it (a payment link is not something to hand to an agent).
@@ -8326,6 +8325,8 @@ const tipOk = () => CFG.tipOk === TIP_TERMS;
 /** the saved link, made safe (worked out again only when it changes: this is asked on every frame) */
 const TIPL = { raw: null, out: '' };
 const tipNow = () => { if (TIPL.raw !== CFG.tip.link) { TIPL.raw = CFG.tip.link; TIPL.out = tipLink(CFG.tip.link); } return TIPL.out; };
+/** set up in Creator Studio: a usable link saved and the terms agreed (the 🎸 Tips buttons in the Visuals and Stage bars appear only then) */
+const tipSetUp = () => !!(tipOk() && tipNow());
 /** set up, agreed to and switched on */
 const tipReady = () => !!(CFG.tip.on && tipOk() && tipNow());
 const tipName = () => String(CFG.tip.name || '').trim();
@@ -8427,11 +8428,11 @@ function tipPng() {
 }
 
 /* ---------- setting it up ---------- */
-/** the 🎸 Tips button for a toolbar (lit while the case is showing); cls: the bar's button class */
+/** the 🎸 Tips button for a toolbar (lit while the case is showing); cls: the bar's button class. Hidden until the tip jar is set up in Creator Studio */
 function tipBtn(cls) {
-  return h('button', { class: (cls || 'btn sm') + (tipReady() ? ' on' : ''), 'data-tipbtn': '1', title: 'Tip jar: a QR code your audience can scan to tip you', onclick: () => tipOpen() }, '🎸 Tips');
+  return h('button', { class: (cls || 'btn sm') + (tipReady() ? ' on' : ''), 'data-tipbtn': '1', title: 'Tip jar: a QR code your audience can scan to tip you', style: { display: tipSetUp() ? '' : 'none' }, onclick: () => tipOpen() }, '🎸 Tips');
 }
-const tipSync = () => { $$('[data-tipbtn]').forEach(b => b.classList.toggle('on', tipReady())); TIP.cards.clear(); };
+const tipSync = () => { $$('[data-tipbtn]').forEach(b => { b.classList.toggle('on', tipReady()); b.style.display = tipSetUp() ? '' : 'none'; }); TIP.cards.clear(); if (typeof goalSync === 'function') goalSync(); };
 function tipOpen() {
   const T0 = CFG.tip, save = () => { saveCfg(); tipSync(); paint(); };
   const prev = h('canvas', { class: 'tip-prev', width: 234, height: 300, role: 'img', 'aria-label': 'How the tip jar looks' });
@@ -8458,7 +8459,7 @@ function tipOpen() {
   }
   const stat = h('div', { class: 'tiny muted', id: 'tipStatus' });
   const box = h('div', { class: 'tip-set' },
-    h('p', { class: 'tiny muted', style: { margin: '0 0 10px', lineHeight: 1.5 } }, 'Put your tip link on the stage, in your videos and on your share pages as a QR code in an open guitar case. Your audience scans it with a phone camera and tips you directly.'),
+    h('p', { class: 'tiny muted', style: { margin: '0 0 10px', lineHeight: 1.5 } }, 'Put your tip link on the stage, in your videos and on your share pages as a QR code in an open guitar case. Your audience scans it with a phone camera and tips you directly. It stays off until you switch it on here; once it is set up, a 🎸 Tips button in the Visuals and Stage bars brings you back.'),
     h('div', { class: 'tip-grid' },
       h('div', { class: 'tip-f' },
         pField('Your tip link', linkIn), h('div', { class: 'row', style: { gap: '8px', alignItems: 'center', margin: '-4px 0 8px', flexWrap: 'wrap' } }, test, msgLine),
@@ -12309,6 +12310,7 @@ const GOALS = [
       ['gtCam', '📷 Webcam', 'You in the picture, in front of or framed by the visuals', () => vzCamPress(), () => !!VZ.cam],
       ['gtFx', '✨ Overlays', 'How the camera sits with the visuals: dimmed behind, framed, or you in front', b => popover(b, h('div', { style: { display: 'grid', gap: '8px', minWidth: '240px' } }, h('h5', {}, 'Overlays'), camFxBox(), h('div', { class: 'tiny muted' }, 'Pick a look in the Visuals panel for what moves behind you.')))],
       ['gtThumb', '🖼 Thumbnail', 'Save a 1280 × 720 picture of the stage with the song title, for the post', () => kitThumb()],
+      ['gtTip', '🎸 Tip jar', 'Let your audience tip you: your own tip link as a QR code on the stage, in your videos and on share pages. Off until you set it up', () => tipOpen(), () => tipReady()],
       ['gtExp', '⇩ Export', 'Audio, the share page, the lyric sheet and more', () => dockGo('exp')]
     ] },
   { id: 'practice', ico: '🎼', name: 'Practice', layout: 'Practice', step: 'create', hue: '#1c9a63', next: ['performer', 'Perform it'],

@@ -667,7 +667,7 @@ Open the **◐** button (or Settings ▸ Customize appearance…; on a phone Mor
 
 ## Tip jar: let your audience tip you (2.17)
 
-**🎸 Tips** (in the Visuals bar and the Stage bar, and **Settings ▸ Tip jar**) puts your own tip link on screen as a QR code in a small open guitar case. Anyone with a phone camera can scan it and tip you directly.
+**🎬 Creator Studio ▸ 🎸 Tip jar** puts your own tip link on screen as a QR code in a small open guitar case. Anyone with a phone camera can scan it and tip you directly. It is **off unless you set it up**: until then nothing about it appears anywhere else. Once it is set up, a **🎸 Tips** button appears in the Visuals and Stage bars so you can switch it on or off at a gig.
 
 1. **Paste your link**: a Ko-fi, PayPal.me, Cash App, Buy Me a Coffee, Patreon or Bandcamp page, or any `https` address. `ko-fi.com/yourname` gets the `https://` added for you, and a `$cashtag` becomes a Cash App link. Press **Test the link** to check it goes to the right place.
 2. Add **your name or band** and a short **message** if you like ("Enjoying the music? Leave a tip" is the default).

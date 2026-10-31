@@ -31,9 +31,11 @@ suite('e2e-tip', async t => {
   await ev(() => { const D = window.__daily; D.CFG.tip.link = ''; D.CFG.tip.on = false; D.dockGo('vis'); });
   await wait(600);
 
-  /* ---- the dialog, from the 🎸 Tips button on the Visuals ---- */
-  ok(await ev(() => !!document.querySelector('#paneVis [data-tipbtn], [data-tipbtn]')), 'the Visuals have a 🎸 Tips button');
-  await ev(() => document.querySelector('[data-tipbtn]').click()); await wait(300);
+  /* ---- off by default: nothing shows until it is set up in Creator Studio ---- */
+  ok(await ev(() => { const b = [...document.querySelectorAll('[data-tipbtn]')]; return b.length >= 1 && b.every(x => x.style.display === 'none' && !x.offsetParent) && !document.getElementById('gtTip'); }), 'off by default: no 🎸 Tips button in the Visuals bar, and no tip jar tool outside Creator Studio');
+  await ev(() => window.__daily.goalGo('creator')); await wait(800);
+  ok(await ev(() => { const b = document.getElementById('gtTip'); return !!(b && b.offsetParent && !b.classList.contains('on')); }), '🎬 Creator Studio has the 🎸 Tip jar tool, not lit');
+  await ev(() => document.getElementById('gtTip').click()); await wait(300);
   ok(await ev(() => { const d = document.getElementById('tipjar'); return !!(d && d.open && document.getElementById('tipLink') && document.getElementById('tipOn').disabled && document.getElementById('tipPrint').disabled); }), 'it opens the tip jar; Show and Print wait for a link');
   await p.fill('#tipLink', 'javascript:alert(1)');
   ok(await ev(() => /does not look like a web address/.test(document.getElementById('tipLinkNote').textContent) && document.getElementById('tipTest').disabled), 'a link that is not usable is named as such');
@@ -42,6 +44,7 @@ suite('e2e-tip', async t => {
   await p.check('#tipAgree'); await p.check('#tipOn');
   const S1 = await ev(() => { const D = window.__daily; return { ready: D.tipReady(), ok: D.CFG.tipOk === D.TIP_TERMS, link: D.CFG.tip.link, name: D.CFG.tip.name, btn: document.querySelector('[data-tipbtn]').classList.contains('on'), stat: document.getElementById('tipStatus').textContent }; });
   ok(S1.ready && S1.ok && S1.name === 'The Test Band' && S1.btn && /Showing/.test(S1.stat), 'agreed and switched on: the tip jar shows and the button lights (' + JSON.stringify(S1) + ')');
+  ok(await ev(() => { const b = document.querySelector('#dock [data-tipbtn], [data-tipbtn]'); return b.style.display === '' && document.getElementById('gtTip').classList.contains('on'); }), 'once set up, the 🎸 Tips button appears in the Visuals bar and the Creator Studio tool lights');
   ok(await ev(() => { const c = document.querySelector('#tipjar .tip-prev'); const d = c.getContext('2d').getImageData(c.width / 2, c.height * .5, 1, 1).data; return d[3] > 0; }), 'the dialog shows a preview of the case');
 
   /* ---- the case is drawn, and its code is the link ---- */
@@ -97,10 +100,8 @@ suite('e2e-tip', async t => {
   await ev(() => document.getElementById('tipPng').click());
   const d = await dl; ok(!!d && /^tip-jar_The_Test_Band\.png$/.test(d.suggestedFilename()), 'the case can be saved as a picture (' + (d && d.suggestedFilename()) + ')');
 
-  /* ---- Settings, agents, keeping it ---- */
-  await ev(() => { const x = document.getElementById('tipjar'); if (x) x.close(); window.__daily.openSettings('tip'); }); await wait(400);
-  ok(await ev(() => /Tip jar: showing/.test((document.getElementById('setTip') || {}).textContent || '')), 'Settings has a Tip jar section that says it is showing');
-  await ev(() => { const s = document.getElementById('settings'); if (s) s.close(); });
+  /* ---- agents, keeping it ---- */
+  await ev(() => { const x = document.getElementById('tipjar'); if (x) x.close(); });
   const A = await ev(async () => { const r = await window.dailyStudio.call('get_studio_state', {}); return JSON.stringify(r); });
   ok(!A.includes('ko-fi.com/the-daily-test') && !A.includes('Test Band'), 'the agent tools do not see the tip link');
   ok(await ev(() => { const c = JSON.parse(localStorage.getItem('fw.cfg') || '{}'); return !!(c.tip && c.tip.link === 'ko-fi.com/the-daily-test' && c.tip.on && c.tipOk === 1); }), 'the tip jar is remembered in this browser');

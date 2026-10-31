@@ -10,7 +10,8 @@ All notable changes to the-daily.studio (earlier versions were released under th
   - **on the Stage**, so the room can scan it from the projector or the pop-out window (it steps around the chord, tuner, song info and lower third);
   - **on share pages**, as a button and a code beside the player;
   - **on a printed sign** for a real guitar case, and **as a picture** (PNG) to post.
-  It can show all the time or only between songs, in any corner, at three sizes. In the Visuals bar, the Stage bar and **Settings ▸ Tip jar**.
+  It can show all the time or only between songs, in any corner, at three sizes.
+- **Off by default, set up in 🎬 Creator Studio** (its **🎸 Tip jar** tool). Until it is set up nothing about it appears anywhere else; once it is, a **🎸 Tips** button appears in the Visuals and Stage bars to switch it on or off.
 - **A QR code maker** (`src/parts/39a-qr.js`), with no library and nothing downloaded: byte mode, error correction level M, versions 1 to 40, the mask chosen by the standard's penalty rules. Every version was checked with an independent QR reader while it was written, and the codes drawn on the Visuals and the Stage scan back to the link.
 
 ### Safeguards
@@ -20,7 +21,7 @@ All notable changes to the-daily.studio (earlier versions were released under th
 - The studio never opens the link itself and sees no payment. Terms of use gain a **Tips** section; the privacy statement lists the tip jar.
 
 ### Tests
-- `test/e2e-tip.cjs` (35 checks): the codes match the fingerprints of codes checked with an independent reader; every module drawn in the case matches the link; unsafe links are refused; nothing shows before the confirmation; the dialog, the corners, stepping around the neck and the lower third, "only between songs", the Stage, share pages (escaped, and absent when turned off), the printed sign, the picture, Settings, the agent tools not seeing the link, and the dialog on a phone.
+- `test/e2e-tip.cjs` (36 checks): the codes match the fingerprints of codes checked with an independent reader; every module drawn in the case matches the link; unsafe links are refused; off by default (no button outside Creator Studio until it is set up); nothing shows before the confirmation; the dialog, the corners, stepping around the neck and the lower third, "only between songs", the Stage, share pages (escaped, and absent when turned off), the printed sign, the picture, the agent tools not seeing the link, and the dialog on a phone.
 
 ## 2.16.1 — 2026-10-31 — A smaller page and steadier tests
 
