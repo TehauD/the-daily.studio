@@ -126,7 +126,7 @@ The fastest way in: **hum or sing a few seconds of melody and get a whole song b
 2. Pick your interface in the list and press **Connect**. The browser asks for microphone access; allow it. (This is how a web page reads your audio interface.) If it is blocked, the card shows the steps for your browser and system.
 3. Press **Set my level**, play or sing as loud as you will, and the **Input trim** is set for you. **Undo** puts it back. The **signal path** under the card (Input → Trim → Rig → Master → Out) shows where the loudest point is and says in one sentence if peaks are hot or low.
 4. For a two-input interface, **Channels** offers *Guitar*, *Guitar + voice*, *Swap* and *Voice*; each input can also be set to Guitar, Vocal or Off.
-5. Choose the **Audio output** (needs a recent Chromium browser to switch away from the system default) and press **Test sound** to hear it. **Hear myself** lets you hear the rig live; with an interface that has its own **Direct Monitor**, leave the app's monitor *off* to avoid doubling, or wear headphones.
+5. Choose the **Audio output** (needs a recent Chromium browser to switch away from the system default) and press **Test sound** to hear it. **Hear myself** lets you hear the rig and your vocal live; the output you choose is used again the next time the app opens; with an interface that has its own **Direct Monitor**, leave the app's monitor *off* to avoid doubling, or wear headphones.
 6. **Advanced** (closed by default) has **Latency lab → Run loopback test** (a measured round-trip delay: patch an output to an input first), **Diagnose devices** and the rarely used controls. The header chip shows an *estimate* until you run it.
 7. Plug in a different interface while the app is open and a small prompt offers to use it.
 
@@ -278,9 +278,9 @@ Your songs live in your browser. Chrome and Edge keep them unless you clear site
 A two-input interface (a Focusrite Scarlett Solo / 2i2 / 4i4, for example) shows up in the browser as **one device with two channels**. The app reads input 1 and input 2 separately, so:
 
 1. Plug the guitar into one input and the microphone into the other.
-2. In **I/O → Audio input**, choose the interface itself (not "Default"); in **Channels** set one input to **Guitar** and the other to **Vocal**. **Detect & visualise** chooses what the note detector, tuner, neck and visuals follow: **Guitar**, **Vocal** (the neck shows the note you sing) or **Both**; the visuals Source menu can also listen to the vocal microphone directly. The Vocal lane appears with its own meter.
+2. In **I/O → Audio input**, choose the interface itself (not "Default"); in **Channels** set one input to **Guitar** and the other to **Vocal**. A **Focusrite** starts as **Vocal on input 1** (the mic / XLR) and **Guitar on input 2** (the Inst jack); change either and your choice is kept. **Detect & visualise** chooses what the note detector, tuner, neck and visuals follow: **Guitar**, **Vocal** (the neck shows the note you sing) or **Both**; the visuals Source menu can also listen to the vocal microphone directly. The Vocal lane appears with its own meter.
 3. Arm both lanes with ● (guitar and vocal), then press <kbd>R</kbd>. You get two takes, aligned to each other and to the band. If only one input has anything on it (a microphone in input 1 and nothing in input 2, say), only that one is kept and a message says the other was silent. To record one lane only, click the ● of the other to turn it off.
-4. **Hear vocal** monitors the microphone through the app; use headphones (or your interface's Direct Monitor with the app's monitor off) or the microphone will feed back. **Vocal polish** adds a 90 Hz high-pass and gentle compression.
+4. **Hear myself** monitors both the guitar and the microphone; **Hear vocal** turns the microphone alone on or off; use headphones (or your interface's Direct Monitor with the app's monitor off) or the microphone will feed back. **Vocal polish** adds a 90 Hz high-pass and gentle compression.
 
 Browsers cannot reach more than the channels the operating system exposes for that device. A mono device (a webcam microphone, an input that only exposes one channel) cannot be split into guitar and vocal, and the-daily.studio says so when it detects that.
 
@@ -299,6 +299,30 @@ The **song strip** under the header holds the **title**, **artist**, **Tuning**,
 **Loading a track fills in the song.** When a backing track finishes loading, the strip takes its title and artist (from the file's tags, or a cleaned-up file name such as "Good Morning" from `01 - Good_Morning (Official Audio).m4a`), and sets tempo, time signature, key and scale. If the song has no work of your own yet, the detected chords are written into it. Anything you had is snapshotted first (undo, or **History**, gets it back). The **♪ track chip** at the right of the strip offers *Import chords*, *Use tempo + key*, *Play band with track*, *Open Stems* and *Unload*, the switch **Track follows the transport** and the **When a track loads** setting (fill details + chords, details only, or nothing).
 
 **Pasting finished lyrics.** In Refine press **📋 Paste lyrics** (or paste a whole lyric sheet into any lyric box, or drop a .txt / .lrc file on the panel). Headings like `[Verse 1]`, `[Pre-Chorus]`, `(Chorus)`, `Verse 2:` or `## Bridge` become sections; with no headings, blank-line stanzas become Verses, and a stanza that repeats becomes the Chorus. Choose where it goes (a section per block, fill the sections you have, or add after), how many bars a line gets for new sections, and whether to place your chords over the words. The preview lists exactly what happens, including any sections that would be replaced. One undo puts everything back.
+
+**Loading a chord sheet.** A song's chords and words, the way tab sites and songbooks write them, become a whole song. Open **☰ Songs ▸ 🎸 Paste a chord sheet…** (or **🎸 Paste chords** in the Songwriter workspace, **📋 Paste lyrics** in Refine, paste it into any lyric box, or drop a .txt file) and paste:
+
+```
+[Verse 1]
+Am            F
+Late night, city lights
+C                 G
+Right here with you
+```
+
+The import box sees the chords and switches to *Import a chord sheet*. It reads:
+- **a line of chords over a line of words**: each chord keeps its place over the syllable it was over;
+- **inline chords** (`[Am]Late night, [F]city lights`) and **ChordPro** (`{title: …}`, `{key: …}`, `{tempo: …}`, `{c: Chorus}`, `{soc}` … `{eoc}`);
+- **chord-only lines** for intros and solos, with `|` bar lines (`| Am | F | C G |`) and repeats (`x2`);
+- **headings** (`[Verse 1]`, `(Chorus)`, `Bridge:`) as sections, and **`Capo: 2`, `Key: E`, `Tempo: 96`** and a **`Title - Artist`** line at the top.
+
+Before you load it, the preview shows the sections, their bars and every chord, and the key it found. You choose:
+- **Where it goes**: a new song (the default; the song you were on stays in ☰ Songs), replace this song's sections, or add after them;
+- **Each chord lasts**: 1 bar, 2 bars, or half a bar (two chords of a line to a bar);
+- **Key**: read from the chords (or from `Key:`), or one you pick;
+- **Guitar part in the tab**: a strum or picking pattern written from the chords, or none.
+
+After loading, the band (drums, bass, rhythm guitar) plays the chords: press Space. **Write** opens with the tab and the words with their chords, **Theory** shows the key, the **Fretboard** follows each chord, and **🎤 Perform** shows the chords and words full screen. With no title in the sheet, the first line of the chorus is offered as the title. A chord the app cannot play is played as the nearest simpler one (*Cadd11* as C, *A7sus2* as A7) and the preview lists them. ASCII tab in the sheet (`e|--0--3--|`) is left out; the tab is written from the chords.
 
 **Refine** is the shared space for lyrics and chords: each section is a card with its name, bars, lyric lines and chord names. Keep any other panel (Tab, Fretboard, Stems, Transcribe) open in the centre while you write.
 

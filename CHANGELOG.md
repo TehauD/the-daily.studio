@@ -2,6 +2,33 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.14.0 — 2026-10-31 — Paste a chord sheet and play it
+
+### Added
+- **Chord sheets become songs** (`src/parts/24b-chordsheet.js`). Paste a song's chords and words, the way tab sites and songbooks write them, and it becomes a song the studio can use: a section for each heading, a bar for each chord, the key read from the chords, the words with each chord over the syllable it was over, and a guitar part written into the tab. The band plays it at once; Write, Theory, the Fretboard and Perform all follow it.
+- It reads **chords over words**, **inline chords** (`[Am]words`), **ChordPro** (`{title}`, `{key}`, `{tempo}`, `{c: …}`, `{soc}`/`{eoc}`), **chord-only lines** with `|` bar lines and `x2` repeats, and **`Capo:`, `Key:`, `Tempo:`, `Time:`** and **`Title - Artist`** lines. Slash chords, 7ths, 9ths, sus and add chords are kept as written; a chord the app cannot play becomes the nearest simpler one (a sus2 never turns into a sus4), and the preview says which.
+- **Choices before loading**: a new song (the default; the current song stays in ☰ Songs), replace this song's sections, or add after them; each chord 1 bar, 2 bars or half a bar; the key (from the chords, or pick one); the guitar part (any of the tab fill patterns, or none). With no title in the sheet, the first line of the chorus is offered.
+- **Ways in**: ☰ Songs ▸ **🎸 Paste a chord sheet…**, **🎸 Paste chords** in the Songwriter workspace, and the existing **📋 Paste lyrics** box, lyric boxes and dropped .txt files, which switch to the chord sheet import when the text has chords in it.
+- `test/e2e-chordsheet.cjs` (37 checks, on invented sheets).
+
+### Limits
+- ASCII tab in a sheet (`e|--0--3--|`) is recognised and left out; the tab is written from the chords. How long each chord lasts is your choice (1 bar, 2 bars or half a bar for the whole sheet), because chord sheets do not say; a line with `|` bar lines keeps its own bars.
+- Checked with invented sheets in a headless browser. A sheet in an unusual layout (chords and words on the same line without brackets, or chords in a proportional font that no longer line up) may place chords a word early or late; the bars are still right.
+
+## 2.13.1 — 2026-10-31 — Hearing yourself through a Focusrite, and voice on input 1 by default
+
+### Fixed
+- **“Hear myself” was silent for a microphone.** It only switched on the guitar; the vocal needed a second switch (the vocal lane's 🎧, off by default), so with a mic on the interface nothing came out. Hear myself now carries the guitar **and** the vocal. The vocal lane's 🎧 and *Hear vocal* in I/O ▸ Channels still turn the vocal alone on or off, and the kill switch turns both off.
+- **The output you chose was not used after a reload.** The output device (a Focusrite, say) was saved and shown in I/O, but the engine started on the system default output, so the sound went somewhere you were not listening. The saved output is now applied when the engine starts. An output that is gone, refuses, or does not answer within 4 s falls back to the system default with a message, instead of leaving the app silent.
+- **An input the engine could not take left the audio half-connected.** Firefox refuses an input when the engine runs at a sample rate it did not choose (Settings ▸ Sample rate other than Auto). The device stayed open, nothing came through and the error escaped. Now the input is released, the engine switches to Auto and reconnects, and if it still cannot, it says what to do.
+
+### Changed
+- **A Focusrite starts as voice on input 1 and guitar on input 2** (Scarlett, Solo, Clarett, Vocaster and other Focusrite names): the mic / XLR is the vocal, the Inst jack the guitar. It stays that way until you choose otherwise in I/O ▸ Channels (a preset, an input's menu, ⚡ Find my guitar or the vocal lane's input), and from then on your choice is kept. Other interfaces are unchanged.
+- `test/e2e-monitor.cjs` (18 checks): Hear myself and the vocal, the kill switch, the Focusrite default and keeping your choice, the saved output and its fallback, and an input the engine refuses.
+
+### Limits
+- Checked in a headless browser with a simulated input and simulated device names, not with a real Focusrite. Which physical jack the browser calls input 1 depends on the interface's driver; on the Scarlett range input 1 is the left jack.
+
 ## 2.13.0 — 2026-10-30 — Workspaces built around what a musician wants to do, and one dialog for the header's buttons
 
 ### Added
