@@ -289,6 +289,11 @@ A two-input interface (a Focusrite Scarlett Solo / 2i2 / 4i4, for example) shows
 3. Arm both lanes with ● (guitar and vocal), then press <kbd>R</kbd>. You get two takes, aligned to each other and to the band. If only one input has anything on it (a microphone in input 1 and nothing in input 2, say), only that one is kept and a message says the other was silent. To record one lane only, click the ● of the other to turn it off.
 4. **Hear myself** monitors both the guitar and the microphone; **Hear vocal** turns the microphone alone on or off; use headphones (or your interface's Direct Monitor with the app's monitor off) or the microphone will feed back. **Vocal polish** adds a 90 Hz high-pass and gentle compression.
 
+**Latency: hearing yourself in time (2.18).** What you hear through **Hear myself** is late by two things: the browser and your interface (usually 10–40 ms in a browser, which cannot use the interface's lowest-latency driver), and the app's own effects. The app's part is now **under 1 ms** for both the guitar and the voice: its compressors, amp and drive run with no look-ahead (before, the guitar came out about 21 ms late and the voice 12 ms). Takes stay in time with each other and with the band on playback and in exports, whatever the rig. To get the rest down:
+- For tracking, hear yourself through the interface's **Direct Monitor** (no delay at all) with the app's monitor off.
+- **Settings ▸ Audio engine ▸ Latency hint ▸ 0 (request minimum)**, and run **I/O ▸ Advanced ▸ Latency lab** so recordings land on the beat.
+- **Settings ▸ Audio engine ▸ Zero-delay effects** is on by default. Turning it off uses the browser's own compressor and oversampling instead (about 20 ms more on the guitar); takes are still kept in time.
+
 Browsers cannot reach more than the channels the operating system exposes for that device. A mono device (a webcam microphone, an input that only exposes one channel) cannot be split into guitar and vocal, and the-daily.studio says so when it detects that.
 
 ## Tab editor

@@ -82,6 +82,63 @@ class Tap extends AudioWorkletProcessor{
       if(this.n===this.B){this.port.postMessage({t:this.t0,l:this.l.slice(),r:this.st?this.r.slice():null});this.n=0;}}}
     return true;}}
 registerProcessor('fw-tap',Tap);
+
+/* zero-delay dynamics and saturation (2.18). The browser's own compressor always looks 6 ms ahead and its waveshaper's 4x
+   oversampling adds 4 ms, so a guitar through the amp heard itself about 21 ms late. These do the same work with no look-ahead:
+   the compressor follows the browser's static curve and make-up gain (so levels do not move) and reads each 32-sample slice
+   before it scales it; the shaper oversamples with polyphase IIR half-band filters (about 0.1 ms) instead of long FIR ones.
+   A compressor told {end:true} stops for good (a take's strip made for one playback, once it is thrown away): Chrome never calls a
+   processor again after it returns false, even if something is connected later, so the others always return true. */
+function hbCoefs(n,tr){let k=Math.tan((1-tr*2)*Math.PI/4);k*=k;const kk=Math.pow(1-k*k,0.25),e=0.5*(1-kk)/(1+kk),e4=e*e*e*e,q=e*(1+e4*(2+e4*(15+150*e4))),ord=n*2+1,out=[];
+  for(let ix=0;ix<n;ix++){const c=ix+1;let num=0,i=0,j=1,t;do{t=Math.pow(q,i*(i+1))*Math.sin((i*2+1)*c*Math.PI/ord)*j;num+=t;j=-j;i++;}while(Math.abs(t)>1e-100);
+    let den=0;i=1;j=-1;do{t=Math.pow(q,i*i)*Math.cos(i*2*c*Math.PI/ord)*j;den+=t;j=-j;i++;}while(Math.abs(t)>1e-100);
+    const ww=num*Math.pow(q,0.25)/(den+0.5),w2=ww*ww,x=Math.sqrt((1-w2*k)*(1-w2/k))/(1+w2);out.push((1-x)/(1+x));}
+  return out;}
+const HB_A=hbCoefs(12,0.02),HB_B=hbCoefs(4,0.12);
+class HB{constructor(co){this.c=co;this.n=co.length;this.x=new Float64Array(this.n);this.y=new Float64Array(this.n);this.a=0;this.b=0;}
+  run(a,b){const c=this.c,x=this.x,y=this.y,n=this.n;for(let i=0;i<n;i+=2){let t=(a-y[i])*c[i]+x[i];x[i]=a;y[i]=t;a=t;if(i+1<n){t=(b-y[i+1])*c[i+1]+x[i+1];x[i+1]=b;y[i+1]=t;b=t;}}this.a=a;this.b=b;}
+  up(s){this.run(s,s);}
+  down(s0,s1){this.run(s1,s0);return 0.5*(this.a+this.b);}}
+/* the curve is the app's satCurve(k, bias, 2048, tanh|atan), rebuilt here from parameters: parameters reach the processor at once, where a
+   message may arrive after an offline render (a bounce) has started. A curve that is not a satCurve comes by message (none does today). */
+class Shape extends AudioWorkletProcessor{
+  static get parameterDescriptors(){return[{name:'k',defaultValue:1,minValue:0,maxValue:10000,automationRate:'k-rate'},{name:'bias',defaultValue:0,minValue:-100,maxValue:100,automationRate:'k-rate'},
+    {name:'kind',defaultValue:0,minValue:0,maxValue:1,automationRate:'k-rate'},{name:'os',defaultValue:1,minValue:1,maxValue:4,automationRate:'k-rate'},{name:'on',defaultValue:0,minValue:0,maxValue:1,automationRate:'k-rate'}];}
+  constructor(){super();this.cu=null;this.mc=null;this.key='';this.st=[];this.port.onmessage=e=>{if('curve' in e.data)this.mc=e.data.curve;};}
+  table(k,b,kind){const n=2048,a=new Float32Array(n),f=kind>0.5?Math.atan:Math.tanh,nb=f(b),sc=Math.abs(f(k+b)-nb)||1;for(let i=0;i<n;i++){const x=i/(n-1)*2-1;a[i]=(f(k*x+b)-nb)/sc;}return a;}
+  f(v){const c=this.cu,N=c.length,p=(N-1)*(v+1)*0.5;if(p<=0)return c[0];if(p>=N-1)return c[N-1];const k=p|0,r=p-k;return c[k]+(c[k+1]-c[k])*r;}
+  process(i,o,pr){const x=i[0],y=o[0];if(!x||!x.length||!y.length)return true;const n=y[0].length;
+    if(pr.on[0]>0.5){const key=pr.k[0]+'|'+pr.bias[0]+'|'+pr.kind[0];if(key!==this.key){this.key=key;this.tb=this.table(pr.k[0],pr.bias[0],pr.kind[0]);}this.cu=this.tb;}else this.cu=this.mc;
+    const os=pr.os[0]>=3?4:pr.os[0]>=1.5?2:1;
+    for(let ch=0;ch<y.length;ch++){const xc=x[ch]||x[0],yc=y[ch];if(!this.cu){yc.set(xc);continue;}
+      const s=this.st[ch]||(this.st[ch]={ua:new HB(HB_A),da:new HB(HB_A),ub:new HB(HB_B),db:new HB(HB_B)});
+      for(let k=0;k<n;k++){const v=xc[k]+1e-20;
+        if(os===1){yc[k]=this.f(v);continue;}
+        s.ua.up(v);const a0=s.ua.a,a1=s.ua.b;
+        if(os===2){yc[k]=s.da.down(this.f(a0),this.f(a1));continue;}
+        s.ub.up(a0);const b0=this.f(s.ub.a),b1=this.f(s.ub.b);s.ub.up(a1);const b2=this.f(s.ub.a),b3=this.f(s.ub.b);
+        yc[k]=s.da.down(s.db.down(b0,b1),s.db.down(b2,b3));}}
+    return true;}}
+registerProcessor('fw-shape',Shape);
+class Comp extends AudioWorkletProcessor{
+  static get parameterDescriptors(){return[{name:'threshold',defaultValue:-24,minValue:-100,maxValue:0,automationRate:'k-rate'},{name:'knee',defaultValue:30,minValue:0,maxValue:40,automationRate:'k-rate'},
+    {name:'ratio',defaultValue:12,minValue:1,maxValue:20,automationRate:'k-rate'},{name:'attack',defaultValue:0.003,minValue:0,maxValue:1,automationRate:'k-rate'},{name:'release',defaultValue:0.25,minValue:0,maxValue:1,automationRate:'k-rate'}];}
+  constructor(){super();this.key='';this.gDb=0;this.gl=1;this.mk=1;this.end=false;this.port.onmessage=e=>{if(e.data&&e.data.end)this.end=true;};}
+  setup(th,kn,ra){const lin=Math.pow(10,th/20),kDb=th+kn,kx=Math.pow(10,kDb/20),sl=1/ra,db=v=>20*Math.log10(v),kc=(x,k)=>x<lin?x:lin+(1-Math.exp(-k*(x-lin)))/k;
+    const at=(x,k)=>{if(x<lin)return 1;const x2=x*1.001;return(db(kc(x2,k))-db(kc(x,k)))/(db(x2)-db(x));};
+    let lo=0.1,hi=10000,k=5;for(let i=0;i<15;i++){if(at(kx,k)<sl)hi=k;else lo=k;k=Math.sqrt(lo*hi);}
+    this.c={lin,k,kx,kDb,yk:db(kc(kx,k)),sl};this.mk=Math.pow(1/this.sat(1),0.6);}
+  sat(x){const c=this.c;if(x<c.kx)return x<c.lin?x:c.lin+(1-Math.exp(-c.k*(x-c.lin)))/c.k;return Math.pow(10,(c.yk+c.sl*(20*Math.log10(x)-c.kDb))/20);}
+  process(i,o,p){if(this.end)return false;const x=i[0],y=o[0];if(!x||!x.length||!y.length)return true;
+    const th=p.threshold[0],kn=p.knee[0],ra=Math.max(1,p.ratio[0]),key=th+'|'+kn+'|'+ra;if(key!==this.key){this.key=key;this.setup(th,kn,ra);}
+    const n=y[0].length,S=32,dt=S/sampleRate,atk=p.attack[0],inst=atk<=0.0015,ca=inst?1:1-Math.exp(-dt/(atk*0.5)),cr=1-Math.exp(-dt/Math.max(0.001,p.release[0]*0.5)),mk=this.mk;
+    for(let s=0;s<n;s+=S){const e=Math.min(n,s+S),L=e-s;let pk=0;for(let c=0;c<x.length;c++){const xc=x[c];for(let k=s;k<e;k++){const v=xc[k]<0?-xc[k]:xc[k];if(v>pk)pk=v;}}
+      const t=pk>1e-6?20*Math.log10(this.sat(pk)/pk):0;this.gDb+=(t-this.gDb)*(t<this.gDb?ca:cr);
+      const g1=Math.pow(10,this.gDb/20)*mk,g0=this.gl,flat=inst&&g1<g0;
+      for(let c=0;c<y.length;c++){const xc=x[c]||x[0],yc=y[c];for(let k=s;k<e;k++)yc[k]=xc[k]*(flat?g1:g0+(g1-g0)*(k-s+1)/L);}
+      this.gl=g1;}
+    return true;}}
+registerProcessor('fw-comp',Comp);
 `;
 
 /* ---------- engine state ---------- */
@@ -148,7 +205,7 @@ async function outApply(id, quiet) {
 function buildGraph() {
   const c = E.ctx;
   E.inTrim = gn(fromDB(CFG.gTrim || 0)); E.inSum = gn(1); E.rigIn = gn(1); E.rigOut = gn(1); E.mix = gn(1); E.master = gn(CFG.master != null ? CFG.master : .9);
-  E.limiter = c.createDynamicsCompressor(); Object.assign(E.limiter.threshold, { value: -1.5 }); E.limiter.knee.value = 0; E.limiter.ratio.value = 20; E.limiter.attack.value = 0.001; E.limiter.release.value = 0.08;
+  E.limiter = mkComp(c); Object.assign(E.limiter.threshold, { value: -1.5 }); E.limiter.knee.value = 0; E.limiter.ratio.value = 20; E.limiter.attack.value = 0.001; E.limiter.release.value = 0.08;
   const mkAna = (fft, sm) => { const a = c.createAnalyser(); a.fftSize = fft; a.smoothingTimeConstant = sm; a.minDecibels = -110; a.maxDecibels = -10; return a; };
   E.anaDI = mkAna(4096, 0); E.anaChroma = mkAna(16384, 0.5); E.anaRig = mkAna(CFG.fft, CFG.smooth); E.anaMaster = mkAna(CFG.fft, CFG.smooth);
   E.inSum.connect(E.inTrim); E.inTrim.connect(E.rigIn); E.anaIn = mkAna(2048, 0); E.inTrim.connect(E.anaIn);
@@ -163,9 +220,9 @@ function buildGraph() {
   /* vocal path: the second input channel → trim → (meter · recorder tap) and → monitor switch → polish strip → Vocal track */
   E.voxIn = gn(1); E.voxTrim = gn(fromDB(CFG.voxTrim || 0)); E.voxMon = gn(0); E.anaVox = mkAna(2048, 0.3);
   E.voxIn.connect(E.voxTrim); E.voxTrim.connect(E.anaVox); E.voxTrim.connect(E.aV); E.voxTrim.connect(E.voxMon);
-  { const sIn = gn(1), sOut = gn(1), hp = bq('highpass', 90), cmp = c.createDynamicsCompressor(), mk = gn(1.35), pr = gn(1), by = gn(0);
+  { const sIn = gn(1), sOut = gn(1), hp = bq('highpass', 90), cmp = mkComp(c), mk = gn(1.35), pr = gn(1), by = gn(0);
     cmp.threshold.value = -24; cmp.knee.value = 14; cmp.ratio.value = 3; cmp.attack.value = .008; cmp.release.value = .2;
-    chainN(sIn, hp, cmp, mk, pr, sOut); sIn.connect(by); by.connect(sOut); E.voxStrip = { in: sIn, out: sOut, proc: pr, byp: by }; sOut.connect(E.tr.vox.in); E.voxMon.connect(sIn); }
+    chainN(sIn, hp, cmp, mk, pr, sOut); sIn.connect(by); by.connect(sOut); E.voxStrip = { in: sIn, out: sOut, proc: pr, byp: by, cmp }; sOut.connect(E.tr.vox.in); E.voxMon.connect(sIn); }
   voxPolishApply();
   E.rigOut.connect(E.tr.live.in);
   { const ms = mstBuild(); E.mix.connect(ms.in); ms.out.connect(E.master); mstApply(); }
@@ -331,10 +388,28 @@ function satCurve(k, bias = 0, n = 2048, kind = 'tanh') {
   const a = new Float32Array(n), nb = kind === 'tanh' ? Math.tanh(bias) : Math.atan(bias);
   const f = kind === 'tanh' ? Math.tanh : Math.atan, sc = Math.abs(f(k + bias) - nb) || 1;
   for (let i = 0; i < n; i++) { const x = i / (n - 1) * 2 - 1; a[i] = (f(k * x + bias) - nb) / sc; }
+  if (n === 2048) a.sat = [k, bias, kind];   /* so the zero-delay shaper can rebuild it from three numbers (part of fw-shape) */
   return a;
 }
 const LFO = (c, type = 'sine', f = 1) => { const o = c.createOscillator(); o.type = type; o.frequency.value = f; o.start(); return o; };
 const passthru = () => { const g = gn(); return { in: g, out: g, set() { } }; };
+/** a compressor with no look-ahead (the worklet's fw-comp), or the browser's own where there are no worklets. Either way it has the
+    same five parameters (threshold, knee, ratio, attack, release) and the same curve and make-up gain; _lat is the delay it adds, in seconds */
+function mkComp(c) {
+  if (!E.worklet || CFG.lowLat === false) { const n = c.createDynamicsCompressor(); n._lat = .006; return n; }
+  const n = new AudioWorkletNode(c, 'fw-comp', { numberOfInputs: 1, numberOfOutputs: 1 });
+  ['threshold', 'knee', 'ratio', 'attack', 'release'].forEach(k => { n[k] = n.parameters.get(k); }); n._lat = 0;
+  n.end = () => { try { n.port.postMessage({ end: true }); } catch (e) { } }; return n;
+}
+/** a waveshaper whose oversampling adds about 0.1 ms (the worklet's fw-shape) instead of the browser's 3–4 ms; set .curve and .oversample as on a
+    WaveShaperNode. Where there are no worklets it is the browser's own. _lat: the delay it adds, in seconds */
+function mkShaper(c) {
+  if (!E.worklet || CFG.lowLat === false) { const n = c.createWaveShaper(); Object.defineProperty(n, '_lat', { get: () => ({ '2x': 128, '4x': 192 }[n.oversample] || 0) / c.sampleRate }); return n; }
+  const n = new AudioWorkletNode(c, 'fw-shape', { numberOfInputs: 1, numberOfOutputs: 1 }), P = k => n.parameters.get(k); let cu = null, os = 'none';
+  Object.defineProperty(n, 'curve', { get: () => cu, set: v => { cu = v || null; const s = cu && cu.sat; if (s) { P('k').value = s[0]; P('bias').value = s[1]; P('kind').value = s[2] === 'atan' ? 1 : 0; } else n.port.postMessage({ curve: cu ? Float32Array.from(cu) : null }); P('on').value = s ? 1 : 0; } });
+  Object.defineProperty(n, 'oversample', { get: () => os, set: v => { os = v; P('os').value = v === '4x' ? 4 : v === '2x' ? 2 : 1; } });
+  n._lat = 0; return n;
+}
 
 defFx('gate', 'Noise Gate', 'Dynamics', [P('thresh', 'Thresh', -80, -20, -58, 1, ' dB'), P('rel', 'Release', 20, 600, 140, 1, ' ms', { log: 1 }), P('hold', 'Hold', 0, 300, 40, 1, ' ms'), P('range', 'Range', -90, -6, -70, 1, ' dB')], (c) => {
   if (!E.worklet) return passthru();
@@ -343,9 +418,11 @@ defFx('gate', 'Noise Gate', 'Dynamics', [P('thresh', 'Thresh', -80, -20, -58, 1,
   return { in: n, out: n, set(k, v) { n.port.postMessage({ [map[k]]: v }); } };
 });
 defFx('comp', 'Compressor', 'Dynamics', [P('thr', 'Thresh', -60, 0, -26, 1, ' dB'), P('ratio', 'Ratio', 1, 20, 4, .1, ':1'), P('atk', 'Attack', 1, 200, 12, 1, ' ms', { log: 1 }), P('rel', 'Release', 20, 1000, 220, 1, ' ms', { log: 1 }), P('knee', 'Knee', 0, 40, 14, 1, ' dB'), P('makeup', 'Makeup', 0, 24, 6, .5, ' dB'), P('mix', 'Blend', 0, 1, 1, .01)], (c) => {
-  const i = gn(), cm = c.createDynamicsCompressor(), mk = gn(), dry = gn(0), wet = gn(1), o = gn();
-  chainN(i, cm, mk, wet, o); i.connect(dry); dry.connect(o);
-  return { in: i, out: o, set(k, v) { switch (k) { case 'thr': cm.threshold.value = v; break; case 'ratio': cm.ratio.value = v; break; case 'atk': cm.attack.value = v / 1000; break; case 'rel': cm.release.value = v / 1000; break; case 'knee': cm.knee.value = v; break; case 'makeup': tc(mk.gain, fromDB(v)); break; case 'mix': tc(wet.gain, v); tc(dry.gain, 1 - v); } } };
+  const i = gn(), cm = mkComp(c), mk = gn(), dry = gn(0), wet = gn(1), o = gn();
+  chainN(i, cm, mk, wet, o); dry.connect(o);
+  /* Blend: with the browser's compressor (6 ms look-ahead) the dry side is delayed to match, so the two do not comb-filter */
+  if (cm._lat) { const dd = c.createDelay(.05); dd.delayTime.value = cm._lat; i.connect(dd); dd.connect(dry); } else i.connect(dry);
+  return { in: i, out: o, lat: () => cm._lat, set(k, v) { switch (k) { case 'thr': cm.threshold.value = v; break; case 'ratio': cm.ratio.value = v; break; case 'atk': cm.attack.value = v / 1000; break; case 'rel': cm.release.value = v / 1000; break; case 'knee': cm.knee.value = v; break; case 'makeup': tc(mk.gain, fromDB(v)); break; case 'mix': tc(wet.gain, v); tc(dry.gain, 1 - v); } } };
 });
 defFx('wah', 'Wah', 'Filter', [SELP('mode', 'Mode', ['Pedal', 'Auto LFO']), P('pos', 'Pedal', 0, 1, .5), P('q', 'Q', 1, 16, 6, .1), P('rate', 'Rate', .1, 8, 1.6, .01, ' Hz', { log: 1 }), P('depth', 'Depth', 0, 1, .8), P('mix', 'Mix', 0, 1, 1)], (c) => {
   const i = gn(), bp = bq('bandpass', 800, 6), lfo = LFO(c), lg = gn(0), lv = gn(1.8), dry = gn(0), wet = gn(1), o = gn();
@@ -355,21 +432,21 @@ defFx('wah', 'Wah', 'Filter', [SELP('mode', 'Mode', ['Pedal', 'Auto LFO']), P('p
   return { in: i, out: o, set(k, v) { switch (k) { case 'mode': mode = v; upd(); break; case 'pos': pos = v; upd(); break; case 'depth': dep = v; upd(); break; case 'q': bp.Q.value = v; break; case 'rate': lfo.frequency.value = v; break; case 'mix': tc(wet.gain, v); tc(dry.gain, 1 - v); } } };
 });
 function driveUnit(c, o) {
-  const i = gn(), hp = bq('highpass', o.hp), body = bq('peaking', 720, .9, 0), drv = gn(8), ws = c.createWaveShaper(), lp = bq('lowpass', 4500), lv = gn(.8);
+  const i = gn(), hp = bq('highpass', o.hp), body = bq('peaking', 720, .9, 0), drv = gn(8), ws = mkShaper(c), lp = bq('lowpass', 4500), lv = gn(.8);
   ws.oversample = '4x'; chainN(i, hp, body, drv, ws, lp, lv); return { i, hp, body, drv, ws, lp, lv };
 }
 defFx('od', 'Overdrive', 'Drive', [P('drive', 'Drive', 0, 1, .45), P('tone', 'Tone', 0, 1, .5), P('level', 'Level', 0, 1, .55), P('body', 'Mid Hump', 0, 12, 5, .5, ' dB')], (c) => {
   const u = driveUnit(c, { hp: 140 }); u.ws.curve = satCurve(3.2, .12);
-  return { in: u.i, out: u.lv, set(k, v) { switch (k) { case 'drive': tc(u.drv.gain, 1 + v * v * 50); break; case 'tone': tc(u.lp.frequency, 1500 * Math.pow(6, v)); break; case 'level': tc(u.lv.gain, v * 1.6); break; case 'body': u.body.gain.value = v; } } };
+  return { in: u.i, out: u.lv, lat: () => u.ws._lat, set(k, v) { switch (k) { case 'drive': tc(u.drv.gain, 1 + v * v * 50); break; case 'tone': tc(u.lp.frequency, 1500 * Math.pow(6, v)); break; case 'level': tc(u.lv.gain, v * 1.6); break; case 'body': u.body.gain.value = v; } } };
 });
 defFx('ds', 'Distortion', 'Drive', [P('drive', 'Gain', 0, 1, .55), P('tone', 'Tone', 0, 1, .5), P('level', 'Level', 0, 1, .45), P('grit', 'Grit', 0, 1, .5)], (c) => {
   const u = driveUnit(c, { hp: 110 });
-  return { in: u.i, out: u.lv, set(k, v) { switch (k) { case 'drive': tc(u.drv.gain, 1 + v * v * 260); break; case 'tone': tc(u.lp.frequency, 1100 * Math.pow(9, v)); break; case 'level': tc(u.lv.gain, v * 1.3); break; case 'grit': u.ws.curve = satCurve(6 + v * 30, 0, 2048, v > .5 ? 'atan' : 'tanh'); } } };
+  return { in: u.i, out: u.lv, lat: () => u.ws._lat, set(k, v) { switch (k) { case 'drive': tc(u.drv.gain, 1 + v * v * 260); break; case 'tone': tc(u.lp.frequency, 1100 * Math.pow(9, v)); break; case 'level': tc(u.lv.gain, v * 1.3); break; case 'grit': u.ws.curve = satCurve(6 + v * 30, 0, 2048, v > .5 ? 'atan' : 'tanh'); } } };
 });
 defFx('fuzz', 'Fuzz', 'Drive', [P('fuzz', 'Fuzz', 0, 1, .7), P('bias', 'Bias', 0, 1, .4), P('tone', 'Tone', 0, 1, .5), P('level', 'Level', 0, 1, .4)], (c) => {
   const u = driveUnit(c, { hp: 70 }); let k = 20, b = .3;
   const cv = () => { u.ws.curve = satCurve(k, b * 1.4, 2048, 'tanh'); };
-  return { in: u.i, out: u.lv, set(n, v) { switch (n) { case 'fuzz': tc(u.drv.gain, 1 + v * 90); k = 10 + v * 50; cv(); break; case 'bias': b = v; cv(); break; case 'tone': tc(u.lp.frequency, 700 * Math.pow(10, v)); break; case 'level': tc(u.lv.gain, v * 1.2); } } };
+  return { in: u.i, out: u.lv, lat: () => u.ws._lat, set(n, v) { switch (n) { case 'fuzz': tc(u.drv.gain, 1 + v * 90); k = 10 + v * 50; cv(); break; case 'bias': b = v; cv(); break; case 'tone': tc(u.lp.frequency, 700 * Math.pow(10, v)); break; case 'level': tc(u.lv.gain, v * 1.2); } } };
 });
 defFx('pitch', 'Pitch / Harmony', 'Pitch', [P('semi', 'Shift', -24, 24, 12, .01, ' st'), P('mix', 'Mix', 0, 1, .5), P('win', 'Window', 20, 120, 60, 1, ' ms')], (c) => {
   if (!E.worklet) return passthru();
@@ -384,8 +461,8 @@ const AMP = {
   'Hi-Gain': { a1: 38, a2: 22, k1: 3.8, k2: 4.5, b1: .25, b2: .2, tB: 90, tM: 620, tT: 2800, vB: 3, vM: -3, vT: 4, hp: 140, inter: 5200, mk: .55, sag: .2 }
 };
 defFx('amp', 'Amp', 'Amp', [SELP('model', 'Model', Object.keys(AMP)), P('gain', 'Gain', 0, 1, .35), P('bass', 'Bass', 0, 1, .5), P('mid', 'Mid', 0, 1, .5), P('treble', 'Treble', 0, 1, .5), P('pres', 'Presence', 0, 1, .45), P('master', 'Master', 0, 1, .5), TOG('bright', 'Bright'), P('tight', 'Tight', 0, 1, .2)], (c) => {
-  const i = gn(), hp = bq('highpass', 90), br = bq('highshelf', 3500, .7, 0), g1 = gn(4), w1 = c.createWaveShaper(), lp1 = bq('lowpass', 7500), hp2 = bq('highpass', 60), g2 = gn(2), w2 = c.createWaveShaper(),
-    lo = bq('lowshelf', 110), mi = bq('peaking', 650, .8), hi = bq('highshelf', 3000), pr = bq('highshelf', 5500), dc = bq('highpass', 28), sg = c.createDynamicsCompressor(), ms = gn(.7);
+  const i = gn(), hp = bq('highpass', 90), br = bq('highshelf', 3500, .7, 0), g1 = gn(4), w1 = mkShaper(c), lp1 = bq('lowpass', 7500), hp2 = bq('highpass', 60), g2 = gn(2), w2 = mkShaper(c),
+    lo = bq('lowshelf', 110), mi = bq('peaking', 650, .8), hi = bq('highshelf', 3000), pr = bq('highshelf', 5500), dc = bq('highpass', 28), sg = mkComp(c), ms = gn(.7);
   w1.oversample = w2.oversample = '4x'; sg.threshold.value = -20; sg.knee.value = 20; sg.attack.value = .004; sg.release.value = .12;
   chainN(i, hp, br, g1, w1, lp1, hp2, g2, w2, lo, mi, hi, pr, dc, sg, ms);
   const st = { model: 'Clean', gain: .35, bass: .5, mid: .5, treble: .5, pres: .45, master: .5, tight: .2, bright: 0 };
@@ -397,7 +474,7 @@ defFx('amp', 'Amp', 'Amp', [SELP('model', 'Model', Object.keys(AMP)), P('gain', 
     lo.gain.value = (st.bass - .5) * 24 + m.vB; mi.gain.value = (st.mid - .5) * 24 + m.vM; hi.gain.value = (st.treble - .5) * 24 + m.vT; pr.gain.value = (st.pres - .5) * 20;
     hp.frequency.value = Math.max(m.hp * .6, 40) + st.tight * 380; sg.ratio.value = 1 + m.sag * 5; tc(ms.gain, st.master * 1.5 * m.mk); br.gain.value = st.bright ? 5 : 0;
   };
-  return { in: i, out: ms, set(k, v) { st[k] = v; upd(); } };
+  return { in: i, out: ms, lat: () => w1._lat + w2._lat + sg._lat, set(k, v) { st[k] = v; upd(); } };
 });
 const CABS = {
   '1x12 Open Back': { res: [[105, .9, .020], [260, .35, .012], [1800, .30, .004], [3300, .45, .003]], lp: 5600, hp: 90, len: .045 },
@@ -496,8 +573,14 @@ class FxUnit {
     else { tc(this.dry.gain, 1, .008); tc(this.wet.gain, 0, .008); this.tm = setTimeout(() => { if (!this.on && this.conn) { try { this.inN.disconnect(this.fx.in); } catch (e) { } this.conn = false; } }, 160); }
   }
   set(k, v) { this.p[k] = v; this.fx.set(k, v); }
+  /** the delay this unit adds while it is on, in seconds (0 for everything with the zero-delay compressor and shaper) */
+  lat() { return this.on && this.fx.lat ? this.fx.lat() || 0 : 0; }
 }
 const RIG = { order: ['gate', 'comp', 'wah', 'od', 'ds', 'fuzz', 'pitch', 'amp', 'cab', 'eq', 'chorus', 'phaser', 'flanger', 'trem', 'delay', 'reverb'], units: {}, cur: '—' };
+/** the delay the rig and the vocal polish add, in seconds: what a take played through them is started early by (delay compensation),
+    and what a wet print is trimmed by. About 0 with the zero-delay effects; about 15–20 ms with the browser's own (Settings ▸ Audio engine). */
+const rigLat = () => RIG.order.reduce((a, id) => a + (RIG.units[id] ? RIG.units[id].lat() : 0), 0);
+const voxLat = () => E.voxStrip && CFG.voxPolish !== false ? E.voxStrip.cmp._lat || 0 : 0;
 function rigBuild() { RIG.order.forEach(id => { RIG.units[id] = new FxUnit(FX[id]); }); rigConnect(); }
 function rigConnect() {
   try { E.rigIn.disconnect(); } catch (e) { }

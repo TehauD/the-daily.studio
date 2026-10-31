@@ -117,6 +117,8 @@ function openSettings(at) {
       F('Sample rate', sel('sr', [['auto', 'Device default'], ['44100', '44.1 kHz'], ['48000', '48 kHz'], ['96000', '96 kHz']])),
       F('Analyzer FFT size', sel('fft', [2048, 4096, 8192, 16384, 32768], () => { if (E.ready) { E.anaRig.fftSize = E.anaMaster.fftSize = CFG.fft; } })),
       F('Analyzer smoothing', range('smooth', 0, .95, .01, () => { if (E.ready) E.anaRig.smoothingTimeConstant = E.anaMaster.smoothingTimeConstant = CFG.smooth; })),
+      chk('Zero-delay effects (compressors, amp and drive with no look-ahead)', 'lowLat', () => { if (E.ready) restartAudio(); }),
+      note('On by default: you hear your guitar about 20 ms sooner and your voice about 12 ms sooner than with the browser’s own compressor and oversampling. Turning it off restarts the audio engine; takes stay in time either way.'),
       h('div', { class: 'hub-acts' }, h('button', { class: 'btn', onclick: () => { close(); restartAudio(); } }, '↻ Restart audio engine'), note('Needed after changing the latency hint, sample rate or output routing.'))] },
     { key: 'rec', label: 'Recording & practice', ico: '●', sub: 'Count-in, the click and what a take keeps.', body: () => [
       F('Count-in (bars)', sel('countIn', [0, 1, 2, 4])),

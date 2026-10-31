@@ -2,6 +2,19 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.18.0 — 2026-10-31 — Hear yourself sooner, and takes in time
+
+### Changed
+- **Hearing yourself through the app is about 20 ms sooner on the guitar and 12 ms sooner on the voice.** Measured with a click through the default rig: the guitar came out of the app 20.7 ms after it went in, the voice 12 ms; now 0.2 ms and 0. The browser's own compressor always looks 6 ms ahead and its 4x oversampling adds 4 ms, and the amp alone had two shapers and a compressor in a row. The compressors (amp sag, compressor pedal, vocal polish, lane and master compressors, limiter) and the amp and drive saturation now run in the app's audio worklet with no look-ahead: the same curves and make-up gain (levels within 0.5 dB), the same saturation and the same aliasing (about −92 dB), oversampled through low-delay IIR filters. Your interface and the browser still add their own delay; for tracking, the interface's Direct Monitor has none.
+- **Takes play in time with each other.** Guitar takes played through the rig, or from their wet print, used to be heard 15–21 ms behind the band and about 9–15 ms behind the vocal; vocal takes 6 ms behind the band. Now each rig unit reports the delay it adds, and a take is started that much early and a wet print trimmed to match (delay compensation), so guitar, vocal and band land within a sample of where they were played, in playback and in exports.
+- **The compressor pedal's Blend no longer thins the tone.** It mixed your dry guitar with a compressed copy 6 ms late (a comb filter); both now arrive together.
+
+### Added
+- **Settings ▸ Audio engine ▸ Zero-delay effects** (on). Off goes back to the browser's own compressor and oversampling (about 20 ms more on the guitar); takes are still kept in time.
+
+### Tests
+- `test/e2e-latency.cjs` (17 checks): the guitar and voice paths timed with a click (with the default rig and with every drive pedal on), the compressor against the browser's at five settings and five levels, the shaper's level, aliasing and first samples in an offline render, a guitar take (re-amped and from its wet print) against a vocal take on playback, and all of it again with the setting off.
+
 ## 2.17.0 — 2026-10-31 — A tip jar: let your audience tip you
 
 ### Added
