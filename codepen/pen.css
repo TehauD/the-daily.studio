@@ -861,6 +861,23 @@ body.perform-on #vzHud{display:none!important}
 .pf-r.ok i{background:var(--accent);color:var(--accent-ink)}.pf-r.bad i{background:#e5484d;color:#fff}.pf-rl{flex:1}.pf-meter{width:110px;height:8px;border-radius:6px;background:var(--raise);overflow:hidden}.pf-meter b{display:block;height:100%;width:0;background:var(--accent)}
 .pf-rr{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:14px}.pf-chk{display:inline-flex;align-items:center;gap:6px;margin-left:auto}.btn.pf-go{min-height:46px;padding:0 22px;font-size:16px}
 .perform.pf-pre .pf-chord,.perform.pf-pre .pf-next,.perform.pf-pre .pf-lyr{display:none}.perform.pf-pre .pf-bar{display:none}
+.pf-shapes{display:none}.perform.pf-pre .pf-shapes{display:none!important}
+.perform.pf-v-shapes .pf-shapes{display:flex;flex-direction:column;align-items:stretch;gap:12px;text-shadow:none;color:#f1f4f2}
+.pf-sh{display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 12px;border-radius:14px;background:rgba(10,16,14,.62);border:1px solid rgba(255,255,255,.12)}.pf-sh.now{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.pf-sh-l{font:700 11px var(--mono);letter-spacing:.12em;color:var(--accent)}.pf-sh-n{font:800 22px var(--mono)}.pf-sh.now .pf-sh-n{font-size:30px}
+.pf-sh svg{width:100%;height:auto;max-width:96px}.pf-sh.now svg{max-width:160px}.pf-sh-f{font:600 12px var(--mono);color:#cfe0d6;letter-spacing:.08em}
+.pf-sh-up{font:700 15px var(--mono);text-align:center;color:#e8efe9}.pf-sh-up span{font-size:11px;letter-spacing:.12em;color:var(--accent)}.pf-sh-capo,.pf-sh-none{font-size:12px;text-align:center;color:#cfe0d6}
+@media (min-width:900px){.perform.pf-v-shapes .pf-stage{padding-right:calc(clamp(170px,17vw,250px) + 6vw)}.perform.pf-v-shapes .pf-shapes{position:absolute;right:3vw;top:50%;transform:translateY(-50%);width:clamp(170px,17vw,250px)}}
+@media (max-width:899px){.perform.pf-v-shapes .pf-shapes{flex-direction:row;flex-wrap:wrap;justify-content:center;align-items:flex-start;order:2}.perform.pf-v-shapes .pf-sh svg{max-width:84px}.perform.pf-v-shapes .pf-sh.now svg{max-width:104px}.perform.pf-v-shapes .pf-sh-up{flex-basis:100%}.perform.pf-v-shapes .pf-lyr{order:3}.perform.pf-v-shapes .pf-chord,.perform.pf-v-shapes .pf-next{display:none}.perform.pf-v-shapes .pf-sh{padding:6px 10px}.perform.pf-v-shapes .pf-sh svg{max-width:68px}.perform.pf-v-shapes .pf-sh.now svg{max-width:84px}.perform.pf-v-shapes .pf-sh-n{font-size:17px}.perform.pf-v-shapes .pf-sh.now .pf-sh-n{font-size:22px}}
+@media (max-width:899px){.pf-stage{justify-content:flex-start;overflow:hidden;padding-top:8px}.perform .pf-l.cur{font-size:clamp(18px,6vw,30px)}.perform .pf-l:not(.cur){font-size:clamp(14px,4.2vw,22px)}.perform.pf-v-sheet .pf-l.cur{font-size:clamp(19px,6.4vw,30px)}.perform.pf-v-shapes .pf-sh svg{max-width:56px}.perform.pf-v-shapes .pf-sh.now svg{max-width:72px}.perform.pf-v-shapes .pf-shapes{gap:8px}}
+@media (max-width:899px) and (max-height:720px){.perform.pf-v-shapes .pf-sh svg{max-width:44px}.perform.pf-v-shapes .pf-sh.now svg{max-width:56px}.perform.pf-v-shapes .pf-sh-f{font-size:11px}.pf-chord{font-size:clamp(48px,14vh,120px)}}
+.perform.pf-v-sheet .pf-chord,.perform.pf-v-sheet .pf-next{display:none}.perform.pf-v-sheet .pf-lyr{margin-top:0}.perform.pf-v-sheet .pf-l.cur{font-size:clamp(26px,6.4vh,66px)}.perform.pf-v-sheet .pf-l:not(.cur):not(.past){font-size:clamp(20px,4.4vh,42px)}
+.btn.pf-view{white-space:nowrap}
+.build-tag{font:600 10px var(--mono);letter-spacing:.04em;opacity:.55;cursor:default;user-select:none;-webkit-user-select:none;white-space:nowrap}
+.pf-ver{position:absolute;right:10px;bottom:3px;color:#cfe0d6;z-index:2}
+.egg-line{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-style:italic;text-align:center;opacity:.75}.pf-bar .egg-line{font:italic 500 13px var(--sans);color:#cfe0d6}
+.egg-in{animation:eggIn .7s ease}@keyframes eggIn{from{opacity:0;transform:translateY(3px)}to{opacity:.75;transform:none}}
+@media (prefers-reduced-motion:reduce){.egg-in{animation:none}}
 @media (max-width:700px){.pf-chord{font-size:clamp(64px,20vh,200px)}.btn.pf-b{min-height:44px;padding:0 14px;font-size:15px}}
 
 /* ---------- print sheet ---------- */

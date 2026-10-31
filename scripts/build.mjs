@@ -24,6 +24,9 @@ try { new vm.Script(js, { filename: 'daily-songs.js' }); } catch (e) { console.e
 const MARK = markInner({ hex: 'var(--accent)', ink: 'var(--text)' });
 const MARK_SM = markInner({ hex: 'var(--accent)', ink: 'var(--text)', bars: false, k: 1.45 });
 js = js.replaceAll('__MARK_INNER__', MARK);
+/* the version the app shows, and a build code taken from the code itself: the same source always gives the same code */
+const BUILD = createHash('sha256').update(js).digest('hex').slice(0, 7);
+js = js.replaceAll('__VERSION__', pkg.version).replaceAll('__BUILD__', BUILD);
 const fontFace = (fam, file) => `@font-face{font-family:"${fam}";src:url(data:font/woff2;base64,${readFileSync(join(root, 'src', 'fonts', file)).toString('base64')}) format("woff2");font-weight:100 900;font-style:normal;font-display:swap}\n`;
 const css = fontFace('DS Inter', 'inter-latin-wght.woff2') + fontFace('DS Montserrat', 'montserrat-latin-wght.woff2') + src('styles.css'), bodyRaw = src('body.html').replaceAll('__MARK_INNER__', MARK).replaceAll('__MARK_SM__', MARK_SM), body = bodyRaw.replaceAll('__GUIDE_LINKS__', guideLinks()), bodyPen = bodyRaw.replaceAll('__GUIDE_LINKS__', guideLinks(SITE.origin + '/'));
 const chlog = readFileSync(join(root, 'CHANGELOG.md'), 'utf8').match(/^## (\d+\.\d+\.\d+) — (\d{4}-\d{2}-\d{2})/m), modified = chlog ? chlog[2] : new Date().toISOString().slice(0, 10);

@@ -554,6 +554,13 @@ Live and session measurements: pitch-class usage and intonation (mean cents devi
 
 **Perform.** Press **🎤 Perform** in the song bar (or on the full-screen stage). A readiness check comes first: audio is running, your input is connected (with a live level), the camera if you want it, lyrics to follow, and the count-in length. **Start performing** then shows the chord huge with the next one under it, the lyrics scrolling with the song, a big count-in, and **Play**, **● Record**, **Loop**, **Click** and tempo −/+ within reach. Tick **Show the visuals behind** to put the stage behind the words, or leave it for a plain dark page. <kbd>Space</kbd> plays or stops, <kbd>R</kbd> records, <kbd>Esc</kbd> leaves, and <kbd>Ctrl/⌘</kbd>+<kbd>.</kbd> stops everything. A finished take goes straight into your song.
 
+**Perform's displays.** The **Display** button at the top switches between three looks, and the choice is remembered:
+- **◫ Chords & shapes** (the default): the big chord and the lyrics, with a panel beside them showing the shape of the chord being played (NOW) and the next one (NEXT), worked out for the song's tuning and capo (the voicing you picked on the Fretboard, if you picked one), the frets under each (x = not played, 0 = open), and the chords after that. On a phone the panel sits above the lyrics, and the NOW and NEXT cards take the place of the big chord.
+- **◼ Big chord**: the big chord with the next one under it, and the lyrics.
+- **☰ Lyric sheet**: no big chord; the lyrics larger, with more lines and their chords over the words, like reading from a songbook.
+
+**Version.** The very bottom-right corner of Perform, and the end of the status bar, show the version and build code (for example *v2.15.0 · build 2a3be1d*), so you can tell which build is running. Help ▸ About shows the same version.
+
 **Voice memo.** On a clean canvas, **🎤 Voice memo** records your voice as it is: one Vocal take at the start of the page, no analysis and no band. The page grows enough bars to play all of it.
 
 **Auto look.** **🎬 Auto look** in the Visuals bar makes the look follow the section while the song plays (choruses open into the Fifths Halo, bridges into Prism, intros and outros into the Tunnel). When playback stops, your own look comes back.

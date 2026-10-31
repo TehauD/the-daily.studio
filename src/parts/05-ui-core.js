@@ -158,7 +158,7 @@ function openHelp(at) {
 }
 
 /* ---------- status bar ---------- */
-function buildStatus() { const s = $('#status'); UI.st = { a: h('span'), i: h('span'), r: h('span'), m: h('span'), f: h('span') }; s.append(UI.st.a, UI.st.i, UI.st.r, h('span', { class: 'sp' }), UI.st.m, UI.st.f); }
+function buildStatus() { const s = $('#status'); UI.st = { a: h('span'), i: h('span'), r: h('span'), m: h('span'), f: h('span') }; s.append(UI.st.a, UI.st.i, UI.st.r, h('span', { class: 'sp egg-line', 'aria-live': 'off' }), UI.st.m, UI.st.f, buildTag('st-ver')); }
 let fpsN = 0, fpsT = 0, FPS = 0;
 function updateStatus() {
   if (!UI.st) return; const L = latencyInfo();
