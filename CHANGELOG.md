@@ -15,6 +15,7 @@ All notable changes to the-daily.studio (earlier versions were released under th
 ### Changed
 - **robots.txt**: AI search and answer bots that cite and link back (OAI-SearchBot, ChatGPT-User, Claude-SearchBot, Claude-User, PerplexityBot, Perplexity-User) are named and allowed; crawlers that collect pages for AI training (GPTBot, ClaudeBot, anthropic-ai, Google-Extended, Applebot-Extended, CCBot, Meta-ExternalAgent, Bytespider, cohere-training-data-crawler, Diffbot) are asked to stay away. Search engines are unchanged. `verify:site` reads the robots groups and checks all three.
 - PRIVACY.md says what agents can and cannot do, and that what an agent does with the song text it reads is up to that agent.
+- **About** (Help ▸ About): the story is rewritten in Tehau's words, from a guitar at five to why the-daily.studio exists, signed -Tehau.
 
 ### Fixed
 - A chord line above a line that already has its own `[Am]` chords is kept as its own line, instead of being merged into it with the chords doubled.
