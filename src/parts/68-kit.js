@@ -1,6 +1,7 @@
 /* ============================================================
    Part 68 · The creator's and the teacher's kit, behind the goal workspaces' buttons (part 64).
-     Studio Replay   the last stage video (or screen recording) plays back in place: save it, share it, or make a thumbnail from any frame
+     Studio Replay   the last stage video (or screen recording, or a track made small to share) plays back in place: save it, share it,
+                     make a one-file share page of it, or make a thumbnail from any frame
      Record video    the stage recorder (part 37), asking for MP4 where the browser can make it, opening Studio Replay when it stops
      Thumbnail       a 1280 × 720 PNG of the stage (or of the replay's frame) with the song's title on it
      Screen record   this tab or the screen (the browser asks which), with the studio's sound and, if you like, your microphone
@@ -8,40 +9,91 @@
      Annotate        draw over the page; the ink stays (and shows in a screen recording) until you clear it
    Everything is made and kept on this device. Share hands the file to your device's own share sheet only when you press it.
    ============================================================ */
-const KIT = { last: null, lastKind: '', url: '', scr: null, notesEl: null, ink: null, inkOn: false, strokes: [], pen: '#ffd23f' };
-const kitMb = b => (b.size / 1048576).toFixed(1) + ' MB';
-const kitExt = b => (/mp4/.test(b.type) ? '.mp4' : '.webm');
+const KIT = { last: null, lastKind: '', meta: {}, sync: null, enc: null, url: '', scr: null, notesEl: null, ink: null, inkOn: false, strokes: [], pen: '#ffd23f' };
+const kitMb = b => b.size < 1048576 ? Math.max(1, Math.round(b.size / 1024)) + ' KB' : (b.size / 1048576).toFixed(1) + ' MB';
+const kitExt = b => /^audio\/mp4/.test(b.type) ? '.m4a' : /mp4/.test(b.type) ? '.mp4' : /ogg/.test(b.type) ? '.ogg' : '.webm';
+const kitAudio = b => /^audio\//.test(b.type);
 const kitName = kind => (S.title || 'song').replace(/\W+/g, '_') + '_' + (kind || 'stage');
 /** keep a recording for Studio Replay (only the newest one is kept, in memory) */
-function kitKeep(blob, kind) {
+function kitKeep(blob, kind, meta) {
   if (!blob || blob === KIT.last) return; if (KIT.url) { try { URL.revokeObjectURL(KIT.url); } catch (e) { } }
-  KIT.last = blob; KIT.lastKind = kind || 'stage'; KIT.url = URL.createObjectURL(blob); bus.emit('kit');
+  KIT.last = blob; KIT.lastKind = kind || 'stage'; KIT.meta = meta || {}; KIT.url = URL.createObjectURL(blob); bus.emit('kit');
 }
-bus.on('srec:blob', b => kitKeep(b, 'stage'));
+/* where the song was when a stage video started, so its share page can follow the words (meta.off: song seconds at the video's start) */
+bus.on('srec', on => { KIT.sync = on && T.playing ? { m: 0, s: playheadSlot() * slotDur() } : null; });
+bus.on('transport', () => { if (SREC.on && !SREC.audio && T.playing && !KIT.sync) KIT.sync = { m: (performance.now() - SREC.t0) / 1000, s: T.cursor * slotDur() }; });
+bus.on('srec:blob', b => kitKeep(b, 'stage', { off: KIT.sync ? KIT.sync.s - KIT.sync.m : null }));
 /** one button: start the stage video; press again to stop, and Studio Replay opens with it */
 function kitRecord() {
   if (SREC.on) { srecStop(true); return; }
   srecStart(false, { mp4: true, onBlob: b => { kitKeep(b, 'stage'); kitReplay(); } });
 }
-function kitSave() { const b = KIT.last; if (!b) return; download(kitName(KIT.lastKind) + kitExt(b), b); toast('Saved the video to this device (' + kitMb(b) + ')', 'ok'); }
+const kitFile = b => (KIT.meta.name || kitName(KIT.lastKind)) + kitExt(b);
+function kitSave() { const b = KIT.last; if (!b) return; download(kitFile(b), b); toast('Saved the ' + (kitAudio(b) ? 'audio' : 'video') + ' to this device (' + kitMb(b) + ')', 'ok'); }
 async function kitShare() {
-  const b = KIT.last; if (!b) return; const f = new File([b], kitName(KIT.lastKind) + kitExt(b), { type: b.type });
+  if (CFG.shareOk !== SHARE_TERMS) return shareGate(kitShare);
+  const b = KIT.last; if (!b) return; const f = new File([b], kitFile(b), { type: b.type });
   try { if (navigator.canShare && navigator.canShare({ files: [f] })) { await navigator.share({ files: [f], title: S.title || 'My performance' }); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
-  kitSave(); toast('This browser has no share sheet for videos here, so it was saved instead: post it from your files.', 'warn');
+  kitSave(); toast('This browser has no share sheet for this file here, so it was saved instead: send or post it from your files.', 'warn');
+}
+/** one file with this recording, a player and the words and chords in time (the share page of part 39, for one recording) */
+function kitPage() {
+  if (CFG.shareOk !== SHARE_TERMS) return shareGate(kitPage);
+  const b = KIT.last; if (!b) return; const m = KIT.meta || {}, fr = new FileReader();
+  fr.onload = () => {
+    const d = shareData(m.off == null ? 0 : m.off, m.len); if (m.off == null) d.nosync = true;
+    const html = shareHtml(fr.result, d, kitAudio(b) ? 'audio' : 'video'); download((m.name || kitName(KIT.lastKind)) + '_share.html', new Blob([html], { type: 'text/html' }));
+    toast('Saved the share page (' + (html.length / 1048576).toFixed(1) + ' MB). Send it as a file, or put it on any web host and embed it with an iframe.', 'ok');
+  };
+  fr.readAsDataURL(b);
+}
+/** a track made small to share: the lane (or one clip) as M4A where the browser can (else Opus), made silently in real time */
+function kitEncode(r, tick) {
+  return new Promise(async (res, rej) => {
+    try { await startAudio(); } catch (e) { return rej(e); }
+    const c = E.ctx, mime = srecMime(true); if (mime === null || !c.createMediaStreamDestination) return rej(new Error('this browser cannot make compressed audio here'));
+    const buf = c.createBuffer(1, r.data.length, r.sr); buf.copyToChannel(r.data, 0);
+    const src = c.createBufferSource(), dst = c.createMediaStreamDestination(), parts = []; src.buffer = buf; src.connect(dst);
+    let mr; try { mr = new MediaRecorder(dst.stream, Object.assign({ audioBitsPerSecond: 160e3 }, mime ? { mimeType: mime } : {})); } catch (e) { return rej(e); }
+    let tm = 0, stopped = false; const t0 = c.currentTime + .1;
+    const end = () => { if (mr.state !== 'inactive') mr.stop(); };
+    mr.ondataavailable = e => { if (e.data && e.data.size) parts.push(e.data); };
+    mr.onstop = () => { clearInterval(tm); try { src.disconnect(); } catch (e) { } KIT.enc = null; if (stopped) rej(new Error('cancelled')); else res(new Blob(parts, { type: (mr.mimeType || mime || 'audio/webm').split(';')[0] })); };
+    src.onended = () => setTimeout(end, 300);
+    KIT.enc = { cancel: () => { stopped = true; try { src.stop(); } catch (e) { } end(); } };
+    mr.start(500); src.start(t0); tm = setInterval(() => tick && tick(Math.max(0, c.currentTime - t0), buf.duration), 200);
+  });
+}
+async function kitTake(tk, one) {
+  if (KIT.enc) return toast('A track is already being made. Wait for it, or cancel it.', 'warn');
+  if (typeof AK !== 'undefined' && AK.killed) return toast('Audio is stopped. Open Audio to resume, then share.', 'warn');
+  const lead = tkLead(tk), r = one ? (tkRenderClip(tk, 'wet') || tkRenderClip(tk, 'dry')) : (tkRender(lead, 'wet') || tkRender(lead, 'dry')); if (!r) return toast('There is no audio in this ' + (one ? 'clip' : 'lane') + '.', 'warn');
+  const name = ((S.title || 'song') + '_' + (one ? tk.name + '_clip' : lead.name)).replace(/\W+/g, '_'), fmt = x => Math.floor(x / 60) + ':' + String(Math.floor(x % 60)).padStart(2, '0');
+  const bar = h('i'), txt = h('span', { class: 'mono tiny' }, '0:00 / ' + fmt(r.dur));
+  const dlg = pdlg('kitEnc', 'MAKING A SMALL AUDIO FILE', h('div', { style: { display: 'grid', gap: '8px' } },
+    h('div', { class: 'small' }, 'Turning “' + (one ? tk.name : lead.name) + '” into a small file to share. It plays through once, silently, so it takes as long as the recording.'),
+    h('div', { class: 'meter' }, bar), txt), { onclose: () => { if (KIT.enc) KIT.enc.cancel(); } });
+  try {
+    const b = await kitEncode(r, (t, d) => { bar.style.width = Math.min(100, t / d * 100).toFixed(1) + '%'; txt.textContent = fmt(Math.min(t, d)) + ' / ' + fmt(d); });
+    try { dlg.close(); } catch (e) { } if (!b || b.size < 200) return toast('The audio came out empty. Try again.', 'warn');
+    kitKeep(b, 'take', { off: r.startSec, len: r.dur, name }); kitReplay();
+  } catch (e) { try { dlg.close(); } catch (x) { } if (!/cancel/.test(e && e.message || '')) toast('Could not make the audio file: ' + (e && e.message || e), 'bad'); }
 }
 function kitReplay() {
   if (!KIT.last) return toast('Record a video first: ⏺ Record video, then ■ to stop.', 'warn');
-  const b = KIT.last, mp4 = /mp4/.test(b.type);
-  const v = h('video', { class: 'kit-v', id: 'kitVideo', src: KIT.url, controls: true, playsinline: true, autoplay: true });
+  const b = KIT.last, mp4 = /mp4/.test(b.type), aud = kitAudio(b);
+  const v = aud ? h('audio', { class: 'kit-a', id: 'kitAudio', src: KIT.url, controls: true }) : h('video', { class: 'kit-v', id: 'kitVideo', src: KIT.url, controls: true, playsinline: true, autoplay: true });
   const canShare = (() => { try { return !!(navigator.canShare && navigator.canShare({ files: [new File([b], 'x' + kitExt(b), { type: b.type })] })); } catch (e) { return false; } })();
   const body = h('div', { class: 'kit-replay' }, v,
-    h('div', { class: 'tiny muted kit-meta' }, (mp4 ? 'MP4' : 'WebM') + ' · ' + kitMb(b) + (mp4 ? ' · ready for social posts' : ' · this browser records WebM; most sites take it, or convert it to MP4')),
+    h('div', { class: 'tiny muted kit-meta' }, (aud ? (KIT.meta.name || 'Track') + ' · ' + (mp4 ? 'M4A' : kitExt(b).slice(1).toUpperCase()) + ' · ' + kitMb(b) : (mp4 ? 'MP4' : 'WebM') + ' · ' + kitMb(b) + (mp4 ? ' · ready for social posts' : ' · this browser records WebM; most sites take it, or convert it to MP4'))),
     h('div', { class: 'row kit-acts' },
-      h('button', { class: 'btn primary', id: 'kitSave', onclick: kitSave }, '⇩ Save ' + (mp4 ? 'MP4' : 'video')),
+      h('button', { class: 'btn primary', id: 'kitSave', onclick: kitSave }, '⇩ Save ' + (aud ? (mp4 ? 'M4A' : 'audio') : mp4 ? 'MP4' : 'video')),
       canShare ? h('button', { class: 'btn', id: 'kitShare', onclick: kitShare }, '↗ Share…') : null,
-      h('button', { class: 'btn', id: 'kitThumbFrame', title: 'Pause on the frame you want first', onclick: () => kitThumb(v) }, '🖼 Thumbnail from this frame'),
+      h('button', { class: 'btn', id: 'kitPage', title: 'One HTML file with this recording, a player and the words and chords in time. Send it, or put it on any web host and embed it.', onclick: kitPage }, '🔗 Share page'),
+      aud ? null : h('button', { class: 'btn', id: 'kitThumbFrame', title: 'Pause on the frame you want first', onclick: () => kitThumb(v) }, '🖼 Thumbnail from this frame'),
       KIT.lastKind === 'stage' ? h('button', { class: 'btn', id: 'kitAgain', onclick: () => { d.close(); kitRecord(); } }, '⏺ Record again') : null));
-  const d = pdlg('kitReplayDlg', 'Studio Replay', body, { wide: true, onclose: () => { try { v.pause(); } catch (e) { } } });
+  body.append(shareNotice());
+  const d = pdlg('kitReplayDlg', aud ? 'Share a track' : 'Studio Replay', body, { wide: true, onclose: () => { try { v.pause(); } catch (e) { } } });
   return d;
 }
 /** a 1280 × 720 picture: the stage (or a video frame), darkened at the foot, with the title and the key and tempo */

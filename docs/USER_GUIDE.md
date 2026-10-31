@@ -23,6 +23,13 @@ The row at the top of the centre holds six goals. Each one is a whole workspace 
 
 **Studio Replay.** **⏺ Record video** (Performer) or **⏺ Record MP4** (Creator Studio) records the stage, the camera if it is on, and the sound. Press it again to stop and Studio Replay opens: watch it, **⇩ Save MP4**, **↗ Share…** (your device's share sheet, where the browser has one), **🖼 Thumbnail from this frame** or **⏺ Record again**. Videos made with the Visuals panel's own ● Record are kept for Replay too. Only the newest recording is kept, in memory. MP4 is used where the browser can make it (recent Chrome, Edge and Safari); otherwise the file is WebM and Replay says so.
 
+**Sharing one track or the video.** In the arrangement, a recorded lane's **⋯** menu has **↗ Share…** (and **Clip options… ▸ ↗ Share clip…** for one clip). The track is turned into a small M4A (Opus where the browser cannot make M4A), about a tenth of the WAV. It plays through once, silently, so it takes as long as the recording; closing the progress window cancels it. It then opens in the same window as Studio Replay, titled *Share a track*. From there, or from Studio Replay for a video:
+- **⇩ Save** keeps the file.
+- **↗ Share…** hands it to your device's share sheet (Messages, Mail, AirDrop, social apps), where the browser has one.
+- **🔗 Share page** saves one HTML file with the recording inside it, a player, and the words with their chords over them, lit in time as it plays. A track's page shows only the sections the track covers. Send the file as it is, or put it on any web host for a link, and embed it elsewhere with an `<iframe>`. A screen recording, or a video that did not follow the song, gets the words without timing.
+
+**Before you share.** The first time you share on a device, the studio asks you to confirm that you own what you are sharing or have permission to share it, and that you take responsibility for sharing it. A reminder stays in the window each time, and every share page carries a notice saying the person who shared it is responsible for it. Covers, other people's lyrics and backing tracks usually need the owners' permission before they are posted. The studio makes the files on your device and does not upload, host or publish anything. See the [terms of use](https://the-daily.studio/legal/#terms).
+
 **Thumbnail.** A 1280 × 720 PNG of the stage (or of the paused Replay frame) with the song title, key and tempo, for the post.
 
 **Annotate.** Draw over anything on the page in one of five colours; **↶ Undo**, **Clear**, and **Done** (or <kbd>Esc</kbd>) to use the page again with the ink left in place. The ink shows in a screen recording of this tab.
