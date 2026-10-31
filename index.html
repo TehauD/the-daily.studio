@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en"><head><meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-ASassjJGHxF2Nm4uej4u66PqqaFdESVUV87wrTDa6i4=' 'wasm-unsafe-eval' blob: https://cdn.jsdelivr.net; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; connect-src 'self' blob: data: https://cdn.jsdelivr.net https://storage.googleapis.com; font-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="the-daily.studio">
+<html lang="en"><head><meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-U8lNRb4lnay9jxzxiyyEpyQAcb7MGlZmaxEBERdzmco=' 'wasm-unsafe-eval' blob: https://cdn.jsdelivr.net; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; connect-src 'self' blob: data: https://cdn.jsdelivr.net https://storage.googleapis.com; font-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="the-daily.studio">
 <title>the-daily.studio — free guitar and voice studio in your browser</title><link rel="canonical" href="https://the-daily.studio/"><meta name="description" content="Record guitar and voice, split a song into stems, get chords, tab and lyrics, and run a live light show. Free, private, in your browser: no account, no uploads."><meta name="robots" content="index,follow,max-image-preview:large">
 <meta name="theme-color" content="#0d0f10"><meta property="og:title" content="the-daily.studio — free guitar and voice studio in your browser"><meta property="og:type" content="website"><meta property="og:site_name" content="the-daily.studio"><meta property="og:locale" content="en_US"><meta property="og:url" content="https://the-daily.studio/"><meta property="og:description" content="Record guitar and mic, split any song into stems, get the chords and tab, and run a live light show. Free, private, nothing to install."><meta property="og:image" content="https://the-daily.studio/icons/social-card.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="the-daily.studio: lyrics, chords, recording and stems in one browser page">
 <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="the-daily.studio — free guitar and voice studio in your browser"><meta name="twitter:description" content="Record guitar and mic, split any song into stems, get the chords and tab, and run a live light show. Free, private, nothing to install."><meta name="twitter:image" content="https://the-daily.studio/icons/social-card.png"><meta name="twitter:image:alt" content="the-daily.studio: lyrics, chords, recording and stems in one browser page">
@@ -1418,7 +1418,7 @@ body[data-goal]:not([data-goal=""]) #dock .tab.on{box-shadow:inset 0 -3px 0 var(
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.15.0', BUILD = 'b303c94';   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.15.0', BUILD = '967ee81';   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://the-daily.studio/journal/' };
 const $ = (s, r = document) => r.querySelector(s);
@@ -9385,9 +9385,11 @@ function perfInfo() {
   return i;
 }
 /* ---------- display options, and the chord shapes beside the lyrics ---------- */
-function perfViewNext() {
-  const k = PF_VIEWS.findIndex(v => v[0] === pfView()), nx = PF_VIEWS[(k + 1) % PF_VIEWS.length]; CFG.pfView = nx[0]; saveCfg();
-  if (PF.el) { PF_VIEWS.forEach(v => PF.el.classList.toggle('pf-v-' + v[0], v[0] === nx[0])); const b = document.getElementById('pfView'); if (b) b.textContent = nx[1]; } PF.key = '';
+function perfViewNext() { const k = PF_VIEWS.findIndex(v => v[0] === pfView()); perfViewSet(PF_VIEWS[(k + 1) % PF_VIEWS.length][0]); }
+/** show Perform as 'shapes', 'big' or 'sheet' (remembered) */
+function perfViewSet(id) {
+  const nx = PF_VIEWS.find(v => v[0] === id); if (!nx) return false; CFG.pfView = nx[0]; saveCfg();
+  if (PF.el) { PF_VIEWS.forEach(v => PF.el.classList.toggle('pf-v-' + v[0], v[0] === nx[0])); const b = document.getElementById('pfView'); if (b) b.textContent = nx[1]; } PF.key = ''; return true;
 }
 /** the chord changes from the playhead on: the one playing, then the next ones (each different from the one before) */
 function perfChords(n) {
@@ -14496,10 +14498,16 @@ function backTip() {
    · Every change an agent makes shows a 🤖 note and is one undo step (Ctrl+Z); a new song keeps the old one in ☰ Songs.
    · Settings ▸ Workflow ▸ “Let AI agents in this browser use the studio” turns it all off (on by default).
    ============================================================ */
-const AGT = { tools: [], reg: null, log: [], via: '' };
+const AGT = { tools: [], reg: null, log: [], via: '', names: [], mc: null, q: Promise.resolve(), calls: [], note: null, noteT: 0, noteN: 0 };
 const agentOn = () => CFG.agents !== false;
-const agTxt = o => ({ content: [{ type: 'text', text: typeof o === 'string' ? o : JSON.stringify(o, null, 1) }] });
-function agentSay(msg) { AGT.log.unshift({ t: Date.now(), msg }); AGT.log.length = Math.min(AGT.log.length, 40); toast('🤖 AI agent: ' + msg, 'ok'); bus.emit('agent', msg); }
+/** a tool's answer: text for every client, and the same data as structuredContent (an object) for clients that read it */
+const agTxt = o => { const r = { content: [{ type: 'text', text: typeof o === 'string' ? o : JSON.stringify(o, null, 1) }] }; if (o && typeof o === 'object' && !Array.isArray(o)) r.structuredContent = o; return r; };
+function agentSay(msg) {
+  const now = Date.now(); AGT.log.unshift({ t: now, msg }); AGT.log.length = Math.min(AGT.log.length, 40);
+  const el = AGT.note; if (el && el.isConnected && now - AGT.noteT < 1500) { AGT.noteN++; el.textContent = '🤖 AI agent: ' + msg + ' (and ' + AGT.noteN + ' more)'; }   /* a burst of changes is one note */
+  else { toast('🤖 AI agent: ' + msg, 'ok'); const box = document.getElementById('toasts'); AGT.note = box && box.lastElementChild; AGT.noteN = 0; }
+  AGT.noteT = now; bus.emit('agent', msg);
+}
 const agKeyName = (root, minor) => pcName(root, (minor ? root === 3 : root === 6) ? !!CFG.flats : keyUsesFlats(root, minor)) + (minor ? ' minor' : ' major');   /* F#/Gb, D#/Eb: as the song spells them */
 /** "E", "E major", "C#m", "Bb minor", "f# min" → { root, minor } (minor from the text, or from `mode`) */
 function agKey(s, mode) {
@@ -14561,7 +14569,8 @@ agTool('get_studio_state', 'What the studio is doing: playing or stopped, the ba
     const fb = flatBars(), bar = Math.min(fb.length, Math.floor(playheadSlot() / spb()) + 1), g = typeof goalNow === 'function' ? goalNow() : null;
     return agTxt({ playing: !!T.playing, bar, loop: !!T.loop, metronome: !!T.metro, audio: E.ctx ? E.ctx.state : 'off', input_connected: !!E.hasInput, recording: !!T.rec,
       band: { drums: !!S.band.drumsOn, bass: !!S.band.bassOn, rhythm_guitar: !!S.band.compOn, lead_tab: !!S.band.leadOn, drum_pattern: S.band.patName, bass_style: S.band.bassStyle, strum_pattern: S.band.compStyle },
-      workspace: g ? g.id : null, panel: DOCK.cur, song: S.title, saved_songs: PRJ.list.map(r => r.title || 'Untitled') });
+      workspace: g ? g.id : null, panel: DOCK.cur, song: S.title, saved_songs: PRJ.list.map(r => r.title || 'Untitled'),
+      visuals: agVisuals(), perform: { open: !!PF.on, display: pfView() }, api: AG_API, app_version: VERSION, build: BUILD });
   }, { readOnlyHint: true });
 
 agTool('get_key_chords', 'The chords that belong to a key (with Roman numerals, triads and sevenths) and common progressions spelled in that key. Use it to suggest or write chord progressions. Defaults to the song\'s key.',
@@ -14669,53 +14678,123 @@ agTool('export_song', 'The song as text: ultimate_guitar (chords over words, wit
 agTool('undo', 'Undo or redo the last change to the song (yours or the person\'s).', agObj({ redo: agBool('Redo instead of undo.') }),
   i => { const n = i.redo ? histStack.r.length : histStack.u.length; if (!n) return agTxt('Nothing to ' + (i.redo ? 'redo' : 'undo') + '.'); i.redo ? redo() : undo(); agentSay(i.redo ? 'redid a change' : 'undid a change'); return agTxt({ done: true, song: agSong(false) }); });
 
+/* ---------- 2.16: the visuals, Perform and chord shapes ---------- */
+const AG_LOOKS = VMODES.map(m => m[0]);
+const agVisuals = () => ({ look: VZ.mode, look_name: (VMODES.find(m => m[0] === VZ.mode) || [, VZ.mode])[1], speed: vzSpeed(), size: vzSize(), zoom: vzZoom(), looks: VMODES.map(([id, name]) => ({ id, name })) });
+agTool('set_visuals', 'Change the visuals: the look, how fast it moves (speed 0.25–3), how big the hexagons of Hex Resonance and the pulse grid are (size 0.5–2.5) and how far it is pushed in (zoom 1–3). Applies on the Visuals tab, the Stage and in Perform. It never turns the camera on. get_studio_state lists the looks.',
+  agObj({ look: agStr('Which look (an id from get_studio_state.visuals.looks, e.g. "hex", "concert", "halo", "aurora").', { enum: AG_LOOKS }), speed: agNum('0.25 to 3 (1 = normal).'), size: agNum('0.5 to 2.5 (1 = normal).'), zoom: agNum('1 to 3 (1 = the whole picture).'), reset: agBool('Put speed, size and zoom back to 1 first.') }),
+  i => {
+    if (i.reset) VZA.forEach(([k]) => { CFG[k] = 1; });
+    [['speed', 'vzSpeed'], ['size', 'vzSize'], ['zoom', 'vzZoom']].forEach(([a, k]) => { if (i[a] == null) return; const d = VZA.find(x => x[0] === k); if (i[a] < d[2] || i[a] > d[3]) throw agErr('invalid_input', '“' + a + '” must be from ' + d[2] + ' to ' + d[3]); CFG[k] = i[a]; });
+    if (i.look) vzSetMode(i.look); saveCfg(); VZ.spec = null; $$('[data-vza]').forEach(x => x.classList.toggle('on', vzAdjusted()));
+    agentSay('changed the visuals'); return agTxt({ done: true, visuals: agVisuals() });
+  }, { idempotentHint: true });
+agTool('perform', 'Open or close the full-screen Perform view, and choose its display: shapes (the big chord, the lyrics and the chord shapes beside them), big (the big chord and the lyrics) or sheet (the lyrics large, like a songbook). It opens on a short readiness check; it never turns the microphone or the camera on, and never records.',
+  agObj({ action: agStr('open or close (omit to only change the display).', { enum: ['open', 'close'] }), display: agStr('Which display.', { enum: ['shapes', 'big', 'sheet'] }) }),
+  i => {
+    if (i.display) perfViewSet(i.display);
+    if (i.action === 'open' && !PF.on) perfOpen(); if (i.action === 'close' && PF.on) perfClose();
+    agentSay(i.action === 'open' ? 'opened Perform' : i.action === 'close' ? 'closed Perform' : 'changed the Perform display'); return agTxt({ done: true, open: !!PF.on, display: pfView() });
+  }, { idempotentHint: true });
+agTool('get_chord_shape', 'How to play a chord on the guitar in this song\'s tuning and capo: the fret for each string from the lowest to the highest (x = not played, 0 = open), the lowest fret used and whether it is a barre, with other ways to play it. The first shape is the one the song uses.',
+  agObj({ chord: agStr('A chord such as "Am", "F#m7", "B/D#", "Csus4".'), count: agNum('How many shapes to list, 1 to 6 (default 3).') }, ['chord']),
+  i => {
+    const c = parseChord(String(i.chord).trim()); if (!c) throw agErr('invalid_input', '“' + i.chord + '” is not a chord the studio knows (try e.g. Am, F#m7, Bb/D, Csus4, G7)');
+    const sym = String(i.chord).trim(), all = voicings(sym, S.tuning, S.capo, 12), pick = S.voicePref[sym] || 0, n = clamp(Math.round(i.count || 3), 1, 6);
+    const order = [all[pick]].concat(all.filter((v, k) => k !== pick)).filter(Boolean).slice(0, n);
+    return agTxt({ chord: c.name, tuning: S.tuningName, strings_low_to_high: S.tuning.map(m => tunPc(m)).join(' '), capo: S.capo || 0,
+      shapes: order.map(v => ({ frets: v.frets.map(f => f == null ? 'x' : f).join(' '), lowest_fret: v.base, barre: !!v.barre, fingers: v.fingers })), note: order.length ? undefined : 'No playable shape was found in this tuning.' });
+  }, { readOnlyHint: true });
+
 /* ---------- running a tool, and offering them ---------- */
-/** check the input against the tool's schema (types, enums, required), so a wrong call gets a clear answer */
-function agCheck(t, input) {
-  const sc = t.inputSchema, p = sc.properties || {}; input = input && typeof input === 'object' ? input : {};
-  (sc.required || []).forEach(k => { if (input[k] == null || input[k] === '') throw new Error('Missing “' + k + '”'); });
+/* The contract. AG_API changes only when a tool is removed or renamed, or a required input changes; new tools and new optional
+   inputs keep it. A renamed tool keeps its old name here, so an agent written for an earlier version still works.
+   test/agent-contract.json holds the published tools and their required inputs; the tests fail if one disappears or changes. */
+const AG_API = '2';
+const AG_ALIAS = {};
+const AG_LIMIT = { change: 8, read: 30, timeout: 20000, maxOut: 250000 };   /* calls per second (changes / reads), ms per call, characters per answer */
+/** an error an agent can act on: code is one of unknown_tool, disabled, loading, invalid_input, busy, timeout, rejected (the studio refused, with the reason) */
+function agErr(code, msg) { const e = new Error(msg); e.code = code; return e; }
+const agFail = (code, msg) => ({ content: [{ type: 'text', text: 'Error (' + code + '): ' + msg }], structuredContent: { error: { code, message: msg } }, isError: true });
+/** check the input against the tool's schema (types, enums, required), so a wrong call gets a clear answer naming the problem */
+function agCheck(t, raw) {
+  let input; try { input = raw == null ? {} : JSON.parse(JSON.stringify(raw)); } catch (e) { throw agErr('invalid_input', 'The input must be plain JSON'); }   /* a copy: nothing the agent holds can change it mid-call */
+  if (!input || typeof input !== 'object' || Array.isArray(input)) throw agErr('invalid_input', 'The input must be an object');
+  const sc = t.inputSchema, p = sc.properties || {}, bad = m => { throw agErr('invalid_input', m); };
+  (sc.required || []).forEach(k => { if (input[k] == null || input[k] === '') bad('Missing “' + k + '”'); });
   Object.keys(input).forEach(k => {
-    const d = p[k], v = input[k]; if (!d) throw new Error('Unknown parameter “' + k + '”. Parameters: ' + (Object.keys(p).join(', ') || 'none')); if (v == null) return;
+    const d = p[k], v = input[k]; if (!d) bad('Unknown parameter “' + k + '”. Parameters: ' + (Object.keys(p).join(', ') || 'none')); if (v == null) return;
     const ty = [].concat(d.type);
-    if (ty.includes('number') && ty.length === 1 && (typeof v !== 'number' || !isFinite(v))) { if (typeof v === 'string' && v.trim() && isFinite(+v)) input[k] = +v; else throw new Error('“' + k + '” must be a number'); }
-    if (ty.includes('boolean') && typeof v !== 'boolean') throw new Error('“' + k + '” must be true or false');
-    if (ty.includes('string') && !(typeof v === 'string' || (ty.includes('number') && typeof v === 'number' && isFinite(v)))) throw new Error('“' + k + '” must be ' + (ty.includes('number') ? 'a number or text' : 'text'));
-    if (d.type === 'array' && (!Array.isArray(v) || (d.maxItems && v.length > d.maxItems))) throw new Error('“' + k + '” must be a list' + (d.maxItems ? ' of up to ' + d.maxItems : ''));
-    if (d.enum && !d.enum.includes(input[k])) throw new Error('“' + k + '” must be one of: ' + d.enum.join(', '));
+    if (ty.includes('number') && ty.length === 1 && (typeof v !== 'number' || !isFinite(v))) { if (typeof v === 'string' && v.trim() && isFinite(+v)) input[k] = +v; else bad('“' + k + '” must be a number'); }
+    if (ty.includes('boolean') && typeof v !== 'boolean') bad('“' + k + '” must be true or false');
+    if (ty.includes('string') && !(typeof v === 'string' || (ty.includes('number') && typeof v === 'number' && isFinite(v)))) bad('“' + k + '” must be ' + (ty.includes('number') ? 'a number or text' : 'text'));
+    if (typeof input[k] === 'string' && input[k].length > (k === 'text' ? 200000 : 20000)) bad('“' + k + '” is too long');
+    if (d.type === 'array') { if (!Array.isArray(v) || (d.maxItems && v.length > d.maxItems)) bad('“' + k + '” must be a list' + (d.maxItems ? ' of up to ' + d.maxItems : '')); if (d.minItems && v.length < d.minItems) bad('“' + k + '” needs at least ' + d.minItems); if (d.items && d.items.type === 'string' && v.some(x => typeof x !== 'string')) bad('“' + k + '” must be a list of text'); }
+    if (d.enum && !d.enum.includes(input[k])) bad('“' + k + '” must be one of: ' + d.enum.join(', '));
   });
-  if (input.text && input.text.length > 200000) throw new Error('That text is too long');
   return input;
 }
+/** run one tool: checked, rate-limited, timed out, changes one at a time, answers capped */
 async function agentCall(name, input) {
-  const t = AGT.tools.find(x => x.name === name); if (!t) return Object.assign(agTxt('Unknown tool “' + name + '”. Tools: ' + AGT.tools.map(x => x.name).join(', ')), { isError: true });
-  if (!agentOn()) return Object.assign(agTxt('The person has turned off AI agent access in Settings ▸ Workflow.'), { isError: true });
-  if (!S || !E) return Object.assign(agTxt('The studio is still loading. Try again in a moment.'), { isError: true });
-  try { return await t.run(agCheck(t, input)); }
-  catch (e) { return Object.assign(agTxt('Error: ' + (e && e.message || e)), { isError: true }); }
-}
-const agWebTool = t => ({ name: t.name, description: t.description, inputSchema: t.inputSchema, annotations: t.annotations, execute: input => agentCall(t.name, input) });
-function agentUnregister() {
-  const mc = navigator.modelContext; if (!mc || !AGT.reg) return;
-  try { if (Array.isArray(AGT.reg)) AGT.reg.forEach(r => { try { if (r && r.unregister) r.unregister(); } catch (e) { } }); else if (mc.clearContext) mc.clearContext(); else if (mc.provideContext) mc.provideContext({ tools: [] }); } catch (e) { console.warn('webmcp', e); }
-  AGT.reg = null; AGT.via = '';
-}
-/** offer the tools through WebMCP when the browser has it (registerTool, or provideContext in earlier drafts) */
-function agentRegister() {
-  agentUnregister(); const mc = typeof navigator !== 'undefined' && navigator.modelContext; if (!mc || !agentOn()) return false;
+  const t = AGT.tools.find(x => x.name === (AG_ALIAS[name] || name)); if (!t) return agFail('unknown_tool', 'Unknown tool “' + name + '”. Tools: ' + AGT.tools.map(x => x.name).join(', '));
+  if (!agentOn()) return agFail('disabled', 'The person has turned off AI agent access in Settings ▸ Workflow.');
+  if (!S || !E) return agFail('loading', 'The studio is still loading. Try again in a moment.');
+  const ro = !!t.annotations.readOnlyHint, now = performance.now(); AGT.calls = AGT.calls.filter(c => now - c.t < 1000);
+  if (AGT.calls.filter(c => c.ro === ro).length >= (ro ? AG_LIMIT.read : AG_LIMIT.change)) return agFail('busy', 'Too many calls in a second. Wait a moment and try again.');
+  AGT.calls.push({ t: now, ro });
+  let inp; try { inp = agCheck(t, input); } catch (e) { return agFail(e.code || 'invalid_input', e.message); }
+  const go = async () => {
+    let tm; const limit = new Promise((_, no) => { tm = setTimeout(() => no(agErr('timeout', 'The studio took too long to answer. The change may still finish; check with get_song.')), AG_LIMIT.timeout); });
+    try { return await Promise.race([Promise.resolve().then(() => t.run(inp)), limit]); } finally { clearTimeout(tm); }
+  };
   try {
-    if (typeof mc.provideContext === 'function' && typeof mc.registerTool !== 'function') { mc.provideContext({ tools: AGT.tools.map(agWebTool) }); AGT.reg = 'ctx'; AGT.via = 'provideContext'; }
-    else if (typeof mc.registerTool === 'function') { AGT.reg = AGT.tools.map(t => mc.registerTool(agWebTool(t))); AGT.via = 'registerTool'; }
-  } catch (e) { console.warn('webmcp', e); AGT.reg = null; return false; }
-  return !!AGT.reg;
+    let r; if (ro) r = await go(); else { const job = AGT.q.then(go, go); AGT.q = job.catch(() => { }); r = await job; }   /* changes wait their turn */
+    const txt = r && r.content && r.content[0] && r.content[0].text;
+    if (txt && txt.length > AG_LIMIT.maxOut) return { content: [{ type: 'text', text: txt.slice(0, AG_LIMIT.maxOut) + '\n… (cut: the answer was longer than ' + AG_LIMIT.maxOut + ' characters)' }] };
+    return r;
+  } catch (e) { return agFail(e && e.code || 'rejected', (e && e.message) || String(e)); }
+}
+const agWebTool = t => ({ name: t.name, title: t.title || t.name.replace(/_/g, ' '), description: t.description, inputSchema: t.inputSchema, annotations: Object.assign({ title: t.name.replace(/_/g, ' '), openWorldHint: false }, t.annotations), execute: input => agentCall(t.name, input) });
+function agentUnregister() {
+  const mc = AGT.mc || navigator.modelContext; if (!mc || !AGT.reg) { AGT.reg = null; return; }
+  try {
+    if (AGT.via === 'registerTool') AGT.names.forEach((n, k) => { const r = AGT.reg[k]; try { if (r && typeof r.unregister === 'function') r.unregister(); else if (typeof mc.unregisterTool === 'function') mc.unregisterTool(n); } catch (e) { } });
+    else if (typeof mc.clearContext === 'function') mc.clearContext(); else if (typeof mc.provideContext === 'function') mc.provideContext({ tools: [] });
+  } catch (e) { console.warn('webmcp', e); }
+  AGT.reg = null; AGT.via = ''; AGT.names = [];
+}
+/** offer the tools through WebMCP: registerTool (current drafts), or provideContext (earlier ones). Each tool on its own, so one
+    refusal does not lose the rest; a name the browser already holds is taken back and offered again. */
+function agentRegister() {
+  agentUnregister(); const mc = typeof navigator !== 'undefined' && navigator.modelContext; AGT.mc = mc || null; if (!mc || !agentOn()) return false;
+  try {
+    if (typeof mc.registerTool === 'function') {
+      AGT.reg = []; AGT.names = []; AGT.via = 'registerTool';
+      AGT.tools.forEach(t => {
+        const w = agWebTool(t); let r;
+        try { r = mc.registerTool(w); } catch (e) { try { if (typeof mc.unregisterTool === 'function') mc.unregisterTool(t.name); r = mc.registerTool(w); } catch (e2) { console.warn('webmcp: ' + t.name, e2); return; } }
+        if (r && typeof r.then === 'function') r.catch(e => console.warn('webmcp: ' + t.name, e));
+        AGT.reg.push(r && typeof r.then !== 'function' ? r : null); AGT.names.push(t.name);
+      });
+    } else if (typeof mc.provideContext === 'function') { mc.provideContext({ tools: AGT.tools.map(agWebTool) }); AGT.reg = 'ctx'; AGT.via = 'provideContext'; AGT.names = AGT.tools.map(t => t.name); }
+  } catch (e) { console.warn('webmcp', e); AGT.reg = null; AGT.via = ''; return false; }
+  return !!AGT.reg && AGT.names.length > 0;
+}
+/** WebMCP can arrive after the page (a browser extension adds it, or the browser turns it on later): look again a few times,
+    and offer the tools again if a different navigator.modelContext shows up */
+function agentWatch() {
+  [0, 600, 2000, 5000, 15000].forEach(ms => setTimeout(() => { const mc = navigator.modelContext; if (agentOn() && mc && (mc !== AGT.mc || !AGT.reg)) agentRegister(); }, ms));
 }
 /* the same tools for agents that drive the page with scripts (and for the tests): window.dailyStudio.call('get_song', {}) */
 try {
   Object.defineProperty(window, 'dailyStudio', { configurable: true, value: Object.freeze({
-    version: '1', about: 'the-daily.studio agent tools: the same tools this page offers through WebMCP (navigator.modelContext). Everything runs locally in this page.',
+    version: AG_API, app: VERSION, build: BUILD,
+    about: 'the-daily.studio agent tools: the same tools this page offers through WebMCP (navigator.modelContext). Everything runs locally in this page.',
     tools: () => AGT.tools.map(t => ({ name: t.name, description: t.description, inputSchema: t.inputSchema, annotations: t.annotations })),
+    describe: () => ({ api: AG_API, app: VERSION, build: BUILD, webmcp: AGT.via || null, enabled: agentOn(), aliases: Object.assign({}, AG_ALIAS), limits: Object.assign({}, AG_LIMIT), tools: AGT.tools.map(t => t.name) }),
     call: (name, input) => agentCall(name, input) }) });
 } catch (e) { }
-setTimeout(agentRegister, 0);
+agentWatch();
 
 /* >>> parts/73-build-egg.js */
 /* ============================================================

@@ -1,0 +1,44 @@
+{
+  "about": "The agent tools the studio publishes (WebMCP and window.dailyStudio) and the inputs each requires. test/e2e-agent.cjs fails if a tool here disappears or its required inputs change: that is a breaking change, which needs AG_API raised in src/parts/72-agent.js (or an alias in AG_ALIAS) and this file updated on purpose. New tools and new optional inputs are fine.",
+  "api": "2",
+  "tools": {
+    "get_song": [],
+    "get_studio_state": [],
+    "get_key_chords": [],
+    "load_chord_sheet": [
+      "text"
+    ],
+    "set_song_details": [],
+    "transpose_song": [
+      "semitones"
+    ],
+    "edit_section": [
+      "section"
+    ],
+    "add_section": [
+      "chords",
+      "name"
+    ],
+    "remove_section": [
+      "section"
+    ],
+    "set_band": [],
+    "transport": [],
+    "open_workspace": [
+      "workspace"
+    ],
+    "list_songs": [],
+    "open_song": [
+      "song"
+    ],
+    "export_song": [
+      "format"
+    ],
+    "undo": [],
+    "set_visuals": [],
+    "perform": [],
+    "get_chord_shape": [
+      "chord"
+    ]
+  }
+}
