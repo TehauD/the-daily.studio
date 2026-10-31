@@ -102,36 +102,42 @@ function liKeys(e) { if (e.key === 'Escape') { e.stopPropagation(); liClose(); }
 function liOpen(text) {
   liClose(); if (typeof text === 'string') LI.st.text = text;
   const st = LI.st, prev = h('div', { class: 'lyi-prev' });
-  const ta = h('textarea', { class: 'in lyi-ta', spellcheck: false, placeholder: '[Verse 1]\nLate night, city lights…\n\n[Chorus]\nI just wanna be right here with you…', oninput: () => { st.text = ta.value; draw(); } }, st.text);
+  const ta = h('textarea', { class: 'in lyi-ta', spellcheck: false, 'aria-label': 'Lyrics or chord sheet', placeholder: '[Verse 1]\nAm            F\nLate night, city lights…\nC                 G\nI just wanna be right here with you…\n\nWords only, or a line of chords over each line of words.', oninput: () => { st.text = ta.value; draw(); } }, st.text);
   const file = h('input', { type: 'file', accept: '.txt,.md,.lrc,.rtf,text/plain', style: { display: 'none' }, onchange: async e => { const f = e.target.files[0]; if (!f) return; st.text = await f.text(); ta.value = st.text; draw(); } });
   const sel = (v, opts, fn) => h('select', { class: 'in', onchange: e => fn(e.target.value) }, opts.map(([k, t]) => h('option', { value: k, selected: String(k) === String(v) }, t)));
   const modeSel = sel(st.mode, [['A', 'Make a section for each block (keep my bars where the name matches)'], ['B', 'Fill the sections I already have, in order'], ['C', 'Add them after my existing sections']], v => { st.mode = v; draw(); });
   const bplSel = sel(st.bpl, [[1, '1 bar per line'], [2, '2 bars per line'], [4, '4 bars per line']], v => { st.bpl = +v; draw(); });
   const chk = h('input', { type: 'checkbox', checked: st.chords, onchange: e => { st.chords = e.target.checked; draw(); } });
-  const go = h('button', { class: 'btn primary', onclick: () => { const p = lyricParse(st.text); if (!p.length) return; liApply(p, st); liClose(); } }, 'Import lyrics');
+  const hd = h('b', {}, '📋 Import lyrics or a chord sheet'), lyOpts = h('div', { class: 'lyi-opts' }, h('label', {}, 'Where it goes'), modeSel, h('label', {}, 'New sections'), bplSel, h('label', { class: 'lyi-chk' }, chk, ' Put the chords over the words'));
+  let csP = null, csUI = null;   // the text has chords in it: it is a chord sheet (part 24b)
+  const go = h('button', { class: 'btn primary', id: 'lyiGo', onclick: async () => {
+    if (csP) { const o = csUI.read(); liClose(); await chordSheetApply(csP, o); return; }
+    const p = lyricParse(st.text); if (!p.length) return; liApply(p, st); liClose(); } }, 'Import lyrics');
   function draw() {
-    const p = lyricParse(st.text); prev.innerHTML = ''; go.disabled = !p.length;
-    if (!p.length) { prev.append(h('div', { class: 'muted small' }, 'Paste the lyrics above. Headings like [Verse 1], [Chorus], (Bridge) or “Verse 2:” split them into sections. Chords you already have in the song are placed over the words.')); return; }
+    csP = typeof chordSheetLike === 'function' ? chordSheetLike(st.text) : null; lyOpts.hidden = !!csP; lyOpts.style.display = csP ? 'none' : ''; ta.wrap = csP ? 'off' : 'soft';   // chord columns line up only unwrapped prev.innerHTML = '';
+    if (csP) { csUI = csPanel(csP, st, draw); prev.append(csUI.opts, csUI.box); go.disabled = false; go.textContent = st.csMode === 'A' || st.csMode === 'C' ? 'Import chord sheet' : 'Load as a new song'; hd.textContent = '🎸 Import a chord sheet'; return; }
+    go.textContent = 'Import lyrics'; hd.textContent = '📋 Import lyrics or a chord sheet';
+    const p = lyricParse(st.text); go.disabled = !p.length;
+    if (!p.length) { prev.append(h('div', { class: 'muted small' }, 'Paste the lyrics above. Headings like [Verse 1], [Chorus], (Bridge) or “Verse 2:” split them into sections. Chords you already have in the song are placed over the words. Paste a chord sheet (a line of chords over each line of words, or [Am] inline) and it becomes a whole song: chords, bars, key and words.')); return; }
     const r = liBuild(p, st), lines = p.reduce((a, x) => a + x.n, 0);
     prev.append(h('div', { class: 'small', style: { fontWeight: 800, marginBottom: '4px' } }, p.length + ' sections · ' + lines + ' lines' + (p.headed ? '' : ' (no headings found: split into stanzas)')));
     const tb = h('div', { class: 'lyi-rows' }); r.rows.forEach(({ p: x, how, bars }) => tb.append(h('div', { class: 'lyi-row' }, h('b', {}, x.name), h('span', { class: 'muted' }, x.n + ' lines · ' + bars + ' bars'), h('span', { class: 'tiny muted' }, how)))); prev.append(tb);
     if (r.dropped.length) { const tab = r.dropped.some(s => s.bars.some(b => b.tab.length)); prev.append(h('div', { class: 'tiny', style: { color: 'var(--warn)', marginTop: '6px' } }, 'Replaces: ' + r.dropped.map(s => s.name + ' (' + s.bars.length + ' bars)').join(', ') + (tab ? ' — including tab notes' : '') + '. Undo brings them back; choose “Add them after…” to keep them.')); }
   }
-  const box = h('div', { class: 'lyi-box', role: 'dialog', 'aria-label': 'Import lyrics' },
-    h('div', { class: 'lyi-h' }, h('b', {}, '📋 Import lyrics'), h('span', { class: 'grow' }), h('button', { class: 'btn sm', title: 'Close (Esc)', onclick: liClose }, '✕')),
+  const box = h('div', { class: 'lyi-box', role: 'dialog', 'aria-label': 'Import lyrics or a chord sheet' },
+    h('div', { class: 'lyi-h' }, hd, h('span', { class: 'grow' }), h('button', { class: 'btn sm', title: 'Close (Esc)', onclick: liClose }, '✕')),
     h('div', { class: 'lyi-b' }, ta,
       h('div', { class: 'row', style: { gap: '8px', flexWrap: 'wrap', margin: '8px 0' } },
         h('button', { class: 'btn sm', onclick: async () => { try { const t = await navigator.clipboard.readText(); if (t) { st.text = t; ta.value = t; draw(); } } catch (e) { toast('Your browser blocked clipboard access: press Ctrl+V in the box instead.', 'warn'); } } }, 'Paste from clipboard'),
         h('button', { class: 'btn sm', onclick: () => file.click() }, 'Open a .txt / .lrc file…'), file, h('button', { class: 'btn sm', onclick: () => { st.text = ''; ta.value = ''; draw(); ta.focus(); } }, 'Clear')),
-      h('div', { class: 'lyi-opts' }, h('label', {}, 'Where it goes'), modeSel, h('label', {}, 'New sections'), bplSel, h('label', { class: 'lyi-chk' }, chk, ' Put the chords over the words')),
-      prev),
+      lyOpts, prev),
     h('div', { class: 'lyi-f' }, h('span', { class: 'tiny muted grow' }, 'Lyrics stay on this device. Nothing is uploaded. Use words you wrote or have the right to use.'), h('button', { class: 'btn', onclick: liClose }, 'Cancel'), go));
   LI.ov = h('div', { class: 'lyi', onpointerdown: e => { if (e.target === LI.ov) liClose(); } }, box); document.body.append(LI.ov); document.addEventListener('keydown', liKeys, true); draw(); setTimeout(() => ta.focus(), 30);
 }
 /** pasting a whole lyric sheet into any section box offers to split it */
 function liPaste(e) {
   const t = ((e.clipboardData || window.clipboardData) || { getData: () => '' }).getData('text'); if (!t || t.length < 40) return;
-  const p = lyricParse(t); if (p.headed >= 2 || (!p.headed && p.length >= 3)) { e.preventDefault(); liOpen(t); }
+  const p = lyricParse(t); if (p.headed >= 2 || (!p.headed && p.length >= 3) || (typeof chordSheetLike === 'function' && chordSheetLike(t))) { e.preventDefault(); liOpen(t); }
 }
 /** drop a .txt / .lrc onto the Refine panel */
 function liWire(box) {

@@ -544,6 +544,8 @@ body[data-form=tablet] .dock-tools,body[data-form=tablet] .tl-bar .cmax{display:
 .lyi-ta{width:100%;height:210px;resize:vertical;font:600 12px/1.5 var(--mono);box-sizing:border-box}
 .lyi-opts{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;align-items:center;font-size:12px}.lyi-opts select{width:100%;font-family:var(--sans)}.lyi-chk{grid-column:1/-1;display:flex;gap:6px;align-items:center}
 .lyi-prev{margin-top:10px;border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--bg2)}
+.cs-prev{margin-top:10px;border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--bg2)}.cs-chords{display:flex;flex-wrap:wrap;gap:4px;margin:2px 0 8px}.cs-ch{font:700 11px/1 var(--mono);padding:3px 6px;border-radius:6px;background:color-mix(in srgb,var(--accent) 16%,transparent);border:1px solid color-mix(in srgb,var(--accent) 40%,transparent)}.cs-seq{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lyi-opts input.in{min-width:0;flex:1;font-family:var(--sans)}body[data-form=phone] .lyi-opts .row{flex-wrap:wrap}body[data-form=phone] .lyi-opts input.in{min-width:140px}
 .lyi-row{display:grid;grid-template-columns:110px 1fr 1.4fr;gap:8px;font-size:12px;padding:2px 0;border-top:1px solid var(--line)}.lyi-row:first-child{border-top:0}
 body[data-form=phone] .lyi{padding:0;align-items:flex-end}body[data-form=phone] .lyi-box{border-radius:16px 16px 0 0;max-height:94dvh}body[data-form=phone] .lyi-row{grid-template-columns:90px 1fr}body[data-form=phone] .lyi-row .tiny{display:none}
 

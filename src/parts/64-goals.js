@@ -20,6 +20,7 @@ const GOALS = [
     enter: () => { try { wrMode('both'); } catch (e) { } },
     tools: () => [
       ['gtCap', '● Capture idea', 'Play, and the notes and chords you play are written into the tab', () => { dockGo('tab'); capToggle(); }, () => !!CAP.on, 1],
+      ['gtSheet', '🎸 Paste chords', 'Paste a chord sheet (chords over the words): it becomes the song, with bars, key, words and a guitar part', () => liOpen('')],
       ['gtWords', '✎ Lyrics & tab', 'The words and the tab side by side', () => { dockGo('tab'); wrMode('both'); }],
       ['gtTheory', '♯ Chords & scales', 'Build a progression from the key: chords, scales and what comes next', () => sideShow('theory')],
       ['gtRec', '⏺ Record idea', 'Arm a take: it records when you press play (R)', () => toggleRec(), () => !!T.rec]

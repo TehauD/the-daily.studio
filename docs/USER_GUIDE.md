@@ -300,6 +300,30 @@ The **song strip** under the header holds the **title**, **artist**, **Tuning**,
 
 **Pasting finished lyrics.** In Refine press **📋 Paste lyrics** (or paste a whole lyric sheet into any lyric box, or drop a .txt / .lrc file on the panel). Headings like `[Verse 1]`, `[Pre-Chorus]`, `(Chorus)`, `Verse 2:` or `## Bridge` become sections; with no headings, blank-line stanzas become Verses, and a stanza that repeats becomes the Chorus. Choose where it goes (a section per block, fill the sections you have, or add after), how many bars a line gets for new sections, and whether to place your chords over the words. The preview lists exactly what happens, including any sections that would be replaced. One undo puts everything back.
 
+**Loading a chord sheet.** A song's chords and words, the way tab sites and songbooks write them, become a whole song. Open **☰ Songs ▸ 🎸 Paste a chord sheet…** (or **🎸 Paste chords** in the Songwriter workspace, **📋 Paste lyrics** in Refine, paste it into any lyric box, or drop a .txt file) and paste:
+
+```
+[Verse 1]
+Am            F
+Late night, city lights
+C                 G
+Right here with you
+```
+
+The import box sees the chords and switches to *Import a chord sheet*. It reads:
+- **a line of chords over a line of words**: each chord keeps its place over the syllable it was over;
+- **inline chords** (`[Am]Late night, [F]city lights`) and **ChordPro** (`{title: …}`, `{key: …}`, `{tempo: …}`, `{c: Chorus}`, `{soc}` … `{eoc}`);
+- **chord-only lines** for intros and solos, with `|` bar lines (`| Am | F | C G |`) and repeats (`x2`);
+- **headings** (`[Verse 1]`, `(Chorus)`, `Bridge:`) as sections, and **`Capo: 2`, `Key: E`, `Tempo: 96`** and a **`Title - Artist`** line at the top.
+
+Before you load it, the preview shows the sections, their bars and every chord, and the key it found. You choose:
+- **Where it goes**: a new song (the default; the song you were on stays in ☰ Songs), replace this song's sections, or add after them;
+- **Each chord lasts**: 1 bar, 2 bars, or half a bar (two chords of a line to a bar);
+- **Key**: read from the chords (or from `Key:`), or one you pick;
+- **Guitar part in the tab**: a strum or picking pattern written from the chords, or none.
+
+After loading, the band (drums, bass, rhythm guitar) plays the chords: press Space. **Write** opens with the tab and the words with their chords, **Theory** shows the key, the **Fretboard** follows each chord, and **🎤 Perform** shows the chords and words full screen. With no title in the sheet, the first line of the chorus is offered as the title. A chord the app cannot play is played as the nearest simpler one (*Cadd11* as C, *A7sus2* as A7) and the preview lists them. ASCII tab in the sheet (`e|--0--3--|`) is left out; the tab is written from the chords.
+
 **Refine** is the shared space for lyrics and chords: each section is a card with its name, bars, lyric lines and chord names. Keep any other panel (Tab, Fretboard, Stems, Transcribe) open in the centre while you write.
 
 **Tunings.** Choose a preset (Standard, Eb, D, C#, C, B; Drop D, Drop C#, Drop C, Drop B, Drop Bb, Drop A, Double Drop D; DADGAD; All fourths; Open G, D, Dm, E, C, A; slack-key tunings), or open **Custom tuning · set each string** to pick the note and octave of all six strings (E1–G5). Quick shifts: **↓ ½ step**, **↑ ½ step**, **Drop low string**, **Reset to standard**. The **Theory** tab in the left sidebar has the same tuning menu, and the strip's **Tuning** menu is the quickest way to change it.
