@@ -4,6 +4,9 @@
    play in reach, and a readiness check first (audio, input and its level, camera, lyrics). With "visuals behind" the stage
    shows through; without, a plain dark page. The microphone and camera stay off until you press their buttons here.
    ============================================================ */
+/* how Perform looks: shapes (the big chord, the lyrics and the chord shapes beside them), big (the big chord and the lyrics), sheet (the lyrics large, no big chord) */
+const PF_VIEWS = [['shapes', '◫ Chords & shapes'], ['big', '◼ Big chord'], ['sheet', '☰ Lyric sheet']];
+const pfView = () => PF_VIEWS.some(v => v[0] === CFG.pfView) ? CFG.pfView : 'shapes';
 const PF = { on: false, el: null, raf: 0, ready: false, bd: false, imm: false, key: '', opener: null, lv: 0, f: {} };
 const pfDb = v => (v < 1e-5 ? -99 : 20 * Math.log10(v));
 function perfLevel() {
@@ -16,6 +19,36 @@ function perfInfo() {
   const fb = barsCache()[Math.min(bi, barsCache().length - 1)]; i.lines = []; i.idx = -1; i.secName = i.sec;
   if (fb) { const sib = T.playing && E.ctx ? Math.max(0, playheadSlot() - bi * sp) : 0, L = lyAt(fb.sec, fb.bi, sib); i.raw = L.lines; i.lines = L.lines.map(lyPlain); i.idx = T.playing ? L.idx : (L.lines.length ? 0 : -1); i.mi = T.playing ? L.mi : -1; i.secName = fb.sec.name; if (!T.playing) { const c = chordAt(bi, 0); i.sym = c && c.sym; i.next = c && c.next; i.barIn = fb.bi + 1; i.nBars = fb.sec.bars.length; } }
   return i;
+}
+/* ---------- display options, and the chord shapes beside the lyrics ---------- */
+function perfViewNext() {
+  const k = PF_VIEWS.findIndex(v => v[0] === pfView()), nx = PF_VIEWS[(k + 1) % PF_VIEWS.length]; CFG.pfView = nx[0]; saveCfg();
+  if (PF.el) { PF_VIEWS.forEach(v => PF.el.classList.toggle('pf-v-' + v[0], v[0] === nx[0])); const b = document.getElementById('pfView'); if (b) b.textContent = nx[1]; } PF.key = '';
+}
+/** the chord changes from the playhead on: the one playing, then the next ones (each different from the one before) */
+function perfChords(n) {
+  const fb = barsCache(); if (!fb.length) return []; const sp = spb(), at = Math.max(0, T.playing && E.ctx ? playheadSlot() : T.cursor), bi0 = Math.min(fb.length - 1, Math.floor(at / sp)), out = [];
+  const c0 = chordAt(bi0, Math.floor(at - bi0 * sp)), cs0 = barChords(fb[bi0].bar), ci0 = c0 ? Math.max(0, cs0.indexOf(c0.sym)) : 0;
+  for (let bi = bi0, steps = 0; bi < fb.length && out.length < n && steps < 400; bi++, steps++) { const cs = barChords(fb[bi].bar); for (let k = bi === bi0 ? ci0 : 0; k < cs.length && out.length < n; k++) if (parseChord(cs[k]) && cs[k] !== out[out.length - 1]) out.push(cs[k]); }
+  return out;
+}
+const PFSH = new Map();
+/** a chord's shape for this song's tuning and capo (the voicing the song uses, if one was picked): { svg, frets } or null */
+function perfShape(sym, w) {
+  const key = sym + '|' + S.tuning.join() + '|' + S.capo + '|' + (S.voicePref[sym] || 0) + '|' + w; if (PFSH.has(key)) return PFSH.get(key);
+  const all = voicings(sym, S.tuning, S.capo, 12), v = all[S.voicePref[sym] || 0] || all[0], r = v ? { svg: chordSVG(v, { w, h: Math.round(w * 1.23) }), frets: v.frets.map(f => f == null ? 'x' : f).join(' ') } : null;
+  if (PFSH.size > 80) PFSH.clear(); PFSH.set(key, r); return r;
+}
+function perfShapes(i) {
+  const box = document.getElementById('pfShapes'); if (!box) return; box.innerHTML = '';
+  const seq = perfChords(5); if (!seq.length) { box.append(h('div', { class: 'pf-sh-none' }, 'No chords in this song yet')); return; }
+  const card = (sym, big, label) => { const s = perfShape(sym, big ? 150 : 96), c = h('div', { class: 'pf-sh' + (big ? ' now' : '') }, h('div', { class: 'pf-sh-l' }, label), h('b', { class: 'pf-sh-n' }, sym));
+    if (s) { const g = s.svg.cloneNode(true); g.setAttribute('aria-label', sym + ': ' + s.frets); g.setAttribute('role', 'img'); c.append(g, h('div', { class: 'pf-sh-f' }, s.frets)); } else c.append(h('div', { class: 'pf-sh-f' }, 'no shape found'));
+    return c; };
+  box.append(card(seq[0], true, T.playing ? 'NOW' : 'UP FIRST'));
+  if (seq[1]) box.append(card(seq[1], false, 'NEXT'));
+  if (seq.length > 2) box.append(h('div', { class: 'pf-sh-up' }, h('span', {}, 'THEN '), seq.slice(2).join('  ·  ')));
+  if (S.capo) box.append(h('div', { class: 'pf-sh-capo' }, 'Capo ' + S.capo + ': shapes from the capo'));
 }
 function perfReady() {
   const row = (id, ok, label, extra) => h('div', { class: 'pf-r ' + (ok === true ? 'ok' : ok === false ? 'bad' : 'info'), id }, h('i', { 'aria-hidden': 'true' }, ok === true ? '✓' : ok === false ? '!' : '–'), h('span', { class: 'pf-rl' }, label), extra || '');
@@ -49,17 +82,18 @@ function perfOpen(opener) {
   if (PF.on) return; PF.on = true; PF.ready = false; PF.opener = opener || document.activeElement; PF.bd = CFG.route === 'stage'; PF.imm = false;
   const dots = h('span', { class: 'pf-dots', id: 'pfDots', 'aria-hidden': 'true' });
   const ctl = (id, t, title, fn) => h('button', { class: 'btn pf-b', id, title, onclick: fn }, t);
-  PF.el = h('div', { id: 'perform', class: 'perform pf-pre' + (PF.bd ? '' : ' pf-solid'), role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Perform' },
+  PF.el = h('div', { id: 'perform', class: 'perform pf-pre pf-v-' + pfView() + (PF.bd ? '' : ' pf-solid'), role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Perform' },
     h('div', { class: 'pf-top' }, h('b', { class: 'pf-song', id: 'pfSong' }), h('span', { class: 'pf-sec', id: 'pfSec' }), h('span', { class: 'grow' }), h('span', { class: 'pf-meta', id: 'pfMeta' }), dots,
+      h('button', { class: 'btn sm pf-view', id: 'pfView', title: 'How Perform looks: the chord shapes beside the lyrics, the big chord, or the lyric sheet', onclick: () => perfViewNext() }, (PF_VIEWS.find(v => v[0] === pfView()) || PF_VIEWS[0])[1]),
       h('button', { class: 'btn sm vzh-kill', id: 'pfKill', title: 'Stop all sound and release the microphone (Ctrl + .)', onclick: () => { try { audioKill(); } catch (e) { } } }, '■ Stop audio'), h('button', { class: 'btn sm', id: 'pfExit', onclick: () => perfClose() }, '✕ Exit')),
-    h('div', { class: 'pf-stage' }, h('div', { class: 'pf-chord', id: 'pfChord', 'aria-live': 'off' }, '·'), h('div', { class: 'pf-next', id: 'pfNext' }), h('div', { class: 'pf-lyr', id: 'pfLyr' })),
+    h('div', { class: 'pf-stage' }, h('div', { class: 'pf-chord', id: 'pfChord', 'aria-live': 'off' }, '·'), h('div', { class: 'pf-next', id: 'pfNext' }), h('div', { class: 'pf-lyr', id: 'pfLyr' }), h('aside', { class: 'pf-shapes', id: 'pfShapes', 'aria-label': 'Chord shapes' })),
     h('div', { class: 'pf-bar' }, ctl('pfPlay', '▶ Play', 'Play or stop (Space)', () => { T.playing ? stopPlay(true) : play(); }), ctl('pfRec', '● Record', 'Record a take with a count-in (R)', () => { if (!E.hasInput) toast('No input is connected, so only the count-in will run.', 'warn'); toggleRec(); }),
       ctl('pfLoop', '⟲ Loop', 'Loop the song (L)', () => { T.loop = !T.loop; syncTransport(); perfSync(); }), ctl('pfMetro', '♩ Click', 'Metronome (M)', () => { T.metro = !T.metro; syncTransport(); perfSync(); }),
       ctl('pfSlow', '−', 'Slower by 5 BPM', () => { S.bpm = clamp(S.bpm - 5, 30, 260); commit(false); bus.emit('bpm'); perfSync(); }), h('b', { class: 'pf-bpm', id: 'pfBpm' }), ctl('pfFast', '+', 'Faster by 5 BPM', () => { S.bpm = clamp(S.bpm + 5, 30, 260); commit(false); bus.emit('bpm'); perfSync(); }),
-      h('span', { class: 'grow' }), h('span', { class: 'pf-takes', id: 'pfTakes' })));
+      h('span', { class: 'grow egg-line', 'aria-live': 'off' }), h('span', { class: 'pf-takes', id: 'pfTakes' })), buildTag('pf-ver'));
   document.body.append(PF.el); document.body.classList.add('perform-on');
   if (PF.bd) perfBackdrop(true);
-  perfRefresh(); perfSync(); const g = document.getElementById('pfGo'); if (g) g.focus();
+  perfRefresh(); perfSync(); eggTick(true); const g = document.getElementById('pfGo'); if (g) g.focus();
   PF.raf = requestAnimationFrame(perfTick);
 }
 function perfClose() {
@@ -80,12 +114,13 @@ function perfTick() {
     const lv = q('pfLv'); if (lv) lv.style.width = Math.max(0, Math.min(100, (perfLevel() + 60) / 60 * 100)).toFixed(0) + '%';
     const st = [!!E.hasInput, !!CAM.on, !!(E.ctx && E.ctx.state === 'running')].join(); if (st !== PF.st) { if (PF.st) perfRefresh(); PF.st = st; }
   }
-  const i = perfInfo(), cnt = T.playing && i.sec === 'Count-in', key = [T.playing, i.sym, i.next, i.secName, i.barIn, i.beat, i.idx, i.lines.length, cnt, S.title, S.ts[0], S.bpm, TAKES.length].join('|');
+  const i = perfInfo(), cnt = T.playing && i.sec === 'Count-in', key = [T.playing, i.sym, i.next, i.secName, i.barIn, i.beat, i.idx, i.lines.length, cnt, S.title, S.ts[0], S.bpm, TAKES.length, pfView(), S.capo, S.tuningName].join('|');
   if (key === PF.key) return; PF.key = key;
   set('pfSong', S.title || 'Untitled'); set('pfSec', i.secName ? i.secName + (i.nBars ? ' · bar ' + i.barIn + '/' + i.nBars : '') : ''); set('pfMeta', Math.round(S.bpm) + ' BPM · ' + S.ts[0] + '/' + S.ts[1]);
   const dots = q('pfDots'); if (dots) { const n = S.ts[0]; if (dots.children.length !== n) { dots.innerHTML = ''; for (let k = 0; k < n; k++) dots.append(h('i', {})); } [...dots.children].forEach((d, k) => d.classList.toggle('on', T.playing && k === i.beat)); }
   set('pfChord', cnt ? String(i.beat + 1) : (i.sym || '·')); q('pfChord').classList.toggle('pf-count', !!cnt); set('pfNext', cnt ? 'count-in' : (i.next && T.playing ? 'next  ' + i.next : (T.playing ? '' : 'press Play when you are ready')));
-  const L = q('pfLyr'); if (L) { L.innerHTML = ''; if (i.lines.length) { const a = Math.max(0, i.idx - 1), z = Math.min(i.lines.length, Math.max(i.idx, 0) + 4); for (let k = a; k < z; k++) L.append(h('div', { class: 'pf-l' + (k === i.idx ? ' cur' : k < i.idx ? ' past' : '') }, ...lyNodes(i.raw[k], k === i.idx ? i.mi : k < i.idx ? 1e9 : -1))); } else L.append(h('div', { class: 'pf-l past' }, 'No lyrics in this section')); }
+  const L = q('pfLyr'); if (L) { L.innerHTML = ''; if (i.lines.length) { const narrow = window.innerWidth < 900, a = Math.max(0, i.idx - (narrow ? 0 : 1)), z = Math.min(i.lines.length, Math.max(i.idx, 0) + (narrow ? 3 : pfView() === 'sheet' ? 7 : 4));   /* a phone shows the line and the next two */ for (let k = a; k < z; k++) L.append(h('div', { class: 'pf-l' + (k === i.idx ? ' cur' : k < i.idx ? ' past' : '') }, ...lyNodes(i.raw[k], k === i.idx ? i.mi : k < i.idx ? 1e9 : -1))); } else L.append(h('div', { class: 'pf-l past' }, 'No lyrics in this section')); }
+  if (pfView() === 'shapes') perfShapes(i);
   perfSync();
 }
 bus.on('transport', () => { PF.key = ''; perfSync(); }); bus.on('song', () => { PF.key = ''; }); bus.on('takes', () => { PF.key = ''; });
