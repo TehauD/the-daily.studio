@@ -5,7 +5,7 @@
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.16.1', BUILD = 'ae3988d';   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.18.0', BUILD = 'a1a856e';   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://the-daily.studio/journal/' };
 const $ = (s, r = document) => r.querySelector(s);
@@ -79,6 +79,7 @@ const CFG = Object.assign({
   rec: { dry: true, wet: true }, fretNames: 'notes', lufsTarget: 0, gTrim: 0, ioLeveled: false, dropKind: 'track',
   vin: 'off', armG: true, armV: true, voxMon: false, voxPolish: true, voxTrim: 0, trackSync: true, trackFill: 'all', renderFast: true, recEnd: 'grow', vzRibbon: false, vrange: null,
   agents: true,   // AI agents in this browser may use the studio's tools (part 72)
+  lowLat: true,   // zero-delay compressors and saturation (part 02); off = the browser's own, which add about 20 ms to the guitar
   mpOk: false   // true once the person has said yes to the one-time MediaPipe download (see mpConsent); nothing leaves the page before that
 }, store.get('cfg', {}));
 const saveCfg = () => store.set('cfg', CFG);
@@ -424,6 +425,63 @@ class Tap extends AudioWorkletProcessor{
       if(this.n===this.B){this.port.postMessage({t:this.t0,l:this.l.slice(),r:this.st?this.r.slice():null});this.n=0;}}}
     return true;}}
 registerProcessor('fw-tap',Tap);
+
+/* zero-delay dynamics and saturation (2.18). The browser's own compressor always looks 6 ms ahead and its waveshaper's 4x
+   oversampling adds 4 ms, so a guitar through the amp heard itself about 21 ms late. These do the same work with no look-ahead:
+   the compressor follows the browser's static curve and make-up gain (so levels do not move) and reads each 32-sample slice
+   before it scales it; the shaper oversamples with polyphase IIR half-band filters (about 0.1 ms) instead of long FIR ones.
+   A compressor told {end:true} stops for good (a take's strip made for one playback, once it is thrown away): Chrome never calls a
+   processor again after it returns false, even if something is connected later, so the others always return true. */
+function hbCoefs(n,tr){let k=Math.tan((1-tr*2)*Math.PI/4);k*=k;const kk=Math.pow(1-k*k,0.25),e=0.5*(1-kk)/(1+kk),e4=e*e*e*e,q=e*(1+e4*(2+e4*(15+150*e4))),ord=n*2+1,out=[];
+  for(let ix=0;ix<n;ix++){const c=ix+1;let num=0,i=0,j=1,t;do{t=Math.pow(q,i*(i+1))*Math.sin((i*2+1)*c*Math.PI/ord)*j;num+=t;j=-j;i++;}while(Math.abs(t)>1e-100);
+    let den=0;i=1;j=-1;do{t=Math.pow(q,i*i)*Math.cos(i*2*c*Math.PI/ord)*j;den+=t;j=-j;i++;}while(Math.abs(t)>1e-100);
+    const ww=num*Math.pow(q,0.25)/(den+0.5),w2=ww*ww,x=Math.sqrt((1-w2*k)*(1-w2/k))/(1+w2);out.push((1-x)/(1+x));}
+  return out;}
+const HB_A=hbCoefs(12,0.02),HB_B=hbCoefs(4,0.12);
+class HB{constructor(co){this.c=co;this.n=co.length;this.x=new Float64Array(this.n);this.y=new Float64Array(this.n);this.a=0;this.b=0;}
+  run(a,b){const c=this.c,x=this.x,y=this.y,n=this.n;for(let i=0;i<n;i+=2){let t=(a-y[i])*c[i]+x[i];x[i]=a;y[i]=t;a=t;if(i+1<n){t=(b-y[i+1])*c[i+1]+x[i+1];x[i+1]=b;y[i+1]=t;b=t;}}this.a=a;this.b=b;}
+  up(s){this.run(s,s);}
+  down(s0,s1){this.run(s1,s0);return 0.5*(this.a+this.b);}}
+/* the curve is the app's satCurve(k, bias, 2048, tanh|atan), rebuilt here from parameters: parameters reach the processor at once, where a
+   message may arrive after an offline render (a bounce) has started. A curve that is not a satCurve comes by message (none does today). */
+class Shape extends AudioWorkletProcessor{
+  static get parameterDescriptors(){return[{name:'k',defaultValue:1,minValue:0,maxValue:10000,automationRate:'k-rate'},{name:'bias',defaultValue:0,minValue:-100,maxValue:100,automationRate:'k-rate'},
+    {name:'kind',defaultValue:0,minValue:0,maxValue:1,automationRate:'k-rate'},{name:'os',defaultValue:1,minValue:1,maxValue:4,automationRate:'k-rate'},{name:'on',defaultValue:0,minValue:0,maxValue:1,automationRate:'k-rate'}];}
+  constructor(){super();this.cu=null;this.mc=null;this.key='';this.st=[];this.port.onmessage=e=>{if('curve' in e.data)this.mc=e.data.curve;};}
+  table(k,b,kind){const n=2048,a=new Float32Array(n),f=kind>0.5?Math.atan:Math.tanh,nb=f(b),sc=Math.abs(f(k+b)-nb)||1;for(let i=0;i<n;i++){const x=i/(n-1)*2-1;a[i]=(f(k*x+b)-nb)/sc;}return a;}
+  f(v){const c=this.cu,N=c.length,p=(N-1)*(v+1)*0.5;if(p<=0)return c[0];if(p>=N-1)return c[N-1];const k=p|0,r=p-k;return c[k]+(c[k+1]-c[k])*r;}
+  process(i,o,pr){const x=i[0],y=o[0];if(!x||!x.length||!y.length)return true;const n=y[0].length;
+    if(pr.on[0]>0.5){const key=pr.k[0]+'|'+pr.bias[0]+'|'+pr.kind[0];if(key!==this.key){this.key=key;this.tb=this.table(pr.k[0],pr.bias[0],pr.kind[0]);}this.cu=this.tb;}else this.cu=this.mc;
+    const os=pr.os[0]>=3?4:pr.os[0]>=1.5?2:1;
+    for(let ch=0;ch<y.length;ch++){const xc=x[ch]||x[0],yc=y[ch];if(!this.cu){yc.set(xc);continue;}
+      const s=this.st[ch]||(this.st[ch]={ua:new HB(HB_A),da:new HB(HB_A),ub:new HB(HB_B),db:new HB(HB_B)});
+      for(let k=0;k<n;k++){const v=xc[k]+1e-20;
+        if(os===1){yc[k]=this.f(v);continue;}
+        s.ua.up(v);const a0=s.ua.a,a1=s.ua.b;
+        if(os===2){yc[k]=s.da.down(this.f(a0),this.f(a1));continue;}
+        s.ub.up(a0);const b0=this.f(s.ub.a),b1=this.f(s.ub.b);s.ub.up(a1);const b2=this.f(s.ub.a),b3=this.f(s.ub.b);
+        yc[k]=s.da.down(s.db.down(b0,b1),s.db.down(b2,b3));}}
+    return true;}}
+registerProcessor('fw-shape',Shape);
+class Comp extends AudioWorkletProcessor{
+  static get parameterDescriptors(){return[{name:'threshold',defaultValue:-24,minValue:-100,maxValue:0,automationRate:'k-rate'},{name:'knee',defaultValue:30,minValue:0,maxValue:40,automationRate:'k-rate'},
+    {name:'ratio',defaultValue:12,minValue:1,maxValue:20,automationRate:'k-rate'},{name:'attack',defaultValue:0.003,minValue:0,maxValue:1,automationRate:'k-rate'},{name:'release',defaultValue:0.25,minValue:0,maxValue:1,automationRate:'k-rate'}];}
+  constructor(){super();this.key='';this.gDb=0;this.gl=1;this.mk=1;this.end=false;this.port.onmessage=e=>{if(e.data&&e.data.end)this.end=true;};}
+  setup(th,kn,ra){const lin=Math.pow(10,th/20),kDb=th+kn,kx=Math.pow(10,kDb/20),sl=1/ra,db=v=>20*Math.log10(v),kc=(x,k)=>x<lin?x:lin+(1-Math.exp(-k*(x-lin)))/k;
+    const at=(x,k)=>{if(x<lin)return 1;const x2=x*1.001;return(db(kc(x2,k))-db(kc(x,k)))/(db(x2)-db(x));};
+    let lo=0.1,hi=10000,k=5;for(let i=0;i<15;i++){if(at(kx,k)<sl)hi=k;else lo=k;k=Math.sqrt(lo*hi);}
+    this.c={lin,k,kx,kDb,yk:db(kc(kx,k)),sl};this.mk=Math.pow(1/this.sat(1),0.6);}
+  sat(x){const c=this.c;if(x<c.kx)return x<c.lin?x:c.lin+(1-Math.exp(-c.k*(x-c.lin)))/c.k;return Math.pow(10,(c.yk+c.sl*(20*Math.log10(x)-c.kDb))/20);}
+  process(i,o,p){if(this.end)return false;const x=i[0],y=o[0];if(!x||!x.length||!y.length)return true;
+    const th=p.threshold[0],kn=p.knee[0],ra=Math.max(1,p.ratio[0]),key=th+'|'+kn+'|'+ra;if(key!==this.key){this.key=key;this.setup(th,kn,ra);}
+    const n=y[0].length,S=32,dt=S/sampleRate,atk=p.attack[0],inst=atk<=0.0015,ca=inst?1:1-Math.exp(-dt/(atk*0.5)),cr=1-Math.exp(-dt/Math.max(0.001,p.release[0]*0.5)),mk=this.mk;
+    for(let s=0;s<n;s+=S){const e=Math.min(n,s+S),L=e-s;let pk=0;for(let c=0;c<x.length;c++){const xc=x[c];for(let k=s;k<e;k++){const v=xc[k]<0?-xc[k]:xc[k];if(v>pk)pk=v;}}
+      const t=pk>1e-6?20*Math.log10(this.sat(pk)/pk):0;this.gDb+=(t-this.gDb)*(t<this.gDb?ca:cr);
+      const g1=Math.pow(10,this.gDb/20)*mk,g0=this.gl,flat=inst&&g1<g0;
+      for(let c=0;c<y.length;c++){const xc=x[c]||x[0],yc=y[c];for(let k=s;k<e;k++)yc[k]=xc[k]*(flat?g1:g0+(g1-g0)*(k-s+1)/L);}
+      this.gl=g1;}
+    return true;}}
+registerProcessor('fw-comp',Comp);
 `;
 
 /* ---------- engine state ---------- */
@@ -490,7 +548,7 @@ async function outApply(id, quiet) {
 function buildGraph() {
   const c = E.ctx;
   E.inTrim = gn(fromDB(CFG.gTrim || 0)); E.inSum = gn(1); E.rigIn = gn(1); E.rigOut = gn(1); E.mix = gn(1); E.master = gn(CFG.master != null ? CFG.master : .9);
-  E.limiter = c.createDynamicsCompressor(); Object.assign(E.limiter.threshold, { value: -1.5 }); E.limiter.knee.value = 0; E.limiter.ratio.value = 20; E.limiter.attack.value = 0.001; E.limiter.release.value = 0.08;
+  E.limiter = mkComp(c); Object.assign(E.limiter.threshold, { value: -1.5 }); E.limiter.knee.value = 0; E.limiter.ratio.value = 20; E.limiter.attack.value = 0.001; E.limiter.release.value = 0.08;
   const mkAna = (fft, sm) => { const a = c.createAnalyser(); a.fftSize = fft; a.smoothingTimeConstant = sm; a.minDecibels = -110; a.maxDecibels = -10; return a; };
   E.anaDI = mkAna(4096, 0); E.anaChroma = mkAna(16384, 0.5); E.anaRig = mkAna(CFG.fft, CFG.smooth); E.anaMaster = mkAna(CFG.fft, CFG.smooth);
   E.inSum.connect(E.inTrim); E.inTrim.connect(E.rigIn); E.anaIn = mkAna(2048, 0); E.inTrim.connect(E.anaIn);
@@ -505,9 +563,9 @@ function buildGraph() {
   /* vocal path: the second input channel → trim → (meter · recorder tap) and → monitor switch → polish strip → Vocal track */
   E.voxIn = gn(1); E.voxTrim = gn(fromDB(CFG.voxTrim || 0)); E.voxMon = gn(0); E.anaVox = mkAna(2048, 0.3);
   E.voxIn.connect(E.voxTrim); E.voxTrim.connect(E.anaVox); E.voxTrim.connect(E.aV); E.voxTrim.connect(E.voxMon);
-  { const sIn = gn(1), sOut = gn(1), hp = bq('highpass', 90), cmp = c.createDynamicsCompressor(), mk = gn(1.35), pr = gn(1), by = gn(0);
+  { const sIn = gn(1), sOut = gn(1), hp = bq('highpass', 90), cmp = mkComp(c), mk = gn(1.35), pr = gn(1), by = gn(0);
     cmp.threshold.value = -24; cmp.knee.value = 14; cmp.ratio.value = 3; cmp.attack.value = .008; cmp.release.value = .2;
-    chainN(sIn, hp, cmp, mk, pr, sOut); sIn.connect(by); by.connect(sOut); E.voxStrip = { in: sIn, out: sOut, proc: pr, byp: by }; sOut.connect(E.tr.vox.in); E.voxMon.connect(sIn); }
+    chainN(sIn, hp, cmp, mk, pr, sOut); sIn.connect(by); by.connect(sOut); E.voxStrip = { in: sIn, out: sOut, proc: pr, byp: by, cmp }; sOut.connect(E.tr.vox.in); E.voxMon.connect(sIn); }
   voxPolishApply();
   E.rigOut.connect(E.tr.live.in);
   { const ms = mstBuild(); E.mix.connect(ms.in); ms.out.connect(E.master); mstApply(); }
@@ -673,10 +731,28 @@ function satCurve(k, bias = 0, n = 2048, kind = 'tanh') {
   const a = new Float32Array(n), nb = kind === 'tanh' ? Math.tanh(bias) : Math.atan(bias);
   const f = kind === 'tanh' ? Math.tanh : Math.atan, sc = Math.abs(f(k + bias) - nb) || 1;
   for (let i = 0; i < n; i++) { const x = i / (n - 1) * 2 - 1; a[i] = (f(k * x + bias) - nb) / sc; }
+  if (n === 2048) a.sat = [k, bias, kind];   /* so the zero-delay shaper can rebuild it from three numbers (part of fw-shape) */
   return a;
 }
 const LFO = (c, type = 'sine', f = 1) => { const o = c.createOscillator(); o.type = type; o.frequency.value = f; o.start(); return o; };
 const passthru = () => { const g = gn(); return { in: g, out: g, set() { } }; };
+/** a compressor with no look-ahead (the worklet's fw-comp), or the browser's own where there are no worklets. Either way it has the
+    same five parameters (threshold, knee, ratio, attack, release) and the same curve and make-up gain; _lat is the delay it adds, in seconds */
+function mkComp(c) {
+  if (!E.worklet || CFG.lowLat === false) { const n = c.createDynamicsCompressor(); n._lat = .006; return n; }
+  const n = new AudioWorkletNode(c, 'fw-comp', { numberOfInputs: 1, numberOfOutputs: 1 });
+  ['threshold', 'knee', 'ratio', 'attack', 'release'].forEach(k => { n[k] = n.parameters.get(k); }); n._lat = 0;
+  n.end = () => { try { n.port.postMessage({ end: true }); } catch (e) { } }; return n;
+}
+/** a waveshaper whose oversampling adds about 0.1 ms (the worklet's fw-shape) instead of the browser's 3–4 ms; set .curve and .oversample as on a
+    WaveShaperNode. Where there are no worklets it is the browser's own. _lat: the delay it adds, in seconds */
+function mkShaper(c) {
+  if (!E.worklet || CFG.lowLat === false) { const n = c.createWaveShaper(); Object.defineProperty(n, '_lat', { get: () => ({ '2x': 128, '4x': 192 }[n.oversample] || 0) / c.sampleRate }); return n; }
+  const n = new AudioWorkletNode(c, 'fw-shape', { numberOfInputs: 1, numberOfOutputs: 1 }), P = k => n.parameters.get(k); let cu = null, os = 'none';
+  Object.defineProperty(n, 'curve', { get: () => cu, set: v => { cu = v || null; const s = cu && cu.sat; if (s) { P('k').value = s[0]; P('bias').value = s[1]; P('kind').value = s[2] === 'atan' ? 1 : 0; } else n.port.postMessage({ curve: cu ? Float32Array.from(cu) : null }); P('on').value = s ? 1 : 0; } });
+  Object.defineProperty(n, 'oversample', { get: () => os, set: v => { os = v; P('os').value = v === '4x' ? 4 : v === '2x' ? 2 : 1; } });
+  n._lat = 0; return n;
+}
 
 defFx('gate', 'Noise Gate', 'Dynamics', [P('thresh', 'Thresh', -80, -20, -58, 1, ' dB'), P('rel', 'Release', 20, 600, 140, 1, ' ms', { log: 1 }), P('hold', 'Hold', 0, 300, 40, 1, ' ms'), P('range', 'Range', -90, -6, -70, 1, ' dB')], (c) => {
   if (!E.worklet) return passthru();
@@ -685,9 +761,11 @@ defFx('gate', 'Noise Gate', 'Dynamics', [P('thresh', 'Thresh', -80, -20, -58, 1,
   return { in: n, out: n, set(k, v) { n.port.postMessage({ [map[k]]: v }); } };
 });
 defFx('comp', 'Compressor', 'Dynamics', [P('thr', 'Thresh', -60, 0, -26, 1, ' dB'), P('ratio', 'Ratio', 1, 20, 4, .1, ':1'), P('atk', 'Attack', 1, 200, 12, 1, ' ms', { log: 1 }), P('rel', 'Release', 20, 1000, 220, 1, ' ms', { log: 1 }), P('knee', 'Knee', 0, 40, 14, 1, ' dB'), P('makeup', 'Makeup', 0, 24, 6, .5, ' dB'), P('mix', 'Blend', 0, 1, 1, .01)], (c) => {
-  const i = gn(), cm = c.createDynamicsCompressor(), mk = gn(), dry = gn(0), wet = gn(1), o = gn();
-  chainN(i, cm, mk, wet, o); i.connect(dry); dry.connect(o);
-  return { in: i, out: o, set(k, v) { switch (k) { case 'thr': cm.threshold.value = v; break; case 'ratio': cm.ratio.value = v; break; case 'atk': cm.attack.value = v / 1000; break; case 'rel': cm.release.value = v / 1000; break; case 'knee': cm.knee.value = v; break; case 'makeup': tc(mk.gain, fromDB(v)); break; case 'mix': tc(wet.gain, v); tc(dry.gain, 1 - v); } } };
+  const i = gn(), cm = mkComp(c), mk = gn(), dry = gn(0), wet = gn(1), o = gn();
+  chainN(i, cm, mk, wet, o); dry.connect(o);
+  /* Blend: with the browser's compressor (6 ms look-ahead) the dry side is delayed to match, so the two do not comb-filter */
+  if (cm._lat) { const dd = c.createDelay(.05); dd.delayTime.value = cm._lat; i.connect(dd); dd.connect(dry); } else i.connect(dry);
+  return { in: i, out: o, lat: () => cm._lat, set(k, v) { switch (k) { case 'thr': cm.threshold.value = v; break; case 'ratio': cm.ratio.value = v; break; case 'atk': cm.attack.value = v / 1000; break; case 'rel': cm.release.value = v / 1000; break; case 'knee': cm.knee.value = v; break; case 'makeup': tc(mk.gain, fromDB(v)); break; case 'mix': tc(wet.gain, v); tc(dry.gain, 1 - v); } } };
 });
 defFx('wah', 'Wah', 'Filter', [SELP('mode', 'Mode', ['Pedal', 'Auto LFO']), P('pos', 'Pedal', 0, 1, .5), P('q', 'Q', 1, 16, 6, .1), P('rate', 'Rate', .1, 8, 1.6, .01, ' Hz', { log: 1 }), P('depth', 'Depth', 0, 1, .8), P('mix', 'Mix', 0, 1, 1)], (c) => {
   const i = gn(), bp = bq('bandpass', 800, 6), lfo = LFO(c), lg = gn(0), lv = gn(1.8), dry = gn(0), wet = gn(1), o = gn();
@@ -697,21 +775,21 @@ defFx('wah', 'Wah', 'Filter', [SELP('mode', 'Mode', ['Pedal', 'Auto LFO']), P('p
   return { in: i, out: o, set(k, v) { switch (k) { case 'mode': mode = v; upd(); break; case 'pos': pos = v; upd(); break; case 'depth': dep = v; upd(); break; case 'q': bp.Q.value = v; break; case 'rate': lfo.frequency.value = v; break; case 'mix': tc(wet.gain, v); tc(dry.gain, 1 - v); } } };
 });
 function driveUnit(c, o) {
-  const i = gn(), hp = bq('highpass', o.hp), body = bq('peaking', 720, .9, 0), drv = gn(8), ws = c.createWaveShaper(), lp = bq('lowpass', 4500), lv = gn(.8);
+  const i = gn(), hp = bq('highpass', o.hp), body = bq('peaking', 720, .9, 0), drv = gn(8), ws = mkShaper(c), lp = bq('lowpass', 4500), lv = gn(.8);
   ws.oversample = '4x'; chainN(i, hp, body, drv, ws, lp, lv); return { i, hp, body, drv, ws, lp, lv };
 }
 defFx('od', 'Overdrive', 'Drive', [P('drive', 'Drive', 0, 1, .45), P('tone', 'Tone', 0, 1, .5), P('level', 'Level', 0, 1, .55), P('body', 'Mid Hump', 0, 12, 5, .5, ' dB')], (c) => {
   const u = driveUnit(c, { hp: 140 }); u.ws.curve = satCurve(3.2, .12);
-  return { in: u.i, out: u.lv, set(k, v) { switch (k) { case 'drive': tc(u.drv.gain, 1 + v * v * 50); break; case 'tone': tc(u.lp.frequency, 1500 * Math.pow(6, v)); break; case 'level': tc(u.lv.gain, v * 1.6); break; case 'body': u.body.gain.value = v; } } };
+  return { in: u.i, out: u.lv, lat: () => u.ws._lat, set(k, v) { switch (k) { case 'drive': tc(u.drv.gain, 1 + v * v * 50); break; case 'tone': tc(u.lp.frequency, 1500 * Math.pow(6, v)); break; case 'level': tc(u.lv.gain, v * 1.6); break; case 'body': u.body.gain.value = v; } } };
 });
 defFx('ds', 'Distortion', 'Drive', [P('drive', 'Gain', 0, 1, .55), P('tone', 'Tone', 0, 1, .5), P('level', 'Level', 0, 1, .45), P('grit', 'Grit', 0, 1, .5)], (c) => {
   const u = driveUnit(c, { hp: 110 });
-  return { in: u.i, out: u.lv, set(k, v) { switch (k) { case 'drive': tc(u.drv.gain, 1 + v * v * 260); break; case 'tone': tc(u.lp.frequency, 1100 * Math.pow(9, v)); break; case 'level': tc(u.lv.gain, v * 1.3); break; case 'grit': u.ws.curve = satCurve(6 + v * 30, 0, 2048, v > .5 ? 'atan' : 'tanh'); } } };
+  return { in: u.i, out: u.lv, lat: () => u.ws._lat, set(k, v) { switch (k) { case 'drive': tc(u.drv.gain, 1 + v * v * 260); break; case 'tone': tc(u.lp.frequency, 1100 * Math.pow(9, v)); break; case 'level': tc(u.lv.gain, v * 1.3); break; case 'grit': u.ws.curve = satCurve(6 + v * 30, 0, 2048, v > .5 ? 'atan' : 'tanh'); } } };
 });
 defFx('fuzz', 'Fuzz', 'Drive', [P('fuzz', 'Fuzz', 0, 1, .7), P('bias', 'Bias', 0, 1, .4), P('tone', 'Tone', 0, 1, .5), P('level', 'Level', 0, 1, .4)], (c) => {
   const u = driveUnit(c, { hp: 70 }); let k = 20, b = .3;
   const cv = () => { u.ws.curve = satCurve(k, b * 1.4, 2048, 'tanh'); };
-  return { in: u.i, out: u.lv, set(n, v) { switch (n) { case 'fuzz': tc(u.drv.gain, 1 + v * 90); k = 10 + v * 50; cv(); break; case 'bias': b = v; cv(); break; case 'tone': tc(u.lp.frequency, 700 * Math.pow(10, v)); break; case 'level': tc(u.lv.gain, v * 1.2); } } };
+  return { in: u.i, out: u.lv, lat: () => u.ws._lat, set(n, v) { switch (n) { case 'fuzz': tc(u.drv.gain, 1 + v * 90); k = 10 + v * 50; cv(); break; case 'bias': b = v; cv(); break; case 'tone': tc(u.lp.frequency, 700 * Math.pow(10, v)); break; case 'level': tc(u.lv.gain, v * 1.2); } } };
 });
 defFx('pitch', 'Pitch / Harmony', 'Pitch', [P('semi', 'Shift', -24, 24, 12, .01, ' st'), P('mix', 'Mix', 0, 1, .5), P('win', 'Window', 20, 120, 60, 1, ' ms')], (c) => {
   if (!E.worklet) return passthru();
@@ -726,8 +804,8 @@ const AMP = {
   'Hi-Gain': { a1: 38, a2: 22, k1: 3.8, k2: 4.5, b1: .25, b2: .2, tB: 90, tM: 620, tT: 2800, vB: 3, vM: -3, vT: 4, hp: 140, inter: 5200, mk: .55, sag: .2 }
 };
 defFx('amp', 'Amp', 'Amp', [SELP('model', 'Model', Object.keys(AMP)), P('gain', 'Gain', 0, 1, .35), P('bass', 'Bass', 0, 1, .5), P('mid', 'Mid', 0, 1, .5), P('treble', 'Treble', 0, 1, .5), P('pres', 'Presence', 0, 1, .45), P('master', 'Master', 0, 1, .5), TOG('bright', 'Bright'), P('tight', 'Tight', 0, 1, .2)], (c) => {
-  const i = gn(), hp = bq('highpass', 90), br = bq('highshelf', 3500, .7, 0), g1 = gn(4), w1 = c.createWaveShaper(), lp1 = bq('lowpass', 7500), hp2 = bq('highpass', 60), g2 = gn(2), w2 = c.createWaveShaper(),
-    lo = bq('lowshelf', 110), mi = bq('peaking', 650, .8), hi = bq('highshelf', 3000), pr = bq('highshelf', 5500), dc = bq('highpass', 28), sg = c.createDynamicsCompressor(), ms = gn(.7);
+  const i = gn(), hp = bq('highpass', 90), br = bq('highshelf', 3500, .7, 0), g1 = gn(4), w1 = mkShaper(c), lp1 = bq('lowpass', 7500), hp2 = bq('highpass', 60), g2 = gn(2), w2 = mkShaper(c),
+    lo = bq('lowshelf', 110), mi = bq('peaking', 650, .8), hi = bq('highshelf', 3000), pr = bq('highshelf', 5500), dc = bq('highpass', 28), sg = mkComp(c), ms = gn(.7);
   w1.oversample = w2.oversample = '4x'; sg.threshold.value = -20; sg.knee.value = 20; sg.attack.value = .004; sg.release.value = .12;
   chainN(i, hp, br, g1, w1, lp1, hp2, g2, w2, lo, mi, hi, pr, dc, sg, ms);
   const st = { model: 'Clean', gain: .35, bass: .5, mid: .5, treble: .5, pres: .45, master: .5, tight: .2, bright: 0 };
@@ -739,7 +817,7 @@ defFx('amp', 'Amp', 'Amp', [SELP('model', 'Model', Object.keys(AMP)), P('gain', 
     lo.gain.value = (st.bass - .5) * 24 + m.vB; mi.gain.value = (st.mid - .5) * 24 + m.vM; hi.gain.value = (st.treble - .5) * 24 + m.vT; pr.gain.value = (st.pres - .5) * 20;
     hp.frequency.value = Math.max(m.hp * .6, 40) + st.tight * 380; sg.ratio.value = 1 + m.sag * 5; tc(ms.gain, st.master * 1.5 * m.mk); br.gain.value = st.bright ? 5 : 0;
   };
-  return { in: i, out: ms, set(k, v) { st[k] = v; upd(); } };
+  return { in: i, out: ms, lat: () => w1._lat + w2._lat + sg._lat, set(k, v) { st[k] = v; upd(); } };
 });
 const CABS = {
   '1x12 Open Back': { res: [[105, .9, .020], [260, .35, .012], [1800, .30, .004], [3300, .45, .003]], lp: 5600, hp: 90, len: .045 },
@@ -838,8 +916,14 @@ class FxUnit {
     else { tc(this.dry.gain, 1, .008); tc(this.wet.gain, 0, .008); this.tm = setTimeout(() => { if (!this.on && this.conn) { try { this.inN.disconnect(this.fx.in); } catch (e) { } this.conn = false; } }, 160); }
   }
   set(k, v) { this.p[k] = v; this.fx.set(k, v); }
+  /** the delay this unit adds while it is on, in seconds (0 for everything with the zero-delay compressor and shaper) */
+  lat() { return this.on && this.fx.lat ? this.fx.lat() || 0 : 0; }
 }
 const RIG = { order: ['gate', 'comp', 'wah', 'od', 'ds', 'fuzz', 'pitch', 'amp', 'cab', 'eq', 'chorus', 'phaser', 'flanger', 'trem', 'delay', 'reverb'], units: {}, cur: '—' };
+/** the delay the rig and the vocal polish add, in seconds: what a take played through them is started early by (delay compensation),
+    and what a wet print is trimmed by. About 0 with the zero-delay effects; about 15–20 ms with the browser's own (Settings ▸ Audio engine). */
+const rigLat = () => RIG.order.reduce((a, id) => a + (RIG.units[id] ? RIG.units[id].lat() : 0), 0);
+const voxLat = () => E.voxStrip && CFG.voxPolish !== false ? E.voxStrip.cmp._lat || 0 : 0;
 function rigBuild() { RIG.order.forEach(id => { RIG.units[id] = new FxUnit(FX[id]); }); rigConnect(); }
 function rigConnect() {
   try { E.rigIn.disconnect(); } catch (e) { }
@@ -1112,7 +1196,7 @@ function recBegin(slot, ctxTime) {
   if (!E.hasInput) { toast('No audio input is open — recording the backing/tab only', 'warn'); return; }
   let g = armedG(), v = armedV(); if (PUNCH.on) { g = PUNCH.kind === 'gtr'; v = PUNCH.kind === 'vox'; }       // a punch-in records the lane being punched, nothing else
   if (!g && !v) { toast('Nothing is armed — arm the Guitar or Vocal lane (the ● button at the left of the arrangement) to record', 'warn'); return; }
-  REC = { dry: [], wet: [], vox: [], g, v, t0: ctxTime, startSec: slot * slotDur(), bpm: S.bpm, preset: RIG.cur, n: 0, cam: [], pkG: [], pkV: [], perf0: performance.now() + (ctxTime - E.ctx.currentTime) * 1000, punch: PUNCH.on ? Object.assign({}, PUNCH) : null, tEnd: 0, cycle: !!(T.loop && T.loopB != null && !PUNCH.on) };
+  REC = { dry: [], wet: [], vox: [], g, v, t0: ctxTime, startSec: slot * slotDur(), bpm: S.bpm, preset: RIG.cur, n: 0, cam: [], pkG: [], pkV: [], perf0: performance.now() + (ctxTime - E.ctx.currentTime) * 1000, punch: PUNCH.on ? Object.assign({}, PUNCH) : null, tEnd: 0, cycle: !!(T.loop && T.loopB != null && !PUNCH.on), wl: rigLat() };
   if (g) { E.tapDI.on(true); if (CFG.rec.wet) E.tapWet.on(true); } if (v) E.tapVox.on(true); bus.emit('rec:state', true);
 }
 function pushBlock(arr, m, t0) {
@@ -1133,7 +1217,9 @@ function recEnd() {
   const pG = r.g && r.v ? pkOf(r.dry) : 0, pV = r.g && r.v ? pkOf(r.vox) : 0, skipped = [];
   const quietLane = (me, other) => r.g && r.v && me < .001 && other > .03;      // below −60 dBFS next to a lane that is above −30 dBFS
   const mk = (kind, parts, wetParts) => {
-    if (!parts.length) return; if (kind === 'gtr' ? quietLane(pG, pV) : quietLane(pV, pG)) { skipped.push(kind === 'gtr' ? 'guitar' : 'vocal'); return; } let dry = cat(parts), wet = wetParts && wetParts.length ? cat(wetParts) : null; const lim = r.tEnd ? Math.max(0, Math.round((r.tEnd - r.t0) * sr)) : 0; if (lim && lim < dry.length) { dry = dry.slice(0, lim); if (wet) wet = wet.slice(0, lim); }       // a punch-in ends exactly at its out point
+    if (!parts.length) return; if (kind === 'gtr' ? quietLane(pG, pV) : quietLane(pV, pG)) { skipped.push(kind === 'gtr' ? 'guitar' : 'vocal'); return; } let dry = cat(parts), wet = wetParts && wetParts.length ? cat(wetParts) : null;
+    if (wet && r.wl > 0) { const k = Math.min(wet.length, Math.round(r.wl * sr)), w = new Float32Array(wet.length); w.set(wet.subarray(k)); wet = w; }      // the wet print came out of the rig r.wl late: line it up with the dry
+    const lim = r.tEnd ? Math.max(0, Math.round((r.tEnd - r.t0) * sr)) : 0; if (lim && lim < dry.length) { dry = dry.slice(0, lim); if (wet) wet = wet.slice(0, lim); }       // a punch-in ends exactly at its out point
     if (dry.length < sr * (r.punch ? .05 : .25)) return;
     let pk = 0, e = 0; for (let i = 0; i < dry.length; i++) { const a = Math.abs(dry[i]); if (a > pk) pk = a; e += dry[i] * dry[i]; }
     if (r.cycle && pk < .002) { r.silentPass = true; return; }      // a pass nobody played on is not a layer: loop recording never stacks silent takes (and it says so, below)
@@ -1159,11 +1245,14 @@ function scheduleTakes(atTime, fromSec) {
   TAKES.forEach(tk => {
     tk._g = null; tk._pn = null; if (tk._fx) { tk._fx.dispose(); tk._fx = null; } const L = tkLead(tk), vox = L.kind === 'vox', which = L.mode === 'reamp' ? 'dry' : 'wet', buf = takeBuffer(tk, which) || takeBuffer(tk, 'dry'); if (!buf) return;
     const len = tkLen(tk); if (len <= 0 || tk.startSec + len <= fromSec) return;
-    const rel = fromSec - tk.startSec, c0 = Math.max(0, rel), when = atTime + c0 - rel, tm = c => atTime + c - rel;        // c0: where in the clip we start; tm(c): when clip-second c is heard
+    /* delay compensation: a take played through the rig (re-amp) or the vocal polish is started that much early, so it is heard in time */
+    const pd = vox ? voxLat() : which === 'dry' && L.mode === 'reamp' ? rigLat() : 0, at = atTime - pd;
+    const rel = fromSec - tk.startSec, c0 = Math.max(0, rel), when = at + c0 - rel, tm = c => at + c - rel;        // c0: where in the clip we start; tm(c): when clip-second c is heard
     const src = E.ctx.createBufferSource(), cgn = gn(tk.cg == null ? 1 : tk.cg), fd = gn(1), g = gn(takeAudible(tk) ? (L.g == null ? 1 : L.g) : 0), pn = E.ctx.createStereoPanner(); pn.pan.value = L.pan || 0; src.buffer = buf; src.connect(cgn); cgn.connect(fd); fd.connect(g); g.connect(pn); tk._g = g; tk._cg = cgn; tk._pn = pn;
     const [fi, fo] = tkFades(tk); if (fi > 0 || fo > 0) { const gf = c => Math.max(0, Math.min(1, fi > 0 ? c / fi : 1, fo > 0 ? (len - c) / fo : 1)), p = fd.gain; p.setValueAtTime(gf(c0), Math.max(0, when)); [fi, len - fo, len].forEach(c => { if (c > c0 + 1e-6) p.linearRampToValueAtTime(gf(c), tm(c)); }); }
     if (vox) pn.connect(E.voxStrip.in); else if (which === 'dry' && L.mode === 'reamp') pn.connect(E.rigIn); else { tk._fx = fxStrip(E.takesIn); tk._fx.set(L.fx); pn.connect(tk._fx.in); }
-    src.start(when, tkIn(tk) + c0, len - c0); T.srcs.push(src);
+    const late = Math.max(0, atTime - when);      // starting from inside the clip: skip the part already due, so it still lands in time
+    if (late < len - c0) { src.start(when + late, tkIn(tk) + c0 + late, len - c0 - late); T.srcs.push(src); }
   });
 }
 function stopTakes() { T.srcs.forEach(s => { try { s.stop(); } catch (e) { } }); T.srcs = []; TAKES.forEach(t => { if (t._fx) { t._fx.dispose(); t._fx = null; } }); }
@@ -1482,6 +1571,8 @@ function openSettings(at) {
       F('Sample rate', sel('sr', [['auto', 'Device default'], ['44100', '44.1 kHz'], ['48000', '48 kHz'], ['96000', '96 kHz']])),
       F('Analyzer FFT size', sel('fft', [2048, 4096, 8192, 16384, 32768], () => { if (E.ready) { E.anaRig.fftSize = E.anaMaster.fftSize = CFG.fft; } })),
       F('Analyzer smoothing', range('smooth', 0, .95, .01, () => { if (E.ready) E.anaRig.smoothingTimeConstant = E.anaMaster.smoothingTimeConstant = CFG.smooth; })),
+      chk('Zero-delay effects (compressors, amp and drive with no look-ahead)', 'lowLat', () => { if (E.ready) restartAudio(); }),
+      note('On by default: you hear your guitar about 20 ms sooner and your voice about 12 ms sooner than with the browser’s own compressor and oversampling. Turning it off restarts the audio engine; takes stay in time either way.'),
       h('div', { class: 'hub-acts' }, h('button', { class: 'btn', onclick: () => { close(); restartAudio(); } }, '↻ Restart audio engine'), note('Needed after changing the latency hint, sample rate or output routing.'))] },
     { key: 'rec', label: 'Recording & practice', ico: '●', sub: 'Count-in, the click and what a take keeps.', body: () => [
       F('Count-in (bars)', sel('countIn', [0, 1, 2, 4])),
@@ -2628,7 +2719,7 @@ function buildVisPane() {
   const bar = h('div', { class: 'row', style: { gap: '8px', marginBottom: '8px', flexWrap: 'wrap' } },
     h('div', { class: 'seg' }, VMODES.filter(m => !VZ_MONITOR.has(m[0]) && !BK_MODES.has(m[0])).map(([k, n]) => h('button', { class: k === VZ.mode ? 'on' : '', 'data-m': k, onclick: e => { vzSetMode(k); $$('.seg [data-m]', bar).forEach(b => b.classList.toggle('on', b === e.target)); } }, n))),
     h('div', { class: 'vz-back', id: 'vzBack' }, h('span', { class: 'hx-l', title: 'Looks made to sit behind you: set Camera look to “Me in front (green screen)” and you stand inside the picture' }, 'Behind you'), h('div', { class: 'seg', role: 'group', 'aria-label': 'Looks that sit behind you' }, VBACK.map(([k, n]) => h('button', { class: k === VZ.mode ? 'on' : '', 'data-m': k, onclick: e => { vzSetMode(k); $$('.seg [data-m]', bar).forEach(b => b.classList.toggle('on', b === e.currentTarget)); try { backTip(); } catch (er) { } } }, n)))),
-    lxLensBar(), vzAdjustBtn(),
+    lxLensBar(), vzAdjustBtn(), tipBtn(),
     hexSwatches(),
     h('select', { class: 'in', style: { width: 'auto', fontFamily: 'var(--sans)' }, title: 'Analysis source', onchange: e => { VZ.src = e.target.value; } }, [['auto', 'Source: auto (follows playback)'], ['rig', 'Source: guitar after the rig'], ['master', 'Source: master mix'], ['di', 'Source: what the detector hears'], ['vox', 'Source: vocal microphone']].map(([v, n]) => h('option', { value: v }, n))),
     h('button', { class: 'btn sm', id: 'vzRecBtn', 'data-srec': '1', title: 'Record the stage as a video with the song’s sound (saved on this device)', onclick: e => srecMenu(e.currentTarget) }, '⏺ Record'),
@@ -2674,6 +2765,7 @@ function drawVis(cvo, o) {
   if (MODE === 'halo' && !cvo) haloFront(g);   // stage draws its own camera layer after trails and kaleidoscope
   if (!cvo && CFG.vzNeck !== false && !document.body.classList.contains('perform-on') && !vzBare(MODE)) { const r = neckRect(W, H); drawMiniNeck(g, r[0], r[1], r[2], r[3], { C }); }
   if (!cvo && CFG.vzRibbon && !document.body.classList.contains('perform-on') && typeof voxDraw === 'function') { const r = voxRect(W, H); voxDraw(g, r[0], r[1], r[2], r[3], { C, labels: H > 260 }); }
+  if (!cvo) tipDraw(g, W, H, 'vis', tipVisAvoid(W, H, MODE));   /* the tip jar (part 39b): on the Visuals, so it is in stage videos */
   if (o.noText || vzBare(MODE)) return;
   const ink = HP ? HP.ink : '255,255,255'; g.fillStyle = `rgba(${ink},.55)`; g.font = `${Math.round(11 * H / 400 + 6)}px ui-monospace,Menlo,monospace`; g.textBaseline = 'top';
   if (AN.midi != null && AN.active) { g.fillStyle = `rgba(${ink},.85)`; g.font = `800 ${Math.round(28 * Math.min(W, H * 2) / 900 + 10)}px ui-monospace,Menlo,monospace`; g.fillText(pcName(AN.midi) + (Math.floor(AN.midi / 12) - 1) + '  ' + (AN.cents >= 0 ? '+' : '') + AN.cents.toFixed(0) + '¢', 14, 12); }
@@ -3740,7 +3832,7 @@ async function boot() {
   document.addEventListener('visibilitychange', () => { if (!document.hidden && E.ctx && !OFR.busy && E.ctx.state === 'suspended') E.ctx.resume(); });
   if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener('devicechange', () => { ioDeviceChange().catch(e => console.warn(e)); });
   bus.emit('song');
-  if (/[?&]debug\b/.test(location.search)) window.__daily = { S, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, STP, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfort, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, srecStart, srecStop, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, tkFades, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, FB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, vzSetMode, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, drawVis, perfClose, voicings, peaksOf, uid, shareGate, shareData, shareHtml, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, slotAtTime, SEL, mtof, spb, playheadSlot, WR, HM, HMX, HM_MODES, vzImmersive, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitThumb, kitInk, kitNotes, kitRecord, srecMime, mGo, GD_SESSIONS, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard};   // test hook, only with ?debug
+  if (/[?&]debug\b/.test(location.search)) window.__daily = { S, WORKLET_SRC, mkComp, mkShaper, rigLat, voxLat, restartAudio, satCurve, rigApply, qrMake, qrSvg, tipLink, tipShort, tipReady, tipCard, tipDraw, tipShareHtml, tipOpen, tipPrint, tipPng, tipVisAvoid, tipStageAvoid, TIP, TIP_TERMS, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, STP, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfort, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, srecStart, srecStop, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, tkFades, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, FB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, vzSetMode, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, drawVis, perfClose, voicings, peaksOf, uid, shareGate, shareData, shareHtml, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, slotAtTime, SEL, mtof, spb, playheadSlot, WR, HM, HMX, HM_MODES, vzImmersive, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitThumb, kitInk, kitNotes, kitRecord, srecMime, mGo, GD_SESSIONS, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard};   // test hook, only with ?debug
   projInit().catch(e => { console.warn('library', e); PRJ.ready = true; if (PRJ.wantStart) startMaybe(); });
 }
 
@@ -4196,6 +4288,7 @@ function stageFrame(ts) {
   if (sc.flash > 0 && SG.flash > .01) { g.fillStyle = 'rgba(255,255,255,' + (SG.flash * sc.flash * lxComfort().flash * LX.gov).toFixed(3) + ')'; g.fillRect(0, 0, w, hh); SG.flash *= .88; }
   if (sc.mode === 'concert' && !pbSolid()) lxGovMeasure(SG.cv, performance.now());   // the governor looks at the finished picture
   if (pbOn()) { if (STG.pb.lower) drawLowerThird(g, w, hh, info, C); } else if (STG.hud !== false) drawStageHUD(g, w, hh, sc, info, C);
+  tipDraw(g, w, hh, 'stage', tipStageAvoid(w, hh, sc));   /* the tip jar (part 39b), for the room and the projector */
   if (SG.freezeReq) { const f = SG.frz || (SG.frz = document.createElement('canvas')); f.width = w; f.height = hh; f.getContext('2d').drawImage(SG.cv, 0, 0); SG.freeze = true; SG.freezeReq = false; }
   shOutFrame(g, w, hh);   // master level, blackout, mirror, flip
   if (SG.idle && ts - SG.idleT > 2800 && document.fullscreenElement === wrap) wrap.classList.add('idle');
@@ -4271,7 +4364,7 @@ function stagePop() {
 function renderStageUI() {
   if (!SG.hudbar) return; const sc = scn();
   SG.hudbar.innerHTML = ''; STG.scenes.forEach((s, i) => SG.hudbar.append(h('button', { class: 'sbtn' + (i === STG.cur ? ' on' : ''), title: s.name + ' — key ' + (i + 1) + ' · MIDI note ' + (48 + i), onclick: () => stageScene(i) }, (i + 1) + ' ' + s.name)));
-  SG.hudbar.append(h('span', { style: { flex: 1 } }), ...(document.body.dataset.form && document.body.dataset.form !== 'desktop' ? [h('button', { class: 'sbtn', title: 'Fill the screen', onclick: stageFull }, SG.wrap.classList.contains('pfs') ? '✕ Exit' : '⛶ Full')] : []), vzAdjustBtn('sbtn'), h('button', { class: 'sbtn' + (SG.boOn ? ' on' : ''), id: 'stgBo', title: 'Fade the output to black and back (key 0)', 'aria-pressed': String(!!SG.boOn), onclick: () => { shBlackout(); renderStageUI(); } }, '■ Blackout'), h('button', { class: 'sbtn', onclick: () => { STG.hud = !(STG.hud !== false); saveStg(); renderStageUI(); } }, STG.hud !== false ? 'HUD on' : 'HUD off'), h('button', { class: 'sbtn', title: 'Separate window for a projector / second screen', onclick: stagePop }, '⧉ Pop-out'), h('button', { class: 'sbtn', onclick: stageFull }, '⛶ Fullscreen'));
+  SG.hudbar.append(h('span', { style: { flex: 1 } }), ...(document.body.dataset.form && document.body.dataset.form !== 'desktop' ? [h('button', { class: 'sbtn', title: 'Fill the screen', onclick: stageFull }, SG.wrap.classList.contains('pfs') ? '✕ Exit' : '⛶ Full')] : []), vzAdjustBtn('sbtn'), tipBtn('sbtn'), h('button', { class: 'sbtn' + (SG.boOn ? ' on' : ''), id: 'stgBo', title: 'Fade the output to black and back (key 0)', 'aria-pressed': String(!!SG.boOn), onclick: () => { shBlackout(); renderStageUI(); } }, '■ Blackout'), h('button', { class: 'sbtn', onclick: () => { STG.hud = !(STG.hud !== false); saveStg(); renderStageUI(); } }, STG.hud !== false ? 'HUD on' : 'HUD off'), h('button', { class: 'sbtn', title: 'Separate window for a projector / second screen', onclick: stagePop }, '⧉ Pop-out'), h('button', { class: 'sbtn', onclick: stageFull }, '⛶ Fullscreen'));
   const E_ = SG.editor; E_.innerHTML = ''; E_.append(shcRoot());   // the Show setup console (part 59)
 }
 function buildStagePane() {
@@ -8170,10 +8263,10 @@ function shareGate(fn) {
 function shareHtml(audioUri, d, kind) {
   const vid = kind === 'video';
   const json = JSON.stringify(Object.assign({ kind: vid ? 'video' : 'audio' }, d)).replace(/</g, '\\u003c');
-  const css = ':root{color-scheme:dark;--bg:#0b100e;--panel:#141a17;--line:#27332d;--text:#e9efeb;--mut:#9db3a5;--acc:#7dbf9b}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}main{max-width:760px;margin:0 auto;padding:28px 18px 60px}h1{font-size:clamp(26px,5vw,40px);margin:0;line-height:1.1}.sub{color:var(--mut);margin:6px 0 18px;font-size:14px}video{width:100%;max-height:70vh;display:block;border-radius:16px;background:#000}canvas{width:100%;height:220px;display:block;border-radius:16px;background:radial-gradient(circle at 50% 50%,#13201a,#080c0a);border:1px solid var(--line)}.pl{display:flex;align-items:center;gap:12px;margin:14px 0 26px}button{font:inherit;border:0;border-radius:999px;background:var(--acc);color:#07120c;font-weight:700;width:52px;height:52px;cursor:pointer;font-size:20px}input[type=range]{flex:1;accent-color:var(--acc)}.tm{font:13px ui-monospace,monospace;color:var(--mut);min-width:88px;text-align:right}h2{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--acc);margin:26px 0 6px}.ch{font:600 14px ui-monospace,Menlo,monospace;color:var(--mut)}.ln{margin:2px 0;padding:2px 8px;border-radius:8px;cursor:pointer}.ln pre{margin:0;font:600 14px ui-monospace,Menlo,monospace;color:var(--acc)}.sg{display:inline-flex;flex-direction:column;vertical-align:bottom;white-space:pre}.sg b{font:600 14px/1.3 ui-monospace,Menlo,monospace;color:var(--acc);padding-right:.35em;min-height:1.3em}.ln div{font-size:18px}.ln.on{background:#1b2a22;outline:1px solid var(--line)}footer{margin-top:40px;color:var(--mut);font-size:12px;line-height:1.5}footer p{margin:0 0 6px}@media print{body{background:#fff;color:#000}canvas,.pl,audio,footer{display:none}h2{color:#000}.ln pre,.ch{color:#333}}';
+  const css = ':root{color-scheme:dark;--bg:#0b100e;--panel:#141a17;--line:#27332d;--text:#e9efeb;--mut:#9db3a5;--acc:#7dbf9b}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}main{max-width:760px;margin:0 auto;padding:28px 18px 60px}h1{font-size:clamp(26px,5vw,40px);margin:0;line-height:1.1}.sub{color:var(--mut);margin:6px 0 18px;font-size:14px}video{width:100%;max-height:70vh;display:block;border-radius:16px;background:#000}canvas{width:100%;height:220px;display:block;border-radius:16px;background:radial-gradient(circle at 50% 50%,#13201a,#080c0a);border:1px solid var(--line)}.pl{display:flex;align-items:center;gap:12px;margin:14px 0 26px}button{font:inherit;border:0;border-radius:999px;background:var(--acc);color:#07120c;font-weight:700;width:52px;height:52px;cursor:pointer;font-size:20px}input[type=range]{flex:1;accent-color:var(--acc)}.tm{font:13px ui-monospace,monospace;color:var(--mut);min-width:88px;text-align:right}h2{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--acc);margin:26px 0 6px}.ch{font:600 14px ui-monospace,Menlo,monospace;color:var(--mut)}.ln{margin:2px 0;padding:2px 8px;border-radius:8px;cursor:pointer}.ln pre{margin:0;font:600 14px ui-monospace,Menlo,monospace;color:var(--acc)}.sg{display:inline-flex;flex-direction:column;vertical-align:bottom;white-space:pre}.sg b{font:600 14px/1.3 ui-monospace,Menlo,monospace;color:var(--acc);padding-right:.35em;min-height:1.3em}.ln div{font-size:18px}.ln.on{background:#1b2a22;outline:1px solid var(--line)}footer{margin-top:40px;color:var(--mut);font-size:12px;line-height:1.5}footer p{margin:0 0 6px}@media print{body{background:#fff;color:#000}canvas,.pl,audio,footer{display:none}h2{color:#000}.ln pre,.ch{color:#333}}' + tipShareCss();
   const js = "(function(){var D=JSON.parse(document.getElementById('d').textContent),au=document.getElementById('au'),pl=document.getElementById('pl'),sk=document.getElementById('sk'),tm=document.getElementById('tm'),cv=document.getElementById('cv'),g=cv.getContext('2d'),an=null,buf=null,L=[].slice.call(document.querySelectorAll('.ln'));function f(t){t=Math.max(0,t||0);return Math.floor(t/60)+':'+('0'+Math.floor(t%60)).slice(-2)}function ac(){if(an)return;try{var C=window.AudioContext||window.webkitAudioContext,c=new C(),s=c.createMediaElementSource(au);an=c.createAnalyser();an.fftSize=256;s.connect(an);an.connect(c.destination);buf=new Uint8Array(an.frequencyBinCount)}catch(e){an=null}}pl.onclick=function(){if(au.paused){ac();au.play()}else au.pause()};au.onplay=function(){pl.textContent='❚❚'};au.onpause=au.onended=function(){pl.textContent='▶'};function du(){return isFinite(au.duration)&&au.duration>0?au.duration:D.dur}sk.oninput=function(){au.currentTime=sk.value/1000*du()};if(!D.nosync)L.forEach(function(el){el.onclick=function(){au.currentTime=Math.max(0,+el.getAttribute('data-t'));ac();au.play()}});function draw(){requestAnimationFrame(draw);var w=cv.width=cv.clientWidth*(devicePixelRatio||1),h=cv.height=cv.clientHeight*(devicePixelRatio||1),cx=w/2,cy=h/2,R=Math.min(w,h)*.22,n=64,i,v;g.clearRect(0,0,w,h);if(an&&!au.paused)an.getByteFrequencyData(buf);g.lineWidth=Math.max(2,w/320);g.strokeStyle='#7dbf9b';g.lineCap='round';for(i=0;i<n;i++){v=an&&!au.paused?buf[Math.floor(i/n*buf.length*.8)]/255:.04+.02*Math.sin(i);var a=i/n*Math.PI*2-Math.PI/2,r1=R,r2=R+v*R*1.4+3;g.globalAlpha=.35+v*.65;g.beginPath();g.moveTo(cx+Math.cos(a)*r1,cy+Math.sin(a)*r1);g.lineTo(cx+Math.cos(a)*r2,cy+Math.sin(a)*r2);g.stroke()}g.globalAlpha=1;var t=au.currentTime,cur=-1;if(!D.nosync)for(i=0;i<L.length;i++){if(+L[i].getAttribute('data-t')<=t+.05)cur=i}L.forEach(function(el,k){el.classList.toggle('on',k===cur&&!au.paused)});if(du()){sk.value=Math.min(1000,t/du()*1000);tm.textContent=f(t)+' / '+f(du())}}draw();})();";
   const sections = d.secs.map(s => '<h2>' + shareEsc(s.name) + '</h2><div class="ch">' + s.chords.map(shareEsc).join(' &nbsp;|&nbsp; ') + '</div>' + s.lines.map(l => '<div class="ln" data-t="' + l.t.toFixed(2) + '">' + (l.segs ? '<div>' + l.segs.map(g => '<span class="sg"><b>' + (shareEsc(g[0]) || '&nbsp;') + '</b>' + (shareEsc(g[1]) || '&nbsp;') + '</span>').join('') + '</div>' : (l.chords ? '<pre>' + shareEsc(l.chords) + '</pre>' : '') + '<div>' + shareEsc(l.text) + '</div>') + '</div>').join('')).join('');
-  return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + shareEsc(d.title) + (d.artist ? ' · ' + shareEsc(d.artist) : '') + '</title><style>' + css + '</style></head><body><main><h1>' + shareEsc(d.title) + '</h1><div class="sub">' + shareEsc([d.artist, d.key, d.bpm + ' BPM', d.ts].filter(Boolean).join(' · ')) + '</div>' + (vid ? '<video id="au" playsinline preload="auto" src="' + audioUri + '"></video><canvas id="cv" aria-hidden="true" style="display:none"></canvas>' : '<canvas id="cv" aria-hidden="true"></canvas>') + '<div class="pl"><button id="pl" aria-label="Play or pause">▶</button><input id="sk" type="range" min="0" max="1000" value="0" aria-label="Seek"><span class="tm" id="tm">0:00</span></div>' + sections + (d.notes ? '<h2>Notes</h2><div class="ch">' + shareEsc(d.notes) + '</div>' : '') + '<footer><p>Shared by the person who made this page, who is responsible for having the right to share the recording, music and words in it. All rights in the songs, lyrics and recordings belong to their owners.</p><p>This page is one file: everything is inside it. It was made with the-daily.studio on the maker’s own device; the-daily.studio does not host, publish or review it and is not responsible for its content.</p></footer></main>' + (vid ? '' : '<audio id="au" preload="auto" src="' + audioUri + '"></audio>') + '<script type="application/json" id="d">' + json + '</script><script>' + js + '</script></body></html>';
+  return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + shareEsc(d.title) + (d.artist ? ' · ' + shareEsc(d.artist) : '') + '</title><style>' + css + '</style></head><body><main><h1>' + shareEsc(d.title) + '</h1><div class="sub">' + shareEsc([d.artist, d.key, d.bpm + ' BPM', d.ts].filter(Boolean).join(' · ')) + '</div>' + (vid ? '<video id="au" playsinline preload="auto" src="' + audioUri + '"></video><canvas id="cv" aria-hidden="true" style="display:none"></canvas>' : '<canvas id="cv" aria-hidden="true"></canvas>') + '<div class="pl"><button id="pl" aria-label="Play or pause">▶</button><input id="sk" type="range" min="0" max="1000" value="0" aria-label="Seek"><span class="tm" id="tm">0:00</span></div>' + tipShareHtml() + sections + (d.notes ? '<h2>Notes</h2><div class="ch">' + shareEsc(d.notes) + '</div>' : '') + '<footer><p>Shared by the person who made this page, who is responsible for having the right to share the recording, music and words in it. All rights in the songs, lyrics and recordings belong to their owners.</p><p>This page is one file: everything is inside it. It was made with the-daily.studio on the maker’s own device; the-daily.studio does not host, publish or review it and is not responsible for its content.</p></footer></main>' + (vid ? '' : '<audio id="au" preload="auto" src="' + audioUri + '"></audio>') + '<script type="application/json" id="d">' + json + '</script><script>' + js + '</script></body></html>';
 }
 function shareMake() {
   if (!songHasWork() && !TAKES.length) return toast('Add some chords or lyrics first, then make a share page.', 'warn');
@@ -8207,6 +8300,277 @@ function exportExtras(close) {
   return [h('button', { class: 'btn', id: 'exAudioC', title: 'The whole song as a smaller audio file (M4A where the browser can, otherwise Opus). Plays once in real time.', onclick: go(compressedSave) }, '⤓ Compressed audio (M4A / Opus)'),
     h('button', { class: 'btn', id: 'exShare', title: 'One HTML file with the song, words, chords and a small player. Open it anywhere or send it to someone.', onclick: go(shareMake) }, '🔗 Share page (one file)'),
     h('button', { class: 'btn', id: 'exPrint', title: 'A clean lyric and chord sheet. Use your browser’s Print or Save as PDF.', onclick: go(printSheet) }, '🖨 Print or PDF sheet')];
+}
+
+/* >>> parts/39a-qr.js */
+/* ============================================================
+   Part 39a · QR CODES, MADE ON THIS DEVICE
+   A small QR code maker for the tip jar (part 39b): byte mode, error correction level M (about 15% of the code can be
+   damaged or covered and it still scans), versions 1 to 40, the mask chosen by the standard's penalty rules (ISO/IEC 18004).
+   No library and no network: the code is worked out here and drawn on a canvas or written as SVG.
+   qrMake(text) → { n, dark(x, y) }   n: modules per side, without the quiet zone
+   ============================================================ */
+/* level M: error-correction codewords per block, and the number of blocks, for versions 1..40 (index 0 unused) */
+const QR_ECC = [0, 10, 16, 26, 18, 24, 16, 18, 22, 22, 26, 30, 22, 22, 24, 24, 28, 28, 26, 26, 26, 26, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28];
+const QR_BLK = [0, 1, 1, 1, 2, 2, 4, 4, 4, 5, 5, 5, 8, 9, 9, 10, 10, 11, 13, 14, 16, 17, 17, 18, 20, 21, 23, 25, 26, 28, 29, 31, 33, 35, 37, 38, 40, 43, 45, 47, 49];
+const qrRaw = v => { let r = (16 * v + 128) * v + 64; if (v >= 2) { const na = Math.floor(v / 7) + 2; r -= (25 * na - 10) * na - 55; if (v >= 7) r -= 36; } return r; };   /* modules free for data and error correction */
+const qrData = v => Math.floor(qrRaw(v) / 8) - QR_ECC[v] * QR_BLK[v];   /* data codewords */
+function qrMul(x, y) { let z = 0; for (let i = 7; i >= 0; i--) { z = (z << 1) ^ ((z >>> 7) * 0x11d); z ^= ((y >>> i) & 1) * x; } return z; }
+function qrDivisor(deg) { const r = new Array(deg).fill(0); r[deg - 1] = 1; let root = 1; for (let i = 0; i < deg; i++) { for (let j = 0; j < deg; j++) { r[j] = qrMul(r[j], root); if (j + 1 < deg) r[j] ^= r[j + 1]; } root = qrMul(root, 2); } return r; }
+function qrRemainder(data, div) { const r = div.map(() => 0); for (const b of data) { const f = b ^ r.shift(); r.push(0); div.forEach((c, i) => { r[i] ^= qrMul(c, f); }); } return r; }
+function qrAlign(v) { if (v === 1) return []; const n = Math.floor(v / 7) + 2, step = v === 32 ? 26 : Math.ceil((v * 4 + 4) / (n * 2 - 2)) * 2, res = [6]; for (let p = v * 4 + 10; res.length < n; p -= step) res.splice(1, 0, p); return res; }
+const QR_MASKS = [(x, y) => (x + y) % 2 === 0, (x, y) => y % 2 === 0, x => x % 3 === 0, (x, y) => (x + y) % 3 === 0, (x, y) => (Math.floor(x / 3) + Math.floor(y / 2)) % 2 === 0,
+  (x, y) => x * y % 2 + x * y % 3 === 0, (x, y) => (x * y % 2 + x * y % 3) % 2 === 0, (x, y) => ((x + y) % 2 + x * y % 3) % 2 === 0];
+
+function qrMake(text) {
+  const bytes = Array.from(new TextEncoder().encode(String(text)));
+  let v = 1; for (; v <= 40; v++) if (4 + (v < 10 ? 8 : 16) + bytes.length * 8 <= qrData(v) * 8) break;
+  if (v > 40) throw new Error('too long for a QR code');
+  /* the bit stream: mode (byte), length, the bytes, a terminator, then padding */
+  const bits = [], put = (val, len) => { for (let i = len - 1; i >= 0; i--) bits.push((val >>> i) & 1); }, cap = qrData(v) * 8;
+  put(4, 4); put(bytes.length, v < 10 ? 8 : 16); bytes.forEach(b => put(b, 8));
+  put(0, Math.min(4, cap - bits.length)); put(0, (8 - bits.length % 8) % 8);
+  for (let p = 0xec; bits.length < cap; p ^= 0xec ^ 0x11) put(p, 8);
+  const data = []; for (let i = 0; i < bits.length; i += 8) data.push(bits.slice(i, i + 8).reduce((a, b) => a << 1 | b, 0));
+  /* split into blocks, add the error correction, and interleave */
+  const nb = QR_BLK[v], ecl = QR_ECC[v], raw = Math.floor(qrRaw(v) / 8), nShort = nb - raw % nb, shortLen = Math.floor(raw / nb), div = qrDivisor(ecl), blocks = [];
+  for (let i = 0, k = 0; i < nb; i++) { const dat = data.slice(k, k + shortLen - ecl + (i < nShort ? 0 : 1)); k += dat.length; const ecc = qrRemainder(dat, div); if (i < nShort) dat.push(0); blocks.push(dat.concat(ecc)); }
+  const words = []; for (let i = 0; i < blocks[0].length; i++) blocks.forEach((b, j) => { if (i !== shortLen - ecl || j >= nShort) words.push(b[i]); });
+  /* the fixed patterns */
+  const n = v * 4 + 17, M = Array.from({ length: n }, () => new Uint8Array(n)), F = Array.from({ length: n }, () => new Uint8Array(n));
+  const fn = (x, y, d) => { M[y][x] = d ? 1 : 0; F[y][x] = 1; };
+  for (let i = 0; i < n; i++) { fn(6, i, i % 2 === 0); fn(i, 6, i % 2 === 0); }
+  [[3, 3], [n - 4, 3], [3, n - 4]].forEach(([cx, cy]) => { for (let dy = -4; dy <= 4; dy++) for (let dx = -4; dx <= 4; dx++) { const x = cx + dx, y = cy + dy, d = Math.max(Math.abs(dx), Math.abs(dy)); if (x >= 0 && x < n && y >= 0 && y < n) fn(x, y, d !== 2 && d !== 4); } });
+  const al = qrAlign(v), na = al.length;
+  for (let i = 0; i < na; i++) for (let j = 0; j < na; j++) { if ((i === 0 && j === 0) || (i === 0 && j === na - 1) || (i === na - 1 && j === 0)) continue; for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) fn(al[i] + dx, al[j] + dy, Math.max(Math.abs(dx), Math.abs(dy)) !== 1); }
+  const format = mask => { const d = mask; let r = d; for (let i = 0; i < 10; i++) r = (r << 1) ^ ((r >>> 9) * 0x537); const b = (d << 10 | r) ^ 0x5412, bit = i => ((b >>> i) & 1) === 1;   /* level M is 00 */
+    for (let i = 0; i <= 5; i++) fn(8, i, bit(i)); fn(8, 7, bit(6)); fn(8, 8, bit(7)); fn(7, 8, bit(8)); for (let i = 9; i < 15; i++) fn(14 - i, 8, bit(i));
+    for (let i = 0; i < 8; i++) fn(n - 1 - i, 8, bit(i)); for (let i = 8; i < 15; i++) fn(8, n - 15 + i, bit(i)); fn(8, n - 8, true); };
+  format(0);   /* reserves the format areas; drawn for real once the mask is chosen */
+  if (v >= 7) { let r = v; for (let i = 0; i < 12; i++) r = (r << 1) ^ ((r >>> 11) * 0x1f25); const b = v << 12 | r; for (let i = 0; i < 18; i++) { const d = ((b >>> i) & 1) === 1, a = n - 11 + i % 3, c = Math.floor(i / 3); fn(a, c, d); fn(c, a, d); } }
+  /* the data, in the zigzag order */
+  let k = 0; for (let right = n - 1; right >= 1; right -= 2) { if (right === 6) right = 5; for (let vert = 0; vert < n; vert++) for (let j = 0; j < 2; j++) { const x = right - j, y = ((right + 1) & 2) === 0 ? n - 1 - vert : vert; if (!F[y][x] && k < words.length * 8) { M[y][x] = (words[k >>> 3] >>> (7 - (k & 7))) & 1; k++; } } }
+  /* the mask with the lowest penalty */
+  const apply = m => { const f = QR_MASKS[m]; for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) if (!F[y][x] && f(x, y)) M[y][x] ^= 1; };
+  let best = 0, low = Infinity;
+  for (let m = 0; m < 8; m++) { apply(m); format(m); const p = qrPenalty(M, n); if (p < low) { low = p; best = m; } apply(m); }
+  apply(best); format(best);
+  return { n, v, mask: best, dark: (x, y) => x >= 0 && y >= 0 && x < n && y < n && M[y][x] === 1 };
+}
+/** the standard's four penalty rules: runs of one colour, 2×2 blocks, finder-like patterns, and the balance of dark and light */
+function qrPenalty(M, n) {
+  let p = 0, dark = 0; const line = get => { let s = ''; for (let i = 0; i < n; i++) s += get(i); return s; };
+  const runs = s => { let q = 0; s.replace(/0{5,}|1{5,}/g, r => { q += r.length - 2; return r; }); return q; };
+  const finders = s => { const t = '0000' + s + '0000'; let q = 0; for (let i = t.indexOf('1011101'); i >= 0; i = t.indexOf('1011101', i + 1)) if (t.slice(i - 4, i) === '0000' || t.slice(i + 7, i + 11) === '0000') q += 40; return q; };
+  for (let y = 0; y < n; y++) { const r = line(x => M[y][x]), c = line(x => M[x][y]); p += runs(r) + runs(c) + finders(r) + finders(c); }
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) { dark += M[y][x]; if (x < n - 1 && y < n - 1) { const c = M[y][x]; if (c === M[y][x + 1] && c === M[y + 1][x] && c === M[y + 1][x + 1]) p += 3; } }
+  return p + Math.floor(Math.abs(dark * 20 - n * n * 10) / (n * n)) * 10;
+}
+/** the code as an SVG path (one rectangle per run of dark modules), q: the quiet zone in modules */
+function qrSvg(qr, q) {
+  q = q == null ? 4 : q; const N = qr.n + q * 2; let d = '';
+  for (let y = 0; y < qr.n; y++) for (let x = 0; x < qr.n; x++) { if (!qr.dark(x, y)) continue; let e = x; while (qr.dark(e + 1, y)) e++; d += 'M' + (x + q) + ' ' + (y + q) + 'h' + (e - x + 1) + 'v1h-' + (e - x + 1) + 'z'; x = e; }
+  return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + N + ' ' + N + '" shape-rendering="crispEdges" role="img"><rect width="' + N + '" height="' + N + '" fill="#fff"/><path fill="#000" d="' + d + '"/></svg>';
+}
+/** draw the code on a canvas at whole pixel (x, y), cell pixels per module (it may be a fraction: each module's edges land on whole pixels), without a quiet zone */
+function qrDraw(g, qr, x, y, cell) {
+  g.fillStyle = '#000'; const at = i => Math.round(i * cell);
+  for (let r = 0; r < qr.n; r++) for (let c = 0; c < qr.n; c++) { if (!qr.dark(c, r)) continue; let e = c; while (qr.dark(e + 1, r)) e++; const x0 = x + at(c), y0 = y + at(r); g.fillRect(x0, y0, x + at(e + 1) - x0, y + at(r + 1) - y0); c = e; }
+}
+
+/* >>> parts/39b-tip.js */
+/* ============================================================
+   Part 39b · THE TIP JAR (an open guitar case)
+   An artist pastes their own tip link (a Ko-fi, PayPal.me, Venmo, Cash App, Buy Me a Coffee, Patreon or Bandcamp page, any https
+   address, a @venmo-name or a $cashtag) and the studio shows it as a QR code in a small open guitar case:
+     · on the Visuals, so it is in every stage video (and the Audience view);
+     · on the Stage, so the room can scan it from the projector or the pop-out window;
+     · on share pages, as a button and a code;
+     · on a printed sign for a real guitar case, and as a picture to post.
+   It can show all the time or only between songs, in any corner, in three sizes.
+   OFF BY DEFAULT. It is set up from 🎬 Creator Studio ▸ 🎸 Tip jar; until then nothing about it shows anywhere else. Once it is
+   set up (a link saved and the terms agreed), a 🎸 Tips button appears in the Visuals and Stage bars to switch it on and off.
+   Money goes straight from the audience to the service the artist chose. The studio never opens the link, never sees a
+   payment and takes nothing. The link lives in this browser's settings, not in songs, backups or share files other than
+   the share page itself, and the AI agent tools cannot read or change it (a payment link is not something to hand to an agent).
+   ============================================================ */
+const TIP_TERMS = 1;   /* raise when the wording below changes, so it is asked again */
+const TIP_DEF = { on: false, link: '', name: '', msg: 'Enjoying the music? Leave a tip', where: { vis: true, stage: true, share: true }, corner: 'br', size: 'm', when: 'always' };
+CFG.tip = Object.assign({}, TIP_DEF, CFG.tip && typeof CFG.tip === 'object' ? CFG.tip : {}); CFG.tip.where = Object.assign({}, TIP_DEF.where, CFG.tip.where || {});
+const TIP = { qr: null, qrFor: '', cards: new Map(), a: { vis: 0, aud: 0, stage: 0 } };   /* cards: the drawn case at each size in use (the Visuals and the Stage differ), a few at most */
+const TIP_SIZES = [['s', 'Small', .26], ['m', 'Medium', .34], ['l', 'Large', .46]];
+const TIP_CORNERS = [['br', 'Bottom right'], ['bl', 'Bottom left'], ['tr', 'Top right'], ['tl', 'Top left']];
+
+/** a tip link made safe: https only, no user name or password in it. '@name' becomes a Venmo profile link (venmo.com/u/name, Venmo's share-link
+    form; Venmo names are 5 to 30 letters, digits, - and _), '$name' a Cash App link, and 'ko-fi.com/x' gets the https scheme added. '' when empty, null when not usable */
+function tipLink(raw) {
+  let s = String(raw == null ? '' : raw).trim(); if (!s) return '';
+  if (/^@[A-Za-z0-9][A-Za-z0-9_-]{4,29}$/.test(s)) s = 'https://venmo.com/u/' + s.slice(1);
+  else if (/^\$[A-Za-z][A-Za-z0-9_-]{0,29}$/.test(s)) s = 'https://cash.app/' + s;
+  else if (!/^[a-z][a-z0-9+.-]*:/i.test(s) && /^[^\s/:@]+\.[^\s/:@]{2,}/.test(s)) s = 'https://' + s;
+  let u; try { u = new URL(s); } catch (e) { return null; }
+  if (u.protocol !== 'https:' || !/\.[a-z]{2,}$/i.test(u.hostname) || u.username || u.password) return null;
+  return u.href.length > 300 ? null : u.href;
+}
+/** the link as people read it: no https://, no www., no trailing slash */
+function tipShort(link) { let s = String(link || '').replace(/^https:\/\//, '').replace(/^www\./, '').replace(/\/$/, ''); try { s = decodeURI(s); } catch (e) { } return s.length > 42 ? s.slice(0, 40) + '…' : s; }
+const tipOk = () => CFG.tipOk === TIP_TERMS;
+/** the saved link, made safe (worked out again only when it changes: this is asked on every frame) */
+const TIPL = { raw: null, out: '' };
+const tipNow = () => { if (TIPL.raw !== CFG.tip.link) { TIPL.raw = CFG.tip.link; TIPL.out = tipLink(CFG.tip.link); } return TIPL.out; };
+/** set up in Creator Studio: a usable link saved and the terms agreed (the 🎸 Tips buttons in the Visuals and Stage bars appear only then) */
+const tipSetUp = () => !!(tipOk() && tipNow());
+/** set up, agreed to and switched on */
+const tipReady = () => !!(CFG.tip.on && tipOk() && tipNow());
+const tipName = () => String(CFG.tip.name || '').trim();
+const tipMsg = () => String(CFG.tip.msg || '').trim() || TIP_DEF.msg;
+function tipQr() { const l = tipNow(); if (!l) return null; if (TIP.qrFor !== l) { TIP.qr = qrMake(l); TIP.qrFor = l; TIP.cards.clear(); } return TIP.qr; }
+
+/* ---------- the card: an open guitar case with the code inside ---------- */
+function tipRound(g, x, y, w, hh, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + hh, r); g.arcTo(x + w, y + hh, x, y + hh, r); g.arcTo(x, y + hh, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
+/** write text on one line, made smaller (down to min) to fit w, and cut with … if it still does not fit */
+function tipFit(g, txt, x, y, w, px, min, weight) {
+  let s = Math.round(px); g.font = `${weight || 700} ${s}px system-ui,-apple-system,Segoe UI,Roboto,sans-serif`;
+  while (s > min && g.measureText(txt).width > w) { s--; g.font = `${weight || 700} ${s}px system-ui,-apple-system,Segoe UI,Roboto,sans-serif`; }
+  let t = txt; while (t.length > 1 && g.measureText(t).width > w) t = t.slice(0, -2) + '…';
+  g.fillText(t, x, y);
+}
+/** the card, px pixels tall (cached until the link, the words or the size change) */
+function tipCard(px) {
+  const qr = tipQr(); if (!qr) return null; px = Math.round(px);
+  const key = [TIP.qrFor, tipName(), tipMsg(), px].join('|'), had = TIP.cards.get(key); if (had) return had;
+  const cw = Math.round(px * .78), cv = document.createElement('canvas'); cv.width = cw; cv.height = px;
+  const g = cv.getContext('2d');
+  const li = px * .03, pad = px * .07, q = cw - pad * 2, top = px * .17;
+  /* the case: a dark shell, then the plush lining */
+  tipRound(g, 0, 0, cw, px, px * .08); g.fillStyle = '#1b130d'; g.fill(); g.lineWidth = Math.max(1, px * .008); g.strokeStyle = '#4a3523'; g.stroke();
+  const lg = g.createLinearGradient(0, 0, 0, px); lg.addColorStop(0, '#8e2546'); lg.addColorStop(1, '#4f1026');
+  tipRound(g, li, li, cw - li * 2, px - li * 2, px * .06); g.fillStyle = lg; g.fill();
+  g.textAlign = 'center'; g.textBaseline = 'alphabetic'; g.fillStyle = '#f7c95a';
+  tipFit(g, tipMsg(), cw / 2, top - px * .045, cw - pad * 2, px * .062, Math.max(8, px * .034), 800);
+  /* the code, black on white, with a quiet zone of three modules */
+  tipRound(g, pad, top, q, q, q * .05); g.fillStyle = '#fff'; g.fill();
+  /* whole pixels per module when there is room (every module the same size); on a small card a fraction, so the code still fills its panel */
+  const fit = q / (qr.n + 6), cell = fit >= 4 ? Math.floor(fit) : fit, side = cell * qr.n, ox = Math.round(pad + (q - side) / 2), oy = Math.round(top + (q - side) / 2);
+  qrDraw(g, qr, ox, oy, cell); cv.qrBox = { x: ox, y: oy, cell };
+  const nm = tipName(), y1 = top + q + px * .068;
+  g.fillStyle = '#fff'; tipFit(g, nm || tipShort(TIP.qrFor), cw / 2, y1, cw - pad * 2, px * .056, Math.max(8, px * .03), 800);
+  if (nm) { g.fillStyle = 'rgba(255,255,255,.72)'; tipFit(g, tipShort(TIP.qrFor), cw / 2, y1 + px * .058, cw - pad * 2, px * .036, Math.max(7, px * .025), 600); }
+  if (TIP.cards.size >= 4) TIP.cards.delete(TIP.cards.keys().next().value);
+  TIP.cards.set(key, cv); return cv;
+}
+/** draw the case on a picture W×H. where: 'vis' | 'aud' | 'stage'; avoid: rectangles [x, y, w, h] the case should not cover (it moves up or down to clear them) */
+function tipDraw(g, W, H, where, avoid) {
+  const sh = where === 'stage' ? CFG.tip.where.stage : CFG.tip.where.vis;
+  const want = tipReady() && sh && !(CFG.tip.when === 'stopped' && T.playing) ? 1 : 0;
+  let a = TIP.a[where] || 0; a += (want - a) * (want ? .12 : .2); if (Math.abs(want - a) < .02) a = want; TIP.a[where] = a;
+  if (a < .02) return null;
+  const base = Math.min(H, W * .5625), sz = (TIP_SIZES.find(s => s[0] === CFG.tip.size) || TIP_SIZES[1])[2], px = Math.round(base * sz); if (px < 64) return null;
+  let card; try { card = tipCard(px); } catch (e) { return null; } if (!card) return null;
+  const cw = card.width, ch = card.height, m = Math.round(base * .035), c = CFG.tip.corner || 'br', right = c[1] === 'r', bottom = c[0] === 'b';
+  const x = right ? W - m - cw : m; let y = bottom ? H - m - ch : m;
+  (avoid || []).forEach(r => { if (r && x < r[0] + r[2] && x + cw > r[0] && y < r[1] + r[3] && y + ch > r[1]) y = bottom ? r[1] - m * .5 - ch : r[1] + r[3] + m * .5; });
+  y = clamp(y, 0, Math.max(0, H - ch));
+  g.save(); g.globalAlpha = a; g.globalCompositeOperation = 'source-over'; g.shadowColor = 'rgba(0,0,0,.45)'; g.shadowBlur = px * .05; g.drawImage(card, Math.round(x), Math.round(y)); g.restore();
+  return [x, y, cw, ch];
+}
+/** what the Visuals draw on top (the small neck, the voice ribbon, the note and chord read-out), so the case can step around them */
+function tipVisAvoid(W, H, mode) {
+  const r = [], perf = document.body.classList.contains('perform-on'), bare = vzBare(mode);
+  if (CFG.vzNeck !== false && !perf && !bare) r.push(neckRect(W, H));
+  if (CFG.vzRibbon && !perf && typeof voxRect === 'function') r.push(voxRect(W, H));
+  if (!bare) r.push([0, 0, W * .32, H * .13 + 28 + Math.round(20 * Math.min(W, H * 2) / 900)]);
+  return r;
+}
+/** what the Stage's own words cover, so the case can step around them (part 13's HUD, or the lower third) */
+function tipStageAvoid(W, H, sc) {
+  const ov = (sc && sc.ov) || {}, u = Math.min(W, H * 1.6), r = [];
+  if (typeof pbOn === 'function' && pbOn()) { if (STG.pb.lower && typeof pbLowerGeom === 'function') { const lr = pbLowerGeom(W, H); r.push([lr.x, lr.y, lr.w, lr.h]); } return r; }
+  if (STG.hud === false) return r;
+  if (ov.tuner) r.push([W * .97 - u * .3, H * .93 - u * .06, u * .3, u * .07]);
+  if (ov.info || ov.beat) r.push([W * .97 - u * .45, 0, u * .45, H * .2]);
+  if (ov.chord) { const sz = u * .14; r.push([W * .04, H * .84 - sz * 1.9, sz * 3.4, sz * 2]); }
+  return r;
+}
+
+/* ---------- the share page ---------- */
+const tipShareCss = () => tipReady() && CFG.tip.where.share ? '.tip{display:flex;gap:16px;align-items:center;margin:18px 0;padding:14px;border-radius:16px;background:linear-gradient(#8e2546,#4f1026);border:4px solid #1b130d;color:#fff}.tip .tq{flex:0 0 132px;background:#fff;border-radius:10px;padding:4px;line-height:0}.tip .tq svg{width:100%;height:auto}.tip b{display:block;color:#f7c95a;font-size:18px}.tip a{display:inline-block;margin-top:8px;padding:8px 14px;border-radius:999px;background:#f7c95a;color:#1b130d;font-weight:800;text-decoration:none}.tip small{display:block;margin-top:8px;opacity:.75;font-size:12px;line-height:1.4}@media print{.tip{background:#fff;color:#000;border-color:#000}.tip b{color:#000}.tip a{background:none;color:#000;padding:0}}' : '';
+function tipShareHtml() {
+  if (!tipReady() || !CFG.tip.where.share) return '';
+  const l = tipLink(CFG.tip.link), nm = tipName(), who = nm || 'the artist';
+  return '<aside class="tip" aria-label="Tip ' + shareEsc(who) + '"><div class="tq">' + qrSvg(tipQr(), 3) + '</div><div><b>' + shareEsc(tipMsg()) + '</b>' + (nm ? shareEsc(nm) + '<br>' : '') +
+    '<a href="' + shareEsc(l) + '" target="_blank" rel="noopener noreferrer nofollow">Tip ' + shareEsc(who) + ' · ' + shareEsc(tipShort(l)) + ' ↗</a>' +
+    '<small>Tips go straight to ' + shareEsc(who) + ' through the service they chose. the-daily.studio is not part of the payment and takes nothing.</small></div></aside>';
+}
+
+/* ---------- a sign for a real guitar case, and a picture to post ---------- */
+function tipPrint() {
+  if (!tipLink(CFG.tip.link)) return toast('Add your tip link first.', 'warn');
+  const old = document.getElementById('printSheet'); if (old) old.remove();
+  const l = tipLink(CFG.tip.link), nm = tipName();
+  const d = h('div', { id: 'printSheet', class: 'tip-sign', 'aria-hidden': 'true' });
+  d.innerHTML = '<div class="ts-m">' + shareEsc(tipMsg()) + '</div>' + (nm ? '<h1>' + shareEsc(nm) + '</h1>' : '') + '<div class="ts-q">' + qrSvg(tipQr(), 4) + '</div><div class="ts-l">' + shareEsc(tipShort(l)) + '</div><div class="ts-n">Scan with your phone’s camera. Tips go straight to ' + shareEsc(nm || 'the artist') + '.</div>';
+  document.body.append(d); document.body.classList.add('printing-sheet');
+  const done = () => { document.body.classList.remove('printing-sheet'); const x = document.getElementById('printSheet'); if (x) x.remove(); window.removeEventListener('afterprint', done); };
+  window.addEventListener('afterprint', done); setTimeout(() => { try { window.print(); } catch (e) { done(); } if (!('onafterprint' in window)) setTimeout(done, 2000); }, 60);
+}
+function tipPng() {
+  let c; try { c = tipCard(1200); } catch (e) { c = null; } if (!c) return toast('Add your tip link first.', 'warn');
+  c.toBlob(b => { if (!b) return toast('Could not make the picture.', 'bad'); download('tip-jar_' + (tipName() || 'qr').replace(/\W+/g, '_') + '.png', b); toast('Saved the tip jar as a picture. Post it, or add it to a video.', 'ok'); }, 'image/png');
+  TIP.cards.clear();   /* the 1200-pixel copy is not kept */
+}
+
+/* ---------- setting it up ---------- */
+/** the 🎸 Tips button for a toolbar (lit while the case is showing); cls: the bar's button class. Hidden until the tip jar is set up in Creator Studio */
+function tipBtn(cls) {
+  return h('button', { class: (cls || 'btn sm') + (tipReady() ? ' on' : ''), 'data-tipbtn': '1', title: 'Tip jar: a QR code your audience can scan to tip you', style: { display: tipSetUp() ? '' : 'none' }, onclick: () => tipOpen() }, '🎸 Tips');
+}
+const tipSync = () => { $$('[data-tipbtn]').forEach(b => { b.classList.toggle('on', tipReady()); b.style.display = tipSetUp() ? '' : 'none'; }); TIP.cards.clear(); if (typeof goalSync === 'function') goalSync(); };
+function tipOpen() {
+  const T0 = CFG.tip, save = () => { saveCfg(); tipSync(); paint(); };
+  const prev = h('canvas', { class: 'tip-prev', width: 234, height: 300, role: 'img', 'aria-label': 'How the tip jar looks' });
+  const msgLine = h('div', { class: 'tiny', id: 'tipLinkNote', 'aria-live': 'polite' });
+  const onChk = h('input', { type: 'checkbox', id: 'tipOn', checked: !!T0.on, onchange: e => { T0.on = e.target.checked; save(); } });
+  const agree = h('input', { type: 'checkbox', id: 'tipAgree', checked: tipOk(), onchange: e => { if (e.target.checked) CFG.tipOk = TIP_TERMS; else delete CFG.tipOk; save(); } });
+  const linkIn = h('input', { class: 'in', id: 'tipLink', type: 'url', inputmode: 'url', autocomplete: 'off', spellcheck: false, maxlength: 300, value: T0.link || '', placeholder: 'ko-fi.com/you · paypal.me/you · @venmo-name · $cashtag',
+    oninput: e => { T0.link = e.target.value.trim(); save(); } });
+  const test = h('button', { class: 'btn sm', id: 'tipTest', title: 'Open your link in a new tab to check it goes to the right place', onclick: () => { const l = tipLink(T0.link); if (l) window.open(l, '_blank', 'noopener,noreferrer'); } }, 'Test the link ↗');
+  const nameIn = h('input', { class: 'in', id: 'tipName', maxlength: 48, value: T0.name || '', placeholder: S.artist || 'Your name or band', oninput: e => { T0.name = e.target.value; save(); } });
+  const msgIn = h('input', { class: 'in', id: 'tipMsg', maxlength: 48, value: T0.msg || '', placeholder: TIP_DEF.msg, oninput: e => { T0.msg = e.target.value; save(); } });
+  const where = (k, label) => h('label', { class: 'chk' }, h('input', { type: 'checkbox', 'data-tw': k, checked: T0.where[k] !== false, onchange: e => { T0.where[k] = e.target.checked; save(); } }), label);
+  const seg = (opts, k, id) => h('div', { class: 'seg', role: 'group', id }, opts.map(([v, t]) => h('button', { type: 'button', class: T0[k] === v ? 'on' : '', 'data-v': v, onclick: e => { T0[k] = v; $$('button', e.currentTarget.parentNode).forEach(b => b.classList.toggle('on', b === e.currentTarget)); save(); } }, t)));
+  function paint() {
+    const l = tipLink(T0.link), ready = tipReady();
+    msgLine.textContent = l === null ? 'That does not look like a web address. Use the https link of your tip page, your @venmo-name or your $cashtag.' : l ? 'The code opens ' + l : 'Paste the link people should go to.';
+    msgLine.style.color = l === null ? 'var(--bad)' : ''; test.disabled = !l; onChk.disabled = !l || !tipOk();
+    if (onChk.disabled && T0.on) onChk.checked = false; else onChk.checked = !!T0.on;
+    $$('[data-tipneed]', box).forEach(b => { b.disabled = !l; });
+    stat.textContent = ready ? 'Showing' + (T0.where.vis ? ' · Visuals and stage videos' : '') + (T0.where.stage ? ' · Stage' : '') + (T0.where.share ? ' · share pages' : '') : !l ? 'Add your link to start.' : !tipOk() ? 'Tick the box above to switch it on.' : 'Off.';
+    const g = prev.getContext('2d'); g.clearRect(0, 0, prev.width, prev.height);
+    let c = null; try { c = l ? tipCard(prev.height) : null; } catch (e) { c = null; }
+    if (c) g.drawImage(c, Math.round((prev.width - c.width) / 2), 0); else { g.fillStyle = 'rgba(128,128,128,.25)'; tipRound(g, 0, 0, prev.width, prev.height, 18); g.fill(); g.fillStyle = 'rgba(128,128,128,.9)'; g.font = '600 13px system-ui,sans-serif'; g.textAlign = 'center'; g.fillText('Your code shows here', prev.width / 2, prev.height / 2); }
+  }
+  const stat = h('div', { class: 'tiny muted', id: 'tipStatus' });
+  const box = h('div', { class: 'tip-set' },
+    h('p', { class: 'tiny muted', style: { margin: '0 0 10px', lineHeight: 1.5 } }, 'Put your tip link on the stage, in your videos and on your share pages as a QR code in an open guitar case. Your audience scans it with a phone camera and tips you directly. It stays off until you switch it on here; once it is set up, a 🎸 Tips button in the Visuals and Stage bars brings you back.'),
+    h('div', { class: 'tip-grid' },
+      h('div', { class: 'tip-f' },
+        pField('Your tip link', linkIn), h('div', { class: 'row', style: { gap: '8px', alignItems: 'center', margin: '-4px 0 8px', flexWrap: 'wrap' } }, test, msgLine),
+        pField('Your name or band (optional)', nameIn), pField('Message', msgIn),
+        h('label', { class: 'chk tip-agree' }, agree, ' This is my own tip or payment link. Tips go straight from my audience to me through the service I chose. the-daily.studio is not part of the payment, takes nothing, and is not responsible for the service, the payments or any taxes on them; I am. ', h('a', { href: 'legal/#terms', target: '_blank', rel: 'noopener' }, 'Terms of use')),
+        h('label', { class: 'chk', style: { fontWeight: 700 } }, onChk, ' Show the tip jar'), stat,
+        h('h5', { style: { margin: '12px 0 4px' } }, 'Where'),
+        where('vis', 'On the Visuals and in stage videos (and the Audience view)'), where('stage', 'On the Stage, the projector and the pop-out window'), where('share', 'On share pages (a button and a code)'),
+        h('div', { class: 'row', style: { gap: '8px', flexWrap: 'wrap', alignItems: 'center', marginTop: '8px' } },
+          pField('When', pSel([['always', 'All the time'], ['stopped', 'Only between songs (while stopped)']], T0.when, v => { T0.when = v; save(); })),
+          pField('Corner', pSel(TIP_CORNERS, T0.corner, v => { T0.corner = v; save(); }))),
+        h('div', { class: 'row', style: { gap: '8px', alignItems: 'center', marginTop: '6px' } }, h('span', { class: 'tiny muted' }, 'Size'), seg(TIP_SIZES.map(s => [s[0], s[1]]), 'size', 'tipSize'))),
+      h('div', { class: 'tip-side' }, prev,
+        h('button', { class: 'btn sm', id: 'tipPrint', 'data-tipneed': '1', title: 'A sign with a large code for your real guitar case or merch table', onclick: tipPrint }, '🖨 Print a sign'),
+        h('button', { class: 'btn sm', id: 'tipPng', 'data-tipneed': '1', title: 'The tip jar as a picture to post or add to a video', onclick: tipPng }, '⤓ Save as a picture'))),
+    h('p', { class: 'tiny muted', style: { margin: '10px 0 0', lineHeight: 1.5 } }, 'The code is made on this device. The studio never opens your link and never sees a payment. Anyone who scans it goes to the service you chose, under that service’s terms. AI agent tools cannot read or change your link.'));
+  pdlg('tipjar', 'TIP JAR', box, { wide: true, onclose: () => { tipSync(); if (typeof renderStageUI === 'function') renderStageUI(); } });
+  paint();
 }
 
 /* >>> parts/40-sync.js */
@@ -8594,7 +8958,7 @@ function fxTempo() { if (E.fxB && E.ctx) E.fxB.dl.delayTime.setTargetAtTime(clam
 bus.on('bpm', fxTempo); bus.on('song', fxTempo);
 
 function fxStrip(dest, o = {}) {
-  const c = E.ctx, B = fxBuses(), inN = gn(1), lo = bq('lowshelf', 110, .7), mid = bq('peaking', 1200, .8), hi = bq('highshelf', 7000, .7), cmp = c.createDynamicsCompressor();
+  const c = E.ctx, B = fxBuses(), inN = gn(1), lo = bq('lowshelf', 110, .7), mid = bq('peaking', 1200, .8), hi = bq('highshelf', 7000, .7), cmp = mkComp(c);
   const mk = gn(1), cP = gn(0), cB = gn(1), sum = gn(1), out = gn(1), sR = gn(0), sD = gn(0); cmp.knee.value = 10; cmp.attack.value = .012; cmp.release.value = .2;
   chainN(inN, lo, mid, hi); hi.connect(cB); cB.connect(sum); hi.connect(cmp); cmp.connect(mk); mk.connect(cP); cP.connect(sum);
   let pn = null; if (o.pan) { pn = c.createStereoPanner(); sum.connect(pn); pn.connect(out); } else sum.connect(out);
@@ -8607,7 +8971,7 @@ function fxStrip(dest, o = {}) {
       tc(sR.gain, clamp(+f.rev || 0, 0, 1) * .9, .02); tc(sD.gain, clamp(+f.dly || 0, 0, 1) * .8, .02);
     },
     pan(v) { if (pn) tc(pn.pan, clamp(+v || 0, -1, 1), .02); },
-    dispose() { try { out.disconnect(); } catch (e) { } }
+    dispose() { try { out.disconnect(); } catch (e) { } if (cmp.end) cmp.end(); }
   };
 }
 /** apply every strip that exists (band lanes, the backing track and its stems) */
@@ -8646,7 +9010,7 @@ const MST_PRE = [
   ['bright', 'Bright', 'Open top end · −14 LUFS', { lo: -.5, hi: 2.5, comp: .3, tgt: -14 }],
   ['loud', 'Loud', 'Tight and dense · −10 LUFS', { lo: 1, hi: 1.5, comp: .7, tgt: -10 }]];
 function mstBuild() {
-  if (E.mst && E.mst.ctx === E.ctx) return E.mst; const c = E.ctx, lo = bq('lowshelf', 120, .7), hi = bq('highshelf', 6500, .7), cmp = c.createDynamicsCompressor(), mk = gn(1), cP = gn(0), cB = gn(1), sum = gn(1), inN = gn(1);
+  if (E.mst && E.mst.ctx === E.ctx) return E.mst; const c = E.ctx, lo = bq('lowshelf', 120, .7), hi = bq('highshelf', 6500, .7), cmp = mkComp(c), mk = gn(1), cP = gn(0), cB = gn(1), sum = gn(1), inN = gn(1);
   cmp.knee.value = 12; cmp.attack.value = .02; cmp.release.value = .25; chainN(inN, lo, hi); hi.connect(cB); cB.connect(sum); hi.connect(cmp); cmp.connect(mk); mk.connect(cP); cP.connect(sum);
   return (E.mst = { ctx: c, in: inN, out: sum, lo, hi, cmp, mk, cP, cB });
 }
@@ -12039,6 +12403,7 @@ const GOALS = [
       ['gtCam', '📷 Webcam', 'You in the picture, in front of or framed by the visuals', () => vzCamPress(), () => !!VZ.cam],
       ['gtFx', '✨ Overlays', 'How the camera sits with the visuals: dimmed behind, framed, or you in front', b => popover(b, h('div', { style: { display: 'grid', gap: '8px', minWidth: '240px' } }, h('h5', {}, 'Overlays'), camFxBox(), h('div', { class: 'tiny muted' }, 'Pick a look in the Visuals panel for what moves behind you.')))],
       ['gtThumb', '🖼 Thumbnail', 'Save a 1280 × 720 picture of the stage with the song title, for the post', () => kitThumb()],
+      ['gtTip', '🎸 Tip jar', 'Let your audience tip you: your own tip link as a QR code on the stage, in your videos and on share pages. Off until you set it up', () => tipOpen(), () => tipReady()],
       ['gtExp', '⇩ Export', 'Audio, the share page, the lyric sheet and more', () => dockGo('exp')]
     ] },
   { id: 'practice', ico: '🎼', name: 'Practice', layout: 'Practice', step: 'create', hue: '#1c9a63', next: ['performer', 'Perform it'],
@@ -12537,6 +12902,7 @@ function audDraw() {
   }
   g.globalAlpha = 1; g.fillStyle = '#04030a'; g.fillRect(0, 0, W, H);
   try { g.drawImage(src, 0, 0, W, H); } catch (er) { }
+  if (!copy) tipDraw(g, W, H, 'aud', tipVisAvoid(W, H, VZ.mode));   /* its own copy of the show: the tip jar as on the Visuals (a copy of the Visuals already has it) */
   if (!CAM.on) { g.font = `600 ${Math.max(10, Math.round(H * .045))}px system-ui,sans-serif`; g.textAlign = 'center'; g.fillStyle = 'rgba(255,255,255,.75)'; g.fillText('Camera off · you are not in the picture', W / 2, H * .92); g.textAlign = 'left'; }
 }
 

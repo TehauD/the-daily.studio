@@ -38,6 +38,7 @@ function audDraw() {
   }
   g.globalAlpha = 1; g.fillStyle = '#04030a'; g.fillRect(0, 0, W, H);
   try { g.drawImage(src, 0, 0, W, H); } catch (er) { }
+  if (!copy) tipDraw(g, W, H, 'aud', tipVisAvoid(W, H, VZ.mode));   /* its own copy of the show: the tip jar as on the Visuals (a copy of the Visuals already has it) */
   if (!CAM.on) { g.font = `600 ${Math.max(10, Math.round(H * .045))}px system-ui,sans-serif`; g.textAlign = 'center'; g.fillStyle = 'rgba(255,255,255,.75)'; g.fillText('Camera off · you are not in the picture', W / 2, H * .92); g.textAlign = 'left'; }
 }
 

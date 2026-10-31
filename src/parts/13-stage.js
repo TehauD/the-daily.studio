@@ -108,6 +108,7 @@ function stageFrame(ts) {
   if (sc.flash > 0 && SG.flash > .01) { g.fillStyle = 'rgba(255,255,255,' + (SG.flash * sc.flash * lxComfort().flash * LX.gov).toFixed(3) + ')'; g.fillRect(0, 0, w, hh); SG.flash *= .88; }
   if (sc.mode === 'concert' && !pbSolid()) lxGovMeasure(SG.cv, performance.now());   // the governor looks at the finished picture
   if (pbOn()) { if (STG.pb.lower) drawLowerThird(g, w, hh, info, C); } else if (STG.hud !== false) drawStageHUD(g, w, hh, sc, info, C);
+  tipDraw(g, w, hh, 'stage', tipStageAvoid(w, hh, sc));   /* the tip jar (part 39b), for the room and the projector */
   if (SG.freezeReq) { const f = SG.frz || (SG.frz = document.createElement('canvas')); f.width = w; f.height = hh; f.getContext('2d').drawImage(SG.cv, 0, 0); SG.freeze = true; SG.freezeReq = false; }
   shOutFrame(g, w, hh);   // master level, blackout, mirror, flip
   if (SG.idle && ts - SG.idleT > 2800 && document.fullscreenElement === wrap) wrap.classList.add('idle');
@@ -183,7 +184,7 @@ function stagePop() {
 function renderStageUI() {
   if (!SG.hudbar) return; const sc = scn();
   SG.hudbar.innerHTML = ''; STG.scenes.forEach((s, i) => SG.hudbar.append(h('button', { class: 'sbtn' + (i === STG.cur ? ' on' : ''), title: s.name + ' — key ' + (i + 1) + ' · MIDI note ' + (48 + i), onclick: () => stageScene(i) }, (i + 1) + ' ' + s.name)));
-  SG.hudbar.append(h('span', { style: { flex: 1 } }), ...(document.body.dataset.form && document.body.dataset.form !== 'desktop' ? [h('button', { class: 'sbtn', title: 'Fill the screen', onclick: stageFull }, SG.wrap.classList.contains('pfs') ? '✕ Exit' : '⛶ Full')] : []), vzAdjustBtn('sbtn'), h('button', { class: 'sbtn' + (SG.boOn ? ' on' : ''), id: 'stgBo', title: 'Fade the output to black and back (key 0)', 'aria-pressed': String(!!SG.boOn), onclick: () => { shBlackout(); renderStageUI(); } }, '■ Blackout'), h('button', { class: 'sbtn', onclick: () => { STG.hud = !(STG.hud !== false); saveStg(); renderStageUI(); } }, STG.hud !== false ? 'HUD on' : 'HUD off'), h('button', { class: 'sbtn', title: 'Separate window for a projector / second screen', onclick: stagePop }, '⧉ Pop-out'), h('button', { class: 'sbtn', onclick: stageFull }, '⛶ Fullscreen'));
+  SG.hudbar.append(h('span', { style: { flex: 1 } }), ...(document.body.dataset.form && document.body.dataset.form !== 'desktop' ? [h('button', { class: 'sbtn', title: 'Fill the screen', onclick: stageFull }, SG.wrap.classList.contains('pfs') ? '✕ Exit' : '⛶ Full')] : []), vzAdjustBtn('sbtn'), tipBtn('sbtn'), h('button', { class: 'sbtn' + (SG.boOn ? ' on' : ''), id: 'stgBo', title: 'Fade the output to black and back (key 0)', 'aria-pressed': String(!!SG.boOn), onclick: () => { shBlackout(); renderStageUI(); } }, '■ Blackout'), h('button', { class: 'sbtn', onclick: () => { STG.hud = !(STG.hud !== false); saveStg(); renderStageUI(); } }, STG.hud !== false ? 'HUD on' : 'HUD off'), h('button', { class: 'sbtn', title: 'Separate window for a projector / second screen', onclick: stagePop }, '⧉ Pop-out'), h('button', { class: 'sbtn', onclick: stageFull }, '⛶ Fullscreen'));
   const E_ = SG.editor; E_.innerHTML = ''; E_.append(shcRoot());   // the Show setup console (part 59)
 }
 function buildStagePane() {

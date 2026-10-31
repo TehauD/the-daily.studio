@@ -27,7 +27,7 @@ function fxTempo() { if (E.fxB && E.ctx) E.fxB.dl.delayTime.setTargetAtTime(clam
 bus.on('bpm', fxTempo); bus.on('song', fxTempo);
 
 function fxStrip(dest, o = {}) {
-  const c = E.ctx, B = fxBuses(), inN = gn(1), lo = bq('lowshelf', 110, .7), mid = bq('peaking', 1200, .8), hi = bq('highshelf', 7000, .7), cmp = c.createDynamicsCompressor();
+  const c = E.ctx, B = fxBuses(), inN = gn(1), lo = bq('lowshelf', 110, .7), mid = bq('peaking', 1200, .8), hi = bq('highshelf', 7000, .7), cmp = mkComp(c);
   const mk = gn(1), cP = gn(0), cB = gn(1), sum = gn(1), out = gn(1), sR = gn(0), sD = gn(0); cmp.knee.value = 10; cmp.attack.value = .012; cmp.release.value = .2;
   chainN(inN, lo, mid, hi); hi.connect(cB); cB.connect(sum); hi.connect(cmp); cmp.connect(mk); mk.connect(cP); cP.connect(sum);
   let pn = null; if (o.pan) { pn = c.createStereoPanner(); sum.connect(pn); pn.connect(out); } else sum.connect(out);
@@ -40,7 +40,7 @@ function fxStrip(dest, o = {}) {
       tc(sR.gain, clamp(+f.rev || 0, 0, 1) * .9, .02); tc(sD.gain, clamp(+f.dly || 0, 0, 1) * .8, .02);
     },
     pan(v) { if (pn) tc(pn.pan, clamp(+v || 0, -1, 1), .02); },
-    dispose() { try { out.disconnect(); } catch (e) { } }
+    dispose() { try { out.disconnect(); } catch (e) { } if (cmp.end) cmp.end(); }
   };
 }
 /** apply every strip that exists (band lanes, the backing track and its stems) */
@@ -79,7 +79,7 @@ const MST_PRE = [
   ['bright', 'Bright', 'Open top end · −14 LUFS', { lo: -.5, hi: 2.5, comp: .3, tgt: -14 }],
   ['loud', 'Loud', 'Tight and dense · −10 LUFS', { lo: 1, hi: 1.5, comp: .7, tgt: -10 }]];
 function mstBuild() {
-  if (E.mst && E.mst.ctx === E.ctx) return E.mst; const c = E.ctx, lo = bq('lowshelf', 120, .7), hi = bq('highshelf', 6500, .7), cmp = c.createDynamicsCompressor(), mk = gn(1), cP = gn(0), cB = gn(1), sum = gn(1), inN = gn(1);
+  if (E.mst && E.mst.ctx === E.ctx) return E.mst; const c = E.ctx, lo = bq('lowshelf', 120, .7), hi = bq('highshelf', 6500, .7), cmp = mkComp(c), mk = gn(1), cP = gn(0), cB = gn(1), sum = gn(1), inN = gn(1);
   cmp.knee.value = 12; cmp.attack.value = .02; cmp.release.value = .25; chainN(inN, lo, hi); hi.connect(cB); cB.connect(sum); hi.connect(cmp); cmp.connect(mk); mk.connect(cP); cP.connect(sum);
   return (E.mst = { ctx: c, in: inN, out: sum, lo, hi, cmp, mk, cP, cB });
 }

@@ -289,6 +289,11 @@ A two-input interface (a Focusrite Scarlett Solo / 2i2 / 4i4, for example) shows
 3. Arm both lanes with ● (guitar and vocal), then press <kbd>R</kbd>. You get two takes, aligned to each other and to the band. If only one input has anything on it (a microphone in input 1 and nothing in input 2, say), only that one is kept and a message says the other was silent. To record one lane only, click the ● of the other to turn it off.
 4. **Hear myself** monitors both the guitar and the microphone; **Hear vocal** turns the microphone alone on or off; use headphones (or your interface's Direct Monitor with the app's monitor off) or the microphone will feed back. **Vocal polish** adds a 90 Hz high-pass and gentle compression.
 
+**Latency: hearing yourself in time (2.18).** What you hear through **Hear myself** is late by two things: the browser and your interface (usually 10–40 ms in a browser, which cannot use the interface's lowest-latency driver), and the app's own effects. The app's part is now **under 1 ms** for both the guitar and the voice: its compressors, amp and drive run with no look-ahead (before, the guitar came out about 21 ms late and the voice 12 ms). Takes stay in time with each other and with the band on playback and in exports, whatever the rig. To get the rest down:
+- For tracking, hear yourself through the interface's **Direct Monitor** (no delay at all) with the app's monitor off.
+- **Settings ▸ Audio engine ▸ Latency hint ▸ 0 (request minimum)**, and run **I/O ▸ Advanced ▸ Latency lab** so recordings land on the beat.
+- **Settings ▸ Audio engine ▸ Zero-delay effects** is on by default. Turning it off uses the browser's own compressor and oversampling instead (about 20 ms more on the guitar); takes are still kept in time.
+
 Browsers cannot reach more than the channels the operating system exposes for that device. A mono device (a webcam microphone, an input that only exposes one channel) cannot be split into guitar and vocal, and the-daily.studio says so when it detects that.
 
 ## Tab editor
@@ -664,6 +669,25 @@ Open the **◐** button (or Settings ▸ Customize appearance…; on a phone Mor
 - **Density, corners, surfaces and text size** change spacing, shape and depth.
 - **Typeface**: the default is Inter with Montserrat headings, built into the page. The other choices use fonts installed on your device (nothing is downloaded). **High contrast** strengthens text and borders. **Colour-blind safe** swaps charts, meters, visuals and status lights to a palette that stays distinguishable for red–green and blue–yellow colour-blindness.
 - **Reset appearance** returns to the defaults.
+
+## Tip jar: let your audience tip you (2.17)
+
+**🎬 Creator Studio ▸ 🎸 Tip jar** puts your own tip link on screen as a QR code in a small open guitar case. Anyone with a phone camera can scan it and tip you directly. It is **off unless you set it up**: until then nothing about it appears anywhere else. Once it is set up, a **🎸 Tips** button appears in the Visuals and Stage bars so you can switch it on or off at a gig.
+
+1. **Paste your link**: a Ko-fi, PayPal.me, Venmo, Cash App, Buy Me a Coffee, Patreon or Bandcamp page, or any `https` address. `ko-fi.com/yourname` gets the `https://` added for you, a `@venmo-name` becomes your Venmo profile link (`venmo.com/u/…`) and a `$cashtag` becomes a Cash App link. Press **Test the link** to check it goes to the right place.
+2. Add **your name or band** and a short **message** if you like ("Enjoying the music? Leave a tip" is the default).
+3. **Confirm** that it is your own link and that the payment is between you, your audience and the service you chose. Then tick **Show the tip jar**.
+
+**Where it shows** (each can be turned off):
+- **On the Visuals**, so it is in every stage video you record, and in the Audience view.
+- **On the Stage**, so the room can scan it from the projector or the pop-out window. It steps around the chord, the tuner, the song info and the lower third.
+- **On share pages**, as a button and a code beside the player.
+
+**When, where and how big:** all the time, or only between songs (it fades out while the song plays); any corner; small, medium or large. Large suits a projector at the back of a room.
+
+**For a real guitar case:** **🖨 Print a sign** prints a page with a large code, your name and the link. **⤓ Save as a picture** saves the case as a PNG to post or put in a video.
+
+The code is made on your device and the studio never opens your link or sees a payment. The link is kept in this browser's settings, not in your songs or backups, and AI agent tools cannot read or change it.
 
 ## Your music, and what you share
 
