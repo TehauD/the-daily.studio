@@ -109,7 +109,7 @@ function chordSheetParse(text) {
     if (cl) {
       stats.chordLines++; ensure(); note(cl.items); cur.rows.push(cl);
       const nx = raw[i + 1], nxt = nx == null ? '' : nx.trim();
-      const words = nxt && !liHeader(nx) && !csChordLine(nx) && !csTabLine(nx) && !csMeta(nx) && !/^\s*\{/.test(nx);
+      const words = nxt && !liHeader(nx) && !csChordLine(nx) && !csTabLine(nx) && !csMeta(nx) && !/^\s*\{/.test(nx) && !csInline(nx);   // a line with its own [Am] chords is not put under this one
       if (words) { cur.lines.push(csMerge(l, nx, cl.items)); i++; }
       else cur.lines.push(csOnlyChords(cl.items) + (cl.rep > 1 ? ' (x' + cl.rep + ')' : ''));
       continue;

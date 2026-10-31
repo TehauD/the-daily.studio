@@ -2,6 +2,27 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.15.0 — 2026-10-31 — AI agents can use the studio; AI search welcome, AI training not
+
+### Added
+- **Agent tools (WebMCP)** (`src/parts/72-agent.js`). The studio offers 16 tools to an AI agent in the browser through `navigator.modelContext` (`registerTool`, or `provideContext` in earlier drafts), each with a description and a JSON input schema: `get_song`, `get_studio_state`, `get_key_chords`, `load_chord_sheet`, `set_song_details`, `transpose_song`, `edit_section`, `add_section`, `remove_section`, `set_band`, `transport`, `open_workspace`, `list_songs`, `open_song`, `export_song` and `undo`. Reading tools are marked read-only and `remove_section` destructive. The same tools are at `window.dailyStudio` for agents that drive pages with scripts.
+- They call the same functions as the buttons, check their input against the schema (a wrong key, an unknown chord or an unknown parameter gets a plain answer naming it), and every change is one undo step with a 🤖 note on screen. `transport` plays and stops but never records, and says when the browser needs a click before it can make sound.
+- **Never offered**: the microphone, the camera, recording, deleting songs and Settings.
+- **Settings ▸ Workflow ▸ Let AI agents in this browser use the studio** (on by default) withdraws the tools and refuses calls.
+- **Transpose the whole song** (`songTranspose`, used by `transpose_song`): bar chords, slash basses, the chords inline in the lyrics, the key and the tab. F#/Gb major and D#/Eb minor keep the sharps or flats the song already used.
+- `test/e2e-agent.cjs` (34 checks, with a stand-in `navigator.modelContext` in both its forms).
+
+### Changed
+- **robots.txt**: AI search and answer bots that cite and link back (OAI-SearchBot, ChatGPT-User, Claude-SearchBot, Claude-User, PerplexityBot, Perplexity-User) are named and allowed; crawlers that collect pages for AI training (GPTBot, ClaudeBot, anthropic-ai, Google-Extended, Applebot-Extended, CCBot, Meta-ExternalAgent, Bytespider, cohere-training-data-crawler, Diffbot) are asked to stay away. Search engines are unchanged. `verify:site` reads the robots groups and checks all three.
+- PRIVACY.md says what agents can and cannot do, and that what an agent does with the song text it reads is up to that agent.
+
+### Fixed
+- A chord line above a line that already has its own `[Am]` chords is kept as its own line, instead of being merged into it with the chords doubled.
+
+### Limits
+- WebMCP is new: browsers and agents that support it are few, and the API may still change; both of its current forms are handled. Tested in a headless browser with a stand-in, not with a real browser agent.
+- robots.txt is a request. Crawlers that ignore it are not stopped by it.
+
 ## 2.14.0 — 2026-10-31 — Paste a chord sheet and play it
 
 ### Added
