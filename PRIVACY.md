@@ -20,6 +20,7 @@ That sentence is a claim about how the software behaves, so this page also says 
 | Screen recordings (Teacher ▸ ⏺ Record screen) | Your browser asks which tab, window or screen to share; the picture, the studio's sound and (if you allow it) your microphone are recorded in the page | No | In memory for Studio Replay until you record another or close the page; saved only as a file you download |
 | Studio Replay, thumbnails and ↗ Share | The newest recording is played back from memory; a thumbnail is drawn in the page | No. **↗ Share** hands the file to your device's own share sheet, and only when you press it | Nowhere, unless you save it or pick an app to share it with |
 | Lesson notes (Teacher ▸ 📝 Lesson notes) | Typed and kept per song title | No | This browser's local storage (`fw.lessons`) |
+| What an AI agent in your browser reads or changes through the studio's tools (WebMCP) | The tools run in the page: they read the open song, load chord sheets, edit, play and stop | Not by the page. The agent is software you chose to run; see below | Changes go into your song like your own edits (and can be undone) |
 
 Clearing the site's data in your browser, or **Settings ▸ Data ▸ Reset…**, removes all of it. Browsers can also clear site data when disk space is low, so keep copies: **☰ Songs ▸ Back up all songs** makes one zip.
 
@@ -30,6 +31,14 @@ Clearing the site's data in your browser, or **Settings ▸ Data ▸ Reset…**,
 3. **Links you click.** GitHub, LinkedIn and The Daily open in a new tab only when you click them.
 
 Nothing else. The page cannot contact any other site: its security policy allows only this site plus the two hosts above, and the test below fails if anything else is attempted.
+
+## AI agents in your browser
+
+The studio offers its main actions as tools for an AI agent running in your browser (WebMCP, `navigator.modelContext`; also `window.dailyStudio`): reading the song, loading a chord sheet, changing the key or tempo, editing sections, setting the band, playing and stopping, and exporting text. The tools run inside the page and send nothing anywhere. They cannot reach the microphone, the camera, recording, your other files, deleting songs or Settings. Every change an agent makes shows a 🤖 note and can be undone.
+
+An agent is software you run, and it usually works with an AI service. When it reads your song through these tools (title, chords, lyrics), what it does with that text, including sending it to its AI provider, is up to that agent and its provider's terms, not this page. To stop agents using the studio, turn off **Settings ▸ Workflow ▸ Let AI agents in this browser use the studio**.
+
+**Crawlers.** `robots.txt` lets search engines and AI search or answer services (which link back to the page) read the public pages, and asks crawlers that only collect pages for training AI models to stay away. That is a request: well-behaved crawlers follow it.
 
 ## What is kept, and for how long
 

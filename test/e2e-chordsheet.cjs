@@ -83,6 +83,8 @@ suite('e2e-chordsheet', async t => {
   ok(c.lyr === '[Am]Fold the [F]page in [C]two', 'the words keep their inline chords');
   const guess = await p.evaluate(() => { const D = window.__daily; return D.chordSheetSong(D.chordSheetParse('[Verse]\nG       C\nWalking down the road\n[Chorus]\nC          G\nsing it out loud... sing it all night\nD    G\nLa la'), { per: 1 }).title; });
   ok(guess === 'Sing it out loud', 'with no title in the sheet, the first line of the chorus is offered as the title (' + guess + ')');
+  const mix = await p.evaluate(() => { const D = window.__daily, s = D.chordSheetSong(D.chordSheetParse('[Chorus]\nA        E\n[A]Hold on, the [E]tide'), { per: 1 }); return s.sections[0].lyrics; });
+  ok(mix === '[A] [E]\n[A]Hold on, the [E]tide', 'a chord line above a line with its own [A] chords stays its own line (no doubled chords): ' + JSON.stringify(mix));
   ok(await p.evaluate(() => !window.__daily.chordSheetLike('[Verse 1]\nJust some words here\nAnd some more words\n\n[Chorus]\nNo chords at all')), 'words without chords stay a lyric import');
 
   /* ---- the dialog: paste, preview, load as a new song ---- */

@@ -69,6 +69,13 @@ ok(known.size === PAGES.length, 'every guide page has its own title');
   const sm = rd('sitemap.xml'), locs = [...sm.matchAll(/<loc>([^<]+)<\/loc>/g)].map(m => m[1]);
   ok([SITE.origin + '/', ...urls].every(u => locs.includes(u)), 'sitemap.xml lists the first page and every guide page');
   ok(locs.every(u => { const f = u.replace(SITE.origin, '').replace(/^\//, ''); return existsSync(join(d, f ? (f.endsWith('/') ? f + 'index.html' : f) : 'index.html')); }), 'every sitemap address exists in the site');
-  ok(/Sitemap: https:\/\/the-daily\.studio\/sitemap\.xml/.test(rd('robots.txt')) && !/Disallow: \/\s*$/m.test(rd('robots.txt')), 'robots.txt allows crawling and points to the sitemap');
+  /* robots.txt groups: consecutive User-agent lines share the rules under them */
+  const robots = rd('robots.txt'), groups = []; let g = null, rules = false;
+  robots.split('\n').map(l => l.replace(/#.*/, '').trim()).filter(Boolean).forEach(l => { const m = /^([A-Za-z-]+)\s*:\s*(.*)$/.exec(l); if (!m) return; const k = m[1].toLowerCase(), v = m[2].trim();
+    if (k === 'user-agent') { if (!g || rules) { g = { ua: [], dis: [] }; groups.push(g); rules = false; } g.ua.push(v.toLowerCase()); } else if (g && (k === 'disallow' || k === 'allow')) { rules = true; if (k === 'disallow' && v) g.dis.push(v); } });
+  const blocked = ua => { const gr = groups.find(x => x.ua.includes(ua.toLowerCase())) || groups.find(x => x.ua.includes('*')); return !!gr && gr.dis.includes('/'); };
+  ok(/Sitemap: https:\/\/the-daily\.studio\/sitemap\.xml/.test(robots) && !blocked('*') && !blocked('Googlebot') && !blocked('Bingbot'), 'robots.txt allows crawling and points to the sitemap');
+  ok(['OAI-SearchBot', 'ChatGPT-User', 'Claude-SearchBot', 'Claude-User', 'PerplexityBot'].every(u => !blocked(u)), 'robots.txt lets AI search and answer bots in');
+  ok(['GPTBot', 'ClaudeBot', 'Google-Extended', 'CCBot', 'Applebot-Extended', 'Meta-ExternalAgent'].every(blocked), 'robots.txt turns AI training crawlers away');
 }
 console.log(bad ? `\n${bad} check(s) failed` : '\nsite verified'); process.exit(bad ? 1 : 0);
