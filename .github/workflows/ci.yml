@@ -6,8 +6,8 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with: { node-version: 22 }
       - name: Committed build outputs are up to date
         run: npm run build:check
@@ -24,8 +24,8 @@ jobs:
     needs: verify
     continue-on-error: true   # browser audio on hosted runners can be flaky; drop this line once it is stable for you
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with: { node-version: 22 }
       - run: npm ci --no-audit --no-fund
       - run: npx playwright install --with-deps chromium

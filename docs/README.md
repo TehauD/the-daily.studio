@@ -4,6 +4,7 @@
 | --- | --- | --- |
 | [../README.md](../README.md) | everyone | what the app is, quick start, features |
 | [USER_GUIDE.md](USER_GUIDE.md) | players and writers | every panel, shortcuts, audio and the kill switch |
+| [AGENT_API.md](AGENT_API.md) | developers of AI agents | the agent tools (WebMCP and `window.dailyStudio`): answers, error codes, limits, versioning |
 | [AUDIO.md](AUDIO.md) | users, maintainers | audio permission model, Audio panel, kill switch |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | contributors | source layout, build model, subsystems |
 | [HOSTING.md](HOSTING.md) | whoever deploys | Cloudflare setup, domain, headers and CSP, other hosts |

@@ -15,6 +15,8 @@
 
 In sandboxes: `CHROMIUM_PATH=/path/to/chromium NO_SANDBOX=1 npm run test:e2e`. To run a few suites, name them: `node test/run.cjs clips midi` (any file whose name contains one of the words). `JOBS=3` sets how many run at once (default: half the processors, 1 to 4). `BASE_URL=https://…` tests a deployed site instead of the local server.
 
+The suites that time drawing (`e2e-concert`, `e2e-show`) run on their own after the others, so the frames they measure are not slowed by other browsers. A file that fails while others run beside it is run once more on its own: if it passes then, the run names it as **flaky (failed beside other tests, passed alone)** and does not fail; a real fault fails both times. `STRICT=1` makes a flaky file count as a failure. Checks that wait for the app (a start route opening, a section scrolling into view) poll until the condition holds rather than sleeping a fixed time, so a slow machine gets longer and a fast one does not wait.
+
 ## The browser suites
 
 Each file starts its **own** static server, its own Chromium (fake microphone and camera) and fresh browser contexts through `test/lib.cjs`, so nothing one file leaves behind (settings, songs, a stuck service worker) can change another, and they run side by side. Every file ends by asserting that the page produced no console errors, page errors or failed requests.

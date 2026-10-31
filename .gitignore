@@ -9,3 +9,6 @@ test/*.wav
 .vscode/
 .idea/
 dist/
+
+# unminified build for debugging (node scripts/build.mjs --pretty)
+index.debug.html

@@ -256,7 +256,8 @@ suite('e2e-show', async t => {
   await ev(() => { window.__daily.CFG.show.out.fps = 60; }); await wait(200); const n60 = await ticks();
   await ev(() => { window.__daily.CFG.show.out.fps = 30; }); await wait(200); const n30 = await ticks();
   await ev(() => { window.__daily.CFG.show.out.fps = 60; });
-  ok(n60 > 40 && n30 < n60 * .75 && n30 > 15, 'the frame rate can be held at 30 for a slower machine (' + n60 + ' → ' + n30 + ' frames in 1.5 s)');
+  /* the cap holds at about 30 frames a second (45 in 1.5 s, with room for timer jitter) and drawing goes on; when the machine itself draws well above 30, capping clearly cuts it. A slow machine that already draws near 30 is not a failure of the cap. */
+  ok(n30 >= 15 && n30 <= 52 && n60 >= n30 - 3 && (n60 < 60 || n30 < n60 * .85), 'the frame rate can be held at 30 for a slower machine (' + n60 + ' → ' + n30 + ' frames in 1.5 s)');
   await ev(() => [...document.querySelectorAll('#shc label.chk')].find(x => /Safe-frame/.test(x.textContent)).querySelector('input').click());
   ok(await ev(() => window.__daily.SG.wrap.classList.contains('guides') && window.__daily.CFG.show.out.safe === true && getComputedStyle(document.querySelector('.sg-guides')).display !== 'none'), 'safe-frame guides can be drawn over the screen (not the output)');
   await ev(() => [...document.querySelectorAll('#shc label.chk')].find(x => /Safe-frame/.test(x.textContent)).querySelector('input').click());

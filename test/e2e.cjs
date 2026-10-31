@@ -8,6 +8,8 @@ const fs = require('node:fs'), os = require('node:os'), path = require('node:pat
 const PORT = 8123 + Math.floor(Math.random() * 500), BASE = process.env.BASE_URL || `http://localhost:${PORT}/`;
 let fails = 0; const ok = (c, m) => { console.log((c ? 'ok   ' : 'FAIL ') + m); if (!c) fails++; };
 const wait = ms => new Promise(r => setTimeout(r, ms));
+/** read a value until it meets a condition (or the time runs out), instead of a fixed wait: the app may need longer on a busy machine */
+const until = async (read, test, ms = 15000) => { const end = Date.now() + ms; for (;;) { const v = await read(); if (test(v) || Date.now() > end) return v; await wait(200); } };
 function wav(L, sr) { const n = L.length, b = Buffer.alloc(44 + n * 2); b.write('RIFF', 0); b.writeUInt32LE(36 + n * 2, 4); b.write('WAVEfmt ', 8); b.writeUInt32LE(16, 16); b.writeUInt16LE(1, 20); b.writeUInt16LE(1, 22); b.writeUInt32LE(sr, 24); b.writeUInt32LE(sr * 2, 28); b.writeUInt16LE(2, 32); b.writeUInt16LE(16, 34); b.write('data', 36); b.writeUInt32LE(n * 2, 40); for (let i = 0; i < n; i++) b.writeInt16LE(Math.max(-32768, Math.min(32767, Math.round(L[i] * 30000))), 44 + i * 2); return b; }
 (async () => {
   let srv; if (!process.env.BASE_URL) { srv = spawn(process.execPath, [path.join(__dirname, '..', 'scripts', 'serve.mjs')], { env: { ...process.env, PORT: String(PORT) }, stdio: 'ignore' }); await wait(800); }
@@ -282,24 +284,25 @@ ok(he.length === 0, 'hum to song runs without script errors' + (he.length ? ' ' 
     { const lt = await dp.evaluate(() => document.querySelector('#left .side-tabs .tab.on').dataset.id); ok(lt === 'io', 'the left rail opens on I/O (audio and camera inputs) instead of Tones (' + lt + ')'); }
     await dp.evaluate(() => document.getElementById('bootGo').click()); await wait(3500);
     ok(await dp.evaluate(() => !window.__daily.CAM.on && window.__daily.CFG.route === 'studio' && !document.body.classList.contains('vz-imm')), 'Start and connect my input is the studio route: no camera, not full-screen');
-    await dp.evaluate(() => document.getElementById('vzGoStage').click()); await wait(4500);
-    const DS = await dp.evaluate(() => { const D = window.__daily; return { cam: D.CAM.on, vz: D.VZ.cam, mode: D.VZ.mode, tab: !!document.querySelector('#dock .tab.on[data-id="vis"]'), btn: document.getElementById('ioCamBtn') && document.getElementById('ioCamBtn').classList.contains('on'), look: D.CFG.camFx, route: D.CFG.route }; });
+    await dp.evaluate(() => document.getElementById('vzGoStage').click()); await wait(800);
+    const DS = await until(() => dp.evaluate(() => { const D = window.__daily; return { cam: D.CAM.on, vz: D.VZ.cam, mode: D.VZ.mode, tab: !!document.querySelector('#dock .tab.on[data-id="vis"]'), btn: document.getElementById('ioCamBtn') && document.getElementById('ioCamBtn').classList.contains('on'), look: D.CFG.camFx, route: D.CFG.route }; }), v => v.cam && v.vz && v.mode === 'hex' && v.tab && v.btn && v.look === 'person' && v.route === 'stage');
     ok(DS.cam && DS.vz && DS.mode === 'hex' && DS.tab && DS.btn && DS.look === 'person' && DS.route === 'stage', '🎥 Go on stage starts the camera backdrop on the default hexagons, me in front (' + JSON.stringify(DS) + ')');
-    await dp.evaluate(() => document.getElementById('ioCamBtn').click()); await wait(600);
+    await dp.evaluate(() => document.getElementById('ioCamBtn').click());
+    await until(() => dp.evaluate(() => !window.__daily.CAM.on && window.__daily.CFG.humStage === false), v => v, 8000);
     ok(await dp.evaluate(() => !window.__daily.CAM.on && window.__daily.CFG.humStage === false), 'the camera button in I/O turns it off and the choice is remembered');
     await dctx.close(); }
   // first run: one panel on the stage, no second welcome dialog
   { const fctx = await browser.newContext({ viewport: { width: 1500, height: 900 }, permissions: ['microphone', 'camera'] }); await fctx.route(/jsdelivr|googleapis/, r => r.abort());
-    const fp = await fctx.newPage(); await fp.goto(BASE + '?debug'); await wait(2500); await fp.evaluate(() => document.getElementById('bootNoMic').click()); await wait(2500);
-    const F1 = await fp.evaluate(() => ({ panel: !!document.querySelector('#humbar[data-mode="canvas"]'), alts: ['humGo2', 'humGuitar', 'humAltFile', 'humAltDemo', 'humAltStage'].every(i => document.getElementById(i)), origins: !!document.getElementById('origins'), cam: window.__daily.CAM.on, imm: document.body.classList.contains('vz-imm'), canvas: document.body.classList.contains('zoom-canvas'), focus: document.activeElement && document.activeElement.classList.contains('lyr') }));
+    const fp = await fctx.newPage(); await fp.goto(BASE + '?debug'); await wait(2500); await fp.evaluate(() => document.getElementById('bootNoMic').click()); await wait(800);
+    const F1 = await until(() => fp.evaluate(() => ({ panel: !!document.querySelector('#humbar[data-mode="canvas"]'), alts: ['humGo2', 'humGuitar', 'humAltFile', 'humAltDemo', 'humAltStage'].every(i => document.getElementById(i)), origins: !!document.getElementById('origins'), cam: window.__daily.CAM.on, imm: document.body.classList.contains('vz-imm'), canvas: document.body.classList.contains('zoom-canvas'), focus: document.activeElement && document.activeElement.classList.contains('lyr') })), v => v.panel && v.alts && !v.origins && !v.cam && !v.imm && v.canvas && v.focus);
     ok(F1.panel && F1.alts && !F1.origins && !F1.cam && !F1.imm && F1.canvas && F1.focus, 'the studio route opens a clean canvas with the cursor in the lyrics and a slim bar: sing or hum, guitar, song file, demo, stage (' + JSON.stringify(F1) + ')');
     await fp.evaluate(() => document.querySelector('#humbar .hum-x').click()); await wait(500);
     ok(await fp.evaluate(() => !document.getElementById('humbar') && (document.querySelector('.sb-title') || {}).value === 'Untitled idea'), 'closing the bar keeps the clean page');
     ok(await fp.evaluate(() => { const b = window.__daily.S.band; return !b.drumsOn && !b.bassOn && !b.compOn && !b.leadOn; }), 'a new blank song starts with the band off (playback is only what you record)');
     await fp.close(); await fctx.close();
     const gctx = await browser.newContext({ viewport: { width: 1500, height: 900 }, permissions: ['microphone', 'camera'] }); await gctx.route(/jsdelivr|googleapis/, r => r.abort());
-    const gp = await gctx.newPage(); await gp.goto(BASE + '?debug'); await wait(2500); await gp.evaluate(() => document.getElementById('bootStage').click()); await wait(4500);
-    const G1 = await gp.evaluate(() => ({ panel: !!document.querySelector('#humbar[data-mode="start"]'), imm: document.body.classList.contains('vz-imm'), cam: window.__daily.CAM.on, origins: !!document.getElementById('origins') }));
+    const gp = await gctx.newPage(); await gp.goto(BASE + '?debug'); await wait(2500); await gp.evaluate(() => document.getElementById('bootStage').click()); await wait(800);
+    const G1 = await until(() => gp.evaluate(() => ({ panel: !!document.querySelector('#humbar[data-mode="start"]'), imm: document.body.classList.contains('vz-imm'), cam: window.__daily.CAM.on, origins: !!document.getElementById('origins') })), v => v.panel && v.imm && v.cam && !v.origins);
     ok(G1.panel && G1.imm && G1.cam && !G1.origins, 'Begin on stage: full-screen stage, camera on, one start panel (' + JSON.stringify(G1) + ')');
     await gp.evaluate(() => document.getElementById('vzhNew').click()); await wait(1500);
     ok(await gp.evaluate(() => new Promise(res => { const r = indexedDB.open('the-daily-songs'); r.onsuccess = () => { const t = r.result.transaction('projects').objectStore('projects').count(); t.onsuccess = () => res(t.result === 1); }; r.onerror = () => res(false); })), '＋ New song on the stage reuses the untouched page instead of piling up empty songs');

@@ -21,9 +21,11 @@ function perfInfo() {
   return i;
 }
 /* ---------- display options, and the chord shapes beside the lyrics ---------- */
-function perfViewNext() {
-  const k = PF_VIEWS.findIndex(v => v[0] === pfView()), nx = PF_VIEWS[(k + 1) % PF_VIEWS.length]; CFG.pfView = nx[0]; saveCfg();
-  if (PF.el) { PF_VIEWS.forEach(v => PF.el.classList.toggle('pf-v-' + v[0], v[0] === nx[0])); const b = document.getElementById('pfView'); if (b) b.textContent = nx[1]; } PF.key = '';
+function perfViewNext() { const k = PF_VIEWS.findIndex(v => v[0] === pfView()); perfViewSet(PF_VIEWS[(k + 1) % PF_VIEWS.length][0]); }
+/** show Perform as 'shapes', 'big' or 'sheet' (remembered) */
+function perfViewSet(id) {
+  const nx = PF_VIEWS.find(v => v[0] === id); if (!nx) return false; CFG.pfView = nx[0]; saveCfg();
+  if (PF.el) { PF_VIEWS.forEach(v => PF.el.classList.toggle('pf-v-' + v[0], v[0] === nx[0])); const b = document.getElementById('pfView'); if (b) b.textContent = nx[1]; } PF.key = ''; return true;
 }
 /** the chord changes from the playhead on: the one playing, then the next ones (each different from the one before) */
 function perfChords(n) {
