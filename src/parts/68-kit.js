@@ -26,7 +26,7 @@ bus.on('srec:blob', b => kitKeep(b, 'stage', { off: KIT.sync ? KIT.sync.s - KIT.
 /** one button: start the stage video; press again to stop, and Studio Replay opens with it */
 function kitRecord() {
   if (SREC.on) { srecStop(true); return; }
-  srecStart(false, { mp4: true, onBlob: b => { kitKeep(b, 'stage'); kitReplay(); } });
+  srecStart(false, { mp4: true, onBlob: b => { kitKeep(b, SREC.fmt === 'tall' ? 'vertical' : 'stage'); kitReplay(); } });
 }
 const kitFile = b => (KIT.meta.name || kitName(KIT.lastKind)) + kitExt(b);
 function kitSave() { const b = KIT.last; if (!b) return; download(kitFile(b), b); toast('Saved the ' + (kitAudio(b) ? 'audio' : 'video') + ' to this device (' + kitMb(b) + ')', 'ok'); }
@@ -98,15 +98,16 @@ function kitReplay() {
 }
 /** a 1280 × 720 picture: the stage (or a video frame), darkened at the foot, with the title and the key and tempo */
 function kitThumb(src) {
-  src = src || UI.vcv; const W = 1280, H = 720, c = h('canvas'); c.width = W; c.height = H; const g = c.getContext('2d');
-  const sw = src && (src.videoWidth || src.width), sh = src && (src.videoHeight || src.height);
+  src = src || UI.vcv; const sw = src && (src.videoWidth || src.width), sh = src && (src.videoHeight || src.height);
+  /* the thumbnail takes the video's shape: a vertical video (or a vertical choice, from the stage) gets a 1080 × 1920 cover */
+  const tall = src && src.videoWidth ? sh > sw : srecFmt() === 'tall', W = tall ? 1080 : 1280, H = tall ? 1920 : 720, c = h('canvas'); c.width = W; c.height = H; const g = c.getContext('2d');
   g.fillStyle = '#0d0f10'; g.fillRect(0, 0, W, H);
   if (sw && sh) { const k = Math.max(W / sw, H / sh), dw = sw * k, dh = sh * k; try { g.drawImage(src, (W - dw) / 2, (H - dh) / 2, dw, dh); } catch (e) { } }
   const gr = g.createLinearGradient(0, H * .45, 0, H); gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(0,0,0,.78)'); g.fillStyle = gr; g.fillRect(0, 0, W, H);
   const title = S.title || 'New song', sub = [NS[S.key] + (S.minor ? ' minor' : ' major'), S.bpm + ' BPM'].filter(Boolean).join(' · ');
   g.fillStyle = '#fff'; g.textBaseline = 'alphabetic'; let fs = 92; g.font = '800 ' + fs + 'px "DS Montserrat", system-ui, sans-serif'; while (g.measureText(title).width > W - 120 && fs > 40) { fs -= 4; g.font = '800 ' + fs + 'px "DS Montserrat", system-ui, sans-serif'; }
-  g.fillText(title, 60, H - 92); g.font = '600 34px "DS Inter", system-ui, sans-serif'; g.fillStyle = 'rgba(255,255,255,.82)'; g.fillText(sub, 62, H - 44);
-  c.toBlob(bl => { if (!bl) return toast('The thumbnail could not be made here.', 'bad'); download(kitName('thumbnail') + '.png', bl); toast('Saved a 1280 × 720 thumbnail', 'ok'); }, 'image/png');
+  const by = tall ? H - 240 : H - 92; g.fillText(title, 60, by); g.font = '600 34px "DS Inter", system-ui, sans-serif'; g.fillStyle = 'rgba(255,255,255,.82)'; g.fillText(sub, 62, by + 48);
+  c.toBlob(bl => { if (!bl) return toast('The thumbnail could not be made here.', 'bad'); download(kitName('thumbnail') + '.png', bl); toast('Saved a ' + W + ' × ' + H + ' thumbnail', 'ok'); }, 'image/png');
   return c;
 }
 /* ---------- screen recording ---------- */

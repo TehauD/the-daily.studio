@@ -5,7 +5,7 @@
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.18.0', BUILD = 'a1a856e';   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.19.0', BUILD = '5610f1a';   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://the-daily.studio/journal/' };
 const $ = (s, r = document) => r.querySelector(s);
@@ -2718,7 +2718,7 @@ function buildVisPane() {
   const p = PANES.vis; p.classList.add('flex');
   const bar = h('div', { class: 'row', style: { gap: '8px', marginBottom: '8px', flexWrap: 'wrap' } },
     h('div', { class: 'seg' }, VMODES.filter(m => !VZ_MONITOR.has(m[0]) && !BK_MODES.has(m[0])).map(([k, n]) => h('button', { class: k === VZ.mode ? 'on' : '', 'data-m': k, onclick: e => { vzSetMode(k); $$('.seg [data-m]', bar).forEach(b => b.classList.toggle('on', b === e.target)); } }, n))),
-    h('div', { class: 'vz-back', id: 'vzBack' }, h('span', { class: 'hx-l', title: 'Looks made to sit behind you: set Camera look to “Me in front (green screen)” and you stand inside the picture' }, 'Behind you'), h('div', { class: 'seg', role: 'group', 'aria-label': 'Looks that sit behind you' }, VBACK.map(([k, n]) => h('button', { class: k === VZ.mode ? 'on' : '', 'data-m': k, onclick: e => { vzSetMode(k); $$('.seg [data-m]', bar).forEach(b => b.classList.toggle('on', b === e.currentTarget)); try { backTip(); } catch (er) { } } }, n)))),
+    h('div', { class: 'vz-back', id: 'vzBack' }, h('span', { class: 'hx-l', title: 'Looks made to sit behind you: set Camera look to “Me in front (green screen)” and you stand inside the picture' }, 'Behind you'), h('div', { class: 'seg', role: 'group', 'aria-label': 'Looks that sit behind you' }, VBACK.map(([k, n]) => h('button', { class: k === VZ.mode ? 'on' : '', 'data-m': k, onclick: e => { vzSetMode(k); $$('.seg [data-m]', bar).forEach(b => b.classList.toggle('on', b === e.currentTarget)); try { backTip(); } catch (er) { } } }, n))), vbgBtn()),
     lxLensBar(), vzAdjustBtn(), tipBtn(),
     hexSwatches(),
     h('select', { class: 'in', style: { width: 'auto', fontFamily: 'var(--sans)' }, title: 'Analysis source', onchange: e => { VZ.src = e.target.value; } }, [['auto', 'Source: auto (follows playback)'], ['rig', 'Source: guitar after the rig'], ['master', 'Source: master mix'], ['di', 'Source: what the detector hears'], ['vox', 'Source: vocal microphone']].map(([v, n]) => h('option', { value: v }, n))),
@@ -2739,12 +2739,14 @@ const vzPlaying = () => T.playing || (typeof STP !== 'undefined' && STP.playing)
 function visAna() { const s = VZ.src || 'auto'; if (s === 'vox' && E.anaVox) return E.anaVox; return s === 'master' || (s === 'auto' && vzPlaying()) ? E.anaMaster : s === 'di' ? E.anaDI : E.anaRig; }
 /** looks that draw their whole picture themselves: no pitch read-out or mini fretboard on top */
 const vzBare = m => m === 'concert' || HM_MODES.has(m) || (typeof BK_MODES !== 'undefined' && BK_MODES.has(m));
+/** cvo: draw on another canvas (the Stage, the Audience view) with the simpler picture; o.main: draw it as the Visuals themselves (your colours,
+    the camera, the neck, the tip jar), at that canvas's size, for a video (part 37). o.noNeck, o.noText leave those out; o.avoid: more places the tip jar steps around */
 function drawVis(cvo, o) {
-  o = o || {}; const cv = cvo || UI.vcv; if (!cv || !E.ready || (!cvo && !paneVisible('vis'))) return; const MODE = o.mode || VZ.mode; const g = cv.getContext('2d'), W = cv.width, H = cv.height, now = performance.now(), dt = Math.min(.1, (now - (VZ.last || now)) / 1000) * vzSpeed(); VZ.last = now; VZ.t += dt;
+  o = o || {}; const cv = cvo || UI.vcv; if (!cv || !E.ready || (!cvo && !paneVisible('vis'))) return; const MODE = o.mode || VZ.mode, main = !cvo || !!o.main; const g = cv.getContext('2d'), W = cv.width, H = cv.height, now = performance.now(), dt = Math.min(.1, (now - (VZ.last || now)) / 1000) * vzSpeed(); VZ.last = now; VZ.t += dt;
   const an = visAna(); if (!an) return; if (!VZ.fd || VZ.fd.length !== an.frequencyBinCount) VZ.fd = new Float32Array(an.frequencyBinCount); an.getFloatFrequencyData(VZ.fd); const fd = VZ.fd, bh = E.ctx.sampleRate / an.fftSize;
-  const light = CFG.theme === 'light', C = o.C || vcol(), HP = MODE === 'hex' && !cvo ? hexPal() : null, HEXL = !!(HP && HP.lt);
+  const light = CFG.theme === 'light', C = o.C || vcol(), HP = MODE === 'hex' && main ? hexPal() : null, HEXL = !!(HP && HP.lt);
   // background (always dark stage for contrast, tinted by theme)
-  if (MODE !== 'spectro' && MODE !== 'kaleido') { g.globalAlpha = o.bgA == null ? 1 : o.bgA; g.fillStyle = HP ? HP.bg : light && !cvo ? '#0c1a1b' : '#050b0c'; g.fillRect(0, 0, W, H); g.globalAlpha = 1; }
+  if (MODE !== 'spectro' && MODE !== 'kaleido') { g.globalAlpha = o.bgA == null ? 1 : o.bgA; g.fillStyle = HP ? HP.bg : light && main ? '#0c1a1b' : '#050b0c'; g.fillRect(0, 0, W, H); g.globalAlpha = 1; }
   const camOn = !!((o.cam != null ? o.cam : VZ.cam) && CAM.video && CAM.video.readyState >= 2 && MODE !== 'spectro');
   if (camOn && (CFG.camFx || 'over') === 'over') { g.save(); g.globalAlpha = .32; if (CFG.mirror) { g.translate(W, 0); g.scale(-1, 1); } const vr = CAM.video.videoWidth / CAM.video.videoHeight, cr = W / H; let dw = W, dh = H, dx = 0, dy = 0; if (vr > cr) { dw = H * vr; dx = (W - dw) / 2; } else { dh = W / vr; dy = (H - dh) / 2; } g.drawImage(CAM.video, dx, dy, dw, dh); g.restore(); }
   const lvl = x => clamp((x + 88 + (o.gain || 0)) / 62, 0, 1), bin = f => clamp(Math.round(f / bh), 1, fd.length - 1);
@@ -2761,11 +2763,11 @@ function drawVis(cvo, o) {
     else if (MODE === 'scope') drawScope(g, VW, VH, C);
     else if (typeof stageExtra === 'function') stageExtra(MODE, g, VW, VH, { fd, bin, lvl, C, pulse, energy, dt, o });
   } finally { if (tf) g.restore(); }
-  if (camOn && !cvo) camTop(g, W, H);
-  if (MODE === 'halo' && !cvo) haloFront(g);   // stage draws its own camera layer after trails and kaleidoscope
-  if (!cvo && CFG.vzNeck !== false && !document.body.classList.contains('perform-on') && !vzBare(MODE)) { const r = neckRect(W, H); drawMiniNeck(g, r[0], r[1], r[2], r[3], { C }); }
-  if (!cvo && CFG.vzRibbon && !document.body.classList.contains('perform-on') && typeof voxDraw === 'function') { const r = voxRect(W, H); voxDraw(g, r[0], r[1], r[2], r[3], { C, labels: H > 260 }); }
-  if (!cvo) tipDraw(g, W, H, 'vis', tipVisAvoid(W, H, MODE));   /* the tip jar (part 39b): on the Visuals, so it is in stage videos */
+  if (camOn && main) camTop(g, W, H);
+  if (MODE === 'halo' && main) haloFront(g);   // stage draws its own camera layer after trails and kaleidoscope
+  if (main && !o.noNeck && CFG.vzNeck !== false && !document.body.classList.contains('perform-on') && !vzBare(MODE)) { const r = neckRect(W, H); drawMiniNeck(g, r[0], r[1], r[2], r[3], { C }); }
+  if (main && CFG.vzRibbon && !document.body.classList.contains('perform-on') && typeof voxDraw === 'function') { const r = voxRect(W, H); voxDraw(g, r[0], r[1], r[2], r[3], { C, labels: H > 260 }); }
+  if (main) tipDraw(g, W, H, 'vis', tipVisAvoid(W, H, MODE, o).concat(o.avoid || []));   /* the tip jar (part 39b): on the Visuals, so it is in stage videos */
   if (o.noText || vzBare(MODE)) return;
   const ink = HP ? HP.ink : '255,255,255'; g.fillStyle = `rgba(${ink},.55)`; g.font = `${Math.round(11 * H / 400 + 6)}px ui-monospace,Menlo,monospace`; g.textBaseline = 'top';
   if (AN.midi != null && AN.active) { g.fillStyle = `rgba(${ink},.85)`; g.font = `800 ${Math.round(28 * Math.min(W, H * 2) / 900 + 10)}px ui-monospace,Menlo,monospace`; g.fillText(pcName(AN.midi) + (Math.floor(AN.midi / 12) - 1) + '  ' + (AN.cents >= 0 ? '+' : '') + AN.cents.toFixed(0) + '¢', 14, 12); }
@@ -3778,7 +3780,7 @@ function frame(ts) {
   const ph = playheadSlot(), sp = spb(), p = barStr(ph); const txt = p + '|' + Math.floor(ph * slotDur() * 10);
   if (txt !== lastLCD) { lastLCD = txt; UI.pos.firstChild.textContent = p; UI.tim.firstChild.textContent = fmtTime(Math.max(0, ph) * slotDur()); }
   if (T.playing || TL.dirty || frameN % 15 === 0) { drawTL(); TL.dirty = false; }
-  if (paneVisible('vis')) drawVis(); if (paneVisible('fret')) paintFret(false); if (paneVisible('tab') && typeof writeFrame === 'function') writeFrame(frameN); if (paneVisible('cam') && frameN % 20 === 0) updateCamStats(); if (typeof neuralFrame === 'function') neuralFrame(); if (typeof stemFrame === 'function') stemFrame(); if (typeof stageFrame === 'function') stageFrame(ts);
+  if (SREC.cv) srecFrame(); else if (paneVisible('vis')) drawVis(); if (paneVisible('fret')) paintFret(false); if (paneVisible('tab') && typeof writeFrame === 'function') writeFrame(frameN); if (paneVisible('cam') && frameN % 20 === 0) updateCamStats(); if (typeof neuralFrame === 'function') neuralFrame(); if (typeof stemFrame === 'function') stemFrame(); if (typeof stageFrame === 'function') stageFrame(ts);
   if (frameN % 30 === 0) updateStatus();
 }
 
@@ -3832,7 +3834,7 @@ async function boot() {
   document.addEventListener('visibilitychange', () => { if (!document.hidden && E.ctx && !OFR.busy && E.ctx.state === 'suspended') E.ctx.resume(); });
   if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener('devicechange', () => { ioDeviceChange().catch(e => console.warn(e)); });
   bus.emit('song');
-  if (/[?&]debug\b/.test(location.search)) window.__daily = { S, WORKLET_SRC, mkComp, mkShaper, rigLat, voxLat, restartAudio, satCurve, rigApply, qrMake, qrSvg, tipLink, tipShort, tipReady, tipCard, tipDraw, tipShareHtml, tipOpen, tipPrint, tipPng, tipVisAvoid, tipStageAvoid, TIP, TIP_TERMS, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, STP, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfort, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, srecStart, srecStop, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, tkFades, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, FB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, vzSetMode, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, drawVis, perfClose, voicings, peaksOf, uid, shareGate, shareData, shareHtml, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, slotAtTime, SEL, mtof, spb, playheadSlot, WR, HM, HMX, HM_MODES, vzImmersive, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitThumb, kitInk, kitNotes, kitRecord, srecMime, mGo, GD_SESSIONS, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard};   // test hook, only with ?debug
+  if (/[?&]debug\b/.test(location.search)) window.__daily = { S, pdbGet, srecFmt, SREC_FMTS, VBG, vbgAdd, vbgRemove, vbgUse, vbgOpen, vbgDraw, vzSetMode, srecFrame, srecFmtBox, kitThumb, WORKLET_SRC, mkComp, mkShaper, rigLat, voxLat, restartAudio, satCurve, rigApply, qrMake, qrSvg, tipLink, tipShort, tipReady, tipCard, tipDraw, tipShareHtml, tipOpen, tipPrint, tipPng, tipVisAvoid, tipStageAvoid, TIP, TIP_TERMS, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, STP, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfort, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, srecStart, srecStop, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, tkFades, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, FB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, vzSetMode, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, drawVis, perfClose, voicings, peaksOf, uid, shareGate, shareData, shareHtml, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, slotAtTime, SEL, mtof, spb, playheadSlot, WR, HM, HMX, HM_MODES, vzImmersive, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitThumb, kitInk, kitNotes, kitRecord, srecMime, mGo, GD_SESSIONS, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard};   // test hook, only with ?debug
   projInit().catch(e => { console.warn('library', e); PRJ.ready = true; if (PRJ.wantStart) startMaybe(); });
 }
 
@@ -7966,8 +7968,63 @@ function vzCycleLook() { const i = VZ_FAVS.indexOf(VZ.mode); vzSetMode(VZ_FAVS[(
    A video of what the Visuals canvas shows (hexagons, Halo ring, you in front when the camera is on) with the song's
    sound (the master output, so live guitar is in it when monitoring is on). Made with the browser's own recorder and saved
    to this device as .webm or .mp4. Nothing is uploaded; the camera is never started by recording; Ctrl/Cmd+. discards it.
+   SHAPE (2.19): Wide 16:9 (1920 × 1080, for YouTube, a website or a TV), Vertical 9:16 (1080 × 1920, for Reels, TikTok and Shorts), or as
+   on screen. The video is drawn for its own frame, not copied from the screen: the look, your colours, the camera (cropped to fill, so you
+   stay in the middle of a vertical video), the tip jar and, if you like, the words and the chord in large type at the bottom. The Visuals
+   show a preview of it while it records, and it keeps going if you switch to another panel.
    ============================================================ */
-const SREC = { on: false, mr: null, chunks: [], t0: 0, tick: 0, watch: 0, dest: null, stream: null, mime: '', whole: false, save: true, was: null, name: '' };
+const SREC = { on: false, mr: null, chunks: [], t0: 0, tick: 0, watch: 0, dest: null, stream: null, mime: '', whole: false, save: true, was: null, name: '', cv: null, cvEl: null, fmt: 'wide', words: false };
+/* the shapes a video can have: width, height (0: the Visuals' own), the label, what it is for */
+const SREC_FMTS = { wide: [1920, 1080, '▭ Wide 16:9', 'YouTube, a website or a TV'], tall: [1080, 1920, '▯ Vertical 9:16', 'Reels, TikTok and Shorts'], screen: [0, 0, '▢ As on screen', 'the shape the Visuals have on this screen'] };
+const srecFmt = () => SREC_FMTS[CFG.recFmt] ? CFG.recFmt : 'wide';
+/** the words and the chord on the video: on by default for vertical (a phone video is watched with the sound low), off for the others */
+const srecWordsOn = f => { const w = CFG.recWords || {}; return w[f] != null ? !!w[f] : f === 'tall'; };
+function srecWordsSet(f, on) { CFG.recWords = Object.assign({}, CFG.recWords || {}, { [f]: !!on }); saveCfg(); }
+/** the canvas the video is drawn on: off the page, at the video's own size (even numbers, as video encoders want) */
+function srecCanvas(f) {
+  let W, H; if (f === 'screen') { const v = UI.vcv; W = (v && v.width) || 1280; H = (v && v.height) || 720; } else [W, H] = SREC_FMTS[f];
+  W = Math.max(2, W - W % 2); H = Math.max(2, H - H % 2);
+  const cv = SREC.cvEl || (SREC.cvEl = h('canvas', { id: 'srecCanvas', 'aria-hidden': 'true', style: { position: 'fixed', left: '-99999px', top: '0', width: '4px', height: '4px', pointerEvents: 'none' } }));
+  cv.width = W; cv.height = H; if (!cv.isConnected) document.body.append(cv); return cv;
+}
+/** where the words go, so the tip jar can step around them */
+const srecWordsRect = (W, H) => { const tall = H > W; return [0, H * (tall ? .62 : .64), W, H * (tall ? .38 : .36)]; };
+/** one frame of the video (called by the frame loop while a video records): the visuals at the video's size, the words, and a preview on the Visuals */
+function srecFrame() {
+  const cv = SREC.cv; if (!cv) return; const W = cv.width, H = cv.height, g = cv.getContext('2d'), words = SREC.words;
+  try { drawVis(cv, { main: true, noNeck: words, noText: words, avoid: words ? [srecWordsRect(W, H)] : null }); if (words) srecWords(g, W, H); }
+  catch (e) { if (!SREC.err) { SREC.err = 1; console.warn('video frame', e); } }
+  const v = UI.vcv; if (v && v.width && paneVisible('vis')) {
+    const vg = v.getContext('2d'), k = Math.min(v.width / W, v.height / H), dw = Math.round(W * k), dh = Math.round(H * k);
+    vg.fillStyle = '#000'; vg.fillRect(0, 0, v.width, v.height); vg.drawImage(cv, (v.width - dw) >> 1, (v.height - dh) >> 1, dw, dh);
+  }
+}
+/** the words being sung (with their chords over them) and the chord, large, over a soft shade at the bottom; the next line under them, dimmer */
+function srecWords(g, W, H) {
+  const info = stageInfo(), tall = H > W, u = tall ? W : Math.min(W, H * 1.6), mono = 'ui-monospace,Menlo,Consolas,monospace';
+  const ly = info.ly && (info.ly.text || info.ly.chords.length) ? info.ly : null, lyCh = !!(ly && ly.chords.length);
+  if (!ly && !info.sym) return;
+  const top = H * (tall ? .6 : .62), sh = g.createLinearGradient(0, top, 0, H); sh.addColorStop(0, 'rgba(0,0,0,0)'); sh.addColorStop(.45, 'rgba(0,0,0,.42)'); sh.addColorStop(1, 'rgba(0,0,0,.72)');
+  g.save(); g.fillStyle = sh; g.fillRect(0, top, W, H - top); g.shadowColor = 'rgba(0,0,0,.6)'; g.shadowBlur = u * .015; g.textBaseline = 'alphabetic';
+  if (!lyCh && info.sym) {
+    const sz = u * (tall ? .17 : .1), y = H * (ly ? (tall ? .77 : .79) : (tall ? .86 : .88)); g.font = `800 ${Math.round(sz)}px ${mono}`; g.textAlign = 'center'; g.fillStyle = '#fff'; g.fillText(info.sym, W / 2, y);
+    if (info.next && info.playing) { g.font = `700 ${Math.round(sz * .3)}px ${mono}`; g.fillStyle = 'rgba(255,255,255,.72)'; g.fillText('next  ' + info.next, W / 2, y + sz * .42); }
+  }
+  if (ly) {
+    const px = Math.round(u * (tall ? .062 : .042)), y = H * (tall ? .87 : .885);
+    lyDraw(g, { x: W / 2, y, w: W * .9, px, font: mono, ly, hi: '#ffd23f' });
+    if (info.lyN && (info.lyN.text || info.lyN.chords.length)) lyDraw(g, { x: W / 2, y: y + px * .6 + Math.round(px * .62) * (info.lyN.chords.length ? 2.1 : 1.2), w: W * .9, px: Math.round(px * .62), weight: 600, font: mono, ly: info.lyN, dim: true });
+  }
+  g.restore(); g.textAlign = 'left';
+}
+/** the choice of shape and words, for the Record menu and Creator Studio */
+function srecFmtBox() {
+  const f = srecFmt(), words = h('input', { type: 'checkbox', id: 'srecWords', checked: srecWordsOn(f), onchange: e => srecWordsSet(srecFmt(), e.target.checked) });
+  const seg = h('div', { class: 'seg', role: 'radiogroup', 'aria-label': 'Video shape', id: 'srecFmt' }, Object.entries(SREC_FMTS).map(([k, d]) => h('button', { type: 'button', role: 'radio', class: k === f ? 'on' : '', 'aria-checked': String(k === f), 'data-fmt': k, title: d[3] + (d[0] ? ' · ' + d[0] + ' × ' + d[1] : ''), onclick: e => {
+    CFG.recFmt = k; saveCfg(); $$('[data-fmt]', seg).forEach(b => { const on = b === e.currentTarget; b.classList.toggle('on', on); b.setAttribute('aria-checked', String(on)); }); words.checked = srecWordsOn(k); hint.textContent = SREC_FMTS[k][3] + (SREC_FMTS[k][0] ? ' · ' + SREC_FMTS[k][0] + ' × ' + SREC_FMTS[k][1] : ''); if (typeof goalSync === 'function') goalSync(); } }, d[2])));
+  const hint = h('div', { class: 'tiny muted' }, SREC_FMTS[f][3] + (SREC_FMTS[f][0] ? ' · ' + SREC_FMTS[f][0] + ' × ' + SREC_FMTS[f][1] : ''));
+  return h('div', { style: { display: 'grid', gap: '6px' } }, seg, hint, h('label', { class: 'row', style: { gap: '6px', alignItems: 'center' }, title: 'The line being sung, with its chords over the words, and the chord, in large type at the bottom of the video' }, words, h('span', { class: 'tiny' }, 'Words and chord on the video')));
+}
 /** mp4: put MP4 first for a video (social sites take it as it is); otherwise WebM first, as before */
 function srecMime(audio, mp4) {
   if (!window.MediaRecorder) return null;
@@ -7981,7 +8038,7 @@ function srecSync() {
 }
 function srecMenu(anchor) {
   if (SREC.on) return srecStop(true);
-  const box = h('div', { style: { minWidth: '250px', display: 'grid', gap: '6px' } }, h('h5', {}, 'Record the stage'),
+  const box = h('div', { style: { minWidth: '250px', display: 'grid', gap: '6px' } }, h('h5', {}, 'Record the stage'), srecFmtBox(),
     h('button', { class: 'btn', id: 'srecNow', onclick: () => { closePop(); srecStart(false); } }, '⏺ Record now'),
     h('button', { class: 'btn', id: 'srecWhole', onclick: () => { closePop(); srecStart(true); } }, '⏺ The whole song, from the top'),
     E.hasInput ? h('label', { class: 'row', style: { gap: '6px', alignItems: 'flex-start' }, title: 'The armed guitar and voice inputs are recorded as a lane in the arrangement, starting where the video starts' }, h('input', { type: 'checkbox', id: 'srecTake', checked: CFG.srecTake !== false, onchange: e => { CFG.srecTake = e.target.checked; saveCfg(); } }), h('span', { class: 'tiny' }, 'Also put what I play into the arrangement (a new lane, starting where the video starts)')) : h('div', { class: 'tiny muted' }, 'Connect your guitar or microphone (Inputs) and your playing can land in the arrangement as well.'),
@@ -7999,14 +8056,15 @@ async function srecStart(whole, o) {
     if (ZOOM.cur === 'canvas') zoomSet('song', true);
     try { dockGo('vis'); } catch (e) { }
     await new Promise(r => setTimeout(r, 250));
-    cv = UI.vcv; if (!cv || !cv.width) return toast('Open the Visuals first.', 'warn');
+    if (!UI.vcv || !UI.vcv.width) return toast('Open the Visuals first.', 'warn');
+    const f = srecFmt(); cv = srecCanvas(f); SREC.fmt = f; SREC.words = srecWordsOn(f); SREC.err = 0; SREC.cv = cv; srecFrame();      /* the first frame is there before the recorder starts */
   }
   let ms;
   try {
     ms = audio ? new MediaStream() : cv.captureStream(30); SREC.dest = E.ctx.createMediaStreamDestination(); E.limiter.connect(SREC.dest); SREC.dest.stream.getAudioTracks().forEach(t => ms.addTrack(t));
     SREC.mr = new MediaRecorder(ms, Object.assign(audio ? { audioBitsPerSecond: 192e3 } : { videoBitsPerSecond: 8e6, audioBitsPerSecond: 192e3 }, mime ? { mimeType: mime } : {}));
-  } catch (e) { try { E.limiter.disconnect(SREC.dest); } catch (x) { } SREC.dest = null; return toast('Recording could not start: ' + (e.message || e.name), 'bad'); }
-  SREC.stream = ms; SREC.mime = SREC.mr.mimeType || mime || 'video/webm'; SREC.chunks = []; SREC.whole = !!whole; SREC.save = true; SREC.name = (S.title || 'song').replace(/\W+/g, '_') + (audio ? '_audio' : '_stage'); SREC.audio = audio; SREC.onBlob = o.onBlob || null;
+  } catch (e) { try { E.limiter.disconnect(SREC.dest); } catch (x) { } SREC.dest = null; SREC.cv = null; return toast('Recording could not start: ' + (e.message || e.name), 'bad'); }
+  SREC.stream = ms; SREC.mime = SREC.mr.mimeType || mime || 'video/webm'; SREC.chunks = []; SREC.whole = !!whole; SREC.save = true; SREC.name = (S.title || 'song').replace(/\W+/g, '_') + (audio ? '_audio' : SREC.fmt === 'tall' ? '_vertical' : '_stage'); SREC.audio = audio; SREC.onBlob = o.onBlob || null;
   SREC.mr.ondataavailable = e => { if (e.data && e.data.size) SREC.chunks.push(e.data); };
   SREC.mr.onstop = srecDone;
   SREC.was = { loop: T.loop, metro: T.metro };
@@ -8031,7 +8089,7 @@ function srecDone() {
   const blob = SREC.chunks.length ? new Blob(SREC.chunks, { type: SREC.mime.split(';')[0] }) : null, save = SREC.save;
   try { E.limiter.disconnect(SREC.dest); } catch (e) { } try { SREC.stream && SREC.stream.getTracks().forEach(t => t.stop()); } catch (e) { }
   if (SREC.was) { T.loop = SREC.was.loop; T.metro = SREC.was.metro; if (SREC.whole) { try { stopPlay(true); } catch (e) { } } SREC.was = null; }
-  SREC.mr = null; SREC.dest = null; SREC.stream = null; SREC.on = false; SREC.chunks = []; srecSync(); bus.emit('srec', false);
+  SREC.mr = null; SREC.dest = null; SREC.stream = null; SREC.on = false; SREC.chunks = []; SREC.cv = null; srecSync(); bus.emit('srec', false);
   const cb = SREC.onBlob; SREC.onBlob = null;
   if (save && blob && blob.size > 1000 && !SREC.audio) bus.emit('srec:blob', blob);   /* Studio Replay keeps the newest video (part 68) */
   if (save && blob && blob.size > 1000 && cb) cb(blob);
@@ -8475,11 +8533,11 @@ function tipDraw(g, W, H, where, avoid) {
   return [x, y, cw, ch];
 }
 /** what the Visuals draw on top (the small neck, the voice ribbon, the note and chord read-out), so the case can step around them */
-function tipVisAvoid(W, H, mode) {
-  const r = [], perf = document.body.classList.contains('perform-on'), bare = vzBare(mode);
-  if (CFG.vzNeck !== false && !perf && !bare) r.push(neckRect(W, H));
+function tipVisAvoid(W, H, mode, o) {
+  const r = [], perf = document.body.classList.contains('perform-on'), bare = vzBare(mode); o = o || {};
+  if (CFG.vzNeck !== false && !o.noNeck && !perf && !bare) r.push(neckRect(W, H));
   if (CFG.vzRibbon && !perf && typeof voxRect === 'function') r.push(voxRect(W, H));
-  if (!bare) r.push([0, 0, W * .32, H * .13 + 28 + Math.round(20 * Math.min(W, H * 2) / 900)]);
+  if (!bare && !o.noText) r.push([0, 0, W * .32, H * .13 + 28 + Math.round(20 * Math.min(W, H * 2) / 900)]);
   return r;
 }
 /** what the Stage's own words cover, so the case can step around them (part 13's HUD, or the lower third) */
@@ -12399,6 +12457,7 @@ const GOALS = [
     spec: { flip: true, left: false, right: true, tlh: '96px', dock: 'vis', order: ['vis', 'exp', 'stage', 'band'], hidden: ['rig', 'tab', 'song', 'fret', 'neural', 'stems', 'tx', 'cam', 'lab'], cur: { right: 'monitor' }, mon: ['audience', 'views', 'levels'] },
     tools: () => [
       ['gtVideo', '⏺ Record MP4', 'Record the stage, the camera and the sound; MP4 where this browser can make it', b => kitRecord(b), () => !!SREC.on, 1],
+      ['gtFmt', () => SREC_FMTS[srecFmt()][2], 'The shape of the video: wide 16:9 for YouTube, or vertical 9:16 for Reels, TikTok and Shorts; and whether the words and chord are on it', b => popover(b, h('div', { style: { display: 'grid', gap: '8px', minWidth: '250px' } }, h('h5', {}, 'Video shape'), srecFmtBox()))],
       ['gtReplay', '▶ Studio Replay', 'Watch the last recording, then save it, share it or make a thumbnail from any frame', () => kitReplay(), null, 0, () => !KIT.last],
       ['gtCam', '📷 Webcam', 'You in the picture, in front of or framed by the visuals', () => vzCamPress(), () => !!VZ.cam],
       ['gtFx', '✨ Overlays', 'How the camera sits with the visuals: dimmed behind, framed, or you in front', b => popover(b, h('div', { style: { display: 'grid', gap: '8px', minWidth: '240px' } }, h('h5', {}, 'Overlays'), camFxBox(), h('div', { class: 'tiny muted' }, 'Pick a look in the Visuals panel for what moves behind you.')))],
@@ -12954,7 +13013,7 @@ bus.on('srec:blob', b => kitKeep(b, 'stage', { off: KIT.sync ? KIT.sync.s - KIT.
 /** one button: start the stage video; press again to stop, and Studio Replay opens with it */
 function kitRecord() {
   if (SREC.on) { srecStop(true); return; }
-  srecStart(false, { mp4: true, onBlob: b => { kitKeep(b, 'stage'); kitReplay(); } });
+  srecStart(false, { mp4: true, onBlob: b => { kitKeep(b, SREC.fmt === 'tall' ? 'vertical' : 'stage'); kitReplay(); } });
 }
 const kitFile = b => (KIT.meta.name || kitName(KIT.lastKind)) + kitExt(b);
 function kitSave() { const b = KIT.last; if (!b) return; download(kitFile(b), b); toast('Saved the ' + (kitAudio(b) ? 'audio' : 'video') + ' to this device (' + kitMb(b) + ')', 'ok'); }
@@ -13026,15 +13085,16 @@ function kitReplay() {
 }
 /** a 1280 × 720 picture: the stage (or a video frame), darkened at the foot, with the title and the key and tempo */
 function kitThumb(src) {
-  src = src || UI.vcv; const W = 1280, H = 720, c = h('canvas'); c.width = W; c.height = H; const g = c.getContext('2d');
-  const sw = src && (src.videoWidth || src.width), sh = src && (src.videoHeight || src.height);
+  src = src || UI.vcv; const sw = src && (src.videoWidth || src.width), sh = src && (src.videoHeight || src.height);
+  /* the thumbnail takes the video's shape: a vertical video (or a vertical choice, from the stage) gets a 1080 × 1920 cover */
+  const tall = src && src.videoWidth ? sh > sw : srecFmt() === 'tall', W = tall ? 1080 : 1280, H = tall ? 1920 : 720, c = h('canvas'); c.width = W; c.height = H; const g = c.getContext('2d');
   g.fillStyle = '#0d0f10'; g.fillRect(0, 0, W, H);
   if (sw && sh) { const k = Math.max(W / sw, H / sh), dw = sw * k, dh = sh * k; try { g.drawImage(src, (W - dw) / 2, (H - dh) / 2, dw, dh); } catch (e) { } }
   const gr = g.createLinearGradient(0, H * .45, 0, H); gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(0,0,0,.78)'); g.fillStyle = gr; g.fillRect(0, 0, W, H);
   const title = S.title || 'New song', sub = [NS[S.key] + (S.minor ? ' minor' : ' major'), S.bpm + ' BPM'].filter(Boolean).join(' · ');
   g.fillStyle = '#fff'; g.textBaseline = 'alphabetic'; let fs = 92; g.font = '800 ' + fs + 'px "DS Montserrat", system-ui, sans-serif'; while (g.measureText(title).width > W - 120 && fs > 40) { fs -= 4; g.font = '800 ' + fs + 'px "DS Montserrat", system-ui, sans-serif'; }
-  g.fillText(title, 60, H - 92); g.font = '600 34px "DS Inter", system-ui, sans-serif'; g.fillStyle = 'rgba(255,255,255,.82)'; g.fillText(sub, 62, H - 44);
-  c.toBlob(bl => { if (!bl) return toast('The thumbnail could not be made here.', 'bad'); download(kitName('thumbnail') + '.png', bl); toast('Saved a 1280 × 720 thumbnail', 'ok'); }, 'image/png');
+  const by = tall ? H - 240 : H - 92; g.fillText(title, 60, by); g.font = '600 34px "DS Inter", system-ui, sans-serif'; g.fillStyle = 'rgba(255,255,255,.82)'; g.fillText(sub, 62, by + 48);
+  c.toBlob(bl => { if (!bl) return toast('The thumbnail could not be made here.', 'bad'); download(kitName('thumbnail') + '.png', bl); toast('Saved a ' + W + ' × ' + H + ' thumbnail', 'ok'); }, 'image/png');
   return c;
 }
 /* ---------- screen recording ---------- */
@@ -13342,9 +13402,11 @@ function bkTick(X) {
   return { dt, mo: cm.motion, gap: cm.gap, im, en: Math.max(.16, BK.en), b: BK.bands, hue: BK.hue, t: BK.t, pulse: (X.pulse || 0) * im, rawPulse: X.pulse || 0 };
 }
 
+/** what draws each of these looks (part 70b adds Your video) */
+const BK_FN = { ribbons: bkRibbons, aurora: bkAurora, warp: bkWarp, rings: bkRings, nebula: bkNebula, skyline: bkSkyline };
 function bkDraw(mode, g, W, H, X) {
   const B = bkTick(X); g.save(); g.lineCap = 'round'; g.lineJoin = 'round';
-  ({ ribbons: bkRibbons, aurora: bkAurora, warp: bkWarp, rings: bkRings, nebula: bkNebula, skyline: bkSkyline })[mode](g, W, H, B);
+  (BK_FN[mode] || bkRibbons)(g, W, H, B);
   g.restore(); g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1;
 }
 /** a deep tinted sky to sit under the light: the same hue, very dark, so the lights read against it */
@@ -13435,8 +13497,154 @@ function bkSkyline(g, W, H, B) {
 
 /** the first time one of these is chosen with the camera showing you dimmed behind the visuals, say how to stand inside the picture */
 function backTip() {
+  if (VZ.mode === 'video' && typeof vbgOpen === 'function' && !CFG.vbg.list.length) { vbgOpen(); return; }      /* Your video with no video yet: open the place to add one */
   if (!CAM.on || (CFG.camFx || 'over') === 'person' || store.get('backTip')) return;
   store.set('backTip', 1); toast('Tip: set Camera look to “Me in front (green screen)” and you stand inside this picture.', '');
+}
+
+/* >>> parts/70b-vidbg.js */
+/* ============================================================
+   Part 70b · YOUR VIDEO (2.19) — your own video loops, behind you
+   A "Behind you" look made from videos you add (MP4 or WebM: clouds, a road at night, your own footage). It plays without sound,
+   looped, filling the picture, so with Camera look ▸ Me in front you stand inside it; on the Visuals, the Stage, the Audience view and
+   in recorded videos, like the other looks.
+     · It moves with the music: the 🎚 Speed control sets how fast it plays, it brightens a little when you play loud and swells
+       slightly on a strong beat (Breathe), and it can take the chord's colour (Tint, the same colour the other backdrops use).
+     · With more than one video it can cut to the next on each new section, or every 4 or 8 bars, while the song plays (a short crossfade).
+   The videos are kept as files in this browser's own database ('the-daily-songs', key stage/vid/<id>), like the stage's pictures:
+   nothing is uploaded, and they are not part of a song's backup. Only the one being shown is opened, and it pauses when no one draws it.
+   ============================================================ */
+const VBG_MAX = 8, VBG_MAXFILE = 300e6, VBG_FADE = .6;
+CFG.vbg = Object.assign({ list: [], pick: '', cycle: 'off', tint: .3, dim: .2, breathe: true }, CFG.vbg && typeof CFG.vbg === 'object' ? CFG.vbg : {});
+if (!Array.isArray(CFG.vbg.list)) CFG.vbg.list = [];
+const VBG = { el: [null, null], on: 0, id: ['', ''], url: new Map(), fade: 1, sec: '', bar: -1, cyc: '', used: 0, gone: new Set(), err: 0 };
+VBACK.push(['video', 'Your video']); VMODES.push(['video', 'Your video']); BK_MODES.add('video'); BK_FN.video = vbgDraw;
+const VBG_CYCLES = [['off', 'One video'], ['section', 'Each section'], ['bars4', 'Every 4 bars'], ['bars8', 'Every 8 bars']];
+
+/** a video element for drawing: muted (so it may play without a click), looped, inline */
+function vbgEl(i) {
+  let v = VBG.el[i]; if (v) return v;
+  v = VBG.el[i] = document.createElement('video'); v.muted = true; v.defaultMuted = true; v.loop = true; v.playsInline = true; v.preload = 'auto'; v.setAttribute('playsinline', ''); v.setAttribute('aria-hidden', 'true');
+  v.addEventListener('error', () => { const id = VBG.id[i]; if (id && !VBG.gone.has(id)) { VBG.gone.add(id); console.warn('video backdrop could not play', id); } });
+  return v;
+}
+/** a stored video as an address the element can play (made once, kept while the page is open) */
+async function vbgUrl(id) {
+  if (VBG.url.has(id)) return VBG.url.get(id);
+  if (!PRJ.db) return null; const blob = await pdbGet('blobs', 'stage/vid/' + id); if (!blob) { VBG.gone.add(id); return null; }
+  const u = URL.createObjectURL(blob); VBG.url.set(id, u); return u;
+}
+/** put video `id` on element i and start it */
+async function vbgPut(i, id) {
+  const v = vbgEl(i); if (VBG.id[i] === id) return v; VBG.id[i] = id;
+  const u = id ? await vbgUrl(id) : null; if (VBG.id[i] !== id) return v;      /* another choice came in while this one loaded */
+  if (!u) { v.removeAttribute('src'); v.load(); return v; }
+  v.src = u; v.playbackRate = vbgRate(); try { await v.play(); } catch (e) { } return v;
+}
+const vbgRate = () => clamp(typeof vzSpeed === 'function' ? vzSpeed() : 1, .25, 3);
+const vbgList = () => CFG.vbg.list.filter(x => !VBG.gone.has(x.id));
+/** which video should be showing now: the one you chose; or, while the song plays and Change video is set, the next in turn on each new
+    section or every 4 or 8 bars (VBG.cyc keeps its place until the next change; when the song stops, your choice comes back) */
+function vbgWant() {
+  const L = vbgList(); if (!L.length) return '';
+  const pick = L.some(x => x.id === CFG.vbg.pick) ? CFG.vbg.pick : L[0].id;
+  if (CFG.vbg.cycle === 'off' || L.length < 2 || !T.playing) { VBG.cyc = ''; return pick; }
+  if (!VBG.cyc || !L.some(x => x.id === VBG.cyc)) VBG.cyc = pick;
+  const info = typeof stageInfo === 'function' ? stageInfo() : {}, bar = Math.floor(Math.max(0, playheadSlot()) / spb()), n = CFG.vbg.cycle === 'bars8' ? 8 : 4;
+  let step = false;
+  if (CFG.vbg.cycle === 'section') { if (info.sec && info.sec !== 'Count-in' && info.sec !== VBG.sec) { step = !!VBG.sec; VBG.sec = info.sec; } }
+  else { const k = Math.floor(bar / n); if (k !== VBG.bar) { step = VBG.bar >= 0; VBG.bar = k; } }
+  if (step) { const i = L.findIndex(x => x.id === VBG.cyc); VBG.cyc = L[(i + 1) % L.length].id; }
+  return VBG.cyc;
+}
+bus.on('transport', () => { if (!T.playing) { VBG.sec = ''; VBG.bar = -1; VBG.cyc = ''; } });
+/** the look itself (part 70's backdrops call this with the shared state B: the chord's hue, the energy, the beat) */
+function vbgDraw(g, W, H, B) {
+  VBG.used = performance.now();
+  const want = vbgWant(), A = VBG.el[VBG.on];
+  if (want && !VBG.id[VBG.on]) vbgPut(VBG.on, want);      /* the first one goes straight on */
+  else if (want && want !== VBG.id[VBG.on] && want !== VBG.id[1 - VBG.on]) { vbgPut(1 - VBG.on, want); VBG.fade = 0; }      /* the next one loads on the other element, then fades in */
+  const nx = VBG.el[1 - VBG.on];
+  if (nx && VBG.id[1 - VBG.on] === want && want && nx.readyState >= 2) { VBG.fade = Math.min(1, VBG.fade + B.dt / VBG_FADE); if (VBG.fade >= 1) { VBG.on = 1 - VBG.on; try { if (A) A.pause(); } catch (e) { } VBG.id[1 - VBG.on] = ''; } }
+  const cur = VBG.el[VBG.on], ok = v => v && v.readyState >= 2 && v.videoWidth > 0, r = vbgRate();
+  [[cur, VBG.id[VBG.on]], [nx, VBG.id[1 - VBG.on]]].forEach(([v, id]) => { if (!v) return; if (id && v.paused && v.src) v.play().catch(() => { }); else if (!id && !v.paused) v.pause(); if (Math.abs(v.playbackRate - r) > .01) v.playbackRate = r; });
+  if (!ok(cur) && !ok(nx)) {
+    bkSky(g, W, H, B.hue, 4, 12);
+    if (!vbgList().length) { g.fillStyle = 'rgba(255,255,255,.72)'; g.textAlign = 'center'; g.font = `600 ${Math.round(Math.min(W, H) * .04)}px system-ui,sans-serif`; g.fillText('Your video: add one with 🎞 Your videos', W / 2, H / 2); g.textAlign = 'left'; }
+    return;
+  }
+  const pulse = CFG.vbg.breathe ? 1 + .025 * clamp(B.pulse, 0, 1) : 1;
+  const paint = (v, a) => { if (!ok(v) || a <= 0) return; const k = Math.max(W / v.videoWidth, H / v.videoHeight) * pulse, dw = v.videoWidth * k, dh = v.videoHeight * k; g.globalAlpha = a; try { g.drawImage(v, (W - dw) / 2, (H - dh) / 2, dw, dh); } catch (e) { } g.globalAlpha = 1; };
+  g.fillStyle = '#000'; g.fillRect(0, 0, W, H);
+  const f = VBG.id[1 - VBG.on] && ok(nx) ? VBG.fade : 0; paint(cur, ok(cur) ? 1 : 0); paint(nx, ok(cur) ? f : 1);
+  const tint = clamp(+CFG.vbg.tint || 0, 0, 1); if (tint > .01) { g.globalCompositeOperation = 'color'; g.fillStyle = bkHsl(B.hue, 75, 50, tint * .85); g.fillRect(0, 0, W, H); g.globalCompositeOperation = 'source-over'; }
+  const dim = clamp(+CFG.vbg.dim || 0, 0, .9) * (CFG.vbg.breathe ? 1 - .45 * clamp(B.en, 0, 1) : 1); if (dim > .01) { g.fillStyle = `rgba(0,0,0,${dim.toFixed(3)})`; g.fillRect(0, 0, W, H); }
+}
+/* a video no one has drawn for a moment is paused, so it costs nothing while another look is on */
+setInterval(() => { if (performance.now() - VBG.used > 1500) VBG.el.forEach(v => { if (v && !v.paused) try { v.pause(); } catch (e) { } }); }, 1000);
+
+/* ---------- adding, choosing and removing videos ---------- */
+/** can this browser play it? read its length and size first (a format it cannot play is refused here, not found out on stage) */
+function vbgProbe(file) {
+  return new Promise(res => { const v = document.createElement('video'), u = URL.createObjectURL(file); let done = false; v.muted = true; v.preload = 'metadata';
+    const end = r => { if (done) return; done = true; URL.revokeObjectURL(u); res(r); };
+    v.onloadedmetadata = () => end(v.videoWidth > 0 ? { dur: v.duration, w: v.videoWidth, h: v.videoHeight } : null); v.onerror = () => end(null); setTimeout(() => end(null), 10000); v.src = u; });
+}
+async function vbgAdd(files) {
+  if (!PRJ.db) return toast('This browser is not keeping files for this site (a private window, or storage turned off), so videos cannot be stored.', 'warn');
+  const list = [...files].filter(f => /^video\//.test(f.type) || /\.(mp4|m4v|webm|mov|ogv)$/i.test(f.name)); if (!list.length) return toast('Choose video files: MP4 or WebM.', 'warn');
+  let n = 0;
+  for (const f of list) {
+    if (CFG.vbg.list.length >= VBG_MAX) { toast('Up to ' + VBG_MAX + ' videos. Remove one to add another.', 'warn'); break; }
+    if (f.size > VBG_MAXFILE) { toast('“' + f.name + '” is over 300 MB. A short loop (a few MB) works best.', 'warn'); continue; }
+    const m = await vbgProbe(f); if (!m) { toast('This browser cannot play “' + f.name + '”. MP4 (H.264) or WebM play almost everywhere.', 'warn'); continue; }
+    try {
+      const id = 'v' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); await pdbPut('blobs', f, 'stage/vid/' + id);
+      CFG.vbg.list.push({ id, name: f.name.replace(/\.[^.]+$/, '').slice(0, 40) || 'Video', kb: Math.round(f.size / 1024), dur: isFinite(m.dur) ? +m.dur.toFixed(1) : null, w: m.w, h: m.h }); n++;
+      if (!CFG.vbg.pick) CFG.vbg.pick = id;
+    } catch (e) { toast('“' + f.name + '” could not be kept: ' + (e && /quota/i.test(e.name + e.message) ? 'this browser is out of storage space for this site.' : (e.message || e.name)), 'warn'); }
+  }
+  if (n) { saveCfg(); bus.emit('vbg'); toast(n + (n === 1 ? ' video' : ' videos') + ' added. They stay on this device.', 'ok'); }
+  return n;
+}
+async function vbgRemove(id) {
+  CFG.vbg.list = CFG.vbg.list.filter(x => x.id !== id); if (CFG.vbg.pick === id) CFG.vbg.pick = CFG.vbg.list.length ? CFG.vbg.list[0].id : '';
+  [0, 1].forEach(i => { if (VBG.id[i] === id) { VBG.id[i] = ''; const v = VBG.el[i]; if (v) { try { v.pause(); } catch (e) { } v.removeAttribute('src'); v.load(); } } });
+  const u = VBG.url.get(id); if (u) { URL.revokeObjectURL(u); VBG.url.delete(id); }
+  try { await pdbDel('blobs', 'stage/vid/' + id); } catch (e) { }
+  saveCfg(); bus.emit('vbg');
+}
+function vbgUse(id) { CFG.vbg.pick = id; saveCfg(); VBG.fade = 0; if (VZ.mode !== 'video') vzSetMode('video'); bus.emit('vbg'); }
+/** the button beside the Behind you looks */
+function vbgBtn() { return h('button', { class: 'btn sm', id: 'vbgBtn', title: 'Your own video loops, to play behind you', onclick: () => vbgOpen() }, '🎞 Your videos'); }
+function vbgOpen() {
+  const pick = h('input', { type: 'file', accept: 'video/mp4,video/webm,video/quicktime,.mp4,.m4v,.webm,.mov', multiple: true, style: { display: 'none' }, onchange: async e => { const fl = [...e.target.files]; e.target.value = ''; if (fl.length) { await vbgAdd(fl); paint(); } } });
+  const listEl = h('div', { class: 'vbg-list', id: 'vbgList' }), fmt = x => [x.dur ? Math.floor(x.dur / 60) + ':' + String(Math.round(x.dur % 60)).padStart(2, '0') : '', x.w && x.h ? x.w + '×' + x.h : '', x.kb ? (x.kb > 1024 ? (x.kb / 1024).toFixed(1) + ' MB' : x.kb + ' KB') : ''].filter(Boolean).join(' · ');
+  function paint() {
+    listEl.innerHTML = ''; const L = CFG.vbg.list;
+    if (!L.length) listEl.append(h('div', { class: 'tiny muted' }, 'No videos yet. A short loop that repeats smoothly works best: clouds, water, a road at night, lights, your own footage.'));
+    L.forEach(x => listEl.append(h('div', { class: 'vbg-row' + (x.id === CFG.vbg.pick ? ' on' : ''), 'data-vid': x.id },
+      h('div', { class: 'vbg-n' }, h('b', {}, x.name), h('span', { class: 'tiny muted' }, VBG.gone.has(x.id) ? 'cannot be played here' : fmt(x))),
+      h('button', { class: 'btn sm' + (x.id === CFG.vbg.pick ? ' on' : ''), title: 'Show this one', onclick: () => { vbgUse(x.id); paint(); } }, x.id === CFG.vbg.pick ? '● Showing' : '▶ Use'),
+      h('button', { class: 'btn sm', title: 'Remove it from this device', 'aria-label': 'Remove ' + x.name, onclick: async () => { await vbgRemove(x.id); paint(); } }, '✕'))));
+    add.disabled = L.length >= VBG_MAX;
+  }
+  const add = h('button', { class: 'btn primary', id: 'vbgAdd', onclick: () => pick.click() }, '＋ Add videos…');
+  const range = (k, lo, hi, label, tip) => h('label', { class: 'lrow', style: { gap: '8px', alignItems: 'center' }, title: tip }, h('span', { style: { width: '120px' } }, label),
+    h('input', { type: 'range', min: lo, max: hi, step: .05, value: CFG.vbg[k], 'data-vbg': k, style: { flex: 1 }, oninput: e => { CFG.vbg[k] = +e.target.value; saveCfg(); } }));
+  const box = h('div', { class: 'vbg-set' },
+    h('p', { class: 'tiny muted', style: { margin: '0 0 10px', lineHeight: 1.5 } }, 'Your own video loops as a look behind you. They play without sound and fill the picture; with Camera look ▸ Me in front you stand inside them. On the Visuals, the Stage and in recorded videos.'),
+    h('div', { class: 'row', style: { gap: '8px', alignItems: 'center', flexWrap: 'wrap' } }, add, pick, h('button', { class: 'btn', id: 'vbgShow', onclick: () => { vzSetMode('video'); try { dockGo('vis'); } catch (e) { } } }, 'Show Your video now')),
+    listEl,
+    h('h5', { style: { margin: '12px 0 4px' } }, 'With the music'),
+    h('div', { class: 'row', style: { gap: '8px', alignItems: 'center', flexWrap: 'wrap' } }, h('span', { class: 'tiny muted' }, 'Change video'),
+      h('div', { class: 'seg', role: 'group', id: 'vbgCycle' }, VBG_CYCLES.map(([v, t]) => h('button', { type: 'button', class: CFG.vbg.cycle === v ? 'on' : '', 'data-v': v, onclick: e => { CFG.vbg.cycle = v; saveCfg(); $$('button', e.currentTarget.parentNode).forEach(b => b.classList.toggle('on', b === e.currentTarget)); } }, t)))),
+    range('tint', 0, 1, 'Tint to the chord', 'How much the video takes the colour of the chord being played'),
+    range('dim', 0, .8, 'Darken', 'Darker makes you, the words and the chord stand out'),
+    h('label', { class: 'chk' }, h('input', { type: 'checkbox', id: 'vbgBreathe', checked: !!CFG.vbg.breathe, onchange: e => { CFG.vbg.breathe = e.target.checked; saveCfg(); } }), ' Breathe with the music (brighter when you play loud, a small swell on a strong beat)'),
+    h('p', { class: 'tiny muted', style: { margin: '10px 0 0', lineHeight: 1.5 } }, 'How fast they play follows 🎚 Speed. Up to ' + VBG_MAX + ' videos, 300 MB each. They are kept in this browser on this device, are not uploaded and are not part of song backups.'));
+  pdlg('vbg', 'YOUR VIDEOS', box, { wide: true });
+  paint();
 }
 
 /* >>> parts/72-agent.js */

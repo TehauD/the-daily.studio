@@ -94,11 +94,11 @@ function tipDraw(g, W, H, where, avoid) {
   return [x, y, cw, ch];
 }
 /** what the Visuals draw on top (the small neck, the voice ribbon, the note and chord read-out), so the case can step around them */
-function tipVisAvoid(W, H, mode) {
-  const r = [], perf = document.body.classList.contains('perform-on'), bare = vzBare(mode);
-  if (CFG.vzNeck !== false && !perf && !bare) r.push(neckRect(W, H));
+function tipVisAvoid(W, H, mode, o) {
+  const r = [], perf = document.body.classList.contains('perform-on'), bare = vzBare(mode); o = o || {};
+  if (CFG.vzNeck !== false && !o.noNeck && !perf && !bare) r.push(neckRect(W, H));
   if (CFG.vzRibbon && !perf && typeof voxRect === 'function') r.push(voxRect(W, H));
-  if (!bare) r.push([0, 0, W * .32, H * .13 + 28 + Math.round(20 * Math.min(W, H * 2) / 900)]);
+  if (!bare && !o.noText) r.push([0, 0, W * .32, H * .13 + 28 + Math.round(20 * Math.min(W, H * 2) / 900)]);
   return r;
 }
 /** what the Stage's own words cover, so the case can step around them (part 13's HUD, or the lower third) */

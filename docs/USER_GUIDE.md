@@ -522,6 +522,13 @@ With the performer backdrop's lower third on, Teach and Sky draw in the room abo
 
 A Monitor widget that shows the show the way the room sees it: the visuals with **you in front of them** (from the camera, **not mirrored**, which is the side the audience sees), so you can watch your own expression while you record. Add it from **Widgets** at the top of the Monitor (the Record layout already has it). Its **📷 Camera on** button starts the camera; choose **Me in front (green screen)** in its Camera look menu to stand in front of the show, or **Visuals frame me** for a soft oval. It works while you are on any tab; when the Visuals tab is open it simply copies that picture, which is mirrored if your camera is.
 
+### Your video behind you (2.19)
+
+**Behind you ▸ Your video** plays your own video loops as the look: clouds, water, a road at night, lights, your own footage. **🎞 Your videos** (next to the Behind you looks) is where you add them: MP4 or WebM, up to 8, 300 MB each (a short loop of a few MB works best). They play without sound and fill the picture, so with **Camera look ▸ Me in front** you stand inside them. They are on the Visuals, the Stage (as a scene's look) and in recorded videos.
+- **With the music:** **🎚 Speed** sets how fast they play; **Breathe** makes them a little brighter when you play loud and swell slightly on a strong beat; **Tint to the chord** gives them the colour of the chord being played; **Darken** helps you, the words and the chord stand out.
+- **Change video:** one video, or the next one on each new section, every 4 bars or every 8 bars while the song plays (a short crossfade). When the song stops, the one you chose comes back.
+- They are kept in this browser on this device, are not uploaded and are not part of song backups. A file the browser cannot play is turned away when you add it.
+
 ### Speed, size and zoom (2.15)
 
 **🎚 Speed · size · zoom**, in the Visuals bar and the Stage's scene bar, opens three sliders that apply wherever the visuals are drawn (the Visuals tab, the Stage, Perform's backdrop, the Audience view) and are remembered:
@@ -584,7 +591,7 @@ Live and session measurements: pitch-class usage and intonation (mean cents devi
 * **Compressed audio** saves M4A (or Opus in a .webm where the browser cannot make M4A). It plays once in real time, like a bounce.
 * **Share page** saves **one HTML file** with the sound, lyrics, chords and a small player. Open it in any browser or send it. Click a lyric line to jump there. It loads nothing from anywhere.
 * **Print or PDF sheet** makes a clean sheet with chords over the words for the browser's Print dialog (choose **Save as PDF** there).
-* **⏺ Record the stage** (Visuals bar) saves a video of the visuals with the song's sound.
+* **⏺ Record the stage** (Visuals bar) saves a video of the visuals with the song's sound. Choose its shape (2.19): **▭ Wide 16:9** (1920 × 1080, for YouTube, a website or a TV), **▯ Vertical 9:16** (1080 × 1920, for Reels, TikTok and Shorts) or **▢ As on screen**. The video is drawn for its own frame, so the camera is cropped to keep you in the middle of a vertical video. **Words and chord on the video** puts the line being sung (with its chords over the words) and the chord in large type at the bottom; it starts on for vertical and off for wide. While it records, the Visuals show a preview, and it keeps recording if you open another panel. In **🎬 Creator Studio** the shape is next to **⏺ Record MP4**, and the **🖼 Thumbnail** takes the same shape (1080 × 1920 for vertical).
 
 **Backup folder** (Chrome and Edge on a computer). **Settings ▸ Export ▸ Backup folder ▸ Choose a folder…** Each song is written there as a `.daily-song.zip` shortly after you change it, and **Save all songs now** writes them all. A folder inside a cloud drive works with that drive's own sync. After a browser restart it may ask once to allow access again. No account is involved: the browser writes the files directly. Renaming a song leaves its old file in the folder.
 
