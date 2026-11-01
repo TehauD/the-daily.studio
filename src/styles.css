@@ -876,8 +876,7 @@ body.perform-on #vzHud{display:none!important}
 .egg-line{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-style:italic;text-align:center;opacity:.75}.pf-bar .egg-line{font:italic 500 13px var(--sans);color:#cfe0d6}
 .egg-in{animation:eggIn .7s ease}@keyframes eggIn{from{opacity:0;transform:translateY(3px)}to{opacity:.75;transform:none}}
 @media (prefers-reduced-motion:reduce){.egg-in{animation:none}}
-.egg-line.egg-long{text-overflow:clip;text-align:left}.egg-line.egg-long .egg-t{display:inline-block;animation:eggScroll var(--egg-dur,6s) ease-in-out 2.5s 1 both}
-@keyframes eggScroll{from{transform:translateX(0)}to{transform:translateX(var(--egg-shift,0))}}
+.egg-line.egg-long{text-overflow:clip;text-align:left}.egg-line.egg-long .egg-t{display:inline-block}
 @media (max-width:700px){.pf-chord{font-size:clamp(64px,20vh,200px)}.btn.pf-b{min-height:44px;padding:0 14px;font-size:15px}}
 
 /* ---------- print sheet ---------- */

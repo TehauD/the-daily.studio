@@ -2,6 +2,17 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.21.2 — 2026-11-01 — The hidden line: a quote of the day
+
+### Changed
+- **The hidden line** (triple-click the version tag) shows **one quote a day**, from people in history (`src/parts/73-build-egg.js`). It changes at midnight by the device's own clock. Everyone gets the same quote on the same day, and all quotes come round once, in a fixed shuffled order, before any repeats, so two days in a row never share one.
+- **118 quotes** (up from 20) on making things, learning and practice, mistakes, music, courage and wonder: among others Tchaikovsky, Bach, Beethoven, Stravinsky, John Cage, Charlie Parker, Ella Fitzgerald, Ada Lovelace, Grace Hopper, Feynman, Van Gogh, Maya Angelou, Toni Morrison, Helen Keller, Frederick Douglass, Seneca and Rumi. The four lines credited to Tehau are gone.
+  - Credits stay honest: a saying with no known source says **attributed to**; a paraphrase or a loose translation says **after**; and a line often credited to the wrong person carries the right name ("Do what you can, with what you have, where you are" is Bill Widener's, quoted by Theodore Roosevelt; "Whatever you can do, or dream you can, begin it" is John Anster's, after Goethe; "Music has charms to soothe a savage breast" is William Congreve's).
+- A quote too long for its space now glides to its end at reading pace, holds there, goes back to its start and rests before the next time, instead of gliding once. It is measured again when its space changes, and in a sliver of space it is cut short instead. With reduced motion it does not move, and the whole quote is always on hover.
+
+### Tests
+- `test/e2e-perform-views.cjs`: 118 different quotes, each with who it is from and none from the maker; today's quote is shown; it changes at midnight by the device's calendar (summer time and the new year too); every quote comes round once before any repeats, never two days running; the line moves on by itself after midnight; the long-quote glide reaches the end in every place, holds, comes back and repeats, is measured again when its space narrows, and stays still in a sliver of space and with reduced motion.
+
 ## 2.21.1 — 2026-11-01 — The hidden line: quotes from history, and from Tehau
 
 ### Changed
