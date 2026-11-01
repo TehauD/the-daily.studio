@@ -15,7 +15,7 @@ suite('e2e-woodshed', async t => {
   /* ---- the way in, from the Theory panel ---- */
   await ev(() => { const D = window.__daily; D.S.key = 9; D.S.scale = 'Minor Pentatonic'; D.commit(false); D.sideShow('theory'); }); await wait(300);
   await ev(() => document.getElementById('theoryShed').click()); await wait(500);
-  ok(await ev(() => { const d = document.getElementById('woodshed'); return !!(d && d.open) && ['scales', 'arps', 'ear', 'how'].every(k => d.querySelector('section[data-sec="' + k + '"]')) && document.getElementById('ws-key').value === '9' && document.getElementById('ws-scale').value === 'Minor Pentatonic'; }), 'Theory ▸ Practise it in the Woodshed opens the room on this key and scale: Scales, Arpeggios, Your ear');
+  ok(await ev(() => { const d = document.getElementById('shower'); return !!(d && d.open) && ['scales', 'arps', 'ear', 'how'].every(k => d.querySelector('section[data-sec="' + k + '"]')) && document.getElementById('ws-key').value === '9' && document.getElementById('ws-scale').value === 'Minor Pentatonic'; }), 'Theory ▸ Practise it in the Woodshed opens the room on this key and scale: Scales, Arpeggios, Your ear');
   const SR = await ev(() => { const r = window.__daily.wsScaleRun(); return { n: r.notes.length, st: r.st, degs: r.notes.map(q => q.deg).join(' '), frets: r.notes.slice(0, 6).map(q => q.s + ':' + q.f).join(' ') }; });
   ok(SR.n === 11 && SR.st === 5 && SR.degs === 'R b3 4 5 b7 R b7 5 4 b3 R' && SR.frets === '0:5 0:8 1:5 1:7 2:5 2:7', 'A minor pentatonic from the 5th fret: the box every guitarist knows, up and back down (' + SR.degs + ')');
   ok(await ev(() => { const o = [...document.querySelectorAll('#ws-scale option')]; return o.length === 16 && o.filter(x => x.disabled).length === 11 && o.find(x => x.value === 'Dorian').disabled && /🔒 Modes and more scales/.test(document.getElementById('ws-room-scale').textContent); }), 'five scales to start with; the modes and the rest are locked, and the room says how they open');
@@ -73,11 +73,11 @@ suite('e2e-woodshed', async t => {
   await ev(() => { const s = document.getElementById('ws-ear-mode'); s.value = 'chords'; s.dispatchEvent(new Event('change')); document.getElementById('ws-ear-go').click(); }); await wait(200);
   ok(await ev(() => window.__daily.WS.ear.q.kind === 'chord' && document.querySelectorAll('#ws-room-ear .ws-a').length === 7), 'chord qualities: major, minor, diminished, augmented and three sevenths');
   ok(await ev(() => /3\/7/.test(document.querySelector('.secret-chip').textContent)), 'the 🗝 counter: 3 of 7');
-  await ev(() => document.getElementById('woodshed').close());
+  await ev(() => document.getElementById('shower').close());
 
   /* ---- with hidden surprises off, the treasures are simply open ---- */
   const q = await t.open({ init: () => { try { localStorage.setItem('fw.cfg', JSON.stringify({ eggs: false })); } catch (e) { } } });
-  await q.evaluate(() => window.__daily.woodshedOpen()); await wait(400);
-  ok(await q.evaluate(() => document.querySelectorAll('#ws-scale option:disabled').length === 0 && !document.querySelector('#ws-ear-mode option[value="chords"]').disabled && !/🔒/.test(document.getElementById('woodshed').textContent)), 'with hidden surprises off, nothing in the room is locked');
+  await q.evaluate(() => window.__daily.showerOpen()); await wait(400);
+  ok(await q.evaluate(() => document.querySelectorAll('#ws-scale option:disabled').length === 0 && !document.querySelector('#ws-ear-mode option[value="chords"]').disabled && !/🔒/.test(document.getElementById('shower').textContent)), 'with hidden surprises off, nothing in the room is locked');
   ok(await q.evaluate(() => Object.keys(window.__daily.CFG.secrets).length === 0), 'and nothing is counted as found');
 });

@@ -111,7 +111,7 @@ const BKS_CMDS = {
   open: ['open <page>', 'open a hidden page in a new tab'],
   history: ['history', 'what you typed'],
   uptime: ['uptime', 'how long this page has been open'],
-  woodshed: ['woodshed', 'the practice room: scales, arpeggios, your ear'],
+  shower: ['shower', 'Shower mode: scales, arpeggios, your ear'],
   exit: ['exit', 'leave Backstage']
 };
 const bksJson = (v, n = 1600) => { const s = JSON.stringify(v, null, 1); return s.length > n ? s.slice(0, n) + '\n… (' + s.length + ' characters; the Agent playground shows it all)' : s; };
@@ -157,7 +157,7 @@ async function bksRun(line, out) {
     case 'open': { const p = BKS_PAGES.find(([x, n]) => x.replace(/\/$/, '') === arg.replace(/\/$/, '') || n.toLowerCase().startsWith(arg.toLowerCase())) || (arg === 'lobby' ? BKS_PAGES[0] : null); if (!p) return out('open ' + BKS_PAGES.map(x => x[0].replace(/\/$/, '') || 'lobby').join(' | '), 'err'); window.open(bksBase() + p[0], '_blank', 'noopener'); return out('↗ ' + bksBase() + p[0]); }
     case 'history': return out(BKS.hist.map((x, i) => String(i + 1).padStart(4) + '  ' + x).join('\n') || 'nothing yet');
     case 'uptime': { const s = Math.round((Date.now() - BKS.t0) / 1000); return out('up ' + (s >= 3600 ? Math.floor(s / 3600) + ' h ' : '') + Math.floor(s % 3600 / 60) + ' min ' + s % 60 + ' s · ' + (frameN || 0).toLocaleString('en') + ' frames drawn'); }
-    case 'woodshed': case 'shed': setTimeout(() => woodshedOpen(), 300); return out('🪵 to the woodshed. Practice makes the music.');
+    case 'shower': case 'woodshed': setTimeout(() => showerOpen(), 300); return out('🚿 Running the water. Not responsible for damage to electronic devices.');
     case 'exit': case 'quit': case 'logout': { const d = document.getElementById('backstage'); if (d) setTimeout(() => d.close(), 350); return out('See you at soundcheck. 🎸'); }
   }
   return out('command not found: ' + cmd + ' · type help', 'err');
