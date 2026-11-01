@@ -105,6 +105,7 @@ function openSettings(at) {
       F('Workspace', h('button', { class: 'btn', onclick: () => { close(); workspaceOpen(); } }, (goalNow() ? goalNow().ico + ' ' + goalNow().name : 'Choose a goal') + ' ▸')),
       F('Device layout', sel('form', [['auto', 'Auto (fit this device)'], ['phone', 'Phone'], ['tablet', 'Tablet'], ['desktop', 'Desktop']], () => applyForm())),
       chk('On-screen tab keypad on phones and tablets', 'kpad', () => mSync()),
+      chk('Hidden surprises (a few secrets for people who look)', 'eggs', () => secretSync()),
       chk('Let AI agents in this browser use the studio (read the song, load chord sheets, edit, play; never the microphone or recording)', 'agents', () => agentRegister()),
       note('An AI assistant in your browser can use the studio through WebMCP. It runs here; nothing is sent anywhere. Each change shows a 🤖 note and can be undone.')] },
     { key: 'music', label: 'Music', ico: '♪', sub: 'Tuning reference, note names and the fretboard.', body: () => [
@@ -160,12 +161,13 @@ function openHelp(at) {
       h('p', { class: 'small muted' }, 'It has no song titles, words, file names, device names or tip link, and nothing is sent: you see it and paste it yourself.'),
       h('div', { class: 'hub-acts' }, h('button', { class: 'btn primary', id: 'reportCopy', onclick: () => reportCopy() }, '⚑ Copy a problem report'), h('button', { class: 'btn', id: 'reportShow', onclick: async () => { close(); reportShow(await reportText()); } }, 'Show it first'),
         h('a', { class: 'btn', href: BRAND.repo + '/issues/new', target: '_blank', rel: 'noopener noreferrer' }, 'Open a GitHub issue ↗'))] },
+    CFG.backstage ? { key: 'backstage', label: 'Backstage', ico: '🎭', sub: 'You found the door. The engine live, how it is made, the agent playground.', wide: true, body: () => [h('div', { class: 'hub-acts' }, h('button', { class: 'btn primary', id: 'helpBackstage', onclick: () => { close(); backstageOpen(); } }, '🎭 Go backstage'))] } : null,
     { key: 'about', label: 'About', ico: '♥', wide: true, body: () => [aboutBlock()] }
   ] });
 }
 
 /* ---------- status bar ---------- */
-function buildStatus() { const s = $('#status'); UI.st = { a: h('span'), i: h('span'), r: h('span'), m: h('span'), f: h('span') }; s.append(UI.st.a, UI.st.i, UI.st.r, h('span', { class: 'sp egg-line', 'aria-live': 'off' }), UI.st.m, UI.st.f, buildTag('st-ver')); }
+function buildStatus() { const s = $('#status'); UI.st = { a: h('span'), i: h('span'), r: h('span'), m: h('span'), f: h('span') }; s.append(UI.st.a, UI.st.i, UI.st.r, h('span', { class: 'sp egg-line', 'aria-live': 'off' }), UI.st.m, UI.st.f, secretChip('st-sec'), buildTag('st-ver')); }
 let fpsN = 0, fpsT = 0, FPS = 0;
 function updateStatus() {
   if (!UI.st) return; const L = latencyInfo();

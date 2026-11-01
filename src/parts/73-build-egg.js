@@ -49,7 +49,7 @@ function buildTag(cls) {
   let n = 0, t = 0;
   return h('span', { class: 'build-tag ' + (cls || ''), title: 'the-daily.studio ' + BUILD_TAG, onclick: () => {
     const now = performance.now(); n = now - t < 550 ? n + 1 : 1; t = now; if (n < 3) return; n = 0;
-    CFG.egg = !eggOn(); saveCfg(); eggTick(true); toast(eggOn() ? '🥚 You found the hidden line. Triple-click the version to hide it again.' : 'The hidden line is asleep again.', 'ok');
+    CFG.egg = !eggOn(); saveCfg(); eggTick(true); const first = eggOn() && typeof secretFound === 'function' && secretFound('line', true); toast(eggOn() ? '🥚 You found the hidden line.' + (first ? ' ' + secretCount() : '') + ' Triple-click the version to hide it again.' : 'The hidden line is asleep again.', 'ok');
   } }, BUILD_TAG);
 }
 /** keep every .egg-line on the page showing the current line (or nothing while asleep) */

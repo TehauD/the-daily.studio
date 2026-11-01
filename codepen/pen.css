@@ -1356,3 +1356,18 @@ body[data-goal]:not([data-goal=""]) #dock .tab.on{box-shadow:inset 0 -3px 0 var(
 .vbg-row{display:flex;gap:8px;align-items:center;padding:6px 8px;border:1px solid var(--line);border-radius:10px}
 .vbg-row.on{border-color:var(--accent)}
 .vbg-n{flex:1;min-width:0;display:flex;flex-direction:column}.vbg-n b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ---------- secrets and Backstage (part 73b) ---------- */
+.secret-chip{font:600 11px var(--mono);background:none;border:1px solid color-mix(in srgb,#f7c95a 55%,transparent);color:inherit;border-radius:999px;padding:1px 7px;cursor:pointer;margin-right:6px}
+.secret-chip[hidden]{display:none}
+.egg-toast .muted{opacity:.8}
+.egg-glow{position:fixed;inset:0;pointer-events:none;z-index:9998;box-shadow:inset 0 0 120px 30px rgba(247,201,90,.42);animation:eggGlow 2.4s ease-out forwards}
+@keyframes eggGlow{0%{opacity:0}18%{opacity:1}100%{opacity:0}}
+@media (prefers-reduced-motion:reduce){.egg-glow{display:none}}
+.secret-list{display:grid;gap:8px}.secret-row{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border:1px dashed var(--line);border-radius:10px}
+.secret-row.found{border-style:solid;border-color:color-mix(in srgb,#f7c95a 60%,var(--line))}.secret-i{font-size:18px;width:24px;text-align:center}
+.bks-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:4px 16px;margin-bottom:10px}
+.bks-r{display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line);padding:3px 0;font-size:12px}.bks-r b{font-weight:600;text-align:right}
+.bks-scope{width:100%;height:auto;border-radius:10px;background:#050b0c;display:block}
+.bks-out{max-height:260px;overflow:auto;background:#0b100e;color:#9de0b8;border-radius:10px;padding:10px;font:12px/1.45 var(--mono);white-space:pre-wrap;margin:8px 0 0}
+#bksIn{width:100%;margin-top:8px}

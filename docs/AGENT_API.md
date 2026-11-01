@@ -9,7 +9,7 @@ the-daily.studio offers its main actions as tools for an AI agent running in the
 | **WebMCP** | browser assistants and extensions that speak MCP | `navigator.modelContext.registerTool()` for each tool (or `provideContext()` in earlier drafts) |
 | **`window.dailyStudio`** | agents that drive pages with scripts, and tests | `dailyStudio.tools()`, `dailyStudio.call(name, input)` (returns a Promise), `dailyStudio.describe()` |
 
-Both run the same functions as the buttons. Desktop MCP clients (Claude Desktop, Claude Code) can reach the WebMCP tools through a browser extension that relays a page's WebMCP tools to MCP clients; nothing in the app changes for that.
+Both run the same functions as the buttons. (`window.dailyStudio` has one more method that is not a tool and does nothing to your song; developers who open the console will find out what it is.) Desktop MCP clients (Claude Desktop, Claude Code) can reach the WebMCP tools through a browser extension that relays a page's WebMCP tools to MCP clients; nothing in the app changes for that.
 
 ## The tools (API 2)
 

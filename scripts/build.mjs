@@ -27,7 +27,7 @@ const MARK_SM = markInner({ hex: 'var(--accent)', ink: 'var(--text)', bars: fals
 js = js.replaceAll('__MARK_INNER__', MARK);
 /* the version the app shows, and a build code taken from the code itself: the same source always gives the same code */
 const BUILD = createHash('sha256').update(js).digest('hex').slice(0, 7);
-js = js.replaceAll('__VERSION__', pkg.version).replaceAll('__BUILD__', BUILD);
+js = js.replaceAll('__VERSION__', pkg.version).replaceAll('__BUILD__', BUILD).replaceAll('__PARTS__', String(parts.length)).replaceAll('__LINES__', String(js.split('\n').length));
 /* index.html carries a minified copy (comments, indentation and needless spaces out; nothing else). The CodePen files keep the
    readable source. `node scripts/build.mjs --pretty` writes an unminified index.debug.html for debugging (not committed). */
 const PRETTY = process.argv.includes('--pretty');

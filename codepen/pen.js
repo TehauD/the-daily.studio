@@ -5,7 +5,7 @@
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.19.1', BUILD = '12deaf8';   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.20.0', BUILD = 'c92b37a', PARTS_N = +'85' || 0, LINES_N = +'14225' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://the-daily.studio/journal/' };
 const $ = (s, r = document) => r.querySelector(s);
@@ -79,7 +79,8 @@ const CFG = Object.assign({
   rec: { dry: true, wet: true }, fretNames: 'notes', lufsTarget: 0, gTrim: 0, ioLeveled: false, dropKind: 'track',
   vin: 'off', armG: true, armV: true, voxMon: false, voxPolish: true, voxTrim: 0, trackSync: true, trackFill: 'all', renderFast: true, recEnd: 'grow', vzRibbon: false, vrange: null,
   agents: true,   // AI agents in this browser may use the studio's tools (part 72)
-  lowLat: true,   // zero-delay compressors and saturation (part 02); off = the browser's own, which add about 20 ms to the guitar
+  lowLat: true,
+  eggs: true,     // the hidden surprises (part 73b); off stops the musical ones and hides the counter   // zero-delay compressors and saturation (part 02); off = the browser's own, which add about 20 ms to the guitar
   mpOk: false   // true once the person has said yes to the one-time MediaPipe download (see mpConsent); nothing leaves the page before that
 }, store.get('cfg', {}));
 const saveCfg = () => store.set('cfg', CFG);
@@ -1559,6 +1560,7 @@ function openSettings(at) {
       F('Workspace', h('button', { class: 'btn', onclick: () => { close(); workspaceOpen(); } }, (goalNow() ? goalNow().ico + ' ' + goalNow().name : 'Choose a goal') + ' ▸')),
       F('Device layout', sel('form', [['auto', 'Auto (fit this device)'], ['phone', 'Phone'], ['tablet', 'Tablet'], ['desktop', 'Desktop']], () => applyForm())),
       chk('On-screen tab keypad on phones and tablets', 'kpad', () => mSync()),
+      chk('Hidden surprises (a few secrets for people who look)', 'eggs', () => secretSync()),
       chk('Let AI agents in this browser use the studio (read the song, load chord sheets, edit, play; never the microphone or recording)', 'agents', () => agentRegister()),
       note('An AI assistant in your browser can use the studio through WebMCP. It runs here; nothing is sent anywhere. Each change shows a 🤖 note and can be undone.')] },
     { key: 'music', label: 'Music', ico: '♪', sub: 'Tuning reference, note names and the fretboard.', body: () => [
@@ -1614,12 +1616,13 @@ function openHelp(at) {
       h('p', { class: 'small muted' }, 'It has no song titles, words, file names, device names or tip link, and nothing is sent: you see it and paste it yourself.'),
       h('div', { class: 'hub-acts' }, h('button', { class: 'btn primary', id: 'reportCopy', onclick: () => reportCopy() }, '⚑ Copy a problem report'), h('button', { class: 'btn', id: 'reportShow', onclick: async () => { close(); reportShow(await reportText()); } }, 'Show it first'),
         h('a', { class: 'btn', href: BRAND.repo + '/issues/new', target: '_blank', rel: 'noopener noreferrer' }, 'Open a GitHub issue ↗'))] },
+    CFG.backstage ? { key: 'backstage', label: 'Backstage', ico: '🎭', sub: 'You found the door. The engine live, how it is made, the agent playground.', wide: true, body: () => [h('div', { class: 'hub-acts' }, h('button', { class: 'btn primary', id: 'helpBackstage', onclick: () => { close(); backstageOpen(); } }, '🎭 Go backstage'))] } : null,
     { key: 'about', label: 'About', ico: '♥', wide: true, body: () => [aboutBlock()] }
   ] });
 }
 
 /* ---------- status bar ---------- */
-function buildStatus() { const s = $('#status'); UI.st = { a: h('span'), i: h('span'), r: h('span'), m: h('span'), f: h('span') }; s.append(UI.st.a, UI.st.i, UI.st.r, h('span', { class: 'sp egg-line', 'aria-live': 'off' }), UI.st.m, UI.st.f, buildTag('st-ver')); }
+function buildStatus() { const s = $('#status'); UI.st = { a: h('span'), i: h('span'), r: h('span'), m: h('span'), f: h('span') }; s.append(UI.st.a, UI.st.i, UI.st.r, h('span', { class: 'sp egg-line', 'aria-live': 'off' }), UI.st.m, UI.st.f, secretChip('st-sec'), buildTag('st-ver')); }
 let fpsN = 0, fpsT = 0, FPS = 0;
 function updateStatus() {
   if (!UI.st) return; const L = latencyInfo();
@@ -3839,7 +3842,7 @@ async function boot() {
   document.addEventListener('visibilitychange', () => { if (!document.hidden && E.ctx && !OFR.busy && E.ctx.state === 'suspended') E.ctx.resume(); });
   if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener('devicechange', () => { ioDeviceChange().catch(e => console.warn(e)); });
   bus.emit('song');
-  if (/[?&]debug\b/.test(location.search)) window.__daily = { S, startAudio, playheadSlot, GUARD, reportText, reportCopy, srecQ, srecSize, pdbGet, srecFmt, SREC_FMTS, VBG, vbgAdd, vbgRemove, vbgUse, vbgOpen, vbgDraw, vzSetMode, srecFrame, srecFmtBox, kitThumb, WORKLET_SRC, mkComp, mkShaper, rigLat, voxLat, restartAudio, satCurve, rigApply, qrMake, qrSvg, tipLink, tipShort, tipReady, tipCard, tipDraw, tipShareHtml, tipOpen, tipPrint, tipPng, tipVisAvoid, tipStageAvoid, TIP, TIP_TERMS, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, STP, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfort, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, srecStart, srecStop, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, tkFades, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, FB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, vzSetMode, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, drawVis, perfClose, voicings, peaksOf, uid, shareGate, shareData, shareHtml, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, slotAtTime, SEL, mtof, spb, playheadSlot, WR, HM, HMX, HM_MODES, vzImmersive, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitThumb, kitInk, kitNotes, kitRecord, srecMime, mGo, GD_SESSIONS, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard};   // test hook, only with ?debug
+  if (/[?&]debug\b/.test(location.search)) window.__daily = { S, SEC, SECRETS, secretFound, secretTiming, secretsOpen, secretSync, backstageOpen, startAudio, playheadSlot, GUARD, reportText, reportCopy, srecQ, srecSize, pdbGet, srecFmt, SREC_FMTS, VBG, vbgAdd, vbgRemove, vbgUse, vbgOpen, vbgDraw, vzSetMode, srecFrame, srecFmtBox, kitThumb, WORKLET_SRC, mkComp, mkShaper, rigLat, voxLat, restartAudio, satCurve, rigApply, qrMake, qrSvg, tipLink, tipShort, tipReady, tipCard, tipDraw, tipShareHtml, tipOpen, tipPrint, tipPng, tipVisAvoid, tipStageAvoid, TIP, TIP_TERMS, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, STP, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfort, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, srecStart, srecStop, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, tkFades, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, FB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, vzSetMode, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, drawVis, perfClose, voicings, peaksOf, uid, shareGate, shareData, shareHtml, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, slotAtTime, SEL, mtof, spb, playheadSlot, WR, HM, HMX, HM_MODES, vzImmersive, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitThumb, kitInk, kitNotes, kitRecord, srecMime, mGo, GD_SESSIONS, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard};   // test hook, only with ?debug
   projInit().catch(e => { console.warn('library', e); PRJ.ready = true; if (PRJ.wantStart) startMaybe(); });
 }
 
@@ -8253,7 +8256,7 @@ function perfOpen(opener) {
     h('div', { class: 'pf-bar' }, ctl('pfPlay', '▶ Play', 'Play or stop (Space)', () => { T.playing ? stopPlay(true) : play(); }), ctl('pfRec', '● Record', 'Record a take with a count-in (R)', () => { if (!E.hasInput) toast('No input is connected, so only the count-in will run.', 'warn'); toggleRec(); }),
       ctl('pfLoop', '⟲ Loop', 'Loop the song (L)', () => { T.loop = !T.loop; syncTransport(); perfSync(); }), ctl('pfMetro', '♩ Click', 'Metronome (M)', () => { T.metro = !T.metro; syncTransport(); perfSync(); }),
       ctl('pfSlow', '−', 'Slower by 5 BPM', () => { S.bpm = clamp(S.bpm - 5, 30, 260); commit(false); bus.emit('bpm'); perfSync(); }), h('b', { class: 'pf-bpm', id: 'pfBpm' }), ctl('pfFast', '+', 'Faster by 5 BPM', () => { S.bpm = clamp(S.bpm + 5, 30, 260); commit(false); bus.emit('bpm'); perfSync(); }),
-      h('span', { class: 'grow egg-line', 'aria-live': 'off' }), h('span', { class: 'pf-takes', id: 'pfTakes' })), buildTag('pf-ver'));
+      h('span', { class: 'grow egg-line', 'aria-live': 'off' }), h('span', { class: 'pf-takes', id: 'pfTakes' })), secretChip('pf-sec'), buildTag('pf-ver'));
   document.body.append(PF.el); document.body.classList.add('perform-on');
   if (PF.bd) perfBackdrop(true);
   perfRefresh(); perfSync(); eggTick(true); const g = document.getElementById('pfGo'); if (g) g.focus();
@@ -14012,7 +14015,9 @@ try {
     about: 'the-daily.studio agent tools: the same tools this page offers through WebMCP (navigator.modelContext). Everything runs locally in this page.',
     tools: () => AGT.tools.map(t => ({ name: t.name, description: t.description, inputSchema: t.inputSchema, annotations: t.annotations })),
     describe: () => ({ api: AG_API, app: VERSION, build: BUILD, webmcp: AGT.via || null, enabled: agentOn(), aliases: Object.assign({}, AG_ALIAS), limits: Object.assign({}, AG_LIMIT), tools: AGT.tools.map(t => t.name) }),
-    call: (name, input) => agentCall(name, input) }) });
+    call: (name, input) => agentCall(name, input),
+    /* not a tool: the door the console note points developers to (part 73b) */
+    backstage: () => backstage() }) });
 } catch (e) { }
 agentWatch();
 
@@ -14068,7 +14073,7 @@ function buildTag(cls) {
   let n = 0, t = 0;
   return h('span', { class: 'build-tag ' + (cls || ''), title: 'the-daily.studio ' + BUILD_TAG, onclick: () => {
     const now = performance.now(); n = now - t < 550 ? n + 1 : 1; t = now; if (n < 3) return; n = 0;
-    CFG.egg = !eggOn(); saveCfg(); eggTick(true); toast(eggOn() ? '🥚 You found the hidden line. Triple-click the version to hide it again.' : 'The hidden line is asleep again.', 'ok');
+    CFG.egg = !eggOn(); saveCfg(); eggTick(true); const first = eggOn() && typeof secretFound === 'function' && secretFound('line', true); toast(eggOn() ? '🥚 You found the hidden line.' + (first ? ' ' + secretCount() : '') + ' Triple-click the version to hide it again.' : 'The hidden line is asleep again.', 'ok');
   } }, BUILD_TAG);
 }
 /** keep every .egg-line on the page showing the current line (or nothing while asleep) */
@@ -14077,6 +14082,143 @@ function eggTick(force) {
   document.querySelectorAll('.egg-line').forEach(el => { el.textContent = txt; el.classList.remove('egg-in'); void el.offsetWidth; if (txt) el.classList.add('egg-in'); });
 }
 setInterval(() => { if (eggOn() || EGG.shown) eggTick(); }, 1000);
+
+/* >>> parts/73b-secrets.js */
+/* ============================================================
+   Part 73b · SECRETS (2.20) — small surprises for people who look, and a door backstage for developers
+   · Tuned to perfection   all six open strings within ±2 cents of true, one after another (the tuner the studio already has)
+   · In the pocket         sixteen notes in a row within 10 ms of the beat while the song plays (the timing analysis already there)
+   · The hidden line       triple-click the version tag (part 73)
+   · Backstage pass        the browser console says hello to developers and points at dailyStudio.backstage(), which unlocks
+                           Backstage: the engine live, a signal scope, how the page is made, a playground for the agent tools, the secrets
+   A small 🗝 counter next to the version shows how many have been found, once the first one has. The rules: nothing fires while a take
+   or a video is recording, nothing flashes (Calm and reduced motion get no glow), nothing loads or leaves the page, and Settings ▸
+   Workflow ▸ Hidden surprises turns the musical ones off. Found secrets are remembered in this browser (CFG.secrets).
+   ============================================================ */
+const SECRETS = [
+  ['line', 'The hidden line', 'Some numbers want to be clicked three times.', 'Triple-click the version tag: a rotating line of song inspiration wakes up at the bottom of the page.'],
+  ['tuned', 'Tuned to perfection', 'Six strings, two cents.', 'All six open strings within ±2 cents of true, one after another.'],
+  ['pocket', 'In the pocket', 'Sixteen notes, right on time.', 'Sixteen notes in a row within 10 ms of the beat while the song plays.'],
+  ['backstage', 'Backstage pass', 'Developers know where to look.', 'Read the note in the browser console and knocked on the door backstage.']
+];
+CFG.secrets = CFG.secrets && typeof CFG.secrets === 'object' ? CFG.secrets : {};
+const SEC = { tuned: {}, tunedT0: 0, hold: { i: -1, t: 0 }, pocket: 0, chips: [] };
+const secretsOn = () => CFG.eggs !== false;
+const secretBusy = () => !!(REC || (typeof SREC !== 'undefined' && SREC.on));      /* never while a take or a video records */
+const secretN = () => SECRETS.filter(s => CFG.secrets[s[0]]).length;
+const secretCount = () => '(Secret ' + secretN() + ' of ' + SECRETS.length + '.)';
+const secretCalm = () => CFG.reduce || (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches) || (typeof lxComfort === 'function' && lxComfort().calm);
+/** mark a secret found; true the first time. quiet: the caller says so itself */
+function secretFound(id, quiet) {
+  if (CFG.secrets[id] || (!secretsOn() && id !== 'backstage')) return false;
+  const s = SECRETS.find(x => x[0] === id); if (!s) return false;
+  CFG.secrets[id] = Date.now(); saveCfg(); secretSync(); bus.emit('secret', id);
+  if (!quiet) { toast(h('span', { class: 'egg-toast' }, (id === 'tuned' ? '🎯 ' : id === 'pocket' ? '🥁 ' : '🗝 ') + s[1] + '. ', h('span', { class: 'muted' }, s[2] + ' ' + secretCount())), 'ok'); secretGlow(); }
+  return true;
+}
+/** a soft gold glow from the edges, for two seconds (not with Calm or reduced motion) */
+function secretGlow() {
+  if (secretCalm()) return; const g = h('div', { class: 'egg-glow', 'aria-hidden': 'true' }); document.body.append(g); setTimeout(() => g.remove(), 2400);
+}
+/** the 🗝 counter beside the version tags (hidden until the first secret is found, and when hidden surprises are off) */
+function secretChip(cls) {
+  const c = h('button', { type: 'button', class: 'secret-chip ' + (cls || ''), title: 'Secrets found', onclick: () => secretsOpen() }); SEC.chips.push(c); secretSync(); return c;
+}
+function secretSync() {
+  const n = secretN(); SEC.chips = SEC.chips.filter(c => c.isConnected || !c.parentNode);
+  SEC.chips.forEach(c => { c.textContent = '🗝 ' + n + '/' + SECRETS.length; c.hidden = !n || !secretsOn(); c.setAttribute('aria-label', n + ' of ' + SECRETS.length + ' secrets found'); });
+}
+/** the list: what has been found, and a hint for the rest */
+function secretList() {
+  return h('div', { class: 'secret-list' }, SECRETS.map(([id, name, hint, how]) => { const at = CFG.secrets[id];
+    return h('div', { class: 'secret-row' + (at ? ' found' : ''), 'data-secret': id }, h('span', { class: 'secret-i', 'aria-hidden': 'true' }, at ? '🗝' : '?'),
+      h('div', {}, h('b', {}, at ? name : '???'), h('div', { class: 'tiny muted' }, at ? how + ' Found ' + new Date(at).toLocaleDateString() + '.' : hint))); }));
+}
+function secretsOpen() { pdlg('secretsDlg', 'SECRETS · ' + secretN() + ' OF ' + SECRETS.length, h('div', {}, secretList(), h('p', { class: 'tiny muted', style: { marginTop: '10px' } }, 'Settings ▸ Workflow ▸ Hidden surprises turns these off.'))); }
+
+/* ---------- Tuned to perfection: each open string held within ±2 cents for a moment, all six inside three minutes ---------- */
+setInterval(() => {
+  if (!secretsOn() || CFG.secrets.tuned || !E.ready || secretBusy() || !AN.active || AN.midi == null || (CFG.anSrc || 'g') === 'v') { SEC.hold.i = -1; return; }
+  const now = performance.now(), open = S.tuning || [];
+  if (SEC.tunedT0 && now - SEC.tunedT0 > 180000) { SEC.tuned = {}; SEC.tunedT0 = 0; }
+  const i = open.indexOf(AN.midi);
+  if (i < 0 || Math.abs(AN.cents) > 2) { SEC.hold.i = -1; return; }
+  if (SEC.hold.i !== i) { SEC.hold = { i, t: now }; return; }
+  if (now - SEC.hold.t < 350 || SEC.tuned[i]) return;
+  SEC.tuned[i] = 1; if (!SEC.tunedT0) SEC.tunedT0 = now;
+  if (open.every((_, k) => SEC.tuned[k])) { secretFound('tuned'); SEC.tuned = {}; SEC.tunedT0 = 0; }
+}, 100);
+/* ---------- In the pocket: sixteen notes in a row within 10 ms of the beat ---------- */
+function secretTiming(ms) {
+  if (!secretsOn() || CFG.secrets.pocket || !T.playing || secretBusy()) { SEC.pocket = 0; return; }
+  SEC.pocket = Math.abs(ms) <= 10 ? SEC.pocket + 1 : 0;
+  if (SEC.pocket >= 16) { SEC.pocket = 0; secretFound('pocket'); }
+}
+bus.on('timing', secretTiming);
+bus.on('transport', () => { if (!T.playing) SEC.pocket = 0; });
+
+/* ---------- a word for developers, in the console ---------- */
+try {
+  console.log('%c the-daily.studio %c v' + VERSION + ' · build ' + BUILD + ' ', 'background:#1f8a56;color:#fff;font:700 14px system-ui,sans-serif;padding:4px 8px;border-radius:6px 0 0 6px', 'background:#0b100e;color:#7dbf9b;font:600 12px ui-monospace,Menlo,monospace;padding:5px 8px;border-radius:0 6px 6px 0');
+  console.log('%cHey, you opened the console. 🎸 Respect.\n%cNo framework, no tracking, no server: one HTML file made from ' + PARTS_N + ' plain JavaScript parts (' + LINES_N.toLocaleString('en') + ' lines), a hand-made minifier, a QR encoder and a lot of Web Audio. The source is at ' + BRAND.repo + '\n\nThere is a door backstage for people like you. Knock:  %cdailyStudio.backstage()',
+    'font:700 13px system-ui,sans-serif', 'font:12px/1.5 system-ui,sans-serif;color:#9db3a5', 'font:700 12px ui-monospace,Menlo,monospace;color:#f7c95a;background:#1b130d;padding:2px 6px;border-radius:4px');
+} catch (e) { }
+
+/* ---------- Backstage ---------- */
+const BKS = { tm: 0, raf: 0 };
+/** the door: unlocks Backstage (remembered here), counts the secret, opens it, and answers in the console */
+function backstage() {
+  const first = !CFG.backstage; CFG.backstage = true; saveCfg(); secretFound('backstage', true);
+  setTimeout(() => backstageOpen(), 30);
+  return first ? '🎭 Come on in. Backstage is unlocked in this browser (and in Help from now on). ' + secretCount() : '🎭 Welcome back. Backstage is open.';
+}
+const bksRow = (k, v) => h('div', { class: 'bks-r' }, h('span', {}, k), h('b', { class: 'mono' }, v));
+function backstageOpen(at) {
+  if (!CFG.backstage) return toast('That door is locked. Developers know where to look.', '');
+  const close = () => { const d = $('#backstage'); if (d) d.close(); };
+  const live = h('div', { class: 'bks-grid', id: 'bksLive' }), scope = h('canvas', { class: 'bks-scope', id: 'bksScope', width: 640, height: 180, role: 'img', 'aria-label': 'The master output as a waveform and a spectrum' });
+  const tools = (window.dailyStudio && window.dailyStudio.tools()) || [], sel = h('select', { class: 'in', id: 'bksTool' }, tools.map(t => h('option', { value: t.name }, t.name)));
+  const inp = h('textarea', { class: 'in mono', id: 'bksIn', rows: 4, spellcheck: false, 'aria-label': 'Input (JSON)' }), outp = h('pre', { class: 'bks-out', id: 'bksOut', 'aria-live': 'polite' }, '—');
+  const example = () => { const t = tools.find(x => x.name === sel.value), s = t && t.inputSchema, o = {}; ((s && s.required) || []).forEach(k => { const p = s.properties[k] || {}; o[k] = p.enum ? p.enum[0] : p.type === 'number' || p.type === 'integer' ? 0 : p.type === 'array' ? [] : p.type === 'boolean' ? false : ''; }); inp.value = JSON.stringify(o, null, 1); };
+  sel.onchange = example; example();
+  const run = h('button', { class: 'btn primary', id: 'bksRun', onclick: async () => {
+    let input; try { input = JSON.parse(inp.value || '{}'); } catch (e) { outp.textContent = 'That is not JSON: ' + e.message; return; }
+    outp.textContent = '…'; const r = await window.dailyStudio.call(sel.value, input); outp.textContent = JSON.stringify(r.structuredContent || r, null, 2).slice(0, 20000);
+  } }, '▶ Run');
+  const nav = performance.getEntriesByType && performance.getEntriesByType('navigation')[0], kb = v => v ? Math.round(v / 1024) + ' kB' : '?';
+  const d = hubOpen('backstage', { ico: '🎭', title: 'Backstage', sub: 'For people who opened the console. How the studio works, live.', at, sections: [
+    { key: 'engine', label: 'The engine, live', ico: '◉', sub: 'Updated twice a second while this is open.', wide: true, body: () => [live, scope] },
+    { key: 'made', label: 'How it is made', ico: '⚙', wide: true, body: () => [h('div', { class: 'bks-grid' },
+      bksRow('Version', 'v' + VERSION + ' · build ' + BUILD), bksRow('Made from', PARTS_N + ' parts · ' + LINES_N.toLocaleString('en') + ' lines'), bksRow('This page arrived as', nav ? kb(nav.transferSize || nav.encodedBodySize) + ' (' + kb(nav.decodedBodySize) + ' unpacked)' : '?'),
+      bksRow('Framework', 'none'), bksRow('Runtime dependencies', '0'), bksRow('Requests to other sites', '0 (unless you say yes to MediaPipe)'), bksRow('Script policy', 'one inline script, allowed by its SHA-256 hash'), bksRow('Audio', 'Web Audio + 7 AudioWorklet processors')),
+      h('p', { class: 'small muted' }, 'The parts are plain JavaScript files concatenated in name order into one closure, minified by a dependency-free minifier that the build proves changed nothing but whitespace. The QR codes, the zero-delay compressors and the oversampling filters are written here too.'),
+      h('div', { class: 'hub-acts' }, h('a', { class: 'btn', href: BRAND.repo, target: '_blank', rel: 'noopener noreferrer' }, 'Source ↗'), h('a', { class: 'btn', href: BRAND.repo + '/blob/main/docs/ARCHITECTURE.md', target: '_blank', rel: 'noopener noreferrer' }, 'Architecture ↗'), h('a', { class: 'btn', href: BRAND.repo + '/blob/main/docs/AGENT_API.md', target: '_blank', rel: 'noopener noreferrer' }, 'Agent API ↗'))] },
+    { key: 'agent', label: 'Agent playground', ico: '🤖', sub: 'Call the same tools an AI agent gets (WebMCP and window.dailyStudio). Changes are real, and Ctrl/⌘+Z undoes them.', wide: true, body: () => [
+      CFG.agents === false ? h('p', { class: 'small' }, 'Agent access is off in Settings ▸ Workflow, so calls are answered “disabled”.') : null,
+      h('div', { class: 'row', style: { gap: '8px', alignItems: 'center', flexWrap: 'wrap' } }, sel, run), inp, outp].filter(Boolean) },
+    { key: 'secrets', label: 'Secrets', ico: '🗝', wide: true, body: () => [secretList()] }
+  ] });
+  /* the live numbers, and the scope */
+  const paint = () => {
+    if (!live.isConnected) { clearInterval(BKS.tm); BKS.tm = 0; return; }
+    const c = E.ctx, ms = v => v == null ? '—' : (v * 1000).toFixed(1) + ' ms', mem = performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1048576) + ' MB' : 'n/a';
+    live.innerHTML = '';
+    [['Audio engine', c ? c.state + ' · ' + c.sampleRate + ' Hz' : 'not started'], ['One render quantum', c ? '128 frames · ' + (128 / c.sampleRate * 1000).toFixed(2) + ' ms' : '—'], ['Browser base / output latency', c ? ms(c.baseLatency) + ' / ' + ms(c.outputLatency) : '—'],
+      ['Zero-delay effects', E.worklet && CFG.lowLat !== false ? 'on' : 'off'], ['Delay the rig adds', ms(rigLat())], ['Delay the vocal strip adds', ms(voxLat())], ['Measured round trip', CFG.rtt != null ? CFG.rtt + ' ms' : 'not measured'],
+      ['Input', E.hasInput ? 'open' : 'none'], ['Frames a second', String(FPS)], ['JS memory', mem], ['Takes in memory', String(TAKES.length)], ['Secrets found', secretN() + ' of ' + SECRETS.length]].forEach(([k, v]) => live.append(bksRow(k, v)));
+  };
+  const draw = () => {
+    if (!scope.isConnected) { cancelAnimationFrame(BKS.raf); BKS.raf = 0; return; }
+    BKS.raf = requestAnimationFrame(draw); const g = scope.getContext('2d'), W = scope.width, H = scope.height; g.fillStyle = '#050b0c'; g.fillRect(0, 0, W, H);
+    const an = E.anaMaster; if (!an) return; const n = an.fftSize, td = BKS.td && BKS.td.length === n ? BKS.td : (BKS.td = new Float32Array(n)), fd = BKS.fd && BKS.fd.length === an.frequencyBinCount ? BKS.fd : (BKS.fd = new Float32Array(an.frequencyBinCount));
+    an.getFloatTimeDomainData(td); an.getFloatFrequencyData(fd);
+    g.fillStyle = 'rgba(61,220,132,.28)'; const bins = 96; for (let i = 0; i < bins; i++) { const k = Math.floor(Math.pow(i / bins, 2) * fd.length * .5) + 1, v = clamp((fd[k] + 100) / 80, 0, 1); g.fillRect(i * W / bins, H - v * H * .9, W / bins - 1, v * H * .9); }
+    g.strokeStyle = '#3ddc84'; g.lineWidth = 1.5; g.beginPath(); const step = Math.max(1, Math.floor(n / W)); for (let x = 0; x < W; x++) { const v = td[Math.min(n - 1, x * step)] || 0; const y = H / 2 - v * H * .45; x ? g.lineTo(x, y) : g.moveTo(x, y); } g.stroke();
+    g.fillStyle = 'rgba(157,179,165,.8)'; g.font = '11px ui-monospace,Menlo,monospace'; g.fillText('master · ' + (E.ctx ? E.ctx.sampleRate : '') + ' Hz', 8, 14);
+  };
+  clearInterval(BKS.tm); paint(); BKS.tm = setInterval(paint, 500); cancelAnimationFrame(BKS.raf); draw();
+  return d;
+}
 
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
