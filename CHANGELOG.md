@@ -2,6 +2,16 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.21.1 — 2026-11-01 — The hidden line: quotes from history, and from Tehau
+
+### Changed
+- **The hidden line** (triple-click the version tag) now rotates **quotes to start a new idea**, each with who it is from (`src/parts/73-build-egg.js`): Leonardo da Vinci, Plato, J.R.R. Tolkien, Nietzsche, Longfellow, Victor Hugo, Aldous Huxley, Leibniz, Einstein, Edison, Abigail Adams and Plutarch, and four lines by **Tehau**. Shown as “…” — who.
+  - Honest credits: a saying with no known source says **attributed to** (Nikola Tesla's "energy, frequency and vibration"); a paraphrase says **after** (Plutarch); and "Somewhere, something incredible is waiting to be known", often credited to Carl Sagan, carries the name of the writer who wrote it about him (Sharon Begley).
+  - A quote stays longer the longer it is (9 s and a little per letter), and one too long for its space glides once to its end, so the end and who said it are read; the whole quote is on hover, and with reduced motion it does not move.
+
+### Tests
+- `test/e2e-perform-views.cjs`: every line has who it is from, Tehau's lines are his, honest credits, and a long quote glides far enough to show its end, in every place it is shown, with time to read it.
+
 ## 2.21.0 — 2026-11-01 — Your studio on GitHub, Sign in with GitHub, and a community gallery
 
 ### Added

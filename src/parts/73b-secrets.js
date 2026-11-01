@@ -10,7 +10,7 @@
    Workflow ▸ Hidden surprises turns the musical ones off. Found secrets are remembered in this browser (CFG.secrets).
    ============================================================ */
 const SECRETS = [
-  ['line', 'The hidden line', 'Some numbers want to be clicked three times.', 'Triple-click the version tag: a rotating line of song inspiration wakes up at the bottom of the page.'],
+  ['line', 'The hidden line', 'Some numbers want to be clicked three times.', 'Triple-click the version tag: a rotating quote wakes up at the bottom of the page, from people in history or from Tehau.'],
   ['tuned', 'Tuned to perfection', 'Six strings, two cents.', 'All six open strings within ±2 cents of true, one after another.'],
   ['pocket', 'In the pocket', 'Sixteen notes, right on time.', 'Sixteen notes in a row within 10 ms of the beat while the song plays.'],
   ['backstage', 'Backstage pass', 'Developers know where to look.', 'Read the note in the browser console and knocked on the door backstage.']
