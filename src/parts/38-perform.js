@@ -92,7 +92,7 @@ function perfOpen(opener) {
     h('div', { class: 'pf-bar' }, ctl('pfPlay', '▶ Play', 'Play or stop (Space)', () => { T.playing ? stopPlay(true) : play(); }), ctl('pfRec', '● Record', 'Record a take with a count-in (R)', () => { if (!E.hasInput) toast('No input is connected, so only the count-in will run.', 'warn'); toggleRec(); }),
       ctl('pfLoop', '⟲ Loop', 'Loop the song (L)', () => { T.loop = !T.loop; syncTransport(); perfSync(); }), ctl('pfMetro', '♩ Click', 'Metronome (M)', () => { T.metro = !T.metro; syncTransport(); perfSync(); }),
       ctl('pfSlow', '−', 'Slower by 5 BPM', () => { S.bpm = clamp(S.bpm - 5, 30, 260); commit(false); bus.emit('bpm'); perfSync(); }), h('b', { class: 'pf-bpm', id: 'pfBpm' }), ctl('pfFast', '+', 'Faster by 5 BPM', () => { S.bpm = clamp(S.bpm + 5, 30, 260); commit(false); bus.emit('bpm'); perfSync(); }),
-      h('span', { class: 'grow egg-line', 'aria-live': 'off' }), h('span', { class: 'pf-takes', id: 'pfTakes' })), buildTag('pf-ver'));
+      h('span', { class: 'grow egg-line', 'aria-live': 'off' }), h('span', { class: 'pf-takes', id: 'pfTakes' })), secretChip('pf-sec'), buildTag('pf-ver'));
   document.body.append(PF.el); document.body.classList.add('perform-on');
   if (PF.bd) perfBackdrop(true);
   perfRefresh(); perfSync(); eggTick(true); const g = document.getElementById('pfGo'); if (g) g.focus();

@@ -321,13 +321,14 @@ suite('e2e-show', async t => {
   const redness = () => ev(() => { const d = window.__daily, c = d.SG.cv, t = document.createElement('canvas'); t.width = 48; t.height = 27; const q = t.getContext('2d', { willReadFrequently: true }); q.drawImage(c, 0, 0, 48, 27); const px = q.getImageData(0, 0, 48, 27).data; let r = 0, o = 0; for (let i = 0; i < px.length; i += 4) { r += px[i]; o += px[i + 1] + px[i + 2]; } return r / (o + 1); });
   await wait(600); const r0 = await redness();
   await p.setInputFiles('#shc .sg-drop input[type=file]', [red, logo]);
-  ok(await poll(() => ev(() => window.__daily.CFG.show.imgs.length === 2), 8000), 'two pictures added from the Pictures tab');
+  /* a big photo is decoded, reduced and stored: give a busy machine time (it is polled, so a quick one does not wait) */
+  ok(await poll(() => ev(() => window.__daily.CFG.show.imgs.length === 2), 20000), 'two pictures added from the Pictures tab');
   const im = await ev(async () => {
     const d = window.__daily, imgs = d.CFG.show.imgs, db = await new Promise((res, rej) => { const r = indexedDB.open('the-daily-songs'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
     const keys = await new Promise(res => { const out = []; const rq = db.transaction('blobs').objectStore('blobs').openCursor(); rq.onsuccess = () => { const c = rq.result; if (c) { out.push(String(c.key)); c.continue(); } else res(out); }; rq.onerror = () => res([]); }); db.close();
     return { imgs: imgs.map(i => ({ w: i.w, h: i.h, alpha: i.alpha, kb: i.kb, id: i.id, name: i.name })), keys: keys.filter(k => k.startsWith('stage/img/')), cfg: localStorage.getItem('fw.cfg').length };
   });
-  ok(im.imgs[0].w === 1920 && im.imgs[0].h === 960 && im.imgs[0].alpha === false && im.imgs[1].alpha === true && im.imgs[1].w === 400, 'a big photo is reduced to 1920 px on its long side; a picture with transparency keeps it (' + im.imgs.map(i => i.w + '×' + i.h).join(', ') + ')');
+  ok(im.imgs.length === 2 && im.imgs[0].w === 1920 && im.imgs[0].h === 960 && im.imgs[0].alpha === false && im.imgs[1].alpha === true && im.imgs[1].w === 400, 'a big photo is reduced to 1920 px on its long side; a picture with transparency keeps it (' + im.imgs.map(i => i.w + '×' + i.h).join(', ') + ')');
   ok(im.keys.length === 2 && im.keys.every(k => im.imgs.some(i => k === 'stage/img/' + i.id)) && im.cfg < 40000, 'the pictures sit in this browser\'s own database, and only their names and sizes go in the settings (' + im.cfg + ' characters)');
   await ev(() => document.querySelectorAll('#shc .sg-thumb')[0].querySelectorAll('.sg-row .btn')[0].click());
   ok(await ev(() => { const u = window.__daily.STG.scenes[0].show.ovr.use; return u && u.back.length === 1; }), 'a picture can be the backdrop of a scene');

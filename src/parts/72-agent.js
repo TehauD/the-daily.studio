@@ -303,6 +303,8 @@ try {
     about: 'the-daily.studio agent tools: the same tools this page offers through WebMCP (navigator.modelContext). Everything runs locally in this page.',
     tools: () => AGT.tools.map(t => ({ name: t.name, description: t.description, inputSchema: t.inputSchema, annotations: t.annotations })),
     describe: () => ({ api: AG_API, app: VERSION, build: BUILD, webmcp: AGT.via || null, enabled: agentOn(), aliases: Object.assign({}, AG_ALIAS), limits: Object.assign({}, AG_LIMIT), tools: AGT.tools.map(t => t.name) }),
-    call: (name, input) => agentCall(name, input) }) });
+    call: (name, input) => agentCall(name, input),
+    /* not a tool: the door the console note points developers to (part 73b) */
+    backstage: () => backstage() }) });
 } catch (e) { }
 agentWatch();

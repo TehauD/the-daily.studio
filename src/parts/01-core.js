@@ -3,9 +3,10 @@
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '__VERSION__', BUILD = '__BUILD__';   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '__VERSION__', BUILD = '__BUILD__', PARTS_N = +'__PARTS__' || 0, LINES_N = +'__LINES__' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
-const BRAND = { support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://the-daily.studio/journal/' };
+const BRAND = { ghApp: { clientId: '', slug: '' },   /* Sign in with GitHub: the GitHub App's public client id and its slug (docs/GITHUB.md); empty = only the token way */
+  support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://the-daily.studio/journal/' };
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 const SVGNS = 'http://www.w3.org/2000/svg';
@@ -77,10 +78,11 @@ const CFG = Object.assign({
   rec: { dry: true, wet: true }, fretNames: 'notes', lufsTarget: 0, gTrim: 0, ioLeveled: false, dropKind: 'track',
   vin: 'off', armG: true, armV: true, voxMon: false, voxPolish: true, voxTrim: 0, trackSync: true, trackFill: 'all', renderFast: true, recEnd: 'grow', vzRibbon: false, vrange: null,
   agents: true,   // AI agents in this browser may use the studio's tools (part 72)
-  lowLat: true,   // zero-delay compressors and saturation (part 02); off = the browser's own, which add about 20 ms to the guitar
+  lowLat: true,
+  eggs: true,     // the hidden surprises (part 73b); off stops the musical ones and hides the counter   // zero-delay compressors and saturation (part 02); off = the browser's own, which add about 20 ms to the guitar
   mpOk: false   // true once the person has said yes to the one-time MediaPipe download (see mpConsent); nothing leaves the page before that
 }, store.get('cfg', {}));
-const saveCfg = () => store.set('cfg', CFG);
+const saveCfg = () => { store.set('cfg', CFG); if (typeof ghCfgKick === 'function') try { ghCfgKick(); } catch (e) { } };
 
 /* ---------- music theory ---------- */
 const NS = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];

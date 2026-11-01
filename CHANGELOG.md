@@ -2,6 +2,32 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.21.0 — 2026-11-01 — Your studio on GitHub, Sign in with GitHub, and a community gallery
+
+### Added
+- **Your studio on GitHub** (`src/parts/74-github.js`, Settings ▸ GitHub; nothing happens until you connect). Settings (not the device's own audio devices, levels, layout, measured latency, monitoring or download consent), rig presets, stage looks and scenes, lesson notes and the notebook, and songs as text are kept in step with a **private repository in your own GitHub account** (`my-daily-studio`, made by the app if the token may). Recordings, backing tracks, pictures and videos stay on the device, so the repository stays tiny and far inside GitHub's limits.
+  - **One commit per sync** through the Git Data API (the changed files inline in one tree), with files compared by their Git blob ids computed in the page; tidy JSON with sorted keys, so every change reads well in Git's history.
+  - **Merges**: settings key by key (this device wins where both changed), a song changed in both places keeps both versions, a song deleted here is removed there and one deleted elsewhere is kept here. Synced looks keep their ids, so devices never trade them back and forth.
+  - **Automatic**: a little after a change, when the page opens and when it comes back; an automatic sync that changed nothing asks GitHub nothing. **⟳ Sync now**, **Disconnect** (removes the token), errors a person can act on (a refused token, an hour's limit used up, a repository the token may not create).
+- **Sign in with GitHub** (`worker/index.mjs`): the site's Worker turns GitHub's one-time sign-in code into a token with the GitHub App's secret and renews it; the answer comes back after `#` and the page checks it against the state it made, keeps it and clears the address. It keeps nothing and never sees songs. Off until the site owner sets up the app (`BRAND.ghApp` and two Worker secrets; [docs/GITHUB.md](docs/GITHUB.md)); without it, people connect with a token. `wrangler.jsonc` now has the Worker (`main`) with the site as its `ASSETS`.
+- **Share looks and rigs** to a separate **public** repository (`daily-studio-shared`, tagged `the-daily-studio`), and **Community looks and rigs**: GitHub's search for studios that share (it says how many), opened, cleaned (only known designs, fields and ranges; names as text; no pictures) and kept with `@who` in the name.
+
+### Changed
+- The security policy lets the page connect to `api.github.com` as well (only used after you connect GitHub or open the gallery); the release gate and the audit know it as a third kind of host, and PRIVACY.md, TERMS.md (a GitHub section), the licensing register and SECURITY_MODEL.md say exactly when it is used. Wording that said "no server" now says that no server keeps your data.
+
+### Tests
+- `test/e2e-github.cjs` (42 checks) against `test/fake-github.cjs`, a stand-in for GitHub's API (refs, commits, trees, blobs with Git's own ids, contents, topics, search): two devices, a private repository, what is and is not sent, a quiet sync asking nothing, a change reaching the other device, both versions kept, settings merged, deletions, refused tokens, Sign in with GitHub's return (and a wrong check refused) and renewal, sharing, the gallery and its cleaning.
+- `test/worker.test.mjs` (17 checks): the Worker's two routes with GitHub's token endpoint stood in for. In CI's verify job.
+
+## 2.20.0 — 2026-11-01 — Secrets, and a door backstage
+
+### Added
+- **Hidden surprises** (`src/parts/73b-secrets.js`). A few secrets for people who look and listen; details are in the code and its test, not here, so as not to spoil them. Two are earned by playing (on the tuner the studio already has, and on the timing it already measures), the triple-click on the version tag (2.15) now counts as one, and one is for developers. Once the first is found, a 🗝 counter next to the version shows how many, and opens the list with a hint for each one not yet found. They never fire while a take or a video records, nothing flashes (no glow with Calm or reduced motion), nothing loads or leaves the page, and **Settings ▸ Workflow ▸ Hidden surprises** turns them off. Found ones are remembered in this browser.
+- **A word for developers in the console**, and **Backstage**, which it leads to: the audio engine live (sample rate, render quantum, the browser's latency, the zero-delay effects and the delay the rig and vocal strip add, frame rate, memory), a waveform and spectrum scope of the master, how the page is made (version, build, parts and lines, what the page weighed, no framework or runtime dependencies), a playground for the agent tools (choose a tool, its required inputs are filled in, Run, see the answer) and the secrets. Once unlocked it stays in Help. The build now fills in the number of parts and lines (`__PARTS__`, `__LINES__`).
+
+### Tests
+- `test/e2e-secrets.cjs` (27 checks).
+
 ## 2.19.1 — 2026-11-01 — Ready for more people: blocking tests, Safari and Firefox, 720p, problem reports
 
 ### Added

@@ -4,7 +4,7 @@ Version 2.13 (v2.13.0). The app is a static page that runs entirely in the visit
 
 ## Trust boundaries
 
-1. **The visitor's device** holds all data. There is no server component, account, cookie, analytics or telemetry.
+1. **The visitor's device** holds all data. There is no account, cookie, analytics or telemetry, and no server keeps data. The site's Worker (`worker/index.mjs`) only serves the files and, if the owner sets up Sign in with GitHub, passes GitHub's one-time sign-in code to GitHub and the token back to the browser (it stores nothing). A person may connect their own GitHub repository (Settings ▸ GitHub); then the browser talks to `api.github.com` directly (docs/GITHUB.md).
 2. **The host (Cloudflare)** serves static files and may keep ordinary access logs. It never sees songs, audio or video.
 3. **Optional third-party hosts**, contacted only after the visitor says yes to a one-time download (`mpConsent()`), when hand tracking or the person cut-out look is used: `cdn.jsdelivr.net` (MediaPipe script and WASM) and `storage.googleapis.com` (hand-landmarker and selfie-segmenter models). They see an IP address and browser details, like any download, and never a camera picture.
 4. **The Daily at `/journal/`** shares the origin. It contacts GitHub, Azure DevOps or an AI provider only if the user enters their own credentials.

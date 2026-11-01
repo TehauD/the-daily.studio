@@ -27,7 +27,7 @@ const MARK_SM = markInner({ hex: 'var(--accent)', ink: 'var(--text)', bars: fals
 js = js.replaceAll('__MARK_INNER__', MARK);
 /* the version the app shows, and a build code taken from the code itself: the same source always gives the same code */
 const BUILD = createHash('sha256').update(js).digest('hex').slice(0, 7);
-js = js.replaceAll('__VERSION__', pkg.version).replaceAll('__BUILD__', BUILD);
+js = js.replaceAll('__VERSION__', pkg.version).replaceAll('__BUILD__', BUILD).replaceAll('__PARTS__', String(parts.length)).replaceAll('__LINES__', String(js.split('\n').length));
 /* index.html carries a minified copy (comments, indentation and needless spaces out; nothing else). The CodePen files keep the
    readable source. `node scripts/build.mjs --pretty` writes an unminified index.debug.html for debugging (not committed). */
 const PRETTY = process.argv.includes('--pretty');
@@ -56,7 +56,7 @@ const head = `<meta charset="utf-8"><meta name="viewport" content="width=device-
 const cssMin = PRETTY ? css : minifyCSS(css);
 { const br = x => [(x.match(/\{/g) || []).length, (x.match(/\}/g) || []).length].join(); if (br(cssMin) !== br(css.replace(/\/\*[\s\S]*?\*\//g, ''))) { console.error('Minifying the stylesheet changed its braces'); process.exit(1); } }
 const inlineJs = `\n${jsMin.replace(/<\/script>/g, '<\\/script>')}\n`;
-const csp = ["default-src 'self'", `script-src 'sha256-${createHash('sha256').update(inlineJs).digest('base64')}' 'wasm-unsafe-eval' blob: https://cdn.jsdelivr.net`, "worker-src 'self' blob:", "style-src 'self' 'unsafe-inline'", "img-src 'self' data: blob:", "media-src 'self' blob: data:", "connect-src 'self' blob: data: https://cdn.jsdelivr.net https://storage.googleapis.com", "font-src 'self' data:", "object-src 'none'", "base-uri 'none'", "form-action 'none'"].join('; ');
+const csp = ["default-src 'self'", `script-src 'sha256-${createHash('sha256').update(inlineJs).digest('base64')}' 'wasm-unsafe-eval' blob: https://cdn.jsdelivr.net`, "worker-src 'self' blob:", "style-src 'self' 'unsafe-inline'", "img-src 'self' data: blob:", "media-src 'self' blob: data:", "connect-src 'self' blob: data: https://cdn.jsdelivr.net https://storage.googleapis.com https://api.github.com", "font-src 'self' data:", "object-src 'none'", "base-uri 'none'", "form-action 'none'"].join('; ');
 const standalone = `<!doctype html>\n<html lang="en"><head><meta http-equiv="Content-Security-Policy" content="${csp}">${head}\n<style>\n${cssMin}\n</style></head><body>\n${body}\n<noscript><div style="max-width:40rem;margin:0 auto;padding:24px 16px;font:16px/1.5 system-ui,sans-serif"><h2>the-daily.studio needs JavaScript</h2><p>It is a guitar and voice studio that runs entirely in your browser: record guitar and voice, split a song into stems, get chords, tab and lyrics, and run a live light show. It sends nothing anywhere, so it needs JavaScript to do the work on your device.</p><p>Read about it: ${guideLinks()}</p></div></noscript>\n<script>${inlineJs}</script></body></html>\n`;
 
 /* installable web app: manifest + offline cache (the page registers sw.js only on https / localhost) */

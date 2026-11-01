@@ -1,6 +1,6 @@
 # Privacy
 
-**the-daily.studio has no server, no account, no analytics, no cookies and no advertising.** What you play, sing, record, type or drop in is processed in your browser and stays on your device. Nothing you make is uploaded.
+**the-daily.studio collects nothing: no server keeps your data, and there is no account of its own, no analytics, no cookies and no advertising.** What you play, sing, record, type or drop in is processed in your browser and stays on your device. Nothing you make is uploaded.
 
 That sentence is a claim about how the software behaves, so this page also says exactly what *can* travel over the network, to whom, and when. Last checked against version 2.19.1 with `test/e2e-privacy.cjs` (see [How this is checked](#how-this-is-checked)).
 
@@ -21,6 +21,7 @@ That sentence is a claim about how the software behaves, so this page also says 
 | Studio Replay, thumbnails, ↗ Share and share pages (a video, or a track or clip made into a small M4A) | The recording is played back from memory; a track is turned into M4A in the page; a thumbnail or a one-file share page is made in the page | No. **↗ Share** hands the file to your device's own share sheet, and only when you press it. A share page is a file you download; where it goes next is up to you (see the [terms of use](#terms)) | Nowhere, unless you save it or pick an app to share it with |
 | Videos you add behind you (Visuals ▸ 🎞 Your videos) | Played muted, looped and drawn on the visuals, in the page | No | This browser's IndexedDB, next to your songs, until you remove them. They are not part of a song's backup |
 | Errors and warnings the studio notices (Help ▸ Report a problem) | The last 20 kept in memory, with quoted names, web addresses and file addresses blanked out, for a report you copy yourself | No. You copy the report and paste it where you choose | In memory only; gone when the page closes |
+| Your studio on GitHub (Settings ▸ GitHub; off unless you connect) | Settings, presets, looks, scenes, notes and songs as text are kept in step with a private repository in your own GitHub account | Yes, to GitHub only, and only after you connect. Recordings, tracks, pictures and videos are never sent | Your repository; the token in this browser's local storage (`fw.ghtok`) until you disconnect |
 | Your tip jar: the link, name and message (Creator Studio ▸ 🎸 Tip jar; off unless you set it up) | Turned into a QR code in the page and drawn where you choose: the visuals and stage videos, the Stage, share pages, a printed sign or a picture | No. The page never opens the link, except when you press **Test the link**. People who scan the code go to the service you chose, under its terms | This browser's local storage (`fw.cfg`). It is not part of songs or song backups, and the AI agent tools cannot read or change it |
 | Lesson notes (Teacher ▸ 📝 Lesson notes) | Typed and kept per song title | No | This browser's local storage (`fw.lessons`) |
 | What an AI agent in your browser reads or changes through the studio's tools (WebMCP) | The tools run in the page: they read the open song, load chord sheets, edit, play and stop | Not by the page. The agent is software you chose to run; see below | Changes go into your song like your own edits (and can be undone) |
@@ -33,7 +34,9 @@ Clearing the site's data in your browser, or **Settings ▸ Data ▸ Reset…**,
 2. **MediaPipe (only after you say yes).** Hand tracking and the **Me in front (green screen)** camera look use Google's MediaPipe. The first time you use either, the page asks. If you agree, your browser downloads the MediaPipe code from `cdn.jsdelivr.net` and a small model from `storage.googleapis.com`, about 10 MB. Those two services see your IP address and browser details, as with any download. Your camera pictures are processed on your device and are never uploaded. If you say no, nothing is requested and the app uses the edges-in look or motion-only mode instead. The stage route (**Begin on stage**, **Go on stage while I sing**, **📷 Camera backdrop**) chooses the Me in front look by default, so it asks the first time; the question does not appear until the camera is on.
 3. **Links you click.** GitHub, LinkedIn and The Daily open in a new tab only when you click them, and so does your own tip link when you press **Test the link** in the tip jar.
 
-Nothing else. The page cannot contact any other site: its security policy allows only this site plus the two hosts above, and the test below fails if anything else is attempted.
+4. **GitHub (only if you connect it, 2.21).** In **Settings ▸ GitHub** you can keep your studio in a private repository in your own GitHub account. Only then does your browser talk to `api.github.com`, directly: it sends your settings (not this device's audio devices, levels, layout, measured latency or download consent), rig presets, stage looks and scenes, lesson notes and notebook, and songs as text (chords, words, tab, arrangement); recordings, backing tracks, pictures and videos stay on the device. The token you paste, or the one **Sign in with GitHub** gets, is kept in this browser (`fw.ghtok`), is never written to the repository and is removed by **Disconnect**. With Sign in with GitHub, this site's Worker turns GitHub's one-time code into that token and renews it; it keeps nothing and never sees your songs. If you **share looks and rigs**, the ones you choose go to a public repository in your account. Opening **Community looks and rigs** asks GitHub's search for studios that share (without signing in, unless you are connected) and reads their public files. GitHub sees your IP address and, when you are connected, your account, under its own privacy statement.
+
+Nothing else. The page cannot contact any other site: its security policy allows only this site plus the hosts above (GitHub's API only for what you connect or open), and the test below fails if anything else is attempted.
 
 ## AI agents in your browser
 
@@ -45,7 +48,7 @@ An agent is software you run, and it usually works with an AI service. When it r
 
 ## What is kept, and for how long
 
-- **By this project: nothing.** It has no server and receives no data.
+- **By this project: nothing.** No server of this project keeps or receives your data. (The site's Worker only passes GitHub's sign-in code to GitHub and the token back to you, if you use Sign in with GitHub; it stores nothing.)
 - **In your browser:** the items in the table above, until you remove them.
 - **By your host and the services above:** whatever their own logs keep, under their own policies. A **backup folder**, if you choose one in Settings (Chrome and Edge), receives a copy of each song you edit; it is a folder on your own computer that the browser was given access to, and you can remove the access at any time.
 - **Persistent storage.** The app may ask the browser to keep its library (the browser decides). Safari can still clear a site's data after about a week without a visit unless the site is added to the Home Screen; the app tells you when that applies.
