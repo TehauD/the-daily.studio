@@ -12,7 +12,7 @@
    With hidden surprises off (Settings ▸ Workflow), the treasures are simply open: nobody has to hunt for practice.
    It listens to the input the tuner uses and records nothing; ▶ Listen plays through the studio's own lead voice.
    ============================================================ */
-CFG.ws = Object.assign({ scale: 'Minor Pentatonic', key: null, at: null, oct: 1, src: 'song', root: null, type: '', arpAt: null, ear: 'more' }, CFG.ws && typeof CFG.ws === 'object' ? CFG.ws : {});
+CFG.shed = Object.assign({ scale: 'Minor Pentatonic', key: null, at: null, oct: 1, src: 'song', root: null, type: '', arpAt: null, ear: 'more' }, CFG.shed && typeof CFG.shed === 'object' ? CFG.shed : {});
 const WS = { run: null, tm: 0, play: [], ear: { q: null, streak: 0, best: 0, n: 0, ok: 0, lock: false }, r: {} };
 const WS_BASE = ['Major (Ionian)', 'Natural Minor (Aeolian)', 'Major Pentatonic', 'Minor Pentatonic', 'Blues'];
 const WS_ARPS = [['', 'Major', [0, 4, 7]], ['m', 'Minor', [0, 3, 7]], ['dim', 'Diminished', [0, 3, 6]], ['aug', 'Augmented', [0, 4, 8]], ['maj7', 'Major 7', [0, 4, 7, 11], 1], ['7', 'Dominant 7', [0, 4, 7, 10], 1], ['m7', 'Minor 7', [0, 3, 7, 10], 1], ['m7b5', 'Half-diminished', [0, 3, 6, 10], 1], ['dim7', 'Diminished 7', [0, 3, 6, 9], 1]];
@@ -21,8 +21,8 @@ const WS_SETS = { easy: ['M3', 'P4', 'P5', 'P8'], more: ['m3', 'M3', 'P4', 'P5',
 const WS_CQ = [['Major', [0, 4, 7]], ['Minor', [0, 3, 7]], ['Diminished', [0, 3, 6]], ['Augmented', [0, 4, 8]], ['Major 7', [0, 4, 7, 11]], ['Dominant 7', [0, 4, 7, 10]], ['Minor 7', [0, 3, 7, 10]]];
 /** a treasure is open once its secret is found, or when hidden surprises are off */
 const wsOpen = id => !!CFG.secrets[id] || !secretsOn();
-const wsKey = () => CFG.ws.key == null ? S.key : CFG.ws.key;
-const wsFlats = () => keyUsesFlats(wsKey(), /min|Minor|Blues|Dorian|Phrygian|Locrian|Aeolian/.test(CFG.ws.scale));
+const wsKey = () => CFG.shed.key == null ? S.key : CFG.shed.key;
+const wsFlats = () => keyUsesFlats(wsKey(), /min|Minor|Blues|Dorian|Phrygian|Locrian|Aeolian/.test(CFG.shed.scale));
 const wsTune = () => (S.tuning && S.tuning.length ? S.tuning : [40, 45, 50, 55, 59, 64]);
 const wsName = m => pcName(m, wsFlats());
 
@@ -40,11 +40,11 @@ const wsRootAt = (pc, st) => { const t0 = wsTune()[0], lo = t0 + Math.max(S.capo
 
 /* ---------- the runs ---------- */
 function wsScaleRun() {
-  const sc = SCALES[CFG.ws.scale] || SCALES['Minor Pentatonic'], key = wsKey(), pcs = sc.map(i => (key + i) % 12), starts = wsStarts(pcs);
-  const st = starts.includes(CFG.ws.at) ? CFG.ws.at : starts.find(f => ((wsTune()[0] + f) % 12) === key % 12) ?? starts[0] ?? 0, r0 = wsRootAt(key, st), up = [];
-  for (let o = 0; o < (CFG.ws.oct || 1); o++) sc.forEach(iv => up.push(r0 + 12 * o + iv)); up.push(r0 + 12 * (CFG.ws.oct || 1));
+  const sc = SCALES[CFG.shed.scale] || SCALES['Minor Pentatonic'], key = wsKey(), pcs = sc.map(i => (key + i) % 12), starts = wsStarts(pcs);
+  const st = starts.includes(CFG.shed.at) ? CFG.shed.at : starts.find(f => ((wsTune()[0] + f) % 12) === key % 12) ?? starts[0] ?? 0, r0 = wsRootAt(key, st), up = [];
+  for (let o = 0; o < (CFG.shed.oct || 1); o++) sc.forEach(iv => up.push(r0 + 12 * o + iv)); up.push(r0 + 12 * (CFG.shed.oct || 1));
   const seq = up.concat(up.slice(0, -1).reverse()).map(m => Object.assign({ m, deg: IVNAMES[((m - key) % 12 + 12) % 12] }, wsPlace(m, st)));
-  return { kind: 'scale', title: wsName(key) + ' ' + CFG.ws.scale, notes: seq, st, pcs, root: key, starts };
+  return { kind: 'scale', title: wsName(key) + ' ' + CFG.shed.scale, notes: seq, st, pcs, root: key, starts };
 }
 function wsChordTones(sym) {      /* triads always; with the treasure, the seventh too */
   const c = parseChord(sym); if (!c) return null; const iv = [...new Set(c.iv.map(i => i % 12))];
@@ -54,12 +54,12 @@ function wsChordTones(sym) {      /* triads always; with the treasure, the seven
 }
 function wsArpRun() {
   let chords = [];
-  if (CFG.ws.src === 'song') { let last = ''; flatBars().forEach(b => { const s = b.bar.chord; if (s && s !== last) { last = s; const t = wsChordTones(s); if (t) chords.push(t); } }); chords = chords.slice(0, 8); }
-  else { const a = WS_ARPS.find(x => x[0] === CFG.ws.type) || WS_ARPS[0], root = CFG.ws.root == null ? S.key : CFG.ws.root; chords = [{ root, iv: a[2].slice(), sym: pcName(root, wsFlats()) + a[0] }]; }
+  if (CFG.shed.src === 'song') { let last = ''; flatBars().forEach(b => { const s = b.bar.chord; if (s && s !== last) { last = s; const t = wsChordTones(s); if (t) chords.push(t); } }); chords = chords.slice(0, 8); }
+  else { const a = WS_ARPS.find(x => x[0] === CFG.shed.type) || WS_ARPS[0], root = CFG.shed.root == null ? S.key : CFG.shed.root; chords = [{ root, iv: a[2].slice(), sym: pcName(root, wsFlats()) + a[0] }]; }
   if (!chords.length) return { kind: 'arp', title: 'No chords yet', notes: [], chords: [], st: 0 };
-  const st = CFG.ws.arpAt != null ? CFG.ws.arpAt : (() => { const t0 = wsTune()[0], c = S.capo || 0; let f = ((chords[0].root - t0) % 12 + 12) % 12; while (f < c) f += 12; return f; })();
+  const st = CFG.shed.arpAt != null ? CFG.shed.arpAt : (() => { const t0 = wsTune()[0], c = S.capo || 0; let f = ((chords[0].root - t0) % 12 + 12) % 12; while (f < c) f += 12; return f; })();
   const notes = []; chords.forEach((ch, ci) => {
-    const rm = wsRootAt(ch.root, st), run = ch.iv.map(i => rm + i).concat(rm + 12), seq = CFG.ws.src === 'song' ? run : run.concat(run.slice(0, -1).reverse());
+    const rm = wsRootAt(ch.root, st), run = ch.iv.map(i => rm + i).concat(rm + 12), seq = CFG.shed.src === 'song' ? run : run.concat(run.slice(0, -1).reverse());
     seq.forEach(m => { if (notes.length && notes[notes.length - 1].m % 12 === m % 12) return; notes.push(Object.assign({ m, ci, deg: IVNAMES[((m - ch.root) % 12 + 12) % 12] }, wsPlace(m, st))); });
   });
   return { kind: 'arp', title: chords.map(c => c.sym).join(' · '), notes, chords, st };
@@ -125,11 +125,11 @@ async function wsListen(kind) {
 }
 
 /* ---------- your ear ---------- */
-const wsEarChords = () => CFG.ws.ear === 'chords' && wsOpen('ear');
+const wsEarChords = () => CFG.shed.ear === 'chords' && wsOpen('ear');
 function wsEarNext() {
   const e = WS.ear; e.lock = false;
   if (wsEarChords()) { const q = WS_CQ[Math.floor(Math.random() * WS_CQ.length)]; e.q = { kind: 'chord', root: 48 + Math.floor(Math.random() * 12), ans: q[0], iv: q[1] }; }
-  else { const set = WS_SETS[CFG.ws.ear] || WS_SETS.more, a = set[Math.floor(Math.random() * set.length)], iv = WS_IV.find(x => x[0] === a); e.q = { kind: 'iv', root: 52 + Math.floor(Math.random() * 16), ans: a, semi: iv[2] }; }
+  else { const set = WS_SETS[CFG.shed.ear] || WS_SETS.more, a = set[Math.floor(Math.random() * set.length)], iv = WS_IV.find(x => x[0] === a); e.q = { kind: 'iv', root: 52 + Math.floor(Math.random() * 16), ans: a, semi: iv[2] }; }
   wsEarPlay(); WS.r.ear.paint();
 }
 async function wsEarPlay() {
@@ -139,7 +139,7 @@ async function wsEarPlay() {
 function wsEarAnswer(a) {
   const e = WS.ear, q = e.q; if (!q || e.lock) return; e.lock = true; e.n++;
   const right = a === q.ans; if (right) { e.ok++; e.streak++; e.best = Math.max(e.best, e.streak); } else e.streak = 0; e.last = { a, right, ans: q.ans };
-  const choices = wsEarChords() ? WS_CQ.length : (WS_SETS[CFG.ws.ear] || WS_SETS.more).length;
+  const choices = wsEarChords() ? WS_CQ.length : (WS_SETS[CFG.shed.ear] || WS_SETS.more).length;
   if (right && e.streak >= 10 && choices >= 6 && !wsEarChords() && !secretBusy()) secretFound('ear');
   WS.r.ear.paint(); clearTimeout(e.tm); e.tm = setTimeout(wsEarNext, right ? 900 : 1700);
 }
@@ -155,16 +155,16 @@ function wsRoom(kind) {
     ctl.innerHTML = '';
     if (kind === 'scale') {
       const sc = Object.keys(SCALES).map(n => [n, (WS_BASE.includes(n) || wsOpen('scale') ? '' : '🔒 ') + n, !WS_BASE.includes(n) && !wsOpen('scale')]), run = wsScaleRun();
-      ctl.append(h('label', { class: 'field' }, 'Key', wsSel(keys, wsKey(), v => { CFG.ws.key = +v; CFG.ws.at = null; saveCfg(); wsStop(true); build(); }, { id: 'ws-key' })),
-        h('label', { class: 'field' }, 'Scale', wsSel(sc, CFG.ws.scale, v => { CFG.ws.scale = v; CFG.ws.at = null; saveCfg(); wsStop(true); build(); }, { id: 'ws-scale' })),
-        h('label', { class: 'field' }, 'Start at', wsSel(run.starts.map(f => [f, f === 0 ? 'Open strings' : 'Fret ' + f]), run.st, v => { CFG.ws.at = +v; saveCfg(); wsStop(true); build(); }, { id: 'ws-at' })),
-        h('label', { class: 'field' }, 'Octaves', wsSel([[1, 'One'], [2, 'Two']], CFG.ws.oct, v => { CFG.ws.oct = +v; saveCfg(); wsStop(true); build(); }, { id: 'ws-oct' })));
+      ctl.append(h('label', { class: 'field' }, 'Key', wsSel(keys, wsKey(), v => { CFG.shed.key = +v; CFG.shed.at = null; saveCfg(); wsStop(true); build(); }, { id: 'ws-key' })),
+        h('label', { class: 'field' }, 'Scale', wsSel(sc, CFG.shed.scale, v => { CFG.shed.scale = v; CFG.shed.at = null; saveCfg(); wsStop(true); build(); }, { id: 'ws-scale' })),
+        h('label', { class: 'field' }, 'Start at', wsSel(run.starts.map(f => [f, f === 0 ? 'Open strings' : 'Fret ' + f]), run.st, v => { CFG.shed.at = +v; saveCfg(); wsStop(true); build(); }, { id: 'ws-at' })),
+        h('label', { class: 'field' }, 'Octaves', wsSel([[1, 'One'], [2, 'Two']], CFG.shed.oct, v => { CFG.shed.oct = +v; saveCfg(); wsStop(true); build(); }, { id: 'ws-oct' })));
     } else {
       const types = WS_ARPS.map(([v, t, , bonus]) => [v, (bonus && !wsOpen('arp') ? '🔒 ' : '') + t, bonus && !wsOpen('arp')]);
-      ctl.append(h('label', { class: 'field' }, 'Play', wsSel([['song', 'This song’s chords'], ['one', 'One chord']], CFG.ws.src, v => { CFG.ws.src = v; CFG.ws.arpAt = null; saveCfg(); wsStop(true); build(); }, { id: 'ws-src' })));
-      if (CFG.ws.src === 'one') ctl.append(h('label', { class: 'field' }, 'Root', wsSel(keys, CFG.ws.root == null ? S.key : CFG.ws.root, v => { CFG.ws.root = +v; CFG.ws.arpAt = null; saveCfg(); wsStop(true); build(); }, { id: 'ws-root' })),
-        h('label', { class: 'field' }, 'Chord', wsSel(types, CFG.ws.type, v => { CFG.ws.type = v; saveCfg(); wsStop(true); build(); }, { id: 'ws-type' })));
-      const t0 = wsTune()[0], c = S.capo || 0; ctl.append(h('label', { class: 'field' }, 'Around fret', wsSel(Array.from({ length: 13 }, (_, i) => [c + i, c + i === 0 ? 'Open' : 'Fret ' + (c + i)]), wsArpRun().st, v => { CFG.ws.arpAt = +v; saveCfg(); wsStop(true); build(); }, { id: 'ws-arpat' })));
+      ctl.append(h('label', { class: 'field' }, 'Play', wsSel([['song', 'This song’s chords'], ['one', 'One chord']], CFG.shed.src, v => { CFG.shed.src = v; CFG.shed.arpAt = null; saveCfg(); wsStop(true); build(); }, { id: 'ws-src' })));
+      if (CFG.shed.src === 'one') ctl.append(h('label', { class: 'field' }, 'Root', wsSel(keys, CFG.shed.root == null ? S.key : CFG.shed.root, v => { CFG.shed.root = +v; CFG.shed.arpAt = null; saveCfg(); wsStop(true); build(); }, { id: 'ws-root' })),
+        h('label', { class: 'field' }, 'Chord', wsSel(types, CFG.shed.type, v => { CFG.shed.type = v; saveCfg(); wsStop(true); build(); }, { id: 'ws-type' })));
+      const t0 = wsTune()[0], c = S.capo || 0; ctl.append(h('label', { class: 'field' }, 'Around fret', wsSel(Array.from({ length: 13 }, (_, i) => [c + i, c + i === 0 ? 'Open' : 'Fret ' + (c + i)]), wsArpRun().st, v => { CFG.shed.arpAt = +v; saveCfg(); wsStop(true); build(); }, { id: 'ws-arpat' })));
     }
     paint();
   };
@@ -186,12 +186,12 @@ function wsEarRoom() {
   const box = h('div', { class: 'ws-room', id: 'ws-room-ear' }), top = h('div', { class: 'ws-ctl' }), ans = h('div', { class: 'ws-ans' }), stat = h('div', { class: 'ws-stat', 'aria-live': 'polite' });
   const modes = [['easy', 'Intervals: 4 to choose from'], ['more', 'Intervals: 6'], ['all', 'Intervals: all 12'], ['chords', (wsOpen('ear') ? '' : '🔒 ') + 'Chord qualities', !wsOpen('ear')]];
   const paint = () => {
-    const e = WS.ear, list = wsEarChords() ? WS_CQ.map(x => [x[0], x[0]]) : (WS_SETS[CFG.ws.ear] || WS_SETS.more).map(a => { const iv = WS_IV.find(x => x[0] === a); return [a, iv[1]]; });
+    const e = WS.ear, list = wsEarChords() ? WS_CQ.map(x => [x[0], x[0]]) : (WS_SETS[CFG.shed.ear] || WS_SETS.more).map(a => { const iv = WS_IV.find(x => x[0] === a); return [a, iv[1]]; });
     ans.innerHTML = ''; list.forEach(([a, t]) => ans.append(h('button', { class: 'btn ws-a' + (e.last && e.lock && a === e.last.ans ? ' right' : '') + (e.last && e.lock && !e.last.right && a === e.last.a ? ' wrong' : ''), 'data-a': a, disabled: !e.q, onclick: () => wsEarAnswer(a) }, t)));
     stat.innerHTML = ''; stat.append(e.q ? (e.lock ? h('b', { class: e.last.right ? 'ws-good' : '' }, e.last.right ? '✓ Yes: ' : '✗ It was: ', h('span', {}, (wsEarChords() ? e.last.ans : WS_IV.find(x => x[0] === e.last.ans)[1]))) : h('span', {}, 'What did you hear?')) : h('span', {}, 'Press ▶ Play a question.'),
       h('span', { class: 'ws-streak' }, ' · streak ' + e.streak + ' · best ' + e.best + (e.n ? ' · ' + Math.round(e.ok / e.n * 100) + '% of ' + e.n : '')));
   };
-  top.append(h('label', { class: 'field' }, 'Train', wsSel(modes, CFG.ws.ear, v => { CFG.ws.ear = v; saveCfg(); Object.assign(WS.ear, { q: null, streak: 0, lock: false }); paint(); }, { id: 'ws-ear-mode' })),
+  top.append(h('label', { class: 'field' }, 'Train', wsSel(modes, CFG.shed.ear, v => { CFG.shed.ear = v; saveCfg(); Object.assign(WS.ear, { q: null, streak: 0, lock: false }); paint(); }, { id: 'ws-ear-mode' })),
     h('button', { class: 'btn primary', id: 'ws-ear-go', onclick: () => wsEarNext() }, '▶ Play a question'), h('button', { class: 'btn', id: 'ws-ear-again', onclick: () => wsEarPlay() }, '↻ Again'));
   WS.r.ear = { paint, build: paint }; box.append(top, ans, stat, wsLock('ear', 'Chord qualities by ear')); paint(); return box;
 }

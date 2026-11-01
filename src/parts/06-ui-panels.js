@@ -122,7 +122,7 @@ function buildTheory(p) {
     if (!pal.children.length) pal.append(h('span', { class: 'muted small' }, 'Diatonic chords need a 7-note scale.'));
   };
   bus.on('song', render); render();
-  p.append(h('button', { class: 'btn sm ws-door', id: 'theoryShed', title: 'Practise this key and scale in the Woodshed: scales, arpeggios and your ear', onclick: () => { CFG.ws.key = S.key; if (WS_BASE.includes(S.scale) || wsOpen('scale')) CFG.ws.scale = S.scale; CFG.ws.at = null; saveCfg(); woodshedOpen('scales'); } }, '🪵 Practise it in the Woodshed'));
+  p.append(h('button', { class: 'btn sm ws-door', id: 'theoryShed', title: 'Practise this key and scale in the Woodshed: scales, arpeggios and your ear', onclick: () => { CFG.shed.key = S.key; if (WS_BASE.includes(S.scale) || wsOpen('scale')) CFG.shed.scale = S.scale; CFG.shed.at = null; saveCfg(); woodshedOpen('scales'); } }, '🪵 Practise it in the Woodshed'));
   p.append(h('div', { class: 'card' }, h('h4', {}, 'Key · Scale · Tuning'), h('div', { class: 'card-b' }, h('div', { class: 'row' }, kSel, sSel), h('div', { style: { height: '6px' } }), tSel, h('div', { class: 'row', style: { marginTop: '6px' } }, h('span', { class: 'small' }, 'Capo'), cap), info)),
     h('div', { class: 'card' }, h('h4', {}, 'Diatonic chord palette'), h('div', { class: 'card-b' }, pal)),
     h('div', { class: 'card' }, h('h4', {}, 'Progression builder'), h('div', { class: 'card-b' }, pr, h('div', { class: 'row', style: { marginTop: '6px' } }, h('button', { class: 'btn sm', onclick: () => applyProg(+pr.value, false) }, 'Replace section'), h('button', { class: 'btn sm', onclick: () => applyProg(+pr.value, true) }, 'Append bars')))),

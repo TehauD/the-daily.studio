@@ -17,6 +17,7 @@ All notable changes to the-daily.studio (earlier versions were released under th
   - **Golden ear**: ten intervals in a row by ear, from six choices or more, opens chord qualities by ear (major, minor, diminished, augmented and three sevenths).
   - Their toasts say what opened, and the room redraws itself so the treasure is there at once.
   - With Hidden surprises off, every treasure is simply open: nobody has to hunt for practice.
+- The Woodshed keeps its own settings under `CFG.shed`, apart from the workspace you are in (`CFG.ws`).
 - The guide's Tones page mentions the Woodshed.
 
 ### Tests

@@ -9,7 +9,7 @@ suite('e2e-woodshed', async t => {
   await ev(async s => { const D = window.__daily; await D.startAudio(); await D.projCreate('blank', { form: 'empty' }); await window.dailyStudio.call('load_chord_sheet', { text: s }); D.S.title = 'Harbour'; D.commit(false); await D.projSave();
     const AN = D.AN; window.__f = { active: false, midi: null }; ['active', 'midi'].forEach(k => Object.defineProperty(AN, k, { configurable: true, get: () => window.__f[k], set: () => { } })); }, SHEET);
   /* play notes into the Woodshed: each held long enough to be heard, with a short gap */
-  const play = ms => ev(async ms => { const nap = x => new Promise(r => setTimeout(r, x)); for (const m of ms) { window.__f.active = true; window.__f.midi = m; await nap(190); window.__f.active = false; window.__f.midi = null; await nap(70); } await nap(150); }, ms);
+  const play = ms => ev(async ms => { const nap = x => new Promise(r => setTimeout(r, x)); for (const m of ms) { window.__f.active = true; window.__f.midi = m; await nap(260); window.__f.active = false; window.__f.midi = null; await nap(70); } await nap(150); }, ms);
   const run = () => ev(() => { const r = window.__daily.WS.run; return r ? { mode: r.mode, i: r.i, miss: r.miss, n: r.notes.length, notes: r.notes.map(q => q.m) } : null; });
 
   /* ---- the way in, from the Theory panel ---- */
@@ -55,7 +55,7 @@ suite('e2e-woodshed', async t => {
   ok(await poll(() => ev(() => !!window.__daily.CFG.secrets.arp), 3000) && await ev(() => /Broken chords/.test(document.getElementById('toasts').textContent)), 'four chords, every note, no mistake: Broken chords');
   await wait(1700);
   ok(await ev(() => { const s = document.getElementById('ws-src'); s.value = 'one'; s.dispatchEvent(new Event('change')); return [...document.querySelectorAll('#ws-type option')].every(o => !o.disabled) && /🗝 Open: Seventh/.test(document.getElementById('ws-room-arp').textContent); }), 'the treasure: seventh arpeggios open');
-  ok(await ev(() => { const D = window.__daily; D.CFG.ws.type = 'm7'; D.CFG.ws.root = 9; const r = D.wsArpRun(); return r.notes.slice(0, 5).map(q => q.deg).join(' ') === 'R b3 5 b7 R'; }), 'A minor 7: R ♭3 5 ♭7 R');
+  ok(await ev(() => { const D = window.__daily; D.CFG.shed.type = 'm7'; D.CFG.shed.root = 9; const r = D.wsArpRun(); return r.notes.slice(0, 5).map(q => q.deg).join(' ') === 'R b3 5 b7 R'; }), 'A minor 7: R ♭3 5 ♭7 R');
 
   /* ---- your ear ---- */
   const answer = (right) => ev(r => { const D = window.__daily, q = D.WS.ear.q; const list = [...document.querySelectorAll('#ws-room-ear .ws-a')].map(b => b.dataset.a); const a = r ? q.ans : list.find(x => x !== q.ans); D.wsEarAnswer(a); D.WS.ear.lock = false; clearTimeout(D.WS.ear.tm); D.wsEarNext(); }, right);
