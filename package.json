@@ -1,6 +1,6 @@
 {
   "name": "the-daily.studio",
-  "version": "2.23.0",
+  "version": "2.24.0",
   "description": "the-daily.studio — a guitar and voice studio in one web page: record guitar and mic, split any song into stems, get chords, tab and lyrics, with a pedal rig, presets and live visuals. Local-first, no account.",
   "type": "module",
   "private": true,

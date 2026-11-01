@@ -5,7 +5,7 @@
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.23.0', BUILD = '13e92b3', PARTS_N = +'87' || 0, LINES_N = +'15215' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.24.0', BUILD = 'ceb3e72', PARTS_N = +'87' || 0, LINES_N = +'15246' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { ghApp: { clientId: '', slug: '' },   /* Sign in with GitHub: the GitHub App's public client id and its slug (docs/GITHUB.md); empty = only the token way */
   support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://the-daily.studio/journal/' };
@@ -1510,12 +1510,13 @@ function buildHeader() {
   UI.rec = B('rec', '●', 'Record guitar take (R)', toggleRec);
   UI.loop = h('button', { class: 'btn sm', title: 'Loop (L)', onclick: () => { T.loop = !T.loop; syncTransport(); } }, '⟲', h('span', { class: 'lbl' }, ' Loop'));
   UI.metro = h('button', { class: 'btn sm', title: 'Metronome (M)', onclick: () => { T.metro = !T.metro; syncTransport(); } }, '♩', h('span', { class: 'lbl' }, ' Click'));
+  UI.bandMute = h('button', { class: 'btn sm bandmute', id: 'bandMute', 'aria-label': 'Mute the band and the click', 'aria-pressed': 'false', onclick: () => bandMute() }, '🔇', h('span', { class: 'lbl' }, ' Band'));
   UI.metroMore = h('button', { class: 'btn sm metro-more', title: 'Count-in and click volume', 'aria-label': 'Count-in and click volume', 'aria-haspopup': 'dialog', onclick: e => clickMenu(e.currentTarget) }, '▾');
   UI.pos = h('div', { class: 'lcd' }, h('b', {}, '1·1·1'), h('i', {}, 'BAR·BEAT·SLOT')); UI.tim = h('div', { class: 'lcd', style: { minWidth: '88px' } }, h('b', {}, '00:00.00'), h('i', {}, 'TIME'));
   UI.bpm = h('input', { type: 'number', min: 30, max: 260, step: 1, value: S.bpm, onchange: e => { S.bpm = clamp(+e.target.value || 90, 30, 260); e.target.value = S.bpm; commit(false); bus.emit('bpm'); } });
   UI.ts = h('select', { onchange: e => { const [n, d] = e.target.value.split('/').map(Number); S.ts = [n, d]; S.band.drumLen = Math.min(32, spb()); commit(); } }, ['4/4', '3/4', '2/4', '5/4', '6/8', '12/8', '7/8'].map(x => h('option', { value: x }, x)));
   UI.key = h('select', { onchange: () => keyChanged() }, NS.map((n, i) => h('option', { value: i }, n))); UI.mode = h('select', { onchange: () => keyChanged() }, [h('option', { value: 'maj' }, 'maj'), h('option', { value: 'min' }, 'min')]);
-  tr.append(UI.rew, UI.play, UI.stop, UI.rec, UI.loop, UI.metro, UI.metroMore, UI.pos, UI.tim, h('label', { class: 'field', style: { width: '58px' } }, 'BPM', UI.bpm), h('label', { class: 'field', style: { width: '54px' } }, 'Sig', UI.ts), h('label', { class: 'field', style: { width: '56px' } }, 'Key', UI.key), h('label', { class: 'field', style: { width: '56px' } }, 'Mode', UI.mode));
+  tr.append(UI.rew, UI.play, UI.stop, UI.rec, UI.loop, UI.metro, UI.bandMute, UI.metroMore, UI.pos, UI.tim, h('label', { class: 'field', style: { width: '58px' } }, 'BPM', UI.bpm), h('label', { class: 'field', style: { width: '54px' } }, 'Sig', UI.ts), h('label', { class: 'field', style: { width: '56px' } }, 'Key', UI.key), h('label', { class: 'field', style: { width: '56px' } }, 'Mode', UI.mode));
   const R = $('#topR');
   UI.lat = h('span', { class: 'chip', title: 'Round-trip latency estimate. Run the Loopback Test in I/O for a measured value.' }, h('i', { class: 'led' }), h('span', {}, 'audio off'));
   UI.theme = h('button', { class: 'btn icon', title: 'Appearance: light / dark, palettes, accent, density…', 'aria-haspopup': 'dialog', onclick: () => lookOpen() }, '◐');
@@ -1538,7 +1539,7 @@ function toggleRec() {
 }
 function syncTransport() {
   if (!UI.play) return; UI.play.textContent = T.playing ? '⏸' : '▶'; UI.play.classList.toggle('on', T.playing);
-  UI.rec.classList.toggle('armed', T.rec && !T.playing); UI.rec.classList.toggle('on', T.rec && T.playing); UI.loop.classList.toggle('on', T.loop); UI.metro.classList.toggle('on', T.metro);
+  UI.rec.classList.toggle('armed', T.rec && !T.playing); UI.rec.classList.toggle('on', T.rec && T.playing); UI.loop.classList.toggle('on', T.loop); UI.metro.classList.toggle('on', T.metro); if (typeof bandMuteSync === 'function') bandMuteSync();
   UI.bpm.value = S.bpm; UI.ts.value = S.ts.join('/'); UI.key.value = S.key; UI.mode.value = S.minor ? 'min' : 'maj';
   if (UI.undo) { UI.undo.disabled = !histStack.u.length; UI.redo.disabled = !histStack.r.length; }
 }
@@ -1600,7 +1601,7 @@ function openSettings(at) {
 }
 /** ? Help (part 05c's dialog) */
 function openHelp(at) {
-  const K = [['Space', 'Play / stop'], ['Ctrl + .', 'KILL AUDIO: stop playback, monitor off, release the microphone, suspend audio'], ['R', 'Record: one press, one take. It keeps going past the end of the song until you press R or Stop again'], ['L / M', 'Loop / metronome'], ['D · B · G · T', 'Band on/off: drums · bass · rhythm guitar · lead tab'], ['1…8 · 0', 'Recall pedalboard scene (Stage scene when Stage is focused) · 0 = all pedals off'], ['Home', 'Return to start'], ['Ctrl/⌘ Z · Shift+Z', 'Undo / redo: song edits, clips and the stem mix share one history'], ['Ctrl/⌘ E · D · Del', 'Selected clip: split at the playhead · duplicate · delete. ← → nudge a beat (Shift = a bar). Hold Alt while dragging for no snapping'], ['Drop a file', 'Audio, lyrics, MIDI (.mid, .kar) or a song file anywhere on the page'], ['Ctrl/⌘ S', 'Save project JSON'], ['Alt + 1…9, 0', 'Switch panel by position (tab order is yours to arrange)'], ['[ ]', 'Toggle left / right sidebars'],
+  const K = [['Space', 'Play / stop'], ['Ctrl + .', 'KILL AUDIO: stop playback, monitor off, release the microphone, suspend audio'], ['R', 'Record: one press, one take. It keeps going past the end of the song until you press R or Stop again'], ['L / M', 'Loop / metronome'], ['D · B · G · T', 'Band on/off: drums · bass · rhythm guitar · lead tab'], ['Shift + M', 'Mute the whole band and the click in one press; again to bring back what was playing'], ['1…8 · 0', 'Recall pedalboard scene (Stage scene when Stage is focused) · 0 = all pedals off'], ['Home', 'Return to start'], ['Ctrl/⌘ Z · Shift+Z', 'Undo / redo: song edits, clips and the stem mix share one history'], ['Ctrl/⌘ E · D · Del', 'Selected clip: split at the playhead · duplicate · delete. ← → nudge a beat (Shift = a bar). Hold Alt while dragging for no snapping'], ['Drop a file', 'Audio, lyrics, MIDI (.mid, .kar) or a song file anywhere on the page'], ['Ctrl/⌘ S', 'Save project JSON'], ['Alt + 1…9, 0', 'Switch panel by position (tab order is yours to arrange)'], ['[ ]', 'Toggle left / right sidebars'],
     ['Tab editor', 'Click a cell · type fret (0–24) · ←→↑↓ move · Del clear · h p / \\ b ~ x < set technique · Shift+arrows select · Space plays from bar'], ['Knobs', 'Drag · wheel · Shift = fine · double-click reset · right-click = MIDI learn'], ['Rig', 'Drag pedal headers to reorder the signal chain · A/B + Morph to compare tones']];
   const close = () => { const d = $('#help'); if (d) d.close(); };
   return hubOpen('help', { ico: '?', title: 'Help', sub: 'Get going, find a shortcut, or read how the studio treats your work.', at, sections: [
@@ -1655,6 +1656,7 @@ document.addEventListener('keydown', e => {
   }
   if (typing || mod) return;
   if (t && t.classList && t.classList.contains('tcell')) return;
+  if (e.shiftKey && (e.key === 'M' || e.key === 'm')) { bandMute(); return; }      /* Shift+M: the whole band and the click, M alone is the click */
   switch (e.key) {
     case ' ': e.preventDefault(); T.playing ? stopPlay(true) : play(); break;
     case 'r': case 'R': toggleRec(); break; case 'l': case 'L': T.loop = !T.loop; syncTransport(); break; case 'm': case 'M': T.metro = !T.metro; syncTransport(); break;
@@ -4046,9 +4048,32 @@ function edgeSync() {
 const BAND_KEYS = [['drums', 'Drums', 'drumsOn'], ['bass', 'Bass', 'bassOn'], ['rhythm', 'Rhythm', 'compOn'], ['lead', 'Lead tab', 'leadOn']];
 const REHEARSAL = [['Full band', { drumsOn: 1, bassOn: 1, compOn: 1, leadOn: 1 }], ['Rhythm section (drums + bass)', { drumsOn: 1, bassOn: 1, compOn: 0, leadOn: 0 }], ['Acoustic duo (rhythm + bass)', { drumsOn: 0, bassOn: 1, compOn: 1, leadOn: 0 }], ['Drums only', { drumsOn: 1, bassOn: 0, compOn: 0, leadOn: 0 }], ['Bass only', { drumsOn: 0, bassOn: 1, compOn: 0, leadOn: 0 }], ['Rhythm guitar only', { drumsOn: 0, bassOn: 0, compOn: 1, leadOn: 0 }], ['Tab playback only', { drumsOn: 0, bassOn: 0, compOn: 0, leadOn: 1 }], ['Play over me (click only)', { drumsOn: 0, bassOn: 0, compOn: 0, leadOn: 0, click: 1 }]];
 function toggleBand(key, val) { S.band[key] = val == null ? !S.band[key] : !!val; commit(false); syncBandStrip(); if (paneVisible('band') && typeof renderBand === 'function') renderBand(); }
+/* ---------- mute the whole band and the click in one press (2.24); the next press brings back exactly what was playing ---------- */
+const BANDMUTE = { id: null, was: null };
+/** true when nothing of the band plays and the click is off */
+const bandMuted = () => BAND_KEYS.every(([, , k]) => !S.band[k]) && !T.metro;
+function bandMute(force) {
+  const silent = bandMuted(), want = force == null ? !silent : !!force; if (want === silent) return silent;
+  if (want) { BANDMUTE.id = PRJ.cur; BANDMUTE.was = { click: !!T.metro }; BAND_KEYS.forEach(([, , k]) => { BANDMUTE.was[k] = !!S.band[k]; S.band[k] = false; }); T.metro = false; }
+  else {      /* what was playing before the mute (in this song), or the band a new song starts with */
+    const d = newSong().band, w = BANDMUTE.was && BANDMUTE.id === PRJ.cur ? BANDMUTE.was : Object.assign({ click: true }, ...BAND_KEYS.map(([, , k]) => ({ [k]: !!d[k] })));
+    BAND_KEYS.forEach(([, , k]) => { S.band[k] = !!w[k]; }); T.metro = !!w.click; if (!BAND_KEYS.some(([, , k]) => S.band[k]) && !T.metro) { S.band.drumsOn = true; T.metro = true; }
+    BANDMUTE.was = null;
+  }
+  commit(false); syncTransport(); syncBandStrip(); if (paneVisible('band') && typeof renderBand === 'function') renderBand(); bus.emit('bandmute', want);
+  return want;
+}
+/** every mute-all button shows whether the band is silent */
+function bandMuteSync() {
+  const m = bandMuted(), title = m ? 'The band and the click are muted. Press to bring back what was playing (Shift+M)' : 'Mute the whole band and the click in one press (Shift+M). Press again to bring them back';
+  [UI.bandMute, UI.bchips && UI.bchips.all, document.getElementById('pfBand')].forEach(b => { if (!b) return; b.classList.toggle('on', m); b.setAttribute('aria-pressed', String(m)); b.title = title; });
+  if (UI.bchips && UI.bchips.all) { UI.bchips.all.firstChild.textContent = m ? '🔇 ' : '🔊 '; UI.bchips.all.lastChild.textContent = m ? 'Unmute all' : 'Mute all'; }
+  if (UI.bandMute) UI.bandMute.firstChild.textContent = m ? '🔇' : '🔊';      /* the speaker says what you hear now */
+  const pf = document.getElementById('pfBand'); if (pf) pf.textContent = m ? '🔇 Band muted' : '🔊 Band';
+}
 function setRehearsal(cfg) { Object.keys(cfg).forEach(k => { if (k === 'click') { T.metro = !!cfg.click; } else S.band[k] = !!cfg[k]; }); if (!('click' in cfg)) { /* leave click alone */ } commit(false); syncTransport(); syncBandStrip(); if (paneVisible('band')) renderBand(); }
 function syncBandStrip() {
-  if (!UI.bchips) return; BAND_KEYS.forEach(([id, , key]) => UI.bchips[id].classList.toggle('on', !!S.band[key])); UI.bchips.click.classList.toggle('on', !!T.metro);
+  if (!UI.bchips) return; BAND_KEYS.forEach(([id, , key]) => UI.bchips[id].classList.toggle('on', !!S.band[key])); UI.bchips.click.classList.toggle('on', !!T.metro); bandMuteSync();
   const all = BAND_KEYS.every(([, , k]) => S.band[k]), none = BAND_KEYS.every(([, , k]) => !S.band[k]); UI.bmix.value = ''; UI.bmix.title = all ? 'Full band' : none ? 'Band silent' : 'Custom mix';
   $$('.tl-head .pw').forEach(b => b.classList.toggle('on', !!S.band[b.dataset.k]));
 }
@@ -4069,6 +4094,7 @@ function buildBandStrip() {
   const strip = h('div', { class: 'bandstrip' }); UI.bchips = {}; strip.append(h('span', { class: 'bs-l' }, 'BAND'));
   BAND_KEYS.forEach(([id, name, key]) => { const c = h('button', { class: 'bchip', title: name + ' — click: on/off · right-click: level, pan, style  (' + { drums: 'D', bass: 'B', rhythm: 'G', lead: 'T' }[id] + ')', onclick: () => toggleBand(key), oncontextmenu: e => { e.preventDefault(); bandPop(c, id, key); } }, h('i', { class: 'led' }), name); UI.bchips[id] = c; strip.append(c); });
   UI.bchips.click = h('button', { class: 'bchip warn', title: 'Metronome click (M)', onclick: () => { T.metro = !T.metro; syncTransport(); } }, h('i', { class: 'led' }), 'Click'); strip.append(UI.bchips.click);
+  UI.bchips.all = h('button', { class: 'bchip bmute', id: 'bandMuteAll', 'aria-pressed': 'false', onclick: () => bandMute() }, h('span', { 'aria-hidden': 'true' }, '🔇 '), h('span', {}, 'Mute all')); strip.append(UI.bchips.all);
   UI.bmix = h('select', { class: 'in', title: 'Rehearsal mixes — who plays with you', onchange: e => { const r = REHEARSAL[+e.target.value]; if (r) setRehearsal(r[1]); } }, h('option', { value: '' }, 'Mix…'), REHEARSAL.map((r, i) => h('option', { value: i }, r[0]))); strip.append(UI.bmix);
   return strip;
 }
@@ -5290,7 +5316,7 @@ function detectForm() {
 function mMoveTransport(phone) {
   const tr = $('#transport'); if (!tr || !M.trans) return;
   if (!M.kids) M.kids = [...tr.children];
-  if (phone) { const k = M.kids.filter(x => !x.classList.contains('metro-more')); M.trans.append(k[0], k[1], k[2], k[3], k[4], k[5], k[6], k[7]); tr.append(k[8], k[9], k[10], k[11], ...M.kids.filter(x => x.classList.contains('metro-more'))); }   // the count-in arrow stays in the header (hidden on phones)
+  if (phone) { const k = M.kids.filter(x => !x.classList.contains('metro-more')), fields = k.filter(x => x.matches('label.field')); M.trans.append(...k.filter(x => !fields.includes(x))); tr.append(...fields, ...M.kids.filter(x => x.classList.contains('metro-more'))); }   // buttons and clocks to the bottom bar; tempo, metre, key and mode stay in the header, and so does the count-in arrow (hidden on phones)
   else tr.append(...M.kids);
 }
 
@@ -5341,7 +5367,7 @@ function mCycleTl() { const k = document.body.dataset.land === '1' ? 'l' : 'p', 
 
 /* ---------- overlays: More sheet, tablet drawers ---------- */
 function mCloseOverlays(keepBack) {
-  if (M.sheet) { M.sheet.remove(); M.sheet = null; }
+  if (M.sheet) { M.sheet.remove(); M.sheet = null; } if (M.nav) M.nav.querySelectorAll('.mnb').forEach(b => b.removeAttribute('aria-expanded'));
   document.body.classList.remove('d-left', 'd-right', 'sheet-open', 'song-open');
   M.drawer = null;
 }
@@ -5357,15 +5383,17 @@ function mShare() {
 }
 function mSheet() {
   if (M.sheet) { mCloseOverlays(); return; }
-  mCloseOverlays();
+  mCloseOverlays(); if (typeof VOX !== 'undefined' && VOX.panel) voxClose();      /* one panel at the bottom at a time */
   const tile = (ico, label, fn, on) => h('button', { class: 'mtile' + (on ? ' on' : ''), onclick: e => { fn(e); } }, ico, h('span', {}, label));
   const stat = h('div', { class: 'mstat' }, (UI.st && UI.st.a.textContent) || '', UI.lat ? h('span', {}, UI.lat.textContent) : null);
   const mon = tile(msvg('<path d="M4 14v-2a8 8 0 0116 0v2"/><rect x="3" y="14" width="4" height="6" rx="1.5"/><rect x="17" y="14" width="4" height="6" rx="1.5"/>'), 'Monitor ' + (CFG.monitor ? 'on' : 'off'), e => { setMonitor(!CFG.monitor); mSheetRefresh(); }, CFG.monitor);
   const wake = tile(msvg('<circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6L7 7M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"/>'), 'Screen awake ' + (CFG.wake !== false ? 'on' : 'off'), () => { CFG.wake = CFG.wake === false; saveCfg(); wakeSync(); mSheetRefresh(); }, CFG.wake !== false);
   const seg = h('div', { class: 'seg mseg' }, [['auto', 'Auto'], ['phone', 'Phone'], ['tablet', 'Tablet'], ['desktop', 'Desktop']].map(([v, t]) => h('button', { class: (CFG.form || 'auto') === v ? 'on' : '', onclick: () => { CFG.form = v; saveCfg(); applyForm(); mSheetRefresh(); } }, t)));
+  const more = MGROUPS.find(g => g.id === 'more'), pico = { lab: '<path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/>', exp: '<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>' };
   const sh = h('div', { class: 'msheet', role: 'dialog', 'aria-label': 'More' },
     h('div', { class: 'mgrab', onclick: () => mCloseOverlays() }),
     stat,
+    h('div', { class: 'mrow mpanels' }, h('span', {}, 'Panels'), h('div', { class: 'mpanel-b' }, more.subs.map(([sid, name]) => h('button', { class: 'btn sm' + (M.g === 'more' && M.s === sid ? ' on' : ''), 'data-sub': sid, onclick: () => { mCloseOverlays(); mGo('more', sid); } }, msvg(pico[sid] || '<circle cx="12" cy="12" r="8"/>', 16), ' ' + name)))),
     h('div', { class: 'mgrid' },
       tile(msvg('<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/>'), 'Hum or sing a song', () => { mCloseOverlays(); humOpen(); }),
       tile(msvg('<path d="M17 2l4 4-4 4M3 11V9a3 3 0 013-3h15M7 22l-4-4 4-4M21 13v2a3 3 0 01-3 3H3"/>'), 'Loop & layer', () => { mCloseOverlays(); looperOpen(); }),
@@ -5391,7 +5419,7 @@ function mSheet() {
     h('div', { class: 'mrow' }, h('span', {}, 'Device layout'), seg),
     h('div', { class: 'mfoot' }, BRAND.name + ' v' + VERSION + ' · everything stays on this device')
   );
-  M.sheet = sh; document.body.classList.add('sheet-open'); document.body.append(sh);
+  M.sheet = sh; document.body.classList.add('sheet-open'); document.body.append(sh); const mb = M.nav && M.nav.querySelector('.mnb[data-g="more"]'); if (mb) mb.setAttribute('aria-expanded', 'true');
 }
 function mSheetRefresh() { if (!M.sheet) return; M.sheet.remove(); M.sheet = null; mSheet(); }
 function mFullscreen() { const e = document.documentElement; try { if (document.fullscreenElement) document.exitFullscreen(); else if (e.requestFullscreen) e.requestFullscreen({ navigationUI: 'hide' }).catch(() => toast('Full screen is not available here')); } catch (err) { } }
@@ -5403,9 +5431,9 @@ function buildMobile() {
   M.trans = h('div', { id: 'mtrans', role: 'group', 'aria-label': 'Transport' });
   M.chips = h('div', { class: 'mchips', role: 'tablist' });
   M.tlBtn = h('button', { class: 'msc tl', title: 'Arrangement: mini → full → hidden', onclick: mCycleTl }, '▴ Tracks');
-  M.songBtn = h('button', { class: 'msc song', title: 'Song details: title, artist, tuning, capo, loaded track', onclick: () => { const o = document.body.classList.contains('song-open'); mCloseOverlays(); if (!o) { document.body.classList.add('song-open'); } } }, '♪ Song');
+  M.songBtn = h('button', { class: 'msc song', title: 'Song details: title, artist, tuning, capo, loaded track', onclick: () => { const o = document.body.classList.contains('song-open'); mCloseOverlays(); if (!o) { if (typeof VOX !== 'undefined' && VOX.panel) voxClose(); document.body.classList.add('song-open'); } } }, '♪ Song');
   M.sub = h('div', { id: 'msub' }, M.songBtn, M.chips, M.tlBtn);
-  M.nav = h('nav', { id: 'mnav', 'aria-label': 'Sections' }, MGROUPS.map(g => h('button', { class: 'mnb', 'data-g': g.id, onclick: () => mGo(g.id) }, msvg(g.ico), h('span', {}, g.name))));
+  M.nav = h('nav', { id: 'mnav', 'aria-label': 'Sections' }, MGROUPS.map(g => h('button', { class: 'mnb', 'data-g': g.id, onclick: () => g.id === 'more' ? mSheet() : mGo(g.id) }, msvg(g.ico), h('span', {}, g.name))));      /* More opens the sheet of everything else (its panels, Research and Export, are the first row) */
   M.back = h('div', { id: 'mback', onclick: () => mCloseOverlays() });
   const more = h('button', { class: 'btn icon mmore', title: 'More: theme, settings, help, share', 'aria-label': 'More', onclick: mSheet }, msvg('<circle cx="5.5" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="18.5" cy="12" r="1.5" fill="currentColor"/>', 20));
   $('#topR').append(more);
@@ -5704,12 +5732,14 @@ function sbChip() {
   } else if (PRJ.pending) {
     t.append(h('button', { class: 'sb-chip', title: 'This song has a backing track saved on this device. Tap to split it into stems again (takes a moment).', onclick: () => projRestoreTrack() }, '♪ Restore “' + (PRJ.pending.title || PRJ.pending.name || 'track') + '”'));
   } else {
-    t.append(h('button', { class: 'sb-chip', title: 'Load a backing track — it is split into stems and fills in this song (title, tempo, key, chords)', onclick: () => { dockGo('stems'); const f = SU && SU.file; if (f) f.click(); } }, '♪ Load a track…'));
+    t.append(h('button', { class: 'sb-chip', title: 'Load a backing track — it is split into stems and fills in this song (title, tempo, key, chords)', onclick: () => { sbLeave(); dockGo('stems'); const f = SU && SU.file; if (f) f.click(); } }, '♪ Load a track…'));
     if (S.track) t.append(h('span', { class: 'tiny muted', title: 'This song was built from a track. Load it again to play along with it.' }, 'from “' + S.track.name + '”'));
   }
-  t.append(h('button', { class: 'sb-chip', id: 'sbPerform', title: 'Perform: full-screen chords and lyrics with a count-in, record and play', onclick: e => perfOpen(e.currentTarget) }, '🎤 Perform'));
-  t.append(h('button', { class: 'sb-chip', id: 'sbVoice', 'aria-label': 'Voice', title: 'Voice: see your pitch against the key, find your range, and find the key that suits your voice', onclick: e => voxOpen(e.currentTarget) }, '〰', h('span', { class: 'sb-lbl' }, 'Voice')));
+  t.append(h('button', { class: 'sb-chip', id: 'sbPerform', title: 'Perform: full-screen chords and lyrics with a count-in, record and play', onclick: e => { sbLeave(); perfOpen(e.currentTarget); } }, '🎤 Perform'));
+  t.append(h('button', { class: 'sb-chip', id: 'sbVoice', 'aria-label': 'Voice', title: 'Voice: see your pitch against the key, find your range, and find the key that suits your voice', onclick: e => { sbLeave(); voxOpen(e.currentTarget); } }, '〰', h('span', { class: 'sb-lbl' }, 'Voice')));
 }
+/** on a phone the song details are a sheet over the page: its buttons close it before they open something else */
+function sbLeave() { if (document.body.classList.contains('song-open') && typeof mCloseOverlays === 'function') mCloseOverlays(); }
 function sbTrackPop(anchor) {
   const an = STM.an, box = h('div', { style: { display: 'grid', gap: '6px' } });
   box.append(h('h5', { style: { margin: 0 } }, STM.title || STM.name), h('div', { class: 'tiny muted' }, fmtT(STM.dur) + ' · ' + (STM.sr / 1000).toFixed(1) + ' kHz' + (an ? ' · ' + an.info.filter(i => i.found).map(i => i.name.split(' ')[0]).join(', ') + ' found' : '')));
@@ -8264,7 +8294,7 @@ function perfOpen(opener) {
       h('button', { class: 'btn sm vzh-kill', id: 'pfKill', title: 'Stop all sound and release the microphone (Ctrl + .)', onclick: () => { try { audioKill(); } catch (e) { } } }, '■ Stop audio'), h('button', { class: 'btn sm', id: 'pfExit', onclick: () => perfClose() }, '✕ Exit')),
     h('div', { class: 'pf-stage' }, h('div', { class: 'pf-chord', id: 'pfChord', 'aria-live': 'off' }, '·'), h('div', { class: 'pf-next', id: 'pfNext' }), h('div', { class: 'pf-lyr', id: 'pfLyr' }), h('aside', { class: 'pf-shapes', id: 'pfShapes', 'aria-label': 'Chord shapes' })),
     h('div', { class: 'pf-bar' }, ctl('pfPlay', '▶ Play', 'Play or stop (Space)', () => { T.playing ? stopPlay(true) : play(); }), ctl('pfRec', '● Record', 'Record a take with a count-in (R)', () => { if (!E.hasInput) toast('No input is connected, so only the count-in will run.', 'warn'); toggleRec(); }),
-      ctl('pfLoop', '⟲ Loop', 'Loop the song (L)', () => { T.loop = !T.loop; syncTransport(); perfSync(); }), ctl('pfMetro', '♩ Click', 'Metronome (M)', () => { T.metro = !T.metro; syncTransport(); perfSync(); }),
+      ctl('pfLoop', '⟲ Loop', 'Loop the song (L)', () => { T.loop = !T.loop; syncTransport(); perfSync(); }), ctl('pfMetro', '♩ Click', 'Metronome (M)', () => { T.metro = !T.metro; syncTransport(); perfSync(); }), ctl('pfBand', '🔇 Band', 'Mute the whole band and the click (Shift+M)', () => { bandMute(); perfSync(); }),
       ctl('pfSlow', '−', 'Slower by 5 BPM', () => { S.bpm = clamp(S.bpm - 5, 30, 260); commit(false); bus.emit('bpm'); perfSync(); }), h('b', { class: 'pf-bpm', id: 'pfBpm' }), ctl('pfFast', '+', 'Faster by 5 BPM', () => { S.bpm = clamp(S.bpm + 5, 30, 260); commit(false); bus.emit('bpm'); perfSync(); }),
       h('span', { class: 'grow egg-line', 'aria-live': 'off' }), h('span', { class: 'pf-takes', id: 'pfTakes' })), secretChip('pf-sec'), buildTag('pf-ver'));
   document.body.append(PF.el); document.body.classList.add('perform-on');
@@ -8280,7 +8310,7 @@ function perfClose() {
 function perfSync() {
   if (!PF.el) return; const q = id => document.getElementById(id), on = (id, v) => { const b = q(id); if (b) b.classList.toggle('on', !!v); };
   const p = q('pfPlay'); if (p) p.textContent = T.playing ? '■ Stop' : '▶ Play'; const r = q('pfRec'); if (r) { r.classList.toggle('on', T.rec && T.playing); r.classList.toggle('armed', T.rec && !T.playing); r.textContent = T.rec && T.playing ? '● Recording' : '● Record'; }
-  on('pfLoop', T.loop); on('pfMetro', T.metro); const b = q('pfBpm'); if (b) b.textContent = Math.round(S.bpm) + ' BPM';
+  on('pfLoop', T.loop); on('pfMetro', T.metro); bandMuteSync(); const b = q('pfBpm'); if (b) b.textContent = Math.round(S.bpm) + ' BPM';
   const tk = q('pfTakes'); if (tk) { const n = tkLeads().length; tk.textContent = n ? n + ' take' + (n === 1 ? '' : 's') + ' in this song' : ''; }
 }
 function perfTick() {
@@ -10449,6 +10479,7 @@ function voxRect(W, H) { const w = Math.min(W * .9, H * 2.6), h = clamp(H * .26,
 const voxPc = m => voxNote(m);
 function voxOpen(anchor) {
   if (VOX.panel) { voxClose(); return; }
+  if (document.body.dataset.form && document.body.dataset.form !== 'desktop' && typeof mCloseOverlays === 'function') mCloseOverlays();      /* one panel at the bottom at a time */
   VOX.mode = VOX.mode || 'ribbon'; const cv = h('canvas', { id: 'voxCv', width: 440, height: 170, role: 'img', 'aria-label': 'Pitch ribbon: the note you are singing against the notes of the key' }), body = h('div', { class: 'vx-body', id: 'voxBody' });
   const close = h('button', { class: 'btn sm', id: 'voxClose', onclick: () => voxClose() }, 'Close');
   const p = h('section', { id: 'voxPanel', class: 'vx', role: 'dialog', 'aria-label': 'Voice' }, h('div', { class: 'vx-h' }, h('b', {}, '🎤 Voice'), h('span', { class: 'grow' }), close), cv, body);

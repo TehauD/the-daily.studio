@@ -28,7 +28,7 @@ function detectForm() {
 function mMoveTransport(phone) {
   const tr = $('#transport'); if (!tr || !M.trans) return;
   if (!M.kids) M.kids = [...tr.children];
-  if (phone) { const k = M.kids.filter(x => !x.classList.contains('metro-more')); M.trans.append(k[0], k[1], k[2], k[3], k[4], k[5], k[6], k[7]); tr.append(k[8], k[9], k[10], k[11], ...M.kids.filter(x => x.classList.contains('metro-more'))); }   // the count-in arrow stays in the header (hidden on phones)
+  if (phone) { const k = M.kids.filter(x => !x.classList.contains('metro-more')), fields = k.filter(x => x.matches('label.field')); M.trans.append(...k.filter(x => !fields.includes(x))); tr.append(...fields, ...M.kids.filter(x => x.classList.contains('metro-more'))); }   // buttons and clocks to the bottom bar; tempo, metre, key and mode stay in the header, and so does the count-in arrow (hidden on phones)
   else tr.append(...M.kids);
 }
 
@@ -79,7 +79,7 @@ function mCycleTl() { const k = document.body.dataset.land === '1' ? 'l' : 'p', 
 
 /* ---------- overlays: More sheet, tablet drawers ---------- */
 function mCloseOverlays(keepBack) {
-  if (M.sheet) { M.sheet.remove(); M.sheet = null; }
+  if (M.sheet) { M.sheet.remove(); M.sheet = null; } if (M.nav) M.nav.querySelectorAll('.mnb').forEach(b => b.removeAttribute('aria-expanded'));
   document.body.classList.remove('d-left', 'd-right', 'sheet-open', 'song-open');
   M.drawer = null;
 }
@@ -95,15 +95,17 @@ function mShare() {
 }
 function mSheet() {
   if (M.sheet) { mCloseOverlays(); return; }
-  mCloseOverlays();
+  mCloseOverlays(); if (typeof VOX !== 'undefined' && VOX.panel) voxClose();      /* one panel at the bottom at a time */
   const tile = (ico, label, fn, on) => h('button', { class: 'mtile' + (on ? ' on' : ''), onclick: e => { fn(e); } }, ico, h('span', {}, label));
   const stat = h('div', { class: 'mstat' }, (UI.st && UI.st.a.textContent) || '', UI.lat ? h('span', {}, UI.lat.textContent) : null);
   const mon = tile(msvg('<path d="M4 14v-2a8 8 0 0116 0v2"/><rect x="3" y="14" width="4" height="6" rx="1.5"/><rect x="17" y="14" width="4" height="6" rx="1.5"/>'), 'Monitor ' + (CFG.monitor ? 'on' : 'off'), e => { setMonitor(!CFG.monitor); mSheetRefresh(); }, CFG.monitor);
   const wake = tile(msvg('<circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6L7 7M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"/>'), 'Screen awake ' + (CFG.wake !== false ? 'on' : 'off'), () => { CFG.wake = CFG.wake === false; saveCfg(); wakeSync(); mSheetRefresh(); }, CFG.wake !== false);
   const seg = h('div', { class: 'seg mseg' }, [['auto', 'Auto'], ['phone', 'Phone'], ['tablet', 'Tablet'], ['desktop', 'Desktop']].map(([v, t]) => h('button', { class: (CFG.form || 'auto') === v ? 'on' : '', onclick: () => { CFG.form = v; saveCfg(); applyForm(); mSheetRefresh(); } }, t)));
+  const more = MGROUPS.find(g => g.id === 'more'), pico = { lab: '<path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/>', exp: '<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>' };
   const sh = h('div', { class: 'msheet', role: 'dialog', 'aria-label': 'More' },
     h('div', { class: 'mgrab', onclick: () => mCloseOverlays() }),
     stat,
+    h('div', { class: 'mrow mpanels' }, h('span', {}, 'Panels'), h('div', { class: 'mpanel-b' }, more.subs.map(([sid, name]) => h('button', { class: 'btn sm' + (M.g === 'more' && M.s === sid ? ' on' : ''), 'data-sub': sid, onclick: () => { mCloseOverlays(); mGo('more', sid); } }, msvg(pico[sid] || '<circle cx="12" cy="12" r="8"/>', 16), ' ' + name)))),
     h('div', { class: 'mgrid' },
       tile(msvg('<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/>'), 'Hum or sing a song', () => { mCloseOverlays(); humOpen(); }),
       tile(msvg('<path d="M17 2l4 4-4 4M3 11V9a3 3 0 013-3h15M7 22l-4-4 4-4M21 13v2a3 3 0 01-3 3H3"/>'), 'Loop & layer', () => { mCloseOverlays(); looperOpen(); }),
@@ -129,7 +131,7 @@ function mSheet() {
     h('div', { class: 'mrow' }, h('span', {}, 'Device layout'), seg),
     h('div', { class: 'mfoot' }, BRAND.name + ' v' + VERSION + ' · everything stays on this device')
   );
-  M.sheet = sh; document.body.classList.add('sheet-open'); document.body.append(sh);
+  M.sheet = sh; document.body.classList.add('sheet-open'); document.body.append(sh); const mb = M.nav && M.nav.querySelector('.mnb[data-g="more"]'); if (mb) mb.setAttribute('aria-expanded', 'true');
 }
 function mSheetRefresh() { if (!M.sheet) return; M.sheet.remove(); M.sheet = null; mSheet(); }
 function mFullscreen() { const e = document.documentElement; try { if (document.fullscreenElement) document.exitFullscreen(); else if (e.requestFullscreen) e.requestFullscreen({ navigationUI: 'hide' }).catch(() => toast('Full screen is not available here')); } catch (err) { } }
@@ -141,9 +143,9 @@ function buildMobile() {
   M.trans = h('div', { id: 'mtrans', role: 'group', 'aria-label': 'Transport' });
   M.chips = h('div', { class: 'mchips', role: 'tablist' });
   M.tlBtn = h('button', { class: 'msc tl', title: 'Arrangement: mini → full → hidden', onclick: mCycleTl }, '▴ Tracks');
-  M.songBtn = h('button', { class: 'msc song', title: 'Song details: title, artist, tuning, capo, loaded track', onclick: () => { const o = document.body.classList.contains('song-open'); mCloseOverlays(); if (!o) { document.body.classList.add('song-open'); } } }, '♪ Song');
+  M.songBtn = h('button', { class: 'msc song', title: 'Song details: title, artist, tuning, capo, loaded track', onclick: () => { const o = document.body.classList.contains('song-open'); mCloseOverlays(); if (!o) { if (typeof VOX !== 'undefined' && VOX.panel) voxClose(); document.body.classList.add('song-open'); } } }, '♪ Song');
   M.sub = h('div', { id: 'msub' }, M.songBtn, M.chips, M.tlBtn);
-  M.nav = h('nav', { id: 'mnav', 'aria-label': 'Sections' }, MGROUPS.map(g => h('button', { class: 'mnb', 'data-g': g.id, onclick: () => mGo(g.id) }, msvg(g.ico), h('span', {}, g.name))));
+  M.nav = h('nav', { id: 'mnav', 'aria-label': 'Sections' }, MGROUPS.map(g => h('button', { class: 'mnb', 'data-g': g.id, onclick: () => g.id === 'more' ? mSheet() : mGo(g.id) }, msvg(g.ico), h('span', {}, g.name))));      /* More opens the sheet of everything else (its panels, Research and Export, are the first row) */
   M.back = h('div', { id: 'mback', onclick: () => mCloseOverlays() });
   const more = h('button', { class: 'btn icon mmore', title: 'More: theme, settings, help, share', 'aria-label': 'More', onclick: mSheet }, msvg('<circle cx="5.5" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="18.5" cy="12" r="1.5" fill="currentColor"/>', 20));
   $('#topR').append(more);

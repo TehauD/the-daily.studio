@@ -156,7 +156,7 @@ Units: Noise Gate · Compressor · Wah · Overdrive · Distortion · Fuzz · Pit
 
 ## The band
 
-The **band strip** above the panels toggles **Drums**, **Bass**, **Rhythm** and **Lead tab** (the lead plays whatever is in your tab), plus the **Click**. Hotkeys: <kbd>D</kbd> <kbd>B</kbd> <kbd>G</kbd> <kbd>T</kbd> and <kbd>M</kbd>. Right-click a chip for level, pan and style. The **Mix** menu picks a rehearsal setup, such as "rhythm section only" or "everything but lead".
+The **band strip** above the panels toggles **Drums**, **Bass**, **Rhythm** and **Lead tab** (the lead plays whatever is in your tab), plus the **Click**. Hotkeys: <kbd>D</kbd> <kbd>B</kbd> <kbd>G</kbd> <kbd>T</kbd> and <kbd>M</kbd>. **🔊 Mute all** (or <kbd>Shift</kbd>+<kbd>M</kbd>) silences the whole band and the click in one press; press it again and exactly what was playing comes back (2.24). On a phone it is the 🔊 button in the transport, and Perform has **🔊 Band** beside the click. Right-click a chip for level, pan and style. The **Mix** menu picks a rehearsal setup, such as "rhythm section only" or "everything but lead".
 
 The **Band** panel (4) sets the style of each instrument: drum grooves (Folk Backbeat, Rock 8ths, Four on the Floor, Pop, Funk 16ths, Blues Shuffle, Reggae One-Drop, Bossa Nova, Ballad, Island, Metal Double Kick, Hip-Hop Boom Bap), bass patterns (Root, Root–Fifth, Eighths, Walking, Syncopated, Reggae Dub, Octave Pump) and strumming patterns for the rhythm guitar, including arpeggios and a Travis roll. Voicings for the rhythm guitar are searched for the **current tuning and capo**, not looked up from a fixed chart.
 
@@ -610,7 +610,7 @@ Connect a controller and allow MIDI access when asked (HTTPS or `localhost`; Chr
 
 The app switches layout by itself; **⋯ More ▸ Device layout** (or Settings) forces Phone, Tablet or Desktop.
 
-**Phone, portrait.** Top: tempo, signature, key and the **⋯** button. Below it a row of chips for the panels in the current section. Bottom: the transport (rewind, play, stop, record, loop, click and the bar·beat·slot readout) and the five sections:
+**Phone, portrait.** Top: tempo, signature, key and the **⋯** button. Below it a row of chips for the panels in the current section. Bottom: the transport (rewind, play, stop, record, loop, click, **🔊 band** and the bar·beat·slot readout) and the five sections:
 
 | Section | Panels |
 |---|---|
@@ -618,7 +618,7 @@ The app switches layout by itself; **⋯ More ▸ Device layout** (or Settings) 
 | **Write** | Tab · Song (tuning, capo, chords, lyrics) · Band · Fretboard · Theory |
 | **See** | Visuals · Stage · Neural · Vision |
 | **Stems** | Stems · Transcribe |
-| **More** | Research · Export |
+| **More** | Opens the sheet of everything else (the same as **⋯**): Hum, Loop & layer, Audio, theme, Settings, Help, guided sessions and the tour, your songs and progress, files, the mix, Voice, keeping songs safe; its first row opens the **Research** and **Export** panels |
 
 The **⋯** button (top right) opens the **More sheet**: **Hum or sing a song**, **Audio · kill switch**, **Light theme**, **Appearance**, **Monitor**, **Screen awake**, **Settings**, **Help**, **Guided tour**, **Save project**, **Share link**, **My songs**, **Open a file** (audio, lyrics, MIDI or a song file), **Master · balance · click** (master preset, Auto-balance, count-in and click level), **Keep songs safe**, **Install app** (when the browser offers it), **Full screen** and **Device layout**.
 

@@ -2,6 +2,28 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.24.0 — 2026-11-01 — Mute the whole band in one press; the phone's More, and one panel at a time
+
+### Added
+- **Mute the whole band and the click in one press** (`bandMute` in `src/parts/11-layout.js`). Press again and exactly what was playing comes back (for the same song; a new song gets its usual band). Switching one part back on by hand ends the mute.
+  - On a computer: **🔊 Mute all** in the band strip, and <kbd>Shift</kbd>+<kbd>M</kbd>. <kbd>M</kbd> alone is still the click.
+  - On a phone: a **🔊** button in the transport, beside the click. The speaker shows what you hear now (🔇, highlighted, when muted).
+  - In Perform: **🔊 Band** beside the click.
+
+### Fixed
+- **On a phone, Voice and the song sheet no longer stack.** Only one panel sits at the bottom at a time.
+  - Opening Voice (from the song sheet, the More sheet or anywhere else) puts the song sheet and the More sheet away.
+  - Opening the song sheet or the More sheet puts Voice away.
+  - The song sheet's own **Voice**, **Perform** and **Load a track** buttons close the sheet before they open anything.
+
+### Changed
+- **The phone's bottom More** opens the sheet of extras (the same one as ⋯), instead of switching straight to the Research measurements. Its first row opens the **Research** and **Export** panels.
+- The phone's transport now keeps tempo, signature, key and mode in the header by what they are, not by position, so an extra button can never push one of them out.
+- On phones narrower than 380 px, the position readout drops its caption so all seven buttons fit.
+
+### Tests
+- `test/e2e-phone-panels.cjs` (21 checks): the band button in the phone transport, mute and an exact restore of a mixed band, the bottom More and its panels, the ••• sheet, one panel at a time in both directions, Perform's band button, nothing wider than the screen, and on a computer the band strip chip, Shift+M, M alone, and ending the mute by hand.
+
 ## 2.23.0 — 2026-11-01 — New guide pages, Backstage with all access, and hidden pages for developers
 
 ### Changed

@@ -200,6 +200,10 @@ dialog::backdrop{background:rgba(5,15,15,.55);backdrop-filter:blur(3px)}
 .bchip{appearance:none;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line2);background:var(--panel2);color:var(--muted);border-radius:99px;padding:3px 10px 3px 8px;font:700 11px var(--sans);cursor:pointer;white-space:nowrap}
 .bchip .led{width:8px;height:8px;border-radius:50%;background:var(--line2);box-shadow:none;display:inline-block}
 .bchip.on{color:var(--text);border-color:var(--accent);background:var(--accent-soft)}.bchip.on .led{background:var(--accent);box-shadow:0 0 8px var(--accent)}
+/* mute the whole band and the click (2.24): the chip in the band strip, the phone's transport button, Perform's */
+.bchip.bmute{margin-left:4px;padding-left:9px}.bchip.bmute.on,.bandmute.on,#pfBand.on{color:var(--warn);border-color:var(--warn);background:color-mix(in srgb,var(--warn) 16%,transparent)}
+.bandmute{display:none}body[data-form=phone] #mtrans .bandmute{display:inline-flex}
+@media (max-width:380px){body[data-form=phone] #mtrans .lcd i{display:none}body[data-form=phone] #mtrans .lcd{padding:3px 5px}body[data-form=phone] #mtrans{gap:4px;padding:6px}}      /* narrow phones: room for seven buttons */
 .bchip.warn.on{border-color:var(--accent2);background:color-mix(in srgb,var(--accent2) 14%,var(--panel2))}.bchip.warn.on .led{background:var(--accent2);box-shadow:0 0 8px var(--accent2)}
 .bchip:hover{border-color:var(--accent)}
 .bandstrip select{font:700 11px var(--sans);padding:3px 6px;max-width:150px}
@@ -399,7 +403,7 @@ body[data-form=phone][data-land="1"][data-tl=mini] #center{--tlp:clamp(96px,32dv
 .mgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .mtile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:78px;padding:8px 4px;border:1px solid var(--line2);background:var(--panel2);border-radius:13px;color:var(--text);font:700 11.5px var(--sans);cursor:pointer;text-align:center}
 .mtile.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
-.mrow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:14px 2px 6px;font:700 12px var(--sans)}
+.mrow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:14px 2px 6px;font:700 12px var(--sans)}.mpanels{margin-top:4px}.mpanel-b{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.mpanel-b .btn{display:inline-flex;align-items:center;gap:4px;min-height:36px}
 .mseg button{padding:7px 10px}.mfoot{margin:12px 2px 0;font-size:10.5px;color:var(--muted);text-align:center}
 @media (prefers-reduced-motion:reduce){.msheet,body[data-form=tablet] #left,body[data-form=tablet] #right{animation:none;transition:none}}
 

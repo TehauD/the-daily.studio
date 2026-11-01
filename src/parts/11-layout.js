@@ -189,9 +189,32 @@ function edgeSync() {
 const BAND_KEYS = [['drums', 'Drums', 'drumsOn'], ['bass', 'Bass', 'bassOn'], ['rhythm', 'Rhythm', 'compOn'], ['lead', 'Lead tab', 'leadOn']];
 const REHEARSAL = [['Full band', { drumsOn: 1, bassOn: 1, compOn: 1, leadOn: 1 }], ['Rhythm section (drums + bass)', { drumsOn: 1, bassOn: 1, compOn: 0, leadOn: 0 }], ['Acoustic duo (rhythm + bass)', { drumsOn: 0, bassOn: 1, compOn: 1, leadOn: 0 }], ['Drums only', { drumsOn: 1, bassOn: 0, compOn: 0, leadOn: 0 }], ['Bass only', { drumsOn: 0, bassOn: 1, compOn: 0, leadOn: 0 }], ['Rhythm guitar only', { drumsOn: 0, bassOn: 0, compOn: 1, leadOn: 0 }], ['Tab playback only', { drumsOn: 0, bassOn: 0, compOn: 0, leadOn: 1 }], ['Play over me (click only)', { drumsOn: 0, bassOn: 0, compOn: 0, leadOn: 0, click: 1 }]];
 function toggleBand(key, val) { S.band[key] = val == null ? !S.band[key] : !!val; commit(false); syncBandStrip(); if (paneVisible('band') && typeof renderBand === 'function') renderBand(); }
+/* ---------- mute the whole band and the click in one press (2.24); the next press brings back exactly what was playing ---------- */
+const BANDMUTE = { id: null, was: null };
+/** true when nothing of the band plays and the click is off */
+const bandMuted = () => BAND_KEYS.every(([, , k]) => !S.band[k]) && !T.metro;
+function bandMute(force) {
+  const silent = bandMuted(), want = force == null ? !silent : !!force; if (want === silent) return silent;
+  if (want) { BANDMUTE.id = PRJ.cur; BANDMUTE.was = { click: !!T.metro }; BAND_KEYS.forEach(([, , k]) => { BANDMUTE.was[k] = !!S.band[k]; S.band[k] = false; }); T.metro = false; }
+  else {      /* what was playing before the mute (in this song), or the band a new song starts with */
+    const d = newSong().band, w = BANDMUTE.was && BANDMUTE.id === PRJ.cur ? BANDMUTE.was : Object.assign({ click: true }, ...BAND_KEYS.map(([, , k]) => ({ [k]: !!d[k] })));
+    BAND_KEYS.forEach(([, , k]) => { S.band[k] = !!w[k]; }); T.metro = !!w.click; if (!BAND_KEYS.some(([, , k]) => S.band[k]) && !T.metro) { S.band.drumsOn = true; T.metro = true; }
+    BANDMUTE.was = null;
+  }
+  commit(false); syncTransport(); syncBandStrip(); if (paneVisible('band') && typeof renderBand === 'function') renderBand(); bus.emit('bandmute', want);
+  return want;
+}
+/** every mute-all button shows whether the band is silent */
+function bandMuteSync() {
+  const m = bandMuted(), title = m ? 'The band and the click are muted. Press to bring back what was playing (Shift+M)' : 'Mute the whole band and the click in one press (Shift+M). Press again to bring them back';
+  [UI.bandMute, UI.bchips && UI.bchips.all, document.getElementById('pfBand')].forEach(b => { if (!b) return; b.classList.toggle('on', m); b.setAttribute('aria-pressed', String(m)); b.title = title; });
+  if (UI.bchips && UI.bchips.all) { UI.bchips.all.firstChild.textContent = m ? '🔇 ' : '🔊 '; UI.bchips.all.lastChild.textContent = m ? 'Unmute all' : 'Mute all'; }
+  if (UI.bandMute) UI.bandMute.firstChild.textContent = m ? '🔇' : '🔊';      /* the speaker says what you hear now */
+  const pf = document.getElementById('pfBand'); if (pf) pf.textContent = m ? '🔇 Band muted' : '🔊 Band';
+}
 function setRehearsal(cfg) { Object.keys(cfg).forEach(k => { if (k === 'click') { T.metro = !!cfg.click; } else S.band[k] = !!cfg[k]; }); if (!('click' in cfg)) { /* leave click alone */ } commit(false); syncTransport(); syncBandStrip(); if (paneVisible('band')) renderBand(); }
 function syncBandStrip() {
-  if (!UI.bchips) return; BAND_KEYS.forEach(([id, , key]) => UI.bchips[id].classList.toggle('on', !!S.band[key])); UI.bchips.click.classList.toggle('on', !!T.metro);
+  if (!UI.bchips) return; BAND_KEYS.forEach(([id, , key]) => UI.bchips[id].classList.toggle('on', !!S.band[key])); UI.bchips.click.classList.toggle('on', !!T.metro); bandMuteSync();
   const all = BAND_KEYS.every(([, , k]) => S.band[k]), none = BAND_KEYS.every(([, , k]) => !S.band[k]); UI.bmix.value = ''; UI.bmix.title = all ? 'Full band' : none ? 'Band silent' : 'Custom mix';
   $$('.tl-head .pw').forEach(b => b.classList.toggle('on', !!S.band[b.dataset.k]));
 }
@@ -212,6 +235,7 @@ function buildBandStrip() {
   const strip = h('div', { class: 'bandstrip' }); UI.bchips = {}; strip.append(h('span', { class: 'bs-l' }, 'BAND'));
   BAND_KEYS.forEach(([id, name, key]) => { const c = h('button', { class: 'bchip', title: name + ' — click: on/off · right-click: level, pan, style  (' + { drums: 'D', bass: 'B', rhythm: 'G', lead: 'T' }[id] + ')', onclick: () => toggleBand(key), oncontextmenu: e => { e.preventDefault(); bandPop(c, id, key); } }, h('i', { class: 'led' }), name); UI.bchips[id] = c; strip.append(c); });
   UI.bchips.click = h('button', { class: 'bchip warn', title: 'Metronome click (M)', onclick: () => { T.metro = !T.metro; syncTransport(); } }, h('i', { class: 'led' }), 'Click'); strip.append(UI.bchips.click);
+  UI.bchips.all = h('button', { class: 'bchip bmute', id: 'bandMuteAll', 'aria-pressed': 'false', onclick: () => bandMute() }, h('span', { 'aria-hidden': 'true' }, '🔇 '), h('span', {}, 'Mute all')); strip.append(UI.bchips.all);
   UI.bmix = h('select', { class: 'in', title: 'Rehearsal mixes — who plays with you', onchange: e => { const r = REHEARSAL[+e.target.value]; if (r) setRehearsal(r[1]); } }, h('option', { value: '' }, 'Mix…'), REHEARSAL.map((r, i) => h('option', { value: i }, r[0]))); strip.append(UI.bmix);
   return strip;
 }
