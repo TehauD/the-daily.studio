@@ -31,9 +31,9 @@ suite('e2e-secrets', async t => {
   await ev(() => { window.__daily.SREC.on = false; window.__daily.SEC.tuned = {}; window.__daily.SEC.tunedT0 = 0; });
   await tune(-1.5);
   ok(await poll(() => ev(() => !!window.__daily.CFG.secrets.tuned), 3000), 'all six open strings within ±2 cents: Tuned to perfection');
-  ok(await ev(() => /Tuned to perfection/.test(document.getElementById('toasts').textContent) && /Secret 1 of 4/.test(document.getElementById('toasts').textContent)), 'it says so, and which secret it is');
+  ok(await ev(() => /Tuned to perfection/.test(document.getElementById('toasts').textContent) && /Secret 1 of 7/.test(document.getElementById('toasts').textContent)), 'it says so, and which secret it is');
   ok(await ev(() => !!document.querySelector('.egg-glow')), 'a soft gold glow comes in from the edges');
-  ok(await ev(() => { const c = document.querySelector('.secret-chip'); return !c.hidden && /1\/4/.test(c.textContent); }), 'the 🗝 counter appears: 1 of 4');
+  ok(await ev(() => { const c = document.querySelector('.secret-chip'); return !c.hidden && /1\/7/.test(c.textContent); }), 'the 🗝 counter appears: 1 of 7');
   await unfake();
 
   /* ---- In the pocket (under reduced motion) ---- */
@@ -49,7 +49,7 @@ suite('e2e-secrets', async t => {
 
   /* ---- the hidden line counts too ---- */
   await ev(() => { const tg = document.querySelector('.build-tag'); for (let i = 0; i < 3; i++) tg.click(); }); await wait(300);
-  ok(await ev(() => !!window.__daily.CFG.secrets.line && /3\/4/.test(document.querySelector('.secret-chip').textContent)), 'triple-clicking the version (the hidden line) is a secret too: 3 of 4');
+  ok(await ev(() => !!window.__daily.CFG.secrets.line && /3\/7/.test(document.querySelector('.secret-chip').textContent)), 'triple-clicking the version (the hidden line) is a secret too: 3 of 7');
 
   /* ---- Backstage: guest list only, and the password is the build ---- */
   const knock = await ev(() => window.dailyStudio.backstage()); await wait(300);
@@ -59,7 +59,7 @@ suite('e2e-secrets', async t => {
   ok(wrong.every(w => /Not on the list/.test(w)) && /seven characters/.test(wrong[2]) && await ev(() => !window.__daily.CFG.backstage), 'a wrong password is turned away, with a stronger hint after a few tries');
   const ans = await ev(() => window.dailyStudio.backstage(window.dailyStudio.describe().build.toUpperCase())); await wait(700);
   const PASS = await ev(() => window.__daily.CFG.bksPass || {});
-  ok(/You are on the list/.test(ans) && new RegExp('pass #' + PASS.n).test(ans) && PASS.n >= 1000 && PASS.n <= 9999 && /Secret 4 of 4/.test(ans), 'the build is the password: an all-access pass with a number of its own (' + ans + ')');
+  ok(/You are on the list/.test(ans) && new RegExp('pass #' + PASS.n).test(ans) && PASS.n >= 1000 && PASS.n <= 9999 && /Secret 4 of 7/.test(ans), 'the build is the password: an all-access pass with a number of its own (' + ans + ')');
   const ROOMS = ['pass', 'engine', 'perf', 'storage', 'bus', 'terminal', 'labs', 'pages', 'made', 'agent', 'secrets'];
   ok(await ev(R => { const d = document.getElementById('backstage'); return !!(d && d.open) && d.classList.contains('bks-hub') && R.every(k => d.querySelector('[data-sec="' + k + '"]')); }, ROOMS), 'Backstage opens with every room: ' + ROOMS.join(', '));
   ok(await ev(n => new RegExp('#' + n).test(document.getElementById('bksPass').textContent) && /ALL ACCESS/.test(document.getElementById('bksPass').textContent), PASS.n), 'the pass shows its number');
@@ -124,7 +124,7 @@ suite('e2e-secrets', async t => {
 
   /* ---- the counter's list, and the switch ---- */
   await ev(() => document.querySelector('.secret-chip').click()); await wait(300);
-  ok(await ev(() => /4 OF 4/.test(document.getElementById('secretsDlg').textContent) && document.querySelectorAll('#secretsDlg .secret-row.found').length === 4), 'the counter opens the list of secrets');
+  ok(await ev(() => /4 OF 7/.test(document.getElementById('secretsDlg').textContent) && document.querySelectorAll('#secretsDlg .secret-row.found').length === 4), 'the counter opens the list of secrets');
   await ev(() => { document.getElementById('secretsDlg').close(); const D = window.__daily; D.CFG.eggs = false; D.secretSync(); });
   ok(await ev(() => [...document.querySelectorAll('.secret-chip')].every(c => c.hidden)), 'Settings ▸ Workflow ▸ Hidden surprises off hides the counter');
   ok(await ev(() => /Hidden surprises/.test((() => { window.__daily.openSettings('work'); return document.getElementById('settings').textContent; })())), 'the switch is in Settings ▸ Workflow');

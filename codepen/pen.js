@@ -5,7 +5,7 @@
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.24.0', BUILD = 'ceb3e72', PARTS_N = +'87' || 0, LINES_N = +'15246' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.25.0', BUILD = '9474695', PARTS_N = +'88' || 0, LINES_N = +'15471' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { ghApp: { clientId: '', slug: '' },   /* Sign in with GitHub: the GitHub App's public client id and its slug (docs/GITHUB.md); empty = only the token way */
   support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://the-daily.studio/journal/' };
@@ -2013,6 +2013,7 @@ function buildTheory(p) {
     if (!pal.children.length) pal.append(h('span', { class: 'muted small' }, 'Diatonic chords need a 7-note scale.'));
   };
   bus.on('song', render); render();
+  p.append(h('button', { class: 'btn sm ws-door', id: 'theoryShed', title: 'Practise this key and scale in the Woodshed: scales, arpeggios and your ear', onclick: () => { CFG.ws.key = S.key; if (WS_BASE.includes(S.scale) || wsOpen('scale')) CFG.ws.scale = S.scale; CFG.ws.at = null; saveCfg(); woodshedOpen('scales'); } }, '🪵 Practise it in the Woodshed'));
   p.append(h('div', { class: 'card' }, h('h4', {}, 'Key · Scale · Tuning'), h('div', { class: 'card-b' }, h('div', { class: 'row' }, kSel, sSel), h('div', { style: { height: '6px' } }), tSel, h('div', { class: 'row', style: { marginTop: '6px' } }, h('span', { class: 'small' }, 'Capo'), cap), info)),
     h('div', { class: 'card' }, h('h4', {}, 'Diatonic chord palette'), h('div', { class: 'card-b' }, pal)),
     h('div', { class: 'card' }, h('h4', {}, 'Progression builder'), h('div', { class: 'card-b' }, pr, h('div', { class: 'row', style: { marginTop: '6px' } }, h('button', { class: 'btn sm', onclick: () => applyProg(+pr.value, false) }, 'Replace section'), h('button', { class: 'btn sm', onclick: () => applyProg(+pr.value, true) }, 'Append bars')))),
@@ -3850,7 +3851,7 @@ async function boot() {
   if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener('devicechange', () => { ioDeviceChange().catch(e => console.warn(e)); });
   bus.emit('song');
   try { ghBoot(); } catch (e) { console.warn('github', e); }      /* back from Sign in with GitHub, or a sync at start (part 74) */
-  DEV.make = () => { window.__daily = { S, pdbPut, pdbKeys, projRename, FS, FS_B, fsUse, fsSync, fsHead, fsNeeds, fsTidy, fsOpen, syncOff, syncZips, PRJ_WAIT: () => PRJ.wait, EGG, EGG_LINES, EGG_ORDER, eggDay, eggFor, eggNow, eggText, eggTick, eggFit, saveCfg, projSave, projDelete, GH, ghSync, ghConnect, ghDisconnect, ghLocal, ghSha, ghJson, ghMerge3, ghShare, ghGallery, ghGalleryOpen, ghGalleryShow, ghKeepLook, ghKeepRig, rigClean, ghReturn, BRAND, ghSettingsOut, projRefresh, projCreate, projLoad, PRJ, SEC, SECRETS, secretFound, secretTiming, secretsOpen, secretSync, backstageOpen, startAudio, playheadSlot, GUARD, reportText, reportCopy, srecQ, srecSize, pdbGet, srecFmt, SREC_FMTS, VBG, vbgAdd, vbgRemove, vbgUse, vbgOpen, vbgDraw, vzSetMode, srecFrame, srecFmtBox, kitThumb, WORKLET_SRC, mkComp, mkShaper, rigLat, voxLat, restartAudio, satCurve, rigApply, qrMake, qrSvg, tipLink, tipShort, tipReady, tipCard, tipDraw, tipShareHtml, tipOpen, tipPrint, tipPng, tipVisAvoid, tipStageAvoid, TIP, TIP_TERMS, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, STP, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfort, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, srecStart, srecStop, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, tkFades, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, FB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, vzSetMode, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, drawVis, perfClose, voicings, peaksOf, uid, shareGate, shareData, shareHtml, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, slotAtTime, SEL, mtof, spb, playheadSlot, WR, HM, HMX, HM_MODES, vzImmersive, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitThumb, kitInk, kitNotes, kitRecord, srecMime, mGo, GD_SESSIONS, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard}; };   // test hook: with ?debug, or Backstage ▸ Labs ▸ Developer handles
+  DEV.make = () => { window.__daily = { S, WS, WS_BASE, WS_ARPS, woodshedOpen, wsScaleRun, wsArpRun, wsFollow, wsStop, wsListen, wsEarNext, wsEarAnswer, wsOpen, bandMute, bandMuted, pdbPut, pdbKeys, projRename, FS, FS_B, fsUse, fsSync, fsHead, fsNeeds, fsTidy, fsOpen, syncOff, syncZips, PRJ_WAIT: () => PRJ.wait, EGG, EGG_LINES, EGG_ORDER, eggDay, eggFor, eggNow, eggText, eggTick, eggFit, saveCfg, projSave, projDelete, GH, ghSync, ghConnect, ghDisconnect, ghLocal, ghSha, ghJson, ghMerge3, ghShare, ghGallery, ghGalleryOpen, ghGalleryShow, ghKeepLook, ghKeepRig, rigClean, ghReturn, BRAND, ghSettingsOut, projRefresh, projCreate, projLoad, PRJ, SEC, SECRETS, secretFound, secretTiming, secretsOpen, secretSync, backstageOpen, startAudio, playheadSlot, GUARD, reportText, reportCopy, srecQ, srecSize, pdbGet, srecFmt, SREC_FMTS, VBG, vbgAdd, vbgRemove, vbgUse, vbgOpen, vbgDraw, vzSetMode, srecFrame, srecFmtBox, kitThumb, WORKLET_SRC, mkComp, mkShaper, rigLat, voxLat, restartAudio, satCurve, rigApply, qrMake, qrSvg, tipLink, tipShort, tipReady, tipCard, tipDraw, tipShareHtml, tipOpen, tipPrint, tipPng, tipVisAvoid, tipStageAvoid, TIP, TIP_TERMS, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, STP, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfort, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, srecStart, srecStop, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, tkFades, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, FB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, vzSetMode, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, drawVis, perfClose, voicings, peaksOf, uid, shareGate, shareData, shareHtml, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, slotAtTime, SEL, mtof, spb, playheadSlot, WR, HM, HMX, HM_MODES, vzImmersive, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitThumb, kitInk, kitNotes, kitRecord, srecMime, mGo, GD_SESSIONS, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard}; };   // test hook: with ?debug, or Backstage ▸ Labs ▸ Developer handles
   if (/[?&]debug\b/.test(location.search) || (CFG.labs && CFG.labs.handles)) DEV.make();
   try { bksBoot(); } catch (e) { console.warn('backstage', e); }      /* #backstage in the address, the performance overlay (part 73c) */
   projInit().catch(e => { console.warn('library', e); PRJ.ready = true; if (PRJ.wantStart) startMaybe(); });
@@ -5412,6 +5413,7 @@ function mSheet() {
       tile(msvg('<path d="M12 16V4M7 9l5-5 5 5M5 20h14"/>'), 'Open a file', () => { mCloseOverlays(); filesOpen(); }),
       tile(msvg('<path d="M5 20V9M12 20V4M19 20v-7"/>'), 'Master · balance · click', () => { mCloseOverlays(); mixOpen(); }),
       tile(msvg('<path d="M3 12c3-8 5-8 8 0s5 8 8 0"/>'), 'Voice · pitch · key', () => { mCloseOverlays(); voxOpen(); }),
+      tile(msvg('<path d="M3 20V10l9-6 9 6v10M9 20v-6h6v6"/>'), 'Woodshed · scales · ear', () => { mCloseOverlays(); woodshedOpen(); }),
       tile(msvg('<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>'), keepRisk().level === 'ok' ? 'Back up songs' : 'Keep songs safe', () => { mCloseOverlays(); keepOpen(); }, keepRisk().level === 'high'),
       M.installEvt ? tile(msvg('<rect x="7" y="2.5" width="10" height="19" rx="2.4"/><path d="M12 8v7M9 12.5l3 3 3-3"/>'), 'Install app', () => { mInstall(); }) : null,
       document.fullscreenEnabled ? tile(msvg('<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>'), 'Full screen', () => { mCloseOverlays(); mFullscreen(); }) : null
@@ -12828,6 +12830,7 @@ const GOALS = [
       ['gtBpm', () => S.bpm + ' BPM', 'The tempo', () => { if (UI.bpm) UI.bpm.focus(); }],
       ['gtFast', '+ 5', 'Faster by 5 BPM', () => goalTempo(5)],
       ['gtScale', '♯ Scales', 'The scale for the key, on the theory panel', () => sideShow('theory')],
+      ['gtShed', '🪵 Woodshed', 'Practise scales, arpeggios and your ear, with your guitar', () => woodshedOpen()],
       ['gtChord', '▦ Chords', 'The chord that is playing, on the fretboard', () => dockGo('fret')]
     ] },
   { id: 'teacher', ico: '🎓', name: 'Teacher', layout: 'Teacher', step: 'share', hue: '#0b84d8', next: null,
@@ -14499,6 +14502,9 @@ function eggFit(el) {
    · Tuned to perfection   all six open strings within ±2 cents of true, one after another (the tuner the studio already has)
    · In the pocket         sixteen notes in a row within 10 ms of the beat while the song plays (the timing analysis already there)
    · The hidden line       triple-click the version tag (part 73)
+   · Up and down           a whole scale up and back down in the Woodshed without a wrong note (part 73d): opens modes and more scales
+   · Broken chords         the arpeggios of a progression of three chords or more, no wrong note: opens seventh arpeggios
+   · Golden ear            ten intervals in a row by ear, from six choices or more: opens chord qualities by ear
    · Backstage pass        the browser console says hello to developers and points at dailyStudio.backstage(): guest list only,
                            and the password is the build (part 73c has the door, the pass and the rooms)
    A small 🗝 counter next to the version shows how many have been found, once the first one has. The rules: nothing fires while a take
@@ -14509,6 +14515,9 @@ const SECRETS = [
   ['line', 'The hidden line', 'Some numbers want to be clicked three times.', 'Triple-click the version tag: a quote of the day from someone in history wakes up at the bottom of the page.'],
   ['tuned', 'Tuned to perfection', 'Six strings, two cents.', 'All six open strings within ±2 cents of true, one after another.'],
   ['pocket', 'In the pocket', 'Sixteen notes, right on time.', 'Sixteen notes in a row within 10 ms of the beat while the song plays.'],
+  ['scale', 'Up and down', 'In the Woodshed: every note, there and back.', 'Ran a whole scale up and back down in the Woodshed without a wrong note.', 'Modes and more scales are open in the Woodshed.'],
+  ['arp', 'Broken chords', 'In the Woodshed: three chords or more, one note at a time.', 'Played the arpeggios of a whole progression in the Woodshed without a wrong note.', 'Seventh arpeggios are open in the Woodshed.'],
+  ['ear', 'Golden ear', 'In the Woodshed: ten in a row, by ear.', 'Named ten intervals in a row by ear in the Woodshed.', 'Chord qualities by ear are open in the Woodshed.'],
   ['backstage', 'Backstage pass', 'Developers know where to look.', 'Read the note in the browser console, knocked, and knew the password.']
 ];
 CFG.secrets = CFG.secrets && typeof CFG.secrets === 'object' ? CFG.secrets : {};
@@ -14523,7 +14532,7 @@ function secretFound(id, quiet) {
   if (CFG.secrets[id] || (!secretsOn() && id !== 'backstage')) return false;
   const s = SECRETS.find(x => x[0] === id); if (!s) return false;
   CFG.secrets[id] = Date.now(); saveCfg(); secretSync(); bus.emit('secret', id);
-  if (!quiet) { toast(h('span', { class: 'egg-toast' }, (id === 'tuned' ? '🎯 ' : id === 'pocket' ? '🥁 ' : '🗝 ') + s[1] + '. ', h('span', { class: 'muted' }, s[2] + ' ' + secretCount())), 'ok'); secretGlow(); }
+  if (!quiet) { toast(h('span', { class: 'egg-toast' }, ({ tuned: '🎯 ', pocket: '🥁 ', scale: '🎼 ', arp: '🎸 ', ear: '👂 ' }[id] || '🗝 ') + s[1] + '. ', h('span', { class: 'muted' }, (s[4] || s[2]) + ' ' + secretCount())), 'ok'); secretGlow(); }      /* a secret that opens a treasure says what it opened */
   return true;
 }
 /** a soft gold glow from the edges, for two seconds (not with Calm or reduced motion) */
@@ -14689,6 +14698,7 @@ const BKS_CMDS = {
   open: ['open <page>', 'open a hidden page in a new tab'],
   history: ['history', 'what you typed'],
   uptime: ['uptime', 'how long this page has been open'],
+  woodshed: ['woodshed', 'the practice room: scales, arpeggios, your ear'],
   exit: ['exit', 'leave Backstage']
 };
 const bksJson = (v, n = 1600) => { const s = JSON.stringify(v, null, 1); return s.length > n ? s.slice(0, n) + '\n… (' + s.length + ' characters; the Agent playground shows it all)' : s; };
@@ -14734,6 +14744,7 @@ async function bksRun(line, out) {
     case 'open': { const p = BKS_PAGES.find(([x, n]) => x.replace(/\/$/, '') === arg.replace(/\/$/, '') || n.toLowerCase().startsWith(arg.toLowerCase())) || (arg === 'lobby' ? BKS_PAGES[0] : null); if (!p) return out('open ' + BKS_PAGES.map(x => x[0].replace(/\/$/, '') || 'lobby').join(' | '), 'err'); window.open(bksBase() + p[0], '_blank', 'noopener'); return out('↗ ' + bksBase() + p[0]); }
     case 'history': return out(BKS.hist.map((x, i) => String(i + 1).padStart(4) + '  ' + x).join('\n') || 'nothing yet');
     case 'uptime': { const s = Math.round((Date.now() - BKS.t0) / 1000); return out('up ' + (s >= 3600 ? Math.floor(s / 3600) + ' h ' : '') + Math.floor(s % 3600 / 60) + ' min ' + s % 60 + ' s · ' + (frameN || 0).toLocaleString('en') + ' frames drawn'); }
+    case 'woodshed': case 'shed': setTimeout(() => woodshedOpen(), 300); return out('🪵 to the woodshed. Practice makes the music.');
     case 'exit': case 'quit': case 'logout': { const d = document.getElementById('backstage'); if (d) setTimeout(() => d.close(), 350); return out('See you at soundcheck. 🎸'); }
   }
   return out('command not found: ' + cmd + ' · type help', 'err');
@@ -14866,6 +14877,220 @@ document.addEventListener('keydown', e => {
   if (near && (key === 'b' || key === 'a')) { e.preventDefault(); e.stopPropagation(); }      /* B and A finish the code here, not the bass and the rest */
   if (BKS.k === BKS_KONAMI.length) { BKS.k = 0; if (CFG.backstage) backstageOpen('terminal'); else toast('🎟 Nice moves. Backstage is guest list only, and the door is in the browser console.', ''); }
 }, true);
+
+/* >>> parts/73d-woodshed.js */
+/* ============================================================
+   Part 73d · THE WOODSHED (2.25) — practise scales, arpeggios and your ear (musicians "go to the woodshed" to practise)
+   Three trainers in one room, each with a fretboard drawn for the song's tuning and capo:
+     · Scales      a key, a scale, where on the neck, one or two octaves. ▶ Listen plays it; ● Play it follows you note by note,
+                   up and back down, by the pitch the tuner already hears (a wrong note counts, a note still ringing does not)
+     · Arpeggios   the chords of this song one note at a time, or one chord up and down
+     · Your ear    an interval is played, you name it; a streak and a best
+   Three of the seven secrets are found here, and each opens a treasure in the room (part 73b keeps the list):
+     · Up and down     a whole scale up and back down without a wrong note     → modes and more scales
+     · Broken chords   a progression of three chords or more, no wrong note    → seventh arpeggios
+     · Golden ear      ten in a row by ear, from six choices or more            → chord qualities by ear
+   With hidden surprises off (Settings ▸ Workflow), the treasures are simply open: nobody has to hunt for practice.
+   It listens to the input the tuner uses and records nothing; ▶ Listen plays through the studio's own lead voice.
+   ============================================================ */
+CFG.ws = Object.assign({ scale: 'Minor Pentatonic', key: null, at: null, oct: 1, src: 'song', root: null, type: '', arpAt: null, ear: 'more' }, CFG.ws && typeof CFG.ws === 'object' ? CFG.ws : {});
+const WS = { run: null, tm: 0, play: [], ear: { q: null, streak: 0, best: 0, n: 0, ok: 0, lock: false }, r: {} };
+const WS_BASE = ['Major (Ionian)', 'Natural Minor (Aeolian)', 'Major Pentatonic', 'Minor Pentatonic', 'Blues'];
+const WS_ARPS = [['', 'Major', [0, 4, 7]], ['m', 'Minor', [0, 3, 7]], ['dim', 'Diminished', [0, 3, 6]], ['aug', 'Augmented', [0, 4, 8]], ['maj7', 'Major 7', [0, 4, 7, 11], 1], ['7', 'Dominant 7', [0, 4, 7, 10], 1], ['m7', 'Minor 7', [0, 3, 7, 10], 1], ['m7b5', 'Half-diminished', [0, 3, 6, 10], 1], ['dim7', 'Diminished 7', [0, 3, 6, 9], 1]];
+const WS_IV = [['m2', 'minor 2nd', 1], ['M2', 'major 2nd', 2], ['m3', 'minor 3rd', 3], ['M3', 'major 3rd', 4], ['P4', 'perfect 4th', 5], ['TT', 'tritone', 6], ['P5', 'perfect 5th', 7], ['m6', 'minor 6th', 8], ['M6', 'major 6th', 9], ['m7', 'minor 7th', 10], ['M7', 'major 7th', 11], ['P8', 'octave', 12]];
+const WS_SETS = { easy: ['M3', 'P4', 'P5', 'P8'], more: ['m3', 'M3', 'P4', 'P5', 'M6', 'P8'], all: WS_IV.map(x => x[0]) };
+const WS_CQ = [['Major', [0, 4, 7]], ['Minor', [0, 3, 7]], ['Diminished', [0, 3, 6]], ['Augmented', [0, 4, 8]], ['Major 7', [0, 4, 7, 11]], ['Dominant 7', [0, 4, 7, 10]], ['Minor 7', [0, 3, 7, 10]]];
+/** a treasure is open once its secret is found, or when hidden surprises are off */
+const wsOpen = id => !!CFG.secrets[id] || !secretsOn();
+const wsKey = () => CFG.ws.key == null ? S.key : CFG.ws.key;
+const wsFlats = () => keyUsesFlats(wsKey(), /min|Minor|Blues|Dorian|Phrygian|Locrian|Aeolian/.test(CFG.ws.scale));
+const wsTune = () => (S.tuning && S.tuning.length ? S.tuning : [40, 45, 50, 55, 59, 64]);
+const wsName = m => pcName(m, wsFlats());
+
+/* ---------- where on the neck ---------- */
+/** frets on the lowest string where a scale note lies (from the capo up an octave): the places a box can start */
+function wsStarts(pcs) { const t0 = wsTune()[0], c = S.capo || 0, out = []; for (let f = c; f <= c + 12; f++) if (pcs.includes(((t0 + f) % 12 + 12) % 12)) out.push(f); return out; }
+/** the string and fret for a note, as near the box as it can be */
+function wsPlace(m, st) {
+  const tu = wsTune(), c = S.capo || 0; let best = null;
+  tu.forEach((o, s) => { const f = m - o; if (f < c || f > 22) return; const cost = Math.abs(f - (st + 1.5)) + (f < st - 1 || f > st + 4 ? 3 : 0) + s * .01; if (!best || cost < best.cost) best = { s, f, cost }; });
+  return best || { s: 0, f: Math.max(c, m - tu[0]) };
+}
+/** the lowest note of a pitch class at or above the box's lowest fret */
+const wsRootAt = (pc, st) => { const t0 = wsTune()[0], lo = t0 + Math.max(S.capo || 0, st - 1); let m = lo + (((pc - lo) % 12) + 12) % 12; return m; };
+
+/* ---------- the runs ---------- */
+function wsScaleRun() {
+  const sc = SCALES[CFG.ws.scale] || SCALES['Minor Pentatonic'], key = wsKey(), pcs = sc.map(i => (key + i) % 12), starts = wsStarts(pcs);
+  const st = starts.includes(CFG.ws.at) ? CFG.ws.at : starts.find(f => ((wsTune()[0] + f) % 12) === key % 12) ?? starts[0] ?? 0, r0 = wsRootAt(key, st), up = [];
+  for (let o = 0; o < (CFG.ws.oct || 1); o++) sc.forEach(iv => up.push(r0 + 12 * o + iv)); up.push(r0 + 12 * (CFG.ws.oct || 1));
+  const seq = up.concat(up.slice(0, -1).reverse()).map(m => Object.assign({ m, deg: IVNAMES[((m - key) % 12 + 12) % 12] }, wsPlace(m, st)));
+  return { kind: 'scale', title: wsName(key) + ' ' + CFG.ws.scale, notes: seq, st, pcs, root: key, starts };
+}
+function wsChordTones(sym) {      /* triads always; with the treasure, the seventh too */
+  const c = parseChord(sym); if (!c) return null; const iv = [...new Set(c.iv.map(i => i % 12))];
+  const third = iv.find(i => i === 3 || i === 4) ?? iv.find(i => i === 2 || i === 5), fifth = iv.find(i => i === 7) ?? iv.find(i => i === 6 || i === 8) ?? 7, t = [0, third ?? 4, fifth];
+  if (wsOpen('arp')) { const sev = iv.find(i => i === 10 || i === 11) ?? (iv.includes(9) && third === 3 && fifth === 6 ? 9 : undefined); if (sev != null) t.push(sev); }
+  return { root: c.root, iv: t.sort((a, b) => a - b), sym };
+}
+function wsArpRun() {
+  let chords = [];
+  if (CFG.ws.src === 'song') { let last = ''; flatBars().forEach(b => { const s = b.bar.chord; if (s && s !== last) { last = s; const t = wsChordTones(s); if (t) chords.push(t); } }); chords = chords.slice(0, 8); }
+  else { const a = WS_ARPS.find(x => x[0] === CFG.ws.type) || WS_ARPS[0], root = CFG.ws.root == null ? S.key : CFG.ws.root; chords = [{ root, iv: a[2].slice(), sym: pcName(root, wsFlats()) + a[0] }]; }
+  if (!chords.length) return { kind: 'arp', title: 'No chords yet', notes: [], chords: [], st: 0 };
+  const st = CFG.ws.arpAt != null ? CFG.ws.arpAt : (() => { const t0 = wsTune()[0], c = S.capo || 0; let f = ((chords[0].root - t0) % 12 + 12) % 12; while (f < c) f += 12; return f; })();
+  const notes = []; chords.forEach((ch, ci) => {
+    const rm = wsRootAt(ch.root, st), run = ch.iv.map(i => rm + i).concat(rm + 12), seq = CFG.ws.src === 'song' ? run : run.concat(run.slice(0, -1).reverse());
+    seq.forEach(m => { if (notes.length && notes[notes.length - 1].m % 12 === m % 12) return; notes.push(Object.assign({ m, ci, deg: IVNAMES[((m - ch.root) % 12 + 12) % 12] }, wsPlace(m, st))); });
+  });
+  return { kind: 'arp', title: chords.map(c => c.sym).join(' · '), notes, chords, st };
+}
+
+/* ---------- the fretboard ---------- */
+function wsFret(run, cur) {
+  const tu = wsTune(), n = tu.length, F = 15, W = 820, H = 26 + n * 22, x0 = 34, fw = (W - x0 - 10) / F, y = s => 16 + (n - 1 - s) * 22, xf = f => f === 0 ? x0 - 12 : x0 + (f - .5) * fw;
+  const ns = 'http://www.w3.org/2000/svg', svg = document.createElementNS(ns, 'svg'), el = (t, a, txt) => { const e = document.createElementNS(ns, t); Object.entries(a).forEach(([k, v]) => e.setAttribute(k, v)); if (txt != null) e.textContent = txt; svg.append(e); return e; };
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H); svg.setAttribute('class', 'ws-fret'); svg.setAttribute('role', 'img'); svg.setAttribute('aria-label', 'Fretboard: ' + (run ? run.title : ''));
+  [3, 5, 7, 9, 15].forEach(f => el('circle', { cx: x0 + (f - .5) * fw, cy: H - 6, r: 3, class: 'ws-mk' })); el('circle', { cx: x0 + 11.5 * fw - 5, cy: H - 6, r: 3, class: 'ws-mk' }); el('circle', { cx: x0 + 11.5 * fw + 5, cy: H - 6, r: 3, class: 'ws-mk' });
+  for (let f = 0; f <= F; f++) el('line', { x1: x0 + f * fw, y1: y(n - 1), x2: x0 + f * fw, y2: y(0), class: f === 0 ? 'ws-nut' : 'ws-fw' });
+  if (S.capo) el('rect', { x: x0 + (S.capo - .62) * fw, y: y(n - 1) - 6, width: 6, height: y(0) - y(n - 1) + 12, rx: 3, class: 'ws-capo' });
+  for (let s = 0; s < n; s++) { el('line', { x1: x0, y1: y(s), x2: W - 10, y2: y(s), class: 'ws-str', 'stroke-width': 1 + (n - 1 - s) * .25 }); el('text', { x: 8, y: y(s) + 4, class: 'ws-sn' }, pcName(tu[s], false)); }
+  if (!run) return svg;
+  if (run.pcs) for (let s = 0; s < n; s++) for (let f = Math.max(0, run.st - 1); f <= Math.min(F, run.st + 4); f++) { const m = tu[s] + f; if (run.pcs.includes(m % 12) && !run.notes.some(q => q.s === s && q.f === f)) el('circle', { cx: xf(f), cy: y(s), r: 6, class: 'ws-ghost' }); }
+  const seen = new Set(); run.notes.forEach((q, i) => {
+    const k = q.s + ':' + q.f; if (seen.has(k) && i !== cur) return; seen.add(k); const isCur = i === cur, done = cur != null && run.notes.slice(0, cur).some(x => x.s === q.s && x.f === q.f) && !isCur;
+    el('circle', { cx: xf(q.f), cy: y(q.s), r: isCur ? 11 : 9.5, class: 'ws-dot' + (q.deg === 'R' ? ' root' : '') + (isCur ? ' cur' : '') + (done ? ' done' : '') });
+    el('text', { x: xf(q.f), y: y(q.s) + 3.6, class: 'ws-dl' + (isCur ? ' cur' : '') }, q.deg);
+  });
+  return svg;
+}
+
+/* ---------- listening: the next note, by the pitch the tuner hears ---------- */
+function wsStop(quiet) {
+  clearInterval(WS.tm); WS.tm = 0; WS.play.forEach(clearTimeout); WS.play = []; const r = WS.run; WS.run = null;
+  if (r && !quiet) { const b = WS.r[r.kind]; if (b) b.paint(); }
+}
+function wsFollow(kind) {
+  wsStop(true); const run = kind === 'scale' ? wsScaleRun() : wsArpRun(); if (!run.notes.length) { toast('This song has no chords yet. Write some, or choose One chord.', 'warn'); return; }
+  WS.run = Object.assign(run, { mode: 'follow', i: 0, miss: 0, held: null, judged: false, prev: null, t0: performance.now(), wrong: 0 });
+  if (!E.hasInput) toast('Connect your input (Audio, top right) so the Woodshed can hear you. Or press Listen to hear it first.', 'warn');
+  WS.tm = setInterval(wsTick, 40); WS.r[kind].paint();
+}
+function wsTick() {
+  const r = WS.run; if (!r || r.mode !== 'follow') return;
+  const m = AN.active && AN.midi != null ? AN.midi : null, now = performance.now();
+  if (m == null) { r.held = null; r.judged = false; return; }
+  if (!r.held || r.held.m !== m) { r.held = { m, t: now }; r.judged = false; return; }
+  if (r.judged || now - r.held.t < 110) return; r.judged = true;
+  const want = r.notes[r.i], pc = ((m % 12) + 12) % 12;
+  if (pc === want.m % 12) { r.prev = want.m; r.i++; if (r.i >= r.notes.length) return wsDone(r); }
+  else if (r.prev != null && pc === r.prev % 12) { /* the last note, still ringing */ }
+  else { r.miss++; r.wrong = now; }
+  WS.r[r.kind].paint();
+}
+function wsDone(r) {
+  clearInterval(WS.tm); WS.tm = 0; r.mode = 'done'; r.secs = (performance.now() - r.t0) / 1000;
+  const clean = r.miss === 0, what = r.kind === 'scale' ? 'Up and back down' : (r.chords.length > 1 ? r.chords.length + ' chords' : 'The arpeggio');
+  toast(what + ' in ' + r.secs.toFixed(1) + ' s' + (clean ? ', no wrong notes. 🎯' : ', ' + r.miss + ' wrong note' + (r.miss === 1 ? '' : 's') + '. Again?'), clean ? 'ok' : '');
+  if (clean && !secretBusy()) { if (r.kind === 'scale' && r.notes.length >= 9) secretFound('scale'); if (r.kind === 'arp' && r.chords.length >= 3) secretFound('arp'); }
+  WS.r[r.kind].paint();
+}
+/** ▶ Listen: the run played by the studio's lead voice, the fretboard following */
+async function wsListen(kind) {
+  wsStop(true); const run = kind === 'scale' ? wsScaleRun() : wsArpRun(); if (!run.notes.length) { toast('This song has no chords yet.', 'warn'); return; }
+  if (!E.ready) { try { await startAudio(); } catch (e) { } } if (!E.ctx || !E.pl) return;
+  WS.run = Object.assign(run, { mode: 'listen', i: 0, miss: 0 }); const dt = 60 / clamp(S.bpm || 90, 50, 160) / 2, t0 = E.ctx.currentTime + .12;
+  run.notes.forEach((q, i) => { try { pluck('lead', t0 + i * dt, q.m, .72, { id: 'ws' + (i % 2) }); } catch (e) { } WS.play.push(setTimeout(() => { if (WS.run === run) { run.i = i; WS.r[kind].paint(); } }, 120 + i * dt * 1000)); });
+  WS.play.push(setTimeout(() => { if (WS.run === run) { run.mode = 'heard'; run.i = run.notes.length; WS.r[kind].paint(); } }, 200 + run.notes.length * dt * 1000));
+  WS.r[kind].paint();
+}
+
+/* ---------- your ear ---------- */
+const wsEarChords = () => CFG.ws.ear === 'chords' && wsOpen('ear');
+function wsEarNext() {
+  const e = WS.ear; e.lock = false;
+  if (wsEarChords()) { const q = WS_CQ[Math.floor(Math.random() * WS_CQ.length)]; e.q = { kind: 'chord', root: 48 + Math.floor(Math.random() * 12), ans: q[0], iv: q[1] }; }
+  else { const set = WS_SETS[CFG.ws.ear] || WS_SETS.more, a = set[Math.floor(Math.random() * set.length)], iv = WS_IV.find(x => x[0] === a); e.q = { kind: 'iv', root: 52 + Math.floor(Math.random() * 16), ans: a, semi: iv[2] }; }
+  wsEarPlay(); WS.r.ear.paint();
+}
+async function wsEarPlay() {
+  const q = WS.ear.q; if (!q) return; if (!E.ready) { try { await startAudio(); } catch (e) { } } if (!E.ctx || !E.pl) return; const t = E.ctx.currentTime + .08;
+  try { if (q.kind === 'chord') q.iv.forEach((i, k) => pluck('lead', t + k * .03, q.root + i, .62, { id: 'we' + k })); else { pluck('lead', t, q.root, .8, { id: 'we0' }); pluck('lead', t + .7, q.root + q.semi, .8, { id: 'we1' }); } } catch (e) { }
+}
+function wsEarAnswer(a) {
+  const e = WS.ear, q = e.q; if (!q || e.lock) return; e.lock = true; e.n++;
+  const right = a === q.ans; if (right) { e.ok++; e.streak++; e.best = Math.max(e.best, e.streak); } else e.streak = 0; e.last = { a, right, ans: q.ans };
+  const choices = wsEarChords() ? WS_CQ.length : (WS_SETS[CFG.ws.ear] || WS_SETS.more).length;
+  if (right && e.streak >= 10 && choices >= 6 && !wsEarChords() && !secretBusy()) secretFound('ear');
+  WS.r.ear.paint(); clearTimeout(e.tm); e.tm = setTimeout(wsEarNext, right ? 900 : 1700);
+}
+
+/* ---------- the room ---------- */
+const wsLock = (id, what) => h('p', { class: 'tiny ws-lock' + (wsOpen(id) ? ' open' : '') }, wsOpen(id) ? '🗝 Open: ' + what + '.' : '🔒 ' + what + ' open when you find a secret in this room.');
+const wsSel = (opts, val, on, attrs) => h('select', Object.assign({ class: 'in', onchange: e => on(e.target.value) }, attrs || {}), opts.map(([v, t, dis]) => h('option', { value: v, selected: String(v) === String(val), disabled: !!dis }, t)));
+function wsRoom(kind) {
+  const box = h('div', { class: 'ws-room', id: 'ws-room-' + kind }), ctl = h('div', { class: 'ws-ctl' }), board = h('div', { class: 'ws-board' }), stat = h('div', { class: 'ws-stat', 'aria-live': 'polite' }), chips = h('div', { class: 'ws-chips mono' });
+  const btns = h('div', { class: 'ws-btns' }, h('button', { class: 'btn', id: 'ws-' + kind + '-listen', onclick: () => wsListen(kind) }, '▶ Listen'), h('button', { class: 'btn primary', id: 'ws-' + kind + '-go', onclick: () => wsFollow(kind) }, '● Play it'), h('button', { class: 'btn', id: 'ws-' + kind + '-stop', onclick: () => wsStop() }, '■ Stop'));
+  const fl = () => wsFlats(), keys = NS.map((_, i) => [i, pcName(i, fl())]);
+  const build = () => {
+    ctl.innerHTML = '';
+    if (kind === 'scale') {
+      const sc = Object.keys(SCALES).map(n => [n, (WS_BASE.includes(n) || wsOpen('scale') ? '' : '🔒 ') + n, !WS_BASE.includes(n) && !wsOpen('scale')]), run = wsScaleRun();
+      ctl.append(h('label', { class: 'field' }, 'Key', wsSel(keys, wsKey(), v => { CFG.ws.key = +v; CFG.ws.at = null; saveCfg(); wsStop(true); build(); }, { id: 'ws-key' })),
+        h('label', { class: 'field' }, 'Scale', wsSel(sc, CFG.ws.scale, v => { CFG.ws.scale = v; CFG.ws.at = null; saveCfg(); wsStop(true); build(); }, { id: 'ws-scale' })),
+        h('label', { class: 'field' }, 'Start at', wsSel(run.starts.map(f => [f, f === 0 ? 'Open strings' : 'Fret ' + f]), run.st, v => { CFG.ws.at = +v; saveCfg(); wsStop(true); build(); }, { id: 'ws-at' })),
+        h('label', { class: 'field' }, 'Octaves', wsSel([[1, 'One'], [2, 'Two']], CFG.ws.oct, v => { CFG.ws.oct = +v; saveCfg(); wsStop(true); build(); }, { id: 'ws-oct' })));
+    } else {
+      const types = WS_ARPS.map(([v, t, , bonus]) => [v, (bonus && !wsOpen('arp') ? '🔒 ' : '') + t, bonus && !wsOpen('arp')]);
+      ctl.append(h('label', { class: 'field' }, 'Play', wsSel([['song', 'This song’s chords'], ['one', 'One chord']], CFG.ws.src, v => { CFG.ws.src = v; CFG.ws.arpAt = null; saveCfg(); wsStop(true); build(); }, { id: 'ws-src' })));
+      if (CFG.ws.src === 'one') ctl.append(h('label', { class: 'field' }, 'Root', wsSel(keys, CFG.ws.root == null ? S.key : CFG.ws.root, v => { CFG.ws.root = +v; CFG.ws.arpAt = null; saveCfg(); wsStop(true); build(); }, { id: 'ws-root' })),
+        h('label', { class: 'field' }, 'Chord', wsSel(types, CFG.ws.type, v => { CFG.ws.type = v; saveCfg(); wsStop(true); build(); }, { id: 'ws-type' })));
+      const t0 = wsTune()[0], c = S.capo || 0; ctl.append(h('label', { class: 'field' }, 'Around fret', wsSel(Array.from({ length: 13 }, (_, i) => [c + i, c + i === 0 ? 'Open' : 'Fret ' + (c + i)]), wsArpRun().st, v => { CFG.ws.arpAt = +v; saveCfg(); wsStop(true); build(); }, { id: 'ws-arpat' })));
+    }
+    paint();
+  };
+  const paint = () => {
+    const r = WS.run && WS.run.kind === kind ? WS.run : null, run = r || (kind === 'scale' ? wsScaleRun() : wsArpRun()), cur = r ? Math.min(r.i, run.notes.length - 1) : null;
+    board.innerHTML = ''; board.append(wsFret(run, r && r.mode !== 'done' && r.mode !== 'heard' ? cur : null));
+    chips.innerHTML = ''; run.notes.forEach((q, i) => chips.append(h('span', { class: 'ws-chip' + (r && i < r.i ? ' ok' : '') + (r && i === r.i && r.mode === 'follow' ? ' cur' : '') + (kind === 'arp' && i && q.ci !== run.notes[i - 1].ci ? ' gap' : '') }, wsName(q.m))));
+    const want = r && r.mode === 'follow' ? run.notes[r.i] : null;
+    stat.innerHTML = ''; stat.append(...[h('b', {}, run.title), ' · ' + run.notes.length + ' notes',
+      want ? h('span', { class: 'ws-next' }, ' · next: ', h('b', {}, wsName(want.m)), ' (string ' + (wsTune().length - want.s) + ', ' + (want.f ? 'fret ' + want.f : 'open') + ') · ' + r.i + ' of ' + run.notes.length + (r.miss ? ' · ' + r.miss + ' wrong' : '')) : null,
+      r && r.mode === 'listen' ? h('span', {}, ' · listening to it…') : null, r && r.mode === 'done' ? h('span', { class: r.miss ? '' : 'ws-good' }, ' · done in ' + r.secs.toFixed(1) + ' s' + (r.miss ? ', ' + r.miss + ' wrong' : ', clean')) : null].filter(x => x != null));
+    if (r && r.wrong && performance.now() - r.wrong < 500) board.classList.add('ws-oops'); else board.classList.remove('ws-oops');
+  };
+  WS.r[kind] = { paint, build };
+  box.append(ctl, btns, board, chips, stat, kind === 'scale' ? wsLock('scale', 'Modes and more scales (Dorian to Hirajoshi)') : wsLock('arp', 'Seventh arpeggios'));
+  build(); return box;
+}
+function wsEarRoom() {
+  const box = h('div', { class: 'ws-room', id: 'ws-room-ear' }), top = h('div', { class: 'ws-ctl' }), ans = h('div', { class: 'ws-ans' }), stat = h('div', { class: 'ws-stat', 'aria-live': 'polite' });
+  const modes = [['easy', 'Intervals: 4 to choose from'], ['more', 'Intervals: 6'], ['all', 'Intervals: all 12'], ['chords', (wsOpen('ear') ? '' : '🔒 ') + 'Chord qualities', !wsOpen('ear')]];
+  const paint = () => {
+    const e = WS.ear, list = wsEarChords() ? WS_CQ.map(x => [x[0], x[0]]) : (WS_SETS[CFG.ws.ear] || WS_SETS.more).map(a => { const iv = WS_IV.find(x => x[0] === a); return [a, iv[1]]; });
+    ans.innerHTML = ''; list.forEach(([a, t]) => ans.append(h('button', { class: 'btn ws-a' + (e.last && e.lock && a === e.last.ans ? ' right' : '') + (e.last && e.lock && !e.last.right && a === e.last.a ? ' wrong' : ''), 'data-a': a, disabled: !e.q, onclick: () => wsEarAnswer(a) }, t)));
+    stat.innerHTML = ''; stat.append(e.q ? (e.lock ? h('b', { class: e.last.right ? 'ws-good' : '' }, e.last.right ? '✓ Yes: ' : '✗ It was: ', h('span', {}, (wsEarChords() ? e.last.ans : WS_IV.find(x => x[0] === e.last.ans)[1]))) : h('span', {}, 'What did you hear?')) : h('span', {}, 'Press ▶ Play a question.'),
+      h('span', { class: 'ws-streak' }, ' · streak ' + e.streak + ' · best ' + e.best + (e.n ? ' · ' + Math.round(e.ok / e.n * 100) + '% of ' + e.n : '')));
+  };
+  top.append(h('label', { class: 'field' }, 'Train', wsSel(modes, CFG.ws.ear, v => { CFG.ws.ear = v; saveCfg(); Object.assign(WS.ear, { q: null, streak: 0, lock: false }); paint(); }, { id: 'ws-ear-mode' })),
+    h('button', { class: 'btn primary', id: 'ws-ear-go', onclick: () => wsEarNext() }, '▶ Play a question'), h('button', { class: 'btn', id: 'ws-ear-again', onclick: () => wsEarPlay() }, '↻ Again'));
+  WS.r.ear = { paint, build: paint }; box.append(top, ans, stat, wsLock('ear', 'Chord qualities by ear')); paint(); return box;
+}
+/** the room itself */
+function woodshedOpen(at) {
+  wsStop(true);
+  const d = hubOpen('woodshed', { ico: '🪵', title: 'The Woodshed', sub: 'Practise scales, arpeggios and your ear. Play along with your guitar, or listen first.', at, sections: [
+    { key: 'scales', label: 'Scales', ico: '♯', sub: 'Choose a key, a scale and where on the neck. ● Play it follows you note by note, up and back down.', wide: true, body: () => [wsRoom('scale')] },
+    { key: 'arps', label: 'Arpeggios', ico: '🎸', sub: 'Chords, one note at a time: this song’s chords in order, or one chord up and down.', wide: true, body: () => [wsRoom('arp')] },
+    { key: 'ear', label: 'Your ear', ico: '👂', sub: 'An interval is played. Name it. Build a streak.', wide: true, body: () => [wsEarRoom()] },
+    { key: 'how', label: 'How it listens', ico: '?', wide: true, body: () => [h('p', { class: 'small' }, 'It listens to the input the tuner uses (Audio, top right): play each note when it is the next one. A wrong note counts; the note you just played, still ringing, does not. Octaves do not matter, the note does. Nothing is recorded. ▶ Listen plays the run through the studio’s own lead voice, at half the song’s beat.'), h('p', { class: 'small muted' }, 'Some of this room is locked until you find what it hides. With Settings ▸ Workflow ▸ Hidden surprises off, it is all open.')] }
+  ] });
+  d.classList.add('ws-hub'); d.addEventListener('close', () => { wsStop(true); clearTimeout(WS.ear.tm); }, { once: true });
+  return d;
+}
+/* a secret found here opens its treasure in place: the room is drawn again where you are, a moment later */
+bus.on('secret', id => { if (!['scale', 'arp', 'ear'].includes(id)) return; setTimeout(() => { const d = document.getElementById('woodshed'); if (!d || !d.open || WS.run && WS.run.mode === 'follow') return; const on = d.querySelector('.hub-nb.on'); const e = Object.assign({}, WS.ear); woodshedOpen(on ? on.dataset.sec : undefined); Object.assign(WS.ear, { streak: e.streak, best: e.best, n: e.n, ok: e.ok }); if (WS.r.ear) WS.r.ear.paint(); }, 1400); });
+bus.on('song', () => { const d = document.getElementById('woodshed'); if (d && d.open && !WS.run) Object.values(WS.r).forEach(r => r.build()); });
 
 /* >>> parts/74-github.js */
 /* ============================================================
