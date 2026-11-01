@@ -45,18 +45,42 @@ suite('e2e-perform-views', async t => {
   await p.click('#perform .pf-ver', { clickCount: 1 }); await p.click('#perform .pf-ver'); await p.click('#perform .pf-ver'); await wait(300);
   const egg = await p.evaluate(() => ({ on: window.__daily.CFG.egg, pf: document.querySelector('#perform .egg-line').textContent, st: document.querySelector('#status .egg-line').textContent }));
   ok(egg.on === true && egg.pf.length > 15 && egg.st === egg.pf, 'a triple click on the version wakes it, in Perform and the status bar: “' + egg.pf + '”');
-  const Q = await p.evaluate(() => { const L = window.__daily.EGG_LINES; return { n: L.length, all: L.every(([q, w]) => q && w && !/[“”]/.test(q)), tehau: L.filter(x => x[1] === 'Tehau').map(x => x[0]), noSagan: !L.some(x => /Sagan$/.test(x[1]) && /^Carl Sagan$/.test(x[1])), tesla: (L.find(x => /Tesla/.test(x[1])) || [])[1] }; });
-  ok(/^“.+” — .+$/.test(egg.pf) && Q.all && Q.n >= 20, 'each line is a quote with who it is from: “…” — who (' + Q.n + ' quotes)');
-  ok(Q.tehau.length === 4 && Q.tehau.includes('Create first. Understand it later.'), 'Tehau’s own lines are credited to Tehau');
-  ok(Q.tesla === 'attributed to Nikola Tesla' && Q.noSagan, 'a saying with no known source says “attributed to”, and a line often credited to the wrong person carries the right name');
-  const LG = await p.evaluate(async () => { const D = window.__daily, i = D.EGG_LINES.findIndex(x => /Tesla/.test(x[1]));
-    D.EGG.i = i; D.EGG.until = Date.now() + D.eggMs(D.eggText(i)); D.eggTick(true); await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-    const el = document.querySelector('#perform .egg-line'), dur = Math.max(...[...document.querySelectorAll('.egg-line')].map(x => parseFloat(x.style.getPropertyValue('--egg-dur') || '0')));      /* the narrowest place glides longest */
-    const tw = el.firstElementChild.getBoundingClientRect().width, shift = -parseFloat(el.style.getPropertyValue('--egg-shift') || '0');
-    return { text: el.textContent, title: el.title, over: tw - el.clientWidth, long: el.classList.contains('egg-long'), stay: D.eggMs(el.textContent), glide: 2.5 + dur, short: D.eggMs(D.eggText(0)), reach: el.clientWidth + shift - tw }; });
-  ok(/Tesla/.test(LG.text) && LG.title === LG.text && (LG.over <= 4 || LG.long), 'a long quote shows whole on hover, and glides to its end if its space is too narrow (' + (LG.long ? 'gliding' : 'fits') + ')');
-  ok(!LG.long || LG.reach >= 0, 'and the glide goes far enough to show its very end, who said it included (' + Math.round(LG.reach) + ' px to spare)');
-  ok(LG.stay > LG.short && LG.glide * 1000 < LG.stay - 3000, 'a long quote stays longer (' + (LG.stay / 1000).toFixed(1) + ' s), and its glide ends, in every place it is shown, with time to read who said it (' + LG.glide.toFixed(1) + ' s)');
+  const Q = await p.evaluate(() => { const L = window.__daily.EGG_LINES, by = w => (L.find(x => x[1] === w) || [])[0]; return { n: L.length, all: L.every(([q, w]) => q && w && !/[“”]/.test(q)), uniq: new Set(L.map(x => x[0])).size, tehau: L.filter(x => /Tehau/.test(x[1])).length, noSagan: !L.some(x => /^Carl Sagan$/.test(x[1]) && /incredible/.test(x[0])), tesla: (L.find(x => /Tesla/.test(x[1])) || [])[1], congreve: /savage breast/.test(by('William Congreve') || ''), widener: /Do what you can/.test(by('Bill Widener, quoted by Theodore Roosevelt') || '') }; });
+  ok(/^“.+” — .+$/.test(egg.pf) && Q.all && Q.uniq === Q.n && Q.n >= 100, 'each line is a quote with who it is from: “…” — who (' + Q.n + ' different quotes)');
+  ok(Q.tehau === 0, 'every quote is from someone in history (none from the maker)');
+  ok(Q.tesla === 'attributed to Nikola Tesla' && Q.noSagan && Q.congreve && Q.widener, 'a saying with no known source says “attributed to”, and a line often credited to the wrong person carries the right name');
+  /* ---- one quote a day ---- */
+  const DY = await p.evaluate(() => { const D = window.__daily, n = D.EGG_LINES.length, f = D.eggFor, at = (m, d, hh, mm, y) => D.eggDay(new Date(y || 2026, m, d, hh, mm));
+    const run = []; for (let d = 20000; d < 20000 + 2 * n; d++) run.push(f(d));
+    return { n, cycle: new Set(run.slice(0, n)).size, again: run.slice(n).every((x, k) => x === run[k]), apart: run.every((x, k) => !k || x !== run[k - 1]),
+      sameDay: at(10, 1, 0, 1) === at(10, 1, 23, 59), next: at(10, 2, 0, 1) - at(10, 1, 23, 59), year: at(0, 1, 0, 30, 2027) - at(11, 31, 23, 30), march: at(2, 9, 12, 0) - at(2, 8, 12, 0),
+      today: D.eggText(f(D.eggDay())), shown: document.querySelector('#perform .egg-line').textContent }; });
+  ok(DY.shown === DY.today, 'the line shows today’s quote');
+  ok(DY.sameDay && DY.next === 1 && DY.march === 1 && DY.year === 1, 'it changes at midnight, by the device’s own calendar, once a day (summer time and new year too)');
+  ok(DY.cycle === DY.n && DY.again && DY.apart, 'every one of the ' + DY.n + ' quotes comes round once before any comes again, and two days in a row never share one');
+  const MID = await p.evaluate(() => { const D = window.__daily, today = D.EGG.i; D.EGG.day -= 1; D.EGG.i = (today + 1) % D.EGG_LINES.length; D.eggTick(); const after = document.querySelector('#perform .egg-line').textContent;
+    D.eggTick(); return { after, today: D.eggText(today), same: document.querySelector('#perform .egg-line').textContent === after }; });
+  ok(MID.after === MID.today && MID.same, 'left open past midnight, the line moves on to the new day’s quote by itself, and then stays');
+  /* ---- a long quote ---- */
+  const longest = async () => p.evaluate(async () => { const D = window.__daily, L = D.EGG_LINES, i = L.reduce((b, x, k) => D.eggText(k).length > D.eggText(b).length ? k : b, 0);
+    if (D.EGG.i !== i) { D.EGG.day = D.eggDay(); D.EGG.i = i; D.eggTick(true); } await new Promise(r => setTimeout(r, 250)); await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    return [...document.querySelectorAll('#perform .egg-line, #status .egg-line')].map(el => { const t = el.firstElementChild, a = el._eggA, k = a ? a.effect.getKeyframes() : [], tm = a ? a.effect.getTiming() : {}, x = f => -parseFloat((/translateX\((-?[\d.]+)px\)/.exec(f.transform) || [0, 0])[1]);
+      const far = k.length ? Math.max(...k.map(x)) : 0, at = k.filter(f => x(f) === far && far > 0).map(f => f.offset * tm.duration);
+      return { text: el.textContent, title: el.title, over: t.getBoundingClientRect().width - el.clientWidth, long: el.classList.contains('egg-long'), reach: el.clientWidth + far - t.getBoundingClientRect().width,
+        loops: tm.iterations === Infinity, back: k.length ? x(k[k.length - 1]) === 0 : true, hold: at.length > 1 ? at[at.length - 1] - at[0] : 0, start: k.length > 1 ? k[1].offset * tm.duration : 0, w: el.clientWidth }; }); });
+  const LG = await longest(), pf = LG[0];
+  ok(LG.every(e => e.title === e.text) && pf.over > 0 && pf.long, 'a long quote shows whole on hover, and glides if its space is too narrow (' + Math.round(pf.over) + ' px over in Perform)');
+  ok(LG.every(e => !e.long || (e.reach >= 0 && e.loops && e.back && e.hold >= 3000 && e.start >= 2000)), 'in every place it is shown it waits to be read, glides far enough to show its very end, who said it included, holds there, glides back, and comes round again');
+  await p.setViewportSize({ width: 1100, height: 900 }); await wait(500);
+  const LN = await longest();
+  ok(LN[0].w < pf.w && LN[0].long && LN[0].reach >= 0, 'when its space narrows, the glide is measured again and still reaches the end (' + Math.round(pf.w) + ' → ' + Math.round(LN[0].w) + ' px)');
+  await p.setViewportSize({ width: 820, height: 900 }); await wait(500);
+  const LS = await longest();
+  ok(LS.every(e => e.w >= 120 || (!e.long && e.title === e.text)), 'in a sliver of space it does not glide, it is cut short with the whole quote on hover (' + LS.map(e => Math.round(e.w) + ' px').join(', ') + ')');
+  await p.setViewportSize({ width: 1500, height: 900 }); await wait(300);
+  await p.emulateMedia({ reducedMotion: 'reduce' }); await p.evaluate(() => window.__daily.eggTick(true)); await wait(300);
+  ok(await p.evaluate(() => { const el = document.querySelector('#perform .egg-line'); return !el._eggA && !el.classList.contains('egg-long') && el.title === el.textContent && el.firstElementChild.getAnimations().length === 0; }), 'with reduced motion it stays still, cut short with the whole quote on hover');
+  await p.emulateMedia({ reducedMotion: 'no-preference' });
   await p.click('#perform .pf-ver'); await p.click('#perform .pf-ver'); await p.click('#perform .pf-ver'); await wait(300);
   ok(await p.evaluate(() => window.__daily.CFG.egg === false && !document.querySelector('#perform .egg-line').textContent), 'a second triple click puts it back to sleep');
   ok((await p.evaluate(() => [window.__daily.T.playing, window.__daily.T.metro, window.__daily.T.loop].join())) === before, 'clicking the version changes nothing else (play, click and loop as they were)');
