@@ -129,6 +129,7 @@ function openSettings(at) {
       F('When recording reaches the end of the song', sel('recEnd', [['grow', 'Keep going (the song grows to fit)'], ['stop', 'Stop at the end'], ['loop', 'Loop back, one take per pass']])),
       h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!CFG.rec.dry, onchange: e => { CFG.rec.dry = e.target.checked; saveCfg(); } }), 'Record dry DI (enables re-amping)'),
       h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!CFG.rec.wet, onchange: e => { CFG.rec.wet = e.target.checked; saveCfg(); } }), 'Record wet print')] },
+    { key: 'github', label: 'GitHub', ico: '⑂', sub: 'Your studio in a private repository of your own, in step on every device. Optional.', wide: true, body: () => [ghSection()] },
     { key: 'export', label: 'Export', ico: '⇩', sub: 'Song bounces, tab text and an automatic backup folder.', body: () => [
       F('Loudness target for song WAVs', sel('lufsTarget', LOUD_TARGETS)),
       chk('Render WAVs faster than real time', 'renderFast'), note('Mixes the song in a few seconds instead of playing it through. Turn this off if a render ever sounds different from playback.'),

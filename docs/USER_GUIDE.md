@@ -706,6 +706,15 @@ The app ships no recordings and no one else's lyrics, and it never uploads anyth
 * **Ultimate Guitar and other sites** have their own submission rules. A chart of your own song is yours to post; a chart of someone else's song is based on theirs.
 * The demo song is an original sketch. Credits and licences are under **Help ▸ About**, and at `/legal/` on the site; the file-by-file register is [LICENSING.md](LICENSING.md).
 
+## Your studio on GitHub (2.21)
+
+**Settings ▸ GitHub** keeps your studio in a private repository in your own GitHub account, so another computer or phone that connects to it has the same studio. Nothing goes to GitHub until you connect.
+- **Connect with a token**: make a private repository (`my-daily-studio`) and a fine-grained token for just that repository with Contents: Read and write, and paste it. **Sign in with GitHub** appears when the site has its GitHub App set up.
+- **What is kept in step:** your settings, rig presets, stage looks and scenes, lesson notes and notebook, and your songs as text (chords, words, tab, arrangement). **What stays on the device:** recordings, backing tracks, pictures and videos, and this device's own audio devices, levels and layout.
+- It syncs a little after each change, when the page opens and when you come back to it; **⟳ Sync now** does it at once. A song changed on two devices keeps both versions; a song deleted on another device stays here until you delete it here too. Every change has a history on GitHub.
+- **⇪ Share looks and rigs** puts the ones you choose in a separate **public** repository, and **◎ Community looks and rigs** shows what others share, to try and keep (with who made them). Nothing from your private studio is shared.
+- **Disconnect** removes the token from this browser; your repository stays on GitHub. How it works, and GitHub's limits: [GITHUB.md](GITHUB.md).
+
 ## Hidden surprises (2.20)
 
 There are a few secrets in the studio for people who look and listen (and one for people who open the browser's developer console). This guide will not spoil them. Once you find the first, a small **🗝** counter appears next to the version in the bottom-right corner; press it for the list, with a hint for each one you have not found yet. They never go off while a take or a video is recording, nothing flashes, and **Settings ▸ Workflow ▸ Hidden surprises** turns them off.

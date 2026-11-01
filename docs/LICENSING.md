@@ -1,6 +1,6 @@
 # Licensing and provenance register
 
-Audited for **v2.20.0** (31 October 2026). Every file the site serves, everything it can fetch, every dependency and every file a person can download is listed here with where it came from and what licence covers it. `npm run audit` checks this page against the real build and fails if a shipped file, a host or a dependency is not accounted for, so it stays true.
+Audited for **v2.21.0** (31 October 2026). Every file the site serves, everything it can fetch, every dependency and every file a person can download is listed here with where it came from and what licence covers it. `npm run audit` checks this page against the real build and fails if a shipped file, a host or a dependency is not accounted for, so it stays true.
 
 This is an engineering audit of the project, written by its maintainers. It is not legal advice. The items only a person can settle (authorship of the demo words, terms for a commercial launch, trademark clearance) are collected in [Open items](#open-items-for-the-maintainer).
 
@@ -62,6 +62,15 @@ The Show setup console lets a person add their own pictures. The app ships none.
 | `selfie_segmenter.tflite` | `storage.googleapis.com` | Google publishes the file with a model card and no separate licence statement | **Not explicit.** Fine for a visitor's browser to fetch from Google; confirm terms before self-hosting or redistributing it |
 
 The page asks first (`mpConsent()` in `src/parts/09d-camfx.js`); nothing is requested before a yes. A search of the 0.10.14 package found no analytics or beacon calls and no hard-coded addresses. The Content-Security-Policy allows only these two hosts, and `scripts/verify-site.mjs` fails if that changes.
+
+## Talked to only if you connect GitHub (2.21)
+
+| Service | Host | What | When |
+| --- | --- | --- | --- |
+| GitHub's REST API | `api.github.com` | Your own repositories: the studio's private one (settings, presets, looks, notes, songs as text), and, if you share, a public one of looks and rigs; the community gallery reads GitHub's repository search and public files | Only after you connect GitHub in Settings ▸ GitHub, or open Community looks and rigs. Nothing is fetched or sent before |
+| This site's Worker | `the-daily.studio/auth/github/*` | Turns GitHub's one-time sign-in code into a token (it holds the GitHub App's secret) and renews it | Only with Sign in with GitHub, and only if the site owner has set up the app (docs/GITHUB.md) |
+
+No code is loaded from GitHub; the page only exchanges JSON with it. What it sends and receives is your own data, under GitHub's terms. Shared looks and rigs are the sharer's.
 
 ## Development dependencies
 

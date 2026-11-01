@@ -25,6 +25,12 @@ the-daily.studio is free software that runs in your web browser. By using it, yo
 - **You are responsible** for your link, for following the rules of the payment service you use, and for any taxes, reporting or permissions that apply to money you receive (playing for tips in a public place, for example, can need a permit).
 - The app asks you to confirm this before the tip jar can be switched on.
 
+## GitHub (2.21)
+
+- **Your repository is yours.** If you connect GitHub, the studio keeps your settings, presets, looks, notes and songs (as text) in a repository in your own GitHub account. GitHub's terms apply to it, and you are responsible for what is in it and who can see it. The project does not run or see your repository.
+- **Sharing is public.** Looks and rigs you share go to a public repository in your account, for anyone to try and keep in their own studio. Share only what you made or may share. You can delete that repository at any time; copies others kept are theirs.
+- **The community gallery shows other people's shared looks and rigs** as they published them. The app keeps only what a look or a rig can hold, but the project does not review them and is not responsible for them.
+
 ## AI agents
 
 An AI agent you run in your browser acts on your behalf. Whatever it reads, changes, makes or shares through the studio is your responsibility, as if you had done it yourself.

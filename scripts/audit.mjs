@@ -84,16 +84,18 @@ ok(anyAudio.length === sa.length, 'no stray audio files anywhere else in the rep
 /* ---------- 3 · hosts and network call sites ---------- */
 console.log('\nNetwork surface');
 const LOAD = ['cdn.jsdelivr.net', 'storage.googleapis.com'];                       // the only hosts the page may fetch from, only after a yes
+const CONNECT = ['api.github.com'];                                                  // only if the person connects GitHub or opens the community gallery (part 74)
 const LINKS = ['the-daily.studio', 'github.com', 'www.linkedin.com', 'developers.google.com', 'www.w3.org', 'cash.app', 'venmo.com'];   // links the person clicks, or XML namespaces; never loaded (cash.app, venmo.com: a $cashtag or @name in the tip jar becomes a link there, for the audience to follow)
 const srcFiles = [...readdirSync(join(root, 'src/parts')).filter(f => /\.js$/.test(f)).map(f => 'src/parts/' + f), 'src/body.html', 'src/styles.css', 'scripts/build.mjs'].filter(has);
 const seen = new Map();
 for (const f of srcFiles) for (const m of rd(f).matchAll(/https?:\/\/([a-z0-9.-]+)/gi)) { const h = m[1].toLowerCase().replace(/\.$/, ''); (seen.get(h) || seen.set(h, new Set()).get(h)).add(f.replace('src/parts/', '')); }
-const unknownHosts = [...seen.keys()].filter(h => !LOAD.includes(h) && !LINKS.includes(h) && h !== 'localhost');
+const unknownHosts = [...seen.keys()].filter(h => !LOAD.includes(h) && !CONNECT.includes(h) && !LINKS.includes(h) && h !== 'localhost');
 ok(unknownHosts.length === 0, 'every web address in the source is a known host (' + [...seen.keys()].sort().join(', ') + ')' + (unknownHosts.length ? ' · NEW: ' + unknownHosts.map(h => h + ' in ' + [...seen.get(h)].join(', ')).join('; ') : ''));
 const meta = (idx.match(/http-equiv="Content-Security-Policy" content="([^"]+)"/) || [])[1] || '', cspHosts = [...new Set(meta.match(/https:\/\/[a-z0-9.-]+/g) || [])].map(h => h.slice(8)).sort();
-ok(cspHosts.join() === [...LOAD].sort().join(), 'the security policy lets the page connect to exactly ' + LOAD.join(' and ') + ' (' + cspHosts.join(', ') + ')');
+ok(cspHosts.join() === [...LOAD, ...CONNECT].sort().join(), 'the security policy lets the page connect to exactly ' + LOAD.concat(CONNECT).join(', ') + ' (' + cspHosts.join(', ') + ')');
 ok(/default-src 'self'/.test(meta) && !/\*/.test(meta.replace(/\*\//g, '')), 'the security policy has no wildcard host');
 const priv = rd('PRIVACY.md');
+ok(CONNECT.every(h => priv.includes(h) && reg.includes(h)), 'PRIVACY.md and the register name ' + CONNECT.join(', ') + ' and when it is used');
 ok(LOAD.every(h => priv.includes(h) && notices.includes(h === 'cdn.jsdelivr.net' ? 'jsDelivr' : 'Google') && reg.includes(h)), 'PRIVACY.md, the notices and the register all name both hosts');
 const mpv = (rd('src/parts/09d-camfx.js').match(/tasks-vision@(\d+\.\d+\.\d+)/) || [])[1];
 ok(mpv && notices.includes(mpv) && reg.includes(mpv), 'the MediaPipe version in the code (' + mpv + ') is the one in the notices and the register');
@@ -106,6 +108,7 @@ const KNOWN = [
   [/^20-samples\.js$/, /fetch\('samples\//, 'sample list and tracks, same site'],
   [/^19-touch\.js$/, /serviceWorker\.register\('sw\.js'\)/, 'offline copy, same site'],
   [/^16-stems\.js$/, /new Worker\(url\)/, 'stem worker from a blob made in the page'],
+  [/^74-github\.js$/, /fetch\(GH_API \+ path|fetch\('\/auth\/github\/refresh'/, 'GitHub, only after you connect it or open the gallery; the renewal is this site'],
 ];
 const NET = /\bfetch\(|XMLHttpRequest|new WebSocket|EventSource\(|sendBeacon|importScripts\(|(?<![\w.$])import\(|new Worker\(|serviceWorker\.register|\.src\s*=\s*['"`]https?:/;
 const hits = [], strange = [];

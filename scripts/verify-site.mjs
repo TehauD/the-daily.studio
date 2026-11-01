@@ -25,7 +25,7 @@ ok(/Strict-Transport-Security/.test(hdr) && /nosniff/.test(hdr) && /Referrer-Pol
 ok(!/'unsafe-eval'/.test(meta) && !/script-src[^;]*'unsafe-inline'/.test(meta), 'script-src allows no unsafe-eval or unsafe-inline');
 ok(/object-src 'none'/.test(meta) && /base-uri 'none'/.test(meta) && /form-action 'none'/.test(meta), 'object, base and form targets are locked');
 const hosts = [...new Set((meta.match(/https:\/\/[a-z0-9.-]+/g) || []))].sort();
-ok(hosts.join() === 'https://cdn.jsdelivr.net,https://storage.googleapis.com', 'third-party hosts are exactly jsDelivr and Google storage: ' + hosts.join(', '));
+ok(hosts.join() === 'https://api.github.com,https://cdn.jsdelivr.net,https://storage.googleapis.com', 'third-party hosts are exactly GitHub’s API (only if you connect it or open the gallery), jsDelivr and Google storage (only after a yes): ' + hosts.join(', '));
 const sw = rd('sw.js'), ver = (JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'))).version;
 ok(sw.includes('daily-songs-' + ver), 'service worker cache name matches package version ' + ver);
 const man = JSON.parse(rd('manifest.webmanifest')); ok(man.name && man.start_url && man.icons.length >= 3, 'manifest has name, start_url and icons');

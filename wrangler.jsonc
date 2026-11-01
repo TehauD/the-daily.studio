@@ -6,8 +6,12 @@
   "workers_dev": true,
   // Runs on every `wrangler deploy`, so the dist/ folder always exists even if the dashboard build command is wrong.
   "build": { "command": "npm run build:site && npm run verify:site" },
+  // The Worker (worker/index.mjs) only runs for addresses that are not files of the site: Sign in with GitHub's two routes (docs/GITHUB.md).
+  // Everything else is served from dist/ as before. Its secrets: npx wrangler secret put GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET.
+  "main": "worker/index.mjs",
   "assets": {
     "directory": "./dist",
+    "binding": "ASSETS",
     "not_found_handling": "404-page"
   }
 }
