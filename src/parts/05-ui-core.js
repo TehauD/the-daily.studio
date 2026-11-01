@@ -155,6 +155,11 @@ function openHelp(at) {
       h('p', { class: 'small' }, 'Everything runs locally in your browser. Nothing is uploaded. Your work is autosaved to this browser: songs, recordings and backing tracks stay on this device (☰ Songs).'),
       h('p', { class: 'small muted' }, 'For a copy you can keep anywhere, use ☰ Songs → All songs → Back up all songs (one zip with everything, which Open a file brings back), or save one song as a bundle. On an iPhone or iPad, add the site to the Home Screen so Safari keeps your songs.')] },
     { key: 'audio', label: 'Latency', ico: '⏱', wide: true, body: () => [h('p', { class: 'small muted' }, 'Browsers cannot talk to ASIO drivers, so achievable latency depends on your OS audio stack. Use the Loopback Test (I/O panel) for a measured number, and your interface’s direct monitor for latency-free headphone monitoring while recording.')] },
+    { key: 'report', label: 'Report a problem', ico: '⚑', sub: 'A report made on this device, for a GitHub issue. Nothing is sent.', wide: true, body: () => [
+      h('p', { class: 'small' }, 'If something goes wrong, copy a problem report and paste it into a new issue on GitHub, with a line on what you were doing. It says which version and browser you have, how the audio is set up and the last errors the studio noticed.'),
+      h('p', { class: 'small muted' }, 'It has no song titles, words, file names, device names or tip link, and nothing is sent: you see it and paste it yourself.'),
+      h('div', { class: 'hub-acts' }, h('button', { class: 'btn primary', id: 'reportCopy', onclick: () => reportCopy() }, '⚑ Copy a problem report'), h('button', { class: 'btn', id: 'reportShow', onclick: async () => { close(); reportShow(await reportText()); } }, 'Show it first'),
+        h('a', { class: 'btn', href: BRAND.repo + '/issues/new', target: '_blank', rel: 'noopener noreferrer' }, 'Open a GitHub issue ↗'))] },
     { key: 'about', label: 'About', ico: '♥', wide: true, body: () => [aboutBlock()] }
   ] });
 }

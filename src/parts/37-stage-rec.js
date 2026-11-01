@@ -12,12 +12,17 @@ const SREC = { on: false, mr: null, chunks: [], t0: 0, tick: 0, watch: 0, dest: 
 /* the shapes a video can have: width, height (0: the Visuals' own), the label, what it is for */
 const SREC_FMTS = { wide: [1920, 1080, '▭ Wide 16:9', 'YouTube, a website or a TV'], tall: [1080, 1920, '▯ Vertical 9:16', 'Reels, TikTok and Shorts'], screen: [0, 0, '▢ As on screen', 'the shape the Visuals have on this screen'] };
 const srecFmt = () => SREC_FMTS[CFG.recFmt] ? CFG.recFmt : 'wide';
+/** quality (2.19.1): 1080p, or 720p, which a phone can draw and encode without dropping frames. Auto is 720p on phones and tablets */
+const SREC_QS = [['auto', 'Auto'], ['1080', '1080p'], ['720', '720p']];
+const srecQ = () => CFG.recQ === '1080' ? 1080 : CFG.recQ === '720' ? 720 : (document.body.dataset.form === 'phone' || document.body.dataset.form === 'tablet' ? 720 : 1080);
+/** the size a shape records at, with the quality applied */
+const srecSize = f => { const d = SREC_FMTS[f]; if (!d || !d[0]) return null; const k = srecQ() === 720 ? 2 / 3 : 1; return [Math.round(d[0] * k), Math.round(d[1] * k)]; };
 /** the words and the chord on the video: on by default for vertical (a phone video is watched with the sound low), off for the others */
 const srecWordsOn = f => { const w = CFG.recWords || {}; return w[f] != null ? !!w[f] : f === 'tall'; };
 function srecWordsSet(f, on) { CFG.recWords = Object.assign({}, CFG.recWords || {}, { [f]: !!on }); saveCfg(); }
 /** the canvas the video is drawn on: off the page, at the video's own size (even numbers, as video encoders want) */
 function srecCanvas(f) {
-  let W, H; if (f === 'screen') { const v = UI.vcv; W = (v && v.width) || 1280; H = (v && v.height) || 720; } else [W, H] = SREC_FMTS[f];
+  let W, H; if (f === 'screen') { const v = UI.vcv; W = (v && v.width) || 1280; H = (v && v.height) || 720; } else [W, H] = srecSize(f);
   W = Math.max(2, W - W % 2); H = Math.max(2, H - H % 2);
   const cv = SREC.cvEl || (SREC.cvEl = h('canvas', { id: 'srecCanvas', 'aria-hidden': 'true', style: { position: 'fixed', left: '-99999px', top: '0', width: '4px', height: '4px', pointerEvents: 'none' } }));
   cv.width = W; cv.height = H; if (!cv.isConnected) document.body.append(cv); return cv;
@@ -26,7 +31,9 @@ function srecCanvas(f) {
 const srecWordsRect = (W, H) => { const tall = H > W; return [0, H * (tall ? .62 : .64), W, H * (tall ? .38 : .36)]; };
 /** one frame of the video (called by the frame loop while a video records): the visuals at the video's size, the words, and a preview on the Visuals */
 function srecFrame() {
-  const cv = SREC.cv; if (!cv) return; const W = cv.width, H = cv.height, g = cv.getContext('2d'), words = SREC.words;
+  const cv = SREC.cv; if (!cv) return;
+  /* how steady the frames are: a gap of more than 50 ms (under 20 a second) while the tab is in front is a late frame */
+  const now = performance.now(), F = SREC.fr; if (F && SREC.on && !document.hidden) { if (F.last) { F.n++; if (now - F.last > 50) F.late++; } F.last = now; } else if (F) F.last = 0; const W = cv.width, H = cv.height, g = cv.getContext('2d'), words = SREC.words;
   try { drawVis(cv, { main: true, noNeck: words, noText: words, avoid: words ? [srecWordsRect(W, H)] : null }); if (words) srecWords(g, W, H); }
   catch (e) { if (!SREC.err) { SREC.err = 1; console.warn('video frame', e); } }
   const v = UI.vcv; if (v && v.width && paneVisible('vis')) {
@@ -56,9 +63,10 @@ function srecWords(g, W, H) {
 function srecFmtBox() {
   const f = srecFmt(), words = h('input', { type: 'checkbox', id: 'srecWords', checked: srecWordsOn(f), onchange: e => srecWordsSet(srecFmt(), e.target.checked) });
   const seg = h('div', { class: 'seg', role: 'radiogroup', 'aria-label': 'Video shape', id: 'srecFmt' }, Object.entries(SREC_FMTS).map(([k, d]) => h('button', { type: 'button', role: 'radio', class: k === f ? 'on' : '', 'aria-checked': String(k === f), 'data-fmt': k, title: d[3] + (d[0] ? ' · ' + d[0] + ' × ' + d[1] : ''), onclick: e => {
-    CFG.recFmt = k; saveCfg(); $$('[data-fmt]', seg).forEach(b => { const on = b === e.currentTarget; b.classList.toggle('on', on); b.setAttribute('aria-checked', String(on)); }); words.checked = srecWordsOn(k); hint.textContent = SREC_FMTS[k][3] + (SREC_FMTS[k][0] ? ' · ' + SREC_FMTS[k][0] + ' × ' + SREC_FMTS[k][1] : ''); if (typeof goalSync === 'function') goalSync(); } }, d[2])));
-  const hint = h('div', { class: 'tiny muted' }, SREC_FMTS[f][3] + (SREC_FMTS[f][0] ? ' · ' + SREC_FMTS[f][0] + ' × ' + SREC_FMTS[f][1] : ''));
-  return h('div', { style: { display: 'grid', gap: '6px' } }, seg, hint, h('label', { class: 'row', style: { gap: '6px', alignItems: 'center' }, title: 'The line being sung, with its chords over the words, and the chord, in large type at the bottom of the video' }, words, h('span', { class: 'tiny' }, 'Words and chord on the video')));
+    CFG.recFmt = k; saveCfg(); $$('[data-fmt]', seg).forEach(b => { const on = b === e.currentTarget; b.classList.toggle('on', on); b.setAttribute('aria-checked', String(on)); }); words.checked = srecWordsOn(k); hint.textContent = sizeTxt(k); if (typeof goalSync === 'function') goalSync(); } }, d[2])));
+  const hint = h('div', { class: 'tiny muted', id: 'srecHint' }), sizeTxt = k => { const z = srecSize(k); return SREC_FMTS[k][3] + (z ? ' · ' + z[0] + ' × ' + z[1] : ''); }; hint.textContent = sizeTxt(f);
+  const qs = h('div', { class: 'seg', role: 'radiogroup', 'aria-label': 'Video quality', id: 'srecQ' }, SREC_QS.map(([k, t]) => h('button', { type: 'button', role: 'radio', class: (CFG.recQ || 'auto') === k ? 'on' : '', 'aria-checked': String((CFG.recQ || 'auto') === k), 'data-q': k, title: k === 'auto' ? 'Auto: ' + srecQ() + 'p on this device (720p on phones and tablets)' : k === '720' ? '720p: smoother on phones' : '1080p: the sharpest', onclick: e => { CFG.recQ = k; saveCfg(); $$('[data-q]', qs).forEach(b => { const on = b === e.currentTarget; b.classList.toggle('on', on); b.setAttribute('aria-checked', String(on)); }); hint.textContent = sizeTxt(srecFmt()); } }, t)));
+  return h('div', { style: { display: 'grid', gap: '6px' } }, seg, h('div', { class: 'row', style: { gap: '6px', alignItems: 'center' } }, h('span', { class: 'tiny muted' }, 'Quality'), qs), hint, h('label', { class: 'row', style: { gap: '6px', alignItems: 'center' }, title: 'The line being sung, with its chords over the words, and the chord, in large type at the bottom of the video' }, words, h('span', { class: 'tiny' }, 'Words and chord on the video')));
 }
 /** mp4: put MP4 first for a video (social sites take it as it is); otherwise WebM first, as before */
 function srecMime(audio, mp4) {
@@ -92,7 +100,7 @@ async function srecStart(whole, o) {
     try { dockGo('vis'); } catch (e) { }
     await new Promise(r => setTimeout(r, 250));
     if (!UI.vcv || !UI.vcv.width) return toast('Open the Visuals first.', 'warn');
-    const f = srecFmt(); cv = srecCanvas(f); SREC.fmt = f; SREC.words = srecWordsOn(f); SREC.err = 0; SREC.cv = cv; srecFrame();      /* the first frame is there before the recorder starts */
+    const f = srecFmt(); cv = srecCanvas(f); SREC.fmt = f; SREC.words = srecWordsOn(f); SREC.err = 0; SREC.fr = { n: 0, late: 0, last: 0, q: f === 'screen' ? 0 : srecQ() }; SREC.cv = cv; srecFrame();      /* the first frame is there before the recorder starts */
   }
   let ms;
   try {
@@ -125,6 +133,8 @@ function srecDone() {
   try { E.limiter.disconnect(SREC.dest); } catch (e) { } try { SREC.stream && SREC.stream.getTracks().forEach(t => t.stop()); } catch (e) { }
   if (SREC.was) { T.loop = SREC.was.loop; T.metro = SREC.was.metro; if (SREC.whole) { try { stopPlay(true); } catch (e) { } } SREC.was = null; }
   SREC.mr = null; SREC.dest = null; SREC.stream = null; SREC.on = false; SREC.chunks = []; SREC.cv = null; srecSync(); bus.emit('srec', false);
+  const F = SREC.fr; SREC.lastFr = F ? { n: F.n, late: F.late, q: F.q } : null; SREC.fr = null;
+  if (save && F && F.n > 60 && F.late / F.n > .1) setTimeout(() => toast(F.q === 1080 ? 'This device could not keep up with every frame (' + Math.round(F.late / F.n * 100) + '% came late). For a smoother video, choose 720p in the Record menu.' : 'This device could not keep up with every frame (' + Math.round(F.late / F.n * 100) + '% came late). Closing other tabs and apps, or a simpler look, helps.', 'warn'), 600);
   const cb = SREC.onBlob; SREC.onBlob = null;
   if (save && blob && blob.size > 1000 && !SREC.audio) bus.emit('srec:blob', blob);   /* Studio Replay keeps the newest video (part 68) */
   if (save && blob && blob.size > 1000 && cb) cb(blob);

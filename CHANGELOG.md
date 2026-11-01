@@ -2,6 +2,20 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.19.1 — 2026-11-01 — Ready for more people: blocking tests, Safari and Firefox, 720p, problem reports
+
+### Added
+- **Help ▸ Report a problem** (`src/parts/29-guard.js`): **Copy a problem report** puts a short report on the clipboard for a GitHub issue: the version and build, browser and screen, how the audio is set up (engine state, sample rate, latency, worklets, input, monitor), the studio's state (workspace, look, video shape and quality, recording, playing), storage use, and the last 20 errors and warnings, kept in memory. Quoted names, web addresses and file addresses are blanked out, and there are no song titles, words, file names, device names or tip link. Nothing is sent. **Show it first** opens it to read, and the message that says something went wrong offers it too.
+- **Video quality** (`src/parts/37-stage-rec.js`): **Auto** (1080p on a computer, 720p on a phone or tablet), **1080p** or **720p** (1280 × 720 or 720 × 1280), in the Record menu and Creator Studio's video shape. The frames are counted while a video records, and if more than one in ten came late the app says so afterwards and suggests 720p.
+- **`test/xbrowser.cjs`**: the studio in Safari's engine (WebKit) and Firefox's as well as Chromium: it opens, the audio engine and worklets start, the song plays, the visuals draw, wide and vertical videos record at their sizes, Your video plays, the tip jar draws, Settings and Help open, the problem report is made. `test/lib.cjs` takes `BROWSER=webkit|firefox`.
+
+### Changed
+- **Browser tests now block a merge.** The CI `e2e` job (every suite, in Chromium) no longer has `continue-on-error`; it has been green on GitHub. A new `browsers` job runs `test/xbrowser.cjs` in WebKit and Firefox; it reports without blocking until it has been green on hosted runners.
+- **The privacy claim is checked against this version.** `test/e2e-privacy.cjs` now also uses the zero-delay effects, the tip jar (with its sign and picture, and a share page that links to the tip page), wide and vertical videos, Your video and the problem report, and still finds no request to any other site; `PRIVACY.md` says it was last checked against 2.19.1 (it said 2.6.0), and lists the problem log.
+
+### Tests
+- `test/e2e-report.cjs` (10 checks); `test/e2e-shapes.cjs` 31 checks (quality); `test/e2e-privacy.cjs` 41 checks; `test/xbrowser.cjs` 14 checks in Chromium here (WebKit and Firefox run in CI).
+
 ## 2.19.0 — 2026-11-01 — Wide and vertical videos, and your own video behind you
 
 ### Added
