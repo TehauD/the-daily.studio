@@ -1,7 +1,9 @@
 /* Shared helpers for the browser tests. Each test file is independent: it starts its own static server on a free port, launches its own
    Chromium (fake audio device) and uses fresh browser contexts, so nothing one file leaves behind can change another.
-   Options (environment): CHROMIUM_PATH=/path/to/chrome · NO_SANDBOX=1 (containers) · BASE_URL=https://… (test a deployed site) */
-const { chromium } = require('playwright');
+   Options (environment): CHROMIUM_PATH=/path/to/chrome · NO_SANDBOX=1 (containers) · BASE_URL=https://… (test a deployed site)
+            BROWSER=webkit|firefox (Safari's or Firefox's engine instead of Chromium; used by test/xbrowser.cjs; the fake microphone is Chromium's) */
+const pw = require('playwright');
+const ENGINE = ['webkit', 'firefox'].includes(process.env.BROWSER) ? process.env.BROWSER : 'chromium';
 const { spawn } = require('node:child_process');
 const fs = require('node:fs'), os = require('node:os'), path = require('node:path'), net = require('node:net');
 const wait = ms => new Promise(r => setTimeout(r, ms));
@@ -34,11 +36,13 @@ async function suite(name, fn) {
   let srv, port, BASE = process.env.BASE_URL;
   try {
     if (!BASE) { port = await freePort(); BASE = `http://localhost:${port}/`; srv = spawn(process.execPath, [path.join(__dirname, '..', 'scripts', 'serve.mjs')], { env: { ...process.env, PORT: String(port) }, stdio: 'ignore' }); await wait(800); }
-    const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined, args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream', '--autoplay-policy=no-user-gesture-required', ...(process.env.NO_SANDBOX ? ['--no-sandbox'] : [])] });
+    const browser = ENGINE === 'firefox' ? await pw.firefox.launch({ firefoxUserPrefs: { 'media.navigator.streams.fake': true, 'media.navigator.permission.disabled': true, 'media.autoplay.default': 0, 'media.autoplay.blocking_policy': 0 } })
+      : ENGINE === 'webkit' ? await pw.webkit.launch()
+      : await pw.chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined, args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream', '--autoplay-policy=no-user-gesture-required', ...(process.env.NO_SANDBOX ? ['--no-sandbox'] : [])] });
     const poll = async (f, ms = 6000, step = 120) => { const end = Date.now() + ms; for (;;) { let v; try { v = await f(); } catch (e) { v = false; } if (v) return v; if (Date.now() > end) return false; await wait(step); } };
     const fresh = async (o = {}) => {
       const dev = o.mobile ? { isMobile: true, hasTouch: true, deviceScaleFactor: o.dpr || 2 } : {};
-      const c = await browser.newContext({ viewport: { width: o.w || 1500, height: o.h || 900 }, permissions: ['microphone'], acceptDownloads: true, ...dev });
+      const c = await browser.newContext({ viewport: { width: o.w || 1500, height: o.h || 900 }, permissions: ENGINE === 'chromium' ? ['microphone'] : [], acceptDownloads: true, ...dev });
       await c.addInitScript(() => { try { if (window.name !== 'noseed') localStorage.setItem('fw.started', 'true'); } catch (e) { } }); if (o.init) await c.addInitScript(o.init); ctxs.push(c); return c;
     };
     const boot = async (p, o = {}) => {
@@ -56,7 +60,7 @@ async function suite(name, fn) {
       return p;
     };
     const tmp = (n, bytes) => { const f = path.join(os.tmpdir(), `daily-${process.pid}-${n}`); fs.writeFileSync(f, bytes); return f; };
-    try { await fn({ ok, wait, poll, BASE, browser, open, boot, fresh, errs, tmp, wav, tone, fs, os, path }); }
+    try { await fn({ ok, wait, poll, BASE, browser, engine: ENGINE, open, boot, fresh, errs, tmp, wav, tone, fs, os, path }); }
     finally { for (const c of ctxs) { try { await c.close(); } catch (e) { } } await browser.close(); }
     ok(errs.length === 0, 'no console / page / network errors' + (errs.length ? '\n' + errs.slice(0, 8).join('\n') : ''));
   } catch (e) { console.error(e); ok(false, `${name} crashed: ${e && e.message}`); }

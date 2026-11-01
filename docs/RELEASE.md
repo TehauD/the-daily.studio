@@ -1,7 +1,7 @@
 # Release and go-live checklist (v2.13.0)
 
 ## Before you publish
-- [ ] `node scripts/build.mjs --check` passes; `npm test`, `npm run test:e2e`, `npm run test:mobile` pass; `npm run build:site && npm run verify:site` prints `site verified` (it includes the size budgets: `index.html` under 2 MB, and under 700 kB compressed).
+- [ ] `node scripts/build.mjs --check` passes; `npm test`, `npm run test:e2e`, `npm run test:mobile` pass; the CI `browsers` job (WebKit and Firefox, `test/xbrowser.cjs`) is green; `npm run build:site && npm run verify:site` prints `site verified` (it includes the size budgets: `index.html` under 2 MB, and under 700 kB compressed).
 - [ ] The real-hardware pass in [HARDWARE_CHECKLIST.md](HARDWARE_CHECKLIST.md) (about 45 minutes: real interface and microphone, kill switch, camera models, MIDI, an iPhone with Add to Home Screen) done on the live site, and the other checks in [TESTING.md](TESTING.md).
 - [ ] `npm run shots` run, and `git diff docs/screenshots` looked at: the pictures in the README match the release.
 - [ ] **Sample track rights.** No music is bundled. If you add a file to `samples/`, record its licence in `samples/LICENSE.md` and, if it came from an AI music service, confirm that service's terms allow public redistribution.

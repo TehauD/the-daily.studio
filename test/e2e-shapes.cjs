@@ -18,7 +18,7 @@ suite('e2e-shapes', async t => {
   ok(M.fmts.join() === 'wide,tall,screen' && M.on.join() === 'wide' && M.words === false, 'the Record menu offers Wide, Vertical and As on screen, with the words off for wide (' + JSON.stringify(M) + ')');
   await ev(() => document.querySelector('#srecFmt [data-fmt="tall"]').click());
   ok(await ev(() => window.__daily.CFG.recFmt === 'tall' && document.getElementById('srecWords').checked), 'choosing Vertical is remembered, and turns the words and chord on');
-  await ev(() => document.body.click()); await wait(200);
+  await p.keyboard.press('Escape'); await wait(200);
 
   /* ---- recording each shape: the file's own size ---- */
   const rec = fmt => ev(async fmt => {
@@ -35,6 +35,18 @@ suite('e2e-shapes', async t => {
   ok(T1.w === 1080 && T1.h === 1920, 'Vertical records a 1080 × 1920 video (' + JSON.stringify(T1) + ')');
   ok(S1.w === S1.ui[0] - S1.ui[0] % 2 && S1.h === S1.ui[1] - S1.ui[1] % 2, 'As on screen records the Visuals’ own size, as before (' + JSON.stringify(S1) + ')');
   ok(T1.prev.edge.every(c => c < 8) && T1.prev.mid.some(c => c > 20), 'while a vertical video records, the Visuals show it as a tall preview with black at the sides');
+
+  /* ---- quality: 720p for phones ---- */
+  const Q = await ev(() => { const D = window.__daily, a = D.srecQ(); D.CFG.recQ = '720'; const w = D.srecSize('wide'), t = D.srecSize('tall'); D.CFG.recQ = 'auto'; document.body.dataset.form = 'phone'; const ph = D.srecQ(); document.body.dataset.form = 'desktop'; return { auto: a, w, t, ph }; });
+  ok(Q.auto === 1080 && Q.ph === 720 && Q.w.join() === '1280,720' && Q.t.join() === '720,1280', 'quality: Auto is 1080p on a computer and 720p on a phone; 720p records 1280 × 720 or 720 × 1280 (' + JSON.stringify(Q) + ')');
+  await ev(() => { window.__daily.CFG.recQ = '720'; });
+  const T7 = await rec('tall'); await ev(() => { window.__daily.CFG.recQ = 'auto'; });
+  ok(T7.w === 720 && T7.h === 1280, 'a 720p vertical video is 720 × 1280 (' + JSON.stringify({ w: T7.w, h: T7.h }) + ')');
+  ok(await ev(() => { const f = window.__daily.SREC.lastFr; return !!f && f.n > 20 && f.late >= 0; }), 'frames are counted while it records, to warn if many came late');
+  await p.keyboard.press('Escape'); await ev(() => document.getElementById('vzRecBtn').click()); await wait(300);
+  const QM = await ev(() => ({ n: document.querySelectorAll('#srecQ [data-q]').length, hint: (document.getElementById('srecHint') || {}).textContent, fmt: window.__daily.CFG.recFmt, pop: !!document.getElementById('srecFmt') }));
+  ok(QM.n === 3 && /\d+ × \d+/.test(QM.hint || ''), 'the Record menu has Quality (Auto, 1080p, 720p) and says the size it will record (' + JSON.stringify(QM) + ')');
+  await p.keyboard.press('Escape'); await wait(200);
 
   /* ---- the words and chord ---- */
   const Wd = await ev(async () => {

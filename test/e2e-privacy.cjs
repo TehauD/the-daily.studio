@@ -1,6 +1,8 @@
 /* What leaves the page. A real browser, a whole session, every request counted.
    The claims on the first page, in About, in README and in PRIVACY.md are only as good as this test:
-     · a full session (first visit, demo song, play, Concert and its Sky poster, a stem split, transcribe, a recording, the exports and the backup)
+     · a full session (first visit, demo song, play, Concert and its Sky poster, a stem split, transcribe, a recording, the exports and the backup,
+       and since 2.19.1 the newer parts: the zero-delay effects, the tip jar with its sign and picture, wide and vertical videos, Your video
+       behind you and the problem report)
        makes NO request to any other site, and its own requests are only the page, the service worker, the manifest, the icons and the sample list
      · the page sets no cookies and keeps its data in `fw.*` keys and its own IndexedDB
      · nothing in the shipped page loads a script, style, image, frame or font from another site
@@ -65,6 +67,31 @@ suite('e2e-privacy', async t => {
     ok(!!await aud, 'compressed audio is rendered here and saved');
     const bk = await dl(p, () => p.evaluate(() => window.__daily.projExportAll()));
     ok(!!bk && /\.zip$/.test(bk.suggestedFilename()), 'the backup of every song is built in the page and saved (' + (bk ? bk.suggestedFilename() : 'no download') + ')');
+
+    /* the newer parts (2.17–2.19): none of them reaches another site either */
+    ok(await p.evaluate(() => window.__daily.E.limiter instanceof AudioWorkletNode && window.__daily.rigLat() === 0), 'the zero-delay effects (2.18) run in the page’s own worklet');
+    await p.evaluate(() => { const D = window.__daily; D.CFG.tip.link = '@test-artist'; D.CFG.tip.name = 'Test Artist'; D.CFG.tipOk = D.TIP_TERMS; D.CFG.tip.on = true; D.dockGo('vis'); });
+    await wait(1200);
+    const TJ = await p.evaluate(() => { const D = window.__daily, html = D.shareHtml('data:audio/webm;base64,AAAA', D.shareData()), hrefs = [...html.matchAll(/(src|href)="(https?:[^"]+)"/g)].map(m => m[1] + ' ' + m[2]); return { shown: D.TIP.a.vis > .5, hrefs }; });
+    ok(TJ.shown && TJ.hrefs.length === 1 && /^href https:\/\/venmo\.com\/u\/test-artist$/.test(TJ.hrefs[0]), 'the tip jar (2.17) shows its code, and a share page links to the tip page (a link to follow, never a load: ' + TJ.hrefs.join(', ') + ')');
+    await p.evaluate(() => { window.print = () => { }; window.__daily.tipPrint(); setTimeout(() => window.dispatchEvent(new Event('afterprint')), 100); });
+    const tp = await dl(p, () => p.evaluate(() => window.__daily.tipPng()));
+    ok(!!tp && /\.png$/.test(tp.suggestedFilename()), 'its sign prints and its picture saves, made in the page');
+    for (const f of ['wide', 'tall']) {
+      const v = await dl(p, () => p.evaluate(f => { const D = window.__daily; D.CFG.recFmt = f; D.srecStart(false); setTimeout(() => D.srecStop(true), 1800); }, f));
+      ok(!!v && /_(stage|vertical)\.(webm|mp4)$/.test(v.suggestedFilename()), 'a ' + (f === 'tall' ? 'vertical' : 'wide') + ' video (2.19) is drawn and saved in the page (' + (v ? v.suggestedFilename() : 'no download') + ')');
+    }
+    const YV = await p.evaluate(async () => {
+      const D = window.__daily, cv = document.createElement('canvas'); cv.width = 160; cv.height = 90; const g = cv.getContext('2d'), mr = new MediaRecorder(cv.captureStream(30), { mimeType: 'video/webm;codecs=vp8' }), parts = [];
+      mr.ondataavailable = e => parts.push(e.data); let k = 0; const iv = setInterval(() => { g.fillStyle = '#c03030'; g.fillRect(0, 0, 160, 90); g.fillStyle = '#fff'; g.fillRect(k++ % 160, 30, 10, 30); }, 33);
+      await new Promise(r => { mr.onstop = r; mr.start(); setTimeout(() => mr.stop(), 1200); }); clearInterval(iv);
+      const n = await D.vbgAdd([new File(parts, 'loop.webm', { type: 'video/webm' })]); D.vzSetMode('video'); await new Promise(r => setTimeout(r, 1500));
+      return { n, playing: D.VBG.el.some(v => v && v.readyState >= 2) };
+    });
+    ok(YV.n === 1 && YV.playing, 'Your video (2.19) is kept in the page’s own database and played from there');
+    const RP = await p.evaluate(() => window.__daily.reportText());
+    ok(/problem report/.test(RP) && !/test-artist|venmo/i.test(RP), 'the problem report (2.19.1) is made in the page, without the tip link');
+    await p.evaluate(() => { const D = window.__daily; D.vzSetMode('hex'); D.CFG.tip.on = false; });
 
     // the shipped page loads nothing from another site (links the visitor clicks are navigations, not loads)
     const ext = await p.evaluate(() => [...document.querySelectorAll('script[src],link:is([rel~=stylesheet],[rel~=preload],[rel~=modulepreload],[rel~=prefetch],[rel~=preconnect],[rel~=dns-prefetch],[rel~=icon],[rel~=apple-touch-icon],[rel~=manifest]),img[src],iframe[src],source[src],audio[src],video[src],embed[src],object[data]')].map(e => e.src || e.href || e.data).filter(u => /^https?:/.test(u) && new URL(u).origin !== location.origin));

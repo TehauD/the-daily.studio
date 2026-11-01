@@ -5,7 +5,7 @@
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.19.0', BUILD = '5610f1a';   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.19.1', BUILD = '12deaf8';   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://the-daily.studio/journal/' };
 const $ = (s, r = document) => r.querySelector(s);
@@ -1609,6 +1609,11 @@ function openHelp(at) {
       h('p', { class: 'small' }, 'Everything runs locally in your browser. Nothing is uploaded. Your work is autosaved to this browser: songs, recordings and backing tracks stay on this device (☰ Songs).'),
       h('p', { class: 'small muted' }, 'For a copy you can keep anywhere, use ☰ Songs → All songs → Back up all songs (one zip with everything, which Open a file brings back), or save one song as a bundle. On an iPhone or iPad, add the site to the Home Screen so Safari keeps your songs.')] },
     { key: 'audio', label: 'Latency', ico: '⏱', wide: true, body: () => [h('p', { class: 'small muted' }, 'Browsers cannot talk to ASIO drivers, so achievable latency depends on your OS audio stack. Use the Loopback Test (I/O panel) for a measured number, and your interface’s direct monitor for latency-free headphone monitoring while recording.')] },
+    { key: 'report', label: 'Report a problem', ico: '⚑', sub: 'A report made on this device, for a GitHub issue. Nothing is sent.', wide: true, body: () => [
+      h('p', { class: 'small' }, 'If something goes wrong, copy a problem report and paste it into a new issue on GitHub, with a line on what you were doing. It says which version and browser you have, how the audio is set up and the last errors the studio noticed.'),
+      h('p', { class: 'small muted' }, 'It has no song titles, words, file names, device names or tip link, and nothing is sent: you see it and paste it yourself.'),
+      h('div', { class: 'hub-acts' }, h('button', { class: 'btn primary', id: 'reportCopy', onclick: () => reportCopy() }, '⚑ Copy a problem report'), h('button', { class: 'btn', id: 'reportShow', onclick: async () => { close(); reportShow(await reportText()); } }, 'Show it first'),
+        h('a', { class: 'btn', href: BRAND.repo + '/issues/new', target: '_blank', rel: 'noopener noreferrer' }, 'Open a GitHub issue ↗'))] },
     { key: 'about', label: 'About', ico: '♥', wide: true, body: () => [aboutBlock()] }
   ] });
 }
@@ -3834,7 +3839,7 @@ async function boot() {
   document.addEventListener('visibilitychange', () => { if (!document.hidden && E.ctx && !OFR.busy && E.ctx.state === 'suspended') E.ctx.resume(); });
   if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener('devicechange', () => { ioDeviceChange().catch(e => console.warn(e)); });
   bus.emit('song');
-  if (/[?&]debug\b/.test(location.search)) window.__daily = { S, pdbGet, srecFmt, SREC_FMTS, VBG, vbgAdd, vbgRemove, vbgUse, vbgOpen, vbgDraw, vzSetMode, srecFrame, srecFmtBox, kitThumb, WORKLET_SRC, mkComp, mkShaper, rigLat, voxLat, restartAudio, satCurve, rigApply, qrMake, qrSvg, tipLink, tipShort, tipReady, tipCard, tipDraw, tipShareHtml, tipOpen, tipPrint, tipPng, tipVisAvoid, tipStageAvoid, TIP, TIP_TERMS, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, STP, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfort, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, srecStart, srecStop, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, tkFades, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, FB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, vzSetMode, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, drawVis, perfClose, voicings, peaksOf, uid, shareGate, shareData, shareHtml, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, slotAtTime, SEL, mtof, spb, playheadSlot, WR, HM, HMX, HM_MODES, vzImmersive, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitThumb, kitInk, kitNotes, kitRecord, srecMime, mGo, GD_SESSIONS, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard};   // test hook, only with ?debug
+  if (/[?&]debug\b/.test(location.search)) window.__daily = { S, startAudio, playheadSlot, GUARD, reportText, reportCopy, srecQ, srecSize, pdbGet, srecFmt, SREC_FMTS, VBG, vbgAdd, vbgRemove, vbgUse, vbgOpen, vbgDraw, vzSetMode, srecFrame, srecFmtBox, kitThumb, WORKLET_SRC, mkComp, mkShaper, rigLat, voxLat, restartAudio, satCurve, rigApply, qrMake, qrSvg, tipLink, tipShort, tipReady, tipCard, tipDraw, tipShareHtml, tipOpen, tipPrint, tipPng, tipVisAvoid, tipStageAvoid, TIP, TIP_TERMS, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, STP, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfort, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, srecStart, srecStop, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, tkFades, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, FB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, vzSetMode, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, drawVis, perfClose, voicings, peaksOf, uid, shareGate, shareData, shareHtml, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, slotAtTime, SEL, mtof, spb, playheadSlot, WR, HM, HMX, HM_MODES, vzImmersive, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitThumb, kitInk, kitNotes, kitRecord, srecMime, mGo, GD_SESSIONS, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard};   // test hook, only with ?debug
   projInit().catch(e => { console.warn('library', e); PRJ.ready = true; if (PRJ.wantStart) startMaybe(); });
 }
 
@@ -7064,13 +7069,57 @@ function aboutBlock() {
    Part 29 · GUARD — a last line of defence: an unexpected error tells you plainly, once in a while, that your songs are safe
    (they are saved on every change). Browser noise that is not a real fault is ignored.
    ============================================================ */
-const GUARD = { at: 0, n: 0 };
+const GUARD = { at: 0, n: 0, log: [], t0: Date.now() };
+/* ---------- the problem log (2.19.1): the last 20 errors and warnings, in memory only ----------
+   Nothing is sent anywhere. Help ▸ Report a problem copies a report the person can paste into a GitHub issue. Messages are made
+   safe first: quoted names (a song, a file, a device) become “…”, addresses and long numbers are shortened. */
+const GUARD_MAX = 20;
+function guardClean(s) {
+  return String(s == null ? '' : s).replace(/[“"'‘][^“”"'‘’\n]{1,80}[”"'’]/g, '“…”').replace(/blob:[^\s)]+/g, 'blob:…').replace(/https?:\/\/(?!the-daily\.studio)[^\s)]+/g, 'https://…').replace(/\s+/g, ' ').trim().slice(0, 300);
+}
+function guardLog(level, a) {
+  try {
+    const e = a && a.find && a.find(x => x instanceof Error), first = e ? e.message : a.map(x => typeof x === 'string' ? x : x && x.message ? x.message : (() => { try { return JSON.stringify(x); } catch (er) { return String(x); } })()).join(' ');
+    const where = e && e.stack ? String(e.stack).split('\n').slice(1, 3).map(l => l.trim().replace(/\(?(?:blob|https?):[^)]*\/([^/)]*)\)?/g, '$1')).join(' · ') : '';
+    GUARD.log.push({ t: Date.now(), level, msg: guardClean(first), where: guardClean(where) }); if (GUARD.log.length > GUARD_MAX) GUARD.log.shift();
+  } catch (x) { }
+}
+GUARD.orig = { error: console.error.bind(console), warn: console.warn.bind(console) };
+['error', 'warn'].forEach(level => { console[level] = (...a) => { guardLog(level, a); GUARD.orig[level](...a); }; });
 function guardReport(err) {
   const msg = String((err && err.message) || err || ''); GUARD.n++;
   if (!msg || /ResizeObserver|AbortError|NotAllowedError|The play\(\) request|Script error|Non-Error promise rejection/i.test(msg)) return;
-  console.warn('[the-daily.studio]', err);
+  guardLog('error', [err instanceof Error ? err : new Error(msg)]); GUARD.orig.warn('[the-daily.studio]', err);      /* an uncaught error is logged as an error */
   if (Date.now() - GUARD.at < 20000) return; GUARD.at = Date.now();
-  try { toast('Something went wrong. Your songs are saved on this device. If it keeps happening, reload the page or report it on GitHub.', 'warn'); } catch (e) { }
+  try { toast(h('span', {}, 'Something went wrong. Your songs are saved on this device. If it keeps happening, reload the page, or ', h('a', { href: '#', id: 'guardReport', onclick: e => { e.preventDefault(); reportCopy(); } }, 'copy a problem report'), ' for a GitHub issue.'), 'warn'); } catch (e) { }
+}
+/** the report: what was running and on what, and what went wrong; no song, words, file or device names, no tip link */
+async function reportText() {
+  const L = [], c = E.ctx, ms = v => v == null ? '?' : Math.round(v * 1000) + ' ms', yes = v => v ? 'yes' : 'no';
+  L.push('the-daily.studio problem report', 'Version: v' + VERSION + ' · build ' + BUILD, 'Date: ' + new Date().toISOString() + ' (page open ' + Math.round((Date.now() - GUARD.t0) / 60000) + ' min)');
+  L.push('Browser: ' + navigator.userAgent);
+  L.push('Device: layout ' + (document.body.dataset.form || '?') + ' · screen ' + screen.width + '×' + screen.height + ' @' + (window.devicePixelRatio || 1) + 'x · window ' + innerWidth + '×' + innerHeight + ' · touch ' + yes(navigator.maxTouchPoints > 0) + ' · installed ' + yes(document.body.dataset.pwa === '1') + ' · cores ' + (navigator.hardwareConcurrency || '?') + (navigator.deviceMemory ? ' · memory ' + navigator.deviceMemory + ' GB' : ''));
+  L.push('Audio: ' + (c ? c.state + ' · ' + c.sampleRate + ' Hz · base ' + ms(c.baseLatency) + ' · output ' + ms(c.outputLatency) : 'not started') + ' · worklets ' + yes(E.worklet) + ' · zero-delay effects ' + yes(CFG.lowLat !== false) + ' · input ' + (E.hasInput ? 'open (' + ((E.inSettings && E.inSettings.channelCount) || '?') + ' ch)' : 'none') + ' · monitor ' + yes(CFG.monitor) + ' · round trip ' + (CFG.rtt != null ? CFG.rtt + ' ms measured' : 'not measured') + ' · latency hint ' + CFG.hint + (typeof AK !== 'undefined' && AK.killed ? ' · KILLED' : ''));
+  L.push('Studio: workspace ' + ((typeof goalNow === 'function' && goalNow() && goalNow().id) || 'none') + ' · look ' + (typeof VZ !== 'undefined' ? VZ.mode : '?') + ' · lens ' + (CFG.lens || '?') + ' · camera ' + yes(typeof CAM !== 'undefined' && CAM.on) + ' · video ' + (typeof srecFmt === 'function' ? srecFmt() + ' ' + srecQ() + 'p' : '?') + ' · recording ' + yes(typeof SREC !== 'undefined' && SREC.on) + ' · playing ' + yes(T.playing) + ' · agents ' + yes(CFG.agents !== false));
+  let st = 'unknown'; try { if (navigator.storage && navigator.storage.estimate) { const e = await navigator.storage.estimate(); st = Math.round((e.usage || 0) / 1048576) + ' MB of ' + Math.round((e.quota || 0) / 1048576) + ' MB'; } } catch (e) { }
+  L.push('Storage: ' + st + ' · kept for good ' + yes(PRJ.persisted) + ' · database ' + yes(PRJ.db) + ' · songs ' + ((PRJ.list && PRJ.list.length) || '?') + ' · stage pictures ' + ((CFG.show && CFG.show.imgs && CFG.show.imgs.length) || 0) + ' · your videos ' + ((CFG.vbg && CFG.vbg.list.length) || 0));
+  L.push('', 'Errors and warnings (newest last, ' + GUARD.log.length + ' kept of ' + GUARD.n + ' errors seen):');
+  if (!GUARD.log.length) L.push('  none');
+  GUARD.log.forEach(x => L.push('  [' + new Date(x.t).toISOString().slice(11, 19) + '] ' + x.level + ': ' + x.msg + (x.where ? '  (' + x.where + ')' : '')));
+  L.push('', 'What I was doing when it happened: ', '', '(This report was made on the device. It has no song titles, words, file names, device names or tip link. Nothing was sent.)');
+  return L.join('\n');
+}
+/** copy the report (or show it to copy by hand where the clipboard is not allowed) */
+async function reportCopy() {
+  const txt = await reportText();
+  try { await navigator.clipboard.writeText(txt); toast('Copied a problem report. Paste it into a new issue on GitHub (Help ▸ Report a problem has the link).', 'ok'); return txt; }
+  catch (e) { reportShow(txt); return txt; }
+}
+function reportShow(txt) {
+  const ta = h('textarea', { class: 'in', id: 'reportText', readonly: true, rows: 14, style: { width: '100%', fontFamily: 'var(--mono)', fontSize: '12px' } }); ta.value = txt;
+  pdlg('reportDlg', 'PROBLEM REPORT', h('div', {}, h('p', { class: 'tiny muted' }, 'Select it all and copy it, then paste it into a new GitHub issue. Nothing has been sent.'), ta,
+    h('div', { class: 'row', style: { gap: '8px', marginTop: '8px' } }, h('a', { class: 'btn', href: BRAND.repo + '/issues/new', target: '_blank', rel: 'noopener noreferrer' }, 'Open a GitHub issue ↗'))), { wide: true });
+  setTimeout(() => { ta.focus(); ta.select(); }, 50);
 }
 window.addEventListener('error', e => guardReport(e.error || e.message));
 window.addEventListener('unhandledrejection', e => guardReport(e.reason));
@@ -7977,12 +8026,17 @@ const SREC = { on: false, mr: null, chunks: [], t0: 0, tick: 0, watch: 0, dest: 
 /* the shapes a video can have: width, height (0: the Visuals' own), the label, what it is for */
 const SREC_FMTS = { wide: [1920, 1080, '▭ Wide 16:9', 'YouTube, a website or a TV'], tall: [1080, 1920, '▯ Vertical 9:16', 'Reels, TikTok and Shorts'], screen: [0, 0, '▢ As on screen', 'the shape the Visuals have on this screen'] };
 const srecFmt = () => SREC_FMTS[CFG.recFmt] ? CFG.recFmt : 'wide';
+/** quality (2.19.1): 1080p, or 720p, which a phone can draw and encode without dropping frames. Auto is 720p on phones and tablets */
+const SREC_QS = [['auto', 'Auto'], ['1080', '1080p'], ['720', '720p']];
+const srecQ = () => CFG.recQ === '1080' ? 1080 : CFG.recQ === '720' ? 720 : (document.body.dataset.form === 'phone' || document.body.dataset.form === 'tablet' ? 720 : 1080);
+/** the size a shape records at, with the quality applied */
+const srecSize = f => { const d = SREC_FMTS[f]; if (!d || !d[0]) return null; const k = srecQ() === 720 ? 2 / 3 : 1; return [Math.round(d[0] * k), Math.round(d[1] * k)]; };
 /** the words and the chord on the video: on by default for vertical (a phone video is watched with the sound low), off for the others */
 const srecWordsOn = f => { const w = CFG.recWords || {}; return w[f] != null ? !!w[f] : f === 'tall'; };
 function srecWordsSet(f, on) { CFG.recWords = Object.assign({}, CFG.recWords || {}, { [f]: !!on }); saveCfg(); }
 /** the canvas the video is drawn on: off the page, at the video's own size (even numbers, as video encoders want) */
 function srecCanvas(f) {
-  let W, H; if (f === 'screen') { const v = UI.vcv; W = (v && v.width) || 1280; H = (v && v.height) || 720; } else [W, H] = SREC_FMTS[f];
+  let W, H; if (f === 'screen') { const v = UI.vcv; W = (v && v.width) || 1280; H = (v && v.height) || 720; } else [W, H] = srecSize(f);
   W = Math.max(2, W - W % 2); H = Math.max(2, H - H % 2);
   const cv = SREC.cvEl || (SREC.cvEl = h('canvas', { id: 'srecCanvas', 'aria-hidden': 'true', style: { position: 'fixed', left: '-99999px', top: '0', width: '4px', height: '4px', pointerEvents: 'none' } }));
   cv.width = W; cv.height = H; if (!cv.isConnected) document.body.append(cv); return cv;
@@ -7991,7 +8045,9 @@ function srecCanvas(f) {
 const srecWordsRect = (W, H) => { const tall = H > W; return [0, H * (tall ? .62 : .64), W, H * (tall ? .38 : .36)]; };
 /** one frame of the video (called by the frame loop while a video records): the visuals at the video's size, the words, and a preview on the Visuals */
 function srecFrame() {
-  const cv = SREC.cv; if (!cv) return; const W = cv.width, H = cv.height, g = cv.getContext('2d'), words = SREC.words;
+  const cv = SREC.cv; if (!cv) return;
+  /* how steady the frames are: a gap of more than 50 ms (under 20 a second) while the tab is in front is a late frame */
+  const now = performance.now(), F = SREC.fr; if (F && SREC.on && !document.hidden) { if (F.last) { F.n++; if (now - F.last > 50) F.late++; } F.last = now; } else if (F) F.last = 0; const W = cv.width, H = cv.height, g = cv.getContext('2d'), words = SREC.words;
   try { drawVis(cv, { main: true, noNeck: words, noText: words, avoid: words ? [srecWordsRect(W, H)] : null }); if (words) srecWords(g, W, H); }
   catch (e) { if (!SREC.err) { SREC.err = 1; console.warn('video frame', e); } }
   const v = UI.vcv; if (v && v.width && paneVisible('vis')) {
@@ -8021,9 +8077,10 @@ function srecWords(g, W, H) {
 function srecFmtBox() {
   const f = srecFmt(), words = h('input', { type: 'checkbox', id: 'srecWords', checked: srecWordsOn(f), onchange: e => srecWordsSet(srecFmt(), e.target.checked) });
   const seg = h('div', { class: 'seg', role: 'radiogroup', 'aria-label': 'Video shape', id: 'srecFmt' }, Object.entries(SREC_FMTS).map(([k, d]) => h('button', { type: 'button', role: 'radio', class: k === f ? 'on' : '', 'aria-checked': String(k === f), 'data-fmt': k, title: d[3] + (d[0] ? ' · ' + d[0] + ' × ' + d[1] : ''), onclick: e => {
-    CFG.recFmt = k; saveCfg(); $$('[data-fmt]', seg).forEach(b => { const on = b === e.currentTarget; b.classList.toggle('on', on); b.setAttribute('aria-checked', String(on)); }); words.checked = srecWordsOn(k); hint.textContent = SREC_FMTS[k][3] + (SREC_FMTS[k][0] ? ' · ' + SREC_FMTS[k][0] + ' × ' + SREC_FMTS[k][1] : ''); if (typeof goalSync === 'function') goalSync(); } }, d[2])));
-  const hint = h('div', { class: 'tiny muted' }, SREC_FMTS[f][3] + (SREC_FMTS[f][0] ? ' · ' + SREC_FMTS[f][0] + ' × ' + SREC_FMTS[f][1] : ''));
-  return h('div', { style: { display: 'grid', gap: '6px' } }, seg, hint, h('label', { class: 'row', style: { gap: '6px', alignItems: 'center' }, title: 'The line being sung, with its chords over the words, and the chord, in large type at the bottom of the video' }, words, h('span', { class: 'tiny' }, 'Words and chord on the video')));
+    CFG.recFmt = k; saveCfg(); $$('[data-fmt]', seg).forEach(b => { const on = b === e.currentTarget; b.classList.toggle('on', on); b.setAttribute('aria-checked', String(on)); }); words.checked = srecWordsOn(k); hint.textContent = sizeTxt(k); if (typeof goalSync === 'function') goalSync(); } }, d[2])));
+  const hint = h('div', { class: 'tiny muted', id: 'srecHint' }), sizeTxt = k => { const z = srecSize(k); return SREC_FMTS[k][3] + (z ? ' · ' + z[0] + ' × ' + z[1] : ''); }; hint.textContent = sizeTxt(f);
+  const qs = h('div', { class: 'seg', role: 'radiogroup', 'aria-label': 'Video quality', id: 'srecQ' }, SREC_QS.map(([k, t]) => h('button', { type: 'button', role: 'radio', class: (CFG.recQ || 'auto') === k ? 'on' : '', 'aria-checked': String((CFG.recQ || 'auto') === k), 'data-q': k, title: k === 'auto' ? 'Auto: ' + srecQ() + 'p on this device (720p on phones and tablets)' : k === '720' ? '720p: smoother on phones' : '1080p: the sharpest', onclick: e => { CFG.recQ = k; saveCfg(); $$('[data-q]', qs).forEach(b => { const on = b === e.currentTarget; b.classList.toggle('on', on); b.setAttribute('aria-checked', String(on)); }); hint.textContent = sizeTxt(srecFmt()); } }, t)));
+  return h('div', { style: { display: 'grid', gap: '6px' } }, seg, h('div', { class: 'row', style: { gap: '6px', alignItems: 'center' } }, h('span', { class: 'tiny muted' }, 'Quality'), qs), hint, h('label', { class: 'row', style: { gap: '6px', alignItems: 'center' }, title: 'The line being sung, with its chords over the words, and the chord, in large type at the bottom of the video' }, words, h('span', { class: 'tiny' }, 'Words and chord on the video')));
 }
 /** mp4: put MP4 first for a video (social sites take it as it is); otherwise WebM first, as before */
 function srecMime(audio, mp4) {
@@ -8057,7 +8114,7 @@ async function srecStart(whole, o) {
     try { dockGo('vis'); } catch (e) { }
     await new Promise(r => setTimeout(r, 250));
     if (!UI.vcv || !UI.vcv.width) return toast('Open the Visuals first.', 'warn');
-    const f = srecFmt(); cv = srecCanvas(f); SREC.fmt = f; SREC.words = srecWordsOn(f); SREC.err = 0; SREC.cv = cv; srecFrame();      /* the first frame is there before the recorder starts */
+    const f = srecFmt(); cv = srecCanvas(f); SREC.fmt = f; SREC.words = srecWordsOn(f); SREC.err = 0; SREC.fr = { n: 0, late: 0, last: 0, q: f === 'screen' ? 0 : srecQ() }; SREC.cv = cv; srecFrame();      /* the first frame is there before the recorder starts */
   }
   let ms;
   try {
@@ -8090,6 +8147,8 @@ function srecDone() {
   try { E.limiter.disconnect(SREC.dest); } catch (e) { } try { SREC.stream && SREC.stream.getTracks().forEach(t => t.stop()); } catch (e) { }
   if (SREC.was) { T.loop = SREC.was.loop; T.metro = SREC.was.metro; if (SREC.whole) { try { stopPlay(true); } catch (e) { } } SREC.was = null; }
   SREC.mr = null; SREC.dest = null; SREC.stream = null; SREC.on = false; SREC.chunks = []; SREC.cv = null; srecSync(); bus.emit('srec', false);
+  const F = SREC.fr; SREC.lastFr = F ? { n: F.n, late: F.late, q: F.q } : null; SREC.fr = null;
+  if (save && F && F.n > 60 && F.late / F.n > .1) setTimeout(() => toast(F.q === 1080 ? 'This device could not keep up with every frame (' + Math.round(F.late / F.n * 100) + '% came late). For a smoother video, choose 720p in the Record menu.' : 'This device could not keep up with every frame (' + Math.round(F.late / F.n * 100) + '% came late). Closing other tabs and apps, or a simpler look, helps.', 'warn'), 600);
   const cb = SREC.onBlob; SREC.onBlob = null;
   if (save && blob && blob.size > 1000 && !SREC.audio) bus.emit('srec:blob', blob);   /* Studio Replay keeps the newest video (part 68) */
   if (save && blob && blob.size > 1000 && cb) cb(blob);

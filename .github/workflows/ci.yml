@@ -22,7 +22,6 @@ jobs:
   e2e:
     runs-on: ubuntu-latest
     needs: verify
-    continue-on-error: true   # browser audio on hosted runners can be flaky; drop this line once it is stable for you
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -33,3 +32,23 @@ jobs:
         run: npm run test:e2e
       - name: Phone, tablet and desktop layouts
         run: npm run test:mobile
+  browsers:
+    # The same app in Safari's engine (WebKit) and Firefox's: a short pass over what people rely on most (test/xbrowser.cjs).
+    # New in 2.19.1 and not yet proven on hosted runners, so it reports without blocking; drop continue-on-error once it has been green.
+    runs-on: ubuntu-latest
+    needs: verify
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [webkit, firefox]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with: { node-version: 22 }
+      - run: npm ci --no-audit --no-fund
+      - run: npx playwright install --with-deps ${{ matrix.browser }}
+      - name: The studio in ${{ matrix.browser }}
+        run: node test/xbrowser.cjs
+        env:
+          BROWSER: ${{ matrix.browser }}

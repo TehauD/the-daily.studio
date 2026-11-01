@@ -2,7 +2,7 @@
 
 **the-daily.studio has no server, no account, no analytics, no cookies and no advertising.** What you play, sing, record, type or drop in is processed in your browser and stays on your device. Nothing you make is uploaded.
 
-That sentence is a claim about how the software behaves, so this page also says exactly what *can* travel over the network, to whom, and when. Last checked against version 2.6.0 with `test/e2e-privacy.cjs` (see [How this is checked](#how-this-is-checked)).
+That sentence is a claim about how the software behaves, so this page also says exactly what *can* travel over the network, to whom, and when. Last checked against version 2.19.1 with `test/e2e-privacy.cjs` (see [How this is checked](#how-this-is-checked)).
 
 ## What happens to your data
 
@@ -20,6 +20,7 @@ That sentence is a claim about how the software behaves, so this page also says 
 | Screen recordings (Teacher ▸ ⏺ Record screen) | Your browser asks which tab, window or screen to share; the picture, the studio's sound and (if you allow it) your microphone are recorded in the page | No | In memory for Studio Replay until you record another or close the page; saved only as a file you download |
 | Studio Replay, thumbnails, ↗ Share and share pages (a video, or a track or clip made into a small M4A) | The recording is played back from memory; a track is turned into M4A in the page; a thumbnail or a one-file share page is made in the page | No. **↗ Share** hands the file to your device's own share sheet, and only when you press it. A share page is a file you download; where it goes next is up to you (see the [terms of use](#terms)) | Nowhere, unless you save it or pick an app to share it with |
 | Videos you add behind you (Visuals ▸ 🎞 Your videos) | Played muted, looped and drawn on the visuals, in the page | No | This browser's IndexedDB, next to your songs, until you remove them. They are not part of a song's backup |
+| Errors and warnings the studio notices (Help ▸ Report a problem) | The last 20 kept in memory, with quoted names, web addresses and file addresses blanked out, for a report you copy yourself | No. You copy the report and paste it where you choose | In memory only; gone when the page closes |
 | Your tip jar: the link, name and message (Creator Studio ▸ 🎸 Tip jar; off unless you set it up) | Turned into a QR code in the page and drawn where you choose: the visuals and stage videos, the Stage, share pages, a printed sign or a picture | No. The page never opens the link, except when you press **Test the link**. People who scan the code go to the service you chose, under its terms | This browser's local storage (`fw.cfg`). It is not part of songs or song backups, and the AI agent tools cannot read or change it |
 | Lesson notes (Teacher ▸ 📝 Lesson notes) | Typed and kept per song title | No | This browser's local storage (`fw.lessons`) |
 | What an AI agent in your browser reads or changes through the studio's tools (WebMCP) | The tools run in the page: they read the open song, load chord sheets, edit, play and stop | Not by the page. The agent is software you chose to run; see below | Changes go into your song like your own edits (and can be undone) |

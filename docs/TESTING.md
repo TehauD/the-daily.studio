@@ -56,6 +56,10 @@ Each file starts its **own** static server, its own Chromium (fake microphone an
 | `e2e-layout.cjs` | Nothing clipped or squeezed: time display from 1280 px, the beat, key and mode boxes and the song bar from 1440 to 1920 px, lane headers and clip bar on a phone, no stray “null” |
 | `mobile.cjs` | Phone, tablet and desktop layouts, the keypad, drawers, gestures, installable-app files |
 
+## Other browsers' engines (2.19.1)
+
+`test/xbrowser.cjs` is a short pass in Safari's engine (WebKit) and Firefox's, over what people rely on most: the studio opens, the audio engine and its worklets start, the song plays, the visuals draw, wide and vertical videos record at their sizes, Your video plays behind, the tip jar draws its code, Settings and Help open and the problem report is made. Run it with `BROWSER=webkit node test/xbrowser.cjs` or `BROWSER=firefox node test/xbrowser.cjs` (after `npx playwright install --with-deps webkit firefox`); with no `BROWSER` it runs in Chromium. Where an engine lacks something the browser provides (recording a canvas, say), the check says so by name instead of passing quietly. CI runs it for WebKit and Firefox in the `browsers` job, which reports without blocking until it has been green on hosted runners; the main `e2e` job (Chromium, every suite) blocks a merge when it fails.
+
 ## Hum to Song checks
 
 The e2e suite runs a synthetic hummed melody (16 notes, 25 cents sharp) through the real analysis and arranger and asserts every note, the tempo, key, section list, valid chords, lead-guitar notes in verse, chorus and bridge, style and key re-arrangement, the Ctrl + . stop, and the center-stage defaults. It also drives the **guitar coach** with stand-in guitar readings (tune six strings, play four chords, reach play-along), the **adaptive studio** (four plain tabs for a new visitor, more after use, the Tools override) and the **full-screen center stage** (fills the screen; Studio button returns). axe-core (WCAG A/AA) was run on the first screen, the start panel and the coach in light and dark with no violations. Real voices are noisier: also try humming, singing with words, and a voice memo on the deployed site.
