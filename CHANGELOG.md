@@ -2,6 +2,33 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.25.0 — 2026-11-01 — The Woodshed: scales, arpeggios and your ear; seven secrets
+
+### Added
+- **The Woodshed** (`src/parts/73d-woodshed.js`), a practice room with a fretboard drawn for the song's tuning and capo. It is in the Practice workspace's tools, at the top of the Theory panel ("Practise it in the Woodshed" opens it on the song's key and scale), in the phone's More sheet, and in the Backstage terminal (`woodshed`).
+  - **Scales**: a key, a scale, where on the neck, one or two octaves.
+    - **▶ Listen** plays the run through the studio's lead voice, with the fretboard following.
+    - **● Play it** follows your guitar note by note, using the pitch the tuner already hears. It marks what is next, ticks off what you play and counts wrong notes. The note still ringing from the last one is never a mistake, and octaves do not matter.
+  - **Arpeggios**: this song's chords in order, one note at a time, or one chord up and down around the fret you choose.
+  - **Your ear**: name the interval you hear, with 4, 6 or 12 to choose from, a streak and a best.
+- **Seven secrets** (up from four). Three new ones are found in the Woodshed, and each opens a treasure there:
+  - **Up and down**: a whole scale up and back down without a wrong note opens the modes and every other scale, from Dorian to Hirajoshi.
+  - **Broken chords**: the arpeggios of a progression of three chords or more, with no wrong note, opens seventh arpeggios.
+  - **Golden ear**: ten intervals in a row by ear, from six choices or more, opens chord qualities by ear (major, minor, diminished, augmented and three sevenths).
+  - Their toasts say what opened, and the room redraws itself so the treasure is there at once.
+  - With Hidden surprises off, every treasure is simply open: nobody has to hunt for practice.
+- The Woodshed keeps its own settings under `CFG.shed`, apart from the workspace you are in (`CFG.ws`).
+- The guide's Tones page mentions the Woodshed.
+
+### Tests
+- `test/e2e-woodshed.cjs` (26 checks), with the guitar stood in for by the tuner's readings. It covers:
+  - the way in from Theory, and the A minor pentatonic box at the 5th fret (R ♭3 4 5 ♭7 R and back);
+  - the locked scales, the fretboard, Listen, a ringing note against a wrong one, no secret after a mistake, and Up and down with the modes opening;
+  - Dorian, the song's arpeggios, Broken chords and seventh arpeggios;
+  - the ear: no secret from four choices, a streak reset, Golden ear from six, and chord qualities;
+  - the counter at 3 of 7, and every treasure open with surprises off.
+- `test/e2e-secrets.cjs` counts seven.
+
 ## 2.24.0 — 2026-11-01 — Mute the whole band in one press; the phone's More, and one panel at a time
 
 ### Added

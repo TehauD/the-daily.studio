@@ -726,9 +726,17 @@ The app ships no recordings and no one else's lyrics, and it never uploads anyth
 - **⇪ Share looks and rigs** puts the ones you choose in a separate **public** repository, and **◎ Community looks and rigs** shows what others share, to try and keep (with who made them). Nothing from your private studio is shared.
 - **Disconnect** removes the token from this browser; your repository stays on GitHub. How it works, and GitHub's limits: [GITHUB.md](GITHUB.md).
 
+## The Woodshed: scales, arpeggios and your ear (2.25)
+
+Musicians *go to the woodshed* to practise. **🪵 Woodshed** is in the Practice workspace's tools, at the top of the **Theory** panel (**Practise it in the Woodshed** opens it on the song's key and scale), and on a phone in **More**.
+- **Scales.** Choose a key, a scale, where on the neck to start, and one or two octaves. The fretboard shows the notes, with the roots in gold and the rest of the scale in that part of the neck faint. **▶ Listen** plays it up and back down through the studio's lead voice. **● Play it** listens to your guitar (the input the tuner uses) and follows you note by note. It marks the next note, ticks off each one you play, and counts wrong notes. The note you just played, still ringing, never counts as wrong, and octaves do not matter.
+- **Arpeggios.** This song's chords in order, one note at a time (root, third, fifth, and back to the root), or **One chord** up and down, around the fret you choose.
+- **Your ear.** **▶ Play a question** plays two notes, and you name the interval: 4, 6 or all 12 to choose from. It keeps your streak and your best.
+- Some of the room is locked until you find what it hides. With **Settings ▸ Workflow ▸ Hidden surprises** off, all of it is open.
+
 ## Hidden surprises (2.20)
 
-There are a few secrets in the studio for people who look and listen (and one for people who open the browser's developer console). This guide will not spoil them. Once you find the first, a small **🗝** counter appears next to the version in the bottom-right corner; press it for the list, with a hint for each one you have not found yet. They never go off while a take or a video is recording, nothing flashes, and **Settings ▸ Workflow ▸ Hidden surprises** turns them off.
+There are seven secrets in the studio for people who look and listen (and one for people who open the browser's developer console). This guide will not spoil them. Once you find the first, a small **🗝** counter appears next to the version in the bottom-right corner; press it for the list, with a hint for each one you have not found yet. They never go off while a take or a video is recording, nothing flashes, and **Settings ▸ Workflow ▸ Hidden surprises** turns them off.
 
 ## Report a problem (2.19.1)
 

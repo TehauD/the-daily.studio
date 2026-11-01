@@ -3,6 +3,9 @@
    · Tuned to perfection   all six open strings within ±2 cents of true, one after another (the tuner the studio already has)
    · In the pocket         sixteen notes in a row within 10 ms of the beat while the song plays (the timing analysis already there)
    · The hidden line       triple-click the version tag (part 73)
+   · Up and down           a whole scale up and back down in the Woodshed without a wrong note (part 73d): opens modes and more scales
+   · Broken chords         the arpeggios of a progression of three chords or more, no wrong note: opens seventh arpeggios
+   · Golden ear            ten intervals in a row by ear, from six choices or more: opens chord qualities by ear
    · Backstage pass        the browser console says hello to developers and points at dailyStudio.backstage(): guest list only,
                            and the password is the build (part 73c has the door, the pass and the rooms)
    A small 🗝 counter next to the version shows how many have been found, once the first one has. The rules: nothing fires while a take
@@ -13,6 +16,9 @@ const SECRETS = [
   ['line', 'The hidden line', 'Some numbers want to be clicked three times.', 'Triple-click the version tag: a quote of the day from someone in history wakes up at the bottom of the page.'],
   ['tuned', 'Tuned to perfection', 'Six strings, two cents.', 'All six open strings within ±2 cents of true, one after another.'],
   ['pocket', 'In the pocket', 'Sixteen notes, right on time.', 'Sixteen notes in a row within 10 ms of the beat while the song plays.'],
+  ['scale', 'Up and down', 'In the Woodshed: every note, there and back.', 'Ran a whole scale up and back down in the Woodshed without a wrong note.', 'Modes and more scales are open in the Woodshed.'],
+  ['arp', 'Broken chords', 'In the Woodshed: three chords or more, one note at a time.', 'Played the arpeggios of a whole progression in the Woodshed without a wrong note.', 'Seventh arpeggios are open in the Woodshed.'],
+  ['ear', 'Golden ear', 'In the Woodshed: ten in a row, by ear.', 'Named ten intervals in a row by ear in the Woodshed.', 'Chord qualities by ear are open in the Woodshed.'],
   ['backstage', 'Backstage pass', 'Developers know where to look.', 'Read the note in the browser console, knocked, and knew the password.']
 ];
 CFG.secrets = CFG.secrets && typeof CFG.secrets === 'object' ? CFG.secrets : {};
@@ -27,7 +33,7 @@ function secretFound(id, quiet) {
   if (CFG.secrets[id] || (!secretsOn() && id !== 'backstage')) return false;
   const s = SECRETS.find(x => x[0] === id); if (!s) return false;
   CFG.secrets[id] = Date.now(); saveCfg(); secretSync(); bus.emit('secret', id);
-  if (!quiet) { toast(h('span', { class: 'egg-toast' }, (id === 'tuned' ? '🎯 ' : id === 'pocket' ? '🥁 ' : '🗝 ') + s[1] + '. ', h('span', { class: 'muted' }, s[2] + ' ' + secretCount())), 'ok'); secretGlow(); }
+  if (!quiet) { toast(h('span', { class: 'egg-toast' }, ({ tuned: '🎯 ', pocket: '🥁 ', scale: '🎼 ', arp: '🎸 ', ear: '👂 ' }[id] || '🗝 ') + s[1] + '. ', h('span', { class: 'muted' }, (s[4] || s[2]) + ' ' + secretCount())), 'ok'); secretGlow(); }      /* a secret that opens a treasure says what it opened */
   return true;
 }
 /** a soft gold glow from the edges, for two seconds (not with Calm or reduced motion) */

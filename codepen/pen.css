@@ -1395,6 +1395,16 @@ dialog.bks-hub .hub-h{background:linear-gradient(100deg,rgba(247,201,90,.10),tra
 .bks-term-line{display:flex;align-items:center;gap:8px;border-top:1px solid #1d2a24;padding-top:8px;margin-top:6px}.bks-term-p{color:#3ddc84;font-size:12px;white-space:nowrap}.bks-term-in{flex:1;min-width:0;background:transparent;border:0;outline:0;color:#e8f5ec;font-size:12.5px;caret-color:#3ddc84}
 .bks-lab{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--line)}.bks-lab:last-child{border-bottom:0}
 .bks-pages{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}.bks-page{display:flex;flex-direction:column;gap:4px;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--panel2);color:inherit;text-decoration:none}.bks-page:hover{border-color:#f7c95a}.bks-page .mono{color:var(--accent)}
+/* the Woodshed (2.25): scales, arpeggios and your ear */
+.ws-room{display:grid;gap:10px}.ws-ctl{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:flex-end}.ws-ctl .field{display:flex;flex-direction:column;gap:2px;font:600 11px var(--sans);color:var(--muted);min-width:120px}.ws-ctl .field .in{font:600 13px var(--sans);min-width:120px}
+.ws-btns{display:flex;flex-wrap:wrap;gap:8px}.ws-board{border-radius:12px;background:linear-gradient(#2a1d12,#1c140c);padding:6px 8px;border:1px solid #3a2a1a;transition:box-shadow .15s}.ws-board.ws-oops{box-shadow:0 0 0 2px var(--bad) inset}
+.ws-fret{width:100%;height:auto;display:block}.ws-fret .ws-str{stroke:#c9b48a;opacity:.85}.ws-fret .ws-fw{stroke:#8b7a62;stroke-width:1.4}.ws-fret .ws-nut{stroke:#efe6d2;stroke-width:4}.ws-fret .ws-mk{fill:#5b4a35}.ws-fret .ws-sn{fill:#c9b48a;font:600 11px var(--mono)}.ws-fret .ws-capo{fill:#7a6a55}
+.ws-fret .ws-ghost{fill:rgba(255,255,255,.12);stroke:rgba(255,255,255,.25)}.ws-fret .ws-dot{fill:#7dbf9b;stroke:#0b100e;stroke-width:1.2}.ws-fret .ws-dot.root{fill:#f7c95a}.ws-fret .ws-dot.done{opacity:.35}.ws-fret .ws-dot.cur{fill:#ff8a5c;stroke:#fff;stroke-width:2}
+.ws-fret .ws-dl{fill:#0b100e;font:700 9.5px var(--mono);text-anchor:middle;pointer-events:none}.ws-fret .ws-dl.cur{fill:#fff}
+.ws-chips{display:flex;flex-wrap:wrap;gap:4px}.ws-chip{font-size:11.5px;padding:1px 7px;border-radius:99px;border:1px solid var(--line2);color:var(--muted)}.ws-chip.ok{color:var(--ok);border-color:var(--ok)}.ws-chip.cur{color:var(--text);border-color:var(--accent);background:var(--accent-soft)}.ws-chip.gap{margin-left:10px}
+.ws-stat{font-size:13px}.ws-good{color:var(--ok)}.ws-lock{margin:0;color:var(--muted)}.ws-lock.open{color:var(--accent2)}.ws-streak{color:var(--muted)}
+.ws-ans{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px}.ws-a.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 18%,transparent)}.ws-a.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 16%,transparent)}
+.ws-door{width:100%;margin-bottom:8px;justify-content:center}
 .bks-ov{position:fixed;left:8px;bottom:30px;z-index:9997;background:rgba(5,11,12,.86);color:#9de0b8;border:1px solid #1d2a24;border-radius:8px;padding:4px 8px;font-size:11px;pointer-events:none}
 #bksIn{width:100%;margin-top:8px}
 
