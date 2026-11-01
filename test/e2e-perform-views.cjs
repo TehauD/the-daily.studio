@@ -45,6 +45,18 @@ suite('e2e-perform-views', async t => {
   await p.click('#perform .pf-ver', { clickCount: 1 }); await p.click('#perform .pf-ver'); await p.click('#perform .pf-ver'); await wait(300);
   const egg = await p.evaluate(() => ({ on: window.__daily.CFG.egg, pf: document.querySelector('#perform .egg-line').textContent, st: document.querySelector('#status .egg-line').textContent }));
   ok(egg.on === true && egg.pf.length > 15 && egg.st === egg.pf, 'a triple click on the version wakes it, in Perform and the status bar: “' + egg.pf + '”');
+  const Q = await p.evaluate(() => { const L = window.__daily.EGG_LINES; return { n: L.length, all: L.every(([q, w]) => q && w && !/[“”]/.test(q)), tehau: L.filter(x => x[1] === 'Tehau').map(x => x[0]), noSagan: !L.some(x => /Sagan$/.test(x[1]) && /^Carl Sagan$/.test(x[1])), tesla: (L.find(x => /Tesla/.test(x[1])) || [])[1] }; });
+  ok(/^“.+” — .+$/.test(egg.pf) && Q.all && Q.n >= 20, 'each line is a quote with who it is from: “…” — who (' + Q.n + ' quotes)');
+  ok(Q.tehau.length === 4 && Q.tehau.includes('Create first. Understand it later.'), 'Tehau’s own lines are credited to Tehau');
+  ok(Q.tesla === 'attributed to Nikola Tesla' && Q.noSagan, 'a saying with no known source says “attributed to”, and a line often credited to the wrong person carries the right name');
+  const LG = await p.evaluate(async () => { const D = window.__daily, i = D.EGG_LINES.findIndex(x => /Tesla/.test(x[1]));
+    D.EGG.i = i; D.EGG.until = Date.now() + D.eggMs(D.eggText(i)); D.eggTick(true); await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    const el = document.querySelector('#perform .egg-line'), dur = Math.max(...[...document.querySelectorAll('.egg-line')].map(x => parseFloat(x.style.getPropertyValue('--egg-dur') || '0')));      /* the narrowest place glides longest */
+    const tw = el.firstElementChild.getBoundingClientRect().width, shift = -parseFloat(el.style.getPropertyValue('--egg-shift') || '0');
+    return { text: el.textContent, title: el.title, over: tw - el.clientWidth, long: el.classList.contains('egg-long'), stay: D.eggMs(el.textContent), glide: 2.5 + dur, short: D.eggMs(D.eggText(0)), reach: el.clientWidth + shift - tw }; });
+  ok(/Tesla/.test(LG.text) && LG.title === LG.text && (LG.over <= 4 || LG.long), 'a long quote shows whole on hover, and glides to its end if its space is too narrow (' + (LG.long ? 'gliding' : 'fits') + ')');
+  ok(!LG.long || LG.reach >= 0, 'and the glide goes far enough to show its very end, who said it included (' + Math.round(LG.reach) + ' px to spare)');
+  ok(LG.stay > LG.short && LG.glide * 1000 < LG.stay - 3000, 'a long quote stays longer (' + (LG.stay / 1000).toFixed(1) + ' s), and its glide ends, in every place it is shown, with time to read who said it (' + LG.glide.toFixed(1) + ' s)');
   await p.click('#perform .pf-ver'); await p.click('#perform .pf-ver'); await p.click('#perform .pf-ver'); await wait(300);
   ok(await p.evaluate(() => window.__daily.CFG.egg === false && !document.querySelector('#perform .egg-line').textContent), 'a second triple click puts it back to sleep');
   ok((await p.evaluate(() => [window.__daily.T.playing, window.__daily.T.metro, window.__daily.T.loop].join())) === before, 'clicking the version changes nothing else (play, click and loop as they were)');

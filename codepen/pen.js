@@ -5,7 +5,7 @@
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.21.0', BUILD = '65fc4df', PARTS_N = +'86' || 0, LINES_N = +'14588' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.21.1', BUILD = 'a266421', PARTS_N = +'86' || 0, LINES_N = +'14593' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { ghApp: { clientId: '', slug: '' },   /* Sign in with GitHub: the GitHub App's public client id and its slug (docs/GITHUB.md); empty = only the token way */
   support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://the-daily.studio/journal/' };
@@ -3845,7 +3845,7 @@ async function boot() {
   if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener('devicechange', () => { ioDeviceChange().catch(e => console.warn(e)); });
   bus.emit('song');
   try { ghBoot(); } catch (e) { console.warn('github', e); }      /* back from Sign in with GitHub, or a sync at start (part 74) */
-  if (/[?&]debug\b/.test(location.search)) window.__daily = { S, saveCfg, projSave, projDelete, GH, ghSync, ghConnect, ghDisconnect, ghLocal, ghSha, ghJson, ghMerge3, ghShare, ghGallery, ghGalleryOpen, ghGalleryShow, ghKeepLook, ghKeepRig, rigClean, ghReturn, BRAND, ghSettingsOut, projRefresh, projCreate, projLoad, PRJ, SEC, SECRETS, secretFound, secretTiming, secretsOpen, secretSync, backstageOpen, startAudio, playheadSlot, GUARD, reportText, reportCopy, srecQ, srecSize, pdbGet, srecFmt, SREC_FMTS, VBG, vbgAdd, vbgRemove, vbgUse, vbgOpen, vbgDraw, vzSetMode, srecFrame, srecFmtBox, kitThumb, WORKLET_SRC, mkComp, mkShaper, rigLat, voxLat, restartAudio, satCurve, rigApply, qrMake, qrSvg, tipLink, tipShort, tipReady, tipCard, tipDraw, tipShareHtml, tipOpen, tipPrint, tipPng, tipVisAvoid, tipStageAvoid, TIP, TIP_TERMS, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, STP, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfort, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, srecStart, srecStop, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, tkFades, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, FB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, vzSetMode, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, drawVis, perfClose, voicings, peaksOf, uid, shareGate, shareData, shareHtml, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, slotAtTime, SEL, mtof, spb, playheadSlot, WR, HM, HMX, HM_MODES, vzImmersive, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitThumb, kitInk, kitNotes, kitRecord, srecMime, mGo, GD_SESSIONS, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard};   // test hook, only with ?debug
+  if (/[?&]debug\b/.test(location.search)) window.__daily = { S, EGG, EGG_LINES, eggMs, eggText, eggTick, saveCfg, projSave, projDelete, GH, ghSync, ghConnect, ghDisconnect, ghLocal, ghSha, ghJson, ghMerge3, ghShare, ghGallery, ghGalleryOpen, ghGalleryShow, ghKeepLook, ghKeepRig, rigClean, ghReturn, BRAND, ghSettingsOut, projRefresh, projCreate, projLoad, PRJ, SEC, SECRETS, secretFound, secretTiming, secretsOpen, secretSync, backstageOpen, startAudio, playheadSlot, GUARD, reportText, reportCopy, srecQ, srecSize, pdbGet, srecFmt, SREC_FMTS, VBG, vbgAdd, vbgRemove, vbgUse, vbgOpen, vbgDraw, vzSetMode, srecFrame, srecFmtBox, kitThumb, WORKLET_SRC, mkComp, mkShaper, rigLat, voxLat, restartAudio, satCurve, rigApply, qrMake, qrSvg, tipLink, tipShort, tipReady, tipCard, tipDraw, tipShareHtml, tipOpen, tipPrint, tipPng, tipVisAvoid, tipStageAvoid, TIP, TIP_TERMS, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, STP, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfort, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, srecStart, srecStop, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, tkFades, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, FB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, vzSetMode, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, drawVis, perfClose, voicings, peaksOf, uid, shareGate, shareData, shareHtml, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, slotAtTime, SEL, mtof, spb, playheadSlot, WR, HM, HMX, HM_MODES, vzImmersive, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitThumb, kitInk, kitNotes, kitRecord, srecMime, mGo, GD_SESSIONS, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard};   // test hook, only with ?debug
   projInit().catch(e => { console.warn('library', e); PRJ.ready = true; if (PRJ.wantStart) startMaybe(); });
 }
 
@@ -14029,48 +14029,42 @@ agentWatch();
    Part 73 · THE BUILD TAG, AND A HIDDEN LINE AT THE BOTTOM
    The version and build code sit in the very bottom-right corner (the app's status bar and Perform), so anyone can tell
    which build is running. Triple-click (or triple-tap) the tag and a small hidden line wakes up at the bottom of the page:
-   a rotating bit of song inspiration or musician humour. Triple-click again to put it back to sleep. Remembered here.
-   All lines are written for this app; none are quotes.
+   a rotating quote to start a new idea, from people in history or from Tehau, who made the studio. Triple-click again to put
+   it back to sleep. Remembered here.
+   Every quote says who it is from. A saying that is only attributed (no known source) says "attributed to"; a paraphrase says
+   "after"; and a line often credited to the wrong person carries the right name.
    ============================================================ */
 const BUILD_TAG = 'v' + VERSION + ' · build ' + BUILD;
+/* [the quote, who it is from] */
 const EGG_LINES = [
-  'Every song you love started as a rough first draft.',
-  'Play it slowly until it is easy. Then play it slowly a little longer.',
-  'The riff you hummed in the shower counts. Write it down.',
-  'A wrong note played twice on purpose is a choice.',
-  'Your voice does not need to sound like anyone else’s. That is the point.',
-  'Ten minutes today beats two hours someday.',
-  'Finish the song. You can fix it in the next one.',
-  'The space between the notes is part of the music too.',
-  'Borrow a chord progression; keep your own story.',
-  'Calluses are just practice you can feel.',
-  'If it makes you smile, it is working.',
-  'Write the line you would be nervous to sing. Then sing it.',
-  'Hum it, record it, forget it, find it again. That is a workflow.',
-  'Somewhere, someone will hear your song for the first time. Make it count.',
-  'Somebody, somewhere, is also stuck on the bridge.',
-  'Wrote a verse? Great. Wrote two? Now it is a song.',
-  'Loop the hard bar. Then loop it again. The bar always gives up first.',
-  'The metronome is not judging you. Mostly.',
-  'You do not need another pedal. You want another pedal. Both are valid.',
-  'That F chord is building character. Yours, mostly.',
-  'Practice amp on 3, dreams on 11.',
-  'Tuning takes thirty seconds. Talking about tuning takes thirty minutes.',
-  'Behind every great song is a phone full of “New Recording 47”.',
-  'If the cat leaves the room, it might be the solo.',
-  'Sore fingertips are the guitar’s way of saying hello.',
-  'Your neighbours know this song better than you think. Bring it home.',
-  'The B string is never quite in tune. It is a lifestyle.',
-  'Counting to four is harder than it looks. Ask any band. Lovingly.',
-  'Breathe on the rest, sing on the downbeat, look calm throughout.',
-  'This app has no opinion about your strumming. The drummer might.',
-  'Capo on two: new key, zero theory, full confidence.',
-  'Done is a sound. So is “one more take”.'
+  ['The noblest pleasure is the joy of understanding.', 'Leonardo da Vinci'],
+  ['Wonder is the beginning of philosophy.', 'Plato'],
+  ['All we have to decide is what to do with the time that is given us.', 'J.R.R. Tolkien'],
+  ['Learning never exhausts the mind.', 'Leonardo da Vinci'],
+  ['Somewhere, something incredible is waiting to be known.', 'Sharon Begley, writing about Carl Sagan'],
+  ['If you want to find the secrets of the universe, think in terms of energy, frequency and vibration.', 'attributed to Nikola Tesla'],
+  ['The best sound is the one you haven’t discovered yet.', 'Tehau'],
+  ['A melody can say what words cannot.', 'Tehau'],
+  ['Create first. Understand it later.', 'Tehau'],
+  ['Make mistakes. Just remember where you made them.', 'Tehau'],
+  ['Without music, life would be a mistake.', 'Friedrich Nietzsche'],
+  ['Music is the universal language of mankind.', 'Henry Wadsworth Longfellow'],
+  ['Music expresses that which cannot be said and on which it is impossible to be silent.', 'Victor Hugo'],
+  ['After silence, that which comes nearest to expressing the inexpressible is music.', 'Aldous Huxley'],
+  ['Music is a hidden arithmetic exercise of the soul, which does not know that it is counting.', 'Gottfried Wilhelm Leibniz'],
+  ['I have no special talent. I am only passionately curious.', 'Albert Einstein'],
+  ['Imagination is more important than knowledge.', 'Albert Einstein'],
+  ['Genius is one per cent inspiration and ninety-nine per cent perspiration.', 'Thomas Edison'],
+  ['Learning is not attained by chance; it must be sought for with ardour and attended to with diligence.', 'Abigail Adams'],
+  ['The mind is not a vessel to be filled, but a fire to be kindled.', 'after Plutarch']
 ];
-const EGG = { start: Math.floor(Math.random() * EGG_LINES.length), shown: '' };
+const EGG = { i: Math.floor(Math.random() * EGG_LINES.length), until: 0, shown: '' };
 const eggOn = () => !!CFG.egg;
-/** the line for now: a new one every nine seconds */
-const eggNow = () => EGG_LINES[(EGG.start + Math.floor(Date.now() / 9000)) % EGG_LINES.length];
+const eggText = i => { const [q, who] = EGG_LINES[i % EGG_LINES.length]; return '“' + q + '” — ' + who; };
+/** how long a quote stays: nine seconds and a little more for each letter, so a long one has time to be read (and to glide, if it must) */
+const eggMs = t => 9000 + 60 * t.length;
+/** the quote for now, as it is shown: “…” — who; the next one comes when this one's time is up */
+const eggNow = () => { const now = Date.now(); if (now >= EGG.until) { EGG.i = (EGG.i + 1) % EGG_LINES.length; EGG.until = now + eggMs(eggText(EGG.i)); } return eggText(EGG.i); };
 /** a build tag that wakes the hidden line on a triple click or tap */
 function buildTag(cls) {
   let n = 0, t = 0;
@@ -14082,9 +14076,20 @@ function buildTag(cls) {
 /** keep every .egg-line on the page showing the current line (or nothing while asleep) */
 function eggTick(force) {
   const txt = eggOn() ? eggNow() : ''; if (txt === EGG.shown && !force) return; EGG.shown = txt;
-  document.querySelectorAll('.egg-line').forEach(el => { el.textContent = txt; el.classList.remove('egg-in'); void el.offsetWidth; if (txt) el.classList.add('egg-in'); });
+  document.querySelectorAll('.egg-line').forEach(el => {
+    el.textContent = ''; el.title = txt; el.classList.remove('egg-in', 'egg-long'); if (!txt) return;
+    el.append(h('span', { class: 'egg-t' }, txt)); void el.offsetWidth; el.classList.add('egg-in');
+    requestAnimationFrame(() => eggFit(el));
+  });
 }
 setInterval(() => { if (eggOn() || EGG.shown) eggTick(); }, 1000);
+/** a quote longer than its space glides once to its end, so the end and who said it are read; with reduced motion it stays, with the whole quote on hover */
+function eggFit(el) {
+  /* the quote's own width against the room it has: the box's width can understate an italic line that is cut short */
+  const t = el.firstElementChild; if (!t) return; const cs = getComputedStyle(el), room = el.clientWidth - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight) || 0), over = Math.ceil(t.getBoundingClientRect().width - room) + 6; if (over <= 10) return;
+  try { if (CFG.reduce || matchMedia('(prefers-reduced-motion: reduce)').matches) return; } catch (e) { }
+  el.style.setProperty('--egg-shift', -over + 'px'); el.style.setProperty('--egg-dur', Math.min(10, Math.max(3, over / 45)).toFixed(1) + 's');      /* about 45 px a second, done well before the quote's time is up */ el.classList.add('egg-long');
+}
 
 /* >>> parts/73b-secrets.js */
 /* ============================================================
@@ -14099,7 +14104,7 @@ setInterval(() => { if (eggOn() || EGG.shown) eggTick(); }, 1000);
    Workflow ▸ Hidden surprises turns the musical ones off. Found secrets are remembered in this browser (CFG.secrets).
    ============================================================ */
 const SECRETS = [
-  ['line', 'The hidden line', 'Some numbers want to be clicked three times.', 'Triple-click the version tag: a rotating line of song inspiration wakes up at the bottom of the page.'],
+  ['line', 'The hidden line', 'Some numbers want to be clicked three times.', 'Triple-click the version tag: a rotating quote wakes up at the bottom of the page, from people in history or from Tehau.'],
   ['tuned', 'Tuned to perfection', 'Six strings, two cents.', 'All six open strings within ±2 cents of true, one after another.'],
   ['pocket', 'In the pocket', 'Sixteen notes, right on time.', 'Sixteen notes in a row within 10 ms of the beat while the song plays.'],
   ['backstage', 'Backstage pass', 'Developers know where to look.', 'Read the note in the browser console and knocked on the door backstage.']
