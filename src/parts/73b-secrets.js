@@ -3,9 +3,9 @@
    · Tuned to perfection   all six open strings within ±2 cents of true, one after another (the tuner the studio already has)
    · In the pocket         sixteen notes in a row within 10 ms of the beat while the song plays (the timing analysis already there)
    · The hidden line       triple-click the version tag (part 73)
-   · Up and down           a whole scale up and back down in the Woodshed without a wrong note (part 73d): opens modes and more scales
-   · Broken chords         the arpeggios of a progression of three chords or more, no wrong note: opens seventh arpeggios
-   · Golden ear            ten intervals in a row by ear, from six choices or more: opens chord qualities by ear
+   · Up and down           any scale up and back down, anywhere the tuner hears it: opens modes and more scales in Shower mode (part 73d)
+   · Broken chords         three of the band's chords in a row broken into notes (root, third, fifth) while the song plays: opens seventh arpeggios
+   · Golden ear            ten intervals in a row by ear in Shower mode, from six choices or more: opens chord qualities by ear
    · Backstage pass        the browser console says hello to developers and points at dailyStudio.backstage(): guest list only,
                            and the password is the build (part 73c has the door, the pass and the rooms)
    A small 🗝 counter next to the version shows how many have been found, once the first one has. The rules: nothing fires while a take
@@ -16,9 +16,9 @@ const SECRETS = [
   ['line', 'The hidden line', 'Some numbers want to be clicked three times.', 'Triple-click the version tag: a quote of the day from someone in history wakes up at the bottom of the page.'],
   ['tuned', 'Tuned to perfection', 'Six strings, two cents.', 'All six open strings within ±2 cents of true, one after another.'],
   ['pocket', 'In the pocket', 'Sixteen notes, right on time.', 'Sixteen notes in a row within 10 ms of the beat while the song plays.'],
-  ['scale', 'Up and down', 'In the Woodshed: every note, there and back.', 'Ran a whole scale up and back down in the Woodshed without a wrong note.', 'Modes and more scales are open in the Woodshed.'],
-  ['arp', 'Broken chords', 'In the Woodshed: three chords or more, one note at a time.', 'Played the arpeggios of a whole progression in the Woodshed without a wrong note.', 'Seventh arpeggios are open in the Woodshed.'],
-  ['ear', 'Golden ear', 'In the Woodshed: ten in a row, by ear.', 'Named ten intervals in a row by ear in the Woodshed.', 'Chord qualities by ear are open in the Woodshed.'],
+  ['scale', 'Up and down', 'Every note, there and back. Anywhere I can hear you.', 'Played a whole scale up and back down.', 'Modes and more scales are open in Shower mode. 🚿'],
+  ['arp', 'Broken chords', 'The band plays the chords. You take them apart.', 'Broke three of the band’s chords in a row into their notes while the song played.', 'Seventh arpeggios are open in Shower mode. 🚿'],
+  ['ear', 'Golden ear', 'Ten in a row, by ear, somewhere steamy.', 'Named ten intervals in a row by ear in Shower mode.', 'Chord qualities by ear are open in Shower mode. 🚿'],
   ['backstage', 'Backstage pass', 'Developers know where to look.', 'Read the note in the browser console, knocked, and knew the password.']
 ];
 CFG.secrets = CFG.secrets && typeof CFG.secrets === 'object' ? CFG.secrets : {};
@@ -75,6 +75,34 @@ function secretTiming(ms) {
   if (SEC.pocket >= 16) { SEC.pocket = 0; secretFound('pocket'); }
 }
 bus.on('timing', secretTiming);
+/* ---------- Up and down, and Broken chords: out in the studio, by the notes the tuner hears (2.25) ---------- */
+/** each note, once, when it has been held a moment: the last twenty */
+setInterval(() => {
+  if (!secretsOn() || !E.ready || secretBusy()) { SEC.held = null; return; }
+  const m = AN.active && AN.midi != null ? AN.midi : null, now = performance.now();
+  if (m == null) { SEC.held = null; return; }
+  if (!SEC.held || SEC.held.m !== m) { SEC.held = { m, t: now, done: false }; return; }
+  if (SEC.held.done || now - SEC.held.t < 110) return; SEC.held.done = true; secretNote(m);
+}, 40);
+/** a note heard: is it the end of a scale up and back down, or a chord of the band's broken into notes? */
+function secretNote(m) {
+  const L = SEC.notes = (SEC.notes || []).concat(m).slice(-20);
+  if (!CFG.secrets.scale) for (const name of (typeof WS_BASE !== 'undefined' ? WS_BASE : [])) {      /* the scale, up from its root to the octave and back, exactly */
+    const iv = SCALES[name], n = iv.length * 2 + 1; if (L.length < n) continue; const w = L.slice(-n), up = w.slice(0, iv.length + 1), down = w.slice(iv.length);
+    if (up.every((x, i) => x - up[0] === (i < iv.length ? iv[i] : 12)) && down.every((x, i) => x === up[up.length - 1 - i])) { secretFound('scale'); SEC.notes = []; break; }
+  }
+  if (!CFG.secrets.arp && T.playing) secretArp(m);
+}
+/** the chord playing now: the bar's chord, or the last one before it */
+function secretChordNow() { const bars = flatBars(), i = Math.floor(playheadSlot() / spb()); for (let k = Math.min(i, bars.length - 1); k >= 0; k--) if (bars[k].bar.chord) return bars[k].bar.chord; return null; }
+function secretArp(m, sym) {
+  sym = sym || secretChordNow(); const a = SEC.arp || (SEC.arp = { sym: null, k: 0, n: 0 });
+  if (sym !== a.sym) { a.n = a.k >= 3 ? a.n + 1 : 0; a.sym = sym; a.k = 0; }      /* a new chord: the last one counts only if it was broken whole */
+  const c = sym && parseChord(sym); if (!c) return;
+  const third = c.iv.find(i => i === 3 || i === 4) ?? c.iv.find(i => i === 2 || i === 5) ?? 4, fifth = c.iv.find(i => i === 7) ?? c.iv.find(i => i === 6 || i === 8) ?? 7, want = [c.root, (c.root + third) % 12, (c.root + fifth) % 12];
+  if (a.k < 3 && ((m % 12) + 12) % 12 === want[a.k]) a.k++;
+  if (a.k >= 3 && a.n + 1 >= 3) { secretFound('arp'); SEC.arp = null; }
+}
 bus.on('transport', () => { if (!T.playing) SEC.pocket = 0; });
 
 /* ---------- a word for developers, in the console ---------- */

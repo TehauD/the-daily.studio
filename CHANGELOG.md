@@ -2,31 +2,34 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
-## 2.25.0 — 2026-11-01 — The Woodshed: scales, arpeggios and your ear; seven secrets
+## 2.25.0 — 2026-11-01 — Shower mode (scales, arpeggios, your ear), seven secrets out in the studio, and the red light
 
 ### Added
-- **The Woodshed** (`src/parts/73d-woodshed.js`), a practice room with a fretboard drawn for the song's tuning and capo. It is in the Practice workspace's tools, at the top of the Theory panel ("Practise it in the Woodshed" opens it on the song's key and scale), in the phone's More sheet, and in the Backstage terminal (`woodshed`).
-  - **Scales**: a key, a scale, where on the neck, one or two octaves.
-    - **▶ Listen** plays the run through the studio's lead voice, with the fretboard following.
-    - **● Play it** follows your guitar note by note, using the pitch the tuner already hears. It marks what is next, ticks off what you play and counts wrong notes. The note still ringing from the last one is never a mistake, and octaves do not matter.
-  - **Arpeggios**: this song's chords in order, one note at a time, or one chord up and down around the fret you choose.
-  - **Your ear**: name the interval you hear, with 4, 6 or 12 to choose from, a streak and a best.
-- **Seven secrets** (up from four). Three new ones are found in the Woodshed, and each opens a treasure there:
-  - **Up and down**: a whole scale up and back down without a wrong note opens the modes and every other scale, from Dorian to Hirajoshi.
-  - **Broken chords**: the arpeggios of a progression of three chords or more, with no wrong note, opens seventh arpeggios.
-  - **Golden ear**: ten intervals in a row by ear, from six choices or more, opens chord qualities by ear (major, minor, diminished, augmented and three sevenths).
-  - Their toasts say what opened, and the room redraws itself so the treasure is there at once.
-  - With Hidden surprises off, every treasure is simply open: nobody has to hunt for practice.
-- The Woodshed keeps its own settings under `CFG.shed`, apart from the workspace you are in (`CFG.ws`).
-- The guide's Tones page mentions the Woodshed.
+- **🚿 Shower mode** (`src/parts/73d-shower.js`): a practice room where everyone sounds better. *Not responsible for damage to electronic devices.* It has a fretboard drawn for the song's tuning and capo, and a fine-print section that asks you to keep the guitar out of the water.
+  - **Where to find it:** the Practice workspace's tools, the top of the Theory panel ("Practise it in Shower mode" opens it on the song's key and scale), the phone's More sheet, and `shower` in the Backstage terminal.
+  - **Scales** ("the warm-up"): a key, a scale, where on the neck, one or two octaves.
+    - **▶ Listen** plays the run.
+    - **● Play it** follows your guitar note by note, using the pitch the tuner already hears. It marks what is next, ticks off what you play and counts wrong notes (blame the tiles). The note still ringing from the last one is never a mistake, and octaves do not matter.
+  - **Arpeggios** ("lather, rinse, repeat"): the song's chords one note at a time, or one chord up and down.
+  - **Your ear:** name the interval you hear, from 4, 6 or 12 choices, with a streak and a best.
+- **Seven secrets, spread out to be explored.** Each of the three new ones opens a treasure in Shower mode, and its toast says so. With Hidden surprises off, the treasures are simply open.
+  - **Up and down:** any scale up and back down, anywhere the tuner hears you, including in Shower mode. Opens the modes and every other scale.
+  - **Broken chords:** while the song plays, break three of the band's chords in a row into their notes (root, third, fifth). Opens seventh arpeggios.
+  - **Golden ear:** ten intervals in a row in Shower mode, from six choices or more. Opens chord qualities by ear.
+- **On air** (`src/parts/73e-onair.js`): a tribute to the red light outside a studio door.
+  - While a take or a stage video records, the logo in the header and the browser tab's icon blink red, and the tab's title says **● REC**, so you can see from any tab that the studio is rolling.
+  - Calm and reduced motion get a steady red light.
+
+### Fixed
+- Shower mode keeps its settings under `CFG.shed`, apart from the workspace you are in (`CFG.ws`). A first draft used the same name and cost first visits the Performer workspace.
 
 ### Tests
-- `test/e2e-woodshed.cjs` (26 checks), with the guitar stood in for by the tuner's readings. It covers:
-  - the way in from Theory, and the A minor pentatonic box at the 5th fret (R ♭3 4 5 ♭7 R and back);
-  - the locked scales, the fretboard, Listen, a ringing note against a wrong one, no secret after a mistake, and Up and down with the modes opening;
-  - Dorian, the song's arpeggios, Broken chords and seventh arpeggios;
-  - the ear: no secret from four choices, a streak reset, Golden ear from six, and chord qualities;
-  - the counter at 3 of 7, and every treasure open with surprises off.
+- `test/e2e-shower.cjs` (29 checks), with the guitar stood in for by the tuner's readings. It covers:
+  - the way in from Theory, the A minor pentatonic box, the locked scales, Listen, a ringing note against a wrong one, Up and down from a clean run, the modes opening, and Dorian;
+  - the song's arpeggios, and a clean arpeggio run in the shower not counting, because that secret is out with the band;
+  - Broken chords: not while stopped, not out of order, then three chords in a row;
+  - the ear trainer and Golden ear, chord qualities, the counter, and everything open with surprises off.
+- `test/e2e-onair.cjs` (7): the red logo, tab icon and ● REC title, the blink, a stage video lighting it too, everything back as it was afterwards, and a steady light with reduced motion.
 - `test/e2e-secrets.cjs` counts seven.
 
 ## 2.24.0 — 2026-11-01 — Mute the whole band in one press; the phone's More, and one panel at a time

@@ -1396,6 +1396,9 @@ dialog.bks-hub .hub-h{background:linear-gradient(100deg,rgba(247,201,90,.10),tra
 .bks-lab{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--line)}.bks-lab:last-child{border-bottom:0}
 .bks-pages{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}.bks-page{display:flex;flex-direction:column;gap:4px;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--panel2);color:inherit;text-decoration:none}.bks-page:hover{border-color:#f7c95a}.bks-page .mono{color:var(--accent)}
 /* the Woodshed (2.25): scales, arpeggios and your ear */
+/* on air (2.25): the logo blinks red while recording, like the light outside a studio door */
+body.onair .brand svg *{stroke:#ff2a3d!important}body.onair .brand svg{filter:drop-shadow(0 0 6px rgba(255,42,61,.75));animation:onair 1.3s steps(1,end) infinite}
+@keyframes onair{50%{opacity:.35;filter:none}}@media (prefers-reduced-motion:reduce){body.onair .brand svg{animation:none}}.reduce body.onair .brand svg,body.onair.reduce .brand svg{animation:none}
 .ws-room{display:grid;gap:10px}.ws-ctl{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:flex-end}.ws-ctl .field{display:flex;flex-direction:column;gap:2px;font:600 11px var(--sans);color:var(--muted);min-width:120px}.ws-ctl .field .in{font:600 13px var(--sans);min-width:120px}
 .ws-btns{display:flex;flex-wrap:wrap;gap:8px}.ws-board{border-radius:12px;background:linear-gradient(#2a1d12,#1c140c);padding:6px 8px;border:1px solid #3a2a1a;transition:box-shadow .15s}.ws-board.ws-oops{box-shadow:0 0 0 2px var(--bad) inset}
 .ws-fret{width:100%;height:auto;display:block}.ws-fret .ws-str{stroke:#c9b48a;opacity:.85}.ws-fret .ws-fw{stroke:#8b7a62;stroke-width:1.4}.ws-fret .ws-nut{stroke:#efe6d2;stroke-width:4}.ws-fret .ws-mk{fill:#5b4a35}.ws-fret .ws-sn{fill:#c9b48a;font:600 11px var(--mono)}.ws-fret .ws-capo{fill:#7a6a55}

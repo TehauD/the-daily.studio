@@ -1,14 +1,14 @@
-/* The Woodshed (2.25): scales, arpeggios and your ear, and the three secrets found there with the treasure each opens. The guitar is
+/* Shower mode (2.25): scales, arpeggios and your ear, and the three secrets that open its treasures (one found in here, two out in the studio). The guitar is
    stood in for by the tuner's own readings (AN.active / AN.midi, as e2e-secrets does), so every note is exactly the one meant. */
 const { suite } = require('./lib.cjs');
 const SHEET = '[Verse]\nAm      F\nLanterns on the harbour wall\nC       G\nCalling all the boats back in';
 
-suite('e2e-woodshed', async t => {
+suite('e2e-shower', async t => {
   const { ok, wait, poll } = t;
   const p = await t.open({}), ev = (f, a) => p.evaluate(f, a);
   await ev(async s => { const D = window.__daily; await D.startAudio(); await D.projCreate('blank', { form: 'empty' }); await window.dailyStudio.call('load_chord_sheet', { text: s }); D.S.title = 'Harbour'; D.commit(false); await D.projSave();
     const AN = D.AN; window.__f = { active: false, midi: null }; ['active', 'midi'].forEach(k => Object.defineProperty(AN, k, { configurable: true, get: () => window.__f[k], set: () => { } })); }, SHEET);
-  /* play notes into the Woodshed: each held long enough to be heard, with a short gap */
+  /* play notes in: each held long enough to be heard, with a short gap */
   const play = ms => ev(async ms => { const nap = x => new Promise(r => setTimeout(r, x)); for (const m of ms) { window.__f.active = true; window.__f.midi = m; await nap(260); window.__f.active = false; window.__f.midi = null; await nap(70); } await nap(150); }, ms);
   const run = () => ev(() => { const r = window.__daily.WS.run; return r ? { mode: r.mode, i: r.i, miss: r.miss, n: r.notes.length, notes: r.notes.map(q => q.m) } : null; });
 
@@ -52,7 +52,13 @@ suite('e2e-woodshed', async t => {
   await ev(() => { const s = document.getElementById('ws-src'); s.value = 'song'; s.dispatchEvent(new Event('change')); }); await wait(150);
   await ev(() => document.getElementById('ws-arp-go').click()); await wait(150);
   await play((await run()).notes);
-  ok(await poll(() => ev(() => !!window.__daily.CFG.secrets.arp), 3000) && await ev(() => /Broken chords/.test(document.getElementById('toasts').textContent)), 'four chords, every note, no mistake: Broken chords');
+  await wait(600);
+  ok((await run()).mode === 'done' && await ev(() => !window.__daily.CFG.secrets.arp && /not in here/i.test(document.getElementById('ws-room-arp').textContent)), 'a clean arpeggio run in the shower is good practice, but that secret is out in the studio (the room says so)');
+  /* ---- Broken chords: with the band, while the song plays ---- */
+  ok(await ev(() => { const D = window.__daily; D.T.playing = false; [57, 60, 64].forEach(m => D.secretNote(m)); return !D.CFG.secrets.arp; }), 'not while the song is stopped');
+  ok(await ev(() => { const D = window.__daily; [['Am', [57, 60, 64]], ['F', [53, 57, 60]], ['C', [55, 60, 64]]].forEach(([c, ms]) => ms.forEach(m => D.secretArp(m, c))); return !D.CFG.secrets.arp; }), 'three chords, but one played out of order (C: G before C), is not it');
+  await ev(() => { const D = window.__daily; [['Am', [57, 60, 64]], ['F', [53, 57, 60]], ['C', [48, 52, 55]], ['G', [43]]].forEach(([c, ms]) => ms.forEach(m => D.secretArp(m, c))); });
+  ok(await poll(() => ev(() => !!window.__daily.CFG.secrets.arp), 3000) && await ev(() => /Broken chords/.test(document.getElementById('toasts').textContent) && /Seventh arpeggios are open in Shower mode/.test(document.getElementById('toasts').textContent)), 'three of the band’s chords in a row broken into root, third and fifth: Broken chords, and it says what opened in Shower mode');
   await wait(1700);
   ok(await ev(() => { const s = document.getElementById('ws-src'); s.value = 'one'; s.dispatchEvent(new Event('change')); return [...document.querySelectorAll('#ws-type option')].every(o => !o.disabled) && /🗝 Open: Seventh/.test(document.getElementById('ws-room-arp').textContent); }), 'the treasure: seventh arpeggios open');
   ok(await ev(() => { const D = window.__daily; D.CFG.shed.type = 'm7'; D.CFG.shed.root = 9; const r = D.wsArpRun(); return r.notes.slice(0, 5).map(q => q.deg).join(' ') === 'R b3 5 b7 R'; }), 'A minor 7: R ♭3 5 ♭7 R');
