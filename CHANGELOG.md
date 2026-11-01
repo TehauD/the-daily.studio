@@ -2,6 +2,26 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.22.0 — 2026-11-01 — Folder sync: your whole studio, recordings too, in a folder you choose
+
+### Added
+- **Folder sync** (`src/parts/40-sync.js`, **Settings ▸ Folder sync**; Chrome and Edge on a computer). Choose a folder, ideally inside iCloud Drive, Dropbox, Google Drive or OneDrive, and your whole studio is kept in step with it: songs **with their recordings and backing tracks**, settings (not this computer's own audio devices, levels and layout), rig presets, stage looks and scenes, lesson notes and the notebook. Choose the same folder on another computer and it has the same studio; the drive's own app carries the files. No account, and the page makes no request: the browser reads and writes the folder itself.
+  - **The files** are a GitHub studio's (`studio.json`, `settings.json`, `songs/<id>.json` …) in `the-daily.studio` inside the chosen folder. Songs also list their recordings, and `media/<song>/` holds each recording as a WAV (dry, and the amp print if any) and each backing track as the file that was loaded. A recording never changes once made, so its file is only ever copied to the side that lacks it; a WAV a cloud drive has not finished copying is left for later.
+  - **Merges** are GitHub's, from one engine: settings key by key, a song changed on two computers keeps both versions, a song deleted elsewhere stays here until deleted here.
+  - **Cloud-drive conflicts**: when two computers save the same song before the drive catches up, the drive keeps a second file (Dropbox's "conflicted copy", "(1)", " 2", OneDrive's "-COMPUTER"). The studio keeps that version as a song of its own ("… (from another device)"), named from its content so two computers doing it at once make one song, and removes the extra file. A file named for another song never replaces that song.
+  - **When**: a few seconds after a change, when the page opens or comes back, and every minute while open; **⟳ Sync now**. Never while playing, recording or looping.
+  - **Tidy**: a recording no song uses is removed from the folder once that has been so for a day (by this computer's count and the file's age), so a drive still copying never loses one. Only the studio's own file names are ever removed.
+  - **Also save each song as a .daily-song.zip** is still there: on for folders chosen before 2.22 (the backup folder becomes a synced studio by itself, keeps its zips, and says so once).
+
+### Changed
+- **One sync engine** (`studioSync` in `src/parts/74-github.js`) for GitHub and folders: a place that keeps a studio says how to read its files, read one, write and delete, and take in a song; GitHub behaves exactly as before (its 42 checks unchanged).
+- **A song whose recordings are not on this device yet** (on their way through a folder) opens without them and keeps them on every save, instead of a save dropping them (`src/parts/25-projects.js`).
+- Settings: **Folder sync** has its own section next to GitHub (the Export section points to it). `syncAt` and the folder's state are this device's own and never synced to GitHub.
+
+### Tests
+- `test/e2e-folder.cjs` (50 checks): two computers through real directories (the browser's private file system), with the cloud drive played by copying folders, wholly or partly: the studio and recordings written and read back sample for sample, backing tracks, settings without this computer's own, a change and a new take reaching the other computer and the open song updating in place, a recording that arrives after its song (kept through an edit, taken in when it lands), both versions kept, Dropbox- and OneDrive-style conflict copies, deletions, tidying after a day while other files are never touched, nothing while playing, the zip option, a 2.21 backup folder upgraded, permission, and no network request.
+- `test/e2e.cjs`: the backup-folder checks now choose a real directory and find the studio written there.
+
 ## 2.21.2 — 2026-11-01 — The hidden line: a quote of the day
 
 ### Changed

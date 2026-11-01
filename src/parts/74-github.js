@@ -22,7 +22,7 @@ const GH_API = 'https://api.github.com', GH_TOPIC = 'the-daily-studio', GH_SHARE
 CFG.gh = Object.assign({ owner: '', repo: 'my-daily-studio', login: '', auto: true, last: null, lastAt: 0, shared: '', gone: [] }, CFG.gh && typeof CFG.gh === 'object' ? CFG.gh : {});
 const GH = { busy: null, again: false, timer: 0, status: '', err: '', rate: null, app: null, el: null, quiet: false };
 /* settings that belong to this device, not to you: they are never sent, and never taken from the repository */
-const GH_SKIP = new Set(['gh', 'inDev', 'outDev', 'camDev', 'rtt', 'sr', 'hint', 'autoIn', 'persistAsked', 'layout', 'lanes', 'zoom', 'form', 'vbg', 'mpOk', 'lastBackup', 'ioLeveled', 'gTrim', 'voxTrim', 'ch', 'vin', 'monitor', 'voxMon', 'recQ', 'vq', 'ui', 'kpad', 'show', 'stage', 'sync']);
+const GH_SKIP = new Set(['gh', 'inDev', 'outDev', 'camDev', 'rtt', 'sr', 'hint', 'autoIn', 'persistAsked', 'layout', 'lanes', 'zoom', 'form', 'vbg', 'mpOk', 'lastBackup', 'ioLeveled', 'gTrim', 'voxTrim', 'ch', 'vin', 'monitor', 'voxMon', 'recQ', 'vq', 'ui', 'kpad', 'show', 'stage', 'sync', 'syncAt', 'fsync']);
 const ghTok = () => store.get('ghtok', null);
 const ghOn = () => !!(ghTok() && CFG.gh.owner && CFG.gh.repo);
 
@@ -102,19 +102,20 @@ const ghSongKeep = rec => {
   if (!rec || !rec.song || /\(demo\)\s*$/i.test(rec.song.title || rec.title || '')) return false;
   const s = rec.song; return (rec.takes || []).length > 0 || !/^(untitled( idea)?|new song|)$/i.test(String(s.title || '').trim()) || (s.sections || []).some(x => (x.lyrics || '').trim() || (x.bars || []).some(b => b.chord || (b.tab && b.tab.length)));
 };
-async function ghLocal() {
-  try { await projSave(); } catch (e) { }
-  const f = {}, songs = [];
-  f['studio.json'] = ghJson({ format: 'the-daily-studio', schema: 1, about: 'This repository is a the-daily.studio studio: settings, presets, looks, notes and songs as text. It is kept in step by the app; edit with care.' });
+/** the studio as files. A folder (part 40) passes its own song format (with recordings), README and size limit */
+async function ghLocal(o = {}) {
+  PRJ.flushing = true; try { await projSave(); } catch (e) { } finally { PRJ.flushing = false; }      /* a sync's own save starts no other sync (or each would start the next, for ever) */
+  const f = {}, songs = [], out = o.songOut || ghSongOut, max = o.max || GH_MAXFILE;
+  f['studio.json'] = ghJson({ format: 'the-daily-studio', schema: 1, about: o.about || 'This repository is a the-daily.studio studio: settings, presets, looks, notes and songs as text. It is kept in step by the app; edit with care.' });
   f['settings.json'] = ghJson({ format: 'the-daily-studio-settings', version: 1, settings: ghSettingsOut() });
   f['rig/presets.json'] = ghJson({ format: 'the-daily-studio-presets', version: 1, presets: store.get('presets', []) });
   f['stage/looks.json'] = ghJson({ format: 'the-daily-studio-looks', version: 1, show: ghLooksOut() });
   f['stage/scenes.json'] = ghJson({ format: 'the-daily-studio-scenes', version: 1, stage: CFG.stage || STG });
   f['notes.json'] = ghJson({ format: 'the-daily-studio-notes', version: 1, lessons: store.get('lessons', {}), notebook: store.get('notebook', null) });
-  const gone = new Set(CFG.gh.gone || []);
-  for (const r of PRJ.list) { let rec = r; if (!rec.song) { try { rec = await pdbGet('projects', r.id); } catch (e) { continue; } } if (!ghSongKeep(rec) || gone.has(rec.id)) continue; const t = ghJson(ghSongOut(rec)); if (t.length > GH_MAXFILE) continue; f['songs/' + rec.id + '.json'] = t; songs.push(rec); }
+  const gone = new Set((o.st || CFG.gh).gone || []);
+  for (const r of PRJ.list) { let rec = r; if (!rec.song) { try { rec = await pdbGet('projects', r.id); } catch (e) { continue; } } if (!ghSongKeep(rec) || gone.has(rec.id)) continue; const t = ghJson(out(rec)); if (t.length > max) continue; f['songs/' + rec.id + '.json'] = t; songs.push(rec); }
   songs.sort((a, b) => String(a.title).localeCompare(String(b.title)));
-  f['README.md'] = '# My the-daily.studio\n\nKept in step by [the-daily.studio](https://the-daily.studio/) (Settings ▸ GitHub). Recordings and backing tracks stay on the devices that made them; everything else is here, with its history.\n\n## Songs\n\n' + (songs.length ? songs.map(s => '- **' + String(s.title || 'Untitled').replace(/[*_`<>[\]]/g, '') + '**' + (s.artist ? ' · ' + String(s.artist).replace(/[*_`<>[\]]/g, '') : '') + ' — `songs/' + s.id + '.json`').join('\n') : '_None yet._') + '\n';
+  f['README.md'] = (o.readme || '# My the-daily.studio\n\nKept in step by [the-daily.studio](https://the-daily.studio/) (Settings ▸ GitHub). Recordings and backing tracks stay on the devices that made them; everything else is here, with its history.\n') + '\n## Songs\n\n' + (songs.length ? songs.map(s => '- **' + String(s.title || 'Untitled').replace(/[*_`<>[\]]/g, '') + '**' + (s.artist ? ' · ' + String(s.artist).replace(/[*_`<>[\]]/g, '') : '') + ' — `songs/' + s.id + '.json`').join('\n') : '_None yet._') + '\n';
   return f;
 }
 /* ---------- taking files in ---------- */
@@ -153,8 +154,67 @@ async function ghTakeSong(text, asCopy) {
 
 /* ---------- one sync: read both sides, decide file by file, take what came in, send what changed, remember where we are ---------- */
 const GH_KIND = p => p === 'settings.json' ? 'settings' : p === 'stage/looks.json' ? 'looks' : p === 'stage/scenes.json' ? 'scenes' : p === 'rig/presets.json' ? 'presets' : p === 'notes.json' ? 'notes' : /^songs\/[\w-]+\.json$/.test(p) ? 'song' : p === 'README.md' || p === 'studio.json' ? 'generated' : 'other';
-const ghBaseGet = async p => { try { return await pdbGet('blobs', 'gh/base/' + p); } catch (e) { return null; } };
-const ghBaseSet = async (p, t) => { try { if (t == null) await pdbDel('blobs', 'gh/base/' + p); else await pdbPut('blobs', t, 'gh/base/' + p); } catch (e) { } };
+/* ---------- one sync, against any place that keeps the studio's files: this GitHub repository, or a folder (part 40) ----------
+   B = { st: its state in CFG ({last, gone, lastAt}), base: where the last-synced copy of each file is kept, label, event,
+         local(): the files this side holds, head(): {head, files: {path: {sha, size}}}, read(path, at): a file's text,
+         commit(at, changes, message): write ({path: text}) and delete ({path: null}), returning the new head,
+         takeSong(text, asCopy, at, path), status(text, bad), quiet(fn): save settings without starting another sync,
+         maxFile, after(at, now, rep, files): anything more once the files are in step (a folder's recordings) } */
+const syncBaseGet = async (B, p) => { try { return await pdbGet('blobs', B.base + p); } catch (e) { return null; } };
+const syncBaseSet = async (B, p, t) => { try { if (t == null) await pdbDel('blobs', B.base + p); else await pdbPut('blobs', t, B.base + p); } catch (e) { } };
+async function studioSync(B, why) {
+  for (let i = 0; i < 60 && !PRJ.ready; i++) await new Promise(r => setTimeout(r, 250));      /* the library first */
+  const st = B.st;
+  if (why === 'auto' && st.last && st.last.files) {      /* a change here that changed nothing the other side holds: no need to look */
+    const lf = await B.local(), last = st.last.files; let same = true;
+    for (const [p, t] of Object.entries(lf)) { if (GH_KIND(p) === 'generated') continue; if (last[p] !== await ghSha(t)) { same = false; break; } }
+    if (same && !Object.keys(last).some(p => GH_KIND(p) === 'song' && !lf[p])) { B.status('In step with ' + B.label + ' · ' + new Date().toLocaleTimeString()); return { took: [], sent: 0, copies: 0, gone: 0, skipped: true }; }
+  }
+  const at = await B.head(), last = (st.last && st.last.files) || {}, local = await B.local(), rep = { took: [], sent: 0, copies: 0, gone: 0 };
+  const lsha = {}; for (const [p, t] of Object.entries(local)) lsha[p] = await ghSha(t);
+  const paths = new Set([...Object.keys(local), ...Object.keys(at.files), ...Object.keys(last)]);
+  const gone = new Set(st.gone || []);
+  for (const p of paths) {
+    const k = GH_KIND(p); if (k === 'other' || k === 'generated') continue;
+    const r = at.files[p] && at.files[p].sha, l = lsha[p], b = last[p];
+    if (r === l || !r || r === b) continue;                     /* in step; or only this side changed (sent below) */
+    if (at.files[p].size > B.maxFile) continue;
+    const rt = await B.read(p, at); if (rt == null) continue;
+    if (k === 'song') {
+      const id = p.slice(6, -5);
+      if (!l || l === b) { if (gone.has(id)) { gone.delete(id); } await B.takeSong(rt, false, at, p); rep.took.push(p); }       /* changed only there (or new there): take it */
+      else { await B.takeSong(rt, true, at, p); rep.copies++; rep.took.push(p); }                                          /* changed on both sides: keep both */
+      continue;
+    }
+    const bt = l === b || b ? await syncBaseGet(B, p) : null;
+    const ch = k === 'settings' ? await ghTakeSettings(rt, b ? bt : null) : k === 'looks' ? await ghTakeLooks(rt, b ? bt : null) : k === 'scenes' ? (l === b || !b ? await ghTakeScenes(rt) : false) : k === 'presets' ? (l === b || !b ? await ghTakePresets(rt) : false) : k === 'notes' ? (l === b || !b ? await ghTakeNotes(rt) : false) : false;
+    if (ch) rep.took.push(p);
+  }
+  /* songs deleted elsewhere: kept here, not sent back, until changed or removed here */
+  for (const p of Object.keys(last)) if (GH_KIND(p) === 'song' && !at.files[p] && local[p] && lsha[p] === last[p]) { gone.add(p.slice(6, -5)); rep.gone++; }
+  st.gone = [...gone];
+  if (rep.took.length) await projRefresh();
+  /* what this side now holds, against the other */
+  const now = await B.local(), send = {}, nsha = {};
+  for (const [p, t] of Object.entries(now)) { nsha[p] = await ghSha(t); if (!at.files[p] || at.files[p].sha !== nsha[p]) send[p] = t; }
+  for (const p of Object.keys(last)) if (GH_KIND(p) === 'song' && !now[p] && at.files[p] && at.files[p].sha === last[p] && !gone.has(p.slice(6, -5))) send[p] = null;     /* deleted here, unchanged there */
+  /* only README changing on its own is not worth a commit */
+  const real = Object.keys(send).filter(p => p !== 'README.md' && p !== 'studio.json');
+  let head = at.head;
+  if (real.length || !at.head || !at.files['studio.json']) { head = await B.commit(at, send, 'the-daily.studio: ' + (why === 'connect' ? 'first sync' : 'sync') + ' (' + real.length + ' file' + (real.length === 1 ? '' : 's') + ')'); rep.sent = real.length; }
+  const files = {}; for (const [p, s] of Object.entries(nsha)) if (send[p] !== null) files[p] = s;
+  for (const p of Object.keys(files)) { const k = GH_KIND(p); if (k !== 'generated') await syncBaseSet(B, p, now[p]); }
+  for (const p of Object.keys(last)) if (!files[p]) await syncBaseSet(B, p, null);
+  st.last = { head, files }; st.lastAt = Date.now(); B.quiet(() => saveCfg());
+  if (B.after) await B.after(at, now, rep, files);
+  B.status('In step with ' + B.label + ' · ' + new Date().toLocaleTimeString() + (rep.took.length ? ' · ' + rep.took.length + ' came in' : '') + (rep.sent ? ' · ' + rep.sent + ' sent' : '') + (rep.copies ? ' · ' + rep.copies + ' song' + (rep.copies === 1 ? '' : 's') + ' kept in both versions' : '') + (rep.note ? ' · ' + rep.note : ''));
+  if (rep.copies) toast(rep.copies + (rep.copies === 1 ? ' song was' : ' songs were') + ' changed here and on another device, so both versions are kept (“… (from another device)”).', 'warn');
+  bus.emit(B.event, rep); return rep;
+}
+/* GitHub as one of those places */
+const GH_B = { get st() { return CFG.gh; }, base: 'gh/base/', label: 'GitHub', event: 'github', maxFile: GH_MAXFILE,
+  local: () => ghLocal(), head: () => ghHead(), read: (p, at) => ghBlob(at.files[p].sha), commit: (at, ch, msg) => ghCommit(at, ch, msg),
+  takeSong: (t, asCopy) => ghTakeSong(t, asCopy), status: (t, bad) => ghStatus(t, bad), quiet: fn => { GH.quiet = true; PRJ.quiet++; try { fn(); } finally { GH.quiet = false; PRJ.quiet--; } } };
 async function ghSync(why) {
   if (!ghOn()) return null;
   if (GH.busy) { GH.again = true; return GH.busy; }
@@ -171,57 +231,11 @@ async function ghSync(why) {
   })();
   return GH.busy;
 }
-async function ghSyncOnce(why) {
-  GH.err = ''; for (let i = 0; i < 60 && !PRJ.ready; i++) await new Promise(r => setTimeout(r, 250));      /* the library first */
-  if (why === 'auto' && CFG.gh.last && CFG.gh.last.files) {      /* a change here that changed nothing GitHub holds: no need to ask */
-    const lf = await ghLocal(), last = CFG.gh.last.files; let same = true;
-    for (const [p, t] of Object.entries(lf)) { if (GH_KIND(p) === 'generated') continue; if (last[p] !== await ghSha(t)) { same = false; break; } }
-    if (same && !Object.keys(last).some(p => GH_KIND(p) === 'song' && !lf[p])) { ghStatus('In step with GitHub · ' + new Date().toLocaleTimeString()); return { took: [], sent: 0, copies: 0, gone: 0, skipped: true }; }
-  }
-  const at = await ghHead(), last = (CFG.gh.last && CFG.gh.last.files) || {}, local = await ghLocal(), rep = { took: [], sent: 0, copies: 0, gone: 0 };
-  const lsha = {}; for (const [p, t] of Object.entries(local)) lsha[p] = await ghSha(t);
-  const paths = new Set([...Object.keys(local), ...Object.keys(at.files), ...Object.keys(last)]);
-  const gone = new Set(CFG.gh.gone || []);
-  for (const p of paths) {
-    const k = GH_KIND(p); if (k === 'other' || k === 'generated') continue;
-    const r = at.files[p] && at.files[p].sha, l = lsha[p], b = last[p];
-    if (r === l || !r || r === b) continue;                     /* in step; or only this side changed (sent below) */
-    if (at.files[p].size > GH_MAXFILE) continue;
-    const rt = await ghBlob(r);
-    if (k === 'song') {
-      const id = p.slice(6, -5);
-      if (!l || l === b) { if (gone.has(id)) { gone.delete(id); } await ghTakeSong(rt); rep.took.push(p); }       /* changed only there (or new there): take it */
-      else { await ghTakeSong(rt, true); rep.copies++; rep.took.push(p); }                                          /* changed on both sides: keep both */
-      continue;
-    }
-    const bt = l === b || b ? await ghBaseGet(p) : null;
-    const ch = k === 'settings' ? await ghTakeSettings(rt, b ? bt : null) : k === 'looks' ? await ghTakeLooks(rt, b ? bt : null) : k === 'scenes' ? (l === b || !b ? await ghTakeScenes(rt) : false) : k === 'presets' ? (l === b || !b ? await ghTakePresets(rt) : false) : k === 'notes' ? (l === b || !b ? await ghTakeNotes(rt) : false) : false;
-    if (ch) rep.took.push(p);
-  }
-  /* songs deleted elsewhere: kept here, not sent back, until changed or removed here */
-  for (const p of Object.keys(last)) if (GH_KIND(p) === 'song' && !at.files[p] && local[p] && lsha[p] === last[p]) { gone.add(p.slice(6, -5)); rep.gone++; }
-  CFG.gh.gone = [...gone];
-  if (rep.took.length) await projRefresh();
-  /* what this side now holds, against the repository */
-  const now = await ghLocal(), send = {}, nsha = {};
-  for (const [p, t] of Object.entries(now)) { nsha[p] = await ghSha(t); if (!at.files[p] || at.files[p].sha !== nsha[p]) send[p] = t; }
-  for (const p of Object.keys(last)) if (GH_KIND(p) === 'song' && !now[p] && at.files[p] && at.files[p].sha === last[p] && !gone.has(p.slice(6, -5))) send[p] = null;     /* deleted here, unchanged there */
-  /* only README changing on its own is not worth a commit */
-  const real = Object.keys(send).filter(p => p !== 'README.md' && p !== 'studio.json');
-  let head = at.head;
-  if (real.length || !at.head || !at.files['studio.json']) { head = await ghCommit(at, send, 'the-daily.studio: ' + (why === 'connect' ? 'first sync' : 'sync') + ' (' + real.length + ' file' + (real.length === 1 ? '' : 's') + ')'); rep.sent = real.length; }
-  const files = {}; for (const [p, s] of Object.entries(nsha)) if (send[p] !== null) files[p] = s;
-  for (const p of Object.keys(files)) { const k = GH_KIND(p); if (k !== 'generated') await ghBaseSet(p, now[p]); }
-  for (const p of Object.keys(last)) if (!files[p]) await ghBaseSet(p, null);
-  CFG.gh.last = { head, files }; CFG.gh.lastAt = Date.now(); GH.quiet = true; try { saveCfg(); } finally { GH.quiet = false; }
-  ghStatus('In step with GitHub · ' + new Date().toLocaleTimeString() + (rep.took.length ? ' · ' + rep.took.length + ' came in' : '') + (rep.sent ? ' · ' + rep.sent + ' sent' : '') + (rep.copies ? ' · ' + rep.copies + ' song' + (rep.copies === 1 ? '' : 's') + ' kept in both versions' : ''));
-  if (rep.copies) toast(rep.copies + (rep.copies === 1 ? ' song was' : ' songs were') + ' changed here and on another device, so both versions are kept (“… (from another device)”).', 'warn');
-  bus.emit('github', rep); return rep;
-}
+async function ghSyncOnce(why) { GH.err = ''; return studioSync(GH_B, why); }
 /** after a change, sync in a little while (many quick changes become one commit); a settings change waits a little longer */
-function ghKick(ms) { if (!ghOn() || CFG.gh.auto === false || GH.quiet) return; if (GH.timer && !ms) clearTimeout(GH.timer); else if (GH.timer) return; GH.timer = setTimeout(() => { GH.timer = 0; ghSync('auto'); }, ms || 20000); }
+function ghKick(ms) { if (!ghOn() || CFG.gh.auto === false || GH.quiet || PRJ.flushing) return; if (GH.timer && !ms) clearTimeout(GH.timer); else if (GH.timer) return; GH.timer = setTimeout(() => { GH.timer = 0; ghSync('auto'); }, ms || 20000); }
 /** saveCfg calls this: settings changed */
-function ghCfgKick() { if (!GH.quiet && !GH.busy) ghKick(45000); }
+function ghCfgKick() { if (!GH.quiet && !GH.busy && !PRJ.quiet) ghKick(45000); }      /* not when a sync (this one or a folder's) is saving its own state */
 /** at start-up: back from Sign in with GitHub, or a sync once the library is loaded */
 function ghBoot() { if (ghReturn()) return; if (ghOn() && CFG.gh.auto !== false) setTimeout(() => ghSync('open'), 1500); }
 bus.on('projects', ghKick);

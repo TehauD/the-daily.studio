@@ -59,7 +59,7 @@ src/body.html  ─┘                    └► codepen/pen.{html,css,js}
 | `31-hum-engine.js`, `32-hum-ui.js` | Hum to Song: the on-device engine and the screens |
 | `33-adapt.js`, `34-launch.js`, `35-neck.js`, `36-halo.js` | Adaptive studio, front screen and centre stage, the neck wired to everything, two more stage looks |
 | `37-stage-rec.js`, `38-perform.js` | Record the stage (canvas + song audio to a video file); Perform |
-| `39-export.js`, `40-sync.js` | Export and share (WAV, stems, MIDI, share page, bundle); backup folder (File System Access API) |
+| `39-export.js`, `40-sync.js` | Export and share (WAV, stems, MIDI, share page, bundle); folder sync: the studio kept in step with a chosen folder, recordings included, through part 74's engine (File System Access API) |
 | `42-mixer.js` | Lane strips: 3-band EQ, one-knob compressor, sends, mute / solo, stem mix |
 | `43-drop.js` | Drop anywhere: classify a dropped file (audio, lyrics, MIDI, song bundle) and ask the one question that matters |
 | `44-balance.js` | Auto-balance: measure each lane, propose level and pan, apply as one undo step |

@@ -81,7 +81,7 @@ Gear: an audio interface with a guitar (a Focusrite Scarlett, say) **or** a USB 
 
 - [ ] Load the site once, switch the computer to airplane mode, reload. The studio opens and a saved song plays.
 - [ ] **My songs ▸ Back up all songs** saves one zip. Reset the app (**Reset…**), then **Open a file** with the zip: every song and recording returns.
-- [ ] (Chrome or Edge) **Settings ▸ Backup folder**: choose a folder; edit a song; a `.daily-song.zip` appears there.
+- [ ] (Chrome or Edge) **Settings ▸ Folder sync**: choose a folder in a cloud drive; edit a song and record a take; `the-daily.studio/songs/` and `media/` update. On a second computer choose the same folder: the song opens with its take.
 
 ## 10 · The first page, the Concert visual and the Show setup (2.4, 2.6)
 
