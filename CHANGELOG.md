@@ -2,6 +2,18 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.19.0 — 2026-11-01 — Wide and vertical videos, and your own video behind you
+
+### Added
+- **Video shapes** (`src/parts/37-stage-rec.js`). A stage video is now drawn for its own frame instead of copied from the screen: **▭ Wide 16:9** (1920 × 1080, for YouTube, a website or a TV; the default), **▯ Vertical 9:16** (1080 × 1920, for Reels, TikTok and Shorts) or **▢ As on screen** (what it did before). The look, your colours, the camera (cropped to fill, so you stay in the middle of a vertical video), the small neck and the tip jar are drawn at the video's size.
+  - **Words and chord on the video**: the line being sung, with its chords over the words, and the chord in large type over a soft shade at the bottom; the next line under it. On by default for vertical, off for wide; remembered for each shape.
+  - While a video records, the Visuals show a preview of it (a tall one with black at the sides for vertical), and it keeps recording, picture and all, if you open another panel (before, the picture stopped).
+  - In the Record menu, and in **🎬 Creator Studio** next to **⏺ Record MP4**. The **🖼 Thumbnail** takes the same shape (1080 × 1920 for vertical). Vertical files end in `_vertical`.
+- **Your video** (`src/parts/70b-vidbg.js`): your own video loops (MP4 or WebM, up to 8, 300 MB each) as a **Behind you** look, added with **🎞 Your videos**. Played muted, looped and filling the picture, on the Visuals, the Stage and in recorded videos. **🎚 Speed** sets how fast it plays; **Breathe** brightens it when you play loud and swells it slightly on a strong beat; **Tint to the chord**; **Darken**; **Change video** on each section or every 4 or 8 bars while the song plays (with a crossfade; your choice comes back when it stops). Kept in this browser's database, not uploaded, not part of song backups; a file the browser cannot play is turned away when added, and a video no look is drawing is paused.
+
+### Tests
+- `test/e2e-shapes.cjs` (27 checks): each shape's file size (1920 × 1080, 1080 × 1920, the Visuals' own), the preview, the words, recording on another panel, Creator Studio and the thumbnail; adding videos (and refusing one that cannot play), showing, switching, speed, changing every 4 bars and coming back, Your video in a recorded video and on the Stage, the tint, removing, and the dialog on a phone. The test videos are made in the page.
+
 ## 2.18.0 — 2026-10-31 — Hear yourself sooner, and takes in time
 
 ### Changed

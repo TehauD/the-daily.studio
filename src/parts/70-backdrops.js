@@ -36,9 +36,11 @@ function bkTick(X) {
   return { dt, mo: cm.motion, gap: cm.gap, im, en: Math.max(.16, BK.en), b: BK.bands, hue: BK.hue, t: BK.t, pulse: (X.pulse || 0) * im, rawPulse: X.pulse || 0 };
 }
 
+/** what draws each of these looks (part 70b adds Your video) */
+const BK_FN = { ribbons: bkRibbons, aurora: bkAurora, warp: bkWarp, rings: bkRings, nebula: bkNebula, skyline: bkSkyline };
 function bkDraw(mode, g, W, H, X) {
   const B = bkTick(X); g.save(); g.lineCap = 'round'; g.lineJoin = 'round';
-  ({ ribbons: bkRibbons, aurora: bkAurora, warp: bkWarp, rings: bkRings, nebula: bkNebula, skyline: bkSkyline })[mode](g, W, H, B);
+  (BK_FN[mode] || bkRibbons)(g, W, H, B);
   g.restore(); g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1;
 }
 /** a deep tinted sky to sit under the light: the same hue, very dark, so the lights read against it */
@@ -129,6 +131,7 @@ function bkSkyline(g, W, H, B) {
 
 /** the first time one of these is chosen with the camera showing you dimmed behind the visuals, say how to stand inside the picture */
 function backTip() {
+  if (VZ.mode === 'video' && typeof vbgOpen === 'function' && !CFG.vbg.list.length) { vbgOpen(); return; }      /* Your video with no video yet: open the place to add one */
   if (!CAM.on || (CFG.camFx || 'over') === 'person' || store.get('backTip')) return;
   store.set('backTip', 1); toast('Tip: set Camera look to “Me in front (green screen)” and you stand inside this picture.', '');
 }

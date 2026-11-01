@@ -1348,3 +1348,9 @@ body[data-goal]:not([data-goal=""]) #dock .tab.on{box-shadow:inset 0 -3px 0 var(
 #printSheet.tip-sign .ts-q svg{width:12cm;height:12cm;display:block;margin:0 auto}
 #printSheet.tip-sign .ts-l{font:700 22px ui-monospace,Menlo,monospace;margin:14px 0 6px}
 #printSheet.tip-sign .ts-n{font:14px system-ui,sans-serif;color:#444}
+
+/* ---------- Your videos (part 70b) ---------- */
+.vbg-list{display:grid;gap:6px;margin:10px 0 4px}
+.vbg-row{display:flex;gap:8px;align-items:center;padding:6px 8px;border:1px solid var(--line);border-radius:10px}
+.vbg-row.on{border-color:var(--accent)}
+.vbg-n{flex:1;min-width:0;display:flex;flex-direction:column}.vbg-n b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

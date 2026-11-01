@@ -3,8 +3,63 @@
    A video of what the Visuals canvas shows (hexagons, Halo ring, you in front when the camera is on) with the song's
    sound (the master output, so live guitar is in it when monitoring is on). Made with the browser's own recorder and saved
    to this device as .webm or .mp4. Nothing is uploaded; the camera is never started by recording; Ctrl/Cmd+. discards it.
+   SHAPE (2.19): Wide 16:9 (1920 × 1080, for YouTube, a website or a TV), Vertical 9:16 (1080 × 1920, for Reels, TikTok and Shorts), or as
+   on screen. The video is drawn for its own frame, not copied from the screen: the look, your colours, the camera (cropped to fill, so you
+   stay in the middle of a vertical video), the tip jar and, if you like, the words and the chord in large type at the bottom. The Visuals
+   show a preview of it while it records, and it keeps going if you switch to another panel.
    ============================================================ */
-const SREC = { on: false, mr: null, chunks: [], t0: 0, tick: 0, watch: 0, dest: null, stream: null, mime: '', whole: false, save: true, was: null, name: '' };
+const SREC = { on: false, mr: null, chunks: [], t0: 0, tick: 0, watch: 0, dest: null, stream: null, mime: '', whole: false, save: true, was: null, name: '', cv: null, cvEl: null, fmt: 'wide', words: false };
+/* the shapes a video can have: width, height (0: the Visuals' own), the label, what it is for */
+const SREC_FMTS = { wide: [1920, 1080, '▭ Wide 16:9', 'YouTube, a website or a TV'], tall: [1080, 1920, '▯ Vertical 9:16', 'Reels, TikTok and Shorts'], screen: [0, 0, '▢ As on screen', 'the shape the Visuals have on this screen'] };
+const srecFmt = () => SREC_FMTS[CFG.recFmt] ? CFG.recFmt : 'wide';
+/** the words and the chord on the video: on by default for vertical (a phone video is watched with the sound low), off for the others */
+const srecWordsOn = f => { const w = CFG.recWords || {}; return w[f] != null ? !!w[f] : f === 'tall'; };
+function srecWordsSet(f, on) { CFG.recWords = Object.assign({}, CFG.recWords || {}, { [f]: !!on }); saveCfg(); }
+/** the canvas the video is drawn on: off the page, at the video's own size (even numbers, as video encoders want) */
+function srecCanvas(f) {
+  let W, H; if (f === 'screen') { const v = UI.vcv; W = (v && v.width) || 1280; H = (v && v.height) || 720; } else [W, H] = SREC_FMTS[f];
+  W = Math.max(2, W - W % 2); H = Math.max(2, H - H % 2);
+  const cv = SREC.cvEl || (SREC.cvEl = h('canvas', { id: 'srecCanvas', 'aria-hidden': 'true', style: { position: 'fixed', left: '-99999px', top: '0', width: '4px', height: '4px', pointerEvents: 'none' } }));
+  cv.width = W; cv.height = H; if (!cv.isConnected) document.body.append(cv); return cv;
+}
+/** where the words go, so the tip jar can step around them */
+const srecWordsRect = (W, H) => { const tall = H > W; return [0, H * (tall ? .62 : .64), W, H * (tall ? .38 : .36)]; };
+/** one frame of the video (called by the frame loop while a video records): the visuals at the video's size, the words, and a preview on the Visuals */
+function srecFrame() {
+  const cv = SREC.cv; if (!cv) return; const W = cv.width, H = cv.height, g = cv.getContext('2d'), words = SREC.words;
+  try { drawVis(cv, { main: true, noNeck: words, noText: words, avoid: words ? [srecWordsRect(W, H)] : null }); if (words) srecWords(g, W, H); }
+  catch (e) { if (!SREC.err) { SREC.err = 1; console.warn('video frame', e); } }
+  const v = UI.vcv; if (v && v.width && paneVisible('vis')) {
+    const vg = v.getContext('2d'), k = Math.min(v.width / W, v.height / H), dw = Math.round(W * k), dh = Math.round(H * k);
+    vg.fillStyle = '#000'; vg.fillRect(0, 0, v.width, v.height); vg.drawImage(cv, (v.width - dw) >> 1, (v.height - dh) >> 1, dw, dh);
+  }
+}
+/** the words being sung (with their chords over them) and the chord, large, over a soft shade at the bottom; the next line under them, dimmer */
+function srecWords(g, W, H) {
+  const info = stageInfo(), tall = H > W, u = tall ? W : Math.min(W, H * 1.6), mono = 'ui-monospace,Menlo,Consolas,monospace';
+  const ly = info.ly && (info.ly.text || info.ly.chords.length) ? info.ly : null, lyCh = !!(ly && ly.chords.length);
+  if (!ly && !info.sym) return;
+  const top = H * (tall ? .6 : .62), sh = g.createLinearGradient(0, top, 0, H); sh.addColorStop(0, 'rgba(0,0,0,0)'); sh.addColorStop(.45, 'rgba(0,0,0,.42)'); sh.addColorStop(1, 'rgba(0,0,0,.72)');
+  g.save(); g.fillStyle = sh; g.fillRect(0, top, W, H - top); g.shadowColor = 'rgba(0,0,0,.6)'; g.shadowBlur = u * .015; g.textBaseline = 'alphabetic';
+  if (!lyCh && info.sym) {
+    const sz = u * (tall ? .17 : .1), y = H * (ly ? (tall ? .77 : .79) : (tall ? .86 : .88)); g.font = `800 ${Math.round(sz)}px ${mono}`; g.textAlign = 'center'; g.fillStyle = '#fff'; g.fillText(info.sym, W / 2, y);
+    if (info.next && info.playing) { g.font = `700 ${Math.round(sz * .3)}px ${mono}`; g.fillStyle = 'rgba(255,255,255,.72)'; g.fillText('next  ' + info.next, W / 2, y + sz * .42); }
+  }
+  if (ly) {
+    const px = Math.round(u * (tall ? .062 : .042)), y = H * (tall ? .87 : .885);
+    lyDraw(g, { x: W / 2, y, w: W * .9, px, font: mono, ly, hi: '#ffd23f' });
+    if (info.lyN && (info.lyN.text || info.lyN.chords.length)) lyDraw(g, { x: W / 2, y: y + px * .6 + Math.round(px * .62) * (info.lyN.chords.length ? 2.1 : 1.2), w: W * .9, px: Math.round(px * .62), weight: 600, font: mono, ly: info.lyN, dim: true });
+  }
+  g.restore(); g.textAlign = 'left';
+}
+/** the choice of shape and words, for the Record menu and Creator Studio */
+function srecFmtBox() {
+  const f = srecFmt(), words = h('input', { type: 'checkbox', id: 'srecWords', checked: srecWordsOn(f), onchange: e => srecWordsSet(srecFmt(), e.target.checked) });
+  const seg = h('div', { class: 'seg', role: 'radiogroup', 'aria-label': 'Video shape', id: 'srecFmt' }, Object.entries(SREC_FMTS).map(([k, d]) => h('button', { type: 'button', role: 'radio', class: k === f ? 'on' : '', 'aria-checked': String(k === f), 'data-fmt': k, title: d[3] + (d[0] ? ' · ' + d[0] + ' × ' + d[1] : ''), onclick: e => {
+    CFG.recFmt = k; saveCfg(); $$('[data-fmt]', seg).forEach(b => { const on = b === e.currentTarget; b.classList.toggle('on', on); b.setAttribute('aria-checked', String(on)); }); words.checked = srecWordsOn(k); hint.textContent = SREC_FMTS[k][3] + (SREC_FMTS[k][0] ? ' · ' + SREC_FMTS[k][0] + ' × ' + SREC_FMTS[k][1] : ''); if (typeof goalSync === 'function') goalSync(); } }, d[2])));
+  const hint = h('div', { class: 'tiny muted' }, SREC_FMTS[f][3] + (SREC_FMTS[f][0] ? ' · ' + SREC_FMTS[f][0] + ' × ' + SREC_FMTS[f][1] : ''));
+  return h('div', { style: { display: 'grid', gap: '6px' } }, seg, hint, h('label', { class: 'row', style: { gap: '6px', alignItems: 'center' }, title: 'The line being sung, with its chords over the words, and the chord, in large type at the bottom of the video' }, words, h('span', { class: 'tiny' }, 'Words and chord on the video')));
+}
 /** mp4: put MP4 first for a video (social sites take it as it is); otherwise WebM first, as before */
 function srecMime(audio, mp4) {
   if (!window.MediaRecorder) return null;
@@ -18,7 +73,7 @@ function srecSync() {
 }
 function srecMenu(anchor) {
   if (SREC.on) return srecStop(true);
-  const box = h('div', { style: { minWidth: '250px', display: 'grid', gap: '6px' } }, h('h5', {}, 'Record the stage'),
+  const box = h('div', { style: { minWidth: '250px', display: 'grid', gap: '6px' } }, h('h5', {}, 'Record the stage'), srecFmtBox(),
     h('button', { class: 'btn', id: 'srecNow', onclick: () => { closePop(); srecStart(false); } }, '⏺ Record now'),
     h('button', { class: 'btn', id: 'srecWhole', onclick: () => { closePop(); srecStart(true); } }, '⏺ The whole song, from the top'),
     E.hasInput ? h('label', { class: 'row', style: { gap: '6px', alignItems: 'flex-start' }, title: 'The armed guitar and voice inputs are recorded as a lane in the arrangement, starting where the video starts' }, h('input', { type: 'checkbox', id: 'srecTake', checked: CFG.srecTake !== false, onchange: e => { CFG.srecTake = e.target.checked; saveCfg(); } }), h('span', { class: 'tiny' }, 'Also put what I play into the arrangement (a new lane, starting where the video starts)')) : h('div', { class: 'tiny muted' }, 'Connect your guitar or microphone (Inputs) and your playing can land in the arrangement as well.'),
@@ -36,14 +91,15 @@ async function srecStart(whole, o) {
     if (ZOOM.cur === 'canvas') zoomSet('song', true);
     try { dockGo('vis'); } catch (e) { }
     await new Promise(r => setTimeout(r, 250));
-    cv = UI.vcv; if (!cv || !cv.width) return toast('Open the Visuals first.', 'warn');
+    if (!UI.vcv || !UI.vcv.width) return toast('Open the Visuals first.', 'warn');
+    const f = srecFmt(); cv = srecCanvas(f); SREC.fmt = f; SREC.words = srecWordsOn(f); SREC.err = 0; SREC.cv = cv; srecFrame();      /* the first frame is there before the recorder starts */
   }
   let ms;
   try {
     ms = audio ? new MediaStream() : cv.captureStream(30); SREC.dest = E.ctx.createMediaStreamDestination(); E.limiter.connect(SREC.dest); SREC.dest.stream.getAudioTracks().forEach(t => ms.addTrack(t));
     SREC.mr = new MediaRecorder(ms, Object.assign(audio ? { audioBitsPerSecond: 192e3 } : { videoBitsPerSecond: 8e6, audioBitsPerSecond: 192e3 }, mime ? { mimeType: mime } : {}));
-  } catch (e) { try { E.limiter.disconnect(SREC.dest); } catch (x) { } SREC.dest = null; return toast('Recording could not start: ' + (e.message || e.name), 'bad'); }
-  SREC.stream = ms; SREC.mime = SREC.mr.mimeType || mime || 'video/webm'; SREC.chunks = []; SREC.whole = !!whole; SREC.save = true; SREC.name = (S.title || 'song').replace(/\W+/g, '_') + (audio ? '_audio' : '_stage'); SREC.audio = audio; SREC.onBlob = o.onBlob || null;
+  } catch (e) { try { E.limiter.disconnect(SREC.dest); } catch (x) { } SREC.dest = null; SREC.cv = null; return toast('Recording could not start: ' + (e.message || e.name), 'bad'); }
+  SREC.stream = ms; SREC.mime = SREC.mr.mimeType || mime || 'video/webm'; SREC.chunks = []; SREC.whole = !!whole; SREC.save = true; SREC.name = (S.title || 'song').replace(/\W+/g, '_') + (audio ? '_audio' : SREC.fmt === 'tall' ? '_vertical' : '_stage'); SREC.audio = audio; SREC.onBlob = o.onBlob || null;
   SREC.mr.ondataavailable = e => { if (e.data && e.data.size) SREC.chunks.push(e.data); };
   SREC.mr.onstop = srecDone;
   SREC.was = { loop: T.loop, metro: T.metro };
@@ -68,7 +124,7 @@ function srecDone() {
   const blob = SREC.chunks.length ? new Blob(SREC.chunks, { type: SREC.mime.split(';')[0] }) : null, save = SREC.save;
   try { E.limiter.disconnect(SREC.dest); } catch (e) { } try { SREC.stream && SREC.stream.getTracks().forEach(t => t.stop()); } catch (e) { }
   if (SREC.was) { T.loop = SREC.was.loop; T.metro = SREC.was.metro; if (SREC.whole) { try { stopPlay(true); } catch (e) { } } SREC.was = null; }
-  SREC.mr = null; SREC.dest = null; SREC.stream = null; SREC.on = false; SREC.chunks = []; srecSync(); bus.emit('srec', false);
+  SREC.mr = null; SREC.dest = null; SREC.stream = null; SREC.on = false; SREC.chunks = []; SREC.cv = null; srecSync(); bus.emit('srec', false);
   const cb = SREC.onBlob; SREC.onBlob = null;
   if (save && blob && blob.size > 1000 && !SREC.audio) bus.emit('srec:blob', blob);   /* Studio Replay keeps the newest video (part 68) */
   if (save && blob && blob.size > 1000 && cb) cb(blob);
