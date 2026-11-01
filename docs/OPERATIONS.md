@@ -56,6 +56,7 @@ No telemetry exists in the app by design. Use:
 
 * **Quarterly:** `npm audit`, update dev dependencies, confirm the MediaPipe version and model URLs still resolve, re-run the accessibility check, re-read `THIRD_PARTY_NOTICES.md`.
 * **When The Daily changes:** sync the vendored copy and re-test `/journal/`.
+* **When the studio's look changes:** remake the guide pictures: `node test/shots.cjs` (docs/screenshots) and `node test/guide-shots.cjs` (the newer `site/img/*.webp`: tones, perform, sync; 1280 × 720, WebP made in the browser).
 * **Backups:** nothing server-side. The repository is the backup of the code; users back up songs from ☰ Songs ▸ Back up all songs.
 * **Domain renewal:** put the registrar renewal date in a calendar; losing the domain loses the site.
 

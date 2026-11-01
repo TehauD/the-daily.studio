@@ -5,7 +5,7 @@
    A project also exports as a plain .zip "song folder": song.md (readable anywhere, Obsidian-friendly),
    arrangement.json (the full model) and audio/*.wav — the same layout a GitHub repo will use later.
    ============================================================ */
-const PRJ = { db: null, ok: false, cur: null, rec: null, list: [], loading: false, timer: 0, saving: null, again: false, ready: false, pending: null, warned: false, wantStart: false };
+const PRJ = { db: null, ok: false, cur: null, rec: null, wait: null, flushing: false, quiet: 0, list: [], loading: false, timer: 0, saving: null, again: false, ready: false, pending: null, warned: false, wantStart: false };
 const PDB_NAME = 'the-daily-songs';
 
 /* ---------- IndexedDB, in a few lines ---------- */
@@ -102,7 +102,7 @@ function projSave() {
   clearTimeout(PRJ.timer); if (!PRJ.ok || !PRJ.cur || PRJ.loading || store.locked) return Promise.resolve();
   if (PRJ.saving) { PRJ.again = true; return PRJ.saving; }
   PRJ.saving = (async () => {
-    try { await projSaveNow(); projPersist(); try { syncKick(); } catch (e) { } bus.emit('savestate', 'ok', Date.now()); } catch (e) { bus.emit('savestate', 'err'); console.warn('project save', e); if (!PRJ.warned) { PRJ.warned = true; toast('This browser would not store your work (storage full or private window?). Export a song bundle from ☰ Songs to keep it.', 'warn'); } }
+    try { await projSaveNow(); projPersist(); try { if (!PRJ.flushing) syncKick(); } catch (e) { } bus.emit('savestate', 'ok', Date.now()); } catch (e) { bus.emit('savestate', 'err'); console.warn('project save', e); if (!PRJ.warned) { PRJ.warned = true; toast('This browser would not store your work (storage full or private window?). Export a song bundle from ☰ Songs to keep it.', 'warn'); } }
     finally { PRJ.saving = null; if (PRJ.again) { PRJ.again = false; projDirty(); } }
   })();
   return PRJ.saving;
@@ -117,7 +117,9 @@ async function projPersist() {
 async function projSaveNow() {
   const id = PRJ.cur, rec = PRJ.rec || (PRJ.rec = { id, created: Date.now(), origin: 'blank' });
   rec.song = JSON.parse(JSON.stringify(S)); rec.title = S.title || 'Untitled'; rec.artist = S.artist || ''; rec.modified = Date.now(); rec.v = 1; rec.zoom = typeof ZOOM !== 'undefined' ? ZOOM.cur : 'studio';
-  let bytes = 0; const live = new Set(TAKES.map(tkSrc));
+  /* recordings still on their way from a synced folder (part 40) are kept in the song as they are, never dropped by a save */
+  const wait = PRJ.wait && PRJ.wait.id === id ? PRJ.wait.list.filter(m => !TAKES.some(t => t.id === m.id)) : [];
+  let bytes = 0; const live = new Set(TAKES.map(tkSrc).concat(wait.map(m => m.src || m.id)));
   for (const old of new Set((rec.takes || []).map(t => t.src || t.id))) if (!live.has(old)) await pdbDelPrefix('blobs', id + '/take/' + old + '/');
   const done = new Set();
   for (const t of TAKES) {                                            // clips that came from one recording share its blobs, so each recording is written once
@@ -125,12 +127,12 @@ async function projSaveNow() {
     if (grp.some(x => !x._saved)) { const k = id + '/take/' + sid + '/'; await pdbPut('blobs', toI16(t.dry), k + 'dry'); if (t.wet) await pdbPut('blobs', toI16(t.wet), k + 'wet'); if (t.cam && t.cam.length) { try { await pdbPut('blobs', JSON.stringify(t.cam), k + 'cam'); } catch (e) { } } grp.forEach(x => { x._saved = true; }); }
     bytes += (t.dry.length + (t.wet ? t.wet.length : 0)) * 2;
   }
-  rec.takes = TAKES.map(takeMeta); rec.stemMix = stmHistGet();
+  rec.takes = TAKES.map(takeMeta).concat(wait); rec.stemMix = stmHistGet();
   if (STM.ch && STM.file && !STM._saved && !STM.busy) {
     const buf = await STM.file.arrayBuffer(); await pdbPut('blobs', { buf, type: STM.file.type || 'audio/mp4', name: STM.file.name || 'track' }, id + '/track'); STM._saved = true;
     rec.track = { name: STM.name, title: STM.title, artist: STM.artist, dur: STM.dur, fileName: STM.file.name || 'track', type: STM.file.type || 'audio/mp4', bytes: buf.byteLength }; PRJ.pending = null;
   } else if (!STM.ch && !STM.busy && !STM.restoring && !PRJ.pending && rec.track) { await pdbDel('blobs', id + '/track'); rec.track = null; }
-  if (rec.track) bytes += rec.track.bytes || 0; rec.size = bytes; rec.nTakes = TAKES.length;
+  if (rec.track) bytes += rec.track.bytes || 0; rec.size = bytes; rec.nTakes = rec.takes.length;
   await pdbPut('projects', rec);
   const i = PRJ.list.findIndex(r => r.id === id); if (i >= 0) PRJ.list[i] = rec; else PRJ.list.unshift(rec); PRJ.list.sort((a, b) => b.modified - a.modified); bus.emit('projects');
 }
@@ -153,16 +155,16 @@ async function projLoad(id, o = {}) {
   if (PRJ.cur && PRJ.cur !== id) await projSave();
   PRJ.loading = true;
   try {
-    projQuiet(); PRJ.cur = id; PRJ.rec = rec; store.set('cur', id);
+    projQuiet(); PRJ.cur = id; PRJ.rec = rec; PRJ.wait = { id, list: [] }; store.set('cur', id);
     const srcs = new Map();                                              // each recording is read once, however many clips use it
     for (const m of rec.takes || []) {
       const sid = m.src || m.id; let r = srcs.get(sid);
       if (!r) {
-        const k = id + '/take/' + sid + '/', dry = await pdbGet('blobs', k + 'dry'); if (!dry) { srcs.set(sid, false); continue; }
+        const k = id + '/take/' + sid + '/', dry = await pdbGet('blobs', k + 'dry'); if (!dry) { srcs.set(sid, false); PRJ.wait.list.push(m); continue; }
         const wet = m.hasWet ? await pdbGet('blobs', k + 'wet') : null, cam = m.hasCam ? await pdbGet('blobs', k + 'cam') : null; let cm = []; try { cm = cam ? JSON.parse(cam) : []; } catch (e) { }
         const d = fromI16(dry); r = { dry: d, wet: wet ? fromI16(wet) : null, cam: cm, peaks: peaksOf(d) }; srcs.set(sid, r);
       }
-      if (!r) continue;
+      if (!r) { PRJ.wait.list.push(m); continue; }      /* its audio is not on this device yet (a synced folder is still bringing it): kept, never dropped by a save */
       TAKES.push(Object.assign({}, m, { dry: r.dry, wet: r.wet, cam: r.cam, peaks: r.peaks, _saved: true }));
     }
     projUse(rec.song);

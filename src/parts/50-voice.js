@@ -104,6 +104,7 @@ function voxRect(W, H) { const w = Math.min(W * .9, H * 2.6), h = clamp(H * .26,
 const voxPc = m => voxNote(m);
 function voxOpen(anchor) {
   if (VOX.panel) { voxClose(); return; }
+  if (document.body.dataset.form && document.body.dataset.form !== 'desktop' && typeof mCloseOverlays === 'function') mCloseOverlays();      /* one panel at the bottom at a time */
   VOX.mode = VOX.mode || 'ribbon'; const cv = h('canvas', { id: 'voxCv', width: 440, height: 170, role: 'img', 'aria-label': 'Pitch ribbon: the note you are singing against the notes of the key' }), body = h('div', { class: 'vx-body', id: 'voxBody' });
   const close = h('button', { class: 'btn sm', id: 'voxClose', onclick: () => voxClose() }, 'Close');
   const p = h('section', { id: 'voxPanel', class: 'vx', role: 'dialog', 'aria-label': 'Voice' }, h('div', { class: 'vx-h' }, h('b', {}, '🎤 Voice'), h('span', { class: 'grow' }), close), cv, body);

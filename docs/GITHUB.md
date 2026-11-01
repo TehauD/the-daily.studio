@@ -2,6 +2,8 @@
 
 From 2.21 a person can keep their studio in a repository in **their own** GitHub account and have it in step on every device. Nothing about this runs until they connect. This page is for the site owner (setting up Sign in with GitHub) and for anyone curious how it works. The code is `src/parts/74-github.js` (the page) and `worker/index.mjs` (the site's Worker).
 
+> **Not a GitHub person?** From 2.22, **Settings ▸ Folder sync** keeps the same files (and the recordings too) in a folder you choose; one inside iCloud Drive, Dropbox, Google Drive or OneDrive keeps every computer the same, with no account. It uses the same engine (`studioSync` in part 74) with a folder in place of the repository (part 40).
+
 ## What a person gets
 
 - **Settings ▸ GitHub ▸ Connect with a token**: paste a fine-grained token for one repository (Contents: Read and write). No server is involved. The app makes the repository (private, `my-daily-studio`) if the token may, otherwise it says how.

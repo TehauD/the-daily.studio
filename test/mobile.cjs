@@ -23,7 +23,10 @@ const DEV = { phone: { viewport: { width: 390, height: 844 }, deviceScaleFactor:
     await p.evaluate(() => { const b = document.querySelector('#tourOffer .btn:not(.primary)'); if (b) b.click(); }); await wait(300); p.ctx = ctx; return p;
   };
   const overflow = p => p.evaluate(() => { const W = innerWidth, bad = []; for (const x of document.querySelectorAll('#app *')) { if (document.body.dataset.form === 'tablet' && x.closest('#left,#right')) continue; const cs = getComputedStyle(x); if (cs.display === 'none' || cs.visibility === 'hidden') continue; const r = x.getBoundingClientRect(); if (r.width < 1 || r.height < 1) continue; let a = x.parentElement, clip = false; while (a && a.id !== 'app') { const c = getComputedStyle(a); if (/(hidden|auto|scroll|clip)/.test(c.overflowX) && a.getBoundingClientRect().right <= W + 2) { clip = true; break; } a = a.parentElement; } if (!clip && (r.right > W + 2 || r.left < -2)) bad.push(x.tagName + '.' + String(x.className).slice(0, 24)); } return { sw: document.documentElement.scrollWidth, W, bad: bad.slice(0, 5) }; });
-  const goto = async (p, g, s) => { await p.tap(`.mnb[data-g="${g}"]`); await wait(150); await p.tap(`#msub .msc[data-s="${s}"]`); await wait(450); };
+  const goto = async (p, g, s) => {
+    if (g === 'more') { await p.tap('.mnb[data-g="more"]'); await wait(300); await p.tap(`.msheet .mpanel-b button[data-sub="${s}"]`); await wait(450); return; }      /* 2.24: More opens the sheet; its first row has the panels */
+    await p.tap(`.mnb[data-g="${g}"]`); await wait(150); await p.tap(`#msub .msc[data-s="${s}"]`); await wait(450);
+  };
 
   /* ---- phone, portrait ---- */
   let p = await open('phone');
@@ -141,7 +144,7 @@ const DEV = { phone: { viewport: { width: 390, height: 844 }, deviceScaleFactor:
   ok(await p.evaluate(() => ['#mnav', '#mtrans', '#msub', '.mmore', '.mdraw.l', '#kpad'].every(s => getComputedStyle(document.querySelector(s)).display === 'none')), 'no phone / tablet chrome is visible on desktop');
   ok(await p.evaluate(() => { const g = id => document.querySelector(id).getBoundingClientRect(); return g('#left').width > 200 && g('#right').width > 250 && g('#timeline').height > 150 && !!document.querySelector('#transport .btn.play') && !!document.querySelector('#dock .tabs .tab') && g('#status').height > 20; }), 'desktop keeps both sidebars, the tab bar, timeline, status bar and header transport');
   await p.setViewportSize({ width: 560, height: 800 }); await wait(500); ok(await p.evaluate(() => document.body.dataset.form === 'phone'), 'narrowing the window switches to the phone layout live');
-  await p.setViewportSize({ width: 1440, height: 900 }); await wait(500); ok(await p.evaluate(() => document.body.dataset.form === 'desktop' && !!document.querySelector('#transport .btn.play') && document.querySelectorAll('#transport > *').length === 13), 'widening again restores the desktop header exactly (13 transport items)');
+  await p.setViewportSize({ width: 1440, height: 900 }); await wait(500); ok(await p.evaluate(() => document.body.dataset.form === 'desktop' && !!document.querySelector('#transport .btn.play') && document.querySelectorAll('#transport > *').length === 14 && document.querySelector('#transport > #bandMute') === document.querySelector('#transport .metro-more').previousElementSibling && getComputedStyle(document.getElementById('bandMute')).display === 'none'), 'widening again restores the desktop header exactly (14 transport items, the band button back beside the click and hidden, as the band strip has Mute all)');
   await p.close(); await p.ctx.close();
 
   ok(errs.length === 0, 'no page errors or failed requests' + (errs.length ? ': ' + errs.slice(0, 4).join(' | ') : ''));

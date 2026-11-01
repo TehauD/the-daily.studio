@@ -395,21 +395,23 @@ ok(he.length === 0, 'hum to song runs without script errors' + (he.length ? ' ' 
     ok(await pp.evaluate(() => !window.__daily.T.playing), 'the kill switch works inside Perform');
     await pp.evaluate(() => window.__daily.perfClose());
     ok(pe.length === 0, 'Perform runs without script errors' + (pe.length ? ' ' + pe[0] : '')); await pp.close(); }
-  // backup folder: choose a folder (stubbed picker), songs are written as .daily-song.zip, and a change is written again
+  // folder sync: choose a folder (the picker answers with a real directory in the browser's private file system), the studio is written
+  // there, and a change is written again by itself (the two-computer story is test/e2e-folder.cjs)
   { const yp = await ctx0.newPage(), ye = []; yp.on('pageerror', e => ye.push(e.message));
-    await yp.addInitScript(() => { window.__syncDelay = 300; window.__wrote = {}; const dir = { name: 'My Songs', kind: 'directory', queryPermission: async () => 'granted', requestPermission: async () => 'granted', getFileHandle: async n => ({ createWritable: async () => ({ write: async b => { window.__wrote[n] = b.size; }, close: async () => { } }) }) }; window.showDirectoryPicker = async () => dir; });
+    await yp.addInitScript(() => { window.__syncDelay = 300; window.showDirectoryPicker = async () => (await navigator.storage.getDirectory()).getDirectoryHandle('My Songs', { create: true }); });
     await yp.goto(BASE + '?debug'); await wait(2500); await yp.evaluate(() => { const b = document.getElementById('bootNoMic'); if (b) b.click(); }); await wait(2000);
     await yp.evaluate(() => { document.querySelectorAll('#humbar').forEach(d => d.remove()); const b = document.querySelector('#tourOffer .btn:not(.primary)'); if (b) b.click(); });
     await yp.click('.btn.icon[title="Settings"]'); await wait(300);
-    ok(await yp.evaluate(() => !!document.getElementById('syncChoose')), 'Settings offers a backup folder');
+    ok(await yp.evaluate(() => !!document.getElementById('syncChoose')), 'Settings offers folder sync');
     await yp.click('#syncChoose'); await wait(2500);
-    const Y1 = await yp.evaluate(() => ({ names: Object.keys(window.__wrote), cfg: window.__daily.CFG.sync, name: window.__daily.SYNC.name, ctl: !!document.getElementById('syncOff') }));
-    ok(Y1.cfg && Y1.name === 'My Songs' && Y1.names.length >= 1 && Y1.names.every(n => /\.daily-song\.zip$/.test(n)) && Y1.ctl, 'choosing a folder saves every song there as a .daily-song.zip (' + JSON.stringify(Y1) + ')');
-    await yp.evaluate(() => { window.__wrote = {}; window.__daily.S.title = 'Backup test song'; window.__daily.commit(); }); await wait(4500);
-    ok(await yp.evaluate(() => Object.keys(window.__wrote).some(n => /^Backup-test-song.*\.daily-song\.zip$/.test(n))), 'a change is written to the folder by itself');
+    const ls = () => yp.evaluate(async () => { const out = [], walk = async (d, pre) => { for await (const [n, h] of d.entries()) { if (h.kind === 'directory') await walk(h, pre + n + '/'); else out.push(pre + n); } }; await walk(await (await navigator.storage.getDirectory()).getDirectoryHandle('My Songs'), ''); return out; });
+    const Y1 = await yp.evaluate(() => ({ cfg: window.__daily.CFG.sync, name: window.__daily.SYNC.name, ctl: !!document.getElementById('syncOff') })), F1 = await ls();
+    ok(Y1.cfg && Y1.name === 'My Songs' && Y1.ctl && F1.includes('the-daily.studio/studio.json') && F1.includes('the-daily.studio/settings.json'), 'choosing a folder keeps the studio there, in “the-daily.studio” (' + F1.length + ' files)');
+    await yp.evaluate(async () => { window.__daily.S.title = 'Backup test song'; window.__daily.commit(); });
+    ok(await (async () => { for (let i = 0; i < 40; i++) { const t = await yp.evaluate(async () => { try { const d = await (await (await (await navigator.storage.getDirectory()).getDirectoryHandle('My Songs')).getDirectoryHandle('the-daily.studio')).getDirectoryHandle('songs'); for await (const [, h] of d.entries()) if (/Backup test song/.test(await (await h.getFile()).text())) return true; } catch (e) { } return false; }); if (t) return true; await wait(250); } return false; })(), 'a change is written to the folder by itself');
     await yp.click('#syncOff'); await wait(300);
-    ok(await yp.evaluate(() => !window.__daily.CFG.sync && !window.__daily.SYNC.dir && !!document.getElementById('syncChoose')), 'Turn off stops the folder backup');
-    ok(ye.length === 0, 'folder backup runs without script errors' + (ye.length ? ' ' + ye[0] : '')); await yp.close(); }
+    ok(await yp.evaluate(() => !window.__daily.CFG.sync && !window.__daily.SYNC.dir && !!document.getElementById('syncChoose')), 'Turn off stops folder sync');
+    ok(ye.length === 0, 'folder sync runs without script errors' + (ye.length ? ' ' + ye[0] : '')); await yp.close(); }
   // auto look: the look follows the section while playing, and your own look returns when it stops
   { const ap2 = await ctx0.newPage(), ae2 = []; ap2.on('pageerror', e => ae2.push(e.message)); await ap2.goto(BASE + '?debug'); await wait(2500);
     await ap2.evaluate(() => { const b = document.getElementById('bootNoMic'); if (b) b.click(); }); await wait(2000);

@@ -5,7 +5,7 @@
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.21.2', BUILD = '2397955', PARTS_N = +'86' || 0, LINES_N = +'14709' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.24.0', BUILD = 'ceb3e72', PARTS_N = +'87' || 0, LINES_N = +'15246' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { ghApp: { clientId: '', slug: '' },   /* Sign in with GitHub: the GitHub App's public client id and its slug (docs/GITHUB.md); empty = only the token way */
   support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://the-daily.studio/journal/' };
@@ -84,7 +84,7 @@ const CFG = Object.assign({
   eggs: true,     // the hidden surprises (part 73b); off stops the musical ones and hides the counter   // zero-delay compressors and saturation (part 02); off = the browser's own, which add about 20 ms to the guitar
   mpOk: false   // true once the person has said yes to the one-time MediaPipe download (see mpConsent); nothing leaves the page before that
 }, store.get('cfg', {}));
-const saveCfg = () => { store.set('cfg', CFG); if (typeof ghCfgKick === 'function') try { ghCfgKick(); } catch (e) { } };
+const saveCfg = () => { store.set('cfg', CFG); if (typeof ghCfgKick === 'function') try { ghCfgKick(); } catch (e) { } if (typeof syncCfgKick === 'function') try { syncCfgKick(); } catch (e) { } };      /* a synced studio (GitHub, a folder) follows a settings change */
 
 /* ---------- music theory ---------- */
 const NS = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
@@ -1510,12 +1510,13 @@ function buildHeader() {
   UI.rec = B('rec', '●', 'Record guitar take (R)', toggleRec);
   UI.loop = h('button', { class: 'btn sm', title: 'Loop (L)', onclick: () => { T.loop = !T.loop; syncTransport(); } }, '⟲', h('span', { class: 'lbl' }, ' Loop'));
   UI.metro = h('button', { class: 'btn sm', title: 'Metronome (M)', onclick: () => { T.metro = !T.metro; syncTransport(); } }, '♩', h('span', { class: 'lbl' }, ' Click'));
+  UI.bandMute = h('button', { class: 'btn sm bandmute', id: 'bandMute', 'aria-label': 'Mute the band and the click', 'aria-pressed': 'false', onclick: () => bandMute() }, '🔇', h('span', { class: 'lbl' }, ' Band'));
   UI.metroMore = h('button', { class: 'btn sm metro-more', title: 'Count-in and click volume', 'aria-label': 'Count-in and click volume', 'aria-haspopup': 'dialog', onclick: e => clickMenu(e.currentTarget) }, '▾');
   UI.pos = h('div', { class: 'lcd' }, h('b', {}, '1·1·1'), h('i', {}, 'BAR·BEAT·SLOT')); UI.tim = h('div', { class: 'lcd', style: { minWidth: '88px' } }, h('b', {}, '00:00.00'), h('i', {}, 'TIME'));
   UI.bpm = h('input', { type: 'number', min: 30, max: 260, step: 1, value: S.bpm, onchange: e => { S.bpm = clamp(+e.target.value || 90, 30, 260); e.target.value = S.bpm; commit(false); bus.emit('bpm'); } });
   UI.ts = h('select', { onchange: e => { const [n, d] = e.target.value.split('/').map(Number); S.ts = [n, d]; S.band.drumLen = Math.min(32, spb()); commit(); } }, ['4/4', '3/4', '2/4', '5/4', '6/8', '12/8', '7/8'].map(x => h('option', { value: x }, x)));
   UI.key = h('select', { onchange: () => keyChanged() }, NS.map((n, i) => h('option', { value: i }, n))); UI.mode = h('select', { onchange: () => keyChanged() }, [h('option', { value: 'maj' }, 'maj'), h('option', { value: 'min' }, 'min')]);
-  tr.append(UI.rew, UI.play, UI.stop, UI.rec, UI.loop, UI.metro, UI.metroMore, UI.pos, UI.tim, h('label', { class: 'field', style: { width: '58px' } }, 'BPM', UI.bpm), h('label', { class: 'field', style: { width: '54px' } }, 'Sig', UI.ts), h('label', { class: 'field', style: { width: '56px' } }, 'Key', UI.key), h('label', { class: 'field', style: { width: '56px' } }, 'Mode', UI.mode));
+  tr.append(UI.rew, UI.play, UI.stop, UI.rec, UI.loop, UI.metro, UI.bandMute, UI.metroMore, UI.pos, UI.tim, h('label', { class: 'field', style: { width: '58px' } }, 'BPM', UI.bpm), h('label', { class: 'field', style: { width: '54px' } }, 'Sig', UI.ts), h('label', { class: 'field', style: { width: '56px' } }, 'Key', UI.key), h('label', { class: 'field', style: { width: '56px' } }, 'Mode', UI.mode));
   const R = $('#topR');
   UI.lat = h('span', { class: 'chip', title: 'Round-trip latency estimate. Run the Loopback Test in I/O for a measured value.' }, h('i', { class: 'led' }), h('span', {}, 'audio off'));
   UI.theme = h('button', { class: 'btn icon', title: 'Appearance: light / dark, palettes, accent, density…', 'aria-haspopup': 'dialog', onclick: () => lookOpen() }, '◐');
@@ -1538,7 +1539,7 @@ function toggleRec() {
 }
 function syncTransport() {
   if (!UI.play) return; UI.play.textContent = T.playing ? '⏸' : '▶'; UI.play.classList.toggle('on', T.playing);
-  UI.rec.classList.toggle('armed', T.rec && !T.playing); UI.rec.classList.toggle('on', T.rec && T.playing); UI.loop.classList.toggle('on', T.loop); UI.metro.classList.toggle('on', T.metro);
+  UI.rec.classList.toggle('armed', T.rec && !T.playing); UI.rec.classList.toggle('on', T.rec && T.playing); UI.loop.classList.toggle('on', T.loop); UI.metro.classList.toggle('on', T.metro); if (typeof bandMuteSync === 'function') bandMuteSync();
   UI.bpm.value = S.bpm; UI.ts.value = S.ts.join('/'); UI.key.value = S.key; UI.mode.value = S.minor ? 'min' : 'maj';
   if (UI.undo) { UI.undo.disabled = !histStack.u.length; UI.redo.disabled = !histStack.r.length; }
 }
@@ -1585,12 +1586,13 @@ function openSettings(at) {
       F('When recording reaches the end of the song', sel('recEnd', [['grow', 'Keep going (the song grows to fit)'], ['stop', 'Stop at the end'], ['loop', 'Loop back, one take per pass']])),
       h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!CFG.rec.dry, onchange: e => { CFG.rec.dry = e.target.checked; saveCfg(); } }), 'Record dry DI (enables re-amping)'),
       h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!CFG.rec.wet, onchange: e => { CFG.rec.wet = e.target.checked; saveCfg(); } }), 'Record wet print')] },
+    { key: 'folder', label: 'Folder sync', ico: '📁', sub: 'Your whole studio, recordings too, in a folder on this computer: iCloud Drive, Dropbox, Google Drive or OneDrive keep it the same on every computer.', wide: true, body: () => [syncControl()] },
     { key: 'github', label: 'GitHub', ico: '⑂', sub: 'Your studio in a private repository of your own, in step on every device. Optional.', wide: true, body: () => [ghSection()] },
-    { key: 'export', label: 'Export', ico: '⇩', sub: 'Song bounces, tab text and an automatic backup folder.', body: () => [
+    { key: 'export', label: 'Export', ico: '⇩', sub: 'Song bounces and tab text.', body: () => [
       F('Loudness target for song WAVs', sel('lufsTarget', LOUD_TARGETS)),
       chk('Render WAVs faster than real time', 'renderFast'), note('Mixes the song in a few seconds instead of playing it through. Turn this off if a render ever sounds different from playback.'),
       F('Ultimate Guitar line width (chars)', num('ugWidth', 40, 120, 1, () => bus.emit('export'))), chk('Include [tab] / [ch] tags in Ultimate Guitar text', 'ugTags', () => bus.emit('export')),
-      F('Backup folder', syncControl())] },
+      note('To keep every song (and its recordings) in a folder, and the same on your other computers, see Settings ▸ Folder sync.')] },
     { key: 'data', label: 'Songs & data', ico: '☰', sub: 'Everything stays in this browser. Nothing is uploaded.', body: () => [
       F('Backing track when a song opens', sel('trackRestore', [['auto', 'Restore it automatically'], ['tap', 'Wait until I tap Restore']])),
       note('Songs and recordings are kept in this browser (My songs). Stems are separated again when a song with a track opens; the song itself opens instantly.'),
@@ -1599,7 +1601,7 @@ function openSettings(at) {
 }
 /** ? Help (part 05c's dialog) */
 function openHelp(at) {
-  const K = [['Space', 'Play / stop'], ['Ctrl + .', 'KILL AUDIO: stop playback, monitor off, release the microphone, suspend audio'], ['R', 'Record: one press, one take. It keeps going past the end of the song until you press R or Stop again'], ['L / M', 'Loop / metronome'], ['D · B · G · T', 'Band on/off: drums · bass · rhythm guitar · lead tab'], ['1…8 · 0', 'Recall pedalboard scene (Stage scene when Stage is focused) · 0 = all pedals off'], ['Home', 'Return to start'], ['Ctrl/⌘ Z · Shift+Z', 'Undo / redo: song edits, clips and the stem mix share one history'], ['Ctrl/⌘ E · D · Del', 'Selected clip: split at the playhead · duplicate · delete. ← → nudge a beat (Shift = a bar). Hold Alt while dragging for no snapping'], ['Drop a file', 'Audio, lyrics, MIDI (.mid, .kar) or a song file anywhere on the page'], ['Ctrl/⌘ S', 'Save project JSON'], ['Alt + 1…9, 0', 'Switch panel by position (tab order is yours to arrange)'], ['[ ]', 'Toggle left / right sidebars'],
+  const K = [['Space', 'Play / stop'], ['Ctrl + .', 'KILL AUDIO: stop playback, monitor off, release the microphone, suspend audio'], ['R', 'Record: one press, one take. It keeps going past the end of the song until you press R or Stop again'], ['L / M', 'Loop / metronome'], ['D · B · G · T', 'Band on/off: drums · bass · rhythm guitar · lead tab'], ['Shift + M', 'Mute the whole band and the click in one press; again to bring back what was playing'], ['1…8 · 0', 'Recall pedalboard scene (Stage scene when Stage is focused) · 0 = all pedals off'], ['Home', 'Return to start'], ['Ctrl/⌘ Z · Shift+Z', 'Undo / redo: song edits, clips and the stem mix share one history'], ['Ctrl/⌘ E · D · Del', 'Selected clip: split at the playhead · duplicate · delete. ← → nudge a beat (Shift = a bar). Hold Alt while dragging for no snapping'], ['Drop a file', 'Audio, lyrics, MIDI (.mid, .kar) or a song file anywhere on the page'], ['Ctrl/⌘ S', 'Save project JSON'], ['Alt + 1…9, 0', 'Switch panel by position (tab order is yours to arrange)'], ['[ ]', 'Toggle left / right sidebars'],
     ['Tab editor', 'Click a cell · type fret (0–24) · ←→↑↓ move · Del clear · h p / \\ b ~ x < set technique · Shift+arrows select · Space plays from bar'], ['Knobs', 'Drag · wheel · Shift = fine · double-click reset · right-click = MIDI learn'], ['Rig', 'Drag pedal headers to reorder the signal chain · A/B + Morph to compare tones']];
   const close = () => { const d = $('#help'); if (d) d.close(); };
   return hubOpen('help', { ico: '?', title: 'Help', sub: 'Get going, find a shortcut, or read how the studio treats your work.', at, sections: [
@@ -1618,7 +1620,7 @@ function openHelp(at) {
       h('p', { class: 'small muted' }, 'It has no song titles, words, file names, device names or tip link, and nothing is sent: you see it and paste it yourself.'),
       h('div', { class: 'hub-acts' }, h('button', { class: 'btn primary', id: 'reportCopy', onclick: () => reportCopy() }, '⚑ Copy a problem report'), h('button', { class: 'btn', id: 'reportShow', onclick: async () => { close(); reportShow(await reportText()); } }, 'Show it first'),
         h('a', { class: 'btn', href: BRAND.repo + '/issues/new', target: '_blank', rel: 'noopener noreferrer' }, 'Open a GitHub issue ↗'))] },
-    CFG.backstage ? { key: 'backstage', label: 'Backstage', ico: '🎭', sub: 'You found the door. The engine live, how it is made, the agent playground.', wide: true, body: () => [h('div', { class: 'hub-acts' }, h('button', { class: 'btn primary', id: 'helpBackstage', onclick: () => { close(); backstageOpen(); } }, '🎭 Go backstage'))] } : null,
+    CFG.backstage ? { key: 'backstage', label: 'Backstage', ico: '🎭', sub: 'You are on the list. The engine room, performance, storage, the event bus, a terminal, labs and the hidden pages.', wide: true, body: () => [h('div', { class: 'hub-acts' }, h('button', { class: 'btn primary', id: 'helpBackstage', onclick: () => { close(); backstageOpen(); } }, '🎭 Go backstage'))] } : null,
     { key: 'about', label: 'About', ico: '♥', wide: true, body: () => [aboutBlock()] }
   ] });
 }
@@ -1654,6 +1656,7 @@ document.addEventListener('keydown', e => {
   }
   if (typing || mod) return;
   if (t && t.classList && t.classList.contains('tcell')) return;
+  if (e.shiftKey && (e.key === 'M' || e.key === 'm')) { bandMute(); return; }      /* Shift+M: the whole band and the click, M alone is the click */
   switch (e.key) {
     case ' ': e.preventDefault(); T.playing ? stopPlay(true) : play(); break;
     case 'r': case 'R': toggleRec(); break; case 'l': case 'L': T.loop = !T.loop; syncTransport(); break; case 'm': case 'M': T.metro = !T.metro; syncTransport(); break;
@@ -3813,6 +3816,8 @@ async function pickInput() {
   const o = E.devs.out.find(d => FOCUSRITE_RE.test(d.label || '')); if (o && !CFG.outDev && E.ctx.setSinkId) try { await setOutputDevice(o.deviceId); } catch (e) { }
   return true;
 }
+/** the developer handles (window.__daily): made at start-up with ?debug, or later from Backstage ▸ Labs */
+const DEV = { make: null };
 async function boot() {
   applyAppearance(); loadInitialSong();
   buildHeader(); buildDock(); buildLeft(); buildRig(); buildTabPane(); buildSongPane(); buildBandPane(); buildFretPane(); writeBuild(); buildVisPane(); buildCamPane(); buildLabPane(); buildExportPane(); buildTxPane(); buildStagePane(); buildNeuralPane(); buildStemsPane(); buildVersionCard(); buildCalCard(); buildBoardExtras(); buildRight(); buildSongbar(); buildSides(); buildLayout(); buildTimeline(); buildStatus(); buildMobile(); if (typeof buildTouch === 'function') buildTouch();
@@ -3845,7 +3850,9 @@ async function boot() {
   if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener('devicechange', () => { ioDeviceChange().catch(e => console.warn(e)); });
   bus.emit('song');
   try { ghBoot(); } catch (e) { console.warn('github', e); }      /* back from Sign in with GitHub, or a sync at start (part 74) */
-  if (/[?&]debug\b/.test(location.search)) window.__daily = { S, EGG, EGG_LINES, EGG_ORDER, eggDay, eggFor, eggNow, eggText, eggTick, eggFit, saveCfg, projSave, projDelete, GH, ghSync, ghConnect, ghDisconnect, ghLocal, ghSha, ghJson, ghMerge3, ghShare, ghGallery, ghGalleryOpen, ghGalleryShow, ghKeepLook, ghKeepRig, rigClean, ghReturn, BRAND, ghSettingsOut, projRefresh, projCreate, projLoad, PRJ, SEC, SECRETS, secretFound, secretTiming, secretsOpen, secretSync, backstageOpen, startAudio, playheadSlot, GUARD, reportText, reportCopy, srecQ, srecSize, pdbGet, srecFmt, SREC_FMTS, VBG, vbgAdd, vbgRemove, vbgUse, vbgOpen, vbgDraw, vzSetMode, srecFrame, srecFmtBox, kitThumb, WORKLET_SRC, mkComp, mkShaper, rigLat, voxLat, restartAudio, satCurve, rigApply, qrMake, qrSvg, tipLink, tipShort, tipReady, tipCard, tipDraw, tipShareHtml, tipOpen, tipPrint, tipPng, tipVisAvoid, tipStageAvoid, TIP, TIP_TERMS, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, STP, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfort, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, srecStart, srecStop, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, tkFades, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, FB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, vzSetMode, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, drawVis, perfClose, voicings, peaksOf, uid, shareGate, shareData, shareHtml, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, slotAtTime, SEL, mtof, spb, playheadSlot, WR, HM, HMX, HM_MODES, vzImmersive, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitThumb, kitInk, kitNotes, kitRecord, srecMime, mGo, GD_SESSIONS, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard};   // test hook, only with ?debug
+  DEV.make = () => { window.__daily = { S, pdbPut, pdbKeys, projRename, FS, FS_B, fsUse, fsSync, fsHead, fsNeeds, fsTidy, fsOpen, syncOff, syncZips, PRJ_WAIT: () => PRJ.wait, EGG, EGG_LINES, EGG_ORDER, eggDay, eggFor, eggNow, eggText, eggTick, eggFit, saveCfg, projSave, projDelete, GH, ghSync, ghConnect, ghDisconnect, ghLocal, ghSha, ghJson, ghMerge3, ghShare, ghGallery, ghGalleryOpen, ghGalleryShow, ghKeepLook, ghKeepRig, rigClean, ghReturn, BRAND, ghSettingsOut, projRefresh, projCreate, projLoad, PRJ, SEC, SECRETS, secretFound, secretTiming, secretsOpen, secretSync, backstageOpen, startAudio, playheadSlot, GUARD, reportText, reportCopy, srecQ, srecSize, pdbGet, srecFmt, SREC_FMTS, VBG, vbgAdd, vbgRemove, vbgUse, vbgOpen, vbgDraw, vzSetMode, srecFrame, srecFmtBox, kitThumb, WORKLET_SRC, mkComp, mkShaper, rigLat, voxLat, restartAudio, satCurve, rigApply, qrMake, qrSvg, tipLink, tipShort, tipReady, tipCard, tipDraw, tipShareHtml, tipOpen, tipPrint, tipPng, tipVisAvoid, tipStageAvoid, TIP, TIP_TERMS, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, STP, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfort, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, srecStart, srecStop, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, tkFades, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, FB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, vzSetMode, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, drawVis, perfClose, voicings, peaksOf, uid, shareGate, shareData, shareHtml, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, slotAtTime, SEL, mtof, spb, playheadSlot, WR, HM, HMX, HM_MODES, vzImmersive, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitThumb, kitInk, kitNotes, kitRecord, srecMime, mGo, GD_SESSIONS, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard}; };   // test hook: with ?debug, or Backstage ▸ Labs ▸ Developer handles
+  if (/[?&]debug\b/.test(location.search) || (CFG.labs && CFG.labs.handles)) DEV.make();
+  try { bksBoot(); } catch (e) { console.warn('backstage', e); }      /* #backstage in the address, the performance overlay (part 73c) */
   projInit().catch(e => { console.warn('library', e); PRJ.ready = true; if (PRJ.wantStart) startMaybe(); });
 }
 
@@ -4041,9 +4048,32 @@ function edgeSync() {
 const BAND_KEYS = [['drums', 'Drums', 'drumsOn'], ['bass', 'Bass', 'bassOn'], ['rhythm', 'Rhythm', 'compOn'], ['lead', 'Lead tab', 'leadOn']];
 const REHEARSAL = [['Full band', { drumsOn: 1, bassOn: 1, compOn: 1, leadOn: 1 }], ['Rhythm section (drums + bass)', { drumsOn: 1, bassOn: 1, compOn: 0, leadOn: 0 }], ['Acoustic duo (rhythm + bass)', { drumsOn: 0, bassOn: 1, compOn: 1, leadOn: 0 }], ['Drums only', { drumsOn: 1, bassOn: 0, compOn: 0, leadOn: 0 }], ['Bass only', { drumsOn: 0, bassOn: 1, compOn: 0, leadOn: 0 }], ['Rhythm guitar only', { drumsOn: 0, bassOn: 0, compOn: 1, leadOn: 0 }], ['Tab playback only', { drumsOn: 0, bassOn: 0, compOn: 0, leadOn: 1 }], ['Play over me (click only)', { drumsOn: 0, bassOn: 0, compOn: 0, leadOn: 0, click: 1 }]];
 function toggleBand(key, val) { S.band[key] = val == null ? !S.band[key] : !!val; commit(false); syncBandStrip(); if (paneVisible('band') && typeof renderBand === 'function') renderBand(); }
+/* ---------- mute the whole band and the click in one press (2.24); the next press brings back exactly what was playing ---------- */
+const BANDMUTE = { id: null, was: null };
+/** true when nothing of the band plays and the click is off */
+const bandMuted = () => BAND_KEYS.every(([, , k]) => !S.band[k]) && !T.metro;
+function bandMute(force) {
+  const silent = bandMuted(), want = force == null ? !silent : !!force; if (want === silent) return silent;
+  if (want) { BANDMUTE.id = PRJ.cur; BANDMUTE.was = { click: !!T.metro }; BAND_KEYS.forEach(([, , k]) => { BANDMUTE.was[k] = !!S.band[k]; S.band[k] = false; }); T.metro = false; }
+  else {      /* what was playing before the mute (in this song), or the band a new song starts with */
+    const d = newSong().band, w = BANDMUTE.was && BANDMUTE.id === PRJ.cur ? BANDMUTE.was : Object.assign({ click: true }, ...BAND_KEYS.map(([, , k]) => ({ [k]: !!d[k] })));
+    BAND_KEYS.forEach(([, , k]) => { S.band[k] = !!w[k]; }); T.metro = !!w.click; if (!BAND_KEYS.some(([, , k]) => S.band[k]) && !T.metro) { S.band.drumsOn = true; T.metro = true; }
+    BANDMUTE.was = null;
+  }
+  commit(false); syncTransport(); syncBandStrip(); if (paneVisible('band') && typeof renderBand === 'function') renderBand(); bus.emit('bandmute', want);
+  return want;
+}
+/** every mute-all button shows whether the band is silent */
+function bandMuteSync() {
+  const m = bandMuted(), title = m ? 'The band and the click are muted. Press to bring back what was playing (Shift+M)' : 'Mute the whole band and the click in one press (Shift+M). Press again to bring them back';
+  [UI.bandMute, UI.bchips && UI.bchips.all, document.getElementById('pfBand')].forEach(b => { if (!b) return; b.classList.toggle('on', m); b.setAttribute('aria-pressed', String(m)); b.title = title; });
+  if (UI.bchips && UI.bchips.all) { UI.bchips.all.firstChild.textContent = m ? '🔇 ' : '🔊 '; UI.bchips.all.lastChild.textContent = m ? 'Unmute all' : 'Mute all'; }
+  if (UI.bandMute) UI.bandMute.firstChild.textContent = m ? '🔇' : '🔊';      /* the speaker says what you hear now */
+  const pf = document.getElementById('pfBand'); if (pf) pf.textContent = m ? '🔇 Band muted' : '🔊 Band';
+}
 function setRehearsal(cfg) { Object.keys(cfg).forEach(k => { if (k === 'click') { T.metro = !!cfg.click; } else S.band[k] = !!cfg[k]; }); if (!('click' in cfg)) { /* leave click alone */ } commit(false); syncTransport(); syncBandStrip(); if (paneVisible('band')) renderBand(); }
 function syncBandStrip() {
-  if (!UI.bchips) return; BAND_KEYS.forEach(([id, , key]) => UI.bchips[id].classList.toggle('on', !!S.band[key])); UI.bchips.click.classList.toggle('on', !!T.metro);
+  if (!UI.bchips) return; BAND_KEYS.forEach(([id, , key]) => UI.bchips[id].classList.toggle('on', !!S.band[key])); UI.bchips.click.classList.toggle('on', !!T.metro); bandMuteSync();
   const all = BAND_KEYS.every(([, , k]) => S.band[k]), none = BAND_KEYS.every(([, , k]) => !S.band[k]); UI.bmix.value = ''; UI.bmix.title = all ? 'Full band' : none ? 'Band silent' : 'Custom mix';
   $$('.tl-head .pw').forEach(b => b.classList.toggle('on', !!S.band[b.dataset.k]));
 }
@@ -4064,6 +4094,7 @@ function buildBandStrip() {
   const strip = h('div', { class: 'bandstrip' }); UI.bchips = {}; strip.append(h('span', { class: 'bs-l' }, 'BAND'));
   BAND_KEYS.forEach(([id, name, key]) => { const c = h('button', { class: 'bchip', title: name + ' — click: on/off · right-click: level, pan, style  (' + { drums: 'D', bass: 'B', rhythm: 'G', lead: 'T' }[id] + ')', onclick: () => toggleBand(key), oncontextmenu: e => { e.preventDefault(); bandPop(c, id, key); } }, h('i', { class: 'led' }), name); UI.bchips[id] = c; strip.append(c); });
   UI.bchips.click = h('button', { class: 'bchip warn', title: 'Metronome click (M)', onclick: () => { T.metro = !T.metro; syncTransport(); } }, h('i', { class: 'led' }), 'Click'); strip.append(UI.bchips.click);
+  UI.bchips.all = h('button', { class: 'bchip bmute', id: 'bandMuteAll', 'aria-pressed': 'false', onclick: () => bandMute() }, h('span', { 'aria-hidden': 'true' }, '🔇 '), h('span', {}, 'Mute all')); strip.append(UI.bchips.all);
   UI.bmix = h('select', { class: 'in', title: 'Rehearsal mixes — who plays with you', onchange: e => { const r = REHEARSAL[+e.target.value]; if (r) setRehearsal(r[1]); } }, h('option', { value: '' }, 'Mix…'), REHEARSAL.map((r, i) => h('option', { value: i }, r[0]))); strip.append(UI.bmix);
   return strip;
 }
@@ -5156,8 +5187,8 @@ function tourStepsDesk() {
     { t: tq('#pane-tx'), pane: 'tx', side: 'left', title: '15 · Transcribe', b: 'Record yourself or load an audio file and get <b>polyphonic tab</b>: chords, bass and melody mapped to strings and frets for your tuning. Review, accept, then apply to the song. <b>Measure noise</b> and <b>Calibrate to my guitar</b> improve accuracy, and <b>Run self-test</b> scores the engine on synthetic guitar.' },
     { t: tq('#pane-stems'), pane: 'stems', side: 'left', title: '16 · Stems and backing tracks', b: 'Load a song and The app separates <b>drums, bass, vocals and guitar / other</b>, finds the tempo, key and chords, and lets you mute stems to play along. Send the chords or the drum groove to the band. Separation is DSP-based and runs on your machine; expect good drums and vocals, rougher guitar.' },
     { t: tq('#pane-neural'), pane: 'neural', side: 'left', title: '17 · Neural map', b: 'The music as a living network: notes become nodes and harmony forms the layers as the song progresses. Rotate, scrub through time and click nodes to inspect them.' },
-    { t: tq('#pane-stage'), pane: 'stage', side: 'left', title: '18 · Stage', b: 'Full-screen, audio-reactive visuals for performing: the Concert light show, hex resonance, a prompter, and a neural mode. Your camera is optional and stays off unless you turn it on. With Stage focused, <kbd>1</kbd>…<kbd>8</kbd> change scenes.' },
-    { t: tq('#top #topR'), side: 'bottom', title: '19 · Settings, help and saving', b: '<b>⚙</b> Settings (A4 pitch, flats, input options), <b>◐</b> light / dark, <b>?</b> shortcuts. Your song autosaves in this browser. Use <b>Export</b> for Project JSON, tab text, ChordPro, MIDI or WAV (rendered faster than the song plays) so nothing is stuck in the page. Press <b>Back up all songs</b> (in <b>☰ Songs</b>) now and then: browsers can clear a site\'s storage, and on an iPhone, Add to Home Screen keeps it.' },
+    { t: tq('#pane-stage'), pane: 'stage', side: 'left', title: '18 · Stage', b: 'Full-screen, audio-reactive visuals for performing: the Concert light show, hex resonance, a prompter, and a neural mode. Your camera is optional and stays off unless you turn it on. With Stage focused, <kbd>1</kbd>…<kbd>8</kbd> change scenes. <b>⏺ Record the stage</b> saves a wide 16:9 or vertical 9:16 video, and <b>🎤 Perform</b> shows the chord huge with the lyrics scrolling.' },
+    { t: tq('#top #topR'), side: 'bottom', title: '19 · Settings, help and saving', b: '<b>⚙</b> Settings (A4 pitch, flats, input options), <b>◐</b> light / dark, <b>?</b> shortcuts. Your song autosaves in this browser. Use <b>Export</b> for Project JSON, tab text, ChordPro, MIDI or WAV (rendered faster than the song plays) so nothing is stuck in the page. Press <b>Back up all songs</b> (in <b>☰ Songs</b>) now and then: browsers can clear a site\'s storage, and on an iPhone, Add to Home Screen keeps it. In Chrome or Edge, <b>Settings ▸ Folder sync</b> keeps your whole studio, recordings too, in a folder (a cloud drive keeps it the same on every computer).' },
     { t: null, title: 'You are ready', b: 'A good first session: pick a tone, press <kbd>Space</kbd>, play along with the band, then try <b>Transcribe</b> or load a backing track in <b>Stems</b>.<br><br>Reopen this tour from <b>?</b> whenever you like.', last: true }
   ];
 }
@@ -5285,7 +5316,7 @@ function detectForm() {
 function mMoveTransport(phone) {
   const tr = $('#transport'); if (!tr || !M.trans) return;
   if (!M.kids) M.kids = [...tr.children];
-  if (phone) { const k = M.kids.filter(x => !x.classList.contains('metro-more')); M.trans.append(k[0], k[1], k[2], k[3], k[4], k[5], k[6], k[7]); tr.append(k[8], k[9], k[10], k[11], ...M.kids.filter(x => x.classList.contains('metro-more'))); }   // the count-in arrow stays in the header (hidden on phones)
+  if (phone) { const k = M.kids.filter(x => !x.classList.contains('metro-more')), fields = k.filter(x => x.matches('label.field')); M.trans.append(...k.filter(x => !fields.includes(x))); tr.append(...fields, ...M.kids.filter(x => x.classList.contains('metro-more'))); }   // buttons and clocks to the bottom bar; tempo, metre, key and mode stay in the header, and so does the count-in arrow (hidden on phones)
   else tr.append(...M.kids);
 }
 
@@ -5336,7 +5367,7 @@ function mCycleTl() { const k = document.body.dataset.land === '1' ? 'l' : 'p', 
 
 /* ---------- overlays: More sheet, tablet drawers ---------- */
 function mCloseOverlays(keepBack) {
-  if (M.sheet) { M.sheet.remove(); M.sheet = null; }
+  if (M.sheet) { M.sheet.remove(); M.sheet = null; } if (M.nav) M.nav.querySelectorAll('.mnb').forEach(b => b.removeAttribute('aria-expanded'));
   document.body.classList.remove('d-left', 'd-right', 'sheet-open', 'song-open');
   M.drawer = null;
 }
@@ -5352,15 +5383,17 @@ function mShare() {
 }
 function mSheet() {
   if (M.sheet) { mCloseOverlays(); return; }
-  mCloseOverlays();
+  mCloseOverlays(); if (typeof VOX !== 'undefined' && VOX.panel) voxClose();      /* one panel at the bottom at a time */
   const tile = (ico, label, fn, on) => h('button', { class: 'mtile' + (on ? ' on' : ''), onclick: e => { fn(e); } }, ico, h('span', {}, label));
   const stat = h('div', { class: 'mstat' }, (UI.st && UI.st.a.textContent) || '', UI.lat ? h('span', {}, UI.lat.textContent) : null);
   const mon = tile(msvg('<path d="M4 14v-2a8 8 0 0116 0v2"/><rect x="3" y="14" width="4" height="6" rx="1.5"/><rect x="17" y="14" width="4" height="6" rx="1.5"/>'), 'Monitor ' + (CFG.monitor ? 'on' : 'off'), e => { setMonitor(!CFG.monitor); mSheetRefresh(); }, CFG.monitor);
   const wake = tile(msvg('<circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6L7 7M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"/>'), 'Screen awake ' + (CFG.wake !== false ? 'on' : 'off'), () => { CFG.wake = CFG.wake === false; saveCfg(); wakeSync(); mSheetRefresh(); }, CFG.wake !== false);
   const seg = h('div', { class: 'seg mseg' }, [['auto', 'Auto'], ['phone', 'Phone'], ['tablet', 'Tablet'], ['desktop', 'Desktop']].map(([v, t]) => h('button', { class: (CFG.form || 'auto') === v ? 'on' : '', onclick: () => { CFG.form = v; saveCfg(); applyForm(); mSheetRefresh(); } }, t)));
+  const more = MGROUPS.find(g => g.id === 'more'), pico = { lab: '<path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/>', exp: '<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>' };
   const sh = h('div', { class: 'msheet', role: 'dialog', 'aria-label': 'More' },
     h('div', { class: 'mgrab', onclick: () => mCloseOverlays() }),
     stat,
+    h('div', { class: 'mrow mpanels' }, h('span', {}, 'Panels'), h('div', { class: 'mpanel-b' }, more.subs.map(([sid, name]) => h('button', { class: 'btn sm' + (M.g === 'more' && M.s === sid ? ' on' : ''), 'data-sub': sid, onclick: () => { mCloseOverlays(); mGo('more', sid); } }, msvg(pico[sid] || '<circle cx="12" cy="12" r="8"/>', 16), ' ' + name)))),
     h('div', { class: 'mgrid' },
       tile(msvg('<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/>'), 'Hum or sing a song', () => { mCloseOverlays(); humOpen(); }),
       tile(msvg('<path d="M17 2l4 4-4 4M3 11V9a3 3 0 013-3h15M7 22l-4-4 4-4M21 13v2a3 3 0 01-3 3H3"/>'), 'Loop & layer', () => { mCloseOverlays(); looperOpen(); }),
@@ -5386,7 +5419,7 @@ function mSheet() {
     h('div', { class: 'mrow' }, h('span', {}, 'Device layout'), seg),
     h('div', { class: 'mfoot' }, BRAND.name + ' v' + VERSION + ' · everything stays on this device')
   );
-  M.sheet = sh; document.body.classList.add('sheet-open'); document.body.append(sh);
+  M.sheet = sh; document.body.classList.add('sheet-open'); document.body.append(sh); const mb = M.nav && M.nav.querySelector('.mnb[data-g="more"]'); if (mb) mb.setAttribute('aria-expanded', 'true');
 }
 function mSheetRefresh() { if (!M.sheet) return; M.sheet.remove(); M.sheet = null; mSheet(); }
 function mFullscreen() { const e = document.documentElement; try { if (document.fullscreenElement) document.exitFullscreen(); else if (e.requestFullscreen) e.requestFullscreen({ navigationUI: 'hide' }).catch(() => toast('Full screen is not available here')); } catch (err) { } }
@@ -5398,9 +5431,9 @@ function buildMobile() {
   M.trans = h('div', { id: 'mtrans', role: 'group', 'aria-label': 'Transport' });
   M.chips = h('div', { class: 'mchips', role: 'tablist' });
   M.tlBtn = h('button', { class: 'msc tl', title: 'Arrangement: mini → full → hidden', onclick: mCycleTl }, '▴ Tracks');
-  M.songBtn = h('button', { class: 'msc song', title: 'Song details: title, artist, tuning, capo, loaded track', onclick: () => { const o = document.body.classList.contains('song-open'); mCloseOverlays(); if (!o) { document.body.classList.add('song-open'); } } }, '♪ Song');
+  M.songBtn = h('button', { class: 'msc song', title: 'Song details: title, artist, tuning, capo, loaded track', onclick: () => { const o = document.body.classList.contains('song-open'); mCloseOverlays(); if (!o) { if (typeof VOX !== 'undefined' && VOX.panel) voxClose(); document.body.classList.add('song-open'); } } }, '♪ Song');
   M.sub = h('div', { id: 'msub' }, M.songBtn, M.chips, M.tlBtn);
-  M.nav = h('nav', { id: 'mnav', 'aria-label': 'Sections' }, MGROUPS.map(g => h('button', { class: 'mnb', 'data-g': g.id, onclick: () => mGo(g.id) }, msvg(g.ico), h('span', {}, g.name))));
+  M.nav = h('nav', { id: 'mnav', 'aria-label': 'Sections' }, MGROUPS.map(g => h('button', { class: 'mnb', 'data-g': g.id, onclick: () => g.id === 'more' ? mSheet() : mGo(g.id) }, msvg(g.ico), h('span', {}, g.name))));      /* More opens the sheet of everything else (its panels, Research and Export, are the first row) */
   M.back = h('div', { id: 'mback', onclick: () => mCloseOverlays() });
   const more = h('button', { class: 'btn icon mmore', title: 'More: theme, settings, help, share', 'aria-label': 'More', onclick: mSheet }, msvg('<circle cx="5.5" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="18.5" cy="12" r="1.5" fill="currentColor"/>', 20));
   $('#topR').append(more);
@@ -5699,12 +5732,14 @@ function sbChip() {
   } else if (PRJ.pending) {
     t.append(h('button', { class: 'sb-chip', title: 'This song has a backing track saved on this device. Tap to split it into stems again (takes a moment).', onclick: () => projRestoreTrack() }, '♪ Restore “' + (PRJ.pending.title || PRJ.pending.name || 'track') + '”'));
   } else {
-    t.append(h('button', { class: 'sb-chip', title: 'Load a backing track — it is split into stems and fills in this song (title, tempo, key, chords)', onclick: () => { dockGo('stems'); const f = SU && SU.file; if (f) f.click(); } }, '♪ Load a track…'));
+    t.append(h('button', { class: 'sb-chip', title: 'Load a backing track — it is split into stems and fills in this song (title, tempo, key, chords)', onclick: () => { sbLeave(); dockGo('stems'); const f = SU && SU.file; if (f) f.click(); } }, '♪ Load a track…'));
     if (S.track) t.append(h('span', { class: 'tiny muted', title: 'This song was built from a track. Load it again to play along with it.' }, 'from “' + S.track.name + '”'));
   }
-  t.append(h('button', { class: 'sb-chip', id: 'sbPerform', title: 'Perform: full-screen chords and lyrics with a count-in, record and play', onclick: e => perfOpen(e.currentTarget) }, '🎤 Perform'));
-  t.append(h('button', { class: 'sb-chip', id: 'sbVoice', 'aria-label': 'Voice', title: 'Voice: see your pitch against the key, find your range, and find the key that suits your voice', onclick: e => voxOpen(e.currentTarget) }, '〰', h('span', { class: 'sb-lbl' }, 'Voice')));
+  t.append(h('button', { class: 'sb-chip', id: 'sbPerform', title: 'Perform: full-screen chords and lyrics with a count-in, record and play', onclick: e => { sbLeave(); perfOpen(e.currentTarget); } }, '🎤 Perform'));
+  t.append(h('button', { class: 'sb-chip', id: 'sbVoice', 'aria-label': 'Voice', title: 'Voice: see your pitch against the key, find your range, and find the key that suits your voice', onclick: e => { sbLeave(); voxOpen(e.currentTarget); } }, '〰', h('span', { class: 'sb-lbl' }, 'Voice')));
 }
+/** on a phone the song details are a sheet over the page: its buttons close it before they open something else */
+function sbLeave() { if (document.body.classList.contains('song-open') && typeof mCloseOverlays === 'function') mCloseOverlays(); }
 function sbTrackPop(anchor) {
   const an = STM.an, box = h('div', { style: { display: 'grid', gap: '6px' } });
   box.append(h('h5', { style: { margin: 0 } }, STM.title || STM.name), h('div', { class: 'tiny muted' }, fmtT(STM.dur) + ' · ' + (STM.sr / 1000).toFixed(1) + ' kHz' + (an ? ' · ' + an.info.filter(i => i.found).map(i => i.name.split(' ')[0]).join(', ') + ' found' : '')));
@@ -6532,7 +6567,7 @@ function csPanel(p, st, onChange) {
    A project also exports as a plain .zip "song folder": song.md (readable anywhere, Obsidian-friendly),
    arrangement.json (the full model) and audio/*.wav — the same layout a GitHub repo will use later.
    ============================================================ */
-const PRJ = { db: null, ok: false, cur: null, rec: null, list: [], loading: false, timer: 0, saving: null, again: false, ready: false, pending: null, warned: false, wantStart: false };
+const PRJ = { db: null, ok: false, cur: null, rec: null, wait: null, flushing: false, quiet: 0, list: [], loading: false, timer: 0, saving: null, again: false, ready: false, pending: null, warned: false, wantStart: false };
 const PDB_NAME = 'the-daily-songs';
 
 /* ---------- IndexedDB, in a few lines ---------- */
@@ -6629,7 +6664,7 @@ function projSave() {
   clearTimeout(PRJ.timer); if (!PRJ.ok || !PRJ.cur || PRJ.loading || store.locked) return Promise.resolve();
   if (PRJ.saving) { PRJ.again = true; return PRJ.saving; }
   PRJ.saving = (async () => {
-    try { await projSaveNow(); projPersist(); try { syncKick(); } catch (e) { } bus.emit('savestate', 'ok', Date.now()); } catch (e) { bus.emit('savestate', 'err'); console.warn('project save', e); if (!PRJ.warned) { PRJ.warned = true; toast('This browser would not store your work (storage full or private window?). Export a song bundle from ☰ Songs to keep it.', 'warn'); } }
+    try { await projSaveNow(); projPersist(); try { if (!PRJ.flushing) syncKick(); } catch (e) { } bus.emit('savestate', 'ok', Date.now()); } catch (e) { bus.emit('savestate', 'err'); console.warn('project save', e); if (!PRJ.warned) { PRJ.warned = true; toast('This browser would not store your work (storage full or private window?). Export a song bundle from ☰ Songs to keep it.', 'warn'); } }
     finally { PRJ.saving = null; if (PRJ.again) { PRJ.again = false; projDirty(); } }
   })();
   return PRJ.saving;
@@ -6644,7 +6679,9 @@ async function projPersist() {
 async function projSaveNow() {
   const id = PRJ.cur, rec = PRJ.rec || (PRJ.rec = { id, created: Date.now(), origin: 'blank' });
   rec.song = JSON.parse(JSON.stringify(S)); rec.title = S.title || 'Untitled'; rec.artist = S.artist || ''; rec.modified = Date.now(); rec.v = 1; rec.zoom = typeof ZOOM !== 'undefined' ? ZOOM.cur : 'studio';
-  let bytes = 0; const live = new Set(TAKES.map(tkSrc));
+  /* recordings still on their way from a synced folder (part 40) are kept in the song as they are, never dropped by a save */
+  const wait = PRJ.wait && PRJ.wait.id === id ? PRJ.wait.list.filter(m => !TAKES.some(t => t.id === m.id)) : [];
+  let bytes = 0; const live = new Set(TAKES.map(tkSrc).concat(wait.map(m => m.src || m.id)));
   for (const old of new Set((rec.takes || []).map(t => t.src || t.id))) if (!live.has(old)) await pdbDelPrefix('blobs', id + '/take/' + old + '/');
   const done = new Set();
   for (const t of TAKES) {                                            // clips that came from one recording share its blobs, so each recording is written once
@@ -6652,12 +6689,12 @@ async function projSaveNow() {
     if (grp.some(x => !x._saved)) { const k = id + '/take/' + sid + '/'; await pdbPut('blobs', toI16(t.dry), k + 'dry'); if (t.wet) await pdbPut('blobs', toI16(t.wet), k + 'wet'); if (t.cam && t.cam.length) { try { await pdbPut('blobs', JSON.stringify(t.cam), k + 'cam'); } catch (e) { } } grp.forEach(x => { x._saved = true; }); }
     bytes += (t.dry.length + (t.wet ? t.wet.length : 0)) * 2;
   }
-  rec.takes = TAKES.map(takeMeta); rec.stemMix = stmHistGet();
+  rec.takes = TAKES.map(takeMeta).concat(wait); rec.stemMix = stmHistGet();
   if (STM.ch && STM.file && !STM._saved && !STM.busy) {
     const buf = await STM.file.arrayBuffer(); await pdbPut('blobs', { buf, type: STM.file.type || 'audio/mp4', name: STM.file.name || 'track' }, id + '/track'); STM._saved = true;
     rec.track = { name: STM.name, title: STM.title, artist: STM.artist, dur: STM.dur, fileName: STM.file.name || 'track', type: STM.file.type || 'audio/mp4', bytes: buf.byteLength }; PRJ.pending = null;
   } else if (!STM.ch && !STM.busy && !STM.restoring && !PRJ.pending && rec.track) { await pdbDel('blobs', id + '/track'); rec.track = null; }
-  if (rec.track) bytes += rec.track.bytes || 0; rec.size = bytes; rec.nTakes = TAKES.length;
+  if (rec.track) bytes += rec.track.bytes || 0; rec.size = bytes; rec.nTakes = rec.takes.length;
   await pdbPut('projects', rec);
   const i = PRJ.list.findIndex(r => r.id === id); if (i >= 0) PRJ.list[i] = rec; else PRJ.list.unshift(rec); PRJ.list.sort((a, b) => b.modified - a.modified); bus.emit('projects');
 }
@@ -6680,16 +6717,16 @@ async function projLoad(id, o = {}) {
   if (PRJ.cur && PRJ.cur !== id) await projSave();
   PRJ.loading = true;
   try {
-    projQuiet(); PRJ.cur = id; PRJ.rec = rec; store.set('cur', id);
+    projQuiet(); PRJ.cur = id; PRJ.rec = rec; PRJ.wait = { id, list: [] }; store.set('cur', id);
     const srcs = new Map();                                              // each recording is read once, however many clips use it
     for (const m of rec.takes || []) {
       const sid = m.src || m.id; let r = srcs.get(sid);
       if (!r) {
-        const k = id + '/take/' + sid + '/', dry = await pdbGet('blobs', k + 'dry'); if (!dry) { srcs.set(sid, false); continue; }
+        const k = id + '/take/' + sid + '/', dry = await pdbGet('blobs', k + 'dry'); if (!dry) { srcs.set(sid, false); PRJ.wait.list.push(m); continue; }
         const wet = m.hasWet ? await pdbGet('blobs', k + 'wet') : null, cam = m.hasCam ? await pdbGet('blobs', k + 'cam') : null; let cm = []; try { cm = cam ? JSON.parse(cam) : []; } catch (e) { }
         const d = fromI16(dry); r = { dry: d, wet: wet ? fromI16(wet) : null, cam: cm, peaks: peaksOf(d) }; srcs.set(sid, r);
       }
-      if (!r) continue;
+      if (!r) { PRJ.wait.list.push(m); continue; }      /* its audio is not on this device yet (a synced folder is still bringing it): kept, never dropped by a save */
       TAKES.push(Object.assign({}, m, { dry: r.dry, wet: r.wet, cam: r.cam, peaks: r.peaks, _saved: true }));
     }
     projUse(rec.song);
@@ -8257,7 +8294,7 @@ function perfOpen(opener) {
       h('button', { class: 'btn sm vzh-kill', id: 'pfKill', title: 'Stop all sound and release the microphone (Ctrl + .)', onclick: () => { try { audioKill(); } catch (e) { } } }, '■ Stop audio'), h('button', { class: 'btn sm', id: 'pfExit', onclick: () => perfClose() }, '✕ Exit')),
     h('div', { class: 'pf-stage' }, h('div', { class: 'pf-chord', id: 'pfChord', 'aria-live': 'off' }, '·'), h('div', { class: 'pf-next', id: 'pfNext' }), h('div', { class: 'pf-lyr', id: 'pfLyr' }), h('aside', { class: 'pf-shapes', id: 'pfShapes', 'aria-label': 'Chord shapes' })),
     h('div', { class: 'pf-bar' }, ctl('pfPlay', '▶ Play', 'Play or stop (Space)', () => { T.playing ? stopPlay(true) : play(); }), ctl('pfRec', '● Record', 'Record a take with a count-in (R)', () => { if (!E.hasInput) toast('No input is connected, so only the count-in will run.', 'warn'); toggleRec(); }),
-      ctl('pfLoop', '⟲ Loop', 'Loop the song (L)', () => { T.loop = !T.loop; syncTransport(); perfSync(); }), ctl('pfMetro', '♩ Click', 'Metronome (M)', () => { T.metro = !T.metro; syncTransport(); perfSync(); }),
+      ctl('pfLoop', '⟲ Loop', 'Loop the song (L)', () => { T.loop = !T.loop; syncTransport(); perfSync(); }), ctl('pfMetro', '♩ Click', 'Metronome (M)', () => { T.metro = !T.metro; syncTransport(); perfSync(); }), ctl('pfBand', '🔇 Band', 'Mute the whole band and the click (Shift+M)', () => { bandMute(); perfSync(); }),
       ctl('pfSlow', '−', 'Slower by 5 BPM', () => { S.bpm = clamp(S.bpm - 5, 30, 260); commit(false); bus.emit('bpm'); perfSync(); }), h('b', { class: 'pf-bpm', id: 'pfBpm' }), ctl('pfFast', '+', 'Faster by 5 BPM', () => { S.bpm = clamp(S.bpm + 5, 30, 260); commit(false); bus.emit('bpm'); perfSync(); }),
       h('span', { class: 'grow egg-line', 'aria-live': 'off' }), h('span', { class: 'pf-takes', id: 'pfTakes' })), secretChip('pf-sec'), buildTag('pf-ver'));
   document.body.append(PF.el); document.body.classList.add('perform-on');
@@ -8273,7 +8310,7 @@ function perfClose() {
 function perfSync() {
   if (!PF.el) return; const q = id => document.getElementById(id), on = (id, v) => { const b = q(id); if (b) b.classList.toggle('on', !!v); };
   const p = q('pfPlay'); if (p) p.textContent = T.playing ? '■ Stop' : '▶ Play'; const r = q('pfRec'); if (r) { r.classList.toggle('on', T.rec && T.playing); r.classList.toggle('armed', T.rec && !T.playing); r.textContent = T.rec && T.playing ? '● Recording' : '● Record'; }
-  on('pfLoop', T.loop); on('pfMetro', T.metro); const b = q('pfBpm'); if (b) b.textContent = Math.round(S.bpm) + ' BPM';
+  on('pfLoop', T.loop); on('pfMetro', T.metro); bandMuteSync(); const b = q('pfBpm'); if (b) b.textContent = Math.round(S.bpm) + ' BPM';
   const tk = q('pfTakes'); if (tk) { const n = tkLeads().length; tk.textContent = n ? n + ' take' + (n === 1 ? '' : 's') + ' in this song' : ''; }
 }
 function perfTick() {
@@ -8698,52 +8735,300 @@ function tipOpen() {
 
 /* >>> parts/40-sync.js */
 /* ============================================================
-   Part 40 · BACKUP FOLDER (File System Access API, Chromium browsers)
-   Pick a folder once (a cloud-drive folder works too) and each song is saved there as a .daily-song.zip after you change it.
-   No account, no server: the browser writes the files directly. The folder choice is remembered on this device only.
+   Part 40 · FOLDER SYNC (File System Access API: Chrome, Edge and other Chromium browsers on a computer)
+   Pick a folder once (one inside iCloud Drive, Dropbox, Google Drive or OneDrive is best) and your whole studio is kept in step
+   with it: songs, their recordings and backing tracks, settings, rig presets, stage looks and scenes, lesson notes and the notebook.
+   Pick the same folder on another computer and it gets the same studio; the cloud drive's own app carries the files between them.
+   No account and no server: this page asks the network for nothing, the browser reads and writes the folder directly.
+     · the files are a GitHub studio's (part 74: studio.json, settings.json, songs/<id>.json …), in "the-daily.studio" inside the
+       folder you pick (or the folder itself, if it already is one). A song here also lists its recordings, and media/<song id>/
+       holds them: each recording as a WAV (dry, and the amp print if there is one), each backing track as the file you loaded.
+       A recording never changes once it is made, so its file is only ever copied to the side that lacks it.
+     · merges are GitHub's (part 74's engine): settings key by key, a song changed in both places keeps both versions, a song
+       deleted here is removed there and one deleted elsewhere is kept here. A song whose recordings are still on their way keeps
+       them (part 25 never drops them on a save), and they come in when the cloud drive has brought them.
+     · when: a few seconds after a change, when the page opens or comes back, and once a minute while it is open (another computer
+       may have changed something). Never while playing or recording.
+     · tidy: a recording no song uses any more is removed from the folder once nothing has used it for a day, so a cloud drive still
+       copying a song from another computer never loses one. Only the app's own files are ever removed.
+     · optional: also save each song as a .daily-song.zip in the folder you picked (this part's whole job before 2.22; kept on for
+       folders chosen then).
+   The folder (a handle the browser keeps) is remembered on this device only; the browser may ask again for access after a restart.
    ============================================================ */
 const SYNC = { dir: null, name: '', busy: false, timer: 0, at: 0, perm: '', err: '' };
+const FS_UP = !!CFG.sync && !CFG.fsync;      /* a backup folder chosen before 2.22: it keeps its .daily-song.zip copies, and is told what is new */
+CFG.fsync = Object.assign({ last: null, lastAt: 0, gone: [], zips: FS_UP, orph: {}, sub: '', told: !FS_UP }, CFG.fsync && typeof CFG.fsync === 'object' ? CFG.fsync : {});
+const FS = { root: null, rootOf: null, clashes: 0, due: 0, cache: new Map(), quiet: false, busy: null, again: false, timer: 0, kick0: 0, status: '', bad: false, mediaAt: 0, mediaDue: true, zipAt: 0, zipT: 0 };
+const FS_SUB = 'the-daily.studio', FS_MAX = 20e6, FS_DAY = 864e5;
+const FS_MEDIA_RE = /^[\w-]{1,48}\.(dry|wet)\.wav$|^[\w-]{1,48}\.cam\.json$|^track-\d{1,12}\.[a-z0-9]{1,8}$/;
 const syncSupported = () => typeof window.showDirectoryPicker === 'function';
 async function syncPerm(ask) {
   const d = SYNC.dir; if (!d) return SYNC.perm = 'none';
   try { if (d.queryPermission) { let p = await d.queryPermission({ mode: 'readwrite' }); if (p !== 'granted' && ask && d.requestPermission) p = await d.requestPermission({ mode: 'readwrite' }); return SYNC.perm = p; } return SYNC.perm = 'granted'; } catch (e) { return SYNC.perm = 'denied'; }
 }
+/** the folder as people see it: the one picked, and the studio inside it */
+const fsWhere = () => SYNC.name + (CFG.fsync.sub ? ' ▸ ' + CFG.fsync.sub : '');
+/** never while playing, recording or looping: a sync can wait for the song to stop */
+const fsAudioBusy = () => !!(T.playing || T.rec || REC || (typeof SREC !== 'undefined' && SREC.on) || (typeof LP !== 'undefined' && LP.on));
 async function syncLoad() {
-  if (!CFG.sync || !PRJ.db) return; try { const d = await pdbGet('blobs', 'sync/dir'); if (d) { SYNC.dir = d; SYNC.name = d.name || 'folder'; await syncPerm(false); bus.emit('sync'); } } catch (e) { }
+  if (!CFG.sync || !PRJ.db) return; try { const d = typeof window.__fsDir === 'function' ? await window.__fsDir() : await pdbGet('blobs', 'sync/dir');      /* (tests hand the folder in: a headless browser cannot read a stored one back) */ if (d) { SYNC.dir = d; SYNC.name = d.name || 'folder'; await syncPerm(false); bus.emit('sync'); if (SYNC.perm === 'granted') setTimeout(() => fsSync('open'), 1200); } } catch (e) { }
 }
 async function syncChoose() {
-  if (!syncSupported()) return toast('Folder backup needs Chrome or Edge on a computer.', 'warn');
+  if (!syncSupported()) return toast('Folder sync needs Chrome or Edge on a computer.', 'warn');
   let d; try { d = await window.showDirectoryPicker({ id: 'daily-backup', mode: 'readwrite' }); } catch (e) { return; }
-  SYNC.dir = d; SYNC.name = d.name || 'folder'; CFG.sync = true; saveCfg(); try { await pdbPut('blobs', d, 'sync/dir'); } catch (e) { }
-  await syncPerm(true); bus.emit('sync'); if (SYNC.perm === 'granted') syncNow(true);
+  return fsUse(d);
 }
-async function syncOff() { SYNC.dir = null; SYNC.name = ''; SYNC.perm = ''; CFG.sync = false; saveCfg(); try { await pdbDel('blobs', 'sync/dir'); } catch (e) { } bus.emit('sync'); toast('Folder backup is off. Files already in the folder stay there.', 'ok'); }
-function syncFile(rec, dup) { return slug(rec.title || 'song') + (dup ? '-' + rec.id.slice(-4) : '') + '.daily-song.zip'; }
-/** write the current song, or every song when `all` */
-async function syncNow(all) {
-  if (!SYNC.dir || SYNC.busy || store.locked) return; if (await syncPerm(false) !== 'granted') { bus.emit('sync'); return; }
-  SYNC.busy = true; SYNC.err = ''; bus.emit('sync');
+/** start keeping the studio in step with this folder (the picker's answer; tests hand one in directly) */
+async function fsUse(d) {
+  SYNC.dir = d; SYNC.name = d.name || 'folder'; CFG.sync = true; FS.root = null; CFG.fsync.last = null; CFG.fsync.gone = []; CFG.fsync.orph = {}; CFG.fsync.told = true; FS.mediaDue = true; saveCfg();
+  try { await pdbPut('blobs', d, 'sync/dir'); } catch (e) { }
+  await syncPerm(true); bus.emit('sync'); if (SYNC.perm !== 'granted') return null;
+  const rep = await fsSync('connect'); if (!rep) return null; const n = rep.took.filter(p => /^songs\//.test(p)).length;
+  toast('Your studio is kept in “' + fsWhere() + '”.' + (n ? ' ' + n + ' song' + (n === 1 ? '' : 's') + ' came in from it.' : '') + ' Choose the same folder on another computer to have the same studio there.', 'ok');
+  return rep;
+}
+async function syncOff() { clearTimeout(FS.timer); FS.timer = 0; SYNC.dir = null; SYNC.name = ''; SYNC.perm = ''; FS.root = null; CFG.sync = false; CFG.fsync.last = null; CFG.fsync.sub = ''; saveCfg(); try { await pdbDel('blobs', 'sync/dir'); } catch (e) { } bus.emit('sync'); toast('Folder sync is off. Everything already in the folder stays there.', 'ok'); }
+
+/* ---------- the folder, by path ---------- */
+const fsHas = async (d, n) => { try { await d.getFileHandle(n); return true; } catch (e) { return false; } };
+/** the studio's own folder: the one picked if it already holds a studio (or is named for one), otherwise "the-daily.studio" inside it */
+async function fsOpen() {
+  const d = SYNC.dir; if (!d) throw new Error('no folder chosen');
+  if (FS.root && FS.rootOf === d) return FS.root;
+  let root = d, sub = '';
+  if (d.name !== FS_SUB && !(await fsHas(d, 'studio.json'))) { root = await d.getDirectoryHandle(FS_SUB, { create: true }); sub = FS_SUB; }
+  FS.root = root; FS.rootOf = d; FS.cache.clear(); if (CFG.fsync.sub !== sub) { CFG.fsync.sub = sub; FS_B.quiet(saveCfg); } return root;
+}
+async function fsDirOf(path, create) { let d = FS.root; const parts = path.split('/'); parts.pop(); for (const p of parts) d = await d.getDirectoryHandle(p, { create: !!create }); return d; }
+async function fsGet(path) { try { return await (await (await fsDirOf(path)).getFileHandle(path.split('/').pop())).getFile(); } catch (e) { return null; } }
+async function fsPut(path, data) {      /* the browser writes beside the file and swaps it in on close, so a file is never left half-written */
+  const w = await (await (await fsDirOf(path, true)).getFileHandle(path.split('/').pop(), { create: true })).createWritable();
+  try { await w.write(data); await w.close(); } catch (e) { try { await w.abort(); } catch (x) { } throw e; }
+}
+async function fsDel(path) { try { await (await fsDirOf(path)).removeEntry(path.split('/').pop()); return true; } catch (e) { return false; } }
+async function fsLs(path) { const out = []; try { let d = FS.root; for (const p of path.split('/').filter(Boolean)) d = await d.getDirectoryHandle(p); for await (const [n, h] of d.entries()) out.push({ n, h }); } catch (e) { } return out; }
+
+/* ---------- the studio's text files: what part 74's engine reads and writes ---------- */
+const FS_TEXT = ['studio.json', 'settings.json', 'notes.json', 'README.md', 'rig/presets.json', 'stage/looks.json', 'stage/scenes.json'];
+/** every file's Git blob id, as GitHub's tree would list it; a file whose time and size have not changed is not read again */
+async function fsHead() {
+  await fsOpen(); const files = {}, texts = new Map(), paths = FS_TEXT.slice();
+  for (const e of await fsLs('songs')) if (e.h.kind === 'file' && /^[\w-]{1,80}\.json$/.test(e.n)) paths.push('songs/' + e.n);
+  for (const p of paths) {
+    const f = await fsGet(p); if (!f) continue; const c = FS.cache.get(p);
+    if (c && c.lm === f.lastModified && c.size === f.size) { files[p] = { sha: c.sha, size: f.size }; continue; }
+    if (f.size > FS_MAX) { files[p] = { sha: 'big', size: f.size }; continue; }
+    const t = await f.text(), sha = await ghSha(t); FS.cache.set(p, { lm: f.lastModified, size: f.size, sha }); texts.set(p, t); files[p] = { sha, size: f.size };
+  }
+  return { head: files['studio.json'] ? 'folder' : null, files, texts };
+}
+async function fsCommit(at, send) {
+  for (const [p, t] of Object.entries(send)) {
+    if (t == null) { await fsDel(p); FS.cache.delete(p); continue; }
+    await fsPut(p, t); const f = await fsGet(p); if (f) FS.cache.set(p, { lm: f.lastModified, size: f.size, sha: await ghSha(t) });
+  }
+  return 'folder';
+}
+/** a song as a file here: the GitHub text, and the recordings it has (their settings; the audio is in media/) */
+const fsSongOut = rec => Object.assign(ghSongOut(rec), { format: 'the-daily-song-folder', takes: (rec.takes || []).map(m => Object.assign({}, m)), track: rec.track ? Object.assign({}, rec.track) : null, stemMix: rec.stemMix || null });
+const FS_ABOUT = 'This folder is a the-daily.studio studio: settings, presets, looks, notes, songs as text, and their recordings in media/. It is kept in step by the app; edit with care.';
+const FS_README = '# My the-daily.studio\n\nKept in step by [the-daily.studio](https://the-daily.studio/) (Settings ▸ Folder sync) on every computer that uses this folder. `songs/` holds each song as text, `media/<song id>/` its recordings (WAV) and backing track, and the rest your settings, rig presets, stage looks and scenes, and notes.\n';
+const fsLocal = () => ghLocal({ songOut: fsSongOut, st: CFG.fsync, max: FS_MAX, about: FS_ABOUT, readme: FS_README });
+
+/* ---------- recordings and backing tracks ---------- */
+const fsId = v => typeof v === 'string' && /^[\w-]{1,48}$/.test(v);
+const fsTakeOk = m => !!m && typeof m === 'object' && fsId(m.id) && (m.src == null || fsId(m.src)) && m.sr >= 8000 && m.sr <= 384000;
+const fsTrackOk = t => !!t && typeof t === 'object' && t.bytes > 0 && t.bytes < 4e9;
+const fsExt = t => ((/\.[A-Za-z0-9]{1,8}$/.exec(String(t.fileName || '')) || ['.m4a'])[0]).toLowerCase();
+/** the files a song's recordings make: where each lives in the folder (under pathId) and in this browser (under keyId) */
+function fsNeeds(pathId, keyId, takes, track) {
+  const out = [], seen = new Set(), dir = 'media/' + pathId + '/';
+  for (const m of takes) {
+    const sid = m.src || m.id; if (seen.has(sid)) continue; seen.add(sid); const k = keyId + '/take/' + sid + '/';
+    out.push({ kind: 'dry', path: dir + sid + '.dry.wav', key: k + 'dry', sr: m.sr });
+    if (m.hasWet) out.push({ kind: 'wet', path: dir + sid + '.wet.wav', key: k + 'wet', sr: m.sr });
+    if (m.hasCam) out.push({ kind: 'cam', path: dir + sid + '.cam.json', key: k + 'cam' });
+  }
+  if (track) out.push({ kind: 'track', path: dir + 'track-' + Math.round(track.bytes) + fsExt(track), key: keyId + '/track', track });
+  return out;
+}
+/** bring a song's recordings in from the folder (only those this browser lacks); a file a cloud drive has not finished is left for later */
+async function fsMediaIn(fromId, toId, takes, track) {
+  const have = new Set(await pdbKeys('blobs', toId + '/')), r = { got: 0, missing: 0 };
+  for (const n of fsNeeds(fromId, toId, takes, track)) {
+    try {
+      if (n.kind === 'track') { if (have.has(n.key)) { const b = await pdbGet('blobs', n.key); if (b && b.buf && b.buf.byteLength === n.track.bytes) continue; } }
+      else if (have.has(n.key)) continue;
+      const f = await fsGet(n.path); if (!f) { r.missing++; continue; }
+      if (n.kind === 'cam') await pdbPut('blobs', await f.text(), n.key);
+      else if (n.kind === 'track') { if (f.size !== n.track.bytes) { r.missing++; continue; } const buf = await f.arrayBuffer(); await pdbPut('blobs', { buf, type: n.track.type || f.type || 'audio/mp4', name: n.track.fileName || 'track' }, n.key); }
+      else { const u = new Uint8Array(await f.arrayBuffer()); if (u.length < 44 || new DataView(u.buffer).getUint32(4, true) + 8 !== u.length) { r.missing++; continue; } await pdbPut('blobs', wavParse(u).i16, n.key); }
+      r.got++; fsStatus('Bringing recordings in… ' + r.got);
+    } catch (e) { r.missing++; console.warn('[folder] could not read', n.path, e); }
+  }
+  return r;
+}
+/** copy a song's recordings to the folder (only those it lacks) */
+async function fsMediaOut(id, takes, track, names) {
+  const have = new Set(await pdbKeys('blobs', id + '/')); let n = 0;
+  for (const x of fsNeeds(id, id, takes, track)) {
+    if (!have.has(x.key) || names.has(x.path.split('/').pop())) continue;
+    const v = await pdbGet('blobs', x.key); if (v == null) continue;
+    await fsPut(x.path, x.kind === 'cam' ? String(v) : x.kind === 'track' ? v.buf : wavI16(v, x.sr)); n++; fsStatus('Copying recordings to the folder… ' + n);
+  }
+  return n;
+}
+/** after the songs are in step: every song's recordings, both ways; then tidy what no song uses (part 74 calls this) */
+async function fsMedia(at, now, rep, files) {
+  if (!(FS.mediaDue || rep.took.length || rep.sent || Date.now() - FS.mediaAt > 36e5)) return;      /* nothing new on either side: an hour between looks */
+  FS.mediaDue = false; FS.mediaAt = Date.now();
+  const ids = new Set(Object.keys(files).filter(p => GH_KIND(p) === 'song').map(p => p.slice(6, -5))), ref = new Map(); let wrote = 0, got = 0, missing = 0;
+  for (const id of ids) {
+    const rec = await pdbGet('projects', id); if (!rec) continue;
+    const takes = (rec.takes || []).filter(fsTakeOk), track = fsTrackOk(rec.track) ? rec.track : null, need = fsNeeds(id, id, takes, track);
+    ref.set(id, new Set(need.map(x => x.path.split('/').pop()))); if (!need.length) continue;
+    wrote += await fsMediaOut(id, takes, track, new Set((await fsLs('media/' + id)).map(e => e.n)));
+    const r = await fsMediaIn(id, id, takes, track); got += r.got; missing += r.missing;
+    if (r.got && PRJ.cur === id && PRJ.wait && PRJ.wait.id === id && PRJ.wait.list.length && !fsAudioBusy()) { try { await projSave(); await projLoad(id, { keepZoom: true }); } catch (e) { } }      /* the open song's recordings arrived */
+  }
+  const inFolder = new Set(Object.keys(at.files).filter(p => GH_KIND(p) === 'song').map(p => p.slice(6, -5))), tidied = await fsTidy(ref, inFolder);
+  if (missing) FS.mediaDue = true;
+  rep.media = { wrote, got, missing, tidied };
+  rep.note = [wrote ? wrote + ' recording file' + (wrote === 1 ? '' : 's') + ' copied' : '', got ? got + ' recording file' + (got === 1 ? '' : 's') + ' came in' : '', missing ? missing + ' still on the way' : ''].filter(Boolean).join(' · ');
+  if (got) bus.emit('projects');
+}
+/** remove the app's own files that no song uses, once that has been so for a day (by this device's count and by the file's age) */
+async function fsTidy(ref, inFolder) {
+  const orph = CFG.fsync.orph || {}, now = Date.now(), seen = new Set(); let n = 0;
+  for (const d of await fsLs('media')) {
+    if (d.h.kind !== 'directory' || !fsId(d.n)) continue;
+    const want = ref.get(d.n); if (!want && inFolder.has(d.n)) continue;      /* a song in the folder this device could not read: its recordings are left alone */
+    for (const e of await fsLs('media/' + d.n)) {
+      if (e.h.kind !== 'file' || !FS_MEDIA_RE.test(e.n) || (want && want.has(e.n))) continue;
+      const p = 'media/' + d.n + '/' + e.n; seen.add(p); const first = orph[p] || (orph[p] = now); let lm = now; try { lm = (await e.h.getFile()).lastModified; } catch (x) { }
+      if (now - first >= FS_DAY && now - lm >= FS_DAY && await fsDel(p)) { n++; delete orph[p]; seen.delete(p); }
+    }
+    if (!want) try { await (await FS.root.getDirectoryHandle('media')).removeEntry(d.n); } catch (e) { }      /* only goes if it is empty */
+  }
+  Object.keys(orph).forEach(p => { if (!seen.has(p)) delete orph[p]; }); CFG.fsync.orph = orph; FS_B.quiet(saveCfg);
+  return n;
+}
+/** a song from the folder into this browser's library: its recordings first, so it opens whole. `cid` names a kept second version */
+async function fsTakeSong(text, asCopy, at, path, cid) {
+  const d = ghParse(text); if (!d || !d.song || !Array.isArray(d.song.sections)) return null;
+  const from = fsId(d.id) ? d.id : '';
+  if (path && from && path !== 'songs/' + from + '.json') { const r = await fsClash(text, d); await fsDel(path); FS.cache.delete(path); return r; }      /* a file named for another song: a cloud drive's second version */
+  const id = cid || (asCopy || !from ? projId() : from), old = asCopy ? null : await pdbGet('projects', id);
+  const takes = Array.isArray(d.takes) ? d.takes.filter(fsTakeOk) : (old && old.takes) || [], track = fsTrackOk(d.track) ? d.track : null;
+  if (from) { const r = await fsMediaIn(from, id, takes, track); if (r.missing) FS.mediaDue = true; }
+  const rec = Object.assign({ takes: [], track: null, stemMix: null, size: 0, nTakes: 0 }, old || {}, { id, v: 1, origin: d.origin || 'folder', created: d.created || Date.now(), modified: Date.now(), zoom: d.zoom || 'song', song: normSong(d.song), takes, track, stemMix: d.stemMix || null });
+  if (asCopy) rec.song.title = (d.title || 'Untitled') + ' (from another device)';
+  rec.title = rec.song.title || d.title || 'Untitled'; rec.artist = rec.song.artist || d.artist || ''; rec.nTakes = takes.length;
+  const sids = new Set(takes.map(m => m.src || m.id)); rec.size = takes.filter(m => sids.delete(m.src || m.id)).reduce((a, m) => a + (m.dur || 0) * m.sr * 2 * (m.hasWet ? 2 : 1), 0) + (track ? track.bytes : 0);
+  if (old) {      /* recordings removed on the other computer go here too */
+    const keep = new Set(takes.map(m => m.src || m.id)); for (const k of await pdbKeys('blobs', id + '/take/')) if (!keep.has(k.split('/')[2])) await pdbDel('blobs', k);
+    if (!track && old.track) await pdbDel('blobs', id + '/track');
+  }
+  await pdbPut('projects', rec);
+  if (!asCopy && PRJ.cur === id) { try { await projLoad(id, { keepZoom: true }); } catch (e) { } }
+  return rec;
+}
+
+/* ---------- two computers saving the same song before the cloud drive caught up ----------
+   A cloud drive keeps both: one as the song's file, the other as a second file beside it ("<id> (Sam's conflicted copy …).json" in
+   Dropbox, "<id> (1).json", "<id> 2.json", "<id>-LAPTOP.json" in OneDrive). The second is kept as a song of its own, "… (from another
+   device)", unless it is the same as the song, and its file goes. The kept song's id comes from its content, so two computers doing
+   this at once make the same song, not two. */
+async function fsClash(text, d) {
+  const main = await fsGet('songs/' + d.id + '.json'); if (main && await main.text() === text) return null;
+  const cid = (d.id.slice(0, 30) + '-v' + (await ghSha(text)).slice(0, 10)).replace(/[^\w-]/g, '');
+  if (await pdbGet('projects', cid)) return null; FS.clashes++;
+  return fsTakeSong(text, true, null, null, cid);
+}
+async function fsAbsorb() {
+  FS.clashes = 0;
+  for (const e of await fsLs('songs')) {
+    if (e.h.kind !== 'file' || !/\.json$/i.test(e.n) || /^[\w-]{1,80}\.json$/.test(e.n)) continue;      /* a plain "<id>.json" is the engine's (a misnamed one is caught as it is taken) */
+    let t; try { const f = await e.h.getFile(); if (f.size > FS_MAX) continue; t = await f.text(); } catch (x) { continue; }
+    const d = ghParse(t); if (!d || !fsId(d.id) || !d.song || !Array.isArray(d.song.sections) || !/^the-daily-song/.test(String(d.format || ''))) continue;      /* not one of ours: left alone */
+    await fsClash(t, d); await fsDel('songs/' + e.n);
+  }
+  if (FS.clashes) await projRefresh();
+  return FS.clashes;
+}
+
+/* ---------- the folder as one of the places part 74's engine keeps a studio in step with ---------- */
+const FS_B = { get st() { return CFG.fsync; }, base: 'fs/base/', label: 'the folder', event: 'fsync', maxFile: FS_MAX,
+  local: fsLocal, head: fsHead, read: async (p, at) => at.texts.has(p) ? at.texts.get(p) : (await fsGet(p) || { text: async () => null }).text(), commit: fsCommit,
+  takeSong: fsTakeSong, status: (t, bad) => fsStatus(t, bad), quiet: fn => { FS.quiet = true; PRJ.quiet++; try { fn(); } finally { FS.quiet = false; PRJ.quiet--; } }, after: fsMedia };
+function fsStatus(t, bad) { FS.status = t; FS.bad = !!bad; const s = document.getElementById('fsStatus'); if (s) { s.textContent = t; s.style.color = bad ? 'var(--bad)' : ''; } }
+/** one sync with the folder (another waits its turn) */
+async function fsSync(why) {
+  if (!SYNC.dir || !CFG.sync) return null;
+  if (FS.busy) { FS.again = true; return FS.busy; }
+  if (await syncPerm(false) !== 'granted') { bus.emit('sync'); return null; }
+  if (why !== 'now' && why !== 'connect' && fsAudioBusy()) { fsKick(10000); return null; }
+  FS.busy = (async () => {
+    SYNC.busy = true; SYNC.err = ''; fsStatus('Syncing…'); bus.emit('sync'); let rep = null;
+    try {
+      await fsOpen(); await fsAbsorb();      /* the cloud drive's second versions first, then the engine (which may find more) */
+      rep = await studioSync(FS_B, why); SYNC.at = Date.now(); CFG.syncAt = SYNC.at; FS_B.quiet(saveCfg);
+      const clash = FS.clashes; if (rep) rep.clash = clash; if (clash) toast(clash + (clash === 1 ? ' song was' : ' songs were') + ' saved on two computers before the cloud drive caught up, so both versions are kept (“… (from another device)”).', 'warn');
+      if (CFG.fsync.zips) await syncZips(why === 'now' || why === 'connect');
+      if (!CFG.fsync.told) { CFG.fsync.told = true; FS_B.quiet(saveCfg); toast('Your backup folder now keeps your whole studio in step (songs, recordings, settings and looks) in “' + fsWhere() + '”. Choose the same folder on another computer to have the same studio there. Each song’s .daily-song.zip is still saved too.', 'ok'); }
+    } catch (e) {
+      SYNC.err = e && e.name === 'NotFoundError' ? 'the folder is not there any more (moved or deleted?). Choose it again.' : e && e.name === 'NotAllowedError' ? 'the browser needs your permission again.' : (e && e.message) || String(e);
+      if (e && e.name === 'NotAllowedError') await syncPerm(false); FS.root = null; fsStatus('Not synced: ' + SYNC.err, true); console.warn('[folder]', e);
+    } finally { SYNC.busy = false; FS.busy = null; bus.emit('sync'); if (FS.again) { FS.again = false; setTimeout(() => fsSync('again'), 50); } }
+    return rep;
+  })();
+  return FS.busy;
+}
+/** the button, and older callers: every song now, or just what changed */
+const syncNow = all => fsSync(all ? 'now' : 'auto');
+/** after a change: sync once things have been quiet for a few seconds (and at least every half minute while they are not) */
+function fsKick(ms) {
+  if (!SYNC.dir || !CFG.sync || FS.quiet || PRJ.flushing) return; const now = Date.now(), d = ms != null ? ms : window.__syncDelay != null ? window.__syncDelay : 6000;
+  if (FS.timer) { if (FS.due <= now + d && now - FS.kick0 > 30000) return; clearTimeout(FS.timer); } else FS.kick0 = now;      /* one already due sooner, after half a minute of changes: let it run */
+  FS.due = now + d; FS.timer = setTimeout(() => { FS.timer = 0; fsSync('auto'); }, d);
+}
+/** part 25 calls this after a song is saved; saveCfg after a setting changes */
+function syncKick() { fsKick(); }
+function syncCfgKick() { if (!FS.quiet && !FS.busy && !PRJ.quiet) fsKick(window.__syncDelay != null ? window.__syncDelay : 15000); }
+bus.on('projects', () => { if (!FS.busy && !PRJ.flushing) fsKick(); });
+document.addEventListener('visibilitychange', () => { if (!document.hidden && SYNC.dir && CFG.sync && SYNC.perm === 'granted' && Date.now() - (SYNC.at || 0) > 30000) fsSync('back'); });
+setInterval(() => { if (SYNC.dir && CFG.sync && SYNC.perm === 'granted' && !document.hidden && !FS.busy && Date.now() - (SYNC.at || 0) > 55000) fsSync('poll'); }, 60000);
+/** each song as a .daily-song.zip in the folder you picked: the current song at most once in 45 seconds, or every song */
+async function syncZips(all) {
+  const since = Date.now() - FS.zipAt;
+  if (!all && since < 45000) { clearTimeout(FS.zipT); FS.zipT = setTimeout(() => { if (fsAudioBusy()) FS.zipAt = 0; else syncZips(false); }, 45000 - since); return; }
+  const list = all ? PRJ.list.slice() : PRJ.list.filter(r => r.id === PRJ.cur); if (!list.length) return; FS.zipAt = Date.now();
   try {
-    if (PRJ.cur) await projSave(); const list = all ? PRJ.list.slice() : PRJ.list.filter(r => r.id === PRJ.cur);
     for (const r of list) {
       const dup = PRJ.list.some(o => o.id !== r.id && slug(o.title || 'song') === slug(r.title || 'song')), blob = zipBuild(await projEntries(r.id, ''));
-      const fh = await SYNC.dir.getFileHandle(syncFile(r, dup), { create: true }), w = await fh.createWritable(); await w.write(blob); await w.close();
+      const w = await (await SYNC.dir.getFileHandle(syncFile(r, dup), { create: true })).createWritable(); await w.write(blob); await w.close();
     }
-    SYNC.at = Date.now(); CFG.syncAt = SYNC.at; saveCfg(); if (all) toast('Saved ' + list.length + ' song' + (list.length === 1 ? '' : 's') + ' to “' + SYNC.name + '”.', 'ok');
-  } catch (e) { SYNC.err = e.message || String(e); console.warn('folder backup', e); if (all) toast('Could not write to the folder: ' + SYNC.err, 'bad'); }
-  SYNC.busy = false; bus.emit('sync');
+  } catch (e) { console.warn('[folder] zip', e); }
 }
-/** after a song is saved: write it to the folder at most once a minute */
-function syncKick() { if (!SYNC.dir || !CFG.sync) return; if (SYNC.timer) return; SYNC.timer = setTimeout(() => { SYNC.timer = 0; syncNow(false); }, window.__syncDelay != null ? window.__syncDelay : 45000); }
+function syncFile(rec, dup) { return slug(rec.title || 'song') + (dup ? '-' + rec.id.slice(-4) : '') + '.daily-song.zip'; }
+
+/* ---------- Settings ▸ Folder sync ---------- */
 function syncControl() {
-  const box = h('div', { class: 'sync-ctl', style: { display: 'grid', gap: '6px' } }), draw = () => {
-    box.innerHTML = ''; if (!syncSupported()) { box.append(h('span', { class: 'tiny muted' }, 'Not available in this browser. It works in Chrome and Edge on a computer.')); return; }
-    if (!SYNC.dir) { box.append(h('div', { class: 'row', style: { gap: '8px', flexWrap: 'wrap' } }, h('button', { class: 'btn', id: 'syncChoose', onclick: syncChoose }, '📁 Choose a folder…'), h('span', { class: 'tiny muted' }, 'Each song is saved there as a .daily-song.zip after you change it.'))); return; }
+  const box = h('div', { class: 'sync-ctl', style: { display: 'grid', gap: '8px' } }), draw = () => {
+    box.innerHTML = '';
+    if (!syncSupported()) { box.append(h('p', { class: 'small muted' }, 'Folder sync needs Chrome or Edge on a computer (this browser cannot open a folder). Here, ☰ Songs → All songs → Back up all songs makes one file with everything, to keep anywhere.')); return; }
+    if (!SYNC.dir) {
+      box.append(h('p', { class: 'small' }, 'Choose a folder and your whole studio is kept in step with it: songs, recordings and backing tracks, settings, rig presets, stage looks and notes. Choose a folder inside iCloud Drive, Dropbox, Google Drive or OneDrive, then the same folder on your other computers, and they all have the same studio.'),
+        h('div', { class: 'row', style: { gap: '8px', flexWrap: 'wrap', alignItems: 'center' } }, h('button', { class: 'btn primary', id: 'syncChoose', onclick: syncChoose }, '📁 Choose a folder…'), h('span', { class: 'tiny muted' }, 'No account. The browser reads and writes the folder itself; nothing is sent anywhere.')));
+      return;
+    }
     const need = SYNC.perm !== 'granted';
-    box.append(h('div', { class: 'row', style: { gap: '8px', flexWrap: 'wrap', alignItems: 'center' } }, h('b', {}, '📁 ' + SYNC.name),
-      need ? h('button', { class: 'btn primary', id: 'syncAllow', onclick: async () => { await syncPerm(true); bus.emit('sync'); if (SYNC.perm === 'granted') syncNow(true); } }, 'Allow access again') : h('button', { class: 'btn', id: 'syncNow', onclick: () => syncNow(true) }, 'Save all songs now'),
+    box.append(h('div', { class: 'row', style: { gap: '8px', flexWrap: 'wrap', alignItems: 'center' } }, h('b', {}, '📁 ' + fsWhere()),
+      need ? h('button', { class: 'btn primary', id: 'syncAllow', onclick: async () => { await syncPerm(true); bus.emit('sync'); if (SYNC.perm === 'granted') fsSync('now'); } }, 'Allow access again') : h('button', { class: 'btn', id: 'syncNow', disabled: SYNC.busy, onclick: () => syncNow(true) }, '⟳ Sync now'),
       h('button', { class: 'btn', id: 'syncChange', onclick: syncChoose }, 'Change…'), h('button', { class: 'btn', id: 'syncOff', onclick: syncOff }, 'Turn off')),
-      h('span', { class: 'tiny muted' }, SYNC.busy ? 'Saving…' : SYNC.err ? 'Last try failed: ' + SYNC.err : need ? 'The browser needs your permission again after a restart.' : (CFG.syncAt ? 'Last saved ' + new Date(CFG.syncAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) + '.' : 'Ready.') + ' Renaming a song leaves its old file in the folder.'));
+      h('span', { class: 'tiny muted', id: 'fsStatus', style: { color: FS.bad && !SYNC.busy ? 'var(--bad)' : '' } }, SYNC.busy ? FS.status || 'Syncing…' : SYNC.err ? 'Not synced: ' + SYNC.err : need ? 'The browser needs your permission again after a restart.' : FS.status || (CFG.syncAt ? 'Last synced ' + new Date(CFG.syncAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) + '.' : 'Ready.')),
+      h('label', { class: 'chk' }, h('input', { type: 'checkbox', id: 'syncZips', checked: !!CFG.fsync.zips, onchange: e => { CFG.fsync.zips = e.target.checked; saveCfg(); if (e.target.checked) syncZips(true); } }), 'Also save each song as a .daily-song.zip in “' + SYNC.name + '” (one file per song, to open or send on its own)'),
+      h('p', { class: 'tiny muted' }, 'It syncs a few seconds after a change, when the page opens, and every minute while it is open; never while playing or recording. A song changed here and on another computer keeps both versions. Recordings no song uses are tidied away after a day.'));
   };
   draw(); bus.on('sync', draw); return box;
 }
@@ -10194,6 +10479,7 @@ function voxRect(W, H) { const w = Math.min(W * .9, H * 2.6), h = clamp(H * .26,
 const voxPc = m => voxNote(m);
 function voxOpen(anchor) {
   if (VOX.panel) { voxClose(); return; }
+  if (document.body.dataset.form && document.body.dataset.form !== 'desktop' && typeof mCloseOverlays === 'function') mCloseOverlays();      /* one panel at the bottom at a time */
   VOX.mode = VOX.mode || 'ribbon'; const cv = h('canvas', { id: 'voxCv', width: 440, height: 170, role: 'img', 'aria-label': 'Pitch ribbon: the note you are singing against the notes of the key' }), body = h('div', { class: 'vx-body', id: 'voxBody' });
   const close = h('button', { class: 'btn sm', id: 'voxClose', onclick: () => voxClose() }, 'Close');
   const p = h('section', { id: 'voxPanel', class: 'vx', role: 'dialog', 'aria-label': 'Voice' }, h('div', { class: 'vx-h' }, h('b', {}, '🎤 Voice'), h('span', { class: 'grow' }), close), cv, body);
@@ -14020,7 +14306,7 @@ try {
     describe: () => ({ api: AG_API, app: VERSION, build: BUILD, webmcp: AGT.via || null, enabled: agentOn(), aliases: Object.assign({}, AG_ALIAS), limits: Object.assign({}, AG_LIMIT), tools: AGT.tools.map(t => t.name) }),
     call: (name, input) => agentCall(name, input),
     /* not a tool: the door the console note points developers to (part 73b) */
-    backstage: () => backstage() }) });
+    backstage: w => backstage(w) }) });
 } catch (e) { }
 agentWatch();
 
@@ -14213,8 +14499,8 @@ function eggFit(el) {
    · Tuned to perfection   all six open strings within ±2 cents of true, one after another (the tuner the studio already has)
    · In the pocket         sixteen notes in a row within 10 ms of the beat while the song plays (the timing analysis already there)
    · The hidden line       triple-click the version tag (part 73)
-   · Backstage pass        the browser console says hello to developers and points at dailyStudio.backstage(), which unlocks
-                           Backstage: the engine live, a signal scope, how the page is made, a playground for the agent tools, the secrets
+   · Backstage pass        the browser console says hello to developers and points at dailyStudio.backstage(): guest list only,
+                           and the password is the build (part 73c has the door, the pass and the rooms)
    A small 🗝 counter next to the version shows how many have been found, once the first one has. The rules: nothing fires while a take
    or a video is recording, nothing flashes (Calm and reduced motion get no glow), nothing loads or leaves the page, and Settings ▸
    Workflow ▸ Hidden surprises turns the musical ones off. Found secrets are remembered in this browser (CFG.secrets).
@@ -14223,7 +14509,7 @@ const SECRETS = [
   ['line', 'The hidden line', 'Some numbers want to be clicked three times.', 'Triple-click the version tag: a quote of the day from someone in history wakes up at the bottom of the page.'],
   ['tuned', 'Tuned to perfection', 'Six strings, two cents.', 'All six open strings within ±2 cents of true, one after another.'],
   ['pocket', 'In the pocket', 'Sixteen notes, right on time.', 'Sixteen notes in a row within 10 ms of the beat while the song plays.'],
-  ['backstage', 'Backstage pass', 'Developers know where to look.', 'Read the note in the browser console and knocked on the door backstage.']
+  ['backstage', 'Backstage pass', 'Developers know where to look.', 'Read the note in the browser console, knocked, and knew the password.']
 ];
 CFG.secrets = CFG.secrets && typeof CFG.secrets === 'object' ? CFG.secrets : {};
 const SEC = { tuned: {}, tunedT0: 0, hold: { i: -1, t: 0 }, pocket: 0, chips: [] };
@@ -14287,20 +14573,208 @@ try {
   console.log('%cHey, you opened the console. 🎸 Respect.\n%cNo framework, no tracking, nothing kept on a server: one HTML file made from ' + PARTS_N + ' plain JavaScript parts (' + LINES_N.toLocaleString('en') + ' lines), a hand-made minifier, a QR encoder and a lot of Web Audio. The source is at ' + BRAND.repo + '\n\nThere is a door backstage for people like you. Knock:  %cdailyStudio.backstage()',
     'font:700 13px system-ui,sans-serif', 'font:12px/1.5 system-ui,sans-serif;color:#9db3a5', 'font:700 12px ui-monospace,Menlo,monospace;color:#f7c95a;background:#1b130d;padding:2px 6px;border-radius:4px');
 } catch (e) { }
+/* Backstage itself (the door, the pass and its rooms) is part 73c. */
 
-/* ---------- Backstage ---------- */
-const BKS = { tm: 0, raf: 0 };
-/** the door: unlocks Backstage (remembered here), counts the secret, opens it, and answers in the console */
-function backstage() {
-  const first = !CFG.backstage; CFG.backstage = true; saveCfg(); secretFound('backstage', true);
-  setTimeout(() => backstageOpen(), 30);
-  return first ? '🎭 Come on in. Backstage is unlocked in this browser (and in Help from now on). ' + secretCount() : '🎭 Welcome back. Backstage is open.';
+/* >>> parts/73c-backstage.js */
+/* ============================================================
+   Part 73c · BACKSTAGE (2.20; all-access in 2.23) — for people who opened the console
+   The door is in the browser console (part 73b says hello there), and it is guest list only: dailyStudio.backstage() says how to get
+   on it, and the password is the build this page is (the bottom-right corner, or dailyStudio.describe().build). This browser then
+   has an all-access pass with a number of its own, and Backstage opens:
+     · Your pass         the pass: its number, when and on which build it was issued
+     · Engine room       the audio engine live, the master scope, the guitar's signal chain with what each unit adds, the worklets
+     · Performance       frames a second over the last minute, long tasks, memory, the size of the page
+     · Storage           what this browser keeps for the studio, where it syncs, and the studio exported as JSON
+     · Event bus         every event the parts send each other, live, with a filter
+     · Terminal          a small shell: studio commands, the agent tools, the rooms, the hidden pages (type help)
+     · Labs              developer handles without ?debug, a performance overlay, the event bus in the console
+     · Hidden pages      /backstage/ on the site: the lobby, the source map, your data raw, the API, the changelog (they check the pass too)
+     · How it is made · Agent playground · Secrets
+   #backstage (or #backstage/<room>) in the address opens it, and so does ↑ ↑ ↓ ↓ ← → ← → B A. Nothing here leaves the page.
+   ============================================================ */
+CFG.labs = Object.assign({ handles: false, perf: false, buslog: false }, CFG.labs && typeof CFG.labs === 'object' ? CFG.labs : {});
+const BKS = { tm: 0, raf: 0, on: false, ev: [], evN: {}, evPause: false, fps: [], longs: 0, longMax: 0, po: null, ov: null, ovTm: 0, hist: [], hi: 0, tries: 0, k: 0, want: undefined, t0: Date.now() };
+const BKS_ROOMS = ['pass', 'engine', 'perf', 'storage', 'bus', 'terminal', 'labs', 'pages', 'made', 'agent', 'secrets'];
+/* the hidden pages on the site (scripts/backstage-pages.mjs writes them) */
+const BKS_PAGES = [['', 'The lobby', 'Your pass, the rooms, and this build at a glance.'], ['source/', 'Source map', 'Every part of the page: what it does, how big it is, and its source.'], ['data/', 'Your data, raw', 'What this browser keeps for the studio, read straight from storage.'], ['api/', 'Console and agent API', 'window.dailyStudio, WebMCP, the tools, and this shell.'], ['changelog/', 'How it was built', 'Every release, as a timeline.']];
+const bksBase = () => location.origin + location.pathname.replace(/[^/]*$/, '') + 'backstage/';
+
+/** this browser's pass: a number of its own, the day and the build it was issued on */
+function bksPass() { if (!CFG.bksPass || !CFG.bksPass.n) { CFG.bksPass = { n: 1000 + Math.floor(Math.random() * 9000), at: Date.now(), build: BUILD }; saveCfg(); } return CFG.bksPass; }
+/** the door. Guest list only: the password is this page's build. Called as dailyStudio.backstage() from the console */
+function backstage(word) {
+  if (CFG.backstage) { const p = bksPass(); setTimeout(() => backstageOpen(), 30); return '🎭 Welcome back, pass #' + p.n + '. Backstage is open.'; }
+  if (word == null || word === '') return '🎟 Backstage is guest list only. The password is the build you are running: it is in the bottom-right corner of the studio (and in dailyStudio.describe().build). Then:  dailyStudio.backstage(\'<build>\')';
+  if (String(word).trim().toLowerCase() !== String(BUILD).toLowerCase()) { BKS.tries++; return '🚪 Not on the list. ' + (BKS.tries > 2 ? 'Psst: seven characters, after “build” in the bottom-right corner.' : 'Look again: the bottom-right corner.'); }
+  CFG.backstage = true; const p = bksPass(); saveCfg(); secretFound('backstage', true); setTimeout(() => backstageOpen(), 30);
+  return '🎭 You are on the list. All-access pass #' + p.n + ' issued to this browser. Come on in. ' + secretCount();
 }
+
+/* ---------- the event bus, tapped (only while Backstage is open, or the Labs log is on) ---------- */
+const BKS_EMIT = bus.emit;
+bus.emit = function (e, ...a) { if (BKS.on || CFG.labs.buslog) bksTap(e, a); return BKS_EMIT.call(this, e, ...a); };
+const bksBrief = a => a.map(x => x == null ? String(x) : typeof x === 'object' ? (Array.isArray(x) ? '[' + x.length + ']' : '{' + Object.keys(x).slice(0, 4).join(',') + (Object.keys(x).length > 4 ? ',…' : '') + '}') : typeof x === 'function' ? 'ƒ' : String(x).slice(0, 40)).join(' ');
+function bksTap(e, a) {
+  if (CFG.labs.buslog) try { console.debug('%c[bus]%c ' + e, 'color:#7dbf9b', '', ...a); } catch (x) { }
+  if (!BKS.on) return; BKS.evN[e] = (BKS.evN[e] || 0) + 1; if (BKS.evPause) return;
+  BKS.ev.push({ t: performance.now(), e, a: bksBrief(a) }); if (BKS.ev.length > 300) BKS.ev.splice(0, BKS.ev.length - 300);
+}
+/* ---------- performance: frames a second (a sample a second), long tasks ---------- */
+function bksLongTasks() { if (BKS.po || typeof PerformanceObserver !== 'function') return; try { BKS.po = new PerformanceObserver(l => l.getEntries().forEach(x => { BKS.longs++; BKS.longMax = Math.max(BKS.longMax, x.duration); })); BKS.po.observe({ type: 'longtask', buffered: true }); } catch (e) { BKS.po = null; } }
+setInterval(() => { if (!BKS.on && !CFG.labs.perf) return; BKS.fps.push(FPS); if (BKS.fps.length > 60) BKS.fps.shift(); }, 1000);
+const bksMem = () => performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1048576) + ' MB of ' + Math.round(performance.memory.jsHeapSizeLimit / 1048576) + ' MB' : 'n/a (Chromium only)';
+/* ---------- storage, and the studio as one JSON file ---------- */
+async function bksStorage() {
+  const o = {};
+  try { const e = await navigator.storage.estimate(); o.usage = e.usage; o.quota = e.quota; } catch (x) { }
+  try { o.persisted = await navigator.storage.persisted(); } catch (x) { }
+  o.songs = PRJ.list.length; o.takes = PRJ.list.reduce((a, r) => a + (r.takes || []).length, 0); o.audio = PRJ.list.reduce((a, r) => a + (r.size || 0), 0);
+  try { o.blobs = (await pdbKeys('blobs', '')).length; } catch (x) { o.blobs = null; }
+  o.ls = []; try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (/^fw\./.test(k)) o.ls.push([k, (localStorage.getItem(k) || '').length]); } } catch (x) { } o.ls.sort((a, b) => b[1] - a[1]);
+  o.folder = SYNC.dir ? fsWhere() + (SYNC.perm === 'granted' ? '' : ' (needs permission)') : 'off'; o.github = ghOn() ? CFG.gh.owner + '/' + CFG.gh.repo : 'off';
+  try { o.caches = typeof caches !== 'undefined' ? (await caches.keys()).join(', ') || 'none' : 'n/a'; } catch (x) { o.caches = 'n/a'; }
+  o.sw = navigator.serviceWorker && navigator.serviceWorker.controller ? 'in control (works offline)' : 'not in control';
+  return o;
+}
+async function bksExport() {
+  const files = await ghLocal(), json = JSON.stringify({ format: 'the-daily-studio-export', version: 1, app: VERSION, build: BUILD, exported: new Date().toISOString(), note: 'Settings, presets, looks, scenes, notes and songs as text, the files a synced studio holds. Recordings are not in it.', files }, null, 1);
+  download('the-daily-studio-' + new Date().toISOString().slice(0, 10) + '.json', json, 'application/json'); return Object.keys(files).length;
+}
+/* ---------- Labs ---------- */
+const BKS_LABS = [['handles', 'Developer handles', 'window.__daily: every internal handle the tests use, without ?debug in the address. Poke around in the console.'], ['perf', 'Performance overlay', 'Frames a second, the frame time, the audio engine, memory and long tasks, in the bottom-left corner.'], ['buslog', 'Event bus in the console', 'Every event the parts send each other, as console.debug (turn on Verbose to see them).']];
+function bksLab(k, on) {
+  CFG.labs[k] = !!on; saveCfg();
+  if (k === 'handles') { if (on) { if (DEV.make) DEV.make(); } else if (!/[?&]debug\b/.test(location.search)) { try { delete window.__daily; } catch (e) { window.__daily = undefined; } } }
+  if (k === 'perf') bksOverlay();
+  bus.emit('labs', k, !!on);
+}
+function bksOverlay() {
+  if (!CFG.labs.perf) { if (BKS.ov) { BKS.ov.remove(); BKS.ov = null; } clearInterval(BKS.ovTm); BKS.ovTm = 0; return; }
+  if (!BKS.ov) { BKS.ov = h('div', { class: 'bks-ov mono', 'aria-hidden': 'true', title: 'Backstage ▸ Labs ▸ Performance overlay' }); document.body.append(BKS.ov); }
+  bksLongTasks(); clearInterval(BKS.ovTm);
+  const tick = () => { if (!BKS.ov) return; const c = E.ctx, mem = performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1048576) + ' MB' : '';
+    BKS.ov.textContent = FPS + ' fps · ' + (FPS ? (1000 / FPS).toFixed(1) : '—') + ' ms · audio ' + (c ? c.state : 'off') + (mem ? ' · ' + mem : '') + ' · long tasks ' + BKS.longs; };
+  tick(); BKS.ovTm = setInterval(tick, 500);
+}
+
+/* ---------- the terminal: a small shell for the studio ---------- */
+const BKS_FUN = { sudo: 'You are already backstage. 🎸 No sudo needed here.', rm: 'Nice try. Your songs are safe (and Ctrl/⌘+Z undoes what the tools change).', hello: 'Hey 👋 Type help to see what this shell can do.', hi: 'Hey 👋 Type help.', '42': 'The answer. Now, what was the question?', coffee: '☕ This is a guitar studio. Try: play', vim: 'To exit vim, close the tab. (Kidding. This is not vim.)', make: 'make: Nothing to be done for “music”. Try: play' };
+const BKS_CMDS = {
+  help: ['help', 'this list'],
+  clear: ['clear', 'clear the screen'],
+  whoami: ['whoami', 'your pass'],
+  version: ['version', 'the version, the build and what it is made of'],
+  status: ['status', 'the song, the transport and the audio engine'],
+  play: ['play [bar]', 'play the song (from a bar)'],
+  stop: ['stop', 'stop, back to the start'],
+  bpm: ['bpm <30–260>', 'set the tempo'],
+  transpose: ['transpose <-11…11>', 'move the whole song'],
+  look: ['look [name]', 'the visuals: list the looks, or switch'],
+  theme: ['theme dark|light', 'the studio’s theme'],
+  songs: ['songs', 'the songs in this browser'],
+  tools: ['tools', 'the agent tools'],
+  call: ['call <tool> [json]', 'call an agent tool, e.g. call get_song'],
+  describe: ['describe', 'dailyStudio.describe()'],
+  fps: ['fps', 'frames a second now, and over the last minute'],
+  bus: ['bus [filter]', 'the latest events on the event bus'],
+  storage: ['storage', 'what this browser keeps'],
+  sync: ['sync [now]', 'folder and GitHub sync: where, and sync now'],
+  export: ['export', 'download the studio as JSON'],
+  quote: ['quote [tomorrow]', 'the quote of the day (or a peek at tomorrow’s)'],
+  secrets: ['secrets', 'what you have found'],
+  labs: ['labs [name on|off]', 'list the labs, or switch one'],
+  room: ['room <name>', 'go to a room (ls lists them)'],
+  ls: ['ls', 'the rooms and the hidden pages'],
+  pages: ['pages', 'the hidden pages on the site'],
+  open: ['open <page>', 'open a hidden page in a new tab'],
+  history: ['history', 'what you typed'],
+  uptime: ['uptime', 'how long this page has been open'],
+  exit: ['exit', 'leave Backstage']
+};
+const bksJson = (v, n = 1600) => { const s = JSON.stringify(v, null, 1); return s.length > n ? s.slice(0, n) + '\n… (' + s.length + ' characters; the Agent playground shows it all)' : s; };
+async function bksTool(name, input) { const r = await window.dailyStudio.call(name, input || {}); return r && (r.structuredContent || r); }
+async function bksRun(line, out) {
+  const raw = String(line || '').trim(); if (!raw) return; const [cmd, ...rest] = raw.split(/\s+/), arg = rest.join(' '), c = cmd.toLowerCase();
+  if (BKS_FUN[c] != null || /^rm$|^sudo$/.test(c)) return out(BKS_FUN[c] || BKS_FUN.rm, 'fun');
+  switch (c) {
+    case 'help': return out(Object.values(BKS_CMDS).map(([u, d]) => u.padEnd(22) + d).join('\n') + '\n\n↑ ↓ for history, Tab to complete. A few other words work too.');
+    case 'clear': return out(null, 'clear');
+    case 'whoami': { const p = bksPass(); return out('All-access pass #' + p.n + ' · issued ' + new Date(p.at).toLocaleString() + ' on build ' + (p.build || BUILD) + ' · this browser'); }
+    case 'version': return out('the-daily.studio v' + VERSION + ' · build ' + BUILD + '\n' + PARTS_N + ' parts · ' + LINES_N.toLocaleString('en') + ' lines · no framework · 0 runtime dependencies');
+    case 'status': return out('song      ' + (S.title || 'Untitled') + (S.artist ? ' · ' + S.artist : '') + '\ntempo     ' + S.bpm + ' bpm · ' + S.ts.join('/') + '\nbars      ' + flatBars().length + ' · takes ' + TAKES.length + '\ntransport ' + (T.playing ? 'playing' : 'stopped') + (T.loop ? ' · loop' : '') + (T.metro ? ' · click' : '') + '\naudio     ' + (E.ctx ? E.ctx.state + ' · ' + E.ctx.sampleRate + ' Hz' : 'not started') + ' · input ' + (E.hasInput ? 'open' : 'none') + '\nrig       ' + (RIG.cur || '—'));
+    case 'play': { const r = await bksTool('transport', Object.assign({ action: 'play' }, +arg > 0 ? { from_bar: +arg } : {})); return out(r && r.ok === false ? '✗ ' + (r.error && r.error.message || 'could not play') : '▶ playing' + (+arg > 0 ? ' from bar ' + +arg : '')); }
+    case 'stop': await bksTool('transport', { action: 'stop' }); return out('■ stopped');
+    case 'bpm': { if (!(+arg >= 30 && +arg <= 260)) return out('bpm takes a number from 30 to 260 (now ' + S.bpm + ')', 'err'); const r = await bksTool('set_song_details', { bpm: +arg }); return out(r && r.ok === false ? '✗ ' + r.error.message : 'tempo ' + S.bpm + ' bpm'); }
+    case 'transpose': { const n = parseInt(arg, 10); if (!(n >= -11 && n <= 11) || !n) return out('transpose takes -11 to 11 semitones', 'err'); const r = await bksTool('transpose_song', { semitones: n }); return out(r && r.ok === false ? '✗ ' + r.error.message : 'moved ' + (n > 0 ? 'up ' : 'down ') + Math.abs(n) + ' · key ' + (r && r.key ? r.key : '')); }
+    case 'look': { if (!arg) return out('looks: ' + VMODES.map(m => m[0]).join(' · ') + '\nnow: ' + (VZ.mode || CFG.vmode || '—')); if (!VMODES.some(m => m[0] === arg)) return out('no look called “' + arg + '”. Type look to list them.', 'err'); vzSetMode(arg); saveCfg(); return out('look: ' + (VMODES.find(m => m[0] === arg) || [])[1]); }
+    case 'theme': if (!/^(dark|light)$/.test(arg)) return out('theme dark or theme light', 'err'); setTheme(arg); return out('theme: ' + arg);
+    case 'songs': return out(PRJ.list.map((r, i) => String(i + 1).padStart(3) + '  ' + (r.title || 'Untitled') + ((r.takes || []).length ? ' · ' + r.takes.length + ' take' + (r.takes.length === 1 ? '' : 's') : '') + (r.id === PRJ.cur ? '   ← open' : '')).join('\n') || 'no songs yet');
+    case 'tools': return out(AGT.tools.map(t => t.name.padEnd(20) + (t.annotations && t.annotations.readOnlyHint ? 'reads' : 'changes')).join('\n') + '\n\ncall <tool> [json] runs one. The Agent playground room has a form.');
+    case 'call': { const m = /^(\S+)\s*([\s\S]*)$/.exec(arg); if (!m) return out('call <tool> [json], e.g. call get_key_chords', 'err'); let input = {}; if (m[2]) { try { input = JSON.parse(m[2]); } catch (e) { return out('that is not JSON: ' + e.message, 'err'); } } return out(bksJson(await bksTool(m[1], input))); }
+    case 'describe': return out(bksJson(window.dailyStudio.describe()));
+    case 'fps': { const a = BKS.fps.length ? BKS.fps : [FPS]; return out(FPS + ' fps now · last minute: min ' + Math.min(...a) + ', average ' + Math.round(a.reduce((x, y) => x + y, 0) / a.length) + ', max ' + Math.max(...a) + ' · long tasks ' + BKS.longs + (BKS.longMax ? ' (longest ' + Math.round(BKS.longMax) + ' ms)' : '')); }
+    case 'bus': { const f = arg.toLowerCase(), list = BKS.ev.filter(x => !f || x.e.toLowerCase().includes(f)).slice(-15); return out((list.map(x => (x.t / 1000).toFixed(2).padStart(9) + 's  ' + x.e.padEnd(14) + x.a).join('\n') || 'nothing yet' + (f ? ' for “' + f + '”' : '')) + '\n\nmost sent: ' + Object.entries(BKS.evN).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([k, n]) => k + ' ×' + n).join(' · ')); }
+    case 'storage': { const o = await bksStorage(); return out('used      ' + projBytes(o.usage || 0) + ' of ' + projBytes(o.quota || 0) + (o.persisted ? ' · kept (persistent)' : ' · may be cleared by the browser') + '\nsongs     ' + o.songs + ' · takes ' + o.takes + ' · audio about ' + projBytes(o.audio) + ' · ' + (o.blobs == null ? '?' : o.blobs) + ' stored blobs\nfolder    ' + o.folder + '\ngithub    ' + o.github + '\noffline   ' + o.sw + ' · cache ' + o.caches + '\nkeys      ' + o.ls.slice(0, 6).map(([k, n]) => k + ' ' + projBytes(n)).join(' · ')); }
+    case 'sync': {
+      if (arg === 'now') { const r = []; if (SYNC.dir && CFG.sync) { await fsSync('now'); r.push('folder: ' + (FS.status || 'done')); } if (ghOn()) { await ghSync('now'); r.push('github: ' + (GH.status || 'done')); } return out(r.join('\n') || 'nothing to sync with: Settings ▸ Folder sync or Settings ▸ GitHub');
+      }
+      return out('folder    ' + (SYNC.dir ? fsWhere() + ' · ' + (FS.status || 'ready') : 'off (Settings ▸ Folder sync)') + '\ngithub    ' + (ghOn() ? CFG.gh.owner + '/' + CFG.gh.repo + ' · ' + (GH.status || 'ready') : 'off (Settings ▸ GitHub)') + '\n\nsync now syncs both.');
+    }
+    case 'export': { const n = await bksExport(); return out('⤓ the studio as JSON: ' + n + ' files in one download'); }
+    case 'quote': return out(eggText(eggFor(eggDay() + (arg === 'tomorrow' ? 1 : 0))) + (arg === 'tomorrow' ? '\n(tomorrow’s, for your eyes only)' : ''));
+    case 'secrets': return out(SECRETS.map(([id, name, hint]) => (CFG.secrets[id] ? '✓ ' + name : '· ' + hint)).join('\n') + '\n' + secretN() + ' of ' + SECRETS.length + ' found');
+    case 'labs': {
+      const [k, v] = rest; if (!k) return out(BKS_LABS.map(([id, name]) => (CFG.labs[id] ? 'on   ' : 'off  ') + id.padEnd(9) + name).join('\n') + '\n\nlabs <name> on|off');
+      if (!BKS_LABS.some(x => x[0] === k) || !/^(on|off)$/.test(v || '')) return out('labs <' + BKS_LABS.map(x => x[0]).join('|') + '> on|off', 'err');
+      bksLab(k, v === 'on'); return out(k + ' ' + v);
+    }
+    case 'room': case 'cd': { const r = (arg || '').replace(/\/$/, ''); if (!BKS_ROOMS.includes(r)) return out('rooms: ' + BKS_ROOMS.join(' · '), 'err'); const d = document.getElementById('backstage'); if (d) hubGo(d, r, true); return out('→ ' + r); }
+    case 'ls': return out(BKS_ROOMS.map(r => r + '/').join('  ') + '\n\npages/  (type pages)');
+    case 'pages': return out(BKS_PAGES.map(([p, n, d]) => ('/backstage/' + p).padEnd(22) + n + ' · ' + d).join('\n') + '\n/humans.txt            who made this\n\nopen <page> opens one, e.g. open source');
+    case 'open': { const p = BKS_PAGES.find(([x, n]) => x.replace(/\/$/, '') === arg.replace(/\/$/, '') || n.toLowerCase().startsWith(arg.toLowerCase())) || (arg === 'lobby' ? BKS_PAGES[0] : null); if (!p) return out('open ' + BKS_PAGES.map(x => x[0].replace(/\/$/, '') || 'lobby').join(' | '), 'err'); window.open(bksBase() + p[0], '_blank', 'noopener'); return out('↗ ' + bksBase() + p[0]); }
+    case 'history': return out(BKS.hist.map((x, i) => String(i + 1).padStart(4) + '  ' + x).join('\n') || 'nothing yet');
+    case 'uptime': { const s = Math.round((Date.now() - BKS.t0) / 1000); return out('up ' + (s >= 3600 ? Math.floor(s / 3600) + ' h ' : '') + Math.floor(s % 3600 / 60) + ' min ' + s % 60 + ' s · ' + (frameN || 0).toLocaleString('en') + ' frames drawn'); }
+    case 'exit': case 'quit': case 'logout': { const d = document.getElementById('backstage'); if (d) setTimeout(() => d.close(), 350); return out('See you at soundcheck. 🎸'); }
+  }
+  return out('command not found: ' + cmd + ' · type help', 'err');
+}
+function bksTerminal() {
+  const pre = h('pre', { class: 'bks-term-out mono', id: 'bksTermOut', 'aria-live': 'polite' }), inp = h('input', { class: 'bks-term-in mono', id: 'bksTermIn', autocomplete: 'off', spellcheck: false, 'aria-label': 'Backstage shell command' });
+  const out = (t, cls) => { if (cls === 'clear') { pre.textContent = ''; return; } if (t == null) return; const s = h('span', { class: 'bks-t-' + (cls || 'out') }, t + '\n'); pre.append(s); while (pre.childNodes.length > 400) pre.firstChild.remove(); pre.scrollTop = pre.scrollHeight; };
+  const run = async () => {
+    const v = inp.value; inp.value = ''; if (!v.trim()) return; BKS.hist.push(v); if (BKS.hist.length > 100) BKS.hist.shift(); BKS.hi = BKS.hist.length;
+    out('studio $ ' + v, 'cmd'); try { await bksRun(v, out); } catch (e) { out('error: ' + (e && e.message || e), 'err'); }
+  };
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); run(); }
+    else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') { e.preventDefault(); BKS.hi = clamp(BKS.hi + (e.key === 'ArrowUp' ? -1 : 1), 0, BKS.hist.length); inp.value = BKS.hist[BKS.hi] || ''; }
+    else if (e.key === 'Tab') { e.preventDefault(); const w = inp.value.trim(); if (!w || /\s/.test(w)) return; const all = Object.keys(BKS_CMDS).filter(k => k.startsWith(w)); if (all.length === 1) inp.value = all[0] + ' '; else if (all.length) out(all.join('  '), 'dim'); }
+    e.stopPropagation();      /* the studio's own keys stay out of the shell */
+  });
+  out('Backstage shell · pass #' + bksPass().n + ' · v' + VERSION + ' · type help', 'dim');
+  return h('div', { class: 'bks-term', onclick: e => { if (e.target === pre || e.target.closest('.bks-term')) inp.focus(); } }, pre, h('div', { class: 'bks-term-line' }, h('span', { class: 'mono bks-term-p', 'aria-hidden': 'true' }, 'studio $'), inp));
+}
+
+/* ---------- the rooms ---------- */
 const bksRow = (k, v) => h('div', { class: 'bks-r' }, h('span', {}, k), h('b', { class: 'mono' }, v));
+const BKS_WORKLETS = () => (String(typeof WORKLET_SRC === 'string' ? WORKLET_SRC : '').match(/registerProcessor\('([\w-]+)'/g) || []).map(m => m.slice(19, -1));
+function bksChain() {
+  return h('div', { class: 'bks-chain', id: 'bksChain' }, h('span', { class: 'bks-unit io' }, h('b', {}, 'Input'), h('i', { class: 'mono' }, E.hasInput ? 'open' : 'none')),
+    RIG.order.map(id => { const u = RIG.units[id], name = (FX[id] && FX[id].name) || id, on = !!(u && u.on), lat = u ? u.lat() : 0;
+      return h('span', { class: 'bks-unit' + (on ? ' on' : ''), title: name + (on ? ' · on' : ' · off') + ' · adds ' + (lat * 1000).toFixed(2) + ' ms' }, h('b', {}, name), h('i', { class: 'mono' }, on ? (lat * 1000).toFixed(lat ? 2 : 0) + ' ms' : 'off')); }),
+    h('span', { class: 'bks-unit io' }, h('b', {}, 'Master'), h('i', { class: 'mono' }, E.ctx ? E.ctx.state : 'off')));
+}
 function backstageOpen(at) {
-  if (!CFG.backstage) return toast('That door is locked. Developers know where to look.', '');
-  const close = () => { const d = $('#backstage'); if (d) d.close(); };
+  if (!CFG.backstage) return toast('🎟 Backstage is guest list only. Developers know where to look.', '');
+  const pass = bksPass(); BKS.on = true; bksLongTasks();
   const live = h('div', { class: 'bks-grid', id: 'bksLive' }), scope = h('canvas', { class: 'bks-scope', id: 'bksScope', width: 640, height: 180, role: 'img', 'aria-label': 'The master output as a waveform and a spectrum' });
+  const chainBox = h('div', {}, bksChain()), perfBox = h('div', { class: 'bks-grid', id: 'bksPerf' }), spark = h('canvas', { class: 'bks-spark', id: 'bksSpark', width: 640, height: 90, role: 'img', 'aria-label': 'Frames a second over the last minute' });
+  const store = h('div', { class: 'bks-grid', id: 'bksStore' }, bksRow('Reading', '…')), keys = h('div', { class: 'bks-keys mono', id: 'bksKeys' });
+  const fillStore = async () => { const o = await bksStorage(); store.innerHTML = ''; keys.innerHTML = '';
+    [['Used by this site', projBytes(o.usage || 0) + ' of ' + projBytes(o.quota || 0)], ['Kept when space is short', o.persisted ? 'yes (persistent)' : 'up to the browser'], ['Songs', String(o.songs)], ['Takes', o.takes + ' (about ' + projBytes(o.audio) + ' of audio)'], ['Stored blobs', o.blobs == null ? '?' : String(o.blobs)], ['Folder sync', o.folder], ['GitHub', o.github], ['Offline copy', o.sw], ['Caches', o.caches]].forEach(([k, v]) => store.append(bksRow(k, v)));
+    o.ls.slice(0, 12).forEach(([k, n]) => keys.append(h('span', {}, k + ' · ' + projBytes(n)))); };
+  const evList = h('div', { class: 'bks-ev mono', id: 'bksEv', 'aria-live': 'off' }), evTop = h('div', { class: 'bks-keys mono', id: 'bksEvTop' }), evFilter = h('input', { class: 'in', id: 'bksEvFilter', placeholder: 'Filter: an event name', 'aria-label': 'Filter events' });
+  const evPause = h('button', { class: 'btn', id: 'bksEvPause', onclick: () => { BKS.evPause = !BKS.evPause; evPause.textContent = BKS.evPause ? '▶ Resume' : '⏸ Pause'; } }, BKS.evPause ? '▶ Resume' : '⏸ Pause');
   const tools = (window.dailyStudio && window.dailyStudio.tools()) || [], sel = h('select', { class: 'in', id: 'bksTool' }, tools.map(t => h('option', { value: t.name }, t.name)));
   const inp = h('textarea', { class: 'in mono', id: 'bksIn', rows: 4, spellcheck: false, 'aria-label': 'Input (JSON)' }), outp = h('pre', { class: 'bks-out', id: 'bksOut', 'aria-live': 'polite' }, '—');
   const example = () => { const t = tools.find(x => x.name === sel.value), s = t && t.inputSchema, o = {}; ((s && s.required) || []).forEach(k => { const p = s.properties[k] || {}; o[k] = p.enum ? p.enum[0] : p.type === 'number' || p.type === 'integer' ? 0 : p.type === 'array' ? [] : p.type === 'boolean' ? false : ''; }); inp.value = JSON.stringify(o, null, 1); };
@@ -14309,27 +14783,54 @@ function backstageOpen(at) {
     let input; try { input = JSON.parse(inp.value || '{}'); } catch (e) { outp.textContent = 'That is not JSON: ' + e.message; return; }
     outp.textContent = '…'; const r = await window.dailyStudio.call(sel.value, input); outp.textContent = JSON.stringify(r.structuredContent || r, null, 2).slice(0, 20000);
   } }, '▶ Run');
-  const nav = performance.getEntriesByType && performance.getEntriesByType('navigation')[0], kb = v => v ? Math.round(v / 1024) + ' kB' : '?';
-  const d = hubOpen('backstage', { ico: '🎭', title: 'Backstage', sub: 'For people who opened the console. How the studio works, live.', at, sections: [
-    { key: 'engine', label: 'The engine, live', ico: '◉', sub: 'Updated twice a second while this is open.', wide: true, body: () => [live, scope] },
+  const nav = performance.getEntriesByType && performance.getEntriesByType('navigation')[0], kb = v => v ? Math.round(v / 1024) + ' kB' : '?', link = (href, t) => h('a', { class: 'btn', href, target: '_blank', rel: 'noopener noreferrer' }, t);
+  const d = hubOpen('backstage', { ico: '🎭', title: 'Backstage', sub: 'All access, pass #' + pass.n + '. How the studio works, live.', at, sections: [
+    { key: 'pass', label: 'Your pass', ico: '🎟', wide: true, body: () => [h('div', { class: 'bks-pass', id: 'bksPass' },
+      h('div', { class: 'bks-pass-top' }, h('span', { class: 'bks-pass-k' }, 'ALL ACCESS'), h('span', { class: 'bks-pass-no mono' }, '#' + pass.n)),
+      h('div', { class: 'bks-pass-name' }, 'the-daily.studio · Backstage'),
+      h('div', { class: 'bks-pass-m mono' }, 'Issued ' + new Date(pass.at).toLocaleDateString() + ' · build ' + (pass.build || BUILD) + ' · this browser only'),
+      h('div', { class: 'bks-pass-rooms' }, BKS_ROOMS.filter(r => r !== 'pass').map(r => h('button', { type: 'button', class: 'bks-pass-room', onclick: () => hubGo(d, r, true) }, r)))),
+      h('p', { class: 'small muted' }, 'Tip: the Terminal has a shell (type help), #backstage/terminal in the address opens it, and so does ↑ ↑ ↓ ↓ ← → ← → B A.')] },
+    { key: 'engine', label: 'Engine room', ico: '◉', sub: 'The audio engine, live twice a second, and the guitar’s signal chain with what each unit adds.', wide: true, body: () => [live, scope, h('h4', { class: 'bks-h' }, 'Signal chain'), chainBox,
+      h('p', { class: 'small muted' }, 'AudioWorklet processors: ' + BKS_WORKLETS().join(' · ') + '. With zero-delay effects on, the compressor and the shapers run in them and add no lookahead.')] },
+    { key: 'perf', label: 'Performance', ico: '⏱', sub: 'Frames a second over the last minute, long tasks (over 50 ms on the main thread) and memory.', wide: true, body: () => [spark, perfBox] },
+    { key: 'storage', label: 'Storage', ico: '🗄', sub: 'What this browser keeps for the studio, and where it syncs.', wide: true, body: () => [store, h('h4', { class: 'bks-h' }, 'Largest keys in local storage'), keys,
+      h('div', { class: 'hub-acts' }, h('button', { class: 'btn', id: 'bksStoreRefresh', onclick: fillStore }, '⟳ Refresh'), h('button', { class: 'btn', id: 'bksExport', onclick: async () => { const n = await bksExport(); toast('The studio as JSON: ' + n + ' files.', 'ok'); } }, '⤓ Export the studio as JSON'))] },
+    { key: 'bus', label: 'Event bus', ico: '⇄', sub: 'Every event the parts send each other while Backstage is open, newest first.', wide: true, body: () => [h('div', { class: 'row', style: { gap: '8px', flexWrap: 'wrap', alignItems: 'center' } }, evFilter, evPause, h('button', { class: 'btn', onclick: () => { BKS.ev.length = 0; BKS.evN = {}; } }, 'Clear')), evTop, evList] },
+    { key: 'terminal', label: 'Terminal', ico: '›_', sub: 'A small shell for the studio. Type help.', wide: true, body: () => [bksTerminal()] },
+    { key: 'labs', label: 'Labs', ico: '⚗', sub: 'Switches for developers. They stay on in this browser until you switch them off.', wide: true, body: () => BKS_LABS.map(([k, name, what]) => h('label', { class: 'chk bks-lab' }, h('input', { type: 'checkbox', id: 'bksLab-' + k, checked: !!CFG.labs[k], onchange: e => bksLab(k, e.target.checked) }), h('span', {}, h('b', {}, name), h('span', { class: 'tiny muted', style: { display: 'block' } }, what)))) },
+    { key: 'pages', label: 'Hidden pages', ico: '🗝', sub: 'Pages on the site that are not linked anywhere, and check for your pass.', wide: true, body: () => [h('div', { class: 'bks-pages' }, BKS_PAGES.map(([p, n, what]) => h('a', { class: 'bks-page', href: bksBase() + p, target: '_blank', rel: 'noopener', 'data-page': p || 'lobby' }, h('b', {}, n), h('span', { class: 'tiny muted' }, what), h('span', { class: 'mono tiny' }, '/backstage/' + p))),
+      h('a', { class: 'bks-page', href: location.origin + location.pathname.replace(/[^/]*$/, '') + 'humans.txt', target: '_blank', rel: 'noopener' }, h('b', {}, 'humans.txt'), h('span', { class: 'tiny muted' }, 'Who made this, and with what.'), h('span', { class: 'mono tiny' }, '/humans.txt')))] },
     { key: 'made', label: 'How it is made', ico: '⚙', wide: true, body: () => [h('div', { class: 'bks-grid' },
       bksRow('Version', 'v' + VERSION + ' · build ' + BUILD), bksRow('Made from', PARTS_N + ' parts · ' + LINES_N.toLocaleString('en') + ' lines'), bksRow('This page arrived as', nav ? kb(nav.transferSize || nav.encodedBodySize) + ' (' + kb(nav.decodedBodySize) + ' unpacked)' : '?'),
-      bksRow('Framework', 'none'), bksRow('Runtime dependencies', '0'), bksRow('Requests to other sites', '0 (unless you say yes to MediaPipe, or connect GitHub)'), bksRow('Script policy', 'one inline script, allowed by its SHA-256 hash'), bksRow('Audio', 'Web Audio + 7 AudioWorklet processors')),
+      bksRow('Framework', 'none'), bksRow('Runtime dependencies', '0'), bksRow('Requests to other sites', '0 (unless you say yes to MediaPipe, or connect GitHub)'), bksRow('Script policy', 'one inline script, allowed by its SHA-256 hash'), bksRow('Audio', 'Web Audio + ' + BKS_WORKLETS().length + ' AudioWorklet processors')),
       h('p', { class: 'small muted' }, 'The parts are plain JavaScript files concatenated in name order into one closure, minified by a dependency-free minifier that the build proves changed nothing but whitespace. The QR codes, the zero-delay compressors and the oversampling filters are written here too.'),
-      h('div', { class: 'hub-acts' }, h('a', { class: 'btn', href: BRAND.repo, target: '_blank', rel: 'noopener noreferrer' }, 'Source ↗'), h('a', { class: 'btn', href: BRAND.repo + '/blob/main/docs/ARCHITECTURE.md', target: '_blank', rel: 'noopener noreferrer' }, 'Architecture ↗'), h('a', { class: 'btn', href: BRAND.repo + '/blob/main/docs/AGENT_API.md', target: '_blank', rel: 'noopener noreferrer' }, 'Agent API ↗'))] },
+      h('div', { class: 'hub-acts' }, link(BRAND.repo, 'Source ↗'), link(BRAND.repo + '/blob/main/docs/ARCHITECTURE.md', 'Architecture ↗'), link(BRAND.repo + '/blob/main/docs/AGENT_API.md', 'Agent API ↗'), link(bksBase() + 'source/', 'Source map ↗'))] },
     { key: 'agent', label: 'Agent playground', ico: '🤖', sub: 'Call the same tools an AI agent gets (WebMCP and window.dailyStudio). Changes are real, and Ctrl/⌘+Z undoes them.', wide: true, body: () => [
       CFG.agents === false ? h('p', { class: 'small' }, 'Agent access is off in Settings ▸ Workflow, so calls are answered “disabled”.') : null,
       h('div', { class: 'row', style: { gap: '8px', alignItems: 'center', flexWrap: 'wrap' } }, sel, run), inp, outp].filter(Boolean) },
     { key: 'secrets', label: 'Secrets', ico: '🗝', wide: true, body: () => [secretList()] }
   ] });
-  /* the live numbers, and the scope */
+  d.classList.add('bks-hub'); fillStore();
+  d.addEventListener('close', () => { BKS.on = false; }, { once: true });
+  /* the live numbers, the chain, performance and the event bus, twice a second */
   const paint = () => {
-    if (!live.isConnected) { clearInterval(BKS.tm); BKS.tm = 0; return; }
-    const c = E.ctx, ms = v => v == null ? '—' : (v * 1000).toFixed(1) + ' ms', mem = performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1048576) + ' MB' : 'n/a';
+    if (!live.isConnected) { clearInterval(BKS.tm); BKS.tm = 0; BKS.on = false; return; }
+    const c = E.ctx, ms = v => v == null ? '—' : (v * 1000).toFixed(1) + ' ms';
     live.innerHTML = '';
     [['Audio engine', c ? c.state + ' · ' + c.sampleRate + ' Hz' : 'not started'], ['One render quantum', c ? '128 frames · ' + (128 / c.sampleRate * 1000).toFixed(2) + ' ms' : '—'], ['Browser base / output latency', c ? ms(c.baseLatency) + ' / ' + ms(c.outputLatency) : '—'],
       ['Zero-delay effects', E.worklet && CFG.lowLat !== false ? 'on' : 'off'], ['Delay the rig adds', ms(rigLat())], ['Delay the vocal strip adds', ms(voxLat())], ['Measured round trip', CFG.rtt != null ? CFG.rtt + ' ms' : 'not measured'],
-      ['Input', E.hasInput ? 'open' : 'none'], ['Frames a second', String(FPS)], ['JS memory', mem], ['Takes in memory', String(TAKES.length)], ['Secrets found', secretN() + ' of ' + SECRETS.length]].forEach(([k, v]) => live.append(bksRow(k, v)));
+      ['Input', E.hasInput ? 'open' : 'none'], ['Frames a second', String(FPS)], ['JS memory', bksMem()], ['Takes in memory', String(TAKES.length)], ['Secrets found', secretN() + ' of ' + SECRETS.length]].forEach(([k, v]) => live.append(bksRow(k, v)));
+    chainBox.innerHTML = ''; chainBox.append(bksChain());
+    const a = BKS.fps.length ? BKS.fps : [FPS]; perfBox.innerHTML = '';
+    [['Frames a second', FPS + ' now · min ' + Math.min(...a) + ' · average ' + Math.round(a.reduce((x, y) => x + y, 0) / a.length)], ['Frame time', FPS ? (1000 / FPS).toFixed(1) + ' ms (16.7 ms is 60 fps)' : '—'], ['Long tasks', BKS.po ? BKS.longs + (BKS.longMax ? ' · longest ' + Math.round(BKS.longMax) + ' ms' : '') : 'not reported by this browser'],
+      ['JS memory', bksMem()], ['Elements on the page', document.getElementsByTagName('*').length.toLocaleString('en')], ['Visuals', (VMODES.find(m => m[0] === VZ.mode) || [, VZ.mode || '—'])[1]], ['Page open for', Math.round((Date.now() - BKS.t0) / 60000) + ' min']].forEach(([k, v]) => perfBox.append(bksRow(k, v)));
+    const g = spark.getContext('2d'), W = spark.width, H = spark.height; g.fillStyle = '#050b0c'; g.fillRect(0, 0, W, H); g.strokeStyle = 'rgba(157,179,165,.25)'; g.beginPath(); g.moveTo(0, H - 60 / 75 * H); g.lineTo(W, H - 60 / 75 * H); g.stroke();
+    g.strokeStyle = '#f7c95a'; g.lineWidth = 2; g.beginPath(); a.forEach((v, i) => { const x = (i + 60 - a.length) / 59 * W, y = H - clamp(v, 0, 75) / 75 * H; i ? g.lineTo(x, y) : g.moveTo(x, y); }); g.stroke();
+    g.fillStyle = 'rgba(157,179,165,.8)'; g.font = '11px ui-monospace,Menlo,monospace'; g.fillText('fps · last minute · line at 60', 8, 14);
+    const f = evFilter.value.trim().toLowerCase(), evs = BKS.ev.filter(x => !f || x.e.toLowerCase().includes(f)).slice(-60).reverse();
+    evList.innerHTML = ''; evs.forEach(x => evList.append(h('div', { class: 'bks-e' }, h('span', {}, (x.t / 1000).toFixed(2) + 's'), h('b', {}, x.e), h('span', {}, x.a)))); if (!evs.length) evList.append(h('div', { class: 'tiny muted' }, 'Nothing yet. Play a song, change a setting or open a panel.'));
+    evTop.innerHTML = ''; Object.entries(BKS.evN).sort((p, q) => q[1] - p[1]).slice(0, 8).forEach(([k, n]) => evTop.append(h('span', {}, k + ' ×' + n)));
   };
   const draw = () => {
     if (!scope.isConnected) { cancelAnimationFrame(BKS.raf); BKS.raf = 0; return; }
@@ -14341,8 +14842,30 @@ function backstageOpen(at) {
     g.fillStyle = 'rgba(157,179,165,.8)'; g.font = '11px ui-monospace,Menlo,monospace'; g.fillText('master · ' + (E.ctx ? E.ctx.sampleRate : '') + ' Hz', 8, 14);
   };
   clearInterval(BKS.tm); paint(); BKS.tm = setInterval(paint, 500); cancelAnimationFrame(BKS.raf); draw();
+  if (at === 'terminal') setTimeout(() => { const i = document.getElementById('bksTermIn'); if (i) i.focus(); }, 300);
   return d;
 }
+
+/* ---------- other ways in: the address (#backstage, #backstage/<room>) and ↑↑↓↓←→←→BA ---------- */
+function bksFromHash() {
+  const m = /^#backstage(?:\/([\w-]+))?$/.exec(location.hash || ''); if (!m) return false;
+  try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { }
+  BKS.want = m[1] && BKS_ROOMS.includes(m[1]) ? m[1] : null;
+  const go = () => { const w = BKS.want; if (w === undefined) return; BKS.want = undefined; if (CFG.backstage) backstageOpen(w || undefined); else toast('🎟 Backstage is guest list only. The door is in the browser console.', ''); };
+  if (document.getElementById('boot')) bus.on('booted', () => setTimeout(go, 400)); else setTimeout(go, 600);
+  return true;
+}
+/** part 10 calls this at start-up */
+function bksBoot() { if (CFG.labs.perf) bksOverlay(); bksFromHash(); }
+window.addEventListener('hashchange', () => { bksFromHash(); });
+const BKS_KONAMI = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+document.addEventListener('keydown', e => {
+  const t = e.target; if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) { BKS.k = 0; return; }
+  const key = e.key && e.key.length === 1 ? e.key.toLowerCase() : e.key, near = BKS.k >= 8;
+  BKS.k = key === BKS_KONAMI[BKS.k] ? BKS.k + 1 : key === BKS_KONAMI[0] ? 1 : 0;
+  if (near && (key === 'b' || key === 'a')) { e.preventDefault(); e.stopPropagation(); }      /* B and A finish the code here, not the bass and the rest */
+  if (BKS.k === BKS_KONAMI.length) { BKS.k = 0; if (CFG.backstage) backstageOpen('terminal'); else toast('🎟 Nice moves. Backstage is guest list only, and the door is in the browser console.', ''); }
+}, true);
 
 /* >>> parts/74-github.js */
 /* ============================================================
@@ -14369,7 +14892,7 @@ const GH_API = 'https://api.github.com', GH_TOPIC = 'the-daily-studio', GH_SHARE
 CFG.gh = Object.assign({ owner: '', repo: 'my-daily-studio', login: '', auto: true, last: null, lastAt: 0, shared: '', gone: [] }, CFG.gh && typeof CFG.gh === 'object' ? CFG.gh : {});
 const GH = { busy: null, again: false, timer: 0, status: '', err: '', rate: null, app: null, el: null, quiet: false };
 /* settings that belong to this device, not to you: they are never sent, and never taken from the repository */
-const GH_SKIP = new Set(['gh', 'inDev', 'outDev', 'camDev', 'rtt', 'sr', 'hint', 'autoIn', 'persistAsked', 'layout', 'lanes', 'zoom', 'form', 'vbg', 'mpOk', 'lastBackup', 'ioLeveled', 'gTrim', 'voxTrim', 'ch', 'vin', 'monitor', 'voxMon', 'recQ', 'vq', 'ui', 'kpad', 'show', 'stage', 'sync']);
+const GH_SKIP = new Set(['gh', 'inDev', 'outDev', 'camDev', 'rtt', 'sr', 'hint', 'autoIn', 'persistAsked', 'layout', 'lanes', 'zoom', 'form', 'vbg', 'mpOk', 'lastBackup', 'ioLeveled', 'gTrim', 'voxTrim', 'ch', 'vin', 'monitor', 'voxMon', 'recQ', 'vq', 'ui', 'kpad', 'show', 'stage', 'sync', 'syncAt', 'fsync', 'labs']);
 const ghTok = () => store.get('ghtok', null);
 const ghOn = () => !!(ghTok() && CFG.gh.owner && CFG.gh.repo);
 
@@ -14449,19 +14972,20 @@ const ghSongKeep = rec => {
   if (!rec || !rec.song || /\(demo\)\s*$/i.test(rec.song.title || rec.title || '')) return false;
   const s = rec.song; return (rec.takes || []).length > 0 || !/^(untitled( idea)?|new song|)$/i.test(String(s.title || '').trim()) || (s.sections || []).some(x => (x.lyrics || '').trim() || (x.bars || []).some(b => b.chord || (b.tab && b.tab.length)));
 };
-async function ghLocal() {
-  try { await projSave(); } catch (e) { }
-  const f = {}, songs = [];
-  f['studio.json'] = ghJson({ format: 'the-daily-studio', schema: 1, about: 'This repository is a the-daily.studio studio: settings, presets, looks, notes and songs as text. It is kept in step by the app; edit with care.' });
+/** the studio as files. A folder (part 40) passes its own song format (with recordings), README and size limit */
+async function ghLocal(o = {}) {
+  PRJ.flushing = true; try { await projSave(); } catch (e) { } finally { PRJ.flushing = false; }      /* a sync's own save starts no other sync (or each would start the next, for ever) */
+  const f = {}, songs = [], out = o.songOut || ghSongOut, max = o.max || GH_MAXFILE;
+  f['studio.json'] = ghJson({ format: 'the-daily-studio', schema: 1, about: o.about || 'This repository is a the-daily.studio studio: settings, presets, looks, notes and songs as text. It is kept in step by the app; edit with care.' });
   f['settings.json'] = ghJson({ format: 'the-daily-studio-settings', version: 1, settings: ghSettingsOut() });
   f['rig/presets.json'] = ghJson({ format: 'the-daily-studio-presets', version: 1, presets: store.get('presets', []) });
   f['stage/looks.json'] = ghJson({ format: 'the-daily-studio-looks', version: 1, show: ghLooksOut() });
   f['stage/scenes.json'] = ghJson({ format: 'the-daily-studio-scenes', version: 1, stage: CFG.stage || STG });
   f['notes.json'] = ghJson({ format: 'the-daily-studio-notes', version: 1, lessons: store.get('lessons', {}), notebook: store.get('notebook', null) });
-  const gone = new Set(CFG.gh.gone || []);
-  for (const r of PRJ.list) { let rec = r; if (!rec.song) { try { rec = await pdbGet('projects', r.id); } catch (e) { continue; } } if (!ghSongKeep(rec) || gone.has(rec.id)) continue; const t = ghJson(ghSongOut(rec)); if (t.length > GH_MAXFILE) continue; f['songs/' + rec.id + '.json'] = t; songs.push(rec); }
+  const gone = new Set((o.st || CFG.gh).gone || []);
+  for (const r of PRJ.list) { let rec = r; if (!rec.song) { try { rec = await pdbGet('projects', r.id); } catch (e) { continue; } } if (!ghSongKeep(rec) || gone.has(rec.id)) continue; const t = ghJson(out(rec)); if (t.length > max) continue; f['songs/' + rec.id + '.json'] = t; songs.push(rec); }
   songs.sort((a, b) => String(a.title).localeCompare(String(b.title)));
-  f['README.md'] = '# My the-daily.studio\n\nKept in step by [the-daily.studio](https://the-daily.studio/) (Settings ▸ GitHub). Recordings and backing tracks stay on the devices that made them; everything else is here, with its history.\n\n## Songs\n\n' + (songs.length ? songs.map(s => '- **' + String(s.title || 'Untitled').replace(/[*_`<>[\]]/g, '') + '**' + (s.artist ? ' · ' + String(s.artist).replace(/[*_`<>[\]]/g, '') : '') + ' — `songs/' + s.id + '.json`').join('\n') : '_None yet._') + '\n';
+  f['README.md'] = (o.readme || '# My the-daily.studio\n\nKept in step by [the-daily.studio](https://the-daily.studio/) (Settings ▸ GitHub). Recordings and backing tracks stay on the devices that made them; everything else is here, with its history.\n') + '\n## Songs\n\n' + (songs.length ? songs.map(s => '- **' + String(s.title || 'Untitled').replace(/[*_`<>[\]]/g, '') + '**' + (s.artist ? ' · ' + String(s.artist).replace(/[*_`<>[\]]/g, '') : '') + ' — `songs/' + s.id + '.json`').join('\n') : '_None yet._') + '\n';
   return f;
 }
 /* ---------- taking files in ---------- */
@@ -14500,8 +15024,67 @@ async function ghTakeSong(text, asCopy) {
 
 /* ---------- one sync: read both sides, decide file by file, take what came in, send what changed, remember where we are ---------- */
 const GH_KIND = p => p === 'settings.json' ? 'settings' : p === 'stage/looks.json' ? 'looks' : p === 'stage/scenes.json' ? 'scenes' : p === 'rig/presets.json' ? 'presets' : p === 'notes.json' ? 'notes' : /^songs\/[\w-]+\.json$/.test(p) ? 'song' : p === 'README.md' || p === 'studio.json' ? 'generated' : 'other';
-const ghBaseGet = async p => { try { return await pdbGet('blobs', 'gh/base/' + p); } catch (e) { return null; } };
-const ghBaseSet = async (p, t) => { try { if (t == null) await pdbDel('blobs', 'gh/base/' + p); else await pdbPut('blobs', t, 'gh/base/' + p); } catch (e) { } };
+/* ---------- one sync, against any place that keeps the studio's files: this GitHub repository, or a folder (part 40) ----------
+   B = { st: its state in CFG ({last, gone, lastAt}), base: where the last-synced copy of each file is kept, label, event,
+         local(): the files this side holds, head(): {head, files: {path: {sha, size}}}, read(path, at): a file's text,
+         commit(at, changes, message): write ({path: text}) and delete ({path: null}), returning the new head,
+         takeSong(text, asCopy, at, path), status(text, bad), quiet(fn): save settings without starting another sync,
+         maxFile, after(at, now, rep, files): anything more once the files are in step (a folder's recordings) } */
+const syncBaseGet = async (B, p) => { try { return await pdbGet('blobs', B.base + p); } catch (e) { return null; } };
+const syncBaseSet = async (B, p, t) => { try { if (t == null) await pdbDel('blobs', B.base + p); else await pdbPut('blobs', t, B.base + p); } catch (e) { } };
+async function studioSync(B, why) {
+  for (let i = 0; i < 60 && !PRJ.ready; i++) await new Promise(r => setTimeout(r, 250));      /* the library first */
+  const st = B.st;
+  if (why === 'auto' && st.last && st.last.files) {      /* a change here that changed nothing the other side holds: no need to look */
+    const lf = await B.local(), last = st.last.files; let same = true;
+    for (const [p, t] of Object.entries(lf)) { if (GH_KIND(p) === 'generated') continue; if (last[p] !== await ghSha(t)) { same = false; break; } }
+    if (same && !Object.keys(last).some(p => GH_KIND(p) === 'song' && !lf[p])) { B.status('In step with ' + B.label + ' · ' + new Date().toLocaleTimeString()); return { took: [], sent: 0, copies: 0, gone: 0, skipped: true }; }
+  }
+  const at = await B.head(), last = (st.last && st.last.files) || {}, local = await B.local(), rep = { took: [], sent: 0, copies: 0, gone: 0 };
+  const lsha = {}; for (const [p, t] of Object.entries(local)) lsha[p] = await ghSha(t);
+  const paths = new Set([...Object.keys(local), ...Object.keys(at.files), ...Object.keys(last)]);
+  const gone = new Set(st.gone || []);
+  for (const p of paths) {
+    const k = GH_KIND(p); if (k === 'other' || k === 'generated') continue;
+    const r = at.files[p] && at.files[p].sha, l = lsha[p], b = last[p];
+    if (r === l || !r || r === b) continue;                     /* in step; or only this side changed (sent below) */
+    if (at.files[p].size > B.maxFile) continue;
+    const rt = await B.read(p, at); if (rt == null) continue;
+    if (k === 'song') {
+      const id = p.slice(6, -5);
+      if (!l || l === b) { if (gone.has(id)) { gone.delete(id); } await B.takeSong(rt, false, at, p); rep.took.push(p); }       /* changed only there (or new there): take it */
+      else { await B.takeSong(rt, true, at, p); rep.copies++; rep.took.push(p); }                                          /* changed on both sides: keep both */
+      continue;
+    }
+    const bt = l === b || b ? await syncBaseGet(B, p) : null;
+    const ch = k === 'settings' ? await ghTakeSettings(rt, b ? bt : null) : k === 'looks' ? await ghTakeLooks(rt, b ? bt : null) : k === 'scenes' ? (l === b || !b ? await ghTakeScenes(rt) : false) : k === 'presets' ? (l === b || !b ? await ghTakePresets(rt) : false) : k === 'notes' ? (l === b || !b ? await ghTakeNotes(rt) : false) : false;
+    if (ch) rep.took.push(p);
+  }
+  /* songs deleted elsewhere: kept here, not sent back, until changed or removed here */
+  for (const p of Object.keys(last)) if (GH_KIND(p) === 'song' && !at.files[p] && local[p] && lsha[p] === last[p]) { gone.add(p.slice(6, -5)); rep.gone++; }
+  st.gone = [...gone];
+  if (rep.took.length) await projRefresh();
+  /* what this side now holds, against the other */
+  const now = await B.local(), send = {}, nsha = {};
+  for (const [p, t] of Object.entries(now)) { nsha[p] = await ghSha(t); if (!at.files[p] || at.files[p].sha !== nsha[p]) send[p] = t; }
+  for (const p of Object.keys(last)) if (GH_KIND(p) === 'song' && !now[p] && at.files[p] && at.files[p].sha === last[p] && !gone.has(p.slice(6, -5))) send[p] = null;     /* deleted here, unchanged there */
+  /* only README changing on its own is not worth a commit */
+  const real = Object.keys(send).filter(p => p !== 'README.md' && p !== 'studio.json');
+  let head = at.head;
+  if (real.length || !at.head || !at.files['studio.json']) { head = await B.commit(at, send, 'the-daily.studio: ' + (why === 'connect' ? 'first sync' : 'sync') + ' (' + real.length + ' file' + (real.length === 1 ? '' : 's') + ')'); rep.sent = real.length; }
+  const files = {}; for (const [p, s] of Object.entries(nsha)) if (send[p] !== null) files[p] = s;
+  for (const p of Object.keys(files)) { const k = GH_KIND(p); if (k !== 'generated') await syncBaseSet(B, p, now[p]); }
+  for (const p of Object.keys(last)) if (!files[p]) await syncBaseSet(B, p, null);
+  st.last = { head, files }; st.lastAt = Date.now(); B.quiet(() => saveCfg());
+  if (B.after) await B.after(at, now, rep, files);
+  B.status('In step with ' + B.label + ' · ' + new Date().toLocaleTimeString() + (rep.took.length ? ' · ' + rep.took.length + ' came in' : '') + (rep.sent ? ' · ' + rep.sent + ' sent' : '') + (rep.copies ? ' · ' + rep.copies + ' song' + (rep.copies === 1 ? '' : 's') + ' kept in both versions' : '') + (rep.note ? ' · ' + rep.note : ''));
+  if (rep.copies) toast(rep.copies + (rep.copies === 1 ? ' song was' : ' songs were') + ' changed here and on another device, so both versions are kept (“… (from another device)”).', 'warn');
+  bus.emit(B.event, rep); return rep;
+}
+/* GitHub as one of those places */
+const GH_B = { get st() { return CFG.gh; }, base: 'gh/base/', label: 'GitHub', event: 'github', maxFile: GH_MAXFILE,
+  local: () => ghLocal(), head: () => ghHead(), read: (p, at) => ghBlob(at.files[p].sha), commit: (at, ch, msg) => ghCommit(at, ch, msg),
+  takeSong: (t, asCopy) => ghTakeSong(t, asCopy), status: (t, bad) => ghStatus(t, bad), quiet: fn => { GH.quiet = true; PRJ.quiet++; try { fn(); } finally { GH.quiet = false; PRJ.quiet--; } } };
 async function ghSync(why) {
   if (!ghOn()) return null;
   if (GH.busy) { GH.again = true; return GH.busy; }
@@ -14518,57 +15101,11 @@ async function ghSync(why) {
   })();
   return GH.busy;
 }
-async function ghSyncOnce(why) {
-  GH.err = ''; for (let i = 0; i < 60 && !PRJ.ready; i++) await new Promise(r => setTimeout(r, 250));      /* the library first */
-  if (why === 'auto' && CFG.gh.last && CFG.gh.last.files) {      /* a change here that changed nothing GitHub holds: no need to ask */
-    const lf = await ghLocal(), last = CFG.gh.last.files; let same = true;
-    for (const [p, t] of Object.entries(lf)) { if (GH_KIND(p) === 'generated') continue; if (last[p] !== await ghSha(t)) { same = false; break; } }
-    if (same && !Object.keys(last).some(p => GH_KIND(p) === 'song' && !lf[p])) { ghStatus('In step with GitHub · ' + new Date().toLocaleTimeString()); return { took: [], sent: 0, copies: 0, gone: 0, skipped: true }; }
-  }
-  const at = await ghHead(), last = (CFG.gh.last && CFG.gh.last.files) || {}, local = await ghLocal(), rep = { took: [], sent: 0, copies: 0, gone: 0 };
-  const lsha = {}; for (const [p, t] of Object.entries(local)) lsha[p] = await ghSha(t);
-  const paths = new Set([...Object.keys(local), ...Object.keys(at.files), ...Object.keys(last)]);
-  const gone = new Set(CFG.gh.gone || []);
-  for (const p of paths) {
-    const k = GH_KIND(p); if (k === 'other' || k === 'generated') continue;
-    const r = at.files[p] && at.files[p].sha, l = lsha[p], b = last[p];
-    if (r === l || !r || r === b) continue;                     /* in step; or only this side changed (sent below) */
-    if (at.files[p].size > GH_MAXFILE) continue;
-    const rt = await ghBlob(r);
-    if (k === 'song') {
-      const id = p.slice(6, -5);
-      if (!l || l === b) { if (gone.has(id)) { gone.delete(id); } await ghTakeSong(rt); rep.took.push(p); }       /* changed only there (or new there): take it */
-      else { await ghTakeSong(rt, true); rep.copies++; rep.took.push(p); }                                          /* changed on both sides: keep both */
-      continue;
-    }
-    const bt = l === b || b ? await ghBaseGet(p) : null;
-    const ch = k === 'settings' ? await ghTakeSettings(rt, b ? bt : null) : k === 'looks' ? await ghTakeLooks(rt, b ? bt : null) : k === 'scenes' ? (l === b || !b ? await ghTakeScenes(rt) : false) : k === 'presets' ? (l === b || !b ? await ghTakePresets(rt) : false) : k === 'notes' ? (l === b || !b ? await ghTakeNotes(rt) : false) : false;
-    if (ch) rep.took.push(p);
-  }
-  /* songs deleted elsewhere: kept here, not sent back, until changed or removed here */
-  for (const p of Object.keys(last)) if (GH_KIND(p) === 'song' && !at.files[p] && local[p] && lsha[p] === last[p]) { gone.add(p.slice(6, -5)); rep.gone++; }
-  CFG.gh.gone = [...gone];
-  if (rep.took.length) await projRefresh();
-  /* what this side now holds, against the repository */
-  const now = await ghLocal(), send = {}, nsha = {};
-  for (const [p, t] of Object.entries(now)) { nsha[p] = await ghSha(t); if (!at.files[p] || at.files[p].sha !== nsha[p]) send[p] = t; }
-  for (const p of Object.keys(last)) if (GH_KIND(p) === 'song' && !now[p] && at.files[p] && at.files[p].sha === last[p] && !gone.has(p.slice(6, -5))) send[p] = null;     /* deleted here, unchanged there */
-  /* only README changing on its own is not worth a commit */
-  const real = Object.keys(send).filter(p => p !== 'README.md' && p !== 'studio.json');
-  let head = at.head;
-  if (real.length || !at.head || !at.files['studio.json']) { head = await ghCommit(at, send, 'the-daily.studio: ' + (why === 'connect' ? 'first sync' : 'sync') + ' (' + real.length + ' file' + (real.length === 1 ? '' : 's') + ')'); rep.sent = real.length; }
-  const files = {}; for (const [p, s] of Object.entries(nsha)) if (send[p] !== null) files[p] = s;
-  for (const p of Object.keys(files)) { const k = GH_KIND(p); if (k !== 'generated') await ghBaseSet(p, now[p]); }
-  for (const p of Object.keys(last)) if (!files[p]) await ghBaseSet(p, null);
-  CFG.gh.last = { head, files }; CFG.gh.lastAt = Date.now(); GH.quiet = true; try { saveCfg(); } finally { GH.quiet = false; }
-  ghStatus('In step with GitHub · ' + new Date().toLocaleTimeString() + (rep.took.length ? ' · ' + rep.took.length + ' came in' : '') + (rep.sent ? ' · ' + rep.sent + ' sent' : '') + (rep.copies ? ' · ' + rep.copies + ' song' + (rep.copies === 1 ? '' : 's') + ' kept in both versions' : ''));
-  if (rep.copies) toast(rep.copies + (rep.copies === 1 ? ' song was' : ' songs were') + ' changed here and on another device, so both versions are kept (“… (from another device)”).', 'warn');
-  bus.emit('github', rep); return rep;
-}
+async function ghSyncOnce(why) { GH.err = ''; return studioSync(GH_B, why); }
 /** after a change, sync in a little while (many quick changes become one commit); a settings change waits a little longer */
-function ghKick(ms) { if (!ghOn() || CFG.gh.auto === false || GH.quiet) return; if (GH.timer && !ms) clearTimeout(GH.timer); else if (GH.timer) return; GH.timer = setTimeout(() => { GH.timer = 0; ghSync('auto'); }, ms || 20000); }
+function ghKick(ms) { if (!ghOn() || CFG.gh.auto === false || GH.quiet || PRJ.flushing) return; if (GH.timer && !ms) clearTimeout(GH.timer); else if (GH.timer) return; GH.timer = setTimeout(() => { GH.timer = 0; ghSync('auto'); }, ms || 20000); }
 /** saveCfg calls this: settings changed */
-function ghCfgKick() { if (!GH.quiet && !GH.busy) ghKick(45000); }
+function ghCfgKick() { if (!GH.quiet && !GH.busy && !PRJ.quiet) ghKick(45000); }      /* not when a sync (this one or a folder's) is saving its own state */
 /** at start-up: back from Sign in with GitHub, or a sync once the library is loaded */
 function ghBoot() { if (ghReturn()) return; if (ghOn() && CFG.gh.auto !== false) setTimeout(() => ghSync('open'), 1500); }
 bus.on('projects', ghKick);

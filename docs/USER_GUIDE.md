@@ -156,7 +156,7 @@ Units: Noise Gate · Compressor · Wah · Overdrive · Distortion · Fuzz · Pit
 
 ## The band
 
-The **band strip** above the panels toggles **Drums**, **Bass**, **Rhythm** and **Lead tab** (the lead plays whatever is in your tab), plus the **Click**. Hotkeys: <kbd>D</kbd> <kbd>B</kbd> <kbd>G</kbd> <kbd>T</kbd> and <kbd>M</kbd>. Right-click a chip for level, pan and style. The **Mix** menu picks a rehearsal setup, such as "rhythm section only" or "everything but lead".
+The **band strip** above the panels toggles **Drums**, **Bass**, **Rhythm** and **Lead tab** (the lead plays whatever is in your tab), plus the **Click**. Hotkeys: <kbd>D</kbd> <kbd>B</kbd> <kbd>G</kbd> <kbd>T</kbd> and <kbd>M</kbd>. **🔊 Mute all** (or <kbd>Shift</kbd>+<kbd>M</kbd>) silences the whole band and the click in one press; press it again and exactly what was playing comes back (2.24). On a phone it is the 🔊 button in the transport, and Perform has **🔊 Band** beside the click. Right-click a chip for level, pan and style. The **Mix** menu picks a rehearsal setup, such as "rhythm section only" or "everything but lead".
 
 The **Band** panel (4) sets the style of each instrument: drum grooves (Folk Backbeat, Rock 8ths, Four on the Floor, Pop, Funk 16ths, Blues Shuffle, Reggae One-Drop, Bossa Nova, Ballad, Island, Metal Double Kick, Hip-Hop Boom Bap), bass patterns (Root, Root–Fifth, Eighths, Walking, Syncopated, Reggae Dub, Octave Pump) and strumming patterns for the rhythm guitar, including arpeggios and a Travis roll. Voicings for the rhythm guitar are searched for the **current tuning and capo**, not looked up from a fixed chart.
 
@@ -278,7 +278,7 @@ Your songs live in your browser. Chrome and Edge keep them unless you clear site
 * **⋯ More ▸ Keep songs safe** (and the card at the top of **My songs**) explains it in three steps (Share ▸ Add to Home Screen ▸ Add), and has one **Back up all songs** button that saves every song and recording as one zip. **Open a file** brings that zip back.
 * The first time you record a take in Safari on an iPhone or iPad, a one-time tip offers the same.
 * A backup reminder appears after a while away: 7 days where the risk is high (Safari not on the Home Screen), 30 days elsewhere. It only reminds; nothing is uploaded.
-* On a computer, **Settings ▸ Export ▸ Backup folder** (Chrome and Edge) writes each song to a folder as you work.
+* On a computer, **Settings ▸ Folder sync** (Chrome and Edge) keeps your whole studio, recordings included, in a folder as you work; choose a folder in iCloud Drive, Dropbox, Google Drive or OneDrive and your other computers can have the same studio (see *Folder sync*).
 
 ### Recording guitar and vocals together
 
@@ -593,7 +593,7 @@ Live and session measurements: pitch-class usage and intonation (mean cents devi
 * **Print or PDF sheet** makes a clean sheet with chords over the words for the browser's Print dialog (choose **Save as PDF** there).
 * **⏺ Record the stage** (Visuals bar) saves a video of the visuals with the song's sound. Choose its shape (2.19): **▭ Wide 16:9** (1920 × 1080, for YouTube, a website or a TV), **▯ Vertical 9:16** (1080 × 1920, for Reels, TikTok and Shorts) or **▢ As on screen**. The video is drawn for its own frame, so the camera is cropped to keep you in the middle of a vertical video. **Quality** is **Auto** (1080p on a computer, 720p on a phone or tablet), **1080p** or **720p**; 720p is smoother on a phone, and if many frames came late while recording the app suggests it (2.19.1). **Words and chord on the video** puts the line being sung (with its chords over the words) and the chord in large type at the bottom; it starts on for vertical and off for wide. While it records, the Visuals show a preview, and it keeps recording if you open another panel. In **🎬 Creator Studio** the shape is next to **⏺ Record MP4**, and the **🖼 Thumbnail** takes the same shape (1080 × 1920 for vertical).
 
-**Backup folder** (Chrome and Edge on a computer). **Settings ▸ Export ▸ Backup folder ▸ Choose a folder…** Each song is written there as a `.daily-song.zip` shortly after you change it, and **Save all songs now** writes them all. A folder inside a cloud drive works with that drive's own sync. After a browser restart it may ask once to allow access again. No account is involved: the browser writes the files directly. Renaming a song leaves its old file in the folder.
+**Folder sync** (Chrome and Edge on a computer; was *Backup folder* before 2.22) keeps your whole studio in a folder you choose, and can still save each song as a `.daily-song.zip` there too. See *Folder sync* below.
 
 ## Export, history and backup
 
@@ -610,7 +610,7 @@ Connect a controller and allow MIDI access when asked (HTTPS or `localhost`; Chr
 
 The app switches layout by itself; **⋯ More ▸ Device layout** (or Settings) forces Phone, Tablet or Desktop.
 
-**Phone, portrait.** Top: tempo, signature, key and the **⋯** button. Below it a row of chips for the panels in the current section. Bottom: the transport (rewind, play, stop, record, loop, click and the bar·beat·slot readout) and the five sections:
+**Phone, portrait.** Top: tempo, signature, key and the **⋯** button. Below it a row of chips for the panels in the current section. Bottom: the transport (rewind, play, stop, record, loop, click, **🔊 band** and the bar·beat·slot readout) and the five sections:
 
 | Section | Panels |
 |---|---|
@@ -618,7 +618,7 @@ The app switches layout by itself; **⋯ More ▸ Device layout** (or Settings) 
 | **Write** | Tab · Song (tuning, capo, chords, lyrics) · Band · Fretboard · Theory |
 | **See** | Visuals · Stage · Neural · Vision |
 | **Stems** | Stems · Transcribe |
-| **More** | Research · Export |
+| **More** | Opens the sheet of everything else (the same as **⋯**): Hum, Loop & layer, Audio, theme, Settings, Help, guided sessions and the tour, your songs and progress, files, the mix, Voice, keeping songs safe; its first row opens the **Research** and **Export** panels |
 
 The **⋯** button (top right) opens the **More sheet**: **Hum or sing a song**, **Audio · kill switch**, **Light theme**, **Appearance**, **Monitor**, **Screen awake**, **Settings**, **Help**, **Guided tour**, **Save project**, **Share link**, **My songs**, **Open a file** (audio, lyrics, MIDI or a song file), **Master · balance · click** (master preset, Auto-balance, count-in and click level), **Keep songs safe**, **Install app** (when the browser offers it), **Full screen** and **Device layout**.
 
@@ -705,6 +705,17 @@ The app ships no recordings and no one else's lyrics, and it never uploads anyth
 * **Files that carry sound carry the loaded track.** If a backing track is loaded, the bounce, compressed audio, share page and stage video contain it, and so do backups. Send them only where you have the right to.
 * **Ultimate Guitar and other sites** have their own submission rules. A chart of your own song is yours to post; a chart of someone else's song is based on theirs.
 * The demo song is an original sketch. Credits and licences are under **Help ▸ About**, and at `/legal/` on the site; the file-by-file register is [LICENSING.md](LICENSING.md).
+
+## Folder sync (2.22)
+
+**Settings ▸ Folder sync ▸ 📁 Choose a folder…** (Chrome and Edge on a computer) keeps your whole studio in step with a folder: your songs **with their recordings and backing tracks**, settings, rig presets, stage looks and scenes, lesson notes and the notebook. Choose a folder inside **iCloud Drive, Dropbox, Google Drive or OneDrive**, then choose the same folder on your other computers, and they all have the same studio; the drive's own app carries the files between them. There is no account and nothing is sent anywhere by the page: the browser reads and writes the folder itself.
+- **Where:** a folder named `the-daily.studio` inside the one you choose (or the folder itself, if it already is one). Songs are in `songs/` as text, their recordings in `media/<song>/` as WAV files (and each backing track as the file you loaded), and the rest beside them. `README.md` lists your songs.
+- **When:** a few seconds after a change, when the page opens or you come back to it, and every minute while it is open; **⟳ Sync now** does it at once. Never while a song is playing or recording.
+- **Both changed:** a song changed on two computers keeps both versions ("… (from another device)"). If both saved before the cloud drive caught up, the drive keeps a second file ("conflicted copy"); the studio keeps that version as a song too, and removes the extra file. A song deleted on another computer stays here until you delete it here too.
+- **Recordings on their way:** a song can arrive before its recordings do. It opens without them until they arrive, and saving it never drops them.
+- **Tidy:** a recording no song uses any more is removed from the folder after a day. Files that are not the studio's own are never touched.
+- **Also save each song as a .daily-song.zip** (a file per song, to open or send on its own) is on for folders chosen before 2.22, when this was the backup folder.
+- This computer's own audio devices, levels and layout stay its own. After a browser restart, the browser may ask once to allow access again (**Allow access again**). **Turn off** stops syncing and leaves the folder as it is.
 
 ## Your studio on GitHub (2.21)
 

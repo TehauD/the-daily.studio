@@ -90,7 +90,7 @@ function perfOpen(opener) {
       h('button', { class: 'btn sm vzh-kill', id: 'pfKill', title: 'Stop all sound and release the microphone (Ctrl + .)', onclick: () => { try { audioKill(); } catch (e) { } } }, '■ Stop audio'), h('button', { class: 'btn sm', id: 'pfExit', onclick: () => perfClose() }, '✕ Exit')),
     h('div', { class: 'pf-stage' }, h('div', { class: 'pf-chord', id: 'pfChord', 'aria-live': 'off' }, '·'), h('div', { class: 'pf-next', id: 'pfNext' }), h('div', { class: 'pf-lyr', id: 'pfLyr' }), h('aside', { class: 'pf-shapes', id: 'pfShapes', 'aria-label': 'Chord shapes' })),
     h('div', { class: 'pf-bar' }, ctl('pfPlay', '▶ Play', 'Play or stop (Space)', () => { T.playing ? stopPlay(true) : play(); }), ctl('pfRec', '● Record', 'Record a take with a count-in (R)', () => { if (!E.hasInput) toast('No input is connected, so only the count-in will run.', 'warn'); toggleRec(); }),
-      ctl('pfLoop', '⟲ Loop', 'Loop the song (L)', () => { T.loop = !T.loop; syncTransport(); perfSync(); }), ctl('pfMetro', '♩ Click', 'Metronome (M)', () => { T.metro = !T.metro; syncTransport(); perfSync(); }),
+      ctl('pfLoop', '⟲ Loop', 'Loop the song (L)', () => { T.loop = !T.loop; syncTransport(); perfSync(); }), ctl('pfMetro', '♩ Click', 'Metronome (M)', () => { T.metro = !T.metro; syncTransport(); perfSync(); }), ctl('pfBand', '🔇 Band', 'Mute the whole band and the click (Shift+M)', () => { bandMute(); perfSync(); }),
       ctl('pfSlow', '−', 'Slower by 5 BPM', () => { S.bpm = clamp(S.bpm - 5, 30, 260); commit(false); bus.emit('bpm'); perfSync(); }), h('b', { class: 'pf-bpm', id: 'pfBpm' }), ctl('pfFast', '+', 'Faster by 5 BPM', () => { S.bpm = clamp(S.bpm + 5, 30, 260); commit(false); bus.emit('bpm'); perfSync(); }),
       h('span', { class: 'grow egg-line', 'aria-live': 'off' }), h('span', { class: 'pf-takes', id: 'pfTakes' })), secretChip('pf-sec'), buildTag('pf-ver'));
   document.body.append(PF.el); document.body.classList.add('perform-on');
@@ -106,7 +106,7 @@ function perfClose() {
 function perfSync() {
   if (!PF.el) return; const q = id => document.getElementById(id), on = (id, v) => { const b = q(id); if (b) b.classList.toggle('on', !!v); };
   const p = q('pfPlay'); if (p) p.textContent = T.playing ? '■ Stop' : '▶ Play'; const r = q('pfRec'); if (r) { r.classList.toggle('on', T.rec && T.playing); r.classList.toggle('armed', T.rec && !T.playing); r.textContent = T.rec && T.playing ? '● Recording' : '● Record'; }
-  on('pfLoop', T.loop); on('pfMetro', T.metro); const b = q('pfBpm'); if (b) b.textContent = Math.round(S.bpm) + ' BPM';
+  on('pfLoop', T.loop); on('pfMetro', T.metro); bandMuteSync(); const b = q('pfBpm'); if (b) b.textContent = Math.round(S.bpm) + ' BPM';
   const tk = q('pfTakes'); if (tk) { const n = tkLeads().length; tk.textContent = n ? n + ' take' + (n === 1 ? '' : 's') + ' in this song' : ''; }
 }
 function perfTick() {

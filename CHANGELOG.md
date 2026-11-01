@@ -2,6 +2,84 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.24.0 — 2026-11-01 — Mute the whole band in one press; the phone's More, and one panel at a time
+
+### Added
+- **Mute the whole band and the click in one press** (`bandMute` in `src/parts/11-layout.js`). Press again and exactly what was playing comes back (for the same song; a new song gets its usual band). Switching one part back on by hand ends the mute.
+  - On a computer: **🔊 Mute all** in the band strip, and <kbd>Shift</kbd>+<kbd>M</kbd>. <kbd>M</kbd> alone is still the click.
+  - On a phone: a **🔊** button in the transport, beside the click. The speaker shows what you hear now (🔇, highlighted, when muted).
+  - In Perform: **🔊 Band** beside the click.
+
+### Fixed
+- **On a phone, Voice and the song sheet no longer stack.** Only one panel sits at the bottom at a time.
+  - Opening Voice (from the song sheet, the More sheet or anywhere else) puts the song sheet and the More sheet away.
+  - Opening the song sheet or the More sheet puts Voice away.
+  - The song sheet's own **Voice**, **Perform** and **Load a track** buttons close the sheet before they open anything.
+
+### Changed
+- **The phone's bottom More** opens the sheet of extras (the same one as ⋯), instead of switching straight to the Research measurements. Its first row opens the **Research** and **Export** panels.
+- The phone's transport now keeps tempo, signature, key and mode in the header by what they are, not by position, so an extra button can never push one of them out.
+- On phones narrower than 380 px, the position readout drops its caption so all seven buttons fit.
+
+### Tests
+- `test/e2e-phone-panels.cjs` (21 checks): the band button in the phone transport, mute and an exact restore of a mixed band, the bottom More and its panels, the ••• sheet, one panel at a time in both directions, Perform's band button, nothing wider than the screen, and on a computer the band strip chip, Shift+M, M alone, and ending the mute by hand.
+
+## 2.23.0 — 2026-11-01 — New guide pages, Backstage with all access, and hidden pages for developers
+
+### Changed
+- **The guide pages** (`scripts/seo-pages.mjs`, `/guide/`) are redesigned and brought up to date.
+  - One column for words and pictures, so text no longer wraps short of the picture above it.
+  - The studio's own colours and fonts: Inter and Montserrat, served from `/fonts/` with the security policy allowing only this site's fonts.
+  - Each topic now reads the same way: an at-a-glance row of cards, numbered steps, a **Good to know** box for honest limits, questions that open and close, and one-line cards to keep reading.
+  - The content now covers everything up to 2.22: zero-delay effects, Loop & layer, Your video, wide and vertical videos, the tip jar, folder sync and GitHub.
+  - Three new pages: **Guitar amps, pedals and tones**, **Perform live and share**, and **Your studio, on every computer**. Their pictures are made from the app itself (`test/guide-shots.cjs`, WebP encoded in the browser).
+- **Backstage is guest list only.** `dailyStudio.backstage()` now says how to get on the list. The password is the build you are running (bottom-right corner, or `dailyStudio.describe().build`), and a wrong one gets a stronger hint after a few tries. Getting in issues this browser an **all-access pass** with a number of its own. A browser that was already in keeps its way in and gets a number.
+
+### Added
+- **Backstage rooms** (`src/parts/73c-backstage.js`):
+  - **Your pass**.
+  - **Engine room**, now with the guitar's signal chain, unit by unit, showing what each unit adds, and the AudioWorklet processors.
+  - **Performance**: frames a second over the last minute, long tasks, memory and the number of elements.
+  - **Storage**: what this browser keeps, where it syncs, and the studio exported as JSON.
+  - **Event bus**: every event the parts send each other, live, with a filter. The bus is tapped only while Backstage is open.
+  - **Terminal**: a small shell for the studio, with history, Tab completion and a few words just for fun. Type `help`; it has 30 commands, including `play`, `bpm`, `transpose`, `look`, `call <tool> {json}`, `bus`, `storage`, `sync now`, `export`, `quote tomorrow`, `labs`, `open source` and `exit`.
+  - **Labs**: developer handles (`window.__daily` without `?debug`), a performance overlay, and the event bus logged to the console.
+  - **Hidden pages**, plus the existing How it is made, Agent playground and Secrets rooms.
+- **Other ways into Backstage**: `#backstage/<room>` in the address, and ↑ ↑ ↓ ↓ ← → ← → B A, which opens the terminal. B and A finish the code rather than toggling the band.
+- **Hidden pages for developers** (`scripts/backstage-pages.mjs`), shown only to a browser with a pass:
+  - `/backstage/`: the lobby, with your pass, the rooms, this build at a glance and the ways in.
+  - `/backstage/source/`: a map of every part, built from each part's own header comment, searchable, with sizes and links to the source.
+  - `/backstage/data/`: your data, raw. It reads the studio's IndexedDB and local storage only, never creates a database, and never shows a GitHub token.
+  - `/backstage/api/`: the console, WebMCP and agent API, and every shell command.
+  - `/backstage/changelog/`: every release as a timeline.
+  - How they are kept apart: noindex, kept out of the sitemap, and robots.txt asks crawlers to stay out of `/backstage/`. Each page has one inline script, allowed by its hash, and may connect nowhere.
+  - `/humans.txt`.
+
+### Tests
+- `test/e2e-secrets.cjs` (54 checks): the guest list, a wrong password, the build as password, the pass, every room, the terminal's commands (help, version, bpm, quote, call, fun words, unknown commands, history, Tab, labs, ls), the deep link, the Konami code without toggling the bass, and the developer handles without `?debug` (persisting, then switched off).
+- `test/e2e-backstage-pages.cjs` (17 checks): the hidden pages, written into `test/out/site` and opened from the studio's own origin.
+- `npm run verify:site` and `npm run audit` cover the new guide pages, the served fonts, `backstage/` and `humans.txt`.
+
+## 2.22.0 — 2026-11-01 — Folder sync: your whole studio, recordings too, in a folder you choose
+
+### Added
+- **Folder sync** (`src/parts/40-sync.js`, **Settings ▸ Folder sync**; Chrome and Edge on a computer). Choose a folder, ideally inside iCloud Drive, Dropbox, Google Drive or OneDrive, and your whole studio is kept in step with it: songs **with their recordings and backing tracks**, settings (not this computer's own audio devices, levels and layout), rig presets, stage looks and scenes, lesson notes and the notebook. Choose the same folder on another computer and it has the same studio; the drive's own app carries the files. No account, and the page makes no request: the browser reads and writes the folder itself.
+  - **The files** are a GitHub studio's (`studio.json`, `settings.json`, `songs/<id>.json` …) in `the-daily.studio` inside the chosen folder. Songs also list their recordings, and `media/<song>/` holds each recording as a WAV (dry, and the amp print if any) and each backing track as the file that was loaded. A recording never changes once made, so its file is only ever copied to the side that lacks it; a WAV a cloud drive has not finished copying is left for later.
+  - **Merges** are GitHub's, from one engine: settings key by key, a song changed on two computers keeps both versions, a song deleted elsewhere stays here until deleted here.
+  - **Cloud-drive conflicts**: when two computers save the same song before the drive catches up, the drive keeps a second file (Dropbox's "conflicted copy", "(1)", " 2", OneDrive's "-COMPUTER"). The studio keeps that version as a song of its own ("… (from another device)"), named from its content so two computers doing it at once make one song, and removes the extra file. A file named for another song never replaces that song.
+  - **When**: a few seconds after a change, when the page opens or comes back, and every minute while open; **⟳ Sync now**. Never while playing, recording or looping.
+  - **Tidy**: a recording no song uses is removed from the folder once that has been so for a day (by this computer's count and the file's age), so a drive still copying never loses one. Only the studio's own file names are ever removed.
+  - **Also save each song as a .daily-song.zip** is still there: on for folders chosen before 2.22 (the backup folder becomes a synced studio by itself, keeps its zips, and says so once).
+
+### Changed
+- **One sync engine** (`studioSync` in `src/parts/74-github.js`) for GitHub and folders: a place that keeps a studio says how to read its files, read one, write and delete, and take in a song; GitHub behaves exactly as before (its 42 checks unchanged).
+- **A song whose recordings are not on this device yet** (on their way through a folder) opens without them and keeps them on every save, instead of a save dropping them (`src/parts/25-projects.js`).
+- Settings: **Folder sync** has its own section next to GitHub (the Export section points to it). `syncAt` and the folder's state are this device's own and never synced to GitHub.
+
+### Tests
+- `test/e2e-folder.cjs` (50 checks): two computers through real directories (the browser's private file system), with the cloud drive played by copying folders, wholly or partly: the studio and recordings written and read back sample for sample, backing tracks, settings without this computer's own, a change and a new take reaching the other computer and the open song updating in place, a recording that arrives after its song (kept through an edit, taken in when it lands), both versions kept, Dropbox- and OneDrive-style conflict copies, deletions, tidying after a day while other files are never touched, nothing while playing, the zip option, a 2.21 backup folder upgraded, permission, and no network request.
+- `test/e2e.cjs`: the backup-folder checks now choose a real directory and find the studio written there.
+
 ## 2.21.2 — 2026-11-01 — The hidden line: a quote of the day
 
 ### Changed

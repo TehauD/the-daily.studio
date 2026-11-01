@@ -54,12 +54,13 @@ function buildHeader() {
   UI.rec = B('rec', '●', 'Record guitar take (R)', toggleRec);
   UI.loop = h('button', { class: 'btn sm', title: 'Loop (L)', onclick: () => { T.loop = !T.loop; syncTransport(); } }, '⟲', h('span', { class: 'lbl' }, ' Loop'));
   UI.metro = h('button', { class: 'btn sm', title: 'Metronome (M)', onclick: () => { T.metro = !T.metro; syncTransport(); } }, '♩', h('span', { class: 'lbl' }, ' Click'));
+  UI.bandMute = h('button', { class: 'btn sm bandmute', id: 'bandMute', 'aria-label': 'Mute the band and the click', 'aria-pressed': 'false', onclick: () => bandMute() }, '🔇', h('span', { class: 'lbl' }, ' Band'));
   UI.metroMore = h('button', { class: 'btn sm metro-more', title: 'Count-in and click volume', 'aria-label': 'Count-in and click volume', 'aria-haspopup': 'dialog', onclick: e => clickMenu(e.currentTarget) }, '▾');
   UI.pos = h('div', { class: 'lcd' }, h('b', {}, '1·1·1'), h('i', {}, 'BAR·BEAT·SLOT')); UI.tim = h('div', { class: 'lcd', style: { minWidth: '88px' } }, h('b', {}, '00:00.00'), h('i', {}, 'TIME'));
   UI.bpm = h('input', { type: 'number', min: 30, max: 260, step: 1, value: S.bpm, onchange: e => { S.bpm = clamp(+e.target.value || 90, 30, 260); e.target.value = S.bpm; commit(false); bus.emit('bpm'); } });
   UI.ts = h('select', { onchange: e => { const [n, d] = e.target.value.split('/').map(Number); S.ts = [n, d]; S.band.drumLen = Math.min(32, spb()); commit(); } }, ['4/4', '3/4', '2/4', '5/4', '6/8', '12/8', '7/8'].map(x => h('option', { value: x }, x)));
   UI.key = h('select', { onchange: () => keyChanged() }, NS.map((n, i) => h('option', { value: i }, n))); UI.mode = h('select', { onchange: () => keyChanged() }, [h('option', { value: 'maj' }, 'maj'), h('option', { value: 'min' }, 'min')]);
-  tr.append(UI.rew, UI.play, UI.stop, UI.rec, UI.loop, UI.metro, UI.metroMore, UI.pos, UI.tim, h('label', { class: 'field', style: { width: '58px' } }, 'BPM', UI.bpm), h('label', { class: 'field', style: { width: '54px' } }, 'Sig', UI.ts), h('label', { class: 'field', style: { width: '56px' } }, 'Key', UI.key), h('label', { class: 'field', style: { width: '56px' } }, 'Mode', UI.mode));
+  tr.append(UI.rew, UI.play, UI.stop, UI.rec, UI.loop, UI.metro, UI.bandMute, UI.metroMore, UI.pos, UI.tim, h('label', { class: 'field', style: { width: '58px' } }, 'BPM', UI.bpm), h('label', { class: 'field', style: { width: '54px' } }, 'Sig', UI.ts), h('label', { class: 'field', style: { width: '56px' } }, 'Key', UI.key), h('label', { class: 'field', style: { width: '56px' } }, 'Mode', UI.mode));
   const R = $('#topR');
   UI.lat = h('span', { class: 'chip', title: 'Round-trip latency estimate. Run the Loopback Test in I/O for a measured value.' }, h('i', { class: 'led' }), h('span', {}, 'audio off'));
   UI.theme = h('button', { class: 'btn icon', title: 'Appearance: light / dark, palettes, accent, density…', 'aria-haspopup': 'dialog', onclick: () => lookOpen() }, '◐');
@@ -82,7 +83,7 @@ function toggleRec() {
 }
 function syncTransport() {
   if (!UI.play) return; UI.play.textContent = T.playing ? '⏸' : '▶'; UI.play.classList.toggle('on', T.playing);
-  UI.rec.classList.toggle('armed', T.rec && !T.playing); UI.rec.classList.toggle('on', T.rec && T.playing); UI.loop.classList.toggle('on', T.loop); UI.metro.classList.toggle('on', T.metro);
+  UI.rec.classList.toggle('armed', T.rec && !T.playing); UI.rec.classList.toggle('on', T.rec && T.playing); UI.loop.classList.toggle('on', T.loop); UI.metro.classList.toggle('on', T.metro); if (typeof bandMuteSync === 'function') bandMuteSync();
   UI.bpm.value = S.bpm; UI.ts.value = S.ts.join('/'); UI.key.value = S.key; UI.mode.value = S.minor ? 'min' : 'maj';
   if (UI.undo) { UI.undo.disabled = !histStack.u.length; UI.redo.disabled = !histStack.r.length; }
 }
@@ -129,12 +130,13 @@ function openSettings(at) {
       F('When recording reaches the end of the song', sel('recEnd', [['grow', 'Keep going (the song grows to fit)'], ['stop', 'Stop at the end'], ['loop', 'Loop back, one take per pass']])),
       h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!CFG.rec.dry, onchange: e => { CFG.rec.dry = e.target.checked; saveCfg(); } }), 'Record dry DI (enables re-amping)'),
       h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!CFG.rec.wet, onchange: e => { CFG.rec.wet = e.target.checked; saveCfg(); } }), 'Record wet print')] },
+    { key: 'folder', label: 'Folder sync', ico: '📁', sub: 'Your whole studio, recordings too, in a folder on this computer: iCloud Drive, Dropbox, Google Drive or OneDrive keep it the same on every computer.', wide: true, body: () => [syncControl()] },
     { key: 'github', label: 'GitHub', ico: '⑂', sub: 'Your studio in a private repository of your own, in step on every device. Optional.', wide: true, body: () => [ghSection()] },
-    { key: 'export', label: 'Export', ico: '⇩', sub: 'Song bounces, tab text and an automatic backup folder.', body: () => [
+    { key: 'export', label: 'Export', ico: '⇩', sub: 'Song bounces and tab text.', body: () => [
       F('Loudness target for song WAVs', sel('lufsTarget', LOUD_TARGETS)),
       chk('Render WAVs faster than real time', 'renderFast'), note('Mixes the song in a few seconds instead of playing it through. Turn this off if a render ever sounds different from playback.'),
       F('Ultimate Guitar line width (chars)', num('ugWidth', 40, 120, 1, () => bus.emit('export'))), chk('Include [tab] / [ch] tags in Ultimate Guitar text', 'ugTags', () => bus.emit('export')),
-      F('Backup folder', syncControl())] },
+      note('To keep every song (and its recordings) in a folder, and the same on your other computers, see Settings ▸ Folder sync.')] },
     { key: 'data', label: 'Songs & data', ico: '☰', sub: 'Everything stays in this browser. Nothing is uploaded.', body: () => [
       F('Backing track when a song opens', sel('trackRestore', [['auto', 'Restore it automatically'], ['tap', 'Wait until I tap Restore']])),
       note('Songs and recordings are kept in this browser (My songs). Stems are separated again when a song with a track opens; the song itself opens instantly.'),
@@ -143,7 +145,7 @@ function openSettings(at) {
 }
 /** ? Help (part 05c's dialog) */
 function openHelp(at) {
-  const K = [['Space', 'Play / stop'], ['Ctrl + .', 'KILL AUDIO: stop playback, monitor off, release the microphone, suspend audio'], ['R', 'Record: one press, one take. It keeps going past the end of the song until you press R or Stop again'], ['L / M', 'Loop / metronome'], ['D · B · G · T', 'Band on/off: drums · bass · rhythm guitar · lead tab'], ['1…8 · 0', 'Recall pedalboard scene (Stage scene when Stage is focused) · 0 = all pedals off'], ['Home', 'Return to start'], ['Ctrl/⌘ Z · Shift+Z', 'Undo / redo: song edits, clips and the stem mix share one history'], ['Ctrl/⌘ E · D · Del', 'Selected clip: split at the playhead · duplicate · delete. ← → nudge a beat (Shift = a bar). Hold Alt while dragging for no snapping'], ['Drop a file', 'Audio, lyrics, MIDI (.mid, .kar) or a song file anywhere on the page'], ['Ctrl/⌘ S', 'Save project JSON'], ['Alt + 1…9, 0', 'Switch panel by position (tab order is yours to arrange)'], ['[ ]', 'Toggle left / right sidebars'],
+  const K = [['Space', 'Play / stop'], ['Ctrl + .', 'KILL AUDIO: stop playback, monitor off, release the microphone, suspend audio'], ['R', 'Record: one press, one take. It keeps going past the end of the song until you press R or Stop again'], ['L / M', 'Loop / metronome'], ['D · B · G · T', 'Band on/off: drums · bass · rhythm guitar · lead tab'], ['Shift + M', 'Mute the whole band and the click in one press; again to bring back what was playing'], ['1…8 · 0', 'Recall pedalboard scene (Stage scene when Stage is focused) · 0 = all pedals off'], ['Home', 'Return to start'], ['Ctrl/⌘ Z · Shift+Z', 'Undo / redo: song edits, clips and the stem mix share one history'], ['Ctrl/⌘ E · D · Del', 'Selected clip: split at the playhead · duplicate · delete. ← → nudge a beat (Shift = a bar). Hold Alt while dragging for no snapping'], ['Drop a file', 'Audio, lyrics, MIDI (.mid, .kar) or a song file anywhere on the page'], ['Ctrl/⌘ S', 'Save project JSON'], ['Alt + 1…9, 0', 'Switch panel by position (tab order is yours to arrange)'], ['[ ]', 'Toggle left / right sidebars'],
     ['Tab editor', 'Click a cell · type fret (0–24) · ←→↑↓ move · Del clear · h p / \\ b ~ x < set technique · Shift+arrows select · Space plays from bar'], ['Knobs', 'Drag · wheel · Shift = fine · double-click reset · right-click = MIDI learn'], ['Rig', 'Drag pedal headers to reorder the signal chain · A/B + Morph to compare tones']];
   const close = () => { const d = $('#help'); if (d) d.close(); };
   return hubOpen('help', { ico: '?', title: 'Help', sub: 'Get going, find a shortcut, or read how the studio treats your work.', at, sections: [
@@ -162,7 +164,7 @@ function openHelp(at) {
       h('p', { class: 'small muted' }, 'It has no song titles, words, file names, device names or tip link, and nothing is sent: you see it and paste it yourself.'),
       h('div', { class: 'hub-acts' }, h('button', { class: 'btn primary', id: 'reportCopy', onclick: () => reportCopy() }, '⚑ Copy a problem report'), h('button', { class: 'btn', id: 'reportShow', onclick: async () => { close(); reportShow(await reportText()); } }, 'Show it first'),
         h('a', { class: 'btn', href: BRAND.repo + '/issues/new', target: '_blank', rel: 'noopener noreferrer' }, 'Open a GitHub issue ↗'))] },
-    CFG.backstage ? { key: 'backstage', label: 'Backstage', ico: '🎭', sub: 'You found the door. The engine live, how it is made, the agent playground.', wide: true, body: () => [h('div', { class: 'hub-acts' }, h('button', { class: 'btn primary', id: 'helpBackstage', onclick: () => { close(); backstageOpen(); } }, '🎭 Go backstage'))] } : null,
+    CFG.backstage ? { key: 'backstage', label: 'Backstage', ico: '🎭', sub: 'You are on the list. The engine room, performance, storage, the event bus, a terminal, labs and the hidden pages.', wide: true, body: () => [h('div', { class: 'hub-acts' }, h('button', { class: 'btn primary', id: 'helpBackstage', onclick: () => { close(); backstageOpen(); } }, '🎭 Go backstage'))] } : null,
     { key: 'about', label: 'About', ico: '♥', wide: true, body: () => [aboutBlock()] }
   ] });
 }
@@ -198,6 +200,7 @@ document.addEventListener('keydown', e => {
   }
   if (typing || mod) return;
   if (t && t.classList && t.classList.contains('tcell')) return;
+  if (e.shiftKey && (e.key === 'M' || e.key === 'm')) { bandMute(); return; }      /* Shift+M: the whole band and the click, M alone is the click */
   switch (e.key) {
     case ' ': e.preventDefault(); T.playing ? stopPlay(true) : play(); break;
     case 'r': case 'R': toggleRec(); break; case 'l': case 'L': T.loop = !T.loop; syncTransport(); break; case 'm': case 'M': T.metro = !T.metro; syncTransport(); break;

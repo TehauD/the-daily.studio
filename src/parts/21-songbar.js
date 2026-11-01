@@ -146,12 +146,14 @@ function sbChip() {
   } else if (PRJ.pending) {
     t.append(h('button', { class: 'sb-chip', title: 'This song has a backing track saved on this device. Tap to split it into stems again (takes a moment).', onclick: () => projRestoreTrack() }, '♪ Restore “' + (PRJ.pending.title || PRJ.pending.name || 'track') + '”'));
   } else {
-    t.append(h('button', { class: 'sb-chip', title: 'Load a backing track — it is split into stems and fills in this song (title, tempo, key, chords)', onclick: () => { dockGo('stems'); const f = SU && SU.file; if (f) f.click(); } }, '♪ Load a track…'));
+    t.append(h('button', { class: 'sb-chip', title: 'Load a backing track — it is split into stems and fills in this song (title, tempo, key, chords)', onclick: () => { sbLeave(); dockGo('stems'); const f = SU && SU.file; if (f) f.click(); } }, '♪ Load a track…'));
     if (S.track) t.append(h('span', { class: 'tiny muted', title: 'This song was built from a track. Load it again to play along with it.' }, 'from “' + S.track.name + '”'));
   }
-  t.append(h('button', { class: 'sb-chip', id: 'sbPerform', title: 'Perform: full-screen chords and lyrics with a count-in, record and play', onclick: e => perfOpen(e.currentTarget) }, '🎤 Perform'));
-  t.append(h('button', { class: 'sb-chip', id: 'sbVoice', 'aria-label': 'Voice', title: 'Voice: see your pitch against the key, find your range, and find the key that suits your voice', onclick: e => voxOpen(e.currentTarget) }, '〰', h('span', { class: 'sb-lbl' }, 'Voice')));
+  t.append(h('button', { class: 'sb-chip', id: 'sbPerform', title: 'Perform: full-screen chords and lyrics with a count-in, record and play', onclick: e => { sbLeave(); perfOpen(e.currentTarget); } }, '🎤 Perform'));
+  t.append(h('button', { class: 'sb-chip', id: 'sbVoice', 'aria-label': 'Voice', title: 'Voice: see your pitch against the key, find your range, and find the key that suits your voice', onclick: e => { sbLeave(); voxOpen(e.currentTarget); } }, '〰', h('span', { class: 'sb-lbl' }, 'Voice')));
 }
+/** on a phone the song details are a sheet over the page: its buttons close it before they open something else */
+function sbLeave() { if (document.body.classList.contains('song-open') && typeof mCloseOverlays === 'function') mCloseOverlays(); }
 function sbTrackPop(anchor) {
   const an = STM.an, box = h('div', { style: { display: 'grid', gap: '6px' } });
   box.append(h('h5', { style: { margin: 0 } }, STM.title || STM.name), h('div', { class: 'tiny muted' }, fmtT(STM.dur) + ' · ' + (STM.sr / 1000).toFixed(1) + ' kHz' + (an ? ' · ' + an.info.filter(i => i.found).map(i => i.name.split(' ')[0]).join(', ') + ' found' : '')));

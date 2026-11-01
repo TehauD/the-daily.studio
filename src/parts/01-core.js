@@ -82,7 +82,7 @@ const CFG = Object.assign({
   eggs: true,     // the hidden surprises (part 73b); off stops the musical ones and hides the counter   // zero-delay compressors and saturation (part 02); off = the browser's own, which add about 20 ms to the guitar
   mpOk: false   // true once the person has said yes to the one-time MediaPipe download (see mpConsent); nothing leaves the page before that
 }, store.get('cfg', {}));
-const saveCfg = () => { store.set('cfg', CFG); if (typeof ghCfgKick === 'function') try { ghCfgKick(); } catch (e) { } };
+const saveCfg = () => { store.set('cfg', CFG); if (typeof ghCfgKick === 'function') try { ghCfgKick(); } catch (e) { } if (typeof syncCfgKick === 'function') try { syncCfgKick(); } catch (e) { } };      /* a synced studio (GitHub, a folder) follows a settings change */
 
 /* ---------- music theory ---------- */
 const NS = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];

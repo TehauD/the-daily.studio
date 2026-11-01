@@ -3,6 +3,8 @@
 
 User-agent: *
 Allow: /
+# Backstage is for people, not robots. If you are a person: open the studio, then the browser's console.
+Disallow: /backstage/
 
 # AI search and answers (they cite and link to the page): allowed
 User-agent: OAI-SearchBot

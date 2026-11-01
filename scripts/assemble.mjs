@@ -5,7 +5,8 @@ import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } fr
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
-import { PAGES, renderPage } from './seo-pages.mjs';
+import { PAGES, renderPage, SITE } from './seo-pages.mjs';
+import { backstagePages } from './backstage-pages.mjs';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..'), out = join(root, 'dist');
 execFileSync(process.execPath, [join(root, 'scripts', 'build.mjs')], { stdio: 'inherit' });
 rmSync(out, { recursive: true, force: true }); mkdirSync(join(out, 'journal'), { recursive: true });
@@ -20,6 +21,17 @@ cpSync(join(root, 'journal', 'index.html'), join(out, 'journal', 'index.html'));
   const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')), log = readFileSync(join(root, 'CHANGELOG.md'), 'utf8').match(/^## (\d+\.\d+\.\d+) — (\d{4}-\d{2}-\d{2})/m), modified = log ? log[2] : new Date().toISOString().slice(0, 10);
   for (const p of PAGES) { const dir = p.slug === 'guide' ? join(out, 'guide') : join(out, 'guide', p.slug); mkdirSync(dir, { recursive: true }); writeFileSync(join(dir, 'index.html'), renderPage(p, { version: pkg.version, modified })); }
   if (existsSync(join(root, 'site', 'img'))) cpSync(join(root, 'site', 'img'), join(out, 'guide', 'img'), { recursive: true });
+  /* the studio's own two fonts (the same files index.html embeds), so the guide pages look like the studio */
+  mkdirSync(join(out, 'fonts'), { recursive: true }); for (const f of ['inter-latin-wght.woff2', 'montserrat-latin-wght.woff2']) cpSync(join(root, 'src', 'fonts', f), join(out, 'fonts', f));
+}
+
+/* /backstage/: the hidden pages for developers who found the door (scripts/backstage-pages.mjs), and /humans.txt. Not in the sitemap, noindex, and turned
+   away in robots.txt; each page checks this browser for a Backstage pass before it shows anything. */
+{
+  const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')), log = readFileSync(join(root, 'CHANGELOG.md'), 'utf8').match(/^## (\d+\.\d+\.\d+) — (\d{4}-\d{2}-\d{2})/m);
+  const build = (readFileSync(join(out, 'index.html'), 'utf8').match(/BUILD\s*=\s*'([0-9a-f]{7})'/) || [])[1] || 'dev';
+  const { files } = backstagePages({ root, version: pkg.version, build, modified: log ? log[2] : new Date().toISOString().slice(0, 10), repo: SITE.repo, origin: SITE.origin, author: SITE.author });
+  for (const [rel, text] of files) { mkdirSync(dirname(join(out, rel)), { recursive: true }); writeFileSync(join(out, rel), text); }
 }
 
 /* /legal/: the licence, the third-party notices, the privacy statement and the two font licences as one plain page, so the notices travel with the site
@@ -85,7 +97,14 @@ ${common}
   Cache-Control: no-cache
 /legal/*
   Cache-Control: no-cache
+/backstage/*
+  Cache-Control: no-cache
+  X-Robots-Tag: noindex, nofollow
+/humans.txt
+  Cache-Control: no-cache
 /icons/*
   Cache-Control: public, max-age=86400
+/fonts/*
+  Cache-Control: public, max-age=604800
 `);
 console.log('dist/ ready');
