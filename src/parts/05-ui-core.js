@@ -163,7 +163,7 @@ function openHelp(at) {
       h('p', { class: 'small muted' }, 'It has no song titles, words, file names, device names or tip link, and nothing is sent: you see it and paste it yourself.'),
       h('div', { class: 'hub-acts' }, h('button', { class: 'btn primary', id: 'reportCopy', onclick: () => reportCopy() }, '⚑ Copy a problem report'), h('button', { class: 'btn', id: 'reportShow', onclick: async () => { close(); reportShow(await reportText()); } }, 'Show it first'),
         h('a', { class: 'btn', href: BRAND.repo + '/issues/new', target: '_blank', rel: 'noopener noreferrer' }, 'Open a GitHub issue ↗'))] },
-    CFG.backstage ? { key: 'backstage', label: 'Backstage', ico: '🎭', sub: 'You found the door. The engine live, how it is made, the agent playground.', wide: true, body: () => [h('div', { class: 'hub-acts' }, h('button', { class: 'btn primary', id: 'helpBackstage', onclick: () => { close(); backstageOpen(); } }, '🎭 Go backstage'))] } : null,
+    CFG.backstage ? { key: 'backstage', label: 'Backstage', ico: '🎭', sub: 'You are on the list. The engine room, performance, storage, the event bus, a terminal, labs and the hidden pages.', wide: true, body: () => [h('div', { class: 'hub-acts' }, h('button', { class: 'btn primary', id: 'helpBackstage', onclick: () => { close(); backstageOpen(); } }, '🎭 Go backstage'))] } : null,
     { key: 'about', label: 'About', ico: '♥', wide: true, body: () => [aboutBlock()] }
   ] });
 }

@@ -22,7 +22,7 @@ const GH_API = 'https://api.github.com', GH_TOPIC = 'the-daily-studio', GH_SHARE
 CFG.gh = Object.assign({ owner: '', repo: 'my-daily-studio', login: '', auto: true, last: null, lastAt: 0, shared: '', gone: [] }, CFG.gh && typeof CFG.gh === 'object' ? CFG.gh : {});
 const GH = { busy: null, again: false, timer: 0, status: '', err: '', rate: null, app: null, el: null, quiet: false };
 /* settings that belong to this device, not to you: they are never sent, and never taken from the repository */
-const GH_SKIP = new Set(['gh', 'inDev', 'outDev', 'camDev', 'rtt', 'sr', 'hint', 'autoIn', 'persistAsked', 'layout', 'lanes', 'zoom', 'form', 'vbg', 'mpOk', 'lastBackup', 'ioLeveled', 'gTrim', 'voxTrim', 'ch', 'vin', 'monitor', 'voxMon', 'recQ', 'vq', 'ui', 'kpad', 'show', 'stage', 'sync', 'syncAt', 'fsync']);
+const GH_SKIP = new Set(['gh', 'inDev', 'outDev', 'camDev', 'rtt', 'sr', 'hint', 'autoIn', 'persistAsked', 'layout', 'lanes', 'zoom', 'form', 'vbg', 'mpOk', 'lastBackup', 'ioLeveled', 'gTrim', 'voxTrim', 'ch', 'vin', 'monitor', 'voxMon', 'recQ', 'vq', 'ui', 'kpad', 'show', 'stage', 'sync', 'syncAt', 'fsync', 'labs']);
 const ghTok = () => store.get('ghtok', null);
 const ghOn = () => !!(ghTok() && CFG.gh.owner && CFG.gh.repo);
 

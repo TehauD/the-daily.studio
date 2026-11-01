@@ -305,6 +305,6 @@ try {
     describe: () => ({ api: AG_API, app: VERSION, build: BUILD, webmcp: AGT.via || null, enabled: agentOn(), aliases: Object.assign({}, AG_ALIAS), limits: Object.assign({}, AG_LIMIT), tools: AGT.tools.map(t => t.name) }),
     call: (name, input) => agentCall(name, input),
     /* not a tool: the door the console note points developers to (part 73b) */
-    backstage: () => backstage() }) });
+    backstage: w => backstage(w) }) });
 } catch (e) { }
 agentWatch();
