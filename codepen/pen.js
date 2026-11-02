@@ -5,7 +5,7 @@
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.25.0', BUILD = 'a96c867', PARTS_N = +'88' || 0, LINES_N = +'15471' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.27.0', BUILD = 'f03bfc7', PARTS_N = +'90' || 0, LINES_N = +'15893' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { ghApp: { clientId: '', slug: '' },   /* Sign in with GitHub: the GitHub App's public client id and its slug (docs/GITHUB.md); empty = only the token way */
   support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://the-daily.studio/journal/' };
@@ -1133,17 +1133,18 @@ function chordAt(bi, sib) {
 function scheduleSlot(slot, time) {
   const sp = spb(), dur = slotDur(), sw = (slot % 2 !== 0) ? S.swing * dur : 0, tt = time + sw;
   const beatSlots = 16 / S.ts[1];
-  if (slot < 0) { const sib = ((slot % sp) + sp) % sp; if (sib % beatSlots === 0) click(time, sib === 0); return; }
+  if (slot < 0) { const sib = ((slot % sp) + sp) % sp; if (sib % beatSlots === 0 && !T.quiet) click(time, sib === 0); return; }
+  const q = !!T.quiet;      /* T.quiet: the band and the click are silent while it is set (Shower mode); the song itself is not changed */
   const bi = Math.floor(slot / sp), sib = slot % sp, fb = barsCache()[bi]; if (!fb) return;
-  if (T.metro && sib % beatSlots === 0) click(tt, sib === 0);
+  if (T.metro && !q && sib % beatSlots === 0) click(tt, sib === 0);
   if (typeof lxEvt === 'function' && sib % beatSlots === 0) lxEvt('beat', tt, sib === 0 ? 1 : 0);   // the show listens on the audio clock
-  if (S.band.drumsOn) drumStep(sib, tt);
+  if (S.band.drumsOn && !q) drumStep(sib, tt);
   const cd = chordAt(bi, sib);
   if (cd && cd.sym) {
-    if (S.band.bassOn) { const e = bassEvent(S.band.bassStyle, cd.sym, cd.rel, cd.len, cd.next); if (e) { pluck('bass', tt, e.m, e.v, { id: 'b', pan: 0 }); if (typeof lxEvt === 'function') lxEvt('bass', tt, e.m, e.v); } }
-    if (S.band.compOn) { const st = STRUMS[S.band.compStyle] || STRUMS['Down 4s'], L = Math.min(16, sp), ch = st.p[sib % L]; strumAt(tt, cd.sym, ch, st); if (ch && ch !== '.' && typeof lxEvt === 'function') lxEvt('chord', tt, cd.sym, ch === ch.toUpperCase() ? 1 : .6); }
+    if (S.band.bassOn && !q) { const e = bassEvent(S.band.bassStyle, cd.sym, cd.rel, cd.len, cd.next); if (e) { pluck('bass', tt, e.m, e.v, { id: 'b', pan: 0 }); if (typeof lxEvt === 'function') lxEvt('bass', tt, e.m, e.v); } }
+    if (S.band.compOn && !q) { const st = STRUMS[S.band.compStyle] || STRUMS['Down 4s'], L = Math.min(16, sp), ch = st.p[sib % L]; strumAt(tt, cd.sym, ch, st); if (ch && ch !== '.' && typeof lxEvt === 'function') lxEvt('chord', tt, cd.sym, ch === ch.toUpperCase() ? 1 : .6); }
   }
-  if (S.band.leadOn) fb.bar.tab.forEach(n => { if (n.s === sib) { playTabNote(fb.bar, n, tt, dur); if (typeof lxEvt === 'function') lxEvt('lead', tt, S.tuning[n.st] + S.capo + n.f, .8); } });
+  if (S.band.leadOn && !q) fb.bar.tab.forEach(n => { if (n.s === sib) { playTabNote(fb.bar, n, tt, dur); if (typeof lxEvt === 'function') lxEvt('lead', tt, S.tuning[n.st] + S.capo + n.f, .8); } });
 }
 async function play(fromRec) {
   if (T.playing || OFR.busy) return; try { bandHint(); } catch (e) { } await startAudio(); const c = E.ctx; applyMix(); if (!S.sections.length || !songSlots()) { toast('Add a section with at least one bar first', 'warn'); return; }
@@ -1253,7 +1254,9 @@ function scheduleTakes(atTime, fromSec) {
     const src = E.ctx.createBufferSource(), cgn = gn(tk.cg == null ? 1 : tk.cg), fd = gn(1), g = gn(takeAudible(tk) ? (L.g == null ? 1 : L.g) : 0), pn = E.ctx.createStereoPanner(); pn.pan.value = L.pan || 0; src.buffer = buf; src.connect(cgn); cgn.connect(fd); fd.connect(g); g.connect(pn); tk._g = g; tk._cg = cgn; tk._pn = pn;
     const [fi, fo] = tkFades(tk); if (fi > 0 || fo > 0) { const gf = c => Math.max(0, Math.min(1, fi > 0 ? c / fi : 1, fo > 0 ? (len - c) / fo : 1)), p = fd.gain; p.setValueAtTime(gf(c0), Math.max(0, when)); [fi, len - fo, len].forEach(c => { if (c > c0 + 1e-6) p.linearRampToValueAtTime(gf(c), tm(c)); }); }
     if (vox) pn.connect(E.voxStrip.in); else if (which === 'dry' && L.mode === 'reamp') pn.connect(E.rigIn); else { tk._fx = fxStrip(E.takesIn); tk._fx.set(L.fx); pn.connect(tk._fx.in); }
-    const late = Math.max(0, atTime - when);      // starting from inside the clip: skip the part already due, so it still lands in time
+    /* starting from inside the clip, or scheduled late (a busy page can take longer than the lead time to get here): skip the part already due,
+       measured against the clock now, so every take still lands on the same timeline and they stay sample-aligned with each other */
+    const late = Math.max(0, atTime - when, E.ctx.currentTime + .005 - when);
     if (late < len - c0) { src.start(when + late, tkIn(tk) + c0 + late, len - c0 - late); T.srcs.push(src); }
   });
 }
@@ -2013,7 +2016,7 @@ function buildTheory(p) {
     if (!pal.children.length) pal.append(h('span', { class: 'muted small' }, 'Diatonic chords need a 7-note scale.'));
   };
   bus.on('song', render); render();
-  p.append(h('button', { class: 'btn sm ws-door', id: 'theoryShed', title: 'Practise this key and scale in the Woodshed: scales, arpeggios and your ear', onclick: () => { CFG.shed.key = S.key; if (WS_BASE.includes(S.scale) || wsOpen('scale')) CFG.shed.scale = S.scale; CFG.shed.at = null; saveCfg(); woodshedOpen('scales'); } }, '🪵 Practise it in the Woodshed'));
+  p.append(h('button', { class: 'btn sm ws-door', id: 'theoryShed', title: 'Practise this key and scale: scales, arpeggios and your ear, followed note by note', onclick: () => { CFG.shed.key = S.key; if (WS_BASE.includes(S.scale) || wsOpen('scale')) CFG.shed.scale = S.scale; CFG.shed.at = null; saveCfg(); trainOpen('scales'); } }, '🎼 Practise this scale'));
   p.append(h('div', { class: 'card' }, h('h4', {}, 'Key · Scale · Tuning'), h('div', { class: 'card-b' }, h('div', { class: 'row' }, kSel, sSel), h('div', { style: { height: '6px' } }), tSel, h('div', { class: 'row', style: { marginTop: '6px' } }, h('span', { class: 'small' }, 'Capo'), cap), info)),
     h('div', { class: 'card' }, h('h4', {}, 'Diatonic chord palette'), h('div', { class: 'card-b' }, pal)),
     h('div', { class: 'card' }, h('h4', {}, 'Progression builder'), h('div', { class: 'card-b' }, pr, h('div', { class: 'row', style: { marginTop: '6px' } }, h('button', { class: 'btn sm', onclick: () => applyProg(+pr.value, false) }, 'Replace section'), h('button', { class: 'btn sm', onclick: () => applyProg(+pr.value, true) }, 'Append bars')))),
@@ -3851,7 +3854,7 @@ async function boot() {
   if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener('devicechange', () => { ioDeviceChange().catch(e => console.warn(e)); });
   bus.emit('song');
   try { ghBoot(); } catch (e) { console.warn('github', e); }      /* back from Sign in with GitHub, or a sync at start (part 74) */
-  DEV.make = () => { window.__daily = { S, WS, WS_BASE, WS_ARPS, woodshedOpen, wsScaleRun, wsArpRun, wsFollow, wsStop, wsListen, wsEarNext, wsEarAnswer, wsOpen, bandMute, bandMuted, pdbPut, pdbKeys, projRename, FS, FS_B, fsUse, fsSync, fsHead, fsNeeds, fsTidy, fsOpen, syncOff, syncZips, PRJ_WAIT: () => PRJ.wait, EGG, EGG_LINES, EGG_ORDER, eggDay, eggFor, eggNow, eggText, eggTick, eggFit, saveCfg, projSave, projDelete, GH, ghSync, ghConnect, ghDisconnect, ghLocal, ghSha, ghJson, ghMerge3, ghShare, ghGallery, ghGalleryOpen, ghGalleryShow, ghKeepLook, ghKeepRig, rigClean, ghReturn, BRAND, ghSettingsOut, projRefresh, projCreate, projLoad, PRJ, SEC, SECRETS, secretFound, secretTiming, secretsOpen, secretSync, backstageOpen, startAudio, playheadSlot, GUARD, reportText, reportCopy, srecQ, srecSize, pdbGet, srecFmt, SREC_FMTS, VBG, vbgAdd, vbgRemove, vbgUse, vbgOpen, vbgDraw, vzSetMode, srecFrame, srecFmtBox, kitThumb, WORKLET_SRC, mkComp, mkShaper, rigLat, voxLat, restartAudio, satCurve, rigApply, qrMake, qrSvg, tipLink, tipShort, tipReady, tipCard, tipDraw, tipShareHtml, tipOpen, tipPrint, tipPng, tipVisAvoid, tipStageAvoid, TIP, TIP_TERMS, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, STP, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfort, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, srecStart, srecStop, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, tkFades, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, FB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, vzSetMode, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, drawVis, perfClose, voicings, peaksOf, uid, shareGate, shareData, shareHtml, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, slotAtTime, SEL, mtof, spb, playheadSlot, WR, HM, HMX, HM_MODES, vzImmersive, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitThumb, kitInk, kitNotes, kitRecord, srecMime, mGo, GD_SESSIONS, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard}; };   // test hook: with ?debug, or Backstage ▸ Labs ▸ Developer handles
+  DEV.make = () => { window.__daily = { S, AIR, airSync, applyLayout, SING, SHW, singStep, singScore, singSteamIR, singMicOff, showerOpen, shwGo, shwPlay, shwPrev, shwNext, shwStem, shwRecToggle, shwRecStop, shwHear, shwSave, shwAdd, shwQueue, trainOpen, projRestoreTrack, secretNote, secretArp, WS, WS_BASE, WS_ARPS, wsScaleRun, wsArpRun, wsFollow, wsStop, wsListen, wsEarNext, wsEarAnswer, wsOpen, bandMute, bandMuted, pdbPut, pdbKeys, projRename, FS, FS_B, fsUse, fsSync, fsHead, fsNeeds, fsTidy, fsOpen, syncOff, syncZips, PRJ_WAIT: () => PRJ.wait, EGG, EGG_LINES, EGG_ORDER, eggDay, eggFor, eggNow, eggText, eggTick, eggFit, saveCfg, projSave, projDelete, GH, ghSync, ghConnect, ghDisconnect, ghLocal, ghSha, ghJson, ghMerge3, ghShare, ghGallery, ghGalleryOpen, ghGalleryShow, ghKeepLook, ghKeepRig, rigClean, ghReturn, BRAND, ghSettingsOut, projRefresh, projCreate, projLoad, PRJ, SEC, SECRETS, secretFound, secretTiming, secretsOpen, secretSync, backstageOpen, startAudio, playheadSlot, GUARD, reportText, reportCopy, srecQ, srecSize, pdbGet, srecFmt, SREC_FMTS, VBG, vbgAdd, vbgRemove, vbgUse, vbgOpen, vbgDraw, vzSetMode, srecFrame, srecFmtBox, kitThumb, WORKLET_SRC, mkComp, mkShaper, rigLat, voxLat, restartAudio, satCurve, rigApply, qrMake, qrSvg, tipLink, tipShort, tipReady, tipCard, tipDraw, tipShareHtml, tipOpen, tipPrint, tipPng, tipVisAvoid, tipStageAvoid, TIP, TIP_TERMS, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, STP, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfort, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, srecStart, srecStop, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, tkFades, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, FB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, vzSetMode, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, drawVis, perfClose, voicings, peaksOf, uid, shareGate, shareData, shareHtml, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, slotAtTime, SEL, mtof, spb, playheadSlot, WR, HM, HMX, HM_MODES, vzImmersive, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitThumb, kitInk, kitNotes, kitRecord, srecMime, mGo, GD_SESSIONS, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard}; };   // test hook: with ?debug, or Backstage ▸ Labs ▸ Developer handles
   if (/[?&]debug\b/.test(location.search) || (CFG.labs && CFG.labs.handles)) DEV.make();
   try { bksBoot(); } catch (e) { console.warn('backstage', e); }      /* #backstage in the address, the performance overlay (part 73c) */
   projInit().catch(e => { console.warn('library', e); PRJ.ready = true; if (PRJ.wantStart) startMaybe(); });
@@ -5413,7 +5416,7 @@ function mSheet() {
       tile(msvg('<path d="M12 16V4M7 9l5-5 5 5M5 20h14"/>'), 'Open a file', () => { mCloseOverlays(); filesOpen(); }),
       tile(msvg('<path d="M5 20V9M12 20V4M19 20v-7"/>'), 'Master · balance · click', () => { mCloseOverlays(); mixOpen(); }),
       tile(msvg('<path d="M3 12c3-8 5-8 8 0s5 8 8 0"/>'), 'Voice · pitch · key', () => { mCloseOverlays(); voxOpen(); }),
-      tile(msvg('<path d="M3 20V10l9-6 9 6v10M9 20v-6h6v6"/>'), 'Woodshed · scales · ear', () => { mCloseOverlays(); woodshedOpen(); }),
+      tile(msvg('<path d="M5 21V8a4 4 0 018 0M13 8h-4M9 12v1M7 15v1M11 15v1M9 18v1"/>'), 'Scales & ear', () => { mCloseOverlays(); trainOpen(); }),
       tile(msvg('<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>'), keepRisk().level === 'ok' ? 'Back up songs' : 'Keep songs safe', () => { mCloseOverlays(); keepOpen(); }, keepRisk().level === 'high'),
       M.installEvt ? tile(msvg('<rect x="7" y="2.5" width="10" height="19" rx="2.4"/><path d="M12 8v7M9 12.5l3 3 3-3"/>'), 'Install app', () => { mInstall(); }) : null,
       document.fullscreenEnabled ? tile(msvg('<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>'), 'Full screen', () => { mCloseOverlays(); mFullscreen(); }) : null
@@ -12830,7 +12833,7 @@ const GOALS = [
       ['gtBpm', () => S.bpm + ' BPM', 'The tempo', () => { if (UI.bpm) UI.bpm.focus(); }],
       ['gtFast', '+ 5', 'Faster by 5 BPM', () => goalTempo(5)],
       ['gtScale', '♯ Scales', 'The scale for the key, on the theory panel', () => sideShow('theory')],
-      ['gtShed', '🪵 Woodshed', 'Practise scales, arpeggios and your ear, with your guitar', () => woodshedOpen()],
+      ['gtShed', '🎼 Scales & ear', 'Scales anywhere on the neck, this song’s arpeggios and ear training, followed note by note', () => trainOpen()],
       ['gtChord', '▦ Chords', 'The chord that is playing, on the fretboard', () => dockGo('fret')]
     ] },
   { id: 'teacher', ico: '🎓', name: 'Teacher', layout: 'Teacher', step: 'share', hue: '#0b84d8', next: null,
@@ -14072,6 +14075,14 @@ const agNum = (d, o) => Object.assign({ type: 'number', description: d }, o || {
 const agBool = d => ({ type: 'boolean', description: d });
 const agSecP = d => ({ type: ['string', 'number'], description: d });
 const agObj = (props, req) => ({ type: 'object', properties: props || {}, required: req || [], additionalProperties: false });
+/** good first calls, for an agent that has just arrived (describe().start_here) */
+const AG_START = [
+  { call: 'get_studio_state', input: {}, why: 'What is open and playing, and which band parts are on.' },
+  { call: 'explain_song', input: {}, why: 'The key, the Roman numerals and how the sections are built.' },
+  { call: 'write_song', input: { lyrics: '[Verse]\nWalking down to the harbour\nLights along the water\n[Chorus]\nHold on, hold on', key: 'G', chorus_progression: 'IV I V vi' }, why: 'Lyrics to a song the band plays.' },
+  { call: 'set_up_practice', input: { section: 'Chorus', tempo_percent: 75, band: 'drums' }, why: 'Loop a section slower with just the drums.' },
+  { call: 'open_practice_room', input: { room: 'scales' }, why: 'Scales in the song\'s key, followed note by note.' }
+];
 function agTool(name, description, inputSchema, run, ann) { AGT.tools.push({ name, description, inputSchema, run, annotations: Object.assign({ readOnlyHint: false }, ann || {}) }); }
 /** a change: one undo step, a 🤖 note, and the song as it is now */
 function agChange(what, fn) { const before = snap(); fn(); if (!histPush(before)) bus.emit('song'); agentSay(what); return what; }
@@ -14083,7 +14094,7 @@ agTool('get_studio_state', 'What the studio is doing: playing or stopped, the ba
   agObj(), () => {
     const fb = flatBars(), bar = Math.min(fb.length, Math.floor(playheadSlot() / spb()) + 1), g = typeof goalNow === 'function' ? goalNow() : null;
     return agTxt({ playing: !!T.playing, bar, loop: !!T.loop, metronome: !!T.metro, audio: E.ctx ? E.ctx.state : 'off', input_connected: !!E.hasInput, recording: !!T.rec,
-      band: { drums: !!S.band.drumsOn, bass: !!S.band.bassOn, rhythm_guitar: !!S.band.compOn, lead_tab: !!S.band.leadOn, drum_pattern: S.band.patName, bass_style: S.band.bassStyle, strum_pattern: S.band.compStyle },
+      band: { drums: !!S.band.drumsOn, bass: !!S.band.bassOn, rhythm_guitar: !!S.band.compOn, lead_tab: !!S.band.leadOn, drum_pattern: S.band.patName, bass_style: S.band.bassStyle, strum_pattern: S.band.compStyle }, band_muted: bandMuted(),
       workspace: g ? g.id : null, panel: DOCK.cur, song: S.title, saved_songs: PRJ.list.map(r => r.title || 'Untitled'),
       visuals: agVisuals(), perform: { open: !!PF.on, display: pfView() }, api: AG_API, app_version: VERSION, build: BUILD });
   }, { readOnlyHint: true });
@@ -14211,6 +14222,105 @@ agTool('perform', 'Open or close the full-screen Perform view, and choose its di
     if (i.action === 'open' && !PF.on) perfOpen(); if (i.action === 'close' && PF.on) perfClose();
     agentSay(i.action === 'open' ? 'opened Perform' : i.action === 'close' ? 'closed Perform' : 'changed the Perform display'); return agTxt({ done: true, open: !!PF.on, display: pfView() });
   }, { idempotentHint: true });
+agTool('mute_band', 'Mute the whole backing band and the metronome click in one go (the same as the person pressing Shift+M), or bring back exactly the parts that were playing before. Omit muted to switch it.',
+  agObj({ muted: agBool('true mutes the band and the click; false brings back what was playing.') }),
+  i => {
+    const m = bandMute(i.muted == null ? undefined : !!i.muted); try { bandMuteSync(); syncBandStrip(); syncTransport(); } catch (e) { }
+    agentSay(m ? 'muted the band' : 'brought the band back');
+    return agTxt({ done: true, muted: bandMuted(), band: { drums: !!S.band.drumsOn, bass: !!S.band.bassOn, rhythm_guitar: !!S.band.compOn, lead_tab: !!S.band.leadOn }, metronome: !!T.metro });
+  }, { idempotentHint: true });
+
+agTool('open_practice_room', 'Open Scales & ear, the practice room: scales (a key, a scale and where on the neck; the studio follows the person note by note), arpeggios (this song\'s chords one note at a time) or ear (name the interval between two notes). Opening it never turns the microphone on: the person presses Play it. Some scales and options stay locked until the person finds them; this tool cannot unlock them.',
+  agObj({ room: agStr('Which room. Default: scales.', { enum: ['scales', 'arpeggios', 'ear'] }), key: agStr('For scales: the key, a note name like A, F# or Bb.'), scale: agStr('For scales: the scale\'s name, e.g. Minor Pentatonic, Major (Ionian), Blues.', { enum: Object.keys(SCALES) }) }),
+  i => {
+    if (i.scale) { if (!SCALES[i.scale]) throw new Error('Unknown scale'); if (!WS_BASE.includes(i.scale) && !wsOpen('scale')) throw new Error('That scale is still locked in this studio. Open ones: ' + WS_BASE.join(', ') + '.'); CFG.shed.scale = i.scale; CFG.shed.at = null; }
+    if (i.key != null) { const k = agKey(String(i.key)); if (!k) throw new Error('Key not understood: ' + i.key); CFG.shed.key = k.root; CFG.shed.at = null; }
+    saveCfg(); trainOpen(i.room === 'arpeggios' ? 'arps' : i.room || 'scales');
+    agentSay('opened Scales & ear'); const r = wsScaleRun();
+    return agTxt({ done: true, room: i.room || 'scales', scale: r.title, notes: r.notes.map(q => wsName(q.m)), start_fret: r.st, note: 'The person presses ● Play it to be followed note by note (it listens to the tuner\'s input), or ▶ Listen to hear it.' });
+  });
+
+/* ---------- 2.26: whole jobs in one call ---------- */
+/** a chord's place in the song's key: is its root in the scale with the same third as the scale's own chord there */
+function agInKey(sym) {
+  const c = parseChord(sym); if (!c) return true; const q = x => x.iv.includes(3) && !x.iv.includes(4) ? 'm' : x.iv.includes(4) ? 'M' : '?';
+  return diatonic(S.key, S.minor ? 'Natural Minor (Aeolian)' : 'Major (Ionian)').some(d => { const t = parseChord(d.triad); return t && t.root === c.root && (q(c) === '?' || q(t) === q(c)); });
+}
+/** a progression from a name in PROGS, Roman numerals ("I V vi IV") or chord names ("G D Em C") → chord names in the key */
+function agProg(spec, root, minor) {
+  const raw = String(spec || '').trim(), norm = x => x.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const named = PROGS.find(([n, r]) => norm(n) === norm(raw) || norm(n).startsWith(norm(raw)) && norm(raw).length > 3 || norm(r) === norm(raw)), toks = (named ? named[1] : raw.replace(/[–—,|-]/g, ' ')).split(/\s+/).filter(Boolean);
+  if (!toks.length) return null; const asRoman = toks.map(t => romanToChord(t.replace('♭', 'b').replace('♯', '#'), root, minor));
+  if (asRoman.every(Boolean)) return asRoman; return toks.every(t => parseChord(t)) ? toks : null;
+}
+agTool('explain_song', 'Explain the song that is open: its key, tempo and time, every section\'s chords with Roman numerals in the key, which chords fall outside the key, which sections share their chords, and any well-known progression it uses. Use it before suggesting changes or teaching the song.',
+  agObj(), () => {
+    const secs = S.sections.map((sec, n) => { const ch = sec.bars.map(b => barChords(b).join(' ') || '–'), num = sec.bars.map(b => barChords(b).map(lxNumeral).join(' ') || '–'), out = [...new Set(sec.bars.flatMap(barChords).filter(c => !agInKey(c)))];
+      return { number: n + 1, name: sec.name, bars: sec.bars.length, chords: ch.join(' | '), numerals: num.join(' | '), outside_key: out, _sig: ch.join(' ') }; });
+    secs.forEach((x, i) => { const j = secs.findIndex(y => y._sig === x._sig); if (j < i) x.same_chords_as = secs[j].name + ' (' + (j + 1) + ')'; });
+    const flat = S.sections.flatMap(sec => sec.bars.flatMap(b => barChords(b).slice(0, 1))), uses = [];
+    PROGS.forEach(([name, r]) => { const want = r.split(' ').map(t => romanToChord(t, S.key, S.minor)); if (want.every(Boolean) && want.length <= flat.length) for (let i = 0; i + want.length <= flat.length; i++) if (want.every((c, k) => parseChord(c) && parseChord(flat[i + k]) && parseChord(c).root === parseChord(flat[i + k]).root)) { uses.push(name.replace(/\s{2,}/g, ' · ')); break; } });
+    const count = {}; flat.forEach(c => { count[c] = (count[c] || 0) + 1; });
+    return agTxt({ title: S.title, key: agKeyName(S.key, S.minor), bpm: S.bpm, time_signature: S.ts.join('/'), capo: S.capo || 0, sections: secs.map(({ _sig, ...x }) => x),
+      most_used_chords: Object.entries(count).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([c, n]) => c + ' ×' + n), known_progressions: uses,
+      note: 'Numerals are relative to the song\'s key: upper case major, lower case minor, ♭/♯ for roots outside the scale. "outside_key" lists chords that are not the scale\'s own chord on that root (borrowed chords, secondary dominants, passing chords).' });
+  }, { readOnlyHint: true });
+
+agTool('write_song', 'Turn lyrics into a song the studio plays, in one call: chords from a progression are laid over each line of words, the band plays it, and a guitar part is written into the tab. Lyrics: [Verse] / [Chorus] heading lines (or blank lines between sections). By default it makes a new song and keeps the current one.',
+  agObj({ lyrics: agStr('The words, one line per sung line. Optional [Section] headings on their own lines.'),
+    key: agStr('The key, e.g. "G", "Em", "Bb minor". Default: the open song\'s key.'),
+    progression: agStr('For verses (and every section unless chorus_progression is given): a name such as "I–V–vi–IV Pop", Roman numerals such as "I V vi IV" or "i VI III VII", or chord names such as "G D Em C". Default: I V vi IV (major) or i VI III VII (minor).'),
+    chorus_progression: agStr('For sections whose name contains "chorus". Same forms as progression.'),
+    chords_per_line: agNum('How many chords over each line of words: 1, 2 (default) or 4.', { enum: [1, 2, 4] }),
+    bpm: agNum('Tempo, 30–260.'), title: agStr('Title (default: the first line of the chorus).'), artist: agStr('Artist.'),
+    where: agStr('new_song (default), replace (this song; undoable), or append.', { enum: ['new_song', 'replace', 'append'] }) }, ['lyrics']),
+  async i => {
+    const k = i.key ? agKey(i.key) : { root: S.key, minor: S.minor }; if (!k) throw new Error('Key not understood: ' + i.key);
+    const pv = agProg(i.progression || (k.minor ? 'i VI III VII' : 'I V vi IV'), k.root, k.minor); if (!pv) throw new Error('Progression not understood: ' + i.progression + '. Use a name from get_key_chords, Roman numerals or chord names.');
+    const pc = i.chorus_progression ? agProg(i.chorus_progression, k.root, k.minor) : pv; if (!pc) throw new Error('Chorus progression not understood: ' + i.chorus_progression);
+    const per = [1, 2, 4].includes(+i.chords_per_line) ? +i.chords_per_line : 2, out = [];
+    let open = false, idx = 0, n = 0, prog = pv, lines = 0;      /* a heading opens a section; a blank line closes it; words with no section open start the next verse */
+    String(i.lyrics).replace(/\r/g, '').split('\n').forEach(raw => {
+      const l = raw.trim(), hd = /^\[([^\]]{1,40})\]$/.exec(l) || /^([A-Za-z][A-Za-z -]{0,24}\d?):$/.exec(l);
+      if (hd) { out.push('[' + hd[1] + ']'); prog = /chorus/i.test(hd[1]) ? pc : pv; idx = 0; open = true; return; }
+      if (!l) { open = false; return; }
+      if (!open) { n++; out.push('[Verse ' + n + ']'); prog = pv; idx = 0; open = true; }
+      lines++; const w = l.split(/\s+/), m = Math.min(per, w.length), at = new Set(Array.from({ length: m }, (_, j) => Math.floor(j * w.length / m)));
+      out.push(w.map((x, j) => (at.has(j) ? '[' + prog[idx++ % prog.length] + ']' : '') + x).join(' '));
+    });
+    if (!lines) throw new Error('No words found in lyrics.');
+    const p = chordSheetParse(out.join('\n')); if (!p.sections.length) throw new Error('Those lyrics could not be laid out.');
+    const o = { mode: { replace: 'A', append: 'C' }[i.where] || 'N', per: 1, key: k.root + ':' + (k.minor ? 'm' : 'M'), fill: 'Block strum', title: i.title || '', artist: i.artist };
+    await chordSheetApply(p, o); if (i.bpm != null) { S.bpm = clamp(Math.round(+i.bpm) || S.bpm, 30, 260); commit(false); }
+    agentSay('wrote a song from lyrics');
+    return agTxt({ done: true, song: agSong(false), note: 'Each chord is one bar. Use edit_section to change any bar, transport {action:"play"} to hear it.' });
+  });
+
+agTool('set_up_practice', 'Set the studio up for practice in one call: loop a section, slow the song down (or set a tempo), switch the click, choose how much of the band plays, and optionally start playing. Tempo changes are part of the song (undoable with undo).',
+  agObj({ section: agSecP('The section to loop: number (1 = first) or name, e.g. "Chorus". Omit to loop the whole song.'),
+    tempo_percent: agNum('Play at this share of the current tempo, 40–100 (e.g. 75).'), bpm: agNum('Or an exact tempo, 30–260.'),
+    metronome: agBool('Click on or off. Default: on.'), band: agStr('full (every part), drums (drums only, to keep time), or none (the band and the click muted). Default: unchanged.', { enum: ['full', 'drums', 'none'] }),
+    play: agBool('Start playing from the top of the loop.') }),
+  async i => {
+    const si = i.section != null ? agSec(i.section) : -1; if (i.section != null && si < 0) throw new Error('No section “' + i.section + '”. Sections: ' + S.sections.map((s, n) => (n + 1) + ' ' + s.name).join(', '));
+    if (i.tempo_percent != null && !(+i.tempo_percent >= 40 && +i.tempo_percent <= 100)) throw new Error('tempo_percent must be from 40 to 100');
+    if (T.rec) throw new Error('The studio is recording; the person has to stop it.');
+    if (T.playing) stopPlay(true);
+    const bpm = i.bpm != null ? clamp(Math.round(+i.bpm), 30, 260) : i.tempo_percent != null ? clamp(Math.round(S.bpm * +i.tempo_percent / 100), 30, 260) : null;
+    if (bpm && bpm !== S.bpm) agChange('set the tempo to ' + bpm, () => { S.bpm = bpm; });
+    const start = si < 0 ? 0 : S.sections.slice(0, si).reduce((a, x) => a + x.bars.length, 0), len = si < 0 ? totalBars() : S.sections[si].bars.length;
+    T.loop = true; T.loopA = start * spb(); T.loopB = si < 0 ? null : Math.min(songSlots(), (start + len) * spb()); T.cursor = T.loopA;
+    if (i.band === 'none') bandMute(true);
+    else { if (bandMuted() && i.band) bandMute(false); if (i.band === 'drums') { S.band.drumsOn = true; S.band.bassOn = false; S.band.compOn = false; S.band.leadOn = false; } if (i.band === 'full') { S.band.drumsOn = S.band.bassOn = S.band.compOn = S.band.leadOn = true; } T.metro = i.metronome == null ? true : !!i.metronome; }
+    if (i.band === 'none' && i.metronome) T.metro = true;
+    commit(false); try { syncTransport(); syncBandStrip(); bandMuteSync(); TL.dirty = true; } catch (e) { }
+    agentSay('set up practice' + (si < 0 ? '' : ' on ' + S.sections[si].name));
+    if (i.play) { if (typeof AK !== 'undefined' && AK.killed) throw new Error('Audio was switched off with the kill switch (Ctrl + .). The person has to resume it in the Audio panel.'); await play(); }
+    return agTxt({ done: true, loop: si < 0 ? 'the whole song' : S.sections[si].name + ' (bars ' + (start + 1) + '–' + (start + len) + ')', bpm: S.bpm, metronome: !!T.metro,
+      band: { drums: !!S.band.drumsOn, bass: !!S.band.bassOn, rhythm_guitar: !!S.band.compOn, lead_tab: !!S.band.leadOn, muted: bandMuted() }, playing: !!T.playing,
+      note: T.playing && E.ctx && E.ctx.state !== 'running' ? 'The browser only lets a page make sound after the person has clicked or tapped on it once.' : 'For scales in the song\'s key, open_shower_mode.' });
+  });
+
 agTool('get_chord_shape', 'How to play a chord on the guitar in this song\'s tuning and capo: the fret for each string from the lowest to the highest (x = not played, 0 = open), the lowest fret used and whether it is a barre, with other ways to play it. The first shape is the one the song uses.',
   agObj({ chord: agStr('A chord such as "Am", "F#m7", "B/D#", "Csus4".'), count: agNum('How many shapes to list, 1 to 6 (default 3).') }, ['chord']),
   i => {
@@ -14226,7 +14336,7 @@ agTool('get_chord_shape', 'How to play a chord on the guitar in this song\'s tun
    inputs keep it. A renamed tool keeps its old name here, so an agent written for an earlier version still works.
    test/agent-contract.json holds the published tools and their required inputs; the tests fail if one disappears or changes. */
 const AG_API = '2';
-const AG_ALIAS = {};
+const AG_ALIAS = { open_shower_mode: 'open_practice_room' };      /* 2.27: the trainers moved to Practice; the old name still works */
 const AG_LIMIT = { change: 20, read: 40, timeout: 20000, maxOut: 250000 };   /* calls per second (changes / reads), ms per call, characters per answer */
 /** an error an agent can act on: code is one of unknown_tool, disabled, loading, invalid_input, busy, timeout, rejected (the studio refused, with the reason) */
 function agErr(code, msg) { const e = new Error(msg); e.code = code; return e; }
@@ -14306,7 +14416,7 @@ try {
     version: AG_API, app: VERSION, build: BUILD,
     about: 'the-daily.studio agent tools: the same tools this page offers through WebMCP (navigator.modelContext). Everything runs locally in this page.',
     tools: () => AGT.tools.map(t => ({ name: t.name, description: t.description, inputSchema: t.inputSchema, annotations: t.annotations })),
-    describe: () => ({ api: AG_API, app: VERSION, build: BUILD, webmcp: AGT.via || null, enabled: agentOn(), aliases: Object.assign({}, AG_ALIAS), limits: Object.assign({}, AG_LIMIT), tools: AGT.tools.map(t => t.name) }),
+    describe: () => ({ api: AG_API, app: VERSION, build: BUILD, webmcp: AGT.via || null, enabled: agentOn(), aliases: Object.assign({}, AG_ALIAS), limits: Object.assign({}, AG_LIMIT), tools: AGT.tools.map(t => t.name), start_here: AG_START, docs: 'https://the-daily.studio/guide/for-ai-assistants/' }),
     call: (name, input) => agentCall(name, input),
     /* not a tool: the door the console note points developers to (part 73b) */
     backstage: w => backstage(w) }) });
@@ -14502,9 +14612,9 @@ function eggFit(el) {
    · Tuned to perfection   all six open strings within ±2 cents of true, one after another (the tuner the studio already has)
    · In the pocket         sixteen notes in a row within 10 ms of the beat while the song plays (the timing analysis already there)
    · The hidden line       triple-click the version tag (part 73)
-   · Up and down           a whole scale up and back down in the Woodshed without a wrong note (part 73d): opens modes and more scales
-   · Broken chords         the arpeggios of a progression of three chords or more, no wrong note: opens seventh arpeggios
-   · Golden ear            ten intervals in a row by ear, from six choices or more: opens chord qualities by ear
+   · Up and down           any scale up and back down, anywhere the tuner hears it: opens modes and more scales in Scales & ear (part 73d)
+   · Broken chords         three of the band's chords in a row broken into notes (root, third, fifth) while the song plays: opens seventh arpeggios
+   · Golden ear            ten intervals in a row by ear in Scales & ear, from six choices or more: opens chord qualities by ear
    · Backstage pass        the browser console says hello to developers and points at dailyStudio.backstage(): guest list only,
                            and the password is the build (part 73c has the door, the pass and the rooms)
    A small 🗝 counter next to the version shows how many have been found, once the first one has. The rules: nothing fires while a take
@@ -14515,9 +14625,9 @@ const SECRETS = [
   ['line', 'The hidden line', 'Some numbers want to be clicked three times.', 'Triple-click the version tag: a quote of the day from someone in history wakes up at the bottom of the page.'],
   ['tuned', 'Tuned to perfection', 'Six strings, two cents.', 'All six open strings within ±2 cents of true, one after another.'],
   ['pocket', 'In the pocket', 'Sixteen notes, right on time.', 'Sixteen notes in a row within 10 ms of the beat while the song plays.'],
-  ['scale', 'Up and down', 'In the Woodshed: every note, there and back.', 'Ran a whole scale up and back down in the Woodshed without a wrong note.', 'Modes and more scales are open in the Woodshed.'],
-  ['arp', 'Broken chords', 'In the Woodshed: three chords or more, one note at a time.', 'Played the arpeggios of a whole progression in the Woodshed without a wrong note.', 'Seventh arpeggios are open in the Woodshed.'],
-  ['ear', 'Golden ear', 'In the Woodshed: ten in a row, by ear.', 'Named ten intervals in a row by ear in the Woodshed.', 'Chord qualities by ear are open in the Woodshed.'],
+  ['scale', 'Up and down', 'Every note, there and back. Anywhere I can hear you.', 'Played a whole scale up and back down.', 'Modes and more scales are open in Practice ▸ Scales & ear. 🎼'],
+  ['arp', 'Broken chords', 'The band plays the chords. You take them apart.', 'Broke three of the band’s chords in a row into their notes while the song played.', 'Seventh arpeggios are open in Practice ▸ Scales & ear. 🎼'],
+  ['ear', 'Golden ear', 'Ten in a row, by ear. Practice has a room for that.', 'Named ten intervals in a row by ear in Scales & ear.', 'Chord qualities by ear are open in Practice ▸ Scales & ear. 🎼'],
   ['backstage', 'Backstage pass', 'Developers know where to look.', 'Read the note in the browser console, knocked, and knew the password.']
 ];
 CFG.secrets = CFG.secrets && typeof CFG.secrets === 'object' ? CFG.secrets : {};
@@ -14574,6 +14684,34 @@ function secretTiming(ms) {
   if (SEC.pocket >= 16) { SEC.pocket = 0; secretFound('pocket'); }
 }
 bus.on('timing', secretTiming);
+/* ---------- Up and down, and Broken chords: out in the studio, by the notes the tuner hears (2.25) ---------- */
+/** each note, once, when it has been held a moment: the last twenty */
+setInterval(() => {
+  if (!secretsOn() || !E.ready || secretBusy()) { SEC.held = null; return; }
+  const m = AN.active && AN.midi != null ? AN.midi : null, now = performance.now();
+  if (m == null) { SEC.held = null; return; }
+  if (!SEC.held || SEC.held.m !== m) { SEC.held = { m, t: now, done: false }; return; }
+  if (SEC.held.done || now - SEC.held.t < 110) return; SEC.held.done = true; secretNote(m);
+}, 40);
+/** a note heard: is it the end of a scale up and back down, or a chord of the band's broken into notes? */
+function secretNote(m) {
+  const L = SEC.notes = (SEC.notes || []).concat(m).slice(-20);
+  if (!CFG.secrets.scale) for (const name of (typeof WS_BASE !== 'undefined' ? WS_BASE : [])) {      /* the scale, up from its root to the octave and back, exactly */
+    const iv = SCALES[name], n = iv.length * 2 + 1; if (L.length < n) continue; const w = L.slice(-n), up = w.slice(0, iv.length + 1), down = w.slice(iv.length);
+    if (up.every((x, i) => x - up[0] === (i < iv.length ? iv[i] : 12)) && down.every((x, i) => x === up[up.length - 1 - i])) { secretFound('scale'); SEC.notes = []; break; }
+  }
+  if (!CFG.secrets.arp && T.playing) secretArp(m);
+}
+/** the chord playing now: the bar's chord, or the last one before it */
+function secretChordNow() { const bars = flatBars(), i = Math.floor(playheadSlot() / spb()); for (let k = Math.min(i, bars.length - 1); k >= 0; k--) if (bars[k].bar.chord) return bars[k].bar.chord; return null; }
+function secretArp(m, sym) {
+  sym = sym || secretChordNow(); const a = SEC.arp || (SEC.arp = { sym: null, k: 0, n: 0 });
+  if (sym !== a.sym) { a.n = a.k >= 3 ? a.n + 1 : 0; a.sym = sym; a.k = 0; }      /* a new chord: the last one counts only if it was broken whole */
+  const c = sym && parseChord(sym); if (!c) return;
+  const third = c.iv.find(i => i === 3 || i === 4) ?? c.iv.find(i => i === 2 || i === 5) ?? 4, fifth = c.iv.find(i => i === 7) ?? c.iv.find(i => i === 6 || i === 8) ?? 7, want = [c.root, (c.root + third) % 12, (c.root + fifth) % 12];
+  if (a.k < 3 && ((m % 12) + 12) % 12 === want[a.k]) a.k++;
+  if (a.k >= 3 && a.n + 1 >= 3) { secretFound('arp'); SEC.arp = null; }
+}
 bus.on('transport', () => { if (!T.playing) SEC.pocket = 0; });
 
 /* ---------- a word for developers, in the console ---------- */
@@ -14698,7 +14836,8 @@ const BKS_CMDS = {
   open: ['open <page>', 'open a hidden page in a new tab'],
   history: ['history', 'what you typed'],
   uptime: ['uptime', 'how long this page has been open'],
-  woodshed: ['woodshed', 'the practice room: scales, arpeggios, your ear'],
+  shower: ['shower', 'Shower mode: sing along to your songs, hands wet'],
+  scales: ['scales', 'Scales & ear: scales, arpeggios, your ear'],
   exit: ['exit', 'leave Backstage']
 };
 const bksJson = (v, n = 1600) => { const s = JSON.stringify(v, null, 1); return s.length > n ? s.slice(0, n) + '\n… (' + s.length + ' characters; the Agent playground shows it all)' : s; };
@@ -14744,13 +14883,14 @@ async function bksRun(line, out) {
     case 'open': { const p = BKS_PAGES.find(([x, n]) => x.replace(/\/$/, '') === arg.replace(/\/$/, '') || n.toLowerCase().startsWith(arg.toLowerCase())) || (arg === 'lobby' ? BKS_PAGES[0] : null); if (!p) return out('open ' + BKS_PAGES.map(x => x[0].replace(/\/$/, '') || 'lobby').join(' | '), 'err'); window.open(bksBase() + p[0], '_blank', 'noopener'); return out('↗ ' + bksBase() + p[0]); }
     case 'history': return out(BKS.hist.map((x, i) => String(i + 1).padStart(4) + '  ' + x).join('\n') || 'nothing yet');
     case 'uptime': { const s = Math.round((Date.now() - BKS.t0) / 1000); return out('up ' + (s >= 3600 ? Math.floor(s / 3600) + ' h ' : '') + Math.floor(s % 3600 / 60) + ' min ' + s % 60 + ' s · ' + (frameN || 0).toLocaleString('en') + ' frames drawn'); }
-    case 'woodshed': case 'shed': setTimeout(() => woodshedOpen(), 300); return out('🪵 to the woodshed. Practice makes the music.');
+    case 'shower': setTimeout(() => showerOpen(), 300); return out('🚿 Running the water. Not responsible for damage to electronic devices.');
+    case 'scales': case 'woodshed': setTimeout(() => trainOpen(), 300); return out('🎼 Scales & ear.');
     case 'exit': case 'quit': case 'logout': { const d = document.getElementById('backstage'); if (d) setTimeout(() => d.close(), 350); return out('See you at soundcheck. 🎸'); }
   }
   return out('command not found: ' + cmd + ' · type help', 'err');
 }
 function bksTerminal() {
-  const pre = h('pre', { class: 'bks-term-out mono', id: 'bksTermOut', 'aria-live': 'polite' }), inp = h('input', { class: 'bks-term-in mono', id: 'bksTermIn', autocomplete: 'off', spellcheck: false, 'aria-label': 'Backstage shell command' });
+  const pre = h('pre', { class: 'bks-term-out mono', id: 'bksTermOut', role: 'log', 'aria-live': 'polite', 'aria-label': 'Backstage shell output' }), inp = h('input', { class: 'bks-term-in mono', id: 'bksTermIn', autocomplete: 'off', spellcheck: false, 'aria-label': 'Backstage shell command' });
   const out = (t, cls) => { if (cls === 'clear') { pre.textContent = ''; return; } if (t == null) return; const s = h('span', { class: 'bks-t-' + (cls || 'out') }, t + '\n'); pre.append(s); while (pre.childNodes.length > 400) pre.firstChild.remove(); pre.scrollTop = pre.scrollHeight; };
   const run = async () => {
     const v = inp.value; inp.value = ''; if (!v.trim()) return; BKS.hist.push(v); if (BKS.hist.length > 100) BKS.hist.shift(); BKS.hi = BKS.hist.length;
@@ -14878,23 +15018,26 @@ document.addEventListener('keydown', e => {
   if (BKS.k === BKS_KONAMI.length) { BKS.k = 0; if (CFG.backstage) backstageOpen('terminal'); else toast('🎟 Nice moves. Backstage is guest list only, and the door is in the browser console.', ''); }
 }, true);
 
-/* >>> parts/73d-woodshed.js */
+/* >>> parts/73d-scales-ear.js */
 /* ============================================================
-   Part 73d · THE WOODSHED (2.25) — practise scales, arpeggios and your ear (musicians "go to the woodshed" to practise)
-   Three trainers in one room, each with a fretboard drawn for the song's tuning and capo:
+   Part 73d · SCALES & EAR (2.25, moved to Practice in 2.27) — scales, arpeggios and your ear, followed note by note
+   Three trainers in one room, each with a fretboard drawn for the song's tuning and capo. It opens from the Practice workspace's tools,
+   the Theory panel ("Practise this scale") and the phone's More sheet:
      · Scales      a key, a scale, where on the neck, one or two octaves. ▶ Listen plays it; ● Play it follows you note by note,
                    up and back down, by the pitch the tuner already hears (a wrong note counts, a note still ringing does not)
      · Arpeggios   the chords of this song one note at a time, or one chord up and down
      · Your ear    an interval is played, you name it; a streak and a best
-   Three of the seven secrets are found here, and each opens a treasure in the room (part 73b keeps the list):
-     · Up and down     a whole scale up and back down without a wrong note     → modes and more scales
-     · Broken chords   a progression of three chords or more, no wrong note    → seventh arpeggios
-     · Golden ear      ten in a row by ear, from six choices or more            → chord qualities by ear
+   Three of the seven secrets open treasures in here, but only one is found in here (the rest are out in the studio, to be explored):
+     · Up and down     a scale up and back down, anywhere the tuner hears you (part 73b)   → modes and more scales
+     · Broken chords   the band's chords broken into notes while the song plays (part 73b)  → seventh arpeggios
+     · Golden ear      ten in a row by ear, in here, from six choices or more             → chord qualities by ear
    With hidden surprises off (Settings ▸ Workflow), the treasures are simply open: nobody has to hunt for practice.
    It listens to the input the tuner uses and records nothing; ▶ Listen plays through the studio's own lead voice.
+   (Its settings keep the name CFG.shed, from when it was the Woodshed, so nobody's choices are lost.)
    ============================================================ */
 CFG.shed = Object.assign({ scale: 'Minor Pentatonic', key: null, at: null, oct: 1, src: 'song', root: null, type: '', arpAt: null, ear: 'more' }, CFG.shed && typeof CFG.shed === 'object' ? CFG.shed : {});
 const WS = { run: null, tm: 0, play: [], ear: { q: null, streak: 0, best: 0, n: 0, ok: 0, lock: false }, r: {} };
+const WS_CHEERS = ['Clean. 🎯', 'Not a note out of place.', 'Your fingers know the way now.', 'Again, a little faster?', 'That one is in your hands.'];
 const WS_BASE = ['Major (Ionian)', 'Natural Minor (Aeolian)', 'Major Pentatonic', 'Minor Pentatonic', 'Blues'];
 const WS_ARPS = [['', 'Major', [0, 4, 7]], ['m', 'Minor', [0, 3, 7]], ['dim', 'Diminished', [0, 3, 6]], ['aug', 'Augmented', [0, 4, 8]], ['maj7', 'Major 7', [0, 4, 7, 11], 1], ['7', 'Dominant 7', [0, 4, 7, 10], 1], ['m7', 'Minor 7', [0, 3, 7, 10], 1], ['m7b5', 'Half-diminished', [0, 3, 6, 10], 1], ['dim7', 'Diminished 7', [0, 3, 6, 9], 1]];
 const WS_IV = [['m2', 'minor 2nd', 1], ['M2', 'major 2nd', 2], ['m3', 'minor 3rd', 3], ['M3', 'major 3rd', 4], ['P4', 'perfect 4th', 5], ['TT', 'tritone', 6], ['P5', 'perfect 5th', 7], ['m6', 'minor 6th', 8], ['M6', 'major 6th', 9], ['m7', 'minor 7th', 10], ['M7', 'major 7th', 11], ['P8', 'octave', 12]];
@@ -14947,16 +15090,27 @@ function wsArpRun() {
 }
 
 /* ---------- the fretboard ---------- */
-function wsFret(run, cur) {
-  const tu = wsTune(), n = tu.length, F = 15, W = 820, H = 26 + n * 22, x0 = 34, fw = (W - x0 - 10) / F, y = s => 16 + (n - 1 - s) * 22, xf = f => f === 0 ? x0 - 12 : x0 + (f - .5) * fw;
+/* the fretboard: 15 frets on a wide screen; on a narrow one (a phone) only the frets the run uses, a little either side, so the dots stay big enough to read */
+function wsFretSpan(run, narrow) {
+  if (!narrow || !run || !run.notes.length) return [0, 15];
+  const fs = run.notes.map(q => q.f), lo = Math.min(...fs), hi = Math.max(...fs), a = Math.max(0, lo - 1), b = Math.min(17, Math.max(hi + 1, a + 5));
+  return [a, b];
+}
+function wsFret(run, cur, narrow) {
+  const tu = wsTune(), n = tu.length, [fa, fb] = wsFretSpan(run, narrow), F = fb - fa, x0 = 34, fw = narrow ? 46 : (820 - x0 - 10) / 15, W = x0 + F * fw + 10, H = 26 + n * 22 + (fa ? 12 : 0);
+  const y = s => 16 + (n - 1 - s) * 22, xf = f => f === 0 ? x0 - 12 : x0 + (f - fa - .5) * fw, by = 26 + n * 22;
   const ns = 'http://www.w3.org/2000/svg', svg = document.createElementNS(ns, 'svg'), el = (t, a, txt) => { const e = document.createElementNS(ns, t); Object.entries(a).forEach(([k, v]) => e.setAttribute(k, v)); if (txt != null) e.textContent = txt; svg.append(e); return e; };
-  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H); svg.setAttribute('class', 'ws-fret'); svg.setAttribute('role', 'img'); svg.setAttribute('aria-label', 'Fretboard: ' + (run ? run.title : ''));
-  [3, 5, 7, 9, 15].forEach(f => el('circle', { cx: x0 + (f - .5) * fw, cy: H - 6, r: 3, class: 'ws-mk' })); el('circle', { cx: x0 + 11.5 * fw - 5, cy: H - 6, r: 3, class: 'ws-mk' }); el('circle', { cx: x0 + 11.5 * fw + 5, cy: H - 6, r: 3, class: 'ws-mk' });
-  for (let f = 0; f <= F; f++) el('line', { x1: x0 + f * fw, y1: y(n - 1), x2: x0 + f * fw, y2: y(0), class: f === 0 ? 'ws-nut' : 'ws-fw' });
-  if (S.capo) el('rect', { x: x0 + (S.capo - .62) * fw, y: y(n - 1) - 6, width: 6, height: y(0) - y(n - 1) + 12, rx: 3, class: 'ws-capo' });
+  const want = run && cur != null ? run.notes[cur] : null, strN = s => n - s;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H); svg.setAttribute('class', 'ws-fret' + (narrow ? ' narrow' : '')); svg.setAttribute('role', 'img');
+  svg.setAttribute('aria-label', run ? 'Fretboard, ' + run.title + ', ' + (fa ? 'frets ' + fa + ' to ' + fb : 'open strings to fret ' + fb) + (want ? '. Next: ' + wsName(want.m) + ' on string ' + strN(want.s) + ', ' + (want.f ? 'fret ' + want.f : 'open') : '') + '.' : 'Fretboard');
+  [3, 5, 7, 9, 15, 17].forEach(f => { if (f > fa && f <= fb) el('circle', { cx: x0 + (f - fa - .5) * fw, cy: by - 6, r: 3, class: 'ws-mk' }); });
+  if (12 > fa && 12 <= fb) { el('circle', { cx: x0 + (12 - fa - .5) * fw - 5, cy: by - 6, r: 3, class: 'ws-mk' }); el('circle', { cx: x0 + (12 - fa - .5) * fw + 5, cy: by - 6, r: 3, class: 'ws-mk' }); }
+  for (let f = fa; f <= fb; f++) el('line', { x1: x0 + (f - fa) * fw, y1: y(n - 1), x2: x0 + (f - fa) * fw, y2: y(0), class: f === 0 ? 'ws-nut' : 'ws-fw' });
+  if (fa) el('text', { x: x0 + .5 * fw, y: H - 2, class: 'ws-fn' }, 'fret ' + (fa + 1));
+  if (S.capo && S.capo > fa && S.capo <= fb) el('rect', { x: x0 + (S.capo - fa - .62) * fw, y: y(n - 1) - 6, width: 6, height: y(0) - y(n - 1) + 12, rx: 3, class: 'ws-capo' });
   for (let s = 0; s < n; s++) { el('line', { x1: x0, y1: y(s), x2: W - 10, y2: y(s), class: 'ws-str', 'stroke-width': 1 + (n - 1 - s) * .25 }); el('text', { x: 8, y: y(s) + 4, class: 'ws-sn' }, pcName(tu[s], false)); }
   if (!run) return svg;
-  if (run.pcs) for (let s = 0; s < n; s++) for (let f = Math.max(0, run.st - 1); f <= Math.min(F, run.st + 4); f++) { const m = tu[s] + f; if (run.pcs.includes(m % 12) && !run.notes.some(q => q.s === s && q.f === f)) el('circle', { cx: xf(f), cy: y(s), r: 6, class: 'ws-ghost' }); }
+  if (run.pcs) for (let s = 0; s < n; s++) for (let f = Math.max(fa, run.st - 1); f <= Math.min(fb, run.st + 4); f++) { const m = tu[s] + f; if (run.pcs.includes(m % 12) && !run.notes.some(q => q.s === s && q.f === f)) el('circle', { cx: xf(f), cy: y(s), r: 6, class: 'ws-ghost' }); }
   const seen = new Set(); run.notes.forEach((q, i) => {
     const k = q.s + ':' + q.f; if (seen.has(k) && i !== cur) return; seen.add(k); const isCur = i === cur, done = cur != null && run.notes.slice(0, cur).some(x => x.s === q.s && x.f === q.f) && !isCur;
     el('circle', { cx: xf(q.f), cy: y(q.s), r: isCur ? 11 : 9.5, class: 'ws-dot' + (q.deg === 'R' ? ' root' : '') + (isCur ? ' cur' : '') + (done ? ' done' : '') });
@@ -14971,9 +15125,9 @@ function wsStop(quiet) {
   if (r && !quiet) { const b = WS.r[r.kind]; if (b) b.paint(); }
 }
 function wsFollow(kind) {
-  wsStop(true); const run = kind === 'scale' ? wsScaleRun() : wsArpRun(); if (!run.notes.length) { toast('This song has no chords yet. Write some, or choose One chord.', 'warn'); return; }
+  wsStop(true); const run = kind === 'scale' ? wsScaleRun() : wsArpRun(); if (!run.notes.length) { toast('This song has no chords yet. Write some, or choose One chord. ', 'warn'); return; }
   WS.run = Object.assign(run, { mode: 'follow', i: 0, miss: 0, held: null, judged: false, prev: null, t0: performance.now(), wrong: 0 });
-  if (!E.hasInput) toast('Connect your input (Audio, top right) so the Woodshed can hear you. Or press Listen to hear it first.', 'warn');
+  if (!E.hasInput) toast('Connect your input (Audio, top right) so the room can hear you. Or press Listen first.', 'warn');
   WS.tm = setInterval(wsTick, 40); WS.r[kind].paint();
 }
 function wsTick() {
@@ -14991,8 +15145,7 @@ function wsTick() {
 function wsDone(r) {
   clearInterval(WS.tm); WS.tm = 0; r.mode = 'done'; r.secs = (performance.now() - r.t0) / 1000;
   const clean = r.miss === 0, what = r.kind === 'scale' ? 'Up and back down' : (r.chords.length > 1 ? r.chords.length + ' chords' : 'The arpeggio');
-  toast(what + ' in ' + r.secs.toFixed(1) + ' s' + (clean ? ', no wrong notes. 🎯' : ', ' + r.miss + ' wrong note' + (r.miss === 1 ? '' : 's') + '. Again?'), clean ? 'ok' : '');
-  if (clean && !secretBusy()) { if (r.kind === 'scale' && r.notes.length >= 9) secretFound('scale'); if (r.kind === 'arp' && r.chords.length >= 3) secretFound('arp'); }
+  toast(what + ' in ' + r.secs.toFixed(1) + ' s' + (clean ? ', no wrong notes. ' + WS_CHEERS[Math.floor(Math.random() * WS_CHEERS.length)] : ', ' + r.miss + ' wrong note' + (r.miss === 1 ? '' : 's') + '. Again, slowly, then faster.'), clean ? 'ok' : '');      /* the secrets are found out in the studio (part 73b hears a scale wherever you play it) */
   WS.r[r.kind].paint();
 }
 /** ▶ Listen: the run played by the studio's lead voice, the fretboard following */
@@ -15026,11 +15179,13 @@ function wsEarAnswer(a) {
 }
 
 /* ---------- the room ---------- */
-const wsLock = (id, what) => h('p', { class: 'tiny ws-lock' + (wsOpen(id) ? ' open' : '') }, wsOpen(id) ? '🗝 Open: ' + what + '.' : '🔒 ' + what + ' open when you find a secret in this room.');
+const wsNarrow = () => innerWidth < 640;
+const WS_WHERE = { scale: 'Hint: play any scale up and back down, anywhere the tuner can hear you.', arp: 'Hint: not in here. Try it with the band.', ear: 'Hint: this one is in here.' };
+const wsLock = (id, what) => h('p', { class: 'tiny ws-lock' + (wsOpen(id) ? ' open' : '') }, wsOpen(id) ? '🗝 Open: ' + what + '.' : '🔒 ' + what + ' are behind the curtain until you find a secret. ' + WS_WHERE[id]);
 const wsSel = (opts, val, on, attrs) => h('select', Object.assign({ class: 'in', onchange: e => on(e.target.value) }, attrs || {}), opts.map(([v, t, dis]) => h('option', { value: v, selected: String(v) === String(val), disabled: !!dis }, t)));
 function wsRoom(kind) {
-  const box = h('div', { class: 'ws-room', id: 'ws-room-' + kind }), ctl = h('div', { class: 'ws-ctl' }), board = h('div', { class: 'ws-board' }), stat = h('div', { class: 'ws-stat', 'aria-live': 'polite' }), chips = h('div', { class: 'ws-chips mono' });
-  const btns = h('div', { class: 'ws-btns' }, h('button', { class: 'btn', id: 'ws-' + kind + '-listen', onclick: () => wsListen(kind) }, '▶ Listen'), h('button', { class: 'btn primary', id: 'ws-' + kind + '-go', onclick: () => wsFollow(kind) }, '● Play it'), h('button', { class: 'btn', id: 'ws-' + kind + '-stop', onclick: () => wsStop() }, '■ Stop'));
+  const box = h('div', { class: 'ws-room', id: 'ws-room-' + kind }), ctl = h('div', { class: 'ws-ctl' }), board = h('div', { class: 'ws-board' }), stat = h('div', { class: 'ws-stat', 'aria-live': 'polite' }), chips = h('div', { class: 'ws-chips mono', role: 'list', 'aria-label': 'The notes, in order' });
+  const btns = h('div', { class: 'ws-btns' }, h('button', { class: 'btn', id: 'ws-' + kind + '-listen', 'aria-label': 'Listen: the studio plays the run', onclick: () => wsListen(kind) }, '▶ Listen'), h('button', { class: 'btn primary', id: 'ws-' + kind + '-go', 'aria-label': 'Play it: the studio follows you note by note', onclick: () => wsFollow(kind) }, '● Play it'), h('button', { class: 'btn', id: 'ws-' + kind + '-stop', 'aria-label': 'Stop', onclick: () => wsStop() }, '■ Stop'));
   const fl = () => wsFlats(), keys = NS.map((_, i) => [i, pcName(i, fl())]);
   const build = () => {
     ctl.innerHTML = '';
@@ -15051,8 +15206,8 @@ function wsRoom(kind) {
   };
   const paint = () => {
     const r = WS.run && WS.run.kind === kind ? WS.run : null, run = r || (kind === 'scale' ? wsScaleRun() : wsArpRun()), cur = r ? Math.min(r.i, run.notes.length - 1) : null;
-    board.innerHTML = ''; board.append(wsFret(run, r && r.mode !== 'done' && r.mode !== 'heard' ? cur : null));
-    chips.innerHTML = ''; run.notes.forEach((q, i) => chips.append(h('span', { class: 'ws-chip' + (r && i < r.i ? ' ok' : '') + (r && i === r.i && r.mode === 'follow' ? ' cur' : '') + (kind === 'arp' && i && q.ci !== run.notes[i - 1].ci ? ' gap' : '') }, wsName(q.m))));
+    board.innerHTML = ''; board.append(wsFret(run, r && r.mode !== 'done' && r.mode !== 'heard' ? cur : null, wsNarrow()));
+    chips.innerHTML = ''; run.notes.forEach((q, i) => chips.append(h('span', { role: 'listitem', class: 'ws-chip' + (r && i < r.i ? ' ok' : '') + (r && i === r.i && r.mode === 'follow' ? ' cur' : '') + (kind === 'arp' && i && q.ci !== run.notes[i - 1].ci ? ' gap' : '') }, wsName(q.m))));
     const want = r && r.mode === 'follow' ? run.notes[r.i] : null;
     stat.innerHTML = ''; stat.append(...[h('b', {}, run.title), ' · ' + run.notes.length + ' notes',
       want ? h('span', { class: 'ws-next' }, ' · next: ', h('b', {}, wsName(want.m)), ' (string ' + (wsTune().length - want.s) + ', ' + (want.f ? 'fret ' + want.f : 'open') + ') · ' + r.i + ' of ' + run.notes.length + (r.miss ? ' · ' + r.miss + ' wrong' : '')) : null,
@@ -15064,33 +15219,300 @@ function wsRoom(kind) {
   build(); return box;
 }
 function wsEarRoom() {
-  const box = h('div', { class: 'ws-room', id: 'ws-room-ear' }), top = h('div', { class: 'ws-ctl' }), ans = h('div', { class: 'ws-ans' }), stat = h('div', { class: 'ws-stat', 'aria-live': 'polite' });
+  const box = h('div', { class: 'ws-room', id: 'ws-room-ear' }), top = h('div', { class: 'ws-ctl' }), ans = h('div', { class: 'ws-ans', role: 'group', 'aria-label': 'Your answer' }), stat = h('div', { class: 'ws-stat', 'aria-live': 'polite' });
   const modes = [['easy', 'Intervals: 4 to choose from'], ['more', 'Intervals: 6'], ['all', 'Intervals: all 12'], ['chords', (wsOpen('ear') ? '' : '🔒 ') + 'Chord qualities', !wsOpen('ear')]];
   const paint = () => {
     const e = WS.ear, list = wsEarChords() ? WS_CQ.map(x => [x[0], x[0]]) : (WS_SETS[CFG.shed.ear] || WS_SETS.more).map(a => { const iv = WS_IV.find(x => x[0] === a); return [a, iv[1]]; });
-    ans.innerHTML = ''; list.forEach(([a, t]) => ans.append(h('button', { class: 'btn ws-a' + (e.last && e.lock && a === e.last.ans ? ' right' : '') + (e.last && e.lock && !e.last.right && a === e.last.a ? ' wrong' : ''), 'data-a': a, disabled: !e.q, onclick: () => wsEarAnswer(a) }, t)));
-    stat.innerHTML = ''; stat.append(e.q ? (e.lock ? h('b', { class: e.last.right ? 'ws-good' : '' }, e.last.right ? '✓ Yes: ' : '✗ It was: ', h('span', {}, (wsEarChords() ? e.last.ans : WS_IV.find(x => x[0] === e.last.ans)[1]))) : h('span', {}, 'What did you hear?')) : h('span', {}, 'Press ▶ Play a question.'),
+    ans.innerHTML = ''; list.forEach(([a, t]) => ans.append(h('button', { 'aria-pressed': String(!!(e.last && e.lock && a === e.last.a)), class: 'btn ws-a' + (e.last && e.lock && a === e.last.ans ? ' right' : '') + (e.last && e.lock && !e.last.right && a === e.last.a ? ' wrong' : ''), 'data-a': a, disabled: !e.q, onclick: () => wsEarAnswer(a) }, t)));
+    stat.innerHTML = ''; stat.append(e.q ? (e.lock ? h('b', { class: e.last.right ? 'ws-good' : '' }, e.last.right ? '✓ ' + ['Yes', 'Nailed it', 'Golden', 'Correct'][e.n % 4] + ': ' : '✗ It was: ', h('span', {}, (wsEarChords() ? e.last.ans : WS_IV.find(x => x[0] === e.last.ans)[1]))) : h('span', {}, 'What did you hear?')) : h('span', {}, 'Press ▶ Play a question.'),
       h('span', { class: 'ws-streak' }, ' · streak ' + e.streak + ' · best ' + e.best + (e.n ? ' · ' + Math.round(e.ok / e.n * 100) + '% of ' + e.n : '')));
   };
   top.append(h('label', { class: 'field' }, 'Train', wsSel(modes, CFG.shed.ear, v => { CFG.shed.ear = v; saveCfg(); Object.assign(WS.ear, { q: null, streak: 0, lock: false }); paint(); }, { id: 'ws-ear-mode' })),
-    h('button', { class: 'btn primary', id: 'ws-ear-go', onclick: () => wsEarNext() }, '▶ Play a question'), h('button', { class: 'btn', id: 'ws-ear-again', onclick: () => wsEarPlay() }, '↻ Again'));
+    h('button', { class: 'btn primary', id: 'ws-ear-go', 'aria-label': 'Play a question', onclick: () => wsEarNext() }, '▶ Play a question'), h('button', { class: 'btn', id: 'ws-ear-again', 'aria-label': 'Play the question again', onclick: () => wsEarPlay() }, '↻ Again'));
   WS.r.ear = { paint, build: paint }; box.append(top, ans, stat, wsLock('ear', 'Chord qualities by ear')); paint(); return box;
 }
-/** the room itself */
-function woodshedOpen(at) {
+/** the room itself (part of Practice) */
+function trainOpen(at) {
   wsStop(true);
-  const d = hubOpen('woodshed', { ico: '🪵', title: 'The Woodshed', sub: 'Practise scales, arpeggios and your ear. Play along with your guitar, or listen first.', at, sections: [
+  const d = hubOpen('scales-ear', { ico: '🎼', title: 'Scales & ear', sub: 'Scales anywhere on the neck, this song’s chords one note at a time, and your ear. The studio listens and follows you note by note.', at, sections: [
     { key: 'scales', label: 'Scales', ico: '♯', sub: 'Choose a key, a scale and where on the neck. ● Play it follows you note by note, up and back down.', wide: true, body: () => [wsRoom('scale')] },
-    { key: 'arps', label: 'Arpeggios', ico: '🎸', sub: 'Chords, one note at a time: this song’s chords in order, or one chord up and down.', wide: true, body: () => [wsRoom('arp')] },
-    { key: 'ear', label: 'Your ear', ico: '👂', sub: 'An interval is played. Name it. Build a streak.', wide: true, body: () => [wsEarRoom()] },
-    { key: 'how', label: 'How it listens', ico: '?', wide: true, body: () => [h('p', { class: 'small' }, 'It listens to the input the tuner uses (Audio, top right): play each note when it is the next one. A wrong note counts; the note you just played, still ringing, does not. Octaves do not matter, the note does. Nothing is recorded. ▶ Listen plays the run through the studio’s own lead voice, at half the song’s beat.'), h('p', { class: 'small muted' }, 'Some of this room is locked until you find what it hides. With Settings ▸ Workflow ▸ Hidden surprises off, it is all open.')] }
+    { key: 'arps', label: 'Arpeggios', ico: '🎸', sub: 'This song’s chords one note at a time, or one chord up and down.', wide: true, body: () => [wsRoom('arp')] },
+    { key: 'ear', label: 'Your ear', ico: '👂', sub: 'Two notes. Name the gap between them. Build a streak.', wide: true, body: () => [wsEarRoom()] },
+    { key: 'how', label: 'How it listens', ico: 'ⓘ', wide: true, body: () => [h('p', { class: 'small' }, 'It listens to the input the tuner uses (Audio, top right): play each note when it is the next one. A wrong note counts; the note you just played, still ringing, does not. Octaves do not matter, the note does. Nothing is recorded. ▶ Listen plays the run through the studio’s own lead voice, at half the song’s beat.'), h('p', { class: 'small muted' }, 'Some of this room is locked until you find what the studio hides, and most of that is out in the studio, not in here. With Settings ▸ Workflow ▸ Hidden surprises off, it is all open.')] }
   ] });
-  d.classList.add('ws-hub'); d.addEventListener('close', () => { wsStop(true); clearTimeout(WS.ear.tm); }, { once: true });
+  d.classList.add('ws-hub'); if (!d._wsClose) { d._wsClose = true; d.addEventListener('close', () => { wsStop(true); clearTimeout(WS.ear.tm); }); }      /* one listener for the dialog's life: reopening fires a close too */
   return d;
 }
 /* a secret found here opens its treasure in place: the room is drawn again where you are, a moment later */
-bus.on('secret', id => { if (!['scale', 'arp', 'ear'].includes(id)) return; setTimeout(() => { const d = document.getElementById('woodshed'); if (!d || !d.open || WS.run && WS.run.mode === 'follow') return; const on = d.querySelector('.hub-nb.on'); const e = Object.assign({}, WS.ear); woodshedOpen(on ? on.dataset.sec : undefined); Object.assign(WS.ear, { streak: e.streak, best: e.best, n: e.n, ok: e.ok }); if (WS.r.ear) WS.r.ear.paint(); }, 1400); });
-bus.on('song', () => { const d = document.getElementById('woodshed'); if (d && d.open && !WS.run) Object.values(WS.r).forEach(r => r.build()); });
+bus.on('secret', id => { if (!['scale', 'arp', 'ear'].includes(id)) return; setTimeout(() => { const d = document.getElementById('scales-ear'); if (!d || !d.open || WS.run && WS.run.mode === 'follow') return; const on = d.querySelector('.hub-nb.on'); const e = Object.assign({}, WS.ear); trainOpen(on ? on.dataset.sec : undefined); Object.assign(WS.ear, { streak: e.streak, best: e.best, n: e.n, ok: e.ok }); if (WS.r.ear) WS.r.ear.paint(); }, 1400); });
+bus.on('song', () => { const d = document.getElementById('scales-ear'); if (d && d.open && !WS.run) Object.values(WS.r).forEach(r => r.build()); });
+/* turning a phone round redraws the fretboard at the size that fits */
+{ let wasN = null; addEventListener('resize', () => { const n = wsNarrow(); if (n === wasN) return; wasN = n; const d = document.getElementById('scales-ear'); if (d && d.open) ['scale', 'arp'].forEach(k => WS.r[k] && WS.r[k].paint()); }); }
+
+/* >>> parts/73e-onair.js */
+/* ============================================================
+   Part 73e · ON AIR (2.25) — a tribute to the red light outside every studio door
+   While a take or a stage video records, the logo in the header and the browser tab's icon blink red, and the tab's title says
+   ● REC, so you can tell from any tab that the studio is rolling. Calm and reduced motion get a steady red light, no blinking.
+   ============================================================ */
+const AIR = { on: false, tm: 0, ph: false, icon: null, red: null, title: '' };
+const airLive = () => !!(REC || (typeof SREC !== 'undefined' && SREC.on) || (typeof SHW !== 'undefined' && SHW.rec));      /* Shower mode's ● too */
+/** the tab's icon in red: the same mark, its strokes recoloured */
+function airRed(href) {
+  try { const svg = decodeURIComponent(href.replace(/^data:image\/svg\+xml,/, '')); return 'data:image/svg+xml,' + encodeURIComponent(svg.replace(/<style>[\s\S]*?<\/style>/, '<style>.h,.i{stroke:#ff2a3d}</style>')); } catch (e) { return href; }
+}
+function airSync() {
+  const on = airLive(); if (on === AIR.on) return; AIR.on = on;
+  const link = document.querySelector('link[rel="icon"]'); if (link && !AIR.icon && /^data:image\/svg/.test(link.getAttribute('href') || '')) { AIR.icon = link.getAttribute('href'); AIR.red = airRed(AIR.icon); }
+  document.body.classList.toggle('onair', on); clearInterval(AIR.tm); AIR.tm = 0;
+  /* the red light, for a screen reader too: one quiet announcement when it goes on and when it goes off */
+  let say = document.getElementById('airSay'); if (!say) { say = h('span', { id: 'airSay', class: 'sr-only', role: 'status', 'aria-live': 'polite' }); document.body.append(say); }
+  say.textContent = on ? 'On air: recording.' : 'Off air: recording stopped.';
+  const mark = document.querySelector('.brand'); if (mark) { if (on) mark.setAttribute('title', 'On air: recording'); else mark.removeAttribute('title'); }
+  if (on) {
+    AIR.title = document.title.replace(/^● REC · /, ''); document.title = '● REC · ' + AIR.title;
+    const steady = secretCalm(), tick = () => { AIR.ph = steady || !AIR.ph; if (link && AIR.red) link.setAttribute('href', AIR.ph ? AIR.red : AIR.icon); };
+    AIR.ph = false; tick(); if (!steady) AIR.tm = setInterval(tick, 650);
+  } else { if (link && AIR.icon) link.setAttribute('href', AIR.icon); if (AIR.title) document.title = AIR.title; }
+}
+bus.on('rec:state', airSync); setInterval(airSync, 500);      /* takes say so; a stage video is noticed within half a second */
+
+/* >>> parts/73f-shower.js */
+/* ============================================================
+   Part 73f · SHOWER MODE (2.27) — a hidden singing companion, made for wet hands
+   Not on any menu. It opens when you hold the logo for two seconds (phones too), type "shower" anywhere outside a text box, or
+   type shower in the Backstage terminal. Once open it is one full screen with a handful of big buttons:
+     · the songs you have saved with a track, one after another (◀ ▶), each playing straight into the next
+     · the track's four stems: the singer (as recorded, a quiet guide or off), drums, bass, and the rest
+     · ▶ / ⏸, and ● to record yourself; then ▶ to hear your take back over the music with a tiled-bathroom reverb, or 💾 to keep it
+     · the words, large, when the song has them; a belt meter and a splash score while you record, for fun
+   The band and the click are silent in here (T.quiet: playback only, no song is changed); everything is put back as it was when you leave, including the song you had open.
+   The microphone is opened only when you press ●, with the browser's echo cancellation on, never played through the speakers, and
+   closed when you leave. Your take stays in memory unless you save it (the voice with the steam, not the record).
+   ============================================================ */
+const SING = { mic: null, srcN: null, an: null, buf: null, f: [], last: 0, db: -99, m: null, ducked: 0, st: null };
+const SHW = { el: null, q: [], i: -1, home: null, busy: false, paused: true, was: false, restore: null, mix0: null, wake: null, tm: 0, raf: 0,
+  rec: null, take: null, takeBuf: null, card: null, hearing: 0, msg: '' };
+const SING_BELT = -20, SING_VOICE = -46;      /* dBFS of the room microphone (automatic gain off): above SING_BELT is belting, below SING_VOICE is the shower */
+const SING_TITLES = [
+  [0, 'Rubber Duck Rookie', 'Everyone starts somewhere. Usually under the water.'],
+  [35, 'Shampoo Soloist', 'Lather, rinse, sing it again.'],
+  [55, 'Conditioner Crooner', 'Smooth. Silky. Slightly echoey.'],
+  [72, 'Loofah Legend', 'The tiles have never sounded better.'],
+  [86, 'Hot Water Heavyweight', 'The neighbours have stopped knocking and started requesting.']
+];
+CFG.shed.shw = Object.assign({ vox: 'guide', drums: true, bass: true, other: true }, CFG.shed.shw && typeof CFG.shed.shw === 'object' ? CFG.shed.shw : {});
+const singNew = () => ({ voiced: 0, inKey: 0, longest: 0, hold: { m: null, t: 0 }, hi: null, lo: null, belt: 0, peak: -99, ducks: 0, secs: 0 });
+
+/* ---------- the score: one reading of the voice (MIDI pitch or null, level in dBFS, seconds since the last reading) ---------- */
+function singStep(m, db, dt) {
+  const s = SING.st; if (!s) return; s.secs += dt; if (db > s.peak) s.peak = db;
+  if (db > SING_BELT && m != null) s.belt += dt;
+  if (m == null || db < SING_VOICE) { s.hold = { m: null, t: 0 }; SING.ducked = 0; return; }
+  s.voiced += dt; const t = voxTarget(m); if (Math.abs(t.n - m) < .5) s.inKey += dt;
+  if (s.hold.m != null && Math.abs(m - s.hold.m) < .6) { s.hold.t += dt; s.hold.m = s.hold.m * .9 + m * .1; } else { s.hold = { m, t: dt }; SING.ducked = 0; }
+  if (s.hold.t > s.longest) s.longest = s.hold.t;
+  if (s.hold.t >= .3) { const r = Math.round(s.hold.m); if (s.hi == null || r > s.hi) s.hi = r; if (s.lo == null || r < s.lo) s.lo = r; }
+  const d = Math.floor(s.hold.t / 4); if (d > SING.ducked) { SING.ducked = d; s.ducks++; shwQuack(); }      /* a rubber duck for every four seconds held */
+}
+/** the score out of 100, and the title that goes with it */
+function singScore(st) {
+  st = st || SING.st; if (!st || st.voiced < 1) return { score: 0, title: SING_TITLES[0][1], line: 'Not a peep. Is the phone on the other side of the curtain?', key: 0 };
+  const key = st.inKey / st.voiced, score = Math.round(Math.min(100, 45 * key + 25 * Math.min(1, st.longest / 6) + 15 * Math.min(1, st.belt / 8) + 15 * Math.min(1, st.voiced / Math.max(8, st.secs * .35))));
+  const t = [...SING_TITLES].reverse().find(x => score >= x[0]); return { score, title: t[1], line: t[2], key: Math.round(key * 100) };
+}
+
+/* ---------- the microphone: only while ● is on ---------- */
+async function singMic() {
+  if (SING.mic) return true; await startAudio();
+  try { SING.mic = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: false, autoGainControl: false } }); }
+  catch (e) { toast('The microphone is needed to record you. ' + (e && e.name === 'NotAllowedError' ? 'Allow it in the browser’s address bar, then try again.' : (e.message || e.name)), 'warn'); return false; }
+  SING.srcN = E.ctx.createMediaStreamSource(SING.mic); SING.an = E.ctx.createAnalyser(); SING.an.fftSize = 2048; SING.srcN.connect(SING.an);   /* never connected to the speakers */
+  return true;
+}
+function singMicOff() { try { SING.srcN && SING.srcN.disconnect(); } catch (e) { } try { SING.mic && SING.mic.getTracks().forEach(t => t.stop()); } catch (e) { } SING.mic = null; SING.srcN = null; SING.an = null; }
+function singRead() {
+  const an = SING.an; if (!an) return; const now = performance.now(), dt = Math.min(.12, (now - SING.last) / 1000); SING.last = now;
+  if (!SING.buf || SING.buf.length !== an.fftSize) SING.buf = new Float32Array(an.fftSize); an.getFloatTimeDomainData(SING.buf);
+  let e = 0; for (let i = 0; i < SING.buf.length; i++) e += SING.buf[i] * SING.buf[i]; const db = dB(Math.sqrt(e / SING.buf.length)); let m = null;
+  if (db > SING_VOICE) { const r = yin(SING.buf, E.ctx.sampleRate, .15); if (r && r.f > 70 && r.f < 1300 && r.clarity > .7) { SING.f.push(r.f); if (SING.f.length > 3) SING.f.shift(); m = ftom(median(SING.f)); } else SING.f = []; } else SING.f = [];
+  SING.db = db; SING.m = m; singStep(m, db, dt);
+}
+
+/* ---------- the steam: a small tiled room, bright early reflections, then a dense tail of about 1.3 s ---------- */
+function singSteamIR(ctx) {
+  const sr = ctx.sampleRate, n = Math.round(sr * 1.4), b = ctx.createBuffer(2, n, sr);
+  for (let ch = 0; ch < 2; ch++) { const d = b.getChannelData(ch); let seed = 1234 + ch * 77; const rnd = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff * 2 - 1; };
+    for (let i = 0; i < n; i++) d[i] = rnd() * Math.exp(-i / (sr * .32)) * .5;
+    [.003, .007, .011, .016, .023].forEach((t, k) => { const j = Math.round(t * sr) + ch * 17; if (j < n) d[j] += (k % 2 ? -.6 : .7) * (1 - k * .12); }); }
+  return b;
+}
+/** the voice, through the steam, into ctx's `dest` from `at` (seconds on ctx's clock) */
+function singSteamChain(ctx, buf, dest, at) {
+  const src = ctx.createBufferSource(), dry = ctx.createGain(), wet = ctx.createGain(), cv = ctx.createConvolver(), hp = ctx.createBiquadFilter();
+  src.buffer = buf; hp.type = 'highpass'; hp.frequency.value = 90; cv.buffer = singSteamIR(ctx); wet.gain.value = .55;
+  src.connect(hp); hp.connect(dry); hp.connect(cv); cv.connect(wet); dry.connect(dest); wet.connect(dest); src.start(Math.max(ctx.currentTime, at)); return src;
+}
+
+/* ---------- the songs ---------- */
+const shwOpenNow = () => !!(SHW.el && SHW.el.isConnected);
+/** when the song started on the audio clock: the slot being scheduled, counted back to where playback began */
+const shwT0 = () => T.next - (T.slot - T.startCursor) * slotDur();
+const shwRec = () => SHW.q[SHW.i] && PRJ.list.find(r => r.id === SHW.q[SHW.i]);
+/** the shower's stem choices on top of the song's own mix (put back when it leaves) */
+function shwMixApply() {
+  if (!STM.ch) return; const c = CFG.shed.shw, mx = STM.mix;
+  mx[0].m = !c.drums; mx[1].m = !c.bass; mx[3].m = !c.other; mx[2].m = c.vox === 'off'; mx[2].g = c.vox === 'guide' ? .22 : 1; mx.forEach(m => { m.s = false; });
+  try { spGains(); } catch (e) { }
+}
+function shwMixRestore() { if (SHW.mix0 && STM.ch) { STM.mix.forEach((m, i) => Object.assign(m, SHW.mix0[i])); try { spGains(); } catch (e) { } } SHW.mix0 = null; }
+async function shwQueue() { await projRefresh(); SHW.q = PRJ.list.filter(r => r.track).map(r => r.id); }
+/** go to song i of the queue: open it, wait for its stems, and play if asked */
+async function shwGo(i, playNow) {
+  if (SHW.busy || !SHW.q.length) return; i = (i + SHW.q.length) % SHW.q.length; SHW.busy = true; SHW.msg = 'Warming up the water…';
+  try {
+    if (SHW.rec) shwRecStop(); if (T.playing) stopPlay(true); SHW.paused = true; shwMixRestore(); SHW.i = i; shwPaint();
+    const id = SHW.q[i]; if (PRJ.cur !== id) await projLoad(id);
+    if (!STM.ch && PRJ.pending) await projRestoreTrack();
+    for (let k = 0; k < 600 && STM.busy; k++) await new Promise(r => setTimeout(r, 100));
+    SHW.mix0 = STM.mix.map(m => Object.assign({}, m)); shwMixApply(); T.quiet = true; T.loop = false; T.cursor = 0;
+  } catch (e) { console.warn(e); }
+  SHW.busy = false; SHW.msg = ''; shwPaint();
+  if (playNow) await shwPlay(true);
+}
+async function shwPlay(on) {
+  if (SHW.busy) return; const want = on == null ? !T.playing : on;
+  if (!want) { if (T.playing) stopPlay(true); SHW.paused = true; if (SHW.rec) shwRecStop(); shwPaint(); return; }
+  if (T.playing) return; if (typeof AK !== 'undefined' && AK.killed) { toast('Audio is stopped. Open Audio to resume.', 'warn'); return; }
+  SHW.paused = false; SHW.hearing = 0; try { await play(); } catch (e) { } SHW.was = T.playing; shwPaint();      /* seen playing at once, so an early end still counts */
+}
+/** ◀: back to the top of this song if it has been playing a while, else the song before */
+function shwPrev() { if (T.playing && playheadSlot() * slotDur() > 3) { stopPlay(true); T.cursor = 0; shwPlay(true); return; } shwGo(SHW.i - 1, T.playing || !SHW.paused); }
+function shwNext() { shwGo(SHW.i + 1, T.playing || !SHW.paused); }
+/** the stem buttons: the singer cycles as recorded → quiet guide → off; the others are on or off */
+function shwStem(k) {
+  const c = CFG.shed.shw; if (k === 'vox') c.vox = { orig: 'guide', guide: 'off', off: 'orig' }[c.vox] || 'guide'; else c[k] = !c[k];
+  saveCfg(); shwMixApply(); shwPaint();
+}
+
+/* ---------- recording yourself ---------- */
+async function shwRecToggle() {
+  if (SHW.rec) { shwRecStop(); return; } if (SHW.busy || !STM.ch) return; if (REC) { toast('The studio is recording. Stop it first.', 'warn'); return; }
+  if (!(await singMic())) return; if (!T.playing) { T.cursor = Math.max(0, T.cursor); await shwPlay(true); } if (!T.playing) return;
+  let mr; try { mr = new MediaRecorder(SING.mic); } catch (e) { toast('This browser cannot record here.', 'warn'); return; }
+  const t0 = E.ctx.currentTime, r = { mr, chunks: [], id: PRJ.cur, songSec: T.startCursor * slotDur() + (t0 - shwT0()), t0 };
+  mr.ondataavailable = e => { if (e.data && e.data.size) r.chunks.push(e.data); }; mr.onstop = () => shwKeep(r); mr.start();
+  SING.st = singNew(); SING.ducked = 0; SING.f = []; SING.last = performance.now(); SHW.rec = r; SHW.card = null; shwPaint();
+}
+function shwRecStop() {
+  const r = SHW.rec; if (!r) return; SHW.rec = null; try { if (r.mr.state !== 'inactive') r.mr.stop(); } catch (e) { }
+  SHW.card = singScore(); SHW.card.st = SING.st; shwPaint();
+}
+function shwKeep(r) { if (!r.chunks.length) return; SHW.take = { blob: new Blob(r.chunks, { type: r.chunks[0].type || 'audio/webm' }), id: r.id, songSec: r.songSec }; SHW.takeBuf = null; shwPaint(); }
+async function shwTakeBuf() { if (SHW.takeBuf) return SHW.takeBuf; if (!SHW.take) return null; try { SHW.takeBuf = await E.ctx.decodeAudioData(await SHW.take.blob.arrayBuffer()); } catch (e) { SHW.takeBuf = null; } return SHW.takeBuf; }
+/** your take over the music, from where you started, with the steam; it stops when your take does */
+async function shwHear() {
+  const tk = SHW.take, buf = await shwTakeBuf(); if (!tk || !buf) return; if (SHW.rec) shwRecStop();
+  if (PRJ.cur !== tk.id) { const i = SHW.q.indexOf(tk.id); if (i < 0) return; await shwGo(i, false); }
+  if (T.playing) stopPlay(true); T.cursor = Math.max(0, Math.floor(tk.songSec / slotDur())); SHW.paused = false; try { await play(); } catch (e) { } if (!T.playing) return;
+  const lat = (E.ctx.baseLatency || 0) + (E.ctx.outputLatency || 0) + .02;        /* the microphone heard the song this much after it was played */
+  SHW.hearSrc = singSteamChain(E.ctx, buf, E.mix, shwT0() + (tk.songSec - T.startCursor * slotDur()) - lat);
+  const n = ++SHW.hearing; setTimeout(() => { if (SHW.hearing !== n) return; SHW.hearing = 0; if (T.playing) stopPlay(true); SHW.paused = true; shwPaint(); }, (buf.duration + .6) * 1000);
+  shwPaint();
+}
+/** your voice with the steam, as a WAV file (the record is not in it: that is someone else's) */
+async function shwSave() {
+  const buf = await shwTakeBuf(); if (!buf) return;
+  const OC = window.OfflineAudioContext || window.webkitOfflineAudioContext, sr = buf.sampleRate, o = new OC(2, buf.length + Math.round(sr * 1.5), sr);
+  singSteamChain(o, buf, o.destination, 0); const r = await o.startRendering(); const rec = PRJ.list.find(x => x.id === SHW.take.id);
+  download(((rec && rec.title) || 'song').replace(/\W+/g, '_') + '_shower_take.wav', encodeWav([r.getChannelData(0), r.getChannelData(1)], sr, 16)); toast('Saved your shower take to this device. 🚿', 'ok');
+}
+
+/* ---------- adding a song from in here ---------- */
+async function shwAdd(file) {
+  if (!file || SHW.busy) return; SHW.busy = true; SHW.msg = 'Getting the track ready (splitting off the singer)…'; shwPaint();
+  try { if (T.playing) stopPlay(true); shwMixRestore(); await projCreate('blank', { form: 'empty' }); await stemLoad(file); for (let k = 0; k < 900 && STM.busy; k++) await new Promise(r => setTimeout(r, 100)); await projSave(); await shwQueue(); }
+  catch (e) { console.warn(e); }
+  SHW.busy = false; SHW.msg = ''; const i = SHW.q.indexOf(PRJ.cur); if (i >= 0) { SHW.i = -1; await shwGo(i, false); } else shwPaint();
+}
+
+/* ---------- the screen ---------- */
+function shwQuack() { const box = SHW.el && SHW.el.querySelector('.shw-steam'); if (!box || secretCalm()) return; const d = h('span', { class: 'shw-duck', 'aria-hidden': 'true' }, '🦆'); d.style.left = (15 + Math.random() * 70) + '%'; box.append(d); setTimeout(() => d.remove(), 2400); }
+function shwPaint() {
+  const d = SHW.el; if (!d) return; const q = (s) => d.querySelector(s), r = shwRec(), c = CFG.shed.shw, empty = !SHW.q.length;
+  q('.shw-song').textContent = empty ? 'No songs with a track yet' : (r ? (r.title || 'Untitled') : S.title || '…'); q('.shw-pos').textContent = empty ? '' : (SHW.i + 1) + ' of ' + SHW.q.length + (r && r.track && r.track.artist ? ' · ' + r.track.artist : '');
+  q('.shw-msg').textContent = SHW.msg; q('.shw-msg').hidden = !SHW.msg; q('.shw-empty').hidden = !empty || SHW.busy; q('.shw-words').hidden = empty;
+  const vox = { orig: ['🎤', 'Singer'], guide: ['🎤', 'Guide'], off: ['🔇', 'Singer off'] }[c.vox] || ['🎤', 'Guide'];
+  [['vox', vox[0], vox[1], c.vox !== 'off'], ['drums', '🥁', 'Drums', c.drums], ['bass', '🎸', 'Bass', c.bass], ['other', '🎹', 'The rest', c.other]].forEach(([k, ico, t, on]) => { const b = q('[data-stem="' + k + '"]'); b.querySelector('i').textContent = ico; b.querySelector('span').textContent = t; b.setAttribute('aria-pressed', String(on)); b.classList.toggle('off', !on); b.disabled = empty || SHW.busy; });
+  const pb = q('.shw-play'); pb.textContent = T.playing ? '⏸' : '▶'; pb.setAttribute('aria-label', T.playing ? 'Pause' : 'Play'); [pb, q('.shw-prev'), q('.shw-next')].forEach(b => { b.disabled = empty || SHW.busy; });
+  const rb = q('.shw-rec'); rb.classList.toggle('on', !!SHW.rec); rb.setAttribute('aria-pressed', String(!!SHW.rec)); rb.setAttribute('aria-label', SHW.rec ? 'Stop recording' : 'Record yourself'); rb.disabled = empty || SHW.busy;
+  const tk = q('.shw-take'); tk.innerHTML = ''; tk.hidden = !(SHW.card || SHW.take) || !!SHW.rec;
+  if (!tk.hidden) { const c2 = SHW.card, st = c2 && c2.st;
+    if (c2) tk.append(h('div', { class: 'shw-score' }, h('b', {}, String(c2.score)), h('span', {}, c2.title)), h('p', { class: 'shw-line' }, c2.line + (st && st.voiced >= 1 ? ' Longest note ' + st.longest.toFixed(1) + ' s · ' + c2.key + '% in the key · 🦆 ' + st.ducks : '')));
+    tk.append(h('div', { class: 'shw-tb' }, h('button', { class: 'shw-sm', id: 'shwHear', disabled: !SHW.take, onclick: () => shwHear() }, '▶ Hear it, steamy'), h('button', { class: 'shw-sm', id: 'shwSave', disabled: !SHW.take, onclick: () => shwSave() }, '💾 Keep it'), h('button', { class: 'shw-sm', id: 'shwDrop', 'aria-label': 'Throw the take away', onclick: () => { SHW.take = null; SHW.takeBuf = null; SHW.card = null; shwPaint(); } }, '✕'))); }
+}
+function shwDraw() {
+  const d = SHW.el; if (!d) return; const q = s => d.querySelector(s);
+  const i = SHW.q.length ? perfInfo() : { lines: [], idx: -1 }, cur = i.idx >= 0 ? i.lines[i.idx] : '', nx = i.idx >= 0 ? i.lines[i.idx + 1] : i.lines[0];
+  const big = cur || (i.lines.length ? '♪' : (SHW.q.length ? 'Sing it like nobody is listening.' : '')), k = big + '\u0001' + (nx || '');
+  if (SHW.lk !== k) { SHW.lk = k; q('.shw-cur').textContent = big; q('.shw-nl').textContent = nx || ''; }
+  const live = !!SHW.rec, lv = live ? clamp((SING.db + 60) / 54, 0, 1) : 0, mt = q('.shw-meter');
+  mt.hidden = !live; mt.style.setProperty('--lv', lv.toFixed(3)); mt.setAttribute('aria-valuenow', String(Math.round(live ? SING.db : -60)));
+  if (live) { const t = Math.max(0, E.ctx.currentTime - SHW.rec.t0); q('.shw-rec b').textContent = Math.floor(t / 60) + ':' + String(Math.floor(t % 60)).padStart(2, '0'); } else q('.shw-rec b').textContent = '●';
+  const box = q('.shw-steam'); if (live && box && !secretCalm() && Math.random() < lv * .5) { const b = h('i', { class: 'shw-bub', 'aria-hidden': 'true' }); b.style.left = (Math.random() * 100) + '%'; b.style.setProperty('--sz', (6 + lv * 22 * Math.random()).toFixed(0) + 'px'); box.append(b); setTimeout(() => b.remove(), 2600); }
+}
+/** every quarter second: the song ended on its own → the next one */
+function shwTick() {
+  if (!shwOpenNow()) return; if (SHW.rec) singRead();
+  if (SHW.was && !T.playing && !SHW.paused && !SHW.busy && !SHW.hearing) { if (SHW.rec) shwRecStop(); if (SHW.i < SHW.q.length - 1) shwGo(SHW.i + 1, true); else { SHW.paused = true; toast('That’s the whole set. Towel time. 🧺', 'ok'); } }
+  if (SHW.was !== T.playing) shwPaint(); SHW.was = T.playing;
+}
+async function showerOpen() {
+  if (shwOpenNow()) return SHW.el; if (REC) { toast('The studio is recording. Stop it first.', 'warn'); return null; }
+  const file = h('input', { type: 'file', accept: 'audio/*,.mp3,.wav,.flac,.m4a,.ogg', hidden: true, onchange: e => { const f = e.target.files[0]; e.target.value = ''; shwAdd(f); } });
+  const stem = k => h('button', { class: 'shw-stem', 'data-stem': k, 'aria-pressed': 'true', onclick: () => shwStem(k) }, h('i', { 'aria-hidden': 'true' }), h('span', {}));
+  const d = h('dialog', { class: 'shw', id: 'shower', 'aria-label': 'Shower mode' },
+    h('div', { class: 'shw-top' }, h('div', { class: 'shw-t' }, h('b', { class: 'shw-song' }), h('span', { class: 'shw-pos' })), h('button', { class: 'shw-sm shw-add', 'aria-label': 'Add a song', title: 'Add a song (its singer is split off on this device)', onclick: () => file.click() }, '＋'), file, h('button', { class: 'shw-sm shw-x', 'aria-label': 'Leave Shower mode', onclick: () => d.close() }, '✕')),
+    h('div', { class: 'shw-words', 'aria-live': 'polite' }, h('div', { class: 'shw-steam', 'aria-hidden': 'true' }), h('div', { class: 'shw-cur' }), h('div', { class: 'shw-nl' }), h('div', { class: 'shw-meter', role: 'meter', 'aria-label': 'How loud you are singing', 'aria-valuemin': '-60', 'aria-valuemax': '0', 'aria-valuenow': '-60', hidden: true }, h('i'))),
+    h('p', { class: 'shw-msg', role: 'status' }), h('div', { class: 'shw-empty' }, h('p', {}, 'Shower mode plays the songs you have saved with a track. Add one and the singer is split off on this device, so you can take over.'), h('button', { class: 'shw-big', onclick: () => file.click() }, '＋ Add a song')),
+    h('div', { class: 'shw-take', role: 'status' }),
+    h('div', { class: 'shw-stems', role: 'group', 'aria-label': 'What you hear' }, stem('vox'), stem('drums'), stem('bass'), stem('other')),
+    h('div', { class: 'shw-tr' }, h('button', { class: 'shw-btn shw-prev', 'aria-label': 'Previous song', onclick: () => shwPrev() }, '⏮'), h('button', { class: 'shw-btn shw-play', onclick: () => shwPlay() }, '▶'), h('button', { class: 'shw-btn shw-next', 'aria-label': 'Next song', onclick: () => shwNext() }, '⏭'), h('button', { class: 'shw-btn shw-rec', onclick: () => shwRecToggle() }, h('b', {}, '●'))),
+    h('p', { class: 'shw-fine' }, 'Not responsible for damage to electronic devices. Keep the phone out of the spray. The microphone opens only while ● is on, and nothing leaves this device.'));
+  document.body.append(d); SHW.el = d; SHW.home = PRJ.cur; SHW.restore = { loop: T.loop }; SHW.take = null; SHW.takeBuf = null; SHW.card = null; SHW.i = -1; SHW.was = false; SHW.paused = true;
+  if (T.playing) stopPlay(true); T.quiet = true; T.loop = false;      /* just the record in here: the band and the click are silent, and no song is changed */
+  d.addEventListener('close', () => shwClose()); d.showModal();
+  try { if (navigator.wakeLock) navigator.wakeLock.request('screen').then(w => { SHW.wake = w; }).catch(() => { }); } catch (e) { }
+  if (!CFG.shed.found) { CFG.shed.found = Date.now(); saveCfg(); toast('🚿 You found Shower mode. Not responsible for damage to electronic devices.', 'ok'); }
+  clearInterval(SHW.tm); SHW.tm = setInterval(shwTick, 250); const loop = () => { if (!shwOpenNow()) return; shwDraw(); SHW.raf = requestAnimationFrame(loop); }; loop();
+  shwPaint(); await shwQueue(); const at = SHW.q.indexOf(PRJ.cur);
+  if (SHW.q.length) await shwGo(at >= 0 ? at : 0, false); else shwPaint();
+  return d;
+}
+async function shwClose() {
+  const d = SHW.el; if (!d) return; SHW.el = null; clearInterval(SHW.tm); cancelAnimationFrame(SHW.raf); SHW.hearing = 0;
+  if (SHW.rec) { try { SHW.rec.mr.stop(); } catch (e) { } SHW.rec = null; } try { SHW.hearSrc && SHW.hearSrc.stop(); } catch (e) { } singMicOff();
+  if (T.playing) stopPlay(true); shwMixRestore();
+  const r = SHW.restore; SHW.restore = null; T.quiet = false; if (r) { T.loop = r.loop; try { syncTransport(); } catch (e) { } }
+  try { SHW.wake && SHW.wake.release(); } catch (e) { } SHW.wake = null; d.remove();
+  for (let k = 0; k < 600 && SHW.busy; k++) await new Promise(res => setTimeout(res, 100));
+  if (SHW.home && PRJ.cur !== SHW.home) { try { await projLoad(SHW.home); } catch (e) { } }      /* back to the song you had open */
+}
+
+/* ---------- the ways in: hold the logo, or type "shower" ---------- */
+{
+  let hold = 0, x0 = 0, y0 = 0; const cancel = () => { clearTimeout(hold); hold = 0; const b = document.querySelector('header .brand'); if (b) b.classList.remove('shw-fog'); };
+  document.addEventListener('pointerdown', e => { const b = e.target.closest && e.target.closest('header .brand'); if (!b) return; x0 = e.clientX; y0 = e.clientY; clearTimeout(hold);
+    setTimeout(() => { if (hold) b.classList.add('shw-fog'); }, 700); hold = setTimeout(() => { hold = 0; b.classList.remove('shw-fog'); showerOpen(); }, 2000); });
+  document.addEventListener('pointermove', e => { if (hold && Math.hypot(e.clientX - x0, e.clientY - y0) > 12) cancel(); });
+  ['pointerup', 'pointercancel'].forEach(t => document.addEventListener(t, () => { if (hold) cancel(); }));
+  document.addEventListener('contextmenu', e => { if (e.target.closest && e.target.closest('header .brand')) e.preventDefault(); });      /* a long press on a phone is ours, not the menu's */
+  let typed = ''; window.addEventListener('keydown', e => {
+    const t = e.target; if (e.ctrlKey || e.metaKey || e.altKey || (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable))) { typed = ''; return; }
+    if (!/^[a-z]$/i.test(e.key)) { typed = ''; return; } typed = (typed + e.key.toLowerCase()).slice(-6);
+    if (typed === 'shower') { typed = ''; e.preventDefault(); e.stopImmediatePropagation(); showerOpen(); }      /* the R that ends it does not arm recording */
+  }, true);
+}
 
 /* >>> parts/74-github.js */
 /* ============================================================

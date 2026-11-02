@@ -90,7 +90,7 @@ suite('e2e-agent', async t => {
 
   /* ---- 2.16: the contract ---- */
   const live = await p.evaluate(() => ({ api: window.dailyStudio.version, d: window.dailyStudio.describe(), tools: Object.fromEntries(window.dailyStudio.tools().map(x => [x.name, (x.inputSchema.required || []).slice().sort()])) }));
-  const broken = Object.entries(CONTRACT.tools).filter(([n, req]) => !live.tools[n] || live.tools[n].join() !== req.join()).map(([n]) => n);
+  const broken = Object.entries(CONTRACT.tools).filter(([n, req]) => { const t = live.tools[n] || live.tools[live.d.aliases[n]]; return !t || t.join() !== req.join(); }).map(([n]) => n);
   ok(live.api === CONTRACT.api && !broken.length, 'the published tools and their required inputs match test/agent-contract.json (API ' + live.api + (broken.length ? '; changed: ' + broken.join(', ') : '') + ')');
   ok(live.d.api === live.api && /^\d+\.\d+\.\d+$/.test(live.d.app) && /^[0-9a-f]{7}$/.test(live.d.build) && live.d.tools.length === N, 'describe() gives the API version, the app version and build, and the tools');
 
@@ -110,6 +110,36 @@ suite('e2e-agent', async t => {
   const pf = await json('perform', { action: 'open', display: 'sheet' });
   ok(pf.open && pf.display === 'sheet' && (await p.evaluate(() => !!document.getElementById('perform') && document.getElementById('perform').classList.contains('pf-v-sheet') && !window.__daily.E.hasInput)), 'perform opens the Perform view on the lyric sheet, without the microphone');
   ok(!(await json('perform', { action: 'close' })).open, 'perform closes it');
+  /* ---- 2.25.1: the band's mute and Shower mode ---- */
+  await p.evaluate(() => { const D = window.__daily; D.S.band.drumsOn = true; D.S.band.bassOn = true; D.S.band.compOn = false; D.S.band.leadOn = false; D.T.metro = true; });
+  const mb = await json('mute_band', { muted: true });
+  ok(mb.muted && !mb.band.drums && !mb.band.bass && !mb.metronome && (await json('get_studio_state', {})).band_muted === true, 'mute_band mutes the whole band and the click, and get_studio_state says so');
+  const ub = await json('mute_band', {});
+  ok(!ub.muted && ub.band.drums && ub.band.bass && !ub.band.rhythm_guitar && ub.metronome, 'mute_band again brings back exactly what was playing');
+  const sh = await json('open_practice_room', { room: 'scales', key: 'E', scale: 'Blues' });
+  ok(sh.done && /^E Blues/.test(sh.scale) && sh.notes.length > 6 && (await p.evaluate(() => !!document.getElementById('scales-ear') && document.getElementById('scales-ear').open && !window.__daily.E.hasInput && !window.__daily.WS.run)), 'open_practice_room opens Scales & ear on the scale asked for (' + sh.scale + '), without the microphone and without starting anything');
+  const lk = await raw('open_shower_mode', { scale: 'Dorian' });      /* the old name, an alias since 2.27 */
+  ok(lk.isError && /locked/.test(JSON.stringify(lk)) && (await p.evaluate(() => window.__daily.CFG.shed.scale === 'Blues' && !window.__daily.CFG.secrets.scale)), 'it cannot pick a scale that is still locked, and unlocks nothing');
+  await p.evaluate(() => document.getElementById('scales-ear').close());
+  /* ---- 2.26: whole jobs in one call, and where to start ---- */
+  const dsc = await p.evaluate(() => window.dailyStudio.describe());
+  ok(Array.isArray(dsc.start_here) && dsc.start_here.length >= 4 && dsc.start_here.every(x => dsc.tools.includes(x.call) && x.why) && /for-ai-assistants/.test(dsc.docs), 'describe() says where to start: ' + dsc.start_here.map(x => x.call).join(', '));
+  const wsg = await json('write_song', { lyrics: '[Verse]\nWalking down to the harbour wall\nLights along the water\n\n[Chorus]\nHold on, hold on\nThe tide will bring you home', key: 'G', chorus_progression: 'IV I V vi', bpm: 88, title: 'Harbour Test' });
+  const wsS = await p.evaluate(() => { const D = window.__daily; return { title: D.S.title, bpm: D.S.bpm, key: D.S.key, minor: D.S.minor, secs: D.S.sections.map(s => [s.name, s.bars.map(b => b.chord).join(' '), s.lyrics]) }; });
+  ok(wsg.done && wsS.title === 'Harbour Test' && wsS.bpm === 88 && wsS.key === 7 && !wsS.minor && wsS.secs.length === 2, 'write_song: lyrics to a new song in G at 88 BPM, two sections (' + wsS.secs.map(x => x[0]).join(', ') + ')');
+  ok(/^G D Em C/.test(wsS.secs[0][1]) && /^C G D Em/.test(wsS.secs[1][1]) && /\[G\]Walking/.test(wsS.secs[0][2]), 'the verse runs I V vi IV, the chorus its own IV I V vi, and the chords sit in the words (' + wsS.secs.map(x => x[1]).join(' / ') + ')');
+  ok((await raw('write_song', { lyrics: 'la la', progression: 'Q R S' })).isError && (await raw('write_song', { lyrics: '   ' })).isError, 'write_song refuses a progression it cannot read, and lyrics with no words');
+  const ex = await json('explain_song', {});
+  ok(ex.key === 'G major' && ex.sections[0].numerals.startsWith('I | V | vi | IV') && ex.known_progressions.some(n => /I–V–vi–IV/.test(n)) && ex.sections.every(s => Array.isArray(s.outside_key)), 'explain_song: the key, the numerals of each section, and the I–V–vi–IV it uses');
+  await p.evaluate(() => { const D = window.__daily; D.S.sections[0].bars[1].chord = 'Bb'; D.commit(false); });
+  ok((await json('explain_song', {})).sections[0].outside_key.includes('Bb'), 'and it names a chord from outside the key');
+  const pr = await json('set_up_practice', { section: 'Chorus', tempo_percent: 75, band: 'drums' });
+  const prS = await p.evaluate(() => { const D = window.__daily; return { loop: D.T.loop, a: D.T.loopA, b: D.T.loopB, spb: D.spb(), bpm: D.S.bpm, metro: D.T.metro, band: [D.S.band.drumsOn, D.S.band.bassOn, D.S.band.compOn, D.S.band.leadOn] }; });
+  ok(pr.done && prS.loop && prS.a === 4 * prS.spb && prS.b === 8 * prS.spb && prS.bpm === 66 && prS.metro && prS.band.join() === 'true,false,false,false' && /Chorus \(bars 5–8\)/.test(pr.loop), 'set_up_practice: loops the chorus (bars 5–8) at 75 % (66 BPM) with the click and just the drums (' + JSON.stringify([pr.loop, prS]) + ')');
+  await json('undo', {});
+  ok(await p.evaluate(() => window.__daily.S.bpm === 88), 'undo puts the tempo back');
+  ok((await json('set_up_practice', { band: 'none' })).band.muted && (await raw('set_up_practice', { section: 'Bridge 9' })).isError && (await raw('set_up_practice', { tempo_percent: 10 })).isError, 'band none mutes everything; an unknown section or a silly tempo is refused');
+  await json('mute_band', { muted: false }); await wait(1500);      /* let the rate limit's second pass before the next block */
   const cs = await json('get_chord_shape', { chord: 'E', count: 2 });
   ok(cs.chord === 'E' && cs.shapes[0].frets === '0 2 2 1 0 0' && cs.shapes.length === 2 && cs.strings_low_to_high === 'E A D G B E', 'get_chord_shape: E in standard tuning is 0 2 2 1 0 0, with another way to play it');
   ok((await raw('get_chord_shape', { chord: 'Q7' })).structuredContent.error.code === 'invalid_input', 'get_chord_shape refuses something that is not a chord');

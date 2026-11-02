@@ -1,21 +1,21 @@
-/* The Woodshed (2.25): scales, arpeggios and your ear, and the three secrets found there with the treasure each opens. The guitar is
+/* Scales & ear (2.25 as Shower mode, in Practice since 2.27): scales, arpeggios and your ear, and the three secrets that open its treasures (one found in here, two out in the studio). The guitar is
    stood in for by the tuner's own readings (AN.active / AN.midi, as e2e-secrets does), so every note is exactly the one meant. */
 const { suite } = require('./lib.cjs');
 const SHEET = '[Verse]\nAm      F\nLanterns on the harbour wall\nC       G\nCalling all the boats back in';
 
-suite('e2e-woodshed', async t => {
+suite('e2e-scales-ear', async t => {
   const { ok, wait, poll } = t;
   const p = await t.open({}), ev = (f, a) => p.evaluate(f, a);
   await ev(async s => { const D = window.__daily; await D.startAudio(); await D.projCreate('blank', { form: 'empty' }); await window.dailyStudio.call('load_chord_sheet', { text: s }); D.S.title = 'Harbour'; D.commit(false); await D.projSave();
     const AN = D.AN; window.__f = { active: false, midi: null }; ['active', 'midi'].forEach(k => Object.defineProperty(AN, k, { configurable: true, get: () => window.__f[k], set: () => { } })); }, SHEET);
-  /* play notes into the Woodshed: each held long enough to be heard, with a short gap */
+  /* play notes in: each held long enough to be heard, with a short gap */
   const play = ms => ev(async ms => { const nap = x => new Promise(r => setTimeout(r, x)); for (const m of ms) { window.__f.active = true; window.__f.midi = m; await nap(260); window.__f.active = false; window.__f.midi = null; await nap(70); } await nap(150); }, ms);
   const run = () => ev(() => { const r = window.__daily.WS.run; return r ? { mode: r.mode, i: r.i, miss: r.miss, n: r.notes.length, notes: r.notes.map(q => q.m) } : null; });
 
   /* ---- the way in, from the Theory panel ---- */
   await ev(() => { const D = window.__daily; D.S.key = 9; D.S.scale = 'Minor Pentatonic'; D.commit(false); D.sideShow('theory'); }); await wait(300);
   await ev(() => document.getElementById('theoryShed').click()); await wait(500);
-  ok(await ev(() => { const d = document.getElementById('woodshed'); return !!(d && d.open) && ['scales', 'arps', 'ear', 'how'].every(k => d.querySelector('section[data-sec="' + k + '"]')) && document.getElementById('ws-key').value === '9' && document.getElementById('ws-scale').value === 'Minor Pentatonic'; }), 'Theory ▸ Practise it in the Woodshed opens the room on this key and scale: Scales, Arpeggios, Your ear');
+  ok(await ev(() => { const d = document.getElementById('scales-ear'); return !!(d && d.open) && ['scales', 'arps', 'ear', 'how'].every(k => d.querySelector('section[data-sec="' + k + '"]')) && document.getElementById('ws-key').value === '9' && document.getElementById('ws-scale').value === 'Minor Pentatonic'; }), 'Theory ▸ Practise it in the Woodshed opens the room on this key and scale: Scales, Arpeggios, Your ear');
   const SR = await ev(() => { const r = window.__daily.wsScaleRun(); return { n: r.notes.length, st: r.st, degs: r.notes.map(q => q.deg).join(' '), frets: r.notes.slice(0, 6).map(q => q.s + ':' + q.f).join(' ') }; });
   ok(SR.n === 11 && SR.st === 5 && SR.degs === 'R b3 4 5 b7 R b7 5 4 b3 R' && SR.frets === '0:5 0:8 1:5 1:7 2:5 2:7', 'A minor pentatonic from the 5th fret: the box every guitarist knows, up and back down (' + SR.degs + ')');
   ok(await ev(() => { const o = [...document.querySelectorAll('#ws-scale option')]; return o.length === 16 && o.filter(x => x.disabled).length === 11 && o.find(x => x.value === 'Dorian').disabled && /🔒 Modes and more scales/.test(document.getElementById('ws-room-scale').textContent); }), 'five scales to start with; the modes and the rest are locked, and the room says how they open');
@@ -52,7 +52,13 @@ suite('e2e-woodshed', async t => {
   await ev(() => { const s = document.getElementById('ws-src'); s.value = 'song'; s.dispatchEvent(new Event('change')); }); await wait(150);
   await ev(() => document.getElementById('ws-arp-go').click()); await wait(150);
   await play((await run()).notes);
-  ok(await poll(() => ev(() => !!window.__daily.CFG.secrets.arp), 3000) && await ev(() => /Broken chords/.test(document.getElementById('toasts').textContent)), 'four chords, every note, no mistake: Broken chords');
+  await wait(600);
+  ok((await run()).mode === 'done' && await ev(() => !window.__daily.CFG.secrets.arp && /not in here/i.test(document.getElementById('ws-room-arp').textContent)), 'a clean arpeggio run in here is good practice, but that secret is out in the studio (the room says so)');
+  /* ---- Broken chords: with the band, while the song plays ---- */
+  ok(await ev(() => { const D = window.__daily; D.T.playing = false; [57, 60, 64].forEach(m => D.secretNote(m)); return !D.CFG.secrets.arp; }), 'not while the song is stopped');
+  ok(await ev(() => { const D = window.__daily; [['Am', [57, 60, 64]], ['F', [53, 57, 60]], ['C', [55, 60, 64]]].forEach(([c, ms]) => ms.forEach(m => D.secretArp(m, c))); return !D.CFG.secrets.arp; }), 'three chords, but one played out of order (C: G before C), is not it');
+  await ev(() => { const D = window.__daily; [['Am', [57, 60, 64]], ['F', [53, 57, 60]], ['C', [48, 52, 55]], ['G', [43]]].forEach(([c, ms]) => ms.forEach(m => D.secretArp(m, c))); });
+  ok(await poll(() => ev(() => !!window.__daily.CFG.secrets.arp), 3000) && await ev(() => /Broken chords/.test(document.getElementById('toasts').textContent) && /Seventh arpeggios are open in Practice ▸ Scales & ear/.test(document.getElementById('toasts').textContent)), 'three of the band’s chords in a row broken into root, third and fifth: Broken chords, and it says what opened in Shower mode');
   await wait(1700);
   ok(await ev(() => { const s = document.getElementById('ws-src'); s.value = 'one'; s.dispatchEvent(new Event('change')); return [...document.querySelectorAll('#ws-type option')].every(o => !o.disabled) && /🗝 Open: Seventh/.test(document.getElementById('ws-room-arp').textContent); }), 'the treasure: seventh arpeggios open');
   ok(await ev(() => { const D = window.__daily; D.CFG.shed.type = 'm7'; D.CFG.shed.root = 9; const r = D.wsArpRun(); return r.notes.slice(0, 5).map(q => q.deg).join(' ') === 'R b3 5 b7 R'; }), 'A minor 7: R ♭3 5 ♭7 R');
@@ -73,11 +79,34 @@ suite('e2e-woodshed', async t => {
   await ev(() => { const s = document.getElementById('ws-ear-mode'); s.value = 'chords'; s.dispatchEvent(new Event('change')); document.getElementById('ws-ear-go').click(); }); await wait(200);
   ok(await ev(() => window.__daily.WS.ear.q.kind === 'chord' && document.querySelectorAll('#ws-room-ear .ws-a').length === 7), 'chord qualities: major, minor, diminished, augmented and three sevenths');
   ok(await ev(() => /3\/7/.test(document.querySelector('.secret-chip').textContent)), 'the 🗝 counter: 3 of 7');
-  await ev(() => document.getElementById('woodshed').close());
+  await ev(() => document.getElementById('scales-ear').close());
+
+  /* ---- for a screen reader ---- */
+  await ev(() => window.__daily.trainOpen('scales')); await wait(400);
+  ok(await ev(() => { const f = document.querySelector('#ws-room-scale svg.ws-fret'); return f.getAttribute('role') === 'img' && /^Fretboard, .+, open strings to fret 15\.$|^Fretboard, .+, frets \d+ to \d+\.$/.test(f.getAttribute('aria-label')); }), 'the fretboard is a picture with a name: which run, and which frets');
+  ok(await ev(() => ['listen', 'go', 'stop'].every(k => document.getElementById('ws-scale-' + k).getAttribute('aria-label')) && document.querySelector('#ws-room-scale .ws-chips').getAttribute('role') === 'list' && document.querySelectorAll('#ws-room-scale .ws-chip[role=listitem]').length > 6 && !!document.querySelector('#ws-room-scale .ws-stat[aria-live=polite]')), 'the buttons say what they do, the notes are a list, and the status line is read out as it changes');
+  await ev(() => { window.__daily.wsFollow('scale'); }); await wait(200);
+  ok(await ev(() => /Next: [A-G][#♯b♭]? on string \d, (fret \d+|open)\.$/.test(document.querySelector('#ws-room-scale svg.ws-fret').getAttribute('aria-label'))), 'while it follows you, the fretboard’s name says the next note, its string and fret');
+  await ev(() => window.__daily.wsStop(true));
+  await ev(() => window.__daily.trainOpen('ear')); await wait(400);
+  ok(await ev(() => { const g = document.querySelector('#ws-room-ear .ws-ans'); return g.getAttribute('role') === 'group' && g.getAttribute('aria-label') === 'Your answer' && document.getElementById('ws-ear-again').getAttribute('aria-label') === 'Play the question again'; }), 'the ear trainer’s answers are a named group');
+  await ev(() => document.getElementById('scales-ear').close());
+
+  /* ---- on a phone ---- */
+  const m = await t.open({ w: 390, h: 844, mobile: true }), mv = (f, a) => m.evaluate(f, a);
+  await mv(() => window.__daily.trainOpen('scales')); await wait(500);
+  const PH = await mv(() => { const f = document.querySelector('#ws-room-scale svg.ws-fret'), vb = f.viewBox.baseVal, r = f.getBoundingClientRect(), dot = f.querySelector('.ws-dot').getBoundingClientRect(); return { narrow: f.classList.contains('narrow'), frets: f.querySelectorAll('.ws-fw,.ws-nut').length - 1, scale: r.width / vb.width, dot: dot.width, fits: r.right <= innerWidth + .5, wide: document.documentElement.scrollWidth <= innerWidth }; });
+  ok(PH.narrow && PH.frets <= 9 && PH.dot >= 16 && PH.fits && PH.wide, 'on a phone the fretboard shows only the frets the run uses (' + PH.frets + '), so a dot is ' + PH.dot.toFixed(0) + ' px across instead of about 8, and nothing is wider than the screen');
+  ok(await mv(() => { const D = window.__daily, run = D.wsScaleRun(), f = document.querySelector('#ws-room-scale svg.ws-fret'); return run.notes.length === f.querySelectorAll('.ws-dot').length + run.notes.filter((q, i) => run.notes.findIndex(x => x.s === q.s && x.f === q.f) !== i).length; }), 'every note of the run is still on it');
+  ok(await mv(() => [...document.querySelectorAll('#ws-room-scale .ws-btns .btn')].every(b => b.getBoundingClientRect().height >= 36) && [...document.querySelectorAll('#ws-room-scale .ws-ctl select')].every(s => s.getBoundingClientRect().right <= innerWidth)), 'the buttons are big enough to tap and the choices fit the screen');
+  await mv(() => window.__daily.trainOpen('ear')); await wait(400); await mv(() => document.getElementById('ws-ear-go').click()); await wait(200);
+  ok(await mv(() => { const b = [...document.querySelectorAll('#ws-room-ear .ws-a')]; return b.length >= 4 && b.every(x => x.getBoundingClientRect().height >= 44 && x.getBoundingClientRect().right <= innerWidth); }), 'the ear trainer’s answers are two to a row, each a good thumb’s height');
+  await m.setViewportSize({ width: 844, height: 390 }); await mv(() => window.__daily.trainOpen('scales')); await wait(500);
+  ok(await mv(() => !document.querySelector('#ws-room-scale svg.ws-fret').classList.contains('narrow')), 'turned sideways, there is room for the whole neck again');
 
   /* ---- with hidden surprises off, the treasures are simply open ---- */
   const q = await t.open({ init: () => { try { localStorage.setItem('fw.cfg', JSON.stringify({ eggs: false })); } catch (e) { } } });
-  await q.evaluate(() => window.__daily.woodshedOpen()); await wait(400);
-  ok(await q.evaluate(() => document.querySelectorAll('#ws-scale option:disabled').length === 0 && !document.querySelector('#ws-ear-mode option[value="chords"]').disabled && !/🔒/.test(document.getElementById('woodshed').textContent)), 'with hidden surprises off, nothing in the room is locked');
+  await q.evaluate(() => window.__daily.trainOpen()); await wait(400);
+  ok(await q.evaluate(() => document.querySelectorAll('#ws-scale option:disabled').length === 0 && !document.querySelector('#ws-ear-mode option[value="chords"]').disabled && !/🔒/.test(document.getElementById('scales-ear').textContent)), 'with hidden surprises off, nothing in the room is locked');
   ok(await q.evaluate(() => Object.keys(window.__daily.CFG.secrets).length === 0), 'and nothing is counted as found');
 });

@@ -19,9 +19,11 @@ Both run the same functions as the buttons. (`window.dailyStudio` has one more m
 | `get_studio_state` | reads | none |
 | `get_key_chords` | reads | none |
 | `get_chord_shape` | reads | `chord` |
+| `explain_song` | reads | none |
 | `list_songs` | reads | none |
 | `export_song` | reads | `format` |
 | `load_chord_sheet` | changes | `text` |
+| `write_song` | changes (a new song by default) | `lyrics` |
 | `set_song_details` | changes | none |
 | `transpose_song` | changes | `semitones` |
 | `edit_section` | changes | `section` |
@@ -29,13 +31,31 @@ Both run the same functions as the buttons. (`window.dailyStudio` has one more m
 | `remove_section` | changes (destructive, undoable) | `section` |
 | `set_band` | changes | none |
 | `transport` | changes (never records) | none |
+| `set_up_practice` | changes (tempo undoable; never records) | none |
 | `set_visuals` | changes (never the camera) | none |
 | `perform` | changes (never the microphone) | none |
+| `mute_band` | changes | none |
+| `open_practice_room` | changes (never the microphone, never unlocks) | none |
 | `open_workspace` | changes | `workspace` |
 | `open_song` | changes | `song` |
 | `undo` | changes | none |
 
 `dailyStudio.tools()` gives each tool's description, JSON input schema and annotations (`readOnlyHint`, `destructiveHint`, `idempotentHint`; WebMCP also gets `openWorldHint: false` and a title).
+
+## Where an agent starts (2.26)
+
+- `dailyStudio.describe()` has `start_here`: five good first calls with example inputs and why, and `docs`, the address of the page for assistants.
+- `/llms.txt` at the site root says what the studio is and lists every tool, for assistants that read it. It is written by `scripts/build.mjs` from the table above, so it cannot drift from it. The page's head links to it (`<link rel="alternate" type="text/plain" href="llms.txt">`).
+- `/guide/for-ai-assistants/` explains the tools, what they never touch and good first calls. It is in the sitemap and `llms.txt`, but nothing in the studio or the other guide pages links to it: people only find it if they go looking. The studio itself shows no AI controls beyond the existing switch in Settings ▸ Workflow (on by default) and a short note when an agent changes something.
+- Three tools do a whole job in one call: `write_song` (lyrics and a progression to a song the band plays), `explain_song` (key, numerals, chords outside the key, repeated sections, known progressions) and `set_up_practice` (loop a section, slow down, click, how much band, play).
+
+## Renamed tools
+
+| Old name | Now | Since |
+| --- | --- | --- |
+| `open_shower_mode` | `open_practice_room` (the scale, arpeggio and ear trainers moved to Practice ▸ Scales & ear) | 2.27 |
+
+Old names keep working; `describe().aliases` lists them.
 
 ## Answers
 

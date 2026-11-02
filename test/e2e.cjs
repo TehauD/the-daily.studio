@@ -8,6 +8,7 @@ const fs = require('node:fs'), os = require('node:os'), path = require('node:pat
 const PORT = 8123 + Math.floor(Math.random() * 500), BASE = process.env.BASE_URL || `http://localhost:${PORT}/`;
 let fails = 0; const ok = (c, m) => { console.log((c ? 'ok   ' : 'FAIL ') + m); if (!c) fails++; };
 const wait = ms => new Promise(r => setTimeout(r, ms));
+const poll = async (f, ms = 6000, step = 120) => { const end = Date.now() + ms; for (;;) { let v; try { v = await f(); } catch (e) { v = false; } if (v) return v; if (Date.now() > end) return false; await wait(step); } };
 /** read a value until it meets a condition (or the time runs out), instead of a fixed wait: the app may need longer on a busy machine */
 const until = async (read, test, ms = 15000) => { const end = Date.now() + ms; for (;;) { const v = await read(); if (test(v) || Date.now() > end) return v; await wait(200); } };
 function wav(L, sr) { const n = L.length, b = Buffer.alloc(44 + n * 2); b.write('RIFF', 0); b.writeUInt32LE(36 + n * 2, 4); b.write('WAVEfmt ', 8); b.writeUInt32LE(16, 16); b.writeUInt16LE(1, 20); b.writeUInt16LE(1, 22); b.writeUInt32LE(sr, 24); b.writeUInt32LE(sr * 2, 28); b.writeUInt16LE(2, 32); b.writeUInt16LE(16, 34); b.write('data', 36); b.writeUInt32LE(n * 2, 40); for (let i = 0; i < n; i++) b.writeInt16LE(Math.max(-32768, Math.min(32767, Math.round(L[i] * 30000))), 44 + i * 2); return b; }
@@ -325,7 +326,9 @@ ok(he.length === 0, 'hum to song runs without script errors' + (he.length ? ' ' 
     ok(await rp.evaluate(() => !!document.getElementById('vzRecBtn') && typeof window.__daily.srecStart === 'function'), 'the Visuals bar has a Record button');
     await rp.evaluate(() => window.__daily.srecStart(false)); await wait(2600);
     ok(await rp.evaluate(() => window.__daily.SREC.on && /Stop|■/.test(document.getElementById('vzRecBtn').textContent) && document.getElementById('vzRecBtn').classList.contains('bad')), 'recording shows on the button with a running clock');
-    const dl = rp.waitForEvent('download', { timeout: 8000 }); await rp.evaluate(() => window.__daily.srecStop(true));
+    /* a busy machine paints the canvas slowly: stop once the recorder has handed over real video (as a person would, after a few seconds of picture) */
+    await poll(() => rp.evaluate(() => (window.__daily.SREC.chunks || []).reduce((a, b) => a + b.size, 0) > 3000), 15000);
+    const dl = rp.waitForEvent('download', { timeout: 20000 }); await rp.evaluate(() => window.__daily.srecStop(true));
     const d1 = await dl.catch(() => null), f1 = d1 && await d1.path().catch(() => null), sz = f1 ? fs.statSync(f1).size : 0;
     ok(!!d1 && /_stage\.(webm|mp4)$/.test(d1.suggestedFilename()) && sz > 3000, 'Record stage saves a video file on this device (' + (d1 ? d1.suggestedFilename() : 'no download') + ', ' + sz + ' bytes)');
     ok(await rp.evaluate(() => !window.__daily.SREC.on && !window.__daily.SREC.dest), 'stopping releases the recorder and audio tap');

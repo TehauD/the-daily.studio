@@ -28,4 +28,5 @@ User-agent: cohere-training-data-crawler
 User-agent: Diffbot
 Disallow: /
 
+# AI assistants: /llms.txt says what the studio is and how to use its tools.
 Sitemap: https://the-daily.studio/sitemap.xml

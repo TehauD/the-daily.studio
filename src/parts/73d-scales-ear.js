@@ -1,19 +1,22 @@
 /* ============================================================
-   Part 73d · THE WOODSHED (2.25) — practise scales, arpeggios and your ear (musicians "go to the woodshed" to practise)
-   Three trainers in one room, each with a fretboard drawn for the song's tuning and capo:
+   Part 73d · SCALES & EAR (2.25, moved to Practice in 2.27) — scales, arpeggios and your ear, followed note by note
+   Three trainers in one room, each with a fretboard drawn for the song's tuning and capo. It opens from the Practice workspace's tools,
+   the Theory panel ("Practise this scale") and the phone's More sheet:
      · Scales      a key, a scale, where on the neck, one or two octaves. ▶ Listen plays it; ● Play it follows you note by note,
                    up and back down, by the pitch the tuner already hears (a wrong note counts, a note still ringing does not)
      · Arpeggios   the chords of this song one note at a time, or one chord up and down
      · Your ear    an interval is played, you name it; a streak and a best
-   Three of the seven secrets are found here, and each opens a treasure in the room (part 73b keeps the list):
-     · Up and down     a whole scale up and back down without a wrong note     → modes and more scales
-     · Broken chords   a progression of three chords or more, no wrong note    → seventh arpeggios
-     · Golden ear      ten in a row by ear, from six choices or more            → chord qualities by ear
+   Three of the seven secrets open treasures in here, but only one is found in here (the rest are out in the studio, to be explored):
+     · Up and down     a scale up and back down, anywhere the tuner hears you (part 73b)   → modes and more scales
+     · Broken chords   the band's chords broken into notes while the song plays (part 73b)  → seventh arpeggios
+     · Golden ear      ten in a row by ear, in here, from six choices or more             → chord qualities by ear
    With hidden surprises off (Settings ▸ Workflow), the treasures are simply open: nobody has to hunt for practice.
    It listens to the input the tuner uses and records nothing; ▶ Listen plays through the studio's own lead voice.
+   (Its settings keep the name CFG.shed, from when it was the Woodshed, so nobody's choices are lost.)
    ============================================================ */
 CFG.shed = Object.assign({ scale: 'Minor Pentatonic', key: null, at: null, oct: 1, src: 'song', root: null, type: '', arpAt: null, ear: 'more' }, CFG.shed && typeof CFG.shed === 'object' ? CFG.shed : {});
 const WS = { run: null, tm: 0, play: [], ear: { q: null, streak: 0, best: 0, n: 0, ok: 0, lock: false }, r: {} };
+const WS_CHEERS = ['Clean. 🎯', 'Not a note out of place.', 'Your fingers know the way now.', 'Again, a little faster?', 'That one is in your hands.'];
 const WS_BASE = ['Major (Ionian)', 'Natural Minor (Aeolian)', 'Major Pentatonic', 'Minor Pentatonic', 'Blues'];
 const WS_ARPS = [['', 'Major', [0, 4, 7]], ['m', 'Minor', [0, 3, 7]], ['dim', 'Diminished', [0, 3, 6]], ['aug', 'Augmented', [0, 4, 8]], ['maj7', 'Major 7', [0, 4, 7, 11], 1], ['7', 'Dominant 7', [0, 4, 7, 10], 1], ['m7', 'Minor 7', [0, 3, 7, 10], 1], ['m7b5', 'Half-diminished', [0, 3, 6, 10], 1], ['dim7', 'Diminished 7', [0, 3, 6, 9], 1]];
 const WS_IV = [['m2', 'minor 2nd', 1], ['M2', 'major 2nd', 2], ['m3', 'minor 3rd', 3], ['M3', 'major 3rd', 4], ['P4', 'perfect 4th', 5], ['TT', 'tritone', 6], ['P5', 'perfect 5th', 7], ['m6', 'minor 6th', 8], ['M6', 'major 6th', 9], ['m7', 'minor 7th', 10], ['M7', 'major 7th', 11], ['P8', 'octave', 12]];
@@ -66,16 +69,27 @@ function wsArpRun() {
 }
 
 /* ---------- the fretboard ---------- */
-function wsFret(run, cur) {
-  const tu = wsTune(), n = tu.length, F = 15, W = 820, H = 26 + n * 22, x0 = 34, fw = (W - x0 - 10) / F, y = s => 16 + (n - 1 - s) * 22, xf = f => f === 0 ? x0 - 12 : x0 + (f - .5) * fw;
+/* the fretboard: 15 frets on a wide screen; on a narrow one (a phone) only the frets the run uses, a little either side, so the dots stay big enough to read */
+function wsFretSpan(run, narrow) {
+  if (!narrow || !run || !run.notes.length) return [0, 15];
+  const fs = run.notes.map(q => q.f), lo = Math.min(...fs), hi = Math.max(...fs), a = Math.max(0, lo - 1), b = Math.min(17, Math.max(hi + 1, a + 5));
+  return [a, b];
+}
+function wsFret(run, cur, narrow) {
+  const tu = wsTune(), n = tu.length, [fa, fb] = wsFretSpan(run, narrow), F = fb - fa, x0 = 34, fw = narrow ? 46 : (820 - x0 - 10) / 15, W = x0 + F * fw + 10, H = 26 + n * 22 + (fa ? 12 : 0);
+  const y = s => 16 + (n - 1 - s) * 22, xf = f => f === 0 ? x0 - 12 : x0 + (f - fa - .5) * fw, by = 26 + n * 22;
   const ns = 'http://www.w3.org/2000/svg', svg = document.createElementNS(ns, 'svg'), el = (t, a, txt) => { const e = document.createElementNS(ns, t); Object.entries(a).forEach(([k, v]) => e.setAttribute(k, v)); if (txt != null) e.textContent = txt; svg.append(e); return e; };
-  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H); svg.setAttribute('class', 'ws-fret'); svg.setAttribute('role', 'img'); svg.setAttribute('aria-label', 'Fretboard: ' + (run ? run.title : ''));
-  [3, 5, 7, 9, 15].forEach(f => el('circle', { cx: x0 + (f - .5) * fw, cy: H - 6, r: 3, class: 'ws-mk' })); el('circle', { cx: x0 + 11.5 * fw - 5, cy: H - 6, r: 3, class: 'ws-mk' }); el('circle', { cx: x0 + 11.5 * fw + 5, cy: H - 6, r: 3, class: 'ws-mk' });
-  for (let f = 0; f <= F; f++) el('line', { x1: x0 + f * fw, y1: y(n - 1), x2: x0 + f * fw, y2: y(0), class: f === 0 ? 'ws-nut' : 'ws-fw' });
-  if (S.capo) el('rect', { x: x0 + (S.capo - .62) * fw, y: y(n - 1) - 6, width: 6, height: y(0) - y(n - 1) + 12, rx: 3, class: 'ws-capo' });
+  const want = run && cur != null ? run.notes[cur] : null, strN = s => n - s;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H); svg.setAttribute('class', 'ws-fret' + (narrow ? ' narrow' : '')); svg.setAttribute('role', 'img');
+  svg.setAttribute('aria-label', run ? 'Fretboard, ' + run.title + ', ' + (fa ? 'frets ' + fa + ' to ' + fb : 'open strings to fret ' + fb) + (want ? '. Next: ' + wsName(want.m) + ' on string ' + strN(want.s) + ', ' + (want.f ? 'fret ' + want.f : 'open') : '') + '.' : 'Fretboard');
+  [3, 5, 7, 9, 15, 17].forEach(f => { if (f > fa && f <= fb) el('circle', { cx: x0 + (f - fa - .5) * fw, cy: by - 6, r: 3, class: 'ws-mk' }); });
+  if (12 > fa && 12 <= fb) { el('circle', { cx: x0 + (12 - fa - .5) * fw - 5, cy: by - 6, r: 3, class: 'ws-mk' }); el('circle', { cx: x0 + (12 - fa - .5) * fw + 5, cy: by - 6, r: 3, class: 'ws-mk' }); }
+  for (let f = fa; f <= fb; f++) el('line', { x1: x0 + (f - fa) * fw, y1: y(n - 1), x2: x0 + (f - fa) * fw, y2: y(0), class: f === 0 ? 'ws-nut' : 'ws-fw' });
+  if (fa) el('text', { x: x0 + .5 * fw, y: H - 2, class: 'ws-fn' }, 'fret ' + (fa + 1));
+  if (S.capo && S.capo > fa && S.capo <= fb) el('rect', { x: x0 + (S.capo - fa - .62) * fw, y: y(n - 1) - 6, width: 6, height: y(0) - y(n - 1) + 12, rx: 3, class: 'ws-capo' });
   for (let s = 0; s < n; s++) { el('line', { x1: x0, y1: y(s), x2: W - 10, y2: y(s), class: 'ws-str', 'stroke-width': 1 + (n - 1 - s) * .25 }); el('text', { x: 8, y: y(s) + 4, class: 'ws-sn' }, pcName(tu[s], false)); }
   if (!run) return svg;
-  if (run.pcs) for (let s = 0; s < n; s++) for (let f = Math.max(0, run.st - 1); f <= Math.min(F, run.st + 4); f++) { const m = tu[s] + f; if (run.pcs.includes(m % 12) && !run.notes.some(q => q.s === s && q.f === f)) el('circle', { cx: xf(f), cy: y(s), r: 6, class: 'ws-ghost' }); }
+  if (run.pcs) for (let s = 0; s < n; s++) for (let f = Math.max(fa, run.st - 1); f <= Math.min(fb, run.st + 4); f++) { const m = tu[s] + f; if (run.pcs.includes(m % 12) && !run.notes.some(q => q.s === s && q.f === f)) el('circle', { cx: xf(f), cy: y(s), r: 6, class: 'ws-ghost' }); }
   const seen = new Set(); run.notes.forEach((q, i) => {
     const k = q.s + ':' + q.f; if (seen.has(k) && i !== cur) return; seen.add(k); const isCur = i === cur, done = cur != null && run.notes.slice(0, cur).some(x => x.s === q.s && x.f === q.f) && !isCur;
     el('circle', { cx: xf(q.f), cy: y(q.s), r: isCur ? 11 : 9.5, class: 'ws-dot' + (q.deg === 'R' ? ' root' : '') + (isCur ? ' cur' : '') + (done ? ' done' : '') });
@@ -90,9 +104,9 @@ function wsStop(quiet) {
   if (r && !quiet) { const b = WS.r[r.kind]; if (b) b.paint(); }
 }
 function wsFollow(kind) {
-  wsStop(true); const run = kind === 'scale' ? wsScaleRun() : wsArpRun(); if (!run.notes.length) { toast('This song has no chords yet. Write some, or choose One chord.', 'warn'); return; }
+  wsStop(true); const run = kind === 'scale' ? wsScaleRun() : wsArpRun(); if (!run.notes.length) { toast('This song has no chords yet. Write some, or choose One chord. ', 'warn'); return; }
   WS.run = Object.assign(run, { mode: 'follow', i: 0, miss: 0, held: null, judged: false, prev: null, t0: performance.now(), wrong: 0 });
-  if (!E.hasInput) toast('Connect your input (Audio, top right) so the Woodshed can hear you. Or press Listen to hear it first.', 'warn');
+  if (!E.hasInput) toast('Connect your input (Audio, top right) so the room can hear you. Or press Listen first.', 'warn');
   WS.tm = setInterval(wsTick, 40); WS.r[kind].paint();
 }
 function wsTick() {
@@ -110,8 +124,7 @@ function wsTick() {
 function wsDone(r) {
   clearInterval(WS.tm); WS.tm = 0; r.mode = 'done'; r.secs = (performance.now() - r.t0) / 1000;
   const clean = r.miss === 0, what = r.kind === 'scale' ? 'Up and back down' : (r.chords.length > 1 ? r.chords.length + ' chords' : 'The arpeggio');
-  toast(what + ' in ' + r.secs.toFixed(1) + ' s' + (clean ? ', no wrong notes. 🎯' : ', ' + r.miss + ' wrong note' + (r.miss === 1 ? '' : 's') + '. Again?'), clean ? 'ok' : '');
-  if (clean && !secretBusy()) { if (r.kind === 'scale' && r.notes.length >= 9) secretFound('scale'); if (r.kind === 'arp' && r.chords.length >= 3) secretFound('arp'); }
+  toast(what + ' in ' + r.secs.toFixed(1) + ' s' + (clean ? ', no wrong notes. ' + WS_CHEERS[Math.floor(Math.random() * WS_CHEERS.length)] : ', ' + r.miss + ' wrong note' + (r.miss === 1 ? '' : 's') + '. Again, slowly, then faster.'), clean ? 'ok' : '');      /* the secrets are found out in the studio (part 73b hears a scale wherever you play it) */
   WS.r[r.kind].paint();
 }
 /** ▶ Listen: the run played by the studio's lead voice, the fretboard following */
@@ -145,11 +158,13 @@ function wsEarAnswer(a) {
 }
 
 /* ---------- the room ---------- */
-const wsLock = (id, what) => h('p', { class: 'tiny ws-lock' + (wsOpen(id) ? ' open' : '') }, wsOpen(id) ? '🗝 Open: ' + what + '.' : '🔒 ' + what + ' open when you find a secret in this room.');
+const wsNarrow = () => innerWidth < 640;
+const WS_WHERE = { scale: 'Hint: play any scale up and back down, anywhere the tuner can hear you.', arp: 'Hint: not in here. Try it with the band.', ear: 'Hint: this one is in here.' };
+const wsLock = (id, what) => h('p', { class: 'tiny ws-lock' + (wsOpen(id) ? ' open' : '') }, wsOpen(id) ? '🗝 Open: ' + what + '.' : '🔒 ' + what + ' are behind the curtain until you find a secret. ' + WS_WHERE[id]);
 const wsSel = (opts, val, on, attrs) => h('select', Object.assign({ class: 'in', onchange: e => on(e.target.value) }, attrs || {}), opts.map(([v, t, dis]) => h('option', { value: v, selected: String(v) === String(val), disabled: !!dis }, t)));
 function wsRoom(kind) {
-  const box = h('div', { class: 'ws-room', id: 'ws-room-' + kind }), ctl = h('div', { class: 'ws-ctl' }), board = h('div', { class: 'ws-board' }), stat = h('div', { class: 'ws-stat', 'aria-live': 'polite' }), chips = h('div', { class: 'ws-chips mono' });
-  const btns = h('div', { class: 'ws-btns' }, h('button', { class: 'btn', id: 'ws-' + kind + '-listen', onclick: () => wsListen(kind) }, '▶ Listen'), h('button', { class: 'btn primary', id: 'ws-' + kind + '-go', onclick: () => wsFollow(kind) }, '● Play it'), h('button', { class: 'btn', id: 'ws-' + kind + '-stop', onclick: () => wsStop() }, '■ Stop'));
+  const box = h('div', { class: 'ws-room', id: 'ws-room-' + kind }), ctl = h('div', { class: 'ws-ctl' }), board = h('div', { class: 'ws-board' }), stat = h('div', { class: 'ws-stat', 'aria-live': 'polite' }), chips = h('div', { class: 'ws-chips mono', role: 'list', 'aria-label': 'The notes, in order' });
+  const btns = h('div', { class: 'ws-btns' }, h('button', { class: 'btn', id: 'ws-' + kind + '-listen', 'aria-label': 'Listen: the studio plays the run', onclick: () => wsListen(kind) }, '▶ Listen'), h('button', { class: 'btn primary', id: 'ws-' + kind + '-go', 'aria-label': 'Play it: the studio follows you note by note', onclick: () => wsFollow(kind) }, '● Play it'), h('button', { class: 'btn', id: 'ws-' + kind + '-stop', 'aria-label': 'Stop', onclick: () => wsStop() }, '■ Stop'));
   const fl = () => wsFlats(), keys = NS.map((_, i) => [i, pcName(i, fl())]);
   const build = () => {
     ctl.innerHTML = '';
@@ -170,8 +185,8 @@ function wsRoom(kind) {
   };
   const paint = () => {
     const r = WS.run && WS.run.kind === kind ? WS.run : null, run = r || (kind === 'scale' ? wsScaleRun() : wsArpRun()), cur = r ? Math.min(r.i, run.notes.length - 1) : null;
-    board.innerHTML = ''; board.append(wsFret(run, r && r.mode !== 'done' && r.mode !== 'heard' ? cur : null));
-    chips.innerHTML = ''; run.notes.forEach((q, i) => chips.append(h('span', { class: 'ws-chip' + (r && i < r.i ? ' ok' : '') + (r && i === r.i && r.mode === 'follow' ? ' cur' : '') + (kind === 'arp' && i && q.ci !== run.notes[i - 1].ci ? ' gap' : '') }, wsName(q.m))));
+    board.innerHTML = ''; board.append(wsFret(run, r && r.mode !== 'done' && r.mode !== 'heard' ? cur : null, wsNarrow()));
+    chips.innerHTML = ''; run.notes.forEach((q, i) => chips.append(h('span', { role: 'listitem', class: 'ws-chip' + (r && i < r.i ? ' ok' : '') + (r && i === r.i && r.mode === 'follow' ? ' cur' : '') + (kind === 'arp' && i && q.ci !== run.notes[i - 1].ci ? ' gap' : '') }, wsName(q.m))));
     const want = r && r.mode === 'follow' ? run.notes[r.i] : null;
     stat.innerHTML = ''; stat.append(...[h('b', {}, run.title), ' · ' + run.notes.length + ' notes',
       want ? h('span', { class: 'ws-next' }, ' · next: ', h('b', {}, wsName(want.m)), ' (string ' + (wsTune().length - want.s) + ', ' + (want.f ? 'fret ' + want.f : 'open') + ') · ' + r.i + ' of ' + run.notes.length + (r.miss ? ' · ' + r.miss + ' wrong' : '')) : null,
@@ -183,30 +198,32 @@ function wsRoom(kind) {
   build(); return box;
 }
 function wsEarRoom() {
-  const box = h('div', { class: 'ws-room', id: 'ws-room-ear' }), top = h('div', { class: 'ws-ctl' }), ans = h('div', { class: 'ws-ans' }), stat = h('div', { class: 'ws-stat', 'aria-live': 'polite' });
+  const box = h('div', { class: 'ws-room', id: 'ws-room-ear' }), top = h('div', { class: 'ws-ctl' }), ans = h('div', { class: 'ws-ans', role: 'group', 'aria-label': 'Your answer' }), stat = h('div', { class: 'ws-stat', 'aria-live': 'polite' });
   const modes = [['easy', 'Intervals: 4 to choose from'], ['more', 'Intervals: 6'], ['all', 'Intervals: all 12'], ['chords', (wsOpen('ear') ? '' : '🔒 ') + 'Chord qualities', !wsOpen('ear')]];
   const paint = () => {
     const e = WS.ear, list = wsEarChords() ? WS_CQ.map(x => [x[0], x[0]]) : (WS_SETS[CFG.shed.ear] || WS_SETS.more).map(a => { const iv = WS_IV.find(x => x[0] === a); return [a, iv[1]]; });
-    ans.innerHTML = ''; list.forEach(([a, t]) => ans.append(h('button', { class: 'btn ws-a' + (e.last && e.lock && a === e.last.ans ? ' right' : '') + (e.last && e.lock && !e.last.right && a === e.last.a ? ' wrong' : ''), 'data-a': a, disabled: !e.q, onclick: () => wsEarAnswer(a) }, t)));
-    stat.innerHTML = ''; stat.append(e.q ? (e.lock ? h('b', { class: e.last.right ? 'ws-good' : '' }, e.last.right ? '✓ Yes: ' : '✗ It was: ', h('span', {}, (wsEarChords() ? e.last.ans : WS_IV.find(x => x[0] === e.last.ans)[1]))) : h('span', {}, 'What did you hear?')) : h('span', {}, 'Press ▶ Play a question.'),
+    ans.innerHTML = ''; list.forEach(([a, t]) => ans.append(h('button', { 'aria-pressed': String(!!(e.last && e.lock && a === e.last.a)), class: 'btn ws-a' + (e.last && e.lock && a === e.last.ans ? ' right' : '') + (e.last && e.lock && !e.last.right && a === e.last.a ? ' wrong' : ''), 'data-a': a, disabled: !e.q, onclick: () => wsEarAnswer(a) }, t)));
+    stat.innerHTML = ''; stat.append(e.q ? (e.lock ? h('b', { class: e.last.right ? 'ws-good' : '' }, e.last.right ? '✓ ' + ['Yes', 'Nailed it', 'Golden', 'Correct'][e.n % 4] + ': ' : '✗ It was: ', h('span', {}, (wsEarChords() ? e.last.ans : WS_IV.find(x => x[0] === e.last.ans)[1]))) : h('span', {}, 'What did you hear?')) : h('span', {}, 'Press ▶ Play a question.'),
       h('span', { class: 'ws-streak' }, ' · streak ' + e.streak + ' · best ' + e.best + (e.n ? ' · ' + Math.round(e.ok / e.n * 100) + '% of ' + e.n : '')));
   };
   top.append(h('label', { class: 'field' }, 'Train', wsSel(modes, CFG.shed.ear, v => { CFG.shed.ear = v; saveCfg(); Object.assign(WS.ear, { q: null, streak: 0, lock: false }); paint(); }, { id: 'ws-ear-mode' })),
-    h('button', { class: 'btn primary', id: 'ws-ear-go', onclick: () => wsEarNext() }, '▶ Play a question'), h('button', { class: 'btn', id: 'ws-ear-again', onclick: () => wsEarPlay() }, '↻ Again'));
+    h('button', { class: 'btn primary', id: 'ws-ear-go', 'aria-label': 'Play a question', onclick: () => wsEarNext() }, '▶ Play a question'), h('button', { class: 'btn', id: 'ws-ear-again', 'aria-label': 'Play the question again', onclick: () => wsEarPlay() }, '↻ Again'));
   WS.r.ear = { paint, build: paint }; box.append(top, ans, stat, wsLock('ear', 'Chord qualities by ear')); paint(); return box;
 }
-/** the room itself */
-function woodshedOpen(at) {
+/** the room itself (part of Practice) */
+function trainOpen(at) {
   wsStop(true);
-  const d = hubOpen('woodshed', { ico: '🪵', title: 'The Woodshed', sub: 'Practise scales, arpeggios and your ear. Play along with your guitar, or listen first.', at, sections: [
+  const d = hubOpen('scales-ear', { ico: '🎼', title: 'Scales & ear', sub: 'Scales anywhere on the neck, this song’s chords one note at a time, and your ear. The studio listens and follows you note by note.', at, sections: [
     { key: 'scales', label: 'Scales', ico: '♯', sub: 'Choose a key, a scale and where on the neck. ● Play it follows you note by note, up and back down.', wide: true, body: () => [wsRoom('scale')] },
-    { key: 'arps', label: 'Arpeggios', ico: '🎸', sub: 'Chords, one note at a time: this song’s chords in order, or one chord up and down.', wide: true, body: () => [wsRoom('arp')] },
-    { key: 'ear', label: 'Your ear', ico: '👂', sub: 'An interval is played. Name it. Build a streak.', wide: true, body: () => [wsEarRoom()] },
-    { key: 'how', label: 'How it listens', ico: '?', wide: true, body: () => [h('p', { class: 'small' }, 'It listens to the input the tuner uses (Audio, top right): play each note when it is the next one. A wrong note counts; the note you just played, still ringing, does not. Octaves do not matter, the note does. Nothing is recorded. ▶ Listen plays the run through the studio’s own lead voice, at half the song’s beat.'), h('p', { class: 'small muted' }, 'Some of this room is locked until you find what it hides. With Settings ▸ Workflow ▸ Hidden surprises off, it is all open.')] }
+    { key: 'arps', label: 'Arpeggios', ico: '🎸', sub: 'This song’s chords one note at a time, or one chord up and down.', wide: true, body: () => [wsRoom('arp')] },
+    { key: 'ear', label: 'Your ear', ico: '👂', sub: 'Two notes. Name the gap between them. Build a streak.', wide: true, body: () => [wsEarRoom()] },
+    { key: 'how', label: 'How it listens', ico: 'ⓘ', wide: true, body: () => [h('p', { class: 'small' }, 'It listens to the input the tuner uses (Audio, top right): play each note when it is the next one. A wrong note counts; the note you just played, still ringing, does not. Octaves do not matter, the note does. Nothing is recorded. ▶ Listen plays the run through the studio’s own lead voice, at half the song’s beat.'), h('p', { class: 'small muted' }, 'Some of this room is locked until you find what the studio hides, and most of that is out in the studio, not in here. With Settings ▸ Workflow ▸ Hidden surprises off, it is all open.')] }
   ] });
-  d.classList.add('ws-hub'); d.addEventListener('close', () => { wsStop(true); clearTimeout(WS.ear.tm); }, { once: true });
+  d.classList.add('ws-hub'); if (!d._wsClose) { d._wsClose = true; d.addEventListener('close', () => { wsStop(true); clearTimeout(WS.ear.tm); }); }      /* one listener for the dialog's life: reopening fires a close too */
   return d;
 }
 /* a secret found here opens its treasure in place: the room is drawn again where you are, a moment later */
-bus.on('secret', id => { if (!['scale', 'arp', 'ear'].includes(id)) return; setTimeout(() => { const d = document.getElementById('woodshed'); if (!d || !d.open || WS.run && WS.run.mode === 'follow') return; const on = d.querySelector('.hub-nb.on'); const e = Object.assign({}, WS.ear); woodshedOpen(on ? on.dataset.sec : undefined); Object.assign(WS.ear, { streak: e.streak, best: e.best, n: e.n, ok: e.ok }); if (WS.r.ear) WS.r.ear.paint(); }, 1400); });
-bus.on('song', () => { const d = document.getElementById('woodshed'); if (d && d.open && !WS.run) Object.values(WS.r).forEach(r => r.build()); });
+bus.on('secret', id => { if (!['scale', 'arp', 'ear'].includes(id)) return; setTimeout(() => { const d = document.getElementById('scales-ear'); if (!d || !d.open || WS.run && WS.run.mode === 'follow') return; const on = d.querySelector('.hub-nb.on'); const e = Object.assign({}, WS.ear); trainOpen(on ? on.dataset.sec : undefined); Object.assign(WS.ear, { streak: e.streak, best: e.best, n: e.n, ok: e.ok }); if (WS.r.ear) WS.r.ear.paint(); }, 1400); });
+bus.on('song', () => { const d = document.getElementById('scales-ear'); if (d && d.open && !WS.run) Object.values(WS.r).forEach(r => r.build()); });
+/* turning a phone round redraws the fretboard at the size that fits */
+{ let wasN = null; addEventListener('resize', () => { const n = wsNarrow(); if (n === wasN) return; wasN = n; const d = document.getElementById('scales-ear'); if (d && d.open) ['scale', 'arp'].forEach(k => WS.r[k] && WS.r[k].paint()); }); }

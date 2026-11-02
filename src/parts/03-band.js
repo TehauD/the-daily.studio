@@ -142,17 +142,18 @@ function chordAt(bi, sib) {
 function scheduleSlot(slot, time) {
   const sp = spb(), dur = slotDur(), sw = (slot % 2 !== 0) ? S.swing * dur : 0, tt = time + sw;
   const beatSlots = 16 / S.ts[1];
-  if (slot < 0) { const sib = ((slot % sp) + sp) % sp; if (sib % beatSlots === 0) click(time, sib === 0); return; }
+  if (slot < 0) { const sib = ((slot % sp) + sp) % sp; if (sib % beatSlots === 0 && !T.quiet) click(time, sib === 0); return; }
+  const q = !!T.quiet;      /* T.quiet: the band and the click are silent while it is set (Shower mode); the song itself is not changed */
   const bi = Math.floor(slot / sp), sib = slot % sp, fb = barsCache()[bi]; if (!fb) return;
-  if (T.metro && sib % beatSlots === 0) click(tt, sib === 0);
+  if (T.metro && !q && sib % beatSlots === 0) click(tt, sib === 0);
   if (typeof lxEvt === 'function' && sib % beatSlots === 0) lxEvt('beat', tt, sib === 0 ? 1 : 0);   // the show listens on the audio clock
-  if (S.band.drumsOn) drumStep(sib, tt);
+  if (S.band.drumsOn && !q) drumStep(sib, tt);
   const cd = chordAt(bi, sib);
   if (cd && cd.sym) {
-    if (S.band.bassOn) { const e = bassEvent(S.band.bassStyle, cd.sym, cd.rel, cd.len, cd.next); if (e) { pluck('bass', tt, e.m, e.v, { id: 'b', pan: 0 }); if (typeof lxEvt === 'function') lxEvt('bass', tt, e.m, e.v); } }
-    if (S.band.compOn) { const st = STRUMS[S.band.compStyle] || STRUMS['Down 4s'], L = Math.min(16, sp), ch = st.p[sib % L]; strumAt(tt, cd.sym, ch, st); if (ch && ch !== '.' && typeof lxEvt === 'function') lxEvt('chord', tt, cd.sym, ch === ch.toUpperCase() ? 1 : .6); }
+    if (S.band.bassOn && !q) { const e = bassEvent(S.band.bassStyle, cd.sym, cd.rel, cd.len, cd.next); if (e) { pluck('bass', tt, e.m, e.v, { id: 'b', pan: 0 }); if (typeof lxEvt === 'function') lxEvt('bass', tt, e.m, e.v); } }
+    if (S.band.compOn && !q) { const st = STRUMS[S.band.compStyle] || STRUMS['Down 4s'], L = Math.min(16, sp), ch = st.p[sib % L]; strumAt(tt, cd.sym, ch, st); if (ch && ch !== '.' && typeof lxEvt === 'function') lxEvt('chord', tt, cd.sym, ch === ch.toUpperCase() ? 1 : .6); }
   }
-  if (S.band.leadOn) fb.bar.tab.forEach(n => { if (n.s === sib) { playTabNote(fb.bar, n, tt, dur); if (typeof lxEvt === 'function') lxEvt('lead', tt, S.tuning[n.st] + S.capo + n.f, .8); } });
+  if (S.band.leadOn && !q) fb.bar.tab.forEach(n => { if (n.s === sib) { playTabNote(fb.bar, n, tt, dur); if (typeof lxEvt === 'function') lxEvt('lead', tt, S.tuning[n.st] + S.capo + n.f, .8); } });
 }
 async function play(fromRec) {
   if (T.playing || OFR.busy) return; try { bandHint(); } catch (e) { } await startAudio(); const c = E.ctx; applyMix(); if (!S.sections.length || !songSlots()) { toast('Add a section with at least one bar first', 'warn'); return; }
@@ -262,7 +263,9 @@ function scheduleTakes(atTime, fromSec) {
     const src = E.ctx.createBufferSource(), cgn = gn(tk.cg == null ? 1 : tk.cg), fd = gn(1), g = gn(takeAudible(tk) ? (L.g == null ? 1 : L.g) : 0), pn = E.ctx.createStereoPanner(); pn.pan.value = L.pan || 0; src.buffer = buf; src.connect(cgn); cgn.connect(fd); fd.connect(g); g.connect(pn); tk._g = g; tk._cg = cgn; tk._pn = pn;
     const [fi, fo] = tkFades(tk); if (fi > 0 || fo > 0) { const gf = c => Math.max(0, Math.min(1, fi > 0 ? c / fi : 1, fo > 0 ? (len - c) / fo : 1)), p = fd.gain; p.setValueAtTime(gf(c0), Math.max(0, when)); [fi, len - fo, len].forEach(c => { if (c > c0 + 1e-6) p.linearRampToValueAtTime(gf(c), tm(c)); }); }
     if (vox) pn.connect(E.voxStrip.in); else if (which === 'dry' && L.mode === 'reamp') pn.connect(E.rigIn); else { tk._fx = fxStrip(E.takesIn); tk._fx.set(L.fx); pn.connect(tk._fx.in); }
-    const late = Math.max(0, atTime - when);      // starting from inside the clip: skip the part already due, so it still lands in time
+    /* starting from inside the clip, or scheduled late (a busy page can take longer than the lead time to get here): skip the part already due,
+       measured against the clock now, so every take still lands on the same timeline and they stay sample-aligned with each other */
+    const late = Math.max(0, atTime - when, E.ctx.currentTime + .005 - when);
     if (late < len - c0) { src.start(when + late, tkIn(tk) + c0 + late, len - c0 - late); T.srcs.push(src); }
   });
 }

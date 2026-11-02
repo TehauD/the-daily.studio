@@ -10,7 +10,7 @@ import { backstagePages } from './backstage-pages.mjs';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..'), out = join(root, 'dist');
 execFileSync(process.execPath, [join(root, 'scripts', 'build.mjs')], { stdio: 'inherit' });
 rmSync(out, { recursive: true, force: true }); mkdirSync(join(out, 'journal'), { recursive: true });
-for (const f of ['index.html', 'manifest.webmanifest', 'sw.js', 'robots.txt', 'sitemap.xml', '404.html']) cpSync(join(root, f), join(out, f));
+for (const f of ['index.html', 'manifest.webmanifest', 'sw.js', 'robots.txt', 'sitemap.xml', 'llms.txt', '404.html']) cpSync(join(root, f), join(out, f));
 cpSync(join(root, 'icons'), join(out, 'icons'), { recursive: true });
 if (existsSync(join(root, 'samples'))) cpSync(join(root, 'samples'), join(out, 'samples'), { recursive: true });
 cpSync(join(root, 'journal', 'index.html'), join(out, 'journal', 'index.html'));

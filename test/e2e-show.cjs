@@ -110,7 +110,10 @@ suite('e2e-show', async t => {
     await new Promise(res => { const iv = setInterval(() => {
       const now = performance.now(); q.drawImage(d.SG.cv, 0, 0, 48, 27); const px = q.getImageData(0, 0, 48, 27).data, reg = [0, 0, 0, 0, 0], n = [0, 0, 0, 0, 0];
       for (let y = 0; y < 27; y++) for (let x = 0; x < 48; x++) { const o = (y * 48 + x) * 4, Y = .2126 * lin(px[o]) + .7152 * lin(px[o + 1]) + .0722 * lin(px[o + 2]); reg[0] += Y; n[0]++; const r = 1 + (y >= 13.5 ? 2 : 0) + (x >= 24 ? 1 : 0); reg[r] += Y; n[r]++; }
-      samples.push({ t: now - t0, v: reg.map((s, i) => s / n[i]) }); const L = d.LX; strobeMax = Math.max(strobeMax, L.strobe); if (L.strobe > prev + .3 && L.strobe >= .8) onsets.push({ t: now - t0, bar: L.barIdx }); prev = L.strobe; lite = Math.max(lite, L.lite);
+      samples.push({ t: now - t0, v: reg.map((s, i) => s / n[i]) }); const L = d.LX; strobeMax = Math.max(strobeMax, L.strobe);
+      /* a blinder is counted by the show's own stamp (when it fired, and in which bar), so a busy machine that samples late cannot miss a flash
+         that has already faded; the level it fired at is ≥ 0.9 by construction */
+      if (L.lastStrobe !== prev && L.lastStrobe > 0) { onsets.push({ t: L.lastStrobe, bar: L.lastStrobeBar }); strobeMax = Math.max(strobeMax, .9); } prev = L.lastStrobe; lite = Math.max(lite, L.lite);
       if (L.fb) kits.push({ k: (L.laserKit || []).join('+'), bi: L.fb.bi, si: L.fb.si }); if (pos0 == null && L.mode === 'song') pos0 = L.pos; pos1 = L.pos;
       if (now - t0 > secs * 1000) { clearInterval(iv); res(); } }, 40); });
     d.stopPlay(true);

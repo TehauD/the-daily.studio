@@ -39,6 +39,13 @@
     "perform": [],
     "get_chord_shape": [
       "chord"
-    ]
+    ],
+    "mute_band": [],
+    "open_practice_room": [],
+    "explain_song": [],
+    "write_song": [
+      "lyrics"
+    ],
+    "set_up_practice": []
   }
 }

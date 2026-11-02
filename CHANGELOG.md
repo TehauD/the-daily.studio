@@ -2,31 +2,129 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
-## 2.25.0 — 2026-11-01 — The Woodshed: scales, arpeggios and your ear; seven secrets
+## 2.27.0 — 2026-11-02 — Shower mode becomes a hidden singing companion; the trainers move to Practice
 
 ### Added
-- **The Woodshed** (`src/parts/73d-woodshed.js`), a practice room with a fretboard drawn for the song's tuning and capo. It is in the Practice workspace's tools, at the top of the Theory panel ("Practise it in the Woodshed" opens it on the song's key and scale), in the phone's More sheet, and in the Backstage terminal (`woodshed`).
-  - **Scales**: a key, a scale, where on the neck, one or two octaves.
-    - **▶ Listen** plays the run through the studio's lead voice, with the fretboard following.
-    - **● Play it** follows your guitar note by note, using the pitch the tuner already hears. It marks what is next, ticks off what you play and counts wrong notes. The note still ringing from the last one is never a mistake, and octaves do not matter.
-  - **Arpeggios**: this song's chords in order, one note at a time, or one chord up and down around the fret you choose.
-  - **Your ear**: name the interval you hear, with 4, 6 or 12 to choose from, a streak and a best.
-- **Seven secrets** (up from four). Three new ones are found in the Woodshed, and each opens a treasure there:
-  - **Up and down**: a whole scale up and back down without a wrong note opens the modes and every other scale, from Dorian to Hirajoshi.
-  - **Broken chords**: the arpeggios of a progression of three chords or more, with no wrong note, opens seventh arpeggios.
-  - **Golden ear**: ten intervals in a row by ear, from six choices or more, opens chord qualities by ear (major, minor, diminished, augmented and three sevenths).
-  - Their toasts say what opened, and the room redraws itself so the treasure is there at once.
-  - With Hidden surprises off, every treasure is simply open: nobody has to hunt for practice.
-- The Woodshed keeps its own settings under `CFG.shed`, apart from the workspace you are in (`CFG.ws`).
-- The guide's Tones page mentions the Woodshed.
+- **🚿 Shower mode, rebuilt as a hidden singing companion** (`src/parts/73f-shower.js`). It is fun but practical, made for wet hands, and not on any menu.
+  - **Ways in:**
+    - hold the logo for two seconds (phones too);
+    - type "shower" anywhere outside a text box;
+    - type `shower` in the Backstage terminal.
+  - **One full screen with a handful of big buttons:**
+    - **⏮ ▶/⏸ ⏭** step through every song you have saved with a track. Each song plays straight into the next, ⏮ restarts the song if it has been playing a while, and ⏭ goes round.
+    - **The four stems** take one tap each. The singer cycles as recorded → quiet guide → off (karaoke). Drums, bass and the rest are on or off. The choices hold for every song, on top of each song's own mix, which is put back afterwards.
+    - **● records you.** The microphone opens only now, with echo cancellation, and is never played through the speakers. The red On air light comes on, and a belt meter shows how hard you are going.
+    - **After recording:**
+      - a splash score with a title, from Rubber Duck Rookie to Hot Water Heavyweight;
+      - a rubber duck for every four seconds you hold a note;
+      - **▶ Hear it, steamy** plays the music from where you started, with your take through a tiled-bathroom reverb;
+      - **💾 Keep it** saves your voice with the reverb as a WAV file;
+      - **✕** throws the take away.
+    - **＋** adds a song from inside, and its singer is split off on this device.
+    - The words show large when the song has them.
+  - **While you're in it:**
+    - The band and the click are silent (`T.quiet`, playback only: no song's band is switched off).
+    - The screen stays awake.
+  - **When you leave:** everything goes back, including the song you had open.
+
+### Changed
+- **The scale, arpeggio and ear trainers moved to Practice as 🎼 Scales & ear** (`src/parts/73d-scales-ear.js`, `trainOpen`).
+  - It opens from the Practice tools, the Theory panel's "Practise this scale" and the phone's More sheet. The shower jokes stayed in the shower.
+  - The secrets that open its treasures work as before, and their messages now point to Practice ▸ Scales & ear. Golden ear's hint is "Ten in a row, by ear. Practice has a room for that."
+  - Its settings keep the name `CFG.shed`, so nobody's choices are lost.
+- **The agent tool `open_shower_mode` is now `open_practice_room`.** The old name still works as an alias (`describe().aliases`), and the contract test now honours aliases. Agents get no tool for the hidden Shower mode.
+- **No public page names Shower mode.** The README hints at it, and the guide's tones page shows a Scales & ear card. The privacy statement does describe its use of the microphone.
+
+### Removed
+- The first draft of a Sing room inside the trainer hub, before it was shipped, in favour of the hidden player.
 
 ### Tests
-- `test/e2e-woodshed.cjs` (26 checks), with the guitar stood in for by the tuner's readings. It covers:
-  - the way in from Theory, and the A minor pentatonic box at the 5th fret (R ♭3 4 5 ♭7 R and back);
-  - the locked scales, the fretboard, Listen, a ringing note against a wrong one, no secret after a mistake, and Up and down with the modes opening;
-  - Dorian, the song's arpeggios, Broken chords and seventh arpeggios;
-  - the ear: no secret from four choices, a streak reset, Golden ear from six, and chord qualities;
-  - the counter at 3 of 7, and every treasure open with surprises off.
+- `e2e-shower` (36 checks): hidden, the gestures, the queue, stems, play and pause, auto-advance, record, score, hear, keep, leaving, and a phone.
+- `e2e-scales-ear` (38, renamed from `e2e-shower`).
+- `e2e-agent` checks that the old tool name still works.
+
+## 2.26.0 — 2026-11-02 — Easier for AI assistants to find and use, with nothing new for people to manage
+
+### Added
+- **Three agent tools that do a whole job in one call** (API 2; nothing removed or changed):
+  - `write_song`: lyrics to a song the band plays. Chords from a progression (a name, Roman numerals or chord names) are laid over each line, with an optional chorus progression, a key and a tempo.
+  - `explain_song`: the key, every section's chords with Roman numerals, chords outside the key, sections that share their chords, and well-known progressions it uses.
+  - `set_up_practice`: loop a section, slow the song down or set a tempo, the click, how much of the band plays, and play. Tempo changes are undoable.
+- **`describe().start_here`:** five good first calls with example inputs, and `docs`, the address of the page for assistants.
+- **`/llms.txt`:** what the studio is, how to call its tools, and every tool, for assistants that read it. `scripts/build.mjs` writes it from the table in `docs/AGENT_API.md`, and the page's head links to it.
+- **`/guide/for-ai-assistants/`:** the tools, what they never touch, how they behave and good first calls. It is in the sitemap and `llms.txt` for assistants and search, but no menu, card or link in the studio or the other guide pages points to it.
+
+### Unchanged on purpose
+- People see nothing new. Agent access stays on by default with its one switch in Settings ▸ Workflow, and the short "🤖 AI agent: …" note still appears only when an agent changes something.
+
+### Tests
+- `e2e-agent` 65 checks:
+  - `start_here`;
+  - `write_song` (sections, the verse and chorus progressions, chords in the words, refusals);
+  - `explain_song` (numerals, a known progression, a chord outside the key);
+  - `set_up_practice` (the chorus looped at 75 % with just the drums, undo, refusals).
+- `verify:site`:
+  - `llms.txt` lists every tool and the page for assistants;
+  - the head links to it;
+  - neither the first page nor any listed guide page links to the page for assistants.
+
+## 2.25.1 — 2026-11-02 — Shower mode on phones, a red light you can hear, two agent tools, steadier tests
+
+### Added
+- **Agent tools** (API 2, nothing removed):
+  - `mute_band`: mutes the whole band and the click, or brings back exactly what was playing, like Shift+M. `get_studio_state` now says `band_muted`.
+  - `open_shower_mode`: opens Shower mode on scales (with a key and a scale), arpeggios or ear. It never turns the microphone on and cannot pick a scale that is still locked.
+- **The README** describes Shower mode, the seven secrets, On air and band mute, with Shift+M in the shortcuts.
+- **Guide pictures:** the start, record, stems, chords and tab, hum and stage pictures are made again from this version (by `test/guide-shots.cjs`, like the newer ones). The first page now shows its six goals.
+
+### Changed
+- **Shower mode on a phone.** The fretboard shows only the frets the run uses, a little either side, so the dots are about 20 px across instead of 8. Choices sit two to a row, the buttons share the width, and the ear trainer's answers are two to a row and 44 px tall. Turning the phone redraws the neck to fit.
+- **Accessibility in the new rooms:**
+  - The fretboard is a named picture: which run, which frets, and while it follows you, the next note with its string and fret.
+  - The buttons say what they do. The notes are a list, and the ear trainer's answers are a named group whose chosen answer is marked as pressed.
+  - The Backstage terminal's output is a log.
+  - **On air**, for a screen reader: "On air: recording." when the red light goes on and "Off air: recording stopped." when it goes off, in a status line nobody sees. The logo's tooltip says it too.
+
+### Fixed
+- **Takes stay sample-aligned on a busy computer.** When the page took longer than playback's lead time to schedule the takes, a take could start a few milliseconds off the others. Each take now skips in by how late it really is, measured against the audio clock, so they stay on one timeline.
+
+### Tests
+- **Three timing checks no longer fail on a loaded machine**, and none of them checks less:
+  - `e2e-latency`: the re-amp gap was 3 ms out under load. The app fix above solves it, and it still has to be 500 ms ± 1.
+  - `e2e-show`: blinders are counted from the show's own record of when each fired and in which bar, not by sampling a light that fades in a few frames.
+  - `e2e.cjs`: the stage video stops once the recorder has handed over real video, not after a fixed 2.6 s.
+- `e2e-shower` 29 → 38 checks: the names a screen reader hears, and the room on a 390 px phone (frets shown, dot size, nothing wider than the screen, tap sizes, sideways).
+- `e2e-onair` 7 → 9: the status line on and off.
+- `e2e-agent` 56 checks, including `mute_band` and `open_shower_mode` (locked scales refused, nothing unlocked, no microphone). `test/agent-contract.json` lists both.
+
+## 2.25.0 — 2026-11-01 — Shower mode (scales, arpeggios, your ear), seven secrets out in the studio, and the red light
+
+### Added
+- **🚿 Shower mode** (`src/parts/73d-shower.js`): a practice room where everyone sounds better. *Not responsible for damage to electronic devices.* It has a fretboard drawn for the song's tuning and capo, and a fine-print section that asks you to keep the guitar out of the water.
+  - **Where to find it:** the Practice workspace's tools, the top of the Theory panel ("Practise it in Shower mode" opens it on the song's key and scale), the phone's More sheet, and `shower` in the Backstage terminal.
+  - **Scales** ("the warm-up"): a key, a scale, where on the neck, one or two octaves.
+    - **▶ Listen** plays the run.
+    - **● Play it** follows your guitar note by note, using the pitch the tuner already hears. It marks what is next, ticks off what you play and counts wrong notes (blame the tiles). The note still ringing from the last one is never a mistake, and octaves do not matter.
+  - **Arpeggios** ("lather, rinse, repeat"): the song's chords one note at a time, or one chord up and down.
+  - **Your ear:** name the interval you hear, from 4, 6 or 12 choices, with a streak and a best.
+- **Seven secrets, spread out to be explored.** Each of the three new ones opens a treasure in Shower mode, and its toast says so. With Hidden surprises off, the treasures are simply open.
+  - **Up and down:** any scale up and back down, anywhere the tuner hears you, including in Shower mode. Opens the modes and every other scale.
+  - **Broken chords:** while the song plays, break three of the band's chords in a row into their notes (root, third, fifth). Opens seventh arpeggios.
+  - **Golden ear:** ten intervals in a row in Shower mode, from six choices or more. Opens chord qualities by ear.
+- **On air** (`src/parts/73e-onair.js`): a tribute to the red light outside a studio door.
+  - While a take or a stage video records, the logo in the header and the browser tab's icon blink red, and the tab's title says **● REC**, so you can see from any tab that the studio is rolling.
+  - Calm and reduced motion get a steady red light.
+
+### Fixed
+- Shower mode keeps its settings under `CFG.shed`, apart from the workspace you are in (`CFG.ws`). A first draft used the same name and cost first visits the Performer workspace.
+
+### Tests
+- `test/e2e-shower.cjs` (29 checks), with the guitar stood in for by the tuner's readings. It covers:
+  - the way in from Theory, the A minor pentatonic box, the locked scales, Listen, a ringing note against a wrong one, Up and down from a clean run, the modes opening, and Dorian;
+  - the song's arpeggios, and a clean arpeggio run in the shower not counting, because that secret is out with the band;
+  - Broken chords: not while stopped, not out of order, then three chords in a row;
+  - the ear trainer and Golden ear, chord qualities, the counter, and everything open with surprises off.
+- `test/e2e-onair.cjs` (7): the red logo, tab icon and ● REC title, the blink, a stage video lighting it too, everything back as it was afterwards, and a steady light with reduced motion.
 - `test/e2e-secrets.cjs` counts seven.
 
 ## 2.24.0 — 2026-11-01 — Mute the whole band in one press; the phone's More, and one panel at a time

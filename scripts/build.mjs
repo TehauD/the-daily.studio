@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
 import { createHash } from 'node:crypto';
 import { markInner, markSvg, BRAND as BR } from './brand-mark.mjs';
-import { SITE, appJsonLd, sitemap, guideLinks } from './seo-pages.mjs';
+import { SITE, appJsonLd, sitemap, guideLinks, llmsTxt } from './seo-pages.mjs';
 import { minifyJS, minifyCSS, tokens } from './minify.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -52,7 +52,7 @@ const head = `<meta charset="utf-8"><meta name="viewport" content="width=device-
 <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${T}"><meta name="twitter:description" content="${SHORT}"><meta name="twitter:image" content="${SITE.card}"><meta name="twitter:image:alt" content="the-daily.studio: lyrics, chords, recording and stems in one browser page">
 <meta name="author" content="${SITE.author}"><meta name="referrer" content="no-referrer"><meta name="color-scheme" content="light dark">
 <script type="application/ld+json">${appJsonLd(pkg.version, modified)}</script>
-<link rel="icon" href="data:image/svg+xml,${icon}"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png"><link rel="manifest" href="manifest.webmanifest">`;
+<link rel="icon" href="data:image/svg+xml,${icon}"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png"><link rel="manifest" href="manifest.webmanifest"><link rel="alternate" type="text/plain" href="llms.txt" title="For AI assistants">`;
 const cssMin = PRETTY ? css : minifyCSS(css);
 { const br = x => [(x.match(/\{/g) || []).length, (x.match(/\}/g) || []).length].join(); if (br(cssMin) !== br(css.replace(/\/\*[\s\S]*?\*\//g, ''))) { console.error('Minifying the stylesheet changed its braces'); process.exit(1); } }
 const inlineJs = `\n${jsMin.replace(/<\/script>/g, '<\\/script>')}\n`;
@@ -87,7 +87,7 @@ self.addEventListener('fetch', e => {
 const AUDIO = /\.(m4a|mp3|wav|ogg|flac|aac)$/i; let info = {}; try { info = JSON.parse(readFileSync(join(root, 'samples', 'info.json'), 'utf8')); } catch { }
 let sampleFiles = []; try { sampleFiles = readdirSync(join(root, 'samples')).filter(f => AUDIO.test(f)).sort(); } catch { }
 const samples = JSON.stringify({ tracks: sampleFiles.map(f => ({ file: f, title: (info[f] && info[f].title) || f.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim(), note: (info[f] && info[f].note) || '', mb: +(statSync(join(root, 'samples', f)).size / 1048576).toFixed(1) })) }, null, 2) + '\n';
-const outputs = { 'index.html': standalone, 'codepen/pen.html': bodyPen, 'codepen/pen.css': css, 'codepen/pen.js': js, 'manifest.webmanifest': manifest, 'sw.js': sw, 'samples/manifest.json': samples, 'sitemap.xml': sitemap(modified) };
+const outputs = { 'index.html': standalone, 'codepen/pen.html': bodyPen, 'codepen/pen.css': css, 'codepen/pen.js': js, 'manifest.webmanifest': manifest, 'sw.js': sw, 'samples/manifest.json': samples, 'sitemap.xml': sitemap(modified), 'llms.txt': llmsTxt(pkg.version, readFileSync(join(root, 'docs', 'AGENT_API.md'), 'utf8')) };
 if (process.argv.includes('--check')) {
   let bad = 0;
   for (const [f, c] of Object.entries(outputs)) { let cur = ''; try { cur = readFileSync(join(root, f), 'utf8'); } catch { } if (cur !== c) { console.error('out of date: ' + f); bad++; } }

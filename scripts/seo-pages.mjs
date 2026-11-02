@@ -61,7 +61,7 @@ export const PAGES = [
     description: 'New here? Choose what you want to do (hum a song, record, learn a song or run a show) and a short guided session walks you through it. Free, in your browser.',
     h1: 'Getting started with the-daily.studio', eyebrow: 'Start here',
     lead: 'You do not need to know a studio from a stage. The first page asks what you want to do, not how good you are, and a small card then takes you through it one step at a time. Each step ticks off when the app sees you do it.',
-    img: { src: 'start.webp', alt: 'The first page of the-daily.studio: four cards asking what you would like to do first: turn a hum into a song, record guitar and voice, learn a song, or run a show', w: 1280, h: 720 },
+    img: { src: 'start.webp', alt: 'The first page of the-daily.studio: six cards asking what you would like to do first: play with a band, write down what you play, turn a hum into a song, record, loop and layer, learn a song, or run a show; then Begin in the studio, Try the demo song or I know my way around', w: 1280, h: 720 },
     glance: [['🎵', 'Turn a hum into a song', 'Hum or sing a few seconds and a whole band plays it back, with chords.'], ['🎙', 'Record, loop and layer', 'Plug in or use your microphone, loop a few bars and play a lead on top.'], ['🎧', 'Learn a song', 'Load a track, mute your part and play along, looping the hard bit.'], ['💡', 'Run a show', 'A preflight for the stage: look, rig, output, test pattern, levels, blackout.']],
     sections: [
       { h: 'How a guided session works', ol: ['A small card names one step and outlines the control it means.', 'You do the step. The app notices (a hum recorded, a take stopped, a test pattern shown) and ticks it off. Nothing is faked.', 'Show me takes you to the control, Skip moves on, and you can fold the card or drag it out of the way.', 'At the end, the tools you used stay in your tab strip. Start, resume or repeat any session from Help ▸ Guided sessions.'] },
@@ -81,7 +81,7 @@ export const PAGES = [
     description: 'Record guitar and microphone at once in your browser: two-input interfaces, zero-delay effects, count-in, punch-in, loops, editable clips, WAV export. Free.',
     h1: 'Record guitar and voice in your browser', eyebrow: 'Record',
     lead: 'Plug in a guitar, sing into a microphone, or do both at once. Every take goes into a multitrack arrangement that you can move, trim, fade and mix, and it stays on your device.',
-    img: { src: 'record.webp', alt: 'The arrangement in the-daily.studio with a vocal take and a guitar take as clips on their own lanes, above the pedal rig', w: 1280, h: 720 },
+    img: { src: 'record.webp', alt: 'The pedal rig in the-daily.studio with the arrangement below it: a guitar take, set to re-amp, and a vocal take as clips on their own lanes', w: 1280, h: 720 },
     glance: [['🎚', 'Two inputs at once', 'A two-input interface records guitar and voice together, each on its own lane.'], ['⚡', 'Zero-delay effects', 'The rig adds almost no delay, and takes line up with the band by themselves.'], ['✂', 'Takes are clips', 'Move, trim, fade, split and duplicate; punch in over one mistake.'], ['⟲', 'Loop and layer', 'Loop 1 to 8 bars and stack layers like a looper pedal.'], ['🎛', 'Dry and wet', 'The clean guitar is kept beside the processed one, to re-amp later.'], ['⤓', 'Mix and export', 'Volume, pan, sends, auto-balance, and a WAV rendered in seconds.']],
     sections: [
       { h: 'Record a take', ol: ['Choose your interface in the I/O panel and press Connect. The browser asks for the microphone now, which is how a web page reads an audio interface.', 'Press Set my level, play or sing as loud as you will, and the input trim is set for you.', 'Arm the guitar lane, the vocal lane, or both, and press R. A count-in plays first.', 'Press R again to stop. One press is one take, however long; the song grows to fit what you played.'] },
@@ -102,7 +102,7 @@ export const PAGES = [
     h1: 'Guitar amps, pedals and tones in your browser', eyebrow: 'Tones',
     lead: 'Plug in and play through a full pedalboard: gate, compressor, drive, amps, cabinets, modulation, delay and reverb, all computed in the page. Start from a preset, shape it with real knobs, and switch whole boards mid-song.',
     img: { src: 'tones.webp', alt: 'The Rig panel in the-daily.studio: the tone presets on the left and a pedalboard of drive, amp, cabinet, delay and reverb pedals with knobs', w: 1280, h: 720 },
-    glance: [['🎚', 'A full pedalboard', 'Gate, compressor, wah, drive, fuzz, pitch, EQ, chorus, phaser, flanger, tremolo, delay, reverb.'], ['🔊', 'Amps and cabinets', 'Clean, Chime, Crunch, Lead and Hi-Gain amps; six cabinets, or your own impulse response.'], ['🎨', '27 starting tones', 'From Crystal Clean to heavy and ambient. Search, filter, click to load.'], ['🎬', 'Scenes', 'Eight snapshots of the whole board, recalled with a smooth morph, by key or MIDI.'], ['⚡', 'Zero-delay effects', 'The compressor and drives run in audio worklets that add almost no delay.'], ['↺', 'Re-amp later', 'The clean guitar is recorded too, so a take can go through another tone afterwards.'], ['🪵', 'The Woodshed', 'Practise scales and arpeggios with your guitar, note by note, and train your ear.']],
+    glance: [['🎚', 'A full pedalboard', 'Gate, compressor, wah, drive, fuzz, pitch, EQ, chorus, phaser, flanger, tremolo, delay, reverb.'], ['🔊', 'Amps and cabinets', 'Clean, Chime, Crunch, Lead and Hi-Gain amps; six cabinets, or your own impulse response.'], ['🎨', '27 starting tones', 'From Crystal Clean to heavy and ambient. Search, filter, click to load.'], ['🎬', 'Scenes', 'Eight snapshots of the whole board, recalled with a smooth morph, by key or MIDI.'], ['⚡', 'Zero-delay effects', 'The compressor and drives run in audio worklets that add almost no delay.'], ['↺', 'Re-amp later', 'The clean guitar is recorded too, so a take can go through another tone afterwards.'], ['🎼', 'Scales & ear', 'Practise scales and arpeggios with your guitar, followed note by note, and train your ear.']],
     sections: [
       { h: 'Get a sound in two minutes', ol: ['Connect your input (Audio at the top right) and turn on Hear myself.', 'Pick a starting tone in Tones on the left.', 'Shape it on the Rig: drag a knob, hold Shift for fine moves, double-click to reset. Drag a pedal’s header to change its place in the chain.', 'Store two snapshots as A and B and morph between them, or press Mutate for a happy accident.', 'Save it as your own preset, or export it as a file.'] },
       { h: 'Play it live', p: ['Stomp view turns the board into big footswitch tiles. Number keys recall scenes when Live keys is on and 0 switches every pedal off. Bind a footswitch to a key or a MIDI note, right-click any knob to MIDI-learn it, and let Scenes + band switch the band with the board.'] }
@@ -120,7 +120,7 @@ export const PAGES = [
     description: 'Separate a song into drums, bass, vocals and guitar/other in your browser and mute the part you play. Free, private and honest about its limits.',
     h1: 'Split a song into stems in your browser', eyebrow: 'Stems',
     lead: 'Load a song and it comes apart into drums, bass, vocals and a guitar / other part. Mute the one you play and jam over the rest, loop a hard bar, or sing over the backing. The audio is analysed on your device and never uploaded.',
-    img: { src: 'stems.webp', alt: 'The Stems panel: a waveform of the mix and four stems, drums, bass, vocals and guitar or other, each with mute, solo and level', w: 1280, h: 720 },
+    img: { src: 'stems.webp', alt: 'The Stems panel: the mix and its four stems, drums, bass, vocals and guitar or other, with the chords found over them, what is in the track, its tempo and key, and the stems as lanes in the arrangement', w: 1280, h: 720 },
     glance: [['🥁', 'Four stems', 'Drums, bass, vocals, and guitar / keys / other, each with mute, solo, level and WAV export.'], ['🎯', 'Practice presets', 'Play the guitar, Play the bass, Karaoke and Drummer’s out, in one click.'], ['🎼', 'Tempo, key and chords', 'The chord of every bar, and a drum groove you can copy to the band.'], ['⟲', 'Loop the hard bit', 'Shift-click the waveform to set where a loop starts, Alt-click where it ends.'], ['🎛', 'On the bar grid', 'The track and its stems appear as lanes, so you can record along with them.']],
     sections: [
       { h: 'How to use it', ol: ['Open the Stems tab and press Load backing track. Any audio file your browser can decode works.', 'Wait for the progress bar. The analysis runs in a worker on your computer.', 'Pick a practice preset, or mute and solo the stems yourself, and loop the bar you are learning.', 'Use Import chords as the song, or Track + band together, to carry the result into the rest of the studio.'] },
@@ -139,7 +139,7 @@ export const PAGES = [
     description: 'Detect the tempo, key and chords of a song, turn audio into guitar tab for your tuning, put lyrics under the chords and export ChordPro, MIDI or a print sheet.',
     h1: 'Chords, tab and lyrics from a song or your playing', eyebrow: 'Chords & tab',
     lead: 'Load a song or record yourself and the studio writes down what it hears: the tempo, the key, the chord of every bar, and guitar tab placed on strings and frets for your tuning. Put lyrics under the chords and share a clean sheet.',
-    img: { src: 'tab.webp', alt: 'The tab editor with chords over a bar of notes, string names for the current tuning, and the lyric sheet below', w: 1280, h: 720 },
+    img: { src: 'tab.webp', alt: 'Write in the-daily.studio: bars of tab under their chords with the string names for the tuning, the words with their chords beside them, and a fretboard below that follows the bar', w: 1280, h: 720 },
     glance: [['🎼', 'Chords from audio', 'Tempo, key and the chord of every bar, with a half- or double-time fix.'], ['🎸', 'Audio to tab', 'Polyphonic tab on strings and frets for your tuning and capo.'], ['⌨', 'Tab editor', 'Hammer-ons, pull-offs, slides, bends, vibrato and muted notes, from the keyboard or a keypad.'], ['📝', 'Lyrics under chords', 'Type, paste or drop a .txt or .lrc file; chords sit over the words.'], ['⇪', 'Share the sheet', 'Ultimate Guitar text, ChordPro, MIDI, a print or PDF sheet, a one-file share page.']],
     sections: [
       { h: 'From sound to sheet', ol: ['Load a track in Stems, or record a take.', 'Read the tempo, key and chords it found, and change any chord you hear differently.', 'Open Transcribe to turn a take or a file into tab for your tuning.', 'Write or paste the lyrics, then export the sheet you need.'] },
@@ -177,7 +177,7 @@ export const PAGES = [
     description: 'A browser stage with moving lights, haze, an LED wall and simulated lasers that follow your song, a show designer, full-screen output and light comfort limits.',
     h1: 'Live visuals and a light show for your music', eyebrow: 'Stage',
     lead: 'The Show view turns a song into a stage: moving lights, haze and an LED wall that follow the chords and the drums, and laser patterns drawn on screen. Design the look like a lighting technician, then send it to a projector or a second screen.',
-    img: { src: 'show.webp', alt: 'The stage in the-daily.studio: moving-head beams, haze, an LED wall and lasers over the band, with the show setup panel beside it', w: 1280, h: 720 },
+    img: { src: 'show.webp', alt: 'The stage in the-daily.studio mid-chorus in the Laser room look, the chord and the words over the lasers, with the Show setup console beside it', w: 1280, h: 720 },
     glance: [['🎶', 'Plays with the song', 'Moves by bars and beats, so the same moment always looks the same.'], ['🎛', 'A show designer', 'Looks, colours, moving lights, haze, the LED wall and laser patterns, like a lighting desk.'], ['🖥', 'Output for a room', 'Full screen or a clean output window, with blackout, freeze, mirror and test patterns.'], ['🎞', 'Your own video', 'Your own video loops behind you, at the song’s speed, tinted to the chord.'], ['🛡', 'Light comfort', 'Calm, Standard and Full limit flashing, and a limiter watches the picture itself.']],
     sections: [
       { h: 'Set up a show', ol: ['Open the Stage and pick a look.', 'Open the output on the projector or second screen and run a test pattern.', 'Set the master level and try the blackout.', 'Play the song once and watch the flash meter. The preflight ticks each step as you do it.'] },
@@ -230,6 +230,26 @@ export const PAGES = [
       ['What happens if two computers change the same song?', 'Both versions are kept, so neither edit is lost. Delete the one you do not want.']
     ],
     related: ['getting-started', 'record-guitar-and-voice', 'perform-and-share']
+  },
+  {
+    /* unlisted: for AI assistants and the people who look for it. It is in the sitemap and /llms.txt, but no menu, card or link in the studio or the guide points to it */
+    slug: 'for-ai-assistants', unlisted: true, ico: '🤖', title: 'Use the-daily.studio with an AI assistant',
+    description: 'How an AI assistant in your browser can read and edit songs, play the band and set up practice in the-daily.studio, and what it can never touch.',
+    h1: 'For AI assistants', eyebrow: 'Agent API',
+    lead: 'The studio offers its main actions as tools that an AI assistant running in your browser can call: read the song, turn a chord sheet or lyrics into a song, edit sections, play the band, set up practice and open Perform. Everything runs inside the page. Nothing is sent anywhere, and there is nothing to set up.',
+    glance: [['📖', 'Read', 'The song, its key and Roman numerals, the chords of any key, chord shapes, what the studio is doing.'], ['✍', 'Write', 'Turn a chord sheet, or lyrics with a progression, into a song; edit, add and remove sections; transpose; undo.'], ['🥁', 'Play', 'Play, stop and loop; choose the band and its styles; mute the band and the click in one go.'], ['🎯', 'Practise', 'Slow the song down, loop a section, open the scale and ear trainers on a scale.'], ['🎤', 'Perform', 'Open Perform on the display that suits the song, change the visuals.'], ['🔒', 'Never', 'The microphone, the camera, recording, deleting songs, Settings or anyone’s payment link.']],
+    sections: [
+      { h: 'Two ways in', p: ['WebMCP: the studio registers its tools with navigator.modelContext, so a browser assistant or extension that speaks the Model Context Protocol finds them on its own. Desktop clients can reach them through an extension that relays a page’s WebMCP tools.', 'Scripts: window.dailyStudio.tools() lists the tools with their input schemas, window.dailyStudio.call(name, input) runs one and returns a promise, and window.dailyStudio.describe() gives the API version, the app version and a short list of good first calls.'] },
+      { h: 'Good first calls', ol: ['describe(), for the version and where to start.', 'get_studio_state, to see what is open and playing.', 'get_song, or explain_song for the key, the Roman numerals and how the sections are built.', 'Then one job at a time: write_song from lyrics, load_chord_sheet from a chord sheet, set_up_practice for a slow loop, open_practice_room for scales.'] },
+      { h: 'How it behaves', ul: ['Every change goes through the same functions as the buttons, lands in the same undo history, and shows the person a short note (“🤖 AI agent: transposed the song”).', 'Inputs are checked against each tool’s schema; a refusal comes back with a reason the assistant can pass on.', 'Calls are rate-limited and time out after 20 seconds.', 'The person can switch agent access off in Settings ▸ Workflow; the tools are then withdrawn and calls are answered “disabled”.', 'Tools and their required inputs are a contract: a breaking change raises the API version.'] }
+    ],
+    limits: ['WebMCP is new: browsers do not offer it on their own yet, so an assistant reaches the tools through an extension that supports it, or through window.dailyStudio from a script.', 'Sound starts only after the person has clicked or tapped the page once; the browser requires it. The transport tool says so when that is the reason it is silent.', 'Hidden parts of the studio stay hidden: the tools cannot unlock what the person has not found.'],
+    faq: [
+      ['Does an assistant need an account or a key?', 'No. The tools run in the page in the person’s own browser. There is no server and no API key.'],
+      ['Can an assistant record me or hear me?', 'No. No tool reaches the microphone, the camera or recording. Practice tools open rooms that listen only when the person presses Play it.'],
+      ['Where is the full reference?', 'In the source repository: docs/AGENT_API.md lists every tool, its inputs and its errors, and test/agent-contract.json is the contract the tests hold it to.']
+    ],
+    related: []
   }
 ];
 
@@ -309,7 +329,7 @@ const firstLine = p => p.blurb || p.description.split('. ')[0].replace(/\.$/, ''
 const topicCards = (list, pre) => `<ul class="cards">${list.map(p => `<li><a class="card" href="${pre}${p.slug}/"><span class="ico" aria-hidden="true">${esc(p.ico)}</span><b>${esc(p.h1)}</b><span class="t">${esc(firstLine(p))}</span></a></li>`).join('')}</ul>`;
 function section(s, p) {
   let o = `<section><h2>${esc(s.h)}</h2>`;
-  if (s.topics) o += topicCards(PAGES.filter(x => x.slug !== 'guide'), '');
+  if (s.topics) o += topicCards(PAGES.filter(x => x.slug !== 'guide' && !x.unlisted), '');
   if (s.p) o += s.p.map(t => `<p>${esc(t)}</p>`).join('');
   if (s.ul) o += `<ul>${s.ul.map(li).join('')}</ul>`;
   if (s.ol) o += `<ol class="steps">${s.ol.map(li).join('')}</ol>`;
@@ -360,4 +380,37 @@ export function sitemap(modified) {
 /** the links under the first page's buttons (also in <noscript>), so every guide is one crawlable link away from the app */
 export function guideLinks(prefix = '') {
   return NAV.map(([h, t]) => `<a href="${prefix}${h}">${esc(t)}</a>`).join(' · ');
+}
+
+/** /llms.txt (llmstxt.org): what the studio is and where its agent tools are, for AI assistants. The tool list comes from docs/AGENT_API.md, so it cannot drift. */
+export function llmsTxt(version, agentApiMd) {
+  const tools = [...agentApiMd.matchAll(/^\| `([a-z_]+)` \| ([^|]+) \| ([^|]+) \|$/gm)].map(m => `- ${m[1]} (${m[2].trim()}; required: ${m[3].trim()})`);
+  const pages = PAGES.filter(p => !p.unlisted && p.slug !== 'guide').map(p => `- [${p.h1}](${pageUrl(p)}): ${firstLine(p)}`);
+  return `# ${SITE.name}
+
+> ${SITE.description} Version ${version}. An AI assistant in the person's browser can use the studio through tools (WebMCP, or window.dailyStudio from a script). Nothing is sent to a server.
+
+## For AI assistants
+
+- [For AI assistants](${SITE.origin}/guide/for-ai-assistants/): what the tools do, what they never touch, and good first calls
+- [Agent API reference](${SITE.repo}/blob/main/docs/AGENT_API.md): every tool, its inputs and its errors
+- [Tool contract](${SITE.repo}/blob/main/test/agent-contract.json): the tools and required inputs the tests hold the studio to
+
+How to call: in the page, navigator.modelContext lists the tools (WebMCP); or window.dailyStudio.tools(), window.dailyStudio.call(name, input) and window.dailyStudio.describe(). Start with describe(), then get_studio_state.
+The tools never reach the microphone, the camera, recording, deleting songs or Settings. Sound starts only after the person has clicked the page once.
+
+## Tools
+
+${tools.join('\n')}
+
+## Guide
+
+- [How it works](${SITE.origin}/guide/): what the studio does, what it needs and its limits
+${pages.join('\n')}
+
+## Optional
+
+- [Source](${SITE.repo}): MIT licence
+- [Privacy](${SITE.origin}/legal/): no account, no tracking; audio stays on the device
+`;
 }
