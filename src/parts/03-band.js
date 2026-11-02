@@ -262,7 +262,9 @@ function scheduleTakes(atTime, fromSec) {
     const src = E.ctx.createBufferSource(), cgn = gn(tk.cg == null ? 1 : tk.cg), fd = gn(1), g = gn(takeAudible(tk) ? (L.g == null ? 1 : L.g) : 0), pn = E.ctx.createStereoPanner(); pn.pan.value = L.pan || 0; src.buffer = buf; src.connect(cgn); cgn.connect(fd); fd.connect(g); g.connect(pn); tk._g = g; tk._cg = cgn; tk._pn = pn;
     const [fi, fo] = tkFades(tk); if (fi > 0 || fo > 0) { const gf = c => Math.max(0, Math.min(1, fi > 0 ? c / fi : 1, fo > 0 ? (len - c) / fo : 1)), p = fd.gain; p.setValueAtTime(gf(c0), Math.max(0, when)); [fi, len - fo, len].forEach(c => { if (c > c0 + 1e-6) p.linearRampToValueAtTime(gf(c), tm(c)); }); }
     if (vox) pn.connect(E.voxStrip.in); else if (which === 'dry' && L.mode === 'reamp') pn.connect(E.rigIn); else { tk._fx = fxStrip(E.takesIn); tk._fx.set(L.fx); pn.connect(tk._fx.in); }
-    const late = Math.max(0, atTime - when);      // starting from inside the clip: skip the part already due, so it still lands in time
+    /* starting from inside the clip, or scheduled late (a busy page can take longer than the lead time to get here): skip the part already due,
+       measured against the clock now, so every take still lands on the same timeline and they stay sample-aligned with each other */
+    const late = Math.max(0, atTime - when, E.ctx.currentTime + .005 - when);
     if (late < len - c0) { src.start(when + late, tkIn(tk) + c0 + late, len - c0 - late); T.srcs.push(src); }
   });
 }

@@ -39,6 +39,8 @@
     "perform": [],
     "get_chord_shape": [
       "chord"
-    ]
+    ],
+    "mute_band": [],
+    "open_shower_mode": []
   }
 }

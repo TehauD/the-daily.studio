@@ -732,11 +732,12 @@ Everyone sounds better in the shower. **🚿 Shower mode** is in the Practice wo
 - **Scales.** Choose a key, a scale, where on the neck to start, and one or two octaves. The fretboard shows the notes, with the roots in gold and the rest of the scale in that part of the neck faint. **▶ Listen** plays it up and back down through the studio's lead voice. **● Play it** listens to your guitar (the input the tuner uses) and follows you note by note. It marks the next note, ticks off each one you play, and counts wrong notes. The note you just played, still ringing, never counts as wrong, and octaves do not matter.
 - **Arpeggios.** This song's chords in order, one note at a time (root, third, fifth, and back to the root), or **One chord** up and down, around the fret you choose.
 - **Your ear.** **▶ Play a question** plays two notes, and you name the interval: 4, 6 or all 12 to choose from. It keeps your streak and your best.
+- **On a phone** the fretboard shows only the frets the run uses, so the dots are big enough to read; turn the phone sideways for the whole neck.
 - Some of the room stays behind the curtain until you find what the studio hides, and most of that is out in the studio, not in the shower. With **Settings ▸ Workflow ▸ Hidden surprises** off, all of it is open.
 
 ## On air (2.25)
 
-While a take or a stage video records, the logo at the top left and the browser tab's icon blink red, and the tab's title starts with **● REC**, like the red light outside a studio door. With reduced motion (or Calm), the light is steady.
+While a take or a stage video records, the logo at the top left and the browser tab's icon blink red, and the tab's title starts with **● REC**, like the red light outside a studio door. With reduced motion (or Calm), the light is steady. A screen reader hears "On air: recording." when it goes on and "Off air: recording stopped." when it goes off.
 
 ## Hidden surprises (2.20)
 

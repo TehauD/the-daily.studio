@@ -81,6 +81,29 @@ suite('e2e-shower', async t => {
   ok(await ev(() => /3\/7/.test(document.querySelector('.secret-chip').textContent)), 'the 🗝 counter: 3 of 7');
   await ev(() => document.getElementById('shower').close());
 
+  /* ---- for a screen reader ---- */
+  await ev(() => window.__daily.showerOpen('scales')); await wait(400);
+  ok(await ev(() => { const f = document.querySelector('#ws-room-scale svg.ws-fret'); return f.getAttribute('role') === 'img' && /^Fretboard, .+, open strings to fret 15\.$|^Fretboard, .+, frets \d+ to \d+\.$/.test(f.getAttribute('aria-label')); }), 'the fretboard is a picture with a name: which run, and which frets');
+  ok(await ev(() => ['listen', 'go', 'stop'].every(k => document.getElementById('ws-scale-' + k).getAttribute('aria-label')) && document.querySelector('#ws-room-scale .ws-chips').getAttribute('role') === 'list' && document.querySelectorAll('#ws-room-scale .ws-chip[role=listitem]').length > 6 && !!document.querySelector('#ws-room-scale .ws-stat[aria-live=polite]')), 'the buttons say what they do, the notes are a list, and the status line is read out as it changes');
+  await ev(() => { window.__daily.wsFollow('scale'); }); await wait(200);
+  ok(await ev(() => /Next: [A-G][#♯b♭]? on string \d, (fret \d+|open)\.$/.test(document.querySelector('#ws-room-scale svg.ws-fret').getAttribute('aria-label'))), 'while it follows you, the fretboard’s name says the next note, its string and fret');
+  await ev(() => window.__daily.wsStop(true));
+  await ev(() => window.__daily.showerOpen('ear')); await wait(400);
+  ok(await ev(() => { const g = document.querySelector('#ws-room-ear .ws-ans'); return g.getAttribute('role') === 'group' && g.getAttribute('aria-label') === 'Your answer' && document.getElementById('ws-ear-again').getAttribute('aria-label') === 'Play the question again'; }), 'the ear trainer’s answers are a named group');
+  await ev(() => document.getElementById('shower').close());
+
+  /* ---- on a phone ---- */
+  const m = await t.open({ w: 390, h: 844, mobile: true }), mv = (f, a) => m.evaluate(f, a);
+  await mv(() => window.__daily.showerOpen('scales')); await wait(500);
+  const PH = await mv(() => { const f = document.querySelector('#ws-room-scale svg.ws-fret'), vb = f.viewBox.baseVal, r = f.getBoundingClientRect(), dot = f.querySelector('.ws-dot').getBoundingClientRect(); return { narrow: f.classList.contains('narrow'), frets: f.querySelectorAll('.ws-fw,.ws-nut').length - 1, scale: r.width / vb.width, dot: dot.width, fits: r.right <= innerWidth + .5, wide: document.documentElement.scrollWidth <= innerWidth }; });
+  ok(PH.narrow && PH.frets <= 9 && PH.dot >= 16 && PH.fits && PH.wide, 'on a phone the fretboard shows only the frets the run uses (' + PH.frets + '), so a dot is ' + PH.dot.toFixed(0) + ' px across instead of about 8, and nothing is wider than the screen');
+  ok(await mv(() => { const D = window.__daily, run = D.wsScaleRun(), f = document.querySelector('#ws-room-scale svg.ws-fret'); return run.notes.length === f.querySelectorAll('.ws-dot').length + run.notes.filter((q, i) => run.notes.findIndex(x => x.s === q.s && x.f === q.f) !== i).length; }), 'every note of the run is still on it');
+  ok(await mv(() => [...document.querySelectorAll('#ws-room-scale .ws-btns .btn')].every(b => b.getBoundingClientRect().height >= 36) && [...document.querySelectorAll('#ws-room-scale .ws-ctl select')].every(s => s.getBoundingClientRect().right <= innerWidth)), 'the buttons are big enough to tap and the choices fit the screen');
+  await mv(() => window.__daily.showerOpen('ear')); await wait(400); await mv(() => document.getElementById('ws-ear-go').click()); await wait(200);
+  ok(await mv(() => { const b = [...document.querySelectorAll('#ws-room-ear .ws-a')]; return b.length >= 4 && b.every(x => x.getBoundingClientRect().height >= 44 && x.getBoundingClientRect().right <= innerWidth); }), 'the ear trainer’s answers are two to a row, each a good thumb’s height');
+  await m.setViewportSize({ width: 844, height: 390 }); await mv(() => window.__daily.showerOpen('scales')); await wait(500);
+  ok(await mv(() => !document.querySelector('#ws-room-scale svg.ws-fret').classList.contains('narrow')), 'turned sideways, there is room for the whole neck again');
+
   /* ---- with hidden surprises off, the treasures are simply open ---- */
   const q = await t.open({ init: () => { try { localStorage.setItem('fw.cfg', JSON.stringify({ eggs: false })); } catch (e) { } } });
   await q.evaluate(() => window.__daily.showerOpen()); await wait(400);

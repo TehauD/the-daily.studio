@@ -110,6 +110,17 @@ suite('e2e-agent', async t => {
   const pf = await json('perform', { action: 'open', display: 'sheet' });
   ok(pf.open && pf.display === 'sheet' && (await p.evaluate(() => !!document.getElementById('perform') && document.getElementById('perform').classList.contains('pf-v-sheet') && !window.__daily.E.hasInput)), 'perform opens the Perform view on the lyric sheet, without the microphone');
   ok(!(await json('perform', { action: 'close' })).open, 'perform closes it');
+  /* ---- 2.25.1: the band's mute and Shower mode ---- */
+  await p.evaluate(() => { const D = window.__daily; D.S.band.drumsOn = true; D.S.band.bassOn = true; D.S.band.compOn = false; D.S.band.leadOn = false; D.T.metro = true; });
+  const mb = await json('mute_band', { muted: true });
+  ok(mb.muted && !mb.band.drums && !mb.band.bass && !mb.metronome && (await json('get_studio_state', {})).band_muted === true, 'mute_band mutes the whole band and the click, and get_studio_state says so');
+  const ub = await json('mute_band', {});
+  ok(!ub.muted && ub.band.drums && ub.band.bass && !ub.band.rhythm_guitar && ub.metronome, 'mute_band again brings back exactly what was playing');
+  const sh = await json('open_shower_mode', { room: 'scales', key: 'E', scale: 'Blues' });
+  ok(sh.done && /^E Blues/.test(sh.scale) && sh.notes.length > 6 && (await p.evaluate(() => !!document.getElementById('shower') && document.getElementById('shower').open && !window.__daily.E.hasInput && !window.__daily.WS.run)), 'open_shower_mode opens the room on the scale asked for (' + sh.scale + '), without the microphone and without starting anything');
+  const lk = await raw('open_shower_mode', { scale: 'Dorian' });
+  ok(lk.isError && /locked/.test(JSON.stringify(lk)) && (await p.evaluate(() => window.__daily.CFG.shed.scale === 'Blues' && !window.__daily.CFG.secrets.scale)), 'it cannot pick a scale that is still locked, and unlocks nothing');
+  await p.evaluate(() => document.getElementById('shower').close());
   const cs = await json('get_chord_shape', { chord: 'E', count: 2 });
   ok(cs.chord === 'E' && cs.shapes[0].frets === '0 2 2 1 0 0' && cs.shapes.length === 2 && cs.strings_low_to_high === 'E A D G B E', 'get_chord_shape: E in standard tuning is 0 2 2 1 0 0, with another way to play it');
   ok((await raw('get_chord_shape', { chord: 'Q7' })).structuredContent.error.code === 'invalid_input', 'get_chord_shape refuses something that is not a chord');

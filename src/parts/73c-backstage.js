@@ -163,7 +163,7 @@ async function bksRun(line, out) {
   return out('command not found: ' + cmd + ' · type help', 'err');
 }
 function bksTerminal() {
-  const pre = h('pre', { class: 'bks-term-out mono', id: 'bksTermOut', 'aria-live': 'polite' }), inp = h('input', { class: 'bks-term-in mono', id: 'bksTermIn', autocomplete: 'off', spellcheck: false, 'aria-label': 'Backstage shell command' });
+  const pre = h('pre', { class: 'bks-term-out mono', id: 'bksTermOut', role: 'log', 'aria-live': 'polite', 'aria-label': 'Backstage shell output' }), inp = h('input', { class: 'bks-term-in mono', id: 'bksTermIn', autocomplete: 'off', spellcheck: false, 'aria-label': 'Backstage shell command' });
   const out = (t, cls) => { if (cls === 'clear') { pre.textContent = ''; return; } if (t == null) return; const s = h('span', { class: 'bks-t-' + (cls || 'out') }, t + '\n'); pre.append(s); while (pre.childNodes.length > 400) pre.firstChild.remove(); pre.scrollTop = pre.scrollHeight; };
   const run = async () => {
     const v = inp.value; inp.value = ''; if (!v.trim()) return; BKS.hist.push(v); if (BKS.hist.length > 100) BKS.hist.shift(); BKS.hi = BKS.hist.length;

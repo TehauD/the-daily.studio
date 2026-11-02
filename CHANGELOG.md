@@ -2,6 +2,35 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.25.1 — 2026-11-02 — Shower mode on phones, a red light you can hear, two agent tools, steadier tests
+
+### Added
+- **Agent tools** (API 2, nothing removed):
+  - `mute_band`: mutes the whole band and the click, or brings back exactly what was playing, like Shift+M. `get_studio_state` now says `band_muted`.
+  - `open_shower_mode`: opens Shower mode on scales (with a key and a scale), arpeggios or ear. It never turns the microphone on and cannot pick a scale that is still locked.
+- **The README** describes Shower mode, the seven secrets, On air and band mute, with Shift+M in the shortcuts.
+- **Guide pictures:** the start, record, stems, chords and tab, hum and stage pictures are made again from this version (by `test/guide-shots.cjs`, like the newer ones). The first page now shows its six goals.
+
+### Changed
+- **Shower mode on a phone.** The fretboard shows only the frets the run uses, a little either side, so the dots are about 20 px across instead of 8. Choices sit two to a row, the buttons share the width, and the ear trainer's answers are two to a row and 44 px tall. Turning the phone redraws the neck to fit.
+- **Accessibility in the new rooms:**
+  - The fretboard is a named picture: which run, which frets, and while it follows you, the next note with its string and fret.
+  - The buttons say what they do. The notes are a list, and the ear trainer's answers are a named group whose chosen answer is marked as pressed.
+  - The Backstage terminal's output is a log.
+  - **On air**, for a screen reader: "On air: recording." when the red light goes on and "Off air: recording stopped." when it goes off, in a status line nobody sees. The logo's tooltip says it too.
+
+### Fixed
+- **Takes stay sample-aligned on a busy computer.** When the page took longer than playback's lead time to schedule the takes, a take could start a few milliseconds off the others. Each take now skips in by how late it really is, measured against the audio clock, so they stay on one timeline.
+
+### Tests
+- **Three timing checks no longer fail on a loaded machine**, and none of them checks less:
+  - `e2e-latency`: the re-amp gap was 3 ms out under load. The app fix above solves it, and it still has to be 500 ms ± 1.
+  - `e2e-show`: blinders are counted from the show's own record of when each fired and in which bar, not by sampling a light that fades in a few frames.
+  - `e2e.cjs`: the stage video stops once the recorder has handed over real video, not after a fixed 2.6 s.
+- `e2e-shower` 29 → 38 checks: the names a screen reader hears, and the room on a 390 px phone (frets shown, dot size, nothing wider than the screen, tap sizes, sideways).
+- `e2e-onair` 7 → 9: the status line on and off.
+- `e2e-agent` 56 checks, including `mute_band` and `open_shower_mode` (locked scales refused, nothing unlocked, no microphone). `test/agent-contract.json` lists both.
+
 ## 2.25.0 — 2026-11-01 — Shower mode (scales, arpeggios, your ear), seven secrets out in the studio, and the red light
 
 ### Added

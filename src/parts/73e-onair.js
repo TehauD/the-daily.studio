@@ -13,6 +13,10 @@ function airSync() {
   const on = airLive(); if (on === AIR.on) return; AIR.on = on;
   const link = document.querySelector('link[rel="icon"]'); if (link && !AIR.icon && /^data:image\/svg/.test(link.getAttribute('href') || '')) { AIR.icon = link.getAttribute('href'); AIR.red = airRed(AIR.icon); }
   document.body.classList.toggle('onair', on); clearInterval(AIR.tm); AIR.tm = 0;
+  /* the red light, for a screen reader too: one quiet announcement when it goes on and when it goes off */
+  let say = document.getElementById('airSay'); if (!say) { say = h('span', { id: 'airSay', class: 'sr-only', role: 'status', 'aria-live': 'polite' }); document.body.append(say); }
+  say.textContent = on ? 'On air: recording.' : 'Off air: recording stopped.';
+  const mark = document.querySelector('.brand'); if (mark) { if (on) mark.setAttribute('title', 'On air: recording'); else mark.removeAttribute('title'); }
   if (on) {
     AIR.title = document.title.replace(/^● REC · /, ''); document.title = '● REC · ' + AIR.title;
     const steady = secretCalm(), tick = () => { AIR.ph = steady || !AIR.ph; if (link && AIR.red) link.setAttribute('href', AIR.ph ? AIR.red : AIR.icon); };

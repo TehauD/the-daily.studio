@@ -30,8 +30,8 @@ Each file starts its **own** static server, its own Chromium (fake microphone an
 | `e2e-lanes.cjs` | Lane strips (M S, volume, pan, +Fx), effects saved with the song and each take, the master menu and presets, undo / redo and the Saved mark, the count-in menu |
 | `e2e-camera.cjs` | Camera backdrop and its looks (dimmed, edges-in, green-screen cut-out), checked by polling for the picture instead of sleeping |
 | `e2e-clips.cjs` | Clips: split, move, trim, fade, duplicate, delete and undo; exact scheduling of each clip; lane settings kept; saved with the song and in a bundle |
-| `e2e-shower.cjs` | Shower mode: scale runs on the right frets, Listen, following a played run (a ringing note is fine, a wrong one counts), arpeggios, the ear trainer and its streak; Up and down heard anywhere, Broken chords with the band, Golden ear in the room, the treasures, all open with surprises off |
-| `e2e-onair.cjs` | The red light while recording: the logo, the tab icon and ● REC, the blink, stage videos too, restored afterwards, steady with reduced motion |
+| `e2e-shower.cjs` | Shower mode: scale runs on the right frets, Listen, following a played run (a ringing note is fine, a wrong one counts), arpeggios, the ear trainer and its streak; Up and down heard anywhere, Broken chords with the band, Golden ear in the room, the treasures, all open with surprises off; the names a screen reader hears, and the room on a 390 px phone (only the frets in use, dot size, tap sizes, sideways) |
+| `e2e-onair.cjs` | The red light while recording: the logo, the tab icon and ● REC, the blink, stage videos too, restored afterwards, steady with reduced motion; the hidden status line a screen reader announces, on and off |
 | `e2e-phone-panels.cjs` | One panel at the bottom of a phone at a time (Voice and the song sheet), the bottom More opening the sheet of extras, and muting the whole band and the click in one press (phone transport, band strip, Perform, Shift+M) with an exact restore |
 | `e2e-backstage-pages.cjs` | The hidden pages under /backstage/: noindex, one hash-allowed script each, out of the sitemap and robots.txt; a closed door without a pass; with one, the lobby, every part in the source map (and finding one), your data read-only (never making a database, never showing a GitHub token), the API and the changelog |
 | `e2e-folder.cjs` | Folder sync: two computers through a real directory (the browser's private file system), with the cloud drive played by copying: the studio and its recordings written and read back sample for sample, a change and a new take reaching the other computer, a recording arriving after its song (never dropped by a save), both versions kept, a cloud drive's conflicted copy kept, deletions, tidying after a day, nothing while playing, the zip option, a 2.21 backup folder upgraded, permission, no network |
@@ -84,3 +84,12 @@ Automated tests use a fake microphone and camera and do not reach the third-part
 ## What is not covered
 
 Very long sessions, large stem imports on low-memory phones, screen-reader pass of every panel, and non-Chromium audio latency. These are known gaps for Release 1.
+
+## Timing checks under load
+
+The full run starts many browsers at once, so a page can be starved for tens of milliseconds. Checks that time things must not depend on when the test happens to look:
+
+- Count events from the app's own record of them (the show's `LX.lastStrobe` and `LX.lastStrobeBar`), not by sampling a value that fades within a few frames.
+- Wait for the condition itself (the recorder has handed over data; `t.poll`), not for a fixed number of seconds.
+- If a timing check fails only under load, look for a real bug before widening a tolerance. In 2.25.1 the re-amp gap in `e2e-latency` was 3 ms out because takes scheduled after playback's lead time started off their timeline; the app now skips each take in by how late it really is, and the check still asks for ± 1 ms.
+

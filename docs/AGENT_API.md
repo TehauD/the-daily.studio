@@ -31,6 +31,8 @@ Both run the same functions as the buttons. (`window.dailyStudio` has one more m
 | `transport` | changes (never records) | none |
 | `set_visuals` | changes (never the camera) | none |
 | `perform` | changes (never the microphone) | none |
+| `mute_band` | changes | none |
+| `open_shower_mode` | changes (never the microphone, never unlocks) | none |
 | `open_workspace` | changes | `workspace` |
 | `open_song` | changes | `song` |
 | `undo` | changes | none |

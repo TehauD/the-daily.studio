@@ -10,9 +10,11 @@ suite('e2e-onair', async t => {
   ok(on.onair && /stroke:#ff2a3d/.test(on.icon) && /^● REC · /.test(on.title) && on.anim === 'onair', 'recording: the logo glows red and blinks, the tab icon turns red, and the tab says ● REC');
   const seen = new Set(); for (let i = 0; i < 6; i++) { seen.add(/ff2a3d/.test((await st()).icon)); await wait(250); }
   ok(seen.size === 2, 'the tab icon blinks: red, then the usual, then red');
+  ok(await ev(() => { const s = document.getElementById('airSay'); return !!s && s.getAttribute('role') === 'status' && s.textContent === 'On air: recording.' && s.getBoundingClientRect().width <= 1 && document.querySelector('.brand').title === 'On air: recording'; }), 'a screen reader hears it too: “On air: recording.”, said once, in a status line nobody sees');
   await ev(() => { window.__daily.REC = null; window.__daily.airSync(); }); await wait(100);
   const off = await st();
   ok(!off.onair && off.icon === before.icon && off.title === before.title, 'when it stops, everything is as it was');
+  ok(await ev(() => document.getElementById('airSay').textContent === 'Off air: recording stopped.' && !document.querySelector('.brand').hasAttribute('title')), 'and the screen reader hears that it stopped');
   await ev(() => { window.__daily.SREC.on = true; }); await wait(700);
   ok((await st()).onair, 'recording a stage video lights it too');
   await ev(() => { window.__daily.SREC.on = false; }); await wait(700);

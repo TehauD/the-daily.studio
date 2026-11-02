@@ -79,7 +79,7 @@ agTool('get_studio_state', 'What the studio is doing: playing or stopped, the ba
   agObj(), () => {
     const fb = flatBars(), bar = Math.min(fb.length, Math.floor(playheadSlot() / spb()) + 1), g = typeof goalNow === 'function' ? goalNow() : null;
     return agTxt({ playing: !!T.playing, bar, loop: !!T.loop, metronome: !!T.metro, audio: E.ctx ? E.ctx.state : 'off', input_connected: !!E.hasInput, recording: !!T.rec,
-      band: { drums: !!S.band.drumsOn, bass: !!S.band.bassOn, rhythm_guitar: !!S.band.compOn, lead_tab: !!S.band.leadOn, drum_pattern: S.band.patName, bass_style: S.band.bassStyle, strum_pattern: S.band.compStyle },
+      band: { drums: !!S.band.drumsOn, bass: !!S.band.bassOn, rhythm_guitar: !!S.band.compOn, lead_tab: !!S.band.leadOn, drum_pattern: S.band.patName, bass_style: S.band.bassStyle, strum_pattern: S.band.compStyle }, band_muted: bandMuted(),
       workspace: g ? g.id : null, panel: DOCK.cur, song: S.title, saved_songs: PRJ.list.map(r => r.title || 'Untitled'),
       visuals: agVisuals(), perform: { open: !!PF.on, display: pfView() }, api: AG_API, app_version: VERSION, build: BUILD });
   }, { readOnlyHint: true });
@@ -207,6 +207,24 @@ agTool('perform', 'Open or close the full-screen Perform view, and choose its di
     if (i.action === 'open' && !PF.on) perfOpen(); if (i.action === 'close' && PF.on) perfClose();
     agentSay(i.action === 'open' ? 'opened Perform' : i.action === 'close' ? 'closed Perform' : 'changed the Perform display'); return agTxt({ done: true, open: !!PF.on, display: pfView() });
   }, { idempotentHint: true });
+agTool('mute_band', 'Mute the whole backing band and the metronome click in one go (the same as the person pressing Shift+M), or bring back exactly the parts that were playing before. Omit muted to switch it.',
+  agObj({ muted: agBool('true mutes the band and the click; false brings back what was playing.') }),
+  i => {
+    const m = bandMute(i.muted == null ? undefined : !!i.muted); try { bandMuteSync(); syncBandStrip(); syncTransport(); } catch (e) { }
+    agentSay(m ? 'muted the band' : 'brought the band back');
+    return agTxt({ done: true, muted: bandMuted(), band: { drums: !!S.band.drumsOn, bass: !!S.band.bassOn, rhythm_guitar: !!S.band.compOn, lead_tab: !!S.band.leadOn }, metronome: !!T.metro });
+  }, { idempotentHint: true });
+
+agTool('open_shower_mode', 'Open Shower mode, the practice room: scales (a key, a scale and where on the neck; the studio follows the person note by note), arpeggios (this song\'s chords one note at a time) or ear (name the interval between two notes). Opening it never turns the microphone on: the person presses Play it. Some scales and options stay locked until the person finds them; this tool cannot unlock them.',
+  agObj({ room: agStr('Which room.', { enum: ['scales', 'arpeggios', 'ear'] }), key: agStr('For scales: the key, a note name like A, F# or Bb.'), scale: agStr('For scales: the scale\'s name, e.g. Minor Pentatonic, Major (Ionian), Blues.', { enum: Object.keys(SCALES) }) }),
+  i => {
+    if (i.scale) { if (!SCALES[i.scale]) throw new Error('Unknown scale'); if (!WS_BASE.includes(i.scale) && !wsOpen('scale')) throw new Error('That scale is still locked in this studio. Open ones: ' + WS_BASE.join(', ') + '.'); CFG.shed.scale = i.scale; CFG.shed.at = null; }
+    if (i.key != null) { const k = agKey(String(i.key)); if (!k) throw new Error('Key not understood: ' + i.key); CFG.shed.key = k.root; CFG.shed.at = null; }
+    saveCfg(); showerOpen(i.room === 'arpeggios' ? 'arps' : i.room || 'scales');
+    agentSay('opened Shower mode'); const r = wsScaleRun();
+    return agTxt({ done: true, room: i.room || 'scales', scale: r.title, notes: r.notes.map(q => wsName(q.m)), start_fret: r.st, note: 'The person presses ● Play it to be followed note by note (it listens to the tuner\'s input), or ▶ Listen to hear it.' });
+  });
+
 agTool('get_chord_shape', 'How to play a chord on the guitar in this song\'s tuning and capo: the fret for each string from the lowest to the highest (x = not played, 0 = open), the lowest fret used and whether it is a barre, with other ways to play it. The first shape is the one the song uses.',
   agObj({ chord: agStr('A chord such as "Am", "F#m7", "B/D#", "Csus4".'), count: agNum('How many shapes to list, 1 to 6 (default 3).') }, ['chord']),
   i => {
