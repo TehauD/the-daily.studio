@@ -1,6 +1,7 @@
 /* ============================================================
-   Part 73d · SHOWER MODE (2.25) — practise scales, arpeggios and your ear, where everyone sounds better
-   Not responsible for damage to electronic devices. Three trainers in one room, each with a fretboard drawn for the song's tuning and capo:
+   Part 73d · SCALES & EAR (2.25, moved to Practice in 2.27) — scales, arpeggios and your ear, followed note by note
+   Three trainers in one room, each with a fretboard drawn for the song's tuning and capo. It opens from the Practice workspace's tools,
+   the Theory panel ("Practise this scale") and the phone's More sheet:
      · Scales      a key, a scale, where on the neck, one or two octaves. ▶ Listen plays it; ● Play it follows you note by note,
                    up and back down, by the pitch the tuner already hears (a wrong note counts, a note still ringing does not)
      · Arpeggios   the chords of this song one note at a time, or one chord up and down
@@ -11,10 +12,11 @@
      · Golden ear      ten in a row by ear, in here, from six choices or more             → chord qualities by ear
    With hidden surprises off (Settings ▸ Workflow), the treasures are simply open: nobody has to hunt for practice.
    It listens to the input the tuner uses and records nothing; ▶ Listen plays through the studio's own lead voice.
+   (Its settings keep the name CFG.shed, from when it was the Woodshed, so nobody's choices are lost.)
    ============================================================ */
 CFG.shed = Object.assign({ scale: 'Minor Pentatonic', key: null, at: null, oct: 1, src: 'song', root: null, type: '', arpAt: null, ear: 'more' }, CFG.shed && typeof CFG.shed === 'object' ? CFG.shed : {});
 const WS = { run: null, tm: 0, play: [], ear: { q: null, streak: 0, best: 0, n: 0, ok: 0, lock: false }, r: {} };
-const WS_CHEERS = ['The acoustics in here are incredible. 🚿', 'Squeaky clean. 🧼', 'Somebody hand this person a towel and a record deal.', 'Even the rubber duck is impressed. 🦆', 'Steam-powered. 💨'];
+const WS_CHEERS = ['Clean. 🎯', 'Not a note out of place.', 'Your fingers know the way now.', 'Again, a little faster?', 'That one is in your hands.'];
 const WS_BASE = ['Major (Ionian)', 'Natural Minor (Aeolian)', 'Major Pentatonic', 'Minor Pentatonic', 'Blues'];
 const WS_ARPS = [['', 'Major', [0, 4, 7]], ['m', 'Minor', [0, 3, 7]], ['dim', 'Diminished', [0, 3, 6]], ['aug', 'Augmented', [0, 4, 8]], ['maj7', 'Major 7', [0, 4, 7, 11], 1], ['7', 'Dominant 7', [0, 4, 7, 10], 1], ['m7', 'Minor 7', [0, 3, 7, 10], 1], ['m7b5', 'Half-diminished', [0, 3, 6, 10], 1], ['dim7', 'Diminished 7', [0, 3, 6, 9], 1]];
 const WS_IV = [['m2', 'minor 2nd', 1], ['M2', 'major 2nd', 2], ['m3', 'minor 3rd', 3], ['M3', 'major 3rd', 4], ['P4', 'perfect 4th', 5], ['TT', 'tritone', 6], ['P5', 'perfect 5th', 7], ['m6', 'minor 6th', 8], ['M6', 'major 6th', 9], ['m7', 'minor 7th', 10], ['M7', 'major 7th', 11], ['P8', 'octave', 12]];
@@ -102,9 +104,9 @@ function wsStop(quiet) {
   if (r && !quiet) { const b = WS.r[r.kind]; if (b) b.paint(); }
 }
 function wsFollow(kind) {
-  wsStop(true); const run = kind === 'scale' ? wsScaleRun() : wsArpRun(); if (!run.notes.length) { toast('This song has no chords yet. Write some, or choose One chord. (Humming in the shower does not count as writing.)', 'warn'); return; }
+  wsStop(true); const run = kind === 'scale' ? wsScaleRun() : wsArpRun(); if (!run.notes.length) { toast('This song has no chords yet. Write some, or choose One chord. ', 'warn'); return; }
   WS.run = Object.assign(run, { mode: 'follow', i: 0, miss: 0, held: null, judged: false, prev: null, t0: performance.now(), wrong: 0 });
-  if (!E.hasInput) toast('Connect your input (Audio, top right) so Shower mode can hear you. Or press Listen first. The actual shower is optional.', 'warn');
+  if (!E.hasInput) toast('Connect your input (Audio, top right) so the room can hear you. Or press Listen first.', 'warn');
   WS.tm = setInterval(wsTick, 40); WS.r[kind].paint();
 }
 function wsTick() {
@@ -122,7 +124,7 @@ function wsTick() {
 function wsDone(r) {
   clearInterval(WS.tm); WS.tm = 0; r.mode = 'done'; r.secs = (performance.now() - r.t0) / 1000;
   const clean = r.miss === 0, what = r.kind === 'scale' ? 'Up and back down' : (r.chords.length > 1 ? r.chords.length + ' chords' : 'The arpeggio');
-  toast(what + ' in ' + r.secs.toFixed(1) + ' s' + (clean ? ', no wrong notes. ' + WS_CHEERS[Math.floor(Math.random() * WS_CHEERS.length)] : ', ' + r.miss + ' wrong note' + (r.miss === 1 ? '' : 's') + '. Blame the tiles. Again?'), clean ? 'ok' : '');      /* the secrets are found out in the studio (part 73b hears a scale wherever you play it) */
+  toast(what + ' in ' + r.secs.toFixed(1) + ' s' + (clean ? ', no wrong notes. ' + WS_CHEERS[Math.floor(Math.random() * WS_CHEERS.length)] : ', ' + r.miss + ' wrong note' + (r.miss === 1 ? '' : 's') + '. Again, slowly, then faster.'), clean ? 'ok' : '');      /* the secrets are found out in the studio (part 73b hears a scale wherever you play it) */
   WS.r[r.kind].paint();
 }
 /** ▶ Listen: the run played by the studio's lead voice, the fretboard following */
@@ -201,27 +203,27 @@ function wsEarRoom() {
   const paint = () => {
     const e = WS.ear, list = wsEarChords() ? WS_CQ.map(x => [x[0], x[0]]) : (WS_SETS[CFG.shed.ear] || WS_SETS.more).map(a => { const iv = WS_IV.find(x => x[0] === a); return [a, iv[1]]; });
     ans.innerHTML = ''; list.forEach(([a, t]) => ans.append(h('button', { 'aria-pressed': String(!!(e.last && e.lock && a === e.last.a)), class: 'btn ws-a' + (e.last && e.lock && a === e.last.ans ? ' right' : '') + (e.last && e.lock && !e.last.right && a === e.last.a ? ' wrong' : ''), 'data-a': a, disabled: !e.q, onclick: () => wsEarAnswer(a) }, t)));
-    stat.innerHTML = ''; stat.append(e.q ? (e.lock ? h('b', { class: e.last.right ? 'ws-good' : '' }, e.last.right ? '✓ ' + ['Yes', 'Nailed it', 'Golden', 'Correct, and very hydrated'][e.n % 4] + ': ' : '✗ It was: ', h('span', {}, (wsEarChords() ? e.last.ans : WS_IV.find(x => x[0] === e.last.ans)[1]))) : h('span', {}, 'What did you hear?')) : h('span', {}, 'Press ▶ Play a question.'),
+    stat.innerHTML = ''; stat.append(e.q ? (e.lock ? h('b', { class: e.last.right ? 'ws-good' : '' }, e.last.right ? '✓ ' + ['Yes', 'Nailed it', 'Golden', 'Correct'][e.n % 4] + ': ' : '✗ It was: ', h('span', {}, (wsEarChords() ? e.last.ans : WS_IV.find(x => x[0] === e.last.ans)[1]))) : h('span', {}, 'What did you hear?')) : h('span', {}, 'Press ▶ Play a question.'),
       h('span', { class: 'ws-streak' }, ' · streak ' + e.streak + ' · best ' + e.best + (e.n ? ' · ' + Math.round(e.ok / e.n * 100) + '% of ' + e.n : '')));
   };
   top.append(h('label', { class: 'field' }, 'Train', wsSel(modes, CFG.shed.ear, v => { CFG.shed.ear = v; saveCfg(); Object.assign(WS.ear, { q: null, streak: 0, lock: false }); paint(); }, { id: 'ws-ear-mode' })),
     h('button', { class: 'btn primary', id: 'ws-ear-go', 'aria-label': 'Play a question', onclick: () => wsEarNext() }, '▶ Play a question'), h('button', { class: 'btn', id: 'ws-ear-again', 'aria-label': 'Play the question again', onclick: () => wsEarPlay() }, '↻ Again'));
   WS.r.ear = { paint, build: paint }; box.append(top, ans, stat, wsLock('ear', 'Chord qualities by ear')); paint(); return box;
 }
-/** the room itself */
-function showerOpen(at) {
+/** the room itself (part of Practice) */
+function trainOpen(at) {
   wsStop(true);
-  const d = hubOpen('shower', { ico: '🚿', title: 'Shower mode', sub: 'Everyone sounds better in here. Scales, arpeggios and your ear. Not responsible for damage to electronic devices.', at, sections: [
-    { key: 'scales', label: 'Scales', ico: '♯', sub: 'The warm-up. Choose a key, a scale and where on the neck. ● Play it follows you note by note, up and back down.', wide: true, body: () => [wsRoom('scale')] },
-    { key: 'arps', label: 'Arpeggios', ico: '🎸', sub: 'Lather, rinse, repeat: this song’s chords one note at a time, or one chord up and down.', wide: true, body: () => [wsRoom('arp')] },
-    { key: 'ear', label: 'Your ear', ico: '👂', sub: 'Two notes through the steam. Name the gap between them. Build a streak.', wide: true, body: () => [wsEarRoom()] },
-    { key: 'how', label: 'The fine print', ico: '🧴', wide: true, body: () => [h('p', { class: 'small' }, 'Shower mode does not need a shower. Please keep phones, laptops, amps, pedals and guitars out of the water. Not responsible for damage to electronic devices, rubber ducks, or your neighbours’ patience.'), h('p', { class: 'small' }, 'It listens to the input the tuner uses (Audio, top right): play each note when it is the next one. A wrong note counts; the note you just played, still ringing, does not. Octaves do not matter, the note does. Nothing is recorded, not even that high note. ▶ Listen plays the run through the studio’s own lead voice, at half the song’s beat.'), h('p', { class: 'small muted' }, 'Some of this room is behind the curtain until you find what the studio hides, and most of it is hidden out there, not in here. With Settings ▸ Workflow ▸ Hidden surprises off, it is all open.')] }
+  const d = hubOpen('scales-ear', { ico: '🎼', title: 'Scales & ear', sub: 'Scales anywhere on the neck, this song’s chords one note at a time, and your ear. The studio listens and follows you note by note.', at, sections: [
+    { key: 'scales', label: 'Scales', ico: '♯', sub: 'Choose a key, a scale and where on the neck. ● Play it follows you note by note, up and back down.', wide: true, body: () => [wsRoom('scale')] },
+    { key: 'arps', label: 'Arpeggios', ico: '🎸', sub: 'This song’s chords one note at a time, or one chord up and down.', wide: true, body: () => [wsRoom('arp')] },
+    { key: 'ear', label: 'Your ear', ico: '👂', sub: 'Two notes. Name the gap between them. Build a streak.', wide: true, body: () => [wsEarRoom()] },
+    { key: 'how', label: 'How it listens', ico: 'ⓘ', wide: true, body: () => [h('p', { class: 'small' }, 'It listens to the input the tuner uses (Audio, top right): play each note when it is the next one. A wrong note counts; the note you just played, still ringing, does not. Octaves do not matter, the note does. Nothing is recorded. ▶ Listen plays the run through the studio’s own lead voice, at half the song’s beat.'), h('p', { class: 'small muted' }, 'Some of this room is locked until you find what the studio hides, and most of that is out in the studio, not in here. With Settings ▸ Workflow ▸ Hidden surprises off, it is all open.')] }
   ] });
-  d.classList.add('ws-hub'); d.addEventListener('close', () => { wsStop(true); clearTimeout(WS.ear.tm); }, { once: true });
+  d.classList.add('ws-hub'); if (!d._wsClose) { d._wsClose = true; d.addEventListener('close', () => { wsStop(true); clearTimeout(WS.ear.tm); }); }      /* one listener for the dialog's life: reopening fires a close too */
   return d;
 }
 /* a secret found here opens its treasure in place: the room is drawn again where you are, a moment later */
-bus.on('secret', id => { if (!['scale', 'arp', 'ear'].includes(id)) return; setTimeout(() => { const d = document.getElementById('shower'); if (!d || !d.open || WS.run && WS.run.mode === 'follow') return; const on = d.querySelector('.hub-nb.on'); const e = Object.assign({}, WS.ear); showerOpen(on ? on.dataset.sec : undefined); Object.assign(WS.ear, { streak: e.streak, best: e.best, n: e.n, ok: e.ok }); if (WS.r.ear) WS.r.ear.paint(); }, 1400); });
-bus.on('song', () => { const d = document.getElementById('shower'); if (d && d.open && !WS.run) Object.values(WS.r).forEach(r => r.build()); });
+bus.on('secret', id => { if (!['scale', 'arp', 'ear'].includes(id)) return; setTimeout(() => { const d = document.getElementById('scales-ear'); if (!d || !d.open || WS.run && WS.run.mode === 'follow') return; const on = d.querySelector('.hub-nb.on'); const e = Object.assign({}, WS.ear); trainOpen(on ? on.dataset.sec : undefined); Object.assign(WS.ear, { streak: e.streak, best: e.best, n: e.n, ok: e.ok }); if (WS.r.ear) WS.r.ear.paint(); }, 1400); });
+bus.on('song', () => { const d = document.getElementById('scales-ear'); if (d && d.open && !WS.run) Object.values(WS.r).forEach(r => r.build()); });
 /* turning a phone round redraws the fretboard at the size that fits */
-{ let wasN = null; addEventListener('resize', () => { const n = wsNarrow(); if (n === wasN) return; wasN = n; const d = document.getElementById('shower'); if (d && d.open) ['scale', 'arp'].forEach(k => WS.r[k] && WS.r[k].paint()); }); }
+{ let wasN = null; addEventListener('resize', () => { const n = wsNarrow(); if (n === wasN) return; wasN = n; const d = document.getElementById('scales-ear'); if (d && d.open) ['scale', 'arp'].forEach(k => WS.r[k] && WS.r[k].paint()); }); }

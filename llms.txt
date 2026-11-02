@@ -1,6 +1,6 @@
 # the-daily.studio
 
-> Record guitar and voice, split a song into stems, get chords, tab and lyrics, and run a live light show. Free, private, in your browser: no account, no uploads. Version 2.26.0. An AI assistant in the person's browser can use the studio through tools (WebMCP, or window.dailyStudio from a script). Nothing is sent to a server.
+> Record guitar and voice, split a song into stems, get chords, tab and lyrics, and run a live light show. Free, private, in your browser: no account, no uploads. Version 2.27.0. An AI assistant in the person's browser can use the studio through tools (WebMCP, or window.dailyStudio from a script). Nothing is sent to a server.
 
 ## For AI assistants
 
@@ -33,10 +33,11 @@ The tools never reach the microphone, the camera, recording, deleting songs or S
 - set_visuals (changes (never the camera); required: none)
 - perform (changes (never the microphone); required: none)
 - mute_band (changes; required: none)
-- open_shower_mode (changes (never the microphone, never unlocks); required: none)
+- open_practice_room (changes (never the microphone, never unlocks); required: none)
 - open_workspace (changes; required: `workspace`)
 - open_song (changes; required: `song`)
 - undo (changes; required: none)
+- open_shower_mode (`open_practice_room` (the scale, arpeggio and ear trainers moved to Practice ▸ Scales & ear); required: 2.27)
 
 ## Guide
 

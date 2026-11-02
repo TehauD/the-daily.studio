@@ -74,7 +74,7 @@ const AG_START = [
   { call: 'explain_song', input: {}, why: 'The key, the Roman numerals and how the sections are built.' },
   { call: 'write_song', input: { lyrics: '[Verse]\nWalking down to the harbour\nLights along the water\n[Chorus]\nHold on, hold on', key: 'G', chorus_progression: 'IV I V vi' }, why: 'Lyrics to a song the band plays.' },
   { call: 'set_up_practice', input: { section: 'Chorus', tempo_percent: 75, band: 'drums' }, why: 'Loop a section slower with just the drums.' },
-  { call: 'open_shower_mode', input: { room: 'scales' }, why: 'Scales in the song\'s key, followed note by note.' }
+  { call: 'open_practice_room', input: { room: 'scales' }, why: 'Scales in the song\'s key, followed note by note.' }
 ];
 function agTool(name, description, inputSchema, run, ann) { AGT.tools.push({ name, description, inputSchema, run, annotations: Object.assign({ readOnlyHint: false }, ann || {}) }); }
 /** a change: one undo step, a 🤖 note, and the song as it is now */
@@ -223,13 +223,13 @@ agTool('mute_band', 'Mute the whole backing band and the metronome click in one 
     return agTxt({ done: true, muted: bandMuted(), band: { drums: !!S.band.drumsOn, bass: !!S.band.bassOn, rhythm_guitar: !!S.band.compOn, lead_tab: !!S.band.leadOn }, metronome: !!T.metro });
   }, { idempotentHint: true });
 
-agTool('open_shower_mode', 'Open Shower mode, the practice room: scales (a key, a scale and where on the neck; the studio follows the person note by note), arpeggios (this song\'s chords one note at a time) or ear (name the interval between two notes). Opening it never turns the microphone on: the person presses Play it. Some scales and options stay locked until the person finds them; this tool cannot unlock them.',
-  agObj({ room: agStr('Which room.', { enum: ['scales', 'arpeggios', 'ear'] }), key: agStr('For scales: the key, a note name like A, F# or Bb.'), scale: agStr('For scales: the scale\'s name, e.g. Minor Pentatonic, Major (Ionian), Blues.', { enum: Object.keys(SCALES) }) }),
+agTool('open_practice_room', 'Open Scales & ear, the practice room: scales (a key, a scale and where on the neck; the studio follows the person note by note), arpeggios (this song\'s chords one note at a time) or ear (name the interval between two notes). Opening it never turns the microphone on: the person presses Play it. Some scales and options stay locked until the person finds them; this tool cannot unlock them.',
+  agObj({ room: agStr('Which room. Default: scales.', { enum: ['scales', 'arpeggios', 'ear'] }), key: agStr('For scales: the key, a note name like A, F# or Bb.'), scale: agStr('For scales: the scale\'s name, e.g. Minor Pentatonic, Major (Ionian), Blues.', { enum: Object.keys(SCALES) }) }),
   i => {
     if (i.scale) { if (!SCALES[i.scale]) throw new Error('Unknown scale'); if (!WS_BASE.includes(i.scale) && !wsOpen('scale')) throw new Error('That scale is still locked in this studio. Open ones: ' + WS_BASE.join(', ') + '.'); CFG.shed.scale = i.scale; CFG.shed.at = null; }
     if (i.key != null) { const k = agKey(String(i.key)); if (!k) throw new Error('Key not understood: ' + i.key); CFG.shed.key = k.root; CFG.shed.at = null; }
-    saveCfg(); showerOpen(i.room === 'arpeggios' ? 'arps' : i.room || 'scales');
-    agentSay('opened Shower mode'); const r = wsScaleRun();
+    saveCfg(); trainOpen(i.room === 'arpeggios' ? 'arps' : i.room || 'scales');
+    agentSay('opened Scales & ear'); const r = wsScaleRun();
     return agTxt({ done: true, room: i.room || 'scales', scale: r.title, notes: r.notes.map(q => wsName(q.m)), start_fret: r.st, note: 'The person presses ● Play it to be followed note by note (it listens to the tuner\'s input), or ▶ Listen to hear it.' });
   });
 
@@ -329,7 +329,7 @@ agTool('get_chord_shape', 'How to play a chord on the guitar in this song\'s tun
    inputs keep it. A renamed tool keeps its old name here, so an agent written for an earlier version still works.
    test/agent-contract.json holds the published tools and their required inputs; the tests fail if one disappears or changes. */
 const AG_API = '2';
-const AG_ALIAS = {};
+const AG_ALIAS = { open_shower_mode: 'open_practice_room' };      /* 2.27: the trainers moved to Practice; the old name still works */
 const AG_LIMIT = { change: 20, read: 40, timeout: 20000, maxOut: 250000 };   /* calls per second (changes / reads), ms per call, characters per answer */
 /** an error an agent can act on: code is one of unknown_tool, disabled, loading, invalid_input, busy, timeout, rejected (the studio refused, with the reason) */
 function agErr(code, msg) { const e = new Error(msg); e.code = code; return e; }

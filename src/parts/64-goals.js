@@ -64,7 +64,7 @@ const GOALS = [
       ['gtBpm', () => S.bpm + ' BPM', 'The tempo', () => { if (UI.bpm) UI.bpm.focus(); }],
       ['gtFast', '+ 5', 'Faster by 5 BPM', () => goalTempo(5)],
       ['gtScale', '♯ Scales', 'The scale for the key, on the theory panel', () => sideShow('theory')],
-      ['gtShed', '🚿 Shower mode', 'Practise scales, arpeggios and your ear, where everyone sounds better', () => showerOpen()],
+      ['gtShed', '🎼 Scales & ear', 'Scales anywhere on the neck, this song’s arpeggios and ear training, followed note by note', () => trainOpen()],
       ['gtChord', '▦ Chords', 'The chord that is playing, on the fretboard', () => dockGo('fret')]
     ] },
   { id: 'teacher', ico: '🎓', name: 'Teacher', layout: 'Teacher', step: 'share', hue: '#0b84d8', next: null,

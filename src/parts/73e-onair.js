@@ -4,7 +4,7 @@
    ● REC, so you can tell from any tab that the studio is rolling. Calm and reduced motion get a steady red light, no blinking.
    ============================================================ */
 const AIR = { on: false, tm: 0, ph: false, icon: null, red: null, title: '' };
-const airLive = () => !!(REC || (typeof SREC !== 'undefined' && SREC.on));
+const airLive = () => !!(REC || (typeof SREC !== 'undefined' && SREC.on) || (typeof SHW !== 'undefined' && SHW.rec));      /* Shower mode's ● too */
 /** the tab's icon in red: the same mark, its strokes recoloured */
 function airRed(href) {
   try { const svg = decodeURIComponent(href.replace(/^data:image\/svg\+xml,/, '')); return 'data:image/svg+xml,' + encodeURIComponent(svg.replace(/<style>[\s\S]*?<\/style>/, '<style>.h,.i{stroke:#ff2a3d}</style>')); } catch (e) { return href; }

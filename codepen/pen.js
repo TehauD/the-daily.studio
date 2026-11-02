@@ -5,7 +5,7 @@
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.26.0', BUILD = '09ebd52', PARTS_N = +'89' || 0, LINES_N = +'15651' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.27.0', BUILD = 'f03bfc7', PARTS_N = +'90' || 0, LINES_N = +'15893' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { ghApp: { clientId: '', slug: '' },   /* Sign in with GitHub: the GitHub App's public client id and its slug (docs/GITHUB.md); empty = only the token way */
   support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://the-daily.studio/journal/' };
@@ -1133,17 +1133,18 @@ function chordAt(bi, sib) {
 function scheduleSlot(slot, time) {
   const sp = spb(), dur = slotDur(), sw = (slot % 2 !== 0) ? S.swing * dur : 0, tt = time + sw;
   const beatSlots = 16 / S.ts[1];
-  if (slot < 0) { const sib = ((slot % sp) + sp) % sp; if (sib % beatSlots === 0) click(time, sib === 0); return; }
+  if (slot < 0) { const sib = ((slot % sp) + sp) % sp; if (sib % beatSlots === 0 && !T.quiet) click(time, sib === 0); return; }
+  const q = !!T.quiet;      /* T.quiet: the band and the click are silent while it is set (Shower mode); the song itself is not changed */
   const bi = Math.floor(slot / sp), sib = slot % sp, fb = barsCache()[bi]; if (!fb) return;
-  if (T.metro && sib % beatSlots === 0) click(tt, sib === 0);
+  if (T.metro && !q && sib % beatSlots === 0) click(tt, sib === 0);
   if (typeof lxEvt === 'function' && sib % beatSlots === 0) lxEvt('beat', tt, sib === 0 ? 1 : 0);   // the show listens on the audio clock
-  if (S.band.drumsOn) drumStep(sib, tt);
+  if (S.band.drumsOn && !q) drumStep(sib, tt);
   const cd = chordAt(bi, sib);
   if (cd && cd.sym) {
-    if (S.band.bassOn) { const e = bassEvent(S.band.bassStyle, cd.sym, cd.rel, cd.len, cd.next); if (e) { pluck('bass', tt, e.m, e.v, { id: 'b', pan: 0 }); if (typeof lxEvt === 'function') lxEvt('bass', tt, e.m, e.v); } }
-    if (S.band.compOn) { const st = STRUMS[S.band.compStyle] || STRUMS['Down 4s'], L = Math.min(16, sp), ch = st.p[sib % L]; strumAt(tt, cd.sym, ch, st); if (ch && ch !== '.' && typeof lxEvt === 'function') lxEvt('chord', tt, cd.sym, ch === ch.toUpperCase() ? 1 : .6); }
+    if (S.band.bassOn && !q) { const e = bassEvent(S.band.bassStyle, cd.sym, cd.rel, cd.len, cd.next); if (e) { pluck('bass', tt, e.m, e.v, { id: 'b', pan: 0 }); if (typeof lxEvt === 'function') lxEvt('bass', tt, e.m, e.v); } }
+    if (S.band.compOn && !q) { const st = STRUMS[S.band.compStyle] || STRUMS['Down 4s'], L = Math.min(16, sp), ch = st.p[sib % L]; strumAt(tt, cd.sym, ch, st); if (ch && ch !== '.' && typeof lxEvt === 'function') lxEvt('chord', tt, cd.sym, ch === ch.toUpperCase() ? 1 : .6); }
   }
-  if (S.band.leadOn) fb.bar.tab.forEach(n => { if (n.s === sib) { playTabNote(fb.bar, n, tt, dur); if (typeof lxEvt === 'function') lxEvt('lead', tt, S.tuning[n.st] + S.capo + n.f, .8); } });
+  if (S.band.leadOn && !q) fb.bar.tab.forEach(n => { if (n.s === sib) { playTabNote(fb.bar, n, tt, dur); if (typeof lxEvt === 'function') lxEvt('lead', tt, S.tuning[n.st] + S.capo + n.f, .8); } });
 }
 async function play(fromRec) {
   if (T.playing || OFR.busy) return; try { bandHint(); } catch (e) { } await startAudio(); const c = E.ctx; applyMix(); if (!S.sections.length || !songSlots()) { toast('Add a section with at least one bar first', 'warn'); return; }
@@ -2015,7 +2016,7 @@ function buildTheory(p) {
     if (!pal.children.length) pal.append(h('span', { class: 'muted small' }, 'Diatonic chords need a 7-note scale.'));
   };
   bus.on('song', render); render();
-  p.append(h('button', { class: 'btn sm ws-door', id: 'theoryShed', title: 'Practise this key and scale in Shower mode: scales, arpeggios and your ear', onclick: () => { CFG.shed.key = S.key; if (WS_BASE.includes(S.scale) || wsOpen('scale')) CFG.shed.scale = S.scale; CFG.shed.at = null; saveCfg(); showerOpen('scales'); } }, '🚿 Practise it in Shower mode'));
+  p.append(h('button', { class: 'btn sm ws-door', id: 'theoryShed', title: 'Practise this key and scale: scales, arpeggios and your ear, followed note by note', onclick: () => { CFG.shed.key = S.key; if (WS_BASE.includes(S.scale) || wsOpen('scale')) CFG.shed.scale = S.scale; CFG.shed.at = null; saveCfg(); trainOpen('scales'); } }, '🎼 Practise this scale'));
   p.append(h('div', { class: 'card' }, h('h4', {}, 'Key · Scale · Tuning'), h('div', { class: 'card-b' }, h('div', { class: 'row' }, kSel, sSel), h('div', { style: { height: '6px' } }), tSel, h('div', { class: 'row', style: { marginTop: '6px' } }, h('span', { class: 'small' }, 'Capo'), cap), info)),
     h('div', { class: 'card' }, h('h4', {}, 'Diatonic chord palette'), h('div', { class: 'card-b' }, pal)),
     h('div', { class: 'card' }, h('h4', {}, 'Progression builder'), h('div', { class: 'card-b' }, pr, h('div', { class: 'row', style: { marginTop: '6px' } }, h('button', { class: 'btn sm', onclick: () => applyProg(+pr.value, false) }, 'Replace section'), h('button', { class: 'btn sm', onclick: () => applyProg(+pr.value, true) }, 'Append bars')))),
@@ -3853,7 +3854,7 @@ async function boot() {
   if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener('devicechange', () => { ioDeviceChange().catch(e => console.warn(e)); });
   bus.emit('song');
   try { ghBoot(); } catch (e) { console.warn('github', e); }      /* back from Sign in with GitHub, or a sync at start (part 74) */
-  DEV.make = () => { window.__daily = { S, AIR, airSync, applyLayout, secretNote, secretArp, WS, WS_BASE, WS_ARPS, showerOpen, wsScaleRun, wsArpRun, wsFollow, wsStop, wsListen, wsEarNext, wsEarAnswer, wsOpen, bandMute, bandMuted, pdbPut, pdbKeys, projRename, FS, FS_B, fsUse, fsSync, fsHead, fsNeeds, fsTidy, fsOpen, syncOff, syncZips, PRJ_WAIT: () => PRJ.wait, EGG, EGG_LINES, EGG_ORDER, eggDay, eggFor, eggNow, eggText, eggTick, eggFit, saveCfg, projSave, projDelete, GH, ghSync, ghConnect, ghDisconnect, ghLocal, ghSha, ghJson, ghMerge3, ghShare, ghGallery, ghGalleryOpen, ghGalleryShow, ghKeepLook, ghKeepRig, rigClean, ghReturn, BRAND, ghSettingsOut, projRefresh, projCreate, projLoad, PRJ, SEC, SECRETS, secretFound, secretTiming, secretsOpen, secretSync, backstageOpen, startAudio, playheadSlot, GUARD, reportText, reportCopy, srecQ, srecSize, pdbGet, srecFmt, SREC_FMTS, VBG, vbgAdd, vbgRemove, vbgUse, vbgOpen, vbgDraw, vzSetMode, srecFrame, srecFmtBox, kitThumb, WORKLET_SRC, mkComp, mkShaper, rigLat, voxLat, restartAudio, satCurve, rigApply, qrMake, qrSvg, tipLink, tipShort, tipReady, tipCard, tipDraw, tipShareHtml, tipOpen, tipPrint, tipPng, tipVisAvoid, tipStageAvoid, TIP, TIP_TERMS, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, STP, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfort, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, srecStart, srecStop, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, tkFades, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, FB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, vzSetMode, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, drawVis, perfClose, voicings, peaksOf, uid, shareGate, shareData, shareHtml, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, slotAtTime, SEL, mtof, spb, playheadSlot, WR, HM, HMX, HM_MODES, vzImmersive, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitThumb, kitInk, kitNotes, kitRecord, srecMime, mGo, GD_SESSIONS, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard}; };   // test hook: with ?debug, or Backstage ▸ Labs ▸ Developer handles
+  DEV.make = () => { window.__daily = { S, AIR, airSync, applyLayout, SING, SHW, singStep, singScore, singSteamIR, singMicOff, showerOpen, shwGo, shwPlay, shwPrev, shwNext, shwStem, shwRecToggle, shwRecStop, shwHear, shwSave, shwAdd, shwQueue, trainOpen, projRestoreTrack, secretNote, secretArp, WS, WS_BASE, WS_ARPS, wsScaleRun, wsArpRun, wsFollow, wsStop, wsListen, wsEarNext, wsEarAnswer, wsOpen, bandMute, bandMuted, pdbPut, pdbKeys, projRename, FS, FS_B, fsUse, fsSync, fsHead, fsNeeds, fsTidy, fsOpen, syncOff, syncZips, PRJ_WAIT: () => PRJ.wait, EGG, EGG_LINES, EGG_ORDER, eggDay, eggFor, eggNow, eggText, eggTick, eggFit, saveCfg, projSave, projDelete, GH, ghSync, ghConnect, ghDisconnect, ghLocal, ghSha, ghJson, ghMerge3, ghShare, ghGallery, ghGalleryOpen, ghGalleryShow, ghKeepLook, ghKeepRig, rigClean, ghReturn, BRAND, ghSettingsOut, projRefresh, projCreate, projLoad, PRJ, SEC, SECRETS, secretFound, secretTiming, secretsOpen, secretSync, backstageOpen, startAudio, playheadSlot, GUARD, reportText, reportCopy, srecQ, srecSize, pdbGet, srecFmt, SREC_FMTS, VBG, vbgAdd, vbgRemove, vbgUse, vbgOpen, vbgDraw, vzSetMode, srecFrame, srecFmtBox, kitThumb, WORKLET_SRC, mkComp, mkShaper, rigLat, voxLat, restartAudio, satCurve, rigApply, qrMake, qrSvg, tipLink, tipShort, tipReady, tipCard, tipDraw, tipShareHtml, tipOpen, tipPrint, tipPng, tipVisAvoid, tipStageAvoid, TIP, TIP_TERMS, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, STP, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfort, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, srecStart, srecStop, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, tkFades, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, FB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, vzSetMode, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, drawVis, perfClose, voicings, peaksOf, uid, shareGate, shareData, shareHtml, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, slotAtTime, SEL, mtof, spb, playheadSlot, WR, HM, HMX, HM_MODES, vzImmersive, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitThumb, kitInk, kitNotes, kitRecord, srecMime, mGo, GD_SESSIONS, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard}; };   // test hook: with ?debug, or Backstage ▸ Labs ▸ Developer handles
   if (/[?&]debug\b/.test(location.search) || (CFG.labs && CFG.labs.handles)) DEV.make();
   try { bksBoot(); } catch (e) { console.warn('backstage', e); }      /* #backstage in the address, the performance overlay (part 73c) */
   projInit().catch(e => { console.warn('library', e); PRJ.ready = true; if (PRJ.wantStart) startMaybe(); });
@@ -5415,7 +5416,7 @@ function mSheet() {
       tile(msvg('<path d="M12 16V4M7 9l5-5 5 5M5 20h14"/>'), 'Open a file', () => { mCloseOverlays(); filesOpen(); }),
       tile(msvg('<path d="M5 20V9M12 20V4M19 20v-7"/>'), 'Master · balance · click', () => { mCloseOverlays(); mixOpen(); }),
       tile(msvg('<path d="M3 12c3-8 5-8 8 0s5 8 8 0"/>'), 'Voice · pitch · key', () => { mCloseOverlays(); voxOpen(); }),
-      tile(msvg('<path d="M5 21V8a4 4 0 018 0M13 8h-4M9 12v1M7 15v1M11 15v1M9 18v1"/>'), 'Shower mode · scales · ear', () => { mCloseOverlays(); showerOpen(); }),
+      tile(msvg('<path d="M5 21V8a4 4 0 018 0M13 8h-4M9 12v1M7 15v1M11 15v1M9 18v1"/>'), 'Scales & ear', () => { mCloseOverlays(); trainOpen(); }),
       tile(msvg('<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>'), keepRisk().level === 'ok' ? 'Back up songs' : 'Keep songs safe', () => { mCloseOverlays(); keepOpen(); }, keepRisk().level === 'high'),
       M.installEvt ? tile(msvg('<rect x="7" y="2.5" width="10" height="19" rx="2.4"/><path d="M12 8v7M9 12.5l3 3 3-3"/>'), 'Install app', () => { mInstall(); }) : null,
       document.fullscreenEnabled ? tile(msvg('<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>'), 'Full screen', () => { mCloseOverlays(); mFullscreen(); }) : null
@@ -12832,7 +12833,7 @@ const GOALS = [
       ['gtBpm', () => S.bpm + ' BPM', 'The tempo', () => { if (UI.bpm) UI.bpm.focus(); }],
       ['gtFast', '+ 5', 'Faster by 5 BPM', () => goalTempo(5)],
       ['gtScale', '♯ Scales', 'The scale for the key, on the theory panel', () => sideShow('theory')],
-      ['gtShed', '🚿 Shower mode', 'Practise scales, arpeggios and your ear, where everyone sounds better', () => showerOpen()],
+      ['gtShed', '🎼 Scales & ear', 'Scales anywhere on the neck, this song’s arpeggios and ear training, followed note by note', () => trainOpen()],
       ['gtChord', '▦ Chords', 'The chord that is playing, on the fretboard', () => dockGo('fret')]
     ] },
   { id: 'teacher', ico: '🎓', name: 'Teacher', layout: 'Teacher', step: 'share', hue: '#0b84d8', next: null,
@@ -14080,7 +14081,7 @@ const AG_START = [
   { call: 'explain_song', input: {}, why: 'The key, the Roman numerals and how the sections are built.' },
   { call: 'write_song', input: { lyrics: '[Verse]\nWalking down to the harbour\nLights along the water\n[Chorus]\nHold on, hold on', key: 'G', chorus_progression: 'IV I V vi' }, why: 'Lyrics to a song the band plays.' },
   { call: 'set_up_practice', input: { section: 'Chorus', tempo_percent: 75, band: 'drums' }, why: 'Loop a section slower with just the drums.' },
-  { call: 'open_shower_mode', input: { room: 'scales' }, why: 'Scales in the song\'s key, followed note by note.' }
+  { call: 'open_practice_room', input: { room: 'scales' }, why: 'Scales in the song\'s key, followed note by note.' }
 ];
 function agTool(name, description, inputSchema, run, ann) { AGT.tools.push({ name, description, inputSchema, run, annotations: Object.assign({ readOnlyHint: false }, ann || {}) }); }
 /** a change: one undo step, a 🤖 note, and the song as it is now */
@@ -14229,13 +14230,13 @@ agTool('mute_band', 'Mute the whole backing band and the metronome click in one 
     return agTxt({ done: true, muted: bandMuted(), band: { drums: !!S.band.drumsOn, bass: !!S.band.bassOn, rhythm_guitar: !!S.band.compOn, lead_tab: !!S.band.leadOn }, metronome: !!T.metro });
   }, { idempotentHint: true });
 
-agTool('open_shower_mode', 'Open Shower mode, the practice room: scales (a key, a scale and where on the neck; the studio follows the person note by note), arpeggios (this song\'s chords one note at a time) or ear (name the interval between two notes). Opening it never turns the microphone on: the person presses Play it. Some scales and options stay locked until the person finds them; this tool cannot unlock them.',
-  agObj({ room: agStr('Which room.', { enum: ['scales', 'arpeggios', 'ear'] }), key: agStr('For scales: the key, a note name like A, F# or Bb.'), scale: agStr('For scales: the scale\'s name, e.g. Minor Pentatonic, Major (Ionian), Blues.', { enum: Object.keys(SCALES) }) }),
+agTool('open_practice_room', 'Open Scales & ear, the practice room: scales (a key, a scale and where on the neck; the studio follows the person note by note), arpeggios (this song\'s chords one note at a time) or ear (name the interval between two notes). Opening it never turns the microphone on: the person presses Play it. Some scales and options stay locked until the person finds them; this tool cannot unlock them.',
+  agObj({ room: agStr('Which room. Default: scales.', { enum: ['scales', 'arpeggios', 'ear'] }), key: agStr('For scales: the key, a note name like A, F# or Bb.'), scale: agStr('For scales: the scale\'s name, e.g. Minor Pentatonic, Major (Ionian), Blues.', { enum: Object.keys(SCALES) }) }),
   i => {
     if (i.scale) { if (!SCALES[i.scale]) throw new Error('Unknown scale'); if (!WS_BASE.includes(i.scale) && !wsOpen('scale')) throw new Error('That scale is still locked in this studio. Open ones: ' + WS_BASE.join(', ') + '.'); CFG.shed.scale = i.scale; CFG.shed.at = null; }
     if (i.key != null) { const k = agKey(String(i.key)); if (!k) throw new Error('Key not understood: ' + i.key); CFG.shed.key = k.root; CFG.shed.at = null; }
-    saveCfg(); showerOpen(i.room === 'arpeggios' ? 'arps' : i.room || 'scales');
-    agentSay('opened Shower mode'); const r = wsScaleRun();
+    saveCfg(); trainOpen(i.room === 'arpeggios' ? 'arps' : i.room || 'scales');
+    agentSay('opened Scales & ear'); const r = wsScaleRun();
     return agTxt({ done: true, room: i.room || 'scales', scale: r.title, notes: r.notes.map(q => wsName(q.m)), start_fret: r.st, note: 'The person presses ● Play it to be followed note by note (it listens to the tuner\'s input), or ▶ Listen to hear it.' });
   });
 
@@ -14335,7 +14336,7 @@ agTool('get_chord_shape', 'How to play a chord on the guitar in this song\'s tun
    inputs keep it. A renamed tool keeps its old name here, so an agent written for an earlier version still works.
    test/agent-contract.json holds the published tools and their required inputs; the tests fail if one disappears or changes. */
 const AG_API = '2';
-const AG_ALIAS = {};
+const AG_ALIAS = { open_shower_mode: 'open_practice_room' };      /* 2.27: the trainers moved to Practice; the old name still works */
 const AG_LIMIT = { change: 20, read: 40, timeout: 20000, maxOut: 250000 };   /* calls per second (changes / reads), ms per call, characters per answer */
 /** an error an agent can act on: code is one of unknown_tool, disabled, loading, invalid_input, busy, timeout, rejected (the studio refused, with the reason) */
 function agErr(code, msg) { const e = new Error(msg); e.code = code; return e; }
@@ -14611,9 +14612,9 @@ function eggFit(el) {
    · Tuned to perfection   all six open strings within ±2 cents of true, one after another (the tuner the studio already has)
    · In the pocket         sixteen notes in a row within 10 ms of the beat while the song plays (the timing analysis already there)
    · The hidden line       triple-click the version tag (part 73)
-   · Up and down           any scale up and back down, anywhere the tuner hears it: opens modes and more scales in Shower mode (part 73d)
+   · Up and down           any scale up and back down, anywhere the tuner hears it: opens modes and more scales in Scales & ear (part 73d)
    · Broken chords         three of the band's chords in a row broken into notes (root, third, fifth) while the song plays: opens seventh arpeggios
-   · Golden ear            ten intervals in a row by ear in Shower mode, from six choices or more: opens chord qualities by ear
+   · Golden ear            ten intervals in a row by ear in Scales & ear, from six choices or more: opens chord qualities by ear
    · Backstage pass        the browser console says hello to developers and points at dailyStudio.backstage(): guest list only,
                            and the password is the build (part 73c has the door, the pass and the rooms)
    A small 🗝 counter next to the version shows how many have been found, once the first one has. The rules: nothing fires while a take
@@ -14624,9 +14625,9 @@ const SECRETS = [
   ['line', 'The hidden line', 'Some numbers want to be clicked three times.', 'Triple-click the version tag: a quote of the day from someone in history wakes up at the bottom of the page.'],
   ['tuned', 'Tuned to perfection', 'Six strings, two cents.', 'All six open strings within ±2 cents of true, one after another.'],
   ['pocket', 'In the pocket', 'Sixteen notes, right on time.', 'Sixteen notes in a row within 10 ms of the beat while the song plays.'],
-  ['scale', 'Up and down', 'Every note, there and back. Anywhere I can hear you.', 'Played a whole scale up and back down.', 'Modes and more scales are open in Shower mode. 🚿'],
-  ['arp', 'Broken chords', 'The band plays the chords. You take them apart.', 'Broke three of the band’s chords in a row into their notes while the song played.', 'Seventh arpeggios are open in Shower mode. 🚿'],
-  ['ear', 'Golden ear', 'Ten in a row, by ear, somewhere steamy.', 'Named ten intervals in a row by ear in Shower mode.', 'Chord qualities by ear are open in Shower mode. 🚿'],
+  ['scale', 'Up and down', 'Every note, there and back. Anywhere I can hear you.', 'Played a whole scale up and back down.', 'Modes and more scales are open in Practice ▸ Scales & ear. 🎼'],
+  ['arp', 'Broken chords', 'The band plays the chords. You take them apart.', 'Broke three of the band’s chords in a row into their notes while the song played.', 'Seventh arpeggios are open in Practice ▸ Scales & ear. 🎼'],
+  ['ear', 'Golden ear', 'Ten in a row, by ear. Practice has a room for that.', 'Named ten intervals in a row by ear in Scales & ear.', 'Chord qualities by ear are open in Practice ▸ Scales & ear. 🎼'],
   ['backstage', 'Backstage pass', 'Developers know where to look.', 'Read the note in the browser console, knocked, and knew the password.']
 ];
 CFG.secrets = CFG.secrets && typeof CFG.secrets === 'object' ? CFG.secrets : {};
@@ -14835,7 +14836,8 @@ const BKS_CMDS = {
   open: ['open <page>', 'open a hidden page in a new tab'],
   history: ['history', 'what you typed'],
   uptime: ['uptime', 'how long this page has been open'],
-  shower: ['shower', 'Shower mode: scales, arpeggios, your ear'],
+  shower: ['shower', 'Shower mode: sing along to your songs, hands wet'],
+  scales: ['scales', 'Scales & ear: scales, arpeggios, your ear'],
   exit: ['exit', 'leave Backstage']
 };
 const bksJson = (v, n = 1600) => { const s = JSON.stringify(v, null, 1); return s.length > n ? s.slice(0, n) + '\n… (' + s.length + ' characters; the Agent playground shows it all)' : s; };
@@ -14881,7 +14883,8 @@ async function bksRun(line, out) {
     case 'open': { const p = BKS_PAGES.find(([x, n]) => x.replace(/\/$/, '') === arg.replace(/\/$/, '') || n.toLowerCase().startsWith(arg.toLowerCase())) || (arg === 'lobby' ? BKS_PAGES[0] : null); if (!p) return out('open ' + BKS_PAGES.map(x => x[0].replace(/\/$/, '') || 'lobby').join(' | '), 'err'); window.open(bksBase() + p[0], '_blank', 'noopener'); return out('↗ ' + bksBase() + p[0]); }
     case 'history': return out(BKS.hist.map((x, i) => String(i + 1).padStart(4) + '  ' + x).join('\n') || 'nothing yet');
     case 'uptime': { const s = Math.round((Date.now() - BKS.t0) / 1000); return out('up ' + (s >= 3600 ? Math.floor(s / 3600) + ' h ' : '') + Math.floor(s % 3600 / 60) + ' min ' + s % 60 + ' s · ' + (frameN || 0).toLocaleString('en') + ' frames drawn'); }
-    case 'shower': case 'woodshed': setTimeout(() => showerOpen(), 300); return out('🚿 Running the water. Not responsible for damage to electronic devices.');
+    case 'shower': setTimeout(() => showerOpen(), 300); return out('🚿 Running the water. Not responsible for damage to electronic devices.');
+    case 'scales': case 'woodshed': setTimeout(() => trainOpen(), 300); return out('🎼 Scales & ear.');
     case 'exit': case 'quit': case 'logout': { const d = document.getElementById('backstage'); if (d) setTimeout(() => d.close(), 350); return out('See you at soundcheck. 🎸'); }
   }
   return out('command not found: ' + cmd + ' · type help', 'err');
@@ -15015,10 +15018,11 @@ document.addEventListener('keydown', e => {
   if (BKS.k === BKS_KONAMI.length) { BKS.k = 0; if (CFG.backstage) backstageOpen('terminal'); else toast('🎟 Nice moves. Backstage is guest list only, and the door is in the browser console.', ''); }
 }, true);
 
-/* >>> parts/73d-shower.js */
+/* >>> parts/73d-scales-ear.js */
 /* ============================================================
-   Part 73d · SHOWER MODE (2.25) — practise scales, arpeggios and your ear, where everyone sounds better
-   Not responsible for damage to electronic devices. Three trainers in one room, each with a fretboard drawn for the song's tuning and capo:
+   Part 73d · SCALES & EAR (2.25, moved to Practice in 2.27) — scales, arpeggios and your ear, followed note by note
+   Three trainers in one room, each with a fretboard drawn for the song's tuning and capo. It opens from the Practice workspace's tools,
+   the Theory panel ("Practise this scale") and the phone's More sheet:
      · Scales      a key, a scale, where on the neck, one or two octaves. ▶ Listen plays it; ● Play it follows you note by note,
                    up and back down, by the pitch the tuner already hears (a wrong note counts, a note still ringing does not)
      · Arpeggios   the chords of this song one note at a time, or one chord up and down
@@ -15029,10 +15033,11 @@ document.addEventListener('keydown', e => {
      · Golden ear      ten in a row by ear, in here, from six choices or more             → chord qualities by ear
    With hidden surprises off (Settings ▸ Workflow), the treasures are simply open: nobody has to hunt for practice.
    It listens to the input the tuner uses and records nothing; ▶ Listen plays through the studio's own lead voice.
+   (Its settings keep the name CFG.shed, from when it was the Woodshed, so nobody's choices are lost.)
    ============================================================ */
 CFG.shed = Object.assign({ scale: 'Minor Pentatonic', key: null, at: null, oct: 1, src: 'song', root: null, type: '', arpAt: null, ear: 'more' }, CFG.shed && typeof CFG.shed === 'object' ? CFG.shed : {});
 const WS = { run: null, tm: 0, play: [], ear: { q: null, streak: 0, best: 0, n: 0, ok: 0, lock: false }, r: {} };
-const WS_CHEERS = ['The acoustics in here are incredible. 🚿', 'Squeaky clean. 🧼', 'Somebody hand this person a towel and a record deal.', 'Even the rubber duck is impressed. 🦆', 'Steam-powered. 💨'];
+const WS_CHEERS = ['Clean. 🎯', 'Not a note out of place.', 'Your fingers know the way now.', 'Again, a little faster?', 'That one is in your hands.'];
 const WS_BASE = ['Major (Ionian)', 'Natural Minor (Aeolian)', 'Major Pentatonic', 'Minor Pentatonic', 'Blues'];
 const WS_ARPS = [['', 'Major', [0, 4, 7]], ['m', 'Minor', [0, 3, 7]], ['dim', 'Diminished', [0, 3, 6]], ['aug', 'Augmented', [0, 4, 8]], ['maj7', 'Major 7', [0, 4, 7, 11], 1], ['7', 'Dominant 7', [0, 4, 7, 10], 1], ['m7', 'Minor 7', [0, 3, 7, 10], 1], ['m7b5', 'Half-diminished', [0, 3, 6, 10], 1], ['dim7', 'Diminished 7', [0, 3, 6, 9], 1]];
 const WS_IV = [['m2', 'minor 2nd', 1], ['M2', 'major 2nd', 2], ['m3', 'minor 3rd', 3], ['M3', 'major 3rd', 4], ['P4', 'perfect 4th', 5], ['TT', 'tritone', 6], ['P5', 'perfect 5th', 7], ['m6', 'minor 6th', 8], ['M6', 'major 6th', 9], ['m7', 'minor 7th', 10], ['M7', 'major 7th', 11], ['P8', 'octave', 12]];
@@ -15120,9 +15125,9 @@ function wsStop(quiet) {
   if (r && !quiet) { const b = WS.r[r.kind]; if (b) b.paint(); }
 }
 function wsFollow(kind) {
-  wsStop(true); const run = kind === 'scale' ? wsScaleRun() : wsArpRun(); if (!run.notes.length) { toast('This song has no chords yet. Write some, or choose One chord. (Humming in the shower does not count as writing.)', 'warn'); return; }
+  wsStop(true); const run = kind === 'scale' ? wsScaleRun() : wsArpRun(); if (!run.notes.length) { toast('This song has no chords yet. Write some, or choose One chord. ', 'warn'); return; }
   WS.run = Object.assign(run, { mode: 'follow', i: 0, miss: 0, held: null, judged: false, prev: null, t0: performance.now(), wrong: 0 });
-  if (!E.hasInput) toast('Connect your input (Audio, top right) so Shower mode can hear you. Or press Listen first. The actual shower is optional.', 'warn');
+  if (!E.hasInput) toast('Connect your input (Audio, top right) so the room can hear you. Or press Listen first.', 'warn');
   WS.tm = setInterval(wsTick, 40); WS.r[kind].paint();
 }
 function wsTick() {
@@ -15140,7 +15145,7 @@ function wsTick() {
 function wsDone(r) {
   clearInterval(WS.tm); WS.tm = 0; r.mode = 'done'; r.secs = (performance.now() - r.t0) / 1000;
   const clean = r.miss === 0, what = r.kind === 'scale' ? 'Up and back down' : (r.chords.length > 1 ? r.chords.length + ' chords' : 'The arpeggio');
-  toast(what + ' in ' + r.secs.toFixed(1) + ' s' + (clean ? ', no wrong notes. ' + WS_CHEERS[Math.floor(Math.random() * WS_CHEERS.length)] : ', ' + r.miss + ' wrong note' + (r.miss === 1 ? '' : 's') + '. Blame the tiles. Again?'), clean ? 'ok' : '');      /* the secrets are found out in the studio (part 73b hears a scale wherever you play it) */
+  toast(what + ' in ' + r.secs.toFixed(1) + ' s' + (clean ? ', no wrong notes. ' + WS_CHEERS[Math.floor(Math.random() * WS_CHEERS.length)] : ', ' + r.miss + ' wrong note' + (r.miss === 1 ? '' : 's') + '. Again, slowly, then faster.'), clean ? 'ok' : '');      /* the secrets are found out in the studio (part 73b hears a scale wherever you play it) */
   WS.r[r.kind].paint();
 }
 /** ▶ Listen: the run played by the studio's lead voice, the fretboard following */
@@ -15219,30 +15224,30 @@ function wsEarRoom() {
   const paint = () => {
     const e = WS.ear, list = wsEarChords() ? WS_CQ.map(x => [x[0], x[0]]) : (WS_SETS[CFG.shed.ear] || WS_SETS.more).map(a => { const iv = WS_IV.find(x => x[0] === a); return [a, iv[1]]; });
     ans.innerHTML = ''; list.forEach(([a, t]) => ans.append(h('button', { 'aria-pressed': String(!!(e.last && e.lock && a === e.last.a)), class: 'btn ws-a' + (e.last && e.lock && a === e.last.ans ? ' right' : '') + (e.last && e.lock && !e.last.right && a === e.last.a ? ' wrong' : ''), 'data-a': a, disabled: !e.q, onclick: () => wsEarAnswer(a) }, t)));
-    stat.innerHTML = ''; stat.append(e.q ? (e.lock ? h('b', { class: e.last.right ? 'ws-good' : '' }, e.last.right ? '✓ ' + ['Yes', 'Nailed it', 'Golden', 'Correct, and very hydrated'][e.n % 4] + ': ' : '✗ It was: ', h('span', {}, (wsEarChords() ? e.last.ans : WS_IV.find(x => x[0] === e.last.ans)[1]))) : h('span', {}, 'What did you hear?')) : h('span', {}, 'Press ▶ Play a question.'),
+    stat.innerHTML = ''; stat.append(e.q ? (e.lock ? h('b', { class: e.last.right ? 'ws-good' : '' }, e.last.right ? '✓ ' + ['Yes', 'Nailed it', 'Golden', 'Correct'][e.n % 4] + ': ' : '✗ It was: ', h('span', {}, (wsEarChords() ? e.last.ans : WS_IV.find(x => x[0] === e.last.ans)[1]))) : h('span', {}, 'What did you hear?')) : h('span', {}, 'Press ▶ Play a question.'),
       h('span', { class: 'ws-streak' }, ' · streak ' + e.streak + ' · best ' + e.best + (e.n ? ' · ' + Math.round(e.ok / e.n * 100) + '% of ' + e.n : '')));
   };
   top.append(h('label', { class: 'field' }, 'Train', wsSel(modes, CFG.shed.ear, v => { CFG.shed.ear = v; saveCfg(); Object.assign(WS.ear, { q: null, streak: 0, lock: false }); paint(); }, { id: 'ws-ear-mode' })),
     h('button', { class: 'btn primary', id: 'ws-ear-go', 'aria-label': 'Play a question', onclick: () => wsEarNext() }, '▶ Play a question'), h('button', { class: 'btn', id: 'ws-ear-again', 'aria-label': 'Play the question again', onclick: () => wsEarPlay() }, '↻ Again'));
   WS.r.ear = { paint, build: paint }; box.append(top, ans, stat, wsLock('ear', 'Chord qualities by ear')); paint(); return box;
 }
-/** the room itself */
-function showerOpen(at) {
+/** the room itself (part of Practice) */
+function trainOpen(at) {
   wsStop(true);
-  const d = hubOpen('shower', { ico: '🚿', title: 'Shower mode', sub: 'Everyone sounds better in here. Scales, arpeggios and your ear. Not responsible for damage to electronic devices.', at, sections: [
-    { key: 'scales', label: 'Scales', ico: '♯', sub: 'The warm-up. Choose a key, a scale and where on the neck. ● Play it follows you note by note, up and back down.', wide: true, body: () => [wsRoom('scale')] },
-    { key: 'arps', label: 'Arpeggios', ico: '🎸', sub: 'Lather, rinse, repeat: this song’s chords one note at a time, or one chord up and down.', wide: true, body: () => [wsRoom('arp')] },
-    { key: 'ear', label: 'Your ear', ico: '👂', sub: 'Two notes through the steam. Name the gap between them. Build a streak.', wide: true, body: () => [wsEarRoom()] },
-    { key: 'how', label: 'The fine print', ico: '🧴', wide: true, body: () => [h('p', { class: 'small' }, 'Shower mode does not need a shower. Please keep phones, laptops, amps, pedals and guitars out of the water. Not responsible for damage to electronic devices, rubber ducks, or your neighbours’ patience.'), h('p', { class: 'small' }, 'It listens to the input the tuner uses (Audio, top right): play each note when it is the next one. A wrong note counts; the note you just played, still ringing, does not. Octaves do not matter, the note does. Nothing is recorded, not even that high note. ▶ Listen plays the run through the studio’s own lead voice, at half the song’s beat.'), h('p', { class: 'small muted' }, 'Some of this room is behind the curtain until you find what the studio hides, and most of it is hidden out there, not in here. With Settings ▸ Workflow ▸ Hidden surprises off, it is all open.')] }
+  const d = hubOpen('scales-ear', { ico: '🎼', title: 'Scales & ear', sub: 'Scales anywhere on the neck, this song’s chords one note at a time, and your ear. The studio listens and follows you note by note.', at, sections: [
+    { key: 'scales', label: 'Scales', ico: '♯', sub: 'Choose a key, a scale and where on the neck. ● Play it follows you note by note, up and back down.', wide: true, body: () => [wsRoom('scale')] },
+    { key: 'arps', label: 'Arpeggios', ico: '🎸', sub: 'This song’s chords one note at a time, or one chord up and down.', wide: true, body: () => [wsRoom('arp')] },
+    { key: 'ear', label: 'Your ear', ico: '👂', sub: 'Two notes. Name the gap between them. Build a streak.', wide: true, body: () => [wsEarRoom()] },
+    { key: 'how', label: 'How it listens', ico: 'ⓘ', wide: true, body: () => [h('p', { class: 'small' }, 'It listens to the input the tuner uses (Audio, top right): play each note when it is the next one. A wrong note counts; the note you just played, still ringing, does not. Octaves do not matter, the note does. Nothing is recorded. ▶ Listen plays the run through the studio’s own lead voice, at half the song’s beat.'), h('p', { class: 'small muted' }, 'Some of this room is locked until you find what the studio hides, and most of that is out in the studio, not in here. With Settings ▸ Workflow ▸ Hidden surprises off, it is all open.')] }
   ] });
-  d.classList.add('ws-hub'); d.addEventListener('close', () => { wsStop(true); clearTimeout(WS.ear.tm); }, { once: true });
+  d.classList.add('ws-hub'); if (!d._wsClose) { d._wsClose = true; d.addEventListener('close', () => { wsStop(true); clearTimeout(WS.ear.tm); }); }      /* one listener for the dialog's life: reopening fires a close too */
   return d;
 }
 /* a secret found here opens its treasure in place: the room is drawn again where you are, a moment later */
-bus.on('secret', id => { if (!['scale', 'arp', 'ear'].includes(id)) return; setTimeout(() => { const d = document.getElementById('shower'); if (!d || !d.open || WS.run && WS.run.mode === 'follow') return; const on = d.querySelector('.hub-nb.on'); const e = Object.assign({}, WS.ear); showerOpen(on ? on.dataset.sec : undefined); Object.assign(WS.ear, { streak: e.streak, best: e.best, n: e.n, ok: e.ok }); if (WS.r.ear) WS.r.ear.paint(); }, 1400); });
-bus.on('song', () => { const d = document.getElementById('shower'); if (d && d.open && !WS.run) Object.values(WS.r).forEach(r => r.build()); });
+bus.on('secret', id => { if (!['scale', 'arp', 'ear'].includes(id)) return; setTimeout(() => { const d = document.getElementById('scales-ear'); if (!d || !d.open || WS.run && WS.run.mode === 'follow') return; const on = d.querySelector('.hub-nb.on'); const e = Object.assign({}, WS.ear); trainOpen(on ? on.dataset.sec : undefined); Object.assign(WS.ear, { streak: e.streak, best: e.best, n: e.n, ok: e.ok }); if (WS.r.ear) WS.r.ear.paint(); }, 1400); });
+bus.on('song', () => { const d = document.getElementById('scales-ear'); if (d && d.open && !WS.run) Object.values(WS.r).forEach(r => r.build()); });
 /* turning a phone round redraws the fretboard at the size that fits */
-{ let wasN = null; addEventListener('resize', () => { const n = wsNarrow(); if (n === wasN) return; wasN = n; const d = document.getElementById('shower'); if (d && d.open) ['scale', 'arp'].forEach(k => WS.r[k] && WS.r[k].paint()); }); }
+{ let wasN = null; addEventListener('resize', () => { const n = wsNarrow(); if (n === wasN) return; wasN = n; const d = document.getElementById('scales-ear'); if (d && d.open) ['scale', 'arp'].forEach(k => WS.r[k] && WS.r[k].paint()); }); }
 
 /* >>> parts/73e-onair.js */
 /* ============================================================
@@ -15251,7 +15256,7 @@ bus.on('song', () => { const d = document.getElementById('shower'); if (d && d.o
    ● REC, so you can tell from any tab that the studio is rolling. Calm and reduced motion get a steady red light, no blinking.
    ============================================================ */
 const AIR = { on: false, tm: 0, ph: false, icon: null, red: null, title: '' };
-const airLive = () => !!(REC || (typeof SREC !== 'undefined' && SREC.on));
+const airLive = () => !!(REC || (typeof SREC !== 'undefined' && SREC.on) || (typeof SHW !== 'undefined' && SHW.rec));      /* Shower mode's ● too */
 /** the tab's icon in red: the same mark, its strokes recoloured */
 function airRed(href) {
   try { const svg = decodeURIComponent(href.replace(/^data:image\/svg\+xml,/, '')); return 'data:image/svg+xml,' + encodeURIComponent(svg.replace(/<style>[\s\S]*?<\/style>/, '<style>.h,.i{stroke:#ff2a3d}</style>')); } catch (e) { return href; }
@@ -15271,6 +15276,243 @@ function airSync() {
   } else { if (link && AIR.icon) link.setAttribute('href', AIR.icon); if (AIR.title) document.title = AIR.title; }
 }
 bus.on('rec:state', airSync); setInterval(airSync, 500);      /* takes say so; a stage video is noticed within half a second */
+
+/* >>> parts/73f-shower.js */
+/* ============================================================
+   Part 73f · SHOWER MODE (2.27) — a hidden singing companion, made for wet hands
+   Not on any menu. It opens when you hold the logo for two seconds (phones too), type "shower" anywhere outside a text box, or
+   type shower in the Backstage terminal. Once open it is one full screen with a handful of big buttons:
+     · the songs you have saved with a track, one after another (◀ ▶), each playing straight into the next
+     · the track's four stems: the singer (as recorded, a quiet guide or off), drums, bass, and the rest
+     · ▶ / ⏸, and ● to record yourself; then ▶ to hear your take back over the music with a tiled-bathroom reverb, or 💾 to keep it
+     · the words, large, when the song has them; a belt meter and a splash score while you record, for fun
+   The band and the click are silent in here (T.quiet: playback only, no song is changed); everything is put back as it was when you leave, including the song you had open.
+   The microphone is opened only when you press ●, with the browser's echo cancellation on, never played through the speakers, and
+   closed when you leave. Your take stays in memory unless you save it (the voice with the steam, not the record).
+   ============================================================ */
+const SING = { mic: null, srcN: null, an: null, buf: null, f: [], last: 0, db: -99, m: null, ducked: 0, st: null };
+const SHW = { el: null, q: [], i: -1, home: null, busy: false, paused: true, was: false, restore: null, mix0: null, wake: null, tm: 0, raf: 0,
+  rec: null, take: null, takeBuf: null, card: null, hearing: 0, msg: '' };
+const SING_BELT = -20, SING_VOICE = -46;      /* dBFS of the room microphone (automatic gain off): above SING_BELT is belting, below SING_VOICE is the shower */
+const SING_TITLES = [
+  [0, 'Rubber Duck Rookie', 'Everyone starts somewhere. Usually under the water.'],
+  [35, 'Shampoo Soloist', 'Lather, rinse, sing it again.'],
+  [55, 'Conditioner Crooner', 'Smooth. Silky. Slightly echoey.'],
+  [72, 'Loofah Legend', 'The tiles have never sounded better.'],
+  [86, 'Hot Water Heavyweight', 'The neighbours have stopped knocking and started requesting.']
+];
+CFG.shed.shw = Object.assign({ vox: 'guide', drums: true, bass: true, other: true }, CFG.shed.shw && typeof CFG.shed.shw === 'object' ? CFG.shed.shw : {});
+const singNew = () => ({ voiced: 0, inKey: 0, longest: 0, hold: { m: null, t: 0 }, hi: null, lo: null, belt: 0, peak: -99, ducks: 0, secs: 0 });
+
+/* ---------- the score: one reading of the voice (MIDI pitch or null, level in dBFS, seconds since the last reading) ---------- */
+function singStep(m, db, dt) {
+  const s = SING.st; if (!s) return; s.secs += dt; if (db > s.peak) s.peak = db;
+  if (db > SING_BELT && m != null) s.belt += dt;
+  if (m == null || db < SING_VOICE) { s.hold = { m: null, t: 0 }; SING.ducked = 0; return; }
+  s.voiced += dt; const t = voxTarget(m); if (Math.abs(t.n - m) < .5) s.inKey += dt;
+  if (s.hold.m != null && Math.abs(m - s.hold.m) < .6) { s.hold.t += dt; s.hold.m = s.hold.m * .9 + m * .1; } else { s.hold = { m, t: dt }; SING.ducked = 0; }
+  if (s.hold.t > s.longest) s.longest = s.hold.t;
+  if (s.hold.t >= .3) { const r = Math.round(s.hold.m); if (s.hi == null || r > s.hi) s.hi = r; if (s.lo == null || r < s.lo) s.lo = r; }
+  const d = Math.floor(s.hold.t / 4); if (d > SING.ducked) { SING.ducked = d; s.ducks++; shwQuack(); }      /* a rubber duck for every four seconds held */
+}
+/** the score out of 100, and the title that goes with it */
+function singScore(st) {
+  st = st || SING.st; if (!st || st.voiced < 1) return { score: 0, title: SING_TITLES[0][1], line: 'Not a peep. Is the phone on the other side of the curtain?', key: 0 };
+  const key = st.inKey / st.voiced, score = Math.round(Math.min(100, 45 * key + 25 * Math.min(1, st.longest / 6) + 15 * Math.min(1, st.belt / 8) + 15 * Math.min(1, st.voiced / Math.max(8, st.secs * .35))));
+  const t = [...SING_TITLES].reverse().find(x => score >= x[0]); return { score, title: t[1], line: t[2], key: Math.round(key * 100) };
+}
+
+/* ---------- the microphone: only while ● is on ---------- */
+async function singMic() {
+  if (SING.mic) return true; await startAudio();
+  try { SING.mic = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: false, autoGainControl: false } }); }
+  catch (e) { toast('The microphone is needed to record you. ' + (e && e.name === 'NotAllowedError' ? 'Allow it in the browser’s address bar, then try again.' : (e.message || e.name)), 'warn'); return false; }
+  SING.srcN = E.ctx.createMediaStreamSource(SING.mic); SING.an = E.ctx.createAnalyser(); SING.an.fftSize = 2048; SING.srcN.connect(SING.an);   /* never connected to the speakers */
+  return true;
+}
+function singMicOff() { try { SING.srcN && SING.srcN.disconnect(); } catch (e) { } try { SING.mic && SING.mic.getTracks().forEach(t => t.stop()); } catch (e) { } SING.mic = null; SING.srcN = null; SING.an = null; }
+function singRead() {
+  const an = SING.an; if (!an) return; const now = performance.now(), dt = Math.min(.12, (now - SING.last) / 1000); SING.last = now;
+  if (!SING.buf || SING.buf.length !== an.fftSize) SING.buf = new Float32Array(an.fftSize); an.getFloatTimeDomainData(SING.buf);
+  let e = 0; for (let i = 0; i < SING.buf.length; i++) e += SING.buf[i] * SING.buf[i]; const db = dB(Math.sqrt(e / SING.buf.length)); let m = null;
+  if (db > SING_VOICE) { const r = yin(SING.buf, E.ctx.sampleRate, .15); if (r && r.f > 70 && r.f < 1300 && r.clarity > .7) { SING.f.push(r.f); if (SING.f.length > 3) SING.f.shift(); m = ftom(median(SING.f)); } else SING.f = []; } else SING.f = [];
+  SING.db = db; SING.m = m; singStep(m, db, dt);
+}
+
+/* ---------- the steam: a small tiled room, bright early reflections, then a dense tail of about 1.3 s ---------- */
+function singSteamIR(ctx) {
+  const sr = ctx.sampleRate, n = Math.round(sr * 1.4), b = ctx.createBuffer(2, n, sr);
+  for (let ch = 0; ch < 2; ch++) { const d = b.getChannelData(ch); let seed = 1234 + ch * 77; const rnd = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff * 2 - 1; };
+    for (let i = 0; i < n; i++) d[i] = rnd() * Math.exp(-i / (sr * .32)) * .5;
+    [.003, .007, .011, .016, .023].forEach((t, k) => { const j = Math.round(t * sr) + ch * 17; if (j < n) d[j] += (k % 2 ? -.6 : .7) * (1 - k * .12); }); }
+  return b;
+}
+/** the voice, through the steam, into ctx's `dest` from `at` (seconds on ctx's clock) */
+function singSteamChain(ctx, buf, dest, at) {
+  const src = ctx.createBufferSource(), dry = ctx.createGain(), wet = ctx.createGain(), cv = ctx.createConvolver(), hp = ctx.createBiquadFilter();
+  src.buffer = buf; hp.type = 'highpass'; hp.frequency.value = 90; cv.buffer = singSteamIR(ctx); wet.gain.value = .55;
+  src.connect(hp); hp.connect(dry); hp.connect(cv); cv.connect(wet); dry.connect(dest); wet.connect(dest); src.start(Math.max(ctx.currentTime, at)); return src;
+}
+
+/* ---------- the songs ---------- */
+const shwOpenNow = () => !!(SHW.el && SHW.el.isConnected);
+/** when the song started on the audio clock: the slot being scheduled, counted back to where playback began */
+const shwT0 = () => T.next - (T.slot - T.startCursor) * slotDur();
+const shwRec = () => SHW.q[SHW.i] && PRJ.list.find(r => r.id === SHW.q[SHW.i]);
+/** the shower's stem choices on top of the song's own mix (put back when it leaves) */
+function shwMixApply() {
+  if (!STM.ch) return; const c = CFG.shed.shw, mx = STM.mix;
+  mx[0].m = !c.drums; mx[1].m = !c.bass; mx[3].m = !c.other; mx[2].m = c.vox === 'off'; mx[2].g = c.vox === 'guide' ? .22 : 1; mx.forEach(m => { m.s = false; });
+  try { spGains(); } catch (e) { }
+}
+function shwMixRestore() { if (SHW.mix0 && STM.ch) { STM.mix.forEach((m, i) => Object.assign(m, SHW.mix0[i])); try { spGains(); } catch (e) { } } SHW.mix0 = null; }
+async function shwQueue() { await projRefresh(); SHW.q = PRJ.list.filter(r => r.track).map(r => r.id); }
+/** go to song i of the queue: open it, wait for its stems, and play if asked */
+async function shwGo(i, playNow) {
+  if (SHW.busy || !SHW.q.length) return; i = (i + SHW.q.length) % SHW.q.length; SHW.busy = true; SHW.msg = 'Warming up the water…';
+  try {
+    if (SHW.rec) shwRecStop(); if (T.playing) stopPlay(true); SHW.paused = true; shwMixRestore(); SHW.i = i; shwPaint();
+    const id = SHW.q[i]; if (PRJ.cur !== id) await projLoad(id);
+    if (!STM.ch && PRJ.pending) await projRestoreTrack();
+    for (let k = 0; k < 600 && STM.busy; k++) await new Promise(r => setTimeout(r, 100));
+    SHW.mix0 = STM.mix.map(m => Object.assign({}, m)); shwMixApply(); T.quiet = true; T.loop = false; T.cursor = 0;
+  } catch (e) { console.warn(e); }
+  SHW.busy = false; SHW.msg = ''; shwPaint();
+  if (playNow) await shwPlay(true);
+}
+async function shwPlay(on) {
+  if (SHW.busy) return; const want = on == null ? !T.playing : on;
+  if (!want) { if (T.playing) stopPlay(true); SHW.paused = true; if (SHW.rec) shwRecStop(); shwPaint(); return; }
+  if (T.playing) return; if (typeof AK !== 'undefined' && AK.killed) { toast('Audio is stopped. Open Audio to resume.', 'warn'); return; }
+  SHW.paused = false; SHW.hearing = 0; try { await play(); } catch (e) { } SHW.was = T.playing; shwPaint();      /* seen playing at once, so an early end still counts */
+}
+/** ◀: back to the top of this song if it has been playing a while, else the song before */
+function shwPrev() { if (T.playing && playheadSlot() * slotDur() > 3) { stopPlay(true); T.cursor = 0; shwPlay(true); return; } shwGo(SHW.i - 1, T.playing || !SHW.paused); }
+function shwNext() { shwGo(SHW.i + 1, T.playing || !SHW.paused); }
+/** the stem buttons: the singer cycles as recorded → quiet guide → off; the others are on or off */
+function shwStem(k) {
+  const c = CFG.shed.shw; if (k === 'vox') c.vox = { orig: 'guide', guide: 'off', off: 'orig' }[c.vox] || 'guide'; else c[k] = !c[k];
+  saveCfg(); shwMixApply(); shwPaint();
+}
+
+/* ---------- recording yourself ---------- */
+async function shwRecToggle() {
+  if (SHW.rec) { shwRecStop(); return; } if (SHW.busy || !STM.ch) return; if (REC) { toast('The studio is recording. Stop it first.', 'warn'); return; }
+  if (!(await singMic())) return; if (!T.playing) { T.cursor = Math.max(0, T.cursor); await shwPlay(true); } if (!T.playing) return;
+  let mr; try { mr = new MediaRecorder(SING.mic); } catch (e) { toast('This browser cannot record here.', 'warn'); return; }
+  const t0 = E.ctx.currentTime, r = { mr, chunks: [], id: PRJ.cur, songSec: T.startCursor * slotDur() + (t0 - shwT0()), t0 };
+  mr.ondataavailable = e => { if (e.data && e.data.size) r.chunks.push(e.data); }; mr.onstop = () => shwKeep(r); mr.start();
+  SING.st = singNew(); SING.ducked = 0; SING.f = []; SING.last = performance.now(); SHW.rec = r; SHW.card = null; shwPaint();
+}
+function shwRecStop() {
+  const r = SHW.rec; if (!r) return; SHW.rec = null; try { if (r.mr.state !== 'inactive') r.mr.stop(); } catch (e) { }
+  SHW.card = singScore(); SHW.card.st = SING.st; shwPaint();
+}
+function shwKeep(r) { if (!r.chunks.length) return; SHW.take = { blob: new Blob(r.chunks, { type: r.chunks[0].type || 'audio/webm' }), id: r.id, songSec: r.songSec }; SHW.takeBuf = null; shwPaint(); }
+async function shwTakeBuf() { if (SHW.takeBuf) return SHW.takeBuf; if (!SHW.take) return null; try { SHW.takeBuf = await E.ctx.decodeAudioData(await SHW.take.blob.arrayBuffer()); } catch (e) { SHW.takeBuf = null; } return SHW.takeBuf; }
+/** your take over the music, from where you started, with the steam; it stops when your take does */
+async function shwHear() {
+  const tk = SHW.take, buf = await shwTakeBuf(); if (!tk || !buf) return; if (SHW.rec) shwRecStop();
+  if (PRJ.cur !== tk.id) { const i = SHW.q.indexOf(tk.id); if (i < 0) return; await shwGo(i, false); }
+  if (T.playing) stopPlay(true); T.cursor = Math.max(0, Math.floor(tk.songSec / slotDur())); SHW.paused = false; try { await play(); } catch (e) { } if (!T.playing) return;
+  const lat = (E.ctx.baseLatency || 0) + (E.ctx.outputLatency || 0) + .02;        /* the microphone heard the song this much after it was played */
+  SHW.hearSrc = singSteamChain(E.ctx, buf, E.mix, shwT0() + (tk.songSec - T.startCursor * slotDur()) - lat);
+  const n = ++SHW.hearing; setTimeout(() => { if (SHW.hearing !== n) return; SHW.hearing = 0; if (T.playing) stopPlay(true); SHW.paused = true; shwPaint(); }, (buf.duration + .6) * 1000);
+  shwPaint();
+}
+/** your voice with the steam, as a WAV file (the record is not in it: that is someone else's) */
+async function shwSave() {
+  const buf = await shwTakeBuf(); if (!buf) return;
+  const OC = window.OfflineAudioContext || window.webkitOfflineAudioContext, sr = buf.sampleRate, o = new OC(2, buf.length + Math.round(sr * 1.5), sr);
+  singSteamChain(o, buf, o.destination, 0); const r = await o.startRendering(); const rec = PRJ.list.find(x => x.id === SHW.take.id);
+  download(((rec && rec.title) || 'song').replace(/\W+/g, '_') + '_shower_take.wav', encodeWav([r.getChannelData(0), r.getChannelData(1)], sr, 16)); toast('Saved your shower take to this device. 🚿', 'ok');
+}
+
+/* ---------- adding a song from in here ---------- */
+async function shwAdd(file) {
+  if (!file || SHW.busy) return; SHW.busy = true; SHW.msg = 'Getting the track ready (splitting off the singer)…'; shwPaint();
+  try { if (T.playing) stopPlay(true); shwMixRestore(); await projCreate('blank', { form: 'empty' }); await stemLoad(file); for (let k = 0; k < 900 && STM.busy; k++) await new Promise(r => setTimeout(r, 100)); await projSave(); await shwQueue(); }
+  catch (e) { console.warn(e); }
+  SHW.busy = false; SHW.msg = ''; const i = SHW.q.indexOf(PRJ.cur); if (i >= 0) { SHW.i = -1; await shwGo(i, false); } else shwPaint();
+}
+
+/* ---------- the screen ---------- */
+function shwQuack() { const box = SHW.el && SHW.el.querySelector('.shw-steam'); if (!box || secretCalm()) return; const d = h('span', { class: 'shw-duck', 'aria-hidden': 'true' }, '🦆'); d.style.left = (15 + Math.random() * 70) + '%'; box.append(d); setTimeout(() => d.remove(), 2400); }
+function shwPaint() {
+  const d = SHW.el; if (!d) return; const q = (s) => d.querySelector(s), r = shwRec(), c = CFG.shed.shw, empty = !SHW.q.length;
+  q('.shw-song').textContent = empty ? 'No songs with a track yet' : (r ? (r.title || 'Untitled') : S.title || '…'); q('.shw-pos').textContent = empty ? '' : (SHW.i + 1) + ' of ' + SHW.q.length + (r && r.track && r.track.artist ? ' · ' + r.track.artist : '');
+  q('.shw-msg').textContent = SHW.msg; q('.shw-msg').hidden = !SHW.msg; q('.shw-empty').hidden = !empty || SHW.busy; q('.shw-words').hidden = empty;
+  const vox = { orig: ['🎤', 'Singer'], guide: ['🎤', 'Guide'], off: ['🔇', 'Singer off'] }[c.vox] || ['🎤', 'Guide'];
+  [['vox', vox[0], vox[1], c.vox !== 'off'], ['drums', '🥁', 'Drums', c.drums], ['bass', '🎸', 'Bass', c.bass], ['other', '🎹', 'The rest', c.other]].forEach(([k, ico, t, on]) => { const b = q('[data-stem="' + k + '"]'); b.querySelector('i').textContent = ico; b.querySelector('span').textContent = t; b.setAttribute('aria-pressed', String(on)); b.classList.toggle('off', !on); b.disabled = empty || SHW.busy; });
+  const pb = q('.shw-play'); pb.textContent = T.playing ? '⏸' : '▶'; pb.setAttribute('aria-label', T.playing ? 'Pause' : 'Play'); [pb, q('.shw-prev'), q('.shw-next')].forEach(b => { b.disabled = empty || SHW.busy; });
+  const rb = q('.shw-rec'); rb.classList.toggle('on', !!SHW.rec); rb.setAttribute('aria-pressed', String(!!SHW.rec)); rb.setAttribute('aria-label', SHW.rec ? 'Stop recording' : 'Record yourself'); rb.disabled = empty || SHW.busy;
+  const tk = q('.shw-take'); tk.innerHTML = ''; tk.hidden = !(SHW.card || SHW.take) || !!SHW.rec;
+  if (!tk.hidden) { const c2 = SHW.card, st = c2 && c2.st;
+    if (c2) tk.append(h('div', { class: 'shw-score' }, h('b', {}, String(c2.score)), h('span', {}, c2.title)), h('p', { class: 'shw-line' }, c2.line + (st && st.voiced >= 1 ? ' Longest note ' + st.longest.toFixed(1) + ' s · ' + c2.key + '% in the key · 🦆 ' + st.ducks : '')));
+    tk.append(h('div', { class: 'shw-tb' }, h('button', { class: 'shw-sm', id: 'shwHear', disabled: !SHW.take, onclick: () => shwHear() }, '▶ Hear it, steamy'), h('button', { class: 'shw-sm', id: 'shwSave', disabled: !SHW.take, onclick: () => shwSave() }, '💾 Keep it'), h('button', { class: 'shw-sm', id: 'shwDrop', 'aria-label': 'Throw the take away', onclick: () => { SHW.take = null; SHW.takeBuf = null; SHW.card = null; shwPaint(); } }, '✕'))); }
+}
+function shwDraw() {
+  const d = SHW.el; if (!d) return; const q = s => d.querySelector(s);
+  const i = SHW.q.length ? perfInfo() : { lines: [], idx: -1 }, cur = i.idx >= 0 ? i.lines[i.idx] : '', nx = i.idx >= 0 ? i.lines[i.idx + 1] : i.lines[0];
+  const big = cur || (i.lines.length ? '♪' : (SHW.q.length ? 'Sing it like nobody is listening.' : '')), k = big + '\u0001' + (nx || '');
+  if (SHW.lk !== k) { SHW.lk = k; q('.shw-cur').textContent = big; q('.shw-nl').textContent = nx || ''; }
+  const live = !!SHW.rec, lv = live ? clamp((SING.db + 60) / 54, 0, 1) : 0, mt = q('.shw-meter');
+  mt.hidden = !live; mt.style.setProperty('--lv', lv.toFixed(3)); mt.setAttribute('aria-valuenow', String(Math.round(live ? SING.db : -60)));
+  if (live) { const t = Math.max(0, E.ctx.currentTime - SHW.rec.t0); q('.shw-rec b').textContent = Math.floor(t / 60) + ':' + String(Math.floor(t % 60)).padStart(2, '0'); } else q('.shw-rec b').textContent = '●';
+  const box = q('.shw-steam'); if (live && box && !secretCalm() && Math.random() < lv * .5) { const b = h('i', { class: 'shw-bub', 'aria-hidden': 'true' }); b.style.left = (Math.random() * 100) + '%'; b.style.setProperty('--sz', (6 + lv * 22 * Math.random()).toFixed(0) + 'px'); box.append(b); setTimeout(() => b.remove(), 2600); }
+}
+/** every quarter second: the song ended on its own → the next one */
+function shwTick() {
+  if (!shwOpenNow()) return; if (SHW.rec) singRead();
+  if (SHW.was && !T.playing && !SHW.paused && !SHW.busy && !SHW.hearing) { if (SHW.rec) shwRecStop(); if (SHW.i < SHW.q.length - 1) shwGo(SHW.i + 1, true); else { SHW.paused = true; toast('That’s the whole set. Towel time. 🧺', 'ok'); } }
+  if (SHW.was !== T.playing) shwPaint(); SHW.was = T.playing;
+}
+async function showerOpen() {
+  if (shwOpenNow()) return SHW.el; if (REC) { toast('The studio is recording. Stop it first.', 'warn'); return null; }
+  const file = h('input', { type: 'file', accept: 'audio/*,.mp3,.wav,.flac,.m4a,.ogg', hidden: true, onchange: e => { const f = e.target.files[0]; e.target.value = ''; shwAdd(f); } });
+  const stem = k => h('button', { class: 'shw-stem', 'data-stem': k, 'aria-pressed': 'true', onclick: () => shwStem(k) }, h('i', { 'aria-hidden': 'true' }), h('span', {}));
+  const d = h('dialog', { class: 'shw', id: 'shower', 'aria-label': 'Shower mode' },
+    h('div', { class: 'shw-top' }, h('div', { class: 'shw-t' }, h('b', { class: 'shw-song' }), h('span', { class: 'shw-pos' })), h('button', { class: 'shw-sm shw-add', 'aria-label': 'Add a song', title: 'Add a song (its singer is split off on this device)', onclick: () => file.click() }, '＋'), file, h('button', { class: 'shw-sm shw-x', 'aria-label': 'Leave Shower mode', onclick: () => d.close() }, '✕')),
+    h('div', { class: 'shw-words', 'aria-live': 'polite' }, h('div', { class: 'shw-steam', 'aria-hidden': 'true' }), h('div', { class: 'shw-cur' }), h('div', { class: 'shw-nl' }), h('div', { class: 'shw-meter', role: 'meter', 'aria-label': 'How loud you are singing', 'aria-valuemin': '-60', 'aria-valuemax': '0', 'aria-valuenow': '-60', hidden: true }, h('i'))),
+    h('p', { class: 'shw-msg', role: 'status' }), h('div', { class: 'shw-empty' }, h('p', {}, 'Shower mode plays the songs you have saved with a track. Add one and the singer is split off on this device, so you can take over.'), h('button', { class: 'shw-big', onclick: () => file.click() }, '＋ Add a song')),
+    h('div', { class: 'shw-take', role: 'status' }),
+    h('div', { class: 'shw-stems', role: 'group', 'aria-label': 'What you hear' }, stem('vox'), stem('drums'), stem('bass'), stem('other')),
+    h('div', { class: 'shw-tr' }, h('button', { class: 'shw-btn shw-prev', 'aria-label': 'Previous song', onclick: () => shwPrev() }, '⏮'), h('button', { class: 'shw-btn shw-play', onclick: () => shwPlay() }, '▶'), h('button', { class: 'shw-btn shw-next', 'aria-label': 'Next song', onclick: () => shwNext() }, '⏭'), h('button', { class: 'shw-btn shw-rec', onclick: () => shwRecToggle() }, h('b', {}, '●'))),
+    h('p', { class: 'shw-fine' }, 'Not responsible for damage to electronic devices. Keep the phone out of the spray. The microphone opens only while ● is on, and nothing leaves this device.'));
+  document.body.append(d); SHW.el = d; SHW.home = PRJ.cur; SHW.restore = { loop: T.loop }; SHW.take = null; SHW.takeBuf = null; SHW.card = null; SHW.i = -1; SHW.was = false; SHW.paused = true;
+  if (T.playing) stopPlay(true); T.quiet = true; T.loop = false;      /* just the record in here: the band and the click are silent, and no song is changed */
+  d.addEventListener('close', () => shwClose()); d.showModal();
+  try { if (navigator.wakeLock) navigator.wakeLock.request('screen').then(w => { SHW.wake = w; }).catch(() => { }); } catch (e) { }
+  if (!CFG.shed.found) { CFG.shed.found = Date.now(); saveCfg(); toast('🚿 You found Shower mode. Not responsible for damage to electronic devices.', 'ok'); }
+  clearInterval(SHW.tm); SHW.tm = setInterval(shwTick, 250); const loop = () => { if (!shwOpenNow()) return; shwDraw(); SHW.raf = requestAnimationFrame(loop); }; loop();
+  shwPaint(); await shwQueue(); const at = SHW.q.indexOf(PRJ.cur);
+  if (SHW.q.length) await shwGo(at >= 0 ? at : 0, false); else shwPaint();
+  return d;
+}
+async function shwClose() {
+  const d = SHW.el; if (!d) return; SHW.el = null; clearInterval(SHW.tm); cancelAnimationFrame(SHW.raf); SHW.hearing = 0;
+  if (SHW.rec) { try { SHW.rec.mr.stop(); } catch (e) { } SHW.rec = null; } try { SHW.hearSrc && SHW.hearSrc.stop(); } catch (e) { } singMicOff();
+  if (T.playing) stopPlay(true); shwMixRestore();
+  const r = SHW.restore; SHW.restore = null; T.quiet = false; if (r) { T.loop = r.loop; try { syncTransport(); } catch (e) { } }
+  try { SHW.wake && SHW.wake.release(); } catch (e) { } SHW.wake = null; d.remove();
+  for (let k = 0; k < 600 && SHW.busy; k++) await new Promise(res => setTimeout(res, 100));
+  if (SHW.home && PRJ.cur !== SHW.home) { try { await projLoad(SHW.home); } catch (e) { } }      /* back to the song you had open */
+}
+
+/* ---------- the ways in: hold the logo, or type "shower" ---------- */
+{
+  let hold = 0, x0 = 0, y0 = 0; const cancel = () => { clearTimeout(hold); hold = 0; const b = document.querySelector('header .brand'); if (b) b.classList.remove('shw-fog'); };
+  document.addEventListener('pointerdown', e => { const b = e.target.closest && e.target.closest('header .brand'); if (!b) return; x0 = e.clientX; y0 = e.clientY; clearTimeout(hold);
+    setTimeout(() => { if (hold) b.classList.add('shw-fog'); }, 700); hold = setTimeout(() => { hold = 0; b.classList.remove('shw-fog'); showerOpen(); }, 2000); });
+  document.addEventListener('pointermove', e => { if (hold && Math.hypot(e.clientX - x0, e.clientY - y0) > 12) cancel(); });
+  ['pointerup', 'pointercancel'].forEach(t => document.addEventListener(t, () => { if (hold) cancel(); }));
+  document.addEventListener('contextmenu', e => { if (e.target.closest && e.target.closest('header .brand')) e.preventDefault(); });      /* a long press on a phone is ours, not the menu's */
+  let typed = ''; window.addEventListener('keydown', e => {
+    const t = e.target; if (e.ctrlKey || e.metaKey || e.altKey || (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable))) { typed = ''; return; }
+    if (!/^[a-z]$/i.test(e.key)) { typed = ''; return; } typed = (typed + e.key.toLowerCase()).slice(-6);
+    if (typed === 'shower') { typed = ''; e.preventDefault(); e.stopImmediatePropagation(); showerOpen(); }      /* the R that ends it does not arm recording */
+  }, true);
+}
 
 /* >>> parts/74-github.js */
 /* ============================================================

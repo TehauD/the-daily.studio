@@ -1,112 +1,100 @@
-/* Shower mode (2.25): scales, arpeggios and your ear, and the three secrets that open its treasures (one found in here, two out in the studio). The guitar is
-   stood in for by the tuner's own readings (AN.active / AN.midi, as e2e-secrets does), so every note is exactly the one meant. */
+/* Shower mode (2.27): hidden (hold the logo two seconds, or type "shower"), one screen of big buttons: the songs saved with a track one
+   after another, the four stems, play, ● to record yourself, then your take back with the steam. The voice is Chromium's fake microphone
+   and readings fed to singStep; the tracks are the synthetic backing track the stems tests use. */
 const { suite } = require('./lib.cjs');
-const SHEET = '[Verse]\nAm      F\nLanterns on the harbour wall\nC       G\nCalling all the boats back in';
+const fs = require('node:fs'), path = require('node:path'), os = require('node:os');
 
 suite('e2e-shower', async t => {
   const { ok, wait, poll } = t;
-  const p = await t.open({}), ev = (f, a) => p.evaluate(f, a);
-  await ev(async s => { const D = window.__daily; await D.startAudio(); await D.projCreate('blank', { form: 'empty' }); await window.dailyStudio.call('load_chord_sheet', { text: s }); D.S.title = 'Harbour'; D.commit(false); await D.projSave();
-    const AN = D.AN; window.__f = { active: false, midi: null }; ['active', 'midi'].forEach(k => Object.defineProperty(AN, k, { configurable: true, get: () => window.__f[k], set: () => { } })); }, SHEET);
-  /* play notes in: each held long enough to be heard, with a short gap */
-  const play = ms => ev(async ms => { const nap = x => new Promise(r => setTimeout(r, x)); for (const m of ms) { window.__f.active = true; window.__f.midi = m; await nap(260); window.__f.active = false; window.__f.midi = null; await nap(70); } await nap(150); }, ms);
-  const run = () => ev(() => { const r = window.__daily.WS.run; return r ? { mode: r.mode, i: r.i, miss: r.miss, n: r.notes.length, notes: r.notes.map(q => q.m) } : null; });
+  const p = await t.open({ w: 1280, h: 800 }), ev = (f, a) => p.evaluate(f, a);
+  process.env.BARS = '8'; const SY = require('./stem_synth.cjs'), mono = SY.L.map((x, i) => (x + SY.R[i]) / 2);
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'shw-')), f1 = path.join(dir, 'Harbour Lights.wav'), f2 = path.join(dir, 'Salt Wind.wav');
+  fs.writeFileSync(f1, t.wav(mono, 44100)); fs.writeFileSync(f2, t.wav(mono.map(x => x * .8), 44100));
+  const hold = async (pg, ms) => { const b = await pg.$('header .brand'), bb = await b.boundingBox(); await pg.mouse.move(bb.x + 12, bb.y + 12); await pg.mouse.down(); await wait(ms); await pg.mouse.up(); await wait(500); };
+  const open = () => ev(() => { const d = document.getElementById('shower'); return !!(d && d.open); });
 
-  /* ---- the way in, from the Theory panel ---- */
-  await ev(() => { const D = window.__daily; D.S.key = 9; D.S.scale = 'Minor Pentatonic'; D.commit(false); D.sideShow('theory'); }); await wait(300);
-  await ev(() => document.getElementById('theoryShed').click()); await wait(500);
-  ok(await ev(() => { const d = document.getElementById('shower'); return !!(d && d.open) && ['scales', 'arps', 'ear', 'how'].every(k => d.querySelector('section[data-sec="' + k + '"]')) && document.getElementById('ws-key').value === '9' && document.getElementById('ws-scale').value === 'Minor Pentatonic'; }), 'Theory ▸ Practise it in the Woodshed opens the room on this key and scale: Scales, Arpeggios, Your ear');
-  const SR = await ev(() => { const r = window.__daily.wsScaleRun(); return { n: r.notes.length, st: r.st, degs: r.notes.map(q => q.deg).join(' '), frets: r.notes.slice(0, 6).map(q => q.s + ':' + q.f).join(' ') }; });
-  ok(SR.n === 11 && SR.st === 5 && SR.degs === 'R b3 4 5 b7 R b7 5 4 b3 R' && SR.frets === '0:5 0:8 1:5 1:7 2:5 2:7', 'A minor pentatonic from the 5th fret: the box every guitarist knows, up and back down (' + SR.degs + ')');
-  ok(await ev(() => { const o = [...document.querySelectorAll('#ws-scale option')]; return o.length === 16 && o.filter(x => x.disabled).length === 11 && o.find(x => x.value === 'Dorian').disabled && /🔒 Modes and more scales/.test(document.getElementById('ws-room-scale').textContent); }), 'five scales to start with; the modes and the rest are locked, and the room says how they open');
-  ok(await ev(() => document.querySelectorAll('#ws-room-scale .ws-fret .ws-dot').length === 6 && document.querySelectorAll('#ws-room-scale .ws-fret .ws-dot.root').length === 2 && document.querySelectorAll('#ws-room-scale .ws-fret .ws-ghost').length >= 4), 'the fretboard shows the run’s six places (the two roots marked), and the rest of the scale in the box, faint');
+  /* ---- hidden ---- */
+  ok(await ev(() => !/Shower/i.test(document.body.innerText) && ![...document.querySelectorAll('button,a,[title]')].some(b => /shower/i.test(b.textContent + ' ' + (b.title || '')))), 'nothing in the studio names Shower mode or points to it');
+  const home = await ev(async () => { const D = window.__daily; D.S.title = 'My work in progress'; D.commit(false); await D.projSave(); D.T.metro = true; D.S.band.drumsOn = true; D.commit(false); return D.PRJ.cur; });
+  await hold(p, 900);
+  ok(!(await open()), 'a short press on the logo does nothing');
+  await hold(p, 2300);
+  ok(await open(), 'holding the logo for two seconds opens Shower mode');
+  ok(await ev(() => /You found Shower mode/.test(document.getElementById('toasts').textContent) && !!window.__daily.CFG.shed.found), 'the first time, it says you found it');
+  const E0 = await ev(() => ({ empty: !document.querySelector('.shw-empty').hidden, play: document.querySelector('.shw-play').disabled, rec: document.querySelector('.shw-rec').disabled, quiet: window.__daily.T.quiet, mic: !!window.__daily.SING.mic }));
+  ok(E0.empty && E0.play && E0.rec && E0.quiet && !E0.mic, 'with no songs that have a track: one big Add a song, the controls wait, the click is quiet, and the microphone is closed');
 
-  /* ---- listen first ---- */
-  await ev(() => document.getElementById('ws-scale-listen').click()); await wait(700);
-  const L1 = await run(); await wait(1500); const L2 = await run();
-  ok(L1 && L1.mode === 'listen' && L2.i > L1.i, '▶ Listen plays the run, and the fretboard follows it (note ' + (L1 && L1.i) + ' → ' + (L2 && L2.i) + ')');
-  await ev(() => document.getElementById('ws-scale-stop').click());
+  /* ---- adding songs from in here ---- */
+  await p.setInputFiles('#shower input[type=file]', f1);
+  ok(await poll(() => ev(() => !window.__daily.SHW.busy && window.__daily.SHW.q.length === 1), 90000), '＋ adds a song: its track is saved and its stems are split on this device');
+  await p.setInputFiles('#shower input[type=file]', f2); await poll(() => ev(() => !window.__daily.SHW.busy && window.__daily.SHW.q.length === 2), 90000);
+  const Q = await ev(() => ({ song: document.querySelector('.shw-song').textContent, pos: document.querySelector('.shw-pos').textContent, band: window.__daily.T.quiet && !window.__daily.bandMuted() }));
+  ok(Q.song === 'Salt Wind' && /^1 of 2/.test(Q.pos) && Q.band, 'the new song is up, first in line (' + Q.song + ', ' + Q.pos + '), with the band and the click silent while you are in here, though no song’s band is switched off: just the record');
 
-  /* ---- play it: a wrong note counts, the last note still ringing does not ---- */
-  await ev(() => document.getElementById('ws-scale-go').click()); await wait(200);
-  const notes = (await run()).notes;
-  await play([notes[0], notes[1], notes[1], 61, notes[2]]);      /* the second note heard again (ringing), then a C♯ that is not in the scale */
-  const R1 = await run();
-  ok(R1.i === 3 && R1.miss === 1, 'Play it follows the notes: a note still ringing is not a mistake, a wrong one is (' + R1.miss + ' wrong, at note ' + R1.i + ')');
-  ok(await ev(() => /next: /.test(document.querySelector('#ws-room-scale .ws-stat').textContent) && document.querySelectorAll('#ws-room-scale .ws-chip.ok').length === 3), 'it says what is next, and ticks off what was played');
-  await play(notes.slice(3)); await wait(200);
-  ok((await run()).mode === 'done' && await ev(() => !window.__daily.CFG.secrets.scale), 'finished with a wrong note: done, but no secret');
+  const bands = () => ev(async () => { const D = window.__daily; await D.projRefresh(); return JSON.stringify(D.PRJ.list.filter(r => r.track).map(r => [r.id, ['drumsOn', 'bassOn', 'compOn', 'leadOn'].map(k => !!r.song.band[k])])); });
+  const bands0 = await bands();
 
-  /* ---- Up and down: clean, and the treasure opens ---- */
-  await ev(() => document.getElementById('ws-scale-go').click()); await wait(150); await play(notes);
-  ok(await poll(() => ev(() => !!window.__daily.CFG.secrets.scale), 3000) && await ev(() => /Up and down/.test(document.getElementById('toasts').textContent) && /Modes and more scales are open/.test(document.getElementById('toasts').textContent) && /Secret 1 of 7/.test(document.getElementById('toasts').textContent)), 'up and back down without a wrong note: Up and down, secret 1 of 7, and it says what opened');
-  await wait(1700);
-  ok(await ev(() => !document.querySelector('#ws-scale option[value="Dorian"]').disabled && document.querySelectorAll('#ws-scale option:disabled').length === 0 && /🗝 Open: Modes/.test(document.getElementById('ws-room-scale').textContent)), 'the treasure: the modes and every other scale open in the room, at once');
-  await ev(() => { const s = document.getElementById('ws-scale'); s.value = 'Dorian'; s.dispatchEvent(new Event('change')); }); await wait(200);
-  ok(await ev(() => window.__daily.wsScaleRun().notes.length === 15 && window.__daily.wsScaleRun().notes.map(q => q.deg).slice(0, 8).join(' ') === 'R 2 b3 4 5 6 b7 R'), 'A Dorian: R 2 ♭3 4 5 6 ♭7 R, and back down');
+  /* ---- the stems ---- */
+  const mix = () => ev(() => window.__daily.STM.mix.map(m => (m.m ? 0 : +m.g.toFixed(2))));
+  ok((await mix()).join() === '1,1,0.22,1', 'the singer starts as a quiet guide, the rest as recorded (' + (await mix()).join() + ')');
+  await p.click('[data-stem="vox"]'); await wait(150);
+  ok((await mix())[2] === 0 && await ev(() => document.querySelector('[data-stem="vox"]').getAttribute('aria-pressed') === 'false' && /Singer off/.test(document.querySelector('[data-stem="vox"]').textContent)), 'one tap: the singer is off (karaoke), and the button says so');
+  await p.click('[data-stem="vox"]'); await wait(150);
+  ok((await mix())[2] === 1, 'another: the singer as recorded');
+  await p.click('[data-stem="drums"]'); await wait(150);
+  ok((await mix())[0] === 0 && await ev(() => window.__daily.CFG.shed.shw.drums === false), 'the drums go off with one tap, and the choice is remembered for every song');
 
-  /* ---- arpeggios: this song's chords ---- */
-  const AR = await ev(() => { const r = window.__daily.wsArpRun(); return { title: r.title, n: r.notes.length, chords: r.chords.length, degs: r.notes.slice(0, 4).map(q => q.deg).join(' ') }; });
-  ok(AR.chords === 4 && /Am · F · C · G/.test(AR.title) && AR.degs === 'R b3 5 R', 'Arpeggios: this song’s chords in order, each from its root (' + AR.title + ', ' + AR.n + ' notes)');
-  ok(await ev(() => { const s = document.getElementById('ws-src'); s.value = 'one'; s.dispatchEvent(new Event('change')); return [...document.querySelectorAll('#ws-type option')].filter(o => o.disabled).length === 5; }), 'one chord at a time: the four triads; the sevenths are locked');
-  await ev(() => { const s = document.getElementById('ws-src'); s.value = 'song'; s.dispatchEvent(new Event('change')); }); await wait(150);
-  await ev(() => document.getElementById('ws-arp-go').click()); await wait(150);
-  await play((await run()).notes);
-  await wait(600);
-  ok((await run()).mode === 'done' && await ev(() => !window.__daily.CFG.secrets.arp && /not in here/i.test(document.getElementById('ws-room-arp').textContent)), 'a clean arpeggio run in the shower is good practice, but that secret is out in the studio (the room says so)');
-  /* ---- Broken chords: with the band, while the song plays ---- */
-  ok(await ev(() => { const D = window.__daily; D.T.playing = false; [57, 60, 64].forEach(m => D.secretNote(m)); return !D.CFG.secrets.arp; }), 'not while the song is stopped');
-  ok(await ev(() => { const D = window.__daily; [['Am', [57, 60, 64]], ['F', [53, 57, 60]], ['C', [55, 60, 64]]].forEach(([c, ms]) => ms.forEach(m => D.secretArp(m, c))); return !D.CFG.secrets.arp; }), 'three chords, but one played out of order (C: G before C), is not it');
-  await ev(() => { const D = window.__daily; [['Am', [57, 60, 64]], ['F', [53, 57, 60]], ['C', [48, 52, 55]], ['G', [43]]].forEach(([c, ms]) => ms.forEach(m => D.secretArp(m, c))); });
-  ok(await poll(() => ev(() => !!window.__daily.CFG.secrets.arp), 3000) && await ev(() => /Broken chords/.test(document.getElementById('toasts').textContent) && /Seventh arpeggios are open in Shower mode/.test(document.getElementById('toasts').textContent)), 'three of the band’s chords in a row broken into root, third and fifth: Broken chords, and it says what opened in Shower mode');
-  await wait(1700);
-  ok(await ev(() => { const s = document.getElementById('ws-src'); s.value = 'one'; s.dispatchEvent(new Event('change')); return [...document.querySelectorAll('#ws-type option')].every(o => !o.disabled) && /🗝 Open: Seventh/.test(document.getElementById('ws-room-arp').textContent); }), 'the treasure: seventh arpeggios open');
-  ok(await ev(() => { const D = window.__daily; D.CFG.shed.type = 'm7'; D.CFG.shed.root = 9; const r = D.wsArpRun(); return r.notes.slice(0, 5).map(q => q.deg).join(' ') === 'R b3 5 b7 R'; }), 'A minor 7: R ♭3 5 ♭7 R');
+  /* ---- play, the queue ---- */
+  await p.click('.shw-play'); ok(await poll(() => ev(() => window.__daily.T.playing), 5000), '▶ plays');
+  ok(await ev(() => document.querySelector('.shw-play').getAttribute('aria-label') === 'Pause'), 'and becomes ⏸ (Pause)');
+  await ev(() => { const D = window.__daily; D.stopPlay(false); });      /* the song ends on its own */
+  ok(await poll(() => ev(() => !window.__daily.SHW.busy && window.__daily.SHW.i === 1 && window.__daily.T.playing), 60000), 'when a song ends, the next one starts by itself');
+  ok(await ev(() => document.querySelector('.shw-song').textContent === 'Harbour Lights' && window.__daily.STM.mix[0].m === true), 'Harbour Lights is up, with the drums still off');
+  await p.click('.shw-next'); ok(await poll(() => ev(() => !window.__daily.SHW.busy && window.__daily.SHW.i === 0 && window.__daily.T.playing), 60000), '⏭ goes round to the first song again and keeps playing');
+  await p.click('.shw-play'); await wait(300);
+  ok(await ev(() => !window.__daily.T.playing && window.__daily.SHW.paused), '⏸ pauses, and a pause is not mistaken for the end of the song');
+  await wait(700); ok(await ev(() => window.__daily.SHW.i === 0 && !window.__daily.T.playing), 'so it stays on this song');
 
-  /* ---- your ear ---- */
-  const answer = (right) => ev(r => { const D = window.__daily, q = D.WS.ear.q; const list = [...document.querySelectorAll('#ws-room-ear .ws-a')].map(b => b.dataset.a); const a = r ? q.ans : list.find(x => x !== q.ans); D.wsEarAnswer(a); D.WS.ear.lock = false; clearTimeout(D.WS.ear.tm); D.wsEarNext(); }, right);
-  await ev(() => { const s = document.getElementById('ws-ear-mode'); s.value = 'easy'; s.dispatchEvent(new Event('change')); document.getElementById('ws-ear-go').click(); }); await wait(200);
-  ok(await ev(() => document.querySelectorAll('#ws-room-ear .ws-a').length === 4 && !!window.__daily.WS.ear.q), 'Your ear: a question is played, four answers to choose from');
-  for (let i = 0; i < 10; i++) await answer(true);
-  ok(await ev(() => window.__daily.WS.ear.streak === 10 && !window.__daily.CFG.secrets.ear), 'ten in a row from four choices: a fine streak, but not the secret');
-  await answer(false);
-  ok(await ev(() => window.__daily.WS.ear.streak === 0 && window.__daily.WS.ear.best === 10), 'a wrong answer starts the streak again; the best is kept');
-  await ev(() => { const s = document.getElementById('ws-ear-mode'); s.value = 'more'; s.dispatchEvent(new Event('change')); document.getElementById('ws-ear-go').click(); }); await wait(150);
-  for (let i = 0; i < 10; i++) await answer(true);
-  ok(await poll(() => ev(() => !!window.__daily.CFG.secrets.ear), 2000), 'ten in a row from six choices: Golden ear');
-  await wait(1700);
-  ok(await ev(() => { const o = document.querySelector('#ws-ear-mode option[value="chords"]'); return !o.disabled; }), 'the treasure: chord qualities by ear');
-  await ev(() => { const s = document.getElementById('ws-ear-mode'); s.value = 'chords'; s.dispatchEvent(new Event('change')); document.getElementById('ws-ear-go').click(); }); await wait(200);
-  ok(await ev(() => window.__daily.WS.ear.q.kind === 'chord' && document.querySelectorAll('#ws-room-ear .ws-a').length === 7), 'chord qualities: major, minor, diminished, augmented and three sevenths');
-  ok(await ev(() => /3\/7/.test(document.querySelector('.secret-chip').textContent)), 'the 🗝 counter: 3 of 7');
-  await ev(() => document.getElementById('shower').close());
+  /* ---- recording yourself ---- */
+  await p.click('.shw-rec');
+  ok(await poll(() => ev(() => !!window.__daily.SHW.rec && window.__daily.T.playing), 6000), '● plays the song and records you');
+  await poll(() => ev(() => !document.querySelector('.shw-meter').hidden), 2000);      /* the meter shows on the next frame */
+  const R1 = await ev(() => { const D = window.__daily, tr = D.SING.mic.getAudioTracks()[0]; return { live: tr.readyState === 'live', ec: tr.getSettings().echoCancellation, air: document.body.classList.contains('onair'), meter: !document.querySelector('.shw-meter').hidden, pressed: document.querySelector('.shw-rec').getAttribute('aria-pressed'), main: D.E.hasInput }; });
+  ok(R1.live && R1.ec !== false && R1.meter && R1.pressed === 'true' && !R1.main, 'only now is the microphone open, with echo cancellation; the belt meter shows; the studio’s own input stays closed (' + JSON.stringify(R1) + ')');
+  ok(await poll(() => ev(() => document.body.classList.contains('onair')), 2000), 'and the red On air light is on');
+  await ev(() => { const D = window.__daily; for (let i = 0; i < 45; i++) D.singStep(67, -14, .1); for (let i = 0; i < 10; i++) D.singStep(62, -28, .1); });
+  ok(await ev(() => window.__daily.SING.st.ducks === 1 && window.__daily.SING.st.longest > 4), 'a note held four seconds earns a rubber duck');
+  await wait(1200); await p.click('.shw-rec'); await wait(900);
+  const C = await ev(() => { const D = window.__daily, tk = document.querySelector('.shw-take'); return { rec: !!D.SHW.rec, card: !tk.hidden && /Longest note/.test(tk.textContent), score: D.SHW.card && D.SHW.card.score, title: D.SHW.card && D.SHW.card.title, take: D.SHW.take ? D.SHW.take.blob.size : 0, playing: D.T.playing }; });
+  ok(!C.rec && C.card && C.score > 0 && C.take > 1000 && C.playing, '● again stops recording (the music plays on): a splash score (' + C.score + ', ' + C.title + ') and your take in memory (' + C.take + ' bytes)');
+  ok(await poll(() => ev(() => !document.body.classList.contains('onair')), 2000), 'the red light goes off');
+  await p.click('#shwHear');
+  ok(await poll(() => ev(() => window.__daily.T.playing && window.__daily.SHW.hearing > 0), 6000), '▶ Hear it, steamy: the music from where you started, with your take through the bathroom reverb');
+  ok(await poll(() => ev(() => !window.__daily.T.playing && window.__daily.SHW.hearing === 0 && window.__daily.SHW.i === 0), 8000), 'it stops when your take does, and does not run on to the next song');
+  const dl = p.waitForEvent('download', { timeout: 15000 }); await p.click('#shwSave');
+  const d1 = await dl.catch(() => null), fp = d1 && await d1.path().catch(() => null);
+  ok(!!d1 && /_shower_take\.wav$/.test(d1.suggestedFilename()) && fp && fs.readFileSync(fp).toString('latin1', 8, 12) === 'WAVE', '💾 Keep it: your voice with the steam, as a WAV file (' + (d1 ? d1.suggestedFilename() : 'none') + ')');
+  await p.click('#shwDrop'); ok(await ev(() => !window.__daily.SHW.take && document.querySelector('.shw-take').hidden), '✕ throws the take away');
 
-  /* ---- for a screen reader ---- */
-  await ev(() => window.__daily.showerOpen('scales')); await wait(400);
-  ok(await ev(() => { const f = document.querySelector('#ws-room-scale svg.ws-fret'); return f.getAttribute('role') === 'img' && /^Fretboard, .+, open strings to fret 15\.$|^Fretboard, .+, frets \d+ to \d+\.$/.test(f.getAttribute('aria-label')); }), 'the fretboard is a picture with a name: which run, and which frets');
-  ok(await ev(() => ['listen', 'go', 'stop'].every(k => document.getElementById('ws-scale-' + k).getAttribute('aria-label')) && document.querySelector('#ws-room-scale .ws-chips').getAttribute('role') === 'list' && document.querySelectorAll('#ws-room-scale .ws-chip[role=listitem]').length > 6 && !!document.querySelector('#ws-room-scale .ws-stat[aria-live=polite]')), 'the buttons say what they do, the notes are a list, and the status line is read out as it changes');
-  await ev(() => { window.__daily.wsFollow('scale'); }); await wait(200);
-  ok(await ev(() => /Next: [A-G][#♯b♭]? on string \d, (fret \d+|open)\.$/.test(document.querySelector('#ws-room-scale svg.ws-fret').getAttribute('aria-label'))), 'while it follows you, the fretboard’s name says the next note, its string and fret');
-  await ev(() => window.__daily.wsStop(true));
-  await ev(() => window.__daily.showerOpen('ear')); await wait(400);
-  ok(await ev(() => { const g = document.querySelector('#ws-room-ear .ws-ans'); return g.getAttribute('role') === 'group' && g.getAttribute('aria-label') === 'Your answer' && document.getElementById('ws-ear-again').getAttribute('aria-label') === 'Play the question again'; }), 'the ear trainer’s answers are a named group');
-  await ev(() => document.getElementById('shower').close());
+  /* ---- leaving puts everything back ---- */
+  await p.click('.shw-x');
+  ok(await poll(() => ev(h => !document.getElementById('shower') && window.__daily.PRJ.cur === h, home), 30000), 'leaving goes back to the song you had open');
+  const B = await ev(() => { const D = window.__daily; return { mic: !!D.SING.mic, quiet: D.T.quiet, metro: D.T.metro, muted: D.bandMuted(), drums: D.S.band.drumsOn, title: D.S.title }; });
+  ok(!B.mic && !B.quiet && B.metro && !B.muted && B.drums && B.title === 'My work in progress', 'the microphone is closed, and the click and the band play again, as they were');
+  ok(await bands() === bands0, 'and the songs Shower mode played keep their band exactly as it was: nothing was switched off in them');
+
+  /* ---- type "shower" ---- */
+  await ev(() => document.body.focus()); await p.keyboard.type('shower'); await wait(800);
+  ok(await open() && await ev(() => !window.__daily.T.rec && !window.__daily.getREC()), 'typing "shower" opens it too, and the R at the end does not arm recording');
+  ok(await poll(() => ev(() => !window.__daily.SHW.busy && window.__daily.SHW.q.length === 2), 60000), 'the songs are there, in the order they were last changed');
+  await p.keyboard.press('Escape'); await poll(() => ev(() => !document.getElementById('shower')), 5000);
+  await ev(() => { const i = document.createElement('input'); i.id = 'tx'; document.body.append(i); i.focus(); }); await p.keyboard.type('shower'); await wait(500);
+  ok(!(await open()), 'typing the word into a text box does not');
+  await ev(() => document.getElementById('tx').remove());
 
   /* ---- on a phone ---- */
   const m = await t.open({ w: 390, h: 844, mobile: true }), mv = (f, a) => m.evaluate(f, a);
-  await mv(() => window.__daily.showerOpen('scales')); await wait(500);
-  const PH = await mv(() => { const f = document.querySelector('#ws-room-scale svg.ws-fret'), vb = f.viewBox.baseVal, r = f.getBoundingClientRect(), dot = f.querySelector('.ws-dot').getBoundingClientRect(); return { narrow: f.classList.contains('narrow'), frets: f.querySelectorAll('.ws-fw,.ws-nut').length - 1, scale: r.width / vb.width, dot: dot.width, fits: r.right <= innerWidth + .5, wide: document.documentElement.scrollWidth <= innerWidth }; });
-  ok(PH.narrow && PH.frets <= 9 && PH.dot >= 16 && PH.fits && PH.wide, 'on a phone the fretboard shows only the frets the run uses (' + PH.frets + '), so a dot is ' + PH.dot.toFixed(0) + ' px across instead of about 8, and nothing is wider than the screen');
-  ok(await mv(() => { const D = window.__daily, run = D.wsScaleRun(), f = document.querySelector('#ws-room-scale svg.ws-fret'); return run.notes.length === f.querySelectorAll('.ws-dot').length + run.notes.filter((q, i) => run.notes.findIndex(x => x.s === q.s && x.f === q.f) !== i).length; }), 'every note of the run is still on it');
-  ok(await mv(() => [...document.querySelectorAll('#ws-room-scale .ws-btns .btn')].every(b => b.getBoundingClientRect().height >= 36) && [...document.querySelectorAll('#ws-room-scale .ws-ctl select')].every(s => s.getBoundingClientRect().right <= innerWidth)), 'the buttons are big enough to tap and the choices fit the screen');
-  await mv(() => window.__daily.showerOpen('ear')); await wait(400); await mv(() => document.getElementById('ws-ear-go').click()); await wait(200);
-  ok(await mv(() => { const b = [...document.querySelectorAll('#ws-room-ear .ws-a')]; return b.length >= 4 && b.every(x => x.getBoundingClientRect().height >= 44 && x.getBoundingClientRect().right <= innerWidth); }), 'the ear trainer’s answers are two to a row, each a good thumb’s height');
-  await m.setViewportSize({ width: 844, height: 390 }); await mv(() => window.__daily.showerOpen('scales')); await wait(500);
-  ok(await mv(() => !document.querySelector('#ws-room-scale svg.ws-fret').classList.contains('narrow')), 'turned sideways, there is room for the whole neck again');
-
-  /* ---- with hidden surprises off, the treasures are simply open ---- */
-  const q = await t.open({ init: () => { try { localStorage.setItem('fw.cfg', JSON.stringify({ eggs: false })); } catch (e) { } } });
-  await q.evaluate(() => window.__daily.showerOpen()); await wait(400);
-  ok(await q.evaluate(() => document.querySelectorAll('#ws-scale option:disabled').length === 0 && !document.querySelector('#ws-ear-mode option[value="chords"]').disabled && !/🔒/.test(document.getElementById('shower').textContent)), 'with hidden surprises off, nothing in the room is locked');
-  ok(await q.evaluate(() => Object.keys(window.__daily.CFG.secrets).length === 0), 'and nothing is counted as found');
+  await hold(m, 2300); await wait(500);
+  const PH = await mv(() => { const d = document.getElementById('shower'), r = s => document.querySelector(s).getBoundingClientRect(); return { open: !!(d && d.open), wide: d.scrollWidth <= innerWidth, play: r('.shw-play').height, stem: r('.shw-stem').height, x: r('.shw-x').height, fit: r('.shw-rec').right <= innerWidth }; });
+  ok(PH.open && PH.wide && PH.play >= 70 && PH.stem >= 56 && PH.x >= 44 && PH.fit, 'on a phone a long press opens it, everything fits, and every button is big enough for a wet thumb (play ' + Math.round(PH.play) + ' px, stems ' + Math.round(PH.stem) + ' px)');
 });

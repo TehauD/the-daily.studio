@@ -2,6 +2,47 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.27.0 — 2026-11-02 — Shower mode becomes a hidden singing companion; the trainers move to Practice
+
+### Added
+- **🚿 Shower mode, rebuilt as a hidden singing companion** (`src/parts/73f-shower.js`). It is fun but practical, made for wet hands, and not on any menu.
+  - **Ways in:**
+    - hold the logo for two seconds (phones too);
+    - type "shower" anywhere outside a text box;
+    - type `shower` in the Backstage terminal.
+  - **One full screen with a handful of big buttons:**
+    - **⏮ ▶/⏸ ⏭** step through every song you have saved with a track. Each song plays straight into the next, ⏮ restarts the song if it has been playing a while, and ⏭ goes round.
+    - **The four stems** take one tap each. The singer cycles as recorded → quiet guide → off (karaoke). Drums, bass and the rest are on or off. The choices hold for every song, on top of each song's own mix, which is put back afterwards.
+    - **● records you.** The microphone opens only now, with echo cancellation, and is never played through the speakers. The red On air light comes on, and a belt meter shows how hard you are going.
+    - **After recording:**
+      - a splash score with a title, from Rubber Duck Rookie to Hot Water Heavyweight;
+      - a rubber duck for every four seconds you hold a note;
+      - **▶ Hear it, steamy** plays the music from where you started, with your take through a tiled-bathroom reverb;
+      - **💾 Keep it** saves your voice with the reverb as a WAV file;
+      - **✕** throws the take away.
+    - **＋** adds a song from inside, and its singer is split off on this device.
+    - The words show large when the song has them.
+  - **While you're in it:**
+    - The band and the click are silent (`T.quiet`, playback only: no song's band is switched off).
+    - The screen stays awake.
+  - **When you leave:** everything goes back, including the song you had open.
+
+### Changed
+- **The scale, arpeggio and ear trainers moved to Practice as 🎼 Scales & ear** (`src/parts/73d-scales-ear.js`, `trainOpen`).
+  - It opens from the Practice tools, the Theory panel's "Practise this scale" and the phone's More sheet. The shower jokes stayed in the shower.
+  - The secrets that open its treasures work as before, and their messages now point to Practice ▸ Scales & ear. Golden ear's hint is "Ten in a row, by ear. Practice has a room for that."
+  - Its settings keep the name `CFG.shed`, so nobody's choices are lost.
+- **The agent tool `open_shower_mode` is now `open_practice_room`.** The old name still works as an alias (`describe().aliases`), and the contract test now honours aliases. Agents get no tool for the hidden Shower mode.
+- **No public page names Shower mode.** The README hints at it, and the guide's tones page shows a Scales & ear card. The privacy statement does describe its use of the microphone.
+
+### Removed
+- The first draft of a Sing room inside the trainer hub, before it was shipped, in favour of the hidden player.
+
+### Tests
+- `e2e-shower` (36 checks): hidden, the gestures, the queue, stems, play and pause, auto-advance, record, score, hear, keep, leaving, and a phone.
+- `e2e-scales-ear` (38, renamed from `e2e-shower`).
+- `e2e-agent` checks that the old tool name still works.
+
 ## 2.26.0 — 2026-11-02 — Easier for AI assistants to find and use, with nothing new for people to manage
 
 ### Added

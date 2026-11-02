@@ -3,9 +3,9 @@
    · Tuned to perfection   all six open strings within ±2 cents of true, one after another (the tuner the studio already has)
    · In the pocket         sixteen notes in a row within 10 ms of the beat while the song plays (the timing analysis already there)
    · The hidden line       triple-click the version tag (part 73)
-   · Up and down           any scale up and back down, anywhere the tuner hears it: opens modes and more scales in Shower mode (part 73d)
+   · Up and down           any scale up and back down, anywhere the tuner hears it: opens modes and more scales in Scales & ear (part 73d)
    · Broken chords         three of the band's chords in a row broken into notes (root, third, fifth) while the song plays: opens seventh arpeggios
-   · Golden ear            ten intervals in a row by ear in Shower mode, from six choices or more: opens chord qualities by ear
+   · Golden ear            ten intervals in a row by ear in Scales & ear, from six choices or more: opens chord qualities by ear
    · Backstage pass        the browser console says hello to developers and points at dailyStudio.backstage(): guest list only,
                            and the password is the build (part 73c has the door, the pass and the rooms)
    A small 🗝 counter next to the version shows how many have been found, once the first one has. The rules: nothing fires while a take
@@ -16,9 +16,9 @@ const SECRETS = [
   ['line', 'The hidden line', 'Some numbers want to be clicked three times.', 'Triple-click the version tag: a quote of the day from someone in history wakes up at the bottom of the page.'],
   ['tuned', 'Tuned to perfection', 'Six strings, two cents.', 'All six open strings within ±2 cents of true, one after another.'],
   ['pocket', 'In the pocket', 'Sixteen notes, right on time.', 'Sixteen notes in a row within 10 ms of the beat while the song plays.'],
-  ['scale', 'Up and down', 'Every note, there and back. Anywhere I can hear you.', 'Played a whole scale up and back down.', 'Modes and more scales are open in Shower mode. 🚿'],
-  ['arp', 'Broken chords', 'The band plays the chords. You take them apart.', 'Broke three of the band’s chords in a row into their notes while the song played.', 'Seventh arpeggios are open in Shower mode. 🚿'],
-  ['ear', 'Golden ear', 'Ten in a row, by ear, somewhere steamy.', 'Named ten intervals in a row by ear in Shower mode.', 'Chord qualities by ear are open in Shower mode. 🚿'],
+  ['scale', 'Up and down', 'Every note, there and back. Anywhere I can hear you.', 'Played a whole scale up and back down.', 'Modes and more scales are open in Practice ▸ Scales & ear. 🎼'],
+  ['arp', 'Broken chords', 'The band plays the chords. You take them apart.', 'Broke three of the band’s chords in a row into their notes while the song played.', 'Seventh arpeggios are open in Practice ▸ Scales & ear. 🎼'],
+  ['ear', 'Golden ear', 'Ten in a row, by ear. Practice has a room for that.', 'Named ten intervals in a row by ear in Scales & ear.', 'Chord qualities by ear are open in Practice ▸ Scales & ear. 🎼'],
   ['backstage', 'Backstage pass', 'Developers know where to look.', 'Read the note in the browser console, knocked, and knew the password.']
 ];
 CFG.secrets = CFG.secrets && typeof CFG.secrets === 'object' ? CFG.secrets : {};

@@ -90,7 +90,7 @@ suite('e2e-agent', async t => {
 
   /* ---- 2.16: the contract ---- */
   const live = await p.evaluate(() => ({ api: window.dailyStudio.version, d: window.dailyStudio.describe(), tools: Object.fromEntries(window.dailyStudio.tools().map(x => [x.name, (x.inputSchema.required || []).slice().sort()])) }));
-  const broken = Object.entries(CONTRACT.tools).filter(([n, req]) => !live.tools[n] || live.tools[n].join() !== req.join()).map(([n]) => n);
+  const broken = Object.entries(CONTRACT.tools).filter(([n, req]) => { const t = live.tools[n] || live.tools[live.d.aliases[n]]; return !t || t.join() !== req.join(); }).map(([n]) => n);
   ok(live.api === CONTRACT.api && !broken.length, 'the published tools and their required inputs match test/agent-contract.json (API ' + live.api + (broken.length ? '; changed: ' + broken.join(', ') : '') + ')');
   ok(live.d.api === live.api && /^\d+\.\d+\.\d+$/.test(live.d.app) && /^[0-9a-f]{7}$/.test(live.d.build) && live.d.tools.length === N, 'describe() gives the API version, the app version and build, and the tools');
 
@@ -116,11 +116,11 @@ suite('e2e-agent', async t => {
   ok(mb.muted && !mb.band.drums && !mb.band.bass && !mb.metronome && (await json('get_studio_state', {})).band_muted === true, 'mute_band mutes the whole band and the click, and get_studio_state says so');
   const ub = await json('mute_band', {});
   ok(!ub.muted && ub.band.drums && ub.band.bass && !ub.band.rhythm_guitar && ub.metronome, 'mute_band again brings back exactly what was playing');
-  const sh = await json('open_shower_mode', { room: 'scales', key: 'E', scale: 'Blues' });
-  ok(sh.done && /^E Blues/.test(sh.scale) && sh.notes.length > 6 && (await p.evaluate(() => !!document.getElementById('shower') && document.getElementById('shower').open && !window.__daily.E.hasInput && !window.__daily.WS.run)), 'open_shower_mode opens the room on the scale asked for (' + sh.scale + '), without the microphone and without starting anything');
-  const lk = await raw('open_shower_mode', { scale: 'Dorian' });
+  const sh = await json('open_practice_room', { room: 'scales', key: 'E', scale: 'Blues' });
+  ok(sh.done && /^E Blues/.test(sh.scale) && sh.notes.length > 6 && (await p.evaluate(() => !!document.getElementById('scales-ear') && document.getElementById('scales-ear').open && !window.__daily.E.hasInput && !window.__daily.WS.run)), 'open_practice_room opens Scales & ear on the scale asked for (' + sh.scale + '), without the microphone and without starting anything');
+  const lk = await raw('open_shower_mode', { scale: 'Dorian' });      /* the old name, an alias since 2.27 */
   ok(lk.isError && /locked/.test(JSON.stringify(lk)) && (await p.evaluate(() => window.__daily.CFG.shed.scale === 'Blues' && !window.__daily.CFG.secrets.scale)), 'it cannot pick a scale that is still locked, and unlocks nothing');
-  await p.evaluate(() => document.getElementById('shower').close());
+  await p.evaluate(() => document.getElementById('scales-ear').close());
   /* ---- 2.26: whole jobs in one call, and where to start ---- */
   const dsc = await p.evaluate(() => window.dailyStudio.describe());
   ok(Array.isArray(dsc.start_here) && dsc.start_here.length >= 4 && dsc.start_here.every(x => dsc.tools.includes(x.call) && x.why) && /for-ai-assistants/.test(dsc.docs), 'describe() says where to start: ' + dsc.start_here.map(x => x.call).join(', '));
