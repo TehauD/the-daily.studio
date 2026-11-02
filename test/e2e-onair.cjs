@@ -7,9 +7,12 @@ suite('e2e-onair', async t => {
   ok(!before.onair && !/ff2a3d/.test(before.icon) && !/REC/.test(before.title), 'not recording: the usual logo, icon and title');
   await ev(() => { window.__daily.REC = { fake: 1 }; window.__daily.airSync(); }); await wait(100);
   const on = await st();
-  ok(on.onair && /stroke:#ff2a3d/.test(on.icon) && /^● REC · /.test(on.title) && on.anim === 'onair', 'recording: the logo glows red and blinks, the tab icon turns red, and the tab says ● REC');
+  ok(on.onair && /stroke:#ff2a3d/.test(on.icon) && /^● REC · /.test(on.title), 'recording: the logo glows red and blinks, the tab icon turns red, and the tab says ● REC');
   const seen = new Set(); for (let i = 0; i < 6; i++) { seen.add(/ff2a3d/.test((await st()).icon)); await wait(250); }
   ok(seen.size === 2, 'the tab icon blinks: red, then the usual, then red');
+  const sync = []; for (let i = 0; i < 8; i++) { sync.push(await ev(() => { const red = /ff2a3d/.test(decodeURIComponent(document.querySelector('link[rel=icon]').getAttribute('href'))), logo = +getComputedStyle(document.querySelector('.brand svg')).opacity; return red === (logo > .9); })); await wait(170); }
+  ok(sync.every(Boolean), 'the logo and the tab icon blink together, on one clock (' + sync.map(x => x ? '✓' : '✗').join('') + ')');
+  ok(await ev(() => { const b = document.querySelector('.btn.rec'); b.classList.add('on'); const a = getComputedStyle(b).animationName; b.classList.remove('on'); return a === 'none'; }), 'and the record button follows the same clock instead of its own pulse');
   ok(await ev(() => { const s = document.getElementById('airSay'); return !!s && s.getAttribute('role') === 'status' && s.textContent === 'On air: recording.' && s.getBoundingClientRect().width <= 1 && document.querySelector('.brand').title === 'On air: recording'; }), 'a screen reader hears it too: “On air: recording.”, said once, in a status line nobody sees');
   await ev(() => { window.__daily.REC = null; window.__daily.airSync(); }); await wait(100);
   const off = await st();
@@ -20,6 +23,6 @@ suite('e2e-onair', async t => {
   await ev(() => { window.__daily.SREC.on = false; }); await wait(700);
   await p.emulateMedia({ reducedMotion: 'reduce' }); await ev(() => { window.__daily.REC = { fake: 1 }; window.__daily.airSync(); });
   const steady = new Set(); for (let i = 0; i < 5; i++) { steady.add(/ff2a3d/.test((await st()).icon)); await wait(250); }
-  ok(steady.size === 1 && steady.has(true) && (await st()).anim === 'none', 'with reduced motion: a steady red light, no blinking');
+  ok(steady.size === 1 && steady.has(true) && await ev(() => !document.body.classList.contains('air-dim')), 'with reduced motion: a steady red light, no blinking');
   await ev(() => { window.__daily.REC = null; window.__daily.airSync(); });
 });

@@ -35,6 +35,9 @@ All notable changes to the-daily.studio (earlier versions were released under th
 - **The agent tool `open_shower_mode` is now `open_practice_room`.** The old name still works as an alias (`describe().aliases`), and the contract test now honours aliases. Agents get no tool for the hidden Shower mode.
 - **No public page names Shower mode.** The README hints at it, and the guide's tones page shows a Scales & ear card. The privacy statement does describe its use of the microphone.
 
+### Fixed
+- **The red lights blink together.** The logo, the tab icon and the record buttons each had their own timer (1.3 s, 650 ms, 1.2 s, 1.4 s), so they drifted apart. They now change on the tab icon's one clock (`body.air-dim`), and the record buttons drop their own pulse while on air.
+
 ### Removed
 - The first draft of a Sing room inside the trainer hub, before it was shipped, in favour of the hidden player.
 
@@ -42,6 +45,7 @@ All notable changes to the-daily.studio (earlier versions were released under th
 - `e2e-shower` (36 checks): hidden, the gestures, the queue, stems, play and pause, auto-advance, record, score, hear, keep, leaving, and a phone.
 - `e2e-scales-ear` (38, renamed from `e2e-shower`).
 - `e2e-agent` checks that the old tool name still works.
+- `e2e-onair` 9 → 11 checks: the logo and the tab icon in step over eight samples, and the record button on the same clock.
 
 ## 2.26.0 — 2026-11-02 — Easier for AI assistants to find and use, with nothing new for people to manage
 

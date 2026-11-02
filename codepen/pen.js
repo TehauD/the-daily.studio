@@ -5,7 +5,7 @@
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.27.0', BUILD = 'f03bfc7', PARTS_N = +'90' || 0, LINES_N = +'15893' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.27.0', BUILD = '8aa07d3', PARTS_N = +'90' || 0, LINES_N = +'15894' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { ghApp: { clientId: '', slug: '' },   /* Sign in with GitHub: the GitHub App's public client id and its slug (docs/GITHUB.md); empty = only the token way */
   support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://the-daily.studio/journal/' };
@@ -15253,7 +15253,7 @@ bus.on('song', () => { const d = document.getElementById('scales-ear'); if (d &&
 /* ============================================================
    Part 73e · ON AIR (2.25) — a tribute to the red light outside every studio door
    While a take or a stage video records, the logo in the header and the browser tab's icon blink red, and the tab's title says
-   ● REC, so you can tell from any tab that the studio is rolling. Calm and reduced motion get a steady red light, no blinking.
+   ● REC, so you can tell from any tab that the studio is rolling. One timer drives them all (and the record buttons), so they blink together. Calm and reduced motion get a steady red light, no blinking.
    ============================================================ */
 const AIR = { on: false, tm: 0, ph: false, icon: null, red: null, title: '' };
 const airLive = () => !!(REC || (typeof SREC !== 'undefined' && SREC.on) || (typeof SHW !== 'undefined' && SHW.rec));      /* Shower mode's ● too */
@@ -15271,9 +15271,10 @@ function airSync() {
   const mark = document.querySelector('.brand'); if (mark) { if (on) mark.setAttribute('title', 'On air: recording'); else mark.removeAttribute('title'); }
   if (on) {
     AIR.title = document.title.replace(/^● REC · /, ''); document.title = '● REC · ' + AIR.title;
-    const steady = secretCalm(), tick = () => { AIR.ph = steady || !AIR.ph; if (link && AIR.red) link.setAttribute('href', AIR.ph ? AIR.red : AIR.icon); };
+    /* one clock for every red light: the tab icon, the logo and the record buttons all change on the same tick (body.air-dim is the dark half) */
+    const steady = secretCalm(), tick = () => { AIR.ph = steady || !AIR.ph; if (link && AIR.red) link.setAttribute('href', AIR.ph ? AIR.red : AIR.icon); document.body.classList.toggle('air-dim', !AIR.ph); };
     AIR.ph = false; tick(); if (!steady) AIR.tm = setInterval(tick, 650);
-  } else { if (link && AIR.icon) link.setAttribute('href', AIR.icon); if (AIR.title) document.title = AIR.title; }
+  } else { document.body.classList.remove('air-dim'); if (link && AIR.icon) link.setAttribute('href', AIR.icon); if (AIR.title) document.title = AIR.title; }
 }
 bus.on('rec:state', airSync); setInterval(airSync, 500);      /* takes say so; a stage video is noticed within half a second */
 
