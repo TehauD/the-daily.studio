@@ -1,0 +1,57 @@
+# the-daily.studio
+
+> Record guitar and voice, split a song into stems, get chords, tab and lyrics, and run a live light show. Free, private, in your browser: no account, no uploads. Version 2.26.0. An AI assistant in the person's browser can use the studio through tools (WebMCP, or window.dailyStudio from a script). Nothing is sent to a server.
+
+## For AI assistants
+
+- [For AI assistants](https://the-daily.studio/guide/for-ai-assistants/): what the tools do, what they never touch, and good first calls
+- [Agent API reference](https://github.com/TehauD/the-daily.studio/blob/main/docs/AGENT_API.md): every tool, its inputs and its errors
+- [Tool contract](https://github.com/TehauD/the-daily.studio/blob/main/test/agent-contract.json): the tools and required inputs the tests hold the studio to
+
+How to call: in the page, navigator.modelContext lists the tools (WebMCP); or window.dailyStudio.tools(), window.dailyStudio.call(name, input) and window.dailyStudio.describe(). Start with describe(), then get_studio_state.
+The tools never reach the microphone, the camera, recording, deleting songs or Settings. Sound starts only after the person has clicked the page once.
+
+## Tools
+
+- get_song (reads; required: none)
+- get_studio_state (reads; required: none)
+- get_key_chords (reads; required: none)
+- get_chord_shape (reads; required: `chord`)
+- explain_song (reads; required: none)
+- list_songs (reads; required: none)
+- export_song (reads; required: `format`)
+- load_chord_sheet (changes; required: `text`)
+- write_song (changes (a new song by default); required: `lyrics`)
+- set_song_details (changes; required: none)
+- transpose_song (changes; required: `semitones`)
+- edit_section (changes; required: `section`)
+- add_section (changes; required: `name`, `chords`)
+- remove_section (changes (destructive, undoable); required: `section`)
+- set_band (changes; required: none)
+- transport (changes (never records); required: none)
+- set_up_practice (changes (tempo undoable; never records); required: none)
+- set_visuals (changes (never the camera); required: none)
+- perform (changes (never the microphone); required: none)
+- mute_band (changes; required: none)
+- open_shower_mode (changes (never the microphone, never unlocks); required: none)
+- open_workspace (changes; required: `workspace`)
+- open_song (changes; required: `song`)
+- undo (changes; required: none)
+
+## Guide
+
+- [How it works](https://the-daily.studio/guide/): what the studio does, what it needs and its limits
+- [Getting started with the-daily.studio](https://the-daily.studio/guide/getting-started/): Pick what you want to do; a short guided session shows you how.
+- [Record guitar and voice in your browser](https://the-daily.studio/guide/record-guitar-and-voice/): Guitar and voice at once, zero-delay effects, takes you can edit.
+- [Guitar amps, pedals and tones in your browser](https://the-daily.studio/guide/guitar-tones-and-rig/): A full pedalboard, amps and 27 tones, with scenes for live use.
+- [Split a song into stems in your browser](https://the-daily.studio/guide/split-song-into-stems/): Drums, bass, vocals and the rest: mute your part and play along.
+- [Chords, tab and lyrics from a song or your playing](https://the-daily.studio/guide/chords-tab-and-lyrics/): Chords, key and tempo from audio, tab for your tuning, lyric sheets.
+- [Hum a melody and get a whole song](https://the-daily.studio/guide/hum-to-song/): Hum ten seconds and a band plays it back as a whole song.
+- [Live visuals and a light show for your music](https://the-daily.studio/guide/live-visuals-and-stage-show/): Lights, lasers and an LED wall that follow the music.
+- [Perform live and share what you make](https://the-daily.studio/guide/perform-and-share/): Big chords on stage, videos for every screen, share pages, tips.
+- [Your studio, on every computer](https://the-daily.studio/guide/keep-your-studio-in-sync/): Your whole studio on every computer, through a folder or GitHub.
+
+## Optional
+
+- [Source](https://github.com/TehauD/the-daily.studio): MIT licence
+- [Privacy](https://the-daily.studio/legal/): no account, no tracking; audio stays on the device

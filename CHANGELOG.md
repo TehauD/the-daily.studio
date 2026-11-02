@@ -2,6 +2,31 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.26.0 — 2026-11-02 — Easier for AI assistants to find and use, with nothing new for people to manage
+
+### Added
+- **Three agent tools that do a whole job in one call** (API 2; nothing removed or changed):
+  - `write_song`: lyrics to a song the band plays. Chords from a progression (a name, Roman numerals or chord names) are laid over each line, with an optional chorus progression, a key and a tempo.
+  - `explain_song`: the key, every section's chords with Roman numerals, chords outside the key, sections that share their chords, and well-known progressions it uses.
+  - `set_up_practice`: loop a section, slow the song down or set a tempo, the click, how much of the band plays, and play. Tempo changes are undoable.
+- **`describe().start_here`:** five good first calls with example inputs, and `docs`, the address of the page for assistants.
+- **`/llms.txt`:** what the studio is, how to call its tools, and every tool, for assistants that read it. `scripts/build.mjs` writes it from the table in `docs/AGENT_API.md`, and the page's head links to it.
+- **`/guide/for-ai-assistants/`:** the tools, what they never touch, how they behave and good first calls. It is in the sitemap and `llms.txt` for assistants and search, but no menu, card or link in the studio or the other guide pages points to it.
+
+### Unchanged on purpose
+- People see nothing new. Agent access stays on by default with its one switch in Settings ▸ Workflow, and the short "🤖 AI agent: …" note still appears only when an agent changes something.
+
+### Tests
+- `e2e-agent` 65 checks:
+  - `start_here`;
+  - `write_song` (sections, the verse and chorus progressions, chords in the words, refusals);
+  - `explain_song` (numerals, a known progression, a chord outside the key);
+  - `set_up_practice` (the chorus looped at 75 % with just the drums, undo, refusals).
+- `verify:site`:
+  - `llms.txt` lists every tool and the page for assistants;
+  - the head links to it;
+  - neither the first page nor any listed guide page links to the page for assistants.
+
 ## 2.25.1 — 2026-11-02 — Shower mode on phones, a red light you can hear, two agent tools, steadier tests
 
 ### Added

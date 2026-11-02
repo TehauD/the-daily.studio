@@ -41,6 +41,11 @@
       "chord"
     ],
     "mute_band": [],
-    "open_shower_mode": []
+    "open_shower_mode": [],
+    "explain_song": [],
+    "write_song": [
+      "lyrics"
+    ],
+    "set_up_practice": []
   }
 }

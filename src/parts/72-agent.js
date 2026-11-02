@@ -68,6 +68,14 @@ const agNum = (d, o) => Object.assign({ type: 'number', description: d }, o || {
 const agBool = d => ({ type: 'boolean', description: d });
 const agSecP = d => ({ type: ['string', 'number'], description: d });
 const agObj = (props, req) => ({ type: 'object', properties: props || {}, required: req || [], additionalProperties: false });
+/** good first calls, for an agent that has just arrived (describe().start_here) */
+const AG_START = [
+  { call: 'get_studio_state', input: {}, why: 'What is open and playing, and which band parts are on.' },
+  { call: 'explain_song', input: {}, why: 'The key, the Roman numerals and how the sections are built.' },
+  { call: 'write_song', input: { lyrics: '[Verse]\nWalking down to the harbour\nLights along the water\n[Chorus]\nHold on, hold on', key: 'G', chorus_progression: 'IV I V vi' }, why: 'Lyrics to a song the band plays.' },
+  { call: 'set_up_practice', input: { section: 'Chorus', tempo_percent: 75, band: 'drums' }, why: 'Loop a section slower with just the drums.' },
+  { call: 'open_shower_mode', input: { room: 'scales' }, why: 'Scales in the song\'s key, followed note by note.' }
+];
 function agTool(name, description, inputSchema, run, ann) { AGT.tools.push({ name, description, inputSchema, run, annotations: Object.assign({ readOnlyHint: false }, ann || {}) }); }
 /** a change: one undo step, a 🤖 note, and the song as it is now */
 function agChange(what, fn) { const before = snap(); fn(); if (!histPush(before)) bus.emit('song'); agentSay(what); return what; }
@@ -225,6 +233,87 @@ agTool('open_shower_mode', 'Open Shower mode, the practice room: scales (a key, 
     return agTxt({ done: true, room: i.room || 'scales', scale: r.title, notes: r.notes.map(q => wsName(q.m)), start_fret: r.st, note: 'The person presses ● Play it to be followed note by note (it listens to the tuner\'s input), or ▶ Listen to hear it.' });
   });
 
+/* ---------- 2.26: whole jobs in one call ---------- */
+/** a chord's place in the song's key: is its root in the scale with the same third as the scale's own chord there */
+function agInKey(sym) {
+  const c = parseChord(sym); if (!c) return true; const q = x => x.iv.includes(3) && !x.iv.includes(4) ? 'm' : x.iv.includes(4) ? 'M' : '?';
+  return diatonic(S.key, S.minor ? 'Natural Minor (Aeolian)' : 'Major (Ionian)').some(d => { const t = parseChord(d.triad); return t && t.root === c.root && (q(c) === '?' || q(t) === q(c)); });
+}
+/** a progression from a name in PROGS, Roman numerals ("I V vi IV") or chord names ("G D Em C") → chord names in the key */
+function agProg(spec, root, minor) {
+  const raw = String(spec || '').trim(), norm = x => x.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const named = PROGS.find(([n, r]) => norm(n) === norm(raw) || norm(n).startsWith(norm(raw)) && norm(raw).length > 3 || norm(r) === norm(raw)), toks = (named ? named[1] : raw.replace(/[–—,|-]/g, ' ')).split(/\s+/).filter(Boolean);
+  if (!toks.length) return null; const asRoman = toks.map(t => romanToChord(t.replace('♭', 'b').replace('♯', '#'), root, minor));
+  if (asRoman.every(Boolean)) return asRoman; return toks.every(t => parseChord(t)) ? toks : null;
+}
+agTool('explain_song', 'Explain the song that is open: its key, tempo and time, every section\'s chords with Roman numerals in the key, which chords fall outside the key, which sections share their chords, and any well-known progression it uses. Use it before suggesting changes or teaching the song.',
+  agObj(), () => {
+    const secs = S.sections.map((sec, n) => { const ch = sec.bars.map(b => barChords(b).join(' ') || '–'), num = sec.bars.map(b => barChords(b).map(lxNumeral).join(' ') || '–'), out = [...new Set(sec.bars.flatMap(barChords).filter(c => !agInKey(c)))];
+      return { number: n + 1, name: sec.name, bars: sec.bars.length, chords: ch.join(' | '), numerals: num.join(' | '), outside_key: out, _sig: ch.join(' ') }; });
+    secs.forEach((x, i) => { const j = secs.findIndex(y => y._sig === x._sig); if (j < i) x.same_chords_as = secs[j].name + ' (' + (j + 1) + ')'; });
+    const flat = S.sections.flatMap(sec => sec.bars.flatMap(b => barChords(b).slice(0, 1))), uses = [];
+    PROGS.forEach(([name, r]) => { const want = r.split(' ').map(t => romanToChord(t, S.key, S.minor)); if (want.every(Boolean) && want.length <= flat.length) for (let i = 0; i + want.length <= flat.length; i++) if (want.every((c, k) => parseChord(c) && parseChord(flat[i + k]) && parseChord(c).root === parseChord(flat[i + k]).root)) { uses.push(name.replace(/\s{2,}/g, ' · ')); break; } });
+    const count = {}; flat.forEach(c => { count[c] = (count[c] || 0) + 1; });
+    return agTxt({ title: S.title, key: agKeyName(S.key, S.minor), bpm: S.bpm, time_signature: S.ts.join('/'), capo: S.capo || 0, sections: secs.map(({ _sig, ...x }) => x),
+      most_used_chords: Object.entries(count).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([c, n]) => c + ' ×' + n), known_progressions: uses,
+      note: 'Numerals are relative to the song\'s key: upper case major, lower case minor, ♭/♯ for roots outside the scale. "outside_key" lists chords that are not the scale\'s own chord on that root (borrowed chords, secondary dominants, passing chords).' });
+  }, { readOnlyHint: true });
+
+agTool('write_song', 'Turn lyrics into a song the studio plays, in one call: chords from a progression are laid over each line of words, the band plays it, and a guitar part is written into the tab. Lyrics: [Verse] / [Chorus] heading lines (or blank lines between sections). By default it makes a new song and keeps the current one.',
+  agObj({ lyrics: agStr('The words, one line per sung line. Optional [Section] headings on their own lines.'),
+    key: agStr('The key, e.g. "G", "Em", "Bb minor". Default: the open song\'s key.'),
+    progression: agStr('For verses (and every section unless chorus_progression is given): a name such as "I–V–vi–IV Pop", Roman numerals such as "I V vi IV" or "i VI III VII", or chord names such as "G D Em C". Default: I V vi IV (major) or i VI III VII (minor).'),
+    chorus_progression: agStr('For sections whose name contains "chorus". Same forms as progression.'),
+    chords_per_line: agNum('How many chords over each line of words: 1, 2 (default) or 4.', { enum: [1, 2, 4] }),
+    bpm: agNum('Tempo, 30–260.'), title: agStr('Title (default: the first line of the chorus).'), artist: agStr('Artist.'),
+    where: agStr('new_song (default), replace (this song; undoable), or append.', { enum: ['new_song', 'replace', 'append'] }) }, ['lyrics']),
+  async i => {
+    const k = i.key ? agKey(i.key) : { root: S.key, minor: S.minor }; if (!k) throw new Error('Key not understood: ' + i.key);
+    const pv = agProg(i.progression || (k.minor ? 'i VI III VII' : 'I V vi IV'), k.root, k.minor); if (!pv) throw new Error('Progression not understood: ' + i.progression + '. Use a name from get_key_chords, Roman numerals or chord names.');
+    const pc = i.chorus_progression ? agProg(i.chorus_progression, k.root, k.minor) : pv; if (!pc) throw new Error('Chorus progression not understood: ' + i.chorus_progression);
+    const per = [1, 2, 4].includes(+i.chords_per_line) ? +i.chords_per_line : 2, out = [];
+    let open = false, idx = 0, n = 0, prog = pv, lines = 0;      /* a heading opens a section; a blank line closes it; words with no section open start the next verse */
+    String(i.lyrics).replace(/\r/g, '').split('\n').forEach(raw => {
+      const l = raw.trim(), hd = /^\[([^\]]{1,40})\]$/.exec(l) || /^([A-Za-z][A-Za-z -]{0,24}\d?):$/.exec(l);
+      if (hd) { out.push('[' + hd[1] + ']'); prog = /chorus/i.test(hd[1]) ? pc : pv; idx = 0; open = true; return; }
+      if (!l) { open = false; return; }
+      if (!open) { n++; out.push('[Verse ' + n + ']'); prog = pv; idx = 0; open = true; }
+      lines++; const w = l.split(/\s+/), m = Math.min(per, w.length), at = new Set(Array.from({ length: m }, (_, j) => Math.floor(j * w.length / m)));
+      out.push(w.map((x, j) => (at.has(j) ? '[' + prog[idx++ % prog.length] + ']' : '') + x).join(' '));
+    });
+    if (!lines) throw new Error('No words found in lyrics.');
+    const p = chordSheetParse(out.join('\n')); if (!p.sections.length) throw new Error('Those lyrics could not be laid out.');
+    const o = { mode: { replace: 'A', append: 'C' }[i.where] || 'N', per: 1, key: k.root + ':' + (k.minor ? 'm' : 'M'), fill: 'Block strum', title: i.title || '', artist: i.artist };
+    await chordSheetApply(p, o); if (i.bpm != null) { S.bpm = clamp(Math.round(+i.bpm) || S.bpm, 30, 260); commit(false); }
+    agentSay('wrote a song from lyrics');
+    return agTxt({ done: true, song: agSong(false), note: 'Each chord is one bar. Use edit_section to change any bar, transport {action:"play"} to hear it.' });
+  });
+
+agTool('set_up_practice', 'Set the studio up for practice in one call: loop a section, slow the song down (or set a tempo), switch the click, choose how much of the band plays, and optionally start playing. Tempo changes are part of the song (undoable with undo).',
+  agObj({ section: agSecP('The section to loop: number (1 = first) or name, e.g. "Chorus". Omit to loop the whole song.'),
+    tempo_percent: agNum('Play at this share of the current tempo, 40–100 (e.g. 75).'), bpm: agNum('Or an exact tempo, 30–260.'),
+    metronome: agBool('Click on or off. Default: on.'), band: agStr('full (every part), drums (drums only, to keep time), or none (the band and the click muted). Default: unchanged.', { enum: ['full', 'drums', 'none'] }),
+    play: agBool('Start playing from the top of the loop.') }),
+  async i => {
+    const si = i.section != null ? agSec(i.section) : -1; if (i.section != null && si < 0) throw new Error('No section “' + i.section + '”. Sections: ' + S.sections.map((s, n) => (n + 1) + ' ' + s.name).join(', '));
+    if (i.tempo_percent != null && !(+i.tempo_percent >= 40 && +i.tempo_percent <= 100)) throw new Error('tempo_percent must be from 40 to 100');
+    if (T.rec) throw new Error('The studio is recording; the person has to stop it.');
+    if (T.playing) stopPlay(true);
+    const bpm = i.bpm != null ? clamp(Math.round(+i.bpm), 30, 260) : i.tempo_percent != null ? clamp(Math.round(S.bpm * +i.tempo_percent / 100), 30, 260) : null;
+    if (bpm && bpm !== S.bpm) agChange('set the tempo to ' + bpm, () => { S.bpm = bpm; });
+    const start = si < 0 ? 0 : S.sections.slice(0, si).reduce((a, x) => a + x.bars.length, 0), len = si < 0 ? totalBars() : S.sections[si].bars.length;
+    T.loop = true; T.loopA = start * spb(); T.loopB = si < 0 ? null : Math.min(songSlots(), (start + len) * spb()); T.cursor = T.loopA;
+    if (i.band === 'none') bandMute(true);
+    else { if (bandMuted() && i.band) bandMute(false); if (i.band === 'drums') { S.band.drumsOn = true; S.band.bassOn = false; S.band.compOn = false; S.band.leadOn = false; } if (i.band === 'full') { S.band.drumsOn = S.band.bassOn = S.band.compOn = S.band.leadOn = true; } T.metro = i.metronome == null ? true : !!i.metronome; }
+    if (i.band === 'none' && i.metronome) T.metro = true;
+    commit(false); try { syncTransport(); syncBandStrip(); bandMuteSync(); TL.dirty = true; } catch (e) { }
+    agentSay('set up practice' + (si < 0 ? '' : ' on ' + S.sections[si].name));
+    if (i.play) { if (typeof AK !== 'undefined' && AK.killed) throw new Error('Audio was switched off with the kill switch (Ctrl + .). The person has to resume it in the Audio panel.'); await play(); }
+    return agTxt({ done: true, loop: si < 0 ? 'the whole song' : S.sections[si].name + ' (bars ' + (start + 1) + '–' + (start + len) + ')', bpm: S.bpm, metronome: !!T.metro,
+      band: { drums: !!S.band.drumsOn, bass: !!S.band.bassOn, rhythm_guitar: !!S.band.compOn, lead_tab: !!S.band.leadOn, muted: bandMuted() }, playing: !!T.playing,
+      note: T.playing && E.ctx && E.ctx.state !== 'running' ? 'The browser only lets a page make sound after the person has clicked or tapped on it once.' : 'For scales in the song\'s key, open_shower_mode.' });
+  });
+
 agTool('get_chord_shape', 'How to play a chord on the guitar in this song\'s tuning and capo: the fret for each string from the lowest to the highest (x = not played, 0 = open), the lowest fret used and whether it is a barre, with other ways to play it. The first shape is the one the song uses.',
   agObj({ chord: agStr('A chord such as "Am", "F#m7", "B/D#", "Csus4".'), count: agNum('How many shapes to list, 1 to 6 (default 3).') }, ['chord']),
   i => {
@@ -320,7 +409,7 @@ try {
     version: AG_API, app: VERSION, build: BUILD,
     about: 'the-daily.studio agent tools: the same tools this page offers through WebMCP (navigator.modelContext). Everything runs locally in this page.',
     tools: () => AGT.tools.map(t => ({ name: t.name, description: t.description, inputSchema: t.inputSchema, annotations: t.annotations })),
-    describe: () => ({ api: AG_API, app: VERSION, build: BUILD, webmcp: AGT.via || null, enabled: agentOn(), aliases: Object.assign({}, AG_ALIAS), limits: Object.assign({}, AG_LIMIT), tools: AGT.tools.map(t => t.name) }),
+    describe: () => ({ api: AG_API, app: VERSION, build: BUILD, webmcp: AGT.via || null, enabled: agentOn(), aliases: Object.assign({}, AG_ALIAS), limits: Object.assign({}, AG_LIMIT), tools: AGT.tools.map(t => t.name), start_here: AG_START, docs: 'https://the-daily.studio/guide/for-ai-assistants/' }),
     call: (name, input) => agentCall(name, input),
     /* not a tool: the door the console note points developers to (part 73b) */
     backstage: w => backstage(w) }) });

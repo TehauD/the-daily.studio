@@ -230,6 +230,26 @@ export const PAGES = [
       ['What happens if two computers change the same song?', 'Both versions are kept, so neither edit is lost. Delete the one you do not want.']
     ],
     related: ['getting-started', 'record-guitar-and-voice', 'perform-and-share']
+  },
+  {
+    /* unlisted: for AI assistants and the people who look for it. It is in the sitemap and /llms.txt, but no menu, card or link in the studio or the guide points to it */
+    slug: 'for-ai-assistants', unlisted: true, ico: '🤖', title: 'Use the-daily.studio with an AI assistant',
+    description: 'How an AI assistant in your browser can read and edit songs, play the band and set up practice in the-daily.studio, and what it can never touch.',
+    h1: 'For AI assistants', eyebrow: 'Agent API',
+    lead: 'The studio offers its main actions as tools that an AI assistant running in your browser can call: read the song, turn a chord sheet or lyrics into a song, edit sections, play the band, set up practice and open Perform. Everything runs inside the page. Nothing is sent anywhere, and there is nothing to set up.',
+    glance: [['📖', 'Read', 'The song, its key and Roman numerals, the chords of any key, chord shapes, what the studio is doing.'], ['✍', 'Write', 'Turn a chord sheet, or lyrics with a progression, into a song; edit, add and remove sections; transpose; undo.'], ['🥁', 'Play', 'Play, stop and loop; choose the band and its styles; mute the band and the click in one go.'], ['🎯', 'Practise', 'Slow the song down, loop a section, open Shower mode on a scale.'], ['🎤', 'Perform', 'Open Perform on the display that suits the song, change the visuals.'], ['🔒', 'Never', 'The microphone, the camera, recording, deleting songs, Settings or anyone’s payment link.']],
+    sections: [
+      { h: 'Two ways in', p: ['WebMCP: the studio registers its tools with navigator.modelContext, so a browser assistant or extension that speaks the Model Context Protocol finds them on its own. Desktop clients can reach them through an extension that relays a page’s WebMCP tools.', 'Scripts: window.dailyStudio.tools() lists the tools with their input schemas, window.dailyStudio.call(name, input) runs one and returns a promise, and window.dailyStudio.describe() gives the API version, the app version and a short list of good first calls.'] },
+      { h: 'Good first calls', ol: ['describe(), for the version and where to start.', 'get_studio_state, to see what is open and playing.', 'get_song, or explain_song for the key, the Roman numerals and how the sections are built.', 'Then one job at a time: write_song from lyrics, load_chord_sheet from a chord sheet, set_up_practice for a slow loop, open_shower_mode for scales.'] },
+      { h: 'How it behaves', ul: ['Every change goes through the same functions as the buttons, lands in the same undo history, and shows the person a short note (“🤖 AI agent: transposed the song”).', 'Inputs are checked against each tool’s schema; a refusal comes back with a reason the assistant can pass on.', 'Calls are rate-limited and time out after 20 seconds.', 'The person can switch agent access off in Settings ▸ Workflow; the tools are then withdrawn and calls are answered “disabled”.', 'Tools and their required inputs are a contract: a breaking change raises the API version.'] }
+    ],
+    limits: ['WebMCP is new: browsers do not offer it on their own yet, so an assistant reaches the tools through an extension that supports it, or through window.dailyStudio from a script.', 'Sound starts only after the person has clicked or tapped the page once; the browser requires it. The transport tool says so when that is the reason it is silent.', 'Hidden parts of Shower mode stay hidden: the tools cannot unlock what the person has not found.'],
+    faq: [
+      ['Does an assistant need an account or a key?', 'No. The tools run in the page in the person’s own browser. There is no server and no API key.'],
+      ['Can an assistant record me or hear me?', 'No. No tool reaches the microphone, the camera or recording. Practice tools open rooms that listen only when the person presses Play it.'],
+      ['Where is the full reference?', 'In the source repository: docs/AGENT_API.md lists every tool, its inputs and its errors, and test/agent-contract.json is the contract the tests hold it to.']
+    ],
+    related: []
   }
 ];
 
@@ -309,7 +329,7 @@ const firstLine = p => p.blurb || p.description.split('. ')[0].replace(/\.$/, ''
 const topicCards = (list, pre) => `<ul class="cards">${list.map(p => `<li><a class="card" href="${pre}${p.slug}/"><span class="ico" aria-hidden="true">${esc(p.ico)}</span><b>${esc(p.h1)}</b><span class="t">${esc(firstLine(p))}</span></a></li>`).join('')}</ul>`;
 function section(s, p) {
   let o = `<section><h2>${esc(s.h)}</h2>`;
-  if (s.topics) o += topicCards(PAGES.filter(x => x.slug !== 'guide'), '');
+  if (s.topics) o += topicCards(PAGES.filter(x => x.slug !== 'guide' && !x.unlisted), '');
   if (s.p) o += s.p.map(t => `<p>${esc(t)}</p>`).join('');
   if (s.ul) o += `<ul>${s.ul.map(li).join('')}</ul>`;
   if (s.ol) o += `<ol class="steps">${s.ol.map(li).join('')}</ol>`;
@@ -360,4 +380,37 @@ export function sitemap(modified) {
 /** the links under the first page's buttons (also in <noscript>), so every guide is one crawlable link away from the app */
 export function guideLinks(prefix = '') {
   return NAV.map(([h, t]) => `<a href="${prefix}${h}">${esc(t)}</a>`).join(' · ');
+}
+
+/** /llms.txt (llmstxt.org): what the studio is and where its agent tools are, for AI assistants. The tool list comes from docs/AGENT_API.md, so it cannot drift. */
+export function llmsTxt(version, agentApiMd) {
+  const tools = [...agentApiMd.matchAll(/^\| `([a-z_]+)` \| ([^|]+) \| ([^|]+) \|$/gm)].map(m => `- ${m[1]} (${m[2].trim()}; required: ${m[3].trim()})`);
+  const pages = PAGES.filter(p => !p.unlisted && p.slug !== 'guide').map(p => `- [${p.h1}](${pageUrl(p)}): ${firstLine(p)}`);
+  return `# ${SITE.name}
+
+> ${SITE.description} Version ${version}. An AI assistant in the person's browser can use the studio through tools (WebMCP, or window.dailyStudio from a script). Nothing is sent to a server.
+
+## For AI assistants
+
+- [For AI assistants](${SITE.origin}/guide/for-ai-assistants/): what the tools do, what they never touch, and good first calls
+- [Agent API reference](${SITE.repo}/blob/main/docs/AGENT_API.md): every tool, its inputs and its errors
+- [Tool contract](${SITE.repo}/blob/main/test/agent-contract.json): the tools and required inputs the tests hold the studio to
+
+How to call: in the page, navigator.modelContext lists the tools (WebMCP); or window.dailyStudio.tools(), window.dailyStudio.call(name, input) and window.dailyStudio.describe(). Start with describe(), then get_studio_state.
+The tools never reach the microphone, the camera, recording, deleting songs or Settings. Sound starts only after the person has clicked the page once.
+
+## Tools
+
+${tools.join('\n')}
+
+## Guide
+
+- [How it works](${SITE.origin}/guide/): what the studio does, what it needs and its limits
+${pages.join('\n')}
+
+## Optional
+
+- [Source](${SITE.repo}): MIT licence
+- [Privacy](${SITE.origin}/legal/): no account, no tracking; audio stays on the device
+`;
 }

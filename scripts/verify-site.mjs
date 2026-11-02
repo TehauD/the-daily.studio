@@ -50,7 +50,8 @@ const bodyOf = h => h.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>
   const ld = ldOf(html), g = ld[0] && ld[0]['@graph'] || [];
   ok(ld.length === 1 && ld[0] && g.some(n => n['@type'] === 'WebApplication' && n.isAccessibleForFree === true && n.featureList.length >= 5) && g.some(n => n['@type'] === 'WebSite'), 'first page: structured data parses and describes a free WebApplication');
   ok((bodyOf(html).match(/<h1[ >]/g) || []).length === 1, 'first page: exactly one <h1>');
-  ok(PAGES.every(p => html.includes('href="guide/' + (p.slug === 'guide' ? '' : p.slug + '/') + '"')), 'first page: links to every guide page (crawlable)');
+  ok(PAGES.filter(p => !p.unlisted).every(p => html.includes('href="guide/' + (p.slug === 'guide' ? '' : p.slug + '/') + '"')), 'first page: links to every listed guide page (crawlable)');
+  ok(PAGES.filter(p => p.unlisted).every(p => !new RegExp('href="[^"]*guide/' + p.slug).test(html)) && html.includes('<link rel="alternate" type="text/plain" href="llms.txt"'), 'first page: the page for AI assistants is not linked anywhere a person looks; the head points assistants to llms.txt');
   ok(/<noscript>[\s\S]*guide\/[\s\S]*<\/noscript>/.test(html), 'first page: the no-JavaScript text carries the guide links');
 }
 const urls = [], known = new Set();
@@ -70,6 +71,12 @@ for (const p of PAGES) {
   ok(!bad2.length, name + 'every local link and picture exists' + (bad2.length ? ': ' + bad2.join(', ') : ''));
 }
 ok(known.size === PAGES.length, 'every guide page has its own title');
+{
+  const ll = existsSync(join(d, 'llms.txt')) ? rd('llms.txt') : '', ag = rd('../docs/AGENT_API.md'), names = [...ag.matchAll(/^\| `([a-z_]+)` \| [^|]+ \| [^|]+ \|$/gm)].map(m => m[1]);
+  ok(/^# the-daily\.studio\n\n> /.test(ll) && names.length >= 20 && names.every(n => ll.includes('- ' + n + ' (')) && ll.includes(SITE.origin + '/guide/for-ai-assistants/'), 'llms.txt: a title, a summary, every agent tool (' + names.length + ') and the page for assistants');
+  const others = PAGES.filter(p => p.slug !== 'guide' && !p.unlisted).map(p => rd('guide/' + p.slug + '/index.html')).concat(rd('guide/index.html'));
+  ok(others.every(h => !/href="[^"]*for-ai-assistants/.test(h)), 'no listed guide page links to the page for AI assistants');
+}
 {
   const sm = rd('sitemap.xml'), locs = [...sm.matchAll(/<loc>([^<]+)<\/loc>/g)].map(m => m[1]);
   ok([SITE.origin + '/', ...urls].every(u => locs.includes(u)), 'sitemap.xml lists the first page and every guide page');

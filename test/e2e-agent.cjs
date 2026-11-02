@@ -121,6 +121,25 @@ suite('e2e-agent', async t => {
   const lk = await raw('open_shower_mode', { scale: 'Dorian' });
   ok(lk.isError && /locked/.test(JSON.stringify(lk)) && (await p.evaluate(() => window.__daily.CFG.shed.scale === 'Blues' && !window.__daily.CFG.secrets.scale)), 'it cannot pick a scale that is still locked, and unlocks nothing');
   await p.evaluate(() => document.getElementById('shower').close());
+  /* ---- 2.26: whole jobs in one call, and where to start ---- */
+  const dsc = await p.evaluate(() => window.dailyStudio.describe());
+  ok(Array.isArray(dsc.start_here) && dsc.start_here.length >= 4 && dsc.start_here.every(x => dsc.tools.includes(x.call) && x.why) && /for-ai-assistants/.test(dsc.docs), 'describe() says where to start: ' + dsc.start_here.map(x => x.call).join(', '));
+  const wsg = await json('write_song', { lyrics: '[Verse]\nWalking down to the harbour wall\nLights along the water\n\n[Chorus]\nHold on, hold on\nThe tide will bring you home', key: 'G', chorus_progression: 'IV I V vi', bpm: 88, title: 'Harbour Test' });
+  const wsS = await p.evaluate(() => { const D = window.__daily; return { title: D.S.title, bpm: D.S.bpm, key: D.S.key, minor: D.S.minor, secs: D.S.sections.map(s => [s.name, s.bars.map(b => b.chord).join(' '), s.lyrics]) }; });
+  ok(wsg.done && wsS.title === 'Harbour Test' && wsS.bpm === 88 && wsS.key === 7 && !wsS.minor && wsS.secs.length === 2, 'write_song: lyrics to a new song in G at 88 BPM, two sections (' + wsS.secs.map(x => x[0]).join(', ') + ')');
+  ok(/^G D Em C/.test(wsS.secs[0][1]) && /^C G D Em/.test(wsS.secs[1][1]) && /\[G\]Walking/.test(wsS.secs[0][2]), 'the verse runs I V vi IV, the chorus its own IV I V vi, and the chords sit in the words (' + wsS.secs.map(x => x[1]).join(' / ') + ')');
+  ok((await raw('write_song', { lyrics: 'la la', progression: 'Q R S' })).isError && (await raw('write_song', { lyrics: '   ' })).isError, 'write_song refuses a progression it cannot read, and lyrics with no words');
+  const ex = await json('explain_song', {});
+  ok(ex.key === 'G major' && ex.sections[0].numerals.startsWith('I | V | vi | IV') && ex.known_progressions.some(n => /I–V–vi–IV/.test(n)) && ex.sections.every(s => Array.isArray(s.outside_key)), 'explain_song: the key, the numerals of each section, and the I–V–vi–IV it uses');
+  await p.evaluate(() => { const D = window.__daily; D.S.sections[0].bars[1].chord = 'Bb'; D.commit(false); });
+  ok((await json('explain_song', {})).sections[0].outside_key.includes('Bb'), 'and it names a chord from outside the key');
+  const pr = await json('set_up_practice', { section: 'Chorus', tempo_percent: 75, band: 'drums' });
+  const prS = await p.evaluate(() => { const D = window.__daily; return { loop: D.T.loop, a: D.T.loopA, b: D.T.loopB, spb: D.spb(), bpm: D.S.bpm, metro: D.T.metro, band: [D.S.band.drumsOn, D.S.band.bassOn, D.S.band.compOn, D.S.band.leadOn] }; });
+  ok(pr.done && prS.loop && prS.a === 4 * prS.spb && prS.b === 8 * prS.spb && prS.bpm === 66 && prS.metro && prS.band.join() === 'true,false,false,false' && /Chorus \(bars 5–8\)/.test(pr.loop), 'set_up_practice: loops the chorus (bars 5–8) at 75 % (66 BPM) with the click and just the drums (' + JSON.stringify([pr.loop, prS]) + ')');
+  await json('undo', {});
+  ok(await p.evaluate(() => window.__daily.S.bpm === 88), 'undo puts the tempo back');
+  ok((await json('set_up_practice', { band: 'none' })).band.muted && (await raw('set_up_practice', { section: 'Bridge 9' })).isError && (await raw('set_up_practice', { tempo_percent: 10 })).isError, 'band none mutes everything; an unknown section or a silly tempo is refused');
+  await json('mute_band', { muted: false }); await wait(1500);      /* let the rate limit's second pass before the next block */
   const cs = await json('get_chord_shape', { chord: 'E', count: 2 });
   ok(cs.chord === 'E' && cs.shapes[0].frets === '0 2 2 1 0 0' && cs.shapes.length === 2 && cs.strings_low_to_high === 'E A D G B E', 'get_chord_shape: E in standard tuning is 0 2 2 1 0 0, with another way to play it');
   ok((await raw('get_chord_shape', { chord: 'Q7' })).structuredContent.error.code === 'invalid_input', 'get_chord_shape refuses something that is not a chord');
