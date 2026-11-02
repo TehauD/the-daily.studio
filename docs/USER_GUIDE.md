@@ -741,7 +741,7 @@ While a take or a stage video records, the logo at the top left and the browser 
 
 ## Hidden surprises (2.20)
 
-There are seven secrets in the studio for people who look and listen (and one for people who open the browser's developer console), and a hidden room for singing with wet hands: if you hold on to the studio long enough, it might run the water. This guide will not spoil them. Once you find the first, a small **🗝** counter appears next to the version in the bottom-right corner; press it for the list, with a hint for each one you have not found yet. They never go off while a take or a video is recording, nothing flashes, and **Settings ▸ Workflow ▸ Hidden surprises** turns them off.
+There are seven secrets in the studio for people who look and listen (and one for people who open the browser's developer console), and a hidden room for singing with wet hands: if you hold on to the studio long enough, it might run the water. (Once you are in: ☰ is your set; bring a whole folder of songs, with a playlist and their .lrc words if you have them.) This guide will not spoil them. Once you find the first, a small **🗝** counter appears next to the version in the bottom-right corner; press it for the list, with a hint for each one you have not found yet. They never go off while a take or a video is recording, nothing flashes, and **Settings ▸ Workflow ▸ Hidden surprises** turns them off.
 
 ## Report a problem (2.19.1)
 

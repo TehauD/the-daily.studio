@@ -2,6 +2,38 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.28.0 — 2026-11-02 — Shower mode gets a Shower set: a whole playlist in one pick, no waiting between songs, and the words
+
+### Added
+- **The Shower set: your playlist, kept apart from your Songs.**
+  - **One pick:** add many songs at once with ＋ Songs, a whole folder with ＋ A folder, or drag files or folders in.
+  - **Playlist order:** a playlist file (`.m3u`, `.m3u8`, `.pls`) picked with them sets the order, matched by file name whatever the paths say.
+  - **Adding is quick:** a song is kept as its original file and split only when it is about to play.
+  - **Nothing goes into your Songs.** The set lives in this browser's IndexedDB (`shower/set`, `shower/a/<id>`).
+- **No waiting between songs.**
+  - The next song is split in the background worker while the current one plays, and the screen shows "next: … ✓" when it's ready.
+  - ⏭ and the move from one song to the next play at once.
+  - Only the current and the next song are kept split, to spare a phone's memory.
+- **☰ The set:**
+  - 🔀 Shuffle, which keeps the song that is on;
+  - 🔁 Repeat all, 🔂 Repeat one, ➡ Play once;
+  - ↑ ↓ to reorder, ✕ to remove, and tap a song to play it;
+  - each song shows whether it has words, and whether it came from the folder.
+- **The words come with the music:**
+  - a timed `.lrc` file beside the song, with offsets, repeated lines and word stamps;
+  - words stored in the file itself, plain or timed: ID3 USLT and SYLT in MP3, ©lyr in M4A, LYRICS in FLAC (LRC text in any of them is timed);
+  - or a `.txt` beside it.
+  - Untimed words are spread over where the singer is heard in the track.
+  - A thin line under the words shows how far into the song you are.
+- **The shower folder:** with folder sync on, a `shower` folder inside the studio folder fills the set on every computer, words included, and songs added in Shower mode are copied into it. Removing a song from the set leaves the folder's copy alone and doesn't bring it back on this device.
+- **Reading words from files:** `readTags(buf, { lyrics: true })` and `lrcParse` (part 21) read lyrics from FLAC as well as MP3 and M4A.
+
+### Changed
+- **Shower mode no longer opens your songs to play them.**
+  - Tracks play through the stems player, and the song you had open is set aside in memory and put back as it was.
+  - Leaving is immediate, with nothing to split again.
+  - While Shower mode is open, your song isn't saved, so it never gets a shower track.
+
 ## 2.27.0 — 2026-11-02 — Shower mode becomes a hidden singing companion; the trainers move to Practice
 
 ### Added
