@@ -10,8 +10,13 @@ suite('e2e-onair', async t => {
   ok(on.onair && /stroke:#ff2a3d/.test(on.icon) && /^● REC · /.test(on.title), 'recording: the logo glows red and blinks, the tab icon turns red, and the tab says ● REC');
   const seen = new Set(); for (let i = 0; i < 6; i++) { seen.add(/ff2a3d/.test((await st()).icon)); await wait(250); }
   ok(seen.size === 2, 'the tab icon blinks: red, then the usual, then red');
-  const sync = []; for (let i = 0; i < 8; i++) { sync.push(await ev(() => { const red = /ff2a3d/.test(decodeURIComponent(document.querySelector('link[rel=icon]').getAttribute('href'))), logo = +getComputedStyle(document.querySelector('.brand svg')).opacity; return red === (logo > .9); })); await wait(170); }
-  ok(sync.every(Boolean), 'the logo and the tab icon blink together, on one clock (' + sync.map(x => x ? '✓' : '✗').join('') + ')');
+  /* the page follows the tab icon by AIR_LAG (the browser shows a new tab icon a little after it is set): every icon flip is matched by
+     a logo flip about that much later, never before it */
+  const SY = await ev(async () => { const t0 = performance.now(), ic = [], lg = []; let pi = null, pl = null;
+    while (performance.now() - t0 < 1600) { const red = /ff2a3d/.test(decodeURIComponent(document.querySelector('link[rel=icon]').getAttribute('href'))), bright = !document.body.classList.contains('air-dim'), t = performance.now() - t0;
+      if (pi !== null && red !== pi) ic.push(t); if (pl !== null && bright !== pl) lg.push(t); pi = red; pl = bright; await new Promise(r => setTimeout(r, 5)); }
+    const lags = ic.map(t => { const m = lg.find(x => x >= t - 2); return m == null ? null : m - t; }).filter(x => x != null); return { ic: ic.length, lg: lg.length, lags: lags.map(x => Math.round(x)), lag: window.__daily.AIR_LAG }; });
+  ok(SY.ic >= 2 && Math.abs(SY.ic - SY.lg) <= 1 && SY.lags.length >= 2 && SY.lags.every(x => x >= SY.lag - 25 && x <= SY.lag + 60), 'the logo follows each tab-icon flip about ' + SY.lag + ' ms later, so they flip together as seen (' + JSON.stringify(SY.lags) + ')');
   ok(await ev(() => { const b = document.querySelector('.btn.rec'); b.classList.add('on'); const a = getComputedStyle(b).animationName; b.classList.remove('on'); return a === 'none'; }), 'and the record button follows the same clock instead of its own pulse');
   ok(await ev(() => { const s = document.getElementById('airSay'); return !!s && s.getAttribute('role') === 'status' && s.textContent === 'On air: recording.' && s.getBoundingClientRect().width <= 1 && document.querySelector('.brand').title === 'On air: recording'; }), 'a screen reader hears it too: “On air: recording.”, said once, in a status line nobody sees');
   await ev(() => { window.__daily.REC = null; window.__daily.airSync(); }); await wait(100);

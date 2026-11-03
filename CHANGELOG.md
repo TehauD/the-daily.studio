@@ -2,6 +2,14 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.31.1 — 2026-11-03 — The tab's red light in step with the page
+
+### Fixed
+- **The tab icon and the page now flip together.** The logo and the record buttons blinked together, but the browser tab's icon blinked a fraction of a second behind: browsers repaint the tab icon a little after it is set, while the page changes at once. The tab icon is now set first and the page follows it by 120 ms (`AIR_LAG`), so they flip together as seen. Calm and reduced motion stay steady.
+
+### Tests
+- `e2e-onair` times each tab-icon flip against the logo's: each logo flip comes about 120 ms after the icon's, and never before it.
+
 ## 2.31.0 — 2026-11-03 — Vocal pedals: Scream, de-esser, megaphone, doubler, harmony, echo and reverb
 
 ### Added
