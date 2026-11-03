@@ -24,7 +24,7 @@ suite('e2e-github', async t => {
     return D.PRJ.cur;
   });
   await ev(A, async s => { const D = window.__daily; await window.dailyStudio.call('load_chord_sheet', { text: s }); D.S.title = 'Harbour Song'; D.S.artist = 'The Test Band'; await D.projSave();
-    D.CFG.lookMode = 'dark'; D.CFG.inDev = 'my-secret-mic-id'; D.CFG.rtt = 12.5; localStorage.setItem('fw.presets', JSON.stringify([{ n: 'Warm Clean', d: 'mine', u: { amp: { on: 1, model: 'Clean', gain: .3 } } }]));
+    D.CFG.lookMode = 'dark'; D.CFG.a4 = 442; D.CFG.inDev = 'my-secret-mic-id'; D.CFG.rtt = 12.5; localStorage.setItem('fw.presets', JSON.stringify([{ n: 'Warm Clean', d: 'mine', u: { amp: { on: 1, model: 'Clean', gain: .3 } } }]));
     D.CFG.show.saved.push({ id: 'lk1', name: 'Club night', design: 'lasers', ovr: {} }); localStorage.setItem('fw.lessons', JSON.stringify({ 'Harbour Song': 'Slow down the chorus' })); D.saveCfg(); }, SHEET);
 
   /* ---- connect: a private repository is made, and the first sync sends everything ---- */
@@ -35,7 +35,7 @@ suite('e2e-github', async t => {
   ok(['studio.json', 'settings.json', 'rig/presets.json', 'stage/looks.json', 'stage/scenes.json', 'notes.json', 'README.md', 'songs/' + (await ev(A, () => window.__daily.PRJ.cur)) + '.json'].every(f => files[f]), 'the first sync sends settings, presets, looks, scenes, notes, the README and the song (' + Object.keys(files).join(', ') + ')');
   const all = Object.values(files).join('\n');
   ok(!/tokA/.test(all) && !/my-secret-mic-id/.test(all) && !/"rtt"/.test(files['settings.json']) && !/"gh"/.test(files['settings.json']) && !/"monitor"/.test(files['settings.json']), 'the token, this device’s audio devices, its measured latency, monitoring and the sync’s own state are never sent');
-  ok(/"lookMode": "dark"/.test(files['settings.json']) && /Warm Clean/.test(files['rig/presets.json']) && /Club night/.test(files['stage/looks.json']) && /Slow down the chorus/.test(files['notes.json']), 'your settings, presets, looks and notes are there');
+  ok(/"a4": 442/.test(files['settings.json']) && !/lookMode/.test(files['settings.json']) && /Warm Clean/.test(files['rig/presets.json']) && /Club night/.test(files['stage/looks.json']) && /Slow down the chorus/.test(files['notes.json']), 'your settings, presets, looks and notes are there (light or dark stays with each device)');
   const songFile = Object.keys(files).find(f => /^songs\//.test(f) && JSON.parse(files[f]).title === 'Harbour Song'), sj = JSON.parse(files[songFile] || '{}');
   ok(sj.title === 'Harbour Song' && Array.isArray(sj.song.sections) && sj.song.sections.length >= 2 && /Lanterns/.test(files[songFile]) && /harbour/i.test(files[songFile]), 'songs go up as readable text: title, sections, chords and words (' + songFile + ')');
   ok(/^\{\n "/.test(files['settings.json']) && Object.keys(JSON.parse(files['settings.json']).settings).join() === Object.keys(JSON.parse(files['settings.json']).settings).sort().join(), 'files are tidy JSON with their keys in order, so changes read well in Git');
@@ -49,9 +49,9 @@ suite('e2e-github', async t => {
 
   /* ---- device B: connect the same repository, and it all comes in ---- */
   const B = await dev();
-  const C2 = await ev(B, async () => { const D = window.__daily; await D.ghConnect('tokA', 'my-daily-studio'); await D.projRefresh(); return { err: D.GH.err, titles: D.PRJ.list.map(r => r.title), theme: D.CFG.lookMode, presets: JSON.parse(localStorage.getItem('fw.presets') || '[]').map(p => p.n), looks: D.CFG.show.saved.map(l => l.name), notes: JSON.parse(localStorage.getItem('fw.lessons') || '{}'), inDev: D.CFG.inDev || '' }; });
+  const C2 = await ev(B, async () => { const D = window.__daily; await D.ghConnect('tokA', 'my-daily-studio'); await D.projRefresh(); return { err: D.GH.err, titles: D.PRJ.list.map(r => r.title), theme: D.CFG.lookMode, a4: D.CFG.a4, presets: JSON.parse(localStorage.getItem('fw.presets') || '[]').map(p => p.n), looks: D.CFG.show.saved.map(l => l.name), notes: JSON.parse(localStorage.getItem('fw.lessons') || '{}'), inDev: D.CFG.inDev || '' }; });
   ok(!C2.err && C2.titles.includes('Harbour Song'), 'a second device gets the song (' + C2.titles.join(', ') + ')');
-  ok(C2.theme === 'dark' && C2.presets.includes('Warm Clean') && C2.looks.includes('Club night') && C2.notes['Harbour Song'], 'and the settings, presets, looks and notes (' + JSON.stringify({ theme: C2.theme, presets: C2.presets, looks: C2.looks, notes: C2.notes }) + ')');
+  ok(C2.a4 === 442 && C2.theme !== 'dark' && C2.presets.includes('Warm Clean') && C2.looks.includes('Club night') && C2.notes['Harbour Song'], 'and the settings, presets, looks and notes (' + JSON.stringify({ a4: C2.a4, theme: C2.theme, presets: C2.presets, looks: C2.looks, notes: C2.notes }) + ')');
   ok(C2.inDev !== 'my-secret-mic-id', 'but not the first device’s own audio device');
 
   /* ---- a change on B reaches A ---- */

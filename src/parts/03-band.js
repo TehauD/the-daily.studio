@@ -74,17 +74,22 @@ function drumHit(row, t, v) {
     const o = c.createOscillator(), g = gn(0); o.frequency.setValueAtTime(K.t[0] * 1.5, t); o.frequency.exponentialRampToValueAtTime(K.t[0], t + .1); env(g, K.t[1], .5 * vol); o.connect(g); g.connect(out); o.start(t); o.stop(t + K.t[1] + .05);
   }
 }
-function drumStep(sib, t) { const pat = dpat(), L = Math.min(S.band.drumLen || 16, 32); const i = sib % L; pat.forEach((row, r) => { const v = row[i]; if (v && typeof lxHit === 'function') lxHit(r, t, v); if (v) drumHit(r, t + (Math.random() * 2 - 1) * CFG.humanize * .006, v); }); }
+function drumStep(slot, t) { const pat = dpat(), L = Math.min(S.band.drumLen || 16, 32); const i = ((slot % L) + L) % L;      /* by song position, so a two-bar groove plays both bars */ pat.forEach((row, r) => { const v = row[i]; if (v && typeof lxHit === 'function') lxHit(r, t, v); if (v) drumHit(r, t + (Math.random() * 2 - 1) * CFG.humanize * .006, v); }); }
 function click(t, accent) {
   const c = E.ctx, o = c.createOscillator(), g = gn(0); o.frequency.value = accent ? 1700 : 1150; g.gain.setValueAtTime(CFG.metroVol * (accent ? 1 : .6), t); g.gain.exponentialRampToValueAtTime(.0001, t + .035);
   o.connect(g); g.connect(E.tr.click.in); o.start(t); o.stop(t + .05);
 }
 
 /* ---------- bass ---------- */
-const BASS_STYLES = ['Root Whole', 'Root–Fifth', 'Eighths', 'Walking', 'Syncopated', 'Reggae Dub', 'Off', 'Octave Pump'];
+const BASS_STYLES = ['Root Whole', 'Root–Fifth', 'Eighths', 'Walking', 'Syncopated', 'Reggae Dub', 'Off', 'Octave Pump', 'Follow the Kick'];
 const bassMidi = pc => { let m = 28 + ((pc - 28) % 12 + 12) % 12; return m; };
-function bassEvent(style, ch, rel, cl, nextCh) {
+function bassEvent(style, ch, rel, cl, nextCh, slot) {
   const c = parseChord(ch); if (!c || style === 'Off') return null;
+  if (style === 'Follow the Kick') {      /* the root on every kick of the drum pattern, held to the next kick: one groove makes the drums and the bass */
+    if (slot == null) return rel === 0 ? { m: bassMidi(c.bass), v: .85, len: cl } : null;
+    const k = dpat()[0], L = Math.min(S.band.drumLen || 16, 32), at = ((slot % L) + L) % L, v = k[at]; if (!v) return null;
+    let n = 1; while (n < 8 && !k[(at + n) % L]) n++; return { m: bassMidi(c.bass), v: [0, .6, .8, .95][v], len: Math.min(n, cl - rel) };
+  }
   const r = bassMidi(c.bass), q3 = c.iv.includes(3) ? 3 : 4, fifth = r + 7, third = r + q3, sp4 = 4;
   switch (style) {
     case 'Root Whole': return rel === 0 ? { m: r, v: .85, len: cl } : null;
@@ -143,14 +148,15 @@ function scheduleSlot(slot, time) {
   const sp = spb(), dur = slotDur(), sw = (slot % 2 !== 0) ? S.swing * dur : 0, tt = time + sw;
   const beatSlots = 16 / S.ts[1];
   if (slot < 0) { const sib = ((slot % sp) + sp) % sp; if (sib % beatSlots === 0 && !T.quiet) click(time, sib === 0); return; }
+  if (typeof mclkSlot === 'function') mclkSlot(slot, time);      /* MIDI clock out (part 76) rides the same schedule */
   const q = !!T.quiet;      /* T.quiet: the band and the click are silent while it is set (Shower mode); the song itself is not changed */
   const bi = Math.floor(slot / sp), sib = slot % sp, fb = barsCache()[bi]; if (!fb) return;
   if (T.metro && !q && sib % beatSlots === 0) click(tt, sib === 0);
   if (typeof lxEvt === 'function' && sib % beatSlots === 0) lxEvt('beat', tt, sib === 0 ? 1 : 0);   // the show listens on the audio clock
-  if (S.band.drumsOn && !q) drumStep(sib, tt);
+  if (S.band.drumsOn && !q) drumStep(slot, tt);
   const cd = chordAt(bi, sib);
   if (cd && cd.sym) {
-    if (S.band.bassOn && !q) { const e = bassEvent(S.band.bassStyle, cd.sym, cd.rel, cd.len, cd.next); if (e) { pluck('bass', tt, e.m, e.v, { id: 'b', pan: 0 }); if (typeof lxEvt === 'function') lxEvt('bass', tt, e.m, e.v); } }
+    if (S.band.bassOn && !q) { const e = bassEvent(S.band.bassStyle, cd.sym, cd.rel, cd.len, cd.next, slot); if (e) { pluck('bass', tt, e.m, e.v, { id: 'b', pan: 0 }); if (typeof lxEvt === 'function') lxEvt('bass', tt, e.m, e.v); } }
     if (S.band.compOn && !q) { const st = STRUMS[S.band.compStyle] || STRUMS['Down 4s'], L = Math.min(16, sp), ch = st.p[sib % L]; strumAt(tt, cd.sym, ch, st); if (ch && ch !== '.' && typeof lxEvt === 'function') lxEvt('chord', tt, cd.sym, ch === ch.toUpperCase() ? 1 : .6); }
   }
   if (S.band.leadOn && !q) fb.bar.tab.forEach(n => { if (n.s === sib) { playTabNote(fb.bar, n, tt, dur); if (typeof lxEvt === 'function') lxEvt('lead', tt, S.tuning[n.st] + S.capo + n.f, .8); } });

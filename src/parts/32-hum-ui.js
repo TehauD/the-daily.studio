@@ -204,7 +204,7 @@ function humResult(d, x) {
   const keySel = pSel(NS.map((n, i) => [i, n]), r.key.root, v => { o.key = +v; again(); }), modeSel = pSel([['maj', 'major'], ['min', 'minor']], r.key.minor ? 'min' : 'maj', v => { o.minor = v === 'min'; again(); });
   keySel.setAttribute('aria-label', 'Key'); modeSel.setAttribute('aria-label', 'Mode');
   const form = pSel(Object.entries(HUM_FORMS), o.form, v => { o.form = v; again(); }); form.setAttribute('aria-label', 'Song shape');
-  const cv = h('canvas', { class: 'hum-roll', width: 600, height: 56, 'aria-label': 'The notes I heard', role: 'img' });
+  const cv = h('canvas', { class: 'hum-roll', width: 600, height: 56, 'aria-label': 'The notes picked up', role: 'img' });
   d.append(
     h('div', { class: 'hum-row' }, h('button', { class: 'btn primary hum-play', id: 'humPlay', onclick: () => { if (T.playing) { stopPlay(true); } else humPlay(); } }, T.playing ? '■ Stop' : '▶ Play my song'),
       h('button', { class: 'btn', id: 'humHear', onclick: humHear }, HUM.hear ? '■ Stop' : '👂 Hear my hum'),
@@ -253,7 +253,7 @@ function humGuitarTick() {
     if (g.hold >= 10) { g.done[st] = true; g.hold = 0; if (g.si >= S.tuning.length - 1) { g.step = 'chords'; g.ci = 0; } else g.si++; toast('✓ ' + humNoteName(S.tuning[st] + S.capo), 'ok'); humBar('g'); }
   } else if (g.step === 'chords') {
     const sym = g.chords[g.ci], tc = parseChord(sym), top = (AN.chord || []).slice(0, 2), heard = top[0] ? top[0].sym : '', hit = AN.active && AN.rms > -45 && top.some(x => tc && x.root === tc.root && (x.q === tc.q || (x.q === '' && tc.q === 'maj') || (tc.q === '' && x.q === 'maj')));
-    if (live) live.textContent = AN.active ? (heard ? 'I hear ' + heard : '…') : 'strum all the strings…';
+    if (live) live.textContent = AN.active ? (heard ? 'Picking up ' + heard : '…') : 'strum all the strings…';
     if (hit) g.hold++; else g.hold = Math.max(0, g.hold - 1); if (fill) fill.style.width = Math.min(100, g.hold / 8 * 100) + '%';
     if (g.hold >= 8) { g.hold = 0; toast('✓ ' + sym + '! Nice.', 'ok'); if (g.ci >= g.chords.length - 1) g.step = 'play'; else g.ci++; humBar('g'); }
   }

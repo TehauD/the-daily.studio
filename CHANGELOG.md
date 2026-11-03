@@ -2,6 +2,194 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.33.0 — 2026-11-03 — ✦ Simple
+
+### Added
+- **✦ Simple** (`src/parts/33b-simple.js`): one switch, at the top right and in Settings ▸ Workflow, for anyone who has never used a recording studio.
+  - **What stays:** play, stop, ● record, Loop and Click (now labelled), the tempo and the key. Also: the song's name, Songs, New, undo, Perform and Voice; the six workspaces and their tools; ● Capture; the tab and the words; Mute all; the arrangement and Loop & layer.
+  - **What is tucked away:** return to start, the bar · beat counter, time signature, the master meter, the latency estimate, the workspace button, artist, tuning, capo, scale and notes, and the Canvas / Song / Studio switch. Also: the Create → Perform → Share flow, the Tools menu, each band part's switch and the mix, tab techniques, fill styles, copy and paste, the arrangement's zoom, swing and lane tools, the stage's extra settings, and the status line.
+  - On the Songwriter screen at 1600 × 900, that is 91 controls instead of 137.
+  - Nothing is turned off or lost: the hiding is CSS only, and the same button brings everything back.
+  - **Who starts in it:** a first visit starts in Simple, and "I know my way around" opens the full studio instead. Anyone who has been here before keeps the full studio until they press ✦ Simple.
+  - Simple is kept per device (it doesn't sync). Phones keep their own layout.
+
+### Changed
+- The Tools menu's tab level called "Simple" is now **Essentials**, so it isn't confused with ✦ Simple. Its heading is "Which panels on the strip?". The panel strip keeps its own adaptive level in Simple mode, shown without numbers.
+
+### Tests
+- New `e2e-simple` (17 checks).
+- `e2e`, `e2e-goals`, `e2e-privacy` and `e2e-workspace` updated:
+  - a brand-new visitor starts in ✦ Simple and switches it off before using full-studio controls;
+  - the menu level is now Essentials.
+
+## 2.32.1 — 2026-11-03 — Fewer buttons, a steady theme, and your choice of red light
+
+### Changed
+- **Each workspace's tool row lost the buttons that did nothing new.** A tool that only opened a panel already on screen, or repeated a button already in view, is gone:
+  - **Songwriter:** ✎ Lyrics & tab and ♯ Chords & scales opened what was already open. ● Capture idea repeated the ● Capture above the tab, and ⏺ Record idea repeated ● at the top. What's left: 🎸 Paste chords, 🎤 Vocal pedals, 🥁 Pads. Recording is now two buttons, each with its own job: ● at the top records sound, ● Capture above the tab writes the notes you play.
+  - **Performer:** ● Record take (the ● at the top) and 🎤 Perform view (Perform in the song bar) are gone.
+  - **Practice:** ⟲ Loop and ♩ Metronome (both at the top), ♯ Scales (Theory is already open) and ▦ Chords (the Fretboard is already the middle) are gone. What's left: tempo −5 / +5, 🥁 Pads and 🎼 Scales & ear.
+  - **Teacher:** ▦ Fretboard (already on the right) is gone.
+  - Each workspace's three steps say where the moved controls are.
+- **Light or dark is now kept per device.** Folder sync and GitHub sync carried it between devices, so a phone in dark mode could switch a computer to dark the next time they synced. That is the likely cause of the "random" switches. Syncing now leaves light / dark / System alone. Palettes, accents and the rest still sync. **System** follows the computer, which may itself switch at sunset; Settings ▸ Appearance now says so.
+
+### Added
+- **Settings ▸ Appearance ▸ On air light:** Blink red (as before), Steady red, or Off. Off leaves the logo, the tab icon and the title alone while recording. It takes effect at once, even during a take, and is kept per device.
+- **Settings ▸ Appearance ▸ Performance overlay:** the frames-a-second readout in the bottom-left corner (from Backstage ▸ Labs) now has a switch here, and a ✕ on the overlay itself hides it.
+
+### Tests
+- `e2e-goals`: no tool repeats a panel that is open or a button already on screen.
+- `e2e-onair`: Steady and Off (including mid-take), the overlay's switch and ✕, and a sync from a dark-mode device leaving this one light while other settings still sync.
+- `e2e-github` and `e2e-folder`: a synced setting (A4 = 442 Hz) reaches the second device; light / dark does not.
+
+## 2.32.0 — 2026-11-03 — Learn: lessons that listen, riffs, Riff Lab and a map of the neck
+
+### Added
+- **🎓 Learn**, the front door of the **Teacher** workspace (also on a phone in **More**). The Teacher is now a place to be taught as well as to teach. Everything here is written for this studio, runs in the page, and uses the same input the tuner does: nothing new is downloaded or sent.
+  - **The coach** (`src/parts/80-coach.js`): every step shows the notes on the neck and as tab, plays them for you (▶ Listen), then listens while you play them (● Play it). It plays its own little band (click, drums, chords, bass) and never touches your song.
+    - It can honestly check notes (a note still ringing is not a mistake), timing against its click (and whether you rush or drag), chords held, chord changes in time, a minute of changes, strumming patterns, bends (how far, and in tune), vibrato (rate and width), and landing on a chord tone at each change while it plays a progression.
+    - Hammer-ons, pull-offs and slides are followed by their notes; the coach cannot tell them apart from picking, and says so.
+    - **Tempo ladder:** pass a step and it comes back 5 BPM faster. **−/+** set the tempo, **Backing** and **Click** switch the band and the click.
+  - **Lessons** in four paths, about 60 steps: **Foundations** (tuning, first chords, changing in time, strumming, a first song), **Lead** (the pentatonic box, bends, vibrato, first licks, licks in time, soloing over the band), **Rhythm** (on the beat, eighths and accents, muted chugs, syncopation, the pocket) and **Technique** (alternate picking, hammer-ons and pull-offs, slides, string skipping, legato). Progress is kept in this browser.
+  - **🔥 Warm-ups:** the spider, finger permutations, the chromatic walk, trills, one-minute changes and a scale sprint.
+  - **🎸 Riffs & licks:** 40 original riffs and licks in blues, rock, funk, metal, country, pop, jazz, reggae and latin, by level. Any key; note by note or **⏱ In time** against a drummer; **➕ Put it in my song** adds it as a new section of tab after the one you are in, with the lead playing it (one undo takes it out); **⇩ Share as a file**.
+  - **🧪 Riff Lab:** choose a scale, a feel (straight, funky sixteenths, shuffle, heavy half-time), one or two bars, how busy and a key, and it writes a riff you have never played. Then vary it: **Shift**, **Reverse**, **Major ↔ minor**, **Add bends**, **Higher** up the neck and **Sequence** it into two bars. **★ Keep** puts it in **My riffs**; **🎲 Another** writes the next one. The same seed always makes the same riff.
+  - **🗺 Scale atlas:** the five pentatonic boxes (box 1 from the root), the seven three-notes-per-string positions, arpeggios (major, minor, 7ths, half-diminished) in five positions, the seven **modes over a band vamp** with the note that gives each mode its colour starred, and **target notes** over a progression.
+  - **🍎 For teachers:** annotate, lesson notes and record the screen (as before), **This section as an exercise** (the tab of the section you are in, note by note), and **lesson files** (`.daily-lesson.json`) to give a student and to open one. A file is checked piece by piece; anything it does not understand is left out, and its words are shown as text.
+- **The Teacher workspace** leads with 🎓 Learn, 🔥 Warm-ups, 🎸 Riffs, 🧪 Riff Lab and 🗺 Scale atlas; ✎ Annotate, 📝 Lesson notes, ⏺ Record screen, ▦ Fretboard and ♪ Transcribe are all still there.
+
+### Fixed (found while testing the coach)
+- Pressing ● Play it while the demo was still playing left the demo running, so the coach would have heard itself. The demo now stops when listening starts.
+- Closing the coach and opening it again at once let the late `close` event stop the new step.
+
+### Tests
+- New `e2e-learn` (50 checks): the Teacher's tools; a lesson followed note by note (a ringing note is fine, a wrong one counts) and the tempo ladder; a chord held; strums against the click, early and late; a bend short of the note and in tune; vibrato too narrow and wide enough; landing on chord tones over the band; the riff library, its filter, a riff in another key and in time; Put it in my song and its undo; Riff Lab's determinism, scale, endings and variations; the atlas's boxes, positions, arpeggios, modes and target notes; an exercise from the song's tab; a lesson file round trip, files that are not lessons, and words in a file shown as text; progress after a reload; the coach on a phone.
+
+## 2.31.1 — 2026-11-03 — The tab's red light in step with the page
+
+### Fixed
+- **The tab icon and the page now flip together.** The logo and the record buttons blinked together, but the browser tab's icon blinked a fraction of a second behind: browsers repaint the tab icon a little after it is set, while the page changes at once. The tab icon is now set first and the page follows it by 120 ms (`AIR_LAG`), so they flip together as seen. Calm and reduced motion stay steady.
+
+### Tests
+- `e2e-onair` times each tab-icon flip against the logo's: each logo flip comes about 120 ms after the icon's, and never before it.
+
+## 2.31.0 — 2026-11-03 — Vocal pedals: Scream, de-esser, megaphone, doubler, harmony, echo and reverb
+
+### Added
+- **🎤 Vocal pedals** (`src/parts/79-vocalboard.js`): seven stompboxes for the voice, after the vocal polish. You open it from the Voice window, the Songwriter, Performer and Creator Studio tools, or the phone's More sheet.
+  - **Where it applies:** the live voice goes through it, and so do vocal takes. Takes are recorded clean and played back through the board, so the sound can change after you sing. A fast bounce builds the same board offline.
+  - **🤘 Scream:**
+    - a gate, hard compression, and grit blended beside the clean voice and focused on the mids, so words stay clear;
+    - growl from an analog-style octave divider (new `fw-oct` worklet), which adds no delay;
+    - styles Rasp, Hardcore, Fry growl and Death growl.
+  - **De-esser** (new `fw-deess` worklet): turns the band above 4–9 kHz down only while it's loud.
+  - **📢 Megaphone:** megaphone, radio or telephone.
+  - **Doubler:** two slightly delayed, moving copies, left and right.
+  - **Harmony** (new `fw-harm` worklet): it finds the note being sung and moves it by steps of the song's scale, or to a tone of the chord playing. Voices: a third or a fifth above, a third below, a third and a fifth, or an octave. It works in bounces too.
+  - **Echo:** tempo-synced divisions. **Throw** echoes only while the foot pedal is held.
+  - **Reverb:** room, plate or hall, with the lows cut.
+  - **Presets:** Clean lead, Rock grit, Scream, Ballad, Ambient echo, Harmony lead and Megaphone.
+  - **By section:** a song can switch presets as it plays.
+- **Foot pedal actions:** Vocal: Scream on / off, Vocal: next preset, and Vocal: echo throw. The throw is held: key-up, note-off and the footswitch coming up all release it.
+- **The show reacts:** with Scream or Megaphone on, the show turns gritty, as for a megaphone pedal. This can be switched off.
+
+### Fixed
+- **The re-amp timing check in `e2e-latency`** failed again in the 2.30.0 full run, with exactly the same 3 ms shortfall as in 2.25. The 2.25.1 note was wrong to say the app change there fixed it.
+  - **The real cause:** the test recorded through a ScriptProcessor on the page's thread, which drops audio when that thread is busy.
+  - **The fix:** the timing tests now record with an AudioWorklet on the audio thread, which can't drop audio. The check still asks for ± 1 ms, and passes with four other test files running beside it.
+  - The 2.25.1 change (late takes skip in against the audio clock) stays, as an improvement in its own right.
+
+### Tests
+- `e2e-vocalboard` (22 checks): every pedal measured by what it does to a signal, plus presets, sections, the pedal, the look and a phone.
+- `e2e-gear` now expects ten pedal actions.
+
+## 2.30.0 — 2026-11-03 — Your megaphone pedal drives the show
+
+### Added
+- **Megaphone pedal** (Settings ▸ Megaphone pedal, `src/parts/78-megaphone.js`). It's for a TC-Helicon VoiceTone X1, or any megaphone, radio or telephone voice effect between the mic and the interface.
+  - **How it's heard:** the X1 has no MIDI, but the studio hears it in the vocal input, by the balance of lows, middle and highs that such an effect cuts and pushes.
+  - **Teach it my voice:** three seconds with the pedal off and three with it on. Without teaching, general settings suit most megaphone sounds.
+  - **While the pedal is on:**
+    - the stage and the Visuals turn red-hot with scan lines and a jolt as it comes on, drawn into the picture so the projector and stage videos carry it;
+    - the lights flash as you stomp it on, within your light comfort;
+    - the words in Perform and the stream window go red and shake.
+  - **Timing:** on within a third of a second, held through a breath, off a moment after you sing clean.
+  - Each reaction can be switched off, and Calm and reduced motion keep the colour without the shake.
+  - Nothing is recorded. Only six numbers from teaching are kept.
+
+### Tests
+- `e2e-megaphone` (17 checks), on synthesised low and high voices, clean and through a megaphone-like band limit and drive.
+
+## 2.29.0 — 2026-11-03 — Pads, beatbox to beat, a foot pedal, MIDI clock and a stream window
+
+### Added
+- **🥁 Pads** (`src/parts/75-pads.js`), in the Band panel, the Songwriter and Practice tools, and the phone's More sheet.
+  - **Six pads** on the band's own kit: kick, snare, hat, open hat, clap / rim and tom. Play them by touch, with A S D F G H (Shift for an accent), or from a MIDI pad controller on the General MIDI drum notes, which is velocity-sensitive. Hits light the stage like the band's drums do.
+  - **Tap tempo:** a button, or T while the pads are open. One burst of taps is one undo.
+  - **● Record a groove:**
+    - one or two bars loop over the click;
+    - hits are written where they were heard, after the speakers' delay, onto the band's drum pattern;
+    - each press is a pass on top of the last, and ↶ takes the last pass away.
+  - **🎤 Beatbox it:** after a bar's count-in, beatbox the loop. Kicks, snares, hats and open hats are told apart by their sound and written on the grid.
+  - **Bass follows the kick:** a new bass style, so one groove makes the drums and the bass.
+  - **The grid is the pattern:** tap a step for normal → accent → ghost → off.
+- **Foot pedal** (Settings ▸ Pedal & MIDI sync, `src/parts/76-gear.js`).
+  - It works with Bluetooth page-turner pedals, which type keys, and MIDI footswitches (control change, note or program change). Learn each action by stepping on the pedal.
+  - Actions: play / stop, next section, previous section, record, loop, the band on / off, tap tempo.
+  - It's off until switched on. Keys in text boxes are left alone, a pedal that bounces counts once, and a pedal coming back up does nothing.
+- **MIDI clock:**
+  - **Send:** 24 clocks a quarter note on the band's own schedule, timed with Web MIDI timestamps. Start, or Song Position and Continue from the middle of a song, and Stop.
+  - **Follow:** tempo, Start, Continue, Stop and Song Position from other gear.
+  - It needs Chrome or Edge.
+- **📺 Stream window** (`src/parts/77-stream.js`), in the Creator Studio and Performer tools. It shows the line being sung, the next line and the chord, in large type on a key colour (green, blue, magenta or black), for a window capture with a chroma or luma key in OBS or any streaming app. It runs its own timer, so it keeps up when the studio's window is covered.
+
+### Fixed
+- **Two-bar drum patterns now play both bars.** The drums were read by position within the bar, so the second half of a 24- or 32-step pattern (offered in the Band panel since long ago) never played. They are now read by position in the song, and one-bar patterns sound exactly as before.
+
+### Tests
+- `e2e-pads` (25 checks) and `e2e-gear` (24 checks), run twice each.
+
+## 2.28.1 — 2026-11-03 — Friendlier words about listening
+
+### Changed
+- **Nothing in the studio talks as if it is listening on its own.** Four lines are rewritten so that what listens is clearly the guitar input you connected, and only while you play:
+  - the Up and down secret's hint, "Every note, there and back. Anywhere I can hear you.", is now "Every note of a scale, there and back, on your connected guitar.";
+  - the Scales & ear lock hint says "on your connected guitar, anywhere in the studio";
+  - the "connect your input" notes in Scales & ear and the level panel no longer say "the room can hear you" or "then I can hear it";
+  - the guitar coach says "Picking up G" instead of "I hear G".
+
+## 2.28.0 — 2026-11-02 — Shower mode gets a Shower set: a whole playlist in one pick, no waiting between songs, and the words
+
+### Added
+- **The Shower set: your playlist, kept apart from your Songs.**
+  - **One pick:** add many songs at once with ＋ Songs, a whole folder with ＋ A folder, or drag files or folders in.
+  - **Playlist order:** a playlist file (`.m3u`, `.m3u8`, `.pls`) picked with them sets the order, matched by file name whatever the paths say.
+  - **Adding is quick:** a song is kept as its original file and split only when it is about to play.
+  - **Nothing goes into your Songs.** The set lives in this browser's IndexedDB (`shower/set`, `shower/a/<id>`).
+- **No waiting between songs.**
+  - The next song is split in the background worker while the current one plays, and the screen shows "next: … ✓" when it's ready.
+  - ⏭ and the move from one song to the next play at once.
+  - Only the current and the next song are kept split, to spare a phone's memory.
+- **☰ The set:**
+  - 🔀 Shuffle, which keeps the song that is on;
+  - 🔁 Repeat all, 🔂 Repeat one, ➡ Play once;
+  - ↑ ↓ to reorder, ✕ to remove, and tap a song to play it;
+  - each song shows whether it has words, and whether it came from the folder.
+- **The words come with the music:**
+  - a timed `.lrc` file beside the song, with offsets, repeated lines and word stamps;
+  - words stored in the file itself, plain or timed: ID3 USLT and SYLT in MP3, ©lyr in M4A, LYRICS in FLAC (LRC text in any of them is timed);
+  - or a `.txt` beside it.
+  - Untimed words are spread over where the singer is heard in the track.
+  - A thin line under the words shows how far into the song you are.
+- **The shower folder:** with folder sync on, a `shower` folder inside the studio folder fills the set on every computer, words included, and songs added in Shower mode are copied into it. Removing a song from the set leaves the folder's copy alone and doesn't bring it back on this device.
+- **Reading words from files:** `readTags(buf, { lyrics: true })` and `lrcParse` (part 21) read lyrics from FLAC as well as MP3 and M4A.
+
+### Changed
+- **Shower mode no longer opens your songs to play them.**
+  - Tracks play through the stems player, and the song you had open is set aside in memory and put back as it was.
+  - Leaving is immediate, with nothing to split again.
+  - While Shower mode is open, your song isn't saved, so it never gets a shower track.
+
 ## 2.27.0 — 2026-11-02 — Shower mode becomes a hidden singing companion; the trainers move to Practice
 
 ### Added
@@ -35,6 +223,9 @@ All notable changes to the-daily.studio (earlier versions were released under th
 - **The agent tool `open_shower_mode` is now `open_practice_room`.** The old name still works as an alias (`describe().aliases`), and the contract test now honours aliases. Agents get no tool for the hidden Shower mode.
 - **No public page names Shower mode.** The README hints at it, and the guide's tones page shows a Scales & ear card. The privacy statement does describe its use of the microphone.
 
+### Fixed
+- **The red lights blink together.** The logo, the tab icon and the record buttons each had their own timer (1.3 s, 650 ms, 1.2 s, 1.4 s), so they drifted apart. They now change on the tab icon's one clock (`body.air-dim`), and the record buttons drop their own pulse while on air.
+
 ### Removed
 - The first draft of a Sing room inside the trainer hub, before it was shipped, in favour of the hidden player.
 
@@ -42,6 +233,7 @@ All notable changes to the-daily.studio (earlier versions were released under th
 - `e2e-shower` (36 checks): hidden, the gestures, the queue, stems, play and pause, auto-advance, record, score, hear, keep, leaving, and a phone.
 - `e2e-scales-ear` (38, renamed from `e2e-shower`).
 - `e2e-agent` checks that the old tool name still works.
+- `e2e-onair` 9 → 11 checks: the logo and the tab icon in step over eight samples, and the record button on the same clock.
 
 ## 2.26.0 — 2026-11-02 — Easier for AI assistants to find and use, with nothing new for people to manage
 

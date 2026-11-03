@@ -236,7 +236,7 @@ function ioLevelWizard(src0) {
   }
   function draw() {
     body.innerHTML = '';
-    if (!E.hasInput) { body.append(h('p', {}, 'First connect your input, then I can hear it.'), ioConnectEl({ path: false, mon: false })); return; }
+    if (!E.hasInput) { body.append(h('p', {}, 'Connect your input first. Its level shows here once it is connected.'), ioConnectEl({ path: false, mon: false })); return; }
     if (W.phase === 'ready') {
       if (!has.g && !has.v) { body.append(h('p', {}, 'Both inputs are set to Off. Choose Guitar or Vocal in the Channels card first.'), h('button', { class: 'btn', onclick: () => d.close() }, 'Close')); return; }
       body.append(

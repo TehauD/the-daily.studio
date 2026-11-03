@@ -16,7 +16,7 @@ const SECRETS = [
   ['line', 'The hidden line', 'Some numbers want to be clicked three times.', 'Triple-click the version tag: a quote of the day from someone in history wakes up at the bottom of the page.'],
   ['tuned', 'Tuned to perfection', 'Six strings, two cents.', 'All six open strings within ±2 cents of true, one after another.'],
   ['pocket', 'In the pocket', 'Sixteen notes, right on time.', 'Sixteen notes in a row within 10 ms of the beat while the song plays.'],
-  ['scale', 'Up and down', 'Every note, there and back. Anywhere I can hear you.', 'Played a whole scale up and back down.', 'Modes and more scales are open in Practice ▸ Scales & ear. 🎼'],
+  ['scale', 'Up and down', 'Every note of a scale, there and back, on your connected guitar.', 'Played a whole scale up and back down.', 'Modes and more scales are open in Practice ▸ Scales & ear. 🎼'],
   ['arp', 'Broken chords', 'The band plays the chords. You take them apart.', 'Broke three of the band’s chords in a row into their notes while the song played.', 'Seventh arpeggios are open in Practice ▸ Scales & ear. 🎼'],
   ['ear', 'Golden ear', 'Ten in a row, by ear. Practice has a room for that.', 'Named ten intervals in a row by ear in Scales & ear.', 'Chord qualities by ear are open in Practice ▸ Scales & ear. 🎼'],
   ['backstage', 'Backstage pass', 'Developers know where to look.', 'Read the note in the browser console, knocked, and knew the password.']

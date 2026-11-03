@@ -25,9 +25,22 @@ function tagText(u, enc) {
     return new TextDecoder(enc === 3 ? 'utf-8' : 'iso-8859-1').decode(u);
   } catch (e) { return ''; }
 }
-/** tiny tag reader: ID3v2 (mp3) and iTunes-style atoms (m4a / mp4). Returns {title, artist} — either may be missing. */
-function readTags(ab) {
-  const out = {}; let u; try { u = new Uint8Array(ab); } catch (e) { return out; } if (u.length < 16) return out;
+/** past an ID3 text field's terminator (one zero byte, or two aligned zero bytes in UTF-16), from offset i */
+function tagSkip(b, i, enc) { if (enc === 1 || enc === 2) { while (i + 1 < b.length && !(b[i] === 0 && b[i + 1] === 0)) i += 2; return i + 2; } while (i < b.length && b[i] !== 0) i++; return i + 1; }
+/** LRC: "[mm:ss.xx] words" lines (several stamps on a line are allowed, [offset:±ms] is honoured, <mm:ss.xx> word stamps are dropped) → [[seconds, line], …] in time order, or null */
+function lrcParse(text) {
+  if (!text) return null; let off = 0; const out = [];
+  String(text).replace(/\r/g, '').split('\n').forEach(line => {
+    const of = /^\s*\[offset:\s*([+-]?\d+)\s*\]/i.exec(line); if (of) { off = +of[1] / 1000; return; }
+    const stamps = []; let rest = line, m; while ((m = /^\s*\[(\d{1,3}):(\d{1,2})(?:[.:](\d{1,3}))?\]/.exec(rest))) { stamps.push(+m[1] * 60 + +m[2] + (m[3] ? +('0.' + m[3]) : 0)); rest = rest.slice(m[0].length); }
+    if (!stamps.length) return; const w = rest.replace(/<\d{1,3}:\d{1,2}(?:[.:]\d{1,3})?>/g, '').trim(); stamps.forEach(t => out.push([Math.max(0, t - off), w]));
+  });
+  if (out.length < 2) return null; out.sort((a, b) => a[0] - b[0]); return out;
+}
+/** tiny tag reader: ID3v2 (mp3), iTunes-style atoms (m4a / mp4) and FLAC's Vorbis comments. Returns {title, artist} — either may be missing.
+    With { lyrics: true } it also returns the words stored in the file: `lyrics` (plain text, or LRC text) and `synced` ([[seconds, line], …]). */
+function readTags(ab, o) {
+  o = o || {}; const out = {}; let u; try { u = new Uint8Array(ab); } catch (e) { return out; } if (u.length < 16) return out;
   const clean = s => String(s || '').replace(/\0+$/g, '').replace(/\0/g, ' ').trim().slice(0, 140);
   try {
     if (u[0] === 0x49 && u[1] === 0x44 && u[2] === 0x33) {
@@ -39,18 +52,34 @@ function readTags(ab) {
         if (sz <= 0 || p + hdr + sz > end) break;
         const body = u.subarray(p + hdr, p + hdr + sz);
         if (id === 'TIT2' || id === 'TT2') out.title = clean(tagText(body.subarray(1), body[0])); else if (id === 'TPE1' || id === 'TP1') out.artist = clean(tagText(body.subarray(1), body[0]));
+        else if (o.lyrics && (id === 'USLT' || id === 'ULT')) { const enc = body[0], i = tagSkip(body, 4, enc), t = tagText(body.subarray(i), enc).replace(/\0+$/, ''); if (t.trim()) out.lyrics = t; }
+        else if (o.lyrics && (id === 'SYLT' || id === 'SLT') && body[4] === 2) {      /* time-stamped words, in milliseconds; an entry starting with a new line starts a new line */
+          const enc = body[0]; let i = tagSkip(body, 6, enc); const lines = [];
+          while (i < body.length - 4) { const j = tagSkip(body, i, enc), txt = tagText(body.subarray(i, Math.max(i, j - (enc === 1 || enc === 2 ? 2 : 1))), enc); if (j + 4 > body.length) break;
+            const ts = ((body[j] << 24) | (body[j + 1] << 16) | (body[j + 2] << 8) | body[j + 3]) >>> 0; i = j + 4; const nl = /^[\r\n]/.test(txt), w = txt.replace(/^[\r\n]+/, '');
+            if (nl || !lines.length) lines.push([ts / 1000, w]); else lines[lines.length - 1][1] += w; }
+          const ok = lines.map(([t, l]) => [t, l.trim()]).filter(x => x[1]); if (ok.length) out.synced = ok; }
         p += hdr + sz;
       }
     }
     if (String.fromCharCode(u[4], u[5], u[6], u[7]) === 'ftyp') {
       for (let i = u.indexOf(0xA9); i >= 0 && i < u.length - 24; i = u.indexOf(0xA9, i + 1)) {
-        const k = String.fromCharCode(u[i + 1], u[i + 2], u[i + 3]); if (k !== 'nam' && k !== 'ART') continue;
+        const k = String.fromCharCode(u[i + 1], u[i + 2], u[i + 3]); if (k !== 'nam' && k !== 'ART' && !(o.lyrics && k === 'lyr')) continue;
         const p = i + 4; if (String.fromCharCode(u[p + 4], u[p + 5], u[p + 6], u[p + 7]) !== 'data') continue;
-        const sz = (u[p] << 24 | u[p + 1] << 16 | u[p + 2] << 8 | u[p + 3]) >>> 0; if (sz < 17 || sz > 400) continue;
+        const sz = (u[p] << 24 | u[p + 1] << 16 | u[p + 2] << 8 | u[p + 3]) >>> 0; if (sz < 17 || sz > (k === 'lyr' ? 200000 : 400)) continue;
+        if (k === 'lyr') { const t = new TextDecoder('utf-8').decode(u.subarray(p + 16, p + sz)); if (t.trim()) out.lyrics = t; continue; }
         const t = clean(new TextDecoder('utf-8').decode(u.subarray(p + 16, p + sz))); if (t) out[k === 'nam' ? 'title' : 'artist'] = t;
       }
     }
+    if (u[0] === 0x66 && u[1] === 0x4C && u[2] === 0x61 && u[3] === 0x43) {      /* fLaC: metadata blocks; type 4 is the Vorbis comment (little-endian lengths, KEY=value) */
+      let p = 4; for (let n = 0; n < 64 && p + 4 <= u.length; n++) {
+        const last = u[p] & 0x80, type = u[p] & 0x7f, len = (u[p + 1] << 16) | (u[p + 2] << 8) | u[p + 3], b = p + 4; p = b + len;
+        if (type === 4 && p <= u.length) { const dv = new DataView(u.buffer, u.byteOffset + b, len), td = new TextDecoder('utf-8'); let q = 4 + dv.getUint32(0, true); const cnt = dv.getUint32(q, true); q += 4;
+          for (let c = 0; c < cnt && q + 4 <= len; c++) { const l = dv.getUint32(q, true); q += 4; const kv = td.decode(u.subarray(b + q, b + q + l)); q += l; const e = kv.indexOf('='); if (e < 0) continue; const key = kv.slice(0, e).toUpperCase(), v = kv.slice(e + 1);
+            if (key === 'TITLE' && !out.title) out.title = clean(v); else if (key === 'ARTIST' && !out.artist) out.artist = clean(v); else if (o.lyrics && (key === 'LYRICS' || key === 'UNSYNCEDLYRICS') && v.trim()) out.lyrics = v; } }
+        if (last) break; } }
   } catch (e) { console.warn('tag read', e); }
+  if (out.lyrics && !out.synced) { const l = lrcParse(out.lyrics); if (l) out.synced = l; }      /* LRC text kept as plain lyrics is still timed */
   return out;
 }
 
@@ -90,7 +119,7 @@ function buildSongbar() {
   SB.f.tun = h('select', { class: 'in sb-tun', 'aria-label': 'Tuning', onchange: e => { const nm = e.target.value; if (nm === '__custom') { sbDetails(SB.f.more, true); sbSync(); return; } setTuning(TUNINGS[nm], nm); } });
   SB.f.capo = h('input', { class: 'in sb-capo', type: 'number', min: 0, max: 12, 'aria-label': 'Capo', onchange: e => { S.capo = clamp(+e.target.value || 0, 0, 12); S.voicePref = {}; commit(); } });
   SB.f.scale = h('select', { class: 'in sb-scale', 'aria-label': 'Scale for overlays', title: 'Scale used for the fretboard and tab overlays', onchange: e => { S.scale = e.target.value; commit(false); bus.emit('scale'); } }, Object.keys(SCALES).map(n => h('option', {}, n)));
-  SB.f.more = h('button', { class: 'btn sm', title: 'Notes, custom tuning, per-string tuning…', onclick: () => sbDetails(SB.f.more) }, 'Notes & tuning ▾');
+  SB.f.more = h('button', { class: 'btn sm sb-more', title: 'Notes, custom tuning, per-string tuning…', onclick: () => sbDetails(SB.f.more) }, 'Notes & tuning ▾');
   SB.trk = h('div', { class: 'sb-trk' });
   SB.saved = h('span', { class: 'sb-saved', role: 'status', 'aria-live': 'polite', title: 'Your work is saved in this browser as you go' });
   UI.undo = h('button', { class: 'btn sm sb-hist', title: 'Undo (Ctrl/Cmd + Z)', 'aria-label': 'Undo', onclick: () => undo() }, '↶'); UI.redo = h('button', { class: 'btn sm sb-hist', title: 'Redo (Shift + Ctrl/Cmd + Z)', 'aria-label': 'Redo', onclick: () => redo() }, '↷'); SB.hist = h('span', { class: 'sb-histg' }, UI.undo, UI.redo, SB.saved);

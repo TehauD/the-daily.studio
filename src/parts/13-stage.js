@@ -110,6 +110,7 @@ function stageFrame(ts) {
   if (pbOn()) { if (STG.pb.lower) drawLowerThird(g, w, hh, info, C); } else if (STG.hud !== false) drawStageHUD(g, w, hh, sc, info, C);
   tipDraw(g, w, hh, 'stage', tipStageAvoid(w, hh, sc));   /* the tip jar (part 39b), for the room and the projector */
   if (SG.freezeReq) { const f = SG.frz || (SG.frz = document.createElement('canvas')); f.width = w; f.height = hh; f.getContext('2d').drawImage(SG.cv, 0, 0); SG.freeze = true; SG.freezeReq = false; }
+  if (typeof megDraw === 'function') megDraw(g, w, hh);   /* the megaphone pedal's look (part 78), before blackout and master */
   shOutFrame(g, w, hh);   // master level, blackout, mirror, flip
   if (SG.idle && ts - SG.idleT > 2800 && document.fullscreenElement === wrap) wrap.classList.add('idle');
 }

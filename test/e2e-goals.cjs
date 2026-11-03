@@ -7,6 +7,8 @@ suite('e2e-goals', async t => {
 
   // a first visit on a computer opens the Performer
   ok(await ev(() => { const d = window.__daily; return d.CFG.ws === 'performer' && d.LAY.name === 'Performer' && d.DOCK.cur === 'vis'; }), 'a first visit opens the Performer workspace, on the stage');
+  ok(await ev(() => window.__daily.CFG.simple === true && document.body.classList.contains('simple')), 'a first visit starts in ✦ Simple');
+  await ev(() => window.__daily.simpleSet(false, true));      /* the rest of this file walks the full studio */
   const bar = await ev(() => ({ goals: [...document.querySelectorAll('#goalbar .gl-b')].map(b => b.textContent.trim()), steps: [...document.querySelectorAll('#goalbar .gl-st')].map(b => b.textContent), on: (document.querySelector('#goalbar .gl-st.on') || {}).textContent, over: document.getElementById('goalbar').scrollWidth - document.getElementById('goalbar').clientWidth }));
   ok(bar.goals.join('|') === '🎸Songwriter|🎤Performer|🎬Creator Studio|🎼Practice|🎓Teacher|⚙️Full Rig', 'the goal bar offers the six goals (' + bar.goals.join(', ') + ')');
   ok(bar.steps.join('>') === 'Create>Perform>Share' && bar.on === 'Perform' && bar.over <= 1, 'Create → Perform → Share, with Perform lit, and the bar fits (' + JSON.stringify(bar) + ')');
@@ -24,10 +26,10 @@ suite('e2e-goals', async t => {
   const ids = Object.keys(fp);
   ok(ids.length === 6 && ids.every(i => fp[i].now === i && fp[i].pressed === i && fp[i].cfg === i), 'each goal opens its own workspace, lights its button and is remembered');
   ok(new Set(ids.map(i => [fp[i].dock, fp[i].tabs, fp[i].lvis, fp[i].rvis, fp[i].lcur, fp[i].rcur, fp[i].mon].join('/'))).size === 6, 'no two goals are the same workspace');
-  ok(fp.songwriter.dock === 'tab' && fp.songwriter.lcur === 'theory' && fp.songwriter.rvis === 'hidden' && /gtCap/.test(fp.songwriter.tools) && /gtTheory/.test(fp.songwriter.tools), 'Songwriter: a notebook — the Write canvas, theory beside it, no meters, Capture an idea (' + fp.songwriter.tools + ')');
-  ok(fp.performer.dock === 'vis' && fp.performer.lcur === 'tones' && fp.performer.mon === 'tuner+levels' && /gtCam/.test(fp.performer.tools) && /gtTake/.test(fp.performer.tools), 'Performer: the stage, tones, tuner and levels, the camera and a take');
+  ok(fp.songwriter.dock === 'tab' && fp.songwriter.lcur === 'theory' && fp.songwriter.rvis === 'hidden' && /gtSheet/.test(fp.songwriter.tools) && !/gtCap|gtTheory|gtWords|gtRec/.test(fp.songwriter.tools), 'Songwriter: a notebook — the Write canvas, theory beside it, no meters; no tool repeats a panel already open or a button already on screen (' + fp.songwriter.tools + ')');
+  ok(fp.performer.dock === 'vis' && fp.performer.lcur === 'tones' && fp.performer.mon === 'tuner+levels' && /gtCam/.test(fp.performer.tools) && /gtVideo/.test(fp.performer.tools) && !/gtTake|gtPerf/.test(fp.performer.tools), 'Performer: the stage, tones, tuner and levels, the camera and a video (a take is the ● at the top)');
   ok(fp.creator.dock === 'vis' && fp.creator.lvis === 'hidden' && /views/.test(fp.creator.mon) && /audience/.test(fp.creator.mon) && ['gtVideo', 'gtReplay', 'gtFx', 'gtThumb', 'gtExp'].every(x => fp.creator.tools.includes(x)), 'Creator Studio: record MP4, Studio Replay, overlays, a thumbnail, export, the audience view and the waveform views (' + fp.creator.tools + ')');
-  ok(fp.practice.dock === 'fret' && fp.practice.lcur === 'theory' && ['gtLoop', 'gtClick', 'gtSlow', 'gtFast', 'gtScale', 'gtChord'].every(x => fp.practice.tools.includes(x)), 'Practice: the fretboard large in the middle; loop, metronome, tempo, scales and chords');
+  ok(fp.practice.dock === 'fret' && fp.practice.lcur === 'theory' && ['gtSlow', 'gtFast', 'gtShed'].every(x => fp.practice.tools.includes(x)) && !/gtLoop|gtClick|gtScale|gtChord/.test(fp.practice.tools), 'Practice: the fretboard large in the middle; tempo and Scales & ear (Loop and Click are at the top)');
   ok(fp.teacher.rcur === 'fret' && fp.teacher.lvis === 'hidden' && fp.teacher.tlTop < fp.teacher.dockTop && ['gtInk', 'gtNotes', 'gtScreen'].every(x => fp.teacher.tools.includes(x)), 'Teacher: annotate, lesson notes and screen recording');
   ok(fp.fullrig.hidden === 0 && !['rig', 'tab', 'band', 'vis', 'stage', 'neural', 'stems', 'tx', 'cam', 'lab', 'exp'].some(x => !fp.fullrig.tabs.split(',').includes(x)) && fp.fullrig.mon.split('+').length === 6 && fp.fullrig.lvis === 'visible' && fp.fullrig.rvis === 'visible', 'Full Rig: every panel on the strip (Song and Fretboard live inside Write), both sidebars, every Monitor widget ' + JSON.stringify(fp.fullrig));
   ok(ids.every(i => fp[i].barTop < 140), 'the goal bar stays at the top of the centre in every goal, the Teacher’s arrangement-on-top included (' + ids.map(i => fp[i].barTop).join(', ') + ')');
@@ -41,8 +43,8 @@ suite('e2e-goals', async t => {
   ok(path === 'performer>creator>songwriter', 'Songwriter → Perform it → Share it, and the Create step goes back to writing (' + path + ')');
 
   // practice: tempo and loop from the bar
-  const pr = await ev(async () => { const d = window.__daily; d.goalGo('practice'); const b0 = d.S.bpm, loop0 = d.T.loop; document.getElementById('gtFast').click(); document.getElementById('gtLoop').click(); await new Promise(r => setTimeout(r, 150)); const r = { up: d.S.bpm - b0, label: document.getElementById('gtBpm').textContent, loop: d.T.loop !== loop0, pressed: document.getElementById('gtLoop').getAttribute('aria-pressed') === String(d.T.loop) }; document.getElementById('gtSlow').click(); document.getElementById('gtLoop').click(); return r; });
-  ok(pr.up === 5 && /\d+ BPM/.test(pr.label) && pr.loop && pr.pressed, 'Practice: +5 BPM and the loop work from the goal bar, and show it (' + JSON.stringify(pr) + ')');
+  const pr = await ev(async () => { const d = window.__daily; d.goalGo('practice'); const b0 = d.S.bpm, loop0 = d.T.loop; document.getElementById('gtFast').click(); await new Promise(r => setTimeout(r, 150)); const r = { up: d.S.bpm - b0, label: document.getElementById('gtBpm').textContent }; document.getElementById('gtSlow').click(); return r; });
+  ok(pr.up === 5 && /\d+ BPM/.test(pr.label), 'Practice: +5 BPM works from the goal bar, and shows it (' + JSON.stringify(pr) + ')');
 
   // the kit: lesson notes are kept, ink is drawn and cleared, Studio Replay and the thumbnail
   await ev(() => window.__daily.goalGo('teacher'));

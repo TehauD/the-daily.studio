@@ -141,6 +141,7 @@ function voxBuild() {
           ...plan.slice(1).filter(o => o.d !== 0 || !same).slice(0, 2).map(o => h('button', { class: 'btn sm', 'data-d': o.d, onclick: () => { voxTranspose(o.d); voxBuild(); } }, keyName(o.key) + ' (' + (o.d > 0 ? '+' : '') + o.d + ')'))),
         h('div', { class: 'tiny muted' }, 'Chords, [chords] in lyrics and tab frets move together; recorded takes stay as they were. Undo (Ctrl/⌘+Z) puts it back.')));
   }
+  b.append(h('button', { class: 'btn sm', id: 'voxPedals', onclick: () => vocalBoardOpen() }, '🎤 Vocal pedals' + (Object.values(CFG.vb.on).some(Boolean) ? ' · on' : '')));
   b.append(h('div', { class: 'tiny muted' }, 'Green is within 20 cents of a note in the key, yellow within 35, red beyond. Bright rows are the chord that is playing. Nothing leaves this device.'));
 }
 bus.on('audiostate', () => { if (!E.hasInput) VOX.capt = false; if (VOX.panel) voxBuild(); });

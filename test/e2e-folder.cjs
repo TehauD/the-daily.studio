@@ -36,7 +36,7 @@ suite('e2e-folder', async t => {
     /* a backing track, put straight into the (closed) song's storage */
     const buf = new Uint8Array(30000).map((x, i) => (i * 37) & 255).buffer; await D.pdbPut('blobs', { buf, type: 'audio/mp4', name: 'night drive backing.m4a' }, id + '/track');
     const rec = await D.pdbGet('projects', id); rec.track = { name: 'Night drive backing', title: 'Night drive backing', artist: '', dur: 3, fileName: 'night drive backing.m4a', type: 'audio/mp4', bytes: 30000 }; await D.pdbPut('projects', rec); await D.projRefresh(); return id; });
-  await ev(A, () => { const D = window.__daily; D.CFG.lookMode = 'dark'; D.CFG.inDev = 'laptop-mic-id'; D.CFG.rtt = 9.5; localStorage.setItem('fw.presets', JSON.stringify([{ n: 'Warm Clean', d: 'mine', u: { amp: { on: 1, model: 'Clean', gain: .3 } } }]));
+  await ev(A, () => { const D = window.__daily; D.CFG.lookMode = 'dark'; D.CFG.a4 = 442; D.CFG.inDev = 'laptop-mic-id'; D.CFG.rtt = 9.5; localStorage.setItem('fw.presets', JSON.stringify([{ n: 'Warm Clean', d: 'mine', u: { amp: { on: 1, model: 'Clean', gain: .3 } } }]));
     D.CFG.show.saved.push({ id: 'lk1', name: 'Club night', design: 'lasers', ovr: {} }); localStorage.setItem('fw.lessons', JSON.stringify({ 'Harbour Song': 'Slow down the chorus' })); D.saveCfg(); });
 
   /* ---- choose the folder: the studio is written into it ---- */
@@ -49,7 +49,7 @@ suite('e2e-folder', async t => {
   ok(w && w.toString('ascii', 0, 4) === 'RIFF' && w.readUInt32LE(4) + 8 === w.length && Math.abs((w.length - 44) / 2 / w.readUInt32LE(24) - 2) < .05, 'each recording is a WAV in media/<song>/, whole and as long as it was recorded (' + (w ? ((w.length - 44) / 2 / w.readUInt32LE(24)).toFixed(2) + ' s' : 'missing') + ')');
   ok(FA['the-daily.studio/media/' + S2 + '/track-30000.m4a'] && Buffer.from(FA['the-daily.studio/media/' + S2 + '/track-30000.m4a'], 'base64').length === 30000, 'a backing track is there as the file that was loaded');
   const setA = text(FA, 'the-daily.studio/settings.json');
-  ok(/"lookMode": "dark"/.test(setA) && !/laptop-mic-id|"rtt"|"fsync"|"syncAt"|"sync"/.test(setA), 'settings are there, but not this computer’s own (its microphone, measured latency, the folder’s own state)');
+  ok(/"a4": 442/.test(setA) && !/lookMode|laptop-mic-id|"rtt"|"fsync"|"syncAt"|"sync"/.test(setA), 'settings are there, but not this computer’s own (light or dark, its microphone, measured latency, the folder’s own state)');
   ok(await ev(A, () => /In step with the folder/.test(document.getElementById('fsStatus').textContent) && /Cloud ▸ the-daily\.studio/.test(document.querySelector('.sync-ctl').textContent)), 'Settings says where the studio is and that it is in step');
 
   /* ---- the other computer chooses the same folder: the same studio ---- */
@@ -59,7 +59,7 @@ suite('e2e-folder', async t => {
   ok(RB.names.includes('Harbour Song') && RB.names.includes('Night Drive'), 'choosing the same folder on another computer brings its songs (' + RB.names.join(', ') + ')');
   ok(JSON.stringify(await sum(B, S1)) === JSON.stringify(await sum(A, S1)), 'with their recordings, sample for sample (' + JSON.stringify(await sum(B, S1)) + ')');
   ok(await ev(B, async id => { const b = await window.__daily.pdbGet('blobs', id + '/track'); return b && b.buf.byteLength === 30000 && b.name === 'night drive backing.m4a'; }, S2), 'and their backing tracks');
-  ok(await ev(B, () => { const D = window.__daily; return D.CFG.lookMode === 'dark' && /Warm Clean/.test(localStorage.getItem('fw.presets')) && D.CFG.show.saved.some(l => l.name === 'Club night') && /Slow down/.test(localStorage.getItem('fw.lessons')) && D.CFG.inDev === 'desktop-interface'; }), 'and the settings, presets, looks and notes, while the computer keeps its own audio interface');
+  ok(await ev(B, () => { const D = window.__daily; return D.CFG.a4 === 442 && D.CFG.lookMode !== 'dark' && /Warm Clean/.test(localStorage.getItem('fw.presets')) && D.CFG.show.saved.some(l => l.name === 'Club night') && /Slow down/.test(localStorage.getItem('fw.lessons')) && D.CFG.inDev === 'desktop-interface'; }), 'and the settings, presets, looks and notes, while the computer keeps its own audio interface');
   ok(await ev(B, async id => { const D = window.__daily; await D.projLoad(id); return D.TAKES.length === 1 && D.TAKES[0].dry.length > 40000 && !(D.PRJ_WAIT() || { list: [] }).list.length; }, S1), 'the song opens with its recording, ready to play');
 
   /* ---- a change on one computer reaches the other, recordings too ---- */

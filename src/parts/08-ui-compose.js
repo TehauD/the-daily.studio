@@ -115,7 +115,7 @@ function buildMidi() {
   const ld = [{ t: 0, b: [0xC1, 26] }]; flatBars().forEach(fb => { fb.bar.tab.forEach(n => { const next = fb.bar.tab.filter(o => o.st === n.st && o.s > n.s).sort((a, b) => a.s - b.s)[0], len = Math.max(1, (next ? next.s : sp) - n.s); on(ld, 1, clamp(n.f === 'x' ? S.tuning[n.st] + S.capo : noteMidi(n) + (n.t === '<>' ? 12 : 0), 0, 127), n.f === 'x' ? 40 : 90, (fb.idx * sp + n.s) * TPS, len * TPS - 8); }); });
   tracks.push(track(ld, 'Lead / tab'));
   // bass, channel 2
-  const bs = [{ t: 0, b: [0xC2, 33] }]; if (S.band.bassOn) for (let bi = 0; bi < totalBars(); bi++) for (let s = 0; s < sp; s++) { const cd = chordAt(bi, s); if (!cd || !cd.sym) continue; const e = bassEvent(S.band.bassStyle, cd.sym, cd.rel, cd.len, cd.next); if (e) on(bs, 2, clamp(e.m, 0, 127), Math.round(60 + 50 * (e.v || .8)), (bi * sp + s) * TPS, Math.max(1, e.len) * TPS - 8); }
+  const bs = [{ t: 0, b: [0xC2, 33] }]; if (S.band.bassOn) for (let bi = 0; bi < totalBars(); bi++) for (let s = 0; s < sp; s++) { const cd = chordAt(bi, s); if (!cd || !cd.sym) continue; const e = bassEvent(S.band.bassStyle, cd.sym, cd.rel, cd.len, cd.next, bi * sp + s); if (e) on(bs, 2, clamp(e.m, 0, 127), Math.round(60 + 50 * (e.v || .8)), (bi * sp + s) * TPS, Math.max(1, e.len) * TPS - 8); }
   tracks.push(track(bs, 'Bass'));
   // drums, channel 9
   const dr = []; if (S.band.drumsOn) { const pat = dpat(), L = Math.min(S.band.drumLen || 16, 32), gm = [36, 38, 42, 46, 39, 45]; for (let s = 0; s < total; s++) pat.forEach((row, r) => { const v = row[s % L]; if (v) on(dr, 9, gm[r], [0, 50, 90, 118][v], s * TPS, 60); }); }
@@ -299,6 +299,7 @@ function renderBand() {
   const drums = h('div', { class: 'card' }, h('h4', {}, 'Drums ', tog('Enabled', 'drumsOn')), h('div', { class: 'card-b' },
     h('div', { class: 'row', style: { gap: '10px', alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: '8px' } }, sel('Kit', Object.keys(KITS), B.kit, v => { B.kit = v; commit(false); }), sel('Pattern', Object.keys(DPATS), B.patName, v => { setDrumPattern(v); renderBand(); }, 170),
       songField('Length (steps)', h('select', { onchange: e => { B.drumLen = +e.target.value; commit(false); renderBand(); } }, [8, 12, 16, 24, 32].map(n => h('option', { selected: n === (B.drumLen || 16) }, n)))),
+      h('button', { class: 'btn sm primary', id: 'bandPads', title: 'Play the drums with your fingers, tap the tempo, record a groove or beatbox it', onclick: () => padsOpen() }, '🥁 Pads'),
       h('button', { class: 'btn sm', onclick: () => { B.pat = DROWS.map(() => new Array(32).fill(0)); commit(false); renderBand(); } }, 'Clear'), h('button', { class: 'btn sm', onclick: () => { const pat = dpat(); pat.forEach(r => r.forEach((v, i) => { if (v && Math.random() < .25) r[i] = 0; else if (!v && Math.random() < .04) r[i] = 1; })); commit(false); renderBand(); } }, '🎲 Mutate'),
       h('span', { class: 'tiny muted' }, 'Click a step to cycle: off → ghost → normal → accent')),
     stepGrid()));

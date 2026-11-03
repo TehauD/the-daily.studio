@@ -25,13 +25,14 @@ function mkKnob(o) {
   const api = { el, set, get: () => v, setNorm: n => set(fromN(clamp(n, 0, 1))), def: o.def }; draw(); if (o.key) KNOBS.set(o.key, api); return api;
 }
 const MIDI = { access: null };
-const MIDIHOOKS = [];
+const MIDIHOOKS = [], MIDIRAW = [];      /* MIDIRAW: every message first (clock, pedals, pads); a hook returning true keeps it */
 async function initMIDI() {
   if (MIDI.access || !navigator.requestMIDIAccess) return;
   try { const a = await navigator.requestMIDIAccess(); MIDI.access = a; const hook = () => a.inputs.forEach(i => { i.onmidimessage = onMidi; }); hook(); a.onstatechange = () => { hook(); bus.emit('midi'); }; CFG.midi = true; saveCfg(); bus.emit('midi'); }
   catch (e) { if (document.body.dataset.form && document.body.dataset.form !== 'desktop') console.warn('MIDI unavailable: ' + e.message); else toast('MIDI unavailable: ' + e.message, 'warn'); }
 }
 function onMidi(e) {
+  for (const f of MIDIRAW) { try { if (f(e.data, e)) return; } catch (er) { console.warn(er); } }
   const [st, d1, d2] = e.data, cmd = st & 0xf0;
   if (cmd === 0xB0) {
     if (LEARN.key) { CFG.midimap[d1] = LEARN.key; saveCfg(); toast('CC ' + d1 + ' → ' + LEARN.key, 'ok'); const k = KNOBS.get(LEARN.key); if (k) k.el.classList.remove('learn'); LEARN.key = null; bus.emit('midi'); return; }
@@ -48,7 +49,7 @@ const barStr = p => { const sp = spb(), bs = 16 / S.ts[1], b = Math.floor(p / sp
 function buildHeader() {
   const tr = $('#transport');
   const B = (cls, txt, title, fn) => h('button', { class: 'btn icon ' + cls, title, onclick: fn }, txt);
-  UI.rew = B('', '⏮', 'Return to start (Home)', () => { if (T.playing) { stopPlay(true); T.cursor = 0; play(); } else { T.cursor = 0; bus.emit('transport'); } });
+  UI.rew = B('rew', '⏮', 'Return to start (Home)', () => { if (T.playing) { stopPlay(true); T.cursor = 0; play(); } else { T.cursor = 0; bus.emit('transport'); } });
   UI.play = B('play', '▶', 'Play / pause (Space)', () => T.playing ? stopPlay(true) : play());
   UI.stop = B('', '⏹', 'Stop (returns to start position)', () => stopPlay(false));
   UI.rec = B('rec', '●', 'Record guitar take (R)', toggleRec);
@@ -56,15 +57,16 @@ function buildHeader() {
   UI.metro = h('button', { class: 'btn sm', title: 'Metronome (M)', onclick: () => { T.metro = !T.metro; syncTransport(); } }, '♩', h('span', { class: 'lbl' }, ' Click'));
   UI.bandMute = h('button', { class: 'btn sm bandmute', id: 'bandMute', 'aria-label': 'Mute the band and the click', 'aria-pressed': 'false', onclick: () => bandMute() }, '🔇', h('span', { class: 'lbl' }, ' Band'));
   UI.metroMore = h('button', { class: 'btn sm metro-more', title: 'Count-in and click volume', 'aria-label': 'Count-in and click volume', 'aria-haspopup': 'dialog', onclick: e => clickMenu(e.currentTarget) }, '▾');
-  UI.pos = h('div', { class: 'lcd' }, h('b', {}, '1·1·1'), h('i', {}, 'BAR·BEAT·SLOT')); UI.tim = h('div', { class: 'lcd', style: { minWidth: '88px' } }, h('b', {}, '00:00.00'), h('i', {}, 'TIME'));
+  UI.pos = h('div', { class: 'lcd lcd-pos' }, h('b', {}, '1·1·1'), h('i', {}, 'BAR·BEAT·SLOT')); UI.tim = h('div', { class: 'lcd', style: { minWidth: '88px' } }, h('b', {}, '00:00.00'), h('i', {}, 'TIME'));
   UI.bpm = h('input', { type: 'number', min: 30, max: 260, step: 1, value: S.bpm, onchange: e => { S.bpm = clamp(+e.target.value || 90, 30, 260); e.target.value = S.bpm; commit(false); bus.emit('bpm'); } });
   UI.ts = h('select', { onchange: e => { const [n, d] = e.target.value.split('/').map(Number); S.ts = [n, d]; S.band.drumLen = Math.min(32, spb()); commit(); } }, ['4/4', '3/4', '2/4', '5/4', '6/8', '12/8', '7/8'].map(x => h('option', { value: x }, x)));
   UI.key = h('select', { onchange: () => keyChanged() }, NS.map((n, i) => h('option', { value: i }, n))); UI.mode = h('select', { onchange: () => keyChanged() }, [h('option', { value: 'maj' }, 'maj'), h('option', { value: 'min' }, 'min')]);
-  tr.append(UI.rew, UI.play, UI.stop, UI.rec, UI.loop, UI.metro, UI.bandMute, UI.metroMore, UI.pos, UI.tim, h('label', { class: 'field', style: { width: '58px' } }, 'BPM', UI.bpm), h('label', { class: 'field', style: { width: '54px' } }, 'Sig', UI.ts), h('label', { class: 'field', style: { width: '56px' } }, 'Key', UI.key), h('label', { class: 'field', style: { width: '56px' } }, 'Mode', UI.mode));
+  tr.append(UI.rew, UI.play, UI.stop, UI.rec, UI.loop, UI.metro, UI.bandMute, UI.metroMore, UI.pos, UI.tim, h('label', { class: 'field f-bpm', style: { width: '58px' } }, 'BPM', UI.bpm), h('label', { class: 'field f-sig', style: { width: '54px' } }, 'Sig', UI.ts), h('label', { class: 'field', style: { width: '56px' } }, 'Key', UI.key), h('label', { class: 'field f-mode', style: { width: '56px' } }, 'Mode', UI.mode));
   const R = $('#topR');
-  UI.lat = h('span', { class: 'chip', title: 'Round-trip latency estimate. Run the Loopback Test in I/O for a measured value.' }, h('i', { class: 'led' }), h('span', {}, 'audio off'));
+  UI.lat = h('span', { class: 'chip lat-chip', title: 'Round-trip latency estimate. Run the Loopback Test in I/O for a measured value.' }, h('i', { class: 'led' }), h('span', {}, 'audio off'));
   UI.theme = h('button', { class: 'btn icon', title: 'Appearance: light / dark, palettes, accent, density…', 'aria-haspopup': 'dialog', onclick: () => lookOpen() }, '◐');
   R.append(mstChip(), audioButton(), UI.lat, UI.theme, h('button', { class: 'btn icon', title: 'Settings', 'aria-haspopup': 'dialog', onclick: () => openSettings() }, '⚙'), h('button', { class: 'btn icon', title: 'Help & shortcuts (?)', 'aria-haspopup': 'dialog', onclick: () => openHelp() }, '?'));
+  try { simpleMount(); } catch (e) { }
 }
 /** count-in and click volume, next to the Click button */
 function clickMenu(anchor) {
@@ -100,12 +102,16 @@ function openSettings(at) {
   const range = (key, min, max, step, cb) => h('input', { type: 'range', min, max, step, value: CFG[key], oninput: e => { CFG[key] = +e.target.value; saveCfg(); cb && cb(); } });
   const note = t => h('p', { class: 'hub-note' }, t);
   return hubOpen('settings', { ico: '⚙', title: 'Settings', sub: 'How the studio looks, sounds, records and keeps your work.', at, sections: [
-    { key: 'look', label: 'Appearance', ico: '🎨', sub: 'Light or dark first, then a palette made for it.', body: () => [lookQuick(), h('button', { class: 'btn', id: 'setLook', onclick: () => { close(); lookOpen(); } }, '🎨 Looks, accent, density and type…')] },
+    { key: 'look', label: 'Appearance', ico: '🎨', sub: 'Light or dark first, then a palette made for it.', body: () => [lookQuick(), h('button', { class: 'btn', id: 'setLook', onclick: () => { close(); lookOpen(); } }, '🎨 Looks, accent, density and type…'),
+      note('Light, dark or System is kept for this device only: syncing never changes it. System follows this computer, which may switch at sunset.'),
+      F('On air light (the logo and the tab while recording)', h('select', { class: 'in', id: 'setOnAir', onchange: e => airSet(e.target.value) }, [['blink', 'Blink red'], ['steady', 'Steady red'], ['off', 'Off']].map(([v, t]) => h('option', { value: v, selected: airMode() === v }, t)))),
+      h('label', { class: 'chk' }, h('input', { type: 'checkbox', id: 'setPerfOv', checked: !!(CFG.labs && CFG.labs.perf), onchange: e => bksLab('perf', e.target.checked) }), 'Performance overlay (frames a second and the audio engine, bottom left)')] },
     { key: 'work', label: 'Workflow', ico: '▦', sub: 'Where the studio starts and how it fits this device.', body: () => [
       F('Start in', routeControl()),
       F('Workspace', h('button', { class: 'btn', onclick: () => { close(); workspaceOpen(); } }, (goalNow() ? goalNow().ico + ' ' + goalNow().name : 'Choose a goal') + ' ▸')),
       F('Device layout', sel('form', [['auto', 'Auto (fit this device)'], ['phone', 'Phone'], ['tablet', 'Tablet'], ['desktop', 'Desktop']], () => applyForm())),
       chk('On-screen tab keypad on phones and tablets', 'kpad', () => mSync()),
+      chk('✦ Simple: just the essentials (the same button is at the top right; nothing is lost)', 'simple', () => simpleSet(CFG.simple, true)),
       chk('Hidden surprises (a few secrets for people who look)', 'eggs', () => secretSync()),
       chk('Let AI agents in this browser use the studio (read the song, load chord sheets, edit, play; never the microphone or recording)', 'agents', () => agentRegister()),
       note('An AI assistant in your browser can use the studio through WebMCP. It runs here; nothing is sent anywhere. Each change shows a 🤖 note and can be undone.')] },
@@ -130,6 +136,8 @@ function openSettings(at) {
       F('When recording reaches the end of the song', sel('recEnd', [['grow', 'Keep going (the song grows to fit)'], ['stop', 'Stop at the end'], ['loop', 'Loop back, one take per pass']])),
       h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!CFG.rec.dry, onchange: e => { CFG.rec.dry = e.target.checked; saveCfg(); } }), 'Record dry DI (enables re-amping)'),
       h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!CFG.rec.wet, onchange: e => { CFG.rec.wet = e.target.checked; saveCfg(); } }), 'Record wet print')] },
+    { key: 'gear', label: 'Pedal & MIDI sync', ico: '🦶', sub: 'A foot pedal for hands-free playing, and MIDI clock for drum machines, synths and music software.', body: () => [gearSettings()] },
+    { key: 'mega', label: 'Megaphone pedal', ico: '📢', sub: 'Your vocal effects pedal drives the show: the stage, the lights and the words react when it is on.', body: () => [megSettings()] },
     { key: 'folder', label: 'Folder sync', ico: '📁', sub: 'Your whole studio, recordings too, in a folder on this computer: iCloud Drive, Dropbox, Google Drive or OneDrive keep it the same on every computer.', wide: true, body: () => [syncControl()] },
     { key: 'github', label: 'GitHub', ico: '⑂', sub: 'Your studio in a private repository of your own, in step on every device. Optional.', wide: true, body: () => [ghSection()] },
     { key: 'export', label: 'Export', ico: '⇩', sub: 'Song bounces and tab text.', body: () => [

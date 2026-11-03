@@ -100,6 +100,7 @@ function projDirty() {
 }
 function projSave() {
   clearTimeout(PRJ.timer); if (!PRJ.ok || !PRJ.cur || PRJ.loading || store.locked) return Promise.resolve();
+  if (typeof SHW !== 'undefined' && SHW.stash) return Promise.resolve();      /* Shower mode has the player: the open song is set aside, untouched, until it is put back */
   if (PRJ.saving) { PRJ.again = true; return PRJ.saving; }
   PRJ.saving = (async () => {
     try { await projSaveNow(); projPersist(); try { if (!PRJ.flushing) syncKick(); } catch (e) { } bus.emit('savestate', 'ok', Date.now()); } catch (e) { bus.emit('savestate', 'err'); console.warn('project save', e); if (!PRJ.warned) { PRJ.warned = true; toast('This browser would not store your work (storage full or private window?). Export a song bundle from ☰ Songs to keep it.', 'warn'); } }

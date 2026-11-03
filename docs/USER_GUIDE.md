@@ -6,17 +6,24 @@ Contents: [Getting started](#getting-started-and-guided-sessions-27) · [Show se
 
 ---
 
+## ✦ Simple (2.33)
+
+**✦ Simple** (top right, next to ◐) shows just what you need to make something, for anyone who has never used a recording studio. A first visit starts in Simple; if you have been here before, you keep the full studio until you press it. **Settings ▸ Workflow** has the same switch.
+- **What stays:** play, stop, ● record, Loop and Click (now with their names), the tempo and the key. Also: your song's name, Songs, New and undo; Perform and Voice; the six workspaces and their tools; ● Capture; the tab and the words; Mute all; the arrangement and Loop & layer.
+- **What is tucked away:** return to start, the bar · beat counter, time signature, the master meter, the latency estimate, the workspace button, artist, tuning, capo, scale and notes, and the Canvas / Song / Studio switch. Also: the Create → Perform → Share flow, the Tools menu, each band part's own switch and the mix, tab techniques, fill styles, copy and paste, the arrangement's zoom, swing and lane tools, the stage's extra settings, and the status line at the bottom.
+- Nothing is switched off or lost; it is only out of sight. Press ✦ Simple again and it all comes back. Simple is kept per device, so a child's tablet and your computer can differ. Phones already have their own simpler layout, so it changes larger screens only.
+
 ## Goal workspaces (2.13)
 
 The row at the top of the centre holds six goals. Each one is a whole workspace with its own shape: which panel fills the middle, whether the arrangement sits above or below it, which sidebars show and what is in them, which Monitor widgets are on. Each also has its own colour, a one-line mission with three steps, and a row of the tools that goal is about, the main one highlighted. Choosing one replaces the last completely. Nothing is removed: every panel is still under **☰**, and **▦ Workspace** shows the six goals as cards with a picture of each shape, then lets you move panels anywhere.
 
 | Goal | Opens on | Its tools |
 | --- | --- | --- |
-| 🎸 **Songwriter** — *Write the song* | A notebook: Write in Both (words and tab), Theory on the left, no right sidebar, the arrangement a strip | **● Capture idea** · ✎ Lyrics & tab · ♯ Chords & scales · ⏺ Record idea |
-| 🎤 **Performer** — *Play it for real* | A stage: Visuals large, Tones on the left, Tuner and Levels on the right, lanes for takes below | **⏺ Record video** · 📷 Camera · 🎤 Perform view · ● Record take · ▶ Replay |
+| 🎸 **Songwriter** — *Write the song* | A notebook: Write in Both (words and tab), Theory on the left, no right sidebar, the arrangement a strip | **🎸 Paste chords** · 🎤 Vocal pedals · 🥁 Pads (● Capture is above the tab, ● Record at the top) |
+| 🎤 **Performer** — *Play it for real* | A stage: Visuals large, Tones on the left, Tuner and Levels on the right, lanes for takes below | **⏺ Record video** · 📷 Camera · 🎤 Vocal pedals · 📺 Stream window · ▶ Replay (a take is ● at the top, Perform is in the song bar) |
 | 🎬 **Creator Studio** — *Make it postable* | An edit bay: Visuals as the picture, no left sidebar, the Audience view, Views (waveform, spectrogram, pitch wheel) and Levels on the right, a slim arrangement | **⏺ Record MP4** · ▶ Studio Replay · 📷 Webcam · ✨ Overlays · 🖼 Thumbnail · ⇩ Export |
-| 🎼 **Practice** — *Get it under your fingers* | A practice room: the Fretboard large in the middle, Theory (scales) on the left, Tuner and Levels on the right | **⟲ Loop** · ♩ Metronome · − 5 / BPM / + 5 · ♯ Scales · ▦ Chords |
-| 🎓 **Teacher** — *Show someone how* | A whiteboard: the arrangement on top, Write below it, the Fretboard on the right, the lesson notes open | **✎ Annotate** · 📝 Lesson notes · ⏺ Record screen · ▦ Fretboard · ♪ Transcribe |
+| 🎼 **Practice** — *Get it under your fingers* | A practice room: the Fretboard large in the middle, Theory (scales) on the left, Tuner and Levels on the right | 🥁 Pads · − 5 / BPM / + 5 · **🎼 Scales & ear** (Loop and Click are at the top) |
+| 🎓 **Teacher** — *Learn something new, or show someone how* | A whiteboard: the arrangement on top, Write below it, the Fretboard on the right, the lesson notes open | **🎓 Learn** · 🔥 Warm-ups · 🎸 Riffs & licks · 🧪 Riff Lab · 🗺 Scale atlas · ✎ Annotate · 📝 Lesson notes · ⏺ Record screen · ♪ Transcribe |
 | ⚙️ **Full Rig** — *Everything, your way* | The Rig, both sidebars, every tab and every Monitor widget | ▦ Workspace… · ⇆ Where panels live… |
 
 **Create → Perform → Share.** The three steps at the right of the row light up for the goal you are in, and each goal ends with a button to the next step: Songwriter and Practice → **Perform it**, Performer → **Share it**, Creator Studio → **Write the next one**. A first visit on a computer opens the **Performer**; anyone who has been here before keeps the workspace they had, and **I know my way around** on the start page opens the Full Rig. On a phone the bottom navigation does this job and the row is not shown.
@@ -107,7 +114,7 @@ Limits: your interface's delay is compensated, but a note played in the last few
 
 **I have a guitar.** The coach walks you through three steps: **1 · Tune** each string (pluck it open; the bar fills when it is in tune), **2 · Learn the chords** of your song one at a time (the diagram shows where your fingers go; it says what it hears), **3 · Play along** with the band. You need an audio input for the guitar (the browser asks when you press the button). Skip any step with the buttons.
 
-**The studio grows with you.** New visitors see four tabs with plain names. As you use the studio (open Studio view, edit, record, connect an input) more tabs appear. **Tools** on the tab row changes this: Automatic, Simple, More tools, Everything.
+**The studio grows with you.** New visitors see four tabs with plain names. As you use the studio (open Studio view, edit, record, connect an input) more tabs appear. **Tools** on the tab row changes this: Automatic, Essentials, More tools, Everything.
 
 The fastest way in: **hum or sing a few seconds of melody and get a whole song back.**
 
@@ -641,7 +648,7 @@ The **Tracks** button at the right of the chip row cycles the arrangement betwee
 ## Layout and themes
 
 * **The header's dialogs (2.13).** **▦ Workspace**, **◐ Appearance**, **⚙ Settings** and **? Help** open the same kind of window: a header with ✕, the sections listed on the left (chips along the top on a phone) and the settings as cards in one scrolling column. Pick a section to jump to it; the list follows as you scroll. <kbd>Esc</kbd> or a click outside closes it.
-* **Appearance (2.13)** starts with **Light · Dark · System**. Under it, a dropdown shows the palette in use; open it to see only the palettes made for that mode (System shows a daytime and a night dropdown). **Looks** lists only the looks for that mode, then Accent, Feel and Type & access. Settings ▸ Appearance has the same mode switch and dropdown.
+* **Appearance (2.13)** starts with **Light · Dark · System** (kept for this device only since 2.32.1: syncing never changes it; System follows the computer, which may switch at sunset). **Performance overlay** (2.32.1) shows frames a second in the bottom-left corner; its ✕ hides it. Under it, a dropdown shows the palette in use; open it to see only the palettes made for that mode (System shows a daytime and a night dropdown). **Looks** lists only the looks for that mode, then Accent, Feel and Type & access. Settings ▸ Appearance has the same mode switch and dropdown.
 * **Drag** dock tabs to reorder; **double-click** a tab to float it as a window and again to dock it back. **▦** (top right) opens Workspace: the six goals, then the sidebars, where each panel lives, show / hide or float for each panel, and a reset. Light / Dark / Match system is in **Appearance** (the ⚙ menu) and **Experience** (Automatic, Simple, More tools, Everything) is on the **Tools** button. There are no preset layouts any more; use the edge tabs.
 * **Edge tabs (2.12).** Every panel area has a labelled tab on its own edge that is always there. Each sidebar's tab is named for the panel that is open (I/O, Monitor, Theory…): click it to collapse the sidebar. While a sidebar is collapsed its edge lists the panels that live there, so one click opens exactly the one you want. The divider between the arrangement and the panels has two tabs, **Arrangement** (collapses it to the transport) and **Panels** (collapses them to their tab strip). Click to collapse, click again to open. What you collapsed is remembered. On phones and tablets the drawers do this job instead.
 * **☰** at the end of the tab strip lists every panel (nothing is hidden when the strip scrolls). **⤢** expands the current panel to the whole centre; <kbd>Esc</kbd> goes back.
@@ -735,13 +742,71 @@ The app ships no recordings and no one else's lyrics, and it never uploads anyth
 - **On a phone** the fretboard shows only the frets the run uses, so the dots are big enough to read; turn the phone sideways for the whole neck.
 - Some of the room stays behind the curtain until you find what the studio hides, and most of that is out in the studio, not in here. With **Settings ▸ Workflow ▸ Hidden surprises** off, all of it is open.
 
+## Pads, tap tempo and beatbox (2.29)
+
+**🥁 Pads** is in the Band panel, in the Songwriter and Practice tools, and on a phone in **More**. Six pads play the band's own kit: kick, snare, hat, open hat, clap / rim and tom. Tap them, press **A S D F G H** (Shift for an accent), or hit a MIDI pad controller (the General MIDI drum notes). Your hits light the stage like the band's drums do.
+- **Tap tempo:** four taps or more set the song's tempo (or press **T** while the pads are open). One undo puts it back.
+- **● Record:** one or two bars loop over the click. What you play is written onto the grid as the band's drum pattern. Press ● again to keep it. Each press is a new pass on top of the last (kick first, then the hats), and **↶ Last pass** takes the last one away.
+- **🎤 Beatbox it:** after a bar's count-in, beatbox the loop. Low thumps become kicks, cracks become snares, and hisses become hats (a long hiss is an open hat).
+- **Bass follows the kick:** the bass plays the chord's root on every kick, so one groove gives you the drums and the bass.
+- The grid under the pads is the pattern: tap a step for normal, again for an accent, again for a ghost note, again to clear it.
+
+## Foot pedal and MIDI clock (2.29)
+
+**Settings ▸ Pedal & MIDI sync.** Switch on **Foot pedal**, then press **Learn** beside an action and step on the pedal. A Bluetooth page-turner pedal types a key; a MIDI footswitch sends a control, a note or a program change. The actions are play / stop, next section, previous section, record, loop, the band on / off, and tap tempo. Out of the box, Page Down or → plays and stops, and Page Up or ← goes to the next section.
+
+**MIDI clock: Send** lets a drum machine, a synth or music software follow the studio's tempo, start and stop (and where in the song it is). **Follow** does the reverse. It needs Chrome or Edge.
+
+## Stream window (2.29)
+
+**📺 Stream window** (Creator Studio and Performer tools) opens a window with only the line being sung, the next one and the chord, in large type on one colour. In OBS, Streamlabs or any streaming app, add a **Window Capture** of it and a **Chroma Key** filter on that colour (green, blue or magenta), or a **Luma Key** on black. The words then float over your camera. The stage visuals have their own pop-out in Visuals.
+
+## Learn: lessons, riffs, Riff Lab and the scale atlas (2.32)
+
+**🎓 Learn** is the first tool in the **Teacher** workspace (and on a phone in **More**). Connect your guitar (Audio, top right): the coach listens through the same input as the tuner.
+
+**The coach.** Each step shows the notes on the neck and as tab. Press **▶ Listen** to hear it, then **● Play it** and play. It follows you note by note (a note still ringing is fine; a wrong one is counted), or checks your timing against its click. It plays its own small band (click, drums, chords, bass) and never changes your song.
+- What it can check: notes, timing (and whether you rush or drag), a chord held, chord changes in time, a minute of changes, strumming patterns, bends (how far and in tune), vibrato (how fast and how wide), and landing on a note of each new chord while it plays a progression.
+- Hammer-ons, pull-offs and slides are followed by their notes: the coach can't tell them from picked notes.
+- **Tempo ladder:** pass a step and it comes back 5 BPM faster. **−/+** change the tempo; **Backing** and **Click** switch the band and the click.
+
+**Lessons** come in four paths: Foundations, Lead, Rhythm and Technique. A lesson shows how many of its steps you have done (kept in this browser). **🔥 Warm-ups** are five minutes before you play.
+
+**🎸 Riffs & licks:** 40 riffs written for the studio, in nine styles, by level. Choose a key, play it note by note or **⏱ In time** with a drummer, **➕ Put it in my song** (a new section of tab after the one you are in, with the lead playing it; Undo takes it out), or **⇩ Share as a file**.
+
+**🧪 Riff Lab:** choose a scale, a feel, one or two bars, how busy and a key, then **🎲 Make a riff**. Vary it with **Shift**, **Reverse**, **Major ↔ minor**, **Add bends**, **Higher** and **Sequence** until it sounds like you. **★ Keep** saves it to **My riffs** (under Riffs & licks).
+
+**🗺 Scale atlas:** the five pentatonic boxes, three-notes-per-string positions, arpeggios in five positions, the modes over a band vamp (the ★ is the note that gives each mode its sound), and target notes over a progression.
+
+**🍎 For teachers:** ✎ Annotate, 📝 Lesson notes and ⏺ Record the screen, plus **This section as an exercise** (the tab of the section you are in, note by note) and lesson files: **⇩ Share as a file** in the coach saves a `.daily-lesson.json` to send a student, and **📂 Open a lesson file** opens one. A file can only contain notes, chords, words and tempos.
+
+## Vocal pedals (2.31)
+
+**🎤 Vocal pedals** (the Voice window, the Songwriter, Performer and Creator Studio tools, and on a phone in **More**) is a small pedalboard for your voice, after the vocal polish. You hear it while you monitor (Hear myself, on headphones). Vocal takes are recorded clean and played back through it, so you can change the sound after you sing. Bounces include it.
+- **🤘 Scream:** a gate, hard compression, grit blended beside your clean voice (so the words stay clear) and an instant octave down for growl. Styles: Rasp, Hardcore, Fry growl, Death growl. It lets you scream lighter: the pedal adds the grit so your throat doesn't have to. If it hurts, stop.
+- **De-esser:** turns down harsh "s" sounds only when they're loud.
+- **📢 Megaphone:** megaphone, radio or telephone.
+- **Doubler:** a double-tracked voice, spread left and right.
+- **Harmony:** a third or a fifth above or below that stays in the song's key, or on the chord that is playing. It lands a few hundredths of a second after you, as it has to hear the note first.
+- **Echo:** in time with the song. **Throw** echoes only while the foot pedal is held.
+- **Reverb:** room, plate or hall.
+
+**Presets:** Clean lead, Rock grit, Scream, Ballad, Ambient echo, Harmony lead and Megaphone. **By section** switches presets as the song plays (for example, Scream in every chorus). The foot pedal can switch Scream, step through presets and hold an echo throw (Settings ▸ Pedal & MIDI sync). With Scream or Megaphone on, the show turns gritty. Use headphones: with speakers, any live vocal effect can feed back.
+
+## Megaphone pedal (2.30)
+
+**Settings ▸ Megaphone pedal** is for a TC-Helicon VoiceTone X1, or any megaphone, radio or telephone voice effect between your mic and the interface. The X1 has no MIDI, so the studio can't switch it, but it can hear it: the effect cuts your voice's lows and highs.
+- Switch on **React to my megaphone pedal**, then press **🎓 Teach it my voice**: sing three seconds with the pedal off, then three with it on. The meter shows what it hears.
+- While the pedal is on, the stage and the Visuals turn red-hot with scan lines (projector and stage videos included), the lights flash as you stomp it on, and the words in Perform and the stream window go red and shake. Each of these can be switched off.
+- A breath between lines keeps it on; it lets go a moment after you sing clean again. Calm and reduced motion keep the colour and drop the shake.
+
 ## On air (2.25)
 
-While a take or a stage video records, the logo at the top left and the browser tab's icon blink red, and the tab's title starts with **● REC**, like the red light outside a studio door. With reduced motion (or Calm), the light is steady. A screen reader hears "On air: recording." when it goes on and "Off air: recording stopped." when it goes off.
+While a take or a stage video records, the logo at the top left and the browser tab's icon blink red, and the tab's title starts with **● REC**, like the red light outside a studio door. With reduced motion (or Calm), the light is steady. **Settings ▸ Appearance ▸ On air light** chooses Blink red, Steady red, or Off. A screen reader hears "On air: recording." when it goes on and "Off air: recording stopped." when it goes off.
 
 ## Hidden surprises (2.20)
 
-There are seven secrets in the studio for people who look and listen (and one for people who open the browser's developer console), and a hidden room for singing with wet hands: if you hold on to the studio long enough, it might run the water. This guide will not spoil them. Once you find the first, a small **🗝** counter appears next to the version in the bottom-right corner; press it for the list, with a hint for each one you have not found yet. They never go off while a take or a video is recording, nothing flashes, and **Settings ▸ Workflow ▸ Hidden surprises** turns them off.
+There are seven secrets in the studio for people who look and listen (and one for people who open the browser's developer console), and a hidden room for singing with wet hands: if you hold on to the studio long enough, it might run the water. (Once you are in: ☰ is your set; bring a whole folder of songs, with a playlist and their .lrc words if you have them.) This guide will not spoil them. Once you find the first, a small **🗝** counter appears next to the version in the bottom-right corner; press it for the list, with a hint for each one you have not found yet. They never go off while a take or a video is recording, nothing flashes, and **Settings ▸ Workflow ▸ Hidden surprises** turns them off.
 
 ## Report a problem (2.19.1)
 
