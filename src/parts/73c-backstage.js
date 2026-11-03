@@ -72,10 +72,10 @@ function bksLab(k, on) {
 }
 function bksOverlay() {
   if (!CFG.labs.perf) { if (BKS.ov) { BKS.ov.remove(); BKS.ov = null; } clearInterval(BKS.ovTm); BKS.ovTm = 0; return; }
-  if (!BKS.ov) { BKS.ov = h('div', { class: 'bks-ov mono', 'aria-hidden': 'true', title: 'Backstage ▸ Labs ▸ Performance overlay' }); document.body.append(BKS.ov); }
+  if (!BKS.ov) { BKS.ovT = h('span', {}); BKS.ov = h('div', { class: 'bks-ov mono', title: 'Performance overlay (Settings ▸ Appearance, or Backstage ▸ Labs)' }, BKS.ovT, h('button', { class: 'bks-ov-x', type: 'button', 'aria-label': 'Hide the performance overlay', title: 'Hide it (Settings ▸ Appearance turns it back on)', onclick: () => bksLab('perf', false) }, '✕')); document.body.append(BKS.ov); }
   bksLongTasks(); clearInterval(BKS.ovTm);
   const tick = () => { if (!BKS.ov) return; const c = E.ctx, mem = performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1048576) + ' MB' : '';
-    BKS.ov.textContent = FPS + ' fps · ' + (FPS ? (1000 / FPS).toFixed(1) : '—') + ' ms · audio ' + (c ? c.state : 'off') + (mem ? ' · ' + mem : '') + ' · long tasks ' + BKS.longs; };
+    BKS.ovT.textContent = FPS + ' fps · ' + (FPS ? (1000 / FPS).toFixed(1) : '—') + ' ms · audio ' + (c ? c.state : 'off') + (mem ? ' · ' + mem : '') + ' · long tasks ' + BKS.longs; };
   tick(); BKS.ovTm = setInterval(tick, 500);
 }
 

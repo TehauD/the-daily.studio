@@ -2,6 +2,26 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.32.1 — 2026-11-03 — Fewer buttons, a steady theme, and your choice of red light
+
+### Changed
+- **Each workspace's tool row lost the buttons that did nothing new.** A tool that only opened a panel already on screen, or repeated a button already in view, is gone:
+  - **Songwriter:** ✎ Lyrics & tab and ♯ Chords & scales opened what was already open. ● Capture idea repeated the ● Capture above the tab, and ⏺ Record idea repeated ● at the top. What's left: 🎸 Paste chords, 🎤 Vocal pedals, 🥁 Pads. Recording is now two buttons, each with its own job: ● at the top records sound, ● Capture above the tab writes the notes you play.
+  - **Performer:** ● Record take (the ● at the top) and 🎤 Perform view (Perform in the song bar) are gone.
+  - **Practice:** ⟲ Loop and ♩ Metronome (both at the top), ♯ Scales (Theory is already open) and ▦ Chords (the Fretboard is already the middle) are gone. What's left: tempo −5 / +5, 🥁 Pads and 🎼 Scales & ear.
+  - **Teacher:** ▦ Fretboard (already on the right) is gone.
+  - Each workspace's three steps say where the moved controls are.
+- **Light or dark is now kept per device.** Folder sync and GitHub sync carried it between devices, so a phone in dark mode could switch a computer to dark the next time they synced. That is the likely cause of the "random" switches. Syncing now leaves light / dark / System alone. Palettes, accents and the rest still sync. **System** follows the computer, which may itself switch at sunset; Settings ▸ Appearance now says so.
+
+### Added
+- **Settings ▸ Appearance ▸ On air light:** Blink red (as before), Steady red, or Off. Off leaves the logo, the tab icon and the title alone while recording. It takes effect at once, even during a take, and is kept per device.
+- **Settings ▸ Appearance ▸ Performance overlay:** the frames-a-second readout in the bottom-left corner (from Backstage ▸ Labs) now has a switch here, and a ✕ on the overlay itself hides it.
+
+### Tests
+- `e2e-goals`: no tool repeats a panel that is open or a button already on screen.
+- `e2e-onair`: Steady and Off (including mid-take), the overlay's switch and ✕, and a sync from a dark-mode device leaving this one light while other settings still sync.
+- `e2e-github` and `e2e-folder`: a synced setting (A4 = 442 Hz) reaches the second device; light / dark does not.
+
 ## 2.32.0 — 2026-11-03 — Learn: lessons that listen, riffs, Riff Lab and a map of the neck
 
 ### Added

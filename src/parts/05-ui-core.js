@@ -101,7 +101,10 @@ function openSettings(at) {
   const range = (key, min, max, step, cb) => h('input', { type: 'range', min, max, step, value: CFG[key], oninput: e => { CFG[key] = +e.target.value; saveCfg(); cb && cb(); } });
   const note = t => h('p', { class: 'hub-note' }, t);
   return hubOpen('settings', { ico: '⚙', title: 'Settings', sub: 'How the studio looks, sounds, records and keeps your work.', at, sections: [
-    { key: 'look', label: 'Appearance', ico: '🎨', sub: 'Light or dark first, then a palette made for it.', body: () => [lookQuick(), h('button', { class: 'btn', id: 'setLook', onclick: () => { close(); lookOpen(); } }, '🎨 Looks, accent, density and type…')] },
+    { key: 'look', label: 'Appearance', ico: '🎨', sub: 'Light or dark first, then a palette made for it.', body: () => [lookQuick(), h('button', { class: 'btn', id: 'setLook', onclick: () => { close(); lookOpen(); } }, '🎨 Looks, accent, density and type…'),
+      note('Light, dark or System is kept for this device only: syncing never changes it. System follows this computer, which may switch at sunset.'),
+      F('On air light (the logo and the tab while recording)', h('select', { class: 'in', id: 'setOnAir', onchange: e => airSet(e.target.value) }, [['blink', 'Blink red'], ['steady', 'Steady red'], ['off', 'Off']].map(([v, t]) => h('option', { value: v, selected: airMode() === v }, t)))),
+      h('label', { class: 'chk' }, h('input', { type: 'checkbox', id: 'setPerfOv', checked: !!(CFG.labs && CFG.labs.perf), onchange: e => bksLab('perf', e.target.checked) }), 'Performance overlay (frames a second and the audio engine, bottom left)')] },
     { key: 'work', label: 'Workflow', ico: '▦', sub: 'Where the studio starts and how it fits this device.', body: () => [
       F('Start in', routeControl()),
       F('Workspace', h('button', { class: 'btn', onclick: () => { close(); workspaceOpen(); } }, (goalNow() ? goalNow().ico + ' ' + goalNow().name : 'Choose a goal') + ' ▸')),

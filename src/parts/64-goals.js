@@ -14,31 +14,27 @@ const GOAL_STEPS = [['create', 'Create', 'songwriter'], ['perform', 'Perform', '
 const GOALS = [
   { id: 'songwriter', ico: '🎸', name: 'Songwriter', layout: 'Songwriter', step: 'create', hue: '#d08a2e', next: ['performer', 'Perform it'],
     blurb: 'Lyrics, chords and progressions, and a quick way to catch an idea before it goes.',
-    mission: 'Write the song', steps: ['Pick a key and a progression', 'Capture the riff', 'Put the words under the chords'],
+    mission: 'Write the song', steps: ['Pick a key and a progression', 'Press ● Capture and play a riff', 'Put the words under the chords'],
     shape: 'Words and tab in the middle · Theory on the left · the arrangement a strip',
     spec: { flip: true, left: true, right: false, tlh: '84px', dock: 'tab', order: ['tab', 'band', 'song', 'exp'], hidden: ['rig', 'fret', 'vis', 'stage', 'neural', 'stems', 'tx', 'cam', 'lab'], cur: { left: 'theory' }, mon: ['tuner', 'live'] },
     enter: () => { try { wrMode('both'); } catch (e) { } },
     tools: () => [
-      ['gtCap', '● Capture idea', 'Play, and the notes and chords you play are written into the tab', () => { dockGo('tab'); capToggle(); }, () => !!CAP.on, 1],
+      ['gtSheet', '🎸 Paste chords', 'Paste a chord sheet (chords over the words): it becomes the song, with bars, key, words and a guitar part', () => liOpen(''), null, 1],
       ['gtVox', '🎤 Vocal pedals', 'Scream, doubler, harmony, echo, reverb, de-esser and megaphone for your voice', () => vocalBoardOpen()],
       ['gtPads', '🥁 Pads', 'Play the drums with your fingers, tap the tempo, record a groove or beatbox it', () => padsOpen()],
-      ['gtSheet', '🎸 Paste chords', 'Paste a chord sheet (chords over the words): it becomes the song, with bars, key, words and a guitar part', () => liOpen('')],
-      ['gtWords', '✎ Lyrics & tab', 'The words and the tab side by side', () => { dockGo('tab'); wrMode('both'); }],
-      ['gtTheory', '♯ Chords & scales', 'Build a progression from the key: chords, scales and what comes next', () => sideShow('theory')],
-      ['gtRec', '⏺ Record idea', 'Arm a take: it records when you press play (R)', () => toggleRec(), () => !!T.rec]
+
+
     ] },
   { id: 'performer', ico: '🎤', name: 'Performer', layout: 'Performer', step: 'perform', hue: '#d6355a', next: ['creator', 'Share it'],
     blurb: 'Your tone, the band and the stage visuals, with the camera and the record button in reach.',
-    mission: 'Play it for real', steps: ['Pick a tone', 'Turn the camera on', 'Record the take'],
+    mission: 'Play it for real', steps: ['Pick a tone', 'Turn the camera on', 'Record a take with ● at the top'],
     shape: 'The stage large · Tones on the left · Tuner and levels on the right · lanes for your takes',
     spec: { flip: true, left: true, right: true, tlh: 'minmax(150px,30%)', dock: 'vis', order: ['vis', 'rig', 'band', 'stage', 'exp'], hidden: ['tab', 'song', 'fret', 'neural', 'stems', 'tx', 'cam', 'lab'], cur: { left: 'tones', right: 'monitor' }, mon: ['tuner', 'levels'] },
     tools: () => [
       ['gtVideo', '⏺ Record video', 'Record the stage, you and the sound as a video; Studio Replay opens when you stop', b => kitRecord(b), () => !!SREC.on, 1],
       ['gtCam', '📷 Camera', 'Put yourself centre stage, in front of the visuals', () => vzCamPress(), () => !!VZ.cam],
-      ['gtPerf', '🎤 Perform view', 'Full screen: the chord huge, the lyrics scrolling, a count-in', b => perfOpen(b)],
       ['gtVox', '🎤 Vocal pedals', 'Scream, doubler, harmony, echo, reverb, de-esser and megaphone for your voice', () => vocalBoardOpen()],
       ['gtStream', '📺 Stream window', 'The words and the chord in a window of their own, for OBS or any streaming app', () => streamRoom()],
-      ['gtTake', '● Record take', 'Record your guitar and voice into the arrangement (R)', () => toggleRec(), () => !!T.rec],
       ['gtReplay', '▶ Replay', 'Watch the last video you recorded', () => kitReplay(), null, 0, () => !KIT.last]
     ] },
   { id: 'creator', ico: '🎬', name: 'Creator Studio', layout: 'Creator Studio', step: 'share', hue: '#6a45e0', next: ['songwriter', 'Write the next one'],
@@ -60,19 +56,16 @@ const GOALS = [
     ] },
   { id: 'practice', ico: '🎼', name: 'Practice', layout: 'Practice', step: 'create', hue: '#1c9a63', next: ['performer', 'Perform it'],
     blurb: 'Loop a part, slow it down, keep time with the click, and see the scale and the chord on the neck.',
-    mission: 'Get it under your fingers', steps: ['Loop the hard bars', 'Slow it down, add the click', 'Speed it up 5 at a time'],
+    mission: 'Get it under your fingers', steps: ['Loop the hard bars (⟲ Loop at the top)', 'Slow it down, add the click', 'Speed it up 5 at a time'],
     shape: 'The fretboard large in the middle · Theory (scales) on the left · Tuner and levels on the right',
     spec: { flip: true, left: true, right: true, tlh: 'minmax(170px,32%)', dock: 'fret', order: ['fret', 'tab', 'stems', 'band', 'rig'], hidden: ['song', 'vis', 'stage', 'neural', 'tx', 'cam', 'lab', 'exp'], cur: { left: 'theory', right: 'monitor' }, mon: ['tuner', 'levels'] },
     tools: () => [
-      ['gtLoop', '⟲ Loop', 'Loop the song or the selected bars (L)', () => { T.loop = !T.loop; syncTransport(); }, () => !!T.loop, 1],
-      ['gtClick', '♩ Metronome', 'The click (M)', () => { T.metro = !T.metro; syncTransport(); }, () => !!T.metro],
+
       ['gtPads', '🥁 Pads', 'Play the drums with your fingers, tap the tempo, record a groove or beatbox it', () => padsOpen()],
       ['gtSlow', '− 5', 'Slower by 5 BPM', () => goalTempo(-5)],
       ['gtBpm', () => S.bpm + ' BPM', 'The tempo', () => { if (UI.bpm) UI.bpm.focus(); }],
       ['gtFast', '+ 5', 'Faster by 5 BPM', () => goalTempo(5)],
-      ['gtScale', '♯ Scales', 'The scale for the key, on the theory panel', () => sideShow('theory')],
-      ['gtShed', '🎼 Scales & ear', 'Scales anywhere on the neck, this song’s arpeggios and ear training, followed note by note', () => trainOpen()],
-      ['gtChord', '▦ Chords', 'The chord that is playing, on the fretboard', () => dockGo('fret')]
+      ['gtShed', '🎼 Scales & ear', 'Scales anywhere on the neck, this song’s arpeggios and ear training, followed note by note', () => trainOpen(), null, 1],
     ] },
   { id: 'teacher', ico: '🎓', name: 'Teacher', layout: 'Teacher', step: 'share', hue: '#0b84d8', next: null,
     blurb: 'Be taught, or teach: lessons that listen while you play, warm-ups, riffs and licks, a riff lab and a map of the neck. For teaching someone else: draw, keep notes and record the screen.',
@@ -89,7 +82,6 @@ const GOALS = [
       ['gtInk', '✎ Annotate', 'Draw over anything on the page; it stays until you clear it', () => kitInk(), () => !!KIT.inkOn],
       ['gtNotes', '📝 Lesson notes', 'Notes for this song, kept in this browser', () => kitNotes(), () => !!KIT.notesEl],
       ['gtScreen', '⏺ Record screen', 'Record this tab or your screen, with the studio’s sound and your voice', () => kitScreen(), () => !!KIT.scr],
-      ['gtFret', '▦ Fretboard', 'Show the chord and scale on the neck', () => sideShow('fret')],
       ['gtTx', '♪ Transcribe', 'Turn a recording into notes and chords to teach from', () => dockGo('tx')]
     ] },
   { id: 'fullrig', ico: '⚙️', name: 'Full Rig', layout: 'Full Rig', step: null, hue: '#5b6b79', next: null, all: true,

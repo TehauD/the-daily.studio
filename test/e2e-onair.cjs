@@ -30,4 +30,31 @@ suite('e2e-onair', async t => {
   const steady = new Set(); for (let i = 0; i < 5; i++) { steady.add(/ff2a3d/.test((await st()).icon)); await wait(250); }
   ok(steady.size === 1 && steady.has(true) && await ev(() => !document.body.classList.contains('air-dim')), 'with reduced motion: a steady red light, no blinking');
   await ev(() => { window.__daily.REC = null; window.__daily.airSync(); });
+  await p.emulateMedia({ reducedMotion: 'no-preference' });
+
+  /* ---- Settings ▸ Appearance ▸ On air light ---- */
+  await ev(() => window.__daily.openSettings('look')); await wait(300);
+  ok(await ev(() => { const s = document.getElementById('setOnAir'); return !!s && s.value === 'blink' && [...s.options].map(o => o.value).join() === 'blink,steady,off'; }), 'Settings ▸ Appearance: On air light, Blink red (the default), Steady red or Off');
+  await ev(() => { const s = document.getElementById('setOnAir'); s.value = 'steady'; s.dispatchEvent(new Event('change')); window.__daily.REC = { fake: 1 }; window.__daily.airSync(); });
+  const st2 = new Set(); for (let i = 0; i < 5; i++) { st2.add(/ff2a3d/.test((await st()).icon)); await wait(250); }
+  ok(st2.size === 1 && st2.has(true) && /^● REC/.test((await st()).title), 'Steady red: red and still, ● REC in the title');
+  await ev(() => { const s = document.getElementById('setOnAir'); s.value = 'off'; s.dispatchEvent(new Event('change')); }); await wait(200);
+  const o2 = await st();
+  ok(!o2.onair && o2.icon === before.icon && o2.title === before.title, 'Off, even in the middle of a take: the logo, the tab icon and the title go back to normal at once');
+  await wait(800);
+  ok(!(await st()).onair, 'and stay that way while recording');
+  await ev(() => { window.__daily.REC = null; window.__daily.airSync(); const s = document.getElementById('setOnAir'); s.value = 'blink'; s.dispatchEvent(new Event('change')); });
+  ok(await ev(() => window.__daily.CFG.onAir === 'blink'), 'and back to Blink');
+
+  /* ---- the performance overlay: a switch in Settings, and a ✕ on the overlay ---- */
+  await ev(() => document.getElementById('setPerfOv').click()); await wait(700);
+  ok(await ev(() => { const o = document.querySelector('.bks-ov'); return !!o && /fps/.test(o.textContent) && !!o.querySelector('.bks-ov-x'); }), 'Settings ▸ Appearance ▸ Performance overlay shows the frames a second, bottom left, with a ✕');
+  await ev(() => document.getElementById('settings').close());
+  await p.click('.bks-ov-x'); await wait(200);
+  ok(await ev(() => !document.querySelector('.bks-ov') && !window.__daily.CFG.labs.perf), 'the ✕ hides it, and it stays off');
+
+  /* ---- light or dark is this device's: syncing never changes it ---- */
+  const TH = await ev(async () => { const D = window.__daily; D.setTheme('light'); const base = JSON.stringify({ settings: { lookMode: 'light', theme: 'light', onAir: 'blink', a4: 440 } }), remote = JSON.stringify({ settings: { lookMode: 'dark', theme: 'dark', onAir: 'off', a4: 442 } });
+    await D.ghTakeSettings(remote, base); const r = { mode: D.CFG.lookMode, theme: document.documentElement.dataset.theme, air: D.CFG.onAir, a4: D.CFG.a4 }; D.CFG.a4 = 440; D.saveCfg(); return r; });
+  ok(TH.mode === 'light' && TH.theme === 'light' && TH.air === 'blink' && TH.a4 === 442, 'a sync from a device in dark mode leaves this one light (and its On air light alone), while other settings still sync (' + JSON.stringify(TH) + ')');
 });

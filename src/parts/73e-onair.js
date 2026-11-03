@@ -10,8 +10,12 @@ const airLive = () => !!(REC || (typeof SREC !== 'undefined' && SREC.on) || (typ
 function airRed(href) {
   try { const svg = decodeURIComponent(href.replace(/^data:image\/svg\+xml,/, '')); return 'data:image/svg+xml,' + encodeURIComponent(svg.replace(/<style>[\s\S]*?<\/style>/, '<style>.h,.i{stroke:#ff2a3d}</style>')); } catch (e) { return href; }
 }
+/** Settings ▸ Appearance ▸ On air light: 'blink' (the default), 'steady' red, or 'off' (the logo and the tab stay as they are) */
+const airMode = () => ['blink', 'steady', 'off'].includes(CFG.onAir) ? CFG.onAir : 'blink';
+function airSet(m) { CFG.onAir = m; saveCfg(); const was = AIR.on; if (was) { AIR.on = null; airOff(); } AIR.on = false; airSync(); }
+function airOff() { clearInterval(AIR.tm); AIR.tm = 0; clearTimeout(AIR.lagT); document.body.classList.remove('onair', 'air-dim'); const link = document.querySelector('link[rel="icon"]'); if (link && AIR.icon) link.setAttribute('href', AIR.icon); if (AIR.title) document.title = AIR.title; }
 function airSync() {
-  const on = airLive(); if (on === AIR.on) return; AIR.on = on;
+  const on = airLive() && airMode() !== 'off'; if (on === AIR.on) return; AIR.on = on;
   const link = document.querySelector('link[rel="icon"]'); if (link && !AIR.icon && /^data:image\/svg/.test(link.getAttribute('href') || '')) { AIR.icon = link.getAttribute('href'); AIR.red = airRed(AIR.icon); }
   document.body.classList.toggle('onair', on); clearInterval(AIR.tm); AIR.tm = 0;
   /* the red light, for a screen reader too: one quiet announcement when it goes on and when it goes off */
@@ -23,7 +27,7 @@ function airSync() {
     /* one clock for every red light: the tab icon, the logo and the record buttons all change on the same tick (body.air-dim is the dark half) */
     /* the browser repaints the tab icon a little after it is changed (the page itself changes at once), so the page follows the icon by
        AIR_LAG ms: the two then flip together as seen */
-    const steady = secretCalm(), tick = () => { AIR.ph = steady || !AIR.ph; const ph = AIR.ph; if (link && AIR.red) link.setAttribute('href', ph ? AIR.red : AIR.icon); clearTimeout(AIR.lagT); AIR.lagT = setTimeout(() => { if (AIR.on) document.body.classList.toggle('air-dim', !ph); }, AIR_LAG); };
+    const steady = secretCalm() || airMode() === 'steady', tick = () => { AIR.ph = steady || !AIR.ph; const ph = AIR.ph; if (link && AIR.red) link.setAttribute('href', ph ? AIR.red : AIR.icon); clearTimeout(AIR.lagT); AIR.lagT = setTimeout(() => { if (AIR.on) document.body.classList.toggle('air-dim', !ph); }, AIR_LAG); };
     AIR.ph = false; tick(); if (!steady) AIR.tm = setInterval(tick, 650);
   } else { clearTimeout(AIR.lagT); document.body.classList.remove('air-dim'); if (link && AIR.icon) link.setAttribute('href', AIR.icon); if (AIR.title) document.title = AIR.title; }
 }
