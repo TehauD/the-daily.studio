@@ -2,6 +2,29 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.32.0 — 2026-11-03 — Learn: lessons that listen, riffs, Riff Lab and a map of the neck
+
+### Added
+- **🎓 Learn**, the front door of the **Teacher** workspace (also on a phone in **More**). The Teacher is now a place to be taught as well as to teach. Everything here is written for this studio, runs in the page, and uses the same input the tuner does: nothing new is downloaded or sent.
+  - **The coach** (`src/parts/80-coach.js`): every step shows the notes on the neck and as tab, plays them for you (▶ Listen), then listens while you play them (● Play it). It plays its own little band (click, drums, chords, bass) and never touches your song.
+    - It can honestly check notes (a note still ringing is not a mistake), timing against its click (and whether you rush or drag), chords held, chord changes in time, a minute of changes, strumming patterns, bends (how far, and in tune), vibrato (rate and width), and landing on a chord tone at each change while it plays a progression.
+    - Hammer-ons, pull-offs and slides are followed by their notes; the coach cannot tell them apart from picking, and says so.
+    - **Tempo ladder:** pass a step and it comes back 5 BPM faster. **−/+** set the tempo, **Backing** and **Click** switch the band and the click.
+  - **Lessons** in four paths, about 60 steps: **Foundations** (tuning, first chords, changing in time, strumming, a first song), **Lead** (the pentatonic box, bends, vibrato, first licks, licks in time, soloing over the band), **Rhythm** (on the beat, eighths and accents, muted chugs, syncopation, the pocket) and **Technique** (alternate picking, hammer-ons and pull-offs, slides, string skipping, legato). Progress is kept in this browser.
+  - **🔥 Warm-ups:** the spider, finger permutations, the chromatic walk, trills, one-minute changes and a scale sprint.
+  - **🎸 Riffs & licks:** 40 original riffs and licks in blues, rock, funk, metal, country, pop, jazz, reggae and latin, by level. Any key; note by note or **⏱ In time** against a drummer; **➕ Put it in my song** adds it as a new section of tab after the one you are in, with the lead playing it (one undo takes it out); **⇩ Share as a file**.
+  - **🧪 Riff Lab:** choose a scale, a feel (straight, funky sixteenths, shuffle, heavy half-time), one or two bars, how busy and a key, and it writes a riff you have never played. Then vary it: **Shift**, **Reverse**, **Major ↔ minor**, **Add bends**, **Higher** up the neck and **Sequence** it into two bars. **★ Keep** puts it in **My riffs**; **🎲 Another** writes the next one. The same seed always makes the same riff.
+  - **🗺 Scale atlas:** the five pentatonic boxes (box 1 from the root), the seven three-notes-per-string positions, arpeggios (major, minor, 7ths, half-diminished) in five positions, the seven **modes over a band vamp** with the note that gives each mode its colour starred, and **target notes** over a progression.
+  - **🍎 For teachers:** annotate, lesson notes and record the screen (as before), **This section as an exercise** (the tab of the section you are in, note by note), and **lesson files** (`.daily-lesson.json`) to give a student and to open one. A file is checked piece by piece; anything it does not understand is left out, and its words are shown as text.
+- **The Teacher workspace** leads with 🎓 Learn, 🔥 Warm-ups, 🎸 Riffs, 🧪 Riff Lab and 🗺 Scale atlas; ✎ Annotate, 📝 Lesson notes, ⏺ Record screen, ▦ Fretboard and ♪ Transcribe are all still there.
+
+### Fixed (found while testing the coach)
+- Pressing ● Play it while the demo was still playing left the demo running, so the coach would have heard itself. The demo now stops when listening starts.
+- Closing the coach and opening it again at once let the late `close` event stop the new step.
+
+### Tests
+- New `e2e-learn` (50 checks): the Teacher's tools; a lesson followed note by note (a ringing note is fine, a wrong one counts) and the tempo ladder; a chord held; strums against the click, early and late; a bend short of the note and in tune; vibrato too narrow and wide enough; landing on chord tones over the band; the riff library, its filter, a riff in another key and in time; Put it in my song and its undo; Riff Lab's determinism, scale, endings and variations; the atlas's boxes, positions, arpeggios, modes and target notes; an exercise from the song's tab; a lesson file round trip, files that are not lessons, and words in a file shown as text; progress after a reload; the coach on a phone.
+
 ## 2.31.1 — 2026-11-03 — The tab's red light in step with the page
 
 ### Fixed

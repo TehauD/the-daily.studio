@@ -16,7 +16,7 @@ The row at the top of the centre holds six goals. Each one is a whole workspace 
 | 🎤 **Performer** — *Play it for real* | A stage: Visuals large, Tones on the left, Tuner and Levels on the right, lanes for takes below | **⏺ Record video** · 📷 Camera · 🎤 Perform view · ● Record take · ▶ Replay |
 | 🎬 **Creator Studio** — *Make it postable* | An edit bay: Visuals as the picture, no left sidebar, the Audience view, Views (waveform, spectrogram, pitch wheel) and Levels on the right, a slim arrangement | **⏺ Record MP4** · ▶ Studio Replay · 📷 Webcam · ✨ Overlays · 🖼 Thumbnail · ⇩ Export |
 | 🎼 **Practice** — *Get it under your fingers* | A practice room: the Fretboard large in the middle, Theory (scales) on the left, Tuner and Levels on the right | **⟲ Loop** · ♩ Metronome · − 5 / BPM / + 5 · ♯ Scales · ▦ Chords |
-| 🎓 **Teacher** — *Show someone how* | A whiteboard: the arrangement on top, Write below it, the Fretboard on the right, the lesson notes open | **✎ Annotate** · 📝 Lesson notes · ⏺ Record screen · ▦ Fretboard · ♪ Transcribe |
+| 🎓 **Teacher** — *Learn something new, or show someone how* | A whiteboard: the arrangement on top, Write below it, the Fretboard on the right, the lesson notes open | **🎓 Learn** · 🔥 Warm-ups · 🎸 Riffs & licks · 🧪 Riff Lab · 🗺 Scale atlas · ✎ Annotate · 📝 Lesson notes · ⏺ Record screen · ▦ Fretboard · ♪ Transcribe |
 | ⚙️ **Full Rig** — *Everything, your way* | The Rig, both sidebars, every tab and every Monitor widget | ▦ Workspace… · ⇆ Where panels live… |
 
 **Create → Perform → Share.** The three steps at the right of the row light up for the goal you are in, and each goal ends with a button to the next step: Songwriter and Practice → **Perform it**, Performer → **Share it**, Creator Studio → **Write the next one**. A first visit on a computer opens the **Performer**; anyone who has been here before keeps the workspace they had, and **I know my way around** on the start page opens the Full Rig. On a phone the bottom navigation does this job and the row is not shown.
@@ -753,6 +753,25 @@ The app ships no recordings and no one else's lyrics, and it never uploads anyth
 ## Stream window (2.29)
 
 **📺 Stream window** (Creator Studio and Performer tools) opens a window with only the line being sung, the next one and the chord, in large type on one colour. In OBS, Streamlabs or any streaming app, add a **Window Capture** of it and a **Chroma Key** filter on that colour (green, blue or magenta), or a **Luma Key** on black. The words then float over your camera. The stage visuals have their own pop-out in Visuals.
+
+## Learn: lessons, riffs, Riff Lab and the scale atlas (2.32)
+
+**🎓 Learn** is the first tool in the **Teacher** workspace (and on a phone in **More**). Connect your guitar (Audio, top right): the coach listens through the same input as the tuner.
+
+**The coach.** Each step shows the notes on the neck and as tab. Press **▶ Listen** to hear it, then **● Play it** and play. It follows you note by note (a note still ringing is fine; a wrong one is counted), or checks your timing against its click. It plays its own small band (click, drums, chords, bass) and never changes your song.
+- What it can check: notes, timing (and whether you rush or drag), a chord held, chord changes in time, a minute of changes, strumming patterns, bends (how far and in tune), vibrato (how fast and how wide), and landing on a note of each new chord while it plays a progression.
+- Hammer-ons, pull-offs and slides are followed by their notes: the coach can't tell them from picked notes.
+- **Tempo ladder:** pass a step and it comes back 5 BPM faster. **−/+** change the tempo; **Backing** and **Click** switch the band and the click.
+
+**Lessons** come in four paths: Foundations, Lead, Rhythm and Technique. A lesson shows how many of its steps you have done (kept in this browser). **🔥 Warm-ups** are five minutes before you play.
+
+**🎸 Riffs & licks:** 40 riffs written for the studio, in nine styles, by level. Choose a key, play it note by note or **⏱ In time** with a drummer, **➕ Put it in my song** (a new section of tab after the one you are in, with the lead playing it; Undo takes it out), or **⇩ Share as a file**.
+
+**🧪 Riff Lab:** choose a scale, a feel, one or two bars, how busy and a key, then **🎲 Make a riff**. Vary it with **Shift**, **Reverse**, **Major ↔ minor**, **Add bends**, **Higher** and **Sequence** until it sounds like you. **★ Keep** saves it to **My riffs** (under Riffs & licks).
+
+**🗺 Scale atlas:** the five pentatonic boxes, three-notes-per-string positions, arpeggios in five positions, the modes over a band vamp (the ★ is the note that gives each mode its sound), and target notes over a progression.
+
+**🍎 For teachers:** ✎ Annotate, 📝 Lesson notes and ⏺ Record the screen, plus **This section as an exercise** (the tab of the section you are in, note by note) and lesson files: **⇩ Share as a file** in the coach saves a `.daily-lesson.json` to send a student, and **📂 Open a lesson file** opens one. A file can only contain notes, chords, words and tempos.
 
 ## Vocal pedals (2.31)
 

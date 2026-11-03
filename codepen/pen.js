@@ -5,7 +5,7 @@
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.31.1', BUILD = 'fbdd3a8', PARTS_N = +'95' || 0, LINES_N = +'16746' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.32.0', BUILD = '148f3fd', PARTS_N = +'98' || 0, LINES_N = +'17300' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { ghApp: { clientId: '', slug: '' },   /* Sign in with GitHub: the GitHub App's public client id and its slug (docs/GITHUB.md); empty = only the token way */
   support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://the-daily.studio/journal/' };
@@ -3911,7 +3911,7 @@ async function boot() {
   if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener('devicechange', () => { ioDeviceChange().catch(e => console.warn(e)); });
   bus.emit('song');
   try { ghBoot(); } catch (e) { console.warn('github', e); }      /* back from Sign in with GitHub, or a sync at start (part 74) */
-  DEV.make = () => { window.__daily = { S, AIR, AIR_LAG, airSync, applyLayout, VB_PRESETS, VB_ORDER, VBS, vbAttach, vbApply, vbToggle, vbSet, vbPreset, vbPresetNext, vbThrow, vbLook, vbTick, vbScale, vocalBoardOpen, pedalRelease, MEG, megSpectrum, megFeatures, megScore, megStep, megSet, megLearn, megDraw, megLoop, megSettings, PAD, padsOpen, padHit, padTap, padRecord, padRecStop, padUndoPass, padClear, padResize, padBeatbox, bbHits, bbPattern, dpat, bassEvent, drumStep, PEDAL, pedalPress, pedalDo, pedalSecs, gearSettings, MCLK, mclkSlot, mclkMs, MIDI, MIDIRAW, onMidi, STRM, streamOpen, streamRoom, streamInfo, streamPanel, slotAtTime, SING, SHW, singStep, singScore, singSteamIR, singMicOff, showerOpen, shwGo, shwPlay, shwPrev, shwNext, shwStem, shwRecToggle, shwRecStop, shwHear, shwSave, shwAddFiles, shwRemove, shwMove, shwMode, shwLoadSet, shwPlaylist, shwWords, shwPrepare, shwFolderPull, lrcParse, readTags, spPos, spPlay, STP, trainOpen, projRestoreTrack, secretNote, secretArp, WS, WS_BASE, WS_ARPS, wsScaleRun, wsArpRun, wsFollow, wsStop, wsListen, wsEarNext, wsEarAnswer, wsOpen, bandMute, bandMuted, pdbPut, pdbKeys, projRename, FS, FS_B, fsUse, fsSync, fsHead, fsNeeds, fsTidy, fsOpen, syncOff, syncZips, PRJ_WAIT: () => PRJ.wait, EGG, EGG_LINES, EGG_ORDER, eggDay, eggFor, eggNow, eggText, eggTick, eggFit, saveCfg, projSave, projDelete, GH, ghSync, ghConnect, ghDisconnect, ghLocal, ghSha, ghJson, ghMerge3, ghShare, ghGallery, ghGalleryOpen, ghGalleryShow, ghKeepLook, ghKeepRig, rigClean, ghReturn, BRAND, ghSettingsOut, projRefresh, projCreate, projLoad, PRJ, SEC, SECRETS, secretFound, secretTiming, secretsOpen, secretSync, backstageOpen, startAudio, playheadSlot, GUARD, reportText, reportCopy, srecQ, srecSize, pdbGet, srecFmt, SREC_FMTS, VBG, vbgAdd, vbgRemove, vbgUse, vbgOpen, vbgDraw, vzSetMode, srecFrame, srecFmtBox, kitThumb, WORKLET_SRC, mkComp, mkShaper, rigLat, voxLat, restartAudio, satCurve, rigApply, qrMake, qrSvg, tipLink, tipShort, tipReady, tipCard, tipDraw, tipShareHtml, tipOpen, tipPrint, tipPng, tipVisAvoid, tipStageAvoid, TIP, TIP_TERMS, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, STP, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfort, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, srecStart, srecStop, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, tkFades, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, FB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, vzSetMode, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, drawVis, perfClose, voicings, peaksOf, uid, shareGate, shareData, shareHtml, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, slotAtTime, SEL, mtof, spb, playheadSlot, WR, HM, HMX, HM_MODES, vzImmersive, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitThumb, kitInk, kitNotes, kitRecord, srecMime, mGo, GD_SESSIONS, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard}; };   // test hook: with ?debug, or Backstage ▸ Labs ▸ Developer handles
+  DEV.make = () => { window.__daily = { CO, coPos, coachOpen, coListen, coTick, coPlace, coNotes, coSetPiece, rfParse, LESSONS, RIFFS, RIFF_STYLES, learnOpen, learnToSong, learnFile, learnFileText, learnOpenFile, learnFromSong, labMake, labVary, labKeep, atlasPieces, atShape, MODE_VAMP, S, AIR, AIR_LAG, airSync, applyLayout, VB_PRESETS, VB_ORDER, VBS, vbAttach, vbApply, vbToggle, vbSet, vbPreset, vbPresetNext, vbThrow, vbLook, vbTick, vbScale, vocalBoardOpen, pedalRelease, MEG, megSpectrum, megFeatures, megScore, megStep, megSet, megLearn, megDraw, megLoop, megSettings, PAD, padsOpen, padHit, padTap, padRecord, padRecStop, padUndoPass, padClear, padResize, padBeatbox, bbHits, bbPattern, dpat, bassEvent, drumStep, PEDAL, pedalPress, pedalDo, pedalSecs, gearSettings, MCLK, mclkSlot, mclkMs, MIDI, MIDIRAW, onMidi, STRM, streamOpen, streamRoom, streamInfo, streamPanel, slotAtTime, SING, SHW, singStep, singScore, singSteamIR, singMicOff, showerOpen, shwGo, shwPlay, shwPrev, shwNext, shwStem, shwRecToggle, shwRecStop, shwHear, shwSave, shwAddFiles, shwRemove, shwMove, shwMode, shwLoadSet, shwPlaylist, shwWords, shwPrepare, shwFolderPull, lrcParse, readTags, spPos, spPlay, STP, trainOpen, projRestoreTrack, secretNote, secretArp, WS, WS_BASE, WS_ARPS, wsScaleRun, wsArpRun, wsFollow, wsStop, wsListen, wsEarNext, wsEarAnswer, wsOpen, bandMute, bandMuted, pdbPut, pdbKeys, projRename, FS, FS_B, fsUse, fsSync, fsHead, fsNeeds, fsTidy, fsOpen, syncOff, syncZips, PRJ_WAIT: () => PRJ.wait, EGG, EGG_LINES, EGG_ORDER, eggDay, eggFor, eggNow, eggText, eggTick, eggFit, saveCfg, projSave, projDelete, GH, ghSync, ghConnect, ghDisconnect, ghLocal, ghSha, ghJson, ghMerge3, ghShare, ghGallery, ghGalleryOpen, ghGalleryShow, ghKeepLook, ghKeepRig, rigClean, ghReturn, BRAND, ghSettingsOut, projRefresh, projCreate, projLoad, PRJ, SEC, SECRETS, secretFound, secretTiming, secretsOpen, secretSync, backstageOpen, startAudio, playheadSlot, GUARD, reportText, reportCopy, srecQ, srecSize, pdbGet, srecFmt, SREC_FMTS, VBG, vbgAdd, vbgRemove, vbgUse, vbgOpen, vbgDraw, vzSetMode, srecFrame, srecFmtBox, kitThumb, WORKLET_SRC, mkComp, mkShaper, rigLat, voxLat, restartAudio, satCurve, rigApply, qrMake, qrSvg, tipLink, tipShort, tipReady, tipCard, tipDraw, tipShareHtml, tipOpen, tipPrint, tipPng, tipVisAvoid, tipStageAvoid, TIP, TIP_TERMS, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, STP, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfort, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, srecStart, srecStop, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, tkFades, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, FB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, vzSetMode, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, drawVis, perfClose, voicings, peaksOf, uid, shareGate, shareData, shareHtml, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, slotAtTime, SEL, mtof, spb, playheadSlot, WR, HM, HMX, HM_MODES, vzImmersive, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitThumb, kitInk, kitNotes, kitRecord, srecMime, mGo, GD_SESSIONS, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard}; };   // test hook: with ?debug, or Backstage ▸ Labs ▸ Developer handles
   if (/[?&]debug\b/.test(location.search) || (CFG.labs && CFG.labs.handles)) DEV.make();
   try { bksBoot(); } catch (e) { console.warn('backstage', e); }      /* #backstage in the address, the performance overlay (part 73c) */
   projInit().catch(e => { console.warn('library', e); PRJ.ready = true; if (PRJ.wantStart) startMaybe(); });
@@ -5475,6 +5475,7 @@ function mSheet() {
       tile(msvg('<path d="M5 20V9M12 20V4M19 20v-7"/>'), 'Master · balance · click', () => { mCloseOverlays(); mixOpen(); }),
       tile(msvg('<path d="M3 12c3-8 5-8 8 0s5 8 8 0"/>'), 'Voice · pitch · key', () => { mCloseOverlays(); voxOpen(); }),
       tile(msvg('<path d="M12 3a3 3 0 00-3 3v6a3 3 0 006 0V6a3 3 0 00-3-3zM5 11a7 7 0 0014 0M12 18v3"/>'), 'Vocal pedals', () => { mCloseOverlays(); vocalBoardOpen(); }),
+      tile(msvg('<path d="M2 9l10-5 10 5-10 5zM6 11v5c3 2 9 2 12 0v-5"/>'), 'Learn', () => { mCloseOverlays(); learnOpen(); }),
       tile(msvg('<path d="M5 21V8a4 4 0 018 0M13 8h-4M9 12v1M7 15v1M11 15v1M9 18v1"/>'), 'Scales & ear', () => { mCloseOverlays(); trainOpen(); }),
       tile(msvg('<rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/>'), 'Pads · tap tempo · beatbox', () => { mCloseOverlays(); padsOpen(); }),
       tile(msvg('<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>'), keepRisk().level === 'ok' ? 'Back up songs' : 'Keep songs safe', () => { mCloseOverlays(); keepOpen(); }, keepRisk().level === 'high'),
@@ -12935,13 +12936,18 @@ const GOALS = [
       ['gtChord', '▦ Chords', 'The chord that is playing, on the fretboard', () => dockGo('fret')]
     ] },
   { id: 'teacher', ico: '🎓', name: 'Teacher', layout: 'Teacher', step: 'share', hue: '#0b84d8', next: null,
-    blurb: 'Draw on the screen, keep lesson notes, and record the screen with your voice.',
-    mission: 'Show someone how', steps: ['Open the lesson notes', 'Draw on what you explain', 'Record the screen'],
+    blurb: 'Be taught, or teach: lessons that listen while you play, warm-ups, riffs and licks, a riff lab and a map of the neck. For teaching someone else: draw, keep notes and record the screen.',
+    mission: 'Learn something new, or show someone how', steps: ['Open 🎓 Learn and start a lesson', 'Warm up, then learn a riff', 'Make your own in 🧪 Riff Lab'],
     shape: 'The arrangement on top · the tab below to point at · the fretboard on the right · notes open',
     spec: { flip: false, left: false, right: true, tlh: 'minmax(200px,40%)', dock: 'tab', order: ['tab', 'tx', 'stems', 'vis', 'band'], hidden: ['rig', 'song', 'fret', 'stage', 'neural', 'cam', 'lab'], side: { fret: 'right' }, so: { left: [], right: ['fret', 'refine', 'monitor'] }, cur: { right: 'fret' }, mon: ['tuner', 'live'] },
     enter: () => { if (typeof KIT !== 'undefined' && !KIT.notesEl) kitNotes(); },
     tools: () => [
-      ['gtInk', '✎ Annotate', 'Draw over anything on the page; it stays until you clear it', () => kitInk(), () => !!KIT.inkOn, 1],
+      ['gtLearn', '🎓 Learn', 'Lessons that show you, play it, then listen to you play it', () => learnOpen('lessons'), null, 1],
+      ['gtWarm', '🔥 Warm-ups', 'Five minutes before you play', () => learnOpen('warm')],
+      ['gtRiffs', '🎸 Riffs & licks', RIFFS.length + ' riffs in ' + RIFF_STYLES.length + ' styles, in any key', () => learnOpen('riffs')],
+      ['gtLab', '🧪 Riff Lab', 'New riff ideas from a scale and a feel', () => learnOpen('lab')],
+      ['gtAtlas', '🗺 Scale atlas', 'Boxes, positions, arpeggios, modes over a band', () => learnOpen('atlas')],
+      ['gtInk', '✎ Annotate', 'Draw over anything on the page; it stays until you clear it', () => kitInk(), () => !!KIT.inkOn],
       ['gtNotes', '📝 Lesson notes', 'Notes for this song, kept in this browser', () => kitNotes(), () => !!KIT.notesEl],
       ['gtScreen', '⏺ Record screen', 'Record this tab or your screen, with the studio’s sound and your voice', () => kitScreen(), () => !!KIT.scr],
       ['gtFret', '▦ Fretboard', 'Show the chord and scale on the neck', () => sideShow('fret')],
@@ -16740,6 +16746,554 @@ function vocalBoardOpen(at) {
   ] });
 }
 bus.on('vb', () => vbPaint());
+
+/* >>> parts/80-coach.js */
+/* ============================================================
+   Part 80 · THE COACH (2.32) — the teacher's ears and hands
+   Every lesson step, warm-up, riff, Riff Lab idea and atlas shape is a "piece": notes on the neck, chords to play, a rhythm to keep,
+   a bend or a vibrato to make. The coach window shows it (the fretboard, a line of tab, what to do), plays it (▶ Listen, through the
+   studio's own lead voice, with a click and, where it helps, a small band: drums, bass and chords of its own, so your song is never
+   touched), and listens while you play it (● Play it), through the input the tuner uses:
+     · notes     each note in turn, as the Scales & ear trainer does (a wrong note counts; the last one still ringing does not)
+     · timed     the same over the click, and how early or late your picking was against the beat (onsets from the input tap)
+     · chord     a chord held, as the chord finder hears it
+     · changes   a chord each bar over the click
+     · minute    one-minute changes: how many times you can switch between two chords in a minute
+     · rhythm    a strumming or picking pattern: each stroke against where it should land
+     · bend      a note bent up to its target pitch, and held there
+     · vib       a note held with vibrato (rate and width, from the analysis)
+     · landing   over a backing vamp, land on a chord tone each time the chord changes
+     · info      something to read and hear
+   A clean run can raise the tempo by 5 (the tempo ladder).
+   ============================================================ */
+CFG.learn = Object.assign({ done: {}, best: {}, ladder: true, back: true, click: true, mine: [] }, CFG.learn && typeof CFG.learn === 'object' ? CFG.learn : {});
+const CO = { el: null, p: null, list: null, idx: 0, run: null, seq: null, tm: 0, bpm: 80, key: null, onAct: null, res: '' };
+const CO_KINDS = ['notes', 'timed', 'chord', 'changes', 'minute', 'rhythm', 'bend', 'vib', 'landing', 'info'];
+
+/* ---------- pieces: notes from intervals onto the neck ---------- */
+/** notes of a piece in this tuning: `root` the MIDI note intervals count from, `near` the fret the hand sits around */
+function coPlace(notes, root, near) {
+  let st = near == null ? 5 : near; return notes.map(n => {
+    if (n.r) return Object.assign({}, n);
+    const ms = (n.ch || [n.i]).map(i => root + i), out = ms.map(m => { const p = wsPlace(m, st); return { m, s: p.s, f: p.f }; });
+    if (out.length === 1) st = Math.max(0, Math.min(17, out[0].f - 1.5 + (st - (out[0].f - 1.5)) * .6));
+    return Object.assign({}, n, { m: out[0].m, s: out[0].s, f: out[0].f, ch: n.ch ? out : null, to: n.t === 'b' ? out[0].m + (n.b || 2) : null });
+  });
+}
+/** the lowest root at or above the low string's open note (+ capo), for a key's pitch class */
+const coRoot = (pc, lift) => { const lo = wsTune()[0] + (S.capo || 0); return lo + (((pc - lo) % 12) + 12) % 12 + (lift || 0); };
+const coName = m => pcName(m, keyUsesFlats((CO.key == null ? S.key : CO.key), false));
+/** a line of ASCII tab for the notes (strings high to low), the note `cur` marked */
+function coTab(notes, cur) {
+  const tu = wsTune(), n = tu.length, cols = notes.map((q, i) => { const w = q.r ? 1 : Math.max(...(q.ch || [q]).map(x => String(x.f).length)) + (q.t && q.t !== 'x' ? 1 : 0); return { q, i, w }; });
+  return Array.from({ length: n }, (_, k) => { const s = n - 1 - k; return pcName(tu[s] + (S.capo || 0), false).padEnd(2) + '|' + cols.map(({ q, i, w }) => {
+    const hit = !q.r && (q.ch || [q]).find(x => x.s === s); let txt = hit ? String(hit.f) + (q.t === 'b' ? 'b' : q.t === 'h' ? 'h' : q.t === 'p' ? 'p' : q.t === '/' ? '/' : q.t === '~' ? '~' : '') : '';
+    if (hit && q.t === 'x') txt = 'x'; txt = txt.padEnd(w, '-'); return (i === cur && hit ? '[' + txt + ']' : '-' + txt + '-'); }).join('') + '|'; }).join('\n');
+}
+
+/* ---------- the coach's own little band ---------- */
+const coSd = () => 60 / CO.bpm / 4;      /* a 16th, in seconds */
+/** play a loop of `len` 16ths: the click, drums, chords (one per bar) and bass from `back`, and the piece's notes if `demo` */
+async function coSeq(o) {
+  coSeqStop(); await startAudio(); if (T.playing) stopPlay(true);
+  const c = E.ctx, sd = coSd(), bar = 16, len = o.len || 16, ci = o.countIn === false ? 0 : bar, t0 = c.currentTime + .12 + ci * sd;
+  const q = { t0, len, k: -ci, sd, o, loops: 0, tm: 0 };
+  const step = (k, t) => {
+    const pos = ((k % len) + len) % len, beat = pos % 4 === 0;
+    if (o.click !== false && beat) click(t, pos % bar === 0);
+    if (k < 0) return;
+    const b = o.back; if (b && b.drums) { if (pos % 8 === 0) drumHit(0, t, pos % 16 === 0 ? 3 : 2); if (pos % 8 === 4) drumHit(1, t, 2); if (pos % 2 === 0) drumHit(2, t, 1); }
+    if (b && b.chords && b.chords.length) { const sym = b.chords[Math.floor(pos / bar) % b.chords.length]; if (pos % 8 === 0) { try { strumAt(t, sym, 'D', STRUMS['Down 4s']); } catch (e) { } } if (b.bass !== false && pos % 8 === 0) { const ch = parseChord(sym); if (ch) pluck('bass', t, bassMidi(ch.bass), .8, { id: 'cb' }); } }
+    if (o.demo && o.notes) o.notes.forEach(n => { if (n.r || n.at !== pos) return; (n.ch || [n]).forEach((x, j) => pluck('lead', t + j * .012, x.m, .8, { id: 'co' + x.s })); if (n.to != null) pluck('lead', t + Math.min(n.len || 2, 4) * sd * .45, n.to, .55, { id: 'co' + n.s, soft: true }); });
+    if (pos === len - 1) q.loops++;
+  };
+  q.tm = setInterval(() => { const now = c.currentTime; while (q.t0 + q.k * sd < now + .15) { step(q.k, q.t0 + q.k * sd); q.k++; if (!o.loop && q.k >= len) { break; } } if (!o.loop && q.k >= len && now > q.t0 + len * sd + .3) { coSeqStop(); o.onEnd && o.onEnd(); } }, 40);
+  CO.seq = q; return q;
+}
+function coSeqStop() { if (CO.seq) { clearInterval(CO.seq.tm); CO.seq = null; } }
+/** where in the loop the audio clock is (in 16ths, fractional), as heard */
+const coPos = () => { const q = CO.seq; if (!q) return -1; const heard = E.ctx.currentTime - (E.ctx.outputLatency || E.ctx.baseLatency || 0); return (heard - q.t0) / q.sd; };
+
+/* ---------- listening ---------- */
+const coChordIs = (want) => { const c = AN.active && AN.chord && AN.chord[0]; if (!c) return false; const a = parseChord(c.sym), b = parseChord(want); if (!a || !b) return false; const third = x => x.iv.includes(3) && !x.iv.includes(4) ? 'm' : 'M'; return a.root === b.root && third(a) === third(b); };
+const coPitch = () => AN.active && AN.midi != null ? AN.midi + (AN.cents || 0) / 100 : null;
+/** start listening for the current piece; result to CO.res and a call to `done(ok, msg)` */
+function coListen(done) {
+  coStopListen(); const p = CO.p, R = CO.run = { kind: p.kind, i: 0, miss: 0, held: null, judged: false, prev: null, t0: performance.now(), on: [], ok: 0, n: 0, best: 0, done, hold: 0, last: null, sw: 0 };
+  if (!E.hasInput) toast('Connect your guitar (Audio, top right) so the coach can hear you.', 'warn');
+  const tapOn = m => { if (m && m.onset && CO.run === R) R.on.push(m.t); }; bus.on('tap:di', tapOn); R.off = () => bus.off('tap:di', tapOn);
+  const need = { timed: 1, changes: 1, minute: 0, rhythm: 1, landing: 1 }[p.kind] || (p.back && p.back.chords && p.kind === 'notes');      /* a scale over a vamp plays the vamp while you play */
+  if (!need) coSeqStop();      /* the demo stops: the coach must hear you, not itself */
+  if (need) coSeq({ len: p.len || 16, loop: true, notes: p.notes, demo: false, back: CFG.learn.back ? p.back : (p.kind === 'landing' || p.kind === 'changes' ? { chords: p.back && p.back.chords, bass: false } : null), click: CFG.learn.click || p.kind !== 'landing' });
+  CO.tm = setInterval(() => coTick(R), 30); coPaint();
+}
+function coStopListen() { const R = CO.run; if (R) { clearInterval(CO.tm); if (R.off) R.off(); CO.run = null; } }
+function coFinish(R, ok, msg) { if (CO.run !== R) return; coStopListen(); coSeqStop(); CO.res = msg; const p = CO.p; if (ok) { CFG.learn.done[p.id] = Date.now(); saveCfg(); } if (ok && CFG.learn.ladder && p.ladder !== false && ['notes', 'timed', 'rhythm', 'changes'].includes(p.kind)) { CO.bpm = Math.max(CO.bpm, Math.min((p.bpm || 80) + 60, CO.bpm + 5)); msg += ' Tempo up: ' + CO.bpm + ' BPM.'; CO.res = msg; } bus.emit('coach:done', { id: p.id, ok }); if (ok) { const dot = document.querySelectorAll('#coach .co-dot')[CO.idx]; if (dot) dot.classList.add('done'); } if (R.done) R.done(ok, msg); coPaint(); }
+function coTick(R) {
+  const p = CO.p, now = performance.now(), m = AN.active && AN.midi != null ? AN.midi : null;
+  switch (p.kind) {
+    case 'notes': case 'timed': {
+      const ns = p.notes.filter(n => !n.r); if (m == null) { R.held = null; R.judged = false; } else if (!R.held || R.held.m !== m) { R.held = { m, t: now }; R.judged = false; }
+      else if (!R.judged && now - R.held.t >= 110) { R.judged = true; const want = ns[R.i], pcs = (want.ch || [want]).map(x => x.m % 12), pc = ((m % 12) + 12) % 12;
+        if (pcs.includes(pc)) { R.prev = m; R.i++; if (R.i >= ns.length) return coNotesDone(R); } else if (R.prev != null && pc === R.prev % 12) { } else R.miss++; coPaint(); }
+      if (p.kind === 'timed' && CO.seq && coPos() > (p.len || 16) * 2 + 2 && R.i < ns.length) { coNotesDone(R); }
+      break;
+    }
+    case 'chord': { if (coChordIs(p.chords[0])) { R.hold += 30; if (R.hold >= 800) coFinish(R, true, '✓ That is ' + p.chords[0] + '. Clean.'); } else R.hold = Math.max(0, R.hold - 15); break; }
+    case 'changes': case 'landing': {
+      const pos = coPos(); if (pos < 0) break; const bar = Math.floor(pos / 16), inBar = pos - bar * 16, want = p.back.chords[((bar % p.back.chords.length) + p.back.chords.length) % p.back.chords.length];
+      if (p.kind === 'changes') { if (inBar > 8 && R.last !== bar && coChordIs(p.chords ? p.chords[bar % p.chords.length] : want)) { R.last = bar; R.ok++; } if (bar >= (p.bars || 8)) coFinish(R, R.ok >= Math.ceil((p.bars || 8) * .75), (R.ok >= Math.ceil((p.bars || 8) * .75) ? '✓ ' : '') + R.ok + ' of ' + (p.bars || 8) + ' bars on the right chord.'); }
+      else { if (bar >= 0 && bar < (p.bars || 8) && R.last !== bar && inBar < 6 && m != null && m !== R.prevM) { const ch = parseChord(want); R.last = bar; R.n++; if (ch && ch.pcs.includes(((m % 12) + 12) % 12)) R.ok++; } R.prevM = m; if (bar >= (p.bars || 8)) coFinish(R, R.ok >= Math.ceil((p.bars || 8) * .6), 'Landed on a chord tone ' + R.ok + ' of ' + (p.bars || 8) + ' changes.'); }
+      break;
+    }
+    case 'minute': {
+      const a = coChordIs(p.chords[0]) ? 0 : coChordIs(p.chords[1]) ? 1 : -1; if (a >= 0) { if (R.cur !== a) { R.cand = a; R.ct = (R.ct || 0) + 30; if (R.ct >= 250) { if (R.cur != null) R.sw++; R.cur = a; R.ct = 0; } } else R.ct = 0; }
+      if (now - R.t0 >= (p.secs || 60) * 1000) { const best = CFG.learn.best[p.id] || 0; if (R.sw > best) { CFG.learn.best[p.id] = R.sw; saveCfg(); } coFinish(R, R.sw >= (p.goal || 20), R.sw + ' changes in a minute' + (R.sw > best ? ' (a new best)' : ' (best ' + best + ')') + '.'); }
+      break;
+    }
+    case 'rhythm': {
+      const pos = coPos(), len = p.len || 16, bars = p.bars || 4; if (pos < len * bars + 1) break;
+      const q = CO.seq, lat = (rttMs() || 20) / 1000, exp = []; for (let b = 0; b < bars; b++) [...p.pattern].forEach((c, i) => { if (c !== '.') exp.push(q.t0 + (b * len + i) * q.sd); });
+      const on = R.on.map(t => t - lat), errs = []; let hit = 0; exp.forEach(e => { let best = null; on.forEach(t => { const d = t - e; if (Math.abs(d) <= .1 && (best == null || Math.abs(d) < Math.abs(best))) best = d; }); if (best != null) { hit++; errs.push(best * 1000); } });
+      const avg = errs.length ? errs.reduce((x, y) => x + Math.abs(y), 0) / errs.length : 999, lean = errs.length ? errs.reduce((x, y) => x + y, 0) / errs.length : 0, extra = Math.max(0, on.filter(t => t > q.t0 - .05 && t < q.t0 + len * bars * q.sd).length - hit);
+      const ok = hit >= exp.length * .8 && avg <= 35; coFinish(R, ok, (ok ? '✓ ' : '') + hit + ' of ' + exp.length + ' strokes on the beat, ' + Math.round(avg) + ' ms off on average' + (Math.abs(lean) > 8 ? ', a little ' + (lean < 0 ? 'early (rushing)' : 'late (dragging)') : '') + (extra ? ', ' + extra + ' extra' : '') + '.');
+      break;
+    }
+    case 'bend': {
+      const f = coPitch(), b = p.notes.find(n => !n.r); if (f == null) { R.hold = 0; break; } R.cur = f - b.m; if (Math.abs(f - b.to) <= .3) { R.hold += 30; if (R.hold >= 300) coFinish(R, true, '✓ Bent up ' + (b.to - b.m) + ' semitone' + (b.to - b.m === 1 ? '' : 's') + ', in tune.'); } else R.hold = 0;
+      if (f > b.to + .5) R.over = (R.over || 0) + 1; break;
+    }
+    case 'vib': {
+      const v = AN.vib, n = p.notes.find(q => !q.r), on = m != null && ((m % 12) + 12) % 12 === n.m % 12; R.v = v; if (on && v && v.ext >= 12) { R.hold += 30; if (R.hold >= 800) coFinish(R, true, '✓ Vibrato: ' + v.rate.toFixed(1) + ' times a second, ' + Math.round(v.ext * 2) + ' cents wide.'); } else R.hold = Math.max(0, R.hold - 10); break;
+    }
+  }
+}
+function coNotesDone(R) {
+  const p = CO.p, ns = p.notes.filter(n => !n.r), secs = (performance.now() - R.t0) / 1000; let msg = '', ok = R.i >= ns.length && R.miss <= Math.max(1, Math.floor(ns.length / 8));
+  if (p.kind === 'timed' && CO.seq) { const q = CO.seq, lat = (rttMs() || 20) / 1000, len = p.len || 16, errs = [];
+    ns.forEach(n => { const e = q.t0 + n.at * q.sd; let best = null; R.on.forEach(t => { const d = (t - lat) - e; if (Math.abs(d) <= .12 && (best == null || Math.abs(d) < Math.abs(best))) best = d; }); if (best == null) R.on.forEach(t => { const d = (t - lat) - (e + len * q.sd); if (Math.abs(d) <= .12 && (best == null || Math.abs(d) < Math.abs(best))) best = d; }); if (best != null) errs.push(best * 1000); });
+    const avg = errs.length ? errs.reduce((x, y) => x + Math.abs(y), 0) / errs.length : null; if (avg != null && avg > 40) ok = false; msg = (avg != null ? ', ' + Math.round(avg) + ' ms from the beat on average' : ''); }
+  coFinish(R, ok, (ok ? '✓ ' : '') + (R.i >= ns.length ? 'All ' + ns.length + ' notes' : R.i + ' of ' + ns.length + ' notes') + (R.miss ? ', ' + R.miss + ' wrong' : ', clean') + msg + ' (' + secs.toFixed(1) + ' s).');
+}
+
+/* ---------- the window ---------- */
+/** open the coach on a piece, or on a list of pieces (a lesson's steps) at `at` */
+function coachOpen(pieces, at, o) {
+  pieces = Array.isArray(pieces) ? pieces : [pieces]; coStopListen(); coSeqStop(); o = o || {};
+  CO.list = pieces; CO.idx = Math.max(0, Math.min(pieces.length - 1, at || 0)); CO.title = o.title || ''; CO.onAct = o.actions || null; CO.key = o.key != null ? o.key : null;
+  let d = document.getElementById('coach'); if (!d) { d = h('dialog', { class: 'coach', id: 'coach', 'aria-labelledby': 'coachT' }); document.body.append(d); d.addEventListener('close', () => { if (d.open) return; coStopListen(); coSeqStop(); bus.emit('coach:close'); });      /* the close event comes late: if the coach was opened again since, leave it be */ }
+  coSetPiece(CO.idx); if (!d.open) d.showModal(); return d;
+}
+function coSetPiece(i) { coStopListen(); coSeqStop(); CO.idx = i; const raw = CO.list[i]; CO.p = typeof raw === 'function' ? raw() : raw; CO.bpm = CO.p.bpm || 80; CO.res = ''; if (CO.p.kind === 'info' && CO.p.id && !CFG.learn.done[CO.p.id]) { CFG.learn.done[CO.p.id] = Date.now(); saveCfg(); bus.emit('coach:done', { id: CO.p.id, ok: true }); } coBuild(); }
+/** the piece's notes placed in this tuning (re-placed when the key or the tuning changes) */
+function coNotes() { const p = CO.p; if (!p.src) return p.notes || []; const pc = CO.key != null ? CO.key : (p.keyPc != null ? p.keyPc : 9); p.notes = coPlace(p.src, coRoot(pc, p.lift || 0), p.near); return p.notes; }
+function coBuild() {
+  const d = document.getElementById('coach'); if (!d) return; const p = CO.p; coNotes(); d.innerHTML = '';
+  const steps = CO.list.length > 12 ? h('span', { class: 'co-count mono', id: 'coCount' }, (CO.idx + 1) + ' / ' + CO.list.length) : CO.list.length > 1 ? h('div', { class: 'co-steps', role: 'list' }, CO.list.map((q, k) => { const qq = typeof q === 'function' ? null : q; return h('button', { role: 'listitem', class: 'co-dot' + (k === CO.idx ? ' on' : '') + (qq && CFG.learn.done[qq.id] ? ' done' : ''), 'aria-label': 'Step ' + (k + 1) + (qq && CFG.learn.done[qq.id] ? ', done' : ''), onclick: () => coSetPiece(k) }); })) : null;
+  const playable = p.kind !== 'info' || (p.notes && p.notes.length);
+  d.append(...[h('div', { class: 'co-top' }, h('div', { class: 'co-tt' }, h('small', {}, CO.title || ''), h('b', { id: 'coachT' }, p.title)), steps, h('button', { class: 'btn icon', 'aria-label': 'Close the coach', onclick: () => d.close() }, '✕')),
+    h('p', { class: 'co-text' }, p.text || ''),
+    p.notes && p.notes.length && !['chord', 'changes', 'minute'].includes(p.kind) ? h('div', { class: 'co-board' }) : null,
+    p.notes && p.notes.length && !['chord', 'changes', 'minute'].includes(p.kind) ? h('pre', { class: 'co-tab mono', 'aria-label': 'Tab' }) : null,
+    ['chord', 'changes', 'minute'].includes(p.kind) ? h('div', { class: 'co-chords' }, (p.chords || p.back.chords).map(c => h('div', { class: 'co-chord' }, h('b', {}, c), h('pre', { class: 'mono co-shape' }, coShape(c))))) : null,
+    h('div', { class: 'co-live', role: 'status', 'aria-live': 'polite' }),
+    h('div', { class: 'co-ctl' },
+      playable ? h('button', { class: 'btn', id: 'coListen', onclick: () => coDemo() }, '▶ Listen') : null,
+      p.kind !== 'info' ? h('button', { class: 'btn primary', id: 'coGo', onclick: () => CO.run ? (coStopListen(), coSeqStop(), coPaint()) : coListen() }, '● Play it') : null,
+      h('span', { class: 'co-bpm' }, h('button', { class: 'btn sm', 'aria-label': 'Slower', onclick: () => { CO.bpm = Math.max(40, CO.bpm - 5); coPaint(); } }, '−'), h('b', { class: 'mono' }), h('button', { class: 'btn sm', 'aria-label': 'Faster', onclick: () => { CO.bpm = Math.min(240, CO.bpm + 5); coPaint(); } }, '+')),
+      h('label', { class: 'chk' }, h('input', { type: 'checkbox', id: 'coLadder', checked: !!CFG.learn.ladder, onchange: e => { CFG.learn.ladder = e.target.checked; saveCfg(); } }), 'Tempo ladder'),
+      p.back ? h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!CFG.learn.back, onchange: e => { CFG.learn.back = e.target.checked; saveCfg(); } }), 'Backing') : null,
+      h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!CFG.learn.click, onchange: e => { CFG.learn.click = e.target.checked; saveCfg(); } }), 'Click'),
+      p.src && p.keyed !== false ? h('label', { class: 'field co-key' }, 'Key', h('select', { class: 'in', id: 'coKey', onchange: e => { CO.key = +e.target.value; coBuild(); } }, NS.map((_, k) => h('option', { value: k, selected: k === (CO.key != null ? CO.key : (p.keyPc != null ? p.keyPc : 9)) }, pcName(k, false))))) : null),
+    CO.onAct ? h('div', { class: 'co-act' }, CO.onAct(p).filter(Boolean)) : null,
+    p.tip ? h('p', { class: 'tiny muted co-tip' }, '💡 ' + p.tip) : null,
+    CO.list.length > 1 ? h('div', { class: 'co-nav' }, h('button', { class: 'btn', disabled: CO.idx === 0, onclick: () => coSetPiece(CO.idx - 1) }, '◀ Back'), h('span', { style: { flex: 1 } }), h('button', { class: 'btn primary', id: 'coNext', disabled: CO.idx >= CO.list.length - 1, onclick: () => coSetPiece(CO.idx + 1) }, 'Next ▶')) : null].filter(Boolean));
+  coPaint();
+}
+function coShape(sym) { try { const v = voicingFor(sym); if (!v) return ''; return v.frets.map(f => f == null ? 'x' : String(f)).join(' '); } catch (e) { return ''; } }
+function coDemo() { coStopListen(); const p = CO.p; coSeq({ len: p.len || 16, loop: false, notes: coNotes(), demo: true, back: CFG.learn.back ? p.back : null, click: CFG.learn.click, onEnd: () => coPaint() }); coPaint(); }
+function coPaint() {
+  const d = document.getElementById('coach'); if (!d || !CO.p) return; const p = CO.p, R = CO.run, q = s => d.querySelector(s), ns = (p.notes || []).filter(n => !n.r);
+  const b = q('.co-bpm b'); if (b) b.textContent = CO.bpm + ' BPM';
+  const go = q('#coGo'); if (go) go.textContent = R ? '■ Stop' : '● Play it';
+  const cur = R && (R.kind === 'notes' || R.kind === 'timed') ? R.i : null;
+  const bd = q('.co-board'); if (bd) { bd.innerHTML = ''; const pcs = p.pcs || null, ref = coRoot(CO.key != null ? CO.key : (p.keyPc != null ? p.keyPc : 9)); const run = { title: p.title, st: ns.length ? Math.min(...ns.map(n => n.f)) : 0, pcs, notes: ns.map(n => ({ s: n.s, f: n.f, m: n.m, deg: n.lab || degName(((n.m - ref) % 12 + 12) % 12) })) }; bd.append(wsFret(run, cur, innerWidth < 640)); }
+  const tb = q('.co-tab'); if (tb) tb.textContent = coTab(p.notes || [], cur == null ? -1 : (p.notes || []).indexOf(ns[cur]));
+  const lv = q('.co-live'); if (!lv) return; lv.innerHTML = '';
+  if (R) {
+    const want = ns[R.i]; lv.append(h('b', {}, R.kind === 'notes' || R.kind === 'timed' ? (want ? 'Next: ' + (want.ch ? want.ch.map(x => coName(x.m)).join(' + ') : coName(want.m)) + ' (string ' + (wsTune().length - want.s) + ', ' + (want.f ? 'fret ' + want.f : 'open') + ')' : '') + ' · ' + R.i + ' of ' + ns.length + (R.miss ? ' · ' + R.miss + ' wrong' : '')
+      : R.kind === 'chord' ? 'Play ' + p.chords[0] + ' and let it ring…' : R.kind === 'changes' ? 'A chord a bar, with the click: ' + R.ok + ' right so far'
+      : R.kind === 'minute' ? Math.max(0, 60 - Math.floor((performance.now() - R.t0) / 1000)) + ' s · ' + R.sw + ' changes' : R.kind === 'rhythm' ? 'Play the pattern with the click (four bars)…'
+      : R.kind === 'bend' ? 'Bend: ' + (R.cur != null ? (R.cur >= 0 ? '+' : '') + R.cur.toFixed(2) : '–') + ' of +' + (ns[0] ? ns[0].to - ns[0].m : 2) + ' semitones' : R.kind === 'vib' ? (R.v ? 'Vibrato ' + R.v.rate.toFixed(1) + '/s, ' + Math.round(R.v.ext * 2) + ' cents' : 'Hold it and shake it…') : R.kind === 'landing' ? 'Land on a chord tone at each change: ' + R.ok + ' so far' : ''));
+    if (!CO.tmP) CO.tmP = setInterval(() => { if (!CO.run) { clearInterval(CO.tmP); CO.tmP = 0; return; } coPaint(); }, 250);
+  } else if (CO.res) lv.append(h('b', { class: /^✓/.test(CO.res) ? 'co-good' : '' }, CO.res));
+  else lv.append(h('span', { class: 'muted' }, p.kind === 'info' ? '' : 'Press ▶ Listen to hear it, then ● Play it.'));
+}
+const degName = iv => ['R', 'b2', '2', 'b3', '3', '4', 'b5', '5', 'b6', '6', 'b7', '7'][iv];
+
+/* >>> parts/81-learn-data.js */
+/* ============================================================
+   Part 81 · WHAT THE TEACHER TEACHES (2.32) — lessons, warm-ups and the riff library
+   Pieces are written as intervals from the key's root, so they play in any key and any tuning (part 80 places them on the neck):
+     "12:2 15b:4 r:2 10~:4"   12 semitones up for an 8th; 15 bent up a whole step for a quarter; an 8th's rest; 10 with vibrato
+     lengths in 16ths (default 2) · b bend a whole step (b1 a half) · h hammer-on · p pull-off · / slide · ~ vibrato · x muted
+     "0+7+12:2"               notes together (a power chord)
+   Every riff here was written for this studio: idioms of each style, not copies of anyone's song.
+   ============================================================ */
+function rfParse(txt) {
+  let at = 0; return String(txt).trim().split(/\s+/).map(tok => {
+    const [a, l] = tok.split(':'), len = l ? +l : 2; const n = { at, len }; at += len; if (a === 'r') { n.r = true; return n; }
+    const m = /^(-?\d+(?:\+-?\d+)*)(b1|b|h|p|\/|~|x)?$/.exec(a); if (!m) return Object.assign(n, { r: true });
+    const iv = m[1].split('+').map(Number); if (iv.length > 1) n.ch = iv; n.i = iv[0];
+    if (m[2]) { n.t = m[2][0] === 'b' ? 'b' : m[2]; if (n.t === 'b') n.b = m[2] === 'b1' ? 1 : 2; }
+    return n;
+  });
+}
+const rfLen = notes => { const e = notes.reduce((a, n) => Math.max(a, n.at + n.len), 0); return Math.max(16, Math.ceil(e / 16) * 16); };
+const SCALE_PCS = name => { const iv = SCALES[name] || SCALES['Minor Pentatonic']; return iv.slice(); };
+
+/* ---------- pieces for lessons ---------- */
+let LPN = 0;
+const lp = (kind, title, text, o) => Object.assign({ kind, title, text, id: 'lp' + (LPN++) }, o || {});
+const lpN = (kind, title, text, txt, o) => { const src = rfParse(txt); return lp(kind, title, text, Object.assign({ src, len: rfLen(src), keyed: false }, o || {})); };
+const LPC = {
+  info: (t, x, o) => lp('info', t, x, o),
+  notes: (t, x, txt, o) => lpN('notes', t, x, txt, o),
+  timed: (t, x, txt, o) => lpN('timed', t, x, txt, Object.assign({ back: { drums: true } }, o || {})),
+  chord: (t, x, c, o) => lp('chord', t, x, Object.assign({ chords: [c] }, o || {})),
+  changes: (t, x, cs, o) => lp('changes', t, x, Object.assign({ chords: cs, back: { drums: true, chords: cs, bass: true }, bars: 8, len: 16 * cs.length }, o || {})),
+  minute: (t, x, cs, o) => lp('minute', t, x, Object.assign({ chords: cs, secs: 60, goal: 20, ladder: false }, o || {})),
+  rhythm: (t, x, pat, o) => lp('rhythm', t, x, Object.assign({ pattern: pat, bars: 4, len: 16, back: { drums: true } }, o || {})),
+  bend: (t, x, txt, o) => lpN('bend', t, x, txt, o),
+  vib: (t, x, txt, o) => lpN('vib', t, x, txt, o),
+  landing: (t, x, cs, o) => lp('landing', t, x, Object.assign({ back: { drums: true, chords: cs, bass: true }, bars: 8, len: 16 * cs.length }, o || {}))
+};
+/* open strings, E2 A2 D3 G3 B3 E4 from E */
+const LESSONS = [
+  { id: 'found', ico: '🌱', name: 'Foundations', blurb: 'Tune, first notes, first chords, changing in time, strumming, your first song.', lessons: [
+    { id: 'f1', name: 'Tune up and find the strings', steps: [
+      LPC.info('Six strings, low to high', 'From the thickest string to the thinnest: E A D G B E. The tuner (top right) shows how far each one is from its note. Tune each until the needle sits in the middle.'),
+      LPC.notes('Play each open string', 'Pick each string once, thickest first. The coach moves on when it hears the right note.', '0:4 5:4 10:4 15:4 19:4 24:4', { keyPc: 4, near: 0 }),
+      LPC.notes('Your first fretted notes', 'Press just behind the fret, with your fingertip. Second fret on the D, G and B strings.', '12:4 17:4 21:4', { keyPc: 4, near: 1 })] },
+    { id: 'f2', name: 'First chords: Em, G, C, D', steps: [
+      LPC.chord('E minor', 'Two fingers, second fret, A and D strings. Strum all six.', 'Em'),
+      LPC.chord('G major', 'Third fret on the low E and the high E, second fret on the A.', 'G'),
+      LPC.chord('C major', 'A staircase: A string 3rd fret, D 2nd, B 1st. Skip the low E.', 'C'),
+      LPC.chord('D major', 'A small triangle on the top three strings. Strum from the D string down.', 'D')] },
+    { id: 'f3', name: 'Changing in time', steps: [
+      LPC.info('Move all the fingers together', 'Lift the whole shape at once and land it at once. Slow and clean beats fast and messy. Look for a finger that can stay put (a "pivot").'),
+      LPC.changes('Em to C, a bar each', 'One strum on the first beat of each bar, with the click. The coach checks each bar.', ['Em', 'C'], { bpm: 60 }),
+      LPC.changes('G to D', 'G for a bar, D for a bar.', ['G', 'D'], { bpm: 60 }),
+      LPC.minute('One-minute changes: G and C', 'Switch between G and C as many times as you can in a minute. Twenty is a great start; your best is kept.', ['G', 'C'])] },
+    { id: 'f4', name: 'Strumming patterns', steps: [
+      LPC.rhythm('Four down-strums a bar', 'One down-strum on each click. Keep your wrist loose.', 'D...D...D...D...', { bpm: 70 }),
+      LPC.rhythm('Down and up eighths', 'Down on the beat, up between. Your hand never stops moving.', 'D.u.D.u.D.u.D.u.', { bpm: 70 }),
+      LPC.rhythm('The folk pattern', 'Down, down-up, up-down-up. Keep the hand moving even where it misses the strings.', 'D...d.u...u.d.u.', { bpm: 72 })] },
+    { id: 'f5', name: 'Your first song', steps: [
+      LPC.changes('G – D – Em – C', 'The four chords under countless songs. A bar each, with the band.', ['G', 'D', 'Em', 'C'], { bpm: 72, bars: 8 }),
+      LPC.info('Now make it yours', 'Open Songwriter and put these four chords in a section: the band will play them while you hum a melody on top.')] }
+  ] },
+  { id: 'lead', ico: '🎸', name: 'Lead', blurb: 'The pentatonic box, bends, vibrato, your first licks, playing them in time, soloing over a band.', lessons: [
+    { id: 'l1', name: 'The minor pentatonic, box one', steps: [
+      LPC.info('The most useful shape on the guitar', 'Five notes, two on each string, starting at the fifth fret for A. Roots (R) are the home notes: start and end there.'),
+      LPC.notes('Up the box', 'Low string to high, one note at a time.', '0 3 5 7 10 12 15 17 19 22 24 27', { keyPc: 9, near: 5, keyed: true }),
+      LPC.notes('And back down', 'High to low.', '27 24 22 19 17 15 12 10 7 5 3 0', { keyPc: 9, near: 5, keyed: true }),
+      LPC.timed('Up and down in time', 'Eighth notes with the click and the drums. Even and relaxed.', '0 3 5 7 10 12 15 17 19 22 24 22 19 17 15 12', { keyPc: 9, near: 5, bpm: 70, keyed: true })] },
+    { id: 'l2', name: 'Bends', steps: [
+      LPC.info('Push the string with three fingers', 'Ring, middle and index all push together; turn from the wrist, like a door handle. Aim for the note two frets up.'),
+      LPC.bend('A whole-step bend', 'Seventh fret on the G string (in A): bend it up until it sounds like the ninth fret.', '10b:8', { keyPc: 9, near: 5, lift: 12 }),
+      LPC.bend('A bend on the B string', 'Eighth fret, B string: bend up a whole step.', '15b:8', { keyPc: 9, near: 6, lift: 12 }),
+      LPC.bend('A half-step bend', 'Small and sweet: the eighth fret on the high E, up a half step.', '22b1:8', { keyPc: 9, near: 6, lift: 12 })] },
+    { id: 'l3', name: 'Vibrato', steps: [
+      LPC.info('Shake the note', 'Bend a little and let go, over and over, steadily. Five or six times a second sounds human.'),
+      LPC.vib('Vibrato on the root', 'Tenth fret, B string (an A): hold it and shake it.', '24~:16', { keyPc: 9, near: 9, lift: 0 })] },
+    { id: 'l4', name: 'Your first licks', steps: [
+      LPC.notes('Down the box', 'A classic shape: three notes on the top string, falling to the root.', '24 22 19 22 19 17 15 12', { keyPc: 9, near: 5, keyed: true }),
+      LPC.notes('The bend and release', 'Bend, let it down, then two notes home.', '15b:4 15 12 10 12:4', { keyPc: 9, near: 5, keyed: true }),
+      LPC.notes('Call and answer', 'A question that rises, an answer that comes home.', '12 15 17 19:4 17 15 12 10 12:4', { keyPc: 9, near: 5, keyed: true })] },
+    { id: 'l5', name: 'Licks in time', steps: [
+      LPC.timed('Lick over the drums', 'The first lick again, now with the click and the drums: land each note on its eighth.', '24 22 19 22 19 17 15 12', { keyPc: 9, near: 5, bpm: 76, keyed: true }),
+      LPC.timed('Bend lick in time', 'Bend on the beat, release, and resolve.', '15b:4 15 12 10 12:4 r:2', { keyPc: 9, near: 5, bpm: 76, keyed: true })] },
+    { id: 'l6', name: 'Solo over the band', steps: [
+      LPC.info('Aim for the chord', 'When the chord changes, land on one of its notes. The fretboard shows the box; the chord tones are where the band agrees with you.'),
+      LPC.landing('A minor to G', 'Play in box one. Each time the chord changes, make your first note one of its notes.', ['Am', 'G'], { bpm: 84 }),
+      LPC.landing('Am – F – C – G', 'Four chords; the same idea.', ['Am', 'F', 'C', 'G'], { bpm: 84 })] }
+  ] },
+  { id: 'rhythm', ico: '🥁', name: 'Rhythm', blurb: 'Steady down-strums, eighths, muted chugs, syncopation, and sitting in the pocket with a drummer.', lessons: [
+    { id: 'r1', name: 'On the beat', steps: [LPC.rhythm('Quarter notes', 'One stroke per click. Nothing early, nothing late.', 'D...D...D...D...', { bpm: 80 }), LPC.rhythm('Faster quarters', 'The same at a brisker tempo.', 'D...D...D...D...', { bpm: 104 })] },
+    { id: 'r2', name: 'Eighths and accents', steps: [LPC.rhythm('Straight eighths', 'Down-up, evenly.', 'D.u.D.u.D.u.D.u.', { bpm: 84 }), LPC.rhythm('Accents on 2 and 4', 'All eighths, but hit beats two and four harder: that is the backbeat.', 'D.u.D.u.D.u.D.u.', { bpm: 84, tip: 'The coach checks the timing; the accents are for your ears.' })] },
+    { id: 'r3', name: 'Muted chugs', steps: [LPC.info('Palm mute', 'Rest the edge of your picking hand on the strings just by the bridge. The notes go short and punchy.'), LPC.rhythm('Chugged eighths', 'Muted low-string eighths, all down-strokes.', 'D.D.D.D.D.D.D.D.', { bpm: 100 }), LPC.rhythm('Gallop', 'One-two-three, one-two-three: an eighth and two sixteenths.', 'D.DDD.DDD.DDD.DD', { bpm: 90 })] },
+    { id: 'r4', name: 'Syncopation', steps: [LPC.rhythm('Off-beat pushes', 'Hit the "and"s: the strokes between the clicks.', '..u...u...u...u.', { bpm: 80 }), LPC.rhythm('The push into the bar', 'Down on one, then anticipate beat three by an eighth.', 'D.....u...u.D...', { bpm: 84 })] },
+    { id: 'r5', name: 'In the pocket', steps: [LPC.rhythm('Lock with the drums', 'Eighths with the drummer. Listen to the hi-hat and sit right on it.', 'D.u.D.u.D.u.D.u.', { bpm: 92, bars: 8 })] }
+  ] },
+  { id: 'tech', ico: '⚙', name: 'Technique', blurb: 'Alternate picking, hammer-ons and pull-offs, slides, string skipping, legato runs.', lessons: [
+    { id: 't1', name: 'Alternate picking', steps: [LPC.info('Down, up, down, up', 'Every note alternates, even when you change strings. Small movements from the wrist.'), LPC.timed('One string, sixteenths', 'Fifth fret, high E: four notes per click.', '24:1 24:1 24:1 24:1 24:1 24:1 24:1 24:1 24:1 24:1 24:1 24:1 24:1 24:1 24:1 24:1', { keyPc: 9, near: 5, bpm: 70 }), LPC.timed('Across two strings', 'Alternate as you cross from B to E.', '19:1 22:1 24:1 22:1 19:1 22:1 24:1 22:1 19:1 22:1 24:1 22:1 19:1 22:1 24:1 22:1', { keyPc: 9, near: 5, bpm: 70 })] },
+    { id: 't2', name: 'Hammer-ons and pull-offs', steps: [LPC.info('Notes without the pick', 'Pick the first note, then hammer the next finger down hard enough to sound it. Pull-offs flick the finger off sideways. The coach follows the notes; how you sound them is up to you.'), LPC.notes('Hammer, pull', 'Fifth fret, hammer to seventh, pull back to fifth, on the G string.', '10 12h 10p 10 12h 10p', { keyPc: 9, near: 5, lift: 12 }), LPC.notes('Trill', 'Hammer and pull as fast as is even.', '10 12h 10p 12h 10p 12h 10p 12h 10p:4', { keyPc: 9, near: 5, lift: 12 })] },
+    { id: 't3', name: 'Slides', steps: [LPC.notes('Slide up a step', 'Seventh fret to ninth on the G string, keeping the pressure on.', '10 12/ 10 12/', { keyPc: 9, near: 5, lift: 12 }), LPC.notes('Slide into the box', 'Slide up into the seventh fret on the D string, then play the box.', '5 7/ 10 12 15 17', { keyPc: 9, near: 5, lift: 12 })] },
+    { id: 't4', name: 'String skipping', steps: [LPC.notes('Skip a string', 'Jump from the D string to the B and back.', '7 19 10 22 7 19 10 22', { keyPc: 9, near: 5 }), LPC.timed('Skips in time', 'The same, eighths with the click.', '7 19 10 22 7 19 10 22', { keyPc: 9, near: 5, bpm: 70 })] },
+    { id: 't5', name: 'Legato runs', steps: [LPC.notes('Three notes a string', 'A major-scale run, three notes per string, picking only the first of each three.', '0 2h 4h 5 7h 9h 11 12h 14h', { keyPc: 0, near: 8 })] }
+  ] },
+  { id: 'warm', ico: '🔥', name: 'Warm-ups', blurb: 'Five minutes before you play: the spider, finger permutations, the chromatic walk, trills, changes, a scale sprint.', lessons: [
+    { id: 'w1', name: 'The spider', steps: [LPC.notes('One finger a fret', 'Frets 1-2-3-4 on every string, low to high: one finger per fret, fingers stay down close to the strings.', '0 1 2 3 5 6 7 8 10 11 12 13 15 16 17 18 19 20 21 22 24 25 26 27', { keyPc: 5, near: 1 })] },
+    { id: 'w2', name: 'Finger permutations', steps: [LPC.notes('1-3-2-4', 'The awkward order on purpose: frets 1, 3, 2, 4 on each string.', '0 2 1 3 5 7 6 8 10 12 11 13 15 17 16 18 19 21 20 22 24 26 25 27', { keyPc: 5, near: 1 }), LPC.notes('4-3-2-1', 'Backwards, from the little finger.', '3 2 1 0 8 7 6 5 13 12 11 10 18 17 16 15 22 21 20 19 27 26 25 24', { keyPc: 5, near: 1 })] },
+    { id: 'w3', name: 'The chromatic walk', steps: [LPC.timed('Up the neck', 'Four notes on the high E, then shift up a fret and again: slow and even.', '0:2 1:2 2:2 3:2 1:2 2:2 3:2 4:2 2:2 3:2 4:2 5:2 3:2 4:2 5:2 6:2', { keyPc: 5, near: 1, lift: 24, bpm: 66 })] },
+    { id: 'w4', name: 'Trills', steps: [LPC.timed('A minute of trills', 'Hammer and pull between two frets, in time.', '10:1 12h:1 10p:1 12h:1 10p:1 12h:1 10p:1 12h:1 10p:1 12h:1 10p:1 12h:1 10p:1 12h:1 10p:1 12h:1', { keyPc: 9, near: 5, lift: 12, bpm: 60 })] },
+    { id: 'w5', name: 'One-minute changes', steps: [LPC.minute('Em and C', 'As many clean changes as you can in a minute.', ['Em', 'C']), LPC.minute('D and A', 'The same with D and A.', ['D', 'A'])] },
+    { id: 'w6', name: 'Scale sprint', steps: [LPC.timed('The box, up and down, faster each time', 'With the tempo ladder on, each clean run adds 5 BPM.', '0 3 5 7 10 12 15 17 19 22 24 22 19 17 15 12', { keyPc: 9, near: 5, bpm: 80, keyed: true })] }
+  ] }
+];
+
+/* ---------- the riff library ---------- */
+const RIFFS = [
+  /* blues: A minor pentatonic / blues, box one, lead register */
+  ['bl1', 'Box-one turnaround', 'Blues', 1, 80, 9, 0, 5, '24 22 19 22 19 17 15 12:4 r:2', 'Let the last note ring.'],
+  ['bl2', 'Bend and resolve', 'Blues', 1, 72, 9, 12, 5, '15b:4 15 12 10 12:6', 'Bend on the beat; let the bend ring before the release.'],
+  ['bl3', 'Blue note slide', 'Blues', 2, 76, 9, 12, 5, '12 15 16/ 17 15 12 10:4 7~:6', 'The flat five passes through on the way up: do not stop on it.'],
+  ['bl4', 'Shuffle double-stop', 'Blues', 2, 84, 9, 0, 5, '19+24:2 r:2 19+24:2 17+22:2 15+19:2 12:2 10:2 12:4', 'Two strings together, barred with one finger.'],
+  ['bl5', 'Slow-blues cry', 'Blues', 3, 60, 9, 0, 7, '22b:6 22 19 17b1:4 15 12~:8', 'Hold the first bend and add vibrato on the top.'],
+  ['bl6', 'Low walk-up', 'Blues', 1, 90, 9, 0, 3, '0 3 4 7:4 5 3 0:4 r:2', 'A low shuffle walk on the A and low E.'],
+  ['bl7', 'The answering phrase', 'Blues', 2, 80, 9, 12, 5, '10 12 15b:4 12 10 7 10:4 12:2', 'Play it right after a sung line, like a reply.'],
+  ['bl8', 'Repeat and push', 'Blues', 3, 92, 9, 0, 8, '24 27 24 22 24 27 24 22 24 27 29b:4 27~:4', 'Same three notes three times, then over the top.'],
+  /* rock: E, low strings, power chords and pentatonic */
+  ['rk1', 'Power-chord climb', 'Rock', 1, 100, 4, 0, 0, '0+7+12:4 3+10+15:4 5+12+17:4 3+10+15:2 0+7+12:2', 'Move one shape; keep the palm light.'],
+  ['rk2', 'Open-E drive', 'Rock', 1, 110, 4, 0, 0, '0:1 0:1 0:2 3:2 0:1 0:1 0:2 5:2 3:2 0:2', 'Chug the open string, punch the fretted notes.'],
+  ['rk3', 'Pentatonic hook', 'Rock', 2, 104, 4, 0, 2, '0 3 5 3 7:4 5 3 0 3:4', 'A low hook on the bottom two strings.'],
+  ['rk4', 'Pedal-tone run', 'Rock', 2, 112, 4, 12, 12, '0:1 12:1 0:1 10:1 0:1 7:1 0:1 10:1 0:1 12:1 0:1 15:1 0:1 12:1 0:1 10:1', 'Every other note returns to the open string.'],
+  ['rk5', 'Stop-time stabs', 'Rock', 1, 96, 4, 0, 0, '0+7+12:2 r:6 5+12+17:2 r:2 3+10+15:2 r:2', 'Silence is part of the riff: stop the strings dead.'],
+  ['rk6', 'Arena bend lick', 'Rock', 2, 108, 4, 12, 12, '15b:4 12 15 12 10 12:4 r:4', 'High on the neck at the twelfth fret.'],
+  ['rk7', 'Riff with a turn', 'Rock', 3, 120, 4, 0, 0, '0 0 3 0 5 3 0 3:2 0 7 6 5 3 0 3:4', 'The chromatic step from 7 to 5 is the hook.'],
+  ['rk8', 'Octave melody', 'Rock', 2, 100, 4, 12, 7, '0+12:4 3+15:4 5+17:4 7+19:2 5+17:2', 'Octave shape: mute the string in between.'],
+  /* funk: sixteenths, E and A */
+  ['fk1', 'Sixteenth scratch', 'Funk', 1, 96, 4, 12, 7, '0:1 r:1 0x:1 0:1 r:1 3:1 0x:1 5:1 r:2 7:1 5:1 3:1 0:1 r:2', 'Muted strokes keep the hand moving.'],
+  ['fk2', 'Ninth-chord stab', 'Funk', 2, 100, 4, 12, 7, '10+14+19:1 r:3 10+14+19:1 r:1 10+14+19:1 r:5 12+16+21:1 r:1 10+14+19:2 r:2', 'Short and percussive; release the pressure right after.'],
+  ['fk3', 'Octave pop', 'Funk', 2, 104, 9, 0, 5, '0:1 r:1 12:1 r:1 0:1 0:1 12:1 r:1 3:1 r:1 15:1 r:1 5:1 7:1 r:2', 'Octaves, pecked like a bass player.'],
+  ['fk4', 'The one-and', 'Funk', 1, 96, 4, 12, 7, '0:3 0:1 r:2 3:1 5:1 r:4 7:1 5:1 r:2', 'Everything leans on the first beat.'],
+  ['fk5', 'Chicken-pick line', 'Funk', 3, 108, 9, 12, 7, '12:1 12x:1 15:1 12x:1 17:1 15:1 12:1 12x:1 10:1 12:1 10x:1 7:1 r:4', 'Alternate the real notes with dead ones.'],
+  /* metal: E and D-ish, low and tight */
+  ['mt1', 'Gallop chug', 'Metal', 1, 140, 4, 0, 0, '0:2 0:1 0:1 0:2 0:1 0:1 3:2 0:1 0:1 5:2 0:1 0:1', 'All down-strokes on the eighths if you can.'],
+  ['mt2', 'Tritone grind', 'Metal', 2, 120, 4, 0, 0, '0:1 0:1 6:2 0:1 0:1 5:2 0:1 0:1 3:2 1:4', 'The flat five gives the menace.'],
+  ['mt3', 'Phrygian run', 'Metal', 2, 132, 4, 0, 0, '0:1 1:1 0:1 3:1 0:1 5:1 0:1 3:1 0:1 1:1 0:1 3:1 0:1 6:1 5:1 3:1', 'Open string pedal against the half step.'],
+  ['mt4', 'Breakdown stops', 'Metal', 1, 100, 4, 0, 0, '0+7:2 r:2 0+7:1 0+7:1 r:2 0+7:2 r:4 1+8:4', 'Lock the stops to the kick drum.'],
+  ['mt5', 'Twin-lead line', 'Metal', 3, 126, 4, 12, 12, '12 14 15 17 19 17 15 14 12 10 12:4', 'Natural minor: picture a harmony a third above.'],
+  /* country: G major pentatonic */
+  ['cn1', 'Major pentatonic run', 'Country', 1, 100, 7, 12, 2, '0 2 4 7 9 12 9 7 4 2 0:4', 'Bright and open, near the nut.'],
+  ['cn2', 'Bend into the third', 'Country', 2, 96, 7, 12, 3, '2b:4 4 2 0 -3:4 0:4', 'Bend the second up to the third, the country sweet spot.'],
+  ['cn3', 'Chicken pickin\' lick', 'Country', 3, 112, 7, 12, 3, '9x:1 9:1 7:1 4:1 7x:1 7:1 4:1 2:1 4x:1 4:1 2:1 0:1 r:4', 'Snap the note after each muted one.'],
+  ['cn4', 'Walk-down fill', 'Country', 1, 92, 7, 0, 0, '12 11 9 7 4 2 0:4', 'A bass-line walk between chords.'],
+  /* pop: major, arpeggios and hooks */
+  ['pp1', 'Arpeggio hook', 'Pop', 1, 96, 0, 12, 5, '0 4 7 12 7 4 0:4', 'The chord, one note at a time.'],
+  ['pp2', 'Suspended shimmer', 'Pop', 2, 104, 2, 12, 7, '0 5 7 12 7 5 0 2:4 r:2', 'Sus4 resolving to the root.'],
+  ['pp3', 'Octave melody', 'Pop', 1, 92, 0, 12, 5, '12:4 11 9 7:4 9 11 12:4', 'Sing it while you play it.'],
+  ['pp4', 'Upbeat pluck', 'Pop', 2, 112, 7, 12, 5, 'r:2 4 r:2 7 r:2 9 7 4 2:4', 'Everything on the off-beats.'],
+  /* jazz-ish: Dorian, arpeggios */
+  ['jz1', 'Dorian line', 'Jazz', 2, 100, 2, 12, 5, '0 2 3 5 7 9 10 9 7 5 3 2 0:4', 'The major sixth is the Dorian colour.'],
+  ['jz2', 'Seventh-chord arpeggio', 'Jazz', 2, 96, 2, 12, 5, '0 3 7 10 12 10 7 3 0:4', 'Minor seventh, up and down.'],
+  ['jz3', 'Enclosure', 'Jazz', 3, 108, 7, 12, 7, '5 3 4 7 9 8 7 4 2 3 4:4', 'Circle the target note from above and below.'],
+  /* reggae and latin */
+  ['rg1', 'One-drop bass riff', 'Reggae', 1, 76, 9, 0, 5, 'r:2 0 r:2 0 3 5 r:2 7 5 3 0:2 r:4', 'Leave the first beat empty.'],
+  ['rg2', 'Skank melody', 'Reggae', 2, 80, 9, 12, 5, 'r:2 12 r:2 15 r:2 17 r:2 15 r:2 12 r:2 10', 'Upstrokes on the off-beats.'],
+  ['lt1', 'Montuno pattern', 'Latin', 3, 100, 0, 12, 5, '0 4 7 4 0 4 7 9 7 4 0 4 7 4 2 4', 'A repeating figure that pushes ahead of the beat.']
+].map(([id, name, style, lvl, bpm, keyPc, lift, near, txt, tip]) => { const src = rfParse(txt); return { id: 'rf-' + id, kind: 'notes', name, title: name, style, lvl, bpm, keyPc, lift, near, src, len: rfLen(src), tip, text: style + ' · level ' + lvl + ' · ' + bpm + ' BPM. Listen, then play it note by note; Timed checks it against the click.' }; });
+const RIFF_STYLES = [...new Set(RIFFS.map(r => r.style))];
+/* progress is kept by step: a lesson's id and the step's place in it, so it survives new lessons being added */
+LESSONS.forEach(path => path.lessons.forEach(ls => ls.steps.forEach((s, i) => { s.id = ls.id + '.' + i; })));
+
+/* >>> parts/82-learn.js */
+/* ============================================================
+   Part 82 · LEARN (2.32) — the Teacher workspace's front door: a place to be taught
+     · Lessons      paths (Foundations, Lead, Rhythm, Technique) whose steps demonstrate, then listen (part 80, 81)
+     · Warm-ups     five minutes before you play
+     · Riffs & licks  the library, by style and level: listen, play it, in time, in any key, put it in your song
+     · Riff Lab     new riffs from a scale, a feel and a length; then vary them (shift, reverse, major ↔ minor, bends, higher,
+                    sequence) and keep the ones you like
+     · Scale atlas  the five pentatonic boxes, three-notes-per-string shapes, arpeggios in five positions, the modes over a band vamp
+                    that shows their colour, and target notes over changes
+     · For teachers annotate, lesson notes, record the screen; turn bars of the song into an exercise; share or open lesson files
+   ============================================================ */
+/* ---------- putting a riff in the song ---------- */
+/** the piece's notes into a new section after the one you are in (undoable), the lead switched on so it plays */
+function learnToSong(p) {
+  const ns = coNotes().filter(n => !n.r); if (!ns.length) return false; const sp = spb(), bars = Math.max(1, Math.ceil((p.len || 16) / sp)), cap = S.capo || 0, bf = snap();
+  const sec = mkSection(String(p.title || 'Riff').slice(0, 40), Array.from({ length: bars }, () => ''));
+  ns.forEach(n => { const b = sec.bars[Math.floor(n.at / sp)]; if (!b) return; (n.ch || [n]).forEach(x => { const f = x.f - cap; if (f < 0) return; const t = n.t === 'b' ? 'b' : n.t === 'h' || n.t === 'p' || n.t === '/' || n.t === '~' ? n.t : ''; const o = { s: n.at % sp, st: x.s, f: n.t === 'x' ? 'x' : f, t }; if (t === 'b') o.bend = f + (n.b || 2); b.tab.push(o); }); });
+  const at = Math.min(S.sections.length, pedalSecs().i + 1); S.sections.splice(at, 0, sec); S.band.leadOn = true; T.cursor = S.sections.slice(0, at).reduce((a, x) => a + x.bars.length, 0) * sp;
+  histPush(bf); bus.emit('transport'); toast('“' + sec.name + '” is in your song as a new section (' + bars + ' bar' + (bars > 1 ? 's' : '') + '), with the lead playing its tab. Undo takes it out.', 'ok'); return true;
+}
+/** a lesson or riff file to give to a student: the pieces as they are (notes, words, tempo) */
+function learnFileText(pieces, title) {
+  const clean = pieces.map(p => { const o = {}; ['kind', 'title', 'text', 'tip', 'bpm', 'len', 'keyPc', 'lift', 'near', 'src', 'notes', 'back', 'pattern', 'chords', 'bars', 'secs', 'goal', 'keyed'].forEach(k => { if (p[k] != null) o[k] = p[k]; }); if (o.src) delete o.notes; return o; });
+  return JSON.stringify({ daily: 'lesson', v: 1, title: title || '', pieces: clean }, null, 1);
+}
+function learnFile(pieces, title) { download((title || 'lesson').replace(/\W+/g, '_') + '.daily-lesson.json', learnFileText(pieces, title), 'application/json'); }
+/** a file from a teacher: checked piece by piece; anything it does not understand is left out */
+function learnOpenFile(text) {
+  let o; try { o = JSON.parse(text); } catch (e) { toast('That is not a lesson file.', 'warn'); return false; }
+  if (!o || o.daily !== 'lesson' || !Array.isArray(o.pieces)) { toast('That is not a lesson file.', 'warn'); return false; }
+  const num = (v, a, b, d) => { v = +v; return isFinite(v) ? Math.max(a, Math.min(b, v)) : d; }, str = (v, n) => typeof v === 'string' ? v.slice(0, n) : '';
+  const okNote = n => n && typeof n === 'object' && isFinite(+n.at) && isFinite(+n.len), cleanNote = n => { const q = { at: num(n.at, 0, 64, 0), len: num(n.len, 1, 32, 2) }; if (n.r) q.r = true; else { if (n.i != null) q.i = num(n.i, -24, 48, 0); if (n.m != null) q.m = num(n.m, 24, 108, 60); if (n.s != null) q.s = num(n.s, 0, 7, 0); if (n.f != null) q.f = num(n.f, 0, 24, 0); if (Array.isArray(n.ch)) q.ch = n.ch.slice(0, 6).map(x => typeof x === 'object' ? { m: num(x.m, 24, 108, 60), s: num(x.s, 0, 7, 0), f: num(x.f, 0, 24, 0) } : num(x, -24, 48, 0)); if (/^[bhp\/~x]$/.test(n.t || '')) q.t = n.t; if (n.b) q.b = num(n.b, 1, 3, 2); if (n.to != null) q.to = num(n.to, 24, 110, 62); } return q; };
+  const ps = o.pieces.slice(0, 40).filter(p => p && CO_KINDS.includes(p.kind)).map((p, i) => { const q = { kind: p.kind, id: 'file.' + i + '.' + str(o.title, 40), title: str(p.title, 80) || 'Step ' + (i + 1), text: str(p.text, 600), tip: str(p.tip, 300), bpm: num(p.bpm, 40, 240, 80), len: num(p.len, 4, 64, 16) };
+    if (Array.isArray(p.src)) { q.src = p.src.filter(okNote).slice(0, 128).map(cleanNote); q.keyPc = num(p.keyPc, 0, 11, 9); q.lift = num(p.lift, 0, 24, 0); q.near = num(p.near, 0, 15, 5); }
+    else if (Array.isArray(p.notes)) q.notes = p.notes.filter(okNote).slice(0, 128).map(cleanNote);
+    if (Array.isArray(p.chords)) q.chords = p.chords.slice(0, 8).map(c => str(c, 8)).filter(c => parseChord(c)); if (typeof p.pattern === 'string') q.pattern = p.pattern.replace(/[^Ddumx.]/g, '').slice(0, 32);
+    if (p.back && typeof p.back === 'object') q.back = { drums: !!p.back.drums, bass: p.back.bass !== false, chords: Array.isArray(p.back.chords) ? p.back.chords.slice(0, 8).map(c => str(c, 8)).filter(c => parseChord(c)) : undefined };
+    ['bars', 'secs', 'goal'].forEach(k => { if (p[k] != null) q[k] = num(p[k], 1, 120, 8); }); if (p.keyed === false) q.keyed = false;
+    if (['chord', 'minute'].includes(q.kind) && !(q.chords && q.chords.length)) return null; if (['changes', 'landing'].includes(q.kind) && !(q.back && q.back.chords && q.back.chords.length)) return null; if (q.kind === 'rhythm' && !q.pattern) return null; if (['notes', 'timed', 'bend', 'vib'].includes(q.kind) && !(q.src || q.notes || []).length) return null;
+    return q; }).filter(Boolean);
+  if (!ps.length) { toast('Nothing in that file could be played.', 'warn'); return false; }
+  coachOpen(ps, 0, { title: str(o.title, 80) || 'A lesson from a file' }); return true;
+}
+/** the bars of the section you are in (or the selected ones) as an exercise: the tab's notes, at the song's tempo */
+function learnFromSong() {
+  const si = pedalSecs().i, sec = S.sections[si]; if (!sec) return null; const sp = spb(), cap = S.capo || 0, notes = [];
+  sec.bars.forEach((b, bi) => (b.tab || []).filter(n => typeof n.f === 'number').forEach(n => notes.push({ at: bi * sp + n.s, len: 2, m: S.tuning[n.st] + cap + n.f, s: n.st, f: n.f + cap, t: n.t === 'b' ? 'b' : '' })));
+  if (!notes.length) { toast('This section has no tab notes yet. Write some in Write, or use ● Capture.', 'warn'); return null; }
+  notes.sort((a, b) => a.at - b.at || a.s - b.s); const merged = []; notes.forEach(n => { const l = merged[merged.length - 1]; if (l && l.at === n.at) (l.ch = l.ch || [{ m: l.m, s: l.s, f: l.f }]).push({ m: n.m, s: n.s, f: n.f }); else merged.push(n); });
+  return { kind: 'notes', id: 'song.' + (sec.id || si), title: (S.title || 'Song') + ' · ' + sec.name, text: 'The tab of this section, note by note. Teachers: share it as a file for your student.', bpm: Math.round(S.bpm), notes: merged, len: Math.max(16, sec.bars.length * sp), keyed: false };
+}
+
+/* ---------- Riff Lab ---------- */
+const LAB_SCALES = ['Minor Pentatonic', 'Blues', 'Major Pentatonic', 'Natural Minor (Aeolian)', 'Dorian', 'Mixolydian', 'Major (Ionian)'];
+const LAB_FEELS = { 'Straight eighths': { step: 2, low: false }, 'Funky sixteenths': { step: 1, low: false }, 'Shuffle': { step: 0, low: false }, 'Heavy half-time': { step: 2, low: true } };
+CFG.learn.lab = Object.assign({ scale: 'Minor Pentatonic', feel: 'Straight eighths', bars: 1, dens: .6, key: null, seed: 1 }, CFG.learn.lab || {});
+const labRng = seed => { let a = seed >>> 0 || 1; return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; };
+/** a new riff: a motif of 3–6 notes on the scale, answered or sequenced, ending on a chord tone; bends and vibrato where the style likes them */
+function labMake(o) {
+  o = Object.assign({}, CFG.learn.lab, o || {}); const R = labRng(o.seed), iv = SCALES[o.scale] || SCALES['Minor Pentatonic'], F = LAB_FEELS[o.feel] || LAB_FEELS['Straight eighths'], L = 16 * (o.bars || 1);
+  const pool = []; for (let oc = 0; oc < 2; oc++) iv.forEach(x => pool.push(x + 12 * oc)); pool.push(24); const home = F.low ? 0 : pool.indexOf(12);
+  let grid = []; if (F.step === 0) { for (let b = 0; b < 4; b++) grid.push(b * 4, b * 4 + 3); } else for (let k = 0; k < 16; k += F.step) grid.push(k);
+  const bar1 = grid.filter((k, j) => j === 0 || R() < o.dens), motifN = Math.max(3, Math.min(6, bar1.length)), rhythm = bar1.slice(0, motifN);
+  let idx = home, motif = rhythm.map((k, j) => { if (j) { const r = R(), step = r < .55 ? 1 : r < .85 ? 2 : 3; idx = Math.max(0, Math.min(pool.length - 1, idx + (R() < .5 ? -step : step))); } return pool[idx]; });
+  const notes = []; const push = (at, i, len) => notes.push({ at, len, i });
+  rhythm.forEach((k, j) => push(k, motif[j], (rhythm[j + 1] != null ? rhythm[j + 1] : 16) - k));
+  if (L > 16) { const seq = R() < .5; rhythm.forEach((k, j) => { let i = motif[j]; if (seq) { const d = pool.indexOf(i); i = pool[Math.min(pool.length - 1, d + 1)]; } push(16 + k, i, (rhythm[j + 1] != null ? rhythm[j + 1] : 16) - k); }); }
+  const last = notes[notes.length - 1], tones = [0, 12, 7, 19, 24, 3, 4, 15, 16].filter(x => pool.includes(x)); let bestT = tones[0]; tones.forEach(x => { if (Math.abs(x - last.i) < Math.abs(bestT - last.i)) bestT = x; }); last.i = bestT; last.len = Math.max(last.len, 4); last.t = '~';
+  const bendy = /Pentatonic|Blues/.test(o.scale); notes.forEach((n, j) => { if (j === notes.length - 1) return; if (bendy && n.len >= 3 && [3, 5, 10, 15, 17, 22].includes(n.i) && R() < .5) { n.t = 'b'; n.b = 2; } else if (j && notes[j - 1].i + 2 === n.i && R() < .25) n.t = '/'; });
+  if (F.low) notes.forEach(n => { if (n.at % 8 === 0 && R() < .5 && iv.includes((n.i + 7) % 12)) n.ch = [n.i, n.i + 7]; });      /* a power chord, when its fifth is in the scale */
+  notes.forEach(n => { n.len = Math.max(1, Math.min(n.len, L - n.at)); });
+  return labPiece(notes, o, 'Idea #' + o.seed);
+}
+function labPiece(src, o, name) { const key = o.key != null ? o.key : S.key, F = LAB_FEELS[o.feel] || LAB_FEELS['Straight eighths']; return { kind: 'notes', id: 'lab.' + (o.seed || 0), title: name, name, src, len: rfLen(src), keyPc: key, lift: 0, near: F.low ? 0 : 5, bpm: o.bpm || (F.step === 1 ? 92 : 96), lab: Object.assign({}, o), text: o.scale + ' · ' + o.feel + ' · ' + (o.bars > 1 ? '2 bars' : '1 bar') + '. Vary it until it is yours, then keep it or put it in your song.' }; }
+/** the variations: each a new piece from the one in the coach */
+function labVary(p, how) {
+  let src = (p.src || []).map(n => Object.assign({}, n)); const o = Object.assign({}, p.lab || { scale: 'Minor Pentatonic', feel: 'Straight eighths', bars: 1 }), L = p.len || 16, ns = src.filter(n => !n.r);
+  const deg = (i, iv) => { const oc = Math.floor(i / 12), r = ((i % 12) + 12) % 12; let k = 0; iv.forEach((x, j) => { if (Math.abs(x - r) < Math.abs(iv[k] - r)) k = j; }); return [oc, k]; };
+  switch (how) {
+    case 'shift': src.forEach(n => { n.at = (n.at + 2) % L; }); src.sort((a, b) => a.at - b.at); src.forEach((n, j) => { const nx = src[j + 1]; n.len = Math.max(1, (nx ? nx.at : L) - n.at); }); break;
+    case 'reverse': { const is = ns.map(n => n.i).reverse(); ns.forEach((n, j) => { n.i = is[j]; if (n.ch) n.ch = [n.i, n.i + (n.ch[1] - n.ch[0])]; n.t = j === ns.length - 1 ? '~' : ''; }); break; }
+    case 'flip': { const minor = /Minor|Blues|Dorian|Aeolian/.test(o.scale), from = SCALES[o.scale] || SCALES['Minor Pentatonic'], toName = minor ? (o.scale === 'Natural Minor (Aeolian)' || o.scale === 'Dorian' ? 'Major (Ionian)' : 'Major Pentatonic') : (o.scale === 'Major (Ionian)' || o.scale === 'Mixolydian' ? 'Natural Minor (Aeolian)' : 'Minor Pentatonic'), to = SCALES[toName];
+      ns.forEach(n => { const [oc, k] = deg(n.i, from); const j = Math.min(to.length - 1, Math.round(k * (to.length - 1) / Math.max(1, from.length - 1))); n.i = oc * 12 + to[j]; if (n.ch) { if (to.includes((n.i + 7) % 12)) n.ch = [n.i, n.i + 7]; else delete n.ch; } }); o.scale = toName; break; }
+    case 'bends': ns.forEach((n, j) => { if (j < ns.length - 1 && n.len >= 2 && !n.t && j % 2 === 0) { n.t = 'b'; n.b = 2; } }); break;
+    case 'higher': return Object.assign({}, p, { src, lift: (p.lift || 0) + 12 > 24 ? 0 : (p.lift || 0) + 12, near: (p.near || 5) + 5 > 14 ? 3 : (p.near || 5) + 5, title: p.title + ' (moved)', id: p.id + '.h' });
+    case 'sequence': { if (L >= 32) { toast('Already two bars: try Shift or Reverse.', 'warn'); return p; } const iv = SCALES[o.scale] || SCALES['Minor Pentatonic']; ns.forEach(n => { const [oc, k] = deg(n.i, iv), k2 = k + 1, i2 = (oc + Math.floor(k2 / iv.length)) * 12 + iv[k2 % iv.length]; src.push(Object.assign({}, n, { at: n.at + 16, i: i2, ch: n.ch && iv.includes((i2 + 7) % 12) ? [i2, i2 + 7] : undefined })); }); o.bars = 2; break; }
+  }
+  const q = Object.assign({}, p, { src, len: rfLen(src), lab: o, id: p.id + '.' + how, title: p.title.replace(/ \(.*\)$/, '') + ' (' + how + ')' }); return q;
+}
+function labKeep(p) { const mine = CFG.learn.mine; if (mine.some(m => m.id === p.id)) { toast('Already kept.', 'ok'); return; } mine.unshift({ id: p.id, title: p.title, src: p.src, len: p.len, keyPc: CO.key != null ? CO.key : p.keyPc, lift: p.lift, near: p.near, bpm: CO.bpm, lab: p.lab, at: Date.now() }); if (mine.length > 60) mine.pop(); saveCfg(); toast('Kept in My riffs (Riffs & licks).', 'ok'); learnPaint(); }
+/** the buttons under a riff or a lab idea in the coach */
+function learnActions(p) {
+  const mk = (id, label, fn, cls) => h('button', { class: 'btn sm' + (cls ? ' ' + cls : ''), id, onclick: fn }, label);
+  const out = [mk('coTimed', p.kind === 'timed' ? '♪ Note by note' : '⏱ In time', () => { CO.p = Object.assign({}, p, { kind: p.kind === 'timed' ? 'notes' : 'timed', back: { drums: true } }); CO.list[CO.idx] = CO.p; coBuild(); }), mk('coSong', '➕ Put it in my song', () => learnToSong(CO.p), 'primary')];
+  if (p.src && p.lab) ['shift', 'reverse', 'flip', 'bends', 'higher', 'sequence'].forEach(v => out.push(mk('coVar-' + v, { shift: '⇥ Shift', reverse: '⇄ Reverse', flip: '☯ Major ↔ minor', bends: '⤴ Add bends', higher: '⬆ Higher', sequence: '⧉ Sequence' }[v], () => { const q = labVary(CO.p, v); CO.list[CO.idx] = q; CO.p = q; coBuild(); })));
+  if (p.src && p.lab) out.push(mk('coKeep', '★ Keep', () => labKeep(CO.p)), mk('coAgain', '🎲 Another', () => { CFG.learn.lab.seed = (CFG.learn.lab.seed || 1) + 1; saveCfg(); const q = labMake(); CO.list[CO.idx] = q; CO.p = q; coBuild(); learnPaint(); }));
+  out.push(mk('coShare', '⇩ Share as a file', () => learnFile([Object.assign({}, CO.p, { keyPc: CO.key != null ? CO.key : CO.p.keyPc, bpm: CO.bpm })], CO.p.title)));
+  return out;
+}
+
+/* ---------- the scale atlas ---------- */
+const MODE_VAMP = { 'Major (Ionian)': [[0, ''], [5, '']], 'Dorian': [[0, 'm'], [5, '']], 'Phrygian': [[0, 'm'], [1, '']], 'Lydian': [[0, ''], [2, '']], 'Mixolydian': [[0, ''], [10, '']], 'Natural Minor (Aeolian)': [[0, 'm'], [8, '']], 'Locrian': [[0, 'dim'], [1, '']] };
+const MODE_COLOUR = { 'Major (Ionian)': [11, 'the major seventh'], 'Dorian': [9, 'the major sixth'], 'Phrygian': [1, 'the flat second'], 'Lydian': [6, 'the sharp fourth'], 'Mixolydian': [10, 'the flat seventh'], 'Natural Minor (Aeolian)': [8, 'the flat sixth'], 'Locrian': [6, 'the flat fifth'] };
+CFG.learn.atlas = Object.assign({ type: 'Pentatonic boxes', key: null, minor: true, pos: 1, mode: 'Dorian', chord: 'm7' }, CFG.learn.atlas || {});
+/** notes of a shape, ascending: per string, up to `per` scale notes in the fret window that starts at `f0` */
+function atShape(pcs, f0, per, span) {
+  const tu = wsTune(), cap = S.capo || 0, out = []; let last = -1;
+  tu.forEach((o, s) => { let n = 0; for (let f = Math.max(cap, f0 - 1); f <= f0 + span && n < per; f++) { const m = o + f; if (m <= last || !pcs.includes(((m % 12) + 12) % 12)) continue; out.push({ m, s, f }); last = m; n++; } });
+  return out;
+}
+/** the five (or seven) starting frets: each scale note on the low string, from the nut (or the capo) up an octave */
+/** the starting frets of the shapes: each scale note on the low string, from the key's root up an octave (shape 1 starts on the root, as guitarists count them) */
+function atStarts(pcs, key) { const o = wsTune()[0], cap = S.capo || 0, rf = cap + ((((key != null ? key : pcs[0]) - o - cap) % 12) + 12) % 12, fs = []; for (let f = rf; f < rf + 12; f++) if (pcs.includes(((o + f) % 12 + 12) % 12)) fs.push(f > cap + 14 ? f - 12 : f); return fs; }
+function atUpDown(ns) { const up = ns.slice(), seq = up.concat(up.slice(0, -1).reverse()); return seq.map((n, k) => ({ at: k * 2, len: 2, m: n.m, s: n.s, f: n.f })); }
+function atlasPieces() {
+  const A = CFG.learn.atlas, key = A.key != null ? A.key : S.key, kn = pcName(key, keyUsesFlats(key, A.minor)), pcsOf = name => (SCALES[name] || []).map(x => (key + x) % 12), t = A.type;
+  if (t === 'Pentatonic boxes' || t === 'Three notes per string') {
+    const name = t === 'Pentatonic boxes' ? (A.minor ? 'Minor Pentatonic' : 'Major Pentatonic') : (A.minor ? 'Natural Minor (Aeolian)' : 'Major (Ionian)'), pcs = pcsOf(name), starts = atStarts(pcs, key), per = t === 'Pentatonic boxes' ? 2 : 3;
+    return starts.map((f0, k) => { const ns = atShape(pcs, f0, per, per === 2 ? 4 : 6), notes = atUpDown(ns); return { kind: 'notes', id: 'atlas.' + t + '.' + name + '.' + key + '.' + k, title: kn + ' ' + name.replace(/ \(.*\)/, '') + ' · ' + (per === 2 ? 'box ' : 'position ') + (k + 1), text: (per === 2 ? 'Box ' + (k + 1) + ' of 5, from fret ' + f0 + '. Two notes on every string. ' : 'Position ' + (k + 1) + ' of ' + starts.length + ': three notes on every string, for speed and legato. ') + 'Up and back down; the roots (R) are home.', bpm: 76, notes, len: rfLen(notes), keyed: false, pcs }; });
+  }
+  if (t === 'Arpeggios') {
+    const Q = { '': [0, 4, 7], 'm': [0, 3, 7], 'maj7': [0, 4, 7, 11], '7': [0, 4, 7, 10], 'm7': [0, 3, 7, 10], 'm7b5': [0, 3, 6, 10] }, cq = Q[A.chord] ? A.chord : 'm7', pcs = Q[cq].map(x => (key + x) % 12), starts = atStarts(pcsOf(/m/.test(cq) && cq !== 'maj7' ? 'Minor Pentatonic' : 'Major Pentatonic'), key);
+    return starts.map((f0, k) => { const ns = atShape(pcs, f0, 3, 4), notes = atUpDown(ns); return { kind: 'notes', id: 'atlas.arp.' + cq + '.' + key + '.' + k, title: kn + cq + ' arpeggio · position ' + (k + 1), text: 'Only the chord’s notes, in one area of the neck (the five positions are the CAGED shapes). Play it up and down; then hear how each note sits over the chord.', bpm: 72, notes, len: rfLen(notes), keyed: false, pcs, back: { chords: [kn + cq], bass: true, drums: false } }; });
+  }
+  if (t === 'Modes over a vamp') {
+    const mode = MODE_VAMP[A.mode] ? A.mode : 'Dorian', pcs = pcsOf(mode), vamp = MODE_VAMP[mode].map(([iv, q]) => pcName((key + iv) % 12, keyUsesFlats(key, /m|dim/.test(MODE_VAMP[mode][0][1]))) + q), starts = atStarts(pcs, key), f0 = starts[Math.min(starts.length - 1, (A.pos || 1) - 1)];
+    const ns = atShape(pcs, f0, 3, 6), notes = atUpDown(ns), [civ, cname] = MODE_COLOUR[mode]; notes.forEach(n => { if (((n.m - key) % 12 + 12) % 12 === civ) n.lab = '★'; });
+    const m = mode.replace(/ \(.*\)/, '');
+    return [{ kind: 'notes', id: 'atlas.mode.' + mode + '.' + key, title: kn + ' ' + m + ' over ' + vamp.join(' – '), text: 'The band plays ' + vamp.join(' and ') + ' over and over; play the ' + m + ' scale over it. The ★ is ' + cname + ': the note that makes ' + m + ' sound like itself. Lean on it.', bpm: 84, notes, len: rfLen(notes), keyed: false, pcs, back: { drums: true, bass: true, chords: vamp } },
+      { kind: 'landing', id: 'atlas.modeland.' + mode + '.' + key, title: 'Improvise in ' + m, text: 'Now make it up: each time the chord changes, land on one of its notes.', bpm: 84, notes, len: 32, bars: 8, keyed: false, pcs, back: { drums: true, bass: true, chords: vamp } }];
+  }
+  /* target notes over changes */
+  const minor = A.minor, prog = minor ? [[0, 'm'], [8, ''], [3, ''], [10, '']] : [[0, ''], [7, ''], [9, 'm'], [5, '']], chords = prog.map(([iv, q]) => pcName((key + iv) % 12, keyUsesFlats(key, minor)) + q), pcs = pcsOf(minor ? 'Natural Minor (Aeolian)' : 'Major (Ionian)'), f0 = atStarts(pcs, key)[0];
+  const ns = atShape(pcs, f0, 3, 6);
+  return [{ kind: 'landing', id: 'atlas.target.' + key + (minor ? 'm' : ''), title: 'Target notes over ' + chords.join(' – '), text: 'The band plays ' + chords.join(', ') + '. Your scale is on the neck; at every change, land on a note of the new chord. That is what makes a solo follow the song.', bpm: 84, notes: atUpDown(ns), len: 64, bars: 8, keyed: false, pcs, back: { drums: true, bass: true, chords } }];
+}
+
+/* ---------- the hub ---------- */
+const lsDone = ls => ls.steps.filter(s => CFG.learn.done[s.id]).length;
+function learnPaint() { const d = document.getElementById('learn'); if (!d || !d.open) return; const on = d.querySelector('.hub-nb.on'); learnOpen(on ? on.dataset.sec : undefined); }
+function learnLessons(paths) {
+  return h('div', { class: 'ln-paths' }, paths.map(path => h('div', { class: 'ln-path' }, h('div', { class: 'ln-ph' }, h('span', { class: 'ln-ico', 'aria-hidden': 'true' }, path.ico), h('div', {}, h('b', {}, path.name), h('small', {}, path.blurb))),
+    h('ol', { class: 'ln-list' }, path.lessons.map(ls => { const n = lsDone(ls), all = ls.steps.length; return h('li', {}, h('button', { class: 'ln-ls' + (n === all ? ' done' : ''), 'data-lesson': ls.id, onclick: () => coachOpen(ls.steps, Math.min(n, all - 1), { title: path.name + ' · ' + ls.name }) },
+      h('span', {}, ls.name), h('small', { class: 'mono' }, n === all ? '✓' : n + '/' + all))); })))));
+}
+function learnRiffs() {
+  const f = CFG.learn.rf = CFG.learn.rf || { style: '', lvl: 0 }, box = h('div', { class: 'ln-riffs' });
+  const list = RIFFS.filter(r => (!f.style || r.style === f.style) && (!f.lvl || r.lvl === f.lvl)), mine = CFG.learn.mine || [];
+  box.append(h('div', { class: 'ln-filt' }, h('label', { class: 'field' }, 'Style', h('select', { class: 'in', id: 'rfStyle', onchange: e => { f.style = e.target.value; saveCfg(); learnPaint(); } }, [h('option', { value: '' }, 'All styles')].concat(RIFF_STYLES.map(s => h('option', { value: s, selected: f.style === s }, s))))),
+    h('label', { class: 'field' }, 'Level', h('select', { class: 'in', id: 'rfLvl', onchange: e => { f.lvl = +e.target.value; saveCfg(); learnPaint(); } }, [[0, 'Any'], [1, '1 · first steps'], [2, '2 · getting there'], [3, '3 · stretch']].map(([v, t]) => h('option', { value: v, selected: f.lvl === v }, t)))), h('small', { class: 'muted' }, list.length + ' riffs')),
+    h('div', { class: 'ln-grid' }, list.map(r => h('button', { class: 'ln-card' + (CFG.learn.done[r.id] ? ' done' : ''), 'data-riff': r.id, onclick: () => coachOpen(list.map(x => Object.assign({}, x)), list.indexOf(r), { title: 'Riffs & licks', actions: learnActions }) }, h('b', {}, r.name), h('small', {}, r.style + ' · level ' + r.lvl + ' · ' + r.bpm + ' BPM'), h('span', { class: 'tiny muted' }, r.tip)))));
+  if (mine.length) box.append(h('h4', { class: 'ln-h' }, '★ My riffs'), h('div', { class: 'ln-grid' }, mine.map((r, k) => h('div', { class: 'ln-card mine' }, h('button', { class: 'ln-open', onclick: () => coachOpen(mine.map(m => Object.assign({ kind: 'notes', text: 'One of yours, from Riff Lab.' }, m)), k, { title: 'My riffs', actions: learnActions }) }, h('b', {}, r.title), h('small', {}, (r.lab ? r.lab.scale + ' · ' + r.lab.feel : '') + ' · ' + pcName(r.keyPc, false))), h('button', { class: 'btn sm', 'aria-label': 'Remove ' + r.title, onclick: () => { CFG.learn.mine.splice(k, 1); saveCfg(); learnPaint(); } }, '✕')))));
+  return box;
+}
+function learnLab() {
+  const o = CFG.learn.lab, set = (k, v) => { o[k] = v; saveCfg(); }, sel = (k, label, opts, id) => h('label', { class: 'field' }, label, h('select', { class: 'in', id, onchange: e => set(k, isNaN(+e.target.value) || k === 'scale' || k === 'feel' ? e.target.value : +e.target.value) }, opts.map(([v, t]) => h('option', { value: v, selected: String(o[k]) === String(v) }, t))));
+  return h('div', { class: 'ln-lab' }, h('p', { class: 'small' }, 'Pick a scale, a feel and a length, and the lab writes a riff you have never played. Vary it (shift it, reverse it, swap major and minor, add bends, move it up the neck, sequence it) until it sounds like you; keep it, or put it straight into your song.'),
+    h('div', { class: 'ln-filt' }, sel('scale', 'Scale', LAB_SCALES.map(s => [s, s]), 'labScale'), sel('feel', 'Feel', Object.keys(LAB_FEELS).map(s => [s, s]), 'labFeel'), sel('bars', 'Length', [[1, '1 bar'], [2, '2 bars']], 'labBars'),
+      h('label', { class: 'field' }, 'Key', h('select', { class: 'in', id: 'labKey', onchange: e => set('key', e.target.value === '' ? null : +e.target.value) }, [h('option', { value: '' }, 'The song’s (' + pcName(S.key, false) + ')')].concat(NS.map((_, k) => h('option', { value: k, selected: o.key === k }, pcName(k, false)))))),
+      h('label', { class: 'field' }, 'Busy', h('input', { type: 'range', min: .2, max: 1, step: .05, value: o.dens, oninput: e => set('dens', +e.target.value) }))),
+    h('button', { class: 'btn primary', id: 'labGo', onclick: () => { o.seed = (o.seed || 1) + 1; saveCfg(); coachOpen(labMake(), 0, { title: 'Riff Lab', actions: learnActions, key: o.key != null ? o.key : S.key }); } }, '🎲 Make a riff'));
+}
+function learnAtlas() {
+  const A = CFG.learn.atlas, set = (k, v) => { A[k] = v; saveCfg(); learnPaint(); };
+  const types = ['Pentatonic boxes', 'Three notes per string', 'Arpeggios', 'Modes over a vamp', 'Target notes'], sel = (k, label, opts, id) => h('label', { class: 'field' }, label, h('select', { class: 'in', id, onchange: e => set(k, typeof A[k] === 'boolean' ? e.target.value === 'true' : isNaN(+e.target.value) || e.target.value === '' ? e.target.value : +e.target.value) }, opts.map(([v, t]) => h('option', { value: v, selected: String(A[k]) === String(v) }, t))));
+  const ctl = [sel('type', 'Show', types.map(x => [x, x]), 'atType'), h('label', { class: 'field' }, 'Key', h('select', { class: 'in', id: 'atKey', onchange: e => { A.key = e.target.value === '' ? null : +e.target.value; saveCfg(); learnPaint(); } }, [h('option', { value: '' }, 'The song’s (' + pcName(S.key, false) + ')')].concat(NS.map((_, k) => h('option', { value: k, selected: A.key === k }, pcName(k, false))))))];
+  if (A.type === 'Pentatonic boxes' || A.type === 'Three notes per string' || A.type === 'Target notes') ctl.push(sel('minor', 'Flavour', [[true, 'Minor'], [false, 'Major']], 'atMinor'));
+  if (A.type === 'Arpeggios') ctl.push(sel('chord', 'Chord', [['', 'Major'], ['m', 'Minor'], ['maj7', 'Major 7'], ['7', 'Dominant 7'], ['m7', 'Minor 7'], ['m7b5', 'Half-diminished']], 'atChord'));
+  if (A.type === 'Modes over a vamp') ctl.push(sel('mode', 'Mode', Object.keys(MODE_VAMP).map(m => [m, m]), 'atMode'), sel('pos', 'Position', [1, 2, 3, 4, 5, 6, 7].map(k => [k, String(k)]), 'atPos'));
+  const ps = atlasPieces();
+  return h('div', { class: 'ln-atlas' }, h('div', { class: 'ln-filt' }, ctl), h('div', { class: 'ln-grid' }, ps.map((p, k) => h('button', { class: 'ln-card' + (CFG.learn.done[p.id] ? ' done' : ''), 'data-atlas': k, onclick: () => coachOpen(atlasPieces(), k, { title: 'Scale atlas' }) }, h('b', {}, p.title), h('small', {}, p.notes.length + ' notes' + (p.back && p.back.chords ? ' · with a band' : ''))))));
+}
+function learnTeach() {
+  const file = h('input', { type: 'file', accept: '.json,application/json', hidden: true, onchange: async e => { const f = e.target.files[0]; e.target.value = ''; if (f) learnOpenFile(await f.text()); } });
+  const b = (id, label, sub, fn) => h('button', { class: 'ln-card', id, onclick: fn }, h('b', {}, label), h('small', {}, sub));
+  return h('div', { class: 'ln-grid' }, file,
+    b('lnInk', '✎ Annotate', 'Draw over anything on the page while you explain.', () => { document.getElementById('learn').close(); kitInk(); }),
+    b('lnNotes', '📝 Lesson notes', 'Notes for this song, kept in this browser.', () => { document.getElementById('learn').close(); kitNotes(); }),
+    b('lnScreen', '⏺ Record the screen', 'Your screen, the studio’s sound and your voice.', () => { document.getElementById('learn').close(); kitScreen(); }),
+    b('lnFromSong', '🎯 This section as an exercise', 'The tab of the section you are in, note by note, ready to share.', () => { const p = learnFromSong(); if (p) coachOpen(p, 0, { title: 'From your song', actions: q => [h('button', { class: 'btn sm', id: 'coShare', onclick: () => learnFile([q], q.title) }, '⇩ Share as a file')] }); }),
+    b('lnOpen', '📂 Open a lesson file', 'A lesson or riff a teacher shared (.daily-lesson.json).', () => file.click()));
+}
+/** the Teacher's front door */
+function learnOpen(at) {
+  const paths = LESSONS.filter(p => p.id !== 'warm'), warm = LESSONS.filter(p => p.id === 'warm'), all = LESSONS.reduce((a, p) => a + p.lessons.reduce((b, l) => b + l.steps.length, 0), 0), done = LESSONS.reduce((a, p) => a + p.lessons.reduce((b, l) => b + lsDone(l), 0), 0);
+  return hubOpen('learn', { ico: '🎓', title: 'Learn', sub: 'Lessons that listen while you play, warm-ups, riffs and licks, a riff lab for new ideas and an atlas of the neck. ' + done + ' of ' + all + ' lesson steps done.', at, sections: [
+    { key: 'lessons', label: 'Lessons', ico: '🎓', sub: 'Each step shows it, plays it, then listens to you play it (through the input the tuner uses).', wide: true, body: () => [learnLessons(paths)] },
+    { key: 'warm', label: 'Warm-ups', ico: '🔥', sub: 'Five minutes before you play.', wide: true, body: () => [learnLessons(warm)] },
+    { key: 'riffs', label: 'Riffs & licks', ico: '🎸', sub: RIFFS.length + ' riffs, written for this studio, in ' + RIFF_STYLES.length + ' styles. Any key; note by note or in time; straight into your song.', wide: true, body: () => [learnRiffs()] },
+    { key: 'lab', label: 'Riff Lab', ico: '🧪', sub: 'New ideas, on tap.', wide: true, body: () => [learnLab()] },
+    { key: 'atlas', label: 'Scale atlas', ico: '🗺', sub: 'The neck, mapped: boxes, positions, arpeggios, modes over a band, target notes.', wide: true, body: () => [learnAtlas()] },
+    { key: 'teach', label: 'For teachers', ico: '🍎', sub: 'Teaching someone else: draw, take notes, record, and hand out exercises as files.', wide: true, body: () => [learnTeach()] }
+  ] });
+}
+bus.on('coach:done', () => learnPaint());
 
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
