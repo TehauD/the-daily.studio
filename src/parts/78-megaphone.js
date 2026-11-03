@@ -50,6 +50,7 @@ function megRead() {
 function megStep(f, now) {
   const dt = Math.min(200, now - (MEG.last || now)); MEG.last = now; MEG.feat = f;
   if (MEG.teach) { if (f) MEG.teach.got.push(f); return; }
+  if (MEG.force) { if (!MEG.on) megSet(true); return; }      /* the vocal board's Scream or Megaphone is on (part 79): the look stays until it goes off */
   if (!f) { MEG.quiet += dt; MEG.voiced = false; if (MEG.on && MEG.quiet > 4000) megSet(false); return; }
   MEG.quiet = 0; MEG.voiced = true; const s = megScore(f); MEG.score = MEG.score * .6 + s * .4;
   if (!MEG.on) { MEG.up = MEG.score > .62 ? MEG.up + dt : 0; if (MEG.up >= 250) megSet(true); }
@@ -60,7 +61,7 @@ function megSet(on) {
   if (on && CFG.mega.lights && typeof LX !== 'undefined') { LX.strobeReq = true; LX.drop = Math.max(LX.drop || 0, .9); if (typeof SG !== 'undefined') SG.flash = 1; }
   megStream(); bus.emit('megaphone', on);
 }
-function megLoop(on) { clearInterval(MEG.tm); MEG.tm = 0; if (!on) { megSet(false); return; } MEG.tm = setInterval(() => { if (!CFG.mega.on) return; megStep(megRead(), performance.now()); megPaint(); }, 60); }
+function megLoop(on) { clearInterval(MEG.tm); MEG.tm = 0; if (!on) { if (!MEG.force) megSet(false); return; } MEG.tm = setInterval(() => { if (!CFG.mega.on) return; megStep(megRead(), performance.now()); megPaint(); }, 60); }
 
 /* ---------- teaching it your voice ---------- */
 /** three seconds with the pedal off, then three with it on; the model is the middle of each, and how far apart they are */

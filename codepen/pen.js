@@ -5,7 +5,7 @@
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.30.0', BUILD = 'b83097f', PARTS_N = +'94' || 0, LINES_N = +'16499' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.31.0', BUILD = '7c190d2', PARTS_N = +'95' || 0, LINES_N = +'16743' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { ghApp: { clientId: '', slug: '' },   /* Sign in with GitHub: the GitHub App's public client id and its slug (docs/GITHUB.md); empty = only the token way */
   support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://the-daily.studio/journal/' };
@@ -484,6 +484,51 @@ class Comp extends AudioWorkletProcessor{
       this.gl=g1;}
     return true;}}
 registerProcessor('fw-comp',Comp);
+
+/* the vocal pedalboard (part 79): an analog-style octave down for growl (a flip-flop on the voice's zero crossings: no delay) */
+class Oct extends AudioWorkletProcessor{
+  constructor(){super();this.l1=0;this.l2=0;this.env=0;this.ff=1;this.pos=false;}
+  process(i,o){const x=i[0],y=o[0];if(!x.length||!y.length)return true;const n=y[0].length,sr=sampleRate,a=Math.exp(-2*Math.PI*350/sr),at=Math.exp(-1/(0.002*sr)),rl=Math.exp(-1/(0.06*sr));
+    for(let k=0;k<n;k++){const v=x[0][k];this.l1=v+(this.l1-v)*a;this.l2=this.l1+(this.l2-this.l1)*a;const e=Math.abs(v);this.env=e>this.env?e+(this.env-e)*at:e+(this.env-e)*rl;
+      const th=this.env*0.08;if(!this.pos&&this.l2>th){this.pos=true;this.ff=-this.ff;}else if(this.pos&&this.l2<-th)this.pos=false;
+      const out=this.ff*this.env*0.9;for(let c=0;c<y.length;c++)y[c][k]=out;}
+    return true;}}
+registerProcessor('fw-oct',Oct);
+
+/* a harmony voice that hears the note being sung and moves it a number of steps up or down the song's scale (or to a chord tone):
+   pitch found by a small YIN on a 4x decimated copy, then the same two-head shifter as fw-pitch */
+class Harm extends AudioWorkletProcessor{
+  constructor(){super();this.N=16384;this.b=new Float32Array(this.N);this.w=0;this.ph=0;this.win=0.035;this.semi=0;this.tgt=0;
+    this.D=new Float32Array(512);this.dw=0;this.acc=0;this.ac=0;this.cnt=0;this.scale=[1,0,1,0,1,1,0,1,0,1,0,1];this.steps=2;this.fixed=null;this.chord=null;this.on=false;
+    this.port.onmessage=e=>{const d=e.data;if(d.scale)this.scale=d.scale;if(d.steps!=null)this.steps=d.steps;if('fixed' in d)this.fixed=d.fixed;if('chord' in d)this.chord=d.chord;};}
+  rd(pos){const N=this.N;let p=pos;while(p<0)p+=N;const i=Math.floor(p),f=p-i;const a=this.b[i%N],c=this.b[(i+1)%N];return a+(c-a)*f;}
+  detect(){const sr=sampleRate/4,W=256,D=this.D,M=512,s0=(this.dw-W-180+M*4)%M,mn=Math.floor(sr/1000),mx=Math.min(175,Math.floor(sr/70));let e=0;
+    for(let j=0;j<W;j++){const v=D[(s0+j)%M];e+=v*v;}if(e/W<1e-6){this.on=false;return;}
+    let run=0,best=-1;const d=new Float32Array(mx+2);for(let t=1;t<=mx+1;t++){let s=0;for(let j=0;j<W;j++){const q=D[(s0+j)%M]-D[(s0+j+t)%M];s+=q*q;}run+=s;d[t]=s*t/(run||1);}
+    for(let t=mn;t<=mx;t++){if(d[t]<0.15&&d[t]<=d[t-1]&&d[t]<=d[t+1]){best=t;break;}}
+    if(best<0){this.on=false;return;}const a=d[best-1],b=d[best],c=d[best+1],den=a-2*b+c,tt=best+(den?0.5*(a-c)/den:0),f=sr/tt,m=69+12*Math.log2(f/440);
+    this.on=true;const n=Math.round(m),pc=((n%12)+12)%12;let t2;
+    if(this.fixed!=null)t2=n+this.fixed;
+    else if(this.chord&&this.chord.length){const up=this.steps>0,cs=[];for(let k=-24;k<=24;k++){const q=n+k;if(this.chord.includes(((q%12)+12)%12))cs.push(q);}
+      const want=up?cs.filter(q=>q>=n+3):cs.filter(q=>q<=n-3).reverse();t2=want.length?want[Math.abs(this.steps)>=4?Math.min(1,want.length-1):0]:n+(up?4:-3);}
+    else{let base=n;if(!this.scale[pc]){base=this.scale[(pc+1)%12]?n+1:n-1;}let q=base,st=this.steps,dir=st>0?1:-1;while(st!==0){q+=dir;if(this.scale[((q%12)+12)%12])st-=dir;}t2=q;}
+    this.tgt=t2-n;}
+  process(i,o){const x=i[0],y=o[0];if(!x.length||!y.length)return true;const n=y[0].length,W=Math.min(this.N-8,Math.floor(this.win*sampleRate)),N=this.N;
+    for(let k=0;k<n;k++){const v=x[0][k];this.acc+=v;this.ac++;if(this.ac===4){this.D[this.dw%512]=this.acc/4;this.dw=(this.dw+1)%(512*1024);this.acc=0;this.ac=0;if(++this.cnt%32===0)this.detect();}
+      this.semi+=(this.tgt-this.semi)*0.0015;const ratio=Math.pow(2,this.semi/12);this.b[this.w]=v;const p1=this.ph,p2=(this.ph+0.5)%1,g1=Math.sin(Math.PI*p1),g2=Math.sin(Math.PI*p2);
+      const wet=(this.rd(this.w-p1*W)*g1*g1+this.rd(this.w-p2*W)*g2*g2)*(this.on?1:0.6);this.ph+=(1-ratio)/W;if(this.ph>=1)this.ph-=1;else if(this.ph<0)this.ph+=1;
+      for(let c=0;c<y.length;c++)y[c][k]=wet;this.w=(this.w+1)%N;}
+    return true;}}
+registerProcessor('fw-harm',Harm);
+
+/* a de-esser: the band above f is turned down only while it is loud (the rest of the voice is never touched) */
+class DeEss extends AudioWorkletProcessor{
+  constructor(){super();this.f=6000;this.th=-30;this.l1=0;this.l2=0;this.env=0;this.g=1;this.port.onmessage=e=>Object.assign(this,e.data);}
+  process(i,o){const x=i[0],y=o[0];if(!x.length||!y.length)return true;const n=y[0].length,sr=sampleRate,a=Math.exp(-2*Math.PI*this.f/sr),at=Math.exp(-1/(0.0005*sr)),rl=Math.exp(-1/(0.06*sr)),th=Math.pow(10,this.th/20),gs=Math.exp(-1/(0.002*sr));
+    for(let k=0;k<n;k++){const v=x[0][k];this.l1=v+(this.l1-v)*a;this.l2=this.l1+(this.l2-this.l1)*a;const hp=v-this.l2,e=Math.abs(hp);this.env=e>this.env?e+(this.env-e)*at:e+(this.env-e)*rl;
+      const t=this.env>th?Math.pow(th/this.env,0.75):1;this.g=t+(this.g-t)*gs;const out=v-hp*(1-this.g);for(let c=0;c<y.length;c++)y[c][k]=out;}
+    return true;}}
+registerProcessor('fw-deess',DeEss);
 `;
 
 /* ---------- engine state ---------- */
@@ -567,7 +612,8 @@ function buildGraph() {
   E.voxIn.connect(E.voxTrim); E.voxTrim.connect(E.anaVox); E.voxTrim.connect(E.aV); E.voxTrim.connect(E.voxMon);
   { const sIn = gn(1), sOut = gn(1), hp = bq('highpass', 90), cmp = mkComp(c), mk = gn(1.35), pr = gn(1), by = gn(0);
     cmp.threshold.value = -24; cmp.knee.value = 14; cmp.ratio.value = 3; cmp.attack.value = .008; cmp.release.value = .2;
-    chainN(sIn, hp, cmp, mk, pr, sOut); sIn.connect(by); by.connect(sOut); E.voxStrip = { in: sIn, out: sOut, proc: pr, byp: by, cmp }; sOut.connect(E.tr.vox.in); E.voxMon.connect(sIn); }
+    chainN(sIn, hp, cmp, mk, pr, sOut); sIn.connect(by); by.connect(sOut); E.voxStrip = { in: sIn, out: sOut, proc: pr, byp: by, cmp }; E.voxMon.connect(sIn);
+    if (typeof vbAttach === 'function') vbAttach(c, sOut, E.tr.vox.in); else sOut.connect(E.tr.vox.in); }      /* the vocal pedalboard (part 79) sits after the polish: the live voice and vocal takes both go through it */
   voxPolishApply();
   E.rigOut.connect(E.tr.live.in);
   { const ms = mstBuild(); E.mix.connect(ms.in); ms.out.connect(E.master); mstApply(); }
@@ -3865,7 +3911,7 @@ async function boot() {
   if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener('devicechange', () => { ioDeviceChange().catch(e => console.warn(e)); });
   bus.emit('song');
   try { ghBoot(); } catch (e) { console.warn('github', e); }      /* back from Sign in with GitHub, or a sync at start (part 74) */
-  DEV.make = () => { window.__daily = { S, AIR, airSync, applyLayout, MEG, megSpectrum, megFeatures, megScore, megStep, megSet, megLearn, megDraw, megLoop, megSettings, PAD, padsOpen, padHit, padTap, padRecord, padRecStop, padUndoPass, padClear, padResize, padBeatbox, bbHits, bbPattern, dpat, bassEvent, drumStep, PEDAL, pedalPress, pedalDo, pedalSecs, gearSettings, MCLK, mclkSlot, mclkMs, MIDI, MIDIRAW, onMidi, STRM, streamOpen, streamRoom, streamInfo, streamPanel, slotAtTime, SING, SHW, singStep, singScore, singSteamIR, singMicOff, showerOpen, shwGo, shwPlay, shwPrev, shwNext, shwStem, shwRecToggle, shwRecStop, shwHear, shwSave, shwAddFiles, shwRemove, shwMove, shwMode, shwLoadSet, shwPlaylist, shwWords, shwPrepare, shwFolderPull, lrcParse, readTags, spPos, spPlay, STP, trainOpen, projRestoreTrack, secretNote, secretArp, WS, WS_BASE, WS_ARPS, wsScaleRun, wsArpRun, wsFollow, wsStop, wsListen, wsEarNext, wsEarAnswer, wsOpen, bandMute, bandMuted, pdbPut, pdbKeys, projRename, FS, FS_B, fsUse, fsSync, fsHead, fsNeeds, fsTidy, fsOpen, syncOff, syncZips, PRJ_WAIT: () => PRJ.wait, EGG, EGG_LINES, EGG_ORDER, eggDay, eggFor, eggNow, eggText, eggTick, eggFit, saveCfg, projSave, projDelete, GH, ghSync, ghConnect, ghDisconnect, ghLocal, ghSha, ghJson, ghMerge3, ghShare, ghGallery, ghGalleryOpen, ghGalleryShow, ghKeepLook, ghKeepRig, rigClean, ghReturn, BRAND, ghSettingsOut, projRefresh, projCreate, projLoad, PRJ, SEC, SECRETS, secretFound, secretTiming, secretsOpen, secretSync, backstageOpen, startAudio, playheadSlot, GUARD, reportText, reportCopy, srecQ, srecSize, pdbGet, srecFmt, SREC_FMTS, VBG, vbgAdd, vbgRemove, vbgUse, vbgOpen, vbgDraw, vzSetMode, srecFrame, srecFmtBox, kitThumb, WORKLET_SRC, mkComp, mkShaper, rigLat, voxLat, restartAudio, satCurve, rigApply, qrMake, qrSvg, tipLink, tipShort, tipReady, tipCard, tipDraw, tipShareHtml, tipOpen, tipPrint, tipPng, tipVisAvoid, tipStageAvoid, TIP, TIP_TERMS, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, STP, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfort, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, srecStart, srecStop, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, tkFades, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, FB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, vzSetMode, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, drawVis, perfClose, voicings, peaksOf, uid, shareGate, shareData, shareHtml, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, slotAtTime, SEL, mtof, spb, playheadSlot, WR, HM, HMX, HM_MODES, vzImmersive, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitThumb, kitInk, kitNotes, kitRecord, srecMime, mGo, GD_SESSIONS, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard}; };   // test hook: with ?debug, or Backstage ▸ Labs ▸ Developer handles
+  DEV.make = () => { window.__daily = { S, AIR, airSync, applyLayout, VB_PRESETS, VB_ORDER, VBS, vbAttach, vbApply, vbToggle, vbSet, vbPreset, vbPresetNext, vbThrow, vbLook, vbTick, vbScale, vocalBoardOpen, pedalRelease, MEG, megSpectrum, megFeatures, megScore, megStep, megSet, megLearn, megDraw, megLoop, megSettings, PAD, padsOpen, padHit, padTap, padRecord, padRecStop, padUndoPass, padClear, padResize, padBeatbox, bbHits, bbPattern, dpat, bassEvent, drumStep, PEDAL, pedalPress, pedalDo, pedalSecs, gearSettings, MCLK, mclkSlot, mclkMs, MIDI, MIDIRAW, onMidi, STRM, streamOpen, streamRoom, streamInfo, streamPanel, slotAtTime, SING, SHW, singStep, singScore, singSteamIR, singMicOff, showerOpen, shwGo, shwPlay, shwPrev, shwNext, shwStem, shwRecToggle, shwRecStop, shwHear, shwSave, shwAddFiles, shwRemove, shwMove, shwMode, shwLoadSet, shwPlaylist, shwWords, shwPrepare, shwFolderPull, lrcParse, readTags, spPos, spPlay, STP, trainOpen, projRestoreTrack, secretNote, secretArp, WS, WS_BASE, WS_ARPS, wsScaleRun, wsArpRun, wsFollow, wsStop, wsListen, wsEarNext, wsEarAnswer, wsOpen, bandMute, bandMuted, pdbPut, pdbKeys, projRename, FS, FS_B, fsUse, fsSync, fsHead, fsNeeds, fsTidy, fsOpen, syncOff, syncZips, PRJ_WAIT: () => PRJ.wait, EGG, EGG_LINES, EGG_ORDER, eggDay, eggFor, eggNow, eggText, eggTick, eggFit, saveCfg, projSave, projDelete, GH, ghSync, ghConnect, ghDisconnect, ghLocal, ghSha, ghJson, ghMerge3, ghShare, ghGallery, ghGalleryOpen, ghGalleryShow, ghKeepLook, ghKeepRig, rigClean, ghReturn, BRAND, ghSettingsOut, projRefresh, projCreate, projLoad, PRJ, SEC, SECRETS, secretFound, secretTiming, secretsOpen, secretSync, backstageOpen, startAudio, playheadSlot, GUARD, reportText, reportCopy, srecQ, srecSize, pdbGet, srecFmt, SREC_FMTS, VBG, vbgAdd, vbgRemove, vbgUse, vbgOpen, vbgDraw, vzSetMode, srecFrame, srecFmtBox, kitThumb, WORKLET_SRC, mkComp, mkShaper, rigLat, voxLat, restartAudio, satCurve, rigApply, qrMake, qrSvg, tipLink, tipShort, tipReady, tipCard, tipDraw, tipShareHtml, tipOpen, tipPrint, tipPng, tipVisAvoid, tipStageAvoid, TIP, TIP_TERMS, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, STP, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfort, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, srecStart, srecStop, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, tkFades, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, FB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, vzSetMode, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, drawVis, perfClose, voicings, peaksOf, uid, shareGate, shareData, shareHtml, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, slotAtTime, SEL, mtof, spb, playheadSlot, WR, HM, HMX, HM_MODES, vzImmersive, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitThumb, kitInk, kitNotes, kitRecord, srecMime, mGo, GD_SESSIONS, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard}; };   // test hook: with ?debug, or Backstage ▸ Labs ▸ Developer handles
   if (/[?&]debug\b/.test(location.search) || (CFG.labs && CFG.labs.handles)) DEV.make();
   try { bksBoot(); } catch (e) { console.warn('backstage', e); }      /* #backstage in the address, the performance overlay (part 73c) */
   projInit().catch(e => { console.warn('library', e); PRJ.ready = true; if (PRJ.wantStart) startMaybe(); });
@@ -5428,6 +5474,7 @@ function mSheet() {
       tile(msvg('<path d="M12 16V4M7 9l5-5 5 5M5 20h14"/>'), 'Open a file', () => { mCloseOverlays(); filesOpen(); }),
       tile(msvg('<path d="M5 20V9M12 20V4M19 20v-7"/>'), 'Master · balance · click', () => { mCloseOverlays(); mixOpen(); }),
       tile(msvg('<path d="M3 12c3-8 5-8 8 0s5 8 8 0"/>'), 'Voice · pitch · key', () => { mCloseOverlays(); voxOpen(); }),
+      tile(msvg('<path d="M12 3a3 3 0 00-3 3v6a3 3 0 006 0V6a3 3 0 00-3-3zM5 11a7 7 0 0014 0M12 18v3"/>'), 'Vocal pedals', () => { mCloseOverlays(); vocalBoardOpen(); }),
       tile(msvg('<path d="M5 21V8a4 4 0 018 0M13 8h-4M9 12v1M7 15v1M11 15v1M9 18v1"/>'), 'Scales & ear', () => { mCloseOverlays(); trainOpen(); }),
       tile(msvg('<rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/>'), 'Pads · tap tempo · beatbox', () => { mCloseOverlays(); padsOpen(); }),
       tile(msvg('<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>'), keepRisk().level === 'ok' ? 'Back up songs' : 'Keep songs safe', () => { mCloseOverlays(); keepOpen(); }, keepRisk().level === 'high'),
@@ -10564,6 +10611,7 @@ function voxBuild() {
           ...plan.slice(1).filter(o => o.d !== 0 || !same).slice(0, 2).map(o => h('button', { class: 'btn sm', 'data-d': o.d, onclick: () => { voxTranspose(o.d); voxBuild(); } }, keyName(o.key) + ' (' + (o.d > 0 ? '+' : '') + o.d + ')'))),
         h('div', { class: 'tiny muted' }, 'Chords, [chords] in lyrics and tab frets move together; recorded takes stay as they were. Undo (Ctrl/⌘+Z) puts it back.')));
   }
+  b.append(h('button', { class: 'btn sm', id: 'voxPedals', onclick: () => vocalBoardOpen() }, '🎤 Vocal pedals' + (Object.values(CFG.vb.on).some(Boolean) ? ' · on' : '')));
   b.append(h('div', { class: 'tiny muted' }, 'Green is within 20 cents of a note in the key, yellow within 35, red beyond. Bright rows are the chord that is playing. Nothing leaves this device.'));
 }
 bus.on('audiostate', () => { if (!E.hasInput) VOX.capt = false; if (VOX.panel) voxBuild(); });
@@ -12832,6 +12880,7 @@ const GOALS = [
     enter: () => { try { wrMode('both'); } catch (e) { } },
     tools: () => [
       ['gtCap', '● Capture idea', 'Play, and the notes and chords you play are written into the tab', () => { dockGo('tab'); capToggle(); }, () => !!CAP.on, 1],
+      ['gtVox', '🎤 Vocal pedals', 'Scream, doubler, harmony, echo, reverb, de-esser and megaphone for your voice', () => vocalBoardOpen()],
       ['gtPads', '🥁 Pads', 'Play the drums with your fingers, tap the tempo, record a groove or beatbox it', () => padsOpen()],
       ['gtSheet', '🎸 Paste chords', 'Paste a chord sheet (chords over the words): it becomes the song, with bars, key, words and a guitar part', () => liOpen('')],
       ['gtWords', '✎ Lyrics & tab', 'The words and the tab side by side', () => { dockGo('tab'); wrMode('both'); }],
@@ -12847,6 +12896,7 @@ const GOALS = [
       ['gtVideo', '⏺ Record video', 'Record the stage, you and the sound as a video; Studio Replay opens when you stop', b => kitRecord(b), () => !!SREC.on, 1],
       ['gtCam', '📷 Camera', 'Put yourself centre stage, in front of the visuals', () => vzCamPress(), () => !!VZ.cam],
       ['gtPerf', '🎤 Perform view', 'Full screen: the chord huge, the lyrics scrolling, a count-in', b => perfOpen(b)],
+      ['gtVox', '🎤 Vocal pedals', 'Scream, doubler, harmony, echo, reverb, de-esser and megaphone for your voice', () => vocalBoardOpen()],
       ['gtStream', '📺 Stream window', 'The words and the chord in a window of their own, for OBS or any streaming app', () => streamRoom()],
       ['gtTake', '● Record take', 'Record your guitar and voice into the arrangement (R)', () => toggleRec(), () => !!T.rec],
       ['gtReplay', '▶ Replay', 'Watch the last video you recorded', () => kitReplay(), null, 0, () => !KIT.last]
@@ -12862,6 +12912,7 @@ const GOALS = [
       ['gtReplay', '▶ Studio Replay', 'Watch the last recording, then save it, share it or make a thumbnail from any frame', () => kitReplay(), null, 0, () => !KIT.last],
       ['gtCam', '📷 Webcam', 'You in the picture, in front of or framed by the visuals', () => vzCamPress(), () => !!VZ.cam],
       ['gtFx', '✨ Overlays', 'How the camera sits with the visuals: dimmed behind, framed, or you in front', b => popover(b, h('div', { style: { display: 'grid', gap: '8px', minWidth: '240px' } }, h('h5', {}, 'Overlays'), camFxBox(), h('div', { class: 'tiny muted' }, 'Pick a look in the Visuals panel for what moves behind you.')))],
+      ['gtVox', '🎤 Vocal pedals', 'Scream, doubler, harmony, echo, reverb, de-esser and megaphone for your voice', () => vocalBoardOpen()],
       ['gtStream', '📺 Stream window', 'The words and the chord in a window of their own, for OBS or any streaming app', () => streamRoom()],
       ['gtThumb', '🖼 Thumbnail', 'Save a 1280 × 720 picture of the stage with the song title, for the post', () => kitThumb()],
       ['gtTip', '🎸 Tip jar', 'Let your audience tip you: your own tip link as a QR code on the stage, in your videos and on share pages. Off until you set it up', () => tipOpen(), () => tipReady()],
@@ -16233,7 +16284,7 @@ bus.on('transport', () => { if (PAD.el && PAD.el.open) padPaint(); if (PAD.rec &
    ============================================================ */
 CFG.pedal = Object.assign({ on: false, map: { play: ['k:PageDown', 'k:ArrowRight'], next: ['k:PageUp', 'k:ArrowLeft'] } }, CFG.pedal && typeof CFG.pedal === 'object' ? CFG.pedal : {});
 CFG.mclock = Object.assign({ mode: 'off', out: '' }, CFG.mclock && typeof CFG.mclock === 'object' ? CFG.mclock : {});
-const PEDAL_ACTS = [['play', 'Play / stop'], ['next', 'Next section'], ['prev', 'Previous section (or the top of this one)'], ['rec', 'Record'], ['loop', 'Loop on / off'], ['mute', 'The band on / off'], ['tap', 'Tap tempo']];
+const PEDAL_ACTS = [['play', 'Play / stop'], ['next', 'Next section'], ['prev', 'Previous section (or the top of this one)'], ['rec', 'Record'], ['loop', 'Loop on / off'], ['mute', 'The band on / off'], ['tap', 'Tap tempo'], ['vscream', 'Vocal: Scream on / off'], ['vnext', 'Vocal: next preset'], ['vthrow', 'Vocal: echo throw (hold it)']];
 const PEDAL = { learn: null, last: {}, taps: [] };
 const pedalName = c => { const [k, v] = [c.slice(0, c.indexOf(':')), c.slice(c.indexOf(':') + 1)]; return k === 'k' ? (v === ' ' ? 'Space' : v) : k === 'cc' ? 'MIDI CC ' + v : k === 'note' ? 'MIDI note ' + v : k === 'pc' ? 'MIDI program ' + v : c; };
 
@@ -16255,6 +16306,9 @@ function pedalDo(act) {
     case 'loop': T.loop = !T.loop; syncTransport(); break;
     case 'mute': bandMute(); break;
     case 'tap': pedalTap(); break;
+    case 'vscream': vbToggle('scream'); break;
+    case 'vnext': vbPresetNext(); break;
+    case 'vthrow': vbThrow(true); break;
   }
   bus.emit('pedal', act);
 }
@@ -16265,6 +16319,9 @@ function pedalPress(c) {
   const now = performance.now(); if (now - (PEDAL.last[c] || 0) < 180) return true; PEDAL.last[c] = now;      /* a pedal that bounces is one press (each pedal on its own: two pedals can be pressed quickly) */
   pedalDo(act); return true;
 }
+/** a pedal let go: only the echo throw cares (it lasts while the pedal is held) */
+function pedalRelease(c) { if (!CFG.pedal.on) return false; const act = Object.keys(CFG.pedal.map).find(k => (CFG.pedal.map[k] || []).includes(c)); if (act === 'vthrow') { vbThrow(false); return true; } return !!act; }
+window.addEventListener('keyup', e => { if (!CFG.pedal.on || PEDAL.learn) return; const t = e.target; if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return; if (pedalRelease('k:' + e.key)) { e.preventDefault(); e.stopImmediatePropagation(); } }, true);
 window.addEventListener('keydown', e => {
   if (!CFG.pedal.on && !PEDAL.learn) return; const t = e.target; if (e.ctrlKey || e.metaKey || e.altKey || e.repeat || (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable))) return;
   if (['Shift', 'Control', 'Alt', 'Meta', 'Escape', 'Tab'].includes(e.key)) return;
@@ -16286,7 +16343,8 @@ MIDIRAW.push((data, ev) => {
   if (CFG.mclock.mode === 'follow' && st === 0xF2) { const pos = data[1] | (data[2] << 7); T.cursor = clamp(pos, 0, Math.max(0, songSlots() - 1)); bus.emit('transport'); return true; }      /* Song Position: in 16ths, as a slot is */
   if (st >= 0xF8) return true;      /* clock we are not following: not a note, not a control */
   if (cmd === 0xB0 && data[2] >= 64 && (PEDAL.learn || (CFG.pedal.on && Object.values(CFG.pedal.map).some(a => a.includes('cc:' + data[1]))))) return pedalPress('cc:' + data[1]);
-  if (cmd === 0xB0 && data[2] < 64 && CFG.pedal.on && Object.values(CFG.pedal.map).some(a => a.includes('cc:' + data[1]))) return true;      /* the pedal coming back up */
+  if (cmd === 0xB0 && data[2] < 64 && CFG.pedal.on && Object.values(CFG.pedal.map).some(a => a.includes('cc:' + data[1]))) { pedalRelease('cc:' + data[1]); return true; }      /* the pedal coming back up: only the echo throw minds */
+  if ((cmd === 0x80 || (cmd === 0x90 && data[2] === 0)) && CFG.pedal.on && Object.values(CFG.pedal.map).some(a => a.includes('note:' + data[1]))) { pedalRelease('note:' + data[1]); return true; }
   if (cmd === 0x90 && data[2] > 0 && (PEDAL.learn || (CFG.pedal.on && Object.values(CFG.pedal.map).some(a => a.includes('note:' + data[1]))))) return pedalPress('note:' + data[1]);
   if (cmd === 0xC0 && (PEDAL.learn || (CFG.pedal.on && Object.values(CFG.pedal.map).some(a => a.includes('pc:' + data[1]))))) return pedalPress('pc:' + data[1]);
   return false;
@@ -16435,6 +16493,7 @@ function megRead() {
 function megStep(f, now) {
   const dt = Math.min(200, now - (MEG.last || now)); MEG.last = now; MEG.feat = f;
   if (MEG.teach) { if (f) MEG.teach.got.push(f); return; }
+  if (MEG.force) { if (!MEG.on) megSet(true); return; }      /* the vocal board's Scream or Megaphone is on (part 79): the look stays until it goes off */
   if (!f) { MEG.quiet += dt; MEG.voiced = false; if (MEG.on && MEG.quiet > 4000) megSet(false); return; }
   MEG.quiet = 0; MEG.voiced = true; const s = megScore(f); MEG.score = MEG.score * .6 + s * .4;
   if (!MEG.on) { MEG.up = MEG.score > .62 ? MEG.up + dt : 0; if (MEG.up >= 250) megSet(true); }
@@ -16445,7 +16504,7 @@ function megSet(on) {
   if (on && CFG.mega.lights && typeof LX !== 'undefined') { LX.strobeReq = true; LX.drop = Math.max(LX.drop || 0, .9); if (typeof SG !== 'undefined') SG.flash = 1; }
   megStream(); bus.emit('megaphone', on);
 }
-function megLoop(on) { clearInterval(MEG.tm); MEG.tm = 0; if (!on) { megSet(false); return; } MEG.tm = setInterval(() => { if (!CFG.mega.on) return; megStep(megRead(), performance.now()); megPaint(); }, 60); }
+function megLoop(on) { clearInterval(MEG.tm); MEG.tm = 0; if (!on) { if (!MEG.force) megSet(false); return; } MEG.tm = setInterval(() => { if (!CFG.mega.on) return; megStep(megRead(), performance.now()); megPaint(); }, 60); }
 
 /* ---------- teaching it your voice ---------- */
 /** three seconds with the pedal off, then three with it on; the model is the middle of each, and how far apart they are */
@@ -16493,6 +16552,191 @@ function megSettings() {
 }
 bus.on('audiostate', () => { if (CFG.mega.on && !MEG.tm) megLoop(true); });
 if (CFG.mega.on) setTimeout(() => megLoop(true), 1500);
+
+/* >>> parts/79-vocalboard.js */
+/* ============================================================
+   Part 79 · VOCAL PEDALBOARD (2.31) — seven stompboxes for the voice
+   After the vocal polish, in this order: 🤘 Scream · De-esser · 📢 Megaphone · Doubler · Harmony · Echo · Reverb. The live voice and
+   vocal takes both go through it (takes are kept clean and played back through it, so the sound can still change after you sing),
+   and a fast bounce builds the same board offline.
+     · Scream     a gate, hard compression, grit blended beside the clean voice (focused on the mids, so words stay clear) and an
+                  analog-style octave down for growl that adds no delay. Styles: Rasp, Hardcore, Fry growl, Death growl
+     · De-esser   turns the band above 4–9 kHz down only while it is loud
+     · Megaphone  megaphone, radio or telephone: the voice squeezed into a band and driven
+     · Doubler    two slightly delayed, slightly moving copies left and right: a double-tracked voice
+     · Harmony    a voice a third or a fifth above or below that stays in the song's key (or on the chord playing): the worklet finds
+                  the note you sing and moves it by steps of the scale. It lands a few hundredths of a second after you
+     · Echo       in time with the song (1/4, dotted 1/8, 1/8 …); Throw: only while the pedal is held, so one word echoes
+     · Reverb     room, plate or hall, with its lows cut so it does not muddy the voice
+   Presets (Clean lead, Rock grit, Scream, Ballad, Ambient echo, Harmony lead, Megaphone) set the whole board; a song can switch
+   presets per section as it plays (S.vbSec), and the foot pedal can switch Scream, step through presets and hold an echo throw.
+   With Scream or Megaphone on, the show turns gritty, as it does for a megaphone pedal (part 78).
+   ============================================================ */
+const VB_DEF = {
+  scream: { style: 'Rasp', grit: .35, growl: 0, gate: -55, level: 1 },
+  deess: { amount: .5, freq: 6500 },
+  mega: { style: 'Megaphone', drive: .6, level: 1 },
+  double: { mix: .35, width: .8 },
+  harm: { voice: 'Third above', mix: .45, follow: 'key' },
+  echo: { time: '1/8 dotted', mix: .25, fb: .35, throw: false },
+  verb: { type: 'Plate', mix: .2, decay: 1.6 }
+};
+const VB_ORDER = [['scream', '🤘', 'Scream'], ['deess', '𝑺', 'De-esser'], ['mega', '📢', 'Megaphone'], ['double', '👥', 'Doubler'], ['harm', '🎶', 'Harmony'], ['echo', '⟲', 'Echo'], ['verb', '◌', 'Reverb']];
+const VB_SCREAM = { 'Rasp': { grit: .35, growl: 0, gate: -55 }, 'Hardcore': { grit: .65, growl: .15, gate: -50 }, 'Fry growl': { grit: .55, growl: .45, gate: -50 }, 'Death growl': { grit: .85, growl: .75, gate: -46 } };
+const VB_MEGA = { 'Megaphone': [500, 3000, 1600, 8], 'Radio': [300, 4200, 1800, 5], 'Telephone': [380, 3400, 1200, 4] };
+const VB_VOICES = { 'Third above': [2], 'Third below': [-2], 'Fifth above': [4], 'Third and fifth above': [2, 4], 'Octave below': [null, -12], 'Octave above': [null, 12] };
+const VB_TIMES = { '1/4': 1, '1/8 dotted': .75, '1/8': .5, '1/4 triplet': 2 / 3, '1/16': .25 };
+const VB_PRESETS = {
+  'Off': {},
+  'Clean lead': { deess: {}, verb: { type: 'Plate', mix: .15, decay: 1.4 } },
+  'Rock grit': { scream: { style: 'Rasp', grit: .35, growl: 0 }, deess: {}, double: { mix: .25 }, verb: { type: 'Room', mix: .14, decay: 1 } },
+  'Scream': { scream: { style: 'Hardcore', grit: .65, growl: .15 }, deess: {}, verb: { type: 'Room', mix: .12, decay: 1 } },
+  'Ballad': { deess: {}, double: { mix: .35 }, echo: { time: '1/4', mix: .14, fb: .25 }, verb: { type: 'Plate', mix: .28, decay: 2.2 } },
+  'Ambient echo': { deess: {}, double: { mix: .2 }, echo: { time: '1/8 dotted', mix: .32, fb: .5 }, verb: { type: 'Hall', mix: .32, decay: 3 } },
+  'Harmony lead': { deess: {}, harm: { voice: 'Third above', mix: .45 }, double: { mix: .2 }, verb: { type: 'Plate', mix: .2, decay: 1.6 } },
+  'Megaphone': { mega: { style: 'Megaphone', drive: .6 }, verb: { type: 'Room', mix: .1, decay: .8 } }
+};
+CFG.vb = Object.assign({ preset: 'Off', on: {}, p: {}, react: true }, CFG.vb && typeof CFG.vb === 'object' ? CFG.vb : {});
+Object.keys(VB_DEF).forEach(k => { CFG.vb.p[k] = Object.assign({}, VB_DEF[k], CFG.vb.p[k] || {}); if (CFG.vb.on[k] == null) CFG.vb.on[k] = false; });
+const VBS = { held: false, applied: null, bpm: 0, tm: 0, chord: '' };
+
+/* ---------- the pedals, built on any audio context (the live one, or the offline one a fast bounce uses) ---------- */
+function vbWrap(fx) { const i = gn(1), o = gn(1), dry = gn(1), wet = gn(0); i.connect(dry); dry.connect(o); i.connect(fx.in); fx.out.connect(wet); wet.connect(o); return { in: i, out: o, fx, on: false, setOn(v) { v = !!v; this.on = v; tc(dry.gain, v ? 0 : 1, .01); tc(wet.gain, v ? 1 : 0, .01); } }; }
+const vbWorklet = (c, name) => { if (!E.worklet) return null; try { return new AudioWorkletNode(c, name, { channelCount: 1, channelCountMode: 'explicit', outputChannelCount: [1] }); } catch (e) { return null; } };
+function vbScream(c) {
+  const i = gn(1), o = gn(1), gate = vbWorklet(c, 'fw-gate') || gn(1), cmp = mkComp(c), mk = gn(1.6), dryG = gn(1), hp = bq('highpass', 220), pk = bq('peaking', 1800, .9, 6), drv = gn(1), sh = mkShaper(c), lp = bq('lowpass', 6500), gritG = gn(0);
+  const oct = vbWorklet(c, 'fw-oct'), olp = bq('lowpass', 700), odr = gn(2), sh2 = mkShaper(c), growlG = gn(0), lv = gn(1);
+  cmp.threshold.value = -28; cmp.ratio.value = 6; cmp.knee.value = 6; cmp.attack.value = .003; cmp.release.value = .12; sh.curve = satCurve(5); sh.oversample = '4x'; sh2.curve = satCurve(3);
+  chainN(i, gate, cmp, mk); mk.connect(dryG); dryG.connect(lv); chainN(mk, hp, pk, drv, sh, lp, gritG); gritG.connect(lv); if (oct) { chainN(mk, oct, olp, odr, sh2, growlG); growlG.connect(lv); } lv.connect(o);
+  if (gate.port) gate.port.postMessage({ range: -70, rel: 120, hold: 30 });
+  return { in: i, out: o, set(k, v) { switch (k) {
+    case 'grit': tc(dryG.gain, 1 - .55 * v); tc(drv.gain, 1 + v * v * 40); tc(gritG.gain, v > 0 ? .25 + .55 * v : 0); break;
+    case 'growl': tc(growlG.gain, v * .9); break; case 'gate': if (gate.port) gate.port.postMessage({ th: v }); break; case 'level': tc(lv.gain, v); break; } } };
+}
+function vbDeess(c) { const n = vbWorklet(c, 'fw-deess'); if (!n) { const g = gn(1); return { in: g, out: g, set() { } }; } return { in: n, out: n, set(k, v) { if (k === 'amount') n.port.postMessage({ th: -14 - v * 30 }); if (k === 'freq') n.port.postMessage({ f: v }); } }; }
+function vbMega(c) {
+  const i = gn(1), h1 = bq('highpass', 500), h2 = bq('highpass', 500), pk = bq('peaking', 1600, 1, 8), drv = gn(4), sh = mkShaper(c), l1 = bq('lowpass', 3000), l2 = bq('lowpass', 3000), lv = gn(.8);
+  sh.curve = satCurve(6); chainN(i, h1, h2, pk, drv, sh, l1, l2, lv);
+  return { in: i, out: lv, set(k, v) { switch (k) {
+    case 'style': { const m = VB_MEGA[v] || VB_MEGA.Megaphone; [h1, h2].forEach(f => { f.frequency.value = m[0]; }); [l1, l2].forEach(f => { f.frequency.value = m[1]; }); pk.frequency.value = m[2]; pk.gain.value = m[3]; break; }
+    case 'drive': tc(drv.gain, 1 + v * 12); tc(lv.gain, .9 - v * .35); break; case 'level': break; } } };
+}
+function vbDouble(c) {
+  const i = gn(1), o = gn(1), dry = gn(1), mk = (t, f, dep) => { const d = c.createDelay(.1); d.delayTime.value = t; const l = c.createOscillator(); l.frequency.value = f; const lg = gn(dep); l.connect(lg); lg.connect(d.delayTime); l.start(); const p = c.createStereoPanner(), g = gn(0); i.connect(d); d.connect(p); p.connect(g); g.connect(o); return { p, g }; };
+  i.connect(dry); dry.connect(o); const a = mk(.021, .13, .0018), b = mk(.031, .17, .0022);
+  return { in: i, out: o, set(k, v) { if (k === 'mix') { tc(a.g.gain, v * .8); tc(b.g.gain, v * .8); } if (k === 'width') { a.p.pan.value = -v; b.p.pan.value = v; } } };
+}
+function vbHarm(c) {
+  const i = gn(1), o = gn(1), dry = gn(1), vs = [0, 1].map(k => { const n = vbWorklet(c, 'fw-harm'); if (!n) return null; const p = c.createStereoPanner(), g = gn(0); p.pan.value = k ? .35 : -.35; i.connect(n); n.connect(p); p.connect(g); g.connect(o); return { n, g }; });
+  i.connect(dry); dry.connect(o); let mix = .45, voice = 'Third above';
+  const upd = () => { const spec = VB_VOICES[voice] || VB_VOICES['Third above'], scale = vbScale();
+    vs.forEach((v, k) => { if (!v) return; const st = spec[0] === null ? null : spec[k], fixed = spec[0] === null && k === 0 ? spec[1] : null, used = spec[0] === null ? k === 0 : st != null;
+      v.n.port.postMessage({ scale, steps: st == null ? 2 : st, fixed }); tc(v.g.gain, used ? mix * (spec.length > 1 && spec[0] !== null ? .8 : 1) : 0); }); };
+  return { in: i, out: o, voices: vs, upd, set(k, v) { if (k === 'mix') mix = v; if (k === 'voice') voice = v; upd(); } };
+}
+function vbEcho(c) {
+  const i = gn(1), o = gn(1), dry = gn(1), send = gn(1), d = c.createDelay(3), tone = bq('lowpass', 4500), fb = gn(.35), wet = gn(.25), d2 = c.createDelay(3), p1 = c.createStereoPanner(), p2 = c.createStereoPanner();
+  i.connect(dry); dry.connect(o); i.connect(send); send.connect(d); d.connect(tone); tone.connect(fb); fb.connect(d); tone.connect(p1); p1.connect(wet); tone.connect(d2); d2.connect(p2); p2.connect(wet); wet.connect(o); p1.pan.value = -.4; p2.pan.value = .4;
+  const st = { time: '1/8 dotted', throw: false }; const retime = () => { const s = clamp(60 / (S.bpm || 100) * (VB_TIMES[st.time] || .75), .03, 2.9); tc(d.delayTime, s, .03); tc(d2.delayTime, Math.min(2.9, s * .5), .03); };
+  const sendOn = () => tc(send.gain, !st.throw || VBS.held ? 1 : 0, .01);
+  return { in: i, out: o, retime, sendOn, set(k, v) { switch (k) { case 'mix': tc(wet.gain, v); break; case 'fb': tc(fb.gain, Math.min(.9, v)); break; case 'time': st.time = v; retime(); break; case 'throw': st.throw = !!v; sendOn(); break; } } };
+}
+function vbVerb(c) { const u = FX.reverb.build(c); u.set('lowcut', 220); u.set('pre', 18); u.set('damp', .55); return u; }
+/** the song's scale as twelve flags, for the harmony voices */
+function vbScale() { const iv = SCALES[S.scale] || (S.minor ? SCALES['Natural Minor (Aeolian)'] : SCALES['Major (Ionian)']), f = new Array(12).fill(0); iv.forEach(x => { f[(S.key + x) % 12] = 1; }); return f; }
+/** build the board between `from` and `to` on context c (called while the engine's graph is built, part 02) */
+function vbAttach(c, from, to) {
+  const B = { c, u: {} }; const mk = { scream: vbScream, deess: vbDeess, mega: vbMega, double: vbDouble, harm: vbHarm, echo: vbEcho, verb: vbVerb };
+  let prev = from; VB_ORDER.forEach(([k]) => { const w = vbWrap(mk[k](c)); B.u[k] = w; prev.connect(w.in); prev = w.out; }); prev.connect(to);
+  E.vb = B; vbApply(B); return B;
+}
+/** CFG.vb onto a board */
+function vbApply(B) {
+  B = B || E.vb; if (!B) return;
+  VB_ORDER.forEach(([k]) => { const w = B.u[k], p = CFG.vb.p[k]; Object.keys(p).forEach(q => { try { w.fx.set(q, p[q]); } catch (e) { } }); w.setOn(!!CFG.vb.on[k]); });
+  vbLook();
+}
+
+/* ---------- using it ---------- */
+function vbSave() { saveCfg(); vbApply(); vbPaint(); }
+function vbToggle(k, on) { CFG.vb.on[k] = on == null ? !CFG.vb.on[k] : !!on; CFG.vb.preset = ''; vbSave(); bus.emit('vb', k); }
+function vbSet(k, q, v) {
+  CFG.vb.p[k][q] = v; if (k === 'scream' && q === 'style' && VB_SCREAM[v]) Object.assign(CFG.vb.p.scream, VB_SCREAM[v]);
+  CFG.vb.preset = ''; saveCfg(); vbApply(); if (k === 'scream' && q === 'style') vbPaint();
+}
+/** a preset: every pedal on or off as it says, with its settings */
+function vbPreset(name, quiet) {
+  const P = VB_PRESETS[name]; if (!P) return false; VB_ORDER.forEach(([k]) => { CFG.vb.on[k] = !!P[k]; if (P[k]) CFG.vb.p[k] = Object.assign({}, VB_DEF[k], P[k]); });
+  if (P.scream && P.scream.style && VB_SCREAM[P.scream.style]) CFG.vb.p.scream = Object.assign({}, VB_DEF.scream, VB_SCREAM[P.scream.style], P.scream);
+  CFG.vb.preset = name; VBS.applied = name; vbSave(); if (!quiet) toast('🎤 ' + name, 'ok'); bus.emit('vb', 'preset'); return true;
+}
+function vbPresetNext() { const ks = Object.keys(VB_PRESETS).filter(k => k !== 'Off'), i = ks.indexOf(CFG.vb.preset); vbPreset(ks[(i + 1) % ks.length]); }
+/** the echo throw: the echo hears the voice only while the pedal is held */
+function vbThrow(held) { VBS.held = !!held; if (!CFG.vb.p.echo.throw && held) { CFG.vb.p.echo.throw = true; saveCfg(); vbApply(); } const B = E.vb; if (B) B.u.echo.fx.sendOn(); }
+/** Scream or Megaphone on: the show's gritty look (part 78), whether or not a hardware pedal is being listened for */
+function vbLook() {
+  if (typeof MEG === 'undefined') return; const want = !!(CFG.vb.react && (CFG.vb.on.scream || CFG.vb.on.mega)); if (want === !!MEG.force) return;
+  MEG.force = want; if (want) megSet(true); else if (!CFG.mega.on) megSet(false);
+}
+const vbSecKey = (sec, i) => sec.id || ('#' + i);
+/** a quarter of a second: the echo follows the tempo, harmony the chord, and a section with its own preset switches to it */
+function vbTick() {
+  const B = E.vb; if (!B || B.c !== E.ctx) return;
+  if (VBS.bpm !== S.bpm) { VBS.bpm = S.bpm; B.u.echo.fx.retime(); }
+  if (CFG.vb.on.harm && CFG.vb.p.harm.follow === 'chord') { let sym = ''; try { const inf = stageInfo(); sym = inf && inf.sym || ''; } catch (e) { } if (sym !== VBS.chord) { VBS.chord = sym; const ch = sym ? parseChord(sym) : null; B.u.harm.fx.voices.forEach(v => v && v.n.port.postMessage({ chord: ch ? ch.pcs : null })); } }
+  else if (VBS.chord) { VBS.chord = ''; B.u.harm.fx.voices.forEach(v => v && v.n.port.postMessage({ chord: null })); }
+  if (T.playing && S.vbSec) { const sp = spb(), bi = Math.max(0, Math.floor(playheadSlot() / sp)), fb = barsCache()[Math.min(bi, barsCache().length - 1)]; if (fb) { const i = S.sections.indexOf(fb.sec), want = S.vbSec[vbSecKey(fb.sec, i)]; if (want && want !== VBS.applied && VB_PRESETS[want]) vbPreset(want, true); } }
+}
+setInterval(vbTick, 250);
+bus.on('song', () => { if (E.vb && E.vb.u.harm) E.vb.u.harm.fx.upd(); });
+
+/* ---------- the room ---------- */
+function vbKnob(k, q, label, min, max, step, fmt) { const v = CFG.vb.p[k][q]; return h('label', { class: 'vb-k' }, h('span', {}, label), h('input', { type: 'range', min, max, step, value: v, 'aria-label': label, oninput: e => { vbSet(k, q, +e.target.value); const o = e.target.nextSibling; if (o) o.textContent = fmt ? fmt(+e.target.value) : ''; } }), h('output', {}, fmt ? fmt(v) : '')); }
+function vbSel(k, q, label, opts) { return h('label', { class: 'vb-k' }, h('span', {}, label), h('select', { class: 'in', 'aria-label': label, onchange: e => vbSet(k, q, e.target.value) }, opts.map(o => h('option', { value: o, selected: CFG.vb.p[k][q] === o }, o)))); }
+const pc = v => Math.round(v * 100) + '%';
+function vbControls(k) {
+  switch (k) {
+    case 'scream': return [vbSel(k, 'style', 'Style', Object.keys(VB_SCREAM)), vbKnob(k, 'grit', 'Grit', 0, 1, .01, pc), vbKnob(k, 'growl', 'Growl', 0, 1, .01, pc), vbKnob(k, 'gate', 'Gate', -80, -30, 1, v => v + ' dB')];
+    case 'deess': return [vbKnob(k, 'amount', 'Amount', 0, 1, .01, pc), vbKnob(k, 'freq', 'Above', 4000, 9000, 100, v => (v / 1000).toFixed(1) + ' kHz')];
+    case 'mega': return [vbSel(k, 'style', 'Sound', Object.keys(VB_MEGA)), vbKnob(k, 'drive', 'Drive', 0, 1, .01, pc)];
+    case 'double': return [vbKnob(k, 'mix', 'Blend', 0, 1, .01, pc), vbKnob(k, 'width', 'Width', 0, 1, .01, pc)];
+    case 'harm': return [vbSel(k, 'voice', 'Voice', Object.keys(VB_VOICES)), vbSel(k, 'follow', 'Follows', ['key', 'chord']), vbKnob(k, 'mix', 'Blend', 0, 1, .01, pc)];
+    case 'echo': return [vbSel(k, 'time', 'Time', Object.keys(VB_TIMES)), vbKnob(k, 'mix', 'Blend', 0, 1, .01, pc), vbKnob(k, 'fb', 'Repeats', 0, .9, .01, pc), h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!CFG.vb.p.echo.throw, onchange: e => vbSet('echo', 'throw', e.target.checked) }), 'Throw: only while the pedal is held')];
+    case 'verb': return [vbSel(k, 'type', 'Space', ['Room', 'Plate', 'Hall']), vbKnob(k, 'mix', 'Blend', 0, 1, .01, pc), vbKnob(k, 'decay', 'Length', .3, 5, .1, v => v.toFixed(1) + ' s')];
+  }
+  return [];
+}
+function vbBoard() {
+  const box = h('div', { class: 'vb-board', id: 'vbBoard' }), draw = () => {
+    box.innerHTML = '';
+    box.append(h('div', { class: 'vb-top' }, h('label', { class: 'vb-k' }, h('span', {}, 'Preset'), h('select', { class: 'in', id: 'vbPreset', onchange: e => vbPreset(e.target.value) }, (CFG.vb.preset ? [] : [h('option', { value: '', selected: true }, 'Your own')]).concat(Object.keys(VB_PRESETS).map(n => h('option', { value: n, selected: CFG.vb.preset === n }, n))))),
+      h('label', { class: 'chk' }, h('input', { type: 'checkbox', id: 'vbReact', checked: !!CFG.vb.react, onchange: e => { CFG.vb.react = e.target.checked; saveCfg(); vbLook(); } }), 'The show turns gritty with Scream or Megaphone')),
+      h('div', { class: 'vb-grid' }, VB_ORDER.map(([k, ico, name]) => h('div', { class: 'vb-ped' + (CFG.vb.on[k] ? ' on' : ''), 'data-ped': k },
+        h('div', { class: 'vb-ph' }, h('span', { class: 'vb-ico', 'aria-hidden': 'true' }, ico), h('b', {}, name)),
+        h('div', { class: 'vb-ctl' }, vbControls(k)),
+        h('button', { class: 'vb-sw', 'data-sw': k, 'aria-pressed': String(!!CFG.vb.on[k]), 'aria-label': name + (CFG.vb.on[k] ? ' on' : ' off'), onclick: () => vbToggle(k) }, h('i', { 'aria-hidden': 'true' }), CFG.vb.on[k] ? 'On' : 'Off')))));
+  };
+  box._draw = draw; draw(); return box;
+}
+function vbSections() {
+  const box = h('div', { class: 'vb-secs' }), opts = [''].concat(Object.keys(VB_PRESETS));
+  box.append(h('p', { class: 'hub-note' }, 'Switch the board as the song plays: choose a preset for a section, and it comes in when the section starts. Leave a section on “—” to keep whatever is on.'));
+  S.sections.forEach((sec, i) => box.append(h('label', { class: 'vb-sec' }, h('span', {}, sec.name), h('select', { class: 'in', 'data-sec': vbSecKey(sec, i), onchange: e => { const bf = snap(); S.vbSec = Object.assign({}, S.vbSec || {}); if (e.target.value) S.vbSec[vbSecKey(sec, i)] = e.target.value; else delete S.vbSec[vbSecKey(sec, i)]; commit(false); histPush(bf); } }, opts.map(o => h('option', { value: o, selected: ((S.vbSec || {})[vbSecKey(sec, i)] || '') === o }, o || '—'))))));
+  return box;
+}
+function vbPaint() { const b = document.getElementById('vbBoard'); if (b && b._draw) b._draw(); }
+function vocalBoardOpen(at) {
+  return hubOpen('vocalboard', { ico: '🎤', title: 'Vocal pedals', sub: 'Seven stompboxes for your voice, after the vocal polish. You hear them while you monitor (Hear myself, on headphones), and vocal takes play back through them.', at, sections: [
+    { key: 'board', label: 'The board', ico: '🎛', wide: true, body: () => [vbBoard()] },
+    { key: 'song', label: 'By section', ico: '▦', body: () => [vbSections()] },
+    { key: 'how', label: 'Good to know', ico: 'ⓘ', body: () => [
+      h('p', { class: 'small' }, 'Scream, the doubler, the de-esser, echo and reverb add no delay you would notice. Harmony lands a few hundredths of a second after you (it has to hear the note first), which sounds natural for a backing voice. Scream’s growl is an analog-style octave down, so it is instant.'),
+      h('p', { class: 'small' }, 'Use headphones, or your interface’s own monitoring: with speakers, any live vocal effect can feed back.'),
+      h('p', { class: 'small' }, 'Scream lets you scream lighter: the pedal adds the grit so your throat does not have to. If it hurts or you go hoarse, stop; a coach who teaches fry and false-cord screaming is worth it.'),
+      h('p', { class: 'small muted' }, 'Takes are recorded clean and played back through the board, so you can change the sound after you sing. Bounces include it. The foot pedal (Settings ▸ Pedal & MIDI sync) can switch Scream, step through presets and hold an echo throw.')] }
+  ] });
+}
+bus.on('vb', () => vbPaint());
 
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();

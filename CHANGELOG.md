@@ -2,6 +2,36 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.31.0 — 2026-11-03 — Vocal pedals: Scream, de-esser, megaphone, doubler, harmony, echo and reverb
+
+### Added
+- **🎤 Vocal pedals** (`src/parts/79-vocalboard.js`): seven stompboxes for the voice, after the vocal polish. You open it from the Voice window, the Songwriter, Performer and Creator Studio tools, or the phone's More sheet.
+  - **Where it applies:** the live voice goes through it, and so do vocal takes. Takes are recorded clean and played back through the board, so the sound can change after you sing. A fast bounce builds the same board offline.
+  - **🤘 Scream:**
+    - a gate, hard compression, and grit blended beside the clean voice and focused on the mids, so words stay clear;
+    - growl from an analog-style octave divider (new `fw-oct` worklet), which adds no delay;
+    - styles Rasp, Hardcore, Fry growl and Death growl.
+  - **De-esser** (new `fw-deess` worklet): turns the band above 4–9 kHz down only while it's loud.
+  - **📢 Megaphone:** megaphone, radio or telephone.
+  - **Doubler:** two slightly delayed, moving copies, left and right.
+  - **Harmony** (new `fw-harm` worklet): it finds the note being sung and moves it by steps of the song's scale, or to a tone of the chord playing. Voices: a third or a fifth above, a third below, a third and a fifth, or an octave. It works in bounces too.
+  - **Echo:** tempo-synced divisions. **Throw** echoes only while the foot pedal is held.
+  - **Reverb:** room, plate or hall, with the lows cut.
+  - **Presets:** Clean lead, Rock grit, Scream, Ballad, Ambient echo, Harmony lead and Megaphone.
+  - **By section:** a song can switch presets as it plays.
+- **Foot pedal actions:** Vocal: Scream on / off, Vocal: next preset, and Vocal: echo throw. The throw is held: key-up, note-off and the footswitch coming up all release it.
+- **The show reacts:** with Scream or Megaphone on, the show turns gritty, as for a megaphone pedal. This can be switched off.
+
+### Fixed
+- **The re-amp timing check in `e2e-latency`** failed again in the 2.30.0 full run, with exactly the same 3 ms shortfall as in 2.25. The 2.25.1 note was wrong to say the app change there fixed it.
+  - **The real cause:** the test recorded through a ScriptProcessor on the page's thread, which drops audio when that thread is busy.
+  - **The fix:** the timing tests now record with an AudioWorklet on the audio thread, which can't drop audio. The check still asks for ± 1 ms, and passes with four other test files running beside it.
+  - The 2.25.1 change (late takes skip in against the audio clock) stays, as an improvement in its own right.
+
+### Tests
+- `e2e-vocalboard` (22 checks): every pedal measured by what it does to a signal, plus presets, sections, the pedal, the look and a phone.
+- `e2e-gear` now expects ten pedal actions.
+
 ## 2.30.0 — 2026-11-03 — Your megaphone pedal drives the show
 
 ### Added

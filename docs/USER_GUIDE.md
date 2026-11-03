@@ -754,6 +754,19 @@ The app ships no recordings and no one else's lyrics, and it never uploads anyth
 
 **📺 Stream window** (Creator Studio and Performer tools) opens a window with only the line being sung, the next one and the chord, in large type on one colour. In OBS, Streamlabs or any streaming app, add a **Window Capture** of it and a **Chroma Key** filter on that colour (green, blue or magenta), or a **Luma Key** on black. The words then float over your camera. The stage visuals have their own pop-out in Visuals.
 
+## Vocal pedals (2.31)
+
+**🎤 Vocal pedals** (the Voice window, the Songwriter, Performer and Creator Studio tools, and on a phone in **More**) is a small pedalboard for your voice, after the vocal polish. You hear it while you monitor (Hear myself, on headphones). Vocal takes are recorded clean and played back through it, so you can change the sound after you sing. Bounces include it.
+- **🤘 Scream:** a gate, hard compression, grit blended beside your clean voice (so the words stay clear) and an instant octave down for growl. Styles: Rasp, Hardcore, Fry growl, Death growl. It lets you scream lighter: the pedal adds the grit so your throat doesn't have to. If it hurts, stop.
+- **De-esser:** turns down harsh "s" sounds only when they're loud.
+- **📢 Megaphone:** megaphone, radio or telephone.
+- **Doubler:** a double-tracked voice, spread left and right.
+- **Harmony:** a third or a fifth above or below that stays in the song's key, or on the chord that is playing. It lands a few hundredths of a second after you, as it has to hear the note first.
+- **Echo:** in time with the song. **Throw** echoes only while the foot pedal is held.
+- **Reverb:** room, plate or hall.
+
+**Presets:** Clean lead, Rock grit, Scream, Ballad, Ambient echo, Harmony lead and Megaphone. **By section** switches presets as the song plays (for example, Scream in every chorus). The foot pedal can switch Scream, step through presets and hold an echo throw (Settings ▸ Pedal & MIDI sync). With Scream or Megaphone on, the show turns gritty. Use headphones: with speakers, any live vocal effect can feed back.
+
 ## Megaphone pedal (2.30)
 
 **Settings ▸ Megaphone pedal** is for a TC-Helicon VoiceTone X1, or any megaphone, radio or telephone voice effect between your mic and the interface. The X1 has no MIDI, so the studio can't switch it, but it can hear it: the effect cuts your voice's lows and highs.

@@ -9,7 +9,7 @@
    ============================================================ */
 CFG.pedal = Object.assign({ on: false, map: { play: ['k:PageDown', 'k:ArrowRight'], next: ['k:PageUp', 'k:ArrowLeft'] } }, CFG.pedal && typeof CFG.pedal === 'object' ? CFG.pedal : {});
 CFG.mclock = Object.assign({ mode: 'off', out: '' }, CFG.mclock && typeof CFG.mclock === 'object' ? CFG.mclock : {});
-const PEDAL_ACTS = [['play', 'Play / stop'], ['next', 'Next section'], ['prev', 'Previous section (or the top of this one)'], ['rec', 'Record'], ['loop', 'Loop on / off'], ['mute', 'The band on / off'], ['tap', 'Tap tempo']];
+const PEDAL_ACTS = [['play', 'Play / stop'], ['next', 'Next section'], ['prev', 'Previous section (or the top of this one)'], ['rec', 'Record'], ['loop', 'Loop on / off'], ['mute', 'The band on / off'], ['tap', 'Tap tempo'], ['vscream', 'Vocal: Scream on / off'], ['vnext', 'Vocal: next preset'], ['vthrow', 'Vocal: echo throw (hold it)']];
 const PEDAL = { learn: null, last: {}, taps: [] };
 const pedalName = c => { const [k, v] = [c.slice(0, c.indexOf(':')), c.slice(c.indexOf(':') + 1)]; return k === 'k' ? (v === ' ' ? 'Space' : v) : k === 'cc' ? 'MIDI CC ' + v : k === 'note' ? 'MIDI note ' + v : k === 'pc' ? 'MIDI program ' + v : c; };
 
@@ -31,6 +31,9 @@ function pedalDo(act) {
     case 'loop': T.loop = !T.loop; syncTransport(); break;
     case 'mute': bandMute(); break;
     case 'tap': pedalTap(); break;
+    case 'vscream': vbToggle('scream'); break;
+    case 'vnext': vbPresetNext(); break;
+    case 'vthrow': vbThrow(true); break;
   }
   bus.emit('pedal', act);
 }
@@ -41,6 +44,9 @@ function pedalPress(c) {
   const now = performance.now(); if (now - (PEDAL.last[c] || 0) < 180) return true; PEDAL.last[c] = now;      /* a pedal that bounces is one press (each pedal on its own: two pedals can be pressed quickly) */
   pedalDo(act); return true;
 }
+/** a pedal let go: only the echo throw cares (it lasts while the pedal is held) */
+function pedalRelease(c) { if (!CFG.pedal.on) return false; const act = Object.keys(CFG.pedal.map).find(k => (CFG.pedal.map[k] || []).includes(c)); if (act === 'vthrow') { vbThrow(false); return true; } return !!act; }
+window.addEventListener('keyup', e => { if (!CFG.pedal.on || PEDAL.learn) return; const t = e.target; if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return; if (pedalRelease('k:' + e.key)) { e.preventDefault(); e.stopImmediatePropagation(); } }, true);
 window.addEventListener('keydown', e => {
   if (!CFG.pedal.on && !PEDAL.learn) return; const t = e.target; if (e.ctrlKey || e.metaKey || e.altKey || e.repeat || (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable))) return;
   if (['Shift', 'Control', 'Alt', 'Meta', 'Escape', 'Tab'].includes(e.key)) return;
@@ -62,7 +68,8 @@ MIDIRAW.push((data, ev) => {
   if (CFG.mclock.mode === 'follow' && st === 0xF2) { const pos = data[1] | (data[2] << 7); T.cursor = clamp(pos, 0, Math.max(0, songSlots() - 1)); bus.emit('transport'); return true; }      /* Song Position: in 16ths, as a slot is */
   if (st >= 0xF8) return true;      /* clock we are not following: not a note, not a control */
   if (cmd === 0xB0 && data[2] >= 64 && (PEDAL.learn || (CFG.pedal.on && Object.values(CFG.pedal.map).some(a => a.includes('cc:' + data[1]))))) return pedalPress('cc:' + data[1]);
-  if (cmd === 0xB0 && data[2] < 64 && CFG.pedal.on && Object.values(CFG.pedal.map).some(a => a.includes('cc:' + data[1]))) return true;      /* the pedal coming back up */
+  if (cmd === 0xB0 && data[2] < 64 && CFG.pedal.on && Object.values(CFG.pedal.map).some(a => a.includes('cc:' + data[1]))) { pedalRelease('cc:' + data[1]); return true; }      /* the pedal coming back up: only the echo throw minds */
+  if ((cmd === 0x80 || (cmd === 0x90 && data[2] === 0)) && CFG.pedal.on && Object.values(CFG.pedal.map).some(a => a.includes('note:' + data[1]))) { pedalRelease('note:' + data[1]); return true; }
   if (cmd === 0x90 && data[2] > 0 && (PEDAL.learn || (CFG.pedal.on && Object.values(CFG.pedal.map).some(a => a.includes('note:' + data[1]))))) return pedalPress('note:' + data[1]);
   if (cmd === 0xC0 && (PEDAL.learn || (CFG.pedal.on && Object.values(CFG.pedal.map).some(a => a.includes('pc:' + data[1]))))) return pedalPress('pc:' + data[1]);
   return false;

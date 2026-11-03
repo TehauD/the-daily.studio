@@ -9,7 +9,7 @@ suite('e2e-gear', async t => {
 
   /* ---- Settings ---- */
   await ev(() => window.__daily.openSettings('gear')); await wait(400);
-  ok(await ev(() => !!document.getElementById('pedalOn') && document.querySelectorAll('#settings .gear-row').length === 7 && !!document.getElementById('mclkMode') && !/\bnull\b/.test(document.querySelector('#settings .gear').textContent)), 'Settings ▸ Pedal & MIDI sync: the pedal switch, seven actions to learn, and MIDI clock');
+  ok(await ev(() => !!document.getElementById('pedalOn') && document.querySelectorAll('#settings .gear-row').length === 10 && !!document.getElementById('mclkMode') && !/\bnull\b/.test(document.querySelector('#settings .gear').textContent)), 'Settings ▸ Pedal & MIDI sync: the pedal switch, ten actions to learn (three for the vocal pedals), and MIDI clock');
   ok(await ev(() => !window.__daily.CFG.pedal.on), 'the pedal is off until you switch it on');
   await p.keyboard.press('PageDown'); await wait(200);
   ok(!(await ev(() => window.__daily.T.playing)), 'so a Page Down does nothing to the studio');

@@ -5,46 +5,49 @@
    nodes, with Settings ▸ Audio engine ▸ Zero-delay effects off) is compensated on playback. A click goes in; the tests time where it comes out. */
 const { suite } = require('./lib.cjs');
 
+/* in the page: a recorder that runs on the audio thread (an AudioWorklet), so a busy page cannot make it drop audio, as a ScriptProcessor
+   on the page's own thread does under load: `nodes` into one channel each, `N` samples, from the moment it is connected */
+async function recorderInstall() {
+  window.__rec = async (nodes, N) => {
+    const c = window.__daily.E.ctx; window.__recCtx = window.__recCtx || new WeakSet();
+    if (!window.__recCtx.has(c)) { const src = 'class R extends AudioWorkletProcessor{constructor(o){super();this.n=o.processorOptions.n;this.c=o.processorOptions.c;this.k=0;this.b=[];for(let i=0;i<this.c;i++)this.b.push(new Float32Array(this.n));}process(i){const x=i[0];if(this.k>=this.n)return false;const m=Math.min(128,this.n-this.k);for(let ch=0;ch<this.c;ch++){const s=x[ch];if(s)this.b[ch].set(s.subarray(0,m),this.k);}this.k+=m;if(this.k>=this.n){this.port.postMessage(this.b);return false;}return true;}};registerProcessor("t-rec",R);';
+      await c.audioWorklet.addModule(URL.createObjectURL(new Blob([src], { type: 'application/javascript' }))); window.__recCtx.add(c); }
+    return await new Promise(res => {
+      const mg = c.createChannelMerger(nodes.length), r = new AudioWorkletNode(c, 't-rec', { numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [1], channelCount: nodes.length, channelCountMode: 'explicit', channelInterpretation: 'discrete', processorOptions: { n: N, c: nodes.length } }), z = c.createGain(); z.gain.value = 0;
+      nodes.forEach((n, i) => n.connect(mg, 0, i)); mg.connect(r); r.connect(z); z.connect(c.destination);
+      r.port.onmessage = e => { nodes.forEach(n => { try { n.disconnect(mg); } catch (x) { } }); try { r.disconnect(); mg.disconnect(); } catch (x) { } res(e.data); };
+      window.__recArm && window.__recArm();
+    });
+  };
+}
 /* in the page: a click into `into` (E.inSum = the guitar, E.voxIn = the vocal), timed at each tap; ms after the first tap */
-function shot([into, names]) {
+async function shot([into, names]) {
   const D = window.__daily, E = D.E, c = E.ctx; D.setMonitor(true); E.voxMon.gain.cancelScheduledValues(0); E.voxMon.gain.value = 1;
-  const all = { gIn: E.inTrim, gRig: E.rigOut, vIn: E.voxTrim, vStrip: E.voxStrip.out, out: E.limiter }, taps = names.map(n => all[n]);
-  const sr = c.sampleRate, N = Math.round(sr * 1.4), mg = c.createChannelMerger(taps.length), sp = c.createScriptProcessor(4096, taps.length, 1), z = c.createGain(); z.gain.value = 0;
-  taps.forEach((n, i) => n.connect(mg, 0, i)); mg.connect(sp); sp.connect(z); z.connect(c.destination);
-  const rec = taps.map(() => new Float32Array(N)); let k = 0;
-  return new Promise(done => {
-    sp.onaudioprocess = ev => { if (k >= N) return; const n = Math.min(ev.inputBuffer.length, N - k); for (let ch = 0; ch < taps.length; ch++) rec[ch].set(ev.inputBuffer.getChannelData(ch).subarray(0, n), k); k += n;
-      if (k < N) return; sp.onaudioprocess = null; taps.forEach(n => { try { n.disconnect(mg); } catch (e) { } }); sp.disconnect();
-      const pk = x => { let m = 0; for (const v of x) m = Math.max(m, Math.abs(v)); return m; }, on = x => { const m = pk(x); return m < 1e-5 ? null : x.findIndex(v => Math.abs(v) > m * .05); };
-      const t = rec.map(on), r = { peak: +pk(rec[rec.length - 1]).toFixed(3) }; names.forEach((n, i) => { r[n] = t[i] == null || t[0] == null ? null : +((t[i] - t[0]) / sr * 1000).toFixed(2); }); done(r); };
-    const s = c.createBufferSource(), bf = c.createBuffer(1, 64, sr); bf.getChannelData(0)[0] = .3; bf.getChannelData(0)[1] = -.2; s.buffer = bf; s.connect(E[into]); s.start(c.currentTime + .4);
-  });
+  const all = { gIn: E.inTrim, gRig: E.rigOut, vIn: E.voxTrim, vStrip: E.voxStrip.out, out: E.limiter }, taps = names.map(n => all[n]), sr = c.sampleRate;
+  window.__recArm = () => { const s = c.createBufferSource(), bf = c.createBuffer(1, 64, sr); bf.getChannelData(0)[0] = .3; bf.getChannelData(0)[1] = -.2; s.buffer = bf; s.connect(E[into]); s.start(c.currentTime + .4); };
+  const rec = await window.__rec(taps, Math.round(sr * 1.4)); window.__recArm = null;
+  const pk = x => { let m = 0; for (const v of x) m = Math.max(m, Math.abs(v)); return m; }, on = x => { const m = pk(x); return m < 1e-5 ? null : x.findIndex(v => Math.abs(v) > m * .05); };
+  const t = rec.map(on), r = { peak: +pk(rec[rec.length - 1]).toFixed(3) }; names.forEach((n, i) => { r[n] = t[i] == null || t[0] == null ? null : +((t[i] - t[0]) / sr * 1000).toFixed(2); }); return r;
 }
 /* in the page: a guitar take with a click 0.5 s in and a vocal take with a click 1.0 s in, played from the top; the gap between them as heard */
-function takes(mode) {
+async function takes(mode) {
   const D = window.__daily, E = D.E, c = E.ctx, sr = c.sampleRate, n = sr * 2, click = (a, t) => { a[Math.round(t * sr)] = .4; a[Math.round(t * sr) + 1] = -.3; return a; };
   D.stopPlay(true); D.TAKES.length = 0; D.T.cursor = 0; D.T.metro = false; D.T.loop = false;
   const wl = D.rigLat(), wet = click(new Float32Array(n), .5 + wl);      // a wet print comes out of the rig wl late
   D.REC = { dry: [click(new Float32Array(n), .5)], wet: [wet], vox: [click(new Float32Array(n), 1)], g: true, v: true, t0: 0, startSec: 0, bpm: D.S.bpm, preset: null, n: 0, cam: [], pkG: [], pkV: [], punch: null, tEnd: 0, cycle: false, wl };
   D.recEnd(); const g = D.TAKES.find(t => t.kind === 'gtr'); if (mode) g.mode = mode;
-  const all = [E.rigOut, E.voxStrip.out, E.takesIn], N = Math.round(sr * 2.2), mg = c.createChannelMerger(3), sp = c.createScriptProcessor(4096, 3, 1), z = c.createGain(); z.gain.value = 0;
-  all.forEach((x, i) => x.connect(mg, 0, i)); mg.connect(sp); sp.connect(z); z.connect(c.destination);
-  const rec = all.map(() => new Float32Array(N)); let k = 0;
-  return new Promise(done => {
-    sp.onaudioprocess = ev => { if (k >= N) return; const m = Math.min(ev.inputBuffer.length, N - k); for (let ch = 0; ch < 3; ch++) rec[ch].set(ev.inputBuffer.getChannelData(ch).subarray(0, m), k); k += m;
-      if (k < N) return; sp.onaudioprocess = null; all.forEach(x => { try { x.disconnect(mg); } catch (e) { } }); sp.disconnect(); D.stopPlay(true);
-      const on = x => { let m = 0; for (const v of x) m = Math.max(m, Math.abs(v)); return m < 1e-4 ? null : x.findIndex(v => Math.abs(v) > m * .3); };
-      const gt = mode === 'wet' ? on(rec[2]) : on(rec[0]), vt = on(rec[1]);
-      done({ mode: g.mode, gapMs: gt == null || vt == null ? null : +((vt - gt) / sr * 1000).toFixed(2), wl: +(wl * 1000).toFixed(2), vl: +(D.voxLat() * 1000).toFixed(2) });
-    };
-    D.play();
-  });
+  window.__recArm = () => { D.play(); };
+  const rec = await window.__rec([E.rigOut, E.voxStrip.out, E.takesIn], Math.round(sr * 2.2)); window.__recArm = null; D.stopPlay(true);
+  const on = x => { let m = 0; for (const v of x) m = Math.max(m, Math.abs(v)); return m < 1e-4 ? null : x.findIndex(v => Math.abs(v) > m * .3); };
+  const gt = mode === 'wet' ? on(rec[2]) : on(rec[0]), vt = on(rec[1]);
+  return { mode: g.mode, gapMs: gt == null || vt == null ? null : +((vt - gt) / sr * 1000).toFixed(2), wl: +(wl * 1000).toFixed(2), vl: +(D.voxLat() * 1000).toFixed(2) };
 }
 
 suite('e2e-latency', async t => {
   const { ok, wait, poll } = t;
   const p = await t.open({});
   const ev = (f, a) => p.evaluate(f, a);
+  await ev(recorderInstall);
   await ev(() => { const c = window.__daily.E.ctx; if (c.state !== 'running') return c.resume(); });
 
   /* ---- live: how late you hear yourself ---- */

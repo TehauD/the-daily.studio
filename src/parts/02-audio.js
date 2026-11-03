@@ -139,6 +139,51 @@ class Comp extends AudioWorkletProcessor{
       this.gl=g1;}
     return true;}}
 registerProcessor('fw-comp',Comp);
+
+/* the vocal pedalboard (part 79): an analog-style octave down for growl (a flip-flop on the voice's zero crossings: no delay) */
+class Oct extends AudioWorkletProcessor{
+  constructor(){super();this.l1=0;this.l2=0;this.env=0;this.ff=1;this.pos=false;}
+  process(i,o){const x=i[0],y=o[0];if(!x.length||!y.length)return true;const n=y[0].length,sr=sampleRate,a=Math.exp(-2*Math.PI*350/sr),at=Math.exp(-1/(0.002*sr)),rl=Math.exp(-1/(0.06*sr));
+    for(let k=0;k<n;k++){const v=x[0][k];this.l1=v+(this.l1-v)*a;this.l2=this.l1+(this.l2-this.l1)*a;const e=Math.abs(v);this.env=e>this.env?e+(this.env-e)*at:e+(this.env-e)*rl;
+      const th=this.env*0.08;if(!this.pos&&this.l2>th){this.pos=true;this.ff=-this.ff;}else if(this.pos&&this.l2<-th)this.pos=false;
+      const out=this.ff*this.env*0.9;for(let c=0;c<y.length;c++)y[c][k]=out;}
+    return true;}}
+registerProcessor('fw-oct',Oct);
+
+/* a harmony voice that hears the note being sung and moves it a number of steps up or down the song's scale (or to a chord tone):
+   pitch found by a small YIN on a 4x decimated copy, then the same two-head shifter as fw-pitch */
+class Harm extends AudioWorkletProcessor{
+  constructor(){super();this.N=16384;this.b=new Float32Array(this.N);this.w=0;this.ph=0;this.win=0.035;this.semi=0;this.tgt=0;
+    this.D=new Float32Array(512);this.dw=0;this.acc=0;this.ac=0;this.cnt=0;this.scale=[1,0,1,0,1,1,0,1,0,1,0,1];this.steps=2;this.fixed=null;this.chord=null;this.on=false;
+    this.port.onmessage=e=>{const d=e.data;if(d.scale)this.scale=d.scale;if(d.steps!=null)this.steps=d.steps;if('fixed' in d)this.fixed=d.fixed;if('chord' in d)this.chord=d.chord;};}
+  rd(pos){const N=this.N;let p=pos;while(p<0)p+=N;const i=Math.floor(p),f=p-i;const a=this.b[i%N],c=this.b[(i+1)%N];return a+(c-a)*f;}
+  detect(){const sr=sampleRate/4,W=256,D=this.D,M=512,s0=(this.dw-W-180+M*4)%M,mn=Math.floor(sr/1000),mx=Math.min(175,Math.floor(sr/70));let e=0;
+    for(let j=0;j<W;j++){const v=D[(s0+j)%M];e+=v*v;}if(e/W<1e-6){this.on=false;return;}
+    let run=0,best=-1;const d=new Float32Array(mx+2);for(let t=1;t<=mx+1;t++){let s=0;for(let j=0;j<W;j++){const q=D[(s0+j)%M]-D[(s0+j+t)%M];s+=q*q;}run+=s;d[t]=s*t/(run||1);}
+    for(let t=mn;t<=mx;t++){if(d[t]<0.15&&d[t]<=d[t-1]&&d[t]<=d[t+1]){best=t;break;}}
+    if(best<0){this.on=false;return;}const a=d[best-1],b=d[best],c=d[best+1],den=a-2*b+c,tt=best+(den?0.5*(a-c)/den:0),f=sr/tt,m=69+12*Math.log2(f/440);
+    this.on=true;const n=Math.round(m),pc=((n%12)+12)%12;let t2;
+    if(this.fixed!=null)t2=n+this.fixed;
+    else if(this.chord&&this.chord.length){const up=this.steps>0,cs=[];for(let k=-24;k<=24;k++){const q=n+k;if(this.chord.includes(((q%12)+12)%12))cs.push(q);}
+      const want=up?cs.filter(q=>q>=n+3):cs.filter(q=>q<=n-3).reverse();t2=want.length?want[Math.abs(this.steps)>=4?Math.min(1,want.length-1):0]:n+(up?4:-3);}
+    else{let base=n;if(!this.scale[pc]){base=this.scale[(pc+1)%12]?n+1:n-1;}let q=base,st=this.steps,dir=st>0?1:-1;while(st!==0){q+=dir;if(this.scale[((q%12)+12)%12])st-=dir;}t2=q;}
+    this.tgt=t2-n;}
+  process(i,o){const x=i[0],y=o[0];if(!x.length||!y.length)return true;const n=y[0].length,W=Math.min(this.N-8,Math.floor(this.win*sampleRate)),N=this.N;
+    for(let k=0;k<n;k++){const v=x[0][k];this.acc+=v;this.ac++;if(this.ac===4){this.D[this.dw%512]=this.acc/4;this.dw=(this.dw+1)%(512*1024);this.acc=0;this.ac=0;if(++this.cnt%32===0)this.detect();}
+      this.semi+=(this.tgt-this.semi)*0.0015;const ratio=Math.pow(2,this.semi/12);this.b[this.w]=v;const p1=this.ph,p2=(this.ph+0.5)%1,g1=Math.sin(Math.PI*p1),g2=Math.sin(Math.PI*p2);
+      const wet=(this.rd(this.w-p1*W)*g1*g1+this.rd(this.w-p2*W)*g2*g2)*(this.on?1:0.6);this.ph+=(1-ratio)/W;if(this.ph>=1)this.ph-=1;else if(this.ph<0)this.ph+=1;
+      for(let c=0;c<y.length;c++)y[c][k]=wet;this.w=(this.w+1)%N;}
+    return true;}}
+registerProcessor('fw-harm',Harm);
+
+/* a de-esser: the band above f is turned down only while it is loud (the rest of the voice is never touched) */
+class DeEss extends AudioWorkletProcessor{
+  constructor(){super();this.f=6000;this.th=-30;this.l1=0;this.l2=0;this.env=0;this.g=1;this.port.onmessage=e=>Object.assign(this,e.data);}
+  process(i,o){const x=i[0],y=o[0];if(!x.length||!y.length)return true;const n=y[0].length,sr=sampleRate,a=Math.exp(-2*Math.PI*this.f/sr),at=Math.exp(-1/(0.0005*sr)),rl=Math.exp(-1/(0.06*sr)),th=Math.pow(10,this.th/20),gs=Math.exp(-1/(0.002*sr));
+    for(let k=0;k<n;k++){const v=x[0][k];this.l1=v+(this.l1-v)*a;this.l2=this.l1+(this.l2-this.l1)*a;const hp=v-this.l2,e=Math.abs(hp);this.env=e>this.env?e+(this.env-e)*at:e+(this.env-e)*rl;
+      const t=this.env>th?Math.pow(th/this.env,0.75):1;this.g=t+(this.g-t)*gs;const out=v-hp*(1-this.g);for(let c=0;c<y.length;c++)y[c][k]=out;}
+    return true;}}
+registerProcessor('fw-deess',DeEss);
 `;
 
 /* ---------- engine state ---------- */
@@ -222,7 +267,8 @@ function buildGraph() {
   E.voxIn.connect(E.voxTrim); E.voxTrim.connect(E.anaVox); E.voxTrim.connect(E.aV); E.voxTrim.connect(E.voxMon);
   { const sIn = gn(1), sOut = gn(1), hp = bq('highpass', 90), cmp = mkComp(c), mk = gn(1.35), pr = gn(1), by = gn(0);
     cmp.threshold.value = -24; cmp.knee.value = 14; cmp.ratio.value = 3; cmp.attack.value = .008; cmp.release.value = .2;
-    chainN(sIn, hp, cmp, mk, pr, sOut); sIn.connect(by); by.connect(sOut); E.voxStrip = { in: sIn, out: sOut, proc: pr, byp: by, cmp }; sOut.connect(E.tr.vox.in); E.voxMon.connect(sIn); }
+    chainN(sIn, hp, cmp, mk, pr, sOut); sIn.connect(by); by.connect(sOut); E.voxStrip = { in: sIn, out: sOut, proc: pr, byp: by, cmp }; E.voxMon.connect(sIn);
+    if (typeof vbAttach === 'function') vbAttach(c, sOut, E.tr.vox.in); else sOut.connect(E.tr.vox.in); }      /* the vocal pedalboard (part 79) sits after the polish: the live voice and vocal takes both go through it */
   voxPolishApply();
   E.rigOut.connect(E.tr.live.in);
   { const ms = mstBuild(); E.mix.connect(ms.in); ms.out.connect(E.master); mstApply(); }
