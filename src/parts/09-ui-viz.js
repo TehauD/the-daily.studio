@@ -133,6 +133,7 @@ function drawVis(cvo, o) {
   if (MODE === 'halo' && main) haloFront(g);   // stage draws its own camera layer after trails and kaleidoscope
   if (main && !o.noNeck && CFG.vzNeck !== false && !document.body.classList.contains('perform-on') && !vzBare(MODE)) { const r = neckRect(W, H); drawMiniNeck(g, r[0], r[1], r[2], r[3], { C }); }
   if (main && CFG.vzRibbon && !document.body.classList.contains('perform-on') && typeof voxDraw === 'function') { const r = voxRect(W, H); voxDraw(g, r[0], r[1], r[2], r[3], { C, labels: H > 260 }); }
+  if (main && typeof megDraw === 'function') megDraw(g, W, H);   /* the megaphone pedal's look (part 78) */
   if (main) tipDraw(g, W, H, 'vis', tipVisAvoid(W, H, MODE, o).concat(o.avoid || []));   /* the tip jar (part 39b): on the Visuals, so it is in stage videos */
   if (o.noText || vzBare(MODE)) return;
   const ink = HP ? HP.ink : '255,255,255'; g.fillStyle = `rgba(${ink},.55)`; g.font = `${Math.round(11 * H / 400 + 6)}px ui-monospace,Menlo,monospace`; g.textBaseline = 'top';

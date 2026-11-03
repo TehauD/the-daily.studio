@@ -2,6 +2,23 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.30.0 — 2026-11-03 — Your megaphone pedal drives the show
+
+### Added
+- **Megaphone pedal** (Settings ▸ Megaphone pedal, `src/parts/78-megaphone.js`). It's for a TC-Helicon VoiceTone X1, or any megaphone, radio or telephone voice effect between the mic and the interface.
+  - **How it's heard:** the X1 has no MIDI, but the studio hears it in the vocal input, by the balance of lows, middle and highs that such an effect cuts and pushes.
+  - **Teach it my voice:** three seconds with the pedal off and three with it on. Without teaching, general settings suit most megaphone sounds.
+  - **While the pedal is on:**
+    - the stage and the Visuals turn red-hot with scan lines and a jolt as it comes on, drawn into the picture so the projector and stage videos carry it;
+    - the lights flash as you stomp it on, within your light comfort;
+    - the words in Perform and the stream window go red and shake.
+  - **Timing:** on within a third of a second, held through a breath, off a moment after you sing clean.
+  - Each reaction can be switched off, and Calm and reduced motion keep the colour without the shake.
+  - Nothing is recorded. Only six numbers from teaching are kept.
+
+### Tests
+- `e2e-megaphone` (17 checks), on synthesised low and high voices, clean and through a megaphone-like band limit and drive.
+
 ## 2.29.0 — 2026-11-03 — Pads, beatbox to beat, a foot pedal, MIDI clock and a stream window
 
 ### Added

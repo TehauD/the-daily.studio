@@ -132,6 +132,7 @@ function openSettings(at) {
       h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!CFG.rec.dry, onchange: e => { CFG.rec.dry = e.target.checked; saveCfg(); } }), 'Record dry DI (enables re-amping)'),
       h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!CFG.rec.wet, onchange: e => { CFG.rec.wet = e.target.checked; saveCfg(); } }), 'Record wet print')] },
     { key: 'gear', label: 'Pedal & MIDI sync', ico: '🦶', sub: 'A foot pedal for hands-free playing, and MIDI clock for drum machines, synths and music software.', body: () => [gearSettings()] },
+    { key: 'mega', label: 'Megaphone pedal', ico: '📢', sub: 'Your vocal effects pedal drives the show: the stage, the lights and the words react when it is on.', body: () => [megSettings()] },
     { key: 'folder', label: 'Folder sync', ico: '📁', sub: 'Your whole studio, recordings too, in a folder on this computer: iCloud Drive, Dropbox, Google Drive or OneDrive keep it the same on every computer.', wide: true, body: () => [syncControl()] },
     { key: 'github', label: 'GitHub', ico: '⑂', sub: 'Your studio in a private repository of your own, in step on every device. Optional.', wide: true, body: () => [ghSection()] },
     { key: 'export', label: 'Export', ico: '⇩', sub: 'Song bounces and tab text.', body: () => [
