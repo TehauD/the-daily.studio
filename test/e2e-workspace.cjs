@@ -57,9 +57,9 @@ suite('e2e-workspace', async t => {
   ok(await ev(() => window.__daily.CFG.lookMode === 'dark' && document.documentElement.dataset.theme === 'dark'), 'and Dark switches it back');
   await ev(() => document.getElementById('xpTools') && document.getElementById('xpTools').click()); await wait(300);
   const xpo = await ev(() => [...document.querySelectorAll('.xp-pop .xp-opt')].map(b => b.querySelector('b').textContent).join());
-  ok(/Automatic,Simple,More tools/.test(xpo), 'Experience stays on the Tools button (' + xpo + ')');
-  await ev(() => { const o = [...document.querySelectorAll('.xp-pop .xp-opt')].find(b => b.querySelector('b').textContent === 'Simple'); if (o) o.click(); }); await wait(300);
-  ok(await ev(() => window.__daily.xpLevel() === 'new'), 'Simple narrows the studio');
+  ok(/Automatic,Essentials,More tools/.test(xpo), 'Experience stays on the Tools button (' + xpo + ')');
+  await ev(() => { const o = [...document.querySelectorAll('.xp-pop .xp-opt')].find(b => b.querySelector('b').textContent === 'Essentials'); if (o) o.click(); }); await wait(300);
+  ok(await ev(() => window.__daily.xpLevel() === 'new'), 'Essentials narrows the panel strip');
   await ev(() => window.__daily.CFG.xpMode = 'pro'); await wait(100);
   ok(await ev(() => window.__daily.xpLevel() === 'pro'), 'and Everything opens it all up again');
   await ev(() => { document.body.click(); window.__daily.closePop && window.__daily.closePop(); }); await wait(200);

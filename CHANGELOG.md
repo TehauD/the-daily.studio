@@ -2,6 +2,26 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.33.0 — 2026-11-03 — ✦ Simple
+
+### Added
+- **✦ Simple** (`src/parts/33b-simple.js`): one switch, at the top right and in Settings ▸ Workflow, for anyone who has never used a recording studio.
+  - **What stays:** play, stop, ● record, Loop and Click (now labelled), the tempo and the key. Also: the song's name, Songs, New, undo, Perform and Voice; the six workspaces and their tools; ● Capture; the tab and the words; Mute all; the arrangement and Loop & layer.
+  - **What is tucked away:** return to start, the bar · beat counter, time signature, the master meter, the latency estimate, the workspace button, artist, tuning, capo, scale and notes, and the Canvas / Song / Studio switch. Also: the Create → Perform → Share flow, the Tools menu, each band part's switch and the mix, tab techniques, fill styles, copy and paste, the arrangement's zoom, swing and lane tools, the stage's extra settings, and the status line.
+  - On the Songwriter screen at 1600 × 900, that is 91 controls instead of 137.
+  - Nothing is turned off or lost: the hiding is CSS only, and the same button brings everything back.
+  - **Who starts in it:** a first visit starts in Simple, and "I know my way around" opens the full studio instead. Anyone who has been here before keeps the full studio until they press ✦ Simple.
+  - Simple is kept per device (it doesn't sync). Phones keep their own layout.
+
+### Changed
+- The Tools menu's tab level called "Simple" is now **Essentials**, so it isn't confused with ✦ Simple. Its heading is "Which panels on the strip?". The panel strip keeps its own adaptive level in Simple mode, shown without numbers.
+
+### Tests
+- New `e2e-simple` (17 checks).
+- `e2e`, `e2e-goals`, `e2e-privacy` and `e2e-workspace` updated:
+  - a brand-new visitor starts in ✦ Simple and switches it off before using full-studio controls;
+  - the menu level is now Essentials.
+
 ## 2.32.1 — 2026-11-03 — Fewer buttons, a steady theme, and your choice of red light
 
 ### Changed

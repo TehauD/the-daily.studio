@@ -119,7 +119,7 @@ function buildSongbar() {
   SB.f.tun = h('select', { class: 'in sb-tun', 'aria-label': 'Tuning', onchange: e => { const nm = e.target.value; if (nm === '__custom') { sbDetails(SB.f.more, true); sbSync(); return; } setTuning(TUNINGS[nm], nm); } });
   SB.f.capo = h('input', { class: 'in sb-capo', type: 'number', min: 0, max: 12, 'aria-label': 'Capo', onchange: e => { S.capo = clamp(+e.target.value || 0, 0, 12); S.voicePref = {}; commit(); } });
   SB.f.scale = h('select', { class: 'in sb-scale', 'aria-label': 'Scale for overlays', title: 'Scale used for the fretboard and tab overlays', onchange: e => { S.scale = e.target.value; commit(false); bus.emit('scale'); } }, Object.keys(SCALES).map(n => h('option', {}, n)));
-  SB.f.more = h('button', { class: 'btn sm', title: 'Notes, custom tuning, per-string tuning…', onclick: () => sbDetails(SB.f.more) }, 'Notes & tuning ▾');
+  SB.f.more = h('button', { class: 'btn sm sb-more', title: 'Notes, custom tuning, per-string tuning…', onclick: () => sbDetails(SB.f.more) }, 'Notes & tuning ▾');
   SB.trk = h('div', { class: 'sb-trk' });
   SB.saved = h('span', { class: 'sb-saved', role: 'status', 'aria-live': 'polite', title: 'Your work is saved in this browser as you go' });
   UI.undo = h('button', { class: 'btn sm sb-hist', title: 'Undo (Ctrl/Cmd + Z)', 'aria-label': 'Undo', onclick: () => undo() }, '↶'); UI.redo = h('button', { class: 'btn sm sb-hist', title: 'Redo (Shift + Ctrl/Cmd + Z)', 'aria-label': 'Redo', onclick: () => redo() }, '↷'); SB.hist = h('span', { class: 'sb-histg' }, UI.undo, UI.redo, SB.saved);

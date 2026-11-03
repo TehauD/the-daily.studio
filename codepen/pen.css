@@ -1524,3 +1524,13 @@ dialog.coach[open]{display:flex;flex-direction:column;gap:10px}
 .ln-card.mine{flex-direction:row;align-items:center;cursor:default}.ln-card.mine:hover{transform:none}.ln-open{flex:1;display:flex;flex-direction:column;gap:2px;text-align:left;background:none;border:0;color:inherit;cursor:pointer;padding:0;font:inherit}
 .ln-h{margin:16px 0 8px}.ln-lab{display:flex;flex-direction:column;gap:10px;align-items:flex-start}
 @media (max-width:700px){dialog.coach{padding:12px}.co-steps{max-width:40%}.co-tt b{font-size:17px}.ln-ls{min-height:44px}dialog.coach .co-ctl .btn,dialog.coach .co-ctl .btn.sm{min-height:44px;min-width:44px}}
+/* ---------- Simple mode (2.33): one switch tucks away what a first-timer does not need (phones have their own layout) ---------- */
+.simple-btn{display:inline-flex;align-items:center;gap:6px;font-weight:700}.simple-btn .simple-ic{color:var(--accent)}
+.simple-btn[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--text)}
+body.simple:not([data-form=phone]) :is(#transport .rew,#transport .metro-more,#transport .lcd-pos,#transport .f-sig,#transport #bandMute,#topR #wsBtn,#topR .mst-chip,#topR .lat-chip,
+  #songbar .f-artist,#songbar .f-tun,#songbar .f-capo,#songbar .f-scale,#songbar .sb-more,#songbar .sb-zoom,
+  #goalbar .gl-flow,.dockbar #xpTools,.dockbar .dock-tools,.bandstrip .bchip:not(.bmute),.bandstrip select,
+  #pane-tab .tech,#pane-tab .te-adv,#timeline .tl-adv,#timeline .tl-corner,footer#status){display:none!important}
+body.simple:not([data-form]) #app,body.simple[data-form=desktop] #app{grid-template-rows:56px auto minmax(0,1fr) 0}body.simple[data-form=tablet] #app{grid-template-rows:auto auto minmax(0,1fr) 0}
+body.simple:not([data-form=phone]) #transport .btn .lbl{display:inline}
+body.simple:not([data-form=phone]) #pane-vis>.row>:is(#vzBack,.row:has(#lxLens),[data-vza],#hexTone,select,#vzRecBtn,#vzAutoBtn,#vzCamBtn,.camfx,#vzNeckBtn,#vzRibbonBtn){display:none!important}

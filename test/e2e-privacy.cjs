@@ -132,6 +132,7 @@ suite('e2e-privacy', async t => {
     await wait(2500);
     ok(!await asked() && net.off.length === 0, 'it does not ask again by itself, and still nothing has gone to another site');
 
+    await p.evaluate(() => window.__daily.simpleSet(false, true));      /* a first visit starts in ✦ Simple, which tucks the camera look away */
     await p.selectOption('select[aria-label="Camera look"]', 'edges'); await wait(300); await p.selectOption('select[aria-label="Camera look"]', 'person');
     ok(await poll(asked, 8000), 'choosing the look again asks again');
     await p.click('#mpAskYes'); await wait(2500);
