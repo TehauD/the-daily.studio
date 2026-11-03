@@ -53,7 +53,7 @@ function tlMove(e) { if (TKR.drag) { tkrMove(e); return; } if (TL.clip) { tkMove
 function tlUp() { if (TKR.drag) { tkrUp(); return; } if (TL.clip) { tkUp(); return; } if (TL.drag) { TL.drag = null; if (T.loopB != null) { T.loop = true; syncTransport(); } } }
 function tlCache() {
   if (TL.cache) return TL.cache; const sp = spb(), n = totalBars(), bass = []; T.bars = null;
-  for (let bi = 0; bi < n; bi++) for (let sib = 0; sib < sp; sib++) { const cd = chordAt(bi, sib); if (!cd || !cd.sym || !S.band.bassOn) continue; const e = bassEvent(S.band.bassStyle, cd.sym, cd.rel, cd.len, cd.next); if (e) bass.push({ s: bi * sp + sib, m: e.m, len: e.len }); }
+  for (let bi = 0; bi < n; bi++) for (let sib = 0; sib < sp; sib++) { const cd = chordAt(bi, sib); if (!cd || !cd.sym || !S.band.bassOn) continue; const e = bassEvent(S.band.bassStyle, cd.sym, cd.rel, cd.len, cd.next, bi * sp + sib); if (e) bass.push({ s: bi * sp + sib, m: e.m, len: e.len }); }
   return TL.cache = { bass };
 }
 function drawTL() {

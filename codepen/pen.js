@@ -5,7 +5,7 @@
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.28.1', BUILD = '0349d1f', PARTS_N = +'90' || 0, LINES_N = +'16047' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.29.0', BUILD = 'd624275', PARTS_N = +'93' || 0, LINES_N = +'16384' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { ghApp: { clientId: '', slug: '' },   /* Sign in with GitHub: the GitHub App's public client id and its slug (docs/GITHUB.md); empty = only the token way */
   support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://the-daily.studio/journal/' };
@@ -1065,17 +1065,22 @@ function drumHit(row, t, v) {
     const o = c.createOscillator(), g = gn(0); o.frequency.setValueAtTime(K.t[0] * 1.5, t); o.frequency.exponentialRampToValueAtTime(K.t[0], t + .1); env(g, K.t[1], .5 * vol); o.connect(g); g.connect(out); o.start(t); o.stop(t + K.t[1] + .05);
   }
 }
-function drumStep(sib, t) { const pat = dpat(), L = Math.min(S.band.drumLen || 16, 32); const i = sib % L; pat.forEach((row, r) => { const v = row[i]; if (v && typeof lxHit === 'function') lxHit(r, t, v); if (v) drumHit(r, t + (Math.random() * 2 - 1) * CFG.humanize * .006, v); }); }
+function drumStep(slot, t) { const pat = dpat(), L = Math.min(S.band.drumLen || 16, 32); const i = ((slot % L) + L) % L;      /* by song position, so a two-bar groove plays both bars */ pat.forEach((row, r) => { const v = row[i]; if (v && typeof lxHit === 'function') lxHit(r, t, v); if (v) drumHit(r, t + (Math.random() * 2 - 1) * CFG.humanize * .006, v); }); }
 function click(t, accent) {
   const c = E.ctx, o = c.createOscillator(), g = gn(0); o.frequency.value = accent ? 1700 : 1150; g.gain.setValueAtTime(CFG.metroVol * (accent ? 1 : .6), t); g.gain.exponentialRampToValueAtTime(.0001, t + .035);
   o.connect(g); g.connect(E.tr.click.in); o.start(t); o.stop(t + .05);
 }
 
 /* ---------- bass ---------- */
-const BASS_STYLES = ['Root Whole', 'Root–Fifth', 'Eighths', 'Walking', 'Syncopated', 'Reggae Dub', 'Off', 'Octave Pump'];
+const BASS_STYLES = ['Root Whole', 'Root–Fifth', 'Eighths', 'Walking', 'Syncopated', 'Reggae Dub', 'Off', 'Octave Pump', 'Follow the Kick'];
 const bassMidi = pc => { let m = 28 + ((pc - 28) % 12 + 12) % 12; return m; };
-function bassEvent(style, ch, rel, cl, nextCh) {
+function bassEvent(style, ch, rel, cl, nextCh, slot) {
   const c = parseChord(ch); if (!c || style === 'Off') return null;
+  if (style === 'Follow the Kick') {      /* the root on every kick of the drum pattern, held to the next kick: one groove makes the drums and the bass */
+    if (slot == null) return rel === 0 ? { m: bassMidi(c.bass), v: .85, len: cl } : null;
+    const k = dpat()[0], L = Math.min(S.band.drumLen || 16, 32), at = ((slot % L) + L) % L, v = k[at]; if (!v) return null;
+    let n = 1; while (n < 8 && !k[(at + n) % L]) n++; return { m: bassMidi(c.bass), v: [0, .6, .8, .95][v], len: Math.min(n, cl - rel) };
+  }
   const r = bassMidi(c.bass), q3 = c.iv.includes(3) ? 3 : 4, fifth = r + 7, third = r + q3, sp4 = 4;
   switch (style) {
     case 'Root Whole': return rel === 0 ? { m: r, v: .85, len: cl } : null;
@@ -1134,14 +1139,15 @@ function scheduleSlot(slot, time) {
   const sp = spb(), dur = slotDur(), sw = (slot % 2 !== 0) ? S.swing * dur : 0, tt = time + sw;
   const beatSlots = 16 / S.ts[1];
   if (slot < 0) { const sib = ((slot % sp) + sp) % sp; if (sib % beatSlots === 0 && !T.quiet) click(time, sib === 0); return; }
+  if (typeof mclkSlot === 'function') mclkSlot(slot, time);      /* MIDI clock out (part 76) rides the same schedule */
   const q = !!T.quiet;      /* T.quiet: the band and the click are silent while it is set (Shower mode); the song itself is not changed */
   const bi = Math.floor(slot / sp), sib = slot % sp, fb = barsCache()[bi]; if (!fb) return;
   if (T.metro && !q && sib % beatSlots === 0) click(tt, sib === 0);
   if (typeof lxEvt === 'function' && sib % beatSlots === 0) lxEvt('beat', tt, sib === 0 ? 1 : 0);   // the show listens on the audio clock
-  if (S.band.drumsOn && !q) drumStep(sib, tt);
+  if (S.band.drumsOn && !q) drumStep(slot, tt);
   const cd = chordAt(bi, sib);
   if (cd && cd.sym) {
-    if (S.band.bassOn && !q) { const e = bassEvent(S.band.bassStyle, cd.sym, cd.rel, cd.len, cd.next); if (e) { pluck('bass', tt, e.m, e.v, { id: 'b', pan: 0 }); if (typeof lxEvt === 'function') lxEvt('bass', tt, e.m, e.v); } }
+    if (S.band.bassOn && !q) { const e = bassEvent(S.band.bassStyle, cd.sym, cd.rel, cd.len, cd.next, slot); if (e) { pluck('bass', tt, e.m, e.v, { id: 'b', pan: 0 }); if (typeof lxEvt === 'function') lxEvt('bass', tt, e.m, e.v); } }
     if (S.band.compOn && !q) { const st = STRUMS[S.band.compStyle] || STRUMS['Down 4s'], L = Math.min(16, sp), ch = st.p[sib % L]; strumAt(tt, cd.sym, ch, st); if (ch && ch !== '.' && typeof lxEvt === 'function') lxEvt('chord', tt, cd.sym, ch === ch.toUpperCase() ? 1 : .6); }
   }
   if (S.band.leadOn && !q) fb.bar.tab.forEach(n => { if (n.s === sib) { playTabNote(fb.bar, n, tt, dur); if (typeof lxEvt === 'function') lxEvt('lead', tt, S.tuning[n.st] + S.capo + n.f, .8); } });
@@ -1484,13 +1490,14 @@ function mkKnob(o) {
   const api = { el, set, get: () => v, setNorm: n => set(fromN(clamp(n, 0, 1))), def: o.def }; draw(); if (o.key) KNOBS.set(o.key, api); return api;
 }
 const MIDI = { access: null };
-const MIDIHOOKS = [];
+const MIDIHOOKS = [], MIDIRAW = [];      /* MIDIRAW: every message first (clock, pedals, pads); a hook returning true keeps it */
 async function initMIDI() {
   if (MIDI.access || !navigator.requestMIDIAccess) return;
   try { const a = await navigator.requestMIDIAccess(); MIDI.access = a; const hook = () => a.inputs.forEach(i => { i.onmidimessage = onMidi; }); hook(); a.onstatechange = () => { hook(); bus.emit('midi'); }; CFG.midi = true; saveCfg(); bus.emit('midi'); }
   catch (e) { if (document.body.dataset.form && document.body.dataset.form !== 'desktop') console.warn('MIDI unavailable: ' + e.message); else toast('MIDI unavailable: ' + e.message, 'warn'); }
 }
 function onMidi(e) {
+  for (const f of MIDIRAW) { try { if (f(e.data, e)) return; } catch (er) { console.warn(er); } }
   const [st, d1, d2] = e.data, cmd = st & 0xf0;
   if (cmd === 0xB0) {
     if (LEARN.key) { CFG.midimap[d1] = LEARN.key; saveCfg(); toast('CC ' + d1 + ' → ' + LEARN.key, 'ok'); const k = KNOBS.get(LEARN.key); if (k) k.el.classList.remove('learn'); LEARN.key = null; bus.emit('midi'); return; }
@@ -1589,6 +1596,7 @@ function openSettings(at) {
       F('When recording reaches the end of the song', sel('recEnd', [['grow', 'Keep going (the song grows to fit)'], ['stop', 'Stop at the end'], ['loop', 'Loop back, one take per pass']])),
       h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!CFG.rec.dry, onchange: e => { CFG.rec.dry = e.target.checked; saveCfg(); } }), 'Record dry DI (enables re-amping)'),
       h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!CFG.rec.wet, onchange: e => { CFG.rec.wet = e.target.checked; saveCfg(); } }), 'Record wet print')] },
+    { key: 'gear', label: 'Pedal & MIDI sync', ico: '🦶', sub: 'A foot pedal for hands-free playing, and MIDI clock for drum machines, synths and music software.', body: () => [gearSettings()] },
     { key: 'folder', label: 'Folder sync', ico: '📁', sub: 'Your whole studio, recordings too, in a folder on this computer: iCloud Drive, Dropbox, Google Drive or OneDrive keep it the same on every computer.', wide: true, body: () => [syncControl()] },
     { key: 'github', label: 'GitHub', ico: '⑂', sub: 'Your studio in a private repository of your own, in step on every device. Optional.', wide: true, body: () => [ghSection()] },
     { key: 'export', label: 'Export', ico: '⇩', sub: 'Song bounces and tab text.', body: () => [
@@ -2162,7 +2170,7 @@ function tlMove(e) { if (TKR.drag) { tkrMove(e); return; } if (TL.clip) { tkMove
 function tlUp() { if (TKR.drag) { tkrUp(); return; } if (TL.clip) { tkUp(); return; } if (TL.drag) { TL.drag = null; if (T.loopB != null) { T.loop = true; syncTransport(); } } }
 function tlCache() {
   if (TL.cache) return TL.cache; const sp = spb(), n = totalBars(), bass = []; T.bars = null;
-  for (let bi = 0; bi < n; bi++) for (let sib = 0; sib < sp; sib++) { const cd = chordAt(bi, sib); if (!cd || !cd.sym || !S.band.bassOn) continue; const e = bassEvent(S.band.bassStyle, cd.sym, cd.rel, cd.len, cd.next); if (e) bass.push({ s: bi * sp + sib, m: e.m, len: e.len }); }
+  for (let bi = 0; bi < n; bi++) for (let sib = 0; sib < sp; sib++) { const cd = chordAt(bi, sib); if (!cd || !cd.sym || !S.band.bassOn) continue; const e = bassEvent(S.band.bassStyle, cd.sym, cd.rel, cd.len, cd.next, bi * sp + sib); if (e) bass.push({ s: bi * sp + sib, m: e.m, len: e.len }); }
   return TL.cache = { bass };
 }
 function drawTL() {
@@ -2390,7 +2398,7 @@ function buildMidi() {
   const ld = [{ t: 0, b: [0xC1, 26] }]; flatBars().forEach(fb => { fb.bar.tab.forEach(n => { const next = fb.bar.tab.filter(o => o.st === n.st && o.s > n.s).sort((a, b) => a.s - b.s)[0], len = Math.max(1, (next ? next.s : sp) - n.s); on(ld, 1, clamp(n.f === 'x' ? S.tuning[n.st] + S.capo : noteMidi(n) + (n.t === '<>' ? 12 : 0), 0, 127), n.f === 'x' ? 40 : 90, (fb.idx * sp + n.s) * TPS, len * TPS - 8); }); });
   tracks.push(track(ld, 'Lead / tab'));
   // bass, channel 2
-  const bs = [{ t: 0, b: [0xC2, 33] }]; if (S.band.bassOn) for (let bi = 0; bi < totalBars(); bi++) for (let s = 0; s < sp; s++) { const cd = chordAt(bi, s); if (!cd || !cd.sym) continue; const e = bassEvent(S.band.bassStyle, cd.sym, cd.rel, cd.len, cd.next); if (e) on(bs, 2, clamp(e.m, 0, 127), Math.round(60 + 50 * (e.v || .8)), (bi * sp + s) * TPS, Math.max(1, e.len) * TPS - 8); }
+  const bs = [{ t: 0, b: [0xC2, 33] }]; if (S.band.bassOn) for (let bi = 0; bi < totalBars(); bi++) for (let s = 0; s < sp; s++) { const cd = chordAt(bi, s); if (!cd || !cd.sym) continue; const e = bassEvent(S.band.bassStyle, cd.sym, cd.rel, cd.len, cd.next, bi * sp + s); if (e) on(bs, 2, clamp(e.m, 0, 127), Math.round(60 + 50 * (e.v || .8)), (bi * sp + s) * TPS, Math.max(1, e.len) * TPS - 8); }
   tracks.push(track(bs, 'Bass'));
   // drums, channel 9
   const dr = []; if (S.band.drumsOn) { const pat = dpat(), L = Math.min(S.band.drumLen || 16, 32), gm = [36, 38, 42, 46, 39, 45]; for (let s = 0; s < total; s++) pat.forEach((row, r) => { const v = row[s % L]; if (v) on(dr, 9, gm[r], [0, 50, 90, 118][v], s * TPS, 60); }); }
@@ -2574,6 +2582,7 @@ function renderBand() {
   const drums = h('div', { class: 'card' }, h('h4', {}, 'Drums ', tog('Enabled', 'drumsOn')), h('div', { class: 'card-b' },
     h('div', { class: 'row', style: { gap: '10px', alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: '8px' } }, sel('Kit', Object.keys(KITS), B.kit, v => { B.kit = v; commit(false); }), sel('Pattern', Object.keys(DPATS), B.patName, v => { setDrumPattern(v); renderBand(); }, 170),
       songField('Length (steps)', h('select', { onchange: e => { B.drumLen = +e.target.value; commit(false); renderBand(); } }, [8, 12, 16, 24, 32].map(n => h('option', { selected: n === (B.drumLen || 16) }, n)))),
+      h('button', { class: 'btn sm primary', id: 'bandPads', title: 'Play the drums with your fingers, tap the tempo, record a groove or beatbox it', onclick: () => padsOpen() }, '🥁 Pads'),
       h('button', { class: 'btn sm', onclick: () => { B.pat = DROWS.map(() => new Array(32).fill(0)); commit(false); renderBand(); } }, 'Clear'), h('button', { class: 'btn sm', onclick: () => { const pat = dpat(); pat.forEach(r => r.forEach((v, i) => { if (v && Math.random() < .25) r[i] = 0; else if (!v && Math.random() < .04) r[i] = 1; })); commit(false); renderBand(); } }, '🎲 Mutate'),
       h('span', { class: 'tiny muted' }, 'Click a step to cycle: off → ghost → normal → accent')),
     stepGrid()));
@@ -3854,7 +3863,7 @@ async function boot() {
   if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener('devicechange', () => { ioDeviceChange().catch(e => console.warn(e)); });
   bus.emit('song');
   try { ghBoot(); } catch (e) { console.warn('github', e); }      /* back from Sign in with GitHub, or a sync at start (part 74) */
-  DEV.make = () => { window.__daily = { S, AIR, airSync, applyLayout, SING, SHW, singStep, singScore, singSteamIR, singMicOff, showerOpen, shwGo, shwPlay, shwPrev, shwNext, shwStem, shwRecToggle, shwRecStop, shwHear, shwSave, shwAddFiles, shwRemove, shwMove, shwMode, shwLoadSet, shwPlaylist, shwWords, shwPrepare, shwFolderPull, lrcParse, readTags, spPos, spPlay, STP, trainOpen, projRestoreTrack, secretNote, secretArp, WS, WS_BASE, WS_ARPS, wsScaleRun, wsArpRun, wsFollow, wsStop, wsListen, wsEarNext, wsEarAnswer, wsOpen, bandMute, bandMuted, pdbPut, pdbKeys, projRename, FS, FS_B, fsUse, fsSync, fsHead, fsNeeds, fsTidy, fsOpen, syncOff, syncZips, PRJ_WAIT: () => PRJ.wait, EGG, EGG_LINES, EGG_ORDER, eggDay, eggFor, eggNow, eggText, eggTick, eggFit, saveCfg, projSave, projDelete, GH, ghSync, ghConnect, ghDisconnect, ghLocal, ghSha, ghJson, ghMerge3, ghShare, ghGallery, ghGalleryOpen, ghGalleryShow, ghKeepLook, ghKeepRig, rigClean, ghReturn, BRAND, ghSettingsOut, projRefresh, projCreate, projLoad, PRJ, SEC, SECRETS, secretFound, secretTiming, secretsOpen, secretSync, backstageOpen, startAudio, playheadSlot, GUARD, reportText, reportCopy, srecQ, srecSize, pdbGet, srecFmt, SREC_FMTS, VBG, vbgAdd, vbgRemove, vbgUse, vbgOpen, vbgDraw, vzSetMode, srecFrame, srecFmtBox, kitThumb, WORKLET_SRC, mkComp, mkShaper, rigLat, voxLat, restartAudio, satCurve, rigApply, qrMake, qrSvg, tipLink, tipShort, tipReady, tipCard, tipDraw, tipShareHtml, tipOpen, tipPrint, tipPng, tipVisAvoid, tipStageAvoid, TIP, TIP_TERMS, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, STP, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfort, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, srecStart, srecStop, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, tkFades, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, FB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, vzSetMode, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, drawVis, perfClose, voicings, peaksOf, uid, shareGate, shareData, shareHtml, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, slotAtTime, SEL, mtof, spb, playheadSlot, WR, HM, HMX, HM_MODES, vzImmersive, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitThumb, kitInk, kitNotes, kitRecord, srecMime, mGo, GD_SESSIONS, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard}; };   // test hook: with ?debug, or Backstage ▸ Labs ▸ Developer handles
+  DEV.make = () => { window.__daily = { S, AIR, airSync, applyLayout, PAD, padsOpen, padHit, padTap, padRecord, padRecStop, padUndoPass, padClear, padResize, padBeatbox, bbHits, bbPattern, dpat, bassEvent, drumStep, PEDAL, pedalPress, pedalDo, pedalSecs, gearSettings, MCLK, mclkSlot, mclkMs, MIDI, MIDIRAW, onMidi, STRM, streamOpen, streamRoom, streamInfo, streamPanel, slotAtTime, SING, SHW, singStep, singScore, singSteamIR, singMicOff, showerOpen, shwGo, shwPlay, shwPrev, shwNext, shwStem, shwRecToggle, shwRecStop, shwHear, shwSave, shwAddFiles, shwRemove, shwMove, shwMode, shwLoadSet, shwPlaylist, shwWords, shwPrepare, shwFolderPull, lrcParse, readTags, spPos, spPlay, STP, trainOpen, projRestoreTrack, secretNote, secretArp, WS, WS_BASE, WS_ARPS, wsScaleRun, wsArpRun, wsFollow, wsStop, wsListen, wsEarNext, wsEarAnswer, wsOpen, bandMute, bandMuted, pdbPut, pdbKeys, projRename, FS, FS_B, fsUse, fsSync, fsHead, fsNeeds, fsTidy, fsOpen, syncOff, syncZips, PRJ_WAIT: () => PRJ.wait, EGG, EGG_LINES, EGG_ORDER, eggDay, eggFor, eggNow, eggText, eggTick, eggFit, saveCfg, projSave, projDelete, GH, ghSync, ghConnect, ghDisconnect, ghLocal, ghSha, ghJson, ghMerge3, ghShare, ghGallery, ghGalleryOpen, ghGalleryShow, ghKeepLook, ghKeepRig, rigClean, ghReturn, BRAND, ghSettingsOut, projRefresh, projCreate, projLoad, PRJ, SEC, SECRETS, secretFound, secretTiming, secretsOpen, secretSync, backstageOpen, startAudio, playheadSlot, GUARD, reportText, reportCopy, srecQ, srecSize, pdbGet, srecFmt, SREC_FMTS, VBG, vbgAdd, vbgRemove, vbgUse, vbgOpen, vbgDraw, vzSetMode, srecFrame, srecFmtBox, kitThumb, WORKLET_SRC, mkComp, mkShaper, rigLat, voxLat, restartAudio, satCurve, rigApply, qrMake, qrSvg, tipLink, tipShort, tipReady, tipCard, tipDraw, tipShareHtml, tipOpen, tipPrint, tipPng, tipVisAvoid, tipStageAvoid, TIP, TIP_TERMS, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, STP, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfort, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, srecStart, srecStop, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, tkFades, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, FB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, vzSetMode, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, drawVis, perfClose, voicings, peaksOf, uid, shareGate, shareData, shareHtml, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, slotAtTime, SEL, mtof, spb, playheadSlot, WR, HM, HMX, HM_MODES, vzImmersive, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitThumb, kitInk, kitNotes, kitRecord, srecMime, mGo, GD_SESSIONS, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard}; };   // test hook: with ?debug, or Backstage ▸ Labs ▸ Developer handles
   if (/[?&]debug\b/.test(location.search) || (CFG.labs && CFG.labs.handles)) DEV.make();
   try { bksBoot(); } catch (e) { console.warn('backstage', e); }      /* #backstage in the address, the performance overlay (part 73c) */
   projInit().catch(e => { console.warn('library', e); PRJ.ready = true; if (PRJ.wantStart) startMaybe(); });
@@ -5417,6 +5426,7 @@ function mSheet() {
       tile(msvg('<path d="M5 20V9M12 20V4M19 20v-7"/>'), 'Master · balance · click', () => { mCloseOverlays(); mixOpen(); }),
       tile(msvg('<path d="M3 12c3-8 5-8 8 0s5 8 8 0"/>'), 'Voice · pitch · key', () => { mCloseOverlays(); voxOpen(); }),
       tile(msvg('<path d="M5 21V8a4 4 0 018 0M13 8h-4M9 12v1M7 15v1M11 15v1M9 18v1"/>'), 'Scales & ear', () => { mCloseOverlays(); trainOpen(); }),
+      tile(msvg('<rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/>'), 'Pads · tap tempo · beatbox', () => { mCloseOverlays(); padsOpen(); }),
       tile(msvg('<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>'), keepRisk().level === 'ok' ? 'Back up songs' : 'Keep songs safe', () => { mCloseOverlays(); keepOpen(); }, keepRisk().level === 'high'),
       M.installEvt ? tile(msvg('<rect x="7" y="2.5" width="10" height="19" rx="2.4"/><path d="M12 8v7M9 12.5l3 3 3-3"/>'), 'Install app', () => { mInstall(); }) : null,
       document.fullscreenEnabled ? tile(msvg('<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>'), 'Full screen', () => { mCloseOverlays(); mFullscreen(); }) : null
@@ -12819,6 +12829,7 @@ const GOALS = [
     enter: () => { try { wrMode('both'); } catch (e) { } },
     tools: () => [
       ['gtCap', '● Capture idea', 'Play, and the notes and chords you play are written into the tab', () => { dockGo('tab'); capToggle(); }, () => !!CAP.on, 1],
+      ['gtPads', '🥁 Pads', 'Play the drums with your fingers, tap the tempo, record a groove or beatbox it', () => padsOpen()],
       ['gtSheet', '🎸 Paste chords', 'Paste a chord sheet (chords over the words): it becomes the song, with bars, key, words and a guitar part', () => liOpen('')],
       ['gtWords', '✎ Lyrics & tab', 'The words and the tab side by side', () => { dockGo('tab'); wrMode('both'); }],
       ['gtTheory', '♯ Chords & scales', 'Build a progression from the key: chords, scales and what comes next', () => sideShow('theory')],
@@ -12833,6 +12844,7 @@ const GOALS = [
       ['gtVideo', '⏺ Record video', 'Record the stage, you and the sound as a video; Studio Replay opens when you stop', b => kitRecord(b), () => !!SREC.on, 1],
       ['gtCam', '📷 Camera', 'Put yourself centre stage, in front of the visuals', () => vzCamPress(), () => !!VZ.cam],
       ['gtPerf', '🎤 Perform view', 'Full screen: the chord huge, the lyrics scrolling, a count-in', b => perfOpen(b)],
+      ['gtStream', '📺 Stream window', 'The words and the chord in a window of their own, for OBS or any streaming app', () => streamRoom()],
       ['gtTake', '● Record take', 'Record your guitar and voice into the arrangement (R)', () => toggleRec(), () => !!T.rec],
       ['gtReplay', '▶ Replay', 'Watch the last video you recorded', () => kitReplay(), null, 0, () => !KIT.last]
     ] },
@@ -12847,6 +12859,7 @@ const GOALS = [
       ['gtReplay', '▶ Studio Replay', 'Watch the last recording, then save it, share it or make a thumbnail from any frame', () => kitReplay(), null, 0, () => !KIT.last],
       ['gtCam', '📷 Webcam', 'You in the picture, in front of or framed by the visuals', () => vzCamPress(), () => !!VZ.cam],
       ['gtFx', '✨ Overlays', 'How the camera sits with the visuals: dimmed behind, framed, or you in front', b => popover(b, h('div', { style: { display: 'grid', gap: '8px', minWidth: '240px' } }, h('h5', {}, 'Overlays'), camFxBox(), h('div', { class: 'tiny muted' }, 'Pick a look in the Visuals panel for what moves behind you.')))],
+      ['gtStream', '📺 Stream window', 'The words and the chord in a window of their own, for OBS or any streaming app', () => streamRoom()],
       ['gtThumb', '🖼 Thumbnail', 'Save a 1280 × 720 picture of the stage with the song title, for the post', () => kitThumb()],
       ['gtTip', '🎸 Tip jar', 'Let your audience tip you: your own tip link as a QR code on the stage, in your videos and on share pages. Off until you set it up', () => tipOpen(), () => tipReady()],
       ['gtExp', '⇩ Export', 'Audio, the share page, the lyric sheet and more', () => dockGo('exp')]
@@ -12859,6 +12872,7 @@ const GOALS = [
     tools: () => [
       ['gtLoop', '⟲ Loop', 'Loop the song or the selected bars (L)', () => { T.loop = !T.loop; syncTransport(); }, () => !!T.loop, 1],
       ['gtClick', '♩ Metronome', 'The click (M)', () => { T.metro = !T.metro; syncTransport(); }, () => !!T.metro],
+      ['gtPads', '🥁 Pads', 'Play the drums with your fingers, tap the tempo, record a groove or beatbox it', () => padsOpen()],
       ['gtSlow', '− 5', 'Slower by 5 BPM', () => goalTempo(-5)],
       ['gtBpm', () => S.bpm + ' BPM', 'The tempo', () => { if (UI.bpm) UI.bpm.focus(); }],
       ['gtFast', '+ 5', 'Faster by 5 BPM', () => goalTempo(5)],
@@ -16041,6 +16055,329 @@ async function ghGalleryShow() {
     list.append(h('div', { class: 'gh-studio', 'data-repo': it.owner + '/' + it.repo }, h('div', { class: 'row', style: { gap: '8px', alignItems: 'center' } }, h('b', {}, '@' + it.owner), h('span', { class: 'tiny muted', style: { flex: 1 } }, it.desc), open), body));
   });
 }
+
+/* >>> parts/75-pads.js */
+/* ============================================================
+   Part 75 · PADS (2.29) — play the band's drums with your fingers, tap the tempo, and set the groove the song sits on
+   Six pads, the band's own kit (kick, snare, hat, open hat, clap / rim, tom): tap them, press A S D F G H, or hit a MIDI pad
+   controller (the General MIDI drum notes: 36 kick, 38 / 40 snare, 42 / 44 hat, 46 open hat, 37 / 39 clap and rim, toms 41–50).
+   Harder taps (or MIDI velocity) play louder. Every hit lights the stage, as the band's drums do.
+     · Tap tempo     four taps or more set the song's tempo (undo puts it back)
+     · ● Record      1 or 2 bars loop over the click; what you play is written onto the 16th-note grid as the band's drum pattern.
+                     Each press of ● is a new pass on top of the last (kick first, then the hats …); ↶ takes the last pass away
+     · 🎤 Beatbox    the same, by mouth: kicks, snares and hats are told apart by their sound (part 75, bbAnalyze)
+     · Bass follows the kick: the band's bass plays the chord's root on every kick (BASS_STYLES 'Follow the Kick', part 03)
+   The grid under the pads is the pattern itself: tap a cell to change it.
+   ============================================================ */
+const PAD = { el: null, rec: null, taps: [], passes: [], bb: null, keys: 'asdfgh', loop0: null, held: new Map() };
+const PAD_ROWS = [['Kick', '🦶'], ['Snare', '🥁'], ['Hat', '🔸'], ['Open hat', '🔶'], ['Clap / rim', '👏'], ['Tom', '🪘']];
+const PAD_GM = { 35: 0, 36: 0, 38: 1, 40: 1, 42: 2, 44: 2, 46: 3, 37: 4, 39: 4, 41: 5, 43: 5, 45: 5, 47: 5, 48: 5, 50: 5 };
+const padLen = () => Math.min(S.band.drumLen || spb(), 32);
+const padBars = () => Math.max(1, Math.round(padLen() / spb()));
+/** the pattern at a length of `n` 16ths (a one-bar groove doubled to two, or the first bar of two kept) */
+function padResize(n) { const p = dpat(), L = padLen(); S.band.pat = p.map(r => Array.from({ length: Math.max(n, 32) }, (_, i) => i < n ? (r[i % L] || 0) : 0)); S.band.drumLen = n; }
+
+/* ---------- a hit ---------- */
+/** play pad `row` now at level v (1 ghost, 2 normal, 3 accent); while recording, write it on the grid */
+function padHit(row, v) {
+  if (!E.ready || !E.ctx) { startAudio().then(() => padHit(row, v)); return; }
+  const t = E.ctx.currentTime + .005; drumHit(row, t, v); if (typeof lxHit === 'function') lxHit(row, t, v);
+  const b = PAD.el && PAD.el.querySelector('[data-pad="' + row + '"]'); if (b) { b.classList.remove('hit'); void b.offsetWidth; b.classList.add('hit'); }
+  if (PAD.rec && T.playing) {      /* where in the loop you played it, as heard: the speakers are output-latency behind the clock */
+    const heard = E.ctx.currentTime - (E.ctx.outputLatency || E.ctx.baseLatency || 0), slot = slotAtTime(heard), L = padLen(), i = ((Math.round(slot) % L) + L) % L;
+    const p = dpat(); p[row][i] = Math.max(p[row][i] || 0, v); commit(false); padGrid();
+  }
+}
+const padLevel = f => f > .8 ? 3 : f > .35 ? 2 : 1;
+
+/* ---------- tap tempo ---------- */
+function padTap() {
+  const now = performance.now(); if (PAD.taps.length && now - PAD.taps[PAD.taps.length - 1] > 2000) PAD.taps = []; PAD.taps.push(now); if (PAD.taps.length > 8) PAD.taps.shift();
+  if (PAD.el) { const b = PAD.el.querySelector('.pad-tap'); b.classList.remove('hit'); void b.offsetWidth; b.classList.add('hit'); }
+  if (PAD.taps.length < 4) { padPaint(PAD.taps.length + ' …'); return null; }
+  const d = PAD.taps.slice(1).map((t, i) => t - PAD.taps[i]).sort((a, b) => a - b), mid = d[Math.floor(d.length / 2)], bpm = Math.round(60000 / mid);
+  if (bpm < 40 || bpm > 240) return null;
+  if (bpm !== S.bpm) { const fresh = !PAD.tapBf || now - PAD.tapAt > 3000; if (fresh) PAD.tapBf = snap(); S.bpm = bpm; commit(false); if (fresh) histPush(PAD.tapBf); try { syncTransport(); } catch (e) { } }      /* one burst of taps is one undo */
+  PAD.tapAt = now;
+  padPaint(); return bpm;
+}
+
+/* ---------- recording a groove ---------- */
+/** start a pass: the first loops `bars` bars from the start of the bar you are on, over the click; each later pass goes on top */
+async function padRecord(bars) {
+  if (PAD.rec) { padRecStop(); return; } if (REC || T.rec) { toast('The studio is recording. Stop it first.', 'warn'); return; }
+  await startAudio(); const n = Math.min(32, (bars || padBars()) * spb()); if (n !== padLen()) padResize(n);
+  PAD.passes.push(JSON.stringify({ pat: dpat(), len: padLen(), name: S.band.patName, on: S.band.drumsOn })); if (PAD.passes.length > 20) PAD.passes.shift();
+  if (!PAD.loop0) PAD.loop0 = { loop: T.loop, a: T.loopA, b: T.loopB, metro: T.metro };
+  const bar = Math.floor(playheadSlot() / spb()), a = Math.min(bar, Math.max(0, totalBars() - 1)) * spb();
+  if (T.playing) stopPlay(true); T.loop = true; T.loopA = a; T.loopB = Math.min(songSlots(), a + n); T.cursor = a; T.metro = true; S.band.drumsOn = true; S.band.patName = 'Your groove';
+  PAD.rec = { at: a, n }; commit(false); await play(); padPaint();
+}
+function padRecStop(keepPlaying) {
+  if (!PAD.rec) return; PAD.rec = null; if (!keepPlaying && T.playing) stopPlay(true);
+  const L0 = PAD.loop0; PAD.loop0 = null; if (L0) { T.loop = L0.loop; T.loopA = L0.a; T.loopB = L0.b; T.metro = L0.metro; try { syncTransport(); } catch (e) { } }
+  commit(true); padPaint();
+}
+function padUndoPass() { const s = PAD.passes.pop(); if (!s) return; const o = JSON.parse(s); S.band.pat = o.pat; S.band.drumLen = o.len; S.band.patName = o.name; S.band.drumsOn = o.on; commit(true); padPaint(); }
+function padClear() { PAD.passes.push(JSON.stringify({ pat: dpat(), len: padLen(), name: S.band.patName, on: S.band.drumsOn })); S.band.pat = DROWS.map(() => new Array(32).fill(0)); S.band.patName = 'Your groove'; commit(true); padPaint(); }
+
+/* ---------- beatbox: kick, snare and hat told apart by their sound ---------- */
+/** onsets in `x` (sample rate sr) → hits [{t, row, v}]: lows are kicks, hiss is a hat (a long one is open), the rest is a snare */
+function bbHits(x, sr) {
+  const hop = Math.round(sr * .005), n = Math.floor(x.length / hop), env = new Float32Array(n);
+  for (let f = 0; f < n; f++) { let e = 0; for (let i = f * hop; i < (f + 1) * hop; i++) e += x[i] * x[i]; env[f] = Math.sqrt(e / hop); }
+  let pk = 0; for (const v of env) pk = Math.max(pk, v); if (pk < 1e-4) return [];
+  const hits = []; let last = -1e9;
+  for (let f = 0; f < n - 2; f++) {
+    const rise = env[f] - Math.max(f > 0 ? env[f - 1] : 0, f > 1 ? env[f - 2] * .9 : 0);      /* from the very first sample: a hit right at the start counts */ if (rise < pk * .12 || env[f] < pk * .15 || (f - last) * hop / sr < .09) continue;
+    let top = f; while (top + 1 < n && env[top + 1] >= env[top] && top - f < 8) top++;
+    const a = f * hop, w = Math.min(x.length - a, Math.round(sr * .06)); let lo = 0, hi = 0, tot = 0, y = 0, d = 0, prev = 0;
+    const kl = Math.exp(-2 * Math.PI * 180 / sr), kh = Math.exp(-2 * Math.PI * 4500 / sr); let lp = 0, lp2 = 0;
+    for (let i = a; i < a + w; i++) { const s = x[i]; lp = (1 - kl) * s + kl * lp; lp2 = (1 - kh) * s + kh * lp2; const hp = s - lp2; lo += lp * lp; hi += hp * hp; tot += s * s; }
+    let len = 0; for (let g = top; g < n && env[g] > env[top] * .2; g++) len++;
+    const lr = lo / (tot + 1e-12), hr = hi / (tot + 1e-12), dur = len * hop / sr;
+    const row = lr > .45 ? 0 : hr > .35 ? (dur > .14 ? 3 : 2) : 1;
+    hits.push({ t: a / sr, row, v: padLevel(env[top] / pk) }); last = f;
+  }
+  return hits;
+}
+/** the hits written onto a pattern of L 16ths: `t0` is the second the loop started in the recording, `slot` its 16th in seconds */
+function bbPattern(hits, t0, slot, L) {
+  const pat = DROWS.map(() => new Array(32).fill(0)); hits.forEach(h => { const i = Math.round((h.t - t0) / slot); if (i < 0 || i >= L * 2) return; const j = i % L; pat[h.row][j] = Math.max(pat[h.row][j], h.v); }); return pat;
+}
+/** beatbox over the click for the loop: a bar's count-in, then `bars` bars; the result goes on top of the pattern (or replaces it) */
+async function padBeatbox(replace) {
+  if (PAD.bb) return; if (REC || T.rec) { toast('The studio is recording. Stop it first.', 'warn'); return; } if (PAD.rec) padRecStop();
+  await startAudio(); let mic; try { mic = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: false, autoGainControl: false } }); }
+  catch (e) { toast('The microphone is needed to hear your beatbox. ' + (e && e.name === 'NotAllowedError' ? 'Allow it in the address bar, then try again.' : (e.message || e.name)), 'warn'); return; }
+  const c = E.ctx, src = c.createMediaStreamSource(mic), sp = c.createScriptProcessor(2048, 1, 1), z = c.createGain(); z.gain.value = 0; src.connect(sp); sp.connect(z); z.connect(c.destination);
+  const n = padLen(), sd = slotDur(), bufs = []; let first = null;
+  PAD.bb = { mic, stop: null }; padPaint('Count-in…');
+  sp.onaudioprocess = ev => { if (first == null) first = ev.playbackTime; bufs.push(new Float32Array(ev.inputBuffer.getChannelData(0))); };
+  const L0 = { loop: T.loop, a: T.loopA, b: T.loopB, metro: T.metro, drums: S.band.drumsOn };
+  if (T.playing) stopPlay(true); const bar = Math.floor(T.cursor / spb()); T.cursor = bar * spb(); T.loop = false; T.metro = true; S.band.drumsOn = !replace && S.band.drumsOn;
+  await play(); const t0 = T.next - (T.slot - T.startCursor) * sd + spb() * sd;      /* the loop starts a bar after the song does: that bar is the count-in */
+  await new Promise(r => { PAD.bb.stop = r; setTimeout(r, (spb() + n) * sd * 1000 + 350); });
+  sp.onaudioprocess = null; try { src.disconnect(); sp.disconnect(); } catch (e) { } mic.getTracks().forEach(t => t.stop()); stopPlay(true);
+  Object.assign(T, { loop: L0.loop, loopA: L0.a, loopB: L0.b, metro: L0.metro }); S.band.drumsOn = L0.drums;
+  const all = new Float32Array(bufs.reduce((a, b) => a + b.length, 0)); let o = 0; bufs.forEach(b => { all.set(b, o); o += b.length; });
+  const lat = (c.baseLatency || 0) + (c.outputLatency || 0), hits = bbHits(all, c.sampleRate), pat = bbPattern(hits, t0 - (first || t0) + lat, sd, n);
+  PAD.bb = null; const got = pat.reduce((a, r) => a + r.filter(Boolean).length, 0);
+  if (!got) { padPaint(); toast('Nothing came through. Beatbox a little louder, close to the phone or the computer.', 'warn'); return; }
+  PAD.passes.push(JSON.stringify({ pat: dpat(), len: padLen(), name: S.band.patName, on: S.band.drumsOn }));
+  const cur = dpat(); S.band.pat = cur.map((r, ri) => Array.from({ length: 32 }, (_, i) => i < n ? (replace ? pat[ri][i] : Math.max(r[i] || 0, pat[ri][i])) : 0)); S.band.drumLen = n; S.band.patName = 'Your groove'; S.band.drumsOn = true;
+  commit(true); padPaint(); toast('🎤 ' + got + ' hits written: ' + ['kick', 'snare', 'hat', 'open hat'].map((k, i) => pat[i].filter(Boolean).length + ' ' + k).filter(s => !/^0 /.test(s)).join(', ') + '. Press ▶ to hear it.', 'ok');
+}
+
+/* ---------- the room ---------- */
+function padGrid() {
+  const g = PAD.el && PAD.el.querySelector('.pad-grid'); if (!g) return; const L = padLen(), p = dpat(), sp = spb(), here = T.playing ? ((Math.floor(playheadSlot()) % L) + L) % L : -1;
+  if (g.childElementCount !== 6 * (L + 1) || g.dataset.l !== String(L)) { g.innerHTML = ''; g.dataset.l = L; g.style.gridTemplateColumns = '64px repeat(' + L + ',minmax(0,1fr))';
+    PAD_ROWS.forEach(([n], r) => { g.append(h('span', { class: 'pad-rn' }, n)); for (let i = 0; i < L; i++) g.append(h('button', { class: 'pad-c' + (i % sp === 0 ? ' bar' : i % 4 === 0 ? ' beat' : ''), 'data-r': r, 'data-i': i, 'aria-label': n + ', step ' + (i + 1), onclick: () => { const q = dpat(); q[r][i] = [2, 0, 3, 1][q[r][i] || 0];      /* off → normal → accent → ghost → off */ S.band.patName = 'Your groove'; commit(true); padGrid(); } })); }); }
+  g.querySelectorAll('.pad-c').forEach(b => { const v = p[+b.dataset.r][+b.dataset.i] || 0; b.dataset.v = v; b.setAttribute('aria-pressed', String(v > 0)); b.classList.toggle('now', +b.dataset.i === here); });
+}
+function padPaint(msg) {
+  const d = PAD.el; if (!d) return; const q = s => d.querySelector(s);
+  q('.pad-bpm').textContent = Math.round(S.bpm) + ' BPM'; q('.pad-msg').textContent = msg || (PAD.rec ? '● Recording: play along, it loops. Press ● again to keep it.' : PAD.bb ? '🎤 Listening…' : PAD.taps.length && PAD.taps.length < 4 ? '' : '');
+  const r = q('.pad-rec'); r.classList.toggle('on', !!PAD.rec); r.setAttribute('aria-pressed', String(!!PAD.rec)); r.textContent = PAD.rec ? '■ Keep it' : '● Record';
+  q('.pad-play').textContent = T.playing ? '■ Stop' : '▶ Play'; q('.pad-undo').disabled = !PAD.passes.length || !!PAD.rec;
+  q('.pad-bars').value = String(padBars()); q('.pad-follow').checked = S.band.bassStyle === 'Follow the Kick'; q('.pad-swing').value = String(S.swing || 0);
+  q('.pad-bb').disabled = !!PAD.bb || !!PAD.rec; padGrid();
+}
+function padsOpen() {
+  if (PAD.el && PAD.el.isConnected) { if (!PAD.el.open) PAD.el.showModal(); padPaint(); padTimer(); return PAD.el; }
+  const pad = (r) => h('button', { class: 'pad', 'data-pad': r, 'aria-label': PAD_ROWS[r][0] + ' (key ' + PAD.keys[r].toUpperCase() + ')',
+    onpointerdown: e => { e.preventDefault(); padHit(r, e.pointerType === 'pen' && e.pressure ? padLevel(e.pressure) : e.shiftKey ? 3 : 2); } },      /* a pen's pressure is real; fingers and mice play at the normal level (Shift: an accent) */
+    h('i', { 'aria-hidden': 'true' }, PAD_ROWS[r][1]), h('b', {}, PAD_ROWS[r][0]), h('kbd', {}, PAD.keys[r].toUpperCase()));
+  const d = h('dialog', { class: 'pads', id: 'pads', 'aria-label': 'Pads' },
+    h('div', { class: 'pad-top' }, h('b', { class: 'pad-title' }, '🥁 Pads'), h('span', { class: 'pad-bpm mono' }), h('button', { class: 'btn pad-tap', title: 'Tap four times or more to set the tempo (or press T here)', onclick: () => padTap() }, 'Tap tempo'),
+      h('button', { class: 'btn pad-play', onclick: () => { T.playing ? stopPlay(true) : play(); setTimeout(padPaint, 60); } }, '▶ Play'), h('span', { style: { flex: 1 } }), h('button', { class: 'btn icon', 'aria-label': 'Close the pads', onclick: () => d.close() }, '✕')),
+    h('div', { class: 'pad-pads' }, [0, 1, 2, 3, 4, 5].map(pad)),
+    h('div', { class: 'pad-row' }, h('button', { class: 'btn primary pad-rec', 'aria-pressed': 'false', onclick: () => padRecord(+d.querySelector('.pad-bars').value) }, '● Record'),
+      h('label', { class: 'field' }, 'Loop', h('select', { class: 'in pad-bars', onchange: e => { if (!PAD.rec) { padResize(+e.target.value * spb()); commit(true); padPaint(); } } }, h('option', { value: '1' }, '1 bar'), h('option', { value: '2' }, '2 bars'))),
+      h('button', { class: 'btn pad-undo', onclick: () => padUndoPass() }, '↶ Last pass'), h('button', { class: 'btn', onclick: () => padClear() }, 'Clear'),
+      h('button', { class: 'btn pad-bb', title: 'Beatbox the groove into the microphone: a bar’s count-in, then the loop', onclick: () => padBeatbox(false) }, '🎤 Beatbox it')),
+    h('div', { class: 'pad-row' }, h('label', { class: 'chk' }, h('input', { type: 'checkbox', class: 'pad-follow', onchange: e => { if (e.target.checked) { PAD.bass0 = S.band.bassStyle; S.band.bassStyle = 'Follow the Kick'; S.band.bassOn = true; } else S.band.bassStyle = PAD.bass0 && PAD.bass0 !== 'Follow the Kick' ? PAD.bass0 : 'Root–Fifth'; commit(true); } }), 'Bass follows the kick'),
+      h('label', { class: 'field pad-sw' }, 'Swing', h('input', { type: 'range', class: 'pad-swing', min: 0, max: .6, step: .05, oninput: e => { S.swing = +e.target.value; commit(false); } }))),
+    h('p', { class: 'pad-msg small', role: 'status', 'aria-live': 'polite' }),
+    h('div', { class: 'pad-grid', role: 'group', 'aria-label': 'The drum pattern: tap a step to change it' }),
+    h('p', { class: 'tiny muted' }, 'Keys A S D F G H play the pads, T taps the tempo, Space plays. A MIDI pad controller plays them too (General MIDI drum notes). Each ● is a pass on top of the last; ↶ takes the last pass away.'));
+  d.addEventListener('keydown', e => {
+    const k = e.key.toLowerCase(), t = e.target; if (e.ctrlKey || e.metaKey || e.altKey || (t && /INPUT|SELECT|TEXTAREA/.test(t.tagName) && t.type !== 'checkbox' && t.type !== 'range')) return;
+    const r = PAD.keys.indexOf(k); if (r >= 0 && !e.repeat) { e.preventDefault(); e.stopPropagation(); padHit(r, e.shiftKey ? 3 : 2); return; }
+    if (k === 't') { e.preventDefault(); e.stopPropagation(); padTap(); return; }
+    if (k === ' ') { e.preventDefault(); e.stopPropagation(); T.playing ? stopPlay(true) : play(); setTimeout(padPaint, 60); }
+  });
+  d.addEventListener('close', () => { if (PAD.rec) padRecStop(); if (PAD.bb && PAD.bb.stop) PAD.bb.stop(); clearInterval(PAD.tm); });
+  document.body.append(d); PAD.el = d; d.showModal(); padPaint(); padTimer();
+  return d;
+}
+/** the moving step marker and the play button, while the pads are open */
+function padTimer() { clearInterval(PAD.tm); PAD.tm = setInterval(() => { if (!PAD.el || !PAD.el.open) return; padGrid(); const pb = PAD.el.querySelector('.pad-play'); if (pb) pb.textContent = T.playing ? '■ Stop' : '▶ Play'; }, 90); }
+/* a MIDI pad controller plays the pads while they are open (and only then: the notes keep their other jobs elsewhere) */
+MIDIRAW.push(data => { const [st, n, v] = data; if (!PAD.el || !PAD.el.open || (st & 0xf0) !== 0x90 || !v) return false; const r = PAD_GM[n]; if (r == null) return false; padHit(r, padLevel(v / 127)); return true; });
+bus.on('transport', () => { if (PAD.el && PAD.el.open) padPaint(); if (PAD.rec && !T.playing) padRecStop(true); });
+
+/* >>> parts/76-gear.js */
+/* ============================================================
+   Part 76 · GEAR (2.29) — a foot pedal for hands-free playing, and MIDI clock to keep other gear in time
+   Foot pedal: Bluetooth page-turner pedals type keys (Page Down, Page Up, the arrows, Space, Enter); MIDI footswitches send a control
+   change, a note or a program change. Settings ▸ Pedal & MIDI sync: switch it on, press Learn beside an action and step on the pedal.
+   Actions: play / stop, next section, previous section, record, loop, the band on / off, tap tempo. Nothing is mapped until it is on.
+   MIDI clock: Send puts out 24 clocks a quarter note on the band's own schedule (the same audio clock, timed by Web MIDI's timestamps),
+   with Start (or Song Position and Continue) and Stop, so a drum machine, a synth or a DAW follows the studio. Follow does the reverse:
+   the studio takes its tempo from incoming clock and starts and stops with it.
+   ============================================================ */
+CFG.pedal = Object.assign({ on: false, map: { play: ['k:PageDown', 'k:ArrowRight'], next: ['k:PageUp', 'k:ArrowLeft'] } }, CFG.pedal && typeof CFG.pedal === 'object' ? CFG.pedal : {});
+CFG.mclock = Object.assign({ mode: 'off', out: '' }, CFG.mclock && typeof CFG.mclock === 'object' ? CFG.mclock : {});
+const PEDAL_ACTS = [['play', 'Play / stop'], ['next', 'Next section'], ['prev', 'Previous section (or the top of this one)'], ['rec', 'Record'], ['loop', 'Loop on / off'], ['mute', 'The band on / off'], ['tap', 'Tap tempo']];
+const PEDAL = { learn: null, last: {}, taps: [] };
+const pedalName = c => { const [k, v] = [c.slice(0, c.indexOf(':')), c.slice(c.indexOf(':') + 1)]; return k === 'k' ? (v === ' ' ? 'Space' : v) : k === 'cc' ? 'MIDI CC ' + v : k === 'note' ? 'MIDI note ' + v : k === 'pc' ? 'MIDI program ' + v : c; };
+
+/* ---------- the actions ---------- */
+/** the first slot of each section, and which one the playhead is in */
+function pedalSecs() { const sp = spb(), at = []; let s = 0; S.sections.forEach(sec => { at.push(s * sp); s += sec.bars.length; }); const cur = T.playing ? playheadSlot() : T.cursor; let i = 0; at.forEach((a, k) => { if (cur >= a) i = k; }); return { at, i, cur }; }
+async function pedalJump(slot) { const was = T.playing; if (was) stopPlay(true); T.cursor = Math.max(0, slot); bus.emit('transport'); if (was) await play(); }
+function pedalTap() {
+  const now = performance.now(); if (PEDAL.taps.length && now - PEDAL.taps[PEDAL.taps.length - 1] > 2000) PEDAL.taps = []; PEDAL.taps.push(now); if (PEDAL.taps.length > 8) PEDAL.taps.shift(); if (PEDAL.taps.length < 4) return;
+  const d = PEDAL.taps.slice(1).map((t, i) => t - PEDAL.taps[i]).sort((a, b) => a - b), bpm = Math.round(60000 / d[Math.floor(d.length / 2)]); if (bpm >= 40 && bpm <= 240 && bpm !== S.bpm) { S.bpm = bpm; commit(false); try { syncTransport(); } catch (e) { } toast('Tempo ' + bpm, 'ok'); }
+}
+function pedalDo(act) {
+  const s = pedalSecs();
+  switch (act) {
+    case 'play': T.playing ? stopPlay(true) : play(); break;
+    case 'next': if (s.i + 1 < s.at.length) pedalJump(s.at[s.i + 1]); break;
+    case 'prev': pedalJump(s.cur - s.at[s.i] > spb() || s.i === 0 ? s.at[s.i] : s.at[s.i - 1]); break;
+    case 'rec': toggleRec(); break;
+    case 'loop': T.loop = !T.loop; syncTransport(); break;
+    case 'mute': bandMute(); break;
+    case 'tap': pedalTap(); break;
+  }
+  bus.emit('pedal', act);
+}
+/** a pedal press, whatever it came from (c: 'k:PageDown', 'cc:64', 'note:60', 'pc:3'); true when it was used */
+function pedalPress(c) {
+  if (PEDAL.learn) { const a = PEDAL.learn; PEDAL.learn = null; Object.keys(CFG.pedal.map).forEach(k => { CFG.pedal.map[k] = (CFG.pedal.map[k] || []).filter(x => x !== c); }); (CFG.pedal.map[a] = CFG.pedal.map[a] || []).push(c); CFG.pedal.on = true; saveCfg(); bus.emit('pedal:map'); toast(pedalName(c) + ' → ' + PEDAL_ACTS.find(x => x[0] === a)[1], 'ok'); return true; }
+  if (!CFG.pedal.on) return false; const act = Object.keys(CFG.pedal.map).find(k => (CFG.pedal.map[k] || []).includes(c)); if (!act) return false;
+  const now = performance.now(); if (now - (PEDAL.last[c] || 0) < 180) return true; PEDAL.last[c] = now;      /* a pedal that bounces is one press (each pedal on its own: two pedals can be pressed quickly) */
+  pedalDo(act); return true;
+}
+window.addEventListener('keydown', e => {
+  if (!CFG.pedal.on && !PEDAL.learn) return; const t = e.target; if (e.ctrlKey || e.metaKey || e.altKey || e.repeat || (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable))) return;
+  if (['Shift', 'Control', 'Alt', 'Meta', 'Escape', 'Tab'].includes(e.key)) return;
+  if (pedalPress('k:' + e.key)) { e.preventDefault(); e.stopImmediatePropagation(); }      /* the page does not scroll, and the key's usual job does not run as well */
+}, true);
+
+/* ---------- MIDI: pedals, and clock in ---------- */
+const MCLK = { ticks: [], last: 0, run: false, sent: false, follow: 0 };
+MIDIRAW.push((data, ev) => {
+  const st = data[0], cmd = st & 0xf0;
+  if (CFG.mclock.mode === 'follow' && st >= 0xF8) {
+    if (st === 0xF8) { const t = ev && ev.timeStamp ? ev.timeStamp : performance.now(); MCLK.ticks.push(t); if (MCLK.ticks.length > 49) MCLK.ticks.shift();
+      if (MCLK.ticks.length >= 25 && t - MCLK.follow > 500) { const n = MCLK.ticks.length - 1, per = (MCLK.ticks[n] - MCLK.ticks[0]) / n, bpm = Math.round(600000 / (per * 24)) / 10; MCLK.follow = t; if (bpm >= 30 && bpm <= 300 && Math.abs(bpm - S.bpm) >= .5) { S.bpm = Math.round(bpm); commit(false); try { syncTransport(); } catch (e) { } } } }
+    else if (st === 0xFA) { MCLK.ticks = []; if (T.playing) stopPlay(true); T.cursor = 0; play(); }
+    else if (st === 0xFB) { if (!T.playing) play(); }
+    else if (st === 0xFC) { if (T.playing) stopPlay(true); }
+    return true;
+  }
+  if (CFG.mclock.mode === 'follow' && st === 0xF2) { const pos = data[1] | (data[2] << 7); T.cursor = clamp(pos, 0, Math.max(0, songSlots() - 1)); bus.emit('transport'); return true; }      /* Song Position: in 16ths, as a slot is */
+  if (st >= 0xF8) return true;      /* clock we are not following: not a note, not a control */
+  if (cmd === 0xB0 && data[2] >= 64 && (PEDAL.learn || (CFG.pedal.on && Object.values(CFG.pedal.map).some(a => a.includes('cc:' + data[1]))))) return pedalPress('cc:' + data[1]);
+  if (cmd === 0xB0 && data[2] < 64 && CFG.pedal.on && Object.values(CFG.pedal.map).some(a => a.includes('cc:' + data[1]))) return true;      /* the pedal coming back up */
+  if (cmd === 0x90 && data[2] > 0 && (PEDAL.learn || (CFG.pedal.on && Object.values(CFG.pedal.map).some(a => a.includes('note:' + data[1]))))) return pedalPress('note:' + data[1]);
+  if (cmd === 0xC0 && (PEDAL.learn || (CFG.pedal.on && Object.values(CFG.pedal.map).some(a => a.includes('pc:' + data[1]))))) return pedalPress('pc:' + data[1]);
+  return false;
+});
+
+/* ---------- MIDI clock out ---------- */
+function mclkOut() { if (CFG.mclock.mode !== 'send' || !MIDI.access) return null; const outs = [...MIDI.access.outputs.values()]; return outs.find(o => o.id === CFG.mclock.out) || (CFG.mclock.out ? null : outs[0]) || null; }
+/** the audio clock in the page's own milliseconds (what Web MIDI times by), as heard: getOutputTimestamp already counts the output's delay */
+function mclkMs(t) { const c = E.ctx; let ts = null; try { ts = c.getOutputTimestamp && c.getOutputTimestamp(); } catch (e) { } if (ts && ts.performanceTime) return ts.performanceTime + (t - ts.contextTime) * 1000; return performance.now() + (t - c.currentTime + (c.outputLatency || c.baseLatency || 0)) * 1000; }
+/** called for every slot the band schedules (part 03): six clocks a 16th; Start at the song's first slot, or Song Position + Continue */
+function mclkSlot(slot, time) {
+  const o = mclkOut(); if (!o) return; const d = slotDur() / 6;
+  try {
+    if (slot >= 0 && !MCLK.sent) { MCLK.sent = true; const at = mclkMs(time); if (slot === 0) o.send([0xFA], at); else { o.send([0xF2, slot & 127, (slot >> 7) & 127], at); o.send([0xFB], at); } }
+    if (slot >= 0) for (let k = 0; k < 6; k++) o.send([0xF8], mclkMs(time + k * d));
+  } catch (e) { console.warn('[midi clock]', e); }
+}
+bus.on('transport', () => { if (T.playing) return; if (MCLK.sent) { const o = mclkOut(); try { o && o.send([0xFC]); } catch (e) { } } MCLK.sent = false; });
+
+/* ---------- Settings ▸ Pedal & MIDI sync ---------- */
+function gearSettings() {
+  const box = h('div', { class: 'gear' }), draw = () => {
+    box.innerHTML = ''; const outs = MIDI.access ? [...MIDI.access.outputs.values()] : [];
+    box.append(h('label', { class: 'chk' }, h('input', { type: 'checkbox', id: 'pedalOn', checked: !!CFG.pedal.on, onchange: e => { CFG.pedal.on = e.target.checked; saveCfg(); } }), 'Foot pedal: use the presses below'),
+      h('p', { class: 'hub-note' }, 'A Bluetooth page-turner pedal types a key; a MIDI footswitch sends a control, a note or a program change. Press Learn, then step on the pedal. Out of the box, Page Down or → plays and stops, Page Up or ← goes to the next section.'),
+      h('div', { class: 'gear-map' }, PEDAL_ACTS.map(([a, label]) => h('div', { class: 'gear-row' }, h('span', { class: 'gear-act' }, label), h('span', { class: 'gear-keys mono', 'data-act': a }, (CFG.pedal.map[a] || []).map(pedalName).join(' · ') || '—'),
+        h('button', { class: 'btn sm' + (PEDAL.learn === a ? ' on' : ''), 'data-learn': a, onclick: () => { PEDAL.learn = PEDAL.learn === a ? null : a; if (PEDAL.learn && !MIDI.access && CFG.midi !== false) initMIDI(); draw(); } }, PEDAL.learn === a ? 'Step on it…' : 'Learn'),
+        h('button', { class: 'btn sm', 'aria-label': 'Clear ' + label, onclick: () => { CFG.pedal.map[a] = []; saveCfg(); draw(); } }, '✕')))),
+      h('h4', { class: 'gear-h' }, 'MIDI clock'),
+      h('label', { class: 'field' }, h('span', {}, 'Clock'), h('select', { class: 'in', id: 'mclkMode', onchange: async e => { CFG.mclock.mode = e.target.value; saveCfg(); if (e.target.value !== 'off' && !MIDI.access) { await initMIDI(); } draw(); } }, [['off', 'Off'], ['send', 'Send: other gear follows the studio'], ['follow', 'Follow: the studio follows other gear']].map(([v, t]) => h('option', { value: v, selected: CFG.mclock.mode === v }, t)))),
+      ...(CFG.mclock.mode !== 'send' ? [] : [h('label', { class: 'field' }, h('span', {}, 'Send to'), outs.length ? h('select', { class: 'in', id: 'mclkOut', onchange: e => { CFG.mclock.out = e.target.value; saveCfg(); } }, outs.map(o => h('option', { value: o.id, selected: o.id === CFG.mclock.out }, o.name))) : h('span', { class: 'small muted' }, MIDI.access ? 'No MIDI outputs. Connect the gear, or a virtual MIDI port to reach music software on this computer.' : 'MIDI is not on yet.'))]),
+      h('p', { class: 'hub-note' }, 'Clock is 24 pulses a quarter note, with Start, Stop and Song Position, timed to the band’s own audio clock. It needs Chrome or Edge (Web MIDI). Gear that follows smooths it out; a computer program may want a few milliseconds of offset set in its own MIDI settings.'));
+  };
+  draw(); box._draw = draw; return box;
+}
+bus.on('pedal:map', () => { const g = document.querySelector('#settings .gear'); if (g && g._draw) g._draw(); });
+bus.on('midi', () => { const g = document.querySelector('#settings .gear'); if (g && g._draw) g._draw(); });
+
+/* >>> parts/77-stream.js */
+/* ============================================================
+   Part 77 · STREAM WINDOW (2.29) — the words and the chord, alone in a window, for OBS or any streaming app
+   A pop-out window with nothing in it but the line being sung, the next one, and the chord, in large type on one solid colour:
+   in OBS (or Streamlabs, or any app that captures a window) add a Window Capture of it and a Chroma Key filter on that colour,
+   and the words float over your camera. Green, blue and magenta are made for keying; black works with a Luma Key or a Blend mode.
+   The stage visuals already have their own pop-out (Visuals ▸ Pop-out). The window runs its own timer, so it keeps up even when
+   the studio's window is behind other windows. Nothing is sent anywhere: the streaming app captures the window on this computer.
+   ============================================================ */
+CFG.stream = Object.assign({ bg: 'green', size: 1, chord: true, next: true, at: 'bottom' }, CFG.stream && typeof CFG.stream === 'object' ? CFG.stream : {});
+const STRM_BG = { green: ['#00b140', 'Green, for a Chroma Key'], blue: ['#0047bb', 'Blue, for a Chroma Key'], magenta: ['#ff00ff', 'Magenta, for a Chroma Key'], black: ['#000000', 'Black, for a Luma Key'] };
+const STRM = { w: null, tm: 0, last: '' };
+/** what the window shows now: the sung line, the next line, and the chord (the same reading Perform uses) */
+function streamInfo() { const i = perfInfo(), cur = i.idx >= 0 ? i.lines[i.idx] : '', nx = i.idx >= 0 ? i.lines[i.idx + 1] || '' : i.lines[0] || ''; return { cur: cur || '', next: nx, sym: i.sym || '', title: S.title || '' }; }
+function streamStyle(w) {
+  const c = CFG.stream, bg = (STRM_BG[c.bg] || STRM_BG.green)[0], k = clamp(+c.size || 1, .6, 1.8);
+  w.document.body.style.cssText = 'margin:0;height:100vh;overflow:hidden;background:' + bg + ';display:flex;flex-direction:column;justify-content:' + (c.at === 'center' ? 'center' : 'flex-end') + ';align-items:center;gap:1.2vh;padding:0 4vw ' + (c.at === 'center' ? '0' : '7vh') + ';box-sizing:border-box;font-family:Montserrat,Inter,"Segoe UI",system-ui,sans-serif;color:#fff;text-align:center';
+  const sh = 'text-shadow:0 0 .12em #000,0 .06em .2em #000;-webkit-text-stroke:.02em rgba(0,0,0,.6)', F = 'Montserrat,Inter,"Segoe UI",system-ui,sans-serif';
+  const set = (id, css) => { const e = w.document.getElementById(id); if (e) e.style.cssText = css; };
+  set('sc', 'font:800 ' + (5.2 * k) + 'vh/1 ' + F + ';color:#ffd75e;' + sh + ';display:' + (c.chord ? '' : 'none'));
+  set('sl', 'font:800 ' + (7.4 * k) + 'vh/1.12 ' + F + ';max-width:92vw;' + sh);
+  set('sn', 'font:700 ' + (4 * k) + 'vh/1.2 ' + F + ';opacity:.85;max-width:92vw;' + sh + ';display:' + (c.next ? '' : 'none'));
+}
+function streamTick() {
+  const w = STRM.w; if (!w || w.closed) { STRM.w = null; return; } const i = streamInfo(), key = i.cur + '\u0001' + i.next + '\u0001' + i.sym;
+  if (key === STRM.last) return; STRM.last = key; const d = w.document;
+  d.getElementById('sc').textContent = i.sym; d.getElementById('sl').textContent = i.cur || (T.playing ? '' : i.title); d.getElementById('sn').textContent = i.next;
+}
+/** open (or bring forward) the stream window */
+function streamOpen() {
+  if (STRM.w && !STRM.w.closed) { STRM.w.focus(); return STRM.w; }
+  let w; try { w = window.open('', 'fw_stream', 'width=1280,height=720'); } catch (e) { w = null; }
+  if (!w) { toast('The browser blocked the window. Allow pop-ups for this page, then try again.', 'warn'); return null; }
+  const d = w.document; d.title = BRAND.short + ' · words for streaming'; d.body.innerHTML = '';
+  ['sc', 'sl', 'sn'].forEach(id => { const e = d.createElement('div'); e.id = id; d.body.append(e); });
+  streamStyle(w); STRM.w = w; STRM.last = ''; streamTick();
+  clearInterval(STRM.tm); STRM.tm = w.setInterval(streamTick, 80);      /* the window's own timer: it keeps time while the studio's window is covered */
+  w.addEventListener('pagehide', () => { STRM.w = null; });
+  toast('Stream window open. In OBS: Window Capture of it, then a ' + (CFG.stream.bg === 'black' ? 'Luma Key' : 'Chroma Key (' + CFG.stream.bg + ')') + ' filter.', 'ok');
+  return w;
+}
+/** the stream window's settings: where they appear (Perform's ⋯ and Creator Studio) */
+function streamPanel() {
+  const c = CFG.stream, upd = () => { saveCfg(); if (STRM.w && !STRM.w.closed) { streamStyle(STRM.w); STRM.last = ''; streamTick(); } };
+  return h('div', { class: 'strm' },
+    h('div', { class: 'row', style: { gap: '8px', flexWrap: 'wrap', alignItems: 'flex-end' } },
+      h('label', { class: 'field' }, 'Background', h('select', { class: 'in', id: 'strmBg', onchange: e => { c.bg = e.target.value; upd(); } }, Object.entries(STRM_BG).map(([k, [, t]]) => h('option', { value: k, selected: c.bg === k }, t)))),
+      h('label', { class: 'field' }, 'Size', h('input', { type: 'range', min: .6, max: 1.8, step: .1, value: c.size, oninput: e => { c.size = +e.target.value; upd(); } })),
+      h('label', { class: 'field' }, 'Where', h('select', { class: 'in', onchange: e => { c.at = e.target.value; upd(); } }, h('option', { value: 'bottom', selected: c.at === 'bottom' }, 'Bottom (over a camera)'), h('option', { value: 'center', selected: c.at === 'center' }, 'Middle'))),
+      h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: c.chord, onchange: e => { c.chord = e.target.checked; upd(); } }), 'Chord'),
+      h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: c.next, onchange: e => { c.next = e.target.checked; upd(); } }), 'Next line')),
+    h('button', { class: 'btn primary', id: 'strmOpen', onclick: () => streamOpen() }, '📺 Open the stream window'),
+    h('p', { class: 'tiny muted' }, 'In OBS, Streamlabs or any streaming app: add a Window Capture of that window, then a Chroma Key filter on its colour (or a Luma Key on black). The words then float over your camera. The stage visuals have their own pop-out in Visuals.'));
+}
+/** a small room for it, from the Creator Studio and Performer tools */
+function streamRoom() { return hubOpen('streamwin', { ico: '📺', title: 'Stream window', sub: 'The words and the chord in a window of their own, on a colour your streaming app keys out.', sections: [{ key: 'win', label: 'Stream window', ico: '📺', wide: true, body: () => [streamPanel()] }] }); }
 
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();

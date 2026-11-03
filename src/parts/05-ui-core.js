@@ -25,13 +25,14 @@ function mkKnob(o) {
   const api = { el, set, get: () => v, setNorm: n => set(fromN(clamp(n, 0, 1))), def: o.def }; draw(); if (o.key) KNOBS.set(o.key, api); return api;
 }
 const MIDI = { access: null };
-const MIDIHOOKS = [];
+const MIDIHOOKS = [], MIDIRAW = [];      /* MIDIRAW: every message first (clock, pedals, pads); a hook returning true keeps it */
 async function initMIDI() {
   if (MIDI.access || !navigator.requestMIDIAccess) return;
   try { const a = await navigator.requestMIDIAccess(); MIDI.access = a; const hook = () => a.inputs.forEach(i => { i.onmidimessage = onMidi; }); hook(); a.onstatechange = () => { hook(); bus.emit('midi'); }; CFG.midi = true; saveCfg(); bus.emit('midi'); }
   catch (e) { if (document.body.dataset.form && document.body.dataset.form !== 'desktop') console.warn('MIDI unavailable: ' + e.message); else toast('MIDI unavailable: ' + e.message, 'warn'); }
 }
 function onMidi(e) {
+  for (const f of MIDIRAW) { try { if (f(e.data, e)) return; } catch (er) { console.warn(er); } }
   const [st, d1, d2] = e.data, cmd = st & 0xf0;
   if (cmd === 0xB0) {
     if (LEARN.key) { CFG.midimap[d1] = LEARN.key; saveCfg(); toast('CC ' + d1 + ' → ' + LEARN.key, 'ok'); const k = KNOBS.get(LEARN.key); if (k) k.el.classList.remove('learn'); LEARN.key = null; bus.emit('midi'); return; }
@@ -130,6 +131,7 @@ function openSettings(at) {
       F('When recording reaches the end of the song', sel('recEnd', [['grow', 'Keep going (the song grows to fit)'], ['stop', 'Stop at the end'], ['loop', 'Loop back, one take per pass']])),
       h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!CFG.rec.dry, onchange: e => { CFG.rec.dry = e.target.checked; saveCfg(); } }), 'Record dry DI (enables re-amping)'),
       h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!CFG.rec.wet, onchange: e => { CFG.rec.wet = e.target.checked; saveCfg(); } }), 'Record wet print')] },
+    { key: 'gear', label: 'Pedal & MIDI sync', ico: '🦶', sub: 'A foot pedal for hands-free playing, and MIDI clock for drum machines, synths and music software.', body: () => [gearSettings()] },
     { key: 'folder', label: 'Folder sync', ico: '📁', sub: 'Your whole studio, recordings too, in a folder on this computer: iCloud Drive, Dropbox, Google Drive or OneDrive keep it the same on every computer.', wide: true, body: () => [syncControl()] },
     { key: 'github', label: 'GitHub', ico: '⑂', sub: 'Your studio in a private repository of your own, in step on every device. Optional.', wide: true, body: () => [ghSection()] },
     { key: 'export', label: 'Export', ico: '⇩', sub: 'Song bounces and tab text.', body: () => [

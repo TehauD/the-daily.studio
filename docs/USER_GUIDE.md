@@ -735,6 +735,25 @@ The app ships no recordings and no one else's lyrics, and it never uploads anyth
 - **On a phone** the fretboard shows only the frets the run uses, so the dots are big enough to read; turn the phone sideways for the whole neck.
 - Some of the room stays behind the curtain until you find what the studio hides, and most of that is out in the studio, not in here. With **Settings ▸ Workflow ▸ Hidden surprises** off, all of it is open.
 
+## Pads, tap tempo and beatbox (2.29)
+
+**🥁 Pads** is in the Band panel, in the Songwriter and Practice tools, and on a phone in **More**. Six pads play the band's own kit: kick, snare, hat, open hat, clap / rim and tom. Tap them, press **A S D F G H** (Shift for an accent), or hit a MIDI pad controller (the General MIDI drum notes). Your hits light the stage like the band's drums do.
+- **Tap tempo:** four taps or more set the song's tempo (or press **T** while the pads are open). One undo puts it back.
+- **● Record:** one or two bars loop over the click. What you play is written onto the grid as the band's drum pattern. Press ● again to keep it. Each press is a new pass on top of the last (kick first, then the hats), and **↶ Last pass** takes the last one away.
+- **🎤 Beatbox it:** after a bar's count-in, beatbox the loop. Low thumps become kicks, cracks become snares, and hisses become hats (a long hiss is an open hat).
+- **Bass follows the kick:** the bass plays the chord's root on every kick, so one groove gives you the drums and the bass.
+- The grid under the pads is the pattern: tap a step for normal, again for an accent, again for a ghost note, again to clear it.
+
+## Foot pedal and MIDI clock (2.29)
+
+**Settings ▸ Pedal & MIDI sync.** Switch on **Foot pedal**, then press **Learn** beside an action and step on the pedal. A Bluetooth page-turner pedal types a key; a MIDI footswitch sends a control, a note or a program change. The actions are play / stop, next section, previous section, record, loop, the band on / off, and tap tempo. Out of the box, Page Down or → plays and stops, and Page Up or ← goes to the next section.
+
+**MIDI clock: Send** lets a drum machine, a synth or music software follow the studio's tempo, start and stop (and where in the song it is). **Follow** does the reverse. It needs Chrome or Edge.
+
+## Stream window (2.29)
+
+**📺 Stream window** (Creator Studio and Performer tools) opens a window with only the line being sung, the next one and the chord, in large type on one colour. In OBS, Streamlabs or any streaming app, add a **Window Capture** of it and a **Chroma Key** filter on that colour (green, blue or magenta), or a **Luma Key** on black. The words then float over your camera. The stage visuals have their own pop-out in Visuals.
+
 ## On air (2.25)
 
 While a take or a stage video records, the logo at the top left and the browser tab's icon blink red, and the tab's title starts with **● REC**, like the red light outside a studio door. With reduced motion (or Calm), the light is steady. A screen reader hears "On air: recording." when it goes on and "Off air: recording stopped." when it goes off.

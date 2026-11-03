@@ -2,6 +2,35 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.29.0 — 2026-11-03 — Pads, beatbox to beat, a foot pedal, MIDI clock and a stream window
+
+### Added
+- **🥁 Pads** (`src/parts/75-pads.js`), in the Band panel, the Songwriter and Practice tools, and the phone's More sheet.
+  - **Six pads** on the band's own kit: kick, snare, hat, open hat, clap / rim and tom. Play them by touch, with A S D F G H (Shift for an accent), or from a MIDI pad controller on the General MIDI drum notes, which is velocity-sensitive. Hits light the stage like the band's drums do.
+  - **Tap tempo:** a button, or T while the pads are open. One burst of taps is one undo.
+  - **● Record a groove:**
+    - one or two bars loop over the click;
+    - hits are written where they were heard, after the speakers' delay, onto the band's drum pattern;
+    - each press is a pass on top of the last, and ↶ takes the last pass away.
+  - **🎤 Beatbox it:** after a bar's count-in, beatbox the loop. Kicks, snares, hats and open hats are told apart by their sound and written on the grid.
+  - **Bass follows the kick:** a new bass style, so one groove makes the drums and the bass.
+  - **The grid is the pattern:** tap a step for normal → accent → ghost → off.
+- **Foot pedal** (Settings ▸ Pedal & MIDI sync, `src/parts/76-gear.js`).
+  - It works with Bluetooth page-turner pedals, which type keys, and MIDI footswitches (control change, note or program change). Learn each action by stepping on the pedal.
+  - Actions: play / stop, next section, previous section, record, loop, the band on / off, tap tempo.
+  - It's off until switched on. Keys in text boxes are left alone, a pedal that bounces counts once, and a pedal coming back up does nothing.
+- **MIDI clock:**
+  - **Send:** 24 clocks a quarter note on the band's own schedule, timed with Web MIDI timestamps. Start, or Song Position and Continue from the middle of a song, and Stop.
+  - **Follow:** tempo, Start, Continue, Stop and Song Position from other gear.
+  - It needs Chrome or Edge.
+- **📺 Stream window** (`src/parts/77-stream.js`), in the Creator Studio and Performer tools. It shows the line being sung, the next line and the chord, in large type on a key colour (green, blue, magenta or black), for a window capture with a chroma or luma key in OBS or any streaming app. It runs its own timer, so it keeps up when the studio's window is covered.
+
+### Fixed
+- **Two-bar drum patterns now play both bars.** The drums were read by position within the bar, so the second half of a 24- or 32-step pattern (offered in the Band panel since long ago) never played. They are now read by position in the song, and one-bar patterns sound exactly as before.
+
+### Tests
+- `e2e-pads` (25 checks) and `e2e-gear` (24 checks), run twice each.
+
 ## 2.28.1 — 2026-11-03 — Friendlier words about listening
 
 ### Changed
