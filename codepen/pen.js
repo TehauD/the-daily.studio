@@ -5,7 +5,7 @@
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.28.0', BUILD = 'fa25999', PARTS_N = +'90' || 0, LINES_N = +'16047' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.28.1', BUILD = '0349d1f', PARTS_N = +'90' || 0, LINES_N = +'16047' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { ghApp: { clientId: '', slug: '' },   /* Sign in with GitHub: the GitHub App's public client id and its slug (docs/GITHUB.md); empty = only the token way */
   support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://the-daily.studio/journal/' };
@@ -7670,7 +7670,7 @@ function humResult(d, x) {
   const keySel = pSel(NS.map((n, i) => [i, n]), r.key.root, v => { o.key = +v; again(); }), modeSel = pSel([['maj', 'major'], ['min', 'minor']], r.key.minor ? 'min' : 'maj', v => { o.minor = v === 'min'; again(); });
   keySel.setAttribute('aria-label', 'Key'); modeSel.setAttribute('aria-label', 'Mode');
   const form = pSel(Object.entries(HUM_FORMS), o.form, v => { o.form = v; again(); }); form.setAttribute('aria-label', 'Song shape');
-  const cv = h('canvas', { class: 'hum-roll', width: 600, height: 56, 'aria-label': 'The notes I heard', role: 'img' });
+  const cv = h('canvas', { class: 'hum-roll', width: 600, height: 56, 'aria-label': 'The notes picked up', role: 'img' });
   d.append(
     h('div', { class: 'hum-row' }, h('button', { class: 'btn primary hum-play', id: 'humPlay', onclick: () => { if (T.playing) { stopPlay(true); } else humPlay(); } }, T.playing ? '■ Stop' : '▶ Play my song'),
       h('button', { class: 'btn', id: 'humHear', onclick: humHear }, HUM.hear ? '■ Stop' : '👂 Hear my hum'),
@@ -7719,7 +7719,7 @@ function humGuitarTick() {
     if (g.hold >= 10) { g.done[st] = true; g.hold = 0; if (g.si >= S.tuning.length - 1) { g.step = 'chords'; g.ci = 0; } else g.si++; toast('✓ ' + humNoteName(S.tuning[st] + S.capo), 'ok'); humBar('g'); }
   } else if (g.step === 'chords') {
     const sym = g.chords[g.ci], tc = parseChord(sym), top = (AN.chord || []).slice(0, 2), heard = top[0] ? top[0].sym : '', hit = AN.active && AN.rms > -45 && top.some(x => tc && x.root === tc.root && (x.q === tc.q || (x.q === '' && tc.q === 'maj') || (tc.q === '' && x.q === 'maj')));
-    if (live) live.textContent = AN.active ? (heard ? 'I hear ' + heard : '…') : 'strum all the strings…';
+    if (live) live.textContent = AN.active ? (heard ? 'Picking up ' + heard : '…') : 'strum all the strings…';
     if (hit) g.hold++; else g.hold = Math.max(0, g.hold - 1); if (fill) fill.style.width = Math.min(100, g.hold / 8 * 100) + '%';
     if (g.hold >= 8) { g.hold = 0; toast('✓ ' + sym + '! Nice.', 'ok'); if (g.ci >= g.chords.length - 1) g.step = 'play'; else g.ci++; humBar('g'); }
   }
@@ -9307,7 +9307,7 @@ function ioLevelWizard(src0) {
   }
   function draw() {
     body.innerHTML = '';
-    if (!E.hasInput) { body.append(h('p', {}, 'First connect your input, then I can hear it.'), ioConnectEl({ path: false, mon: false })); return; }
+    if (!E.hasInput) { body.append(h('p', {}, 'Connect your input first. Its level shows here once it is connected.'), ioConnectEl({ path: false, mon: false })); return; }
     if (W.phase === 'ready') {
       if (!has.g && !has.v) { body.append(h('p', {}, 'Both inputs are set to Off. Choose Guitar or Vocal in the Channels card first.'), h('button', { class: 'btn', onclick: () => d.close() }, 'Close')); return; }
       body.append(
@@ -14655,7 +14655,7 @@ const SECRETS = [
   ['line', 'The hidden line', 'Some numbers want to be clicked three times.', 'Triple-click the version tag: a quote of the day from someone in history wakes up at the bottom of the page.'],
   ['tuned', 'Tuned to perfection', 'Six strings, two cents.', 'All six open strings within ±2 cents of true, one after another.'],
   ['pocket', 'In the pocket', 'Sixteen notes, right on time.', 'Sixteen notes in a row within 10 ms of the beat while the song plays.'],
-  ['scale', 'Up and down', 'Every note, there and back. Anywhere I can hear you.', 'Played a whole scale up and back down.', 'Modes and more scales are open in Practice ▸ Scales & ear. 🎼'],
+  ['scale', 'Up and down', 'Every note of a scale, there and back, on your connected guitar.', 'Played a whole scale up and back down.', 'Modes and more scales are open in Practice ▸ Scales & ear. 🎼'],
   ['arp', 'Broken chords', 'The band plays the chords. You take them apart.', 'Broke three of the band’s chords in a row into their notes while the song played.', 'Seventh arpeggios are open in Practice ▸ Scales & ear. 🎼'],
   ['ear', 'Golden ear', 'Ten in a row, by ear. Practice has a room for that.', 'Named ten intervals in a row by ear in Scales & ear.', 'Chord qualities by ear are open in Practice ▸ Scales & ear. 🎼'],
   ['backstage', 'Backstage pass', 'Developers know where to look.', 'Read the note in the browser console, knocked, and knew the password.']
@@ -15157,7 +15157,7 @@ function wsStop(quiet) {
 function wsFollow(kind) {
   wsStop(true); const run = kind === 'scale' ? wsScaleRun() : wsArpRun(); if (!run.notes.length) { toast('This song has no chords yet. Write some, or choose One chord. ', 'warn'); return; }
   WS.run = Object.assign(run, { mode: 'follow', i: 0, miss: 0, held: null, judged: false, prev: null, t0: performance.now(), wrong: 0 });
-  if (!E.hasInput) toast('Connect your input (Audio, top right) so the room can hear you. Or press Listen first.', 'warn');
+  if (!E.hasInput) toast('Connect your input (Audio, top right) so the trainer can follow what you play. Or press Listen first.', 'warn');
   WS.tm = setInterval(wsTick, 40); WS.r[kind].paint();
 }
 function wsTick() {
@@ -15210,7 +15210,7 @@ function wsEarAnswer(a) {
 
 /* ---------- the room ---------- */
 const wsNarrow = () => innerWidth < 640;
-const WS_WHERE = { scale: 'Hint: play any scale up and back down, anywhere the tuner can hear you.', arp: 'Hint: not in here. Try it with the band.', ear: 'Hint: this one is in here.' };
+const WS_WHERE = { scale: 'Hint: play any scale up and back down on your connected guitar, anywhere in the studio.', arp: 'Hint: not in here. Try it with the band.', ear: 'Hint: this one is in here.' };
 const wsLock = (id, what) => h('p', { class: 'tiny ws-lock' + (wsOpen(id) ? ' open' : '') }, wsOpen(id) ? '🗝 Open: ' + what + '.' : '🔒 ' + what + ' are behind the curtain until you find a secret. ' + WS_WHERE[id]);
 const wsSel = (opts, val, on, attrs) => h('select', Object.assign({ class: 'in', onchange: e => on(e.target.value) }, attrs || {}), opts.map(([v, t, dis]) => h('option', { value: v, selected: String(v) === String(val), disabled: !!dis }, t)));
 function wsRoom(kind) {

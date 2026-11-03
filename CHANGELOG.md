@@ -2,6 +2,15 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.28.1 — 2026-11-03 — Friendlier words about listening
+
+### Changed
+- **Nothing in the studio talks as if it is listening on its own.** Four lines are rewritten so that what listens is clearly the guitar input you connected, and only while you play:
+  - the Up and down secret's hint, "Every note, there and back. Anywhere I can hear you.", is now "Every note of a scale, there and back, on your connected guitar.";
+  - the Scales & ear lock hint says "on your connected guitar, anywhere in the studio";
+  - the "connect your input" notes in Scales & ear and the level panel no longer say "the room can hear you" or "then I can hear it";
+  - the guitar coach says "Picking up G" instead of "I hear G".
+
 ## 2.28.0 — 2026-11-02 — Shower mode gets a Shower set: a whole playlist in one pick, no waiting between songs, and the words
 
 ### Added

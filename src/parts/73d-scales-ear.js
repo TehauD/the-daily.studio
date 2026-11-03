@@ -106,7 +106,7 @@ function wsStop(quiet) {
 function wsFollow(kind) {
   wsStop(true); const run = kind === 'scale' ? wsScaleRun() : wsArpRun(); if (!run.notes.length) { toast('This song has no chords yet. Write some, or choose One chord. ', 'warn'); return; }
   WS.run = Object.assign(run, { mode: 'follow', i: 0, miss: 0, held: null, judged: false, prev: null, t0: performance.now(), wrong: 0 });
-  if (!E.hasInput) toast('Connect your input (Audio, top right) so the room can hear you. Or press Listen first.', 'warn');
+  if (!E.hasInput) toast('Connect your input (Audio, top right) so the trainer can follow what you play. Or press Listen first.', 'warn');
   WS.tm = setInterval(wsTick, 40); WS.r[kind].paint();
 }
 function wsTick() {
@@ -159,7 +159,7 @@ function wsEarAnswer(a) {
 
 /* ---------- the room ---------- */
 const wsNarrow = () => innerWidth < 640;
-const WS_WHERE = { scale: 'Hint: play any scale up and back down, anywhere the tuner can hear you.', arp: 'Hint: not in here. Try it with the band.', ear: 'Hint: this one is in here.' };
+const WS_WHERE = { scale: 'Hint: play any scale up and back down on your connected guitar, anywhere in the studio.', arp: 'Hint: not in here. Try it with the band.', ear: 'Hint: this one is in here.' };
 const wsLock = (id, what) => h('p', { class: 'tiny ws-lock' + (wsOpen(id) ? ' open' : '') }, wsOpen(id) ? '🗝 Open: ' + what + '.' : '🔒 ' + what + ' are behind the curtain until you find a secret. ' + WS_WHERE[id]);
 const wsSel = (opts, val, on, attrs) => h('select', Object.assign({ class: 'in', onchange: e => on(e.target.value) }, attrs || {}), opts.map(([v, t, dis]) => h('option', { value: v, selected: String(v) === String(val), disabled: !!dis }, t)));
 function wsRoom(kind) {
