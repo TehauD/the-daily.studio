@@ -2,6 +2,16 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.33.2 — 2026-11-04 — The coach stays in front
+
+### Fixed
+- **Riff Lab and the coach could disappear behind the Learn window.** 🎲 Another, ★ Keep and finishing a step all refreshed the Learn window behind the coach. That refresh reopened the window, which put it in front of the coach. The coach was still open underneath, so pressing 🎲 Make a riff again changed a riff you couldn't see.
+  - The Learn window now waits until the coach closes before it refreshes.
+  - Opening the coach always brings it to the front.
+
+### Tests
+- `e2e-learn` (54 checks): after 🎲 Another, after closing the coach and pressing Make a riff again, and after Another twice more, the coach shows the new riff and is the window in front. Two of these checks fail on 2.33.1.
+
 ## 2.33.1 — 2026-11-04 — Settings tidied; the megaphone pedal folds into Pedal & MIDI sync
 
 ### Fixed

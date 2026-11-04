@@ -132,7 +132,7 @@ function coachOpen(pieces, at, o) {
   pieces = Array.isArray(pieces) ? pieces : [pieces]; coStopListen(); coSeqStop(); o = o || {};
   CO.list = pieces; CO.idx = Math.max(0, Math.min(pieces.length - 1, at || 0)); CO.title = o.title || ''; CO.onAct = o.actions || null; CO.key = o.key != null ? o.key : null;
   let d = document.getElementById('coach'); if (!d) { d = h('dialog', { class: 'coach', id: 'coach', 'aria-labelledby': 'coachT' }); document.body.append(d); d.addEventListener('close', () => { if (d.open) return; coStopListen(); coSeqStop(); bus.emit('coach:close'); });      /* the close event comes late: if the coach was opened again since, leave it be */ }
-  coSetPiece(CO.idx); if (!d.open) d.showModal(); return d;
+  coSetPiece(CO.idx); if (d.open) d.close(); d.showModal(); return d;      /* reopened, so it is always in front (of the Learn hub too) */
 }
 function coSetPiece(i) { coStopListen(); coSeqStop(); CO.idx = i; const raw = CO.list[i]; CO.p = typeof raw === 'function' ? raw() : raw; CO.bpm = CO.p.bpm || 80; CO.res = ''; if (CO.p.kind === 'info' && CO.p.id && !CFG.learn.done[CO.p.id]) { CFG.learn.done[CO.p.id] = Date.now(); saveCfg(); bus.emit('coach:done', { id: CO.p.id, ok: true }); } coBuild(); }
 /** the piece's notes placed in this tuning (re-placed when the key or the tuning changes) */

@@ -137,7 +137,10 @@ function atlasPieces() {
 
 /* ---------- the hub ---------- */
 const lsDone = ls => ls.steps.filter(s => CFG.learn.done[s.id]).length;
-function learnPaint() { const d = document.getElementById('learn'); if (!d || !d.open) return; const on = d.querySelector('.hub-nb.on'); learnOpen(on ? on.dataset.sec : undefined); }
+/** redraw the hub (progress, My riffs). Never while the coach is open: redrawing reopens the hub, which would put it in front of the
+    coach and hide it; the redraw waits for the coach to close */
+let LRN_DIRTY = false;
+function learnPaint() { const c = document.getElementById('coach'); if (c && c.open) { LRN_DIRTY = true; return; } LRN_DIRTY = false; const d = document.getElementById('learn'); if (!d || !d.open) return; const on = d.querySelector('.hub-nb.on'); learnOpen(on ? on.dataset.sec : undefined); }
 function learnLessons(paths) {
   return h('div', { class: 'ln-paths' }, paths.map(path => h('div', { class: 'ln-path' }, h('div', { class: 'ln-ph' }, h('span', { class: 'ln-ico', 'aria-hidden': 'true' }, path.ico), h('div', {}, h('b', {}, path.name), h('small', {}, path.blurb))),
     h('ol', { class: 'ln-list' }, path.lessons.map(ls => { const n = lsDone(ls), all = ls.steps.length; return h('li', {}, h('button', { class: 'ln-ls' + (n === all ? ' done' : ''), 'data-lesson': ls.id, onclick: () => coachOpen(ls.steps, Math.min(n, all - 1), { title: path.name + ' · ' + ls.name }) },
@@ -193,3 +196,4 @@ function learnOpen(at) {
   ] });
 }
 bus.on('coach:done', () => learnPaint());
+bus.on('coach:close', () => { if (LRN_DIRTY) learnPaint(); });

@@ -5,7 +5,7 @@
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.33.1', BUILD = '10775f9', PARTS_N = +'99' || 0, LINES_N = +'17342' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.33.2', BUILD = '65596fe', PARTS_N = +'99' || 0, LINES_N = +'17346' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { ghApp: { clientId: '', slug: '' },   /* Sign in with GitHub: the GitHub App's public client id and its slug (docs/GITHUB.md); empty = only the token way */
   support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://the-daily.studio/journal/' };
@@ -16924,7 +16924,7 @@ function coachOpen(pieces, at, o) {
   pieces = Array.isArray(pieces) ? pieces : [pieces]; coStopListen(); coSeqStop(); o = o || {};
   CO.list = pieces; CO.idx = Math.max(0, Math.min(pieces.length - 1, at || 0)); CO.title = o.title || ''; CO.onAct = o.actions || null; CO.key = o.key != null ? o.key : null;
   let d = document.getElementById('coach'); if (!d) { d = h('dialog', { class: 'coach', id: 'coach', 'aria-labelledby': 'coachT' }); document.body.append(d); d.addEventListener('close', () => { if (d.open) return; coStopListen(); coSeqStop(); bus.emit('coach:close'); });      /* the close event comes late: if the coach was opened again since, leave it be */ }
-  coSetPiece(CO.idx); if (!d.open) d.showModal(); return d;
+  coSetPiece(CO.idx); if (d.open) d.close(); d.showModal(); return d;      /* reopened, so it is always in front (of the Learn hub too) */
 }
 function coSetPiece(i) { coStopListen(); coSeqStop(); CO.idx = i; const raw = CO.list[i]; CO.p = typeof raw === 'function' ? raw() : raw; CO.bpm = CO.p.bpm || 80; CO.res = ''; if (CO.p.kind === 'info' && CO.p.id && !CFG.learn.done[CO.p.id]) { CFG.learn.done[CO.p.id] = Date.now(); saveCfg(); bus.emit('coach:done', { id: CO.p.id, ok: true }); } coBuild(); }
 /** the piece's notes placed in this tuning (re-placed when the key or the tuning changes) */
@@ -17280,7 +17280,10 @@ function atlasPieces() {
 
 /* ---------- the hub ---------- */
 const lsDone = ls => ls.steps.filter(s => CFG.learn.done[s.id]).length;
-function learnPaint() { const d = document.getElementById('learn'); if (!d || !d.open) return; const on = d.querySelector('.hub-nb.on'); learnOpen(on ? on.dataset.sec : undefined); }
+/** redraw the hub (progress, My riffs). Never while the coach is open: redrawing reopens the hub, which would put it in front of the
+    coach and hide it; the redraw waits for the coach to close */
+let LRN_DIRTY = false;
+function learnPaint() { const c = document.getElementById('coach'); if (c && c.open) { LRN_DIRTY = true; return; } LRN_DIRTY = false; const d = document.getElementById('learn'); if (!d || !d.open) return; const on = d.querySelector('.hub-nb.on'); learnOpen(on ? on.dataset.sec : undefined); }
 function learnLessons(paths) {
   return h('div', { class: 'ln-paths' }, paths.map(path => h('div', { class: 'ln-path' }, h('div', { class: 'ln-ph' }, h('span', { class: 'ln-ico', 'aria-hidden': 'true' }, path.ico), h('div', {}, h('b', {}, path.name), h('small', {}, path.blurb))),
     h('ol', { class: 'ln-list' }, path.lessons.map(ls => { const n = lsDone(ls), all = ls.steps.length; return h('li', {}, h('button', { class: 'ln-ls' + (n === all ? ' done' : ''), 'data-lesson': ls.id, onclick: () => coachOpen(ls.steps, Math.min(n, all - 1), { title: path.name + ' · ' + ls.name }) },
@@ -17336,6 +17339,7 @@ function learnOpen(at) {
   ] });
 }
 bus.on('coach:done', () => learnPaint());
+bus.on('coach:close', () => { if (LRN_DIRTY) learnPaint(); });
 
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
