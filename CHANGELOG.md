@@ -2,6 +2,20 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.33.1 — 2026-11-04 — Settings tidied; the megaphone pedal folds into Pedal & MIDI sync
+
+### Fixed
+- **Settings layout:**
+  - Pedal & MIDI sync and Megaphone pedal sat in the left half of a two-column card, which squeezed their text and left the right half empty. A card with one block in it now uses the whole width.
+  - Folder sync had an empty band at the top of its card, from a paragraph's default margin. It's gone.
+
+### Changed
+- **The megaphone pedal moved into Settings ▸ Pedal & MIDI sync** as a fold-out (📢 Megaphone pedal · optional), closed unless it's switched on. It no longer has its own section. Links that opened it (`openSettings('mega')`) now open the fold-out.
+- **No pedal brands are named:** the app, the guides, the README and earlier changelog entries now say "a megaphone, radio or telephone voice effect pedal".
+
+### Tests
+- `e2e-megaphone`: its settings are in the Pedal & MIDI sync section, open when linked to, with no brand named and no separate section.
+
 ## 2.33.0 — 2026-11-03 — ✦ Simple
 
 ### Added
@@ -106,8 +120,8 @@ All notable changes to the-daily.studio (earlier versions were released under th
 ## 2.30.0 — 2026-11-03 — Your megaphone pedal drives the show
 
 ### Added
-- **Megaphone pedal** (Settings ▸ Megaphone pedal, `src/parts/78-megaphone.js`). It's for a TC-Helicon VoiceTone X1, or any megaphone, radio or telephone voice effect between the mic and the interface.
-  - **How it's heard:** the X1 has no MIDI, but the studio hears it in the vocal input, by the balance of lows, middle and highs that such an effect cuts and pushes.
+- **Megaphone pedal** (Settings ▸ Megaphone pedal, `src/parts/78-megaphone.js`; in Settings ▸ Pedal & MIDI sync since 2.33.1). It's for any megaphone, radio or telephone voice effect pedal between the mic and the interface.
+  - **How it's heard:** such pedals usually have no MIDI, but the studio hears it in the vocal input, by the balance of lows, middle and highs that such an effect cuts and pushes.
   - **Teach it my voice:** three seconds with the pedal off and three with it on. Without teaching, general settings suit most megaphone sounds.
   - **While the pedal is on:**
     - the stage and the Visuals turn red-hot with scan lines and a jolt as it comes on, drawn into the picture so the projector and stage videos carry it;

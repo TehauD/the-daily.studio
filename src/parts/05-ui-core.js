@@ -94,6 +94,7 @@ bus.on('transport', syncTransport); bus.on('song', syncTransport); bus.on('rec:s
 /* ---------- settings / help ---------- */
 /** ⚙ Settings (part 05c's dialog). at: the section to open on */
 function openSettings(at) {
+  if (at === 'mega') { at = 'gear'; setTimeout(() => { const d = document.getElementById('megDetails'); if (d) { d.open = true; d.scrollIntoView({ block: 'start' }); } }, 80); }      /* the megaphone pedal lives inside Pedal & MIDI sync since 2.33.1 */
   const close = () => { const d = $('#settings'); if (d) d.close(); };
   const F = (label, el) => h('label', { class: 'field' }, h('span', {}, label), el);
   const sel = (key, opts, cb) => h('select', { class: 'in', onchange: e => { const v = e.target.value; CFG[key] = isNaN(+v) || v === '' ? v : (key === 'hint' ? v : +v); saveCfg(); cb && cb(); } }, opts.map(o => { const [v, t] = Array.isArray(o) ? o : [o, o]; return h('option', { value: v, selected: String(CFG[key]) === String(v) }, t); }));
@@ -136,8 +137,7 @@ function openSettings(at) {
       F('When recording reaches the end of the song', sel('recEnd', [['grow', 'Keep going (the song grows to fit)'], ['stop', 'Stop at the end'], ['loop', 'Loop back, one take per pass']])),
       h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!CFG.rec.dry, onchange: e => { CFG.rec.dry = e.target.checked; saveCfg(); } }), 'Record dry DI (enables re-amping)'),
       h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!CFG.rec.wet, onchange: e => { CFG.rec.wet = e.target.checked; saveCfg(); } }), 'Record wet print')] },
-    { key: 'gear', label: 'Pedal & MIDI sync', ico: '🦶', sub: 'A foot pedal for hands-free playing, and MIDI clock for drum machines, synths and music software.', body: () => [gearSettings()] },
-    { key: 'mega', label: 'Megaphone pedal', ico: '📢', sub: 'Your vocal effects pedal drives the show: the stage, the lights and the words react when it is on.', body: () => [megSettings()] },
+    { key: 'gear', label: 'Pedal & MIDI sync', ico: '🦶', sub: 'A foot pedal for hands-free playing, MIDI clock for drum machines, synths and music software, and (optional) a voice effect the show can react to.', wide: true, body: () => [gearSettings(), megDetails()] },
     { key: 'folder', label: 'Folder sync', ico: '📁', sub: 'Your whole studio, recordings too, in a folder on this computer: iCloud Drive, Dropbox, Google Drive or OneDrive keep it the same on every computer.', wide: true, body: () => [syncControl()] },
     { key: 'github', label: 'GitHub', ico: '⑂', sub: 'Your studio in a private repository of your own, in step on every device. Optional.', wide: true, body: () => [ghSection()] },
     { key: 'export', label: 'Export', ico: '⇩', sub: 'Song bounces and tab text.', body: () => [

@@ -1532,3 +1532,9 @@ body.simple:not([data-form=phone]) :is(#transport .rew,#transport .metro-more,#t
 body.simple:not([data-form]) #app,body.simple[data-form=desktop] #app{grid-template-rows:56px auto minmax(0,1fr) 0}body.simple[data-form=tablet] #app{grid-template-rows:auto auto minmax(0,1fr) 0}
 body.simple:not([data-form=phone]) #transport .btn .lbl{display:inline}
 body.simple:not([data-form=phone]) #pane-vis>.row>:is(#vzBack,.row:has(#lxLens),[data-vza],#hexTone,select,#vzRecBtn,#vzAutoBtn,#vzCamBtn,.camfx,#vzNeckBtn,#vzRibbonBtn){display:none!important}
+/* 2.33.1: a card with one block in it uses the whole width; no stray top margin; the megaphone pedal folds out under Pedal & MIDI sync */
+.hub-card>:only-child{grid-column:1/-1}
+.hub-card p:first-child,.hub-card>*>p:first-child{margin-top:0}
+.gear-map{max-width:580px}.gear label.field{max-width:360px}.gear .hub-note,.meg .hub-note{max-width:75ch}
+.gear-more{border-top:1px solid var(--line);padding-top:12px;margin-top:6px}.gear-more>summary{cursor:pointer;font-size:13.5px;padding:6px 0;min-height:32px}.gear-more>summary:hover b{color:var(--accent)}.gear-more[open]>summary{margin-bottom:10px}
+.gear-more .meg{max-width:660px}

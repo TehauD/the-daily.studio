@@ -1,4 +1,4 @@
-/* Megaphone pedal (2.30): a vocal effects pedal with no MIDI (a TC-Helicon VoiceTone X1) heard in the vocal input, and the show reacting.
+/* Megaphone pedal (2.30): a vocal effects pedal with no MIDI (a megaphone, radio or telephone voice effect) heard in the vocal input, and the show reacting.
    The voices are synthesised: a low and a high voice, clean and through a megaphone-like band limit and drive. */
 const { suite } = require('./lib.cjs');
 
@@ -50,7 +50,7 @@ suite('e2e-megaphone', async t => {
 
   /* ---- Settings ---- */
   await ev(() => window.__daily.openSettings('mega')); await wait(400);
-  ok(await ev(() => !!document.getElementById('meg-on') && !!document.getElementById('megLive') && !!document.getElementById('megTeach') && /VoiceTone X1/.test(document.querySelector('#settings .meg').textContent)), 'Settings ▸ Megaphone pedal: a switch, a live meter, Teach it my voice, and what reacts');
+  ok(await ev(() => !!document.getElementById('meg-on') && !!document.getElementById('megLive') && !!document.getElementById('megTeach') && /megaphone, radio or telephone voice effect pedal/.test(document.querySelector('#settings .meg').textContent) && !/Helicon|VoiceTone/i.test(document.getElementById('settings').textContent) && document.getElementById('megDetails').open && document.getElementById('megDetails').closest('section[data-sec="gear"]') && !document.querySelector('#settings section[data-sec="mega"]')), 'Settings ▸ Pedal & MIDI sync ▸ Megaphone pedal (folded out): a switch, a live meter, Teach it my voice, and what reacts; no brand named');
   await p.click('#megTeach'); await wait(300);
   ok(await ev(() => /Connect your vocal input/.test(document.getElementById('toasts').textContent)), 'teaching without an input connected says what to do first');
   await p.click('#meg-on'); await wait(300);

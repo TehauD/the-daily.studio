@@ -5,7 +5,7 @@
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.33.0', BUILD = 'eb1806e', PARTS_N = +'99' || 0, LINES_N = +'17339' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.33.1', BUILD = '10775f9', PARTS_N = +'99' || 0, LINES_N = +'17342' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { ghApp: { clientId: '', slug: '' },   /* Sign in with GitHub: the GitHub App's public client id and its slug (docs/GITHUB.md); empty = only the token way */
   support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://the-daily.studio/journal/' };
@@ -1605,6 +1605,7 @@ bus.on('transport', syncTransport); bus.on('song', syncTransport); bus.on('rec:s
 /* ---------- settings / help ---------- */
 /** ⚙ Settings (part 05c's dialog). at: the section to open on */
 function openSettings(at) {
+  if (at === 'mega') { at = 'gear'; setTimeout(() => { const d = document.getElementById('megDetails'); if (d) { d.open = true; d.scrollIntoView({ block: 'start' }); } }, 80); }      /* the megaphone pedal lives inside Pedal & MIDI sync since 2.33.1 */
   const close = () => { const d = $('#settings'); if (d) d.close(); };
   const F = (label, el) => h('label', { class: 'field' }, h('span', {}, label), el);
   const sel = (key, opts, cb) => h('select', { class: 'in', onchange: e => { const v = e.target.value; CFG[key] = isNaN(+v) || v === '' ? v : (key === 'hint' ? v : +v); saveCfg(); cb && cb(); } }, opts.map(o => { const [v, t] = Array.isArray(o) ? o : [o, o]; return h('option', { value: v, selected: String(CFG[key]) === String(v) }, t); }));
@@ -1647,8 +1648,7 @@ function openSettings(at) {
       F('When recording reaches the end of the song', sel('recEnd', [['grow', 'Keep going (the song grows to fit)'], ['stop', 'Stop at the end'], ['loop', 'Loop back, one take per pass']])),
       h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!CFG.rec.dry, onchange: e => { CFG.rec.dry = e.target.checked; saveCfg(); } }), 'Record dry DI (enables re-amping)'),
       h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!CFG.rec.wet, onchange: e => { CFG.rec.wet = e.target.checked; saveCfg(); } }), 'Record wet print')] },
-    { key: 'gear', label: 'Pedal & MIDI sync', ico: '🦶', sub: 'A foot pedal for hands-free playing, and MIDI clock for drum machines, synths and music software.', body: () => [gearSettings()] },
-    { key: 'mega', label: 'Megaphone pedal', ico: '📢', sub: 'Your vocal effects pedal drives the show: the stage, the lights and the words react when it is on.', body: () => [megSettings()] },
+    { key: 'gear', label: 'Pedal & MIDI sync', ico: '🦶', sub: 'A foot pedal for hands-free playing, MIDI clock for drum machines, synths and music software, and (optional) a voice effect the show can react to.', wide: true, body: () => [gearSettings(), megDetails()] },
     { key: 'folder', label: 'Folder sync', ico: '📁', sub: 'Your whole studio, recordings too, in a folder on this computer: iCloud Drive, Dropbox, Google Drive or OneDrive keep it the same on every computer.', wide: true, body: () => [syncControl()] },
     { key: 'github', label: 'GitHub', ico: '⑂', sub: 'Your studio in a private repository of your own, in step on every device. Optional.', wide: true, body: () => [ghSection()] },
     { key: 'export', label: 'Export', ico: '⇩', sub: 'Song bounces and tab text.', body: () => [
@@ -16491,14 +16491,14 @@ function streamRoom() { return hubOpen('streamwin', { ico: '📺', title: 'Strea
 /* >>> parts/78-megaphone.js */
 /* ============================================================
    Part 78 · MEGAPHONE (2.30) — your vocal effects pedal drives the show
-   A TC-Helicon VoiceTone X1 (or any megaphone, radio or telephone voice effect between your mic and the interface) has no MIDI, but it
+   A megaphone, radio or telephone voice effect pedal between your mic and the interface usually has no MIDI, but it
    changes your voice in a way that can be heard: the lows and the highs are cut away and the middle is pushed and dirtied. The studio
    listens to the vocal input for that sound, and while the pedal is on:
      · the stage and the Visuals turn gritty: red-hot colour, scan lines, a little shake (drawn into the picture itself, so the
        projector, stage videos and a window capture all show it)
      · the lights flash as you stomp it on (within the light comfort you chose)
      · the words in Perform and in the stream window go red and shake
-   Settings ▸ Megaphone pedal: switch it on, then teach it your voice: three seconds with the pedal off, three with it on. Without
+   Settings ▸ Pedal & MIDI sync ▸ Megaphone pedal (folded away until you open it): switch it on, then teach it your voice: three seconds with the pedal off, three with it on. Without
    teaching it uses general settings that suit most megaphone sounds. Calm and reduced motion keep the colour and drop the shake.
    Only levels and the balance of lows, middle and highs are measured, a few times a second; nothing is recorded.
    ============================================================ */
@@ -16585,14 +16585,17 @@ function megDraw(g, W, H) {
 }
 function megStream() { try { if (typeof STRM !== 'undefined' && STRM.w && !STRM.w.closed) { const e = STRM.w.document.getElementById('sl'); if (e) { e.style.color = MEG.on && CFG.mega.words ? '#ff4b3e' : '#fff'; e.style.animation = MEG.on && CFG.mega.words && !secretCalm() ? 'megshake .12s steps(2) infinite' : ''; if (!STRM.w.document.getElementById('megk')) { const s = STRM.w.document.createElement('style'); s.id = 'megk'; s.textContent = '@keyframes megshake{0%{transform:translate(1px,-1px)}50%{transform:translate(-1px,1px)}}'; STRM.w.document.head.append(s); } } } } catch (e) { } }
 
-/* ---------- Settings ▸ Megaphone pedal ---------- */
+/* ---------- Settings ▸ Pedal & MIDI sync ▸ Megaphone pedal (a fold-out: few people need it) ---------- */
+function megDetails() {
+  return h('details', { class: 'gear-more', id: 'megDetails', open: !!CFG.mega.on }, h('summary', {}, h('b', {}, '📢 Megaphone pedal'), h('span', { class: 'muted' }, ' · optional: the show reacts when a voice effect pedal is on')), megSettings());
+}
 function megPaint() { const b = document.getElementById('megLive'); if (!b) return; const s = MEG.voiced ? MEG.score : 0; b.style.setProperty('--s', s.toFixed(3)); b.querySelector('b').textContent = !E.hasInput ? 'No input connected' : MEG.on ? '📢 Megaphone' : MEG.voiced ? 'Clean voice' : 'Sing to test'; b.classList.toggle('on', MEG.on); }
 function megSettings() {
   const chk = (k, label) => h('label', { class: 'chk' }, h('input', { type: 'checkbox', id: 'meg-' + k, checked: !!CFG.mega[k], onchange: e => { CFG.mega[k] = e.target.checked; saveCfg(); if (k === 'on') megLoop(e.target.checked); if (k === 'words') document.body.classList.toggle('mega', MEG.on && CFG.mega.words); } }), label);
   const st = h('p', { class: 'hub-note', id: 'megTeachSt', role: 'status' }, CFG.mega.model ? 'Taught to your voice (' + new Date(CFG.mega.model.at).toLocaleDateString() + ').' : 'Using general settings. Teach it your voice for the best results.');
   return h('div', { class: 'meg' },
     chk('on', 'React to my megaphone pedal'),
-    h('p', { class: 'hub-note' }, 'For a TC-Helicon VoiceTone X1, or any megaphone, radio or telephone voice effect between your mic and the interface. While it is on, the stage and the Visuals turn gritty, the lights flash as you stomp it on, and the words in Perform and the stream window go red and shake. Only the balance of lows, middle and highs of the vocal input is measured; nothing is recorded.'),
+    h('p', { class: 'hub-note' }, 'For any megaphone, radio or telephone voice effect pedal between your mic and the interface. While it is on, the stage and the Visuals turn gritty, the lights flash as you stomp it on, and the words in Perform and the stream window go red and shake. Only the balance of lows, middle and highs of the vocal input is measured; nothing is recorded.'),
     h('div', { class: 'meg-live', id: 'megLive', role: 'status', 'aria-live': 'polite' }, h('i'), h('b', {}, 'Sing to test')),
     h('div', { class: 'row', style: { gap: '8px', flexWrap: 'wrap' } }, h('button', { class: 'btn', id: 'megTeach', onclick: async e => { const b = e.currentTarget; b.disabled = true; const m = await megTeach(w => { st.textContent = w === 'off' ? '1 of 2: pedal OFF. Sing for three seconds…' : '2 of 2: pedal ON. Sing for three seconds…'; }); b.disabled = false; st.textContent = m ? 'Taught. Stomp it and sing: the box above follows you.' : 'Not taught: try again.'; } }, '🎓 Teach it my voice'),
       h('button', { class: 'btn', onclick: () => { CFG.mega.model = null; saveCfg(); st.textContent = 'Back to general settings.'; } }, 'Forget')), st,

@@ -795,7 +795,7 @@ The app ships no recordings and no one else's lyrics, and it never uploads anyth
 
 ## Megaphone pedal (2.30)
 
-**Settings ▸ Megaphone pedal** is for a TC-Helicon VoiceTone X1, or any megaphone, radio or telephone voice effect between your mic and the interface. The X1 has no MIDI, so the studio can't switch it, but it can hear it: the effect cuts your voice's lows and highs.
+**Settings ▸ Pedal & MIDI sync ▸ 📢 Megaphone pedal** (folded away; press it to open) is for any megaphone, radio or telephone voice effect pedal between your mic and the interface. Such pedals usually have no MIDI, so the studio can't switch them, but it can hear them: the effect cuts your voice's lows and highs.
 - Switch on **React to my megaphone pedal**, then press **🎓 Teach it my voice**: sing three seconds with the pedal off, then three with it on. The meter shows what it hears.
 - While the pedal is on, the stage and the Visuals turn red-hot with scan lines (projector and stage videos included), the lights flash as you stomp it on, and the words in Perform and the stream window go red and shake. Each of these can be switched off.
 - A breath between lines keeps it on; it lets go a moment after you sing clean again. Calm and reduced motion keep the colour and drop the shake.
