@@ -761,6 +761,66 @@ The app ships no recordings and no one else's lyrics, and it never uploads anyth
 
 **📺 Stream window** (Creator Studio and Performer tools) opens a window with only the line being sung, the next one and the chord, in large type on one colour. In OBS, Streamlabs or any streaming app, add a **Window Capture** of it and a **Chroma Key** filter on that colour (green, blue or magenta), or a **Luma Key** on black. The words then float over your camera. The stage visuals have their own pop-out in Visuals.
 
+## For electronic music: piano roll, sidechain, MIDI out (2.37)
+
+- **🎛 Piano roll** (Songwriter tools, or **🎛 Piano roll…** in the Keys room) is for drawing the keys part or the bass line of a section on a grid of 16ths.
+  - Click a square to add a note, and drag right to make it longer. Click a note to remove it, or Shift-click to make it loud, medium or soft.
+  - **Only the scale's notes** hides the rest. **▼ / ▲** move an octave.
+  - **▶ Loop this section** plays just those bars while you draw.
+  - It's the same part the Keys room records into, so a drawn bass line also replaces the made-up bass in its bars.
+- **Sidechain: duck to the kick** (in the piano roll and the Keys room): every kick pushes the keys, the bass, the rhythm guitar or the loaded track down, and they swell back. You set the depth (up to 18 dB) and the release. It's kept with the song and is in bounces too.
+- **MIDI out** (Settings ▸ Pedal & MIDI sync) sends the keys part, the bass (played or made up) and the drums to a MIDI device.
+  - Each has its own channel: 1, 2 and 10 by default. Drums go as General MIDI notes.
+  - Notes are timed to what you hear, and stopping sends all-notes-off.
+  - Turn off **Also play the studio's own sound** to let the hardware take over.
+  - Playing the Keys room sends too, so a controller can play your synth through the studio. Web MIDI needs Chrome or Edge.
+
+## Bass guitar (2.36)
+
+**Settings ▸ Music ▸ My instrument** chooses **Guitar**, or a **4, 5 or 6-string bass**. The song bar's tuning list also has bass tunings: standard, drop D, half-step down, D standard, 5-string with a low B or a high C, and 6-string.
+- **What follows the number of strings:** the tab editor, the tab text, both fretboards, the transcription view, the tuner and the tuning editor.
+- **The band:** bass tab plays with a bass sound, and the band's bass steps out so you can play it. **Band strip ▸ Bass** brings it back, and switching back to a guitar tuning brings it back too. The band's rhythm guitar keeps a guitar's chord shapes.
+- **Low notes:** the pitch tracker reaches down to a 5-string's low B (31 Hz) when the song is set for bass.
+
+## Speed & key (2.35)
+
+**⏱** in the transport (on a phone: **More ▸ Speed & key**) slows the song down without lowering it, or moves it to another key without slowing it.
+- **Speed (50–125%):** the band, the click and the loaded track all play slower or faster, and the pitch stays the same. It's for practice: your song is not changed, and **100% speed** puts it back. At any speed other than 100%, recording waits (takes are kept at the song's own speed) and recorded takes stay quiet.
+- **Key (−6 to +6 semitones):** the loaded track moves up or down without changing speed. **Move the song's chords and tab too** (on by default) transposes the song with it, so the band and the chart follow. With no track loaded, the key simply transposes the song. A track's key change is saved with the song, and **Original** puts it back.
+- The track is stretched as it plays, two seconds ahead, in a background worker, part by part, so muting and soloing its parts still work.
+
+## Keys: a piano to see, play and record (2.35)
+
+- **🎹 Piano** (in Write, next to **Fretboard**; one shows at a time): the chord that is playing (its notes, with the root in gold), the song's scale shaded, and what is sounding lit. Click or drag along it to play.
+- **🎹 Keys** (Songwriter tools, the band strip's **Keys** chip, or a phone's **More**) is a bigger keyboard. Play it with the mouse, a touch screen, the computer keys (A W S E D F T G Y H U J K O L P ; are the notes; Z and X change octave) or a MIDI keyboard while it is open.
+  - **Plays into:** **🎹 Keys** (six sounds: piano, electric piano, organ, pad, synth lead, synth bass), the band's **Bass**, or the **Lead guitar**.
+  - **● Record:** the band plays, and what you play is written into the song, rounded to 16ths, 8ths or quarters. Keys become the keys part of those bars, bass becomes the bass line (it replaces the made-up bass in those bars), and lead becomes tab, with the string and fret chosen for you. It adds to what is there; one undo takes it out. **Clear in this section** removes a keys part or bass line.
+  - **Keys in the band:** a keys player that follows the chords in five styles (Pad, Block chords, Broken chords, Arpeggio up, Off-beat stabs), voiced so that each chord moves as little as possible. A part you recorded plays in its own bars instead. Keys have their own channel in the mixer.
+
+## Learn 2: feedback, Today, This song and By ear (2.34)
+
+**After every go the coach tells you what happened and what to do next:**
+- **Wrong notes, on the neck:** the note it wanted (green) beside where you probably were (✕), and in words, for example "note 3 wants D (string 5, fret 5), you played D♯: one fret too high". **🔁 Practise notes 2–5** puts in a short, slower piece of just the tricky bit.
+- **Timing, on a strip:** each stroke or note is a dot against the beat, early above the line and late below. Ones it didn't hear are hollow rings. It tells you whether you rush or drag, where you were furthest out, and offers **🐢 Slower** (10 BPM down).
+- **🎧 Hear my take:** what you just played, recorded from your input while the coach listened, next to **▶ Hear the coach**. It's kept in memory only and is gone when you move on.
+
+**📅 Today** (the first section of Learn) is about fifteen minutes, a new plan each day:
+- a warm-up;
+- **a review** of something you passed before, brought back after 1, 3, 7, 14 and then 30 days so it sticks;
+- **something new** on the path you're on (with its explanation first);
+- a riff at your level.
+Your **streak** (days in a row) and the steps you passed this week are at the top.
+
+**🎵 This song** turns the song you have open into lessons:
+- its own strum pattern (the band's);
+- each section's chords in time with the band, and its riff where the tab has one;
+- then **the whole song**.
+It starts at 70% of the song's tempo, every clean go is 5 BPM faster, and it stops at the song's own tempo. Where you got to is remembered for each song. It's also in the Practice workspace's tools.
+
+**👂 By ear:** the coach plays a short phrase in the key and scale you choose, with the neck and the tab hidden. Press **🎧 Hear it, then play it back** and play it.
+- Get it and the next phrase is a note longer (up to eight). Miss two in a row and it's a note shorter.
+- **▶ Hear it again** replays it, and **👁 Show me** reveals it.
+
 ## Learn: lessons, riffs, Riff Lab and the scale atlas (2.32)
 
 **🎓 Learn** is the first tool in the **Teacher** workspace (and on a phone in **More**). Connect your guitar (Audio, top right): the coach listens through the same input as the tuner.
@@ -795,7 +855,7 @@ The app ships no recordings and no one else's lyrics, and it never uploads anyth
 
 ## Megaphone pedal (2.30)
 
-**Settings ▸ Megaphone pedal** is for a TC-Helicon VoiceTone X1, or any megaphone, radio or telephone voice effect between your mic and the interface. The X1 has no MIDI, so the studio can't switch it, but it can hear it: the effect cuts your voice's lows and highs.
+**Settings ▸ Pedal & MIDI sync ▸ 📢 Megaphone pedal** (folded away; press it to open) is for any megaphone, radio or telephone voice effect pedal between your mic and the interface. Such pedals usually have no MIDI, so the studio can't switch them, but it can hear them: the effect cuts your voice's lows and highs.
 - Switch on **React to my megaphone pedal**, then press **🎓 Teach it my voice**: sing three seconds with the pedal off, then three with it on. The meter shows what it hears.
 - While the pedal is on, the stage and the Visuals turn red-hot with scan lines (projector and stage videos included), the lights flash as you stomp it on, and the words in Perform and the stream window go red and shake. Each of these can be switched off.
 - A breath between lines keeps it on; it lets go a moment after you sing clean again. Calm and reduced motion keep the colour and drop the shake.

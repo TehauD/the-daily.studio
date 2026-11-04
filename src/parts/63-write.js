@@ -23,7 +23,7 @@ function writeBuild() {
   UI.wrSecs = h('div', { class: 'wr-secs', role: 'tablist', 'aria-label': 'Sections' });
   UI.wrModeSeg = h('div', { class: 'seg wr-mode', role: 'group', 'aria-label': 'What the canvas shows' });
   [['tab', '𝄞', 'Tab', 'Just the tab'], ['words', '✎', 'Words', 'Lyrics with the chords over them'], ['both', '▥', 'Both', 'The tab with the words beside it']].forEach(([k, i, t, d]) => UI.wrModeSeg.append(h('button', { 'data-wm': k, title: d, onclick: () => wrMode(k) }, h('span', { class: 'wr-ic', 'aria-hidden': 'true' }, i), t)));
-  UI.wrFretBtn = h('button', { class: 'btn sm wr-fb', title: 'Show or hide the fretboard under the canvas', onclick: () => { WR.fret = !wrFretOn(); CFG.wrFret = WR.fret; saveCfg(); wrLayout(); } }, h('span', { class: 'wr-fl' }, 'Fretboard'), h('span', { class: 'wr-fs', 'aria-hidden': 'true' }, '🎸'));
+  UI.wrFretBtn = h('button', { class: 'btn sm wr-fb', title: 'Show or hide the fretboard under the canvas', onclick: () => { WR.fret = !wrFretOn(); CFG.wrFret = WR.fret; if (WR.fret && CFG.wrPiano) { CFG.wrPiano = false; if (typeof kyWrSync === 'function') kyWrSync(); } saveCfg(); wrLayout(); } }, h('span', { class: 'wr-fl' }, 'Fretboard'), h('span', { class: 'wr-fs', 'aria-hidden': 'true' }, '🎸'));
   UI.wrCapBtn = h('button', { class: 'btn wr-cb', id: 'wrCap', title: 'Play your guitar and the notes and chords are written into the tab as you play. It counts you in and loops this section.', onclick: () => { capToggle(); } }, '● Capture');
   UI.wrOpt = h('button', { class: 'btn sm', title: 'Capture options', 'aria-haspopup': 'dialog', onclick: e => wrOptions(e.currentTarget) }, '⚙');
   UI.wrBar = h('div', { class: 'wr-bar' }, UI.wrSecs, h('span', { class: 'wr-sp' }), UI.wrModeSeg, UI.wrFretBtn, h('span', { class: 'wr-capg' }, UI.wrCapBtn, UI.wrOpt));
@@ -83,16 +83,16 @@ function wrCapNote(e) {
 }
 /* ---------- the fretboard ---------- */
 function wrFretBuild() {
-  if (!UI.wrFretSvg) return; const NF = WR.nf, left = !!CFG.left, W = NF === 15 ? 960 : 1240, H = 142, padL = 30, padR = 12, top = 14, bot = 18, bw = W - padL - padR, sh = (H - top - bot) / 5;
+  if (!UI.wrFretSvg) return; const NF = WR.nf, left = !!CFG.left, W = NF === 15 ? 960 : 1240, H = 142, padL = 30, padR = 12, top = 14, bot = 18, bw = W - padL - padR, NS1 = nStr() - 1, sh = (H - top - bot) / NS1;
   const posX = n => { const t = (1 - Math.pow(2, -n / 12)) / (1 - Math.pow(2, -NF / 12)); return padL + bw * (left ? 1 - t : t); };
   const svg = sv('svg', { viewBox: `0 0 ${W} ${H}`, class: 'wr-svg', role: 'img', 'aria-label': 'Fretboard', style: 'min-width:' + (NF === 15 ? 640 : 860) + 'px' });
-  svg.append(sv('rect', { x: padL, y: top - 6, width: bw, height: 5 * sh + 12, rx: 6, fill: 'var(--panel2)', stroke: 'var(--line2)' }));
-  for (let n = 0; n <= NF; n++) { const x = posX(n); svg.append(sv('line', { x1: x, x2: x, y1: top - 6, y2: top + 5 * sh + 6, stroke: n === 0 ? 'var(--text)' : 'var(--line2)', 'stroke-width': n === 0 ? 4 : 1.2 })); if (n > 0) svg.append(sv('text', { x: (posX(n) + posX(n - 1)) / 2, y: H - 6, 'text-anchor': 'middle', 'font-size': 9, fill: 'var(--muted)', 'font-family': 'var(--mono)' }, n)); }
-  [3, 5, 7, 9, 15, 17, 19, 21].filter(n => n <= NF).forEach(n => svg.append(sv('circle', { cx: (posX(n) + posX(n - 1)) / 2, cy: top + 2.5 * sh, r: 3.6, fill: 'var(--line2)', opacity: .6 })));
-  if (NF >= 12) { const x = (posX(12) + posX(11)) / 2; svg.append(sv('circle', { cx: x, cy: top + 1.5 * sh, r: 3.6, fill: 'var(--line2)', opacity: .7 }), sv('circle', { cx: x, cy: top + 3.5 * sh, r: 3.6, fill: 'var(--line2)', opacity: .7 })); }
+  svg.append(sv('rect', { x: padL, y: top - 6, width: bw, height: NS1 * sh + 12, rx: 6, fill: 'var(--panel2)', stroke: 'var(--line2)' }));
+  for (let n = 0; n <= NF; n++) { const x = posX(n); svg.append(sv('line', { x1: x, x2: x, y1: top - 6, y2: top + NS1 * sh + 6, stroke: n === 0 ? 'var(--text)' : 'var(--line2)', 'stroke-width': n === 0 ? 4 : 1.2 })); if (n > 0) svg.append(sv('text', { x: (posX(n) + posX(n - 1)) / 2, y: H - 6, 'text-anchor': 'middle', 'font-size': 9, fill: 'var(--muted)', 'font-family': 'var(--mono)' }, n)); }
+  [3, 5, 7, 9, 15, 17, 19, 21].filter(n => n <= NF).forEach(n => svg.append(sv('circle', { cx: (posX(n) + posX(n - 1)) / 2, cy: top + NS1 / 2 * sh, r: 3.6, fill: 'var(--line2)', opacity: .6 })));
+  if (NF >= 12) { const x = (posX(12) + posX(11)) / 2; svg.append(sv('circle', { cx: x, cy: top + NS1 * .3 * sh, r: 3.6, fill: 'var(--line2)', opacity: .7 }), sv('circle', { cx: x, cy: top + NS1 * .7 * sh, r: 3.6, fill: 'var(--line2)', opacity: .7 })); }
   WR.nodes = []; WR.tun = S.tuning.join() + ':' + S.capo;
   S.tuning.forEach((open, st) => {
-    const y = top + (5 - st) * sh; svg.append(sv('line', { x1: padL, x2: padL + bw, y1: y, y2: y, stroke: 'var(--text)', 'stroke-opacity': .5, 'stroke-width': .8 + (st === 0 ? 2.4 : st === 1 ? 1.9 : st === 2 ? 1.5 : st === 3 ? 1.2 : st === 4 ? .9 : .7) }));
+    const y = top + (NS1 - st) * sh; svg.append(sv('line', { x1: padL, x2: padL + bw, y1: y, y2: y, stroke: 'var(--text)', 'stroke-opacity': .5, 'stroke-width': .8 + (st === 0 ? 2.4 : st === 1 ? 1.9 : st === 2 ? 1.5 : st === 3 ? 1.2 : st === 4 ? .9 : .7) }));
     svg.append(sv('text', { x: 6, y: y + 4, 'font-size': 10.5, 'font-weight': 800, fill: 'var(--muted)', 'font-family': 'var(--mono)' }, tunPc(open))); WR.nodes[st] = [];
     for (let n = 0; n <= NF; n++) {
       const midi = open + S.capo + n, x = n === 0 ? posX(0) + (left ? 13 : -13) : (posX(n) + posX(n - 1)) / 2;

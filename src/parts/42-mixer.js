@@ -5,7 +5,7 @@
 const FX_KEYS = ['lo', 'mid', 'hi', 'comp', 'rev', 'dly'];
 const FX_DEF = { lo: 0, mid: 0, hi: 0, comp: 0, rev: 0, dly: 0 };
 const FX_PRE = [['Flat', {}], ['Warm', { lo: 2, mid: -1, hi: -2, comp: .2 }], ['Bright', { lo: -1, hi: 3, comp: .15 }], ['Punch', { lo: 1.5, hi: 1, comp: .55 }], ['Room', { rev: .22 }], ['Hall', { hi: -1, rev: .5 }], ['Echo', { dly: .3, rev: .12 }]];
-const FX_TRACKS = ['drums', 'bass', 'rhythm', 'lead', 'vox'];
+const FX_TRACKS = ['drums', 'bass', 'rhythm', 'lead', 'keys', 'vox'];
 /** the strip settings of an object (a lane's mix entry, a take, a stem), filled in with zeros */
 function fxOf(o) { if (!o.fx || typeof o.fx !== 'object') o.fx = {}; FX_KEYS.forEach(k => { const v = +o.fx[k]; o.fx[k] = isFinite(v) ? v : 0; }); return o.fx; }
 const fxOn = f => !!f && FX_KEYS.some(k => +f[k]);

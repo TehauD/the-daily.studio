@@ -61,7 +61,7 @@ function buildHeader() {
   UI.bpm = h('input', { type: 'number', min: 30, max: 260, step: 1, value: S.bpm, onchange: e => { S.bpm = clamp(+e.target.value || 90, 30, 260); e.target.value = S.bpm; commit(false); bus.emit('bpm'); } });
   UI.ts = h('select', { onchange: e => { const [n, d] = e.target.value.split('/').map(Number); S.ts = [n, d]; S.band.drumLen = Math.min(32, spb()); commit(); } }, ['4/4', '3/4', '2/4', '5/4', '6/8', '12/8', '7/8'].map(x => h('option', { value: x }, x)));
   UI.key = h('select', { onchange: () => keyChanged() }, NS.map((n, i) => h('option', { value: i }, n))); UI.mode = h('select', { onchange: () => keyChanged() }, [h('option', { value: 'maj' }, 'maj'), h('option', { value: 'min' }, 'min')]);
-  tr.append(UI.rew, UI.play, UI.stop, UI.rec, UI.loop, UI.metro, UI.bandMute, UI.metroMore, UI.pos, UI.tim, h('label', { class: 'field f-bpm', style: { width: '58px' } }, 'BPM', UI.bpm), h('label', { class: 'field f-sig', style: { width: '54px' } }, 'Sig', UI.ts), h('label', { class: 'field', style: { width: '56px' } }, 'Key', UI.key), h('label', { class: 'field f-mode', style: { width: '56px' } }, 'Mode', UI.mode));
+  tr.append(UI.rew, UI.play, UI.stop, UI.rec, UI.loop, UI.metro, UI.bandMute, UI.metroMore, psButton(), UI.pos, UI.tim, h('label', { class: 'field f-bpm', style: { width: '58px' } }, 'BPM', UI.bpm), h('label', { class: 'field f-sig', style: { width: '54px' } }, 'Sig', UI.ts), h('label', { class: 'field', style: { width: '56px' } }, 'Key', UI.key), h('label', { class: 'field f-mode', style: { width: '56px' } }, 'Mode', UI.mode));
   const R = $('#topR');
   UI.lat = h('span', { class: 'chip lat-chip', title: 'Round-trip latency estimate. Run the Loopback Test in I/O for a measured value.' }, h('i', { class: 'led' }), h('span', {}, 'audio off'));
   UI.theme = h('button', { class: 'btn icon', title: 'Appearance: light / dark, palettes, accent, density…', 'aria-haspopup': 'dialog', onclick: () => lookOpen() }, '◐');
@@ -80,6 +80,7 @@ function keyChanged() {
 }
 function toggleRec() {
   if (T.rec && T.playing) { stopPlay(true); return; }
+  if (!T.rec && typeof PS !== 'undefined' && PS.rate !== 1) { toast('Recording is at the song’s own speed: set ⏱ back to 100% first.', 'warn'); return; }
   T.rec = !T.rec; if (T.rec && !E.hasInput) toast('Arming without an input: only the count-in will run. Open an input in I/O.', 'warn'); syncTransport();
   if (T.rec && !T.playing) play(true);
 }
@@ -94,6 +95,7 @@ bus.on('transport', syncTransport); bus.on('song', syncTransport); bus.on('rec:s
 /* ---------- settings / help ---------- */
 /** ⚙ Settings (part 05c's dialog). at: the section to open on */
 function openSettings(at) {
+  if (at === 'mega') { at = 'gear'; setTimeout(() => { const d = document.getElementById('megDetails'); if (d) { d.open = true; d.scrollIntoView({ block: 'start' }); } }, 80); }      /* the megaphone pedal lives inside Pedal & MIDI sync since 2.33.1 */
   const close = () => { const d = $('#settings'); if (d) d.close(); };
   const F = (label, el) => h('label', { class: 'field' }, h('span', {}, label), el);
   const sel = (key, opts, cb) => h('select', { class: 'in', onchange: e => { const v = e.target.value; CFG[key] = isNaN(+v) || v === '' ? v : (key === 'hint' ? v : +v); saveCfg(); cb && cb(); } }, opts.map(o => { const [v, t] = Array.isArray(o) ? o : [o, o]; return h('option', { value: v, selected: String(CFG[key]) === String(v) }, t); }));
@@ -116,6 +118,7 @@ function openSettings(at) {
       chk('Let AI agents in this browser use the studio (read the song, load chord sheets, edit, play; never the microphone or recording)', 'agents', () => agentRegister()),
       note('An AI assistant in your browser can use the studio through WebMCP. It runs here; nothing is sent anywhere. Each change shows a 🤖 note and can be undone.')] },
     { key: 'music', label: 'Music', ico: '♪', sub: 'Tuning reference, note names and the fretboard.', body: () => [
+      F('My instrument (sets a standard tuning; the tuning list has more)', h('select', { class: 'in', id: 'setInst', onchange: e => { const [name] = INSTRUMENTS.find(x => x[1] === e.target.value) || []; const tun = { guitar: 'Standard (E A D G B E)', bass4: 'Bass: standard (E A D G)', bass5: 'Bass 5-string (B E A D G)', bass6: 'Bass 6-string (B E A D G C)' }[e.target.value]; setTuning(TUNINGS[tun], tun); commit(); bus.emit('song'); } }, INSTRUMENTS.map(([t, v]) => h('option', { value: v, selected: instNow() === v }, t)))),
       F('Reference pitch A4 (Hz)', num('a4', 415, 466, .1, () => bus.emit('song'))),
       F('Accidentals', sel('flats', [[false, 'Sharps (C#)'], [true, 'Flats (Db)']], () => { CFG.flats = String(CFG.flats) === 'true'; saveCfg(); bus.emit('song'); })),
       F('Fretboard labels', sel('fretNames', [['notes', 'Note names'], ['degrees', 'Scale degrees'], ['frets', 'Fret numbers']], () => bus.emit('fret'))),
@@ -136,8 +139,7 @@ function openSettings(at) {
       F('When recording reaches the end of the song', sel('recEnd', [['grow', 'Keep going (the song grows to fit)'], ['stop', 'Stop at the end'], ['loop', 'Loop back, one take per pass']])),
       h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!CFG.rec.dry, onchange: e => { CFG.rec.dry = e.target.checked; saveCfg(); } }), 'Record dry DI (enables re-amping)'),
       h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!CFG.rec.wet, onchange: e => { CFG.rec.wet = e.target.checked; saveCfg(); } }), 'Record wet print')] },
-    { key: 'gear', label: 'Pedal & MIDI sync', ico: '🦶', sub: 'A foot pedal for hands-free playing, and MIDI clock for drum machines, synths and music software.', body: () => [gearSettings()] },
-    { key: 'mega', label: 'Megaphone pedal', ico: '📢', sub: 'Your vocal effects pedal drives the show: the stage, the lights and the words react when it is on.', body: () => [megSettings()] },
+    { key: 'gear', label: 'Pedal & MIDI sync', ico: '🦶', sub: 'A foot pedal for hands-free playing, MIDI clock for drum machines, synths and music software, and (optional) a voice effect the show can react to.', wide: true, body: () => [gearSettings(), moSettings(), megDetails()] },
     { key: 'folder', label: 'Folder sync', ico: '📁', sub: 'Your whole studio, recordings too, in a folder on this computer: iCloud Drive, Dropbox, Google Drive or OneDrive keep it the same on every computer.', wide: true, body: () => [syncControl()] },
     { key: 'github', label: 'GitHub', ico: '⑂', sub: 'Your studio in a private repository of your own, in step on every device. Optional.', wide: true, body: () => [ghSection()] },
     { key: 'export', label: 'Export', ico: '⇩', sub: 'Song bounces and tab text.', body: () => [

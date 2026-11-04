@@ -1,10 +1,10 @@
 /* ============================================================
    Part 04 · analysis & research layer: YIN f0, chroma/chord, key, onsets, timing, stats, latency lab
    ============================================================ */
-function yin(buf, sr, thresh = .12) {
+function yin(buf, sr, thresh = .12, minHz = 45) {
   const dec = sr >= 32000 ? 2 : 1, n = Math.floor(buf.length / dec), x = new Float32Array(n), fs = sr / dec;
   for (let i = 0; i < n; i++) x[i] = dec === 2 ? (buf[2 * i] + buf[2 * i + 1]) * .5 : buf[i];
-  const W = n >> 1, tauMax = Math.min(W - 2, Math.floor(fs / 45)), tauMin = Math.max(2, Math.floor(fs / 1400)), d = new Float32Array(tauMax + 2);
+  const W = n >> 1, tauMax = Math.min(W - 2, Math.floor(fs / minHz)), tauMin = Math.max(2, Math.floor(fs / 1400)), d = new Float32Array(tauMax + 2);
   for (let tau = 1; tau <= tauMax; tau++) { let s = 0; for (let i = 0; i < W; i++) { const t = x[i] - x[i + tau]; s += t * t; } d[tau] = s; }
   let run = 0; d[0] = 1; for (let tau = 1; tau <= tauMax; tau++) { run += d[tau]; d[tau] = d[tau] * tau / (run || 1); }
   let tau = -1;
@@ -45,7 +45,7 @@ function anaTick() {
   clipRun = AN.clip ? clipRun + 1 : 0; if (clipRun === 30) { toast('Input is clipping — reduce the interface gain or the trim', 'warn'); STAT.clipF++; }
   const act = AN.rms > (CFG.gateDb != null ? CFG.gateDb : -56); AN.active = act;
   let f = 0, cl = 0;
-  if (act) { const r = yin(tdBuf, sr); if (r) { f = r.f; cl = r.clarity; } }
+  if (act) { const r = yin(tdBuf, sr, .12, isBass() ? 27 : 45); if (r) { f = r.f; cl = r.clarity; } }
   AN.clarity = cl;
   if (f > 60 && f < 1400 && cl > .8) {
     f0q.push(f); if (f0q.length > 3) f0q.shift(); const fm = median(f0q); AN.f0 = fm; const m = ftom(fm), r = Math.round(m); AN.cents = (m - r) * 100; AN.midi = r;

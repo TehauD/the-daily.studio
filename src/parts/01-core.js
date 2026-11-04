@@ -124,8 +124,21 @@ const TUNINGS = {
   'Open Dm (D A D F A D)': [38, 45, 50, 53, 57, 62],
   'Open E (E B E G# B E)': [40, 47, 52, 56, 59, 64],
   'Open C (C G C G C E)': [36, 43, 48, 55, 60, 64],
-  'Open A (E A E A C# E)': [40, 45, 52, 57, 61, 64]
+  'Open A (E A E A C# E)': [40, 45, 52, 57, 61, 64],
+  /* bass (2.36): four, five and six strings; the studio treats the song as bass when its tuning is (isBass) */
+  'Bass: standard (E A D G)': [28, 33, 38, 43],
+  'Bass: drop D (D A D G)': [26, 33, 38, 43],
+  'Bass: half-step down (Eb Ab Db Gb)': [27, 32, 37, 42],
+  'Bass: D standard (D G C F)': [26, 31, 36, 41],
+  'Bass 5-string (B E A D G)': [23, 28, 33, 38, 43],
+  'Bass 5-string, high C (E A D G C)': [28, 33, 38, 43, 48],
+  'Bass 6-string (B E A D G C)': [23, 28, 33, 38, 43, 48]
 };
+/** the song is for bass: fewer than six strings, or a bottom string below the lowest guitar tuning (Drop A) */
+const isBass = (tu = S.tuning) => tu.length < 6 || tu[0] < 31;
+const nStr = () => S.tuning.length;
+const INSTRUMENTS = [['Guitar (6 strings)', 'guitar'], ['Bass (4 strings)', 'bass4'], ['Bass (5 strings)', 'bass5'], ['Bass (6 strings)', 'bass6']];
+const instNow = () => !isBass() ? 'guitar' : 'bass' + Math.min(6, Math.max(4, S.tuning.length));
 const SCALES = {
   'Major (Ionian)': [0, 2, 4, 5, 7, 9, 11], 'Natural Minor (Aeolian)': [0, 2, 3, 5, 7, 8, 10],
   'Major Pentatonic': [0, 2, 4, 7, 9], 'Minor Pentatonic': [0, 3, 5, 7, 10], 'Blues': [0, 3, 5, 6, 7, 10],
@@ -201,9 +214,9 @@ function voicings(sym, tuning, capo = 0, limit = 6) {
   for (let b = 0; b <= 11; b++) {
     const lo = Math.max(1, b), hi = lo + 3;
     const opts = open.map(o => { const a = [null]; if (b <= 3 && pcs.includes(o % 12)) a.push(0); for (let f = lo; f <= hi; f++) if (pcs.includes((o + f) % 12)) a.push(f); return a; });
-    const cur = new Array(6);
+    const cur = new Array(open.length);
     const rec = i => {
-      if (i === 6) return evalV(cur);
+      if (i === open.length) return evalV(cur);
       for (const f of opts[i]) { cur[i] = f; rec(i + 1); }
     };
     const evalV = v => {
@@ -235,12 +248,12 @@ function voicings(sym, tuning, capo = 0, limit = 6) {
   vcCache.set(key, out); return out.slice(0, limit);
 }
 function chordSVG(v, o = {}) {
-  const W = o.w || 78, H = o.h || 96, mx = 13, top = 22, cw = (W - 2 * mx) / 5, ch = (H - top - 6) / 5;
+  const NS_ = (v.frets || []).length || 6, W = o.w || 78, H = o.h || 96, mx = 13, top = 22, cw = (W - 2 * mx) / (NS_ - 1), ch = (H - top - 6) / 5;
   const fr = v.frets, base = v.base || 1;
   const g = sv('svg', { viewBox: `0 0 ${W} ${H}`, class: 'cdiag', width: W, height: H });
   g.append(sv('line', { x1: mx, x2: W - mx, y1: top, y2: top, stroke: 'currentColor', 'stroke-width': base === 1 ? 3 : 1 }));
   for (let i = 1; i <= 5; i++) g.append(sv('line', { x1: mx, x2: W - mx, y1: top + i * ch, y2: top + i * ch, stroke: 'currentColor', 'stroke-opacity': .35 }));
-  for (let s = 0; s < 6; s++) g.append(sv('line', { x1: mx + s * cw, x2: mx + s * cw, y1: top, y2: top + 5 * ch, stroke: 'currentColor', 'stroke-opacity': .55 }));
+  for (let s = 0; s < NS_; s++) g.append(sv('line', { x1: mx + s * cw, x2: mx + s * cw, y1: top, y2: top + 5 * ch, stroke: 'currentColor', 'stroke-opacity': .55 }));
   fr.forEach((f, s) => {
     const x = mx + s * cw;
     if (f == null) g.append(sv('text', { x, y: top - 8, 'text-anchor': 'middle', 'font-size': 9, fill: 'currentColor', opacity: .6 }, '×'));
@@ -263,9 +276,9 @@ function newSong() {
     sections: [], voicePref: {},
     band: {
       drumsOn: true, kit: 'Acoustic', patName: 'Folk Backbeat', pat: null, bassOn: true, bassStyle: 'Root–Fifth', bassTone: 'Round',
-      compOn: true, compStyle: 'Folk D-DU-UDU', compInst: 'Steel', leadOn: true, leadInst: 'Nylon', drumLen: 16
+      compOn: true, compStyle: 'Folk D-DU-UDU', compInst: 'Steel', leadOn: true, leadInst: 'Nylon', drumLen: 16, keysOn: false, keysStyle: 'Pad (held)', keysSound: 'Piano'
     },
-    mix: { drums: { g: .8, p: 0, m: 0, s: 0 }, bass: { g: .8, p: 0, m: 0, s: 0 }, rhythm: { g: .75, p: -.15, m: 0, s: 0 }, lead: { g: .8, p: .15, m: 0, s: 0 }, live: { g: 1, p: 0, m: 0, s: 0 }, vox: { g: 1, p: 0, m: 0, s: 0 }, click: { g: .6, p: 0, m: 0, s: 0 } }
+    mix: { drums: { g: .8, p: 0, m: 0, s: 0 }, bass: { g: .8, p: 0, m: 0, s: 0 }, rhythm: { g: .75, p: -.15, m: 0, s: 0 }, lead: { g: .8, p: .15, m: 0, s: 0 }, keys: { g: .7, p: .1, m: 0, s: 0 }, live: { g: 1, p: 0, m: 0, s: 0 }, vox: { g: 1, p: 0, m: 0, s: 0 }, click: { g: .6, p: 0, m: 0, s: 0 } }
   };
 }
 function mkSection(name, chords) { return { id: uid(), name, bars: chords.map(c => newBar(c)), lyrics: '' }; }
@@ -302,10 +315,12 @@ const tunPc = m => pcName(m, tunFlat());
 function stringLabels() { return S.tuning.map(m => tunPc(m)).reverse(); }
 const tunNote = m => tunPc(m) + (Math.floor(m / 12) - 1);
 const tunShort = () => (/^Custom/.test(S.tuningName || '') ? S.tuning.map(m => tunPc(m)).join(' ') : (S.tuningName || '').split(' (')[0].split(' · ')[0]) + (S.capo ? ' · capo ' + S.capo : '');
-function tunMatch(arr) { const k = Object.keys(TUNINGS).find(n => TUNINGS[n].every((m, i) => m === arr[i])); return k || 'Custom (' + arr.map(m => tunPc(m)).join(' ') + ')'; }
-function setTuning(arr, name) { xpSignal(2); S.tuning = arr.map(m => clamp(Math.round(m), 24, 79)); S.tuningName = name || tunMatch(S.tuning); S.voicePref = {}; if (!name && !TUNINGS[S.tuningName]) S.tuningName = 'Custom (' + S.tuning.map(m => tunPc(m)).join(' ') + ')'; commit(); }
+function tunMatch(arr) { const k = Object.keys(TUNINGS).find(n => TUNINGS[n].length === arr.length && TUNINGS[n].every((m, i) => m === arr[i])); return k || 'Custom (' + arr.map(m => tunPc(m)).join(' ') + ')'; }
+function setTuning(arr, name) { xpSignal(2); const wasBass = isBass(); S.tuning = arr.map(m => clamp(Math.round(m), 21, 79)); S.tuningName = name || tunMatch(S.tuning); S.voicePref = {}; if (!name && !TUNINGS[S.tuningName]) S.tuningName = 'Custom (' + S.tuning.map(m => tunPc(m)).join(' ') + ')'; commit();  bassSwitched(wasBass); }
 
 /* tab note helpers */
+/** switching between guitar and bass: the band's bass steps out while you play bass, and back in when you return to guitar */
+function bassSwitched(was) { const now = isBass(); if (now === was || !S.band) return; S.band.bassOn = !now; if (typeof TE !== 'undefined') TE.st = Math.min(TE.st, nStr() - 1); setTimeout(() => { try { if (typeof syncBandStrip === 'function') syncBandStrip(); toast(now ? 'Bass tuning: your tab now plays as bass, and the band’s bass steps out so you can play it (Band strip ▸ Bass brings it back).' : 'Guitar tuning: the band’s bass is back.', 'ok'); } catch (e) { } }, 0); }
 const noteMidi = n => S.tuning[n.st] + S.capo + (typeof n.f === 'number' ? n.f : 0);
 function fretText(n) {
   if (n.f === 'x') return 'x';

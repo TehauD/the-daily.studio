@@ -92,7 +92,7 @@ function wsFret(run, cur, narrow) {
   if (run.pcs) for (let s = 0; s < n; s++) for (let f = Math.max(fa, run.st - 1); f <= Math.min(fb, run.st + 4); f++) { const m = tu[s] + f; if (run.pcs.includes(m % 12) && !run.notes.some(q => q.s === s && q.f === f)) el('circle', { cx: xf(f), cy: y(s), r: 6, class: 'ws-ghost' }); }
   const seen = new Set(); run.notes.forEach((q, i) => {
     const k = q.s + ':' + q.f; if (seen.has(k) && i !== cur) return; seen.add(k); const isCur = i === cur, done = cur != null && run.notes.slice(0, cur).some(x => x.s === q.s && x.f === q.f) && !isCur;
-    el('circle', { cx: xf(q.f), cy: y(q.s), r: isCur ? 11 : 9.5, class: 'ws-dot' + (q.deg === 'R' ? ' root' : '') + (isCur ? ' cur' : '') + (done ? ' done' : '') });
+    el('circle', { cx: xf(q.f), cy: y(q.s), r: isCur ? 11 : 9.5, class: 'ws-dot' + (q.deg === 'R' ? ' root' : '') + (isCur ? ' cur' : '') + (done ? ' done' : '') + (q.cls ? ' ' + q.cls : '') });
     el('text', { x: xf(q.f), y: y(q.s) + 3.6, class: 'ws-dl' + (isCur ? ' cur' : '') }, q.deg);
   });
   return svg;

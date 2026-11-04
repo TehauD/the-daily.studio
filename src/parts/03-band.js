@@ -57,6 +57,8 @@ function dpat() { const b = S.band; if (!b.pat) b.pat = DPATS[b.patName].map(r =
 function setDrumPattern(name) { S.band.patName = name; S.band.pat = DPATS[name].map(r => r.split('').map(ch => ({ '.': 0, g: 1, x: 2, X: 3 }[ch]))); commit(); }
 function nz(t, dur, dest, off) { const s = E.ctx.createBufferSource(); s.buffer = E.noise; s.loop = true; s.connect(dest); s.start(t, off == null ? Math.random() * .8 : off); s.stop(t + dur + .02); return s; }
 function drumHit(row, t, v) {
+  if (row === 0 && typeof duckAt === 'function') duckAt(t);      /* the sidechain (part 87) */
+  if (typeof moDrum === 'function' && moDrum(row, t, v)) return;      /* sent to a MIDI device, the studio's own drum quiet */
   if (!E.noise) return; const c = E.ctx, K = KITS[S.band.kit] || KITS.Acoustic, out = E.tr.drums.in, vol = [0, .5, .85, 1.1][v] || .8;
   const env = (g, dur, peak, start = t) => { g.gain.setValueAtTime(0.0001, start); g.gain.exponentialRampToValueAtTime(peak, start + .002); g.gain.exponentialRampToValueAtTime(.0001, start + dur); };
   if (row === 0) {
@@ -114,7 +116,7 @@ const STRUMS = {
   'Island Strum': { p: 'D..uD.u..u.uD.u.' }, 'Half-time Pad': { p: 'D...............' }, 'Waltz 3/4': { p: 'D.....d...d.....' }
 };
 const voicingFor = sym => {
-  const vs = voicings(sym, S.tuning, S.capo, 12), i = S.voicePref[sym];
+  const bass = isBass(), vs = voicings(sym, bass ? TUNINGS['Standard (E A D G B E)'] : S.tuning, bass ? 0 : S.capo, 12), i = S.voicePref[sym];      /* the band's rhythm guitar keeps a guitar's tuning when you play bass */
   return vs[i != null && vs[i] ? i : 0] || null;
 };
 function strumAt(t, sym, ch, style) {
@@ -130,8 +132,9 @@ function playTabNote(bar, n, t, dur) {
   const midi = n.f === 'x' ? S.tuning[n.st] + S.capo : noteMidi(n), id = 'l' + n.st;
   const prev = bar.tab.filter(o => o.st === n.st && o.s < n.s).sort((a, b) => b.s - a.s)[0], leg = prev && LEGATO.has(prev.t);
   const vel = (n.f === 'x' ? .5 : (leg ? .5 : .85)) * (n.t === '<>' ? .55 : 1);
-  pluck('lead', t, n.t === '<>' ? midi + 12 : midi, vel, { id, soft: leg || n.t === '<>', dead: n.f === 'x', pan: (n.st - 2.5) * .08 });
-  if (n.t === 'b') pluck('lead', t + dur * 1.5, midi + ((n.bend != null ? n.bend : n.f + 2) - n.f), .5, { id, soft: true, pan: (n.st - 2.5) * .08 });
+  const tr = isBass() ? 'bass' : 'lead';      /* bass tab plays as bass */
+  pluck(tr, t, n.t === '<>' ? midi + 12 : midi, vel, { id, soft: leg || n.t === '<>', dead: n.f === 'x', pan: (n.st - 2.5) * .08 });
+  if (n.t === 'b') pluck(tr, t + dur * 1.5, midi + ((n.bend != null ? n.bend : n.f + 2) - n.f), .5, { id, soft: true, pan: (n.st - 2.5) * .08 });
 }
 
 /* ---------- transport ---------- */
@@ -145,7 +148,7 @@ function chordAt(bi, sib) {
   return { sym: cs[ci] || null, start, len, rel: sib - start, next: nxt };
 }
 function scheduleSlot(slot, time) {
-  const sp = spb(), dur = slotDur(), sw = (slot % 2 !== 0) ? S.swing * dur : 0, tt = time + sw;
+  const sp = spb(), dur = playDur(), sw = (slot % 2 !== 0) ? S.swing * dur : 0, tt = time + sw;
   const beatSlots = 16 / S.ts[1];
   if (slot < 0) { const sib = ((slot % sp) + sp) % sp; if (sib % beatSlots === 0 && !T.quiet) click(time, sib === 0); return; }
   if (typeof mclkSlot === 'function') mclkSlot(slot, time);      /* MIDI clock out (part 76) rides the same schedule */
@@ -154,9 +157,11 @@ function scheduleSlot(slot, time) {
   if (T.metro && !q && sib % beatSlots === 0) click(tt, sib === 0);
   if (typeof lxEvt === 'function' && sib % beatSlots === 0) lxEvt('beat', tt, sib === 0 ? 1 : 0);   // the show listens on the audio clock
   if (S.band.drumsOn && !q) drumStep(slot, tt);
-  const cd = chordAt(bi, sib);
+  const cd = chordAt(bi, sib), ownBass = fb.bar.bassLine && fb.bar.bassLine.length;
+  if (ownBass && S.band.bassOn && !q) fb.bar.bassLine.forEach(n => { if (n.s === sib) bassOut(tt, n.m, n.v || .8, (n.d || 1) * dur); });      /* a bass line you played (part 86) takes the place of the made-up one in its bars */
+  if (!q && typeof keysStep === 'function') keysStep(fb.bar, sib, cd, tt, dur);
   if (cd && cd.sym) {
-    if (S.band.bassOn && !q) { const e = bassEvent(S.band.bassStyle, cd.sym, cd.rel, cd.len, cd.next, slot); if (e) { pluck('bass', tt, e.m, e.v, { id: 'b', pan: 0 }); if (typeof lxEvt === 'function') lxEvt('bass', tt, e.m, e.v); } }
+    if (S.band.bassOn && !q && !ownBass) { const e = bassEvent(S.band.bassStyle, cd.sym, cd.rel, cd.len, cd.next, slot); if (e) { bassOut(tt, e.m, e.v, dur * 2); if (typeof lxEvt === 'function') lxEvt('bass', tt, e.m, e.v); } }
     if (S.band.compOn && !q) { const st = STRUMS[S.band.compStyle] || STRUMS['Down 4s'], L = Math.min(16, sp), ch = st.p[sib % L]; strumAt(tt, cd.sym, ch, st); if (ch && ch !== '.' && typeof lxEvt === 'function') lxEvt('chord', tt, cd.sym, ch === ch.toUpperCase() ? 1 : .6); }
   }
   if (S.band.leadOn && !q) fb.bar.tab.forEach(n => { if (n.s === sib) { playTabNote(fb.bar, n, tt, dur); if (typeof lxEvt === 'function') lxEvt('lead', tt, S.tuning[n.st] + S.capo + n.f, .8); } });
@@ -165,16 +170,16 @@ async function play(fromRec) {
   if (T.playing || OFR.busy) return; try { bandHint(); } catch (e) { } await startAudio(); const c = E.ctx; applyMix(); if (!S.sections.length || !songSlots()) { toast('Add a section with at least one bar first', 'warn'); return; }
   T.rec = !!fromRec || T.rec; T.playing = true; T.ending = false; T.grew = 0; T.q = []; T.startCursor = T.cursor;
   const ci = ((T.rec && !PUNCH.on) || (typeof CAP !== 'undefined' && CAP.on && CAP.countIn)) && CFG.countIn > 0 ? CFG.countIn * spb() : 0; T.slot = T.cursor - ci; T.next = c.currentTime + .08; T.wantRec = T.rec; T.recFrom = PUNCH.on ? PUNCH.startSlot : T.cursor;
-  if (!T.loopB) T.loopB = null; scheduleTakes(T.next + ci * slotDur(), T.cursor * slotDur()); trackStart(T.next + ci * slotDur(), T.cursor, true);
+  if (!T.loopB) T.loopB = null; scheduleTakes(T.next + ci * playDur(), T.cursor * slotDur()); trackStart(T.next + ci * playDur(), T.cursor, true);
   clearInterval(T.timer); T.timer = setInterval(tick, 25); tick(); bus.emit('transport');
 }
 function tick() {
-  if (!T.playing) return; const c = E.ctx, dur = slotDur(), ahead = c.currentTime + .15;
+  if (!T.playing) return; const c = E.ctx, dur = playDur(), ahead = c.currentTime + .15;
   while (T.next < ahead && T.playing && !T.ending) {
     const total = songSlots(), end = T.loop ? (T.loopB != null ? Math.min(T.loopB, total) : total) : total;
     if (T.slot >= end) {
       if (REC && !(T.loop && T.loopB != null)) { const how = CFG.recEnd || 'grow'; if (how === 'grow' && recGrow()) continue; if (how === 'stop') { T.ending = true; T.endAt = T.next; setTimeout(() => { if (T.playing && T.ending && REC) stopPlay(true); }, Math.max(0, (T.next - E.ctx.currentTime) * 1000) + 60); break; } }
-      if (T.loop && end > 0) { if (T.loopA >= end) T.loopA = 0; if (REC) recEnd(); if (typeof lpWrap === 'function') lpWrap(); if (typeof capWrap === 'function') capWrap(); T.slot = T.loopA; stopTakes(); scheduleTakes(T.next, T.loopA * dur); trackStart(T.next, T.loopA); if (T.rec) { T.wantRec = true; T.recFrom = T.loopA; } if (T.slot >= end) { T.ending = true; T.endAt = T.next; break; } continue; }
+      if (T.loop && end > 0) { if (T.loopA >= end) T.loopA = 0; if (REC) recEnd(); if (typeof lpWrap === 'function') lpWrap(); if (typeof capWrap === 'function') capWrap(); T.slot = T.loopA; stopTakes(); scheduleTakes(T.next, T.loopA * slotDur()); trackStart(T.next, T.loopA); if (T.rec) { T.wantRec = true; T.recFrom = T.loopA; } if (T.slot >= end) { T.ending = true; T.endAt = T.next; break; } continue; }
       T.ending = true; T.endAt = T.next; break;
     }
     if (T.wantRec && T.slot === T.recFrom) { recBegin(T.slot, T.next); T.wantRec = false; }
@@ -201,7 +206,7 @@ function stopPlay(keep) {
 }
 const slotAtTime = time => {
   const q = T.q; if (!q.length) return T.cursor; let e = q[0]; for (let i = q.length - 1; i >= 0; i--) if (q[i].time <= time) { e = q[i]; break; }
-  return e.slot + (time - e.time) / slotDur();
+  return e.slot + (time - e.time) / playDur();
 };
 function playheadSlot() { if (!T.playing || !E.ctx) return T.cursor; return slotAtTime(E.ctx.currentTime - (E.ctx.outputLatency || E.ctx.baseLatency || 0)); }
 function seek(slot) { slot = clamp(Math.round(slot), 0, Math.max(0, songSlots() - 1)); const was = T.playing; if (was) stopPlay(true); T.cursor = slot; bus.emit('transport'); if (was) play(); }
@@ -211,6 +216,7 @@ function nearestSlotTime(t) { let b = null, bd = 1e9; for (const e of T.q) { con
 const TAKES = []; let REC = null;
 /* Recording captures whatever is armed, all on the same clock: the guitar (dry DI + wet print) and/or the vocal (input 2). */
 function recBegin(slot, ctxTime) {
+  if (typeof PS !== 'undefined' && PS.rate !== 1) { toast('Not recording: the speed is ' + Math.round(PS.rate * 100) + '%. Takes are kept at the song’s own speed; set ⏱ back to 100%.', 'warn'); return; }
   if (!E.hasInput) { toast('No audio input is open — recording the backing/tab only', 'warn'); return; }
   let g = armedG(), v = armedV(); if (PUNCH.on) { g = PUNCH.kind === 'gtr'; v = PUNCH.kind === 'vox'; }       // a punch-in records the lane being punched, nothing else
   if (!g && !v) { toast('Nothing is armed — arm the Guitar or Vocal lane (the ● button at the left of the arrangement) to record', 'warn'); return; }
@@ -260,6 +266,7 @@ function takeLive(tk) {
   TAKES.forEach(t => { const l = tkLead(t); if (t._g) tc(t._g.gain, (anySolo ? l.solo : !l.mute) ? (l.g == null ? 1 : l.g) : 0, .015); if (t._pn && (!tk || tkLead(tk) === l)) tc(t._pn.pan, l.pan || 0, .02); if (t._fx && (!tk || tkLead(tk) === l)) t._fx.set(l.fx); });
 }
 function scheduleTakes(atTime, fromSec) {
+  if (typeof PS !== 'undefined' && PS.rate !== 1) return;      /* at a practice speed, recorded takes stay quiet (they are in the song's own time) */
   TAKES.forEach(tk => {
     tk._g = null; tk._pn = null; if (tk._fx) { tk._fx.dispose(); tk._fx = null; } const L = tkLead(tk), vox = L.kind === 'vox', which = L.mode === 'reamp' ? 'dry' : 'wet', buf = takeBuffer(tk, which) || takeBuffer(tk, 'dry'); if (!buf) return;
     const len = tkLen(tk); if (len <= 0 || tk.startSec + len <= fromSec) return;

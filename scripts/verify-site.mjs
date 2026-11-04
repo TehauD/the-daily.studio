@@ -34,6 +34,7 @@ const j = rd('journal/index.html'); ok(/Content-Security-Policy/.test(j), 'The D
 ok(statSync(join(d, 'index.html')).size < 2_000_000, 'index.html is under 2 MB');
 { /* what a visitor downloads: the page travels compressed, so this is the number that sets the first load. Raise it on purpose, not by drift. */
   const gz = gzipSync(readFileSync(join(d, 'index.html')), { level: 9 }).length;
+  /* 2.37.0 crossed 700 kB and raised this to 750; 2.37.1 dropped the line breaks the minifier can safely drop and came back under, so 700 again */
   ok(gz < 700_000, 'index.html is under 700 kB compressed (' + (gz / 1024).toFixed(0) + ' kB gzip)');
 }
 

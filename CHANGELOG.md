@@ -2,6 +2,126 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.37.1 — 2026-11-04 — Smaller page
+
+### Changed
+- **Line breaks the browser cannot miss are left out of the page's script.** The build already removed comments, indentation and needless spaces. It now also drops a line break where no automatic semicolon could depend on it: after punctuation that needs more to follow (`;` `{` `,` `(` `=` `&&` and so on, but not `)` `]` `}` `++` `--`), and before `)` `]` `}` `,` `;` `.` `?` `:`. As before, the build checks the result token by token and fails if anything but whitespace changed.
+- **The result:** the page is 697 kB gzip (from 703 kB) and 562 kB with brotli, back under the 700 kB budget. The budget is 700 kB again.
+- **Not done:** shortening names (mangling). Shortening every long name, which would not even be valid, would save at most about 32 kB gzip. A safe version needs a JavaScript parser, which the build does not have and would have to add as a dependency.
+
+## 2.37.0 — 2026-11-04 — For electronic music: piano roll, sidechain, MIDI out
+
+### Added
+- **🎛 Piano roll** (`src/parts/87-electronic.js`; Songwriter tools, and in the Keys room). Draw the keys part or the bass line of a section on a grid of 16ths:
+  - click to add a note, drag right to lengthen it, click to remove it, Shift-click for loud, medium or soft;
+  - show only the scale's notes, and move up or down an octave;
+  - loop the section while you draw;
+  - one undo per edit.
+  It writes the same part the Keys room records into.
+- **Sidechain ducking:** each kick dips the keys, the bass, the rhythm guitar or the loaded track (your choice), with a set depth and release. It is kept with the song and is in bounces too. Each mixer track gained a duck stage before its fader.
+- **MIDI out** (Settings ▸ Pedal & MIDI sync): the keys part, the bass (played or made up) and the drums go to a MIDI device on their own channels (1, 2, 10; drums as General MIDI notes).
+  - Notes are timed to what you hear (scheduled ahead, allowing for output latency), and stopping sends all-notes-off.
+  - "Also play the studio's own sound" can be turned off so the hardware takes over.
+  - The Keys room sends live, so a controller can play a synth through the studio.
+
+### Changed
+- **The page's size budget** in `verify:site` went from 700 kB to 750 kB compressed: this release took the page to about 703 kB gzip, after 2.35–2.37 added about 45 kB. 2.37.1 brought it back under 700 kB, and the budget back to 700 kB.
+
+### Tests
+- New `e2e-electronic` (20 checks).
+
+## 2.36.0 — 2026-11-04 — Bass guitar
+
+### Added
+- **4, 5 and 6-string bass.**
+  - **Choosing it:** Settings ▸ Music ▸ My instrument, or the tuning list. The bass tunings are standard, drop D, half-step down, D standard, 5-string with a low B or a high C, and 6-string.
+  - **What follows the strings:** the tab editor, the tab text, both fretboards, the transcription view, the tuning editor and the tuning check.
+  - **Bass tab** plays with a bass sound.
+  - **The band's bass** steps out while you play bass, and comes back when you switch to a guitar tuning.
+  - **The band's rhythm guitar** keeps a guitar's chord shapes.
+  - **The pitch tracker** reaches down to 27 Hz for a bass, so it hears a 5-string's low B, and keeps the guitar range otherwise.
+
+### Fixed
+- A tuning was named after the first listed tuning whose strings it matched, even if it had a different number of strings. A 5-string with a high C would have been called "Bass: standard". It now has to have the same number of strings.
+
+### Tests
+- New `e2e-bass` (15 checks).
+- `e2e-learn2`: the simulated notes are held longer, so the wrong-note check also holds when the machine is busy. It failed once beside other tests in the 2.35 full run, then passed alone.
+- The 2.35.0 full suite: 61 files, 1,944 checks passed.
+
+## 2.35.0 — 2026-11-04 — Speed & key, and Keys
+
+### Added
+- **⏱ Speed & key** (`src/parts/85-stretch.js`), in the transport (on a phone, More ▸ Speed & key).
+  - **Speed:** 50–125%, one press for 50/60/70/75/80/90/100%. The band, the click and the loaded track slow down without dropping in pitch. The song itself is untouched.
+  - **Key:** −6 to +6 semitones for the track at the same speed. "Move the song's chords and tab too" transposes the song so the band follows. With no track, the key transposes the song. The track's shift is kept with the song.
+  - **How the track is stretched:** a phase vocoder (2048-point frames, identity phase locking) then a cubic resampler, in a worker, two seconds ahead, per stem channel, so mute and solo keep working. Tested at 50%, 75%, +12, −5 and 60%/+3: pitch within 1%, the right length, the same level, and no click between chunks.
+  - **Recording at practice speeds:** it waits until you're back at 100%, and recorded takes stay quiet, because takes are kept at the song's own speed.
+- **🎹 Keys** (`src/parts/86-keys.js`).
+  - **A piano under Write**, next to the fretboard (one at a time). It shows the chord playing (root in gold), the scale and what's sounding, and you can click or drag along it.
+  - **The Keys room:** play with the mouse, touch, the computer keys or a MIDI keyboard. It plays into its own six sounds, the band's bass or the lead guitar.
+  - **● Record into the song:** a keys part, a bass line (replacing the made-up bass in those bars) or lead tab. Notes are rounded to the grid, and one undo takes them out.
+  - **Keys in the band:** five styles with smooth voice leading, a Keys chip on the band strip, and a Keys channel in the mixer and in bounces.
+- **Workspaces:** Songwriter gets 🎹 Keys and Practice gets ⏱ Speed & key. On a phone, Keys and Speed & key are in More.
+
+### Fixed (found while testing)
+- The Organ sound failed to start (its vibrato pointed at the wrong node).
+
+### Tests
+- New `e2e-speedkeys` (29 checks).
+- `mobile` now counts 15 desktop transport controls (⏱ is one); on phones ⏱ sits in More instead of the top bar.
+
+## 2.34.0 — 2026-11-04 — Learn 2: feedback that teaches, Today, This song, By ear
+
+### Added
+- **Feedback after every go** (`src/parts/80b-coach-feedback.js`): the coach says what went wrong and what to do next.
+  - **Wrong notes, on the neck:** the note it wanted (green) beside where you probably were (✕), and in words ("one fret too high"). **🔁 Practise notes 2–5** puts in a slower piece of just the tricky notes.
+  - **Timing, on a strip:** each stroke or note is a dot, early above the line and late below, with misses hollow. It says whether you rush or drag, where you were furthest out, and offers **🐢 Slower**.
+  - **🎧 Hear my take:** your attempt is recorded from the input while the coach listens, so you can compare it with the coach. It's kept in memory only and dropped when you move on.
+- **📅 Today** (`src/parts/83-practice-plan.js`): about fifteen minutes, a new plan each day.
+  - The plan is a warm-up, a review, the next new step on your path (with its explanation first) and a riff at your level.
+  - Reviews come back after 1, 3, 7, 14 and 30 days.
+  - A streak and a week count are shown, and finishing says so.
+- **🎵 This song:** the open song as lessons.
+  - Its own strum pattern, each section's chords in time with the band, its riff from the tab, then the whole song.
+  - It starts at 70% of the song's tempo, and the ladder stops at the song's tempo. Progress is remembered per song.
+  - It's also in the Practice workspace.
+- **👂 By ear:** call and response.
+  - The coach plays a short phrase in your key and scale with the tab hidden, then listens for you to play it back.
+  - The phrase grows a note when you get it, and shrinks after two misses. **👁 Show me** reveals it.
+- **The Teacher workspace's tools** are now 🎓 Learn, 📅 Today, 🎵 This song, 👂 By ear and 🎸 Riffs & licks, plus the teaching tools. Riff Lab, the atlas and the warm-ups are inside Learn.
+
+### Fixed
+- **Strum timing:** a stroke could count for two beats, so a late stroke also showed as early for the next beat. Each stroke now counts once, closest pairs first.
+- **Learn's ticks:** any step passed now marks the Learn window to refresh when the coach closes.
+
+### Tests
+- New `e2e-learn2` (36 checks). `e2e-learn` updated for the new Teacher tools and Learn sections.
+
+## 2.33.2 — 2026-11-04 — The coach stays in front
+
+### Fixed
+- **Riff Lab and the coach could disappear behind the Learn window.** 🎲 Another, ★ Keep and finishing a step all refreshed the Learn window behind the coach. That refresh reopened the window, which put it in front of the coach. The coach was still open underneath, so pressing 🎲 Make a riff again changed a riff you couldn't see.
+  - The Learn window now waits until the coach closes before it refreshes.
+  - Opening the coach always brings it to the front.
+
+### Tests
+- `e2e-learn` (54 checks): after 🎲 Another, after closing the coach and pressing Make a riff again, and after Another twice more, the coach shows the new riff and is the window in front. Two of these checks fail on 2.33.1.
+
+## 2.33.1 — 2026-11-04 — Settings tidied; the megaphone pedal folds into Pedal & MIDI sync
+
+### Fixed
+- **Settings layout:**
+  - Pedal & MIDI sync and Megaphone pedal sat in the left half of a two-column card, which squeezed their text and left the right half empty. A card with one block in it now uses the whole width.
+  - Folder sync had an empty band at the top of its card, from a paragraph's default margin. It's gone.
+
+### Changed
+- **The megaphone pedal moved into Settings ▸ Pedal & MIDI sync** as a fold-out (📢 Megaphone pedal · optional), closed unless it's switched on. It no longer has its own section. Links that opened it (`openSettings('mega')`) now open the fold-out.
+- **No pedal brands are named:** the app, the guides, the README and earlier changelog entries now say "a megaphone, radio or telephone voice effect pedal".
+
+### Tests
+- `e2e-megaphone`: its settings are in the Pedal & MIDI sync section, open when linked to, with no brand named and no separate section.
+
 ## 2.33.0 — 2026-11-03 — ✦ Simple
 
 ### Added
@@ -106,8 +226,8 @@ All notable changes to the-daily.studio (earlier versions were released under th
 ## 2.30.0 — 2026-11-03 — Your megaphone pedal drives the show
 
 ### Added
-- **Megaphone pedal** (Settings ▸ Megaphone pedal, `src/parts/78-megaphone.js`). It's for a TC-Helicon VoiceTone X1, or any megaphone, radio or telephone voice effect between the mic and the interface.
-  - **How it's heard:** the X1 has no MIDI, but the studio hears it in the vocal input, by the balance of lows, middle and highs that such an effect cuts and pushes.
+- **Megaphone pedal** (Settings ▸ Megaphone pedal, `src/parts/78-megaphone.js`; in Settings ▸ Pedal & MIDI sync since 2.33.1). It's for any megaphone, radio or telephone voice effect pedal between the mic and the interface.
+  - **How it's heard:** such pedals usually have no MIDI, but the studio hears it in the vocal input, by the balance of lows, middle and highs that such an effect cuts and pushes.
   - **Teach it my voice:** three seconds with the pedal off and three with it on. Without teaching, general settings suit most megaphone sounds.
   - **While the pedal is on:**
     - the stage and the Visuals turn red-hot with scan lines and a jolt as it comes on, drawn into the picture so the projector and stage videos carry it;

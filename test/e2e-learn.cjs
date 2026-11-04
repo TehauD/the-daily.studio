@@ -16,9 +16,9 @@ suite('e2e-learn', async t => {
 
   /* ---- the Teacher workspace ---- */
   await ev(() => window.__daily.goalGo('teacher')); await wait(500);
-  ok(await ev(() => ['gtLearn', 'gtWarm', 'gtRiffs', 'gtLab', 'gtAtlas', 'gtInk', 'gtNotes', 'gtScreen'].every(id => document.getElementById(id)) && document.getElementById('gtLearn').classList.contains('gl-main')), 'the Teacher: 🎓 Learn first, then warm-ups, riffs, Riff Lab and the atlas; annotate, lesson notes and record screen are still there');
+  ok(await ev(() => ['gtLearn', 'gtToday', 'gtSong', 'gtEar', 'gtRiffs', 'gtInk', 'gtNotes', 'gtScreen'].every(id => document.getElementById(id)) && document.getElementById('gtLearn').classList.contains('gl-main')), 'the Teacher: 🎓 Learn first, then Today, This song, By ear and riffs (Riff Lab and the atlas are inside Learn); annotate, lesson notes and record screen are still there');
   await ev(() => document.getElementById('gtLearn').click()); await wait(500);
-  ok(await ev(() => { const d = document.getElementById('learn'); return !!(d && d.open) && ['lessons', 'warm', 'riffs', 'lab', 'atlas', 'teach'].every(k => d.querySelector('section[data-sec="' + k + '"]')) && document.querySelectorAll('#learn [data-lesson]').length >= 20; }), 'Learn: lessons, warm-ups, riffs & licks, Riff Lab, the atlas and a room for teachers; four paths of lessons');
+  ok(await ev(() => { const d = document.getElementById('learn'); return !!(d && d.open) && ['today', 'lessons', 'warm', 'song', 'ear', 'riffs', 'lab', 'atlas', 'teach'].every(k => d.querySelector('section[data-sec="' + k + '"]')) && document.querySelectorAll('#learn [data-lesson]').length >= 20; }), 'Learn: lessons, warm-ups, riffs & licks, Riff Lab, the atlas and a room for teachers; four paths of lessons');
 
   /* ---- a lesson: read, listen, then play it note by note ---- */
   await ev(() => document.querySelector('[data-lesson="l1"]').click()); await wait(400);
@@ -132,6 +132,20 @@ suite('e2e-learn', async t => {
   ok(await ev(t => window.__daily.CO.p.title !== t && /\(reverse\)/.test(document.getElementById('coachT').textContent), t0), 'a variation replaces the idea in place');
   await ev(() => document.getElementById('coKeep').click()); await wait(200);
   ok(await ev(() => window.__daily.CFG.learn.mine.length === 1 && /\(reverse\)/.test(window.__daily.CFG.learn.mine[0].title)), '★ Keep puts it in My riffs');
+  /* the coach stays in front: 🎲 Another, then closing it and pressing Make a riff again, shows the new riff (2.33.2: the hub used to
+     redraw itself in front of the coach, so the new riff opened out of sight) */
+  const top = () => ev(() => { const c = document.getElementById('coach'), r = c.getBoundingClientRect(), e = document.elementFromPoint(r.left + r.width / 2, r.top + 24); return c.open && !!e && c.contains(e); });
+  const a0 = await ev(() => window.__daily.CO.p.title); await ev(() => document.getElementById('coAgain').click()); await wait(300);
+  const A1 = await ev(() => window.__daily.CO.p.title);
+  ok(A1 !== a0 && await top(), '🎲 Another: a new riff, and the coach is still in front (' + a0 + ' → ' + A1 + ')');
+  await ev(() => document.getElementById('coach').close()); await wait(300);
+  ok(await ev(() => document.querySelectorAll('#learn .ln-card.mine').length === 1 || document.getElementById('learn').open), 'closing the coach brings back the Learn hub, brought up to date');
+  await ev(() => { const d = document.getElementById('learn'); if (!d.querySelector('#labGo')) window.__daily.learnOpen('lab'); }); await wait(300);
+  await ev(() => document.getElementById('labGo').click()); await wait(400);
+  const A2 = await ev(() => window.__daily.CO.p.title);
+  ok(A2 !== A1 && await top() && await ev(t => document.getElementById('coachT').textContent === t, A2), 'Make a riff again: the next riff, in front of the hub (' + A2 + ')');
+  await ev(() => document.getElementById('coAgain').click()); await wait(200); await ev(() => document.getElementById('coAgain').click()); await wait(300);
+  ok(await top(), 'and after Another twice more it is still in front');
   await ev(() => { document.getElementById('coach').close(); document.getElementById('learn').close(); const D = window.__daily; D.CFG.learn.rf = { style: '', lvl: 0 }; D.learnOpen('riffs'); }); await wait(300);
   ok(await ev(() => document.querySelectorAll('#learn .ln-card.mine').length === 1), 'and My riffs is listed under the library');
 

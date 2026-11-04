@@ -108,6 +108,7 @@ const KNOWN = [
   [/^20-samples\.js$/, /fetch\('samples\//, 'sample list and tracks, same site'],
   [/^19-touch\.js$/, /serviceWorker\.register\('sw\.js'\)/, 'offline copy, same site'],
   [/^16-stems\.js$/, /new Worker\(url\)/, 'stem worker from a blob made in the page'],
+  [/^85-stretch\.js$/, /new Worker\(url\)/, 'speed & key worker from a blob made in the page'],
   [/^74-github\.js$/, /fetch\(GH_API \+ path|fetch\('\/auth\/github\/refresh'/, 'GitHub, only after you connect it or open the gallery; the renewal is this site'],
 ];
 const NET = /\bfetch\(|XMLHttpRequest|new WebSocket|EventSource\(|sendBeacon|importScripts\(|(?<![\w.$])import\(|new Worker\(|serviceWorker\.register|\.src\s*=\s*['"`]https?:/;
