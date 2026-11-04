@@ -185,12 +185,12 @@ function gdDrag(e) {
 function gdFinish() {
   const id = GD.id, S0 = GD_SESSIONS[id], g = gdc(), first = !g.done[id]; GD.done = true; g.done[id] = Date.now(); g.prog[id] = 0; saveCfg();
   clearInterval(GD.timer); GD.timer = 0; gdPulse(null);
-  let unlocked = []; if (first) { const was = new Set(DOCK.filter(d => xpAllowed(d[0])).map(d => d[0])); try { xpSignal(5); } catch (e) { } unlocked = DOCK.filter(d => xpAllowed(d[0]) && !was.has(d[0])).map(d => XP_NAMES[d[0]] || d[1]); }
+  let unlocked = []; if (first) { const was = new Set(DOCK.filter(d => xpAllowed(d[0], true)).map(d => d[0])); try { xpSignal(5); } catch (e) { } unlocked = DOCK.filter(d => xpAllowed(d[0], true) && !was.has(d[0])).map(d => XP_NAMES[d[0]] || d[1]); }
   const nx = S0.next && !g.done[S0.next] ? GD_SESSIONS[S0.next] : GD_ORDER.map(k => GD_SESSIONS[k]).find((s, i) => !g.done[GD_ORDER[i]]);
   const nxId = nx ? GD_ORDER.find(k => GD_SESSIONS[k] === nx) : null;
   if (!GD.el) gdBuild(); const el = GD.el; el.innerHTML = ''; el.classList.remove('min'); el.dataset.state = 'done';
   el.append(h('div', { class: 'gd-h' }, h('span', { class: 'gd-t' }, '✓ ' + S0.name), h('button', { class: 'gd-x', 'aria-label': 'Close', title: 'Close', onclick: () => guideStop(true) }, '✕')),
-    h('p', { class: 'gd-text' }, S0.outro), unlocked.length ? h('p', { class: 'gd-unlock' }, h('b', {}, 'Added to your tabs: '), unlocked.join(', '), '. Find the rest under Tools.') : null,
+    h('p', { class: 'gd-text' }, S0.outro), unlocked.length ? h('p', { class: 'gd-unlock' }, h('b', {}, CFG.simple ? 'New tools are ready: ' : 'Added to your tabs: '), unlocked.join(', '), CFG.simple ? '. ✦ Simple off (top right) shows them.' : '. Find the rest under Tools.') : null,
     h('div', { class: 'gd-act' }, nxId ? h('button', { class: 'btn sm primary', id: 'gdNext', onclick: () => guideStart(nxId, { fresh: true, go: true }) }, 'Next: ' + nx.name) : null, h('button', { class: 'btn sm', onclick: () => guideStop(true) }, 'Done')));
   GD.id = null; document.body.classList.add('gd-on');
 }

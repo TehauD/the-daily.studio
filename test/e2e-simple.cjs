@@ -44,6 +44,26 @@ suite('e2e-simple', async t => {
   const F1 = await all(GONE);
   ok(await ev(() => !document.body.classList.contains('simple')) && Object.values(F1).every(v => v !== false), 'unticked: every tool is back');
 
+  /* ---- 2.38: Simple across the board, and the arrangement kept ---- */
+  const A0 = await ev(() => { const D = window.__daily; D.goalGo('performer'); return { lay: JSON.stringify(D.LAY), tabs: [...document.querySelectorAll('#dock .tabs .tab')].map(b => b.dataset.id).join() }; });
+  await ev(() => window.__daily.simpleSet(true, true)); await wait(400);
+  const A1 = await ev(() => { const D = window.__daily, vis = q => { const e = document.querySelector(q); return !!e && e.getBoundingClientRect().width > 0; };
+    return { tabs: [...document.querySelectorAll('#dock .tabs .tab')].map(b => b.dataset.id).join(), tones: document.querySelectorAll('#left .plist .pitem').length, all: vis('#toneAll'), search: vis('#left .tone-q'), fullrig: vis('.gl-b[data-goal="fullrig"]') }; });
+  ok(!/rig/.test(A1.tabs) && /vis/.test(A1.tabs) && A1.tabs.split(',').length <= 4, 'Simple keeps the panel strip to the essentials, even in a workspace that has more (Performer: ' + A1.tabs + ', was ' + A0.tabs + ')');
+  ok(A1.tones === 8 && A1.all && !A1.search, 'eight core tones, with Show all 27 tones, and no search or categories');
+  ok(!A1.fullrig, 'the Full Rig workspace is tucked away');
+  await ev(() => document.getElementById('toneAll').click()); await wait(200);
+  ok(await ev(() => document.querySelectorAll('#left .plist .pitem').length === 27), 'Show all tones lists every tone');
+  await ev(() => document.querySelector('#left .side-tabs .tab[data-id="io"]').click()); await wait(200);
+  const IO = await ev(() => { const vis = e => !!e && e.getBoundingClientRect().width > 0, card = t => [...document.querySelectorAll('#left .card')].find(c => c.querySelector('h4') && c.querySelector('h4').textContent.trim().startsWith(t)); return { input: vis(card('Audio input')), voice: vis(card('Channels')), cam: vis(card('Camera')), midi: vis(card('MIDI')), add: vis(document.getElementById('ioAddVoice')), path: vis(document.querySelector('#ioConn .io-pathbox')) }; });
+  ok(IO.input && !IO.voice && !IO.cam && !IO.midi && !IO.path && IO.add, 'Audio: one input, with its level and monitoring; the camera, MIDI and the signal path are tucked away');
+  await ev(() => document.getElementById('ioAddVoice').click()); await wait(200);
+  ok(await ev(() => { const c = [...document.querySelectorAll('#left .card')].find(x => x.querySelector('h4') && /^Channels/.test(x.querySelector('h4').textContent.trim())); return !!c && c.getBoundingClientRect().width > 0 && /No microphone/.test(document.getElementById('ioAddVoice').textContent); }), '＋ Add a microphone for your voice brings in the second input');
+  await ev(() => { document.querySelector('#left .side-tabs .tab[data-id="tones"]').click(); window.__daily.simpleSet(false, true); }); await wait(400);      /* back to the tab it was on: the test itself moved it */
+  const A2 = await ev(() => { const D = window.__daily; return { lay: JSON.stringify(D.LAY), tabs: [...document.querySelectorAll('#dock .tabs .tab')].map(b => b.dataset.id).join(), tones: document.querySelectorAll('#left .plist .pitem').length }; });
+  ok(A2.lay === A0.lay && A2.tabs === A0.tabs && A2.tones === 27, 'Simple off: the arrangement is exactly as it was (sidebars, panels, tabs), and every tone is back');
+  await ev(() => { window.__daily.CFG.ioVoice = false; window.__daily.saveCfg(); window.__daily.goalGo('songwriter'); });
+
   /* ---- a first visit starts Simple; "I know my way around" does not ---- */
   const q = await t.open({ w: 1600, h: 900, boot: false }); await q.evaluate(() => { window.name = 'noseed'; }); await q.goto(t.BASE + '?debug'); await wait(3200);
   ok(await q.evaluate(() => window.__daily.CFG.simple === true), 'a first visit starts in Simple');

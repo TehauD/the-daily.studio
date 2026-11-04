@@ -11,7 +11,14 @@ Contents: [Getting started](#getting-started-and-guided-sessions-27) · [Show se
 **✦ Simple** (top right, next to ◐) shows just what you need to make something, for anyone who has never used a recording studio. A first visit starts in Simple; if you have been here before, you keep the full studio until you press it. **Settings ▸ Workflow** has the same switch.
 - **What stays:** play, stop, ● record, Loop and Click (now with their names), the tempo and the key. Also: your song's name, Songs, New and undo; Perform and Voice; the six workspaces and their tools; ● Capture; the tab and the words; Mute all; the arrangement and Loop & layer.
 - **What is tucked away:** return to start, the bar · beat counter, time signature, the master meter, the latency estimate, the workspace button, artist, tuning, capo, scale and notes, and the Canvas / Song / Studio switch. Also: the Create → Perform → Share flow, the Tools menu, each band part's own switch and the mix, tab techniques, fill styles, copy and paste, the arrangement's zoom, swing and lane tools, the stage's extra settings, and the status line at the bottom.
-- Nothing is switched off or lost; it is only out of sight. Press ✦ Simple again and it all comes back. Simple is kept per device, so a child's tablet and your computer can differ. Phones already have their own simpler layout, so it changes larger screens only.
+- **Inside the panels too (2.38):**
+  - **Panel tabs:** only the essentials (Write, Band, Stage, Save & export), plus the backing track once one is loaded and whatever is open now, even in a workspace that has more.
+  - **Tones:** eight core tones (clean, acoustic, edge of breakup, crunch, lead, metal, ambient and direct). **Show all 27 tones** lists the rest.
+  - **Audio:** one input with its level and monitoring, plus the output. **＋ Add a microphone for your voice** brings in the second input. The camera, MIDI, the signal path and the latency test are in the full studio.
+  - **Sidebars:** Refine, the Monitor widget picker and the chord finder are tucked away.
+  - **The arrangement:** the lanes keep mute, solo and on/off, without their faders, pans and effects.
+  - **The Full Rig workspace** button is tucked away.
+- Nothing is switched off or lost, and your arrangement (sidebars, panels and tabs) is kept exactly as it was. Press ✦ Simple again and it all comes back. Simple is kept per device, so a child's tablet and your computer can differ. Phones already have their own simpler layout, so it changes larger screens only.
 
 ## Goal workspaces (2.13)
 

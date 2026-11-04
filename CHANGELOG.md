@@ -2,6 +2,22 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.38.0 — 2026-11-04 — ✦ Simple, across the board
+
+### Changed
+- **✦ Simple now simplifies inside the panels too**, not just the controls around them. Switching back keeps your arrangement exactly as it was.
+  - **Panel tabs:** only the essentials (Write, Band, Stage, Save & export), plus the backing track once one is loaded and whatever is open. This applies even in workspaces that have more; Performer's Guitar sound tab waits for the full studio.
+  - **Tones:** eight core tones, from clean to metal, plus direct. **Show all 27 tones** lists the rest; the search and categories are in the full studio.
+  - **Audio:** one input (connect, set my level, hear myself) and the output. **＋ Add a microphone for your voice** brings in the second input. The camera, MIDI, the signal path, the trim knob and troubleshooting are in the full studio.
+  - **Sidebars:** the Refine tab, the Monitor widget picker and the chord finder are tucked away.
+  - **Arrangement lanes:** they keep on/off, mute and solo, without faders, pans and effects.
+  - **Workspaces:** the Full Rig button is hidden.
+- **A guided session in Simple** now says which new tools are ready and that switching Simple off shows them. Before, it claimed it had added them to the tab strip.
+
+### Tests
+- `e2e-simple`: 24 checks (up from 17).
+- `e2e` and `e2e-guide`: updated for first visits starting in Simple.
+
 ## 2.37.1 — 2026-11-04 — Smaller page
 
 ### Changed

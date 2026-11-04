@@ -36,7 +36,7 @@ suite('e2e-guide', async t => {
   await r.evaluate(() => { window.__daily.GD.seen.played = 1; }); await tick(r); await wait(300);
   s = await st(r); const dn = await r.evaluate(() => ({ done: !!window.__daily.gdc().done.record, lvl: window.__daily.xpLevel(), next: (document.getElementById('gdNext') || {}).textContent, unl: (document.querySelector('.gd-unlock') || {}).textContent || '' }));
   ok(s.done === 'done' && dn.done && /Record, loop and layer/.test(dn.next || ''), 'finishing shows what you made and offers the next session (' + dn.next + ')');
-  ok(dn.lvl === 'some' && /Added to your tabs/.test(dn.unl), 'finishing a session adds tools to the tab strip and says which (' + dn.unl.slice(0, 70) + ')');
+  ok(dn.lvl === 'some' && /Added to your tabs|New tools are ready: .+Simple off/.test(dn.unl), 'finishing a session adds tools (in ✦ Simple: says they are ready, one press away) and says which (' + dn.unl.slice(0, 70) + ')');
   await r.evaluate(() => { const D = window.__daily, i = D.TAKES.findIndex(x => x.id === 'guide-fake'); if (i >= 0) D.TAKES.splice(i, 1); D.T.rec = false; });
 
   // ---- the loop session ticks from the looper's own state

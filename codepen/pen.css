@@ -1590,3 +1590,14 @@ dialog.roll-room{width:min(1180px,97vw)}
 .rl-svg .rl-note{fill:var(--accent);stroke:color-mix(in srgb,var(--accent) 60%,#000);stroke-width:1;cursor:pointer}.rl-svg .rl-ph{stroke:#f0745a;stroke-width:2}
 .duck{align-items:center}.duck .field{min-width:130px}.duck-to{display:inline-flex;flex-wrap:wrap;gap:10px}
 .mo-parts{display:flex;flex-wrap:wrap;gap:12px}.mo-part{display:inline-flex;gap:6px;align-items:center}.mo-part select{width:auto}
+/* ---------- ✦ Simple across the board (2.38): content inside the panels too; phones included ---------- */
+body.simple :is(.io-more,.th-adv){display:none!important}
+body.simple:not(.io-voice-on) .io-voice{display:none!important}
+body:not(.simple) :is(.io-addvoice,.io-simple-note){display:none!important}
+.io-addvoice{margin:6px 10px 2px;align-self:flex-start}.io-simple-note{margin:2px 10px 8px}
+body.simple :is(.tone-q,.tone-cats){display:none!important}
+.tone-all{margin:8px;width:calc(100% - 16px)}
+body.simple .side-tabs .tab[data-id="refine"]:not(.on),body.simple .mon-wid{display:none!important}
+body.simple .gl-b[data-goal="fullrig"]:not(.on){display:none}
+body.simple #ioConn :is(.io-pathbox,.io-trim){display:none!important}
+body.simple:not([data-form=phone]) .tl-heads :is(input[type=range],.fxchip){display:none!important}
