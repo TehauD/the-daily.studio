@@ -2,6 +2,13 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.37.1 — 2026-11-04 — Smaller page
+
+### Changed
+- **Line breaks the browser cannot miss are left out of the page's script.** The build already removed comments, indentation and needless spaces. It now also drops a line break where no automatic semicolon could depend on it: after punctuation that needs more to follow (`;` `{` `,` `(` `=` `&&` and so on, but not `)` `]` `}` `++` `--`), and before `)` `]` `}` `,` `;` `.` `?` `:`. As before, the build checks the result token by token and fails if anything but whitespace changed.
+- **The result:** the page is 697 kB gzip (from 703 kB) and 562 kB with brotli, back under the 700 kB budget. The budget is 700 kB again.
+- **Not done:** shortening names (mangling). Shortening every long name, which would not even be valid, would save at most about 32 kB gzip. A safe version needs a JavaScript parser, which the build does not have and would have to add as a dependency.
+
 ## 2.37.0 — 2026-11-04 — For electronic music: piano roll, sidechain, MIDI out
 
 ### Added
@@ -18,7 +25,7 @@ All notable changes to the-daily.studio (earlier versions were released under th
   - The Keys room sends live, so a controller can play a synth through the studio.
 
 ### Changed
-- **The page's size budget** in `verify:site` goes from 700 kB to 750 kB compressed. This release took the page to about 703 kB gzip; 2.35–2.37 together added about 45 kB. The page is still one file with no dependencies. Minifying the build would win most of it back.
+- **The page's size budget** in `verify:site` went from 700 kB to 750 kB compressed: this release took the page to about 703 kB gzip, after 2.35–2.37 added about 45 kB. 2.37.1 brought it back under 700 kB, and the budget back to 700 kB.
 
 ### Tests
 - New `e2e-electronic` (20 checks).

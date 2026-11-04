@@ -1,7 +1,8 @@
 /* the-daily.studio · a small, dependency-free minifier for the build (no packages: the build must run before `npm ci`).
    It only removes what cannot change what the code does:
-     JS   comments, indentation, blank lines and the spaces around punctuation. Line breaks are kept (so automatic semicolons
-          behave exactly as before), names are never shortened, and strings, templates and regular expressions are copied byte
+     JS   comments, indentation, blank lines and the spaces around punctuation. Line breaks are kept wherever automatic semicolons
+          could depend on them, and dropped only where they cannot (after punctuation that needs more, before ) ] } , ; . ? :);
+          names are never shortened, and strings, templates and regular expressions are copied byte
           for byte.
      CSS  comments, runs of whitespace, and the spaces around { } ; , and >; strings are copied as they are.
    The build compares the token list before and after, so a minified copy that differs in anything but whitespace fails the build. */
@@ -54,17 +55,21 @@ export function minifyJS(src) {
   /* pieces in an array and the last two characters in a variable: reading the end of one growing string would flatten it at every token */
   const tk = tokens(src), parts = []; let gap = '', a2 = '', a = '';   /* gap: '' | ' ' | '\n' since the last token written; a2 a: the last two characters */
   const put = s => { parts.push(s); if (s.length >= 2) { a2 = s[s.length - 2]; a = s[s.length - 1]; } else if (s.length) { a2 = a; a = s; } };
+  let lt = null;   /* the last token written */
   for (const x of tk) {
     if (x.t === 'nl') { gap = '\n'; continue; }
     if (x.t === 'ws') { if (!gap) gap = ' '; continue; }
     const v = x.v, b = v[0], started = parts.length > 0;
+    /* a line break can go when it cannot end a statement: after punctuation that needs more to come (not ) ] } ++ --), or before
+       ) ] } , ; . ? : which can only continue one. Automatic semicolons never depend on it there (2.37.1). */
+    if (gap === '\n' && started && ((lt.t === 'p' && !/^(\)|\]|\}|\+\+|--)$/.test(lt.v)) || (x.t === 'p' && /^[)\]},;.?:]/.test(v) && !/^(\.\.\.|\?\?|\?\.)/.test(v)))) gap = ' ';
     if (gap === '\n' && started) put('\n');
     else if (gap && started) {
       const need = (WORD.test(a) && WORD.test(b)) || (WORD.test(a) && x.t === 'num') || (/[0-9]/.test(a) && b === '.') ||
         ((a === '+' || a === '-') && b === a) || (a === '/' && (b === '/' || b === '*')) || (a === '<' && b === '!') || (a === '-' && a2 === '-' && b === '>');
       if (need) put(' ');
     }
-    put(v); gap = '';
+    put(v); gap = ''; lt = x;
   }
   return parts.join('').trim() + '\n';   /* no blanket replace here: it would reach inside template literals; the loop never writes two line breaks in a row */
 }
