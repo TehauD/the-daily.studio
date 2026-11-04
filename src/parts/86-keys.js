@@ -57,27 +57,27 @@ function kyVoicing(sym) {
 /** every 16th: the bar's own keys part if it has one, otherwise the band's keys player in its style */
 function keysStep(bar, sib, cd, tt, dur) {
   if (!S.band.keysOn) return; const own = bar.keys && bar.keys.length;
-  if (own) { bar.keys.forEach(n => { if (n.s === sib) keysVoice(tt, n.m, n.v || .8, (n.d || 1) * dur * .95); }); return; }
+  if (own) { bar.keys.forEach(n => { if (n.s === sib) kyOut(tt, n.m, n.v || .8, (n.d || 1) * dur * .95); }); return; }
   if (!cd || !cd.sym) return; const st = kyStyle(), V = (cd.rel === 0 || sib === 0) ? kyVoicing(cd.sym) : (KY.voice ? { up: KY.voice, low: null } : kyVoicing(cd.sym)); if (!V) return;
-  const all = (len, vel) => V.up.forEach((m, i) => keysVoice(tt + i * .006, m, vel, len));
-  if (st === 'Pad (held)') { if (cd.rel === 0) { all(cd.len * dur * .98, .55); if (V.low) keysVoice(tt, V.low, .5, cd.len * dur * .98); } }
-  else if (st === 'Block chords') { if (sib % 4 === 0) { all(dur * 3.6, sib % 16 === 0 ? .8 : .65); if (sib % 8 === 0 && V.low) keysVoice(tt, V.low + 12, .6, dur * 7); } }
+  const all = (len, vel) => V.up.forEach((m, i) => kyOut(tt + i * .006, m, vel, len));
+  if (st === 'Pad (held)') { if (cd.rel === 0) { all(cd.len * dur * .98, .55); if (V.low) kyOut(tt, V.low, .5, cd.len * dur * .98); } }
+  else if (st === 'Block chords') { if (sib % 4 === 0) { all(dur * 3.6, sib % 16 === 0 ? .8 : .65); if (sib % 8 === 0 && V.low) kyOut(tt, V.low + 12, .6, dur * 7); } }
   else if (st === 'Off-beat stabs') { if (sib % 4 === 2) all(dur * 1.1, .7); }
-  else if (st === 'Broken chords') { if (sib % 2 === 0) { const k = (sib / 2) % 4, seq = V.low != null || KY.low != null ? [KY.low = V.low != null ? V.low + 12 : KY.low, V.up[0], V.up[1], V.up[V.up.length - 1]] : V.up; keysVoice(tt, seq[k % seq.length], k ? .55 : .7, dur * 3); } }
-  else if (st === 'Arpeggio up') { if (sib % 2 === 0) { const seq = V.up.concat(V.up.map(m => m + 12)), k = (sib / 2) % seq.length; keysVoice(tt, seq[k], .6, dur * 2.2); } }
+  else if (st === 'Broken chords') { if (sib % 2 === 0) { const k = (sib / 2) % 4, seq = V.low != null || KY.low != null ? [KY.low = V.low != null ? V.low + 12 : KY.low, V.up[0], V.up[1], V.up[V.up.length - 1]] : V.up; kyOut(tt, seq[k % seq.length], k ? .55 : .7, dur * 3); } }
+  else if (st === 'Arpeggio up') { if (sib % 2 === 0) { const seq = V.up.concat(V.up.map(m => m + 12)), k = (sib / 2) % seq.length; kyOut(tt, seq[k], .6, dur * 2.2); } }
 }
 
 /* ---------- playing it: mouse, touch, computer keys, MIDI ---------- */
 function kyNoteOn(m, v) {
   if (KY.held.has(m)) kyNoteOff(m); startAudio(); const c = E.ctx; if (!c) return; const t = c.currentTime + .005; v = v == null ? .8 : v;
-  let h0 = null; if (KY.target === 'bass') pluck('bass', t, m, v, { id: 'kb' + m }); else if (KY.target === 'lead') pluck('lead', t, m, v, { id: 'kl' + m }); else h0 = keysVoice(t, m, v, null);
+  let h0 = null; if (KY.target === 'bass') pluck('bass', t, m, v, { id: 'kb' + m }); else if (KY.target === 'lead') pluck('lead', t, m, v, { id: 'kl' + m }); else { const sent = typeof moLive === 'function' && moLive(true, m, v); if (!sent || CFG.midiOut.local) h0 = keysVoice(t, m, v, null); if (sent) KY.sent = (KY.sent || new Set()).add(m); }
   if (KY.target !== 'keys') KY.lit.set(m, { a: t, b: t + 30, by: KY.target });
   KY.held.set(m, h0 || { stop: tt => { const l = KY.lit.get(m); if (l) l.b = tt; } });
   if (KY.rec && T.playing) KY.pend.set(m, { s: playheadSlot(), v });
   kyPaintAll(); bus.emit('keys:on', m);
 }
 function kyNoteOff(m) {
-  const hd = KY.held.get(m); if (!hd) return; KY.held.delete(m); const c = E.ctx; hd.stop(c ? c.currentTime : 0);
+  const hd = KY.held.get(m); if (!hd) return; KY.held.delete(m); const c = E.ctx; hd.stop(c ? c.currentTime : 0); if (KY.sent && KY.sent.has(m)) { KY.sent.delete(m); moLive(false, m); }
   const p = KY.pend.get(m); if (p) { KY.pend.delete(m); kyWrite(m, p.s, playheadSlot(), p.v); } kyPaintAll();
 }
 /** a recorded note into the song: keys part, bass line or lead tab, rounded to the grid */
@@ -180,11 +180,13 @@ function kyRoomBuild() {
     h('div', { class: 'ky-ctl' },
       h('button', { class: 'btn' + (KY.rec ? ' rec-on' : ' primary'), id: 'kyRec', type: 'button', onclick: () => kyRec() }, KY.rec ? '■ Stop recording' : '● Record into ' + { keys: 'the keys part', bass: 'the bass line', lead: 'the lead tab' }[KY.target]),
       sel('kyQ', 'Round to', [[1, '16ths'], [2, '8ths'], [4, 'quarters']], [1, 2, 4].includes(CFG.keysQ) ? CFG.keysQ : 1, v => { CFG.keysQ = +v; saveCfg(); }),
-      h('button', { class: 'btn sm', id: 'kyClear', type: 'button', onclick: kyClear }, 'Clear in this section')),
+      h('button', { class: 'btn sm', id: 'kyClear', type: 'button', onclick: kyClear }, 'Clear in this section'),
+      h('button', { class: 'btn sm', id: 'kyRoll', type: 'button', onclick: () => { d.close(); rollOpen(KY.target === 'bass' ? 'bass' : 'keys'); } }, '🎛 Piano roll…')),
     h('div', { class: 'ky-band' },
       h('label', { class: 'chk' }, h('input', { type: 'checkbox', id: 'kyBand', checked: !!S.band.keysOn, onchange: e => { toggleBand('keysOn', e.target.checked); } }), 'Keys in the band'),
       sel('kyStyle', 'Style', KEYS_STYLES.map(x => [x, x]), kyStyle(), v => { S.band.keysStyle = v; commit(false); }),
       h('span', { class: 'tiny muted' }, 'A part you recorded plays in its bars; elsewhere the keys player follows the chords.')),
+    typeof duckView === 'function' ? duckView() : null,
     h('p', { class: 'tiny muted' }, 'Play with the mouse or a touch screen, the computer keys A W S E D F T G Y H U J K O L P ; (Z and X move an octave), or a MIDI keyboard while this is open. The highlighted keys are the chord that is playing; the root is darker.'));
   kyPaintAll();
 }

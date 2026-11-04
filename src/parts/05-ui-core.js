@@ -139,7 +139,7 @@ function openSettings(at) {
       F('When recording reaches the end of the song', sel('recEnd', [['grow', 'Keep going (the song grows to fit)'], ['stop', 'Stop at the end'], ['loop', 'Loop back, one take per pass']])),
       h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!CFG.rec.dry, onchange: e => { CFG.rec.dry = e.target.checked; saveCfg(); } }), 'Record dry DI (enables re-amping)'),
       h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!CFG.rec.wet, onchange: e => { CFG.rec.wet = e.target.checked; saveCfg(); } }), 'Record wet print')] },
-    { key: 'gear', label: 'Pedal & MIDI sync', ico: '🦶', sub: 'A foot pedal for hands-free playing, MIDI clock for drum machines, synths and music software, and (optional) a voice effect the show can react to.', wide: true, body: () => [gearSettings(), megDetails()] },
+    { key: 'gear', label: 'Pedal & MIDI sync', ico: '🦶', sub: 'A foot pedal for hands-free playing, MIDI clock for drum machines, synths and music software, and (optional) a voice effect the show can react to.', wide: true, body: () => [gearSettings(), moSettings(), megDetails()] },
     { key: 'folder', label: 'Folder sync', ico: '📁', sub: 'Your whole studio, recordings too, in a folder on this computer: iCloud Drive, Dropbox, Google Drive or OneDrive keep it the same on every computer.', wide: true, body: () => [syncControl()] },
     { key: 'github', label: 'GitHub', ico: '⑂', sub: 'Your studio in a private repository of your own, in step on every device. Optional.', wide: true, body: () => [ghSection()] },
     { key: 'export', label: 'Export', ico: '⇩', sub: 'Song bounces and tab text.', body: () => [

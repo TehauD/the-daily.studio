@@ -1578,3 +1578,13 @@ dialog.keys-room[open]{display:flex;flex-direction:column;gap:12px}
 @media (max-width:700px){.ky-svg{min-width:640px}.ky-ctl .btn,.ky-band .btn{min-height:44px}}
 .wr-piano .ky-wrap{display:flex;justify-content:center}.wr-piano .ky-svg{max-height:128px;width:auto;max-width:100%;min-width:0}
 body[data-form=phone] .ps-btn{display:none}
+/* ---------- 2.37: piano roll, sidechain, MIDI out ---------- */
+dialog.roll-room{width:min(1180px,97vw)}
+.rl-wrap{overflow:auto;max-height:52vh;border:1px solid var(--line2);border-radius:10px;background:var(--panel)}
+.rl-svg{display:block;touch-action:none;user-select:none;-webkit-user-select:none;cursor:crosshair}
+.rl-svg .rl-row{fill:var(--panel)}.rl-svg .rl-row.bl{fill:var(--panel2)}.rl-svg .rl-row.sc{fill:color-mix(in srgb,var(--accent) 7%,var(--panel))}.rl-svg .rl-row.root{fill:color-mix(in srgb,#f5d27a 30%,var(--panel))}
+.rl-svg .rl-lab{font:600 9.5px var(--mono);fill:var(--muted);text-anchor:end}.rl-svg .rl-lab.root{fill:var(--text);font-weight:800}
+.rl-svg .rl-step{stroke:var(--line);stroke-width:.5}.rl-svg .rl-beat{stroke:var(--line2);stroke-width:1}.rl-svg .rl-bar{stroke:var(--text);stroke-opacity:.45;stroke-width:1.5}
+.rl-svg .rl-note{fill:var(--accent);stroke:color-mix(in srgb,var(--accent) 60%,#000);stroke-width:1;cursor:pointer}.rl-svg .rl-ph{stroke:#f0745a;stroke-width:2}
+.duck{align-items:center}.duck .field{min-width:130px}.duck-to{display:inline-flex;flex-wrap:wrap;gap:10px}
+.mo-parts{display:flex;flex-wrap:wrap;gap:12px}.mo-part{display:inline-flex;gap:6px;align-items:center}.mo-part select{width:auto}

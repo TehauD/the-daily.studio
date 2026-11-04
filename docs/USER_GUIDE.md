@@ -761,6 +761,20 @@ The app ships no recordings and no one else's lyrics, and it never uploads anyth
 
 **📺 Stream window** (Creator Studio and Performer tools) opens a window with only the line being sung, the next one and the chord, in large type on one colour. In OBS, Streamlabs or any streaming app, add a **Window Capture** of it and a **Chroma Key** filter on that colour (green, blue or magenta), or a **Luma Key** on black. The words then float over your camera. The stage visuals have their own pop-out in Visuals.
 
+## For electronic music: piano roll, sidechain, MIDI out (2.37)
+
+- **🎛 Piano roll** (Songwriter tools, or **🎛 Piano roll…** in the Keys room) is for drawing the keys part or the bass line of a section on a grid of 16ths.
+  - Click a square to add a note, and drag right to make it longer. Click a note to remove it, or Shift-click to make it loud, medium or soft.
+  - **Only the scale's notes** hides the rest. **▼ / ▲** move an octave.
+  - **▶ Loop this section** plays just those bars while you draw.
+  - It's the same part the Keys room records into, so a drawn bass line also replaces the made-up bass in its bars.
+- **Sidechain: duck to the kick** (in the piano roll and the Keys room): every kick pushes the keys, the bass, the rhythm guitar or the loaded track down, and they swell back. You set the depth (up to 18 dB) and the release. It's kept with the song and is in bounces too.
+- **MIDI out** (Settings ▸ Pedal & MIDI sync) sends the keys part, the bass (played or made up) and the drums to a MIDI device.
+  - Each has its own channel: 1, 2 and 10 by default. Drums go as General MIDI notes.
+  - Notes are timed to what you hear, and stopping sends all-notes-off.
+  - Turn off **Also play the studio's own sound** to let the hardware take over.
+  - Playing the Keys room sends too, so a controller can play your synth through the studio. Web MIDI needs Chrome or Edge.
+
 ## Bass guitar (2.36)
 
 **Settings ▸ Music ▸ My instrument** chooses **Guitar**, or a **4, 5 or 6-string bass**. The song bar's tuning list also has bass tunings: standard, drop D, half-step down, D standard, 5-string with a low B or a high C, and 6-string.

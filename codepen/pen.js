@@ -5,7 +5,7 @@
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.36.0', BUILD = '79c1e1f', PARTS_N = +'103' || 0, LINES_N = +'17963' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.37.0', BUILD = '4d0798d', PARTS_N = +'104' || 0, LINES_N = +'18090' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { ghApp: { clientId: '', slug: '' },   /* Sign in with GitHub: the GitHub App's public client id and its slug (docs/GITHUB.md); empty = only the token way */
   support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://the-daily.studio/journal/' };
@@ -619,7 +619,7 @@ function buildGraph() {
   E.rigOut.connect(E.anaRig);
   TRACKS.forEach(([id]) => {
     const t = { id, in: gn(1), g: gn(1), pan: c.createStereoPanner(), ana: mkAna(512, 0.4) };
-    t.in.connect(t.g); t.g.connect(t.pan); t.pan.connect(t.ana); E.tr[id] = t; if (FX_TRACKS.includes(id)) { t.fx = fxStrip(E.mix); t.pan.connect(t.fx.in); } else t.pan.connect(E.mix);
+    t.duck = gn(1); t.in.connect(t.duck); t.duck.connect(t.g); t.g.connect(t.pan); t.pan.connect(t.ana); E.tr[id] = t; if (FX_TRACKS.includes(id)) { t.fx = fxStrip(E.mix); t.pan.connect(t.fx.in); } else t.pan.connect(E.mix);
   });
   E.takesIn = gn(1); E.takesIn.connect(E.mix);
   /* vocal path: the second input channel → trim → (meter · recorder tap) and → monitor switch → polish strip → Vocal track */
@@ -1109,6 +1109,8 @@ function dpat() { const b = S.band; if (!b.pat) b.pat = DPATS[b.patName].map(r =
 function setDrumPattern(name) { S.band.patName = name; S.band.pat = DPATS[name].map(r => r.split('').map(ch => ({ '.': 0, g: 1, x: 2, X: 3 }[ch]))); commit(); }
 function nz(t, dur, dest, off) { const s = E.ctx.createBufferSource(); s.buffer = E.noise; s.loop = true; s.connect(dest); s.start(t, off == null ? Math.random() * .8 : off); s.stop(t + dur + .02); return s; }
 function drumHit(row, t, v) {
+  if (row === 0 && typeof duckAt === 'function') duckAt(t);      /* the sidechain (part 87) */
+  if (typeof moDrum === 'function' && moDrum(row, t, v)) return;      /* sent to a MIDI device, the studio's own drum quiet */
   if (!E.noise) return; const c = E.ctx, K = KITS[S.band.kit] || KITS.Acoustic, out = E.tr.drums.in, vol = [0, .5, .85, 1.1][v] || .8;
   const env = (g, dur, peak, start = t) => { g.gain.setValueAtTime(0.0001, start); g.gain.exponentialRampToValueAtTime(peak, start + .002); g.gain.exponentialRampToValueAtTime(.0001, start + dur); };
   if (row === 0) {
@@ -1208,10 +1210,10 @@ function scheduleSlot(slot, time) {
   if (typeof lxEvt === 'function' && sib % beatSlots === 0) lxEvt('beat', tt, sib === 0 ? 1 : 0);   // the show listens on the audio clock
   if (S.band.drumsOn && !q) drumStep(slot, tt);
   const cd = chordAt(bi, sib), ownBass = fb.bar.bassLine && fb.bar.bassLine.length;
-  if (ownBass && S.band.bassOn && !q) fb.bar.bassLine.forEach(n => { if (n.s === sib) pluck('bass', tt, n.m, n.v || .8, { id: 'b', pan: 0 }); });      /* a bass line you played (part 86) takes the place of the made-up one in its bars */
+  if (ownBass && S.band.bassOn && !q) fb.bar.bassLine.forEach(n => { if (n.s === sib) bassOut(tt, n.m, n.v || .8, (n.d || 1) * dur); });      /* a bass line you played (part 86) takes the place of the made-up one in its bars */
   if (!q && typeof keysStep === 'function') keysStep(fb.bar, sib, cd, tt, dur);
   if (cd && cd.sym) {
-    if (S.band.bassOn && !q && !ownBass) { const e = bassEvent(S.band.bassStyle, cd.sym, cd.rel, cd.len, cd.next, slot); if (e) { pluck('bass', tt, e.m, e.v, { id: 'b', pan: 0 }); if (typeof lxEvt === 'function') lxEvt('bass', tt, e.m, e.v); } }
+    if (S.band.bassOn && !q && !ownBass) { const e = bassEvent(S.band.bassStyle, cd.sym, cd.rel, cd.len, cd.next, slot); if (e) { bassOut(tt, e.m, e.v, dur * 2); if (typeof lxEvt === 'function') lxEvt('bass', tt, e.m, e.v); } }
     if (S.band.compOn && !q) { const st = STRUMS[S.band.compStyle] || STRUMS['Down 4s'], L = Math.min(16, sp), ch = st.p[sib % L]; strumAt(tt, cd.sym, ch, st); if (ch && ch !== '.' && typeof lxEvt === 'function') lxEvt('chord', tt, cd.sym, ch === ch.toUpperCase() ? 1 : .6); }
   }
   if (S.band.leadOn && !q) fb.bar.tab.forEach(n => { if (n.s === sib) { playTabNote(fb.bar, n, tt, dur); if (typeof lxEvt === 'function') lxEvt('lead', tt, S.tuning[n.st] + S.capo + n.f, .8); } });
@@ -1670,7 +1672,7 @@ function openSettings(at) {
       F('When recording reaches the end of the song', sel('recEnd', [['grow', 'Keep going (the song grows to fit)'], ['stop', 'Stop at the end'], ['loop', 'Loop back, one take per pass']])),
       h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!CFG.rec.dry, onchange: e => { CFG.rec.dry = e.target.checked; saveCfg(); } }), 'Record dry DI (enables re-amping)'),
       h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!CFG.rec.wet, onchange: e => { CFG.rec.wet = e.target.checked; saveCfg(); } }), 'Record wet print')] },
-    { key: 'gear', label: 'Pedal & MIDI sync', ico: '🦶', sub: 'A foot pedal for hands-free playing, MIDI clock for drum machines, synths and music software, and (optional) a voice effect the show can react to.', wide: true, body: () => [gearSettings(), megDetails()] },
+    { key: 'gear', label: 'Pedal & MIDI sync', ico: '🦶', sub: 'A foot pedal for hands-free playing, MIDI clock for drum machines, synths and music software, and (optional) a voice effect the show can react to.', wide: true, body: () => [gearSettings(), moSettings(), megDetails()] },
     { key: 'folder', label: 'Folder sync', ico: '📁', sub: 'Your whole studio, recordings too, in a folder on this computer: iCloud Drive, Dropbox, Google Drive or OneDrive keep it the same on every computer.', wide: true, body: () => [syncControl()] },
     { key: 'github', label: 'GitHub', ico: '⑂', sub: 'Your studio in a private repository of your own, in step on every device. Optional.', wide: true, body: () => [ghSection()] },
     { key: 'export', label: 'Export', ico: '⇩', sub: 'Song bounces and tab text.', body: () => [
@@ -3938,7 +3940,7 @@ async function boot() {
   if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener('devicechange', () => { ioDeviceChange().catch(e => console.warn(e)); });
   bus.emit('song');
   try { ghBoot(); } catch (e) { console.warn('github', e); }      /* back from Sign in with GitHub, or a sync at start (part 74) */
-  DEV.make = () => { window.__daily = { isBass, instNow, nStr, yin, TUNINGS, setTuning, renderBarTab, tabLabels, voicingFor, toggleRec, closePop, spPause, encodeWav, PS, psOn, playDur, psSpeed, psKey, psSched, psDSPFactory, psPop, KY, keysOpen, keysVoice, keysStep, kyNoteOn, kyNoteOff, kyRec, kyClear, kyWrite, kyPiano, kyMarks, kyVoicing, KEYS_SOUNDS, KEYS_STYLES, coFinish, coDemo, coFeedback, coFbView, coTimeline, coBeat, coPractise, TAKE, learnPassed, todayPlan, todayPieces, todayStart, todayDone, streak, weekCount, dayKey, LSTEP, songLessons, songStart, songKey, earLick, earStart, EAR, simpleSet, simpleApply, ghTakeSettings, airMode, airSet, CO, coPos, coachOpen, coListen, coTick, coPlace, coNotes, coSetPiece, rfParse, LESSONS, RIFFS, RIFF_STYLES, learnOpen, learnToSong, learnFile, learnFileText, learnOpenFile, learnFromSong, labMake, labVary, labKeep, atlasPieces, atShape, MODE_VAMP, S, AIR, AIR_LAG, airSync, applyLayout, VB_PRESETS, VB_ORDER, VBS, vbAttach, vbApply, vbToggle, vbSet, vbPreset, vbPresetNext, vbThrow, vbLook, vbTick, vbScale, vocalBoardOpen, pedalRelease, MEG, megSpectrum, megFeatures, megScore, megStep, megSet, megLearn, megDraw, megLoop, megSettings, PAD, padsOpen, padHit, padTap, padRecord, padRecStop, padUndoPass, padClear, padResize, padBeatbox, bbHits, bbPattern, dpat, bassEvent, drumStep, PEDAL, pedalPress, pedalDo, pedalSecs, gearSettings, MCLK, mclkSlot, mclkMs, MIDI, MIDIRAW, onMidi, STRM, streamOpen, streamRoom, streamInfo, streamPanel, slotAtTime, SING, SHW, singStep, singScore, singSteamIR, singMicOff, showerOpen, shwGo, shwPlay, shwPrev, shwNext, shwStem, shwRecToggle, shwRecStop, shwHear, shwSave, shwAddFiles, shwRemove, shwMove, shwMode, shwLoadSet, shwPlaylist, shwWords, shwPrepare, shwFolderPull, lrcParse, readTags, spPos, spPlay, STP, trainOpen, projRestoreTrack, secretNote, secretArp, WS, WS_BASE, WS_ARPS, wsScaleRun, wsArpRun, wsFollow, wsStop, wsListen, wsEarNext, wsEarAnswer, wsOpen, bandMute, bandMuted, pdbPut, pdbKeys, projRename, FS, FS_B, fsUse, fsSync, fsHead, fsNeeds, fsTidy, fsOpen, syncOff, syncZips, PRJ_WAIT: () => PRJ.wait, EGG, EGG_LINES, EGG_ORDER, eggDay, eggFor, eggNow, eggText, eggTick, eggFit, saveCfg, projSave, projDelete, GH, ghSync, ghConnect, ghDisconnect, ghLocal, ghSha, ghJson, ghMerge3, ghShare, ghGallery, ghGalleryOpen, ghGalleryShow, ghKeepLook, ghKeepRig, rigClean, ghReturn, BRAND, ghSettingsOut, projRefresh, projCreate, projLoad, PRJ, SEC, SECRETS, secretFound, secretTiming, secretsOpen, secretSync, backstageOpen, startAudio, playheadSlot, GUARD, reportText, reportCopy, srecQ, srecSize, pdbGet, srecFmt, SREC_FMTS, VBG, vbgAdd, vbgRemove, vbgUse, vbgOpen, vbgDraw, vzSetMode, srecFrame, srecFmtBox, kitThumb, WORKLET_SRC, mkComp, mkShaper, rigLat, voxLat, restartAudio, satCurve, rigApply, qrMake, qrSvg, tipLink, tipShort, tipReady, tipCard, tipDraw, tipShareHtml, tipOpen, tipPrint, tipPng, tipVisAvoid, tipStageAvoid, TIP, TIP_TERMS, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, STP, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfort, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, srecStart, srecStop, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, tkFades, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, FB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, vzSetMode, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, drawVis, perfClose, voicings, peaksOf, uid, shareGate, shareData, shareHtml, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, slotAtTime, SEL, mtof, spb, playheadSlot, WR, HM, HMX, HM_MODES, vzImmersive, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitThumb, kitInk, kitNotes, kitRecord, srecMime, mGo, GD_SESSIONS, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard}; };   // test hook: with ?debug, or Backstage ▸ Labs ▸ Developer handles
+  DEV.make = () => { window.__daily = { drumHit, RL, MO, GM_DRUM, duckAt, duckSet, duckCfg, duckNode, moNote, moDev, moDrum, moPanic, moSettings, kyOut, bassOut, rollOpen, rollBuild, rollLoop, isBass, instNow, nStr, yin, TUNINGS, setTuning, renderBarTab, tabLabels, voicingFor, toggleRec, closePop, spPause, encodeWav, PS, psOn, playDur, psSpeed, psKey, psSched, psDSPFactory, psPop, KY, keysOpen, keysVoice, keysStep, kyNoteOn, kyNoteOff, kyRec, kyClear, kyWrite, kyPiano, kyMarks, kyVoicing, KEYS_SOUNDS, KEYS_STYLES, coFinish, coDemo, coFeedback, coFbView, coTimeline, coBeat, coPractise, TAKE, learnPassed, todayPlan, todayPieces, todayStart, todayDone, streak, weekCount, dayKey, LSTEP, songLessons, songStart, songKey, earLick, earStart, EAR, simpleSet, simpleApply, ghTakeSettings, airMode, airSet, CO, coPos, coachOpen, coListen, coTick, coPlace, coNotes, coSetPiece, rfParse, LESSONS, RIFFS, RIFF_STYLES, learnOpen, learnToSong, learnFile, learnFileText, learnOpenFile, learnFromSong, labMake, labVary, labKeep, atlasPieces, atShape, MODE_VAMP, S, AIR, AIR_LAG, airSync, applyLayout, VB_PRESETS, VB_ORDER, VBS, vbAttach, vbApply, vbToggle, vbSet, vbPreset, vbPresetNext, vbThrow, vbLook, vbTick, vbScale, vocalBoardOpen, pedalRelease, MEG, megSpectrum, megFeatures, megScore, megStep, megSet, megLearn, megDraw, megLoop, megSettings, PAD, padsOpen, padHit, padTap, padRecord, padRecStop, padUndoPass, padClear, padResize, padBeatbox, bbHits, bbPattern, dpat, bassEvent, drumStep, PEDAL, pedalPress, pedalDo, pedalSecs, gearSettings, MCLK, mclkSlot, mclkMs, MIDI, MIDIRAW, onMidi, STRM, streamOpen, streamRoom, streamInfo, streamPanel, slotAtTime, SING, SHW, singStep, singScore, singSteamIR, singMicOff, showerOpen, shwGo, shwPlay, shwPrev, shwNext, shwStem, shwRecToggle, shwRecStop, shwHear, shwSave, shwAddFiles, shwRemove, shwMove, shwMode, shwLoadSet, shwPlaylist, shwWords, shwPrepare, shwFolderPull, lrcParse, readTags, spPos, spPlay, STP, trainOpen, projRestoreTrack, secretNote, secretArp, WS, WS_BASE, WS_ARPS, wsScaleRun, wsArpRun, wsFollow, wsStop, wsListen, wsEarNext, wsEarAnswer, wsOpen, bandMute, bandMuted, pdbPut, pdbKeys, projRename, FS, FS_B, fsUse, fsSync, fsHead, fsNeeds, fsTidy, fsOpen, syncOff, syncZips, PRJ_WAIT: () => PRJ.wait, EGG, EGG_LINES, EGG_ORDER, eggDay, eggFor, eggNow, eggText, eggTick, eggFit, saveCfg, projSave, projDelete, GH, ghSync, ghConnect, ghDisconnect, ghLocal, ghSha, ghJson, ghMerge3, ghShare, ghGallery, ghGalleryOpen, ghGalleryShow, ghKeepLook, ghKeepRig, rigClean, ghReturn, BRAND, ghSettingsOut, projRefresh, projCreate, projLoad, PRJ, SEC, SECRETS, secretFound, secretTiming, secretsOpen, secretSync, backstageOpen, startAudio, playheadSlot, GUARD, reportText, reportCopy, srecQ, srecSize, pdbGet, srecFmt, SREC_FMTS, VBG, vbgAdd, vbgRemove, vbgUse, vbgOpen, vbgDraw, vzSetMode, srecFrame, srecFmtBox, kitThumb, WORKLET_SRC, mkComp, mkShaper, rigLat, voxLat, restartAudio, satCurve, rigApply, qrMake, qrSvg, tipLink, tipShort, tipReady, tipCard, tipDraw, tipShareHtml, tipOpen, tipPrint, tipPng, tipVisAvoid, tipStageAvoid, TIP, TIP_TERMS, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, STP, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfort, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, srecStart, srecStop, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, tkFades, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, FB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, vzSetMode, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, drawVis, perfClose, voicings, peaksOf, uid, shareGate, shareData, shareHtml, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, slotAtTime, SEL, mtof, spb, playheadSlot, WR, HM, HMX, HM_MODES, vzImmersive, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitThumb, kitInk, kitNotes, kitRecord, srecMime, mGo, GD_SESSIONS, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard}; };   // test hook: with ?debug, or Backstage ▸ Labs ▸ Developer handles
   if (/[?&]debug\b/.test(location.search) || (CFG.labs && CFG.labs.handles)) DEV.make();
   try { bksBoot(); } catch (e) { console.warn('backstage', e); }      /* #backstage in the address, the performance overlay (part 73c) */
   projInit().catch(e => { console.warn('library', e); PRJ.ready = true; if (PRJ.wantStart) startMaybe(); });
@@ -5011,7 +5013,7 @@ function stemBeatGrid(an, feat, chAt) {
 }
 
 /* ---------- player ---------- */
-function spEnsure() { if (STP.bus) return; STP.bus = gn(1); STP.tfx = fxStrip(E.mix); STP.bus.connect(STP.tfx.in); STP.fx = STMS.map(() => fxStrip(STP.bus, { pan: true })); STP.sg = STMS.map((_, i) => { const g = gn(1); g.connect(STP.fx[i].in); return g; }); spGains(); spFx(); }
+function spEnsure() { if (STP.bus) return; STP.bus = gn(1); STP.tfx = fxStrip(E.mix); STP.duck = gn(1); STP.bus.connect(STP.duck); STP.duck.connect(STP.tfx.in);      /* STP.duck: the sidechain dip (part 87) */ STP.fx = STMS.map(() => fxStrip(STP.bus, { pan: true })); STP.sg = STMS.map((_, i) => { const g = gn(1); g.connect(STP.fx[i].in); return g; }); spGains(); spFx(); }
 /** per-stem and whole-track strips: EQ, squeeze, reverb, echo and pan */
 function spFx() { if (!STP.bus || !STP.fx) return; STP.tfx.set(STM.fx); STM.mix.forEach((m, i) => { STP.fx[i].set(m.fx); STP.fx[i].pan(m.p || 0); }); }
 function spGains() { if (!STP.bus) return; const anyS = STM.mix.some(m => m.s); STM.mix.forEach((m, i) => { const aud = anyS ? m.s : !m.m; tc(STP.sg[i].gain, aud ? m.g : 0, .015); }); }
@@ -12954,6 +12956,7 @@ const GOALS = [
       ['gtVox', '🎤 Vocal pedals', 'Scream, doubler, harmony, echo, reverb, de-esser and megaphone for your voice', () => vocalBoardOpen()],
       ['gtPads', '🥁 Pads', 'Play the drums with your fingers, tap the tempo, record a groove or beatbox it', () => padsOpen()],
       ['gtKeys', '🎹 Keys', 'A piano to play with the mouse, the computer keys or a MIDI keyboard: its own sounds, or the band’s bass or lead; record what you play into the song', () => keysOpen()],
+      ['gtRoll', '🎛 Piano roll', 'Draw the keys part or the bass line on a grid, loop it, duck it to the kick', () => rollOpen()],
 
 
     ] },
@@ -17825,27 +17828,27 @@ function kyVoicing(sym) {
 /** every 16th: the bar's own keys part if it has one, otherwise the band's keys player in its style */
 function keysStep(bar, sib, cd, tt, dur) {
   if (!S.band.keysOn) return; const own = bar.keys && bar.keys.length;
-  if (own) { bar.keys.forEach(n => { if (n.s === sib) keysVoice(tt, n.m, n.v || .8, (n.d || 1) * dur * .95); }); return; }
+  if (own) { bar.keys.forEach(n => { if (n.s === sib) kyOut(tt, n.m, n.v || .8, (n.d || 1) * dur * .95); }); return; }
   if (!cd || !cd.sym) return; const st = kyStyle(), V = (cd.rel === 0 || sib === 0) ? kyVoicing(cd.sym) : (KY.voice ? { up: KY.voice, low: null } : kyVoicing(cd.sym)); if (!V) return;
-  const all = (len, vel) => V.up.forEach((m, i) => keysVoice(tt + i * .006, m, vel, len));
-  if (st === 'Pad (held)') { if (cd.rel === 0) { all(cd.len * dur * .98, .55); if (V.low) keysVoice(tt, V.low, .5, cd.len * dur * .98); } }
-  else if (st === 'Block chords') { if (sib % 4 === 0) { all(dur * 3.6, sib % 16 === 0 ? .8 : .65); if (sib % 8 === 0 && V.low) keysVoice(tt, V.low + 12, .6, dur * 7); } }
+  const all = (len, vel) => V.up.forEach((m, i) => kyOut(tt + i * .006, m, vel, len));
+  if (st === 'Pad (held)') { if (cd.rel === 0) { all(cd.len * dur * .98, .55); if (V.low) kyOut(tt, V.low, .5, cd.len * dur * .98); } }
+  else if (st === 'Block chords') { if (sib % 4 === 0) { all(dur * 3.6, sib % 16 === 0 ? .8 : .65); if (sib % 8 === 0 && V.low) kyOut(tt, V.low + 12, .6, dur * 7); } }
   else if (st === 'Off-beat stabs') { if (sib % 4 === 2) all(dur * 1.1, .7); }
-  else if (st === 'Broken chords') { if (sib % 2 === 0) { const k = (sib / 2) % 4, seq = V.low != null || KY.low != null ? [KY.low = V.low != null ? V.low + 12 : KY.low, V.up[0], V.up[1], V.up[V.up.length - 1]] : V.up; keysVoice(tt, seq[k % seq.length], k ? .55 : .7, dur * 3); } }
-  else if (st === 'Arpeggio up') { if (sib % 2 === 0) { const seq = V.up.concat(V.up.map(m => m + 12)), k = (sib / 2) % seq.length; keysVoice(tt, seq[k], .6, dur * 2.2); } }
+  else if (st === 'Broken chords') { if (sib % 2 === 0) { const k = (sib / 2) % 4, seq = V.low != null || KY.low != null ? [KY.low = V.low != null ? V.low + 12 : KY.low, V.up[0], V.up[1], V.up[V.up.length - 1]] : V.up; kyOut(tt, seq[k % seq.length], k ? .55 : .7, dur * 3); } }
+  else if (st === 'Arpeggio up') { if (sib % 2 === 0) { const seq = V.up.concat(V.up.map(m => m + 12)), k = (sib / 2) % seq.length; kyOut(tt, seq[k], .6, dur * 2.2); } }
 }
 
 /* ---------- playing it: mouse, touch, computer keys, MIDI ---------- */
 function kyNoteOn(m, v) {
   if (KY.held.has(m)) kyNoteOff(m); startAudio(); const c = E.ctx; if (!c) return; const t = c.currentTime + .005; v = v == null ? .8 : v;
-  let h0 = null; if (KY.target === 'bass') pluck('bass', t, m, v, { id: 'kb' + m }); else if (KY.target === 'lead') pluck('lead', t, m, v, { id: 'kl' + m }); else h0 = keysVoice(t, m, v, null);
+  let h0 = null; if (KY.target === 'bass') pluck('bass', t, m, v, { id: 'kb' + m }); else if (KY.target === 'lead') pluck('lead', t, m, v, { id: 'kl' + m }); else { const sent = typeof moLive === 'function' && moLive(true, m, v); if (!sent || CFG.midiOut.local) h0 = keysVoice(t, m, v, null); if (sent) KY.sent = (KY.sent || new Set()).add(m); }
   if (KY.target !== 'keys') KY.lit.set(m, { a: t, b: t + 30, by: KY.target });
   KY.held.set(m, h0 || { stop: tt => { const l = KY.lit.get(m); if (l) l.b = tt; } });
   if (KY.rec && T.playing) KY.pend.set(m, { s: playheadSlot(), v });
   kyPaintAll(); bus.emit('keys:on', m);
 }
 function kyNoteOff(m) {
-  const hd = KY.held.get(m); if (!hd) return; KY.held.delete(m); const c = E.ctx; hd.stop(c ? c.currentTime : 0);
+  const hd = KY.held.get(m); if (!hd) return; KY.held.delete(m); const c = E.ctx; hd.stop(c ? c.currentTime : 0); if (KY.sent && KY.sent.has(m)) { KY.sent.delete(m); moLive(false, m); }
   const p = KY.pend.get(m); if (p) { KY.pend.delete(m); kyWrite(m, p.s, playheadSlot(), p.v); } kyPaintAll();
 }
 /** a recorded note into the song: keys part, bass line or lead tab, rounded to the grid */
@@ -17948,15 +17951,139 @@ function kyRoomBuild() {
     h('div', { class: 'ky-ctl' },
       h('button', { class: 'btn' + (KY.rec ? ' rec-on' : ' primary'), id: 'kyRec', type: 'button', onclick: () => kyRec() }, KY.rec ? '■ Stop recording' : '● Record into ' + { keys: 'the keys part', bass: 'the bass line', lead: 'the lead tab' }[KY.target]),
       sel('kyQ', 'Round to', [[1, '16ths'], [2, '8ths'], [4, 'quarters']], [1, 2, 4].includes(CFG.keysQ) ? CFG.keysQ : 1, v => { CFG.keysQ = +v; saveCfg(); }),
-      h('button', { class: 'btn sm', id: 'kyClear', type: 'button', onclick: kyClear }, 'Clear in this section')),
+      h('button', { class: 'btn sm', id: 'kyClear', type: 'button', onclick: kyClear }, 'Clear in this section'),
+      h('button', { class: 'btn sm', id: 'kyRoll', type: 'button', onclick: () => { d.close(); rollOpen(KY.target === 'bass' ? 'bass' : 'keys'); } }, '🎛 Piano roll…')),
     h('div', { class: 'ky-band' },
       h('label', { class: 'chk' }, h('input', { type: 'checkbox', id: 'kyBand', checked: !!S.band.keysOn, onchange: e => { toggleBand('keysOn', e.target.checked); } }), 'Keys in the band'),
       sel('kyStyle', 'Style', KEYS_STYLES.map(x => [x, x]), kyStyle(), v => { S.band.keysStyle = v; commit(false); }),
       h('span', { class: 'tiny muted' }, 'A part you recorded plays in its bars; elsewhere the keys player follows the chords.')),
+    typeof duckView === 'function' ? duckView() : null,
     h('p', { class: 'tiny muted' }, 'Play with the mouse or a touch screen, the computer keys A W S E D F T G Y H U J K O L P ; (Z and X move an octave), or a MIDI keyboard while this is open. The highlighted keys are the chord that is playing; the root is darker.'));
   kyPaintAll();
 }
 function kyRoomPaint() { kyRoomBuild(); }
+
+/* >>> parts/87-electronic.js */
+/* ============================================================
+   Part 87 · ELECTRONIC (2.37) — a piano roll, sidechain ducking and MIDI out
+     · 🎛 Piano roll: draw the keys part or the bass line of a section on a grid of 16ths (click to add, drag to lengthen, click a note
+       to remove it, Shift-click for loud/medium/soft), only the scale's notes if you like, and loop the section while you draw. It
+       writes the same notes as recording in the Keys room does (part 86), so what you play and what you draw are one part.
+     · Sidechain: every kick pushes the keys, the bass, the rhythm guitar or the loaded track down and lets them swell back, the pumping
+       of dance music. Depth and release are yours; it is in bounces too, because the kick and the duck share the band's clock.
+     · MIDI out: the keys part, the bass (played or made up) and the drums go to a MIDI device on their own channels (1, 2 and 10 by
+       default; drums as General MIDI notes), timed to what you hear. "Also play the studio's own sound" off lets the hardware take over.
+       Playing the Keys room sends too, so a controller can play a synth through the studio.
+   ============================================================ */
+CFG.midiOut = Object.assign({ on: false, out: '', keys: 1, bass: 2, drums: 10, local: true, parts: { keys: true, bass: true, drums: true } }, CFG.midiOut || {});
+const RL = { part: 'keys', sec: 0, lo: { keys: 48, bass: 28 }, rows: 25, scaleOnly: false, drag: null };
+const GM_DRUM = [36, 38, 42, 46, 39, 45];
+
+/* ---------- sidechain ---------- */
+const duckCfg = () => S.duck && typeof S.duck === 'object' ? S.duck : { on: false, amt: 9, rel: 180, to: ['keys', 'bass', 'track'] };
+function duckNode(id) { return id === 'track' ? (typeof STP !== 'undefined' ? STP.duck : null) : (E.tr && E.tr[id] ? E.tr[id].duck : null); }
+/** a kick at time t: the chosen tracks dip and swell back */
+function duckAt(t) {
+  const D = duckCfg(); if (!D.on) return; const lvl = Math.pow(10, -clamp(+D.amt || 9, 0, 24) / 20), rel = clamp(+D.rel || 180, 30, 800) / 1000;
+  (D.to || []).forEach(id => { const g = duckNode(id); if (!g || g.context !== E.ctx) return; const p = g.gain; try { p.cancelScheduledValues(t); p.setTargetAtTime(lvl, t, .004); p.setTargetAtTime(1, t + .025, rel / 3); } catch (e) { } });
+}
+function duckSet(o) {
+  S.duck = Object.assign({}, duckCfg(), o); commit(false);
+  if (!S.duck.on || o.to) ['keys', 'bass', 'rhythm', 'lead', 'track'].forEach(id => { const g = duckNode(id); if (g) { try { g.gain.cancelScheduledValues(0); g.gain.value = 1; } catch (e) { } } });
+}
+
+/* ---------- MIDI out ---------- */
+function moDev() { const M = CFG.midiOut; if (!M.on || typeof MIDI === 'undefined' || !MIDI.access) return null; const outs = [...MIDI.access.outputs.values()]; return outs.find(o => o.id === M.out) || null; }
+/** one note out, at audio-clock time t, for `part` (keys, bass, drums); true if it went */
+function moNote(part, t, m, v, dur) {
+  const M = CFG.midiOut; if (!M.on || !M.parts[part] || !E.ctx) return false; const d = moDev(); if (!d) return false;
+  const c = E.ctx, ch = clamp((M[part] || 1) - 1, 0, 15), ts = performance.now() + (t - c.currentTime + (c.outputLatency || c.baseLatency || 0)) * 1000, vel = clamp(Math.round((v || .8) * 127), 1, 127);
+  try { d.send([0x90 | ch, m, vel], Math.max(performance.now(), ts)); d.send([0x80 | ch, m, 0], Math.max(performance.now(), ts) + Math.max(20, (dur || .2) * 1000)); MO.used.add(ch); MO.n++; return true; } catch (e) { return false; }
+}
+const MO = { used: new Set(), n: 0, live: new Map() };
+function moLive(on, m, v) {
+  const M = CFG.midiOut; if (!M.on || !M.parts.keys) return false; const d = moDev(); if (!d) return false; const ch = clamp((M.keys || 1) - 1, 0, 15);
+  try { if (on) d.send([0x90 | ch, m, clamp(Math.round((v || .8) * 127), 1, 127)]); else d.send([0x80 | ch, m, 0]); MO.used.add(ch); return true; } catch (e) { return false; }
+}
+/** all notes off on the channels used, when the studio stops */
+function moPanic() { const d = moDev(); if (!d) return; MO.used.forEach(ch => { try { d.send([0xB0 | ch, 123, 0]); } catch (e) { } }); }
+bus.on('transport', () => { if (!T.playing && MO.n) moPanic(); });
+const moLocal = part => { const M = CFG.midiOut; return !(M.on && M.parts[part] && moDev()) || M.local; };
+/** the keys player and the keys part go through here: out to MIDI and/or the studio's own sound */
+function kyOut(t, m, v, dur, sound) { moNote('keys', t, m, v, dur); if (moLocal('keys')) return keysVoice(t, m, v, dur, sound); return null; }
+function bassOut(t, m, v, dur) { moNote('bass', t, m, v, dur); if (moLocal('bass')) pluck('bass', t, m, v, { id: 'b', pan: 0 }); }
+/** drums: out as General MIDI notes; true when the studio's own drum should stay quiet */
+function moDrum(row, t, v) { const sent = moNote('drums', t, GM_DRUM[row] || 37, [0, .5, .8, 1][v] || .8, .08); return sent && !CFG.midiOut.local; }
+function moSettings() {
+  const M = CFG.midiOut, outs = typeof MIDI !== 'undefined' && MIDI.access ? [...MIDI.access.outputs.values()] : [], box = h('div', { class: 'gear mo' });
+  const draw = () => {
+    box.innerHTML = ''; const outsNow = typeof MIDI !== 'undefined' && MIDI.access ? [...MIDI.access.outputs.values()] : [];
+    box.append(h('h4', { class: 'gear-h' }, 'MIDI out'),
+      h('label', { class: 'chk' }, h('input', { type: 'checkbox', id: 'moOn', checked: !!M.on, onchange: async e => { M.on = e.target.checked; saveCfg(); if (M.on && !MIDI.access) { try { await initMIDI(); } catch (er) { } } draw(); } }), 'Send the keys, the bass and the drums to a MIDI device'),
+      !M.on ? null : h('label', { class: 'field' }, h('span', {}, 'Send to'), outsNow.length ? h('select', { class: 'in', id: 'moOut', onchange: e => { M.out = e.target.value; saveCfg(); } }, [h('option', { value: '' }, 'Choose…')].concat(outsNow.map(o => h('option', { value: o.id, selected: o.id === M.out }, o.name)))) : h('span', { class: 'small muted' }, 'No MIDI output found. Connect a synth or a drum machine (Chrome or Edge).')),
+      !M.on ? null : h('div', { class: 'mo-parts' }, [['keys', 'Keys'], ['bass', 'Bass'], ['drums', 'Drums']].map(([k, t]) => h('span', { class: 'mo-part' }, h('label', { class: 'chk' }, h('input', { type: 'checkbox', 'data-mo': k, checked: !!M.parts[k], onchange: e => { M.parts[k] = e.target.checked; saveCfg(); } }), t),
+        h('select', { class: 'in', 'aria-label': t + ' MIDI channel', 'data-moch': k, onchange: e => { M[k] = +e.target.value; saveCfg(); } }, Array.from({ length: 16 }, (_, i) => h('option', { value: i + 1, selected: M[k] === i + 1 }, 'ch ' + (i + 1))))))),
+      !M.on ? null : h('label', { class: 'chk' }, h('input', { type: 'checkbox', id: 'moLocal', checked: !!M.local, onchange: e => { M.local = e.target.checked; saveCfg(); } }), 'Also play the studio’s own sound'),
+      h('p', { class: 'hub-note' }, 'Timed to what you hear. Drums go as General MIDI notes (kick 36, snare 38, hats 42 and 46, clap 39, tom 45). Playing the Keys room sends too, so a keyboard can play your synth through the studio.'));
+  }; draw(); return box;
+}
+
+/* ---------- 🎛 Piano roll ---------- */
+const rlNotes = (bar, part) => part === 'bass' ? (bar.bassLine = bar.bassLine || []) : (bar.keys = bar.keys || []);
+function rollOpen(part, sec) {
+  if (part) RL.part = part; RL.sec = sec != null ? sec : pedalSecs().i;
+  let d = document.getElementById('rollRoom'); if (!d) { d = h('dialog', { class: 'keys-room roll-room', id: 'rollRoom', 'aria-labelledby': 'rollT' }); document.body.append(d); d.addEventListener('close', () => { if (RL.looping && T.playing) stopPlay(true); RL.looping = false; }); }
+  rollBuild(); if (!d.open) d.showModal(); startAudio(); return d;
+}
+function rollRows() { const lo = RL.lo[RL.part], scale = (SCALES[S.scale] || SCALES['Major (Ionian)']).map(i => (S.key + i) % 12), out = []; for (let m = lo + RL.rows - 1; m >= lo; m--) if (!RL.scaleOnly || scale.includes(m % 12)) out.push(m); return { rows: out, scale }; }
+function rollBuild() {
+  const d = document.getElementById('rollRoom'); if (!d) return; d.innerHTML = ''; const sec = S.sections[RL.sec]; if (!sec) return; const sp = spb();
+  const { rows, scale } = rollRows(), cols = sec.bars.length * sp, CW = 20, RH = 16, LW = 36, W = LW + cols * CW, H = rows.length * RH;
+  const ns = 'http://www.w3.org/2000/svg', svg = document.createElementNS(ns, 'svg'), el = (t, a, txt) => { const e = document.createElementNS(ns, t); Object.entries(a).forEach(([k, v]) => e.setAttribute(k, v)); if (txt != null) e.textContent = txt; svg.append(e); return e; };
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H); svg.setAttribute('width', W); svg.setAttribute('height', H); svg.setAttribute('class', 'rl-svg'); svg.setAttribute('role', 'grid'); svg.setAttribute('aria-label', 'Piano roll: ' + (RL.part === 'bass' ? 'bass line' : 'keys part') + ' of ' + sec.name);
+  rows.forEach((m, r) => { const pc = m % 12; el('rect', { x: LW, y: r * RH, width: cols * CW, height: RH, class: 'rl-row' + (KY_BLACK.includes(pc) ? ' bl' : '') + (scale.includes(pc) ? ' sc' : '') + (pc === S.key ? ' root' : '') }); el('text', { x: LW - 4, y: r * RH + RH - 4, class: 'rl-lab' + (pc === S.key ? ' root' : '') }, pcName(pc, CFG.flats) + (pc === 0 || m === rows[rows.length - 1] ? Math.floor(m / 12 - 1) : '')); });
+  for (let c = 0; c <= cols; c++) el('line', { x1: LW + c * CW, x2: LW + c * CW, y1: 0, y2: H, class: c % sp === 0 ? 'rl-bar' : c % 4 === 0 ? 'rl-beat' : 'rl-step' });
+  sec.bars.forEach((bar, bi) => rlNotes(bar, RL.part).forEach((n, k) => { const r = rows.indexOf(n.m); if (r < 0) return; el('rect', { x: LW + (bi * sp + n.s) * CW + 1, y: r * RH + 1, width: Math.max(4, (n.d || 1) * CW - 2), height: RH - 2, rx: 3, class: 'rl-note', 'data-bi': bi, 'data-k': k, style: 'opacity:' + (.45 + .55 * (n.v || .8)) }); }));
+  RL.ph = el('line', { x1: -10, x2: -10, y1: 0, y2: H, class: 'rl-ph' }); svg._g = { LW, CW, RH, rows, sp, cols };
+  const at = e => { const r = svg.getBoundingClientRect(), x = (e.clientX - r.left) * W / r.width, y = (e.clientY - r.top) * H / r.height; return { c: Math.floor((x - LW) / CW), r: Math.floor(y / RH) }; };
+  svg.addEventListener('pointerdown', e => {
+    const t = e.target, bf = snap();
+    if (t.classList && t.classList.contains('rl-note')) { const bar = sec.bars[+t.dataset.bi], arr = rlNotes(bar, RL.part), n = arr[+t.dataset.k]; if (!n) return; if (e.shiftKey) n.v = n.v >= .95 ? .5 : n.v >= .75 ? 1 : .8; else arr.splice(+t.dataset.k, 1); T.bars = null; histPush(bf); rollBuild(); return; }
+    const p = at(e); if (p.c < 0 || p.c >= cols || p.r < 0 || p.r >= rows.length) return; const bi = Math.floor(p.c / sp), n = { s: p.c % sp, m: rows[p.r], d: 1, v: .8 };
+    rlNotes(sec.bars[bi], RL.part).push(n); if (RL.part === 'keys') S.band.keysOn = true; else S.band.bassOn = true; T.bars = null;
+    try { startAudio(); if (RL.part === 'bass') pluck('bass', E.ctx.currentTime + .01, n.m, .8, { id: 'rl' }); else keysVoice(E.ctx.currentTime + .01, n.m, .8, .25); } catch (er) { }
+    RL.drag = { n, c0: p.c, bf, bi }; try { svg.setPointerCapture(e.pointerId); } catch (er) { } rollPaintNotes(svg, sec);
+  });
+  svg.addEventListener('pointermove', e => { if (!RL.drag) return; const p = at(e), dd = Math.max(1, Math.min(sp * 4 - RL.drag.n.s, p.c - RL.drag.c0 + 1)); if (dd !== RL.drag.n.d) { RL.drag.n.d = dd; rollPaintNotes(svg, sec); } });
+  const up = () => { if (!RL.drag) return; const g = RL.drag; RL.drag = null; histPush(g.bf); try { syncBandStrip(); } catch (er) { } rollBuild(); }; svg.addEventListener('pointerup', up); svg.addEventListener('pointercancel', up);
+  const head = h('div', { class: 'co-top' }, h('div', { class: 'co-tt' }, h('small', {}, 'Draw it'), h('b', { id: 'rollT' }, '🎛 Piano roll')), h('button', { class: 'btn icon', type: 'button', 'aria-label': 'Close the piano roll', onclick: () => d.close() }, '✕'));
+  const ctl = h('div', { class: 'ky-ctl' },
+    h('div', { class: 'seg', role: 'group', 'aria-label': 'Part', id: 'rlPart' }, [['keys', '🎹 Keys'], ['bass', 'Bass']].map(([v, t]) => h('button', { type: 'button', class: RL.part === v ? 'on' : '', 'aria-pressed': String(RL.part === v), 'data-p': v, onclick: () => { RL.part = v; rollBuild(); } }, t))),
+    h('label', { class: 'field' }, 'Section', h('select', { class: 'in', id: 'rlSec', onchange: e => { RL.sec = +e.target.value; rollBuild(); } }, S.sections.map((s, i) => h('option', { value: i, selected: i === RL.sec }, s.name)))),
+    h('span', { class: 'ky-oct' }, h('button', { class: 'btn sm', type: 'button', 'aria-label': 'Lower', onclick: () => { RL.lo[RL.part] = Math.max(21, RL.lo[RL.part] - 12); rollBuild(); } }, '▼'), h('b', { class: 'mono' }, pcName(RL.lo[RL.part] % 12, false) + Math.floor(RL.lo[RL.part] / 12 - 1)), h('button', { class: 'btn sm', type: 'button', 'aria-label': 'Higher', onclick: () => { RL.lo[RL.part] = Math.min(96, RL.lo[RL.part] + 12); rollBuild(); } }, '▲')),
+    h('label', { class: 'chk' }, h('input', { type: 'checkbox', id: 'rlScale', checked: RL.scaleOnly, onchange: e => { RL.scaleOnly = e.target.checked; rollBuild(); } }), 'Only the scale’s notes'),
+    h('button', { class: 'btn' + (RL.looping && T.playing ? ' on' : ' primary'), id: 'rlPlay', type: 'button', onclick: rollLoop }, RL.looping && T.playing ? '■ Stop' : '▶ Loop this section'),
+    h('button', { class: 'btn sm', id: 'rlClear', type: 'button', onclick: () => { const bf = snap(); sec.bars.forEach(b => { if (RL.part === 'bass') b.bassLine = []; else b.keys = []; }); T.bars = null; histPush(bf); rollBuild(); } }, 'Clear'));
+  d.append(head, ctl, h('div', { class: 'rl-wrap' }, svg), h('p', { class: 'tiny muted' }, 'Click a square to add a note, drag right to make it longer; click a note to remove it, Shift-click to make it loud, medium or soft. It is the same part the Keys room records into' + (RL.part === 'bass' ? ': in these bars it replaces the made-up bass.' : '.')), duckView());
+}
+function rollPaintNotes(svg, sec) { svg.querySelectorAll('.rl-note').forEach(n => n.remove()); const { LW, CW, RH, rows, sp } = svg._g, ns = 'http://www.w3.org/2000/svg'; sec.bars.forEach((bar, bi) => rlNotes(bar, RL.part).forEach((n, k) => { const r = rows.indexOf(n.m); if (r < 0) return; const e = document.createElementNS(ns, 'rect'); Object.entries({ x: LW + (bi * sp + n.s) * CW + 1, y: r * RH + 1, width: Math.max(4, (n.d || 1) * CW - 2), height: RH - 2, rx: 3, class: 'rl-note', 'data-bi': bi, 'data-k': k }).forEach(([a, v]) => e.setAttribute(a, v)); svg.insertBefore(e, RL.ph); })); }
+async function rollLoop() {
+  if (RL.looping && T.playing) { RL.looping = false; stopPlay(true); rollBuild(); return; }
+  const sp = spb(), start = S.sections.slice(0, RL.sec).reduce((a, s) => a + s.bars.length, 0) * sp, len = S.sections[RL.sec].bars.length * sp;
+  if (T.playing) stopPlay(true); T.loop = true; T.loopA = start; T.loopB = start + len; T.cursor = start; syncTransport(); RL.looping = true; await play(); rollBuild();
+}
+/* the playhead moves across the roll while it plays */
+(function rlLoop() { requestAnimationFrame(rlLoop); const d = document.getElementById('rollRoom'); if (!d || !d.open || !RL.ph || !T.playing) return; const svg = RL.ph.ownerSVGElement; if (!svg || !svg._g) return; const { LW, CW, sp } = svg._g, start = S.sections.slice(0, RL.sec).reduce((a, s) => a + s.bars.length, 0) * sp, x = LW + (playheadSlot() - start) * CW; RL.ph.setAttribute('x1', x); RL.ph.setAttribute('x2', x); })();
+
+/* ---------- the sidechain block (in the piano roll and the Keys room) ---------- */
+function duckView() {
+  const D = duckCfg(), tgt = (k, t) => h('label', { class: 'chk' }, h('input', { type: 'checkbox', 'data-duck': k, checked: (D.to || []).includes(k), onchange: e => { const to = new Set(duckCfg().to || []); if (e.target.checked) to.add(k); else to.delete(k); duckSet({ to: [...to] }); } }), t);
+  return h('div', { class: 'ky-band duck' },
+    h('label', { class: 'chk' }, h('input', { type: 'checkbox', id: 'duckOn', checked: !!D.on, onchange: e => duckSet({ on: e.target.checked }) }), h('b', {}, 'Sidechain: duck to the kick')),
+    h('label', { class: 'field' }, 'Depth', h('input', { type: 'range', id: 'duckAmt', min: 0, max: 18, step: 1, value: D.amt || 9, onchange: e => duckSet({ amt: +e.target.value }) })),
+    h('label', { class: 'field' }, 'Release', h('input', { type: 'range', id: 'duckRel', min: 60, max: 500, step: 10, value: D.rel || 180, onchange: e => duckSet({ rel: +e.target.value }) })),
+    h('span', { class: 'duck-to' }, tgt('keys', 'Keys'), tgt('bass', 'Bass'), tgt('rhythm', 'Rhythm gtr'), tgt('track', 'Track')));
+}
 
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();

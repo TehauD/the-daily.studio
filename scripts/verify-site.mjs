@@ -34,7 +34,8 @@ const j = rd('journal/index.html'); ok(/Content-Security-Policy/.test(j), 'The D
 ok(statSync(join(d, 'index.html')).size < 2_000_000, 'index.html is under 2 MB');
 { /* what a visitor downloads: the page travels compressed, so this is the number that sets the first load. Raise it on purpose, not by drift. */
   const gz = gzipSync(readFileSync(join(d, 'index.html')), { level: 9 }).length;
-  ok(gz < 700_000, 'index.html is under 700 kB compressed (' + (gz / 1024).toFixed(0) + ' kB gzip)');
+  /* 700 kB until 2.37.0, which crossed it (bass guitar, keys, speed & key, the piano roll); raised on purpose to 750 kB */
+  ok(gz < 750_000, 'index.html is under 750 kB compressed (' + (gz / 1024).toFixed(0) + ' kB gzip)');
 }
 
 /* ---- search engines: the first page and every guide page ---- */

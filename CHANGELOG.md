@@ -2,6 +2,27 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.37.0 — 2026-11-04 — For electronic music: piano roll, sidechain, MIDI out
+
+### Added
+- **🎛 Piano roll** (`src/parts/87-electronic.js`; Songwriter tools, and in the Keys room). Draw the keys part or the bass line of a section on a grid of 16ths:
+  - click to add a note, drag right to lengthen it, click to remove it, Shift-click for loud, medium or soft;
+  - show only the scale's notes, and move up or down an octave;
+  - loop the section while you draw;
+  - one undo per edit.
+  It writes the same part the Keys room records into.
+- **Sidechain ducking:** each kick dips the keys, the bass, the rhythm guitar or the loaded track (your choice), with a set depth and release. It is kept with the song and is in bounces too. Each mixer track gained a duck stage before its fader.
+- **MIDI out** (Settings ▸ Pedal & MIDI sync): the keys part, the bass (played or made up) and the drums go to a MIDI device on their own channels (1, 2, 10; drums as General MIDI notes).
+  - Notes are timed to what you hear (scheduled ahead, allowing for output latency), and stopping sends all-notes-off.
+  - "Also play the studio's own sound" can be turned off so the hardware takes over.
+  - The Keys room sends live, so a controller can play a synth through the studio.
+
+### Changed
+- **The page's size budget** in `verify:site` goes from 700 kB to 750 kB compressed. This release took the page to about 703 kB gzip; 2.35–2.37 together added about 45 kB. The page is still one file with no dependencies. Minifying the build would win most of it back.
+
+### Tests
+- New `e2e-electronic` (20 checks).
+
 ## 2.36.0 — 2026-11-04 — Bass guitar
 
 ### Added
