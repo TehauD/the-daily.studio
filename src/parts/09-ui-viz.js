@@ -26,16 +26,16 @@ function buildFretPane() {
 }
 function hexPts(cx, cy, r) { let s = ''; for (let i = 0; i < 6; i++) { const a = Math.PI / 3 * i + Math.PI / 6; s += (cx + r * Math.cos(a)).toFixed(1) + ',' + (cy + r * Math.sin(a)).toFixed(1) + ' '; } return s; }
 function renderFret() {
-  if (!UI.fb) return; const NF_ = FB.frets, left = !!CFG.left, W = FB.W, H = FB.H, padL = 34, padR = 14, top = 20, bot = 24, bw = W - padL - padR, sh = (H - top - bot) / 5;
+  if (!UI.fb) return; const NF_ = FB.frets, left = !!CFG.left, W = FB.W, H = FB.H, padL = 34, padR = 14, top = 20, bot = 24, bw = W - padL - padR, NS1 = nStr() - 1, sh = (H - top - bot) / NS1;
   const posX = n => { const t = (1 - Math.pow(2, -n / 12)) / (1 - Math.pow(2, -NF_ / 12)); return padL + bw * (left ? 1 - t : t); };
   const svg = sv('svg', { id: 'fretsvg', viewBox: `0 0 ${W} ${H}`, class: 'fbsvg' }); FB.nodes = [];
-  svg.append(sv('rect', { x: padL, y: top - 6, width: bw, height: 5 * sh + 12, rx: 6, fill: 'var(--panel2)', stroke: 'var(--line2)' }));
-  for (let n = 0; n <= NF_; n++) { const x = posX(n); svg.append(sv('line', { x1: x, x2: x, y1: top - 6, y2: top + 5 * sh + 6, stroke: n === 0 ? 'var(--text)' : 'var(--line2)', 'stroke-width': n === 0 ? 4 : 1.4 })); if (n > 0) svg.append(sv('text', { x: (posX(n) + posX(n - 1)) / 2, y: H - 7, 'text-anchor': 'middle', 'font-size': 9.5, fill: 'var(--muted)', 'font-family': 'var(--mono)' }, n)); }
-  [3, 5, 7, 9, 15, 17, 19, 21].forEach(n => { const x = (posX(n) + posX(n - 1)) / 2; svg.append(sv('circle', { cx: x, cy: top + 2.5 * sh, r: 4, fill: 'var(--line2)', opacity: .6 })); });
-  [12].forEach(n => { const x = (posX(n) + posX(n - 1)) / 2; svg.append(sv('circle', { cx: x, cy: top + 1.5 * sh, r: 4, fill: 'var(--line2)', opacity: .7 }), sv('circle', { cx: x, cy: top + 3.5 * sh, r: 4, fill: 'var(--line2)', opacity: .7 })); });
+  svg.append(sv('rect', { x: padL, y: top - 6, width: bw, height: NS1 * sh + 12, rx: 6, fill: 'var(--panel2)', stroke: 'var(--line2)' }));
+  for (let n = 0; n <= NF_; n++) { const x = posX(n); svg.append(sv('line', { x1: x, x2: x, y1: top - 6, y2: top + NS1 * sh + 6, stroke: n === 0 ? 'var(--text)' : 'var(--line2)', 'stroke-width': n === 0 ? 4 : 1.4 })); if (n > 0) svg.append(sv('text', { x: (posX(n) + posX(n - 1)) / 2, y: H - 7, 'text-anchor': 'middle', 'font-size': 9.5, fill: 'var(--muted)', 'font-family': 'var(--mono)' }, n)); }
+  [3, 5, 7, 9, 15, 17, 19, 21].forEach(n => { const x = (posX(n) + posX(n - 1)) / 2; svg.append(sv('circle', { cx: x, cy: top + NS1 / 2 * sh, r: 4, fill: 'var(--line2)', opacity: .6 })); });
+  [12].forEach(n => { const x = (posX(n) + posX(n - 1)) / 2; svg.append(sv('circle', { cx: x, cy: top + NS1 * .3 * sh, r: 4, fill: 'var(--line2)', opacity: .7 }), sv('circle', { cx: x, cy: top + NS1 * .7 * sh, r: 4, fill: 'var(--line2)', opacity: .7 })); });
   const root = FB.root == null ? S.key : FB.root, scl = SCALES[S.scale] || SCALES['Major (Ionian)'], scPcs = new Set(scl.map(i => (root + i) % 12));
   S.tuning.forEach((open, st) => {
-    const y = top + (5 - st) * sh; svg.append(sv('line', { x1: padL, x2: padL + bw, y1: y, y2: y, stroke: 'var(--text)', 'stroke-opacity': .55, 'stroke-width': 0.8 + (5 - (5 - st)) * .0 + (st === 0 ? 2.6 : st === 1 ? 2.1 : st === 2 ? 1.7 : st === 3 ? 1.3 : st === 4 ? 1 : .8) }));
+    const y = top + (NS1 - st) * sh; svg.append(sv('line', { x1: padL, x2: padL + bw, y1: y, y2: y, stroke: 'var(--text)', 'stroke-opacity': .55, 'stroke-width': 0.8 + (5 - (5 - st)) * .0 + (st === 0 ? 2.6 : st === 1 ? 2.1 : st === 2 ? 1.7 : st === 3 ? 1.3 : st === 4 ? 1 : .8) }));
     svg.append(sv('text', { x: 6, y: y + 4, 'font-size': 11, 'font-weight': 800, fill: 'var(--muted)', 'font-family': 'var(--mono)' }, tunPc(open)));
     FB.nodes[st] = [];
     for (let n = 0; n <= NF_; n++) {

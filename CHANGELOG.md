@@ -2,6 +2,25 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.36.0 — 2026-11-04 — Bass guitar
+
+### Added
+- **4, 5 and 6-string bass.**
+  - **Choosing it:** Settings ▸ Music ▸ My instrument, or the tuning list. The bass tunings are standard, drop D, half-step down, D standard, 5-string with a low B or a high C, and 6-string.
+  - **What follows the strings:** the tab editor, the tab text, both fretboards, the transcription view, the tuning editor and the tuning check.
+  - **Bass tab** plays with a bass sound.
+  - **The band's bass** steps out while you play bass, and comes back when you switch to a guitar tuning.
+  - **The band's rhythm guitar** keeps a guitar's chord shapes.
+  - **The pitch tracker** reaches down to 27 Hz for a bass, so it hears a 5-string's low B, and keeps the guitar range otherwise.
+
+### Fixed
+- A tuning was named after the first listed tuning whose strings it matched, even if it had a different number of strings. A 5-string with a high C would have been called "Bass: standard". It now has to have the same number of strings.
+
+### Tests
+- New `e2e-bass` (15 checks).
+- `e2e-learn2`: the simulated notes are held longer, so the wrong-note check also holds when the machine is busy. It failed once beside other tests in the 2.35 full run, then passed alone.
+- The 2.35.0 full suite: 61 files, 1,944 checks passed.
+
 ## 2.35.0 — 2026-11-04 — Speed & key, and Keys
 
 ### Added

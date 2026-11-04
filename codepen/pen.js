@@ -5,7 +5,7 @@
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.35.0', BUILD = '6339eb2', PARTS_N = +'103' || 0, LINES_N = +'17946' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.36.0', BUILD = '79c1e1f', PARTS_N = +'103' || 0, LINES_N = +'17963' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { ghApp: { clientId: '', slug: '' },   /* Sign in with GitHub: the GitHub App's public client id and its slug (docs/GITHUB.md); empty = only the token way */
   support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://the-daily.studio/journal/' };
@@ -126,8 +126,21 @@ const TUNINGS = {
   'Open Dm (D A D F A D)': [38, 45, 50, 53, 57, 62],
   'Open E (E B E G# B E)': [40, 47, 52, 56, 59, 64],
   'Open C (C G C G C E)': [36, 43, 48, 55, 60, 64],
-  'Open A (E A E A C# E)': [40, 45, 52, 57, 61, 64]
+  'Open A (E A E A C# E)': [40, 45, 52, 57, 61, 64],
+  /* bass (2.36): four, five and six strings; the studio treats the song as bass when its tuning is (isBass) */
+  'Bass: standard (E A D G)': [28, 33, 38, 43],
+  'Bass: drop D (D A D G)': [26, 33, 38, 43],
+  'Bass: half-step down (Eb Ab Db Gb)': [27, 32, 37, 42],
+  'Bass: D standard (D G C F)': [26, 31, 36, 41],
+  'Bass 5-string (B E A D G)': [23, 28, 33, 38, 43],
+  'Bass 5-string, high C (E A D G C)': [28, 33, 38, 43, 48],
+  'Bass 6-string (B E A D G C)': [23, 28, 33, 38, 43, 48]
 };
+/** the song is for bass: fewer than six strings, or a bottom string below the lowest guitar tuning (Drop A) */
+const isBass = (tu = S.tuning) => tu.length < 6 || tu[0] < 31;
+const nStr = () => S.tuning.length;
+const INSTRUMENTS = [['Guitar (6 strings)', 'guitar'], ['Bass (4 strings)', 'bass4'], ['Bass (5 strings)', 'bass5'], ['Bass (6 strings)', 'bass6']];
+const instNow = () => !isBass() ? 'guitar' : 'bass' + Math.min(6, Math.max(4, S.tuning.length));
 const SCALES = {
   'Major (Ionian)': [0, 2, 4, 5, 7, 9, 11], 'Natural Minor (Aeolian)': [0, 2, 3, 5, 7, 8, 10],
   'Major Pentatonic': [0, 2, 4, 7, 9], 'Minor Pentatonic': [0, 3, 5, 7, 10], 'Blues': [0, 3, 5, 6, 7, 10],
@@ -203,9 +216,9 @@ function voicings(sym, tuning, capo = 0, limit = 6) {
   for (let b = 0; b <= 11; b++) {
     const lo = Math.max(1, b), hi = lo + 3;
     const opts = open.map(o => { const a = [null]; if (b <= 3 && pcs.includes(o % 12)) a.push(0); for (let f = lo; f <= hi; f++) if (pcs.includes((o + f) % 12)) a.push(f); return a; });
-    const cur = new Array(6);
+    const cur = new Array(open.length);
     const rec = i => {
-      if (i === 6) return evalV(cur);
+      if (i === open.length) return evalV(cur);
       for (const f of opts[i]) { cur[i] = f; rec(i + 1); }
     };
     const evalV = v => {
@@ -237,12 +250,12 @@ function voicings(sym, tuning, capo = 0, limit = 6) {
   vcCache.set(key, out); return out.slice(0, limit);
 }
 function chordSVG(v, o = {}) {
-  const W = o.w || 78, H = o.h || 96, mx = 13, top = 22, cw = (W - 2 * mx) / 5, ch = (H - top - 6) / 5;
+  const NS_ = (v.frets || []).length || 6, W = o.w || 78, H = o.h || 96, mx = 13, top = 22, cw = (W - 2 * mx) / (NS_ - 1), ch = (H - top - 6) / 5;
   const fr = v.frets, base = v.base || 1;
   const g = sv('svg', { viewBox: `0 0 ${W} ${H}`, class: 'cdiag', width: W, height: H });
   g.append(sv('line', { x1: mx, x2: W - mx, y1: top, y2: top, stroke: 'currentColor', 'stroke-width': base === 1 ? 3 : 1 }));
   for (let i = 1; i <= 5; i++) g.append(sv('line', { x1: mx, x2: W - mx, y1: top + i * ch, y2: top + i * ch, stroke: 'currentColor', 'stroke-opacity': .35 }));
-  for (let s = 0; s < 6; s++) g.append(sv('line', { x1: mx + s * cw, x2: mx + s * cw, y1: top, y2: top + 5 * ch, stroke: 'currentColor', 'stroke-opacity': .55 }));
+  for (let s = 0; s < NS_; s++) g.append(sv('line', { x1: mx + s * cw, x2: mx + s * cw, y1: top, y2: top + 5 * ch, stroke: 'currentColor', 'stroke-opacity': .55 }));
   fr.forEach((f, s) => {
     const x = mx + s * cw;
     if (f == null) g.append(sv('text', { x, y: top - 8, 'text-anchor': 'middle', 'font-size': 9, fill: 'currentColor', opacity: .6 }, '×'));
@@ -304,10 +317,12 @@ const tunPc = m => pcName(m, tunFlat());
 function stringLabels() { return S.tuning.map(m => tunPc(m)).reverse(); }
 const tunNote = m => tunPc(m) + (Math.floor(m / 12) - 1);
 const tunShort = () => (/^Custom/.test(S.tuningName || '') ? S.tuning.map(m => tunPc(m)).join(' ') : (S.tuningName || '').split(' (')[0].split(' · ')[0]) + (S.capo ? ' · capo ' + S.capo : '');
-function tunMatch(arr) { const k = Object.keys(TUNINGS).find(n => TUNINGS[n].every((m, i) => m === arr[i])); return k || 'Custom (' + arr.map(m => tunPc(m)).join(' ') + ')'; }
-function setTuning(arr, name) { xpSignal(2); S.tuning = arr.map(m => clamp(Math.round(m), 24, 79)); S.tuningName = name || tunMatch(S.tuning); S.voicePref = {}; if (!name && !TUNINGS[S.tuningName]) S.tuningName = 'Custom (' + S.tuning.map(m => tunPc(m)).join(' ') + ')'; commit(); }
+function tunMatch(arr) { const k = Object.keys(TUNINGS).find(n => TUNINGS[n].length === arr.length && TUNINGS[n].every((m, i) => m === arr[i])); return k || 'Custom (' + arr.map(m => tunPc(m)).join(' ') + ')'; }
+function setTuning(arr, name) { xpSignal(2); const wasBass = isBass(); S.tuning = arr.map(m => clamp(Math.round(m), 21, 79)); S.tuningName = name || tunMatch(S.tuning); S.voicePref = {}; if (!name && !TUNINGS[S.tuningName]) S.tuningName = 'Custom (' + S.tuning.map(m => tunPc(m)).join(' ') + ')'; commit();  bassSwitched(wasBass); }
 
 /* tab note helpers */
+/** switching between guitar and bass: the band's bass steps out while you play bass, and back in when you return to guitar */
+function bassSwitched(was) { const now = isBass(); if (now === was || !S.band) return; S.band.bassOn = !now; if (typeof TE !== 'undefined') TE.st = Math.min(TE.st, nStr() - 1); setTimeout(() => { try { if (typeof syncBandStrip === 'function') syncBandStrip(); toast(now ? 'Bass tuning: your tab now plays as bass, and the band’s bass steps out so you can play it (Band strip ▸ Bass brings it back).' : 'Guitar tuning: the band’s bass is back.', 'ok'); } catch (e) { } }, 0); }
 const noteMidi = n => S.tuning[n.st] + S.capo + (typeof n.f === 'number' ? n.f : 0);
 function fretText(n) {
   if (n.f === 'x') return 'x';
@@ -1151,7 +1166,7 @@ const STRUMS = {
   'Island Strum': { p: 'D..uD.u..u.uD.u.' }, 'Half-time Pad': { p: 'D...............' }, 'Waltz 3/4': { p: 'D.....d...d.....' }
 };
 const voicingFor = sym => {
-  const vs = voicings(sym, S.tuning, S.capo, 12), i = S.voicePref[sym];
+  const bass = isBass(), vs = voicings(sym, bass ? TUNINGS['Standard (E A D G B E)'] : S.tuning, bass ? 0 : S.capo, 12), i = S.voicePref[sym];      /* the band's rhythm guitar keeps a guitar's tuning when you play bass */
   return vs[i != null && vs[i] ? i : 0] || null;
 };
 function strumAt(t, sym, ch, style) {
@@ -1167,8 +1182,9 @@ function playTabNote(bar, n, t, dur) {
   const midi = n.f === 'x' ? S.tuning[n.st] + S.capo : noteMidi(n), id = 'l' + n.st;
   const prev = bar.tab.filter(o => o.st === n.st && o.s < n.s).sort((a, b) => b.s - a.s)[0], leg = prev && LEGATO.has(prev.t);
   const vel = (n.f === 'x' ? .5 : (leg ? .5 : .85)) * (n.t === '<>' ? .55 : 1);
-  pluck('lead', t, n.t === '<>' ? midi + 12 : midi, vel, { id, soft: leg || n.t === '<>', dead: n.f === 'x', pan: (n.st - 2.5) * .08 });
-  if (n.t === 'b') pluck('lead', t + dur * 1.5, midi + ((n.bend != null ? n.bend : n.f + 2) - n.f), .5, { id, soft: true, pan: (n.st - 2.5) * .08 });
+  const tr = isBass() ? 'bass' : 'lead';      /* bass tab plays as bass */
+  pluck(tr, t, n.t === '<>' ? midi + 12 : midi, vel, { id, soft: leg || n.t === '<>', dead: n.f === 'x', pan: (n.st - 2.5) * .08 });
+  if (n.t === 'b') pluck(tr, t + dur * 1.5, midi + ((n.bend != null ? n.bend : n.f + 2) - n.f), .5, { id, soft: true, pan: (n.st - 2.5) * .08 });
 }
 
 /* ---------- transport ---------- */
@@ -1355,10 +1371,10 @@ bus.on('tap:master', m => { if (!BOUNCE) return; const sr = E.ctx.sampleRate; le
 /* ============================================================
    Part 04 · analysis & research layer: YIN f0, chroma/chord, key, onsets, timing, stats, latency lab
    ============================================================ */
-function yin(buf, sr, thresh = .12) {
+function yin(buf, sr, thresh = .12, minHz = 45) {
   const dec = sr >= 32000 ? 2 : 1, n = Math.floor(buf.length / dec), x = new Float32Array(n), fs = sr / dec;
   for (let i = 0; i < n; i++) x[i] = dec === 2 ? (buf[2 * i] + buf[2 * i + 1]) * .5 : buf[i];
-  const W = n >> 1, tauMax = Math.min(W - 2, Math.floor(fs / 45)), tauMin = Math.max(2, Math.floor(fs / 1400)), d = new Float32Array(tauMax + 2);
+  const W = n >> 1, tauMax = Math.min(W - 2, Math.floor(fs / minHz)), tauMin = Math.max(2, Math.floor(fs / 1400)), d = new Float32Array(tauMax + 2);
   for (let tau = 1; tau <= tauMax; tau++) { let s = 0; for (let i = 0; i < W; i++) { const t = x[i] - x[i + tau]; s += t * t; } d[tau] = s; }
   let run = 0; d[0] = 1; for (let tau = 1; tau <= tauMax; tau++) { run += d[tau]; d[tau] = d[tau] * tau / (run || 1); }
   let tau = -1;
@@ -1399,7 +1415,7 @@ function anaTick() {
   clipRun = AN.clip ? clipRun + 1 : 0; if (clipRun === 30) { toast('Input is clipping — reduce the interface gain or the trim', 'warn'); STAT.clipF++; }
   const act = AN.rms > (CFG.gateDb != null ? CFG.gateDb : -56); AN.active = act;
   let f = 0, cl = 0;
-  if (act) { const r = yin(tdBuf, sr); if (r) { f = r.f; cl = r.clarity; } }
+  if (act) { const r = yin(tdBuf, sr, .12, isBass() ? 27 : 45); if (r) { f = r.f; cl = r.clarity; } }
   AN.clarity = cl;
   if (f > 60 && f < 1400 && cl > .8) {
     f0q.push(f); if (f0q.length > 3) f0q.shift(); const fm = median(f0q); AN.f0 = fm; const m = ftom(fm), r = Math.round(m); AN.cents = (m - r) * 100; AN.midi = r;
@@ -1633,6 +1649,7 @@ function openSettings(at) {
       chk('Let AI agents in this browser use the studio (read the song, load chord sheets, edit, play; never the microphone or recording)', 'agents', () => agentRegister()),
       note('An AI assistant in your browser can use the studio through WebMCP. It runs here; nothing is sent anywhere. Each change shows a 🤖 note and can be undone.')] },
     { key: 'music', label: 'Music', ico: '♪', sub: 'Tuning reference, note names and the fretboard.', body: () => [
+      F('My instrument (sets a standard tuning; the tuning list has more)', h('select', { class: 'in', id: 'setInst', onchange: e => { const [name] = INSTRUMENTS.find(x => x[1] === e.target.value) || []; const tun = { guitar: 'Standard (E A D G B E)', bass4: 'Bass: standard (E A D G)', bass5: 'Bass 5-string (B E A D G)', bass6: 'Bass 6-string (B E A D G C)' }[e.target.value]; setTuning(TUNINGS[tun], tun); commit(); bus.emit('song'); } }, INSTRUMENTS.map(([t, v]) => h('option', { value: v, selected: instNow() === v }, t)))),
       F('Reference pitch A4 (Hz)', num('a4', 415, 466, .1, () => bus.emit('song'))),
       F('Accidentals', sel('flats', [[false, 'Sharps (C#)'], [true, 'Flats (Db)']], () => { CFG.flats = String(CFG.flats) === 'true'; saveCfg(); bus.emit('song'); })),
       F('Fretboard labels', sel('fretNames', [['notes', 'Note names'], ['degrees', 'Scale degrees'], ['frets', 'Fret numbers']], () => bus.emit('fret'))),
@@ -2288,8 +2305,8 @@ function renderTab(keepFocus) {
   sec.bars.forEach((bar, bi) => {
     const grid = h('div', { class: 'tgrid', style: { gridTemplateColumns: '18px repeat(' + sp + ',var(--tcw,22px))' } }), cs = barChords(bar);
     grid.append(h('span'), ...Array.from({ length: sp }, (_, s) => h('div', { class: 'tbeat', style: { display: 'block', width: 'var(--tcw,22px)', textAlign: 'center', height: '11px', font: '600 8.5px var(--mono)', color: 'var(--muted)' } }, s % bs === 0 ? String(s / bs + 1) : (bs >= 4 && s % (bs / 2) === 0 ? '&' : ''))));
-    for (let r = 0; r < 6; r++) {
-      const st = 5 - r; grid.append(h('div', { style: { font: '700 10px var(--mono)', color: 'var(--muted)', alignSelf: 'center', textAlign: 'center' } }, labels[r]));
+    const NS_ = nStr(); TE.st = Math.min(TE.st, NS_ - 1); for (let r = 0; r < NS_; r++) {
+      const st = NS_ - 1 - r; grid.append(h('div', { style: { font: '700 10px var(--mono)', color: 'var(--muted)', alignSelf: 'center', textAlign: 'center' } }, labels[r]));
       for (let s = 0; s < sp; s++) {
         const n = bar.tab.find(o => o.s === s && o.st === st), sel = TE.bi === bi && TE.slot === s && TE.st === st;
         const c = h('div', { class: 'tcell' + (s === 0 ? ' b0' : s % bs === 0 ? ' b4' : '') + (sel ? ' sel' : ''), tabindex: sel ? 0 : -1, 'data-b': bi, 'data-s': s, 'data-st': st, onpointerdown: () => { TE.bi = bi; TE.slot = s; TE.st = st; markSel(); } }, n ? h('span', { class: 'n' }, fretText(n)) : null, n && n.t && n.t !== '<>' && n.t !== 'b' ? h('span', { class: 't' }, n.t) : null);
@@ -2321,7 +2338,7 @@ function tabKey(e) {
   } else switch (e.key) {
     case 'ArrowRight': TE.slot++; if (TE.slot >= sp) { if (TE.bi < sec.bars.length - 1) { TE.bi++; TE.slot = 0; } else TE.slot = sp - 1; } markSel(); break;
     case 'ArrowLeft': TE.slot--; if (TE.slot < 0) { if (TE.bi > 0) { TE.bi--; TE.slot = sp - 1; } else TE.slot = 0; } markSel(); break;
-    case 'ArrowUp': if (e.altKey) { transpose(1); } else { TE.st = Math.min(5, TE.st + 1); markSel(); } break;
+    case 'ArrowUp': if (e.altKey) { transpose(1); } else { TE.st = Math.min(nStr() - 1, TE.st + 1); markSel(); } break;
     case 'ArrowDown': if (e.altKey) { transpose(-1); } else { TE.st = Math.max(0, TE.st - 1); markSel(); } break;
     case 'Delete': case 'Backspace': setNote(null); break;
     case 'Enter': case ' ': { T.cursor = (sec.bars.length ? S.sections.slice(0, TE.sec).reduce((a, q) => a + q.bars.length, 0) + TE.bi : 0) * sp; T.playing ? stopPlay(true) : play(); break; }
@@ -2376,12 +2393,12 @@ function stripCaretPad(s) { return s.replace(/\s+$/, ''); }
 
 /* ---------- ASCII tablature renderer (Ultimate Guitar friendly) ---------- */
 function slotText(n) { return fretText(n) + ({ h: 'h', p: 'p', '/': '/', '\\': '\\', '~': '~' }[n.t] || ''); }
-function tabLabels() { return stringLabels().map((l, i) => (i === 0 && l === 'E' ? 'e' : l)); }
+function tabLabels() { return stringLabels().map((l, i) => (i === 0 && l === 'E' && !isBass() ? 'e' : l)); }
 function renderBarTab(bar) {
-  const sp = spb(), rows = Array.from({ length: 6 }, () => '');
+  const sp = spb(), NS_ = nStr(), rows = Array.from({ length: NS_ }, () => '');
   for (let s = 0; s < sp; s++) {
     const here = bar.tab.filter(n => n.s === s), w = Math.max(2, ...here.map(n => slotText(n).length + 1));
-    for (let r = 0; r < 6; r++) { const n = here.find(o => o.st === 5 - r); rows[r] += n ? slotText(n).padEnd(w, '-') : '-'.repeat(w); }
+    for (let r = 0; r < NS_; r++) { const n = here.find(o => o.st === NS_ - 1 - r); rows[r] += n ? slotText(n).padEnd(w, '-') : '-'.repeat(w); }
   }
   return rows;
 }
@@ -2514,18 +2531,18 @@ function tuningEditor() {
   const isCustom = !TUNINGS[S.tuningName];
   const d = h('details', { class: 'tun-ed', open: TUNED.open || isCustom, ontoggle: e => { TUNED.open = e.target.open; } }, h('summary', {}, 'Custom tuning · set each string' + (isCustom ? '  —  active' : '')));
   const row = h('div', { class: 'tun-row' });
-  const opts = []; for (let m = 24; m <= 79; m++) opts.push(m);
-  for (let i = 0; i < 6; i++) {
-    const sel = h('select', { class: 'in', title: 'String ' + (6 - i) + (i === 0 ? ' (lowest)' : i === 5 ? ' (highest)' : ''), onchange: () => { const arr = S.tuning.slice(); arr[i] = +sel.value; setTuning(arr); } }, opts.map(m => h('option', { value: m }, tunNote(m))));
-    sel.value = S.tuning[i]; row.append(h('label', { class: 'field' }, 'String ' + (6 - i), sel));
+  const opts = []; for (let m = 21; m <= 79; m++) opts.push(m);
+  const NS_ = nStr(); for (let i = 0; i < NS_; i++) {
+    const sel = h('select', { class: 'in', title: 'String ' + (NS_ - i) + (i === 0 ? ' (lowest)' : i === NS_ - 1 ? ' (highest)' : ''), onchange: () => { const arr = S.tuning.slice(); arr[i] = +sel.value; setTuning(arr); } }, opts.map(m => h('option', { value: m }, tunNote(m))));
+    sel.value = S.tuning[i]; row.append(h('label', { class: 'field' }, 'String ' + (NS_ - i), sel));
   }
   const shift = (n) => () => setTuning(S.tuning.map(m => m + n));
   const dropLow = () => { const a = S.tuning.slice(); a[0] -= 2; setTuning(a); };
   d.append(row, h('div', { class: 'row', style: { gap: '6px', marginTop: '8px', flexWrap: 'wrap' } },
     h('button', { class: 'btn sm', title: 'Tune every string down a half step', onclick: shift(-1) }, '↓ ½ step'), h('button', { class: 'btn sm', title: 'Tune every string up a half step', onclick: shift(1) }, '↑ ½ step'),
     h('button', { class: 'btn sm', title: 'Lower the lowest string a whole step (drop tuning)', onclick: dropLow }, 'Drop low string'),
-    h('button', { class: 'btn sm', onclick: () => setTuning(TUNINGS['Standard (E A D G B E)'], 'Standard (E A D G B E)') }, 'Reset to standard'),
-    h('span', { class: 'tiny muted' }, 'Six strings, notes E1–G5. Voicings, tab playback, the tuner, chord detection and transcription all follow it.')));
+    h('button', { class: 'btn sm', onclick: () => isBass() ? setTuning(TUNINGS['Bass: standard (E A D G)'], 'Bass: standard (E A D G)') : setTuning(TUNINGS['Standard (E A D G B E)'], 'Standard (E A D G B E)') }, 'Reset to standard'),
+    h('span', { class: 'tiny muted' }, (isBass() ? NS_ + ' bass strings' : 'Six strings') + ', notes A0–G5. Voicings, tab playback, the tuner, chord detection and transcription all follow it.')));
   return d;
 }
 function songField(label, el) { return h('label', { class: 'field' }, label, el); }
@@ -2743,16 +2760,16 @@ function buildFretPane() {
 }
 function hexPts(cx, cy, r) { let s = ''; for (let i = 0; i < 6; i++) { const a = Math.PI / 3 * i + Math.PI / 6; s += (cx + r * Math.cos(a)).toFixed(1) + ',' + (cy + r * Math.sin(a)).toFixed(1) + ' '; } return s; }
 function renderFret() {
-  if (!UI.fb) return; const NF_ = FB.frets, left = !!CFG.left, W = FB.W, H = FB.H, padL = 34, padR = 14, top = 20, bot = 24, bw = W - padL - padR, sh = (H - top - bot) / 5;
+  if (!UI.fb) return; const NF_ = FB.frets, left = !!CFG.left, W = FB.W, H = FB.H, padL = 34, padR = 14, top = 20, bot = 24, bw = W - padL - padR, NS1 = nStr() - 1, sh = (H - top - bot) / NS1;
   const posX = n => { const t = (1 - Math.pow(2, -n / 12)) / (1 - Math.pow(2, -NF_ / 12)); return padL + bw * (left ? 1 - t : t); };
   const svg = sv('svg', { id: 'fretsvg', viewBox: `0 0 ${W} ${H}`, class: 'fbsvg' }); FB.nodes = [];
-  svg.append(sv('rect', { x: padL, y: top - 6, width: bw, height: 5 * sh + 12, rx: 6, fill: 'var(--panel2)', stroke: 'var(--line2)' }));
-  for (let n = 0; n <= NF_; n++) { const x = posX(n); svg.append(sv('line', { x1: x, x2: x, y1: top - 6, y2: top + 5 * sh + 6, stroke: n === 0 ? 'var(--text)' : 'var(--line2)', 'stroke-width': n === 0 ? 4 : 1.4 })); if (n > 0) svg.append(sv('text', { x: (posX(n) + posX(n - 1)) / 2, y: H - 7, 'text-anchor': 'middle', 'font-size': 9.5, fill: 'var(--muted)', 'font-family': 'var(--mono)' }, n)); }
-  [3, 5, 7, 9, 15, 17, 19, 21].forEach(n => { const x = (posX(n) + posX(n - 1)) / 2; svg.append(sv('circle', { cx: x, cy: top + 2.5 * sh, r: 4, fill: 'var(--line2)', opacity: .6 })); });
-  [12].forEach(n => { const x = (posX(n) + posX(n - 1)) / 2; svg.append(sv('circle', { cx: x, cy: top + 1.5 * sh, r: 4, fill: 'var(--line2)', opacity: .7 }), sv('circle', { cx: x, cy: top + 3.5 * sh, r: 4, fill: 'var(--line2)', opacity: .7 })); });
+  svg.append(sv('rect', { x: padL, y: top - 6, width: bw, height: NS1 * sh + 12, rx: 6, fill: 'var(--panel2)', stroke: 'var(--line2)' }));
+  for (let n = 0; n <= NF_; n++) { const x = posX(n); svg.append(sv('line', { x1: x, x2: x, y1: top - 6, y2: top + NS1 * sh + 6, stroke: n === 0 ? 'var(--text)' : 'var(--line2)', 'stroke-width': n === 0 ? 4 : 1.4 })); if (n > 0) svg.append(sv('text', { x: (posX(n) + posX(n - 1)) / 2, y: H - 7, 'text-anchor': 'middle', 'font-size': 9.5, fill: 'var(--muted)', 'font-family': 'var(--mono)' }, n)); }
+  [3, 5, 7, 9, 15, 17, 19, 21].forEach(n => { const x = (posX(n) + posX(n - 1)) / 2; svg.append(sv('circle', { cx: x, cy: top + NS1 / 2 * sh, r: 4, fill: 'var(--line2)', opacity: .6 })); });
+  [12].forEach(n => { const x = (posX(n) + posX(n - 1)) / 2; svg.append(sv('circle', { cx: x, cy: top + NS1 * .3 * sh, r: 4, fill: 'var(--line2)', opacity: .7 }), sv('circle', { cx: x, cy: top + NS1 * .7 * sh, r: 4, fill: 'var(--line2)', opacity: .7 })); });
   const root = FB.root == null ? S.key : FB.root, scl = SCALES[S.scale] || SCALES['Major (Ionian)'], scPcs = new Set(scl.map(i => (root + i) % 12));
   S.tuning.forEach((open, st) => {
-    const y = top + (5 - st) * sh; svg.append(sv('line', { x1: padL, x2: padL + bw, y1: y, y2: y, stroke: 'var(--text)', 'stroke-opacity': .55, 'stroke-width': 0.8 + (5 - (5 - st)) * .0 + (st === 0 ? 2.6 : st === 1 ? 2.1 : st === 2 ? 1.7 : st === 3 ? 1.3 : st === 4 ? 1 : .8) }));
+    const y = top + (NS1 - st) * sh; svg.append(sv('line', { x1: padL, x2: padL + bw, y1: y, y2: y, stroke: 'var(--text)', 'stroke-opacity': .55, 'stroke-width': 0.8 + (5 - (5 - st)) * .0 + (st === 0 ? 2.6 : st === 1 ? 2.1 : st === 2 ? 1.7 : st === 3 ? 1.3 : st === 4 ? 1 : .8) }));
     svg.append(sv('text', { x: 6, y: y + 4, 'font-size': 11, 'font-weight': 800, fill: 'var(--muted)', 'font-family': 'var(--mono)' }, tunPc(open)));
     FB.nodes[st] = [];
     for (let n = 0; n <= NF_; n++) {
@@ -3321,7 +3338,7 @@ function txAssign(events, cx) {
     ev.notes = ev.notes.filter(n => txCandidates(n.midi, T, capo, MF).length);
     const notes = ev.notes.slice().sort((a, b) => a.midi - b.midi), vs = vf(ev.sym), camNear = (cx.cam || []).filter(c => Math.abs(c.t - ev.t) < .35), camPos = camNear.length ? median(camNear.map(c => c.fret).filter(f => f > 0)) : NaN;
     const states = []; if (!notes.length) { layers.push([{ asg: [], cost: 0, pos: null }]); return; }
-    const opts = notes.map(n => txCandidates(n.midi, T, capo, MF)), used = new Array(6).fill(false), cur = [];
+    const opts = notes.map(n => txCandidates(n.midi, T, capo, MF)), used = new Array(T.length).fill(false), cur = [];
     const dfs = (i, cost) => {
       if (states.length > 6000) return; if (i === notes.length) { states.push(txScoreSet(cur.slice(), notes, cost, vs, camNear, camPos, ev, cx)); return; }
       for (const c of opts[i]) { if (used[c.st]) continue; used[c.st] = true; cur.push({ st: c.st, f: c.f, midi: notes[i].midi }); dfs(i + 1, cost + (c.f === 0 ? 0 : .09 * c.f + (c.f > 12 ? .5 : 0))); cur.pop(); used[c.st] = false; }
@@ -3560,15 +3577,15 @@ function txRender() {
 function txDraw() {
   const cv = UI.txCv; if (!cv) return; const d = window.devicePixelRatio || 1, wrap = UI.txScroll; const res = TX.res;
   if (!res || !res.events.length) { cv.width = Math.max(10, wrap.clientWidth) * d; cv.height = 90 * d; const g = cv.getContext('2d'); g.clearRect(0, 0, cv.width, cv.height); g.fillStyle = TL.col.muted; g.font = `${12 * d}px sans-serif`; g.fillText(res ? 'No notes found. Raise the sensitivity or check the input level.' : 'Transcription appears here — each note is placed on its string and fret, coloured by confidence.', 14 * d, 40 * d); cv.style.width = '100%'; cv.style.height = '90px'; return; }
-  const N = spb(), evs = res.events, kmin = Math.floor(evs[0].k / N) * N, kmax = (Math.floor(evs[evs.length - 1].k / N) + 1) * N, W = Math.max(wrap.clientWidth, (kmax - kmin) * TXV.cw + 40), H = TXV.head + 6 * TXV.lane + TXV.pad;
+  const N = spb(), evs = res.events, kmin = Math.floor(evs[0].k / N) * N, kmax = (Math.floor(evs[evs.length - 1].k / N) + 1) * N, W = Math.max(wrap.clientWidth, (kmax - kmin) * TXV.cw + 40), H = TXV.head + nStr() * TXV.lane + TXV.pad;
   cv.width = W * d; cv.height = H * d; cv.style.width = W + 'px'; cv.style.height = H + 'px'; const g = cv.getContext('2d'); g.setTransform(d, 0, 0, d, 0, 0); g.clearRect(0, 0, W, H);
   const C = TL.col, x0 = 28, lbl = tabLabels();
   g.font = '600 10px ui-monospace,monospace'; g.textBaseline = 'middle';
-  for (let s = 0; s < 6; s++) { const y = TXV.head + (5 - s) * TXV.lane + TXV.lane / 2; g.fillStyle = s % 2 ? C.p2 : 'transparent'; g.fillRect(0, y - TXV.lane / 2, W, TXV.lane); g.strokeStyle = C.line2; g.beginPath(); g.moveTo(x0, y); g.lineTo(W, y); g.stroke(); g.fillStyle = C.muted; g.textAlign = 'left'; g.fillText(lbl[5 - s] || '', 6, y); }
+  const NS_ = nStr(); for (let s = 0; s < NS_; s++) { const y = TXV.head + (NS_ - 1 - s) * TXV.lane + TXV.lane / 2; g.fillStyle = s % 2 ? C.p2 : 'transparent'; g.fillRect(0, y - TXV.lane / 2, W, TXV.lane); g.strokeStyle = C.line2; g.beginPath(); g.moveTo(x0, y); g.lineTo(W, y); g.stroke(); g.fillStyle = C.muted; g.textAlign = 'left'; g.fillText(lbl[5 - s] || '', 6, y); }
   for (let k = kmin; k <= kmax; k++) { const x = x0 + (k - kmin) * TXV.cw, isBar = (k % N) === 0, isBeat = (k % 4) === 0; if (!isBar && !isBeat) continue; g.strokeStyle = isBar ? C.text : C.grid; g.globalAlpha = isBar ? .55 : 1; g.beginPath(); g.moveTo(x, TXV.head - 4); g.lineTo(x, H - TXV.pad); g.stroke(); g.globalAlpha = 1; if (isBar) { g.fillStyle = C.muted; g.textAlign = 'left'; g.fillText(String(k / N + 1), x + 3, 8); const ch = txChordAt(k); if (ch) { g.fillStyle = C.accent; g.font = '700 11px ui-monospace,monospace'; g.fillText(ch, x + 18, 9); g.font = '600 10px ui-monospace,monospace'; } } }
   TX.hits = [];
   evs.forEach(e => e.notes.forEach(n => {
-    const x = x0 + (e.k - kmin) * TXV.cw + 1, y = TXV.head + (5 - n.st) * TXV.lane + 3, w = TXV.cw - 3, hh = TXV.lane - 6, rej = TX.rej.has(e.k + ':' + n.midi), hue = 8 + n.conf * 120;
+    const x = x0 + (e.k - kmin) * TXV.cw + 1, y = TXV.head + (NS_ - 1 - n.st) * TXV.lane + 3, w = TXV.cw - 3, hh = TXV.lane - 6, rej = TX.rej.has(e.k + ':' + n.midi), hue = 8 + n.conf * 120;
     g.globalAlpha = rej ? .28 : .35 + .65 * n.conf; g.fillStyle = rej ? C.muted : `hsl(${hue} 62% 46%)`; g.beginPath(); (g.roundRect ? g.roundRect(x, y, w, hh, 5) : g.rect(x, y, w, hh)); g.fill();
     if (n.inferred) { g.setLineDash([3, 2]); g.strokeStyle = C.text; g.lineWidth = 1; g.stroke(); g.setLineDash([]); } g.globalAlpha = rej ? .5 : 1;
     g.fillStyle = '#fff'; g.textAlign = 'center'; g.font = '700 11px ui-monospace,monospace'; g.fillText(String(n.fret), x + w / 2 - (n.tech ? 3 : 0), y + hh / 2 + .5); if (n.tech) { g.font = '700 9px ui-monospace,monospace'; g.fillText(n.tech, x + w - 5, y + 5); }
@@ -3921,7 +3938,7 @@ async function boot() {
   if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener('devicechange', () => { ioDeviceChange().catch(e => console.warn(e)); });
   bus.emit('song');
   try { ghBoot(); } catch (e) { console.warn('github', e); }      /* back from Sign in with GitHub, or a sync at start (part 74) */
-  DEV.make = () => { window.__daily = { toggleRec, closePop, spPause, encodeWav, PS, psOn, playDur, psSpeed, psKey, psSched, psDSPFactory, psPop, KY, keysOpen, keysVoice, keysStep, kyNoteOn, kyNoteOff, kyRec, kyClear, kyWrite, kyPiano, kyMarks, kyVoicing, KEYS_SOUNDS, KEYS_STYLES, coFinish, coDemo, coFeedback, coFbView, coTimeline, coBeat, coPractise, TAKE, learnPassed, todayPlan, todayPieces, todayStart, todayDone, streak, weekCount, dayKey, LSTEP, songLessons, songStart, songKey, earLick, earStart, EAR, simpleSet, simpleApply, ghTakeSettings, airMode, airSet, CO, coPos, coachOpen, coListen, coTick, coPlace, coNotes, coSetPiece, rfParse, LESSONS, RIFFS, RIFF_STYLES, learnOpen, learnToSong, learnFile, learnFileText, learnOpenFile, learnFromSong, labMake, labVary, labKeep, atlasPieces, atShape, MODE_VAMP, S, AIR, AIR_LAG, airSync, applyLayout, VB_PRESETS, VB_ORDER, VBS, vbAttach, vbApply, vbToggle, vbSet, vbPreset, vbPresetNext, vbThrow, vbLook, vbTick, vbScale, vocalBoardOpen, pedalRelease, MEG, megSpectrum, megFeatures, megScore, megStep, megSet, megLearn, megDraw, megLoop, megSettings, PAD, padsOpen, padHit, padTap, padRecord, padRecStop, padUndoPass, padClear, padResize, padBeatbox, bbHits, bbPattern, dpat, bassEvent, drumStep, PEDAL, pedalPress, pedalDo, pedalSecs, gearSettings, MCLK, mclkSlot, mclkMs, MIDI, MIDIRAW, onMidi, STRM, streamOpen, streamRoom, streamInfo, streamPanel, slotAtTime, SING, SHW, singStep, singScore, singSteamIR, singMicOff, showerOpen, shwGo, shwPlay, shwPrev, shwNext, shwStem, shwRecToggle, shwRecStop, shwHear, shwSave, shwAddFiles, shwRemove, shwMove, shwMode, shwLoadSet, shwPlaylist, shwWords, shwPrepare, shwFolderPull, lrcParse, readTags, spPos, spPlay, STP, trainOpen, projRestoreTrack, secretNote, secretArp, WS, WS_BASE, WS_ARPS, wsScaleRun, wsArpRun, wsFollow, wsStop, wsListen, wsEarNext, wsEarAnswer, wsOpen, bandMute, bandMuted, pdbPut, pdbKeys, projRename, FS, FS_B, fsUse, fsSync, fsHead, fsNeeds, fsTidy, fsOpen, syncOff, syncZips, PRJ_WAIT: () => PRJ.wait, EGG, EGG_LINES, EGG_ORDER, eggDay, eggFor, eggNow, eggText, eggTick, eggFit, saveCfg, projSave, projDelete, GH, ghSync, ghConnect, ghDisconnect, ghLocal, ghSha, ghJson, ghMerge3, ghShare, ghGallery, ghGalleryOpen, ghGalleryShow, ghKeepLook, ghKeepRig, rigClean, ghReturn, BRAND, ghSettingsOut, projRefresh, projCreate, projLoad, PRJ, SEC, SECRETS, secretFound, secretTiming, secretsOpen, secretSync, backstageOpen, startAudio, playheadSlot, GUARD, reportText, reportCopy, srecQ, srecSize, pdbGet, srecFmt, SREC_FMTS, VBG, vbgAdd, vbgRemove, vbgUse, vbgOpen, vbgDraw, vzSetMode, srecFrame, srecFmtBox, kitThumb, WORKLET_SRC, mkComp, mkShaper, rigLat, voxLat, restartAudio, satCurve, rigApply, qrMake, qrSvg, tipLink, tipShort, tipReady, tipCard, tipDraw, tipShareHtml, tipOpen, tipPrint, tipPng, tipVisAvoid, tipStageAvoid, TIP, TIP_TERMS, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, STP, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfort, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, srecStart, srecStop, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, tkFades, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, FB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, vzSetMode, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, drawVis, perfClose, voicings, peaksOf, uid, shareGate, shareData, shareHtml, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, slotAtTime, SEL, mtof, spb, playheadSlot, WR, HM, HMX, HM_MODES, vzImmersive, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitThumb, kitInk, kitNotes, kitRecord, srecMime, mGo, GD_SESSIONS, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard}; };   // test hook: with ?debug, or Backstage ▸ Labs ▸ Developer handles
+  DEV.make = () => { window.__daily = { isBass, instNow, nStr, yin, TUNINGS, setTuning, renderBarTab, tabLabels, voicingFor, toggleRec, closePop, spPause, encodeWav, PS, psOn, playDur, psSpeed, psKey, psSched, psDSPFactory, psPop, KY, keysOpen, keysVoice, keysStep, kyNoteOn, kyNoteOff, kyRec, kyClear, kyWrite, kyPiano, kyMarks, kyVoicing, KEYS_SOUNDS, KEYS_STYLES, coFinish, coDemo, coFeedback, coFbView, coTimeline, coBeat, coPractise, TAKE, learnPassed, todayPlan, todayPieces, todayStart, todayDone, streak, weekCount, dayKey, LSTEP, songLessons, songStart, songKey, earLick, earStart, EAR, simpleSet, simpleApply, ghTakeSettings, airMode, airSet, CO, coPos, coachOpen, coListen, coTick, coPlace, coNotes, coSetPiece, rfParse, LESSONS, RIFFS, RIFF_STYLES, learnOpen, learnToSong, learnFile, learnFileText, learnOpenFile, learnFromSong, labMake, labVary, labKeep, atlasPieces, atShape, MODE_VAMP, S, AIR, AIR_LAG, airSync, applyLayout, VB_PRESETS, VB_ORDER, VBS, vbAttach, vbApply, vbToggle, vbSet, vbPreset, vbPresetNext, vbThrow, vbLook, vbTick, vbScale, vocalBoardOpen, pedalRelease, MEG, megSpectrum, megFeatures, megScore, megStep, megSet, megLearn, megDraw, megLoop, megSettings, PAD, padsOpen, padHit, padTap, padRecord, padRecStop, padUndoPass, padClear, padResize, padBeatbox, bbHits, bbPattern, dpat, bassEvent, drumStep, PEDAL, pedalPress, pedalDo, pedalSecs, gearSettings, MCLK, mclkSlot, mclkMs, MIDI, MIDIRAW, onMidi, STRM, streamOpen, streamRoom, streamInfo, streamPanel, slotAtTime, SING, SHW, singStep, singScore, singSteamIR, singMicOff, showerOpen, shwGo, shwPlay, shwPrev, shwNext, shwStem, shwRecToggle, shwRecStop, shwHear, shwSave, shwAddFiles, shwRemove, shwMove, shwMode, shwLoadSet, shwPlaylist, shwWords, shwPrepare, shwFolderPull, lrcParse, readTags, spPos, spPlay, STP, trainOpen, projRestoreTrack, secretNote, secretArp, WS, WS_BASE, WS_ARPS, wsScaleRun, wsArpRun, wsFollow, wsStop, wsListen, wsEarNext, wsEarAnswer, wsOpen, bandMute, bandMuted, pdbPut, pdbKeys, projRename, FS, FS_B, fsUse, fsSync, fsHead, fsNeeds, fsTidy, fsOpen, syncOff, syncZips, PRJ_WAIT: () => PRJ.wait, EGG, EGG_LINES, EGG_ORDER, eggDay, eggFor, eggNow, eggText, eggTick, eggFit, saveCfg, projSave, projDelete, GH, ghSync, ghConnect, ghDisconnect, ghLocal, ghSha, ghJson, ghMerge3, ghShare, ghGallery, ghGalleryOpen, ghGalleryShow, ghKeepLook, ghKeepRig, rigClean, ghReturn, BRAND, ghSettingsOut, projRefresh, projCreate, projLoad, PRJ, SEC, SECRETS, secretFound, secretTiming, secretsOpen, secretSync, backstageOpen, startAudio, playheadSlot, GUARD, reportText, reportCopy, srecQ, srecSize, pdbGet, srecFmt, SREC_FMTS, VBG, vbgAdd, vbgRemove, vbgUse, vbgOpen, vbgDraw, vzSetMode, srecFrame, srecFmtBox, kitThumb, WORKLET_SRC, mkComp, mkShaper, rigLat, voxLat, restartAudio, satCurve, rigApply, qrMake, qrSvg, tipLink, tipShort, tipReady, tipCard, tipDraw, tipShareHtml, tipOpen, tipPrint, tipPng, tipVisAvoid, tipStageAvoid, TIP, TIP_TERMS, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, STP, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfort, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, srecStart, srecStop, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, tkFades, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, FB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, vzSetMode, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, drawVis, perfClose, voicings, peaksOf, uid, shareGate, shareData, shareHtml, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, slotAtTime, SEL, mtof, spb, playheadSlot, WR, HM, HMX, HM_MODES, vzImmersive, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitThumb, kitInk, kitNotes, kitRecord, srecMime, mGo, GD_SESSIONS, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard}; };   // test hook: with ?debug, or Backstage ▸ Labs ▸ Developer handles
   if (/[?&]debug\b/.test(location.search) || (CFG.labs && CFG.labs.handles)) DEV.make();
   try { bksBoot(); } catch (e) { console.warn('backstage', e); }      /* #backstage in the address, the performance overlay (part 73c) */
   projInit().catch(e => { console.warn('library', e); PRJ.ready = true; if (PRJ.wantStart) startMaybe(); });
@@ -4905,7 +4922,7 @@ async function calStrings(ui) {
     res.push({ str: i, name: names[i], peak: pk, level: hi, cents: off, centroid: med(cen), decay: dec || 1300, midi: m }); ui.dots.children[i].className = Math.abs(off) > 12 ? 'cdot warn' : 'cdot ok'; await calWait(900);
   }
   const ok = res.filter(Boolean); CFG.guitar = { t: Date.now(), strings: res }; saveCfg(); CAL.busy = false; const out = [];
-  if (ok.length < 4) out.push('Only ' + ok.length + ' of 6 strings were heard — check the input and try again.');
+  if (ok.length < Math.min(4, S.tuning.length - 1)) out.push('Only ' + ok.length + ' of ' + S.tuning.length + ' strings were heard — check the input and try again.');
   ok.forEach(r => { if (Math.abs(r.cents) > 12) out.push(`${r.name}: ${r.cents > 0 ? 'sharp' : 'flat'} by ${Math.abs(r.cents).toFixed(0)}¢ — tune it before transcribing.`); if (r.peak > -1.5) out.push(`${r.name}: clipping — lower the interface gain.`); });
   const lv = ok.length ? ok.reduce((a, r) => a + r.level, 0) / ok.length : -99; if (lv < -34) out.push(`Average level ${lv.toFixed(0)} dB is low — raise the gain so open strings land around −18 dB.`); if (lv > -8) out.push(`Average level ${lv.toFixed(0)} dB is hot — back it off a little.`);
   const sp = ok.length ? Math.max(...ok.map(r => r.level)) - Math.min(...ok.map(r => r.level)) : 0; if (sp > 12) out.push(`String-to-string level varies by ${sp.toFixed(0)} dB — check pickup height or pick attack.`);
@@ -12852,16 +12869,16 @@ function wrCapNote(e) {
 }
 /* ---------- the fretboard ---------- */
 function wrFretBuild() {
-  if (!UI.wrFretSvg) return; const NF = WR.nf, left = !!CFG.left, W = NF === 15 ? 960 : 1240, H = 142, padL = 30, padR = 12, top = 14, bot = 18, bw = W - padL - padR, sh = (H - top - bot) / 5;
+  if (!UI.wrFretSvg) return; const NF = WR.nf, left = !!CFG.left, W = NF === 15 ? 960 : 1240, H = 142, padL = 30, padR = 12, top = 14, bot = 18, bw = W - padL - padR, NS1 = nStr() - 1, sh = (H - top - bot) / NS1;
   const posX = n => { const t = (1 - Math.pow(2, -n / 12)) / (1 - Math.pow(2, -NF / 12)); return padL + bw * (left ? 1 - t : t); };
   const svg = sv('svg', { viewBox: `0 0 ${W} ${H}`, class: 'wr-svg', role: 'img', 'aria-label': 'Fretboard', style: 'min-width:' + (NF === 15 ? 640 : 860) + 'px' });
-  svg.append(sv('rect', { x: padL, y: top - 6, width: bw, height: 5 * sh + 12, rx: 6, fill: 'var(--panel2)', stroke: 'var(--line2)' }));
-  for (let n = 0; n <= NF; n++) { const x = posX(n); svg.append(sv('line', { x1: x, x2: x, y1: top - 6, y2: top + 5 * sh + 6, stroke: n === 0 ? 'var(--text)' : 'var(--line2)', 'stroke-width': n === 0 ? 4 : 1.2 })); if (n > 0) svg.append(sv('text', { x: (posX(n) + posX(n - 1)) / 2, y: H - 6, 'text-anchor': 'middle', 'font-size': 9, fill: 'var(--muted)', 'font-family': 'var(--mono)' }, n)); }
-  [3, 5, 7, 9, 15, 17, 19, 21].filter(n => n <= NF).forEach(n => svg.append(sv('circle', { cx: (posX(n) + posX(n - 1)) / 2, cy: top + 2.5 * sh, r: 3.6, fill: 'var(--line2)', opacity: .6 })));
-  if (NF >= 12) { const x = (posX(12) + posX(11)) / 2; svg.append(sv('circle', { cx: x, cy: top + 1.5 * sh, r: 3.6, fill: 'var(--line2)', opacity: .7 }), sv('circle', { cx: x, cy: top + 3.5 * sh, r: 3.6, fill: 'var(--line2)', opacity: .7 })); }
+  svg.append(sv('rect', { x: padL, y: top - 6, width: bw, height: NS1 * sh + 12, rx: 6, fill: 'var(--panel2)', stroke: 'var(--line2)' }));
+  for (let n = 0; n <= NF; n++) { const x = posX(n); svg.append(sv('line', { x1: x, x2: x, y1: top - 6, y2: top + NS1 * sh + 6, stroke: n === 0 ? 'var(--text)' : 'var(--line2)', 'stroke-width': n === 0 ? 4 : 1.2 })); if (n > 0) svg.append(sv('text', { x: (posX(n) + posX(n - 1)) / 2, y: H - 6, 'text-anchor': 'middle', 'font-size': 9, fill: 'var(--muted)', 'font-family': 'var(--mono)' }, n)); }
+  [3, 5, 7, 9, 15, 17, 19, 21].filter(n => n <= NF).forEach(n => svg.append(sv('circle', { cx: (posX(n) + posX(n - 1)) / 2, cy: top + NS1 / 2 * sh, r: 3.6, fill: 'var(--line2)', opacity: .6 })));
+  if (NF >= 12) { const x = (posX(12) + posX(11)) / 2; svg.append(sv('circle', { cx: x, cy: top + NS1 * .3 * sh, r: 3.6, fill: 'var(--line2)', opacity: .7 }), sv('circle', { cx: x, cy: top + NS1 * .7 * sh, r: 3.6, fill: 'var(--line2)', opacity: .7 })); }
   WR.nodes = []; WR.tun = S.tuning.join() + ':' + S.capo;
   S.tuning.forEach((open, st) => {
-    const y = top + (5 - st) * sh; svg.append(sv('line', { x1: padL, x2: padL + bw, y1: y, y2: y, stroke: 'var(--text)', 'stroke-opacity': .5, 'stroke-width': .8 + (st === 0 ? 2.4 : st === 1 ? 1.9 : st === 2 ? 1.5 : st === 3 ? 1.2 : st === 4 ? .9 : .7) }));
+    const y = top + (NS1 - st) * sh; svg.append(sv('line', { x1: padL, x2: padL + bw, y1: y, y2: y, stroke: 'var(--text)', 'stroke-opacity': .5, 'stroke-width': .8 + (st === 0 ? 2.4 : st === 1 ? 1.9 : st === 2 ? 1.5 : st === 3 ? 1.2 : st === 4 ? .9 : .7) }));
     svg.append(sv('text', { x: 6, y: y + 4, 'font-size': 10.5, 'font-weight': 800, fill: 'var(--muted)', 'font-family': 'var(--mono)' }, tunPc(open))); WR.nodes[st] = [];
     for (let n = 0; n <= NF; n++) {
       const midi = open + S.capo + n, x = n === 0 ? posX(0) + (left ? 13 : -13) : (posX(n) + posX(n - 1)) / 2;

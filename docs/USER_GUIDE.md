@@ -761,6 +761,13 @@ The app ships no recordings and no one else's lyrics, and it never uploads anyth
 
 **📺 Stream window** (Creator Studio and Performer tools) opens a window with only the line being sung, the next one and the chord, in large type on one colour. In OBS, Streamlabs or any streaming app, add a **Window Capture** of it and a **Chroma Key** filter on that colour (green, blue or magenta), or a **Luma Key** on black. The words then float over your camera. The stage visuals have their own pop-out in Visuals.
 
+## Bass guitar (2.36)
+
+**Settings ▸ Music ▸ My instrument** chooses **Guitar**, or a **4, 5 or 6-string bass**. The song bar's tuning list also has bass tunings: standard, drop D, half-step down, D standard, 5-string with a low B or a high C, and 6-string.
+- **What follows the number of strings:** the tab editor, the tab text, both fretboards, the transcription view, the tuner and the tuning editor.
+- **The band:** bass tab plays with a bass sound, and the band's bass steps out so you can play it. **Band strip ▸ Bass** brings it back, and switching back to a guitar tuning brings it back too. The band's rhythm guitar keeps a guitar's chord shapes.
+- **Low notes:** the pitch tracker reaches down to a 5-string's low B (31 Hz) when the song is set for bass.
+
 ## Speed & key (2.35)
 
 **⏱** in the transport (on a phone: **More ▸ Speed & key**) slows the song down without lowering it, or moves it to another key without slowing it.

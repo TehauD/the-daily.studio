@@ -200,7 +200,7 @@ function txAssign(events, cx) {
     ev.notes = ev.notes.filter(n => txCandidates(n.midi, T, capo, MF).length);
     const notes = ev.notes.slice().sort((a, b) => a.midi - b.midi), vs = vf(ev.sym), camNear = (cx.cam || []).filter(c => Math.abs(c.t - ev.t) < .35), camPos = camNear.length ? median(camNear.map(c => c.fret).filter(f => f > 0)) : NaN;
     const states = []; if (!notes.length) { layers.push([{ asg: [], cost: 0, pos: null }]); return; }
-    const opts = notes.map(n => txCandidates(n.midi, T, capo, MF)), used = new Array(6).fill(false), cur = [];
+    const opts = notes.map(n => txCandidates(n.midi, T, capo, MF)), used = new Array(T.length).fill(false), cur = [];
     const dfs = (i, cost) => {
       if (states.length > 6000) return; if (i === notes.length) { states.push(txScoreSet(cur.slice(), notes, cost, vs, camNear, camPos, ev, cx)); return; }
       for (const c of opts[i]) { if (used[c.st]) continue; used[c.st] = true; cur.push({ st: c.st, f: c.f, midi: notes[i].midi }); dfs(i + 1, cost + (c.f === 0 ? 0 : .09 * c.f + (c.f > 12 ? .5 : 0))); cur.pop(); used[c.st] = false; }

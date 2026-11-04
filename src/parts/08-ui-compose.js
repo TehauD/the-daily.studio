@@ -36,12 +36,12 @@ function stripCaretPad(s) { return s.replace(/\s+$/, ''); }
 
 /* ---------- ASCII tablature renderer (Ultimate Guitar friendly) ---------- */
 function slotText(n) { return fretText(n) + ({ h: 'h', p: 'p', '/': '/', '\\': '\\', '~': '~' }[n.t] || ''); }
-function tabLabels() { return stringLabels().map((l, i) => (i === 0 && l === 'E' ? 'e' : l)); }
+function tabLabels() { return stringLabels().map((l, i) => (i === 0 && l === 'E' && !isBass() ? 'e' : l)); }
 function renderBarTab(bar) {
-  const sp = spb(), rows = Array.from({ length: 6 }, () => '');
+  const sp = spb(), NS_ = nStr(), rows = Array.from({ length: NS_ }, () => '');
   for (let s = 0; s < sp; s++) {
     const here = bar.tab.filter(n => n.s === s), w = Math.max(2, ...here.map(n => slotText(n).length + 1));
-    for (let r = 0; r < 6; r++) { const n = here.find(o => o.st === 5 - r); rows[r] += n ? slotText(n).padEnd(w, '-') : '-'.repeat(w); }
+    for (let r = 0; r < NS_; r++) { const n = here.find(o => o.st === NS_ - 1 - r); rows[r] += n ? slotText(n).padEnd(w, '-') : '-'.repeat(w); }
   }
   return rows;
 }
@@ -174,18 +174,18 @@ function tuningEditor() {
   const isCustom = !TUNINGS[S.tuningName];
   const d = h('details', { class: 'tun-ed', open: TUNED.open || isCustom, ontoggle: e => { TUNED.open = e.target.open; } }, h('summary', {}, 'Custom tuning · set each string' + (isCustom ? '  —  active' : '')));
   const row = h('div', { class: 'tun-row' });
-  const opts = []; for (let m = 24; m <= 79; m++) opts.push(m);
-  for (let i = 0; i < 6; i++) {
-    const sel = h('select', { class: 'in', title: 'String ' + (6 - i) + (i === 0 ? ' (lowest)' : i === 5 ? ' (highest)' : ''), onchange: () => { const arr = S.tuning.slice(); arr[i] = +sel.value; setTuning(arr); } }, opts.map(m => h('option', { value: m }, tunNote(m))));
-    sel.value = S.tuning[i]; row.append(h('label', { class: 'field' }, 'String ' + (6 - i), sel));
+  const opts = []; for (let m = 21; m <= 79; m++) opts.push(m);
+  const NS_ = nStr(); for (let i = 0; i < NS_; i++) {
+    const sel = h('select', { class: 'in', title: 'String ' + (NS_ - i) + (i === 0 ? ' (lowest)' : i === NS_ - 1 ? ' (highest)' : ''), onchange: () => { const arr = S.tuning.slice(); arr[i] = +sel.value; setTuning(arr); } }, opts.map(m => h('option', { value: m }, tunNote(m))));
+    sel.value = S.tuning[i]; row.append(h('label', { class: 'field' }, 'String ' + (NS_ - i), sel));
   }
   const shift = (n) => () => setTuning(S.tuning.map(m => m + n));
   const dropLow = () => { const a = S.tuning.slice(); a[0] -= 2; setTuning(a); };
   d.append(row, h('div', { class: 'row', style: { gap: '6px', marginTop: '8px', flexWrap: 'wrap' } },
     h('button', { class: 'btn sm', title: 'Tune every string down a half step', onclick: shift(-1) }, '↓ ½ step'), h('button', { class: 'btn sm', title: 'Tune every string up a half step', onclick: shift(1) }, '↑ ½ step'),
     h('button', { class: 'btn sm', title: 'Lower the lowest string a whole step (drop tuning)', onclick: dropLow }, 'Drop low string'),
-    h('button', { class: 'btn sm', onclick: () => setTuning(TUNINGS['Standard (E A D G B E)'], 'Standard (E A D G B E)') }, 'Reset to standard'),
-    h('span', { class: 'tiny muted' }, 'Six strings, notes E1–G5. Voicings, tab playback, the tuner, chord detection and transcription all follow it.')));
+    h('button', { class: 'btn sm', onclick: () => isBass() ? setTuning(TUNINGS['Bass: standard (E A D G)'], 'Bass: standard (E A D G)') : setTuning(TUNINGS['Standard (E A D G B E)'], 'Standard (E A D G B E)') }, 'Reset to standard'),
+    h('span', { class: 'tiny muted' }, (isBass() ? NS_ + ' bass strings' : 'Six strings') + ', notes A0–G5. Voicings, tab playback, the tuner, chord detection and transcription all follow it.')));
   return d;
 }
 function songField(label, el) { return h('label', { class: 'field' }, label, el); }

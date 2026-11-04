@@ -41,7 +41,7 @@ async function calStrings(ui) {
     res.push({ str: i, name: names[i], peak: pk, level: hi, cents: off, centroid: med(cen), decay: dec || 1300, midi: m }); ui.dots.children[i].className = Math.abs(off) > 12 ? 'cdot warn' : 'cdot ok'; await calWait(900);
   }
   const ok = res.filter(Boolean); CFG.guitar = { t: Date.now(), strings: res }; saveCfg(); CAL.busy = false; const out = [];
-  if (ok.length < 4) out.push('Only ' + ok.length + ' of 6 strings were heard — check the input and try again.');
+  if (ok.length < Math.min(4, S.tuning.length - 1)) out.push('Only ' + ok.length + ' of ' + S.tuning.length + ' strings were heard — check the input and try again.');
   ok.forEach(r => { if (Math.abs(r.cents) > 12) out.push(`${r.name}: ${r.cents > 0 ? 'sharp' : 'flat'} by ${Math.abs(r.cents).toFixed(0)}¢ — tune it before transcribing.`); if (r.peak > -1.5) out.push(`${r.name}: clipping — lower the interface gain.`); });
   const lv = ok.length ? ok.reduce((a, r) => a + r.level, 0) / ok.length : -99; if (lv < -34) out.push(`Average level ${lv.toFixed(0)} dB is low — raise the gain so open strings land around −18 dB.`); if (lv > -8) out.push(`Average level ${lv.toFixed(0)} dB is hot — back it off a little.`);
   const sp = ok.length ? Math.max(...ok.map(r => r.level)) - Math.min(...ok.map(r => r.level)) : 0; if (sp > 12) out.push(`String-to-string level varies by ${sp.toFixed(0)} dB — check pickup height or pick attack.`);

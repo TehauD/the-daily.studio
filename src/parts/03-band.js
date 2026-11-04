@@ -114,7 +114,7 @@ const STRUMS = {
   'Island Strum': { p: 'D..uD.u..u.uD.u.' }, 'Half-time Pad': { p: 'D...............' }, 'Waltz 3/4': { p: 'D.....d...d.....' }
 };
 const voicingFor = sym => {
-  const vs = voicings(sym, S.tuning, S.capo, 12), i = S.voicePref[sym];
+  const bass = isBass(), vs = voicings(sym, bass ? TUNINGS['Standard (E A D G B E)'] : S.tuning, bass ? 0 : S.capo, 12), i = S.voicePref[sym];      /* the band's rhythm guitar keeps a guitar's tuning when you play bass */
   return vs[i != null && vs[i] ? i : 0] || null;
 };
 function strumAt(t, sym, ch, style) {
@@ -130,8 +130,9 @@ function playTabNote(bar, n, t, dur) {
   const midi = n.f === 'x' ? S.tuning[n.st] + S.capo : noteMidi(n), id = 'l' + n.st;
   const prev = bar.tab.filter(o => o.st === n.st && o.s < n.s).sort((a, b) => b.s - a.s)[0], leg = prev && LEGATO.has(prev.t);
   const vel = (n.f === 'x' ? .5 : (leg ? .5 : .85)) * (n.t === '<>' ? .55 : 1);
-  pluck('lead', t, n.t === '<>' ? midi + 12 : midi, vel, { id, soft: leg || n.t === '<>', dead: n.f === 'x', pan: (n.st - 2.5) * .08 });
-  if (n.t === 'b') pluck('lead', t + dur * 1.5, midi + ((n.bend != null ? n.bend : n.f + 2) - n.f), .5, { id, soft: true, pan: (n.st - 2.5) * .08 });
+  const tr = isBass() ? 'bass' : 'lead';      /* bass tab plays as bass */
+  pluck(tr, t, n.t === '<>' ? midi + 12 : midi, vel, { id, soft: leg || n.t === '<>', dead: n.f === 'x', pan: (n.st - 2.5) * .08 });
+  if (n.t === 'b') pluck(tr, t + dur * 1.5, midi + ((n.bend != null ? n.bend : n.f + 2) - n.f), .5, { id, soft: true, pan: (n.st - 2.5) * .08 });
 }
 
 /* ---------- transport ---------- */

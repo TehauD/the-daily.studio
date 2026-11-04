@@ -9,7 +9,7 @@ suite('e2e-learn2', async t => {
   const p = await t.open({ w: 1280, h: 900 }), ev = (f, a) => p.evaluate(f, a);
   await ev(async s => { const D = window.__daily; await D.startAudio(); await window.dailyStudio.call('load_chord_sheet', { text: s }); D.S.key = 9; D.S.bpm = 100; D.S.title = 'Harbour'; D.commit(false);
     const AN = D.AN; window.__f = { active: false, midi: null, cents: 0, chord: [], vib: null }; ['active', 'midi', 'cents', 'chord', 'vib'].forEach(k => Object.defineProperty(AN, k, { configurable: true, get: () => window.__f[k], set: () => { } })); }, SHEET);
-  const play = ms => ev(async ms => { const nap = x => new Promise(r => setTimeout(r, x)); for (const m of ms) { window.__f.active = true; window.__f.midi = m; await nap(170); window.__f.active = false; window.__f.midi = null; await nap(50); } await nap(150); }, ms);
+  const play = ms => ev(async ms => { const nap = x => new Promise(r => setTimeout(r, x)); for (const m of ms) { window.__f.active = true; window.__f.midi = m; await nap(260); window.__f.active = false; window.__f.midi = null; await nap(70); } await nap(200); }, ms);
   const quiet = () => ev(() => Object.assign(window.__f, { active: false, midi: null, cents: 0, chord: [], vib: null }));
 
   /* ---- 1 · feedback: a wrong note ---- */

@@ -114,8 +114,8 @@ function renderTab(keepFocus) {
   sec.bars.forEach((bar, bi) => {
     const grid = h('div', { class: 'tgrid', style: { gridTemplateColumns: '18px repeat(' + sp + ',var(--tcw,22px))' } }), cs = barChords(bar);
     grid.append(h('span'), ...Array.from({ length: sp }, (_, s) => h('div', { class: 'tbeat', style: { display: 'block', width: 'var(--tcw,22px)', textAlign: 'center', height: '11px', font: '600 8.5px var(--mono)', color: 'var(--muted)' } }, s % bs === 0 ? String(s / bs + 1) : (bs >= 4 && s % (bs / 2) === 0 ? '&' : ''))));
-    for (let r = 0; r < 6; r++) {
-      const st = 5 - r; grid.append(h('div', { style: { font: '700 10px var(--mono)', color: 'var(--muted)', alignSelf: 'center', textAlign: 'center' } }, labels[r]));
+    const NS_ = nStr(); TE.st = Math.min(TE.st, NS_ - 1); for (let r = 0; r < NS_; r++) {
+      const st = NS_ - 1 - r; grid.append(h('div', { style: { font: '700 10px var(--mono)', color: 'var(--muted)', alignSelf: 'center', textAlign: 'center' } }, labels[r]));
       for (let s = 0; s < sp; s++) {
         const n = bar.tab.find(o => o.s === s && o.st === st), sel = TE.bi === bi && TE.slot === s && TE.st === st;
         const c = h('div', { class: 'tcell' + (s === 0 ? ' b0' : s % bs === 0 ? ' b4' : '') + (sel ? ' sel' : ''), tabindex: sel ? 0 : -1, 'data-b': bi, 'data-s': s, 'data-st': st, onpointerdown: () => { TE.bi = bi; TE.slot = s; TE.st = st; markSel(); } }, n ? h('span', { class: 'n' }, fretText(n)) : null, n && n.t && n.t !== '<>' && n.t !== 'b' ? h('span', { class: 't' }, n.t) : null);
@@ -147,7 +147,7 @@ function tabKey(e) {
   } else switch (e.key) {
     case 'ArrowRight': TE.slot++; if (TE.slot >= sp) { if (TE.bi < sec.bars.length - 1) { TE.bi++; TE.slot = 0; } else TE.slot = sp - 1; } markSel(); break;
     case 'ArrowLeft': TE.slot--; if (TE.slot < 0) { if (TE.bi > 0) { TE.bi--; TE.slot = sp - 1; } else TE.slot = 0; } markSel(); break;
-    case 'ArrowUp': if (e.altKey) { transpose(1); } else { TE.st = Math.min(5, TE.st + 1); markSel(); } break;
+    case 'ArrowUp': if (e.altKey) { transpose(1); } else { TE.st = Math.min(nStr() - 1, TE.st + 1); markSel(); } break;
     case 'ArrowDown': if (e.altKey) { transpose(-1); } else { TE.st = Math.max(0, TE.st - 1); markSel(); } break;
     case 'Delete': case 'Backspace': setNote(null); break;
     case 'Enter': case ' ': { T.cursor = (sec.bars.length ? S.sections.slice(0, TE.sec).reduce((a, q) => a + q.bars.length, 0) + TE.bi : 0) * sp; T.playing ? stopPlay(true) : play(); break; }

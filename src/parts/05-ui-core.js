@@ -118,6 +118,7 @@ function openSettings(at) {
       chk('Let AI agents in this browser use the studio (read the song, load chord sheets, edit, play; never the microphone or recording)', 'agents', () => agentRegister()),
       note('An AI assistant in your browser can use the studio through WebMCP. It runs here; nothing is sent anywhere. Each change shows a 🤖 note and can be undone.')] },
     { key: 'music', label: 'Music', ico: '♪', sub: 'Tuning reference, note names and the fretboard.', body: () => [
+      F('My instrument (sets a standard tuning; the tuning list has more)', h('select', { class: 'in', id: 'setInst', onchange: e => { const [name] = INSTRUMENTS.find(x => x[1] === e.target.value) || []; const tun = { guitar: 'Standard (E A D G B E)', bass4: 'Bass: standard (E A D G)', bass5: 'Bass 5-string (B E A D G)', bass6: 'Bass 6-string (B E A D G C)' }[e.target.value]; setTuning(TUNINGS[tun], tun); commit(); bus.emit('song'); } }, INSTRUMENTS.map(([t, v]) => h('option', { value: v, selected: instNow() === v }, t)))),
       F('Reference pitch A4 (Hz)', num('a4', 415, 466, .1, () => bus.emit('song'))),
       F('Accidentals', sel('flats', [[false, 'Sharps (C#)'], [true, 'Flats (Db)']], () => { CFG.flats = String(CFG.flats) === 'true'; saveCfg(); bus.emit('song'); })),
       F('Fretboard labels', sel('fretNames', [['notes', 'Note names'], ['degrees', 'Scale degrees'], ['frets', 'Fret numbers']], () => bus.emit('fret'))),
