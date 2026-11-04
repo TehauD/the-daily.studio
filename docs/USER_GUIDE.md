@@ -761,6 +761,30 @@ The app ships no recordings and no one else's lyrics, and it never uploads anyth
 
 **📺 Stream window** (Creator Studio and Performer tools) opens a window with only the line being sung, the next one and the chord, in large type on one colour. In OBS, Streamlabs or any streaming app, add a **Window Capture** of it and a **Chroma Key** filter on that colour (green, blue or magenta), or a **Luma Key** on black. The words then float over your camera. The stage visuals have their own pop-out in Visuals.
 
+## Learn 2: feedback, Today, This song and By ear (2.34)
+
+**After every go the coach tells you what happened and what to do next:**
+- **Wrong notes, on the neck:** the note it wanted (green) beside where you probably were (✕), and in words, for example "note 3 wants D (string 5, fret 5), you played D♯: one fret too high". **🔁 Practise notes 2–5** puts in a short, slower piece of just the tricky bit.
+- **Timing, on a strip:** each stroke or note is a dot against the beat, early above the line and late below. Ones it didn't hear are hollow rings. It tells you whether you rush or drag, where you were furthest out, and offers **🐢 Slower** (10 BPM down).
+- **🎧 Hear my take:** what you just played, recorded from your input while the coach listened, next to **▶ Hear the coach**. It's kept in memory only and is gone when you move on.
+
+**📅 Today** (the first section of Learn) is about fifteen minutes, a new plan each day:
+- a warm-up;
+- **a review** of something you passed before, brought back after 1, 3, 7, 14 and then 30 days so it sticks;
+- **something new** on the path you're on (with its explanation first);
+- a riff at your level.
+Your **streak** (days in a row) and the steps you passed this week are at the top.
+
+**🎵 This song** turns the song you have open into lessons:
+- its own strum pattern (the band's);
+- each section's chords in time with the band, and its riff where the tab has one;
+- then **the whole song**.
+It starts at 70% of the song's tempo, every clean go is 5 BPM faster, and it stops at the song's own tempo. Where you got to is remembered for each song. It's also in the Practice workspace's tools.
+
+**👂 By ear:** the coach plays a short phrase in the key and scale you choose, with the neck and the tab hidden. Press **🎧 Hear it, then play it back** and play it.
+- Get it and the next phrase is a note longer (up to eight). Miss two in a row and it's a note shorter.
+- **▶ Hear it again** replays it, and **👁 Show me** reveals it.
+
 ## Learn: lessons, riffs, Riff Lab and the scale atlas (2.32)
 
 **🎓 Learn** is the first tool in the **Teacher** workspace (and on a phone in **More**). Connect your guitar (Audio, top right): the coach listens through the same input as the tuner.

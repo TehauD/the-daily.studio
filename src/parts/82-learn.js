@@ -42,10 +42,10 @@ function learnOpenFile(text) {
   coachOpen(ps, 0, { title: str(o.title, 80) || 'A lesson from a file' }); return true;
 }
 /** the bars of the section you are in (or the selected ones) as an exercise: the tab's notes, at the song's tempo */
-function learnFromSong() {
-  const si = pedalSecs().i, sec = S.sections[si]; if (!sec) return null; const sp = spb(), cap = S.capo || 0, notes = [];
+function learnFromSong(at, quiet) {
+  const si = at != null ? at : pedalSecs().i, sec = S.sections[si]; if (!sec) return null; const sp = spb(), cap = S.capo || 0, notes = [];
   sec.bars.forEach((b, bi) => (b.tab || []).filter(n => typeof n.f === 'number').forEach(n => notes.push({ at: bi * sp + n.s, len: 2, m: S.tuning[n.st] + cap + n.f, s: n.st, f: n.f + cap, t: n.t === 'b' ? 'b' : '' })));
-  if (!notes.length) { toast('This section has no tab notes yet. Write some in Write, or use ● Capture.', 'warn'); return null; }
+  if (!notes.length) { if (!quiet) toast('This section has no tab notes yet. Write some in Write, or use ● Capture.', 'warn'); return null; }
   notes.sort((a, b) => a.at - b.at || a.s - b.s); const merged = []; notes.forEach(n => { const l = merged[merged.length - 1]; if (l && l.at === n.at) (l.ch = l.ch || [{ m: l.m, s: l.s, f: l.f }]).push({ m: n.m, s: n.s, f: n.f }); else merged.push(n); });
   return { kind: 'notes', id: 'song.' + (sec.id || si), title: (S.title || 'Song') + ' · ' + sec.name, text: 'The tab of this section, note by note. Teachers: share it as a file for your student.', bpm: Math.round(S.bpm), notes: merged, len: Math.max(16, sec.bars.length * sp), keyed: false };
 }
@@ -186,9 +186,12 @@ function learnTeach() {
 /** the Teacher's front door */
 function learnOpen(at) {
   const paths = LESSONS.filter(p => p.id !== 'warm'), warm = LESSONS.filter(p => p.id === 'warm'), all = LESSONS.reduce((a, p) => a + p.lessons.reduce((b, l) => b + l.steps.length, 0), 0), done = LESSONS.reduce((a, p) => a + p.lessons.reduce((b, l) => b + lsDone(l), 0), 0);
-  return hubOpen('learn', { ico: '🎓', title: 'Learn', sub: 'Lessons that listen while you play, warm-ups, riffs and licks, a riff lab for new ideas and an atlas of the neck. ' + done + ' of ' + all + ' lesson steps done.', at, sections: [
+  return hubOpen('learn', { ico: '🎓', title: 'Learn', sub: 'A plan for today, lessons that listen while you play, your own song as lessons, ear training, riffs, a riff lab and an atlas of the neck. ' + done + ' of ' + all + ' lesson steps done.', at, sections: [
+    { key: 'today', label: 'Today', ico: '📅', sub: 'About fifteen minutes: a warm-up, something to review, something new and a riff. A new plan every day.', wide: true, body: () => [todayView()] },
     { key: 'lessons', label: 'Lessons', ico: '🎓', sub: 'Each step shows it, plays it, then listens to you play it (through the input the tuner uses).', wide: true, body: () => [learnLessons(paths)] },
     { key: 'warm', label: 'Warm-ups', ico: '🔥', sub: 'Five minutes before you play.', wide: true, body: () => [learnLessons(warm)] },
+    { key: 'song', label: 'This song', ico: '🎵', sub: 'The song you have open, as lessons: its strum, each section’s chords and riff, then the whole song, working up to its tempo.', wide: true, body: () => [songView()] },
+    { key: 'ear', label: 'By ear', ico: '👂', sub: 'The coach plays a short phrase with the tab hidden; you play it back. It grows a note each time you get it.', wide: true, body: () => [earView()] },
     { key: 'riffs', label: 'Riffs & licks', ico: '🎸', sub: RIFFS.length + ' riffs, written for this studio, in ' + RIFF_STYLES.length + ' styles. Any key; note by note or in time; straight into your song.', wide: true, body: () => [learnRiffs()] },
     { key: 'lab', label: 'Riff Lab', ico: '🧪', sub: 'New ideas, on tap.', wide: true, body: () => [learnLab()] },
     { key: 'atlas', label: 'Scale atlas', ico: '🗺', sub: 'The neck, mapped: boxes, positions, arpeggios, modes over a band, target notes.', wide: true, body: () => [learnAtlas()] },

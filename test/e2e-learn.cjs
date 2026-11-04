@@ -16,9 +16,9 @@ suite('e2e-learn', async t => {
 
   /* ---- the Teacher workspace ---- */
   await ev(() => window.__daily.goalGo('teacher')); await wait(500);
-  ok(await ev(() => ['gtLearn', 'gtWarm', 'gtRiffs', 'gtLab', 'gtAtlas', 'gtInk', 'gtNotes', 'gtScreen'].every(id => document.getElementById(id)) && document.getElementById('gtLearn').classList.contains('gl-main')), 'the Teacher: 🎓 Learn first, then warm-ups, riffs, Riff Lab and the atlas; annotate, lesson notes and record screen are still there');
+  ok(await ev(() => ['gtLearn', 'gtToday', 'gtSong', 'gtEar', 'gtRiffs', 'gtInk', 'gtNotes', 'gtScreen'].every(id => document.getElementById(id)) && document.getElementById('gtLearn').classList.contains('gl-main')), 'the Teacher: 🎓 Learn first, then Today, This song, By ear and riffs (Riff Lab and the atlas are inside Learn); annotate, lesson notes and record screen are still there');
   await ev(() => document.getElementById('gtLearn').click()); await wait(500);
-  ok(await ev(() => { const d = document.getElementById('learn'); return !!(d && d.open) && ['lessons', 'warm', 'riffs', 'lab', 'atlas', 'teach'].every(k => d.querySelector('section[data-sec="' + k + '"]')) && document.querySelectorAll('#learn [data-lesson]').length >= 20; }), 'Learn: lessons, warm-ups, riffs & licks, Riff Lab, the atlas and a room for teachers; four paths of lessons');
+  ok(await ev(() => { const d = document.getElementById('learn'); return !!(d && d.open) && ['today', 'lessons', 'warm', 'song', 'ear', 'riffs', 'lab', 'atlas', 'teach'].every(k => d.querySelector('section[data-sec="' + k + '"]')) && document.querySelectorAll('#learn [data-lesson]').length >= 20; }), 'Learn: lessons, warm-ups, riffs & licks, Riff Lab, the atlas and a room for teachers; four paths of lessons');
 
   /* ---- a lesson: read, listen, then play it note by note ---- */
   await ev(() => document.querySelector('[data-lesson="l1"]').click()); await wait(400);

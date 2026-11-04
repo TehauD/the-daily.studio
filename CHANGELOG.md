@@ -2,6 +2,33 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.34.0 — 2026-11-04 — Learn 2: feedback that teaches, Today, This song, By ear
+
+### Added
+- **Feedback after every go** (`src/parts/80b-coach-feedback.js`): the coach says what went wrong and what to do next.
+  - **Wrong notes, on the neck:** the note it wanted (green) beside where you probably were (✕), and in words ("one fret too high"). **🔁 Practise notes 2–5** puts in a slower piece of just the tricky notes.
+  - **Timing, on a strip:** each stroke or note is a dot, early above the line and late below, with misses hollow. It says whether you rush or drag, where you were furthest out, and offers **🐢 Slower**.
+  - **🎧 Hear my take:** your attempt is recorded from the input while the coach listens, so you can compare it with the coach. It's kept in memory only and dropped when you move on.
+- **📅 Today** (`src/parts/83-practice-plan.js`): about fifteen minutes, a new plan each day.
+  - The plan is a warm-up, a review, the next new step on your path (with its explanation first) and a riff at your level.
+  - Reviews come back after 1, 3, 7, 14 and 30 days.
+  - A streak and a week count are shown, and finishing says so.
+- **🎵 This song:** the open song as lessons.
+  - Its own strum pattern, each section's chords in time with the band, its riff from the tab, then the whole song.
+  - It starts at 70% of the song's tempo, and the ladder stops at the song's tempo. Progress is remembered per song.
+  - It's also in the Practice workspace.
+- **👂 By ear:** call and response.
+  - The coach plays a short phrase in your key and scale with the tab hidden, then listens for you to play it back.
+  - The phrase grows a note when you get it, and shrinks after two misses. **👁 Show me** reveals it.
+- **The Teacher workspace's tools** are now 🎓 Learn, 📅 Today, 🎵 This song, 👂 By ear and 🎸 Riffs & licks, plus the teaching tools. Riff Lab, the atlas and the warm-ups are inside Learn.
+
+### Fixed
+- **Strum timing:** a stroke could count for two beats, so a late stroke also showed as early for the next beat. Each stroke now counts once, closest pairs first.
+- **Learn's ticks:** any step passed now marks the Learn window to refresh when the coach closes.
+
+### Tests
+- New `e2e-learn2` (36 checks). `e2e-learn` updated for the new Teacher tools and Learn sections.
+
 ## 2.33.2 — 2026-11-04 — The coach stays in front
 
 ### Fixed

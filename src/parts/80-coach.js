@@ -69,7 +69,7 @@ const coChordIs = (want) => { const c = AN.active && AN.chord && AN.chord[0]; if
 const coPitch = () => AN.active && AN.midi != null ? AN.midi + (AN.cents || 0) / 100 : null;
 /** start listening for the current piece; result to CO.res and a call to `done(ok, msg)` */
 function coListen(done) {
-  coStopListen(); const p = CO.p, R = CO.run = { kind: p.kind, i: 0, miss: 0, held: null, judged: false, prev: null, t0: performance.now(), on: [], ok: 0, n: 0, best: 0, done, hold: 0, last: null, sw: 0 };
+  coStopListen(); const p = CO.p, R = CO.run = { kind: p.kind, i: 0, miss: 0, held: null, judged: false, prev: null, t0: performance.now(), on: [], ok: 0, n: 0, best: 0, done, hold: 0, last: null, sw: 0, log: [], timing: null, max: 0 }; CO.fb = null; coTakeStart();
   if (!E.hasInput) toast('Connect your guitar (Audio, top right) so the coach can hear you.', 'warn');
   const tapOn = m => { if (m && m.onset && CO.run === R) R.on.push(m.t); }; bus.on('tap:di', tapOn); R.off = () => bus.off('tap:di', tapOn);
   const need = { timed: 1, changes: 1, minute: 0, rhythm: 1, landing: 1 }[p.kind] || (p.back && p.back.chords && p.kind === 'notes');      /* a scale over a vamp plays the vamp while you play */
@@ -77,15 +77,15 @@ function coListen(done) {
   if (need) coSeq({ len: p.len || 16, loop: true, notes: p.notes, demo: false, back: CFG.learn.back ? p.back : (p.kind === 'landing' || p.kind === 'changes' ? { chords: p.back && p.back.chords, bass: false } : null), click: CFG.learn.click || p.kind !== 'landing' });
   CO.tm = setInterval(() => coTick(R), 30); coPaint();
 }
-function coStopListen() { const R = CO.run; if (R) { clearInterval(CO.tm); if (R.off) R.off(); CO.run = null; } }
-function coFinish(R, ok, msg) { if (CO.run !== R) return; coStopListen(); coSeqStop(); CO.res = msg; const p = CO.p; if (ok) { CFG.learn.done[p.id] = Date.now(); saveCfg(); } if (ok && CFG.learn.ladder && p.ladder !== false && ['notes', 'timed', 'rhythm', 'changes'].includes(p.kind)) { CO.bpm = Math.max(CO.bpm, Math.min((p.bpm || 80) + 60, CO.bpm + 5)); msg += ' Tempo up: ' + CO.bpm + ' BPM.'; CO.res = msg; } bus.emit('coach:done', { id: p.id, ok }); if (ok) { const dot = document.querySelectorAll('#coach .co-dot')[CO.idx]; if (dot) dot.classList.add('done'); } if (R.done) R.done(ok, msg); coPaint(); }
+function coStopListen() { const R = CO.run; if (R) { clearInterval(CO.tm); if (R.off) R.off(); CO.run = null; coTakeStop(); } }
+function coFinish(R, ok, msg) { if (CO.run !== R) return; const at = CO.seq ? { t0: CO.seq.t0, sd: CO.seq.sd } : null; coStopListen(); coSeqStop(); CO.res = msg; const p = CO.p, bpm0 = CO.bpm; if (ok) { CFG.learn.done[p.id] = Date.now(); learnPassed(p); saveCfg(); } if (ok && CFG.learn.ladder && p.ladder !== false && ['notes', 'timed', 'rhythm', 'changes'].includes(p.kind)) { const cap = p.target || (p.bpm || 80) + 60; CO.bpm = Math.max(CO.bpm, Math.min(cap, CO.bpm + 5)); if (CO.bpm > bpm0) msg += ' Tempo up: ' + CO.bpm + ' BPM.'; else if (p.target && CO.bpm >= p.target) msg += ' That is the song’s own tempo.'; CO.res = msg; } CO.fb = coFeedback(R, ok, bpm0, at); bus.emit('coach:done', { id: p.id, ok }); if (ok) { const dot = document.querySelectorAll('#coach .co-dot')[CO.idx]; if (dot) dot.classList.add('done'); } if (R.done) R.done(ok, msg); coPaint(); }
 function coTick(R) {
   const p = CO.p, now = performance.now(), m = AN.active && AN.midi != null ? AN.midi : null;
   switch (p.kind) {
     case 'notes': case 'timed': {
       const ns = p.notes.filter(n => !n.r); if (m == null) { R.held = null; R.judged = false; } else if (!R.held || R.held.m !== m) { R.held = { m, t: now }; R.judged = false; }
       else if (!R.judged && now - R.held.t >= 110) { R.judged = true; const want = ns[R.i], pcs = (want.ch || [want]).map(x => x.m % 12), pc = ((m % 12) + 12) % 12;
-        if (pcs.includes(pc)) { R.prev = m; R.i++; if (R.i >= ns.length) return coNotesDone(R); } else if (R.prev != null && pc === R.prev % 12) { } else R.miss++; coPaint(); }
+        if (pcs.includes(pc)) { R.prev = m; R.i++; if (R.i >= ns.length) return coNotesDone(R); } else if (R.prev != null && pc === R.prev % 12) { } else { R.miss++; R.log.push({ i: R.i, got: m }); } coPaint(); }
       if (p.kind === 'timed' && CO.seq && coPos() > (p.len || 16) * 2 + 2 && R.i < ns.length) { coNotesDone(R); }
       break;
     }
@@ -104,13 +104,16 @@ function coTick(R) {
     case 'rhythm': {
       const pos = coPos(), len = p.len || 16, bars = p.bars || 4; if (pos < len * bars + 1) break;
       const q = CO.seq, lat = (rttMs() || 20) / 1000, exp = []; for (let b = 0; b < bars; b++) [...p.pattern].forEach((c, i) => { if (c !== '.') exp.push(q.t0 + (b * len + i) * q.sd); });
-      const on = R.on.map(t => t - lat), errs = []; let hit = 0; exp.forEach(e => { let best = null; on.forEach(t => { const d = t - e; if (Math.abs(d) <= .1 && (best == null || Math.abs(d) < Math.abs(best))) best = d; }); if (best != null) { hit++; errs.push(best * 1000); } });
+      const on = R.on.map(t => t - lat), errs = []; let hit = 0; R.timing = { items: [], len: len * bars };
+      /* each stroke counts for one beat at most: the closest pairs first, so a late stroke is never also an early one for the next beat */
+      const pairs = []; exp.forEach((e, ei) => on.forEach((t, oi) => { const d = t - e; if (Math.abs(d) <= .1) pairs.push([Math.abs(d), ei, oi, d]); })); pairs.sort((x, y) => x[0] - y[0]); const ue = new Map(), uo = new Set(); pairs.forEach(([, ei, oi, d]) => { if (ue.has(ei) || uo.has(oi)) return; ue.set(ei, d); uo.add(oi); });
+      exp.forEach((e, ei) => { const best = ue.has(ei) ? ue.get(ei) : null; R.timing.items.push({ at: Math.round((e - q.t0) / q.sd), d: best == null ? null : best * 1000 }); if (best != null) { hit++; errs.push(best * 1000); } });
       const avg = errs.length ? errs.reduce((x, y) => x + Math.abs(y), 0) / errs.length : 999, lean = errs.length ? errs.reduce((x, y) => x + y, 0) / errs.length : 0, extra = Math.max(0, on.filter(t => t > q.t0 - .05 && t < q.t0 + len * bars * q.sd).length - hit);
       const ok = hit >= exp.length * .8 && avg <= 35; coFinish(R, ok, (ok ? '✓ ' : '') + hit + ' of ' + exp.length + ' strokes on the beat, ' + Math.round(avg) + ' ms off on average' + (Math.abs(lean) > 8 ? ', a little ' + (lean < 0 ? 'early (rushing)' : 'late (dragging)') : '') + (extra ? ', ' + extra + ' extra' : '') + '.');
       break;
     }
     case 'bend': {
-      const f = coPitch(), b = p.notes.find(n => !n.r); if (f == null) { R.hold = 0; break; } R.cur = f - b.m; if (Math.abs(f - b.to) <= .3) { R.hold += 30; if (R.hold >= 300) coFinish(R, true, '✓ Bent up ' + (b.to - b.m) + ' semitone' + (b.to - b.m === 1 ? '' : 's') + ', in tune.'); } else R.hold = 0;
+      const f = coPitch(), b = p.notes.find(n => !n.r); if (f == null) { R.hold = 0; break; } R.cur = f - b.m; R.max = Math.max(R.max, R.cur); if (Math.abs(f - b.to) <= .3) { R.hold += 30; if (R.hold >= 300) coFinish(R, true, '✓ Bent up ' + (b.to - b.m) + ' semitone' + (b.to - b.m === 1 ? '' : 's') + ', in tune.'); } else R.hold = 0;
       if (f > b.to + .5) R.over = (R.over || 0) + 1; break;
     }
     case 'vib': {
@@ -121,7 +124,7 @@ function coTick(R) {
 function coNotesDone(R) {
   const p = CO.p, ns = p.notes.filter(n => !n.r), secs = (performance.now() - R.t0) / 1000; let msg = '', ok = R.i >= ns.length && R.miss <= Math.max(1, Math.floor(ns.length / 8));
   if (p.kind === 'timed' && CO.seq) { const q = CO.seq, lat = (rttMs() || 20) / 1000, len = p.len || 16, errs = [];
-    ns.forEach(n => { const e = q.t0 + n.at * q.sd; let best = null; R.on.forEach(t => { const d = (t - lat) - e; if (Math.abs(d) <= .12 && (best == null || Math.abs(d) < Math.abs(best))) best = d; }); if (best == null) R.on.forEach(t => { const d = (t - lat) - (e + len * q.sd); if (Math.abs(d) <= .12 && (best == null || Math.abs(d) < Math.abs(best))) best = d; }); if (best != null) errs.push(best * 1000); });
+    ns.forEach(n => { const e = q.t0 + n.at * q.sd; let best = null; R.on.forEach(t => { const d = (t - lat) - e; if (Math.abs(d) <= .12 && (best == null || Math.abs(d) < Math.abs(best))) best = d; }); if (best == null) R.on.forEach(t => { const d = (t - lat) - (e + len * q.sd); if (Math.abs(d) <= .12 && (best == null || Math.abs(d) < Math.abs(best))) best = d; }); R.timing = R.timing || { items: [], len }; R.timing.items.push({ at: n.at, d: best == null ? null : best * 1000 }); if (best != null) errs.push(best * 1000); });
     const avg = errs.length ? errs.reduce((x, y) => x + Math.abs(y), 0) / errs.length : null; if (avg != null && avg > 40) ok = false; msg = (avg != null ? ', ' + Math.round(avg) + ' ms from the beat on average' : ''); }
   coFinish(R, ok, (ok ? '✓ ' : '') + (R.i >= ns.length ? 'All ' + ns.length + ' notes' : R.i + ' of ' + ns.length + ' notes') + (R.miss ? ', ' + R.miss + ' wrong' : ', clean') + msg + ' (' + secs.toFixed(1) + ' s).');
 }
@@ -134,7 +137,7 @@ function coachOpen(pieces, at, o) {
   let d = document.getElementById('coach'); if (!d) { d = h('dialog', { class: 'coach', id: 'coach', 'aria-labelledby': 'coachT' }); document.body.append(d); d.addEventListener('close', () => { if (d.open) return; coStopListen(); coSeqStop(); bus.emit('coach:close'); });      /* the close event comes late: if the coach was opened again since, leave it be */ }
   coSetPiece(CO.idx); if (d.open) d.close(); d.showModal(); return d;      /* reopened, so it is always in front (of the Learn hub too) */
 }
-function coSetPiece(i) { coStopListen(); coSeqStop(); CO.idx = i; const raw = CO.list[i]; CO.p = typeof raw === 'function' ? raw() : raw; CO.bpm = CO.p.bpm || 80; CO.res = ''; if (CO.p.kind === 'info' && CO.p.id && !CFG.learn.done[CO.p.id]) { CFG.learn.done[CO.p.id] = Date.now(); saveCfg(); bus.emit('coach:done', { id: CO.p.id, ok: true }); } coBuild(); }
+function coSetPiece(i) { coStopListen(); coSeqStop(); CO.idx = i; const raw = CO.list[i]; CO.p = typeof raw === 'function' ? raw() : raw; CO.bpm = CO.p.bpm || 80; CO.res = ''; CO.fb = null; CO.reveal = false; coTakeDrop(); if (CO.p.kind === 'info' && CO.p.id && !CFG.learn.done[CO.p.id]) { CFG.learn.done[CO.p.id] = Date.now(); saveCfg(); bus.emit('coach:done', { id: CO.p.id, ok: true }); } coBuild(); }
 /** the piece's notes placed in this tuning (re-placed when the key or the tuning changes) */
 function coNotes() { const p = CO.p; if (!p.src) return p.notes || []; const pc = CO.key != null ? CO.key : (p.keyPc != null ? p.keyPc : 9); p.notes = coPlace(p.src, coRoot(pc, p.lift || 0), p.near); return p.notes; }
 function coBuild() {
@@ -143,15 +146,19 @@ function coBuild() {
   const playable = p.kind !== 'info' || (p.notes && p.notes.length);
   d.append(...[h('div', { class: 'co-top' }, h('div', { class: 'co-tt' }, h('small', {}, CO.title || ''), h('b', { id: 'coachT' }, p.title)), steps, h('button', { class: 'btn icon', 'aria-label': 'Close the coach', onclick: () => d.close() }, '✕')),
     h('p', { class: 'co-text' }, p.text || ''),
-    p.notes && p.notes.length && !['chord', 'changes', 'minute'].includes(p.kind) ? h('div', { class: 'co-board' }) : null,
-    p.notes && p.notes.length && !['chord', 'changes', 'minute'].includes(p.kind) ? h('pre', { class: 'co-tab mono', 'aria-label': 'Tab' }) : null,
+    p.notes && p.notes.length && !['chord', 'changes', 'minute'].includes(p.kind) && !(p.ear && !CO.reveal) ? h('div', { class: 'co-board' }) : null,
+    p.notes && p.notes.length && !['chord', 'changes', 'minute'].includes(p.kind) && !(p.ear && !CO.reveal) ? h('pre', { class: 'co-tab mono', 'aria-label': 'Tab' }) : null,
+    p.ear && !CO.reveal ? h('div', { class: 'co-hidden', id: 'coHidden' }, h('span', { class: 'co-hid-ic', 'aria-hidden': 'true' }, '👂'), h('div', {}, h('b', {}, 'No tab this time: use your ears.'), h('span', {}, 'Hear it, then play it back. ' + (p.notes || []).filter(n => !n.r).length + ' notes, starting on ' + (p.hint || 'the root') + '.'))) : null,
     ['chord', 'changes', 'minute'].includes(p.kind) ? h('div', { class: 'co-chords' }, (p.chords || p.back.chords).map(c => h('div', { class: 'co-chord' }, h('b', {}, c), h('pre', { class: 'mono co-shape' }, coShape(c))))) : null,
     h('div', { class: 'co-live', role: 'status', 'aria-live': 'polite' }),
+    h('div', { class: 'co-fb', id: 'coFb' }),
     h('div', { class: 'co-ctl' },
-      playable ? h('button', { class: 'btn', id: 'coListen', onclick: () => coDemo() }, '▶ Listen') : null,
-      p.kind !== 'info' ? h('button', { class: 'btn primary', id: 'coGo', onclick: () => CO.run ? (coStopListen(), coSeqStop(), coPaint()) : coListen() }, '● Play it') : null,
+      p.ear ? h('button', { class: 'btn primary', id: 'coEarGo', onclick: () => coDemo(true) }, '🎧 Hear it, then play it back') : null,
+      p.ear && !CO.reveal ? h('button', { class: 'btn', id: 'coReveal', onclick: () => { CO.reveal = true; coBuild(); } }, '👁 Show me') : null,
+      playable ? h('button', { class: 'btn', id: 'coListen', onclick: () => coDemo() }, p.ear ? '▶ Hear it again' : '▶ Listen') : null,
+      p.kind !== 'info' ? h('button', { class: 'btn' + (p.ear ? '' : ' primary'), id: 'coGo', onclick: () => CO.run ? (coStopListen(), coSeqStop(), coPaint()) : coListen() }, '● Play it') : null,
       h('span', { class: 'co-bpm' }, h('button', { class: 'btn sm', 'aria-label': 'Slower', onclick: () => { CO.bpm = Math.max(40, CO.bpm - 5); coPaint(); } }, '−'), h('b', { class: 'mono' }), h('button', { class: 'btn sm', 'aria-label': 'Faster', onclick: () => { CO.bpm = Math.min(240, CO.bpm + 5); coPaint(); } }, '+')),
-      h('label', { class: 'chk' }, h('input', { type: 'checkbox', id: 'coLadder', checked: !!CFG.learn.ladder, onchange: e => { CFG.learn.ladder = e.target.checked; saveCfg(); } }), 'Tempo ladder'),
+      p.ladder === false ? null : h('label', { class: 'chk' }, h('input', { type: 'checkbox', id: 'coLadder', checked: !!CFG.learn.ladder, onchange: e => { CFG.learn.ladder = e.target.checked; saveCfg(); } }), 'Tempo ladder'),
       p.back ? h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!CFG.learn.back, onchange: e => { CFG.learn.back = e.target.checked; saveCfg(); } }), 'Backing') : null,
       h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!CFG.learn.click, onchange: e => { CFG.learn.click = e.target.checked; saveCfg(); } }), 'Click'),
       p.src && p.keyed !== false ? h('label', { class: 'field co-key' }, 'Key', h('select', { class: 'in', id: 'coKey', onchange: e => { CO.key = +e.target.value; coBuild(); } }, NS.map((_, k) => h('option', { value: k, selected: k === (CO.key != null ? CO.key : (p.keyPc != null ? p.keyPc : 9)) }, pcName(k, false))))) : null),
@@ -161,7 +168,7 @@ function coBuild() {
   coPaint();
 }
 function coShape(sym) { try { const v = voicingFor(sym); if (!v) return ''; return v.frets.map(f => f == null ? 'x' : String(f)).join(' '); } catch (e) { return ''; } }
-function coDemo() { coStopListen(); const p = CO.p; coSeq({ len: p.len || 16, loop: false, notes: coNotes(), demo: true, back: CFG.learn.back ? p.back : null, click: CFG.learn.click, onEnd: () => coPaint() }); coPaint(); }
+function coDemo(then) { coStopListen(); const p = CO.p; coSeq({ len: p.len || 16, loop: false, notes: coNotes(), demo: true, back: CFG.learn.back ? p.back : null, click: CFG.learn.click, onEnd: () => { coPaint(); if (then) coListen(); } }); coPaint(); }
 function coPaint() {
   const d = document.getElementById('coach'); if (!d || !CO.p) return; const p = CO.p, R = CO.run, q = s => d.querySelector(s), ns = (p.notes || []).filter(n => !n.r);
   const b = q('.co-bpm b'); if (b) b.textContent = CO.bpm + ' BPM';
@@ -169,6 +176,7 @@ function coPaint() {
   const cur = R && (R.kind === 'notes' || R.kind === 'timed') ? R.i : null;
   const bd = q('.co-board'); if (bd) { bd.innerHTML = ''; const pcs = p.pcs || null, ref = coRoot(CO.key != null ? CO.key : (p.keyPc != null ? p.keyPc : 9)); const run = { title: p.title, st: ns.length ? Math.min(...ns.map(n => n.f)) : 0, pcs, notes: ns.map(n => ({ s: n.s, f: n.f, m: n.m, deg: n.lab || degName(((n.m - ref) % 12 + 12) % 12) })) }; bd.append(wsFret(run, cur, innerWidth < 640)); }
   const tb = q('.co-tab'); if (tb) tb.textContent = coTab(p.notes || [], cur == null ? -1 : (p.notes || []).indexOf(ns[cur]));
+  const fbx = q('#coFb'); if (fbx) { fbx.innerHTML = ''; if (!R && CO.fb) fbx.append(coFbView(CO.fb)); }
   const lv = q('.co-live'); if (!lv) return; lv.innerHTML = '';
   if (R) {
     const want = ns[R.i]; lv.append(h('b', {}, R.kind === 'notes' || R.kind === 'timed' ? (want ? 'Next: ' + (want.ch ? want.ch.map(x => coName(x.m)).join(' + ') : coName(want.m)) + ' (string ' + (wsTune().length - want.s) + ', ' + (want.f ? 'fret ' + want.f : 'open') + ')' : '') + ' · ' + R.i + ' of ' + ns.length + (R.miss ? ' · ' + R.miss + ' wrong' : '')
@@ -177,6 +185,6 @@ function coPaint() {
       : R.kind === 'bend' ? 'Bend: ' + (R.cur != null ? (R.cur >= 0 ? '+' : '') + R.cur.toFixed(2) : '–') + ' of +' + (ns[0] ? ns[0].to - ns[0].m : 2) + ' semitones' : R.kind === 'vib' ? (R.v ? 'Vibrato ' + R.v.rate.toFixed(1) + '/s, ' + Math.round(R.v.ext * 2) + ' cents' : 'Hold it and shake it…') : R.kind === 'landing' ? 'Land on a chord tone at each change: ' + R.ok + ' so far' : ''));
     if (!CO.tmP) CO.tmP = setInterval(() => { if (!CO.run) { clearInterval(CO.tmP); CO.tmP = 0; return; } coPaint(); }, 250);
   } else if (CO.res) lv.append(h('b', { class: /^✓/.test(CO.res) ? 'co-good' : '' }, CO.res));
-  else lv.append(h('span', { class: 'muted' }, p.kind === 'info' ? '' : 'Press ▶ Listen to hear it, then ● Play it.'));
+  else lv.append(h('span', { class: 'muted' }, p.kind === 'info' ? '' : p.ear ? 'Press 🎧 to hear it, then play it back.' : 'Press ▶ Listen to hear it, then ● Play it.'));
 }
 const degName = iv => ['R', 'b2', '2', 'b3', '3', '4', 'b5', '5', 'b6', '6', 'b7', '7'][iv];

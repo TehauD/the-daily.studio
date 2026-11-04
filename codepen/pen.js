@@ -5,7 +5,7 @@
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.33.2', BUILD = '65596fe', PARTS_N = +'99' || 0, LINES_N = +'17346' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.34.0', BUILD = 'a7cdcfb', PARTS_N = +'101' || 0, LINES_N = +'17576' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { ghApp: { clientId: '', slug: '' },   /* Sign in with GitHub: the GitHub App's public client id and its slug (docs/GITHUB.md); empty = only the token way */
   support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://the-daily.studio/journal/' };
@@ -3916,7 +3916,7 @@ async function boot() {
   if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener('devicechange', () => { ioDeviceChange().catch(e => console.warn(e)); });
   bus.emit('song');
   try { ghBoot(); } catch (e) { console.warn('github', e); }      /* back from Sign in with GitHub, or a sync at start (part 74) */
-  DEV.make = () => { window.__daily = { simpleSet, simpleApply, ghTakeSettings, airMode, airSet, CO, coPos, coachOpen, coListen, coTick, coPlace, coNotes, coSetPiece, rfParse, LESSONS, RIFFS, RIFF_STYLES, learnOpen, learnToSong, learnFile, learnFileText, learnOpenFile, learnFromSong, labMake, labVary, labKeep, atlasPieces, atShape, MODE_VAMP, S, AIR, AIR_LAG, airSync, applyLayout, VB_PRESETS, VB_ORDER, VBS, vbAttach, vbApply, vbToggle, vbSet, vbPreset, vbPresetNext, vbThrow, vbLook, vbTick, vbScale, vocalBoardOpen, pedalRelease, MEG, megSpectrum, megFeatures, megScore, megStep, megSet, megLearn, megDraw, megLoop, megSettings, PAD, padsOpen, padHit, padTap, padRecord, padRecStop, padUndoPass, padClear, padResize, padBeatbox, bbHits, bbPattern, dpat, bassEvent, drumStep, PEDAL, pedalPress, pedalDo, pedalSecs, gearSettings, MCLK, mclkSlot, mclkMs, MIDI, MIDIRAW, onMidi, STRM, streamOpen, streamRoom, streamInfo, streamPanel, slotAtTime, SING, SHW, singStep, singScore, singSteamIR, singMicOff, showerOpen, shwGo, shwPlay, shwPrev, shwNext, shwStem, shwRecToggle, shwRecStop, shwHear, shwSave, shwAddFiles, shwRemove, shwMove, shwMode, shwLoadSet, shwPlaylist, shwWords, shwPrepare, shwFolderPull, lrcParse, readTags, spPos, spPlay, STP, trainOpen, projRestoreTrack, secretNote, secretArp, WS, WS_BASE, WS_ARPS, wsScaleRun, wsArpRun, wsFollow, wsStop, wsListen, wsEarNext, wsEarAnswer, wsOpen, bandMute, bandMuted, pdbPut, pdbKeys, projRename, FS, FS_B, fsUse, fsSync, fsHead, fsNeeds, fsTidy, fsOpen, syncOff, syncZips, PRJ_WAIT: () => PRJ.wait, EGG, EGG_LINES, EGG_ORDER, eggDay, eggFor, eggNow, eggText, eggTick, eggFit, saveCfg, projSave, projDelete, GH, ghSync, ghConnect, ghDisconnect, ghLocal, ghSha, ghJson, ghMerge3, ghShare, ghGallery, ghGalleryOpen, ghGalleryShow, ghKeepLook, ghKeepRig, rigClean, ghReturn, BRAND, ghSettingsOut, projRefresh, projCreate, projLoad, PRJ, SEC, SECRETS, secretFound, secretTiming, secretsOpen, secretSync, backstageOpen, startAudio, playheadSlot, GUARD, reportText, reportCopy, srecQ, srecSize, pdbGet, srecFmt, SREC_FMTS, VBG, vbgAdd, vbgRemove, vbgUse, vbgOpen, vbgDraw, vzSetMode, srecFrame, srecFmtBox, kitThumb, WORKLET_SRC, mkComp, mkShaper, rigLat, voxLat, restartAudio, satCurve, rigApply, qrMake, qrSvg, tipLink, tipShort, tipReady, tipCard, tipDraw, tipShareHtml, tipOpen, tipPrint, tipPng, tipVisAvoid, tipStageAvoid, TIP, TIP_TERMS, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, STP, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfort, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, srecStart, srecStop, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, tkFades, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, FB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, vzSetMode, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, drawVis, perfClose, voicings, peaksOf, uid, shareGate, shareData, shareHtml, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, slotAtTime, SEL, mtof, spb, playheadSlot, WR, HM, HMX, HM_MODES, vzImmersive, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitThumb, kitInk, kitNotes, kitRecord, srecMime, mGo, GD_SESSIONS, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard}; };   // test hook: with ?debug, or Backstage ▸ Labs ▸ Developer handles
+  DEV.make = () => { window.__daily = { coFinish, coDemo, coFeedback, coFbView, coTimeline, coBeat, coPractise, TAKE, learnPassed, todayPlan, todayPieces, todayStart, todayDone, streak, weekCount, dayKey, LSTEP, songLessons, songStart, songKey, earLick, earStart, EAR, simpleSet, simpleApply, ghTakeSettings, airMode, airSet, CO, coPos, coachOpen, coListen, coTick, coPlace, coNotes, coSetPiece, rfParse, LESSONS, RIFFS, RIFF_STYLES, learnOpen, learnToSong, learnFile, learnFileText, learnOpenFile, learnFromSong, labMake, labVary, labKeep, atlasPieces, atShape, MODE_VAMP, S, AIR, AIR_LAG, airSync, applyLayout, VB_PRESETS, VB_ORDER, VBS, vbAttach, vbApply, vbToggle, vbSet, vbPreset, vbPresetNext, vbThrow, vbLook, vbTick, vbScale, vocalBoardOpen, pedalRelease, MEG, megSpectrum, megFeatures, megScore, megStep, megSet, megLearn, megDraw, megLoop, megSettings, PAD, padsOpen, padHit, padTap, padRecord, padRecStop, padUndoPass, padClear, padResize, padBeatbox, bbHits, bbPattern, dpat, bassEvent, drumStep, PEDAL, pedalPress, pedalDo, pedalSecs, gearSettings, MCLK, mclkSlot, mclkMs, MIDI, MIDIRAW, onMidi, STRM, streamOpen, streamRoom, streamInfo, streamPanel, slotAtTime, SING, SHW, singStep, singScore, singSteamIR, singMicOff, showerOpen, shwGo, shwPlay, shwPrev, shwNext, shwStem, shwRecToggle, shwRecStop, shwHear, shwSave, shwAddFiles, shwRemove, shwMove, shwMode, shwLoadSet, shwPlaylist, shwWords, shwPrepare, shwFolderPull, lrcParse, readTags, spPos, spPlay, STP, trainOpen, projRestoreTrack, secretNote, secretArp, WS, WS_BASE, WS_ARPS, wsScaleRun, wsArpRun, wsFollow, wsStop, wsListen, wsEarNext, wsEarAnswer, wsOpen, bandMute, bandMuted, pdbPut, pdbKeys, projRename, FS, FS_B, fsUse, fsSync, fsHead, fsNeeds, fsTidy, fsOpen, syncOff, syncZips, PRJ_WAIT: () => PRJ.wait, EGG, EGG_LINES, EGG_ORDER, eggDay, eggFor, eggNow, eggText, eggTick, eggFit, saveCfg, projSave, projDelete, GH, ghSync, ghConnect, ghDisconnect, ghLocal, ghSha, ghJson, ghMerge3, ghShare, ghGallery, ghGalleryOpen, ghGalleryShow, ghKeepLook, ghKeepRig, rigClean, ghReturn, BRAND, ghSettingsOut, projRefresh, projCreate, projLoad, PRJ, SEC, SECRETS, secretFound, secretTiming, secretsOpen, secretSync, backstageOpen, startAudio, playheadSlot, GUARD, reportText, reportCopy, srecQ, srecSize, pdbGet, srecFmt, SREC_FMTS, VBG, vbgAdd, vbgRemove, vbgUse, vbgOpen, vbgDraw, vzSetMode, srecFrame, srecFmtBox, kitThumb, WORKLET_SRC, mkComp, mkShaper, rigLat, voxLat, restartAudio, satCurve, rigApply, qrMake, qrSvg, tipLink, tipShort, tipReady, tipCard, tipDraw, tipShareHtml, tipOpen, tipPrint, tipPng, tipVisAvoid, tipStageAvoid, TIP, TIP_TERMS, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, STP, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfort, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, srecStart, srecStop, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, tkFades, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, FB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, vzSetMode, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, drawVis, perfClose, voicings, peaksOf, uid, shareGate, shareData, shareHtml, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, slotAtTime, SEL, mtof, spb, playheadSlot, WR, HM, HMX, HM_MODES, vzImmersive, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitThumb, kitInk, kitNotes, kitRecord, srecMime, mGo, GD_SESSIONS, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard}; };   // test hook: with ?debug, or Backstage ▸ Labs ▸ Developer handles
   if (/[?&]debug\b/.test(location.search) || (CFG.labs && CFG.labs.handles)) DEV.make();
   try { bksBoot(); } catch (e) { console.warn('backstage', e); }      /* #backstage in the address, the performance overlay (part 73c) */
   projInit().catch(e => { console.warn('library', e); PRJ.ready = true; if (PRJ.wantStart) startMaybe(); });
@@ -12969,20 +12969,21 @@ const GOALS = [
       ['gtSlow', '− 5', 'Slower by 5 BPM', () => goalTempo(-5)],
       ['gtBpm', () => S.bpm + ' BPM', 'The tempo', () => { if (UI.bpm) UI.bpm.focus(); }],
       ['gtFast', '+ 5', 'Faster by 5 BPM', () => goalTempo(5)],
+      ['gtSongLearn', '🎵 Teach me this song', 'This song as lessons: its strum, each section’s chords and riff, up to tempo', () => learnOpen('song')],
       ['gtShed', '🎼 Scales & ear', 'Scales anywhere on the neck, this song’s arpeggios and ear training, followed note by note', () => trainOpen(), null, 1],
     ] },
   { id: 'teacher', ico: '🎓', name: 'Teacher', layout: 'Teacher', step: 'share', hue: '#0b84d8', next: null,
     blurb: 'Be taught, or teach: lessons that listen while you play, warm-ups, riffs and licks, a riff lab and a map of the neck. For teaching someone else: draw, keep notes and record the screen.',
-    mission: 'Learn something new, or show someone how', steps: ['Open 🎓 Learn and start a lesson', 'Warm up, then learn a riff', 'Make your own in 🧪 Riff Lab'],
+    mission: 'Learn something new, or show someone how', steps: ['Start 📅 Today’s fifteen minutes', 'Learn your song with 🎵 This song', 'Train your ear with 👂 By ear'],
     shape: 'The arrangement on top · the tab below to point at · the fretboard on the right · notes open',
     spec: { flip: false, left: false, right: true, tlh: 'minmax(200px,40%)', dock: 'tab', order: ['tab', 'tx', 'stems', 'vis', 'band'], hidden: ['rig', 'song', 'fret', 'stage', 'neural', 'cam', 'lab'], side: { fret: 'right' }, so: { left: [], right: ['fret', 'refine', 'monitor'] }, cur: { right: 'fret' }, mon: ['tuner', 'live'] },
     enter: () => { if (typeof KIT !== 'undefined' && !KIT.notesEl) kitNotes(); },
     tools: () => [
       ['gtLearn', '🎓 Learn', 'Lessons that show you, play it, then listen to you play it', () => learnOpen('lessons'), null, 1],
-      ['gtWarm', '🔥 Warm-ups', 'Five minutes before you play', () => learnOpen('warm')],
-      ['gtRiffs', '🎸 Riffs & licks', RIFFS.length + ' riffs in ' + RIFF_STYLES.length + ' styles, in any key', () => learnOpen('riffs')],
-      ['gtLab', '🧪 Riff Lab', 'New riff ideas from a scale and a feel', () => learnOpen('lab')],
-      ['gtAtlas', '🗺 Scale atlas', 'Boxes, positions, arpeggios, modes over a band', () => learnOpen('atlas')],
+      ['gtToday', '📅 Today', 'Today’s fifteen minutes: a warm-up, a review, something new and a riff', () => learnOpen('today')],
+      ['gtSong', '🎵 This song', 'The song you have open, as lessons, working up to its tempo', () => learnOpen('song')],
+      ['gtEar', '👂 By ear', 'Hear a phrase, play it back: no tab', () => learnOpen('ear')],
+      ['gtRiffs', '🎸 Riffs & licks', RIFFS.length + ' riffs in ' + RIFF_STYLES.length + ' styles, in any key; Riff Lab and the scale atlas are in Learn', () => learnOpen('riffs')],
       ['gtInk', '✎ Annotate', 'Draw over anything on the page; it stays until you clear it', () => kitInk(), () => !!KIT.inkOn],
       ['gtNotes', '📝 Lesson notes', 'Notes for this song, kept in this browser', () => kitNotes(), () => !!KIT.notesEl],
       ['gtScreen', '⏺ Record screen', 'Record this tab or your screen, with the studio’s sound and your voice', () => kitScreen(), () => !!KIT.scr],
@@ -15252,7 +15253,7 @@ function wsFret(run, cur, narrow) {
   if (run.pcs) for (let s = 0; s < n; s++) for (let f = Math.max(fa, run.st - 1); f <= Math.min(fb, run.st + 4); f++) { const m = tu[s] + f; if (run.pcs.includes(m % 12) && !run.notes.some(q => q.s === s && q.f === f)) el('circle', { cx: xf(f), cy: y(s), r: 6, class: 'ws-ghost' }); }
   const seen = new Set(); run.notes.forEach((q, i) => {
     const k = q.s + ':' + q.f; if (seen.has(k) && i !== cur) return; seen.add(k); const isCur = i === cur, done = cur != null && run.notes.slice(0, cur).some(x => x.s === q.s && x.f === q.f) && !isCur;
-    el('circle', { cx: xf(q.f), cy: y(q.s), r: isCur ? 11 : 9.5, class: 'ws-dot' + (q.deg === 'R' ? ' root' : '') + (isCur ? ' cur' : '') + (done ? ' done' : '') });
+    el('circle', { cx: xf(q.f), cy: y(q.s), r: isCur ? 11 : 9.5, class: 'ws-dot' + (q.deg === 'R' ? ' root' : '') + (isCur ? ' cur' : '') + (done ? ' done' : '') + (q.cls ? ' ' + q.cls : '') });
     el('text', { x: xf(q.f), y: y(q.s) + 3.6, class: 'ws-dl' + (isCur ? ' cur' : '') }, q.deg);
   });
   return svg;
@@ -16861,7 +16862,7 @@ const coChordIs = (want) => { const c = AN.active && AN.chord && AN.chord[0]; if
 const coPitch = () => AN.active && AN.midi != null ? AN.midi + (AN.cents || 0) / 100 : null;
 /** start listening for the current piece; result to CO.res and a call to `done(ok, msg)` */
 function coListen(done) {
-  coStopListen(); const p = CO.p, R = CO.run = { kind: p.kind, i: 0, miss: 0, held: null, judged: false, prev: null, t0: performance.now(), on: [], ok: 0, n: 0, best: 0, done, hold: 0, last: null, sw: 0 };
+  coStopListen(); const p = CO.p, R = CO.run = { kind: p.kind, i: 0, miss: 0, held: null, judged: false, prev: null, t0: performance.now(), on: [], ok: 0, n: 0, best: 0, done, hold: 0, last: null, sw: 0, log: [], timing: null, max: 0 }; CO.fb = null; coTakeStart();
   if (!E.hasInput) toast('Connect your guitar (Audio, top right) so the coach can hear you.', 'warn');
   const tapOn = m => { if (m && m.onset && CO.run === R) R.on.push(m.t); }; bus.on('tap:di', tapOn); R.off = () => bus.off('tap:di', tapOn);
   const need = { timed: 1, changes: 1, minute: 0, rhythm: 1, landing: 1 }[p.kind] || (p.back && p.back.chords && p.kind === 'notes');      /* a scale over a vamp plays the vamp while you play */
@@ -16869,15 +16870,15 @@ function coListen(done) {
   if (need) coSeq({ len: p.len || 16, loop: true, notes: p.notes, demo: false, back: CFG.learn.back ? p.back : (p.kind === 'landing' || p.kind === 'changes' ? { chords: p.back && p.back.chords, bass: false } : null), click: CFG.learn.click || p.kind !== 'landing' });
   CO.tm = setInterval(() => coTick(R), 30); coPaint();
 }
-function coStopListen() { const R = CO.run; if (R) { clearInterval(CO.tm); if (R.off) R.off(); CO.run = null; } }
-function coFinish(R, ok, msg) { if (CO.run !== R) return; coStopListen(); coSeqStop(); CO.res = msg; const p = CO.p; if (ok) { CFG.learn.done[p.id] = Date.now(); saveCfg(); } if (ok && CFG.learn.ladder && p.ladder !== false && ['notes', 'timed', 'rhythm', 'changes'].includes(p.kind)) { CO.bpm = Math.max(CO.bpm, Math.min((p.bpm || 80) + 60, CO.bpm + 5)); msg += ' Tempo up: ' + CO.bpm + ' BPM.'; CO.res = msg; } bus.emit('coach:done', { id: p.id, ok }); if (ok) { const dot = document.querySelectorAll('#coach .co-dot')[CO.idx]; if (dot) dot.classList.add('done'); } if (R.done) R.done(ok, msg); coPaint(); }
+function coStopListen() { const R = CO.run; if (R) { clearInterval(CO.tm); if (R.off) R.off(); CO.run = null; coTakeStop(); } }
+function coFinish(R, ok, msg) { if (CO.run !== R) return; const at = CO.seq ? { t0: CO.seq.t0, sd: CO.seq.sd } : null; coStopListen(); coSeqStop(); CO.res = msg; const p = CO.p, bpm0 = CO.bpm; if (ok) { CFG.learn.done[p.id] = Date.now(); learnPassed(p); saveCfg(); } if (ok && CFG.learn.ladder && p.ladder !== false && ['notes', 'timed', 'rhythm', 'changes'].includes(p.kind)) { const cap = p.target || (p.bpm || 80) + 60; CO.bpm = Math.max(CO.bpm, Math.min(cap, CO.bpm + 5)); if (CO.bpm > bpm0) msg += ' Tempo up: ' + CO.bpm + ' BPM.'; else if (p.target && CO.bpm >= p.target) msg += ' That is the song’s own tempo.'; CO.res = msg; } CO.fb = coFeedback(R, ok, bpm0, at); bus.emit('coach:done', { id: p.id, ok }); if (ok) { const dot = document.querySelectorAll('#coach .co-dot')[CO.idx]; if (dot) dot.classList.add('done'); } if (R.done) R.done(ok, msg); coPaint(); }
 function coTick(R) {
   const p = CO.p, now = performance.now(), m = AN.active && AN.midi != null ? AN.midi : null;
   switch (p.kind) {
     case 'notes': case 'timed': {
       const ns = p.notes.filter(n => !n.r); if (m == null) { R.held = null; R.judged = false; } else if (!R.held || R.held.m !== m) { R.held = { m, t: now }; R.judged = false; }
       else if (!R.judged && now - R.held.t >= 110) { R.judged = true; const want = ns[R.i], pcs = (want.ch || [want]).map(x => x.m % 12), pc = ((m % 12) + 12) % 12;
-        if (pcs.includes(pc)) { R.prev = m; R.i++; if (R.i >= ns.length) return coNotesDone(R); } else if (R.prev != null && pc === R.prev % 12) { } else R.miss++; coPaint(); }
+        if (pcs.includes(pc)) { R.prev = m; R.i++; if (R.i >= ns.length) return coNotesDone(R); } else if (R.prev != null && pc === R.prev % 12) { } else { R.miss++; R.log.push({ i: R.i, got: m }); } coPaint(); }
       if (p.kind === 'timed' && CO.seq && coPos() > (p.len || 16) * 2 + 2 && R.i < ns.length) { coNotesDone(R); }
       break;
     }
@@ -16896,13 +16897,16 @@ function coTick(R) {
     case 'rhythm': {
       const pos = coPos(), len = p.len || 16, bars = p.bars || 4; if (pos < len * bars + 1) break;
       const q = CO.seq, lat = (rttMs() || 20) / 1000, exp = []; for (let b = 0; b < bars; b++) [...p.pattern].forEach((c, i) => { if (c !== '.') exp.push(q.t0 + (b * len + i) * q.sd); });
-      const on = R.on.map(t => t - lat), errs = []; let hit = 0; exp.forEach(e => { let best = null; on.forEach(t => { const d = t - e; if (Math.abs(d) <= .1 && (best == null || Math.abs(d) < Math.abs(best))) best = d; }); if (best != null) { hit++; errs.push(best * 1000); } });
+      const on = R.on.map(t => t - lat), errs = []; let hit = 0; R.timing = { items: [], len: len * bars };
+      /* each stroke counts for one beat at most: the closest pairs first, so a late stroke is never also an early one for the next beat */
+      const pairs = []; exp.forEach((e, ei) => on.forEach((t, oi) => { const d = t - e; if (Math.abs(d) <= .1) pairs.push([Math.abs(d), ei, oi, d]); })); pairs.sort((x, y) => x[0] - y[0]); const ue = new Map(), uo = new Set(); pairs.forEach(([, ei, oi, d]) => { if (ue.has(ei) || uo.has(oi)) return; ue.set(ei, d); uo.add(oi); });
+      exp.forEach((e, ei) => { const best = ue.has(ei) ? ue.get(ei) : null; R.timing.items.push({ at: Math.round((e - q.t0) / q.sd), d: best == null ? null : best * 1000 }); if (best != null) { hit++; errs.push(best * 1000); } });
       const avg = errs.length ? errs.reduce((x, y) => x + Math.abs(y), 0) / errs.length : 999, lean = errs.length ? errs.reduce((x, y) => x + y, 0) / errs.length : 0, extra = Math.max(0, on.filter(t => t > q.t0 - .05 && t < q.t0 + len * bars * q.sd).length - hit);
       const ok = hit >= exp.length * .8 && avg <= 35; coFinish(R, ok, (ok ? '✓ ' : '') + hit + ' of ' + exp.length + ' strokes on the beat, ' + Math.round(avg) + ' ms off on average' + (Math.abs(lean) > 8 ? ', a little ' + (lean < 0 ? 'early (rushing)' : 'late (dragging)') : '') + (extra ? ', ' + extra + ' extra' : '') + '.');
       break;
     }
     case 'bend': {
-      const f = coPitch(), b = p.notes.find(n => !n.r); if (f == null) { R.hold = 0; break; } R.cur = f - b.m; if (Math.abs(f - b.to) <= .3) { R.hold += 30; if (R.hold >= 300) coFinish(R, true, '✓ Bent up ' + (b.to - b.m) + ' semitone' + (b.to - b.m === 1 ? '' : 's') + ', in tune.'); } else R.hold = 0;
+      const f = coPitch(), b = p.notes.find(n => !n.r); if (f == null) { R.hold = 0; break; } R.cur = f - b.m; R.max = Math.max(R.max, R.cur); if (Math.abs(f - b.to) <= .3) { R.hold += 30; if (R.hold >= 300) coFinish(R, true, '✓ Bent up ' + (b.to - b.m) + ' semitone' + (b.to - b.m === 1 ? '' : 's') + ', in tune.'); } else R.hold = 0;
       if (f > b.to + .5) R.over = (R.over || 0) + 1; break;
     }
     case 'vib': {
@@ -16913,7 +16917,7 @@ function coTick(R) {
 function coNotesDone(R) {
   const p = CO.p, ns = p.notes.filter(n => !n.r), secs = (performance.now() - R.t0) / 1000; let msg = '', ok = R.i >= ns.length && R.miss <= Math.max(1, Math.floor(ns.length / 8));
   if (p.kind === 'timed' && CO.seq) { const q = CO.seq, lat = (rttMs() || 20) / 1000, len = p.len || 16, errs = [];
-    ns.forEach(n => { const e = q.t0 + n.at * q.sd; let best = null; R.on.forEach(t => { const d = (t - lat) - e; if (Math.abs(d) <= .12 && (best == null || Math.abs(d) < Math.abs(best))) best = d; }); if (best == null) R.on.forEach(t => { const d = (t - lat) - (e + len * q.sd); if (Math.abs(d) <= .12 && (best == null || Math.abs(d) < Math.abs(best))) best = d; }); if (best != null) errs.push(best * 1000); });
+    ns.forEach(n => { const e = q.t0 + n.at * q.sd; let best = null; R.on.forEach(t => { const d = (t - lat) - e; if (Math.abs(d) <= .12 && (best == null || Math.abs(d) < Math.abs(best))) best = d; }); if (best == null) R.on.forEach(t => { const d = (t - lat) - (e + len * q.sd); if (Math.abs(d) <= .12 && (best == null || Math.abs(d) < Math.abs(best))) best = d; }); R.timing = R.timing || { items: [], len }; R.timing.items.push({ at: n.at, d: best == null ? null : best * 1000 }); if (best != null) errs.push(best * 1000); });
     const avg = errs.length ? errs.reduce((x, y) => x + Math.abs(y), 0) / errs.length : null; if (avg != null && avg > 40) ok = false; msg = (avg != null ? ', ' + Math.round(avg) + ' ms from the beat on average' : ''); }
   coFinish(R, ok, (ok ? '✓ ' : '') + (R.i >= ns.length ? 'All ' + ns.length + ' notes' : R.i + ' of ' + ns.length + ' notes') + (R.miss ? ', ' + R.miss + ' wrong' : ', clean') + msg + ' (' + secs.toFixed(1) + ' s).');
 }
@@ -16926,7 +16930,7 @@ function coachOpen(pieces, at, o) {
   let d = document.getElementById('coach'); if (!d) { d = h('dialog', { class: 'coach', id: 'coach', 'aria-labelledby': 'coachT' }); document.body.append(d); d.addEventListener('close', () => { if (d.open) return; coStopListen(); coSeqStop(); bus.emit('coach:close'); });      /* the close event comes late: if the coach was opened again since, leave it be */ }
   coSetPiece(CO.idx); if (d.open) d.close(); d.showModal(); return d;      /* reopened, so it is always in front (of the Learn hub too) */
 }
-function coSetPiece(i) { coStopListen(); coSeqStop(); CO.idx = i; const raw = CO.list[i]; CO.p = typeof raw === 'function' ? raw() : raw; CO.bpm = CO.p.bpm || 80; CO.res = ''; if (CO.p.kind === 'info' && CO.p.id && !CFG.learn.done[CO.p.id]) { CFG.learn.done[CO.p.id] = Date.now(); saveCfg(); bus.emit('coach:done', { id: CO.p.id, ok: true }); } coBuild(); }
+function coSetPiece(i) { coStopListen(); coSeqStop(); CO.idx = i; const raw = CO.list[i]; CO.p = typeof raw === 'function' ? raw() : raw; CO.bpm = CO.p.bpm || 80; CO.res = ''; CO.fb = null; CO.reveal = false; coTakeDrop(); if (CO.p.kind === 'info' && CO.p.id && !CFG.learn.done[CO.p.id]) { CFG.learn.done[CO.p.id] = Date.now(); saveCfg(); bus.emit('coach:done', { id: CO.p.id, ok: true }); } coBuild(); }
 /** the piece's notes placed in this tuning (re-placed when the key or the tuning changes) */
 function coNotes() { const p = CO.p; if (!p.src) return p.notes || []; const pc = CO.key != null ? CO.key : (p.keyPc != null ? p.keyPc : 9); p.notes = coPlace(p.src, coRoot(pc, p.lift || 0), p.near); return p.notes; }
 function coBuild() {
@@ -16935,15 +16939,19 @@ function coBuild() {
   const playable = p.kind !== 'info' || (p.notes && p.notes.length);
   d.append(...[h('div', { class: 'co-top' }, h('div', { class: 'co-tt' }, h('small', {}, CO.title || ''), h('b', { id: 'coachT' }, p.title)), steps, h('button', { class: 'btn icon', 'aria-label': 'Close the coach', onclick: () => d.close() }, '✕')),
     h('p', { class: 'co-text' }, p.text || ''),
-    p.notes && p.notes.length && !['chord', 'changes', 'minute'].includes(p.kind) ? h('div', { class: 'co-board' }) : null,
-    p.notes && p.notes.length && !['chord', 'changes', 'minute'].includes(p.kind) ? h('pre', { class: 'co-tab mono', 'aria-label': 'Tab' }) : null,
+    p.notes && p.notes.length && !['chord', 'changes', 'minute'].includes(p.kind) && !(p.ear && !CO.reveal) ? h('div', { class: 'co-board' }) : null,
+    p.notes && p.notes.length && !['chord', 'changes', 'minute'].includes(p.kind) && !(p.ear && !CO.reveal) ? h('pre', { class: 'co-tab mono', 'aria-label': 'Tab' }) : null,
+    p.ear && !CO.reveal ? h('div', { class: 'co-hidden', id: 'coHidden' }, h('span', { class: 'co-hid-ic', 'aria-hidden': 'true' }, '👂'), h('div', {}, h('b', {}, 'No tab this time: use your ears.'), h('span', {}, 'Hear it, then play it back. ' + (p.notes || []).filter(n => !n.r).length + ' notes, starting on ' + (p.hint || 'the root') + '.'))) : null,
     ['chord', 'changes', 'minute'].includes(p.kind) ? h('div', { class: 'co-chords' }, (p.chords || p.back.chords).map(c => h('div', { class: 'co-chord' }, h('b', {}, c), h('pre', { class: 'mono co-shape' }, coShape(c))))) : null,
     h('div', { class: 'co-live', role: 'status', 'aria-live': 'polite' }),
+    h('div', { class: 'co-fb', id: 'coFb' }),
     h('div', { class: 'co-ctl' },
-      playable ? h('button', { class: 'btn', id: 'coListen', onclick: () => coDemo() }, '▶ Listen') : null,
-      p.kind !== 'info' ? h('button', { class: 'btn primary', id: 'coGo', onclick: () => CO.run ? (coStopListen(), coSeqStop(), coPaint()) : coListen() }, '● Play it') : null,
+      p.ear ? h('button', { class: 'btn primary', id: 'coEarGo', onclick: () => coDemo(true) }, '🎧 Hear it, then play it back') : null,
+      p.ear && !CO.reveal ? h('button', { class: 'btn', id: 'coReveal', onclick: () => { CO.reveal = true; coBuild(); } }, '👁 Show me') : null,
+      playable ? h('button', { class: 'btn', id: 'coListen', onclick: () => coDemo() }, p.ear ? '▶ Hear it again' : '▶ Listen') : null,
+      p.kind !== 'info' ? h('button', { class: 'btn' + (p.ear ? '' : ' primary'), id: 'coGo', onclick: () => CO.run ? (coStopListen(), coSeqStop(), coPaint()) : coListen() }, '● Play it') : null,
       h('span', { class: 'co-bpm' }, h('button', { class: 'btn sm', 'aria-label': 'Slower', onclick: () => { CO.bpm = Math.max(40, CO.bpm - 5); coPaint(); } }, '−'), h('b', { class: 'mono' }), h('button', { class: 'btn sm', 'aria-label': 'Faster', onclick: () => { CO.bpm = Math.min(240, CO.bpm + 5); coPaint(); } }, '+')),
-      h('label', { class: 'chk' }, h('input', { type: 'checkbox', id: 'coLadder', checked: !!CFG.learn.ladder, onchange: e => { CFG.learn.ladder = e.target.checked; saveCfg(); } }), 'Tempo ladder'),
+      p.ladder === false ? null : h('label', { class: 'chk' }, h('input', { type: 'checkbox', id: 'coLadder', checked: !!CFG.learn.ladder, onchange: e => { CFG.learn.ladder = e.target.checked; saveCfg(); } }), 'Tempo ladder'),
       p.back ? h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!CFG.learn.back, onchange: e => { CFG.learn.back = e.target.checked; saveCfg(); } }), 'Backing') : null,
       h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!CFG.learn.click, onchange: e => { CFG.learn.click = e.target.checked; saveCfg(); } }), 'Click'),
       p.src && p.keyed !== false ? h('label', { class: 'field co-key' }, 'Key', h('select', { class: 'in', id: 'coKey', onchange: e => { CO.key = +e.target.value; coBuild(); } }, NS.map((_, k) => h('option', { value: k, selected: k === (CO.key != null ? CO.key : (p.keyPc != null ? p.keyPc : 9)) }, pcName(k, false))))) : null),
@@ -16953,7 +16961,7 @@ function coBuild() {
   coPaint();
 }
 function coShape(sym) { try { const v = voicingFor(sym); if (!v) return ''; return v.frets.map(f => f == null ? 'x' : String(f)).join(' '); } catch (e) { return ''; } }
-function coDemo() { coStopListen(); const p = CO.p; coSeq({ len: p.len || 16, loop: false, notes: coNotes(), demo: true, back: CFG.learn.back ? p.back : null, click: CFG.learn.click, onEnd: () => coPaint() }); coPaint(); }
+function coDemo(then) { coStopListen(); const p = CO.p; coSeq({ len: p.len || 16, loop: false, notes: coNotes(), demo: true, back: CFG.learn.back ? p.back : null, click: CFG.learn.click, onEnd: () => { coPaint(); if (then) coListen(); } }); coPaint(); }
 function coPaint() {
   const d = document.getElementById('coach'); if (!d || !CO.p) return; const p = CO.p, R = CO.run, q = s => d.querySelector(s), ns = (p.notes || []).filter(n => !n.r);
   const b = q('.co-bpm b'); if (b) b.textContent = CO.bpm + ' BPM';
@@ -16961,6 +16969,7 @@ function coPaint() {
   const cur = R && (R.kind === 'notes' || R.kind === 'timed') ? R.i : null;
   const bd = q('.co-board'); if (bd) { bd.innerHTML = ''; const pcs = p.pcs || null, ref = coRoot(CO.key != null ? CO.key : (p.keyPc != null ? p.keyPc : 9)); const run = { title: p.title, st: ns.length ? Math.min(...ns.map(n => n.f)) : 0, pcs, notes: ns.map(n => ({ s: n.s, f: n.f, m: n.m, deg: n.lab || degName(((n.m - ref) % 12 + 12) % 12) })) }; bd.append(wsFret(run, cur, innerWidth < 640)); }
   const tb = q('.co-tab'); if (tb) tb.textContent = coTab(p.notes || [], cur == null ? -1 : (p.notes || []).indexOf(ns[cur]));
+  const fbx = q('#coFb'); if (fbx) { fbx.innerHTML = ''; if (!R && CO.fb) fbx.append(coFbView(CO.fb)); }
   const lv = q('.co-live'); if (!lv) return; lv.innerHTML = '';
   if (R) {
     const want = ns[R.i]; lv.append(h('b', {}, R.kind === 'notes' || R.kind === 'timed' ? (want ? 'Next: ' + (want.ch ? want.ch.map(x => coName(x.m)).join(' + ') : coName(want.m)) + ' (string ' + (wsTune().length - want.s) + ', ' + (want.f ? 'fret ' + want.f : 'open') + ')' : '') + ' · ' + R.i + ' of ' + ns.length + (R.miss ? ' · ' + R.miss + ' wrong' : '')
@@ -16969,9 +16978,98 @@ function coPaint() {
       : R.kind === 'bend' ? 'Bend: ' + (R.cur != null ? (R.cur >= 0 ? '+' : '') + R.cur.toFixed(2) : '–') + ' of +' + (ns[0] ? ns[0].to - ns[0].m : 2) + ' semitones' : R.kind === 'vib' ? (R.v ? 'Vibrato ' + R.v.rate.toFixed(1) + '/s, ' + Math.round(R.v.ext * 2) + ' cents' : 'Hold it and shake it…') : R.kind === 'landing' ? 'Land on a chord tone at each change: ' + R.ok + ' so far' : ''));
     if (!CO.tmP) CO.tmP = setInterval(() => { if (!CO.run) { clearInterval(CO.tmP); CO.tmP = 0; return; } coPaint(); }, 250);
   } else if (CO.res) lv.append(h('b', { class: /^✓/.test(CO.res) ? 'co-good' : '' }, CO.res));
-  else lv.append(h('span', { class: 'muted' }, p.kind === 'info' ? '' : 'Press ▶ Listen to hear it, then ● Play it.'));
+  else lv.append(h('span', { class: 'muted' }, p.kind === 'info' ? '' : p.ear ? 'Press 🎧 to hear it, then play it back.' : 'Press ▶ Listen to hear it, then ● Play it.'));
 }
 const degName = iv => ['R', 'b2', '2', 'b3', '3', '4', 'b5', '5', 'b6', '6', 'b7', '7'][iv];
+
+/* >>> parts/80b-coach-feedback.js */
+/* ============================================================
+   Part 80b · COACH FEEDBACK (2.34) — after a go, the coach says what happened and what to do next
+     · the notes that went wrong, on the neck: the note it wanted (green) beside where you probably were (red ✕), and in words
+       ("one fret too high")
+     · timing on a strip: every stroke or note against the beat, early above the line and late below, missed ones hollow
+     · advice with a button: practise just the tricky notes, slow down by 10, try again
+     · your take: the attempt is recorded from the input while the coach listens, so you can hear it right after the demo. It is kept
+       in memory only, never saved, and is dropped when you move on or have another go.
+   ============================================================ */
+const TAKE = { rec: null, url: null, au: null, n: 0 };
+function coTakeStart() {
+  coTakeDrop(); if (!E.stream || typeof MediaRecorder === 'undefined' || CFG.learn.take === false) return;
+  try {
+    const r = new MediaRecorder(E.stream), chunks = [], n = ++TAKE.n;
+    r.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+    r.onstop = () => { if (n !== TAKE.n || !chunks.length) return; TAKE.url = URL.createObjectURL(new Blob(chunks, { type: r.mimeType || 'audio/webm' })); coPaint(); };
+    r.start(); TAKE.rec = r;
+  } catch (e) { TAKE.rec = null; }
+}
+function coTakeStop() { const r = TAKE.rec; TAKE.rec = null; if (r && r.state !== 'inactive') { try { r.stop(); } catch (e) { } } }
+function coTakeDrop() { coTakeStop(); TAKE.n++; if (TAKE.au) { try { TAKE.au.pause(); } catch (e) { } TAKE.au = null; } if (TAKE.url) { try { URL.revokeObjectURL(TAKE.url); } catch (e) { } } TAKE.url = null; }
+function coTakePlay() { if (!TAKE.url) return; if (TAKE.au) { try { TAKE.au.pause(); } catch (e) { } } TAKE.au = new Audio(TAKE.url); TAKE.au.play().catch(() => { }); }
+
+/** "bar 2, beat 3&" for a place in 16ths */
+const coBeat = at => { const bar = Math.floor(at / 16) + 1, r = ((at % 16) + 16) % 16; return 'bar ' + bar + ', beat ' + (Math.floor(r / 4) + 1) + ['', 'e', '&', 'a'][r % 4]; };
+/** what to say and offer after a go (R is the run that just finished) */
+function coFeedback(R, ok, bpm0) {
+  const p = CO.p, ns = (p.notes || []).filter(n => !n.r), fb = { ok, tips: [], acts: [] }, mOf = n => n.ch ? n.ch[0].m : n.m;
+  if (R.log && R.log.length && ns.length) {
+    fb.wrong = R.log.filter(x => ns[x.i]).map(x => ({ i: x.i, want: ns[x.i], got: x.got }));
+    if (fb.wrong.length) {
+      const by = {}; fb.wrong.forEach(x => { by[x.i] = (by[x.i] || 0) + 1; }); const k = +Object.keys(by).sort((a, b) => by[b] - by[a] || a - b)[0], w = fb.wrong.find(x => x.i === k), wm = mOf(w.want), d = w.got - wm;
+      const how = Math.abs(d) === 1 ? ' That is one fret too ' + (d > 0 ? 'high' : 'low') + '.' : Math.abs(d) === 2 ? ' That is two frets too ' + (d > 0 ? 'high' : 'low') + '.' : '';
+      fb.tips.push((Object.keys(by).length > 1 ? 'The trickiest spot is note ' : 'The slip was at note ') + (k + 1) + ': it wants ' + coName(wm) + ' (string ' + (wsTune().length - w.want.s) + ', ' + (w.want.f ? 'fret ' + w.want.f : 'open') + '), and you played ' + coName(w.got) + '.' + how);
+      const a = Math.max(0, k - 1), b = Math.min(ns.length, a + 4);
+      if (ns.length > 4) fb.acts.push(['coFbPart', '🔁 Practise notes ' + (a + 1) + '–' + b, () => coPractise(a, b)]);
+    }
+  }
+  if (R.timing && R.timing.items.length) {
+    const it = R.timing.items, got = it.filter(x => x.d != null), miss = it.length - got.length, avg = got.length ? got.reduce((s, x) => s + Math.abs(x.d), 0) / got.length : 0, lean = got.length ? got.reduce((s, x) => s + x.d, 0) / got.length : 0;
+    const worst = got.slice().sort((a, b) => Math.abs(b.d) - Math.abs(a.d))[0]; fb.timing = R.timing;
+    if (miss) fb.tips.push(miss + ' of ' + it.length + (p.kind === 'rhythm' ? ' strokes' : ' notes') + ' were not heard near the beat (the hollow ones).');
+    if (Math.abs(lean) > 12) fb.tips.push(lean < 0 ? 'You are rushing, about ' + Math.round(-lean) + ' ms ahead of the click. Let the click land first, and count out loud.' : 'You are dragging, about ' + Math.round(lean) + ' ms behind the click. Play on the click, not after it.');
+    if (worst && Math.abs(worst.d) > 30) fb.tips.push('Furthest out: ' + coBeat(worst.at) + ', ' + Math.round(Math.abs(worst.d)) + ' ms ' + (worst.d < 0 ? 'early' : 'late') + '.');
+    if (!ok && (avg > 35 || miss > it.length * .2)) fb.acts.push(['coFbSlow', '🐢 Slower: ' + Math.max(40, bpm0 - 10) + ' BPM', () => { CO.bpm = Math.max(40, bpm0 - 10); CO.fb = null; coListen(); }]);
+  }
+  if (!ok && p.kind === 'landing') fb.tips.push('Aim for the root of each new chord first: it is always a chord tone. Then try its third.');
+  if (!ok && p.kind === 'changes') { fb.tips.push('Look ahead: start moving to the next chord on beat 4, not on beat 1. Lift only the fingers that have to move.'); if (!fb.acts.some(a => a[0] === 'coFbSlow')) fb.acts.push(['coFbSlow', '🐢 Slower: ' + Math.max(40, bpm0 - 10) + ' BPM', () => { CO.bpm = Math.max(40, bpm0 - 10); CO.fb = null; coListen(); }]); }
+  if (ok && !fb.tips.length) fb.tips.push(CO.bpm > bpm0 ? 'Clean. The next go is ' + CO.bpm + ' BPM: same feel, a little quicker.' : 'Clean.');
+  if (ok && p.ear) fb.tips.push(CO.reveal ? 'Next time try it before you look.' : 'All by ear. The next one is a note longer.');
+  fb.acts.unshift(['coFbAgain', ok ? '↻ Again' : '↻ Try again', () => { CO.fb = null; coListen(); }]);
+  return fb;
+}
+/** a short piece of just the tricky notes, slower, put in after this one */
+function coPractise(a, b) {
+  const p = CO.p, ns = (p.notes || []).filter(n => !n.r).slice(a, b); if (!ns.length) return; const t0 = ns[0].at;
+  const notes = ns.map(n => Object.assign({}, n, { at: n.at - t0 })), len = Math.max(8, Math.ceil((notes[notes.length - 1].at + 4) / 4) * 4);
+  const q = { kind: 'notes', id: (p.id || 'piece') + '.part' + a, title: p.title + ' · notes ' + (a + 1) + '–' + b, text: 'Just the tricky part, slower. Play it until it is clean twice, then go back to the whole thing.', notes, len, bpm: Math.max(40, CO.bpm - 10), keyed: false, ear: false };
+  CO.list.splice(CO.idx + 1, 0, q); coSetPiece(CO.idx + 1);
+}
+/** the timing strip: the beats, each stroke or note early (up) or late (down) */
+function coTimeline(t) {
+  const W = 600, H = 74, cy = 37, x = at => 14 + at / Math.max(1, t.len) * (W - 28), ns = 'http://www.w3.org/2000/svg', svg = document.createElementNS(ns, 'svg');
+  const el = (tag, a, txt) => { const e = document.createElementNS(ns, tag); Object.entries(a).forEach(([k, v]) => e.setAttribute(k, v)); if (txt != null) e.textContent = txt; svg.append(e); return e; };
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H); svg.setAttribute('class', 'co-tl'); svg.setAttribute('role', 'img');
+  const got = t.items.filter(i => i.d != null); svg.setAttribute('aria-label', 'Timing: ' + got.length + ' of ' + t.items.length + ' on the beat; ' + got.filter(i => i.d < -20).length + ' early, ' + got.filter(i => i.d > 20).length + ' late');
+  for (let b = 0; b <= t.len; b += 4) el('line', { x1: x(b), x2: x(b), y1: 8, y2: H - 8, class: b % 16 === 0 ? 'tl-bar' : 'tl-beat' });
+  el('line', { x1: 14, x2: W - 14, y1: cy, y2: cy, class: 'tl-mid' }); el('text', { x: 16, y: 13, class: 'tl-lab' }, 'early'); el('text', { x: 16, y: H - 4, class: 'tl-lab' }, 'late');
+  t.items.forEach(i => { const xx = x(i.at); if (i.d == null) { el('circle', { cx: xx, cy, r: 5, class: 'tl-miss' }); return; } const y = cy + Math.max(-30, Math.min(30, i.d * .3)), a = Math.abs(i.d); el('line', { x1: xx, x2: xx, y1: cy, y2: y, class: 'tl-stem' }); el('circle', { cx: xx, cy: y, r: 4.5, class: 'tl-dot ' + (a <= 20 ? 'good' : a <= 45 ? 'meh' : 'bad') }); });
+  return svg;
+}
+/** the feedback block under the result */
+function coFbView(fb) {
+  const box = h('div', { class: 'co-fbv' + (fb.ok ? ' ok' : '') });
+  if (fb.wrong && fb.wrong.length) {
+    const marks = []; const seen = new Set();
+    fb.wrong.forEach(x => { const w = x.want.ch ? x.want.ch[0] : x.want, k = x.i; if (seen.has(k)) return; seen.add(k); marks.push({ s: w.s, f: w.f, m: w.m, deg: coName(w.m), cls: 'want' }); const pl = wsPlace(x.got, w.f); marks.push({ s: pl.s, f: pl.f, m: x.got, deg: '✕', cls: 'wrong' }); });
+    const fs = marks.map(q => q.f);
+    box.append(h('div', { class: 'co-fb-neck' }, h('small', {}, 'Wanted (green) and where you probably were (✕)'), h('div', { class: 'co-board' }, wsFret({ title: 'Your slips', st: Math.min(...fs), notes: marks }, null, innerWidth < 640))));
+  }
+  if (fb.timing) box.append(h('div', { class: 'co-fb-time' }, h('small', {}, 'Timing: each dot is a ' + (CO.p && CO.p.kind === 'rhythm' ? 'stroke' : 'note') + ', on the line is on the beat'), coTimeline(fb.timing)));
+  box.append(h('ul', { class: 'co-tips' }, fb.tips.map(t => h('li', {}, t))));
+  box.append(h('div', { class: 'co-fb-acts' }, fb.acts.map(([id, label, fn]) => h('button', { class: 'btn sm', id, type: 'button', onclick: fn }, label)),
+    TAKE.url ? h('button', { class: 'btn sm', id: 'coTake', type: 'button', onclick: coTakePlay }, '🎧 Hear my take') : null,
+    TAKE.url && CO.p && CO.p.kind !== 'info' ? h('button', { class: 'btn sm', id: 'coDemoAgain', type: 'button', onclick: () => coDemo() }, '▶ Hear the coach') : null));
+  return box;
+}
 
 /* >>> parts/81-learn-data.js */
 /* ============================================================
@@ -17185,10 +17283,10 @@ function learnOpenFile(text) {
   coachOpen(ps, 0, { title: str(o.title, 80) || 'A lesson from a file' }); return true;
 }
 /** the bars of the section you are in (or the selected ones) as an exercise: the tab's notes, at the song's tempo */
-function learnFromSong() {
-  const si = pedalSecs().i, sec = S.sections[si]; if (!sec) return null; const sp = spb(), cap = S.capo || 0, notes = [];
+function learnFromSong(at, quiet) {
+  const si = at != null ? at : pedalSecs().i, sec = S.sections[si]; if (!sec) return null; const sp = spb(), cap = S.capo || 0, notes = [];
   sec.bars.forEach((b, bi) => (b.tab || []).filter(n => typeof n.f === 'number').forEach(n => notes.push({ at: bi * sp + n.s, len: 2, m: S.tuning[n.st] + cap + n.f, s: n.st, f: n.f + cap, t: n.t === 'b' ? 'b' : '' })));
-  if (!notes.length) { toast('This section has no tab notes yet. Write some in Write, or use ● Capture.', 'warn'); return null; }
+  if (!notes.length) { if (!quiet) toast('This section has no tab notes yet. Write some in Write, or use ● Capture.', 'warn'); return null; }
   notes.sort((a, b) => a.at - b.at || a.s - b.s); const merged = []; notes.forEach(n => { const l = merged[merged.length - 1]; if (l && l.at === n.at) (l.ch = l.ch || [{ m: l.m, s: l.s, f: l.f }]).push({ m: n.m, s: n.s, f: n.f }); else merged.push(n); });
   return { kind: 'notes', id: 'song.' + (sec.id || si), title: (S.title || 'Song') + ' · ' + sec.name, text: 'The tab of this section, note by note. Teachers: share it as a file for your student.', bpm: Math.round(S.bpm), notes: merged, len: Math.max(16, sec.bars.length * sp), keyed: false };
 }
@@ -17329,9 +17427,12 @@ function learnTeach() {
 /** the Teacher's front door */
 function learnOpen(at) {
   const paths = LESSONS.filter(p => p.id !== 'warm'), warm = LESSONS.filter(p => p.id === 'warm'), all = LESSONS.reduce((a, p) => a + p.lessons.reduce((b, l) => b + l.steps.length, 0), 0), done = LESSONS.reduce((a, p) => a + p.lessons.reduce((b, l) => b + lsDone(l), 0), 0);
-  return hubOpen('learn', { ico: '🎓', title: 'Learn', sub: 'Lessons that listen while you play, warm-ups, riffs and licks, a riff lab for new ideas and an atlas of the neck. ' + done + ' of ' + all + ' lesson steps done.', at, sections: [
+  return hubOpen('learn', { ico: '🎓', title: 'Learn', sub: 'A plan for today, lessons that listen while you play, your own song as lessons, ear training, riffs, a riff lab and an atlas of the neck. ' + done + ' of ' + all + ' lesson steps done.', at, sections: [
+    { key: 'today', label: 'Today', ico: '📅', sub: 'About fifteen minutes: a warm-up, something to review, something new and a riff. A new plan every day.', wide: true, body: () => [todayView()] },
     { key: 'lessons', label: 'Lessons', ico: '🎓', sub: 'Each step shows it, plays it, then listens to you play it (through the input the tuner uses).', wide: true, body: () => [learnLessons(paths)] },
     { key: 'warm', label: 'Warm-ups', ico: '🔥', sub: 'Five minutes before you play.', wide: true, body: () => [learnLessons(warm)] },
+    { key: 'song', label: 'This song', ico: '🎵', sub: 'The song you have open, as lessons: its strum, each section’s chords and riff, then the whole song, working up to its tempo.', wide: true, body: () => [songView()] },
+    { key: 'ear', label: 'By ear', ico: '👂', sub: 'The coach plays a short phrase with the tab hidden; you play it back. It grows a note each time you get it.', wide: true, body: () => [earView()] },
     { key: 'riffs', label: 'Riffs & licks', ico: '🎸', sub: RIFFS.length + ' riffs, written for this studio, in ' + RIFF_STYLES.length + ' styles. Any key; note by note or in time; straight into your song.', wide: true, body: () => [learnRiffs()] },
     { key: 'lab', label: 'Riff Lab', ico: '🧪', sub: 'New ideas, on tap.', wide: true, body: () => [learnLab()] },
     { key: 'atlas', label: 'Scale atlas', ico: '🗺', sub: 'The neck, mapped: boxes, positions, arpeggios, modes over a band, target notes.', wide: true, body: () => [learnAtlas()] },
@@ -17340,6 +17441,135 @@ function learnOpen(at) {
 }
 bus.on('coach:done', () => learnPaint());
 bus.on('coach:close', () => { if (LRN_DIRTY) learnPaint(); });
+
+/* >>> parts/83-practice-plan.js */
+/* ============================================================
+   Part 83 · TODAY, THIS SONG, BY EAR (2.34) — more of Learn
+     · 📅 Today       about fifteen minutes, a new plan each day: a warm-up, a step you passed a while ago (reviewed after 1, 3, 7, 14
+                      and then 30 days, so it sticks), the next new step on the path you are on, and a riff at your level. A streak and a
+                      week's count; all of it kept in this browser.
+     · 🎵 This song   the open song as lessons: its strum pattern (the band's own), each section's chords in time and its riff (from
+                      the tab), then the whole song's changes; it starts at 70% of the song's tempo and the tempo ladder stops at the
+                      song's own. Where you got to is remembered for the song.
+     · 👂 By ear      call and response: the coach plays a short phrase in the key and scale you pick, with the tab hidden, and you
+                      play it back. Get it and the next is a note longer (up to eight); miss two and it is a note shorter. 👁 Show me
+                      reveals it.
+   ============================================================ */
+CFG.learn.rev = CFG.learn.rev && typeof CFG.learn.rev === 'object' ? CFG.learn.rev : {};
+CFG.learn.passes = CFG.learn.passes && typeof CFG.learn.passes === 'object' ? CFG.learn.passes : {};
+CFG.learn.sbpm = CFG.learn.sbpm && typeof CFG.learn.sbpm === 'object' ? CFG.learn.sbpm : {};
+CFG.learn.ear = Object.assign({ scale: 'Minor Pentatonic', len: 3, key: null, best: 0 }, CFG.learn.ear || {});
+const dayKey = t => { const d = new Date(t == null ? Date.now() : t); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+const LSTEP = {}; LESSONS.forEach(pa => pa.lessons.forEach(ls => ls.steps.forEach((s, i) => { LSTEP[s.id] = { s, ls, pa, i }; })));
+const RIFF_BY = {}; RIFFS.forEach(r => { RIFF_BY[r.id] = r; });
+const REV_DAYS = [1, 3, 7, 14, 30];
+
+/** a step passed: when to see it again, today's count, and which path you are on */
+function learnPassed(p) {
+  if (!p || !p.id) return; const L = CFG.learn, now = Date.now(), k = dayKey(now); LRN_DIRTY = true;      /* the Learn hub's ticks and streak are stale now */
+  L.passes[k] = (L.passes[k] || 0) + 1; const keys = Object.keys(L.passes).sort(); while (keys.length > 90) delete L.passes[keys.shift()];
+  if (LSTEP[p.id] || RIFF_BY[p.id]) { const r = L.rev[p.id] || { n: 0, at: 0 }; if (dayKey(r.at) !== k) r.n++; r.at = now; L.rev[p.id] = r; }
+  if (LSTEP[p.id] && LSTEP[p.id].pa.id !== 'warm') L.lastPath = LSTEP[p.id].pa.id;
+  const T = L.today; if (T && T.day === k && !T.told && T.ids.every(([, id]) => todayDone(id))) { T.told = true; setTimeout(() => toast('✓ Today’s session is done. ' + streak() + '-day streak. See you tomorrow.', 'ok'), 400); }
+}
+const todayDone = id => { const r = CFG.learn.rev[id]; return !!(r && dayKey(r.at) === dayKey()) || (LSTEP[id] && LSTEP[id].s.kind === 'info' && !!CFG.learn.done[id]); };
+/** days in a row with at least one step passed, counting back from today (or from yesterday, if today has not started) */
+function streak() { let n = 0; const P = CFG.learn.passes, d = new Date(); if (!P[dayKey(d)]) d.setDate(d.getDate() - 1); while (P[dayKey(d)]) { n++; d.setDate(d.getDate() - 1); } return n; }
+const weekCount = () => { let n = 0; const d = new Date(); for (let i = 0; i < 7; i++) { n += CFG.learn.passes[dayKey(d)] || 0; d.setDate(d.getDate() - 1); } return n; };
+/** the day's plan, made once a day so it does not shuffle as you go: [kind, step id] */
+function todayPlan() {
+  const L = CFG.learn, k = dayKey(); if (L.today && L.today.day === k && Array.isArray(L.today.ids) && L.today.ids.length) return L.today;
+  const n = Math.floor(Date.now() / 864e5), ids = [], now = Date.now();
+  const warm = LESSONS.find(x => x.id === 'warm'), wl = warm.lessons[n % warm.lessons.length], ws = wl.steps.find(s => s.kind !== 'info') || wl.steps[0]; ids.push(['warm', ws.id]);
+  const due = Object.keys(L.rev).filter(id => (LSTEP[id] && LSTEP[id].s.kind !== 'info' && LSTEP[id].pa.id !== 'warm') || RIFF_BY[id]).map(id => { const r = L.rev[id]; return [id, (now - r.at) / 864e5 - REV_DAYS[Math.min(REV_DAYS.length - 1, Math.max(0, r.n - 1))]]; }).filter(x => x[1] >= 0).sort((a, b) => b[1] - a[1]);
+  if (due.length) ids.push(['review', due[0][0]]);
+  const paths = LESSONS.filter(x => x.id !== 'warm'), lp = paths.find(x => x.id === L.lastPath), order = lp ? [lp].concat(paths.filter(x => x !== lp)) : paths;
+  let nw = null; for (const pa of order) { for (const ls of pa.lessons) { const i = ls.steps.findIndex(s => s.kind !== 'info' && !L.done[s.id]); if (i >= 0) { if (i > 0 && ls.steps[i - 1].kind === 'info' && !L.done[ls.steps[i - 1].id]) ids.push(['read', ls.steps[i - 1].id]); nw = ls.steps[i]; break; } } if (nw) break; }
+  if (nw) ids.push(['new', nw.id]);
+  const level = Math.min(3, 1 + Math.floor(Object.keys(L.done).length / 15)), pool = RIFFS.filter(r => r.lvl <= level && !L.done[r.id] && !ids.some(x => x[1] === r.id)), rp = pool.length ? pool : RIFFS;
+  ids.push(['riff', rp[n % rp.length].id]);
+  L.today = { day: k, ids, told: false }; saveCfg(); return L.today;
+}
+const pieceOf = id => LSTEP[id] ? LSTEP[id].s : RIFF_BY[id] || null;
+const TODAY_KIND = { read: '📖 Read first', warm: '🔥 Warm up', review: '↺ Review', new: '✨ Something new', riff: '🎸 A riff' };
+function todayPieces() { return todayPlan().ids.map(([kind, id]) => { const p = pieceOf(id); return p ? Object.assign({}, p, { today: kind }) : null; }).filter(Boolean); }
+function todayStart() { const ps = todayPieces(), at = Math.max(0, ps.findIndex(p => !todayDone(p.id))); return coachOpen(ps, at, { title: 'Today' }); }
+function todayView() {
+  const T = todayPlan(), st = streak(), wk = weekCount(), rows = T.ids.map(([kind, id]) => { const p = pieceOf(id); if (!p) return null; const r = CFG.learn.rev[id], ago = kind === 'review' && r ? Math.max(1, Math.round((Date.now() - r.at) / 864e5)) : 0;
+    return h('li', { class: 'td-row' + (todayDone(id) ? ' done' : ''), 'data-today': kind }, h('span', { class: 'td-k' }, TODAY_KIND[kind] || kind), h('b', {}, p.title || p.name), h('small', { class: 'muted' }, kind === 'review' ? 'you passed it ' + ago + ' day' + (ago === 1 ? '' : 's') + ' ago' : LSTEP[id] ? LSTEP[id].ls.name : p.style ? p.style + ' · level ' + p.lvl : ''), h('span', { class: 'td-tick', 'aria-label': todayDone(id) ? 'done today' : 'to do' }, todayDone(id) ? '✓' : '')); }).filter(Boolean);
+  const all = T.ids.every(([, id]) => todayDone(id));
+  return h('div', { class: 'td' },
+    h('div', { class: 'td-top' }, h('span', { class: 'td-streak', id: 'tdStreak' }, st ? '🔥 ' + st + '-day streak' : 'Start a streak today'), h('span', { class: 'muted' }, wk + ' step' + (wk === 1 ? '' : 's') + ' passed this week')),
+    h('ol', { class: 'td-list' }, rows),
+    h('div', { class: 'td-go' }, h('button', { class: 'btn primary', id: 'lnToday', type: 'button', onclick: todayStart }, all ? '▶ Go again' : '▶ Start today’s session'), all ? h('span', { class: 'muted small' }, '✓ Done for today. A new plan tomorrow.') : h('span', { class: 'muted small' }, 'About fifteen minutes. Reviews come back after 1, 3, 7, 14 and 30 days, so what you learn sticks.')));
+}
+
+/* ---------- 🎵 This song ---------- */
+const songKey = () => 'song.' + String((typeof PRJ !== 'undefined' && PRJ.cur) || S.title || 'untitled').replace(/\W+/g, '_').slice(0, 40);
+const secChords = sec => sec.bars.map(b => String(b.chord || '').trim().split(/\s+/)[0]).filter(c => c && parseChord(c));
+function songLessons() {
+  const sid = songKey(), target = Math.round(S.bpm), start = Math.max(40, Math.min(target, Math.round(target * .7 / 5) * 5)), bpm = Math.min(target, Math.max(start, CFG.learn.sbpm[sid] || start)), out = [], title = S.title || 'this song';
+  const firstCh = S.sections.map(secChords).find(c => c.length); if (!firstCh) return [];
+  const sty = S.band && S.band.compStyle && STRUMS[S.band.compStyle] ? S.band.compStyle : 'Down 4s', pat = (STRUMS[sty].p || 'D...D...D...D...').padEnd(16, '.').slice(0, 16).replace(/[0-9]/g, 'D').replace(/[^Ddumx.]/g, '.');
+  const base = { bpm, target, song: sid };
+  out.push(Object.assign({ kind: 'info', id: sid + '.intro', title: 'Learn “' + title + '”', text: 'Its strum first, then each part: the chords in time, and the riff where the tab has one. Then the whole song. You start at ' + bpm + ' BPM; every clean go is 5 faster, up to the song’s own ' + target + '.' }, base));
+  out.push(Object.assign({ kind: 'rhythm', id: sid + '.strum', title: 'The strum: ' + sty, text: 'This song’s strum, on ' + firstCh[0] + ', with the click: D is a down-strum, u is up. Keep your arm moving down and up even when it does not hit.', pattern: pat, bars: 4, len: 16, back: { drums: true, bass: true, chords: [firstCh[0]] } }, base));
+  const seen = new Set();
+  S.sections.forEach((sec, si) => {
+    const ch = secChords(sec), key = sec.name.replace(/\s*\d+$/, '') + '|' + ch.join(','); if (seen.has(key)) return; seen.add(key);
+    if (ch.length) out.push(Object.assign({ kind: 'changes', id: sid + '.' + si + '.chords', title: sec.name + ': the chords', text: sec.name + ': ' + ch.join(' – ') + ', a bar each. Change when the band does; start moving on beat 4.', bars: Math.min(16, Math.max(4, ch.length)), len: 16 * Math.min(16, ch.length), back: { drums: true, bass: true, chords: ch.slice(0, 16) } }, base));
+    const r = learnFromSong(si, true); if (r) out.push(Object.assign(r, { id: sid + '.' + si + '.riff', title: sec.name + ': the riff', text: 'The tab of ' + sec.name + ', note by note. When it is clean, press ⏱ In time.' }, base, { bpm: Math.min(bpm, r.bpm || bpm) }));
+  });
+  const all = S.sections.flatMap(secChords).slice(0, 32);
+  if (all.length > 1) out.push(Object.assign({ kind: 'changes', id: sid + '.whole', title: 'The whole song', text: 'Every bar’s chord, start to end' + (all.length >= 32 ? ' (the first 32 bars)' : '') + '. This is the song.', bars: all.length, len: 16 * all.length, back: { drums: true, bass: true, chords: all } }, base));
+  return out;
+}
+function songActions(p) { return p.kind === 'notes' || p.kind === 'timed' ? [h('button', { class: 'btn sm', id: 'coTimed', type: 'button', onclick: () => { CO.p = Object.assign({}, p, { kind: p.kind === 'timed' ? 'notes' : 'timed', back: { drums: true } }); CO.list[CO.idx] = CO.p; coBuild(); } }, p.kind === 'timed' ? '♪ Note by note' : '⏱ In time')] : []; }
+function songStart(at) { const ps = songLessons(); if (!ps.length) { toast('This song has no chords yet. Write some, paste a chord sheet, or load a track.', 'warn'); return null; } return coachOpen(ps, at || 0, { title: '🎵 ' + (S.title || 'This song'), actions: songActions }); }
+bus.on('coach:done', e => { if (!e || !e.ok || !CO.p || !CO.p.song) return; CFG.learn.sbpm[CO.p.song] = Math.min(CO.p.target || 999, CO.bpm); saveCfg(); CO.list.forEach(q => { if (q && typeof q === 'object' && q.song === CO.p.song) q.bpm = Math.max(q.bpm || 0, CFG.learn.sbpm[CO.p.song]); }); });
+function songView() {
+  const ps = songLessons(); if (!ps.length) return h('p', { class: 'small muted' }, 'Open a song with chords (☰ Songs), paste a chord sheet, or load a track, and it will be taught here.');
+  const sid = songKey(), cur = CFG.learn.sbpm[sid], n = ps.filter(p => p.kind !== 'info').length, done = ps.filter(p => p.kind !== 'info' && CFG.learn.done[p.id]).length;
+  return h('div', { class: 'sg' }, h('p', { class: 'small' }, h('b', {}, S.title || 'This song'), ' · ' + n + ' steps · ' + done + ' done · ' + (cur ? 'you are at ' + cur + ' of ' + Math.round(S.bpm) + ' BPM' : 'starts at ' + ps[0].bpm + ', the song is ' + Math.round(S.bpm) + ' BPM')),
+    h('ol', { class: 'sg-list' }, ps.map((p, k) => p.kind === 'info' ? null : h('li', {}, h('button', { class: 'ln-ls' + (CFG.learn.done[p.id] ? ' done' : ''), type: 'button', 'data-song-step': k, onclick: () => songStart(k) }, h('span', {}, p.title), h('small', { class: 'mono' }, CFG.learn.done[p.id] ? '✓' : ''))))),
+    h('button', { class: 'btn primary', id: 'lnSong', type: 'button', onclick: () => songStart(0) }, '▶ Teach me this song'));
+}
+
+/* ---------- 👂 By ear ---------- */
+const EAR = { len: 3, fails: 0 };
+const EAR_SCALES = ['Minor Pentatonic', 'Major Pentatonic', 'Natural Minor (Aeolian)', 'Major (Ionian)', 'Blues'];
+/** a phrase of `len` notes on the scale, mostly by step, starting on the root (or for longer ones the fifth or the octave) */
+function earLick(len, seed, o) {
+  o = o || CFG.learn.ear; const R = labRng(seed * 7919 + len * 31 + 7), iv = SCALES[o.scale] || SCALES['Minor Pentatonic'], pool = [];
+  for (let oc = 0; oc < 2; oc++) iv.forEach(x => pool.push(x + 12 * oc)); pool.push(24);
+  const starts = len < 4 ? [0] : [0, pool.indexOf(7), pool.indexOf(12)].filter(x => x >= 0); let k = starts[Math.floor(R() * starts.length)], prev = -1; const src = [];
+  for (let j = 0; j < len; j++) {
+    if (j) { const cap = len <= 3 ? 5 : 7; let nk, tries = 0; do { const r = R(), st = r < .65 ? 1 : r < .9 ? 2 : 3; nk = Math.max(0, Math.min(pool.length - 1, k + (R() < .5 ? -st : st))); tries++; } while (tries < 60 && (nk === k || nk === prev || Math.abs(pool[nk] - pool[k]) > cap)); if (nk === k) nk = k ? k - 1 : 1; prev = k; k = nk; }      /* by step mostly; never more than a fifth (a fourth in short ones) */
+    src.push({ at: j * 4, len: j === len - 1 ? 8 : 4, i: pool[k] });
+  }
+  const key = o.key != null ? o.key : S.key, first = src[0].i % 12, hint = first === 0 ? 'the root (' + pcName(key, false) + ')' : first === 7 ? 'the fifth' : 'a ' + pcName((key + first) % 12, false);
+  return { kind: 'notes', ear: true, id: 'ear.' + len + '.' + seed, title: 'By ear · ' + len + ' notes', text: 'Listen, then play it back. ' + o.scale.replace(/ \(.*\)/, '') + ' in ' + pcName(key, false) + '. Stuck? ▶ Hear it again, or 👁 Show me.', src, len: rfLen(src), keyPc: key, lift: 12, near: 5, bpm: 76, keyed: false, ladder: false, hint };
+}
+function earStart() {
+  const o = CFG.learn.ear; EAR.len = Math.max(2, Math.min(8, o.len || 3)); EAR.fails = 0; const s0 = Math.floor(Math.random() * 1e5);
+  const list = Array.from({ length: 12 }, (_, k) => () => earLick(EAR.len, s0 + k, o));
+  return coachOpen(list, 0, { title: '👂 By ear', key: o.key != null ? o.key : S.key });
+}
+bus.on('coach:done', e => {
+  if (!e || !/^ear\./.test(e.id || '')) return; const o = CFG.learn.ear;
+  if (e.ok) { if (!CO.reveal) { o.best = Math.max(o.best || 0, EAR.len); EAR.len = Math.min(8, EAR.len + 1); } EAR.fails = 0; saveCfg();
+    const idx = CO.idx; setTimeout(() => { const d = document.getElementById('coach'); if (d && d.open && !CO.run && CO.idx === idx && idx < CO.list.length - 1) coSetPiece(idx + 1); }, 1800); }
+  else if (++EAR.fails >= 2) { EAR.len = Math.max(2, EAR.len - 1); EAR.fails = 0; }
+});
+function earView() {
+  const o = CFG.learn.ear, set = (k, v) => { o[k] = v; saveCfg(); };
+  return h('div', { class: 'ln-lab' }, h('p', { class: 'small' }, 'Call and response: the coach plays a short phrase and you play it back, by ear. Get it and the next one is a note longer; miss two in a row and it is a note shorter. Your best: ' + (o.best ? o.best + ' notes' : 'not yet') + '.'),
+    h('div', { class: 'ln-filt' },
+      h('label', { class: 'field' }, 'Scale', h('select', { class: 'in', id: 'earScale', onchange: e => set('scale', e.target.value) }, EAR_SCALES.map(x => h('option', { value: x, selected: o.scale === x }, x.replace(/ \(.*\)/, ''))))),
+      h('label', { class: 'field' }, 'Key', h('select', { class: 'in', id: 'earKey', onchange: e => set('key', e.target.value === '' ? null : +e.target.value) }, [h('option', { value: '' }, 'The song’s (' + pcName(S.key, false) + ')')].concat(NS.map((_, k) => h('option', { value: k, selected: o.key === k }, pcName(k, false)))))),
+      h('label', { class: 'field' }, 'Start with', h('select', { class: 'in', id: 'earLen', onchange: e => set('len', +e.target.value) }, [2, 3, 4, 5].map(n => h('option', { value: n, selected: (o.len || 3) === n }, n + ' notes'))))),
+    h('button', { class: 'btn primary', id: 'lnEar', type: 'button', onclick: earStart }, '🎧 Start'));
+}
 
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
