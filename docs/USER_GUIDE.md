@@ -761,6 +761,21 @@ The app ships no recordings and no one else's lyrics, and it never uploads anyth
 
 **📺 Stream window** (Creator Studio and Performer tools) opens a window with only the line being sung, the next one and the chord, in large type on one colour. In OBS, Streamlabs or any streaming app, add a **Window Capture** of it and a **Chroma Key** filter on that colour (green, blue or magenta), or a **Luma Key** on black. The words then float over your camera. The stage visuals have their own pop-out in Visuals.
 
+## Speed & key (2.35)
+
+**⏱** in the transport (on a phone: **More ▸ Speed & key**) slows the song down without lowering it, or moves it to another key without slowing it.
+- **Speed (50–125%):** the band, the click and the loaded track all play slower or faster, and the pitch stays the same. It's for practice: your song is not changed, and **100% speed** puts it back. At any speed other than 100%, recording waits (takes are kept at the song's own speed) and recorded takes stay quiet.
+- **Key (−6 to +6 semitones):** the loaded track moves up or down without changing speed. **Move the song's chords and tab too** (on by default) transposes the song with it, so the band and the chart follow. With no track loaded, the key simply transposes the song. A track's key change is saved with the song, and **Original** puts it back.
+- The track is stretched as it plays, two seconds ahead, in a background worker, part by part, so muting and soloing its parts still work.
+
+## Keys: a piano to see, play and record (2.35)
+
+- **🎹 Piano** (in Write, next to **Fretboard**; one shows at a time): the chord that is playing (its notes, with the root in gold), the song's scale shaded, and what is sounding lit. Click or drag along it to play.
+- **🎹 Keys** (Songwriter tools, the band strip's **Keys** chip, or a phone's **More**) is a bigger keyboard. Play it with the mouse, a touch screen, the computer keys (A W S E D F T G Y H U J K O L P ; are the notes; Z and X change octave) or a MIDI keyboard while it is open.
+  - **Plays into:** **🎹 Keys** (six sounds: piano, electric piano, organ, pad, synth lead, synth bass), the band's **Bass**, or the **Lead guitar**.
+  - **● Record:** the band plays, and what you play is written into the song, rounded to 16ths, 8ths or quarters. Keys become the keys part of those bars, bass becomes the bass line (it replaces the made-up bass in those bars), and lead becomes tab, with the string and fret chosen for you. It adds to what is there; one undo takes it out. **Clear in this section** removes a keys part or bass line.
+  - **Keys in the band:** a keys player that follows the chords in five styles (Pad, Block chords, Broken chords, Arpeggio up, Off-beat stabs), voiced so that each chord moves as little as possible. A part you recorded plays in its own bars instead. Keys have their own channel in the mixer.
+
 ## Learn 2: feedback, Today, This song and By ear (2.34)
 
 **After every go the coach tells you what happened and what to do next:**

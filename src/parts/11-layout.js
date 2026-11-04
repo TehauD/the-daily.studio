@@ -186,7 +186,7 @@ function edgeSync() {
 }
 
 /* ---------- band strip: always-visible instrument switches ---------- */
-const BAND_KEYS = [['drums', 'Drums', 'drumsOn'], ['bass', 'Bass', 'bassOn'], ['rhythm', 'Rhythm', 'compOn'], ['lead', 'Lead tab', 'leadOn']];
+const BAND_KEYS = [['drums', 'Drums', 'drumsOn'], ['bass', 'Bass', 'bassOn'], ['rhythm', 'Rhythm', 'compOn'], ['lead', 'Lead tab', 'leadOn'], ['keys', 'Keys', 'keysOn']];
 const REHEARSAL = [['Full band', { drumsOn: 1, bassOn: 1, compOn: 1, leadOn: 1 }], ['Rhythm section (drums + bass)', { drumsOn: 1, bassOn: 1, compOn: 0, leadOn: 0 }], ['Acoustic duo (rhythm + bass)', { drumsOn: 0, bassOn: 1, compOn: 1, leadOn: 0 }], ['Drums only', { drumsOn: 1, bassOn: 0, compOn: 0, leadOn: 0 }], ['Bass only', { drumsOn: 0, bassOn: 1, compOn: 0, leadOn: 0 }], ['Rhythm guitar only', { drumsOn: 0, bassOn: 0, compOn: 1, leadOn: 0 }], ['Tab playback only', { drumsOn: 0, bassOn: 0, compOn: 0, leadOn: 1 }], ['Play over me (click only)', { drumsOn: 0, bassOn: 0, compOn: 0, leadOn: 0, click: 1 }]];
 function toggleBand(key, val) { S.band[key] = val == null ? !S.band[key] : !!val; commit(false); syncBandStrip(); if (paneVisible('band') && typeof renderBand === 'function') renderBand(); }
 /* ---------- mute the whole band and the click in one press (2.24); the next press brings back exactly what was playing ---------- */
@@ -219,6 +219,7 @@ function syncBandStrip() {
   $$('.tl-head .pw').forEach(b => b.classList.toggle('on', !!S.band[b.dataset.k]));
 }
 function bandPop(chip, id, key) {
+  if (id === 'keys' && !S.mix.keys) S.mix.keys = { g: .7, p: .1, m: 0, s: 0 };
   const m = S.mix[id], box = h('div'); box.append(h('h5', {}, BAND_KEYS.find(x => x[0] === id)[1]));
   box.append(h('label', { class: 'lrow' }, h('input', { type: 'checkbox', checked: !!S.band[key], onchange: e => toggleBand(key, e.target.checked) }), 'Enabled'));
   box.append(h('div', { class: 'lrow' }, h('span', {}, 'Level'), h('input', { type: 'range', min: 0, max: 1.4, step: .01, value: m.g, style: { flex: 1 }, oninput: e => { m.g = +e.target.value; applyMix(); commit(false); } })));
@@ -228,12 +229,13 @@ function bandPop(chip, id, key) {
   if (id === 'drums') { sel('Pattern', Object.keys(DPATS), S.band.patName, v => { setDrumPattern(v); }); sel('Kit', Object.keys(KITS), S.band.kit, v => { S.band.kit = v; commit(false); }); }
   if (id === 'bass') { sel('Style', BASS_STYLES, S.band.bassStyle, v => { S.band.bassStyle = v; commit(false); }); sel('Tone', ['Round', 'Sub', 'Pick', 'Muted Pluck'], S.band.bassTone, v => { S.band.bassTone = v; commit(false); }); }
   if (id === 'rhythm') { sel('Pattern', Object.keys(STRUMS), S.band.compStyle, v => { S.band.compStyle = v; commit(false); }); sel('Voice', ['Steel', 'Nylon', 'Electric', 'Muted Pluck'], S.band.compInst, v => { S.band.compInst = v; commit(false); }); }
+  if (id === 'keys') { if (!S.mix.keys) S.mix.keys = { g: .7, p: .1, m: 0, s: 0 }; sel('Style', KEYS_STYLES, kyStyle(), v => { S.band.keysStyle = v; commit(false); }); sel('Sound', KEYS_SOUNDS, kySound(), v => { S.band.keysSound = v; commit(false); }); box.append(h('button', { class: 'btn sm', type: 'button', onclick: () => { closePop(); keysOpen(); } }, '🎹 Play and record keys…')); }
   if (id === 'lead') sel('Voice', ['Nylon', 'Steel', 'Electric', 'Muted Pluck'], S.band.leadInst, v => { S.band.leadInst = v; commit(false); });
   popover(chip, box, { right: true });
 }
 function buildBandStrip() {
   const strip = h('div', { class: 'bandstrip' }); UI.bchips = {}; strip.append(h('span', { class: 'bs-l' }, 'BAND'));
-  BAND_KEYS.forEach(([id, name, key]) => { const c = h('button', { class: 'bchip', title: name + ' — click: on/off · right-click: level, pan, style  (' + { drums: 'D', bass: 'B', rhythm: 'G', lead: 'T' }[id] + ')', onclick: () => toggleBand(key), oncontextmenu: e => { e.preventDefault(); bandPop(c, id, key); } }, h('i', { class: 'led' }), name); UI.bchips[id] = c; strip.append(c); });
+  BAND_KEYS.forEach(([id, name, key]) => { const c = h('button', { class: 'bchip', title: name + ' — click: on/off · right-click: level, pan, style  (' + ({ drums: 'D', bass: 'B', rhythm: 'G', lead: 'T' }[id] || '🎹 Keys room') + ')', onclick: () => toggleBand(key), oncontextmenu: e => { e.preventDefault(); bandPop(c, id, key); } }, h('i', { class: 'led' }), name); UI.bchips[id] = c; strip.append(c); });
   UI.bchips.click = h('button', { class: 'bchip warn', title: 'Metronome click (M)', onclick: () => { T.metro = !T.metro; syncTransport(); } }, h('i', { class: 'led' }), 'Click'); strip.append(UI.bchips.click);
   UI.bchips.all = h('button', { class: 'bchip bmute', id: 'bandMuteAll', 'aria-pressed': 'false', onclick: () => bandMute() }, h('span', { 'aria-hidden': 'true' }, '🔇 '), h('span', {}, 'Mute all')); strip.append(UI.bchips.all);
   UI.bmix = h('select', { class: 'in', title: 'Rehearsal mixes — who plays with you', onchange: e => { const r = REHEARSAL[+e.target.value]; if (r) setRehearsal(r[1]); } }, h('option', { value: '' }, 'Mix…'), REHEARSAL.map((r, i) => h('option', { value: i }, r[0]))); strip.append(UI.bmix);

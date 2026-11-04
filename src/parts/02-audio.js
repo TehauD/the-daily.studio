@@ -191,7 +191,7 @@ const E = {
   ctx: null, worklet: false, ready: false, stream: null, inSettings: null, src: null, hasInput: false, tr: {},
   devs: { in: [], out: [], cam: [] }, recOn: { di: false, wet: false, master: false }, onTap: {}
 };
-const TRACKS = [['drums', 'Drums', '#e4572e'], ['bass', 'Bass', '#8a5cf5'], ['rhythm', 'Rhythm Gtr', '#0a9aa6'], ['lead', 'Lead / Tab', '#e0a31a'], ['live', 'Live Guitar', '#2e9d57'], ['vox', 'Vocal', '#ff5fa2'], ['click', 'Click', '#7b8a88']];
+const TRACKS = [['drums', 'Drums', '#e4572e'], ['bass', 'Bass', '#8a5cf5'], ['rhythm', 'Rhythm Gtr', '#0a9aa6'], ['lead', 'Lead / Tab', '#e0a31a'], ['keys', 'Keys', '#9b6cf0'], ['live', 'Live Guitar', '#2e9d57'], ['vox', 'Vocal', '#ff5fa2'], ['click', 'Click', '#7b8a88']];
 const gn = (v = 1) => { const n = E.ctx.createGain(); n.gain.value = v; return n; };
 const bq = (type, f, q = 0.707, g = 0) => { const n = E.ctx.createBiquadFilter(); n.type = type; n.frequency.value = f; n.Q.value = q; n.gain.value = g; return n; };
 const tc = (p, v, t = 0.025) => p.setTargetAtTime(v, E.ctx.currentTime, t);
@@ -281,7 +281,7 @@ function buildGraph() {
 }
 
 function applyMix() {
-  if (!E.ready && !E.tr.drums) return; if (!S.mix.vox) S.mix.vox = { g: 1, p: 0, m: 0, s: 0 }; const m = S.mix;
+  if (!E.ready && !E.tr.drums) return; if (!S.mix.vox) S.mix.vox = { g: 1, p: 0, m: 0, s: 0 }; if (!S.mix.keys) S.mix.keys = { g: .7, p: .1, m: 0, s: 0 }; const m = S.mix;
   const solo = Object.values(m).some(x => x.s);
   Object.keys(E.tr).forEach(id => {
     const x = m[id]; if (!x) return;

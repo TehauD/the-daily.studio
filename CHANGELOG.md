@@ -2,6 +2,28 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.35.0 — 2026-11-04 — Speed & key, and Keys
+
+### Added
+- **⏱ Speed & key** (`src/parts/85-stretch.js`), in the transport (on a phone, More ▸ Speed & key).
+  - **Speed:** 50–125%, one press for 50/60/70/75/80/90/100%. The band, the click and the loaded track slow down without dropping in pitch. The song itself is untouched.
+  - **Key:** −6 to +6 semitones for the track at the same speed. "Move the song's chords and tab too" transposes the song so the band follows. With no track, the key transposes the song. The track's shift is kept with the song.
+  - **How the track is stretched:** a phase vocoder (2048-point frames, identity phase locking) then a cubic resampler, in a worker, two seconds ahead, per stem channel, so mute and solo keep working. Tested at 50%, 75%, +12, −5 and 60%/+3: pitch within 1%, the right length, the same level, and no click between chunks.
+  - **Recording at practice speeds:** it waits until you're back at 100%, and recorded takes stay quiet, because takes are kept at the song's own speed.
+- **🎹 Keys** (`src/parts/86-keys.js`).
+  - **A piano under Write**, next to the fretboard (one at a time). It shows the chord playing (root in gold), the scale and what's sounding, and you can click or drag along it.
+  - **The Keys room:** play with the mouse, touch, the computer keys or a MIDI keyboard. It plays into its own six sounds, the band's bass or the lead guitar.
+  - **● Record into the song:** a keys part, a bass line (replacing the made-up bass in those bars) or lead tab. Notes are rounded to the grid, and one undo takes them out.
+  - **Keys in the band:** five styles with smooth voice leading, a Keys chip on the band strip, and a Keys channel in the mixer and in bounces.
+- **Workspaces:** Songwriter gets 🎹 Keys and Practice gets ⏱ Speed & key. On a phone, Keys and Speed & key are in More.
+
+### Fixed (found while testing)
+- The Organ sound failed to start (its vibrato pointed at the wrong node).
+
+### Tests
+- New `e2e-speedkeys` (29 checks).
+- `mobile` now counts 15 desktop transport controls (⏱ is one); on phones ⏱ sits in More instead of the top bar.
+
 ## 2.34.0 — 2026-11-04 — Learn 2: feedback that teaches, Today, This song, By ear
 
 ### Added

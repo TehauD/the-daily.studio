@@ -22,6 +22,7 @@ const GOALS = [
       ['gtSheet', '🎸 Paste chords', 'Paste a chord sheet (chords over the words): it becomes the song, with bars, key, words and a guitar part', () => liOpen(''), null, 1],
       ['gtVox', '🎤 Vocal pedals', 'Scream, doubler, harmony, echo, reverb, de-esser and megaphone for your voice', () => vocalBoardOpen()],
       ['gtPads', '🥁 Pads', 'Play the drums with your fingers, tap the tempo, record a groove or beatbox it', () => padsOpen()],
+      ['gtKeys', '🎹 Keys', 'A piano to play with the mouse, the computer keys or a MIDI keyboard: its own sounds, or the band’s bass or lead; record what you play into the song', () => keysOpen()],
 
 
     ] },
@@ -65,6 +66,7 @@ const GOALS = [
       ['gtSlow', '− 5', 'Slower by 5 BPM', () => goalTempo(-5)],
       ['gtBpm', () => S.bpm + ' BPM', 'The tempo', () => { if (UI.bpm) UI.bpm.focus(); }],
       ['gtFast', '+ 5', 'Faster by 5 BPM', () => goalTempo(5)],
+      ['gtSpeed', '⏱ Speed & key', 'Slow the song down without lowering it, or move it to another key', b => psPop(b)],
       ['gtSongLearn', '🎵 Teach me this song', 'This song as lessons: its strum, each section’s chords and riff, up to tempo', () => learnOpen('song')],
       ['gtShed', '🎼 Scales & ear', 'Scales anywhere on the neck, this song’s arpeggios and ear training, followed note by note', () => trainOpen(), null, 1],
     ] },

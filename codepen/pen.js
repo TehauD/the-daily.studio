@@ -5,7 +5,7 @@
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.34.0', BUILD = 'a7cdcfb', PARTS_N = +'101' || 0, LINES_N = +'17576' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.35.0', BUILD = '6339eb2', PARTS_N = +'103' || 0, LINES_N = +'17946' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { ghApp: { clientId: '', slug: '' },   /* Sign in with GitHub: the GitHub App's public client id and its slug (docs/GITHUB.md); empty = only the token way */
   support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://the-daily.studio/journal/' };
@@ -265,9 +265,9 @@ function newSong() {
     sections: [], voicePref: {},
     band: {
       drumsOn: true, kit: 'Acoustic', patName: 'Folk Backbeat', pat: null, bassOn: true, bassStyle: 'Root–Fifth', bassTone: 'Round',
-      compOn: true, compStyle: 'Folk D-DU-UDU', compInst: 'Steel', leadOn: true, leadInst: 'Nylon', drumLen: 16
+      compOn: true, compStyle: 'Folk D-DU-UDU', compInst: 'Steel', leadOn: true, leadInst: 'Nylon', drumLen: 16, keysOn: false, keysStyle: 'Pad (held)', keysSound: 'Piano'
     },
-    mix: { drums: { g: .8, p: 0, m: 0, s: 0 }, bass: { g: .8, p: 0, m: 0, s: 0 }, rhythm: { g: .75, p: -.15, m: 0, s: 0 }, lead: { g: .8, p: .15, m: 0, s: 0 }, live: { g: 1, p: 0, m: 0, s: 0 }, vox: { g: 1, p: 0, m: 0, s: 0 }, click: { g: .6, p: 0, m: 0, s: 0 } }
+    mix: { drums: { g: .8, p: 0, m: 0, s: 0 }, bass: { g: .8, p: 0, m: 0, s: 0 }, rhythm: { g: .75, p: -.15, m: 0, s: 0 }, lead: { g: .8, p: .15, m: 0, s: 0 }, keys: { g: .7, p: .1, m: 0, s: 0 }, live: { g: 1, p: 0, m: 0, s: 0 }, vox: { g: 1, p: 0, m: 0, s: 0 }, click: { g: .6, p: 0, m: 0, s: 0 } }
   };
 }
 function mkSection(name, chords) { return { id: uid(), name, bars: chords.map(c => newBar(c)), lyrics: '' }; }
@@ -536,7 +536,7 @@ const E = {
   ctx: null, worklet: false, ready: false, stream: null, inSettings: null, src: null, hasInput: false, tr: {},
   devs: { in: [], out: [], cam: [] }, recOn: { di: false, wet: false, master: false }, onTap: {}
 };
-const TRACKS = [['drums', 'Drums', '#e4572e'], ['bass', 'Bass', '#8a5cf5'], ['rhythm', 'Rhythm Gtr', '#0a9aa6'], ['lead', 'Lead / Tab', '#e0a31a'], ['live', 'Live Guitar', '#2e9d57'], ['vox', 'Vocal', '#ff5fa2'], ['click', 'Click', '#7b8a88']];
+const TRACKS = [['drums', 'Drums', '#e4572e'], ['bass', 'Bass', '#8a5cf5'], ['rhythm', 'Rhythm Gtr', '#0a9aa6'], ['lead', 'Lead / Tab', '#e0a31a'], ['keys', 'Keys', '#9b6cf0'], ['live', 'Live Guitar', '#2e9d57'], ['vox', 'Vocal', '#ff5fa2'], ['click', 'Click', '#7b8a88']];
 const gn = (v = 1) => { const n = E.ctx.createGain(); n.gain.value = v; return n; };
 const bq = (type, f, q = 0.707, g = 0) => { const n = E.ctx.createBiquadFilter(); n.type = type; n.frequency.value = f; n.Q.value = q; n.gain.value = g; return n; };
 const tc = (p, v, t = 0.025) => p.setTargetAtTime(v, E.ctx.currentTime, t);
@@ -626,7 +626,7 @@ function buildGraph() {
 }
 
 function applyMix() {
-  if (!E.ready && !E.tr.drums) return; if (!S.mix.vox) S.mix.vox = { g: 1, p: 0, m: 0, s: 0 }; const m = S.mix;
+  if (!E.ready && !E.tr.drums) return; if (!S.mix.vox) S.mix.vox = { g: 1, p: 0, m: 0, s: 0 }; if (!S.mix.keys) S.mix.keys = { g: .7, p: .1, m: 0, s: 0 }; const m = S.mix;
   const solo = Object.values(m).some(x => x.s);
   Object.keys(E.tr).forEach(id => {
     const x = m[id]; if (!x) return;
@@ -1182,7 +1182,7 @@ function chordAt(bi, sib) {
   return { sym: cs[ci] || null, start, len, rel: sib - start, next: nxt };
 }
 function scheduleSlot(slot, time) {
-  const sp = spb(), dur = slotDur(), sw = (slot % 2 !== 0) ? S.swing * dur : 0, tt = time + sw;
+  const sp = spb(), dur = playDur(), sw = (slot % 2 !== 0) ? S.swing * dur : 0, tt = time + sw;
   const beatSlots = 16 / S.ts[1];
   if (slot < 0) { const sib = ((slot % sp) + sp) % sp; if (sib % beatSlots === 0 && !T.quiet) click(time, sib === 0); return; }
   if (typeof mclkSlot === 'function') mclkSlot(slot, time);      /* MIDI clock out (part 76) rides the same schedule */
@@ -1191,9 +1191,11 @@ function scheduleSlot(slot, time) {
   if (T.metro && !q && sib % beatSlots === 0) click(tt, sib === 0);
   if (typeof lxEvt === 'function' && sib % beatSlots === 0) lxEvt('beat', tt, sib === 0 ? 1 : 0);   // the show listens on the audio clock
   if (S.band.drumsOn && !q) drumStep(slot, tt);
-  const cd = chordAt(bi, sib);
+  const cd = chordAt(bi, sib), ownBass = fb.bar.bassLine && fb.bar.bassLine.length;
+  if (ownBass && S.band.bassOn && !q) fb.bar.bassLine.forEach(n => { if (n.s === sib) pluck('bass', tt, n.m, n.v || .8, { id: 'b', pan: 0 }); });      /* a bass line you played (part 86) takes the place of the made-up one in its bars */
+  if (!q && typeof keysStep === 'function') keysStep(fb.bar, sib, cd, tt, dur);
   if (cd && cd.sym) {
-    if (S.band.bassOn && !q) { const e = bassEvent(S.band.bassStyle, cd.sym, cd.rel, cd.len, cd.next, slot); if (e) { pluck('bass', tt, e.m, e.v, { id: 'b', pan: 0 }); if (typeof lxEvt === 'function') lxEvt('bass', tt, e.m, e.v); } }
+    if (S.band.bassOn && !q && !ownBass) { const e = bassEvent(S.band.bassStyle, cd.sym, cd.rel, cd.len, cd.next, slot); if (e) { pluck('bass', tt, e.m, e.v, { id: 'b', pan: 0 }); if (typeof lxEvt === 'function') lxEvt('bass', tt, e.m, e.v); } }
     if (S.band.compOn && !q) { const st = STRUMS[S.band.compStyle] || STRUMS['Down 4s'], L = Math.min(16, sp), ch = st.p[sib % L]; strumAt(tt, cd.sym, ch, st); if (ch && ch !== '.' && typeof lxEvt === 'function') lxEvt('chord', tt, cd.sym, ch === ch.toUpperCase() ? 1 : .6); }
   }
   if (S.band.leadOn && !q) fb.bar.tab.forEach(n => { if (n.s === sib) { playTabNote(fb.bar, n, tt, dur); if (typeof lxEvt === 'function') lxEvt('lead', tt, S.tuning[n.st] + S.capo + n.f, .8); } });
@@ -1202,16 +1204,16 @@ async function play(fromRec) {
   if (T.playing || OFR.busy) return; try { bandHint(); } catch (e) { } await startAudio(); const c = E.ctx; applyMix(); if (!S.sections.length || !songSlots()) { toast('Add a section with at least one bar first', 'warn'); return; }
   T.rec = !!fromRec || T.rec; T.playing = true; T.ending = false; T.grew = 0; T.q = []; T.startCursor = T.cursor;
   const ci = ((T.rec && !PUNCH.on) || (typeof CAP !== 'undefined' && CAP.on && CAP.countIn)) && CFG.countIn > 0 ? CFG.countIn * spb() : 0; T.slot = T.cursor - ci; T.next = c.currentTime + .08; T.wantRec = T.rec; T.recFrom = PUNCH.on ? PUNCH.startSlot : T.cursor;
-  if (!T.loopB) T.loopB = null; scheduleTakes(T.next + ci * slotDur(), T.cursor * slotDur()); trackStart(T.next + ci * slotDur(), T.cursor, true);
+  if (!T.loopB) T.loopB = null; scheduleTakes(T.next + ci * playDur(), T.cursor * slotDur()); trackStart(T.next + ci * playDur(), T.cursor, true);
   clearInterval(T.timer); T.timer = setInterval(tick, 25); tick(); bus.emit('transport');
 }
 function tick() {
-  if (!T.playing) return; const c = E.ctx, dur = slotDur(), ahead = c.currentTime + .15;
+  if (!T.playing) return; const c = E.ctx, dur = playDur(), ahead = c.currentTime + .15;
   while (T.next < ahead && T.playing && !T.ending) {
     const total = songSlots(), end = T.loop ? (T.loopB != null ? Math.min(T.loopB, total) : total) : total;
     if (T.slot >= end) {
       if (REC && !(T.loop && T.loopB != null)) { const how = CFG.recEnd || 'grow'; if (how === 'grow' && recGrow()) continue; if (how === 'stop') { T.ending = true; T.endAt = T.next; setTimeout(() => { if (T.playing && T.ending && REC) stopPlay(true); }, Math.max(0, (T.next - E.ctx.currentTime) * 1000) + 60); break; } }
-      if (T.loop && end > 0) { if (T.loopA >= end) T.loopA = 0; if (REC) recEnd(); if (typeof lpWrap === 'function') lpWrap(); if (typeof capWrap === 'function') capWrap(); T.slot = T.loopA; stopTakes(); scheduleTakes(T.next, T.loopA * dur); trackStart(T.next, T.loopA); if (T.rec) { T.wantRec = true; T.recFrom = T.loopA; } if (T.slot >= end) { T.ending = true; T.endAt = T.next; break; } continue; }
+      if (T.loop && end > 0) { if (T.loopA >= end) T.loopA = 0; if (REC) recEnd(); if (typeof lpWrap === 'function') lpWrap(); if (typeof capWrap === 'function') capWrap(); T.slot = T.loopA; stopTakes(); scheduleTakes(T.next, T.loopA * slotDur()); trackStart(T.next, T.loopA); if (T.rec) { T.wantRec = true; T.recFrom = T.loopA; } if (T.slot >= end) { T.ending = true; T.endAt = T.next; break; } continue; }
       T.ending = true; T.endAt = T.next; break;
     }
     if (T.wantRec && T.slot === T.recFrom) { recBegin(T.slot, T.next); T.wantRec = false; }
@@ -1238,7 +1240,7 @@ function stopPlay(keep) {
 }
 const slotAtTime = time => {
   const q = T.q; if (!q.length) return T.cursor; let e = q[0]; for (let i = q.length - 1; i >= 0; i--) if (q[i].time <= time) { e = q[i]; break; }
-  return e.slot + (time - e.time) / slotDur();
+  return e.slot + (time - e.time) / playDur();
 };
 function playheadSlot() { if (!T.playing || !E.ctx) return T.cursor; return slotAtTime(E.ctx.currentTime - (E.ctx.outputLatency || E.ctx.baseLatency || 0)); }
 function seek(slot) { slot = clamp(Math.round(slot), 0, Math.max(0, songSlots() - 1)); const was = T.playing; if (was) stopPlay(true); T.cursor = slot; bus.emit('transport'); if (was) play(); }
@@ -1248,6 +1250,7 @@ function nearestSlotTime(t) { let b = null, bd = 1e9; for (const e of T.q) { con
 const TAKES = []; let REC = null;
 /* Recording captures whatever is armed, all on the same clock: the guitar (dry DI + wet print) and/or the vocal (input 2). */
 function recBegin(slot, ctxTime) {
+  if (typeof PS !== 'undefined' && PS.rate !== 1) { toast('Not recording: the speed is ' + Math.round(PS.rate * 100) + '%. Takes are kept at the song’s own speed; set ⏱ back to 100%.', 'warn'); return; }
   if (!E.hasInput) { toast('No audio input is open — recording the backing/tab only', 'warn'); return; }
   let g = armedG(), v = armedV(); if (PUNCH.on) { g = PUNCH.kind === 'gtr'; v = PUNCH.kind === 'vox'; }       // a punch-in records the lane being punched, nothing else
   if (!g && !v) { toast('Nothing is armed — arm the Guitar or Vocal lane (the ● button at the left of the arrangement) to record', 'warn'); return; }
@@ -1297,6 +1300,7 @@ function takeLive(tk) {
   TAKES.forEach(t => { const l = tkLead(t); if (t._g) tc(t._g.gain, (anySolo ? l.solo : !l.mute) ? (l.g == null ? 1 : l.g) : 0, .015); if (t._pn && (!tk || tkLead(tk) === l)) tc(t._pn.pan, l.pan || 0, .02); if (t._fx && (!tk || tkLead(tk) === l)) t._fx.set(l.fx); });
 }
 function scheduleTakes(atTime, fromSec) {
+  if (typeof PS !== 'undefined' && PS.rate !== 1) return;      /* at a practice speed, recorded takes stay quiet (they are in the song's own time) */
   TAKES.forEach(tk => {
     tk._g = null; tk._pn = null; if (tk._fx) { tk._fx.dispose(); tk._fx = null; } const L = tkLead(tk), vox = L.kind === 'vox', which = L.mode === 'reamp' ? 'dry' : 'wet', buf = takeBuffer(tk, which) || takeBuffer(tk, 'dry'); if (!buf) return;
     const len = tkLen(tk); if (len <= 0 || tk.startSec + len <= fromSec) return;
@@ -1572,7 +1576,7 @@ function buildHeader() {
   UI.bpm = h('input', { type: 'number', min: 30, max: 260, step: 1, value: S.bpm, onchange: e => { S.bpm = clamp(+e.target.value || 90, 30, 260); e.target.value = S.bpm; commit(false); bus.emit('bpm'); } });
   UI.ts = h('select', { onchange: e => { const [n, d] = e.target.value.split('/').map(Number); S.ts = [n, d]; S.band.drumLen = Math.min(32, spb()); commit(); } }, ['4/4', '3/4', '2/4', '5/4', '6/8', '12/8', '7/8'].map(x => h('option', { value: x }, x)));
   UI.key = h('select', { onchange: () => keyChanged() }, NS.map((n, i) => h('option', { value: i }, n))); UI.mode = h('select', { onchange: () => keyChanged() }, [h('option', { value: 'maj' }, 'maj'), h('option', { value: 'min' }, 'min')]);
-  tr.append(UI.rew, UI.play, UI.stop, UI.rec, UI.loop, UI.metro, UI.bandMute, UI.metroMore, UI.pos, UI.tim, h('label', { class: 'field f-bpm', style: { width: '58px' } }, 'BPM', UI.bpm), h('label', { class: 'field f-sig', style: { width: '54px' } }, 'Sig', UI.ts), h('label', { class: 'field', style: { width: '56px' } }, 'Key', UI.key), h('label', { class: 'field f-mode', style: { width: '56px' } }, 'Mode', UI.mode));
+  tr.append(UI.rew, UI.play, UI.stop, UI.rec, UI.loop, UI.metro, UI.bandMute, UI.metroMore, psButton(), UI.pos, UI.tim, h('label', { class: 'field f-bpm', style: { width: '58px' } }, 'BPM', UI.bpm), h('label', { class: 'field f-sig', style: { width: '54px' } }, 'Sig', UI.ts), h('label', { class: 'field', style: { width: '56px' } }, 'Key', UI.key), h('label', { class: 'field f-mode', style: { width: '56px' } }, 'Mode', UI.mode));
   const R = $('#topR');
   UI.lat = h('span', { class: 'chip lat-chip', title: 'Round-trip latency estimate. Run the Loopback Test in I/O for a measured value.' }, h('i', { class: 'led' }), h('span', {}, 'audio off'));
   UI.theme = h('button', { class: 'btn icon', title: 'Appearance: light / dark, palettes, accent, density…', 'aria-haspopup': 'dialog', onclick: () => lookOpen() }, '◐');
@@ -1591,6 +1595,7 @@ function keyChanged() {
 }
 function toggleRec() {
   if (T.rec && T.playing) { stopPlay(true); return; }
+  if (!T.rec && typeof PS !== 'undefined' && PS.rate !== 1) { toast('Recording is at the song’s own speed: set ⏱ back to 100% first.', 'warn'); return; }
   T.rec = !T.rec; if (T.rec && !E.hasInput) toast('Arming without an input: only the count-in will run. Open an input in I/O.', 'warn'); syncTransport();
   if (T.rec && !T.playing) play(true);
 }
@@ -3916,7 +3921,7 @@ async function boot() {
   if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener('devicechange', () => { ioDeviceChange().catch(e => console.warn(e)); });
   bus.emit('song');
   try { ghBoot(); } catch (e) { console.warn('github', e); }      /* back from Sign in with GitHub, or a sync at start (part 74) */
-  DEV.make = () => { window.__daily = { coFinish, coDemo, coFeedback, coFbView, coTimeline, coBeat, coPractise, TAKE, learnPassed, todayPlan, todayPieces, todayStart, todayDone, streak, weekCount, dayKey, LSTEP, songLessons, songStart, songKey, earLick, earStart, EAR, simpleSet, simpleApply, ghTakeSettings, airMode, airSet, CO, coPos, coachOpen, coListen, coTick, coPlace, coNotes, coSetPiece, rfParse, LESSONS, RIFFS, RIFF_STYLES, learnOpen, learnToSong, learnFile, learnFileText, learnOpenFile, learnFromSong, labMake, labVary, labKeep, atlasPieces, atShape, MODE_VAMP, S, AIR, AIR_LAG, airSync, applyLayout, VB_PRESETS, VB_ORDER, VBS, vbAttach, vbApply, vbToggle, vbSet, vbPreset, vbPresetNext, vbThrow, vbLook, vbTick, vbScale, vocalBoardOpen, pedalRelease, MEG, megSpectrum, megFeatures, megScore, megStep, megSet, megLearn, megDraw, megLoop, megSettings, PAD, padsOpen, padHit, padTap, padRecord, padRecStop, padUndoPass, padClear, padResize, padBeatbox, bbHits, bbPattern, dpat, bassEvent, drumStep, PEDAL, pedalPress, pedalDo, pedalSecs, gearSettings, MCLK, mclkSlot, mclkMs, MIDI, MIDIRAW, onMidi, STRM, streamOpen, streamRoom, streamInfo, streamPanel, slotAtTime, SING, SHW, singStep, singScore, singSteamIR, singMicOff, showerOpen, shwGo, shwPlay, shwPrev, shwNext, shwStem, shwRecToggle, shwRecStop, shwHear, shwSave, shwAddFiles, shwRemove, shwMove, shwMode, shwLoadSet, shwPlaylist, shwWords, shwPrepare, shwFolderPull, lrcParse, readTags, spPos, spPlay, STP, trainOpen, projRestoreTrack, secretNote, secretArp, WS, WS_BASE, WS_ARPS, wsScaleRun, wsArpRun, wsFollow, wsStop, wsListen, wsEarNext, wsEarAnswer, wsOpen, bandMute, bandMuted, pdbPut, pdbKeys, projRename, FS, FS_B, fsUse, fsSync, fsHead, fsNeeds, fsTidy, fsOpen, syncOff, syncZips, PRJ_WAIT: () => PRJ.wait, EGG, EGG_LINES, EGG_ORDER, eggDay, eggFor, eggNow, eggText, eggTick, eggFit, saveCfg, projSave, projDelete, GH, ghSync, ghConnect, ghDisconnect, ghLocal, ghSha, ghJson, ghMerge3, ghShare, ghGallery, ghGalleryOpen, ghGalleryShow, ghKeepLook, ghKeepRig, rigClean, ghReturn, BRAND, ghSettingsOut, projRefresh, projCreate, projLoad, PRJ, SEC, SECRETS, secretFound, secretTiming, secretsOpen, secretSync, backstageOpen, startAudio, playheadSlot, GUARD, reportText, reportCopy, srecQ, srecSize, pdbGet, srecFmt, SREC_FMTS, VBG, vbgAdd, vbgRemove, vbgUse, vbgOpen, vbgDraw, vzSetMode, srecFrame, srecFmtBox, kitThumb, WORKLET_SRC, mkComp, mkShaper, rigLat, voxLat, restartAudio, satCurve, rigApply, qrMake, qrSvg, tipLink, tipShort, tipReady, tipCard, tipDraw, tipShareHtml, tipOpen, tipPrint, tipPng, tipVisAvoid, tipStageAvoid, TIP, TIP_TERMS, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, STP, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfort, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, srecStart, srecStop, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, tkFades, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, FB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, vzSetMode, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, drawVis, perfClose, voicings, peaksOf, uid, shareGate, shareData, shareHtml, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, slotAtTime, SEL, mtof, spb, playheadSlot, WR, HM, HMX, HM_MODES, vzImmersive, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitThumb, kitInk, kitNotes, kitRecord, srecMime, mGo, GD_SESSIONS, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard}; };   // test hook: with ?debug, or Backstage ▸ Labs ▸ Developer handles
+  DEV.make = () => { window.__daily = { toggleRec, closePop, spPause, encodeWav, PS, psOn, playDur, psSpeed, psKey, psSched, psDSPFactory, psPop, KY, keysOpen, keysVoice, keysStep, kyNoteOn, kyNoteOff, kyRec, kyClear, kyWrite, kyPiano, kyMarks, kyVoicing, KEYS_SOUNDS, KEYS_STYLES, coFinish, coDemo, coFeedback, coFbView, coTimeline, coBeat, coPractise, TAKE, learnPassed, todayPlan, todayPieces, todayStart, todayDone, streak, weekCount, dayKey, LSTEP, songLessons, songStart, songKey, earLick, earStart, EAR, simpleSet, simpleApply, ghTakeSettings, airMode, airSet, CO, coPos, coachOpen, coListen, coTick, coPlace, coNotes, coSetPiece, rfParse, LESSONS, RIFFS, RIFF_STYLES, learnOpen, learnToSong, learnFile, learnFileText, learnOpenFile, learnFromSong, labMake, labVary, labKeep, atlasPieces, atShape, MODE_VAMP, S, AIR, AIR_LAG, airSync, applyLayout, VB_PRESETS, VB_ORDER, VBS, vbAttach, vbApply, vbToggle, vbSet, vbPreset, vbPresetNext, vbThrow, vbLook, vbTick, vbScale, vocalBoardOpen, pedalRelease, MEG, megSpectrum, megFeatures, megScore, megStep, megSet, megLearn, megDraw, megLoop, megSettings, PAD, padsOpen, padHit, padTap, padRecord, padRecStop, padUndoPass, padClear, padResize, padBeatbox, bbHits, bbPattern, dpat, bassEvent, drumStep, PEDAL, pedalPress, pedalDo, pedalSecs, gearSettings, MCLK, mclkSlot, mclkMs, MIDI, MIDIRAW, onMidi, STRM, streamOpen, streamRoom, streamInfo, streamPanel, slotAtTime, SING, SHW, singStep, singScore, singSteamIR, singMicOff, showerOpen, shwGo, shwPlay, shwPrev, shwNext, shwStem, shwRecToggle, shwRecStop, shwHear, shwSave, shwAddFiles, shwRemove, shwMove, shwMode, shwLoadSet, shwPlaylist, shwWords, shwPrepare, shwFolderPull, lrcParse, readTags, spPos, spPlay, STP, trainOpen, projRestoreTrack, secretNote, secretArp, WS, WS_BASE, WS_ARPS, wsScaleRun, wsArpRun, wsFollow, wsStop, wsListen, wsEarNext, wsEarAnswer, wsOpen, bandMute, bandMuted, pdbPut, pdbKeys, projRename, FS, FS_B, fsUse, fsSync, fsHead, fsNeeds, fsTidy, fsOpen, syncOff, syncZips, PRJ_WAIT: () => PRJ.wait, EGG, EGG_LINES, EGG_ORDER, eggDay, eggFor, eggNow, eggText, eggTick, eggFit, saveCfg, projSave, projDelete, GH, ghSync, ghConnect, ghDisconnect, ghLocal, ghSha, ghJson, ghMerge3, ghShare, ghGallery, ghGalleryOpen, ghGalleryShow, ghKeepLook, ghKeepRig, rigClean, ghReturn, BRAND, ghSettingsOut, projRefresh, projCreate, projLoad, PRJ, SEC, SECRETS, secretFound, secretTiming, secretsOpen, secretSync, backstageOpen, startAudio, playheadSlot, GUARD, reportText, reportCopy, srecQ, srecSize, pdbGet, srecFmt, SREC_FMTS, VBG, vbgAdd, vbgRemove, vbgUse, vbgOpen, vbgDraw, vzSetMode, srecFrame, srecFmtBox, kitThumb, WORKLET_SRC, mkComp, mkShaper, rigLat, voxLat, restartAudio, satCurve, rigApply, qrMake, qrSvg, tipLink, tipShort, tipReady, tipCard, tipDraw, tipShareHtml, tipOpen, tipPrint, tipPng, tipVisAvoid, tipStageAvoid, TIP, TIP_TERMS, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, STP, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfort, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, srecStart, srecStop, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, tkFades, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, FB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, vzSetMode, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, drawVis, perfClose, voicings, peaksOf, uid, shareGate, shareData, shareHtml, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, slotAtTime, SEL, mtof, spb, playheadSlot, WR, HM, HMX, HM_MODES, vzImmersive, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitThumb, kitInk, kitNotes, kitRecord, srecMime, mGo, GD_SESSIONS, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard}; };   // test hook: with ?debug, or Backstage ▸ Labs ▸ Developer handles
   if (/[?&]debug\b/.test(location.search) || (CFG.labs && CFG.labs.handles)) DEV.make();
   try { bksBoot(); } catch (e) { console.warn('backstage', e); }      /* #backstage in the address, the performance overlay (part 73c) */
   projInit().catch(e => { console.warn('library', e); PRJ.ready = true; if (PRJ.wantStart) startMaybe(); });
@@ -4111,7 +4116,7 @@ function edgeSync() {
 }
 
 /* ---------- band strip: always-visible instrument switches ---------- */
-const BAND_KEYS = [['drums', 'Drums', 'drumsOn'], ['bass', 'Bass', 'bassOn'], ['rhythm', 'Rhythm', 'compOn'], ['lead', 'Lead tab', 'leadOn']];
+const BAND_KEYS = [['drums', 'Drums', 'drumsOn'], ['bass', 'Bass', 'bassOn'], ['rhythm', 'Rhythm', 'compOn'], ['lead', 'Lead tab', 'leadOn'], ['keys', 'Keys', 'keysOn']];
 const REHEARSAL = [['Full band', { drumsOn: 1, bassOn: 1, compOn: 1, leadOn: 1 }], ['Rhythm section (drums + bass)', { drumsOn: 1, bassOn: 1, compOn: 0, leadOn: 0 }], ['Acoustic duo (rhythm + bass)', { drumsOn: 0, bassOn: 1, compOn: 1, leadOn: 0 }], ['Drums only', { drumsOn: 1, bassOn: 0, compOn: 0, leadOn: 0 }], ['Bass only', { drumsOn: 0, bassOn: 1, compOn: 0, leadOn: 0 }], ['Rhythm guitar only', { drumsOn: 0, bassOn: 0, compOn: 1, leadOn: 0 }], ['Tab playback only', { drumsOn: 0, bassOn: 0, compOn: 0, leadOn: 1 }], ['Play over me (click only)', { drumsOn: 0, bassOn: 0, compOn: 0, leadOn: 0, click: 1 }]];
 function toggleBand(key, val) { S.band[key] = val == null ? !S.band[key] : !!val; commit(false); syncBandStrip(); if (paneVisible('band') && typeof renderBand === 'function') renderBand(); }
 /* ---------- mute the whole band and the click in one press (2.24); the next press brings back exactly what was playing ---------- */
@@ -4144,6 +4149,7 @@ function syncBandStrip() {
   $$('.tl-head .pw').forEach(b => b.classList.toggle('on', !!S.band[b.dataset.k]));
 }
 function bandPop(chip, id, key) {
+  if (id === 'keys' && !S.mix.keys) S.mix.keys = { g: .7, p: .1, m: 0, s: 0 };
   const m = S.mix[id], box = h('div'); box.append(h('h5', {}, BAND_KEYS.find(x => x[0] === id)[1]));
   box.append(h('label', { class: 'lrow' }, h('input', { type: 'checkbox', checked: !!S.band[key], onchange: e => toggleBand(key, e.target.checked) }), 'Enabled'));
   box.append(h('div', { class: 'lrow' }, h('span', {}, 'Level'), h('input', { type: 'range', min: 0, max: 1.4, step: .01, value: m.g, style: { flex: 1 }, oninput: e => { m.g = +e.target.value; applyMix(); commit(false); } })));
@@ -4153,12 +4159,13 @@ function bandPop(chip, id, key) {
   if (id === 'drums') { sel('Pattern', Object.keys(DPATS), S.band.patName, v => { setDrumPattern(v); }); sel('Kit', Object.keys(KITS), S.band.kit, v => { S.band.kit = v; commit(false); }); }
   if (id === 'bass') { sel('Style', BASS_STYLES, S.band.bassStyle, v => { S.band.bassStyle = v; commit(false); }); sel('Tone', ['Round', 'Sub', 'Pick', 'Muted Pluck'], S.band.bassTone, v => { S.band.bassTone = v; commit(false); }); }
   if (id === 'rhythm') { sel('Pattern', Object.keys(STRUMS), S.band.compStyle, v => { S.band.compStyle = v; commit(false); }); sel('Voice', ['Steel', 'Nylon', 'Electric', 'Muted Pluck'], S.band.compInst, v => { S.band.compInst = v; commit(false); }); }
+  if (id === 'keys') { if (!S.mix.keys) S.mix.keys = { g: .7, p: .1, m: 0, s: 0 }; sel('Style', KEYS_STYLES, kyStyle(), v => { S.band.keysStyle = v; commit(false); }); sel('Sound', KEYS_SOUNDS, kySound(), v => { S.band.keysSound = v; commit(false); }); box.append(h('button', { class: 'btn sm', type: 'button', onclick: () => { closePop(); keysOpen(); } }, '🎹 Play and record keys…')); }
   if (id === 'lead') sel('Voice', ['Nylon', 'Steel', 'Electric', 'Muted Pluck'], S.band.leadInst, v => { S.band.leadInst = v; commit(false); });
   popover(chip, box, { right: true });
 }
 function buildBandStrip() {
   const strip = h('div', { class: 'bandstrip' }); UI.bchips = {}; strip.append(h('span', { class: 'bs-l' }, 'BAND'));
-  BAND_KEYS.forEach(([id, name, key]) => { const c = h('button', { class: 'bchip', title: name + ' — click: on/off · right-click: level, pan, style  (' + { drums: 'D', bass: 'B', rhythm: 'G', lead: 'T' }[id] + ')', onclick: () => toggleBand(key), oncontextmenu: e => { e.preventDefault(); bandPop(c, id, key); } }, h('i', { class: 'led' }), name); UI.bchips[id] = c; strip.append(c); });
+  BAND_KEYS.forEach(([id, name, key]) => { const c = h('button', { class: 'bchip', title: name + ' — click: on/off · right-click: level, pan, style  (' + ({ drums: 'D', bass: 'B', rhythm: 'G', lead: 'T' }[id] || '🎹 Keys room') + ')', onclick: () => toggleBand(key), oncontextmenu: e => { e.preventDefault(); bandPop(c, id, key); } }, h('i', { class: 'led' }), name); UI.bchips[id] = c; strip.append(c); });
   UI.bchips.click = h('button', { class: 'bchip warn', title: 'Metronome click (M)', onclick: () => { T.metro = !T.metro; syncTransport(); } }, h('i', { class: 'led' }), 'Click'); strip.append(UI.bchips.click);
   UI.bchips.all = h('button', { class: 'bchip bmute', id: 'bandMuteAll', 'aria-pressed': 'false', onclick: () => bandMute() }, h('span', { 'aria-hidden': 'true' }, '🔇 '), h('span', {}, 'Mute all')); strip.append(UI.bchips.all);
   UI.bmix = h('select', { class: 'in', title: 'Rehearsal mixes — who plays with you', onchange: e => { const r = REHEARSAL[+e.target.value]; if (r) setRehearsal(r[1]); } }, h('option', { value: '' }, 'Mix…'), REHEARSAL.map((r, i) => h('option', { value: i }, r[0]))); strip.append(UI.bmix);
@@ -4992,8 +4999,8 @@ function spEnsure() { if (STP.bus) return; STP.bus = gn(1); STP.tfx = fxStrip(E.
 function spFx() { if (!STP.bus || !STP.fx) return; STP.tfx.set(STM.fx); STM.mix.forEach((m, i) => { STP.fx[i].set(m.fx); STP.fx[i].pan(m.p || 0); }); }
 function spGains() { if (!STP.bus) return; const anyS = STM.mix.some(m => m.s); STM.mix.forEach((m, i) => { const aud = anyS ? m.s : !m.m; tc(STP.sg[i].gain, aud ? m.g : 0, .015); }); }
 function spData(i) { const c = STM.ch; return i === 0 ? [c.drumsL, c.drumsR] : i === 1 ? [c.bass, c.bass] : i === 2 ? [c.vox, c.vox] : [c.otherL, c.otherR]; }
-function spPos() { if (!STP.playing) return STP.pos; const now = E.ctx.currentTime; for (let i = STP.segs.length - 1; i >= 0; i--) { const s = STP.segs[i]; if (now >= s.t) return Math.min(s.from + (now - s.t), s.from + s.dur); } return STP.pos; }
-function spStop() { STP.playing = false; clearInterval(STP.timer); STP.segs.forEach(s => s.srcs.forEach(o => { try { o.stop(); } catch (e) { } })); STP.segs = []; }
+function spPos() { if (!STP.playing) return STP.pos; const now = E.ctx.currentTime; for (let i = STP.segs.length - 1; i >= 0; i--) { const s = STP.segs[i], r = s.rate || 1; if (now >= s.t) return Math.min(s.from + (now - s.t) * r, s.from + s.dur * r); } return STP.pos; }
+function spStop() { STP.playing = false; STP.psGen = (STP.psGen || 0) + 1; STP.psBusy = false; STP.psNext = null; clearInterval(STP.timer); STP.segs.forEach(s => s.srcs.forEach(o => { try { o.stop(); } catch (e) { } })); STP.segs = []; }
 async function spPlay(when, from) {
   if (!STM.ch) return toast('Load a backing track first', 'warn'); await startAudio(); spEnsure(); if (STP.playing) spStop();
   const L = STM.loop.on && STM.loop.a != null && STM.loop.b != null; STP.cur = from != null ? from : (L && (STP.pos < STM.loop.a || STP.pos >= STM.loop.b) ? STM.loop.a : STP.pos); if (STP.cur >= STM.dur - .05) STP.cur = 0;
@@ -5002,6 +5009,7 @@ async function spPlay(when, from) {
 function spPause() { STP.pos = spPos(); spStop(); syncStemUI(); }
 function spSeek(t) { t = clamp(t, 0, Math.max(0, STM.dur - .05)); const was = STP.playing; STP.pos = t; if (was) spPlay(null, t); else syncStemUI(); }
 function spSched() {
+  if (typeof psOn === 'function' && psOn()) return psSched();      /* a practice speed or key: stretched in a worker (part 85) */
   if (!STP.playing || !STM.ch) return; const c = E.ctx, sr = STM.sr, CH = 2.5; STP.segs = STP.segs.filter(s => s.t + s.dur > c.currentTime - 2);
   while (STP.curT < c.currentTime + 4.5) {
     const L = STM.loop.on && STM.loop.a != null && STM.loop.b != null && STM.loop.b - STM.loop.a > .2; let end = STP.cur + CH; if (L && STP.cur < STM.loop.b) end = Math.min(end, STM.loop.b); end = Math.min(end, STM.dur);
@@ -5481,6 +5489,8 @@ function mSheet() {
       tile(msvg('<path d="M3 12c3-8 5-8 8 0s5 8 8 0"/>'), 'Voice · pitch · key', () => { mCloseOverlays(); voxOpen(); }),
       tile(msvg('<path d="M12 3a3 3 0 00-3 3v6a3 3 0 006 0V6a3 3 0 00-3-3zM5 11a7 7 0 0014 0M12 18v3"/>'), 'Vocal pedals', () => { mCloseOverlays(); vocalBoardOpen(); }),
       tile(msvg('<path d="M2 9l10-5 10 5-10 5zM6 11v5c3 2 9 2 12 0v-5"/>'), 'Learn', () => { mCloseOverlays(); learnOpen(); }),
+      tile(msvg('<path d="M3 5h18v14H3zM8 5v9M13 5v9M18 5v9"/>'), 'Keys', () => { mCloseOverlays(); keysOpen(); }),
+      tile(msvg('<circle cx="12" cy="13" r="8"/><path d="M12 13V9M9 2h6"/>'), 'Speed & key', b => { mCloseOverlays(); psPop(document.getElementById('psBtn') && document.getElementById('psBtn').offsetParent ? document.getElementById('psBtn') : document.body); }),
       tile(msvg('<path d="M5 21V8a4 4 0 018 0M13 8h-4M9 12v1M7 15v1M11 15v1M9 18v1"/>'), 'Scales & ear', () => { mCloseOverlays(); trainOpen(); }),
       tile(msvg('<rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/>'), 'Pads · tap tempo · beatbox', () => { mCloseOverlays(); padsOpen(); }),
       tile(msvg('<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>'), keepRisk().level === 'ok' ? 'Back up songs' : 'Keep songs safe', () => { mCloseOverlays(); keepOpen(); }, keepRisk().level === 'high'),
@@ -9483,7 +9493,7 @@ function ioPillLevel() { UI.audLv = h('i', { class: 'aud-lv', 'aria-hidden': 'tr
 const FX_KEYS = ['lo', 'mid', 'hi', 'comp', 'rev', 'dly'];
 const FX_DEF = { lo: 0, mid: 0, hi: 0, comp: 0, rev: 0, dly: 0 };
 const FX_PRE = [['Flat', {}], ['Warm', { lo: 2, mid: -1, hi: -2, comp: .2 }], ['Bright', { lo: -1, hi: 3, comp: .15 }], ['Punch', { lo: 1.5, hi: 1, comp: .55 }], ['Room', { rev: .22 }], ['Hall', { hi: -1, rev: .5 }], ['Echo', { dly: .3, rev: .12 }]];
-const FX_TRACKS = ['drums', 'bass', 'rhythm', 'lead', 'vox'];
+const FX_TRACKS = ['drums', 'bass', 'rhythm', 'lead', 'keys', 'vox'];
 /** the strip settings of an object (a lane's mix entry, a take, a stem), filled in with zeros */
 function fxOf(o) { if (!o.fx || typeof o.fx !== 'object') o.fx = {}; FX_KEYS.forEach(k => { const v = +o.fx[k]; o.fx[k] = isFinite(v) ? v : 0; }); return o.fx; }
 const fxOn = f => !!f && FX_KEYS.some(k => +f[k]);
@@ -12782,7 +12792,7 @@ function writeBuild() {
   UI.wrSecs = h('div', { class: 'wr-secs', role: 'tablist', 'aria-label': 'Sections' });
   UI.wrModeSeg = h('div', { class: 'seg wr-mode', role: 'group', 'aria-label': 'What the canvas shows' });
   [['tab', '𝄞', 'Tab', 'Just the tab'], ['words', '✎', 'Words', 'Lyrics with the chords over them'], ['both', '▥', 'Both', 'The tab with the words beside it']].forEach(([k, i, t, d]) => UI.wrModeSeg.append(h('button', { 'data-wm': k, title: d, onclick: () => wrMode(k) }, h('span', { class: 'wr-ic', 'aria-hidden': 'true' }, i), t)));
-  UI.wrFretBtn = h('button', { class: 'btn sm wr-fb', title: 'Show or hide the fretboard under the canvas', onclick: () => { WR.fret = !wrFretOn(); CFG.wrFret = WR.fret; saveCfg(); wrLayout(); } }, h('span', { class: 'wr-fl' }, 'Fretboard'), h('span', { class: 'wr-fs', 'aria-hidden': 'true' }, '🎸'));
+  UI.wrFretBtn = h('button', { class: 'btn sm wr-fb', title: 'Show or hide the fretboard under the canvas', onclick: () => { WR.fret = !wrFretOn(); CFG.wrFret = WR.fret; if (WR.fret && CFG.wrPiano) { CFG.wrPiano = false; if (typeof kyWrSync === 'function') kyWrSync(); } saveCfg(); wrLayout(); } }, h('span', { class: 'wr-fl' }, 'Fretboard'), h('span', { class: 'wr-fs', 'aria-hidden': 'true' }, '🎸'));
   UI.wrCapBtn = h('button', { class: 'btn wr-cb', id: 'wrCap', title: 'Play your guitar and the notes and chords are written into the tab as you play. It counts you in and loops this section.', onclick: () => { capToggle(); } }, '● Capture');
   UI.wrOpt = h('button', { class: 'btn sm', title: 'Capture options', 'aria-haspopup': 'dialog', onclick: e => wrOptions(e.currentTarget) }, '⚙');
   UI.wrBar = h('div', { class: 'wr-bar' }, UI.wrSecs, h('span', { class: 'wr-sp' }), UI.wrModeSeg, UI.wrFretBtn, h('span', { class: 'wr-capg' }, UI.wrCapBtn, UI.wrOpt));
@@ -12926,6 +12936,7 @@ const GOALS = [
       ['gtSheet', '🎸 Paste chords', 'Paste a chord sheet (chords over the words): it becomes the song, with bars, key, words and a guitar part', () => liOpen(''), null, 1],
       ['gtVox', '🎤 Vocal pedals', 'Scream, doubler, harmony, echo, reverb, de-esser and megaphone for your voice', () => vocalBoardOpen()],
       ['gtPads', '🥁 Pads', 'Play the drums with your fingers, tap the tempo, record a groove or beatbox it', () => padsOpen()],
+      ['gtKeys', '🎹 Keys', 'A piano to play with the mouse, the computer keys or a MIDI keyboard: its own sounds, or the band’s bass or lead; record what you play into the song', () => keysOpen()],
 
 
     ] },
@@ -12969,6 +12980,7 @@ const GOALS = [
       ['gtSlow', '− 5', 'Slower by 5 BPM', () => goalTempo(-5)],
       ['gtBpm', () => S.bpm + ' BPM', 'The tempo', () => { if (UI.bpm) UI.bpm.focus(); }],
       ['gtFast', '+ 5', 'Faster by 5 BPM', () => goalTempo(5)],
+      ['gtSpeed', '⏱ Speed & key', 'Slow the song down without lowering it, or move it to another key', b => psPop(b)],
       ['gtSongLearn', '🎵 Teach me this song', 'This song as lessons: its strum, each section’s chords and riff, up to tempo', () => learnOpen('song')],
       ['gtShed', '🎼 Scales & ear', 'Scales anywhere on the neck, this song’s arpeggios and ear training, followed note by note', () => trainOpen(), null, 1],
     ] },
@@ -17570,6 +17582,364 @@ function earView() {
       h('label', { class: 'field' }, 'Start with', h('select', { class: 'in', id: 'earLen', onchange: e => set('len', +e.target.value) }, [2, 3, 4, 5].map(n => h('option', { value: n, selected: (o.len || 3) === n }, n + ' notes'))))),
     h('button', { class: 'btn primary', id: 'lnEar', type: 'button', onclick: earStart }, '🎧 Start'));
 }
+
+/* >>> parts/85-stretch.js */
+/* ============================================================
+   Part 85 · SPEED & KEY (2.35) — slow a song down without lowering it, or move it to another key without slowing it
+     · ⏱ Speed (50–125%): the band, the click and the loaded track all play slower or faster; the pitch stays. For practice:
+       the song itself is not changed (its tempo, its bars), and it is back to 100% with one press.
+     · ♯ Key (−6…+6 semitones): the track is moved up or down without changing its speed. "Move the song's chords and tab too"
+       (on by default) transposes the song with it, so the band and the chart follow; off, only the track moves. Kept with the song.
+   The track is stretched as it plays by a phase vocoder (2048-point frames, a quarter-frame hop, identity phase locking so chords
+   stay clean), then resampled for the key change, in a worker, two seconds ahead, one stem at a time so mute and solo still work.
+   While the speed is not 100%, recording is paused (a take is kept in the song's time) and recorded takes stay quiet.
+   ============================================================ */
+const PS = { rate: 1, semi: 0, warned: 0, w: null, seq: 0, wait: new Map() };
+const psOn = () => PS.rate !== 1 || PS.semi !== 0;
+/** seconds of audio per 16th as it plays: the song's own (slotDur) divided by the practice speed */
+const playDur = () => slotDur() / PS.rate;
+
+/* ---------- the stretcher (runs in a worker; the same code runs here if a worker cannot start) ---------- */
+function psDSPFactory() {
+  const N = 2048, HS = 512, NB = N / 2 + 1, win = new Float32Array(N), TWO = Math.PI * 2;
+  for (let i = 0; i < N; i++) win[i] = .5 - .5 * Math.cos(TWO * i / N);
+  const LOG = Math.log2(N), rev = new Uint32Array(N), cs = new Float64Array(N / 2), sn = new Float64Array(N / 2);
+  for (let i = 0; i < N; i++) { let r = 0; for (let b = 0; b < LOG; b++) r |= ((i >> b) & 1) << (LOG - 1 - b); rev[i] = r; }
+  for (let i = 0; i < N / 2; i++) { cs[i] = Math.cos(TWO * i / N); sn[i] = -Math.sin(TWO * i / N); }
+  const fft = (re, im, inv) => {
+    for (let i = 0; i < N; i++) { const j = rev[i]; if (j > i) { let t = re[i]; re[i] = re[j]; re[j] = t; t = im[i]; im[i] = im[j]; im[j] = t; } }
+    for (let size = 2; size <= N; size <<= 1) { const half = size >> 1, step = N / size; for (let i = 0; i < N; i += size) for (let j = 0, k = 0; j < half; j++, k += step) {
+      const wr = cs[k], wi = inv ? -sn[k] : sn[k], a = i + j, b = a + half, tr = re[b] * wr - im[b] * wi, ti = re[b] * wi + im[b] * wr; re[b] = re[a] - tr; im[b] = im[a] - ti; re[a] += tr; im[a] += ti; } }
+  };
+  const wrap = x => x - TWO * Math.round(x / TWO), norm = 1 / (1.5 * N);
+  const re = new Float64Array(N), im = new Float64Array(N), mag = new Float64Array(NB), ph = new Float64Array(NB), peak = new Int32Array(NB);
+  class Chan {
+    reset(A, alpha, q) {
+      this.alpha = alpha; this.q = q; this.ha = HS / alpha; const D = N; this.ipos = A - N / 2 - (D - N / 2) * this.ha / HS; this.last = null;
+      this.prev = new Float64Array(NB); this.sum = new Float64Array(NB); this.acc = new Float64Array(N); this.skip = D;
+      this.y = new Float32Array(1 << 15); this.yn = 0; this.yr = 1;      /* y: the stretched stream; yr: the resampler's place in it (1: room for the cubic's left point) */
+    }
+    frame() {
+      const src = this.src, off = this.off, i0 = Math.floor(this.ipos), n = src.length;
+      for (let i = 0; i < N; i++) { const j = i0 + i - off; re[i] = (j >= 0 && j < n ? src[j] / 32768 : 0) * win[i]; im[i] = 0; }
+      fft(re, im, false);
+      for (let k = 0; k < NB; k++) { mag[k] = Math.hypot(re[k], im[k]); ph[k] = Math.atan2(im[k], re[k]); }
+      if (this.last == null) { for (let k = 0; k < NB; k++) this.sum[k] = ph[k]; }
+      else {
+        const ha = i0 - this.last; let np = 0;      /* the real analysis hop (frames start on whole samples) */
+        for (let k = 0; k < NB; k++) { const m = mag[k]; if ((k < 2 || m > mag[k - 1] && m > mag[k - 2]) && (k > NB - 3 || m >= mag[k + 1] && m >= mag[k + 2])) peak[np++] = k; }
+        const ns = new Float64Array(NB); if (!np) peak[np++] = 0;
+        for (let p = 0; p < np; p++) { const k = peak[p], om = TWO * k / N, d = wrap(ph[k] - this.prev[k] - om * ha); ns[k] = this.sum[k] + (om + d / Math.max(1, ha)) * HS; }
+        /* identity phase locking: every bin follows the peak it belongs to, keeping the phase it had relative to that peak */
+        let p = 0; for (let k = 0; k < NB; k++) { while (p < np - 1 && Math.abs(peak[p + 1] - k) < Math.abs(peak[p] - k)) p++; const pk = peak[p]; if (k !== pk) ns[k] = ns[pk] + (ph[k] - ph[pk]); }
+        this.sum = ns;
+      }
+      this.prev.set(ph); this.last = i0; this.ipos += this.ha;
+      for (let k = 0; k < NB; k++) { re[k] = mag[k] * Math.cos(this.sum[k]); im[k] = mag[k] * Math.sin(this.sum[k]); }
+      for (let k = 1; k < N / 2; k++) { re[N - k] = re[k]; im[N - k] = -im[k]; }
+      fft(re, im, true);
+      const acc = this.acc; for (let i = 0; i < N; i++) acc[i] += re[i] * win[i] * norm;
+      for (let i = 0; i < HS; i++) { if (this.skip > 0) { this.skip--; continue; } this.push(acc[i]); }
+      acc.copyWithin(0, HS); acc.fill(0, N - HS);
+    }
+    push(v) { if (this.yn >= this.y.length) { const b = new Float32Array(this.y.length * 2); b.set(this.y); this.y = b; } this.y[this.yn++] = v; }
+    out(len) {
+      const o = new Float32Array(len), q = this.q; let k = 0;
+      if (this.yn === 0 && this.yr === 1) { this.push(0); }      /* the cubic's left neighbour for the very first sample */
+      while (k < len) {
+        const i = Math.floor(this.yr); if (i + 2 >= this.yn) { this.frame(); continue; }
+        const f = this.yr - i, y = this.y, a = y[i - 1], b = y[i], c = y[i + 1], d = y[i + 2];
+        o[k++] = b + .5 * f * (c - a + f * (2 * a - 5 * b + 4 * c - d + f * (3 * (b - c) + d - a))); this.yr += q;
+      }
+      const drop = Math.floor(this.yr) - 2; if (drop > 4096) { this.y.copyWithin(0, drop, this.yn); this.yn -= drop; this.yr -= drop; }
+      return o;
+    }
+  }
+  const CH = [];
+  /** one chunk: `chans` are the stems' Int16 samples from `off`; the output is `len` samples from track sample `start` on */
+  function run(d) {
+    const out = [];
+    d.chans.forEach((src, c) => { const ch = CH[c] || (CH[c] = new Chan()); if (d.reset || ch.alpha !== d.alpha || ch.q !== d.q) ch.reset(d.start, d.alpha, d.q); ch.src = src; ch.off = d.off; out.push(ch.out(d.len)); });
+    return out;
+  }
+  return { run, N };
+}
+function psWorker() {
+  if (PS.w !== null) return PS.w;
+  try {
+    const url = URL.createObjectURL(new Blob(['const D=(' + psDSPFactory.toString() + ')();onmessage=e=>{const o=D.run(e.data);postMessage({seq:e.data.seq,out:o},o.map(a=>a.buffer));};'], { type: 'text/javascript' }));
+    PS.w = new Worker(url); PS.w.onmessage = e => { const r = PS.wait.get(e.data.seq); if (r) { PS.wait.delete(e.data.seq); r(e.data.out); } };
+    PS.w.onerror = () => { PS.w = false; PS.wait.forEach(r => r(null)); PS.wait.clear(); };
+  } catch (e) { PS.w = false; }
+  return PS.w;
+}
+let PS_LOCAL = null;
+function psRun(d) {
+  const w = psWorker(); d.seq = ++PS.seq;
+  if (!w) { PS_LOCAL = PS_LOCAL || psDSPFactory(); return Promise.resolve(PS_LOCAL.run(d)); }
+  return new Promise(res => { PS.wait.set(d.seq, res); w.postMessage(d, d.chans.map(a => a.buffer)); });
+}
+
+/* ---------- the track, stretched as it plays (called from spSched in part 16 when psOn()) ---------- */
+const PS_CHANS = c => [c.drumsL, c.drumsR, c.bass, c.vox, c.otherL, c.otherR];
+function psSched() {
+  if (!STP.playing || !STM.ch || STP.psBusy) return; const c = E.ctx, sr = STM.sr; STP.segs = STP.segs.filter(s => s.t + s.dur > c.currentTime - 2);
+  if (STP.curT >= c.currentTime + 4.5) return;
+  const L = STM.loop.on && STM.loop.a != null && STM.loop.b != null && STM.loop.b - STM.loop.a > .2, rate = PS.rate, q = Math.pow(2, PS.semi / 12);
+  let end = STP.cur + 2 * rate; if (L && STP.cur < STM.loop.b) end = Math.min(end, STM.loop.b); end = Math.min(end, STM.dur);
+  if (end - STP.cur < .02) { if (L) { STP.cur = STM.loop.a; STP.psNext = null; return psSched(); } STP.playing = false; setTimeout(() => { if (!STP.playing) { STP.pos = 0; spStop(); syncStemUI(); } }, Math.max(0, (STP.curT - c.currentTime) * 1000)); return; }
+  const start = Math.round(STP.cur * sr), span = (end - STP.cur) * sr, len = Math.max(64, Math.round(span / rate)), M = 4 * 2048 + 64, off = Math.max(0, start - M), stop = Math.min(STM.n, Math.ceil(start + span + M));
+  const reset = STP.psNext == null || Math.abs(STP.psNext - start) > 2, from = STP.cur, t = STP.curT, gen = STP.psGen;
+  const chans = PS_CHANS(STM.ch).map(a => a.slice(off, stop));
+  STP.psBusy = true; STP.psNext = start + len * rate; STP.cur = end; if (L && STP.cur >= STM.loop.b - 1e-6) STP.cur = STM.loop.a; STP.curT += len / sr;
+  psRun({ chans, off, start, len, alpha: q / rate, q, reset }).then(out => {
+    STP.psBusy = false; if (!out || gen !== STP.psGen || !STP.playing) return;
+    const now = c.currentTime, late = Math.max(0, now + .02 - t), seg = { t, from, dur: len / sr, rate, srcs: [] }, pair = [[0, 1], [2, 2], [3, 3], [4, 5]];
+    STMS.forEach((_, si) => { const buf = c.createBuffer(2, len, sr); buf.getChannelData(0).set(out[pair[si][0]]); buf.getChannelData(1).set(out[pair[si][1]]); const src = c.createBufferSource(); src.buffer = buf; src.connect(STP.sg[si]); if (late < len / sr) src.start(t + late, late); seg.srcs.push(src); });
+    STP.segs.push(seg); psSched();
+  });
+}
+
+/* ---------- changing speed or key ---------- */
+/** restart whatever is playing at the same place, so the new speed or key takes over at once */
+async function psRestart() {
+  STP.psGen = (STP.psGen || 0) + 1; STP.psNext = null;
+  if (T.playing) { const s = Math.max(0, Math.floor(playheadSlot())); stopPlay(true); T.cursor = Math.min(s, Math.max(0, songSlots() - 1)); await play(); }
+  else if (STP.playing) { const p = spPos(); spStop(); await spPlay(null, p); }
+}
+function psSpeed(r) {
+  r = Math.round(clamp(+r || 1, .5, 1.25) * 100) / 100; if (r === PS.rate) return; PS.rate = r; psRestart(); psPaint(); bus.emit('speed', r);
+  if (r !== 1 && Date.now() - PS.warned > 60000) { PS.warned = Date.now(); toast('Speed ' + Math.round(r * 100) + '%: the band, the click and the track slow down, the pitch stays. Recording waits until you are back at 100%.', 'ok'); }
+}
+/** move the key by `d` semitones (absolute: the track's shift from the original); `song` also transposes the chords and tab */
+function psKey(semi, song) {
+  semi = Math.max(-6, Math.min(6, Math.round(+semi || 0)));
+  if (!STM.ch) { const d = semi - PS.keyOff; if (!d) return; PS.keyOff = semi; const bf = snap(); songTranspose(d); histPush(bf); bus.emit('song', 'reload'); if (T.playing) psRestart(); psPaint(); return; }      /* no track: the key moves the song (and so the band) */
+  const d = semi - PS.semi; if (!d) return;
+  if (song) { const bf = snap(); songTranspose(d); histPush(bf); bus.emit('song', 'reload'); }
+  PS.semi = semi; if (S.track) S.track.semi = semi; commit(false); psRestart(); psPaint(); bus.emit('speed', PS.rate);
+}
+PS.keyOff = 0;
+/* the track's key shift is kept with the song (S.track.semi): a song opened later brings its own */
+bus.on('song', () => { if (!S.track) return; const s = S.track.semi || 0; if (s !== PS.semi) { PS.semi = s; STP.psNext = null; psPaint(); } });
+
+/* ---------- the control: ⏱ in the transport ---------- */
+function psButton() {
+  const b = h('button', { class: 'btn sm ps-btn', id: 'psBtn', type: 'button', title: 'Speed and key: slow down without lowering the pitch, or change the key', 'aria-haspopup': 'dialog', onclick: e => psPop(e.currentTarget) });
+  PS.btn = b; psPaint(); return b;
+}
+function psPaint() {
+  const b = PS.btn; if (!b) return; const on = psOn(); b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on));
+  b.textContent = '⏱ ' + Math.round(PS.rate * 100) + '%' + (PS.semi ? ' · ' + (PS.semi > 0 ? '+' : '') + PS.semi : '');
+  const p = document.getElementById('psPop'); if (p) { const s = p.querySelector('#psRate'), v = p.querySelector('#psRateV'), k = p.querySelector('#psKeyV'); if (s) s.value = PS.rate * 100; if (v) v.textContent = Math.round(PS.rate * 100) + '%'; if (k) { const v = STM.ch ? PS.semi : PS.keyOff; k.textContent = (v > 0 ? '+' : '') + v + ' · ' + pcName(S.key, CFG.flats) + (S.minor ? 'm' : ''); } }
+}
+function psPop(anchor) {
+  const moveSong = () => { const c = document.getElementById('psSong'); return !c || c.checked; }, cur = () => STM.ch ? PS.semi : PS.keyOff;
+  const box = h('div', { class: 'ps-pop', id: 'psPop' },
+    h('h5', {}, '⏱ Speed'),
+    h('div', { class: 'lrow' }, h('input', { type: 'range', id: 'psRate', min: 50, max: 125, step: 5, value: PS.rate * 100, 'aria-label': 'Speed', style: { flex: 1 }, onchange: e => psSpeed(+e.target.value / 100), oninput: e => { document.getElementById('psRateV').textContent = e.target.value + '%'; } }), h('b', { class: 'mono', id: 'psRateV' }, Math.round(PS.rate * 100) + '%')),
+    h('div', { class: 'ps-pre' }, [50, 60, 70, 75, 80, 90, 100].map(v => h('button', { class: 'btn sm', type: 'button', 'data-rate': v, onclick: () => psSpeed(v / 100) }, v + '%'))),
+    h('p', { class: 'tiny muted' }, 'The band, the click and the loaded track play slower; the pitch stays. Your song is not changed.'),
+    h('h5', {}, '♯ Key'),
+    h('div', { class: 'lrow' }, h('button', { class: 'btn sm', id: 'psDown', type: 'button', 'aria-label': 'Down a semitone', onclick: () => psKey(cur() - 1, moveSong()) }, '−'), h('b', { class: 'mono', id: 'psKeyV', style: { minWidth: '70px', textAlign: 'center' } }), h('button', { class: 'btn sm', id: 'psUp', type: 'button', 'aria-label': 'Up a semitone', onclick: () => psKey(cur() + 1, moveSong()) }, '+'), h('button', { class: 'btn sm', type: 'button', onclick: () => psKey(0, moveSong()) }, 'Original')),
+    STM.ch ? h('label', { class: 'chk tiny' }, h('input', { type: 'checkbox', id: 'psSong', checked: true }), 'Move the song’s chords and tab too, so the band follows') : null,
+    h('p', { class: 'tiny muted' }, STM.ch ? 'The track moves without changing speed. A singer’s range, or a capo you do not want: up or down up to 6.' : 'No track is loaded: the key moves the song’s chords and tab (and the band).'),
+    h('div', { class: 'row' }, h('button', { class: 'btn sm', id: 'psReset', type: 'button', onclick: () => { psSpeed(1); } }, '100% speed')));
+  popover(anchor, box, { style: { width: '320px', maxWidth: '94vw' } }); psPaint();
+}
+
+/* >>> parts/86-keys.js */
+/* ============================================================
+   Part 86 · KEYS (2.35) — a piano to see and play, and keys in the band
+     · 🎹 the piano under Write (beside the fretboard): the chord that is playing (its notes, the root marked), the song's scale,
+       and what you and the band's keys play, lit as it sounds. Click or drag along it to play.
+     · 🎹 Keys (a room): a bigger keyboard you play with the mouse, a touch screen, the computer keys (A W S E D F T G Y H U J K O L P ;,
+       Z and X for octaves) or a MIDI keyboard. Six sounds of its own (piano, electric piano, organ, pad, synth lead, synth bass), or
+       it plays the band's bass or lead guitar instead: "Plays into".
+     · ● Record: in time with the band, what you play is written into the song: as a keys part, as the bass line (it replaces the
+       made-up bass in those bars), or as lead tab. Rounded to 16ths, 8ths or quarters; added to what is there; one undo.
+     · Keys in the band: a keys player that follows the chords, in five styles, with its own channel in the mixer (Keys).
+   ============================================================ */
+const KEYS_SOUNDS = ['Piano', 'Electric piano', 'Organ', 'Pad', 'Synth lead', 'Synth bass'];
+const KEYS_STYLES = ['Pad (held)', 'Block chords', 'Broken chords', 'Arpeggio up', 'Off-beat stabs'];
+const KEYS_TARGETS = [['keys', '🎹 Keys'], ['bass', 'Bass'], ['lead', 'Lead guitar']];
+const KY = { target: ['keys', 'bass', 'lead'].includes(CFG.keysTarget) ? CFG.keysTarget : 'keys', oct: 4, held: new Map(), lit: new Map(), rec: false, bf: null, pend: new Map(), voice: null, noise: new WeakMap(), down: false, keys: new Map() };
+const kySound = () => KEYS_SOUNDS.includes(S.band.keysSound) ? S.band.keysSound : 'Piano';
+const kyStyle = () => KEYS_STYLES.includes(S.band.keysStyle) ? S.band.keysStyle : 'Pad (held)';
+
+/* ---------- the sounds ---------- */
+function kyNoise(c) { let b = KY.noise.get(c); if (!b) { b = c.createBuffer(1, Math.floor(c.sampleRate * .05), c.sampleRate); const d = b.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length); KY.noise.set(c, b); } return b; }
+/** one keys note: `dur` in seconds, or null for held until .stop(t). Plays into the Keys channel of the mixer. */
+function keysVoice(time, midi, vel, dur, sound) {
+  const c = E.ctx, out = E.tr && E.tr.keys ? E.tr.keys.in : E.mix; if (!c || !out) return null;
+  const f = mtof(midi), v = clamp(vel || .8, .05, 1), env = c.createGain(), oscs = []; env.gain.value = 0; env.connect(out);
+  const osc = (type, freq, g, dst, det) => { const o = c.createOscillator(), gg = c.createGain(); o.type = type; o.frequency.value = freq; if (det) o.detune.value = det; gg.gain.value = g; o.connect(gg); gg.connect(dst || env); o.start(time); oscs.push(o); return { o, g: gg }; };
+  let rel = .1, sus = 0, stopAt = null;
+  switch (sound || kySound()) {
+    case 'Electric piano': { const car = osc('sine', f, .9 * v), mod = c.createOscillator(), mg = c.createGain(); mod.frequency.value = f; mg.gain.setValueAtTime(f * 3 * v, time); mg.gain.setTargetAtTime(f * .35, time, .35); mod.connect(mg); mg.connect(car.o.frequency); mod.start(time); oscs.push(mod); const tine = osc('sine', f * 4, .12 * v); tine.g.gain.setTargetAtTime(0, time, .12);
+      env.gain.setValueAtTime(0, time); env.gain.linearRampToValueAtTime(.55, time + .004); env.gain.setTargetAtTime(.0001, time + .004, 1.4 + 200 / f); rel = .18; break; }
+    case 'Organ': { [[.5, .45], [1, 1], [2, .55], [3, .3], [4, .22], [6, .1]].forEach(([r, g]) => osc('sine', f * r, g * .28)); const lfo = c.createOscillator(), lg = c.createGain(); lfo.frequency.value = 6.2; lg.gain.value = 4; lfo.connect(lg); oscs.slice(-6).forEach(x => lg.connect(x.detune)); lfo.start(time); oscs.push(lfo);
+      env.gain.setValueAtTime(0, time); env.gain.linearRampToValueAtTime(.5 * (.6 + .4 * v), time + .012); sus = 1; rel = .07; break; }
+    case 'Pad': { const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 900 + 1400 * v; lp.Q.value = .5; lp.connect(env); osc('sawtooth', f, .16, lp, -8); osc('sawtooth', f, .16, lp, 8); osc('triangle', f / 2, .2, lp);
+      env.gain.setValueAtTime(0, time); env.gain.linearRampToValueAtTime(.45 * (.5 + .5 * v), time + .35); sus = 1; rel = .9; break; }
+    case 'Synth lead': { const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = 4; lp.frequency.setValueAtTime(800 + 4200 * v, time); lp.frequency.setTargetAtTime(1600, time, .18); lp.connect(env); osc('sawtooth', f, .3, lp, -5); osc('square', f, .18, lp, 5);
+      env.gain.setValueAtTime(0, time); env.gain.linearRampToValueAtTime(.45, time + .006); env.gain.setTargetAtTime(.36, time + .006, .2); sus = 1; rel = .12; break; }
+    case 'Synth bass': { const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = 6; lp.frequency.setValueAtTime(300 + 1500 * v, time); lp.frequency.setTargetAtTime(260, time, .12); lp.connect(env); osc('sawtooth', f, .4, lp); osc('square', f / 2, .3, lp);
+      env.gain.setValueAtTime(0, time); env.gain.linearRampToValueAtTime(.6, time + .004); env.gain.setTargetAtTime(.48, time + .004, .25); sus = 1; rel = .08; break; }
+    default: {      /* piano: six slightly stretched partials, each dying away at its own rate, and a felt-hammer knock */
+      const B = .00035, low = f < 220 ? 1.4 : 1; [1, .52, .3, .18, .1, .06].forEach((g, k) => { const hN = k + 1, p = osc('sine', f * hN * Math.sqrt(1 + B * hN * hN), g * (k ? .55 + .45 * v : 1) * .42); p.g.gain.setTargetAtTime(.0001, time + .004, (3.2 - k * .38) * low * (f > 900 ? .5 : 1)); });
+      const n = c.createBufferSource(), bp = c.createBiquadFilter(), ng = c.createGain(); n.buffer = kyNoise(c); bp.type = 'bandpass'; bp.frequency.value = 1800 + f; bp.Q.value = 1.2; ng.gain.value = .12 * v; n.connect(bp); bp.connect(ng); ng.connect(env); n.start(time); oscs.push(n);
+      env.gain.setValueAtTime(0, time); env.gain.linearRampToValueAtTime(.32 + .5 * v, time + .003); rel = .22;
+    }
+  }
+  const stop = t => { if (stopAt != null) return; stopAt = Math.max(t, time + .02); env.gain.cancelScheduledValues(stopAt); env.gain.setTargetAtTime(0, stopAt, rel / 3); oscs.forEach(o => { try { o.stop(stopAt + rel * 2 + .05); } catch (e) { } }); };
+  if (dur != null) stop(time + Math.max(.05, dur)); else if (!sus) { oscs.forEach(o => { try { o.stop(time + 12); } catch (e) { } }); }
+  const end = dur != null ? time + dur : time + 30; KY.lit.set(midi, { a: time, b: end, by: 'keys' });
+  return { stop: t => { stop(t); const l = KY.lit.get(midi); if (l) l.b = t; } };
+}
+
+/* ---------- in the band ---------- */
+/** chord tones for the right hand near middle C, moving as little as possible from the last chord; the root low for the left */
+function kyVoicing(sym) {
+  const ch = parseChord(sym); if (!ch) return null; const prev = KY.voice || [60, 64, 67], c0 = prev.reduce((a, b) => a + b, 0) / prev.length;
+  const up = ch.pcs.slice(0, 4).map(pc => { let m = 48 + pc; while (m < c0 - 6) m += 12; while (m > c0 + 6) m -= 12; return Math.max(55, Math.min(79, m)); }).sort((a, b) => a - b);
+  KY.voice = up; return { up, low: 36 + ((ch.bass - 36) % 12 + 12) % 12 };
+}
+/** every 16th: the bar's own keys part if it has one, otherwise the band's keys player in its style */
+function keysStep(bar, sib, cd, tt, dur) {
+  if (!S.band.keysOn) return; const own = bar.keys && bar.keys.length;
+  if (own) { bar.keys.forEach(n => { if (n.s === sib) keysVoice(tt, n.m, n.v || .8, (n.d || 1) * dur * .95); }); return; }
+  if (!cd || !cd.sym) return; const st = kyStyle(), V = (cd.rel === 0 || sib === 0) ? kyVoicing(cd.sym) : (KY.voice ? { up: KY.voice, low: null } : kyVoicing(cd.sym)); if (!V) return;
+  const all = (len, vel) => V.up.forEach((m, i) => keysVoice(tt + i * .006, m, vel, len));
+  if (st === 'Pad (held)') { if (cd.rel === 0) { all(cd.len * dur * .98, .55); if (V.low) keysVoice(tt, V.low, .5, cd.len * dur * .98); } }
+  else if (st === 'Block chords') { if (sib % 4 === 0) { all(dur * 3.6, sib % 16 === 0 ? .8 : .65); if (sib % 8 === 0 && V.low) keysVoice(tt, V.low + 12, .6, dur * 7); } }
+  else if (st === 'Off-beat stabs') { if (sib % 4 === 2) all(dur * 1.1, .7); }
+  else if (st === 'Broken chords') { if (sib % 2 === 0) { const k = (sib / 2) % 4, seq = V.low != null || KY.low != null ? [KY.low = V.low != null ? V.low + 12 : KY.low, V.up[0], V.up[1], V.up[V.up.length - 1]] : V.up; keysVoice(tt, seq[k % seq.length], k ? .55 : .7, dur * 3); } }
+  else if (st === 'Arpeggio up') { if (sib % 2 === 0) { const seq = V.up.concat(V.up.map(m => m + 12)), k = (sib / 2) % seq.length; keysVoice(tt, seq[k], .6, dur * 2.2); } }
+}
+
+/* ---------- playing it: mouse, touch, computer keys, MIDI ---------- */
+function kyNoteOn(m, v) {
+  if (KY.held.has(m)) kyNoteOff(m); startAudio(); const c = E.ctx; if (!c) return; const t = c.currentTime + .005; v = v == null ? .8 : v;
+  let h0 = null; if (KY.target === 'bass') pluck('bass', t, m, v, { id: 'kb' + m }); else if (KY.target === 'lead') pluck('lead', t, m, v, { id: 'kl' + m }); else h0 = keysVoice(t, m, v, null);
+  if (KY.target !== 'keys') KY.lit.set(m, { a: t, b: t + 30, by: KY.target });
+  KY.held.set(m, h0 || { stop: tt => { const l = KY.lit.get(m); if (l) l.b = tt; } });
+  if (KY.rec && T.playing) KY.pend.set(m, { s: playheadSlot(), v });
+  kyPaintAll(); bus.emit('keys:on', m);
+}
+function kyNoteOff(m) {
+  const hd = KY.held.get(m); if (!hd) return; KY.held.delete(m); const c = E.ctx; hd.stop(c ? c.currentTime : 0);
+  const p = KY.pend.get(m); if (p) { KY.pend.delete(m); kyWrite(m, p.s, playheadSlot(), p.v); } kyPaintAll();
+}
+/** a recorded note into the song: keys part, bass line or lead tab, rounded to the grid */
+function kyWrite(m, s0, s1, v) {
+  const g = [1, 2, 4].includes(CFG.keysQ) ? CFG.keysQ : 1, sp = spb(), start = Math.max(0, Math.round(s0 / g) * g), d = Math.max(g, Math.round((s1 - s0) / g) * g), bi = Math.floor(start / sp), fb = barsCache()[bi]; if (!fb) return;
+  const s = start - bi * sp, bar = fb.bar, n = { s, m, d: Math.min(d, sp * 4), v: Math.round(v * 100) / 100 };
+  if (KY.target === 'keys') { (bar.keys = bar.keys || []).push(n); }
+  else if (KY.target === 'bass') { (bar.bassLine = bar.bassLine || []).push(n); }
+  else { const cap = S.capo || 0, pl = wsPlace(m, 5); if (pl.f - cap < 0) return; bar.tab = bar.tab.filter(x => !(x.s === s && x.st === pl.s)); bar.tab.push({ s, st: pl.s, f: pl.f - cap, t: '' }); }
+  KY.wrote = (KY.wrote || 0) + 1; kyPaintAll();
+}
+function kyRec(on) {
+  on = on == null ? !KY.rec : !!on; if (on === KY.rec) return;
+  if (on) { if (typeof PS !== 'undefined' && PS.rate !== 1) { toast('Recording keys is at the song’s own speed: set ⏱ back to 100% first.', 'warn'); return; } KY.bf = snap(); KY.wrote = 0; KY.rec = true; if (KY.target === 'keys') S.band.keysOn = true; if (KY.target === 'lead') S.band.leadOn = true; if (KY.target === 'bass') S.band.bassOn = true; if (!T.playing) play(); }
+  else { KY.rec = false; [...KY.pend.keys()].forEach(m => kyNoteOff(m)); KY.pend.clear(); T.bars = null; if (KY.wrote) { histPush(KY.bf); toast(KY.wrote + ' note' + (KY.wrote === 1 ? '' : 's') + ' written into ' + { keys: 'the keys part', bass: 'the bass line', lead: 'the lead tab' }[KY.target] + '. Undo takes them out.', 'ok'); } KY.bf = null; }
+  kyPaintAll(); try { syncBandStrip(); } catch (e) { }
+}
+/** clear the target's part in the section you are in (one undo) */
+function kyClear() {
+  const sec = S.sections[pedalSecs().i]; if (!sec) return; const bf = snap(); let n = 0;
+  sec.bars.forEach(b => { if (KY.target === 'keys' && b.keys) { n += b.keys.length; b.keys = []; } if (KY.target === 'bass' && b.bassLine) { n += b.bassLine.length; b.bassLine = []; } });
+  if (KY.target === 'lead') { toast('Lead tab is cleared in Write (Clear bar).', ''); return; }
+  T.bars = null; if (n) { histPush(bf); toast('Cleared ' + n + ' note' + (n === 1 ? '' : 's') + ' in ' + sec.name + '.', 'ok'); } else toast('Nothing to clear in ' + sec.name + '.', '');
+}
+const KY_MAP = 'awsedftgyhujkolp;\''.split('');
+document.addEventListener('keydown', e => {
+  const d = document.getElementById('keysRoom'); if (!d || !d.open || e.metaKey || e.ctrlKey || e.altKey || e.repeat) return; if (/^(INPUT|SELECT|TEXTAREA)$/.test((e.target && e.target.tagName) || '')) return;
+  const k = e.key.toLowerCase(); if (k === 'z' || k === 'x') { KY.oct = clamp(KY.oct + (k === 'z' ? -1 : 1), 1, 7); kyRoomPaint(); e.preventDefault(); return; }
+  const i = KY_MAP.indexOf(k); if (i < 0) return; e.preventDefault(); e.stopPropagation(); const m = 12 * (KY.oct + 1) + i; if (KY.keys.has(k)) return; KY.keys.set(k, m); kyNoteOn(m, .8);
+}, true);
+document.addEventListener('keyup', e => { const k = e.key.toLowerCase(), m = KY.keys.get(k); if (m == null) return; KY.keys.delete(k); kyNoteOff(m); }, true);
+/* a MIDI keyboard plays the keys while the Keys room is open (or always, with Settings ▸ Pedal & MIDI sync ▸ MIDI keyboard plays the keys) */
+MIDIRAW.push(d => {
+  const st = d[0] & 0xf0; if (st !== 0x90 && st !== 0x80) return false; const room = document.getElementById('keysRoom'); if (!(room && room.open) && !CFG.keysMidi) return false;
+  if (st === 0x90 && d[2] > 0) kyNoteOn(d[1], d[2] / 127); else kyNoteOff(d[1]); return true;
+});
+
+/* ---------- the piano picture ---------- */
+const KY_BLACK = [1, 3, 6, 8, 10];
+/** an SVG keyboard from `lo` to `hi` (MIDI); keys carry data-m; paint() colours them */
+function kyPiano(lo, hi, o = {}) {
+  const ns = 'http://www.w3.org/2000/svg', svg = document.createElementNS(ns, 'svg'), whites = []; for (let m = lo; m <= hi; m++) if (!KY_BLACK.includes(m % 12)) whites.push(m);
+  const W = 22, H = o.h || 96, BW = 14, BH = H * .62; svg.setAttribute('viewBox', '0 0 ' + whites.length * W + ' ' + (H + 2)); svg.setAttribute('class', 'ky-svg'); svg.setAttribute('role', 'group'); svg.setAttribute('aria-label', 'Piano keyboard, ' + pcName(lo % 12, false) + Math.floor(lo / 12 - 1) + ' to ' + pcName(hi % 12, false) + Math.floor(hi / 12 - 1));
+  const el = (t, a) => { const e = document.createElementNS(ns, t); Object.entries(a).forEach(([k, v]) => e.setAttribute(k, v)); svg.append(e); return e; };
+  const x = {}; whites.forEach((m, i) => { x[m] = i * W; const r = el('rect', { x: i * W + .5, y: .5, width: W - 1, height: H, rx: 3, class: 'ky-w', 'data-m': m }); r.setAttribute('aria-label', pcName(m % 12, false) + Math.floor(m / 12 - 1)); if (m % 12 === 0) el('text', { x: i * W + W / 2, y: H - 5, class: 'ky-c' }).textContent = 'C' + Math.floor(m / 12 - 1); });
+  for (let m = lo; m <= hi; m++) if (KY_BLACK.includes(m % 12) && x[m - 1] != null) el('rect', { x: x[m - 1] + W - BW / 2, y: .5, width: BW, height: BH, rx: 2, class: 'ky-b', 'data-m': m });
+  for (let m = lo; m <= hi; m++) { const bl = KY_BLACK.includes(m % 12), cx = bl ? x[m - 1] + W : x[m] + W / 2; if (cx == null || isNaN(cx)) continue; const t = el('text', { x: cx, y: bl ? BH - 6 : H - 18, class: 'ky-l' + (bl ? ' bl' : ''), 'data-l': m }); t.textContent = ''; }
+  svg._lo = lo; svg._hi = hi;
+  /* play by clicking, touching or dragging along it */
+  const at = e => { const t = document.elementFromPoint(e.clientX, e.clientY); return t && t.dataset && t.dataset.m != null && svg.contains(t) ? +t.dataset.m : null; };
+  svg.addEventListener('pointerdown', e => { const m = at(e); if (m == null) return; e.preventDefault(); KY.down = true; svg._cur = m; kyNoteOn(m, .75 + .2 * Math.min(1, (e.pressure || .5))); try { svg.setPointerCapture(e.pointerId); } catch (er) { } });
+  svg.addEventListener('pointermove', e => { if (!KY.down || svg._cur == null) return; const m = at(e); if (m == null || m === svg._cur) return; kyNoteOff(svg._cur); svg._cur = m; kyNoteOn(m, .7); });
+  const up = () => { if (svg._cur != null) kyNoteOff(svg._cur); svg._cur = null; KY.down = false; }; svg.addEventListener('pointerup', up); svg.addEventListener('pointercancel', up); svg.addEventListener('lostpointercapture', up);
+  return svg;
+}
+/** what to show: the chord at the playhead (or the bar you are on), the song's scale, and what is sounding now */
+function kyMarks() {
+  const sp = spb(), slot = T.playing ? playheadSlot() : T.cursor, bi = Math.max(0, Math.floor(slot / sp)), cd = chordAt(bi, Math.max(0, Math.floor(slot - bi * sp))), ch = cd && cd.sym ? parseChord(cd.sym) : null;
+  const scale = (SCALES[S.scale] || SCALES['Major (Ionian)']).map(i => (S.key + i) % 12), now = E.ctx ? E.ctx.currentTime : 0, on = new Set();
+  KY.lit.forEach((l, m) => { if (now >= l.a - .02 && now <= l.b) on.add(m); else if (now > l.b + 1) KY.lit.delete(m); }); KY.held.forEach((_, m) => on.add(m));
+  const me = AN.active && AN.midi != null ? AN.midi : null; return { ch, scale, on, me, sym: cd && cd.sym };
+}
+function kyPaint(svg, mk) {
+  if (!svg || !svg.isConnected) return; mk = mk || kyMarks(); const deg = CFG.fretNames === 'degrees';
+  svg.querySelectorAll('[data-m]').forEach(k => { const m = +k.dataset.m, pc = m % 12, inCh = mk.ch && mk.ch.pcs.includes(pc), root = mk.ch && mk.ch.root === pc;
+    k.classList.toggle('ch', !!inCh); k.classList.toggle('root', !!root); k.classList.toggle('sc', mk.scale.includes(pc)); k.classList.toggle('on', mk.on.has(m)); k.classList.toggle('me', mk.me === m); });
+  svg.querySelectorAll('[data-l]').forEach(t => { const m = +t.dataset.l, pc = m % 12, inCh = mk.ch && mk.ch.pcs.includes(pc); t.textContent = inCh ? (deg ? ['R', 'b2', '2', 'b3', '3', '4', 'b5', '5', 'b6', '6', 'b7', '7'][((pc - mk.ch.root) % 12 + 12) % 12] : pcName(pc, CFG.flats)) : ''; });
+}
+function kyPaintAll() { const mk = kyMarks(); document.querySelectorAll('svg.ky-svg').forEach(s => kyPaint(s, mk)); const st = document.getElementById('kyChord'); if (st) st.textContent = mk.sym ? 'Chord: ' + mk.sym : ''; }
+/* keep it moving while it is on screen */
+(function kyLoop() { requestAnimationFrame(kyLoop); const vis = [...document.querySelectorAll('svg.ky-svg')].some(s => s.isConnected && s.getBoundingClientRect().width > 0); if (!vis) return; const now = performance.now(); if (now - (KY.pt || 0) < 60) return; KY.pt = now; kyPaintAll(); })();
+
+/* ---------- under Write, beside the fretboard ---------- */
+const kyWrOn = () => !!CFG.wrPiano;
+function kyMountWrite() {
+  if (!UI.wrBar || !UI.wrFretBox || document.getElementById('wrPianoBtn')) return;
+  const btn = h('button', { class: 'btn sm wr-fb', id: 'wrPianoBtn', type: 'button', title: 'Show the piano under the canvas instead of the fretboard', 'aria-pressed': String(kyWrOn()), onclick: () => { CFG.wrPiano = !kyWrOn(); if (CFG.wrPiano && wrFretOn()) { WR.fret = false; CFG.wrFret = false; wrLayout(); } saveCfg(); kyWrSync(); } }, h('span', { class: 'wr-fl' }, '🎹 Piano'));
+  UI.wrFretBtn.after(btn); UI.wrPianoBtn = btn;
+  UI.wrPiano = h('div', { class: 'wr-piano', id: 'wrPiano' }, h('div', { class: 'wr-fh' }, h('b', { class: 'small' }, 'PIANO'), h('span', { class: 'tiny muted grow', id: 'kyChord' }), h('button', { class: 'btn sm', type: 'button', onclick: () => keysOpen() }, '🎹 Keys…')), h('div', { class: 'ky-wrap' }, kyPiano(36, 84, { h: 82 })));
+  UI.wrFretBox.after(UI.wrPiano); kyWrSync();
+}
+function kyWrSync() { if (!UI.wrPiano) return; const on = kyWrOn(); UI.wrPiano.hidden = !on; UI.wrPianoBtn.classList.toggle('on', on); UI.wrPianoBtn.setAttribute('aria-pressed', String(on)); if (on) kyPaintAll(); }
+bus.on('booted', kyMountWrite); bus.on('dock', () => kyMountWrite()); setTimeout(kyMountWrite, 0);
+
+/* ---------- the Keys room ---------- */
+function keysOpen() {
+  let d = document.getElementById('keysRoom'); if (!d) { d = h('dialog', { class: 'keys-room', id: 'keysRoom', 'aria-labelledby': 'keysT' }); document.body.append(d); d.addEventListener('close', () => { [...KY.held.keys()].forEach(kyNoteOff); if (KY.rec) kyRec(false); }); }
+  kyRoomBuild(); if (!d.open) d.showModal(); startAudio(); return d;
+}
+function kyRoomBuild() {
+  const d = document.getElementById('keysRoom'); if (!d) return; d.innerHTML = ''; const lo = 12 * (KY.oct + 1) - 12, wide = innerWidth > 900;
+  const sel = (id, label, opts, val, fn) => h('label', { class: 'field' }, label, h('select', { class: 'in', id, onchange: e => fn(e.target.value) }, opts.map(([v, t]) => h('option', { value: v, selected: String(val) === String(v) }, t))));
+  d.append(
+    h('div', { class: 'co-top' }, h('div', { class: 'co-tt' }, h('small', {}, 'Play, hear, write it down'), h('b', { id: 'keysT' }, '🎹 Keys')), h('span', { class: 'tiny muted', id: 'kyChord' }), h('button', { class: 'btn icon', type: 'button', 'aria-label': 'Close Keys', onclick: () => d.close() }, '✕')),
+    h('div', { class: 'ky-ctl' },
+      h('div', { class: 'seg', role: 'group', 'aria-label': 'Plays into', id: 'kyTarget' }, KEYS_TARGETS.map(([v, t]) => h('button', { type: 'button', class: KY.target === v ? 'on' : '', 'aria-pressed': String(KY.target === v), 'data-t': v, onclick: () => { KY.target = v; CFG.keysTarget = v; saveCfg(); kyRoomBuild(); } }, t))),
+      KY.target === 'keys' ? sel('kySound', 'Sound', KEYS_SOUNDS.map(x => [x, x]), kySound(), v => { S.band.keysSound = v; commit(false); }) : h('span', { class: 'small muted' }, KY.target === 'bass' ? 'The band’s bass plays what you play.' : 'The band’s lead guitar plays what you play.'),
+      h('span', { class: 'ky-oct' }, h('button', { class: 'btn sm', type: 'button', 'aria-label': 'Octave down (Z)', onclick: () => { KY.oct = clamp(KY.oct - 1, 1, 7); kyRoomBuild(); } }, '−'), h('b', { class: 'mono' }, 'C' + KY.oct), h('button', { class: 'btn sm', type: 'button', 'aria-label': 'Octave up (X)', onclick: () => { KY.oct = clamp(KY.oct + 1, 1, 7); kyRoomBuild(); } }, '+'))),
+    h('div', { class: 'ky-wrap big' }, kyPiano(lo, lo + (wide ? 36 : 24), { h: 140 })),
+    h('div', { class: 'ky-ctl' },
+      h('button', { class: 'btn' + (KY.rec ? ' rec-on' : ' primary'), id: 'kyRec', type: 'button', onclick: () => kyRec() }, KY.rec ? '■ Stop recording' : '● Record into ' + { keys: 'the keys part', bass: 'the bass line', lead: 'the lead tab' }[KY.target]),
+      sel('kyQ', 'Round to', [[1, '16ths'], [2, '8ths'], [4, 'quarters']], [1, 2, 4].includes(CFG.keysQ) ? CFG.keysQ : 1, v => { CFG.keysQ = +v; saveCfg(); }),
+      h('button', { class: 'btn sm', id: 'kyClear', type: 'button', onclick: kyClear }, 'Clear in this section')),
+    h('div', { class: 'ky-band' },
+      h('label', { class: 'chk' }, h('input', { type: 'checkbox', id: 'kyBand', checked: !!S.band.keysOn, onchange: e => { toggleBand('keysOn', e.target.checked); } }), 'Keys in the band'),
+      sel('kyStyle', 'Style', KEYS_STYLES.map(x => [x, x]), kyStyle(), v => { S.band.keysStyle = v; commit(false); }),
+      h('span', { class: 'tiny muted' }, 'A part you recorded plays in its bars; elsewhere the keys player follows the chords.')),
+    h('p', { class: 'tiny muted' }, 'Play with the mouse or a touch screen, the computer keys A W S E D F T G Y H U J K O L P ; (Z and X move an octave), or a MIDI keyboard while this is open. The highlighted keys are the chord that is playing; the root is darker.'));
+  kyPaintAll();
+}
+function kyRoomPaint() { kyRoomBuild(); }
 
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();

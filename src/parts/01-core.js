@@ -263,9 +263,9 @@ function newSong() {
     sections: [], voicePref: {},
     band: {
       drumsOn: true, kit: 'Acoustic', patName: 'Folk Backbeat', pat: null, bassOn: true, bassStyle: 'Root–Fifth', bassTone: 'Round',
-      compOn: true, compStyle: 'Folk D-DU-UDU', compInst: 'Steel', leadOn: true, leadInst: 'Nylon', drumLen: 16
+      compOn: true, compStyle: 'Folk D-DU-UDU', compInst: 'Steel', leadOn: true, leadInst: 'Nylon', drumLen: 16, keysOn: false, keysStyle: 'Pad (held)', keysSound: 'Piano'
     },
-    mix: { drums: { g: .8, p: 0, m: 0, s: 0 }, bass: { g: .8, p: 0, m: 0, s: 0 }, rhythm: { g: .75, p: -.15, m: 0, s: 0 }, lead: { g: .8, p: .15, m: 0, s: 0 }, live: { g: 1, p: 0, m: 0, s: 0 }, vox: { g: 1, p: 0, m: 0, s: 0 }, click: { g: .6, p: 0, m: 0, s: 0 } }
+    mix: { drums: { g: .8, p: 0, m: 0, s: 0 }, bass: { g: .8, p: 0, m: 0, s: 0 }, rhythm: { g: .75, p: -.15, m: 0, s: 0 }, lead: { g: .8, p: .15, m: 0, s: 0 }, keys: { g: .7, p: .1, m: 0, s: 0 }, live: { g: 1, p: 0, m: 0, s: 0 }, vox: { g: 1, p: 0, m: 0, s: 0 }, click: { g: .6, p: 0, m: 0, s: 0 } }
   };
 }
 function mkSection(name, chords) { return { id: uid(), name, bars: chords.map(c => newBar(c)), lyrics: '' }; }

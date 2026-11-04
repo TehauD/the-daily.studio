@@ -61,7 +61,7 @@ function buildHeader() {
   UI.bpm = h('input', { type: 'number', min: 30, max: 260, step: 1, value: S.bpm, onchange: e => { S.bpm = clamp(+e.target.value || 90, 30, 260); e.target.value = S.bpm; commit(false); bus.emit('bpm'); } });
   UI.ts = h('select', { onchange: e => { const [n, d] = e.target.value.split('/').map(Number); S.ts = [n, d]; S.band.drumLen = Math.min(32, spb()); commit(); } }, ['4/4', '3/4', '2/4', '5/4', '6/8', '12/8', '7/8'].map(x => h('option', { value: x }, x)));
   UI.key = h('select', { onchange: () => keyChanged() }, NS.map((n, i) => h('option', { value: i }, n))); UI.mode = h('select', { onchange: () => keyChanged() }, [h('option', { value: 'maj' }, 'maj'), h('option', { value: 'min' }, 'min')]);
-  tr.append(UI.rew, UI.play, UI.stop, UI.rec, UI.loop, UI.metro, UI.bandMute, UI.metroMore, UI.pos, UI.tim, h('label', { class: 'field f-bpm', style: { width: '58px' } }, 'BPM', UI.bpm), h('label', { class: 'field f-sig', style: { width: '54px' } }, 'Sig', UI.ts), h('label', { class: 'field', style: { width: '56px' } }, 'Key', UI.key), h('label', { class: 'field f-mode', style: { width: '56px' } }, 'Mode', UI.mode));
+  tr.append(UI.rew, UI.play, UI.stop, UI.rec, UI.loop, UI.metro, UI.bandMute, UI.metroMore, psButton(), UI.pos, UI.tim, h('label', { class: 'field f-bpm', style: { width: '58px' } }, 'BPM', UI.bpm), h('label', { class: 'field f-sig', style: { width: '54px' } }, 'Sig', UI.ts), h('label', { class: 'field', style: { width: '56px' } }, 'Key', UI.key), h('label', { class: 'field f-mode', style: { width: '56px' } }, 'Mode', UI.mode));
   const R = $('#topR');
   UI.lat = h('span', { class: 'chip lat-chip', title: 'Round-trip latency estimate. Run the Loopback Test in I/O for a measured value.' }, h('i', { class: 'led' }), h('span', {}, 'audio off'));
   UI.theme = h('button', { class: 'btn icon', title: 'Appearance: light / dark, palettes, accent, density…', 'aria-haspopup': 'dialog', onclick: () => lookOpen() }, '◐');
@@ -80,6 +80,7 @@ function keyChanged() {
 }
 function toggleRec() {
   if (T.rec && T.playing) { stopPlay(true); return; }
+  if (!T.rec && typeof PS !== 'undefined' && PS.rate !== 1) { toast('Recording is at the song’s own speed: set ⏱ back to 100% first.', 'warn'); return; }
   T.rec = !T.rec; if (T.rec && !E.hasInput) toast('Arming without an input: only the count-in will run. Open an input in I/O.', 'warn'); syncTransport();
   if (T.rec && !T.playing) play(true);
 }

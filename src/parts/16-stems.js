@@ -77,8 +77,8 @@ function spEnsure() { if (STP.bus) return; STP.bus = gn(1); STP.tfx = fxStrip(E.
 function spFx() { if (!STP.bus || !STP.fx) return; STP.tfx.set(STM.fx); STM.mix.forEach((m, i) => { STP.fx[i].set(m.fx); STP.fx[i].pan(m.p || 0); }); }
 function spGains() { if (!STP.bus) return; const anyS = STM.mix.some(m => m.s); STM.mix.forEach((m, i) => { const aud = anyS ? m.s : !m.m; tc(STP.sg[i].gain, aud ? m.g : 0, .015); }); }
 function spData(i) { const c = STM.ch; return i === 0 ? [c.drumsL, c.drumsR] : i === 1 ? [c.bass, c.bass] : i === 2 ? [c.vox, c.vox] : [c.otherL, c.otherR]; }
-function spPos() { if (!STP.playing) return STP.pos; const now = E.ctx.currentTime; for (let i = STP.segs.length - 1; i >= 0; i--) { const s = STP.segs[i]; if (now >= s.t) return Math.min(s.from + (now - s.t), s.from + s.dur); } return STP.pos; }
-function spStop() { STP.playing = false; clearInterval(STP.timer); STP.segs.forEach(s => s.srcs.forEach(o => { try { o.stop(); } catch (e) { } })); STP.segs = []; }
+function spPos() { if (!STP.playing) return STP.pos; const now = E.ctx.currentTime; for (let i = STP.segs.length - 1; i >= 0; i--) { const s = STP.segs[i], r = s.rate || 1; if (now >= s.t) return Math.min(s.from + (now - s.t) * r, s.from + s.dur * r); } return STP.pos; }
+function spStop() { STP.playing = false; STP.psGen = (STP.psGen || 0) + 1; STP.psBusy = false; STP.psNext = null; clearInterval(STP.timer); STP.segs.forEach(s => s.srcs.forEach(o => { try { o.stop(); } catch (e) { } })); STP.segs = []; }
 async function spPlay(when, from) {
   if (!STM.ch) return toast('Load a backing track first', 'warn'); await startAudio(); spEnsure(); if (STP.playing) spStop();
   const L = STM.loop.on && STM.loop.a != null && STM.loop.b != null; STP.cur = from != null ? from : (L && (STP.pos < STM.loop.a || STP.pos >= STM.loop.b) ? STM.loop.a : STP.pos); if (STP.cur >= STM.dur - .05) STP.cur = 0;
@@ -87,6 +87,7 @@ async function spPlay(when, from) {
 function spPause() { STP.pos = spPos(); spStop(); syncStemUI(); }
 function spSeek(t) { t = clamp(t, 0, Math.max(0, STM.dur - .05)); const was = STP.playing; STP.pos = t; if (was) spPlay(null, t); else syncStemUI(); }
 function spSched() {
+  if (typeof psOn === 'function' && psOn()) return psSched();      /* a practice speed or key: stretched in a worker (part 85) */
   if (!STP.playing || !STM.ch) return; const c = E.ctx, sr = STM.sr, CH = 2.5; STP.segs = STP.segs.filter(s => s.t + s.dur > c.currentTime - 2);
   while (STP.curT < c.currentTime + 4.5) {
     const L = STM.loop.on && STM.loop.a != null && STM.loop.b != null && STM.loop.b - STM.loop.a > .2; let end = STP.cur + CH; if (L && STP.cur < STM.loop.b) end = Math.min(end, STM.loop.b); end = Math.min(end, STM.dur);
