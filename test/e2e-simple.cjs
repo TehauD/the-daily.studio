@@ -6,7 +6,7 @@ suite('e2e-simple', async t => {
   const { ok, wait } = t;
   const p = await t.open({ w: 1600, h: 900 }), ev = (f, a) => p.evaluate(f, a);
   await ev(() => window.__daily.goalGo('songwriter')); await wait(400);
-  const GONE = ['#transport .rew', '#transport .lcd-pos', '#transport .f-sig', '#transport .metro-more', '#topR #wsBtn', '#topR .mst-chip', '#topR .lat-chip', '#songbar .f-artist', '#songbar .f-tun', '#songbar .f-capo', '#songbar .f-scale', '#songbar .sb-more', '#songbar .sb-zoom', '#goalbar .gl-flow', '#xpTools', 'footer#status', '#pane-tab .tech', '#pane-tab .te-adv', '#timeline .tl-adv'];
+  const GONE = ['#transport .rew', '#transport .lcd-pos', '#transport .f-sig', '#transport .metro-more', '#topR #wsBtn', '#topR .mst-chip', '#songbar .f-artist', '#songbar .f-tun', '#songbar .f-capo', '#songbar .f-scale', '#songbar .sb-more', '#songbar .sb-zoom', '#goalbar .gl-flow', '#xpTools', 'footer#status', '#pane-tab .tech', '#pane-tab .te-adv', '#timeline .tl-adv'];
   const KEPT = ['#transport .play', '#transport .rec', '#transport .f-bpm', '#songbar .sb-songs', '#songbar .sb-title', '#sbPerform', '#gtSheet', '#wrCap', '#bandMuteAll', '#lpBtn', '#simpleBtn'];
   const seen = q => ev(q => { const e = document.querySelector(q); if (!e) return null; const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(e).visibility !== 'hidden'; }, q);
   const all = async qs => { const o = {}; for (const q of qs) o[q] = await seen(q); return o; };

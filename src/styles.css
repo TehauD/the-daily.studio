@@ -1599,3 +1599,4 @@ body.simple .side-tabs .tab[data-id="refine"]:not(.on),body.simple .mon-wid{disp
 body.simple .gl-b[data-goal="fullrig"]:not(.on){display:none}
 body.simple #ioConn :is(.io-pathbox,.io-trim){display:none!important}
 body.simple:not([data-form=phone]) .tl-heads :is(input[type=range],.fxchip){display:none!important}
+#status .lat-chip{display:inline-flex;align-items:center;gap:5px}#status .lat-chip .led{width:7px;height:7px}

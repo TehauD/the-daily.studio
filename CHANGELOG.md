@@ -2,6 +2,11 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.38.1 — 2026-11-05 — Latency moves to the status line
+
+### Changed
+- **The latency estimate ("≈60 ms est.", or the measured round trip) moved from the top bar to the status line at the bottom**, next to the audio engine's details. The top bar keeps what you act on: the master level, the input, Simple, appearance, settings and help. The measured value and the loopback test are still in I/O ▸ Advanced.
+
 ## 2.38.0 — 2026-11-04 — ✦ Simple, across the board
 
 ### Changed

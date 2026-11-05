@@ -5,7 +5,7 @@
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.38.0', BUILD = 'e831578', PARTS_N = +'104' || 0, LINES_N = +'18099' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.38.1', BUILD = '1279683', PARTS_N = +'104' || 0, LINES_N = +'18099' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { ghApp: { clientId: '', slug: '' },   /* Sign in with GitHub: the GitHub App's public client id and its slug (docs/GITHUB.md); empty = only the token way */
   support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://the-daily.studio/journal/' };
@@ -1596,9 +1596,9 @@ function buildHeader() {
   UI.key = h('select', { onchange: () => keyChanged() }, NS.map((n, i) => h('option', { value: i }, n))); UI.mode = h('select', { onchange: () => keyChanged() }, [h('option', { value: 'maj' }, 'maj'), h('option', { value: 'min' }, 'min')]);
   tr.append(UI.rew, UI.play, UI.stop, UI.rec, UI.loop, UI.metro, UI.bandMute, UI.metroMore, psButton(), UI.pos, UI.tim, h('label', { class: 'field f-bpm', style: { width: '58px' } }, 'BPM', UI.bpm), h('label', { class: 'field f-sig', style: { width: '54px' } }, 'Sig', UI.ts), h('label', { class: 'field', style: { width: '56px' } }, 'Key', UI.key), h('label', { class: 'field f-mode', style: { width: '56px' } }, 'Mode', UI.mode));
   const R = $('#topR');
-  UI.lat = h('span', { class: 'chip lat-chip', title: 'Round-trip latency estimate. Run the Loopback Test in I/O for a measured value.' }, h('i', { class: 'led' }), h('span', {}, 'audio off'));
+  UI.lat = h('span', { class: 'lat-chip', title: 'Round-trip latency estimate. Run the Loopback Test in I/O for a measured value.' }, h('i', { class: 'led' }), h('span', {}, 'audio off'));
   UI.theme = h('button', { class: 'btn icon', title: 'Appearance: light / dark, palettes, accent, density…', 'aria-haspopup': 'dialog', onclick: () => lookOpen() }, '◐');
-  R.append(mstChip(), audioButton(), UI.lat, UI.theme, h('button', { class: 'btn icon', title: 'Settings', 'aria-haspopup': 'dialog', onclick: () => openSettings() }, '⚙'), h('button', { class: 'btn icon', title: 'Help & shortcuts (?)', 'aria-haspopup': 'dialog', onclick: () => openHelp() }, '?'));
+  R.append(mstChip(), audioButton(), UI.theme, h('button', { class: 'btn icon', title: 'Settings', 'aria-haspopup': 'dialog', onclick: () => openSettings() }, '⚙'), h('button', { class: 'btn icon', title: 'Help & shortcuts (?)', 'aria-haspopup': 'dialog', onclick: () => openHelp() }, '?'));
   try { simpleMount(); } catch (e) { }
 }
 /** count-in and click volume, next to the Click button */
@@ -1713,7 +1713,7 @@ function openHelp(at) {
 }
 
 /* ---------- status bar ---------- */
-function buildStatus() { const s = $('#status'); UI.st = { a: h('span'), i: h('span'), r: h('span'), m: h('span'), f: h('span') }; s.append(UI.st.a, UI.st.i, UI.st.r, h('span', { class: 'sp egg-line', 'aria-live': 'off' }), UI.st.m, UI.st.f, secretChip('st-sec'), buildTag('st-ver')); }
+function buildStatus() { const s = $('#status'); UI.st = { a: h('span'), i: h('span'), r: h('span'), m: h('span'), f: h('span') }; s.append(UI.st.a, UI.lat, UI.st.i, UI.st.r, h('span', { class: 'sp egg-line', 'aria-live': 'off' }), UI.st.m, UI.st.f, secretChip('st-sec'), buildTag('st-ver')); }
 let fpsN = 0, fpsT = 0, FPS = 0;
 function updateStatus() {
   if (!UI.st) return; const L = latencyInfo();
