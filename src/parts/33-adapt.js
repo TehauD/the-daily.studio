@@ -18,7 +18,6 @@ function xpSignal(pts) {
 const xpEdit = () => { if (!XP.quiet) { xpSignal(.25); try { if (performance.now() - JN.inp < 3000) JN.edit = performance.now(); } catch (e) { } } };       // a change the person made (a key or a tap just before it, not the app loading a song) counts as activity in the journal
 /** run a generator (like Hum to Song) without counting its changes as the person's own edits */
 function xpQuiet(fn) { XP.quiet++; try { return fn(); } finally { XP.quiet--; } }
-function xpSetMode(k) { CFG.xpMode = k; saveCfg(); if (k === 'pro' && LAY.hidden.length) { LAY.hidden = []; saveLay(); } rebuildTabs(); if (k !== 'auto') toast((XP_LABEL[k]) + ' tools', ''); }
 function xpToolsButton() {
   const l = xpLevel(), b = h('button', { class: 'btn sm xp-tools', id: 'xpTools', title: 'Choose how much of the studio to show', 'aria-haspopup': 'dialog', onclick: () => {
     const m = CFG.xpMode || 'auto', opt = (k, t, d) => h('button', { class: 'btn sm xp-opt' + (m === k ? ' on' : ''), 'aria-pressed': String(m === k), onclick: () => { CFG.xpMode = k; saveCfg(); closePop(); if (k === 'pro' && LAY.hidden.length) { LAY.hidden = []; saveLay(); }   /* “Everything” brings back any tab a layout had left off the strip */

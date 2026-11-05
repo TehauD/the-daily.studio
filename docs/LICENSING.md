@@ -1,6 +1,6 @@
 # Licensing and provenance register
 
-Audited for **v2.38.1** (3 November 2026). Every file the site serves, everything it can fetch, every dependency and every file a person can download is listed here with where it came from and what licence covers it. `npm run audit` checks this page against the real build and fails if a shipped file, a host or a dependency is not accounted for, so it stays true.
+Audited for **v2.39.0** (3 November 2026). Every file the site serves, everything it can fetch, every dependency and every file a person can download is listed here with where it came from and what licence covers it. `npm run audit` checks this page against the real build and fails if a shipped file, a host or a dependency is not accounted for, so it stays true.
 
 This is an engineering audit of the project, written by its maintainers. It is not legal advice. The items only a person can settle (authorship of the demo words, terms for a commercial launch, trademark clearance) are collected in [Open items](#open-items-for-the-maintainer).
 
@@ -48,6 +48,8 @@ There are no audio files in the repository. Tones, amp and pedal models, the dru
 ### The demo song
 
 "Salt Wind (demo)" (`demoSong()` in `src/parts/01-core.js`) is two ordinary four-chord progressions (Am F C G and F C G Am) with four short lines of words. Chord progressions are common property. The words were written for this project. On 26 October 2026 the three most distinctive lines were searched on the web in quotation marks and nothing matched; that is a sanity check, not a clearance. See [Open items](#open-items-for-the-maintainer).
+
+The 🥁 Beats (2.39, `src/parts/88-beats.js`) are data, not audio: a step pattern for the studio's own synthesised drums, a tempo, a bass style and a chord progression in Roman numerals. The grooves and progressions are common building blocks, written for this studio and not transcribed from any recording, so a track made over them belongs to whoever made it. No sample or loop is shipped or fetched.
 
 ### No example songs; your pictures (2.6)
 

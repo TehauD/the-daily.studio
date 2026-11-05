@@ -45,8 +45,6 @@ async function shRemove(id) {
   [CFG.show].concat(STG.scenes.map(s => s.show).filter(Boolean)).forEach(sp => { const u = sp.ovr && sp.ovr.use; if (!u) return; u.back = (u.back || []).filter(x => x !== id); u.wall = (u.wall || []).filter(x => x !== id); if (u.logo === id) u.logo = null; if (!u.wall.length && sp.ovr.rig && sp.ovr.rig.wall === 'image') sp.ovr.rig.wall = 'spectrum'; });
   saveCfg(); saveStg(); bus.emit('show');
 }
-/** drop pictures whose file is gone (for example after a reset that cleared the songs database) */
-async function shPrune() { try { if (!PRJ.db || !CFG.show.imgs.length) return; const keys = new Set(await pdbKeys('blobs', 'stage/img/')); const gone = CFG.show.imgs.filter(i => !keys.has('stage/img/' + i.id)); for (const i of gone) await shRemove(i.id); } catch (e) { } }
 
 /* ---------- which look a song wants, when nobody has chosen ---------- */
 function lxAutoDesign() {

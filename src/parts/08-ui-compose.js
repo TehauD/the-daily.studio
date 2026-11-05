@@ -294,6 +294,7 @@ function buildBandPane() {
 }
 function renderBand() {
   const B = S.band, bx = UI.bandBox; if (!bx) return; const ae = document.activeElement; if (ae && ae.type === 'range' && bx.contains(ae)) return; bx.innerHTML = '';
+  if (CFG.simple && !UI.bAll) return bandSimple(bx);      /* ✦ Simple: the beats and who plays (part 88) */
   const sel = (label, opts, val, fn, w) => songField(label, h('select', { style: { width: (w || 150) + 'px' }, onchange: e => { fn(e.target.value); } }, opts.map(o => h('option', { selected: o === val }, o))));
   const tog = (label, k) => h('button', { class: 'btn sm' + (B[k] ? ' on' : ''), onclick: e => { B[k] = !B[k]; commit(false); e.target.classList.toggle('on', B[k]); } }, label);
   const drums = h('div', { class: 'card' }, h('h4', {}, 'Drums ', tog('Enabled', 'drumsOn')), h('div', { class: 'card-b' },
@@ -308,7 +309,8 @@ function renderBand() {
     h('span', { class: 'tiny muted' }, 'Voicings come from the Chord library (Song panel) in the current tuning and capo.')));
   const lead = h('div', { class: 'card' }, h('h4', {}, 'Tab playback (lead) ', tog('Enabled', 'leadOn')), h('div', { class: 'card-b row', style: { gap: '10px', flexWrap: 'wrap' } }, sel('Instrument', ['Nylon', 'Steel', 'Electric', 'Muted Pluck'], B.leadInst, v => { B.leadInst = v; commit(false); }),
     songField('Humanize', h('input', { type: 'range', min: 0, max: 1, step: .05, value: CFG.humanize, oninput: e => { CFG.humanize = +e.target.value; saveCfg(); } })), songField('Swing', h('input', { type: 'range', min: 0, max: .5, step: .01, value: S.swing, oninput: e => { S.swing = +e.target.value; commit(false); } }))));
-  bx.append(ensembleCard(), drums, bass, comp, lead);
+  const beats = h('div', { class: 'card' }, h('h4', {}, 'Beats ', CFG.simple ? h('button', { class: 'btn sm', id: 'bandLess', type: 'button', onclick: () => { UI.bAll = false; renderBand(); } }, 'Just the essentials') : null), h('div', { class: 'card-b' }, beatsShelf()));
+  bx.append(beats, ensembleCard(), drums, bass, comp, lead);
 }
 function ensembleCard() {
   const B = S.band, info = {

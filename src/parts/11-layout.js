@@ -150,9 +150,6 @@ function layThumb(s) {
   const dk = h('i', { class: 'lt-dk', style: { flex: String(1 - fr) } }, name(s.dock)), tl = h('i', { class: 'lt-tl', style: { flex: String(fr) } });
   return h('span', { class: 'lay-th', 'aria-hidden': 'true' }, side('left', s.left), h('i', { class: 'lt-c' }, ...(s.flip === false ? [tl, dk] : [dk, tl])), side('right', s.right));
 }
-function layCard(n, d, s, on, fn) { return h('button', { class: 'lay-card' + (on ? ' on' : ''), 'aria-pressed': String(!!on), title: d, onclick: fn }, layThumb(s), h('span', { class: 'lay-t' }, h('b', {}, n), h('span', {}, d))); }
-/** the ▦ menu is the Workspace dialog now (part 64); this name stays for the callers that open it on the panels */
-function layoutMenu() { workspaceOpen('panels'); }
 
 /* ---------- labelled tabs on the edge of every panel area (like the journal's): collapse it, open it, always within reach ----------
    Each sidebar has a vertical tab named for the panel that is open (click it to collapse the sidebar). While the sidebar is collapsed

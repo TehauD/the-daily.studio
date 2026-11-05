@@ -48,10 +48,14 @@ suite('e2e-simple', async t => {
   const A0 = await ev(() => { const D = window.__daily; D.goalGo('performer'); return { lay: JSON.stringify(D.LAY), tabs: [...document.querySelectorAll('#dock .tabs .tab')].map(b => b.dataset.id).join() }; });
   await ev(() => window.__daily.simpleSet(true, true)); await wait(400);
   const A1 = await ev(() => { const D = window.__daily, vis = q => { const e = document.querySelector(q); return !!e && e.getBoundingClientRect().width > 0; };
-    return { tabs: [...document.querySelectorAll('#dock .tabs .tab')].map(b => b.dataset.id).join(), tones: document.querySelectorAll('#left .plist .pitem').length, all: vis('#toneAll'), search: vis('#left .tone-q'), fullrig: vis('.gl-b[data-goal="fullrig"]') }; });
-  ok(!/rig/.test(A1.tabs) && /vis/.test(A1.tabs) && A1.tabs.split(',').length <= 4, 'Simple keeps the panel strip to the essentials, even in a workspace that has more (Performer: ' + A1.tabs + ', was ' + A0.tabs + ')');
-  ok(A1.tones === 8 && A1.all && !A1.search, 'eight core tones, with Show all 27 tones, and no search or categories');
-  ok(!A1.fullrig, 'the Full Rig workspace is tucked away');
+    return { lay: D.LAY.name, tabs: [...document.querySelectorAll('#dock .tabs .tab')].map(b => b.dataset.id).join(), fullrig: vis('.gl-b[data-goal="fullrig"]'), goals: [...document.querySelectorAll('#goalbar .gl-b')].filter(b => b.getBoundingClientRect().width > 0).length, next: vis('#gtNext'),
+      tools: [...document.querySelectorAll('#goalbar .gl-tool')].map(b => b.id + (b.classList.contains('gl-main') ? '*' : '')).join(), mis: document.querySelector('#goalbar .gl-mis').textContent }; });
+  ok(!/rig/.test(A1.tabs) && A1.tabs.split(',').length <= 4 && A1.lay === 'Songwriter', 'Simple is the Songwriter workspace, with the panel strip at the essentials (' + A1.tabs + '; it was the Performer: ' + A0.tabs + ')');
+  ok(A1.goals === 1 && !A1.next && A1.tools === 'gtBeats*,gtSheet,gtPads,gtKeys' && /Pick a beat/.test(A1.mis), 'the goal bar is just the Songwriter: Beats first, then Paste chords, Pads and Keys, and “Pick a beat” as step one (' + A1.tools + ')');
+  ok(!A1.fullrig, 'the other workspaces are tucked away');
+  await ev(() => document.querySelector('#left .side-tabs .tab[data-id="tones"]').click()); await wait(200);
+  const A1t = await ev(() => { const vis = q => { const e = document.querySelector(q); return !!e && e.getBoundingClientRect().width > 0; }; return { tones: document.querySelectorAll('#left .plist .pitem').length, all: vis('#toneAll'), search: vis('#left .tone-q') }; });
+  ok(A1t.tones === 8 && A1t.all && !A1t.search, 'eight core tones, with Show all 27 tones, and no search or categories');
   await ev(() => document.getElementById('toneAll').click()); await wait(200);
   ok(await ev(() => document.querySelectorAll('#left .plist .pitem').length === 27), 'Show all tones lists every tone');
   await ev(() => document.querySelector('#left .side-tabs .tab[data-id="io"]').click()); await wait(200);
@@ -59,9 +63,25 @@ suite('e2e-simple', async t => {
   ok(IO.input && !IO.voice && !IO.cam && !IO.midi && !IO.path && IO.add, 'Audio: one input, with its level and monitoring; the camera, MIDI and the signal path are tucked away');
   await ev(() => document.getElementById('ioAddVoice').click()); await wait(200);
   ok(await ev(() => { const c = [...document.querySelectorAll('#left .card')].find(x => x.querySelector('h4') && /^Channels/.test(x.querySelector('h4').textContent.trim())); return !!c && c.getBoundingClientRect().width > 0 && /No microphone/.test(document.getElementById('ioAddVoice').textContent); }), '＋ Add a microphone for your voice brings in the second input');
-  await ev(() => { document.querySelector('#left .side-tabs .tab[data-id="tones"]').click(); window.__daily.simpleSet(false, true); }); await wait(400);      /* back to the tab it was on: the test itself moved it */
-  const A2 = await ev(() => { const D = window.__daily; return { lay: JSON.stringify(D.LAY), tabs: [...document.querySelectorAll('#dock .tabs .tab')].map(b => b.dataset.id).join(), tones: document.querySelectorAll('#left .plist .pitem').length }; });
-  ok(A2.lay === A0.lay && A2.tabs === A0.tabs && A2.tones === 27, 'Simple off: the arrangement is exactly as it was (sidebars, panels, tabs), and every tone is back');
+
+  /* ---- 2.39: Simple's band is the beats and who plays ---- */
+  await ev(() => window.__daily.dockGo('band')); await wait(300);
+  const BD = await ev(() => ({ beats: document.querySelectorAll('#pane-band .bt-card').length, mix: [...document.querySelectorAll('#pane-band .bt-ch')].map(c => c.dataset.part).join(), grid: !!document.querySelector('#pane-band .dgrid'), sel: document.querySelectorAll('#pane-band select').length }));
+  ok(BD.beats >= 10, 'the Band panel opens on the beats (' + BD.beats + ')');
+  ok(BD.mix === 'drums,bass,rhythm,keys' && !BD.grid && BD.sel === 0, 'and who plays: drums, bass, guitar and keys, a switch and a level each; no step grid, no menus');
+  await ev(() => { const D = window.__daily; D.S.sections.forEach(s => s.bars.forEach(b => { b.chord = ''; })); D.commit(false); document.querySelector('#pane-band .bt-card[data-beat="lofi"]').click(); }); await wait(600);
+  const BT = await ev(() => { const D = window.__daily, B = D.S.band; return { bpm: D.S.bpm, swing: D.S.swing, kit: B.kit, len: B.drumLen, keys: B.keysOn && B.keysSound, playing: D.T.playing, loop: D.T.loop, chords: D.S.sections[0].bars.slice(0, 4).map(b => b.chord).join(' '), on: !!document.querySelector('#pane-band .bt-card.on[data-beat="lofi"]') }; });
+  ok(BT.bpm === 82 && BT.swing > 0 && BT.kit === 'Brush (soft)' && BT.keys === 'Electric piano' && BT.playing && BT.loop, 'tapping Lo-fi Nod sets the band and the tempo and plays it on a loop (' + JSON.stringify(BT) + ')');
+  ok(/^\S+m7 \S+7 \S+maj7 \S+m7$/.test(BT.chords) && BT.on, 'a song with no chords gets the beat’s progression in its key (' + BT.chords + '), and the beat shows as chosen');
+  await ev(() => { const D = window.__daily; D.stopPlay(true); D.undo(); }); await wait(300);
+  ok(await ev(() => { const D = window.__daily; return D.S.band.beat !== 'lofi' && D.S.bpm !== 82 && D.S.sections[0].bars.every(b => !b.chord); }), 'one undo puts the band, the tempo and the chords back');
+  await ev(() => document.getElementById('bandAll').click()); await wait(200);
+  ok(await ev(() => !!document.querySelector('#pane-band .dgrid') && !!document.getElementById('bandLess') && document.querySelectorAll('#pane-band .bt-card').length >= 10), 'Show every band setting brings the step grid and the menus back, with the beats on top');
+  await ev(() => document.getElementById('bandLess').click()); await wait(200);
+
+  await ev(() => { document.querySelector('#left .side-tabs .tab[data-id="theory"]').click(); window.__daily.simpleSet(false, true); }); await wait(400);      /* back to the sidebar tab it was on: the test itself moved it */
+  const A2 = await ev(() => { const D = window.__daily; return { name: D.LAY.name, lay: JSON.stringify(D.LAY), tabs: [...document.querySelectorAll('#dock .tabs .tab')].map(b => b.dataset.id).join(), tones: document.querySelectorAll('#left .plist .pitem').length }; });
+  ok(A2.name === 'Performer' && A2.lay === A0.lay && A2.tabs === A0.tabs && A2.tones === 27, 'Simple off: back in the Performer, exactly as it was (sidebars, panels, tabs), and every tone is back (' + A2.name + ')');
   await ev(() => { window.__daily.CFG.ioVoice = false; window.__daily.saveCfg(); window.__daily.goalGo('songwriter'); });
 
   /* ---- a first visit starts Simple; "I know my way around" does not ---- */

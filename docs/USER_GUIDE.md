@@ -2,7 +2,7 @@
 
 A practical walkthrough of every panel. For a ten-minute orientation, press **?** in the app and choose **Take the guided tour**.
 
-Contents: [Getting started](#getting-started-and-guided-sessions-27) · [Show setup](#show-setup-26) · [Layouts](#layout-and-themes) · [Monitor widgets](#monitor-widgets-26) · [Concert](#concert-24) · [Voice](#voice-pitch-ribbon-your-range-find-my-key-23) · [Cut, silence and punch in](#cut-silence-and-punch-in-23) · [Heatmap](#heatmap-23) · [Performer backdrop](#performer-backdrop-23) · [Clips and the mix](#clips-move-trim-fade-split-22) · [Fast WAV render](#faster-than-real-time-wav-render-22) · [Open a MIDI file](#open-a-midi-file-22) · [Keep songs safe](#keep-songs-safe-22) · [Perform, share and back up](#perform-share-and-back-up-20) · [Getting sound](#getting-sound-in-and-out) · [Tones and the Rig](#tones-and-the-rig) · [The band](#the-band) · [Arrangement and recording](#arrangement-and-recording) · [Tab editor](#tab-editor) · [Song, tunings and capo](#song-tunings-and-capo) · [Fretboard and tuner](#fretboard-and-tuner) · [Transcribe](#transcribe-audio-to-tab) · [Stems](#stems-and-backing-tracks) · [Neural map](#neural-map) · [Visuals and Stage](#visuals-and-stage) · [Vision](#vision-lab) · [Research](#research-panel) · [Export, history and backup](#export-history-and-backup) · [MIDI](#midi) · [Layout](#layout-and-themes)
+Contents: [Beats](#-beats-239) · [Getting started](#getting-started-and-guided-sessions-27) · [Show setup](#show-setup-26) · [Layouts](#layout-and-themes) · [Monitor widgets](#monitor-widgets-26) · [Concert](#concert-24) · [Voice](#voice-pitch-ribbon-your-range-find-my-key-23) · [Cut, silence and punch in](#cut-silence-and-punch-in-23) · [Heatmap](#heatmap-23) · [Performer backdrop](#performer-backdrop-23) · [Clips and the mix](#clips-move-trim-fade-split-22) · [Fast WAV render](#faster-than-real-time-wav-render-22) · [Open a MIDI file](#open-a-midi-file-22) · [Keep songs safe](#keep-songs-safe-22) · [Perform, share and back up](#perform-share-and-back-up-20) · [Getting sound](#getting-sound-in-and-out) · [Tones and the Rig](#tones-and-the-rig) · [The band](#the-band) · [Arrangement and recording](#arrangement-and-recording) · [Tab editor](#tab-editor) · [Song, tunings and capo](#song-tunings-and-capo) · [Fretboard and tuner](#fretboard-and-tuner) · [Transcribe](#transcribe-audio-to-tab) · [Stems](#stems-and-backing-tracks) · [Neural map](#neural-map) · [Visuals and Stage](#visuals-and-stage) · [Vision](#vision-lab) · [Research](#research-panel) · [Export, history and backup](#export-history-and-backup) · [MIDI](#midi) · [Layout](#layout-and-themes)
 
 ---
 
@@ -18,6 +18,17 @@ Contents: [Getting started](#getting-started-and-guided-sessions-27) · [Show se
   - **Sidebars:** Refine, the Monitor widget picker and the chord finder are tucked away.
   - **The arrangement:** the lanes keep mute, solo and on/off, without their faders, pans and effects.
   - **The Full Rig workspace** button is tucked away.
+- **Simple is the Songwriter (2.39):** Simple opens the Songwriter workspace, and its goal bar is just *Make a song*: **🥁 Beats**, Paste chords, Pads and Keys. If you switch Simple on from another workspace, switching it off takes you back there exactly as you left it.
+- **The band in Simple (2.39):** the Band panel is the beats and who plays (drums, bass, guitar and keys, each a switch and a level). **Show every band setting** brings the rest back.
+
+## 🥁 Beats (2.39)
+
+A beat is a ready band to play, sing or write over. Tap one at the top of the **Band** panel (or **🥁 Beats** in the Songwriter tools) and it starts looping: drums, bass, and guitar or keys where the style wants them, at the beat's tempo.
+- **Eleven styles:** folk, pop, rock, lo-fi hip-hop, dance, trap, reggae, blues shuffle, ballad, funk and bossa nova.
+- **Your chords:** if the song has none yet, the beat brings a progression in your song's key. If it has chords, the beat plays yours.
+- **Mix on top:** play or sing over it, press ● to record, and set each player's level (or switch them off) under *Who plays*.
+- **Undo** puts your previous band, tempo and chords back.
+- The beats are played by the studio's own instruments, not recordings, so they follow your key and tempo and there is nothing to download. They were written for this studio, so what you make with them is yours.
 - Nothing is switched off or lost, and your arrangement (sidebars, panels and tabs) is kept exactly as it was. Press ✦ Simple again and it all comes back. Simple is kept per device, so a child's tablet and your computer can differ. Phones already have their own simpler layout, so it changes larger screens only.
 
 ## Goal workspaces (2.13)
@@ -26,7 +37,7 @@ The row at the top of the centre holds six goals. Each one is a whole workspace 
 
 | Goal | Opens on | Its tools |
 | --- | --- | --- |
-| 🎸 **Songwriter** — *Write the song* | A notebook: Write in Both (words and tab), Theory on the left, no right sidebar, the arrangement a strip | **🎸 Paste chords** · 🎤 Vocal pedals · 🥁 Pads (● Capture is above the tab, ● Record at the top) |
+| 🎸 **Songwriter** — *Write the song* | A notebook: Write in Both (words and tab), Theory on the left, no right sidebar, the arrangement a strip | 🥁 Beats · **🎸 Paste chords** · 🎤 Vocal pedals · 🥁 Pads (● Capture is above the tab, ● Record at the top) |
 | 🎤 **Performer** — *Play it for real* | A stage: Visuals large, Tones on the left, Tuner and Levels on the right, lanes for takes below | **⏺ Record video** · 📷 Camera · 🎤 Vocal pedals · 📺 Stream window · ▶ Replay (a take is ● at the top, Perform is in the song bar) |
 | 🎬 **Creator Studio** — *Make it postable* | An edit bay: Visuals as the picture, no left sidebar, the Audience view, Views (waveform, spectrogram, pitch wheel) and Levels on the right, a slim arrangement | **⏺ Record MP4** · ▶ Studio Replay · 📷 Webcam · ✨ Overlays · 🖼 Thumbnail · ⇩ Export |
 | 🎼 **Practice** — *Get it under your fingers* | A practice room: the Fretboard large in the middle, Theory (scales) on the left, Tuner and Levels on the right | 🥁 Pads · − 5 / BPM / + 5 · **🎼 Scales & ear** (Loop and Click are at the top) |

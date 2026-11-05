@@ -329,7 +329,6 @@ function fretText(n) {
   if (n.t === 'b') t += 'b' + (n.bend != null ? n.bend : n.f + 2);
   return t;
 }
-const connectorOf = n => ({ h: 'h', p: 'p', '/': '/', '\\': '\\', '~': '~' }[n.t] || '-');
 function fillTab(bar, style, sym) {
   const vs = voicings(sym, S.tuning, S.capo, 1); if (!vs.length) return false;
   const v = S.voicePref[sym] != null ? (voicings(sym, S.tuning, S.capo, 12)[S.voicePref[sym]] || vs[0]) : vs[0];

@@ -5,7 +5,7 @@
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.38.1', BUILD = '1279683', PARTS_N = +'104' || 0, LINES_N = +'18099' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.39.0', BUILD = '8805a10', PARTS_N = +'105' || 0, LINES_N = +'18170' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { ghApp: { clientId: '', slug: '' },   /* Sign in with GitHub: the GitHub App's public client id and its slug (docs/GITHUB.md); empty = only the token way */
   support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://the-daily.studio/journal/' };
@@ -331,7 +331,6 @@ function fretText(n) {
   if (n.t === 'b') t += 'b' + (n.bend != null ? n.bend : n.f + 2);
   return t;
 }
-const connectorOf = n => ({ h: 'h', p: 'p', '/': '/', '\\': '\\', '~': '~' }[n.t] || '-');
 function fillTab(bar, style, sym) {
   const vs = voicings(sym, S.tuning, S.capo, 1); if (!vs.length) return false;
   const v = S.voicePref[sym] != null ? (voicings(sym, S.tuning, S.capo, 12)[S.voicePref[sym]] || vs[0]) : vs[0];
@@ -1262,7 +1261,6 @@ const slotAtTime = time => {
 };
 function playheadSlot() { if (!T.playing || !E.ctx) return T.cursor; return slotAtTime(E.ctx.currentTime - (E.ctx.outputLatency || E.ctx.baseLatency || 0)); }
 function seek(slot) { slot = clamp(Math.round(slot), 0, Math.max(0, songSlots() - 1)); const was = T.playing; if (was) stopPlay(true); T.cursor = slot; bus.emit('transport'); if (was) play(); }
-function nearestSlotTime(t) { let b = null, bd = 1e9; for (const e of T.q) { const d = Math.abs(e.time - t); if (d < bd) { bd = d; b = e; } } return b ? { e: b, d: bd } : null; }
 
 /* ---------- takes: recording (dry DI + wet print), playback and re-amp ---------- */
 const TAKES = []; let REC = null;
@@ -2658,6 +2656,7 @@ function buildBandPane() {
 }
 function renderBand() {
   const B = S.band, bx = UI.bandBox; if (!bx) return; const ae = document.activeElement; if (ae && ae.type === 'range' && bx.contains(ae)) return; bx.innerHTML = '';
+  if (CFG.simple && !UI.bAll) return bandSimple(bx);      /* ✦ Simple: the beats and who plays (part 88) */
   const sel = (label, opts, val, fn, w) => songField(label, h('select', { style: { width: (w || 150) + 'px' }, onchange: e => { fn(e.target.value); } }, opts.map(o => h('option', { selected: o === val }, o))));
   const tog = (label, k) => h('button', { class: 'btn sm' + (B[k] ? ' on' : ''), onclick: e => { B[k] = !B[k]; commit(false); e.target.classList.toggle('on', B[k]); } }, label);
   const drums = h('div', { class: 'card' }, h('h4', {}, 'Drums ', tog('Enabled', 'drumsOn')), h('div', { class: 'card-b' },
@@ -2672,7 +2671,8 @@ function renderBand() {
     h('span', { class: 'tiny muted' }, 'Voicings come from the Chord library (Song panel) in the current tuning and capo.')));
   const lead = h('div', { class: 'card' }, h('h4', {}, 'Tab playback (lead) ', tog('Enabled', 'leadOn')), h('div', { class: 'card-b row', style: { gap: '10px', flexWrap: 'wrap' } }, sel('Instrument', ['Nylon', 'Steel', 'Electric', 'Muted Pluck'], B.leadInst, v => { B.leadInst = v; commit(false); }),
     songField('Humanize', h('input', { type: 'range', min: 0, max: 1, step: .05, value: CFG.humanize, oninput: e => { CFG.humanize = +e.target.value; saveCfg(); } })), songField('Swing', h('input', { type: 'range', min: 0, max: .5, step: .01, value: S.swing, oninput: e => { S.swing = +e.target.value; commit(false); } }))));
-  bx.append(ensembleCard(), drums, bass, comp, lead);
+  const beats = h('div', { class: 'card' }, h('h4', {}, 'Beats ', CFG.simple ? h('button', { class: 'btn sm', id: 'bandLess', type: 'button', onclick: () => { UI.bAll = false; renderBand(); } }, 'Just the essentials') : null), h('div', { class: 'card-b' }, beatsShelf()));
+  bx.append(beats, ensembleCard(), drums, bass, comp, lead);
 }
 function ensembleCard() {
   const B = S.band, info = {
@@ -3488,7 +3488,6 @@ const TX = {
   p: Object.assign({ sens: .5, maxPoly: 6, grid: 1, offsetMs: 0, autoOffset: true, chordPrior: 1, camWeight: 1, techniques: true, legato: true, snapChord: true, minConf: 0 }, CFG.tx || {})
 };
 const txSave = () => { CFG.tx = TX.p; saveCfg(); };
-const TXG = { 1: '16th', 2: '8th', 4: 'quarter' };
 
 function txSource(id) {
   id = id || TX.src;
@@ -3945,7 +3944,7 @@ async function boot() {
   if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener('devicechange', () => { ioDeviceChange().catch(e => console.warn(e)); });
   bus.emit('song');
   try { ghBoot(); } catch (e) { console.warn('github', e); }      /* back from Sign in with GitHub, or a sync at start (part 74) */
-  DEV.make = () => { window.__daily = { drumHit, RL, MO, GM_DRUM, duckAt, duckSet, duckCfg, duckNode, moNote, moDev, moDrum, moPanic, moSettings, kyOut, bassOut, rollOpen, rollBuild, rollLoop, isBass, instNow, nStr, yin, TUNINGS, setTuning, renderBarTab, tabLabels, voicingFor, toggleRec, closePop, spPause, encodeWav, PS, psOn, playDur, psSpeed, psKey, psSched, psDSPFactory, psPop, KY, keysOpen, keysVoice, keysStep, kyNoteOn, kyNoteOff, kyRec, kyClear, kyWrite, kyPiano, kyMarks, kyVoicing, KEYS_SOUNDS, KEYS_STYLES, coFinish, coDemo, coFeedback, coFbView, coTimeline, coBeat, coPractise, TAKE, learnPassed, todayPlan, todayPieces, todayStart, todayDone, streak, weekCount, dayKey, LSTEP, songLessons, songStart, songKey, earLick, earStart, EAR, simpleSet, simpleApply, ghTakeSettings, airMode, airSet, CO, coPos, coachOpen, coListen, coTick, coPlace, coNotes, coSetPiece, rfParse, LESSONS, RIFFS, RIFF_STYLES, learnOpen, learnToSong, learnFile, learnFileText, learnOpenFile, learnFromSong, labMake, labVary, labKeep, atlasPieces, atShape, MODE_VAMP, S, AIR, AIR_LAG, airSync, applyLayout, VB_PRESETS, VB_ORDER, VBS, vbAttach, vbApply, vbToggle, vbSet, vbPreset, vbPresetNext, vbThrow, vbLook, vbTick, vbScale, vocalBoardOpen, pedalRelease, MEG, megSpectrum, megFeatures, megScore, megStep, megSet, megLearn, megDraw, megLoop, megSettings, PAD, padsOpen, padHit, padTap, padRecord, padRecStop, padUndoPass, padClear, padResize, padBeatbox, bbHits, bbPattern, dpat, bassEvent, drumStep, PEDAL, pedalPress, pedalDo, pedalSecs, gearSettings, MCLK, mclkSlot, mclkMs, MIDI, MIDIRAW, onMidi, STRM, streamOpen, streamRoom, streamInfo, streamPanel, slotAtTime, SING, SHW, singStep, singScore, singSteamIR, singMicOff, showerOpen, shwGo, shwPlay, shwPrev, shwNext, shwStem, shwRecToggle, shwRecStop, shwHear, shwSave, shwAddFiles, shwRemove, shwMove, shwMode, shwLoadSet, shwPlaylist, shwWords, shwPrepare, shwFolderPull, lrcParse, readTags, spPos, spPlay, STP, trainOpen, projRestoreTrack, secretNote, secretArp, WS, WS_BASE, WS_ARPS, wsScaleRun, wsArpRun, wsFollow, wsStop, wsListen, wsEarNext, wsEarAnswer, wsOpen, bandMute, bandMuted, pdbPut, pdbKeys, projRename, FS, FS_B, fsUse, fsSync, fsHead, fsNeeds, fsTidy, fsOpen, syncOff, syncZips, PRJ_WAIT: () => PRJ.wait, EGG, EGG_LINES, EGG_ORDER, eggDay, eggFor, eggNow, eggText, eggTick, eggFit, saveCfg, projSave, projDelete, GH, ghSync, ghConnect, ghDisconnect, ghLocal, ghSha, ghJson, ghMerge3, ghShare, ghGallery, ghGalleryOpen, ghGalleryShow, ghKeepLook, ghKeepRig, rigClean, ghReturn, BRAND, ghSettingsOut, projRefresh, projCreate, projLoad, PRJ, SEC, SECRETS, secretFound, secretTiming, secretsOpen, secretSync, backstageOpen, startAudio, playheadSlot, GUARD, reportText, reportCopy, srecQ, srecSize, pdbGet, srecFmt, SREC_FMTS, VBG, vbgAdd, vbgRemove, vbgUse, vbgOpen, vbgDraw, vzSetMode, srecFrame, srecFmtBox, kitThumb, WORKLET_SRC, mkComp, mkShaper, rigLat, voxLat, restartAudio, satCurve, rigApply, qrMake, qrSvg, tipLink, tipShort, tipReady, tipCard, tipDraw, tipShareHtml, tipOpen, tipPrint, tipPng, tipVisAvoid, tipStageAvoid, TIP, TIP_TERMS, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, STP, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfort, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, srecStart, srecStop, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, tkFades, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, FB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, vzSetMode, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, drawVis, perfClose, voicings, peaksOf, uid, shareGate, shareData, shareHtml, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, PRJ, TAKES, STM, ZOOM, CFG, store, commit, projSave, projLoad, projCreate, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, slotAtTime, SEL, mtof, spb, playheadSlot, WR, HM, HMX, HM_MODES, vzImmersive, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitThumb, kitInk, kitNotes, kitRecord, srecMime, mGo, GD_SESSIONS, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard}; };   // test hook: with ?debug, or Backstage ▸ Labs ▸ Developer handles
+  DEV.make = () => { window.__daily = { BEATS, beatUse, beatRows, beatsShelf, SIMPLE_TOOLS, drumHit, RL, MO, GM_DRUM, duckAt, duckSet, duckCfg, duckNode, moNote, moDev, moDrum, moPanic, moSettings, kyOut, bassOut, rollOpen, rollBuild, rollLoop, isBass, instNow, nStr, yin, TUNINGS, setTuning, renderBarTab, tabLabels, voicingFor, toggleRec, closePop, spPause, encodeWav, PS, psOn, playDur, psSpeed, psKey, psSched, psDSPFactory, psPop, KY, keysOpen, keysVoice, keysStep, kyNoteOn, kyNoteOff, kyRec, kyClear, kyWrite, kyPiano, kyMarks, kyVoicing, KEYS_SOUNDS, KEYS_STYLES, coFinish, coDemo, coFeedback, coFbView, coTimeline, coBeat, coPractise, TAKE, learnPassed, todayPlan, todayPieces, todayStart, todayDone, streak, weekCount, dayKey, LSTEP, songLessons, songStart, songKey, earLick, earStart, EAR, simpleSet, simpleApply, ghTakeSettings, airMode, airSet, CO, coPos, coachOpen, coListen, coTick, coPlace, coNotes, coSetPiece, rfParse, LESSONS, RIFFS, RIFF_STYLES, learnOpen, learnToSong, learnFile, learnFileText, learnOpenFile, learnFromSong, labMake, labVary, labKeep, atlasPieces, atShape, MODE_VAMP, S, AIR, AIR_LAG, airSync, applyLayout, VB_PRESETS, VB_ORDER, VBS, vbAttach, vbApply, vbToggle, vbSet, vbPreset, vbPresetNext, vbThrow, vbLook, vbTick, vbScale, vocalBoardOpen, pedalRelease, MEG, megSpectrum, megFeatures, megScore, megStep, megSet, megLearn, megDraw, megLoop, megSettings, PAD, padsOpen, padHit, padTap, padRecord, padRecStop, padUndoPass, padClear, padResize, padBeatbox, bbHits, bbPattern, dpat, bassEvent, drumStep, PEDAL, pedalPress, pedalDo, pedalSecs, gearSettings, MCLK, mclkSlot, mclkMs, MIDI, MIDIRAW, onMidi, STRM, streamOpen, streamRoom, streamInfo, streamPanel, slotAtTime, SING, SHW, singStep, singScore, singSteamIR, singMicOff, showerOpen, shwGo, shwPlay, shwPrev, shwNext, shwStem, shwRecToggle, shwRecStop, shwHear, shwSave, shwAddFiles, shwRemove, shwMove, shwMode, shwLoadSet, shwPlaylist, shwWords, shwPrepare, shwFolderPull, lrcParse, readTags, spPos, spPlay, STP, trainOpen, projRestoreTrack, secretNote, secretArp, WS, WS_BASE, WS_ARPS, wsScaleRun, wsArpRun, wsFollow, wsStop, wsListen, wsEarNext, wsEarAnswer, wsOpen, bandMute, bandMuted, pdbPut, pdbKeys, projRename, FS, FS_B, fsUse, fsSync, fsHead, fsNeeds, fsTidy, fsOpen, syncOff, syncZips, PRJ_WAIT: () => PRJ.wait, EGG, EGG_LINES, EGG_ORDER, eggDay, eggFor, eggNow, eggText, eggTick, eggFit, saveCfg, projSave, projDelete, GH, ghSync, ghConnect, ghDisconnect, ghLocal, ghSha, ghJson, ghMerge3, ghShare, ghGallery, ghGalleryOpen, ghGalleryShow, ghKeepLook, ghKeepRig, rigClean, ghReturn, BRAND, ghSettingsOut, projRefresh, projCreate, projLoad, PRJ, SEC, SECRETS, secretFound, secretTiming, secretsOpen, secretSync, backstageOpen, startAudio, playheadSlot, GUARD, reportText, reportCopy, srecQ, srecSize, pdbGet, srecFmt, SREC_FMTS, VBG, vbgAdd, vbgRemove, vbgUse, vbgOpen, vbgDraw, vzSetMode, srecFrame, srecFmtBox, kitThumb, WORKLET_SRC, mkComp, mkShaper, rigLat, voxLat, restartAudio, satCurve, rigApply, qrMake, qrSvg, tipLink, tipShort, tipReady, tipCard, tipDraw, tipShareHtml, tipOpen, tipPrint, tipPng, tipVisAvoid, tipStageAvoid, TIP, TIP_TERMS, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, drawVis, peaksOf, uid, shareGate, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, TAKES, STM, ZOOM, CFG, store, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, SEL, mtof, spb, WR, HM, HMX, HM_MODES, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitInk, kitNotes, kitRecord, srecMime, mGo, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard}; };   // test hook: with ?debug, or Backstage ▸ Labs ▸ Developer handles
   if (/[?&]debug\b/.test(location.search) || (CFG.labs && CFG.labs.handles)) DEV.make();
   try { bksBoot(); } catch (e) { console.warn('backstage', e); }      /* #backstage in the address, the performance overlay (part 73c) */
   projInit().catch(e => { console.warn('library', e); PRJ.ready = true; if (PRJ.wantStart) startMaybe(); });
@@ -4104,9 +4103,6 @@ function layThumb(s) {
   const dk = h('i', { class: 'lt-dk', style: { flex: String(1 - fr) } }, name(s.dock)), tl = h('i', { class: 'lt-tl', style: { flex: String(fr) } });
   return h('span', { class: 'lay-th', 'aria-hidden': 'true' }, side('left', s.left), h('i', { class: 'lt-c' }, ...(s.flip === false ? [tl, dk] : [dk, tl])), side('right', s.right));
 }
-function layCard(n, d, s, on, fn) { return h('button', { class: 'lay-card' + (on ? ' on' : ''), 'aria-pressed': String(!!on), title: d, onclick: fn }, layThumb(s), h('span', { class: 'lay-t' }, h('b', {}, n), h('span', {}, d))); }
-/** the ▦ menu is the Workspace dialog now (part 64); this name stays for the callers that open it on the panels */
-function layoutMenu() { workspaceOpen('panels'); }
 
 /* ---------- labelled tabs on the edge of every panel area (like the journal's): collapse it, open it, always within reach ----------
    Each sidebar has a vertical tab named for the panel that is open (click it to collapse the sidebar). While the sidebar is collapsed
@@ -4630,7 +4626,6 @@ const saveNG = () => { CFG.neural = { layout: NG.layout, color: NG.color, edges:
 const NR = { nodes: new Map(), edges: [], events: [], seq: [], trans: new Map(), pulses: [], lastSlot: null, sym: '', symT: 0, hover: null, sel: null, cut: 1, last: 0, tickAt: -1, sections: [], hit: 0, miss: 0, pred: null, key: { root: 9, minor: true }, tension: 0, curChord: null, curSec: null, nBands: 24, evSeq: 0, dirty: true, fd: null, t0: performance.now(), pos: [] };
 const FIFTH = pc => (pc * 7) % 12;                    // position on the circle of fifths
 const FANG = pc => FIFTH(pc) / 12 * Math.PI * 2 - Math.PI / 2;
-const NGPROJ = [];
 
 /* ---------- colour ---------- */
 const light_ = () => CFG.theme === 'light';
@@ -5262,7 +5257,6 @@ function stemDSPFactory() {
    ===================================================================== */
 const TOUR = { on: false, i: 0, el: null, spot: null, card: null, steps: [], raf: 0, token: 0 };
 const tq = sel => () => { const e = $(sel); return e && e.getClientRects().length ? e : null; };
-const tqf = (root, re) => () => { const e = $$(root).find(x => re.test(x.textContent)); return e && e.getClientRects().length ? e : null; };
 const tourSide = id => () => { const t = $('#left .side-tabs .tab[data-id="' + id + '"]'); if (t) t.click(); };
 function tourSteps() { return document.body.dataset.form === 'phone' ? tourStepsPhone() : tourStepsDesk(); }
 function tourStepsDesk() {
@@ -5435,7 +5429,6 @@ function applyForm() {
 }
 
 /* ---------- navigation model (phone) ---------- */
-function mSetView(v) { M.view = v; mSync(); }
 function mGo(gid, sid) {
   const g = MGROUPS.find(x => x.id === gid) || MGROUPS[0], s = g.subs.find(x => x[0] === sid) || g.subs.find(x => x[0] === M.last[g.id]) || g.subs[0];
   M.g = g.id; M.s = s[0]; M.last[g.id] = s[0]; CFG.mlast = M.last;
@@ -7876,7 +7869,6 @@ function xpSignal(pts) {
 const xpEdit = () => { if (!XP.quiet) { xpSignal(.25); try { if (performance.now() - JN.inp < 3000) JN.edit = performance.now(); } catch (e) { } } };       // a change the person made (a key or a tap just before it, not the app loading a song) counts as activity in the journal
 /** run a generator (like Hum to Song) without counting its changes as the person's own edits */
 function xpQuiet(fn) { XP.quiet++; try { return fn(); } finally { XP.quiet--; } }
-function xpSetMode(k) { CFG.xpMode = k; saveCfg(); if (k === 'pro' && LAY.hidden.length) { LAY.hidden = []; saveLay(); } rebuildTabs(); if (k !== 'auto') toast((XP_LABEL[k]) + ' tools', ''); }
 function xpToolsButton() {
   const l = xpLevel(), b = h('button', { class: 'btn sm xp-tools', id: 'xpTools', title: 'Choose how much of the studio to show', 'aria-haspopup': 'dialog', onclick: () => {
     const m = CFG.xpMode || 'auto', opt = (k, t, d) => h('button', { class: 'btn sm xp-opt' + (m === k ? ' on' : ''), 'aria-pressed': String(m === k), onclick: () => { CFG.xpMode = k; saveCfg(); closePop(); if (k === 'pro' && LAY.hidden.length) { LAY.hidden = []; saveLay(); }   /* “Everything” brings back any tab a layout had left off the strip */
@@ -7901,6 +7893,8 @@ function xpToolsButton() {
    ============================================================ */
 /* what Simple keeps on the panel strip (and whatever is open, and the backing track once one is loaded), and the tones it offers */
 const SIMPLE_TABS = ['tab', 'band', 'vis', 'exp'];
+/* the Songwriter tools Simple keeps (2.39) */
+const SIMPLE_TOOLS = ['gtBeats', 'gtSheet', 'gtPads', 'gtKeys'];
 const SIMPLE_TONES = ['Crystal Clean', 'Busker Corner', 'Edge of Breakup', 'Classic Crunch', 'Singing Lead', 'Tight Metal Rhythm', 'Shimmer Cathedral', 'Direct (No FX)'];
 if (CFG.simple == null) { CFG.simple = !store.get('started', false) && !store.get('song', null); saveCfg(); }
 function simpleApply() {
@@ -7911,10 +7905,22 @@ function simpleApply() {
 }
 /** switch Simple on or off; `quiet` skips the toast (used when another choice implies it) */
 function simpleSet(on, quiet) {
-  CFG.simple = !!on; saveCfg(); simpleApply();
-  try { rebuildTabs(); } catch (e) { } try { UI.tAll = false; renderTones(); } catch (e) { }
+  const was = !!CFG.simple, back = !on && was ? CFG.preSimple : null, desk = typeof isDesk !== 'function' || isDesk();
+  CFG.simple = !!on; if (on !== was) CFG.preSimple = null; saveCfg(); simpleApply();
+  /* Simple lives in the Songwriter workspace: going in keeps a note of the workspace you were in, coming out puts it back exactly */
+  if (on && !was && desk) { const g = goalNow(); if (!g || g.id !== 'songwriter') { CFG.preSimple = simpleLaySnap(); saveCfg(); goalGo('songwriter', { keepZoom: true }); } }
+  if (back && desk) { try { simpleLayBack(back); } catch (e) { console.warn('simple', e); } }
+  try { rebuildTabs(); } catch (e) { } try { UI.tAll = false; renderTones(); } catch (e) { } try { UI.bAll = false; renderBand(); goalBarBuild(); } catch (e) { }
   if (!quiet) toast(on ? 'Simple: just the essentials. Everything else is one press away (✦ Simple, top right).' : 'Every tool is showing. ✦ Simple tidies up again.', 'ok');
   bus.emit('simple', !!on); setTimeout(() => { try { tlSize(); } catch (e) { } window.dispatchEvent(new Event('resize')); }, 60);
+}
+/** the workspace as it is (the layout, the panel order, the open panels), and putting it back */
+function simpleLaySnap() { return { lay: JSON.parse(JSON.stringify(LAY)), order: DOCK.map(d => d[0]), dock: DOCK.cur, sd: Object.assign({}, SD.cur), ws: CFG.ws }; }
+function simpleLayBack(s) {
+  Object.keys(LAY).forEach(k => delete LAY[k]); Object.assign(LAY, s.lay); CFG.ws = s.ws;
+  const ix = id => { const i = s.order.indexOf(id); return i < 0 ? 999 : i; }, cur = DOCK.cur; DOCK.sort((a, b) => ix(a[0]) - ix(b[0])); DOCK.cur = cur;
+  SD.cur = Object.assign({}, s.sd); if (typeof sideApply === 'function') sideApply(); saveLay(); applyLayout(); setupCardsRefresh(); rebuildTabs();
+  if (s.dock) { if (FLOATS.has(s.dock)) floatFront(s.dock); else dockGo(s.dock); } goalMark(); goalBarBuild(); saveCfg();
 }
 /** the switch, beside Appearance in the top right */
 function simpleMount() {
@@ -9558,12 +9564,6 @@ function fxStrip(dest, o = {}) {
     pan(v) { if (pn) tc(pn.pan, clamp(+v || 0, -1, 1), .02); },
     dispose() { try { out.disconnect(); } catch (e) { } if (cmp.end) cmp.end(); }
   };
-}
-/** apply every strip that exists (band lanes, the backing track and its stems) */
-function fxApplyAll() {
-  if (!E.ready && !E.tr.drums) return;
-  Object.keys(E.tr).forEach(id => { const t = E.tr[id]; if (t.fx) t.fx.set(S.mix[id] && S.mix[id].fx); });
-  if (typeof spFx === 'function') spFx();
 }
 
 /* ---------- the "+Fx" chip and its strip panel ---------- */
@@ -11869,8 +11869,6 @@ async function shRemove(id) {
   [CFG.show].concat(STG.scenes.map(s => s.show).filter(Boolean)).forEach(sp => { const u = sp.ovr && sp.ovr.use; if (!u) return; u.back = (u.back || []).filter(x => x !== id); u.wall = (u.wall || []).filter(x => x !== id); if (u.logo === id) u.logo = null; if (!u.wall.length && sp.ovr.rig && sp.ovr.rig.wall === 'image') sp.ovr.rig.wall = 'spectrum'; });
   saveCfg(); saveStg(); bus.emit('show');
 }
-/** drop pictures whose file is gone (for example after a reset that cleared the songs database) */
-async function shPrune() { try { if (!PRJ.db || !CFG.show.imgs.length) return; const keys = new Set(await pdbKeys('blobs', 'stage/img/')); const gone = CFG.show.imgs.filter(i => !keys.has('stage/img/' + i.id)); for (const i of gone) await shRemove(i.id); } catch (e) { } }
 
 /* ---------- which look a song wants, when nobody has chosen ---------- */
 function lxAutoDesign() {
@@ -12957,11 +12955,13 @@ const GOALS = [
   { id: 'songwriter', ico: '🎸', name: 'Songwriter', layout: 'Songwriter', step: 'create', hue: '#d08a2e', next: ['performer', 'Perform it'],
     blurb: 'Lyrics, chords and progressions, and a quick way to catch an idea before it goes.',
     mission: 'Write the song', steps: ['Pick a key and a progression', 'Press ● Capture and play a riff', 'Put the words under the chords'],
+    simple: { mission: 'Make a song', steps: ['Pick a beat', 'Play or sing over it, ● to record', 'Put the words under the chords'] },
     shape: 'Words and tab in the middle · Theory on the left · the arrangement a strip',
     spec: { flip: true, left: true, right: false, tlh: '84px', dock: 'tab', order: ['tab', 'band', 'song', 'exp'], hidden: ['rig', 'fret', 'vis', 'stage', 'neural', 'stems', 'tx', 'cam', 'lab'], cur: { left: 'theory' }, mon: ['tuner', 'live'] },
     enter: () => { try { wrMode('both'); } catch (e) { } },
     tools: () => [
-      ['gtSheet', '🎸 Paste chords', 'Paste a chord sheet (chords over the words): it becomes the song, with bars, key, words and a guitar part', () => liOpen(''), null, 1],
+      ['gtBeats', '🥁 Beats', 'A ready band to play, sing or write over: tap a beat and it plays, in your song’s key', b => popover(b, h('div', { class: 'bt-pop' }, h('h5', {}, 'Beats'), h('p', { class: 'tiny muted' }, 'Tap one and it plays. Undo puts your band back.'), beatsShelf({ after: closePop }))), null, () => !!CFG.simple],
+      ['gtSheet', '🎸 Paste chords', 'Paste a chord sheet (chords over the words): it becomes the song, with bars, key, words and a guitar part', () => liOpen(''), null, () => !CFG.simple],
       ['gtVox', '🎤 Vocal pedals', 'Scream, doubler, harmony, echo, reverb, de-esser and megaphone for your voice', () => vocalBoardOpen()],
       ['gtPads', '🥁 Pads', 'Play the drums with your fingers, tap the tempo, record a groove or beatbox it', () => padsOpen()],
       ['gtKeys', '🎹 Keys', 'A piano to play with the mouse, the computer keys or a MIDI keyboard: its own sounds, or the band’s bass or lead; record what you play into the song', () => keysOpen()],
@@ -13052,7 +13052,7 @@ const goalShows = id => { const g = goalNow(); return !!g && (g.all || g.spec.or
 function goalTempo(d) { S.bpm = clamp(S.bpm + d, 30, 260); commit(false); bus.emit('bpm'); syncTransport(); goalSync(); }
 /** o.keepZoom: leave the Canvas view as it is (the first-visit default); a goal you pick always shows the studio */
 function goalGo(id, o) {
-  const g = goalById(id); if (!g) return false; CFG.ws = g.id; saveCfg();
+  const g = goalById(id); if (!g) return false; CFG.ws = g.id; if (CFG.simple && g.id !== 'songwriter') CFG.preSimple = null; saveCfg();
   if (!(o && o.keepZoom) && typeof ZOOM !== 'undefined' && ZOOM.cur === 'canvas') { ZOOM.cur = CFG.zoom = 'studio'; saveCfg(); document.body.classList.remove('zoom-canvas'); try { zoomSync(); } catch (e) { } }
   applyPreset(g.spec, g.layout); if (typeof xpSignal === 'function') xpSignal(1);
   if (g.spec.side && g.spec.side.fret && typeof sideShow === 'function') { try { sideShow('fret'); } catch (e) { } }
@@ -13074,8 +13074,10 @@ function goalBarBuild() {
   box.append(h('div', { class: 'gl-row' }, pick, flow));
   if (!cur) { box.append(h('div', { class: 'gl-row gl-tools' }, h('span', { class: 'tiny muted' }, 'Pick what you want to do, and the studio arranges itself for it. Everything stays one click away.'))); return; }
   const tools = h('div', { class: 'gl-row gl-tools', role: 'toolbar', 'aria-label': cur.name + ' tools' });
-  tools.append(h('div', { class: 'gl-mis', title: cur.shape }, h('b', {}, cur.mission), h('span', { class: 'gl-steps' }, cur.steps.map((s, i) => h('span', {}, h('i', {}, i + 1), s)))));
+  const ms = CFG.simple && cur.simple || cur, few = CFG.simple && cur.id === 'songwriter';      /* ✦ Simple: Songwriter's own words and fewer tools (part 33b) */
+  tools.append(h('div', { class: 'gl-mis', title: cur.shape }, h('b', {}, ms.mission), h('span', { class: 'gl-steps' }, ms.steps.map((s, i) => h('span', {}, h('i', {}, i + 1), s)))));
   cur.tools().forEach(([id, label, title, fn, on, main, off]) => {
+    if (few && !SIMPLE_TOOLS.includes(id)) return; if (typeof main === 'function') main = main();
     const b = h('button', { class: 'btn sm gl-tool' + (main ? ' gl-main' : ''), id, type: 'button', title, onclick: e => { fn(e.currentTarget); setTimeout(goalSync, 60); } }, typeof label === 'function' ? label() : label);
     b._on = on; b._off = off; b._label = label; tools.append(b);
   });
@@ -13120,14 +13122,14 @@ function workspaceOpen(at) {
 /** a small picture of a goal's shape: the sidebars, the open panel, the arrangement above or below */
 function goalThumb(g) { const t = layThumb(g.spec); t.classList.add('ws-th'); return t; }
 
-/* a first visit on a computer opens the Performer: the shortest way to a performance you can share.
+/* a first visit on a computer opens in ✦ Simple, which is the Songwriter (2.39; it was the Performer before): a beat, the chords and the words.
    Anyone who has been here before keeps the workspace they had, and a layout you chose is never replaced. */
 const GOAL_FIRST = !store.get('started', false);
 bus.on('booted', () => {
   goalMark();
   if (CFG.ws !== undefined || !isDesk()) return;
   if (!GOAL_FIRST || LAY.name) { CFG.ws = (goalNow() || {}).id || null; saveCfg(); return; }
-  goalGo(CFG.xpMode === 'pro' ? 'fullrig' : 'performer', { keepZoom: true });
+  goalGo(CFG.xpMode === 'pro' ? 'fullrig' : CFG.simple ? 'songwriter' : 'performer', { keepZoom: true });      /* ✦ Simple (a first visit) is the Songwriter */
 });
 
 /* >>> parts/65-harmony.js */
@@ -13149,7 +13151,6 @@ const HM = {
   stars: [], paint: [], t0: performance.now(), lastPt: 0, lastStar: 0, starOn: false, clearT: 0
 };
 HM.vmax = 0;
-const hmHsl = (h, s, l, a) => `hsla(${((h % 360) + 360) % 360},${Math.round(s)}%,${Math.round(l)}%,${(a == null ? 1 : a).toFixed(3)})`;
 
 /** the chord to show: the song's while it plays, else the one heard, else the song's first, else the key's own chord */
 function hmChordSym() {
@@ -15851,7 +15852,7 @@ const GH_API = 'https://api.github.com', GH_TOPIC = 'the-daily-studio', GH_SHARE
 CFG.gh = Object.assign({ owner: '', repo: 'my-daily-studio', login: '', auto: true, last: null, lastAt: 0, shared: '', gone: [] }, CFG.gh && typeof CFG.gh === 'object' ? CFG.gh : {});
 const GH = { busy: null, again: false, timer: 0, status: '', err: '', rate: null, app: null, el: null, quiet: false };
 /* settings that belong to this device, not to you: they are never sent, and never taken from the repository */
-const GH_SKIP = new Set(['theme', 'lookMode', 'onAir', 'simple', 'gh', 'inDev', 'outDev', 'camDev', 'rtt', 'sr', 'hint', 'autoIn', 'persistAsked', 'layout', 'lanes', 'zoom', 'form', 'vbg', 'mpOk', 'lastBackup', 'ioLeveled', 'gTrim', 'voxTrim', 'ch', 'vin', 'monitor', 'voxMon', 'recQ', 'vq', 'ui', 'kpad', 'show', 'stage', 'sync', 'syncAt', 'fsync', 'labs']);
+const GH_SKIP = new Set(['theme', 'lookMode', 'onAir', 'simple', 'preSimple', 'gh', 'inDev', 'outDev', 'camDev', 'rtt', 'sr', 'hint', 'autoIn', 'persistAsked', 'layout', 'lanes', 'zoom', 'form', 'vbg', 'mpOk', 'lastBackup', 'ioLeveled', 'gTrim', 'voxTrim', 'ch', 'vin', 'monitor', 'voxMon', 'recQ', 'vq', 'ui', 'kpad', 'show', 'stage', 'sync', 'syncAt', 'fsync', 'labs']);
 const ghTok = () => store.get('ghtok', null);
 const ghOn = () => !!(ghTok() && CFG.gh.owner && CFG.gh.repo);
 
@@ -17131,7 +17132,6 @@ function rfParse(txt) {
   });
 }
 const rfLen = notes => { const e = notes.reduce((a, n) => Math.max(a, n.at + n.len), 0); return Math.max(16, Math.ceil(e / 16) * 16); };
-const SCALE_PCS = name => { const iv = SCALES[name] || SCALES['Minor Pentatonic']; return iv.slice(); };
 
 /* ---------- pieces for lessons ---------- */
 let LPN = 0;
@@ -18092,6 +18092,77 @@ function duckView() {
     h('label', { class: 'field' }, 'Depth', h('input', { type: 'range', id: 'duckAmt', min: 0, max: 18, step: 1, value: D.amt || 9, onchange: e => duckSet({ amt: +e.target.value }) })),
     h('label', { class: 'field' }, 'Release', h('input', { type: 'range', id: 'duckRel', min: 60, max: 500, step: 10, value: D.rel || 180, onchange: e => duckSet({ rel: +e.target.value }) })),
     h('span', { class: 'duck-to' }, tgt('keys', 'Keys'), tgt('bass', 'Bass'), tgt('rhythm', 'Rhythm gtr'), tgt('track', 'Track')));
+}
+
+/* >>> parts/88-beats.js */
+/* ============================================================
+   Part 88 · BEATS (2.39) — a ready band to play, sing or write over, in one tap
+   Each beat is a groove, a tempo and a band: the studio's own drums, bass, rhythm guitar and keys (parts 03 and 86), so there are
+   no audio files to download, nothing to license, and the beat follows the song's key, chords and tempo like the band always has.
+   Tapping a beat sets the band and the tempo and starts it looping; a song with no chords yet gets the beat's progression in its key.
+   One undo puts the band back. The grooves are written for this studio; none is copied from a record.
+   In ✦ Simple the Band panel is just this: the beats, and a switch and a level for each player (Show every band setting for the rest).
+   ============================================================ */
+const BEATS = [
+  { id: 'folk', name: 'Easy Folk', feel: 'Acoustic', bpm: 92, kit: 'Acoustic', pat: 'Folk Backbeat', bass: 'Root–Fifth', tone: 'Round', comp: 'Folk D-DU-UDU', inst: 'Steel', prog: 'I V vi IV' },
+  { id: 'pop', name: 'Pop Drive', feel: 'Pop', bpm: 108, kit: 'Acoustic', pat: 'Pop Groove', bass: 'Eighths', tone: 'Pick', comp: 'Pop 8ths', inst: 'Electric', keys: 'Pad (held)', sound: 'Pad', prog: 'vi IV I V' },
+  { id: 'rock', name: 'Garage Rock', feel: 'Rock', bpm: 126, kit: 'Rock Room', pat: 'Rock 8ths', bass: 'Eighths', tone: 'Pick', comp: 'Power Chug 8ths', inst: 'Electric', prog: 'i VI III VII', minor: 1 },
+  { id: 'lofi', name: 'Lo-fi Nod', feel: 'Lo-fi hip-hop', bpm: 82, swing: .22, kit: 'Brush (soft)', bass: 'Syncopated', tone: 'Sub', keys: 'Broken chords', sound: 'Electric piano', prog: 'ii7 V7 Imaj7 vi7',
+    rows: ['X......x..X.....', '....X.......X..g', 'x.x.x.x.x.x.x.xg', '................', '................', '................'] },
+  { id: 'night', name: 'Night Drive', feel: 'Dance', bpm: 122, kit: '808', pat: 'Four on the Floor', bass: 'Octave Pump', tone: 'Sub', keys: 'Off-beat stabs', sound: 'Synth lead', prog: 'i VI III VII', minor: 1 },
+  { id: 'trap', name: 'Trap Glide', feel: 'Trap', bpm: 140, kit: '808', bass: 'Follow the Kick', tone: 'Sub', keys: 'Pad (held)', sound: 'Pad', prog: 'i VI iv V', minor: 1,
+    rows: ['X.....x...x.....X.......x..x....', '........X...............X.......', 'x.x.x.x.xxx.x.x.x.x.x.x.x.xxxxxx', '..............x...............x.', '........x...............x.......', '................................'] },
+  { id: 'island', name: 'Island Sway', feel: 'Reggae', bpm: 76, kit: 'Acoustic', pat: 'Reggae One-Drop', bass: 'Reggae Dub', tone: 'Round', comp: 'Reggae Skank', inst: 'Electric', keys: 'Off-beat stabs', sound: 'Organ', prog: 'I IV V IV' },
+  { id: 'blues', name: 'Slow Burn', feel: 'Blues shuffle', bpm: 96, swing: .33, kit: 'Acoustic', pat: 'Blues Shuffle', bass: 'Walking', tone: 'Round', comp: 'Down 4s', inst: 'Electric', prog: 'I7 IV7 I7 I7 IV7 IV7 I7 I7 V7 IV7 I7 V7' },
+  { id: 'ballad', name: 'Quiet Ballad', feel: 'Ballad', bpm: 70, kit: 'Brush (soft)', pat: 'Ballad Half-Time', bass: 'Root Whole', tone: 'Round', comp: 'Ballad Arpeggio', inst: 'Nylon', keys: 'Pad (held)', sound: 'Piano', prog: 'I vi IV V' },
+  { id: 'funk', name: 'Funk Pocket', feel: 'Funk', bpm: 100, kit: 'Acoustic', pat: 'Funk 16ths', bass: 'Syncopated', tone: 'Pick', comp: 'Funk Chuck', inst: 'Electric', keys: 'Off-beat stabs', sound: 'Electric piano', prog: 'i7 IV7 i7 IV7', minor: 1 },
+  { id: 'bossa', name: 'Bossa Evening', feel: 'Bossa nova', bpm: 128, kit: 'Brush (soft)', pat: 'Bossa Nova', bass: 'Root–Fifth', tone: 'Round', comp: 'Travis Roll', inst: 'Nylon', prog: 'ii7 V7 Imaj7 Imaj7' }
+];
+const BEAT_CH = { '.': 0, g: 1, x: 2, X: 3 };
+/** a beat's drum pattern as the band's grid (rows of 32 steps) and its length in 16ths */
+function beatRows(b) { const src = b.rows || DPATS[b.pat], L = Math.min(src[0].length, 32); return { L, pat: src.map(r => Array.from({ length: 32 }, (_, i) => i < L ? BEAT_CH[r[i]] || 0 : 0)) }; }
+/** a song with no chords yet takes the beat's progression, in the song's key; a song that has chords keeps them */
+function beatChords(b) {
+  if (S.sections.some(s => s.bars.some(x => (x.chord || '').trim()))) return false;
+  const minor = !!b.minor, ch = b.prog.split(' ').map(t => romanToChord(t, S.key, minor) || '');
+  S.minor = minor; S.scale = minor ? 'Natural Minor (Aeolian)' : 'Major (Ionian)';
+  if (!S.sections.length) S.sections.push(mkSection('Verse 1', ch));
+  else { const sec = S.sections[0]; while (sec.bars.length < ch.length) sec.bars.push(newBar()); sec.bars.forEach((x, i) => { x.chord = ch[i % ch.length]; }); }
+  return true;
+}
+/** use beat `id`: the band and the tempo, then (unless o.play is false) loop it; one undo puts everything back */
+function beatUse(id, o = {}) {
+  const b = BEATS.find(x => x.id === id); if (!b) return false; const B = S.band, { L, pat } = beatRows(b);
+  Object.assign(B, { beat: b.id, drumsOn: true, kit: b.kit, patName: b.pat || b.name, pat, drumLen: L, bassOn: !isBass(), bassStyle: b.bass, bassTone: b.tone, compOn: !!b.comp, keysOn: !!b.keys });
+  if (b.comp) { B.compStyle = b.comp; B.compInst = b.inst; } if (b.keys) { B.keysStyle = b.keys; B.keysSound = b.sound; }
+  if (!S.mix.keys) S.mix.keys = { g: .7, p: .1, m: 0, s: 0 };
+  S.bpm = b.bpm; S.swing = b.swing || 0; const fresh = beatChords(b); T.bars = null;
+  commit(true); bus.emit('song', fresh ? 'reload' : 'band'); bus.emit('bpm'); syncTransport(); try { syncBandStrip(); } catch (e) { }
+  if (o.play !== false && !T.playing) { T.loop = true; syncTransport(); play(); }
+  if (!o.quiet) toast('🥁 ' + b.name + ' · ' + b.bpm + ' BPM' + (fresh ? ', with chords to start from' : '') + '. Play or sing over it; ● records. Undo puts your band back.', 'ok');
+  return true;
+}
+/** the beats as a row of cards (the Band panel, and 🥁 Beats in the Songwriter tools) */
+function beatsShelf(o = {}) {
+  const cur = S.band.beat;
+  return h('div', { class: 'bt-shelf', role: 'group', 'aria-label': 'Beats' }, BEATS.map(b => h('button', { class: 'bt-card' + (cur === b.id ? ' on' : ''), type: 'button', 'data-beat': b.id, 'aria-pressed': String(cur === b.id),
+    title: b.name + ': ' + b.feel + ', ' + b.bpm + ' BPM. Tap to play it', onclick: () => { beatUse(b.id); if (o.after) o.after(); } }, h('b', {}, b.name), h('span', {}, b.feel + ' · ' + b.bpm))));
+}
+/** who plays, as four switches with a level each (Simple's band) */
+function beatsMixer() {
+  const B = S.band, parts = [['drums', '🥁', 'Drums', 'drumsOn'], ['bass', '〰', 'Bass', 'bassOn'], ['rhythm', '🎸', 'Guitar', 'compOn'], ['keys', '🎹', 'Keys', 'keysOn']];
+  return h('div', { class: 'bt-mix' }, parts.map(([id, ic, nm, key]) => {
+    const m = S.mix[id] || (S.mix[id] = { g: .7, p: 0, m: 0, s: 0 });
+    return h('div', { class: 'bt-ch' + (B[key] ? ' on' : ''), 'data-part': id },
+      h('button', { class: 'btn sm bt-pw' + (B[key] ? ' on' : ''), type: 'button', 'aria-pressed': String(!!B[key]), title: (B[key] ? 'Turn off the ' : 'Bring in the ') + nm.toLowerCase(), onclick: () => { toggleBand(key); renderBand(); } }, ic + ' ' + nm),
+      h('input', { type: 'range', min: 0, max: 1.4, step: .01, value: m.g, 'aria-label': nm + ' level', oninput: e => { m.g = +e.target.value; applyMix(); commit(false); } }));
+  }));
+}
+/** Simple's Band panel: the beats and who plays; everything else one press away */
+function bandSimple(bx) {
+  bx.append(h('div', { class: 'card' }, h('h4', {}, 'Pick a beat'), h('div', { class: 'card-b' }, h('p', { class: 'tiny muted bt-how' }, 'Tap one and it plays: drums, bass and chords, in your song’s key. Play or sing over it, and press ● to record. Undo puts your band back.'), beatsShelf())),
+    h('div', { class: 'card' }, h('h4', {}, 'Who plays'), h('div', { class: 'card-b' }, beatsMixer())),
+    h('button', { class: 'btn sm', id: 'bandAll', type: 'button', onclick: () => { UI.bAll = true; renderBand(); } }, 'Show every band setting'));
 }
 
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();

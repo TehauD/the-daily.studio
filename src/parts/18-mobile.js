@@ -48,7 +48,6 @@ function applyForm() {
 }
 
 /* ---------- navigation model (phone) ---------- */
-function mSetView(v) { M.view = v; mSync(); }
 function mGo(gid, sid) {
   const g = MGROUPS.find(x => x.id === gid) || MGROUPS[0], s = g.subs.find(x => x[0] === sid) || g.subs.find(x => x[0] === M.last[g.id]) || g.subs[0];
   M.g = g.id; M.s = s[0]; M.last[g.id] = s[0]; CFG.mlast = M.last;

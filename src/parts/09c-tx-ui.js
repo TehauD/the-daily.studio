@@ -6,7 +6,6 @@ const TX = {
   p: Object.assign({ sens: .5, maxPoly: 6, grid: 1, offsetMs: 0, autoOffset: true, chordPrior: 1, camWeight: 1, techniques: true, legato: true, snapChord: true, minConf: 0 }, CFG.tx || {})
 };
 const txSave = () => { CFG.tx = TX.p; saveCfg(); };
-const TXG = { 1: '16th', 2: '8th', 4: 'quarter' };
 
 function txSource(id) {
   id = id || TX.src;

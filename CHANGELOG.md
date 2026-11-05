@@ -2,6 +2,29 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.39.0 — 2026-11-05 — Simple is the Songwriter, with beats
+
+### Added
+- **🥁 Beats: a ready band to play, sing or write over, in one tap.** Eleven beats: Easy Folk, Pop Drive, Garage Rock, Lo-fi Nod, Night Drive (dance), Trap Glide, Island Sway (reggae), Slow Burn (blues shuffle), Quiet Ballad, Funk Pocket and Bossa Evening.
+  - Each is a groove, a tempo and a band (drums, bass, and guitar or keys where the style wants them). Tapping one sets the band and the tempo and starts it looping.
+  - A song with no chords yet gets the beat's progression in the song's key. A song that has chords keeps them, and the beat plays them.
+  - One undo puts your band, tempo and chords back.
+  - They are played by the studio's own instruments, so there are no audio files to download or license, they cost almost nothing in page size, and they follow the key, chords and tempo. The grooves were written for this studio.
+  - Where: the top of the Band panel, and **🥁 Beats** in the Songwriter tools.
+
+### Changed
+- **✦ Simple is now the Songwriter workspace.** A first visit on a computer opens there (it was the Performer).
+  - Switching Simple on from another workspace moves to the Songwriter. Switching it off puts that workspace back exactly as it was: sidebars, panels, tabs and the open panel.
+  - The goal bar shows only the Songwriter, with "Make a song: pick a beat, play or sing over it, put the words under the chords", and four tools: **🥁 Beats** (highlighted), Paste chords, Pads and Keys. Vocal pedals, the piano roll and "Perform it →" wait for the full studio.
+- **The Band panel in Simple is the beats and who plays:** drums, bass, guitar and keys, each with a switch and a level. **Show every band setting** brings back the kit, patterns, step grid, styles and instruments, with the beats on top.
+
+### Removed
+- **Leftovers from retired features**, so the beats fit in the 700 kB budget. Nothing removed was used anywhere: about 2.7 kB of styles for the old first page, layout menu and song dialog, seven functions and six constants nothing called, and 22 names listed twice in the test hook. The page is just under 700 kB gzip again.
+
+### Tests
+- `e2e-simple`: 31 checks (up from 24), covering the Songwriter, the beats, undo, the band view and getting your workspace back.
+- `e2e-goals`: a first visit opens the Songwriter.
+
 ## 2.38.1 — 2026-11-05 — Latency moves to the status line
 
 ### Changed

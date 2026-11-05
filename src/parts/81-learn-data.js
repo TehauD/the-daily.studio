@@ -16,7 +16,6 @@ function rfParse(txt) {
   });
 }
 const rfLen = notes => { const e = notes.reduce((a, n) => Math.max(a, n.at + n.len), 0); return Math.max(16, Math.ceil(e / 16) * 16); };
-const SCALE_PCS = name => { const iv = SCALES[name] || SCALES['Minor Pentatonic']; return iv.slice(); };
 
 /* ---------- pieces for lessons ---------- */
 let LPN = 0;
