@@ -23,7 +23,7 @@ All notable changes to the-daily.studio (earlier versions were released under th
 
 ### Tests
 - `e2e-simple`: 31 checks (up from 24), covering the Songwriter, the beats, undo, the band view and getting your workspace back.
-- `e2e-goals`: a first visit opens the Songwriter.
+- `e2e-goals` and `e2e`: a first visit opens the Songwriter.
 
 ## 2.38.1 — 2026-11-05 — Latency moves to the status line
 
