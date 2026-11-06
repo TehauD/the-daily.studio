@@ -9,6 +9,7 @@
      · every place the code can make a network request is one we know about (a new one fails until it is reviewed)
      · no over-claiming phrases ("100% private", "completely offline", ...)
    What it cannot do is watch a browser. For that, test/e2e-privacy.cjs counts real requests. */
+import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -59,8 +60,14 @@ for (const f of pages) {
   ok(!/<script[^>]+\bsrc=|<link[^>]+rel=["']?(stylesheet|preload|modulepreload)[^>]+href=["']?https?:/i.test(s), f + ': no external script or stylesheet tag');
 }
 const ws = readdirSync(join(root, 'src/fonts')).filter(f => /\.woff2$/.test(f));
-const idx = readFileSync(join(dist, 'index.html'), 'utf8');
-ok((idx.match(/data:font\/woff2/g) || []).length === ws.length, 'index.html embeds exactly the ' + ws.length + ' fonts in src/fonts');
+const idx = readFileSync(join(dist, 'index.html'), 'utf8'), one = readFileSync(join(root, 'index.html'), 'utf8');
+ok((one.match(/data:font\/woff2/g) || []).length === ws.length, 'the single-file index.html embeds exactly the ' + ws.length + ' fonts in src/fonts');
+ok(!/data:font\/woff2/.test(idx) && ws.every(w => idx.includes('url(fonts/' + w + ')') && files.includes('fonts/' + w)), 'the site’s page uses the same ' + ws.length + ' fonts as files from this site (2.40)');
+/* rooms: every one the page can load is shipped, from this site, with its hash */
+{ const m = idx.match(/ROOM\.files=(\{[^}]*\});ROOM\.sri=(\{[^}]*\})/), rf = m ? JSON.parse(m[1]) : {}, rs = m ? JSON.parse(m[2]) : {}, list = Object.values(rf);
+  ok(list.length > 0 && list.every(f => /^rooms\/[a-z]+\.[0-9a-f]{8}\.js$/.test(f) && files.includes(f)) && files.filter(f => f.startsWith('rooms/')).every(f => list.includes(f)), 'the page’s rooms are exactly the shipped rooms/ files, all from this site (' + list.join(', ') + ')');
+  ok(Object.entries(rf).every(([id, f]) => rs[id] === 'sha384-' + createHash('sha384').update(readFileSync(join(dist, f))).digest('base64')), 'each room’s sha384 in the page matches the file');
+  for (const f of list) { const c = readFileSync(join(dist, f), 'utf8'); ok(!/https?:\/\//.test(c.replace(/'https?:\/\/[^']*'|"https?:\/\/[^"]*"|`[^`]*`/g, '')) && !/\bimport\(|importScripts|new WebSocket|sendBeacon/.test(c), f + ': reaches no other site (no import, socket or beacon)'); } }
 
 /* fonts */
 console.log('\nFonts');
@@ -109,9 +116,10 @@ const KNOWN = [
   [/^19-touch\.js$/, /serviceWorker\.register\('sw\.js'\)/, 'offline copy, same site'],
   [/^16-stems\.js$/, /new Worker\(url\)/, 'stem worker from a blob made in the page'],
   [/^85-stretch\.js$/, /new Worker\(url\)/, 'speed & key worker from a blob made in the page'],
+  [/^00-rooms\.js$/, /createElement\('script'\)/, 'a room of the studio, from this site, checked by its hash (2.40)'],
   [/^74-github\.js$/, /fetch\(GH_API \+ path|fetch\('\/auth\/github\/refresh'/, 'GitHub, only after you connect it or open the gallery; the renewal is this site'],
 ];
-const NET = /\bfetch\(|XMLHttpRequest|new WebSocket|EventSource\(|sendBeacon|importScripts\(|(?<![\w.$])import\(|new Worker\(|serviceWorker\.register|\.src\s*=\s*['"`]https?:/;
+const NET = /createElement\(['"`]script['"`]\)|\bfetch\(|XMLHttpRequest|new WebSocket|EventSource\(|sendBeacon|importScripts\(|(?<![\w.$])import\(|new Worker\(|serviceWorker\.register|\.src\s*=\s*['"`]https?:/;
 const hits = [], strange = [];
 for (const f of srcFiles.filter(x => x.endsWith('.js'))) rd(f).split('\n').forEach((line, i) => {
   const code = line.replace(/\/\*.*?\*\//g, '').replace(/^\s*\/\/.*$|^\s*\*.*$/, ''); if (!NET.test(code)) return;

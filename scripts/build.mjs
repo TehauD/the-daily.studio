@@ -11,6 +11,7 @@ import { createHash } from 'node:crypto';
 import { markInner, markSvg, BRAND as BR } from './brand-mark.mjs';
 import { SITE, appJsonLd, sitemap, guideLinks, llmsTxt } from './seo-pages.mjs';
 import { minifyJS, minifyCSS, tokens } from './minify.mjs';
+import { splitRooms } from './rooms.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const src = p => readFileSync(join(root, 'src', p), 'utf8');
@@ -59,6 +60,39 @@ const inlineJs = `\n${jsMin.replace(/<\/script>/g, '<\\/script>')}\n`;
 const csp = ["default-src 'self'", `script-src 'sha256-${createHash('sha256').update(inlineJs).digest('base64')}' 'wasm-unsafe-eval' blob: https://cdn.jsdelivr.net`, "worker-src 'self' blob:", "style-src 'self' 'unsafe-inline'", "img-src 'self' data: blob:", "media-src 'self' blob: data:", "connect-src 'self' blob: data: https://cdn.jsdelivr.net https://storage.googleapis.com https://api.github.com", "font-src 'self' data:", "object-src 'none'", "base-uri 'none'", "form-action 'none'"].join('; ');
 const standalone = `<!doctype html>\n<html lang="en"><head><meta http-equiv="Content-Security-Policy" content="${csp}">${head}\n<style>\n${cssMin}\n</style></head><body>\n${body}\n<noscript><div style="max-width:40rem;margin:0 auto;padding:24px 16px;font:16px/1.5 system-ui,sans-serif"><h2>the-daily.studio needs JavaScript</h2><p>It is a guitar and voice studio that runs entirely in your browser: record guitar and voice, split a song into stems, get chords, tab and lyrics, and run a live light show. It sends nothing anywhere, so it needs JavaScript to do the work on your device.</p><p>Read about it: ${guideLinks()}</p></div></noscript>\n<script>${inlineJs}</script></body></html>\n`;
 
+/* ---------- the hosted site's page (2.40, `--site`, written to dist/ by scripts/assemble.mjs) ----------
+   The same app, lighter to load: the fonts are files beside the page (the guide pages already use them), and the rooms in
+   scripts/rooms.mjs are their own scripts, loaded the first time they are used. index.html above stays one complete file. */
+function siteBuild() {
+  const sp = splitRooms(parts.map(f => [f, src('parts/' + f)])), LINES = String(js.split('\n').length);
+  const fin = x => x.replaceAll('__MARK_INNER__', MARK).replaceAll('__VERSION__', pkg.version).replaceAll('__BUILD__', BUILD).replaceAll('__PARTS__', String(parts.length)).replaceAll('__LINES__', LINES);
+  const proof = (a0, b0, what) => { const sig = x => tokens(x).filter(t => t.t !== 'ws' && t.t !== 'nl'), a = sig(a0), b = sig(b0); const k = a.findIndex((t, i) => !b[i] || b[i].t !== t.t || b[i].v !== t.v); if (k >= 0 || a.length !== b.length) { console.error('Minifying changed ' + what + ' at token ' + k); process.exit(1); } };
+  const files = {}, sri = {}, roomOut = {};
+  for (const [id, code0] of Object.entries(sp.rooms)) {
+    const code = fin(code0); try { new vm.Script(code, { filename: 'room-' + id + '.js' }); } catch (e) { console.error('Room ' + id + ' does not compile:\n' + e.stack); process.exit(1); }
+    const min = minifyJS(code); proof(code, min, 'room ' + id); new vm.Script(min);
+    const name = 'rooms/' + id + '.' + createHash('sha256').update(min).digest('hex').slice(0, 8) + '.js';
+    files[id] = name; sri[id] = 'sha384-' + createHash('sha384').update(min).digest('base64'); roomOut[name] = min;
+  }
+  let sj = "(()=>{'use strict';\n" + sp.header;
+  for (const [f, s0] of sp.core) sj += `/* >>> parts/${f} */\n${s0}\n`;
+  sj += sp.footer + `ROOM.files = ${JSON.stringify(files)}; ROOM.sri = ${JSON.stringify(sri)};\n`;
+  sj += "if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();\n})();\n";
+  sj = fin(sj); try { new vm.Script(sj, { filename: 'daily-songs.site.js' }); } catch (e) { console.error('The site script does not compile:\n' + e.stack); process.exit(1); }
+  const sjMin = minifyJS(sj); proof(sj, sjMin, 'the site script'); new vm.Script(sjMin);
+  const FONTS = [['DS Inter', 'inter-latin-wght.woff2'], ['DS Montserrat', 'montserrat-latin-wght.woff2']];
+  const cssS = minifyCSS(FONTS.map(([fam, f]) => `@font-face{font-family:"${fam}";src:url(fonts/${f}) format("woff2");font-weight:100 900;font-style:normal;font-display:swap}\n`).join('') + src('styles.css'));
+  const inl = `\n${sjMin.replace(/<\/script>/g, '<\\/script>')}\n`;
+  const cspS = csp.replace(/script-src 'sha256-[^']+'/, `script-src 'sha256-${createHash('sha256').update(inl).digest('base64')}' 'self'`);
+  const pre = FONTS.map(([, f]) => `<link rel="preload" href="fonts/${f}" as="font" type="font/woff2" crossorigin>`).join('');
+  const html = standalone.replace(csp, cspS).replace(`<style>\n${cssMin}\n</style>`, () => `${pre}<style>\n${cssS}\n</style>`).replace(`<script>${inlineJs}</script>`, () => `<script>${inl}</script>`);
+  if (html === standalone || !html.includes(inl) || !html.includes(cspS)) { console.error('Could not assemble the site page'); process.exit(1); }
+  const extra = FONTS.map(([, f]) => 'fonts/' + f).concat(Object.values(files));
+  const swS = sw.replace('const CORE = [', `const EXTRA = ${JSON.stringify(extra)};      /* the fonts and rooms: kept for offline use, but a missing one never stops the install */\nconst CORE = [`).replace('c.addAll(CORE))', 'c.addAll(CORE).then(() => Promise.all(EXTRA.map(u => c.add(u).catch(() => { })))))');
+  if (swS === sw) { console.error('Could not make the site service worker'); process.exit(1); }
+  return { 'index.html': html, 'sw.js': swS, ...roomOut, info: sp.info };
+}
+
 /* installable web app: manifest + offline cache (the page registers sw.js only on https / localhost) */
 const manifest = JSON.stringify({
   name: 'the-daily.studio', short_name: 'The Daily', description: pkg.description, id: './', start_url: './', scope: './', display: 'standalone', orientation: 'any',
@@ -88,7 +122,11 @@ const AUDIO = /\.(m4a|mp3|wav|ogg|flac|aac)$/i; let info = {}; try { info = JSON
 let sampleFiles = []; try { sampleFiles = readdirSync(join(root, 'samples')).filter(f => AUDIO.test(f)).sort(); } catch { }
 const samples = JSON.stringify({ tracks: sampleFiles.map(f => ({ file: f, title: (info[f] && info[f].title) || f.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim(), note: (info[f] && info[f].note) || '', mb: +(statSync(join(root, 'samples', f)).size / 1048576).toFixed(1) })) }, null, 2) + '\n';
 const outputs = { 'index.html': standalone, 'codepen/pen.html': bodyPen, 'codepen/pen.css': css, 'codepen/pen.js': js, 'manifest.webmanifest': manifest, 'sw.js': sw, 'samples/manifest.json': samples, 'sitemap.xml': sitemap(modified), 'llms.txt': llmsTxt(pkg.version, readFileSync(join(root, 'docs', 'AGENT_API.md'), 'utf8')) };
-if (process.argv.includes('--check')) {
+if (process.argv.includes('--site')) {
+  const out = join(root, 'dist'), o = siteBuild(), info = o.info; delete o.info; mkdirSync(join(out, 'rooms'), { recursive: true });
+  for (const [f, c] of Object.entries(o)) writeFileSync(join(out, f), c);
+  console.log(`site: index.html ${(o['index.html'].length / 1024).toFixed(0)} kB, ` + Object.keys(o).filter(f => f.startsWith('rooms/')).map(f => f + ' ' + (o[f].length / 1024).toFixed(0) + ' kB').join(', '));
+} else if (process.argv.includes('--check')) {
   let bad = 0;
   for (const [f, c] of Object.entries(outputs)) { let cur = ''; try { cur = readFileSync(join(root, f), 'utf8'); } catch { } if (cur !== c) { console.error('out of date: ' + f); bad++; } }
   if (bad) { console.error('Run `npm run build` and commit the result.'); process.exit(1); } else console.log('build outputs are up to date');

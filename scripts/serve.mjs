@@ -7,7 +7,7 @@ import { readFile } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
 import { extname, join, normalize, dirname, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+const root = process.env.SERVE_ROOT || join(dirname(fileURLToPath(import.meta.url)), '..');      /* SERVE_ROOT=dist: the hosted site's build (the tests use it) */
 const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json', '.png': 'image/png', '.webmanifest': 'application/manifest+json', '.m4a': 'audio/mp4', '.mp3': 'audio/mpeg', '.ogg': 'audio/ogg', '.flac': 'audio/flac', '.svg': 'image/svg+xml', '.wav': 'audio/wav', '.md': 'text/markdown; charset=utf-8' };
 const server = http.createServer(async (req, res) => {
   try {

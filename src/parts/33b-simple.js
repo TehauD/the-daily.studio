@@ -14,7 +14,7 @@
 /* what Simple keeps on the panel strip (and whatever is open, and the backing track once one is loaded), and the tones it offers */
 const SIMPLE_TABS = ['tab', 'band', 'vis', 'exp'];
 /* the Songwriter tools Simple keeps (2.39) */
-const SIMPLE_TOOLS = ['gtBeats', 'gtSheet', 'gtPads', 'gtKeys'];
+const SIMPLE_TOOLS = ['gtBeats', 'gtSheet', 'gtPads', 'gtKeys', 'gtLink'];
 const SIMPLE_TONES = ['Crystal Clean', 'Busker Corner', 'Edge of Breakup', 'Classic Crunch', 'Singing Lead', 'Tight Metal Rhythm', 'Shimmer Cathedral', 'Direct (No FX)'];
 if (CFG.simple == null) { CFG.simple = !store.get('started', false) && !store.get('song', null); saveCfg(); }
 function simpleApply() {

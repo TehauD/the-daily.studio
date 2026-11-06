@@ -32,6 +32,7 @@ function txCx(src, startSec, dur) {
 async function txRun(srcs) {
   if (TX.busy) return; srcs = srcs.filter(Boolean); if (!srcs.length) return toast('Choose or record something to transcribe first', 'warn');
   TX.busy = true; txBusyUI(true); const t0 = performance.now(), results = [];
+  try { await room('tx'); } catch (e) { TX.busy = false; txBusyUI(false); return; }      /* the engine is a room on the hosted site (part 00) */
   try {
     for (let i = 0; i < srcs.length; i++) {
       const src = srcs[i]; let startSec = src.startSec, dur = slotDur(), tempoNote = '';
@@ -165,6 +166,7 @@ function txSuite(rngSeed) {
 }
 async function txBench() {
   if (TX.busy) return; TX.busy = true; txBusyUI(true); const snr = +UI.txSnr.value || null, jit = +UI.txJit.value / 1000, rows = [], sr = 44100;
+  try { await room('tx'); } catch (e) { TX.busy = false; txBusyUI(false); return; }
   try {
     const cases = txSuite(+UI.txSeed.value || 11); let tot = { tp: 0, det: 0, truth: 0, sf: 0 };
     for (let ci = 0; ci < cases.length; ci++) {
@@ -195,6 +197,7 @@ function txReport() {
 /* ---------- pane ---------- */
 function buildTxPane() {
   const p = PANES.tx; if (!p) return;
+  bus.on('dock', id => { if (id === 'tx') room('tx').catch(() => { }); });      /* fetch the engine while you choose what to transcribe */
   const lab = (t, w) => h('label', { style: { fontSize: '11px', fontWeight: 700, color: 'var(--muted)', display: 'block', margin: '8px 0 2px' } }, t, w || '');
   const rng = (key, min, max, step, fmt) => { const out = h('b', { class: 'mono', style: { marginLeft: '6px', color: 'var(--text)' } }, fmt(TX.p[key])); const inp = h('input', { type: 'range', min, max, step, value: TX.p[key], style: { width: '100%' }, oninput: e => { TX.p[key] = +e.target.value; out.textContent = fmt(TX.p[key]); txSave(); } }); return [out, inp]; };
   const chk = (key, label, tip) => h('label', { class: 'chk', title: tip || '', style: { display: 'flex', gap: '5px', alignItems: 'center', fontSize: '12px', fontWeight: 600 } }, h('input', { type: 'checkbox', checked: TX.p[key], onchange: e => { TX.p[key] = e.target.checked; txSave(); } }), label);

@@ -15,6 +15,8 @@ if (!files.length) { console.error('No test file matches ' + want.join(', ')); p
 const shared = files.filter(f => !SOLO.includes(f)), solo = files.filter(f => SOLO.includes(f));
 const jobs = Math.max(1, Math.min(+process.env.JOBS || Math.max(1, Math.min(4, Math.floor(os.cpus().length / 2))), shared.length || 1));
 const strict = process.env.STRICT === '1', t0 = Date.now();
+/* the files are tested on the hosted site's build (dist/, test/lib.cjs): build it once here, so files running side by side never build it at the same time */
+if (!process.env.BASE_URL && process.env.STANDALONE !== '1') { console.log('Building the site into dist/…'); require('node:child_process').execFileSync(process.execPath, [path.join(__dirname, '..', 'scripts', 'assemble.mjs')], { stdio: 'ignore' }); }
 
 /** run one file; resolves with its result (and prints a summary, plus the failures) */
 function run(f, how) {

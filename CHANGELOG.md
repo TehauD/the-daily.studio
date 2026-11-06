@@ -2,6 +2,42 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.40.0 — 2026-11-06 — Send a song as a link, and room to grow
+
+### Added
+- **🔗 Send as a link.** The song travels inside an ordinary link to the studio, after the `#`. Browsers never send that part to a server, so nothing is uploaded or stored anywhere.
+  - **What it carries:** the title, key, tempo, time signature and tuning; every section's chords, words and tab; the band (the beat, drum pattern, bass, rhythm guitar, keys); and the piano roll's keys and bass line. Recordings stay with you; a share page carries audio.
+  - **Size:** the browser's own compression keeps it short. A full song with a beat, tab and words is about 900 characters.
+  - **Sharing:** Copy link, Share… on phones, or a QR code to scan across the room. A warning shows when a link is long enough that some chat apps might cut it.
+  - **Opening one:** the studio offers the song by name, with what it holds, even over the first page on a first visit. **▶ Open and play** opens it as a new song and starts it; your own songs are untouched. The link is taken out of the address, so a reload does not offer it again.
+  - **Where:** 🔗 Send as a link in the Songwriter tools (Simple too), and in Save & export.
+  - **Safe with any link:** everything in a link is treated as untrusted. Lengths are capped; numbers are clamped; names are checked against the studio's own lists; only real chords are kept; the unpacked size is limited while it unpacks; and text is never turned into page elements.
+- **Rooms: the hosted site loads rarely used parts the first time they are used** (`scripts/rooms.mjs`, part 00). The first three are the transcription engine (fetched when you open Transcribe), MIDI import and Shower mode.
+  - Each is a small file named by its contents, checked with Subresource Integrity, and kept by the service worker for offline use.
+  - A room sees the studio's live song exactly as inline code would. The build refuses rooms that lean on each other, or a core that relies on a room's state.
+  - New big features can go into a room without making the first load heavier.
+
+### Changed
+- **The hosted page is 578 kB gzip, from 684 kB**, with this release's features included.
+  - The two fonts are now files beside the page (preloaded, and the guide pages already used them) instead of being embedded.
+  - The rooms above are no longer part of the first load.
+- **The single-file `index.html` is unchanged in spirit:** it still carries every part and both fonts inline, so it opens from disk and in CodePen as before. Only the hosted site (`dist/`) is split.
+- **The tests run on the hosted site's build** (`dist/`, built automatically when stale). `STANDALONE=1` runs them on the single file, and CI does that for MIDI, Shower mode, song links and Simple.
+- **The release gate checks the rooms:** each is shipped, from this site only, matches its hash, reaches no other site, and stays under 150 kB gzip. The page's policy now allows scripts from this site (`'self'`) beside its own inline one.
+- **Shower mode's ways in** (hold the logo, or type "shower") moved into the core (part 73g), so they work before the room has loaded.
+
+### Fixed
+- A song link naming the scale or tuning `__proto__` could reach the app's drawing code. Names are now looked up only among the studio's own entries. The new hostile-link test found this before release.
+
+### Tests
+- `e2e-rooms` (17 checks): the page starts without rooms and links its fonts, a stand-in loads its room and hands over, one hashed script per room, a live song, a failed load that can be retried, and Transcribe fetching its engine.
+- `e2e-songlink` (17 checks):
+  - the link itself, the QR code, and an exact read-back;
+  - nothing in any request;
+  - a first visit, and someone who keeps their songs;
+  - hostile links (markup, numbers out of range, oversized), a compression bomb, a truncated link and an unknown format.
+- `e2e-privacy` allows this site's fonts and rooms. `e2e-shower` loads the room before reaching into it. `e2e-simple` now expects the fifth tool.
+
 ## 2.39.0 — 2026-11-05 — Simple is the Songwriter, with beats
 
 ### Added

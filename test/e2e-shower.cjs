@@ -9,6 +9,7 @@ const fs = require('node:fs'), path = require('node:path'), os = require('node:o
 suite('e2e-shower', async t => {
   const { ok, wait, poll } = t;
   const p = await t.open({ w: 1280, h: 800 }), ev = (f, a) => p.evaluate(f, a);
+  await ev(() => window.__daily.room('shower'));      /* on the hosted site Shower mode is a room (2.40): load it before reaching into it */
   process.env.BARS = '8'; const SY = require('./stem_synth.cjs'), mono = SY.L.map((x, i) => (x + SY.R[i]) / 2);
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'shw-')), F = n => path.join(dir, n);
   fs.writeFileSync(F('Harbour Lights.wav'), t.wav(mono, 44100)); fs.writeFileSync(F('Salt Wind.wav'), t.wav(mono.map(x => x * .8), 44100)); fs.writeFileSync(F('Low Tide.wav'), t.wav(mono.map(x => x * .9), 44100));

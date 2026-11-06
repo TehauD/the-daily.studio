@@ -30,8 +30,12 @@ jobs:
         with: { node-version: 22 }
       - run: npm ci --no-audit --no-fund
       - run: npx playwright install --with-deps chromium
-      - name: End-to-end flows (tunings, tour, rig deck, transcription, stems)
+      - name: End-to-end flows on the hosted site's build (dist/, with its rooms and font files)
         run: npm run test:e2e
+      - name: The single-file index.html (every part inline, as opened from disk or CodePen)
+        run: node test/run.cjs midi shower songlink simple
+        env:
+          STANDALONE: '1'
       - name: Phone, tablet and desktop layouts
         run: npm run test:mobile
   browsers:

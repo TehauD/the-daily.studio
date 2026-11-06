@@ -1610,3 +1610,10 @@ body.simple:not([data-form=phone]) .tl-heads :is(input[type=range],.fxchip){disp
 .bt-mix{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
 .bt-ch{display:flex;flex-direction:column;gap:6px;padding:8px;border:1px solid var(--line);border-radius:10px;opacity:.6}.bt-ch.on{opacity:1}
 .bt-ch .bt-pw{justify-content:flex-start}.bt-ch input{width:100%}
+
+/* 2.40 · Send a song as a link (part 89) */
+.sl-dlg{width:min(540px,94vw);border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--text);padding:18px 20px}
+.sl-dlg::backdrop{background:rgba(0,0,0,.45)}.sl-dlg h3{margin:0 0 6px;font-size:18px}.sl-dlg p{margin:6px 0}
+.sl-what{font-weight:700;color:var(--accent)}.sl-kick{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.sl-url{width:100%;margin:8px 0;font-family:var(--mono);font-size:12px}.sl-long{color:var(--warn)}
+.sl-acts{gap:8px;flex-wrap:wrap;margin-top:10px}.sl-qr{margin-top:12px;display:flex;justify-content:center}.sl-qr svg{width:min(260px,70vw);height:auto}

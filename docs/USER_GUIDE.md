@@ -2,7 +2,7 @@
 
 A practical walkthrough of every panel. For a ten-minute orientation, press **?** in the app and choose **Take the guided tour**.
 
-Contents: [Beats](#-beats-239) · [Getting started](#getting-started-and-guided-sessions-27) · [Show setup](#show-setup-26) · [Layouts](#layout-and-themes) · [Monitor widgets](#monitor-widgets-26) · [Concert](#concert-24) · [Voice](#voice-pitch-ribbon-your-range-find-my-key-23) · [Cut, silence and punch in](#cut-silence-and-punch-in-23) · [Heatmap](#heatmap-23) · [Performer backdrop](#performer-backdrop-23) · [Clips and the mix](#clips-move-trim-fade-split-22) · [Fast WAV render](#faster-than-real-time-wav-render-22) · [Open a MIDI file](#open-a-midi-file-22) · [Keep songs safe](#keep-songs-safe-22) · [Perform, share and back up](#perform-share-and-back-up-20) · [Getting sound](#getting-sound-in-and-out) · [Tones and the Rig](#tones-and-the-rig) · [The band](#the-band) · [Arrangement and recording](#arrangement-and-recording) · [Tab editor](#tab-editor) · [Song, tunings and capo](#song-tunings-and-capo) · [Fretboard and tuner](#fretboard-and-tuner) · [Transcribe](#transcribe-audio-to-tab) · [Stems](#stems-and-backing-tracks) · [Neural map](#neural-map) · [Visuals and Stage](#visuals-and-stage) · [Vision](#vision-lab) · [Research](#research-panel) · [Export, history and backup](#export-history-and-backup) · [MIDI](#midi) · [Layout](#layout-and-themes)
+Contents: [Song links](#-send-a-song-as-a-link-240) · [Beats](#-beats-239) · [Getting started](#getting-started-and-guided-sessions-27) · [Show setup](#show-setup-26) · [Layouts](#layout-and-themes) · [Monitor widgets](#monitor-widgets-26) · [Concert](#concert-24) · [Voice](#voice-pitch-ribbon-your-range-find-my-key-23) · [Cut, silence and punch in](#cut-silence-and-punch-in-23) · [Heatmap](#heatmap-23) · [Performer backdrop](#performer-backdrop-23) · [Clips and the mix](#clips-move-trim-fade-split-22) · [Fast WAV render](#faster-than-real-time-wav-render-22) · [Open a MIDI file](#open-a-midi-file-22) · [Keep songs safe](#keep-songs-safe-22) · [Perform, share and back up](#perform-share-and-back-up-20) · [Getting sound](#getting-sound-in-and-out) · [Tones and the Rig](#tones-and-the-rig) · [The band](#the-band) · [Arrangement and recording](#arrangement-and-recording) · [Tab editor](#tab-editor) · [Song, tunings and capo](#song-tunings-and-capo) · [Fretboard and tuner](#fretboard-and-tuner) · [Transcribe](#transcribe-audio-to-tab) · [Stems](#stems-and-backing-tracks) · [Neural map](#neural-map) · [Visuals and Stage](#visuals-and-stage) · [Vision](#vision-lab) · [Research](#research-panel) · [Export, history and backup](#export-history-and-backup) · [MIDI](#midi) · [Layout](#layout-and-themes)
 
 ---
 
@@ -18,8 +18,17 @@ Contents: [Beats](#-beats-239) · [Getting started](#getting-started-and-guided-
   - **Sidebars:** Refine, the Monitor widget picker and the chord finder are tucked away.
   - **The arrangement:** the lanes keep mute, solo and on/off, without their faders, pans and effects.
   - **The Full Rig workspace** button is tucked away.
-- **Simple is the Songwriter (2.39):** Simple opens the Songwriter workspace, and its goal bar is just *Make a song*: **🥁 Beats**, Paste chords, Pads and Keys. If you switch Simple on from another workspace, switching it off takes you back there exactly as you left it.
+- **Simple is the Songwriter (2.39):** Simple opens the Songwriter workspace, and its goal bar is just *Make a song*: **🥁 Beats**, Paste chords, Pads, Keys and **🔗 Send as a link**. If you switch Simple on from another workspace, switching it off takes you back there exactly as you left it.
 - **The band in Simple (2.39):** the Band panel is the beats and who plays (drums, bass, guitar and keys, each a switch and a level). **Show every band setting** brings the rest back.
+
+## 🔗 Send a song as a link (2.40)
+
+**🔗 Send as a link** (Songwriter tools, and Save & export) turns the song into a link you can paste in a message. Whoever opens it gets the song, ready to play.
+- **What travels:** the chords, words and tab of every section, the beat and the band, what the piano roll drew, the tempo, the key and the tuning. **Recordings stay with you:** for audio, make a share page in Save & export.
+- **Nothing is uploaded.** The song is written into the link after the `#`, and browsers never send that part to a server. A typical song is under a thousand characters.
+- **Sending:** **⧉ Copy link**, **↗ Share…** on a phone, or **▦ QR code** for someone in the room. If a link is very long, the window says so, because some chat apps cut long links.
+- **Receiving:** opening the link shows the song's name and what it holds. **▶ Open and play** opens it as a new song and starts it; **Open** just opens it. Your own songs are not changed.
+- Anyone with the link can read the song, as with anything you paste in a chat.
 
 ## 🥁 Beats (2.39)
 

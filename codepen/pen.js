@@ -1,11 +1,40 @@
 (()=>{'use strict';
+/* >>> parts/00-rooms.js */
+/* ============================================================
+   Part 00 · ROOMS (2.40) — parts of the studio the hosted site loads the first time they are used
+   The single-file index.html carries every part, so here room() simply answers at once. The site build (scripts/rooms.mjs) moves
+   the parts listed in its ROOMS table into their own files and fills in ROOM.files, ROOM.sri, ROOM.sc and ROOM.apply below.
+     room(id)            → a promise of the room's names, loading it once (one <script> from this site, checked by its hash)
+     __roomFn(id, name)  the core's stand-in for a room function: loads the room, then calls the real one
+   A room arrives through window.__dailyRoom, which only accepts the room being waited for. Nothing is fetched from anywhere else.
+   ============================================================ */
+const ROOM = { files: null, sri: null, sc: null, apply: null, done: {}, wait: {} };
+/** load room `id` (no-op in the single-file app, where everything is already here) */
+function room(id) {
+  if (!ROOM.files || !ROOM.files[id]) return Promise.resolve(null);
+  if (ROOM.done[id]) return Promise.resolve(ROOM.done[id]);
+  if (ROOM.wait[id]) return ROOM.wait[id].p;
+  const w = ROOM.wait[id] = {}; w.p = new Promise((res, rej) => { w.res = res; w.rej = rej; });
+  const s = document.createElement('script'); s.src = ROOM.files[id]; s.async = true; if (ROOM.sri && ROOM.sri[id]) s.integrity = ROOM.sri[id];
+  s.onerror = () => { delete ROOM.wait[id]; s.remove(); w.rej(new Error('room ' + id)); try { toast('That part of the studio could not load. Check the connection and try again (once loaded, it works offline).', 'bad'); } catch (e) { } };
+  document.head.append(s); return w.p;
+}
+function __roomFn(id, name) { return async (...a) => { const x = await room(id); return x[name](...a); }; }
+window.__dailyRoom = (id, make) => {
+  const w = ROOM.wait[id]; if (!w || ROOM.done[id] || typeof make !== 'function') return;
+  let x; try { x = make(ROOM.sc); } catch (e) { delete ROOM.wait[id]; console.error('room ' + id, e); w.rej(e); return; }
+  ROOM.done[id] = x; delete ROOM.wait[id]; try { ROOM.apply(id, x); } catch (e) { console.error(e); }
+  if (window.__daily) Object.assign(window.__daily, x);
+  try { bus.emit('room', id); } catch (e) { } w.res(x);
+};
+
 /* >>> parts/01-core.js */
 /* ============================================================
    the-daily.studio  ·  MIT License
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.39.0', BUILD = '8805a10', PARTS_N = +'105' || 0, LINES_N = +'18170' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.40.0', BUILD = '1a4777f', PARTS_N = +'108' || 0, LINES_N = +'18353' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { ghApp: { clientId: '', slug: '' },   /* Sign in with GitHub: the GitHub App's public client id and its slug (docs/GITHUB.md); empty = only the token way */
   support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://the-daily.studio/journal/' };
@@ -2732,6 +2761,7 @@ function buildExportPane() {
       h('button', { class: 'btn', onclick: () => bounceMaster() }, '⤓ Bounce master WAV'), exportExtras(),
       h('button', { class: 'btn', title: 'One WAV per band part (drums, bass, rhythm, lead). Each one is rendered faster than it plays, with the other parts silenced.', onclick: () => bounceAllParts() }, '⤓ Each band part (WAVs)'),
       h('button', { class: 'btn', onclick: () => { if (!TAKES.length) return toast('No takes recorded yet', 'warn'); tkLeads().forEach((t, i) => setTimeout(() => dlTake(t), i * 700)); } }, '⤓ All takes (dry DI + wet)'),
+      h('button', { class: 'btn primary', id: 'exLink', title: 'The chords, words, tab, beat, tempo and key inside a link: nothing is uploaded', onclick: () => slShare() }, '🔗 Send as a link'),
       h('button', { class: 'btn', onclick: exportProject }, '⤓ Project JSON (Ctrl+S)'), h('button', { class: 'btn', onclick: () => imp.click() }, '⤒ Import project'), imp,
       h('button', { class: 'btn bad', onclick: () => { if (confirm('Replace the current song with the demo? (Undo with Ctrl+Z)')) { S = demoSong(); commit(true); bus.emit('song', 'reload'); } } }, 'Load demo song'),
       h('button', { class: 'btn bad', onclick: () => { if (confirm('Start a blank song? (Undo with Ctrl+Z)')) { S = newSong(); S.sections = [mkSection('Verse 1', ['', '', '', ''])]; commit(true); bus.emit('song', 'reload'); } } }, 'New blank song'))));
@@ -3514,6 +3544,7 @@ function txCx(src, startSec, dur) {
 async function txRun(srcs) {
   if (TX.busy) return; srcs = srcs.filter(Boolean); if (!srcs.length) return toast('Choose or record something to transcribe first', 'warn');
   TX.busy = true; txBusyUI(true); const t0 = performance.now(), results = [];
+  try { await room('tx'); } catch (e) { TX.busy = false; txBusyUI(false); return; }      /* the engine is a room on the hosted site (part 00) */
   try {
     for (let i = 0; i < srcs.length; i++) {
       const src = srcs[i]; let startSec = src.startSec, dur = slotDur(), tempoNote = '';
@@ -3647,6 +3678,7 @@ function txSuite(rngSeed) {
 }
 async function txBench() {
   if (TX.busy) return; TX.busy = true; txBusyUI(true); const snr = +UI.txSnr.value || null, jit = +UI.txJit.value / 1000, rows = [], sr = 44100;
+  try { await room('tx'); } catch (e) { TX.busy = false; txBusyUI(false); return; }
   try {
     const cases = txSuite(+UI.txSeed.value || 11); let tot = { tp: 0, det: 0, truth: 0, sf: 0 };
     for (let ci = 0; ci < cases.length; ci++) {
@@ -3677,6 +3709,7 @@ function txReport() {
 /* ---------- pane ---------- */
 function buildTxPane() {
   const p = PANES.tx; if (!p) return;
+  bus.on('dock', id => { if (id === 'tx') room('tx').catch(() => { }); });      /* fetch the engine while you choose what to transcribe */
   const lab = (t, w) => h('label', { style: { fontSize: '11px', fontWeight: 700, color: 'var(--muted)', display: 'block', margin: '8px 0 2px' } }, t, w || '');
   const rng = (key, min, max, step, fmt) => { const out = h('b', { class: 'mono', style: { marginLeft: '6px', color: 'var(--text)' } }, fmt(TX.p[key])); const inp = h('input', { type: 'range', min, max, step, value: TX.p[key], style: { width: '100%' }, oninput: e => { TX.p[key] = +e.target.value; out.textContent = fmt(TX.p[key]); txSave(); } }); return [out, inp]; };
   const chk = (key, label, tip) => h('label', { class: 'chk', title: tip || '', style: { display: 'flex', gap: '5px', alignItems: 'center', fontSize: '12px', fontWeight: 600 } }, h('input', { type: 'checkbox', checked: TX.p[key], onchange: e => { TX.p[key] = e.target.checked; txSave(); } }), label);
@@ -3944,7 +3977,7 @@ async function boot() {
   if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener('devicechange', () => { ioDeviceChange().catch(e => console.warn(e)); });
   bus.emit('song');
   try { ghBoot(); } catch (e) { console.warn('github', e); }      /* back from Sign in with GitHub, or a sync at start (part 74) */
-  DEV.make = () => { window.__daily = { BEATS, beatUse, beatRows, beatsShelf, SIMPLE_TOOLS, drumHit, RL, MO, GM_DRUM, duckAt, duckSet, duckCfg, duckNode, moNote, moDev, moDrum, moPanic, moSettings, kyOut, bassOut, rollOpen, rollBuild, rollLoop, isBass, instNow, nStr, yin, TUNINGS, setTuning, renderBarTab, tabLabels, voicingFor, toggleRec, closePop, spPause, encodeWav, PS, psOn, playDur, psSpeed, psKey, psSched, psDSPFactory, psPop, KY, keysOpen, keysVoice, keysStep, kyNoteOn, kyNoteOff, kyRec, kyClear, kyWrite, kyPiano, kyMarks, kyVoicing, KEYS_SOUNDS, KEYS_STYLES, coFinish, coDemo, coFeedback, coFbView, coTimeline, coBeat, coPractise, TAKE, learnPassed, todayPlan, todayPieces, todayStart, todayDone, streak, weekCount, dayKey, LSTEP, songLessons, songStart, songKey, earLick, earStart, EAR, simpleSet, simpleApply, ghTakeSettings, airMode, airSet, CO, coPos, coachOpen, coListen, coTick, coPlace, coNotes, coSetPiece, rfParse, LESSONS, RIFFS, RIFF_STYLES, learnOpen, learnToSong, learnFile, learnFileText, learnOpenFile, learnFromSong, labMake, labVary, labKeep, atlasPieces, atShape, MODE_VAMP, S, AIR, AIR_LAG, airSync, applyLayout, VB_PRESETS, VB_ORDER, VBS, vbAttach, vbApply, vbToggle, vbSet, vbPreset, vbPresetNext, vbThrow, vbLook, vbTick, vbScale, vocalBoardOpen, pedalRelease, MEG, megSpectrum, megFeatures, megScore, megStep, megSet, megLearn, megDraw, megLoop, megSettings, PAD, padsOpen, padHit, padTap, padRecord, padRecStop, padUndoPass, padClear, padResize, padBeatbox, bbHits, bbPattern, dpat, bassEvent, drumStep, PEDAL, pedalPress, pedalDo, pedalSecs, gearSettings, MCLK, mclkSlot, mclkMs, MIDI, MIDIRAW, onMidi, STRM, streamOpen, streamRoom, streamInfo, streamPanel, slotAtTime, SING, SHW, singStep, singScore, singSteamIR, singMicOff, showerOpen, shwGo, shwPlay, shwPrev, shwNext, shwStem, shwRecToggle, shwRecStop, shwHear, shwSave, shwAddFiles, shwRemove, shwMove, shwMode, shwLoadSet, shwPlaylist, shwWords, shwPrepare, shwFolderPull, lrcParse, readTags, spPos, spPlay, STP, trainOpen, projRestoreTrack, secretNote, secretArp, WS, WS_BASE, WS_ARPS, wsScaleRun, wsArpRun, wsFollow, wsStop, wsListen, wsEarNext, wsEarAnswer, wsOpen, bandMute, bandMuted, pdbPut, pdbKeys, projRename, FS, FS_B, fsUse, fsSync, fsHead, fsNeeds, fsTidy, fsOpen, syncOff, syncZips, PRJ_WAIT: () => PRJ.wait, EGG, EGG_LINES, EGG_ORDER, eggDay, eggFor, eggNow, eggText, eggTick, eggFit, saveCfg, projSave, projDelete, GH, ghSync, ghConnect, ghDisconnect, ghLocal, ghSha, ghJson, ghMerge3, ghShare, ghGallery, ghGalleryOpen, ghGalleryShow, ghKeepLook, ghKeepRig, rigClean, ghReturn, BRAND, ghSettingsOut, projRefresh, projCreate, projLoad, PRJ, SEC, SECRETS, secretFound, secretTiming, secretsOpen, secretSync, backstageOpen, startAudio, playheadSlot, GUARD, reportText, reportCopy, srecQ, srecSize, pdbGet, srecFmt, SREC_FMTS, VBG, vbgAdd, vbgRemove, vbgUse, vbgOpen, vbgDraw, vzSetMode, srecFrame, srecFmtBox, kitThumb, WORKLET_SRC, mkComp, mkShaper, rigLat, voxLat, restartAudio, satCurve, rigApply, qrMake, qrSvg, tipLink, tipShort, tipReady, tipCard, tipDraw, tipShareHtml, tipOpen, tipPrint, tipPng, tipVisAvoid, tipStageAvoid, TIP, TIP_TERMS, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, drawVis, peaksOf, uid, shareGate, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, TAKES, STM, ZOOM, CFG, store, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, SEL, mtof, spb, WR, HM, HMX, HM_MODES, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitInk, kitNotes, kitRecord, srecMime, mGo, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard}; };   // test hook: with ?debug, or Backstage ▸ Labs ▸ Developer handles
+  DEV.make = () => { window.__daily = { room, ROOM, slPack, slUnpack, slLink, slRead, slShare, slWelcome, slOpen, slFromHash, SL, BEATS, beatUse, beatRows, beatsShelf, SIMPLE_TOOLS, drumHit, RL, MO, GM_DRUM, duckAt, duckSet, duckCfg, duckNode, moNote, moDev, moDrum, moPanic, moSettings, kyOut, bassOut, rollOpen, rollBuild, rollLoop, isBass, instNow, nStr, yin, TUNINGS, setTuning, renderBarTab, tabLabels, voicingFor, toggleRec, closePop, spPause, encodeWav, PS, psOn, playDur, psSpeed, psKey, psSched, psDSPFactory, psPop, KY, keysOpen, keysVoice, keysStep, kyNoteOn, kyNoteOff, kyRec, kyClear, kyWrite, kyPiano, kyMarks, kyVoicing, KEYS_SOUNDS, KEYS_STYLES, coFinish, coDemo, coFeedback, coFbView, coTimeline, coBeat, coPractise, TAKE, learnPassed, todayPlan, todayPieces, todayStart, todayDone, streak, weekCount, dayKey, LSTEP, songLessons, songStart, songKey, earLick, earStart, EAR, simpleSet, simpleApply, ghTakeSettings, airMode, airSet, CO, coPos, coachOpen, coListen, coTick, coPlace, coNotes, coSetPiece, rfParse, LESSONS, RIFFS, RIFF_STYLES, learnOpen, learnToSong, learnFile, learnFileText, learnOpenFile, learnFromSong, labMake, labVary, labKeep, atlasPieces, atShape, MODE_VAMP, S, AIR, AIR_LAG, airSync, applyLayout, VB_PRESETS, VB_ORDER, VBS, vbAttach, vbApply, vbToggle, vbSet, vbPreset, vbPresetNext, vbThrow, vbLook, vbTick, vbScale, vocalBoardOpen, pedalRelease, MEG, megSpectrum, megFeatures, megScore, megStep, megSet, megLearn, megDraw, megLoop, megSettings, PAD, padsOpen, padHit, padTap, padRecord, padRecStop, padUndoPass, padClear, padResize, padBeatbox, bbHits, bbPattern, dpat, bassEvent, drumStep, PEDAL, pedalPress, pedalDo, pedalSecs, gearSettings, MCLK, mclkSlot, mclkMs, MIDI, MIDIRAW, onMidi, STRM, streamOpen, streamRoom, streamInfo, streamPanel, slotAtTime, SING, SHW, singStep, singScore, singSteamIR, singMicOff, showerOpen, shwGo, shwPlay, shwPrev, shwNext, shwStem, shwRecToggle, shwRecStop, shwHear, shwSave, shwAddFiles, shwRemove, shwMove, shwMode, shwLoadSet, shwPlaylist, shwWords, shwPrepare, shwFolderPull, lrcParse, readTags, spPos, spPlay, STP, trainOpen, projRestoreTrack, secretNote, secretArp, WS, WS_BASE, WS_ARPS, wsScaleRun, wsArpRun, wsFollow, wsStop, wsListen, wsEarNext, wsEarAnswer, wsOpen, bandMute, bandMuted, pdbPut, pdbKeys, projRename, FS, FS_B, fsUse, fsSync, fsHead, fsNeeds, fsTidy, fsOpen, syncOff, syncZips, PRJ_WAIT: () => PRJ.wait, EGG, EGG_LINES, EGG_ORDER, eggDay, eggFor, eggNow, eggText, eggTick, eggFit, saveCfg, projSave, projDelete, GH, ghSync, ghConnect, ghDisconnect, ghLocal, ghSha, ghJson, ghMerge3, ghShare, ghGallery, ghGalleryOpen, ghGalleryShow, ghKeepLook, ghKeepRig, rigClean, ghReturn, BRAND, ghSettingsOut, projRefresh, projCreate, projLoad, PRJ, SEC, SECRETS, secretFound, secretTiming, secretsOpen, secretSync, backstageOpen, startAudio, playheadSlot, GUARD, reportText, reportCopy, srecQ, srecSize, pdbGet, srecFmt, SREC_FMTS, VBG, vbgAdd, vbgRemove, vbgUse, vbgOpen, vbgDraw, vzSetMode, srecFrame, srecFmtBox, kitThumb, WORKLET_SRC, mkComp, mkShaper, rigLat, voxLat, restartAudio, satCurve, rigApply, qrMake, qrSvg, tipLink, tipShort, tipReady, tipCard, tipDraw, tipShareHtml, tipOpen, tipPrint, tipPng, tipVisAvoid, tipStageAvoid, TIP, TIP_TERMS, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, drawVis, peaksOf, uid, shareGate, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, TAKES, STM, ZOOM, CFG, store, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, SEL, mtof, spb, WR, HM, HMX, HM_MODES, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitInk, kitNotes, kitRecord, srecMime, mGo, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard}; };   // test hook: with ?debug, or Backstage ▸ Labs ▸ Developer handles
   if (/[?&]debug\b/.test(location.search) || (CFG.labs && CFG.labs.handles)) DEV.make();
   try { bksBoot(); } catch (e) { console.warn('backstage', e); }      /* #backstage in the address, the performance overlay (part 73c) */
   projInit().catch(e => { console.warn('library', e); PRJ.ready = true; if (PRJ.wantStart) startMaybe(); });
@@ -7894,7 +7927,7 @@ function xpToolsButton() {
 /* what Simple keeps on the panel strip (and whatever is open, and the backing track once one is loaded), and the tones it offers */
 const SIMPLE_TABS = ['tab', 'band', 'vis', 'exp'];
 /* the Songwriter tools Simple keeps (2.39) */
-const SIMPLE_TOOLS = ['gtBeats', 'gtSheet', 'gtPads', 'gtKeys'];
+const SIMPLE_TOOLS = ['gtBeats', 'gtSheet', 'gtPads', 'gtKeys', 'gtLink'];
 const SIMPLE_TONES = ['Crystal Clean', 'Busker Corner', 'Edge of Breakup', 'Classic Crunch', 'Singing Lead', 'Tight Metal Rhythm', 'Shimmer Cathedral', 'Direct (No FX)'];
 if (CFG.simple == null) { CFG.simple = !store.get('started', false) && !store.get('song', null); saveCfg(); }
 function simpleApply() {
@@ -12965,6 +12998,7 @@ const GOALS = [
       ['gtVox', '🎤 Vocal pedals', 'Scream, doubler, harmony, echo, reverb, de-esser and megaphone for your voice', () => vocalBoardOpen()],
       ['gtPads', '🥁 Pads', 'Play the drums with your fingers, tap the tempo, record a groove or beatbox it', () => padsOpen()],
       ['gtKeys', '🎹 Keys', 'A piano to play with the mouse, the computer keys or a MIDI keyboard: its own sounds, or the band’s bass or lead; record what you play into the song', () => keysOpen()],
+      ['gtLink', '🔗 Send as a link', 'Send this song to a bandmate as a link: the chords, words, tab, beat, tempo and key ride inside it, and nothing is uploaded', () => slShare()],
       ['gtRoll', '🎛 Piano roll', 'Draw the keys part or the bass line on a grid, loop it, duck it to the kick', () => rollOpen()],
 
 
@@ -15812,6 +15846,13 @@ async function shwClose() {
   try { SHW.wake && SHW.wake.release(); } catch (e) { } SHW.wake = null; d.remove();
 }
 
+
+
+/* >>> parts/73g-shower-door.js */
+/* ============================================================
+   Part 73g · the ways into Shower mode (part 73f): hold the logo for two seconds, or type "shower".
+   Kept in the core on its own because on the hosted site Shower mode is a room (part 00): the door has to be there before the room is.
+   ============================================================ */
 /* ---------- the ways in: hold the logo, or type "shower" ---------- */
 {
   let hold = 0, x0 = 0, y0 = 0; const cancel = () => { clearTimeout(hold); hold = 0; const b = document.querySelector('header .brand'); if (b) b.classList.remove('shw-fog'); };
@@ -18164,6 +18205,148 @@ function bandSimple(bx) {
     h('div', { class: 'card' }, h('h4', {}, 'Who plays'), h('div', { class: 'card-b' }, beatsMixer())),
     h('button', { class: 'btn sm', id: 'bandAll', type: 'button', onclick: () => { UI.bAll = true; renderBand(); } }, 'Show every band setting'));
 }
+
+/* >>> parts/89-songlink.js */
+/* ============================================================
+   Part 89 · SEND A SONG AS A LINK (2.40) — the song travels inside the link, after the #
+   🔗 Send as a link packs the song: its title, key, tempo, time signature and tuning; every section with its chords, words and tab;
+   the band (the beat, the drum pattern, bass, rhythm guitar, keys) and what the piano roll drew. It is squeezed with the browser's
+   own compression and written after the # of an ordinary link to this studio. The part after # is never sent to any server, so the
+   song goes from one person to another without being stored or uploaded anywhere. Recordings stay with you (a share page carries audio).
+   Opening a link: the studio reads it, clears it from the address, and offers the song. It opens as a new song, so nothing of
+   yours is replaced. Everything in a link is treated as untrusted: lengths are capped, numbers clamped, names checked against the
+   studio's own lists, chords parsed, and the unpacked size limited before anything is used.
+   Format: #s=1 + 'z' (deflate-raw) or 'j' (plain) + base64url of the JSON below (keys kept short so the link stays short).
+   ============================================================ */
+const SL = { v: '1', max: 60000, unz: 262144, long: 8000, qr: 2300 };
+const SL_DR = '.gxX';
+const slB64 = u8 => { let s = ''; for (let i = 0; i < u8.length; i += 32768) s += String.fromCharCode.apply(null, u8.subarray(i, i + 32768)); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); };
+const slUnB64 = s => { const b = atob(s.replace(/-/g, '+').replace(/_/g, '/')), u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; };
+/** deflate-raw (or inflate, with a ceiling on what comes out) through the browser's own streams */
+async function slZip(u8, inflate) {
+  const cs = inflate ? new DecompressionStream('deflate-raw') : new CompressionStream('deflate-raw'), w = cs.writable.getWriter();
+  w.write(u8).catch(() => { }); w.close().catch(() => { });
+  const r = cs.readable.getReader(), parts = []; let n = 0;
+  for (;;) { const { value, done } = await r.read(); if (done) break; n += value.length; if (n > SL.unz) { try { r.cancel(); } catch (e) { } throw new Error('it unpacks to more than a song can hold'); } parts.push(value); }
+  const out = new Uint8Array(n); let o = 0; parts.forEach(p => { out.set(p, o); o += p.length; }); return out;
+}
+/** the song as the link carries it */
+function slPack(s) {
+  s = s || S; const B = s.band, L = Math.min(B.drumLen || 16, 32), pat = (s === S ? dpat() : B.pat || []).map(r => (r || []).slice(0, L).map(v => SL_DR[v | 0] || '.').join(''));
+  const notes = a => Array.isArray(a) && a.length ? a.map(n => [n.m, n.s, n.d, n.v]) : 0;
+  return { v: 1, t: s.title, a: s.artist || undefined, k: s.key, m: s.minor ? 1 : 0, sc: s.scale, b: s.bpm, ts: s.ts, sw: s.swing || undefined, cp: s.capo || undefined, tn: s.tuningName, tu: TUNINGS[s.tuningName] ? undefined : s.tuning,
+    x: s.sections.map(sec => { const row = [sec.name, sec.bars.map(b => b.chord || '').join('|'), sec.lyrics || ''];
+      const tab = sec.bars.some(b => b.tab && b.tab.length), ky = sec.bars.some(b => b.keys && b.keys.length), bl = sec.bars.some(b => b.bassLine && b.bassLine.length);
+      if (tab || ky || bl) row.push(tab ? sec.bars.map(b => (b.tab || []).map(n => n.bend != null ? [n.s, n.st, n.f, n.t || '', n.bend] : [n.s, n.st, n.f, n.t || ''])) : 0, ky ? sec.bars.map(b => notes(b.keys)) : 0, bl ? sec.bars.map(b => notes(b.bassLine)) : 0);
+      return row; }),
+    bd: { d: B.drumsOn ? 1 : 0, kit: B.kit, pn: B.patName, p: pat, bo: B.bassOn ? 1 : 0, bs: B.bassStyle, bt: B.bassTone, co: B.compOn ? 1 : 0, cs: B.compStyle, ci: B.compInst, lo: B.leadOn ? 1 : 0, li: B.leadInst, ko: B.keysOn ? 1 : 0, ks: B.keysStyle, kn: B.keysSound, beat: B.beat || undefined } };
+}
+/** a song from a link, rebuilt from scratch: only what is checked is kept */
+function slUnpack(o) {
+  if (!o || typeof o !== 'object' || o.v !== 1) throw new Error('it is not a song link this studio knows');
+  const str = (x, n) => String(x == null ? '' : x).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, '').slice(0, n);
+  const int = (x, a, b, d) => { x = Math.round(+x); return Number.isFinite(x) ? clamp(x, a, b) : d; };
+  const pick = (x, list, d) => list.includes(x) ? x : d, own = (O, k) => typeof k === 'string' && Object.prototype.hasOwnProperty.call(O, k) && Array.isArray(O[k]);      /* never “__proto__” and the like */
+  const s = newSong(); s.title = str(o.t, 80).trim() || 'A song for you'; s.artist = str(o.a, 80).trim();
+  s.key = int(o.k, 0, 11, 9); s.minor = !!o.m; s.scale = own(SCALES, o.sc) ? o.sc : (s.minor ? 'Natural Minor (Aeolian)' : 'Major (Ionian)');
+  s.bpm = int(o.b, 30, 260, 92); if (Array.isArray(o.ts)) s.ts = [int(o.ts[0], 1, 16, 4), pick(+o.ts[1], [2, 4, 8, 16], 4)];
+  s.swing = clamp(+o.sw || 0, 0, .5); s.capo = int(o.cp, 0, 12, 0);
+  if (own(TUNINGS, o.tn)) { s.tuningName = o.tn; s.tuning = TUNINGS[o.tn].slice(); }
+  else if (Array.isArray(o.tu) && o.tu.length >= 4 && o.tu.length <= 7) { s.tuning = o.tu.map(m => int(m, 12, 100, 40)); s.tuningName = str(o.tn, 40).trim() || 'Custom'; }
+  const ns = s.tuning.length, chordOk = c => c.length <= 14 && !!parseChord(c);
+  const notes = (a, lo, hi) => Array.isArray(a) ? a.slice(0, 128).filter(Array.isArray).map(n => ({ m: int(n[0], lo, hi, 60), s: int(n[1], 0, 63, 0), d: int(n[2], 1, 64, 1), v: clamp(+n[3] || .8, .05, 1) })) : [];
+  let total = 0;
+  s.sections = (Array.isArray(o.x) ? o.x : []).slice(0, 48).map(r => {
+    if (!Array.isArray(r) || total >= 400) return null;
+    const chords = str(r[1], 6000).split('|').slice(0, 400 - total); total += chords.length;
+    const sec = mkSection(str(r[0], 40).trim() || 'Section', chords.map(c => c.trim().split(/\s+/).filter(chordOk).slice(0, 4).join(' ')));
+    sec.lyrics = str(r[2], 6000);
+    sec.bars.forEach((bar, i) => {
+      const tb = Array.isArray(r[3]) && r[3][i]; if (Array.isArray(tb)) bar.tab = tb.slice(0, 96).filter(Array.isArray).map(n => {
+        const f = n[2] === 'x' ? 'x' : int(n[2], 0, 24, 0), x = { s: int(n[0], 0, 63, 0), st: int(n[1], 0, ns - 1, 0), f, t: /^[a-z~/\\^]{0,3}$/i.test(String(n[3] || '')) ? String(n[3] || '') : '' };
+        if (n[4] != null && Number.isFinite(+n[4])) x.bend = clamp(+n[4], 0, 30); return x; });
+      const ky = Array.isArray(r[4]) && r[4][i]; if (ky) bar.keys = notes(ky, 21, 108);
+      const bl = Array.isArray(r[5]) && r[5][i]; if (bl) bar.bassLine = notes(bl, 16, 72);
+    });
+    return sec.bars.length ? sec : null;
+  }).filter(Boolean);
+  if (!s.sections.length) throw new Error('it holds no bars');
+  const d = o.bd && typeof o.bd === 'object' ? o.bd : {}, B = s.band, INSTR = ['Steel', 'Nylon', 'Electric', 'Muted Pluck'];
+  B.drumsOn = !!d.d; B.kit = pick(d.kit, Object.keys(KITS), B.kit); B.bassOn = !!d.bo; B.bassStyle = pick(d.bs, BASS_STYLES, B.bassStyle); B.bassTone = pick(d.bt, ['Round', 'Sub', 'Pick', 'Muted Pluck'], B.bassTone);
+  B.compOn = !!d.co; B.compStyle = pick(d.cs, Object.keys(STRUMS), B.compStyle); B.compInst = pick(d.ci, INSTR, B.compInst); B.leadOn = !!d.lo; B.leadInst = pick(d.li, INSTR, B.leadInst);
+  B.keysOn = !!d.ko; B.keysStyle = pick(d.ks, KEYS_STYLES, B.keysStyle); B.keysSound = pick(d.kn, KEYS_SOUNDS, B.keysSound); B.beat = pick(d.beat, BEATS.map(b => b.id), undefined);
+  B.patName = str(d.pn, 48).trim() || B.patName;
+  if (Array.isArray(d.p) && d.p.length) { const L = clamp(Math.max(...d.p.slice(0, 6).map(r => String(r || '').length)), 4, 32); B.drumLen = L; B.pat = DROWS.map((_, i) => Array.from({ length: 32 }, (_, j) => j < L ? Math.max(0, SL_DR.indexOf(String(d.p[i] || '')[j] || '.')) : 0)); }
+  return s;
+}
+/** where a link should point: this page when it is on the web, the public studio when it was opened from disk or another site */
+const slBase = () => /^https?:$/.test(location.protocol) && !/codepen|cdpn/.test(location.hostname) ? location.origin + location.pathname : BRAND.url;
+/** the link for a song (the open one unless given) */
+async function slLink(s) {
+  const u = new TextEncoder().encode(JSON.stringify(slPack(s)));
+  const body = typeof CompressionStream === 'function' ? 'z' + slB64(await slZip(u)) : 'j' + slB64(u);
+  return slBase() + '#s=' + SL.v + body;
+}
+/** a link (or just the part after #) back into a song */
+async function slRead(text) {
+  const m = /#?s=1([zj])([A-Za-z0-9_-]+)\s*$/.exec(String(text || '')); if (!m) throw new Error('it is not a song link');
+  if (m[2].length > SL.max) throw new Error('it is longer than a song link can be');
+  let u = slUnB64(m[2]);
+  if (m[1] === 'z') { if (typeof DecompressionStream !== 'function') throw new Error('this browser cannot unpack it (a newer browser can)'); u = await slZip(u, true); }
+  if (u.length > SL.unz) throw new Error('it is bigger than a song can be');
+  let o; try { o = JSON.parse(new TextDecoder().decode(u)); } catch (e) { throw new Error('it is damaged (part of the link may be missing)'); }
+  return slUnpack(o);
+}
+const slSummary = s => { const bars = s.sections.reduce((a, x) => a + x.bars.length, 0), words = s.sections.some(x => (x.lyrics || '').trim()), tab = s.sections.some(x => x.bars.some(b => b.tab && b.tab.length)), beat = s.band.beat && BEATS.find(b => b.id === s.band.beat);
+  return [pcName(s.key, keyUsesFlats(s.key, s.minor)) + (s.minor ? ' minor' : ' major'), s.bpm + ' BPM', s.sections.length + (s.sections.length === 1 ? ' section' : ' sections'), bars + ' bars', words ? 'words' : '', tab ? 'tab' : '', beat ? 'beat: ' + beat.name : ''].filter(Boolean).join(' · '); };
+
+/* ---------- 🔗 sending ---------- */
+async function slShare() {
+  let url; try { url = await slLink(); } catch (e) { return toast('The link could not be made: ' + (e.message || e), 'bad'); }
+  const old = document.getElementById('slDlg'); if (old) old.remove();
+  const qrBox = h('div', { class: 'sl-qr', hidden: true }), inp = h('input', { class: 'in sl-url', id: 'slUrl', readonly: true, value: url, 'aria-label': 'The link', onfocus: e => e.target.select() });
+  const copy = async () => { try { await navigator.clipboard.writeText(url); toast('Link copied. Paste it in a message to whoever you are playing with.', 'ok'); } catch (e) { inp.select(); document.execCommand && document.execCommand('copy'); toast('Link selected: copy it with Ctrl+C (⌘C on a Mac).', ''); } };
+  const d = h('dialog', { class: 'sl-dlg', id: 'slDlg', 'aria-labelledby': 'slH' },
+    h('h3', { id: 'slH' }, '🔗 Send “' + S.title + '” as a link'),
+    h('p', { class: 'sl-what' }, slSummary(S)),
+    h('p', { class: 'small muted' }, 'The chords, words, tab, the beat, the tempo and the key travel inside the link itself, after the #, a part of a link that is never sent to any server. Whoever opens it gets the song, ready to play, as a new song of their own. Your recordings stay with you; for audio, make a share page in Save & export.'),
+    inp,
+    url.length > SL.long ? h('p', { class: 'tiny sl-long' }, 'This link is long (' + url.length.toLocaleString() + ' characters), so some chat apps may cut it short. Email, notes and most messengers keep it whole.') : null,
+    h('div', { class: 'row sl-acts' },
+      h('button', { class: 'btn primary', id: 'slCopy', type: 'button', onclick: copy }, '⧉ Copy link'),
+      navigator.share ? h('button', { class: 'btn', id: 'slSend', type: 'button', onclick: () => navigator.share({ title: S.title, text: '“' + S.title + '”, a song for you on the-daily.studio', url }).catch(() => { }) }, '↗ Share…') : null,
+      h('button', { class: 'btn', id: 'slQr', type: 'button', disabled: url.length > SL.qr, title: url.length > SL.qr ? 'Too long for a QR code: copy the link instead' : 'Show a code to scan with a phone', onclick: () => { if (!qrBox.childNodes.length) qrBox.innerHTML = qrSvg(qrMake(url)); qrBox.hidden = !qrBox.hidden; } }, '▦ QR code'),
+      h('span', { class: 'grow' }), h('button', { class: 'btn', type: 'button', onclick: () => d.close() }, 'Close')),
+    qrBox);
+  d.addEventListener('close', () => d.remove()); document.body.append(d); d.showModal(); inp.focus();
+}
+
+/* ---------- opening one ---------- */
+async function slOpen(song, playNow) {
+  const boot = document.getElementById('boot'), b = document.getElementById('bootNoMic');
+  if (boot && b && boot.getClientRects().length && getComputedStyle(boot).display !== 'none') b.click();      /* past the first page, as Begin in the studio does */
+  await projCreate('import', { song, zoom: 'studio' }); bus.emit('song', 'reload'); try { syncTransport(); syncBandStrip(); } catch (e) { }
+  if (playNow) { try { await startAudio(); T.cursor = 0; T.loop = true; syncTransport(); play(); } catch (e) { console.warn(e); } }
+  toast('“' + S.title + '” is open as a new song. Your other songs are as they were.', 'ok');
+}
+function slWelcome(song) {
+  const old = document.getElementById('slIn'); if (old) old.remove();
+  const go = p => { d.close(); slOpen(song, p).catch(e => toast('It could not be opened: ' + (e.message || e), 'bad')); };
+  const d = h('dialog', { class: 'sl-dlg sl-in', id: 'slIn', 'aria-labelledby': 'slInH' },
+    h('p', { class: 'sl-kick' }, '🎵 A song was sent to you'), h('h3', { id: 'slInH' }, song.title), song.artist ? h('p', { class: 'muted' }, song.artist) : null,
+    h('p', { class: 'sl-what' }, slSummary(song)),
+    h('p', { class: 'small muted' }, 'It opens as a new song, so none of yours change. It came inside the link: nothing was downloaded from anyone.'),
+    h('div', { class: 'row sl-acts' }, h('button', { class: 'btn primary', id: 'slPlay', type: 'button', onclick: () => go(true) }, '▶ Open and play'), h('button', { class: 'btn', id: 'slOpenBtn', type: 'button', onclick: () => go(false) }, 'Open'), h('span', { class: 'grow' }), h('button', { class: 'btn', type: 'button', onclick: () => d.close() }, 'Not now')));
+  d.addEventListener('close', () => setTimeout(() => d.remove(), 0)); document.body.append(d); d.showModal();
+}
+/** a song link in the address: read it, take it out of the address (so a reload does not offer it again), offer the song */
+function slFromHash() {
+  if (!/^#s=1[zj]/.test(location.hash || '')) return false; const text = location.hash;
+  try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { }
+  slRead(text).then(slWelcome).catch(e => toast('That song link could not be opened: ' + (e.message || e) + '.', 'warn')); return true;
+}
+setTimeout(slFromHash, 400);      /* at once, over the first page too: a first visit should see the song before anything else */
+window.addEventListener('hashchange', () => { slFromHash(); });
 
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();

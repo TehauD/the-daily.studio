@@ -51,7 +51,7 @@ suite('e2e-simple', async t => {
     return { lay: D.LAY.name, tabs: [...document.querySelectorAll('#dock .tabs .tab')].map(b => b.dataset.id).join(), fullrig: vis('.gl-b[data-goal="fullrig"]'), goals: [...document.querySelectorAll('#goalbar .gl-b')].filter(b => b.getBoundingClientRect().width > 0).length, next: vis('#gtNext'),
       tools: [...document.querySelectorAll('#goalbar .gl-tool')].map(b => b.id + (b.classList.contains('gl-main') ? '*' : '')).join(), mis: document.querySelector('#goalbar .gl-mis').textContent }; });
   ok(!/rig/.test(A1.tabs) && A1.tabs.split(',').length <= 4 && A1.lay === 'Songwriter', 'Simple is the Songwriter workspace, with the panel strip at the essentials (' + A1.tabs + '; it was the Performer: ' + A0.tabs + ')');
-  ok(A1.goals === 1 && !A1.next && A1.tools === 'gtBeats*,gtSheet,gtPads,gtKeys' && /Pick a beat/.test(A1.mis), 'the goal bar is just the Songwriter: Beats first, then Paste chords, Pads and Keys, and “Pick a beat” as step one (' + A1.tools + ')');
+  ok(A1.goals === 1 && !A1.next && A1.tools === 'gtBeats*,gtSheet,gtPads,gtKeys,gtLink' && /Pick a beat/.test(A1.mis), 'the goal bar is just the Songwriter: Beats first, then Paste chords, Pads, Keys and Send as a link, and “Pick a beat” as step one (' + A1.tools + ')');
   ok(!A1.fullrig, 'the other workspaces are tucked away');
   await ev(() => document.querySelector('#left .side-tabs .tab[data-id="tones"]').click()); await wait(200);
   const A1t = await ev(() => { const vis = q => { const e = document.querySelector(q); return !!e && e.getBoundingClientRect().width > 0; }; return { tones: document.querySelectorAll('#left .plist .pitem').length, all: vis('#toneAll'), search: vis('#left .tone-q') }; });
