@@ -36,7 +36,7 @@ All notable changes to the-daily.studio (earlier versions were released under th
   - nothing in any request;
   - a first visit, and someone who keeps their songs;
   - hostile links (markup, numbers out of range, oversized), a compression bomb, a truncated link and an unknown format.
-- `e2e-privacy` allows this site's fonts and rooms. `e2e-shower` loads the room before reaching into it. `e2e-simple` now expects the fifth tool.
+- `e2e-backstage-pages` serves the repository (it writes its pages under `test/out/`). `e2e-privacy` allows this site's fonts and rooms. `e2e-shower` loads the room before reaching into it. `e2e-simple` now expects the fifth tool.
 
 ## 2.39.0 — 2026-11-05 — Simple is the Songwriter, with beats
 

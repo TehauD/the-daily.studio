@@ -1,5 +1,6 @@
 /* The hidden pages under /backstage/ (2.23): written by scripts/backstage-pages.mjs into test/out/site (with the fonts and favicon they use) and
    opened from the same origin as the studio, so they see the studio's own storage, as they do on the real site. */
+process.env.STANDALONE = '1';      /* it writes its pages under test/out/ in the repository and opens them there, so it serves the repository, not dist/ (2.40) */
 const { suite } = require('./lib.cjs');
 const fs = require('node:fs'), path = require('node:path');
 const ROOT = path.join(__dirname, '..'), SITE = path.join(__dirname, 'out', 'site');
