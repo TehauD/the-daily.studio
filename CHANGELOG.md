@@ -2,6 +2,22 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.46.1 — 2026-11-07 — The guitar, not a harpsichord
+
+### Fixed
+- **The band's guitars sounded like a harpsichord.** Measured on a strummed G chord, three causes, all fixed:
+  - **A near-white pick:** the pluck's burst now goes through two gentle filters, with the pick a little further from the bridge. Treble in the attack fell from 40% to about 21% on steel and from 31% to 13% on nylon.
+  - **Strings that kept their highs:** the string loop has natural averaging plus a little extra damping per instrument (nylon the most, electric the least), so the highs fade as a real string's do. The treble still there half a second after the strum fell from about 10% to under 4%.
+  - **A doubled copy:** 2.45's double-tracking repeated the same strum 14 ms later, which combs the sound the way a harpsichord's doubled strings do (correlation 0.48 at 14 ms). The second take is now its own performance: 9–21 ms behind, a few cents off and a little softer, panned to the other side. Correlation is now about 0.
+- **Tuning:** the string loop's length now accounts for each filter's delay at the note's own frequency. Notes are within half a cent, low and high (the first try was 4–16 cents flat).
+
+### Tests
+- `e2e-instruments` (13 checks) adds:
+  - highs that fade (steel under 7% and nylon under 4% of the sound above 2.5 kHz half a second on);
+  - no comb from a copied double;
+  - a softer pick;
+  - tuning within 3 cents, low and high.
+
 ## 2.46.0 — 2026-11-07 — Simple in every workspace; audio first
 
 ### Changed

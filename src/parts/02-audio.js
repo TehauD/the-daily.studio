@@ -46,9 +46,9 @@ class Pluck extends AudioWorkletProcessor{
   constructor(){super();this.v=[];this.q=[];this.seed=987654321;
     this.port.onmessage=e=>{const m=e.data;if(m.t==='on')this.q.push(m);else if(m.t==='kill'){this.v.length=0;this.q.length=0;}else if(m.t==='sync')this.port.postMessage({sync:m.n});};}
   rnd(){this.seed=(Math.imul(this.seed,1664525)+1013904223)>>>0;return this.seed/2147483648-1;}
-  start(m,off){const sr=sampleRate,s=m.s,Lf=sr/m.f+s,N=Math.max(4,Math.floor(Lf)),d=Lf-N,c=(1-d)/(1+d);
-    const buf=new Float32Array(N),ex=new Float32Array(N);let lp=0;const a=m.br;
-    for(let j=0;j<N;j++){lp+=a*(this.rnd()-lp);ex[j]=lp;}
+  start(m,off){const sr=sampleRate,s=m.s,D=m.dp||0,w=2*Math.PI*m.f/sr,Lf=sr/m.f-Math.atan2(-s*Math.sin(w),(1-s)+s*Math.cos(w))/w-(D?Math.atan2(D*Math.sin(w),1-D*Math.cos(w))/w:0),N=Math.max(4,Math.floor(Lf)),d=Lf-N,c=(1-d)/(1+d);
+    const buf=new Float32Array(N),ex=new Float32Array(N);let lp=0,lp2=0;const a=m.br;
+    for(let j=0;j<N;j++){lp+=a*(this.rnd()-lp);lp2+=a*(lp-lp2);ex[j]=lp2;}
     const pp=Math.max(1,Math.floor(N*m.pp));let mean=0;
     for(let j=0;j<N;j++){buf[j]=ex[j]-ex[(j+N-pp)%N];mean+=buf[j];}mean/=N;
     let e=0;for(let j=0;j<N;j++){buf[j]-=mean;e+=buf[j]*buf[j];}
@@ -57,13 +57,13 @@ class Pluck extends AudioWorkletProcessor{
     if(this.v.length>=44)this.v.shift();
     const pan=Math.max(-1,Math.min(1,m.pan||0)),ang=(pan+1)*Math.PI/4,g=m.g==null?1:m.g;
     const dec=m.dead?0.93:Math.pow(10,-3/(m.t60*m.f));
-    this.v.push({buf,N,pos:0,c,s,dec,x1:0,y1:0,gl:Math.cos(ang)*g,gr:Math.sin(ang)*g,id:m.id,fade:1,env:1,age:0,delay:off});}
+    this.v.push({buf,N,pos:0,c,s,D,lz:0,dec,x1:0,y1:0,gl:Math.cos(ang)*g,gr:Math.sin(ang)*g,id:m.id,fade:1,env:1,age:0,delay:off});}
   process(i,o){const out=o[0],L=out[0],R=out[1]||out[0],n=L.length;
     if(this.q.length){const now=currentTime;for(let k=this.q.length-1;k>=0;k--){const m=this.q[k],off=Math.round((m.at-now)*sampleRate);if(off<n){this.q.splice(k,1);this.start(m,Math.max(0,off));}}}
     for(let vi=this.v.length-1;vi>=0;vi--){const v=this.v[vi];let k=0;if(v.delay>0){k=Math.min(n,v.delay);v.delay-=k;}
-      const buf=v.buf,N=v.N,c=v.c,s=v.s,dec=v.dec*v.fade,gl=v.gl,gr=v.gr;let pos=v.pos,x1=v.x1,y1=v.y1,env=v.env;
-      for(;k<n;k++){const yo=buf[pos],p1=pos+1===N?0:pos+1,f=((1-s)*yo+s*buf[p1])*dec,a=c*f+x1-c*y1;x1=f;y1=a;buf[pos]=a;pos=p1;L[k]+=yo*gl;if(R!==L)R[k]+=yo*gr;env=env*0.999+Math.abs(yo)*0.001;}
-      v.pos=pos;v.x1=x1;v.y1=y1;v.env=env;v.age+=n;
+      const buf=v.buf,N=v.N,c=v.c,s=v.s,D=v.D,dec=v.dec*v.fade,gl=v.gl,gr=v.gr;let pos=v.pos,x1=v.x1,y1=v.y1,env=v.env,lz=v.lz;
+      for(;k<n;k++){const yo=buf[pos],p1=pos+1===N?0:pos+1,f0=((1-s)*yo+s*buf[p1])*dec,f=D?(lz=f0*(1-D)+lz*D):f0,a=c*f+x1-c*y1;x1=f;y1=a;buf[pos]=a;pos=p1;L[k]+=yo*gl;if(R!==L)R[k]+=yo*gr;env=env*0.999+Math.abs(yo)*0.001;}
+      v.pos=pos;v.x1=x1;v.y1=y1;v.env=env;v.lz=lz;v.age+=n;
       if((v.age>6000&&env<2e-5)||(v.fade<1&&env<1e-4&&v.age>800))this.v.splice(vi,1);}
     for(let k=0;k<n;k++){L[k]=Math.tanh(L[k]);if(R!==L)R[k]=Math.tanh(R[k]);}
     return true;}}

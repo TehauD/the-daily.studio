@@ -34,7 +34,7 @@ window.__dailyRoom = (id, make) => {
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.46.0', BUILD = 'b6ca95f', PARTS_N = +'112' || 0, LINES_N = +'18864' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.46.1', BUILD = '28ce66b', PARTS_N = +'112' || 0, LINES_N = +'18866' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { ghApp: { clientId: '', slug: '' },   /* Sign in with GitHub: the GitHub App's public client id and its slug (docs/GITHUB.md); empty = only the token way */
   support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://the-daily.studio/journal/' };
@@ -434,9 +434,9 @@ class Pluck extends AudioWorkletProcessor{
   constructor(){super();this.v=[];this.q=[];this.seed=987654321;
     this.port.onmessage=e=>{const m=e.data;if(m.t==='on')this.q.push(m);else if(m.t==='kill'){this.v.length=0;this.q.length=0;}else if(m.t==='sync')this.port.postMessage({sync:m.n});};}
   rnd(){this.seed=(Math.imul(this.seed,1664525)+1013904223)>>>0;return this.seed/2147483648-1;}
-  start(m,off){const sr=sampleRate,s=m.s,Lf=sr/m.f+s,N=Math.max(4,Math.floor(Lf)),d=Lf-N,c=(1-d)/(1+d);
-    const buf=new Float32Array(N),ex=new Float32Array(N);let lp=0;const a=m.br;
-    for(let j=0;j<N;j++){lp+=a*(this.rnd()-lp);ex[j]=lp;}
+  start(m,off){const sr=sampleRate,s=m.s,D=m.dp||0,w=2*Math.PI*m.f/sr,Lf=sr/m.f-Math.atan2(-s*Math.sin(w),(1-s)+s*Math.cos(w))/w-(D?Math.atan2(D*Math.sin(w),1-D*Math.cos(w))/w:0),N=Math.max(4,Math.floor(Lf)),d=Lf-N,c=(1-d)/(1+d);
+    const buf=new Float32Array(N),ex=new Float32Array(N);let lp=0,lp2=0;const a=m.br;
+    for(let j=0;j<N;j++){lp+=a*(this.rnd()-lp);lp2+=a*(lp-lp2);ex[j]=lp2;}
     const pp=Math.max(1,Math.floor(N*m.pp));let mean=0;
     for(let j=0;j<N;j++){buf[j]=ex[j]-ex[(j+N-pp)%N];mean+=buf[j];}mean/=N;
     let e=0;for(let j=0;j<N;j++){buf[j]-=mean;e+=buf[j]*buf[j];}
@@ -445,13 +445,13 @@ class Pluck extends AudioWorkletProcessor{
     if(this.v.length>=44)this.v.shift();
     const pan=Math.max(-1,Math.min(1,m.pan||0)),ang=(pan+1)*Math.PI/4,g=m.g==null?1:m.g;
     const dec=m.dead?0.93:Math.pow(10,-3/(m.t60*m.f));
-    this.v.push({buf,N,pos:0,c,s,dec,x1:0,y1:0,gl:Math.cos(ang)*g,gr:Math.sin(ang)*g,id:m.id,fade:1,env:1,age:0,delay:off});}
+    this.v.push({buf,N,pos:0,c,s,D,lz:0,dec,x1:0,y1:0,gl:Math.cos(ang)*g,gr:Math.sin(ang)*g,id:m.id,fade:1,env:1,age:0,delay:off});}
   process(i,o){const out=o[0],L=out[0],R=out[1]||out[0],n=L.length;
     if(this.q.length){const now=currentTime;for(let k=this.q.length-1;k>=0;k--){const m=this.q[k],off=Math.round((m.at-now)*sampleRate);if(off<n){this.q.splice(k,1);this.start(m,Math.max(0,off));}}}
     for(let vi=this.v.length-1;vi>=0;vi--){const v=this.v[vi];let k=0;if(v.delay>0){k=Math.min(n,v.delay);v.delay-=k;}
-      const buf=v.buf,N=v.N,c=v.c,s=v.s,dec=v.dec*v.fade,gl=v.gl,gr=v.gr;let pos=v.pos,x1=v.x1,y1=v.y1,env=v.env;
-      for(;k<n;k++){const yo=buf[pos],p1=pos+1===N?0:pos+1,f=((1-s)*yo+s*buf[p1])*dec,a=c*f+x1-c*y1;x1=f;y1=a;buf[pos]=a;pos=p1;L[k]+=yo*gl;if(R!==L)R[k]+=yo*gr;env=env*0.999+Math.abs(yo)*0.001;}
-      v.pos=pos;v.x1=x1;v.y1=y1;v.env=env;v.age+=n;
+      const buf=v.buf,N=v.N,c=v.c,s=v.s,D=v.D,dec=v.dec*v.fade,gl=v.gl,gr=v.gr;let pos=v.pos,x1=v.x1,y1=v.y1,env=v.env,lz=v.lz;
+      for(;k<n;k++){const yo=buf[pos],p1=pos+1===N?0:pos+1,f0=((1-s)*yo+s*buf[p1])*dec,f=D?(lz=f0*(1-D)+lz*D):f0,a=c*f+x1-c*y1;x1=f;y1=a;buf[pos]=a;pos=p1;L[k]+=yo*gl;if(R!==L)R[k]+=yo*gr;env=env*0.999+Math.abs(yo)*0.001;}
+      v.pos=pos;v.x1=x1;v.y1=y1;v.env=env;v.lz=lz;v.age+=n;
       if((v.age>6000&&env<2e-5)||(v.fade<1&&env<1e-4&&v.age>800))this.v.splice(vi,1);}
     for(let k=0;k<n;k++){L[k]=Math.tanh(L[k]);if(R!==L)R[k]=Math.tanh(R[k]);}
     return true;}}
@@ -1082,8 +1082,9 @@ function loadPreset(p) {
    Part 03 · backing band (KS pluck, drums, bass), transport/scheduler, recording / re-amp
    ============================================================ */
 const INST = {
-  Steel: { br: .9, s: .32, pp: .14, t60: 3.0 }, Nylon: { br: .45, s: .45, pp: .2, t60: 2.4 }, Electric: { br: .7, s: .28, pp: .12, t60: 3.4 },
-  'Muted Pluck': { br: .35, s: .5, pp: .2, t60: .55 }, Round: { br: .3, s: .5, pp: .3, t60: 1.6 }, Pick: { br: .75, s: .38, pp: .25, t60: 1.2 }, Sub: { br: .18, s: .5, pp: .3, t60: 2.4 }
+  /* 2.46.1: softer picks and strings that lose their highs as they ring (a near-white pick and little damping sounded like a harpsichord) */
+  Steel: { br: .5, s: .48, pp: .19, t60: 2.6, dp: .3 }, Nylon: { br: .26, s: .5, pp: .24, t60: 2.2, dp: .32 }, Electric: { br: .44, s: .44, pp: .16, t60: 3.0, dp: .14 },
+  'Muted Pluck': { br: .3, s: .5, pp: .2, t60: .55, dp: .3 },      /* dp: extra damping of the highs inside the string, so it mellows as it rings */ Round: { br: .3, s: .5, pp: .3, t60: 1.6 }, Pick: { br: .75, s: .38, pp: .25, t60: 1.2 }, Sub: { br: .18, s: .5, pp: .3, t60: 2.4 }
 };
 const instFor = tk => INST[tk === 'rhythm' ? S.band.compInst : tk === 'lead' ? S.band.leadInst : S.band.bassTone] || INST.Steel;
 
@@ -1093,8 +1094,7 @@ function buildBand() {
     const body = bq('peaking', 220, .8, 2.5), h = bq('highpass', hp), l = bq('lowpass', lp), out = gn(1);
     chainN(h, body, l, out);
     if (id !== 'bass') { const bc = c.createConvolver(), bw = gn(.5); bc.normalize = false; bc.buffer = guitarBody(c); l.connect(bc); bc.connect(bw); bw.connect(out); E.plBody[id] = bw; }      /* 2.45: a wooden body */
-    if (id === 'rhythm' && c.createStereoPanner) { const pL = c.createStereoPanner(), pR = c.createStereoPanner(), dl = c.createDelay(.05), dg = gn(.82); pL.pan.value = -.75; pR.pan.value = .75; dl.delayTime.value = .014; out.connect(pL); pL.connect(E.tr[id].in); out.connect(dl); dl.connect(dg); dg.connect(pR); pR.connect(E.tr[id].in); }      /* double-tracked, one each side */
-    else out.connect(E.tr[id].in);
+    out.connect(E.tr[id].in);      /* (2.46.1: the rhythm part's double is a second performance, played in strumAt, not a delayed copy of the first) */
     if (id !== 'bass') try { kitSend(out, id === 'rhythm' ? .12 : .16, id); } catch (e) { }
     if (E.worklet) { const n = new AudioWorkletNode(c, 'fw-pluck', { numberOfInputs: 0, numberOfOutputs: 1, outputChannelCount: [2] }); n.connect(h); E.pl[id] = n; }
     else E.pl[id] = { in: h };
@@ -1105,10 +1105,10 @@ function buildBand() {
 bus.on('audio:ready', buildBand);
 
 function pluck(track, time, midi, vel, o = {}) {
-  const inst = instFor(track), f = mtof(midi), hum = (Math.random() * 2 - 1) * CFG.humanize * .12;
+  const inst = instFor(track), f = mtof(midi) * (o.cents ? Math.pow(2, o.cents / 1200) : 1), hum = (Math.random() * 2 - 1) * CFG.humanize * .12;
   if (E.plBody && E.plBody[track]) { const el = (track === 'rhythm' ? S.band.compInst : S.band.leadInst) === 'Electric'; E.plBody[track].gain.value = el ? .1 : .8; }      /* an electric has no wooden body to speak of */
   vel = clamp(vel * (1 + hum), .05, 1);
-  if (E.worklet) E.pl[track].port.postMessage({ t: 'on', at: time, f, vel, t60: inst.t60 * (o.t60m || 1), br: o.soft ? inst.br * .6 : inst.br, s: inst.s, pp: inst.pp, pan: o.pan || 0, id: o.id, g: o.g || 1, dead: o.dead });
+  if (E.worklet) E.pl[track].port.postMessage({ t: 'on', at: time, f, vel, t60: inst.t60 * (o.t60m || 1), br: o.soft ? inst.br * .6 : inst.br, s: inst.s, pp: inst.pp, dp: inst.dp || 0, pan: o.pan || 0, id: o.id, g: o.g || 1, dead: o.dead });
   else {
     const c = E.ctx, osc = c.createOscillator(), lp = bq('lowpass', Math.min(f * 8, 9000)), g = gn(0), T60 = Math.min(inst.t60 * (o.t60m || 1), 2.2);
     osc.type = 'sawtooth'; osc.frequency.value = f; lp.frequency.setValueAtTime(Math.min(f * 8, 9000), time); lp.frequency.exponentialRampToValueAtTime(Math.max(f * 1.5, 200), time + .5);
@@ -1208,10 +1208,12 @@ const voicingFor = sym => {
 function strumAt(t, sym, ch, style) {
   const p = parseChord(sym); if (!p) return; const useSym = style.power ? (pcName(p.root, false) + '5') : sym; const v = voicingFor(useSym) || voicingFor(sym); if (!v) return;
   const notes = []; v.frets.forEach((f, i) => { if (f != null) notes.push({ st: i, m: S.tuning[i] + S.capo + f }); });
-  if (style.arp) { const d = +ch; if (!d) return; const n = notes[(d - 1) % notes.length]; pluck('rhythm', t, n.m, .62, { id: 'r' + n.st, pan: (n.st - 2.5) * .05 }); return; }
+  /* double-tracked like a recording: a second performance on the other side, a little late, a few cents off and softer (2.46.1) */
+  const dt = .009 + Math.random() * .012, dc = (Math.random() < .5 ? -1 : 1) * (2 + Math.random() * 3), two = (tt, m, vel, o) => { pluck('rhythm', tt, m, vel, Object.assign({}, o, { pan: -.85 + (o.pan || 0) })); pluck('rhythm', tt + dt + (Math.random() - .5) * .003, m, vel * .82, Object.assign({}, o, { id: 'R' + o.id, pan: .85 + (o.pan || 0), cents: dc })); };
+  if (style.arp) { const d = +ch; if (!d) return; const n = notes[(d - 1) % notes.length]; two(t, n.m, .62, { id: 'r' + n.st, pan: (n.st - 2.5) * .05 }); return; }
   if (!ch || ch === '.') return; const lc = ch.toLowerCase(), down = lc === 'd' || lc === 'm', acc = ch === ch.toUpperCase() ? 1 : 0;
   const order = down ? notes : notes.slice().reverse(), gap = .0105 + Math.random() * .003, take = down ? order : order.slice(0, Math.max(3, order.length - 2));
-  take.forEach((n, k) => pluck('rhythm', t + k * gap, n.m, (lc === 'm' ? .55 : acc ? .85 : .6) * (down ? 1 : .8) * (.92 + Math.random() * .16), { id: 'r' + n.st, dead: lc === 'm' && k > 0 ? true : false, t60m: lc === 'm' ? .3 : 1, pan: (n.st - 2.5) * .06 }));
+  take.forEach((n, k) => two(t + k * gap, n.m, (lc === 'm' ? .55 : acc ? .85 : .6) * (down ? 1 : .8) * (.92 + Math.random() * .16), { id: 'r' + n.st, dead: lc === 'm' && k > 0 ? true : false, t60m: lc === 'm' ? .3 : 1, pan: (n.st - 2.5) * .06 }));
 }
 const LEGATO = new Set(['h', 'p', '/', '\\']);
 function playTabNote(bar, n, t, dur) {
