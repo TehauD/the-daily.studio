@@ -2,6 +2,119 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.41.0 — 2026-11-07 — The phone, for singers and songwriters
+
+### Changed
+- **On a phone the studio is now built around the words and the voice.** Few people have a guitar plugged into their phone. Computers and tablets are unchanged.
+  - **The bottom bar is Words · Sing · Beats · Tracks · More** (it was Play · Write · See · Stems · More).
+  - **The guitar** (rig, tones, tuner, I/O, tab, refine) and **the visuals** are under **More**, in rows of their own. Nothing was removed.
+  - **A phone opens on the words** (or wherever you were last).
+- **Words is a lyric notebook.**
+  - Sections as chips, with **＋** to add a verse, pre-chorus, chorus, bridge or outro.
+  - **✎ Write** gives the section's words in one big text box, with the live syllable count of the line you're on and of the line before.
+  - **♪ Chords** shows every word as a big button with its chord over it, a syllable count per line, and the chords of your key below. Pick a chord, tap the word it lands on; **✕ Remove** takes one off; **Other…** takes any chord.
+  - **⧉ Paste** takes a whole lyric sheet.
+  - **The chords are the song's own `[Am]` markers**, so the desktop Write canvas, chord sheets, exports and song links all see them.
+  - **Each chord is tied to its place in the words**, so typing, adding lines or rewriting around it keeps it on its word.
+  - **A new section's band follows its words' chords**, one bar each. **↻ Band plays these chords** does the same for a section that already had bars.
+  - One undo takes back each edit.
+- **Sing is one screen.**
+  - **🎤 Sing into this phone** makes the phone's microphone the voice input (no chooser).
+  - **● Record over the beat** records it on the vocal lane, with a count-in, and **▶ Hear it back** plays it.
+  - Your takes are listed (with delete), and the eight voice sounds (Clean lead, Ballad, Harmony lead and so on) are one tap each.
+  - Pitch and your range, Hum it into a song, and Voice memo are there too.
+- **The hexagons on a phone:**
+  - **Sing** has a strip of the hexagon field at the top. It follows your voice, and the whole mix while the song plays.
+  - **More ▸ Visuals** shows the hexagon graphic first, at nearly half the screen, with its looks and settings below (they used to come first, pushing it to the bottom).
+- **Beats** is the beats and who plays. Band holds every setting.
+- **The top bar keeps only the song's name.** The name opens the song sheet, which now holds the tempo, time signature, key and mode as well as the artist, tuning, capo and backing track. The arrangement toggle is now called **Timeline**.
+- The song's name in the top bar is a phone-only button. A first build showed it on tablets and computers too, where it crowded the header over the song bar's New button; `e2e.cjs` caught it.
+- Old phone section names (play, write, stems) still work for guided sessions and links. Panels the studio opens while it starts no longer move a phone off its screen.
+
+### Tests
+- `e2e-phone-singer` (25 checks; the hexagons on Sing and Visuals-first included): the bottom bar and opening on the words; typing keeps chords on their words; syllables; undo; placing and removing a chord on a word; a new section whose band follows its chords; Sing (the microphone as the voice, a voice sound, recording a take); Beats; the song sheet and putting its fields back; More with the guitar and the visuals; the old names; a desktop untouched.
+- `mobile` (every section on two phone sizes, landscape and tablet), `e2e-phone-panels` and `e2e-layout` updated for the new sections.
+
+## 2.40.0 — 2026-11-06 — Send a song as a link, and room to grow
+
+### Added
+- **🔗 Send as a link.** The song travels inside an ordinary link to the studio, after the `#`. Browsers never send that part to a server, so nothing is uploaded or stored anywhere.
+  - **What it carries:** the title, key, tempo, time signature and tuning; every section's chords, words and tab; the band (the beat, drum pattern, bass, rhythm guitar, keys); and the piano roll's keys and bass line. Recordings stay with you; a share page carries audio.
+  - **Size:** the browser's own compression keeps it short. A full song with a beat, tab and words is about 900 characters.
+  - **Sharing:** Copy link, Share… on phones, or a QR code to scan across the room. A warning shows when a link is long enough that some chat apps might cut it.
+  - **Opening one:** the studio offers the song by name, with what it holds, even over the first page on a first visit. **▶ Open and play** opens it as a new song and starts it; your own songs are untouched. The link is taken out of the address, so a reload does not offer it again.
+  - **Where:** 🔗 Send as a link in the Songwriter tools (Simple too), and in Save & export.
+  - **Safe with any link:** everything in a link is treated as untrusted. Lengths are capped; numbers are clamped; names are checked against the studio's own lists; only real chords are kept; the unpacked size is limited while it unpacks; and text is never turned into page elements.
+- **Rooms: the hosted site loads rarely used parts the first time they are used** (`scripts/rooms.mjs`, part 00). The first three are the transcription engine (fetched when you open Transcribe), MIDI import and Shower mode.
+  - Each is a small file named by its contents, checked with Subresource Integrity, and kept by the service worker for offline use.
+  - A room sees the studio's live song exactly as inline code would. The build refuses rooms that lean on each other, or a core that relies on a room's state.
+  - New big features can go into a room without making the first load heavier.
+
+### Changed
+- **The hosted page is 578 kB gzip, from 684 kB**, with this release's features included.
+  - The two fonts are now files beside the page (preloaded, and the guide pages already used them) instead of being embedded.
+  - The rooms above are no longer part of the first load.
+- **The single-file `index.html` is unchanged in spirit:** it still carries every part and both fonts inline, so it opens from disk and in CodePen as before. Only the hosted site (`dist/`) is split.
+- **The tests run on the hosted site's build** (`dist/`, built automatically when stale). `STANDALONE=1` runs them on the single file, and CI does that for MIDI, Shower mode, song links and Simple.
+- **The release gate checks the rooms:** each is shipped, from this site only, matches its hash, reaches no other site, and stays under 150 kB gzip. The page's policy now allows scripts from this site (`'self'`) beside its own inline one.
+- **Shower mode's ways in** (hold the logo, or type "shower") moved into the core (part 73g), so they work before the room has loaded.
+
+### Fixed
+- A song link naming the scale or tuning `__proto__` could reach the app's drawing code. Names are now looked up only among the studio's own entries. The new hostile-link test found this before release.
+
+### Tests
+- `e2e-rooms` (17 checks): the page starts without rooms and links its fonts, a stand-in loads its room and hands over, one hashed script per room, a live song, a failed load that can be retried, and Transcribe fetching its engine.
+- `e2e-songlink` (17 checks):
+  - the link itself, the QR code, and an exact read-back;
+  - nothing in any request;
+  - a first visit, and someone who keeps their songs;
+  - hostile links (markup, numbers out of range, oversized), a compression bomb, a truncated link and an unknown format.
+- `e2e-backstage-pages` serves the repository (it writes its pages under `test/out/`). `e2e-privacy` allows this site's fonts and rooms. `e2e-shower` loads the room before reaching into it. `e2e-simple` now expects the fifth tool.
+
+## 2.39.0 — 2026-11-05 — Simple is the Songwriter, with beats
+
+### Added
+- **🥁 Beats: a ready band to play, sing or write over, in one tap.** Eleven beats: Easy Folk, Pop Drive, Garage Rock, Lo-fi Nod, Night Drive (dance), Trap Glide, Island Sway (reggae), Slow Burn (blues shuffle), Quiet Ballad, Funk Pocket and Bossa Evening.
+  - Each is a groove, a tempo and a band (drums, bass, and guitar or keys where the style wants them). Tapping one sets the band and the tempo and starts it looping.
+  - A song with no chords yet gets the beat's progression in the song's key. A song that has chords keeps them, and the beat plays them.
+  - One undo puts your band, tempo and chords back.
+  - They are played by the studio's own instruments, so there are no audio files to download or license, they cost almost nothing in page size, and they follow the key, chords and tempo. The grooves were written for this studio.
+  - Where: the top of the Band panel, and **🥁 Beats** in the Songwriter tools.
+
+### Changed
+- **✦ Simple is now the Songwriter workspace.** A first visit on a computer opens there (it was the Performer).
+  - Switching Simple on from another workspace moves to the Songwriter. Switching it off puts that workspace back exactly as it was: sidebars, panels, tabs and the open panel.
+  - The goal bar shows only the Songwriter, with "Make a song: pick a beat, play or sing over it, put the words under the chords", and four tools: **🥁 Beats** (highlighted), Paste chords, Pads and Keys. Vocal pedals, the piano roll and "Perform it →" wait for the full studio.
+- **The Band panel in Simple is the beats and who plays:** drums, bass, guitar and keys, each with a switch and a level. **Show every band setting** brings back the kit, patterns, step grid, styles and instruments, with the beats on top.
+
+### Removed
+- **Leftovers from retired features**, so the beats fit in the 700 kB budget. Nothing removed was used anywhere: about 2.7 kB of styles for the old first page, layout menu and song dialog, seven functions and six constants nothing called, and 22 names listed twice in the test hook. The page is just under 700 kB gzip again.
+
+### Tests
+- `e2e-simple`: 31 checks (up from 24), covering the Songwriter, the beats, undo, the band view and getting your workspace back.
+- `e2e-goals` and `e2e`: a first visit opens the Songwriter.
+
+## 2.38.1 — 2026-11-05 — Latency moves to the status line
+
+### Changed
+- **The latency estimate ("≈60 ms est.", or the measured round trip) moved from the top bar to the status line at the bottom**, next to the audio engine's details. The top bar keeps what you act on: the master level, the input, Simple, appearance, settings and help. The measured value and the loopback test are still in I/O ▸ Advanced.
+
+## 2.38.0 — 2026-11-04 — ✦ Simple, across the board
+
+### Changed
+- **✦ Simple now simplifies inside the panels too**, not just the controls around them. Switching back keeps your arrangement exactly as it was.
+  - **Panel tabs:** only the essentials (Write, Band, Stage, Save & export), plus the backing track once one is loaded and whatever is open. This applies even in workspaces that have more; Performer's Guitar sound tab waits for the full studio.
+  - **Tones:** eight core tones, from clean to metal, plus direct. **Show all 27 tones** lists the rest; the search and categories are in the full studio.
+  - **Audio:** one input (connect, set my level, hear myself) and the output. **＋ Add a microphone for your voice** brings in the second input. The camera, MIDI, the signal path, the trim knob and troubleshooting are in the full studio.
+  - **Sidebars:** the Refine tab, the Monitor widget picker and the chord finder are tucked away.
+  - **Arrangement lanes:** they keep on/off, mute and solo, without faders, pans and effects.
+  - **Workspaces:** the Full Rig button is hidden.
+- **A guided session in Simple** now says which new tools are ready and that switching Simple off shows them. Before, it claimed it had added them to the tab strip.
+
+### Tests
+- `e2e-simple`: 24 checks (up from 17).
+- `e2e` and `e2e-guide`: updated for first visits starting in Simple.
+
 ## 2.37.1 — 2026-11-04 — Smaller page
 
 ### Changed

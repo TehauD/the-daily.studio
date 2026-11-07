@@ -5,7 +5,6 @@
    ===================================================================== */
 const TOUR = { on: false, i: 0, el: null, spot: null, card: null, steps: [], raf: 0, token: 0 };
 const tq = sel => () => { const e = $(sel); return e && e.getClientRects().length ? e : null; };
-const tqf = (root, re) => () => { const e = $$(root).find(x => re.test(x.textContent)); return e && e.getClientRects().length ? e : null; };
 const tourSide = id => () => { const t = $('#left .side-tabs .tab[data-id="' + id + '"]'); if (t) t.click(); };
 function tourSteps() { return document.body.dataset.form === 'phone' ? tourStepsPhone() : tourStepsDesk(); }
 function tourStepsDesk() {

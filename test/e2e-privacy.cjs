@@ -14,7 +14,7 @@
 const { suite } = require('./lib.cjs');
 const FRESH = new Function(`try { localStorage.removeItem('fw.started'); } catch (e) { }`);
 const THIRD = new Set(['cdn.jsdelivr.net', 'storage.googleapis.com']);
-const OWN = /^\/(index\.html|sw\.js|manifest\.webmanifest|icons\/[\w.-]+|samples\/manifest\.json|favicon\.ico|)$/;
+const OWN = /^\/(index\.html|sw\.js|manifest\.webmanifest|icons\/[\w.-]+|samples\/manifest\.json|favicon\.ico|fonts\/[\w-]+\.woff2|rooms\/[a-z]+\.[0-9a-f]{8}\.js|)$/;      /* 2.40: the site's two font files and its rooms, from this site */
 
 suite('e2e-privacy', async t => {
   const { ok, wait, poll, BASE } = t, home = new URL(BASE).origin;
@@ -108,7 +108,7 @@ suite('e2e-privacy', async t => {
     // the verdict
     ok(net.off.length === 0, 'a whole session made no attempt to reach any other site' + (net.off.length ? ': ' + [...new Set(net.off)].join(', ') : ''));
     const odd = [...new Set(net.own.filter(x => !OWN.test(x)))];
-    ok(odd.length === 0, 'its own requests were only the page, service worker, manifest, icons and sample list' + (odd.length ? ' · also: ' + odd.join(', ') : ''));
+    ok(odd.length === 0, 'its own requests were only the page, service worker, manifest, icons, sample list, fonts and rooms' + (odd.length ? ' · also: ' + odd.join(', ') : ''));
     ok(!net.own.some(x => /^\/journal\//.test(x)), 'The Daily (a separate app on this site) is not loaded unless it is opened');
     await p.ctx.close();
   }

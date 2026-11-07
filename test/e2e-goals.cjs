@@ -5,10 +5,10 @@ const { suite } = require('./lib.cjs');
 suite('e2e-goals', async t => {
   const { ok, wait, poll } = t, firstVisit = () => { if (!sessionStorage.getItem('seen')) { localStorage.removeItem('fw.started'); sessionStorage.setItem('seen', '1'); } }, p = await t.open({ w: 1440, h: 900, debug: true, init: firstVisit }), ev = (f, a) => p.evaluate(f, a);
 
-  // a first visit on a computer opens the Performer
-  ok(await ev(() => { const d = window.__daily; return d.CFG.ws === 'performer' && d.LAY.name === 'Performer' && d.DOCK.cur === 'vis'; }), 'a first visit opens the Performer workspace, on the stage');
+  // a first visit on a computer opens in Simple, which is the Songwriter (2.39)
+  ok(await ev(() => { const d = window.__daily; return d.CFG.ws === 'songwriter' && d.LAY.name === 'Songwriter' && d.DOCK.cur === 'tab'; }), 'a first visit opens the Songwriter workspace, on the words and tab');
   ok(await ev(() => window.__daily.CFG.simple === true && document.body.classList.contains('simple')), 'a first visit starts in ✦ Simple');
-  await ev(() => window.__daily.simpleSet(false, true));      /* the rest of this file walks the full studio */
+  await ev(() => { window.__daily.simpleSet(false, true); window.__daily.goalGo('performer', { keepZoom: true }); });      /* the rest of this file walks the full studio */
   const bar = await ev(() => ({ goals: [...document.querySelectorAll('#goalbar .gl-b')].map(b => b.textContent.trim()), steps: [...document.querySelectorAll('#goalbar .gl-st')].map(b => b.textContent), on: (document.querySelector('#goalbar .gl-st.on') || {}).textContent, over: document.getElementById('goalbar').scrollWidth - document.getElementById('goalbar').clientWidth }));
   ok(bar.goals.join('|') === '🎸Songwriter|🎤Performer|🎬Creator Studio|🎼Practice|🎓Teacher|⚙️Full Rig', 'the goal bar offers the six goals (' + bar.goals.join(', ') + ')');
   ok(bar.steps.join('>') === 'Create>Perform>Share' && bar.on === 'Perform' && bar.over <= 1, 'Create → Perform → Share, with Perform lit, and the bar fits (' + JSON.stringify(bar) + ')');

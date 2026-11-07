@@ -30,12 +30,22 @@ function tone(sec, f, o = {}) {
  * Run one test file. `fn(t)` gets: t.ok(cond, message) · t.wait · t.poll(fn, ms) · t.BASE · t.browser · t.open(opts) · t.fresh(opts) · t.errs · t.tmp(name, bytes)
  * t.open({ w, h, mobile, debug, boot, init }) → a page in its own fresh context, booted past the start card with the tour offer dismissed.
  */
+/** the folder the tests serve: dist/ (the hosted site's build, with its rooms and font files), kept in step with index.html;
+    STANDALONE=1 serves the repository itself, so the single-file index.html is what is tested */
+function siteRoot() {
+  if (process.env.STANDALONE === '1') return '';
+  const root = path.join(__dirname, '..'), dist = path.join(root, 'dist'), code = f => { try { return (fs.readFileSync(f, 'utf8').match(/BUILD\s*=\s*'([0-9a-f]{7})'/) || [])[1]; } catch (e) { return null; } };
+  if (!code(path.join(dist, 'index.html')) || code(path.join(dist, 'index.html')) !== code(path.join(root, 'index.html'))) {
+    console.log('(building the site into dist/ for the tests)'); require('node:child_process').execFileSync(process.execPath, [path.join(root, 'scripts', 'assemble.mjs')], { stdio: 'ignore' });
+  }
+  return dist;
+}
 async function suite(name, fn) {
   const t0 = Date.now(); let fails = 0, checks = 0; const errs = [], ctxs = [];
   const ok = (c, m) => { checks++; console.log((c ? 'ok   ' : 'FAIL ') + m); if (!c) fails++; return !!c; };
   let srv, port, BASE = process.env.BASE_URL;
   try {
-    if (!BASE) { port = await freePort(); BASE = `http://localhost:${port}/`; srv = spawn(process.execPath, [path.join(__dirname, '..', 'scripts', 'serve.mjs')], { env: { ...process.env, PORT: String(port) }, stdio: 'ignore' }); await wait(800); }
+    if (!BASE) { port = await freePort(); BASE = `http://localhost:${port}/`; srv = spawn(process.execPath, [path.join(__dirname, '..', 'scripts', 'serve.mjs')], { env: { ...process.env, PORT: String(port), ...(siteRoot() ? { SERVE_ROOT: siteRoot() } : {}) }, stdio: 'ignore' }); await wait(800); }
     const browser = ENGINE === 'firefox' ? await pw.firefox.launch({ firefoxUserPrefs: { 'media.navigator.streams.fake': true, 'media.navigator.permission.disabled': true, 'media.autoplay.default': 0, 'media.autoplay.blocking_policy': 0 } })
       : ENGINE === 'webkit' ? await pw.webkit.launch()
       : await pw.chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined, args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream', '--autoplay-policy=no-user-gesture-required', ...(process.env.NO_SANDBOX ? ['--no-sandbox'] : [])] });

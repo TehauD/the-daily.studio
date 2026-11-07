@@ -26,19 +26,21 @@ function buildLeft() {
   buildTones(panes.tones); buildIO(panes.io); buildTheory(panes.theory);
 }
 function buildTones(p) {
-  UI.tcat = 'All'; UI.tq = h('input', { class: 'in', placeholder: 'Search tones…', oninput: renderTones, style: { fontFamily: 'var(--sans)' } });
-  const cats = ['All', 'Clean', 'Acoustic', 'Crunch', 'Lead', 'Heavy', 'Funk', 'Psych', 'Ambient', 'Lo-Fi', 'User'], cw = h('div', { class: 'cats' });
+  UI.tcat = 'All'; UI.tq = h('input', { class: 'in tone-q', placeholder: 'Search tones…', oninput: renderTones, style: { fontFamily: 'var(--sans)' } });
+  const cats = ['All', 'Clean', 'Acoustic', 'Crunch', 'Lead', 'Heavy', 'Funk', 'Psych', 'Ambient', 'Lo-Fi', 'User'], cw = h('div', { class: 'cats tone-cats' });
   cats.forEach(c => cw.append(h('button', { class: 'cat' + (c === 'All' ? ' on' : ''), onclick: e => { UI.tcat = c; $$('.cat', cw).forEach(x => x.classList.remove('on')); e.target.classList.add('on'); renderTones(); } }, c)));
   UI.tlist = h('div', { class: 'plist' }); p.append(UI.tq, cw, UI.tlist); renderTones(); bus.on('preset', renderTones);
 }
 function renderTones() {
   const q = UI.tq.value.toLowerCase(), l = UI.tlist; l.innerHTML = '';
-  allPresets().forEach((p, i) => {
-    if (UI.tcat !== 'All' && p.c !== UI.tcat) return; if (q && !(p.n + ' ' + (p.d || '') + ' ' + p.c).toLowerCase().includes(q)) return;
+  const core = CFG.simple && !UI.tAll; allPresets().forEach((p, i) => {
+    if (core && !SIMPLE_TONES.includes(p.n) && RIG.cur !== p.n) return;
+    if (!core && UI.tcat !== 'All' && p.c !== UI.tcat) return; if (q && !(p.n + ' ' + (p.d || '') + ' ' + p.c).toLowerCase().includes(q)) return;
     const it = h('button', { class: 'pitem' + (RIG.cur === p.n ? ' on' : ''), onclick: () => usePreset(p) }, h('b', {}, p.n, p.c === 'User' ? h('span', { style: { float: 'right', cursor: 'pointer', color: 'var(--bad)' }, title: 'Delete preset', onclick: e => { e.stopPropagation(); const a = store.get('presets', []).filter(x => x.n !== p.n); store.set('presets', a); renderTones(); } }, '✕') : null), h('span', {}, p.c + ' · ' + (p.d || '')));
     l.append(it);
   });
   if (!l.children.length) l.append(h('div', { class: 'muted small', style: { padding: '8px' } }, 'No tones match.'));
+  if (CFG.simple) l.append(h('button', { class: 'btn sm tone-all', id: 'toneAll', type: 'button', onclick: () => { UI.tAll = !UI.tAll; renderTones(); } }, UI.tAll ? 'Just the essentials' : 'Show all ' + allPresets().length + ' tones'));
 }
 function buildIO(p) {
   UI.outSel = h('select', { class: 'in', 'aria-label': 'Audio output device', onchange: e => setOutputDevice(e.target.value) });
@@ -56,14 +58,17 @@ function buildIO(p) {
     h('div', { class: 'card' }, h('h4', {}, 'Diagnose devices'), h('div', { class: 'card-b' }, h('p', { class: 'tiny muted', style: { margin: '0 0 6px' } }, 'Checks the secure context, permissions and what the browser can see. Use it when no input shows up.'), UI.diag = h('pre', { class: 'tiny', style: { whiteSpace: 'pre-wrap', margin: '0 0 6px', padding: '6px', border: '1px dashed var(--line2)', borderRadius: '6px', display: 'none', font: '600 10px/1.45 var(--mono)' } }), h('button', { class: 'btn sm', onclick: () => diagnoseInputs(true) }, '🩺 Diagnose devices'))),
     h('div', { class: 'card' }, h('h4', {}, 'Latency lab'), h('div', { class: 'card-b' }, UI.lat2, h('div', { class: 'hr' }), h('button', { class: 'btn sm primary', onclick: measureRTT }, '⏱ Run loopback test'), h('div', { style: { height: '6px' } }), UI.latRes, h('div', { class: 'row', style: { marginTop: '6px' } }, h('span', { class: 'small' }, 'RTT used for alignment (ms):'), offs), h('p', { class: 'tiny muted' }, 'Patch a cable from the interface’s Line Out into an input (or hold a mic near a speaker). The test emits six 8 ms chirps and cross-correlates them to find the true round trip. That value shifts recorded takes so they land on the grid, and corrects timing statistics.'))),
     h('div', { class: 'card' }, h('h4', {}, 'Focusrite / low-latency notes'), h('div', { class: 'card-b tiny muted' }, h('p', { style: { margin: '0 0 6px' } }, 'Browsers can’t use ASIO. Chrome/Edge on Windows use WASAPI, macOS uses CoreAudio. Set the smallest stable buffer in Focusrite Control (Windows) / the interface’s driver panel.'), h('p', { style: { margin: '0 0 6px' } }, 'Plug the guitar into the front Inst jack (Input 1 or 2). Press Set my level and play. Keep the peaks around −12 to −6 dBFS.'), h('p', { style: { margin: 0 } }, 'For zero-latency monitoring, turn on the interface’s Direct Monitor and leave Hear myself off here: recording and analysis still work.'))));
-  p.append(conn, outCard, midiCard, adv);
+  midiCard.classList.add('io-more'); adv.classList.add('io-more'); p.append(conn, outCard, midiCard, adv);
   const camCard = h('div', { class: 'card' }, h('h4', {}, 'Camera'), h('div', { class: 'card-b' },
     UI.camSel2 = h('select', { class: 'in', 'aria-label': 'Camera', style: { fontFamily: 'var(--sans)' }, onchange: e => { CFG.camDev = e.target.value; saveCfg(); if (CAM.on) startCam(); } }),
     h('div', { class: 'row', style: { marginTop: '6px' } }, h('button', { class: 'btn sm' + (VZ.cam ? ' on' : ''), id: 'ioCamBtn', onclick: () => vzCamPress() }, '📷 Camera backdrop')),
     h('div', { class: 'tiny muted', style: { marginTop: '4px' } }, 'Puts you in front of the hexagons. The picture stays on this device.'),
     h('div', { class: 'row', style: { marginTop: '8px', gap: '8px', flexWrap: 'wrap' } }, h('span', { class: 'tiny muted' }, 'Start in'), routeControl())));
-  p.insertBefore(camCard, outCard); refreshCamList();
-  bus.on('devices', renderDevices); bus.on('input', renderDevices); buildVoxCard(p);
+  camCard.classList.add('io-more'); p.insertBefore(camCard, outCard); refreshCamList();
+  bus.on('devices', renderDevices); bus.on('input', renderDevices); buildVoxCard(p); [...p.children].forEach(c => { const t = c.querySelector && c.querySelector('h4'); if (t && /^Channels/i.test(t.textContent)) c.classList.add('io-voice'); });
+  const tr = conn.querySelector('.card-b > .row'); if (tr) tr.classList.add('io-trim');
+  /* ✦ Simple (2.38): one input to start with; a second one for your voice when you ask for it */
+  outCard.after(h('button', { class: 'btn sm io-addvoice', id: 'ioAddVoice', type: 'button', onclick: () => { CFG.ioVoice = !CFG.ioVoice; saveCfg(); simpleApply(); } }, '＋ Add a microphone for your voice'), h('p', { class: 'tiny muted io-simple-note' }, 'The camera, MIDI and the latency test are in the full studio (✦ Simple off).'));
 }
 function renderDevices() {
   refreshCamList();
@@ -126,7 +131,7 @@ function buildTheory(p) {
   p.append(h('div', { class: 'card' }, h('h4', {}, 'Key · Scale · Tuning'), h('div', { class: 'card-b' }, h('div', { class: 'row' }, kSel, sSel), h('div', { style: { height: '6px' } }), tSel, h('div', { class: 'row', style: { marginTop: '6px' } }, h('span', { class: 'small' }, 'Capo'), cap), info)),
     h('div', { class: 'card' }, h('h4', {}, 'Diatonic chord palette'), h('div', { class: 'card-b' }, pal)),
     h('div', { class: 'card' }, h('h4', {}, 'Progression builder'), h('div', { class: 'card-b' }, pr, h('div', { class: 'row', style: { marginTop: '6px' } }, h('button', { class: 'btn sm', onclick: () => applyProg(+pr.value, false) }, 'Replace section'), h('button', { class: 'btn sm', onclick: () => applyProg(+pr.value, true) }, 'Append bars')))),
-    h('div', { class: 'card' }, h('h4', {}, 'Chord finder'), h('div', { class: 'card-b' }, cf, cres)));
+    h('div', { class: 'card th-adv' }, h('h4', {}, 'Chord finder'), h('div', { class: 'card-b' }, cf, cres)));
 }
 function insertChord(sym) {
   const sec = S.sections[SEL.sec]; if (!sec) return toast('Add a section first', 'warn'); const bar = sec.bars[SEL.bar] || sec.bars[0]; if (!bar) return; bar.chord = sym; if (SEL.bar < sec.bars.length - 1) SEL.bar++; commit(); play0preview(sym);

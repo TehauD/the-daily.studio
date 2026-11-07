@@ -9,7 +9,7 @@ var XP_NAMES = { rig: 'Guitar sound', tab: 'Write', vis: 'Stage', song: 'Song', 
 var XP_LABEL = { new: 'Essentials', some: 'More tools', pro: 'Everything' };
 if (CFG.xp == null) { CFG.xp = (store.get('started', false) || store.get('song', null)) ? 40 : 0; saveCfg(); }   // people who already use the app keep the full studio
 function xpLevel() { const m = CFG.xpMode || 'auto'; if (XP_TABS[m] !== undefined) return m; const s = CFG.xp || 0; return s >= 12 ? 'pro' : s >= 4 ? 'some' : 'new'; }
-function xpAllowed(id) { const l = XP_TABS[xpLevel()]; return !l || l.includes(id) || id === DOCK.cur || (typeof goalShows === 'function' && goalShows(id)); }
+function xpAllowed(id, ignoreSimple) { if (CFG.simple && !ignoreSimple) return SIMPLE_TABS.includes(id) || id === DOCK.cur || (id === 'stems' && typeof STM !== 'undefined' && !!STM.ch); const l = XP_TABS[xpLevel()]; return !l || l.includes(id) || id === DOCK.cur || (typeof goalShows === 'function' && goalShows(id)); }
 function xpTabText(id, name, i) { return xpLevel() === 'pro' && !CFG.simple ? (i + 1) + ' · ' + name : (XP_NAMES[id] || name); }
 function xpSignal(pts) {
   if (XP.quiet || (CFG.xpMode && CFG.xpMode !== 'auto')) return; const before = xpLevel(); CFG.xp = Math.min(40, (CFG.xp || 0) + pts); clearTimeout(XP.t); XP.t = setTimeout(saveCfg, 800);
@@ -18,7 +18,6 @@ function xpSignal(pts) {
 const xpEdit = () => { if (!XP.quiet) { xpSignal(.25); try { if (performance.now() - JN.inp < 3000) JN.edit = performance.now(); } catch (e) { } } };       // a change the person made (a key or a tap just before it, not the app loading a song) counts as activity in the journal
 /** run a generator (like Hum to Song) without counting its changes as the person's own edits */
 function xpQuiet(fn) { XP.quiet++; try { return fn(); } finally { XP.quiet--; } }
-function xpSetMode(k) { CFG.xpMode = k; saveCfg(); if (k === 'pro' && LAY.hidden.length) { LAY.hidden = []; saveLay(); } rebuildTabs(); if (k !== 'auto') toast((XP_LABEL[k]) + ' tools', ''); }
 function xpToolsButton() {
   const l = xpLevel(), b = h('button', { class: 'btn sm xp-tools', id: 'xpTools', title: 'Choose how much of the studio to show', 'aria-haspopup': 'dialog', onclick: () => {
     const m = CFG.xpMode || 'auto', opt = (k, t, d) => h('button', { class: 'btn sm xp-opt' + (m === k ? ' on' : ''), 'aria-pressed': String(m === k), onclick: () => { CFG.xpMode = k; saveCfg(); closePop(); if (k === 'pro' && LAY.hidden.length) { LAY.hidden = []; saveLay(); }   /* “Everything” brings back any tab a layout had left off the strip */

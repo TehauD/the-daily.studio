@@ -10,7 +10,9 @@ import { backstagePages } from './backstage-pages.mjs';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..'), out = join(root, 'dist');
 execFileSync(process.execPath, [join(root, 'scripts', 'build.mjs')], { stdio: 'inherit' });
 rmSync(out, { recursive: true, force: true }); mkdirSync(join(out, 'journal'), { recursive: true });
-for (const f of ['index.html', 'manifest.webmanifest', 'sw.js', 'robots.txt', 'sitemap.xml', 'llms.txt', '404.html']) cpSync(join(root, f), join(out, f));
+/* the page, its service worker and the rooms: the site's own lighter build (2.40, scripts/rooms.mjs); index.html in the repository stays one complete file */
+execFileSync(process.execPath, [join(root, 'scripts', 'build.mjs'), '--site'], { stdio: 'inherit' });
+for (const f of ['manifest.webmanifest', 'robots.txt', 'sitemap.xml', 'llms.txt', '404.html']) cpSync(join(root, f), join(out, f));
 cpSync(join(root, 'icons'), join(out, 'icons'), { recursive: true });
 if (existsSync(join(root, 'samples'))) cpSync(join(root, 'samples'), join(out, 'samples'), { recursive: true });
 cpSync(join(root, 'journal', 'index.html'), join(out, 'journal', 'index.html'));
@@ -72,7 +74,7 @@ mkdirSync(join(out, 'legal'), { recursive: true });
 }
 /* Response headers (Cloudflare _headers). The studio page gets the same policy as its <meta> CSP plus frame-ancestors, which only works as a header.
    The CSP is scoped to the studio page only: /journal/ carries its own policy in its own <meta>, and headers from several matching rules are combined. */
-const html = readFileSync(join(root, 'index.html'), 'utf8'), m = html.match(/http-equiv="Content-Security-Policy" content="([^"]+)"/);
+const html = readFileSync(join(out, 'index.html'), 'utf8'), m = html.match(/http-equiv="Content-Security-Policy" content="([^"]+)"/);
 if (!m) throw new Error('index.html has no Content-Security-Policy meta; refusing to build a site without one');
 const csp = m[1].trim().replace(/;$/, '') + "; frame-ancestors 'none'";
 const common = `  X-Content-Type-Options: nosniff

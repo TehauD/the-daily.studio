@@ -2,7 +2,7 @@
 
 A practical walkthrough of every panel. For a ten-minute orientation, press **?** in the app and choose **Take the guided tour**.
 
-Contents: [Getting started](#getting-started-and-guided-sessions-27) · [Show setup](#show-setup-26) · [Layouts](#layout-and-themes) · [Monitor widgets](#monitor-widgets-26) · [Concert](#concert-24) · [Voice](#voice-pitch-ribbon-your-range-find-my-key-23) · [Cut, silence and punch in](#cut-silence-and-punch-in-23) · [Heatmap](#heatmap-23) · [Performer backdrop](#performer-backdrop-23) · [Clips and the mix](#clips-move-trim-fade-split-22) · [Fast WAV render](#faster-than-real-time-wav-render-22) · [Open a MIDI file](#open-a-midi-file-22) · [Keep songs safe](#keep-songs-safe-22) · [Perform, share and back up](#perform-share-and-back-up-20) · [Getting sound](#getting-sound-in-and-out) · [Tones and the Rig](#tones-and-the-rig) · [The band](#the-band) · [Arrangement and recording](#arrangement-and-recording) · [Tab editor](#tab-editor) · [Song, tunings and capo](#song-tunings-and-capo) · [Fretboard and tuner](#fretboard-and-tuner) · [Transcribe](#transcribe-audio-to-tab) · [Stems](#stems-and-backing-tracks) · [Neural map](#neural-map) · [Visuals and Stage](#visuals-and-stage) · [Vision](#vision-lab) · [Research](#research-panel) · [Export, history and backup](#export-history-and-backup) · [MIDI](#midi) · [Layout](#layout-and-themes)
+Contents: [Song links](#-send-a-song-as-a-link-240) · [Beats](#-beats-239) · [Getting started](#getting-started-and-guided-sessions-27) · [Show setup](#show-setup-26) · [Layouts](#layout-and-themes) · [Monitor widgets](#monitor-widgets-26) · [Concert](#concert-24) · [Voice](#voice-pitch-ribbon-your-range-find-my-key-23) · [Cut, silence and punch in](#cut-silence-and-punch-in-23) · [Heatmap](#heatmap-23) · [Performer backdrop](#performer-backdrop-23) · [Clips and the mix](#clips-move-trim-fade-split-22) · [Fast WAV render](#faster-than-real-time-wav-render-22) · [Open a MIDI file](#open-a-midi-file-22) · [Keep songs safe](#keep-songs-safe-22) · [Perform, share and back up](#perform-share-and-back-up-20) · [Getting sound](#getting-sound-in-and-out) · [Tones and the Rig](#tones-and-the-rig) · [The band](#the-band) · [Arrangement and recording](#arrangement-and-recording) · [Tab editor](#tab-editor) · [Song, tunings and capo](#song-tunings-and-capo) · [Fretboard and tuner](#fretboard-and-tuner) · [Transcribe](#transcribe-audio-to-tab) · [Stems](#stems-and-backing-tracks) · [Neural map](#neural-map) · [Visuals and Stage](#visuals-and-stage) · [Vision](#vision-lab) · [Research](#research-panel) · [Export, history and backup](#export-history-and-backup) · [MIDI](#midi) · [Layout](#layout-and-themes)
 
 ---
 
@@ -11,7 +11,34 @@ Contents: [Getting started](#getting-started-and-guided-sessions-27) · [Show se
 **✦ Simple** (top right, next to ◐) shows just what you need to make something, for anyone who has never used a recording studio. A first visit starts in Simple; if you have been here before, you keep the full studio until you press it. **Settings ▸ Workflow** has the same switch.
 - **What stays:** play, stop, ● record, Loop and Click (now with their names), the tempo and the key. Also: your song's name, Songs, New and undo; Perform and Voice; the six workspaces and their tools; ● Capture; the tab and the words; Mute all; the arrangement and Loop & layer.
 - **What is tucked away:** return to start, the bar · beat counter, time signature, the master meter, the latency estimate, the workspace button, artist, tuning, capo, scale and notes, and the Canvas / Song / Studio switch. Also: the Create → Perform → Share flow, the Tools menu, each band part's own switch and the mix, tab techniques, fill styles, copy and paste, the arrangement's zoom, swing and lane tools, the stage's extra settings, and the status line at the bottom.
-- Nothing is switched off or lost; it is only out of sight. Press ✦ Simple again and it all comes back. Simple is kept per device, so a child's tablet and your computer can differ. Phones already have their own simpler layout, so it changes larger screens only.
+- **Inside the panels too (2.38):**
+  - **Panel tabs:** only the essentials (Write, Band, Stage, Save & export), plus the backing track once one is loaded and whatever is open now, even in a workspace that has more.
+  - **Tones:** eight core tones (clean, acoustic, edge of breakup, crunch, lead, metal, ambient and direct). **Show all 27 tones** lists the rest.
+  - **Audio:** one input with its level and monitoring, plus the output. **＋ Add a microphone for your voice** brings in the second input. The camera, MIDI, the signal path and the latency test are in the full studio.
+  - **Sidebars:** Refine, the Monitor widget picker and the chord finder are tucked away.
+  - **The arrangement:** the lanes keep mute, solo and on/off, without their faders, pans and effects.
+  - **The Full Rig workspace** button is tucked away.
+- **Simple is the Songwriter (2.39):** Simple opens the Songwriter workspace, and its goal bar is just *Make a song*: **🥁 Beats**, Paste chords, Pads, Keys and **🔗 Send as a link**. If you switch Simple on from another workspace, switching it off takes you back there exactly as you left it.
+- **The band in Simple (2.39):** the Band panel is the beats and who plays (drums, bass, guitar and keys, each a switch and a level). **Show every band setting** brings the rest back.
+
+## 🔗 Send a song as a link (2.40)
+
+**🔗 Send as a link** (Songwriter tools, and Save & export) turns the song into a link you can paste in a message. Whoever opens it gets the song, ready to play.
+- **What travels:** the chords, words and tab of every section, the beat and the band, what the piano roll drew, the tempo, the key and the tuning. **Recordings stay with you:** for audio, make a share page in Save & export.
+- **Nothing is uploaded.** The song is written into the link after the `#`, and browsers never send that part to a server. A typical song is under a thousand characters.
+- **Sending:** **⧉ Copy link**, **↗ Share…** on a phone, or **▦ QR code** for someone in the room. If a link is very long, the window says so, because some chat apps cut long links.
+- **Receiving:** opening the link shows the song's name and what it holds. **▶ Open and play** opens it as a new song and starts it; **Open** just opens it. Your own songs are not changed.
+- Anyone with the link can read the song, as with anything you paste in a chat.
+
+## 🥁 Beats (2.39)
+
+A beat is a ready band to play, sing or write over. Tap one at the top of the **Band** panel (or **🥁 Beats** in the Songwriter tools) and it starts looping: drums, bass, and guitar or keys where the style wants them, at the beat's tempo.
+- **Eleven styles:** folk, pop, rock, lo-fi hip-hop, dance, trap, reggae, blues shuffle, ballad, funk and bossa nova.
+- **Your chords:** if the song has none yet, the beat brings a progression in your song's key. If it has chords, the beat plays yours.
+- **Mix on top:** play or sing over it, press ● to record, and set each player's level (or switch them off) under *Who plays*.
+- **Undo** puts your previous band, tempo and chords back.
+- The beats are played by the studio's own instruments, not recordings, so they follow your key and tempo and there is nothing to download. They were written for this studio, so what you make with them is yours.
+- Nothing is switched off or lost, and your arrangement (sidebars, panels and tabs) is kept exactly as it was. Press ✦ Simple again and it all comes back. Simple is kept per device, so a child's tablet and your computer can differ. Phones already have their own simpler layout, so it changes larger screens only.
 
 ## Goal workspaces (2.13)
 
@@ -19,7 +46,7 @@ The row at the top of the centre holds six goals. Each one is a whole workspace 
 
 | Goal | Opens on | Its tools |
 | --- | --- | --- |
-| 🎸 **Songwriter** — *Write the song* | A notebook: Write in Both (words and tab), Theory on the left, no right sidebar, the arrangement a strip | **🎸 Paste chords** · 🎤 Vocal pedals · 🥁 Pads (● Capture is above the tab, ● Record at the top) |
+| 🎸 **Songwriter** — *Write the song* | A notebook: Write in Both (words and tab), Theory on the left, no right sidebar, the arrangement a strip | 🥁 Beats · **🎸 Paste chords** · 🎤 Vocal pedals · 🥁 Pads (● Capture is above the tab, ● Record at the top) |
 | 🎤 **Performer** — *Play it for real* | A stage: Visuals large, Tones on the left, Tuner and Levels on the right, lanes for takes below | **⏺ Record video** · 📷 Camera · 🎤 Vocal pedals · 📺 Stream window · ▶ Replay (a take is ● at the top, Perform is in the song bar) |
 | 🎬 **Creator Studio** — *Make it postable* | An edit bay: Visuals as the picture, no left sidebar, the Audience view, Views (waveform, spectrogram, pitch wheel) and Levels on the right, a slim arrangement | **⏺ Record MP4** · ▶ Studio Replay · 📷 Webcam · ✨ Overlays · 🖼 Thumbnail · ⇩ Export |
 | 🎼 **Practice** — *Get it under your fingers* | A practice room: the Fretboard large in the middle, Theory (scales) on the left, Tuner and Levels on the right | 🥁 Pads · − 5 / BPM / + 5 · **🎼 Scales & ear** (Loop and Click are at the top) |
@@ -617,21 +644,21 @@ Connect a controller and allow MIDI access when asked (HTTPS or `localhost`; Chr
 
 The app switches layout by itself; **⋯ More ▸ Device layout** (or Settings) forces Phone, Tablet or Desktop.
 
-**Phone, portrait.** Top: tempo, signature, key and the **⋯** button. Below it a row of chips for the panels in the current section. Bottom: the transport (rewind, play, stop, record, loop, click, **🔊 band** and the bar·beat·slot readout) and the five sections:
+**Phone, portrait (2.41: built for singers and songwriters).** Top: the song's name (tap it for the song sheet: name, tempo, time signature, key, mode, artist, tuning, capo and backing track) and the **⋯** button. Bottom: the transport (rewind, play, stop, record, loop, click, **🔊 band** and the bar·beat·slot readout) and five sections. A phone opens on **Words**.
 
-| Section | Panels |
+| Section | What is there |
 |---|---|
-| **Play** | Rig (tone, A/B, scenes, pedalboard) · Tones · Tuner · I/O |
-| **Write** | Tab · Song (tuning, capo, chords, lyrics) · Band · Fretboard · Theory |
-| **See** | Visuals · Stage · Neural · Vision |
-| **Stems** | Stems · Transcribe |
-| **More** | Opens the sheet of everything else (the same as **⋯**): Hum, Loop & layer, Audio, theme, Settings, Help, guided sessions and the tour, your songs and progress, files, the mix, Voice, keeping songs safe; its first row opens the **Research** and **Export** panels |
+| **Words** | A lyric notebook: the sections as chips (**＋** adds one). **✎ Write** is one big text box with the syllables of the line you are on; **♪ Chords** shows each word with its chord over it: pick a chord below and tap the word it lands on. **⧉ Paste** takes a whole lyric sheet. A new section's band plays the chords you put on its words. **Chords & key** opens the key, scale and progression tools |
+| **Sing** | A live strip of the hexagons (your voice lights them), **🎤 Sing into this phone**, **● Record over the beat** (with a count-in), **▶ Hear it back**, your takes, one-tap voice sounds, pitch and your range, hum into a song, voice memo |
+| **Beats** | The beats and who plays; **Band** has every setting |
+| **Tracks** | Backing track (stems) · Transcribe |
+| **More** | The sheet of everything else. Its rows open **Research** and **Export**, then **🎸 Guitar** (Rig, Tones, Tuner, I/O, Tab, Refine) and **Visuals** (Visuals, Stage, Neural, Vision; on a phone the hexagon graphic comes first, its settings below) |
 
 The **⋯** button (top right) opens the **More sheet**: **Hum or sing a song**, **Audio · kill switch**, **Light theme**, **Appearance**, **Monitor**, **Screen awake**, **Settings**, **Help**, **Guided tour**, **Save project**, **Share link**, **My songs**, **Open a file** (audio, lyrics, MIDI or a song file), **Master · balance · click** (master preset, Auto-balance, count-in and click level), **Keep songs safe**, **Install app** (when the browser offers it), **Full screen** and **Device layout**.
 
-The **Tracks** button at the right of the chip row cycles the arrangement between a mini strip, a **full-screen tracks view** (no other panel competing; the button then reads **▾ Panel**) and hidden. The band strip (drums, bass, rhythm, lead) sits under the chips in *Play* and *Write*.
+The **Timeline** button at the right of the chip row (on panels that have the arrangement under them) cycles the arrangement between a mini strip, a **full-screen tracks view** (no other panel competing; the button then reads **▾ Panel**) and hidden. The band strip (drums, bass, rhythm, lead) sits under the chips in *Play* and *Write*.
 
-**Landscape** puts the sections on a left rail and the transport in the header, which leaves the most room for the Fretboard, Stage and Neural map. The arrangement starts hidden there; bring it back with **Tracks**.
+**Landscape** puts the sections on a left rail and the transport in the header, which leaves the most room for the Fretboard, Stage and Neural map. The arrangement starts hidden there; bring it back with **Timeline**.
 
 **Write tab on a touch screen.** Tap a cell, then a fret on the keypad. **10s** / **20s** turn the next digit into 10–19 / 20–24. **Auto ▶** advances after each note (turn it off to stack notes on different strings). Arrow keys move the cursor and **▲ ▼** change string; **⌫** clears a note; **h p / \ b ~ x ‹n›** set techniques; **⏵ bar** plays from the current bar. Chord names above each bar are edited in **Song**.
 

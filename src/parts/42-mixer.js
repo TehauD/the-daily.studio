@@ -43,12 +43,6 @@ function fxStrip(dest, o = {}) {
     dispose() { try { out.disconnect(); } catch (e) { } if (cmp.end) cmp.end(); }
   };
 }
-/** apply every strip that exists (band lanes, the backing track and its stems) */
-function fxApplyAll() {
-  if (!E.ready && !E.tr.drums) return;
-  Object.keys(E.tr).forEach(id => { const t = E.tr[id]; if (t.fx) t.fx.set(S.mix[id] && S.mix[id].fx); });
-  if (typeof spFx === 'function') spFx();
-}
 
 /* ---------- the "+Fx" chip and its strip panel ---------- */
 let fxSaveT = 0;

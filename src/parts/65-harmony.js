@@ -16,7 +16,6 @@ const HM = {
   stars: [], paint: [], t0: performance.now(), lastPt: 0, lastStar: 0, starOn: false, clearT: 0
 };
 HM.vmax = 0;
-const hmHsl = (h, s, l, a) => `hsla(${((h % 360) + 360) % 360},${Math.round(s)}%,${Math.round(l)}%,${(a == null ? 1 : a).toFixed(3)})`;
 
 /** the chord to show: the song's while it plays, else the one heard, else the song's first, else the key's own chord */
 function hmChordSym() {

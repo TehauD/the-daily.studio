@@ -15,14 +15,17 @@ const GOALS = [
   { id: 'songwriter', ico: '🎸', name: 'Songwriter', layout: 'Songwriter', step: 'create', hue: '#d08a2e', next: ['performer', 'Perform it'],
     blurb: 'Lyrics, chords and progressions, and a quick way to catch an idea before it goes.',
     mission: 'Write the song', steps: ['Pick a key and a progression', 'Press ● Capture and play a riff', 'Put the words under the chords'],
+    simple: { mission: 'Make a song', steps: ['Pick a beat', 'Play or sing over it, ● to record', 'Put the words under the chords'] },
     shape: 'Words and tab in the middle · Theory on the left · the arrangement a strip',
     spec: { flip: true, left: true, right: false, tlh: '84px', dock: 'tab', order: ['tab', 'band', 'song', 'exp'], hidden: ['rig', 'fret', 'vis', 'stage', 'neural', 'stems', 'tx', 'cam', 'lab'], cur: { left: 'theory' }, mon: ['tuner', 'live'] },
     enter: () => { try { wrMode('both'); } catch (e) { } },
     tools: () => [
-      ['gtSheet', '🎸 Paste chords', 'Paste a chord sheet (chords over the words): it becomes the song, with bars, key, words and a guitar part', () => liOpen(''), null, 1],
+      ['gtBeats', '🥁 Beats', 'A ready band to play, sing or write over: tap a beat and it plays, in your song’s key', b => popover(b, h('div', { class: 'bt-pop' }, h('h5', {}, 'Beats'), h('p', { class: 'tiny muted' }, 'Tap one and it plays. Undo puts your band back.'), beatsShelf({ after: closePop }))), null, () => !!CFG.simple],
+      ['gtSheet', '🎸 Paste chords', 'Paste a chord sheet (chords over the words): it becomes the song, with bars, key, words and a guitar part', () => liOpen(''), null, () => !CFG.simple],
       ['gtVox', '🎤 Vocal pedals', 'Scream, doubler, harmony, echo, reverb, de-esser and megaphone for your voice', () => vocalBoardOpen()],
       ['gtPads', '🥁 Pads', 'Play the drums with your fingers, tap the tempo, record a groove or beatbox it', () => padsOpen()],
       ['gtKeys', '🎹 Keys', 'A piano to play with the mouse, the computer keys or a MIDI keyboard: its own sounds, or the band’s bass or lead; record what you play into the song', () => keysOpen()],
+      ['gtLink', '🔗 Send as a link', 'Send this song to a bandmate as a link: the chords, words, tab, beat, tempo and key ride inside it, and nothing is uploaded', () => slShare()],
       ['gtRoll', '🎛 Piano roll', 'Draw the keys part or the bass line on a grid, loop it, duck it to the kick', () => rollOpen()],
 
 
@@ -110,7 +113,7 @@ const goalShows = id => { const g = goalNow(); return !!g && (g.all || g.spec.or
 function goalTempo(d) { S.bpm = clamp(S.bpm + d, 30, 260); commit(false); bus.emit('bpm'); syncTransport(); goalSync(); }
 /** o.keepZoom: leave the Canvas view as it is (the first-visit default); a goal you pick always shows the studio */
 function goalGo(id, o) {
-  const g = goalById(id); if (!g) return false; CFG.ws = g.id; saveCfg();
+  const g = goalById(id); if (!g) return false; CFG.ws = g.id; if (CFG.simple && g.id !== 'songwriter') CFG.preSimple = null; saveCfg();
   if (!(o && o.keepZoom) && typeof ZOOM !== 'undefined' && ZOOM.cur === 'canvas') { ZOOM.cur = CFG.zoom = 'studio'; saveCfg(); document.body.classList.remove('zoom-canvas'); try { zoomSync(); } catch (e) { } }
   applyPreset(g.spec, g.layout); if (typeof xpSignal === 'function') xpSignal(1);
   if (g.spec.side && g.spec.side.fret && typeof sideShow === 'function') { try { sideShow('fret'); } catch (e) { } }
@@ -132,8 +135,10 @@ function goalBarBuild() {
   box.append(h('div', { class: 'gl-row' }, pick, flow));
   if (!cur) { box.append(h('div', { class: 'gl-row gl-tools' }, h('span', { class: 'tiny muted' }, 'Pick what you want to do, and the studio arranges itself for it. Everything stays one click away.'))); return; }
   const tools = h('div', { class: 'gl-row gl-tools', role: 'toolbar', 'aria-label': cur.name + ' tools' });
-  tools.append(h('div', { class: 'gl-mis', title: cur.shape }, h('b', {}, cur.mission), h('span', { class: 'gl-steps' }, cur.steps.map((s, i) => h('span', {}, h('i', {}, i + 1), s)))));
+  const ms = CFG.simple && cur.simple || cur, few = CFG.simple && cur.id === 'songwriter';      /* ✦ Simple: Songwriter's own words and fewer tools (part 33b) */
+  tools.append(h('div', { class: 'gl-mis', title: cur.shape }, h('b', {}, ms.mission), h('span', { class: 'gl-steps' }, ms.steps.map((s, i) => h('span', {}, h('i', {}, i + 1), s)))));
   cur.tools().forEach(([id, label, title, fn, on, main, off]) => {
+    if (few && !SIMPLE_TOOLS.includes(id)) return; if (typeof main === 'function') main = main();
     const b = h('button', { class: 'btn sm gl-tool' + (main ? ' gl-main' : ''), id, type: 'button', title, onclick: e => { fn(e.currentTarget); setTimeout(goalSync, 60); } }, typeof label === 'function' ? label() : label);
     b._on = on; b._off = off; b._label = label; tools.append(b);
   });
@@ -178,12 +183,12 @@ function workspaceOpen(at) {
 /** a small picture of a goal's shape: the sidebars, the open panel, the arrangement above or below */
 function goalThumb(g) { const t = layThumb(g.spec); t.classList.add('ws-th'); return t; }
 
-/* a first visit on a computer opens the Performer: the shortest way to a performance you can share.
+/* a first visit on a computer opens in ✦ Simple, which is the Songwriter (2.39; it was the Performer before): a beat, the chords and the words.
    Anyone who has been here before keeps the workspace they had, and a layout you chose is never replaced. */
 const GOAL_FIRST = !store.get('started', false);
 bus.on('booted', () => {
   goalMark();
   if (CFG.ws !== undefined || !isDesk()) return;
   if (!GOAL_FIRST || LAY.name) { CFG.ws = (goalNow() || {}).id || null; saveCfg(); return; }
-  goalGo(CFG.xpMode === 'pro' ? 'fullrig' : 'performer', { keepZoom: true });
+  goalGo(CFG.xpMode === 'pro' ? 'fullrig' : CFG.simple ? 'songwriter' : 'performer', { keepZoom: true });      /* ✦ Simple (a first visit) is the Songwriter */
 });

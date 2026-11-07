@@ -63,9 +63,9 @@ function buildHeader() {
   UI.key = h('select', { onchange: () => keyChanged() }, NS.map((n, i) => h('option', { value: i }, n))); UI.mode = h('select', { onchange: () => keyChanged() }, [h('option', { value: 'maj' }, 'maj'), h('option', { value: 'min' }, 'min')]);
   tr.append(UI.rew, UI.play, UI.stop, UI.rec, UI.loop, UI.metro, UI.bandMute, UI.metroMore, psButton(), UI.pos, UI.tim, h('label', { class: 'field f-bpm', style: { width: '58px' } }, 'BPM', UI.bpm), h('label', { class: 'field f-sig', style: { width: '54px' } }, 'Sig', UI.ts), h('label', { class: 'field', style: { width: '56px' } }, 'Key', UI.key), h('label', { class: 'field f-mode', style: { width: '56px' } }, 'Mode', UI.mode));
   const R = $('#topR');
-  UI.lat = h('span', { class: 'chip lat-chip', title: 'Round-trip latency estimate. Run the Loopback Test in I/O for a measured value.' }, h('i', { class: 'led' }), h('span', {}, 'audio off'));
+  UI.lat = h('span', { class: 'lat-chip', title: 'Round-trip latency estimate. Run the Loopback Test in I/O for a measured value.' }, h('i', { class: 'led' }), h('span', {}, 'audio off'));
   UI.theme = h('button', { class: 'btn icon', title: 'Appearance: light / dark, palettes, accent, density…', 'aria-haspopup': 'dialog', onclick: () => lookOpen() }, '◐');
-  R.append(mstChip(), audioButton(), UI.lat, UI.theme, h('button', { class: 'btn icon', title: 'Settings', 'aria-haspopup': 'dialog', onclick: () => openSettings() }, '⚙'), h('button', { class: 'btn icon', title: 'Help & shortcuts (?)', 'aria-haspopup': 'dialog', onclick: () => openHelp() }, '?'));
+  R.append(mstChip(), audioButton(), UI.theme, h('button', { class: 'btn icon', title: 'Settings', 'aria-haspopup': 'dialog', onclick: () => openSettings() }, '⚙'), h('button', { class: 'btn icon', title: 'Help & shortcuts (?)', 'aria-haspopup': 'dialog', onclick: () => openHelp() }, '?'));
   try { simpleMount(); } catch (e) { }
 }
 /** count-in and click volume, next to the Click button */
@@ -180,7 +180,7 @@ function openHelp(at) {
 }
 
 /* ---------- status bar ---------- */
-function buildStatus() { const s = $('#status'); UI.st = { a: h('span'), i: h('span'), r: h('span'), m: h('span'), f: h('span') }; s.append(UI.st.a, UI.st.i, UI.st.r, h('span', { class: 'sp egg-line', 'aria-live': 'off' }), UI.st.m, UI.st.f, secretChip('st-sec'), buildTag('st-ver')); }
+function buildStatus() { const s = $('#status'); UI.st = { a: h('span'), i: h('span'), r: h('span'), m: h('span'), f: h('span') }; s.append(UI.st.a, UI.lat, UI.st.i, UI.st.r, h('span', { class: 'sp egg-line', 'aria-live': 'off' }), UI.st.m, UI.st.f, secretChip('st-sec'), buildTag('st-ver')); }
 let fpsN = 0, fpsT = 0, FPS = 0;
 function updateStatus() {
   if (!UI.st) return; const L = latencyInfo();

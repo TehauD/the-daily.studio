@@ -9,7 +9,6 @@ const saveNG = () => { CFG.neural = { layout: NG.layout, color: NG.color, edges:
 const NR = { nodes: new Map(), edges: [], events: [], seq: [], trans: new Map(), pulses: [], lastSlot: null, sym: '', symT: 0, hover: null, sel: null, cut: 1, last: 0, tickAt: -1, sections: [], hit: 0, miss: 0, pred: null, key: { root: 9, minor: true }, tension: 0, curChord: null, curSec: null, nBands: 24, evSeq: 0, dirty: true, fd: null, t0: performance.now(), pos: [] };
 const FIFTH = pc => (pc * 7) % 12;                    // position on the circle of fifths
 const FANG = pc => FIFTH(pc) / 12 * Math.PI * 2 - Math.PI / 2;
-const NGPROJ = [];
 
 /* ---------- colour ---------- */
 const light_ = () => CFG.theme === 'light';

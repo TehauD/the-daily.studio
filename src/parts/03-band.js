@@ -210,7 +210,6 @@ const slotAtTime = time => {
 };
 function playheadSlot() { if (!T.playing || !E.ctx) return T.cursor; return slotAtTime(E.ctx.currentTime - (E.ctx.outputLatency || E.ctx.baseLatency || 0)); }
 function seek(slot) { slot = clamp(Math.round(slot), 0, Math.max(0, songSlots() - 1)); const was = T.playing; if (was) stopPlay(true); T.cursor = slot; bus.emit('transport'); if (was) play(); }
-function nearestSlotTime(t) { let b = null, bd = 1e9; for (const e of T.q) { const d = Math.abs(e.time - t); if (d < bd) { bd = d; b = e; } } return b ? { e: b, d: bd } : null; }
 
 /* ---------- takes: recording (dry DI + wet print), playback and re-amp ---------- */
 const TAKES = []; let REC = null;
