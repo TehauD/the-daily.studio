@@ -1663,3 +1663,4 @@ body[data-form=phone][data-msub="0"] #msub{display:none}
 body[data-form=phone] #pane-vis>.vwrap{order:-1;flex:none!important;height:clamp(240px,46dvh,420px);min-height:0!important;margin-bottom:10px}
 body[data-form=phone] #pane-vis>.vwrap .vcanvas{min-height:0!important}
 body[data-form=phone] #pane-vis>.row{order:1}
+#mSongBtn{display:none}body[data-form=phone] #mSongBtn{display:inline-flex;align-items:center}      /* the song's name in the top bar is a phone thing: elsewhere the song bar has it */

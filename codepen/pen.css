@@ -1659,3 +1659,10 @@ body[data-form=phone].song-open .msong-f .field input,body[data-form=phone].song
 .ms-more{display:grid;gap:8px}.ms-more .btn{min-height:46px;justify-content:flex-start;font-size:15px}
 .mb-all{align-self:flex-start}
 body[data-form=phone][data-msub="0"] #msub{display:none}
+
+/* 2.41 · the hexagons on a phone: the Sing strip, and the Visuals graphic before its controls */
+.ms-hex{width:100%;height:clamp(110px,18dvh,170px);border-radius:12px;background:#050b0c;display:block;flex:none}
+body[data-form=phone] #pane-vis>.vwrap{order:-1;flex:none!important;height:clamp(240px,46dvh,420px);min-height:0!important;margin-bottom:10px}
+body[data-form=phone] #pane-vis>.vwrap .vcanvas{min-height:0!important}
+body[data-form=phone] #pane-vis>.row{order:1}
+#mSongBtn{display:none}body[data-form=phone] #mSongBtn{display:inline-flex;align-items:center}      /* the song's name in the top bar is a phone thing: elsewhere the song bar has it */

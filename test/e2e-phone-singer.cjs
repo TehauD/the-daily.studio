@@ -40,6 +40,8 @@ suite('e2e-phone-singer', async t => {
   await m.tap('.mnb[data-g="sing"]'); await wait(400);
   ok(await ev(() => !!document.getElementById('msMic') && !!document.getElementById('msRec') && document.querySelectorAll('.ms-vb .msc').length >= 8 && !document.querySelector('#msub').getClientRects().length), 'Sing: a microphone button, ● Record over the beat, your takes and the voice sounds, with nothing above it');
   await m.tap('#msMic'); await poll(() => ev(() => !!document.querySelector('.ms-ok')), 6000);
+  const lit = sel => ev(q => { const c = document.querySelector(q); if (!c || !c.width) return 0; const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let n = 0; for (let i = 0; i < d.length; i += 4 * 53) if (d[i] + d[i + 1] + d[i + 2] > 60) n++; return n; }, sel);
+  ok(await poll(async () => (await lit('#msHex')) > 50, 4000), 'Sing has the hexagons, live, at the top (' + await lit('#msHex') + ' lit samples)');
   ok(await ev(() => { const D = window.__daily; return D.CFG.vin === 'L' && !!D.E.hasInput && !!document.querySelector('.ms-ok'); }), '🎤 Sing into this phone: the microphone becomes the voice input and says it is ready');
   await m.tap('.ms-vb .msc[data-vb="Ballad"]'); await wait(200);
   ok(await ev(() => window.__daily.CFG.vb.preset === 'Ballad' && document.querySelector('.ms-vb .msc.on').dataset.vb === 'Ballad'), 'a voice sound is one tap (Ballad)');
@@ -58,6 +60,10 @@ suite('e2e-phone-singer', async t => {
   ok(await ev(() => !!document.querySelector('.msheet [data-group="guitar"] [data-sub="rig"]') && !!document.querySelector('.msheet [data-group="see"] [data-sub="vis"]')), 'More holds the guitar (rig, tones, tuner, I/O, tab, refine) and the visuals');
   await m.tap('.msheet [data-group="guitar"] [data-sub="tab"]'); await wait(400);
   ok(await ev(() => window.__daily.M.g === 'guitar' && document.getElementById('pane-tab').getClientRects().length > 0 && document.querySelector('.mnb.on').dataset.g === 'more'), 'and opens them, with More lit');
+  await m.tap('.mnb[data-g="more"]'); await wait(300); await m.tap('.msheet [data-group="see"] [data-sub="vis"]'); await wait(900);
+  const V = await ev(() => { const w = document.querySelector('#pane-vis .vwrap').getBoundingClientRect(), b = document.querySelector('#pane-vis > .row').getBoundingClientRect(); return { first: w.top < b.top, h: Math.round(w.height), top: Math.round(w.top) }; });
+  ok(V.first && V.h >= 240 && V.top < 200, 'More ▸ Visuals on a phone shows the hexagon graphic first, with its controls below (' + V.h + ' px tall, at ' + V.top + ' px)');
+  ok(await poll(async () => (await lit('#pane-vis canvas')) > 50, 4000), 'and it is drawing');
   ok(await ev(() => { const D = window.__daily; D.mGo('play'); const a = D.M.g; D.mGo('write', 'tab'); const b = D.M.g + '/' + D.M.s; D.mGo('stems'); return a === 'guitar' && b === 'guitar/tab' && D.M.g === 'tracks'; }), 'the old section names (play, write ▸ tab, stems) still lead to the right place');
 
   /* ---- a desktop is untouched ---- */

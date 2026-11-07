@@ -23,6 +23,9 @@ All notable changes to the-daily.studio (earlier versions were released under th
   - **● Record over the beat** records it on the vocal lane, with a count-in, and **▶ Hear it back** plays it.
   - Your takes are listed (with delete), and the eight voice sounds (Clean lead, Ballad, Harmony lead and so on) are one tap each.
   - Pitch and your range, Hum it into a song, and Voice memo are there too.
+- **The hexagons on a phone:**
+  - **Sing** has a strip of the hexagon field at the top. It follows your voice, and the whole mix while the song plays.
+  - **More ▸ Visuals** shows the hexagon graphic first, at nearly half the screen, with its looks and settings below (they used to come first, pushing it to the bottom).
 - **Beats** is the beats and who plays. Band holds every setting.
 - **The top bar keeps only the song's name.** The name opens the song sheet, which now holds the tempo, time signature, key and mode as well as the artist, tuning, capo and backing track. The arrangement toggle is now called **Timeline**.
 - Old phone section names (play, write, stems) still work for guided sessions and links. Panels the studio opens while it starts no longer move a phone off its screen.
