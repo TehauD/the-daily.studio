@@ -4,6 +4,11 @@ What the studio, its tutorials, its documents and its tests do **not** cover yet
 
 How to use it: before a release, move what the release closed into *Closed* with the version, and add what it opened. [RELEASE.md](RELEASE.md) has this as a checklist item. Items marked **(maintainer)** are decisions or facts only the project's owner can settle; nothing here blocks a build.
 
+## Closed in 2.48.1
+
+- Whole song needed a lot of scrolling and left most of the screen unused. It now opens as a chord sheet in columns, with repeats shortened, editing in place and a full-screen mode.
+- Nothing stopped two parts declaring the same function; the build now refuses it.
+
 ## Closed in 2.48.0
 
 - Seeing the whole song in Write: Write showed one section at a time, and ＋ could only add a Verse or a Chorus. Now there's **☰ Whole song**, a song map, and a menu of every section kind with names and chords filled in.

@@ -2,7 +2,30 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
-## 2.48.0 — 2026-11-07 — See the whole song, and Perform your way
+## 2.48.1 — 2026-11-07 — The whole song as a chord sheet
+
+### Write
+- **Whole song opens as a 📄 Sheet**, laid out the way a chord sheet is pasted:
+  - each section's name, then its words with the chords over them, or its bars of chords if it has no words;
+  - the sections flow into as many columns as the screen holds, so a whole song fits without scrolling;
+  - a section that repeats an earlier one word for word and chord for chord is one line ("Same words and chords as Chorus above"), with **Show** to open it;
+  - while the song plays, the section playing is lit and kept in view.
+- **Editing:** click a section to edit it where it is; **✓ Done** turns it back into the sheet. **✎ Edit all** shows every section's editor, as 2.48.0 did.
+- **A− / A+** change the text size; smaller text means more columns.
+- **⛶ Full screen** fills the window with the song. Esc, or the button again, brings the studio back.
+
+### Fixed
+- The new sheet code briefly reused the scale trainer's function name `wsFollow`, which started the trainer and repeated its "Connect your input" warning. It's renamed (never released).
+- **The build now refuses two parts declaring the same function**, since JavaScript lets the later one silently replace the earlier.
+
+### Tests
+- `e2e-songmap` (27 checks) adds:
+  - the sheet: sections, chords over the words, bars, a repeat shortened, columns;
+  - editing in place;
+  - full screen and Esc;
+  - that the trainer stays quiet.
+
+2026-11-07 — See the whole song, and Perform your way
 
 ### Write: the whole song
 - **☰ Whole song**, a fourth way to see Write beside Tab, Words and Both. It shows every section in order, from intro to outro, each with its name, chords and words, all editable where they are.

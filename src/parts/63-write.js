@@ -41,7 +41,7 @@ function writeBuild() {
   bus.on('capnote', e => wrCapNote(e));
   wrLayout(); wrBarDraw(); wrCapUI();
 }
-function wrMode(k) { WR.mode = k; CFG.wrMode = k; saveCfg(); wrLayout(); if (k !== 'tab') renderWords(); try { if (typeof xpSignal === 'function') xpSignal(.5); } catch (e) { } }
+function wrMode(k) { if (k !== 'song') document.body.classList.remove('ws-full'); WR.mode = k; CFG.wrMode = k; saveCfg(); wrLayout(); if (k !== 'tab') renderWords(); try { if (typeof xpSignal === 'function') xpSignal(.5); } catch (e) { } }
 function wrLayout() {
   const p = PANES.tab; if (!p) return; p.dataset.wr = WR.mode; const fo = wrFretOn(); p.classList.toggle('wr-nofret', !fo);
   $$('button', UI.wrModeSeg).forEach(b => { const on = b.dataset.wm === WR.mode; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });

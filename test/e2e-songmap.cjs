@@ -11,7 +11,29 @@ suite('e2e-songmap', async t => {
   await ev(() => { const D = window.__daily; D.S.sections = [D.mkSection('Intro', ['Am', 'F']), D.mkSection('Verse', ['Am', 'F', 'C', 'G']), D.mkSection('Chorus', ['F', 'G', 'Am', 'Am', 'F', 'G', 'C', 'C'])]; D.S.sections[1].lyrics = '[Am]Salt wind on the [F]water\n[C]Morning on my [G]skin'; D.S.sections[2].lyrics = '[F]Hold on, [G]hold on'; D.T.bars = null; D.commit(false); D.dockGo('tab'); D.wrMode('song'); });
   await wait(500);
 
-  /* ---- Write: the whole song ---- */
+  /* ---- Write: the whole song as a chord sheet (2.48.1, the default) ---- */
+  await ev(() => { const D = window.__daily; D.S.sections.push(Object.assign(D.mkSection('Chorus', ['F', 'G', 'Am', 'Am', 'F', 'G', 'C', 'C']), { lyrics: '[F]Hold on, [G]hold on' })); D.T.bars = null; D.commit(false); });
+  await wait(500);
+  const SH = await ev(() => { const sh = document.getElementById('wsSheet'), secs = [...sh.querySelectorAll('.wsh-sec')];
+    return { n: secs.length, names: secs.map(x => x.querySelector('.wsh-n').textContent).join(), lines: sh.querySelectorAll('.wsh-l').length, chords: [...secs[1].querySelectorAll('.ly-c')].map(c => c.textContent.trim()).filter(Boolean).join(' '), words: secs[1].querySelector('.wsh-l').textContent.replace(/\s+/g, ' ').trim(),
+      bars: [...secs[0].querySelectorAll('.wsh-bar')].map(b => b.textContent).join(' '), rep: secs[3].classList.contains('rep') && /Same words and chords as Chorus/.test(secs[3].textContent), cols: getComputedStyle(sh).columnWidth, inputs: sh.querySelectorAll('input,textarea').length }; });
+  ok(SH.n === 4 && SH.names === 'Intro,Verse,Chorus,Chorus' && SH.inputs === 0, 'Whole song opens as a chord sheet: every section, nothing to edit in the way (' + SH.names + ')');
+  ok(SH.chords === 'Am F C G' && /^Am ?Salt wind on the ?F? ?water/.test(SH.words) && SH.lines === 3, 'the words with their chords over them, as pasted (' + SH.chords + ' over “' + SH.words + '”)');
+  ok(SH.bars === 'Am F', 'a section with no words shows its bars of chords (' + SH.bars + ')');
+  ok(SH.rep, 'a chorus that repeats an earlier one word for word is one line');
+  ok(SH.cols === '320px', 'it flows into columns across the screen (' + SH.cols + ' each)');
+  await ev(() => document.querySelector('#wsSheet .wsh-sec[data-si="1"]').click()); await wait(300);
+  ok(await ev(() => { const e = document.querySelector('#wsSheet .wsh-sec.editing'); return !!e && e.dataset.si === '1' && !!e.querySelector('textarea') && document.querySelectorAll('#wsSheet .wsh-sec').length === 4; }), 'clicking a section opens its editor in place, the rest stays a sheet');
+  await ev(() => document.getElementById('wsFull').click()); await wait(300);
+  const FS = await ev(() => { const r = document.getElementById('pane-tab').getBoundingClientRect(); return { full: document.body.classList.contains('ws-full'), w: r.width >= innerWidth - 1, h: r.height >= innerHeight - 1 }; });
+  ok(FS.full && FS.w && FS.h, 'Full screen fills the window with the song');
+  await p.keyboard.press('Escape'); await wait(200);
+  ok(await ev(() => !document.body.classList.contains('ws-full')), 'and Esc brings the studio back');
+  await wait(800);
+  ok(await ev(() => ![...document.querySelectorAll('#toasts .toast')].some(t => /trainer/.test(t.textContent))), 'the sheet does not start the scale trainer (two functions once shared a name; the build now refuses that)');
+  await ev(() => { const D = window.__daily; D.S.sections.pop(); D.T.bars = null; D.commit(false); D.CFG.wsView = 'edit'; D.wrMode('song'); }); await wait(400);
+
+  /* ---- Write: the whole song, every editor (Edit all) ---- */
   const W = await ev(() => { const blocks = [...document.querySelectorAll('#pane-tab .wr-words .smap-b')];
     return { secs: [...document.querySelectorAll('#pane-tab .ws-sec')].map(x => x.querySelector('input.in').value), names: blocks.map(b => b.textContent), grow: blocks.map(b => +b.style.flexGrow), kinds: blocks.map(b => b.dataset.kind), tabHidden: getComputedStyle(document.querySelector('#pane-tab .wr-tabcol')).display === 'none' }; });
   ok(W.secs.join() === 'Intro,Verse,Chorus' && W.tabHidden, 'Whole song shows every section in order, each one editable (' + W.secs.join(', ') + '), with the tab out of the way');

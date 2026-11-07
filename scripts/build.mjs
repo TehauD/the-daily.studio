@@ -22,6 +22,9 @@ let js = "(()=>{'use strict';\n";
 for (const f of parts) js += `/* >>> parts/${f} */\n${src('parts/' + f)}\n`;
 js += "if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();\n})();\n";
 try { new vm.Script(js, { filename: 'daily-songs.js' }); } catch (e) { console.error('Syntax error in bundled script:\n' + e.stack); process.exit(1); }
+/* two parts declaring the same top-level function is legal JavaScript, and the later one silently replaces the earlier everywhere: refuse it */
+{ const seen = new Map(), dup = []; for (const f of parts) for (const m of src('parts/' + f).matchAll(/^(?:async\s+)?function\s*\*?\s*([A-Za-z_$][\w$]*)/gm)) { if (seen.has(m[1])) dup.push(m[1] + ' (' + seen.get(m[1]) + ' and ' + f + ')'); else seen.set(m[1], f); }
+  if (dup.length) { console.error('The same function is declared in two places, so one would silently replace the other:\n  ' + dup.join('\n  ')); process.exit(1); } }
 
 const MARK = markInner({ hex: 'var(--accent)', ink: 'var(--text)' });
 const MARK_SM = markInner({ hex: 'var(--accent)', ink: 'var(--text)', bars: false, k: 1.45 });

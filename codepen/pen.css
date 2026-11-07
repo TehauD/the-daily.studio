@@ -1720,3 +1720,22 @@ body.simple:not(.vz-all) #pane-vis .seg [data-m]:not([data-m=hex]):not([data-m=c
 .perform.pf-size-l .pf-l{font-size:clamp(26px,6.6vh,70px)}.perform.pf-size-l .pf-chord{font-size:clamp(80px,27vh,320px)}
 .perform.pf-size-xl .pf-l{font-size:clamp(30px,8vh,90px)}.perform.pf-size-xl .pf-chord{font-size:clamp(90px,30vh,360px)}
 @media (max-width:700px){.perform.pf-ctl-top .pf-bar,.perform.pf-ctl-auto .pf-bar{justify-content:center}.perform .pf-map .smap-b{min-width:18px;font-size:10px}.perform.pf-lyr-bottom .pf-lyr{width:96vw}}
+/* ---- 2.48.1: Whole song as a chord sheet (part 63b) ---- */
+.wsh{--wsf:15px;column-width:320px;column-gap:28px;column-rule:1px solid var(--line);font-size:var(--wsf);padding:4px 2px 16px}
+.wsh[data-size="1"]{--wsf:13px;column-width:250px}.wsh[data-size="3"]{--wsf:18px;column-width:400px}.wsh[data-size="4"]{--wsf:22px;column-width:500px}
+.wsh-sec{break-inside:avoid;margin:0 0 .9em;padding:.35em .6em .45em;border-left:4px solid hsl(var(--sh) 50% 50%);border-radius:8px;cursor:pointer;background:transparent;transition:background .15s}
+.wsh-sec:hover{background:color-mix(in srgb,var(--text) 4%,transparent)}.wsh-sec.cur{background:hsl(var(--sh) 55% 50% / .14);box-shadow:inset 0 0 0 1px hsl(var(--sh) 55% 50% / .5)}
+.wsh-sec.editing{cursor:default;break-inside:auto;column-span:all;background:color-mix(in srgb,var(--text) 3%,transparent)}
+.wsh-h{display:flex;align-items:center;gap:8px;margin-bottom:.2em}.wsh-n{font:800 .82em var(--display);letter-spacing:.06em;text-transform:uppercase;color:hsl(var(--sh) 45% 40%)}
+.wsh-m{font:600 .72em var(--mono);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wsh-b{min-height:24px;padding:0 7px;font-size:11px;opacity:0;transition:opacity .15s}.wsh-sec:hover .wsh-b,.wsh-sec:focus-within .wsh-b,.wsh-sec.editing .wsh-b{opacity:1}
+.wsh-l{font:600 1em/1.25 var(--sans);margin:.1em 0 .25em}.wsh .ly-c{color:var(--accent);font-size:.8em}.wsh-gap{height:.6em}
+.wsh-bars{display:flex;flex-wrap:wrap;gap:4px;font:700 .9em var(--mono)}.wsh-bar{padding:.1em .55em;border:1px solid var(--line2);border-radius:6px}
+.wsh-rep{font-size:.82em;color:var(--muted);font-style:italic}.wsh-sec.rep{padding-bottom:.3em}
+@media (hover:none){.wsh-b{opacity:1}}
+:root[data-theme="dark"] .wsh-n{color:hsl(var(--sh) 55% 68%)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .wsh-n{color:hsl(var(--sh) 55% 68%)}}
+.linkish{background:none;border:0;padding:0;color:var(--accent);text-decoration:underline;cursor:pointer;font:inherit}
+body.ws-full #pane-tab{position:fixed;inset:0;z-index:70;background:var(--bg);overflow:auto;padding:12px clamp(12px,2vw,28px) 24px}
+body.ws-full #pane-tab .wr-bar{position:sticky;top:-12px;z-index:2;background:var(--bg);padding-top:6px}
+body.ws-full .wsh{column-width:340px}

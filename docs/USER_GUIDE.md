@@ -44,7 +44,12 @@ Contents: [Whole song and Perform layouts](#-the-whole-song-and-perform-your-way
 ## ☰ The whole song, and Perform your way (2.48)
 
 **In Write:**
-- **☰ Whole song** (beside Tab, Words and Both) shows every section in order, each with its name, chords and words, and you can edit them where they are. Use ↑ ↓ to move a section, ⧉ to duplicate one and ▶ to play from it.
+- **☰ Whole song** (beside Tab, Words and Both) shows every section in order. It opens as a **📄 Sheet** (2.48.1), laid out like a pasted chord sheet:
+  - the words with their chords over them, in as many columns as the screen holds;
+  - a repeated chorus is one line;
+  - the section playing is lit.
+
+  Click a section to edit it in place (✓ Done to finish), or choose **✎ Edit all** for every section's editor, where ↑ ↓ move a section, ⧉ duplicates one and ▶ plays from it. **A− / A+** change the text size, and **⛶ Full screen** fills the window with the song (Esc to come back).
 - **The song map** above the section chips shows a block per section, as wide as its bars and coloured by kind. The one playing is lit; click a block to go there.
 - **＋** opens a menu: Intro, Verse, Pre-chorus, Chorus, Interlude, Bridge, Solo, Outro, or a copy of a section already in the song. The new section goes after the one you picked and is named for you (Verse 1, Verse 2…). A second verse or chorus starts with the first one's chords.
 

@@ -34,7 +34,7 @@ window.__dailyRoom = (id, make) => {
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.48.0', BUILD = 'f80dcb6', PARTS_N = +'113' || 0, LINES_N = +'18983' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.48.1', BUILD = 'afc8cef', PARTS_N = +'113' || 0, LINES_N = +'19018' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { ghApp: { clientId: '', slug: '' },   /* Sign in with GitHub: the GitHub App's public client id and its slug (docs/GITHUB.md); empty = only the token way */
   support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://the-daily.studio/journal/' };
@@ -13302,7 +13302,7 @@ function writeBuild() {
   bus.on('capnote', e => wrCapNote(e));
   wrLayout(); wrBarDraw(); wrCapUI();
 }
-function wrMode(k) { WR.mode = k; CFG.wrMode = k; saveCfg(); wrLayout(); if (k !== 'tab') renderWords(); try { if (typeof xpSignal === 'function') xpSignal(.5); } catch (e) { } }
+function wrMode(k) { if (k !== 'song') document.body.classList.remove('ws-full'); WR.mode = k; CFG.wrMode = k; saveCfg(); wrLayout(); if (k !== 'tab') renderWords(); try { if (typeof xpSignal === 'function') xpSignal(.5); } catch (e) { } }
 function wrLayout() {
   const p = PANES.tab; if (!p) return; p.dataset.wr = WR.mode; const fo = wrFretOn(); p.classList.toggle('wr-nofret', !fo);
   $$('button', UI.wrModeSeg).forEach(b => { const on = b.dataset.wm === WR.mode; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
@@ -13469,18 +13469,53 @@ function secAddMenu(anchor, done) {
     S.sections.length ? h('div', { class: 'tiny muted', style: { marginTop: '6px' } }, 'Or repeat one, words and all:') : '',
     S.sections.length ? h('div', { class: 'sm-add-g' }, S.sections.map((s, si) => h('button', { class: 'btn sm', role: 'menuitem', onclick: go(() => { const c = JSON.parse(JSON.stringify(s)); c.id = uid(); const at = clamp((SEL.sec != null ? SEL.sec : S.sections.length - 1) + 1, 0, S.sections.length); S.sections.splice(at, 0, c); T.bars = null; commit(); SEL.sec = at; if (typeof TE !== 'undefined') { TE.sec = at; TE.bi = 0; } bus.emit('sel'); return at; }) }, '⧉ ' + s.name))) : ''));
 }
-/** Write's Whole song view: the map, then every section in order with its name, chords and words, each editable where it is */
+/* Write's Whole song view (2.48). Two ways to see it:
+     Sheet (2.48.1, the default)  the song as a chord sheet, the way it was pasted: each section's name, then its words with the chords
+                                 over them (or its bars of chords, if it has no words), flowing into as many columns as the screen
+                                 holds. A section that repeats an earlier one word for word and chord for chord is one line. Click a
+                                 section to edit it where it is; the section playing is lit and kept in view.
+     Edit                        every section's full editor card, one under another. */
+const WSH = { edit: -1, open: new Set() };
+const wsView = () => CFG.wsView === 'edit' ? 'edit' : 'sheet', wsSize = () => clamp(+CFG.wsSize || 2, 1, 4);
+const wsSame = (a, b) => a.lyrics.trim() === b.lyrics.trim() && a.bars.map(x => x.chord).join('|') === b.bars.map(x => x.chord).join('|');
+function wsSheetSec(sec, si) {
+  const chords = [...new Set(sec.bars.flatMap(barChords))], rep = S.sections.slice(0, si).find(o => wsSame(o, sec) && (o.lyrics.trim() || o.bars.some(b => b.chord))), edit = WSH.edit === si;
+  const head = h('div', { class: 'wsh-h' }, h('b', { class: 'wsh-n' }, sec.name), h('span', { class: 'wsh-m' }, sec.bars.length + ' bar' + (sec.bars.length === 1 ? '' : 's') + (chords.length ? ' · ' + chords.slice(0, 6).join(' ') : '')),
+    h('span', { class: 'grow' }), h('button', { class: 'btn sm wsh-b', title: 'Play from ' + sec.name, 'aria-label': 'Play from ' + sec.name, onclick: e => { e.stopPropagation(); T.cursor = secStart(si) * spb(); if (T.playing) stopPlay(true); play(); } }, '▶'),
+    h('button', { class: 'btn sm wsh-b' + (edit ? ' on' : ''), title: edit ? 'Done editing' : 'Edit ' + sec.name, onclick: e => { e.stopPropagation(); WSH.edit = edit ? -1 : si; SEL.sec = si; renderWords(); } }, edit ? '✓ Done' : '✎'));
+  const el = h('section', { class: 'wsh-sec' + (edit ? ' editing' : ''), 'data-si': si, 'data-kind': secKind(sec.name), style: '--sh:' + secHue(sec.name), title: edit ? '' : 'Click to edit ' + sec.name, onclick: () => { if (WSH.edit !== si) { WSH.edit = si; SEL.sec = si; renderWords(); } } }, head);
+  if (edit) { const c = sectionCard(sec, si, false, {}); c.onclick = e => e.stopPropagation(); el.append(c); return el; }
+  if (rep && !WSH.open.has(si)) { el.classList.add('rep'); el.append(h('div', { class: 'wsh-rep' }, 'Same words and chords as ' + rep.name + ' above. ', h('button', { class: 'linkish', onclick: e => { e.stopPropagation(); WSH.open.add(si); renderWords(); } }, 'Show'))); return el; }
+  const lines = (sec.lyrics || '').replace(/\s+$/, '').split('\n'), words = lines.some(l => lyPlain(l));
+  if (words) lines.forEach(l => el.append(l.trim() ? h('div', { class: 'wsh-l' }, ...lyNodes(l, -1)) : h('div', { class: 'wsh-gap' })));
+  else el.append(h('div', { class: 'wsh-bars' }, sec.bars.map(b => h('span', { class: 'wsh-bar' }, b.chord || '—'))));
+  return el;
+}
 function renderWholeSong(box) {
-  const bars = S.sections.reduce((a, s) => a + s.bars.length, 0), secs = (si) => box.querySelector('.ws-sec[data-si="' + si + '"]');
-  const map = songMapEl({ onPick: si => { SEL.sec = si; if (typeof TE !== 'undefined') TE.sec = si; const c = secs(si); if (c) c.scrollIntoView({ block: 'start', behavior: 'smooth' }); bus.emit('sel'); } });
-  box.append(h('div', { class: 'wr-wh' }, h('b', { class: 'small' }, 'WHOLE SONG · ' + S.sections.length + ' section' + (S.sections.length === 1 ? '' : 's') + ' · ' + bars + ' bars'), h('span', { class: 'grow' }),
+  const bars = S.sections.reduce((a, s) => a + s.bars.length, 0), view = wsView(), size = wsSize(), find = si => box.querySelector('[data-si="' + si + '"]:not(.smap-b)');
+  const map = songMapEl({ onPick: si => { SEL.sec = si; if (typeof TE !== 'undefined') TE.sec = si; const c = find(si); if (c) c.scrollIntoView({ block: 'start', behavior: 'smooth' }); bus.emit('sel'); } });
+  const seg = h('div', { class: 'seg ws-view', role: 'group', 'aria-label': 'How the whole song is shown' }, [['sheet', '📄 Sheet', 'The song as a chord sheet: every word with its chords over it, in columns'], ['edit', '✎ Edit all', 'Every section\'s editor, one under another']].map(([k, t, d]) => h('button', { class: view === k ? 'on' : '', 'aria-pressed': String(view === k), 'data-ws': k, title: d, onclick: () => { CFG.wsView = k; WSH.edit = -1; saveCfg(); renderWords(); } }, t)));
+  const sz = d => () => { CFG.wsSize = clamp(size + d, 1, 4); saveCfg(); renderWords(); };
+  box.append(h('div', { class: 'wr-wh' }, h('b', { class: 'small' }, 'WHOLE SONG · ' + S.sections.length + ' section' + (S.sections.length === 1 ? '' : 's') + ' · ' + bars + ' bars'), h('span', { class: 'grow' }), seg,
+    view === 'sheet' ? h('span', { class: 'row', style: 'gap:4px' }, h('button', { class: 'btn sm', id: 'wsSmaller', title: 'Smaller text, more columns', 'aria-label': 'Smaller text', disabled: size <= 1, onclick: sz(-1) }, 'A−'), h('button', { class: 'btn sm', id: 'wsBigger', title: 'Larger text', 'aria-label': 'Larger text', disabled: size >= 4, onclick: sz(1) }, 'A+')) : '',
+    h('button', { class: 'btn sm' + (document.body.classList.contains('ws-full') ? ' on' : ''), id: 'wsFull', title: 'Fill the window with the whole song (Esc to come back)', 'aria-pressed': String(document.body.classList.contains('ws-full')), onclick: () => wsFullSet(!document.body.classList.contains('ws-full')) }, document.body.classList.contains('ws-full') ? '✕ Exit full screen' : '⛶ Full screen'),
     h('button', { class: 'btn sm', id: 'wsAdd', title: 'Add a section: intro, verse, chorus, interlude…', onclick: e => secAddMenu(e.currentTarget, () => renderWords()) }, '＋ Section'),
     h('button', { class: 'btn sm', title: 'Paste a finished lyric sheet: [Verse] and [Chorus] headings become sections, with your chords placed over the words', onclick: () => liOpen() }, '📋 Paste lyrics')), map);
-  S.sections.forEach((sec, si) => box.append(h('div', { class: 'ws-sec', 'data-si': si, 'data-kind': secKind(sec.name), style: '--sh:' + secHue(sec.name) }, sectionCard(sec, si, false, {}))));
+  if (view === 'sheet') box.append(h('div', { class: 'wsh', id: 'wsSheet', 'data-size': size }, S.sections.map(wsSheetSec)));
+  else S.sections.forEach((sec, si) => box.append(h('div', { class: 'ws-sec', 'data-si': si, 'data-kind': secKind(sec.name), style: '--sh:' + secHue(sec.name) }, sectionCard(sec, si, false, {}))));
   box._map = map;
 }
+/** the whole song filling the window: the Write panel over everything else, until Esc or the button again */
+function wsFullSet(on) { document.body.classList.toggle('ws-full', !!on); renderWords(); setTimeout(() => window.dispatchEvent(new Event('resize')), 30); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.body.classList.contains('ws-full') && !document.querySelector('dialog[open]') && !document.getElementById('perform')) { e.preventDefault(); wsFullSet(false); } });
+bus.on('dock', id => { if (id !== 'tab' && document.body.classList.contains('ws-full')) wsFullSet(false); });
+/** the sheet follows the song: the section playing is lit and scrolled into view */
+function wsheetFollow() {
+  const sh = document.getElementById('wsSheet'); if (!sh || !sh.offsetParent) return; const w = smWhere(), si = w && T.playing ? w.si : -1; if (sh._si === si) return; sh._si = si;
+  sh.querySelectorAll('.wsh-sec').forEach(x => x.classList.toggle('cur', +x.dataset.si === si)); const c = sh.querySelector('.wsh-sec.cur'); if (c && WSH.edit < 0) try { c.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' }); } catch (e) { }
+}
 /* keep every song map on the page in step with the playhead, a few times a second (only the ones that are showing) */
-setInterval(() => { document.querySelectorAll('.smap').forEach(m => { if (m._paint && m.offsetParent) try { m._paint(); } catch (e) { } }); }, 250);
+setInterval(() => { document.querySelectorAll('.smap').forEach(m => { if (m._paint && m.offsetParent) try { m._paint(); } catch (e) { } }); try { wsheetFollow(); } catch (e) { } }, 250);
 
 /* >>> parts/64-goals.js */
 /* ============================================================
