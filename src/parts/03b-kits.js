@@ -1,15 +1,15 @@
 /* ============================================================
-   Part 03b · DRUM MACHINES AND THE 808 SUB (2.42) — the modern kits, synthesised the way the classic machines made their sounds
+   Part 03b · DRUM MACHINES AND THE GLIDE SUB (2.42; neutral names since 2.47.1) — the modern kits, synthesised the way the classic machines made their sounds
    2.42 also rebuilds the acoustic kits (Acoustic, Rock Room, Brush) the same way, with a small room around them.
    No samples: every hit is built from oscillators and the band's noise buffer, so nothing is downloaded or licensed, and it costs
    a few kilobytes. Each kit with an `engine` is played here instead of by the plain kit in part 03:
-     808       a long sub kick (a sine falling from about 150 to 48 Hz, held, then saturated so phones can hear it), a snare of two
+     Deep Machine   a long sub kick (a sine falling from about 150 to 48 Hz, held, then saturated so phones can hear it), a snare of two
                tuned tones and a burst of noise, hats from six square waves at inharmonic pitches through a band-pass (the metallic
                "tss" comes from that, not from noise), an open hat that the closed one chokes, a clap of four quick bursts and a tail
-     909       a short punchy kick with a click, a brighter snare with more noise, hats of metal and noise together
+     Club Machine   a short punchy kick with a click, a brighter snare with more noise, hats of metal and noise together
      Boom Bap  a round, dusty kick and a fat snare, both through a soft saturator, rounded-off hats
-   The 808 sub is a bass sound for the band's bass ("808 Sub"): a sine with a short pitch drop, saturated, held for the note,
-   one note at a time; when a note starts while the last one still sounds it slides up or down to it, as 808 basslines do.
+   The glide sub is a bass sound for the band's bass ("Glide Sub"): a sine with a short pitch drop, saturated, held for the note,
+   one note at a time; when a note starts while the last one still sounds it slides up or down to it, as sub basslines in trap do.
    ============================================================ */
 Object.assign(KITS, {
   /* 2.42: the acoustic kits, played the same way: a beater, a head and a shell; tuned shell tones and snare wires; hats of metal and noise;
@@ -17,12 +17,15 @@ Object.assign(KITS, {
   'Acoustic': { engine: 1, human: 1, k: { f0: 112, f1: 54, pt: .045, dec: .42, drive: 1.5, click: .32, lvl: 1, body: .32, room: .1 }, s: { t: [188, 322], td: .12, n: 3800, nd: .24, nl: .72, clap: 0, room: .2 }, h: { tune: 1.45, cd: .05, od: .55, noise: .9, room: .05 }, c: { f: 1100, tail: .12, rim: 1, room: .12 }, t: { f0: 150, f1: 98, dec: .5, stick: .12, room: .18 } },
   'Rock Room': { engine: 1, human: 1, k: { f0: 122, f1: 50, pt: .04, dec: .52, drive: 2.2, click: .5, lvl: 1.05, body: .4, room: .28 }, s: { t: [178, 300], td: .14, n: 3400, nd: .3, nl: .88, clap: 0, room: .45, drive: 2 }, h: { tune: 1.35, cd: .06, od: .7, noise: 1, room: .12 }, c: { f: 1100, tail: .12, rim: 1, room: .3 }, t: { f0: 135, f1: 82, dec: .62, stick: .18, room: .4 } },
   'Brush (soft)': { engine: 1, human: 1, k: { f0: 96, f1: 55, pt: .05, dec: .3, drive: 1.1, click: .07, lvl: .9, body: .25, room: .08 }, s: { t: [200, 330], td: .08, n: 2400, nd: .34, nl: .5, clap: 0, brush: 1, room: .14 }, h: { tune: 1.5, cd: .08, od: .45, noise: 1, dark: 7500, lvl: .6, room: .06 }, c: { f: 1100, tail: .1, rim: 1, soft: 1, room: .1 }, t: { f0: 160, f1: 120, dec: .4, stick: .05, room: .12 } },
-  '808': { engine: 1, k: { f0: 150, f1: 48, pt: .07, dec: 1.15, drive: 2.4, click: .18, lvl: 1 }, s: { t: [185, 330], td: .11, n: 1800, nd: .17, nl: .55, clap: .35 }, h: { tune: 1, cd: .05, od: .42, noise: 0 }, c: { f: 1100, tail: .2 }, t: { f0: 150, f1: 95, dec: .38 } },
-  '909': { engine: 1, k: { f0: 240, f1: 52, pt: .035, dec: .48, drive: 3, click: .45, lvl: 1 }, s: { t: [195, 290], td: .1, n: 4200, nd: .24, nl: .8, clap: 0 }, h: { tune: 1.3, cd: .045, od: .32, noise: .5 }, c: { f: 1300, tail: .16 }, t: { f0: 200, f1: 120, dec: .28 } },
+  'Deep Machine': { engine: 1, k: { f0: 150, f1: 48, pt: .07, dec: 1.15, drive: 2.4, click: .18, lvl: 1 }, s: { t: [185, 330], td: .11, n: 1800, nd: .17, nl: .55, clap: .35 }, h: { tune: 1, cd: .05, od: .42, noise: 0 }, c: { f: 1100, tail: .2 }, t: { f0: 150, f1: 95, dec: .38 } },
+  'Club Machine': { engine: 1, k: { f0: 240, f1: 52, pt: .035, dec: .48, drive: 3, click: .45, lvl: 1 }, s: { t: [195, 290], td: .1, n: 4200, nd: .24, nl: .8, clap: 0 }, h: { tune: 1.3, cd: .045, od: .32, noise: .5 }, c: { f: 1300, tail: .16 }, t: { f0: 200, f1: 120, dec: .28 } },
   'Boom Bap': { engine: 1, k: { f0: 125, f1: 50, pt: .05, dec: .42, drive: 1.9, click: .3, lvl: 1.05, dusty: 1 }, s: { t: [205, 340], td: .09, n: 2600, nd: .2, nl: .7, clap: .15, dusty: 1 }, h: { tune: .85, cd: .06, od: .3, noise: .35, dusty: 1 }, c: { f: 1000, tail: .14 }, t: { f0: 180, f1: 140, dec: .2 } }
 });
-INST['808 Sub'] = INST.Sub;      /* a pluck stands in where the 808 cannot play (a quick preview) */
-const BASS_TONES = ['Round', 'Sub', '808 Sub', 'Pick', 'Muted Pluck'];
+INST['Glide Sub'] = INST.Sub;      /* a pluck stands in where the sub cannot play (a quick preview) */
+const BASS_TONES = ['Round', 'Sub', 'Glide Sub', 'Pick', 'Muted Pluck'];
+/* 2.47.1: neutral names. Songs, song links and backups saved before then still name the old ones; bandRename maps them on the way in */
+const BAND_RENAME = { kit: { '808': 'Deep Machine', '909': 'Club Machine' }, tone: { '808 Sub': 'Glide Sub' } };
+function bandRename(B) { if (!B) return B; if (BAND_RENAME.kit[B.kit]) B.kit = BAND_RENAME.kit[B.kit]; if (BAND_RENAME.tone[B.bassTone]) B.bassTone = BAND_RENAME.tone[B.bassTone]; return B; }
 const KIT_HAT = [205.3, 304.4, 369.6, 522.7, 540, 800];      /* the six square-wave pitches of the classic metallic hat, in Hz */
 const DMK = { open: null, curve: null, room: null };
 /** a soft-clip curve (tanh), made once */
@@ -98,10 +101,10 @@ function kitRim(K, t, vol, out) {
   const a = o(1650), b = o(480), g = gn(0), g2 = gn(0); kitEnv(g, t, .28 * vol * s, .025, .0005); kitEnv(g2, t, .32 * vol * s, .045, .0008); a.connect(g); b.connect(g2); g.connect(out); g2.connect(out); a.start(t); b.start(t); a.stop(t + .05); b.stop(t + .07);
   const ng = gn(0), bp = bq('bandpass', 2300, 1.4); kitEnv(ng, t, .3 * vol * s, .035, .0005); kitNoise(t, .04, bp); bp.connect(ng); ng.connect(out); kitSend(g2, P.room);
 }
-/* ---------- the 808 sub ---------- */
-/** one 808 bass note at time t: midi m, velocity v, held about `dur` seconds; slides from the last note if that one is still ringing */
+/* ---------- the glide sub ---------- */
+/** one glide-sub bass note at time t: midi m, velocity v, held about `dur` seconds; slides from the last note if that one is still ringing */
 function sub808(t, m, v, dur) {
-  const c = E.ctx; if (!c) return; if (m >= 40) m -= 12;      /* down where an 808 lives */
+  const c = E.ctx; if (!c) return; if (m >= 40) m -= 12;      /* down where a sub bass lives */
   const f = mtof(m), len = clamp((dur || .5) + .3, .4, 2.6), prev = E.sub808, slide = prev && prev.end > t + .02 && t - prev.t > .04 && Math.abs(prev.m - m) <= 12;
   if (prev && prev.end > t) { try { prev.g.gain.cancelScheduledValues(t); prev.g.gain.setTargetAtTime(.0001, t, slide ? .02 : .008); prev.o.stop(t + .2); } catch (e) { } }
   const o = c.createOscillator(), o2 = c.createOscillator(), g = gn(0), g2 = gn(.1), sh = kitShaper(2.8), lp = bq('lowpass', 2400, .6);

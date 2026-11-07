@@ -2,6 +2,20 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.47.1 — 2026-11-07 — Neutral names for the drum machines
+
+### Changed
+- The drum machines and the sub bass have neutral names:
+  - **Deep Machine** (was 808): the long sub kick;
+  - **Club Machine** (was 909): the short punchy kick;
+  - **Glide Sub** (was 808 Sub): the bass that slides between notes.
+  - The sounds are unchanged. Songs, song links, backups and snapshots saved with the old names open with the new ones.
+- The Afrobeats beat is now called **Golden Hour** (was Afro Sunset).
+- LICENSING.md, THIRD_PARTY_NOTICES.md and the docs use the new names. The open item about the style names is closed.
+
+### Tests
+- `e2e-kits`: a song saved with the old names opens with the new ones, no kit or bass sound has a model number in its name, and the Afrobeats beat is Golden Hour.
+
 ## 2.47.0 — 2026-11-07 — The tutorials, guides and licensing catch up
 
 A release to close the gaps that 2.39–2.46.1 left in the tutorials, the documents, the licensing register and the tests, and to start a register of what is still open: [docs/GAPS.md](docs/GAPS.md). Nothing is removed.

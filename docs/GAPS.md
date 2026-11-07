@@ -4,6 +4,10 @@ What the studio, its tutorials, its documents and its tests do **not** cover yet
 
 How to use it: before a release, move what the release closed into *Closed* with the version, and add what it opened. [RELEASE.md](RELEASE.md) has this as a checklist item. Items marked **(maintainer)** are decisions or facts only the project's owner can settle; nothing here blocks a build.
 
+## Closed in 2.47.1
+
+- **Neutral names** for the drum machines and the sub bass: Deep Machine (was 808), Club Machine (was 909) and Glide Sub (was 808 Sub). Saved songs, song links, backups and snapshots that use the old names open with the new ones (`bandRename`). The Afrobeats beat is now **Golden Hour** (was Afro Sunset).
+
 ## Closed in 2.47.0
 
 **Tutorials**
@@ -26,7 +30,7 @@ How to use it: before a release, move what the release closed into *Closed* with
 **Tests**
 - `test/e2e-privacy.cjs` had not been widened since 2.19.1. Its session now taps a beat with Song build, makes and reads a song link and tunes a take and puts it back, and still makes no request to any other site.
 - TESTING.md's table was missing sixteen suites (agent, goals, chord sheets, share, tip jar, GitHub and more). All listed now.
-- HARDWARE_CHECKLIST.md had nothing after 2.12. Section 15 covers what only ears and real devices can judge: the beats and the 808 sub on real speakers, the guitars folded to mono, Song build, tuning a real voice, singing on a phone, song links through chat apps, and the tour.
+- HARDWARE_CHECKLIST.md had nothing after 2.12. Section 15 covers what only ears and real devices can judge: the beats and the sub bass on real speakers, the guitars folded to mono, Song build, tuning a real voice, singing on a phone, song links through chat apps, and the tour.
 
 **Agents and machine-readable files**
 - `llms.txt` listed the renamed `open_shower_mode` as a tool with a garbled line; only the tools table is read now, and `verify-site` checks it.
@@ -62,7 +66,6 @@ How to use it: before a release, move what the release closed into *Closed* with
 ### Licensing and legal (maintainer)
 - **Demo words:** confirm you wrote the four lines of the demo song.
 - **MediaPipe models:** confirm Google's terms before self-hosting or redistributing `selfie_segmenter.tflite` (and the hand model).
-- **"808" and "909"** as style names: generic among producers and no manufacturer is named, but you may prefer neutral names (a one-line change, with a mapping for saved songs).
 - **Patents:** none searched. The methods are decades old and the early patents have run their term; a freedom-to-operate opinion is needed before licensing the code commercially as a product.
 - **Trademark:** no search for "the-daily.studio" or "The Daily".
 - **Takedown contact:** none, if the site becomes a public product.

@@ -39,7 +39,7 @@ function pluck(track, time, midi, vel, o = {}) {
 /* ---------- drums ---------- */
 const KITS = {
   'Acoustic': { k: [150, 48, .30, 1], s: [190, 3200, .2, .7], h: [7000, .035, .35], o: [7000, .28, .3], c: [1500, .18], t: [110, .3] },
-  '808': { k: [110, 38, .6, 1.2], s: [230, 4500, .22, .6], h: [9000, .03, .3], o: [9000, .25, .25], c: [1300, .22], t: [90, .45] },
+  'Deep Machine': { k: [110, 38, .6, 1.2], s: [230, 4500, .22, .6], h: [9000, .03, .3], o: [9000, .25, .25], c: [1300, .22], t: [90, .45] },
   'Brush (soft)': { k: [120, 50, .22, .6], s: [170, 2000, .30, .45], h: [5000, .06, .2], o: [5000, .35, .2], c: [1200, .2], t: [100, .3] },
   'Rock Room': { k: [170, 45, .34, 1.1], s: [200, 3800, .26, .8], h: [8000, .04, .35], o: [8000, .32, .3], c: [1600, .2], t: [120, .35] }
 };
@@ -76,7 +76,7 @@ function drumHit(row, t, v) {
   } else if (row === 2 || row === 3) {
     const P = row === 2 ? K.h : K.o, ng = gn(0), hp = bq('highpass', P[0]); env(ng, P[1], P[2] * vol * (row === 3 ? .9 : 1)); nz(t, P[1], hp); hp.connect(ng); ng.connect(out);
   } else if (row === 4) {
-    if (S.band.kit === '808' || S.band.patName === 'Four on the Floor') { for (let k = 0; k < 3; k++) { const ng = gn(0), bp = bq('bandpass', K.c[0], 1.2); env(ng, k === 2 ? K.c[1] : .012, .5 * vol, t + k * .011); nz(t + k * .011, .02, bp); bp.connect(ng); ng.connect(out); } }
+    if (S.band.kit === 'Deep Machine' || S.band.patName === 'Four on the Floor') { for (let k = 0; k < 3; k++) { const ng = gn(0), bp = bq('bandpass', K.c[0], 1.2); env(ng, k === 2 ? K.c[1] : .012, .5 * vol, t + k * .011); nz(t + k * .011, .02, bp); bp.connect(ng); ng.connect(out); } }
     else { const o = c.createOscillator(), g = gn(0); o.frequency.value = 820; env(g, .03, .25 * vol); o.connect(g); g.connect(out); o.start(t); o.stop(t + .05); const ng = gn(0), bp = bq('bandpass', 1900, 2); env(ng, .04, .35 * vol); nz(t, .04, bp); bp.connect(ng); ng.connect(out); }
   } else {
     const o = c.createOscillator(), g = gn(0); o.frequency.setValueAtTime(K.t[0] * 1.5, t); o.frequency.exponentialRampToValueAtTime(K.t[0], t + .1); env(g, K.t[1], .5 * vol); o.connect(g); g.connect(out); o.start(t); o.stop(t + K.t[1] + .05);
@@ -170,7 +170,7 @@ function scheduleSlot(slot, time) {
   if (ownBass && S.band.bassOn && PT.bass && !q) fb.bar.bassLine.forEach(n => { if (n.s === sib) bassOut(tt, n.m, n.v || .8, (n.d || 1) * dur); });      /* a bass line you played (part 86) takes the place of the made-up one in its bars */
   if (!q && PT.keys && typeof keysStep === 'function') keysStep(fb.bar, sib, cd, tt, PT.ring ? dur * spb() : dur);
   if (cd && cd.sym) {
-    if (S.band.bassOn && PT.bass && !q && !ownBass) { const e = PT.ring ? (cd.rel === 0 ? bassEvent('Root Whole', cd.sym, 0, cd.len, cd.next, slot) : null) : bassEvent(S.band.bassStyle, cd.sym, cd.rel, cd.len, cd.next, slot); if (e) { bassOut(tt, e.m, e.v, PT.ring ? dur * spb() : S.band.bassTone === '808 Sub' && e.len ? e.len * dur : dur * 2);      /* an 808 rings to the next note */ if (typeof lxEvt === 'function') lxEvt('bass', tt, e.m, e.v); } }
+    if (S.band.bassOn && PT.bass && !q && !ownBass) { const e = PT.ring ? (cd.rel === 0 ? bassEvent('Root Whole', cd.sym, 0, cd.len, cd.next, slot) : null) : bassEvent(S.band.bassStyle, cd.sym, cd.rel, cd.len, cd.next, slot); if (e) { bassOut(tt, e.m, e.v, PT.ring ? dur * spb() : S.band.bassTone === 'Glide Sub' && e.len ? e.len * dur : dur * 2);      /* a sub bass rings to the next note */ if (typeof lxEvt === 'function') lxEvt('bass', tt, e.m, e.v); } }
     if (S.band.compOn && PT.comp && !q) { const st = STRUMS[S.band.compStyle] || STRUMS['Down 4s'], L = Math.min(16, sp), ch = PT.ring ? 'D' : st.p[sib % L]; strumAt(tt, cd.sym, ch, st); if (ch && ch !== '.' && typeof lxEvt === 'function') lxEvt('chord', tt, cd.sym, ch === ch.toUpperCase() ? 1 : .6); }
   }
   if (S.band.leadOn && !q) fb.bar.tab.forEach(n => { if (n.s === sib) { playTabNote(fb.bar, n, tt, dur); if (typeof lxEvt === 'function') lxEvt('lead', tt, S.tuning[n.st] + S.capo + n.f, .8); } });

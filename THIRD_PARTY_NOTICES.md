@@ -49,7 +49,7 @@ No recording of anyone else's music and no one else's lyrics are bundled. The bu
 
 ## Names and trademarks
 
-Ultimate Guitar, Focusrite, Scarlett, MIDI, Google, MediaPipe, Cloudflare and any amplifier, pedal or software names that appear are trademarks of their owners and are used only to describe compatibility. "808", "909" and "Boom Bap" name musical styles of drum sound, as producers use them; they do not refer to any manufacturer's product, and none is reproduced. This project is independent and is not affiliated with or endorsed by them.
+Ultimate Guitar, Focusrite, Scarlett, MIDI, Google, MediaPipe, Cloudflare and any amplifier, pedal or software names that appear are trademarks of their owners and are used only to describe compatibility. The drum machines and the sub bass have neutral names of this project's own (Deep Machine, Club Machine, Boom Bap, Glide Sub) and do not reproduce any manufacturer's product.
 
 ## Assistance
 

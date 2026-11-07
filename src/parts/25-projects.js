@@ -85,7 +85,7 @@ const projAgo = t => { const s = (Date.now() - t) / 1000; if (s < 60) return 'ju
 const slug = s => (String(s || 'song').normalize('NFKD').replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '-').slice(0, 60) || 'song');
 /** a saved song, completed with any fields this version added since it was written */
 function normSong(saved) {
-  const d = newSong(), s = Object.assign(d, saved || {}); s.band = Object.assign(d.band, (saved && saved.band) || {}); s.mix = Object.assign(d.mix, (saved && saved.mix) || {}); s.voicePref = (saved && saved.voicePref) || {};
+  const d = newSong(), s = Object.assign(d, saved || {}); s.band = bandRename(Object.assign(d.band, (saved && saved.band) || {})); s.mix = Object.assign(d.mix, (saved && saved.mix) || {}); s.voicePref = (saved && saved.voicePref) || {};
   s.tuning = ((saved && saved.tuning) || d.tuning).slice(); if (!Array.isArray(s.sections)) s.sections = []; if (!Array.isArray(s.ts) || s.ts.length < 2) s.ts = [4, 4]; return s;
 }
 const takeMeta = t => { const m = { hum: !!t.hum, id: t.id, kind: t.kind || 'gtr', name: t.name, startSec: t.startSec, sr: t.sr, g: t.g, pan: t.pan || 0, fx: fxOn(t.fx) ? Object.assign({}, t.fx) : null, mute: !!t.mute, solo: !!t.solo, mode: t.mode, bpm: t.bpm, preset: t.preset || '', peak: t.peak, rms: t.rms, dur: t.dur, t: t.t, hasWet: !!t.wet, hasCam: !!(t.cam && t.cam.length) };

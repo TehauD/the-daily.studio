@@ -157,7 +157,7 @@ What the offline measurements cannot judge: how it sounds on real speakers and h
 
 - [ ] **Audio first.** In a new private window, pick each workspace: each opens on **Audio input** until you connect. After **Connect**, each opens on its own tab again. Nothing asks for the microphone before you press Connect.
 - [ ] **✦ Simple.** In each workspace, Simple shows that workspace's own panels and tools (USER_GUIDE.md has the table). Choosing **Full Rig** turns Simple off; ✦ Simple there goes back to the last workspace.
-- [ ] **Beats on real speakers and headphones.** Play folk, pop, trap and bossa nova. The kick and the **808 Sub** are felt on speakers without the master clipping; nothing sounds like a toy on laptop speakers; the acoustic kits sound like a kit in a room.
+- [ ] **Beats on real speakers and headphones.** Play folk, pop, trap and bossa nova. The kick and the **Glide Sub** are felt on speakers without the master clipping; nothing sounds like a toy on laptop speakers; the acoustic kits sound like a kit in a room.
 - [ ] **The guitars (2.46.1).** Folk (steel), ballad (nylon), rock and funk: they sound like guitars, not a harpsichord; the strum mellows as it rings; on headphones the double is two players, one each side, with no hollow, phasey sound when you fold to mono (phone speaker).
 - [ ] **Song build.** A song with an intro, verses and a chorus: the chorus is clearly bigger, fills and the riser lead into it, and a song that does not loop ends on one hit.
 - [ ] **Vocal tuning with a real voice.** Sing a verse slightly off. **Natural** sounds like you, a little better; **Hard** is the obvious tuned effect; **Off** is exactly the original, also after a reload. Try a low voice and a high one.

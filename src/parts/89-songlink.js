@@ -64,7 +64,7 @@ function slUnpack(o) {
   }).filter(Boolean);
   if (!s.sections.length) throw new Error('it holds no bars');
   const d = o.bd && typeof o.bd === 'object' ? o.bd : {}, B = s.band, INSTR = ['Steel', 'Nylon', 'Electric', 'Muted Pluck'];
-  B.drumsOn = !!d.d; B.kit = pick(d.kit, Object.keys(KITS), B.kit); B.bassOn = !!d.bo; B.bassStyle = pick(d.bs, BASS_STYLES, B.bassStyle); B.bassTone = pick(d.bt, BASS_TONES, B.bassTone);
+  B.drumsOn = !!d.d; B.kit = pick(BAND_RENAME.kit[d.kit] || d.kit, Object.keys(KITS), B.kit); B.bassOn = !!d.bo; B.bassStyle = pick(d.bs, BASS_STYLES, B.bassStyle); B.bassTone = pick(BAND_RENAME.tone[d.bt] || d.bt, BASS_TONES, B.bassTone);
   B.compOn = !!d.co; B.compStyle = pick(d.cs, Object.keys(STRUMS), B.compStyle); B.compInst = pick(d.ci, INSTR, B.compInst); B.leadOn = !!d.lo; B.leadInst = pick(d.li, INSTR, B.leadInst);
   B.keysOn = !!d.ko; B.keysStyle = pick(d.ks, KEYS_STYLES, B.keysStyle); B.keysSound = pick(d.kn, KEYS_SOUNDS, B.keysSound); B.beat = pick(d.beat, BEATS.map(b => b.id), undefined); B.build = !!d.bu;
   B.patName = str(d.pn, 48).trim() || B.patName;

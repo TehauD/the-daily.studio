@@ -133,7 +133,7 @@ function importProject(file) {
   const r = new FileReader(); r.onload = () => {
     try {
       const d = JSON.parse(r.result), s = d.song || d; if (!s || !Array.isArray(s.sections)) throw new Error('no sections');
-      S = Object.assign(newSong(), s); S.band = Object.assign(newSong().band, s.band); S.mix = Object.assign(newSong().mix, s.mix); S.tuning = (s.tuning || S.tuning).slice();
+      S = Object.assign(newSong(), s); S.band = bandRename(Object.assign(newSong().band, s.band)); S.mix = Object.assign(newSong().mix, s.mix); S.tuning = (s.tuning || S.tuning).slice();
       if (d.rig) try { rigApply(d.rig); } catch (e) { }
       T.loopA = 0; T.loopB = null; SEL.sec = 0; SEL.bar = 0; TE.sec = 0; TE.bi = 0; commit(true); bus.emit('song', 'reload'); toast('Imported “' + S.title + '”', 'ok');
     } catch (e) { toast('Import failed: ' + e.message, 'bad'); }
