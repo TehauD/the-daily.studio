@@ -2,6 +2,38 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.45.0 — 2026-11-07 — Better instruments
+
+### Changed
+- **Piano:** twelve stretched partials; the lower four each have two strings a fraction of a cent apart, one quieter, for a slow shimmer that never cancels. The high partials ring bright on the hammer and die within a moment (harder playing is brighter). A felt-hammer knock and a small room.
+- **Electric piano:** the hammer's bark on the tine, and the classic auto-pan tremolo.
+- **Pad:** four detuned saws spread hard left and right, a sub, and a filter that breathes slowly.
+- **Guitars:**
+  - **Wooden body:** the acoustic sounds (steel, nylon) play through a body resonance made in the page (air and plate modes, about 100–800 Hz); an electric hardly does.
+  - **Double-tracked rhythm:** the rhythm guitar is two takes, one each side, 14 ms apart.
+  - **A room:** both guitar tracks get a small one.
+- **Keys** have their own small room too.
+- **Song build:** the verse now sits at −2.5 dB, and the crash and riser are more present, so a chorus still lifts clearly in the fuller mix.
+
+### Added
+- **Strings**, a new keys sound: a bowed section of five players a few cents apart across the stage, with vibrato that comes in after the bow and a soft attack.
+
+### Fixed
+- The offline render shared the guitar-body settings with the live engine, so after any bounce the live body setting pointed at the render's copy. Each engine now has its own.
+
+### Tests
+- `e2e-instruments` (9 checks), measured from the render with one note or chord alone:
+  - the piano is bright on the hammer and mellower as it rings (5.5% → 3.3% of it above 1.5 kHz);
+  - the strings swell in (+15 dB by 0.3 s), with vibrato arriving late (2.7 → 6.2 cents);
+  - the pad is wide (left–right correlation 0.87 against 1.00);
+  - the rhythm guitar is double-tracked (a copy 14 ms later on the other side);
+  - the body boosts its resonances 62 dB over the treble, and the acoustic sounds use it while the electric hardly does.
+- While building it, the tests caught:
+  - a body resonance whose strength the convolver was normalising away;
+  - a piano with too few partials to mellow;
+  - two equally loud strings drifting into cancellation at 1.6 s.
+- `e2e-speedkeys`: seven keys sounds.
+
 ## 2.44.0 — 2026-11-07 — Songs that build
 
 ### Added

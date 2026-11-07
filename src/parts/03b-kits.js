@@ -32,15 +32,22 @@ function kitShaper(drive) { const c = E.ctx, pre = gn(drive), ws = c.createWaveS
 function kitEnv(g, t, peak, dec, a) { g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(Math.max(.0002, peak), t + (a || .002)); g.gain.exponentialRampToValueAtTime(.0001, t + dec); }
 function kitNoise(t, dur, dest) { return nz(t, dur, dest); }
 /** the drums' room: a short reverb made in the page (decaying noise with a few early reflections), one per audio context */
-function kitRoom(c) {
-  if (DMK.room && DMK.room.ctx === c) return DMK.room.in;
+function kitRoom(c, id) {
+  id = id || 'drums'; DMK.rooms = DMK.rooms || {}; const have = DMK.rooms[id]; if (have && have.ctx === c) return have.in;
   const sr = c.sampleRate, len = Math.floor(sr * .9), ir = c.createBuffer(2, len, sr); let seed = 11;
   for (let ch = 0; ch < 2; ch++) { const d = ir.getChannelData(ch); let lp = 0; for (let i = 0; i < len; i++) { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; const w = seed / 2147483648 - 1; lp += (w - lp) * (.55 - .4 * i / len); d[i] = lp * Math.exp(-i / (sr * .22)); }
     [.011, .019, .027, .041].forEach((e, k) => { const n = Math.floor(e * sr * (1 + ch * .07)); if (n < len) d[n] += (.5 - k * .1) * (ch ? -1 : 1); }); }
-  const cv = c.createConvolver(), inG = gn(.55); cv.buffer = ir; inG.connect(cv); cv.connect(E.tr.drums.in); DMK.room = { ctx: c, in: inG }; return inG;
+  const cv = c.createConvolver(), inG = gn(.55); cv.buffer = ir; inG.connect(cv); cv.connect(E.tr[id].in); DMK.rooms[id] = { ctx: c, in: inG }; return inG;
 }
 /** send a sound to the room as well */
-const kitSend = (node, amt) => { if (!amt) return; const g = gn(amt); node.connect(g); g.connect(kitRoom(E.ctx)); };
+const kitSend = (node, amt, id) => { if (!amt || !E.tr[id || 'drums']) return; const g = gn(amt); node.connect(g); g.connect(kitRoom(E.ctx, id)); };      /* 2.45: every band track can have its room */
+/** a guitar's wooden body: the air and plate resonances (about 100 to 800 Hz) ringing for a few tens of milliseconds, made once per audio context */
+function guitarBody(c) {
+  if (DMK.body && DMK.body.ctx === c) return DMK.body.buf; const sr = c.sampleRate, n = Math.floor(sr * .09), b = c.createBuffer(2, n, sr);
+  const modes = [[98, .9, .05], [196, .7, .04], [285, .55, .035], [410, .45, .03], [560, .3, .025], [820, .2, .02]];
+  for (let ch = 0; ch < 2; ch++) { const d = b.getChannelData(ch); let seed = 3 + ch; for (let i = 0; i < n; i++) { const t = i / sr; let v = 0; modes.forEach(([f, a, dec], k) => { v += a * Math.sin(2 * Math.PI * f * (1 + ch * .004 * (k % 2 ? 1 : -1)) * t) * Math.exp(-t / dec); }); seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; v += (seed / 2147483648 - 1) * .5 * Math.exp(-t / .002); d[i] = v * .0018; } }      /* unnormalised (see guitarBody's use): a resonance's gain is about a·rate·decay/2, so this lifts each body mode by roughly 2× */
+  DMK.body = { ctx: c, buf: b }; return b;
+}
 /** a hit from a kit with an engine (part 03's drumHit hands it over) */
 function kitHit(K, row, t, v) {
   const c = E.ctx, out = E.tr.drums.in; let vol = [0, .45, .82, 1.08][v] || .8;

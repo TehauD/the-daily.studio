@@ -11,7 +11,7 @@
    Nothing here changes the song's patterns: it decides, slot by slot, what the band plays of them (scheduleSlot in part 03).
    ============================================================ */
 /* how hard the whole band plays at each energy (1 … 5): a chorus is bigger in every part, not only in the drums */
-const BUILD_LIFT = [1, .56, .68, .8, .9, 1], BLD = { last: null }, BUILD_TRACKS = ['drums', 'bass', 'rhythm', 'lead', 'keys'];
+const BUILD_LIFT = [1, .52, .64, .75, .88, 1], BLD = { last: null }, BUILD_TRACKS = ['drums', 'bass', 'rhythm', 'lead', 'keys'];
 /** the band's level for the section: set on each band track's energy gain at the first slot of a bar, gliding over a few milliseconds */
 function buildLevel(C, sib, t) {
   const v = C ? BUILD_LIFT[C.ending ? 4 : C.e] : 1; if (sib !== 0 && BLD.last === v) return; if (BLD.last === v && BLD.ctx === E.ctx) return; BLD.last = v; BLD.ctx = E.ctx;
@@ -66,14 +66,14 @@ function buildCrash(K, t, amt) {
   const c = E.ctx; if (!c || !E.noise) return; const out = E.tr.drums.duck || E.tr.drums.in, g = gn(0), bp = bq('bandpass', 6500, .5), hp = bq('highpass', 3500), mix = gn(.18), dec = 2.2;
   KIT_HAT.forEach(f => { const o = c.createOscillator(); o.type = 'square'; o.frequency.value = f * 1.9; o.connect(mix); o.start(t); o.stop(t + dec); });
   mix.connect(bp); const ng = gn(.8); nz(t, dec, ng); ng.connect(bp); chainN(bp, hp, g); g.connect(out);
-  g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.6 * amt, t + .004); g.gain.exponentialRampToValueAtTime(.2 * amt, t + .3); g.gain.exponentialRampToValueAtTime(.0001, t + dec);
+  g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.78 * amt, t + .004); g.gain.exponentialRampToValueAtTime(.26 * amt, t + .3); g.gain.exponentialRampToValueAtTime(.0001, t + dec);
   try { kitSend(g, .25); } catch (e) { }
 }
 /** a noise riser over `len` seconds: a band of noise sweeping up and swelling, ending at the next section */
 function buildRiser(t, len) {
   const c = E.ctx; if (!c || !E.noise || len < .3) return; const out = E.tr.drums.duck || E.tr.drums.in, g = gn(0)      /* transitions ride over the section's level */, bp = bq('bandpass', 300, 1.4);
   nz(t, len, bp); bp.connect(g); g.connect(out);
-  bp.frequency.setValueAtTime(300, t); bp.frequency.exponentialRampToValueAtTime(9000, t + len); g.gain.setValueAtTime(.0001, t); g.gain.linearRampToValueAtTime(.34, t + len * .97);      /* a straight swell: an exponential one from silence stays inaudible until the last moment */ g.gain.exponentialRampToValueAtTime(.0001, t + len + .02);
+  bp.frequency.setValueAtTime(300, t); bp.frequency.exponentialRampToValueAtTime(9000, t + len); g.gain.setValueAtTime(.0001, t); g.gain.linearRampToValueAtTime(.62, t + len * .97);      /* a straight swell: an exponential one from silence stays inaudible until the last moment */ g.gain.exponentialRampToValueAtTime(.0001, t + len + .02);
   try { kitSend(g, .3); } catch (e) { }
 }
 /* ---------- the controls: Band panel, Simple's band and the phone's Beats ---------- */

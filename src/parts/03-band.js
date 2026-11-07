@@ -8,10 +8,14 @@ const INST = {
 const instFor = tk => INST[tk === 'rhythm' ? S.band.compInst : tk === 'lead' ? S.band.leadInst : S.band.bassTone] || INST.Steel;
 
 function buildBand() {
-  const c = E.ctx; E.pl = {};
+  const c = E.ctx; E.pl = {}; E.plBody = {};      /* fresh each build: the offline render builds its own and must not take over the live one's */
   [['rhythm', 70, 9500], ['lead', 90, 10500], ['bass', 35, 1400]].forEach(([id, hp, lp]) => {
     const body = bq('peaking', 220, .8, 2.5), h = bq('highpass', hp), l = bq('lowpass', lp), out = gn(1);
-    chainN(h, body, l, out); out.connect(E.tr[id].in);
+    chainN(h, body, l, out);
+    if (id !== 'bass') { const bc = c.createConvolver(), bw = gn(.5); bc.normalize = false; bc.buffer = guitarBody(c); l.connect(bc); bc.connect(bw); bw.connect(out); E.plBody[id] = bw; }      /* 2.45: a wooden body */
+    if (id === 'rhythm' && c.createStereoPanner) { const pL = c.createStereoPanner(), pR = c.createStereoPanner(), dl = c.createDelay(.05), dg = gn(.82); pL.pan.value = -.75; pR.pan.value = .75; dl.delayTime.value = .014; out.connect(pL); pL.connect(E.tr[id].in); out.connect(dl); dl.connect(dg); dg.connect(pR); pR.connect(E.tr[id].in); }      /* double-tracked, one each side */
+    else out.connect(E.tr[id].in);
+    if (id !== 'bass') try { kitSend(out, id === 'rhythm' ? .12 : .16, id); } catch (e) { }
     if (E.worklet) { const n = new AudioWorkletNode(c, 'fw-pluck', { numberOfInputs: 0, numberOfOutputs: 1, outputChannelCount: [2] }); n.connect(h); E.pl[id] = n; }
     else E.pl[id] = { in: h };
   });
@@ -22,6 +26,7 @@ bus.on('audio:ready', buildBand);
 
 function pluck(track, time, midi, vel, o = {}) {
   const inst = instFor(track), f = mtof(midi), hum = (Math.random() * 2 - 1) * CFG.humanize * .12;
+  if (E.plBody && E.plBody[track]) { const el = (track === 'rhythm' ? S.band.compInst : S.band.leadInst) === 'Electric'; E.plBody[track].gain.value = el ? .1 : .8; }      /* an electric has no wooden body to speak of */
   vel = clamp(vel * (1 + hum), .05, 1);
   if (E.worklet) E.pl[track].port.postMessage({ t: 'on', at: time, f, vel, t60: inst.t60 * (o.t60m || 1), br: o.soft ? inst.br * .6 : inst.br, s: inst.s, pp: inst.pp, pan: o.pan || 0, id: o.id, g: o.g || 1, dead: o.dead });
   else {

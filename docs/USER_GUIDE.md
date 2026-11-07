@@ -21,6 +21,17 @@ Contents: [Songs that build](#-songs-that-build-244) · [Vocal tuning](#-vocal-t
 - **Simple is the Songwriter (2.39):** Simple opens the Songwriter workspace, and its goal bar is just *Make a song*: **🥁 Beats**, Paste chords, Pads, Keys and **🔗 Send as a link**. If you switch Simple on from another workspace, switching it off takes you back there exactly as you left it.
 - **The band in Simple (2.39):** the Band panel is the beats and who plays (drums, bass, guitar and keys, each a switch and a level). **Show every band setting** brings the rest back.
 
+## 🎹 Better instruments (2.45)
+
+The band's instruments were rebuilt to sound like the real thing (still made on your device, with no samples):
+- **Piano:** shimmering double strings, bright on the hammer and mellowing as the note rings.
+- **Electric piano:** the bark of the tine and a gentle auto-pan tremolo.
+- **Pad:** wide and slowly breathing.
+- **Strings** (new): a bowed section with vibrato that comes in after the bow.
+- **Acoustic guitars:** a wooden body.
+- **Rhythm guitar:** double-tracked, one take each side.
+- **A small room** around the keys and guitars.
+
 ## 📈 Songs that build (2.44)
 
 With **Song build** on (Band panel, or under the beats on a phone; picking a beat turns it on), the band plays each section at its own energy:
