@@ -73,7 +73,7 @@ A release to close the gaps that 2.39–2.46.1 left in the tutorials, the docume
 - **`e2e-agent`** (70 checks) adds a beat, the kit, the sounds and Song build through `set_band`, and a section's energy.
 - **`e2e-privacy`** (42 checks): its session now includes a beat with Song build, a song link and a tuned take, still with no request to any other site.
 - **`verify-site`** checks that `llms.txt` lists only real tools.
-- **`e2e`:** the tour's step count range now allows the shorter Simple tour.
+- **`e2e` and `mobile`:** the tour step counts now allow the new tours (12–29 cards on a computer, 9–15 on a phone).
 
 ## 2.46.1 — 2026-11-07 — The guitar, not a harpsichord
 
