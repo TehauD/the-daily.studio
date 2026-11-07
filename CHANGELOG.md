@@ -9,6 +9,14 @@ All notable changes to the-daily.studio (earlier versions were released under th
   - **808:** a long sub kick that falls from about 150 to 48 Hz and rings, saturated so phone speakers can hear it. A snare of two tuned tones and a noise snap. Hats from six square waves at metallic pitches, band-passed and high-passed (centred near 9 kHz); the closed hat cuts off the open one. A clap of four quick bursts and a tail.
   - **909:** a short, punchy kick with a click, a brighter snare, and hats of metal and noise.
   - **Boom Bap:** a round, dusty kick and a fat saturated snare, with softened hats.
+- **The acoustic kits are rebuilt the same way: Acoustic, Rock Room and Brush.**
+  - **Kick:** a beater click, a pitch-dropping head and a resonant shell.
+  - **Snare:** two tuned shell tones and a band of wire noise; ghost notes are softer and shorter. On **Brush** it is a slow swish instead of a crack.
+  - **Hats:** metal and noise together, as a real hat is; the closed hat cuts off the open one. Brush hats are darker and quieter.
+  - **Rim:** the rim row is a cross-stick (a short woody knock with a click), where the drum machines clap.
+  - **Toms:** with the stick on the head.
+  - **A small room:** a short reverb made in the page that each drum sends into. Rock Room has the most, Brush the least.
+  - **Human feel:** every hit varies a little in strength and timing, so a groove never sounds stamped out.
 - **808 Sub, a bass sound** (Band ▸ Bass ▸ Tone):
   - a sine with a short pitch drop, saturated so its upper harmonics carry on small speakers, held for the note;
   - one note at a time, sliding into the next while the last one still rings;
@@ -21,13 +29,14 @@ All notable changes to the-daily.studio (earlier versions were released under th
   - **Night Drive:** 909 kit and 808 sub.
   - **Pop Drive:** 909 kit.
   - **Lo-fi Nod:** Boom Bap kit.
-- The acoustic beats (folk, rock, reggae, blues, ballad, funk, bossa) keep the acoustic kits.
+- The acoustic beats (folk, rock, reggae, blues, ballad, funk, bossa) keep their kits, which now use the rebuilt sounds above.
 
 ### Tests
-- `e2e-kits` (10 checks), measured from the studio's own render:
+- `e2e-kits` (14 checks), measured from the studio's own render:
   - the 808 kick is a sub near 47 Hz that rings, and the 909 kick is short;
   - the closed hat is bright (near 9 kHz), the open hat rings longer, and the clap is a burst;
   - the 808 sub is a held low A, an octave under the plucked bass;
+  - the Rock Room snare carries its room, the rim is a short woody knock, the acoustic kick sits around 50–90 Hz and its hits vary, and the brush is softer;
   - the beats use the new kits.
 - `e2e-simple`: Lo-fi Nod is now on Boom Bap.
 

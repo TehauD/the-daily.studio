@@ -32,6 +32,15 @@ suite('e2e-kits', async t => {
   const sub = await one('808', null, { tone: '808 Sub', chord: 'Am' }), pl = await one('808', null, { tone: 'Round', chord: 'Am' });
   ok(sub.f > 48 && sub.f < 62 && sub.hiShare < .05, '808 Sub: a low A (' + sub.f.toFixed(0) + ' Hz, an octave under the plucked bass) with almost nothing up top');
   ok(dB(sub.early, sub.mid) < 6, 'and it holds the note instead of plucking it (' + dB(sub.early, sub.mid).toFixed(1) + ' dB down at 0.4 s)');
+  /* the acoustic kits (2.42): a room, a rim click, and hits that differ */
+  const rs = await one('Rock Room', 1), ds = await one('808', 1);
+  ok(rs.mid > ds.mid * 4 && rs.late > 0, 'Rock Room snare carries its room (still sounding at 0.4 s, ' + dB(rs.mid, ds.mid).toFixed(0) + ' dB above the dry 808 snare there)');
+  const rim = await one('Acoustic', 4);
+  ok(rim.ok && rim.zHi > 400 && rim.zHi < 2500 && dB(rim.early, rim.mid) > 20, 'the rim row on a real kit is a cross-stick: a short woody knock (about ' + Math.round(rim.zHi) + ' Hz), not a clap');
+  const a1 = await one('Acoustic', 0), a2 = await one('Acoustic', 0), a3 = await one('Acoustic', 0), es = [a1, a2, a3].map(x => x.early), spread = (Math.max(...es) - Math.min(...es)) / Math.max(...es);
+  ok(a1.ok && a1.f > 45 && a1.f < 95 && spread > .003, 'the acoustic kick sits at about ' + a1.f.toFixed(0) + ' Hz, and hits are never quite the same (three hits ' + (spread * 100).toFixed(1) + '% apart)');
+  const br = await one('Brush (soft)', 1);
+  ok(br.ok && br.early > 0 && br.early < rs.early, 'the brush snare is a softer swish than the rock snare');
   const B = await ev(() => { const D = window.__daily, by = id => D.BEATS.find(b => b.id === id); return { trap: by('trap').kit + '/' + by('trap').tone, drill: !!by('drill'), afro: !!by('afro'), rnb: !!by('rnb'), lofi: by('lofi').kit, night: by('night').kit, tones: D.BASS_TONES.includes('808 Sub') }; });
   ok(B.trap === '808/808 Sub' && B.night === '909' && B.lofi === 'Boom Bap' && B.drill && B.afro && B.rnb && B.tones, 'the modern beats use them (Trap on the 808 with the 808 sub, Night Drive on the 909, Lo-fi on Boom Bap), and Drill, Afrobeats and R&B are new');
 });

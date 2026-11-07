@@ -34,7 +34,7 @@ Contents: [Song links](#-send-a-song-as-a-link-240) · [Beats](#-beats-239) · [
 
 A beat is a ready band to play, sing or write over. Tap one at the top of the **Band** panel (or **🥁 Beats** in the Songwriter tools) and it starts looping: drums, bass, and guitar or keys where the style wants them, at the beat's tempo.
 - **Fourteen styles:** folk, pop, rock, lo-fi hip-hop, dance, trap, drill, Afrobeats, R&B, reggae, blues shuffle, ballad, funk and bossa nova.
-- **Drum machines (2.42):** the modern beats play on the **808**, **909** and **Boom Bap** kits (Band ▸ Drums ▸ Kit), and trap, drill, dance and R&B use the **808 Sub** bass (Band ▸ Bass ▸ Tone): a long, heavy sub that slides between notes. You can pick any kit or the 808 Sub for any song.
+- **Drum machines (2.42):** the modern beats play on the **808**, **909** and **Boom Bap** kits (Band ▸ Drums ▸ Kit), and trap, drill, dance and R&B use the **808 Sub** bass (Band ▸ Bass ▸ Tone): a long, heavy sub that slides between notes. You can pick any kit or the 808 Sub for any song. The acoustic kits (Acoustic, Rock Room, Brush) were rebuilt too: a real-sounding kick, snare and hats in a small room, with a cross-stick on the rim row and hits that vary like a drummer's.
 - **Your chords:** if the song has none yet, the beat brings a progression in your song's key. If it has chords, the beat plays yours.
 - **Mix on top:** play or sing over it, press ● to record, and set each player's level (or switch them off) under *Who plays*.
 - **Undo** puts your previous band, tempo and chords back.
