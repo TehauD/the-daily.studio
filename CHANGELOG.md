@@ -2,6 +2,35 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.42.0 — 2026-11-07 — Drum machines and an 808 sub
+
+### Added
+- **Three drum-machine kits, built the way the classic machines made their sounds** (part 03b). Still no samples: every hit is made in the page, so there is nothing to download or license.
+  - **808:** a long sub kick that falls from about 150 to 48 Hz and rings, saturated so phone speakers can hear it. A snare of two tuned tones and a noise snap. Hats from six square waves at metallic pitches, band-passed and high-passed (centred near 9 kHz); the closed hat cuts off the open one. A clap of four quick bursts and a tail.
+  - **909:** a short, punchy kick with a click, a brighter snare, and hats of metal and noise.
+  - **Boom Bap:** a round, dusty kick and a fat saturated snare, with softened hats.
+- **808 Sub, a bass sound** (Band ▸ Bass ▸ Tone):
+  - a sine with a short pitch drop, saturated so its upper harmonics carry on small speakers, held for the note;
+  - one note at a time, sliding into the next while the last one still rings;
+  - set to sit with the kit and under a voice, not over it.
+- **Three new beats:** **Drill Night** (142 BPM, 808 and 808 sub), **Afro Sunset** (Afrobeats, 104 BPM), **Late R&B** (68 BPM, 808, sub and electric piano).
+
+### Changed
+- **The modern beats use the new sounds:**
+  - **Trap Glide:** 808 kit and 808 sub.
+  - **Night Drive:** 909 kit and 808 sub.
+  - **Pop Drive:** 909 kit.
+  - **Lo-fi Nod:** Boom Bap kit.
+- The acoustic beats (folk, rock, reggae, blues, ballad, funk, bossa) keep the acoustic kits.
+
+### Tests
+- `e2e-kits` (10 checks), measured from the studio's own render:
+  - the 808 kick is a sub near 47 Hz that rings, and the 909 kick is short;
+  - the closed hat is bright (near 9 kHz), the open hat rings longer, and the clap is a burst;
+  - the 808 sub is a held low A, an octave under the plucked bass;
+  - the beats use the new kits.
+- `e2e-simple`: Lo-fi Nod is now on Boom Bap.
+
 ## 2.41.0 — 2026-11-07 — The phone, for singers and songwriters
 
 ### Changed

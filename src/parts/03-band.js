@@ -60,6 +60,7 @@ function drumHit(row, t, v) {
   if (row === 0 && typeof duckAt === 'function') duckAt(t);      /* the sidechain (part 87) */
   if (typeof moDrum === 'function' && moDrum(row, t, v)) return;      /* sent to a MIDI device, the studio's own drum quiet */
   if (!E.noise) return; const c = E.ctx, K = KITS[S.band.kit] || KITS.Acoustic, out = E.tr.drums.in, vol = [0, .5, .85, 1.1][v] || .8;
+  if (K.engine) return kitHit(K, row, t, v);      /* the drum machines (part 03b) */
   const env = (g, dur, peak, start = t) => { g.gain.setValueAtTime(0.0001, start); g.gain.exponentialRampToValueAtTime(peak, start + .002); g.gain.exponentialRampToValueAtTime(.0001, start + dur); };
   if (row === 0) {
     const o = c.createOscillator(), g = gn(0); o.frequency.setValueAtTime(K.k[0], t); o.frequency.exponentialRampToValueAtTime(K.k[1], t + .07); env(g, K.k[2], .95 * vol * K.k[3]); o.connect(g); g.connect(out); o.start(t); o.stop(t + K.k[2] + .05);
@@ -161,7 +162,7 @@ function scheduleSlot(slot, time) {
   if (ownBass && S.band.bassOn && !q) fb.bar.bassLine.forEach(n => { if (n.s === sib) bassOut(tt, n.m, n.v || .8, (n.d || 1) * dur); });      /* a bass line you played (part 86) takes the place of the made-up one in its bars */
   if (!q && typeof keysStep === 'function') keysStep(fb.bar, sib, cd, tt, dur);
   if (cd && cd.sym) {
-    if (S.band.bassOn && !q && !ownBass) { const e = bassEvent(S.band.bassStyle, cd.sym, cd.rel, cd.len, cd.next, slot); if (e) { bassOut(tt, e.m, e.v, dur * 2); if (typeof lxEvt === 'function') lxEvt('bass', tt, e.m, e.v); } }
+    if (S.band.bassOn && !q && !ownBass) { const e = bassEvent(S.band.bassStyle, cd.sym, cd.rel, cd.len, cd.next, slot); if (e) { bassOut(tt, e.m, e.v, S.band.bassTone === '808 Sub' && e.len ? e.len * dur : dur * 2);      /* an 808 rings to the next note */ if (typeof lxEvt === 'function') lxEvt('bass', tt, e.m, e.v); } }
     if (S.band.compOn && !q) { const st = STRUMS[S.band.compStyle] || STRUMS['Down 4s'], L = Math.min(16, sp), ch = st.p[sib % L]; strumAt(tt, cd.sym, ch, st); if (ch && ch !== '.' && typeof lxEvt === 'function') lxEvt('chord', tt, cd.sym, ch === ch.toUpperCase() ? 1 : .6); }
   }
   if (S.band.leadOn && !q) fb.bar.tab.forEach(n => { if (n.s === sib) { playTabNote(fb.bar, n, tt, dur); if (typeof lxEvt === 'function') lxEvt('lead', tt, S.tuning[n.st] + S.capo + n.f, .8); } });

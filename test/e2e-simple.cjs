@@ -71,7 +71,7 @@ suite('e2e-simple', async t => {
   ok(BD.mix === 'drums,bass,rhythm,keys' && !BD.grid && BD.sel === 0, 'and who plays: drums, bass, guitar and keys, a switch and a level each; no step grid, no menus');
   await ev(() => { const D = window.__daily; D.S.sections.forEach(s => s.bars.forEach(b => { b.chord = ''; })); D.commit(false); document.querySelector('#pane-band .bt-card[data-beat="lofi"]').click(); }); await wait(600);
   const BT = await ev(() => { const D = window.__daily, B = D.S.band; return { bpm: D.S.bpm, swing: D.S.swing, kit: B.kit, len: B.drumLen, keys: B.keysOn && B.keysSound, playing: D.T.playing, loop: D.T.loop, chords: D.S.sections[0].bars.slice(0, 4).map(b => b.chord).join(' '), on: !!document.querySelector('#pane-band .bt-card.on[data-beat="lofi"]') }; });
-  ok(BT.bpm === 82 && BT.swing > 0 && BT.kit === 'Brush (soft)' && BT.keys === 'Electric piano' && BT.playing && BT.loop, 'tapping Lo-fi Nod sets the band and the tempo and plays it on a loop (' + JSON.stringify(BT) + ')');
+  ok(BT.bpm === 82 && BT.swing > 0 && BT.kit === 'Boom Bap' && BT.keys === 'Electric piano' && BT.playing && BT.loop, 'tapping Lo-fi Nod sets the band and the tempo and plays it on a loop (' + JSON.stringify(BT) + ')');
   ok(/^\S+m7 \S+7 \S+maj7 \S+m7$/.test(BT.chords) && BT.on, 'a song with no chords gets the beat’s progression in its key (' + BT.chords + '), and the beat shows as chosen');
   await ev(() => { const D = window.__daily; D.stopPlay(true); D.undo(); }); await wait(300);
   ok(await ev(() => { const D = window.__daily; return D.S.band.beat !== 'lofi' && D.S.bpm !== 82 && D.S.sections[0].bars.every(b => !b.chord); }), 'one undo puts the band, the tempo and the chords back');
