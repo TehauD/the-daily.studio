@@ -2,6 +2,31 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.43.0 — 2026-11-07 — Vocal tuning
+
+### Added
+- **🎯 Tune a vocal take to the song's key**, on the device, from the take's menu (computer) or its row on Sing (phone).
+  - **Natural:** most of the way to the note, gently; your slides and vibrato stay.
+  - **Tight:** nearly all the way, quickly (pop).
+  - **Hard:** snaps every moment to the note (the modern tuned sound; vibrato goes).
+  - **Off:** gives back the exact original, which is kept in memory and in the song's own storage, so it survives a reload.
+- **How it works:**
+  - The pitch is read every 10 ms (YIN, with a level gate, and smoothed over one-frame octave slips and short gaps).
+  - The target is the nearest note of the key's scale, held until the voice clearly moves.
+  - The shift is TD-PSOLA: grains two periods long, cut at the same peak of each cycle, laid down closer or further apart at fractional-sample spacing.
+  - The voice keeps its character, and nothing moves in time; the take keeps its length.
+- **A room:** on the hosted site it is a 4 kB room, loaded the first time someone tunes.
+
+### Tests
+- `e2e-tune` (11 checks): synthetic voices with known problems.
+  - A flat A (−32 cents) lands within a cent with Hard.
+  - A note between A and B goes to A with Tight (within 3 cents).
+  - Natural gets most of the way gently.
+  - Hard flattens a ±45-cent vibrato (31 → 3 cents spread) while Natural keeps it.
+  - Onset and length do not move, and Off restores the original sample for sample.
+  - The room loads only on use, and the controls work on a computer and on a phone.
+- While building it, the tests caught an octave-low artefact (grains cut on alternating peaks) and an 8–16-cent error (whole-sample grain spacing). Both were fixed before release.
+
 ## 2.42.0 — 2026-11-07 — Drum machines and an 808 sub
 
 ### Added
