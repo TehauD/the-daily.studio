@@ -5,7 +5,33 @@
    shows through; without, a plain dark page. The microphone and camera stay off until you press their buttons here.
    ============================================================ */
 /* how Perform looks: shapes (the big chord, the lyrics and the chord shapes beside them), big (the big chord and the lyrics), sheet (the lyrics large, no big chord) */
-const PF_VIEWS = [['shapes', '◫ Chords & shapes'], ['big', '◼ Big chord'], ['sheet', '☰ Lyric sheet']];
+const PF_VIEWS = [['shapes', '◫ Chords & shapes'], ['big', '◼ Big chord'], ['sheet', '☰ Lyric sheet'], ['sing', '🎤 Sing-along']];
+/* 2.48: how Perform is laid out, each person's own (remembered): where the controls are, where the words are, the song map, the text size.
+   The defaults are a sing-along: controls at the top right, the words in a band at the bottom, the map of the song under the title. */
+const PF_LAY_OPTS = {
+  ctl: [['top', 'Top right'], ['bottom', 'Bottom'], ['auto', 'Hide until I move']],
+  lyr: [['bottom', 'Bottom, like a sing-along'], ['middle', 'Middle, under the chord']],
+  size: [['s', 'Small'], ['m', 'Medium'], ['l', 'Large'], ['xl', 'Huge']],
+  map: [['on', 'Show'], ['off', 'Hide']]
+};
+function pfLay() { const L = Object.assign({ ctl: 'top', lyr: 'bottom', size: 'm', map: 'on' }, CFG.pfLay || {}); Object.keys(PF_LAY_OPTS).forEach(k => { if (!PF_LAY_OPTS[k].some(o => o[0] === L[k])) L[k] = PF_LAY_OPTS[k][0][0]; }); return L; }
+/** the classes that lay Perform out */
+function pfLayCls() { const L = pfLay(), lyr = pfView() === 'sing' ? 'bottom' : L.lyr; return ['pf-ctl-' + L.ctl, 'pf-lyr-' + lyr, 'pf-size-' + L.size, 'pf-map-' + L.map]; }
+function pfLayApply() { if (!PF.el) return; [...PF.el.classList].filter(c => /^pf-(ctl|lyr|size|map)-/.test(c)).forEach(c => PF.el.classList.remove(c)); PF.el.classList.add(...pfLayCls()); PF.key = ''; }
+/** change one layout choice (k: ctl, lyr, size or map) */
+function pfLaySet(k, v) { if (!PF_LAY_OPTS[k] || !PF_LAY_OPTS[k].some(o => o[0] === v)) return false; CFG.pfLay = Object.assign(pfLay(), { [k]: v }); saveCfg(); pfLayApply(); return true; }
+/** the Layout menu: the view and the four choices, each a row of buttons */
+function pfLayMenu(anchor) {
+  const L = pfLay(), row = (label, opts, cur, fn) => h('div', { class: 'pf-lm-r' }, h('span', { class: 'pf-lm-l' }, label), h('div', { class: 'seg pf-lm-s', role: 'group', 'aria-label': label }, opts.map(([v, t]) => h('button', { class: v === cur ? 'on' : '', 'aria-pressed': String(v === cur), 'data-v': v, onclick: e => { fn(v); e.currentTarget.parentNode.querySelectorAll('button').forEach(b => { const on = b === e.currentTarget; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); }); } }, t))));
+  const p = popover(anchor, h('div', { class: 'pf-lm', id: 'pfLayMenu' }, h('b', {}, 'Layout'),
+    row('Show', PF_VIEWS.map(([v, t]) => [v, t]), pfView(), v => perfViewSet(v)),
+    row('Controls', PF_LAY_OPTS.ctl, L.ctl, v => pfLaySet('ctl', v)),
+    row('Words', PF_LAY_OPTS.lyr, L.lyr, v => pfLaySet('lyr', v)),
+    row('Text size', PF_LAY_OPTS.size, L.size, v => pfLaySet('size', v)),
+    row('Song map', PF_LAY_OPTS.map, L.map, v => pfLaySet('map', v)),
+    h('div', { class: 'tiny muted' }, 'Remembered on this device. Sing-along always puts the words at the bottom.')), { right: true });
+  if (p) p.classList.add('pf-pop');
+}
 const pfView = () => PF_VIEWS.some(v => v[0] === CFG.pfView) ? CFG.pfView : 'shapes';
 const PF = { on: false, el: null, raf: 0, ready: false, bd: false, imm: false, key: '', opener: null, lv: 0, f: {} };
 const pfDb = v => (v < 1e-5 ? -99 : 20 * Math.log10(v));
@@ -25,7 +51,7 @@ function perfViewNext() { const k = PF_VIEWS.findIndex(v => v[0] === pfView()); 
 /** show Perform as 'shapes', 'big' or 'sheet' (remembered) */
 function perfViewSet(id) {
   const nx = PF_VIEWS.find(v => v[0] === id); if (!nx) return false; CFG.pfView = nx[0]; saveCfg();
-  if (PF.el) { PF_VIEWS.forEach(v => PF.el.classList.toggle('pf-v-' + v[0], v[0] === nx[0])); const b = document.getElementById('pfView'); if (b) b.textContent = nx[1]; } PF.key = ''; return true;
+  if (PF.el) { PF_VIEWS.forEach(v => PF.el.classList.toggle('pf-v-' + v[0], v[0] === nx[0])); const b = document.getElementById('pfView'); if (b) b.textContent = nx[1]; pfLayApply(); } PF.key = ''; return true;
 }
 /** the chord changes from the playhead on: the one playing, then the next ones (each different from the one before) */
 function perfChords(n) {
@@ -84,16 +110,21 @@ function perfOpen(opener) {
   if (PF.on) return; PF.on = true; PF.ready = false; PF.opener = opener || document.activeElement; PF.bd = CFG.route === 'stage'; PF.imm = false;
   const dots = h('span', { class: 'pf-dots', id: 'pfDots', 'aria-hidden': 'true' });
   const ctl = (id, t, title, fn) => h('button', { class: 'btn pf-b', id, title, onclick: fn }, t);
-  PF.el = h('div', { id: 'perform', class: 'perform pf-pre pf-v-' + pfView() + (PF.bd ? '' : ' pf-solid'), role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Perform' },
+  PF.map = songMapEl({ big: true, cls: 'pf-map' });
+  PF.el = h('div', { id: 'perform', class: 'perform pf-pre pf-v-' + pfView() + ' ' + pfLayCls().join(' ') + (PF.bd ? '' : ' pf-solid'), role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Perform' },
     h('div', { class: 'pf-top' }, h('b', { class: 'pf-song', id: 'pfSong' }), h('span', { class: 'pf-sec', id: 'pfSec' }), h('span', { class: 'grow' }), h('span', { class: 'pf-meta', id: 'pfMeta' }), dots,
+      h('button', { class: 'btn sm pf-lay', id: 'pfLayout', title: 'Layout: where the controls and the words go, the text size, the song map', 'aria-haspopup': 'dialog', onclick: e => pfLayMenu(e.currentTarget) }, '⚙ Layout'),
       h('button', { class: 'btn sm pf-view', id: 'pfView', title: 'How Perform looks: the chord shapes beside the lyrics, the big chord, or the lyric sheet', onclick: () => perfViewNext() }, (PF_VIEWS.find(v => v[0] === pfView()) || PF_VIEWS[0])[1]),
       h('button', { class: 'btn sm vzh-kill', id: 'pfKill', title: 'Stop all sound and release the microphone (Ctrl + .)', onclick: () => { try { audioKill(); } catch (e) { } } }, '■ Stop audio'), h('button', { class: 'btn sm', id: 'pfExit', onclick: () => perfClose() }, '✕ Exit')),
+    PF.map,
     h('div', { class: 'pf-stage' }, h('div', { class: 'pf-chord', id: 'pfChord', 'aria-live': 'off' }, '·'), h('div', { class: 'pf-next', id: 'pfNext' }), h('div', { class: 'pf-lyr', id: 'pfLyr' }), h('aside', { class: 'pf-shapes', id: 'pfShapes', 'aria-label': 'Chord shapes' })),
     h('div', { class: 'pf-bar' }, ctl('pfPlay', '▶ Play', 'Play or stop (Space)', () => { T.playing ? stopPlay(true) : play(); }), ctl('pfRec', '● Record', 'Record a take with a count-in (R)', () => { if (!E.hasInput) toast('No input is connected, so only the count-in will run.', 'warn'); toggleRec(); }),
       ctl('pfLoop', '⟲ Loop', 'Loop the song (L)', () => { T.loop = !T.loop; syncTransport(); perfSync(); }), ctl('pfMetro', '♩ Click', 'Metronome (M)', () => { T.metro = !T.metro; syncTransport(); perfSync(); }), ctl('pfBand', '🔇 Band', 'Mute the whole band and the click (Shift+M)', () => { bandMute(); perfSync(); }),
       ctl('pfSlow', '−', 'Slower by 5 BPM', () => { S.bpm = clamp(S.bpm - 5, 30, 260); commit(false); bus.emit('bpm'); perfSync(); }), h('b', { class: 'pf-bpm', id: 'pfBpm' }), ctl('pfFast', '+', 'Faster by 5 BPM', () => { S.bpm = clamp(S.bpm + 5, 30, 260); commit(false); bus.emit('bpm'); perfSync(); }),
       h('span', { class: 'grow egg-line', 'aria-live': 'off' }), h('span', { class: 'pf-takes', id: 'pfTakes' })), secretChip('pf-sec'), buildTag('pf-ver'));
   document.body.append(PF.el); document.body.classList.add('perform-on');
+  let wake = 0; const awake = () => { if (!PF.el) return; PF.el.classList.add('pf-awake'); clearTimeout(wake); wake = setTimeout(() => { if (PF.el && !PF.el.querySelector('.pf-bar :focus-visible')) PF.el.classList.remove('pf-awake'); }, 2600); };      /* 'Hide until I move' */
+  ['pointermove', 'pointerdown', 'keydown'].forEach(t => PF.el.addEventListener(t, awake)); awake();
   if (PF.bd) perfBackdrop(true);
   perfRefresh(); perfSync(); eggTick(true); const g = document.getElementById('pfGo'); if (g) g.focus();
   PF.raf = requestAnimationFrame(perfTick);
@@ -121,7 +152,7 @@ function perfTick() {
   set('pfSong', S.title || 'Untitled'); set('pfSec', i.secName ? i.secName + (i.nBars ? ' · bar ' + i.barIn + '/' + i.nBars : '') : ''); set('pfMeta', Math.round(S.bpm) + ' BPM · ' + S.ts[0] + '/' + S.ts[1]);
   const dots = q('pfDots'); if (dots) { const n = S.ts[0]; if (dots.children.length !== n) { dots.innerHTML = ''; for (let k = 0; k < n; k++) dots.append(h('i', {})); } [...dots.children].forEach((d, k) => d.classList.toggle('on', T.playing && k === i.beat)); }
   set('pfChord', cnt ? String(i.beat + 1) : (i.sym || '·')); q('pfChord').classList.toggle('pf-count', !!cnt); set('pfNext', cnt ? 'count-in' : (i.next && T.playing ? 'next  ' + i.next : (T.playing ? '' : 'press Play when you are ready')));
-  const L = q('pfLyr'); if (L) { L.innerHTML = ''; if (i.lines.length) { const narrow = window.innerWidth < 900, a = Math.max(0, i.idx - (narrow ? 0 : 1)), z = Math.min(i.lines.length, Math.max(i.idx, 0) + (narrow ? 3 : pfView() === 'sheet' ? 7 : 4));   /* a phone shows the line and the next two */ for (let k = a; k < z; k++) L.append(h('div', { class: 'pf-l' + (k === i.idx ? ' cur' : k < i.idx ? ' past' : '') }, ...lyNodes(i.raw[k], k === i.idx ? i.mi : k < i.idx ? 1e9 : -1))); } else L.append(h('div', { class: 'pf-l past' }, 'No lyrics in this section')); }
+  const L = q('pfLyr'); if (L) { L.innerHTML = ''; if (i.lines.length) { const narrow = window.innerWidth < 900, low = PF.el.classList.contains('pf-lyr-bottom') && pfView() !== 'sheet', a = Math.max(0, i.idx - (narrow || low ? 0 : 1)), z = Math.min(i.lines.length, Math.max(i.idx, 0) + (low ? 2 : narrow ? 3 : pfView() === 'sheet' ? 7 : 4));      /* at the bottom: the line being sung and the next, like a sing-along */   /* a phone shows the line and the next two */ for (let k = a; k < z; k++) L.append(h('div', { class: 'pf-l' + (k === i.idx ? ' cur' : k < i.idx ? ' past' : '') }, ...lyNodes(i.raw[k], k === i.idx ? i.mi : k < i.idx ? 1e9 : -1))); } else L.append(h('div', { class: 'pf-l past' }, 'No lyrics in this section')); }
   if (pfView() === 'shapes') perfShapes(i);
   perfSync();
 }

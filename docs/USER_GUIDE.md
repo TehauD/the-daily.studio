@@ -2,7 +2,7 @@
 
 A practical walkthrough of every panel. For a two-minute orientation, press **?** in the app and choose **Take the guided tour** (on a phone, **⋯ More ▸ Guided tour**). Known gaps in the product and these docs are listed in [GAPS.md](GAPS.md).
 
-Contents: [Guided tour](#guided-tour-247) · [Simple](#-simple-233) · [Better instruments](#-better-instruments-245) · [Songs that build](#-songs-that-build-244) · [Vocal tuning](#-vocal-tuning-243) · [Song links](#-send-a-song-as-a-link-240) · [Beats](#-beats-239) · [Getting started](#getting-started-and-guided-sessions-27) · [Show setup](#show-setup-26) · [Layouts](#layout-and-themes) · [Monitor widgets](#monitor-widgets-26) · [Concert](#concert-24) · [Voice](#voice-pitch-ribbon-your-range-find-my-key-23) · [Cut, silence and punch in](#cut-silence-and-punch-in-23) · [Heatmap](#heatmap-23) · [Performer backdrop](#performer-backdrop-23) · [Clips and the mix](#clips-move-trim-fade-split-22) · [Fast WAV render](#faster-than-real-time-wav-render-22) · [Open a MIDI file](#open-a-midi-file-22) · [Keep songs safe](#keep-songs-safe-22) · [Perform, share and back up](#perform-share-and-back-up-20) · [Getting sound](#getting-sound-in-and-out) · [Tones and the Rig](#tones-and-the-rig) · [The band](#the-band) · [Arrangement and recording](#arrangement-and-recording) · [Tab editor](#tab-editor) · [Song, tunings and capo](#song-tunings-and-capo) · [Fretboard and tuner](#fretboard-and-tuner) · [Transcribe](#transcribe-audio-to-tab) · [Stems](#stems-and-backing-tracks) · [Neural map](#neural-map) · [Visuals and Stage](#visuals-and-stage) · [Vision](#vision-lab) · [Research](#research-panel) · [Export, history and backup](#export-history-and-backup) · [MIDI](#midi) · [Layout](#layout-and-themes)
+Contents: [Whole song and Perform layouts](#-the-whole-song-and-perform-your-way-248) · [Guided tour](#guided-tour-247) · [Simple](#-simple-233) · [Better instruments](#-better-instruments-245) · [Songs that build](#-songs-that-build-244) · [Vocal tuning](#-vocal-tuning-243) · [Song links](#-send-a-song-as-a-link-240) · [Beats](#-beats-239) · [Getting started](#getting-started-and-guided-sessions-27) · [Show setup](#show-setup-26) · [Layouts](#layout-and-themes) · [Monitor widgets](#monitor-widgets-26) · [Concert](#concert-24) · [Voice](#voice-pitch-ribbon-your-range-find-my-key-23) · [Cut, silence and punch in](#cut-silence-and-punch-in-23) · [Heatmap](#heatmap-23) · [Performer backdrop](#performer-backdrop-23) · [Clips and the mix](#clips-move-trim-fade-split-22) · [Fast WAV render](#faster-than-real-time-wav-render-22) · [Open a MIDI file](#open-a-midi-file-22) · [Keep songs safe](#keep-songs-safe-22) · [Perform, share and back up](#perform-share-and-back-up-20) · [Getting sound](#getting-sound-in-and-out) · [Tones and the Rig](#tones-and-the-rig) · [The band](#the-band) · [Arrangement and recording](#arrangement-and-recording) · [Tab editor](#tab-editor) · [Song, tunings and capo](#song-tunings-and-capo) · [Fretboard and tuner](#fretboard-and-tuner) · [Transcribe](#transcribe-audio-to-tab) · [Stems](#stems-and-backing-tracks) · [Neural map](#neural-map) · [Visuals and Stage](#visuals-and-stage) · [Vision](#vision-lab) · [Research](#research-panel) · [Export, history and backup](#export-history-and-backup) · [MIDI](#midi) · [Layout](#layout-and-themes)
 
 ---
 
@@ -40,6 +40,25 @@ Contents: [Guided tour](#guided-tour-247) · [Simple](#-simple-233) · [Better i
   Pressing ✦ Simple in the Full Rig goes to the last workspace you used; switching Simple off again brings the Full Rig back exactly as it was.
 - **Visuals in Simple (2.46):** four looks (hex, concert, bloom and the prompter); **More looks…** shows the rest.
 - **The band in Simple (2.39):** the Band panel is the beats and who plays (drums, bass, guitar and keys, each a switch and a level). **Show every band setting** brings the rest back.
+
+## ☰ The whole song, and Perform your way (2.48)
+
+**In Write:**
+- **☰ Whole song** (beside Tab, Words and Both) shows every section in order, each with its name, chords and words, and you can edit them where they are. Use ↑ ↓ to move a section, ⧉ to duplicate one and ▶ to play from it.
+- **The song map** above the section chips shows a block per section, as wide as its bars and coloured by kind. The one playing is lit; click a block to go there.
+- **＋** opens a menu: Intro, Verse, Pre-chorus, Chorus, Interlude, Bridge, Solo, Outro, or a copy of a section already in the song. The new section goes after the one you picked and is named for you (Verse 1, Verse 2…). A second verse or chorus starts with the first one's chords.
+
+**In Perform (⚙ Layout, remembered on this device):**
+
+| Choice | Options |
+| --- | --- |
+| Show | Chords & shapes · Big chord · Lyric sheet · 🎤 Sing-along |
+| Controls | Top right (default) · Bottom · Hide until I move |
+| Words | Bottom, like a sing-along (default) · Middle, under the chord |
+| Text size | Small · Medium · Large · Huge |
+| Song map | Show (default) · Hide |
+
+At the bottom, the words sit in a dark band: the line being sung with its chords over the words, and the next line under it. The song map under the title shows where you are; click a section to play on from there. **Sing-along** always puts the words at the bottom and the chord smaller above them. It's a good way to learn a song: you see the chords and the words move together.
 
 ## 🎹 Better instruments (2.45)
 

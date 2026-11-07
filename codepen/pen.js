@@ -34,7 +34,7 @@ window.__dailyRoom = (id, make) => {
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.47.1', BUILD = '1428e77', PARTS_N = +'112' || 0, LINES_N = +'18873' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.47.1', BUILD = '37ec1cb', PARTS_N = +'113' || 0, LINES_N = +'18983' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { ghApp: { clientId: '', slug: '' },   /* Sign in with GitHub: the GitHub App's public client id and its slug (docs/GITHUB.md); empty = only the token way */
   support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://the-daily.studio/journal/' };
@@ -4197,7 +4197,7 @@ async function boot() {
   if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener('devicechange', () => { ioDeviceChange().catch(e => console.warn(e)); });
   bus.emit('song');
   try { ghBoot(); } catch (e) { console.warn('github', e); }      /* back from Sign in with GitHub, or a sync at start (part 74) */
-  DEV.make = () => { window.__daily = { tourStart, normSong, bandRename, get TOUR() { return TOUR; }, SIMPLE_GOAL_TABS, SIMPLE_GOAL_TOOLS, simpleTabs, goalAudioFirst, guitarBody, pluck, BLD, BUILD_LIFT, buildLevel, secEnergy, buildCtx, buildParts, buildDrums, buildCard, buildCrash, buildRiser, tuneSelect, TUNE_LABELS, tuneTake, BASS_TONES, KITS, kitHit, sub808, M, MGROUPS, MW, mScreenDraw, mwRead, mwView, mwLyrics, mwSyl, mwEdited, mwPut, mSongOpen, msHexLoop, room, ROOM, slPack, slUnpack, slLink, slRead, slShare, slWelcome, slOpen, slFromHash, SL, BEATS, beatUse, beatRows, beatsShelf, SIMPLE_TOOLS, drumHit, RL, MO, GM_DRUM, duckAt, duckSet, duckCfg, duckNode, moNote, moDev, moDrum, moPanic, moSettings, kyOut, bassOut, rollOpen, rollBuild, rollLoop, isBass, instNow, nStr, yin, TUNINGS, setTuning, renderBarTab, tabLabels, voicingFor, toggleRec, closePop, spPause, encodeWav, PS, psOn, playDur, psSpeed, psKey, psSched, psDSPFactory, psPop, KY, keysOpen, keysVoice, keysStep, kyNoteOn, kyNoteOff, kyRec, kyClear, kyWrite, kyPiano, kyMarks, kyVoicing, KEYS_SOUNDS, KEYS_STYLES, coFinish, coDemo, coFeedback, coFbView, coTimeline, coBeat, coPractise, TAKE, learnPassed, todayPlan, todayPieces, todayStart, todayDone, streak, weekCount, dayKey, LSTEP, songLessons, songStart, songKey, earLick, earStart, EAR, simpleSet, simpleApply, ghTakeSettings, airMode, airSet, CO, coPos, coachOpen, coListen, coTick, coPlace, coNotes, coSetPiece, rfParse, LESSONS, RIFFS, RIFF_STYLES, learnOpen, learnToSong, learnFile, learnFileText, learnOpenFile, learnFromSong, labMake, labVary, labKeep, atlasPieces, atShape, MODE_VAMP, S, AIR, AIR_LAG, airSync, applyLayout, VB_PRESETS, VB_ORDER, VBS, vbAttach, vbApply, vbToggle, vbSet, vbPreset, vbPresetNext, vbThrow, vbLook, vbTick, vbScale, vocalBoardOpen, pedalRelease, MEG, megSpectrum, megFeatures, megScore, megStep, megSet, megLearn, megDraw, megLoop, megSettings, PAD, padsOpen, padHit, padTap, padRecord, padRecStop, padUndoPass, padClear, padResize, padBeatbox, bbHits, bbPattern, dpat, bassEvent, drumStep, PEDAL, pedalPress, pedalDo, pedalSecs, gearSettings, MCLK, mclkSlot, mclkMs, MIDI, MIDIRAW, onMidi, STRM, streamOpen, streamRoom, streamInfo, streamPanel, slotAtTime, SING, SHW, singStep, singScore, singSteamIR, singMicOff, showerOpen, shwGo, shwPlay, shwPrev, shwNext, shwStem, shwRecToggle, shwRecStop, shwHear, shwSave, shwAddFiles, shwRemove, shwMove, shwMode, shwLoadSet, shwPlaylist, shwWords, shwPrepare, shwFolderPull, lrcParse, readTags, spPos, spPlay, STP, trainOpen, projRestoreTrack, secretNote, secretArp, WS, WS_BASE, WS_ARPS, wsScaleRun, wsArpRun, wsFollow, wsStop, wsListen, wsEarNext, wsEarAnswer, wsOpen, bandMute, bandMuted, pdbPut, pdbKeys, projRename, FS, FS_B, fsUse, fsSync, fsHead, fsNeeds, fsTidy, fsOpen, syncOff, syncZips, PRJ_WAIT: () => PRJ.wait, EGG, EGG_LINES, EGG_ORDER, eggDay, eggFor, eggNow, eggText, eggTick, eggFit, saveCfg, projSave, projDelete, GH, ghSync, ghConnect, ghDisconnect, ghLocal, ghSha, ghJson, ghMerge3, ghShare, ghGallery, ghGalleryOpen, ghGalleryShow, ghKeepLook, ghKeepRig, rigClean, ghReturn, BRAND, ghSettingsOut, projRefresh, projCreate, projLoad, PRJ, SEC, SECRETS, secretFound, secretTiming, secretsOpen, secretSync, backstageOpen, startAudio, playheadSlot, GUARD, reportText, reportCopy, srecQ, srecSize, pdbGet, srecFmt, SREC_FMTS, VBG, vbgAdd, vbgRemove, vbgUse, vbgOpen, vbgDraw, vzSetMode, srecFrame, srecFmtBox, kitThumb, WORKLET_SRC, mkComp, mkShaper, rigLat, voxLat, restartAudio, satCurve, rigApply, qrMake, qrSvg, tipLink, tipShort, tipReady, tipCard, tipDraw, tipShareHtml, tipOpen, tipPrint, tipPng, tipVisAvoid, tipStageAvoid, TIP, TIP_TERMS, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, drawVis, peaksOf, uid, shareGate, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, TAKES, STM, ZOOM, CFG, store, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, SEL, mtof, spb, WR, HM, HMX, HM_MODES, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitInk, kitNotes, kitRecord, srecMime, mGo, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard}; };   // test hook: with ?debug, or Backstage ▸ Labs ▸ Developer handles
+  DEV.make = () => { window.__daily = { tourStart, mkSection, perfViewSet, pfLay, pfLaySet, pfLayMenu, songMapEl, secAdd, secKind, secNameFor, smGo, renderWholeSong, normSong, bandRename, get TOUR() { return TOUR; }, SIMPLE_GOAL_TABS, SIMPLE_GOAL_TOOLS, simpleTabs, goalAudioFirst, guitarBody, pluck, BLD, BUILD_LIFT, buildLevel, secEnergy, buildCtx, buildParts, buildDrums, buildCard, buildCrash, buildRiser, tuneSelect, TUNE_LABELS, tuneTake, BASS_TONES, KITS, kitHit, sub808, M, MGROUPS, MW, mScreenDraw, mwRead, mwView, mwLyrics, mwSyl, mwEdited, mwPut, mSongOpen, msHexLoop, room, ROOM, slPack, slUnpack, slLink, slRead, slShare, slWelcome, slOpen, slFromHash, SL, BEATS, beatUse, beatRows, beatsShelf, SIMPLE_TOOLS, drumHit, RL, MO, GM_DRUM, duckAt, duckSet, duckCfg, duckNode, moNote, moDev, moDrum, moPanic, moSettings, kyOut, bassOut, rollOpen, rollBuild, rollLoop, isBass, instNow, nStr, yin, TUNINGS, setTuning, renderBarTab, tabLabels, voicingFor, toggleRec, closePop, spPause, encodeWav, PS, psOn, playDur, psSpeed, psKey, psSched, psDSPFactory, psPop, KY, keysOpen, keysVoice, keysStep, kyNoteOn, kyNoteOff, kyRec, kyClear, kyWrite, kyPiano, kyMarks, kyVoicing, KEYS_SOUNDS, KEYS_STYLES, coFinish, coDemo, coFeedback, coFbView, coTimeline, coBeat, coPractise, TAKE, learnPassed, todayPlan, todayPieces, todayStart, todayDone, streak, weekCount, dayKey, LSTEP, songLessons, songStart, songKey, earLick, earStart, EAR, simpleSet, simpleApply, ghTakeSettings, airMode, airSet, CO, coPos, coachOpen, coListen, coTick, coPlace, coNotes, coSetPiece, rfParse, LESSONS, RIFFS, RIFF_STYLES, learnOpen, learnToSong, learnFile, learnFileText, learnOpenFile, learnFromSong, labMake, labVary, labKeep, atlasPieces, atShape, MODE_VAMP, S, AIR, AIR_LAG, airSync, applyLayout, VB_PRESETS, VB_ORDER, VBS, vbAttach, vbApply, vbToggle, vbSet, vbPreset, vbPresetNext, vbThrow, vbLook, vbTick, vbScale, vocalBoardOpen, pedalRelease, MEG, megSpectrum, megFeatures, megScore, megStep, megSet, megLearn, megDraw, megLoop, megSettings, PAD, padsOpen, padHit, padTap, padRecord, padRecStop, padUndoPass, padClear, padResize, padBeatbox, bbHits, bbPattern, dpat, bassEvent, drumStep, PEDAL, pedalPress, pedalDo, pedalSecs, gearSettings, MCLK, mclkSlot, mclkMs, MIDI, MIDIRAW, onMidi, STRM, streamOpen, streamRoom, streamInfo, streamPanel, slotAtTime, SING, SHW, singStep, singScore, singSteamIR, singMicOff, showerOpen, shwGo, shwPlay, shwPrev, shwNext, shwStem, shwRecToggle, shwRecStop, shwHear, shwSave, shwAddFiles, shwRemove, shwMove, shwMode, shwLoadSet, shwPlaylist, shwWords, shwPrepare, shwFolderPull, lrcParse, readTags, spPos, spPlay, STP, trainOpen, projRestoreTrack, secretNote, secretArp, WS, WS_BASE, WS_ARPS, wsScaleRun, wsArpRun, wsFollow, wsStop, wsListen, wsEarNext, wsEarAnswer, wsOpen, bandMute, bandMuted, pdbPut, pdbKeys, projRename, FS, FS_B, fsUse, fsSync, fsHead, fsNeeds, fsTidy, fsOpen, syncOff, syncZips, PRJ_WAIT: () => PRJ.wait, EGG, EGG_LINES, EGG_ORDER, eggDay, eggFor, eggNow, eggText, eggTick, eggFit, saveCfg, projSave, projDelete, GH, ghSync, ghConnect, ghDisconnect, ghLocal, ghSha, ghJson, ghMerge3, ghShare, ghGallery, ghGalleryOpen, ghGalleryShow, ghKeepLook, ghKeepRig, rigClean, ghReturn, BRAND, ghSettingsOut, projRefresh, projCreate, projLoad, PRJ, SEC, SECRETS, secretFound, secretTiming, secretsOpen, secretSync, backstageOpen, startAudio, playheadSlot, GUARD, reportText, reportCopy, srecQ, srecSize, pdbGet, srecFmt, SREC_FMTS, VBG, vbgAdd, vbgRemove, vbgUse, vbgOpen, vbgDraw, vzSetMode, srecFrame, srecFmtBox, kitThumb, WORKLET_SRC, mkComp, mkShaper, rigLat, voxLat, restartAudio, satCurve, rigApply, qrMake, qrSvg, tipLink, tipShort, tipReady, tipCard, tipDraw, tipShareHtml, tipOpen, tipPrint, tipPng, tipVisAvoid, tipStageAvoid, TIP, TIP_TERMS, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, drawVis, peaksOf, uid, shareGate, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, TAKES, STM, ZOOM, CFG, store, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, SEL, mtof, spb, WR, HM, HMX, HM_MODES, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitInk, kitNotes, kitRecord, srecMime, mGo, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard}; };   // test hook: with ?debug, or Backstage ▸ Labs ▸ Developer handles
   if (/[?&]debug\b/.test(location.search) || (CFG.labs && CFG.labs.handles)) DEV.make();
   try { bksBoot(); } catch (e) { console.warn('backstage', e); }      /* #backstage in the address, the performance overlay (part 73c) */
   projInit().catch(e => { console.warn('library', e); PRJ.ready = true; if (PRJ.wantStart) startMaybe(); });
@@ -8817,7 +8817,33 @@ function srecAbort() { if (!SREC.on) return; srecStop(false); toast('Recording s
    shows through; without, a plain dark page. The microphone and camera stay off until you press their buttons here.
    ============================================================ */
 /* how Perform looks: shapes (the big chord, the lyrics and the chord shapes beside them), big (the big chord and the lyrics), sheet (the lyrics large, no big chord) */
-const PF_VIEWS = [['shapes', '◫ Chords & shapes'], ['big', '◼ Big chord'], ['sheet', '☰ Lyric sheet']];
+const PF_VIEWS = [['shapes', '◫ Chords & shapes'], ['big', '◼ Big chord'], ['sheet', '☰ Lyric sheet'], ['sing', '🎤 Sing-along']];
+/* 2.48: how Perform is laid out, each person's own (remembered): where the controls are, where the words are, the song map, the text size.
+   The defaults are a sing-along: controls at the top right, the words in a band at the bottom, the map of the song under the title. */
+const PF_LAY_OPTS = {
+  ctl: [['top', 'Top right'], ['bottom', 'Bottom'], ['auto', 'Hide until I move']],
+  lyr: [['bottom', 'Bottom, like a sing-along'], ['middle', 'Middle, under the chord']],
+  size: [['s', 'Small'], ['m', 'Medium'], ['l', 'Large'], ['xl', 'Huge']],
+  map: [['on', 'Show'], ['off', 'Hide']]
+};
+function pfLay() { const L = Object.assign({ ctl: 'top', lyr: 'bottom', size: 'm', map: 'on' }, CFG.pfLay || {}); Object.keys(PF_LAY_OPTS).forEach(k => { if (!PF_LAY_OPTS[k].some(o => o[0] === L[k])) L[k] = PF_LAY_OPTS[k][0][0]; }); return L; }
+/** the classes that lay Perform out */
+function pfLayCls() { const L = pfLay(), lyr = pfView() === 'sing' ? 'bottom' : L.lyr; return ['pf-ctl-' + L.ctl, 'pf-lyr-' + lyr, 'pf-size-' + L.size, 'pf-map-' + L.map]; }
+function pfLayApply() { if (!PF.el) return; [...PF.el.classList].filter(c => /^pf-(ctl|lyr|size|map)-/.test(c)).forEach(c => PF.el.classList.remove(c)); PF.el.classList.add(...pfLayCls()); PF.key = ''; }
+/** change one layout choice (k: ctl, lyr, size or map) */
+function pfLaySet(k, v) { if (!PF_LAY_OPTS[k] || !PF_LAY_OPTS[k].some(o => o[0] === v)) return false; CFG.pfLay = Object.assign(pfLay(), { [k]: v }); saveCfg(); pfLayApply(); return true; }
+/** the Layout menu: the view and the four choices, each a row of buttons */
+function pfLayMenu(anchor) {
+  const L = pfLay(), row = (label, opts, cur, fn) => h('div', { class: 'pf-lm-r' }, h('span', { class: 'pf-lm-l' }, label), h('div', { class: 'seg pf-lm-s', role: 'group', 'aria-label': label }, opts.map(([v, t]) => h('button', { class: v === cur ? 'on' : '', 'aria-pressed': String(v === cur), 'data-v': v, onclick: e => { fn(v); e.currentTarget.parentNode.querySelectorAll('button').forEach(b => { const on = b === e.currentTarget; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); }); } }, t))));
+  const p = popover(anchor, h('div', { class: 'pf-lm', id: 'pfLayMenu' }, h('b', {}, 'Layout'),
+    row('Show', PF_VIEWS.map(([v, t]) => [v, t]), pfView(), v => perfViewSet(v)),
+    row('Controls', PF_LAY_OPTS.ctl, L.ctl, v => pfLaySet('ctl', v)),
+    row('Words', PF_LAY_OPTS.lyr, L.lyr, v => pfLaySet('lyr', v)),
+    row('Text size', PF_LAY_OPTS.size, L.size, v => pfLaySet('size', v)),
+    row('Song map', PF_LAY_OPTS.map, L.map, v => pfLaySet('map', v)),
+    h('div', { class: 'tiny muted' }, 'Remembered on this device. Sing-along always puts the words at the bottom.')), { right: true });
+  if (p) p.classList.add('pf-pop');
+}
 const pfView = () => PF_VIEWS.some(v => v[0] === CFG.pfView) ? CFG.pfView : 'shapes';
 const PF = { on: false, el: null, raf: 0, ready: false, bd: false, imm: false, key: '', opener: null, lv: 0, f: {} };
 const pfDb = v => (v < 1e-5 ? -99 : 20 * Math.log10(v));
@@ -8837,7 +8863,7 @@ function perfViewNext() { const k = PF_VIEWS.findIndex(v => v[0] === pfView()); 
 /** show Perform as 'shapes', 'big' or 'sheet' (remembered) */
 function perfViewSet(id) {
   const nx = PF_VIEWS.find(v => v[0] === id); if (!nx) return false; CFG.pfView = nx[0]; saveCfg();
-  if (PF.el) { PF_VIEWS.forEach(v => PF.el.classList.toggle('pf-v-' + v[0], v[0] === nx[0])); const b = document.getElementById('pfView'); if (b) b.textContent = nx[1]; } PF.key = ''; return true;
+  if (PF.el) { PF_VIEWS.forEach(v => PF.el.classList.toggle('pf-v-' + v[0], v[0] === nx[0])); const b = document.getElementById('pfView'); if (b) b.textContent = nx[1]; pfLayApply(); } PF.key = ''; return true;
 }
 /** the chord changes from the playhead on: the one playing, then the next ones (each different from the one before) */
 function perfChords(n) {
@@ -8896,16 +8922,21 @@ function perfOpen(opener) {
   if (PF.on) return; PF.on = true; PF.ready = false; PF.opener = opener || document.activeElement; PF.bd = CFG.route === 'stage'; PF.imm = false;
   const dots = h('span', { class: 'pf-dots', id: 'pfDots', 'aria-hidden': 'true' });
   const ctl = (id, t, title, fn) => h('button', { class: 'btn pf-b', id, title, onclick: fn }, t);
-  PF.el = h('div', { id: 'perform', class: 'perform pf-pre pf-v-' + pfView() + (PF.bd ? '' : ' pf-solid'), role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Perform' },
+  PF.map = songMapEl({ big: true, cls: 'pf-map' });
+  PF.el = h('div', { id: 'perform', class: 'perform pf-pre pf-v-' + pfView() + ' ' + pfLayCls().join(' ') + (PF.bd ? '' : ' pf-solid'), role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Perform' },
     h('div', { class: 'pf-top' }, h('b', { class: 'pf-song', id: 'pfSong' }), h('span', { class: 'pf-sec', id: 'pfSec' }), h('span', { class: 'grow' }), h('span', { class: 'pf-meta', id: 'pfMeta' }), dots,
+      h('button', { class: 'btn sm pf-lay', id: 'pfLayout', title: 'Layout: where the controls and the words go, the text size, the song map', 'aria-haspopup': 'dialog', onclick: e => pfLayMenu(e.currentTarget) }, '⚙ Layout'),
       h('button', { class: 'btn sm pf-view', id: 'pfView', title: 'How Perform looks: the chord shapes beside the lyrics, the big chord, or the lyric sheet', onclick: () => perfViewNext() }, (PF_VIEWS.find(v => v[0] === pfView()) || PF_VIEWS[0])[1]),
       h('button', { class: 'btn sm vzh-kill', id: 'pfKill', title: 'Stop all sound and release the microphone (Ctrl + .)', onclick: () => { try { audioKill(); } catch (e) { } } }, '■ Stop audio'), h('button', { class: 'btn sm', id: 'pfExit', onclick: () => perfClose() }, '✕ Exit')),
+    PF.map,
     h('div', { class: 'pf-stage' }, h('div', { class: 'pf-chord', id: 'pfChord', 'aria-live': 'off' }, '·'), h('div', { class: 'pf-next', id: 'pfNext' }), h('div', { class: 'pf-lyr', id: 'pfLyr' }), h('aside', { class: 'pf-shapes', id: 'pfShapes', 'aria-label': 'Chord shapes' })),
     h('div', { class: 'pf-bar' }, ctl('pfPlay', '▶ Play', 'Play or stop (Space)', () => { T.playing ? stopPlay(true) : play(); }), ctl('pfRec', '● Record', 'Record a take with a count-in (R)', () => { if (!E.hasInput) toast('No input is connected, so only the count-in will run.', 'warn'); toggleRec(); }),
       ctl('pfLoop', '⟲ Loop', 'Loop the song (L)', () => { T.loop = !T.loop; syncTransport(); perfSync(); }), ctl('pfMetro', '♩ Click', 'Metronome (M)', () => { T.metro = !T.metro; syncTransport(); perfSync(); }), ctl('pfBand', '🔇 Band', 'Mute the whole band and the click (Shift+M)', () => { bandMute(); perfSync(); }),
       ctl('pfSlow', '−', 'Slower by 5 BPM', () => { S.bpm = clamp(S.bpm - 5, 30, 260); commit(false); bus.emit('bpm'); perfSync(); }), h('b', { class: 'pf-bpm', id: 'pfBpm' }), ctl('pfFast', '+', 'Faster by 5 BPM', () => { S.bpm = clamp(S.bpm + 5, 30, 260); commit(false); bus.emit('bpm'); perfSync(); }),
       h('span', { class: 'grow egg-line', 'aria-live': 'off' }), h('span', { class: 'pf-takes', id: 'pfTakes' })), secretChip('pf-sec'), buildTag('pf-ver'));
   document.body.append(PF.el); document.body.classList.add('perform-on');
+  let wake = 0; const awake = () => { if (!PF.el) return; PF.el.classList.add('pf-awake'); clearTimeout(wake); wake = setTimeout(() => { if (PF.el && !PF.el.querySelector('.pf-bar :focus-visible')) PF.el.classList.remove('pf-awake'); }, 2600); };      /* 'Hide until I move' */
+  ['pointermove', 'pointerdown', 'keydown'].forEach(t => PF.el.addEventListener(t, awake)); awake();
   if (PF.bd) perfBackdrop(true);
   perfRefresh(); perfSync(); eggTick(true); const g = document.getElementById('pfGo'); if (g) g.focus();
   PF.raf = requestAnimationFrame(perfTick);
@@ -8933,7 +8964,7 @@ function perfTick() {
   set('pfSong', S.title || 'Untitled'); set('pfSec', i.secName ? i.secName + (i.nBars ? ' · bar ' + i.barIn + '/' + i.nBars : '') : ''); set('pfMeta', Math.round(S.bpm) + ' BPM · ' + S.ts[0] + '/' + S.ts[1]);
   const dots = q('pfDots'); if (dots) { const n = S.ts[0]; if (dots.children.length !== n) { dots.innerHTML = ''; for (let k = 0; k < n; k++) dots.append(h('i', {})); } [...dots.children].forEach((d, k) => d.classList.toggle('on', T.playing && k === i.beat)); }
   set('pfChord', cnt ? String(i.beat + 1) : (i.sym || '·')); q('pfChord').classList.toggle('pf-count', !!cnt); set('pfNext', cnt ? 'count-in' : (i.next && T.playing ? 'next  ' + i.next : (T.playing ? '' : 'press Play when you are ready')));
-  const L = q('pfLyr'); if (L) { L.innerHTML = ''; if (i.lines.length) { const narrow = window.innerWidth < 900, a = Math.max(0, i.idx - (narrow ? 0 : 1)), z = Math.min(i.lines.length, Math.max(i.idx, 0) + (narrow ? 3 : pfView() === 'sheet' ? 7 : 4));   /* a phone shows the line and the next two */ for (let k = a; k < z; k++) L.append(h('div', { class: 'pf-l' + (k === i.idx ? ' cur' : k < i.idx ? ' past' : '') }, ...lyNodes(i.raw[k], k === i.idx ? i.mi : k < i.idx ? 1e9 : -1))); } else L.append(h('div', { class: 'pf-l past' }, 'No lyrics in this section')); }
+  const L = q('pfLyr'); if (L) { L.innerHTML = ''; if (i.lines.length) { const narrow = window.innerWidth < 900, low = PF.el.classList.contains('pf-lyr-bottom') && pfView() !== 'sheet', a = Math.max(0, i.idx - (narrow || low ? 0 : 1)), z = Math.min(i.lines.length, Math.max(i.idx, 0) + (low ? 2 : narrow ? 3 : pfView() === 'sheet' ? 7 : 4));      /* at the bottom: the line being sung and the next, like a sing-along */   /* a phone shows the line and the next two */ for (let k = a; k < z; k++) L.append(h('div', { class: 'pf-l' + (k === i.idx ? ' cur' : k < i.idx ? ' past' : '') }, ...lyNodes(i.raw[k], k === i.idx ? i.mi : k < i.idx ? 1e9 : -1))); } else L.append(h('div', { class: 'pf-l past' }, 'No lyrics in this section')); }
   if (pfView() === 'shapes') perfShapes(i);
   perfSync();
 }
@@ -13242,7 +13273,7 @@ function capInfo() { return { on: !!CAP.on, text: CX.say, st: CX.saySt, count: C
 /** the fretboard strip: on for desktop; on a phone it shows while capturing (there is little room) unless the person chose */
 const wrFretOn = () => WR.fret != null ? WR.fret : (typeof isDesk === 'function' ? isDesk() : true) || !!CAP.on;
 const WR = { mode: CFG.wrMode || 'both', fret: CFG.wrFret == null ? null : !!CFG.wrFret, nf: CFG.wrNf === 22 ? 22 : 15, nodes: null, key: '', flash: new Map(), ph: [], sayAt: 0 };
-if (!['tab', 'words', 'both'].includes(WR.mode)) WR.mode = 'tab';
+if (!['tab', 'words', 'both', 'song'].includes(WR.mode)) WR.mode = 'tab';
 if (CFG.capOpt) Object.assign(CAP, CFG.capOpt);
 
 function writeBuild() {
@@ -13252,17 +13283,18 @@ function writeBuild() {
   UI.wrMain = h('div', { class: 'wr-main' }, UI.wrTabCol, UI.wrWords);
   UI.wrSecs = h('div', { class: 'wr-secs', role: 'tablist', 'aria-label': 'Sections' });
   UI.wrModeSeg = h('div', { class: 'seg wr-mode', role: 'group', 'aria-label': 'What the canvas shows' });
-  [['tab', '𝄞', 'Tab', 'Just the tab'], ['words', '✎', 'Words', 'Lyrics with the chords over them'], ['both', '▥', 'Both', 'The tab with the words beside it']].forEach(([k, i, t, d]) => UI.wrModeSeg.append(h('button', { 'data-wm': k, title: d, onclick: () => wrMode(k) }, h('span', { class: 'wr-ic', 'aria-hidden': 'true' }, i), t)));
+  [['tab', '𝄞', 'Tab', 'Just the tab'], ['words', '✎', 'Words', 'Lyrics with the chords over them'], ['both', '▥', 'Both', 'The tab with the words beside it'], ['song', '☰', 'Whole song', 'Every section in order, intro to outro, with its chords and words, to read and edit (2.48)']].forEach(([k, i, t, d]) => UI.wrModeSeg.append(h('button', { 'data-wm': k, title: d, onclick: () => wrMode(k) }, h('span', { class: 'wr-ic', 'aria-hidden': 'true' }, i), t)));
   UI.wrFretBtn = h('button', { class: 'btn sm wr-fb', title: 'Show or hide the fretboard under the canvas', onclick: () => { WR.fret = !wrFretOn(); CFG.wrFret = WR.fret; if (WR.fret && CFG.wrPiano) { CFG.wrPiano = false; if (typeof kyWrSync === 'function') kyWrSync(); } saveCfg(); wrLayout(); } }, h('span', { class: 'wr-fl' }, 'Fretboard'), h('span', { class: 'wr-fs', 'aria-hidden': 'true' }, '🎸'));
   UI.wrCapBtn = h('button', { class: 'btn wr-cb', id: 'wrCap', title: 'Play your guitar and the notes and chords are written into the tab as you play. It counts you in and loops this section.', onclick: () => { capToggle(); } }, '● Capture');
   UI.wrOpt = h('button', { class: 'btn sm', title: 'Capture options', 'aria-haspopup': 'dialog', onclick: e => wrOptions(e.currentTarget) }, '⚙');
+  UI.wrMap = songMapEl({ cls: 'wr-map', onPick: i => wrSel(i) });
   UI.wrBar = h('div', { class: 'wr-bar' }, UI.wrSecs, h('span', { class: 'wr-sp' }), UI.wrModeSeg, UI.wrFretBtn, h('span', { class: 'wr-capg' }, UI.wrCapBtn, UI.wrOpt));
   UI.wrLvl = h('i', { class: 'wr-lvl' }, h('b')); UI.wrSay = h('span', { class: 'wr-say', id: 'wrSay', 'aria-live': 'polite' }); UI.wrN = h('span', { class: 'wr-n' });
   UI.wrStrip = h('div', { class: 'wr-strip' }, UI.wrLvl, UI.wrSay, UI.wrN);
   UI.wrFretBox = h('div', { class: 'wr-fret' }); UI.wrFretSvg = h('div', { class: 'wr-fbs' });
   UI.wrFretHead = h('div', { class: 'wr-fh' }, h('b', { class: 'small', title: 'Click a position to put that note in the selected cell of the tab. Dots: the chord’s notes. Filled: in this bar. Orange ring: what you are playing now.' }, 'FRETBOARD'), h('span', { class: 'tiny muted grow', id: 'wrFInfo' }), h('button', { class: 'btn sm', title: 'How many frets to show', onclick: () => { WR.nf = WR.nf === 15 ? 22 : 15; CFG.wrNf = WR.nf; saveCfg(); wrFretBuild(); } }, '⟷ frets'), h('button', { class: 'btn sm', title: 'The full fretboard, with scales and the heatmap', onclick: () => dockGo('fret') }, 'More ▸'));
   UI.wrFretBox.append(UI.wrFretHead, UI.wrFretSvg);
-  p.append(UI.wrBar, UI.wrStrip, UI.wrMain, UI.wrFretBox);
+  p.append(UI.wrMap, UI.wrBar, UI.wrStrip, UI.wrMain, UI.wrFretBox);
   bus.on('song', () => { wrBarDraw(); if (WR.mode !== 'tab' && !SP.lock) renderWords(); if (WR.nodes && WR.tun !== S.tuning.join() + ':' + S.capo) wrFretBuild(); });
   bus.on('sel', () => { if (SEL.sec !== TE.sec && SEL.sec < S.sections.length) { TE.sec = SEL.sec; TE.bi = clamp(SEL.bar || 0, 0, Math.max(0, S.sections[TE.sec].bars.length - 1)); renderTab(); } wrBarDraw(); if (WR.mode !== 'tab') renderWords(); });
   bus.on('dock', id => { if (id === 'tab') { wrBarDraw(); if (WR.mode !== 'tab') renderWords(); wrFretPaint(true); } });
@@ -13275,7 +13307,7 @@ function wrLayout() {
   const p = PANES.tab; if (!p) return; p.dataset.wr = WR.mode; const fo = wrFretOn(); p.classList.toggle('wr-nofret', !fo);
   $$('button', UI.wrModeSeg).forEach(b => { const on = b.dataset.wm === WR.mode; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
   UI.wrFretBtn.classList.toggle('on', fo); UI.wrFretBtn.setAttribute('aria-pressed', String(fo));
-  UI.wrFretBox.style.display = fo ? '' : 'none'; UI.wrStrip.style.display = WR.mode === 'words' ? 'none' : '';
+  UI.wrFretBox.style.display = fo && WR.mode !== 'song' ? '' : 'none'; UI.wrStrip.style.display = WR.mode === 'words' || WR.mode === 'song' ? 'none' : ''; if (UI.wrMap) UI.wrMap.style.display = WR.mode === 'song' ? 'none' : '';
   if (fo && !WR.nodes) wrFretBuild(); if (WR.mode !== 'tab') renderWords();
 }
 /** the section chips */
@@ -13283,14 +13315,11 @@ function wrSel(i) { i = clamp(i, 0, S.sections.length - 1); TE.sec = SEL.sec = i
 function wrBarDraw() {
   const box = UI.wrSecs; if (!box) return; const key = S.sections.map(s => s.name).join('|') + '#' + TE.sec; if (box._k === key) return; box._k = key; box.innerHTML = '';
   S.sections.forEach((s, i) => box.append(h('button', { class: 'wr-sec' + (i === TE.sec ? ' on' : ''), role: 'tab', 'aria-selected': String(i === TE.sec), title: s.bars.length + ' bars', onclick: () => wrSel(i) }, s.name)));
-  box.append(h('button', { class: 'wr-sec add', title: 'Add a section', 'aria-label': 'Add a section', onclick: () => {
-    const hasV = S.sections.some(s => /^Verse/.test(s.name)), hasC = S.sections.some(s => /^Chorus/.test(s.name)), base = hasV && !hasC ? 'Chorus' : 'Verse', n = S.sections.filter(s => s.name.startsWith(base)).length + 1;
-    S.sections.push(mkSection(base + ' ' + n, ['', '', '', ''])); commit(); wrSel(S.sections.length - 1);
-  } }, '＋'));
+  box.append(h('button', { class: 'wr-sec add', id: 'wrSecAdd', title: 'Add a section: intro, verse, pre-chorus, chorus, interlude, bridge, solo or outro, after this one', 'aria-label': 'Add a section', 'aria-haspopup': 'menu', onclick: e => secAddMenu(e.currentTarget, i => wrSel(i)) }, '＋'));      /* 2.48: a menu of section kinds (part 63b) */
 }
 /* ---------- words ---------- */
 function renderWords() {
-  const box = UI.wrWords; if (!box) return; box.innerHTML = ''; if (!S.sections.length) return; const si = clamp(TE.sec, 0, S.sections.length - 1), sec = S.sections[si];
+  const box = UI.wrWords; if (!box) return; box.innerHTML = ''; if (!S.sections.length) return; if (WR.mode === 'song') { renderWholeSong(box); if (!box._li) { box._li = 1; try { liWire(box); } catch (e) { } } return; } const si = clamp(TE.sec, 0, S.sections.length - 1), sec = S.sections[si];
   const head = h('div', { class: 'wr-wh' }, h('b', { class: 'small' }, 'WORDS · ' + sec.name), h('span', { class: 'grow' }), h('button', { class: 'btn sm', title: 'Paste a finished lyric sheet: [Verse] and [Chorus] headings become sections, with your chords placed over the words', onclick: () => liOpen() }, '📋 Paste lyrics'));
   box.append(head, sectionCard(sec, si, false, { lean: WR.mode === 'both' })); if (!box._li) { box._li = 1; try { liWire(box); } catch (e) { } }
 }
@@ -13371,6 +13400,87 @@ function wrPlayhead() {
   if (fb.si !== TE.sec) { TE.sec = SEL.sec = fb.si; TE.bi = fb.bi; renderTab(); if (WR.mode !== 'tab') renderWords(); wrBarDraw(); }
   WR.ph.forEach(c => c.classList.remove('wph')); WR.ph = $$(`#pane-tab .tcell[data-b="${fb.bi}"][data-s="${sib}"]`); WR.ph.forEach(c => c.classList.add('wph'));
 }
+
+/* >>> parts/63b-songmap.js */
+/* ============================================================
+   Part 63b · THE SONG MAP AND ITS SECTIONS (2.48)
+   The whole song at a glance: one block per section, as wide as its bars, coloured by what it is (intro, verse, pre-chorus, chorus,
+   interlude, bridge, solo, outro), the one playing lit, with how far through it the song is. Click a block to go there. It is in
+   Write (above the section chips, and at the top of the Whole song view) and in Perform.
+   Adding a section names it for you: Intro, Verse 1, Verse 2, Pre-chorus, Chorus, Interlude, Bridge, Solo, Outro, numbered when there
+   is more than one, and a second verse or chorus starts with the first one's chords (no words or tab), as songs usually go.
+   ============================================================ */
+const SEC_KINDS = [
+  ['intro', 'Intro', /^intro/i, 200], ['verse', 'Verse', /^verse/i, 150], ['pre', 'Pre-chorus', /^pre/i, 95], ['chorus', 'Chorus', /^(chorus|hook|refrain)/i, 25],
+  ['inter', 'Interlude', /^(interlude|instrumental|break|turnaround)/i, 270], ['bridge', 'Bridge', /^(bridge|middle)/i, 305], ['solo', 'Solo', /^solo/i, 340], ['outro', 'Outro', /^(outro|ending|coda|tag)/i, 220]
+];
+/** what a section is, from its name: one of SEC_KINDS' ids, or 'other' */
+function secKind(name) { const k = SEC_KINDS.find(x => x[2].test(String(name || '').trim())); return k ? k[0] : 'other'; }
+const secHue = name => { const k = SEC_KINDS.find(x => x[0] === secKind(name)); return k ? k[3] : 180; };
+/** where the song is: the section and the bar in it (while playing, the playhead; otherwise the cursor), or null */
+function smWhere() {
+  const fb = barsCache(); if (!fb.length) return null; const sp = spb(), at = Math.max(0, T.playing && E.ctx ? playheadSlot() : T.cursor), b = fb[Math.min(fb.length - 1, Math.floor(at / sp))];
+  if (!b || b.si == null) return null; return { si: b.si, bi: b.bi, frac: clamp((b.bi + (at / sp - Math.floor(at / sp))) / Math.max(1, b.sec.bars.length), 0, 1) };
+}
+/** go to a section: the cursor moves there, and if the song is playing it plays on from there */
+function smGo(si) {
+  si = clamp(si, 0, S.sections.length - 1); const was = T.playing; if (was) stopPlay(true); T.cursor = secStart(si) * spb();
+  SEL.sec = si; SEL.bar = 0; if (typeof TE !== 'undefined') { TE.sec = si; TE.bi = 0; } TL.dirty = true; bus.emit('sel'); if (was) play();
+}
+/**
+ * the song map element. o.onPick(si) when a block is clicked (default: go there); o.big for Perform; o.cls an extra class.
+ * Call el._paint() to light the section playing; it is cheap and does nothing when nothing changed.
+ */
+function songMapEl(o = {}) {
+  const el = h('div', { class: 'smap' + (o.big ? ' smap-big' : '') + (o.cls ? ' ' + o.cls : ''), role: 'list', 'aria-label': 'The song, section by section' });
+  el._build = () => {
+    el.innerHTML = ''; el._k = S.sections.map(s => s.name + ':' + s.bars.length).join('|');
+    S.sections.forEach((s, si) => el.append(h('button', { class: 'smap-b', role: 'listitem', type: 'button', 'data-si': si, 'data-kind': secKind(s.name), style: 'flex-grow:' + Math.max(1, s.bars.length) + ';--sh:' + secHue(s.name),
+      title: s.name + ' · ' + s.bars.length + ' bar' + (s.bars.length === 1 ? '' : 's') + ' · go there', onclick: () => (o.onPick || smGo)(si) }, h('i', { class: 'smap-f', 'aria-hidden': 'true' }), h('span', { class: 'smap-n' }, s.name))));
+    el._w = '';
+  };
+  el._paint = () => {
+    if (el._k !== S.sections.map(s => s.name + ':' + s.bars.length).join('|')) el._build();
+    const w = smWhere(), key = w ? w.si + ':' + Math.round(w.frac * 40) : ''; if (key === el._w) return; el._w = key;
+    [...el.children].forEach((b, si) => { const cur = !!w && si === w.si; b.classList.toggle('cur', cur); b.classList.toggle('past', !!w && si < w.si); b.setAttribute('aria-current', cur ? 'true' : 'false'); b.firstChild.style.width = cur ? (w.frac * 100).toFixed(1) + '%' : (w && si < w.si ? '100%' : '0'); });
+  };
+  el._build(); el._paint(); return el;
+}
+/** the name for a new section of this kind: "Verse 2" after "Verse 1" (and the first "Verse" becomes "Verse 1") */
+function secNameFor(kind) {
+  const k = SEC_KINDS.find(x => x[0] === kind), base = k ? k[1] : 'Section', same = S.sections.filter(s => secKind(s.name) === kind || (!k && s.name.startsWith(base)));
+  if (!same.length) return base;
+  const plain = same.find(s => s.name.trim().toLowerCase() === base.toLowerCase()); if (plain) plain.name = base + ' 1';      /* the first one gets its number when a second arrives */
+  let n = same.length + 1; while (S.sections.some(s => s.name === base + ' ' + n)) n++; return base + ' ' + n;
+}
+/** add a section of this kind after section `after` (default: the selected one); a second verse or chorus takes the first one's chords */
+function secAdd(kind, after) {
+  const at = clamp((after == null ? (SEL.sec != null ? SEL.sec : S.sections.length - 1) : after) + 1, 0, S.sections.length), like = S.sections.find(s => secKind(s.name) === kind);
+  const chords = like ? like.bars.map(b => b.chord) : (kind === 'intro' || kind === 'outro' || kind === 'inter' ? ['', ''] : ['', '', '', '']);
+  const s = mkSection(secNameFor(kind), chords.length ? chords : ['', '', '', '']); S.sections.splice(at, 0, s); T.bars = null; commit();
+  SEL.sec = at; SEL.bar = 0; if (typeof TE !== 'undefined') { TE.sec = at; TE.bi = 0; } bus.emit('sel'); return at;
+}
+/** the menu behind ＋: every kind of section, and a copy of one already in the song */
+function secAddMenu(anchor, done) {
+  const go = fn => () => { closePop(); const i = fn(); if (done) done(i); };
+  popover(anchor, h('div', { class: 'sm-add', role: 'menu', 'aria-label': 'Add a section' },
+    h('div', { class: 'tiny muted' }, 'Add after ' + ((S.sections[SEL.sec] || {}).name || 'the last section')),
+    h('div', { class: 'sm-add-g' }, SEC_KINDS.map(([id, name, , hue]) => h('button', { class: 'btn sm sm-k', role: 'menuitem', 'data-kind': id, style: '--sh:' + hue, onclick: go(() => secAdd(id)) }, name))),
+    S.sections.length ? h('div', { class: 'tiny muted', style: { marginTop: '6px' } }, 'Or repeat one, words and all:') : '',
+    S.sections.length ? h('div', { class: 'sm-add-g' }, S.sections.map((s, si) => h('button', { class: 'btn sm', role: 'menuitem', onclick: go(() => { const c = JSON.parse(JSON.stringify(s)); c.id = uid(); const at = clamp((SEL.sec != null ? SEL.sec : S.sections.length - 1) + 1, 0, S.sections.length); S.sections.splice(at, 0, c); T.bars = null; commit(); SEL.sec = at; if (typeof TE !== 'undefined') { TE.sec = at; TE.bi = 0; } bus.emit('sel'); return at; }) }, '⧉ ' + s.name))) : ''));
+}
+/** Write's Whole song view: the map, then every section in order with its name, chords and words, each editable where it is */
+function renderWholeSong(box) {
+  const bars = S.sections.reduce((a, s) => a + s.bars.length, 0), secs = (si) => box.querySelector('.ws-sec[data-si="' + si + '"]');
+  const map = songMapEl({ onPick: si => { SEL.sec = si; if (typeof TE !== 'undefined') TE.sec = si; const c = secs(si); if (c) c.scrollIntoView({ block: 'start', behavior: 'smooth' }); bus.emit('sel'); } });
+  box.append(h('div', { class: 'wr-wh' }, h('b', { class: 'small' }, 'WHOLE SONG · ' + S.sections.length + ' section' + (S.sections.length === 1 ? '' : 's') + ' · ' + bars + ' bars'), h('span', { class: 'grow' }),
+    h('button', { class: 'btn sm', id: 'wsAdd', title: 'Add a section: intro, verse, chorus, interlude…', onclick: e => secAddMenu(e.currentTarget, () => renderWords()) }, '＋ Section'),
+    h('button', { class: 'btn sm', title: 'Paste a finished lyric sheet: [Verse] and [Chorus] headings become sections, with your chords placed over the words', onclick: () => liOpen() }, '📋 Paste lyrics')), map);
+  S.sections.forEach((sec, si) => box.append(h('div', { class: 'ws-sec', 'data-si': si, 'data-kind': secKind(sec.name), style: '--sh:' + secHue(sec.name) }, sectionCard(sec, si, false, {}))));
+  box._map = map;
+}
+/* keep every song map on the page in step with the playhead, a few times a second (only the ones that are showing) */
+setInterval(() => { document.querySelectorAll('.smap').forEach(m => { if (m._paint && m.offsetParent) try { m._paint(); } catch (e) { } }); }, 250);
 
 /* >>> parts/64-goals.js */
 /* ============================================================

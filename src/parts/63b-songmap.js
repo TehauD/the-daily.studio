@@ -1,0 +1,79 @@
+/* ============================================================
+   Part 63b · THE SONG MAP AND ITS SECTIONS (2.48)
+   The whole song at a glance: one block per section, as wide as its bars, coloured by what it is (intro, verse, pre-chorus, chorus,
+   interlude, bridge, solo, outro), the one playing lit, with how far through it the song is. Click a block to go there. It is in
+   Write (above the section chips, and at the top of the Whole song view) and in Perform.
+   Adding a section names it for you: Intro, Verse 1, Verse 2, Pre-chorus, Chorus, Interlude, Bridge, Solo, Outro, numbered when there
+   is more than one, and a second verse or chorus starts with the first one's chords (no words or tab), as songs usually go.
+   ============================================================ */
+const SEC_KINDS = [
+  ['intro', 'Intro', /^intro/i, 200], ['verse', 'Verse', /^verse/i, 150], ['pre', 'Pre-chorus', /^pre/i, 95], ['chorus', 'Chorus', /^(chorus|hook|refrain)/i, 25],
+  ['inter', 'Interlude', /^(interlude|instrumental|break|turnaround)/i, 270], ['bridge', 'Bridge', /^(bridge|middle)/i, 305], ['solo', 'Solo', /^solo/i, 340], ['outro', 'Outro', /^(outro|ending|coda|tag)/i, 220]
+];
+/** what a section is, from its name: one of SEC_KINDS' ids, or 'other' */
+function secKind(name) { const k = SEC_KINDS.find(x => x[2].test(String(name || '').trim())); return k ? k[0] : 'other'; }
+const secHue = name => { const k = SEC_KINDS.find(x => x[0] === secKind(name)); return k ? k[3] : 180; };
+/** where the song is: the section and the bar in it (while playing, the playhead; otherwise the cursor), or null */
+function smWhere() {
+  const fb = barsCache(); if (!fb.length) return null; const sp = spb(), at = Math.max(0, T.playing && E.ctx ? playheadSlot() : T.cursor), b = fb[Math.min(fb.length - 1, Math.floor(at / sp))];
+  if (!b || b.si == null) return null; return { si: b.si, bi: b.bi, frac: clamp((b.bi + (at / sp - Math.floor(at / sp))) / Math.max(1, b.sec.bars.length), 0, 1) };
+}
+/** go to a section: the cursor moves there, and if the song is playing it plays on from there */
+function smGo(si) {
+  si = clamp(si, 0, S.sections.length - 1); const was = T.playing; if (was) stopPlay(true); T.cursor = secStart(si) * spb();
+  SEL.sec = si; SEL.bar = 0; if (typeof TE !== 'undefined') { TE.sec = si; TE.bi = 0; } TL.dirty = true; bus.emit('sel'); if (was) play();
+}
+/**
+ * the song map element. o.onPick(si) when a block is clicked (default: go there); o.big for Perform; o.cls an extra class.
+ * Call el._paint() to light the section playing; it is cheap and does nothing when nothing changed.
+ */
+function songMapEl(o = {}) {
+  const el = h('div', { class: 'smap' + (o.big ? ' smap-big' : '') + (o.cls ? ' ' + o.cls : ''), role: 'list', 'aria-label': 'The song, section by section' });
+  el._build = () => {
+    el.innerHTML = ''; el._k = S.sections.map(s => s.name + ':' + s.bars.length).join('|');
+    S.sections.forEach((s, si) => el.append(h('button', { class: 'smap-b', role: 'listitem', type: 'button', 'data-si': si, 'data-kind': secKind(s.name), style: 'flex-grow:' + Math.max(1, s.bars.length) + ';--sh:' + secHue(s.name),
+      title: s.name + ' · ' + s.bars.length + ' bar' + (s.bars.length === 1 ? '' : 's') + ' · go there', onclick: () => (o.onPick || smGo)(si) }, h('i', { class: 'smap-f', 'aria-hidden': 'true' }), h('span', { class: 'smap-n' }, s.name))));
+    el._w = '';
+  };
+  el._paint = () => {
+    if (el._k !== S.sections.map(s => s.name + ':' + s.bars.length).join('|')) el._build();
+    const w = smWhere(), key = w ? w.si + ':' + Math.round(w.frac * 40) : ''; if (key === el._w) return; el._w = key;
+    [...el.children].forEach((b, si) => { const cur = !!w && si === w.si; b.classList.toggle('cur', cur); b.classList.toggle('past', !!w && si < w.si); b.setAttribute('aria-current', cur ? 'true' : 'false'); b.firstChild.style.width = cur ? (w.frac * 100).toFixed(1) + '%' : (w && si < w.si ? '100%' : '0'); });
+  };
+  el._build(); el._paint(); return el;
+}
+/** the name for a new section of this kind: "Verse 2" after "Verse 1" (and the first "Verse" becomes "Verse 1") */
+function secNameFor(kind) {
+  const k = SEC_KINDS.find(x => x[0] === kind), base = k ? k[1] : 'Section', same = S.sections.filter(s => secKind(s.name) === kind || (!k && s.name.startsWith(base)));
+  if (!same.length) return base;
+  const plain = same.find(s => s.name.trim().toLowerCase() === base.toLowerCase()); if (plain) plain.name = base + ' 1';      /* the first one gets its number when a second arrives */
+  let n = same.length + 1; while (S.sections.some(s => s.name === base + ' ' + n)) n++; return base + ' ' + n;
+}
+/** add a section of this kind after section `after` (default: the selected one); a second verse or chorus takes the first one's chords */
+function secAdd(kind, after) {
+  const at = clamp((after == null ? (SEL.sec != null ? SEL.sec : S.sections.length - 1) : after) + 1, 0, S.sections.length), like = S.sections.find(s => secKind(s.name) === kind);
+  const chords = like ? like.bars.map(b => b.chord) : (kind === 'intro' || kind === 'outro' || kind === 'inter' ? ['', ''] : ['', '', '', '']);
+  const s = mkSection(secNameFor(kind), chords.length ? chords : ['', '', '', '']); S.sections.splice(at, 0, s); T.bars = null; commit();
+  SEL.sec = at; SEL.bar = 0; if (typeof TE !== 'undefined') { TE.sec = at; TE.bi = 0; } bus.emit('sel'); return at;
+}
+/** the menu behind ＋: every kind of section, and a copy of one already in the song */
+function secAddMenu(anchor, done) {
+  const go = fn => () => { closePop(); const i = fn(); if (done) done(i); };
+  popover(anchor, h('div', { class: 'sm-add', role: 'menu', 'aria-label': 'Add a section' },
+    h('div', { class: 'tiny muted' }, 'Add after ' + ((S.sections[SEL.sec] || {}).name || 'the last section')),
+    h('div', { class: 'sm-add-g' }, SEC_KINDS.map(([id, name, , hue]) => h('button', { class: 'btn sm sm-k', role: 'menuitem', 'data-kind': id, style: '--sh:' + hue, onclick: go(() => secAdd(id)) }, name))),
+    S.sections.length ? h('div', { class: 'tiny muted', style: { marginTop: '6px' } }, 'Or repeat one, words and all:') : '',
+    S.sections.length ? h('div', { class: 'sm-add-g' }, S.sections.map((s, si) => h('button', { class: 'btn sm', role: 'menuitem', onclick: go(() => { const c = JSON.parse(JSON.stringify(s)); c.id = uid(); const at = clamp((SEL.sec != null ? SEL.sec : S.sections.length - 1) + 1, 0, S.sections.length); S.sections.splice(at, 0, c); T.bars = null; commit(); SEL.sec = at; if (typeof TE !== 'undefined') { TE.sec = at; TE.bi = 0; } bus.emit('sel'); return at; }) }, '⧉ ' + s.name))) : ''));
+}
+/** Write's Whole song view: the map, then every section in order with its name, chords and words, each editable where it is */
+function renderWholeSong(box) {
+  const bars = S.sections.reduce((a, s) => a + s.bars.length, 0), secs = (si) => box.querySelector('.ws-sec[data-si="' + si + '"]');
+  const map = songMapEl({ onPick: si => { SEL.sec = si; if (typeof TE !== 'undefined') TE.sec = si; const c = secs(si); if (c) c.scrollIntoView({ block: 'start', behavior: 'smooth' }); bus.emit('sel'); } });
+  box.append(h('div', { class: 'wr-wh' }, h('b', { class: 'small' }, 'WHOLE SONG · ' + S.sections.length + ' section' + (S.sections.length === 1 ? '' : 's') + ' · ' + bars + ' bars'), h('span', { class: 'grow' }),
+    h('button', { class: 'btn sm', id: 'wsAdd', title: 'Add a section: intro, verse, chorus, interlude…', onclick: e => secAddMenu(e.currentTarget, () => renderWords()) }, '＋ Section'),
+    h('button', { class: 'btn sm', title: 'Paste a finished lyric sheet: [Verse] and [Chorus] headings become sections, with your chords placed over the words', onclick: () => liOpen() }, '📋 Paste lyrics')), map);
+  S.sections.forEach((sec, si) => box.append(h('div', { class: 'ws-sec', 'data-si': si, 'data-kind': secKind(sec.name), style: '--sh:' + secHue(sec.name) }, sectionCard(sec, si, false, {}))));
+  box._map = map;
+}
+/* keep every song map on the page in step with the playhead, a few times a second (only the ones that are showing) */
+setInterval(() => { document.querySelectorAll('.smap').forEach(m => { if (m._paint && m.offsetParent) try { m._paint(); } catch (e) { } }); }, 250);

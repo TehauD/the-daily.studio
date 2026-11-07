@@ -2,7 +2,42 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
-## 2.47.1 — 2026-11-07 — Neutral names for the drum machines
+## 2.48.0 — 2026-11-07 — See the whole song, and Perform your way
+
+### Write: the whole song
+- **☰ Whole song**, a fourth way to see Write beside Tab, Words and Both. It shows every section in order, from intro to outro, each with its name, chords and words, all editable where they are.
+- **A song map** above the section chips and at the top of Whole song:
+  - a block per section, as wide as its bars;
+  - coloured by kind (intro, verse, pre-chorus, chorus, interlude, bridge, solo, outro);
+  - the section playing is lit and fills as the song moves through it;
+  - click a block to go there.
+- **＋ is a menu of section kinds:** Intro, Verse, Pre-chorus, Chorus, Interlude, Bridge, Solo, Outro, or a copy of any section already in the song.
+  - The new section goes after the one you picked, and it's named for you: the second verse makes the first one "Verse 1" and itself "Verse 2".
+  - A second verse or chorus starts with the first one's chords, with no words or tab.
+
+### Perform: laid out your way
+- **⚙ Layout**, remembered on this device:
+  - **Show:** chords and shapes, big chord, lyric sheet, or the new **🎤 Sing-along**;
+  - **Controls:** top right, bottom, or hidden until you move the mouse;
+  - **Words:** in a band along the bottom like a sing-along, or in the middle under the chord;
+  - **Text size:** small, medium, large or huge;
+  - **Song map:** show or hide.
+- **The new default is a sing-along:**
+  - the controls are at the top right;
+  - the words sit in a band at the bottom: the line being sung, its chords over the words, and the next line;
+  - the song map is under the title. Click a section on it and the song plays on from there.
+- **Sing-along** makes the words the show, with the chord smaller above them.
+
+### Tests
+- **New `e2e-songmap`** (18 checks):
+  - the Whole song view and its map;
+  - the add menu, section names and copied chords;
+  - Perform's default layout (controls top right, words at the bottom), every Layout choice, and that it's remembered;
+  - hide until I move;
+  - the map playing on from a section;
+  - a phone.
+
+2026-11-07 — Neutral names for the drum machines
 
 ### Changed
 - The drum machines and the sub bass have neutral names:
