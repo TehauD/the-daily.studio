@@ -98,7 +98,8 @@ function mwPut(li, wi) {
 function mSing(box) {
   const voice = !!CFG.vin && CFG.vin !== 'off', ready = voice && E.hasInput, rec = !!(T.rec && T.playing);
   const vtakes = TAKES.filter(t => t.kind === 'vox').slice(-6).reverse();
-  box.append(h('h3', { class: 'ms-h' }, '🎤 Sing'),
+  MW.hex = h('canvas', { class: 'ms-hex', id: 'msHex', 'aria-hidden': 'true' });
+  box.append(h('h3', { class: 'ms-h' }, '🎤 Sing'), MW.hex,
     ready ? h('p', { class: 'ms-ok' }, '● Microphone ready: your voice goes on its own lane.') : h('button', { class: 'btn primary ms-mic', id: 'msMic', onclick: async () => { try { chSetRoles('v', 'o'); await ioConnect(CFG.inDev || ''); } catch (e) { } mScreenDraw();      /* a phone has one microphone: connect it, no chooser */ } }, voice ? '🎤 Connect the microphone' : '🎤 Sing into this phone'),
     h('p', { class: 'tiny muted' }, '🎧 With headphones, the beat stays out of your recording.'),
     h('div', { class: 'ms-big' },
@@ -116,6 +117,19 @@ function mSing(box) {
       h('button', { class: 'btn', onclick: () => humOpen() }, '✨ Hum it into a song'),
       h('button', { class: 'btn', onclick: () => humRecord(true) }, '🎙 Voice memo')));
 }
+/** the hexagons on the Sing screen: what you sing lights them, and the whole mix while the song plays (2.41) */
+function msHexLoop() {
+  if (MW.hexRaf) return;
+  const step = () => {
+    const cv = MW.hex; if (!cv || !cv.isConnected || M.view !== 'm' || M.s !== 'sing' || document.hidden) { MW.hexRaf = 0; return; }
+    MW.hexRaf = requestAnimationFrame(step); if (!E.ready) return;
+    const d = Math.min(2, window.devicePixelRatio || 1), w = Math.floor(cv.clientWidth * d), hh = Math.floor(cv.clientHeight * d); if (!w || !hh) return;
+    if (cv.width !== w || cv.height !== hh) { cv.width = w; cv.height = hh; }
+    try { drawVis(cv, { mode: 'hex', main: true, noText: true, noNeck: true, an: T.playing ? E.anaMaster : (E.anaVox || E.anaMaster) }); } catch (e) { MW.hexRaf && cancelAnimationFrame(MW.hexRaf); MW.hexRaf = 0; }
+  };
+  MW.hexRaf = requestAnimationFrame(step);
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden && M.view === 'm' && M.s === 'sing') msHexLoop(); });
 /* ---------- Beats ---------- */
 function mBeats(box) {
   box.append(h('h3', { class: 'ms-h' }, '🥁 Beats'), h('p', { class: 'tiny muted' }, 'Tap one and it plays in your song’s key. Write or sing over it.'), beatsShelf(), h('h4', { class: 'ms-sub' }, 'Who plays'), beatsMixer(),
@@ -126,6 +140,6 @@ const M_SCREENS = { words: mWords, sing: mSing, beats: mBeats };
 function mScreenDraw() {
   const box = M.scr; if (!box || M.view !== 'm') return; const id = M.s, fn = M_SCREENS[id]; if (!fn) return;
   const ae = document.activeElement, same = box.dataset.screen === id; if (same && ae && box.contains(ae) && (ae.tagName === 'TEXTAREA' || ae.type === 'range')) return; if (!same && ae && box.contains(ae)) ae.blur();      /* never under someone's typing or a fader they hold */
-  const top = box.scrollTop; box.innerHTML = ''; box.dataset.screen = id; try { fn(box); } catch (e) { console.warn('phone screen', e); } box.scrollTop = top;
+  const top = box.scrollTop; box.innerHTML = ''; box.dataset.screen = id; try { fn(box); } catch (e) { console.warn('phone screen', e); } box.scrollTop = top; if (id === 'sing') msHexLoop();
 }
 ['song', 'takes', 'audiostate', 'rec:state', 'transport', 'route'].forEach(e => bus.on(e, () => { if (M.view === 'm') { clearTimeout(MW.redraw); MW.redraw = setTimeout(mScreenDraw, 80); } }));
