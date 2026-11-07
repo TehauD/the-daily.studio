@@ -28,10 +28,11 @@ All notable changes to the-daily.studio (earlier versions were released under th
   - **More ▸ Visuals** shows the hexagon graphic first, at nearly half the screen, with its looks and settings below (they used to come first, pushing it to the bottom).
 - **Beats** is the beats and who plays. Band holds every setting.
 - **The top bar keeps only the song's name.** The name opens the song sheet, which now holds the tempo, time signature, key and mode as well as the artist, tuning, capo and backing track. The arrangement toggle is now called **Timeline**.
+- The song's name in the top bar is a phone-only button. A first build showed it on tablets and computers too, where it crowded the header over the song bar's New button; `e2e.cjs` caught it.
 - Old phone section names (play, write, stems) still work for guided sessions and links. Panels the studio opens while it starts no longer move a phone off its screen.
 
 ### Tests
-- `e2e-phone-singer` (22 checks): the bottom bar and opening on the words; typing keeps chords on their words; syllables; undo; placing and removing a chord on a word; a new section whose band follows its chords; Sing (the microphone as the voice, a voice sound, recording a take); Beats; the song sheet and putting its fields back; More with the guitar and the visuals; the old names; a desktop untouched.
+- `e2e-phone-singer` (25 checks; the hexagons on Sing and Visuals-first included): the bottom bar and opening on the words; typing keeps chords on their words; syllables; undo; placing and removing a chord on a word; a new section whose band follows its chords; Sing (the microphone as the voice, a voice sound, recording a take); Beats; the song sheet and putting its fields back; More with the guitar and the visuals; the old names; a desktop untouched.
 - `mobile` (every section on two phone sizes, landscape and tablet), `e2e-phone-panels` and `e2e-layout` updated for the new sections.
 
 ## 2.40.0 — 2026-11-06 — Send a song as a link, and room to grow

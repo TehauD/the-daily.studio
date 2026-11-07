@@ -649,10 +649,10 @@ The app switches layout by itself; **⋯ More ▸ Device layout** (or Settings) 
 | Section | What is there |
 |---|---|
 | **Words** | A lyric notebook: the sections as chips (**＋** adds one). **✎ Write** is one big text box with the syllables of the line you are on; **♪ Chords** shows each word with its chord over it: pick a chord below and tap the word it lands on. **⧉ Paste** takes a whole lyric sheet. A new section's band plays the chords you put on its words. **Chords & key** opens the key, scale and progression tools |
-| **Sing** | **🎤 Sing into this phone**, **● Record over the beat** (with a count-in), **▶ Hear it back**, your takes, one-tap voice sounds, pitch and your range, hum into a song, voice memo |
+| **Sing** | A live strip of the hexagons (your voice lights them), **🎤 Sing into this phone**, **● Record over the beat** (with a count-in), **▶ Hear it back**, your takes, one-tap voice sounds, pitch and your range, hum into a song, voice memo |
 | **Beats** | The beats and who plays; **Band** has every setting |
 | **Tracks** | Backing track (stems) · Transcribe |
-| **More** | The sheet of everything else. Its rows open **Research** and **Export**, then **🎸 Guitar** (Rig, Tones, Tuner, I/O, Tab, Refine) and **Visuals** (Visuals, Stage, Neural, Vision) |
+| **More** | The sheet of everything else. Its rows open **Research** and **Export**, then **🎸 Guitar** (Rig, Tones, Tuner, I/O, Tab, Refine) and **Visuals** (Visuals, Stage, Neural, Vision; on a phone the hexagon graphic comes first, its settings below) |
 
 The **⋯** button (top right) opens the **More sheet**: **Hum or sing a song**, **Audio · kill switch**, **Light theme**, **Appearance**, **Monitor**, **Screen awake**, **Settings**, **Help**, **Guided tour**, **Save project**, **Share link**, **My songs**, **Open a file** (audio, lyrics, MIDI or a song file), **Master · balance · click** (master preset, Auto-balance, count-in and click level), **Keep songs safe**, **Install app** (when the browser offers it), **Full screen** and **Device layout**.
 
