@@ -1670,3 +1670,10 @@ body[data-form=phone] #pane-vis>.row{order:1}
 /* 2.43 · vocal tuning */
 .tune-sel{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--muted)}.tune-sel select{width:auto;min-height:32px;padding:2px 6px}
 .ms-take{flex-wrap:wrap}
+
+/* 2.44 · Song build */
+.bl-how{margin:0 0 8px}.bl-secs{display:grid;gap:6px}
+.bl-sec{display:flex;align-items:center;gap:10px}.bl-nm{flex:0 0 96px;font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bl-dots{display:flex;gap:6px}.bl-dot{width:26px;height:26px;border-radius:50%;border:1px solid var(--line2);background:var(--panel2);cursor:pointer;padding:0}
+.bl-dot.on{background:color-mix(in srgb,var(--accent) 55%,transparent);border-color:var(--accent)}.bl-dot.on.own{background:var(--accent)}
+body[data-form=phone] .bl-dot{width:34px;height:34px}

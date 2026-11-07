@@ -2,6 +2,35 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.44.0 — 2026-11-07 — Songs that build
+
+### Added
+- **Song build: the band plays each section at its own energy**, from 1 to 5 (Band panel, Simple's band, and Beats on a phone; every beat turns it on).
+  - **Defaults from the section's name:** intro 2, verse 3, pre-chorus 4, chorus 5, bridge 2, solo 4, outro 2. Tap a dot to set your own.
+  - **1:** hats and rim only, no bass, one harmony instrument.
+  - **2:** kick, hats and a softer snare.
+  - **3:** the groove as written.
+  - **4:** adds an open hat at each bar's end and a crash to start.
+  - **5:** everything, with sixteenth hats.
+- **The level follows the energy:** the chorus plays at full level and the quieter sections sit under it (−5 dB at 1, −2 dB at 3), set on each band track after its compressor, so the difference is real and the chorus doesn't hit the master limiter.
+- **Between sections:**
+  - **Fill:** a drum fill in the last beat; a tom-and-snare roll when the next section is bigger.
+  - **Crash:** on the first beat of a section at 4 or more.
+  - **Riser:** a noise riser swelling through the last bar into a section that lifts.
+- **Ending:** a song that does not loop ends on one hit with a crash, with the bass and chords left ringing.
+- **Song links** carry Song build and the energies you set.
+
+### Tests
+- `e2e-build` (11 checks), measured from the studio's render:
+  - intro, verse and chorus come out at rising levels (−21.6, −16, −14.3 dB), 7.4 dB apart against 0.2 dB with Song build off;
+  - the crash at the chorus, the riser into it, and the ending;
+  - a section turned down to 1, the controls on a computer and a phone, and the song link.
+- While building it, the tests caught:
+  - lifting the chorus did nothing, because the master limiter flattened it, so the quieter sections now come down instead;
+  - note strength alone barely changed the level (each track's compressor evened it out), so energy is now a level stage per track;
+  - a name clash had left the build stale;
+  - the riser stayed inaudible on an exponential swell.
+
 ## 2.43.0 — 2026-11-07 — Vocal tuning
 
 ### Added

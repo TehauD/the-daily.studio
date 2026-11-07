@@ -34,7 +34,7 @@ window.__dailyRoom = (id, make) => {
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.43.0', BUILD = '5a5d0e8', PARTS_N = +'111' || 0, LINES_N = +'18734' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.44.0', BUILD = '31ad93c', PARTS_N = +'112' || 0, LINES_N = +'18827' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { ghApp: { clientId: '', slug: '' },   /* Sign in with GitHub: the GitHub App's public client id and its slug (docs/GITHUB.md); empty = only the token way */
   support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://the-daily.studio/journal/' };
@@ -647,7 +647,7 @@ function buildGraph() {
   E.rigOut.connect(E.anaRig);
   TRACKS.forEach(([id]) => {
     const t = { id, in: gn(1), g: gn(1), pan: c.createStereoPanner(), ana: mkAna(512, 0.4) };
-    t.duck = gn(1); t.in.connect(t.duck); t.duck.connect(t.g); t.g.connect(t.pan); t.pan.connect(t.ana); E.tr[id] = t; if (FX_TRACKS.includes(id)) { t.fx = fxStrip(E.mix); t.pan.connect(t.fx.in); } else t.pan.connect(E.mix);
+    t.duck = gn(1); t.nrg = gn(1); t.in.connect(t.nrg); t.nrg.connect(t.duck); t.duck.connect(t.g);      /* nrg: the section's energy (Song build, part 03c) */ t.g.connect(t.pan); t.pan.connect(t.ana); E.tr[id] = t; if (FX_TRACKS.includes(id)) { t.fx = fxStrip(E.mix); t.pan.connect(t.fx.in); } else t.pan.connect(E.mix);
   });
   E.takesIn = gn(1); E.takesIn.connect(E.mix);
   /* vocal path: the second input channel → trim → (meter · recorder tap) and → monitor switch → polish strip → Vocal track */
@@ -1237,13 +1237,14 @@ function scheduleSlot(slot, time) {
   const bi = Math.floor(slot / sp), sib = slot % sp, fb = barsCache()[bi]; if (!fb) return;
   if (T.metro && !q && sib % beatSlots === 0) click(tt, sib === 0);
   if (typeof lxEvt === 'function' && sib % beatSlots === 0) lxEvt('beat', tt, sib === 0 ? 1 : 0);   // the show listens on the audio clock
-  if (S.band.drumsOn && !q) drumStep(slot, tt);
+  const C = buildCtx(slot, fb, sib), PT = buildParts(C); buildLevel(C, sib, tt);      /* Song build (part 03c): what the band plays of each section */
+  if (S.band.drumsOn && !q) { if (!(C && buildDrums(C, slot, tt))) drumStep(slot, tt); }
   const cd = chordAt(bi, sib), ownBass = fb.bar.bassLine && fb.bar.bassLine.length;
-  if (ownBass && S.band.bassOn && !q) fb.bar.bassLine.forEach(n => { if (n.s === sib) bassOut(tt, n.m, n.v || .8, (n.d || 1) * dur); });      /* a bass line you played (part 86) takes the place of the made-up one in its bars */
-  if (!q && typeof keysStep === 'function') keysStep(fb.bar, sib, cd, tt, dur);
+  if (ownBass && S.band.bassOn && PT.bass && !q) fb.bar.bassLine.forEach(n => { if (n.s === sib) bassOut(tt, n.m, n.v || .8, (n.d || 1) * dur); });      /* a bass line you played (part 86) takes the place of the made-up one in its bars */
+  if (!q && PT.keys && typeof keysStep === 'function') keysStep(fb.bar, sib, cd, tt, PT.ring ? dur * spb() : dur);
   if (cd && cd.sym) {
-    if (S.band.bassOn && !q && !ownBass) { const e = bassEvent(S.band.bassStyle, cd.sym, cd.rel, cd.len, cd.next, slot); if (e) { bassOut(tt, e.m, e.v, S.band.bassTone === '808 Sub' && e.len ? e.len * dur : dur * 2);      /* an 808 rings to the next note */ if (typeof lxEvt === 'function') lxEvt('bass', tt, e.m, e.v); } }
-    if (S.band.compOn && !q) { const st = STRUMS[S.band.compStyle] || STRUMS['Down 4s'], L = Math.min(16, sp), ch = st.p[sib % L]; strumAt(tt, cd.sym, ch, st); if (ch && ch !== '.' && typeof lxEvt === 'function') lxEvt('chord', tt, cd.sym, ch === ch.toUpperCase() ? 1 : .6); }
+    if (S.band.bassOn && PT.bass && !q && !ownBass) { const e = PT.ring ? (cd.rel === 0 ? bassEvent('Root Whole', cd.sym, 0, cd.len, cd.next, slot) : null) : bassEvent(S.band.bassStyle, cd.sym, cd.rel, cd.len, cd.next, slot); if (e) { bassOut(tt, e.m, e.v, PT.ring ? dur * spb() : S.band.bassTone === '808 Sub' && e.len ? e.len * dur : dur * 2);      /* an 808 rings to the next note */ if (typeof lxEvt === 'function') lxEvt('bass', tt, e.m, e.v); } }
+    if (S.band.compOn && PT.comp && !q) { const st = STRUMS[S.band.compStyle] || STRUMS['Down 4s'], L = Math.min(16, sp), ch = PT.ring ? 'D' : st.p[sib % L]; strumAt(tt, cd.sym, ch, st); if (ch && ch !== '.' && typeof lxEvt === 'function') lxEvt('chord', tt, cd.sym, ch === ch.toUpperCase() ? 1 : .6); }
   }
   if (S.band.leadOn && !q) fb.bar.tab.forEach(n => { if (n.s === sib) { playTabNote(fb.bar, n, tt, dur); if (typeof lxEvt === 'function') lxEvt('lead', tt, S.tuning[n.st] + S.capo + n.f, .8); } });
 }
@@ -1504,6 +1505,97 @@ function sub808(t, m, v, dur) {
   const pk = .85 * clamp(v, .2, 1); g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(pk, t + (slide ? .02 : .004)); g.gain.setValueAtTime(pk, t + Math.max(.05, len * .45)); g.gain.exponentialRampToValueAtTime(.0001, t + len);
   const lvl = gn(.36); g.connect(sh.in); sh.out.connect(lp); lp.connect(lvl); lvl.connect(E.tr.bass.in);      /* a held, saturated sine is dense: sit it with the kit, under a voice */ o.start(t); o2.start(t); o.stop(t + len + .05); o2.stop(t + len + .05);
   E.sub808 = { o, g, t, m, end: t + len };
+}
+
+/* >>> parts/03c-build.js */
+/* ============================================================
+   Part 03c · SONGS THAT BUILD (2.44) — the band plays each section at its own energy
+   With "Song build" on (S.band.build; a beat turns it on), every section has an energy from 1 to 5. A section without one takes it from
+   its name: intro 2, verse 3, pre-chorus 4, chorus 5, bridge 2, solo 4, outro 2, anything else 3.
+     1  just the hats and the rim, no bass, one harmony instrument     4  the groove, an open hat at the end of each bar, a crash to start
+     2  kick, hats and a softer snare, no open hats or toms            5  all of 4, with the hats filled in to sixteenths
+     3  the groove as written
+   Between sections: a drum fill in the last beat (a tom-and-snare roll when the next section is bigger), a crash on the first beat of a
+   section at 4 or more, and a noise riser through the last bar before a section that lifts to 4 or more. When the song is not looping,
+   its last bar is an ending: one hit on the downbeat, with a crash, and the bass and chord left ringing.
+   Nothing here changes the song's patterns: it decides, slot by slot, what the band plays of them (scheduleSlot in part 03).
+   ============================================================ */
+/* how hard the whole band plays at each energy (1 … 5): a chorus is bigger in every part, not only in the drums */
+const BUILD_LIFT = [1, .56, .68, .8, .9, 1], BLD = { last: null }, BUILD_TRACKS = ['drums', 'bass', 'rhythm', 'lead', 'keys'];
+/** the band's level for the section: set on each band track's energy gain at the first slot of a bar, gliding over a few milliseconds */
+function buildLevel(C, sib, t) {
+  const v = C ? BUILD_LIFT[C.ending ? 4 : C.e] : 1; if (sib !== 0 && BLD.last === v) return; if (BLD.last === v && BLD.ctx === E.ctx) return; BLD.last = v; BLD.ctx = E.ctx;
+  BUILD_TRACKS.forEach(id => { const n = E.tr[id] && E.tr[id].nrg; if (n) { try { n.gain.setTargetAtTime(v, Math.max(t - .01, 0), .012); } catch (e) { } } });
+}      /* a chorus at full level, the rest under it: lifting the chorus instead would only push it into the master's limiter */
+const BUILD_DEF = [[/intro/i, 2], [/pre/i, 4], [/chorus|hook|refrain/i, 5], [/verse/i, 3], [/bridge|break|middle/i, 2], [/solo|instrumental/i, 4], [/outro|ending|coda/i, 2]];
+/** a section's energy: its own, or the one its name suggests */
+function secEnergy(sec) { if (!sec) return 3; const e = +sec.energy; if (e >= 1 && e <= 5) return Math.round(e); const d = BUILD_DEF.find(([re]) => re.test(sec.name || '')); return d ? d[1] : 3; }
+/** where slot `slot` sits in the song's shape, or null when Song build is off */
+function buildCtx(slot, fb, sib) {
+  if (!S.band.build || !fb) return null;
+  const sp = spb(), beat = 16 / S.ts[1], sec = fb.sec, e = secEnergy(sec), lastBar = fb.bi === sec.bars.length - 1, nextSec = S.sections[fb.si + 1] || (T.loop ? S.sections[0] : null);
+  const ne = nextSec ? secEnergy(nextSec) : null, songLast = fb.si === S.sections.length - 1 && lastBar;
+  return { e, ne, first: fb.bi === 0 && sib === 0, lastBar, fill: lastBar && !!nextSec && sib >= sp - beat, riser: lastBar && ne != null && ne >= 4 && ne > e, ending: songLast && !T.loop, sib, sp, beat, prevE: fb.si > 0 ? secEnergy(S.sections[fb.si - 1]) : null };
+}
+/** the drums for one slot at the section's energy; true when it played them */
+function buildDrums(C, slot, t) {
+  const pat = dpat(), L = Math.min(S.band.drumLen || 16, 32), i = ((slot % L) + L) % L, K = KITS[S.band.kit] || KITS.Acoustic, hit = (r, v, dt) => { const tt = t + (dt || 0) + (Math.random() * 2 - 1) * CFG.humanize * .006; if (typeof lxHit === 'function') lxHit(r, tt, v); drumHit(r, tt, v); };
+  if (C.ending) { if (C.sib === 0) { hit(0, 3); hit(1, 3); buildCrash(K, t, 1); } return true; }
+  if (C.first && (C.e >= 4 || (C.prevE != null && C.e - C.prevE >= 2))) buildCrash(K, t, C.e >= 5 ? 1 : .8);
+  if (C.riser && C.sib === 0) buildRiser(t, C.sp * playDur());
+  if (C.fill) {      /* the last beat of the section */
+    const k = C.sib - (C.sp - C.beat), big = C.ne > C.e || C.e >= 4, n = C.beat;
+    if (k === 0 && pat[0][i]) hit(0, pat[0][i]);
+    if (big) { const row = k < n / 2 ? 5 : 1; hit(row, k === n - 1 ? 3 : 2); if (C.e >= 3) hit(row, 1, playDur() / 2); }
+    else if (k >= n - 2) hit(1, k === n - 1 ? 2 : 1);
+    else pat.forEach((r, ri) => { if (ri !== 1 && ri !== 5 && r[i]) hit(ri, Math.max(1, r[i] - (ri === 2 ? 1 : 0))); });
+    return true;
+  }
+  pat.forEach((r, ri) => {
+    let v = r[i] || 0;
+    if (C.e === 1) { if (ri === 2) v = v ? Math.max(1, v - 1) : 0; else if (ri !== 4) v = 0; }
+    else if (C.e === 2) { if (ri === 3 || ri === 5) v = 0; else if (ri === 1 && v) v = Math.max(1, v - 1); }
+    else if (C.e >= 4) {
+      if (ri === 3 && !v && C.sib === C.sp - 2 && !pat[2][i]) v = 2;      /* an open hat to lift the end of each bar */
+      if (C.e === 5 && ri === 2 && !v && !pat[3][i]) v = 1;      /* sixteenth hats */
+      if (ri === 0 && C.sib === 0 && v) v = 3;
+    }
+    if (v) hit(ri, v);
+  });
+  return true;
+}
+/** which of the band plays at this energy (bass, the rhythm part, the keys) */
+function buildParts(C) {
+  if (!C) return { bass: true, comp: true, keys: true };
+  if (C.ending) return { bass: C.sib === 0, comp: C.sib === 0, keys: C.sib === 0, ring: true };
+  const both = S.band.compOn && S.band.keysOn;      /* at 1 and 2 only one harmony instrument plays: the keys if both are on */
+  return { bass: C.e >= 2, comp: C.e >= 3 || !both, keys: C.e >= 3 || !S.band.compOn || both };
+}
+/** a crash cymbal: metal and noise, long, into the room */
+function buildCrash(K, t, amt) {
+  const c = E.ctx; if (!c || !E.noise) return; const out = E.tr.drums.duck || E.tr.drums.in, g = gn(0), bp = bq('bandpass', 6500, .5), hp = bq('highpass', 3500), mix = gn(.18), dec = 2.2;
+  KIT_HAT.forEach(f => { const o = c.createOscillator(); o.type = 'square'; o.frequency.value = f * 1.9; o.connect(mix); o.start(t); o.stop(t + dec); });
+  mix.connect(bp); const ng = gn(.8); nz(t, dec, ng); ng.connect(bp); chainN(bp, hp, g); g.connect(out);
+  g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.6 * amt, t + .004); g.gain.exponentialRampToValueAtTime(.2 * amt, t + .3); g.gain.exponentialRampToValueAtTime(.0001, t + dec);
+  try { kitSend(g, .25); } catch (e) { }
+}
+/** a noise riser over `len` seconds: a band of noise sweeping up and swelling, ending at the next section */
+function buildRiser(t, len) {
+  const c = E.ctx; if (!c || !E.noise || len < .3) return; const out = E.tr.drums.duck || E.tr.drums.in, g = gn(0)      /* transitions ride over the section's level */, bp = bq('bandpass', 300, 1.4);
+  nz(t, len, bp); bp.connect(g); g.connect(out);
+  bp.frequency.setValueAtTime(300, t); bp.frequency.exponentialRampToValueAtTime(9000, t + len); g.gain.setValueAtTime(.0001, t); g.gain.linearRampToValueAtTime(.34, t + len * .97);      /* a straight swell: an exponential one from silence stays inaudible until the last moment */ g.gain.exponentialRampToValueAtTime(.0001, t + len + .02);
+  try { kitSend(g, .3); } catch (e) { }
+}
+/* ---------- the controls: Band panel, Simple's band and the phone's Beats ---------- */
+function buildCard() {
+  const on = !!S.band.build, card = h('div', { class: 'card bl-card', id: 'buildCard' });
+  card.append(h('h4', {}, 'Song build ', h('button', { class: 'btn sm' + (on ? ' on' : ''), id: 'buildOn', type: 'button', 'aria-pressed': String(on), title: 'The band plays each section at its own energy, with fills, crashes, risers and an ending', onclick: () => { S.band.build = !S.band.build; commit(true); bus.emit('song', 'band'); try { renderBand(); } catch (e) { } } }, on ? 'On' : 'Off')));
+  const body = h('div', { class: 'card-b' });
+  body.append(h('p', { class: 'tiny muted bl-how' }, on ? 'Each section plays at its energy: 1 is just hats, 3 the groove as written, 5 everything. Fills, crashes and risers come in between.' : 'Turn it on and the band builds through the song: quiet verses, big choruses, fills and risers between them.'));
+  if (on) body.append(h('div', { class: 'bl-secs' }, S.sections.map((sec, si) => { const e = secEnergy(sec), own = sec.energy >= 1;
+    return h('div', { class: 'bl-sec', 'data-si': si }, h('span', { class: 'bl-nm' }, sec.name), h('span', { class: 'bl-dots', role: 'radiogroup', 'aria-label': sec.name + ' energy' }, [1, 2, 3, 4, 5].map(n => h('button', { class: 'bl-dot' + (n <= e ? ' on' : '') + (own ? ' own' : ''), type: 'button', role: 'radio', 'aria-checked': String(n === e), 'aria-label': 'Energy ' + n, 'data-e': n, onclick: () => { sec.energy = n; commit(true); bus.emit('song', 'band'); try { renderBand(); } catch (x) { } if (typeof mScreenDraw === 'function') mScreenDraw(); } }))));
+  })));
+  card.append(body); return card;
 }
 
 /* >>> parts/04-analysis.js */
@@ -2811,7 +2903,7 @@ function renderBand() {
   const lead = h('div', { class: 'card' }, h('h4', {}, 'Tab playback (lead) ', tog('Enabled', 'leadOn')), h('div', { class: 'card-b row', style: { gap: '10px', flexWrap: 'wrap' } }, sel('Instrument', ['Nylon', 'Steel', 'Electric', 'Muted Pluck'], B.leadInst, v => { B.leadInst = v; commit(false); }),
     songField('Humanize', h('input', { type: 'range', min: 0, max: 1, step: .05, value: CFG.humanize, oninput: e => { CFG.humanize = +e.target.value; saveCfg(); } })), songField('Swing', h('input', { type: 'range', min: 0, max: .5, step: .01, value: S.swing, oninput: e => { S.swing = +e.target.value; commit(false); } }))));
   const beats = h('div', { class: 'card' }, h('h4', {}, 'Beats ', CFG.simple ? h('button', { class: 'btn sm', id: 'bandLess', type: 'button', onclick: () => { UI.bAll = false; renderBand(); } }, 'Just the essentials') : null), h('div', { class: 'card-b' }, beatsShelf()));
-  bx.append(beats, ensembleCard(), drums, bass, comp, lead);
+  bx.append(beats, buildCard(), ensembleCard(), drums, bass, comp, lead);
 }
 function ensembleCard() {
   const B = S.band, info = {
@@ -4087,7 +4179,7 @@ async function boot() {
   if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener('devicechange', () => { ioDeviceChange().catch(e => console.warn(e)); });
   bus.emit('song');
   try { ghBoot(); } catch (e) { console.warn('github', e); }      /* back from Sign in with GitHub, or a sync at start (part 74) */
-  DEV.make = () => { window.__daily = { tuneSelect, TUNE_LABELS, tuneTake, BASS_TONES, KITS, kitHit, sub808, M, MGROUPS, MW, mScreenDraw, mwRead, mwView, mwLyrics, mwSyl, mwEdited, mwPut, mSongOpen, msHexLoop, room, ROOM, slPack, slUnpack, slLink, slRead, slShare, slWelcome, slOpen, slFromHash, SL, BEATS, beatUse, beatRows, beatsShelf, SIMPLE_TOOLS, drumHit, RL, MO, GM_DRUM, duckAt, duckSet, duckCfg, duckNode, moNote, moDev, moDrum, moPanic, moSettings, kyOut, bassOut, rollOpen, rollBuild, rollLoop, isBass, instNow, nStr, yin, TUNINGS, setTuning, renderBarTab, tabLabels, voicingFor, toggleRec, closePop, spPause, encodeWav, PS, psOn, playDur, psSpeed, psKey, psSched, psDSPFactory, psPop, KY, keysOpen, keysVoice, keysStep, kyNoteOn, kyNoteOff, kyRec, kyClear, kyWrite, kyPiano, kyMarks, kyVoicing, KEYS_SOUNDS, KEYS_STYLES, coFinish, coDemo, coFeedback, coFbView, coTimeline, coBeat, coPractise, TAKE, learnPassed, todayPlan, todayPieces, todayStart, todayDone, streak, weekCount, dayKey, LSTEP, songLessons, songStart, songKey, earLick, earStart, EAR, simpleSet, simpleApply, ghTakeSettings, airMode, airSet, CO, coPos, coachOpen, coListen, coTick, coPlace, coNotes, coSetPiece, rfParse, LESSONS, RIFFS, RIFF_STYLES, learnOpen, learnToSong, learnFile, learnFileText, learnOpenFile, learnFromSong, labMake, labVary, labKeep, atlasPieces, atShape, MODE_VAMP, S, AIR, AIR_LAG, airSync, applyLayout, VB_PRESETS, VB_ORDER, VBS, vbAttach, vbApply, vbToggle, vbSet, vbPreset, vbPresetNext, vbThrow, vbLook, vbTick, vbScale, vocalBoardOpen, pedalRelease, MEG, megSpectrum, megFeatures, megScore, megStep, megSet, megLearn, megDraw, megLoop, megSettings, PAD, padsOpen, padHit, padTap, padRecord, padRecStop, padUndoPass, padClear, padResize, padBeatbox, bbHits, bbPattern, dpat, bassEvent, drumStep, PEDAL, pedalPress, pedalDo, pedalSecs, gearSettings, MCLK, mclkSlot, mclkMs, MIDI, MIDIRAW, onMidi, STRM, streamOpen, streamRoom, streamInfo, streamPanel, slotAtTime, SING, SHW, singStep, singScore, singSteamIR, singMicOff, showerOpen, shwGo, shwPlay, shwPrev, shwNext, shwStem, shwRecToggle, shwRecStop, shwHear, shwSave, shwAddFiles, shwRemove, shwMove, shwMode, shwLoadSet, shwPlaylist, shwWords, shwPrepare, shwFolderPull, lrcParse, readTags, spPos, spPlay, STP, trainOpen, projRestoreTrack, secretNote, secretArp, WS, WS_BASE, WS_ARPS, wsScaleRun, wsArpRun, wsFollow, wsStop, wsListen, wsEarNext, wsEarAnswer, wsOpen, bandMute, bandMuted, pdbPut, pdbKeys, projRename, FS, FS_B, fsUse, fsSync, fsHead, fsNeeds, fsTidy, fsOpen, syncOff, syncZips, PRJ_WAIT: () => PRJ.wait, EGG, EGG_LINES, EGG_ORDER, eggDay, eggFor, eggNow, eggText, eggTick, eggFit, saveCfg, projSave, projDelete, GH, ghSync, ghConnect, ghDisconnect, ghLocal, ghSha, ghJson, ghMerge3, ghShare, ghGallery, ghGalleryOpen, ghGalleryShow, ghKeepLook, ghKeepRig, rigClean, ghReturn, BRAND, ghSettingsOut, projRefresh, projCreate, projLoad, PRJ, SEC, SECRETS, secretFound, secretTiming, secretsOpen, secretSync, backstageOpen, startAudio, playheadSlot, GUARD, reportText, reportCopy, srecQ, srecSize, pdbGet, srecFmt, SREC_FMTS, VBG, vbgAdd, vbgRemove, vbgUse, vbgOpen, vbgDraw, vzSetMode, srecFrame, srecFmtBox, kitThumb, WORKLET_SRC, mkComp, mkShaper, rigLat, voxLat, restartAudio, satCurve, rigApply, qrMake, qrSvg, tipLink, tipShort, tipReady, tipCard, tipDraw, tipShareHtml, tipOpen, tipPrint, tipPng, tipVisAvoid, tipStageAvoid, TIP, TIP_TERMS, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, drawVis, peaksOf, uid, shareGate, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, TAKES, STM, ZOOM, CFG, store, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, SEL, mtof, spb, WR, HM, HMX, HM_MODES, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitInk, kitNotes, kitRecord, srecMime, mGo, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard}; };   // test hook: with ?debug, or Backstage ▸ Labs ▸ Developer handles
+  DEV.make = () => { window.__daily = { BLD, BUILD_LIFT, buildLevel, secEnergy, buildCtx, buildParts, buildDrums, buildCard, buildCrash, buildRiser, tuneSelect, TUNE_LABELS, tuneTake, BASS_TONES, KITS, kitHit, sub808, M, MGROUPS, MW, mScreenDraw, mwRead, mwView, mwLyrics, mwSyl, mwEdited, mwPut, mSongOpen, msHexLoop, room, ROOM, slPack, slUnpack, slLink, slRead, slShare, slWelcome, slOpen, slFromHash, SL, BEATS, beatUse, beatRows, beatsShelf, SIMPLE_TOOLS, drumHit, RL, MO, GM_DRUM, duckAt, duckSet, duckCfg, duckNode, moNote, moDev, moDrum, moPanic, moSettings, kyOut, bassOut, rollOpen, rollBuild, rollLoop, isBass, instNow, nStr, yin, TUNINGS, setTuning, renderBarTab, tabLabels, voicingFor, toggleRec, closePop, spPause, encodeWav, PS, psOn, playDur, psSpeed, psKey, psSched, psDSPFactory, psPop, KY, keysOpen, keysVoice, keysStep, kyNoteOn, kyNoteOff, kyRec, kyClear, kyWrite, kyPiano, kyMarks, kyVoicing, KEYS_SOUNDS, KEYS_STYLES, coFinish, coDemo, coFeedback, coFbView, coTimeline, coBeat, coPractise, TAKE, learnPassed, todayPlan, todayPieces, todayStart, todayDone, streak, weekCount, dayKey, LSTEP, songLessons, songStart, songKey, earLick, earStart, EAR, simpleSet, simpleApply, ghTakeSettings, airMode, airSet, CO, coPos, coachOpen, coListen, coTick, coPlace, coNotes, coSetPiece, rfParse, LESSONS, RIFFS, RIFF_STYLES, learnOpen, learnToSong, learnFile, learnFileText, learnOpenFile, learnFromSong, labMake, labVary, labKeep, atlasPieces, atShape, MODE_VAMP, S, AIR, AIR_LAG, airSync, applyLayout, VB_PRESETS, VB_ORDER, VBS, vbAttach, vbApply, vbToggle, vbSet, vbPreset, vbPresetNext, vbThrow, vbLook, vbTick, vbScale, vocalBoardOpen, pedalRelease, MEG, megSpectrum, megFeatures, megScore, megStep, megSet, megLearn, megDraw, megLoop, megSettings, PAD, padsOpen, padHit, padTap, padRecord, padRecStop, padUndoPass, padClear, padResize, padBeatbox, bbHits, bbPattern, dpat, bassEvent, drumStep, PEDAL, pedalPress, pedalDo, pedalSecs, gearSettings, MCLK, mclkSlot, mclkMs, MIDI, MIDIRAW, onMidi, STRM, streamOpen, streamRoom, streamInfo, streamPanel, slotAtTime, SING, SHW, singStep, singScore, singSteamIR, singMicOff, showerOpen, shwGo, shwPlay, shwPrev, shwNext, shwStem, shwRecToggle, shwRecStop, shwHear, shwSave, shwAddFiles, shwRemove, shwMove, shwMode, shwLoadSet, shwPlaylist, shwWords, shwPrepare, shwFolderPull, lrcParse, readTags, spPos, spPlay, STP, trainOpen, projRestoreTrack, secretNote, secretArp, WS, WS_BASE, WS_ARPS, wsScaleRun, wsArpRun, wsFollow, wsStop, wsListen, wsEarNext, wsEarAnswer, wsOpen, bandMute, bandMuted, pdbPut, pdbKeys, projRename, FS, FS_B, fsUse, fsSync, fsHead, fsNeeds, fsTidy, fsOpen, syncOff, syncZips, PRJ_WAIT: () => PRJ.wait, EGG, EGG_LINES, EGG_ORDER, eggDay, eggFor, eggNow, eggText, eggTick, eggFit, saveCfg, projSave, projDelete, GH, ghSync, ghConnect, ghDisconnect, ghLocal, ghSha, ghJson, ghMerge3, ghShare, ghGallery, ghGalleryOpen, ghGalleryShow, ghKeepLook, ghKeepRig, rigClean, ghReturn, BRAND, ghSettingsOut, projRefresh, projCreate, projLoad, PRJ, SEC, SECRETS, secretFound, secretTiming, secretsOpen, secretSync, backstageOpen, startAudio, playheadSlot, GUARD, reportText, reportCopy, srecQ, srecSize, pdbGet, srecFmt, SREC_FMTS, VBG, vbgAdd, vbgRemove, vbgUse, vbgOpen, vbgDraw, vzSetMode, srecFrame, srecFmtBox, kitThumb, WORKLET_SRC, mkComp, mkShaper, rigLat, voxLat, restartAudio, satCurve, rigApply, qrMake, qrSvg, tipLink, tipShort, tipReady, tipCard, tipDraw, tipShareHtml, tipOpen, tipPrint, tipPng, tipVisAvoid, tipStageAvoid, TIP, TIP_TERMS, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, drawVis, peaksOf, uid, shareGate, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, TAKES, STM, ZOOM, CFG, store, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, SEL, mtof, spb, WR, HM, HMX, HM_MODES, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitInk, kitNotes, kitRecord, srecMime, mGo, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard}; };   // test hook: with ?debug, or Backstage ▸ Labs ▸ Developer handles
   if (/[?&]debug\b/.test(location.search) || (CFG.labs && CFG.labs.handles)) DEV.make();
   try { bksBoot(); } catch (e) { console.warn('backstage', e); }      /* #backstage in the address, the performance overlay (part 73c) */
   projInit().catch(e => { console.warn('library', e); PRJ.ready = true; if (PRJ.wantStart) startMaybe(); });
@@ -5853,7 +5945,7 @@ function msHexLoop() {
 document.addEventListener('visibilitychange', () => { if (!document.hidden && M.view === 'm' && M.s === 'sing') msHexLoop(); });
 /* ---------- Beats ---------- */
 function mBeats(box) {
-  box.append(h('h3', { class: 'ms-h' }, '🥁 Beats'), h('p', { class: 'tiny muted' }, 'Tap one and it plays in your song’s key. Write or sing over it.'), beatsShelf(), h('h4', { class: 'ms-sub' }, 'Who plays'), beatsMixer(),
+  box.append(h('h3', { class: 'ms-h' }, '🥁 Beats'), h('p', { class: 'tiny muted' }, 'Tap one and it plays in your song’s key. Write or sing over it.'), beatsShelf(), h('h4', { class: 'ms-sub' }, 'Who plays'), beatsMixer(), buildCard(),
     h('button', { class: 'btn sm mb-all', onclick: () => mGo('beats', 'band') }, 'Every band setting…'));
 }
 /* ---------- the screen ---------- */
@@ -18470,7 +18562,7 @@ function beatChords(b) {
 /** use beat `id`: the band and the tempo, then (unless o.play is false) loop it; one undo puts everything back */
 function beatUse(id, o = {}) {
   const b = BEATS.find(x => x.id === id); if (!b) return false; const B = S.band, { L, pat } = beatRows(b);
-  Object.assign(B, { beat: b.id, drumsOn: true, kit: b.kit, patName: b.pat || b.name, pat, drumLen: L, bassOn: !isBass(), bassStyle: b.bass, bassTone: b.tone, compOn: !!b.comp, keysOn: !!b.keys });
+  Object.assign(B, { beat: b.id, build: true, drumsOn: true, kit: b.kit, patName: b.pat || b.name, pat, drumLen: L, bassOn: !isBass(), bassStyle: b.bass, bassTone: b.tone, compOn: !!b.comp, keysOn: !!b.keys });
   if (b.comp) { B.compStyle = b.comp; B.compInst = b.inst; } if (b.keys) { B.keysStyle = b.keys; B.keysSound = b.sound; }
   if (!S.mix.keys) S.mix.keys = { g: .7, p: .1, m: 0, s: 0 };
   S.bpm = b.bpm; S.swing = b.swing || 0; const fresh = beatChords(b); T.bars = null;
@@ -18498,7 +18590,7 @@ function beatsMixer() {
 /** Simple's Band panel: the beats and who plays; everything else one press away */
 function bandSimple(bx) {
   bx.append(h('div', { class: 'card' }, h('h4', {}, 'Pick a beat'), h('div', { class: 'card-b' }, h('p', { class: 'tiny muted bt-how' }, 'Tap one and it plays: drums, bass and chords, in your song’s key. Play or sing over it, and press ● to record. Undo puts your band back.'), beatsShelf())),
-    h('div', { class: 'card' }, h('h4', {}, 'Who plays'), h('div', { class: 'card-b' }, beatsMixer())),
+    h('div', { class: 'card' }, h('h4', {}, 'Who plays'), h('div', { class: 'card-b' }, beatsMixer())), buildCard(),
     h('button', { class: 'btn sm', id: 'bandAll', type: 'button', onclick: () => { UI.bAll = true; renderBand(); } }, 'Show every band setting'));
 }
 
@@ -18534,8 +18626,9 @@ function slPack(s) {
     x: s.sections.map(sec => { const row = [sec.name, sec.bars.map(b => b.chord || '').join('|'), sec.lyrics || ''];
       const tab = sec.bars.some(b => b.tab && b.tab.length), ky = sec.bars.some(b => b.keys && b.keys.length), bl = sec.bars.some(b => b.bassLine && b.bassLine.length);
       if (tab || ky || bl) row.push(tab ? sec.bars.map(b => (b.tab || []).map(n => n.bend != null ? [n.s, n.st, n.f, n.t || '', n.bend] : [n.s, n.st, n.f, n.t || ''])) : 0, ky ? sec.bars.map(b => notes(b.keys)) : 0, bl ? sec.bars.map(b => notes(b.bassLine)) : 0);
+      if (sec.energy >= 1) { while (row.length < 6) row.push(0); row.push(sec.energy); }      /* 2.44: the section's energy */
       return row; }),
-    bd: { d: B.drumsOn ? 1 : 0, kit: B.kit, pn: B.patName, p: pat, bo: B.bassOn ? 1 : 0, bs: B.bassStyle, bt: B.bassTone, co: B.compOn ? 1 : 0, cs: B.compStyle, ci: B.compInst, lo: B.leadOn ? 1 : 0, li: B.leadInst, ko: B.keysOn ? 1 : 0, ks: B.keysStyle, kn: B.keysSound, beat: B.beat || undefined } };
+    bd: { d: B.drumsOn ? 1 : 0, kit: B.kit, pn: B.patName, p: pat, bo: B.bassOn ? 1 : 0, bs: B.bassStyle, bt: B.bassTone, co: B.compOn ? 1 : 0, cs: B.compStyle, ci: B.compInst, lo: B.leadOn ? 1 : 0, li: B.leadInst, ko: B.keysOn ? 1 : 0, ks: B.keysStyle, kn: B.keysSound, beat: B.beat || undefined, bu: B.build ? 1 : undefined } };
 }
 /** a song from a link, rebuilt from scratch: only what is checked is kept */
 function slUnpack(o) {
@@ -18556,7 +18649,7 @@ function slUnpack(o) {
     if (!Array.isArray(r) || total >= 400) return null;
     const chords = str(r[1], 6000).split('|').slice(0, 400 - total); total += chords.length;
     const sec = mkSection(str(r[0], 40).trim() || 'Section', chords.map(c => c.trim().split(/\s+/).filter(chordOk).slice(0, 4).join(' ')));
-    sec.lyrics = str(r[2], 6000);
+    sec.lyrics = str(r[2], 6000); if (r[6] != null) { const e = int(r[6], 1, 5, 0); if (e) sec.energy = e; }
     sec.bars.forEach((bar, i) => {
       const tb = Array.isArray(r[3]) && r[3][i]; if (Array.isArray(tb)) bar.tab = tb.slice(0, 96).filter(Array.isArray).map(n => {
         const f = n[2] === 'x' ? 'x' : int(n[2], 0, 24, 0), x = { s: int(n[0], 0, 63, 0), st: int(n[1], 0, ns - 1, 0), f, t: /^[a-z~/\\^]{0,3}$/i.test(String(n[3] || '')) ? String(n[3] || '') : '' };
@@ -18570,7 +18663,7 @@ function slUnpack(o) {
   const d = o.bd && typeof o.bd === 'object' ? o.bd : {}, B = s.band, INSTR = ['Steel', 'Nylon', 'Electric', 'Muted Pluck'];
   B.drumsOn = !!d.d; B.kit = pick(d.kit, Object.keys(KITS), B.kit); B.bassOn = !!d.bo; B.bassStyle = pick(d.bs, BASS_STYLES, B.bassStyle); B.bassTone = pick(d.bt, BASS_TONES, B.bassTone);
   B.compOn = !!d.co; B.compStyle = pick(d.cs, Object.keys(STRUMS), B.compStyle); B.compInst = pick(d.ci, INSTR, B.compInst); B.leadOn = !!d.lo; B.leadInst = pick(d.li, INSTR, B.leadInst);
-  B.keysOn = !!d.ko; B.keysStyle = pick(d.ks, KEYS_STYLES, B.keysStyle); B.keysSound = pick(d.kn, KEYS_SOUNDS, B.keysSound); B.beat = pick(d.beat, BEATS.map(b => b.id), undefined);
+  B.keysOn = !!d.ko; B.keysStyle = pick(d.ks, KEYS_STYLES, B.keysStyle); B.keysSound = pick(d.kn, KEYS_SOUNDS, B.keysSound); B.beat = pick(d.beat, BEATS.map(b => b.id), undefined); B.build = !!d.bu;
   B.patName = str(d.pn, 48).trim() || B.patName;
   if (Array.isArray(d.p) && d.p.length) { const L = clamp(Math.max(...d.p.slice(0, 6).map(r => String(r || '').length)), 4, 32); B.drumLen = L; B.pat = DROWS.map((_, i) => Array.from({ length: 32 }, (_, j) => j < L ? Math.max(0, SL_DR.indexOf(String(d.p[i] || '')[j] || '.')) : 0)); }
   return s;

@@ -2,7 +2,7 @@
 
 A practical walkthrough of every panel. For a ten-minute orientation, press **?** in the app and choose **Take the guided tour**.
 
-Contents: [Vocal tuning](#-vocal-tuning-243) · [Song links](#-send-a-song-as-a-link-240) · [Beats](#-beats-239) · [Getting started](#getting-started-and-guided-sessions-27) · [Show setup](#show-setup-26) · [Layouts](#layout-and-themes) · [Monitor widgets](#monitor-widgets-26) · [Concert](#concert-24) · [Voice](#voice-pitch-ribbon-your-range-find-my-key-23) · [Cut, silence and punch in](#cut-silence-and-punch-in-23) · [Heatmap](#heatmap-23) · [Performer backdrop](#performer-backdrop-23) · [Clips and the mix](#clips-move-trim-fade-split-22) · [Fast WAV render](#faster-than-real-time-wav-render-22) · [Open a MIDI file](#open-a-midi-file-22) · [Keep songs safe](#keep-songs-safe-22) · [Perform, share and back up](#perform-share-and-back-up-20) · [Getting sound](#getting-sound-in-and-out) · [Tones and the Rig](#tones-and-the-rig) · [The band](#the-band) · [Arrangement and recording](#arrangement-and-recording) · [Tab editor](#tab-editor) · [Song, tunings and capo](#song-tunings-and-capo) · [Fretboard and tuner](#fretboard-and-tuner) · [Transcribe](#transcribe-audio-to-tab) · [Stems](#stems-and-backing-tracks) · [Neural map](#neural-map) · [Visuals and Stage](#visuals-and-stage) · [Vision](#vision-lab) · [Research](#research-panel) · [Export, history and backup](#export-history-and-backup) · [MIDI](#midi) · [Layout](#layout-and-themes)
+Contents: [Songs that build](#-songs-that-build-244) · [Vocal tuning](#-vocal-tuning-243) · [Song links](#-send-a-song-as-a-link-240) · [Beats](#-beats-239) · [Getting started](#getting-started-and-guided-sessions-27) · [Show setup](#show-setup-26) · [Layouts](#layout-and-themes) · [Monitor widgets](#monitor-widgets-26) · [Concert](#concert-24) · [Voice](#voice-pitch-ribbon-your-range-find-my-key-23) · [Cut, silence and punch in](#cut-silence-and-punch-in-23) · [Heatmap](#heatmap-23) · [Performer backdrop](#performer-backdrop-23) · [Clips and the mix](#clips-move-trim-fade-split-22) · [Fast WAV render](#faster-than-real-time-wav-render-22) · [Open a MIDI file](#open-a-midi-file-22) · [Keep songs safe](#keep-songs-safe-22) · [Perform, share and back up](#perform-share-and-back-up-20) · [Getting sound](#getting-sound-in-and-out) · [Tones and the Rig](#tones-and-the-rig) · [The band](#the-band) · [Arrangement and recording](#arrangement-and-recording) · [Tab editor](#tab-editor) · [Song, tunings and capo](#song-tunings-and-capo) · [Fretboard and tuner](#fretboard-and-tuner) · [Transcribe](#transcribe-audio-to-tab) · [Stems](#stems-and-backing-tracks) · [Neural map](#neural-map) · [Visuals and Stage](#visuals-and-stage) · [Vision](#vision-lab) · [Research](#research-panel) · [Export, history and backup](#export-history-and-backup) · [MIDI](#midi) · [Layout](#layout-and-themes)
 
 ---
 
@@ -20,6 +20,14 @@ Contents: [Vocal tuning](#-vocal-tuning-243) · [Song links](#-send-a-song-as-a-
   - **The Full Rig workspace** button is tucked away.
 - **Simple is the Songwriter (2.39):** Simple opens the Songwriter workspace, and its goal bar is just *Make a song*: **🥁 Beats**, Paste chords, Pads, Keys and **🔗 Send as a link**. If you switch Simple on from another workspace, switching it off takes you back there exactly as you left it.
 - **The band in Simple (2.39):** the Band panel is the beats and who plays (drums, bass, guitar and keys, each a switch and a level). **Show every band setting** brings the rest back.
+
+## 📈 Songs that build (2.44)
+
+With **Song build** on (Band panel, or under the beats on a phone; picking a beat turns it on), the band plays each section at its own energy:
+- **Energy 1 to 5** per section. Without your own setting, a section takes it from its name: intro 2, verse 3, pre-chorus 4, chorus 5, bridge 2, outro 2. Tap a dot to change it.
+- **1** is just hats, **3** the groove as written, **5** everything, louder. Quieter sections sit under the chorus.
+- A **fill** ends each section, a **crash** opens a big one, and a **riser** swells into a section that lifts.
+- A song that is not looping **ends** on one ringing hit.
 
 ## 🎯 Vocal tuning (2.43)
 

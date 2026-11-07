@@ -259,7 +259,7 @@ function buildGraph() {
   E.rigOut.connect(E.anaRig);
   TRACKS.forEach(([id]) => {
     const t = { id, in: gn(1), g: gn(1), pan: c.createStereoPanner(), ana: mkAna(512, 0.4) };
-    t.duck = gn(1); t.in.connect(t.duck); t.duck.connect(t.g); t.g.connect(t.pan); t.pan.connect(t.ana); E.tr[id] = t; if (FX_TRACKS.includes(id)) { t.fx = fxStrip(E.mix); t.pan.connect(t.fx.in); } else t.pan.connect(E.mix);
+    t.duck = gn(1); t.nrg = gn(1); t.in.connect(t.nrg); t.nrg.connect(t.duck); t.duck.connect(t.g);      /* nrg: the section's energy (Song build, part 03c) */ t.g.connect(t.pan); t.pan.connect(t.ana); E.tr[id] = t; if (FX_TRACKS.includes(id)) { t.fx = fxStrip(E.mix); t.pan.connect(t.fx.in); } else t.pan.connect(E.mix);
   });
   E.takesIn = gn(1); E.takesIn.connect(E.mix);
   /* vocal path: the second input channel → trim → (meter · recorder tap) and → monitor switch → polish strip → Vocal track */

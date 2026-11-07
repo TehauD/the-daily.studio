@@ -132,7 +132,7 @@ function msHexLoop() {
 document.addEventListener('visibilitychange', () => { if (!document.hidden && M.view === 'm' && M.s === 'sing') msHexLoop(); });
 /* ---------- Beats ---------- */
 function mBeats(box) {
-  box.append(h('h3', { class: 'ms-h' }, '🥁 Beats'), h('p', { class: 'tiny muted' }, 'Tap one and it plays in your song’s key. Write or sing over it.'), beatsShelf(), h('h4', { class: 'ms-sub' }, 'Who plays'), beatsMixer(),
+  box.append(h('h3', { class: 'ms-h' }, '🥁 Beats'), h('p', { class: 'tiny muted' }, 'Tap one and it plays in your song’s key. Write or sing over it.'), beatsShelf(), h('h4', { class: 'ms-sub' }, 'Who plays'), beatsMixer(), buildCard(),
     h('button', { class: 'btn sm mb-all', onclick: () => mGo('beats', 'band') }, 'Every band setting…'));
 }
 /* ---------- the screen ---------- */

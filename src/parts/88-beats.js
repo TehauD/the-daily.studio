@@ -42,7 +42,7 @@ function beatChords(b) {
 /** use beat `id`: the band and the tempo, then (unless o.play is false) loop it; one undo puts everything back */
 function beatUse(id, o = {}) {
   const b = BEATS.find(x => x.id === id); if (!b) return false; const B = S.band, { L, pat } = beatRows(b);
-  Object.assign(B, { beat: b.id, drumsOn: true, kit: b.kit, patName: b.pat || b.name, pat, drumLen: L, bassOn: !isBass(), bassStyle: b.bass, bassTone: b.tone, compOn: !!b.comp, keysOn: !!b.keys });
+  Object.assign(B, { beat: b.id, build: true, drumsOn: true, kit: b.kit, patName: b.pat || b.name, pat, drumLen: L, bassOn: !isBass(), bassStyle: b.bass, bassTone: b.tone, compOn: !!b.comp, keysOn: !!b.keys });
   if (b.comp) { B.compStyle = b.comp; B.compInst = b.inst; } if (b.keys) { B.keysStyle = b.keys; B.keysSound = b.sound; }
   if (!S.mix.keys) S.mix.keys = { g: .7, p: .1, m: 0, s: 0 };
   S.bpm = b.bpm; S.swing = b.swing || 0; const fresh = beatChords(b); T.bars = null;
@@ -70,6 +70,6 @@ function beatsMixer() {
 /** Simple's Band panel: the beats and who plays; everything else one press away */
 function bandSimple(bx) {
   bx.append(h('div', { class: 'card' }, h('h4', {}, 'Pick a beat'), h('div', { class: 'card-b' }, h('p', { class: 'tiny muted bt-how' }, 'Tap one and it plays: drums, bass and chords, in your song’s key. Play or sing over it, and press ● to record. Undo puts your band back.'), beatsShelf())),
-    h('div', { class: 'card' }, h('h4', {}, 'Who plays'), h('div', { class: 'card-b' }, beatsMixer())),
+    h('div', { class: 'card' }, h('h4', {}, 'Who plays'), h('div', { class: 'card-b' }, beatsMixer())), buildCard(),
     h('button', { class: 'btn sm', id: 'bandAll', type: 'button', onclick: () => { UI.bAll = true; renderBand(); } }, 'Show every band setting'));
 }
