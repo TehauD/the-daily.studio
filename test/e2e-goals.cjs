@@ -16,13 +16,15 @@ suite('e2e-goals', async t => {
 
   // each goal is its own workspace, with its own tools; nothing is lost
   const fp = await ev(async () => {
-    const d = window.__daily, out = {};
+    const d = window.__daily, out = {}, had = d.E.hasInput; d.E.hasInput = true;      /* each workspace's own shape: once an input is connected (before that, every one opens on Audio input; checked below) */
     for (const g of d.GOALS) {
       document.querySelector('#goalbar .gl-b[data-goal="' + g.id + '"]').click(); await new Promise(r => setTimeout(r, 350));
       out[g.id] = { name: d.LAY.name, now: (d.goalNow() || {}).id, dock: d.DOCK.cur, tabs: [...document.querySelectorAll('#dock .tabs .tab')].map(b => b.dataset.id).join(','), tools: [...document.querySelectorAll('#goalbar .gl-tool')].map(b => b.id).join(','), lvis: getComputedStyle(document.getElementById('left')).visibility, rvis: getComputedStyle(document.getElementById('right')).visibility, lcur: d.SD.cur.left, rcur: d.SD.cur.right, mon: ['tuner', 'levels', 'live', 'spectrum', 'views', 'audience'].filter(w => !d.LAY.rc.hide[w]).join('+'), pressed: (document.querySelector('#goalbar .gl-b.on') || {}).dataset.goal, barTop: Math.round(document.getElementById('goalbar').getBoundingClientRect().top), tlTop: Math.round(document.getElementById('timeline').getBoundingClientRect().top), dockTop: Math.round(document.getElementById('dock').getBoundingClientRect().top), goalVar: getComputedStyle(document.documentElement).getPropertyValue('--goal').trim(), hidden: d.LAY.hidden.length, cfg: d.CFG.ws };
     }
-    return out;
+    d.E.hasInput = had; return out;
   });
+  const AF = await ev(async () => { const d = window.__daily, had = d.E.hasInput, out = []; d.E.hasInput = false; for (const g of d.GOALS) { d.goalGo(g.id); await new Promise(r => setTimeout(r, 250)); out.push(g.id + ':' + d.SD.cur.left + ':' + getComputedStyle(document.getElementById('left')).visibility); } d.E.hasInput = had; d.goalGo('performer'); return out; });
+  ok(AF.every(x => /:io:visible$/.test(x)), 'until an input is connected, every workspace opens its sidebar on Audio input (' + AF.join(', ') + ')');
   const ids = Object.keys(fp);
   ok(ids.length === 6 && ids.every(i => fp[i].now === i && fp[i].pressed === i && fp[i].cfg === i), 'each goal opens its own workspace, lights its button and is remembered');
   ok(new Set(ids.map(i => [fp[i].dock, fp[i].tabs, fp[i].lvis, fp[i].rvis, fp[i].lcur, fp[i].rcur, fp[i].mon].join('/'))).size === 6, 'no two goals are the same workspace');

@@ -1,13 +1,15 @@
 # Terms of use
 
-Last updated 31 October 2026.
+Last updated 7 November 2026.
 
 the-daily.studio is free software that runs in your web browser. By using it, you agree to these terms. They sit alongside the licence (MIT) and the privacy statement on this page.
 
 ## Your content
 
 - **What you make is yours.** The project claims no rights in your songs, words, recordings or anything else you make with the app.
+- **The beats and the band are yours to use.** The beats, grooves, progressions and instrument sounds are made by the app's own code and were written for it, not taken from recordings. What you make over them is yours, and you may release it.
 - **What you bring in is your responsibility.** You need the right to use the audio, lyrics, chord sheets, tab, MIDI files and backing tracks you open, paste or record in the app. The app ships with no one else's recordings or lyrics.
+- **A song link carries the song itself (2.40).** 🔗 Send as a link puts the chords, words and tab inside the link. Whoever has the link can read the song, so send it like you would the words themselves. The project never receives it.
 - **Work made from someone else's song is still theirs too.** Chords, tab, stems, transcriptions, covers and videos made from another person's song or recording remain subject to the rights in that song or recording.
 
 ## Sharing what you make

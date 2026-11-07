@@ -1,6 +1,6 @@
 # Hosting the-daily.studio
 
-the-daily.studio is a **static site**: one `index.html` with everything inside, plus a manifest, a service worker, icons, optional sample tracks, and The Daily journal at `/journal/`. There is no backend, database or server code. **Production runs on Cloudflare Workers static assets**; any static host works.
+the-daily.studio is a **static site**: one `index.html` (on the hosted site its two fonts and four rarely used parts, the `rooms/`, are separate files beside it since 2.40, each checked by a hash; the `index.html` in the repository still has everything inside), plus a manifest, a service worker, icons, optional sample tracks, and The Daily journal at `/journal/`. There is no backend, database or server code. **Production runs on Cloudflare Workers static assets**; any static host works.
 
 > **Why HTTPS matters.** Browsers only allow the **microphone, camera and MIDI** on secure contexts (`https://…` and `http://localhost`). Cloudflare serves HTTPS automatically. A plain `http://` or `http://192.168.x.x` address will not get microphone access.
 

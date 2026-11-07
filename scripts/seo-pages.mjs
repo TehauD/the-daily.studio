@@ -27,7 +27,7 @@ export const FEATURES = [
 ];
 
 const NAV = [
-  ['guide/', 'Guide'], ['guide/getting-started/', 'Start'], ['guide/record-guitar-and-voice/', 'Record'], ['guide/guitar-tones-and-rig/', 'Tones'], ['guide/split-song-into-stems/', 'Stems'],
+  ['guide/', 'Guide'], ['guide/getting-started/', 'Start'], ['guide/write-a-song-over-a-beat/', 'Write'], ['guide/sing-record-and-tune/', 'Sing'], ['guide/record-guitar-and-voice/', 'Record'], ['guide/guitar-tones-and-rig/', 'Tones'], ['guide/split-song-into-stems/', 'Stems'],
   ['guide/chords-tab-and-lyrics/', 'Chords & tab'], ['guide/hum-to-song/', 'Hum'], ['guide/live-visuals-and-stage-show/', 'Stage'], ['guide/perform-and-share/', 'Perform'], ['guide/keep-your-studio-in-sync/', 'Sync']
 ];
 
@@ -42,7 +42,7 @@ export const PAGES = [
     lead: 'A guitar and voice studio in one web page. Record, play along with any song, write chords, tab and lyrics, shape your tone and put on a light show. It is free and open source, there is no account, and your audio never leaves your device.',
     sections: [
       { h: 'Pick a topic', topics: true },
-      { h: 'New lately', ul: ['Folder sync (2.22): your whole studio, recordings too, in a folder you choose. Put it in iCloud Drive, Dropbox, Google Drive or OneDrive and every computer has the same studio.', 'Your studio on GitHub (2.21): settings, presets, looks and songs in a private repository of your own, with a gallery of looks and rigs others share.', 'Wide and vertical videos (2.19): record the stage in 16:9 for YouTube or 9:16 for Reels, TikTok and Shorts, with your own video loops behind you.', 'Zero-delay effects (2.18): the guitar rig adds almost no delay, and every take lines up with the band.', 'A tip jar (2.17): your own tip link as a QR code on the stage, in videos and on share pages.'] }
+      { h: 'New lately', ul: ['✦ Simple in every workspace (2.46): one button keeps Songwriter, Performer, Creator Studio, Practice and Teacher to the few tools each needs. Full Rig has everything.', 'Better instruments (2.45, 2.46.1): a piano with a real ring, strings with vibrato, acoustic guitars with a wooden body and a double-tracked rhythm guitar.', 'Songs that build (2.44): quiet verses, big choruses, fills and risers between sections, and an ending.', 'Vocal tuning (2.43): put a vocal take in key, from natural to the hard tuned sound, and back to the original whenever you like.', 'Beats and drum machines (2.39, 2.42): fourteen ready beats in your key, on acoustic kits or drum machines with a heavy sub bass.', 'Send a song as a link (2.40): the chords, words and beat inside the link itself, with nothing uploaded.', 'The phone, for singers (2.41): Words, Sing, Beats and Tracks at the bottom of the screen.'] }
     ],
     limits: ['It is not a plugin host: there is no VST, AU or ASIO support, and the effects are built in.', 'It is not a full desktop DAW. It is a fast, private sketchpad and practice room that also records, mixes and exports.', 'The stem splitter, the chord finder and the tab transcriber are light, private tools that give good estimates, not studio-grade results.'],
     faq: [
@@ -65,6 +65,9 @@ export const PAGES = [
     glance: [['🎵', 'Turn a hum into a song', 'Hum or sing a few seconds and a whole band plays it back, with chords.'], ['🎙', 'Record, loop and layer', 'Plug in or use your microphone, loop a few bars and play a lead on top.'], ['🎧', 'Learn a song', 'Load a track, mute your part and play along, looping the hard bit.'], ['💡', 'Run a show', 'A preflight for the stage: look, rig, output, test pattern, levels, blackout.']],
     sections: [
       { h: 'How a guided session works', ol: ['A small card names one step and outlines the control it means.', 'You do the step. The app notices (a hum recorded, a take stopped, a test pattern shown) and ticks it off. Nothing is faked.', 'Show me takes you to the control, Skip moves on, and you can fold the card or drag it out of the way.', 'At the end, the tools you used stay in your tab strip. Start, resume or repeat any session from Help ▸ Guided sessions.'] },
+      { h: 'Workspaces and ✦ Simple', p: ['Across the top are six workspaces: Songwriter, Performer, Creator Studio, Practice, Teacher and Full Rig. Each arranges the studio for one job and brings its own row of tools. ✦ Simple keeps each workspace to the few panels and tools it needs; press it again for everything. Full Rig is the one workspace with it all, so choosing it turns Simple off. Nothing is ever removed: every panel stays under ☰.'] },
+      { h: 'Connect first', p: ['Until a microphone or interface is connected, every workspace opens on Audio input, because hearing you is the first thing the studio needs. Choose your input, check the level moves when you sing or play, and the workspace goes back to its own panels. Wired headphones keep the delay low and stop the speakers feeding back into the microphone.'] },
+      { h: 'The guided tour', p: ['Help ▸ Take the guided tour shows where everything is in about two minutes, and never changes your song. In ✦ Simple it keeps to the essentials. On a phone it follows the bottom bar: Words, Sing, Beats, Tracks and More.'] },
       { h: 'Help that stays out of the way', p: ['The first time you open a tab, a short note says what it is and gives one thing to try. Press Got it and it folds into a small line. DAW words, in guitar terms explains lane, clip, take, arm, dry and wet, latency and the rest in a sentence a guitarist would use.'] },
       { h: 'Coming back', p: ['When you return, the first page says where you are: when you last practised, your streak, what you are working on, your latest recording and your progress this year. Pick up where I left off opens the song you were on. My progress shows the chords you have learned and how often your chord changes land in time. It is counts and dates only, kept on your device.'] }
     ],
@@ -74,7 +77,45 @@ export const PAGES = [
       ['Does it ask for the microphone straight away?', 'No. Nothing is requested until you press a button that needs it, and the guided session says so before it asks.'],
       ['Where is my work kept?', 'On your device, in this browser. Nothing is uploaded. To have it on another computer too, use folder sync or your own GitHub repository.']
     ],
-    related: ['hum-to-song', 'record-guitar-and-voice', 'live-visuals-and-stage-show']
+    related: ['write-a-song-over-a-beat', 'sing-record-and-tune', 'record-guitar-and-voice']
+  },
+  {
+    slug: 'write-a-song-over-a-beat', blurb: 'Tap a beat, write the words and chords, and send the song as a link.', ico: '🥁', title: 'Write a song over a beat in your browser',
+    description: 'Tap one of fourteen beats, write words and chords over it, let the band build from verse to chorus, and send the song as a link. Free, private, in your browser.',
+    h1: 'Write a song over a beat', eyebrow: 'Write',
+    lead: 'Start with a groove instead of a blank page. Tap a beat and a band plays it in your key; write the words and chords over it; let the band build from a quiet verse to a big chorus; then send the song to someone as a link.',
+    glance: [['🥁', 'Fourteen beats', 'Folk, pop, rock, lo-fi, dance, trap, drill, Afrobeats, R&B, reggae, blues, ballad, funk and bossa nova.'], ['🎛', 'Drum machines and kits', 'Acoustic kits in a small room, or drum machines with a long, heavy sub bass that slides between notes.'], ['📈', 'Songs that build', 'Each section plays at its own energy, with fills, crashes and risers between them.'], ['🎹', 'Real-sounding instruments', 'Piano, electric piano, pad, strings, organ and guitars, all made on your device.'], ['✍', 'Words and chords', 'Type the words with chords over them, or paste a whole lyric sheet.'], ['🔗', 'Send as a link', 'The song rides inside the link. Nothing is uploaded.']],
+    sections: [
+      { h: 'Your first song over a beat', ol: ['Open the Songwriter workspace and press 🥁 Beats (or the Beats tab on a phone). Tap a beat and it starts looping.', 'If your song has no chords yet, the beat brings a progression in your key. If it has chords, the band plays yours.', 'Write the words section by section, with the chords over them. Name sections Verse, Chorus and Bridge so the band knows how hard to play them.', 'Under Who plays, switch each player on or off and set its level. Undo puts your previous band back.'] },
+      { h: 'Let the song build', p: ['With Song build on (picking a beat turns it on), each section has an energy from 1 to 5: an intro 2, a verse 3, a pre-chorus 4 and a chorus 5, unless you tap the dots to choose. At 1 it is just hats; at 5 the whole band plays harder. A fill ends each section, a crash opens a big one, a riser swells into a section that lifts, and a song that does not loop ends on one ringing hit.'] },
+      { h: 'Send it', p: ['🔗 Send as a link writes the chords, words, tab, beat, tempo and key into the link itself, after the #. Browsers never send that part to a server, so the song goes only where you send the link. Copy it, share it, or show a QR code to someone in the room. Recordings stay with you: for audio, make a share page in Save & export.'] }
+    ],
+    limits: ['The beats are played by the studio\'s own instruments, not recordings: they follow your key and tempo, and there is nothing to download, but they are not sampled drums.', 'A song link carries the song, not its recordings.', 'Anyone with the link can read the song, as with anything you paste in a chat.'],
+    faq: [
+      ['Can I use the beats in a song I release?', 'Yes. The grooves and progressions were written for this studio, not taken from any recording, so what you make over them is yours.'],
+      ['Is the song uploaded when I send a link?', 'No. The song is written into the link after the #, which browsers never send to a server. It goes wherever you send the link, and nowhere else.'],
+      ['Can I change the drum kit or the bass?', 'Yes. Band ▸ Drums ▸ Kit and Band ▸ Bass ▸ Tone, for any beat or any song.']
+    ],
+    related: ['sing-record-and-tune', 'chords-tab-and-lyrics', 'hum-to-song']
+  },
+  {
+    slug: 'sing-record-and-tune', blurb: 'Sing over the band, keep the best take and put it in key.', ico: '🎤', title: 'Sing, record and tune your voice in your browser',
+    description: 'Record vocal takes over a beat, keep the best one and tune it to the song\'s key, from natural to hard. Free and private, on a phone or a computer.',
+    h1: 'Sing, record and tune your voice', eyebrow: 'Sing',
+    lead: 'Sing over the band, on a phone or a computer. Each take is kept; tune the one you like to the song\'s key, as gently or as hard as you want, and get the original back whenever you like. Your voice never leaves your device.',
+    glance: [['●', 'Takes with a count-in', 'Press ● and sing: the count-in gives you a bar to get ready.'], ['🎯', 'Tune a take', 'Natural, Tight or Hard, in the song\'s key. Off gives back the original, exactly.'], ['🎛', 'Vocal pedals', 'Doubler, harmony, echo, reverb, de-esser, a megaphone and a scream.'], ['📱', 'Made for phones', 'Words, Sing, Beats and Tracks at the bottom of the screen.']],
+    sections: [
+      { h: 'Record a vocal', ol: ['Connect a microphone (Audio input opens first until one is connected). Use headphones so the beat does not end up in your vocal.', 'Set the song\'s key, then press ● (on a phone, the Sing screen). A bar of count-in plays first.', 'Sing; press ● again to stop. Each take is listed, so you can sing it again and keep the best.'] },
+      { h: 'Tune it', p: ['Every vocal take has 🎯 Tune: in the take\'s menu on a computer, on its row under Sing on a phone. Natural moves you most of the way to the note, gently, and keeps your slides and vibrato. Tight is pop-tight. Hard snaps to every note: the modern tuned sound. Off gives back the original exactly, even after a reload. It works out the pitch on your device and corrects it to the song\'s key and scale.'] },
+      { h: 'Shape the sound', p: ['The vocal pedals (Performer ▸ 🎤 Vocal pedals) add a doubler, harmony that follows the note you sing, echo, reverb, a de-esser, a megaphone and a scream. Takes are kept clean, so you can change the pedals afterwards.'] }
+    ],
+    limits: ['Tuning follows the song\'s key: set the key first, or notes outside the scale are pulled to the nearest one in it.', 'Hard tuning is meant to be heard. For a natural result, sing close to the note and use Natural.', 'Without headphones the band can be recorded with you.'],
+    faq: [
+      ['Is my voice uploaded?', 'No. Takes are recorded, tuned and kept in this browser on your device. They leave only when you export or share them.'],
+      ['Can I undo the tuning?', 'Yes. Off gives back the original take exactly, at any time, even after a reload.'],
+      ['Does it work on a phone?', 'Yes. The phone opens on the words, with Sing, Beats and Tracks at the bottom of the screen.']
+    ],
+    related: ['write-a-song-over-a-beat', 'record-guitar-and-voice', 'perform-and-share']
   },
   {
     slug: 'record-guitar-and-voice', blurb: 'Guitar and voice at once, zero-delay effects, takes you can edit.', ico: '🎙', title: 'Record guitar and voice in your browser',
@@ -384,7 +425,8 @@ export function guideLinks(prefix = '') {
 
 /** /llms.txt (llmstxt.org): what the studio is and where its agent tools are, for AI assistants. The tool list comes from docs/AGENT_API.md, so it cannot drift. */
 export function llmsTxt(version, agentApiMd) {
-  const tools = [...agentApiMd.matchAll(/^\| `([a-z_]+)` \| ([^|]+) \| ([^|]+) \|$/gm)].map(m => `- ${m[1]} (${m[2].trim()}; required: ${m[3].trim()})`);
+  const sec = (agentApiMd.split(/^## The tools/m)[1] || '').split(/^## /m)[0];      /* only the tools table: the renamed-tools table has the same shape */
+  const tools = [...sec.matchAll(/^\| `([a-z_]+)` \| ([^|]+) \| ([^|]+) \|$/gm)].map(m => `- ${m[1]} (${m[2].trim()}; required: ${m[3].trim()})`);
   const pages = PAGES.filter(p => !p.unlisted && p.slug !== 'guide').map(p => `- [${p.h1}](${pageUrl(p)}): ${firstLine(p)}`);
   return `# ${SITE.name}
 

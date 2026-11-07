@@ -14,9 +14,9 @@ Record for each run: date · device · operating system · browser and version �
 
 ## 1 · Audio interface or microphone (desktop Chrome or Edge)
 
-Gear: an audio interface with a guitar (a Focusrite Scarlett, say) **or** a USB or built-in microphone.
+Gear: an audio interface with a guitar (any class-compliant one) **or** a USB or built-in microphone.
 
-- [ ] **I/O ▸ Connect** with the interface chosen. The browser asks for the microphone only now. The card changes to *Connected*.
+- [ ] **Audio input ▸ Connect** with the interface chosen (it opens by itself until something is connected, 2.46). The browser asks for the microphone only now. The card changes to *Connected*.
 - [ ] Play or sing. The input meter moves; the level bar in the header Audio button moves.
 - [ ] **Set my level**: play your loudest part for a few seconds. It proposes a trim; accept it. Peaks sit around −12 to −6 dBFS.
 - [ ] **Channels**: with a two-input interface, put the guitar on input 1 and a microphone on input 2. Both meters move independently.
@@ -150,6 +150,20 @@ Checked with invented history and simulated chords. These need real use over rea
 - [ ] **Hexagon colours**: try each swatch and your own three on the start screen and on a projector or TV; is anything hard to read? Do the tabs named for each panel (I/O, Monitor…) read well down the edge, and does a collapsed sidebar list its panels clearly?
 - [ ] **Behind you**: with your own camera and room light, set Camera look to *Me in front (green screen)* and try each of the six backdrops while you play. Do they sit well behind you, do any distract from the playing, and does anything feel too fast or too bright (try Calm)?
 - [ ] **A phone**: Welcome Back fits (the labels stack above their values), and My progress is reachable from More.
+
+## 15 · Simple, the beats, the band's sound, tuning, links and the tour (2.39–2.47)
+
+What the offline measurements cannot judge: how it sounds on real speakers and headphones, and how it feels with a real voice.
+
+- [ ] **Audio first.** In a new private window, pick each workspace: each opens on **Audio input** until you connect. After **Connect**, each opens on its own tab again. Nothing asks for the microphone before you press Connect.
+- [ ] **✦ Simple.** In each workspace, Simple shows that workspace's own panels and tools (USER_GUIDE.md has the table). Choosing **Full Rig** turns Simple off; ✦ Simple there goes back to the last workspace.
+- [ ] **Beats on real speakers and headphones.** Play folk, pop, trap and bossa nova. The kick and the **808 Sub** are felt on speakers without the master clipping; nothing sounds like a toy on laptop speakers; the acoustic kits sound like a kit in a room.
+- [ ] **The guitars (2.46.1).** Folk (steel), ballad (nylon), rock and funk: they sound like guitars, not a harpsichord; the strum mellows as it rings; on headphones the double is two players, one each side, with no hollow, phasey sound when you fold to mono (phone speaker).
+- [ ] **Song build.** A song with an intro, verses and a chorus: the chorus is clearly bigger, fills and the riser lead into it, and a song that does not loop ends on one hit.
+- [ ] **Vocal tuning with a real voice.** Sing a verse slightly off. **Natural** sounds like you, a little better; **Hard** is the obvious tuned effect; **Off** is exactly the original, also after a reload. Try a low voice and a high one.
+- [ ] **Sing on a phone.** In the **Sing** screen, record over a beat with wired headphones and then with none: with none, note how much of the beat is in the take.
+- [ ] **Song links.** Send a link to another phone through two chat apps. It arrives whole (or the send window warned it was long), opens as a new song, and the address bar is cleaned.
+- [ ] **The guided tour (2.47).** On a computer in Simple, in Full Rig and on a phone: every card points at something you can see and reads true; **Esc** leaves it; your song is unchanged.
 
 ## What to send back
 

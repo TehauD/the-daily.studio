@@ -1,6 +1,6 @@
 # Operations runbook
 
-How version 2.13 (v2.13.0) is built, shipped, watched and rolled back. The site is static, so there are no servers to patch and no database to restore.
+How the site is built, shipped, watched and rolled back (written for 2.13; the release checklist in [RELEASE.md](RELEASE.md) and the gaps in [GAPS.md](GAPS.md) are kept current). The site is static, so there are no servers to patch and no database to restore.
 
 ## Moving parts
 

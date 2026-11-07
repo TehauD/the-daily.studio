@@ -2,8 +2,9 @@
    Part 03 · backing band (KS pluck, drums, bass), transport/scheduler, recording / re-amp
    ============================================================ */
 const INST = {
-  Steel: { br: .9, s: .32, pp: .14, t60: 3.0 }, Nylon: { br: .45, s: .45, pp: .2, t60: 2.4 }, Electric: { br: .7, s: .28, pp: .12, t60: 3.4 },
-  'Muted Pluck': { br: .35, s: .5, pp: .2, t60: .55 }, Round: { br: .3, s: .5, pp: .3, t60: 1.6 }, Pick: { br: .75, s: .38, pp: .25, t60: 1.2 }, Sub: { br: .18, s: .5, pp: .3, t60: 2.4 }
+  /* 2.46.1: softer picks and strings that lose their highs as they ring (a near-white pick and little damping sounded like a harpsichord) */
+  Steel: { br: .5, s: .48, pp: .19, t60: 2.6, dp: .3 }, Nylon: { br: .26, s: .5, pp: .24, t60: 2.2, dp: .32 }, Electric: { br: .44, s: .44, pp: .16, t60: 3.0, dp: .14 },
+  'Muted Pluck': { br: .3, s: .5, pp: .2, t60: .55, dp: .3 },      /* dp: extra damping of the highs inside the string, so it mellows as it rings */ Round: { br: .3, s: .5, pp: .3, t60: 1.6 }, Pick: { br: .75, s: .38, pp: .25, t60: 1.2 }, Sub: { br: .18, s: .5, pp: .3, t60: 2.4 }
 };
 const instFor = tk => INST[tk === 'rhythm' ? S.band.compInst : tk === 'lead' ? S.band.leadInst : S.band.bassTone] || INST.Steel;
 
@@ -13,8 +14,7 @@ function buildBand() {
     const body = bq('peaking', 220, .8, 2.5), h = bq('highpass', hp), l = bq('lowpass', lp), out = gn(1);
     chainN(h, body, l, out);
     if (id !== 'bass') { const bc = c.createConvolver(), bw = gn(.5); bc.normalize = false; bc.buffer = guitarBody(c); l.connect(bc); bc.connect(bw); bw.connect(out); E.plBody[id] = bw; }      /* 2.45: a wooden body */
-    if (id === 'rhythm' && c.createStereoPanner) { const pL = c.createStereoPanner(), pR = c.createStereoPanner(), dl = c.createDelay(.05), dg = gn(.82); pL.pan.value = -.75; pR.pan.value = .75; dl.delayTime.value = .014; out.connect(pL); pL.connect(E.tr[id].in); out.connect(dl); dl.connect(dg); dg.connect(pR); pR.connect(E.tr[id].in); }      /* double-tracked, one each side */
-    else out.connect(E.tr[id].in);
+    out.connect(E.tr[id].in);      /* (2.46.1: the rhythm part's double is a second performance, played in strumAt, not a delayed copy of the first) */
     if (id !== 'bass') try { kitSend(out, id === 'rhythm' ? .12 : .16, id); } catch (e) { }
     if (E.worklet) { const n = new AudioWorkletNode(c, 'fw-pluck', { numberOfInputs: 0, numberOfOutputs: 1, outputChannelCount: [2] }); n.connect(h); E.pl[id] = n; }
     else E.pl[id] = { in: h };
@@ -25,10 +25,10 @@ function buildBand() {
 bus.on('audio:ready', buildBand);
 
 function pluck(track, time, midi, vel, o = {}) {
-  const inst = instFor(track), f = mtof(midi), hum = (Math.random() * 2 - 1) * CFG.humanize * .12;
+  const inst = instFor(track), f = mtof(midi) * (o.cents ? Math.pow(2, o.cents / 1200) : 1), hum = (Math.random() * 2 - 1) * CFG.humanize * .12;
   if (E.plBody && E.plBody[track]) { const el = (track === 'rhythm' ? S.band.compInst : S.band.leadInst) === 'Electric'; E.plBody[track].gain.value = el ? .1 : .8; }      /* an electric has no wooden body to speak of */
   vel = clamp(vel * (1 + hum), .05, 1);
-  if (E.worklet) E.pl[track].port.postMessage({ t: 'on', at: time, f, vel, t60: inst.t60 * (o.t60m || 1), br: o.soft ? inst.br * .6 : inst.br, s: inst.s, pp: inst.pp, pan: o.pan || 0, id: o.id, g: o.g || 1, dead: o.dead });
+  if (E.worklet) E.pl[track].port.postMessage({ t: 'on', at: time, f, vel, t60: inst.t60 * (o.t60m || 1), br: o.soft ? inst.br * .6 : inst.br, s: inst.s, pp: inst.pp, dp: inst.dp || 0, pan: o.pan || 0, id: o.id, g: o.g || 1, dead: o.dead });
   else {
     const c = E.ctx, osc = c.createOscillator(), lp = bq('lowpass', Math.min(f * 8, 9000)), g = gn(0), T60 = Math.min(inst.t60 * (o.t60m || 1), 2.2);
     osc.type = 'sawtooth'; osc.frequency.value = f; lp.frequency.setValueAtTime(Math.min(f * 8, 9000), time); lp.frequency.exponentialRampToValueAtTime(Math.max(f * 1.5, 200), time + .5);
@@ -128,10 +128,12 @@ const voicingFor = sym => {
 function strumAt(t, sym, ch, style) {
   const p = parseChord(sym); if (!p) return; const useSym = style.power ? (pcName(p.root, false) + '5') : sym; const v = voicingFor(useSym) || voicingFor(sym); if (!v) return;
   const notes = []; v.frets.forEach((f, i) => { if (f != null) notes.push({ st: i, m: S.tuning[i] + S.capo + f }); });
-  if (style.arp) { const d = +ch; if (!d) return; const n = notes[(d - 1) % notes.length]; pluck('rhythm', t, n.m, .62, { id: 'r' + n.st, pan: (n.st - 2.5) * .05 }); return; }
+  /* double-tracked like a recording: a second performance on the other side, a little late, a few cents off and softer (2.46.1) */
+  const dt = .009 + Math.random() * .012, dc = (Math.random() < .5 ? -1 : 1) * (2 + Math.random() * 3), two = (tt, m, vel, o) => { pluck('rhythm', tt, m, vel, Object.assign({}, o, { pan: -.85 + (o.pan || 0) })); pluck('rhythm', tt + dt + (Math.random() - .5) * .003, m, vel * .82, Object.assign({}, o, { id: 'R' + o.id, pan: .85 + (o.pan || 0), cents: dc })); };
+  if (style.arp) { const d = +ch; if (!d) return; const n = notes[(d - 1) % notes.length]; two(t, n.m, .62, { id: 'r' + n.st, pan: (n.st - 2.5) * .05 }); return; }
   if (!ch || ch === '.') return; const lc = ch.toLowerCase(), down = lc === 'd' || lc === 'm', acc = ch === ch.toUpperCase() ? 1 : 0;
   const order = down ? notes : notes.slice().reverse(), gap = .0105 + Math.random() * .003, take = down ? order : order.slice(0, Math.max(3, order.length - 2));
-  take.forEach((n, k) => pluck('rhythm', t + k * gap, n.m, (lc === 'm' ? .55 : acc ? .85 : .6) * (down ? 1 : .8) * (.92 + Math.random() * .16), { id: 'r' + n.st, dead: lc === 'm' && k > 0 ? true : false, t60m: lc === 'm' ? .3 : 1, pan: (n.st - 2.5) * .06 }));
+  take.forEach((n, k) => two(t + k * gap, n.m, (lc === 'm' ? .55 : acc ? .85 : .6) * (down ? 1 : .8) * (.92 + Math.random() * .16), { id: 'r' + n.st, dead: lc === 'm' && k > 0 ? true : false, t60m: lc === 'm' ? .3 : 1, pan: (n.st - 2.5) * .06 }));
 }
 const LEGATO = new Set(['h', 'p', '/', '\\']);
 function playTabNote(bar, n, t, dur) {

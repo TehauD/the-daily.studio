@@ -91,6 +91,14 @@ suite('e2e-privacy', async t => {
     ok(YV.n === 1 && YV.playing, 'Your video (2.19) is kept in the page’s own database and played from there');
     const RP = await p.evaluate(() => window.__daily.reportText());
     ok(/problem report/.test(RP) && !/test-artist|venmo/i.test(RP), 'the problem report (2.19.1) is made in the page, without the tip link');
+    /* 2.39–2.46 (added in 2.47): a beat with Song build, a song link made and read back, and a take tuned and put back, all in the page */
+    const NEW = await p.evaluate(async () => {
+      const D = window.__daily; D.beatUse('trap', { play: true, quiet: true }); await new Promise(r => setTimeout(r, 1500)); const beat = D.S.band.beat === 'trap' && D.S.band.build && D.T.playing; D.stopPlay();
+      const link = await D.slLink(), back = await D.slRead(link), tk = D.TAKES[0]; let tuned = false, orig = false;
+      if (tk) { const before = tk.dry.slice(0, 4096); await D.room('tune'); await D.tuneTake(tk, 'natural'); tuned = tk.tune === 'natural'; await D.tuneTake(tk, 'off'); orig = tk.dry.slice(0, 4096).every((v, i) => v === before[i]); }
+      return { beat, link: /#s=1/.test(link) && back.title === D.S.title, tuned, orig };
+    });
+    ok(NEW.beat && NEW.link && NEW.tuned && NEW.orig, 'a beat with Song build (2.39, 2.44), a song link (2.40) and vocal tuning (2.43) all run in the page (beat ' + NEW.beat + ', link ' + NEW.link + ', tuned ' + NEW.tuned + ', original back ' + NEW.orig + ')');
     await p.evaluate(() => { const D = window.__daily; D.vzSetMode('hex'); D.CFG.tip.on = false; });
 
     // the shipped page loads nothing from another site (links the visitor clicks are navigations, not loads)

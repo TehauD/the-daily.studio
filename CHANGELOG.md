@@ -2,6 +2,118 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.47.0 — 2026-11-07 — The tutorials, guides and licensing catch up
+
+A release to close the gaps that 2.39–2.46.1 left in the tutorials, the documents, the licensing register and the tests, and to start a register of what is still open: [docs/GAPS.md](docs/GAPS.md). Nothing is removed.
+
+### Tutorials
+- **A new guided tour on a computer.** It now shows:
+  - the workspaces and ✦ Simple;
+  - connecting your input (Audio input opens first until one is connected);
+  - play and record, the workspace's tools and the tabs;
+  - the beats and the band, with Song build;
+  - writing words, chords and tab;
+  - recording, editing and 🎯 tuning a take;
+  - song details, then saving, sending and sharing.
+
+  In ✦ Simple that is the whole tour, 14 cards. In the Full Rig it adds the Rig and pedalboard, tones, the fretboard, the tuner, stems, transcription and the stage, for 21. The old tour was guitar-first, named a "latency chip" that moved in 2.38.1, and named a brand in its first step.
+- **A new phone tour.** It follows the phone's bottom bar (Words, Sing, Beats, Tracks, More), then the guitar and the stage under More: 11 cards. The old one taught the sections phones had before 2.41.
+- **Two new guide pages** on the site:
+  - *Write a song over a beat*: beats, kits, Song build and sending a link;
+  - *Sing, record and tune your voice*: takes, 🎯 Tune and the vocal pedals.
+- **Getting started** now explains the workspaces, ✦ Simple, connecting first and the tour. The guide's *New lately* lists 2.40–2.46.
+
+### Documents
+- **USER_GUIDE.md:**
+  - new: a *Guided tour* section, and a table of each workspace's panels and tools in Simple;
+  - the 2.46.1 guitar is described;
+  - corrected: the first visit now opens the Songwriter, not the Performer, and the phone records from Sing, not *Play*;
+  - the contents line is complete.
+- **README.md:**
+  - highlights for 2.39–2.46.1, and a current Simple row;
+  - *Your first five minutes* now starts with a beat, the words, a take, tuning and a link;
+  - the panel table is current;
+  - the roadmap no longer lists five things that have shipped.
+- **AUDIO.md:** audio first, and how the band, Song build and vocal tuning are made.
+- **SECURITY_MODEL.md:** song links as untrusted input, the rooms and their integrity hashes, tuned takes, the phone's microphone, and the wider agent tools.
+- **TESTING.md:** every suite is listed (sixteen were missing).
+- **HARDWARE_CHECKLIST.md:** a new section for what only ears and real devices can judge.
+- **RELEASE.md:** version-neutral, with smoke tests for song links, rooms, beats and tuning.
+- **The documentation index:** lists every document, including LICENSING, GITHUB, TERMS and GAPS.
+
+### Licensing, privacy and terms
+- **LICENSING.md** (audited for 2.47.0):
+  - the methods behind vocal tuning (TD-PSOLA) and the 2.46.1 guitar (the Jaffe–Smith extensions of Karplus–Strong) are credited;
+  - the 2.45 instruments are described as code, with nothing sampled or measured from anyone else;
+  - a dates-only note on patents (none searched; the early ones have run their term);
+  - "808" and "909" are recorded as style names, with an open item for the maintainer;
+  - the guide's page count is corrected, and so is the claim that `/legal/` has no terms.
+- **THIRD_PARTY_NOTICES.md:** the two new citations and the style-name note.
+- **PRIVACY.md:**
+  - rows for vocal tuning, singing on a phone and the band;
+  - corrected: the offline copy fetches every room when it installs, not the first time each is used;
+  - checked against 2.47.0.
+- **TERMS.md** (updated 7 November 2026): the beats and the band are yours to use, and a song link carries the song itself. Both are under *Your content*, so the sharing terms you confirm are unchanged and nobody is asked again.
+
+### For AI agents
+- **`set_band`** can pick a beat and set:
+  - the drum kit;
+  - the bass sound (including the 808 Sub);
+  - the keys and their sound;
+  - the rhythm guitar (steel, nylon or electric);
+  - Song build.
+- **`edit_section`** can set a section's energy (1 to 5, or 0 for the one its name suggests).
+- These are new optional inputs, so the API stays at version 2.
+- **Fixed:**
+  - `llms.txt` listed the renamed `open_shower_mode` as a tool, on a garbled line;
+  - one answer still suggested `open_shower_mode`.
+
+### Tests
+- **New `e2e-tour`** (13 checks). The tour is walked in ✦ Simple, in the Full Rig and on a phone. Every step must find what it points at, the card must be fully on screen, the words must hold no brand names or moved controls, and the song must be unchanged.
+- **`e2e-agent`** (70 checks) adds a beat, the kit, the sounds and Song build through `set_band`, and a section's energy.
+- **`e2e-privacy`** (42 checks): its session now includes a beat with Song build, a song link and a tuned take, still with no request to any other site.
+- **`verify-site`** checks that `llms.txt` lists only real tools.
+- **`e2e` and `mobile`:** the tour step counts now allow the new tours (12–29 cards on a computer, 9–15 on a phone).
+
+## 2.46.1 — 2026-11-07 — The guitar, not a harpsichord
+
+### Fixed
+- **The band's guitars sounded like a harpsichord.** Measured on a strummed G chord, three causes, all fixed:
+  - **A near-white pick:** the pluck's burst now goes through two gentle filters, with the pick a little further from the bridge. Treble in the attack fell from 40% to about 21% on steel and from 31% to 13% on nylon.
+  - **Strings that kept their highs:** the string loop has natural averaging plus a little extra damping per instrument (nylon the most, electric the least), so the highs fade as a real string's do. The treble still there half a second after the strum fell from about 10% to under 4%.
+  - **A doubled copy:** 2.45's double-tracking repeated the same strum 14 ms later, which combs the sound the way a harpsichord's doubled strings do (correlation 0.48 at 14 ms). The second take is now its own performance: 9–21 ms behind, a few cents off and a little softer, panned to the other side. Correlation is now about 0.
+- **Tuning:** the string loop's length now accounts for each filter's delay at the note's own frequency. Notes are within half a cent, low and high (the first try was 4–16 cents flat).
+
+### Tests
+- `e2e-instruments` (13 checks) adds:
+  - highs that fade (steel under 7% and nylon under 4% of the sound above 2.5 kHz half a second on);
+  - no comb from a copied double;
+  - a softer pick;
+  - tuning within 3 cents, low and high.
+
+## 2.46.0 — 2026-11-07 — Simple in every workspace; audio first
+
+### Changed
+- **✦ Simple now simplifies the workspace you are in, instead of moving you to Songwriter.** Every workspace stays in the goal bar, and each keeps its own few panels and tools:
+  - **Songwriter:** Write, Band, Save · Beats, Paste chords, Pads, Keys, Send as a link.
+  - **Performer:** Stage, Band, Save · Record video, Camera, Vocal pedals, Replay.
+  - **Creator Studio:** Stage, Save · Record MP4, Video shape, Replay, Thumbnail, Export.
+  - **Practice:** Fretboard, Write, Band · −5 / BPM / +5, Teach me this song, Scales & ear.
+  - **Teacher:** Write, Band · Learn, Today, This song, By ear, Riffs.
+- **Full Rig is the one workspace with everything.**
+  - Choosing it turns Simple off.
+  - Turning Simple on from Full Rig takes you to the last workspace you used.
+  - Turning Simple off again brings Full Rig back exactly as it was.
+- **Visuals in Simple** shows four core looks (Hex Resonance, Concert, Chord Bloom, Prompter); **More looks…** shows the rest.
+- **Audio first:** until an input is connected, every workspace opens its sidebar on the **Audio input** tab, because connecting comes before anything else. Once an input is connected, each workspace opens on its own tab again.
+
+### Tests
+- `e2e-simple`: 34 checks:
+  - Simple stays in Performer with its panels and tools;
+  - every workspace keeps its essentials;
+  - Full Rig turns Simple off, and the round trip back to Full Rig is exact.
+- `e2e-goals`: 46 checks, with every workspace opening on Audio input until an input is connected; each workspace's own shape is checked with an input connected.
+
 ## 2.45.0 — 2026-11-07 — Better instruments
 
 ### Changed

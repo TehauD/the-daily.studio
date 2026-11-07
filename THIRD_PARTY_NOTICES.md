@@ -17,8 +17,10 @@ What was checked: a text search of the 0.10.14 package found no analytics, beaco
 - **YIN** fundamental-frequency estimation: A. de Cheveigné and H. Kawahara, *YIN, a fundamental frequency estimator for speech and music*, JASA 111(4), 2002.
 - **Harmonic / percussive separation** by median filtering: D. Fitzgerald, *Harmonic/Percussive Separation using Median Filtering*, DAFx-10, 2010.
 - **Karplus–Strong** plucked-string synthesis: K. Karplus and A. Strong, *Digital Synthesis of Plucked-String and Drum Timbres*, Computer Music Journal 7(2), 1983.
+- **Extensions of the Karplus–Strong algorithm** (pick-position and dynamic filters, loop damping, fine tuning), used for the band's guitars since 2.46.1: D. A. Jaffe and J. O. Smith, *Extensions of the Karplus-Strong Plucked-String Algorithm*, Computer Music Journal 7(2), 1983.
+- **TD-PSOLA** pitch shifting, used by vocal tuning (2.43): E. Moulines and F. Charpentier, *Pitch-synchronous waveform processing techniques for text-to-speech synthesis using diphones*, Speech Communication 9(5–6), 1990.
 
-There are no trained neural-network weights in this project (the source was searched for model files, embedded tensors and large numeric tables: none). The Neural Map visualisation starts empty and learns from what is played in the session (a small Markov next-chord predictor and an embedding cloud). Stem separation, chord and tab extraction and the band are signal-processing code written for this project. No pretrained checkpoint is bundled or downloaded, other than the two optional MediaPipe models above.
+There are no trained neural-network weights in this project (the source was searched for model files, embedded tensors and large numeric tables: none). The Neural Map visualisation starts empty and learns from what is played in the session (a small Markov next-chord predictor and an embedding cloud). Stem separation, chord and tab extraction and the band are signal-processing code written for this project. No pretrained checkpoint is bundled or downloaded, other than the two optional MediaPipe models above. The band's instruments, drum kits, drum machines, beats and rooms (2.39–2.46.1) are synthesised by code written for this project, with no samples or impulse responses from anyone else.
 
 ## Platform
 
@@ -47,7 +49,7 @@ No recording of anyone else's music and no one else's lyrics are bundled. The bu
 
 ## Names and trademarks
 
-Ultimate Guitar, Focusrite, Scarlett, MIDI, Google, MediaPipe, Cloudflare and any amplifier, pedal or software names that appear are trademarks of their owners and are used only to describe compatibility. This project is independent and is not affiliated with or endorsed by them.
+Ultimate Guitar, Focusrite, Scarlett, MIDI, Google, MediaPipe, Cloudflare and any amplifier, pedal or software names that appear are trademarks of their owners and are used only to describe compatibility. "808", "909" and "Boom Bap" name musical styles of drum sound, as producers use them; they do not refer to any manufacturer's product, and none is reproduced. This project is independent and is not affiliated with or endorsed by them.
 
 ## Assistance
 

@@ -13,8 +13,14 @@
    ============================================================ */
 /* what Simple keeps on the panel strip (and whatever is open, and the backing track once one is loaded), and the tones it offers */
 const SIMPLE_TABS = ['tab', 'band', 'vis', 'exp'];
-/* the Songwriter tools Simple keeps (2.39) */
-const SIMPLE_TOOLS = ['gtBeats', 'gtSheet', 'gtPads', 'gtKeys', 'gtLink'];
+/* 2.46: Simple simplifies every workspace but Full Rig. Each keeps its own few panels and tools; Full Rig always has everything */
+const SIMPLE_GOAL_TABS = { songwriter: ['tab', 'band', 'exp'], performer: ['vis', 'band', 'exp'], creator: ['vis', 'exp'], practice: ['fret', 'tab', 'band'], teacher: ['tab', 'band'] };
+const SIMPLE_GOAL_TOOLS = {
+  songwriter: ['gtBeats', 'gtSheet', 'gtPads', 'gtKeys', 'gtLink'], performer: ['gtVideo', 'gtCam', 'gtVox', 'gtReplay'], creator: ['gtVideo', 'gtFmt', 'gtReplay', 'gtThumb', 'gtExp'],
+  practice: ['gtSlow', 'gtBpm', 'gtFast', 'gtSongLearn', 'gtShed'], teacher: ['gtLearn', 'gtToday', 'gtSong', 'gtEar', 'gtRiffs'] };
+const SIMPLE_TOOLS = SIMPLE_GOAL_TOOLS.songwriter;
+/** the panels Simple keeps in the workspace in use */
+const simpleTabs = () => { const g = typeof goalNow === 'function' && goalNow(); return (g && SIMPLE_GOAL_TABS[g.id]) || SIMPLE_TABS; };
 const SIMPLE_TONES = ['Crystal Clean', 'Busker Corner', 'Edge of Breakup', 'Classic Crunch', 'Singing Lead', 'Tight Metal Rhythm', 'Shimmer Cathedral', 'Direct (No FX)'];
 if (CFG.simple == null) { CFG.simple = !store.get('started', false) && !store.get('song', null); saveCfg(); }
 function simpleApply() {
@@ -27,11 +33,12 @@ function simpleApply() {
 function simpleSet(on, quiet) {
   const was = !!CFG.simple, back = !on && was ? CFG.preSimple : null, desk = typeof isDesk !== 'function' || isDesk();
   CFG.simple = !!on; if (on !== was) CFG.preSimple = null; saveCfg(); simpleApply();
-  /* Simple lives in the Songwriter workspace: going in keeps a note of the workspace you were in, coming out puts it back exactly */
-  if (on && !was && desk) { const g = goalNow(); if (!g || g.id !== 'songwriter') { CFG.preSimple = simpleLaySnap(); saveCfg(); goalGo('songwriter', { keepZoom: true }); } }
+  /* 2.46: Simple stays in the workspace you are in. Only Full Rig (everything, always) is left: for the last workspace you used, and Simple off
+     brings Full Rig back exactly as it was */
+  if (on && !was && desk) { const g = goalNow(); if (!g || g.id === 'fullrig') { CFG.preSimple = simpleLaySnap(); saveCfg(); goalGo(CFG.lastGoal && CFG.lastGoal !== 'fullrig' ? CFG.lastGoal : 'songwriter', { keepZoom: true }); } }
   if (back && desk) { try { simpleLayBack(back); } catch (e) { console.warn('simple', e); } }
   try { rebuildTabs(); } catch (e) { } try { UI.tAll = false; renderTones(); } catch (e) { } try { UI.bAll = false; renderBand(); goalBarBuild(); } catch (e) { }
-  if (!quiet) toast(on ? 'Simple: just the essentials. Everything else is one press away (✦ Simple, top right).' : 'Every tool is showing. ✦ Simple tidies up again.', 'ok');
+  if (!quiet) toast(on ? 'Simple: just the essentials of ' + ((goalNow() || {}).name || 'this workspace') + '. Everything else is one press away (✦ Simple, top right).' : 'Every tool is showing. ✦ Simple tidies up again.', 'ok');
   bus.emit('simple', !!on); setTimeout(() => { try { tlSize(); } catch (e) { } window.dispatchEvent(new Event('resize')); }, 60);
 }
 /** the workspace as it is (the layout, the panel order, the open panels), and putting it back */

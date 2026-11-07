@@ -78,7 +78,7 @@ const DEV = { phone: { viewport: { width: 390, height: 844 }, deviceScaleFactor:
   p = await open('phone', () => { window.__wl = 0; Object.defineProperty(navigator, 'wakeLock', { configurable: true, value: { request: async () => { window.__wl++; return { release: async () => { }, addEventListener() { } }; } } }); });
   await p.tap('.mmore'); await wait(300); await p.tap('.msheet .mtile:has-text("Guided tour")'); await wait(700);
   let steps = 0, off = 0; while (await p.$('#tour')) { steps++; const r = await p.evaluate(() => { const c = document.querySelector('.tour-card').getBoundingClientRect(); return c.left >= 0 && c.top >= 0 && c.right <= innerWidth + 1 && c.bottom <= innerHeight + 1; }); if (!r) off++; const nxt = await p.$('.tour-card .btn.primary'); await nxt.tap(); await wait(520); if (steps > 40) break; }
-  ok(steps >= 15 && steps <= 20 && off === 0, `phone tour walked ${steps} steps, every card on screen, then closed`);
+  ok(steps >= 9 && steps <= 15 && off === 0, `phone tour walked ${steps} steps, every card on screen, then closed`);
   await goto(p, 'guitar', 'rig');
   await p.tap('#mtrans .btn.play'); await wait(2500);
   ok(await p.evaluate(() => window.__wl) >= 1, 'screen wake lock requested while playing'); await p.tap('#mtrans .btn.play');
