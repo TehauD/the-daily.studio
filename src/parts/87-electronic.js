@@ -45,7 +45,7 @@ bus.on('transport', () => { if (!T.playing && MO.n) moPanic(); });
 const moLocal = part => { const M = CFG.midiOut; return !(M.on && M.parts[part] && moDev()) || M.local; };
 /** the keys player and the keys part go through here: out to MIDI and/or the studio's own sound */
 function kyOut(t, m, v, dur, sound) { moNote('keys', t, m, v, dur); if (moLocal('keys')) return keysVoice(t, m, v, dur, sound); return null; }
-function bassOut(t, m, v, dur) { moNote('bass', t, m, v, dur); if (moLocal('bass')) pluck('bass', t, m, v, { id: 'b', pan: 0 }); }
+function bassOut(t, m, v, dur) { moNote('bass', t, m, v, dur); if (moLocal('bass')) { if (S.band.bassTone === '808 Sub') sub808(t, m, v, dur); else pluck('bass', t, m, v, { id: 'b', pan: 0 }); } }
 /** drums: out as General MIDI notes; true when the studio's own drum should stay quiet */
 function moDrum(row, t, v) { const sent = moNote('drums', t, GM_DRUM[row] || 37, [0, .5, .8, 1][v] || .8, .08); return sent && !CFG.midiOut.local; }
 function moSettings() {

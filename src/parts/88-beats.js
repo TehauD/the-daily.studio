@@ -8,17 +8,23 @@
    ============================================================ */
 const BEATS = [
   { id: 'folk', name: 'Easy Folk', feel: 'Acoustic', bpm: 92, kit: 'Acoustic', pat: 'Folk Backbeat', bass: 'Root–Fifth', tone: 'Round', comp: 'Folk D-DU-UDU', inst: 'Steel', prog: 'I V vi IV' },
-  { id: 'pop', name: 'Pop Drive', feel: 'Pop', bpm: 108, kit: 'Acoustic', pat: 'Pop Groove', bass: 'Eighths', tone: 'Pick', comp: 'Pop 8ths', inst: 'Electric', keys: 'Pad (held)', sound: 'Pad', prog: 'vi IV I V' },
+  { id: 'pop', name: 'Pop Drive', feel: 'Pop', bpm: 108, kit: '909', pat: 'Pop Groove', bass: 'Eighths', tone: 'Pick', comp: 'Pop 8ths', inst: 'Electric', keys: 'Pad (held)', sound: 'Pad', prog: 'vi IV I V' },
   { id: 'rock', name: 'Garage Rock', feel: 'Rock', bpm: 126, kit: 'Rock Room', pat: 'Rock 8ths', bass: 'Eighths', tone: 'Pick', comp: 'Power Chug 8ths', inst: 'Electric', prog: 'i VI III VII', minor: 1 },
-  { id: 'lofi', name: 'Lo-fi Nod', feel: 'Lo-fi hip-hop', bpm: 82, swing: .22, kit: 'Brush (soft)', bass: 'Syncopated', tone: 'Sub', keys: 'Broken chords', sound: 'Electric piano', prog: 'ii7 V7 Imaj7 vi7',
+  { id: 'lofi', name: 'Lo-fi Nod', feel: 'Lo-fi hip-hop', bpm: 82, swing: .22, kit: 'Boom Bap', bass: 'Syncopated', tone: 'Sub', keys: 'Broken chords', sound: 'Electric piano', prog: 'ii7 V7 Imaj7 vi7',
     rows: ['X......x..X.....', '....X.......X..g', 'x.x.x.x.x.x.x.xg', '................', '................', '................'] },
-  { id: 'night', name: 'Night Drive', feel: 'Dance', bpm: 122, kit: '808', pat: 'Four on the Floor', bass: 'Octave Pump', tone: 'Sub', keys: 'Off-beat stabs', sound: 'Synth lead', prog: 'i VI III VII', minor: 1 },
-  { id: 'trap', name: 'Trap Glide', feel: 'Trap', bpm: 140, kit: '808', bass: 'Follow the Kick', tone: 'Sub', keys: 'Pad (held)', sound: 'Pad', prog: 'i VI iv V', minor: 1,
+  { id: 'night', name: 'Night Drive', feel: 'Dance', bpm: 122, kit: '909', pat: 'Four on the Floor', bass: 'Octave Pump', tone: '808 Sub', keys: 'Off-beat stabs', sound: 'Synth lead', prog: 'i VI III VII', minor: 1 },
+  { id: 'trap', name: 'Trap Glide', feel: 'Trap', bpm: 140, kit: '808', bass: 'Follow the Kick', tone: '808 Sub', keys: 'Pad (held)', sound: 'Pad', prog: 'i VI iv V', minor: 1,
     rows: ['X.....x...x.....X.......x..x....', '........X...............X.......', 'x.x.x.x.xxx.x.x.x.x.x.x.x.xxxxxx', '..............x...............x.', '........x...............x.......', '................................'] },
   { id: 'island', name: 'Island Sway', feel: 'Reggae', bpm: 76, kit: 'Acoustic', pat: 'Reggae One-Drop', bass: 'Reggae Dub', tone: 'Round', comp: 'Reggae Skank', inst: 'Electric', keys: 'Off-beat stabs', sound: 'Organ', prog: 'I IV V IV' },
   { id: 'blues', name: 'Slow Burn', feel: 'Blues shuffle', bpm: 96, swing: .33, kit: 'Acoustic', pat: 'Blues Shuffle', bass: 'Walking', tone: 'Round', comp: 'Down 4s', inst: 'Electric', prog: 'I7 IV7 I7 I7 IV7 IV7 I7 I7 V7 IV7 I7 V7' },
   { id: 'ballad', name: 'Quiet Ballad', feel: 'Ballad', bpm: 70, kit: 'Brush (soft)', pat: 'Ballad Half-Time', bass: 'Root Whole', tone: 'Round', comp: 'Ballad Arpeggio', inst: 'Nylon', keys: 'Pad (held)', sound: 'Piano', prog: 'I vi IV V' },
   { id: 'funk', name: 'Funk Pocket', feel: 'Funk', bpm: 100, kit: 'Acoustic', pat: 'Funk 16ths', bass: 'Syncopated', tone: 'Pick', comp: 'Funk Chuck', inst: 'Electric', keys: 'Off-beat stabs', sound: 'Electric piano', prog: 'i7 IV7 i7 IV7', minor: 1 },
+  { id: 'drill', name: 'Drill Night', feel: 'Drill', bpm: 142, kit: '808', bass: 'Follow the Kick', tone: '808 Sub', keys: 'Pad (held)', sound: 'Pad', prog: 'i iv VI v', minor: 1,
+    rows: ['X......x..x.....X.....x...x.x...', '........X...............X..g....', 'x..x..x.x..x..x.x..x..x.x.x.xxxx', '................................', '........x...............x.......', '................................'] },
+  { id: 'afro', name: 'Afro Sunset', feel: 'Afrobeats', bpm: 104, kit: '909', bass: 'Syncopated', tone: 'Round', keys: 'Off-beat stabs', sound: 'Electric piano', prog: 'I V vi IV',
+    rows: ['X...x...X...x...', '................', 'x.xxx.xxx.xxx.xx', '...............x', '......x.....x...', '..x....x..x...x.'] },
+  { id: 'rnb', name: 'Late R&B', feel: 'R&B', bpm: 68, kit: '808', bass: 'Syncopated', tone: '808 Sub', keys: 'Broken chords', sound: 'Electric piano', prog: 'Imaj7 vi7 ii7 V7',
+    rows: ['X......x.X......', '....X.......X...', 'x.x.x.x.x.x.xxx.', '................', '....x.......x...', '................'] },
   { id: 'bossa', name: 'Bossa Evening', feel: 'Bossa nova', bpm: 128, kit: 'Brush (soft)', pat: 'Bossa Nova', bass: 'Root–Fifth', tone: 'Round', comp: 'Travis Roll', inst: 'Nylon', prog: 'ii7 V7 Imaj7 Imaj7' }
 ];
 const BEAT_CH = { '.': 0, g: 1, x: 2, X: 3 };
@@ -36,7 +42,7 @@ function beatChords(b) {
 /** use beat `id`: the band and the tempo, then (unless o.play is false) loop it; one undo puts everything back */
 function beatUse(id, o = {}) {
   const b = BEATS.find(x => x.id === id); if (!b) return false; const B = S.band, { L, pat } = beatRows(b);
-  Object.assign(B, { beat: b.id, drumsOn: true, kit: b.kit, patName: b.pat || b.name, pat, drumLen: L, bassOn: !isBass(), bassStyle: b.bass, bassTone: b.tone, compOn: !!b.comp, keysOn: !!b.keys });
+  Object.assign(B, { beat: b.id, build: true, drumsOn: true, kit: b.kit, patName: b.pat || b.name, pat, drumLen: L, bassOn: !isBass(), bassStyle: b.bass, bassTone: b.tone, compOn: !!b.comp, keysOn: !!b.keys });
   if (b.comp) { B.compStyle = b.comp; B.compInst = b.inst; } if (b.keys) { B.keysStyle = b.keys; B.keysSound = b.sound; }
   if (!S.mix.keys) S.mix.keys = { g: .7, p: .1, m: 0, s: 0 };
   S.bpm = b.bpm; S.swing = b.swing || 0; const fresh = beatChords(b); T.bars = null;
@@ -64,6 +70,6 @@ function beatsMixer() {
 /** Simple's Band panel: the beats and who plays; everything else one press away */
 function bandSimple(bx) {
   bx.append(h('div', { class: 'card' }, h('h4', {}, 'Pick a beat'), h('div', { class: 'card-b' }, h('p', { class: 'tiny muted bt-how' }, 'Tap one and it plays: drums, bass and chords, in your song’s key. Play or sing over it, and press ● to record. Undo puts your band back.'), beatsShelf())),
-    h('div', { class: 'card' }, h('h4', {}, 'Who plays'), h('div', { class: 'card-b' }, beatsMixer())),
+    h('div', { class: 'card' }, h('h4', {}, 'Who plays'), h('div', { class: 'card-b' }, beatsMixer())), buildCard(),
     h('button', { class: 'btn sm', id: 'bandAll', type: 'button', onclick: () => { UI.bAll = true; renderBand(); } }, 'Show every band setting'));
 }

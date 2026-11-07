@@ -2,7 +2,7 @@
 
 A practical walkthrough of every panel. For a ten-minute orientation, press **?** in the app and choose **Take the guided tour**.
 
-Contents: [Song links](#-send-a-song-as-a-link-240) · [Beats](#-beats-239) · [Getting started](#getting-started-and-guided-sessions-27) · [Show setup](#show-setup-26) · [Layouts](#layout-and-themes) · [Monitor widgets](#monitor-widgets-26) · [Concert](#concert-24) · [Voice](#voice-pitch-ribbon-your-range-find-my-key-23) · [Cut, silence and punch in](#cut-silence-and-punch-in-23) · [Heatmap](#heatmap-23) · [Performer backdrop](#performer-backdrop-23) · [Clips and the mix](#clips-move-trim-fade-split-22) · [Fast WAV render](#faster-than-real-time-wav-render-22) · [Open a MIDI file](#open-a-midi-file-22) · [Keep songs safe](#keep-songs-safe-22) · [Perform, share and back up](#perform-share-and-back-up-20) · [Getting sound](#getting-sound-in-and-out) · [Tones and the Rig](#tones-and-the-rig) · [The band](#the-band) · [Arrangement and recording](#arrangement-and-recording) · [Tab editor](#tab-editor) · [Song, tunings and capo](#song-tunings-and-capo) · [Fretboard and tuner](#fretboard-and-tuner) · [Transcribe](#transcribe-audio-to-tab) · [Stems](#stems-and-backing-tracks) · [Neural map](#neural-map) · [Visuals and Stage](#visuals-and-stage) · [Vision](#vision-lab) · [Research](#research-panel) · [Export, history and backup](#export-history-and-backup) · [MIDI](#midi) · [Layout](#layout-and-themes)
+Contents: [Songs that build](#-songs-that-build-244) · [Vocal tuning](#-vocal-tuning-243) · [Song links](#-send-a-song-as-a-link-240) · [Beats](#-beats-239) · [Getting started](#getting-started-and-guided-sessions-27) · [Show setup](#show-setup-26) · [Layouts](#layout-and-themes) · [Monitor widgets](#monitor-widgets-26) · [Concert](#concert-24) · [Voice](#voice-pitch-ribbon-your-range-find-my-key-23) · [Cut, silence and punch in](#cut-silence-and-punch-in-23) · [Heatmap](#heatmap-23) · [Performer backdrop](#performer-backdrop-23) · [Clips and the mix](#clips-move-trim-fade-split-22) · [Fast WAV render](#faster-than-real-time-wav-render-22) · [Open a MIDI file](#open-a-midi-file-22) · [Keep songs safe](#keep-songs-safe-22) · [Perform, share and back up](#perform-share-and-back-up-20) · [Getting sound](#getting-sound-in-and-out) · [Tones and the Rig](#tones-and-the-rig) · [The band](#the-band) · [Arrangement and recording](#arrangement-and-recording) · [Tab editor](#tab-editor) · [Song, tunings and capo](#song-tunings-and-capo) · [Fretboard and tuner](#fretboard-and-tuner) · [Transcribe](#transcribe-audio-to-tab) · [Stems](#stems-and-backing-tracks) · [Neural map](#neural-map) · [Visuals and Stage](#visuals-and-stage) · [Vision](#vision-lab) · [Research](#research-panel) · [Export, history and backup](#export-history-and-backup) · [MIDI](#midi) · [Layout](#layout-and-themes)
 
 ---
 
@@ -21,6 +21,35 @@ Contents: [Song links](#-send-a-song-as-a-link-240) · [Beats](#-beats-239) · [
 - **Simple is the Songwriter (2.39):** Simple opens the Songwriter workspace, and its goal bar is just *Make a song*: **🥁 Beats**, Paste chords, Pads, Keys and **🔗 Send as a link**. If you switch Simple on from another workspace, switching it off takes you back there exactly as you left it.
 - **The band in Simple (2.39):** the Band panel is the beats and who plays (drums, bass, guitar and keys, each a switch and a level). **Show every band setting** brings the rest back.
 
+## 🎹 Better instruments (2.45)
+
+The band's instruments were rebuilt to sound like the real thing (still made on your device, with no samples):
+- **Piano:** shimmering double strings, bright on the hammer and mellowing as the note rings.
+- **Electric piano:** the bark of the tine and a gentle auto-pan tremolo.
+- **Pad:** wide and slowly breathing.
+- **Strings** (new): a bowed section with vibrato that comes in after the bow.
+- **Acoustic guitars:** a wooden body.
+- **Rhythm guitar:** double-tracked, one take each side.
+- **A small room** around the keys and guitars.
+
+## 📈 Songs that build (2.44)
+
+With **Song build** on (Band panel, or under the beats on a phone; picking a beat turns it on), the band plays each section at its own energy:
+- **Energy 1 to 5** per section. Without your own setting, a section takes it from its name: intro 2, verse 3, pre-chorus 4, chorus 5, bridge 2, outro 2. Tap a dot to change it.
+- **1** is just hats, **3** the groove as written, **5** everything, louder. Quieter sections sit under the chorus.
+- A **fill** ends each section, a **crash** opens a big one, and a **riser** swells into a section that lifts.
+- A song that is not looping **ends** on one ringing hit.
+
+## 🎯 Vocal tuning (2.43)
+
+Every vocal take has **🎯 Tune** (in the take's menu on a computer, on its row under **Sing** on a phone). It corrects the pitch to the song's key and scale:
+- **Natural** moves you most of the way to the note, gently, and keeps your slides and vibrato.
+- **Tight** is pop-tight.
+- **Hard** snaps to every note: the modern "tuned" sound.
+- **Off** gives back the original, exactly. It is kept even after a reload.
+
+Set the song's key first (the tuning follows it). Nothing is sent anywhere; it is worked out on your device.
+
 ## 🔗 Send a song as a link (2.40)
 
 **🔗 Send as a link** (Songwriter tools, and Save & export) turns the song into a link you can paste in a message. Whoever opens it gets the song, ready to play.
@@ -33,7 +62,8 @@ Contents: [Song links](#-send-a-song-as-a-link-240) · [Beats](#-beats-239) · [
 ## 🥁 Beats (2.39)
 
 A beat is a ready band to play, sing or write over. Tap one at the top of the **Band** panel (or **🥁 Beats** in the Songwriter tools) and it starts looping: drums, bass, and guitar or keys where the style wants them, at the beat's tempo.
-- **Eleven styles:** folk, pop, rock, lo-fi hip-hop, dance, trap, reggae, blues shuffle, ballad, funk and bossa nova.
+- **Fourteen styles:** folk, pop, rock, lo-fi hip-hop, dance, trap, drill, Afrobeats, R&B, reggae, blues shuffle, ballad, funk and bossa nova.
+- **Drum machines (2.42):** the modern beats play on the **808**, **909** and **Boom Bap** kits (Band ▸ Drums ▸ Kit), and trap, drill, dance and R&B use the **808 Sub** bass (Band ▸ Bass ▸ Tone): a long, heavy sub that slides between notes. You can pick any kit or the 808 Sub for any song. The acoustic kits (Acoustic, Rock Room, Brush) were rebuilt too: a real-sounding kick, snare and hats in a small room, with a cross-stick on the rim row and hits that vary like a drummer's.
 - **Your chords:** if the song has none yet, the beat brings a progression in your song's key. If it has chords, the beat plays yours.
 - **Mix on top:** play or sing over it, press ● to record, and set each player's level (or switch them off) under *Who plays*.
 - **Undo** puts your previous band, tempo and chords back.

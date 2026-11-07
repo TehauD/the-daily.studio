@@ -68,14 +68,14 @@ suite('e2e-speedkeys', async t => {
 
   /* ---- the Keys room: computer keys, MIDI, sounds, into the bass or lead ---- */
   await ev(() => document.getElementById('gtKeys').click()); await wait(300);
-  ok(await ev(() => document.getElementById('keysRoom').open && document.querySelectorAll('#keysRoom [data-t]').length === 3 && document.querySelectorAll('#kySound option').length === 6), 'the Keys room: plays into Keys, Bass or Lead guitar; six sounds');
+  ok(await ev(() => document.getElementById('keysRoom').open && document.querySelectorAll('#keysRoom [data-t]').length === 3 && document.querySelectorAll('#kySound option').length === 7), 'the Keys room: plays into Keys, Bass or Lead guitar; seven sounds (Strings joined in 2.45)');
   await ev(() => document.body.focus()); await p.keyboard.down('a'); await wait(80); const kA = await ev(() => [...window.__daily.KY.held.keys()]); await p.keyboard.up('a');
   await p.keyboard.press('x'); await p.keyboard.down('h'); await wait(80); const kH = await ev(() => [...window.__daily.KY.held.keys()]); await p.keyboard.up('h');
   ok(kA.join() === '60' && kH.join() === '81', 'the computer keys play it: A is middle C, X moves up an octave, H is then A5 (' + kA + ', ' + kH + ')');
   await ev(() => { window.__daily.onMidi({ data: [0x90, 67, 100] }); }); const mOn = await ev(() => window.__daily.KY.held.has(67)); await ev(() => window.__daily.onMidi({ data: [0x80, 67, 0] }));
   ok(mOn && await ev(() => !window.__daily.KY.held.has(67)), 'a MIDI keyboard plays it while the room is open (note on, note off)');
   const SND = await ev(() => { const D = window.__daily, c = D.E.ctx; return D.KEYS_SOUNDS.map(s => { try { const v = D.keysVoice(c.currentTime + .01, 60, .8, .2, s); return !!v; } catch (e) { return s + ': ' + e.message; } }); });
-  ok(SND.every(x => x === true), 'all six sounds play: ' + String(SND));
+  ok(SND.every(x => x === true), 'all seven sounds play: ' + String(SND));
   const LEV = await ev(async () => { const D = window.__daily, c = D.E.ctx, an = D.E.tr.keys.ana, buf = new Float32Array(an.fftSize); D.keysVoice(c.currentTime + .02, 57, .9, .5, 'Piano'); await new Promise(r => setTimeout(r, 150)); an.getFloatTimeDomainData(buf); return Math.max(...buf.map(Math.abs)); });
   ok(LEV > .01, 'and it comes out of its own Keys channel in the mixer (peak ' + LEV.toFixed(3) + ')');
 

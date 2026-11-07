@@ -106,7 +106,7 @@ function mSing(box) {
       h('button', { class: 'btn ms-rec' + (rec ? ' on' : ''), id: 'msRec', 'aria-pressed': String(rec), onclick: () => { if (!ready && !rec) toast('Connect the microphone first (the button above).', 'warn'); toggleRec(); setTimeout(mScreenDraw, 300); } }, rec ? '■ Stop' : '● Record over the beat'),
       h('button', { class: 'btn ms-back', id: 'msBack', onclick: () => { if (T.playing) { stopPlay(true); setTimeout(mScreenDraw, 200); return; } T.cursor = 0; syncTransport(); play(); setTimeout(mScreenDraw, 300); } }, T.playing && !rec ? '■ Stop' : '▶ Hear it back')),
     h('h4', { class: 'ms-sub' }, 'Your takes'),
-    vtakes.length ? h('div', { class: 'ms-takes' }, vtakes.map(t => h('div', { class: 'ms-take' }, h('b', {}, t.name || 'Vocal take'), h('span', { class: 'muted' }, (t.dur || 0).toFixed(1) + ' s'), h('span', { class: 'grow' }),
+    vtakes.length ? h('div', { class: 'ms-takes' }, vtakes.map(t => h('div', { class: 'ms-take' }, h('b', {}, t.name || 'Vocal take'), h('span', { class: 'muted' }, (t.dur || 0).toFixed(1) + ' s'), h('span', { class: 'grow' }), tuneSelect(t, mScreenDraw),
       h('button', { class: 'btn sm', 'aria-label': 'Delete ' + (t.name || 'take'), onclick: () => { if (confirm('Delete “' + (t.name || 'this take') + '”? (Undo brings it back)')) { tkDelete(t); setTimeout(mScreenDraw, 100); } } }, '✕'))))
       : h('p', { class: 'tiny muted' }, 'None yet. Press ● and sing: the count-in gives you a bar to get ready.'),
     h('h4', { class: 'ms-sub' }, 'Your voice sound'),
@@ -132,7 +132,7 @@ function msHexLoop() {
 document.addEventListener('visibilitychange', () => { if (!document.hidden && M.view === 'm' && M.s === 'sing') msHexLoop(); });
 /* ---------- Beats ---------- */
 function mBeats(box) {
-  box.append(h('h3', { class: 'ms-h' }, '🥁 Beats'), h('p', { class: 'tiny muted' }, 'Tap one and it plays in your song’s key. Write or sing over it.'), beatsShelf(), h('h4', { class: 'ms-sub' }, 'Who plays'), beatsMixer(),
+  box.append(h('h3', { class: 'ms-h' }, '🥁 Beats'), h('p', { class: 'tiny muted' }, 'Tap one and it plays in your song’s key. Write or sing over it.'), beatsShelf(), h('h4', { class: 'ms-sub' }, 'Who plays'), beatsMixer(), buildCard(),
     h('button', { class: 'btn sm mb-all', onclick: () => mGo('beats', 'band') }, 'Every band setting…'));
 }
 /* ---------- the screen ---------- */

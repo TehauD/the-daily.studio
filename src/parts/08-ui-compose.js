@@ -304,13 +304,13 @@ function renderBand() {
       h('button', { class: 'btn sm', onclick: () => { B.pat = DROWS.map(() => new Array(32).fill(0)); commit(false); renderBand(); } }, 'Clear'), h('button', { class: 'btn sm', onclick: () => { const pat = dpat(); pat.forEach(r => r.forEach((v, i) => { if (v && Math.random() < .25) r[i] = 0; else if (!v && Math.random() < .04) r[i] = 1; })); commit(false); renderBand(); } }, '🎲 Mutate'),
       h('span', { class: 'tiny muted' }, 'Click a step to cycle: off → ghost → normal → accent')),
     stepGrid()));
-  const bass = h('div', { class: 'card' }, h('h4', {}, 'Bass ', tog('Enabled', 'bassOn')), h('div', { class: 'card-b row', style: { gap: '10px', flexWrap: 'wrap' } }, sel('Style', BASS_STYLES, B.bassStyle, v => { B.bassStyle = v; commit(false); }), sel('Tone', ['Round', 'Sub', 'Pick', 'Muted Pluck'], B.bassTone, v => { B.bassTone = v; commit(false); })));
+  const bass = h('div', { class: 'card' }, h('h4', {}, 'Bass ', tog('Enabled', 'bassOn')), h('div', { class: 'card-b row', style: { gap: '10px', flexWrap: 'wrap' } }, sel('Style', BASS_STYLES, B.bassStyle, v => { B.bassStyle = v; commit(false); }), sel('Tone', BASS_TONES, B.bassTone, v => { B.bassTone = v; commit(false); })));
   const comp = h('div', { class: 'card' }, h('h4', {}, 'Rhythm guitar ', tog('Enabled', 'compOn')), h('div', { class: 'card-b row', style: { gap: '10px', flexWrap: 'wrap' } }, sel('Strum / arpeggio pattern', Object.keys(STRUMS), B.compStyle, v => { B.compStyle = v; commit(false); }, 190), sel('Instrument', ['Steel', 'Nylon', 'Electric', 'Muted Pluck'], B.compInst, v => { B.compInst = v; commit(false); }),
     h('span', { class: 'tiny muted' }, 'Voicings come from the Chord library (Song panel) in the current tuning and capo.')));
   const lead = h('div', { class: 'card' }, h('h4', {}, 'Tab playback (lead) ', tog('Enabled', 'leadOn')), h('div', { class: 'card-b row', style: { gap: '10px', flexWrap: 'wrap' } }, sel('Instrument', ['Nylon', 'Steel', 'Electric', 'Muted Pluck'], B.leadInst, v => { B.leadInst = v; commit(false); }),
     songField('Humanize', h('input', { type: 'range', min: 0, max: 1, step: .05, value: CFG.humanize, oninput: e => { CFG.humanize = +e.target.value; saveCfg(); } })), songField('Swing', h('input', { type: 'range', min: 0, max: .5, step: .01, value: S.swing, oninput: e => { S.swing = +e.target.value; commit(false); } }))));
   const beats = h('div', { class: 'card' }, h('h4', {}, 'Beats ', CFG.simple ? h('button', { class: 'btn sm', id: 'bandLess', type: 'button', onclick: () => { UI.bAll = false; renderBand(); } }, 'Just the essentials') : null), h('div', { class: 'card-b' }, beatsShelf()));
-  bx.append(beats, ensembleCard(), drums, bass, comp, lead);
+  bx.append(beats, buildCard(), ensembleCard(), drums, bass, comp, lead);
 }
 function ensembleCard() {
   const B = S.band, info = {

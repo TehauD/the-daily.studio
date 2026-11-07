@@ -2,6 +2,130 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.45.0 — 2026-11-07 — Better instruments
+
+### Changed
+- **Piano:** twelve stretched partials; the lower four each have two strings a fraction of a cent apart, one quieter, for a slow shimmer that never cancels. The high partials ring bright on the hammer and die within a moment (harder playing is brighter). A felt-hammer knock and a small room.
+- **Electric piano:** the hammer's bark on the tine, and the classic auto-pan tremolo.
+- **Pad:** four detuned saws spread hard left and right, a sub, and a filter that breathes slowly.
+- **Guitars:**
+  - **Wooden body:** the acoustic sounds (steel, nylon) play through a body resonance made in the page (air and plate modes, about 100–800 Hz); an electric hardly does.
+  - **Double-tracked rhythm:** the rhythm guitar is two takes, one each side, 14 ms apart.
+  - **A room:** both guitar tracks get a small one.
+- **Keys** have their own small room too.
+- **Song build:** the verse now sits at −2.5 dB, and the crash and riser are more present, so a chorus still lifts clearly in the fuller mix.
+
+### Added
+- **Strings**, a new keys sound: a bowed section of five players a few cents apart across the stage, with vibrato that comes in after the bow and a soft attack.
+
+### Fixed
+- The offline render shared the guitar-body settings with the live engine, so after any bounce the live body setting pointed at the render's copy. Each engine now has its own.
+
+### Tests
+- `e2e-instruments` (9 checks), measured from the render with one note or chord alone:
+  - the piano is bright on the hammer and mellower as it rings (5.5% → 3.3% of it above 1.5 kHz);
+  - the strings swell in (+15 dB by 0.3 s), with vibrato arriving late (2.7 → 6.2 cents);
+  - the pad is wide (left–right correlation 0.87 against 1.00);
+  - the rhythm guitar is double-tracked (a copy 14 ms later on the other side);
+  - the body boosts its resonances 62 dB over the treble, and the acoustic sounds use it while the electric hardly does.
+- While building it, the tests caught:
+  - a body resonance whose strength the convolver was normalising away;
+  - a piano with too few partials to mellow;
+  - two equally loud strings drifting into cancellation at 1.6 s.
+- `e2e-speedkeys`: seven keys sounds.
+
+## 2.44.0 — 2026-11-07 — Songs that build
+
+### Added
+- **Song build: the band plays each section at its own energy**, from 1 to 5 (Band panel, Simple's band, and Beats on a phone; every beat turns it on).
+  - **Defaults from the section's name:** intro 2, verse 3, pre-chorus 4, chorus 5, bridge 2, solo 4, outro 2. Tap a dot to set your own.
+  - **1:** hats and rim only, no bass, one harmony instrument.
+  - **2:** kick, hats and a softer snare.
+  - **3:** the groove as written.
+  - **4:** adds an open hat at each bar's end and a crash to start.
+  - **5:** everything, with sixteenth hats.
+- **The level follows the energy:** the chorus plays at full level and the quieter sections sit under it (−5 dB at 1, −2 dB at 3), set on each band track after its compressor, so the difference is real and the chorus doesn't hit the master limiter.
+- **Between sections:**
+  - **Fill:** a drum fill in the last beat; a tom-and-snare roll when the next section is bigger.
+  - **Crash:** on the first beat of a section at 4 or more.
+  - **Riser:** a noise riser swelling through the last bar into a section that lifts.
+- **Ending:** a song that does not loop ends on one hit with a crash, with the bass and chords left ringing.
+- **Song links** carry Song build and the energies you set.
+
+### Tests
+- `e2e-build` (11 checks), measured from the studio's render:
+  - intro, verse and chorus come out at rising levels (−21.6, −16, −14.3 dB), 7.4 dB apart against 0.2 dB with Song build off;
+  - the crash at the chorus, the riser into it, and the ending;
+  - a section turned down to 1, the controls on a computer and a phone, and the song link.
+- While building it, the tests caught:
+  - lifting the chorus did nothing, because the master limiter flattened it, so the quieter sections now come down instead;
+  - note strength alone barely changed the level (each track's compressor evened it out), so energy is now a level stage per track;
+  - a name clash had left the build stale;
+  - the riser stayed inaudible on an exponential swell.
+
+## 2.43.0 — 2026-11-07 — Vocal tuning
+
+### Added
+- **🎯 Tune a vocal take to the song's key**, on the device, from the take's menu (computer) or its row on Sing (phone).
+  - **Natural:** most of the way to the note, gently; your slides and vibrato stay.
+  - **Tight:** nearly all the way, quickly (pop).
+  - **Hard:** snaps every moment to the note (the modern tuned sound; vibrato goes).
+  - **Off:** gives back the exact original, which is kept in memory and in the song's own storage, so it survives a reload.
+- **How it works:**
+  - The pitch is read every 10 ms (YIN, with a level gate, and smoothed over one-frame octave slips and short gaps).
+  - The target is the nearest note of the key's scale, held until the voice clearly moves.
+  - The shift is TD-PSOLA: grains two periods long, cut at the same peak of each cycle, laid down closer or further apart at fractional-sample spacing.
+  - The voice keeps its character, and nothing moves in time; the take keeps its length.
+- **A room:** on the hosted site it is a 4 kB room, loaded the first time someone tunes.
+
+### Tests
+- `e2e-tune` (11 checks): synthetic voices with known problems.
+  - A flat A (−32 cents) lands within a cent with Hard.
+  - A note between A and B goes to A with Tight (within 3 cents).
+  - Natural gets most of the way gently.
+  - Hard flattens a ±45-cent vibrato (31 → 3 cents spread) while Natural keeps it.
+  - Onset and length do not move, and Off restores the original sample for sample.
+  - The room loads only on use, and the controls work on a computer and on a phone.
+- While building it, the tests caught an octave-low artefact (grains cut on alternating peaks) and an 8–16-cent error (whole-sample grain spacing). Both were fixed before release.
+
+## 2.42.0 — 2026-11-07 — Drum machines and an 808 sub
+
+### Added
+- **Three drum-machine kits, built the way the classic machines made their sounds** (part 03b). Still no samples: every hit is made in the page, so there is nothing to download or license.
+  - **808:** a long sub kick that falls from about 150 to 48 Hz and rings, saturated so phone speakers can hear it. A snare of two tuned tones and a noise snap. Hats from six square waves at metallic pitches, band-passed and high-passed (centred near 9 kHz); the closed hat cuts off the open one. A clap of four quick bursts and a tail.
+  - **909:** a short, punchy kick with a click, a brighter snare, and hats of metal and noise.
+  - **Boom Bap:** a round, dusty kick and a fat saturated snare, with softened hats.
+- **The acoustic kits are rebuilt the same way: Acoustic, Rock Room and Brush.**
+  - **Kick:** a beater click, a pitch-dropping head and a resonant shell.
+  - **Snare:** two tuned shell tones and a band of wire noise; ghost notes are softer and shorter. On **Brush** it is a slow swish instead of a crack.
+  - **Hats:** metal and noise together, as a real hat is; the closed hat cuts off the open one. Brush hats are darker and quieter.
+  - **Rim:** the rim row is a cross-stick (a short woody knock with a click), where the drum machines clap.
+  - **Toms:** with the stick on the head.
+  - **A small room:** a short reverb made in the page that each drum sends into. Rock Room has the most, Brush the least.
+  - **Human feel:** every hit varies a little in strength and timing, so a groove never sounds stamped out.
+- **808 Sub, a bass sound** (Band ▸ Bass ▸ Tone):
+  - a sine with a short pitch drop, saturated so its upper harmonics carry on small speakers, held for the note;
+  - one note at a time, sliding into the next while the last one still rings;
+  - set to sit with the kit and under a voice, not over it.
+- **Three new beats:** **Drill Night** (142 BPM, 808 and 808 sub), **Afro Sunset** (Afrobeats, 104 BPM), **Late R&B** (68 BPM, 808, sub and electric piano).
+
+### Changed
+- **The modern beats use the new sounds:**
+  - **Trap Glide:** 808 kit and 808 sub.
+  - **Night Drive:** 909 kit and 808 sub.
+  - **Pop Drive:** 909 kit.
+  - **Lo-fi Nod:** Boom Bap kit.
+- The acoustic beats (folk, rock, reggae, blues, ballad, funk, bossa) keep their kits, which now use the rebuilt sounds above.
+
+### Tests
+- `e2e-kits` (14 checks), measured from the studio's own render:
+  - the 808 kick is a sub near 47 Hz that rings, and the 909 kick is short;
+  - the closed hat is bright (near 9 kHz), the open hat rings longer, and the clap is a burst;
+  - the 808 sub is a held low A, an octave under the plucked bass;
+  - the Rock Room snare carries its room, the rim is a short woody knock, the acoustic kick sits around 50–90 Hz and its hits vary, and the brush is softer;
+  - the beats use the new kits.
+- `e2e-simple`: Lo-fi Nod is now on Boom Bap.
+
 ## 2.41.0 — 2026-11-07 — The phone, for singers and songwriters
 
 ### Changed

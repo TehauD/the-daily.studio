@@ -9,7 +9,7 @@
        made-up bass in those bars), or as lead tab. Rounded to 16ths, 8ths or quarters; added to what is there; one undo.
      · Keys in the band: a keys player that follows the chords, in five styles, with its own channel in the mixer (Keys).
    ============================================================ */
-const KEYS_SOUNDS = ['Piano', 'Electric piano', 'Organ', 'Pad', 'Synth lead', 'Synth bass'];
+const KEYS_SOUNDS = ['Piano', 'Electric piano', 'Organ', 'Pad', 'Strings', 'Synth lead', 'Synth bass'];
 const KEYS_STYLES = ['Pad (held)', 'Block chords', 'Broken chords', 'Arpeggio up', 'Off-beat stabs'];
 const KEYS_TARGETS = [['keys', '🎹 Keys'], ['bass', 'Bass'], ['lead', 'Lead guitar']];
 const KY = { target: ['keys', 'bass', 'lead'].includes(CFG.keysTarget) ? CFG.keysTarget : 'keys', oct: 4, held: new Map(), lit: new Map(), rec: false, bf: null, pend: new Map(), voice: null, noise: new WeakMap(), down: false, keys: new Map() };
@@ -21,26 +21,39 @@ function kyNoise(c) { let b = KY.noise.get(c); if (!b) { b = c.createBuffer(1, M
 /** one keys note: `dur` in seconds, or null for held until .stop(t). Plays into the Keys channel of the mixer. */
 function keysVoice(time, midi, vel, dur, sound) {
   const c = E.ctx, out = E.tr && E.tr.keys ? E.tr.keys.in : E.mix; if (!c || !out) return null;
-  const f = mtof(midi), v = clamp(vel || .8, .05, 1), env = c.createGain(), oscs = []; env.gain.value = 0; env.connect(out);
+  const f = mtof(midi), v = clamp(vel || .8, .05, 1), env = c.createGain(), oscs = [], snd = sound || kySound(), pan = c.createStereoPanner ? c.createStereoPanner() : null; env.gain.value = 0; if (pan) { env.connect(pan); pan.connect(out); } else env.connect(out);
+  const sp = x => { if (!c.createStereoPanner) return env; const p = c.createStereoPanner(); p.pan.value = x; return p; }, lfo = (hz, depth, param, t0, rise) => { const o = c.createOscillator(), g = c.createGain(); o.frequency.value = hz; g.gain.setValueAtTime(rise ? 0 : depth, time); if (rise) g.gain.linearRampToValueAtTime(depth, time + (t0 || .3)); o.connect(g); g.connect(param); o.start(time); oscs.push(o); };
   const osc = (type, freq, g, dst, det) => { const o = c.createOscillator(), gg = c.createGain(); o.type = type; o.frequency.value = freq; if (det) o.detune.value = det; gg.gain.value = g; o.connect(gg); gg.connect(dst || env); o.start(time); oscs.push(o); return { o, g: gg }; };
   let rel = .1, sus = 0, stopAt = null;
-  switch (sound || kySound()) {
+  switch (snd) {
     case 'Electric piano': { const car = osc('sine', f, .9 * v), mod = c.createOscillator(), mg = c.createGain(); mod.frequency.value = f; mg.gain.setValueAtTime(f * 3 * v, time); mg.gain.setTargetAtTime(f * .35, time, .35); mod.connect(mg); mg.connect(car.o.frequency); mod.start(time); oscs.push(mod); const tine = osc('sine', f * 4, .12 * v); tine.g.gain.setTargetAtTime(0, time, .12);
-      env.gain.setValueAtTime(0, time); env.gain.linearRampToValueAtTime(.55, time + .004); env.gain.setTargetAtTime(.0001, time + .004, 1.4 + 200 / f); rel = .18; break; }
+      env.gain.setValueAtTime(0, time); env.gain.linearRampToValueAtTime(.55, time + .004); env.gain.setTargetAtTime(.0001, time + .004, 1.4 + 200 / f); rel = .18;
+      const bell = osc('sine', Math.min(f * 14.1, 15000), .07 * v); bell.g.gain.setTargetAtTime(.0001, time + .002, .04);      /* the bark of the hammer on the tine */
+      if (pan) lfo(4.4, .35, pan.pan); break; }      /* the classic auto-pan tremolo */
     case 'Organ': { [[.5, .45], [1, 1], [2, .55], [3, .3], [4, .22], [6, .1]].forEach(([r, g]) => osc('sine', f * r, g * .28)); const lfo = c.createOscillator(), lg = c.createGain(); lfo.frequency.value = 6.2; lg.gain.value = 4; lfo.connect(lg); oscs.slice(-6).forEach(x => lg.connect(x.detune)); lfo.start(time); oscs.push(lfo);
       env.gain.setValueAtTime(0, time); env.gain.linearRampToValueAtTime(.5 * (.6 + .4 * v), time + .012); sus = 1; rel = .07; break; }
-    case 'Pad': { const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 900 + 1400 * v; lp.Q.value = .5; lp.connect(env); osc('sawtooth', f, .16, lp, -8); osc('sawtooth', f, .16, lp, 8); osc('triangle', f / 2, .2, lp);
-      env.gain.setValueAtTime(0, time); env.gain.linearRampToValueAtTime(.45 * (.5 + .5 * v), time + .35); sus = 1; rel = .9; break; }
+    case 'Pad': {      /* four detuned saws spread left and right, a sub, a filter that breathes slowly */
+      const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 650 + 1500 * v; lp.Q.value = .7; lp.connect(env); lfo(.17, 380, lp.frequency);
+      [[-14, -1], [-6, -.7], [6, .7], [14, 1]].forEach(([d, x]) => { const p = sp(x); if (p !== env) p.connect(lp); osc('sawtooth', f, .1, p === env ? lp : p, d); }); osc('sine', f / 2, .18, lp);
+      env.gain.setValueAtTime(0, time); env.gain.linearRampToValueAtTime(.5 * (.5 + .5 * v), time + .6); sus = 1; rel = 1.2; break; }
+    case 'Strings': {      /* a bowed section: five players a few cents apart across the stage, vibrato that comes in after the bow */
+      const lp = c.createBiquadFilter(), hp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2400 + 1600 * v; lp.Q.value = .5; hp.type = 'highpass'; hp.frequency.value = 170; lp.connect(hp); hp.connect(env);
+      const players = [[-12, -.7], [-5, -.35], [0, 0], [6, .35], [13, .7]].map(([d, x]) => { const p = sp(x); if (p !== env) p.connect(lp); return osc('sawtooth', f, .085, p === env ? lp : p, d); });
+      const vo = c.createOscillator(), vg = c.createGain(); vo.frequency.value = 5.3; vg.gain.setValueAtTime(0, time); vg.gain.linearRampToValueAtTime(9, time + .45); vo.connect(vg); players.forEach(pl => vg.connect(pl.o.detune)); vo.start(time); oscs.push(vo);
+      env.gain.setValueAtTime(0, time); env.gain.linearRampToValueAtTime(.55 * (.5 + .5 * v), time + .28); sus = 1; rel = .7; break; }
     case 'Synth lead': { const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = 4; lp.frequency.setValueAtTime(800 + 4200 * v, time); lp.frequency.setTargetAtTime(1600, time, .18); lp.connect(env); osc('sawtooth', f, .3, lp, -5); osc('square', f, .18, lp, 5);
       env.gain.setValueAtTime(0, time); env.gain.linearRampToValueAtTime(.45, time + .006); env.gain.setTargetAtTime(.36, time + .006, .2); sus = 1; rel = .12; break; }
     case 'Synth bass': { const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = 6; lp.frequency.setValueAtTime(300 + 1500 * v, time); lp.frequency.setTargetAtTime(260, time, .12); lp.connect(env); osc('sawtooth', f, .4, lp); osc('square', f / 2, .3, lp);
       env.gain.setValueAtTime(0, time); env.gain.linearRampToValueAtTime(.6, time + .004); env.gain.setTargetAtTime(.48, time + .004, .25); sus = 1; rel = .08; break; }
-    default: {      /* piano: six slightly stretched partials, each dying away at its own rate, and a felt-hammer knock */
-      const B = .00035, low = f < 220 ? 1.4 : 1; [1, .52, .3, .18, .1, .06].forEach((g, k) => { const hN = k + 1, p = osc('sine', f * hN * Math.sqrt(1 + B * hN * hN), g * (k ? .55 + .45 * v : 1) * .42); p.g.gain.setTargetAtTime(.0001, time + .004, (3.2 - k * .38) * low * (f > 900 ? .5 : 1)); });
+    default: {      /* piano (2.45): two strings a cent apart for each of eight stretched partials, the high ones dying first; the harder you play the
+                       brighter it starts, and the brightness fades as the note rings; a felt-hammer knock */
+      const B = .00038, low = f < 220 ? 1.4 : 1, br = c.createBiquadFilter(); br.type = 'lowpass'; br.Q.value = .5; br.frequency.setValueAtTime(1800 + 7000 * v, time); br.frequency.setTargetAtTime(900 + 2600 * v, time + .01, .7); br.connect(env);
+      [1, .55, .36, .24, .16, .11, .08, .06, .045, .035, .026, .02].forEach((g, k) => { const hN = k + 1, fp = f * hN * Math.sqrt(1 + B * hN * hN); if (fp > 15000) return; (k < 4 ? [[-.25, .26], [.25, .19]] : [[0, .32]]).forEach(([d, a]) => { const p = osc('sine', fp, g * a * (k ? .45 + .55 * v * v : 1), br, d);      /* two strings a fraction of a cent apart, one quieter: a slow shimmer that never cancels out */ p.g.gain.setTargetAtTime(.0001, time + .004, Math.max(.28, 3.4 - k * .3) * low * (f > 900 ? .5 : 1)); }); });      /* twelve partials: the high ones bright on the hammer and gone in a moment */
       const n = c.createBufferSource(), bp = c.createBiquadFilter(), ng = c.createGain(); n.buffer = kyNoise(c); bp.type = 'bandpass'; bp.frequency.value = 1800 + f; bp.Q.value = 1.2; ng.gain.value = .12 * v; n.connect(bp); bp.connect(ng); ng.connect(env); n.start(time); oscs.push(n);
-      env.gain.setValueAtTime(0, time); env.gain.linearRampToValueAtTime(.32 + .5 * v, time + .003); rel = .22;
+      env.gain.setValueAtTime(0, time); env.gain.linearRampToValueAtTime(.32 + .5 * v, time + .003); rel = .25;
     }
   }
+  try { kitSend(env, { Piano: .2, 'Electric piano': .12, Organ: .1, Pad: .22, Strings: .3 }[snd] || .08, 'keys'); } catch (e) { }      /* 2.45: the keys in a room */
   const stop = t => { if (stopAt != null) return; stopAt = Math.max(t, time + .02); env.gain.cancelScheduledValues(stopAt); env.gain.setTargetAtTime(0, stopAt, rel / 3); oscs.forEach(o => { try { o.stop(stopAt + rel * 2 + .05); } catch (e) { } }); };
   if (dur != null) stop(time + Math.max(.05, dur)); else if (!sus) { oscs.forEach(o => { try { o.stop(time + 12); } catch (e) { } }); }
   const end = dur != null ? time + dur : time + 30; KY.lit.set(midi, { a: time, b: end, by: 'keys' });

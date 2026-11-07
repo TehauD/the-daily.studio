@@ -8,10 +8,14 @@ const INST = {
 const instFor = tk => INST[tk === 'rhythm' ? S.band.compInst : tk === 'lead' ? S.band.leadInst : S.band.bassTone] || INST.Steel;
 
 function buildBand() {
-  const c = E.ctx; E.pl = {};
+  const c = E.ctx; E.pl = {}; E.plBody = {};      /* fresh each build: the offline render builds its own and must not take over the live one's */
   [['rhythm', 70, 9500], ['lead', 90, 10500], ['bass', 35, 1400]].forEach(([id, hp, lp]) => {
     const body = bq('peaking', 220, .8, 2.5), h = bq('highpass', hp), l = bq('lowpass', lp), out = gn(1);
-    chainN(h, body, l, out); out.connect(E.tr[id].in);
+    chainN(h, body, l, out);
+    if (id !== 'bass') { const bc = c.createConvolver(), bw = gn(.5); bc.normalize = false; bc.buffer = guitarBody(c); l.connect(bc); bc.connect(bw); bw.connect(out); E.plBody[id] = bw; }      /* 2.45: a wooden body */
+    if (id === 'rhythm' && c.createStereoPanner) { const pL = c.createStereoPanner(), pR = c.createStereoPanner(), dl = c.createDelay(.05), dg = gn(.82); pL.pan.value = -.75; pR.pan.value = .75; dl.delayTime.value = .014; out.connect(pL); pL.connect(E.tr[id].in); out.connect(dl); dl.connect(dg); dg.connect(pR); pR.connect(E.tr[id].in); }      /* double-tracked, one each side */
+    else out.connect(E.tr[id].in);
+    if (id !== 'bass') try { kitSend(out, id === 'rhythm' ? .12 : .16, id); } catch (e) { }
     if (E.worklet) { const n = new AudioWorkletNode(c, 'fw-pluck', { numberOfInputs: 0, numberOfOutputs: 1, outputChannelCount: [2] }); n.connect(h); E.pl[id] = n; }
     else E.pl[id] = { in: h };
   });
@@ -22,6 +26,7 @@ bus.on('audio:ready', buildBand);
 
 function pluck(track, time, midi, vel, o = {}) {
   const inst = instFor(track), f = mtof(midi), hum = (Math.random() * 2 - 1) * CFG.humanize * .12;
+  if (E.plBody && E.plBody[track]) { const el = (track === 'rhythm' ? S.band.compInst : S.band.leadInst) === 'Electric'; E.plBody[track].gain.value = el ? .1 : .8; }      /* an electric has no wooden body to speak of */
   vel = clamp(vel * (1 + hum), .05, 1);
   if (E.worklet) E.pl[track].port.postMessage({ t: 'on', at: time, f, vel, t60: inst.t60 * (o.t60m || 1), br: o.soft ? inst.br * .6 : inst.br, s: inst.s, pp: inst.pp, pan: o.pan || 0, id: o.id, g: o.g || 1, dead: o.dead });
   else {
@@ -60,6 +65,7 @@ function drumHit(row, t, v) {
   if (row === 0 && typeof duckAt === 'function') duckAt(t);      /* the sidechain (part 87) */
   if (typeof moDrum === 'function' && moDrum(row, t, v)) return;      /* sent to a MIDI device, the studio's own drum quiet */
   if (!E.noise) return; const c = E.ctx, K = KITS[S.band.kit] || KITS.Acoustic, out = E.tr.drums.in, vol = [0, .5, .85, 1.1][v] || .8;
+  if (K.engine) return kitHit(K, row, t, v);      /* the drum machines (part 03b) */
   const env = (g, dur, peak, start = t) => { g.gain.setValueAtTime(0.0001, start); g.gain.exponentialRampToValueAtTime(peak, start + .002); g.gain.exponentialRampToValueAtTime(.0001, start + dur); };
   if (row === 0) {
     const o = c.createOscillator(), g = gn(0); o.frequency.setValueAtTime(K.k[0], t); o.frequency.exponentialRampToValueAtTime(K.k[1], t + .07); env(g, K.k[2], .95 * vol * K.k[3]); o.connect(g); g.connect(out); o.start(t); o.stop(t + K.k[2] + .05);
@@ -156,13 +162,14 @@ function scheduleSlot(slot, time) {
   const bi = Math.floor(slot / sp), sib = slot % sp, fb = barsCache()[bi]; if (!fb) return;
   if (T.metro && !q && sib % beatSlots === 0) click(tt, sib === 0);
   if (typeof lxEvt === 'function' && sib % beatSlots === 0) lxEvt('beat', tt, sib === 0 ? 1 : 0);   // the show listens on the audio clock
-  if (S.band.drumsOn && !q) drumStep(slot, tt);
+  const C = buildCtx(slot, fb, sib), PT = buildParts(C); buildLevel(C, sib, tt);      /* Song build (part 03c): what the band plays of each section */
+  if (S.band.drumsOn && !q) { if (!(C && buildDrums(C, slot, tt))) drumStep(slot, tt); }
   const cd = chordAt(bi, sib), ownBass = fb.bar.bassLine && fb.bar.bassLine.length;
-  if (ownBass && S.band.bassOn && !q) fb.bar.bassLine.forEach(n => { if (n.s === sib) bassOut(tt, n.m, n.v || .8, (n.d || 1) * dur); });      /* a bass line you played (part 86) takes the place of the made-up one in its bars */
-  if (!q && typeof keysStep === 'function') keysStep(fb.bar, sib, cd, tt, dur);
+  if (ownBass && S.band.bassOn && PT.bass && !q) fb.bar.bassLine.forEach(n => { if (n.s === sib) bassOut(tt, n.m, n.v || .8, (n.d || 1) * dur); });      /* a bass line you played (part 86) takes the place of the made-up one in its bars */
+  if (!q && PT.keys && typeof keysStep === 'function') keysStep(fb.bar, sib, cd, tt, PT.ring ? dur * spb() : dur);
   if (cd && cd.sym) {
-    if (S.band.bassOn && !q && !ownBass) { const e = bassEvent(S.band.bassStyle, cd.sym, cd.rel, cd.len, cd.next, slot); if (e) { bassOut(tt, e.m, e.v, dur * 2); if (typeof lxEvt === 'function') lxEvt('bass', tt, e.m, e.v); } }
-    if (S.band.compOn && !q) { const st = STRUMS[S.band.compStyle] || STRUMS['Down 4s'], L = Math.min(16, sp), ch = st.p[sib % L]; strumAt(tt, cd.sym, ch, st); if (ch && ch !== '.' && typeof lxEvt === 'function') lxEvt('chord', tt, cd.sym, ch === ch.toUpperCase() ? 1 : .6); }
+    if (S.band.bassOn && PT.bass && !q && !ownBass) { const e = PT.ring ? (cd.rel === 0 ? bassEvent('Root Whole', cd.sym, 0, cd.len, cd.next, slot) : null) : bassEvent(S.band.bassStyle, cd.sym, cd.rel, cd.len, cd.next, slot); if (e) { bassOut(tt, e.m, e.v, PT.ring ? dur * spb() : S.band.bassTone === '808 Sub' && e.len ? e.len * dur : dur * 2);      /* an 808 rings to the next note */ if (typeof lxEvt === 'function') lxEvt('bass', tt, e.m, e.v); } }
+    if (S.band.compOn && PT.comp && !q) { const st = STRUMS[S.band.compStyle] || STRUMS['Down 4s'], L = Math.min(16, sp), ch = PT.ring ? 'D' : st.p[sib % L]; strumAt(tt, cd.sym, ch, st); if (ch && ch !== '.' && typeof lxEvt === 'function') lxEvt('chord', tt, cd.sym, ch === ch.toUpperCase() ? 1 : .6); }
   }
   if (S.band.leadOn && !q) fb.bar.tab.forEach(n => { if (n.s === sib) { playTabNote(fb.bar, n, tt, dur); if (typeof lxEvt === 'function') lxEvt('lead', tt, S.tuning[n.st] + S.capo + n.f, .8); } });
 }

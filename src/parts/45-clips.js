@@ -252,9 +252,19 @@ function tkContext(e) {
 }
 
 /* ---------- the clip menu and bar ---------- */
+/* 2.43: vocal tuning (part 90, a room) from a take's menu and from the phone's Sing screen */
+const TUNE_LABELS = [['off', 'Off'], ['natural', 'Natural'], ['tight', 'Tight'], ['hard', 'Hard']];
+function tuneSelect(tk, after) {
+  return h('label', { class: 'tune-sel', title: 'Pitch correction to the song’s key and scale. Natural keeps your slides and vibrato, Tight is pop-tight, Hard is the modern tuned sound. The original is always kept: Off brings it back.' }, h('span', {}, '🎯 Tune'),
+    h('select', { class: 'in', 'data-tune': tk.id, 'aria-label': 'Tune ' + (tk.name || 'this take'), onchange: async e => {
+      const m = e.target.value, sel = e.target; sel.disabled = true; toast(m === 'off' ? 'Putting the original back…' : 'Tuning “' + (tk.name || 'the take') + '” to ' + keyName() + '…');
+      try { await room('tune'); await tuneTake(tk, m); toast(m === 'off' ? 'The original take is back.' : 'Tuned (' + m + ') to ' + keyName() + '. Off brings the original back.', 'ok'); }
+      catch (x) { console.warn(x); toast('Tuning did not finish: ' + (x.message || x), 'bad'); }
+      sel.disabled = false; if (after) after(); } }, TUNE_LABELS.map(([k, n]) => h('option', { value: k, selected: (tk.tune || 'off') === k }, n))));
+}
 function tkMenu(anchor, tk) {
   const lead = tkLead(tk), len = tkLen(tk), [fi, fo] = tkFades(tk), mx = Math.max(.05, Math.min(len, 8));
-  const box = h('div', { class: 'clipmenu', style: { minWidth: '250px' } }, h('h5', {}, lead.name + (tkClips(lead).length > 1 ? ' · clip' : '')));
+  const box = h('div', { class: 'clipmenu', style: { minWidth: '250px' } }, h('h5', {}, lead.name + (tkClips(lead).length > 1 ? ' · clip' : '')), lead.kind === 'vox' ? tuneSelect(lead) : null);
   const row = (...kids) => h('div', { class: 'row', style: { gap: '6px', margin: '4px 0', flexWrap: 'wrap' } }, kids);
   const fade = (lab, v, which) => h('div', { class: 'lrow' }, h('span', { style: { width: '62px' } }, lab), h('input', { type: 'range', min: 0, max: mx, step: .01, value: Math.min(v, mx), 'aria-label': lab, style: { flex: 1 }, oninput: e => { histBegin(); tkSetFade(tk, which, +e.target.value, true); }, onchange: () => { tkResched(); if (!histEnd()) bus.emit('takes'); } }));
   box.append(row(h('button', { class: 'btn sm', id: 'cmSplit', title: 'Cut the clip in two at the playhead (Ctrl+E)', onclick: () => { closePop(); tkSplit(tk); } }, '✂ Split at playhead'), h('button', { class: 'btn sm', id: 'cmDup', title: 'Copy the clip so it starts where this one ends (Ctrl+D)', onclick: () => { closePop(); tkDup(tk); } }, '⧉ Duplicate')),
