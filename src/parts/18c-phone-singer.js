@@ -10,7 +10,7 @@
    exports and song links all see the same thing. A chord sits on a word, so rewriting a line keeps its chords on the
    words where they were (by position) and a line that is moved keeps its own.
    ============================================================ */
-const MW = { sec: -1, mode: 'write', pick: null, t: 0, text: '', cm: [], syms: [], lines: [], marks: [], starts: [] };
+const MW = { sec: -1, mode: ['write', 'chords', 'song'].includes(CFG.mwMode) ? CFG.mwMode : 'write', pick: null, t: 0, text: '', cm: [], syms: [], lines: [], marks: [], starts: [] };
 /* The section's words as plain text (MW.text, lines joined by line breaks) and its chords as character positions in it (MW.cm: { o, sym }).
    An edit moves every chord after it by the same amount, so a chord stays on its word however the words around it change. */
 /** syllables in a line of English, near enough to compare one line with another */
@@ -56,11 +56,19 @@ function mWords(box) {
   if (!S.sections.length) S.sections.push(mkSection('Verse 1', ['', '', '', '']));
   if (MW.sec < 0 || MW.song !== (PRJ.cur || '')) { MW.song = PRJ.cur || ''; MW.sec = Math.max(0, S.sections.findIndex(x => (x.lyrics || '').trim())); }      /* a song opens on its first section with words */
   MW.sec = clamp(MW.sec, 0, S.sections.length - 1); mwRead();
-  const secs = h('div', { class: 'mw-secs', role: 'tablist', 'aria-label': 'Sections' }, S.sections.map((s, i) => h('button', { class: 'msc' + (i === MW.sec ? ' on' : ''), role: 'tab', 'aria-selected': String(i === MW.sec), onclick: () => { MW.sec = i; mScreenDraw(); } }, s.name)),
-    h('button', { class: 'msc mw-add', 'aria-label': 'Add a section', onclick: e => popover(e.currentTarget, h('div', { class: 'mw-addm' }, ['Verse', 'Pre-chorus', 'Chorus', 'Bridge', 'Outro'].map(n => h('button', { class: 'btn', onclick: () => { closePop(); const k = S.sections.filter(s => s.name.startsWith(n)).length, nm = n === 'Verse' || k ? n + ' ' + (k + 1) : n; S.sections.push(mkSection(nm, ['', '', '', ''])); commit(true); MW.sec = S.sections.length - 1; bus.emit('song', 'reload'); mScreenDraw(); } }, n)))) }, '＋'));
-  const mode = h('div', { class: 'seg mw-mode' }, [['write', '✎ Write'], ['chords', '♪ Chords']].map(([k, n]) => h('button', { class: MW.mode === k ? 'on' : '', 'data-mode': k, onclick: () => { MW.mode = k; mScreenDraw(); } }, n)));
-  const tools = h('div', { class: 'mw-tools' }, mode, h('span', { class: 'grow' }), h('button', { class: 'btn sm', title: 'Paste a whole lyric sheet: [Verse] and [Chorus] headings become sections', onclick: () => liOpen('') }, '⧉ Paste'));
-  box.append(secs, tools);
+  const pick = i => { MW.sec = i; SEL.sec = i; mScreenDraw(); };
+  const secs = h('div', { class: 'mw-secs', role: 'tablist', 'aria-label': 'Sections' }, S.sections.map((s, i) => h('button', { class: 'msc' + (i === MW.sec ? ' on' : ''), role: 'tab', 'aria-selected': String(i === MW.sec), style: '--sh:' + secHue(s.name), 'data-kind': secKind(s.name), onclick: () => pick(i) }, s.name)),
+    h('button', { class: 'msc mw-add', id: 'mwAdd', 'aria-label': 'Add a section', 'aria-haspopup': 'menu', onclick: e => { SEL.sec = MW.sec; secAddMenu(e.currentTarget, i => { bus.emit('song', 'reload'); pick(i); }); } }, '＋'));      /* 2.49: every kind of section, named and placed for you (part 63b) */
+  const map = songMapEl({ cls: 'mw-map', onPick: i => { if (MW.mode === 'song') { const c = document.querySelector('#mwSheet .wsh-sec[data-si="' + i + '"]'); if (c) c.scrollIntoView({ block: 'start', behavior: 'smooth' }); } else pick(i); } });
+  const mode = h('div', { class: 'seg mw-mode' }, [['write', '✎ Write'], ['chords', '♪ Chords'], ['song', '📄 Song']].map(([k, n]) => h('button', { class: MW.mode === k ? 'on' : '', 'data-mode': k, 'aria-pressed': String(MW.mode === k), onclick: () => { MW.mode = k; CFG.mwMode = k; saveCfg(); mScreenDraw(); } }, n)));
+  const tools = h('div', { class: 'mw-tools' }, mode, h('span', { class: 'grow' }),
+    MW.mode !== 'song' ? h('button', { class: 'btn sm', id: 'mwSecMenu', title: 'Rename, move, repeat or delete ' + mwSec().name, 'aria-label': mwSec().name + ': more', 'aria-haspopup': 'menu', onclick: e => secMenu(e.currentTarget, MW.sec, i => pick(i)) }, '⋯') : '',
+    h('button', { class: 'btn sm mw-paste', title: 'Paste a whole lyric sheet: [Verse] and [Chorus] headings become sections', 'aria-label': 'Paste a lyric sheet', onclick: () => liOpen('') }, '⧉'));
+  box.append(map, secs, tools);
+  if (MW.mode === 'song') {      /* the whole song as a chord sheet (2.49); tap a section to write in it */
+    box.append(wsNext(true), wsEmpty(true) || h('p', { class: 'tiny muted mw-how' }, 'The whole song. Tap a section to write in it.'), h('div', { class: 'wsh mw-sheet', id: 'mwSheet', 'data-size': '2' }, S.sections.map((sec, si) => wsSheetSec(sec, si, { onEdit: i => { MW.mode = 'write'; CFG.mwMode = 'write'; saveCfg(); pick(i); } }))));
+    return;
+  }
   if (MW.mode === 'write') {
     const hint = h('div', { class: 'mw-hint', 'aria-live': 'polite' }), ta = h('textarea', { class: 'mw-ta', id: 'mwText', rows: 10, spellcheck: true, autocapitalize: 'sentences', 'aria-label': 'Words of ' + mwSec().name, placeholder: 'Write the words of ' + mwSec().name + ' here, a line at a time.\nPress ♪ Chords when you want to put chords on them.' });
     ta.value = MW.text;

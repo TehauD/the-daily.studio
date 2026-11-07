@@ -74,14 +74,15 @@ function secAddMenu(anchor, done) {
 const WSH = { edit: -1, open: new Set() };
 const wsView = () => CFG.wsView === 'edit' ? 'edit' : 'sheet', wsSize = () => clamp(+CFG.wsSize || 2, 1, 4);
 const wsSame = (a, b) => a.lyrics.trim() === b.lyrics.trim() && a.bars.map(x => x.chord).join('|') === b.bars.map(x => x.chord).join('|');
-function wsSheetSec(sec, si) {
-  const chords = [...new Set(sec.bars.flatMap(barChords))], rep = S.sections.slice(0, si).find(o => wsSame(o, sec) && (o.lyrics.trim() || o.bars.some(b => b.chord))), edit = WSH.edit === si;
+/** one section of the sheet. o.onEdit(si): what a tap does instead of opening the editor in place (the phone opens it in its own editor) */
+function wsSheetSec(sec, si, o = {}) {
+  const chords = [...new Set(sec.bars.flatMap(barChords))], rep = S.sections.slice(0, si).find(x => wsSame(x, sec) && (x.lyrics.trim() || x.bars.some(b => b.chord))), edit = !o.onEdit && WSH.edit === si, go = () => { if (o.onEdit) return o.onEdit(si); WSH.edit = WSH.edit === si ? -1 : si; SEL.sec = si; renderWords(); };
   const head = h('div', { class: 'wsh-h' }, h('b', { class: 'wsh-n' }, sec.name), h('span', { class: 'wsh-m' }, sec.bars.length + ' bar' + (sec.bars.length === 1 ? '' : 's') + (chords.length ? ' · ' + chords.slice(0, 6).join(' ') : '')),
     h('span', { class: 'grow' }), h('button', { class: 'btn sm wsh-b', title: 'Play from ' + sec.name, 'aria-label': 'Play from ' + sec.name, onclick: e => { e.stopPropagation(); T.cursor = secStart(si) * spb(); if (T.playing) stopPlay(true); play(); } }, '▶'),
-    h('button', { class: 'btn sm wsh-b' + (edit ? ' on' : ''), title: edit ? 'Done editing' : 'Edit ' + sec.name, onclick: e => { e.stopPropagation(); WSH.edit = edit ? -1 : si; SEL.sec = si; renderWords(); } }, edit ? '✓ Done' : '✎'));
-  const el = h('section', { class: 'wsh-sec' + (edit ? ' editing' : ''), 'data-si': si, 'data-kind': secKind(sec.name), style: '--sh:' + secHue(sec.name), title: edit ? '' : 'Click to edit ' + sec.name, onclick: () => { if (WSH.edit !== si) { WSH.edit = si; SEL.sec = si; renderWords(); } } }, head);
+    h('button', { class: 'btn sm wsh-b' + (edit ? ' on' : ''), title: edit ? 'Done editing' : 'Edit ' + sec.name, onclick: e => { e.stopPropagation(); go(); } }, edit ? '✓ Done' : '✎'));
+  const el = h('section', { class: 'wsh-sec' + (edit ? ' editing' : ''), 'data-si': si, 'data-kind': secKind(sec.name), style: '--sh:' + secHue(sec.name), title: edit ? '' : 'Click to edit ' + sec.name, onclick: () => { if (o.onEdit || WSH.edit !== si) go(); } }, head);
   if (edit) { const c = sectionCard(sec, si, false, {}); c.onclick = e => e.stopPropagation(); el.append(c); return el; }
-  if (rep && !WSH.open.has(si)) { el.classList.add('rep'); el.append(h('div', { class: 'wsh-rep' }, 'Same words and chords as ' + rep.name + ' above. ', h('button', { class: 'linkish', onclick: e => { e.stopPropagation(); WSH.open.add(si); renderWords(); } }, 'Show'))); return el; }
+  if (rep && !WSH.open.has(si)) { el.classList.add('rep'); el.append(h('div', { class: 'wsh-rep' }, 'Same words and chords as ' + rep.name + ' above. ', h('button', { class: 'linkish', onclick: e => { e.stopPropagation(); WSH.open.add(si); if (o.onEdit) mScreenDraw(); else renderWords(); } }, 'Show'))); return el; }
   const lines = (sec.lyrics || '').replace(/\s+$/, '').split('\n'), words = lines.some(l => lyPlain(l));
   if (words) lines.forEach(l => el.append(l.trim() ? h('div', { class: 'wsh-l' }, ...lyNodes(l, -1)) : h('div', { class: 'wsh-gap' })));
   else el.append(h('div', { class: 'wsh-bars' }, sec.bars.map(b => h('span', { class: 'wsh-bar' }, b.chord || '—'))));
@@ -97,9 +98,9 @@ function renderWholeSong(box) {
     h('button', { class: 'btn sm' + (document.body.classList.contains('ws-full') ? ' on' : ''), id: 'wsFull', title: 'Fill the window with the whole song (Esc to come back)', 'aria-pressed': String(document.body.classList.contains('ws-full')), onclick: () => wsFullSet(!document.body.classList.contains('ws-full')) }, document.body.classList.contains('ws-full') ? '✕ Exit full screen' : '⛶ Full screen'),
     h('button', { class: 'btn sm', id: 'wsAdd', title: 'Add a section: intro, verse, chorus, interlude…', onclick: e => secAddMenu(e.currentTarget, () => renderWords()) }, '＋ Section'),
     h('button', { class: 'btn sm', title: 'Paste a finished lyric sheet: [Verse] and [Chorus] headings become sections, with your chords placed over the words', onclick: () => liOpen() }, '📋 Paste lyrics')), map);
-  if (view === 'sheet') box.append(h('div', { class: 'wsh', id: 'wsSheet', 'data-size': size }, S.sections.map(wsSheetSec)));
+  if (view === 'sheet') box.append(wsEmpty(false), h('div', { class: 'wsh', id: 'wsSheet', 'data-size': size }, S.sections.map((sec, si) => wsSheetSec(sec, si))));
   else S.sections.forEach((sec, si) => box.append(h('div', { class: 'ws-sec', 'data-si': si, 'data-kind': secKind(sec.name), style: '--sh:' + secHue(sec.name) }, sectionCard(sec, si, false, {}))));
-  box._map = map;
+  box._map = map; if (view === 'sheet') box.append(wsNext(false));
 }
 /** the whole song filling the window: the Write panel over everything else, until Esc or the button again */
 function wsFullSet(on) { document.body.classList.toggle('ws-full', !!on); renderWords(); setTimeout(() => window.dispatchEvent(new Event('resize')), 30); }
@@ -107,8 +108,35 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.b
 bus.on('dock', id => { if (id !== 'tab' && document.body.classList.contains('ws-full')) wsFullSet(false); });
 /** the sheet follows the song: the section playing is lit and scrolled into view */
 function wsheetFollow() {
-  const sh = document.getElementById('wsSheet'); if (!sh || !sh.offsetParent) return; const w = smWhere(), si = w && T.playing ? w.si : -1; if (sh._si === si) return; sh._si = si;
+  const sh = document.querySelector('#wsSheet, #mwSheet'); if (!sh || !sh.offsetParent) return; const w = smWhere(), si = w && T.playing ? w.si : -1; if (sh._si === si) return; sh._si = si;
   sh.querySelectorAll('.wsh-sec').forEach(x => x.classList.toggle('cur', +x.dataset.si === si)); const c = sh.querySelector('.wsh-sec.cur'); if (c && WSH.edit < 0) try { c.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' }); } catch (e) { }
 }
 /* keep every song map on the page in step with the playhead, a few times a second (only the ones that are showing) */
 setInterval(() => { document.querySelectorAll('.smap').forEach(m => { if (m._paint && m.offsetParent) try { m._paint(); } catch (e) { } }); try { wsheetFollow(); } catch (e) { } }, 250);
+
+/* ---------- a section's own actions, as a menu (the phone's ⋯; part 18c) ---------- */
+/** rename, move, duplicate or delete section si; done(newIndex) after each */
+function secMenu(anchor, si, done) {
+  const sec = S.sections[si]; if (!sec) return; const fin = i => { closePop(); T.bars = null; commit(); bus.emit('song', 'reload'); if (done) done(i); };
+  const mv = d => () => { const j = si + d; if (j < 0 || j >= S.sections.length) return closePop(); [S.sections[si], S.sections[j]] = [S.sections[j], S.sections[si]]; fin(j); };
+  popover(anchor, h('div', { class: 'sm-add sm-menu', role: 'menu', 'aria-label': sec.name },
+    h('b', {}, sec.name),
+    h('button', { class: 'btn', role: 'menuitem', onclick: () => { const v = (prompt('Name this section:', sec.name) || '').trim(); if (!v) return closePop(); sec.name = v.slice(0, 40); fin(si); } }, '✎ Rename'),
+    h('div', { class: 'sm-add-g' }, h('button', { class: 'btn', role: 'menuitem', disabled: si === 0, onclick: mv(-1) }, '↑ Earlier'), h('button', { class: 'btn', role: 'menuitem', disabled: si === S.sections.length - 1, onclick: mv(1) }, '↓ Later')),
+    h('button', { class: 'btn', role: 'menuitem', onclick: () => { const c = JSON.parse(JSON.stringify(sec)); c.id = uid(); S.sections.splice(si + 1, 0, c); fin(si + 1); } }, '⧉ Repeat it after itself'),
+    h('button', { class: 'btn', role: 'menuitem', onclick: () => { closePop(); T.cursor = secStart(si) * spb(); if (T.playing) stopPlay(true); play(); } }, '▶ Play from here'),
+    h('button', { class: 'btn bad', role: 'menuitem', disabled: S.sections.length < 2, onclick: () => { if (!confirm('Delete ' + sec.name + '? Undo brings it back.')) return closePop(); S.sections.splice(si, 1); fin(Math.max(0, si - 1)); } }, '✕ Delete')), { right: true });
+}
+
+/** what comes after writing, from the sheet: sing it in Perform, send it as a link, print it */
+function wsNext(phone) {
+  return h('div', { class: 'ws-next' + (phone ? ' ws-next-m' : '') },
+    h('button', { class: 'btn sm', id: phone ? 'mwPerform' : 'wsPerform', title: 'Sing or play it through: the words in time with the band, as a sing-along', onclick: () => { try { perfOpen(); } catch (e) { } } }, '🎤 Perform'),
+    h('button', { class: 'btn sm', id: phone ? 'mwSend' : 'wsSend', title: 'Send the song as a link: the chords, words and beat ride inside it, and nothing is uploaded', onclick: () => { try { slShare(); } catch (e) { } } }, '🔗 Send'),
+    phone ? '' : h('button', { class: 'btn sm', id: 'wsPrint', title: 'Print the chord sheet, or save it as a PDF', onclick: () => { try { printSheet(); } catch (e) { } } }, '🖨 Print'));
+}
+/** a song with nothing in it yet: how to begin */
+function wsEmpty(phone) {
+  const any = S.sections.some(s => (s.lyrics || '').trim() || s.bars.some(b => (b.chord || '').trim())); if (any) return '';
+  return h('div', { class: 'ws-empty' }, h('b', {}, 'A blank page.'), ' ', phone ? 'Tap ＋ for an intro, a verse and a chorus, or ⧉ Paste a lyric sheet you already have.' : 'Press ＋ Section for an intro, a verse and a chorus, or 📋 Paste lyrics you already have. 🥁 Beats gives you a groove to write over.');
+}

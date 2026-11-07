@@ -1739,3 +1739,12 @@ body.simple:not(.vz-all) #pane-vis .seg [data-m]:not([data-m=hex]):not([data-m=c
 body.ws-full #pane-tab{position:fixed;inset:0;z-index:70;background:var(--bg);overflow:auto;padding:12px clamp(12px,2vw,28px) 24px}
 body.ws-full #pane-tab .wr-bar{position:sticky;top:-12px;z-index:2;background:var(--bg);padding-top:6px}
 body.ws-full .wsh{column-width:340px}
+/* ---- 2.49: writing on a phone (part 18c) ---- */
+.mw-map{flex:none}.mw-map .smap-b{min-width:16px;height:22px;font-size:10px;padding:0 4px}.mw-map .smap-n{line-height:22px}
+.mw-secs .msc[data-kind]{box-shadow:inset 0 -3px 0 hsl(var(--sh) 55% 50% / .8)}.mw-secs .msc.on[data-kind]{box-shadow:none}
+.mw-sheet{column-width:auto;columns:1;font-size:16px;padding-bottom:24px}.mw-sheet .wsh-b{opacity:1}
+.sm-menu{min-width:220px}.sm-menu>.btn{justify-content:flex-start;min-height:42px}.sm-menu .sm-add-g .btn{flex:1;min-height:42px}
+.ws-next{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;padding:6px 2px 12px;border-top:1px solid var(--line)}.ws-next-m{justify-content:stretch;border:0;padding:0}.ws-next-m .btn{flex:1;min-height:40px}
+.ws-empty{margin:10px 2px;padding:14px 16px;border:1px dashed var(--line2);border-radius:12px;color:var(--muted);font-size:14px}.ws-empty b{color:var(--text)}
+.mw-tools .mw-mode{display:flex;flex:1 1 auto;min-width:0}.mw-tools .mw-mode button{flex:1;white-space:nowrap;padding:0 8px;font-size:14px}
+.mw-tools .btn.sm{min-width:40px;min-height:40px;font-size:16px}

@@ -723,7 +723,7 @@ The app switches layout by itself; **⋯ More ▸ Device layout** (or Settings) 
 
 | Section | What is there |
 |---|---|
-| **Words** | A lyric notebook: the sections as chips (**＋** adds one). **✎ Write** is one big text box with the syllables of the line you are on; **♪ Chords** shows each word with its chord over it: pick a chord below and tap the word it lands on. **⧉ Paste** takes a whole lyric sheet. A new section's band plays the chords you put on its words. **Chords & key** opens the key, scale and progression tools |
+| **Words** | (2.49) A song map along the top (tap a section to write in it), section chips in their section's colour, **＋** for any kind of section (named and placed after the one you're in), **⋯** to rename, move, repeat, play or delete it, and **📄 Song**: the whole song as a chord sheet, with 🎤 Perform and 🔗 Send. Then a lyric notebook: the sections as chips (**＋** adds one). **✎ Write** is one big text box with the syllables of the line you are on; **♪ Chords** shows each word with its chord over it: pick a chord below and tap the word it lands on. **⧉ Paste** takes a whole lyric sheet. A new section's band plays the chords you put on its words. **Chords & key** opens the key, scale and progression tools |
 | **Sing** | A live strip of the hexagons (your voice lights them), **🎤 Sing into this phone**, **● Record over the beat** (with a count-in), **▶ Hear it back**, your takes, one-tap voice sounds, pitch and your range, hum into a song, voice memo |
 | **Beats** | The beats and who plays; **Band** has every setting |
 | **Tracks** | Backing track (stems) · Transcribe |

@@ -86,4 +86,25 @@ suite('e2e-songmap', async t => {
   await m.evaluate(async () => { const D = window.__daily; await D.startAudio(); D.perfOpen(); document.getElementById('pfGo').click(); }); await wait(600);
   const M = await m.evaluate(() => ({ over: document.documentElement.scrollWidth > innerWidth, play: !!document.getElementById('pfPlay').getClientRects().length, lyr: document.getElementById('pfLyr').getBoundingClientRect().bottom <= innerHeight + 1 }));
   ok(!M.over && M.play && M.lyr, 'on a phone it fits: no sideways scroll, the controls and the words on screen');
+
+  /* ---- writing on a phone (2.49): the map, the whole song as a sheet, sections named and placed, a section's own menu ---- */
+  const w = await t.open({ w: 390, h: 844, mobile: true }), we = (f, a) => w.evaluate(f, a);
+  await we(() => { const D = window.__daily; D.CFG.mwMode = 'write'; D.S.sections = [D.mkSection('Intro', ['Am', 'F']), D.mkSection('Verse', ['Am', 'F', 'C', 'G'])]; D.S.sections[1].lyrics = '[Am]Salt wind on the [F]water'; D.T.bars = null; D.commit(false); D.MW.sec = 1; D.MW.mode = 'write'; D.mGo('words'); });
+  await wait(500);
+  const PW = await we(() => ({ map: document.querySelectorAll('#mscreen .mw-map .smap-b').length, chips: [...document.querySelectorAll('#mscreen .mw-secs .msc[data-kind]')].map(b => b.dataset.kind).join(), modes: [...document.querySelectorAll('#mscreen .mw-mode button')].map(b => b.dataset.mode).join(), over: document.documentElement.scrollWidth > innerWidth }));
+  ok(PW.map === 2 && PW.chips === 'intro,verse' && PW.modes === 'write,chords,song' && !PW.over, 'the phone\'s Words screen has the song map, coloured section chips and Write · Chords · Song, with nothing off the side');
+  await w.tap('#mwAdd'); await wait(250); await w.tap('.pop .sm-k[data-kind="verse"]'); await wait(400);
+  const PA = await we(() => { const D = window.__daily; return { names: D.S.sections.map(s => s.name).join(), sec: D.MW.sec, bars: D.S.sections[D.MW.sec].bars.map(b => b.chord).join(' ') }; });
+  ok(PA.names === 'Intro,Verse 1,Verse 2' && PA.sec === 2 && PA.bars === 'Am F C G', '＋ Verse on a phone adds Verse 2 after the verse you are in, with its chords, and opens it (' + PA.names + ')');
+  await w.tap('#mwSecMenu'); await wait(250);
+  const pmenu = await we(() => [...document.querySelectorAll('.pop.sm-menu, .pop .sm-menu')].length ? [...document.querySelectorAll('.pop .sm-menu .btn')].map(b => b.textContent.trim()).join(' | ') : '');
+  ok(/Rename/.test(pmenu) && /Earlier/.test(pmenu) && /Later/.test(pmenu) && /Repeat/.test(pmenu) && /Delete/.test(pmenu), 'a section\'s ⋯ menu: rename, move, repeat, play, delete (' + pmenu + ')');
+  await w.tap('.pop .sm-menu .btn:has-text("Earlier")'); await wait(400);
+  ok(await we(() => { const D = window.__daily; return D.S.sections.map(s => s.name).join() === 'Intro,Verse 2,Verse 1' && D.MW.sec === 1; }), '↑ Earlier moves it up, and you stay on it');
+  await w.tap('.mw-mode [data-mode="song"]'); await wait(400);
+  const PS = await we(() => ({ secs: [...document.querySelectorAll('#mwSheet .wsh-sec')].map(x => x.querySelector('.wsh-n').textContent).join(), cols: getComputedStyle(document.getElementById('mwSheet')).columnCount, words: !!document.querySelector('#mwSheet .wsh-l .ly-c'), perf: !!document.getElementById('mwPerform'), send: !!document.getElementById('mwSend') }));
+  ok(PS.secs === 'Intro,Verse 2,Verse 1' && PS.cols === '1' && PS.words && PS.perf && PS.send, 'Song shows the whole song as a sheet in one column, chords over the words, with Perform and Send to hand');
+  await w.tap('#mwSheet .wsh-sec[data-si="2"]'); await wait(400);
+  ok(await we(() => window.__daily.MW.sec === 2 && window.__daily.MW.mode === 'write' && !!document.getElementById('mwText') && /Salt wind/.test(document.getElementById('mwText').value)), 'tapping a section in the sheet opens it to write in');
+  ok(await we(() => window.__daily.CFG.mwMode === 'write'), 'and the phone remembers which way you were writing');
 });

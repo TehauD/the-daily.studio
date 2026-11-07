@@ -4,6 +4,11 @@ What the studio, its tutorials, its documents and its tests do **not** cover yet
 
 How to use it: before a release, move what the release closed into *Closed* with the version, and add what it opened. [RELEASE.md](RELEASE.md) has this as a checklist item. Items marked **(maintainer)** are decisions or facts only the project's owner can settle; nothing here blocks a build.
 
+## Closed in 2.49.0
+
+- The phone's Words screen showed one section at a time, and its ＋ offered five kinds and always added at the end. It now has the song map, a 📄 Song sheet, every section kind placed after the current one, and a ⋯ menu for each section.
+- Writing had no next step from the sheet. Perform, Send and Print are now at its foot.
+
 ## Closed in 2.48.1
 
 - Whole song needed a lot of scrolling and left most of the screen unused. It now opens as a chord sheet in columns, with repeats shortened, editing in place and a full-screen mode.
@@ -61,7 +66,6 @@ How to use it: before a release, move what the release closed into *Closed* with
 - **Per-room usage:** the offline copy fetches every room on install, so the host's request counts cannot show which rooms people use. This is privacy-friendly and probably right; recorded so nobody reads the counts as usage.
 
 ### Song structure (opened by 2.48)
-- The phone's **Words** screen still shows one section at a time with plain chips: no song map or whole-song view yet, and its ＋ doesn't offer the section kinds.
 - The **Stage** panel's prompter and the lower third have none of Perform's layout choices.
 - Sections can be reordered with ↑ ↓ but not dragged on the map.
 

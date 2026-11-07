@@ -2,7 +2,36 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
-## 2.48.1 — 2026-11-07 — The whole song as a chord sheet
+## 2.49.0 — 2026-11-07 — Writing on a phone, beginning to end
+
+### Phone (Words)
+- **A song map** above the section chips: every section as a coloured block, as wide as its bars. Tap one to write in it.
+- **📄 Song**, beside ✎ Write and ♪ Chords, shows the whole song as a chord sheet in one column. Tap a section to write in it, or use **🎤 Perform** and **🔗 Send** right there. The phone remembers which of the three you were using.
+- **＋** offers every kind of section (Intro, Verse, Pre-chorus, Chorus, Interlude, Bridge, Solo, Outro, or a repeat of one already in the song):
+  - the new section goes after the one you're in, is named for you, and opens;
+  - a second verse starts with the first one's chords.
+
+  Before, ＋ offered five kinds and always added at the end.
+- **⋯** for the section you're in: rename it, move it earlier or later, repeat it after itself, play from it, or delete it (undo brings it back).
+- Section chips are underlined in their section's colour, the same colours as the map.
+- The Write / Chords / Song switch fits on one line, and ⧉ Paste became an icon.
+
+### Writing, beginning to end
+- The Whole song sheet on a computer ends with **🎤 Perform**, **🔗 Send** and **🖨 Print**: write it, sing it, send it.
+- A blank song says how to begin: add sections, paste a lyric sheet, or put a beat under it.
+- The phone tour's Words card mentions 📄 Song, ＋ and ⋯. The guide page *Write a song over a beat* has a new section, *See the whole song*.
+
+### Tests
+- `e2e-songmap` (34 checks) adds the phone:
+  - the map, coloured chips and the three ways to write, with nothing off the side;
+  - ＋ Verse placing and naming Verse 2 with its chords;
+  - the ⋯ menu and moving a section earlier;
+  - Song as a one-column sheet with Perform and Send;
+  - tapping a section to write in it;
+  - the remembered way of writing.
+- `e2e-phone-singer` uses the new ＋ menu.
+
+2026-11-07 — The whole song as a chord sheet
 
 ### Write
 - **Whole song opens as a 📄 Sheet**, laid out the way a chord sheet is pasted:
