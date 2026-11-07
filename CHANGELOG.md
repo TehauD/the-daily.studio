@@ -36,6 +36,7 @@ All notable changes to the-daily.studio (earlier versions were released under th
   - hide until I move;
   - the map playing on from a section;
   - a phone.
+- **`e2e-perform-views`** adds the Sing-along view to the cycle of views.
 
 2026-11-07 — Neutral names for the drum machines
 
