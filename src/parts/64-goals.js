@@ -113,13 +113,17 @@ const goalShows = id => { const g = goalNow(); return !!g && (g.all || g.spec.or
 function goalTempo(d) { S.bpm = clamp(S.bpm + d, 30, 260); commit(false); bus.emit('bpm'); syncTransport(); goalSync(); }
 /** o.keepZoom: leave the Canvas view as it is (the first-visit default); a goal you pick always shows the studio */
 function goalGo(id, o) {
-  const g = goalById(id); if (!g) return false; CFG.ws = g.id; if (CFG.simple && g.id !== 'songwriter') CFG.preSimple = null; saveCfg();
+  const g = goalById(id); if (!g) return false; CFG.ws = g.id; if (g.id !== 'fullrig') CFG.lastGoal = g.id; saveCfg();
+  if (g.id === 'fullrig' && CFG.simple) { CFG.preSimple = null; simpleSet(false, true); toast('Full Rig has every tool, so Simple is off here. ✦ Simple takes you back to the essentials.', ''); }      /* 2.46: Full Rig is everything */
   if (!(o && o.keepZoom) && typeof ZOOM !== 'undefined' && ZOOM.cur === 'canvas') { ZOOM.cur = CFG.zoom = 'studio'; saveCfg(); document.body.classList.remove('zoom-canvas'); try { zoomSync(); } catch (e) { } }
   applyPreset(g.spec, g.layout); if (typeof xpSignal === 'function') xpSignal(1);
   if (g.spec.side && g.spec.side.fret && typeof sideShow === 'function') { try { sideShow('fret'); } catch (e) { } }
   if (g.enter) { try { g.enter(); } catch (e) { console.warn('goal', e); } }
-  goalMark(); bus.emit('goal', g.id); goalBarBuild(); return true;
+  goalAudioFirst();
+  goalMark(); bus.emit('goal', g.id); goalBarBuild(); try { rebuildTabs(); } catch (e) { } return true;
 }
+/** 2.46: until an input is connected, every workspace opens its sidebar on the audio input (you connect before anything else works) */
+function goalAudioFirst() { try { if (isDesk() && !E.hasInput && typeof sideShow === 'function') sideShow('io'); } catch (e) { } }
 /** the goal's colour, on the page (the goal bar, the open tab) */
 function goalMark() { const g = goalNow(); document.body.dataset.goal = g ? g.id : ''; document.documentElement.style.setProperty('--goal', g ? g.hue : 'var(--accent)'); }
 bus.on('dock', () => { if (document.body.dataset.goal !== ((goalNow() || {}).id || '')) { goalMark(); goalBarBuild(); } });
@@ -135,10 +139,10 @@ function goalBarBuild() {
   box.append(h('div', { class: 'gl-row' }, pick, flow));
   if (!cur) { box.append(h('div', { class: 'gl-row gl-tools' }, h('span', { class: 'tiny muted' }, 'Pick what you want to do, and the studio arranges itself for it. Everything stays one click away.'))); return; }
   const tools = h('div', { class: 'gl-row gl-tools', role: 'toolbar', 'aria-label': cur.name + ' tools' });
-  const ms = CFG.simple && cur.simple || cur, few = CFG.simple && cur.id === 'songwriter';      /* ✦ Simple: Songwriter's own words and fewer tools (part 33b) */
+  const ms = CFG.simple && cur.simple || cur, few = CFG.simple && SIMPLE_GOAL_TOOLS[cur.id];      /* ✦ Simple: each workspace keeps its few tools (part 33b) */      /* ✦ Simple: Songwriter's own words and fewer tools (part 33b) */
   tools.append(h('div', { class: 'gl-mis', title: cur.shape }, h('b', {}, ms.mission), h('span', { class: 'gl-steps' }, ms.steps.map((s, i) => h('span', {}, h('i', {}, i + 1), s)))));
   cur.tools().forEach(([id, label, title, fn, on, main, off]) => {
-    if (few && !SIMPLE_TOOLS.includes(id)) return; if (typeof main === 'function') main = main();
+    if (few && !few.includes(id)) return; if (typeof main === 'function') main = main();
     const b = h('button', { class: 'btn sm gl-tool' + (main ? ' gl-main' : ''), id, type: 'button', title, onclick: e => { fn(e.currentTarget); setTimeout(goalSync, 60); } }, typeof label === 'function' ? label() : label);
     b._on = on; b._off = off; b._label = label; tools.append(b);
   });

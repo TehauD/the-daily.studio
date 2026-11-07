@@ -8,6 +8,8 @@ Contents: [Songs that build](#-songs-that-build-244) · [Vocal tuning](#-vocal-t
 
 ## ✦ Simple (2.33)
 
+**2.46: Simple works in every workspace.** It no longer moves you to Songwriter. Songwriter, Performer, Creator Studio, Practice and Teacher each keep their own few panels and tools in Simple. **Full Rig** is the one workspace with everything: choosing it turns Simple off, and ✦ Simple there takes you back to the last workspace you used. Until an input is connected, every workspace opens its sidebar on **Audio input**, so connecting is the first thing you see.
+
 **✦ Simple** (top right, next to ◐) shows just what you need to make something, for anyone who has never used a recording studio. A first visit starts in Simple; if you have been here before, you keep the full studio until you press it. **Settings ▸ Workflow** has the same switch.
 - **What stays:** play, stop, ● record, Loop and Click (now with their names), the tempo and the key. Also: your song's name, Songs, New and undo; Perform and Voice; the six workspaces and their tools; ● Capture; the tab and the words; Mute all; the arrangement and Loop & layer.
 - **What is tucked away:** return to start, the bar · beat counter, time signature, the master meter, the latency estimate, the workspace button, artist, tuning, capo, scale and notes, and the Canvas / Song / Studio switch. Also: the Create → Perform → Share flow, the Tools menu, each band part's own switch and the mix, tab techniques, fill styles, copy and paste, the arrangement's zoom, swing and lane tools, the stage's extra settings, and the status line at the bottom.

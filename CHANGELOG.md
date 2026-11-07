@@ -2,6 +2,29 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.46.0 — 2026-11-07 — Simple in every workspace; audio first
+
+### Changed
+- **✦ Simple now simplifies the workspace you are in, instead of moving you to Songwriter.** Every workspace stays in the goal bar, and each keeps its own few panels and tools:
+  - **Songwriter:** Write, Band, Save · Beats, Paste chords, Pads, Keys, Send as a link.
+  - **Performer:** Stage, Band, Save · Record video, Camera, Vocal pedals, Replay.
+  - **Creator Studio:** Stage, Save · Record MP4, Video shape, Replay, Thumbnail, Export.
+  - **Practice:** Fretboard, Write, Band · −5 / BPM / +5, Teach me this song, Scales & ear.
+  - **Teacher:** Write, Band · Learn, Today, This song, By ear, Riffs.
+- **Full Rig is the one workspace with everything.**
+  - Choosing it turns Simple off.
+  - Turning Simple on from Full Rig takes you to the last workspace you used.
+  - Turning Simple off again brings Full Rig back exactly as it was.
+- **Visuals in Simple** shows four core looks (Hex Resonance, Concert, Chord Bloom, Prompter); **More looks…** shows the rest.
+- **Audio first:** until an input is connected, every workspace opens its sidebar on the **Audio input** tab, because connecting comes before anything else. Once an input is connected, each workspace opens on its own tab again.
+
+### Tests
+- `e2e-simple`: 34 checks:
+  - Simple stays in Performer with its panels and tools;
+  - every workspace keeps its essentials;
+  - Full Rig turns Simple off, and the round trip back to Full Rig is exact.
+- `e2e-goals`: 46 checks, with every workspace opening on Audio input until an input is connected; each workspace's own shape is checked with an input connected.
+
 ## 2.45.0 — 2026-11-07 — Better instruments
 
 ### Changed
