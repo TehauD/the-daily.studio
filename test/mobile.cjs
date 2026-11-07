@@ -24,23 +24,24 @@ const DEV = { phone: { viewport: { width: 390, height: 844 }, deviceScaleFactor:
   };
   const overflow = p => p.evaluate(() => { const W = innerWidth, bad = []; for (const x of document.querySelectorAll('#app *')) { if (document.body.dataset.form === 'tablet' && x.closest('#left,#right')) continue; const cs = getComputedStyle(x); if (cs.display === 'none' || cs.visibility === 'hidden') continue; const r = x.getBoundingClientRect(); if (r.width < 1 || r.height < 1) continue; let a = x.parentElement, clip = false; while (a && a.id !== 'app') { const c = getComputedStyle(a); if (/(hidden|auto|scroll|clip)/.test(c.overflowX) && a.getBoundingClientRect().right <= W + 2) { clip = true; break; } a = a.parentElement; } if (!clip && (r.right > W + 2 || r.left < -2)) bad.push(x.tagName + '.' + String(x.className).slice(0, 24)); } return { sw: document.documentElement.scrollWidth, W, bad: bad.slice(0, 5) }; });
   const goto = async (p, g, s) => {
-    if (g === 'more') { await p.tap('.mnb[data-g="more"]'); await wait(300); await p.tap(`.msheet .mpanel-b button[data-sub="${s}"]`); await wait(450); return; }      /* 2.24: More opens the sheet; its first row has the panels */
-    await p.tap(`.mnb[data-g="${g}"]`); await wait(150); await p.tap(`#msub .msc[data-s="${s}"]`); await wait(450);
+    if (['more', 'guitar', 'see'].includes(g)) { await p.tap('.mnb[data-g="more"]'); await wait(300); await p.tap(`.msheet .mpanel-b button[data-sub="${s}"]`); await wait(450); return; }      /* More opens the sheet: Research and Export, then the guitar and the visuals (2.41) */
+    await p.tap(`.mnb[data-g="${g}"]`); await wait(150); if (await p.$(`#msub .msc[data-s="${s}"]:visible`)) await p.tap(`#msub .msc[data-s="${s}"]`); await wait(450);
   };
 
   /* ---- phone, portrait ---- */
   let p = await open('phone');
   ok(await p.evaluate(() => document.body.dataset.form === 'phone' && document.body.dataset.land === '0'), 'phone width selects the phone layout');
-  ok(await p.evaluate(() => !!document.querySelector('#mtrans #mtrans, #mtrans .btn.play') && !!document.querySelector('#top #transport .field')), 'transport buttons moved to the bottom bar, tempo/key stay in the header');
-  const subs = [['play', 'rig'], ['play', 'tones'], ['play', 'tuner'], ['play', 'io'], ['write', 'tab'], ['write', 'band'], ['write', 'theory'], ['see', 'vis'], ['see', 'stage'], ['see', 'neural'], ['see', 'cam'], ['stems', 'stems'], ['stems', 'tx'], ['more', 'lab'], ['more', 'exp']];
+  ok(await p.evaluate(() => !!document.querySelector('#mtrans #mtrans, #mtrans .btn.play') && !!document.querySelector('#top #mSongBtn') && ![...document.querySelectorAll('#top #transport .field')].some(f => f.getClientRects().length)), 'transport buttons are in the bottom bar; the header has the song’s name, and its tempo and key are in the song sheet (2.41)');
+  ok(await p.evaluate(() => [...document.querySelectorAll('.mnb')].map(b => b.textContent.trim()).join() === 'Words,Sing,Beats,Tracks,More' && document.body.dataset.view === 'm' && document.getElementById('mscreen').dataset.screen === 'words'), 'the bottom bar is Words, Sing, Beats, Tracks and More, and a phone opens on the words (2.41)');
+  const subs = [['words', 'words'], ['words', 'theory'], ['sing', 'sing'], ['beats', 'beats'], ['beats', 'band'], ['tracks', 'stems'], ['tracks', 'tx'], ['guitar', 'rig'], ['guitar', 'tones'], ['guitar', 'tuner'], ['guitar', 'io'], ['guitar', 'tab'], ['guitar', 'refine'], ['see', 'vis'], ['see', 'stage'], ['see', 'neural'], ['see', 'cam'], ['more', 'lab'], ['more', 'exp']];
   for (const dev of ['phone', 'small']) {
     const q = dev === 'phone' ? p : await open('small'); const bad = [];
-    for (const [g, s] of subs) { await goto(q, g, s); const o = await overflow(q); const vis = await q.evaluate(() => { const v = document.body.dataset.view; const el = v === 'center' ? document.querySelector('#dock .pane.on') : document.querySelector('#' + v); return !!el && el.getBoundingClientRect().height > 120; }); if (o.sw > o.W + 1 || o.bad.length || !vis) bad.push(s + ':' + JSON.stringify(o.bad) + (vis ? '' : ' empty')); }
+    for (const [g, s] of subs) { await goto(q, g, s); const o = await overflow(q); const vis = await q.evaluate(() => { const v = document.body.dataset.view; const el = v === 'center' ? document.querySelector('#dock .pane.on') : v === 'm' ? document.querySelector('#mscreen') : document.querySelector('#' + v); return !!el && el.getBoundingClientRect().height > 120; }); if (o.sw > o.W + 1 || o.bad.length || !vis) bad.push(s + ':' + JSON.stringify(o.bad) + (vis ? '' : ' empty')); }
     ok(bad.length === 0, `${dev}: all ${subs.length} panels fit the screen without sideways scrolling` + (bad.length ? ' ' + bad.join(' ') : ''));
     if (dev === 'small') await q.ctx.close();
   }
   // on-screen tab keypad
-  await goto(p, 'write', 'tab');
+  await goto(p, 'guitar', 'tab');
   ok(await p.evaluate(() => getComputedStyle(document.querySelector('#kpad')).display === 'flex'), 'tab keypad is shown in Write ▸ Tab');
   await p.tap('#pane-tab .tcell[data-b="0"][data-s="0"][data-st="5"]'); await p.tap('#kpad .kp.num:has-text("5")'); await wait(250);
   const cell = (b, s, st) => p.evaluate(([b, s, st]) => { const c = document.querySelector(`#pane-tab .tcell[data-b="${b}"][data-s="${s}"][data-st="${st}"]`); return c ? c.textContent.trim() : null; }, [b, s, st]);
@@ -56,7 +57,7 @@ const DEV = { phone: { viewport: { width: 390, height: 844 }, deviceScaleFactor:
   await p.tap('#mtrans .btn.play'); await wait(900);
   ok(await p.evaluate(() => document.querySelector('#mtrans .btn.play').classList.contains('on')), 'bottom transport starts playback'); await p.tap('#mtrans .btn.play'); await wait(300);
   // arrangement cycling
-  await goto(p, 'write', 'tab');
+  await goto(p, 'guitar', 'tab');
   const tlh = () => p.evaluate(() => document.querySelector('#timeline').getBoundingClientRect().height);
   const h0 = await tlh(); await p.tap('#msub .msc.tl'); await wait(250); const h1 = await tlh(); await p.tap('#msub .msc.tl'); await wait(250); const h2 = await tlh(); await p.tap('#msub .msc.tl'); await wait(250);
   ok(h1 > h0 + 80 && h2 === 0 && Math.abs((await tlh()) - h0) < 3, `arrangement cycles mini ${Math.round(h0)} → full ${Math.round(h1)} → hidden → mini`);
@@ -78,7 +79,7 @@ const DEV = { phone: { viewport: { width: 390, height: 844 }, deviceScaleFactor:
   await p.tap('.mmore'); await wait(300); await p.tap('.msheet .mtile:has-text("Guided tour")'); await wait(700);
   let steps = 0, off = 0; while (await p.$('#tour')) { steps++; const r = await p.evaluate(() => { const c = document.querySelector('.tour-card').getBoundingClientRect(); return c.left >= 0 && c.top >= 0 && c.right <= innerWidth + 1 && c.bottom <= innerHeight + 1; }); if (!r) off++; const nxt = await p.$('.tour-card .btn.primary'); await nxt.tap(); await wait(520); if (steps > 40) break; }
   ok(steps >= 15 && steps <= 20 && off === 0, `phone tour walked ${steps} steps, every card on screen, then closed`);
-  await goto(p, 'play', 'rig');
+  await goto(p, 'guitar', 'rig');
   await p.tap('#mtrans .btn.play'); await wait(2500);
   ok(await p.evaluate(() => window.__wl) >= 1, 'screen wake lock requested while playing'); await p.tap('#mtrans .btn.play');
   const knob = await p.$('.rigdeck .knob'); const kb = await knob.boundingBox(); const cdp = await p.ctx.newCDPSession(p);
@@ -102,14 +103,14 @@ const DEV = { phone: { viewport: { width: 390, height: 844 }, deviceScaleFactor:
   await p.close(); await p.ctx.close();
 
   /* ---- phone: Tracks gets the whole work area ---- */
-  p = await open('phone'); await goto(p, 'play', 'rig');
+  p = await open('phone'); await goto(p, 'guitar', 'rig');
   await p.evaluate(() => { const b = document.querySelector('.msc.tl'); b.click(); if (document.body.dataset.tl !== 'full') b.click(); }); await wait(500);
   { const T1 = await p.evaluate(() => ({ tl: document.body.dataset.tl, dock: getComputedStyle(document.getElementById('dock')).display, h: Math.round(document.getElementById('timeline').getBoundingClientRect().height), vh: innerHeight, btn: document.querySelector('.msc.tl').textContent }));
     ok(T1.tl === 'full' && T1.dock === 'none' && T1.h > T1.vh * .5 && /Panel/.test(T1.btn), 'phone: Tracks takes the whole work area and the button offers Panel (' + JSON.stringify(T1) + ')'); }
   await p.close(); await p.ctx.close();
 
   /* ---- loading a track into Stems (a synthetic file made here; nothing is bundled) ---- */
-  p = await open('phone'); await goto(p, 'stems', 'stems');
+  p = await open('phone'); await goto(p, 'tracks', 'stems');
   ok(await p.evaluate(() => !document.querySelector('.smp-shelf .smp')), 'no sample track is bundled with the app');
   { const fs = require('node:fs'), os = require('node:os'), sr = 22050, n = sr * 6, buf = Buffer.alloc(44 + n * 2), wv = path.join(os.tmpdir(), 'daily-test-track.wav');
     buf.write('RIFF', 0); buf.writeUInt32LE(36 + n * 2, 4); buf.write('WAVEfmt ', 8); buf.writeUInt32LE(16, 16); buf.writeUInt16LE(1, 20); buf.writeUInt16LE(1, 22); buf.writeUInt32LE(sr, 24); buf.writeUInt32LE(sr * 2, 28); buf.writeUInt16LE(2, 32); buf.writeUInt16LE(16, 34); buf.write('data', 36); buf.writeUInt32LE(n * 2, 40);
@@ -121,7 +122,7 @@ const DEV = { phone: { viewport: { width: 390, height: 844 }, deviceScaleFactor:
 
   /* ---- landscape phone ---- */
   p = await open('land'); ok(await p.evaluate(() => document.body.dataset.form === 'phone' && document.body.dataset.land === '1' && getComputedStyle(document.querySelector('#mnav')).flexDirection === 'column'), 'landscape phone uses the side rail');
-  { const bad = []; for (const [g, s] of [['play', 'rig'], ['write', 'tab'], ['write', 'band'], ['see', 'neural'], ['see', 'stage'], ['stems', 'stems']]) { await goto(p, g, s); const o = await overflow(p); if (o.sw > o.W + 1 || o.bad.length) bad.push(s + JSON.stringify(o.bad)); } ok(bad.length === 0, 'landscape: panels fit' + (bad.length ? ' ' + bad : '')); }
+  { const bad = []; for (const [g, s] of [['guitar', 'rig'], ['guitar', 'tab'], ['beats', 'band'], ['see', 'neural'], ['see', 'stage'], ['tracks', 'stems'], ['words', 'words'], ['sing', 'sing']]) { await goto(p, g, s); const o = await overflow(p); if (o.sw > o.W + 1 || o.bad.length) bad.push(s + JSON.stringify(o.bad)); } ok(bad.length === 0, 'landscape: panels fit' + (bad.length ? ' ' + bad : '')); }
   const hts = await p.evaluate(() => { const w = document.querySelector('#work').getBoundingClientRect(); return w.height; }); ok(hts >= 240, 'landscape: content area is at least 240px tall (' + Math.round(hts) + ')');
   await p.close(); await p.ctx.close();
 

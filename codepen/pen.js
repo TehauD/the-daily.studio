@@ -34,7 +34,7 @@ window.__dailyRoom = (id, make) => {
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.40.0', BUILD = '1a4777f', PARTS_N = +'108' || 0, LINES_N = +'18353' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.41.0', BUILD = '354f4e5', PARTS_N = +'109' || 0, LINES_N = +'18509' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { ghApp: { clientId: '', slug: '' },   /* Sign in with GitHub: the GitHub App's public client id and its slug (docs/GITHUB.md); empty = only the token way */
   support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://the-daily.studio/journal/' };
@@ -3977,7 +3977,7 @@ async function boot() {
   if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener('devicechange', () => { ioDeviceChange().catch(e => console.warn(e)); });
   bus.emit('song');
   try { ghBoot(); } catch (e) { console.warn('github', e); }      /* back from Sign in with GitHub, or a sync at start (part 74) */
-  DEV.make = () => { window.__daily = { room, ROOM, slPack, slUnpack, slLink, slRead, slShare, slWelcome, slOpen, slFromHash, SL, BEATS, beatUse, beatRows, beatsShelf, SIMPLE_TOOLS, drumHit, RL, MO, GM_DRUM, duckAt, duckSet, duckCfg, duckNode, moNote, moDev, moDrum, moPanic, moSettings, kyOut, bassOut, rollOpen, rollBuild, rollLoop, isBass, instNow, nStr, yin, TUNINGS, setTuning, renderBarTab, tabLabels, voicingFor, toggleRec, closePop, spPause, encodeWav, PS, psOn, playDur, psSpeed, psKey, psSched, psDSPFactory, psPop, KY, keysOpen, keysVoice, keysStep, kyNoteOn, kyNoteOff, kyRec, kyClear, kyWrite, kyPiano, kyMarks, kyVoicing, KEYS_SOUNDS, KEYS_STYLES, coFinish, coDemo, coFeedback, coFbView, coTimeline, coBeat, coPractise, TAKE, learnPassed, todayPlan, todayPieces, todayStart, todayDone, streak, weekCount, dayKey, LSTEP, songLessons, songStart, songKey, earLick, earStart, EAR, simpleSet, simpleApply, ghTakeSettings, airMode, airSet, CO, coPos, coachOpen, coListen, coTick, coPlace, coNotes, coSetPiece, rfParse, LESSONS, RIFFS, RIFF_STYLES, learnOpen, learnToSong, learnFile, learnFileText, learnOpenFile, learnFromSong, labMake, labVary, labKeep, atlasPieces, atShape, MODE_VAMP, S, AIR, AIR_LAG, airSync, applyLayout, VB_PRESETS, VB_ORDER, VBS, vbAttach, vbApply, vbToggle, vbSet, vbPreset, vbPresetNext, vbThrow, vbLook, vbTick, vbScale, vocalBoardOpen, pedalRelease, MEG, megSpectrum, megFeatures, megScore, megStep, megSet, megLearn, megDraw, megLoop, megSettings, PAD, padsOpen, padHit, padTap, padRecord, padRecStop, padUndoPass, padClear, padResize, padBeatbox, bbHits, bbPattern, dpat, bassEvent, drumStep, PEDAL, pedalPress, pedalDo, pedalSecs, gearSettings, MCLK, mclkSlot, mclkMs, MIDI, MIDIRAW, onMidi, STRM, streamOpen, streamRoom, streamInfo, streamPanel, slotAtTime, SING, SHW, singStep, singScore, singSteamIR, singMicOff, showerOpen, shwGo, shwPlay, shwPrev, shwNext, shwStem, shwRecToggle, shwRecStop, shwHear, shwSave, shwAddFiles, shwRemove, shwMove, shwMode, shwLoadSet, shwPlaylist, shwWords, shwPrepare, shwFolderPull, lrcParse, readTags, spPos, spPlay, STP, trainOpen, projRestoreTrack, secretNote, secretArp, WS, WS_BASE, WS_ARPS, wsScaleRun, wsArpRun, wsFollow, wsStop, wsListen, wsEarNext, wsEarAnswer, wsOpen, bandMute, bandMuted, pdbPut, pdbKeys, projRename, FS, FS_B, fsUse, fsSync, fsHead, fsNeeds, fsTidy, fsOpen, syncOff, syncZips, PRJ_WAIT: () => PRJ.wait, EGG, EGG_LINES, EGG_ORDER, eggDay, eggFor, eggNow, eggText, eggTick, eggFit, saveCfg, projSave, projDelete, GH, ghSync, ghConnect, ghDisconnect, ghLocal, ghSha, ghJson, ghMerge3, ghShare, ghGallery, ghGalleryOpen, ghGalleryShow, ghKeepLook, ghKeepRig, rigClean, ghReturn, BRAND, ghSettingsOut, projRefresh, projCreate, projLoad, PRJ, SEC, SECRETS, secretFound, secretTiming, secretsOpen, secretSync, backstageOpen, startAudio, playheadSlot, GUARD, reportText, reportCopy, srecQ, srecSize, pdbGet, srecFmt, SREC_FMTS, VBG, vbgAdd, vbgRemove, vbgUse, vbgOpen, vbgDraw, vzSetMode, srecFrame, srecFmtBox, kitThumb, WORKLET_SRC, mkComp, mkShaper, rigLat, voxLat, restartAudio, satCurve, rigApply, qrMake, qrSvg, tipLink, tipShort, tipReady, tipCard, tipDraw, tipShareHtml, tipOpen, tipPrint, tipPng, tipVisAvoid, tipStageAvoid, TIP, TIP_TERMS, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, drawVis, peaksOf, uid, shareGate, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, TAKES, STM, ZOOM, CFG, store, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, SEL, mtof, spb, WR, HM, HMX, HM_MODES, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitInk, kitNotes, kitRecord, srecMime, mGo, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard}; };   // test hook: with ?debug, or Backstage ▸ Labs ▸ Developer handles
+  DEV.make = () => { window.__daily = { M, MGROUPS, MW, mScreenDraw, mwRead, mwView, mwLyrics, mwSyl, mwEdited, mwPut, mSongOpen, room, ROOM, slPack, slUnpack, slLink, slRead, slShare, slWelcome, slOpen, slFromHash, SL, BEATS, beatUse, beatRows, beatsShelf, SIMPLE_TOOLS, drumHit, RL, MO, GM_DRUM, duckAt, duckSet, duckCfg, duckNode, moNote, moDev, moDrum, moPanic, moSettings, kyOut, bassOut, rollOpen, rollBuild, rollLoop, isBass, instNow, nStr, yin, TUNINGS, setTuning, renderBarTab, tabLabels, voicingFor, toggleRec, closePop, spPause, encodeWav, PS, psOn, playDur, psSpeed, psKey, psSched, psDSPFactory, psPop, KY, keysOpen, keysVoice, keysStep, kyNoteOn, kyNoteOff, kyRec, kyClear, kyWrite, kyPiano, kyMarks, kyVoicing, KEYS_SOUNDS, KEYS_STYLES, coFinish, coDemo, coFeedback, coFbView, coTimeline, coBeat, coPractise, TAKE, learnPassed, todayPlan, todayPieces, todayStart, todayDone, streak, weekCount, dayKey, LSTEP, songLessons, songStart, songKey, earLick, earStart, EAR, simpleSet, simpleApply, ghTakeSettings, airMode, airSet, CO, coPos, coachOpen, coListen, coTick, coPlace, coNotes, coSetPiece, rfParse, LESSONS, RIFFS, RIFF_STYLES, learnOpen, learnToSong, learnFile, learnFileText, learnOpenFile, learnFromSong, labMake, labVary, labKeep, atlasPieces, atShape, MODE_VAMP, S, AIR, AIR_LAG, airSync, applyLayout, VB_PRESETS, VB_ORDER, VBS, vbAttach, vbApply, vbToggle, vbSet, vbPreset, vbPresetNext, vbThrow, vbLook, vbTick, vbScale, vocalBoardOpen, pedalRelease, MEG, megSpectrum, megFeatures, megScore, megStep, megSet, megLearn, megDraw, megLoop, megSettings, PAD, padsOpen, padHit, padTap, padRecord, padRecStop, padUndoPass, padClear, padResize, padBeatbox, bbHits, bbPattern, dpat, bassEvent, drumStep, PEDAL, pedalPress, pedalDo, pedalSecs, gearSettings, MCLK, mclkSlot, mclkMs, MIDI, MIDIRAW, onMidi, STRM, streamOpen, streamRoom, streamInfo, streamPanel, slotAtTime, SING, SHW, singStep, singScore, singSteamIR, singMicOff, showerOpen, shwGo, shwPlay, shwPrev, shwNext, shwStem, shwRecToggle, shwRecStop, shwHear, shwSave, shwAddFiles, shwRemove, shwMove, shwMode, shwLoadSet, shwPlaylist, shwWords, shwPrepare, shwFolderPull, lrcParse, readTags, spPos, spPlay, STP, trainOpen, projRestoreTrack, secretNote, secretArp, WS, WS_BASE, WS_ARPS, wsScaleRun, wsArpRun, wsFollow, wsStop, wsListen, wsEarNext, wsEarAnswer, wsOpen, bandMute, bandMuted, pdbPut, pdbKeys, projRename, FS, FS_B, fsUse, fsSync, fsHead, fsNeeds, fsTidy, fsOpen, syncOff, syncZips, PRJ_WAIT: () => PRJ.wait, EGG, EGG_LINES, EGG_ORDER, eggDay, eggFor, eggNow, eggText, eggTick, eggFit, saveCfg, projSave, projDelete, GH, ghSync, ghConnect, ghDisconnect, ghLocal, ghSha, ghJson, ghMerge3, ghShare, ghGallery, ghGalleryOpen, ghGalleryShow, ghKeepLook, ghKeepRig, rigClean, ghReturn, BRAND, ghSettingsOut, projRefresh, projCreate, projLoad, PRJ, SEC, SECRETS, secretFound, secretTiming, secretsOpen, secretSync, backstageOpen, startAudio, playheadSlot, GUARD, reportText, reportCopy, srecQ, srecSize, pdbGet, srecFmt, SREC_FMTS, VBG, vbgAdd, vbgRemove, vbgUse, vbgOpen, vbgDraw, vzSetMode, srecFrame, srecFmtBox, kitThumb, WORKLET_SRC, mkComp, mkShaper, rigLat, voxLat, restartAudio, satCurve, rigApply, qrMake, qrSvg, tipLink, tipShort, tipReady, tipCard, tipDraw, tipShareHtml, tipOpen, tipPrint, tipPng, tipVisAvoid, tipStageAvoid, TIP, TIP_TERMS, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, drawVis, peaksOf, uid, shareGate, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, TAKES, STM, ZOOM, CFG, store, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, SEL, mtof, spb, WR, HM, HMX, HM_MODES, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitInk, kitNotes, kitRecord, srecMime, mGo, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard}; };   // test hook: with ?debug, or Backstage ▸ Labs ▸ Developer handles
   if (/[?&]debug\b/.test(location.search) || (CFG.labs && CFG.labs.handles)) DEV.make();
   try { bksBoot(); } catch (e) { console.warn('backstage', e); }      /* #backstage in the address, the performance overlay (part 73c) */
   projInit().catch(e => { console.warn('library', e); PRJ.ready = true; if (PRJ.wantStart) startMaybe(); });
@@ -5420,13 +5420,19 @@ bus.on('form', () => { if (TOUR.on) tourEnd(false); });
    - desktop: untouched (this part only toggles attributes and moves nothing)
    ============================================================ */
 const M = { form: 'desktop', g: 'play', s: 'rig', view: 'center', tl: { p: 'mini', l: 'off' }, last: {}, sheet: null, drawer: null };
+/* 2.41: on a phone the bottom bar is for singers and songwriters (part 18c): Words, Sing, Beats, Tracks and More. The guitar and the
+   visuals are sections too, opened from More (no nav), so nothing is lost. A sub marked 'm' is a phone screen of part 18c. */
 const MGROUPS = [
-  { id: 'play', name: 'Play', ico: '<rect x="4" y="5" width="16" height="14" rx="2.4"/><circle cx="9" cy="12" r="2.2"/><path d="M14.5 10h3M14.5 14h3"/>', subs: [['rig', 'Rig'], ['tones', 'Tones', 'left'], ['tuner', 'Tuner', 'right'], ['io', 'I/O', 'left']] },
-  { id: 'write', name: 'Write', ico: '<path d="M4 20l1-4.2L16.2 4.6a1.6 1.6 0 012.2 0l1 1a1.6 1.6 0 010 2.2L8.2 19z"/><path d="M14 7l3 3"/>', subs: [['tab', 'Write'], ['refine', 'Refine', 'right'], ['band', 'Band'], ['theory', 'Theory', 'left']] },
-  { id: 'see', name: 'See', ico: '<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><circle cx="12" cy="12" r="2.6"/>', subs: [['vis', 'Visuals'], ['stage', 'Stage'], ['neural', 'Neural'], ['cam', 'Vision']] },
-  { id: 'stems', name: 'Stems', ico: '<path d="M4 9v6M8 5v14M12 8v8M16 4v16M20 9v6"/>', subs: [['stems', 'Stems'], ['tx', 'Transcribe']] },
-  { id: 'more', name: 'More', ico: '<circle cx="5.5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="18.5" cy="12" r="1.5"/>', subs: [['lab', 'Research'], ['exp', 'Export']] }
+  { id: 'words', name: 'Words', nav: 1, ico: '<path d="M4 20l1-4.2L16.2 4.6a1.6 1.6 0 012.2 0l1 1a1.6 1.6 0 010 2.2L8.2 19z"/><path d="M14 7l3 3"/>', subs: [['words', 'Words', 'm'], ['theory', 'Chords & key', 'left']] },
+  { id: 'sing', name: 'Sing', nav: 1, ico: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/>', subs: [['sing', 'Sing', 'm']] },
+  { id: 'beats', name: 'Beats', nav: 1, ico: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.4"/><path d="M12 4v3M12 17v3M4 12h3M17 12h3"/>', subs: [['beats', 'Beats', 'm'], ['band', 'Band']] },
+  { id: 'tracks', name: 'Tracks', nav: 1, ico: '<path d="M4 9v6M8 5v14M12 8v8M16 4v16M20 9v6"/>', subs: [['stems', 'Backing track'], ['tx', 'Transcribe']] },
+  { id: 'more', name: 'More', nav: 1, ico: '<circle cx="5.5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="18.5" cy="12" r="1.5"/>', subs: [['lab', 'Research'], ['exp', 'Export']] },
+  { id: 'guitar', name: 'Guitar', ico: '<rect x="4" y="5" width="16" height="14" rx="2.4"/><circle cx="9" cy="12" r="2.2"/><path d="M14.5 10h3M14.5 14h3"/>', subs: [['rig', 'Rig'], ['tones', 'Tones', 'left'], ['tuner', 'Tuner', 'right'], ['io', 'I/O', 'left'], ['tab', 'Tab'], ['refine', 'Refine', 'right']] },
+  { id: 'see', name: 'See', ico: '<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><circle cx="12" cy="12" r="2.6"/>', subs: [['vis', 'Visuals'], ['stage', 'Stage'], ['neural', 'Neural'], ['cam', 'Vision']] }
 ];
+/* the names phones used before 2.41, for guided sessions and links that still use them */
+const MG_ALIAS = { play: 'guitar', write: 'words', stems: 'tracks' };
 const msvg = (inner, sz) => { const s = document.createElement('span'); s.className = 'ico'; s.innerHTML = '<svg viewBox="0 0 24 24" width="' + (sz || 22) + '" height="' + (sz || 22) + '" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + inner + '</svg>'; return s; };
 const mGroupOf = sid => MGROUPS.find(g => g.subs.some(s => s[0] === sid));
 
@@ -5463,10 +5469,12 @@ function applyForm() {
 
 /* ---------- navigation model (phone) ---------- */
 function mGo(gid, sid) {
-  const g = MGROUPS.find(x => x.id === gid) || MGROUPS[0], s = g.subs.find(x => x[0] === sid) || g.subs.find(x => x[0] === M.last[g.id]) || g.subs[0];
-  M.g = g.id; M.s = s[0]; M.last[g.id] = s[0]; CFG.mlast = M.last;
+  gid = MG_ALIAS[gid] || gid; const own = sid && mGroupOf(sid), asked = MGROUPS.find(x => x.id === gid);      /* a panel always opens in the section it lives in */
+  const g = (own && !(asked && asked.subs.some(x => x[0] === sid)) ? own : asked) || MGROUPS[0], s = g.subs.find(x => x[0] === sid) || g.subs.find(x => x[0] === M.last[g.id]) || g.subs[0];
+  M.g = g.id; M.s = s[0]; M.last[g.id] = s[0]; CFG.mlast = M.last; CFG.mg = g.id; saveCfg();
   mCloseOverlays(true);
-  if (s[2] === 'left') { M.view = 'left'; const t = $('#left .side-tabs .tab[data-id="' + s[0] + '"]'); if (t) t.click(); }
+  if (s[2] === 'm') { M.view = 'm'; }      /* a phone screen (part 18c) */
+  else if (s[2] === 'left') { M.view = 'left'; const t = $('#left .side-tabs .tab[data-id="' + s[0] + '"]'); if (t) t.click(); }
   else if (s[2] === 'right') { M.view = 'right'; const t = $('#right .side-tabs .tab[data-id="' + (s[0] === 'tuner' ? 'monitor' : s[0]) + '"]'); if (t) t.click(); }
   else { M.view = 'center'; if (DOCK.cur !== s[0]) dockGo(s[0]); }
   mSync();
@@ -5477,21 +5485,32 @@ function mSync() {
   const tlv = mTl();
   b.dataset.tl = (M.view !== 'center' || M.g === 'see') ? 'off' : tlv;
   if (!M.nav) return;
-  $$('.mnb', M.nav).forEach(x => x.classList.toggle('on', x.dataset.g === M.g));
+  const gNav = (MGROUPS.find(x => x.id === M.g) || {}).nav ? M.g : 'more';      /* the guitar and the visuals light up More, where they open from */
+  $$('.mnb', M.nav).forEach(x => x.classList.toggle('on', x.dataset.g === gNav));
+  if (M.view === 'm' && typeof mScreenDraw === 'function') mScreenDraw();
   const g = MGROUPS.find(x => x.id === M.g); if (!g) return;
   if (M.subFor !== g.id) { M.subFor = g.id; M.chips.innerHTML = ''; g.subs.forEach(([id, name, tgt]) => M.chips.append(h('button', { class: 'msc', 'data-s': id, role: 'tab', onclick: () => mGo(g.id, id) }, name))); }
   $$('.msc', M.chips).forEach(x => x.classList.toggle('on', x.dataset.s === M.s));
   const on = M.chips.querySelector('.msc.on'); if (on && on.scrollIntoView) on.scrollIntoView({ block: 'nearest', inline: 'nearest' });
-  if (M.songBtn) M.songBtn.textContent = '♪ ' + ((S && S.title) || 'Song').slice(0, 14);
-  M.tlBtn.textContent = tlv === 'full' ? '▾ Panel' : tlv === 'off' ? '▴ Tracks' : '⤢ Tracks'; M.tlBtn.title = tlv === 'mini' ? 'Give the tracks the whole screen' : tlv === 'full' ? 'Back to the panel (tracks hidden)' : 'Show the tracks';
-  M.tlBtn.style.display = M.view === 'center' && M.g !== 'see' ? '' : 'none';
+  if (M.songBtn) M.songBtn.textContent = '♪ ' + ((S && S.title) || 'Song').slice(0, 22);
+  M.tlBtn.textContent = tlv === 'full' ? '▾ Panel' : tlv === 'off' ? '▴ Timeline' : '⤢ Timeline'; M.tlBtn.title = tlv === 'mini' ? 'Give the tracks the whole screen' : tlv === 'full' ? 'Back to the panel (tracks hidden)' : 'Show the tracks';
+  M.tlBtn.style.display = M.view === 'center' && M.g !== 'see' ? '' : 'none'; b.dataset.msub = (MGROUPS.find(x => x.id === M.g) || { subs: [] }).subs.length > 1 || M.tlBtn.style.display !== 'none' ? '1' : '0';
   setTimeout(() => { if (typeof tlSize === 'function') tlSize(); window.dispatchEvent(new Event('fw:fit')); }, 50);
 }
 const mTl = () => M.tl[document.body.dataset.land === '1' ? 'l' : 'p'];
 function mCycleTl() { const k = document.body.dataset.land === '1' ? 'l' : 'p', v = M.tl[k]; M.tl[k] = v === 'mini' ? 'full' : v === 'full' ? 'off' : 'mini'; CFG.mtl = M.tl; saveCfg(); mSync(); }
 
 /* ---------- overlays: More sheet, tablet drawers ---------- */
+/** 2.41: the song sheet holds the tempo, time signature, key and mode on a phone (the top bar keeps only the song's name) */
+function mSongOpen() {
+  const o = document.body.classList.contains('song-open'); mCloseOverlays(); if (o) return;
+  if (typeof VOX !== 'undefined' && VOX.panel) voxClose();
+  const bar = $('#songbar'), f = M.kids ? M.kids.filter(x => x.matches && x.matches('label.field')) : [];
+  if (bar && f.length) { M.sf = h('div', { class: 'msong-f' }, ...f); bar.prepend(M.sf); }
+  document.body.classList.add('song-open');
+}
 function mCloseOverlays(keepBack) {
+  if (M.sf) { const tr = $('#transport'), mm = tr && tr.querySelector('.metro-more'); [...M.sf.children].forEach(x => tr.insertBefore(x, mm || null)); M.sf.remove(); M.sf = null; }
   if (M.sheet) { M.sheet.remove(); M.sheet = null; } if (M.nav) M.nav.querySelectorAll('.mnb').forEach(b => b.removeAttribute('aria-expanded'));
   document.body.classList.remove('d-left', 'd-right', 'sheet-open', 'song-open');
   M.drawer = null;
@@ -5519,6 +5538,7 @@ function mSheet() {
     h('div', { class: 'mgrab', onclick: () => mCloseOverlays() }),
     stat,
     h('div', { class: 'mrow mpanels' }, h('span', {}, 'Panels'), h('div', { class: 'mpanel-b' }, more.subs.map(([sid, name]) => h('button', { class: 'btn sm' + (M.g === 'more' && M.s === sid ? ' on' : ''), 'data-sub': sid, onclick: () => { mCloseOverlays(); mGo('more', sid); } }, msvg(pico[sid] || '<circle cx="12" cy="12" r="8"/>', 16), ' ' + name)))),
+    ['guitar', 'see'].map(gid => { const g = MGROUPS.find(x => x.id === gid); return h('div', { class: 'mrow mpanels', 'data-group': gid }, h('span', {}, gid === 'guitar' ? '🎸 Guitar' : 'Visuals'), h('div', { class: 'mpanel-b' }, g.subs.map(([sid, name]) => h('button', { class: 'btn sm' + (M.g === gid && M.s === sid ? ' on' : ''), 'data-sub': sid, onclick: () => { mCloseOverlays(); mGo(gid, sid); } }, name)))); }),
     h('div', { class: 'mgrid' },
       tile(msvg('<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/>'), 'Hum or sing a song', () => { mCloseOverlays(); humOpen(); }),
       tile(msvg('<path d="M17 2l4 4-4 4M3 11V9a3 3 0 013-3h15M7 22l-4-4 4-4M21 13v2a3 3 0 01-3 3H3"/>'), 'Loop & layer', () => { mCloseOverlays(); looperOpen(); }),
@@ -5562,28 +5582,164 @@ function buildMobile() {
   M.trans = h('div', { id: 'mtrans', role: 'group', 'aria-label': 'Transport' });
   M.chips = h('div', { class: 'mchips', role: 'tablist' });
   M.tlBtn = h('button', { class: 'msc tl', title: 'Arrangement: mini → full → hidden', onclick: mCycleTl }, '▴ Tracks');
-  M.songBtn = h('button', { class: 'msc song', title: 'Song details: title, artist, tuning, capo, loaded track', onclick: () => { const o = document.body.classList.contains('song-open'); mCloseOverlays(); if (!o) { if (typeof VOX !== 'undefined' && VOX.panel) voxClose(); document.body.classList.add('song-open'); } } }, '♪ Song');
-  M.sub = h('div', { id: 'msub' }, M.songBtn, M.chips, M.tlBtn);
-  M.nav = h('nav', { id: 'mnav', 'aria-label': 'Sections' }, MGROUPS.map(g => h('button', { class: 'mnb', 'data-g': g.id, onclick: () => g.id === 'more' ? mSheet() : mGo(g.id) }, msvg(g.ico), h('span', {}, g.name))));      /* More opens the sheet of everything else (its panels, Research and Export, are the first row) */
+  M.songBtn = h('button', { class: 'msc song', id: 'mSongBtn', title: 'The song: its name, tempo, key, time signature, tuning and backing track', onclick: mSongOpen }, '♪ Song');
+  M.sub = h('div', { id: 'msub' }, M.chips, M.tlBtn);
+  M.scr = h('div', { id: 'mscreen', role: 'region', 'aria-label': 'Phone screen' }); const work = $('#work'); if (work) work.append(M.scr);
+  M.nav = h('nav', { id: 'mnav', 'aria-label': 'Sections' }, MGROUPS.filter(g => g.nav).map(g => h('button', { class: 'mnb', 'data-g': g.id, onclick: () => g.id === 'more' ? mSheet() : mGo(g.id) }, msvg(g.ico), h('span', {}, g.name))));      /* More opens the sheet of everything else (its panels, Research and Export, are the first row) */
   M.back = h('div', { id: 'mback', onclick: () => mCloseOverlays() });
   const more = h('button', { class: 'btn icon mmore', title: 'More: theme, settings, help, share', 'aria-label': 'More', onclick: mSheet }, msvg('<circle cx="5.5" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="18.5" cy="12" r="1.5" fill="currentColor"/>', 20));
   $('#topR').append(more);
   const dl = h('button', { class: 'btn icon mdraw l', title: 'Tones, I/O and theory ([)', 'aria-label': 'Open the Tones panel', onclick: () => mDrawer('left') }, msvg('<path d="M4 6h16M4 12h16M4 18h16"/>', 18));
   const dr = h('button', { class: 'btn icon mdraw r', title: 'Tuner and levels (])', 'aria-label': 'Open the Tuner panel', onclick: () => mDrawer('right') }, msvg('<path d="M12 3v7M8 7l4 4 4-4M5 14h14M7 18h10"/>', 18));
   top.insertBefore(dl, top.firstChild); $('#topR').insertBefore(dr, $('#topR').firstChild);
+  const brand = top.querySelector('.brand'); if (brand && brand.nextSibling) top.insertBefore(M.songBtn, brand.nextSibling); else top.append(M.songBtn);
   app.append(M.trans, M.sub, M.nav, M.back);
   M.tl = Object.assign(M.tl, CFG.mtl && typeof CFG.mtl === 'object' ? CFG.mtl : {}); M.last = CFG.mlast || {};
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && (M.sheet || M.drawer)) mCloseOverlays(); });
   let rt = 0; const fit = () => { clearTimeout(rt); rt = setTimeout(applyForm, 90); };
   window.addEventListener('resize', fit); window.addEventListener('orientationchange', fit);
   bus.on('dock', id => {
-    if (M.form === 'desktop' || (typeof SD !== 'undefined' && SD.nat[id])) return; const g = mGroupOf(id); if (!g) return;
+    if (M.form === 'desktop' || !M.ready || (typeof SD !== 'undefined' && SD.nat[id])) return; const g = mGroupOf(id); if (!g) return;      /* panels the studio opens while it starts do not move the phone off the words */
     M.g = g.id; M.s = id; M.last[g.id] = id; M.view = 'center'; mSync();
   });
   window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); M.installEvt = e; });
+  ['pointerdown', 'keydown'].forEach(ev => document.addEventListener(ev, () => { M.ready = true; }, { once: true, capture: true }));
   applyForm();
-  if (M.form !== 'desktop') { const init = mGroupOf(DOCK.cur || 'rig'); M.g = init ? init.id : 'play'; M.s = DOCK.cur || 'rig'; mSync(); }
+  if (M.form !== 'desktop') mGo(MGROUPS.some(g => g.id === CFG.mg) ? CFG.mg : 'words');      /* a phone opens on the words (2.41), or where you were */
 }
+
+/* >>> parts/18c-phone-singer.js */
+/* ============================================================
+   Part 18c · THE PHONE, FOR SINGERS AND SONGWRITERS (2.41)
+   On a phone the studio is built around the words and the voice, not the guitar (part 18 holds the shell):
+     Words   a lyric notebook: the section's words in one big text box, then "Chords" to tap a chord onto a word;
+             a syllable count for every line, the chords of your key one tap away, paste a whole lyric sheet
+     Sing    your phone's microphone as the voice, ● to record over the beat, your takes, one-tap vocal sounds,
+             pitch and range, hum to song and a voice memo
+     Beats   the beats and who plays (part 88)
+   Chords in the words are the studio's own [Am] markers (ChordPro style), so the desktop Write canvas, the chord sheet,
+   exports and song links all see the same thing. A chord sits on a word, so rewriting a line keeps its chords on the
+   words where they were (by position) and a line that is moved keeps its own.
+   ============================================================ */
+const MW = { sec: -1, mode: 'write', pick: null, t: 0, text: '', cm: [], syms: [], lines: [], marks: [], starts: [] };
+/* The section's words as plain text (MW.text, lines joined by line breaks) and its chords as character positions in it (MW.cm: { o, sym }).
+   An edit moves every chord after it by the same amount, so a chord stays on its word however the words around it change. */
+/** syllables in a line of English, near enough to compare one line with another */
+function mwSyl(line) {
+  return (String(line || '').toLowerCase().match(/[a-z']+/g) || []).reduce((n, w) => {
+    w = w.replace(/'/g, ''); if (!w) return n; if (w.length <= 3) return n + 1;
+    w = w.replace(/(?:[^laeiouy]es|[^laeiouy]ed|[^laeiouy]e)$/, '').replace(/^y/, '');
+    const v = w.match(/[aeiouy]{1,2}/g); return n + Math.max(1, v ? v.length : 1);
+  }, 0);
+}
+const mwSec = () => S.sections[clamp(MW.sec, 0, Math.max(0, S.sections.length - 1))];
+/** the open section's words and chords */
+function mwRead() {
+  const sec = mwSec(); let off = 0; const texts = [], cm = [];
+  String((sec && sec.lyrics) || '').split('\n').forEach(line => { const { text, chords } = parseLyricLine(line); chords.forEach(c => cm.push({ o: off + c.pos, sym: c.sym })); texts.push(text); off += text.length + 1; });
+  MW.text = texts.join('\n'); MW.cm = cm; MW.syms = cm.map(c => c.sym); mwView();
+}
+/** the lines, where each starts, and each line's chords as [word, chord] (a chord between words belongs to the next one; after the last, to the last) */
+function mwView() {
+  MW.lines = MW.text.split('\n'); MW.starts = []; let off = 0; MW.lines.forEach(t => { MW.starts.push(off); off += t.length + 1; }); MW.marks = MW.lines.map(() => []);
+  MW.cm.forEach(c => { let li = MW.starts.length - 1; while (li > 0 && MW.starts[li] > c.o) li--; const words = [...MW.lines[li].matchAll(/\S+/g)], p = c.o - MW.starts[li]; c.li = li; c.wi = -1; if (!words.length) return;
+    let w = words.findIndex(x => p < x.index + x[0].length); if (w < 0) w = words.length - 1; c.wi = w; MW.marks[li].push([w, c.sym]); });
+}
+/** the words with their [chord] markers, as the song keeps them */
+function mwLyrics() { let out = '', last = 0; MW.cm.slice().sort((a, b) => a.o - b.o).forEach(c => { const o = clamp(c.o, last, MW.text.length); out += MW.text.slice(last, o) + '[' + c.sym + ']'; last = o; }); return out + MW.text.slice(last); }
+/** keep the song in step; while the band's bars still follow the words' chords (or are empty), they keep following, one bar each */
+function mwWrite(final) {
+  const sec = mwSec(); if (!sec) return; sec.lyrics = mwLyrics().replace(/\s+$/, '');
+  const syms = MW.cm.slice().sort((a, b) => a.o - b.o).map(c => c.sym), cur = sec.bars.map(b => (b.chord || '').trim());
+  if (syms.join() !== MW.syms.join() && (syms.length || MW.syms.length) && cur.every((c, i) => !c || c === MW.syms[i])) { while (sec.bars.length < syms.length) sec.bars.push(newBar('')); sec.bars.forEach((b, i) => { b.chord = syms[i] || ''; }); T.bars = null; }
+  MW.syms = syms;
+  if (final) { histEnd(); commit(false); bus.emit('song', 'words'); } else commit(false);
+}
+/** the text box changed: chords before the change stay, chords after it move with their words, chords inside it go to where it starts */
+function mwEdited(value) {
+  const a = MW.text, b = String(value); let p = 0; while (p < a.length && p < b.length && a[p] === b[p]) p++;
+  let e = 0; while (e < a.length - p && e < b.length - p && a[a.length - 1 - e] === b[b.length - 1 - e]) e++;
+  const end = a.length - e, d = b.length - a.length;
+  MW.cm = MW.cm.map(c => c.o < p ? c : c.o >= end ? { o: c.o + d, sym: c.sym } : { o: p, sym: c.sym }); MW.text = b; mwView();
+}
+/* ---------- Words ---------- */
+function mWords(box) {
+  if (!S.sections.length) S.sections.push(mkSection('Verse 1', ['', '', '', '']));
+  if (MW.sec < 0 || MW.song !== (PRJ.cur || '')) { MW.song = PRJ.cur || ''; MW.sec = Math.max(0, S.sections.findIndex(x => (x.lyrics || '').trim())); }      /* a song opens on its first section with words */
+  MW.sec = clamp(MW.sec, 0, S.sections.length - 1); mwRead();
+  const secs = h('div', { class: 'mw-secs', role: 'tablist', 'aria-label': 'Sections' }, S.sections.map((s, i) => h('button', { class: 'msc' + (i === MW.sec ? ' on' : ''), role: 'tab', 'aria-selected': String(i === MW.sec), onclick: () => { MW.sec = i; mScreenDraw(); } }, s.name)),
+    h('button', { class: 'msc mw-add', 'aria-label': 'Add a section', onclick: e => popover(e.currentTarget, h('div', { class: 'mw-addm' }, ['Verse', 'Pre-chorus', 'Chorus', 'Bridge', 'Outro'].map(n => h('button', { class: 'btn', onclick: () => { closePop(); const k = S.sections.filter(s => s.name.startsWith(n)).length, nm = n === 'Verse' || k ? n + ' ' + (k + 1) : n; S.sections.push(mkSection(nm, ['', '', '', ''])); commit(true); MW.sec = S.sections.length - 1; bus.emit('song', 'reload'); mScreenDraw(); } }, n)))) }, '＋'));
+  const mode = h('div', { class: 'seg mw-mode' }, [['write', '✎ Write'], ['chords', '♪ Chords']].map(([k, n]) => h('button', { class: MW.mode === k ? 'on' : '', 'data-mode': k, onclick: () => { MW.mode = k; mScreenDraw(); } }, n)));
+  const tools = h('div', { class: 'mw-tools' }, mode, h('span', { class: 'grow' }), h('button', { class: 'btn sm', title: 'Paste a whole lyric sheet: [Verse] and [Chorus] headings become sections', onclick: () => liOpen('') }, '⧉ Paste'));
+  box.append(secs, tools);
+  if (MW.mode === 'write') {
+    const hint = h('div', { class: 'mw-hint', 'aria-live': 'polite' }), ta = h('textarea', { class: 'mw-ta', id: 'mwText', rows: 10, spellcheck: true, autocapitalize: 'sentences', 'aria-label': 'Words of ' + mwSec().name, placeholder: 'Write the words of ' + mwSec().name + ' here, a line at a time.\nPress ♪ Chords when you want to put chords on them.' });
+    ta.value = MW.text;
+    const line = () => { const i = ta.value.slice(0, ta.selectionStart).split('\n').length - 1, t = ta.value.split('\n')[i] || '', n = mwSyl(t), prev = i > 0 ? mwSyl(ta.value.split('\n')[i - 1]) : null; hint.textContent = t.trim() ? 'Line ' + (i + 1) + ': ' + n + (n === 1 ? ' syllable' : ' syllables') + (prev ? ' · the line before has ' + prev : '') : ''; };
+    ta.addEventListener('focus', () => histBegin());
+    ta.addEventListener('input', () => { mwEdited(ta.value); clearTimeout(MW.t); MW.t = setTimeout(() => mwWrite(false), 400); line(); });
+    ta.addEventListener('keyup', line); ta.addEventListener('click', line);
+    ta.addEventListener('blur', () => { clearTimeout(MW.t); mwEdited(ta.value); mwWrite(true); });
+    box.append(ta, hint);
+  } else {
+    const pal = diatonic(S.key, S.scale).map(d => d.triad).filter(Boolean), list = h('div', { class: 'mw-lines' });
+    if (!MW.lines.some(t => t.trim())) list.append(h('p', { class: 'muted mw-empty' }, 'No words in ' + mwSec().name + ' yet. Write them first, then come back to put chords on them.'));
+    MW.lines.forEach((t, li) => {
+      if (!t.trim()) { list.append(h('div', { class: 'mw-gap' })); return; }
+      const words = t.match(/\S+/g) || [], row = h('div', { class: 'mw-line' });
+      row.append(h('div', { class: 'mw-words' }, words.map((w, wi) => { const ch = (MW.marks[li] || []).filter(m => m[0] === wi).map(m => m[1]).join(' ');
+        return h('button', { class: 'mw-w' + (ch ? ' has' : ''), type: 'button', 'data-l': li, 'data-w': wi, 'aria-label': w + (ch ? ', chord ' + ch : ''), onclick: () => mwPut(li, wi) }, h('i', {}, ch || ' '), h('span', {}, w)); })),
+        h('span', { class: 'mw-syl', title: 'syllables' }, String(mwSyl(t))));
+      list.append(row);
+    });
+    const chip = (sym, label) => h('button', { class: 'msc mw-pk' + (MW.pick === sym ? ' on' : ''), 'data-sym': sym, onclick: () => { MW.pick = MW.pick === sym ? null : sym; mScreenDraw(); } }, label || sym);
+    const palette = h('div', { class: 'mw-pal', role: 'toolbar', 'aria-label': 'Chords in ' + keyName() }, pal.map(s => chip(s)), chip('✕', '✕ Remove'),
+      h('button', { class: 'msc', onclick: () => { const v = (prompt('Any chord (for example D/F#, Gsus4, Bbmaj7):', '') || '').trim(); if (!v) return; if (!parseChord(v)) return toast('“' + v + '” is not a chord the studio knows', 'warn'); MW.pick = v; mScreenDraw(); } }, 'Other…'));
+    const syncB = mwSec().bars.some(b => (b.chord || '').trim()) && MW.marks.flat().length ? h('button', { class: 'btn sm mw-sync', title: 'The band plays these chords, one bar each, in the order they are in the words', onclick: () => { const sec = mwSec(), syms = MW.marks.flat().map(m => m[1]); histBegin(); sec.bars = syms.map(s => newBar(s)); T.bars = null; histEnd(); commit(false); bus.emit('song', 'reload'); toast('The band now plays ' + syms.length + ' bars: ' + syms.join(' '), 'ok'); } }, '↻ Band plays these chords') : null;
+    box.append(...[h('p', { class: 'tiny muted mw-how' }, MW.pick ? (MW.pick === '✕' ? 'Tap a chord in the words to take it off.' : 'Tap a word to put ' + MW.pick + ' on it.') : 'Pick a chord below, then tap the word it lands on.'), list, syncB, palette].filter(Boolean));
+  }
+}
+function mwPut(li, wi) {
+  if (!MW.pick) { toast('Pick a chord below first, then tap the word.', ''); return; }
+  const w = [...(MW.lines[li] || '').matchAll(/\S+/g)][wi]; if (!w) return;
+  histBegin(); MW.cm = MW.cm.filter(c => !(c.li === li && c.wi === wi)); if (MW.pick !== '✕') MW.cm.push({ o: MW.starts[li] + w.index, sym: MW.pick });
+  mwView(); mwWrite(true); mScreenDraw();
+}
+/* ---------- Sing ---------- */
+function mSing(box) {
+  const voice = !!CFG.vin && CFG.vin !== 'off', ready = voice && E.hasInput, rec = !!(T.rec && T.playing);
+  const vtakes = TAKES.filter(t => t.kind === 'vox').slice(-6).reverse();
+  box.append(h('h3', { class: 'ms-h' }, '🎤 Sing'),
+    ready ? h('p', { class: 'ms-ok' }, '● Microphone ready: your voice goes on its own lane.') : h('button', { class: 'btn primary ms-mic', id: 'msMic', onclick: async () => { try { chSetRoles('v', 'o'); await ioConnect(CFG.inDev || ''); } catch (e) { } mScreenDraw();      /* a phone has one microphone: connect it, no chooser */ } }, voice ? '🎤 Connect the microphone' : '🎤 Sing into this phone'),
+    h('p', { class: 'tiny muted' }, '🎧 With headphones, the beat stays out of your recording.'),
+    h('div', { class: 'ms-big' },
+      h('button', { class: 'btn ms-rec' + (rec ? ' on' : ''), id: 'msRec', 'aria-pressed': String(rec), onclick: () => { if (!ready && !rec) toast('Connect the microphone first (the button above).', 'warn'); toggleRec(); setTimeout(mScreenDraw, 300); } }, rec ? '■ Stop' : '● Record over the beat'),
+      h('button', { class: 'btn ms-back', id: 'msBack', onclick: () => { if (T.playing) { stopPlay(true); setTimeout(mScreenDraw, 200); return; } T.cursor = 0; syncTransport(); play(); setTimeout(mScreenDraw, 300); } }, T.playing && !rec ? '■ Stop' : '▶ Hear it back')),
+    h('h4', { class: 'ms-sub' }, 'Your takes'),
+    vtakes.length ? h('div', { class: 'ms-takes' }, vtakes.map(t => h('div', { class: 'ms-take' }, h('b', {}, t.name || 'Vocal take'), h('span', { class: 'muted' }, (t.dur || 0).toFixed(1) + ' s'), h('span', { class: 'grow' }),
+      h('button', { class: 'btn sm', 'aria-label': 'Delete ' + (t.name || 'take'), onclick: () => { if (confirm('Delete “' + (t.name || 'this take') + '”? (Undo brings it back)')) { tkDelete(t); setTimeout(mScreenDraw, 100); } } }, '✕'))))
+      : h('p', { class: 'tiny muted' }, 'None yet. Press ● and sing: the count-in gives you a bar to get ready.'),
+    h('h4', { class: 'ms-sub' }, 'Your voice sound'),
+    h('div', { class: 'ms-vb' }, Object.keys(VB_PRESETS).map(k => h('button', { class: 'msc' + ((CFG.vb && CFG.vb.preset) === k ? ' on' : ''), 'data-vb': k, onclick: () => { vbPreset(k); mScreenDraw(); } }, k)), h('button', { class: 'msc', onclick: () => vocalBoardOpen() }, 'All vocal pedals…')),
+    h('h4', { class: 'ms-sub' }, 'More for your voice'),
+    h('div', { class: 'ms-more' },
+      h('button', { class: 'btn', onclick: () => voxOpen() }, '〰 Pitch and my range'),
+      h('button', { class: 'btn', onclick: () => humOpen() }, '✨ Hum it into a song'),
+      h('button', { class: 'btn', onclick: () => humRecord(true) }, '🎙 Voice memo')));
+}
+/* ---------- Beats ---------- */
+function mBeats(box) {
+  box.append(h('h3', { class: 'ms-h' }, '🥁 Beats'), h('p', { class: 'tiny muted' }, 'Tap one and it plays in your song’s key. Write or sing over it.'), beatsShelf(), h('h4', { class: 'ms-sub' }, 'Who plays'), beatsMixer(),
+    h('button', { class: 'btn sm mb-all', onclick: () => mGo('beats', 'band') }, 'Every band setting…'));
+}
+/* ---------- the screen ---------- */
+const M_SCREENS = { words: mWords, sing: mSing, beats: mBeats };
+function mScreenDraw() {
+  const box = M.scr; if (!box || M.view !== 'm') return; const id = M.s, fn = M_SCREENS[id]; if (!fn) return;
+  const ae = document.activeElement, same = box.dataset.screen === id; if (same && ae && box.contains(ae) && (ae.tagName === 'TEXTAREA' || ae.type === 'range')) return; if (!same && ae && box.contains(ae)) ae.blur();      /* never under someone's typing or a fader they hold */
+  const top = box.scrollTop; box.innerHTML = ''; box.dataset.screen = id; try { fn(box); } catch (e) { console.warn('phone screen', e); } box.scrollTop = top;
+}
+['song', 'takes', 'audiostate', 'rec:state', 'transport', 'route'].forEach(e => bus.on(e, () => { if (M.view === 'm') { clearTimeout(MW.redraw); MW.redraw = setTimeout(mScreenDraw, 80); } }));
 
 /* >>> parts/19-touch.js */
 /* ============================================================

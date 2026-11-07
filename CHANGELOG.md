@@ -2,6 +2,35 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.41.0 — 2026-11-07 — The phone, for singers and songwriters
+
+### Changed
+- **On a phone the studio is now built around the words and the voice.** Few people have a guitar plugged into their phone. Computers and tablets are unchanged.
+  - **The bottom bar is Words · Sing · Beats · Tracks · More** (it was Play · Write · See · Stems · More).
+  - **The guitar** (rig, tones, tuner, I/O, tab, refine) and **the visuals** are under **More**, in rows of their own. Nothing was removed.
+  - **A phone opens on the words** (or wherever you were last).
+- **Words is a lyric notebook.**
+  - Sections as chips, with **＋** to add a verse, pre-chorus, chorus, bridge or outro.
+  - **✎ Write** gives the section's words in one big text box, with the live syllable count of the line you're on and of the line before.
+  - **♪ Chords** shows every word as a big button with its chord over it, a syllable count per line, and the chords of your key below. Pick a chord, tap the word it lands on; **✕ Remove** takes one off; **Other…** takes any chord.
+  - **⧉ Paste** takes a whole lyric sheet.
+  - **The chords are the song's own `[Am]` markers**, so the desktop Write canvas, chord sheets, exports and song links all see them.
+  - **Each chord is tied to its place in the words**, so typing, adding lines or rewriting around it keeps it on its word.
+  - **A new section's band follows its words' chords**, one bar each. **↻ Band plays these chords** does the same for a section that already had bars.
+  - One undo takes back each edit.
+- **Sing is one screen.**
+  - **🎤 Sing into this phone** makes the phone's microphone the voice input (no chooser).
+  - **● Record over the beat** records it on the vocal lane, with a count-in, and **▶ Hear it back** plays it.
+  - Your takes are listed (with delete), and the eight voice sounds (Clean lead, Ballad, Harmony lead and so on) are one tap each.
+  - Pitch and your range, Hum it into a song, and Voice memo are there too.
+- **Beats** is the beats and who plays. Band holds every setting.
+- **The top bar keeps only the song's name.** The name opens the song sheet, which now holds the tempo, time signature, key and mode as well as the artist, tuning, capo and backing track. The arrangement toggle is now called **Timeline**.
+- Old phone section names (play, write, stems) still work for guided sessions and links. Panels the studio opens while it starts no longer move a phone off its screen.
+
+### Tests
+- `e2e-phone-singer` (22 checks): the bottom bar and opening on the words; typing keeps chords on their words; syllables; undo; placing and removing a chord on a word; a new section whose band follows its chords; Sing (the microphone as the voice, a voice sound, recording a take); Beats; the song sheet and putting its fields back; More with the guitar and the visuals; the old names; a desktop untouched.
+- `mobile` (every section on two phone sizes, landscape and tablet), `e2e-phone-panels` and `e2e-layout` updated for the new sections.
+
 ## 2.40.0 — 2026-11-06 — Send a song as a link, and room to grow
 
 ### Added

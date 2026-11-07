@@ -644,21 +644,21 @@ Connect a controller and allow MIDI access when asked (HTTPS or `localhost`; Chr
 
 The app switches layout by itself; **⋯ More ▸ Device layout** (or Settings) forces Phone, Tablet or Desktop.
 
-**Phone, portrait.** Top: tempo, signature, key and the **⋯** button. Below it a row of chips for the panels in the current section. Bottom: the transport (rewind, play, stop, record, loop, click, **🔊 band** and the bar·beat·slot readout) and the five sections:
+**Phone, portrait (2.41: built for singers and songwriters).** Top: the song's name (tap it for the song sheet: name, tempo, time signature, key, mode, artist, tuning, capo and backing track) and the **⋯** button. Bottom: the transport (rewind, play, stop, record, loop, click, **🔊 band** and the bar·beat·slot readout) and five sections. A phone opens on **Words**.
 
-| Section | Panels |
+| Section | What is there |
 |---|---|
-| **Play** | Rig (tone, A/B, scenes, pedalboard) · Tones · Tuner · I/O |
-| **Write** | Tab · Song (tuning, capo, chords, lyrics) · Band · Fretboard · Theory |
-| **See** | Visuals · Stage · Neural · Vision |
-| **Stems** | Stems · Transcribe |
-| **More** | Opens the sheet of everything else (the same as **⋯**): Hum, Loop & layer, Audio, theme, Settings, Help, guided sessions and the tour, your songs and progress, files, the mix, Voice, keeping songs safe; its first row opens the **Research** and **Export** panels |
+| **Words** | A lyric notebook: the sections as chips (**＋** adds one). **✎ Write** is one big text box with the syllables of the line you are on; **♪ Chords** shows each word with its chord over it: pick a chord below and tap the word it lands on. **⧉ Paste** takes a whole lyric sheet. A new section's band plays the chords you put on its words. **Chords & key** opens the key, scale and progression tools |
+| **Sing** | **🎤 Sing into this phone**, **● Record over the beat** (with a count-in), **▶ Hear it back**, your takes, one-tap voice sounds, pitch and your range, hum into a song, voice memo |
+| **Beats** | The beats and who plays; **Band** has every setting |
+| **Tracks** | Backing track (stems) · Transcribe |
+| **More** | The sheet of everything else. Its rows open **Research** and **Export**, then **🎸 Guitar** (Rig, Tones, Tuner, I/O, Tab, Refine) and **Visuals** (Visuals, Stage, Neural, Vision) |
 
 The **⋯** button (top right) opens the **More sheet**: **Hum or sing a song**, **Audio · kill switch**, **Light theme**, **Appearance**, **Monitor**, **Screen awake**, **Settings**, **Help**, **Guided tour**, **Save project**, **Share link**, **My songs**, **Open a file** (audio, lyrics, MIDI or a song file), **Master · balance · click** (master preset, Auto-balance, count-in and click level), **Keep songs safe**, **Install app** (when the browser offers it), **Full screen** and **Device layout**.
 
-The **Tracks** button at the right of the chip row cycles the arrangement between a mini strip, a **full-screen tracks view** (no other panel competing; the button then reads **▾ Panel**) and hidden. The band strip (drums, bass, rhythm, lead) sits under the chips in *Play* and *Write*.
+The **Timeline** button at the right of the chip row (on panels that have the arrangement under them) cycles the arrangement between a mini strip, a **full-screen tracks view** (no other panel competing; the button then reads **▾ Panel**) and hidden. The band strip (drums, bass, rhythm, lead) sits under the chips in *Play* and *Write*.
 
-**Landscape** puts the sections on a left rail and the transport in the header, which leaves the most room for the Fretboard, Stage and Neural map. The arrangement starts hidden there; bring it back with **Tracks**.
+**Landscape** puts the sections on a left rail and the transport in the header, which leaves the most room for the Fretboard, Stage and Neural map. The arrangement starts hidden there; bring it back with **Timeline**.
 
 **Write tab on a touch screen.** Tap a cell, then a fret on the keypad. **10s** / **20s** turn the next digit into 10–19 / 20–24. **Auto ▶** advances after each note (turn it off to stack notes on different strings). Arrow keys move the cursor and **▲ ▼** change string; **⌫** clears a note; **h p / \ b ~ x ‹n›** set techniques; **⏵ bar** plays from the current bar. Chord names above each bar are edited in **Song**.
 

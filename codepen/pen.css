@@ -1619,3 +1619,43 @@ body.simple:not([data-form=phone]) .tl-heads :is(input[type=range],.fxchip){disp
 .sl-what{font-weight:700;color:var(--accent)}.sl-kick{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .sl-url{width:100%;margin:8px 0;font-family:var(--mono);font-size:12px}.sl-long{color:var(--warn)}
 .sl-acts{gap:8px;flex-wrap:wrap;margin-top:10px}.sl-qr{margin-top:12px;display:flex;justify-content:center}.sl-qr svg{width:min(260px,70vw);height:auto}
+
+/* 2.41 · the phone for singers and songwriters (parts 18, 18c) */
+#mscreen{display:none}
+body[data-form=phone][data-view=m] #left,body[data-form=phone][data-view=m] #center,body[data-form=phone][data-view=m] #right{display:none!important}
+body[data-form=phone][data-view=m] #mscreen{display:flex;flex-direction:column;gap:10px;overflow-y:auto;padding:12px 12px 20px;-webkit-overflow-scrolling:touch}
+body[data-form=phone] #transport .field{display:none}
+body[data-form=phone] #top .msc.song{flex:1 1 auto;min-width:0;max-width:none;overflow:hidden;text-overflow:ellipsis;text-align:left;font-size:14px;color:var(--text)}
+body[data-form=phone] #transport{flex:0 0 auto}
+body[data-form=phone].song-open .msong-f{display:flex;flex:1 1 100%;gap:8px;flex-wrap:wrap}
+body[data-form=phone].song-open .msong-f .field{display:flex;flex-direction:column;flex:1 1 40%;font-size:11px;font-weight:700;color:var(--muted)}
+body[data-form=phone].song-open .msong-f .field input,body[data-form=phone].song-open .msong-f .field select{font-size:16px;min-height:42px;width:100%}
+.mw-secs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;flex:none}.mw-secs::-webkit-scrollbar{display:none}
+.mw-addm{display:grid;gap:6px;min-width:160px}
+.mw-tools{display:flex;gap:8px;align-items:center;flex:none}.mw-mode button{min-height:40px;padding:0 16px;font-size:14px}
+.mw-ta{width:100%;min-height:44vh;flex:1 0 auto;font:18px/1.6 var(--sans);padding:12px 14px;border:1px solid var(--line2);border-radius:12px;background:var(--panel);color:var(--text);resize:vertical}
+.mw-hint{min-height:18px;font-size:13px;color:var(--muted)}
+.mw-how{margin:0}.mw-empty{margin:20px 4px}
+.mw-lines{display:flex;flex-direction:column;gap:6px}
+.mw-line{display:flex;align-items:flex-end;gap:8px;padding:6px 8px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+.mw-gap{height:10px}
+.mw-words{flex:1;display:flex;flex-wrap:wrap;gap:2px 4px}
+.mw-w{display:flex;flex-direction:column;align-items:flex-start;border:0;background:none;padding:2px 3px;border-radius:6px;color:var(--text);font:17px/1.25 var(--sans);cursor:pointer;min-height:44px}
+.mw-w i{font:700 13px var(--mono);font-style:normal;color:var(--accent);min-height:16px}
+.mw-w:active,.mw-w:focus-visible{background:var(--accent-soft)}
+.mw-syl{flex:none;font:700 12px var(--mono);color:var(--muted);min-width:22px;text-align:right}
+.mw-pal{position:sticky;bottom:-20px;display:flex;flex-wrap:wrap;gap:6px;padding:10px 0;background:var(--bg)}
+.mw-sync{align-self:flex-start}
+.ms-h{margin:2px 0 0;font-size:20px}.ms-sub{margin:10px 0 0;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.ms-ok{margin:0;color:var(--ok);font-weight:700}
+.ms-mic{min-height:52px;font-size:17px}
+.ms-big{display:grid;gap:10px}
+.ms-rec{min-height:64px;font-size:19px;font-weight:800;border-color:var(--rec);color:var(--rec)}
+.ms-rec.on{background:var(--rec);color:#fff}
+.ms-back{min-height:52px;font-size:17px}
+.ms-takes{display:flex;flex-direction:column;gap:6px}
+.ms-take{display:flex;gap:8px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+.ms-vb{display:flex;flex-wrap:wrap;gap:6px}
+.ms-more{display:grid;gap:8px}.ms-more .btn{min-height:46px;justify-content:flex-start;font-size:15px}
+.mb-all{align-self:flex-start}
+body[data-form=phone][data-msub="0"] #msub{display:none}

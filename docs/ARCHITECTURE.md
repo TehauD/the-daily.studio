@@ -42,7 +42,8 @@ src/body.html  ─┘                    └► codepen/pen.{html,css,js}
 | `16a-stem-dsp.js` | Stem separation DSP. A pure function factory so it can run in a Web Worker *or* on the main thread |
 | `16-stems.js` | Stems pane, chunked stem player, tempo / key / chord analysis glue |
 | `17-tour.js` | Guided tour overlay (desktop / tablet steps and a phone walkthrough) |
-| `18-mobile.js` | Responsive shell: form-factor detection, phone bottom navigation, More sheet, tablet drawers |
+| `18-mobile.js` | Responsive shell: form-factor detection, phone bottom navigation (2.41: Words, Sing, Beats, Tracks, More; the guitar and the visuals are sections without a button, opened from More; `MG_ALIAS` maps the old names), the song sheet (`mSongOpen` moves the tempo, metre, key and mode fields into it and back), More sheet, tablet drawers |
+| `18c-phone-singer.js` | **The phone for singers** (2.41): the phone screens a section's sub marked `'m'` shows in `#mscreen`. **Words** keeps the section as plain text plus chord positions (`MW.text`, `MW.cm`), moves the chords with every edit (`mwEdited`: common prefix and suffix), writes `[chord]` markers back (`mwLyrics`, `mwWrite`, bars follow the words' chords while they still match), places chords on words (`mwPut`) and counts syllables (`mwSyl`). **Sing** (`chSetRoles('v','o')` + `ioConnect`, `toggleRec`, takes, `vbPreset`) and **Beats** (part 88). `mScreenDraw` never redraws under someone's typing on the same screen |
 | `19-touch.js` | Touch extras: tab keypad, long-press = right-click, wake lock, PWA registration, first-run phone defaults |
 | `20-samples.js` | Sample-track shelves (reads `samples/manifest.json`, loads a track into Stems or Transcribe on tap) |
 | `21-songbar.js` | The persistent song strip (title, artist, tuning, capo, scale, notes popover) and the loaded-track chip; title cleaning, ID3 / MP4 tag reading and `stemAutofill()` (one undoable step) |
@@ -154,7 +155,7 @@ A step list (`tourSteps()`) of `{ t: target, pane, pre, title, b, side, tip }`. 
 
 `detectForm()` returns `phone`, `tablet` or `desktop` from the viewport and `(pointer:coarse)`, unless `CFG.form` forces one. `applyForm()` writes `body[data-form]`, `data-land` (landscape), `data-touch`, and on every navigation `data-view`, `data-g` (section), `data-s` (panel), `data-tl` (arrangement state) and `data-kpad`. **All responsive CSS hangs off those attributes** at the end of `styles.css`, so desktop styles are never edited and cannot regress; at `desktop` the new elements are `display:none`.
 
-* **Phone** keeps the same DOM. `mMoveTransport()` moves the first eight transport children (rewind … time) into `#mtrans` (bottom bar) and moves them back when the form changes, so tempo, signature, key and mode stay in the header. Navigation is a model, not new panels: `MGROUPS` maps five sections to the existing dock panes (`dockGo`) and to the two sidebars, which become full views (`data-view=left|right`). The arrangement is the same `#timeline`; only its grid row changes (`--tlp`).
+* **Phone** keeps the same DOM. `mMoveTransport()` moves the first eight transport children (rewind … time) into `#mtrans` (bottom bar) and moves them back when the form changes, (tempo, signature, key and mode are hidden on phones since 2.41 and shown in the song sheet). Navigation is a model, not new panels: `MGROUPS` maps five sections to the existing dock panes (`dockGo`) and to the two sidebars, which become full views (`data-view=left|right`). The arrangement is the same `#timeline`; only its grid row changes (`--tlp`).
 * **Tablet** keeps the dock tab bar and turns `#left` / `#right` into fixed drawers (`body.d-left|d-right`, `#mback` backdrop). `toggleSide()` (`[` and `]`) opens them.
 * The tab keypad is a sibling of the panes in `#dock`, shown only for `data-s=tab`. It drives the editor through `tabKey()` / `setNote()`, so it shares all behaviour with the keyboard.
 * Long-press dispatches a synthetic `contextmenu` after 650 ms (cancelled by movement, or by a real `contextmenu` on Android). Pinch is handled with a pointer map in the Neural pane.
@@ -176,7 +177,7 @@ A step list (`tourSteps()`) of `{ t: target, pane, pre, title, b, side, tip }`. 
 
 **Add a tour step.** Add an object to `tourStepsDesk()` (and `tourStepsPhone()` if it should appear on phones).
 
-**Add a panel on phones.** Add its id to a group in `MGROUPS` (`18-mobile.js`).
+**Add a panel on phones.** Add its id to a group in `MGROUPS` (`18-mobile.js`). A phone-only screen is a sub marked `'m'` with a function in `M_SCREENS` (`18c-phone-singer.js`); a group without `nav` has no button and opens from More.
 
 ## Testing
 

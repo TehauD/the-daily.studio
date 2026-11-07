@@ -28,7 +28,7 @@ suite('e2e-layout', async t => {
   // a phone: lane headers fit their column, and the clip bar is whole
   const m = await t.open({ w: 390, h: 844, mobile: true });
   await take(m, 'gtr', 110); await take(m, 'vox', 196); await wait(500);
-  await m.click('#mnav >> text=Write'); await wait(600); await m.evaluate(() => document.querySelectorAll('#toasts .toast').forEach(x => x.remove()));
+  await m.evaluate(() => window.__daily.mGo('beats', 'band')); await wait(600);      /* 2.41: a panel with the arrangement under it (Words is a phone screen of its own) */ await m.evaluate(() => document.querySelectorAll('#toasts .toast').forEach(x => x.remove()));
   await m.click('.msc.tl'); await wait(600);
   const heads = await m.evaluate(() => [...document.querySelectorAll('.tl-head')].map(h => { const hr = h.getBoundingClientRect(); const over = [...h.querySelectorAll('.t > *, .b > *')].filter(c => c.getClientRects().length && c.getBoundingClientRect().right > hr.right + 1).map(c => c.className || c.tagName); return { name: (h.querySelector('.nm') || {}).textContent, over }; }));
   ok(heads.length >= 7 && heads.every(h => h.over.length === 0), 'every lane header on a phone, the vocal and guitar lanes included, fits its column ' + JSON.stringify(heads.filter(h => h.over.length)));

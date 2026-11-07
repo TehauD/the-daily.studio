@@ -11,7 +11,7 @@ suite('e2e-phone-panels', async t => {
 
   /* ---- the phone's transport ---- */
   const TR = await ev(() => ({ trans: [...document.querySelectorAll('#mtrans > *')].filter(x => x.getClientRects().length).map(x => x.id || x.className), fields: [...document.querySelectorAll('#transport label.field')].filter(x => x.getClientRects().length).length }));
-  ok(TR.trans.includes('bandMute') && TR.trans.some(c => /lcd/.test(c)) && TR.fields === 4, 'the phone’s transport has a band button beside the click, the position display stays, and tempo, metre, key and mode stay at the top (' + TR.trans.length + ' items)');
+  ok(TR.trans.includes('bandMute') && TR.trans.some(c => /lcd/.test(c)) && TR.fields === 0, 'the phone’s transport has a band button beside the click and the position display stays; tempo, metre, key and mode are in the song sheet (2.41) (' + TR.trans.length + ' items)');
 
   /* ---- one press mutes the band and the click; the next brings back exactly what was playing ---- */
   await ev(() => { const D = window.__daily; D.S.band.drumsOn = true; D.S.band.bassOn = false; D.S.band.compOn = true; D.S.band.leadOn = false; D.T.metro = true; D.commit(false); });
@@ -27,7 +27,7 @@ suite('e2e-phone-panels', async t => {
   /* ---- the bottom More: the sheet of extras, with its panels first ---- */
   await p.tap('.mnb[data-g="more"]'); await wait(400);
   const MS = await ev(() => ({ sheet: !!document.querySelector('.msheet'), panels: [...document.querySelectorAll('.msheet .mpanel-b button')].map(b => b.textContent.trim()), tiles: document.querySelectorAll('.msheet .mtile').length, pane: [...document.querySelectorAll('.pane')].filter(x => x.getClientRects().length && x.offsetHeight > 50).map(x => x.id).join() }));
-  ok(MS.sheet && MS.tiles >= 12 && MS.panels.join() === 'Research,Export' && !/pane-lab/.test(MS.pane), 'the bottom More opens the sheet of extras (' + MS.tiles + ' tiles) with Research and Export as its first row, instead of jumping to the measurements');
+  ok(MS.sheet && MS.tiles >= 12 && MS.panels.slice(0, 2).join() === 'Research,Export' && MS.panels.includes('Rig') && MS.panels.includes('Tab') && MS.panels.includes('Visuals') && !/pane-lab/.test(MS.pane), 'the bottom More opens the sheet of extras (' + MS.tiles + ' tiles): Research and Export first, then the guitar (Rig, Tones, Tuner, I/O, Tab, Refine) and the visuals (2.41)');
   await p.tap('.msheet .mpanel-b button[data-sub="exp"]'); await wait(400);
   ok(await ev(() => !document.querySelector('.msheet') && document.getElementById('pane-exp').getClientRects().length > 0 && document.querySelector('.mnb[data-g="more"]').classList.contains('on')), 'Export from that row opens the Export panel, under More');
   await p.tap('.mmore'); await wait(300);

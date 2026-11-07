@@ -6,13 +6,19 @@
    - desktop: untouched (this part only toggles attributes and moves nothing)
    ============================================================ */
 const M = { form: 'desktop', g: 'play', s: 'rig', view: 'center', tl: { p: 'mini', l: 'off' }, last: {}, sheet: null, drawer: null };
+/* 2.41: on a phone the bottom bar is for singers and songwriters (part 18c): Words, Sing, Beats, Tracks and More. The guitar and the
+   visuals are sections too, opened from More (no nav), so nothing is lost. A sub marked 'm' is a phone screen of part 18c. */
 const MGROUPS = [
-  { id: 'play', name: 'Play', ico: '<rect x="4" y="5" width="16" height="14" rx="2.4"/><circle cx="9" cy="12" r="2.2"/><path d="M14.5 10h3M14.5 14h3"/>', subs: [['rig', 'Rig'], ['tones', 'Tones', 'left'], ['tuner', 'Tuner', 'right'], ['io', 'I/O', 'left']] },
-  { id: 'write', name: 'Write', ico: '<path d="M4 20l1-4.2L16.2 4.6a1.6 1.6 0 012.2 0l1 1a1.6 1.6 0 010 2.2L8.2 19z"/><path d="M14 7l3 3"/>', subs: [['tab', 'Write'], ['refine', 'Refine', 'right'], ['band', 'Band'], ['theory', 'Theory', 'left']] },
-  { id: 'see', name: 'See', ico: '<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><circle cx="12" cy="12" r="2.6"/>', subs: [['vis', 'Visuals'], ['stage', 'Stage'], ['neural', 'Neural'], ['cam', 'Vision']] },
-  { id: 'stems', name: 'Stems', ico: '<path d="M4 9v6M8 5v14M12 8v8M16 4v16M20 9v6"/>', subs: [['stems', 'Stems'], ['tx', 'Transcribe']] },
-  { id: 'more', name: 'More', ico: '<circle cx="5.5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="18.5" cy="12" r="1.5"/>', subs: [['lab', 'Research'], ['exp', 'Export']] }
+  { id: 'words', name: 'Words', nav: 1, ico: '<path d="M4 20l1-4.2L16.2 4.6a1.6 1.6 0 012.2 0l1 1a1.6 1.6 0 010 2.2L8.2 19z"/><path d="M14 7l3 3"/>', subs: [['words', 'Words', 'm'], ['theory', 'Chords & key', 'left']] },
+  { id: 'sing', name: 'Sing', nav: 1, ico: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/>', subs: [['sing', 'Sing', 'm']] },
+  { id: 'beats', name: 'Beats', nav: 1, ico: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.4"/><path d="M12 4v3M12 17v3M4 12h3M17 12h3"/>', subs: [['beats', 'Beats', 'm'], ['band', 'Band']] },
+  { id: 'tracks', name: 'Tracks', nav: 1, ico: '<path d="M4 9v6M8 5v14M12 8v8M16 4v16M20 9v6"/>', subs: [['stems', 'Backing track'], ['tx', 'Transcribe']] },
+  { id: 'more', name: 'More', nav: 1, ico: '<circle cx="5.5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="18.5" cy="12" r="1.5"/>', subs: [['lab', 'Research'], ['exp', 'Export']] },
+  { id: 'guitar', name: 'Guitar', ico: '<rect x="4" y="5" width="16" height="14" rx="2.4"/><circle cx="9" cy="12" r="2.2"/><path d="M14.5 10h3M14.5 14h3"/>', subs: [['rig', 'Rig'], ['tones', 'Tones', 'left'], ['tuner', 'Tuner', 'right'], ['io', 'I/O', 'left'], ['tab', 'Tab'], ['refine', 'Refine', 'right']] },
+  { id: 'see', name: 'See', ico: '<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><circle cx="12" cy="12" r="2.6"/>', subs: [['vis', 'Visuals'], ['stage', 'Stage'], ['neural', 'Neural'], ['cam', 'Vision']] }
 ];
+/* the names phones used before 2.41, for guided sessions and links that still use them */
+const MG_ALIAS = { play: 'guitar', write: 'words', stems: 'tracks' };
 const msvg = (inner, sz) => { const s = document.createElement('span'); s.className = 'ico'; s.innerHTML = '<svg viewBox="0 0 24 24" width="' + (sz || 22) + '" height="' + (sz || 22) + '" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + inner + '</svg>'; return s; };
 const mGroupOf = sid => MGROUPS.find(g => g.subs.some(s => s[0] === sid));
 
@@ -49,10 +55,12 @@ function applyForm() {
 
 /* ---------- navigation model (phone) ---------- */
 function mGo(gid, sid) {
-  const g = MGROUPS.find(x => x.id === gid) || MGROUPS[0], s = g.subs.find(x => x[0] === sid) || g.subs.find(x => x[0] === M.last[g.id]) || g.subs[0];
-  M.g = g.id; M.s = s[0]; M.last[g.id] = s[0]; CFG.mlast = M.last;
+  gid = MG_ALIAS[gid] || gid; const own = sid && mGroupOf(sid), asked = MGROUPS.find(x => x.id === gid);      /* a panel always opens in the section it lives in */
+  const g = (own && !(asked && asked.subs.some(x => x[0] === sid)) ? own : asked) || MGROUPS[0], s = g.subs.find(x => x[0] === sid) || g.subs.find(x => x[0] === M.last[g.id]) || g.subs[0];
+  M.g = g.id; M.s = s[0]; M.last[g.id] = s[0]; CFG.mlast = M.last; CFG.mg = g.id; saveCfg();
   mCloseOverlays(true);
-  if (s[2] === 'left') { M.view = 'left'; const t = $('#left .side-tabs .tab[data-id="' + s[0] + '"]'); if (t) t.click(); }
+  if (s[2] === 'm') { M.view = 'm'; }      /* a phone screen (part 18c) */
+  else if (s[2] === 'left') { M.view = 'left'; const t = $('#left .side-tabs .tab[data-id="' + s[0] + '"]'); if (t) t.click(); }
   else if (s[2] === 'right') { M.view = 'right'; const t = $('#right .side-tabs .tab[data-id="' + (s[0] === 'tuner' ? 'monitor' : s[0]) + '"]'); if (t) t.click(); }
   else { M.view = 'center'; if (DOCK.cur !== s[0]) dockGo(s[0]); }
   mSync();
@@ -63,21 +71,32 @@ function mSync() {
   const tlv = mTl();
   b.dataset.tl = (M.view !== 'center' || M.g === 'see') ? 'off' : tlv;
   if (!M.nav) return;
-  $$('.mnb', M.nav).forEach(x => x.classList.toggle('on', x.dataset.g === M.g));
+  const gNav = (MGROUPS.find(x => x.id === M.g) || {}).nav ? M.g : 'more';      /* the guitar and the visuals light up More, where they open from */
+  $$('.mnb', M.nav).forEach(x => x.classList.toggle('on', x.dataset.g === gNav));
+  if (M.view === 'm' && typeof mScreenDraw === 'function') mScreenDraw();
   const g = MGROUPS.find(x => x.id === M.g); if (!g) return;
   if (M.subFor !== g.id) { M.subFor = g.id; M.chips.innerHTML = ''; g.subs.forEach(([id, name, tgt]) => M.chips.append(h('button', { class: 'msc', 'data-s': id, role: 'tab', onclick: () => mGo(g.id, id) }, name))); }
   $$('.msc', M.chips).forEach(x => x.classList.toggle('on', x.dataset.s === M.s));
   const on = M.chips.querySelector('.msc.on'); if (on && on.scrollIntoView) on.scrollIntoView({ block: 'nearest', inline: 'nearest' });
-  if (M.songBtn) M.songBtn.textContent = '♪ ' + ((S && S.title) || 'Song').slice(0, 14);
-  M.tlBtn.textContent = tlv === 'full' ? '▾ Panel' : tlv === 'off' ? '▴ Tracks' : '⤢ Tracks'; M.tlBtn.title = tlv === 'mini' ? 'Give the tracks the whole screen' : tlv === 'full' ? 'Back to the panel (tracks hidden)' : 'Show the tracks';
-  M.tlBtn.style.display = M.view === 'center' && M.g !== 'see' ? '' : 'none';
+  if (M.songBtn) M.songBtn.textContent = '♪ ' + ((S && S.title) || 'Song').slice(0, 22);
+  M.tlBtn.textContent = tlv === 'full' ? '▾ Panel' : tlv === 'off' ? '▴ Timeline' : '⤢ Timeline'; M.tlBtn.title = tlv === 'mini' ? 'Give the tracks the whole screen' : tlv === 'full' ? 'Back to the panel (tracks hidden)' : 'Show the tracks';
+  M.tlBtn.style.display = M.view === 'center' && M.g !== 'see' ? '' : 'none'; b.dataset.msub = (MGROUPS.find(x => x.id === M.g) || { subs: [] }).subs.length > 1 || M.tlBtn.style.display !== 'none' ? '1' : '0';
   setTimeout(() => { if (typeof tlSize === 'function') tlSize(); window.dispatchEvent(new Event('fw:fit')); }, 50);
 }
 const mTl = () => M.tl[document.body.dataset.land === '1' ? 'l' : 'p'];
 function mCycleTl() { const k = document.body.dataset.land === '1' ? 'l' : 'p', v = M.tl[k]; M.tl[k] = v === 'mini' ? 'full' : v === 'full' ? 'off' : 'mini'; CFG.mtl = M.tl; saveCfg(); mSync(); }
 
 /* ---------- overlays: More sheet, tablet drawers ---------- */
+/** 2.41: the song sheet holds the tempo, time signature, key and mode on a phone (the top bar keeps only the song's name) */
+function mSongOpen() {
+  const o = document.body.classList.contains('song-open'); mCloseOverlays(); if (o) return;
+  if (typeof VOX !== 'undefined' && VOX.panel) voxClose();
+  const bar = $('#songbar'), f = M.kids ? M.kids.filter(x => x.matches && x.matches('label.field')) : [];
+  if (bar && f.length) { M.sf = h('div', { class: 'msong-f' }, ...f); bar.prepend(M.sf); }
+  document.body.classList.add('song-open');
+}
 function mCloseOverlays(keepBack) {
+  if (M.sf) { const tr = $('#transport'), mm = tr && tr.querySelector('.metro-more'); [...M.sf.children].forEach(x => tr.insertBefore(x, mm || null)); M.sf.remove(); M.sf = null; }
   if (M.sheet) { M.sheet.remove(); M.sheet = null; } if (M.nav) M.nav.querySelectorAll('.mnb').forEach(b => b.removeAttribute('aria-expanded'));
   document.body.classList.remove('d-left', 'd-right', 'sheet-open', 'song-open');
   M.drawer = null;
@@ -105,6 +124,7 @@ function mSheet() {
     h('div', { class: 'mgrab', onclick: () => mCloseOverlays() }),
     stat,
     h('div', { class: 'mrow mpanels' }, h('span', {}, 'Panels'), h('div', { class: 'mpanel-b' }, more.subs.map(([sid, name]) => h('button', { class: 'btn sm' + (M.g === 'more' && M.s === sid ? ' on' : ''), 'data-sub': sid, onclick: () => { mCloseOverlays(); mGo('more', sid); } }, msvg(pico[sid] || '<circle cx="12" cy="12" r="8"/>', 16), ' ' + name)))),
+    ['guitar', 'see'].map(gid => { const g = MGROUPS.find(x => x.id === gid); return h('div', { class: 'mrow mpanels', 'data-group': gid }, h('span', {}, gid === 'guitar' ? '🎸 Guitar' : 'Visuals'), h('div', { class: 'mpanel-b' }, g.subs.map(([sid, name]) => h('button', { class: 'btn sm' + (M.g === gid && M.s === sid ? ' on' : ''), 'data-sub': sid, onclick: () => { mCloseOverlays(); mGo(gid, sid); } }, name)))); }),
     h('div', { class: 'mgrid' },
       tile(msvg('<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/>'), 'Hum or sing a song', () => { mCloseOverlays(); humOpen(); }),
       tile(msvg('<path d="M17 2l4 4-4 4M3 11V9a3 3 0 013-3h15M7 22l-4-4 4-4M21 13v2a3 3 0 01-3 3H3"/>'), 'Loop & layer', () => { mCloseOverlays(); looperOpen(); }),
@@ -148,25 +168,28 @@ function buildMobile() {
   M.trans = h('div', { id: 'mtrans', role: 'group', 'aria-label': 'Transport' });
   M.chips = h('div', { class: 'mchips', role: 'tablist' });
   M.tlBtn = h('button', { class: 'msc tl', title: 'Arrangement: mini → full → hidden', onclick: mCycleTl }, '▴ Tracks');
-  M.songBtn = h('button', { class: 'msc song', title: 'Song details: title, artist, tuning, capo, loaded track', onclick: () => { const o = document.body.classList.contains('song-open'); mCloseOverlays(); if (!o) { if (typeof VOX !== 'undefined' && VOX.panel) voxClose(); document.body.classList.add('song-open'); } } }, '♪ Song');
-  M.sub = h('div', { id: 'msub' }, M.songBtn, M.chips, M.tlBtn);
-  M.nav = h('nav', { id: 'mnav', 'aria-label': 'Sections' }, MGROUPS.map(g => h('button', { class: 'mnb', 'data-g': g.id, onclick: () => g.id === 'more' ? mSheet() : mGo(g.id) }, msvg(g.ico), h('span', {}, g.name))));      /* More opens the sheet of everything else (its panels, Research and Export, are the first row) */
+  M.songBtn = h('button', { class: 'msc song', id: 'mSongBtn', title: 'The song: its name, tempo, key, time signature, tuning and backing track', onclick: mSongOpen }, '♪ Song');
+  M.sub = h('div', { id: 'msub' }, M.chips, M.tlBtn);
+  M.scr = h('div', { id: 'mscreen', role: 'region', 'aria-label': 'Phone screen' }); const work = $('#work'); if (work) work.append(M.scr);
+  M.nav = h('nav', { id: 'mnav', 'aria-label': 'Sections' }, MGROUPS.filter(g => g.nav).map(g => h('button', { class: 'mnb', 'data-g': g.id, onclick: () => g.id === 'more' ? mSheet() : mGo(g.id) }, msvg(g.ico), h('span', {}, g.name))));      /* More opens the sheet of everything else (its panels, Research and Export, are the first row) */
   M.back = h('div', { id: 'mback', onclick: () => mCloseOverlays() });
   const more = h('button', { class: 'btn icon mmore', title: 'More: theme, settings, help, share', 'aria-label': 'More', onclick: mSheet }, msvg('<circle cx="5.5" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="18.5" cy="12" r="1.5" fill="currentColor"/>', 20));
   $('#topR').append(more);
   const dl = h('button', { class: 'btn icon mdraw l', title: 'Tones, I/O and theory ([)', 'aria-label': 'Open the Tones panel', onclick: () => mDrawer('left') }, msvg('<path d="M4 6h16M4 12h16M4 18h16"/>', 18));
   const dr = h('button', { class: 'btn icon mdraw r', title: 'Tuner and levels (])', 'aria-label': 'Open the Tuner panel', onclick: () => mDrawer('right') }, msvg('<path d="M12 3v7M8 7l4 4 4-4M5 14h14M7 18h10"/>', 18));
   top.insertBefore(dl, top.firstChild); $('#topR').insertBefore(dr, $('#topR').firstChild);
+  const brand = top.querySelector('.brand'); if (brand && brand.nextSibling) top.insertBefore(M.songBtn, brand.nextSibling); else top.append(M.songBtn);
   app.append(M.trans, M.sub, M.nav, M.back);
   M.tl = Object.assign(M.tl, CFG.mtl && typeof CFG.mtl === 'object' ? CFG.mtl : {}); M.last = CFG.mlast || {};
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && (M.sheet || M.drawer)) mCloseOverlays(); });
   let rt = 0; const fit = () => { clearTimeout(rt); rt = setTimeout(applyForm, 90); };
   window.addEventListener('resize', fit); window.addEventListener('orientationchange', fit);
   bus.on('dock', id => {
-    if (M.form === 'desktop' || (typeof SD !== 'undefined' && SD.nat[id])) return; const g = mGroupOf(id); if (!g) return;
+    if (M.form === 'desktop' || !M.ready || (typeof SD !== 'undefined' && SD.nat[id])) return; const g = mGroupOf(id); if (!g) return;      /* panels the studio opens while it starts do not move the phone off the words */
     M.g = g.id; M.s = id; M.last[g.id] = id; M.view = 'center'; mSync();
   });
   window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); M.installEvt = e; });
+  ['pointerdown', 'keydown'].forEach(ev => document.addEventListener(ev, () => { M.ready = true; }, { once: true, capture: true }));
   applyForm();
-  if (M.form !== 'desktop') { const init = mGroupOf(DOCK.cur || 'rig'); M.g = init ? init.id : 'play'; M.s = DOCK.cur || 'rig'; mSync(); }
+  if (M.form !== 'desktop') mGo(MGROUPS.some(g => g.id === CFG.mg) ? CFG.mg : 'words');      /* a phone opens on the words (2.41), or where you were */
 }
