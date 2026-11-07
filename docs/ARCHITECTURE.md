@@ -152,7 +152,7 @@ Classical, local, deterministic DSP: STFT (N = 2048, hop 1024, sqrt-Hann) → ha
 
 ## Guided tour (`17-tour.js`)
 
-A step list (`tourSteps()`) of `{ t: target, pane, pre, title, b, side, tip }`. `tourGo(i)` switches the pane, finds the target element, and `tourPlace()` positions a spotlight (a div with a very large `box-shadow`) and a card next to it, avoiding overlap and clamping to the viewport. Keys are captured while the tour is open so shortcuts cannot fire accidentally. Add a step by adding an entry to the array.
+A step list (`tourSteps()`) of `{ t: target, pane, pre, title, b, side, tip, drawer, full }`. Since 2.47 there are two stories: `tourStepsDesk()` (workspaces and ✦ Simple, connecting, the beats and the band, writing, recording and tuning, saving and sending; steps marked `full` are left out while `CFG.simple` is on) and `tourStepsPhone()` (the phone's bottom bar, Words, Sing, Beats, Tracks and More, then the guitar and the stage). A target that is missing gives a centred card, so a step never points at nothing; `test/e2e-tour.cjs` fails if any step's target is missing in Simple, the Full Rig or on a phone. `tourGo(i)` switches the pane, finds the target element, and `tourPlace()` positions a spotlight (a div with a very large `box-shadow`) and a card next to it, avoiding overlap and clamping to the viewport. Keys are captured while the tour is open so shortcuts cannot fire accidentally. Add a step by adding an entry to the array.
 
 ## Responsive shell (`18-mobile.js`, `19-touch.js`)
 
@@ -224,7 +224,7 @@ The browser opens one stream with up to two channels. `E.split` (a 2-way `Channe
 - **26-origins.js** — the start card (Clean canvas / Start from a song), the library dialog, the zoom control (`zoomSet('canvas'|'song'|'studio')`, which applies the Write or Record / Arrange layouts) and the song-bar buttons.
 - **27-reset.js** — selective reset. `store.locked` blocks every write (the old bug was `beforeunload` re-saving after `localStorage.clear()`), a BroadcastChannel tells other tabs, then localStorage keys, the IndexedDB database and the Cache Storage / service worker are cleared and the page reloads on a clean address.
 - Add `?debug` to the address to expose `window.__daily` for tests.
-- Design rule: no accounts, no backend. Optional sync (for example to a GitHub repository, text first) is planned as a separate, opt-in layer on top of the bundle format.
+- Design rule: no accounts, no backend. Optional sync is a separate, opt-in layer on top of the bundle format: folder sync (2.22) and GitHub (2.21).
 
 ## Appearance (part 05b-look.js, v1.6)
 

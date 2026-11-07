@@ -77,8 +77,9 @@ for (const p of PAGES) {
 }
 ok(known.size === PAGES.length, 'every guide page has its own title');
 {
-  const ll = existsSync(join(d, 'llms.txt')) ? rd('llms.txt') : '', ag = rd('../docs/AGENT_API.md'), names = [...ag.matchAll(/^\| `([a-z_]+)` \| [^|]+ \| [^|]+ \|$/gm)].map(m => m[1]);
+  const ll = existsSync(join(d, 'llms.txt')) ? rd('llms.txt') : '', ag = rd('../docs/AGENT_API.md'), names = [...((ag.split(/^## The tools/m)[1] || '').split(/^## /m)[0]).matchAll(/^\| `([a-z_]+)` \| [^|]+ \| [^|]+ \|$/gm)].map(m => m[1]);
   ok(/^# the-daily\.studio\n\n> /.test(ll) && names.length >= 20 && names.every(n => ll.includes('- ' + n + ' (')) && ll.includes(SITE.origin + '/guide/for-ai-assistants/'), 'llms.txt: a title, a summary, every agent tool (' + names.length + ') and the page for assistants');
+  ok(!/^- open_shower_mode \(/m.test(ll), 'llms.txt: a renamed tool is not listed as a tool');
   const others = PAGES.filter(p => p.slug !== 'guide' && !p.unlisted).map(p => rd('guide/' + p.slug + '/index.html')).concat(rd('guide/index.html'));
   ok(others.every(h => !/href="[^"]*for-ai-assistants/.test(h)), 'no listed guide page links to the page for AI assistants');
 }

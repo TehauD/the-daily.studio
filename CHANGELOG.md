@@ -2,6 +2,79 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.47.0 — 2026-11-07 — The tutorials, guides and licensing catch up
+
+A release to close the gaps that 2.39–2.46.1 left in the tutorials, the documents, the licensing register and the tests, and to start a register of what is still open: [docs/GAPS.md](docs/GAPS.md). Nothing is removed.
+
+### Tutorials
+- **A new guided tour on a computer.** It now shows:
+  - the workspaces and ✦ Simple;
+  - connecting your input (Audio input opens first until one is connected);
+  - play and record, the workspace's tools and the tabs;
+  - the beats and the band, with Song build;
+  - writing words, chords and tab;
+  - recording, editing and 🎯 tuning a take;
+  - song details, then saving, sending and sharing.
+
+  In ✦ Simple that is the whole tour, 14 cards. In the Full Rig it adds the Rig and pedalboard, tones, the fretboard, the tuner, stems, transcription and the stage, for 21. The old tour was guitar-first, named a "latency chip" that moved in 2.38.1, and named a brand in its first step.
+- **A new phone tour.** It follows the phone's bottom bar (Words, Sing, Beats, Tracks, More), then the guitar and the stage under More: 11 cards. The old one taught the sections phones had before 2.41.
+- **Two new guide pages** on the site:
+  - *Write a song over a beat*: beats, kits, Song build and sending a link;
+  - *Sing, record and tune your voice*: takes, 🎯 Tune and the vocal pedals.
+- **Getting started** now explains the workspaces, ✦ Simple, connecting first and the tour. The guide's *New lately* lists 2.40–2.46.
+
+### Documents
+- **USER_GUIDE.md:**
+  - new: a *Guided tour* section, and a table of each workspace's panels and tools in Simple;
+  - the 2.46.1 guitar is described;
+  - corrected: the first visit now opens the Songwriter, not the Performer, and the phone records from Sing, not *Play*;
+  - the contents line is complete.
+- **README.md:**
+  - highlights for 2.39–2.46.1, and a current Simple row;
+  - *Your first five minutes* now starts with a beat, the words, a take, tuning and a link;
+  - the panel table is current;
+  - the roadmap no longer lists five things that have shipped.
+- **AUDIO.md:** audio first, and how the band, Song build and vocal tuning are made.
+- **SECURITY_MODEL.md:** song links as untrusted input, the rooms and their integrity hashes, tuned takes, the phone's microphone, and the wider agent tools.
+- **TESTING.md:** every suite is listed (sixteen were missing).
+- **HARDWARE_CHECKLIST.md:** a new section for what only ears and real devices can judge.
+- **RELEASE.md:** version-neutral, with smoke tests for song links, rooms, beats and tuning.
+- **The documentation index:** lists every document, including LICENSING, GITHUB, TERMS and GAPS.
+
+### Licensing, privacy and terms
+- **LICENSING.md** (audited for 2.47.0):
+  - the methods behind vocal tuning (TD-PSOLA) and the 2.46.1 guitar (the Jaffe–Smith extensions of Karplus–Strong) are credited;
+  - the 2.45 instruments are described as code, with nothing sampled or measured from anyone else;
+  - a dates-only note on patents (none searched; the early ones have run their term);
+  - "808" and "909" are recorded as style names, with an open item for the maintainer;
+  - the guide's page count is corrected, and so is the claim that `/legal/` has no terms.
+- **THIRD_PARTY_NOTICES.md:** the two new citations and the style-name note.
+- **PRIVACY.md:**
+  - rows for vocal tuning, singing on a phone and the band;
+  - corrected: the offline copy fetches every room when it installs, not the first time each is used;
+  - checked against 2.47.0.
+- **TERMS.md** (updated 7 November 2026): the beats and the band are yours to use, and a song link carries the song itself. Both are under *Your content*, so the sharing terms you confirm are unchanged and nobody is asked again.
+
+### For AI agents
+- **`set_band`** can pick a beat and set:
+  - the drum kit;
+  - the bass sound (including the 808 Sub);
+  - the keys and their sound;
+  - the rhythm guitar (steel, nylon or electric);
+  - Song build.
+- **`edit_section`** can set a section's energy (1 to 5, or 0 for the one its name suggests).
+- These are new optional inputs, so the API stays at version 2.
+- **Fixed:**
+  - `llms.txt` listed the renamed `open_shower_mode` as a tool, on a garbled line;
+  - one answer still suggested `open_shower_mode`.
+
+### Tests
+- **New `e2e-tour`** (13 checks). The tour is walked in ✦ Simple, in the Full Rig and on a phone. Every step must find what it points at, the card must be fully on screen, the words must hold no brand names or moved controls, and the song must be unchanged.
+- **`e2e-agent`** (70 checks) adds a beat, the kit, the sounds and Song build through `set_band`, and a section's energy.
+- **`e2e-privacy`** (42 checks): its session now includes a beat with Song build, a song link and a tuned take, still with no request to any other site.
+- **`verify-site`** checks that `llms.txt` lists only real tools.
+- **`e2e`:** the tour's step count range now allows the shorter Simple tour.
+
 ## 2.46.1 — 2026-11-07 — The guitar, not a harpsichord
 
 ### Fixed

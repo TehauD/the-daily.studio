@@ -65,6 +65,16 @@ suite('e2e-agent', async t => {
   /* ---- band, transport, workspace, export ---- */
   const bd = await json('set_band', { drums: false, bass: true, strum_pattern: 'Folk D-DU-UDU' });
   ok(bd.band.drums === false && bd.band.bass === true && bd.band.strum_pattern === 'Folk D-DU-UDU', 'set_band: parts on/off and a strum pattern');
+  /* 2.47: the band of 2.39–2.45 is within an agent's reach: a beat, the kit, the bass and keys sounds, the rhythm guitar and Song build */
+  const bt = await json('set_band', { beat: 'trap' });
+  ok(bt.band.beat === 'trap' && bt.band.bass_tone === '808 Sub' && bt.band.song_build === true, 'set_band: a beat brings its band and Song build (' + bt.band.drum_kit + ', ' + bt.band.bass_tone + ', ' + bt.band.tempo + ' BPM)');
+  const sn = await json('set_band', { drum_kit: 'Acoustic', bass_tone: 'Round', keys: true, keys_sound: 'Strings', rhythm_guitar: true, rhythm_instrument: 'Nylon', song_build: false });
+  ok(sn.band.drum_kit === 'Acoustic' && sn.band.bass_tone === 'Round' && sn.band.keys && sn.band.keys_sound === 'Strings' && sn.band.rhythm_instrument === 'Nylon' && sn.band.song_build === false, 'set_band: kit, bass tone, keys sound, rhythm guitar and Song build');
+  ok(/must be one of|Unknown/.test((await call('set_band', { keys_sound: 'Kazoo' })).text) && /must be one of|Unknown/.test((await call('set_band', { beat: 'polka' })).text), 'set_band: a beat or sound the studio does not have is refused');
+  const tools = await p.evaluate(() => window.dailyStudio.tools().find(t => t.name === 'set_band'));
+  ok(tools && tools.inputSchema.properties.beat.enum.includes('trap') && tools.inputSchema.properties.keys_sound.enum.includes('Strings'), 'its schema lists the beats and the keys sounds');
+  const en = await json('edit_section', { section: 1, energy: 2 }), en0 = await json('edit_section', { section: 1, energy: 0 });
+  ok(en.section.energy === 2 && en0.section.energy === 3, 'edit_section: a section\'s energy, and 0 gives it back the one its name suggests (' + en.section.energy + ', then ' + en0.section.energy + ')');
   const pl = await json('transport', { action: 'play', from_bar: 2, metronome: true }); await wait(900);
   const playing = await p.evaluate(() => ({ on: window.__daily.T.playing, bar: Math.floor(window.__daily.playheadSlot() / window.__daily.spb()) + 1 }));
   ok(pl.playing && pl.metronome && playing.on && playing.bar >= 2, 'transport: plays from bar 2 with the click (bar ' + playing.bar + ', audio ' + pl.audio + ')');

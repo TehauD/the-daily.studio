@@ -135,12 +135,12 @@ agTool('transpose_song', 'Move the whole song up or down: every chord in the bar
   i => { const d = Math.round(+i.semitones); if (!d || Math.abs(d) > 11) throw new Error('semitones must be a whole number from -11 to 11, not 0'); agChange('transposed the song ' + (d > 0 ? 'up ' : 'down ') + Math.abs(d), () => songTranspose(d)); return agTxt({ done: true, key: agKeyName(S.key, S.minor), sections: agSong(false).sections }); });
 
 agTool('edit_section', 'Change one section: rename it, replace its bars\' chords, and/or replace its lyrics. Bars: one entry per bar, "Am" or "Am G" (two chords in the bar) or "" (no chord). Lyrics: chords inline in [brackets] before the syllable.',
-  agObj({ section: agSecP('Section number (1 = first) or name, e.g. "Chorus".'), name: agStr('New name.'), chords: { type: 'array', items: { type: 'string' }, description: 'The chord of each bar, in order. Replaces all bars.', maxItems: 128 }, lyrics: agStr('The words, with [Chord] marks inline.') }, ['section']),
+  agObj({ section: agSecP('Section number (1 = first) or name, e.g. "Chorus".'), name: agStr('New name.'), chords: { type: 'array', items: { type: 'string' }, description: 'The chord of each bar, in order. Replaces all bars.', maxItems: 128 }, lyrics: agStr('The words, with [Chord] marks inline.'), energy: agNum('How hard the band plays it with Song build on: 1 (just hats) to 5 (everything). 0 goes back to the energy its name suggests.', { minimum: 0, maximum: 5 }) }, ['section']),
   i => {
     const si = agSec(i.section); if (si < 0) throw new Error('No section “' + i.section + '”. Sections: ' + S.sections.map((s, n) => (n + 1) + ' ' + s.name).join(', '));
     const bars = i.chords ? i.chords.map(agBar) : null; if (bars && !bars.length) throw new Error('chords needs at least one bar');
-    agChange('edited ' + S.sections[si].name, () => { const s = S.sections[si]; if (i.name) s.name = String(i.name).slice(0, 40); if (bars) { s.bars = bars.map((c, n) => { const b = newBar(c); const old = s.bars[n]; if (old && old.chord === c) b.tab = old.tab; return b; }); T.bars = null; } if (i.lyrics != null) s.lyrics = String(i.lyrics); });
-    return agTxt({ done: true, section: agSong(true).sections[si] });
+    agChange('edited ' + S.sections[si].name, () => { const s = S.sections[si]; if (i.name) s.name = String(i.name).slice(0, 40); if (bars) { s.bars = bars.map((c, n) => { const b = newBar(c); const old = s.bars[n]; if (old && old.chord === c) b.tab = old.tab; return b; }); T.bars = null; } if (i.lyrics != null) s.lyrics = String(i.lyrics); if (i.energy != null) { const e = Math.round(+i.energy); if (e >= 1 && e <= 5) s.energy = e; else delete s.energy; } });
+    return agTxt({ done: true, section: Object.assign(agSong(true).sections[si], { energy: secEnergy(S.sections[si]) }) });
   });
 
 agTool('add_section', 'Add a section with its chords (one per bar) and optional lyrics.',
@@ -156,14 +156,23 @@ agTool('remove_section', 'Remove one section (undoable with undo).',
   i => { const si = agSec(i.section); if (si < 0) throw new Error('No section “' + i.section + '”'); if (S.sections.length < 2) throw new Error('A song needs at least one section'); const nm = S.sections[si].name; agChange('removed ' + nm, () => { S.sections.splice(si, 1); SEL.sec = 0; SEL.bar = 0; TE.sec = 0; TE.bi = 0; T.bars = null; }); return agTxt({ done: true, sections: agSong(false).sections.map(s => s.number + ' ' + s.name) }); },
   { destructiveHint: true });
 
-agTool('set_band', 'Turn the backing band\'s parts on or off and choose their styles.',
-  agObj({ drums: agBool('Drums on/off.'), bass: agBool('Bass on/off.'), rhythm_guitar: agBool('Rhythm guitar (strums the chords) on/off.'), lead_tab: agBool('Lead guitar playing the tab on/off.'),
-    drum_pattern: agStr('Drum pattern.', { enum: Object.keys(DPATS) }), bass_style: agStr('Bass style.', { enum: BASS_STYLES }), strum_pattern: agStr('Rhythm guitar pattern.', { enum: Object.keys(STRUMS) }) }),
+agTool('set_band', 'Turn the backing band\'s parts on or off and choose their styles and sounds, pick a ready beat, and switch Song build (each section at its own energy).',
+  agObj({ beat: { type: 'string', description: 'A ready beat: drums, bass and guitar or keys at its tempo, with chords in the song\'s key if it has none. Applied first; the other inputs then change it.', get enum() { return BEATS.map(b => b.id); } },      /* read when asked: the beats and the keys are defined after this part */
+    drums: agBool('Drums on/off.'), bass: agBool('Bass on/off.'), rhythm_guitar: agBool('Rhythm guitar (strums the chords) on/off.'), lead_tab: agBool('Lead guitar playing the tab on/off.'), keys: agBool('Keys (piano, pad, strings…) playing the chords on/off.'),
+    drum_pattern: agStr('Drum pattern.', { enum: Object.keys(DPATS) }), drum_kit: agStr('Drum kit.', { enum: Object.keys(KITS) }), bass_style: agStr('Bass style.', { enum: BASS_STYLES }), bass_tone: agStr('Bass sound.', { enum: BASS_TONES }),
+    strum_pattern: agStr('Rhythm guitar pattern.', { enum: Object.keys(STRUMS) }), rhythm_instrument: agStr('Rhythm guitar.', { enum: ['Steel', 'Nylon', 'Electric'] }), keys_sound: { type: 'string', description: 'Keys sound.', get enum() { return KEYS_SOUNDS.slice(); } },
+    song_build: agBool('Song build: quiet verses, big choruses, fills and risers between sections (energies are set per section with edit_section).') }),
   i => {
     if (i.drum_pattern && !DPATS[i.drum_pattern]) throw new Error('Unknown drum pattern'); if (i.bass_style && !BASS_STYLES.includes(i.bass_style)) throw new Error('Unknown bass style'); if (i.strum_pattern && !STRUMS[i.strum_pattern]) throw new Error('Unknown strum pattern');
-    agChange('changed the band', () => { [['drums', 'drumsOn'], ['bass', 'bassOn'], ['rhythm_guitar', 'compOn'], ['lead_tab', 'leadOn']].forEach(([a, b]) => { if (i[a] != null) S.band[b] = !!i[a]; }); if (i.drum_pattern) setDrumPattern(i.drum_pattern); if (i.bass_style) S.band.bassStyle = i.bass_style; if (i.strum_pattern) S.band.compStyle = i.strum_pattern; });
+    if (i.beat && !BEATS.some(b => b.id === i.beat)) throw new Error('Unknown beat. Beats: ' + BEATS.map(b => b.id).join(', ')); if (i.drum_kit && !KITS[i.drum_kit]) throw new Error('Unknown drum kit'); if (i.bass_tone && !BASS_TONES.includes(i.bass_tone)) throw new Error('Unknown bass tone');
+    if (i.rhythm_instrument && !['Steel', 'Nylon', 'Electric'].includes(i.rhythm_instrument)) throw new Error('Unknown rhythm guitar'); if (i.keys_sound && !KEYS_SOUNDS.includes(i.keys_sound)) throw new Error('Unknown keys sound');
+    if (i.beat) { beatUse(i.beat, { play: false, quiet: true }); agentSay('picked the ' + BEATS.find(b => b.id === i.beat).name + ' beat'); }      /* its own undo step */
+    const more = Object.keys(i).some(k => k !== 'beat' && i[k] != null);
+    if (more) agChange('changed the band', () => { const B = S.band; [['drums', 'drumsOn'], ['bass', 'bassOn'], ['rhythm_guitar', 'compOn'], ['lead_tab', 'leadOn'], ['keys', 'keysOn'], ['song_build', 'build']].forEach(([a, b]) => { if (i[a] != null) B[b] = !!i[a]; });
+      if (i.keys && !S.mix.keys) S.mix.keys = { g: .7, p: .1, m: 0, s: 0 }; if (i.drum_pattern) setDrumPattern(i.drum_pattern); if (i.drum_kit) B.kit = i.drum_kit; if (i.bass_style) B.bassStyle = i.bass_style; if (i.bass_tone) B.bassTone = i.bass_tone;
+      if (i.strum_pattern) B.compStyle = i.strum_pattern; if (i.rhythm_instrument) B.compInst = i.rhythm_instrument; if (i.keys_sound) B.keysSound = i.keys_sound; });
     try { syncBandStrip(); if (paneVisible('band')) renderBand(); } catch (e) { }
-    return agTxt({ done: true, band: { drums: !!S.band.drumsOn, bass: !!S.band.bassOn, rhythm_guitar: !!S.band.compOn, lead_tab: !!S.band.leadOn, drum_pattern: S.band.patName, bass_style: S.band.bassStyle, strum_pattern: S.band.compStyle } });
+    const B = S.band; return agTxt({ done: true, band: { beat: B.beat || null, drums: !!B.drumsOn, bass: !!B.bassOn, rhythm_guitar: !!B.compOn, lead_tab: !!B.leadOn, keys: !!B.keysOn, drum_pattern: B.patName, drum_kit: B.kit, bass_style: B.bassStyle, bass_tone: B.bassTone, strum_pattern: B.compStyle, rhythm_instrument: B.compInst, keys_sound: B.keysSound, song_build: !!B.build, tempo: S.bpm } });
   });
 
 agTool('transport', 'Play or stop the song (the band plays the chords), start from a bar, and switch the loop or the metronome. It never records.',
@@ -311,7 +320,7 @@ agTool('set_up_practice', 'Set the studio up for practice in one call: loop a se
     if (i.play) { if (typeof AK !== 'undefined' && AK.killed) throw new Error('Audio was switched off with the kill switch (Ctrl + .). The person has to resume it in the Audio panel.'); await play(); }
     return agTxt({ done: true, loop: si < 0 ? 'the whole song' : S.sections[si].name + ' (bars ' + (start + 1) + '–' + (start + len) + ')', bpm: S.bpm, metronome: !!T.metro,
       band: { drums: !!S.band.drumsOn, bass: !!S.band.bassOn, rhythm_guitar: !!S.band.compOn, lead_tab: !!S.band.leadOn, muted: bandMuted() }, playing: !!T.playing,
-      note: T.playing && E.ctx && E.ctx.state !== 'running' ? 'The browser only lets a page make sound after the person has clicked or tapped on it once.' : 'For scales in the song\'s key, open_shower_mode.' });
+      note: T.playing && E.ctx && E.ctx.state !== 'running' ? 'The browser only lets a page make sound after the person has clicked or tapped on it once.' : 'For scales in the song\'s key, open_practice_room.' });
   });
 
 agTool('get_chord_shape', 'How to play a chord on the guitar in this song\'s tuning and capo: the fret for each string from the lowest to the highest (x = not played, 0 = open), the lowest fret used and whether it is a barre, with other ways to play it. The first shape is the one the song uses.',

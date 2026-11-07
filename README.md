@@ -76,7 +76,11 @@ It began as a guitar lab and grew into a place to turn an idea into a song. **Hu
 | **Pads, pedal, sync and streaming (2.29)** | **🥁 Pads** on the band's kit (touch, A–H keys or a MIDI pad controller) with **tap tempo**, a groove **recorded in passes** over the click, **beatbox to beat**, and a bass that **follows the kick**. A **foot pedal** (Bluetooth page turner or MIDI footswitch) for play, sections, record, loop and more, learned in Settings. **MIDI clock** out and in for drum machines, synths and music software. A **stream window** of the words and chord on a key colour for OBS. A **megaphone pedal** (any megaphone, radio or telephone voice effect) heard in your voice turns the stage red-hot, flashes the lights and shakes the words while it is on (2.30). **🎤 Vocal pedals** (2.31): Scream, de-esser, megaphone, doubler, harmony that follows the key, echo in time with a throw, and reverb, with presets that can change by section. |
 | **The phone, for singers (2.41)** | On a phone the studio is built around the words and the voice: **Words** (a lyric notebook; tap a chord onto a word, syllables per line), **Sing** (the phone's microphone, ● record over the beat, takes, one-tap voice sounds), **Beats**, **Tracks**, and the guitar and visuals under **More**. |
 | **🔗 Send a song as a link (2.40)** | The chords, words, tab, beat, tempo and key ride inside a link, after the `#`, which never reaches a server. Paste it in a message or show a QR code; whoever opens it gets the song ready to play, as a new song of their own. Nothing is uploaded or stored anywhere. |
-| **✦ Simple (2.33)** | One switch (top right) shows just play, record, the tempo and key, your song, the workspaces and their tools, and tucks the rest away. A first visit starts in it, in the Songwriter workspace, with 🥁 Beats to play over (2.39); nothing is lost, and the same button brings every tool back. |
+| **✦ Simple in every workspace (2.33, 2.46)** | One switch (top right) keeps each workspace to the few panels and tools it needs: Songwriter, Performer, Creator Studio, Practice and Teacher each have their own. **Full Rig** is the one workspace with everything, so choosing it turns Simple off. A first visit starts in Simple, and until an input is connected every workspace opens on **Audio input**. Nothing is lost; the same button brings every tool back. |
+| **🥁 Beats and drum machines (2.39, 2.42)** | Fourteen ready **beats** in your key (folk to trap, Afrobeats to bossa nova), on rebuilt acoustic kits or the **808**, **909** and **Boom Bap** drum machines with an **808 Sub** bass that slides between notes. All synthesised on your device: no samples, nothing to download. |
+| **🎯 Vocal tuning (2.43)** | **🎯 Tune** on every vocal take: Natural, Tight or Hard, in the song's key and scale. **Off** gives back the original exactly, even after a reload. |
+| **📈 Songs that build (2.44)** | With **Song build** on, each section plays at its own energy (1 to 5, from its name unless you choose): quiet verses, big choruses, fills, crashes, risers and an ending. |
+| **🎹 Better instruments (2.45, 2.46.1)** | A piano that rings and mellows, an electric piano with tremolo, a wide pad, a new **Strings** section with delayed vibrato, acoustic guitars with a wooden body, and a rhythm guitar double-tracked as two real performances, with a soft pick and strings that lose their highs as they ring. |
 | **Electronic (2.37)** | **🎛 Piano roll** for the keys part and bass line (draw, lengthen, loud or soft, scale-only, loop the section); **sidechain ducking** to the kick on keys, bass, rhythm guitar or the track; **MIDI out** of the keys, bass and drums to your synths and drum machines on their own channels, timed to what you hear. |
 | **Bass guitar (2.36)** | **4, 5 and 6-string bass**: Settings ▸ Music ▸ My instrument or the tuning list. The tab, the fretboards, the tuner and transcription follow the strings, bass tab plays as bass, the band's bass steps out for you, and the pitch tracker hears a low B. |
 | **Speed, key and keys (2.35)** | **⏱ Speed & key**: slow the band, the click and a loaded track to 50% without lowering the pitch, or move the track up to six semitones without changing its speed (in a worker, by a phase vocoder), with the song's chords following. **🎹 Keys**: a piano under Write that shows the chord and scale, a keyboard to play by mouse, touch, computer keys or MIDI, six sounds of its own or the band's bass or lead, **record what you play into the song** (keys part, bass line or lead tab), and a keys player in the band. |
@@ -297,23 +301,23 @@ The ◐ button (top right; **More ▸ Appearance** on a phone) opens a drawer th
 ## Your first five minutes
 
 0. **Fastest start:** press **Start**, then **● Hum or sing**. A few seconds later you have a song.
-1. **Press Start** on the welcome card. If your interface does not appear, open **I/O** in the left sidebar, pick it, and press the refresh button.
-2. **Take the tour.** Accept the offer that appears on first run, or press **?** and choose **Take the guided tour**. It highlights each key area in about two minutes.
-3. **Pick a tone** from **Tones** (left) and play. Watch the **Tuner** (right) and the level meters; aim for peaks around −12 to −6 dBFS.
-4. **Turn on the band.** Click **Drums**, **Bass**, **Rhythm** in the band strip and press <kbd>Space</kbd>.
-5. **Set your tuning** in **Song → Tuning**, or **Custom tuning** to set each string.
-6. **Try the clever bits:** record a take in **Transcribe**, or drop a song into **Stems**.
+1. **Press Start** on the welcome card. Until an input is connected, every workspace opens on **Audio input**: choose your microphone or interface there, and press the refresh button (⟳) if the list is empty.
+2. **Take the tour.** Accept the offer that appears on first run, or press **?** and choose **Take the guided tour**. It shows the workspaces, ✦ Simple, the beats, writing, recording and tuning, and sending a song, in about two minutes (2.47). On a phone it follows the bottom bar.
+3. **Tap a beat** (🥁 Beats in the Songwriter tools) and write the words and chords over it in **Write**.
+4. **Record** a take with **●**, then **🎯 Tune** it if it is a vocal.
+5. **Send it** with **🔗 Send as a link**, or export a WAV or a share page from **Save & export**.
+6. **Want everything?** Choose **Full Rig**: tones and the pedal rig, the tuner, your tuning (**Song → Tuning**), **Transcribe** and **Stems**.
 
 ## Tour of the panels
 
-The dock at the top of the centre column holds every panel as a tab. **Drag** tabs to reorder them, **double-click** one to float it as a window, and use **▦** to choose a layout (Studio, Write, Arrange, Record, Tone, Practice, Show, Focus or Classic).
+The dock at the top of the centre column holds every panel as a tab. **Drag** tabs to reorder them, **double-click** one to float it as a window, and use **▦** to choose where panels live. Each workspace shows the tabs it needs; the **Full Rig** shows them all.
 
 | # | Panel | What it is for |
 |---|---|---|
 | 1 | **Rig** | Tone, A/B morph, scenes, the signal chain strip and the full pedalboard. Drag pedal headers to reorder; **⚙** per pedal for width, colour, collapse, hide and footswitch binding. |
-| 2 | **Tab** | Grid tab editor. Click a cell and type a fret; arrows move; `h p / \ b ~ x` set techniques; <kbd>Space</kbd> plays from the bar; *Capture from playing* writes what you play. |
+| 2 | **Write** | The words with chords over them, and the grid tab editor. Click a cell and type a fret; arrows move; `h p / \ b ~ x` set techniques; <kbd>Space</kbd> plays from the bar; *Capture from playing* writes what you play. |
 | 3 | **Song** | Title, tuning, capo, scale, sections and chords, plus the chord library with voicings for the current tuning. |
-| 4 | **Band** | Style, level and pan for drums, bass, rhythm guitar and lead playback. |
+| 4 | **Band** | The 🥁 beats, Song build and its energies, and style, sound, level and pan for drums, bass, rhythm guitar, keys and lead playback. |
 | 5 | **Fretboard** | A hexagon fretboard aware of tuning, capo and scale. Click any note to hear it. |
 | 6 | **Visuals** | Audio-reactive visualisers from rig output, master mix or dry DI. |
 | 7 | **Stage** | Performance mode: full-screen visuals, scenes, prompter and a neural view. |
@@ -473,9 +477,10 @@ The short version: push this folder to a new repository, then **Settings → Pag
 * An optional machine-learning separator and transcriber (loaded on demand) alongside the classical DSP
 * Tempo and key changes inside a song, MusicXML and Guitar Pro import and export (MIDI import is in 2.2)
 * Dragging a clip onto another lane; copy and paste of clips between songs
-* Sidechain ducking, pitch correction and a groove picker
-* Shareable song links and a gallery of community presets
 * More amp and cabinet models, impulse-response library browser
+* Done since this list began: sidechain ducking (2.37), a groove picker (🥁 Beats, 2.39), shareable song links (2.40), pitch correction (🎯 Tune, 2.43) and a gallery of community looks and rigs (2.21)
+
+The open gaps the maintainers know about, in the docs, the tests and the product, are listed in [docs/GAPS.md](docs/GAPS.md).
 
 Ideas and pull requests are welcome.
 

@@ -43,7 +43,7 @@ function wav(L, sr) { const n = L.length, b = Buffer.alloc(44 + n * 2); b.write(
   // guided tour: offer, walk every step, finish
   ok(!!(await page.$('#tourOffer')), 'first-run tour offer appears'); await page.click('#tourOffer button.primary'); await wait(500);
   let steps = 0; while (await page.$('#tour')) { steps++; const inView = await page.evaluate(() => { const r = document.querySelector('.tour-card').getBoundingClientRect(); return r.left >= 0 && r.top >= 0 && r.right <= innerWidth && r.bottom <= innerHeight; }); if (!inView) ok(false, 'tour card fully on screen at step ' + steps); await page.keyboard.press('ArrowRight'); await wait(380); if (steps > 40) break; }
-  ok(steps >= 15 && steps < 30, `tour walked ${steps} steps and closed`);
+  ok(steps >= 12 && steps < 30, `tour walked ${steps} steps and closed`);
 
   // transcription self-test in Drop C#
   await page.click('#dock .tab[data-id="tab"]'); await page.selectOption('#songbar select.sb-tun', 'Drop C# (C# G# C# F# A# D#)'); await wait(250);

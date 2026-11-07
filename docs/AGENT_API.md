@@ -49,6 +49,14 @@ Both run the same functions as the buttons. (`window.dailyStudio` has one more m
 - `/guide/for-ai-assistants/` explains the tools, what they never touch and good first calls. It is in the sitemap and `llms.txt`, but nothing in the studio or the other guide pages links to it: people only find it if they go looking. The studio itself shows no AI controls beyond the existing switch in Settings ▸ Workflow (on by default) and a short note when an agent changes something.
 - Three tools do a whole job in one call: `write_song` (lyrics and a progression to a song the band plays), `explain_song` (key, numerals, chords outside the key, repeated sections, known progressions) and `set_up_practice` (loop a section, slow down, click, how much band, play).
 
+## The band and the song's shape (2.47)
+
+New optional inputs, so the API stays at version 2:
+- `set_band` can pick a ready **beat** (`beat`: its id, e.g. `trap`; it brings its band, tempo and Song build, and chords in the song's key if there are none, as one undo step), then change the **kit** (`drum_kit`), the **bass sound** (`bass_tone`, including `808 Sub`), the **keys** (`keys` on/off, `keys_sound`), the **rhythm guitar** (`rhythm_instrument`: Steel, Nylon or Electric) and **Song build** (`song_build`). The schema lists the beats and sounds the studio has, and anything else is refused. Its answer has every band setting and the tempo.
+- `edit_section` takes `energy`: 1 (just hats) to 5 (everything), how hard the band plays the section with Song build on; `0` gives it back the energy its name suggests. Its answer includes the section's energy.
+
+`llms.txt` lists only the tools in the table above; the renamed names below are not listed as tools (fixed in 2.47).
+
 ## Renamed tools
 
 | Old name | Now | Since |

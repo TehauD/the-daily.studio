@@ -1,11 +1,13 @@
-# Release and go-live checklist (v2.13.0)
+# Release and go-live checklist (reviewed for v2.47.0)
 
 ## Before you publish
-- [ ] `node scripts/build.mjs --check` passes; `npm test`, `npm run test:e2e`, `npm run test:mobile` pass; the CI `browsers` job (WebKit and Firefox, `test/xbrowser.cjs`) is green; `npm run build:site && npm run verify:site` prints `site verified` (it includes the size budgets: `index.html` under 2 MB, and under 700 kB compressed).
+- [ ] `node scripts/build.mjs --check` passes; `npm test`, `npm run test:e2e`, `npm run test:mobile` pass; the CI `browsers` job (WebKit and Firefox, `test/xbrowser.cjs`) is green; `npm run build:site && npm run verify:site` prints `site verified` and `audit passed` (it includes the size budgets: the page under 700 kB compressed and each room under 150 kB compressed).
 - [ ] The real-hardware pass in [HARDWARE_CHECKLIST.md](HARDWARE_CHECKLIST.md) (about 45 minutes: real interface and microphone, kill switch, camera models, MIDI, an iPhone with Add to Home Screen) done on the live site, and the other checks in [TESTING.md](TESTING.md).
 - [ ] `npm run shots` run, and `git diff docs/screenshots` looked at: the pictures in the README match the release.
 - [ ] **Sample track rights.** No music is bundled. If you add a file to `samples/`, record its licence in `samples/LICENSE.md` and, if it came from an AI music service, confirm that service's terms allow public redistribution.
-- [ ] Read `THIRD_PARTY_NOTICES.md` and `PRIVACY.md` once; they should match what you intend.
+- [ ] Read `THIRD_PARTY_NOTICES.md`, `PRIVACY.md` and `TERMS.md` once; they should match what you intend. `docs/LICENSING.md` must say it was audited for this version (`npm run audit` fails otherwise); read its *Open items*.
+- [ ] Walk the guided tour on a computer (✦ Simple and Full Rig) and on a phone: every card should read true for this release (`test/e2e-tour.cjs` checks the targets, not the words).
+- [ ] Look over [GAPS.md](GAPS.md): move what this release closed, and add what it opened.
 - [ ] Optional: delete the "Made with AI assistance" line in `src/parts/28-about.js` if you would rather not state it.
 
 ## Repository
@@ -28,10 +30,10 @@ The page is already vendored at `journal/index.html` and deploys with the site (
 
 ## Tag and release
 ```
-git tag -a v2.13.0 -m "Goal workspaces: Songwriter, Performer, Creator Studio, Practice, Teacher, Full Rig"
-git push origin v2.13.0
+git tag -a v<version> -m "<the CHANGELOG entry's title>"
+git push origin v<version>
 ```
-Create a GitHub release from the tag using the 2.8.0 CHANGELOG entry.
+Create a GitHub release from the tag, using that version's CHANGELOG entry (and those of any versions since the last release).
 
 ## Smoke test on the live site (desktop and a phone)
 - [ ] Page loads over HTTPS with no console errors; start card appears and **no microphone prompt** shows until you choose.
@@ -46,10 +48,14 @@ Create a GitHub release from the tag using the 2.8.0 CHANGELOG entry.
 - [ ] Install to home screen / offline reload works.
 - [ ] Hand tracking (Vision panel) and the camera **person** look: the one-time question appears first; **Download** then loads from jsDelivr and Google storage (the real download is not covered by the automated tests, the question and the refusal are). Confirm the segmenter model URL resolves.
 - [ ] `BASE_URL=https://the-daily.studio/ node test/e2e-privacy.cjs` passes against the live site (no request to any other site, no cookie).
-- [ ] `https://the-daily.studio/legal/` opens and shows the licence, notices, privacy statement and both font licences.
+- [ ] `https://the-daily.studio/legal/` opens and shows the licence, notices, privacy statement, terms and both font licences.
+- [ ] **Song link:** 🔗 Send as a link, open the link in another browser: it offers the song, the address bar is cleaned, and it opens as a new song.
+- [ ] **A room:** on a fresh profile, open **Transcribe** or **🎯 Tune** a take: its room loads with no console error (a hash mismatch would be refused). Then go offline and reload: it still opens.
+- [ ] **Beats and tuning:** tap a beat and play it; record a short vocal and 🎯 Tune it Natural, then Off.
 
-## Known limits at 2.2
-- Songs live in the browser of the device that made them; there is no sync by design. Back up from Songs. Safari clears a site's storage after about a week away unless the site is on the Home Screen; the app says so.
+## Known limits
+
+The current list, with what each release closed, is [GAPS.md](GAPS.md). The lasting ones:
+- Songs live in the browser of the device that made them; sync is opt-in (folder sync, or your own GitHub repository). Back up from Songs. Safari clears a site's storage after about a week away unless the site is on the Home Screen; the app says so.
 - Hand tracking and the person cut-out depend on jsDelivr and Google storage being reachable (self-hosting is described in HOSTING.md §8).
-- Not covered by tests: very long sessions, large stems on low-memory phones, full screen-reader pass, non-Chromium audio latency, and real audio hardware (the automated tests use a fake microphone; see HARDWARE_CHECKLIST.md).
-- Clips stay on their lane (no dragging to another lane yet). Compressed audio, the share page and the stage recording are produced in real time; WAVs render faster.
+- Not covered by tests: very long sessions, large stems on low-memory phones, a full screen-reader pass, non-Chromium audio latency, real audio hardware (the automated tests use a fake microphone; see HARDWARE_CHECKLIST.md), and how the band and a tuned voice sound to a listener.

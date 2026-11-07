@@ -1,6 +1,6 @@
 # the-daily.studio
 
-> Record guitar and voice, split a song into stems, get chords, tab and lyrics, and run a live light show. Free, private, in your browser: no account, no uploads. Version 2.46.1. An AI assistant in the person's browser can use the studio through tools (WebMCP, or window.dailyStudio from a script). Nothing is sent to a server.
+> Record guitar and voice, split a song into stems, get chords, tab and lyrics, and run a live light show. Free, private, in your browser: no account, no uploads. Version 2.47.0. An AI assistant in the person's browser can use the studio through tools (WebMCP, or window.dailyStudio from a script). Nothing is sent to a server.
 
 ## For AI assistants
 
@@ -37,12 +37,13 @@ The tools never reach the microphone, the camera, recording, deleting songs or S
 - open_workspace (changes; required: `workspace`)
 - open_song (changes; required: `song`)
 - undo (changes; required: none)
-- open_shower_mode (`open_practice_room` (the scale, arpeggio and ear trainers moved to Practice ▸ Scales & ear); required: 2.27)
 
 ## Guide
 
 - [How it works](https://the-daily.studio/guide/): what the studio does, what it needs and its limits
 - [Getting started with the-daily.studio](https://the-daily.studio/guide/getting-started/): Pick what you want to do; a short guided session shows you how.
+- [Write a song over a beat](https://the-daily.studio/guide/write-a-song-over-a-beat/): Tap a beat, write the words and chords, and send the song as a link.
+- [Sing, record and tune your voice](https://the-daily.studio/guide/sing-record-and-tune/): Sing over the band, keep the best take and put it in key.
 - [Record guitar and voice in your browser](https://the-daily.studio/guide/record-guitar-and-voice/): Guitar and voice at once, zero-delay effects, takes you can edit.
 - [Guitar amps, pedals and tones in your browser](https://the-daily.studio/guide/guitar-tones-and-rig/): A full pedalboard, amps and 27 tones, with scenes for live use.
 - [Split a song into stems in your browser](https://the-daily.studio/guide/split-song-into-stems/): Drums, bass, vocals and the rest: mute your part and play along.

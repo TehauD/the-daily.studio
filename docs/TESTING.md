@@ -50,7 +50,23 @@ Each file starts its **own** static server, its own Chromium (fake microphone an
 | `e2e-kits.cjs` | Drum machines and the 808 sub (2.42), measured from the studio's render: the 808 kick's pitch (near 48 Hz) and ring against the 909's short kick, a bright closed hat (zero-crossing rate near 9 kHz) and a longer open one, the clap's burst, the 808 sub held an octave under the plucked bass, the acoustic kits' room, cross-stick, kick pitch, varied hits and softer brush, and the beats using them |
 | `e2e-tune.cjs` | Vocal tuning (2.43): a flat A to A (Hard), a between-note to the nearer (Tight), Natural part-way, vibrato flattened by Hard and kept by Natural, onset and length unchanged, Off restoring the original exactly, the room loaded only on use, the controls on a computer and a phone |
 | `e2e-build.cjs` | Songs that build (2.44), from the render with the master finishing off: section levels rising intro → verse → chorus and far more than with Song build off; the crash; the riser (against the same verse with no lift after it); the ending; a section turned down; the controls on a computer and a phone; energies in a song link |
-| `e2e-instruments.cjs` | Better instruments (2.45), from the render with one note or chord alone: piano brightness fading as it rings, strings' bow swell and late vibrato, a wide pad, a double-tracked rhythm guitar (lag and correlation), the guitar body's resonance and which sounds use it |
+| `e2e-instruments.cjs` | Better instruments (2.45), from the render with one note or chord alone: piano brightness fading as it rings, strings' bow swell and late vibrato, a wide pad, a double-tracked rhythm guitar played as a second performance (lag, correlation), the guitar body's resonance and which sounds use it; and since 2.46.1 a guitar, not a harpsichord: highs that fade as the strings ring, no comb from a copied double, a softer pick, tuning within 3 cents |
+| `e2e-tour.cjs` | The guided tours (2.47): on a computer in ✦ Simple (the essentials, no full-studio steps) and in the Full Rig (every step), and on a phone (the bottom bar: Words, Sing, Beats, Tracks, More). Every step finds what it points at, the card is always fully on screen, no brand names or moved controls, and the song is unchanged |
+| `e2e-agent.cjs` | The AI agent tools (2.15, 2.26, 2.47) through a stand-in `navigator.modelContext` and `window.dailyStudio`: registration, schemas, every tool's answers and errors, undo, limits, the contract in `test/agent-contract.json`; since 2.47 a beat, kit, sounds and Song build through `set_band`, and a section's energy through `edit_section` |
+| `e2e-goals.cjs` | The six goal workspaces (2.13, 2.46): each workspace's shape and tools, Create → Perform → Share, the first-visit default, Audio input first until an input is connected, Studio Replay, the thumbnail, lesson notes and annotate |
+| `e2e-chordsheet.cjs` | Chord sheets (2.14): a pasted sheet (tab-site and ChordPro layouts, invented for the test) becomes a song |
+| `e2e-lyrics-live.cjs` | Lyrics in time with their chords (2.15): the line on screen is the one playing, with its chords over the right words, on the Stage, the lower third and Perform |
+| `e2e-perform-views.cjs` | Perform's display options (2.15): chords and shapes, big chord, lyric sheet, and the build version |
+| `e2e-vz-adjust.cjs` | Speed, size and zoom for the visuals (2.15), remembered and applied wherever the visuals are drawn |
+| `e2e-share.cjs` | Sharing one recording (2.15): a lane or clip as a small M4A, a one-file share page with the words in time, and the one-time "I have the right to share this" |
+| `e2e-mobile-fit.cjs` | Phones (2.15): the header dialogs fill the screen, and the welcome screen fits its choices on the first screen, at three phone sizes |
+| `e2e-monitor.cjs` | Hearing yourself and the output device (2.13.1): Hear myself carries the voice too, the last output is reused, an input the engine cannot take is reported |
+| `e2e-tip.cjs` | The tip jar (2.17): the QR code everywhere it can appear, pinned by fingerprint |
+| `e2e-shapes.cjs` | Video shapes and your own video backgrounds (2.19): wide and vertical stage videos, words on them, and video loops behind you |
+| `e2e-report.cjs` | Report a problem (2.19.1): recent errors kept in memory and copied as a report that leaves out titles, words, file and device names |
+| `e2e-latency.cjs` | Latency (2.18): how late you hear the guitar and the voice through the app, and that takes play back in time with each other |
+| `e2e-secrets.cjs` | The hidden surprises (2.20) and Backstage |
+| `e2e-github.cjs` | Your studio on GitHub (2.21): two devices kept in step through a stand-in for GitHub's API (`test/fake-github.cjs`), sign-in renewal, and sharing looks and rigs to the gallery |
 | `e2e-onair.cjs` | The red light while recording: the logo, the tab icon and ● REC, the blink, stage videos too, restored afterwards, steady with reduced motion; Settings' On air light (Steady, Off mid-take), the performance overlay's switch and ✕, light / dark not changed by a sync; the hidden status line a screen reader announces, on and off |
 | `e2e-phone-panels.cjs` | One panel at the bottom of a phone at a time (Voice and the song sheet), the bottom More opening the sheet of extras, and muting the whole band and the click in one press (phone transport, band strip, Perform, Shift+M) with an exact restore |
 | `e2e-backstage-pages.cjs` | The hidden pages under /backstage/: noindex, one hash-allowed script each, out of the sitemap and robots.txt; a closed door without a pass; with one, the lobby, every part in the source map (and finding one), your data read-only (never making a database, never showing a GitHub token), the API and the changelog |
@@ -103,7 +119,7 @@ Automated tests use a fake microphone and camera and do not reach the third-part
 
 ## What is not covered
 
-Very long sessions, large stem imports on low-memory phones, screen-reader pass of every panel, and non-Chromium audio latency. These are known gaps for Release 1.
+Very long sessions, large stem imports on low-memory phones, screen-reader pass of every panel, and non-Chromium audio latency. How the band and a tuned voice *sound* on real speakers and headphones is measured by numbers here, not judged by ears: that is section 15 of [HARDWARE_CHECKLIST.md](HARDWARE_CHECKLIST.md). The full list of known gaps, with what each release closed, is [GAPS.md](GAPS.md).
 
 ## Timing checks under load
 

@@ -1,6 +1,6 @@
 # Security and privacy model
 
-Version 2.13 (v2.13.0). The app is a static page that runs entirely in the visitor's browser. This document records what it can access, what it stores, what it contacts, and the controls that keep it that way.
+Reviewed for 2.47.0 (first written for 2.13). The app is a static page that runs entirely in the visitor's browser. This document records what it can access, what it stores, what it contacts, and the controls that keep it that way.
 
 ## Trust boundaries
 
@@ -39,13 +39,15 @@ Version 2.13 (v2.13.0). The app is a static page that runs entirely in the visit
 | Lesson notes | `fw.lessons` (per song title) | No | Clear the note, or Reset |
 | Studio Replay (the newest stage video or screen recording) | Memory only, until the next recording or closing the tab | No (↗ Share hands it to the device's share sheet only when pressed) | Close the tab |
 | Consent to the MediaPipe download | `fw.cfg` (`mpOk`) | No | Reset, or About ▸ Credits ▸ Ask me again |
+| A tuned vocal take (2.43) and its original | IndexedDB, in the song, next to the take; the original is kept so **Off** brings it back exactly | No | Deleting the take or the song, or Reset |
+| A song received as a link (2.40) | Nothing until the person chooses **Open**: then a new song in IndexedDB. The link itself is removed from the address bar as soon as it is read | The link carries the song wherever the person sends it (see *Song links* below) | Deleting the song |
 | The Daily entries | `localStorage` keys beginning `daily` | Only to a provider the user configures | The Daily's own controls |
 
 The studio's reset removes only the studio's `fw.*` data and its own caches; it leaves The Daily alone.
 
 ## Network requests
 
-* On a normal visit: only the site's own files (page, service worker, manifest, icons, `samples/manifest.json` and a sample track if the user opens it).
+* On a normal visit: only the site's own files (page, service worker, manifest, icons, `samples/manifest.json` and a sample track if the user opens it). Since 2.40 the two fonts and four rarely used parts of the studio (`rooms/`: transcription, MIDI import, Shower mode, vocal tuning) are separate files on the same origin. The service worker fetches them all when it installs, so they work offline; on a first visit before it has, a room is fetched the first time it is used. Each room is loaded with a `sha384` integrity hash built into the page, so a changed file is refused.
 * Hand tracking and the person cut-out add requests to the two hosts above, **after the one-time question is answered yes**. The stage route chooses the cut-out look by default, so it asks the first time the camera is on. Nothing is sent to the hosts except the standard request for the file. A no keeps the page offline and is not asked again until the feature is chosen again.
 * `verify:site` fails the release if the CSP allows any host other than those two. `npm run audit` fails if the source names a new host or gains a new place that can reach the network. `test/e2e-privacy.cjs` plays a whole session in a real browser and fails on any request to another site, any cookie, or any storage outside the app's own names; run it against the live site after a deploy (`BASE_URL=https://the-daily.studio/ node test/e2e-privacy.cjs`) so anything the host injects on its own is caught.
 * Cloudflare Web Analytics' automatic script injection must stay off. If it were on, the CSP would block its script and the live-site test would fail.
@@ -56,6 +58,8 @@ The studio's reset removes only the studio's `fw.*` data and its own caches; it 
 * **Other headers:** `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy: no-referrer`, HSTS (one year, no subdomains, no preload), COOP `same-origin`, Permissions-Policy as above. Full list in [HOSTING.md](HOSTING.md#7-headers-and-csp).
 * **Supply chain:** zero runtime npm dependencies; fonts (Inter, Montserrat; SIL OFL) are embedded; dev dependencies (jsdom, Playwright) are not shipped. The MediaPipe version is pinned. Licences are in `THIRD_PARTY_NOTICES.md`, the file-by-file register is [LICENSING.md](LICENSING.md), and both are published at `/legal/`.
 * **Pictures:** read with the browser's own image decoder (`createImageBitmap`), drawn onto a canvas, reduced to at most 1920 px and stored as a fresh JPEG or PNG, so what is kept is not the file that came in. Only JPEG, PNG, WebP and GIF are accepted; **SVG is refused** because it can carry script. At most 24 pictures, 14 MB each. A picture is only ever drawn on a canvas, never inserted into the page as markup.
+* **Song links (2.40):** the song travels after the `#`, which browsers never send to a server. Everything in a link is untrusted input: the link is capped at 60,000 characters and its unpacked size at 256 kB (a ceiling on decompression), the JSON is parsed as data, names are checked against the studio's own lists, numbers clamped, text lengths capped and chords parsed before anything is used. Text is inserted as text, never HTML. The link is cleared from the address once read, and the person is asked before it opens, as a new song that replaces nothing. A link is readable by anyone who has it, including link-preview services in chat apps; the send window says so.
+* **AI agent tools (2.26, wider in 2.47):** the tools run in the page and can read and edit the open song and the band, play and stop, and export text. They never reach the microphone, the camera, recording, deleting songs or Settings, every change shows a 🤖 note and is one undo step, and the person can turn them off (Settings ▸ Workflow). 2.47 lets `set_band` pick a beat and change the kit, sounds and Song build, and `edit_section` set a section's energy; neither opens anything new.
 * **Imports:** JSON, WAV, MP3 and preset files are parsed locally; malformed files must produce an error, not code execution. Text from files is inserted as text, not HTML.
 * **Same-origin neighbour:** the studio and The Daily use different storage names and do not read each other's data. A cross-site-scripting flaw in either would expose both, which is why both carry a CSP and neither loads third-party scripts. Use a fine-grained, repo-scoped token in The Daily.
 
@@ -67,6 +71,8 @@ The studio's reset removes only the studio's `fw.*` data and its own caches; it 
 * The Daily's own security policy allows images from any `https` address, so a journal entry that links a remote picture makes the browser fetch it. That is its policy, not the studio's.
 * `style-src` allows `'unsafe-inline'` because the app sets styles at run time; scripts are not affected.
 * HSTS is set for one year without preload; consider preload only after the domain has been stable.
+* A song link is as private as the channel it is sent through. Link previews in chat apps can fetch the address; they still cannot see the part after `#` unless the app reads the whole link it was given. The studio cannot control that.
+* The device permissions table describes the computer. On a phone (2.41), **Sing** opens the microphone when the person presses 🎤 Sing into this phone or ●; the same kill switch applies.
 
 ## Reporting
 
