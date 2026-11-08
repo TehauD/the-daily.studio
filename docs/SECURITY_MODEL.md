@@ -5,7 +5,15 @@ Reviewed for 2.49.2 (first written for 2.13), with an evaluation of the live sit
 ## Trust boundaries
 
 1. **The visitor's device** holds all data. There is no account, cookie, analytics or telemetry, and no server keeps data. The site's Worker (`worker/index.mjs`) only serves the files and, if the owner sets up Sign in with GitHub, passes GitHub's one-time sign-in code to GitHub and the token back to the browser (it stores nothing). A person may connect their own GitHub repository (Settings ▸ GitHub); then the browser talks to `api.github.com` directly (docs/GITHUB.md).
-2. **The host (Cloudflare)** serves static files and may keep ordinary access logs. It never sees songs, audio or video.
+2. **The host (Cloudflare)** serves static files and may keep ordinary access logs. It never sees songs, or audio or video it can open.
+5. **Recordings sent with a song link (2.54, `worker/share.mjs`)** are the one thing the site keeps:
+   - **Sealed in the sender's browser:** AES-GCM-256 with a new random key, which rides in the link after the `#` and is never sent.
+   - **Stored for 7 days** in R2, under a random name, with the sending GitHub account's number.
+   - **Uploading** needs a GitHub token. The Worker uses it for one `GET api.github.com/user` and doesn't keep it.
+   - **Limits:** 25 MB a package, 10 a day per account, 200 and 3 GB a day in all.
+   - **The package check** accepts only the studio's sealed envelope (`TDS1`).
+   - **Downloading** needs only the random name, and gives back only ciphertext.
+   - **The receiver** treats everything as untrusted: the package size, the zip, every field of every take (`srxCleanTake`), Opus only, at most 48 takes and an hour of audio.
 3. **Optional third-party hosts**, contacted only after the visitor says yes to a one-time download (`mpConsent()`), when hand tracking or the person cut-out look is used: `cdn.jsdelivr.net` (MediaPipe script and WASM) and `storage.googleapis.com` (hand-landmarker and selfie-segmenter models). They see an IP address and browser details, like any download, and never a camera picture.
 4. **The Daily at `journal.the-daily.studio`** (2.50) has its own origin. It contacts GitHub, Azure DevOps or an AI provider only if the user enters their own credentials.
 
@@ -71,6 +79,9 @@ The studio's reset removes only the studio's `fw.*` data and its own caches; it 
 * The Daily's own security policy allows images from any `https` address, so a journal entry that links a remote picture makes the browser fetch it. That is its policy, not the studio's.
 * `style-src` allows `'unsafe-inline'` because the app sets styles at run time; scripts are not affected.
 * HSTS is set for one year without preload; consider preload only after the domain has been stable.
+* **Recordings in a link:** anyone who has the whole link can play them for 7 days, because the key is in the link. That's the same reach as the song itself.
+  * The site can't open them, so it can't check them before a report. Abuse is limited by the sign-in, the daily limits and the 7 days, and handled through **⚑ Report**.
+  * Reports land in the bucket under `reports/` and are deleted after 7 days like everything else, so the owner needs to look at them within that week (CLOUDFLARE_SETUP.md, Part G).
 * A song link is as private as the channel it is sent through. Link previews in chat apps can fetch the address; they still cannot see the part after `#` unless the app reads the whole link it was given. The studio cannot control that.
 * The device permissions table describes the computer. On a phone (2.41), **Sing** opens the microphone when the person presses 🎤 Sing into this phone or ●; the same kill switch applies.
 

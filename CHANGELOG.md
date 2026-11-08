@@ -2,6 +2,43 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.54.0 — 2026-11-08 — Send a song with its recordings
+
+### New
+- **🔗 Send ▸ 🎙 Include my recordings.** A song link can now carry the song's takes, so whoever opens it hears your voice and guitar, not only the words and chords. They can add their own take and ↩ Send it back the same way.
+  - **Compressed:** in the browser, with its own Opus encoder (96 kbps), about 0.7 MB a minute of take.
+  - **Encrypted:** in the browser, with a new random key for each send (AES-GCM, 256-bit). The key is added to the link after the `#`, which browsers never send to a server. The site, Cloudflare and the site's owner keep only bytes they can't open.
+  - **Kept for 7 days,** then deleted. The sender can **Take them back** sooner.
+  - **Sending needs Sign in with GitHub** (one account behind each send, and a daily limit). Opening never needs an account.
+  - **Not sent:** the backing track you loaded, which is usually someone else's recording. The beat and the band travel in the song as before.
+- **Opening one:** the invitation says "🎙 With recordings, until <day>". **Open** brings the song in as a new song, with the takes in their lanes:
+  - same name, kind, place in the song, level and pan;
+  - sample-aligned: the receiving browser works out exactly how much of the codec's lead-in its decoder already dropped, from the frame lengths and the Opus header, so a take lands where it was.
+  - If the recordings have run out, were taken back, or the link was damaged, the song still opens, and it says why.
+- **⚑ Report** on a link with recordings sends the reason to the site's owner, with the link's key if the person agrees, so the owner can listen and remove it.
+
+### The Worker (`worker/share.mjs`)
+- New routes: `POST /share/put`, `GET /share/<ref>`, `POST /share/delete` and `POST /share/report`. They're stored in an R2 bucket bound as `SHARES`, with the bucket's 7-day lifecycle rule; the Worker also refuses anything older.
+- **Limits**, so nobody can run up the bill or use it as free file storage:
+  - 25 MB a send;
+  - 10 sends a day for each GitHub account;
+  - 200 sends and 3 GB a day in all.
+  
+  They're counted by listing the day's files in the bucket, so no other storage is needed.
+- **Only the studio's own sealed packages are accepted.** What's stored: the encrypted bytes, under a random name, with the GitHub account's number for abuse reports (deleted with it). The GitHub token is used once to ask GitHub who is sending, and is never kept.
+- The service worker never caches `/share/`.
+
+### Terms
+- **The sharing terms changed, so the app asks once more before the next share.** One exception to "the project hosts nothing": recordings you choose to send with a link are kept, encrypted, for 7 days, can be reported, and can be removed by the site's owner. PRIVACY.md, TERMS.md and Help ▸ About say the same.
+
+### Tests
+- **`e2e-sendrec` (21 checks):** two people, with the site's real Worker and an in-memory bucket.
+  - The package is sealed: no song, take or file name can be read in it, and the key never leaves the browser.
+  - A take at 44.1 kHz comes back at 48 kHz exactly as long, lined up with the original to the sample, and within 1 dB.
+  - Reports.
+  - A tampered key, a share that was taken back, and no sign-in.
+- **`worker.test`:** 46 checks, 22 of them new: sign-in, origin, package check, size (including an upload that hides its size), the daily limits, 7-day expiry, take-back and reports.
+
 ## 2.53.2 — 2026-11-08 — Sign in with GitHub: the last step, as buttons
 
 ### Fixed

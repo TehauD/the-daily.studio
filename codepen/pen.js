@@ -54,7 +54,7 @@ window.__dailyRoom = (id, make) => {
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.53.2', BUILD = '5f14ec9', PARTS_N = +'114' || 0, LINES_N = +'19152' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.54.0', BUILD = 'c76d90a', PARTS_N = +'115' || 0, LINES_N = +'19354' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { ghApp: { clientId: 'Iv23liTjqEBQsgmGaE1Q', slug: 'tehaud-the-daily-studio' },   /* Sign in with GitHub: the GitHub App's public client id and its slug (docs/GITHUB.md); empty = only the token way */
   support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://journal.the-daily.studio/' };
@@ -4220,7 +4220,7 @@ async function boot() {
   if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener('devicechange', () => { ioDeviceChange().catch(e => console.warn(e)); });
   bus.emit('song');
   try { ghBoot(); } catch (e) { console.warn('github', e); }      /* back from Sign in with GitHub, or a sync at start (part 74) */
-  DEV.make = () => { window.__daily = { tourStart, mpVision, slSendLabel, slcChanges, mkSection, perfViewSet, pfLay, pfLaySet, pfLayMenu, songMapEl, secAdd, secKind, secNameFor, smGo, renderWholeSong, normSong, bandRename, get TOUR() { return TOUR; }, SIMPLE_GOAL_TABS, SIMPLE_GOAL_TOOLS, simpleTabs, goalAudioFirst, guitarBody, pluck, BLD, BUILD_LIFT, buildLevel, secEnergy, buildCtx, buildParts, buildDrums, buildCard, buildCrash, buildRiser, tuneSelect, TUNE_LABELS, tuneTake, BASS_TONES, KITS, kitHit, sub808, M, MGROUPS, MW, mScreenDraw, mwRead, mwView, mwLyrics, mwSyl, mwEdited, mwPut, mSongOpen, msHexLoop, room, ROOM, slPack, slUnpack, slLink, slRead, slShare, slWelcome, slOpen, slFromHash, SL, BEATS, beatUse, beatRows, beatsShelf, SIMPLE_TOOLS, drumHit, RL, MO, GM_DRUM, duckAt, duckSet, duckCfg, duckNode, moNote, moDev, moDrum, moPanic, moSettings, kyOut, bassOut, rollOpen, rollBuild, rollLoop, isBass, instNow, nStr, yin, TUNINGS, setTuning, renderBarTab, tabLabels, voicingFor, toggleRec, closePop, spPause, encodeWav, PS, psOn, playDur, psSpeed, psKey, psSched, psDSPFactory, psPop, KY, keysOpen, keysVoice, keysStep, kyNoteOn, kyNoteOff, kyRec, kyClear, kyWrite, kyPiano, kyMarks, kyVoicing, KEYS_SOUNDS, KEYS_STYLES, coFinish, coDemo, coFeedback, coFbView, coTimeline, coBeat, coPractise, TAKE, learnPassed, todayPlan, todayPieces, todayStart, todayDone, streak, weekCount, dayKey, LSTEP, songLessons, songStart, songKey, earLick, earStart, EAR, simpleSet, simpleApply, ghTakeSettings, airMode, airSet, CO, coPos, coachOpen, coListen, coTick, coPlace, coNotes, coSetPiece, rfParse, LESSONS, RIFFS, RIFF_STYLES, learnOpen, learnToSong, learnFile, learnFileText, learnOpenFile, learnFromSong, labMake, labVary, labKeep, atlasPieces, atShape, MODE_VAMP, S, AIR, AIR_LAG, airSync, applyLayout, VB_PRESETS, VB_ORDER, VBS, vbAttach, vbApply, vbToggle, vbSet, vbPreset, vbPresetNext, vbThrow, vbLook, vbTick, vbScale, vocalBoardOpen, pedalRelease, MEG, megSpectrum, megFeatures, megScore, megStep, megSet, megLearn, megDraw, megLoop, megSettings, PAD, padsOpen, padHit, padTap, padRecord, padRecStop, padUndoPass, padClear, padResize, padBeatbox, bbHits, bbPattern, dpat, bassEvent, drumStep, PEDAL, pedalPress, pedalDo, pedalSecs, gearSettings, MCLK, mclkSlot, mclkMs, MIDI, MIDIRAW, onMidi, STRM, streamOpen, streamRoom, streamInfo, streamPanel, slotAtTime, SING, SHW, singStep, singScore, singSteamIR, singMicOff, showerOpen, shwGo, shwPlay, shwPrev, shwNext, shwStem, shwRecToggle, shwRecStop, shwHear, shwSave, shwAddFiles, shwRemove, shwMove, shwMode, shwLoadSet, shwPlaylist, shwWords, shwPrepare, shwFolderPull, lrcParse, readTags, spPos, spPlay, STP, trainOpen, projRestoreTrack, secretNote, secretArp, WS, WS_BASE, WS_ARPS, wsScaleRun, wsArpRun, wsFollow, wsStop, wsListen, wsEarNext, wsEarAnswer, wsOpen, bandMute, bandMuted, pdbPut, pdbKeys, projRename, FS, FS_B, fsUse, fsSync, fsHead, fsNeeds, fsTidy, fsOpen, syncOff, syncZips, PRJ_WAIT: () => PRJ.wait, EGG, EGG_LINES, EGG_ORDER, eggDay, eggFor, eggNow, eggText, eggTick, eggFit, saveCfg, projSave, projDelete, GH, ghSync, ghConnect, ghKick, ghRecheck, ghDisconnect, ghLocal, ghSha, ghJson, ghMerge3, ghShare, ghGallery, ghGalleryOpen, ghGalleryShow, ghKeepLook, ghKeepRig, rigClean, ghReturn, BRAND, ghSettingsOut, projRefresh, projCreate, projLoad, PRJ, SEC, SECRETS, secretFound, secretTiming, secretsOpen, secretSync, backstageOpen, startAudio, playheadSlot, GUARD, reportText, reportCopy, srecQ, srecSize, pdbGet, srecFmt, SREC_FMTS, VBG, vbgAdd, vbgRemove, vbgUse, vbgOpen, vbgDraw, vzSetMode, srecFrame, srecFmtBox, kitThumb, WORKLET_SRC, mkComp, mkShaper, rigLat, voxLat, restartAudio, satCurve, rigApply, qrMake, qrSvg, tipLink, tipShort, tipReady, tipCard, tipDraw, tipShareHtml, tipOpen, tipPrint, tipPng, tipVisAvoid, tipStageAvoid, TIP, TIP_TERMS, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, drawVis, peaksOf, uid, shareGate, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, TAKES, STM, ZOOM, CFG, store, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, SEL, mtof, spb, WR, HM, HMX, HM_MODES, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitInk, kitNotes, kitRecord, srecMime, mGo, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard}; };   // test hook: with ?debug, or Backstage ▸ Labs ▸ Developer handles
+  DEV.make = () => { window.__daily = { tourStart, mpVision, slSendLabel, slcChanges, mkSection, perfViewSet, pfLay, pfLaySet, pfLayMenu, songMapEl, secAdd, secKind, secNameFor, smGo, renderWholeSong, normSong, bandRename, get TOUR() { return TOUR; }, SIMPLE_GOAL_TABS, SIMPLE_GOAL_TOOLS, simpleTabs, goalAudioFirst, guitarBody, pluck, BLD, BUILD_LIFT, buildLevel, secEnergy, buildCtx, buildParts, buildDrums, buildCard, buildCrash, buildRiser, tuneSelect, TUNE_LABELS, tuneTake, BASS_TONES, KITS, kitHit, sub808, M, MGROUPS, MW, mScreenDraw, mwRead, mwView, mwLyrics, mwSyl, mwEdited, mwPut, mSongOpen, msHexLoop, room, ROOM, slPack, slUnpack, slLink, slRead, slShare, slWelcome, slOpen, slFromHash, SL, BEATS, beatUse, beatRows, beatsShelf, SIMPLE_TOOLS, drumHit, RL, MO, GM_DRUM, duckAt, duckSet, duckCfg, duckNode, moNote, moDev, moDrum, moPanic, moSettings, kyOut, bassOut, rollOpen, rollBuild, rollLoop, isBass, instNow, nStr, yin, TUNINGS, setTuning, renderBarTab, tabLabels, voicingFor, toggleRec, closePop, spPause, encodeWav, PS, psOn, playDur, psSpeed, psKey, psSched, psDSPFactory, psPop, KY, keysOpen, keysVoice, keysStep, kyNoteOn, kyNoteOff, kyRec, kyClear, kyWrite, kyPiano, kyMarks, kyVoicing, KEYS_SOUNDS, KEYS_STYLES, coFinish, coDemo, coFeedback, coFbView, coTimeline, coBeat, coPractise, TAKE, learnPassed, todayPlan, todayPieces, todayStart, todayDone, streak, weekCount, dayKey, LSTEP, songLessons, songStart, songKey, earLick, earStart, EAR, simpleSet, simpleApply, ghTakeSettings, airMode, airSet, CO, coPos, coachOpen, coListen, coTick, coPlace, coNotes, coSetPiece, rfParse, LESSONS, RIFFS, RIFF_STYLES, learnOpen, learnToSong, learnFile, learnFileText, learnOpenFile, learnFromSong, labMake, labVary, labKeep, atlasPieces, atShape, MODE_VAMP, S, AIR, AIR_LAG, airSync, applyLayout, VB_PRESETS, VB_ORDER, VBS, vbAttach, vbApply, vbToggle, vbSet, vbPreset, vbPresetNext, vbThrow, vbLook, vbTick, vbScale, vocalBoardOpen, pedalRelease, MEG, megSpectrum, megFeatures, megScore, megStep, megSet, megLearn, megDraw, megLoop, megSettings, PAD, padsOpen, padHit, padTap, padRecord, padRecStop, padUndoPass, padClear, padResize, padBeatbox, bbHits, bbPattern, dpat, bassEvent, drumStep, PEDAL, pedalPress, pedalDo, pedalSecs, gearSettings, MCLK, mclkSlot, mclkMs, MIDI, MIDIRAW, onMidi, STRM, streamOpen, streamRoom, streamInfo, streamPanel, slotAtTime, SING, SHW, singStep, singScore, singSteamIR, singMicOff, showerOpen, shwGo, shwPlay, shwPrev, shwNext, shwStem, shwRecToggle, shwRecStop, shwHear, shwSave, shwAddFiles, shwRemove, shwMove, shwMode, shwLoadSet, shwPlaylist, shwWords, shwPrepare, shwFolderPull, lrcParse, readTags, spPos, spPlay, STP, trainOpen, projRestoreTrack, secretNote, secretArp, WS, WS_BASE, WS_ARPS, wsScaleRun, wsArpRun, wsFollow, wsStop, wsListen, wsEarNext, wsEarAnswer, wsOpen, bandMute, bandMuted, pdbPut, pdbKeys, projRename, FS, FS_B, fsUse, fsSync, fsHead, fsNeeds, fsTidy, fsOpen, syncOff, syncZips, PRJ_WAIT: () => PRJ.wait, EGG, EGG_LINES, EGG_ORDER, eggDay, eggFor, eggNow, eggText, eggTick, eggFit, saveCfg, projSave, projDelete, GH, ghSync, ghConnect, ghKick, ghRecheck, srxSend, srxReceive, srxTakeBack, srxEncode, srxDecodeTake, srxPack, srxBundle, srxCan, SRS, ghDisconnect, ghLocal, ghSha, ghJson, ghMerge3, ghShare, ghGallery, ghGalleryOpen, ghGalleryShow, ghKeepLook, ghKeepRig, rigClean, ghReturn, BRAND, ghSettingsOut, projRefresh, projCreate, projLoad, PRJ, SEC, SECRETS, secretFound, secretTiming, secretsOpen, secretSync, backstageOpen, startAudio, playheadSlot, GUARD, reportText, reportCopy, srecQ, srecSize, pdbGet, srecFmt, SREC_FMTS, VBG, vbgAdd, vbgRemove, vbgUse, vbgOpen, vbgDraw, vzSetMode, srecFrame, srecFmtBox, kitThumb, WORKLET_SRC, mkComp, mkShaper, rigLat, voxLat, restartAudio, satCurve, rigApply, qrMake, qrSvg, tipLink, tipShort, tipReady, tipCard, tipDraw, tipShareHtml, tipOpen, tipPrint, tipPng, tipVisAvoid, tipStageAvoid, TIP, TIP_TERMS, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, drawVis, peaksOf, uid, shareGate, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, TAKES, STM, ZOOM, CFG, store, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, SEL, mtof, spb, WR, HM, HMX, HM_MODES, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitInk, kitNotes, kitRecord, srecMime, mGo, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard}; };   // test hook: with ?debug, or Backstage ▸ Labs ▸ Developer handles
   if (/[?&]debug\b/.test(location.search) || (CFG.labs && CFG.labs.handles)) DEV.make();
   try { bksBoot(); } catch (e) { console.warn('backstage', e); }      /* #backstage in the address, the performance overlay (part 73c) */
   projInit().catch(e => { console.warn('library', e); PRJ.ready = true; if (PRJ.wantStart) startMaybe(); });
@@ -7672,7 +7672,7 @@ function aboutBlock() {
     h('details', { class: 'ab-cr', id: 'abPriv' }, h('summary', {}, 'Privacy at a glance'),
       h('ul', {},
         li(h('b', {}, 'Stays on this device: '), 'everything you play, sing, record, drop in or type: audio, camera pictures, songs, takes, lyrics and settings. Nothing is uploaded, and there is no account, analytics or advertising.'),
-        li(h('b', {}, 'Sent over the network: '), 'nothing from your music. The page and its offline copy come from this site. A song link carries the song (and, if you add them, your name and a note) inside the link itself, after the #, which never reaches a server. Only if you say yes to the one-time MediaPipe download does your browser also fetch code and a model from jsDelivr and Google Storage; those two sites see your IP address and browser type, as with any download. If you connect GitHub, your studio goes to your own repository there.'),
+        li(h('b', {}, 'Sent over the network: '), 'nothing from your music. The page and its offline copy come from this site. A song link carries the song (and, if you add them, your name and a note) inside the link itself, after the #, which never reaches a server. If you tick Include my recordings, your takes are encrypted here and kept on this site for 7 days; the key is only in the link. Only if you say yes to the one-time MediaPipe download does your browser also fetch code and a model from jsDelivr and Google Storage; those two sites see your IP address and browser type, as with any download. If you connect GitHub, your studio goes to your own repository there.'),
         li(h('b', {}, 'Kept here, in this browser: '), 'songs and takes (IndexedDB), settings (local storage) and an offline copy of the app (Cache Storage). Settings ▸ Data ▸ Reset erases them. Files you export are yours to keep or share.'),
         li(h('b', {}, 'Seen by the host: '), 'the site is served by Cloudflare, which keeps ordinary access logs and traffic counts, as any web host does. The app itself sets no cookies.')),
       h('p', { class: 'tiny muted' }, 'The full statement: ', ext('privacy and notices', 'legal/#privacy'), '.')),
@@ -9074,10 +9074,10 @@ function shareData(off, len) {
   return { dur: len != null ? len : bars0 * sp * sd, title: S.title || 'Untitled', artist: S.artist || '', key: keyName(), bpm: Math.round(S.bpm), ts: S.ts.join('/'), notes: S.notes || '', secs };
 }
 /* ---------- your content, your responsibility: the notice and the one-time acknowledgement before sharing ---------- */
-const SHARE_TERMS = 1;   /* raise when the wording changes, so it is asked again */
+const SHARE_TERMS = 2;   /* raise when the wording changes, so it is asked again (2: recordings sent with a song link, 2.54) */
 function shareNotice() {
   return h('div', { class: 'share-note', role: 'note' }, h('b', {}, 'You are responsible for what you share. '),
-    'Share only songs, words and recordings that are yours or that you have permission to share. Covers, other people’s lyrics and backing tracks usually need the owners’ permission before you post them. This app makes the file on your device; it does not upload, host or publish anything. ',
+    'Share only songs, words and recordings that are yours or that you have permission to share. Covers, other people’s lyrics and backing tracks usually need the owners’ permission before you post them. This app makes the file on your device; it does not upload, host or publish anything, except recordings you choose to send with a song link (kept encrypted for 7 days). ',
     h('a', { href: 'legal/#terms', target: '_blank', rel: 'noopener' }, 'Terms of use'));
 }
 /** run fn once the person has said they have the right to share (asked once, remembered on this device) */
@@ -9089,7 +9089,8 @@ function shareGate(fn) {
     h('p', {}, 'Recordings and share pages you make here can be sent, posted and copied once they leave this device.'),
     h('ul', {}, h('li', {}, 'Share only your own songs, words and recordings, or other people’s work with their permission. A cover, someone else’s lyrics or a backing track you did not make usually needs the owners’ permission before you post it publicly.'),
       h('li', {}, 'You are the one sharing it: you are responsible for it, and for following the rules of the places you post it.'),
-      h('li', {}, 'the-daily.studio makes the file on this device. It does not upload, host, publish or review what you share, and is not responsible for it.')),
+      h('li', {}, 'the-daily.studio makes the file on this device. It does not upload, host, publish or review what you share, and is not responsible for it.'),
+      h('li', {}, 'One exception: recordings you choose to send with a song link are kept on this site, encrypted, for 7 days, then deleted. Anyone with the link can report them, and the site’s owner can remove recordings that break the terms.')),
     h('label', { class: 'chk' }, chk, ' I own this content or have permission to share it, and I accept responsibility for sharing it.'),
     h('p', { class: 'tiny muted' }, h('a', { href: 'legal/#terms', target: '_blank', rel: 'noopener' }, 'Terms of use'), ' · asked once on this device.'),
     h('div', { class: 'row', style: { gap: '8px', justifyContent: 'flex-end' } }, h('button', { class: 'btn', onclick: () => d.close() }, 'Cancel'), go)));
@@ -18884,6 +18885,7 @@ function bandSimple(bx) {
    Passing a song back and forth (2.51): a link can carry who sent it, a note, and a short history of the rounds (who changed which sections,
    and when). Whoever opens it gets ↩ Send it back, which knows who it came from and what they changed since. All of it rides in the link.
    Format: #s=1 + 'z' (deflate-raw) or 'j' (plain) + base64url of the JSON below (keys kept short so the link stays short).
+   With recordings (2.54, part 89b): + '&r=' + where they are kept + '.' + the key that unlocks them (also after the #, so never sent).
    ============================================================ */
 const SL = { v: '1', max: 60000, unz: 262144, long: 8000, qr: 2300 };
 const SL_DR = '.gxX';
@@ -18982,13 +18984,14 @@ async function slLink(s) {
 }
 /** a link (or just the part after #) back into a song */
 async function slRead(text) {
-  const m = /#?s=1([zj])([A-Za-z0-9_-]+)\s*$/.exec(String(text || '')); if (!m) throw new Error('it is not a song link');
+  const m = /#?s=1([zj])([A-Za-z0-9_-]+)(?:&r=([A-Za-z0-9_.-]{1,140}))?\s*$/.exec(String(text || '')); if (!m) throw new Error('it is not a song link');
   if (m[2].length > SL.max) throw new Error('it is longer than a song link can be');
   let u = slUnB64(m[2]);
   if (m[1] === 'z') { if (typeof DecompressionStream !== 'function') throw new Error('this browser cannot unpack it (a newer browser can)'); u = await slZip(u, true); }
   if (u.length > SL.unz) throw new Error('it is bigger than a song can be');
   let o; try { o = JSON.parse(new TextDecoder().decode(u)); } catch (e) { throw new Error('it is damaged (part of the link may be missing)'); }
-  return slUnpack(o);
+  const song = slUnpack(o); if (m[3] && SRX_ATT.test(m[3])) Object.defineProperty(song, '_att', { value: m[3], enumerable: false, configurable: true });      /* recordings: never saved with the song */
+  return song;
 }
 const slSummary = s => { const bars = s.sections.reduce((a, x) => a + x.bars.length, 0), words = s.sections.some(x => (x.lyrics || '').trim()), tab = s.sections.some(x => x.bars.some(b => b.tab && b.tab.length)), beat = s.band.beat && BEATS.find(b => b.id === s.band.beat);
   return [pcName(s.key, keyUsesFlats(s.key, s.minor)) + (s.minor ? ' minor' : ' major'), s.bpm + ' BPM', s.sections.length + (s.sections.length === 1 ? ' section' : ' sections'), bars + ' bars', words ? 'words' : '', tab ? 'tab' : '', beat ? 'beat: ' + beat.name : ''].filter(Boolean).join(' · '); };
@@ -19002,12 +19005,13 @@ async function slShare() {
   const nameIn = h('input', { class: 'in slc-name', id: 'slName', maxlength: 40, autocomplete: 'nickname', placeholder: 'Your name', value: CFG.slName || '', 'aria-label': 'Your name, so they know who sent it' });
   const noteIn = h('textarea', { class: 'in slc-noteIn', id: 'slNote', maxlength: SLC.note, rows: 2, placeholder: back ? 'A note for ' + c.with + ': what you did, or what comes next' : 'A note: “Can you write the chorus?”', 'aria-label': 'A note to go with the song' });
   const out = () => { const hist = ((c && c.hist) || []).concat([[nameIn.value.trim() || 'Someone', slcDay(), what || 'started the song']]).slice(-SLC.keep); return { id: (c && c.id) || (S.collab && S.collab.id) || (slShare.id = slShare.id || slcId()), f: nameIn.value.trim(), n: noteIn.value.trim(), h: hist }; };
-  const build = () => built = (async () => { const prev = S.collab; S.collab = Object.assign({}, prev || {}, { out: out() }); try { url = await slLink(); } finally { S.collab = prev; } inp.value = url; long.hidden = url.length <= SL.long; long.textContent = 'This link is long (' + url.length.toLocaleString() + ' characters), so some chat apps may cut it short. Email, notes and most messengers keep it whole.'; qrBox.innerHTML = ''; qrBox.hidden = true; qrB.disabled = url.length > SL.qr; })();
+  const build = () => built = (async () => { const prev = S.collab; S.collab = Object.assign({}, prev || {}, { out: out() }); try { url = await slLink(); if (SRS.att) url += '&r=' + SRS.att; } finally { S.collab = prev; } inp.value = url; long.hidden = url.length <= SL.long; long.textContent = 'This link is long (' + url.length.toLocaleString() + ' characters), so some chat apps may cut it short. Email, notes and most messengers keep it whole.'; qrBox.innerHTML = ''; qrBox.hidden = true; qrB.disabled = url.length > SL.qr; })();
   /** the round is part of the song once it has gone: the next send says what changed after this one */
   const gone = () => { if (sent) return; sent = true; const o = out(); S.collab = { id: o.id, with: c && c.with || '', note: c && c.note || '', hist: o.h }; slcMark(S); commit(false); };
   const qrBox = h('div', { class: 'sl-qr', hidden: true }), inp = h('input', { class: 'in sl-url', id: 'slUrl', readonly: true, value: '', 'aria-label': 'The link', onfocus: e => e.target.select() }), long = h('p', { class: 'tiny sl-long', hidden: true });
-  const copy = async () => { await built; try { await navigator.clipboard.writeText(url); toast('Link copied. Paste it in a message to ' + (back ? c.with : 'whoever you are writing with') + '.', 'ok'); } catch (e) { inp.select(); document.execCommand && document.execCommand('copy'); toast('Link selected: copy it with Ctrl+C (⌘C on a Mac).', ''); } gone(); };
-  const qrB = h('button', { class: 'btn', id: 'slQr', type: 'button', title: 'Show a code to scan with a phone', onclick: async () => { await built; if (!qrBox.childNodes.length) qrBox.innerHTML = qrSvg(qrMake(url)); qrBox.hidden = !qrBox.hidden; gone(); } }, '▦ QR code');
+  const ready = async () => { if (SRS.busy) await SRS.busy.catch(() => { }); await built; };
+  const copy = async () => { await ready(); try { await navigator.clipboard.writeText(url); toast('Link copied. Paste it in a message to ' + (back ? c.with : 'whoever you are writing with') + '.', 'ok'); } catch (e) { inp.select(); document.execCommand && document.execCommand('copy'); toast('Link selected: copy it with Ctrl+C (⌘C on a Mac).', ''); } gone(); };
+  const qrB = h('button', { class: 'btn', id: 'slQr', type: 'button', title: 'Show a code to scan with a phone', onclick: async () => { await ready(); if (!qrBox.childNodes.length) qrBox.innerHTML = qrSvg(qrMake(url)); qrBox.hidden = !qrBox.hidden; gone(); } }, '▦ QR code');
   let tm = 0; const again = () => { clearTimeout(tm); tm = setTimeout(build, 250); };
   nameIn.addEventListener('input', () => { CFG.slName = nameIn.value.trim().slice(0, 40); saveCfg(); again(); }); noteIn.addEventListener('input', again);
   const old = document.getElementById('slDlg'); if (old) old.remove();
@@ -19016,11 +19020,12 @@ async function slShare() {
     h('p', { class: 'sl-what' }, slSummary(S)),
     c ? h('div', { class: 'slc-box' }, what ? h('p', { class: 'small', id: 'slChanged' }, h('b', {}, 'Your changes: '), what) : '', slcHistEl(c.hist)) : '',
     h('div', { class: 'slc-form' }, h('label', { class: 'small' }, 'From', nameIn), h('label', { class: 'small' }, 'Note', noteIn)),
-    h('p', { class: 'small muted' }, 'The chords, words, tab, the beat, the tempo and the key travel inside the link itself, with your name, your note and who changed what, after the #: a part of a link that is never sent to any server. Whoever opens it gets the song as a new song of their own, with ↩ Send it back. Your recordings stay with you; for audio, make a share page in Save & export.'),
+    h('p', { class: 'small muted' }, 'The chords, words, tab, the beat, the tempo and the key travel inside the link itself, with your name, your note and who changed what, after the #: a part of a link that is never sent to any server. Whoever opens it gets the song as a new song of their own, with ↩ Send it back.' + (TAKES.length ? ' Your recordings stay with you unless you include them.' : '')),
+    srxRow(() => build()),
     inp, long,
     h('div', { class: 'row sl-acts' },
       h('button', { class: 'btn primary', id: 'slCopy', type: 'button', onclick: copy }, '⧉ Copy link'),
-      navigator.share ? h('button', { class: 'btn', id: 'slSend', type: 'button', onclick: async () => { await built; navigator.share({ title: S.title, text: (nameIn.value.trim() ? nameIn.value.trim() + ' sent you' : 'Here is') + ' “' + S.title + '” on the-daily.studio' + (noteIn.value.trim() ? ': ' + noteIn.value.trim() : ''), url }).then(gone).catch(() => { }); } }, '↗ Share…') : null,
+      navigator.share ? h('button', { class: 'btn', id: 'slSend', type: 'button', onclick: async () => { await ready(); navigator.share({ title: S.title, text: (nameIn.value.trim() ? nameIn.value.trim() + ' sent you' : 'Here is') + ' “' + S.title + '” on the-daily.studio' + (noteIn.value.trim() ? ': ' + noteIn.value.trim() : ''), url }).then(gone).catch(() => { }); } }, '↗ Share…') : null,
       qrB, h('span', { class: 'grow' }), h('button', { class: 'btn', type: 'button', onclick: () => d.close() }, 'Close')),
     qrBox);
   d.addEventListener('close', () => d.remove()); document.body.append(d); d.showModal();
@@ -19030,12 +19035,17 @@ async function slShare() {
 
 /* ---------- opening one ---------- */
 async function slOpen(song, playNow, perform) {
-  const boot = document.getElementById('boot'), b = document.getElementById('bootNoMic');
+  const boot = document.getElementById('boot'), b = document.getElementById('bootNoMic'), att = song._att;
   if (boot && b && boot.getClientRects().length && getComputedStyle(boot).display !== 'none') b.click();      /* past the first page, as Begin in the studio does */
-  await projCreate('import', { song, zoom: 'studio' }); bus.emit('song', 'reload'); try { syncTransport(); syncBandStrip(); } catch (e) { }
+  let takes = null, lost = '';
+  if (att) { try { takes = await srxReceive(att, t => toast(t)); } catch (e) { lost = e.message; } }      /* the recordings first: if they can't come, the song still does */
+  delete song._att; await projCreate('import', { song, zoom: 'studio' }); if (takes && takes.length) { srxAdd(takes); await projSave(); }
+  bus.emit('song', 'reload'); try { syncTransport(); syncBandStrip(); } catch (e) { }
   if (playNow) { try { await startAudio(); T.cursor = 0; T.loop = true; syncTransport(); play(); } catch (e) { console.warn(e); } }
   if (perform) { try { perfOpen(); const g = document.getElementById('pfGo'); if (g) g.click(); } catch (e) { console.warn(e); } }      /* a first visit through a link: the song as a sing-along */
   const from = S.collab && S.collab.with;
+  if (lost) return toast(lost + ' The song opened without them' + (from ? ': ask ' + from + ' to send it again.' : '.'), 'warn');
+  if (takes && takes.length) return toast('“' + S.title + '” is open as a new song with ' + takes.length + (takes.length === 1 ? ' recording' : ' recordings') + (from ? ' from ' + from + '. Add yours, then ↩ Send it back.' : '.'), 'ok');
   toast(from ? '“' + S.title + '” from ' + from + ' is open as a new song. Change what you like, then ↩ Send it back.' : '“' + S.title + '” is open as a new song. Your other songs are as they were.', 'ok');
 }
 function slWelcome(song) {
@@ -19047,7 +19057,8 @@ function slWelcome(song) {
     c && c.note ? h('blockquote', { class: 'slc-note', id: 'slInNote' }, c.note) : null,
     h('p', { class: 'sl-what' }, slSummary(song)),
     c ? slcHistEl(c.hist) : null,
-    h('p', { class: 'small muted' }, (first ? 'This is the-daily.studio: a place to write, sing and play songs, free, in your browser, with no account. ' : '') + 'It opens as a new song' + (first ? '' : ', so none of yours change') + '. It came inside the link: nothing was downloaded from anyone.' + (from ? ' Change what you like, then ↩ Send it back to ' + from + '.' : '')),
+    song._att ? h('p', { class: 'small srx-in', id: 'srxIn' }, '🎙 With recordings, until ' + srxDate(srxUntil(song._att)) + '. ', h('button', { class: 'linkish tiny', id: 'srxRepBtn', type: 'button', onclick: () => srxReport(song._att) }, '⚑ Report')) : null,
+    h('p', { class: 'small muted' }, (first ? 'This is the-daily.studio: a place to write, sing and play songs, free, in your browser, with no account. ' : '') + 'It opens as a new song' + (first ? '' : ', so none of yours change') + '. ' + (song._att ? 'The song came inside the link; its recordings are fetched encrypted from this site and unlocked with the link’s key.' : 'It came inside the link: nothing was downloaded from anyone.') + (from ? ' Change what you like, then ↩ Send it back to ' + from + '.' : '')),
     h('div', { class: 'row sl-acts' }, ...(first
       ? [h('button', { class: 'btn primary', id: 'slPlay', type: 'button', onclick: () => go(true, true) }, '▶ Play it'), h('button', { class: 'btn', id: 'slOpenBtn', type: 'button', onclick: () => go(false) }, 'Open it in the studio')]
       : [h('button', { class: 'btn primary', id: 'slPlay', type: 'button', onclick: () => go(true) }, '▶ Open and play'), h('button', { class: 'btn', id: 'slOpenBtn', type: 'button', onclick: () => go(false) }, 'Open'), h('span', { class: 'grow' }), h('button', { class: 'btn', type: 'button', onclick: () => d.close() }, 'Not now')])));
@@ -19061,6 +19072,197 @@ function slFromHash() {
 }
 setTimeout(slFromHash, 400);      /* at once, over the first page too: a first visit should see the song before anything else */
 window.addEventListener('hashchange', () => { slFromHash(); });
+
+/* >>> parts/89b-sendrec.js */
+/* ============================================================
+   Part 89b · SEND WITH RECORDINGS (2.54) — a song link that carries your takes, for 7 days
+   🔗 Send ▸ 🎙 Include my recordings: the song's takes (each clip as it plays, dry and with its effects) are compressed here with the
+   browser's own Opus encoder (WebCodecs), packed with what each take is (name, place in the song, level, pan) and ENCRYPTED here
+   (AES-GCM, a new random 256-bit key). Only the sealed package goes to this site's Worker (worker/share.mjs), which keeps it for 7 days.
+   The key is added to the link after the #, the part of a link no server ever receives, so neither the site nor Cloudflare can open it.
+   The backing track you loaded is not sent (it is usually someone else's recording); the beat and the band travel in the song itself.
+   Sending needs Sign in with GitHub (one account, a daily limit); opening never does. Whoever opens the link gets the song as a new song
+   with the takes in their lanes, sample-aligned, and can add their own and ↩ Send it back the same way.
+   Package: "TDS1" + 12-byte IV + AES-GCM( a stored .zip: arrangement.json (the takes) + audio/<take>.tda (+ fret logs) ).
+   A .tda is: u32 header length, the header (JSON: decoder config, chunk table, samples, Opus's lead-in), then the Opus chunks.
+   Everything from a link is untrusted: sizes, counts and every field of a take are checked before anything is used.
+   ============================================================ */
+const SRX = { rate: 48000, kbps: 96000, max: 25 * 1024 * 1024, days: 7, takes: 48, secs: 3600, magic: [0x54, 0x44, 0x53, 0x31] };
+const SRS = { att: '', ref: '', exp: 0, busy: null, err: '' };      /* this send dialog's upload: the link's attachment once it has gone */
+/** can this browser make and open recordings in links? (WebCodecs audio, Web Crypto, and a page on the web) */
+const srxCan = () => typeof AudioEncoder === 'function' && typeof AudioDecoder === 'function' && !!(window.crypto && crypto.subtle) && window.isSecureContext !== false;
+/** a link's recordings: "<day>.<account>.<id>.<key>" */
+const SRX_ATT = /^(\d{8}\.[0-9a-f]{12}\.[A-Za-z0-9_-]{22})\.([A-Za-z0-9_-]{43})$/;
+const srxUntil = ref => { const d = String(ref).slice(0, 8); return new Date(Date.UTC(+d.slice(0, 4), +d.slice(4, 6) - 1, +d.slice(6, 8)) + SRX.days * 864e5); };
+const srxDate = d => d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+const srxErr = (code, message) => Object.assign(new Error(message), { code });
+
+/* ---------- audio: to 48 kHz, Opus and back ---------- */
+async function srxTo48(x, sr) {
+  if (sr === SRX.rate || !x.length) return x;
+  const n = Math.max(1, Math.round(x.length * SRX.rate / sr)), oc = new OfflineAudioContext(1, n, SRX.rate), b = oc.createBuffer(1, x.length, sr), s = oc.createBufferSource();
+  b.copyToChannel(x, 0); s.buffer = b; s.connect(oc.destination); s.start(); return (await oc.startRendering()).getChannelData(0).slice();
+}
+const srxU8 = d => d instanceof ArrayBuffer ? new Uint8Array(d) : new Uint8Array(d.buffer, d.byteOffset, d.byteLength);
+/** decode a take's chunks (as this browser's decoder gives them: some drop the encoder's lead-in, some do not) */
+async function srxDecodeRaw(e) {
+  if (!e.chunks.length) return new Float32Array(0);
+  const parts = []; let err = null, rate = SRX.rate;
+  const d = new AudioDecoder({ output: a => { rate = a.sampleRate; const f = new Float32Array(a.numberOfFrames); a.copyTo(f, { planeIndex: 0, format: 'f32-planar' }); parts.push(f); a.close(); }, error: x => { err = x; } });
+  const cfg = { codec: 'opus', sampleRate: SRX.rate, numberOfChannels: 1 }; if (e.cfg.description) cfg.description = slUnB64(e.cfg.description);
+  d.configure(cfg); e.chunks.forEach(c => d.decode(new EncodedAudioChunk({ type: c[0] ? 'key' : 'delta', timestamp: c[1], duration: c[2] || undefined, data: c[3] }))); await d.flush(); d.close(); if (err) throw err;
+  const n = parts.reduce((a, p) => a + p.length, 0), y = new Float32Array(n); let o = 0; parts.forEach(p => { y.set(p, o); o += p.length; });
+  return rate === SRX.rate ? y : srxTo48(y, rate);
+}
+/** Opus's lead-in (pre-skip), from the encoder's own header (OpusHead, bytes 10–11); 312 samples is libopus's at 48 kHz */
+const srxPre = desc => { const u = desc ? srxU8(desc) : null; return u && u.length >= 12 && u[0] === 0x4f && u[1] === 0x70 ? u[10] | (u[11] << 8) : 312; };
+/** one take (48 kHz) as Opus, with what the receiver needs to put it back exactly where it was */
+async function srxEncode(x) {
+  const chunks = []; let cfg = null, err = null;
+  const e = new AudioEncoder({ output: (c, m) => { const d = new Uint8Array(c.byteLength); c.copyTo(d); chunks.push([c.type === 'key' ? 1 : 0, c.timestamp, c.duration || 0, d]); if (m && m.decoderConfig) cfg = m.decoderConfig; }, error: z => { err = z; } });
+  e.configure({ codec: 'opus', sampleRate: SRX.rate, numberOfChannels: 1, bitrate: SRX.kbps });
+  for (let i = 0; i < x.length; i += SRX.rate) { const len = Math.min(SRX.rate, x.length - i); e.encode(new AudioData({ format: 'f32-planar', sampleRate: SRX.rate, numberOfFrames: len, numberOfChannels: 1, timestamp: Math.round(i / SRX.rate * 1e6), data: x.slice(i, i + len) })); }
+  await e.flush(); e.close(); if (err) throw err;
+  return { cfg: { codec: 'opus', description: cfg && cfg.description ? slB64(srxU8(cfg.description)) : '' }, chunks, n: x.length, pre: srxPre(cfg && cfg.description) };
+}
+function srxPack(e) {
+  const hj = new TextEncoder().encode(JSON.stringify({ v: 1, cfg: e.cfg, n: e.n, pre: e.pre, c: e.chunks.map(c => [c[0], c[1], c[2], c[3].length]) }));
+  const size = e.chunks.reduce((a, c) => a + c[3].length, 0), out = new Uint8Array(4 + hj.length + size); new DataView(out.buffer).setUint32(0, hj.length, true); out.set(hj, 4);
+  let o = 4 + hj.length; e.chunks.forEach(c => { out.set(c[3], o); o += c[3].length; }); return out;
+}
+/** a .tda from a link, checked: Opus only, sizes that add up, no more than an hour */
+function srxUnpack(u) {
+  if (u.length < 8) throw srxErr('bad', 'a recording is damaged'); const hl = new DataView(u.buffer, u.byteOffset, u.byteLength).getUint32(0, true); if (hl > 4e6 || 4 + hl > u.length) throw srxErr('bad', 'a recording is damaged');
+  let h0; try { h0 = JSON.parse(new TextDecoder().decode(u.subarray(4, 4 + hl))); } catch (e) { throw srxErr('bad', 'a recording is damaged'); }
+  const okN = v => Number.isInteger(v) && v >= 0; if (!h0 || !h0.cfg || h0.cfg.codec !== 'opus' || !okN(h0.n) || h0.n > SRX.rate * SRX.secs || !okN(h0.pre) || h0.pre > 9600 || !Array.isArray(h0.c) || h0.c.length > 400000) throw srxErr('bad', 'a recording is not one this studio makes');
+  if (typeof h0.cfg.description !== 'string' || h0.cfg.description.length > 400) throw srxErr('bad', 'a recording is damaged');
+  let o = 4 + hl; const chunks = h0.c.map(c => { const n = c && c[3]; if (!Array.isArray(c) || !okN(n) || o + n > u.length || !Number.isFinite(c[1]) || !Number.isFinite(c[2])) throw srxErr('bad', 'a recording is damaged'); const d = u.subarray(o, o + n); o += n; return [c[0] ? 1 : 0, c[1], c[2], d]; });
+  return { cfg: { codec: 'opus', description: h0.cfg.description }, chunks, n: h0.n, pre: h0.pre };
+}
+/** a take back as samples, exactly as long as it was and where it was. The frames add up to the lead-in + the take + padding; a decoder
+    that drops the lead-in gives that many fewer samples, so what is left to drop is plain arithmetic, the same in every browser. */
+async function srxDecodeTake(u) {
+  const e = srxUnpack(u), y = await srxDecodeRaw(e), total = e.chunks.reduce((a, c) => a + Math.round((c[2] || 20000) * SRX.rate / 1e6), 0);
+  const lead = clamp(y.length - (total - e.pre), 0, Math.min(e.pre, Math.max(0, y.length - e.n))), x = new Float32Array(e.n);
+  x.set(y.subarray(lead, lead + e.n)); return x;
+}
+
+/* ---------- the package ---------- */
+/** the open song's takes, compressed, with what each one is (the backing track is left out) */
+async function srxBundle(onStep) {
+  await projSave(); const files = await projEntries(PRJ.cur, ''), dec = new TextDecoder(), af = files.find(f => f.name === 'arrangement.json'), arr = JSON.parse(dec.decode(af.data));
+  const out = [], takes = []; let secs = 0, i = 0;
+  for (const t of (arr.takes || []).slice(0, SRX.takes)) {
+    const m = Object.assign({}, t, { files: {} }); delete m.stats; onStep && onStep(++i, Math.min(arr.takes.length, SRX.takes));
+    for (const k of ['dry', 'wet']) {
+      const fn = t.files && t.files[k], f = fn && files.find(x => x.name === fn); if (!f) continue;
+      const w = wavParse(f.data), x = await srxTo48(fromI16(w.i16), w.sr); if (k === 'dry') secs += x.length / SRX.rate;
+      const nn = fn.replace(/\.wav$/i, '') + '.tda'; out.push({ name: nn, data: srxPack(await srxEncode(x)) }); m.files[k] = nn;
+    }
+    if (t.files && t.files.cam) { const f = files.find(x => x.name === t.files.cam); if (f) { out.push(f); m.files.cam = t.files.cam; } }
+    if (m.files.dry) takes.push(m);
+  }
+  out.unshift({ name: 'arrangement.json', data: new TextEncoder().encode(JSON.stringify({ format: 'the-daily-recordings', version: 1, app: BRAND.name + ' ' + VERSION, takes })) });
+  return { blob: zipBuild(out), takes: takes.length, secs };
+}
+async function srxSeal(blob) {
+  const raw = crypto.getRandomValues(new Uint8Array(32)), key = await crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['encrypt']), iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, await blob.arrayBuffer())), out = new Uint8Array(16 + ct.length);
+  out.set(SRX.magic); out.set(iv, 4); out.set(ct, 16); return { body: out, key: slB64(raw) };
+}
+async function srxUnseal(u, k) {
+  if (u.length < 32 || SRX.magic.some((b, i) => u[i] !== b)) throw srxErr('bad', 'the recordings are damaged'); const raw = slUnB64(k); if (raw.length !== 32) throw srxErr('bad', 'the link’s key is damaged');
+  const key = await crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['decrypt']);
+  try { return new Uint8Array(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: u.subarray(4, 16) }, key, u.subarray(16))); } catch (e) { throw srxErr('bad', 'the recordings could not be unlocked (part of the link may be missing)'); }
+}
+const SRX_WHY = { 'sign-in': 'Sign in with GitHub first (Settings ▸ GitHub): sending recordings needs an account.', 'limit-you': 'You have sent recordings 10 times today, the most for one day. Try again tomorrow.', 'limit-all': 'The studio has sent as many recordings as it can today. Try again tomorrow.', 'too-big': 'The recordings are more than 25 MB, even compressed. Delete takes you don’t need, then try again.', 'not-set-up': 'Sending recordings isn’t switched on for this site yet.', 'origin': 'Sending recordings only works on the-daily.studio itself.' };
+/** pack, seal and send the open song's takes; the link's attachment comes back */
+async function srxSend(onStep) {
+  if (!srxCan()) throw srxErr('browser', 'This browser can’t compress audio for a link. Chrome, Edge, Firefox and Safari 26 or later can.');
+  if (!ghTok()) throw srxErr('sign-in', SRX_WHY['sign-in']); if (!TAKES.length) throw srxErr('none', 'This song has no recordings yet.');
+  const b = await srxBundle((i, n) => onStep && onStep('Compressing take ' + i + ' of ' + n + '…')), s = await srxSeal(b.blob);
+  if (s.body.length > SRX.max) throw srxErr('too-big', SRX_WHY['too-big']);
+  onStep && onStep('Sending ' + projBytes(s.body.length) + ' (encrypted)…');
+  const tok = await ghToken(); let r, j = {};
+  try { r = await fetch('/share/put', { method: 'POST', headers: { Authorization: 'Bearer ' + tok, 'Content-Type': 'application/octet-stream' }, body: s.body, cache: 'no-store' }); j = await r.json().catch(() => ({})); } catch (e) { throw srxErr('offline', 'The recordings could not be sent. Are you online?'); }
+  if (!r.ok || !j.ref) throw srxErr(j.error || 'http', SRX_WHY[j.error] || 'The recordings could not be sent (' + (j.error || r.status) + ').');
+  return { att: j.ref + '.' + s.key, ref: j.ref, exp: j.exp, takes: b.takes, secs: b.secs, bytes: s.body.length };
+}
+/** take a share back before it runs out (the sender's own account only) */
+async function srxTakeBack(ref) {
+  const tok = await ghToken(); const r = await fetch('/share/delete', { method: 'POST', headers: { Authorization: 'Bearer ' + tok, 'Content-Type': 'application/json' }, body: JSON.stringify({ ref }), cache: 'no-store' });
+  if (!r.ok) throw srxErr('http', 'It could not be taken back (' + r.status + ').');
+}
+
+/* ---------- receiving ---------- */
+/** a take from someone else, kept to what a take can hold */
+function srxCleanTake(m, used) {
+  const num = (v, lo, hi, d) => Number.isFinite(+v) ? clamp(+v, lo, hi) : d, str = (v, n) => String(v == null ? '' : v).replace(/[\u0000-\u001f]/g, ' ').slice(0, n);
+  let id = /^[\w-]{1,40}$/.test(m && m.id) ? m.id : 'tk' + Math.random().toString(36).slice(2, 9); while (used.has(id)) id += 'x'; used.add(id);
+  const fx = m && m.fx && typeof m.fx === 'object' ? Object.fromEntries(FX_KEYS.filter(k => Number.isFinite(+m.fx[k])).map(k => [k, clamp(+m.fx[k], 0, 1)])) : null;
+  return { id, hum: !!m.hum, kind: /^[a-z]{2,8}$/.test(m.kind) ? m.kind : 'gtr', name: str(m.name, 60) || 'Take', startSec: num(m.startSec, 0, 36000, 0), g: num(m.g, 0, 4, 1), pan: num(m.pan, -1, 1, 0), fx: fx && fxOn(fx) ? fx : null,
+    mute: !!m.mute, solo: !!m.solo, mode: m.mode === 'wet' ? 'wet' : 'dry', bpm: Number.isFinite(+m.bpm) ? clamp(+m.bpm, 20, 400) : undefined, preset: str(m.preset, 40), fadeIn: num(m.fadeIn, 0, 60, 0), fadeOut: num(m.fadeOut, 0, 60, 0), cg: num(m.cg, 0, 8, 1), t: num(m.t, 0, 1e13, Date.now()) };
+}
+/** fetch, unlock and decode a link's recordings: the takes, ready to go in the song's lanes */
+async function srxReceive(att, onStep) {
+  const m = SRX_ATT.exec(att || ''); if (!m) throw srxErr('bad', 'the link’s recordings part is damaged');
+  if (!srxCan()) throw srxErr('browser', 'This browser can’t open recordings from a link (Chrome, Edge, Firefox and Safari 26 or later can).');
+  onStep && onStep('Fetching the recordings…'); let r;
+  try { r = await fetch('/share/' + m[1], { cache: 'no-store' }); } catch (e) { throw srxErr('offline', 'The recordings could not be fetched. Are you online?'); }
+  if (r.status === 404) throw srxErr('gone', 'The recordings in this link have run out (they are kept 7 days) or were taken back.'); if (!r.ok) throw srxErr('http', 'The recordings could not be fetched (' + r.status + ').');
+  if (+r.headers.get('Content-Length') > SRX.max + 64) throw srxErr('bad', 'the recordings are bigger than a link can carry');
+  const u = new Uint8Array(await r.arrayBuffer()); if (u.length > SRX.max + 64) throw srxErr('bad', 'the recordings are bigger than a link can carry');
+  onStep && onStep('Unlocking…'); const z = await zipRead(new Blob([await srxUnseal(u, m[2])])), a = z.get('arrangement.json'); if (!a) throw srxErr('bad', 'there are no recordings in it');
+  let arr; try { arr = JSON.parse(new TextDecoder().decode(await a.get())); } catch (e) { throw srxErr('bad', 'the recordings are damaged'); }
+  const list = Array.isArray(arr && arr.takes) ? arr.takes.slice(0, SRX.takes) : [], used = new Set(), out = []; let total = 0;
+  for (let i = 0; i < list.length; i++) {
+    const t = list[i], fd = t && t.files && typeof t.files.dry === 'string' && z.get(t.files.dry); if (!fd) continue; onStep && onStep('Decoding take ' + (i + 1) + ' of ' + list.length + '…');
+    const dry = await srxDecodeTake(await fd.get()); total += dry.length; if (total > SRX.rate * SRX.secs) break;
+    const fw = typeof t.files.wet === 'string' && z.get(t.files.wet), wet = fw ? await srxDecodeTake(await fw.get()) : null;
+    let cam = []; const fc = typeof t.files.cam === 'string' && z.get(t.files.cam); if (fc) { try { const c = JSON.parse(new TextDecoder().decode(await fc.get())); cam = Array.isArray(c) ? c.slice(0, 20000).filter(x => x && Number.isFinite(x.t)) : []; } catch (e) { } }
+    const meta = srxCleanTake(t, used); out.push(Object.assign(meta, { sr: SRX.rate, dur: dry.length / SRX.rate, dry, wet: wet && wet.length === dry.length ? wet : null, cam, peaks: peaksOf(dry), _saved: false }));
+    if (!out[out.length - 1].wet) out[out.length - 1].mode = 'dry';
+  }
+  return out;
+}
+/** put received takes in the open song */
+function srxAdd(takes) { takes.forEach(t => TAKES.push(t)); bus.emit('takes'); projDirty(); }
+/** someone with the link reports it to the site's owner (the key only if they say so, so the owner can listen) */
+async function srxReport(att) {
+  const m = SRX_ATT.exec(att || ''); if (!m) return; const why = h('textarea', { class: 'in', id: 'srxWhy', rows: 3, maxlength: 500, placeholder: 'What’s wrong with it?' }), withKey = h('input', { type: 'checkbox', id: 'srxKey', checked: true });
+  const old = document.getElementById('srxRep'); if (old) old.remove();
+  const d = h('dialog', { class: 'sl-dlg', id: 'srxRep', 'aria-labelledby': 'srxRepH' }, h('h3', { id: 'srxRepH' }, '⚑ Report these recordings'),
+    h('p', { class: 'small muted' }, 'The site’s owner checks reports and removes recordings that break the terms. The recordings are encrypted, so the owner can only listen if you include the link’s key.'),
+    why, h('label', { class: 'chk small' }, withKey, ' Include the key, so the owner can listen and check'),
+    h('div', { class: 'row sl-acts' }, h('button', { class: 'btn primary', id: 'srxSendRep', type: 'button', onclick: async () => {
+      try { const r = await fetch('/share/report', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ref: m[1], why: why.value.trim(), key: withKey.checked ? m[2] : '' }), cache: 'no-store' }); if (!r.ok) throw new Error(r.status); d.close(); toast('Reported. Thank you.', 'ok'); } catch (e) { toast('The report could not be sent (' + (e.message || e) + ').', 'bad'); }
+    } }, 'Send report'), h('span', { class: 'grow' }), h('button', { class: 'btn', type: 'button', onclick: () => d.close() }, 'Cancel')));
+  d.addEventListener('close', () => d.remove()); document.body.append(d); d.showModal(); why.focus();
+}
+
+/* ---------- in the send dialog (part 89) ---------- */
+/** the "Include my recordings" row: sends once, and the link carries the recordings from then on */
+function srxRow(rebuild) {
+  SRS.att = ''; SRS.ref = ''; SRS.exp = 0; SRS.busy = null; SRS.err = '';
+  const n = TAKES.length; if (!n) return null;
+  const secs = TAKES.reduce((a, t) => a + (t.dur || 0), 0), can = srxCan(), signed = !!ghTok();
+  const say = h('p', { class: 'tiny', id: 'srxSay', 'aria-live': 'polite' }), box = h('input', { type: 'checkbox', id: 'srxOn', disabled: !can });
+  const back = h('button', { class: 'btn', id: 'srxBack', type: 'button', hidden: true, onclick: async () => { back.disabled = true; try { await srxTakeBack(SRS.ref); SRS.att = SRS.ref = ''; box.checked = false; back.hidden = true; say.textContent = 'Taken back: the recordings are deleted, and the link no longer has them.'; rebuild(); } catch (e) { say.textContent = e.message; } finally { back.disabled = false; } } }, 'Take them back');
+  box.addEventListener('change', async () => {
+    if (box.checked && CFG.shareOk !== SHARE_TERMS) { box.checked = false; shareGate(() => { box.checked = true; box.dispatchEvent(new Event('change')); }); return; }      /* the terms, once, as for any share */
+    if (!box.checked) { if (SRS.ref) say.textContent = 'The link no longer carries the recordings. (They stay on the site until ' + srxDate(srxUntil(SRS.ref)) + ' unless you take them back.)'; SRS.att = ''; rebuild(); return; }
+    if (SRS.ref && SRS.keep) { SRS.att = SRS.keep; rebuild(); say.textContent = '✓ The link carries your recordings until ' + srxDate(srxUntil(SRS.ref)) + '.'; return; }
+    box.disabled = true; say.style.color = '';
+    SRS.busy = srxSend(t => { say.textContent = t; }).then(x => { SRS.att = SRS.keep = x.att; SRS.ref = x.ref; SRS.exp = x.exp; say.textContent = '✓ ' + x.takes + (x.takes === 1 ? ' take (' : ' takes (') + fmtT(x.secs) + ', ' + projBytes(x.bytes) + (x.takes === 1 ? ') goes' : ') go') + ' with the link until ' + srxDate(new Date(x.exp)) + '.'; back.hidden = false; })
+      .catch(e => { box.checked = false; say.textContent = e.message; say.style.color = 'var(--bad)'; if (e.code === 'sign-in') say.append(' ', h('button', { class: 'btn small', type: 'button', onclick: () => { try { document.getElementById('slDlg').close(); openSettings('github'); } catch (x) { } } }, 'Sign in…')); })
+      .finally(() => { box.disabled = false; SRS.busy = null; rebuild(); });
+    rebuild();
+  });
+  return h('div', { class: 'srx-row', id: 'srxRow' },
+    h('label', { class: 'chk' }, box, ' 🎙 Include my recordings (' + n + (n === 1 ? ' take' : ' takes') + ', ' + fmtT(secs) + ')'),
+    h('p', { class: 'tiny muted' }, !can ? 'This browser can’t compress audio for a link. Chrome, Edge, Firefox and Safari 26 or later can.' : (signed ? '' : 'Needs Sign in with GitHub (Settings ▸ GitHub). ') + 'They are compressed and encrypted here, kept on the site for 7 days, then deleted. Only people with the link can play them. Your backing track isn’t sent.'),
+    say, back);
+}
 
 /* >>> parts/90-tune.js */
 /* ============================================================

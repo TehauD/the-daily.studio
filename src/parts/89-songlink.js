@@ -10,6 +10,7 @@
    Passing a song back and forth (2.51): a link can carry who sent it, a note, and a short history of the rounds (who changed which sections,
    and when). Whoever opens it gets ↩ Send it back, which knows who it came from and what they changed since. All of it rides in the link.
    Format: #s=1 + 'z' (deflate-raw) or 'j' (plain) + base64url of the JSON below (keys kept short so the link stays short).
+   With recordings (2.54, part 89b): + '&r=' + where they are kept + '.' + the key that unlocks them (also after the #, so never sent).
    ============================================================ */
 const SL = { v: '1', max: 60000, unz: 262144, long: 8000, qr: 2300 };
 const SL_DR = '.gxX';
@@ -108,13 +109,14 @@ async function slLink(s) {
 }
 /** a link (or just the part after #) back into a song */
 async function slRead(text) {
-  const m = /#?s=1([zj])([A-Za-z0-9_-]+)\s*$/.exec(String(text || '')); if (!m) throw new Error('it is not a song link');
+  const m = /#?s=1([zj])([A-Za-z0-9_-]+)(?:&r=([A-Za-z0-9_.-]{1,140}))?\s*$/.exec(String(text || '')); if (!m) throw new Error('it is not a song link');
   if (m[2].length > SL.max) throw new Error('it is longer than a song link can be');
   let u = slUnB64(m[2]);
   if (m[1] === 'z') { if (typeof DecompressionStream !== 'function') throw new Error('this browser cannot unpack it (a newer browser can)'); u = await slZip(u, true); }
   if (u.length > SL.unz) throw new Error('it is bigger than a song can be');
   let o; try { o = JSON.parse(new TextDecoder().decode(u)); } catch (e) { throw new Error('it is damaged (part of the link may be missing)'); }
-  return slUnpack(o);
+  const song = slUnpack(o); if (m[3] && SRX_ATT.test(m[3])) Object.defineProperty(song, '_att', { value: m[3], enumerable: false, configurable: true });      /* recordings: never saved with the song */
+  return song;
 }
 const slSummary = s => { const bars = s.sections.reduce((a, x) => a + x.bars.length, 0), words = s.sections.some(x => (x.lyrics || '').trim()), tab = s.sections.some(x => x.bars.some(b => b.tab && b.tab.length)), beat = s.band.beat && BEATS.find(b => b.id === s.band.beat);
   return [pcName(s.key, keyUsesFlats(s.key, s.minor)) + (s.minor ? ' minor' : ' major'), s.bpm + ' BPM', s.sections.length + (s.sections.length === 1 ? ' section' : ' sections'), bars + ' bars', words ? 'words' : '', tab ? 'tab' : '', beat ? 'beat: ' + beat.name : ''].filter(Boolean).join(' · '); };
@@ -128,12 +130,13 @@ async function slShare() {
   const nameIn = h('input', { class: 'in slc-name', id: 'slName', maxlength: 40, autocomplete: 'nickname', placeholder: 'Your name', value: CFG.slName || '', 'aria-label': 'Your name, so they know who sent it' });
   const noteIn = h('textarea', { class: 'in slc-noteIn', id: 'slNote', maxlength: SLC.note, rows: 2, placeholder: back ? 'A note for ' + c.with + ': what you did, or what comes next' : 'A note: “Can you write the chorus?”', 'aria-label': 'A note to go with the song' });
   const out = () => { const hist = ((c && c.hist) || []).concat([[nameIn.value.trim() || 'Someone', slcDay(), what || 'started the song']]).slice(-SLC.keep); return { id: (c && c.id) || (S.collab && S.collab.id) || (slShare.id = slShare.id || slcId()), f: nameIn.value.trim(), n: noteIn.value.trim(), h: hist }; };
-  const build = () => built = (async () => { const prev = S.collab; S.collab = Object.assign({}, prev || {}, { out: out() }); try { url = await slLink(); } finally { S.collab = prev; } inp.value = url; long.hidden = url.length <= SL.long; long.textContent = 'This link is long (' + url.length.toLocaleString() + ' characters), so some chat apps may cut it short. Email, notes and most messengers keep it whole.'; qrBox.innerHTML = ''; qrBox.hidden = true; qrB.disabled = url.length > SL.qr; })();
+  const build = () => built = (async () => { const prev = S.collab; S.collab = Object.assign({}, prev || {}, { out: out() }); try { url = await slLink(); if (SRS.att) url += '&r=' + SRS.att; } finally { S.collab = prev; } inp.value = url; long.hidden = url.length <= SL.long; long.textContent = 'This link is long (' + url.length.toLocaleString() + ' characters), so some chat apps may cut it short. Email, notes and most messengers keep it whole.'; qrBox.innerHTML = ''; qrBox.hidden = true; qrB.disabled = url.length > SL.qr; })();
   /** the round is part of the song once it has gone: the next send says what changed after this one */
   const gone = () => { if (sent) return; sent = true; const o = out(); S.collab = { id: o.id, with: c && c.with || '', note: c && c.note || '', hist: o.h }; slcMark(S); commit(false); };
   const qrBox = h('div', { class: 'sl-qr', hidden: true }), inp = h('input', { class: 'in sl-url', id: 'slUrl', readonly: true, value: '', 'aria-label': 'The link', onfocus: e => e.target.select() }), long = h('p', { class: 'tiny sl-long', hidden: true });
-  const copy = async () => { await built; try { await navigator.clipboard.writeText(url); toast('Link copied. Paste it in a message to ' + (back ? c.with : 'whoever you are writing with') + '.', 'ok'); } catch (e) { inp.select(); document.execCommand && document.execCommand('copy'); toast('Link selected: copy it with Ctrl+C (⌘C on a Mac).', ''); } gone(); };
-  const qrB = h('button', { class: 'btn', id: 'slQr', type: 'button', title: 'Show a code to scan with a phone', onclick: async () => { await built; if (!qrBox.childNodes.length) qrBox.innerHTML = qrSvg(qrMake(url)); qrBox.hidden = !qrBox.hidden; gone(); } }, '▦ QR code');
+  const ready = async () => { if (SRS.busy) await SRS.busy.catch(() => { }); await built; };
+  const copy = async () => { await ready(); try { await navigator.clipboard.writeText(url); toast('Link copied. Paste it in a message to ' + (back ? c.with : 'whoever you are writing with') + '.', 'ok'); } catch (e) { inp.select(); document.execCommand && document.execCommand('copy'); toast('Link selected: copy it with Ctrl+C (⌘C on a Mac).', ''); } gone(); };
+  const qrB = h('button', { class: 'btn', id: 'slQr', type: 'button', title: 'Show a code to scan with a phone', onclick: async () => { await ready(); if (!qrBox.childNodes.length) qrBox.innerHTML = qrSvg(qrMake(url)); qrBox.hidden = !qrBox.hidden; gone(); } }, '▦ QR code');
   let tm = 0; const again = () => { clearTimeout(tm); tm = setTimeout(build, 250); };
   nameIn.addEventListener('input', () => { CFG.slName = nameIn.value.trim().slice(0, 40); saveCfg(); again(); }); noteIn.addEventListener('input', again);
   const old = document.getElementById('slDlg'); if (old) old.remove();
@@ -142,11 +145,12 @@ async function slShare() {
     h('p', { class: 'sl-what' }, slSummary(S)),
     c ? h('div', { class: 'slc-box' }, what ? h('p', { class: 'small', id: 'slChanged' }, h('b', {}, 'Your changes: '), what) : '', slcHistEl(c.hist)) : '',
     h('div', { class: 'slc-form' }, h('label', { class: 'small' }, 'From', nameIn), h('label', { class: 'small' }, 'Note', noteIn)),
-    h('p', { class: 'small muted' }, 'The chords, words, tab, the beat, the tempo and the key travel inside the link itself, with your name, your note and who changed what, after the #: a part of a link that is never sent to any server. Whoever opens it gets the song as a new song of their own, with ↩ Send it back. Your recordings stay with you; for audio, make a share page in Save & export.'),
+    h('p', { class: 'small muted' }, 'The chords, words, tab, the beat, the tempo and the key travel inside the link itself, with your name, your note and who changed what, after the #: a part of a link that is never sent to any server. Whoever opens it gets the song as a new song of their own, with ↩ Send it back.' + (TAKES.length ? ' Your recordings stay with you unless you include them.' : '')),
+    srxRow(() => build()),
     inp, long,
     h('div', { class: 'row sl-acts' },
       h('button', { class: 'btn primary', id: 'slCopy', type: 'button', onclick: copy }, '⧉ Copy link'),
-      navigator.share ? h('button', { class: 'btn', id: 'slSend', type: 'button', onclick: async () => { await built; navigator.share({ title: S.title, text: (nameIn.value.trim() ? nameIn.value.trim() + ' sent you' : 'Here is') + ' “' + S.title + '” on the-daily.studio' + (noteIn.value.trim() ? ': ' + noteIn.value.trim() : ''), url }).then(gone).catch(() => { }); } }, '↗ Share…') : null,
+      navigator.share ? h('button', { class: 'btn', id: 'slSend', type: 'button', onclick: async () => { await ready(); navigator.share({ title: S.title, text: (nameIn.value.trim() ? nameIn.value.trim() + ' sent you' : 'Here is') + ' “' + S.title + '” on the-daily.studio' + (noteIn.value.trim() ? ': ' + noteIn.value.trim() : ''), url }).then(gone).catch(() => { }); } }, '↗ Share…') : null,
       qrB, h('span', { class: 'grow' }), h('button', { class: 'btn', type: 'button', onclick: () => d.close() }, 'Close')),
     qrBox);
   d.addEventListener('close', () => d.remove()); document.body.append(d); d.showModal();
@@ -156,12 +160,17 @@ async function slShare() {
 
 /* ---------- opening one ---------- */
 async function slOpen(song, playNow, perform) {
-  const boot = document.getElementById('boot'), b = document.getElementById('bootNoMic');
+  const boot = document.getElementById('boot'), b = document.getElementById('bootNoMic'), att = song._att;
   if (boot && b && boot.getClientRects().length && getComputedStyle(boot).display !== 'none') b.click();      /* past the first page, as Begin in the studio does */
-  await projCreate('import', { song, zoom: 'studio' }); bus.emit('song', 'reload'); try { syncTransport(); syncBandStrip(); } catch (e) { }
+  let takes = null, lost = '';
+  if (att) { try { takes = await srxReceive(att, t => toast(t)); } catch (e) { lost = e.message; } }      /* the recordings first: if they can't come, the song still does */
+  delete song._att; await projCreate('import', { song, zoom: 'studio' }); if (takes && takes.length) { srxAdd(takes); await projSave(); }
+  bus.emit('song', 'reload'); try { syncTransport(); syncBandStrip(); } catch (e) { }
   if (playNow) { try { await startAudio(); T.cursor = 0; T.loop = true; syncTransport(); play(); } catch (e) { console.warn(e); } }
   if (perform) { try { perfOpen(); const g = document.getElementById('pfGo'); if (g) g.click(); } catch (e) { console.warn(e); } }      /* a first visit through a link: the song as a sing-along */
   const from = S.collab && S.collab.with;
+  if (lost) return toast(lost + ' The song opened without them' + (from ? ': ask ' + from + ' to send it again.' : '.'), 'warn');
+  if (takes && takes.length) return toast('“' + S.title + '” is open as a new song with ' + takes.length + (takes.length === 1 ? ' recording' : ' recordings') + (from ? ' from ' + from + '. Add yours, then ↩ Send it back.' : '.'), 'ok');
   toast(from ? '“' + S.title + '” from ' + from + ' is open as a new song. Change what you like, then ↩ Send it back.' : '“' + S.title + '” is open as a new song. Your other songs are as they were.', 'ok');
 }
 function slWelcome(song) {
@@ -173,7 +182,8 @@ function slWelcome(song) {
     c && c.note ? h('blockquote', { class: 'slc-note', id: 'slInNote' }, c.note) : null,
     h('p', { class: 'sl-what' }, slSummary(song)),
     c ? slcHistEl(c.hist) : null,
-    h('p', { class: 'small muted' }, (first ? 'This is the-daily.studio: a place to write, sing and play songs, free, in your browser, with no account. ' : '') + 'It opens as a new song' + (first ? '' : ', so none of yours change') + '. It came inside the link: nothing was downloaded from anyone.' + (from ? ' Change what you like, then ↩ Send it back to ' + from + '.' : '')),
+    song._att ? h('p', { class: 'small srx-in', id: 'srxIn' }, '🎙 With recordings, until ' + srxDate(srxUntil(song._att)) + '. ', h('button', { class: 'linkish tiny', id: 'srxRepBtn', type: 'button', onclick: () => srxReport(song._att) }, '⚑ Report')) : null,
+    h('p', { class: 'small muted' }, (first ? 'This is the-daily.studio: a place to write, sing and play songs, free, in your browser, with no account. ' : '') + 'It opens as a new song' + (first ? '' : ', so none of yours change') + '. ' + (song._att ? 'The song came inside the link; its recordings are fetched encrypted from this site and unlocked with the link’s key.' : 'It came inside the link: nothing was downloaded from anyone.') + (from ? ' Change what you like, then ↩ Send it back to ' + from + '.' : '')),
     h('div', { class: 'row sl-acts' }, ...(first
       ? [h('button', { class: 'btn primary', id: 'slPlay', type: 'button', onclick: () => go(true, true) }, '▶ Play it'), h('button', { class: 'btn', id: 'slOpenBtn', type: 'button', onclick: () => go(false) }, 'Open it in the studio')]
       : [h('button', { class: 'btn primary', id: 'slPlay', type: 'button', onclick: () => go(true) }, '▶ Open and play'), h('button', { class: 'btn', id: 'slOpenBtn', type: 'button', onclick: () => go(false) }, 'Open'), h('span', { class: 'grow' }), h('button', { class: 'btn', type: 'button', onclick: () => d.close() }, 'Not now')])));

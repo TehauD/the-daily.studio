@@ -130,7 +130,7 @@ self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Pr
 const SAVED = /\\/(fonts|icons|rooms)\\//;
 self.addEventListener('fetch', e => {
   const r = e.request; if (r.method !== 'GET') return; const u = new URL(r.url); if (u.origin !== location.origin) return;
-  if (/\\/(journal|api|auth)\\/|\\/healthz$/.test(u.pathname)) return;   // the moving page at /journal/ and the sign-in routes manage themselves
+  if (/\\/(journal|api|auth|share)\\/|\\/healthz$/.test(u.pathname)) return;   // the moving page at /journal/, the sign-in routes and shared recordings (encrypted, 7 days; never cached here) manage themselves
   if (r.mode === 'navigate' || /\\/$|\\.html$/.test(u.pathname)) {   // the page itself: network first, so a new version is never hidden behind an old copy
     e.respondWith(fetch(r).then(res => { if (res && res.ok) { const cp = res.clone(); caches.open(V).then(c => c.put(r, cp)); } return res; }).catch(() => caches.match(r, { ignoreSearch: true }).then(h => h || caches.match('./')))); return;
   }

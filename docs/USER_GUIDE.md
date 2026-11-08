@@ -97,6 +97,18 @@ Set the song's key first (the tuning follows it). Nothing is sent anywhere; it i
 
 ## 🔗 Send a song as a link (2.40), and pass it back and forth (2.51)
 
+**With your recordings (2.54):** in the send window, tick **🎙 Include my recordings**.
+- **The first time,** the studio asks you to confirm the sharing terms.
+- **To send,** you need to be signed in with GitHub (Settings ▸ GitHub). Opening a link never needs an account.
+- **Your takes are compressed and encrypted in your browser,** and the key goes into the link. The site keeps the sealed recordings for **7 days**, and can't play them itself.
+- **Your backing track isn't sent;** the beat and the band are part of the song.
+- **Take them back** deletes them before the 7 days are up.
+- **Whoever opens the link** sees "🎙 With recordings, until …". **Open** brings the song in as a new song with your takes in their lanes, where you put them. They can add theirs and ↩ Send it back with their recordings.
+- After 7 days the link still opens the song, without the recordings.
+- **⚑ Report** tells the site's owner about recordings that shouldn't be there.
+- **It works in** Chrome, Edge, Firefox and Safari 26 or later.
+- **Limits:** up to 25 MB (about half an hour of takes), and 10 sends a day.
+
 **Writing a song together (2.51):**
 - **From and Note:** the send window has both. Your name is remembered on this device, and a note says what you need ("Can you write the chorus?").
 - **What the other person sees:** "🎵 Alice sent you a song", the note, and the rounds so far (who changed what, and when).
@@ -104,11 +116,11 @@ Set the song's key first (the tuning follows it). Nothing is sent anywhere; it i
 - **↩ Send it back:** the send buttons say **↩ Send back to Alice**. The window lists **Your changes** (for example "wrote words for Chorus; added Bridge"), worked out from what the song was when it arrived, and they go into the link's history.
 - **Each round opens as a new song,** so nothing is ever overwritten. The history (the last eight rounds) travels with it.
 - **Share pages and printed sheets link back:** a share page ends with **Open this song in the-daily.studio**, and a printed sheet has a code to scan that opens it.
-- **Nothing is uploaded:** the names, the note and the history ride inside the link with the song.
+- **Nothing is uploaded:** the names, the note and the history ride inside the link with the song (recordings only if you include them).
 
 
 **🔗 Send as a link** (Songwriter tools, and Save & export) turns the song into a link you can paste in a message. Whoever opens it gets the song, ready to play.
-- **What travels:** the chords, words and tab of every section, the beat and the band, what the piano roll drew, the tempo, the key and the tuning. **Recordings stay with you:** for audio, make a share page in Save & export.
+- **What travels:** the chords, words and tab of every section, the beat and the band, what the piano roll drew, the tempo, the key and the tuning. **Recordings stay with you** unless you tick **Include my recordings** (above).
 - **Nothing is uploaded.** The song is written into the link after the `#`, and browsers never send that part to a server. A typical song is under a thousand characters.
 - **Sending:** **⧉ Copy link**, **↗ Share…** on a phone, or **▦ QR code** for someone in the room. If a link is very long, the window says so, because some chat apps cut long links.
 - **Receiving:** opening the link shows the song's name and what it holds. **▶ Open and play** opens it as a new song and starts it; **Open** just opens it. Your own songs are not changed.

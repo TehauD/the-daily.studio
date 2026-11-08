@@ -1754,6 +1754,7 @@ html:not(.ds-booted) #boot .boot-card{visibility:hidden}
 /* ---- 2.51: passing a song back and forth (part 89) ---- */
 .slc-box{display:grid;gap:4px;margin:4px 0 8px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
 .slc-hist{margin:0;padding-left:20px;font-size:13px;color:var(--muted)}.slc-hist b{color:var(--text)}
+.srx-row{margin:6px 0 10px;padding:10px 12px;border:1px solid var(--line);border-radius:10px}.srx-row .chk{font-weight:700}.srx-row p{margin:4px 0 0}.srx-row #srxBack{margin-top:6px}.srx-in{margin:6px 0}
 .slc-form{display:grid;grid-template-columns:minmax(120px,1fr) 2fr;gap:10px;margin:8px 0}.slc-form label{display:grid;gap:4px;font-weight:700}.slc-form .in{width:100%;box-sizing:border-box;font:14px var(--sans)}
 .slc-noteIn{resize:vertical;min-height:44px}
 .slc-note{margin:8px 0;padding:10px 14px;border-left:4px solid var(--accent);background:var(--panel);border-radius:0 10px 10px 0;font-size:15px;white-space:pre-wrap}
