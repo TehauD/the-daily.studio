@@ -34,7 +34,8 @@ function slPack(s) {
       if (tab || ky || bl) row.push(tab ? sec.bars.map(b => (b.tab || []).map(n => n.bend != null ? [n.s, n.st, n.f, n.t || '', n.bend] : [n.s, n.st, n.f, n.t || ''])) : 0, ky ? sec.bars.map(b => notes(b.keys)) : 0, bl ? sec.bars.map(b => notes(b.bassLine)) : 0);
       if (sec.energy >= 1) { while (row.length < 6) row.push(0); row.push(sec.energy); }      /* 2.44: the section's energy */
       return row; }),
-    c: s.collab && s.collab.out ? s.collab.out : undefined,      /* 2.51: who sent it, a note, the rounds so far */
+    c: s.collab && s.collab.out ? s.collab.out : undefined,
+    cm: cmtPack(s),      /* 2.58: open comments, pinned to their place */      /* 2.51: who sent it, a note, the rounds so far */
     bd: { d: B.drumsOn ? 1 : 0, kit: B.kit, pn: B.patName, p: pat, bo: B.bassOn ? 1 : 0, bs: B.bassStyle, bt: B.bassTone, co: B.compOn ? 1 : 0, cs: B.compStyle, ci: B.compInst, lo: B.leadOn ? 1 : 0, li: B.leadInst, ko: B.keysOn ? 1 : 0, ks: B.keysStyle, kn: B.keysSound, beat: B.beat || undefined, bu: B.build ? 1 : undefined } };
 }
 /** a song from a link, rebuilt from scratch: only what is checked is kept */
@@ -77,6 +78,7 @@ function slUnpack(o) {
     const c = o.c, hist = (Array.isArray(c.h) ? c.h : []).slice(-SLC.keep).filter(Array.isArray).map(x => [str(x[0], 40).trim() || 'Someone', int(x[1], 0, 200000, 0), str(x[2], 140).trim()]);
     s.collab = { id: /^[a-z0-9]{6,16}$/.test(String(c.id || '')) ? c.id : slcId(), with: str(c.f, 40).trim(), note: str(c.n, SLC.note).trim(), hist };
   }
+  if (o.cm) s.comments = cmtUnpack(o.cm, str);
   if (s.collab) slcMark(s);      /* what it was when it arrived, to tell what changes before it goes back */
   return s;
 }
@@ -184,6 +186,7 @@ function slWelcome(song) {
     c && c.note ? h('blockquote', { class: 'slc-note', id: 'slInNote' }, c.note) : null,
     h('p', { class: 'sl-what' }, slSummary(song)),
     c ? slcHistEl(c.hist) : null,
+    (song.comments || []).length ? h('details', { class: 'small', id: 'slInCmt' }, h('summary', {}, '💬 ' + song.comments.length + (song.comments.length === 1 ? ' comment' : ' comments')), h('ul', { class: 'tiny' }, song.comments.slice(0, 8).map(c => h('li', {}, (c.sec ? c.sec + ' · ' : '') + (c.who ? c.who + ': ' : '') + c.text)))) : null,
     song._att ? h('p', { class: 'small srx-in', id: 'srxIn' }, '🎙 With recordings, until ' + srxDate(srxUntil(song._att)) + '. ', h('button', { class: 'linkish tiny', id: 'srxRepBtn', type: 'button', onclick: () => srxReport(song._att) }, '⚑ Report')) : null,
     mine ? h('p', { class: 'small', id: 'slMine' }, 'You already have “' + (mine.title || 'this song') + '”. Add this round as its newest version, so the rounds don’t pile up as copies; what you have now is kept as a version too.') : null,
     h('p', { class: 'small muted' }, (first ? 'This is the-daily.studio: a place to write, sing and play songs, free, in your browser, with no account. ' : '') + 'It opens as a new song' + (first ? '' : ', so none of yours change') + '. ' + (song._att ? 'The song came inside the link; its recordings are fetched encrypted from this site and unlocked with the link’s key.' : 'It came inside the link: nothing was downloaded from anyone.') + (from ? ' Change what you like, then ↩ Send it back to ' + from + '.' : '')),

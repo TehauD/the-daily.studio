@@ -51,6 +51,7 @@ function verRoundOf(song) { const id = song && song.collab && song.collab.id; re
 async function verAddRound(rec, song, takes) {
   if (PRJ.cur !== rec.id) await projLoad(rec.id); const from = (song.collab && song.collab.with) || 'someone';
   if (verChanged()) await verMark('Before ' + from + '’s round', '', { kind: 'auto' });
+  { const seen = new Set(), all = (S.comments || []).concat(song.comments || []).filter(c => { const k = Math.round(c.at) + '|' + c.text; if (seen.has(k)) return false; seen.add(k); return true; }); song.comments = all.sort((x, y) => x.at - y.at); }      /* yours and theirs (2.58) */
   const keep = S.collab && S.collab.id ? S.collab : null; projUse(song); if (keep && S.collab) S.collab.id = keep.id;
   if (takes && takes.length) srxAdd(takes); commit(false); await projSave();
   return verMark('Round from ' + from, (song.collab && song.collab.note) || '', { kind: 'round', from });

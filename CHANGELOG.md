@@ -2,6 +2,35 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.58.0 — 2026-11-08 — Comments pinned to a moment, and a lyric helper
+
+### New
+- **💬 Comments pinned to a moment.** **💬 Comment** in the arrangement bar (or press **C**) pins a note to where the playhead is: "bar 12: rush here?".
+  - **It's pinned to a bar and beat,** not a time in seconds, so it stays on the beat if the tempo changes.
+  - **Comments show on the arrangement's ruler.** 💬 Comments lists them: jump to one, mark it ✓ Done, or remove it.
+  - **They're part of the song,** so they're kept in its versions and go with it to sync.
+  - **They travel in song links:** the open ones (up to 20), each at its place, with who wrote it. Opening the link shows them. When a round comes back as a new version, your comments and theirs are both kept, without doubles. Comments from a link are checked like everything else: places clamped, words cut to 280 characters, names to 40.
+- **✎ Rhymes & syllables,** in the Write card's Lyrics row and on the phone's Words screen. A small panel follows whichever lyrics box you're typing in:
+  - **Line by line:** each line's syllable count, and the rhyme scheme from the line endings (A B A B). Uneven lines stand out.
+  - **Rhymes** for the last word you typed (or any word you enter): perfect ones grouped by syllables, common words first, then near rhymes. Click one to put it in at the cursor.
+  - **The words:** 31,469 common English words (SCOWL levels 10–35, no proper names) with pronunciations from the CMU Pronouncing Dictionary, in `data/rhymes.txt`. It's fetched from this site the first time the helper opens (about 170 KB compressed), then kept offline. The Write card's own syllable counts and rhyme scheme use the dictionary once it's loaded.
+  - **Without the word list** (the single-file app, or offline before first use), syllables come from spelling rules and rhymes from the song's own words. Nothing you write is sent anywhere.
+
+### Tests
+- **`e2e-comments` (15 checks):**
+  - **Comments:**
+    - pinned at the playhead's bar, listed, jumped to;
+    - a link carries the open ones, not the done one;
+    - a hostile link's comments are clamped and cut;
+    - opening a link shows them;
+    - a round as a version keeps both sides' comments, without doubles.
+  - **Lyric helper:**
+    - 31,469 words load from this site;
+    - dictionary syllables (everything 3, beautiful 3) and an A B A B scheme;
+    - rhymes for "night" (light, fight, tonight, delight…) with near rhymes;
+    - typing fills in the last word, and clicking a rhyme puts it in at the cursor;
+    - the panel's scheme follows.
+
 ## 2.57.0 — 2026-11-08 — Finish it: master the song and make its release package
 
 ### New

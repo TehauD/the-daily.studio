@@ -6,6 +6,17 @@ Contents: [Whole song and Perform layouts](#-the-whole-song-and-perform-your-way
 
 ---
 
+## 💬 Comments and ✎ Rhymes & syllables (2.58)
+
+**💬 Comments:** put the playhead where you mean, then press **💬 Comment** (or **C**) and type: "rush here?", "double the vocal".
+- Comments show on the ruler, and 💬 Comments lists them: press a place to jump there, **✓ Done** when it's sorted.
+- When you send the song, the open comments go with it, at their places, so whoever you write with sees them where they belong.
+
+**✎ Rhymes & syllables** (the Lyrics row in Write, or ✎ on the phone's Words) opens a panel beside your words:
+- **Each line's syllables and the rhyme scheme.** A line much longer or shorter than the rest is marked.
+- **Rhymes for the last word you typed:** perfect ones by syllables, then near ones. Click one to put it in.
+- **The word list** loads once from the site, then works offline. Your words stay on your device.
+
 ## ✦ Finish it: master and release (2.57)
 
 **Save & export ▸ ✦ Finish it…** (or the last dot of the song journey):

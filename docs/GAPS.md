@@ -4,6 +4,11 @@ What the studio, its tutorials, its documents and its tests do **not** cover yet
 
 How to use it: before a release, move what the release closed into *Closed* with the version, and add what it opened. [RELEASE.md](RELEASE.md) has this as a checklist item. Items marked **(maintainer)** are decisions or facts only the project's owner can settle; nothing here blocks a build.
 
+## Closed in 2.58.0
+
+- **No way to say "this bit" while writing together.** Comments are pinned to a moment and travel with the song.
+- **No help with rhymes or syllables beyond guesses from spelling.** The lyric helper has a 31,000-word pronouncing dictionary.
+
 ## Closed in 2.57.0
 
 - **Finishing a song happened elsewhere.** Finish it masters to a streaming target with a real limiter, a fair Before / After and reference matching, and makes the release package with credits and splits.
@@ -119,6 +124,13 @@ How to use it: before a release, move what the release closed into *Closed* with
 ### Song structure (opened by 2.48)
 - The **Stage** panel's prompter and the lower third have none of Perform's layout choices.
 - Sections can be reordered with ↑ ↓ but not dragged on the map.
+
+### Comments and the lyric helper (opened by 2.58)
+- **Comment markers on the ruler can't be clicked yet:** use 💬 Comments to jump to one. Comments don't show in the whole-song sheet or Perform.
+- **Replies:** a comment is a single note; there are no replies under it.
+- **The phone** has no 💬 Comment button yet; comments made on a computer travel to it with the song.
+- **The rhyme list includes some rare words** (doe, fro, hoe) among the common ones, and knows only words in the CMU dictionary. Slang and names fall back to spelling rules.
+- **English only.**
 
 ### Finish it (opened by 2.57)
 - **Cover art** isn't made or checked; the README says what's usually needed.

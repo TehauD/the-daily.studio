@@ -16,6 +16,7 @@ function buildTimeline() {
   UI.tlinfo = h('span', { class: 'chip' });
   bar.append(h('b', { class: 'small', title: 'Click ruler = seek · Shift-drag = loop · Double-click ruler = clear loop · click section strip = select section' }, 'ARRANGEMENT'), UI.follow, h('span', { class: 'small muted tl-adv' }, 'Zoom'), zoom, h('span', { class: 'small muted tl-adv' }, 'Swing'), sw,
     h('button', { class: 'btn sm tl-adv', title: 'Clear loop region (double-click ruler)', onclick: () => { T.loopA = 0; T.loopB = null; TL.dirty = true; } }, 'Clear loop'),
+    h('button', { class: 'btn sm', id: 'cmtBtn', title: 'Pin a comment to the playhead’s place in the song (C). Comments travel with the song when you send it.', onclick: () => cmtOpen() }, '💬 Comment'),
     h('button', { class: 'btn sm lp-btn', id: 'lpBtn', title: 'Record a part, loop it, and play the next part on top, like a looper pedal', onclick: () => looperOpen() }, '⟲ Loop & layer'),
     h('button', { class: 'btn sm tl-adv', onclick: () => { T.loop = true; T.loopA = Math.floor(playheadSlot() / spb()) * spb(); T.loopB = Math.min(songSlots(), T.loopA + spb() * 4); syncTransport(); TL.dirty = true; } }, 'Loop 4 bars here'), clipBarMake(), h('span', { class: 'grow' }), UI.tlinfo,
     h('span', { class: 'small muted tl-adv' }, 'Lanes'), h('button', { class: 'btn sm tl-adv', title: 'Shorter lanes', 'aria-label': 'Shorter lanes', onclick: () => laneScale(-.2) }, '−'), h('button', { class: 'btn sm tl-adv', title: 'Taller lanes', 'aria-label': 'Taller lanes', onclick: () => laneScale(.2) }, '+'),
@@ -80,6 +81,7 @@ function drawTL() {
   // loop region
   if (T.loopB != null) { const x = T.loopA * sw, w = (T.loopB - T.loopA) * sw; g.fillStyle = C.accent; g.globalAlpha = .13; g.fillRect(x, 0, w, end); g.globalAlpha = .9; g.fillRect(x, TL.rh - 4, w, 3); g.globalAlpha = 1; }
   // playhead
+  cmtDraw(g, sw, end, C);      /* 💬 comments on the ruler (part 63c) */
   const ph = playheadSlot(), px = ph * sw; g.strokeStyle = C.accent2; g.lineWidth = 2; g.beginPath(); g.moveTo(px, 0); g.lineTo(px, end); g.stroke(); g.lineWidth = 1; g.fillStyle = C.accent2; g.beginPath(); g.moveTo(px - 5, 0); g.lineTo(px + 5, 0); g.lineTo(px, 8); g.fill();
   if (T.playing && TL.follow && (px < ox + 30 || px > ox + vw - 80)) { sc.scrollLeft = Math.max(0, px - 60); }
   UI.tlinfo.textContent = bars + ' bars · ' + fmtTime(bars * spb() * slotDur()) + (T.loopB != null ? ' · loop ' + (T.loopA / sp + 1) + '–' + (T.loopB / sp) : '');

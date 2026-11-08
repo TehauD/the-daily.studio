@@ -59,6 +59,19 @@ Each file starts its **own** static server, its own Chromium (fake microphone an
 | `e2e-lanesout.cjs` | Lanes out (2.55):
 | `e2e-versions.cjs` | Versions, the song journey and 🛡 (2.56):
 | `e2e-finish.cjs` | Finish it (2.57):
+| `e2e-comments.cjs` | Comments and the lyric helper (2.58):
+  - **Comments:**
+    - pinned at the playhead's bar, listed, jumped to;
+    - a link carries the open ones, not the done one;
+    - a hostile link's comments are clamped and cut;
+    - opening a link shows them;
+    - a round as a version keeps both sides', without doubles.
+  - **Lyric helper:**
+    - the 31,469-word list loads from this site;
+    - dictionary syllables and an A B A B scheme;
+    - rhymes for "night" with near rhymes;
+    - typing fills in the last word, and a click inserts a rhyme at the cursor;
+    - the scheme follows. |
   - the look-ahead limiter never passes its ceiling and leaves the rest alone;
   - reference matching lifts and lowers the right bands, within ±6 dB;
   - Master it lands within 0.5 LU of −14 LUFS with true peaks ≤ −1 dBTP;

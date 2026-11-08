@@ -4,13 +4,13 @@
 
 /* ---------- lyric text analysis ---------- */
 function syllables(word) {
-  let w = word.toLowerCase().replace(/[^a-z]/g, ''); if (!w) return 0; if (w.length <= 3) return 1;
+  let w = word.toLowerCase().replace(/[^a-z]/g, ''); if (!w) return 0; { const e = typeof LH !== 'undefined' && LH.idx && LH.idx.get(w); if (e) return e.syl; }      /* the dictionary's count once the lyric helper has loaded it (2.58) */ if (w.length <= 3) return 1;
   w = w.replace(/(?:[^laeiouy]es|ed|[^laeiouy]e)$/, '').replace(/^y/, ''); const m = w.match(/[aeiouy]{1,2}/g); return Math.max(1, m ? m.length : 1);
 }
 const lyricPlain = line => line.replace(/\[[^\]]*\]/g, '');
 const lineSyl = line => (lyricPlain(line).match(/[A-Za-z']+/g) || []).reduce((a, w) => a + syllables(w), 0);
 function rhymeKey(line) {
-  const ws = lyricPlain(line).toLowerCase().match(/[a-z']+/g); if (!ws) return ''; let w = ws[ws.length - 1].replace(/'/g, '').replace(/(s|ed)$/, m => w2ok(m));
+  const ws = lyricPlain(line).toLowerCase().match(/[a-z']+/g); if (!ws) return ''; if (typeof LH !== 'undefined' && LH.idx && LH.idx.has(lhWord(ws[ws.length - 1]))) return lhKey(ws[ws.length - 1]); let w = ws[ws.length - 1].replace(/'/g, '').replace(/(s|ed)$/, m => w2ok(m));
   const m = w.match(/[aeiouy]+[^aeiouy]+e$/) || w.match(/[aeiouy]+[^aeiouy]*$/); return m ? m[0] : w;
 }
 function w2ok(m) { return m === 's' ? '' : m; }
@@ -270,7 +270,7 @@ function sectionCard(sec, si, compact, opt) {
     lines.forEach((l, i) => { if (!l.trim()) return; const sy = lineSyl(l); tot += sy; n++; tb.append(h('tr', {}, h('td', { style: { fontFamily: 'var(--sans)' } }, lyricPlain(l).slice(0, 52)), h('td', {}, String(sy)), h('td', {}, sch[i] || ''))); });
     ana.append(n ? tb : h('span', { class: 'muted' }, 'No lyric lines yet.'), n ? h('div', { class: 'tiny muted', style: { marginTop: '4px' } }, 'Scheme: ' + sch.filter(Boolean).join('') + ' · mean ' + (tot / n).toFixed(1) + ' syllables/line (heuristic count)') : '');
   };
-  body.append(h('div', { class: 'row', style: { gap: '6px', marginBottom: '5px' } }, h('b', { class: 'small' }, 'Lyrics'), h('span', { class: 'muted tiny' }, 'insert chord at cursor:'), h('div', { class: 'pal' }, used.map(c => h('button', { class: 'btn sm', onclick: () => ins(c) }, c)))),
+  body.append(h('div', { class: 'row', style: { gap: '6px', marginBottom: '5px' } }, h('b', { class: 'small' }, 'Lyrics'), h('button', { class: 'btn sm', id: 'lhBtn', title: 'Rhymes for the word you just typed, each line’s syllables and the rhyme scheme, in a panel beside the words', onclick: () => { lhOpen(ta); } }, '✎ Rhymes'), h('span', { class: 'muted tiny' }, 'insert chord at cursor:'), h('div', { class: 'pal' }, used.map(c => h('button', { class: 'btn sm', onclick: () => ins(c) }, c)))),
     h('div', { class: 'lyr-grid' }, ta, prev), h('details', { style: { marginTop: '8px' } }, h('summary', { class: 'small muted', style: { cursor: 'pointer' } }, 'Syllable & rhyme analysis'), ana));
   refresh(); card.append(body); return card;
 }
