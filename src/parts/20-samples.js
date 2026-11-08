@@ -5,8 +5,11 @@
    Hidden when the page is opened from disk or the folder is absent (CodePen, a single emailed file).
    ============================================================ */
 const SMP = { list: null, shelves: [] };
+/* 2.52: the build puts the shelf it found into the page, so listing it needs no request (and the build replaces this name) */
+const SMP_BUILT = __SAMPLES_BUILT__;
 async function samplesList() {
   if (SMP.list) return SMP.list;
+  if (SMP_BUILT && Array.isArray(SMP_BUILT.tracks)) return (SMP.list = SMP_BUILT.tracks);
   try {
     if (typeof fetch !== 'function' || location.protocol === 'file:') throw new Error('no fetch');
     const r = await fetch('samples/manifest.json', { cache: 'no-cache' }); if (!r.ok) throw new Error('none');

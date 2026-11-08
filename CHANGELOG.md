@@ -2,7 +2,24 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
-## 2.51.0 — 2026-11-08 — Write a song together, by passing it back and forth
+## 2.52.0 — 2026-11-08 — Fewer requests, lower costs
+
+### Changed
+- **The Worker runs only where it has work:** The Daily's address, the moving page, Sign in with GitHub, backstage and the studio's own page. Fonts, code, icons, pictures and the guide are served as static files, which Cloudflare doesn't count as Worker requests. In 2.50 every file went through the Worker, so one visit was 10 to 15 counted requests; now it's one. `run_worker_first` lists the paths and needs Wrangler 4.20 or later.
+- **A first visit downloads the page once.** The service worker saved its own copy twice more, as `/` and `/index.html`, and the second was a redirect on Cloudflare.
+- **Later visits make one request:** asking whether the page has changed.
+  - Fonts, icons and the studio's rarely used parts come from the saved copy with no request. Before, every visit fetched them again in the background.
+  - A new version copies over any part whose name (and so whose contents) didn't change, instead of downloading it again.
+- **The sample shelf is built into the page.** It used to be fetched four times on every visit, twice by the page and twice by the service worker.
+- **Longer caching:** a year for the parts named by their contents, a month for the fonts, a week for icons and guide pictures.
+
+### Fixed before release
+- The new sample shelf placeholder wasn't filled into the hosted build, so the studio stopped part way through starting. Caught by measuring. **The build now refuses any unfilled placeholder,** and **the tests now fail on code errors the app catches and logs as warnings.**
+
+### Tests
+- **New `e2e-requests`** (9 checks): every request on a first and a later visit, the saved copy, the Worker's path list and the cache times.
+
+2026-11-08 — Write a song together, by passing it back and forth
 
 ### New
 - **From and Note in the send window.** Your name, remembered on this device, and a note go inside the song link ("Can you write the chorus?").

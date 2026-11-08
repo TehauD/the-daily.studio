@@ -113,8 +113,12 @@ ${common}
 /humans.txt
   Cache-Control: no-cache
 /icons/*
-  Cache-Control: public, max-age=86400
+  Cache-Control: public, max-age=604800
 /fonts/*
+  Cache-Control: public, max-age=2592000
+/rooms/*
+  Cache-Control: public, max-age=31536000, immutable
+/guide/img/*
   Cache-Control: public, max-age=604800
 `);
 console.log('dist/ ready');

@@ -4,6 +4,11 @@ What the studio, its tutorials, its documents and its tests do **not** cover yet
 
 How to use it: before a release, move what the release closed into *Closed* with the version, and add what it opened. [RELEASE.md](RELEASE.md) has this as a checklist item. Items marked **(maintainer)** are decisions or facts only the project's owner can settle; nothing here blocks a build.
 
+## Closed in 2.52.0
+
+- Since 2.50, every request went through the Worker and counted against the free plan; now only the pages that need it do.
+- The service worker saved the page twice and re-fetched saved files on every visit, and the sample shelf was fetched four times a visit. A later visit is now one request.
+
 ## Closed in 2.50.0
 
 - The Daily has its own address, `journal.the-daily.studio`, with a page at `/journal/` that moves a journal kept there.

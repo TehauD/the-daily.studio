@@ -54,7 +54,7 @@ window.__dailyRoom = (id, make) => {
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.51.0', BUILD = '4a196bb', PARTS_N = +'114' || 0, LINES_N = +'19125' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.52.0', BUILD = 'd56553d', PARTS_N = +'114' || 0, LINES_N = +'19131' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { ghApp: { clientId: '', slug: '' },   /* Sign in with GitHub: the GitHub App's public client id and its slug (docs/GITHUB.md); empty = only the token way */
   support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://journal.the-daily.studio/' };
@@ -6103,8 +6103,14 @@ function buildTouch() {
    Hidden when the page is opened from disk or the folder is absent (CodePen, a single emailed file).
    ============================================================ */
 const SMP = { list: null, shelves: [] };
+/* 2.52: the build puts the shelf it found into the page, so listing it needs no request (and the build replaces this name) */
+const SMP_BUILT = {
+  "tracks": []
+}
+;
 async function samplesList() {
   if (SMP.list) return SMP.list;
+  if (SMP_BUILT && Array.isArray(SMP_BUILT.tracks)) return (SMP.list = SMP_BUILT.tracks);
   try {
     if (typeof fetch !== 'function' || location.protocol === 'file:') throw new Error('no fetch');
     const r = await fetch('samples/manifest.json', { cache: 'no-cache' }); if (!r.ok) throw new Error('none');

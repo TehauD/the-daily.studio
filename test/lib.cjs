@@ -65,7 +65,7 @@ async function suite(name, fn) {
     };
     const open = async (o = {}) => {
       const c = await fresh(o), p = await c.newPage(); p.on('pageerror', e => errs.push(`${name}: pageerror: ${e.message}`));
-      p.on('console', m => { if (m.type() === 'error' && !/audio input|MIDI|favicon|Failed to load resource/i.test(m.text())) errs.push(`${name}: console: ${m.text()}`); });
+      p.on('console', m => { if ((m.type() === 'error' && !/audio input|MIDI|favicon|Failed to load resource/i.test(m.text())) || (m.type() === 'warning' && /is not defined|ReferenceError|TypeError|SyntaxError/.test(m.text()))) errs.push(`${name}: console: ${m.text()}`); });      /* 2.52: a code error caught and logged as a warning still fails the test */
       p.on('response', r => { if (r.status() >= 400 && !/favicon|manifest|icons\//.test(r.url())) errs.push(`${name}: http ${r.status()} ${r.url()}`); });
       p.ctx = c;
       if (o.boot === false) return p;
