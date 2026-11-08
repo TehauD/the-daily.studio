@@ -140,7 +140,7 @@ function humSaveMenu(anchor) {
   const tk = TAKES.find(t => t.hum), box = h('div', { style: { minWidth: '240px', display: 'grid', gap: '6px' } }, h('h5', {}, 'Save to this device'),
     h('button', { class: 'btn', onclick: () => { closePop(); bounceMaster(); } }, '⤓ The whole song (WAV)'),
     tk ? h('button', { class: 'btn', onclick: () => { closePop(); dlTake(tk); } }, '⤓ My hum (WAV)') : '',
-    h('button', { class: 'btn', onclick: () => { closePop(); bounceAllParts(); } }, '⤓ Each band part (WAVs)'), exportExtras(closePop),
+    h('button', { class: 'btn', onclick: () => { closePop(); lxExportOpen(); } }, '📦 Export for mixing & mastering…'), exportExtras(closePop),
     h('button', { class: 'btn', onclick: () => { closePop(); download((S.title || 'song').replace(/\W+/g, '_') + '.mid', buildMidi()); toast('MIDI saved', 'ok'); } }, '⤓ MIDI (to open in any music app)'),
     h('div', { class: 'tiny muted' }, 'Everything is made and saved here. Nothing is uploaded. WAV saves are rendered faster than the song plays.'));
   popover(anchor, box);

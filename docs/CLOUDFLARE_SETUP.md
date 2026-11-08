@@ -10,6 +10,7 @@ Everything the site owner does in Cloudflare (and GitHub) to run the-daily.studi
 | GitHub sync, **Share looks and rigs**, the community gallery, with a pasted token | **No.** The browser talks to GitHub directly. |
 | **Sign in with GitHub** (one click instead of a token) | **Yes:** a GitHub App, two Worker secrets and the app's public id in the code (Part D). |
 | The Daily at `journal.the-daily.studio` | The custom domain (Part B). |
+| **Send with recordings** (2.54): takes travel with a song link for 7 days | **Yes:** an R2 bucket with a 7-day rule, bound to the Worker as `SHARES` (Part G). Uses Sign in with GitHub (Part D). |
 
 ---
 
@@ -130,3 +131,32 @@ This should show the policy and HSTS, and no `set-cookie`.
 for p in /.env /.git/config /.dev.vars /wrangler.jsonc /package.json /.wrangler/; do printf '%s ' "$p"; curl -s -o /dev/null -w '%{http_code}\n' "https://the-daily.studio$p"; done
 ```
 Each should print `404`. The release check (`verify:site`) already refuses to deploy any of these; this is the outside view.
+
+## Part G: Send with recordings (R2)
+
+The Worker keeps the sealed recordings people send with song links. You can't open them; the key is only in the links.
+
+1. **R2 ▸ Create bucket.** Any name, for example `the-daily-shares`. Location: automatic.
+2. **The bucket ▸ Settings ▸ Object lifecycle rules ▸ Add rule:** delete objects **7 days** after upload, for the whole bucket (no prefix). The Worker also refuses anything older, so a day's delay in the rule doesn't matter.
+3. **Bind it to the Worker.** `wrangler.jsonc` lists it under `r2_buckets` with the binding name `SHARES` and your bucket's name (`thedaily`, since 2.54.0), so every deploy keeps it. Adding it in the dashboard only would be undone by the next deploy.
+   **Keep the bucket private.** Under *Settings*: **Public access** off, no **r2.dev** address, and no **Custom Domain**. Only the Worker should read and write it; it applies the 7 days, the limits and the checks.
+4. **Check, after the deploy:**
+   ```bash
+   curl -s -X POST -H "Origin: https://the-daily.studio" https://the-daily.studio/share/put -w " %{http_code}\n"
+   ```
+   It should print `{"error":"sign-in"} 401`. If it says `not-set-up` (503), the binding is missing.
+
+**What it costs:** R2's free allowance is 10 GB stored, 1 million uploads and 10 million downloads a month, and downloads are free. The Worker refuses anything past 200 sends and 3 GB a day, and the 7-day rule deletes old ones, so at most about 21 GB is ever stored: roughly $0.20 a month above the free allowance in the worst case.
+- Set a **billing notification** (*Manage Account ▸ Billing ▸ Notifications*) at, say, $1, so you hear about anything unusual.
+- The Worker stays on the free plan.
+
+**Reports:** a **⚑ Report** lands in the bucket under `reports/<day>/` as a small JSON file. It holds:
+- the share's name;
+- the reason;
+- the GitHub account number it came from;
+- the link's key, if the reporter allowed it.
+
+Check that folder now and then (*R2 ▸ the bucket ▸ Objects*). Reports are deleted after 7 days like everything else.
+- **To remove a share:** delete its object (`<day>/<hash>/<id>`; the share's name in the report is the same with dots for slashes).
+- **To listen first** (only if the report includes the key): in the studio, 🔗 Send any song and copy its link. Add `&r=<share name>.<key>` to the end and open it. The recordings come in with that song.
+- **To stop an account:** the account number is GitHub's (`https://api.github.com/user/<number>` shows who). There's no block list yet; ask me to add one if it's ever needed.

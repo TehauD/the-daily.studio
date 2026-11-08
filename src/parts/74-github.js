@@ -216,7 +216,7 @@ const GH_B = { get st() { return CFG.gh; }, base: 'gh/base/', label: 'GitHub', e
   local: () => ghLocal(), head: () => ghHead(), read: (p, at) => ghBlob(at.files[p].sha), commit: (at, ch, msg) => ghCommit(at, ch, msg),
   takeSong: (t, asCopy) => ghTakeSong(t, asCopy), status: (t, bad) => ghStatus(t, bad), quiet: fn => { GH.quiet = true; PRJ.quiet++; try { fn(); } finally { GH.quiet = false; PRJ.quiet--; } } };
 async function ghSync(why) {
-  if (!ghOn()) return null;
+  if (!ghOn() || CFG.gh.need) return null;      /* nothing to sync until the repository can be reached (ghRecheck) */
   if (GH.busy) { GH.again = true; return GH.busy; }
   GH.busy = (async () => {
     ghStatus('Syncing…'); let report = null;
@@ -233,7 +233,7 @@ async function ghSync(why) {
 }
 async function ghSyncOnce(why) { GH.err = ''; return studioSync(GH_B, why); }
 /** after a change, sync in a little while (many quick changes become one commit); a settings change waits a little longer */
-function ghKick(ms) { if (!ghOn() || CFG.gh.auto === false || GH.quiet || PRJ.flushing) return; if (GH.timer && !ms) clearTimeout(GH.timer); else if (GH.timer) return; GH.timer = setTimeout(() => { GH.timer = 0; ghSync('auto'); }, ms || 20000); }
+function ghKick(ms) { if (!ghOn() || CFG.gh.need || CFG.gh.auto === false || GH.quiet || PRJ.flushing) return; if (GH.timer && !ms) clearTimeout(GH.timer); else if (GH.timer) return; GH.timer = setTimeout(() => { GH.timer = 0; ghSync('auto'); }, ms || 20000); }
 /** saveCfg calls this: settings changed */
 function ghCfgKick() { if (!GH.quiet && !GH.busy && !PRJ.quiet) ghKick(45000); }      /* not when a sync (this one or a folder's) is saving its own state */
 /** at start-up: back from Sign in with GitHub, or a sync once the library is loaded */
@@ -253,11 +253,23 @@ async function ghConnect(token, repo) {
   catch (e) {
     if (e.code !== 'missing') throw e;
     try { await ghApi('POST', '/user/repos', { name: repo, private: true, auto_init: true, description: 'My the-daily.studio: settings, presets, looks, notes and songs (kept in step by the app)' }); }
-    catch (e2) { throw ghErr('create', 'The repository “' + repo + '” is not there and this sign-in cannot create it. Create it on GitHub (private), give the token or the app access to it, then press Connect again.'); }
+    catch (e2) { CFG.gh.need = repo; GH.status = ''; GH.bad = false; saveCfg(); ghPaint(); throw ghErr('create', ghNeedText(repo)); }
   }
-  CFG.gh.last = null; CFG.gh.gone = []; saveCfg(); return ghSync('connect');
+  delete CFG.gh.need; CFG.gh.last = null; CFG.gh.gone = []; saveCfg(); return ghSync('connect');
 }
-function ghDisconnect() { store.set('ghtok', null); try { localStorage.removeItem('fw.ghtok'); } catch (e) { } CFG.gh.last = null; CFG.gh.owner = ''; CFG.gh.login = ''; saveCfg(); ghStatus('Not connected.'); bus.emit('github', null); }
+/** connected, but the repository can't be reached yet: it isn't there, or (signed in with the app) the app hasn't been given access to it.
+    GitHub answers both the same way, so the words cover both, and Settings shows the steps as buttons (ghPaint). */
+const ghViaApp = () => !!(ghTok() && ghTok().via === 'app');
+const ghNeedText = repo => ghViaApp() ? 'Signed in. The app can’t reach “' + repo + '” yet: give it access to that repository on GitHub (or create it first, private), then press Check again.' : 'This token can’t reach “' + repo + '”: create it on GitHub (private) and make sure the token covers it, then press Check again.';
+/** try the repository again (after the person created it or gave the app access); quiet when it simply isn't reachable yet */
+async function ghRecheck(quiet) {
+  if (!CFG.gh.need || !ghTok() || GH.checking) return; GH.checking = true;
+  try { await ghConnect(null, CFG.gh.need); if (!GH.err) toast('Connected. Your studio is in step with GitHub.', 'ok'); }
+  catch (e) { if (!quiet) ghStatus(e.message, true); if (e.code === 'auth') ghDisconnect(); }
+  finally { GH.checking = false; ghPaint(); }
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden && CFG.gh.need && ghTok()) setTimeout(() => ghRecheck(true), 600); });      /* back from GitHub's tab */
+function ghDisconnect() { delete CFG.gh.need; store.set('ghtok', null); try { localStorage.removeItem('fw.ghtok'); } catch (e) { } CFG.gh.last = null; CFG.gh.owner = ''; CFG.gh.login = ''; saveCfg(); ghStatus('Not connected.'); bus.emit('github', null); }
 /** is Sign in with GitHub set up on this site? BRAND.ghApp holds the GitHub App's public client id (part 01); the secret stays in the site's worker */
 const ghApp = () => BRAND.ghApp && BRAND.ghApp.clientId ? BRAND.ghApp : null;
 function ghSignIn() {
@@ -318,9 +330,18 @@ function ghSection() {
 }
 function ghPaint() {
   const box = GH.el; if (!box || !box.isConnected && box.parentNode) return; box.innerHTML = ''; const on = ghOn();
-  box.append(h('div', { class: 'tiny', id: 'ghStatus', style: { color: GH.bad ? 'var(--bad)' : '' } }, GH.status || (on ? 'Connected as @' + CFG.gh.login + ' · ' + CFG.gh.owner + '/' + CFG.gh.repo + (CFG.gh.lastAt ? ' · last in step ' + new Date(CFG.gh.lastAt).toLocaleString() : '') : 'Not connected. Nothing goes to GitHub until you connect.')));
+  box.append(h('div', { class: 'tiny', id: 'ghStatus', style: { color: GH.bad ? 'var(--bad)' : '' } }, GH.status || (on && CFG.gh.need ? ghNeedText(CFG.gh.need) : on ? 'Connected as @' + CFG.gh.login + ' · ' + CFG.gh.owner + '/' + CFG.gh.repo + (CFG.gh.lastAt ? ' · last in step ' + new Date(CFG.gh.lastAt).toLocaleString() : '') : 'Not connected. Nothing goes to GitHub until you connect.')));
   const add = (...xs) => box.append(...xs.filter(Boolean));      /* an optional line that is not there adds nothing (append would write "null") */
-  if (on) add(h('div', { class: 'hub-acts' },
+  const need = on && CFG.gh.need, app = ghApp();
+  if (need) {      /* one step left: the repository, as buttons rather than instructions */
+    const r = CFG.gh.need, ext = { target: '_blank', rel: 'noopener noreferrer' };
+    add(h('ol', { class: 'gh-need small', id: 'ghNeed', style: { lineHeight: 1.6, paddingLeft: '18px', margin: '8px 0' } },
+      h('li', {}, 'If you don’t have it yet: ', h('a', Object.assign({ class: 'btn', id: 'ghNeedCreate', href: 'https://github.com/new?name=' + encodeURIComponent(r) + '&visibility=private&description=' + encodeURIComponent('My the-daily.studio') }, ext), 'Create “' + r + '” on GitHub ↗'), ' (keep it private).'),
+      ghViaApp() && app && app.slug ? h('li', {}, h('a', Object.assign({ class: 'btn', id: 'ghNeedAccess', href: 'https://github.com/apps/' + encodeURIComponent(app.slug) + '/installations/new' }, ext), 'Give the app access ↗'), ': choose ', h('b', {}, 'Only select repositories'), ', then ', h('b', {}, r), '.') : h('li', {}, 'Make sure your token is for “' + r + '”, with Contents: Read and write.'),
+      h('li', {}, h('button', { class: 'btn primary', id: 'ghNeedCheck', onclick: e => { e.currentTarget.disabled = true; ghStatus('Checking…'); ghRecheck(false); } }, 'Check again'), ' (it also checks by itself when you come back to this tab).')),
+      h('div', { class: 'hub-acts' }, h('button', { class: 'btn', id: 'ghOff', onclick: () => { ghDisconnect(); ghPaint(); } }, 'Disconnect')));
+  }
+  else if (on) add(h('div', { class: 'hub-acts' },
     h('button', { class: 'btn primary', id: 'ghSyncNow', onclick: async () => { await ghSync('button'); ghPaint(); } }, '⟳ Sync now'),
     h('a', { class: 'btn', href: 'https://github.com/' + CFG.gh.owner + '/' + CFG.gh.repo, target: '_blank', rel: 'noopener noreferrer' }, 'Open on GitHub ↗'),
     h('button', { class: 'btn', id: 'ghShareBtn', onclick: () => ghShareOpen() }, '⇪ Share looks and rigs'),

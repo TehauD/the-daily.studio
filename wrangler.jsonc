@@ -18,8 +18,11 @@
     // The Worker runs only where it has work to do (2.52): The Daily's address (its "/" and "/move/"), the moving page at /journal/, Sign in
     // with GitHub, and backstage (kept off The Daily's address). Everything else, fonts, code, icons, pictures and the guide, is served as
     // static assets, which Cloudflare does not count as Worker requests. One visit to the studio is one Worker request.
-    "run_worker_first": ["/", "/index.html", "/move", "/move/", "/journal", "/journal/*", "/auth/*", "/backstage", "/backstage/*"]
+    "run_worker_first": ["/", "/index.html", "/move", "/move/", "/journal", "/journal/*", "/auth/*", "/share/*", "/backstage", "/backstage/*"]
   },
+  // Send with recordings (2.54, worker/share.mjs): sealed recordings people send with song links, kept 7 days (the bucket's lifecycle rule).
+  // The bucket stays private: no public access, no r2.dev address and no custom domain on it. Only the Worker reads and writes it.
+  "r2_buckets": [{ "binding": "SHARES", "bucket_name": "thedaily" }],
   // The site and The Daily's own address. Both are attached on deploy when the domain's DNS is on Cloudflare (docs/HOSTING.md).
   "routes": [
     { "pattern": "the-daily.studio", "custom_domain": true },

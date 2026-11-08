@@ -6,7 +6,7 @@ const { fake } = require('./fake-github.cjs');
 const SHEET = '[Verse]\nG        D\nLanterns on the harbour wall\nEm       C\nCalling all the boats back in\n[Chorus]\nC   G   D   Em\nHold on, hold on';
 
 suite('e2e-github', async t => {
-  const { ok, wait, poll } = t, F = fake({ users: { tokA: 'tester', tokNo: 'tester', appTok: 'tester', appTok2: 'tester' }, noCreate: ['tokNo'] });
+  const { ok, wait, poll } = t, F = fake({ users: { tokA: 'tester', tokNo: 'tester', appTok: 'tester', appTok2: 'tester', appNo: 'tester' }, noCreate: ['tokNo', 'appNo'], noAccess: { appNo: ['tester/my-daily-studio'] } });
   const dev = async () => { const p = await t.open({ boot: false }); await F.install(p.ctx); await t.boot(p); return p; };
   const A = await dev();
   const ev = (p, f, a) => p.evaluate(f, a);
@@ -84,7 +84,19 @@ suite('e2e-github', async t => {
   const bad = await ev(B, async () => { const D = window.__daily; localStorage.setItem('fw.ghtok', JSON.stringify({ t: 'nope', via: 'token' })); await D.ghSync('button'); const e = D.GH.err; localStorage.setItem('fw.ghtok', JSON.stringify({ t: 'tokA', via: 'token' })); return e; });
   ok(/did not accept the token/.test(bad || ''), 'a token GitHub refuses is named as such (' + bad + ')');
   const nc = await ev(B, async () => { const D = window.__daily; try { await D.ghConnect('tokNo', 'another-repo'); return 'connected?'; } catch (e) { return e.message; } });
-  ok(/Create it on GitHub \(private\)/.test(nc), 'a token that may not create the repository says how to make it (' + nc.slice(0, 80) + '…)');
+  ok(/create it on GitHub \(private\)/.test(nc), 'a token that may not create the repository says how to make it (' + nc.slice(0, 80) + '…)');
+  /* signed in with the app, but the app hasn't been given access to the repository yet (2.53.2): GitHub says "not found" for a repository
+     that is there, so the words and the buttons cover both, and Check again connects once access is given */
+  const na = await ev(B, async () => { const D = window.__daily; localStorage.setItem('fw.ghtok', JSON.stringify({ t: 'appNo', via: 'app' })); try { await D.ghConnect(null, 'my-daily-studio'); return 'connected?'; } catch (e) { return e.message; } });
+  ok(/can’t reach “my-daily-studio” yet: give it access/.test(na) && !/is not there/.test(na), 'signed in with the app, a repository it can’t reach is not called missing: it says to give the app access (' + na.slice(0, 70) + '…)');
+  await ev(B, () => window.__daily.openSettings('github')); await wait(400);
+  const NB = await ev(B, () => ({ list: !!document.getElementById('ghNeed'), access: (document.getElementById('ghNeedAccess') || {}).href, create: (document.getElementById('ghNeedCreate') || {}).href, check: !!document.getElementById('ghNeedCheck'), sync: !!document.getElementById('ghSyncNow') }));
+  ok(NB.list && /\/apps\/tehaud-the-daily-studio\/installations\/new$/.test(NB.access || '') && /github\.com\/new\?name=my-daily-studio&visibility=private/.test(NB.create || '') && NB.check && !NB.sync, 'Settings shows the step as buttons: create it, give the app access, Check again (and no Sync now until it can be reached)');
+  const calls0 = F.calls(); await ev(B, () => window.__daily.ghKick(10)); await wait(300);
+  ok(F.calls() === calls0, 'while the repository can’t be reached, changes don’t try to sync');
+  F.noAccess.appNo = []; await ev(B, () => document.getElementById('ghNeedCheck').click());
+  ok(await poll(() => ev(B, () => !window.__daily.CFG.gh.need && !!document.getElementById('ghSyncNow')), 8000), 'once the app has access, Check again connects and Sync now is back');
+  await ev(B, () => { const d = document.getElementById('settings'); if (d) d.close(); });
   await ev(B, async () => { const D = window.__daily; await D.ghConnect('tokA', 'my-daily-studio'); });
 
   /* ---- Sign in with GitHub: the return, and renewal ---- */

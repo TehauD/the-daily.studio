@@ -6,10 +6,12 @@
      GET  /auth/github/callback?code&state   → 302 to /#gh=<token, renewal token, expiry times, state>   (the part after # never
                                                reaches any server; the page checks the state, keeps the token and clears the address)
      POST /auth/github/refresh  { r }         → { t, r, exp, rexp }   a new token when the old one runs out (from this site only)
+   /share/* (2.54) keeps encrypted recordings for 7 days for song links (worker/share.mjs, in the R2 bucket bound as SHARES).
    Secrets (npx wrangler secret put …): GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET. Without them both routes say so and the site works as before.
    The Daily (2.50) has its own address, journal.<site>: there "/" is The Daily and "/move/" receives a journal handed over from the old
    address. On the site itself, /journal/ is a page that moves a journal kept there to the new address; the receiving page is not served
    here. Everything else is the site, as before. */
+import { share } from './share.mjs';
 const NO_STORE = { 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer', 'X-Content-Type-Options': 'nosniff' };
 const TOKEN_URL = 'https://github.com/login/oauth/access_token';
 
@@ -36,6 +38,7 @@ export async function handle(req, env, fetchFn = fetch, now = Date.now()) {
   }
   if (u.pathname === '/journal' || u.pathname === '/journal/' || u.pathname === '/journal/index.html') return asset(env, req, u, '/journal/moving');
   if (/^\/journal\/move(\.html)?$/.test(u.pathname)) return asset(env, req, u, '/journal/not-here');      /* the receiving page belongs to the new address only */
+  if (u.pathname.startsWith('/share/')) return share(req, env, u, fetchFn, now);      /* Send with recordings (2.54, worker/share.mjs) */
   if (u.pathname === '/auth/github/callback') {
     const back = frag => new Response(null, { status: 302, headers: Object.assign({ Location: '/#' + frag }, NO_STORE) });
     if (!ready(env)) return back('gh-error=not-set-up');

@@ -15,9 +15,10 @@ the-daily.studio is free software that runs in your web browser. By using it, yo
 ## Sharing what you make
 
 - **You are the publisher.** Videos, audio files, tracks, share pages and exports are made on your own device. The project does not upload, host, publish, store, review or moderate them. When you send, post or host one, you are the person publishing it.
+- **One exception: recordings sent with a song link (2.54).** If you tick **Include my recordings**, the project keeps them on this site, encrypted, for 7 days, so the people you send the link to can open them. You need to be signed in with GitHub, and there's a daily limit. Anyone with the link can report them. The site's owner may remove recordings, or stop an account from sending, when a report shows they break these terms. You are still the one sharing them, and the rules below apply to them too.
 - **Share only what you have the right to share.** Share your own songs, words and recordings, or other people's work with their permission. Posting a cover, someone else's lyrics or a backing track you did not make usually needs permission or a licence from the people who own them (songwriters, publishers, record labels). Many platforms have their own rules and licences for music; following them is up to you.
 - **Do not use the app to infringe anyone's rights**, or to make or share anything unlawful, harmful or misleading.
-- **The project cannot take down what it never had.** If someone asks you to remove something you shared, that is between you and them.
+- **The project cannot take down what it never had.** If someone asks you to remove something you shared, that is between you and them. Recordings sent with a link are the exception: report them with **⚑ Report** in the link's window, or through the contact in [SECURITY.md](SECURITY.md), and the site's owner can remove them.
 - The app asks you to confirm that you have the right to share before you share for the first time on a device, shows a reminder each time, and puts a notice in every share page it makes.
 
 ## Tips

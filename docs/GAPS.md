@@ -4,6 +4,16 @@ What the studio, its tutorials, its documents and its tests do **not** cover yet
 
 How to use it: before a release, move what the release closed into *Closed* with the version, and add what it opened. [RELEASE.md](RELEASE.md) has this as a checklist item. Items marked **(maintainer)** are decisions or facts only the project's owner can settle; nothing here blocks a build.
 
+## Closed in 2.55.0
+
+- **Lanes couldn't be taken to another app lined up.** Band parts went through the master limiter, stems started where the track did, and takes were bare clips. Now every lane saves from the first beat, without the master section, and 📦 Export makes the whole set with a premaster and a README.
+- **Relative links could pile up** when the offline copy served the studio at another address. Fixed in the service worker and in the page.
+
+## Closed in 2.54.0
+
+- **Song links couldn't carry audio:** they now can, sealed in the browser and kept 7 days (Send with recordings).
+- **There was no takedown route:** recordings in links have **⚑ Report**, and the owner can remove them (CLOUDFLARE_SETUP.md, Part G).
+
 ## Closed in 2.53.1
 
 - The site had a second copy at its `workers.dev` address. That address and the preview addresses are off; `verify:site` keeps them off and fails a release if a private file (`.env`, `.dev.vars`, a key, a Wrangler file) is committed or deployed.
@@ -99,6 +109,17 @@ How to use it: before a release, move what the release closed into *Closed* with
 - The **Stage** panel's prompter and the lower third have none of Perform's layout choices.
 - Sections can be reordered with ↑ ↓ but not dragged on the map.
 
+### Lanes out (opened by 2.55)
+- **Dragging straight into another web app** (BandLab) depends on the browser passing a file from one page to another. It's tested in the page, not across two real windows. The desktop or the folder always works.
+- **MIDI out of the band parts** (for replacing a sound in a DAW) isn't exported with the lanes.
+- **The other app's tempo** has to be set by hand from the README; a tempo map in the files (BWF or an `.als` or `.dawproject` file) would set it automatically.
+- **Sidechain ducking** keyed by the kick isn't heard on a bass lane saved on its own (the kick isn't playing), so it sounds a little fuller than in the mix.
+
+### Send with recordings (opened by 2.54)
+- **Browsers:** Safari before 26 and older browsers can't compress or open the recordings (no WebCodecs audio). The song still opens, and the window says why. A fallback (16-bit WAV at a lower rate) would cover them at four to eight times the size.
+- **Reports** are files in the bucket that the owner has to look at; there's no notification or block list yet.
+- **Recordings go as they are now:** a take can't be sent on its own, and the stems of a backing track aren't sent.
+
 ### Writing together (opened by 2.51)
 - Each round of a song passed back and forth opens as a new song. The rounds aren't gathered into one song with versions yet, so someone who passes a song many times gets many copies.
 - Two people changing the same section at once aren't merged: the later round simply carries its own version.
@@ -128,5 +149,5 @@ How to use it: before a release, move what the release closed into *Closed* with
 - **MediaPipe models:** confirm Google's terms before self-hosting or redistributing `selfie_segmenter.tflite` (and the hand model).
 - **Patents:** none searched. The methods are decades old and the early patents have run their term; a freedom-to-operate opinion is needed before licensing the code commercially as a product.
 - **Trademark:** no search for "the-daily.studio" or "The Daily".
-- **Takedown contact:** none, if the site becomes a public product.
+- **Takedown contact:** recordings in links have ⚑ Report (2.54); for everything else, the contact is SECURITY.md's (GitHub). A plain email address would help a non-technical person.
 - **AI-assisted authorship:** how it affects copyright differs by country; ask a lawyer before a commercial launch.

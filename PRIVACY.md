@@ -1,6 +1,6 @@
 # Privacy
 
-**the-daily.studio collects nothing: no server keeps your data, and there is no account of its own, no analytics, no cookies and no advertising.** What you play, sing, record, type or drop in is processed in your browser and stays on your device. Nothing you make is uploaded.
+**the-daily.studio collects nothing: no server keeps your data, and there is no account of its own, no analytics, no cookies and no advertising.** What you play, sing, record, type or drop in is processed in your browser and stays on your device. Nothing you make is uploaded, with one exception you choose each time: recordings you send with a song link (2.54) are kept on this site, encrypted so the site cannot open them, for 7 days (item 6 below).
 
 That sentence is a claim about how the software behaves, so this page also says exactly what *can* travel over the network, to whom, and when. Last checked against version 2.47.0 with `test/e2e-privacy.cjs`, whose session now includes the beats, Song build, a song link and vocal tuning (see [How this is checked](#how-this-is-checked)).
 
@@ -49,6 +49,13 @@ Clearing the site's data in your browser, or **Settings ▸ Data ▸ Reset…**,
 
 5. **Song links (2.40): nothing is sent.** **🔗 Send as a link** writes your song (chords, words, tab, the beat, tempo and key) into the link itself, after the `#`. Browsers never send the part after `#` to any server, so the song goes only where you send the link: Cloudflare sees a visit to the-daily.studio but not the song. Opening such a link reads it in the page, removes it from the address, and asks before opening it as a new song. Anyone you send it to can read the song, and so can any app the link passes through (a chat app's link preview, for example), so share it like you would the words themselves. Since 2.51 a link can also carry the name and note you type in the send window and a short history of who changed which sections and when (the names people gave, never an account). It all stays inside the link, like the song.
 
+6. **Recordings sent with a song link (2.54): only when you tick it, encrypted, for 7 days.** In the send window, **🎙 Include my recordings** compresses the open song's takes in your browser, packs them with what each take is (name, kind, place in the song, level, pan, effects), and **encrypts the package in your browser** with a new random key. Only then is it sent to this site, which keeps it in Cloudflare's R2 storage for 7 days and then deletes it (you can **Take them back** sooner).
+   - **The key** goes into the link after the `#`, so it never reaches this site, Cloudflare or anyone you didn't give the link to. Without it the stored package can't be opened by anyone, including the site's owner.
+   - **To send,** you must be signed in with GitHub. The site asks GitHub which account is sending, once, with your sign-in, and keeps that account's number with the package, so abuse can be traced and the daily limit applied. It is deleted with the package. Your GitHub token is not kept.
+   - **Not sent:** your backing track, stems, pictures and videos.
+   - **Opening such a link** fetches the package from this site (Cloudflare sees that request, as with any visit) and unlocks it in your browser.
+   - **⚑ Report** sends the site's owner the reason you type and, only if you leave the box ticked, the link's key, so the owner can listen and check. Reports are kept with the package's account number for 7 days.
+
 Nothing else. The page cannot contact any other site: its security policy allows only this site plus the hosts above (GitHub's API only for what you connect or open), and the test below fails if anything else is attempted.
 
 ## AI agents in your browser
@@ -61,7 +68,7 @@ An agent is software you run, and it usually works with an AI service. When it r
 
 ## What is kept, and for how long
 
-- **By this project: nothing.** No server of this project keeps or receives your data. (The site's Worker only passes GitHub's sign-in code to GitHub and the token back to you, if you use Sign in with GitHub; it stores nothing.)
+- **By this project: nothing, except recordings you send with a song link.** Those are kept encrypted for 7 days, with the sending GitHub account's number, then deleted (item 6). Otherwise no server of this project keeps or receives your data; the site's Worker only passes GitHub's sign-in code to GitHub and the token back to you, if you use Sign in with GitHub.
 - **In your browser:** the items in the table above, until you remove them.
 - **By your host and the services above:** whatever their own logs keep, under their own policies. A **synced folder**, if you choose one in Settings ▸ Folder sync (Chrome and Edge), holds your studio (and, if you turn it on, a `.daily-song.zip` of each song); it is a folder on your own computer that the browser was given access to, and you can turn it off at any time. A cloud drive that folder is in keeps it under that drive's own policy.
 - **Persistent storage.** The app may ask the browser to keep its library (the browser decides). Safari can still clear a site's data after about a week without a visit unless the site is added to the Home Screen; the app tells you when that applies.
