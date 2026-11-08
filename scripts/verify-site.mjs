@@ -48,6 +48,7 @@ for (const f of ['journal/moving.html', 'journal/move.html']) { const t = exists
 { const cl = rd('../CHANGELOG.md').split('\n'), bare = cl.filter(l => /^\d{4}-\d{2}-\d{2} — /.test(l)), top = (cl.find(l => /^## \d/.test(l)) || '').match(/^## (\d+\.\d+\.\d+)/);
   ok(!bare.length && top && top[1] === JSON.parse(rd('../package.json')).version, 'every CHANGELOG release heading has its version, and the newest is package.json\'s' + (bare.length ? ': ' + bare[0].slice(0, 50) : '')); }
 const wr = rd('../wrangler.jsonc');
+ok(/"binding":\s*"SHARES"/.test(wr), 'the Worker has its bucket for shared recordings (SHARES)');
 ok(/"\/share\/\*"/.test(wr) && /\(journal\|api\|auth\|share\)/.test(rd('sw.js')), 'shared recordings (2.54) go through the Worker, and the service worker never caches them'); ok(/"workers_dev":\s*false/.test(wr) && /"preview_urls":\s*false/.test(wr), 'the site is served only at its own addresses: no workers.dev copy, no preview addresses');
 ok(!/document\.cookie/.test(rd('index.html')) && !/document\.cookie/.test(j), 'neither the studio nor The Daily uses cookies, so nothing is shared between their two addresses');
 ok(!/\/journal\//.test(rd('sitemap.xml')), 'the sitemap no longer lists /journal/ (The Daily has its own address)');

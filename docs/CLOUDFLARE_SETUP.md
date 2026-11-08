@@ -138,7 +138,8 @@ The Worker keeps the sealed recordings people send with song links. You can't op
 
 1. **R2 ▸ Create bucket.** Any name, for example `the-daily-shares`. Location: automatic.
 2. **The bucket ▸ Settings ▸ Object lifecycle rules ▸ Add rule:** delete objects **7 days** after upload, for the whole bucket (no prefix). The Worker also refuses anything older, so a day's delay in the rule doesn't matter.
-3. **Bind it to the Worker.** `wrangler.jsonc` lists it under `r2_buckets` with the binding name `SHARES` and your bucket's name, so every deploy keeps it. (Adding it in the dashboard only would be undone by the next deploy.)
+3. **Bind it to the Worker.** `wrangler.jsonc` lists it under `r2_buckets` with the binding name `SHARES` and your bucket's name (`thedaily`, since 2.54.0), so every deploy keeps it. Adding it in the dashboard only would be undone by the next deploy.
+   **Keep the bucket private.** Under *Settings*: **Public access** off, no **r2.dev** address, and no **Custom Domain**. Only the Worker should read and write it; it applies the 7 days, the limits and the checks.
 4. **Check, after the deploy:**
    ```bash
    curl -s -X POST -H "Origin: https://the-daily.studio" https://the-daily.studio/share/put -w " %{http_code}\n"

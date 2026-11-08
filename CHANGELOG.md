@@ -18,7 +18,7 @@ All notable changes to the-daily.studio (earlier versions were released under th
 - **⚑ Report** on a link with recordings sends the reason to the site's owner, with the link's key if the person agrees, so the owner can listen and remove it.
 
 ### The Worker (`worker/share.mjs`)
-- New routes: `POST /share/put`, `GET /share/<ref>`, `POST /share/delete` and `POST /share/report`. They're stored in an R2 bucket bound as `SHARES`, with the bucket's 7-day lifecycle rule; the Worker also refuses anything older.
+- New routes: `POST /share/put`, `GET /share/<ref>`, `POST /share/delete` and `POST /share/report`. They're stored in the private R2 bucket `thedaily`, bound as `SHARES`, with the bucket's 7-day lifecycle rule; the Worker also refuses anything older.
 - **Limits**, so nobody can run up the bill or use it as free file storage:
   - 25 MB a send;
   - 10 sends a day for each GitHub account;
