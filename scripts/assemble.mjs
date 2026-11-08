@@ -23,6 +23,12 @@ if (existsSync(join(root, 'samples'))) cpSync(join(root, 'samples'), join(out, '
 cpSync(join(root, 'journal', 'index.html'), join(out, 'journal', 'index.html'));
 /* 2.50: the page that moves a journal from the old address (served at /journal/ on the site) and the one that receives it (served at /move/ on
    journal.<site>); each allows only its own script, by hash */
+/* Drops (2.60): the public page and the owner's review page, each with one script allowed by its hash */
+mkdirSync(join(out, 'drops', 'review'), { recursive: true });
+for (const [f, to] of [['index.html', 'drops/index.html'], ['review.html', 'drops/review/index.html']]) {
+  const src = readFileSync(join(root, 'drops', f), 'utf8'), m = src.match(/<script>([\s\S]*?)<\/script>/); if (!m || !src.includes('__SCRIPT_HASH__')) throw new Error('drops/' + f + ' needs one <script> and the __SCRIPT_HASH__ placeholder');
+  writeFileSync(join(out, to), src.replace('__SCRIPT_HASH__', 'sha256-' + createHash('sha256').update(m[1]).digest('base64')));
+}
 for (const f of ['moving.html', 'move.html']) {
   const src = readFileSync(join(root, 'journal', f), 'utf8'), m = src.match(/<script>([\s\S]*?)<\/script>/); if (!m || !src.includes('__SCRIPT_HASH__')) throw new Error('journal/' + f + ' needs one <script> and the __SCRIPT_HASH__ placeholder');
   writeFileSync(join(out, 'journal', f), src.replace('__SCRIPT_HASH__', 'sha256-' + createHash('sha256').update(m[1]).digest('base64')));

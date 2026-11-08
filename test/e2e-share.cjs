@@ -40,7 +40,7 @@ suite('e2e-share', async t => {
   await p.click('#shareOkChk');
   const [dl] = await Promise.all([p.waitForEvent('download', { timeout: 10000 }), p.click('#shareOkGo')]);
   const html = fs.readFileSync(await dl.path(), 'utf8');
-  ok(/_share\.html$/.test(dl.suggestedFilename()) && (await p.evaluate(() => window.__daily.CFG.shareOk)) === 2, 'ticking it and Continue makes the share page, and it is remembered (' + dl.suggestedFilename() + ')');
+  ok(/_share\.html$/.test(dl.suggestedFilename()) && (await p.evaluate(() => window.__daily.CFG.shareOk)) === 3, 'ticking it and Continue makes the share page, and it is remembered (' + dl.suggestedFilename() + ')');
   const data = JSON.parse(html.match(/<script type="application\/json" id="d">([\s\S]*?)<\/script>/)[1]);
   ok(/<audio id="au"[^>]*src="data:audio\//.test(html) && data.kind === 'audio', 'the page holds the track itself (one file, nothing to fetch)');
   ok(data.secs.map(s => s.name).join() === 'Verse 1' && Math.abs(data.secs[0].t) < .01 && Math.abs(data.dur - 3) < .05, 'only the sections the track covers, timed from the start of the track (' + data.secs.map(s => s.name + '@' + s.t.toFixed(2)).join(', ') + ')');

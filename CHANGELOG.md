@@ -2,6 +2,43 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.60.0 — 2026-11-08 — Drops: new music from the studio, public for 7 days, after review
+
+### New
+- **🌍 Drop it** (Finish it, once the song is mastered). Share a finished song publicly, for 7 days.
+  - **What's sent:** the master, compressed in your browser to an Ogg Opus file (128 kbps stereo, made with WebCodecs, playable in every current browser), with a title, the name you choose, a note and, if you like, the song itself as a link (words, chords and the band; no recordings).
+  - **Review first:** it waits, privately, for the site's owner to listen. Once approved, it's on **the-daily.studio/drops** for 7 days, then gone.
+  - **Rules:** you tick that the music is yours, and the sharing terms ask once more. A song still played over someone else's record can't be dropped (✦ Make it ours first). Sending needs Sign in with GitHub, with up to 3 drops a day per account.
+- **`/drops/`, the public page:** each drop with its title, who made it, the note, a player, how long it has left, a link that opens the song in the studio (to make your own version), and ⚑ Report.
+- **`/drops/review/`, for the site's owner:** listen to each waiting drop, then Approve (public for 7 days) or Reject (deleted), and take down anything live. It uses the GitHub sign-in from the studio on that browser; only the owner's GitHub account (`OWNER_GITHUB_ID`) is let in.
+
+### The Worker (`worker/drops.mjs`)
+- **Routes:** `POST /drops/api/put`, `GET /drops/api/list` (cached a minute), `GET /drops/a/<id>`, and for the owner `review`, `pending/<id>`, `decide` and `remove`; plus `report`.
+- **Storage:** waiting drops and reports stay in the private bucket, approved ones go to a public bucket (`DROPS`), and 7-day rules on both delete them.
+- **Checks:** only Ogg audio is accepted, up to 15 MB. Titles, names and notes are plain text (`<` and `>` removed), and a link that isn't a song link is dropped.
+- **Limits:** 3 drops a day for each account (counted even after a drop is approved or rejected) and 100 waiting at once.
+- **Off until set up:** without the public bucket bound, every route says "not set up". The owner's account number is already in `wrangler.jsonc`.
+
+### Terms
+- **The sharing terms are version 3,** asked once more: songs you choose to drop are public for 7 days after review, can be reported, and can be removed by the site's owner. PRIVACY.md and TERMS.md say the same.
+
+### Tests
+- **`e2e-drops` (16 checks):**
+  - the Ogg file is real audio of the master's length;
+  - the terms ask first, and Drop it waits for "this is mine";
+  - a drop waits privately, and nothing is public before approval;
+  - the review page lists it, its markup arrives as plain text, and the owner can listen;
+  - Approve publishes it;
+  - the public page lists it as text with "7 days left", its audio plays from this site, and it links to the song;
+  - a song over a record can't be dropped.
+- **`worker.test` (63 checks, 17 new):**
+  - off until set up;
+  - sign-in, Ogg only, title and name required, markup and non-song links removed;
+  - nothing public before approval, and only the owner reviews and listens;
+  - approve, the public list (address, end time, caching), gone after 7 days;
+  - report, remove, reject;
+  - 3 a day counting decided drops, and another site can't drop.
+
 ## 2.59.0 — 2026-11-08 — Load your copy, and Make it ours
 
 ### New

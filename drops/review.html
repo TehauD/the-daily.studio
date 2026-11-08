@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src '__SCRIPT_HASH__'; style-src 'unsafe-inline'; connect-src 'self'; media-src 'self' blob: https://drops.the-daily.studio; base-uri 'none'; form-action 'none'">
+<title>Drops review · the-daily.studio</title>
+<style>:root{color-scheme:light dark}body{margin:0;font:15px/1.5 "Segoe UI",system-ui,sans-serif;background:Canvas;color:CanvasText}main{max-width:52rem;margin:0 auto;padding:20px 16px 40px}
+.it{border:1px solid #8884;border-radius:12px;padding:12px 14px;margin:0 0 10px}.it h3{margin:0}.m{opacity:.75;font-size:.9rem}.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:6px}
+button{font:inherit;padding:6px 12px;border-radius:8px;border:1px solid #8886;background:transparent;color:inherit;cursor:pointer}button.ok{background:#1f7a4d;color:#fff;border-color:#1f7a4d}button.no{border-color:#c0392b;color:#c0392b}audio{width:100%;margin-top:6px}</style></head>
+<body><main>
+<h1>Drops review</h1><p class="m">For the site’s owner. Listen, then approve (public for 7 days) or reject (deleted). Uses the GitHub sign-in from the studio on this browser.</p>
+<p id="say" class="m" aria-live="polite">Loading…</p><h2>Waiting</h2><div id="pend"></div><h2>Live</h2><div id="live"></div>
+</main>
+<script>
+(() => {
+  'use strict';
+  const $ = id => document.getElementById(id), el = (t, cls, txt) => { const e = document.createElement(t); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
+  let tok = ''; try { tok = (JSON.parse(localStorage.getItem('fw.ghtok') || 'null') || {}).t || ''; } catch (e) { }
+  const api = (path, body) => fetch('../api/' + path, { method: 'POST', headers: { Authorization: 'Bearer ' + tok, 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
+  const load = () => api('review').then(async r => {
+    if (r.status === 503) { $('say').textContent = 'Drops isn’t set up yet (docs/CLOUDFLARE_SETUP.md, Part H).'; return; }
+    if (r.status === 401 || r.status === 403) { $('say').textContent = 'Sign in with GitHub in the studio on this browser, as the site’s owner, then reload.'; return; }
+    const j = await r.json(); $('say').textContent = j.pending.length + ' waiting · ' + j.live.length + ' live'; $('pend').textContent = ''; $('live').textContent = '';
+    j.pending.forEach(d => {
+      const c = el('div', 'it'); c.append(el('h3', '', d.t), el('div', 'm', 'by ' + d.a + ' · GitHub ' + (d.login || d.u) + ' · ' + Math.round((d.size || 0) / 1024) + ' kB' + (d.d ? ' · ' + Math.floor(d.d / 60) + ':' + String(d.d % 60).padStart(2, '0') : '')));
+      if (d.n) c.append(el('p', '', d.n)); const row = el('div', 'row'), au = el('audio'); au.controls = true;
+      const lis = el('button', '', '▶ Load to listen'); lis.onclick = async () => { lis.disabled = true; const r = await fetch('../api/pending/' + d.id, { headers: { Authorization: 'Bearer ' + tok } }); if (r.ok) { au.src = URL.createObjectURL(await r.blob()); c.append(au); au.play().catch(() => { }); } lis.remove(); };
+      const ok = el('button', 'ok', 'Approve: public for 7 days'), no = el('button', 'no', 'Reject: delete');
+      ok.onclick = () => api('decide', { id: d.id, ok: true }).then(load); no.onclick = () => { if (confirm('Delete “' + d.t + '”?')) api('decide', { id: d.id, ok: false }).then(load); };
+      row.append(lis, ok, no); c.append(row); $('pend').append(c);
+    });
+    if (!j.pending.length) $('pend').append(el('p', 'm', 'Nothing waiting.'));
+    j.live.forEach(d => { const c = el('div', 'it'); c.append(el('h3', '', d.t), el('div', 'm', 'by ' + d.a + ' · GitHub ' + (d.login || d.u) + ' · until ' + new Date(d.until).toLocaleString())); const rm = el('button', 'no', 'Take it down'); rm.onclick = () => { if (confirm('Take down “' + d.t + '”?')) api('remove', { id: d.id }).then(load); }; const row = el('div', 'row'); row.append(rm); c.append(row); $('live').append(c); });
+    if (!j.live.length) $('live').append(el('p', 'm', 'Nothing live.'));
+  }).catch(() => { $('say').textContent = 'The review list could not be loaded.'; });
+  load();
+})();
+</script>
+</body></html>

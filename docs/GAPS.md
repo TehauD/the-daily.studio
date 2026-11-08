@@ -4,6 +4,10 @@ What the studio, its tutorials, its documents and its tests do **not** cover yet
 
 How to use it: before a release, move what the release closed into *Closed* with the version, and add what it opened. [RELEASE.md](RELEASE.md) has this as a checklist item. Items marked **(maintainer)** are decisions or facts only the project's owner can settle; nothing here blocks a build.
 
+## Closed in 2.60.0
+
+- **No community page.** Drops is a public showcase, reviewed first and gone after 7 days. It's switched on by the owner (CLOUDFLARE_SETUP.md, Part H).
+
 ## Closed in 2.59.0
 
 - **Two people working over the same famous song** had no way to line up their own copies. Load your copy does, from a 400-byte fingerprint.
@@ -129,6 +133,14 @@ How to use it: before a release, move what the release closed into *Closed* with
 ### Song structure (opened by 2.48)
 - The **Stage** panel's prompter and the lower third have none of Perform's layout choices.
 - Sections can be reordered with ↑ ↓ but not dragged on the map.
+
+### Drops (opened by 2.60)
+- **Off until the owner sets it up** (public bucket, copyright agent, takedown email: CLOUDFLARE_SETUP.md, Part H).
+- **The review queue doesn't notify you.** Check /drops/review/.
+- **No block list:** an account can be stopped only by declining its drops.
+- **No reactions, comments or "versions of this"** on the public page yet. The link to the song is how people answer.
+- **The public page isn't in search engines (`noindex`).** Drops come and go; turn indexing on if you want it.
+- **No cover art.**
 
 ### Load your copy (opened by 2.59)
 - **Only the start is matched,** not the speed. A copy at a slightly different speed (a sped-up upload) lines up at the start and drifts; the studio doesn't stretch it yet.

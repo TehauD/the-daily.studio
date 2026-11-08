@@ -61,6 +61,13 @@ Each file starts its **own** static server, its own Chromium (fake microphone an
 | `e2e-finish.cjs` | Finish it (2.57):
 | `e2e-comments.cjs` | Comments and the lyric helper (2.58):
 | `e2e-yourcopy.cjs` | Load your copy and Make it ours (2.59), with a made-up 48-second record:
+| `e2e-drops.cjs` | Drops (2.60), through the site's real Worker with private and public in-memory buckets:
+  - the Ogg file plays back at the master's length;
+  - the sharing terms ask first, and Drop it waits for "this is mine";
+  - a drop waits privately, and the public page shows nothing before approval;
+  - the review page lists it, its markup arrives as plain text, and the owner listens and approves;
+  - the public page lists it as text with "7 days left", plays it from this site, and links to the song;
+  - a song over a record can't be dropped. |
   - the fingerprint (about 530 characters) and the link carrying it;
   - ♪ Load your copy offered;
   - a copy 2.5 s later and 3 dB quieter lining up at exactly +2.5 s, with the song unchanged;

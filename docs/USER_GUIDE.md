@@ -6,6 +6,14 @@ Contents: [Whole song and Perform layouts](#-the-whole-song-and-perform-your-way
 
 ---
 
+## 🌍 Drops (2.60)
+
+When a song is finished (✦ Finish it ▸ ✦ Master it), press **🌍 Drop it (7 days)**:
+- Give it a title, the name to show and a note. Choose whether to include the song itself, so listeners can open it in the studio and make their own version.
+- Tick that the music is yours, then **🌍 Drop it**.
+- The site's owner listens first. Once it's approved, it's on **the-daily.studio/drops** for 7 days, then it's gone. Your own copy, versions and release package stay with you.
+- You need to be signed in with GitHub, and you can drop up to 3 songs a day. A song still played over someone else's record can't be dropped: press ✦ Make it ours first.
+
 ## ♪ Load your copy, and ✦ Make it ours (2.59)
 
 **When someone sends you a song played over a record,** the record isn't sent; it's someone else's recording. Open the song, then press **♪ Load your copy of "…"** in the song bar and pick your own file of that record. It lines itself up with the song, even if your copy starts earlier or later. If it's a different recording, the studio says so.

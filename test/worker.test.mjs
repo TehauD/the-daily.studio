@@ -2,6 +2,7 @@
    Run: node test/worker.test.mjs */
 import { handle, b64url } from '../worker/index.mjs';
 import { SHARE, shareDay } from '../worker/share.mjs';
+import { DROP } from '../worker/drops.mjs';
 import { fakeR2 } from './fake-r2.mjs';
 let fails = 0, n = 0; const ok = (c, m) => { n++; console.log((c ? 'ok   ' : 'FAIL ') + m); if (!c) fails++; };
 const SITE = 'https://the-daily.studio', ENV = { GITHUB_CLIENT_ID: 'Iv1.abc', GITHUB_CLIENT_SECRET: 'shh', ASSETS: { fetch: r => new Response('asset ' + new URL(r.url).pathname) } };
@@ -96,5 +97,36 @@ ok(b64url('é✓') === btoa(String.fromCharCode(...new TextEncoder().encode('é�
   r = await del(J.ref, 'tokA'); ok(r.status === 200 && !R2.m.has(key), 'the sender can take a share back');
   r = await handle(new Request(SITE + '/share/' + J.ref), SENV, ghU, NOW); ok(r.status === 404, 'and then the link’s recordings are gone');
   r = await handle(new Request(SITE + '/share/put'), SENV, ghU, NOW); ok(r.status === 404 || r.status === 405, 'GET on the upload route stores nothing');
+}
+/* ---- Drops (2.60): /drops/api/* ---- */
+{
+  const PRIV = fakeR2(), PUB = fakeR2(), NOW = Date.UTC(2026, 10, 9, 12), DENV = Object.assign({}, ENV, { SHARES: PRIV, DROPS: PUB, OWNER_GITHUB_ID: '1', DROPS_URL: 'https://drops.the-daily.studio' });
+  const users = { tokOwner: { id: 1, login: 'TehauD' }, tokA: { id: 101, login: 'artist' } };
+  const ghU = async (url, init) => { const t = String((init.headers || {}).Authorization || '').replace('Bearer ', ''); return users[t] ? new Response(JSON.stringify(users[t]), { headers: { 'Content-Type': 'application/json' } }) : new Response('{}', { status: 401 }); };
+  const b64 = o => Buffer.from(JSON.stringify(o)).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  const ogg = (n = 200) => { const u = new Uint8Array(n); u.set([0x4f, 0x67, 0x67, 0x53]); return u; };
+  const call = (path, o = {}) => handle(new Request(SITE + path, { method: o.method || 'POST', headers: Object.assign({ Origin: SITE }, o.tok ? { Authorization: 'Bearer ' + o.tok } : {}, o.meta ? { 'X-Drop-Meta': o.meta } : {}, o.json ? { 'Content-Type': 'application/json' } : {}), body: o.body || (o.json ? JSON.stringify(o.json) : undefined) }), o.env || DENV, ghU, o.now || NOW);
+  const M = { t: 'Harbour Song', a: 'Tehau', n: 'First drop', l: 's=1zABCDEF', d: 184 };
+  r = await call('/drops/api/list', { method: 'GET', env: ENV }); ok(r.status === 503, 'Drops are off until the public bucket and the owner are set up');
+  r = await call('/drops/api/put', { body: ogg(), meta: b64(M) }); ok(r.status === 401, 'dropping needs a GitHub sign-in');
+  r = await call('/drops/api/put', { tok: 'tokA', body: new Uint8Array(200), meta: b64(M) }); ok(r.status === 400, 'only Ogg audio is taken');
+  r = await call('/drops/api/put', { tok: 'tokA', body: ogg(), meta: b64({ t: '', a: 'x' }) }); ok(r.status === 400, 'a drop needs a title and a name');
+  r = await call('/drops/api/put', { tok: 'tokA', body: ogg(), meta: b64(Object.assign({}, M, { t: '<script>alert(1)</script>Harbour', l: 'javascript:alert(1)' })) }); const J = await r.json();
+  const pend = PRIV.m.get('drops-pending/' + J.id + '.ogg');
+  ok(r.status === 200 && J.status === 'pending' && pend && !/[<>]/.test(pend.meta.t) && pend.meta.l === '' && pend.meta.u === '101', 'a drop waits for review, privately; its title is plain text and a link that isn’t a song link is dropped');
+  r = await call('/drops/api/list', { method: 'GET' }); ok((await r.json()).drops.length === 0, 'nothing is public before the owner approves it');
+  r = await call('/drops/api/review', { tok: 'tokA' }); ok(r.status === 403, 'only the owner can review');
+  r = await call('/drops/api/review', { tok: 'tokOwner' }); const RV = await r.json(); ok(RV.pending.length === 1 && RV.pending[0].login === 'artist', 'the owner sees the waiting drop, and who sent it');
+  r = await call('/drops/api/pending/' + J.id, { method: 'GET', tok: 'tokOwner' }); ok(r.status === 200 && r.headers.get('Content-Type') === 'audio/ogg', 'and can listen before deciding');
+  r = await call('/drops/api/decide', { tok: 'tokOwner', json: { id: J.id, ok: true } }); ok(r.status === 200 && PUB.m.has('live/' + J.id + '.ogg') && !PRIV.m.has('drops-pending/' + J.id + '.ogg'), 'approving makes it public and takes it out of the queue');
+  r = await call('/drops/api/list', { method: 'GET' }); const L = await r.json();
+  ok(L.drops.length === 1 && L.drops[0].url === 'https://drops.the-daily.studio/live/' + J.id + '.ogg' && L.drops[0].until === NOW + 7 * 864e5 && r.headers.get('Cache-Control') === 'public, max-age=60', 'the public list has it, with its public address and when it ends, cached for a minute');
+  r = await call('/drops/api/list', { method: 'GET', now: NOW + 8 * 864e5 }); ok((await r.json()).drops.length === 0, 'after 7 days it is no longer listed');
+  r = await call('/drops/api/report', { json: { id: J.id, why: 'Not theirs' } }); ok(r.status === 200 && [...PRIV.m.keys()].some(k => k.startsWith('reports/drops/')), 'anyone can report a drop');
+  r = await call('/drops/api/remove', { tok: 'tokOwner', json: { id: J.id } }); ok(r.status === 200 && !PUB.m.has('live/' + J.id + '.ogg'), 'the owner can take a drop down');
+  await call('/drops/api/put', { tok: 'tokA', body: ogg(), meta: b64(M) }); await call('/drops/api/put', { tok: 'tokA', body: ogg(), meta: b64(M) });
+  r = await call('/drops/api/put', { tok: 'tokA', body: ogg(), meta: b64(M) }); ok(r.status === 429, 'three drops a day for each account, counting ones already approved or rejected');
+  r = await call('/drops/api/decide', { tok: 'tokOwner', json: { id: (await (await call('/drops/api/review', { tok: 'tokOwner' })).json()).pending[0].id, ok: false } }); ok(r.status === 200 && [...PUB.m.keys()].length === 0, 'rejecting deletes it, and nothing is published');
+  r = await handle(new Request(SITE + '/drops/api/put', { method: 'POST', headers: { Origin: 'https://evil.example', Authorization: 'Bearer tokA', 'X-Drop-Meta': b64(M) }, body: ogg() }), DENV, ghU, NOW); ok(r.status === 403, 'another site cannot drop');
 }
 console.log('\nworker: ' + (n - fails) + '/' + n + ' checks passed'); process.exit(fails ? 1 : 0);

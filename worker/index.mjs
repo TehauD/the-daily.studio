@@ -12,6 +12,7 @@
    address. On the site itself, /journal/ is a page that moves a journal kept there to the new address; the receiving page is not served
    here. Everything else is the site, as before. */
 import { share } from './share.mjs';
+import { drops } from './drops.mjs';
 const NO_STORE = { 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer', 'X-Content-Type-Options': 'nosniff' };
 const TOKEN_URL = 'https://github.com/login/oauth/access_token';
 
@@ -38,7 +39,8 @@ export async function handle(req, env, fetchFn = fetch, now = Date.now()) {
   }
   if (u.pathname === '/journal' || u.pathname === '/journal/' || u.pathname === '/journal/index.html') return asset(env, req, u, '/journal/moving');
   if (/^\/journal\/move(\.html)?$/.test(u.pathname)) return asset(env, req, u, '/journal/not-here');      /* the receiving page belongs to the new address only */
-  if (u.pathname.startsWith('/share/')) return share(req, env, u, fetchFn, now);      /* Send with recordings (2.54, worker/share.mjs) */
+  if (u.pathname.startsWith('/share/')) return share(req, env, u, fetchFn, now);
+  if (u.pathname.startsWith('/drops/api/') || u.pathname.startsWith('/drops/a/')) return drops(req, env, u, fetchFn, now);      /* Drops (2.60, worker/drops.mjs) */      /* Send with recordings (2.54, worker/share.mjs) */
   if (u.pathname === '/auth/github/callback') {
     const back = frag => new Response(null, { status: 302, headers: Object.assign({ Location: '/#' + frag }, NO_STORE) });
     if (!ready(env)) return back('gh-error=not-set-up');

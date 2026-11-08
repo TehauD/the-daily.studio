@@ -62,10 +62,10 @@ function shareData(off, len) {
   return { dur: len != null ? len : bars0 * sp * sd, title: S.title || 'Untitled', artist: S.artist || '', key: keyName(), bpm: Math.round(S.bpm), ts: S.ts.join('/'), notes: S.notes || '', secs };
 }
 /* ---------- your content, your responsibility: the notice and the one-time acknowledgement before sharing ---------- */
-const SHARE_TERMS = 2;   /* raise when the wording changes, so it is asked again (2: recordings sent with a song link, 2.54) */
+const SHARE_TERMS = 3;   /* raise when the wording changes, so it is asked again (2: recordings sent with a song link, 2.54; 3: Drops, 2.60) */
 function shareNotice() {
   return h('div', { class: 'share-note', role: 'note' }, h('b', {}, 'You are responsible for what you share. '),
-    'Share only songs, words and recordings that are yours or that you have permission to share. Covers, other people’s lyrics and backing tracks usually need the owners’ permission before you post them. This app makes the file on your device; it does not upload, host or publish anything, except recordings you choose to send with a song link (kept encrypted for 7 days). ',
+    'Share only songs, words and recordings that are yours or that you have permission to share. Covers, other people’s lyrics and backing tracks usually need the owners’ permission before you post them. This app makes the file on your device; it does not upload, host or publish anything, except recordings you choose to send with a song link (kept encrypted for 7 days) and songs you choose to drop (public for 7 days, after review). ',
     h('a', { href: 'legal/#terms', target: '_blank', rel: 'noopener' }, 'Terms of use'));
 }
 /** run fn once the person has said they have the right to share (asked once, remembered on this device) */
@@ -78,7 +78,7 @@ function shareGate(fn) {
     h('ul', {}, h('li', {}, 'Share only your own songs, words and recordings, or other people’s work with their permission. A cover, someone else’s lyrics or a backing track you did not make usually needs the owners’ permission before you post it publicly.'),
       h('li', {}, 'You are the one sharing it: you are responsible for it, and for following the rules of the places you post it.'),
       h('li', {}, 'the-daily.studio makes the file on this device. It does not upload, host, publish or review what you share, and is not responsible for it.'),
-      h('li', {}, 'One exception: recordings you choose to send with a song link are kept on this site, encrypted, for 7 days, then deleted. Anyone with the link can report them, and the site’s owner can remove recordings that break the terms.')),
+      h('li', {}, 'Two exceptions: recordings you choose to send with a song link are kept on this site, encrypted, for 7 days, then deleted. And songs you choose to drop are public on the-daily.studio/drops for 7 days, after the site’s owner has listened. Both can be reported, and the site’s owner can remove anything that breaks the terms.')),
     h('label', { class: 'chk' }, chk, ' I own this content or have permission to share it, and I accept responsibility for sharing it.'),
     h('p', { class: 'tiny muted' }, h('a', { href: 'legal/#terms', target: '_blank', rel: 'noopener' }, 'Terms of use'), ' · asked once on this device.'),
     h('div', { class: 'row', style: { gap: '8px', justifyContent: 'flex-end' } }, h('button', { class: 'btn', onclick: () => d.close() }, 'Cancel'), go)));
