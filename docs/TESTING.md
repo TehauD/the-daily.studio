@@ -56,6 +56,13 @@ Each file starts its **own** static server, its own Chromium (fake microphone an
 | `e2e-journal-move.cjs` | The Daily at its own address (2.50): `the-daily.studio` and `journal.the-daily.studio` are answered in the browser from the build through the site's own Worker, so each keeps its own storage as on the live site. Checks: the old address finds a journal and moves it with Move my journal (entries and settings arrive exactly), nothing at the old address is removed until Remove the old copy, a page on another site can't hand anything over, the receiving page opened on its own only points back, the routes, The Daily opening at its address, and someone with no journal going straight there |
 | `e2e-collab.cjs` | Passing a song back and forth (2.51), between two browsers: Alice sends with her name and a note; Bob, a first visit, sees who sent it, the note (as text), the rounds and ▶ Play it (which opens it in Perform); his send buttons say ↩ Send back to Alice, and the window lists what he changed; Alice gets his reply with both rounds and the chorus he wrote. Share pages and printed sheets link back to the song, and odd values in a link are cleaned |
 | `e2e-sendrec.cjs` | Send with recordings (2.54), between two browsers, through the site's real Worker with an in-memory R2 bucket:
+| `e2e-lanesout.cjs` | Lanes out (2.55):
+  - a take lane's first sound is within 2 samples of its place in the song;
+  - the master section is left out (master level at 30 %, the take still at its own level);
+  - every lane is the same length;
+  - the song's band, mixer, take mutes and monitoring are untouched afterwards;
+  - ⤓ Save this lane offers a draggable file (as a file and as a desktop download) and saves 24-bit stereo;
+  - 📦 Export lists the lanes and makes a .zip with the premaster, the numbered lanes (all the same length) and a README with the tempo and "bar 1". |
   - the sharing terms are asked first;
   - the package is sealed (no song, take or file name readable) and the key never leaves the browser;
   - a 44.1 kHz take comes back at 48 kHz exactly as long, lined up to the sample and within 1 dB, with its name, kind, place, level and pan;

@@ -5,7 +5,7 @@
                        version of the studio saves them afresh, and a room whose name (and so whose contents) did not change is copied
                        over from the last version instead of downloaded again
      anything else     the saved copy at once, and a fresh one in the background */
-const V = 'daily-songs-2.54.0';
+const V = 'daily-songs-2.55.0';
 const CORE = ['./', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png'];
 const HASHED = /\.[0-9a-f]{8}\.js$/;
 const save = (c, u) => { const p = typeof u === 'string' ? u : u.url; return HASHED.test(p) ? caches.match(p).then(old => old ? c.put(p, old) : c.add(u)) : c.add(u); };      /* force-cache (the fonts and rooms the page just loaded): taken from the browser's cache when it has them */
@@ -16,7 +16,7 @@ self.addEventListener('fetch', e => {
   const r = e.request; if (r.method !== 'GET') return; const u = new URL(r.url); if (u.origin !== location.origin) return;
   if (/\/(journal|api|auth|share)\/|\/healthz$/.test(u.pathname)) return;   // the moving page at /journal/, the sign-in routes and shared recordings (encrypted, 7 days; never cached here) manage themselves
   if (r.mode === 'navigate' || /\/$|\.html$/.test(u.pathname)) {   // the page itself: network first, so a new version is never hidden behind an old copy
-    e.respondWith(fetch(r).then(res => { if (res && res.ok) { const cp = res.clone(); caches.open(V).then(c => c.put(r, cp)); } return res; }).catch(() => caches.match(r, { ignoreSearch: true }).then(h => h || caches.match('./')))); return;
+    e.respondWith(fetch(r).then(res => { if (res && res.ok) { const cp = res.clone(); caches.open(V).then(c => c.put(r, cp)); } return res; }).catch(() => caches.match(r, { ignoreSearch: true }).then(h => h || (new URL('./', location).pathname === u.pathname || /\/index\.html$/.test(u.pathname) ? caches.match('./') : new Response('<!doctype html><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>Offline</title><p style="font:16px system-ui;margin:2rem">You’re offline, and this page isn’t saved on this device. <a href="' + new URL('./', location).pathname + '">Open the studio</a>: it works offline.</p>', { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8' } }))))); return;   // the studio only at its own address: anywhere else its relative links would pile up (2.55)
   }
   if (SAVED.test(u.pathname)) {   // saved at install for this version: no request at all
     e.respondWith(caches.match(r, { ignoreSearch: true }).then(hit => hit || fetch(r).then(res => { if (res && res.ok) { const cp = res.clone(); caches.open(V).then(c => c.put(r, cp)); } return res; }))); return;

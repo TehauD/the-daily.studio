@@ -44,6 +44,7 @@ function ofrStems(a, b) {
 /**
  * Render the song (the same signal as pressing play from the top) and return { l, r, sr, seconds }.
  * opt.tail: seconds after the last bar (default 3.2) · opt.onProgress(0..1) · throws { cancelled: true } when aborted
+ * opt.raw (2.55): the mix as it leaves the strips, before the master tone, master level and limiter (for mixing and mastering elsewhere)
  */
 async function ofrRender(opt) {
   opt = opt || {}; if (OFR.busy) throw new Error('A render is already running'); if (!ofrAvailable()) throw new Error('Fast render is not available in this browser');
@@ -58,6 +59,7 @@ async function ofrRender(opt) {
     ofrSwapIn(oc); T.metro = false; T.loop = false; T.cursor = 0;
     buildGraph(); buildBand(); try { rigApply(rig); } catch (e) { console.warn(e); }
     if (STM.ch && CFG.trackSync !== false) { spEnsure(); spGains(); spFx(); spBus(); }
+    if (opt.raw) { try { E.mix.disconnect(); } catch (e) { } E.mix.connect(oc.destination); }      /* past the master section, straight out */
     let nSync = 0; const slotsIn = (a, b) => { const s0 = Math.max(0, Math.ceil((a - pre) / dur - 1e-9)), s1 = Math.min(slots, Math.ceil((b - pre) / dur - 1e-9)); return [s0, s1]; };
     const schedule = j => {
       const a = j * step, b = (j + 1) * step; const [s0, s1] = slotsIn(a, b);

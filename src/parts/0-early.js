@@ -6,6 +6,9 @@
    A first visit always opens on the dark green start page (#boot.boot-first); Welcome back follows the person's own light or dark.
    It only reads this browser's own settings; a fallback shows the card after five seconds even if boot never finishes.
    ============================================================ */
+/* 2.55: the studio only ever runs at its own address. If a server (or an old offline copy) hands it out inside another page's address,
+   such as /guide/about/, its relative links would pile up (/guide/about/guide/…): go to the studio's own address instead. */
+(() => { try { const m = /^(.*?\/)(?:guide|legal|backstage|journal)\//.exec(location.pathname); if (m && /^https?:$/.test(location.protocol)) location.replace(m[1] + location.search + location.hash); } catch (e) { } })();
 (() => {
   try {
     const r = document.documentElement, c = JSON.parse(localStorage.getItem('fw.cfg') || 'null') || {}, sys = (() => { try { return matchMedia('(prefers-color-scheme: dark)').matches; } catch (e) { return false; } })();

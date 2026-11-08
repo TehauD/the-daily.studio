@@ -2,6 +2,44 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.55.0 — 2026-11-08 — Every lane out, ready to mix and master anywhere
+
+### New
+- **⤓ Save this lane (WAV)** in every lane's ⋯ menu: band parts (drums, bass, rhythm, lead), each take, and each stem of a backing track.
+  - **Lined up:** each file starts at the song's first beat and runs the whole song plus its tail, so in BandLab, a DAW or a mastering app they line up when dropped at bar 1.
+  - **The lane's mix, not the master's:** each one keeps its own level, pan and effects, and leaves out the master section (master tone, master level, limiter). That part belongs to whoever mixes it next.
+  - **Drag it out:** the ready window has a file you can drag. Edge and Chrome drop it on the desktop or in a folder; pages that take dropped files can take it directly. Or press ⤓ Save.
+  - The take's old **⤓ WAV**, the bare recording, is now **⤓ Raw clip**.
+- **📦 Export for mixing & mastering** (Save & export, the Songwriter's export menu, and **📦 All lanes…** in any lane menu): choose the lanes, then a folder (Edge and Chrome write straight into it) or one .zip. You get:
+  - **00 Premaster:** the full mix without the master section, turned down to peak at −3 dBFS if louder, which leaves headroom for mastering;
+  - **01, 02…** each lane, numbered in the arrangement's order;
+  - **README.txt:** the tempo, time signature, key, sample rate and length, how to line the files up, and any level change.
+  
+  Levels stay as mixed. A lane that would clip is turned down just enough, and the README says how many dB to raise its fader to get the balance back. Silent lanes are left out. Only one lane's audio is in memory at a time, so long songs work on ordinary laptops.
+- **Copy and paste:** browsers only put text and pictures on the clipboard, never audio, so moving a lane between apps is done by dragging or through the folder.
+- **On the first page:** "Made with AI, for the music only you can make. **The story**" (shorter).
+
+### Fixed
+- **Links that piled up** (`/guide/about/guide/getting-started/…`). When the network failed, the offline copy served the studio at any address, and its relative links grew one level each time.
+  - Offline, the studio is now only served at its own address; any other page says it's offline, with a link home.
+  - The studio also goes to its own address if a server ever hands it out inside a guide, legal or backstage address.
+
+### Under the hood
+- The fast renderer takes `raw`: the mix as it leaves the strips, straight out.
+- The zip builder takes a file with its checksum worked out ahead of time, so big WAVs aren't held twice.
+
+### Tests
+- **`e2e-lanesout` (15 checks):**
+  - a take's first sound is within 2 samples of its place in the song;
+  - with the master level at 30 %, the take still comes out at its own level;
+  - every lane is the same length;
+  - the band, mixer, take mutes and monitoring are untouched afterwards;
+  - the drag carries the WAV as a file and as a desktop download;
+  - ⤓ Save gives 24-bit stereo;
+  - the .zip holds the premaster, the numbered lanes (all the same length) and a README with the tempo and "bar 1".
+- **`e2e-requests` (+2):** the studio inside another page's address goes home, and the offline fallback is only at its own address.
+- **`e2e`:** the lane menus offer ⤓ Save this lane and ⤓ Raw clip.
+
 ## 2.54.0 — 2026-11-08 — Send a song with its recordings
 
 ### New

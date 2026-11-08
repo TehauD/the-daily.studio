@@ -27,4 +27,14 @@ suite('e2e-requests', async t => {
   ok(Array.isArray(rwf) && rwf.includes('/') && rwf.includes('/journal/*') && rwf.includes('/auth/*') && !rwf.some(x => /^\/\*|^\/fonts|^\/rooms|^\/icons|^\/guide/.test(x)), 'the Worker runs only for the pages that need it; fonts, code, icons and the guide are plain files (' + rwf.length + ' paths)');
   const hd = fs.readFileSync(path.join(__dirname, '..', 'dist', '_headers'), 'utf8');
   ok(/\/rooms\/\*\n\s+Cache-Control: public, max-age=31536000, immutable/.test(hd) && /\/fonts\/\*\n\s+Cache-Control: public, max-age=2592000/.test(hd), 'the rooms (named by their contents) are kept a year, the fonts a month');
+
+  /* 2.55: the studio only runs at its own address: handed out inside another page's address (a server falling back to it, or an old offline
+     copy), its relative links would pile up (/guide/about/guide/getting-started/…). It goes to its own address instead. */
+  const g = await t.fresh({ w: 1280, h: 800 }), gp = await g.newPage(), studio = fs.readFileSync(path.join(__dirname, '..', 'dist', 'index.html'));
+  await gp.route(u => /\/guide\/about\/guide\//.test(u.pathname), r => r.fulfill({ status: 200, contentType: 'text/html', body: studio }));
+  await gp.goto(t.BASE + 'guide/about/guide/getting-started/'); await t.poll(() => !/\/guide\//.test(new URL(gp.url()).pathname), 6000);
+  ok(new URL(gp.url()).pathname === new URL(t.BASE).pathname, 'the studio found inside another page’s address goes to its own address, so its links can’t pile up (' + new URL(gp.url()).pathname + ')');
+  const swSrc = fs.readFileSync(path.join(__dirname, '..', 'dist', 'sw.js'), 'utf8');
+  ok(/You’re offline, and this page isn’t saved on this device/.test(swSrc) && /new URL\('\.\/', location\)\.pathname === u\.pathname/.test(swSrc), 'and offline, the saved studio is only given at its own address; any other page says it is offline, with a link home');
+  await g.close();
 });

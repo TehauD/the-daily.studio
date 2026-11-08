@@ -6,6 +6,19 @@ Contents: [Whole song and Perform layouts](#-the-whole-song-and-perform-your-way
 
 ---
 
+## 📦 Mix and master in another app (2.55)
+
+When the song is ready for a proper mix, or for mastering in BandLab, a DAW or a mastering service:
+- **One lane:** open its **⋯** menu and choose **⤓ Save this lane (WAV)**. When it's ready, drag the file into the other app (or onto your desktop first), or press ⤓ Save.
+- **Everything:** choose **📦 Export for mixing & mastering** in Save & export, or **📦 All lanes…** in any lane menu. Untick what you don't want, then **Choose a folder…** (Edge and Chrome) or **One .zip**.
+
+**In the other app:** set the tempo and time signature from README.txt, then drop every file at the very start (bar 1, 0:00). They all start at the song's first beat and are all the same length, so they line up.
+- **The levels** are as you mixed them, with each lane's level, pan and effects. The master section (master tone, level, limiter) is left out.
+- **00 Premaster** is the whole mix that way, with headroom, for mastering.
+- **If a lane was turned down** so it wouldn't clip, the README says by how much: raise its fader that much.
+- **You can't copy and paste audio** between apps (browsers don't put audio on the clipboard). Drag it, or use the folder.
+- **A backing track's stems** are someone else's recording: mix with them for yourself, but only publish parts that are yours.
+
 ## Guided tour (2.47)
 
 **? ▸ Take the guided tour** (offered once on a first visit; on a phone, **⋯ More ▸ Guided tour**) walks the studio as it is now. It never changes your song; <kbd>→</kbd> and <kbd>←</kbd> move, <kbd>Esc</kbd> leaves.
@@ -731,7 +744,7 @@ Live and session measurements: pitch-class usage and intonation (mean cents devi
 ## Export, history and backup
 
 * **Ultimate Guitar** text with `[ch]` / `[tab]` tags (toggle off for plain text), **ChordPro**, lyrics-only, and tab-only, each with **Copy** and **Download**. A **submission lint** warns about unreadable chords, over-wide lines and similar problems.
-* **MIDI**, **Bounce master WAV** (rendered faster than real time), **Each band part (WAVs)**, **All takes (dry DI + wet)**, **Project JSON** (<kbd>Ctrl/⌘</kbd>+<kbd>S</kbd>), **Import project**, **Load demo song**, **New blank song**.
+* **MIDI**, **Bounce master WAV** (rendered faster than real time), **📦 Export for mixing & mastering** (every lane lined up, a premaster and a README; 2.55), **All takes (dry DI + wet)**, **Project JSON** (<kbd>Ctrl/⌘</kbd>+<kbd>S</kbd>), **Import project**, **Load demo song**, **New blank song**.
 * **Version history** snapshots your song automatically (before each play, periodically and when you leave the page) and keeps the last 30 in this browser. **Restoring** first snapshots the current state, so it is reversible. **＋ Snapshot now** makes one on demand.
 * Your song autosaves to this browser. **Back up all songs** (☰ Songs ▸ All songs) is your portable backup of everything; **Project JSON** is one song as plain text. Clearing browser data deletes the autosave.
 

@@ -233,7 +233,7 @@ function wav(L, sr) { const n = L.length, b = Buffer.alloc(44 + n * 2); b.write(
     await hp.evaluate(() => window.__daily.dockGo('song'));
     const laneSave = async sel => { await hp.evaluate(s => document.querySelector(s + ' button[title^="Lane options"]').click(), sel); await wait(150); const t = await hp.evaluate(() => (document.querySelector('.pop') || {}).textContent || ''); await hp.keyboard.press('Escape'); await hp.mouse.click(5, 450); await wait(100); return t; };
     const tkSave = await laneSave('.tl-head.take'), bsSave = await laneSave('.tl-head.bass');
-    ok(/⤓ WAV/.test(tkSave) && /⤓ Save this part \(WAV\)/.test(bsSave), 'every recording and band track can be saved from its lane ⋯ menu (⤓ WAV, ⤓ Save this part)');
+    ok(/⤓ Save this lane \(WAV\)/.test(tkSave) && /⤓ Raw clip/.test(tkSave) && /⤓ Save this lane \(WAV\)/.test(bsSave), 'every recording and band track can be saved from its lane ⋯ menu (⤓ Save this lane, lined up; ⤓ Raw clip)');
     const dlp = hp.waitForEvent('download', { timeout: 60000 });
     await hp.evaluate(() => { const D = window.__daily; window.__keep = { sec: D.S.sections.slice(), bpm: D.S.bpm }; D.S.sections = D.S.sections.slice(0, 1); D.S.sections[0].bars = D.S.sections[0].bars.slice(0, 2); D.S.bpm = 200; D.bouncePart('bass'); });
     const dl = await dlp.catch(() => null);
