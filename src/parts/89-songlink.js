@@ -35,7 +35,8 @@ function slPack(s) {
       if (sec.energy >= 1) { while (row.length < 6) row.push(0); row.push(sec.energy); }      /* 2.44: the section's energy */
       return row; }),
     c: s.collab && s.collab.out ? s.collab.out : undefined,
-    cm: cmtPack(s),      /* 2.58: open comments, pinned to their place */      /* 2.51: who sent it, a note, the rounds so far */
+    cm: cmtPack(s),
+    tr: s === S && STM.ch && STM.an && !(s.track && s.track.ours) ? ycPrint() || undefined : (s.trackRef || undefined),      /* 2.59: the record it's played over, named and fingerprinted, never sent */      /* 2.58: open comments, pinned to their place */      /* 2.51: who sent it, a note, the rounds so far */
     bd: { d: B.drumsOn ? 1 : 0, kit: B.kit, pn: B.patName, p: pat, bo: B.bassOn ? 1 : 0, bs: B.bassStyle, bt: B.bassTone, co: B.compOn ? 1 : 0, cs: B.compStyle, ci: B.compInst, lo: B.leadOn ? 1 : 0, li: B.leadInst, ko: B.keysOn ? 1 : 0, ks: B.keysStyle, kn: B.keysSound, beat: B.beat || undefined, bu: B.build ? 1 : undefined } };
 }
 /** a song from a link, rebuilt from scratch: only what is checked is kept */
@@ -79,6 +80,7 @@ function slUnpack(o) {
     s.collab = { id: /^[a-z0-9]{6,16}$/.test(String(c.id || '')) ? c.id : slcId(), with: str(c.f, 40).trim(), note: str(c.n, SLC.note).trim(), hist };
   }
   if (o.cm) s.comments = cmtUnpack(o.cm, str);
+  if (o.tr && typeof o.tr === 'object' && typeof o.tr.fp === 'string' && /^[A-Za-z0-9_-]{8,1400}$/.test(o.tr.fp)) s.trackRef = { t: str(o.tr.t, 80).trim(), a: str(o.tr.a, 80).trim(), d: int(o.tr.d, 0, 3600, 0), fp: o.tr.fp, n: int(o.tr.n, 8, 2000, 800) };
   if (s.collab) slcMark(s);      /* what it was when it arrived, to tell what changes before it goes back */
   return s;
 }
@@ -186,6 +188,7 @@ function slWelcome(song) {
     c && c.note ? h('blockquote', { class: 'slc-note', id: 'slInNote' }, c.note) : null,
     h('p', { class: 'sl-what' }, slSummary(song)),
     c ? slcHistEl(c.hist) : null,
+    song.trackRef ? h('p', { class: 'small', id: 'slInTrk' }, '🎵 Played over “' + song.trackRef.t + (song.trackRef.a ? ' – ' + song.trackRef.a : '') + '”. The record isn’t sent: after opening, choose ♪ Load your copy, and it lines itself up.') : null,
     (song.comments || []).length ? h('details', { class: 'small', id: 'slInCmt' }, h('summary', {}, '💬 ' + song.comments.length + (song.comments.length === 1 ? ' comment' : ' comments')), h('ul', { class: 'tiny' }, song.comments.slice(0, 8).map(c => h('li', {}, (c.sec ? c.sec + ' · ' : '') + (c.who ? c.who + ': ' : '') + c.text)))) : null,
     song._att ? h('p', { class: 'small srx-in', id: 'srxIn' }, '🎙 With recordings, until ' + srxDate(srxUntil(song._att)) + '. ', h('button', { class: 'linkish tiny', id: 'srxRepBtn', type: 'button', onclick: () => srxReport(song._att) }, '⚑ Report')) : null,
     mine ? h('p', { class: 'small', id: 'slMine' }, 'You already have “' + (mine.title || 'this song') + '”. Add this round as its newest version, so the rounds don’t pile up as copies; what you have now is kept as a version too.') : null,

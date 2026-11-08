@@ -60,6 +60,12 @@ Each file starts its **own** static server, its own Chromium (fake microphone an
 | `e2e-versions.cjs` | Versions, the song journey and 🛡 (2.56):
 | `e2e-finish.cjs` | Finish it (2.57):
 | `e2e-comments.cjs` | Comments and the lyric helper (2.58):
+| `e2e-yourcopy.cjs` | Load your copy and Make it ours (2.59), with a made-up 48-second record:
+  - the fingerprint (about 530 characters) and the link carrying it;
+  - ♪ Load your copy offered;
+  - a copy 2.5 s later and 3 dB quieter lining up at exactly +2.5 s, with the song unchanged;
+  - a different record (another tempo, chords and drums) matching 5% and not lined up;
+  - Make it ours: band on over the chords, record muted, no record named in the next link, and Undo. |
   - **Comments:**
     - pinned at the playhead's bar, listed, jumped to;
     - a link carries the open ones, not the done one;

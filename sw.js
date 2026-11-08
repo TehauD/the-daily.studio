@@ -5,7 +5,7 @@
                        version of the studio saves them afresh, and a room whose name (and so whose contents) did not change is copied
                        over from the last version instead of downloaded again
      anything else     the saved copy at once, and a fresh one in the background */
-const V = 'daily-songs-2.58.0';
+const V = 'daily-songs-2.59.0';
 const CORE = ['./', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png'];
 const HASHED = /\.[0-9a-f]{8}\.js$/;
 const save = (c, u) => { const p = typeof u === 'string' ? u : u.url; return HASHED.test(p) ? caches.match(p).then(old => old ? c.put(p, old) : c.add(u)) : c.add(u); };      /* force-cache (the fonts and rooms the page just loaded): taken from the browser's cache when it has them */

@@ -110,7 +110,7 @@ async function stemLoad(file, opt) {
     STM.an = stemAnalyze(r.feat, sr, STM.dur); STM.env = stemEnvelopes(); STP.pos = 0; STM.loop = { on: false, a: null, b: null };
     setStemStatus('Done in ' + ((performance.now() - t0) / 1000).toFixed(1) + ' s', 1); toast('Stems ready — ' + STM.an.info.filter(i => i.found).map(i => i.name.split(' ')[0]).join(', ') + ' found', 'ok');
     STM.busy = false; bus.emit('track');
-    const fr = opt.restore ? null : stemAutofill(); if (opt.restore) toast('Track restored: “' + (STM.title || STM.name) + '”', 'ok'); if (fr) toast('“' + S.title + '” — ' + S.bpm.toFixed(0) + ' BPM, ' + pcName(S.key) + (S.minor ? ' minor' : ' major') + (fr.doChords ? ', ' + totalBars() + ' bars of chords added to the song' : fr.keepWork ? ' · your chords, tab and lyrics were kept (use Import chords to replace them)' : ''), 'ok');
+    const fr = opt.restore || opt.noFill ? null : stemAutofill();      /* noFill: someone's own copy of a song's record (2.59) leaves the song as it is */ if (opt.restore) toast('Track restored: “' + (STM.title || STM.name) + '”', 'ok'); if (fr) toast('“' + S.title + '” — ' + S.bpm.toFixed(0) + ' BPM, ' + pcName(S.key) + (S.minor ? ' minor' : ' major') + (fr.doChords ? ', ' + totalBars() + ' bars of chords added to the song' : fr.keepWork ? ' · your chords, tab and lyrics were kept (use Import chords to replace them)' : ''), 'ok');
   } catch (e) { if (tk !== STM.ticket) return; console.error(e); STM.file = null; setStemStatus('Could not read that file: ' + (e.message || e), 0); toast('Could not decode that audio file', 'warn'); }
   if (tk !== STM.ticket) return; STM.busy = false; renderStems(); bus.emit('track');
 }

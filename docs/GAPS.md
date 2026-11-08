@@ -4,6 +4,11 @@ What the studio, its tutorials, its documents and its tests do **not** cover yet
 
 How to use it: before a release, move what the release closed into *Closed* with the version, and add what it opened. [RELEASE.md](RELEASE.md) has this as a checklist item. Items marked **(maintainer)** are decisions or facts only the project's owner can settle; nothing here blocks a build.
 
+## Closed in 2.59.0
+
+- **Two people working over the same famous song** had no way to line up their own copies. Load your copy does, from a 400-byte fingerprint.
+- **Covers couldn't become your own songs.** Make it ours swaps the record for the band.
+
 ## Closed in 2.58.0
 
 - **No way to say "this bit" while writing together.** Comments are pinned to a moment and travel with the song.
@@ -124,6 +129,12 @@ How to use it: before a release, move what the release closed into *Closed* with
 ### Song structure (opened by 2.48)
 - The **Stage** panel's prompter and the lower third have none of Perform's layout choices.
 - Sections can be reordered with ↑ ↓ but not dragged on the map.
+
+### Load your copy (opened by 2.59)
+- **Only the start is matched,** not the speed. A copy at a slightly different speed (a sped-up upload) lines up at the start and drifts; the studio doesn't stretch it yet.
+- **The match looks at the first three minutes** of the copy for the first 40 seconds of the song. A copy with a much longer intro wouldn't be found.
+- **A cover with the same arrangement** can match, which is usually what you want.
+- **Make it ours** takes the chords, tempo, key and drum groove. It doesn't take the melody or the bass line note for note.
 
 ### Comments and the lyric helper (opened by 2.58)
 - **Comment markers on the ruler can't be clicked yet:** use 💬 Comments to jump to one. Comments don't show in the whole-song sheet or Perform.

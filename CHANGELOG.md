@@ -2,6 +2,33 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.59.0 — 2026-11-08 — Load your copy, and Make it ours
+
+### New
+- **♪ Load your copy.** A song link for a song played over a record now names the record ("Joy – Artist") and carries a **fingerprint** of it: about 400 bytes describing how its sound rises and falls for 40 seconds from the song's first downbeat. Never the audio.
+  - **What the person who opens it sees:** "🎵 Played over…", and the song bar offers **♪ Load your copy of "Joy"**. They pick their own file. It's split and analysed as usual, without changing the song (its title, tempo and chords stay), and lined up: the studio finds where the fingerprint fits best in their file and puts the song's first downbeat there, on their copy's nearest beat. The alignment is kept with the song.
+  - **What lines up:** a different rip, a longer intro or a second of silence before the music.
+  - **What doesn't:** a different recording isn't taken for the same one. The studio says the match isn't clear and leaves the copy at its own first downbeat.
+  - **The fingerprint** combines onsets with the loudness contour (log energy against its own last second). Silence is floored 30 dB under the average and onsets are capped, so a quiet start or one loud hit can't outweigh the rest.
+- **✦ Make it ours** (the track chip's menu). One press turns a song played over a record into the studio's own:
+  - the chords found in the track (if the song has none), its tempo and key, and its drum groove;
+  - the band (drums, bass, rhythm) playing them;
+  - the record muted (✕ Unload removes it).
+  
+  The next link no longer names a record. Undo takes it back.
+
+### Changed
+- **Loading a track** has a `noFill` option (used by Load your copy) that leaves the song exactly as it is.
+
+### Tests
+- **`e2e-yourcopy` (12 checks), with a made-up 48-second record:**
+  - the fingerprint is about 530 characters and the link carries it;
+  - the song bar offers Load your copy;
+  - "someone else's copy" (2.5 s later, 3 dB quieter) lines up at exactly +2.5 s, and the song isn't changed;
+  - a different record (another tempo, chords and drums) matches 5% and isn't lined up;
+  - Make it ours turns on the band over the song's chords and mutes the record;
+  - the next link names no record, and Undo works.
+
 ## 2.58.0 — 2026-11-08 — Comments pinned to a moment, and a lyric helper
 
 ### New

@@ -6,6 +6,12 @@ Contents: [Whole song and Perform layouts](#-the-whole-song-and-perform-your-way
 
 ---
 
+## ♪ Load your copy, and ✦ Make it ours (2.59)
+
+**When someone sends you a song played over a record,** the record isn't sent; it's someone else's recording. Open the song, then press **♪ Load your copy of "…"** in the song bar and pick your own file of that record. It lines itself up with the song, even if your copy starts earlier or later. If it's a different recording, the studio says so.
+
+**✦ Make it ours** (press the track's name in the song bar): the band takes over the record's chords, tempo, key and drum groove, and the record is muted. Now the whole song is yours to send, finish and release. (A cover's words and melody still belong to its writers: ask before you publish one.)
+
 ## 💬 Comments and ✎ Rhymes & syllables (2.58)
 
 **💬 Comments:** put the playhead where you mean, then press **💬 Comment** (or **C**) and type: "rush here?", "double the vocal".
