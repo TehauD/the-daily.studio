@@ -2,7 +2,28 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
-## 2.50.0 — 2026-11-08 — The Daily at its own address
+## 2.51.0 — 2026-11-08 — Write a song together, by passing it back and forth
+
+### New
+- **From and Note in the send window.** Your name, remembered on this device, and a note go inside the song link ("Can you write the chorus?").
+- **Who opens it sees:**
+  - "🎵 Alice sent you a song";
+  - the note;
+  - the rounds so far: who changed what, and when (the last eight travel with the song).
+- **↩ Send it back.** After opening a song someone sent, the send buttons say **↩ Send back to Alice** (in the Songwriter tools, Save & export and the Whole song sheet). The window lists **Your changes**, worked out from what the song was when it arrived: "wrote words for Chorus; changed Verse 2; added Bridge". They join the history in the link.
+- **A first visit through a link is an invitation:** **▶ Play it** opens the song and plays it in Perform with the words as a sing-along, or **Open it in the studio**.
+- **What you share links back to the song:**
+  - a share page ends with **Open this song in the-daily.studio**;
+  - a printed sheet carries a code to scan that opens it.
+- **Nothing is uploaded:** the names, note and history ride inside the link with the song.
+
+### Changed
+- **The demo song's placeholder artist ("Your Name")** no longer travels in links.
+
+### Tests
+- **New `e2e-collab`** (15 checks). Two browsers pass a song back and forth: name, note, the invitation, ↩ Send back with what changed, both rounds, links back from share pages and printed sheets, and odd values cleaned.
+
+2026-11-08 — The Daily at its own address
 
 ### Changed
 - **The Daily now lives at https://journal.the-daily.studio/.** The studio's links point there.

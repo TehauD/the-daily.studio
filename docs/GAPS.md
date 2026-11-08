@@ -86,6 +86,10 @@ How to use it: before a release, move what the release closed into *Closed* with
 - The **Stage** panel's prompter and the lower third have none of Perform's layout choices.
 - Sections can be reordered with ↑ ↓ but not dragged on the map.
 
+### Writing together (opened by 2.51)
+- Each round of a song passed back and forth opens as a new song. The rounds aren't gathered into one song with versions yet, so someone who passes a song many times gets many copies.
+- Two people changing the same section at once aren't merged: the later round simply carries its own version.
+
 ### Tutorials and documents
 - The two new guide pages have **no picture** yet (`test/guide-shots.cjs` makes the others).
 - `docs/screenshots/` and `guide/img/` predate 2.46 (Simple per workspace) and 2.41 (the phone); regenerate with `npm run shots` and `node test/guide-shots.cjs`, and check `git diff`.

@@ -95,7 +95,17 @@ Every vocal take has **🎯 Tune** (in the take's menu on a computer, on its row
 
 Set the song's key first (the tuning follows it). Nothing is sent anywhere; it is worked out on your device.
 
-## 🔗 Send a song as a link (2.40)
+## 🔗 Send a song as a link (2.40), and pass it back and forth (2.51)
+
+**Writing a song together (2.51):**
+- **From and Note:** the send window has both. Your name is remembered on this device, and a note says what you need ("Can you write the chorus?").
+- **What the other person sees:** "🎵 Alice sent you a song", the note, and the rounds so far (who changed what, and when).
+- **Someone who has never been here** gets an invitation: **▶ Play it** opens the song and plays it in Perform with the words as a sing-along; **Open it in the studio** opens it to work on.
+- **↩ Send it back:** the send buttons say **↩ Send back to Alice**. The window lists **Your changes** (for example "wrote words for Chorus; added Bridge"), worked out from what the song was when it arrived, and they go into the link's history.
+- **Each round opens as a new song,** so nothing is ever overwritten. The history (the last eight rounds) travels with it.
+- **Share pages and printed sheets link back:** a share page ends with **Open this song in the-daily.studio**, and a printed sheet has a code to scan that opens it.
+- **Nothing is uploaded:** the names, the note and the history ride inside the link with the song.
+
 
 **🔗 Send as a link** (Songwriter tools, and Save & export) turns the song into a link you can paste in a message. Whoever opens it gets the song, ready to play.
 - **What travels:** the chords, words and tab of every section, the beat and the band, what the piano roll drew, the tempo, the key and the tuning. **Recordings stay with you:** for audio, make a share page in Save & export.

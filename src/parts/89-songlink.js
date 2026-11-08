@@ -7,6 +7,8 @@
    Opening a link: the studio reads it, clears it from the address, and offers the song. It opens as a new song, so nothing of
    yours is replaced. Everything in a link is treated as untrusted: lengths are capped, numbers clamped, names checked against the
    studio's own lists, chords parsed, and the unpacked size limited before anything is used.
+   Passing a song back and forth (2.51): a link can carry who sent it, a note, and a short history of the rounds (who changed which sections,
+   and when). Whoever opens it gets ↩ Send it back, which knows who it came from and what they changed since. All of it rides in the link.
    Format: #s=1 + 'z' (deflate-raw) or 'j' (plain) + base64url of the JSON below (keys kept short so the link stays short).
    ============================================================ */
 const SL = { v: '1', max: 60000, unz: 262144, long: 8000, qr: 2300 };
@@ -25,12 +27,13 @@ async function slZip(u8, inflate) {
 function slPack(s) {
   s = s || S; const B = s.band, L = Math.min(B.drumLen || 16, 32), pat = (s === S ? dpat() : B.pat || []).map(r => (r || []).slice(0, L).map(v => SL_DR[v | 0] || '.').join(''));
   const notes = a => Array.isArray(a) && a.length ? a.map(n => [n.m, n.s, n.d, n.v]) : 0;
-  return { v: 1, t: s.title, a: s.artist || undefined, k: s.key, m: s.minor ? 1 : 0, sc: s.scale, b: s.bpm, ts: s.ts, sw: s.swing || undefined, cp: s.capo || undefined, tn: s.tuningName, tu: TUNINGS[s.tuningName] ? undefined : s.tuning,
+  return { v: 1, t: s.title, a: s.artist && s.artist !== 'Your Name' ? s.artist : undefined,      /* not the demo song's placeholder */ k: s.key, m: s.minor ? 1 : 0, sc: s.scale, b: s.bpm, ts: s.ts, sw: s.swing || undefined, cp: s.capo || undefined, tn: s.tuningName, tu: TUNINGS[s.tuningName] ? undefined : s.tuning,
     x: s.sections.map(sec => { const row = [sec.name, sec.bars.map(b => b.chord || '').join('|'), sec.lyrics || ''];
       const tab = sec.bars.some(b => b.tab && b.tab.length), ky = sec.bars.some(b => b.keys && b.keys.length), bl = sec.bars.some(b => b.bassLine && b.bassLine.length);
       if (tab || ky || bl) row.push(tab ? sec.bars.map(b => (b.tab || []).map(n => n.bend != null ? [n.s, n.st, n.f, n.t || '', n.bend] : [n.s, n.st, n.f, n.t || ''])) : 0, ky ? sec.bars.map(b => notes(b.keys)) : 0, bl ? sec.bars.map(b => notes(b.bassLine)) : 0);
       if (sec.energy >= 1) { while (row.length < 6) row.push(0); row.push(sec.energy); }      /* 2.44: the section's energy */
       return row; }),
+    c: s.collab && s.collab.out ? s.collab.out : undefined,      /* 2.51: who sent it, a note, the rounds so far */
     bd: { d: B.drumsOn ? 1 : 0, kit: B.kit, pn: B.patName, p: pat, bo: B.bassOn ? 1 : 0, bs: B.bassStyle, bt: B.bassTone, co: B.compOn ? 1 : 0, cs: B.compStyle, ci: B.compInst, lo: B.leadOn ? 1 : 0, li: B.leadInst, ko: B.keysOn ? 1 : 0, ks: B.keysStyle, kn: B.keysSound, beat: B.beat || undefined, bu: B.build ? 1 : undefined } };
 }
 /** a song from a link, rebuilt from scratch: only what is checked is kept */
@@ -69,8 +72,32 @@ function slUnpack(o) {
   B.keysOn = !!d.ko; B.keysStyle = pick(d.ks, KEYS_STYLES, B.keysStyle); B.keysSound = pick(d.kn, KEYS_SOUNDS, B.keysSound); B.beat = pick(d.beat, BEATS.map(b => b.id), undefined); B.build = !!d.bu;
   B.patName = str(d.pn, 48).trim() || B.patName;
   if (Array.isArray(d.p) && d.p.length) { const L = clamp(Math.max(...d.p.slice(0, 6).map(r => String(r || '').length)), 4, 32); B.drumLen = L; B.pat = DROWS.map((_, i) => Array.from({ length: 32 }, (_, j) => j < L ? Math.max(0, SL_DR.indexOf(String(d.p[i] || '')[j] || '.')) : 0)); }
+  if (o.c && typeof o.c === 'object') {      /* 2.51: who sent it, their note, the rounds so far */
+    const c = o.c, hist = (Array.isArray(c.h) ? c.h : []).slice(-SLC.keep).filter(Array.isArray).map(x => [str(x[0], 40).trim() || 'Someone', int(x[1], 0, 200000, 0), str(x[2], 140).trim()]);
+    s.collab = { id: /^[a-z0-9]{6,16}$/.test(String(c.id || '')) ? c.id : slcId(), with: str(c.f, 40).trim(), note: str(c.n, SLC.note).trim(), hist };
+  }
+  if (s.collab) slcMark(s);      /* what it was when it arrived, to tell what changes before it goes back */
   return s;
 }
+/* ---------- passing a song back and forth (2.51) ---------- */
+const SLC = { keep: 8, note: 280 };
+const slcId = () => Array.from(crypto.getRandomValues(new Uint8Array(6)), b => (b % 36).toString(36)).join('') + Date.now().toString(36).slice(-4);
+const slcDay = () => Math.floor(Date.now() / 864e5);
+/** a short fingerprint of each section (its chords and words), by name */
+function slcPrints(s) { const out = {}; s.sections.forEach(sec => { const t = sec.bars.map(b => b.chord || '').join('|') + '\u0001' + (sec.lyrics || ''); let h = 2166136261; for (let i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 16777619); } out[sec.name] = (h >>> 0).toString(36); }); return out; }
+/** what changed since the song arrived (or since it was last sent): "wrote Chorus, changed Verse 2, added Bridge" */
+function slcChanges(s) {
+  s = s || S; const c = s.collab; if (!c || !c.base) return 'started the song';
+  const now = slcPrints(s), was = c.base, had = c.words || {}, names = Object.keys(now), wrote = [], changed = [], added = names.filter(n => !(n in was)), gone = Object.keys(was).filter(n => !(n in now));
+  names.forEach(n => { if (!(n in was) || now[n] === was[n]) return; const sec = s.sections.find(x => x.name === n); (sec && (sec.lyrics || '').trim() && !had[n] ? wrote : changed).push(n); });
+  const say = (verb, list) => list.length ? verb + ' ' + (list.length > 3 ? list.slice(0, 3).join(', ') + ' and ' + (list.length - 3) + ' more' : list.join(', ')) : '';
+  return [say('wrote words for', wrote), say('changed', changed), say('added', added), say('took out', gone)].filter(Boolean).join('; ') || 'sent it on as it was';
+}
+/** remember the song as it is now, to tell what changes next */
+function slcMark(s) { s = s || S; if (!s.collab) return; s.collab.base = slcPrints(s); s.collab.words = Object.fromEntries(s.sections.map(x => [x.name, !!(x.lyrics || '').trim()])); }
+const slcWhen = d => { const k = slcDay() - d; return k <= 0 ? 'today' : k === 1 ? 'yesterday' : k < 7 ? k + ' days ago' : new Date(d * 864e5).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }); };
+/** the rounds, newest last, as a list */
+const slcHistEl = hist => hist && hist.length ? h('ol', { class: 'slc-hist', 'aria-label': 'The rounds so far' }, hist.slice(-5).map(([who, d, what]) => h('li', {}, h('b', {}, who), ' · ' + slcWhen(d) + (what ? ': ' + what : '')))) : '';
 /** where a link should point: this page when it is on the web, the public studio when it was opened from disk or another site */
 const slBase = () => /^https?:$/.test(location.protocol) && !/codepen|cdpn/.test(location.hostname) ? location.origin + location.pathname : BRAND.url;
 /** the link for a song (the open one unless given) */
@@ -92,43 +119,64 @@ async function slRead(text) {
 const slSummary = s => { const bars = s.sections.reduce((a, x) => a + x.bars.length, 0), words = s.sections.some(x => (x.lyrics || '').trim()), tab = s.sections.some(x => x.bars.some(b => b.tab && b.tab.length)), beat = s.band.beat && BEATS.find(b => b.id === s.band.beat);
   return [pcName(s.key, keyUsesFlats(s.key, s.minor)) + (s.minor ? ' minor' : ' major'), s.bpm + ' BPM', s.sections.length + (s.sections.length === 1 ? ' section' : ' sections'), bars + ' bars', words ? 'words' : '', tab ? 'tab' : '', beat ? 'beat: ' + beat.name : ''].filter(Boolean).join(' · '); };
 
-/* ---------- 🔗 sending ---------- */
+/* ---------- 🔗 sending (and ↩ sending back, 2.51) ---------- */
+/** what the send buttons say: Send back to whoever the song came from, or Send as a link */
+const slSendLabel = short => S.collab && S.collab.with ? '↩ Send back' + (short ? '' : ' to ' + S.collab.with) : (short ? '🔗 Send' : '🔗 Send as a link');
 async function slShare() {
-  let url; try { url = await slLink(); } catch (e) { return toast('The link could not be made: ' + (e.message || e), 'bad'); }
+  const c = S.collab, back = !!(c && c.with), what = c ? slcChanges() : '';
+  let url = '', built = null, sent = false;
+  const nameIn = h('input', { class: 'in slc-name', id: 'slName', maxlength: 40, autocomplete: 'nickname', placeholder: 'Your name', value: CFG.slName || '', 'aria-label': 'Your name, so they know who sent it' });
+  const noteIn = h('textarea', { class: 'in slc-noteIn', id: 'slNote', maxlength: SLC.note, rows: 2, placeholder: back ? 'A note for ' + c.with + ': what you did, or what comes next' : 'A note: “Can you write the chorus?”', 'aria-label': 'A note to go with the song' });
+  const out = () => { const hist = ((c && c.hist) || []).concat([[nameIn.value.trim() || 'Someone', slcDay(), what || 'started the song']]).slice(-SLC.keep); return { id: (c && c.id) || (S.collab && S.collab.id) || (slShare.id = slShare.id || slcId()), f: nameIn.value.trim(), n: noteIn.value.trim(), h: hist }; };
+  const build = () => built = (async () => { const prev = S.collab; S.collab = Object.assign({}, prev || {}, { out: out() }); try { url = await slLink(); } finally { S.collab = prev; } inp.value = url; long.hidden = url.length <= SL.long; long.textContent = 'This link is long (' + url.length.toLocaleString() + ' characters), so some chat apps may cut it short. Email, notes and most messengers keep it whole.'; qrBox.innerHTML = ''; qrBox.hidden = true; qrB.disabled = url.length > SL.qr; })();
+  /** the round is part of the song once it has gone: the next send says what changed after this one */
+  const gone = () => { if (sent) return; sent = true; const o = out(); S.collab = { id: o.id, with: c && c.with || '', note: c && c.note || '', hist: o.h }; slcMark(S); commit(false); };
+  const qrBox = h('div', { class: 'sl-qr', hidden: true }), inp = h('input', { class: 'in sl-url', id: 'slUrl', readonly: true, value: '', 'aria-label': 'The link', onfocus: e => e.target.select() }), long = h('p', { class: 'tiny sl-long', hidden: true });
+  const copy = async () => { await built; try { await navigator.clipboard.writeText(url); toast('Link copied. Paste it in a message to ' + (back ? c.with : 'whoever you are writing with') + '.', 'ok'); } catch (e) { inp.select(); document.execCommand && document.execCommand('copy'); toast('Link selected: copy it with Ctrl+C (⌘C on a Mac).', ''); } gone(); };
+  const qrB = h('button', { class: 'btn', id: 'slQr', type: 'button', title: 'Show a code to scan with a phone', onclick: async () => { await built; if (!qrBox.childNodes.length) qrBox.innerHTML = qrSvg(qrMake(url)); qrBox.hidden = !qrBox.hidden; gone(); } }, '▦ QR code');
+  let tm = 0; const again = () => { clearTimeout(tm); tm = setTimeout(build, 250); };
+  nameIn.addEventListener('input', () => { CFG.slName = nameIn.value.trim().slice(0, 40); saveCfg(); again(); }); noteIn.addEventListener('input', again);
   const old = document.getElementById('slDlg'); if (old) old.remove();
-  const qrBox = h('div', { class: 'sl-qr', hidden: true }), inp = h('input', { class: 'in sl-url', id: 'slUrl', readonly: true, value: url, 'aria-label': 'The link', onfocus: e => e.target.select() });
-  const copy = async () => { try { await navigator.clipboard.writeText(url); toast('Link copied. Paste it in a message to whoever you are playing with.', 'ok'); } catch (e) { inp.select(); document.execCommand && document.execCommand('copy'); toast('Link selected: copy it with Ctrl+C (⌘C on a Mac).', ''); } };
   const d = h('dialog', { class: 'sl-dlg', id: 'slDlg', 'aria-labelledby': 'slH' },
-    h('h3', { id: 'slH' }, '🔗 Send “' + S.title + '” as a link'),
+    h('h3', { id: 'slH' }, back ? '↩ Send “' + S.title + '” back to ' + c.with : '🔗 Send “' + S.title + '” as a link'),
     h('p', { class: 'sl-what' }, slSummary(S)),
-    h('p', { class: 'small muted' }, 'The chords, words, tab, the beat, the tempo and the key travel inside the link itself, after the #, a part of a link that is never sent to any server. Whoever opens it gets the song, ready to play, as a new song of their own. Your recordings stay with you; for audio, make a share page in Save & export.'),
-    inp,
-    url.length > SL.long ? h('p', { class: 'tiny sl-long' }, 'This link is long (' + url.length.toLocaleString() + ' characters), so some chat apps may cut it short. Email, notes and most messengers keep it whole.') : null,
+    c ? h('div', { class: 'slc-box' }, what ? h('p', { class: 'small', id: 'slChanged' }, h('b', {}, 'Your changes: '), what) : '', slcHistEl(c.hist)) : '',
+    h('div', { class: 'slc-form' }, h('label', { class: 'small' }, 'From', nameIn), h('label', { class: 'small' }, 'Note', noteIn)),
+    h('p', { class: 'small muted' }, 'The chords, words, tab, the beat, the tempo and the key travel inside the link itself, with your name, your note and who changed what, after the #: a part of a link that is never sent to any server. Whoever opens it gets the song as a new song of their own, with ↩ Send it back. Your recordings stay with you; for audio, make a share page in Save & export.'),
+    inp, long,
     h('div', { class: 'row sl-acts' },
       h('button', { class: 'btn primary', id: 'slCopy', type: 'button', onclick: copy }, '⧉ Copy link'),
-      navigator.share ? h('button', { class: 'btn', id: 'slSend', type: 'button', onclick: () => navigator.share({ title: S.title, text: '“' + S.title + '”, a song for you on the-daily.studio', url }).catch(() => { }) }, '↗ Share…') : null,
-      h('button', { class: 'btn', id: 'slQr', type: 'button', disabled: url.length > SL.qr, title: url.length > SL.qr ? 'Too long for a QR code: copy the link instead' : 'Show a code to scan with a phone', onclick: () => { if (!qrBox.childNodes.length) qrBox.innerHTML = qrSvg(qrMake(url)); qrBox.hidden = !qrBox.hidden; } }, '▦ QR code'),
-      h('span', { class: 'grow' }), h('button', { class: 'btn', type: 'button', onclick: () => d.close() }, 'Close')),
+      navigator.share ? h('button', { class: 'btn', id: 'slSend', type: 'button', onclick: async () => { await built; navigator.share({ title: S.title, text: (nameIn.value.trim() ? nameIn.value.trim() + ' sent you' : 'Here is') + ' “' + S.title + '” on the-daily.studio' + (noteIn.value.trim() ? ': ' + noteIn.value.trim() : ''), url }).then(gone).catch(() => { }); } }, '↗ Share…') : null,
+      qrB, h('span', { class: 'grow' }), h('button', { class: 'btn', type: 'button', onclick: () => d.close() }, 'Close')),
     qrBox);
-  d.addEventListener('close', () => d.remove()); document.body.append(d); d.showModal(); inp.focus();
+  d.addEventListener('close', () => d.remove()); document.body.append(d); d.showModal();
+  try { await build(); } catch (e) { d.close(); return toast('The link could not be made: ' + (e.message || e), 'bad'); }
+  (nameIn.value ? noteIn : nameIn).focus();
 }
 
 /* ---------- opening one ---------- */
-async function slOpen(song, playNow) {
+async function slOpen(song, playNow, perform) {
   const boot = document.getElementById('boot'), b = document.getElementById('bootNoMic');
   if (boot && b && boot.getClientRects().length && getComputedStyle(boot).display !== 'none') b.click();      /* past the first page, as Begin in the studio does */
   await projCreate('import', { song, zoom: 'studio' }); bus.emit('song', 'reload'); try { syncTransport(); syncBandStrip(); } catch (e) { }
   if (playNow) { try { await startAudio(); T.cursor = 0; T.loop = true; syncTransport(); play(); } catch (e) { console.warn(e); } }
-  toast('“' + S.title + '” is open as a new song. Your other songs are as they were.', 'ok');
+  if (perform) { try { perfOpen(); const g = document.getElementById('pfGo'); if (g) g.click(); } catch (e) { console.warn(e); } }      /* a first visit through a link: the song as a sing-along */
+  const from = S.collab && S.collab.with;
+  toast(from ? '“' + S.title + '” from ' + from + ' is open as a new song. Change what you like, then ↩ Send it back.' : '“' + S.title + '” is open as a new song. Your other songs are as they were.', 'ok');
 }
 function slWelcome(song) {
   const old = document.getElementById('slIn'); if (old) old.remove();
-  const go = p => { d.close(); slOpen(song, p).catch(e => toast('It could not be opened: ' + (e.message || e), 'bad')); };
-  const d = h('dialog', { class: 'sl-dlg sl-in', id: 'slIn', 'aria-labelledby': 'slInH' },
-    h('p', { class: 'sl-kick' }, '🎵 A song was sent to you'), h('h3', { id: 'slInH' }, song.title), song.artist ? h('p', { class: 'muted' }, song.artist) : null,
+  const c = song.collab, from = c && c.with, first = !store.get('started', false);
+  const go = (p, perf) => { d.close(); slOpen(song, p, perf).catch(e => toast('It could not be opened: ' + (e.message || e), 'bad')); };
+  const d = h('dialog', { class: 'sl-dlg sl-in' + (first ? ' sl-first' : ''), id: 'slIn', 'aria-labelledby': 'slInH' },
+    h('p', { class: 'sl-kick' }, from ? '🎵 ' + from + ' sent you a song' : '🎵 A song was sent to you'), h('h3', { id: 'slInH' }, song.title), song.artist ? h('p', { class: 'muted' }, song.artist) : null,
+    c && c.note ? h('blockquote', { class: 'slc-note', id: 'slInNote' }, c.note) : null,
     h('p', { class: 'sl-what' }, slSummary(song)),
-    h('p', { class: 'small muted' }, 'It opens as a new song, so none of yours change. It came inside the link: nothing was downloaded from anyone.'),
-    h('div', { class: 'row sl-acts' }, h('button', { class: 'btn primary', id: 'slPlay', type: 'button', onclick: () => go(true) }, '▶ Open and play'), h('button', { class: 'btn', id: 'slOpenBtn', type: 'button', onclick: () => go(false) }, 'Open'), h('span', { class: 'grow' }), h('button', { class: 'btn', type: 'button', onclick: () => d.close() }, 'Not now')));
+    c ? slcHistEl(c.hist) : null,
+    h('p', { class: 'small muted' }, (first ? 'This is the-daily.studio: a place to write, sing and play songs, free, in your browser, with no account. ' : '') + 'It opens as a new song' + (first ? '' : ', so none of yours change') + '. It came inside the link: nothing was downloaded from anyone.' + (from ? ' Change what you like, then ↩ Send it back to ' + from + '.' : '')),
+    h('div', { class: 'row sl-acts' }, ...(first
+      ? [h('button', { class: 'btn primary', id: 'slPlay', type: 'button', onclick: () => go(true, true) }, '▶ Play it'), h('button', { class: 'btn', id: 'slOpenBtn', type: 'button', onclick: () => go(false) }, 'Open it in the studio')]
+      : [h('button', { class: 'btn primary', id: 'slPlay', type: 'button', onclick: () => go(true) }, '▶ Open and play'), h('button', { class: 'btn', id: 'slOpenBtn', type: 'button', onclick: () => go(false) }, 'Open'), h('span', { class: 'grow' }), h('button', { class: 'btn', type: 'button', onclick: () => d.close() }, 'Not now')])));
   d.addEventListener('close', () => setTimeout(() => d.remove(), 0)); document.body.append(d); d.showModal();
 }
 /** a song link in the address: read it, take it out of the address (so a reload does not offer it again), offer the song */

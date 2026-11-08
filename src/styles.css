@@ -1751,3 +1751,12 @@ html:not(.ds-booted) #boot .boot-card{visibility:hidden}
 .boot-goals.boot-goals-sm{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:6px}.boot-goals-sm .boot-goal{padding:10px 12px}.boot-goals-sm .boot-goal span{display:none}.boot-goals-sm .boot-goal b{font-size:14px}
 #bootRoutes + .boot-q{margin-top:16px}
 @media (max-width:620px){.boot-goals.boot-goals-sm{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* ---- 2.51: passing a song back and forth (part 89) ---- */
+.slc-box{display:grid;gap:4px;margin:4px 0 8px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+.slc-hist{margin:0;padding-left:20px;font-size:13px;color:var(--muted)}.slc-hist b{color:var(--text)}
+.slc-form{display:grid;grid-template-columns:minmax(120px,1fr) 2fr;gap:10px;margin:8px 0}.slc-form label{display:grid;gap:4px;font-weight:700}.slc-form .in{width:100%;box-sizing:border-box;font:14px var(--sans)}
+.slc-noteIn{resize:vertical;min-height:44px}
+.slc-note{margin:8px 0;padding:10px 14px;border-left:4px solid var(--accent);background:var(--panel);border-radius:0 10px 10px 0;font-size:15px;white-space:pre-wrap}
+.sl-first .sl-kick{font-size:15px}
+@media (max-width:560px){.slc-form{grid-template-columns:1fr}}
+#printSheet .pq{display:flex;gap:12px;align-items:center;margin-top:18px;font:12px/1.4 system-ui,sans-serif}#printSheet .pq svg{width:96px;height:96px;flex:none}
