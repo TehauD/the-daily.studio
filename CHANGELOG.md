@@ -2,7 +2,27 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
-## 2.49.0 — 2026-11-07 — Writing on a phone, beginning to end
+## 2.49.1 — 2026-11-08 — The first page, without the flash
+
+### Fixed
+- **A flash of the wrong first page.** Someone coming back saw the first-visit page, with its goals, in the default colours for a moment before Welcome back replaced it in their own theme. Now:
+  - the card stays hidden until it's laid out for that person;
+  - the saved light or dark is set before anything is drawn.
+
+  So the first thing anyone sees is their own page.
+
+### Changed
+- **A first visit always opens on the dark green page**, whatever light or dark is saved.
+- **Welcome back follows the person's appearance setting:** light or dark, from its first frame.
+- **People coming back keep the goals.** Under **Pick up where I left off** they get **Or start something new**: play with a band, write down what you play, turn a hum into a song, record and layer, learn a song, or run a show. Each starts a new song and leaves yours as they are. Before, coming back removed the goals entirely.
+
+### Tests
+- `e2e-welcome` watches the page from its first frame:
+  - a first visit is dark green with the goals, even with light saved;
+  - Welcome back is in the person's own light or dark, and the first-visit page never shows.
+- `e2e-guide` and `e2e-journal` expect the goals under the main button for returning visitors.
+
+2026-11-07 — Writing on a phone, beginning to end
 
 ### Phone (Words)
 - **A song map** above the section chips: every section as a coloured block, as wide as its bars. Tap one to write in it.

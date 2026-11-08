@@ -20,6 +20,7 @@ src/body.html  ─┘                    └► codepen/pen.{html,css,js}
 
 | File | Responsibility |
 |---|---|
+| `0-early.js` | **Before the first paint** (2.49.1): sets the saved light or dark on `<html>` and marks a first visit (`#boot.boot-first`, always the dark green page) as soon as the script runs. `styles.css` keeps the start card hidden (`html:not(.ds-booted)`) until `boot()` has laid it out for this person, with a five-second fallback. |
 | `00-rooms.js` | **Rooms** (2.40): `ROOM`, `room(id)` (one `<script>` from this site with its SRI hash, once; resolves at once in the single file), `__roomFn` (the core's stand-in for a room function) and `window.__dailyRoom` (accepts only the room being waited for, runs it with the core's names, swaps the stand-ins for the real ones). See *Rooms* below. |
 | `01-core.js` | `h()` DOM helper, `$` / `$$`, `bus` (tiny event emitter), `CFG` (settings) and `store` (localStorage with fallback), music theory (notes, scales, chord parsing, key detection), the **voicing search** (`voicings()`), `TUNINGS`, and the song model `S` with `commit()` / undo / redo |
 | `02-audio.js` | Audio engine `E` (AudioContext, input / output selection, worklets), the **FX framework** (`defFx`, `FX`), amp / cabinet / reverb models, the rig `RIG`, presets |

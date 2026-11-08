@@ -792,9 +792,9 @@ body[data-form=phone] #topR>.aud{display:inline-flex}body[data-form=phone] .btn.
 
 
 /* the same start page on the light (white) field: the two looks of one design */
-[data-theme=light] #boot.boot-live{background:#f4f8f3;color:#14211b;--bg:#f7f9f6;--bg2:#eef3ee;--panel:#ffffff;--panel2:#f1f6f1;--raise:#e8f0e9;--line:#d3dfd6;--line2:#bccbc1;--text:#14211b;--muted:#4f6358;--accent:#1f7a4d;--accent-ink:#ffffff;--accent-soft:#dcefe3}
-[data-theme=light] #boot.boot-live .boot-card{background:rgba(255,255,255,.82);border:1px solid rgba(45,110,80,.28);box-shadow:0 0 0 1px rgba(255,255,255,.7),0 24px 70px rgba(30,70,50,.16),0 0 90px rgba(31,138,86,.1);color:#14211b}
-[data-theme=light] #boot.boot-live .boot-lead{color:#0d1f16}
+[data-theme=light] #boot.boot-live:not(.boot-first){background:#f4f8f3;color:#14211b;--bg:#f7f9f6;--bg2:#eef3ee;--panel:#ffffff;--panel2:#f1f6f1;--raise:#e8f0e9;--line:#d3dfd6;--line2:#bccbc1;--text:#14211b;--muted:#4f6358;--accent:#1f7a4d;--accent-ink:#ffffff;--accent-soft:#dcefe3}
+[data-theme=light] #boot.boot-live:not(.boot-first) .boot-card{background:rgba(255,255,255,.82);border:1px solid rgba(45,110,80,.28);box-shadow:0 0 0 1px rgba(255,255,255,.7),0 24px 70px rgba(30,70,50,.16),0 0 90px rgba(31,138,86,.1);color:#14211b}
+[data-theme=light] #boot.boot-live:not(.boot-first) .boot-lead{color:#0d1f16}
 
 
 body.vz-imm .vwrap{position:fixed!important;inset:0;z-index:50;width:auto!important;height:auto!important;min-height:0!important;margin:0;border-radius:0;background:#000}
@@ -1746,3 +1746,8 @@ body.ws-full .wsh{column-width:340px}
 .ws-empty{margin:10px 2px;padding:14px 16px;border:1px dashed var(--line2);border-radius:12px;color:var(--muted);font-size:14px}.ws-empty b{color:var(--text)}
 .mw-tools .mw-mode{display:flex;flex:1 1 auto;min-width:0}.mw-tools .mw-mode button{flex:1;white-space:nowrap;padding:0 8px;font-size:14px}
 .mw-tools .btn.sm{min-width:40px;min-height:40px;font-size:16px}
+/* ---- 2.49.1: no flash of the wrong first page (part 0); the goals for people coming back ---- */
+html:not(.ds-booted) #boot .boot-card{visibility:hidden}
+.boot-goals.boot-goals-sm{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:6px}.boot-goals-sm .boot-goal{padding:10px 12px}.boot-goals-sm .boot-goal span{display:none}.boot-goals-sm .boot-goal b{font-size:14px}
+#bootRoutes + .boot-q{margin-top:16px}
+@media (max-width:620px){.boot-goals.boot-goals-sm{grid-template-columns:repeat(2,minmax(0,1fr))}}

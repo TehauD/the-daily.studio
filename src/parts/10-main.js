@@ -74,7 +74,10 @@ async function boot() {
   $('#bootNoMic').onclick = () => bootStart('studio'); $('#bootStage').onclick = () => bootStart('stage'); guideBoot(bootStart);
   if (CFG.route === 'stage') { $('#bootStage').classList.add('primary'); $('#bootNoMic').classList.remove('primary'); } else if (CFG.route === 'studio') $('#bootNoMic').classList.add('primary');
   // first-timers can look at a finished song before they give anything (no microphone, no camera); people who already have songs just carry on
-  const demoBtn = $('#bootDemo'); if (store.get('started', false)) { demoBtn.remove(); $('#bootRoutes').classList.add('solo'); ['#bootGoals', '#bootQ', '#bootPro'].forEach(q => { const e = $(q); if (e) e.remove(); }); $('#bootNoMic').classList.add('primary'); if (typeof wbBoot === 'function') { try { wbBoot(); } catch (e) { console.warn('welcome back', e); } } } else demoBtn.onclick = () => { PRJ.bootDemo = true; bootStart('studio'); };
+  const demoBtn = $('#bootDemo'); if (store.get('started', false)) { demoBtn.remove(); $('#bootRoutes').classList.add('solo'); { const pro = $('#bootPro'); if (pro) pro.remove(); }      /* 2.49.1: people who have been here keep the goals, under Pick up where I left off, as the way to start something new */
+    { const q = $('#bootQ'), g = $('#bootGoals'), rt = $('#bootRoutes'); if (q && g && rt) { q.textContent = 'Or start something new'; g.classList.add('boot-goals-sm'); rt.after(q, g); } } $('#bootNoMic').classList.add('primary'); if (typeof wbBoot === 'function') { try { wbBoot(); } catch (e) { console.warn('welcome back', e); } } } else demoBtn.onclick = () => { PRJ.bootDemo = true; bootStart('studio'); };
+  { const b = $('#boot'); if (b) b.classList.toggle('boot-first', !store.get('started', false)); }
+  document.documentElement.classList.add('ds-booted');      /* the first page is laid out for this person: show it (part 0) */
   setInterval(anaTick, 33); requestAnimationFrame(frame);
   window.addEventListener('beforeunload', () => { try { store.set('song', S); saveCfg(); } catch (e) { } });
   document.addEventListener('visibilitychange', () => { if (!document.hidden && E.ctx && !OFR.busy && E.ctx.state === 'suspended') E.ctx.resume(); });

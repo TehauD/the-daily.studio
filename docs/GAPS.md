@@ -4,6 +4,11 @@ What the studio, its tutorials, its documents and its tests do **not** cover yet
 
 How to use it: before a release, move what the release closed into *Closed* with the version, and add what it opened. [RELEASE.md](RELEASE.md) has this as a checklist item. Items marked **(maintainer)** are decisions or facts only the project's owner can settle; nothing here blocks a build.
 
+## Closed in 2.49.1
+
+- The first page flashed the first-visit card, in the default colours, before Welcome back. The card now waits until it's laid out, and the saved theme is set first.
+- People coming back had no way to the goals. They now sit under Pick up where I left off.
+
 ## Closed in 2.49.0
 
 - The phone's Words screen showed one section at a time, and its ＋ offered five kinds and always added at the end. It now has the song map, a 📄 Song sheet, every section kind placed after the current one, and a ⋯ menu for each section.

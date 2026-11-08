@@ -1,4 +1,24 @@
 (()=>{'use strict';
+/* >>> parts/0-early.js */
+/* ============================================================
+   Part 0 · BEFORE THE FIRST PAINT (2.49.1)
+   The first page used to show the first-visit card (and the default theme) for a moment before the studio, once started, swapped in
+   Welcome back and the person's own theme: a flash of the wrong page. Now the card stays hidden (styles.css: html:not(.ds-booted))
+   until boot has laid it out, and this sets the saved light or dark at once, so the first thing anyone sees is their own page.
+   A first visit always opens on the dark green start page (#boot.boot-first); Welcome back follows the person's own light or dark.
+   It only reads this browser's own settings; a fallback shows the card after five seconds even if boot never finishes.
+   ============================================================ */
+(() => {
+  try {
+    const r = document.documentElement, c = JSON.parse(localStorage.getItem('fw.cfg') || 'null') || {}, sys = (() => { try { return matchMedia('(prefers-color-scheme: dark)').matches; } catch (e) { return false; } })();
+    const mode = c.lookMode === 'auto' ? (sys ? 'dark' : 'light') : (c.lookMode === 'dark' || c.lookMode === 'light' ? c.lookMode : c.theme === 'dark' ? 'dark' : 'light');
+    r.dataset.theme = mode; r.style.colorScheme = mode;
+    /* a first visit always opens on the dark green start page; someone coming back gets Welcome back in their own light or dark */
+    const first = localStorage.getItem('fw.started') !== 'true', b = document.getElementById('boot'); if (first && b) b.classList.add('boot-first');
+  } catch (e) { }
+  setTimeout(() => document.documentElement.classList.add('ds-booted'), 5000);
+})();
+
 /* >>> parts/00-rooms.js */
 /* ============================================================
    Part 00 · ROOMS (2.40) — parts of the studio the hosted site loads the first time they are used
@@ -34,7 +54,7 @@ window.__dailyRoom = (id, make) => {
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.49.0', BUILD = '81198c7', PARTS_N = +'113' || 0, LINES_N = +'19054' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.49.0', BUILD = 'bddde01', PARTS_N = +'114' || 0, LINES_N = +'19077' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { ghApp: { clientId: '', slug: '' },   /* Sign in with GitHub: the GitHub App's public client id and its slug (docs/GITHUB.md); empty = only the token way */
   support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://the-daily.studio/journal/' };
@@ -4190,7 +4210,10 @@ async function boot() {
   $('#bootNoMic').onclick = () => bootStart('studio'); $('#bootStage').onclick = () => bootStart('stage'); guideBoot(bootStart);
   if (CFG.route === 'stage') { $('#bootStage').classList.add('primary'); $('#bootNoMic').classList.remove('primary'); } else if (CFG.route === 'studio') $('#bootNoMic').classList.add('primary');
   // first-timers can look at a finished song before they give anything (no microphone, no camera); people who already have songs just carry on
-  const demoBtn = $('#bootDemo'); if (store.get('started', false)) { demoBtn.remove(); $('#bootRoutes').classList.add('solo'); ['#bootGoals', '#bootQ', '#bootPro'].forEach(q => { const e = $(q); if (e) e.remove(); }); $('#bootNoMic').classList.add('primary'); if (typeof wbBoot === 'function') { try { wbBoot(); } catch (e) { console.warn('welcome back', e); } } } else demoBtn.onclick = () => { PRJ.bootDemo = true; bootStart('studio'); };
+  const demoBtn = $('#bootDemo'); if (store.get('started', false)) { demoBtn.remove(); $('#bootRoutes').classList.add('solo'); { const pro = $('#bootPro'); if (pro) pro.remove(); }      /* 2.49.1: people who have been here keep the goals, under Pick up where I left off, as the way to start something new */
+    { const q = $('#bootQ'), g = $('#bootGoals'), rt = $('#bootRoutes'); if (q && g && rt) { q.textContent = 'Or start something new'; g.classList.add('boot-goals-sm'); rt.after(q, g); } } $('#bootNoMic').classList.add('primary'); if (typeof wbBoot === 'function') { try { wbBoot(); } catch (e) { console.warn('welcome back', e); } } } else demoBtn.onclick = () => { PRJ.bootDemo = true; bootStart('studio'); };
+  { const b = $('#boot'); if (b) b.classList.toggle('boot-first', !store.get('started', false)); }
+  document.documentElement.classList.add('ds-booted');      /* the first page is laid out for this person: show it (part 0) */
   setInterval(anaTick, 33); requestAnimationFrame(frame);
   window.addEventListener('beforeunload', () => { try { store.set('song', S); saveCfg(); } catch (e) { } });
   document.addEventListener('visibilitychange', () => { if (!document.hidden && E.ctx && !OFR.busy && E.ctx.state === 'suspended') E.ctx.resume(); });
@@ -8386,7 +8409,7 @@ bus.on('booted', simpleMount);
   }
   function paint(now) {
     const t = (now - t0) / 1000, R = Math.max(26, Math.min(W, H) / 15) * (dpr > 1 ? 1 : 1), dx = R * Math.sqrt(3), dy = R * 1.5, cx = W / 2, cy = H * .46, maxd = Math.hypot(W, H) * .55;
-    const P = typeof hexPal === 'function' ? hexPal() : { lt: false, bg: '#04090a', glow: '61,220,132', cell: '61,220,132', warm: '242,182,50', line: '125,191,155' }, lt = P.lt;   /* the palette you chose for the hexagons; light (white) and dark green are the original two looks */
+    const DG = { lt: false, bg: '#04090a', glow: '61,220,132', cell: '61,220,132', warm: '242,182,50', line: '125,191,155' }, first = !!document.querySelector('#boot.boot-first'), P = first ? DG : typeof hexPal === 'function' ? hexPal() : DG, lt = P.lt;      /* 2.49.1: a first visit is always the dark green page */   /* the palette you chose for the hexagons; light (white) and dark green are the original two looks */
     g.fillStyle = P.bg; g.fillRect(0, 0, W, H);
     const glow = g.createRadialGradient(cx, cy, 0, cx, cy, maxd); glow.addColorStop(0, `rgba(${P.glow},${lt ? .12 : .16})`); glow.addColorStop(.5, `rgba(${P.glow},.04)`); glow.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = glow; g.fillRect(0, 0, W, H);
     const beat = (t % 1.9) / 1.9;

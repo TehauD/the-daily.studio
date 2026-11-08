@@ -159,6 +159,8 @@ It is kept on this device only (counts and dates, never sound), is not part of s
 
 ## Getting started and guided sessions (2.7)
 
+**2.49.1:** a first visit always opens on the dark green page. Coming back, you see **Welcome back** in your own light or dark, with **Pick up where I left off** and, under it, **Or start something new**: the same goals, each starting a new song.
+
 The first page asks **what you would like to do first**, not how good you are:
 
 | Goal | Opens | The session |
