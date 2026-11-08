@@ -17,7 +17,7 @@ All notable changes to the-daily.studio (earlier versions were released under th
   
   Levels stay as mixed. A lane that would clip is turned down just enough, and the README says how many dB to raise its fader to get the balance back. Silent lanes are left out. Only one lane's audio is in memory at a time, so long songs work on ordinary laptops.
 - **Copy and paste:** browsers only put text and pictures on the clipboard, never audio, so moving a lane between apps is done by dragging or through the folder.
-- **On the first page:** "Spread Joy, by Tehau. **The story**" (shorter).
+- **On the first page:** "Share Joy, by Tehau. **The story**" (shorter).
 
 ### Fixed
 - **Links that piled up** (`/guide/about/guide/getting-started/…`). When the network failed, the offline copy served the studio at any address, and its relative links grew one level each time.
