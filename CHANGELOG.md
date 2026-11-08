@@ -12,6 +12,11 @@ All notable changes to the-daily.studio (earlier versions were released under th
 - **`/drops/`, the public page:** each drop with its title, who made it, the note, a player, how long it has left, a link that opens the song in the studio (to make your own version), and ⚑ Report.
 - **`/drops/review/`, for the site's owner:** listen to each waiting drop, then Approve (public for 7 days) or Reject (deleted), and take down anything live. It uses the GitHub sign-in from the studio on that browser; only the owner's GitHub account (`OWNER_GITHUB_ID`) is let in.
 
+### Fixed
+- **The song bar fits the window again.** The song journey and the 🛡 chip (2.56) made the bar wider than the window at 1440–1920 px (`e2e-layout`). Now:
+  - the journey is a thin six-part bar along the bottom of the song's title, which opens it when pressed;
+  - Saved and "where your songs are kept" are one control beside undo: ✓ when they're kept somewhere else as well, ⚠ when only in this browser. It opens Keep my songs safe.
+
 ### The Worker (`worker/drops.mjs`)
 - **Routes:** `POST /drops/api/put`, `GET /drops/api/list` (cached a minute), `GET /drops/a/<id>`, and for the owner `review`, `pending/<id>`, `decide` and `remove`; plus `report`.
 - **Storage:** waiting drops and reports stay in the private bucket, approved ones go to a public bucket (`DROPS`), and 7-day rules on both delete them.

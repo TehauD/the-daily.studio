@@ -90,8 +90,8 @@ function jrSteps() {
 }
 function jrPaint() {
   const b = SB.jr; if (!b) return; const st = jrSteps(), n = st.filter(x => x.on).length, next = st.find(x => !x.on);
-  b.replaceChildren(h('span', { class: 'jr-dots', 'aria-hidden': 'true' }, st.map(x => h('i', { class: x.on ? 'on' : '' }))), h('span', { class: 'jr-t' }, next ? 'Next: ' + next.t.toLowerCase() : 'Finished'));
-  b.title = 'Song journey: ' + n + ' of ' + st.length + ' · ' + st.map(x => (x.on ? '✓ ' : '○ ') + x.t).join(' · '); b.setAttribute('aria-label', b.title);
+  b.replaceChildren(...st.map(x => h('i', { class: x.on ? 'on' : '', 'aria-hidden': 'true' })));
+  b.title = 'Song journey: ' + n + ' of ' + st.length + (next ? ' · next: ' + next.t.toLowerCase() : ' · finished') + ' · ' + st.map(x => (x.on ? '✓ ' : '○ ') + x.t).join(' · '); b.setAttribute('aria-label', b.title);
 }
 function jrOpen(anchor) {
   const st = jrSteps(), box = h('div', { class: 'jr-pop', id: 'jrPop' }, h('h5', {}, 'Song journey'));
@@ -107,10 +107,8 @@ function safeState() {
   return { k: 'local', ok: false, t: 'Only in this browser' };
 }
 function safePaint() {
-  const b = SB.safe; if (!b) return; const s = safeState(), r = typeof keepRisk === 'function' ? keepRisk() : { level: 'ok' };
-  b.dataset.k = s.ok ? 'ok' : r.level === 'high' || r.level === 'med' ? 'risk' : 'local'; b.replaceChildren(h('b', {}, s.ok ? '🛡' : '⚠'), h('span', { class: 'sb-st' }, ' ' + s.t));
-  b.title = s.ok ? s.t + '. Your songs are in this browser and kept somewhere else as well.' : 'Your songs are only in this browser. If its data is cleared, they are gone: keep a copy (a backup, a folder, or GitHub).';
+  if (!SB.saved) return; sbSaved(SB.saved.dataset.k === 'dirty' || SB.saved.dataset.k === 'err' ? SB.saved.dataset.k : 'ok', null); const s = safeState();
   /* a gentle nudge, once a week, once there's real work and it's kept nowhere else */
-  if (!s.ok && (songHasWork() || TAKES.length) && Date.now() - (CFG.safeNudge || 0) > 7 * 864e5 && !document.getElementById('boot')?.getClientRects().length) { CFG.safeNudge = Date.now(); saveCfg(); setTimeout(() => toast('Your songs are only in this browser. Press ⚠ Only in this browser (beside Saved) to keep a copy.', 'warn'), 1500); }
+  if (!s.ok && (songHasWork() || TAKES.length) && Date.now() - (CFG.safeNudge || 0) > 7 * 864e5 && !document.getElementById('boot')?.getClientRects().length) { CFG.safeNudge = Date.now(); saveCfg(); setTimeout(() => toast('Your songs are only in this browser. Press ⚠ (beside undo) to keep a copy.', 'warn'), 1500); }
 }
 bus.on('projects', () => { jrPaint(); safePaint(); }); bus.on('song', () => jrPaint()); bus.on('takes', () => jrPaint()); bus.on('versions', () => jrPaint()); bus.on('github', () => safePaint());

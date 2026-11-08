@@ -9,13 +9,13 @@ suite('e2e-versions', async t => {
     const dry = new Float32Array(48000).map((_, i) => .3 * Math.sin(i / 20)); D.TAKES.push({ id: 'tkV', kind: 'vox', name: 'Lead vocal', startSec: 1, sr: 48000, g: 1, pan: 0, mode: 'dry', dur: 1, dry, wet: null, cam: [], peaks: D.peaksOf(dry) }); D.bus.emit('takes'); await D.projSave();
   });
   /* the journey and the chip */
-  const J0 = await ev(() => ({ steps: window.__daily.jrSteps().map(s => s.k + ':' + (s.on ? 1 : 0)).join(' '), title: document.getElementById('sbJr').title, safe: document.getElementById('sbSafe').textContent }));
-  ok(J0.steps === 'words:1 chords:1 rec:1 ver:0 shared:0 done:0' && /Next: a version/.test(await ev(() => document.getElementById('sbJr').textContent)), 'the song journey shows words, chords and recorded done, and the next step: a version (' + J0.steps + ')');
-  ok(/Only in this browser/.test(J0.safe), 'beside Saved, the 🛡 chip says honestly that the songs are only in this browser (' + J0.safe.trim() + ')');
+  const J0 = await ev(() => ({ steps: window.__daily.jrSteps().map(s => s.k + ':' + (s.on ? 1 : 0)).join(' '), title: document.getElementById('sbJr').title, safe: document.getElementById('sbSafe').title, icon: document.getElementById('sbSafe').querySelector('b').textContent }));
+  ok(J0.steps === 'words:1 chords:1 rec:1 ver:0 shared:0 done:0' && /next: a version/.test(J0.title) && await ev(() => document.querySelectorAll('#sbJr i.on').length === 3), 'the song journey shows words, chords and recorded done, and the next step: a version (' + J0.steps + ')');
+  ok(/Only in this browser/.test(J0.safe) && J0.icon === '⚠', 'Saved shows ⚠, and says honestly that the songs are only in this browser');
   await ev(() => document.getElementById('sbSafe').click()); await wait(300);
   ok(await ev(() => !!document.getElementById('keepDlg')), 'and pressing it opens Keep my songs safe'); await ev(() => document.getElementById('keepDlg').close());
   await ev(() => { window.__daily.CFG.lastBackup = Date.now(); window.__daily.bus.emit('projects'); });
-  ok(/Backed up/.test(await ev(() => document.getElementById('sbSafe').textContent)), 'after a backup it says so');
+  ok(await ev(() => /Backed up/.test(document.getElementById('sbSafe').title) && document.getElementById('sbSafe').querySelector('b').textContent === '✓'), 'after a backup it shows ✓ and says so');
 
   /* mark a version */
   await ev(() => document.getElementById('sbJr').click()); await wait(200);

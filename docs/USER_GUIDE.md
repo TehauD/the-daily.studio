@@ -45,16 +45,16 @@ When a song is finished (✦ Finish it ▸ ✦ Master it), press **🌍 Drop it 
 
 ## ✓ Versions, the song journey and 🛡 (2.56)
 
-**Versions:** press the dots in the song bar (the song journey), then **Versions…**, or open ✓ Versions from there.
+**Versions:** press the thin bar under the song's title (the song journey), then **Versions…**.
 - **✓ Mark this version** keeps the song and its takes as they are now, with a name and a note.
 - **⟲ Go back to this** makes the song that version again. What you had is kept as a version first.
 - **⧉ Open as a copy** opens a version as a song of its own.
 - **Rounds:** when someone sends back a song you already have, choose **Add as a new version**. Their round joins your versions instead of becoming another copy.
 - **Where they're kept:** versions stay with the song in this browser, and in your folder or GitHub if sync is on. Their recordings stay on the device that made them.
 
-**The song journey** (six dots) shows how far the song has come: words, chords, recorded, a version, shared, finished. It also names the next step.
+**The song journey** (the six-part bar under the title) shows how far the song has come: words, chords, recorded, a version, shared, finished. Point at it to see the next step; press it for every step.
 
-**🛡 beside Saved** says where your songs are kept. **⚠ Only in this browser** means that if this browser's data is cleared, they're gone: press it and keep a copy (a backup, a folder or GitHub).
+**✓ or ⚠ beside undo** is Saved, and says where your songs are kept. **⚠** means they're only in this browser: if its data is cleared, they're gone. Press it and keep a copy (a backup, a folder or GitHub). **✓** means they're kept somewhere else as well.
 
 ## 📦 Mix and master in another app (2.55)
 

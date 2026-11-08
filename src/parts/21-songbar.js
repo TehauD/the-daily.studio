@@ -121,15 +121,15 @@ function buildSongbar() {
   SB.f.scale = h('select', { class: 'in sb-scale', 'aria-label': 'Scale for overlays', title: 'Scale used for the fretboard and tab overlays', onchange: e => { S.scale = e.target.value; commit(false); bus.emit('scale'); } }, Object.keys(SCALES).map(n => h('option', {}, n)));
   SB.f.more = h('button', { class: 'btn sm sb-more', title: 'Notes, custom tuning, per-string tuning…', onclick: () => sbDetails(SB.f.more) }, 'Notes & tuning ▾');
   SB.trk = h('div', { class: 'sb-trk' });
-  SB.saved = h('span', { class: 'sb-saved', role: 'status', 'aria-live': 'polite', title: 'Your work is saved in this browser as you go' });
-  SB.safe = h('button', { class: 'sb-safe', id: 'sbSafe', type: 'button', onclick: () => keepOpen() }); SB.jr = h('button', { class: 'btn sm sb-jr', id: 'sbJr', type: 'button', onclick: e => jrOpen(e.currentTarget) });
-  UI.undo = h('button', { class: 'btn sm sb-hist', title: 'Undo (Ctrl/Cmd + Z)', 'aria-label': 'Undo', onclick: () => undo() }, '↶'); UI.redo = h('button', { class: 'btn sm sb-hist', title: 'Redo (Shift + Ctrl/Cmd + Z)', 'aria-label': 'Redo', onclick: () => redo() }, '↷'); SB.hist = h('span', { class: 'sb-histg' }, UI.undo, UI.redo, SB.saved, SB.safe);
+  SB.saved = h('button', { class: 'sb-saved', id: 'sbSafe', type: 'button', 'aria-live': 'polite', title: 'Your work is saved in this browser as you go', onclick: () => keepOpen() });      /* 2.56: saved, and where your songs are kept (✓ also kept elsewhere, ⚠ only here) */
+  SB.jr = h('button', { class: 'sb-jr', id: 'sbJr', type: 'button', onclick: e => jrOpen(e.currentTarget) });      /* the song journey: a thin bar under the title, no width of its own */
+  UI.undo = h('button', { class: 'btn sm sb-hist', title: 'Undo (Ctrl/Cmd + Z)', 'aria-label': 'Undo', onclick: () => undo() }, '↶'); UI.redo = h('button', { class: 'btn sm sb-hist', title: 'Redo (Shift + Ctrl/Cmd + Z)', 'aria-label': 'Redo', onclick: () => redo() }, '↷'); SB.hist = h('span', { class: 'sb-histg' }, UI.undo, UI.redo, SB.saved);
   bus.on('savestate', (k, t) => sbSaved(k, t)); sbSaved('ok', null);
   SB.f.refine = h('button', { class: 'btn sm sb-ref', title: 'Open the Refine panel — chords & lyrics beside whatever you are doing', onclick: () => sideShow('refine') }, '✎ Refine');
   el.append(h('div', { class: 'sb-hex', 'aria-hidden': 'true' }, sv('svg', { viewBox: '0 0 24 24', width: 18, height: 18 }, sv('path', { d: 'M12 2l9 5v10l-9 5-9-5V7z', fill: 'none', stroke: 'currentColor', 'stroke-width': 2 }))), sbProject(),
-    sbField('Song', txt('title', 'Title', '', 'Song title'), 'f-title'), sbField('Artist', txt('artist', 'Artist / author', '', 'Artist or author'), 'f-artist'),
+    (() => { const f = sbField('Song', txt('title', 'Title', '', 'Song title'), 'f-title'); f.append(SB.jr); return f; })(), sbField('Artist', txt('artist', 'Artist / author', '', 'Artist or author'), 'f-artist'),
     sbField('Tuning', SB.f.tun, 'f-tun'), sbField('Capo', SB.f.capo, 'f-capo'), sbField('Scale', SB.f.scale, 'f-scale'), SB.f.more,
-    h('span', { class: 'grow' }), SB.jr, SB.hist, SB.trk, zoomCtl(), SB.f.refine);
+    h('span', { class: 'grow' }), SB.hist, SB.trk, zoomCtl(), SB.f.refine);
   setTimeout(() => { jrPaint(); safePaint(); }, 0);
   bus.on('song', () => { if (SP.lock) return; sbSync(); }); bus.on('track', sbChip); bus.on('scale', sbSync); bus.on('projects', sbChip);
   sbSync();
@@ -137,8 +137,9 @@ function buildSongbar() {
 /** “Saved ✓ 14:02” beside the song details: autosave is quiet, so show that it happened */
 function sbSaved(k, t) {
   const el = SB.saved; if (!el) return; el.dataset.k = k;
-  el.innerHTML = ''; if (k === 'dirty') el.append(h('b', {}, '…'), h('span', { class: 'sb-st' }, ' Saving')); else if (k === 'err') el.append(h('b', {}, '⚠'), h('span', { class: 'sb-st' }, ' Not saved')); else { if (t) SB.savedAt = t; el.append(h('b', {}, '✓'), h('span', { class: 'sb-st' }, ' Saved')); }
-  el.title = k === 'err' ? 'This browser would not store your work. Export a song bundle from ☰ Songs to keep it.' : SB.savedAt ? 'Saved in this browser at ' + new Date(SB.savedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) + '. Autosave keeps it up to date.' : 'Your work is saved in this browser as you go';
+  el.innerHTML = ''; if (k === 'dirty') el.append(h('b', {}, '…'), h('span', { class: 'sb-st' }, ' Saving')); else if (k === 'err') el.append(h('b', {}, '⚠'), h('span', { class: 'sb-st' }, ' Not saved')); else { if (t) SB.savedAt = t; const s = typeof safeState === 'function' ? safeState() : { ok: true }; el.dataset.safe = s.ok ? 'ok' : 'local'; el.append(h('b', {}, s.ok ? '✓' : '⚠'), h('span', { class: 'sb-st' }, s.ok ? ' Saved' : ' Only here')); }
+  const at = SB.savedAt ? 'Saved in this browser at ' + new Date(SB.savedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) + '. ' : 'Saved in this browser as you go. ', s = typeof safeState === 'function' ? safeState() : null;
+  el.title = k === 'err' ? 'This browser would not store your work. Export a song bundle from ☰ Songs to keep it.' : at + (!s ? '' : s.ok ? s.t + ': kept somewhere else as well.' : 'Only in this browser: if its data is cleared, your songs are gone. Press to keep a copy (a backup, a folder, or GitHub).'); el.setAttribute('aria-label', el.title);
 }
 function sbSync() {
   if (!SB.el) return; const act = document.activeElement, set = (el, v) => { if (el && el !== act && el.value !== String(v)) el.value = v; };
