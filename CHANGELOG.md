@@ -12,6 +12,10 @@ All notable changes to the-daily.studio (earlier versions were released under th
   - the deployed folder carries a `.assetsignore`, so Cloudflare would refuse to upload any of these even if one ended up there.
 - **`verify:site` now fails a release** if the deployed folder holds any dotfile (other than `.well-known/`), an `.env` or `.dev.vars` file, a key, or a package or Wrangler file; if any such file is committed; or if the `workers.dev` or preview addresses are turned back on.
 
+### Docs
+- **[docs/CLOUDFLARE_SETUP.md](docs/CLOUDFLARE_SETUP.md):** a single checklist for the site owner: build and deploy settings, domains and DNS (and leftover records to remove), TLS, WAF and a rate limit on `/auth/*`, Sign in with GitHub with the Worker's secrets, and account safety. Song links need none of it.
+- **CHANGELOG:** the headings for 2.47.1 to 2.52.0 had lost their version numbers; restored. `verify:site` now catches a release heading without one.
+
 Checked on the live site for both addresses: `.env` and its variants, `.git/`, `.dev.vars`, `.wrangler/`, `wrangler.jsonc`, `package.json`, the source folders and common admin paths all answer 404. The only secrets the site uses (Sign in with GitHub's client id and secret) are Worker secrets kept in Cloudflare, never in the repository or the deployed files.
 
 ## 2.53.0 — 2026-11-08 — The story behind it, where people can find it
@@ -32,7 +36,7 @@ Checked on the live site for both addresses: `.env` and its variants, `.git/`, `
 ### Tests
 - **`verify-site`:** the About page is an About page and names its author with the LinkedIn and GitHub profiles.
 
-2026-11-08 — Fewer requests, lower costs
+## 2.52.0 — 2026-11-08 — Fewer requests, lower costs
 
 ### Changed
 - **The Worker runs only where it has work:** The Daily's address, the moving page, Sign in with GitHub, backstage and the studio's own page. Fonts, code, icons, pictures and the guide are served as static files, which Cloudflare doesn't count as Worker requests. In 2.50 every file went through the Worker, so one visit was 10 to 15 counted requests; now it's one. `run_worker_first` lists the paths and needs Wrangler 4.20 or later.
@@ -49,7 +53,7 @@ Checked on the live site for both addresses: `.env` and its variants, `.git/`, `
 ### Tests
 - **New `e2e-requests`** (9 checks): every request on a first and a later visit, the saved copy, the Worker's path list and the cache times.
 
-2026-11-08 — Write a song together, by passing it back and forth
+## 2.51.0 — 2026-11-08 — Write a song together, by passing it back and forth
 
 ### New
 - **From and Note in the send window.** Your name, remembered on this device, and a note go inside the song link ("Can you write the chorus?").
@@ -70,7 +74,7 @@ Checked on the live site for both addresses: `.env` and its variants, `.git/`, `
 ### Tests
 - **New `e2e-collab`** (15 checks). Two browsers pass a song back and forth: name, note, the invitation, ↩ Send back with what changed, both rounds, links back from share pages and printed sheets, and odd values cleaned.
 
-2026-11-08 — The Daily at its own address
+## 2.50.0 — 2026-11-08 — The Daily at its own address
 
 ### Changed
 - **The Daily now lives at https://journal.the-daily.studio/.** The studio's links point there.
@@ -95,7 +99,7 @@ Checked on the live site for both addresses: `.env` and its variants, `.git/`, `
   - that neither app uses cookies;
   - that the sitemap no longer lists `/journal/`.
 
-2026-11-08 — Security hardening, after a look at the live site
+## 2.49.2 — 2026-11-08 — Security hardening, after a look at the live site
 
 A passive evaluation of https://the-daily.studio/ (running 2.48.1): headers, the policy on every page, files that must not be served, the sign-in routes with bad input, and the privacy test run against the live site. The full findings are in [docs/SECURITY_MODEL.md](docs/SECURITY_MODEL.md#live-site-evaluation-2026-11-08).
 
@@ -113,7 +117,7 @@ A passive evaluation of https://the-daily.studio/ (running 2.48.1): headers, the
 - **`www.the-daily.studio`** has no DNS answer.
 - **The `workers.dev` address** (`workers_dev: true` in `wrangler.jsonc`) serves a second copy of the site.
 
-2026-11-08 — The first page, without the flash
+## 2.49.1 — 2026-11-08 — The first page, without the flash
 
 ### Fixed
 - **A flash of the wrong first page.** Someone coming back saw the first-visit page, with its goals, in the default colours for a moment before Welcome back replaced it in their own theme. Now:
@@ -133,7 +137,7 @@ A passive evaluation of https://the-daily.studio/ (running 2.48.1): headers, the
   - Welcome back is in the person's own light or dark, and the first-visit page never shows.
 - `e2e-guide` and `e2e-journal` expect the goals under the main button for returning visitors.
 
-2026-11-07 — Writing on a phone, beginning to end
+## 2.49.0 — 2026-11-07 — Writing on a phone, beginning to end
 
 ### Phone (Words)
 - **A song map** above the section chips: every section as a coloured block, as wide as its bars. Tap one to write in it.
@@ -162,7 +166,7 @@ A passive evaluation of https://the-daily.studio/ (running 2.48.1): headers, the
   - the remembered way of writing.
 - `e2e-phone-singer` uses the new ＋ menu.
 
-2026-11-07 — The whole song as a chord sheet
+## 2.48.1 — 2026-11-07 — The whole song as a chord sheet
 
 ### Write
 - **Whole song opens as a 📄 Sheet**, laid out the way a chord sheet is pasted:
@@ -185,7 +189,7 @@ A passive evaluation of https://the-daily.studio/ (running 2.48.1): headers, the
   - full screen and Esc;
   - that the trainer stays quiet.
 
-2026-11-07 — See the whole song, and Perform your way
+## 2.48.0 — 2026-11-07 — See the whole song, and Perform your way
 
 ### Write: the whole song
 - **☰ Whole song**, a fourth way to see Write beside Tab, Words and Both. It shows every section in order, from intro to outro, each with its name, chords and words, all editable where they are.
@@ -221,7 +225,7 @@ A passive evaluation of https://the-daily.studio/ (running 2.48.1): headers, the
   - a phone.
 - **`e2e-perform-views`** adds the Sing-along view to the cycle of views.
 
-2026-11-07 — Neutral names for the drum machines
+## 2.47.1 — 2026-11-07 — Neutral names for the drum machines
 
 ### Changed
 - The drum machines and the sub bass have neutral names:

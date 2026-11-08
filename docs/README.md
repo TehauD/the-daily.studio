@@ -9,6 +9,7 @@
 | [AUDIO.md](AUDIO.md) | users, maintainers | audio permission model, Audio panel, kill switch, audio first, how the band and vocal tuning are made |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | contributors | source layout, build model, rooms, subsystems |
 | [HOSTING.md](HOSTING.md) | whoever deploys | Cloudflare setup, domain, headers and CSP, other hosts |
+| [CLOUDFLARE_SETUP.md](CLOUDFLARE_SETUP.md) | the site owner | step-by-step checklist: builds, domains and DNS, WAF, Sign in with GitHub, account safety |
 | [OPERATIONS.md](OPERATIONS.md) | whoever runs it | release procedure, rollback, monitoring, incident playbook |
 | [RELEASE.md](RELEASE.md) | release manager | go-live checklist and live smoke test |
 | [TESTING.md](TESTING.md) | contributors | test suites, quality gates, manual checks, known gaps |

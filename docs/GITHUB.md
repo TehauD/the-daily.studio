@@ -32,6 +32,8 @@ From 2.21 a person can keep their studio in a repository in **their own** GitHub
 
 ## Setting up Sign in with GitHub (site owner)
 
+The same steps with the Cloudflare side, the WAF and rate limit for `/auth/*`, and checks are in [CLOUDFLARE_SETUP.md](CLOUDFLARE_SETUP.md), Part D.
+
 1. On GitHub: **Settings ▸ Developer settings ▸ GitHub Apps ▸ New GitHub App**.
    - **Homepage URL**: `https://the-daily.studio/`
    - **Callback URL**: `https://the-daily.studio/auth/github/callback`

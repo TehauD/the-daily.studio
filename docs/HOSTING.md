@@ -6,7 +6,7 @@ the-daily.studio is a **static site**: one `index.html` (on the hosted site its 
 
 Contents: [1. Deploy on Cloudflare](#1-deploy-on-cloudflare) · [2. Custom domain](#2-custom-domain) · [3. Check it works](#3-check-it-works) · [4. Updating](#4-updating-the-site) · [5. Releases](#5-cut-a-release) · [6. Other hosts](#6-other-hosts) · [7. Headers and CSP](#7-headers-and-csp) · [8. Self-hosting camera models](#8-self-hosting-the-camera-model-files) · [9. Troubleshooting](#9-troubleshooting)
 
-For day-to-day running, rollback and incident steps see [OPERATIONS.md](OPERATIONS.md). For the security design see [SECURITY_MODEL.md](SECURITY_MODEL.md).
+**The step-by-step Cloudflare and GitHub checklist** (builds, domains, DNS, WAF, Sign in with GitHub, account safety) is [CLOUDFLARE_SETUP.md](CLOUDFLARE_SETUP.md). For day-to-day running, rollback and incident steps see [OPERATIONS.md](OPERATIONS.md). For the security design see [SECURITY_MODEL.md](SECURITY_MODEL.md).
 
 ---
 
@@ -23,7 +23,7 @@ In **Workers & Pages ▸ Create ▸ Import a repository**, choose the repository
 | --- | --- |
 | Project name | `the-daily-studio` (must match `name` in `wrangler.jsonc`) |
 | Build command | `npm run build:site && npm run verify:site` (`wrangler.jsonc` repeats it, so a deploy still works if this is left as `npm run build`) |
-| Deploy command | `npx wrangler deploy` |
+| Deploy command | `npx wrangler@4 deploy` (Wrangler 4.20 or later; `run_worker_first` as a list needs it) |
 | Preview command | `npx wrangler versions upload` |
 | Preview builds | optional. Since 2.53.1 `wrangler.jsonc` sets `preview_urls: false` and `workers_dev: false`, so a preview build uploads a version without a public address: test locally (`npx wrangler dev`) instead |
 | Cloudflare Access | off (the site is public) |
