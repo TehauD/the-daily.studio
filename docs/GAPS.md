@@ -4,6 +4,10 @@ What the studio, its tutorials, its documents and its tests do **not** cover yet
 
 How to use it: before a release, move what the release closed into *Closed* with the version, and add what it opened. [RELEASE.md](RELEASE.md) has this as a checklist item. Items marked **(maintainer)** are decisions or facts only the project's owner can settle; nothing here blocks a build.
 
+## Closed in 2.53.0
+
+- The story behind the studio was only at the end of Help. It now has its own page, a line on the first page, and structured data linking the author's profiles.
+
 ## Closed in 2.52.0
 
 - Since 2.50, every request went through the Worker and counted against the free plan; now only the pages that need it do.

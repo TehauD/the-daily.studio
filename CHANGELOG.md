@@ -2,7 +2,25 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
-## 2.52.0 — 2026-11-08 — Fewer requests, lower costs
+## 2.53.0 — 2026-11-08 — The story behind it, where people can find it
+
+### New
+- **An About page,** `/guide/about/`, with the story from Help ▸ About (*Made for creators*): why the studio exists and who made it. It links to LinkedIn, GitHub, the source code and The Daily. It's in the guide's top bar and linked from the in-app About.
+- **On the first page:** "Made by Tehau DeBarthe: a musician, a software engineer and a dad. **The story**".
+- **Structured data for search engines,** with no script and no tracking:
+  - the About page is marked as an About page;
+  - it names its author, with the LinkedIn and GitHub profiles as theirs;
+  - the studio's page names the same author, with the same profiles.
+
+  This lets search engines show the site for the author's name and connect it to those profiles.
+
+### Changed
+- **Help ▸ About ▸ Privacy at a glance** no longer says the page fetches a sample list (it stopped in 2.52). It now mentions song links (the song, and any name and note, inside the link) and GitHub.
+
+### Tests
+- **`verify-site`:** the About page is an About page and names its author with the LinkedIn and GitHub profiles.
+
+2026-11-08 — Fewer requests, lower costs
 
 ### Changed
 - **The Worker runs only where it has work:** The Daily's address, the moving page, Sign in with GitHub, backstage and the studio's own page. Fonts, code, icons, pictures and the guide are served as static files, which Cloudflare doesn't count as Worker requests. In 2.50 every file went through the Worker, so one visit was 10 to 15 counted requests; now it's one. `run_worker_first` lists the paths and needs Wrangler 4.20 or later.

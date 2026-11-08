@@ -1762,3 +1762,5 @@ html:not(.ds-booted) #boot .boot-card{visibility:hidden}
 .sl-first .sl-kick{font-size:15px}
 @media (max-width:560px){.slc-form{grid-template-columns:1fr}}
 #printSheet .pq{display:flex;gap:12px;align-items:center;margin-top:18px;font:12px/1.4 system-ui,sans-serif}#printSheet .pq svg{width:96px;height:96px;flex:none}
+/* ---- 2.53: who made it, on the first page ---- */
+.boot-made{margin:0 0 6px;font-size:12px;color:var(--muted)}.boot-made a{color:var(--accent);font-weight:700}
