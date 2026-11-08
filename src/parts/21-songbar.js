@@ -137,7 +137,7 @@ function buildSongbar() {
 /** “Saved ✓ 14:02” beside the song details: autosave is quiet, so show that it happened */
 function sbSaved(k, t) {
   const el = SB.saved; if (!el) return; el.dataset.k = k;
-  el.innerHTML = ''; if (k === 'dirty') el.append(h('b', {}, '…'), h('span', { class: 'sb-st' }, ' Saving')); else if (k === 'err') el.append(h('b', {}, '⚠'), h('span', { class: 'sb-st' }, ' Not saved')); else { if (t) SB.savedAt = t; const s = typeof safeState === 'function' ? safeState() : { ok: true }; el.dataset.safe = s.ok ? 'ok' : 'local'; el.append(h('b', {}, s.ok ? '✓' : '⚠'), h('span', { class: 'sb-st' }, s.ok ? ' Saved' : ' Only here')); }
+  el.innerHTML = ''; if (k === 'dirty') el.append(h('b', {}, '…'), h('span', { class: 'sb-st' }, ' Saving')); else if (k === 'err') el.append(h('b', {}, '⚠'), h('span', { class: 'sb-st' }, ' Not saved')); else { if (t) SB.savedAt = t; const s = typeof safeState === 'function' ? safeState() : { ok: true }; el.dataset.safe = s.ok ? 'ok' : 'local'; el.append(h('b', {}, s.ok ? '✓' : '⚠'), h('span', { class: 'sb-st' }, ' Saved')); }
   const at = SB.savedAt ? 'Saved in this browser at ' + new Date(SB.savedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) + '. ' : 'Saved in this browser as you go. ', s = typeof safeState === 'function' ? safeState() : null;
   el.title = k === 'err' ? 'This browser would not store your work. Export a song bundle from ☰ Songs to keep it.' : at + (!s ? '' : s.ok ? s.t + ': kept somewhere else as well.' : 'Only in this browser: if its data is cleared, your songs are gone. Press to keep a copy (a backup, a folder, or GitHub).'); el.setAttribute('aria-label', el.title);
 }

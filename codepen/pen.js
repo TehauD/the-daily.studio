@@ -57,7 +57,7 @@ window.__dailyRoom = (id, make) => {
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.60.0', BUILD = '349bcb3', PARTS_N = +'122' || 0, LINES_N = +'20095' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.60.0', BUILD = '0e60453', PARTS_N = +'122' || 0, LINES_N = +'20095' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { ghApp: { clientId: 'Iv23liTjqEBQsgmGaE1Q', slug: 'tehaud-the-daily-studio' },   /* Sign in with GitHub: the GitHub App's public client id and its slug (docs/GITHUB.md); empty = only the token way */
   support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://journal.the-daily.studio/' };
@@ -6356,7 +6356,7 @@ function buildSongbar() {
 /** “Saved ✓ 14:02” beside the song details: autosave is quiet, so show that it happened */
 function sbSaved(k, t) {
   const el = SB.saved; if (!el) return; el.dataset.k = k;
-  el.innerHTML = ''; if (k === 'dirty') el.append(h('b', {}, '…'), h('span', { class: 'sb-st' }, ' Saving')); else if (k === 'err') el.append(h('b', {}, '⚠'), h('span', { class: 'sb-st' }, ' Not saved')); else { if (t) SB.savedAt = t; const s = typeof safeState === 'function' ? safeState() : { ok: true }; el.dataset.safe = s.ok ? 'ok' : 'local'; el.append(h('b', {}, s.ok ? '✓' : '⚠'), h('span', { class: 'sb-st' }, s.ok ? ' Saved' : ' Only here')); }
+  el.innerHTML = ''; if (k === 'dirty') el.append(h('b', {}, '…'), h('span', { class: 'sb-st' }, ' Saving')); else if (k === 'err') el.append(h('b', {}, '⚠'), h('span', { class: 'sb-st' }, ' Not saved')); else { if (t) SB.savedAt = t; const s = typeof safeState === 'function' ? safeState() : { ok: true }; el.dataset.safe = s.ok ? 'ok' : 'local'; el.append(h('b', {}, s.ok ? '✓' : '⚠'), h('span', { class: 'sb-st' }, ' Saved')); }
   const at = SB.savedAt ? 'Saved in this browser at ' + new Date(SB.savedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) + '. ' : 'Saved in this browser as you go. ', s = typeof safeState === 'function' ? safeState() : null;
   el.title = k === 'err' ? 'This browser would not store your work. Export a song bundle from ☰ Songs to keep it.' : at + (!s ? '' : s.ok ? s.t + ': kept somewhere else as well.' : 'Only in this browser: if its data is cleared, your songs are gone. Press to keep a copy (a backup, a folder, or GitHub).'); el.setAttribute('aria-label', el.title);
 }
