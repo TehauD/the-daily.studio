@@ -39,7 +39,7 @@ suite('e2e-journal', async t => {
   const want = H.label + ': Played ' + H.u.s + ' sessions · Learned ' + H.u.c + ' chords · Recorded ' + H.u.i + ' ideas · Completed ' + H.u.d + ' songs';
   ok(wb && wb.sum === want, 'the summary line reads “' + want + '” (' + (wb && wb.sum) + ')');
   ok(wb && /Pick up where I left off/.test(wb.btn) && /Maybe Today Demo/.test(wb.btn), 'the main button says Pick up where I left off and names the song');
-  ok(await ev(() => !document.getElementById('bootGoals') && !document.getElementById('bootDemo')), 'the first-time choices are still out of the way for a returning person');
+  ok(await ev(() => !document.getElementById('bootDemo') && !document.getElementById('bootPro') && document.getElementById('bootGoals').classList.contains('boot-goals-sm')), 'for a returning person the demo and I know my way around are gone, and the goals sit small under the main button (2.49.1)');
   // changing what you are working on
   await ev(() => document.querySelector('#welcomeBack .wb-edit').click()); await p.fill('#welcomeBack .wb-in', 'Fingerstyle blues'); await p.keyboard.press('Enter');
   ok(await ev(() => /Fingerstyle blues/.test(document.getElementById('welcomeBack').innerText) && window.__daily.jnLoad().focus === 'Fingerstyle blues'), 'the pencil changes Working on, and it is kept');

@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src '__SCRIPT_HASH__'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
+<title>The Daily has moved</title>
+<style>:root{color-scheme:light dark}body{margin:0;min-height:100vh;display:grid;place-items:center;font:16px/1.55 "Segoe UI",system-ui,-apple-system,sans-serif;background:#f4f6f3;color:#14211b}
+@media (prefers-color-scheme:dark){body{background:#070c0b;color:#e8efea}.card{background:#101816!important;border-color:#263a31!important}.muted{color:#9fb3a8!important}}
+.card{max-width:34rem;margin:16px;padding:26px 28px;border:1px solid #d3dfd6;border-radius:16px;background:#fff}h1{margin:0 0 .4rem;font-size:1.5rem}
+.muted{color:#4f6358;font-size:.92rem}.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+button,a.b{font-weight:600;font-size:15px;padding:11px 16px;border-radius:10px;border:1px solid #1f7a4d;background:#1f7a4d;color:#fff;cursor:pointer;text-decoration:none}
+button.ghost,a.ghost{background:transparent;color:inherit;border-color:#bccbc1}button[disabled]{opacity:.5;cursor:default}#say{min-height:1.5em;margin-top:14px}</style></head>
+<body><main class="card" aria-live="polite">
+<h1>The Daily has a new address</h1>
+<p>It now lives at <b id="to">journal.the-daily.studio</b>. Your journal is kept in this browser, so it comes with you in one step.</p>
+<p class="muted" id="what">Looking for a journal on this device…</p>
+<div class="row" id="acts"></div>
+<p id="say"></p>
+</main>
+<script>
+(() => {
+  'use strict';
+  const NEW = location.protocol + '//journal.' + location.host, DB = 'the-daily', $ = id => document.getElementById(id);
+  $('to').textContent = NEW.replace(/^https?:\/\//, '');
+  const say = (t, bad) => { const s = $('say'); s.textContent = t; s.style.color = bad ? '#c0392b' : ''; };
+  const btn = (label, fn, ghost) => { const b = document.createElement(fn ? 'button' : 'a'); b.textContent = label; if (fn) { b.type = 'button'; b.onclick = fn; } else { b.href = NEW + '/'; b.className = 'b'; } if (ghost) b.classList.add('ghost'); return b; };
+  const lsKeys = () => { const out = []; try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.startsWith('daily')) out.push(k); } } catch (e) { } return out; };
+  /* The Daily's own database, read without creating it where there is none */
+  const readDb = () => new Promise(res => {
+    const empty = { kv: [], meta: [] }; let made = false; if (!window.indexedDB) return res(empty);
+    const rq = indexedDB.open(DB); rq.onerror = () => res(empty);
+    rq.onupgradeneeded = () => { made = true; try { rq.transaction.abort(); } catch (e) { } };
+    rq.onsuccess = () => { const db = rq.result; if (made) { db.close(); return res(empty); }
+      const names = ['kv', 'meta'].filter(n => db.objectStoreNames.contains(n)); if (!names.length) { db.close(); return res(empty); }
+      const tx = db.transaction(names, 'readonly'), out = { kv: [], meta: [] };
+      names.forEach(n => { const g = tx.objectStore(n).getAll(); g.onsuccess = () => { out[n] = g.result || []; }; });
+      tx.oncomplete = () => { db.close(); res(out); }; tx.onerror = () => { db.close(); res(empty); }; };
+  });
+  const clearOld = () => new Promise(res => { lsKeys().forEach(k => { try { localStorage.removeItem(k); } catch (e) { } }); if (!window.indexedDB) return res(); const d = indexedDB.deleteDatabase(DB); d.onsuccess = d.onerror = d.onblocked = () => res(); });
+  readDb().then(db => {
+    const ls = {}; lsKeys().forEach(k => { try { ls[k] = localStorage.getItem(k); } catch (e) { } });
+    const n = db.kv.length + Object.keys(ls).length;
+    if (!n) { $('what').textContent = 'There is no journal on this device, so there is nothing to move. Taking you there…'; $('acts').append(btn('Open The Daily')); setTimeout(() => location.replace(NEW + '/'), 1500); return; }
+    $('what').textContent = 'This device has a journal here (' + db.kv.length + ' saved item' + (db.kv.length === 1 ? '' : 's') + ' and ' + Object.keys(ls).length + ' setting' + (Object.keys(ls).length === 1 ? '' : 's') + '). Move it, then open The Daily at its new address. Nothing is uploaded: it goes from this page to the new one, in this browser.';
+    let win = null, sent = false;
+    const go = btn('Move my journal', () => {
+      go.disabled = true; say('Opening the new address…'); win = window.open(NEW + '/move/', 'daily-move');
+      if (!win) { go.disabled = false; say('The browser blocked the new window. Allow pop-ups for this page, then press Move my journal again.', true); }
+    });
+    $('acts').append(go, btn('Open The Daily', null, true));
+    addEventListener('message', e => {
+      if (e.origin !== NEW || !win || e.source !== win || !e.data || typeof e.data !== 'object') return;
+      if (e.data.type === 'ready' && !sent) { sent = true; win.postMessage({ type: 'move', ls, kv: db.kv, meta: db.meta }, NEW); say('Moving…'); }
+      if (e.data.type === 'done') {
+        const a = e.data; say('Moved: ' + (a.kv || 0) + ' saved item' + (a.kv === 1 ? '' : 's') + ' and ' + (a.ls || 0) + ' setting' + (a.ls === 1 ? '' : 's') + (a.kept ? ' (' + a.kept + ' already there were kept as they were)' : '') + '. Your journal is at the new address.');
+        $('acts').replaceChildren(btn('Open The Daily'), btn('Remove the old copy from this address', async ev => { ev.currentTarget.disabled = true; await clearOld(); say('The old copy is removed from this address. Your journal is at ' + NEW.replace(/^https?:\/\//, '') + '.'); }, true));
+        $('what').textContent = 'Check your journal at the new address, then remove the old copy here so it is kept in one place only.';
+      }
+      if (e.data.type === 'error') { say('The move did not finish: ' + String(e.data.why || 'unknown').slice(0, 120) + '. Nothing here was changed; try again.', true); go.disabled = false; sent = false; }
+    });
+  });
+})();
+</script>
+</body></html>

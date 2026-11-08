@@ -4,6 +4,42 @@ What the studio, its tutorials, its documents and its tests do **not** cover yet
 
 How to use it: before a release, move what the release closed into *Closed* with the version, and add what it opened. [RELEASE.md](RELEASE.md) has this as a checklist item. Items marked **(maintainer)** are decisions or facts only the project's owner can settle; nothing here blocks a build.
 
+## Closed in 2.50.0
+
+- The Daily has its own address, `journal.the-daily.studio`, with a page at `/journal/` that moves a journal kept there.
+
+## Closed in 2.49.2
+
+- From the live-site evaluation (SECURITY_MODEL.md):
+  - jsDelivr is narrowed to the camera library's folder;
+  - the 404 page has a policy;
+  - there's a `security.txt`;
+  - CI's token is read-only, and Dependabot is on.
+
+## Closed in 2.49.1
+
+- The first page flashed the first-visit card, in the default colours, before Welcome back. The card now waits until it's laid out, and the saved theme is set first.
+- People coming back had no way to the goals. They now sit under Pick up where I left off.
+
+## Closed in 2.49.0
+
+- The phone's Words screen showed one section at a time, and its ＋ offered five kinds and always added at the end. It now has the song map, a 📄 Song sheet, every section kind placed after the current one, and a ⋯ menu for each section.
+- Writing had no next step from the sheet. Perform, Send and Print are now at its foot.
+
+## Closed in 2.48.1
+
+- Whole song needed a lot of scrolling and left most of the screen unused. It now opens as a chord sheet in columns, with repeats shortened, editing in place and a full-screen mode.
+- Nothing stopped two parts declaring the same function; the build now refuses it.
+
+## Closed in 2.48.0
+
+- Seeing the whole song in Write: Write showed one section at a time, and ＋ could only add a Verse or a Chorus. Now there's **☰ Whole song**, a song map, and a menu of every section kind with names and chords filled in.
+- Perform had one layout: controls at the bottom and the words in the middle. **⚙ Layout** now offers controls top right, at the bottom or hidden, the words at the bottom like a sing-along or in the middle, four text sizes, the song map, and a Sing-along view.
+
+## Closed in 2.47.1
+
+- **Neutral names** for the drum machines and the sub bass: Deep Machine (was 808), Club Machine (was 909) and Glide Sub (was 808 Sub). Saved songs, song links, backups and snapshots that use the old names open with the new ones (`bandRename`). The Afrobeats beat is now **Golden Hour** (was Afro Sunset).
+
 ## Closed in 2.47.0
 
 **Tutorials**
@@ -26,7 +62,7 @@ How to use it: before a release, move what the release closed into *Closed* with
 **Tests**
 - `test/e2e-privacy.cjs` had not been widened since 2.19.1. Its session now taps a beat with Song build, makes and reads a song link and tunes a take and puts it back, and still makes no request to any other site.
 - TESTING.md's table was missing sixteen suites (agent, goals, chord sheets, share, tip jar, GitHub and more). All listed now.
-- HARDWARE_CHECKLIST.md had nothing after 2.12. Section 15 covers what only ears and real devices can judge: the beats and the 808 sub on real speakers, the guitars folded to mono, Song build, tuning a real voice, singing on a phone, song links through chat apps, and the tour.
+- HARDWARE_CHECKLIST.md had nothing after 2.12. Section 15 covers what only ears and real devices can judge: the beats and the sub bass on real speakers, the guitars folded to mono, Song build, tuning a real voice, singing on a phone, song links through chat apps, and the tour.
 
 **Agents and machine-readable files**
 - `llms.txt` listed the renamed `open_shower_mode` as a tool with a garbled line; only the tools table is read now, and `verify-site` checks it.
@@ -46,6 +82,14 @@ How to use it: before a release, move what the release closed into *Closed* with
 - `get_song` does not return section energies or whether Song build is on (`edit_section` and `set_band` answers do).
 - **Per-room usage:** the offline copy fetches every room on install, so the host's request counts cannot show which rooms people use. This is privacy-friendly and probably right; recorded so nobody reads the counts as usage.
 
+### Song structure (opened by 2.48)
+- The **Stage** panel's prompter and the lower third have none of Perform's layout choices.
+- Sections can be reordered with ↑ ↓ but not dragged on the map.
+
+### Writing together (opened by 2.51)
+- Each round of a song passed back and forth opens as a new song. The rounds aren't gathered into one song with versions yet, so someone who passes a song many times gets many copies.
+- Two people changing the same section at once aren't merged: the later round simply carries its own version.
+
 ### Tutorials and documents
 - The two new guide pages have **no picture** yet (`test/guide-shots.cjs` makes the others).
 - `docs/screenshots/` and `guide/img/` predate 2.46 (Simple per workspace) and 2.41 (the phone); regenerate with `npm run shots` and `node test/guide-shots.cjs`, and check `git diff`.
@@ -59,10 +103,15 @@ How to use it: before a release, move what the release closed into *Closed* with
 - Not covered at all: very long sessions, large stems on low-memory phones, a full screen-reader pass, audio latency outside Chromium.
 - The tour test checks that each step points at something, not that its words are true; RELEASE.md asks a person to read them.
 
+### Security (maintainer, from the live-site evaluation)
+- **Cloudflare settings:** turn off Web Analytics' automatic setup, bot detection's JavaScript and, if you can, Network Error Logging. Until then the 404 page and `/journal/` get Cloudflare's scripts, and `/journal/` gets a `cf_clearance` cookie.
+- **Decide on `www.the-daily.studio`** (no DNS answer) and on `workers_dev` (a second copy of the site).
+- **Pin the CI actions to commit hashes.**
+- **Check the TLS configuration** with a public scanner; the evaluation couldn't, from behind a proxy.
+
 ### Licensing and legal (maintainer)
 - **Demo words:** confirm you wrote the four lines of the demo song.
 - **MediaPipe models:** confirm Google's terms before self-hosting or redistributing `selfie_segmenter.tflite` (and the hand model).
-- **"808" and "909"** as style names: generic among producers and no manufacturer is named, but you may prefer neutral names (a one-line change, with a mapping for saved songs).
 - **Patents:** none searched. The methods are decades old and the early patents have run their term; a freedom-to-operate opinion is needed before licensing the code commercially as a product.
 - **Trademark:** no search for "the-daily.studio" or "The Daily".
 - **Takedown contact:** none, if the site becomes a public product.

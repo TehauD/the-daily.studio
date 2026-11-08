@@ -22,6 +22,9 @@ let js = "(()=>{'use strict';\n";
 for (const f of parts) js += `/* >>> parts/${f} */\n${src('parts/' + f)}\n`;
 js += "if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();\n})();\n";
 try { new vm.Script(js, { filename: 'daily-songs.js' }); } catch (e) { console.error('Syntax error in bundled script:\n' + e.stack); process.exit(1); }
+/* two parts declaring the same top-level function is legal JavaScript, and the later one silently replaces the earlier everywhere: refuse it */
+{ const seen = new Map(), dup = []; for (const f of parts) for (const m of src('parts/' + f).matchAll(/^(?:async\s+)?function\s*\*?\s*([A-Za-z_$][\w$]*)/gm)) { if (seen.has(m[1])) dup.push(m[1] + ' (' + seen.get(m[1]) + ' and ' + f + ')'); else seen.set(m[1], f); }
+  if (dup.length) { console.error('The same function is declared in two places, so one would silently replace the other:\n  ' + dup.join('\n  ')); process.exit(1); } }
 
 const MARK = markInner({ hex: 'var(--accent)', ink: 'var(--text)' });
 const MARK_SM = markInner({ hex: 'var(--accent)', ink: 'var(--text)', bars: false, k: 1.45 });
@@ -57,7 +60,11 @@ const head = `<meta charset="utf-8"><meta name="viewport" content="width=device-
 const cssMin = PRETTY ? css : minifyCSS(css);
 { const br = x => [(x.match(/\{/g) || []).length, (x.match(/\}/g) || []).length].join(); if (br(cssMin) !== br(css.replace(/\/\*[\s\S]*?\*\//g, ''))) { console.error('Minifying the stylesheet changed its braces'); process.exit(1); } }
 const inlineJs = `\n${jsMin.replace(/<\/script>/g, '<\\/script>')}\n`;
-const csp = ["default-src 'self'", `script-src 'sha256-${createHash('sha256').update(inlineJs).digest('base64')}' 'wasm-unsafe-eval' blob: https://cdn.jsdelivr.net`, "worker-src 'self' blob:", "style-src 'self' 'unsafe-inline'", "img-src 'self' data: blob:", "media-src 'self' blob: data:", "connect-src 'self' blob: data: https://cdn.jsdelivr.net https://storage.googleapis.com https://api.github.com", "font-src 'self' data:", "object-src 'none'", "base-uri 'none'", "form-action 'none'"].join('; ');
+/* 2.49.2: jsDelivr serves every npm package, so the policy names only the one folder the camera library loads from (its code and WASM),
+   read from part 09d so the two cannot drift apart */
+const MPV = (src('parts/09d-camfx.js').match(/tasks-vision@(\d+\.\d+\.\d+)\/vision_bundle/) || [])[1]; if (!MPV) { console.error('Could not find the MediaPipe version in part 09d'); process.exit(1); }
+const MPDIR = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@' + MPV + '/';
+const csp = ["default-src 'self'", `script-src 'sha256-${createHash('sha256').update(inlineJs).digest('base64')}' 'wasm-unsafe-eval' blob: ${MPDIR}`, "worker-src 'self' blob:", "style-src 'self' 'unsafe-inline'", "img-src 'self' data: blob:", "media-src 'self' blob: data:", `connect-src 'self' blob: data: ${MPDIR} https://storage.googleapis.com https://api.github.com`, "font-src 'self' data:", "object-src 'none'", "base-uri 'none'", "form-action 'none'"].join('; ');
 const standalone = `<!doctype html>\n<html lang="en"><head><meta http-equiv="Content-Security-Policy" content="${csp}">${head}\n<style>\n${cssMin}\n</style></head><body>\n${body}\n<noscript><div style="max-width:40rem;margin:0 auto;padding:24px 16px;font:16px/1.5 system-ui,sans-serif"><h2>the-daily.studio needs JavaScript</h2><p>It is a guitar and voice studio that runs entirely in your browser: record guitar and voice, split a song into stems, get chords, tab and lyrics, and run a live light show. It sends nothing anywhere, so it needs JavaScript to do the work on your device.</p><p>Read about it: ${guideLinks()}</p></div></noscript>\n<script>${inlineJs}</script></body></html>\n`;
 
 /* ---------- the hosted site's page (2.40, `--site`, written to dist/ by scripts/assemble.mjs) ----------

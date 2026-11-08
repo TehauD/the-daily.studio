@@ -50,7 +50,7 @@ Design notes for how the-daily.studio treats the microphone and sound output.
 
 ## The band's sound (2.42–2.46.1)
 
-* **Drums** (`03b-kits.js`, `kitHit`): acoustic kits and drum machines built from oscillators and noise, with per-hit variation and a small room; no samples. The **808 Sub** bass (`BASS_TONES`) glides between notes.
+* **Drums** (`03b-kits.js`, `kitHit`): acoustic kits and drum machines built from oscillators and noise, with per-hit variation and a small room; no samples. The **Glide Sub** bass (`BASS_TONES`) glides between notes.
 * **Song build** (`03c-build.js`): each band track has an energy gain (`in → nrg → duck → g`) that `buildLevel` sets per section from `BUILD_LIFT`; quieter sections are turned down rather than the chorus up, so the master limiter is not pushed.
 * **Instruments** (`86-keys.js`, `03-band.js`): the piano is additive (12 partials with paired, slightly detuned strings), strings bow in with delayed vibrato, and guitars are a Karplus–Strong worklet (`Pluck` in `02-audio.js`) with a two-stage pick filter, per-instrument loop damping (`INST[...].dp`) and a loop length that compensates each filter's phase delay, so notes are within half a cent. Acoustic guitars play through a generated body response (`guitarBody`, convolver with `normalize = false`). The rhythm guitar is double-tracked as a second performance, 9–21 ms late and a few cents off, panned to the other side.
 * **Vocal tuning** (`90-tune.js`, a room): YIN pitch every 10 ms, a target note from the song's key and scale, and TD-PSOLA shifting that keeps each grain in place, so the take keeps its length. Offline: it never runs on the live input.

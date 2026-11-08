@@ -67,7 +67,7 @@ suite('e2e-agent', async t => {
   ok(bd.band.drums === false && bd.band.bass === true && bd.band.strum_pattern === 'Folk D-DU-UDU', 'set_band: parts on/off and a strum pattern');
   /* 2.47: the band of 2.39–2.45 is within an agent's reach: a beat, the kit, the bass and keys sounds, the rhythm guitar and Song build */
   const bt = await json('set_band', { beat: 'trap' });
-  ok(bt.band.beat === 'trap' && bt.band.bass_tone === '808 Sub' && bt.band.song_build === true, 'set_band: a beat brings its band and Song build (' + bt.band.drum_kit + ', ' + bt.band.bass_tone + ', ' + bt.band.tempo + ' BPM)');
+  ok(bt.band.beat === 'trap' && bt.band.bass_tone === 'Glide Sub' && bt.band.song_build === true, 'set_band: a beat brings its band and Song build (' + bt.band.drum_kit + ', ' + bt.band.bass_tone + ', ' + bt.band.tempo + ' BPM)');
   const sn = await json('set_band', { drum_kit: 'Acoustic', bass_tone: 'Round', keys: true, keys_sound: 'Strings', rhythm_guitar: true, rhythm_instrument: 'Nylon', song_build: false });
   ok(sn.band.drum_kit === 'Acoustic' && sn.band.bass_tone === 'Round' && sn.band.keys && sn.band.keys_sound === 'Strings' && sn.band.rhythm_instrument === 'Nylon' && sn.band.song_build === false, 'set_band: kit, bass tone, keys sound, rhythm guitar and Song build');
   ok(/must be one of|Unknown/.test((await call('set_band', { keys_sound: 'Kazoo' })).text) && /must be one of|Unknown/.test((await call('set_band', { beat: 'polka' })).text), 'set_band: a beat or sound the studio does not have is refused');

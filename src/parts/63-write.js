@@ -12,7 +12,7 @@
 /** the fretboard strip: on for desktop; on a phone it shows while capturing (there is little room) unless the person chose */
 const wrFretOn = () => WR.fret != null ? WR.fret : (typeof isDesk === 'function' ? isDesk() : true) || !!CAP.on;
 const WR = { mode: CFG.wrMode || 'both', fret: CFG.wrFret == null ? null : !!CFG.wrFret, nf: CFG.wrNf === 22 ? 22 : 15, nodes: null, key: '', flash: new Map(), ph: [], sayAt: 0 };
-if (!['tab', 'words', 'both'].includes(WR.mode)) WR.mode = 'tab';
+if (!['tab', 'words', 'both', 'song'].includes(WR.mode)) WR.mode = 'tab';
 if (CFG.capOpt) Object.assign(CAP, CFG.capOpt);
 
 function writeBuild() {
@@ -22,17 +22,18 @@ function writeBuild() {
   UI.wrMain = h('div', { class: 'wr-main' }, UI.wrTabCol, UI.wrWords);
   UI.wrSecs = h('div', { class: 'wr-secs', role: 'tablist', 'aria-label': 'Sections' });
   UI.wrModeSeg = h('div', { class: 'seg wr-mode', role: 'group', 'aria-label': 'What the canvas shows' });
-  [['tab', '𝄞', 'Tab', 'Just the tab'], ['words', '✎', 'Words', 'Lyrics with the chords over them'], ['both', '▥', 'Both', 'The tab with the words beside it']].forEach(([k, i, t, d]) => UI.wrModeSeg.append(h('button', { 'data-wm': k, title: d, onclick: () => wrMode(k) }, h('span', { class: 'wr-ic', 'aria-hidden': 'true' }, i), t)));
+  [['tab', '𝄞', 'Tab', 'Just the tab'], ['words', '✎', 'Words', 'Lyrics with the chords over them'], ['both', '▥', 'Both', 'The tab with the words beside it'], ['song', '☰', 'Whole song', 'Every section in order, intro to outro, with its chords and words, to read and edit (2.48)']].forEach(([k, i, t, d]) => UI.wrModeSeg.append(h('button', { 'data-wm': k, title: d, onclick: () => wrMode(k) }, h('span', { class: 'wr-ic', 'aria-hidden': 'true' }, i), t)));
   UI.wrFretBtn = h('button', { class: 'btn sm wr-fb', title: 'Show or hide the fretboard under the canvas', onclick: () => { WR.fret = !wrFretOn(); CFG.wrFret = WR.fret; if (WR.fret && CFG.wrPiano) { CFG.wrPiano = false; if (typeof kyWrSync === 'function') kyWrSync(); } saveCfg(); wrLayout(); } }, h('span', { class: 'wr-fl' }, 'Fretboard'), h('span', { class: 'wr-fs', 'aria-hidden': 'true' }, '🎸'));
   UI.wrCapBtn = h('button', { class: 'btn wr-cb', id: 'wrCap', title: 'Play your guitar and the notes and chords are written into the tab as you play. It counts you in and loops this section.', onclick: () => { capToggle(); } }, '● Capture');
   UI.wrOpt = h('button', { class: 'btn sm', title: 'Capture options', 'aria-haspopup': 'dialog', onclick: e => wrOptions(e.currentTarget) }, '⚙');
+  UI.wrMap = songMapEl({ cls: 'wr-map', onPick: i => wrSel(i) });
   UI.wrBar = h('div', { class: 'wr-bar' }, UI.wrSecs, h('span', { class: 'wr-sp' }), UI.wrModeSeg, UI.wrFretBtn, h('span', { class: 'wr-capg' }, UI.wrCapBtn, UI.wrOpt));
   UI.wrLvl = h('i', { class: 'wr-lvl' }, h('b')); UI.wrSay = h('span', { class: 'wr-say', id: 'wrSay', 'aria-live': 'polite' }); UI.wrN = h('span', { class: 'wr-n' });
   UI.wrStrip = h('div', { class: 'wr-strip' }, UI.wrLvl, UI.wrSay, UI.wrN);
   UI.wrFretBox = h('div', { class: 'wr-fret' }); UI.wrFretSvg = h('div', { class: 'wr-fbs' });
   UI.wrFretHead = h('div', { class: 'wr-fh' }, h('b', { class: 'small', title: 'Click a position to put that note in the selected cell of the tab. Dots: the chord’s notes. Filled: in this bar. Orange ring: what you are playing now.' }, 'FRETBOARD'), h('span', { class: 'tiny muted grow', id: 'wrFInfo' }), h('button', { class: 'btn sm', title: 'How many frets to show', onclick: () => { WR.nf = WR.nf === 15 ? 22 : 15; CFG.wrNf = WR.nf; saveCfg(); wrFretBuild(); } }, '⟷ frets'), h('button', { class: 'btn sm', title: 'The full fretboard, with scales and the heatmap', onclick: () => dockGo('fret') }, 'More ▸'));
   UI.wrFretBox.append(UI.wrFretHead, UI.wrFretSvg);
-  p.append(UI.wrBar, UI.wrStrip, UI.wrMain, UI.wrFretBox);
+  p.append(UI.wrMap, UI.wrBar, UI.wrStrip, UI.wrMain, UI.wrFretBox);
   bus.on('song', () => { wrBarDraw(); if (WR.mode !== 'tab' && !SP.lock) renderWords(); if (WR.nodes && WR.tun !== S.tuning.join() + ':' + S.capo) wrFretBuild(); });
   bus.on('sel', () => { if (SEL.sec !== TE.sec && SEL.sec < S.sections.length) { TE.sec = SEL.sec; TE.bi = clamp(SEL.bar || 0, 0, Math.max(0, S.sections[TE.sec].bars.length - 1)); renderTab(); } wrBarDraw(); if (WR.mode !== 'tab') renderWords(); });
   bus.on('dock', id => { if (id === 'tab') { wrBarDraw(); if (WR.mode !== 'tab') renderWords(); wrFretPaint(true); } });
@@ -40,12 +41,12 @@ function writeBuild() {
   bus.on('capnote', e => wrCapNote(e));
   wrLayout(); wrBarDraw(); wrCapUI();
 }
-function wrMode(k) { WR.mode = k; CFG.wrMode = k; saveCfg(); wrLayout(); if (k !== 'tab') renderWords(); try { if (typeof xpSignal === 'function') xpSignal(.5); } catch (e) { } }
+function wrMode(k) { if (k !== 'song') document.body.classList.remove('ws-full'); WR.mode = k; CFG.wrMode = k; saveCfg(); wrLayout(); if (k !== 'tab') renderWords(); try { if (typeof xpSignal === 'function') xpSignal(.5); } catch (e) { } }
 function wrLayout() {
   const p = PANES.tab; if (!p) return; p.dataset.wr = WR.mode; const fo = wrFretOn(); p.classList.toggle('wr-nofret', !fo);
   $$('button', UI.wrModeSeg).forEach(b => { const on = b.dataset.wm === WR.mode; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
   UI.wrFretBtn.classList.toggle('on', fo); UI.wrFretBtn.setAttribute('aria-pressed', String(fo));
-  UI.wrFretBox.style.display = fo ? '' : 'none'; UI.wrStrip.style.display = WR.mode === 'words' ? 'none' : '';
+  UI.wrFretBox.style.display = fo && WR.mode !== 'song' ? '' : 'none'; UI.wrStrip.style.display = WR.mode === 'words' || WR.mode === 'song' ? 'none' : ''; if (UI.wrMap) UI.wrMap.style.display = WR.mode === 'song' ? 'none' : '';
   if (fo && !WR.nodes) wrFretBuild(); if (WR.mode !== 'tab') renderWords();
 }
 /** the section chips */
@@ -53,14 +54,11 @@ function wrSel(i) { i = clamp(i, 0, S.sections.length - 1); TE.sec = SEL.sec = i
 function wrBarDraw() {
   const box = UI.wrSecs; if (!box) return; const key = S.sections.map(s => s.name).join('|') + '#' + TE.sec; if (box._k === key) return; box._k = key; box.innerHTML = '';
   S.sections.forEach((s, i) => box.append(h('button', { class: 'wr-sec' + (i === TE.sec ? ' on' : ''), role: 'tab', 'aria-selected': String(i === TE.sec), title: s.bars.length + ' bars', onclick: () => wrSel(i) }, s.name)));
-  box.append(h('button', { class: 'wr-sec add', title: 'Add a section', 'aria-label': 'Add a section', onclick: () => {
-    const hasV = S.sections.some(s => /^Verse/.test(s.name)), hasC = S.sections.some(s => /^Chorus/.test(s.name)), base = hasV && !hasC ? 'Chorus' : 'Verse', n = S.sections.filter(s => s.name.startsWith(base)).length + 1;
-    S.sections.push(mkSection(base + ' ' + n, ['', '', '', ''])); commit(); wrSel(S.sections.length - 1);
-  } }, '＋'));
+  box.append(h('button', { class: 'wr-sec add', id: 'wrSecAdd', title: 'Add a section: intro, verse, pre-chorus, chorus, interlude, bridge, solo or outro, after this one', 'aria-label': 'Add a section', 'aria-haspopup': 'menu', onclick: e => secAddMenu(e.currentTarget, i => wrSel(i)) }, '＋'));      /* 2.48: a menu of section kinds (part 63b) */
 }
 /* ---------- words ---------- */
 function renderWords() {
-  const box = UI.wrWords; if (!box) return; box.innerHTML = ''; if (!S.sections.length) return; const si = clamp(TE.sec, 0, S.sections.length - 1), sec = S.sections[si];
+  const box = UI.wrWords; if (!box) return; box.innerHTML = ''; if (!S.sections.length) return; if (WR.mode === 'song') { renderWholeSong(box); if (!box._li) { box._li = 1; try { liWire(box); } catch (e) { } } return; } const si = clamp(TE.sec, 0, S.sections.length - 1), sec = S.sections[si];
   const head = h('div', { class: 'wr-wh' }, h('b', { class: 'small' }, 'WORDS · ' + sec.name), h('span', { class: 'grow' }), h('button', { class: 'btn sm', title: 'Paste a finished lyric sheet: [Verse] and [Chorus] headings become sections, with your chords placed over the words', onclick: () => liOpen() }, '📋 Paste lyrics'));
   box.append(head, sectionCard(sec, si, false, { lean: WR.mode === 'both' })); if (!box._li) { box._li = 1; try { liWire(box); } catch (e) { } }
 }

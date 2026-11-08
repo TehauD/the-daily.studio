@@ -14,7 +14,7 @@ function vhSnap(label, force) {
 let vhTimer = 0; bus.on('song', () => { clearTimeout(vhTimer); vhTimer = setTimeout(() => { if (Date.now() - VH.lastT > 25000) vhSnap('auto'); }, 8000); });
 bus.on('transport', () => { if (T.playing && Date.now() - VH.lastT > 5000) vhSnap('before play'); });
 document.addEventListener('visibilitychange', () => { if (document.hidden) vhSnap('on leave'); });
-function vhRestore(id) { const j = store.get('vh.' + id, null); if (!j) return toast('Snapshot is gone', 'warn'); vhSnap('before restore', true); S = JSON.parse(j); commit(true); bus.emit('song', 'reload'); toast('Restored snapshot', 'ok'); }
+function vhRestore(id) { const j = store.get('vh.' + id, null); if (!j) return toast('Snapshot is gone', 'warn'); vhSnap('before restore', true); S = JSON.parse(j); bandRename(S.band); commit(true); bus.emit('song', 'reload'); toast('Restored snapshot', 'ok'); }
 function buildVersionCard() {
   const p = PANES.exp; if (!p) return; const list = h('div', { style: { display: 'grid', gap: '4px', maxHeight: '260px', overflow: 'auto' } });
   const fmt = t => { const d = new Date(t), n = Date.now() - t; return n < 6e4 ? 'just now' : n < 36e5 ? Math.round(n / 6e4) + ' min ago' : d.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ' + d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); };

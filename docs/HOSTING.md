@@ -34,9 +34,9 @@ Every push to the production branch builds, verifies and deploys. If `verify:sit
 
 1. Add `the-daily.studio` to Cloudflare (Websites ▸ Add a domain) and change the nameservers at your registrar to the two Cloudflare gives you.
 2. Remove any old GitHub Pages `A`, `AAAA` or `CNAME` records so they do not conflict.
-3. On the Worker: **Settings ▸ Domains & Routes ▸ Add ▸ Custom domain** → `the-daily.studio`, then again for `www` (and set a redirect from `www` to the apex if you want one).
+3. On the Worker: **Settings ▸ Domains & Routes ▸ Add ▸ Custom domain** → `the-daily.studio`, then again for `journal.the-daily.studio` (The Daily, 2.50) and, if you want it, `www` with a redirect to the apex. `wrangler.jsonc` lists the site and `journal.` as custom domains, so a deploy attaches them when the domain's DNS is on Cloudflare.
 4. HTTPS is issued automatically. In **SSL/TLS** use mode *Full (strict)*; optionally turn on *Always use HTTPS*.
-5. The app is at `/` and The Daily at `/journal/`.
+5. The app is at `/`. The Daily is at `https://journal.the-daily.studio/`; `/journal/` on the site is the page that moves a journal kept there to the new address. The Worker sees every request first (`run_worker_first`) to tell the two addresses apart.
 
 Songs are stored per web address. People who used another address will not see their songs here: back up first (☰ Songs ▸ Back up all songs) and import on the new address. If you fork this for another domain, change `robots.txt`, `sitemap.xml`, `manifest.webmanifest` links, and `BRAND` in `src/parts/01-core.js`.
 
@@ -48,7 +48,7 @@ Open the site in Chrome or Edge:
 2. Header **Audio** button ▸ **Connect** asks for the microphone; the light turns green. **Ctrl + .** turns it off again.
 3. **?** ▸ **Take the guided tour** runs through all steps.
 4. The console shows no red errors, and the Network tab shows no requests to other hosts until you use camera hand tracking or a person-cutout look.
-5. `https://the-daily.studio/journal/` opens The Daily.
+5. `https://journal.the-daily.studio/` opens The Daily, and `https://the-daily.studio/journal/` shows the moving page (or, with no journal on that browser, goes straight to the new address).
 
 Sample tracks in `samples/` are served beside the page and listed in the app. Keep each file to a few MB.
 

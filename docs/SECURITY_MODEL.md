@@ -1,13 +1,13 @@
 # Security and privacy model
 
-Reviewed for 2.47.0 (first written for 2.13). The app is a static page that runs entirely in the visitor's browser. This document records what it can access, what it stores, what it contacts, and the controls that keep it that way.
+Reviewed for 2.49.2 (first written for 2.13), with an evaluation of the live site below. The app is a static page that runs entirely in the visitor's browser. This document records what it can access, what it stores, what it contacts, and the controls that keep it that way.
 
 ## Trust boundaries
 
 1. **The visitor's device** holds all data. There is no account, cookie, analytics or telemetry, and no server keeps data. The site's Worker (`worker/index.mjs`) only serves the files and, if the owner sets up Sign in with GitHub, passes GitHub's one-time sign-in code to GitHub and the token back to the browser (it stores nothing). A person may connect their own GitHub repository (Settings ▸ GitHub); then the browser talks to `api.github.com` directly (docs/GITHUB.md).
 2. **The host (Cloudflare)** serves static files and may keep ordinary access logs. It never sees songs, audio or video.
 3. **Optional third-party hosts**, contacted only after the visitor says yes to a one-time download (`mpConsent()`), when hand tracking or the person cut-out look is used: `cdn.jsdelivr.net` (MediaPipe script and WASM) and `storage.googleapis.com` (hand-landmarker and selfie-segmenter models). They see an IP address and browser details, like any download, and never a camera picture.
-4. **The Daily at `/journal/`** shares the origin. It contacts GitHub, Azure DevOps or an AI provider only if the user enters their own credentials.
+4. **The Daily at `journal.the-daily.studio`** (2.50) has its own origin. It contacts GitHub, Azure DevOps or an AI provider only if the user enters their own credentials.
 
 ## Device permissions
 
@@ -61,7 +61,7 @@ The studio's reset removes only the studio's `fw.*` data and its own caches; it 
 * **Song links (2.40):** the song travels after the `#`, which browsers never send to a server. Everything in a link is untrusted input: the link is capped at 60,000 characters and its unpacked size at 256 kB (a ceiling on decompression), the JSON is parsed as data, names are checked against the studio's own lists, numbers clamped, text lengths capped and chords parsed before anything is used. Text is inserted as text, never HTML. The link is cleared from the address once read, and the person is asked before it opens, as a new song that replaces nothing. A link is readable by anyone who has it, including link-preview services in chat apps; the send window says so.
 * **AI agent tools (2.26, wider in 2.47):** the tools run in the page and can read and edit the open song and the band, play and stop, and export text. They never reach the microphone, the camera, recording, deleting songs or Settings, every change shows a 🤖 note and is one undo step, and the person can turn them off (Settings ▸ Workflow). 2.47 lets `set_band` pick a beat and change the kit, sounds and Song build, and `edit_section` set a section's energy; neither opens anything new.
 * **Imports:** JSON, WAV, MP3 and preset files are parsed locally; malformed files must produce an error, not code execution. Text from files is inserted as text, not HTML.
-* **Same-origin neighbour:** the studio and The Daily use different storage names and do not read each other's data. A cross-site-scripting flaw in either would expose both, which is why both carry a CSP and neither loads third-party scripts. Use a fine-grained, repo-scoped token in The Daily.
+* **The Daily's own origin (2.50):** The Daily is served at `journal.the-daily.studio`, and the studio at `the-daily.studio`, so the browser keeps their storage apart; neither sets cookies (`verify-site` checks). The page at `/journal/` moves a journal kept at the old address with a one-time hand-over between two pages: each accepts it only from the other's exact origin and the window it opened or was opened by, keeps only `daily…` keys and well-formed rows, never overwrites what is already there, and leaves the old copy until the person removes it. Both pages allow only their own script, by hash.
 
 ## Known limits and residual risks
 
@@ -73,6 +73,39 @@ The studio's reset removes only the studio's `fw.*` data and its own caches; it 
 * HSTS is set for one year without preload; consider preload only after the domain has been stable.
 * A song link is as private as the channel it is sent through. Link previews in chat apps can fetch the address; they still cannot see the part after `#` unless the app reads the whole link it was given. The studio cannot control that.
 * The device permissions table describes the computer. On a phone (2.41), **Sing** opens the microphone when the person presses 🎤 Sing into this phone or ●; the same kill switch applies.
+
+## Live site evaluation (2026-11-08)
+
+A passive look at https://the-daily.studio/, then running 2.48.1. Nothing was load-tested or attacked; every request was one a visitor or crawler could make. Run from a sandbox whose proxy re-signs TLS, so the certificate and TLS settings were **not** evaluated (check them with a public TLS scanner).
+
+**Holding up:**
+- **Headers:** every response has HSTS (one year), `nosniff`, `Referrer-Policy: no-referrer`, `X-Frame-Options: DENY`, a cross-origin opener policy and the permissions policy. The studio page's policy header matches its `<meta>` policy and adds `frame-ancestors 'none'`.
+- **The studio's script** is the one inline script its policy allows by hash, and the hash matches. No outside script is loaded.
+- **Nothing private is served:** `.git`, `package.json`, `wrangler.jsonc`, `src/`, `scripts/`, `worker/`, `test/`, `docs/`, `.env`, `_headers`, `index.debug.html` and `codepen/` all answer 404.
+- **The guide, legal and backstage pages** each carry their own strict policy: no script, or one pinned by hash on backstage.
+- **The sign-in routes:**
+  - `/auth/github/callback` only ever redirects to `/#…`, never to an address it is given, and cleans the state it passes back;
+  - `/auth/github/refresh` refuses GET (405) and other sites (403);
+  - both say `not-set-up` (Sign in with GitHub isn't configured in production) and send `no-store`.
+- **The studio page sets no cookie**, and a whole session reaches no other site (`e2e-privacy` against the live site: 40 of 42 checks; the two failures are the Cloudflare beacon below).
+
+**Found, and fixed in 2.49.2:**
+- **jsDelivr was trusted as a whole host;** now only the camera library's folder is (`test/net-mediapipe.cjs` loads it for real under the new policy).
+- **The 404 page had no policy,** so scripts Cloudflare adds on the way out ran there. It now runs none.
+- **No `security.txt`:** there is one now.
+- **CI's token had GitHub's default permissions:** it is now read-only, and Dependabot is on.
+
+**Found, for the site owner to change in Cloudflare:**
+- **Web Analytics' automatic setup is on.** Cloudflare adds `static.cloudflareinsights.com/beacon.min.js` to pages. The studio's policy blocks it (with console errors), but it ran on the 404 page and is attempted on `/journal/`. Turn it off: *Analytics & Logs ▸ Web Analytics*, the site's automatic setup. [LICENSING.md](LICENSING.md) open item 6 asks for this.
+- **Bot detection is on** ("JavaScript detections" or Bot Fight Mode). Cloudflare injects an inline script that loads `/cdn-cgi/challenge-platform/…`. The studio's policy blocks it; on `/journal/`, whose policy allows inline scripts, it runs and sets a `cf_clearance` cookie. PRIVACY.md says no cookies, so turn it off (*Security ▸ Bots*), or say so in PRIVACY.md.
+- **Network Error Logging** (`NEL` / `Report-To` headers) asks visitors' browsers to report failed connections to Cloudflare. It's harmless, but it isn't in PRIVACY.md; turn it off in the dashboard if you can, or mention it.
+- **`www.the-daily.studio` has no DNS answer.** Add it with a redirect to the bare domain, or leave it out on purpose.
+- **`workers_dev: true`** in `wrangler.jsonc` also serves the site at `the-daily-studio.<account>.workers.dev`: a second copy, not covered by the domain's HSTS. Set it to `false` unless you use it for previews.
+
+**Since then:** The Daily moved to its own address (2.50).
+
+**Still open:**
+- **The CI actions are pinned to major versions,** not commit hashes; Dependabot can keep commit pins current.
 
 ## Reporting
 

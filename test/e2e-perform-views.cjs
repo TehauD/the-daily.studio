@@ -1,4 +1,4 @@
-/* Perform's display options (2.15): Chords & shapes (the chord shapes beside the lyrics), Big chord, Lyric sheet; the build
+/* Perform's display options (2.15): Chords & shapes (the chord shapes beside the lyrics), Big chord, Lyric sheet, Sing-along (2.48); the build
    version in the very bottom-right corner; and the hidden line that a triple click on the version wakes. */
 const { suite } = require('./lib.cjs');
 const SHEET = '[Verse 1]\nE              B/D#              C#m\nLanterns swing along the harbour wall\nA                  D9\nAnd the gulls are calling out\nE        B\nOne more line here\nA        E\nAnd one more after that\n[Chorus]\nA        E\nHold on, the tide is turning slow';
@@ -35,6 +35,9 @@ suite('e2e-perform-views', async t => {
   await p.click('#pfView'); await wait(300);
   const sheet = await p.evaluate(() => ({ view: window.__daily.CFG.pfView, chord: document.getElementById('pfChord').offsetParent !== null, lines: document.querySelectorAll('#pfLyr .pf-l').length, chords: document.querySelectorAll('#pfLyr .pf-l.cur .ly-c').length }));
   ok(sheet.view === 'sheet' && !sheet.chord && sheet.lines >= 4 && sheet.chords > 0, 'Display ▸ Lyric sheet: no big chord, more lines, chords over the words (' + sheet.lines + ' lines)');
+  await p.click('#pfView'); await wait(300);
+  const sing = await p.evaluate(() => ({ view: window.__daily.CFG.pfView, low: document.getElementById('perform').classList.contains('pf-lyr-bottom') }));
+  ok(sing.view === 'sing' && sing.low, 'Display ▸ Sing-along (2.48): the words at the bottom');
   await p.click('#pfView'); await wait(200);
   ok(await p.evaluate(() => window.__daily.CFG.pfView === 'shapes'), 'and round again to Chords & shapes; the choice is remembered');
   await p.evaluate(() => window.__daily.stopPlay(true));

@@ -30,10 +30,10 @@ suite('e2e-phone-singer', async t => {
   await m.tap('.mw-pk[data-sym="✕"]'); await m.tap('.mw-w[data-l="0"][data-w="3"]'); await wait(300);
   ok(await ev(() => { const D = window.__daily; return !/Dm/.test(D.S.sections[D.MW.sec].lyrics.split('\n')[0]); }), '✕ Remove takes it off again');
   /* a new section: words first, chords next, and the band plays them */
-  await m.tap('.mw-add'); await wait(250); await m.tap('.mw-addm button:has-text("Bridge")'); await wait(400);
+  await m.tap('.mw-add'); await wait(250); await m.tap('.pop .sm-k[data-kind="bridge"]'); await wait(400);      /* 2.49: the menu of section kinds; the new one goes after the one you are in */
   await m.tap('.mw-mode [data-mode="write"]'); await wait(200); await m.tap('#mwText'); await m.keyboard.type('Hold on to the harbour light'); await m.tap('.mw-tools'); await wait(400);
   await m.tap('.mw-mode [data-mode="chords"]'); await wait(200); await m.tap('.mw-pk[data-sym="F"]'); await m.tap('.mw-w[data-l="0"][data-w="0"]'); await m.tap('.mw-pk[data-sym="G"]'); await m.tap('.mw-w[data-l="0"][data-w="3"]'); await wait(300);
-  const B = await ev(() => { const D = window.__daily, s = D.S.sections[D.S.sections.length - 1]; return { name: s.name, ly: s.lyrics, bars: s.bars.map(b => b.chord).join(' ') }; });
+  const B = await ev(() => { const D = window.__daily, s = D.S.sections[D.MW.sec]; return { name: s.name, ly: s.lyrics, bars: s.bars.map(b => b.chord).join(' ') }; });
   ok(B.name === 'Bridge' && B.ly === '[F]Hold on to [G]the harbour light' && /^F G/.test(B.bars), '＋ Bridge, its words, two chords tapped on: the band plays them, a bar each (' + B.ly + ' → ' + B.bars + ')');
 
   /* ---- Sing ---- */

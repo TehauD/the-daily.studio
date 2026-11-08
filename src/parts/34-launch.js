@@ -17,7 +17,7 @@
   }
   function paint(now) {
     const t = (now - t0) / 1000, R = Math.max(26, Math.min(W, H) / 15) * (dpr > 1 ? 1 : 1), dx = R * Math.sqrt(3), dy = R * 1.5, cx = W / 2, cy = H * .46, maxd = Math.hypot(W, H) * .55;
-    const P = typeof hexPal === 'function' ? hexPal() : { lt: false, bg: '#04090a', glow: '61,220,132', cell: '61,220,132', warm: '242,182,50', line: '125,191,155' }, lt = P.lt;   /* the palette you chose for the hexagons; light (white) and dark green are the original two looks */
+    const DG = { lt: false, bg: '#04090a', glow: '61,220,132', cell: '61,220,132', warm: '242,182,50', line: '125,191,155' }, first = !!document.querySelector('#boot.boot-first') && !CFG.hexTone, P = first ? DG : typeof hexPal === 'function' ? hexPal() : DG, lt = P.lt;      /* 2.49.1: a first visit is the dark green page, unless hexagon colours were chosen on purpose */   /* the palette you chose for the hexagons; light (white) and dark green are the original two looks */
     g.fillStyle = P.bg; g.fillRect(0, 0, W, H);
     const glow = g.createRadialGradient(cx, cy, 0, cx, cy, maxd); glow.addColorStop(0, `rgba(${P.glow},${lt ? .12 : .16})`); glow.addColorStop(.5, `rgba(${P.glow},.04)`); glow.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = glow; g.fillRect(0, 0, W, H);
     const beat = (t % 1.9) / 1.9;

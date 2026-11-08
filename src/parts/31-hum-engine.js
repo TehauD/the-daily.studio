@@ -7,7 +7,7 @@ const HUM_STYLES = {
   Pop: { kit: 'Acoustic', pat: 'Pop Groove', bass: 'Eighths', comp: 'Pop 8ths', compInst: 'Steel', lead: 'Electric', hint: 'Bright, steady, radio-ready' },
   Rock: { kit: 'Rock Room', pat: 'Rock 8ths', bass: 'Eighths', comp: 'Power Chug 8ths', compInst: 'Electric', lead: 'Electric', hint: 'Driving, palm-muted power chords' },
   Ballad: { kit: 'Brush (soft)', pat: 'Folk Backbeat', bass: 'Root Whole', comp: 'Ballad Arpeggio', compInst: 'Nylon', lead: 'Nylon', hint: 'Soft brushes, rolling arpeggios' },
-  Dance: { kit: '808', pat: 'Four on the Floor', bass: 'Syncopated', comp: 'Pop 16th shimmer', compInst: 'Steel', lead: 'Steel', hint: 'Four on the floor, shimmering chords' }
+  Dance: { kit: 'Deep Machine', pat: 'Four on the Floor', bass: 'Syncopated', comp: 'Pop 16th shimmer', compInst: 'Steel', lead: 'Steel', hint: 'Four on the floor, shimmering chords' }
 };
 const HUM_FORMS = { full: 'Full song · intro, verses, choruses, bridge, outro', quick: 'Quick sketch · verse and chorus' };
 const HUM_PROGS = {

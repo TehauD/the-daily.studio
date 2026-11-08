@@ -143,7 +143,8 @@ suite('e2e-guide', async t => {
 
   // ---- someone who already has songs just carries on
   const rt = await open({ w: 1440, h: 900, returning: true });
-  ok(await rt.evaluate(() => !document.getElementById('bootGoals') && !document.getElementById('bootPro') && !!document.getElementById('bootNoMic')), 'a returning visitor sees one button and no goal cards');
+  const RT = await rt.evaluate(() => { const g = document.getElementById('bootGoals'), r = document.getElementById('bootRoutes'); return { main: !!document.getElementById('bootNoMic'), pro: !!document.getElementById('bootPro'), after: !!g && !!(r.compareDocumentPosition(g) & Node.DOCUMENT_POSITION_FOLLOWING), small: !!g && g.classList.contains('boot-goals-sm'), n: g ? g.querySelectorAll('.boot-goal').length : 0, q: (document.getElementById('bootQ') || {}).textContent }; });
+  ok(RT.main && !RT.pro && RT.after && RT.small && RT.n === 6 && RT.q === 'Or start something new', 'a returning visitor gets one main button, then the six goals, smaller, as the way to start something new (2.49.1)');
   await rt.ctx.close();
 
   // ---- a phone

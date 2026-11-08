@@ -2,6 +2,192 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.51.0 — 2026-11-08 — Write a song together, by passing it back and forth
+
+### New
+- **From and Note in the send window.** Your name, remembered on this device, and a note go inside the song link ("Can you write the chorus?").
+- **Who opens it sees:**
+  - "🎵 Alice sent you a song";
+  - the note;
+  - the rounds so far: who changed what, and when (the last eight travel with the song).
+- **↩ Send it back.** After opening a song someone sent, the send buttons say **↩ Send back to Alice** (in the Songwriter tools, Save & export and the Whole song sheet). The window lists **Your changes**, worked out from what the song was when it arrived: "wrote words for Chorus; changed Verse 2; added Bridge". They join the history in the link.
+- **A first visit through a link is an invitation:** **▶ Play it** opens the song and plays it in Perform with the words as a sing-along, or **Open it in the studio**.
+- **What you share links back to the song:**
+  - a share page ends with **Open this song in the-daily.studio**;
+  - a printed sheet carries a code to scan that opens it.
+- **Nothing is uploaded:** the names, note and history ride inside the link with the song.
+
+### Changed
+- **The demo song's placeholder artist ("Your Name")** no longer travels in links.
+
+### Tests
+- **New `e2e-collab`** (15 checks). Two browsers pass a song back and forth: name, note, the invitation, ↩ Send back with what changed, both rounds, links back from share pages and printed sheets, and odd values cleaned.
+
+2026-11-08 — The Daily at its own address
+
+### Changed
+- **The Daily now lives at https://journal.the-daily.studio/.** The studio's links point there.
+- **`the-daily.studio/journal/` is now a moving page:**
+  - **With a journal on this device,** it offers **Move my journal**, which hands the entries and settings to the new address in the browser, through a window it opens. Nothing is uploaded.
+  - **Once moved,** **Remove the old copy** clears it from the old address.
+  - **With no journal there,** it goes straight to the new address.
+- **The Worker** sees every request first (`run_worker_first`) and tells the two addresses apart. `wrangler.jsonc` lists both as custom domains.
+- **The sitemap** no longer lists `/journal/`.
+
+### Tests
+- **New `e2e-journal-move`** (14 checks). Both real addresses are answered in the browser from the build through the site's own Worker. It checks:
+  - the move, exactly;
+  - that nothing is removed until asked;
+  - hand-overs refused from any other site;
+  - the routes;
+  - The Daily opening at its address;
+  - the no-journal redirect.
+- **`worker.test`** (24 checks) adds the routing.
+- **`verify-site`** checks:
+  - that both moving pages allow only their own script;
+  - that neither app uses cookies;
+  - that the sitemap no longer lists `/journal/`.
+
+2026-11-08 — Security hardening, after a look at the live site
+
+A passive evaluation of https://the-daily.studio/ (running 2.48.1): headers, the policy on every page, files that must not be served, the sign-in routes with bad input, and the privacy test run against the live site. The full findings are in [docs/SECURITY_MODEL.md](docs/SECURITY_MODEL.md#live-site-evaluation-2026-11-08).
+
+### Changed
+- **jsDelivr is allowed only for the camera library's own folder** (`/npm/@mediapipe/tasks-vision@0.10.14/`), not for every package it serves. If something ever slipped a script tag into the page, it could not load an arbitrary package from there. The build reads the version from the code that loads it, so the two cannot drift apart, and `verify-site` checks it.
+- **The not-found page has a security policy** that runs no script. On the live site, Cloudflare adds its analytics beacon and bot-detection script to pages on the way out, and the 404 page was the one place they could run.
+- **`/.well-known/security.txt`** says where to report a security problem (GitHub's private vulnerability reporting).
+- **CI's token is read-only** (`permissions: contents: read`), and **Dependabot** keeps the CI actions and the development tools up to date.
+- **Tests can reach a deployed site through a sandbox's proxy** (`PW_PROXY=1` with `BASE_URL`).
+
+### Found on the live site, to change in Cloudflare (no code can)
+- **Web Analytics automatic setup is on.** Its beacon is blocked on the studio page by the policy, and the live privacy test fails 2 of 42 checks because of it. It loaded on the 404 page (fixed above) and is attempted on `/journal/`.
+- **Bot detection ("JavaScript detections" or Bot Fight Mode) is on.** It injects a script that runs on `/journal/` (whose policy allows inline scripts) and on the 404 page, and it sets a `cf_clearance` cookie there. PRIVACY.md says no cookies.
+- **Network Error Logging headers** ask visitors' browsers to report failed connections to Cloudflare.
+- **`www.the-daily.studio`** has no DNS answer.
+- **The `workers.dev` address** (`workers_dev: true` in `wrangler.jsonc`) serves a second copy of the site.
+
+2026-11-08 — The first page, without the flash
+
+### Fixed
+- **A flash of the wrong first page.** Someone coming back saw the first-visit page, with its goals, in the default colours for a moment before Welcome back replaced it in their own theme. Now:
+  - the card stays hidden until it's laid out for that person;
+  - the saved light or dark is set before anything is drawn.
+
+  So the first thing anyone sees is their own page.
+
+### Changed
+- **A first visit always opens on the dark green page**, whatever light or dark is saved. The one exception is hexagon colours chosen on purpose (Visuals ▸ hexagon colours), which the start page keeps.
+- **Welcome back follows the person's appearance setting:** light or dark, from its first frame.
+- **People coming back keep the goals.** Under **Pick up where I left off** they get **Or start something new**: play with a band, write down what you play, turn a hum into a song, record and layer, learn a song, or run a show. Each starts a new song and leaves yours as they are. Before, coming back removed the goals entirely.
+
+### Tests
+- `e2e-welcome` watches the page from its first frame:
+  - a first visit is dark green with the goals, even with light saved;
+  - Welcome back is in the person's own light or dark, and the first-visit page never shows.
+- `e2e-guide` and `e2e-journal` expect the goals under the main button for returning visitors.
+
+2026-11-07 — Writing on a phone, beginning to end
+
+### Phone (Words)
+- **A song map** above the section chips: every section as a coloured block, as wide as its bars. Tap one to write in it.
+- **📄 Song**, beside ✎ Write and ♪ Chords, shows the whole song as a chord sheet in one column. Tap a section to write in it, or use **🎤 Perform** and **🔗 Send** right there. The phone remembers which of the three you were using.
+- **＋** offers every kind of section (Intro, Verse, Pre-chorus, Chorus, Interlude, Bridge, Solo, Outro, or a repeat of one already in the song):
+  - the new section goes after the one you're in, is named for you, and opens;
+  - a second verse starts with the first one's chords.
+
+  Before, ＋ offered five kinds and always added at the end.
+- **⋯** for the section you're in: rename it, move it earlier or later, repeat it after itself, play from it, or delete it (undo brings it back).
+- Section chips are underlined in their section's colour, the same colours as the map.
+- The Write / Chords / Song switch fits on one line, and ⧉ Paste became an icon.
+
+### Writing, beginning to end
+- The Whole song sheet on a computer ends with **🎤 Perform**, **🔗 Send** and **🖨 Print**: write it, sing it, send it.
+- A blank song says how to begin: add sections, paste a lyric sheet, or put a beat under it.
+- The phone tour's Words card mentions 📄 Song, ＋ and ⋯. The guide page *Write a song over a beat* has a new section, *See the whole song*.
+
+### Tests
+- `e2e-songmap` (34 checks) adds the phone:
+  - the map, coloured chips and the three ways to write, with nothing off the side;
+  - ＋ Verse placing and naming Verse 2 with its chords;
+  - the ⋯ menu and moving a section earlier;
+  - Song as a one-column sheet with Perform and Send;
+  - tapping a section to write in it;
+  - the remembered way of writing.
+- `e2e-phone-singer` uses the new ＋ menu.
+
+2026-11-07 — The whole song as a chord sheet
+
+### Write
+- **Whole song opens as a 📄 Sheet**, laid out the way a chord sheet is pasted:
+  - each section's name, then its words with the chords over them, or its bars of chords if it has no words;
+  - the sections flow into as many columns as the screen holds, so a whole song fits without scrolling;
+  - a section that repeats an earlier one word for word and chord for chord is one line ("Same words and chords as Chorus above"), with **Show** to open it;
+  - while the song plays, the section playing is lit and kept in view.
+- **Editing:** click a section to edit it where it is; **✓ Done** turns it back into the sheet. **✎ Edit all** shows every section's editor, as 2.48.0 did.
+- **A− / A+** change the text size; smaller text means more columns.
+- **⛶ Full screen** fills the window with the song. Esc, or the button again, brings the studio back.
+
+### Fixed
+- The new sheet code briefly reused the scale trainer's function name `wsFollow`, which started the trainer and repeated its "Connect your input" warning. It's renamed (never released).
+- **The build now refuses two parts declaring the same function**, since JavaScript lets the later one silently replace the earlier.
+
+### Tests
+- `e2e-songmap` (27 checks) adds:
+  - the sheet: sections, chords over the words, bars, a repeat shortened, columns;
+  - editing in place;
+  - full screen and Esc;
+  - that the trainer stays quiet.
+
+2026-11-07 — See the whole song, and Perform your way
+
+### Write: the whole song
+- **☰ Whole song**, a fourth way to see Write beside Tab, Words and Both. It shows every section in order, from intro to outro, each with its name, chords and words, all editable where they are.
+- **A song map** above the section chips and at the top of Whole song:
+  - a block per section, as wide as its bars;
+  - coloured by kind (intro, verse, pre-chorus, chorus, interlude, bridge, solo, outro);
+  - the section playing is lit and fills as the song moves through it;
+  - click a block to go there.
+- **＋ is a menu of section kinds:** Intro, Verse, Pre-chorus, Chorus, Interlude, Bridge, Solo, Outro, or a copy of any section already in the song.
+  - The new section goes after the one you picked, and it's named for you: the second verse makes the first one "Verse 1" and itself "Verse 2".
+  - A second verse or chorus starts with the first one's chords, with no words or tab.
+
+### Perform: laid out your way
+- **⚙ Layout**, remembered on this device:
+  - **Show:** chords and shapes, big chord, lyric sheet, or the new **🎤 Sing-along**;
+  - **Controls:** top right, bottom, or hidden until you move the mouse;
+  - **Words:** in a band along the bottom like a sing-along, or in the middle under the chord;
+  - **Text size:** small, medium, large or huge;
+  - **Song map:** show or hide.
+- **The new default is a sing-along:**
+  - the controls are at the top right;
+  - the words sit in a band at the bottom: the line being sung, its chords over the words, and the next line;
+  - the song map is under the title. Click a section on it and the song plays on from there.
+- **Sing-along** makes the words the show, with the chord smaller above them.
+
+### Tests
+- **New `e2e-songmap`** (18 checks):
+  - the Whole song view and its map;
+  - the add menu, section names and copied chords;
+  - Perform's default layout (controls top right, words at the bottom), every Layout choice, and that it's remembered;
+  - hide until I move;
+  - the map playing on from a section;
+  - a phone.
+- **`e2e-perform-views`** adds the Sing-along view to the cycle of views.
+
+2026-11-07 — Neutral names for the drum machines
+
+### Changed
+- The drum machines and the sub bass have neutral names:
+  - **Deep Machine** (was 808): the long sub kick;
+  - **Club Machine** (was 909): the short punchy kick;
+  - **Glide Sub** (was 808 Sub): the bass that slides between notes.
+  - The sounds are unchanged. Songs, song links, backups and snapshots saved with the old names open with the new ones.
+- The Afrobeats beat is now called **Golden Hour** (was Afro Sunset).
+- LICENSING.md, THIRD_PARTY_NOTICES.md and the docs use the new names. The open item about the style names is closed.
+
+### Tests
+- `e2e-kits`: a song saved with the old names opens with the new ones, no kit or bass sound has a model number in its name, and the Afrobeats beat is Golden Hour.
+
 ## 2.47.0 — 2026-11-07 — The tutorials, guides and licensing catch up
 
 A release to close the gaps that 2.39–2.46.1 left in the tutorials, the documents, the licensing register and the tests, and to start a register of what is still open: [docs/GAPS.md](docs/GAPS.md). Nothing is removed.

@@ -1,0 +1,6 @@
+# the-daily.studio: how to report a security problem (RFC 9116)
+Contact: https://github.com/TehauD/the-daily.studio/security/advisories/new
+Expires: 2027-11-08T00:00:00.000Z
+Preferred-Languages: en
+Canonical: https://the-daily.studio/.well-known/security.txt
+Policy: https://github.com/TehauD/the-daily.studio/blob/main/SECURITY.md

@@ -32,7 +32,7 @@ suite('e2e-show', async t => {
   // ---- the look follows the song when nobody has chosen
   const au = await ev(() => {
     const d = window.__daily, S = d.S, b = S.band, was = JSON.stringify([S.minor, S.bpm, S.show, b.kit, b.patName, b.compStyle, b.drumsOn]), set = (minor, bpm, kit, pat, comp, drums) => { S.minor = minor; S.bpm = bpm; S.show = undefined; b.kit = kit; b.patName = pat; b.compStyle = comp; b.drumsOn = drums !== false; return d.lxAutoDesign(); };
-    const r = { lasers: set(false, 124, '808', 'Four on the Floor', 'Pop 16th shimmer'), backlight: set(false, 126, 'Rock Room', 'Rock 8ths', 'Power Chug 8ths'), theatre: set(false, 84, 'Brush (soft)', 'Folk Backbeat', 'Folk Strum'), horizon: set(true, 72, 'Brush (soft)', 'Ballad Half-Time', 'Arpeggio'), blades: set(true, 100, 'Acoustic', 'Funk 16ths', 'Funk Chuck'), pixels: set(true, 100, 'Acoustic', 'Pop Groove', 'Pop 8ths'), horizon2: set(false, 118, 'Acoustic', 'Pop Groove', 'Pop 8ths') };
+    const r = { lasers: set(false, 124, 'Deep Machine', 'Four on the Floor', 'Pop 16th shimmer'), backlight: set(false, 126, 'Rock Room', 'Rock 8ths', 'Power Chug 8ths'), theatre: set(false, 84, 'Brush (soft)', 'Folk Backbeat', 'Folk Strum'), horizon: set(true, 72, 'Brush (soft)', 'Ballad Half-Time', 'Arpeggio'), blades: set(true, 100, 'Acoustic', 'Funk 16ths', 'Funk Chuck'), pixels: set(true, 100, 'Acoustic', 'Pop Groove', 'Pop 8ths'), horizon2: set(false, 118, 'Acoustic', 'Pop Groove', 'Pop 8ths') };
     S.show = 'blades'; r.hint = d.lxAutoDesign(); S.show = 'arena'; r.alias = d.lxAutoDesign(); const w = JSON.parse(was); S.minor = w[0]; S.bpm = w[1]; S.show = w[2]; b.kit = w[3]; b.patName = w[4]; b.compStyle = w[5]; b.drumsOn = w[6]; return r;
   });
   ok(Object.keys(au).every(k => /^horizon2$/.test(k) ? au[k] === 'horizon' : au[k] === k || k === 'hint' || k === 'alias') && au.hint === 'blades' && au.alias === 'backlight', 'the Visuals tab picks a look from the song: kit, groove, key, tempo; a song that names its show keeps it (' + JSON.stringify(au) + ')');
@@ -101,7 +101,7 @@ suite('e2e-show', async t => {
   // ---- flash rate: the independent counter, 190 BPM, 16th-note funk, three comfort levels
   const run = (comfort, scene, secs, bpm) => ev(async ([comfort, scene, secs, bpm]) => {
     const d = window.__daily, bar = c => ({ chord: c, tab: [] }), mk = (id, name, ch) => ({ id, name, lyrics: '', bars: ch.map(bar) });
-    d.S.key = 9; d.S.minor = true; d.S.bpm = bpm; Object.assign(d.S.band, { drumsOn: true, bassOn: true, compOn: true, leadOn: true, kit: '808', patName: 'Funk 16ths', pat: null, bassStyle: 'Syncopated', compStyle: 'Pop 16th shimmer', compInst: 'Electric' });
+    d.S.key = 9; d.S.minor = true; d.S.bpm = bpm; Object.assign(d.S.band, { drumsOn: true, bassOn: true, compOn: true, leadOn: true, kit: 'Deep Machine', patName: 'Funk 16ths', pat: null, bassStyle: 'Syncopated', compStyle: 'Pop 16th shimmer', compInst: 'Electric' });
     d.S.sections = [mk('a', 'Pre-Chorus', ['Am', 'F']), mk('b', 'Chorus', ['F', 'C', 'G', 'Am', 'F', 'C', 'G', 'Am']), mk('c', 'Solo', ['Am', 'F', 'C', 'G']), mk('d', 'Chorus', ['F', 'C', 'G', 'Am', 'F', 'C', 'G', 'Am'])]; d.commit(false);
     d.dockGo('stage'); d.STG.cur = scene; d.STG.comfort = comfort; d.LXG.maxN = 0; d.LX.lastStrobeBar = -1; d.LX.strobe = 0; d.LX.lastStrobe = 0; d.T.cursor = 0; await d.play();
     const cv = document.createElement('canvas'); cv.width = 48; cv.height = 27; const q = cv.getContext('2d', { willReadFrequently: true }), samples = [], onsets = [];

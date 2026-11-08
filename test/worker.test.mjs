@@ -44,5 +44,14 @@ ok(r.status === 401 && (await r.json()).error === 'bad_refresh_token', 'an expir
 /* everything else is the site */
 r = await handle(new Request(SITE + '/guide/'), ENV, gh({}));
 ok(await r.text() === 'asset /guide/', 'every other address is the built site, as before');
+/* The Daily's own address (2.50) */
+const J = 'https://journal.the-daily.studio';
+r = await handle(new Request(J + '/'), ENV, gh({})); ok(await r.text() === 'asset /journal/', 'journal.<site>/ is The Daily');
+r = await handle(new Request(J + '/move/'), ENV, gh({})); ok(await r.text() === 'asset /journal/move', 'journal.<site>/move/ is the page that receives a journal');
+r = await handle(new Request(J + '/guide/'), ENV, gh({})); ok(await r.text() === 'asset /journal/not-here', 'nothing else of the site is served at The Daily’s address (its not-found page)');
+r = await handle(new Request(J + '/auth/github/callback?code=x&state=s'), ENV, gh({ access_token: 't' })); ok(await r.text() === 'asset /journal/not-here', 'and the sign-in routes are the studio’s only');
+r = await handle(new Request(SITE + '/journal/'), ENV, gh({})); ok(await r.text() === 'asset /journal/moving', 'the-daily.studio/journal/ is the page that moves a journal to the new address');
+r = await handle(new Request(SITE + '/journal'), ENV, gh({})); ok(await r.text() === 'asset /journal/moving', 'with or without the slash');
+r = await handle(new Request(SITE + '/journal/move'), ENV, gh({})); ok(await r.text() === 'asset /journal/not-here', 'the receiving page is not served at the old address');
 ok(b64url('é✓') === btoa(String.fromCharCode(...new TextEncoder().encode('é✓'))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''), 'base64url handles any text');
 console.log('\nworker: ' + (n - fails) + '/' + n + ' checks passed'); process.exit(fails ? 1 : 0);

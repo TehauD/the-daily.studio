@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* Vendors The Daily (https://github.com/TehauD/daily) into ./journal/ so it is served at /journal/ on the same site.
+/* Vendors The Daily (https://github.com/TehauD/daily) into ./journal/ so it is served at journal.the-daily.studio (the Worker routes that address to it).
  *   node scripts/sync-journal.mjs path/to/daily/public/index.html [source-commit]
  * The page is copied unchanged except for one <meta> Content-Security-Policy tag. On Azure the same policy is sent as a header by
  * Express; the meta tag carries the policy so it also holds on hosts that cannot send headers (frame-ancestors is header-only and is omitted). */
@@ -17,5 +17,5 @@ if (/http-equiv="Content-Security-Policy"/i.test(html)) html = html.replace(/<me
 html = html.replace(/(<meta charset="UTF-8">)/i, `$1\n<meta http-equiv="Content-Security-Policy" content="${csp}">\n<meta name="referrer" content="no-referrer">`);
 mkdirSync(resolve(root, 'journal'), { recursive: true });
 writeFileSync(resolve(root, 'journal/index.html'), html);
-writeFileSync(resolve(root, 'journal/SOURCE.md'), `# The Daily (vendored)\n\nThis folder is a copy of the built page from https://github.com/TehauD/daily (MIT), source commit \`${commit}\`.\nIt is served at https://the-daily.studio/journal/. Do not edit \`index.html\` by hand; refresh it with:\n\n\`\`\`\nnode scripts/sync-journal.mjs ../daily/public/index.html <commit>\n\`\`\`\n\nThe only change is a Content-Security-Policy meta tag (the live Azure copy sends the same policy as an HTTP header).\nThe Daily keeps its data in this browser under keys starting \`daily\`; the studio uses \`fw.\`. They never read each other's data.\n`);
+writeFileSync(resolve(root, 'journal/SOURCE.md'), `# The Daily (vendored)\n\nThis folder is a copy of the built page from https://github.com/TehauD/daily (MIT), source commit \`${commit}\`.\nIt is served at https://journal.the-daily.studio/ (2.50; the Worker routes that address to this file). `moving.html` and `move.html` here are the studio's own pages that move a journal from the old address, `/journal/`. Do not edit \`index.html\` by hand; refresh it with:\n\n\`\`\`\nnode scripts/sync-journal.mjs ../daily/public/index.html <commit>\n\`\`\`\n\nThe only change is a Content-Security-Policy meta tag (the live Azure copy sends the same policy as an HTTP header).\nThe Daily keeps its data in this browser under keys starting \`daily\`; the studio uses \`fw.\`. They never read each other's data.\n`);
 console.log('journal/index.html written (' + Math.round(html.length / 1024) + ' kB)');

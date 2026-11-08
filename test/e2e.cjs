@@ -423,7 +423,7 @@ ok(he.length === 0, 'hum to song runs without script errors' + (he.length ? ' ' 
     ok(AL.during === 'halo' && AL.after === 'hex', 'Auto look switches to the Fifths Halo in a chorus and goes back to your look when playback stops (' + JSON.stringify(AL) + ')');
     ok(await ap2.evaluate(() => !!document.getElementById('vzAutoBtn')), 'the Visuals bar has an Auto look button');
     await ap2.evaluate(() => { window.__daily.CFG.vzAuto = false; }); ok(ae2.length === 0, 'auto look runs without script errors' + (ae2.length ? ' ' + ae2[0] : '')); await ap2.close(); }
-  // The Daily is served at /journal/ on the same origin
+  // The Daily's file (on the live site it has its own address, journal.the-daily.studio, through the Worker: test/e2e-journal-move.cjs)
   { const fwBefore = await page.evaluate(() => Object.keys(localStorage).filter(k => k.startsWith('fw.')).sort());
     const jp = await ctx0.newPage(), je = []; jp.on('pageerror', e => je.push(e.message));
     await jp.goto(BASE + 'journal/'); await wait(2000);

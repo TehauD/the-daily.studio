@@ -52,7 +52,7 @@ function lxAutoDesign() {
   if (S.show && (SHOW_DESIGNS.some(d => d.id === S.show) || SHOW_ALIAS[S.show])) return lxDesign(S.show).id;
   const soft = !b.drumsOn || kit === 'Brush (soft)' || pat === 'Ballad Half-Time' || bpm < 80;
   if (soft) return (S.minor && bpm < 84) || /Arpeggio|Pad/.test(cs) ? 'horizon' : 'theatre';
-  if (kit === '808' || pat === 'Four on the Floor' || (S.minor && bpm >= 118 && kit !== 'Rock Room')) return 'lasers';
+  if (kit === 'Deep Machine' || pat === 'Four on the Floor' || (S.minor && bpm >= 118 && kit !== 'Rock Room')) return 'lasers';
   if (/Funk|Boom Bap/.test(pat) || cs === 'Funk Chuck') return 'blades';
   if (kit === 'Rock Room' || /Chug|Metal/.test(cs + pat)) return 'backlight';
   if (pat === 'Folk Backbeat' || /Folk/.test(cs)) return 'theatre';

@@ -5,6 +5,7 @@ import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } fr
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { PAGES, renderPage, SITE } from './seo-pages.mjs';
 import { backstagePages } from './backstage-pages.mjs';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..'), out = join(root, 'dist');
@@ -13,9 +14,16 @@ rmSync(out, { recursive: true, force: true }); mkdirSync(join(out, 'journal'), {
 /* the page, its service worker and the rooms: the site's own lighter build (2.40, scripts/rooms.mjs); index.html in the repository stays one complete file */
 execFileSync(process.execPath, [join(root, 'scripts', 'build.mjs'), '--site'], { stdio: 'inherit' });
 for (const f of ['manifest.webmanifest', 'robots.txt', 'sitemap.xml', 'llms.txt', '404.html']) cpSync(join(root, f), join(out, f));
+mkdirSync(join(out, '.well-known'), { recursive: true }); cpSync(join(root, '.well-known', 'security.txt'), join(out, '.well-known', 'security.txt'));      /* how to report a security problem (2.49.2) */
 cpSync(join(root, 'icons'), join(out, 'icons'), { recursive: true });
 if (existsSync(join(root, 'samples'))) cpSync(join(root, 'samples'), join(out, 'samples'), { recursive: true });
 cpSync(join(root, 'journal', 'index.html'), join(out, 'journal', 'index.html'));
+/* 2.50: the page that moves a journal from the old address (served at /journal/ on the site) and the one that receives it (served at /move/ on
+   journal.<site>); each allows only its own script, by hash */
+for (const f of ['moving.html', 'move.html']) {
+  const src = readFileSync(join(root, 'journal', f), 'utf8'), m = src.match(/<script>([\s\S]*?)<\/script>/); if (!m || !src.includes('__SCRIPT_HASH__')) throw new Error('journal/' + f + ' needs one <script> and the __SCRIPT_HASH__ placeholder');
+  writeFileSync(join(out, 'journal', f), src.replace('__SCRIPT_HASH__', 'sha256-' + createHash('sha256').update(m[1]).digest('base64')));
+}
 
 /* /guide/: the public pages that say what the studio does (one question per page), each with its own title, description, canonical link and structured data.
    Written by scripts/seo-pages.mjs; the pictures are the small WebP files in site/img (see docs/OPERATIONS.md). */

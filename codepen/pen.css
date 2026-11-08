@@ -794,9 +794,9 @@ body[data-form=phone] #topR>.aud{display:inline-flex}body[data-form=phone] .btn.
 
 
 /* the same start page on the light (white) field: the two looks of one design */
-[data-theme=light] #boot.boot-live{background:#f4f8f3;color:#14211b;--bg:#f7f9f6;--bg2:#eef3ee;--panel:#ffffff;--panel2:#f1f6f1;--raise:#e8f0e9;--line:#d3dfd6;--line2:#bccbc1;--text:#14211b;--muted:#4f6358;--accent:#1f7a4d;--accent-ink:#ffffff;--accent-soft:#dcefe3}
-[data-theme=light] #boot.boot-live .boot-card{background:rgba(255,255,255,.82);border:1px solid rgba(45,110,80,.28);box-shadow:0 0 0 1px rgba(255,255,255,.7),0 24px 70px rgba(30,70,50,.16),0 0 90px rgba(31,138,86,.1);color:#14211b}
-[data-theme=light] #boot.boot-live .boot-lead{color:#0d1f16}
+[data-theme=light] #boot.boot-live:not(.boot-first){background:#f4f8f3;color:#14211b;--bg:#f7f9f6;--bg2:#eef3ee;--panel:#ffffff;--panel2:#f1f6f1;--raise:#e8f0e9;--line:#d3dfd6;--line2:#bccbc1;--text:#14211b;--muted:#4f6358;--accent:#1f7a4d;--accent-ink:#ffffff;--accent-soft:#dcefe3}
+[data-theme=light] #boot.boot-live:not(.boot-first) .boot-card{background:rgba(255,255,255,.82);border:1px solid rgba(45,110,80,.28);box-shadow:0 0 0 1px rgba(255,255,255,.7),0 24px 70px rgba(30,70,50,.16),0 0 90px rgba(31,138,86,.1);color:#14211b}
+[data-theme=light] #boot.boot-live:not(.boot-first) .boot-lead{color:#0d1f16}
 
 
 body.vz-imm .vwrap{position:fixed!important;inset:0;z-index:50;width:auto!important;height:auto!important;min-height:0!important;margin:0;border-radius:0;background:#000}
@@ -1681,3 +1681,84 @@ body[data-form=phone] .bl-dot{width:34px;height:34px}
 /* 2.46 · Simple in every workspace: four core looks in Visuals, the rest a tap away */
 .vz-more{display:none}body.simple .vz-more{display:inline-flex}
 body.simple:not(.vz-all) #pane-vis .seg [data-m]:not([data-m=hex]):not([data-m=concert]):not([data-m=bloom]):not([data-m=prompter]):not(.on){display:none}
+/* ---- 2.48: the song map (part 63b) and Write's Whole song ---- */
+.smap{display:flex;gap:3px;min-width:0;width:100%;align-items:stretch}
+.smap-b{position:relative;flex:1 1 0;min-width:28px;height:26px;border:0;border-radius:6px;padding:0 6px;background:hsl(var(--sh) 45% 50% / .22);color:var(--text);font:700 11px var(--sans);cursor:pointer;overflow:hidden;text-align:left;box-shadow:inset 0 0 0 1px hsl(var(--sh) 45% 50% / .45)}
+.smap-b:hover{background:hsl(var(--sh) 45% 50% / .34)}.smap-b:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.smap-f{position:absolute;left:0;top:0;bottom:0;width:0;background:hsl(var(--sh) 55% 52% / .55);pointer-events:none}
+.smap-n{position:relative;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;line-height:26px}
+.smap-b.cur{box-shadow:inset 0 0 0 2px hsl(var(--sh) 60% 55%)}.smap-b.past{opacity:.6}
+.wr-map{margin:0 0 6px}
+.smap-big .smap-b{height:30px;font-size:12px;color:#f1f4f2;background:hsl(var(--sh) 45% 45% / .35)}.smap-big .smap-n{line-height:30px}.smap-big .smap-b.cur{background:hsl(var(--sh) 50% 40% / .55)}
+.pane[data-wr=song] .wr-tabcol{display:none}
+.ws-sec{border-left:4px solid hsl(var(--sh) 50% 50%);border-radius:10px;margin:8px 0;padding-left:2px}
+.sm-add{display:grid;gap:6px;max-width:340px}.sm-add-g{display:flex;flex-wrap:wrap;gap:5px}.sm-k{box-shadow:inset 3px 0 0 hsl(var(--sh) 55% 50%)}
+/* ---- 2.48: Perform layouts (part 38) ---- */
+.pop.pf-pop{z-index:95;max-width:min(560px,94vw);background:#141a18;color:#eef2ef;border-color:#33423b}
+.pf-lm{display:grid;gap:9px;min-width:min(480px,88vw)}.pf-lm-r{display:grid;gap:4px}.pf-lm-l{font:700 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:#a3b6aa}
+.pf-lm-s{display:flex;flex-wrap:wrap;gap:4px}.pf-lm-s button{flex:1 1 auto;min-height:34px;padding:0 10px;border-radius:8px;border:1px solid #33423b;background:#1b221f;color:#eef2ef;font:600 13px var(--sans);cursor:pointer}
+.pf-lm-s button.on{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+.perform .pf-map{padding:0 16px 6px;box-sizing:border-box}.perform.pf-map-off .pf-map{display:none}
+/* controls at the top right: the bar moves under the title row, its buttons to the right */
+.perform.pf-ctl-top .pf-top,.perform.pf-ctl-auto .pf-top{order:0}.perform.pf-ctl-top .pf-map,.perform.pf-ctl-auto .pf-map{order:2}
+.perform.pf-ctl-top .pf-bar,.perform.pf-ctl-auto .pf-bar{order:1;justify-content:flex-end;padding:0 16px 8px;background:none;gap:8px}
+.perform.pf-ctl-top .pf-stage,.perform.pf-ctl-auto .pf-stage{order:3}
+.perform.pf-ctl-top .pf-bar .egg-line,.perform.pf-ctl-auto .pf-bar .egg-line{order:-2}.perform.pf-ctl-top .pf-bar .pf-takes,.perform.pf-ctl-auto .pf-bar .pf-takes{order:-1}
+.perform.pf-ctl-top .btn.pf-b,.perform.pf-ctl-auto .btn.pf-b{min-height:40px;padding:0 14px;font-size:14px}
+.perform.pf-ctl-auto .pf-bar{opacity:0;transition:opacity .35s;pointer-events:none}.perform.pf-ctl-auto.pf-awake .pf-bar,.perform.pf-ctl-auto .pf-bar:has(:focus-visible){opacity:1;pointer-events:auto}
+/* the words at the bottom: the chord in the middle of what is left, the words in a band along the bottom */
+.perform.pf-lyr-bottom .pf-stage{justify-content:flex-start;padding-bottom:clamp(10px,2vh,22px)}
+.perform.pf-lyr-bottom .pf-chord{margin-top:auto}
+.perform.pf-lyr-bottom .pf-lyr{margin-top:auto;width:min(1200px,96vw);max-width:none;padding:clamp(10px,2vh,20px) clamp(14px,3vw,36px);border-radius:18px;background:rgba(4,8,7,.62);backdrop-filter:blur(3px);box-sizing:border-box}
+.perform.pf-lyr-bottom .pf-l:not(.cur){opacity:.62}
+.perform.pf-lyr-bottom.pf-v-shapes .pf-lyr{width:min(1200px,calc(96vw - clamp(170px,17vw,250px)))}
+/* the sing-along view: the words are the show, the chord smaller above them */
+.perform.pf-v-sing .pf-chord{font-size:clamp(44px,12vh,140px)}.perform.pf-v-sing .pf-next{font-size:clamp(14px,2.4vh,22px)}
+.perform.pf-v-sing .pf-l.cur{font-size:clamp(26px,6.2vh,64px)}.perform.pf-v-sing .pf-l:not(.cur){font-size:clamp(18px,4.2vh,42px)}.perform.pf-lyr-bottom.pf-v-sing .pf-lyr{width:min(1500px,97vw)}
+/* text size */
+.perform.pf-size-s .pf-l{font-size:clamp(18px,4vh,40px)}.perform.pf-size-s .pf-chord{font-size:clamp(56px,17vh,200px)}
+.perform.pf-size-l .pf-l{font-size:clamp(26px,6.6vh,70px)}.perform.pf-size-l .pf-chord{font-size:clamp(80px,27vh,320px)}
+.perform.pf-size-xl .pf-l{font-size:clamp(30px,8vh,90px)}.perform.pf-size-xl .pf-chord{font-size:clamp(90px,30vh,360px)}
+@media (max-width:700px){.perform.pf-ctl-top .pf-bar,.perform.pf-ctl-auto .pf-bar{justify-content:center}.perform .pf-map .smap-b{min-width:18px;font-size:10px}.perform.pf-lyr-bottom .pf-lyr{width:96vw}}
+/* ---- 2.48.1: Whole song as a chord sheet (part 63b) ---- */
+.wsh{--wsf:15px;column-width:320px;column-gap:28px;column-rule:1px solid var(--line);font-size:var(--wsf);padding:4px 2px 16px}
+.wsh[data-size="1"]{--wsf:13px;column-width:250px}.wsh[data-size="3"]{--wsf:18px;column-width:400px}.wsh[data-size="4"]{--wsf:22px;column-width:500px}
+.wsh-sec{break-inside:avoid;margin:0 0 .9em;padding:.35em .6em .45em;border-left:4px solid hsl(var(--sh) 50% 50%);border-radius:8px;cursor:pointer;background:transparent;transition:background .15s}
+.wsh-sec:hover{background:color-mix(in srgb,var(--text) 4%,transparent)}.wsh-sec.cur{background:hsl(var(--sh) 55% 50% / .14);box-shadow:inset 0 0 0 1px hsl(var(--sh) 55% 50% / .5)}
+.wsh-sec.editing{cursor:default;break-inside:auto;column-span:all;background:color-mix(in srgb,var(--text) 3%,transparent)}
+.wsh-h{display:flex;align-items:center;gap:8px;margin-bottom:.2em}.wsh-n{font:800 .82em var(--display);letter-spacing:.06em;text-transform:uppercase;color:hsl(var(--sh) 45% 40%)}
+.wsh-m{font:600 .72em var(--mono);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wsh-b{min-height:24px;padding:0 7px;font-size:11px;opacity:0;transition:opacity .15s}.wsh-sec:hover .wsh-b,.wsh-sec:focus-within .wsh-b,.wsh-sec.editing .wsh-b{opacity:1}
+.wsh-l{font:600 1em/1.25 var(--sans);margin:.1em 0 .25em}.wsh .ly-c{color:var(--accent);font-size:.8em}.wsh-gap{height:.6em}
+.wsh-bars{display:flex;flex-wrap:wrap;gap:4px;font:700 .9em var(--mono)}.wsh-bar{padding:.1em .55em;border:1px solid var(--line2);border-radius:6px}
+.wsh-rep{font-size:.82em;color:var(--muted);font-style:italic}.wsh-sec.rep{padding-bottom:.3em}
+@media (hover:none){.wsh-b{opacity:1}}
+:root[data-theme="dark"] .wsh-n{color:hsl(var(--sh) 55% 68%)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .wsh-n{color:hsl(var(--sh) 55% 68%)}}
+.linkish{background:none;border:0;padding:0;color:var(--accent);text-decoration:underline;cursor:pointer;font:inherit}
+body.ws-full #pane-tab{position:fixed;inset:0;z-index:70;background:var(--bg);overflow:auto;padding:12px clamp(12px,2vw,28px) 24px}
+body.ws-full #pane-tab .wr-bar{position:sticky;top:-12px;z-index:2;background:var(--bg);padding-top:6px}
+body.ws-full .wsh{column-width:340px}
+/* ---- 2.49: writing on a phone (part 18c) ---- */
+.mw-map{flex:none}.mw-map .smap-b{min-width:16px;height:22px;font-size:10px;padding:0 4px}.mw-map .smap-n{line-height:22px}
+.mw-secs .msc[data-kind]{box-shadow:inset 0 -3px 0 hsl(var(--sh) 55% 50% / .8)}.mw-secs .msc.on[data-kind]{box-shadow:none}
+.mw-sheet{column-width:auto;columns:1;font-size:16px;padding-bottom:24px}.mw-sheet .wsh-b{opacity:1}
+.sm-menu{min-width:220px}.sm-menu>.btn{justify-content:flex-start;min-height:42px}.sm-menu .sm-add-g .btn{flex:1;min-height:42px}
+.ws-next{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;padding:6px 2px 12px;border-top:1px solid var(--line)}.ws-next-m{justify-content:stretch;border:0;padding:0}.ws-next-m .btn{flex:1;min-height:40px}
+.ws-empty{margin:10px 2px;padding:14px 16px;border:1px dashed var(--line2);border-radius:12px;color:var(--muted);font-size:14px}.ws-empty b{color:var(--text)}
+.mw-tools .mw-mode{display:flex;flex:1 1 auto;min-width:0}.mw-tools .mw-mode button{flex:1;white-space:nowrap;padding:0 8px;font-size:14px}
+.mw-tools .btn.sm{min-width:40px;min-height:40px;font-size:16px}
+/* ---- 2.49.1: no flash of the wrong first page (part 0); the goals for people coming back ---- */
+html:not(.ds-booted) #boot .boot-card{visibility:hidden}
+.boot-goals.boot-goals-sm{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:6px}.boot-goals-sm .boot-goal{padding:10px 12px}.boot-goals-sm .boot-goal span{display:none}.boot-goals-sm .boot-goal b{font-size:14px}
+#bootRoutes + .boot-q{margin-top:16px}
+@media (max-width:620px){.boot-goals.boot-goals-sm{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* ---- 2.51: passing a song back and forth (part 89) ---- */
+.slc-box{display:grid;gap:4px;margin:4px 0 8px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+.slc-hist{margin:0;padding-left:20px;font-size:13px;color:var(--muted)}.slc-hist b{color:var(--text)}
+.slc-form{display:grid;grid-template-columns:minmax(120px,1fr) 2fr;gap:10px;margin:8px 0}.slc-form label{display:grid;gap:4px;font-weight:700}.slc-form .in{width:100%;box-sizing:border-box;font:14px var(--sans)}
+.slc-noteIn{resize:vertical;min-height:44px}
+.slc-note{margin:8px 0;padding:10px 14px;border-left:4px solid var(--accent);background:var(--panel);border-radius:0 10px 10px 0;font-size:15px;white-space:pre-wrap}
+.sl-first .sl-kick{font-size:15px}
+@media (max-width:560px){.slc-form{grid-template-columns:1fr}}
+#printSheet .pq{display:flex;gap:12px;align-items:center;margin-top:18px;font:12px/1.4 system-ui,sans-serif}#printSheet .pq svg{width:96px;height:96px;flex:none}
