@@ -416,7 +416,7 @@ ${related.length ? `<section><h2>Keep reading</h2>${topicCards(related, p.slug =
 
 /** sitemap.xml: the app, the guide and the pages under it, the journal; lastmod from the newest CHANGELOG entry */
 export function sitemap(modified) {
-  const urls = [[SITE.origin + '/', '1.0'], ...PAGES.map(p => [pageUrl(p), p.slug === 'guide' ? '0.8' : '0.7']), [SITE.origin + '/journal/', '0.4']];
+  const urls = [[SITE.origin + '/', '1.0'], ...PAGES.map(p => [pageUrl(p), p.slug === 'guide' ? '0.8' : '0.7'])];
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map(([u, pr]) => `  <url><loc>${u}</loc><lastmod>${modified}</lastmod><priority>${pr}</priority></url>`).join('\n')}\n</urlset>\n`;
 }
 /** the links under the first page's buttons (also in <noscript>), so every guide is one crawlable link away from the app */

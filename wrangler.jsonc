@@ -6,12 +6,19 @@
   "workers_dev": true,
   // Runs on every `wrangler deploy`, so the dist/ folder always exists even if the dashboard build command is wrong.
   "build": { "command": "npm run build:site && npm run verify:site" },
-  // The Worker (worker/index.mjs) only runs for addresses that are not files of the site: Sign in with GitHub's two routes (docs/GITHUB.md).
+  // The Worker (worker/index.mjs) answers Sign in with GitHub's two routes (docs/GITHUB.md) and The Daily's own address (2.50).
   // Everything else is served from dist/ as before. Its secrets: npx wrangler secret put GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET.
   "main": "worker/index.mjs",
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",
-    "not_found_handling": "404-page"
-  }
+    "not_found_handling": "404-page",
+    // 2.50: the Worker sees every request first, so it can tell The Daily's own address (journal.) from the site's
+    "run_worker_first": true
+  },
+  // The site and The Daily's own address. Both are attached on deploy when the domain's DNS is on Cloudflare (docs/HOSTING.md).
+  "routes": [
+    { "pattern": "the-daily.studio", "custom_domain": true },
+    { "pattern": "journal.the-daily.studio", "custom_domain": true }
+  ]
 }

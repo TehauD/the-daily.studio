@@ -66,9 +66,11 @@ An agent is software you run, and it usually works with an AI service. When it r
 - **By your host and the services above:** whatever their own logs keep, under their own policies. A **synced folder**, if you choose one in Settings ▸ Folder sync (Chrome and Edge), holds your studio (and, if you turn it on, a `.daily-song.zip` of each song); it is a folder on your own computer that the browser was given access to, and you can turn it off at any time. A cloud drive that folder is in keeps it under that drive's own policy.
 - **Persistent storage.** The app may ask the browser to keep its library (the browser decides). Safari can still clear a site's data after about a week without a visit unless the site is added to the Home Screen; the app tells you when that applies.
 
-## The Daily at /journal/
+## The Daily at journal.the-daily.studio
 
-The site also hosts [The Daily](https://the-daily.studio/journal/), a separate journal app by the same author. Its entries stay in your browser. It contacts GitHub, Azure DevOps or an AI provider only if you enter your own credentials and use those features, and it sends them straight from your browser to that provider, never to this site. Its page also allows images from any `https` address, so an entry that links to a remote picture makes your browser fetch it. Because both apps share the same web address, your browser keeps their data side by side (the studio under `fw.` names, The Daily under `daily` names). They do not read each other's data, and the studio's reset only removes the studio's own. The studio never loads The Daily unless you open it.
+The site also hosts [The Daily](https://journal.the-daily.studio/), a separate journal app by the same author, at its own address (2.50; it was at `/journal/` before). Its entries stay in your browser. It contacts GitHub, Azure DevOps or an AI provider only if you enter your own credentials and use those features, and it sends them straight from your browser to that provider, never to this site. Its page also allows images from any `https` address, so an entry that links to a remote picture makes your browser fetch it. Because it has its own address, your browser keeps its data apart from the studio's. The studio never loads The Daily unless you open it.
+
+**Moving from the old address.** A journal kept at `the-daily.studio/journal/` moves with **Move my journal** on that page: the page reads it in your browser and hands it to the new address in your browser, through a window it opens. Nothing is uploaded, and each page accepts the hand-over only from the other. Once it has moved, **Remove the old copy** clears it from the old address.
 
 ## Hum to Song
 

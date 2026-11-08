@@ -34,6 +34,11 @@ ok(sw.includes('daily-songs-' + ver), 'service worker cache name matches package
 const man = JSON.parse(rd('manifest.webmanifest')); ok(man.name && man.start_url && man.icons.length >= 3, 'manifest has name, start_url and icons');
 ok(!/fretwork/i.test(rd('manifest.webmanifest') + rd('404.html')), 'no old product name in manifest or 404 page');
 const j = rd('journal/index.html'); ok(/Content-Security-Policy/.test(j), 'The Daily page keeps its own CSP');
+/* 2.50: The Daily has its own address; the pages that move a journal there each allow only their own script */
+for (const f of ['journal/moving.html', 'journal/move.html']) { const t = existsSync(join(d, f)) ? rd(f) : '', sc = (t.match(/<script>([\s\S]*?)<\/script>/) || [])[1] || '', pol = (t.match(/Content-Security-Policy" content="([^"]+)/) || [])[1] || '';
+  ok(sc && pol.includes("script-src 'sha256-" + createHash('sha256').update(sc).digest('base64') + "'") && /default-src 'none'/.test(pol) && !/__SCRIPT_HASH__/.test(t), f + ': present, and its policy allows only its own script'); }
+ok(!/document\.cookie/.test(rd('index.html')) && !/document\.cookie/.test(j), 'neither the studio nor The Daily uses cookies, so nothing is shared between their two addresses');
+ok(!/\/journal\//.test(rd('sitemap.xml')), 'the sitemap no longer lists /journal/ (The Daily has its own address)');
 ok(statSync(join(d, 'index.html')).size < 2_000_000, 'index.html is under 2 MB');
 { /* what a visitor downloads: the page travels compressed, so this is the number that sets the first load. Raise it on purpose, not by drift. */
   const gz = gzipSync(readFileSync(join(d, 'index.html')), { level: 9 }).length;

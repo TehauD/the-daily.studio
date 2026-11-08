@@ -7,7 +7,7 @@ Reviewed for 2.49.2 (first written for 2.13), with an evaluation of the live sit
 1. **The visitor's device** holds all data. There is no account, cookie, analytics or telemetry, and no server keeps data. The site's Worker (`worker/index.mjs`) only serves the files and, if the owner sets up Sign in with GitHub, passes GitHub's one-time sign-in code to GitHub and the token back to the browser (it stores nothing). A person may connect their own GitHub repository (Settings ▸ GitHub); then the browser talks to `api.github.com` directly (docs/GITHUB.md).
 2. **The host (Cloudflare)** serves static files and may keep ordinary access logs. It never sees songs, audio or video.
 3. **Optional third-party hosts**, contacted only after the visitor says yes to a one-time download (`mpConsent()`), when hand tracking or the person cut-out look is used: `cdn.jsdelivr.net` (MediaPipe script and WASM) and `storage.googleapis.com` (hand-landmarker and selfie-segmenter models). They see an IP address and browser details, like any download, and never a camera picture.
-4. **The Daily at `/journal/`** shares the origin. It contacts GitHub, Azure DevOps or an AI provider only if the user enters their own credentials.
+4. **The Daily at `journal.the-daily.studio`** (2.50) has its own origin. It contacts GitHub, Azure DevOps or an AI provider only if the user enters their own credentials.
 
 ## Device permissions
 
@@ -61,7 +61,7 @@ The studio's reset removes only the studio's `fw.*` data and its own caches; it 
 * **Song links (2.40):** the song travels after the `#`, which browsers never send to a server. Everything in a link is untrusted input: the link is capped at 60,000 characters and its unpacked size at 256 kB (a ceiling on decompression), the JSON is parsed as data, names are checked against the studio's own lists, numbers clamped, text lengths capped and chords parsed before anything is used. Text is inserted as text, never HTML. The link is cleared from the address once read, and the person is asked before it opens, as a new song that replaces nothing. A link is readable by anyone who has it, including link-preview services in chat apps; the send window says so.
 * **AI agent tools (2.26, wider in 2.47):** the tools run in the page and can read and edit the open song and the band, play and stop, and export text. They never reach the microphone, the camera, recording, deleting songs or Settings, every change shows a 🤖 note and is one undo step, and the person can turn them off (Settings ▸ Workflow). 2.47 lets `set_band` pick a beat and change the kit, sounds and Song build, and `edit_section` set a section's energy; neither opens anything new.
 * **Imports:** JSON, WAV, MP3 and preset files are parsed locally; malformed files must produce an error, not code execution. Text from files is inserted as text, not HTML.
-* **Same-origin neighbour:** the studio and The Daily use different storage names and do not read each other's data. A cross-site-scripting flaw in either would expose both, which is why both carry a CSP and neither loads third-party scripts. Use a fine-grained, repo-scoped token in The Daily.
+* **The Daily's own origin (2.50):** The Daily is served at `journal.the-daily.studio`, and the studio at `the-daily.studio`, so the browser keeps their storage apart; neither sets cookies (`verify-site` checks). The page at `/journal/` moves a journal kept at the old address with a one-time hand-over between two pages: each accepts it only from the other's exact origin and the window it opened or was opened by, keeps only `daily…` keys and well-formed rows, never overwrites what is already there, and leaves the old copy until the person removes it. Both pages allow only their own script, by hash.
 
 ## Known limits and residual risks
 
@@ -102,8 +102,9 @@ A passive look at https://the-daily.studio/, then running 2.48.1. Nothing was lo
 - **`www.the-daily.studio` has no DNS answer.** Add it with a redirect to the bare domain, or leave it out on purpose.
 - **`workers_dev: true`** in `wrangler.jsonc` also serves the site at `the-daily-studio.<account>.workers.dev`: a second copy, not covered by the domain's HSTS. Set it to `false` unless you use it for previews.
 
-**Still open (design):**
-- **`/journal/` shares the studio's origin,** and its policy allows inline scripts and connections to several AI providers. A script-injection bug in the journal could read the studio's storage, including the GitHub token. Moving The Daily to its own subdomain (for example `journal.the-daily.studio`) separates them.
+**Since then:** The Daily moved to its own address (2.50).
+
+**Still open:**
 - **The CI actions are pinned to major versions,** not commit hashes; Dependabot can keep commit pins current.
 
 ## Reporting

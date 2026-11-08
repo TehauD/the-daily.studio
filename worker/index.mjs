@@ -6,7 +6,10 @@
      GET  /auth/github/callback?code&state   → 302 to /#gh=<token, renewal token, expiry times, state>   (the part after # never
                                                reaches any server; the page checks the state, keeps the token and clears the address)
      POST /auth/github/refresh  { r }         → { t, r, exp, rexp }   a new token when the old one runs out (from this site only)
-   Secrets (npx wrangler secret put …): GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET. Without them both routes say so and the site works as before. */
+   Secrets (npx wrangler secret put …): GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET. Without them both routes say so and the site works as before.
+   The Daily (2.50) has its own address, journal.<site>: there "/" is The Daily and "/move/" receives a journal handed over from the old
+   address. On the site itself, /journal/ is a page that moves a journal kept there to the new address; the receiving page is not served
+   here. Everything else is the site, as before. */
 const NO_STORE = { 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer', 'X-Content-Type-Options': 'nosniff' };
 const TOKEN_URL = 'https://github.com/login/oauth/access_token';
 
@@ -22,8 +25,17 @@ async function exchange(env, params, fetchFn) {
 const tokens = (j, now) => ({ t: j.access_token, r: j.refresh_token || '', exp: j.expires_in ? now + j.expires_in * 1000 : 0, rexp: j.refresh_token_expires_in ? now + j.refresh_token_expires_in * 1000 : 0 });
 const clean = s => String(s || '').replace(/[^\w.-]/g, '').slice(0, 60) || 'unknown';
 
+/** the site's file at `path`, as the assets would serve it (keeping the method and headers of the request) */
+const asset = (env, req, u, path) => env.ASSETS.fetch(new Request(new URL(path, u), req));
 export async function handle(req, env, fetchFn = fetch, now = Date.now()) {
   const u = new URL(req.url);
+  if (/^journal\./.test(u.hostname)) {      /* The Daily's own address */
+    if (u.pathname === '/' || u.pathname === '/index.html') return asset(env, req, u, '/journal/');
+    if (u.pathname === '/move/' || u.pathname === '/move') return asset(env, req, u, '/journal/move');
+    return asset(env, req, u, '/journal/not-here');      /* everything else: the site's not-found page */
+  }
+  if (u.pathname === '/journal' || u.pathname === '/journal/' || u.pathname === '/journal/index.html') return asset(env, req, u, '/journal/moving');
+  if (/^\/journal\/move(\.html)?$/.test(u.pathname)) return asset(env, req, u, '/journal/not-here');      /* the receiving page belongs to the new address only */
   if (u.pathname === '/auth/github/callback') {
     const back = frag => new Response(null, { status: 302, headers: Object.assign({ Location: '/#' + frag }, NO_STORE) });
     if (!ready(env)) return back('gh-error=not-set-up');

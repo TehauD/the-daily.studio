@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src '__SCRIPT_HASH__'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
+<title>Moving The Daily</title>
+<style>:root{color-scheme:light dark}body{margin:0;min-height:100vh;display:grid;place-items:center;font:16px/1.55 "Segoe UI",system-ui,-apple-system,sans-serif;background:#f4f6f3;color:#14211b}
+@media (prefers-color-scheme:dark){body{background:#070c0b;color:#e8efea}.card{background:#101816!important;border-color:#263a31!important}}
+.card{max-width:32rem;margin:16px;padding:26px 28px;border:1px solid #d3dfd6;border-radius:16px;background:#fff}h1{margin:0 0 .4rem;font-size:1.4rem}
+a.b{display:inline-block;margin-top:14px;font-weight:600;font-size:15px;padding:11px 16px;border-radius:10px;background:#1f7a4d;color:#fff;text-decoration:none}</style></head>
+<body><main class="card" aria-live="polite"><h1>Moving The Daily</h1><p id="say">Waiting for your journal…</p><p><a class="b" href="/" id="open" hidden>Open The Daily</a></p></main>
+<script>
+(() => {
+  'use strict';
+  /* Only the studio's own address may hand a journal over, and only from the page that opened this one */
+  const OLD = location.protocol + '//' + location.host.replace(/^journal\./, ''), DB = 'the-daily', say = t => { document.getElementById('say').textContent = t; };
+  if (OLD === location.origin || !window.opener) { say('Open the old address of The Daily and press Move my journal there.'); document.getElementById('open').hidden = false; return; }
+  const ok = r => r && typeof r === 'object' && typeof r.k === 'string' && r.k.length > 0 && r.k.length <= 300;
+  const openDb = () => new Promise((res, rej) => { const rq = indexedDB.open(DB, 1);
+    rq.onupgradeneeded = () => { const d = rq.result; if (!d.objectStoreNames.contains('kv')) d.createObjectStore('kv', { keyPath: 'k' }); if (!d.objectStoreNames.contains('meta')) d.createObjectStore('meta', { keyPath: 'k' }); };      /* the same shape The Daily makes */
+    rq.onsuccess = () => res(rq.result); rq.onerror = () => rej(rq.error); });
+  const put = (db, store, rows) => new Promise((res, rej) => { const tx = db.transaction(store, 'readwrite'), os = tx.objectStore(store); let added = 0, kept = 0;
+    rows.forEach(r => { const g = os.get(r.k); g.onsuccess = () => { if (g.result === undefined) { os.put({ k: r.k, v: r.v }); added++; } else kept++; }; });      /* what is already here stays as it is */
+    tx.oncomplete = () => res({ added, kept }); tx.onerror = () => rej(tx.error); });
+  let done = false;
+  addEventListener('message', async e => {
+    if (done || e.origin !== OLD || e.source !== window.opener) return; const d = e.data;
+    if (!d || d.type !== 'move' || !Array.isArray(d.kv) || !Array.isArray(d.meta) || !d.ls || typeof d.ls !== 'object') return;
+    done = true; say('Moving your journal…');
+    try {
+      const kv = d.kv.filter(ok), meta = d.meta.filter(ok), db = await openDb(), a = await put(db, 'kv', kv), b = await put(db, 'meta', meta); db.close();
+      let ls = 0, lsKept = 0; Object.keys(d.ls).forEach(k => { const v = d.ls[k]; if (!/^daily/.test(k) || typeof v !== 'string') return; if (localStorage.getItem(k) === null) { localStorage.setItem(k, v); ls++; } else lsKept++; });
+      window.opener.postMessage({ type: 'done', kv: a.added, ls, kept: a.kept + b.kept + lsKept }, OLD);
+      say('Your journal is here now: ' + a.added + ' saved item' + (a.added === 1 ? '' : 's') + ' and ' + ls + ' setting' + (ls === 1 ? '' : 's') + '.'); document.getElementById('open').hidden = false;
+    } catch (err) { done = false; window.opener.postMessage({ type: 'error', why: String(err && err.message || err) }, OLD); say('The move did not finish. Go back to the other tab and try again.'); }
+  });
+  window.opener.postMessage({ type: 'ready' }, OLD);
+})();
+</script>
+</body></html>

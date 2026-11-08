@@ -2,7 +2,32 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
-## 2.49.2 — 2026-11-08 — Security hardening, after a look at the live site
+## 2.50.0 — 2026-11-08 — The Daily at its own address
+
+### Changed
+- **The Daily now lives at https://journal.the-daily.studio/.** The studio's links point there.
+- **`the-daily.studio/journal/` is now a moving page:**
+  - **With a journal on this device,** it offers **Move my journal**, which hands the entries and settings to the new address in the browser, through a window it opens. Nothing is uploaded.
+  - **Once moved,** **Remove the old copy** clears it from the old address.
+  - **With no journal there,** it goes straight to the new address.
+- **The Worker** sees every request first (`run_worker_first`) and tells the two addresses apart. `wrangler.jsonc` lists both as custom domains.
+- **The sitemap** no longer lists `/journal/`.
+
+### Tests
+- **New `e2e-journal-move`** (14 checks). Both real addresses are answered in the browser from the build through the site's own Worker. It checks:
+  - the move, exactly;
+  - that nothing is removed until asked;
+  - hand-overs refused from any other site;
+  - the routes;
+  - The Daily opening at its address;
+  - the no-journal redirect.
+- **`worker.test`** (24 checks) adds the routing.
+- **`verify-site`** checks:
+  - that both moving pages allow only their own script;
+  - that neither app uses cookies;
+  - that the sitemap no longer lists `/journal/`.
+
+2026-11-08 — Security hardening, after a look at the live site
 
 A passive evaluation of https://the-daily.studio/ (running 2.48.1): headers, the policy on every page, files that must not be served, the sign-in routes with bad input, and the privacy test run against the live site. The full findings are in [docs/SECURITY_MODEL.md](docs/SECURITY_MODEL.md#live-site-evaluation-2026-11-08).
 

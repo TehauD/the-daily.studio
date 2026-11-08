@@ -20,13 +20,12 @@
 ## Deploy and domain (Cloudflare)
 Follow [HOSTING.md](HOSTING.md) sections 1 and 2: import the repo as Worker `the-daily-studio`, build command `npm run build:site && npm run verify:site`, deploy `npx wrangler deploy`, attach custom domain `the-daily.studio` (and `www`), nameservers at the registrar, SSL mode Full (strict). Remove old GitHub Pages DNS records. Runbook: [OPERATIONS.md](OPERATIONS.md).
 
-## Moving The Daily onto this domain
-The page is already vendored at `journal/index.html` and deploys with the site (live at `https://the-daily.studio/journal/`).
-1. **Before** switching anything, open the old address (`thedaily.azurewebsites.net`) in each browser you use and **export your entire journal** (and note any repository / provider settings; tokens are stored per address and do not carry over).
-2. Open `https://the-daily.studio/journal/`, import the export, and re-enter your repository settings.
-3. Optional: leave the Azure site running as it is, or add a redirect there to the new address once you have moved.
-4. When The Daily's source changes, refresh the copy: `node scripts/sync-journal.mjs ../daily/public/index.html <commit>`, then commit and push.
-5. Heads up: the optional token you enter in The Daily is stored on this site's address, next to the studio. Both pages have a Content-Security-Policy, and neither loads third-party scripts, but use a fine-grained, repo-scoped token.
+## The Daily's address
+The Daily is vendored at `journal/index.html` and deploys with the site. Since 2.50 it is served at its own address, `https://journal.the-daily.studio/` (the Worker routes that address; `wrangler.jsonc` attaches it as a custom domain).
+1. After the first deploy with 2.50, open `https://journal.the-daily.studio/`: The Daily loads.
+2. In a browser that had a journal at `https://the-daily.studio/journal/`, open that address and press **Move my journal**; check the entries at the new address, then **Remove the old copy**. The page explains this to everyone who opens the old address.
+3. When The Daily's source changes, refresh the copy: `node scripts/sync-journal.mjs ../daily/public/index.html <commit>`, then commit and push.
+4. The token you enter in The Daily is kept at The Daily's own address. Use a fine-grained, repo-scoped token.
 
 ## Tag and release
 ```
@@ -50,6 +49,7 @@ Create a GitHub release from the tag, using that version's CHANGELOG entry (and 
 - [ ] `BASE_URL=https://the-daily.studio/ node test/e2e-privacy.cjs` passes against the live site (no request to any other site, no cookie). From a sandbox that reaches the internet through a proxy, add `PW_PROXY=1`.
 - [ ] In Cloudflare: Web Analytics' automatic setup, bot detection's JavaScript and Network Error Logging are off (see SECURITY_MODEL.md, *Live site evaluation*). `curl -s https://the-daily.studio/nope | grep -c cloudflareinsights` prints 0.
 - [ ] `https://the-daily.studio/.well-known/security.txt` answers, and its `Expires` date is more than a month away.
+- [ ] `https://journal.the-daily.studio/` opens The Daily, and `https://the-daily.studio/journal/` shows the moving page.
 - [ ] `https://the-daily.studio/legal/` opens and shows the licence, notices, privacy statement, terms and both font licences.
 - [ ] **Song link:** 🔗 Send as a link, open the link in another browser: it offers the song, the address bar is cleaned, and it opens as a new song.
 - [ ] **A room:** on a fresh profile, open **Transcribe** or **🎯 Tune** a take: its room loads with no console error (a hash mismatch would be refused). Then go offline and reload: it still opens.

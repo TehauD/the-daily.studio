@@ -489,7 +489,7 @@ Ideas and pull requests are welcome.
 
 Code: **[MIT License](LICENSE)**, © 2026 Tehau DeBarthe. You may use, copy, change and share it; keep the licence notice.
 
-* **About me and credits** are inside the app under *Help & shortcuts*. Maker: [Tehau DeBarthe](https://github.com/TehauD) · [LinkedIn](https://www.linkedin.com/in/tehau/). A sibling project, [The Daily](https://the-daily.studio/journal/), a developer journal in the same spirit, is hosted at `/journal/` (source: [TehauD/daily](https://github.com/TehauD/daily)).
+* **About me and credits** are inside the app under *Help & shortcuts*. Maker: [Tehau DeBarthe](https://github.com/TehauD) · [LinkedIn](https://www.linkedin.com/in/tehau/). A sibling project, [The Daily](https://journal.the-daily.studio/), a developer journal in the same spirit, is hosted at its own address, `journal.the-daily.studio` (source: [TehauD/daily](https://github.com/TehauD/daily)).
 * **[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)**: optional hand tracking uses [MediaPipe Tasks Vision](https://developers.google.com/mediapipe) (Apache-2.0), loaded from a CDN only after you agree to a one-time download. Techniques: YIN pitch estimation (de Cheveigné and Kawahara, 2002), harmonic / percussive separation by median filtering (Fitzgerald, 2010), Karplus–Strong synthesis (1983).
 * **[PRIVACY.md](PRIVACY.md)**: what is processed on your device, what can travel over the network and when, and what is kept.
 * **[docs/LICENSING.md](docs/LICENSING.md)**: the licence and provenance register: every shipped file, font, dependency, model and downloadable output, and what is still open.
