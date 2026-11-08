@@ -2,8 +2,10 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "the-daily-studio",
   "compatibility_date": "2026-10-01",
-  // Serves https://the-daily-studio.<your-subdomain>.workers.dev. The custom domain is attached in the dashboard (Settings > Domains & Routes).
-  "workers_dev": true,
+  // 2.53.1: the site is only at its own addresses, behind the domain's Cloudflare settings: no second copy at a workers.dev address, and
+  // no preview addresses for each version.
+  "workers_dev": false,
+  "preview_urls": false,
   // Runs on every `wrangler deploy`, so the dist/ folder always exists even if the dashboard build command is wrong.
   "build": { "command": "npm run build:site && npm run verify:site" },
   // The Worker (worker/index.mjs) answers Sign in with GitHub's two routes (docs/GITHUB.md) and The Daily's own address (2.50).

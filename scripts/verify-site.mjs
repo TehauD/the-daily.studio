@@ -3,6 +3,7 @@
    Fails (exit 1) if anything a visitor depends on is missing or the security posture drifted. */
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { createHash } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 import { gzipSync } from 'node:zlib';
 import { dirname, join, posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -37,6 +38,14 @@ const j = rd('journal/index.html'); ok(/Content-Security-Policy/.test(j), 'The D
 /* 2.50: The Daily has its own address; the pages that move a journal there each allow only their own script */
 for (const f of ['journal/moving.html', 'journal/move.html']) { const t = existsSync(join(d, f)) ? rd(f) : '', sc = (t.match(/<script>([\s\S]*?)<\/script>/) || [])[1] || '', pol = (t.match(/Content-Security-Policy" content="([^"]+)/) || [])[1] || '';
   ok(sc && pol.includes("script-src 'sha256-" + createHash('sha256').update(sc).digest('base64') + "'") && /default-src 'none'/.test(pol) && !/__SCRIPT_HASH__/.test(t), f + ': present, and its policy allows only its own script'); }
+/* 2.53.1: nothing private is deployed or committed */
+{ const all = []; const walk = dir => readdirSync(join(d, dir), { withFileTypes: true }).forEach(e => { const rel = dir ? dir + '/' + e.name : e.name; if (e.isDirectory()) walk(rel); else all.push(rel); }); walk('');
+  const bad = all.filter(f => /(^|\/)\.(?!well-known\/|assetsignore$)/.test(f) || /(^|\/)(\.env[^/]*|\.dev\.vars[^/]*|package(-lock)?\.json|wrangler\.[a-z]+|[^/]+\.(pem|key|p12))$/.test(f) || /(^|\/)(node_modules|\.git|\.wrangler)\//.test(f));
+  ok(!bad.length, 'the deployed folder holds no dotfiles (but .well-known), no .env or .dev.vars, no keys, no package or Wrangler files' + (bad.length ? ': ' + bad.slice(0, 5).join(', ') : ' (' + all.length + ' files)'));
+  ok(/^\.env$/m.test(rd('.assetsignore')) && /^\.git$/m.test(rd('.assetsignore')), 'and .assetsignore tells Cloudflare never to upload them'); }
+{ let tracked = []; try { tracked = execFileSync('git', ['ls-files'], { cwd: join(d, '..'), encoding: 'utf8' }).split('\n'); } catch (e) { tracked = null; }
+  if (tracked) { const bad = tracked.filter(f => /(^|\/)(\.env(\.[^/]*)?|\.dev\.vars[^/]*|[^/]+\.(pem|key|p12))$/.test(f) || /^\.wrangler\//.test(f)); ok(!bad.length, 'no .env, .dev.vars, key or Wrangler cache file is committed' + (bad.length ? ': ' + bad.join(', ') : '')); } }
+const wr = rd('../wrangler.jsonc'); ok(/"workers_dev":\s*false/.test(wr) && /"preview_urls":\s*false/.test(wr), 'the site is served only at its own addresses: no workers.dev copy, no preview addresses');
 ok(!/document\.cookie/.test(rd('index.html')) && !/document\.cookie/.test(j), 'neither the studio nor The Daily uses cookies, so nothing is shared between their two addresses');
 ok(!/\/journal\//.test(rd('sitemap.xml')), 'the sitemap no longer lists /journal/ (The Daily has its own address)');
 ok(statSync(join(d, 'index.html')).size < 2_000_000, 'index.html is under 2 MB');

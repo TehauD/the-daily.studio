@@ -2,6 +2,18 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.53.1 — 2026-11-08 — Only what's meant to be public
+
+### Security
+- **The site is served only at its own addresses.** `wrangler.jsonc` turns off the `workers.dev` address and the preview addresses (`workers_dev: false`, `preview_urls: false`), so every visit goes through the domain's Cloudflare settings and HSTS. There is no origin server behind Cloudflare: the site is the Worker and its static assets.
+- **Private files can't be committed or deployed by accident:**
+  - `.gitignore` covers `.env` and `.env.*`, `.dev.vars`, key files (`*.pem`, `*.key`, `*.p12`) and Wrangler's local folder;
+  - a Wrangler cache file that had been committed (it named the Cloudflare account; no key or token) is no longer tracked;
+  - the deployed folder carries a `.assetsignore`, so Cloudflare would refuse to upload any of these even if one ended up there.
+- **`verify:site` now fails a release** if the deployed folder holds any dotfile (other than `.well-known/`), an `.env` or `.dev.vars` file, a key, or a package or Wrangler file; if any such file is committed; or if the `workers.dev` or preview addresses are turned back on.
+
+Checked on the live site for both addresses: `.env` and its variants, `.git/`, `.dev.vars`, `.wrangler/`, `wrangler.jsonc`, `package.json`, the source folders and common admin paths all answer 404. The only secrets the site uses (Sign in with GitHub's client id and secret) are Worker secrets kept in Cloudflare, never in the repository or the deployed files.
+
 ## 2.53.0 — 2026-11-08 — The story behind it, where people can find it
 
 ### New

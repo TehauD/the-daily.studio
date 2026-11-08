@@ -12,3 +12,13 @@ dist/
 
 # unminified build for debugging (node scripts/build.mjs --pretty)
 index.debug.html
+
+# never committed: local tool caches, environment and secret files
+.wrangler/
+.env
+.env.*
+.dev.vars
+.dev.vars.*
+*.pem
+*.key
+*.p12

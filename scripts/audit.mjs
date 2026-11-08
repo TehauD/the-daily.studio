@@ -40,7 +40,8 @@ console.log('\nShipped files');
 const reg = rd('docs/LICENSING.md'), tokens = new Set([...reg.matchAll(/`([^`\n]+)`/g)].map(m => m[1]));
 const covered = rel => tokens.has(rel) || [...tokens].some(t => t.endsWith('/') && rel.startsWith(t));
 if (!ok(existsSync(dist), 'dist/ exists (run npm run build:site first)')) { console.log('\n' + bad + ' check(s) failed'); process.exit(1); }
-const files = walk(dist).map(f => relative(dist, f).split('\\').join('/')), loose = files.filter(f => !covered(f));
+const files = walk(dist).map(f => relative(dist, f).split('\\').join('/')).filter(f => f !== '.assetsignore'),      /* Wrangler reads it and never uploads it */
+      loose = files.filter(f => !covered(f));
 ok(loose.length === 0, files.length + ' shipped files are all in docs/LICENSING.md' + (loose.length ? ' · not listed: ' + loose.join(', ') : ''));
 const served = (reg.split(/^## What the site serves$/m)[1] || '').split(/^### /m)[0], named = [...served.matchAll(/^\|\s*((?:`[^`]+`(?:,\s*)?)+)\s*\|/gm)].flatMap(m => [...m[1].matchAll(/`([^`]+)`/g)].map(x => x[1]));
 const stale = named.filter(t => !t.endsWith('/') && !files.includes(t) && !/^(Path)$/.test(t));
