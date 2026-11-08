@@ -102,7 +102,7 @@ This should show the policy and HSTS, and no `set-cookie`.
      npx wrangler@4 secret put GITHUB_CLIENT_SECRET
      ```
    Secrets survive later deploys. Never paste them into chat, a commit, `wrangler.jsonc` or a build variable.
-4. **Put the public parts in the page:** `src/parts/01-core.js` → `ghApp: { clientId: 'Iv23…', slug: 'your-app-slug' }`. Then `npm run build`, commit and merge. These two values are public (they appear in the sign-in address); the secret is the only private part.
+4. **Put the public parts in the page** (done in 2.53.1: `Iv23liTjqEBQsgmGaE1Q`, `tehaud-the-daily-studio`): `src/parts/01-core.js` → `ghApp: { clientId: 'Iv23…', slug: 'your-app-slug' }`. Then `npm run build`, commit and merge. These two values are public (they appear in the sign-in address); the secret is the only private part.
 5. **Check:**
    ```bash
    curl -sI "https://the-daily.studio/auth/github/callback" | grep -i location

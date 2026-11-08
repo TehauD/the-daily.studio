@@ -269,7 +269,7 @@ function ghSignIn() {
 function ghReturn() {
   const m = /^#gh(-error)?=([^&]*)/.exec(location.hash || ''); if (!m) return false;
   try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { }
-  if (m[1]) { setTimeout(() => toast('GitHub sign-in did not finish (' + decodeURIComponent(m[2]) + ').', 'warn'), 400); return true; }
+  if (m[1]) { const why = decodeURIComponent(m[2]); setTimeout(() => toast(why === 'not-set-up' ? 'Sign in with GitHub isn’t switched on for this site yet. Use Connect with a token for now (Settings ▸ GitHub).' : why === 'access_denied' ? 'GitHub sign-in was cancelled.' : 'GitHub sign-in did not finish (' + why + ').', 'warn'), 400); return true; }
   let d = null, st = null; try { d = JSON.parse(ghUnb64(m[2].replace(/-/g, '+').replace(/_/g, '/'))); st = sessionStorage.getItem('fw.ghState'); sessionStorage.removeItem('fw.ghState'); } catch (e) { }
   if (!d || !d.t || !st || d.state !== st) { setTimeout(() => toast('That GitHub sign-in could not be checked, so it was not used. Try again from Settings ▸ GitHub.', 'warn'), 400); return true; }
   store.set('ghtok', { t: d.t, r: d.r || '', exp: d.exp || 0, rexp: d.rexp || 0, via: 'app' });

@@ -42,7 +42,7 @@ The same steps with the Cloudflare side, the WAF and rate limit for `/auth/*`, a
    - **Repository permissions**: **Contents: Read and write**; Metadata: Read-only (always on). Add **Administration: Read and write** only if you want the app to be able to create the private repository itself; otherwise people create it and the app explains how.
    - **Where can this GitHub App be installed?** Any account.
 2. Create a **client secret**. Note the **Client ID** and the app's **slug** (the last part of its public page address).
-3. Put the public parts in `src/parts/01-core.js`, then `npm run build`:
+3. Put the public parts in `src/parts/01-core.js`, then `npm run build` (done in 2.53.1 for the site's app, [`tehaud-the-daily-studio`](https://github.com/apps/tehaud-the-daily-studio)):
    ```js
    ghApp: { clientId: 'Iv23li…', slug: 'your-app-slug' },
    ```

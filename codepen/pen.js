@@ -54,9 +54,9 @@ window.__dailyRoom = (id, make) => {
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.53.1', BUILD = '72607bf', PARTS_N = +'114' || 0, LINES_N = +'19131' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.53.1', BUILD = 'eed1be5', PARTS_N = +'114' || 0, LINES_N = +'19131' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
-const BRAND = { ghApp: { clientId: '', slug: '' },   /* Sign in with GitHub: the GitHub App's public client id and its slug (docs/GITHUB.md); empty = only the token way */
+const BRAND = { ghApp: { clientId: 'Iv23liTjqEBQsgmGaE1Q', slug: 'tehaud-the-daily-studio' },   /* Sign in with GitHub: the GitHub App's public client id and its slug (docs/GITHUB.md); empty = only the token way */
   support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://journal.the-daily.studio/' };
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
@@ -16765,7 +16765,7 @@ function ghSignIn() {
 function ghReturn() {
   const m = /^#gh(-error)?=([^&]*)/.exec(location.hash || ''); if (!m) return false;
   try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { }
-  if (m[1]) { setTimeout(() => toast('GitHub sign-in did not finish (' + decodeURIComponent(m[2]) + ').', 'warn'), 400); return true; }
+  if (m[1]) { const why = decodeURIComponent(m[2]); setTimeout(() => toast(why === 'not-set-up' ? 'Sign in with GitHub isn’t switched on for this site yet. Use Connect with a token for now (Settings ▸ GitHub).' : why === 'access_denied' ? 'GitHub sign-in was cancelled.' : 'GitHub sign-in did not finish (' + why + ').', 'warn'), 400); return true; }
   let d = null, st = null; try { d = JSON.parse(ghUnb64(m[2].replace(/-/g, '+').replace(/_/g, '/'))); st = sessionStorage.getItem('fw.ghState'); sessionStorage.removeItem('fw.ghState'); } catch (e) { }
   if (!d || !d.t || !st || d.state !== st) { setTimeout(() => toast('That GitHub sign-in could not be checked, so it was not used. Try again from Settings ▸ GitHub.', 'warn'), 400); return true; }
   store.set('ghtok', { t: d.t, r: d.r || '', exp: d.exp || 0, rexp: d.rexp || 0, via: 'app' });

@@ -12,6 +12,9 @@ All notable changes to the-daily.studio (earlier versions were released under th
   - the deployed folder carries a `.assetsignore`, so Cloudflare would refuse to upload any of these even if one ended up there.
 - **`verify:site` now fails a release** if the deployed folder holds any dotfile (other than `.well-known/`), an `.env` or `.dev.vars` file, a key, or a package or Wrangler file; if any such file is committed; or if the `workers.dev` or preview addresses are turned back on.
 
+### Sign in with GitHub
+- **The site's GitHub App is named in the page** (`BRAND.ghApp`: client id `Iv23liTjqEBQsgmGaE1Q`, app `tehaud-the-daily-studio`). Both are public. Settings ▸ GitHub now offers **Sign in with GitHub**, next to Connect with a token. It finishes once the Worker has its two secrets in Cloudflare ([docs/CLOUDFLARE_SETUP.md](docs/CLOUDFLARE_SETUP.md), Part D). Until then, a sign-in comes back with a plain message to use a token for now, and a cancelled sign-in says so.
+
 ### Docs
 - **[docs/CLOUDFLARE_SETUP.md](docs/CLOUDFLARE_SETUP.md):** a single checklist for the site owner: build and deploy settings, domains and DNS (and leftover records to remove), TLS, WAF and a rate limit on `/auth/*`, Sign in with GitHub with the Worker's secrets, and account safety. Song links need none of it.
 - **CHANGELOG:** the headings for 2.47.1 to 2.52.0 had lost their version numbers; restored. `verify:site` now catches a release heading without one.
