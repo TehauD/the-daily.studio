@@ -6,7 +6,8 @@
 const crypto = require('node:crypto');
 
 function fake(o = {}) {
-  const F = { users: Object.assign({ tokA: 'tester' }, o.users || {}), noCreate: new Set(o.noCreate || []), repos: {}, blobs: {}, trees: {}, commits: {}, log: [] };
+  const F = { users: Object.assign({ tokA: 'tester' }, o.users || {}), noCreate: new Set(o.noCreate || []), noAccess: o.noAccess || {},      /* token → repositories it can't see (an app not given access answers 404, as GitHub does) */
+    repos: {}, blobs: {}, trees: {}, commits: {}, log: [] };
   const sha1 = s => crypto.createHash('sha1').update(s).digest('hex');
   const blobId = buf => sha1(Buffer.concat([Buffer.from('blob ' + buf.length + '\0'), buf]));
   const putBlob = buf => { const id = blobId(buf); F.blobs[id] = buf; return id; };
@@ -45,7 +46,7 @@ function fake(o = {}) {
     }
     if ((x = /^\/repos\/([^/]+)\/([^/]+)(\/.*)?$/.exec(p))) {
       const full = x[1] + '/' + x[2], R = F.repos[full], rest = x[3] || '';
-      if (!R || (R.private && user !== R.owner)) return reply(route, 404, { message: 'Not Found' });
+      if (!R || (R.private && user !== R.owner) || (F.noAccess[auth] || []).includes(full)) return reply(route, 404, { message: 'Not Found' });
       const mine = user === R.owner;
       if (m === 'GET' && !rest) return reply(route, 200, { full_name: full, private: R.private, default_branch: R.branch, size: 1 });
       if (m === 'PUT' && rest === '/topics') { if (!mine) return reply(route, 403, { message: 'Forbidden' }); R.topics = body.names || []; return reply(route, 200, { names: R.topics }); }

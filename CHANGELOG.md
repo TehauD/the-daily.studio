@@ -2,6 +2,19 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.53.2 — 2026-11-08 — Sign in with GitHub: the last step, as buttons
+
+### Fixed
+- **Signed in with GitHub, a studio repository that was there was called missing.** The app can only see the repositories it has been given access to, and GitHub answers "not found" for the rest. So the studio said "my-daily-studio is not there" and told people to press a Connect button that wasn't shown.
+- **Settings ▸ GitHub now shows the step that's left, as buttons:**
+  - **Create "my-daily-studio" on GitHub** (private, name filled in), if it isn't there yet;
+  - **Give the app access**, choosing *Only select repositories*, then that one (with a token: make sure the token covers it);
+  - **Check again.** It also checks by itself when you come back to the tab from GitHub.
+- Until the repository can be reached, nothing tries to sync, and Sync now, Share and Open on GitHub stay hidden. Disconnect is still there.
+
+### Tests
+- `e2e-github`: an app sign-in without access to the repository gets the new words and buttons, and nothing syncs. Once access is given, Check again connects and Sync now is back. (The stand-in for GitHub can now hide a repository from one token.)
+
 ## 2.53.1 — 2026-11-08 — Only what's meant to be public
 
 ### Security

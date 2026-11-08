@@ -7,7 +7,7 @@ From 2.21 a person can keep their studio in a repository in **their own** GitHub
 ## What a person gets
 
 - **Settings ▸ GitHub ▸ Connect with a token**: paste a fine-grained token for one repository (Contents: Read and write). No server is involved. The app makes the repository (private, `my-daily-studio`) if the token may, otherwise it says how.
-- **Sign in with GitHub** (once you set it up, below): one click, then the person gives the app access to that one repository.
+- **Sign in with GitHub** (once you set it up, below): one click, then the person gives the app access to that one repository. The app only sees repositories it has been given, and GitHub answers "not found" for the rest. So until it can reach the studio repository, Settings shows the step that's left as buttons: *Create "my-daily-studio" on GitHub*, *Give the app access* and *Check again* (2.53.2). It also checks again by itself when the person comes back to the tab.
 - What is kept in step, and what is not:
 
 | In the repository | Stays on the device |
