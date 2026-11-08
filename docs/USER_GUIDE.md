@@ -6,6 +6,31 @@ Contents: [Whole song and Perform layouts](#-the-whole-song-and-perform-your-way
 
 ---
 
+## ✦ Finish it: master and release (2.57)
+
+**Save & export ▸ ✦ Finish it…** (or the last dot of the song journey):
+1. **Loudness and tone.**
+   - **Loudness:** −14 LUFS suits Spotify, YouTube, Tidal and Amazon; −16 suits Apple Music.
+   - **Tone:** pick one, or **Match a reference song…** and load a finished song you like (it stays on your device). **Amount** says how far to move toward it.
+   
+   Then press **✦ Master it**.
+2. **▶ Play, Before / After:** with **Same loudness** on, you compare the sound itself, not the volume. The numbers below show the loudness and peaks before and after.
+3. **Credits and splits:** the people in the song's history are listed with what they did. Agree the writing shares together; they're saved with the song.
+4. **📦 Make the release package** (or **📁 Into a folder…**). Upload the 16-bit 44.1 kHz master to your distributor, and paste `lyrics.txt` where they ask for lyrics. You'll also need cover art (usually 3000 × 3000 px) and an ISRC (most distributors give you one).
+
+## ✓ Versions, the song journey and 🛡 (2.56)
+
+**Versions:** press the dots in the song bar (the song journey), then **Versions…**, or open ✓ Versions from there.
+- **✓ Mark this version** keeps the song and its takes as they are now, with a name and a note.
+- **⟲ Go back to this** makes the song that version again. What you had is kept as a version first.
+- **⧉ Open as a copy** opens a version as a song of its own.
+- **Rounds:** when someone sends back a song you already have, choose **Add as a new version**. Their round joins your versions instead of becoming another copy.
+- **Where they're kept:** versions stay with the song in this browser, and in your folder or GitHub if sync is on. Their recordings stay on the device that made them.
+
+**The song journey** (six dots) shows how far the song has come: words, chords, recorded, a version, shared, finished. It also names the next step.
+
+**🛡 beside Saved** says where your songs are kept. **⚠ Only in this browser** means that if this browser's data is cleared, they're gone: press it and keep a copy (a backup, a folder or GitHub).
+
 ## 📦 Mix and master in another app (2.55)
 
 When the song is ready for a proper mix, or for mastering in BandLab, a DAW or a mastering service:

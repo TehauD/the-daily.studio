@@ -159,12 +159,14 @@ async function slShare() {
 }
 
 /* ---------- opening one ---------- */
-async function slOpen(song, playNow, perform) {
+async function slOpen(song, playNow, perform, asVersion) {
   const boot = document.getElementById('boot'), b = document.getElementById('bootNoMic'), att = song._att;
   if (boot && b && boot.getClientRects().length && getComputedStyle(boot).display !== 'none') b.click();      /* past the first page, as Begin in the studio does */
   let takes = null, lost = '';
   if (att) { try { takes = await srxReceive(att, t => toast(t)); } catch (e) { lost = e.message; } }      /* the recordings first: if they can't come, the song still does */
-  delete song._att; await projCreate('import', { song, zoom: 'studio' }); if (takes && takes.length) { srxAdd(takes); await projSave(); }
+  delete song._att;
+  if (asVersion) { const v = await verAddRound(asVersion, song, takes); bus.emit('song', 'reload'); try { syncTransport(); syncBandStrip(); } catch (e) { } return toast((lost ? lost + ' ' : '') + '↩ “' + v.n + '” is now the newest version of “' + S.title + '”. Your earlier versions are in ✓ Versions.', lost ? 'warn' : 'ok'); }      /* 2.56: a round of a song you have becomes a version of it */
+  await projCreate('import', { song, zoom: 'studio' }); if (takes && takes.length) { srxAdd(takes); await projSave(); }
   bus.emit('song', 'reload'); try { syncTransport(); syncBandStrip(); } catch (e) { }
   if (playNow) { try { await startAudio(); T.cursor = 0; T.loop = true; syncTransport(); play(); } catch (e) { console.warn(e); } }
   if (perform) { try { perfOpen(); const g = document.getElementById('pfGo'); if (g) g.click(); } catch (e) { console.warn(e); } }      /* a first visit through a link: the song as a sing-along */
@@ -175,17 +177,19 @@ async function slOpen(song, playNow, perform) {
 }
 function slWelcome(song) {
   const old = document.getElementById('slIn'); if (old) old.remove();
-  const c = song.collab, from = c && c.with, first = !store.get('started', false);
-  const go = (p, perf) => { d.close(); slOpen(song, p, perf).catch(e => toast('It could not be opened: ' + (e.message || e), 'bad')); };
+  const c = song.collab, from = c && c.with, first = !store.get('started', false), mine = !first && verRoundOf(song);
+  const go = (p, perf, asV) => { d.close(); slOpen(song, p, perf, asV).catch(e => toast('It could not be opened: ' + (e.message || e), 'bad')); };
   const d = h('dialog', { class: 'sl-dlg sl-in' + (first ? ' sl-first' : ''), id: 'slIn', 'aria-labelledby': 'slInH' },
     h('p', { class: 'sl-kick' }, from ? '🎵 ' + from + ' sent you a song' : '🎵 A song was sent to you'), h('h3', { id: 'slInH' }, song.title), song.artist ? h('p', { class: 'muted' }, song.artist) : null,
     c && c.note ? h('blockquote', { class: 'slc-note', id: 'slInNote' }, c.note) : null,
     h('p', { class: 'sl-what' }, slSummary(song)),
     c ? slcHistEl(c.hist) : null,
     song._att ? h('p', { class: 'small srx-in', id: 'srxIn' }, '🎙 With recordings, until ' + srxDate(srxUntil(song._att)) + '. ', h('button', { class: 'linkish tiny', id: 'srxRepBtn', type: 'button', onclick: () => srxReport(song._att) }, '⚑ Report')) : null,
+    mine ? h('p', { class: 'small', id: 'slMine' }, 'You already have “' + (mine.title || 'this song') + '”. Add this round as its newest version, so the rounds don’t pile up as copies; what you have now is kept as a version too.') : null,
     h('p', { class: 'small muted' }, (first ? 'This is the-daily.studio: a place to write, sing and play songs, free, in your browser, with no account. ' : '') + 'It opens as a new song' + (first ? '' : ', so none of yours change') + '. ' + (song._att ? 'The song came inside the link; its recordings are fetched encrypted from this site and unlocked with the link’s key.' : 'It came inside the link: nothing was downloaded from anyone.') + (from ? ' Change what you like, then ↩ Send it back to ' + from + '.' : '')),
     h('div', { class: 'row sl-acts' }, ...(first
       ? [h('button', { class: 'btn primary', id: 'slPlay', type: 'button', onclick: () => go(true, true) }, '▶ Play it'), h('button', { class: 'btn', id: 'slOpenBtn', type: 'button', onclick: () => go(false) }, 'Open it in the studio')]
+      : mine ? [h('button', { class: 'btn primary', id: 'slAsVer', type: 'button', title: 'It becomes the newest version of your song; what you have now is kept as a version first', onclick: () => go(false, false, mine) }, '↩ Add as a new version of “' + (mine.title || 'your song') + '”'), h('button', { class: 'btn', id: 'slOpenBtn', type: 'button', onclick: () => go(false) }, 'Open as a separate song'), h('span', { class: 'grow' }), h('button', { class: 'btn', type: 'button', onclick: () => d.close() }, 'Not now')]
       : [h('button', { class: 'btn primary', id: 'slPlay', type: 'button', onclick: () => go(true) }, '▶ Open and play'), h('button', { class: 'btn', id: 'slOpenBtn', type: 'button', onclick: () => go(false) }, 'Open'), h('span', { class: 'grow' }), h('button', { class: 'btn', type: 'button', onclick: () => d.close() }, 'Not now')])));
   d.addEventListener('close', () => setTimeout(() => d.remove(), 0)); document.body.append(d); d.showModal();
 }

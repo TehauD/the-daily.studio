@@ -96,7 +96,7 @@ async function ghCommit(at, changes, message, o, r) {
 function ghSettingsOut() { const o = {}; Object.keys(CFG).forEach(k => { if (!GH_SKIP.has(k) && typeof CFG[k] !== 'function') o[k] = CFG[k]; }); return o; }
 const ghLooksOut = () => { const s = Object.assign({}, CFG.show || {}); delete s.imgs; return s; };       /* the stage's pictures stay on the device */
 /* no save time in the file: saving a song that did not change would make it look changed, and send it again */
-const ghSongOut = rec => ({ format: 'the-daily-song-text', version: 1, id: rec.id, title: rec.title || 'Untitled', artist: rec.artist || '', created: rec.created || 0, origin: rec.origin || 'blank', zoom: rec.zoom || 'song', song: rec.song, recordings: (rec.takes || []).length });
+const ghSongOut = rec => ({ format: 'the-daily-song-text', version: 1, id: rec.id, title: rec.title || 'Untitled', artist: rec.artist || '', created: rec.created || 0, origin: rec.origin || 'blank', zoom: rec.zoom || 'song', song: rec.song, recordings: (rec.takes || []).length, versions: (rec.versions || []).slice(-20) });      /* 2.56: the song's versions travel with it (their recordings stay on the devices that made them) */
 /** a song worth keeping: something written or recorded in it, or a name of its own; never the built-in demo */
 const ghSongKeep = rec => {
   if (!rec || !rec.song || /\(demo\)\s*$/i.test(rec.song.title || rec.title || '')) return false;
@@ -145,6 +145,8 @@ async function ghTakeSong(text, asCopy) {
   const d = ghParse(text); if (!d || !d.song || !Array.isArray(d.song.sections)) return null;
   const id = asCopy ? projId() : String(d.id || '').replace(/[^\w-]/g, '') || projId(), old = asCopy ? null : await pdbGet('projects', id);
   const rec = Object.assign({ takes: [], track: null, stemMix: null, size: 0, nTakes: 0 }, old || {}, { id, v: 1, origin: d.origin || 'github', created: d.created || Date.now(), modified: Date.now(), zoom: d.zoom || 'song', song: normSong(d.song) });
+  { const mine = (old && old.versions) || [], seen = new Set(mine.map(v => v.id)), theirs = Array.isArray(d.versions) ? d.versions.filter(v => v && v.id && v.song && Array.isArray(v.song.sections) && !seen.has(v.id)) : [];
+    rec.versions = mine.concat(theirs.map(v => Object.assign({}, v, { takes: Array.isArray(v.takes) ? v.takes : [] }))).sort((a, b) => (a.at || 0) - (b.at || 0)).slice(-VER.max); }      /* versions from both sides are kept (2.56) */
   if (asCopy) { rec.song.title = (d.title || 'Untitled') + ' (from another device)'; }
   rec.title = rec.song.title || d.title || 'Untitled'; rec.artist = rec.song.artist || d.artist || '';
   await pdbPut('projects', rec);

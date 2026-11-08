@@ -154,7 +154,7 @@ function mSheet() {
       document.fullscreenEnabled ? tile(msvg('<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>'), 'Full screen', () => { mCloseOverlays(); mFullscreen(); }) : null
     ),
     h('div', { class: 'mrow' }, h('span', {}, 'Device layout'), seg),
-    h('div', { class: 'mfoot' }, BRAND.name + ' v' + VERSION + ' · everything stays on this device')
+    h('div', { class: 'mfoot' }, BRAND.name + ' v' + VERSION + ' · your songs stay on this device')
   );
   M.sheet = sh; document.body.classList.add('sheet-open'); document.body.append(sh); const mb = M.nav && M.nav.querySelector('.mnb[data-g="more"]'); if (mb) mb.setAttribute('aria-expanded', 'true');
 }

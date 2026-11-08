@@ -290,7 +290,7 @@ If the page looks like an older version or shows the wrong name, a previous copy
 ## Songs, two origins and zoom (new in 1.4)
 
 - **Begin two ways.** **＋ New** offers a *Clean canvas* (blank page, optional title, tempo, key, tuning) or *Start from a song* (load an audio file or a sample: it is split into stems and the title, tempo, key and chords fill in).
-- **Everything is kept in your browser.** **☰ Songs** lists your songs with their takes and backing tracks; they reopen exactly as you left them. Nothing is uploaded and there are no accounts.
+- **Everything is kept in your browser.** **☰ Songs** lists your songs with their takes and backing tracks; they reopen exactly as you left them. There are no accounts, and nothing is uploaded unless you choose to: sync with a folder or your own GitHub repository, or send recordings with a song link (encrypted, kept 7 days).
 - **Bundles.** Export a song as a `.daily-song.zip` (`song.md`, `arrangement.json`, `audio/`), or back up every song at once. Plain files you can keep in Git.
 - **Zoom.** *Canvas* (just the page), *Song* (writing layout), *Studio* (full arrangement and recording) on the same song.
 - **Reset what you choose.** Settings ▸ Data ▸ Reset… clears layout, settings, presets, notes, songs or the offline copy, separately or all together.
@@ -376,7 +376,7 @@ Knobs: drag, mouse wheel, <kbd>Shift</kbd> for fine, double-click to reset, righ
 
 ## Privacy and data
 
-* Audio, camera frames, songs, takes and settings are processed **on your device**. No server keeps your data, and there is no account or analytics. (Optional: a folder you choose, or your own GitHub repository, if you connect one.)
+* Audio, camera frames, songs, takes and settings are processed **on your device**. No server keeps your data, and there is no account or analytics. (Optional: a folder you choose, or your own GitHub repository, if you connect one; and recordings you send with a song link, which the site keeps sealed for 7 days.)
 * Your songs, recordings, presets and settings autosave to **this browser** (local storage and IndexedDB). Use **☰ Songs ▸ All songs ▸ Back up all songs** for one zip with everything, **Export → Project JSON** for a portable, git-friendly copy, or **Settings ▸ Export ▸ Backup folder** (Chrome and Edge) to save as you work.
 * The page can reach exactly two other hosts, and **only after you say yes** to a one-time download: MediaPipe's code from jsDelivr and its model from Google storage, used by hand tracking and by the **Me in front** camera look (the stage route chooses that look, so it asks the first time). Your camera pictures are never uploaded. If you say no, or use motion-only mode or the edges-in look, nothing is requested. The host (Cloudflare) keeps ordinary access logs like any web host. [PRIVACY.md](PRIVACY.md) lists what is processed, what can be sent and what is kept; `test/e2e-privacy.cjs` checks it in a real browser, and `npm run audit` checks the licences and hosts. To self-host those files, see [docs/HOSTING.md](docs/HOSTING.md#8-self-hosting-the-camera-model-files).
 * **Your music stays yours.** No recordings and no one else's lyrics are bundled; what you bring in stays on your device, and stems, chords and tab are worked out from your file. Share only what you have the right to share. The register of every file, font, dependency and download is [docs/LICENSING.md](docs/LICENSING.md); the licences and notices are also on the site at `/legal/`.

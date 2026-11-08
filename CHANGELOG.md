@@ -2,6 +2,66 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.57.0 — 2026-11-08 — Finish it: master the song and make its release package
+
+### New
+- **✦ Finish it** (Save & export, the Songwriter's export menu, and the last step of the song journey). It runs on this device; nothing is uploaded.
+  1. **The sound.** Your mix (without the master section) goes through:
+     - a tone: Natural, Clean, Warm, Bright, Dense, or **matched to a reference song** you load;
+     - a gentle glue compressor;
+     - gain and a **look-ahead limiter**, until it reaches the loudness you choose (−14 LUFS for streaming, −16 for Apple Music and podcasts, −11 louder, −9 club, or no target), with **true peaks under −1 dBTP**. It's measured to BS.1770 and the masters are checked again after limiting.
+     
+     **▶ Before / After** plays both **at the same loudness**, so you hear the tone and dynamics rather than "louder". Switch at any moment, from any point.
+  2. **Credits and splits.** Everyone in the song's history (rounds of Writing together, versions), with what they did (words, music, played, produced) and a writing share. The shares start equal and the window checks they add up to 100 %.
+  3. **The release package**, in a folder or one .zip:
+     - the **master in 24-bit**, and in **16-bit 44.1 kHz with dither for distributors**;
+     - `lyrics.txt`, the chord sheet, `credits.txt` and `splits.csv`;
+     - the song itself (`.daily-song.zip`);
+     - a README with the loudness, the song's details and what a distributor will ask for.
+     
+     The release is kept as a version, and the song journey shows the song as finished.
+- **Reference matching:** both songs' average spectrum (a 4096-point FFT across the whole song) is compared in eleven bands. The difference, smoothed, limited to ±6 dB and scaled by Amount, becomes eleven gentle filters. The reference stays on this device.
+
+### Fixed
+- **What the studio says about itself is accurate again.** Since GitHub sync, Sign in with GitHub and Send with recordings, "nothing is uploaded" and "it runs entirely in your browser" were no longer the whole story. Now:
+  - the About page's *How it is made*, Help ▸ About, Settings ▸ Songs & data, the guided tour, the phone footer, the first page, the guide's FAQs, its footer and its description, and the README all say what's true: your songs stay on your device, and nothing is uploaded unless you choose to (GitHub sync to your own account, a folder, or recordings sent with a link, sealed and kept 7 days);
+  - *How it is made* also says a small Cloudflare Worker handles the sign-in and those recordings, and that the studio was made with AI assistance.
+
+### Tests
+- **`e2e-finish`:**
+  - the limiter never lets a sample past its ceiling, and leaves the rest alone;
+  - matching a brighter reference lifts the highs and lowers the lows, within ±6 dB;
+  - the master lands within 0.5 LU of −14 LUFS with true peaks at or under −1 dBTP;
+  - Before / After is level-matched and switches at once;
+  - credits name everyone in the history, with shares adding up to 100 %;
+  - the package holds both masters (the distributor one 16-bit 44.1 kHz), lyrics, chord sheet, credits, splits, the song and a README;
+  - the song is marked finished and the release kept as a version.
+
+## 2.56.0 — 2026-11-08 — Versions, the song journey, and where your songs are kept
+
+### New
+- **✓ Versions.** Keep the moments of a song worth keeping. **Mark this version** keeps the song as it is (every section, the band, the arrangement) and its takes as they're placed and trimmed, with a name ("Demo 2") and a note.
+  - **The window lists every version,** newest first: who made it, when, how many takes, and what changed since the one before ("Chorus: words; added Bridge").
+  - **⟲ Go back to this.** What you had is kept as a version first ("Before going back to Demo 2"), so nothing is ever lost.
+  - **⧉ Open as a copy:** a song of its own, with the version's recordings.
+  - **A version's recordings are kept** for as long as the version is, even after the take is deleted from the song. Versions travel with the song to your folder and to GitHub (the last 20), and versions made on both sides are kept.
+- **↩ Rounds become versions.** A round of Writing together that comes back for a song you already have now offers **Add as a new version of "Harbour Song"**. It becomes "Round from Sam", with Sam's note, and what you had just before is kept as a version. Rounds stop piling up as copies, and the 2.51 gap is closed. **Open as a separate song** still works.
+- **The song journey,** in the song bar: six dots for words, chords, recorded, a version, shared and finished, plus the next step. Press it to see each step and go straight to it (Versions…, Send…, Finish…).
+- **🛡 Where your songs are kept,** beside Saved: *Only in this browser* (⚠), *Backed up* (a backup in the last two weeks), *Kept in your folder* or *In step with GitHub*. Press it for Keep my songs safe.
+  - **A gentle reminder:** once a week at most, and only once there's real work kept nowhere else.
+
+### Tests
+- **`e2e-versions` (17 checks):**
+  - the journey and its next step;
+  - the 🛡 chip before and after a backup;
+  - marking a version with a take, a name and a note;
+  - a deleted take's recording is kept for its version;
+  - "what changed";
+  - going back (audio and all) with what you had kept as a version;
+  - opening a copy with its audio;
+  - a round becoming "Round from Sam" with no copy;
+  - versions going out with the song to sync.
+
 ## 2.55.0 — 2026-11-08 — Every lane out, ready to mix and master anywhere
 
 ### New

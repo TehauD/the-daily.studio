@@ -122,13 +122,15 @@ function buildSongbar() {
   SB.f.more = h('button', { class: 'btn sm sb-more', title: 'Notes, custom tuning, per-string tuning…', onclick: () => sbDetails(SB.f.more) }, 'Notes & tuning ▾');
   SB.trk = h('div', { class: 'sb-trk' });
   SB.saved = h('span', { class: 'sb-saved', role: 'status', 'aria-live': 'polite', title: 'Your work is saved in this browser as you go' });
-  UI.undo = h('button', { class: 'btn sm sb-hist', title: 'Undo (Ctrl/Cmd + Z)', 'aria-label': 'Undo', onclick: () => undo() }, '↶'); UI.redo = h('button', { class: 'btn sm sb-hist', title: 'Redo (Shift + Ctrl/Cmd + Z)', 'aria-label': 'Redo', onclick: () => redo() }, '↷'); SB.hist = h('span', { class: 'sb-histg' }, UI.undo, UI.redo, SB.saved);
+  SB.safe = h('button', { class: 'sb-safe', id: 'sbSafe', type: 'button', onclick: () => keepOpen() }); SB.jr = h('button', { class: 'btn sm sb-jr', id: 'sbJr', type: 'button', onclick: e => jrOpen(e.currentTarget) });
+  UI.undo = h('button', { class: 'btn sm sb-hist', title: 'Undo (Ctrl/Cmd + Z)', 'aria-label': 'Undo', onclick: () => undo() }, '↶'); UI.redo = h('button', { class: 'btn sm sb-hist', title: 'Redo (Shift + Ctrl/Cmd + Z)', 'aria-label': 'Redo', onclick: () => redo() }, '↷'); SB.hist = h('span', { class: 'sb-histg' }, UI.undo, UI.redo, SB.saved, SB.safe);
   bus.on('savestate', (k, t) => sbSaved(k, t)); sbSaved('ok', null);
   SB.f.refine = h('button', { class: 'btn sm sb-ref', title: 'Open the Refine panel — chords & lyrics beside whatever you are doing', onclick: () => sideShow('refine') }, '✎ Refine');
   el.append(h('div', { class: 'sb-hex', 'aria-hidden': 'true' }, sv('svg', { viewBox: '0 0 24 24', width: 18, height: 18 }, sv('path', { d: 'M12 2l9 5v10l-9 5-9-5V7z', fill: 'none', stroke: 'currentColor', 'stroke-width': 2 }))), sbProject(),
     sbField('Song', txt('title', 'Title', '', 'Song title'), 'f-title'), sbField('Artist', txt('artist', 'Artist / author', '', 'Artist or author'), 'f-artist'),
     sbField('Tuning', SB.f.tun, 'f-tun'), sbField('Capo', SB.f.capo, 'f-capo'), sbField('Scale', SB.f.scale, 'f-scale'), SB.f.more,
-    h('span', { class: 'grow' }), SB.hist, SB.trk, zoomCtl(), SB.f.refine);
+    h('span', { class: 'grow' }), SB.jr, SB.hist, SB.trk, zoomCtl(), SB.f.refine);
+  setTimeout(() => { jrPaint(); safePaint(); }, 0);
   bus.on('song', () => { if (SP.lock) return; sbSync(); }); bus.on('track', sbChip); bus.on('scale', sbSync); bus.on('projects', sbChip);
   sbSync();
 }

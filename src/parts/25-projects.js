@@ -122,6 +122,7 @@ async function projSaveNow() {
   /* recordings still on their way from a synced folder (part 40) are kept in the song as they are, never dropped by a save */
   const wait = PRJ.wait && PRJ.wait.id === id ? PRJ.wait.list.filter(m => !TAKES.some(t => t.id === m.id)) : [];
   let bytes = 0; const live = new Set(TAKES.map(tkSrc).concat(wait.map(m => m.src || m.id)));
+  (rec.versions || []).forEach(v => (v.takes || []).forEach(m => live.add(m.src || m.id)));      /* a version keeps its recordings (2.56) */
   for (const old of new Set((rec.takes || []).map(t => t.src || t.id))) if (!live.has(old)) await pdbDelPrefix('blobs', id + '/take/' + old + '/');
   const done = new Set();
   for (const t of TAKES) {                                            // clips that came from one recording share its blobs, so each recording is written once
