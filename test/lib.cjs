@@ -40,6 +40,9 @@ function siteRoot() {
   }
   return dist;
 }
+/* PW_PROXY=1 (with BASE_URL): reach a deployed site through the environment's HTTPS proxy (HTTPS_PROXY), as sandboxes need. The proxy
+   re-signs TLS, so certificate errors are ignored in that mode only: it checks what the page requests, not the site's certificate. */
+const PWPROXY = (() => { if (process.env.PW_PROXY !== '1' || !process.env.HTTPS_PROXY) return {}; try { const u = new URL(process.env.HTTPS_PROXY); return { proxy: { server: u.protocol + '//' + u.host, bypass: 'localhost,127.0.0.1', username: decodeURIComponent(u.username) || undefined, password: decodeURIComponent(u.password) || undefined } }; } catch (e) { return {}; } })();
 async function suite(name, fn) {
   const t0 = Date.now(); let fails = 0, checks = 0; const errs = [], ctxs = [];
   const ok = (c, m) => { checks++; console.log((c ? 'ok   ' : 'FAIL ') + m); if (!c) fails++; return !!c; };
@@ -48,11 +51,11 @@ async function suite(name, fn) {
     if (!BASE) { port = await freePort(); BASE = `http://localhost:${port}/`; srv = spawn(process.execPath, [path.join(__dirname, '..', 'scripts', 'serve.mjs')], { env: { ...process.env, PORT: String(port), ...(siteRoot() ? { SERVE_ROOT: siteRoot() } : {}) }, stdio: 'ignore' }); await wait(800); }
     const browser = ENGINE === 'firefox' ? await pw.firefox.launch({ firefoxUserPrefs: { 'media.navigator.streams.fake': true, 'media.navigator.permission.disabled': true, 'media.autoplay.default': 0, 'media.autoplay.blocking_policy': 0 } })
       : ENGINE === 'webkit' ? await pw.webkit.launch()
-      : await pw.chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined, args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream', '--autoplay-policy=no-user-gesture-required', ...(process.env.NO_SANDBOX ? ['--no-sandbox'] : [])] });
+      : await pw.chromium.launch({ ...PWPROXY, executablePath: process.env.CHROMIUM_PATH || undefined, args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream', '--autoplay-policy=no-user-gesture-required', ...(process.env.NO_SANDBOX ? ['--no-sandbox'] : [])] });
     const poll = async (f, ms = 6000, step = 120) => { const end = Date.now() + ms; for (;;) { let v; try { v = await f(); } catch (e) { v = false; } if (v) return v; if (Date.now() > end) return false; await wait(step); } };
     const fresh = async (o = {}) => {
       const dev = o.mobile ? { isMobile: true, hasTouch: true, deviceScaleFactor: o.dpr || 2 } : {};
-      const c = await browser.newContext({ viewport: { width: o.w || 1500, height: o.h || 900 }, permissions: ENGINE === 'chromium' ? ['microphone'] : [], acceptDownloads: true, ...dev });
+      const c = await browser.newContext({ ...(PWPROXY.proxy ? { ignoreHTTPSErrors: true } : {}), viewport: { width: o.w || 1500, height: o.h || 900 }, permissions: ENGINE === 'chromium' ? ['microphone'] : [], acceptDownloads: true, ...dev });
       await c.addInitScript(() => { try { if (window.name !== 'noseed') localStorage.setItem('fw.started', 'true'); } catch (e) { } }); if (o.init) await c.addInitScript(o.init); ctxs.push(c); return c;
     };
     const boot = async (p, o = {}) => {

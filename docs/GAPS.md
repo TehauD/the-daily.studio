@@ -4,6 +4,14 @@ What the studio, its tutorials, its documents and its tests do **not** cover yet
 
 How to use it: before a release, move what the release closed into *Closed* with the version, and add what it opened. [RELEASE.md](RELEASE.md) has this as a checklist item. Items marked **(maintainer)** are decisions or facts only the project's owner can settle; nothing here blocks a build.
 
+## Closed in 2.49.2
+
+- From the live-site evaluation (SECURITY_MODEL.md):
+  - jsDelivr is narrowed to the camera library's folder;
+  - the 404 page has a policy;
+  - there's a `security.txt`;
+  - CI's token is read-only, and Dependabot is on.
+
 ## Closed in 2.49.1
 
 - The first page flashed the first-visit card, in the default colours, before Welcome back. The card now waits until it's laid out, and the saved theme is set first.
@@ -86,6 +94,13 @@ How to use it: before a release, move what the release closed into *Closed* with
 - How the band and a tuned voice **sound** is measured by numbers (brightness, correlation, cents), not judged by ears: HARDWARE_CHECKLIST.md section 15 is the human pass.
 - Not covered at all: very long sessions, large stems on low-memory phones, a full screen-reader pass, audio latency outside Chromium.
 - The tour test checks that each step points at something, not that its words are true; RELEASE.md asks a person to read them.
+
+### Security (maintainer, from the live-site evaluation)
+- **Cloudflare settings:** turn off Web Analytics' automatic setup, bot detection's JavaScript and, if you can, Network Error Logging. Until then the 404 page and `/journal/` get Cloudflare's scripts, and `/journal/` gets a `cf_clearance` cookie.
+- **Move The Daily to its own subdomain,** so the journal and the studio stop sharing storage.
+- **Decide on `www.the-daily.studio`** (no DNS answer) and on `workers_dev` (a second copy of the site).
+- **Pin the CI actions to commit hashes.**
+- **Check the TLS configuration** with a public scanner; the evaluation couldn't, from behind a proxy.
 
 ### Licensing and legal (maintainer)
 - **Demo words:** confirm you wrote the four lines of the demo song.

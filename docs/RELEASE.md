@@ -47,7 +47,9 @@ Create a GitHub release from the tag, using that version's CHANGELOG entry (and 
 - [ ] On an iPhone in Safari, **⋯ More ▸ Keep songs safe** shows the Add to Home Screen steps.
 - [ ] Install to home screen / offline reload works.
 - [ ] Hand tracking (Vision panel) and the camera **person** look: the one-time question appears first; **Download** then loads from jsDelivr and Google storage (the real download is not covered by the automated tests, the question and the refusal are). Confirm the segmenter model URL resolves.
-- [ ] `BASE_URL=https://the-daily.studio/ node test/e2e-privacy.cjs` passes against the live site (no request to any other site, no cookie).
+- [ ] `BASE_URL=https://the-daily.studio/ node test/e2e-privacy.cjs` passes against the live site (no request to any other site, no cookie). From a sandbox that reaches the internet through a proxy, add `PW_PROXY=1`.
+- [ ] In Cloudflare: Web Analytics' automatic setup, bot detection's JavaScript and Network Error Logging are off (see SECURITY_MODEL.md, *Live site evaluation*). `curl -s https://the-daily.studio/nope | grep -c cloudflareinsights` prints 0.
+- [ ] `https://the-daily.studio/.well-known/security.txt` answers, and its `Expires` date is more than a month away.
 - [ ] `https://the-daily.studio/legal/` opens and shows the licence, notices, privacy statement, terms and both font licences.
 - [ ] **Song link:** 🔗 Send as a link, open the link in another browser: it offers the song, the address bar is cleaned, and it opens as a new song.
 - [ ] **A room:** on a fresh profile, open **Transcribe** or **🎯 Tune** a take: its room loads with no console error (a hash mismatch would be refused). Then go offline and reload: it still opens.

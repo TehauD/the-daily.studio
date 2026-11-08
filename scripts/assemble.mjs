@@ -13,6 +13,7 @@ rmSync(out, { recursive: true, force: true }); mkdirSync(join(out, 'journal'), {
 /* the page, its service worker and the rooms: the site's own lighter build (2.40, scripts/rooms.mjs); index.html in the repository stays one complete file */
 execFileSync(process.execPath, [join(root, 'scripts', 'build.mjs'), '--site'], { stdio: 'inherit' });
 for (const f of ['manifest.webmanifest', 'robots.txt', 'sitemap.xml', 'llms.txt', '404.html']) cpSync(join(root, f), join(out, f));
+mkdirSync(join(out, '.well-known'), { recursive: true }); cpSync(join(root, '.well-known', 'security.txt'), join(out, '.well-known', 'security.txt'));      /* how to report a security problem (2.49.2) */
 cpSync(join(root, 'icons'), join(out, 'icons'), { recursive: true });
 if (existsSync(join(root, 'samples'))) cpSync(join(root, 'samples'), join(out, 'samples'), { recursive: true });
 cpSync(join(root, 'journal', 'index.html'), join(out, 'journal', 'index.html'));

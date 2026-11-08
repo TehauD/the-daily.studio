@@ -26,6 +26,9 @@ ok(!/'unsafe-eval'/.test(meta) && !/script-src[^;]*'unsafe-inline'/.test(meta), 
 ok(/object-src 'none'/.test(meta) && /base-uri 'none'/.test(meta) && /form-action 'none'/.test(meta), 'object, base and form targets are locked');
 const hosts = [...new Set((meta.match(/https:\/\/[a-z0-9.-]+/g) || []))].sort();
 ok(hosts.join() === 'https://api.github.com,https://cdn.jsdelivr.net,https://storage.googleapis.com', 'third-party hosts are exactly GitHub’s API (only if you connect it or open the gallery), jsDelivr and Google storage (only after a yes): ' + hosts.join(', '));
+ok(!/cdn\.jsdelivr\.net[ ;'"]/.test(meta) && /https:\/\/cdn\.jsdelivr\.net\/npm\/@mediapipe\/tasks-vision@\d+\.\d+\.\d+\/[ ;]/.test(meta), 'jsDelivr is allowed only for the camera library’s own folder, not every package it serves (2.49.2)');
+{ const nf = rd('404.html'); ok(/http-equiv="Content-Security-Policy" content="default-src 'none'[^"]*script-src 'none'/.test(nf) || /http-equiv="Content-Security-Policy" content="default-src 'none'/.test(nf) && !/script-src/.test(nf.match(/Content-Security-Policy" content="([^"]+)/)[1]), 'the not-found page has a policy that runs no script, so nothing added to it on the way can run (2.49.2)'); }
+{ const st = existsSync(join(d, '.well-known', 'security.txt')) ? rd('.well-known/security.txt') : ''; ok(/^Contact: https:\/\//m.test(st) && /^Expires: \d{4}-\d\d-\d\dT/m.test(st) && new Date(st.match(/^Expires: (.+)$/m)[1]) > new Date(), '/.well-known/security.txt says how to report a security problem and has not expired'); }
 const sw = rd('sw.js'), ver = (JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'))).version;
 ok(sw.includes('daily-songs-' + ver), 'service worker cache name matches package version ' + ver);
 const man = JSON.parse(rd('manifest.webmanifest')); ok(man.name && man.start_url && man.icons.length >= 3, 'manifest has name, start_url and icons');

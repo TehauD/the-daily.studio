@@ -2,6 +2,9 @@ name: CI
 on:
   push: { branches: [main] }
   pull_request:
+# the jobs only read the code and run the tests: the token they get can do nothing else (2.49.2)
+permissions:
+  contents: read
 jobs:
   verify:
     runs-on: ubuntu-latest

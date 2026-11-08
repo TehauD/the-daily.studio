@@ -1,0 +1,11 @@
+# Keeps the CI actions and the development tools (jsdom, Playwright) up to date with security fixes (2.49.2).
+# The site itself has no runtime dependencies; npm run audit fails if one appears.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly }
+  - package-ecosystem: npm
+    directory: /
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 3

@@ -2,7 +2,25 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
-## 2.49.1 — 2026-11-08 — The first page, without the flash
+## 2.49.2 — 2026-11-08 — Security hardening, after a look at the live site
+
+A passive evaluation of https://the-daily.studio/ (running 2.48.1): headers, the policy on every page, files that must not be served, the sign-in routes with bad input, and the privacy test run against the live site. The full findings are in [docs/SECURITY_MODEL.md](docs/SECURITY_MODEL.md#live-site-evaluation-2026-11-08).
+
+### Changed
+- **jsDelivr is allowed only for the camera library's own folder** (`/npm/@mediapipe/tasks-vision@0.10.14/`), not for every package it serves. If something ever slipped a script tag into the page, it could not load an arbitrary package from there. The build reads the version from the code that loads it, so the two cannot drift apart, and `verify-site` checks it.
+- **The not-found page has a security policy** that runs no script. On the live site, Cloudflare adds its analytics beacon and bot-detection script to pages on the way out, and the 404 page was the one place they could run.
+- **`/.well-known/security.txt`** says where to report a security problem (GitHub's private vulnerability reporting).
+- **CI's token is read-only** (`permissions: contents: read`), and **Dependabot** keeps the CI actions and the development tools up to date.
+- **Tests can reach a deployed site through a sandbox's proxy** (`PW_PROXY=1` with `BASE_URL`).
+
+### Found on the live site, to change in Cloudflare (no code can)
+- **Web Analytics automatic setup is on.** Its beacon is blocked on the studio page by the policy, and the live privacy test fails 2 of 42 checks because of it. It loaded on the 404 page (fixed above) and is attempted on `/journal/`.
+- **Bot detection ("JavaScript detections" or Bot Fight Mode) is on.** It injects a script that runs on `/journal/` (whose policy allows inline scripts) and on the 404 page, and it sets a `cf_clearance` cookie there. PRIVACY.md says no cookies.
+- **Network Error Logging headers** ask visitors' browsers to report failed connections to Cloudflare.
+- **`www.the-daily.studio`** has no DNS answer.
+- **The `workers.dev` address** (`workers_dev: true` in `wrangler.jsonc`) serves a second copy of the site.
+
+2026-11-08 — The first page, without the flash
 
 ### Fixed
 - **A flash of the wrong first page.** Someone coming back saw the first-visit page, with its goals, in the default colours for a moment before Welcome back replaced it in their own theme. Now:
