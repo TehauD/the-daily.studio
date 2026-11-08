@@ -100,9 +100,14 @@ A passive look at https://the-daily.studio/, then running 2.48.1. Nothing was lo
 - **Bot detection is on** ("JavaScript detections" or Bot Fight Mode). Cloudflare injects an inline script that loads `/cdn-cgi/challenge-platform/…`. The studio's policy blocks it; on `/journal/`, whose policy allows inline scripts, it runs and sets a `cf_clearance` cookie. PRIVACY.md says no cookies, so turn it off (*Security ▸ Bots*), or say so in PRIVACY.md.
 - **Network Error Logging** (`NEL` / `Report-To` headers) asks visitors' browsers to report failed connections to Cloudflare. It's harmless, but it isn't in PRIVACY.md; turn it off in the dashboard if you can, or mention it.
 - **`www.the-daily.studio` has no DNS answer.** Add it with a redirect to the bare domain, or leave it out on purpose.
-- **`workers_dev: true`** in `wrangler.jsonc` also serves the site at `the-daily-studio.<account>.workers.dev`: a second copy, not covered by the domain's HSTS. Set it to `false` unless you use it for previews.
+- ~~**`workers_dev: true`** in `wrangler.jsonc` also served the site at `the-daily-studio.<account>.workers.dev`: a second copy, not covered by the domain's HSTS.~~ Off since 2.53.1, with the preview addresses.
 
 **Since then:** The Daily moved to its own address (2.50).
+
+**Private files and the origin (2.53.1):**
+- **No origin server.** The site is a Cloudflare Worker and its static assets; there is no server or IP address behind Cloudflare to reach directly. Since 2.53.1 the `workers.dev` and preview addresses are off, so the custom domains are the only way in.
+- **Nothing private is deployed.** `dist/` is built fresh from a fixed list of files; it also carries a `.assetsignore` (`.env*`, `.dev.vars*`, `.git`, `.wrangler`, `node_modules`, keys, package and Wrangler files). `verify:site` fails if any such file is in `dist/` or committed, or if `workers_dev` or `preview_urls` is turned back on. Probed live on both addresses: all 404.
+- **Secrets.** The only ones are Sign in with GitHub's `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET`, Worker secrets set with `wrangler secret put` and kept in Cloudflare. `wrangler.jsonc` holds no secret, and the repository's history has no token or key.
 
 **Still open:**
 - **The CI actions are pinned to major versions,** not commit hashes; Dependabot can keep commit pins current.

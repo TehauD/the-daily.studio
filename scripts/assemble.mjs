@@ -14,6 +14,8 @@ rmSync(out, { recursive: true, force: true }); mkdirSync(join(out, 'journal'), {
 /* the page, its service worker and the rooms: the site's own lighter build (2.40, scripts/rooms.mjs); index.html in the repository stays one complete file */
 execFileSync(process.execPath, [join(root, 'scripts', 'build.mjs'), '--site'], { stdio: 'inherit' });
 for (const f of ['manifest.webmanifest', 'robots.txt', 'sitemap.xml', 'llms.txt', '404.html']) cpSync(join(root, f), join(out, f));
+/* 2.53.1: files Cloudflare must never upload, even if one ended up here (the folder is built fresh, so this is a second guard) */
+writeFileSync(join(out, '.assetsignore'), ['.env', '.env.*', '.dev.vars', '.dev.vars.*', '.git', '.wrangler', 'node_modules', '*.pem', '*.key', '*.p12', 'package.json', 'package-lock.json', 'wrangler.*'].join('\n') + '\n');
 mkdirSync(join(out, '.well-known'), { recursive: true }); cpSync(join(root, '.well-known', 'security.txt'), join(out, '.well-known', 'security.txt'));      /* how to report a security problem (2.49.2) */
 cpSync(join(root, 'icons'), join(out, 'icons'), { recursive: true });
 if (existsSync(join(root, 'samples'))) cpSync(join(root, 'samples'), join(out, 'samples'), { recursive: true });
@@ -113,8 +115,12 @@ ${common}
 /humans.txt
   Cache-Control: no-cache
 /icons/*
-  Cache-Control: public, max-age=86400
+  Cache-Control: public, max-age=604800
 /fonts/*
+  Cache-Control: public, max-age=2592000
+/rooms/*
+  Cache-Control: public, max-age=31536000, immutable
+/guide/img/*
   Cache-Control: public, max-age=604800
 `);
 console.log('dist/ ready');

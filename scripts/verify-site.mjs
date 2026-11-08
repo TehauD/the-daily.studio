@@ -3,6 +3,7 @@
    Fails (exit 1) if anything a visitor depends on is missing or the security posture drifted. */
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { createHash } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 import { gzipSync } from 'node:zlib';
 import { dirname, join, posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -37,6 +38,16 @@ const j = rd('journal/index.html'); ok(/Content-Security-Policy/.test(j), 'The D
 /* 2.50: The Daily has its own address; the pages that move a journal there each allow only their own script */
 for (const f of ['journal/moving.html', 'journal/move.html']) { const t = existsSync(join(d, f)) ? rd(f) : '', sc = (t.match(/<script>([\s\S]*?)<\/script>/) || [])[1] || '', pol = (t.match(/Content-Security-Policy" content="([^"]+)/) || [])[1] || '';
   ok(sc && pol.includes("script-src 'sha256-" + createHash('sha256').update(sc).digest('base64') + "'") && /default-src 'none'/.test(pol) && !/__SCRIPT_HASH__/.test(t), f + ': present, and its policy allows only its own script'); }
+/* 2.53.1: nothing private is deployed or committed */
+{ const all = []; const walk = dir => readdirSync(join(d, dir), { withFileTypes: true }).forEach(e => { const rel = dir ? dir + '/' + e.name : e.name; if (e.isDirectory()) walk(rel); else all.push(rel); }); walk('');
+  const bad = all.filter(f => /(^|\/)\.(?!well-known\/|assetsignore$)/.test(f) || /(^|\/)(\.env[^/]*|\.dev\.vars[^/]*|package(-lock)?\.json|wrangler\.[a-z]+|[^/]+\.(pem|key|p12))$/.test(f) || /(^|\/)(node_modules|\.git|\.wrangler)\//.test(f));
+  ok(!bad.length, 'the deployed folder holds no dotfiles (but .well-known), no .env or .dev.vars, no keys, no package or Wrangler files' + (bad.length ? ': ' + bad.slice(0, 5).join(', ') : ' (' + all.length + ' files)'));
+  ok(/^\.env$/m.test(rd('.assetsignore')) && /^\.git$/m.test(rd('.assetsignore')), 'and .assetsignore tells Cloudflare never to upload them'); }
+{ let tracked = []; try { tracked = execFileSync('git', ['ls-files'], { cwd: join(d, '..'), encoding: 'utf8' }).split('\n'); } catch (e) { tracked = null; }
+  if (tracked) { const bad = tracked.filter(f => /(^|\/)(\.env(\.[^/]*)?|\.dev\.vars[^/]*|[^/]+\.(pem|key|p12))$/.test(f) || /^\.wrangler\//.test(f)); ok(!bad.length, 'no .env, .dev.vars, key or Wrangler cache file is committed' + (bad.length ? ': ' + bad.join(', ') : '')); } }
+{ const cl = rd('../CHANGELOG.md').split('\n'), bare = cl.filter(l => /^\d{4}-\d{2}-\d{2} — /.test(l)), top = (cl.find(l => /^## \d/.test(l)) || '').match(/^## (\d+\.\d+\.\d+)/);
+  ok(!bare.length && top && top[1] === JSON.parse(rd('../package.json')).version, 'every CHANGELOG release heading has its version, and the newest is package.json\'s' + (bare.length ? ': ' + bare[0].slice(0, 50) : '')); }
+const wr = rd('../wrangler.jsonc'); ok(/"workers_dev":\s*false/.test(wr) && /"preview_urls":\s*false/.test(wr), 'the site is served only at its own addresses: no workers.dev copy, no preview addresses');
 ok(!/document\.cookie/.test(rd('index.html')) && !/document\.cookie/.test(j), 'neither the studio nor The Daily uses cookies, so nothing is shared between their two addresses');
 ok(!/\/journal\//.test(rd('sitemap.xml')), 'the sitemap no longer lists /journal/ (The Daily has its own address)');
 ok(statSync(join(d, 'index.html')).size < 2_000_000, 'index.html is under 2 MB');
@@ -77,7 +88,8 @@ for (const p of PAGES) {
   ok(h.includes('<link rel="canonical" href="' + url + '">') && metaOf(h, 'og:url') === url, name + 'canonical and og:url are ' + url);
   ok((b.match(/<h1[ >]/g) || []).length === 1 && (b.match(/<h2[ >]/g) || []).length >= 2, name + 'one <h1> and at least two <h2>');
   ok((b.replace(/<[^>]+>/g, ' ').split(/\s+/).filter(Boolean).length) >= 280, name + 'has real text (280+ words)');
-  const ld = ldOf(h); ok(ld.length === 1 && ld[0] && ld[0]['@graph'].some(n => n['@type'] === 'WebPage') && ld[0]['@graph'].some(n => n['@type'] === 'BreadcrumbList') && (!p.faq || ld[0]['@graph'].some(n => n['@type'] === 'FAQPage' && n.mainEntity.length === p.faq.length)), name + 'structured data parses (page, breadcrumbs' + (p.faq ? ', FAQ' : '') + ')');
+  const ld = ldOf(h); ok(ld.length === 1 && ld[0] && ld[0]['@graph'].some(n => [].concat(n['@type']).includes('WebPage')) && ld[0]['@graph'].some(n => n['@type'] === 'BreadcrumbList') && (!p.faq || ld[0]['@graph'].some(n => n['@type'] === 'FAQPage' && n.mainEntity.length === p.faq.length)), name + 'structured data parses (page, breadcrumbs' + (p.faq ? ', FAQ' : '') + ')');
+  if (p.about) ok(ld[0]['@graph'].some(n => [].concat(n['@type']).includes('AboutPage')) && ld[0]['@graph'].some(n => n['@type'] === 'Person' && Array.isArray(n.sameAs) && n.sameAs.some(u => /linkedin\.com\/in\//.test(u)) && n.sameAs.some(u => /github\.com\//.test(u))), name + 'it is an About page, and names the author with their LinkedIn and GitHub (2.53)');
   ok(p.faq ? p.faq.every(([q]) => b.includes(q.replace(/&/g, '&amp;'))) : true, name + 'every FAQ question in the data is visible on the page');
   ok(!/<script[^>]+\bsrc=/i.test(h) && !/<img(?![^>]*\balt="[^"]+")/i.test(h) && !/<img(?![^>]*\bwidth=)/i.test(h), name + 'no external script; every image has alt text and a size');
   const bad2 = [...h.matchAll(/(?:href|src)="([^"#]+)(?:#[^"]*)?"/g)].map(m => m[1]).filter(u => !/^(https?:|mailto:|data:)/.test(u)).filter(u => { const f = posix.normalize(posix.join(here, u)); const g = f.endsWith('/') ? f + 'index.html' : f; return !existsSync(join(d, g)); });

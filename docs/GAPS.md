@@ -4,6 +4,19 @@ What the studio, its tutorials, its documents and its tests do **not** cover yet
 
 How to use it: before a release, move what the release closed into *Closed* with the version, and add what it opened. [RELEASE.md](RELEASE.md) has this as a checklist item. Items marked **(maintainer)** are decisions or facts only the project's owner can settle; nothing here blocks a build.
 
+## Closed in 2.53.1
+
+- The site had a second copy at its `workers.dev` address. That address and the preview addresses are off; `verify:site` keeps them off and fails a release if a private file (`.env`, `.dev.vars`, a key, a Wrangler file) is committed or deployed.
+
+## Closed in 2.53.0
+
+- The story behind the studio was only at the end of Help. It now has its own page, a line on the first page, and structured data linking the author's profiles.
+
+## Closed in 2.52.0
+
+- Since 2.50, every request went through the Worker and counted against the free plan; now only the pages that need it do.
+- The service worker saved the page twice and re-fetched saved files on every visit, and the sample shelf was fetched four times a visit. A later visit is now one request.
+
 ## Closed in 2.50.0
 
 - The Daily has its own address, `journal.the-daily.studio`, with a page at `/journal/` that moves a journal kept there.
@@ -105,7 +118,8 @@ How to use it: before a release, move what the release closed into *Closed* with
 
 ### Security (maintainer, from the live-site evaluation)
 - **Cloudflare settings:** turn off Web Analytics' automatic setup, bot detection's JavaScript and, if you can, Network Error Logging. Until then the 404 page and `/journal/` get Cloudflare's scripts, and `/journal/` gets a `cf_clearance` cookie.
-- **Decide on `www.the-daily.studio`** (no DNS answer) and on `workers_dev` (a second copy of the site).
+- **Decide on `www.the-daily.studio`** (no DNS answer).
+- **A Wrangler cache file** (Cloudflare account id and name, no key) stays in the repository's history; it is untracked since 2.53.1. Removing it from history means rewriting it, which only the owner should decide.
 - **Pin the CI actions to commit hashes.**
 - **Check the TLS configuration** with a public scanner; the evaluation couldn't, from behind a proxy.
 

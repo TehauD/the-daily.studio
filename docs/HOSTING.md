@@ -6,7 +6,7 @@ the-daily.studio is a **static site**: one `index.html` (on the hosted site its 
 
 Contents: [1. Deploy on Cloudflare](#1-deploy-on-cloudflare) · [2. Custom domain](#2-custom-domain) · [3. Check it works](#3-check-it-works) · [4. Updating](#4-updating-the-site) · [5. Releases](#5-cut-a-release) · [6. Other hosts](#6-other-hosts) · [7. Headers and CSP](#7-headers-and-csp) · [8. Self-hosting camera models](#8-self-hosting-the-camera-model-files) · [9. Troubleshooting](#9-troubleshooting)
 
-For day-to-day running, rollback and incident steps see [OPERATIONS.md](OPERATIONS.md). For the security design see [SECURITY_MODEL.md](SECURITY_MODEL.md).
+**The step-by-step Cloudflare and GitHub checklist** (builds, domains, DNS, WAF, Sign in with GitHub, account safety) is [CLOUDFLARE_SETUP.md](CLOUDFLARE_SETUP.md). For day-to-day running, rollback and incident steps see [OPERATIONS.md](OPERATIONS.md). For the security design see [SECURITY_MODEL.md](SECURITY_MODEL.md).
 
 ---
 
@@ -23,9 +23,9 @@ In **Workers & Pages ▸ Create ▸ Import a repository**, choose the repository
 | --- | --- |
 | Project name | `the-daily-studio` (must match `name` in `wrangler.jsonc`) |
 | Build command | `npm run build:site && npm run verify:site` (`wrangler.jsonc` repeats it, so a deploy still works if this is left as `npm run build`) |
-| Deploy command | `npx wrangler deploy` |
+| Deploy command | `npx wrangler@4 deploy` (Wrangler 4.20 or later; `run_worker_first` as a list needs it) |
 | Preview command | `npx wrangler versions upload` |
-| Preview builds | on (optional; gives every branch a test URL) |
+| Preview builds | optional. Since 2.53.1 `wrangler.jsonc` sets `preview_urls: false` and `workers_dev: false`, so a preview build uploads a version without a public address: test locally (`npx wrangler dev`) instead |
 | Cloudflare Access | off (the site is public) |
 
 Every push to the production branch builds, verifies and deploys. If `verify:site` fails the build stops and the previous version stays live.
@@ -36,7 +36,11 @@ Every push to the production branch builds, verifies and deploys. If `verify:sit
 2. Remove any old GitHub Pages `A`, `AAAA` or `CNAME` records so they do not conflict.
 3. On the Worker: **Settings ▸ Domains & Routes ▸ Add ▸ Custom domain** → `the-daily.studio`, then again for `journal.the-daily.studio` (The Daily, 2.50) and, if you want it, `www` with a redirect to the apex. `wrangler.jsonc` lists the site and `journal.` as custom domains, so a deploy attaches them when the domain's DNS is on Cloudflare.
 4. HTTPS is issued automatically. In **SSL/TLS** use mode *Full (strict)*; optionally turn on *Always use HTTPS*.
-5. The app is at `/`. The Daily is at `https://journal.the-daily.studio/`; `/journal/` on the site is the page that moves a journal kept there to the new address. The Worker sees every request first (`run_worker_first`) to tell the two addresses apart.
+5. The app is at `/`. The Daily is at `https://journal.the-daily.studio/`; `/journal/` on the site is the page that moves a journal kept there to the new address. Since 2.52 the Worker runs only for the few paths that need it (`run_worker_first` in `wrangler.jsonc`: `/`, `/index.html`, `/move/`, `/journal/*`, `/auth/*` and `/backstage/*`). Everything else (fonts, code, icons, pictures and the guide) is served as static assets, which Cloudflare doesn't count as Worker requests, so a visit to the studio is one Worker request and the free plan's 100,000 a day covers about that many visits. A list in `run_worker_first` needs Wrangler 4.20 or later.
+
+**Only the custom domains serve the site (2.53.1).** There is no origin server: the site is the Worker and its static assets, so nothing sits behind Cloudflare to reach directly. The `workers.dev` and preview addresses are off, so every request goes through the domain's settings (HSTS, WAF, rate limits). `verify:site` fails if either is turned back on.
+
+**Secrets never go in the repository.** Set them with `npx wrangler secret put NAME` (they live in Cloudflare). For local work, put them in `.dev.vars`, which `.gitignore` covers along with `.env*`, keys and `.wrangler/`. `dist/.assetsignore` and `verify:site` make sure none of these is ever uploaded.
 
 Songs are stored per web address. People who used another address will not see their songs here: back up first (☰ Songs ▸ Back up all songs) and import on the new address. If you fork this for another domain, change `robots.txt`, `sitemap.xml`, `manifest.webmanifest` links, and `BRAND` in `src/parts/01-core.js`.
 

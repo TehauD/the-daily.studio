@@ -1,6 +1,6 @@
 # the-daily.studio
 
-> Record guitar and voice, split a song into stems, get chords, tab and lyrics, and run a live light show. Free, private, in your browser: no account, no uploads. Version 2.51.0. An AI assistant in the person's browser can use the studio through tools (WebMCP, or window.dailyStudio from a script). Nothing is sent to a server.
+> Record guitar and voice, split a song into stems, get chords, tab and lyrics, and run a live light show. Free, private, in your browser: no account, no uploads. Version 2.53.1. An AI assistant in the person's browser can use the studio through tools (WebMCP, or window.dailyStudio from a script). Nothing is sent to a server.
 
 ## For AI assistants
 
@@ -52,6 +52,7 @@ The tools never reach the microphone, the camera, recording, deleting songs or S
 - [Live visuals and a light show for your music](https://the-daily.studio/guide/live-visuals-and-stage-show/): Lights, lasers and an LED wall that follow the music.
 - [Perform live and share what you make](https://the-daily.studio/guide/perform-and-share/): Big chords on stage, videos for every screen, share pages, tips.
 - [Your studio, on every computer](https://the-daily.studio/guide/keep-your-studio-in-sync/): Your whole studio on every computer, through a folder or GitHub.
+- [Made for creators](https://the-daily.studio/guide/about/): Who made it, and why.
 
 ## Optional
 

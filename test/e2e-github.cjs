@@ -13,7 +13,7 @@ suite('e2e-github', async t => {
 
   /* ---- nothing goes to GitHub until you connect ---- */
   await ev(A, () => window.__daily.openSettings('github')); await wait(500);
-  ok(await ev(A, () => !!document.getElementById('ghConnectBtn') && !document.getElementById('ghSignIn') && /Not connected/.test(document.getElementById('ghStatus').textContent)), 'Settings ▸ GitHub: not connected, with Connect with a token (no Sign in button until the site has its GitHub App)');
+  ok(await ev(A, () => !!document.getElementById('ghConnectBtn') && !!document.getElementById('ghSignIn') && [...document.querySelectorAll('a')].some(x => x.href === 'https://github.com/apps/tehaud-the-daily-studio/installations/new') && /Not connected/.test(document.getElementById('ghStatus').textContent)), 'Settings ▸ GitHub: not connected, with Sign in with GitHub (the site’s app, 2.53.1), its access link and Connect with a token');
   ok(F.calls() === 0, 'nothing has gone to GitHub before connecting (' + F.calls() + ' requests)');
   ok(await ev(A, () => !/\bnull\b|undefined/.test(document.getElementById('ghSec').textContent)), 'the section reads cleanly (no stray “null”)');
   await ev(A, () => { const d = document.getElementById('settings'); if (d) d.close(); });

@@ -5,7 +5,9 @@
 import { markSvg } from './brand-mark.mjs';
 
 export const SITE = {
-  origin: 'https://the-daily.studio', name: 'the-daily.studio', author: 'Tehau DeBarthe', authorUrl: 'https://github.com/TehauD',
+  origin: 'https://the-daily.studio', name: 'the-daily.studio', author: 'Tehau DeBarthe', authorUrl: 'https://the-daily.studio/guide/about/',
+  /* the author's own profiles, so search engines know the site and these are one person (2.53) */
+  profiles: ['https://www.linkedin.com/in/tehau/', 'https://github.com/TehauD'],
   repo: 'https://github.com/TehauD/the-daily.studio', card: 'https://the-daily.studio/icons/social-card.png',
   tagline: 'a guitar and voice studio in your browser',
   title: 'the-daily.studio — free guitar and voice studio in your browser',
@@ -28,7 +30,7 @@ export const FEATURES = [
 
 const NAV = [
   ['guide/', 'Guide'], ['guide/getting-started/', 'Start'], ['guide/write-a-song-over-a-beat/', 'Write'], ['guide/sing-record-and-tune/', 'Sing'], ['guide/record-guitar-and-voice/', 'Record'], ['guide/guitar-tones-and-rig/', 'Tones'], ['guide/split-song-into-stems/', 'Stems'],
-  ['guide/chords-tab-and-lyrics/', 'Chords & tab'], ['guide/hum-to-song/', 'Hum'], ['guide/live-visuals-and-stage-show/', 'Stage'], ['guide/perform-and-share/', 'Perform'], ['guide/keep-your-studio-in-sync/', 'Sync']
+  ['guide/chords-tab-and-lyrics/', 'Chords & tab'], ['guide/hum-to-song/', 'Hum'], ['guide/live-visuals-and-stage-show/', 'Stage'], ['guide/perform-and-share/', 'Perform'], ['guide/keep-your-studio-in-sync/', 'Sync'], ['guide/about/', 'About']
 ];
 
 /* ------------------------------------------------------------------ the pages
@@ -275,6 +277,27 @@ export const PAGES = [
     related: ['getting-started', 'record-guitar-and-voice', 'perform-and-share']
   },
   {
+    /* 2.53: who made it, and why: the story from Help ▸ About, as a page of its own that people and search engines can find */
+    slug: 'about', about: true, ico: '🎸', title: 'About: made for creators, by Tehau DeBarthe',
+    description: 'Why the-daily.studio exists: a free, private place to write, sing and play, built by Tehau DeBarthe, a musician, software engineer and dad.',
+    h1: 'Made for creators', eyebrow: 'About', blurb: 'Who made it, and why.',
+    lead: 'My mom put a guitar in my hands when I was five years old. It changed my life.',
+    sections: [
+      { h: 'Why I built it', p: [
+        'I didn\'t grow up surrounded by instruments, recording studios, or expensive equipment. I had a guitar, a curious mind, and a desire to make music. I learned by listening, experimenting, making mistakes, and finding my own way. That feeling never really left me.',
+        'As a musician, I\'ve always believed that creating something meaningful shouldn\'t depend on having the right gear, knowing the right people, or mastering complicated software. Sometimes you just need a place to start, the freedom to experiment, and tools that get out of your way. That\'s why I built the-daily.studio.',
+        'A creative space for exploring sounds, discovering how music works, developing your ear, and capturing ideas before they slip away. A place where experimentation is encouraged, inspiration has room to grow, and technology exists to serve the creative process, not get in its way.'] },
+      { h: 'Who I am', p: [
+        'I built this as a musician, a software engineer, and a dad. Part of me is still that five-year-old picking up a guitar for the first time. And part of me hopes that what I create here might inspire my own kids, and anyone else who has ever wanted to make something but wasn\'t quite sure where to begin.',
+        'Because creativity doesn\'t need permission. It doesn\'t need perfect conditions. And it certainly doesn\'t need expensive equipment. It just needs a beginning.',
+        'If the-daily.studio helps you discover a new sound, finish a song, find your voice, or simply enjoy making music a little more, then it\'s doing exactly what I hoped it would do. Make something. Explore something. Find your sound. And above all, may it bring you joy.',
+        '— Tehau'] },
+      { h: 'How it is made', p: ['the-daily.studio is free and open source (MIT licence). It runs entirely in your browser: no account, no uploads, no tracking. Your songs, recordings and settings stay on your device. Built by hand with the browser\'s own audio, drawing and storage, and no frameworks.'] },
+      { h: 'Find me', links: [['LinkedIn', 'https://www.linkedin.com/in/tehau/'], ['GitHub', 'https://github.com/TehauD'], ['The source code', 'https://github.com/TehauD/the-daily.studio'], ['The Daily, my developer journal', 'https://journal.the-daily.studio/']] }
+    ],
+    related: ['getting-started', 'write-a-song-over-a-beat', 'sing-record-and-tune']
+  },
+  {
     /* unlisted: for AI assistants and the people who look for it. It is in the sitemap and /llms.txt, but no menu, card or link in the studio or the guide points to it */
     slug: 'for-ai-assistants', unlisted: true, ico: '🤖', title: 'Use the-daily.studio with an AI assistant',
     description: 'How an AI assistant in your browser can read and edit songs, play the band and set up practice in the-daily.studio, and what it can never touch.',
@@ -314,7 +337,7 @@ export function appJsonLd(version, modified) {
         operatingSystem: 'Any operating system with a current web browser', browserRequirements: 'Requires JavaScript and the Web Audio API. Chrome or Edge recommended.', softwareVersion: version, dateModified: modified, inLanguage: 'en', isAccessibleForFree: true,
         offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' }, license: 'https://opensource.org/licenses/MIT', image: SITE.card, featureList: FEATURES, author: { '@id': SITE.origin + '/#author' }, isPartOf: { '@id': SITE.origin + '/#site' }, sameAs: [SITE.repo], mainEntityOfPage: SITE.origin + '/'
       },
-      { '@type': 'Person', '@id': SITE.origin + '/#author', name: SITE.author, url: SITE.authorUrl }
+      { '@type': 'Person', '@id': SITE.origin + '/#author', name: SITE.author, url: SITE.authorUrl, jobTitle: 'Musician and software engineer', sameAs: SITE.profiles }
     ]
   });
 }
@@ -325,6 +348,7 @@ function pageJsonLd(p, modified) {
     { '@type': 'WebPage', '@id': url, url, name: p.title, description: p.description, inLanguage: 'en', dateModified: modified, isPartOf: { '@id': SITE.origin + '/#site' }, about: { '@id': SITE.origin + '/#app' }, breadcrumb: { '@id': url + '#crumbs' }, ...(p.img ? { primaryImageOfPage: { '@type': 'ImageObject', url: SITE.origin + '/guide/img/' + p.img.src, width: p.img.w, height: p.img.h } } : {}) },
     { '@type': 'BreadcrumbList', '@id': url + '#crumbs', itemListElement: crumbs }
   ];
+  if (p.about) { g[0]['@type'] = ['WebPage', 'AboutPage']; g[0].mainEntity = { '@id': SITE.origin + '/#author' }; g.push({ '@type': 'Person', '@id': SITE.origin + '/#author', name: SITE.author, url, jobTitle: 'Musician and software engineer', sameAs: SITE.profiles }); }      /* 2.53: the author, and the profiles that are theirs */
   if (p.faq) g.push({ '@type': 'FAQPage', '@id': url + '#faq', mainEntity: p.faq.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })) });
   return ldJson({ '@context': 'https://schema.org', '@graph': g });
 }
@@ -357,7 +381,7 @@ a.card{display:block;color:inherit;text-decoration:none;transition:border-color 
 ol.steps{list-style:none;counter-reset:s;padding:0}ol.steps li{counter-increment:s;position:relative;padding:2px 0 10px 48px;margin:0}
 ol.steps li::before{content:counter(s);position:absolute;left:0;top:0;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font:800 15px var(--display);color:var(--ink);background:var(--accent)}
 ol.steps li:not(:last-child)::after{content:"";position:absolute;left:15.5px;top:36px;bottom:2px;width:1px;background:var(--line)}
-aside.good{margin:40px 0 0;padding:18px 20px;border-radius:14px;background:var(--soft);border:1px solid var(--line)}aside.good h2{margin:0 0 8px;font-size:19px}aside.good ul{margin:0}aside.good li{color:var(--text)}
+p.links{display:flex;flex-wrap:wrap;gap:10px}aside.good{margin:40px 0 0;padding:18px 20px;border-radius:14px;background:var(--soft);border:1px solid var(--line)}aside.good h2{margin:0 0 8px;font-size:19px}aside.good ul{margin:0}aside.good li{color:var(--text)}
 details{border:1px solid var(--line);border-radius:12px;background:var(--raise);margin:0 0 8px}summary{cursor:pointer;padding:14px 44px 14px 16px;font-weight:700;list-style:none;position:relative}summary::-webkit-details-marker{display:none}
 summary::after{content:"+";position:absolute;right:16px;top:50%;transform:translateY(-50%);font:400 22px var(--sans);color:var(--muted)}details[open] summary::after{content:"–"}details p{margin:0;padding:0 16px 16px;color:var(--muted)}
 .end{margin-top:40px;padding:22px;border-radius:16px;background:var(--panel);border:1px solid var(--line);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px}.end p{margin:0;font-weight:600}
@@ -372,10 +396,11 @@ const firstLine = p => p.blurb || p.description.split('. ')[0].replace(/\.$/, ''
 const topicCards = (list, pre) => `<ul class="cards">${list.map(p => `<li><a class="card" href="${pre}${p.slug}/"><span class="ico" aria-hidden="true">${esc(p.ico)}</span><b>${esc(p.h1)}</b><span class="t">${esc(firstLine(p))}</span></a></li>`).join('')}</ul>`;
 function section(s, p) {
   let o = `<section><h2>${esc(s.h)}</h2>`;
-  if (s.topics) o += topicCards(PAGES.filter(x => x.slug !== 'guide' && !x.unlisted), '');
+  if (s.topics) o += topicCards(PAGES.filter(x => x.slug !== 'guide' && !x.unlisted && !x.about), '');
   if (s.p) o += s.p.map(t => `<p>${esc(t)}</p>`).join('');
   if (s.ul) o += `<ul>${s.ul.map(li).join('')}</ul>`;
   if (s.ol) o += `<ol class="steps">${s.ol.map(li).join('')}</ol>`;
+  if (s.links) o += `<p class="links">${s.links.map(([t, h]) => `<a class="cta2" href="${esc(h)}" rel="${/^https?:/.test(h) ? 'me noopener' : ''}">${esc(t)}</a>`).join(' ')}</p>`;
   return o + '</section>';
 }
 /** one complete static page (no script, its own strict policy) */
@@ -422,7 +447,7 @@ export function sitemap(modified) {
 }
 /** the links under the first page's buttons (also in <noscript>), so every guide is one crawlable link away from the app */
 export function guideLinks(prefix = '') {
-  return NAV.map(([h, t]) => `<a href="${prefix}${h}">${esc(t)}</a>`).join(' · ');
+  return NAV.filter(([h]) => h !== 'guide/about/').map(([h, t]) => `<a href="${prefix}${h}">${esc(t)}</a>`).join(' · ');      /* the first page has its own line for the story */
 }
 
 /** /llms.txt (llmstxt.org): what the studio is and where its agent tools are, for AI assistants. The tool list comes from docs/AGENT_API.md, so it cannot drift. */
