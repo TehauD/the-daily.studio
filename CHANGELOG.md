@@ -12,7 +12,7 @@ All notable changes to the-daily.studio (earlier versions were released under th
   So the first thing anyone sees is their own page.
 
 ### Changed
-- **A first visit always opens on the dark green page**, whatever light or dark is saved.
+- **A first visit always opens on the dark green page**, whatever light or dark is saved. The one exception is hexagon colours chosen on purpose (Visuals ▸ hexagon colours), which the start page keeps.
 - **Welcome back follows the person's appearance setting:** light or dark, from its first frame.
 - **People coming back keep the goals.** Under **Pick up where I left off** they get **Or start something new**: play with a band, write down what you play, turn a hum into a song, record and layer, learn a song, or run a show. Each starts a new song and leaves yours as they are. Before, coming back removed the goals entirely.
 

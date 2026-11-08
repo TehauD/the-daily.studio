@@ -54,7 +54,7 @@ window.__dailyRoom = (id, make) => {
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.49.0', BUILD = 'bddde01', PARTS_N = +'114' || 0, LINES_N = +'19077' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.49.1', BUILD = '2b69560', PARTS_N = +'114' || 0, LINES_N = +'19077' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { ghApp: { clientId: '', slug: '' },   /* Sign in with GitHub: the GitHub App's public client id and its slug (docs/GITHUB.md); empty = only the token way */
   support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://the-daily.studio/journal/' };
@@ -8409,7 +8409,7 @@ bus.on('booted', simpleMount);
   }
   function paint(now) {
     const t = (now - t0) / 1000, R = Math.max(26, Math.min(W, H) / 15) * (dpr > 1 ? 1 : 1), dx = R * Math.sqrt(3), dy = R * 1.5, cx = W / 2, cy = H * .46, maxd = Math.hypot(W, H) * .55;
-    const DG = { lt: false, bg: '#04090a', glow: '61,220,132', cell: '61,220,132', warm: '242,182,50', line: '125,191,155' }, first = !!document.querySelector('#boot.boot-first'), P = first ? DG : typeof hexPal === 'function' ? hexPal() : DG, lt = P.lt;      /* 2.49.1: a first visit is always the dark green page */   /* the palette you chose for the hexagons; light (white) and dark green are the original two looks */
+    const DG = { lt: false, bg: '#04090a', glow: '61,220,132', cell: '61,220,132', warm: '242,182,50', line: '125,191,155' }, first = !!document.querySelector('#boot.boot-first') && !CFG.hexTone, P = first ? DG : typeof hexPal === 'function' ? hexPal() : DG, lt = P.lt;      /* 2.49.1: a first visit is the dark green page, unless hexagon colours were chosen on purpose */   /* the palette you chose for the hexagons; light (white) and dark green are the original two looks */
     g.fillStyle = P.bg; g.fillRect(0, 0, W, H);
     const glow = g.createRadialGradient(cx, cy, 0, cx, cy, maxd); glow.addColorStop(0, `rgba(${P.glow},${lt ? .12 : .16})`); glow.addColorStop(.5, `rgba(${P.glow},.04)`); glow.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = glow; g.fillRect(0, 0, W, H);
     const beat = (t % 1.9) / 1.9;
