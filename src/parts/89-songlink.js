@@ -34,7 +34,9 @@ function slPack(s) {
       if (tab || ky || bl) row.push(tab ? sec.bars.map(b => (b.tab || []).map(n => n.bend != null ? [n.s, n.st, n.f, n.t || '', n.bend] : [n.s, n.st, n.f, n.t || ''])) : 0, ky ? sec.bars.map(b => notes(b.keys)) : 0, bl ? sec.bars.map(b => notes(b.bassLine)) : 0);
       if (sec.energy >= 1) { while (row.length < 6) row.push(0); row.push(sec.energy); }      /* 2.44: the section's energy */
       return row; }),
-    c: s.collab && s.collab.out ? s.collab.out : undefined,      /* 2.51: who sent it, a note, the rounds so far */
+    c: s.collab && s.collab.out ? s.collab.out : undefined,
+    cm: cmtPack(s),
+    tr: s === S && STM.ch && STM.an && !(s.track && s.track.ours) ? ycPrint() || undefined : (s.trackRef || undefined),      /* 2.59: the record it's played over, named and fingerprinted, never sent */      /* 2.58: open comments, pinned to their place */      /* 2.51: who sent it, a note, the rounds so far */
     bd: { d: B.drumsOn ? 1 : 0, kit: B.kit, pn: B.patName, p: pat, bo: B.bassOn ? 1 : 0, bs: B.bassStyle, bt: B.bassTone, co: B.compOn ? 1 : 0, cs: B.compStyle, ci: B.compInst, lo: B.leadOn ? 1 : 0, li: B.leadInst, ko: B.keysOn ? 1 : 0, ks: B.keysStyle, kn: B.keysSound, beat: B.beat || undefined, bu: B.build ? 1 : undefined } };
 }
 /** a song from a link, rebuilt from scratch: only what is checked is kept */
@@ -77,6 +79,8 @@ function slUnpack(o) {
     const c = o.c, hist = (Array.isArray(c.h) ? c.h : []).slice(-SLC.keep).filter(Array.isArray).map(x => [str(x[0], 40).trim() || 'Someone', int(x[1], 0, 200000, 0), str(x[2], 140).trim()]);
     s.collab = { id: /^[a-z0-9]{6,16}$/.test(String(c.id || '')) ? c.id : slcId(), with: str(c.f, 40).trim(), note: str(c.n, SLC.note).trim(), hist };
   }
+  if (o.cm) s.comments = cmtUnpack(o.cm, str);
+  if (o.tr && typeof o.tr === 'object' && typeof o.tr.fp === 'string' && /^[A-Za-z0-9_-]{8,1400}$/.test(o.tr.fp)) s.trackRef = { t: str(o.tr.t, 80).trim(), a: str(o.tr.a, 80).trim(), d: int(o.tr.d, 0, 3600, 0), fp: o.tr.fp, n: int(o.tr.n, 8, 2000, 800) };
   if (s.collab) slcMark(s);      /* what it was when it arrived, to tell what changes before it goes back */
   return s;
 }
@@ -159,12 +163,14 @@ async function slShare() {
 }
 
 /* ---------- opening one ---------- */
-async function slOpen(song, playNow, perform) {
+async function slOpen(song, playNow, perform, asVersion) {
   const boot = document.getElementById('boot'), b = document.getElementById('bootNoMic'), att = song._att;
   if (boot && b && boot.getClientRects().length && getComputedStyle(boot).display !== 'none') b.click();      /* past the first page, as Begin in the studio does */
   let takes = null, lost = '';
   if (att) { try { takes = await srxReceive(att, t => toast(t)); } catch (e) { lost = e.message; } }      /* the recordings first: if they can't come, the song still does */
-  delete song._att; await projCreate('import', { song, zoom: 'studio' }); if (takes && takes.length) { srxAdd(takes); await projSave(); }
+  delete song._att;
+  if (asVersion) { const v = await verAddRound(asVersion, song, takes); bus.emit('song', 'reload'); try { syncTransport(); syncBandStrip(); } catch (e) { } return toast((lost ? lost + ' ' : '') + '↩ “' + v.n + '” is now the newest version of “' + S.title + '”. Your earlier versions are in ✓ Versions.', lost ? 'warn' : 'ok'); }      /* 2.56: a round of a song you have becomes a version of it */
+  await projCreate('import', { song, zoom: 'studio' }); if (takes && takes.length) { srxAdd(takes); await projSave(); }
   bus.emit('song', 'reload'); try { syncTransport(); syncBandStrip(); } catch (e) { }
   if (playNow) { try { await startAudio(); T.cursor = 0; T.loop = true; syncTransport(); play(); } catch (e) { console.warn(e); } }
   if (perform) { try { perfOpen(); const g = document.getElementById('pfGo'); if (g) g.click(); } catch (e) { console.warn(e); } }      /* a first visit through a link: the song as a sing-along */
@@ -175,17 +181,21 @@ async function slOpen(song, playNow, perform) {
 }
 function slWelcome(song) {
   const old = document.getElementById('slIn'); if (old) old.remove();
-  const c = song.collab, from = c && c.with, first = !store.get('started', false);
-  const go = (p, perf) => { d.close(); slOpen(song, p, perf).catch(e => toast('It could not be opened: ' + (e.message || e), 'bad')); };
+  const c = song.collab, from = c && c.with, first = !store.get('started', false), mine = !first && verRoundOf(song);
+  const go = (p, perf, asV) => { d.close(); slOpen(song, p, perf, asV).catch(e => toast('It could not be opened: ' + (e.message || e), 'bad')); };
   const d = h('dialog', { class: 'sl-dlg sl-in' + (first ? ' sl-first' : ''), id: 'slIn', 'aria-labelledby': 'slInH' },
     h('p', { class: 'sl-kick' }, from ? '🎵 ' + from + ' sent you a song' : '🎵 A song was sent to you'), h('h3', { id: 'slInH' }, song.title), song.artist ? h('p', { class: 'muted' }, song.artist) : null,
     c && c.note ? h('blockquote', { class: 'slc-note', id: 'slInNote' }, c.note) : null,
     h('p', { class: 'sl-what' }, slSummary(song)),
     c ? slcHistEl(c.hist) : null,
+    song.trackRef ? h('p', { class: 'small', id: 'slInTrk' }, '🎵 Played over “' + song.trackRef.t + (song.trackRef.a ? ' – ' + song.trackRef.a : '') + '”. The record isn’t sent: after opening, choose ♪ Load your copy, and it lines itself up.') : null,
+    (song.comments || []).length ? h('details', { class: 'small', id: 'slInCmt' }, h('summary', {}, '💬 ' + song.comments.length + (song.comments.length === 1 ? ' comment' : ' comments')), h('ul', { class: 'tiny' }, song.comments.slice(0, 8).map(c => h('li', {}, (c.sec ? c.sec + ' · ' : '') + (c.who ? c.who + ': ' : '') + c.text)))) : null,
     song._att ? h('p', { class: 'small srx-in', id: 'srxIn' }, '🎙 With recordings, until ' + srxDate(srxUntil(song._att)) + '. ', h('button', { class: 'linkish tiny', id: 'srxRepBtn', type: 'button', onclick: () => srxReport(song._att) }, '⚑ Report')) : null,
+    mine ? h('p', { class: 'small', id: 'slMine' }, 'You already have “' + (mine.title || 'this song') + '”. Add this round as its newest version, so the rounds don’t pile up as copies; what you have now is kept as a version too.') : null,
     h('p', { class: 'small muted' }, (first ? 'This is the-daily.studio: a place to write, sing and play songs, free, in your browser, with no account. ' : '') + 'It opens as a new song' + (first ? '' : ', so none of yours change') + '. ' + (song._att ? 'The song came inside the link; its recordings are fetched encrypted from this site and unlocked with the link’s key.' : 'It came inside the link: nothing was downloaded from anyone.') + (from ? ' Change what you like, then ↩ Send it back to ' + from + '.' : '')),
     h('div', { class: 'row sl-acts' }, ...(first
       ? [h('button', { class: 'btn primary', id: 'slPlay', type: 'button', onclick: () => go(true, true) }, '▶ Play it'), h('button', { class: 'btn', id: 'slOpenBtn', type: 'button', onclick: () => go(false) }, 'Open it in the studio')]
+      : mine ? [h('button', { class: 'btn primary', id: 'slAsVer', type: 'button', title: 'It becomes the newest version of your song; what you have now is kept as a version first', onclick: () => go(false, false, mine) }, '↩ Add as a new version of “' + (mine.title || 'your song') + '”'), h('button', { class: 'btn', id: 'slOpenBtn', type: 'button', onclick: () => go(false) }, 'Open as a separate song'), h('span', { class: 'grow' }), h('button', { class: 'btn', type: 'button', onclick: () => d.close() }, 'Not now')]
       : [h('button', { class: 'btn primary', id: 'slPlay', type: 'button', onclick: () => go(true) }, '▶ Open and play'), h('button', { class: 'btn', id: 'slOpenBtn', type: 'button', onclick: () => go(false) }, 'Open'), h('span', { class: 'grow' }), h('button', { class: 'btn', type: 'button', onclick: () => d.close() }, 'Not now')])));
   d.addEventListener('close', () => setTimeout(() => d.remove(), 0)); document.body.append(d); d.showModal();
 }

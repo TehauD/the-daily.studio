@@ -56,6 +56,8 @@ Clearing the site's data in your browser, or **Settings ▸ Data ▸ Reset…**,
    - **Opening such a link** fetches the package from this site (Cloudflare sees that request, as with any visit) and unlocks it in your browser.
    - **⚑ Report** sends the site's owner the reason you type and, only if you leave the box ticked, the link's key, so the owner can listen and check. Reports are kept with the package's account number for 7 days.
 
+7. **Drops (2.60): only when you drop a song, public by design.** **🌍 Drop it** sends the song's master (compressed in your browser), the title, the name you choose to show, your note and, if you tick it, the song as a link. Your GitHub account's number and login go with it, so the site's owner knows who sent it and the daily limit works. It's kept privately until the owner has listened. If it's approved, the audio, title, name, note and link are **public** on the-daily.studio/drops for 7 days, then deleted. If it's rejected, it's deleted. Your account number isn't shown on the public page. Reports of a drop go to the owner with its title and the account number it came from, and are kept 7 days.
+
 Nothing else. The page cannot contact any other site: its security policy allows only this site plus the hosts above (GitHub's API only for what you connect or open), and the test below fails if anything else is attempted.
 
 ## AI agents in your browser
@@ -68,7 +70,7 @@ An agent is software you run, and it usually works with an AI service. When it r
 
 ## What is kept, and for how long
 
-- **By this project: nothing, except recordings you send with a song link.** Those are kept encrypted for 7 days, with the sending GitHub account's number, then deleted (item 6). Otherwise no server of this project keeps or receives your data; the site's Worker only passes GitHub's sign-in code to GitHub and the token back to you, if you use Sign in with GitHub.
+- **By this project: nothing, except recordings you send with a song link and songs you drop.** Drops are kept privately until reviewed, then public for 7 days (item 7). Those are kept encrypted for 7 days, with the sending GitHub account's number, then deleted (item 6). Otherwise no server of this project keeps or receives your data; the site's Worker only passes GitHub's sign-in code to GitHub and the token back to you, if you use Sign in with GitHub.
 - **In your browser:** the items in the table above, until you remove them.
 - **By your host and the services above:** whatever their own logs keep, under their own policies. A **synced folder**, if you choose one in Settings ▸ Folder sync (Chrome and Edge), holds your studio (and, if you turn it on, a `.daily-song.zip` of each song); it is a folder on your own computer that the browser was given access to, and you can turn it off at any time. A cloud drive that folder is in keeps it under that drive's own policy.
 - **Persistent storage.** The app may ask the browser to keep its library (the browser decides). Safari can still clear a site's data after about a week without a visit unless the site is added to the Home Screen; the app tells you when that applies.

@@ -57,7 +57,7 @@ window.__dailyRoom = (id, make) => {
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.55.0', BUILD = '413bbfc', PARTS_N = +'116' || 0, LINES_N = +'19508' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.60.0', BUILD = '0e60453', PARTS_N = +'122' || 0, LINES_N = +'20095' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { ghApp: { clientId: 'Iv23liTjqEBQsgmGaE1Q', slug: 'tehaud-the-daily-studio' },   /* Sign in with GitHub: the GitHub App's public client id and its slug (docs/GITHUB.md); empty = only the token way */
   support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://journal.the-daily.studio/' };
@@ -1949,7 +1949,7 @@ function openSettings(at) {
       chk('Render WAVs faster than real time', 'renderFast'), note('Mixes the song in a few seconds instead of playing it through. Turn this off if a render ever sounds different from playback.'),
       F('Ultimate Guitar line width (chars)', num('ugWidth', 40, 120, 1, () => bus.emit('export'))), chk('Include [tab] / [ch] tags in Ultimate Guitar text', 'ugTags', () => bus.emit('export')),
       note('To keep every song (and its recordings) in a folder, and the same on your other computers, see Settings ▸ Folder sync.')] },
-    { key: 'data', label: 'Songs & data', ico: '☰', sub: 'Everything stays in this browser. Nothing is uploaded.', body: () => [
+    { key: 'data', label: 'Songs & data', ico: '☰', sub: 'Your songs stay in this browser. Nothing is uploaded unless you turn on sync or send recordings.', body: () => [
       F('Backing track when a song opens', sel('trackRestore', [['auto', 'Restore it automatically'], ['tap', 'Wait until I tap Restore']])),
       note('Songs and recordings are kept in this browser (My songs). Stems are separated again when a song with a track opens; the song itself opens instantly.'),
       h('div', { class: 'hub-acts' }, h('button', { class: 'btn', onclick: () => { close(); libraryOpen(); } }, '☰ My songs'), h('button', { class: 'btn', onclick: () => { close(); progressOpen(); } }, '📈 My progress'), h('button', { class: 'btn', onclick: () => download('daily-songs-settings.json', JSON.stringify(CFG, null, 2), 'application/json') }, 'Export settings JSON'), h('button', { class: 'btn bad', title: 'Choose what to erase: layout, settings, songs, offline copy…', onclick: () => { close(); resetOpen(); } }, 'Reset…'))] }
@@ -1968,7 +1968,7 @@ function openHelp(at) {
         h('button', { class: 'hub-tile', onclick: () => { close(); workspaceOpen(); } }, h('b', {}, '▦ Pick a workspace'), h('span', {}, 'Songwriter, Performer, Creator Studio, Practice, Teacher or Full Rig.')))] },
     { key: 'keys', label: 'Shortcuts', ico: '⌨', wide: true, body: () => [h('div', { class: 'help-k' }, K.map(([a, b]) => [h('kbd', {}, a), h('span', {}, b)]))] },
     { key: 'data', label: 'Your work', ico: '🔒', sub: 'Local, private, kept on this device.', wide: true, body: () => [
-      h('p', { class: 'small' }, 'Everything runs locally in your browser. Nothing is uploaded. Your work is autosaved to this browser: songs, recordings and backing tracks stay on this device (☰ Songs).'),
+      h('p', { class: 'small' }, 'Everything runs locally in your browser. Nothing is uploaded unless you choose to: GitHub sync (to your own account), a folder, or recordings sent with a link (encrypted, kept 7 days). Your work is autosaved to this browser: songs, recordings and backing tracks stay on this device (☰ Songs).'),
       h('p', { class: 'small muted' }, 'For a copy you can keep anywhere, use ☰ Songs → All songs → Back up all songs (one zip with everything, which Open a file brings back), or save one song as a bundle. On an iPhone or iPad, add the site to the Home Screen so Safari keeps your songs.')] },
     { key: 'audio', label: 'Latency', ico: '⏱', wide: true, body: () => [h('p', { class: 'small muted' }, 'Browsers cannot talk to ASIO drivers, so achievable latency depends on your OS audio stack. Use the Loopback Test (I/O panel) for a measured number, and your interface’s direct monitor for latency-free headphone monitoring while recording.')] },
     { key: 'report', label: 'Report a problem', ico: '⚑', sub: 'A report made on this device, for a GitHub issue. Nothing is sent.', wide: true, body: () => [
@@ -2483,6 +2483,7 @@ function buildTimeline() {
   UI.tlinfo = h('span', { class: 'chip' });
   bar.append(h('b', { class: 'small', title: 'Click ruler = seek · Shift-drag = loop · Double-click ruler = clear loop · click section strip = select section' }, 'ARRANGEMENT'), UI.follow, h('span', { class: 'small muted tl-adv' }, 'Zoom'), zoom, h('span', { class: 'small muted tl-adv' }, 'Swing'), sw,
     h('button', { class: 'btn sm tl-adv', title: 'Clear loop region (double-click ruler)', onclick: () => { T.loopA = 0; T.loopB = null; TL.dirty = true; } }, 'Clear loop'),
+    h('button', { class: 'btn sm', id: 'cmtBtn', title: 'Pin a comment to the playhead’s place in the song (C). Comments travel with the song when you send it.', onclick: () => cmtOpen() }, '💬 Comment'),
     h('button', { class: 'btn sm lp-btn', id: 'lpBtn', title: 'Record a part, loop it, and play the next part on top, like a looper pedal', onclick: () => looperOpen() }, '⟲ Loop & layer'),
     h('button', { class: 'btn sm tl-adv', onclick: () => { T.loop = true; T.loopA = Math.floor(playheadSlot() / spb()) * spb(); T.loopB = Math.min(songSlots(), T.loopA + spb() * 4); syncTransport(); TL.dirty = true; } }, 'Loop 4 bars here'), clipBarMake(), h('span', { class: 'grow' }), UI.tlinfo,
     h('span', { class: 'small muted tl-adv' }, 'Lanes'), h('button', { class: 'btn sm tl-adv', title: 'Shorter lanes', 'aria-label': 'Shorter lanes', onclick: () => laneScale(-.2) }, '−'), h('button', { class: 'btn sm tl-adv', title: 'Taller lanes', 'aria-label': 'Taller lanes', onclick: () => laneScale(.2) }, '+'),
@@ -2547,6 +2548,7 @@ function drawTL() {
   // loop region
   if (T.loopB != null) { const x = T.loopA * sw, w = (T.loopB - T.loopA) * sw; g.fillStyle = C.accent; g.globalAlpha = .13; g.fillRect(x, 0, w, end); g.globalAlpha = .9; g.fillRect(x, TL.rh - 4, w, 3); g.globalAlpha = 1; }
   // playhead
+  cmtDraw(g, sw, end, C);      /* 💬 comments on the ruler (part 63c) */
   const ph = playheadSlot(), px = ph * sw; g.strokeStyle = C.accent2; g.lineWidth = 2; g.beginPath(); g.moveTo(px, 0); g.lineTo(px, end); g.stroke(); g.lineWidth = 1; g.fillStyle = C.accent2; g.beginPath(); g.moveTo(px - 5, 0); g.lineTo(px + 5, 0); g.lineTo(px, 8); g.fill();
   if (T.playing && TL.follow && (px < ox + 30 || px > ox + vw - 80)) { sc.scrollLeft = Math.max(0, px - 60); }
   UI.tlinfo.textContent = bars + ' bars · ' + fmtTime(bars * spb() * slotDur()) + (T.loopB != null ? ' · loop ' + (T.loopA / sp + 1) + '–' + (T.loopB / sp) : '');
@@ -2637,13 +2639,13 @@ function fillBar(whole) {
 
 /* ---------- lyric text analysis ---------- */
 function syllables(word) {
-  let w = word.toLowerCase().replace(/[^a-z]/g, ''); if (!w) return 0; if (w.length <= 3) return 1;
+  let w = word.toLowerCase().replace(/[^a-z]/g, ''); if (!w) return 0; { const e = typeof LH !== 'undefined' && LH.idx && LH.idx.get(w); if (e) return e.syl; }      /* the dictionary's count once the lyric helper has loaded it (2.58) */ if (w.length <= 3) return 1;
   w = w.replace(/(?:[^laeiouy]es|ed|[^laeiouy]e)$/, '').replace(/^y/, ''); const m = w.match(/[aeiouy]{1,2}/g); return Math.max(1, m ? m.length : 1);
 }
 const lyricPlain = line => line.replace(/\[[^\]]*\]/g, '');
 const lineSyl = line => (lyricPlain(line).match(/[A-Za-z']+/g) || []).reduce((a, w) => a + syllables(w), 0);
 function rhymeKey(line) {
-  const ws = lyricPlain(line).toLowerCase().match(/[a-z']+/g); if (!ws) return ''; let w = ws[ws.length - 1].replace(/'/g, '').replace(/(s|ed)$/, m => w2ok(m));
+  const ws = lyricPlain(line).toLowerCase().match(/[a-z']+/g); if (!ws) return ''; if (typeof LH !== 'undefined' && LH.idx && LH.idx.has(lhWord(ws[ws.length - 1]))) return lhKey(ws[ws.length - 1]); let w = ws[ws.length - 1].replace(/'/g, '').replace(/(s|ed)$/, m => w2ok(m));
   const m = w.match(/[aeiouy]+[^aeiouy]+e$/) || w.match(/[aeiouy]+[^aeiouy]*$/); return m ? m[0] : w;
 }
 function w2ok(m) { return m === 's' ? '' : m; }
@@ -2903,7 +2905,7 @@ function sectionCard(sec, si, compact, opt) {
     lines.forEach((l, i) => { if (!l.trim()) return; const sy = lineSyl(l); tot += sy; n++; tb.append(h('tr', {}, h('td', { style: { fontFamily: 'var(--sans)' } }, lyricPlain(l).slice(0, 52)), h('td', {}, String(sy)), h('td', {}, sch[i] || ''))); });
     ana.append(n ? tb : h('span', { class: 'muted' }, 'No lyric lines yet.'), n ? h('div', { class: 'tiny muted', style: { marginTop: '4px' } }, 'Scheme: ' + sch.filter(Boolean).join('') + ' · mean ' + (tot / n).toFixed(1) + ' syllables/line (heuristic count)') : '');
   };
-  body.append(h('div', { class: 'row', style: { gap: '6px', marginBottom: '5px' } }, h('b', { class: 'small' }, 'Lyrics'), h('span', { class: 'muted tiny' }, 'insert chord at cursor:'), h('div', { class: 'pal' }, used.map(c => h('button', { class: 'btn sm', onclick: () => ins(c) }, c)))),
+  body.append(h('div', { class: 'row', style: { gap: '6px', marginBottom: '5px' } }, h('b', { class: 'small' }, 'Lyrics'), h('button', { class: 'btn sm', id: 'lhBtn', title: 'Rhymes for the word you just typed, each line’s syllables and the rhyme scheme, in a panel beside the words', onclick: () => { lhOpen(ta); } }, '✎ Rhymes'), h('span', { class: 'muted tiny' }, 'insert chord at cursor:'), h('div', { class: 'pal' }, used.map(c => h('button', { class: 'btn sm', onclick: () => ins(c) }, c)))),
     h('div', { class: 'lyr-grid' }, ta, prev), h('details', { style: { marginTop: '8px' } }, h('summary', { class: 'small muted', style: { cursor: 'pointer' } }, 'Syllable & rhyme analysis'), ana));
   refresh(); card.append(body); return card;
 }
@@ -3001,9 +3003,9 @@ function buildExportPane() {
     h('div', { class: 'card' }, h('h4', {}, 'Files'), h('div', { class: 'card-b row', style: { gap: '8px', flexWrap: 'wrap' } }, h('div', { class: 'tiny muted', style: { flexBasis: '100%' } }, 'Audio, share pages and project files carry your words and sound, and anything you brought in. Send them only where you have the right to.'),
       h('button', { class: 'btn', onclick: () => { download(fn('.mid'), buildMidi()); toast('MIDI saved (rhythm, lead, bass, drums on separate tracks)', 'ok'); } }, '⤓ MIDI'),
       h('button', { class: 'btn', onclick: () => bounceMaster() }, '⤓ Bounce master WAV'), exportExtras(),
-      h('button', { class: 'btn', id: 'lxOpenBtn', title: 'Every lane as its own WAV, lined up from the first beat, plus a premaster and a README with the tempo and key: ready to mix and master in BandLab or any DAW', onclick: () => lxExportOpen() }, '📦 Export for mixing & mastering…'),
+      h('button', { class: 'btn primary', id: 'finOpenBtn', title: 'Master the song to a streaming loudness (with a before/after), then make the release package: masters, lyrics, chord sheet, credits and splits', onclick: () => finOpen() }, '✦ Finish it…'), h('button', { class: 'btn', id: 'lxOpenBtn', title: 'Every lane as its own WAV, lined up from the first beat, plus a premaster and a README with the tempo and key: ready to mix and master in BandLab or any DAW', onclick: () => lxExportOpen() }, '📦 Export for mixing & mastering…'),
       h('button', { class: 'btn', onclick: () => { if (!TAKES.length) return toast('No takes recorded yet', 'warn'); tkLeads().forEach((t, i) => setTimeout(() => dlTake(t), i * 700)); } }, '⤓ All takes (dry DI + wet)'),
-      h('button', { class: 'btn primary', id: 'exLink', title: 'The chords, words, tab, beat, tempo and key inside a link: nothing is uploaded', onclick: () => slShare() }, slSendLabel()),
+      h('button', { class: 'btn primary', id: 'exLink', title: 'The chords, words, tab, beat, tempo and key inside a link (and, if you choose, your recordings, encrypted for 7 days)', onclick: () => slShare() }, slSendLabel()),
       h('button', { class: 'btn', onclick: exportProject }, '⤓ Project JSON (Ctrl+S)'), h('button', { class: 'btn', onclick: () => imp.click() }, '⤒ Import project'), imp,
       h('button', { class: 'btn bad', onclick: () => { if (confirm('Replace the current song with the demo? (Undo with Ctrl+Z)')) { S = demoSong(); commit(true); bus.emit('song', 'reload'); } } }, 'Load demo song'),
       h('button', { class: 'btn bad', onclick: () => { if (confirm('Start a blank song? (Undo with Ctrl+Z)')) { S = newSong(); S.sections = [mkSection('Verse 1', ['', '', '', ''])]; commit(true); bus.emit('song', 'reload'); } } }, 'New blank song'))));
@@ -4223,7 +4225,7 @@ async function boot() {
   if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener('devicechange', () => { ioDeviceChange().catch(e => console.warn(e)); });
   bus.emit('song');
   try { ghBoot(); } catch (e) { console.warn('github', e); }      /* back from Sign in with GitHub, or a sync at start (part 74) */
-  DEV.make = () => { window.__daily = { tourStart, mpVision, slSendLabel, slcChanges, mkSection, perfViewSet, pfLay, pfLaySet, pfLayMenu, songMapEl, secAdd, secKind, secNameFor, smGo, renderWholeSong, normSong, bandRename, get TOUR() { return TOUR; }, SIMPLE_GOAL_TABS, SIMPLE_GOAL_TOOLS, simpleTabs, goalAudioFirst, guitarBody, pluck, BLD, BUILD_LIFT, buildLevel, secEnergy, buildCtx, buildParts, buildDrums, buildCard, buildCrash, buildRiser, tuneSelect, TUNE_LABELS, tuneTake, BASS_TONES, KITS, kitHit, sub808, M, MGROUPS, MW, mScreenDraw, mwRead, mwView, mwLyrics, mwSyl, mwEdited, mwPut, mSongOpen, msHexLoop, room, ROOM, slPack, slUnpack, slLink, slRead, slShare, slWelcome, slOpen, slFromHash, SL, BEATS, beatUse, beatRows, beatsShelf, SIMPLE_TOOLS, drumHit, RL, MO, GM_DRUM, duckAt, duckSet, duckCfg, duckNode, moNote, moDev, moDrum, moPanic, moSettings, kyOut, bassOut, rollOpen, rollBuild, rollLoop, isBass, instNow, nStr, yin, TUNINGS, setTuning, renderBarTab, tabLabels, voicingFor, toggleRec, closePop, spPause, encodeWav, PS, psOn, playDur, psSpeed, psKey, psSched, psDSPFactory, psPop, KY, keysOpen, keysVoice, keysStep, kyNoteOn, kyNoteOff, kyRec, kyClear, kyWrite, kyPiano, kyMarks, kyVoicing, KEYS_SOUNDS, KEYS_STYLES, coFinish, coDemo, coFeedback, coFbView, coTimeline, coBeat, coPractise, TAKE, learnPassed, todayPlan, todayPieces, todayStart, todayDone, streak, weekCount, dayKey, LSTEP, songLessons, songStart, songKey, earLick, earStart, EAR, simpleSet, simpleApply, ghTakeSettings, airMode, airSet, CO, coPos, coachOpen, coListen, coTick, coPlace, coNotes, coSetPiece, rfParse, LESSONS, RIFFS, RIFF_STYLES, learnOpen, learnToSong, learnFile, learnFileText, learnOpenFile, learnFromSong, labMake, labVary, labKeep, atlasPieces, atShape, MODE_VAMP, S, AIR, AIR_LAG, airSync, applyLayout, VB_PRESETS, VB_ORDER, VBS, vbAttach, vbApply, vbToggle, vbSet, vbPreset, vbPresetNext, vbThrow, vbLook, vbTick, vbScale, vocalBoardOpen, pedalRelease, MEG, megSpectrum, megFeatures, megScore, megStep, megSet, megLearn, megDraw, megLoop, megSettings, PAD, padsOpen, padHit, padTap, padRecord, padRecStop, padUndoPass, padClear, padResize, padBeatbox, bbHits, bbPattern, dpat, bassEvent, drumStep, PEDAL, pedalPress, pedalDo, pedalSecs, gearSettings, MCLK, mclkSlot, mclkMs, MIDI, MIDIRAW, onMidi, STRM, streamOpen, streamRoom, streamInfo, streamPanel, slotAtTime, SING, SHW, singStep, singScore, singSteamIR, singMicOff, showerOpen, shwGo, shwPlay, shwPrev, shwNext, shwStem, shwRecToggle, shwRecStop, shwHear, shwSave, shwAddFiles, shwRemove, shwMove, shwMode, shwLoadSet, shwPlaylist, shwWords, shwPrepare, shwFolderPull, lrcParse, readTags, spPos, spPlay, STP, trainOpen, projRestoreTrack, secretNote, secretArp, WS, WS_BASE, WS_ARPS, wsScaleRun, wsArpRun, wsFollow, wsStop, wsListen, wsEarNext, wsEarAnswer, wsOpen, bandMute, bandMuted, pdbPut, pdbKeys, projRename, FS, FS_B, fsUse, fsSync, fsHead, fsNeeds, fsTidy, fsOpen, syncOff, syncZips, PRJ_WAIT: () => PRJ.wait, EGG, EGG_LINES, EGG_ORDER, eggDay, eggFor, eggNow, eggText, eggTick, eggFit, saveCfg, projSave, projDelete, GH, ghSync, ghConnect, ghKick, ghRecheck, lxExport, lxExportOpen, lxSaveLane, lxLanes, lxRender, LXO, zipRead, srxSend, srxReceive, srxTakeBack, srxEncode, srxDecodeTake, srxPack, srxBundle, srxCan, SRS, ghDisconnect, ghLocal, ghSha, ghJson, ghMerge3, ghShare, ghGallery, ghGalleryOpen, ghGalleryShow, ghKeepLook, ghKeepRig, rigClean, ghReturn, BRAND, ghSettingsOut, projRefresh, projCreate, projLoad, PRJ, SEC, SECRETS, secretFound, secretTiming, secretsOpen, secretSync, backstageOpen, startAudio, playheadSlot, GUARD, reportText, reportCopy, srecQ, srecSize, pdbGet, srecFmt, SREC_FMTS, VBG, vbgAdd, vbgRemove, vbgUse, vbgOpen, vbgDraw, vzSetMode, srecFrame, srecFmtBox, kitThumb, WORKLET_SRC, mkComp, mkShaper, rigLat, voxLat, restartAudio, satCurve, rigApply, qrMake, qrSvg, tipLink, tipShort, tipReady, tipCard, tipDraw, tipShareHtml, tipOpen, tipPrint, tipPng, tipVisAvoid, tipStageAvoid, TIP, TIP_TERMS, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, drawVis, peaksOf, uid, shareGate, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, TAKES, STM, ZOOM, CFG, store, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, SEL, mtof, spb, WR, HM, HMX, HM_MODES, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitInk, kitNotes, kitRecord, srecMime, mGo, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard}; };   // test hook: with ?debug, or Backstage ▸ Labs ▸ Developer handles
+  DEV.make = () => { window.__daily = { tourStart, mpVision, slSendLabel, slcChanges, mkSection, perfViewSet, pfLay, pfLaySet, pfLayMenu, songMapEl, secAdd, secKind, secNameFor, smGo, renderWholeSong, normSong, bandRename, get TOUR() { return TOUR; }, SIMPLE_GOAL_TABS, SIMPLE_GOAL_TOOLS, simpleTabs, goalAudioFirst, guitarBody, pluck, BLD, BUILD_LIFT, buildLevel, secEnergy, buildCtx, buildParts, buildDrums, buildCard, buildCrash, buildRiser, tuneSelect, TUNE_LABELS, tuneTake, BASS_TONES, KITS, kitHit, sub808, M, MGROUPS, MW, mScreenDraw, mwRead, mwView, mwLyrics, mwSyl, mwEdited, mwPut, mSongOpen, msHexLoop, room, ROOM, slPack, slUnpack, slLink, slRead, slShare, slWelcome, slOpen, slFromHash, SL, BEATS, beatUse, beatRows, beatsShelf, SIMPLE_TOOLS, drumHit, RL, MO, GM_DRUM, duckAt, duckSet, duckCfg, duckNode, moNote, moDev, moDrum, moPanic, moSettings, kyOut, bassOut, rollOpen, rollBuild, rollLoop, isBass, instNow, nStr, yin, TUNINGS, setTuning, renderBarTab, tabLabels, voicingFor, toggleRec, closePop, spPause, encodeWav, PS, psOn, playDur, psSpeed, psKey, psSched, psDSPFactory, psPop, KY, keysOpen, keysVoice, keysStep, kyNoteOn, kyNoteOff, kyRec, kyClear, kyWrite, kyPiano, kyMarks, kyVoicing, KEYS_SOUNDS, KEYS_STYLES, coFinish, coDemo, coFeedback, coFbView, coTimeline, coBeat, coPractise, TAKE, learnPassed, todayPlan, todayPieces, todayStart, todayDone, streak, weekCount, dayKey, LSTEP, songLessons, songStart, songKey, earLick, earStart, EAR, simpleSet, simpleApply, ghTakeSettings, airMode, airSet, CO, coPos, coachOpen, coListen, coTick, coPlace, coNotes, coSetPiece, rfParse, LESSONS, RIFFS, RIFF_STYLES, learnOpen, learnToSong, learnFile, learnFileText, learnOpenFile, learnFromSong, labMake, labVary, labKeep, atlasPieces, atShape, MODE_VAMP, S, AIR, AIR_LAG, airSync, applyLayout, VB_PRESETS, VB_ORDER, VBS, vbAttach, vbApply, vbToggle, vbSet, vbPreset, vbPresetNext, vbThrow, vbLook, vbTick, vbScale, vocalBoardOpen, pedalRelease, MEG, megSpectrum, megFeatures, megScore, megStep, megSet, megLearn, megDraw, megLoop, megSettings, PAD, padsOpen, padHit, padTap, padRecord, padRecStop, padUndoPass, padClear, padResize, padBeatbox, bbHits, bbPattern, dpat, bassEvent, drumStep, PEDAL, pedalPress, pedalDo, pedalSecs, gearSettings, MCLK, mclkSlot, mclkMs, MIDI, MIDIRAW, onMidi, STRM, streamOpen, streamRoom, streamInfo, streamPanel, slotAtTime, SING, SHW, singStep, singScore, singSteamIR, singMicOff, showerOpen, shwGo, shwPlay, shwPrev, shwNext, shwStem, shwRecToggle, shwRecStop, shwHear, shwSave, shwAddFiles, shwRemove, shwMove, shwMode, shwLoadSet, shwPlaylist, shwWords, shwPrepare, shwFolderPull, lrcParse, readTags, spPos, spPlay, STP, trainOpen, projRestoreTrack, secretNote, secretArp, WS, WS_BASE, WS_ARPS, wsScaleRun, wsArpRun, wsFollow, wsStop, wsListen, wsEarNext, wsEarAnswer, wsOpen, bandMute, bandMuted, pdbPut, pdbKeys, projRename, FS, FS_B, fsUse, fsSync, fsHead, fsNeeds, fsTidy, fsOpen, syncOff, syncZips, PRJ_WAIT: () => PRJ.wait, EGG, EGG_LINES, EGG_ORDER, eggDay, eggFor, eggNow, eggText, eggTick, eggFit, saveCfg, projSave, projDelete, GH, ghSync, ghConnect, ghKick, ghRecheck, drpOgg, drpOpen, drpOwn, encodeWav, stemUnload, ycEnv, ycPrint, ycUnprint, ycMatch, ycSetStart, ycLoad, ycMakeOurs, STM, stemLoad, cmtAdd, cmtOpen, cmtAll, cmtPack, cmtWhere, lhOpen, lhScheme, lhRhymes, lhLoad, lhSyl, LH, finOpen, finAB, finMaster, finPackage, finTone, finMatchEq, finLimit, finPeople, FIN, lufsMeasure, verMark, verRestore, verCopy, verList, verOpen, verRoundOf, verChanged, jrSteps, safeState, ghSongOut, pdbGet, lxExport, lxExportOpen, lxSaveLane, lxLanes, lxRender, LXO, zipRead, srxSend, srxReceive, srxTakeBack, srxEncode, srxDecodeTake, srxPack, srxBundle, srxCan, SRS, ghDisconnect, ghLocal, ghSha, ghJson, ghMerge3, ghShare, ghGallery, ghGalleryOpen, ghGalleryShow, ghKeepLook, ghKeepRig, rigClean, ghReturn, BRAND, ghSettingsOut, projRefresh, projCreate, projLoad, PRJ, SEC, SECRETS, secretFound, secretTiming, secretsOpen, secretSync, backstageOpen, startAudio, playheadSlot, GUARD, reportText, reportCopy, srecQ, srecSize, pdbGet, srecFmt, SREC_FMTS, VBG, vbgAdd, vbgRemove, vbgUse, vbgOpen, vbgDraw, vzSetMode, srecFrame, srecFmtBox, kitThumb, WORKLET_SRC, mkComp, mkShaper, rigLat, voxLat, restartAudio, satCurve, rigApply, qrMake, qrSvg, tipLink, tipShort, tipReady, tipCard, tipDraw, tipShareHtml, tipOpen, tipPrint, tipPng, tipVisAvoid, tipStageAvoid, TIP, TIP_TERMS, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, drawVis, peaksOf, uid, shareGate, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, TAKES, STM, ZOOM, CFG, store, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, SEL, mtof, spb, WR, HM, HMX, HM_MODES, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitInk, kitNotes, kitRecord, srecMime, mGo, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard}; };   // test hook: with ?debug, or Backstage ▸ Labs ▸ Developer handles
   if (/[?&]debug\b/.test(location.search) || (CFG.labs && CFG.labs.handles)) DEV.make();
   try { bksBoot(); } catch (e) { console.warn('backstage', e); }      /* #backstage in the address, the performance overlay (part 73c) */
   projInit().catch(e => { console.warn('library', e); PRJ.ready = true; if (PRJ.wantStart) startMaybe(); });
@@ -5330,7 +5332,7 @@ async function stemLoad(file, opt) {
     STM.an = stemAnalyze(r.feat, sr, STM.dur); STM.env = stemEnvelopes(); STP.pos = 0; STM.loop = { on: false, a: null, b: null };
     setStemStatus('Done in ' + ((performance.now() - t0) / 1000).toFixed(1) + ' s', 1); toast('Stems ready — ' + STM.an.info.filter(i => i.found).map(i => i.name.split(' ')[0]).join(', ') + ' found', 'ok');
     STM.busy = false; bus.emit('track');
-    const fr = opt.restore ? null : stemAutofill(); if (opt.restore) toast('Track restored: “' + (STM.title || STM.name) + '”', 'ok'); if (fr) toast('“' + S.title + '” — ' + S.bpm.toFixed(0) + ' BPM, ' + pcName(S.key) + (S.minor ? ' minor' : ' major') + (fr.doChords ? ', ' + totalBars() + ' bars of chords added to the song' : fr.keepWork ? ' · your chords, tab and lyrics were kept (use Import chords to replace them)' : ''), 'ok');
+    const fr = opt.restore || opt.noFill ? null : stemAutofill();      /* noFill: someone's own copy of a song's record (2.59) leaves the song as it is */ if (opt.restore) toast('Track restored: “' + (STM.title || STM.name) + '”', 'ok'); if (fr) toast('“' + S.title + '” — ' + S.bpm.toFixed(0) + ' BPM, ' + pcName(S.key) + (S.minor ? ' minor' : ' major') + (fr.doChords ? ', ' + totalBars() + ' bars of chords added to the song' : fr.keepWork ? ' · your chords, tab and lyrics were kept (use Import chords to replace them)' : ''), 'ok');
   } catch (e) { if (tk !== STM.ticket) return; console.error(e); STM.file = null; setStemStatus('Could not read that file: ' + (e.message || e), 0); toast('Could not decode that audio file', 'warn'); }
   if (tk !== STM.ticket) return; STM.busy = false; renderStems(); bus.emit('track');
 }
@@ -5528,6 +5530,80 @@ function stemDSPFactory() {
   return { run, N, HOP };
 }
 
+/* >>> parts/16b-yourcopy.js */
+/* ============================================================
+   Part 16b · LOAD YOUR COPY, and MAKE IT OURS (2.59) — songs over someone else's record, without sending the record
+   Load your copy: a song link for a song played over a backing track names the track ("Joy – Artist") and carries a fingerprint of it:
+   how its loudness rises and falls (onset strength, 20 times a second, for 40 seconds from the song's first downbeat), about 400 bytes,
+   never the audio. Whoever opens the link loads their own copy of the record; the studio finds where the fingerprint best matches in
+   their file (normalised cross-correlation), puts the song's first downbeat there (on their copy's nearest detected beat), and keeps
+   that in the song (S.trackAlign). A different rip, a longer intro or a second of silence still lines up; the song itself (chords,
+   words, tempo) is never changed by their file.
+   Make it ours: one press turns a song played over a record into the studio's own: the chords found in the track (if the song has
+   none), its tempo and key, its drum groove, and the band (drums, bass, rhythm) playing them; the record is muted (✕ Unload removes it).
+   What's left is yours to share, send in a link, finish and release. Your recording of the band is original; the song's composition
+   may still belong to its writers, so covers still need permission to publish.
+   ============================================================ */
+const YC = { hz: 20, secs: 40, scan: 180, min: .45 };
+/** onset strength of the loaded track (its stems mixed), YC.hz frames a second, z-normalised */
+function ycEnv(t0, secs) {
+  if (!STM.ch) return null; const sr = STM.sr, hop = Math.max(1, Math.round(sr / YC.hz)), n0 = Math.max(0, Math.round(t0 * sr)), n1 = Math.min(STM.n, n0 + Math.round(secs * sr)), F = Math.floor((n1 - n0) / hop); if (F < 8) return null;
+  const chs = STMS.map((_, si) => spData(si)[0]), en = new Float64Array(F), out = new Float32Array(F); let tot = 0;
+  for (let f = 0; f < F; f++) { let s = 0; const a = n0 + f * hop; for (let i = a; i < a + hop; i += 2) { let v = 0; for (const c of chs) v += c[i]; s += v * v; } en[f] = s / (hop / 2); tot += en[f]; }
+  /* two things, added: when sounds start (onsets) and how loud each moment is (the log-energy contour, its slow drift removed, so a quieter
+     or louder copy still matches). Onsets alone can't tell two records at the same tempo apart; the loudness of each hit, fill and part can.
+     Silence is floored 30 dB under the average and onsets capped at five times the typical one, so a quiet start or one loud hit can't
+     outweigh the rest (a copy with a second of silence before the music still matches). */
+  const floor = 1e-3 * tot / F + 1e-9, lg = new Float32Array(F); for (let f = 0; f < F; f++) lg[f] = Math.log(Math.max(en[f], floor));
+  const z = a => { let m = 0, q = 0; for (const v of a) m += v; m /= a.length; for (const v of a) q += (v - m) * (v - m); const sd = Math.sqrt(q / a.length) || 1; return a.map(v => (v - m) / sd); };
+  const on = new Float32Array(F); let om = 0; for (let f = 1; f < F; f++) { on[f] = Math.max(0, lg[f] - lg[f - 1]); om += on[f]; } const cap = 5 * (om / F || 1); for (let f = 0; f < F; f++) if (on[f] > cap) on[f] = cap;
+  const W = YC.hz, ct = new Float32Array(F); let acc = 0; for (let f = 0; f < F; f++) { acc += lg[f]; if (f >= W) acc -= lg[f - W]; ct[f] = lg[f] - acc / Math.min(f + 1, W); }      /* the contour against its own last second */
+  const a = z(on), b = z(ct); for (let f = 0; f < F; f++) out[f] = a[f] + b[f]; return z(out);
+}
+/** the fingerprint a link carries: 4 bits a frame, two frames a byte */
+function ycPrint() {
+  if (!STM.ch || !STM.an) return null; const e = ycEnv(trkT0(), YC.secs); if (!e) return null; const q = new Uint8Array(Math.ceil(e.length / 2));
+  for (let i = 0; i < e.length; i++) { const v = Math.max(0, Math.min(15, Math.round((e[i] + 2) * 2.5))); q[i >> 1] |= i & 1 ? v << 4 : v; }
+  return { t: (STM.title || STM.name || '').slice(0, 80), a: (STM.artist || '').slice(0, 80), d: Math.round(STM.dur), fp: slB64(q), n: e.length };
+}
+function ycUnprint(r) { const u = slUnB64(r.fp), n = Math.min(r.n || u.length * 2, u.length * 2), e = new Float32Array(n); for (let i = 0; i < n; i++) e[i] = ((i & 1 ? u[i >> 1] >> 4 : u[i >> 1] & 15) / 2.5) - 2; let m = 0, q = 0; for (const v of e) m += v; m /= n; for (const v of e) q += (v - m) * (v - m); const sd = Math.sqrt(q / n) || 1; return e.map(v => (v - m) / sd); }
+/** where in the loaded copy the fingerprint fits best: { t (seconds), score (0..1) } */
+function ycMatch(ref) {
+  const T = ycUnprint(ref), E = ycEnv(0, Math.min(YC.scan, STM.dur)); if (!E || E.length < T.length) return null; let best = -1, at = 0;
+  for (let l = 0; l + T.length <= E.length; l++) { let s = 0; for (let i = 0; i < T.length; i++) s += T[i] * E[l + i]; if (s > best) { best = s; at = l; } }
+  return { t: at / YC.hz, score: Math.min(1, best / T.length) };
+}
+/** put the song's first downbeat at t seconds in the loaded copy (on its nearest detected beat) */
+function ycSetStart(t) {
+  const an = STM.an; if (!an || !an.beats || !an.beats.length) return null; let k = 0, d = Infinity; an.beats.forEach((b, i) => { const x = Math.abs(b / an.fps - t); if (x < d) { d = x; k = i; } });
+  an.down = k; T.bars = null; TL.dirty = true; bus.emit('track'); return an.beats[k] / an.fps;
+}
+/** after any load or restore of the track: the song's own alignment, if it has one */
+bus.on('track', () => { const a = S.trackAlign, an = STM.an; if (!a || !an || an._ycApplied === a.t0) return; an._ycApplied = a.t0; ycSetStart(a.t0); });
+/** Load your copy: the person picks their file; it is split and analysed as any track, without changing the song, then lined up */
+function ycLoad() {
+  const ref = S.trackRef; const inp = h('input', { type: 'file', accept: 'audio/*', hidden: true }); document.body.append(inp);
+  inp.addEventListener('change', async () => {
+    const f = inp.files[0]; inp.remove(); if (!f) return; toast('Loading your copy of “' + ((ref && ref.t) || f.name) + '”…');
+    await stemLoad(f, { noFill: true }); if (!STM.an) return; if (!ref || !ref.fp) return;
+    const m = ycMatch(ref); if (!m || m.score < YC.min) return toast('Your copy is loaded, but it doesn’t clearly match the one the song was made with' + (m ? ' (match ' + Math.round(m.score * 100) + '%)' : '') + '. Is it the same recording? It starts at its own first downbeat for now.', 'warn');
+    const t0 = ycSetStart(m.t); S.trackAlign = { t0: Math.round(t0 * 1000) / 1000, score: Math.round(m.score * 100) / 100 }; STM.an._ycApplied = S.trackAlign.t0; commit(false);
+    toast('Lined up: the song starts ' + t0.toFixed(2) + ' s into your copy (match ' + Math.round(m.score * 100) + '%).' + (ref.d && Math.abs(ref.d - STM.dur) > 3 ? ' Your copy is ' + fmtT(STM.dur) + ' long, the original ' + fmtT(ref.d) + '.' : ''), 'ok');
+  }, { once: true });
+  inp.click();
+}
+/** Make it ours: the track's chords, tempo, key and groove, played by the band; the record muted */
+function ycMakeOurs() {
+  const an = STM.an; if (!STM.ch || !an) return toast('Load a track first.', 'warn'); const bf = snap();
+  if (!S.sections.some(sec => sec.bars.some(b => b.chord)) && an.chordBars.length >= 2) stemWriteChords();
+  S.bpm = Math.round(an.bpmEff * 100) / 100; if (an.key) { S.key = an.key.root; S.minor = an.key.minor; S.scale = an.key.minor ? 'Natural Minor (Aeolian)' : 'Major (Ionian)'; }
+  Object.assign(S.band, { drumsOn: true, bassOn: true, compOn: true });
+  if (an.groove) { try { stemImportGroove(); } catch (e) { } }
+  STM.mute = true; try { spBus(); } catch (e) { } S.track = Object.assign({}, S.track || {}, { ours: true, name: STM.title || STM.name }); delete S.trackRef;
+  commit(true); try { histPush(bf); } catch (e) { } bus.emit('song', 'band'); try { syncBandStrip(); } catch (e) { }
+  toast('✦ It’s yours now: the band plays the song’s chords, tempo and groove. The record is muted; ✕ Unload it when you’re happy.', 'ok');
+}
+
 /* >>> parts/17-tour.js */
 /* =====================================================================
    Part 17 · guided tour: a spotlight walkthrough of the key areas.
@@ -5542,7 +5618,7 @@ const tourSide = id => () => { const t = $('#left .side-tabs .tab[data-id="' + i
 function tourSteps() { const all = document.body.dataset.form === 'phone' ? tourStepsPhone() : tourStepsDesk(); return CFG.simple ? all.filter(s => !s.full) : all; }
 function tourStepsDesk() {
   return [
-    { t: null, title: 'Welcome to the-daily.studio', b: 'A studio for writing, singing and playing that runs entirely in this browser tab. <b>Write</b> the words and chords, put a <b>beat</b> under them, <b>record</b> your voice and guitar, tune the vocal, and <b>send</b> the song to someone. Nothing is uploaded: your songs stay on this device.<br><br>This tour takes about two minutes and never changes your song. Use <kbd>→</kbd> and <kbd>←</kbd>, or <kbd>Esc</kbd> to leave.' },
+    { t: null, title: 'Welcome to the-daily.studio', b: 'A studio for writing, singing and playing that runs entirely in this browser tab. <b>Write</b> the words and chords, put a <b>beat</b> under them, <b>record</b> your voice and guitar, tune the vocal, and <b>send</b> the song to someone. Your songs stay on this device: nothing is uploaded unless you choose to sync or send it.<br><br>This tour takes about two minutes and never changes your song. Use <kbd>→</kbd> and <kbd>←</kbd>, or <kbd>Esc</kbd> to leave.' },
     { t: tq('#goalbar .gl-pick'), side: 'bottom', title: 'Pick what you want to do', b: 'Six workspaces: <b>Songwriter</b>, <b>Performer</b>, <b>Creator Studio</b>, <b>Practice</b>, <b>Teacher</b> and <b>Full Rig</b>. Each arranges the studio for that job and brings its own tools. Nothing is ever removed: every panel is still under <b>☰</b>.' },
     { t: tq('#simpleBtn'), side: 'bottom', title: '✦ Simple', b: '<b>✦ Simple</b> keeps each workspace to the few panels and tools it needs, for anyone new to a studio. Press it again for everything. <b>Full Rig</b> is the one workspace with it all, so choosing it turns Simple off.' },
     { t: tq('#left'), pre: tourSide('io'), drawer: 'left', side: 'right', title: 'Connect your input', b: '<b>Audio input</b> opens first until something is connected: choose your microphone or audio interface and check the level moves when you sing or play. If the list is empty, allow microphone access in the browser and press ⟳.', tip: 'Wired headphones give the lowest delay and stop the speakers feeding back into the mic. Bluetooth adds a lot of delay.' },
@@ -5809,7 +5885,7 @@ function mSheet() {
       document.fullscreenEnabled ? tile(msvg('<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>'), 'Full screen', () => { mCloseOverlays(); mFullscreen(); }) : null
     ),
     h('div', { class: 'mrow' }, h('span', {}, 'Device layout'), seg),
-    h('div', { class: 'mfoot' }, BRAND.name + ' v' + VERSION + ' · everything stays on this device')
+    h('div', { class: 'mfoot' }, BRAND.name + ' v' + VERSION + ' · your songs stay on this device')
   );
   M.sheet = sh; document.body.classList.add('sheet-open'); document.body.append(sh); const mb = M.nav && M.nav.querySelector('.mnb[data-g="more"]'); if (mb) mb.setAttribute('aria-expanded', 'true');
 }
@@ -5915,6 +5991,7 @@ function mWords(box) {
   const mode = h('div', { class: 'seg mw-mode' }, [['write', '✎ Write'], ['chords', '♪ Chords'], ['song', '📄 Song']].map(([k, n]) => h('button', { class: MW.mode === k ? 'on' : '', 'data-mode': k, 'aria-pressed': String(MW.mode === k), onclick: () => { MW.mode = k; CFG.mwMode = k; saveCfg(); mScreenDraw(); } }, n)));
   const tools = h('div', { class: 'mw-tools' }, mode, h('span', { class: 'grow' }),
     MW.mode !== 'song' ? h('button', { class: 'btn sm', id: 'mwSecMenu', title: 'Rename, move, repeat or delete ' + mwSec().name, 'aria-label': mwSec().name + ': more', 'aria-haspopup': 'menu', onclick: e => secMenu(e.currentTarget, MW.sec, i => pick(i)) }, '⋯') : '',
+    MW.mode !== 'song' ? h('button', { class: 'btn sm', id: 'mwRhymes', title: 'Rhymes, syllables and the rhyme scheme', 'aria-label': 'Rhymes and syllables', onclick: () => lhOpen(document.getElementById('mwText')) }, '✎') : '',
     h('button', { class: 'btn sm mw-paste', title: 'Paste a whole lyric sheet: [Verse] and [Chorus] headings become sections', 'aria-label': 'Paste a lyric sheet', onclick: () => liOpen('') }, '⧉'));
   box.append(map, secs, tools);
   if (MW.mode === 'song') {      /* the whole song as a chord sheet (2.49); tap a section to write in it */
@@ -6263,22 +6340,25 @@ function buildSongbar() {
   SB.f.scale = h('select', { class: 'in sb-scale', 'aria-label': 'Scale for overlays', title: 'Scale used for the fretboard and tab overlays', onchange: e => { S.scale = e.target.value; commit(false); bus.emit('scale'); } }, Object.keys(SCALES).map(n => h('option', {}, n)));
   SB.f.more = h('button', { class: 'btn sm sb-more', title: 'Notes, custom tuning, per-string tuning…', onclick: () => sbDetails(SB.f.more) }, 'Notes & tuning ▾');
   SB.trk = h('div', { class: 'sb-trk' });
-  SB.saved = h('span', { class: 'sb-saved', role: 'status', 'aria-live': 'polite', title: 'Your work is saved in this browser as you go' });
+  SB.saved = h('button', { class: 'sb-saved', id: 'sbSafe', type: 'button', 'aria-live': 'polite', title: 'Your work is saved in this browser as you go', onclick: () => keepOpen() });      /* 2.56: saved, and where your songs are kept (✓ also kept elsewhere, ⚠ only here) */
+  SB.jr = h('button', { class: 'sb-jr', id: 'sbJr', type: 'button', onclick: e => jrOpen(e.currentTarget) });      /* the song journey: a thin bar under the title, no width of its own */
   UI.undo = h('button', { class: 'btn sm sb-hist', title: 'Undo (Ctrl/Cmd + Z)', 'aria-label': 'Undo', onclick: () => undo() }, '↶'); UI.redo = h('button', { class: 'btn sm sb-hist', title: 'Redo (Shift + Ctrl/Cmd + Z)', 'aria-label': 'Redo', onclick: () => redo() }, '↷'); SB.hist = h('span', { class: 'sb-histg' }, UI.undo, UI.redo, SB.saved);
   bus.on('savestate', (k, t) => sbSaved(k, t)); sbSaved('ok', null);
   SB.f.refine = h('button', { class: 'btn sm sb-ref', title: 'Open the Refine panel — chords & lyrics beside whatever you are doing', onclick: () => sideShow('refine') }, '✎ Refine');
   el.append(h('div', { class: 'sb-hex', 'aria-hidden': 'true' }, sv('svg', { viewBox: '0 0 24 24', width: 18, height: 18 }, sv('path', { d: 'M12 2l9 5v10l-9 5-9-5V7z', fill: 'none', stroke: 'currentColor', 'stroke-width': 2 }))), sbProject(),
-    sbField('Song', txt('title', 'Title', '', 'Song title'), 'f-title'), sbField('Artist', txt('artist', 'Artist / author', '', 'Artist or author'), 'f-artist'),
+    (() => { const f = sbField('Song', txt('title', 'Title', '', 'Song title'), 'f-title'); f.append(SB.jr); return f; })(), sbField('Artist', txt('artist', 'Artist / author', '', 'Artist or author'), 'f-artist'),
     sbField('Tuning', SB.f.tun, 'f-tun'), sbField('Capo', SB.f.capo, 'f-capo'), sbField('Scale', SB.f.scale, 'f-scale'), SB.f.more,
     h('span', { class: 'grow' }), SB.hist, SB.trk, zoomCtl(), SB.f.refine);
+  setTimeout(() => { jrPaint(); safePaint(); }, 0);
   bus.on('song', () => { if (SP.lock) return; sbSync(); }); bus.on('track', sbChip); bus.on('scale', sbSync); bus.on('projects', sbChip);
   sbSync();
 }
 /** “Saved ✓ 14:02” beside the song details: autosave is quiet, so show that it happened */
 function sbSaved(k, t) {
   const el = SB.saved; if (!el) return; el.dataset.k = k;
-  el.innerHTML = ''; if (k === 'dirty') el.append(h('b', {}, '…'), h('span', { class: 'sb-st' }, ' Saving')); else if (k === 'err') el.append(h('b', {}, '⚠'), h('span', { class: 'sb-st' }, ' Not saved')); else { if (t) SB.savedAt = t; el.append(h('b', {}, '✓'), h('span', { class: 'sb-st' }, ' Saved')); }
-  el.title = k === 'err' ? 'This browser would not store your work. Export a song bundle from ☰ Songs to keep it.' : SB.savedAt ? 'Saved in this browser at ' + new Date(SB.savedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) + '. Autosave keeps it up to date.' : 'Your work is saved in this browser as you go';
+  el.innerHTML = ''; if (k === 'dirty') el.append(h('b', {}, '…'), h('span', { class: 'sb-st' }, ' Saving')); else if (k === 'err') el.append(h('b', {}, '⚠'), h('span', { class: 'sb-st' }, ' Not saved')); else { if (t) SB.savedAt = t; const s = typeof safeState === 'function' ? safeState() : { ok: true }; el.dataset.safe = s.ok ? 'ok' : 'local'; el.append(h('b', {}, s.ok ? '✓' : '⚠'), h('span', { class: 'sb-st' }, ' Saved')); }
+  const at = SB.savedAt ? 'Saved in this browser at ' + new Date(SB.savedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) + '. ' : 'Saved in this browser as you go. ', s = typeof safeState === 'function' ? safeState() : null;
+  el.title = k === 'err' ? 'This browser would not store your work. Export a song bundle from ☰ Songs to keep it.' : at + (!s ? '' : s.ok ? s.t + ': kept somewhere else as well.' : 'Only in this browser: if its data is cleared, your songs are gone. Press to keep a copy (a backup, a folder, or GitHub).'); el.setAttribute('aria-label', el.title);
 }
 function sbSync() {
   if (!SB.el) return; const act = document.activeElement, set = (el, v) => { if (el && el !== act && el.value !== String(v)) el.value = v; };
@@ -6318,7 +6398,8 @@ function sbChip() {
     t.append(h('button', { class: 'sb-chip', title: 'This song has a backing track saved on this device. Tap to split it into stems again (takes a moment).', onclick: () => projRestoreTrack() }, '♪ Restore “' + (PRJ.pending.title || PRJ.pending.name || 'track') + '”'));
   } else {
     t.append(h('button', { class: 'sb-chip', title: 'Load a backing track — it is split into stems and fills in this song (title, tempo, key, chords)', onclick: () => { sbLeave(); dockGo('stems'); const f = SU && SU.file; if (f) f.click(); } }, '♪ Load a track…'));
-    if (S.track) t.append(h('span', { class: 'tiny muted', title: 'This song was built from a track. Load it again to play along with it.' }, 'from “' + S.track.name + '”'));
+    if (S.trackRef) t.append(h('button', { class: 'sb-chip', id: 'sbYourCopy', title: 'This song is played over a record that wasn’t sent. Load your own copy: it lines itself up with the song.', onclick: () => { sbLeave(); ycLoad(); } }, '♪ Load your copy of “' + (S.trackRef.t || 'the track') + '”'));
+    else if (S.track) t.append(h('span', { class: 'tiny muted', title: 'This song was built from a track. Load it again to play along with it.' }, 'from “' + S.track.name + '”'));
   }
   t.append(h('button', { class: 'sb-chip', id: 'sbPerform', title: 'Perform: full-screen chords and lyrics with a count-in, record and play', onclick: e => { sbLeave(); perfOpen(e.currentTarget); } }, '🎤 Perform'));
   t.append(h('button', { class: 'sb-chip', id: 'sbVoice', 'aria-label': 'Voice', title: 'Voice: see your pitch against the key, find your range, and find the key that suits your voice', onclick: e => { sbLeave(); voxOpen(e.currentTarget); } }, '〰', h('span', { class: 'sb-lbl' }, 'Voice')));
@@ -6330,7 +6411,7 @@ function sbTrackPop(anchor) {
   box.append(h('h5', { style: { margin: 0 } }, STM.title || STM.name), h('div', { class: 'tiny muted' }, fmtT(STM.dur) + ' · ' + (STM.sr / 1000).toFixed(1) + ' kHz' + (an ? ' · ' + an.info.filter(i => i.found).map(i => i.name.split(' ')[0]).join(', ') + ' found' : '')));
   const row = (label, fn, cls, title) => h('button', { class: 'btn sm ' + (cls || ''), title: title || '', style: { justifyContent: 'flex-start' }, onclick: () => { closePop(); fn(); } }, label);
   box.append(row('⤵ Import chords as the song', stemImportChords, 'primary', 'Replace the song with this chord chart (a snapshot is saved first)'), row('♩ Use tempo + key only', stemApplyTempo, '', 'Set BPM, key and scale from the track'),
-    row('▶ Play the band with the track', stemTogether, '', 'Start the band and the track together from bar 1'), row('🎚 Open Stems', () => dockGo('stems')), row('✕ Unload track', stemUnload, 'bad', 'Remove the track from memory'));
+    row('▶ Play the band with the track', stemTogether, '', 'Start the band and the track together from bar 1'), row('✦ Make it ours', ycMakeOurs, '', 'The band plays the song’s chords, tempo and groove found in the track, and the record is muted: a song of your own to share and release'), row('🎚 Open Stems', () => dockGo('stems')), row('✕ Unload track', stemUnload, 'bad', 'Remove the track from memory'));
   const syncT = h('label', { class: 'lrow' }, h('input', { type: 'checkbox', checked: CFG.trackSync !== false, onchange: e => { CFG.trackSync = e.target.checked; saveCfg(); } }), 'Track follows the transport (play, stop, seek, loop)');
   const fill = h('div', { class: 'lrow' }, h('span', {}, 'When a track loads'), h('select', { class: 'in', style: { flex: 1 }, onchange: e => { CFG.trackFill = e.target.value; saveCfg(); } }, [['all', 'Fill details + chords'], ['details', 'Fill details only'], ['off', 'Do nothing']].map(([v, t]) => h('option', { value: v, selected: (CFG.trackFill || 'all') === v }, t))));
   box.append(h('div', { class: 'hr' }), syncT, fill, h('div', { class: 'tiny muted' }, 'Your own chords, tab and lyrics are never replaced automatically — use “Import chords” when you want that.'));
@@ -7270,6 +7351,7 @@ async function projSaveNow() {
   /* recordings still on their way from a synced folder (part 40) are kept in the song as they are, never dropped by a save */
   const wait = PRJ.wait && PRJ.wait.id === id ? PRJ.wait.list.filter(m => !TAKES.some(t => t.id === m.id)) : [];
   let bytes = 0; const live = new Set(TAKES.map(tkSrc).concat(wait.map(m => m.src || m.id)));
+  (rec.versions || []).forEach(v => (v.takes || []).forEach(m => live.add(m.src || m.id)));      /* a version keeps its recordings (2.56) */
   for (const old of new Set((rec.takes || []).map(t => t.src || t.id))) if (!live.has(old)) await pdbDelPrefix('blobs', id + '/take/' + old + '/');
   const done = new Set();
   for (const t of TAKES) {                                            // clips that came from one recording share its blobs, so each recording is written once
@@ -7461,6 +7543,122 @@ async function projInit() {
 bus.on('song', projDirty); bus.on('takes', projDirty); bus.on('track', projDirty);
 document.addEventListener('visibilitychange', () => { if (document.hidden && !store.locked) { try { store.set('song', S); store.set('songAt', Date.now()); } catch (e) { } projSave(); } });
 window.addEventListener('pagehide', () => { if (!store.locked) projSave(); });
+
+/* >>> parts/25b-versions.js */
+/* ============================================================
+   Part 25b · VERSIONS (2.56) — the moments of a song you choose to keep
+   ✓ Mark this version keeps the song as it is now (every section, the band, the arrangement) and its takes as they are placed and
+   trimmed, with a name and a note. Versions live with the song in this browser (the project record: rec.versions) and, if sync is on,
+   in your folder or your GitHub repository with the song; the recordings a version uses are kept for as long as the version is.
+   Go back to a version (what you had is kept as a version first, so nothing is lost), or open one as a song of its own.
+   Writing together: a round that comes back for a song you already have can be added as a new version of it ("Round from Sam"), so the
+   rounds stop piling up as copies. Shares, credits and the release package (later parts) name the version they are of.
+   The song journey (the strip in the song bar) shows how far a song has come: words, chords, recorded, a version, shared, finished;
+   and the 🛡 beside Saved says where your songs are kept: only in this browser, a folder, a backup or GitHub.
+   ============================================================ */
+const VER = { max: 60 };
+const verList = (rec) => ((rec || PRJ.rec) && (rec || PRJ.rec).versions) || [];
+const verClone = o => JSON.parse(JSON.stringify(o));
+/** the song and its takes, as a version keeps them */
+const verSnap = () => ({ song: verClone(S), takes: TAKES.filter(tkIsLead).length || TAKES.length ? TAKES.map(takeMeta) : [] });
+const verKey = v => JSON.stringify([Object.assign({}, v.song, { collab: undefined }), (v.takes || []).map(t => [t.id, t.src, t.startSec, t.inS, t.outS, t.g, t.pan, t.mute, t.name])]);
+/** has the song changed since its newest version? */
+function verChanged() { const L = verList().slice(-1)[0]; return !L || verKey(L) !== verKey(verSnap()); }
+/** what changed between two songs, in words ("Chorus: new words; added Bridge") */
+function verDiff(a, b) {
+  if (!a || !b) return ''; const pr = x => Object.fromEntries(x.sections.map(sec => [sec.name, [sec.bars.map(bb => bb.chord || '').join('|'), (sec.lyrics || '').trim()]])), pa = pr(a), pb = pr(b), out = [];
+  b.sections.forEach(sec => { const n = sec.name; if (!(n in pa)) out.push('added ' + n); else { const [ca, la] = pa[n], [cb, lb] = pb[n], w = [ca !== cb ? 'chords' : '', la !== lb ? 'words' : ''].filter(Boolean); if (w.length) out.push(n + ': ' + w.join(' and ')); } });
+  a.sections.forEach(sec => { if (!(sec.name in pb)) out.push('removed ' + sec.name); });
+  if (a.bpm !== b.bpm) out.push('tempo ' + a.bpm + ' → ' + b.bpm); if (a.key !== b.key || !!a.minor !== !!b.minor) out.push('key changed');
+  return out.slice(0, 6).join('; ');
+}
+/** keep the song as it is now as a version; returns it */
+async function verMark(name, note, o) {
+  o = o || {}; if (!PRJ.rec) await projSave(); const rec = PRJ.rec; if (!rec) return null;
+  const list = verList(rec), s = verSnap(), v = { id: 'v' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), n: String(name || '').trim().slice(0, 60) || 'Version ' + (list.length + 1), note: String(note || '').trim().slice(0, 400), at: Date.now(), by: CFG.slName || '', kind: o.kind || 'mine', from: o.from || '', song: s.song, takes: s.takes };
+  rec.versions = list.concat(v).slice(-VER.max); await projSave(); bus.emit('versions'); return v;
+}
+/** go back to a version: what you have now is kept as a version first (if it differs), so nothing is lost */
+async function verRestore(v) {
+  const rec = PRJ.rec; if (!rec || !v) return; if (verChanged()) await verMark('Before going back to ' + v.n, '', { kind: 'auto' });
+  await projSave(); rec.song = verClone(v.song); rec.takes = verClone(v.takes || []); rec.modified = Date.now(); await pdbPut('projects', rec);
+  await projLoad(rec.id, { rec, keepZoom: true }); bus.emit('versions'); toast('Back to “' + v.n + '”. What you had is kept as a version too.', 'ok');
+}
+/** a version as a song of its own (its recordings copied with it) */
+async function verCopy(v) {
+  const from = PRJ.rec; if (!from || !v) return; await projSave(); const id = projId(), done = new Set();
+  for (const m of v.takes || []) { const sid = m.src || m.id; if (done.has(sid)) continue; done.add(sid); for (const k of ['dry', 'wet', 'cam']) { const b = await pdbGet('blobs', from.id + '/take/' + sid + '/' + k); if (b != null) await pdbPut('blobs', b, id + '/take/' + sid + '/' + k); } }
+  const song = verClone(v.song); song.title = (song.title || 'Untitled') + ' (' + v.n + ')';
+  const rec = { id, v: 1, origin: 'version', created: Date.now(), modified: Date.now(), zoom: from.zoom || 'song', song, title: song.title, artist: song.artist || '', takes: verClone(v.takes || []), track: null, stemMix: null, versions: [], nTakes: (v.takes || []).length, size: 0 };
+  await pdbPut('projects', rec); await projRefresh(); await projLoad(id); bus.emit('projects'); toast('“' + song.title + '” is open as a song of its own.', 'ok');
+}
+async function verDelete(v) { const rec = PRJ.rec; if (!rec) return; rec.versions = verList(rec).filter(x => x.id !== v.id); await projSave(); bus.emit('versions'); }
+/** a round of Writing together, for a song you already have, as a new version of it (part 89 asks first) */
+function verRoundOf(song) { const id = song && song.collab && song.collab.id; return id ? PRJ.list.find(r => r && r.song && r.song.collab && r.song.collab.id === id) || null : null; }
+async function verAddRound(rec, song, takes) {
+  if (PRJ.cur !== rec.id) await projLoad(rec.id); const from = (song.collab && song.collab.with) || 'someone';
+  if (verChanged()) await verMark('Before ' + from + '’s round', '', { kind: 'auto' });
+  { const seen = new Set(), all = (S.comments || []).concat(song.comments || []).filter(c => { const k = Math.round(c.at) + '|' + c.text; if (seen.has(k)) return false; seen.add(k); return true; }); song.comments = all.sort((x, y) => x.at - y.at); }      /* yours and theirs (2.58) */
+  const keep = S.collab && S.collab.id ? S.collab : null; projUse(song); if (keep && S.collab) S.collab.id = keep.id;
+  if (takes && takes.length) srxAdd(takes); commit(false); await projSave();
+  return verMark('Round from ' + from, (song.collab && song.collab.note) || '', { kind: 'round', from });
+}
+
+/* ---------- the versions window ---------- */
+const verWhen = t => new Date(t).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+function verOpen() {
+  const list = verList().slice().reverse(), nameIn = h('input', { class: 'in', id: 'verName', maxlength: 60, placeholder: 'Version ' + (verList().length + 1) + '  (e.g. “Demo 2”, “With Sam’s bridge”)' }), noteIn = h('input', { class: 'in', id: 'verNote', maxlength: 400, placeholder: 'A note (optional): what this one is' });
+  const changed = verChanged(), since = list[0] ? verDiff(list[0].song, S) : '';
+  const row = v => { const i = verList().indexOf(v), prev = verList()[i - 1], ch = prev ? verDiff(prev.song, v.song) : 'the first version';
+    return h('li', { class: 'ver-item' + (v.kind === 'auto' ? ' auto' : ''), 'data-id': v.id },
+      h('div', { class: 'ver-h' }, h('b', {}, (v.kind === 'round' ? '↩ ' : v.kind === 'auto' ? '⟲ ' : '✓ ') + v.n), h('span', { class: 'tiny muted' }, ' · ' + verWhen(v.at) + (v.by ? ' · ' + v.by : '') + ' · ' + (v.takes || []).length + ((v.takes || []).length === 1 ? ' take' : ' takes'))),
+      v.note ? h('p', { class: 'small ver-note' }, v.note) : null, ch ? h('p', { class: 'tiny muted' }, 'Changed: ' + ch) : null,
+      h('div', { class: 'row ver-acts' }, h('button', { class: 'btn sm', title: 'Make the song this version again (what you have now is kept as a version first)', onclick: () => { d.close(); verRestore(v); } }, '⟲ Go back to this'),
+        h('button', { class: 'btn sm', title: 'Open this version as a song of its own', onclick: () => { d.close(); verCopy(v); } }, '⧉ Open as a copy'),
+        h('button', { class: 'btn sm', title: 'Forget this version (the song as it is now does not change)', 'aria-label': 'Delete version ' + v.n, onclick: async e => { if (!confirm('Forget the version “' + v.n + '”?')) return; await verDelete(v); e.target.closest('li').remove(); } }, '✕')));
+  };
+  const d = pdlg('verDlg', '✓ Versions of “' + (S.title || 'Untitled') + '”', h('div', { class: 'ver' },
+    h('div', { class: 'ver-mark' }, h('p', { class: 'small' }, changed ? (list.length ? 'Changed since “' + list[0].n + '”' + (since ? ': ' + since : '') + '.' : 'Keep this moment of the song: its sections, the band and your takes as they are now.') : 'Nothing has changed since “' + list[0].n + '”.'),
+      nameIn, noteIn, h('div', { class: 'row', style: { justifyContent: 'flex-end', gap: '8px' } }, h('button', { class: 'btn primary', id: 'verMarkBtn', disabled: !changed, onclick: async () => { const v = await verMark(nameIn.value, noteIn.value); d.close(); if (v) toast('✓ Kept as “' + v.n + '”.', 'ok'); } }, '✓ Mark this version'))),
+    list.length ? h('ol', { class: 'ver-list', id: 'verList' }, list.map(row)) : h('p', { class: 'muted small' }, 'No versions yet. A version is kept in this browser with the song, and in your folder or GitHub if sync is on.')), { wide: true });
+  setTimeout(() => nameIn.focus(), 50);
+}
+
+/* ---------- the song journey (in the song bar) ---------- */
+function jrSteps() {
+  const s = S, words = s.sections.some(x => (x.lyrics || '').trim()), chords = s.sections.some(x => x.bars.some(b => b.chord)), rec = TAKES.length > 0, vs = verList(), shared = !!(s.collab && s.collab.hist && s.collab.hist.length), done = !!(PRJ.rec && PRJ.rec.done);
+  return [
+    { k: 'words', on: words, t: 'Words', go: () => dockGo('tab'), how: 'Write the words in Write (or paste them).' },
+    { k: 'chords', on: chords, t: 'Chords', go: () => dockGo('tab'), how: 'Add chords to the bars, or paste a chord sheet.' },
+    { k: 'rec', on: rec, t: 'Recorded', go: null, how: 'Arm the Guitar or Vocal lane and press ● (or R).' },
+    { k: 'ver', on: vs.length > 0, t: vs.length ? vs[vs.length - 1].n : 'A version', go: verOpen, how: 'Mark this version when it’s worth keeping.' },
+    { k: 'shared', on: shared, t: 'Shared', go: () => slShare(), how: '🔗 Send it to someone to hear or write with.' },
+    { k: 'done', on: done, t: 'Finished', go: () => (typeof finOpen === 'function' ? finOpen() : lxExportOpen()), how: 'Finish it: master it and make the release package.' }];
+}
+function jrPaint() {
+  const b = SB.jr; if (!b) return; const st = jrSteps(), n = st.filter(x => x.on).length, next = st.find(x => !x.on);
+  b.replaceChildren(...st.map(x => h('i', { class: x.on ? 'on' : '', 'aria-hidden': 'true' })));
+  b.title = 'Song journey: ' + n + ' of ' + st.length + (next ? ' · next: ' + next.t.toLowerCase() : ' · finished') + ' · ' + st.map(x => (x.on ? '✓ ' : '○ ') + x.t).join(' · '); b.setAttribute('aria-label', b.title);
+}
+function jrOpen(anchor) {
+  const st = jrSteps(), box = h('div', { class: 'jr-pop', id: 'jrPop' }, h('h5', {}, 'Song journey'));
+  st.forEach(x => box.append(h('div', { class: 'jr-row' + (x.on ? ' on' : '') }, h('span', { class: 'jr-ck' }, x.on ? '✓' : '○'), h('div', { class: 'grow' }, h('b', {}, x.t), x.on ? null : h('div', { class: 'tiny muted' }, x.how)), x.go ? h('button', { class: 'btn sm', onclick: () => { closePop(); x.go(); } }, x.k === 'ver' ? 'Versions…' : x.k === 'shared' ? 'Send…' : x.k === 'done' ? 'Finish…' : 'Open') : null)));
+  popover(anchor, box, { style: { maxWidth: '340px' } });
+}
+
+/* ---------- 🛡 where your songs are kept ---------- */
+function safeState() {
+  if (typeof ghOn === 'function' && ghOn() && !CFG.gh.need && CFG.gh.lastAt) return { k: 'gh', ok: true, t: 'In step with GitHub', at: CFG.gh.lastAt };
+  if (CFG.sync && CFG.fsync && CFG.fsync.lastAt) return { k: 'folder', ok: true, t: 'Kept in your folder', at: CFG.fsync.lastAt };
+  if (CFG.lastBackup && Date.now() - CFG.lastBackup < 14 * 864e5) return { k: 'backup', ok: true, t: 'Backed up ' + new Date(CFG.lastBackup).toLocaleDateString(), at: CFG.lastBackup };
+  return { k: 'local', ok: false, t: 'Only in this browser' };
+}
+function safePaint() {
+  if (!SB.saved) return; sbSaved(SB.saved.dataset.k === 'dirty' || SB.saved.dataset.k === 'err' ? SB.saved.dataset.k : 'ok', null); const s = safeState();
+  /* a gentle nudge, once a week, once there's real work and it's kept nowhere else */
+  if (!s.ok && (songHasWork() || TAKES.length) && Date.now() - (CFG.safeNudge || 0) > 7 * 864e5 && !document.getElementById('boot')?.getClientRects().length) { CFG.safeNudge = Date.now(); saveCfg(); setTimeout(() => toast('Your songs are only in this browser. Press ⚠ (beside undo) to keep a copy.', 'warn'), 1500); }
+}
+bus.on('projects', () => { jrPaint(); safePaint(); }); bus.on('song', () => jrPaint()); bus.on('takes', () => jrPaint()); bus.on('versions', () => jrPaint()); bus.on('github', () => safePaint());
 
 /* >>> parts/26-origins.js */
 /* ============================================================
@@ -7676,7 +7874,7 @@ function aboutBlock() {
       h('div', { class: 'row', style: { gap: '6px', flexWrap: 'wrap' } }, BRAND.support ? link('☕ ' + BRAND.supportLabel, BRAND.support, 'primary') : '', link('The story', 'guide/about/'), link('GitHub', BRAND.github), link('LinkedIn', BRAND.linkedin), link('The Daily', BRAND.journal), link('Source & issues', BRAND.repo))),
     h('details', { class: 'ab-cr', id: 'abPriv' }, h('summary', {}, 'Privacy at a glance'),
       h('ul', {},
-        li(h('b', {}, 'Stays on this device: '), 'everything you play, sing, record, drop in or type: audio, camera pictures, songs, takes, lyrics and settings. Nothing is uploaded, and there is no account, analytics or advertising.'),
+        li(h('b', {}, 'Stays on this device: '), 'everything you play, sing, record, drop in or type: audio, camera pictures, songs, takes, lyrics and settings. There is no account of its own, no analytics and no advertising. Nothing is uploaded unless you choose to: GitHub sync (to your own account), a folder, or recordings sent with a link (encrypted, kept 7 days).'),
         li(h('b', {}, 'Sent over the network: '), 'nothing from your music. The page and its offline copy come from this site. A song link carries the song (and, if you add them, your name and a note) inside the link itself, after the #, which never reaches a server. If you tick Include my recordings, your takes are encrypted here and kept on this site for 7 days; the key is only in the link. Only if you say yes to the one-time MediaPipe download does your browser also fetch code and a model from jsDelivr and Google Storage; those two sites see your IP address and browser type, as with any download. If you connect GitHub, your studio goes to your own repository there.'),
         li(h('b', {}, 'Kept here, in this browser: '), 'songs and takes (IndexedDB), settings (local storage) and an offline copy of the app (Cache Storage). Settings ▸ Data ▸ Reset erases them. Files you export are yours to keep or share.'),
         li(h('b', {}, 'Seen by the host: '), 'the site is served by Cloudflare, which keeps ordinary access logs and traffic counts, as any web host does. The app itself sets no cookies.')),
@@ -7684,7 +7882,7 @@ function aboutBlock() {
     h('details', { class: 'ab-cr' }, h('summary', {}, 'Credits & licences'),
       h('ul', {},
         li(h('b', {}, 'Code: '), 'MIT licence, © 2026 ' + BRAND.author + '. Free to use, copy, change and share; keep the licence notice.'),
-        li(h('b', {}, 'Built with: '), 'the Web Audio API, AudioWorklet, Canvas, SVG and IndexedDB. No frameworks, no tracking, no analytics.'),
+        li(h('b', {}, 'Built with: '), 'the Web Audio API, AudioWorklet, WebCodecs, Canvas, SVG and IndexedDB, and no frameworks. A small Cloudflare Worker handles Sign in with GitHub and keeps recordings sent with links (sealed) for 7 days; everything else is plain files. No tracking, no analytics.'),
         li(h('b', {}, 'Hand tracking and person cut-out (optional): '), 'use ', ext('MediaPipe Tasks Vision', 'https://developers.google.com/mediapipe'), ' (Apache-2.0) with Google’s hand-landmarker and selfie-segmenter models. They are fetched from jsDelivr and Google Storage only after you say yes to a one-time download; this site does not host or copy them, and Google publishes them with model cards rather than a separate licence file. Motion-only mode and the edges-in look stay offline. ', CFG.mpOk ? h('button', { class: 'btn sm', id: 'mpForget', onclick: e => { CFG.mpOk = false; saveCfg(); e.target.remove(); toast('OK. It will ask again before downloading anything.', 'ok'); } }, 'Ask me again next time') : ''),
         li(h('b', {}, 'Methods: '), 'YIN pitch estimation (de Cheveigné & Kawahara, 2002); harmonic / percussive separation by median filtering (Fitzgerald, 2010); Karplus–Strong string synthesis (1983). Re-implemented here from the published papers.'),
         li(h('b', {}, 'Your music: '), 'the app ships with no recordings and no one else’s lyrics. Audio, lyrics and tab you bring in stay yours and stay on this device; you are responsible for having the right to use and share them. Chords, tab and stems are computed from your file and are derivative of it, so share them only as far as the original allows. The demo song is original. See the ', ext('terms of use', 'legal/#terms'), '.'),
@@ -7692,7 +7890,7 @@ function aboutBlock() {
         li(h('b', {}, 'Names: '), 'Ultimate Guitar, Focusrite, Scarlett, MIDI, Google and other names are used only to describe compatibility. This project is independent and not affiliated with or endorsed by them.'),
         li(h('b', {}, 'Made with AI assistance: '), 'developed with Claude (Anthropic) under my direction. The design choices, the music and any mistakes are mine.')),
       h('p', { class: 'tiny muted' }, 'Full text: ', ext('licences, third-party notices and privacy statement', 'legal/'), '.')),
-    h('p', { class: 'tiny muted', style: { marginBottom: 0 } }, 'Your songs, recordings and settings stay in this browser. Nothing is uploaded. The only other sites this page can contact are jsDelivr and Google Storage, and only after you agree to the optional MediaPipe download.'));
+    h('p', { class: 'tiny muted', style: { marginBottom: 0 } }, 'Your songs, recordings and settings stay in this browser. Nothing is uploaded unless you choose to: GitHub sync goes from your browser to your own GitHub account (this site only helps you sign in), Folder sync writes to a folder on your computer, and recordings you send with a link go to this site sealed (it can’t open them) for 7 days. Beyond this site, the page contacts GitHub’s API only if you connect it, and jsDelivr and Google Storage only after you agree to the optional MediaPipe download.'));
 }
 
 /* >>> parts/29-guard.js */
@@ -8159,7 +8357,7 @@ function humSaveMenu(anchor) {
   const tk = TAKES.find(t => t.hum), box = h('div', { style: { minWidth: '240px', display: 'grid', gap: '6px' } }, h('h5', {}, 'Save to this device'),
     h('button', { class: 'btn', onclick: () => { closePop(); bounceMaster(); } }, '⤓ The whole song (WAV)'),
     tk ? h('button', { class: 'btn', onclick: () => { closePop(); dlTake(tk); } }, '⤓ My hum (WAV)') : '',
-    h('button', { class: 'btn', onclick: () => { closePop(); lxExportOpen(); } }, '📦 Export for mixing & mastering…'), exportExtras(closePop),
+    h('button', { class: 'btn primary', onclick: () => { closePop(); finOpen(); } }, '✦ Finish it (master + release package)'), h('button', { class: 'btn', onclick: () => { closePop(); lxExportOpen(); } }, '📦 Export for mixing & mastering…'), exportExtras(closePop),
     h('button', { class: 'btn', onclick: () => { closePop(); download((S.title || 'song').replace(/\W+/g, '_') + '.mid', buildMidi()); toast('MIDI saved', 'ok'); } }, '⤓ MIDI (to open in any music app)'),
     h('div', { class: 'tiny muted' }, 'Everything is made and saved here. Nothing is uploaded. WAV saves are rendered faster than the song plays.'));
   popover(anchor, box);
@@ -9079,10 +9277,10 @@ function shareData(off, len) {
   return { dur: len != null ? len : bars0 * sp * sd, title: S.title || 'Untitled', artist: S.artist || '', key: keyName(), bpm: Math.round(S.bpm), ts: S.ts.join('/'), notes: S.notes || '', secs };
 }
 /* ---------- your content, your responsibility: the notice and the one-time acknowledgement before sharing ---------- */
-const SHARE_TERMS = 2;   /* raise when the wording changes, so it is asked again (2: recordings sent with a song link, 2.54) */
+const SHARE_TERMS = 3;   /* raise when the wording changes, so it is asked again (2: recordings sent with a song link, 2.54; 3: Drops, 2.60) */
 function shareNotice() {
   return h('div', { class: 'share-note', role: 'note' }, h('b', {}, 'You are responsible for what you share. '),
-    'Share only songs, words and recordings that are yours or that you have permission to share. Covers, other people’s lyrics and backing tracks usually need the owners’ permission before you post them. This app makes the file on your device; it does not upload, host or publish anything, except recordings you choose to send with a song link (kept encrypted for 7 days). ',
+    'Share only songs, words and recordings that are yours or that you have permission to share. Covers, other people’s lyrics and backing tracks usually need the owners’ permission before you post them. This app makes the file on your device; it does not upload, host or publish anything, except recordings you choose to send with a song link (kept encrypted for 7 days) and songs you choose to drop (public for 7 days, after review). ',
     h('a', { href: 'legal/#terms', target: '_blank', rel: 'noopener' }, 'Terms of use'));
 }
 /** run fn once the person has said they have the right to share (asked once, remembered on this device) */
@@ -9095,7 +9293,7 @@ function shareGate(fn) {
     h('ul', {}, h('li', {}, 'Share only your own songs, words and recordings, or other people’s work with their permission. A cover, someone else’s lyrics or a backing track you did not make usually needs the owners’ permission before you post it publicly.'),
       h('li', {}, 'You are the one sharing it: you are responsible for it, and for following the rules of the places you post it.'),
       h('li', {}, 'the-daily.studio makes the file on this device. It does not upload, host, publish or review what you share, and is not responsible for it.'),
-      h('li', {}, 'One exception: recordings you choose to send with a song link are kept on this site, encrypted, for 7 days, then deleted. Anyone with the link can report them, and the site’s owner can remove recordings that break the terms.')),
+      h('li', {}, 'Two exceptions: recordings you choose to send with a song link are kept on this site, encrypted, for 7 days, then deleted. And songs you choose to drop are public on the-daily.studio/drops for 7 days, after the site’s owner has listened. Both can be reported, and the site’s owner can remove anything that breaks the terms.')),
     h('label', { class: 'chk' }, chk, ' I own this content or have permission to share it, and I accept responsibility for sharing it.'),
     h('p', { class: 'tiny muted' }, h('a', { href: 'legal/#terms', target: '_blank', rel: 'noopener' }, 'Terms of use'), ' · asked once on this device.'),
     h('div', { class: 'row', style: { gap: '8px', justifyContent: 'flex-end' } }, h('button', { class: 'btn', onclick: () => d.close() }, 'Cancel'), go)));
@@ -9413,6 +9611,251 @@ function tipOpen() {
     h('p', { class: 'tiny muted', style: { margin: '10px 0 0', lineHeight: 1.5 } }, 'The code is made on this device. The studio never opens your link and never sees a payment. Anyone who scans it goes to the service you chose, under that service’s terms. AI agent tools cannot read or change your link.'));
   pdlg('tipjar', 'TIP JAR', box, { wide: true, onclose: () => { tipSync(); if (typeof renderStageUI === 'function') renderStageUI(); } });
   paint();
+}
+
+/* >>> parts/39c-finish.js */
+/* ============================================================
+   Part 39c · FINISH IT (2.57) — master the song and make its release package, on this device
+   1. Sound: the premaster (the whole mix without the master section, part 46b) goes through a tone (Natural, Warm, Bright, or matched to a
+      reference song you load), a gentle glue compressor, then gain and a look-ahead limiter until it reaches the loudness you choose
+      (−14 LUFS for streaming, −16 for Apple Music, louder for clubs) with true peaks under −1 dBTP. Measured by BS.1770 (part 39).
+      ▶ Before / After plays both at the same loudness, so you hear the tone and the dynamics, not just "louder".
+   2. Credits and splits: everyone in the song's history (Writing together rounds, versions), with what they did and a share of the writing.
+   3. The release package: the master (24-bit, and 16-bit 44.1 kHz with dither for distributors), the lyrics, the chord sheet, the
+      credits and splits, a README with the loudness and the song's details, and the song itself, in a folder or one .zip.
+   Reference matching: both songs' average spectrum (4096-point FFT over the whole song) is compared in eleven bands; the difference,
+   smoothed, limited to ±6 dB and scaled by Amount, becomes eleven peaking filters. Nothing is uploaded: the reference stays on this device.
+   ============================================================ */
+const FIN = { ref: null, out: null, pre: null, play: null, bands: [40, 80, 160, 315, 630, 1250, 2500, 5000, 8000, 12000, 16000] };
+const FIN_TARGETS = [[-14, '−14 LUFS · streaming (Spotify, YouTube, Tidal, Amazon)'], [-16, '−16 LUFS · Apple Music, podcasts'], [-11, '−11 LUFS · louder'], [-9, '−9 LUFS · club, very loud'], [0, 'No target · keep the dynamics, peaks safe']];
+const finDb = x => 20 * Math.log10(Math.max(x, 1e-9)), finLin = d => Math.pow(10, d / 20);
+
+/* ---------- the reference song's tone, and the mix's ---------- */
+function finFft(re, im) {
+  const n = re.length; for (let i = 1, j = 0; i < n; i++) { let b = n >> 1; for (; j & b; b >>= 1) j ^= b; j ^= b; if (i < j) { [re[i], re[j]] = [re[j], re[i]]; [im[i], im[j]] = [im[j], im[i]]; } }
+  for (let len = 2; len <= n; len <<= 1) { const a = -2 * Math.PI / len, wr = Math.cos(a), wi = Math.sin(a); for (let i = 0; i < n; i += len) { let cr = 1, ci = 0; for (let k = 0; k < len / 2; k++) { const ur = re[i + k], ui = im[i + k], vr = re[i + k + len / 2] * cr - im[i + k + len / 2] * ci, vi = re[i + k + len / 2] * ci + im[i + k + len / 2] * cr; re[i + k] = ur + vr; im[i + k] = ui + vi; re[i + k + len / 2] = ur - vr; im[i + k + len / 2] = ui - vi; const t = cr * wr - ci * wi; ci = cr * wi + ci * wr; cr = t; } } }
+}
+/** average energy in FIN.bands (dB, relative to their mean), from up to 240 frames spread over the song */
+function finTone(l, r, sr) {
+  const N = 4096, frames = Math.max(1, Math.min(240, Math.floor(l.length / N))), step = Math.max(N, Math.floor((l.length - N) / frames)), pw = new Float64Array(N / 2), win = new Float32Array(N).map((_, i) => .5 - .5 * Math.cos(2 * Math.PI * i / (N - 1)));
+  for (let f = 0, o = 0; f < frames && o + N <= l.length; f++, o += step) { const re = new Float32Array(N), im = new Float32Array(N); for (let i = 0; i < N; i++) re[i] = (l[o + i] + (r ? r[o + i] : l[o + i])) * .5 * win[i]; finFft(re, im); for (let k = 0; k < N / 2; k++) pw[k] += re[k] * re[k] + im[k] * im[k]; }
+  const B = FIN.bands, e = B.map((fc, i) => { const lo = i ? Math.sqrt(B[i - 1] * fc) : fc / 1.41, hi = i < B.length - 1 ? Math.sqrt(fc * B[i + 1]) : Math.min(sr / 2, fc * 1.41); let s = 0, c = 0; for (let k = Math.max(1, Math.floor(lo * N / sr)); k <= Math.min(N / 2 - 1, Math.ceil(hi * N / sr)); k++) { s += pw[k]; c++; } return 10 * Math.log10(Math.max(s / Math.max(c, 1), 1e-20)); });
+  const m = e.reduce((a, v) => a + v, 0) / e.length; return e.map(v => v - m);
+}
+/** the EQ that moves the mix's tone toward the reference: ±6 dB at most, smoothed, times amount (0..1) */
+function finMatchEq(mix, ref, amount) {
+  const d = ref.map((v, i) => v - mix[i]), sm = d.map((v, i) => (d[Math.max(0, i - 1)] + 2 * v + d[Math.min(d.length - 1, i + 1)]) / 4);
+  return sm.map(v => clamp(v * amount, -6, 6));
+}
+async function finDecode(file) {
+  const ab = await file.arrayBuffer(), c = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(2, 44100, 44100), b = await c.decodeAudioData(ab);
+  return { l: b.getChannelData(0), r: b.numberOfChannels > 1 ? b.getChannelData(1) : b.getChannelData(0), sr: b.sampleRate, name: file.name };
+}
+
+/* ---------- the master ---------- */
+/** look-ahead brickwall limiter (stereo-linked): no sample over ceil; the gain falls over the look-ahead and recovers over `rel` */
+function finLimit(l, r, sr, ceil, rel) {
+  const n = l.length, la = Math.max(1, Math.round(sr * .0015)), need = new Float32Array(n), mn = new Float32Array(n);
+  for (let i = 0; i < n; i++) { const p = Math.max(Math.abs(l[i]), Math.abs(r[i])); need[i] = p > ceil ? ceil / p : 1; }
+  const dq = new Int32Array(n); let h0 = 0, t0 = 0;      /* sliding minimum over the next la samples */
+  for (let i = n - 1; i >= 0; i--) { while (t0 > h0 && need[dq[t0 - 1]] >= need[i]) t0--; dq[t0++] = i; while (dq[h0] > i + la) h0++; mn[i] = need[dq[h0]]; }
+  const rc = 1 - Math.exp(-1 / ((rel || .06) * sr)); let acc = 0, g = 1, most = 1;
+  for (let i = 0; i < n; i++) { acc += mn[i]; if (i >= la) acc -= mn[i - la]; const sm = acc / Math.min(i + 1, la), t = Math.min(sm, mn[i]); g = t < g ? t : g + (t - g) * rc; if (g > t) g = t; l[i] *= g; r[i] *= g; if (g < most) most = g; }
+  return finDb(most);
+}
+/** premaster → tone and glue (offline graph) → gain and limiter, to the target; returns { l, r, sr, m (measure), gr (most gain reduction, dB) } */
+async function finMaster(pre, o) {
+  const OC = window.OfflineAudioContext || window.webkitOfflineAudioContext, sr = pre.sr, n = pre.l.length, c = new OC(2, n, sr), b = c.createBuffer(2, n, sr); b.copyToChannel(pre.l, 0); b.copyToChannel(pre.r, 1);
+  const src = c.createBufferSource(); src.buffer = b; let node = src; const add = x => { node.connect(x); node = x; };
+  const p = (MST_PRE.find(x => x[0] === o.tone) || MST_PRE[0])[3];
+  if (o.tone !== 'off' && o.tone !== 'match') { const lo = c.createBiquadFilter(); lo.type = 'lowshelf'; lo.frequency.value = 120; lo.gain.value = p.lo; add(lo); const hi = c.createBiquadFilter(); hi.type = 'highshelf'; hi.frequency.value = 6500; hi.gain.value = p.hi; add(hi); }
+  if (o.eq) o.eq.forEach((g, i) => { if (Math.abs(g) < .1) return; const f = c.createBiquadFilter(); f.type = 'peaking'; f.frequency.value = Math.min(FIN.bands[i], sr * .45); f.Q.value = 1.1; f.gain.value = g; add(f); });
+  const glue = o.glue == null ? (o.tone === 'loud' ? .7 : .3) : o.glue; if (glue > 0) { const k = c.createDynamicsCompressor(); k.threshold.value = -8 - 14 * glue; k.ratio.value = 1.6 + 2.4 * glue; k.knee.value = 12; k.attack.value = .02; k.release.value = .25; add(k); const mk = c.createGain(); mk.gain.value = 1 + .5 * glue; add(mk); }
+  node.connect(c.destination); src.start(); const out = await c.startRendering(), l = out.getChannelData(0).slice(), r = out.getChannelData(1).slice();
+  const ceilTP = -1; let ceil = ceilTP - .5;
+  if (o.target) {      /* gain toward the target, the limiter holding the peaks; measured again, as limiting lowers the loudness a little and may let an inter-sample peak through */
+    const m0 = lufsMeasure(l, r, sr); if (!isFinite(m0.lufs)) throw new Error('The song is silent'); let g = Math.min(24, o.target - m0.lufs), best = null;
+    for (let it = 0; it < 6; it++) {
+      const a = l.map(v => v * finLin(g)), bb = r.map(v => v * finLin(g)), gr = finLimit(a, bb, sr, finLin(ceil), .08), mm = lufsMeasure(a, bb, sr); best = { l: a, r: bb, sr, m: mm, gr };
+      if (mm.tp > ceilTP + .05) { ceil -= mm.tp - ceilTP + .1; continue; }
+      if (Math.abs(mm.lufs - o.target) < .15 || g >= 24) break; g = Math.min(24, g + o.target - mm.lufs);
+    }
+    return best;
+  }
+  const gr = finLimit(l, r, sr, finLin(ceil), .08); return { l, r, sr, m: lufsMeasure(l, r, sr), gr };
+}
+
+/* ---------- before / after, at the same loudness ---------- */
+function finStop() { const p = FIN.play; if (!p) return; try { p.a.stop(); p.b.stop(); } catch (e) { } FIN.play = null; const b = document.getElementById('finPlay'); if (b) b.textContent = '▶ Play'; }
+async function finPlay(which, at) {
+  await startAudio(); finStop(); const c = E.ctx, mk = x => { const b = c.createBuffer(2, x.l.length, x.sr); b.copyToChannel(x.l, 0); b.copyToChannel(x.r, 1); const s = c.createBufferSource(); s.buffer = b; return s; };
+  const A = FIN.pre, B = FIN.out; if (!A || !B) return; const match = document.getElementById('finMatch') ? document.getElementById('finMatch').checked : true;
+  const la = finLin(match ? Math.min(0, B.m.lufs - A.m.lufs) : 0), lb = finLin(match ? Math.min(0, A.m.lufs - B.m.lufs) : 0);      /* the louder one is turned down to the other */
+  const a = mk(A), b = mk(B), ga = c.createGain(), gb = c.createGain(); ga.gain.value = which === 'a' ? la : 0; gb.gain.value = which === 'b' ? lb : 0; a.connect(ga); b.connect(gb); ga.connect(c.destination); gb.connect(c.destination);
+  const t0 = c.currentTime + .05; a.start(t0, at || 0); b.start(t0, at || 0); FIN.play = { a, b, ga, gb, la, lb, t0, at: at || 0 }; a.onended = () => { if (FIN.play && FIN.play.a === a) finStop(); };
+  const btn = document.getElementById('finPlay'); if (btn) btn.textContent = '■ Stop';
+}
+function finAB(which) { const p = FIN.play; document.querySelectorAll('#finAB button').forEach(x => x.classList.toggle('on', x.dataset.w === which)); FIN.which = which; if (!p) return; const c = E.ctx, t = c.currentTime; p.ga.gain.setTargetAtTime(which === 'a' ? p.la : 0, t, .01); p.gb.gain.setTargetAtTime(which === 'b' ? p.lb : 0, t, .01); }
+
+/* ---------- credits and splits ---------- */
+function finPeople() {
+  const me = (CFG.slName || '').trim() || (S.artist && S.artist !== 'Your Name' ? S.artist : 'Me'), P = new Map(), add = (n, role) => { n = String(n || '').trim().slice(0, 40); if (!n || n === 'Someone') return; const x = P.get(n) || { n, words: false, music: false, perf: false, prod: false, did: new Set() }; if (role) x[role] = true; P.set(n, x); return x; };
+  const m0 = add(me); Object.assign(m0, { words: true, music: true, perf: TAKES.length > 0, prod: true });
+  ((S.collab && S.collab.hist) || []).forEach(([who, , what]) => { const x = add(who); if (!x) return; const w = String(what || ''); if (/word/i.test(w)) x.words = true; if (/chord|added|bar|band|beat|section|tempo|key/i.test(w)) x.music = true; if (w) x.did.add(w); });
+  verList().forEach(v => { if (v.kind === 'round' && v.from) { const x = add(v.from); if (x && (v.takes || []).length) x.perf = true; } });
+  const saved = (PRJ.rec && PRJ.rec.credits) || [], list = [...P.values()].map(x => { const s = saved.find(y => y.n === x.n); return s ? Object.assign({}, x, s, { did: x.did }) : x; });
+  saved.forEach(s => { if (!list.some(x => x.n === s.n)) list.push(Object.assign({ did: new Set() }, s)); });
+  const writers = list.filter(x => x.words || x.music); if (!saved.length) writers.forEach(x => { x.share = Math.round(1000 / writers.length) / 10; });
+  return list;
+}
+const finCreditsTxt = (people, v) => [(S.title || 'Untitled') + (S.artist && S.artist !== 'Your Name' ? ' — ' + S.artist : ''), v ? 'Version: ' + v.n + ' (' + new Date(v.at).toLocaleDateString() + ')' : '', '',
+  'CREDITS', ...people.map(x => '  ' + x.n + ': ' + [x.words ? 'words' : '', x.music ? 'music' : '', x.perf ? 'performance' : '', x.prod ? 'production' : ''].filter(Boolean).join(', ') + (x.did && x.did.size ? '  (' + [...x.did].slice(0, 4).join('; ') + ')' : '')), '',
+  'WRITING SPLITS (songwriting share; agree them with everyone before release)', ...people.filter(x => x.share > 0).map(x => '  ' + x.n + ': ' + x.share + ' %'), '',
+  'From the song’s history in the-daily.studio (Writing together rounds and versions). It records who changed what; it is not a contract.'].filter(v => v !== null).join('\n');
+const finCsv = people => 'name,words,music,performance,production,writing_share_percent\n' + people.map(x => ['"' + x.n.replace(/"/g, '""') + '"', x.words ? 1 : 0, x.music ? 1 : 0, x.perf ? 1 : 0, x.prod ? 1 : 0, x.share || 0].join(',')).join('\n') + '\n';
+
+/* ---------- the release package ---------- */
+function finDither16(l, r) { const q = 1 / 32768, a = new Float32Array(l.length), b = new Float32Array(r.length); for (let i = 0; i < l.length; i++) { a[i] = l[i] + (Math.random() - Math.random()) * q; b[i] = r[i] + (Math.random() - Math.random()) * q; } return [a, b]; }
+async function finTo44(x) { if (x.sr === 44100) return x; const OC = window.OfflineAudioContext || window.webkitOfflineAudioContext, n = Math.round(x.l.length * 44100 / x.sr), c = new OC(2, n, 44100), b = c.createBuffer(2, x.l.length, x.sr); b.copyToChannel(x.l, 0); b.copyToChannel(x.r, 1); const s = c.createBufferSource(); s.buffer = b; s.connect(c.destination); s.start(); const o = await c.startRendering(); return { l: o.getChannelData(0), r: o.getChannelData(1), sr: 44100 }; }
+const finLyrics = () => S.sections.filter(s => (s.lyrics || '').trim()).map(s => '[' + s.name + ']\n' + s.lyrics.trim()).join('\n\n') + '\n';
+async function finPackage(o) {
+  o = o || {}; const M = FIN.out; if (!M) throw new Error('Render the master first'); const people = o.people || finPeople(), title = lxSafe(S.title || 'Song');
+  if (verChanged()) await verMark('Release ' + new Date().toLocaleDateString(), 'Mastered to ' + fmtLU(M.m.lufs) + ' LUFS', {});
+  const v = verList().slice(-1)[0], files = [], put = (name, data) => files.push({ name, data: data instanceof Uint8Array ? data : new TextEncoder().encode(data) });
+  put(title + ' - master (24-bit ' + Math.round(M.sr / 100) / 10 + ' kHz).wav', new Uint8Array(await encodeWav([M.l, M.r], M.sr, 24).arrayBuffer()));
+  const m44 = await finTo44(M), [dl, dr] = finDither16(m44.l, m44.r); put(title + ' - master (16-bit 44.1 kHz, for distributors).wav', new Uint8Array(await encodeWav([dl, dr], 44100, 16).arrayBuffer()));
+  if (S.sections.some(s => (s.lyrics || '').trim())) put('lyrics.txt', finLyrics());
+  try { put('chord sheet.html', printSheetHtml('')); } catch (e) { }
+  put('credits.txt', finCreditsTxt(people, v)); put('splits.csv', finCsv(people));
+  try { const b = zipBuild(await projEntries(PRJ.cur, '')); put(title + '.daily-song.zip', new Uint8Array(await b.arrayBuffer())); } catch (e) { }
+  put('README.txt', [title + (S.artist && S.artist !== 'Your Name' ? ' — ' + S.artist : ''), 'Release package from the-daily.studio ' + VERSION + ', ' + new Date().toLocaleString(), v ? 'Version: ' + v.n : '', '',
+    'Loudness: ' + fmtLU(M.m.lufs) + ' LUFS integrated, true peak ' + fmtLU(M.m.tp) + ' dBTP' + (FIN.opt && FIN.opt.target ? ' (target ' + FIN.opt.target + ' LUFS)' : ' (no loudness target)'),
+    'Tempo ' + S.bpm + ' BPM · ' + S.ts.join('/') + ' · Key ' + pcName(S.key, keyUsesFlats(S.key, S.minor)) + (S.minor ? ' minor' : ' major') + ' · Length ' + fmtT(M.l.length / M.sr), '',
+    'For a distributor: upload the 16-bit 44.1 kHz master; most also take the 24-bit one. Paste lyrics.txt where they ask for lyrics.', 'You will need: cover art (3000 × 3000 px is the usual ask), an ISRC (most distributors give one), the release date, and the agreed splits (splits.csv).', '',
+    'The .daily-song.zip opens the song again in the-daily.studio, with its takes.'].filter(x => x !== '').join('\n') + '\n');
+  if (PRJ.rec) { PRJ.rec.credits = people.map(x => ({ n: x.n, words: x.words, music: x.music, perf: x.perf, prod: x.prod, share: x.share || 0 })); PRJ.rec.done = Date.now(); await projSave(); bus.emit('versions'); }
+  if (o.where === 'folder') { const dir = o.dir || await lxPickFolder(); if (!dir) return null; let sub = dir; try { sub = await dir.getDirectoryHandle(title + ' (release ' + new Date().toISOString().slice(0, 10) + ')', { create: true }); } catch (e) { } for (const f of files) { const fh = await sub.getFileHandle(f.name, { create: true }), w = await fh.createWritable(); await w.write(f.data); await w.close(); } return { files: files.map(f => f.name), where: sub.name }; }
+  const zf = new File([zipBuild(files)], title + ' - release.zip', { type: 'application/zip' }); FIN.zip = zf; if (!o.noDownload) download(zf.name, zf); return { files: files.map(f => f.name), zip: zf };
+}
+
+/* ---------- the window ---------- */
+async function finOpen() {
+  if (!ofrAvailable() && !(await startAudio().then(() => ofrAvailable()).catch(() => false))) return toast('This browser can’t render the song faster than it plays, so Finish it isn’t available here.', 'warn');
+  const tgt = h('select', { class: 'in', id: 'finTarget' }, FIN_TARGETS.map(([v, t]) => h('option', { value: v, selected: v === (CFG.finTarget == null ? -14 : CFG.finTarget) }, t)));
+  const tone = h('select', { class: 'in', id: 'finTone' }, [['off', 'Natural'], ['clean', 'Clean'], ['warm', 'Warm'], ['bright', 'Bright'], ['loud', 'Dense'], ['match', 'Match a reference song…']].map(([v, t]) => h('option', { value: v, selected: v === (CFG.finTone || 'clean') }, t)));
+  const refIn = h('input', { type: 'file', id: 'finRef', accept: 'audio/*', hidden: true }), refSay = h('span', { class: 'tiny muted', id: 'finRefSay' }, FIN.ref ? FIN.ref.name : ''), amt = h('input', { type: 'range', id: 'finAmt', min: 0, max: 100, value: 60 });
+  const refRow = h('div', { class: 'row fin-ref', hidden: tone.value !== 'match' }, h('button', { class: 'btn sm', type: 'button', onclick: () => refIn.click() }, '♪ Choose the reference…'), refSay, h('label', { class: 'small' }, 'Amount ', amt));
+  refIn.addEventListener('change', async () => { const f = refIn.files[0]; if (!f) return; refSay.textContent = 'Reading ' + f.name + '…'; try { const d = await finDecode(f); FIN.ref = { name: f.name, tone: finTone(d.l, d.r, d.sr) }; refSay.textContent = '✓ ' + f.name + ' (stays on this device)'; } catch (e) { refSay.textContent = 'That file could not be read: ' + (e.message || e); } });
+  tone.addEventListener('change', () => { refRow.hidden = tone.value !== 'match'; });
+  const say = h('p', { class: 'small', id: 'finSay', role: 'status' }), fill = h('i'), bar = h('div', { class: 'rnd-bar', hidden: true }, fill);
+  const ab = h('div', { class: 'fin-ab', id: 'finAB', hidden: true }, h('button', { class: 'btn', id: 'finPlay', type: 'button', onclick: () => FIN.play ? finStop() : finPlay(FIN.which || 'b', +(document.getElementById('finPos') || {}).value || 0) }, '▶ Play'),
+    h('div', { class: 'seg' }, h('button', { type: 'button', 'data-w': 'a', onclick: () => finAB('a') }, 'Before'), h('button', { type: 'button', 'data-w': 'b', class: 'on', onclick: () => finAB('b') }, 'After')),
+    h('input', { type: 'range', id: 'finPos', min: 0, max: 1, step: .1, value: 0, 'aria-label': 'Where to play from', onchange: e => { if (FIN.play) finPlay(FIN.which || 'b', +e.target.value); } }),
+    h('label', { class: 'chk tiny' }, h('input', { type: 'checkbox', id: 'finMatch', checked: true, onchange: () => { if (FIN.play) finPlay(FIN.which || 'b', 0); } }), ' Same loudness (a fair comparison)'), h('p', { class: 'tiny muted', id: 'finNums' }));
+  const go = h('button', { class: 'btn primary', id: 'finGo', type: 'button', onclick: async () => {
+    go.disabled = true; finStop(); bar.hidden = false; CFG.finTarget = +tgt.value; CFG.finTone = tone.value; saveCfg();
+    try {
+      if (tone.value === 'match' && !FIN.ref) throw new Error('Choose the reference song first');
+      say.textContent = 'Rendering the mix…'; const pre = await lxRender(null, p => { fill.style.width = Math.round(p * 60) + '%'; }); if (pre.peak < 1e-4) throw new Error('The song is silent');
+      FIN.pre = { l: pre.l, r: pre.r, sr: pre.sr, m: lufsMeasure(pre.l, pre.r, pre.sr) }; say.textContent = 'Mastering…'; fill.style.width = '70%';
+      const eq = tone.value === 'match' ? finMatchEq(finTone(pre.l, pre.r, pre.sr), FIN.ref.tone, +amt.value / 100) : null;
+      FIN.opt = { target: +tgt.value || 0, tone: tone.value, eq }; FIN.out = await finMaster(FIN.pre, FIN.opt); fill.style.width = '100%';
+      const M = FIN.out.m, P = FIN.pre.m; say.textContent = '✓ Mastered: ' + fmtLU(M.lufs) + ' LUFS, true peak ' + fmtLU(M.tp) + ' dBTP' + (FIN.out.gr < -.5 ? ' · the limiter took up to ' + fmtLU(-FIN.out.gr) + ' dB off the loudest peaks' : '') + '.';
+      document.getElementById('finNums').textContent = 'Before: ' + fmtLU(P.lufs) + ' LUFS, peak ' + fmtLU(P.tp) + ' dBTP · After: ' + fmtLU(M.lufs) + ' LUFS, peak ' + fmtLU(M.tp) + ' dBTP' + (eq ? ' · tone matched: ' + FIN.bands.map((f, i) => (eq[i] >= 0 ? '+' : '') + eq[i].toFixed(1)).join(' ') + ' dB' : '');
+      const pos = document.getElementById('finPos'); pos.max = (FIN.out.l.length / FIN.out.sr).toFixed(1); ab.hidden = false; step2.hidden = false;
+    } catch (e) { if (!(e && e.cancelled)) say.textContent = 'It could not be mastered: ' + (e.message || e); } finally { go.disabled = false; setTimeout(() => { bar.hidden = true; }, 600); }
+  } }, '✦ Master it');
+  /* credits and splits */
+  const people = finPeople(), rows = h('tbody'), sum = h('span', { class: 'tiny', id: 'finSum' });
+  const reSum = () => { const t = people.reduce((a, x) => a + (+x.share || 0), 0); sum.textContent = 'Writing shares add up to ' + Math.round(t * 10) / 10 + ' %' + (Math.abs(t - 100) > .05 ? ' (they should make 100)' : ' ✓'); sum.style.color = Math.abs(t - 100) > .05 ? 'var(--warn,#c98a12)' : ''; };
+  const paint = () => { rows.replaceChildren(...people.map(x => h('tr', {}, h('td', {}, h('input', { class: 'in', value: x.n, maxlength: 40, 'aria-label': 'Name', oninput: e => { x.n = e.target.value; } })),
+    ...['words', 'music', 'perf', 'prod'].map(k => h('td', {}, h('input', { type: 'checkbox', checked: !!x[k], 'aria-label': k, onchange: e => { x[k] = e.target.checked; } }))),
+    h('td', {}, h('input', { class: 'in fin-share', type: 'number', min: 0, max: 100, step: .1, value: x.share || 0, 'aria-label': 'Writing share for ' + x.n, oninput: e => { x.share = +e.target.value || 0; reSum(); } }))))); reSum(); };
+  paint();
+  const step2 = h('div', { class: 'fin-step', id: 'finStep2', hidden: true },
+    h('h4', {}, '2 · Credits and splits'), h('p', { class: 'tiny muted' }, 'Everyone in this song’s history (rounds of Writing together, versions), with what they did. Agree the writing shares together before you release it.'),
+    h('table', { class: 'fin-tab' }, h('thead', {}, h('tr', {}, ...['Name', 'Words', 'Music', 'Played', 'Produced', 'Writing %'].map(t => h('th', {}, t)))), rows),
+    h('div', { class: 'row', style: { gap: '8px' } }, h('button', { class: 'btn sm', type: 'button', onclick: () => { people.push({ n: '', words: false, music: false, perf: false, prod: false, share: 0, did: new Set() }); paint(); } }, '＋ Someone'), sum),
+    h('h4', {}, '3 · Share it, or release it'), h('div', { class: 'row', style: { gap: '8px', flexWrap: 'wrap', margin: '4px 0' } }, h('button', { class: 'btn', id: 'finDrop', type: 'button', title: 'Public for 7 days on the-daily.studio/drops, after the site’s owner has listened', onclick: () => drpOpen() }, '🌍 Drop it (7 days)…')),
+    h('h4', {}, 'The release package'), h('p', { class: 'tiny muted' }, 'The master (24-bit, and 16-bit 44.1 kHz for distributors), the lyrics, the chord sheet, credits and splits, a README, and the song itself. It’s also kept as a version.'),
+    h('div', { class: 'row', style: { gap: '8px', flexWrap: 'wrap' } },
+      typeof window.showDirectoryPicker === 'function' ? h('button', { class: 'btn', id: 'finPkgDir', type: 'button', onclick: async () => { const r = await finPackage({ people, where: 'folder' }).catch(e => { toast(e.message || String(e), 'bad'); return null; }); if (r) { pkgSay.textContent = '✓ ' + r.files.length + ' files in “' + r.where + '”.'; } } }, '📁 Into a folder…') : null,
+      h('button', { class: 'btn primary', id: 'finPkg', type: 'button', onclick: async () => { const r = await finPackage({ people }).catch(e => { toast(e.message || String(e), 'bad'); return null; }); if (r) { pkgSay.textContent = '✓ ' + r.files.length + ' files in one .zip.'; pkgSay.after(lxChip(r.zip)); } } }, '📦 Make the release package')),
+    (() => { const p = h('p', { class: 'small', id: 'finPkgSay' }); return p; })());
+  const pkgSay = step2.querySelector('#finPkgSay');
+  pdlg('finDlg', '✦ Finish “' + (S.title || 'Untitled') + '”', h('div', { class: 'fin' },
+    h('h4', {}, '1 · The sound'), h('p', { class: 'tiny muted' }, 'Your mix, mastered here: a tone, a gentle glue, then the loudness you choose, with the peaks kept under −1 dBTP. Nothing is uploaded.'),
+    h('div', { class: 'fin-grid' }, h('label', { class: 'small' }, 'Loudness', tgt), h('label', { class: 'small' }, 'Tone', tone)), refRow, refIn,
+    h('div', { class: 'row', style: { gap: '8px', alignItems: 'center' } }, go), bar, say, ab, step2), { wide: true, onclose: finStop });
+}
+
+/* >>> parts/39d-drops.js */
+/* ============================================================
+   Part 39d · DROPS (2.60) — share a finished song publicly, for 7 days, after the site's owner has listened to it
+   🌍 Drop it (in Finish it, once the song is mastered): the master is compressed here (Opus in an Ogg file, made with WebCodecs, 128 kbps
+   stereo) and sent with a title, the name you choose, a note and, if you like, the song itself as a link (words, chords and the band; no
+   recordings). It waits for the owner's review; once approved it's on /drops/ for 7 days, then gone. Drops are for music you made: a song
+   still played over someone else's record can't be dropped (✦ Make it ours first). Sending needs Sign in with GitHub, as for recordings.
+   The Ogg file: OpusHead and OpusTags pages, then the audio, up to 255 segments a page, each page's granule position the samples so far
+   (48 kHz, counting Opus's lead-in), CRC-32 with Ogg's polynomial (0x04c11db7, not reflected).
+   ============================================================ */
+const DRP = { kbps: 128000 };
+const DRP_CRC = (() => { const t = new Uint32Array(256); for (let i = 0; i < 256; i++) { let r = i << 24; for (let k = 0; k < 8; k++) r = r & 0x80000000 ? (r << 1) ^ 0x04c11db7 : r << 1; t[i] = r >>> 0; } return t; })();
+function drpPage(flags, granule, serial, seq, packets) {
+  const lace = []; packets.forEach(p => { let n = p.length; while (n >= 255) { lace.push(255); n -= 255; } lace.push(n); });
+  const size = packets.reduce((a, p) => a + p.length, 0), pg = new Uint8Array(27 + lace.length + size), dv = new DataView(pg.buffer);
+  pg.set([0x4f, 0x67, 0x67, 0x53, 0, flags]); dv.setUint32(6, granule % 4294967296, true); dv.setUint32(10, Math.floor(granule / 4294967296), true); dv.setUint32(14, serial, true); dv.setUint32(18, seq, true); pg[26] = lace.length; pg.set(lace, 27);
+  let o = 27 + lace.length; packets.forEach(p => { pg.set(p, o); o += p.length; });
+  let c = 0; for (let i = 0; i < pg.length; i++) c = ((c << 8) ^ DRP_CRC[((c >>> 24) ^ pg[i]) & 255]) >>> 0; dv.setUint32(22, c, true); return pg;
+}
+/** a stereo master (any rate) as an Ogg Opus file */
+async function drpOgg(l, r, sr) {
+  if (typeof AudioEncoder !== 'function') throw new Error('This browser can’t compress audio for a drop. Chrome, Edge, Firefox and Safari 26 or later can.');
+  let L = l, R = r; if (sr !== 48000) { const OC = window.OfflineAudioContext || window.webkitOfflineAudioContext, n = Math.round(l.length * 48000 / sr), c = new OC(2, n, 48000), b = c.createBuffer(2, l.length, sr); b.copyToChannel(l, 0); b.copyToChannel(r, 1); const s = c.createBufferSource(); s.buffer = b; s.connect(c.destination); s.start(); const o = await c.startRendering(); L = o.getChannelData(0); R = o.getChannelData(1); }
+  const pk = []; let cfg = null, err = null;
+  const e = new AudioEncoder({ output: (ch, m) => { const d = new Uint8Array(ch.byteLength); ch.copyTo(d); pk.push([d, ch.duration]); if (m && m.decoderConfig) cfg = m.decoderConfig; }, error: x => { err = x; } });
+  e.configure({ codec: 'opus', sampleRate: 48000, numberOfChannels: 2, bitrate: DRP.kbps });
+  for (let i = 0; i < L.length; i += 48000) { const n = Math.min(48000, L.length - i), d = new Float32Array(n * 2); d.set(L.subarray(i, i + n), 0); d.set(R.subarray(i, i + n), n); e.encode(new AudioData({ format: 'f32-planar', sampleRate: 48000, numberOfFrames: n, numberOfChannels: 2, timestamp: Math.round(i / 48 * 1000), data: d })); }
+  await e.flush(); e.close(); if (err) throw err;
+  const pre = srxPre(cfg && cfg.description), serial = (Math.random() * 4294967295) >>> 0, enc = new TextEncoder(), pages = [];
+  const head = new Uint8Array(19); head.set(enc.encode('OpusHead')); head[8] = 1; head[9] = 2; new DataView(head.buffer).setUint16(10, pre, true); new DataView(head.buffer).setUint32(12, 48000, true);
+  const vendor = enc.encode('the-daily.studio'), tags = new Uint8Array(8 + 4 + vendor.length + 4); tags.set(enc.encode('OpusTags')); new DataView(tags.buffer).setUint32(8, vendor.length, true); tags.set(vendor, 12);
+  pages.push(drpPage(2, 0, serial, 0, [head]), drpPage(0, 0, serial, 1, [tags]));
+  let seq = 2, gran = 0, cur = [], segs = 0;
+  pk.forEach(([d, dur], i) => { const s = Math.floor(d.length / 255) + 1; if (segs + s > 255 && cur.length) { pages.push(drpPage(0, gran, serial, seq++, cur)); cur = []; segs = 0; } cur.push(d); segs += s; gran += Math.round((dur || 20000) * 48 / 1000); });
+  pages.push(drpPage(4, Math.min(gran, pre + L.length), serial, seq++, cur));
+  return new Blob(pages, { type: 'audio/ogg' });
+}
+/** can this song be dropped? (music you made: no record still under it) */
+const drpOwn = () => !(STM.ch && !STM.mute) && !(S.trackRef && !(S.track && S.track.ours));
+async function drpOpen() {
+  if (!FIN.out) return toast('Master the song first (✦ Master it).', 'warn');
+  if (CFG.shareOk !== SHARE_TERMS) return shareGate(drpOpen);      /* the sharing terms, once, as for any share */
+  if (!drpOwn()) return toast('Drops are for music you made. This song is still played over a record: ✦ Make it ours first (the track’s menu in the song bar).', 'warn');
+  const t = h('input', { class: 'in', id: 'drpTitle', maxlength: 80, value: S.title || '' }), a = h('input', { class: 'in', id: 'drpName', maxlength: 40, value: CFG.slName || (S.artist && S.artist !== 'Your Name' ? S.artist : ''), placeholder: 'The name to show' });
+  const n = h('textarea', { class: 'in', id: 'drpNote', rows: 2, maxlength: 280, placeholder: 'A line about it (optional)' }), link = h('input', { type: 'checkbox', id: 'drpLink', checked: true }), mine = h('input', { type: 'checkbox', id: 'drpMine' });
+  const say = h('p', { class: 'small', id: 'drpSay', role: 'status' });
+  const go = h('button', { class: 'btn primary', id: 'drpGo', disabled: true, onclick: async () => {
+    if (!ghTok()) { say.textContent = 'Sign in with GitHub first (Settings ▸ GitHub): a drop needs an account.'; return; }
+    if (!t.value.trim() || !a.value.trim()) { say.textContent = 'A title and a name, please.'; return; }
+    go.disabled = true; CFG.slName = a.value.trim().slice(0, 40); saveCfg();
+    try {
+      say.textContent = 'Compressing the master…'; const blob = await drpOgg(FIN.out.l, FIN.out.r, FIN.out.sr);
+      let l = ''; if (link.checked) { const u = await slLink(); l = u.slice(u.indexOf('#') + 1); }
+      const meta = slB64(new TextEncoder().encode(JSON.stringify({ t: t.value.trim(), a: a.value.trim(), n: n.value.trim(), l, d: Math.round(FIN.out.l.length / FIN.out.sr) })));
+      say.textContent = 'Sending ' + projBytes(blob.size) + '…'; const tok = await ghToken();
+      const r = await fetch('/drops/api/put', { method: 'POST', headers: { Authorization: 'Bearer ' + tok, 'Content-Type': 'audio/ogg', 'X-Drop-Meta': meta }, body: blob, cache: 'no-store' }), j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error({ 'not-set-up': 'Drops aren’t switched on for this site yet.', 'sign-in': 'Sign in with GitHub first (Settings ▸ GitHub).', 'limit-you': 'Three drops a day at most: try again tomorrow.', 'queue-full': 'The review queue is full: try again in a day or two.', 'too-big': 'It’s more than 15 MB, even compressed.' }[j.error] || 'It couldn’t be sent (' + (j.error || r.status) + ').');
+      say.textContent = '✓ Sent for review. Once the site’s owner has listened, it’s on the-daily.studio/drops for 7 days.'; toast('🌍 Dropped, waiting for review.', 'ok');
+    } catch (e) { say.textContent = e.message || String(e); go.disabled = false; }
+  } }, '🌍 Drop it');
+  mine.addEventListener('change', () => { go.disabled = !mine.checked; });
+  pdlg('drpDlg', '🌍 Drop “' + (S.title || 'Untitled') + '”', h('div', { class: 'drp' },
+    h('p', { class: 'small' }, 'Drops is new music from the studio, public for 7 days. The site’s owner listens first; once approved, anyone can hear it at the-daily.studio/drops until it ends.'),
+    h('label', { class: 'small' }, 'Title', t), h('label', { class: 'small' }, 'Your name, as shown', a), h('label', { class: 'small' }, 'Note', n),
+    h('label', { class: 'chk small' }, link, ' Include the song (words, chords and the band; no recordings), so listeners can open it and make their own version'),
+    h('label', { class: 'chk small' }, mine, ' I made this, music and words, or have the right to publish it; it’s no one else’s recording. (Terms of use)'),
+    h('div', { class: 'row', style: { justifyContent: 'flex-end', gap: '8px' } }, go), say), {});
 }
 
 /* >>> parts/40-sync.js */
@@ -10893,6 +11336,7 @@ async function lxExport(opt) {
       const zf = new File([zipBuild(files)], title + ' - stems.zip', { type: 'application/zip' }); if (!opt.noDownload) download(zf.name, zf); LXO.lastZip = zf;
       msg.textContent = '✓ ' + (files.length - 1) + ' files and a README, in one .zip. Unzip it, then drag the files into your other app, all at bar 1.'; body.append(lxChip(zf));
     }
+    if (PRJ.rec) { PRJ.rec.done = Date.now(); projSave(); bus.emit('versions'); }      /* the song journey's last step (2.56) */
     fill.style.width = '100%'; body.append(h('div', { class: 'row', style: { justifyContent: 'flex-end', marginTop: '8px' } }, h('button', { class: 'btn primary', id: 'lxDone', onclick: () => d.close() }, 'Done')));
     return { files: files.map(f => f.name), turned, gP, readme };
   } catch (e) { if (!(e && e.cancelled)) { msg.textContent = 'The export stopped: ' + (e.message || e); console.warn(e); } }
@@ -13728,7 +14172,7 @@ function secMenu(anchor, si, done) {
 function wsNext(phone) {
   return h('div', { class: 'ws-next' + (phone ? ' ws-next-m' : '') },
     h('button', { class: 'btn sm', id: phone ? 'mwPerform' : 'wsPerform', title: 'Sing or play it through: the words in time with the band, as a sing-along', onclick: () => { try { perfOpen(); } catch (e) { } } }, '🎤 Perform'),
-    h('button', { class: 'btn sm', id: phone ? 'mwSend' : 'wsSend', title: 'Send the song as a link: the chords, words and beat ride inside it, and nothing is uploaded', onclick: () => { try { slShare(); } catch (e) { } } }, slSendLabel(true)),
+    h('button', { class: 'btn sm', id: phone ? 'mwSend' : 'wsSend', title: 'Send the song as a link: the chords, words and beat ride inside it (your recordings too, if you choose)', onclick: () => { try { slShare(); } catch (e) { } } }, slSendLabel(true)),
     phone ? '' : h('button', { class: 'btn sm', id: 'wsPrint', title: 'Print the chord sheet, or save it as a PDF', onclick: () => { try { printSheet(); } catch (e) { } } }, '🖨 Print'));
 }
 /** a song with nothing in it yet: how to begin */
@@ -13736,6 +14180,137 @@ function wsEmpty(phone) {
   const any = S.sections.some(s => (s.lyrics || '').trim() || s.bars.some(b => (b.chord || '').trim())); if (any) return '';
   return h('div', { class: 'ws-empty' }, h('b', {}, 'A blank page.'), ' ', phone ? 'Tap ＋ for an intro, a verse and a chorus, or ⧉ Paste a lyric sheet you already have.' : 'Press ＋ Section for an intro, a verse and a chorus, or 📋 Paste lyrics you already have. 🥁 Beats gives you a groove to write over.');
 }
+
+/* >>> parts/63c-comments.js */
+/* ============================================================
+   Part 63c · COMMENTS PINNED TO A MOMENT (2.58) — "bar 12: rush here?"
+   💬 Comment (the arrangement's bar, or C) pins a note to the playhead's place in the song: a bar and beat, not a time in seconds, so it
+   stays on the beat if the tempo changes. Comments show on the arrangement's ruler, are listed in 💬 Comments (jump to one, mark it done,
+   remove it), are part of the song (and so of its versions and sync), and travel in song links with the song: the open ones, up to 20,
+   with who wrote them. Writing together becomes a conversation about the song, at the place it's about.
+   ============================================================ */
+const CMT = { max: 60, len: 280, link: 20 };
+const cmtAll = () => (Array.isArray(S.comments) ? S.comments : (S.comments = []));
+/** the section and bar.beat of a slot */
+function cmtWhere(slot) {
+  const sp = spb(), bar = Math.floor(slot / sp); let si = S.sections.findIndex((_, i) => bar >= secStart(i) && bar < secStart(i) + S.sections[i].bars.length); if (si < 0) si = S.sections.length - 1;
+  const beat = Math.floor((slot % sp) / Math.max(1, sp / (S.ts[0] || 4))) + 1;
+  return { si, sec: S.sections[si] ? S.sections[si].name : '', bar: bar + 1, beat, label: 'bar ' + (bar + 1) + (beat > 1 ? '.' + beat : '') };
+}
+function cmtAdd(text, slot) {
+  text = String(text || '').trim().slice(0, CMT.len); if (!text) return null; const at = Math.max(0, slot == null ? playheadSlot() : slot), w = cmtWhere(at);
+  const c = { id: 'm' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), at: Math.round(at * 100) / 100, sec: w.sec, text, who: CFG.slName || '', day: slcDay(), done: false };
+  const a = cmtAll(); a.push(c); a.sort((x, y) => x.at - y.at); if (a.length > CMT.max) a.splice(0, a.length - CMT.max); commit(false); TL.dirty = true; bus.emit('comments'); return c;
+}
+function cmtJump(c) { if (T.playing) stopPlay(true); T.cursor = c.at; try { syncTransport(); } catch (e) { } TL.dirty = true; const w = cmtWhere(c.at); if (w.si >= 0) { SEL.sec = w.si; bus.emit('song', 'sel'); } }
+/** the comments a link carries, and reading them back (untrusted: lengths capped, numbers clamped) */
+const cmtPack = s => { const a = (s.comments || []).filter(c => c && !c.done).slice(0, CMT.link); return a.length ? a.map(c => [c.at, c.text, c.who || '', c.day || 0, c.sec || '']) : undefined; };
+function cmtUnpack(a, str) {
+  if (!Array.isArray(a)) return []; return a.slice(0, CMT.link).map((x, i) => Array.isArray(x) && Number.isFinite(+x[0]) ? { id: 'm' + i + Math.random().toString(36).slice(2, 6), at: clamp(+x[0], 0, 1e5), text: str(x[1], CMT.len).trim(), who: str(x[2], 40).trim(), day: Number.isFinite(+x[3]) ? Math.round(+x[3]) : 0, sec: str(x[4], 40), done: false } : null).filter(c => c && c.text);
+}
+/** a comment as a line: "bar 12 · Verse 1 · Sam: rush here?" */
+const cmtLine = c => cmtWhere(c.at).label + (c.sec ? ' · ' + c.sec : '') + (c.who ? ' · ' + c.who : '') + ': ' + c.text;
+function cmtOpen(focusNew) {
+  const ta = h('textarea', { class: 'in', id: 'cmtText', rows: 2, maxlength: CMT.len, placeholder: 'A note for this moment: “rush here?”, “double the vocal”, “new chord?”' }), here = cmtWhere(playheadSlot());
+  const list = h('ol', { class: 'cmt-list', id: 'cmtList' }), paint = () => {
+    const a = cmtAll(); list.replaceChildren(...(a.length ? a.map(c => h('li', { class: c.done ? 'done' : '' },
+      h('button', { class: 'linkish', title: 'Go there', onclick: () => cmtJump(c) }, cmtWhere(c.at).label), h('span', { class: 'tiny muted' }, (c.sec ? ' · ' + c.sec : '') + (c.who ? ' · ' + c.who : '')), h('div', { class: 'cmt-t' }, c.text),
+      h('div', { class: 'row', style: { gap: '6px' } }, h('button', { class: 'btn sm', onclick: () => { c.done = !c.done; commit(false); TL.dirty = true; paint(); bus.emit('comments'); } }, c.done ? '↺ Open again' : '✓ Done'),
+        h('button', { class: 'btn sm', 'aria-label': 'Remove comment', onclick: () => { const i = a.indexOf(c); if (i >= 0) a.splice(i, 1); commit(false); TL.dirty = true; paint(); bus.emit('comments'); } }, '✕'))))
+      : [h('li', { class: 'muted small' }, 'No comments yet.')]));
+  };
+  paint();
+  pdlg('cmtDlg', '💬 Comments on “' + (S.title || 'Untitled') + '”', h('div', { class: 'cmt' },
+    h('p', { class: 'small' }, 'Pinned to ', h('b', {}, here.label + (here.sec ? ' · ' + here.sec : '')), ' (where the playhead is). Comments go with the song when you send it, so whoever you write with sees them at the same place.'),
+    ta, h('div', { class: 'row', style: { justifyContent: 'flex-end', gap: '8px' } }, h('button', { class: 'btn primary', id: 'cmtAdd', onclick: () => { if (cmtAdd(ta.value)) { ta.value = ''; paint(); } } }, '💬 Add here')), list), {});
+  if (focusNew !== false) setTimeout(() => ta.focus(), 50);
+}
+/** the ruler's markers (drawn by drawTL in part 07) */
+function cmtDraw(g, sw, end, C) {
+  const a = S.comments; if (!a || !a.length) return;
+  a.forEach(c => { const x = c.at * sw; g.globalAlpha = c.done ? .35 : 1; g.fillStyle = '#e0a31a'; g.beginPath(); g.moveTo(x, 2); g.lineTo(x + 9, 2); g.lineTo(x + 9, 10); g.lineTo(x + 4, 10); g.lineTo(x, 14); g.closePath(); g.fill(); g.strokeStyle = '#e0a31a'; g.globalAlpha = c.done ? .15 : .35; g.beginPath(); g.moveTo(x + .5, 14); g.lineTo(x + .5, end); g.stroke(); g.globalAlpha = 1; });
+}
+document.addEventListener('keydown', e => { if ((e.key === 'c' || e.key === 'C') && !e.ctrlKey && !e.metaKey && !e.altKey && !/^(INPUT|TEXTAREA|SELECT)$/.test((e.target && e.target.tagName) || '') && !(e.target && e.target.isContentEditable) && !document.querySelector('dialog[open]')) { e.preventDefault(); cmtOpen(); } });
+
+/* >>> parts/63d-lyrichelp.js */
+/* ============================================================
+   Part 63d · LYRIC HELPER (2.58) — rhymes, syllables and the rhyme scheme, beside the words you're writing
+   ✎ Rhymes & syllables opens a small panel that follows whichever lyrics box you're typing in (Write, the phone's Words, Paste lyrics):
+     · each line's syllable count, and the rhyme scheme from the line endings (A B A B), so uneven lines and broken rhymes stand out;
+     · rhymes for a word (the last word you typed, or any you enter): perfect rhymes by syllables, common words first, then near rhymes
+       (the same vowel); click one to put it in at the cursor.
+   The words come from data/rhymes.txt on this site, fetched once and then kept offline: 31,000 common English words (SCOWL levels 10–35)
+   with their pronunciations from the CMU Pronouncing Dictionary, grouped by rhyme (scripts/make-rhymes.mjs; licences in
+   THIRD_PARTY_NOTICES.md). Without it (the single-file app, or offline before the first use), syllables are counted by spelling rules and
+   rhymes come from the song's own words. Nothing you write is sent anywhere.
+   ============================================================ */
+const LH = { idx: null, groups: null, loading: null, ta: null, el: null, url: 'data/rhymes.txt' };
+async function lhLoad() {
+  if (LH.idx) return true; if (LH.loading) return LH.loading;
+  return (LH.loading = (async () => {
+    try {
+      const r = await fetch(LH.url); if (!r.ok) throw new Error(r.status); const t = await r.text(), idx = new Map(), groups = new Map();
+      t.split('\n').forEach(line => { const p = line.indexOf('|'); if (p < 0) return; const key = line.slice(0, p), ws = line.slice(p + 1).split(' ').map((x, i) => { const m = /^([a-z]+)(\d+)$/.exec(x); return m ? [m[1], +m[2], i] : null; }).filter(Boolean); groups.set(key, ws); ws.forEach(([w, s]) => { if (!idx.has(w)) idx.set(w, { key, syl: s }); }); });
+      LH.idx = idx; LH.groups = groups; return true;
+    } catch (e) { LH.loading = null; return false; }
+  })());
+}
+const lhWord = w => String(w || '').toLowerCase().replace(/[^a-z']/g, '').replace(/^'+|'+$/g, '').replace(/'s$/, '').replace(/in'$/, 'ing');
+/** syllables by spelling, when the dictionary doesn't know the word (part 08's rules) */
+const lhSylGuess = w => syllables(lhWord(w).replace(/'/g, ''));
+const lhSyl = w => { const k = lhWord(w), e = LH.idx && LH.idx.get(k); return e ? e.syl : lhSylGuess(k); };
+/** a rhyme key: the dictionary's (last stressed vowel onward), or one from spelling */
+function lhKey(w) {
+  const k = lhWord(w), e = LH.idx && LH.idx.get(k); if (e) return e.key; if (!k) return '';
+  const m = /([aeiouy]+[^aeiouy]*e?)$/.exec(k.replace(/(.)\1$/, '$1')); return 'sp:' + (m ? m[1] : k.slice(-2)).replace(/igh/, 'i').replace(/ight$/, 'ite').replace(/ey$|ay$/, 'ay');
+}
+const lhLines = text => String(text || '').split('\n').map(l => l.replace(/\[[^\]]*\]/g, '').replace(/[^\p{L}\p{N}'’ -]/gu, ' ').trim());
+/** syllable counts and the rhyme scheme (A, B, …) for the lines of a verse */
+function lhScheme(text) {
+  const out = [], seen = new Map(); let next = 0;
+  lhLines(text).forEach(l => { if (!l) { out.push(null); return; } const ws = l.split(/\s+/).filter(Boolean), last = ws[ws.length - 1], key = lhKey(last); let letter = seen.get(key); if (letter == null) { letter = String.fromCharCode(65 + (next++ % 26)); seen.set(key, letter); } out.push({ syl: ws.reduce((a, w) => a + lhSyl(w), 0), last, letter }); });
+  return out;
+}
+/** rhymes for a word: perfect ones by syllables (common words first), then near ones (same vowel); with no dictionary, the song's own words */
+function lhRhymes(word, max) {
+  const w = lhWord(word), key = lhKey(w); max = max || 60; if (!w) return { perfect: [], near: [] };
+  if (!LH.groups) { const own = new Set(); S.sections.forEach(s => lhLines(s.lyrics).forEach(l => l.split(/\s+/).forEach(x => { const y = lhWord(x); if (y && y !== w && lhKey(y) === key) own.add(y); }))); return { perfect: [...own].slice(0, max).map(x => [x, lhSylGuess(x)]), near: [], own: true }; }
+  const perfect = (LH.groups.get(key) || []).filter(x => x[0] !== w).slice(0, max).map(x => [x[0], x[1]]), vowel = key.split(' ')[0], near = [];
+  for (const [k, ws] of LH.groups) { if (k === key || k.split(' ')[0] !== vowel || k.split(' ').length > key.split(' ').length + 1) continue; for (const x of ws) { if (x[2] > 6) break; near.push([x[0], x[1]]); } if (near.length >= max) break; }
+  return { perfect, near: near.slice(0, max) };
+}
+/** put a word in at the cursor of the lyrics box the panel follows */
+function lhInsert(word) {
+  const ta = LH.ta; if (!ta || !ta.isConnected) return toast('Click into the words first, then choose a rhyme.', 'warn');
+  const a = ta.selectionStart, b = ta.selectionEnd, v = ta.value, pre = v.slice(0, a), sp = pre && !/\s$/.test(pre) ? ' ' : '';
+  ta.value = pre + sp + word + v.slice(b); const c = a + sp.length + word.length; ta.focus(); ta.setSelectionRange(c, c); ta.dispatchEvent(new Event('input', { bubbles: true }));
+}
+const lhLastWord = ta => { const pre = ta.value.slice(0, ta.selectionStart).replace(/[^\p{L}'’]+$/u, ''), m = /([\p{L}'’]+)$/u.exec(pre); return m ? m[1] : ''; };
+function lhPaint() {
+  const el = LH.el; if (!el || !el.isConnected) return; const ta = LH.ta, text = ta && ta.isConnected ? ta.value : (S.sections[SEL.sec] || {}).lyrics || '';
+  const sch = lhScheme(text), rows = el.querySelector('#lhRows'), q = el.querySelector('#lhWord'), res = el.querySelector('#lhRes');
+  const counts = sch.filter(Boolean).map(x => x.syl), avg = counts.length ? counts.reduce((a, b) => a + b, 0) / counts.length : 0;
+  rows.replaceChildren(...(sch.some(Boolean) ? sch.map(x => x ? h('div', { class: 'lh-row' + (Math.abs(x.syl - avg) > Math.max(2, avg * .3) ? ' odd' : '') }, h('b', { class: 'lh-l' }, x.letter), h('span', { class: 'lh-n' }, String(x.syl)), h('span', { class: 'lh-w' }, x.last)) : h('div', { class: 'lh-gap' })) : [h('p', { class: 'tiny muted' }, 'Type some lines: each one’s syllables and the rhyme scheme show here.')]));
+  const word = q.value.trim(); if (!word) { res.replaceChildren(h('p', { class: 'tiny muted' }, 'Rhymes for the last word you typed show here, or type a word above.')); return; }
+  const R = lhRhymes(word), chip = ([w, s]) => h('button', { class: 'lh-chip', type: 'button', title: s + (s === 1 ? ' syllable' : ' syllables') + ' · click to put it in', onclick: () => lhInsert(w) }, w);
+  const by = n => R.perfect.filter(x => (n < 3 ? x[1] === n : x[1] >= 3));
+  res.replaceChildren(
+    R.perfect.length ? h('div', {}, ...[1, 2, 3].map(n => by(n).length ? h('div', { class: 'lh-grp' }, h('span', { class: 'tiny muted' }, n < 3 ? n + ' syl' : '3+ syl'), ...by(n).map(chip)) : null).filter(Boolean)) : h('p', { class: 'tiny muted' }, 'No perfect rhymes for “' + word + '”' + (R.own ? ' among this song’s words (the full list loads on the site).' : '.')),
+    R.near.length ? h('div', { class: 'lh-grp near' }, h('span', { class: 'tiny muted' }, 'near'), ...R.near.slice(0, 30).map(chip)) : null);
+}
+async function lhOpen(ta) {
+  if (ta && ta.tagName === 'TEXTAREA') LH.ta = ta; if (LH.el && LH.el.isConnected) { LH.el.remove(); LH.el = null; return; }
+  const q = h('input', { class: 'in', id: 'lhWord', placeholder: 'A word to rhyme', autocomplete: 'off', oninput: () => lhPaint() });
+  LH.el = h('aside', { class: 'lh-panel', id: 'lhPanel', role: 'complementary', 'aria-label': 'Rhymes and syllables' },
+    h('div', { class: 'lh-h' }, h('b', {}, '✎ Rhymes & syllables'), h('span', { class: 'tiny muted', id: 'lhSrc' }, ' loading…'), h('span', { class: 'grow' }), h('button', { class: 'btn sm', 'aria-label': 'Close', onclick: () => { LH.el.remove(); LH.el = null; } }, '✕')),
+    h('div', { class: 'lh-rows', id: 'lhRows' }), q, h('div', { class: 'lh-res', id: 'lhRes' }));
+  document.body.append(LH.el); lhPaint();
+  const ok = await lhLoad(); const src = document.getElementById('lhSrc'); if (src) src.textContent = ok ? ' 31,000 words' : ' this song’s words (offline)'; lhPaint();
+}
+/* the panel follows the lyrics box you're in, and the last word you typed */
+const LH_SEL = 'textarea.lyr, textarea.mw-ta, textarea.lyi-ta';
+document.addEventListener('focusin', e => { if (e.target && e.target.matches && e.target.matches(LH_SEL)) { LH.ta = e.target; lhPaint(); } });
+document.addEventListener('input', e => { if (!LH.el || !e.target || !e.target.matches || !e.target.matches(LH_SEL)) return; LH.ta = e.target; const w = lhLastWord(e.target), q = document.getElementById('lhWord'); if (q && w && document.activeElement !== q) q.value = w; lhPaint(); });
 
 /* >>> parts/64-goals.js */
 /* ============================================================
@@ -13765,7 +14340,7 @@ const GOALS = [
       ['gtVox', '🎤 Vocal pedals', 'Scream, doubler, harmony, echo, reverb, de-esser and megaphone for your voice', () => vocalBoardOpen()],
       ['gtPads', '🥁 Pads', 'Play the drums with your fingers, tap the tempo, record a groove or beatbox it', () => padsOpen()],
       ['gtKeys', '🎹 Keys', 'A piano to play with the mouse, the computer keys or a MIDI keyboard: its own sounds, or the band’s bass or lead; record what you play into the song', () => keysOpen()],
-      ['gtLink', () => slSendLabel(), 'Send this song to a bandmate as a link: the chords, words, tab, beat, tempo and key ride inside it, and nothing is uploaded', () => slShare()],
+      ['gtLink', () => slSendLabel(), 'Send this song to a bandmate as a link: the chords, words, tab, beat, tempo and key ride inside it (your recordings too, if you choose)', () => slShare()],
       ['gtRoll', '🎛 Piano roll', 'Draw the keys part or the bass line on a grid, loop it, duck it to the kick', () => rollOpen()],
 
 
@@ -16747,7 +17322,7 @@ async function ghCommit(at, changes, message, o, r) {
 function ghSettingsOut() { const o = {}; Object.keys(CFG).forEach(k => { if (!GH_SKIP.has(k) && typeof CFG[k] !== 'function') o[k] = CFG[k]; }); return o; }
 const ghLooksOut = () => { const s = Object.assign({}, CFG.show || {}); delete s.imgs; return s; };       /* the stage's pictures stay on the device */
 /* no save time in the file: saving a song that did not change would make it look changed, and send it again */
-const ghSongOut = rec => ({ format: 'the-daily-song-text', version: 1, id: rec.id, title: rec.title || 'Untitled', artist: rec.artist || '', created: rec.created || 0, origin: rec.origin || 'blank', zoom: rec.zoom || 'song', song: rec.song, recordings: (rec.takes || []).length });
+const ghSongOut = rec => ({ format: 'the-daily-song-text', version: 1, id: rec.id, title: rec.title || 'Untitled', artist: rec.artist || '', created: rec.created || 0, origin: rec.origin || 'blank', zoom: rec.zoom || 'song', song: rec.song, recordings: (rec.takes || []).length, versions: (rec.versions || []).slice(-20) });      /* 2.56: the song's versions travel with it (their recordings stay on the devices that made them) */
 /** a song worth keeping: something written or recorded in it, or a name of its own; never the built-in demo */
 const ghSongKeep = rec => {
   if (!rec || !rec.song || /\(demo\)\s*$/i.test(rec.song.title || rec.title || '')) return false;
@@ -16796,6 +17371,8 @@ async function ghTakeSong(text, asCopy) {
   const d = ghParse(text); if (!d || !d.song || !Array.isArray(d.song.sections)) return null;
   const id = asCopy ? projId() : String(d.id || '').replace(/[^\w-]/g, '') || projId(), old = asCopy ? null : await pdbGet('projects', id);
   const rec = Object.assign({ takes: [], track: null, stemMix: null, size: 0, nTakes: 0 }, old || {}, { id, v: 1, origin: d.origin || 'github', created: d.created || Date.now(), modified: Date.now(), zoom: d.zoom || 'song', song: normSong(d.song) });
+  { const mine = (old && old.versions) || [], seen = new Set(mine.map(v => v.id)), theirs = Array.isArray(d.versions) ? d.versions.filter(v => v && v.id && v.song && Array.isArray(v.song.sections) && !seen.has(v.id)) : [];
+    rec.versions = mine.concat(theirs.map(v => Object.assign({}, v, { takes: Array.isArray(v.takes) ? v.takes : [] }))).sort((a, b) => (a.at || 0) - (b.at || 0)).slice(-VER.max); }      /* versions from both sides are kept (2.56) */
   if (asCopy) { rec.song.title = (d.title || 'Untitled') + ' (from another device)'; }
   rec.title = rec.song.title || d.title || 'Untitled'; rec.artist = rec.song.artist || d.artist || '';
   await pdbPut('projects', rec);
@@ -19063,7 +19640,9 @@ function slPack(s) {
       if (tab || ky || bl) row.push(tab ? sec.bars.map(b => (b.tab || []).map(n => n.bend != null ? [n.s, n.st, n.f, n.t || '', n.bend] : [n.s, n.st, n.f, n.t || ''])) : 0, ky ? sec.bars.map(b => notes(b.keys)) : 0, bl ? sec.bars.map(b => notes(b.bassLine)) : 0);
       if (sec.energy >= 1) { while (row.length < 6) row.push(0); row.push(sec.energy); }      /* 2.44: the section's energy */
       return row; }),
-    c: s.collab && s.collab.out ? s.collab.out : undefined,      /* 2.51: who sent it, a note, the rounds so far */
+    c: s.collab && s.collab.out ? s.collab.out : undefined,
+    cm: cmtPack(s),
+    tr: s === S && STM.ch && STM.an && !(s.track && s.track.ours) ? ycPrint() || undefined : (s.trackRef || undefined),      /* 2.59: the record it's played over, named and fingerprinted, never sent */      /* 2.58: open comments, pinned to their place */      /* 2.51: who sent it, a note, the rounds so far */
     bd: { d: B.drumsOn ? 1 : 0, kit: B.kit, pn: B.patName, p: pat, bo: B.bassOn ? 1 : 0, bs: B.bassStyle, bt: B.bassTone, co: B.compOn ? 1 : 0, cs: B.compStyle, ci: B.compInst, lo: B.leadOn ? 1 : 0, li: B.leadInst, ko: B.keysOn ? 1 : 0, ks: B.keysStyle, kn: B.keysSound, beat: B.beat || undefined, bu: B.build ? 1 : undefined } };
 }
 /** a song from a link, rebuilt from scratch: only what is checked is kept */
@@ -19106,6 +19685,8 @@ function slUnpack(o) {
     const c = o.c, hist = (Array.isArray(c.h) ? c.h : []).slice(-SLC.keep).filter(Array.isArray).map(x => [str(x[0], 40).trim() || 'Someone', int(x[1], 0, 200000, 0), str(x[2], 140).trim()]);
     s.collab = { id: /^[a-z0-9]{6,16}$/.test(String(c.id || '')) ? c.id : slcId(), with: str(c.f, 40).trim(), note: str(c.n, SLC.note).trim(), hist };
   }
+  if (o.cm) s.comments = cmtUnpack(o.cm, str);
+  if (o.tr && typeof o.tr === 'object' && typeof o.tr.fp === 'string' && /^[A-Za-z0-9_-]{8,1400}$/.test(o.tr.fp)) s.trackRef = { t: str(o.tr.t, 80).trim(), a: str(o.tr.a, 80).trim(), d: int(o.tr.d, 0, 3600, 0), fp: o.tr.fp, n: int(o.tr.n, 8, 2000, 800) };
   if (s.collab) slcMark(s);      /* what it was when it arrived, to tell what changes before it goes back */
   return s;
 }
@@ -19188,12 +19769,14 @@ async function slShare() {
 }
 
 /* ---------- opening one ---------- */
-async function slOpen(song, playNow, perform) {
+async function slOpen(song, playNow, perform, asVersion) {
   const boot = document.getElementById('boot'), b = document.getElementById('bootNoMic'), att = song._att;
   if (boot && b && boot.getClientRects().length && getComputedStyle(boot).display !== 'none') b.click();      /* past the first page, as Begin in the studio does */
   let takes = null, lost = '';
   if (att) { try { takes = await srxReceive(att, t => toast(t)); } catch (e) { lost = e.message; } }      /* the recordings first: if they can't come, the song still does */
-  delete song._att; await projCreate('import', { song, zoom: 'studio' }); if (takes && takes.length) { srxAdd(takes); await projSave(); }
+  delete song._att;
+  if (asVersion) { const v = await verAddRound(asVersion, song, takes); bus.emit('song', 'reload'); try { syncTransport(); syncBandStrip(); } catch (e) { } return toast((lost ? lost + ' ' : '') + '↩ “' + v.n + '” is now the newest version of “' + S.title + '”. Your earlier versions are in ✓ Versions.', lost ? 'warn' : 'ok'); }      /* 2.56: a round of a song you have becomes a version of it */
+  await projCreate('import', { song, zoom: 'studio' }); if (takes && takes.length) { srxAdd(takes); await projSave(); }
   bus.emit('song', 'reload'); try { syncTransport(); syncBandStrip(); } catch (e) { }
   if (playNow) { try { await startAudio(); T.cursor = 0; T.loop = true; syncTransport(); play(); } catch (e) { console.warn(e); } }
   if (perform) { try { perfOpen(); const g = document.getElementById('pfGo'); if (g) g.click(); } catch (e) { console.warn(e); } }      /* a first visit through a link: the song as a sing-along */
@@ -19204,17 +19787,21 @@ async function slOpen(song, playNow, perform) {
 }
 function slWelcome(song) {
   const old = document.getElementById('slIn'); if (old) old.remove();
-  const c = song.collab, from = c && c.with, first = !store.get('started', false);
-  const go = (p, perf) => { d.close(); slOpen(song, p, perf).catch(e => toast('It could not be opened: ' + (e.message || e), 'bad')); };
+  const c = song.collab, from = c && c.with, first = !store.get('started', false), mine = !first && verRoundOf(song);
+  const go = (p, perf, asV) => { d.close(); slOpen(song, p, perf, asV).catch(e => toast('It could not be opened: ' + (e.message || e), 'bad')); };
   const d = h('dialog', { class: 'sl-dlg sl-in' + (first ? ' sl-first' : ''), id: 'slIn', 'aria-labelledby': 'slInH' },
     h('p', { class: 'sl-kick' }, from ? '🎵 ' + from + ' sent you a song' : '🎵 A song was sent to you'), h('h3', { id: 'slInH' }, song.title), song.artist ? h('p', { class: 'muted' }, song.artist) : null,
     c && c.note ? h('blockquote', { class: 'slc-note', id: 'slInNote' }, c.note) : null,
     h('p', { class: 'sl-what' }, slSummary(song)),
     c ? slcHistEl(c.hist) : null,
+    song.trackRef ? h('p', { class: 'small', id: 'slInTrk' }, '🎵 Played over “' + song.trackRef.t + (song.trackRef.a ? ' – ' + song.trackRef.a : '') + '”. The record isn’t sent: after opening, choose ♪ Load your copy, and it lines itself up.') : null,
+    (song.comments || []).length ? h('details', { class: 'small', id: 'slInCmt' }, h('summary', {}, '💬 ' + song.comments.length + (song.comments.length === 1 ? ' comment' : ' comments')), h('ul', { class: 'tiny' }, song.comments.slice(0, 8).map(c => h('li', {}, (c.sec ? c.sec + ' · ' : '') + (c.who ? c.who + ': ' : '') + c.text)))) : null,
     song._att ? h('p', { class: 'small srx-in', id: 'srxIn' }, '🎙 With recordings, until ' + srxDate(srxUntil(song._att)) + '. ', h('button', { class: 'linkish tiny', id: 'srxRepBtn', type: 'button', onclick: () => srxReport(song._att) }, '⚑ Report')) : null,
+    mine ? h('p', { class: 'small', id: 'slMine' }, 'You already have “' + (mine.title || 'this song') + '”. Add this round as its newest version, so the rounds don’t pile up as copies; what you have now is kept as a version too.') : null,
     h('p', { class: 'small muted' }, (first ? 'This is the-daily.studio: a place to write, sing and play songs, free, in your browser, with no account. ' : '') + 'It opens as a new song' + (first ? '' : ', so none of yours change') + '. ' + (song._att ? 'The song came inside the link; its recordings are fetched encrypted from this site and unlocked with the link’s key.' : 'It came inside the link: nothing was downloaded from anyone.') + (from ? ' Change what you like, then ↩ Send it back to ' + from + '.' : '')),
     h('div', { class: 'row sl-acts' }, ...(first
       ? [h('button', { class: 'btn primary', id: 'slPlay', type: 'button', onclick: () => go(true, true) }, '▶ Play it'), h('button', { class: 'btn', id: 'slOpenBtn', type: 'button', onclick: () => go(false) }, 'Open it in the studio')]
+      : mine ? [h('button', { class: 'btn primary', id: 'slAsVer', type: 'button', title: 'It becomes the newest version of your song; what you have now is kept as a version first', onclick: () => go(false, false, mine) }, '↩ Add as a new version of “' + (mine.title || 'your song') + '”'), h('button', { class: 'btn', id: 'slOpenBtn', type: 'button', onclick: () => go(false) }, 'Open as a separate song'), h('span', { class: 'grow' }), h('button', { class: 'btn', type: 'button', onclick: () => d.close() }, 'Not now')]
       : [h('button', { class: 'btn primary', id: 'slPlay', type: 'button', onclick: () => go(true) }, '▶ Open and play'), h('button', { class: 'btn', id: 'slOpenBtn', type: 'button', onclick: () => go(false) }, 'Open'), h('span', { class: 'grow' }), h('button', { class: 'btn', type: 'button', onclick: () => d.close() }, 'Not now')])));
   d.addEventListener('close', () => setTimeout(() => d.remove(), 0)); document.body.append(d); d.showModal();
 }

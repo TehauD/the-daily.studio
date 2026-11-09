@@ -6,6 +6,11 @@ Reviewed for 2.49.2 (first written for 2.13), with an evaluation of the live sit
 
 1. **The visitor's device** holds all data. There is no account, cookie, analytics or telemetry, and no server keeps data. The site's Worker (`worker/index.mjs`) only serves the files and, if the owner sets up Sign in with GitHub, passes GitHub's one-time sign-in code to GitHub and the token back to the browser (it stores nothing). A person may connect their own GitHub repository (Settings ▸ GitHub); then the browser talks to `api.github.com` directly (docs/GITHUB.md).
 2. **The host (Cloudflare)** serves static files and may keep ordinary access logs. It never sees songs, or audio or video it can open.
+6. **Drops (2.60, `worker/drops.mjs`)** is public by design, so the owner reviews before anything is shown.
+   - **Uploading** needs a GitHub token (one `GET api.github.com/user`, not kept). It accepts Ogg audio only, up to 15 MB, 3 a day per account (counted by markers in the private bucket) and 100 waiting.
+   - **Text** (title, name, note) is cut to length with `<` and `>` removed. A link is kept only if it is a song link.
+   - **Waiting drops** stay in the private bucket. The owner-only routes check the GitHub account number against `OWNER_GITHUB_ID`.
+   - **The public and review pages** have a strict policy (one script allowed by its hash; no inline handlers) and put every text in with `textContent`. Audio plays from the site or the public bucket's own address only.
 5. **Recordings sent with a song link (2.54, `worker/share.mjs`)** are the one thing the site keeps:
    - **Sealed in the sender's browser:** AES-GCM-256 with a new random key, which rides in the link after the `#` and is never sent.
    - **Stored for 7 days** in R2, under a random name, with the sending GitHub account's number.

@@ -132,7 +132,7 @@ function secMenu(anchor, si, done) {
 function wsNext(phone) {
   return h('div', { class: 'ws-next' + (phone ? ' ws-next-m' : '') },
     h('button', { class: 'btn sm', id: phone ? 'mwPerform' : 'wsPerform', title: 'Sing or play it through: the words in time with the band, as a sing-along', onclick: () => { try { perfOpen(); } catch (e) { } } }, '🎤 Perform'),
-    h('button', { class: 'btn sm', id: phone ? 'mwSend' : 'wsSend', title: 'Send the song as a link: the chords, words and beat ride inside it, and nothing is uploaded', onclick: () => { try { slShare(); } catch (e) { } } }, slSendLabel(true)),
+    h('button', { class: 'btn sm', id: phone ? 'mwSend' : 'wsSend', title: 'Send the song as a link: the chords, words and beat ride inside it (your recordings too, if you choose)', onclick: () => { try { slShare(); } catch (e) { } } }, slSendLabel(true)),
     phone ? '' : h('button', { class: 'btn sm', id: 'wsPrint', title: 'Print the chord sheet, or save it as a PDF', onclick: () => { try { printSheet(); } catch (e) { } } }, '🖨 Print'));
 }
 /** a song with nothing in it yet: how to begin */

@@ -57,6 +57,50 @@ Each file starts its **own** static server, its own Chromium (fake microphone an
 | `e2e-collab.cjs` | Passing a song back and forth (2.51), between two browsers: Alice sends with her name and a note; Bob, a first visit, sees who sent it, the note (as text), the rounds and ▶ Play it (which opens it in Perform); his send buttons say ↩ Send back to Alice, and the window lists what he changed; Alice gets his reply with both rounds and the chorus he wrote. Share pages and printed sheets link back to the song, and odd values in a link are cleaned |
 | `e2e-sendrec.cjs` | Send with recordings (2.54), between two browsers, through the site's real Worker with an in-memory R2 bucket:
 | `e2e-lanesout.cjs` | Lanes out (2.55):
+| `e2e-versions.cjs` | Versions, the song journey and 🛡 (2.56):
+| `e2e-finish.cjs` | Finish it (2.57):
+| `e2e-comments.cjs` | Comments and the lyric helper (2.58):
+| `e2e-yourcopy.cjs` | Load your copy and Make it ours (2.59), with a made-up 48-second record:
+| `e2e-drops.cjs` | Drops (2.60), through the site's real Worker with private and public in-memory buckets:
+  - the Ogg file plays back at the master's length;
+  - the sharing terms ask first, and Drop it waits for "this is mine";
+  - a drop waits privately, and the public page shows nothing before approval;
+  - the review page lists it, its markup arrives as plain text, and the owner listens and approves;
+  - the public page lists it as text with "7 days left", plays it from this site, and links to the song;
+  - a song over a record can't be dropped. |
+  - the fingerprint (about 530 characters) and the link carrying it;
+  - ♪ Load your copy offered;
+  - a copy 2.5 s later and 3 dB quieter lining up at exactly +2.5 s, with the song unchanged;
+  - a different record (another tempo, chords and drums) matching 5% and not lined up;
+  - Make it ours: band on over the chords, record muted, no record named in the next link, and Undo. |
+  - **Comments:**
+    - pinned at the playhead's bar, listed, jumped to;
+    - a link carries the open ones, not the done one;
+    - a hostile link's comments are clamped and cut;
+    - opening a link shows them;
+    - a round as a version keeps both sides', without doubles.
+  - **Lyric helper:**
+    - the 31,469-word list loads from this site;
+    - dictionary syllables and an A B A B scheme;
+    - rhymes for "night" with near rhymes;
+    - typing fills in the last word, and a click inserts a rhyme at the cursor;
+    - the scheme follows. |
+  - the look-ahead limiter never passes its ceiling and leaves the rest alone;
+  - reference matching lifts and lowers the right bands, within ±6 dB;
+  - Master it lands within 0.5 LU of −14 LUFS with true peaks ≤ −1 dBTP;
+  - Before / After is level-matched and switches at once;
+  - credits and splits come from the history and add up to 100 %;
+  - the package holds both masters (16-bit 44.1 kHz for distributors), lyrics, chord sheet, credits, splits, the song and a README;
+  - the song is marked finished, and the release is kept as a version. |
+  - the journey's steps and the next one;
+  - the 🛡 chip before and after a backup, and opening Keep my songs safe;
+  - marking a version with a take, a name and a note;
+  - a deleted take's audio kept for its version;
+  - "what changed" (words, not chords);
+  - going back, with the take's audio, and what you had kept as "Before going back…";
+  - Open as a copy with audio;
+  - a round arriving as "Round from Sam" without a copy;
+  - versions going out with the song to sync. |
   - a take lane's first sound is within 2 samples of its place in the song;
   - the master section is left out (master level at 30 %, the take still at its own level);
   - every lane is the same length;

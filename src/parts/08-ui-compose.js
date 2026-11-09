@@ -4,13 +4,13 @@
 
 /* ---------- lyric text analysis ---------- */
 function syllables(word) {
-  let w = word.toLowerCase().replace(/[^a-z]/g, ''); if (!w) return 0; if (w.length <= 3) return 1;
+  let w = word.toLowerCase().replace(/[^a-z]/g, ''); if (!w) return 0; { const e = typeof LH !== 'undefined' && LH.idx && LH.idx.get(w); if (e) return e.syl; }      /* the dictionary's count once the lyric helper has loaded it (2.58) */ if (w.length <= 3) return 1;
   w = w.replace(/(?:[^laeiouy]es|ed|[^laeiouy]e)$/, '').replace(/^y/, ''); const m = w.match(/[aeiouy]{1,2}/g); return Math.max(1, m ? m.length : 1);
 }
 const lyricPlain = line => line.replace(/\[[^\]]*\]/g, '');
 const lineSyl = line => (lyricPlain(line).match(/[A-Za-z']+/g) || []).reduce((a, w) => a + syllables(w), 0);
 function rhymeKey(line) {
-  const ws = lyricPlain(line).toLowerCase().match(/[a-z']+/g); if (!ws) return ''; let w = ws[ws.length - 1].replace(/'/g, '').replace(/(s|ed)$/, m => w2ok(m));
+  const ws = lyricPlain(line).toLowerCase().match(/[a-z']+/g); if (!ws) return ''; if (typeof LH !== 'undefined' && LH.idx && LH.idx.has(lhWord(ws[ws.length - 1]))) return lhKey(ws[ws.length - 1]); let w = ws[ws.length - 1].replace(/'/g, '').replace(/(s|ed)$/, m => w2ok(m));
   const m = w.match(/[aeiouy]+[^aeiouy]+e$/) || w.match(/[aeiouy]+[^aeiouy]*$/); return m ? m[0] : w;
 }
 function w2ok(m) { return m === 's' ? '' : m; }
@@ -270,7 +270,7 @@ function sectionCard(sec, si, compact, opt) {
     lines.forEach((l, i) => { if (!l.trim()) return; const sy = lineSyl(l); tot += sy; n++; tb.append(h('tr', {}, h('td', { style: { fontFamily: 'var(--sans)' } }, lyricPlain(l).slice(0, 52)), h('td', {}, String(sy)), h('td', {}, sch[i] || ''))); });
     ana.append(n ? tb : h('span', { class: 'muted' }, 'No lyric lines yet.'), n ? h('div', { class: 'tiny muted', style: { marginTop: '4px' } }, 'Scheme: ' + sch.filter(Boolean).join('') + ' · mean ' + (tot / n).toFixed(1) + ' syllables/line (heuristic count)') : '');
   };
-  body.append(h('div', { class: 'row', style: { gap: '6px', marginBottom: '5px' } }, h('b', { class: 'small' }, 'Lyrics'), h('span', { class: 'muted tiny' }, 'insert chord at cursor:'), h('div', { class: 'pal' }, used.map(c => h('button', { class: 'btn sm', onclick: () => ins(c) }, c)))),
+  body.append(h('div', { class: 'row', style: { gap: '6px', marginBottom: '5px' } }, h('b', { class: 'small' }, 'Lyrics'), h('button', { class: 'btn sm', id: 'lhBtn', title: 'Rhymes for the word you just typed, each line’s syllables and the rhyme scheme, in a panel beside the words', onclick: () => { lhOpen(ta); } }, '✎ Rhymes'), h('span', { class: 'muted tiny' }, 'insert chord at cursor:'), h('div', { class: 'pal' }, used.map(c => h('button', { class: 'btn sm', onclick: () => ins(c) }, c)))),
     h('div', { class: 'lyr-grid' }, ta, prev), h('details', { style: { marginTop: '8px' } }, h('summary', { class: 'small muted', style: { cursor: 'pointer' } }, 'Syllable & rhyme analysis'), ana));
   refresh(); card.append(body); return card;
 }
@@ -368,9 +368,9 @@ function buildExportPane() {
     h('div', { class: 'card' }, h('h4', {}, 'Files'), h('div', { class: 'card-b row', style: { gap: '8px', flexWrap: 'wrap' } }, h('div', { class: 'tiny muted', style: { flexBasis: '100%' } }, 'Audio, share pages and project files carry your words and sound, and anything you brought in. Send them only where you have the right to.'),
       h('button', { class: 'btn', onclick: () => { download(fn('.mid'), buildMidi()); toast('MIDI saved (rhythm, lead, bass, drums on separate tracks)', 'ok'); } }, '⤓ MIDI'),
       h('button', { class: 'btn', onclick: () => bounceMaster() }, '⤓ Bounce master WAV'), exportExtras(),
-      h('button', { class: 'btn', id: 'lxOpenBtn', title: 'Every lane as its own WAV, lined up from the first beat, plus a premaster and a README with the tempo and key: ready to mix and master in BandLab or any DAW', onclick: () => lxExportOpen() }, '📦 Export for mixing & mastering…'),
+      h('button', { class: 'btn primary', id: 'finOpenBtn', title: 'Master the song to a streaming loudness (with a before/after), then make the release package: masters, lyrics, chord sheet, credits and splits', onclick: () => finOpen() }, '✦ Finish it…'), h('button', { class: 'btn', id: 'lxOpenBtn', title: 'Every lane as its own WAV, lined up from the first beat, plus a premaster and a README with the tempo and key: ready to mix and master in BandLab or any DAW', onclick: () => lxExportOpen() }, '📦 Export for mixing & mastering…'),
       h('button', { class: 'btn', onclick: () => { if (!TAKES.length) return toast('No takes recorded yet', 'warn'); tkLeads().forEach((t, i) => setTimeout(() => dlTake(t), i * 700)); } }, '⤓ All takes (dry DI + wet)'),
-      h('button', { class: 'btn primary', id: 'exLink', title: 'The chords, words, tab, beat, tempo and key inside a link: nothing is uploaded', onclick: () => slShare() }, slSendLabel()),
+      h('button', { class: 'btn primary', id: 'exLink', title: 'The chords, words, tab, beat, tempo and key inside a link (and, if you choose, your recordings, encrypted for 7 days)', onclick: () => slShare() }, slSendLabel()),
       h('button', { class: 'btn', onclick: exportProject }, '⤓ Project JSON (Ctrl+S)'), h('button', { class: 'btn', onclick: () => imp.click() }, '⤒ Import project'), imp,
       h('button', { class: 'btn bad', onclick: () => { if (confirm('Replace the current song with the demo? (Undo with Ctrl+Z)')) { S = demoSong(); commit(true); bus.emit('song', 'reload'); } } }, 'Load demo song'),
       h('button', { class: 'btn bad', onclick: () => { if (confirm('Start a blank song? (Undo with Ctrl+Z)')) { S = newSong(); S.sections = [mkSection('Verse 1', ['', '', '', ''])]; commit(true); bus.emit('song', 'reload'); } } }, 'New blank song'))));

@@ -121,22 +121,25 @@ function buildSongbar() {
   SB.f.scale = h('select', { class: 'in sb-scale', 'aria-label': 'Scale for overlays', title: 'Scale used for the fretboard and tab overlays', onchange: e => { S.scale = e.target.value; commit(false); bus.emit('scale'); } }, Object.keys(SCALES).map(n => h('option', {}, n)));
   SB.f.more = h('button', { class: 'btn sm sb-more', title: 'Notes, custom tuning, per-string tuning…', onclick: () => sbDetails(SB.f.more) }, 'Notes & tuning ▾');
   SB.trk = h('div', { class: 'sb-trk' });
-  SB.saved = h('span', { class: 'sb-saved', role: 'status', 'aria-live': 'polite', title: 'Your work is saved in this browser as you go' });
+  SB.saved = h('button', { class: 'sb-saved', id: 'sbSafe', type: 'button', 'aria-live': 'polite', title: 'Your work is saved in this browser as you go', onclick: () => keepOpen() });      /* 2.56: saved, and where your songs are kept (✓ also kept elsewhere, ⚠ only here) */
+  SB.jr = h('button', { class: 'sb-jr', id: 'sbJr', type: 'button', onclick: e => jrOpen(e.currentTarget) });      /* the song journey: a thin bar under the title, no width of its own */
   UI.undo = h('button', { class: 'btn sm sb-hist', title: 'Undo (Ctrl/Cmd + Z)', 'aria-label': 'Undo', onclick: () => undo() }, '↶'); UI.redo = h('button', { class: 'btn sm sb-hist', title: 'Redo (Shift + Ctrl/Cmd + Z)', 'aria-label': 'Redo', onclick: () => redo() }, '↷'); SB.hist = h('span', { class: 'sb-histg' }, UI.undo, UI.redo, SB.saved);
   bus.on('savestate', (k, t) => sbSaved(k, t)); sbSaved('ok', null);
   SB.f.refine = h('button', { class: 'btn sm sb-ref', title: 'Open the Refine panel — chords & lyrics beside whatever you are doing', onclick: () => sideShow('refine') }, '✎ Refine');
   el.append(h('div', { class: 'sb-hex', 'aria-hidden': 'true' }, sv('svg', { viewBox: '0 0 24 24', width: 18, height: 18 }, sv('path', { d: 'M12 2l9 5v10l-9 5-9-5V7z', fill: 'none', stroke: 'currentColor', 'stroke-width': 2 }))), sbProject(),
-    sbField('Song', txt('title', 'Title', '', 'Song title'), 'f-title'), sbField('Artist', txt('artist', 'Artist / author', '', 'Artist or author'), 'f-artist'),
+    (() => { const f = sbField('Song', txt('title', 'Title', '', 'Song title'), 'f-title'); f.append(SB.jr); return f; })(), sbField('Artist', txt('artist', 'Artist / author', '', 'Artist or author'), 'f-artist'),
     sbField('Tuning', SB.f.tun, 'f-tun'), sbField('Capo', SB.f.capo, 'f-capo'), sbField('Scale', SB.f.scale, 'f-scale'), SB.f.more,
     h('span', { class: 'grow' }), SB.hist, SB.trk, zoomCtl(), SB.f.refine);
+  setTimeout(() => { jrPaint(); safePaint(); }, 0);
   bus.on('song', () => { if (SP.lock) return; sbSync(); }); bus.on('track', sbChip); bus.on('scale', sbSync); bus.on('projects', sbChip);
   sbSync();
 }
 /** “Saved ✓ 14:02” beside the song details: autosave is quiet, so show that it happened */
 function sbSaved(k, t) {
   const el = SB.saved; if (!el) return; el.dataset.k = k;
-  el.innerHTML = ''; if (k === 'dirty') el.append(h('b', {}, '…'), h('span', { class: 'sb-st' }, ' Saving')); else if (k === 'err') el.append(h('b', {}, '⚠'), h('span', { class: 'sb-st' }, ' Not saved')); else { if (t) SB.savedAt = t; el.append(h('b', {}, '✓'), h('span', { class: 'sb-st' }, ' Saved')); }
-  el.title = k === 'err' ? 'This browser would not store your work. Export a song bundle from ☰ Songs to keep it.' : SB.savedAt ? 'Saved in this browser at ' + new Date(SB.savedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) + '. Autosave keeps it up to date.' : 'Your work is saved in this browser as you go';
+  el.innerHTML = ''; if (k === 'dirty') el.append(h('b', {}, '…'), h('span', { class: 'sb-st' }, ' Saving')); else if (k === 'err') el.append(h('b', {}, '⚠'), h('span', { class: 'sb-st' }, ' Not saved')); else { if (t) SB.savedAt = t; const s = typeof safeState === 'function' ? safeState() : { ok: true }; el.dataset.safe = s.ok ? 'ok' : 'local'; el.append(h('b', {}, s.ok ? '✓' : '⚠'), h('span', { class: 'sb-st' }, ' Saved')); }
+  const at = SB.savedAt ? 'Saved in this browser at ' + new Date(SB.savedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) + '. ' : 'Saved in this browser as you go. ', s = typeof safeState === 'function' ? safeState() : null;
+  el.title = k === 'err' ? 'This browser would not store your work. Export a song bundle from ☰ Songs to keep it.' : at + (!s ? '' : s.ok ? s.t + ': kept somewhere else as well.' : 'Only in this browser: if its data is cleared, your songs are gone. Press to keep a copy (a backup, a folder, or GitHub).'); el.setAttribute('aria-label', el.title);
 }
 function sbSync() {
   if (!SB.el) return; const act = document.activeElement, set = (el, v) => { if (el && el !== act && el.value !== String(v)) el.value = v; };
@@ -176,7 +179,8 @@ function sbChip() {
     t.append(h('button', { class: 'sb-chip', title: 'This song has a backing track saved on this device. Tap to split it into stems again (takes a moment).', onclick: () => projRestoreTrack() }, '♪ Restore “' + (PRJ.pending.title || PRJ.pending.name || 'track') + '”'));
   } else {
     t.append(h('button', { class: 'sb-chip', title: 'Load a backing track — it is split into stems and fills in this song (title, tempo, key, chords)', onclick: () => { sbLeave(); dockGo('stems'); const f = SU && SU.file; if (f) f.click(); } }, '♪ Load a track…'));
-    if (S.track) t.append(h('span', { class: 'tiny muted', title: 'This song was built from a track. Load it again to play along with it.' }, 'from “' + S.track.name + '”'));
+    if (S.trackRef) t.append(h('button', { class: 'sb-chip', id: 'sbYourCopy', title: 'This song is played over a record that wasn’t sent. Load your own copy: it lines itself up with the song.', onclick: () => { sbLeave(); ycLoad(); } }, '♪ Load your copy of “' + (S.trackRef.t || 'the track') + '”'));
+    else if (S.track) t.append(h('span', { class: 'tiny muted', title: 'This song was built from a track. Load it again to play along with it.' }, 'from “' + S.track.name + '”'));
   }
   t.append(h('button', { class: 'sb-chip', id: 'sbPerform', title: 'Perform: full-screen chords and lyrics with a count-in, record and play', onclick: e => { sbLeave(); perfOpen(e.currentTarget); } }, '🎤 Perform'));
   t.append(h('button', { class: 'sb-chip', id: 'sbVoice', 'aria-label': 'Voice', title: 'Voice: see your pitch against the key, find your range, and find the key that suits your voice', onclick: e => { sbLeave(); voxOpen(e.currentTarget); } }, '〰', h('span', { class: 'sb-lbl' }, 'Voice')));
@@ -188,7 +192,7 @@ function sbTrackPop(anchor) {
   box.append(h('h5', { style: { margin: 0 } }, STM.title || STM.name), h('div', { class: 'tiny muted' }, fmtT(STM.dur) + ' · ' + (STM.sr / 1000).toFixed(1) + ' kHz' + (an ? ' · ' + an.info.filter(i => i.found).map(i => i.name.split(' ')[0]).join(', ') + ' found' : '')));
   const row = (label, fn, cls, title) => h('button', { class: 'btn sm ' + (cls || ''), title: title || '', style: { justifyContent: 'flex-start' }, onclick: () => { closePop(); fn(); } }, label);
   box.append(row('⤵ Import chords as the song', stemImportChords, 'primary', 'Replace the song with this chord chart (a snapshot is saved first)'), row('♩ Use tempo + key only', stemApplyTempo, '', 'Set BPM, key and scale from the track'),
-    row('▶ Play the band with the track', stemTogether, '', 'Start the band and the track together from bar 1'), row('🎚 Open Stems', () => dockGo('stems')), row('✕ Unload track', stemUnload, 'bad', 'Remove the track from memory'));
+    row('▶ Play the band with the track', stemTogether, '', 'Start the band and the track together from bar 1'), row('✦ Make it ours', ycMakeOurs, '', 'The band plays the song’s chords, tempo and groove found in the track, and the record is muted: a song of your own to share and release'), row('🎚 Open Stems', () => dockGo('stems')), row('✕ Unload track', stemUnload, 'bad', 'Remove the track from memory'));
   const syncT = h('label', { class: 'lrow' }, h('input', { type: 'checkbox', checked: CFG.trackSync !== false, onchange: e => { CFG.trackSync = e.target.checked; saveCfg(); } }), 'Track follows the transport (play, stop, seek, loop)');
   const fill = h('div', { class: 'lrow' }, h('span', {}, 'When a track loads'), h('select', { class: 'in', style: { flex: 1 }, onchange: e => { CFG.trackFill = e.target.value; saveCfg(); } }, [['all', 'Fill details + chords'], ['details', 'Fill details only'], ['off', 'Do nothing']].map(([v, t]) => h('option', { value: v, selected: (CFG.trackFill || 'all') === v }, t))));
   box.append(h('div', { class: 'hr' }), syncT, fill, h('div', { class: 'tiny muted' }, 'Your own chords, tab and lyrics are never replaced automatically — use “Import chords” when you want that.'));

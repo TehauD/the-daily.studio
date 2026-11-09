@@ -10,6 +10,7 @@ Everything the site owner does in Cloudflare (and GitHub) to run the-daily.studi
 | GitHub sync, **Share looks and rigs**, the community gallery, with a pasted token | **No.** The browser talks to GitHub directly. |
 | **Sign in with GitHub** (one click instead of a token) | **Yes:** a GitHub App, two Worker secrets and the app's public id in the code (Part D). |
 | The Daily at `journal.the-daily.studio` | The custom domain (Part B). |
+| **Drops** (2.60): finished songs public for 7 days, after your review | **Yes, when you want it:** a public R2 bucket, its address, and the steps in Part H. Off until then. |
 | **Send with recordings** (2.54): takes travel with a song link for 7 days | **Yes:** an R2 bucket with a 7-day rule, bound to the Worker as `SHARES` (Part G). Uses Sign in with GitHub (Part D). |
 
 ---
@@ -160,3 +161,29 @@ Check that folder now and then (*R2 ▸ the bucket ▸ Objects*). Reports are de
 - **To remove a share:** delete its object (`<day>/<hash>/<id>`; the share's name in the report is the same with dots for slashes).
 - **To listen first** (only if the report includes the key): in the studio, 🔗 Send any song and copy its link. Add `&r=<share name>.<key>` to the end and open it. The recordings come in with that song.
 - **To stop an account:** the account number is GitHub's (`https://api.github.com/user/<number>` shows who). There's no block list yet; ask me to add one if it's ever needed.
+
+## Part H: Drops (switch on when you're ready)
+
+Drops makes music public, so do the first two steps before switching it on.
+
+1. **Before launch (not Cloudflare):**
+   - **Register a copyright (DMCA) agent** at copyright.gov ("DMCA designated agent"; $6, renew every 3 years). Use a P.O. box or mail-forwarding address, not your home: the directory is public.
+   - **Set up a takedown email**, for example `abuse@the-daily.studio` with Cloudflare Email Routing (*Email ▸ Email Routing*, free, forwarding to your inbox). Tell me the address and I'll add it to `security.txt`, the terms and the Drops page.
+2. **R2 ▸ Create bucket:** `thedaily-drops` (any name; tell me if it's different).
+   - *Settings ▸ Object lifecycle rules:* delete after **7 days**.
+   - *Settings ▸ Custom Domains ▸ Add:* `drops.the-daily.studio`. This is the one bucket that's meant to be public. Leave the r2.dev address off.
+3. **Tell me when it's done.** I'll switch it on in `wrangler.jsonc`: the `DROPS` binding, and `DROPS_URL` set to `https://drops.the-daily.studio`. Your GitHub account number (13037814) is already there as `OWNER_GITHUB_ID`, and only that account can review.
+4. **Check after the deploy:**
+   ```bash
+   curl -s https://the-daily.studio/drops/api/list
+   ```
+   This should print `{"drops":[]}` (not `not-set-up`).
+
+**Reviewing:** open **https://the-daily.studio/drops/review/** in the browser where you're signed in to the studio with GitHub. Listen to each waiting drop, then **Approve** (public for 7 days) or **Reject** (deleted). **Take it down** removes a live one.
+- **Reports:** they land in the private bucket under `reports/drops/`.
+- **Pace:** drops wait until you decide. Up to 100 can wait at once, and each account can send 3 a day.
+
+**What it costs:**
+- **Storage:** about 3–4 MB per drop for 7 days, so a few hundred drops a week is still inside R2's free 10 GB.
+- **Plays:** served from the bucket's own address through Cloudflare's cache, so they don't count as Worker requests, and R2 doesn't charge for downloads.
+- **The list:** one Worker request per page view, cached for a minute.

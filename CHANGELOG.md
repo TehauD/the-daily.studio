@@ -2,6 +2,164 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.60.0 — 2026-11-08 — Drops: new music from the studio, public for 7 days, after review
+
+### New
+- **🌍 Drop it** (Finish it, once the song is mastered). Share a finished song publicly, for 7 days.
+  - **What's sent:** the master, compressed in your browser to an Ogg Opus file (128 kbps stereo, made with WebCodecs, playable in every current browser), with a title, the name you choose, a note and, if you like, the song itself as a link (words, chords and the band; no recordings).
+  - **Review first:** it waits, privately, for the site's owner to listen. Once approved, it's on **the-daily.studio/drops** for 7 days, then gone.
+  - **Rules:** you tick that the music is yours, and the sharing terms ask once more. A song still played over someone else's record can't be dropped (✦ Make it ours first). Sending needs Sign in with GitHub, with up to 3 drops a day per account.
+- **`/drops/`, the public page:** each drop with its title, who made it, the note, a player, how long it has left, a link that opens the song in the studio (to make your own version), and ⚑ Report.
+- **`/drops/review/`, for the site's owner:** listen to each waiting drop, then Approve (public for 7 days) or Reject (deleted), and take down anything live. It uses the GitHub sign-in from the studio on that browser; only the owner's GitHub account (`OWNER_GITHUB_ID`) is let in.
+
+### Fixed
+- **The song bar fits the window again.** The song journey and the 🛡 chip (2.56) made the bar wider than the window at 1440–1920 px (`e2e-layout`). Now:
+  - the journey is a thin six-part bar along the bottom of the song's title, which opens it when pressed;
+  - Saved and "where your songs are kept" are one control beside undo: ✓ when they're kept somewhere else as well, ⚠ when only in this browser. It opens Keep my songs safe.
+
+### The Worker (`worker/drops.mjs`)
+- **Routes:** `POST /drops/api/put`, `GET /drops/api/list` (cached a minute), `GET /drops/a/<id>`, and for the owner `review`, `pending/<id>`, `decide` and `remove`; plus `report`.
+- **Storage:** waiting drops and reports stay in the private bucket, approved ones go to a public bucket (`DROPS`), and 7-day rules on both delete them.
+- **Checks:** only Ogg audio is accepted, up to 15 MB. Titles, names and notes are plain text (`<` and `>` removed), and a link that isn't a song link is dropped.
+- **Limits:** 3 drops a day for each account (counted even after a drop is approved or rejected) and 100 waiting at once.
+- **Off until set up:** without the public bucket bound, every route says "not set up". The owner's account number is already in `wrangler.jsonc`.
+
+### Terms
+- **The sharing terms are version 3,** asked once more: songs you choose to drop are public for 7 days after review, can be reported, and can be removed by the site's owner. PRIVACY.md and TERMS.md say the same.
+
+### Tests
+- **`e2e-drops` (16 checks):**
+  - the Ogg file is real audio of the master's length;
+  - the terms ask first, and Drop it waits for "this is mine";
+  - a drop waits privately, and nothing is public before approval;
+  - the review page lists it, its markup arrives as plain text, and the owner can listen;
+  - Approve publishes it;
+  - the public page lists it as text with "7 days left", its audio plays from this site, and it links to the song;
+  - a song over a record can't be dropped.
+- **`worker.test` (63 checks, 17 new):**
+  - off until set up;
+  - sign-in, Ogg only, title and name required, markup and non-song links removed;
+  - nothing public before approval, and only the owner reviews and listens;
+  - approve, the public list (address, end time, caching), gone after 7 days;
+  - report, remove, reject;
+  - 3 a day counting decided drops, and another site can't drop.
+
+## 2.59.0 — 2026-11-08 — Load your copy, and Make it ours
+
+### New
+- **♪ Load your copy.** A song link for a song played over a record now names the record ("Joy – Artist") and carries a **fingerprint** of it: about 400 bytes describing how its sound rises and falls for 40 seconds from the song's first downbeat. Never the audio.
+  - **What the person who opens it sees:** "🎵 Played over…", and the song bar offers **♪ Load your copy of "Joy"**. They pick their own file. It's split and analysed as usual, without changing the song (its title, tempo and chords stay), and lined up: the studio finds where the fingerprint fits best in their file and puts the song's first downbeat there, on their copy's nearest beat. The alignment is kept with the song.
+  - **What lines up:** a different rip, a longer intro or a second of silence before the music.
+  - **What doesn't:** a different recording isn't taken for the same one. The studio says the match isn't clear and leaves the copy at its own first downbeat.
+  - **The fingerprint** combines onsets with the loudness contour (log energy against its own last second). Silence is floored 30 dB under the average and onsets are capped, so a quiet start or one loud hit can't outweigh the rest.
+- **✦ Make it ours** (the track chip's menu). One press turns a song played over a record into the studio's own:
+  - the chords found in the track (if the song has none), its tempo and key, and its drum groove;
+  - the band (drums, bass, rhythm) playing them;
+  - the record muted (✕ Unload removes it).
+  
+  The next link no longer names a record. Undo takes it back.
+
+### Changed
+- **Loading a track** has a `noFill` option (used by Load your copy) that leaves the song exactly as it is.
+
+### Tests
+- **`e2e-yourcopy` (12 checks), with a made-up 48-second record:**
+  - the fingerprint is about 530 characters and the link carries it;
+  - the song bar offers Load your copy;
+  - "someone else's copy" (2.5 s later, 3 dB quieter) lines up at exactly +2.5 s, and the song isn't changed;
+  - a different record (another tempo, chords and drums) matches 5% and isn't lined up;
+  - Make it ours turns on the band over the song's chords and mutes the record;
+  - the next link names no record, and Undo works.
+
+## 2.58.0 — 2026-11-08 — Comments pinned to a moment, and a lyric helper
+
+### New
+- **💬 Comments pinned to a moment.** **💬 Comment** in the arrangement bar (or press **C**) pins a note to where the playhead is: "bar 12: rush here?".
+  - **It's pinned to a bar and beat,** not a time in seconds, so it stays on the beat if the tempo changes.
+  - **Comments show on the arrangement's ruler.** 💬 Comments lists them: jump to one, mark it ✓ Done, or remove it.
+  - **They're part of the song,** so they're kept in its versions and go with it to sync.
+  - **They travel in song links:** the open ones (up to 20), each at its place, with who wrote it. Opening the link shows them. When a round comes back as a new version, your comments and theirs are both kept, without doubles. Comments from a link are checked like everything else: places clamped, words cut to 280 characters, names to 40.
+- **✎ Rhymes & syllables,** in the Write card's Lyrics row and on the phone's Words screen. A small panel follows whichever lyrics box you're typing in:
+  - **Line by line:** each line's syllable count, and the rhyme scheme from the line endings (A B A B). Uneven lines stand out.
+  - **Rhymes** for the last word you typed (or any word you enter): perfect ones grouped by syllables, common words first, then near rhymes. Click one to put it in at the cursor.
+  - **The words:** 31,469 common English words (SCOWL levels 10–35, no proper names) with pronunciations from the CMU Pronouncing Dictionary, in `data/rhymes.txt`. It's fetched from this site the first time the helper opens (about 170 KB compressed), then kept offline. The Write card's own syllable counts and rhyme scheme use the dictionary once it's loaded.
+  - **Without the word list** (the single-file app, or offline before first use), syllables come from spelling rules and rhymes from the song's own words. Nothing you write is sent anywhere.
+
+### Tests
+- **`e2e-comments` (15 checks):**
+  - **Comments:**
+    - pinned at the playhead's bar, listed, jumped to;
+    - a link carries the open ones, not the done one;
+    - a hostile link's comments are clamped and cut;
+    - opening a link shows them;
+    - a round as a version keeps both sides' comments, without doubles.
+  - **Lyric helper:**
+    - 31,469 words load from this site;
+    - dictionary syllables (everything 3, beautiful 3) and an A B A B scheme;
+    - rhymes for "night" (light, fight, tonight, delight…) with near rhymes;
+    - typing fills in the last word, and clicking a rhyme puts it in at the cursor;
+    - the panel's scheme follows.
+
+## 2.57.0 — 2026-11-08 — Finish it: master the song and make its release package
+
+### New
+- **✦ Finish it** (Save & export, the Songwriter's export menu, and the last step of the song journey). It runs on this device; nothing is uploaded.
+  1. **The sound.** Your mix (without the master section) goes through:
+     - a tone: Natural, Clean, Warm, Bright, Dense, or **matched to a reference song** you load;
+     - a gentle glue compressor;
+     - gain and a **look-ahead limiter**, until it reaches the loudness you choose (−14 LUFS for streaming, −16 for Apple Music and podcasts, −11 louder, −9 club, or no target), with **true peaks under −1 dBTP**. It's measured to BS.1770 and the masters are checked again after limiting.
+     
+     **▶ Before / After** plays both **at the same loudness**, so you hear the tone and dynamics rather than "louder". Switch at any moment, from any point.
+  2. **Credits and splits.** Everyone in the song's history (rounds of Writing together, versions), with what they did (words, music, played, produced) and a writing share. The shares start equal and the window checks they add up to 100 %.
+  3. **The release package**, in a folder or one .zip:
+     - the **master in 24-bit**, and in **16-bit 44.1 kHz with dither for distributors**;
+     - `lyrics.txt`, the chord sheet, `credits.txt` and `splits.csv`;
+     - the song itself (`.daily-song.zip`);
+     - a README with the loudness, the song's details and what a distributor will ask for.
+     
+     The release is kept as a version, and the song journey shows the song as finished.
+- **Reference matching:** both songs' average spectrum (a 4096-point FFT across the whole song) is compared in eleven bands. The difference, smoothed, limited to ±6 dB and scaled by Amount, becomes eleven gentle filters. The reference stays on this device.
+
+### Fixed
+- **What the studio says about itself is accurate again.** Since GitHub sync, Sign in with GitHub and Send with recordings, "nothing is uploaded" and "it runs entirely in your browser" were no longer the whole story. Now:
+  - the About page's *How it is made*, Help ▸ About, Settings ▸ Songs & data, the guided tour, the phone footer, the first page, the guide's FAQs, its footer and its description, and the README all say what's true: your songs stay on your device, and nothing is uploaded unless you choose to (GitHub sync to your own account, a folder, or recordings sent with a link, sealed and kept 7 days);
+  - *How it is made* also says a small Cloudflare Worker handles the sign-in and those recordings, and that the studio was made with AI assistance.
+
+### Tests
+- **`e2e-finish`:**
+  - the limiter never lets a sample past its ceiling, and leaves the rest alone;
+  - matching a brighter reference lifts the highs and lowers the lows, within ±6 dB;
+  - the master lands within 0.5 LU of −14 LUFS with true peaks at or under −1 dBTP;
+  - Before / After is level-matched and switches at once;
+  - credits name everyone in the history, with shares adding up to 100 %;
+  - the package holds both masters (the distributor one 16-bit 44.1 kHz), lyrics, chord sheet, credits, splits, the song and a README;
+  - the song is marked finished and the release kept as a version.
+
+## 2.56.0 — 2026-11-08 — Versions, the song journey, and where your songs are kept
+
+### New
+- **✓ Versions.** Keep the moments of a song worth keeping. **Mark this version** keeps the song as it is (every section, the band, the arrangement) and its takes as they're placed and trimmed, with a name ("Demo 2") and a note.
+  - **The window lists every version,** newest first: who made it, when, how many takes, and what changed since the one before ("Chorus: words; added Bridge").
+  - **⟲ Go back to this.** What you had is kept as a version first ("Before going back to Demo 2"), so nothing is ever lost.
+  - **⧉ Open as a copy:** a song of its own, with the version's recordings.
+  - **A version's recordings are kept** for as long as the version is, even after the take is deleted from the song. Versions travel with the song to your folder and to GitHub (the last 20), and versions made on both sides are kept.
+- **↩ Rounds become versions.** A round of Writing together that comes back for a song you already have now offers **Add as a new version of "Harbour Song"**. It becomes "Round from Sam", with Sam's note, and what you had just before is kept as a version. Rounds stop piling up as copies, and the 2.51 gap is closed. **Open as a separate song** still works.
+- **The song journey,** in the song bar: six dots for words, chords, recorded, a version, shared and finished, plus the next step. Press it to see each step and go straight to it (Versions…, Send…, Finish…).
+- **🛡 Where your songs are kept,** beside Saved: *Only in this browser* (⚠), *Backed up* (a backup in the last two weeks), *Kept in your folder* or *In step with GitHub*. Press it for Keep my songs safe.
+  - **A gentle reminder:** once a week at most, and only once there's real work kept nowhere else.
+
+### Tests
+- **`e2e-versions` (17 checks):**
+  - the journey and its next step;
+  - the 🛡 chip before and after a backup;
+  - marking a version with a take, a name and a note;
+  - a deleted take's recording is kept for its version;
+  - "what changed";
+  - going back (audio and all) with what you had kept as a version;
+  - opening a copy with its audio;
+  - a round becoming "Round from Sam" with no copy;
+  - versions going out with the song to sync.
+
 ## 2.55.0 — 2026-11-08 — Every lane out, ready to mix and master anywhere
 
 ### New

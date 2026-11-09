@@ -119,6 +119,8 @@ const KNOWN = [
   [/^85-stretch\.js$/, /new Worker\(url\)/, 'speed & key worker from a blob made in the page'],
   [/^00-rooms\.js$/, /createElement\('script'\)/, 'a room of the studio, from this site, checked by its hash (2.40)'],
   [/^74-github\.js$/, /fetch\(GH_API \+ path|fetch\('\/auth\/github\/refresh'/, 'GitHub, only after you connect it or open the gallery; the renewal is this site'],
+  [/^63d-lyrichelp\.js$/, /fetch\(LH\.url\)/, 'the lyric helper’s word list (data/rhymes.txt), this site only, when the helper opens (2.58)'],
+  [/^39d-drops\.js$/, /fetch\('\/drops\/api\/put'/, 'a song you choose to drop: this site only, for review, then public for 7 days (2.60)'],
   [/^89b-sendrec\.js$/, /fetch\('\/share\/(put|delete|report)?'/, 'recordings sent with a song link: this site only, sealed in the browser first, only when you tick it (2.54)'],
 ];
 const NET = /createElement\(['"`]script['"`]\)|\bfetch\(|XMLHttpRequest|new WebSocket|EventSource\(|sendBeacon|importScripts\(|(?<![\w.$])import\(|new Worker\(|serviceWorker\.register|\.src\s*=\s*['"`]https?:/;

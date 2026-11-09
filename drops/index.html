@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src '__SCRIPT_HASH__'; style-src 'unsafe-inline'; connect-src 'self'; media-src 'self' https://drops.the-daily.studio; img-src 'self'; base-uri 'none'; form-action 'none'">
+<title>Drops · the-daily.studio</title>
+<link rel="icon" href="../icons/favicon.svg" type="image/svg+xml">
+<style>:root{color-scheme:light dark;--bg:#f4f6f3;--fg:#14211b;--card:#fff;--line:#d3dfd6;--muted:#4f6358;--acc:#1f7a4d}
+@media (prefers-color-scheme:dark){:root{--bg:#070c0b;--fg:#e8efea;--card:#101816;--line:#263a31;--muted:#9fb3a8;--acc:#4ec08a}}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 "Segoe UI",system-ui,-apple-system,sans-serif}main{max-width:44rem;margin:0 auto;padding:24px 16px 48px}
+h1{margin:0 0 4px;font-size:1.6rem}.lead{color:var(--muted);margin:0 0 20px}.drop{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin:0 0 12px}
+.drop h2{margin:0;font-size:1.15rem}.by{color:var(--muted);font-size:.92rem}.note{margin:6px 0}.drop audio{width:100%;margin:8px 0 4px}.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;font-size:.9rem}
+a{color:var(--acc)}button.link{background:none;border:0;padding:0;color:var(--muted);font:inherit;text-decoration:underline;cursor:pointer}.left{color:var(--muted)}#say{color:var(--muted)}</style></head>
+<body><main>
+<h1>🌍 Drops</h1><p class="lead">New music made in <a href="../">the-daily.studio</a>, here for 7 days. Each one was listened to before it went up. Finish a song in the studio and drop yours.</p>
+<div id="list" aria-live="polite"><p id="say">Loading…</p></div>
+</main>
+<script>
+(() => {
+  'use strict';
+  const $ = id => document.getElementById(id), el = (t, cls, txt) => { const e = document.createElement(t); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
+  const left = until => { const d = Math.max(0, until - Date.now()), days = Math.ceil(d / 864e5 - .02); return d >= 864e5 ? days + (days === 1 ? ' day left' : ' days left') : Math.max(1, Math.round(d / 36e5)) + ' hours left'; };
+  const time = s => Math.floor(s / 60) + ':' + String(Math.round(s % 60)).padStart(2, '0');
+  fetch('api/list', { cache: 'no-store' }).then(r => r.status === 503 ? { off: true } : r.json()).then(j => {
+    const list = $('list'); list.textContent = '';
+    if (j.off) { list.append(el('p', '', 'Drops isn’t open yet. Come back soon.')); return; }
+    const ds = Array.isArray(j.drops) ? j.drops : []; if (!ds.length) { list.append(el('p', '', 'Nothing has been dropped right now. Finish a song in the studio, and drop it.')); return; }
+    ds.forEach(d => {
+      const c = el('article', 'drop'); c.append(el('h2', '', String(d.t || 'Untitled')), el('div', 'by', 'by ' + String(d.a || 'someone') + (d.d ? ' · ' + time(d.d) : '')));
+      if (d.n) c.append(el('p', 'note', String(d.n)));
+      const au = el('audio'); au.controls = true; au.preload = 'none'; if (/^(https:\/\/drops\.the-daily\.studio\/|\/drops\/a\/)/.test(String(d.url))) au.src = d.url; c.append(au);
+      const row = el('div', 'row'); row.append(el('span', 'left', left(+d.until || 0)));
+      if (d.l && /^s=1[zj][A-Za-z0-9_-]+$/.test(d.l)) { const a = el('a', '', 'Open the song in the studio'); a.href = '../#' + d.l; row.append(a); }
+      const rep = el('button', 'link', '⚑ Report'); rep.type = 'button'; rep.onclick = () => { const why = prompt('What’s wrong with “' + d.t + '”?'); if (why === null) return; fetch('api/report', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: d.id, why: why.slice(0, 500) }) }).then(r => { rep.textContent = r.ok ? 'Reported. Thank you.' : 'It could not be sent.'; rep.disabled = true; }); };
+      row.append(rep); c.append(row); list.append(c);
+    });
+  }).catch(() => { $('list').textContent = 'Drops couldn’t be loaded. Check the connection and reload.'; });
+})();
+</script>
+</body></html>

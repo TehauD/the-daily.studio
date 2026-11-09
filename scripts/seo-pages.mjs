@@ -11,7 +11,7 @@ export const SITE = {
   repo: 'https://github.com/TehauD/the-daily.studio', card: 'https://the-daily.studio/icons/social-card.png',
   tagline: 'a guitar and voice studio in your browser',
   title: 'the-daily.studio — free guitar and voice studio in your browser',
-  description: 'Record guitar and voice, split a song into stems, get chords, tab and lyrics, and run a live light show. Free, private, in your browser: no account, no uploads.'
+  description: 'Record guitar and voice, split a song into stems, get chords, tab and lyrics, and run a live light show. Free, in your browser, no account needed.'
 };
 
 /** the things the app does, in the words people search with (also the JSON-LD featureList) */
@@ -41,7 +41,7 @@ export const PAGES = [
     slug: 'guide', ico: '📖', title: 'How it works: guide and answers',
     description: 'What the-daily.studio does, what it needs, what stays on your device and where its limits are: short answers on recording, stems, chords, tab and the show.',
     h1: 'How the-daily.studio works', eyebrow: 'Guide',
-    lead: 'A guitar and voice studio in one web page. Record, play along with any song, write chords, tab and lyrics, shape your tone and put on a light show. It is free and open source, there is no account, and your audio never leaves your device.',
+    lead: 'A guitar and voice studio in one web page. Record, play along with any song, write chords, tab and lyrics, shape your tone and put on a light show. It is free and open source, there is no account to make, and your audio stays on your device unless you choose to send it.',
     sections: [
       { h: 'Pick a topic', topics: true },
       { h: 'New lately', ul: ['✦ Simple in every workspace (2.46): one button keeps Songwriter, Performer, Creator Studio, Practice and Teacher to the few tools each needs. Full Rig has everything.', 'Better instruments (2.45, 2.46.1): a piano with a real ring, strings with vibrato, acoustic guitars with a wooden body and a double-tracked rhythm guitar.', 'Songs that build (2.44): quiet verses, big choruses, fills and risers between sections, and an ending.', 'Vocal tuning (2.43): put a vocal take in key, from natural to the hard tuned sound, and back to the original whenever you like.', 'Beats and drum machines (2.39, 2.42): fourteen ready beats in your key, on acoustic kits or drum machines with a heavy sub bass.', 'Send a song as a link (2.40): the chords, words and beat inside the link itself, with nothing uploaded.', 'The phone, for singers (2.41): Words, Sing, Beats and Tracks at the bottom of the screen.'] }
@@ -77,7 +77,7 @@ export const PAGES = [
     faq: [
       ['Do I have to take the guided sessions?', 'No. Choose I know my way around, and there is no coaching. You can start a session later from the Help button.'],
       ['Does it ask for the microphone straight away?', 'No. Nothing is requested until you press a button that needs it, and the guided session says so before it asks.'],
-      ['Where is my work kept?', 'On your device, in this browser. Nothing is uploaded. To have it on another computer too, use folder sync or your own GitHub repository.']
+      ['Where is my work kept?', 'On your device, in this browser. Nothing is uploaded unless you choose to: to have it on another computer too, use folder sync or your own GitHub repository; to send a song with its recordings, tick Include my recordings (they are encrypted and kept on this site for 7 days).']
     ],
     related: ['write-a-song-over-a-beat', 'sing-record-and-tune', 'record-guitar-and-voice']
   },
@@ -86,12 +86,12 @@ export const PAGES = [
     description: 'Tap one of fourteen beats, write words and chords over it, let the band build from verse to chorus, and send the song as a link. Free, private, in your browser.',
     h1: 'Write a song over a beat', eyebrow: 'Write',
     lead: 'Start with a groove instead of a blank page. Tap a beat and a band plays it in your key; write the words and chords over it; let the band build from a quiet verse to a big chorus; then send the song to someone as a link.',
-    glance: [['🥁', 'Fourteen beats', 'Folk, pop, rock, lo-fi, dance, trap, drill, Afrobeats, R&B, reggae, blues, ballad, funk and bossa nova.'], ['🎛', 'Drum machines and kits', 'Acoustic kits in a small room, or drum machines with a long, heavy sub bass that slides between notes.'], ['📈', 'Songs that build', 'Each section plays at its own energy, with fills, crashes and risers between them.'], ['🎹', 'Real-sounding instruments', 'Piano, electric piano, pad, strings, organ and guitars, all made on your device.'], ['✍', 'Words and chords', 'Type the words with chords over them, or paste a whole lyric sheet.'], ['🔗', 'Send as a link', 'The song rides inside the link. Nothing is uploaded.']],
+    glance: [['🥁', 'Fourteen beats', 'Folk, pop, rock, lo-fi, dance, trap, drill, Afrobeats, R&B, reggae, blues, ballad, funk and bossa nova.'], ['🎛', 'Drum machines and kits', 'Acoustic kits in a small room, or drum machines with a long, heavy sub bass that slides between notes.'], ['📈', 'Songs that build', 'Each section plays at its own energy, with fills, crashes and risers between them.'], ['🎹', 'Real-sounding instruments', 'Piano, electric piano, pad, strings, organ and guitars, all made on your device.'], ['✍', 'Words and chords', 'Type the words with chords over them, or paste a whole lyric sheet.'], ['🔗', 'Send as a link', 'The song rides inside the link. Your recordings can go too, encrypted, for 7 days.']],
     sections: [
       { h: 'Your first song over a beat', ol: ['Open the Songwriter workspace and press 🥁 Beats (or the Beats tab on a phone). Tap a beat and it starts looping.', 'If your song has no chords yet, the beat brings a progression in your key. If it has chords, the band plays yours.', 'Write the words section by section, with the chords over them. Name sections Verse, Chorus and Bridge so the band knows how hard to play them.', 'Under Who plays, switch each player on or off and set its level. Undo puts your previous band back.'] },
       { h: 'See the whole song', p: ['Write ▸ ☰ Whole song (📄 Song on a phone) shows the song as a chord sheet: every section\'s name, then its words with the chords over them, in as many columns as the screen holds. A chorus that repeats is one line. Tap a section to write in it. A song map along the top shows every section as a coloured block as wide as its bars; tap one to go there. ＋ adds an intro, a verse, a pre-chorus, a chorus, an interlude, a bridge, a solo or an outro, named for you (Verse 1, Verse 2), and a second verse starts with the first one\'s chords.'] },
       { h: 'Let the song build', p: ['With Song build on (picking a beat turns it on), each section has an energy from 1 to 5: an intro 2, a verse 3, a pre-chorus 4 and a chorus 5, unless you tap the dots to choose. At 1 it is just hats; at 5 the whole band plays harder. A fill ends each section, a crash opens a big one, a riser swells into a section that lifts, and a song that does not loop ends on one ringing hit.'] },
-      { h: 'Write it together', p: ['Type your name and a note ("Can you write the chorus?") when you send it. Whoever opens the link sees who it came from, your note and who changed what so far, and gets ↩ Send it back: they change what they like and send it back to you, with their changes listed. Someone who has never used the studio gets ▶ Play it, and hears the song with the words as a sing-along. Share pages and printed sheets link back to the song too. Nothing is uploaded: the names, the note and the history ride inside the link.'] },
+      { h: 'Write it together', p: ['Type your name and a note ("Can you write the chorus?") when you send it. Whoever opens the link sees who it came from, your note and who changed what so far, and gets ↩ Send it back: they change what they like and send it back to you, with their changes listed. Someone who has never used the studio gets ▶ Play it, and hears the song with the words as a sing-along. Share pages and printed sheets link back to the song too. The names, the note and the history ride inside the link; recordings go only if you include them (encrypted, kept 7 days).'] },
       { h: 'Send it', p: ['🔗 Send as a link writes the chords, words, tab, beat, tempo and key into the link itself, after the #. Browsers never send that part to a server, so the song goes only where you send the link. Copy it, share it, or show a QR code to someone in the room. Recordings stay with you: for audio, make a share page in Save & export.'] }
     ],
     limits: ['The beats are played by the studio\'s own instruments, not recordings: they follow your key and tempo, and there is nothing to download, but they are not sampled drums.', 'A song link carries the song, not its recordings.', 'Anyone with the link can read the song, as with anything you paste in a chat.'],
@@ -270,7 +270,7 @@ export const PAGES = [
     ],
     limits: ['Folder sync needs Chrome or Edge on a computer. After a browser restart, the browser may ask once to allow access again.', 'GitHub keeps text, not recordings: takes and backing tracks stay on the devices that made them.', 'On iPhone and iPad, Safari clears a website’s data after about a week without a visit unless you add it to the Home Screen. The app tells you, and Back up all songs makes one file to keep.'],
     faq: [
-      ['Do you keep my songs on a server?', 'No. The page asks no server to keep anything. With folder sync the browser writes a folder on your own computer, and your cloud drive’s app carries it under that drive’s terms. With GitHub, your browser talks to GitHub directly.'],
+      ['Do you keep my songs on a server?', 'No, with one exception you choose: recordings you send with a song link are kept on this site for 7 days, encrypted so the site can’t open them. Otherwise the page asks no server to keep anything. With folder sync the browser writes a folder on your own computer, and your cloud drive’s app carries it under that drive’s terms. With GitHub, your browser talks to GitHub directly.'],
       ['Does folder sync work on a phone?', 'No. It needs Chrome or Edge on a computer, where the browser can open a folder. GitHub sync works wherever the studio does, for everything but recordings.'],
       ['What happens if two computers change the same song?', 'Both versions are kept, so neither edit is lost. Delete the one you do not want.']
     ],
@@ -292,7 +292,7 @@ export const PAGES = [
         'Because creativity doesn\'t need permission. It doesn\'t need perfect conditions. And it certainly doesn\'t need expensive equipment. It just needs a beginning.',
         'If the-daily.studio helps you discover a new sound, finish a song, find your voice, or simply enjoy making music a little more, then it\'s doing exactly what I hoped it would do. Make something. Explore something. Find your sound. And above all, may it bring you joy.',
         '— Tehau'] },
-      { h: 'How it is made', p: ['the-daily.studio is free and open source (MIT licence). It runs entirely in your browser: no account, no uploads, no tracking. Your songs, recordings and settings stay on your device. Built by hand with the browser\'s own audio, drawing and storage, and no frameworks.'] },
+      { h: 'How it is made', p: ['the-daily.studio is free and open source (MIT licence). It runs in your browser, with no account to make, no ads and no tracking. Your songs, recordings and settings live on your device.', 'Three things are yours to switch on: keeping your studio in step with your own GitHub repository (your browser talks to GitHub directly; this site only helps you sign in), keeping it in a folder on your computer, and sending a song\'s recordings with a link (sealed in your browser and kept on this site for 7 days, where it can\'t be opened).', 'It is built with the browser\'s own audio, drawing and storage, and no frameworks. A small Cloudflare Worker handles the sign-in and those 7-day recordings; everything else is plain files. I made it with AI assistance (Claude, by Anthropic): the design choices, the music and any mistakes are mine.'] },
       { h: 'Find me', links: [['LinkedIn', 'https://www.linkedin.com/in/tehau/'], ['GitHub', 'https://github.com/TehauD'], ['The source code', 'https://github.com/TehauD/the-daily.studio'], ['The Daily, my developer journal', 'https://journal.the-daily.studio/']] }
     ],
     related: ['getting-started', 'write-a-song-over-a-beat', 'sing-record-and-tune']
@@ -435,7 +435,7 @@ ${p.faq ? `<section><h2>Questions</h2>${p.faq.map(([q, a], i) => `<details${i ? 
 ${related.length ? `<section><h2>Keep reading</h2>${topicCards(related, p.slug === 'guide' ? '' : '../')}</section>` : ''}
 <div class="end"><p>Free, private, in your browser. Nothing to install.</p><a class="cta" href="${depth}">Open the studio</a></div>
 </main>
-<footer><div class="wrap">${SITE.name} v${esc(version)} · free and open source (MIT) · no account, no tracking, your audio stays on your device · <a href="${depth}legal/">Licences, notices and privacy</a> · <a href="${SITE.repo}" rel="noopener noreferrer">Source on GitHub</a> · by <a href="${SITE.authorUrl}" rel="noopener noreferrer">${esc(SITE.author)}</a></div></footer>
+<footer><div class="wrap">${SITE.name} v${esc(version)} · free and open source (MIT) · no account, no tracking, your audio stays on your device unless you send it · <a href="${depth}legal/">Licences, notices and privacy</a> · <a href="${SITE.repo}" rel="noopener noreferrer">Source on GitHub</a> · by <a href="${SITE.authorUrl}" rel="noopener noreferrer">${esc(SITE.author)}</a></div></footer>
 </body></html>
 `;
 }

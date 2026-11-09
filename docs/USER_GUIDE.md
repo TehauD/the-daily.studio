@@ -6,6 +6,56 @@ Contents: [Whole song and Perform layouts](#-the-whole-song-and-perform-your-way
 
 ---
 
+## 🌍 Drops (2.60)
+
+When a song is finished (✦ Finish it ▸ ✦ Master it), press **🌍 Drop it (7 days)**:
+- Give it a title, the name to show and a note. Choose whether to include the song itself, so listeners can open it in the studio and make their own version.
+- Tick that the music is yours, then **🌍 Drop it**.
+- The site's owner listens first. Once it's approved, it's on **the-daily.studio/drops** for 7 days, then it's gone. Your own copy, versions and release package stay with you.
+- You need to be signed in with GitHub, and you can drop up to 3 songs a day. A song still played over someone else's record can't be dropped: press ✦ Make it ours first.
+
+## ♪ Load your copy, and ✦ Make it ours (2.59)
+
+**When someone sends you a song played over a record,** the record isn't sent; it's someone else's recording. Open the song, then press **♪ Load your copy of "…"** in the song bar and pick your own file of that record. It lines itself up with the song, even if your copy starts earlier or later. If it's a different recording, the studio says so.
+
+**✦ Make it ours** (press the track's name in the song bar): the band takes over the record's chords, tempo, key and drum groove, and the record is muted. Now the whole song is yours to send, finish and release. (A cover's words and melody still belong to its writers: ask before you publish one.)
+
+## 💬 Comments and ✎ Rhymes & syllables (2.58)
+
+**💬 Comments:** put the playhead where you mean, then press **💬 Comment** (or **C**) and type: "rush here?", "double the vocal".
+- Comments show on the ruler, and 💬 Comments lists them: press a place to jump there, **✓ Done** when it's sorted.
+- When you send the song, the open comments go with it, at their places, so whoever you write with sees them where they belong.
+
+**✎ Rhymes & syllables** (the Lyrics row in Write, or ✎ on the phone's Words) opens a panel beside your words:
+- **Each line's syllables and the rhyme scheme.** A line much longer or shorter than the rest is marked.
+- **Rhymes for the last word you typed:** perfect ones by syllables, then near ones. Click one to put it in.
+- **The word list** loads once from the site, then works offline. Your words stay on your device.
+
+## ✦ Finish it: master and release (2.57)
+
+**Save & export ▸ ✦ Finish it…** (or the last dot of the song journey):
+1. **Loudness and tone.**
+   - **Loudness:** −14 LUFS suits Spotify, YouTube, Tidal and Amazon; −16 suits Apple Music.
+   - **Tone:** pick one, or **Match a reference song…** and load a finished song you like (it stays on your device). **Amount** says how far to move toward it.
+   
+   Then press **✦ Master it**.
+2. **▶ Play, Before / After:** with **Same loudness** on, you compare the sound itself, not the volume. The numbers below show the loudness and peaks before and after.
+3. **Credits and splits:** the people in the song's history are listed with what they did. Agree the writing shares together; they're saved with the song.
+4. **📦 Make the release package** (or **📁 Into a folder…**). Upload the 16-bit 44.1 kHz master to your distributor, and paste `lyrics.txt` where they ask for lyrics. You'll also need cover art (usually 3000 × 3000 px) and an ISRC (most distributors give you one).
+
+## ✓ Versions, the song journey and 🛡 (2.56)
+
+**Versions:** press the thin bar under the song's title (the song journey), then **Versions…**.
+- **✓ Mark this version** keeps the song and its takes as they are now, with a name and a note.
+- **⟲ Go back to this** makes the song that version again. What you had is kept as a version first.
+- **⧉ Open as a copy** opens a version as a song of its own.
+- **Rounds:** when someone sends back a song you already have, choose **Add as a new version**. Their round joins your versions instead of becoming another copy.
+- **Where they're kept:** versions stay with the song in this browser, and in your folder or GitHub if sync is on. Their recordings stay on the device that made them.
+
+**The song journey** (the six-part bar under the title) shows how far the song has come: words, chords, recorded, a version, shared, finished. Point at it to see the next step; press it for every step.
+
+**✓ or ⚠ beside undo** is Saved, and says where your songs are kept. **⚠** means they're only in this browser: if its data is cleared, they're gone. Press it and keep a copy (a backup, a folder or GitHub). **✓** means they're kept somewhere else as well.
+
 ## 📦 Mix and master in another app (2.55)
 
 When the song is ready for a proper mix, or for mastering in BandLab, a DAW or a mastering service:

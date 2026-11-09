@@ -124,6 +124,7 @@ async function lxExport(opt) {
       const zf = new File([zipBuild(files)], title + ' - stems.zip', { type: 'application/zip' }); if (!opt.noDownload) download(zf.name, zf); LXO.lastZip = zf;
       msg.textContent = '✓ ' + (files.length - 1) + ' files and a README, in one .zip. Unzip it, then drag the files into your other app, all at bar 1.'; body.append(lxChip(zf));
     }
+    if (PRJ.rec) { PRJ.rec.done = Date.now(); projSave(); bus.emit('versions'); }      /* the song journey's last step (2.56) */
     fill.style.width = '100%'; body.append(h('div', { class: 'row', style: { justifyContent: 'flex-end', marginTop: '8px' } }, h('button', { class: 'btn primary', id: 'lxDone', onclick: () => d.close() }, 'Done')));
     return { files: files.map(f => f.name), turned, gP, readme };
   } catch (e) { if (!(e && e.cancelled)) { msg.textContent = 'The export stopped: ' + (e.message || e); console.warn(e); } }

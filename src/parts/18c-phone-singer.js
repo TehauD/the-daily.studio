@@ -63,6 +63,7 @@ function mWords(box) {
   const mode = h('div', { class: 'seg mw-mode' }, [['write', '✎ Write'], ['chords', '♪ Chords'], ['song', '📄 Song']].map(([k, n]) => h('button', { class: MW.mode === k ? 'on' : '', 'data-mode': k, 'aria-pressed': String(MW.mode === k), onclick: () => { MW.mode = k; CFG.mwMode = k; saveCfg(); mScreenDraw(); } }, n)));
   const tools = h('div', { class: 'mw-tools' }, mode, h('span', { class: 'grow' }),
     MW.mode !== 'song' ? h('button', { class: 'btn sm', id: 'mwSecMenu', title: 'Rename, move, repeat or delete ' + mwSec().name, 'aria-label': mwSec().name + ': more', 'aria-haspopup': 'menu', onclick: e => secMenu(e.currentTarget, MW.sec, i => pick(i)) }, '⋯') : '',
+    MW.mode !== 'song' ? h('button', { class: 'btn sm', id: 'mwRhymes', title: 'Rhymes, syllables and the rhyme scheme', 'aria-label': 'Rhymes and syllables', onclick: () => lhOpen(document.getElementById('mwText')) }, '✎') : '',
     h('button', { class: 'btn sm mw-paste', title: 'Paste a whole lyric sheet: [Verse] and [Chorus] headings become sections', 'aria-label': 'Paste a lyric sheet', onclick: () => liOpen('') }, '⧉'));
   box.append(map, secs, tools);
   if (MW.mode === 'song') {      /* the whole song as a chord sheet (2.49); tap a section to write in it */

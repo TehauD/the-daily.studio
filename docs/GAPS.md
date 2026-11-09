@@ -4,6 +4,31 @@ What the studio, its tutorials, its documents and its tests do **not** cover yet
 
 How to use it: before a release, move what the release closed into *Closed* with the version, and add what it opened. [RELEASE.md](RELEASE.md) has this as a checklist item. Items marked **(maintainer)** are decisions or facts only the project's owner can settle; nothing here blocks a build.
 
+## Closed in 2.60.0
+
+- **No community page.** Drops is a public showcase, reviewed first and gone after 7 days. It's switched on by the owner (CLOUDFLARE_SETUP.md, Part H).
+
+## Closed in 2.59.0
+
+- **Two people working over the same famous song** had no way to line up their own copies. Load your copy does, from a 400-byte fingerprint.
+- **Covers couldn't become your own songs.** Make it ours swaps the record for the band.
+
+## Closed in 2.58.0
+
+- **No way to say "this bit" while writing together.** Comments are pinned to a moment and travel with the song.
+- **No help with rhymes or syllables beyond guesses from spelling.** The lyric helper has a 31,000-word pronouncing dictionary.
+
+## Closed in 2.57.0
+
+- **Finishing a song happened elsewhere.** Finish it masters to a streaming target with a real limiter, a fair Before / After and reference matching, and makes the release package with credits and splits.
+- **"Nothing is uploaded" claims** that stopped being the whole truth with GitHub sync and Send with recordings are corrected across the app, the guide and the README.
+
+## Closed in 2.56.0
+
+- **Each round of Writing together opened as a new song** (opened by 2.51). It can now be added as a new version of the song you have.
+- **Nothing showed where songs were kept.** The 🛡 chip does, with a weekly reminder when they're only in this browser.
+- **No named versions.** ✓ Versions keeps them, with their recordings, and they travel with sync.
+
 ## Closed in 2.55.0
 
 - **Lanes couldn't be taken to another app lined up.** Band parts went through the master limiter, stems started where the track did, and takes were bare clips. Now every lane saves from the first beat, without the master section, and 📦 Export makes the whole set with a premaster and a README.
@@ -108,6 +133,40 @@ How to use it: before a release, move what the release closed into *Closed* with
 ### Song structure (opened by 2.48)
 - The **Stage** panel's prompter and the lower third have none of Perform's layout choices.
 - Sections can be reordered with ↑ ↓ but not dragged on the map.
+
+### Drops (opened by 2.60)
+- **Off until the owner sets it up** (public bucket, copyright agent, takedown email: CLOUDFLARE_SETUP.md, Part H).
+- **The review queue doesn't notify you.** Check /drops/review/.
+- **No block list:** an account can be stopped only by declining its drops.
+- **No reactions, comments or "versions of this"** on the public page yet. The link to the song is how people answer.
+- **The public page isn't in search engines (`noindex`).** Drops come and go; turn indexing on if you want it.
+- **No cover art.**
+
+### Load your copy (opened by 2.59)
+- **Only the start is matched,** not the speed. A copy at a slightly different speed (a sped-up upload) lines up at the start and drifts; the studio doesn't stretch it yet.
+- **The match looks at the first three minutes** of the copy for the first 40 seconds of the song. A copy with a much longer intro wouldn't be found.
+- **A cover with the same arrangement** can match, which is usually what you want.
+- **Make it ours** takes the chords, tempo, key and drum groove. It doesn't take the melody or the bass line note for note.
+
+### Comments and the lyric helper (opened by 2.58)
+- **Comment markers on the ruler can't be clicked yet:** use 💬 Comments to jump to one. Comments don't show in the whole-song sheet or Perform.
+- **Replies:** a comment is a single note; there are no replies under it.
+- **The phone** has no 💬 Comment button yet; comments made on a computer travel to it with the song.
+- **The rhyme list includes some rare words** (doe, fro, hoe) among the common ones, and knows only words in the CMU dictionary. Slang and names fall back to spelling rules.
+- **English only.**
+
+### Finish it (opened by 2.57)
+- **Cover art** isn't made or checked; the README says what's usually needed.
+- **There's no ISRC or UPC.** Distributors issue them.
+- **Splits are a record, not a contract.** The README and credits say so.
+- **There's no MP3 or AAC in the package:** distributors want WAV. A compressed preview could come from the existing M4A export.
+- **Mastering is one chain:** tone, glue, limiter. There's no multiband compression or stereo-width control.
+
+### Versions (opened by 2.56)
+- **The phone** has no journey strip, 🛡 chip or Versions window yet: they live in the song bar, which the phone layout doesn't show. Versions made on a computer still travel to the phone through sync.
+- **You can't play a version without going back to it** (or opening a copy). A "listen" button would need a second song loaded at once.
+- **A version's recordings sync as names only:** the audio stays on the device that made it, as with takes.
+- **Two devices adding versions to the same song at the same time** keep both lists, but the song file itself still follows the "both changed: keep both" rule.
 
 ### Lanes out (opened by 2.55)
 - **Dragging straight into another web app** (BandLab) depends on the browser passing a file from one page to another. It's tested in the page, not across two real windows. The desktop or the folder always works.
