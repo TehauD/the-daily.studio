@@ -87,6 +87,7 @@ The studio's reset removes only the studio's `fw.*` data and its own caches; it 
 * **Recordings in a link:** anyone who has the whole link can play them for 7 days, because the key is in the link. That's the same reach as the song itself.
   * The site can't open them, so it can't check them before a report. Abuse is limited by the sign-in, the daily limits and the 7 days, and handled through **⚑ Report**.
   * Reports land in the bucket under `reports/` and are deleted after 7 days like everything else, so the owner needs to look at them within that week (CLOUDFLARE_SETUP.md, Part G).
+* **Soundprint links (2.61)** (`#p=1…`) are untrusted input too: at most 4,000 characters, inflated with the same ceiling as song links, checked byte by byte (version, lengths, counts, the key), and the title and name are shown as text with control characters and `<` `>` removed. The print holds no audio, so a link can't carry a recording.
 * A song link is as private as the channel it is sent through. Link previews in chat apps can fetch the address; they still cannot see the part after `#` unless the app reads the whole link it was given. The studio cannot control that.
 * The device permissions table describes the computer. On a phone (2.41), **Sing** opens the microphone when the person presses 🎤 Sing into this phone or ●; the same kill switch applies.
 

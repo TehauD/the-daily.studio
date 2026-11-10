@@ -8,7 +8,7 @@ suite('e2e-rooms', async t => {
   const { ok, wait, poll } = t, dist = path.join(__dirname, '..', 'dist');
   const html = fs.readFileSync(path.join(dist, 'index.html'), 'utf8'), rooms = fs.readdirSync(path.join(dist, 'rooms'));
   ok(!/data:font\/woff2/.test(html) && /<link rel="preload" href="fonts\/inter-latin-wght\.woff2" as="font"/.test(html), 'the site’s page links its two fonts (preloaded) instead of carrying them');
-  ok(['tx', 'midi', 'shower', 'tune'].every(id => rooms.some(f => new RegExp('^' + id + '\\.[0-9a-f]{8}\\.js$').test(f))), 'the rooms are their own files, named by their contents (' + rooms.join(', ') + ')');
+  ok(['tx', 'midi', 'shower', 'tune', 'print'].every(id => rooms.some(f => new RegExp('^' + id + '\\.[0-9a-f]{8}\\.js$').test(f))), 'the rooms are their own files, named by their contents (' + rooms.join(', ') + ')');
   const gz = zlib.gzipSync(Buffer.from(html), { level: 9 }).length, one = zlib.gzipSync(fs.readFileSync(path.join(__dirname, '..', 'index.html')), { level: 9 }).length;
   ok(gz < one - 80000, 'the site’s page is much lighter than the single file: ' + (gz / 1024).toFixed(0) + ' kB gzip instead of ' + (one / 1024).toFixed(0) + ' kB');
   ok(/script-src 'sha256-[^']+' 'self'/.test(html), 'its policy lets in scripts from this site only, beside its own inline one');
@@ -16,7 +16,7 @@ suite('e2e-rooms', async t => {
   const p = await t.open({ w: 1280, h: 800 }), ev = (f, a) => p.evaluate(f, a), req = [];
   p.on('request', r => req.push(new URL(r.url()).pathname));
   const R0 = await ev(() => ({ files: Object.keys(window.__daily.ROOM.files || {}).sort().join(), loaded: Object.keys(window.__daily.ROOM.done).length, tags: document.querySelectorAll('script[src*="rooms/"]').length, shw: typeof window.__daily.SHW, fn: typeof window.__daily.smfParse, fonts: [...document.fonts].filter(f => /DS /.test(f.family) && f.status === 'loaded').length }));
-  ok(R0.files === 'midi,shower,tune,tx' && R0.loaded === 0 && R0.tags === 0, 'the studio starts without its rooms (' + R0.files + ' wait to be used)');
+  ok(R0.files === 'midi,print,shower,tune,tx' && R0.loaded === 0 && R0.tags === 0, 'the studio starts without its rooms (' + R0.files + ' wait to be used)');
   ok(R0.shw === 'undefined' && R0.fn === 'function', 'until then the core holds stand-ins: a room’s functions load it when called, its objects are not there yet');
   ok(R0.fonts >= 1, 'the fonts load from their files (' + R0.fonts + ' in use)');
 
