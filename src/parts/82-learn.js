@@ -1,5 +1,5 @@
 /* ============================================================
-   Part 82 · LEARN (2.32) — the Teacher workspace's front door: a place to be taught
+   Part 82 · LEARN (2.32) — the Practice workspace's front door (Teacher until 2.64): a place to be taught
      · Lessons      paths (Foundations, Lead, Rhythm, Technique) whose steps demonstrate, then listen (part 80, 81)
      · Warm-ups     five minutes before you play
      · Riffs & licks  the library, by style and level: listen, play it, in time, in any key, put it in your song
@@ -183,7 +183,7 @@ function learnTeach() {
     b('lnFromSong', '🎯 This section as an exercise', 'The tab of the section you are in, note by note, ready to share.', () => { const p = learnFromSong(); if (p) coachOpen(p, 0, { title: 'From your song', actions: q => [h('button', { class: 'btn sm', id: 'coShare', onclick: () => learnFile([q], q.title) }, '⇩ Share as a file')] }); }),
     b('lnOpen', '📂 Open a lesson file', 'A lesson or riff a teacher shared (.daily-lesson.json).', () => file.click()));
 }
-/** the Teacher's front door */
+/** the lessons' front door (🎓 Learn in Practice) */
 function learnOpen(at) {
   const paths = LESSONS.filter(p => p.id !== 'warm'), warm = LESSONS.filter(p => p.id === 'warm'), all = LESSONS.reduce((a, p) => a + p.lessons.reduce((b, l) => b + l.steps.length, 0), 0), done = LESSONS.reduce((a, p) => a + p.lessons.reduce((b, l) => b + lsDone(l), 0), 0);
   return hubOpen('learn', { ico: '🎓', title: 'Learn', sub: 'A plan for today, lessons that listen while you play, your own song as lessons, ear training, riffs, a riff lab and an atlas of the neck. ' + done + ' of ' + all + ' lesson steps done.', at, sections: [

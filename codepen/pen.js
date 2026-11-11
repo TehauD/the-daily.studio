@@ -57,7 +57,7 @@ window.__dailyRoom = (id, make) => {
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.65.0', BUILD = 'cc96953', PARTS_N = +'124' || 0, LINES_N = +'20952' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.65.1', BUILD = 'e7d0b17', PARTS_N = +'124' || 0, LINES_N = +'20952' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { ghApp: { clientId: 'Iv23liTjqEBQsgmGaE1Q', slug: 'tehaud-the-daily-studio' },   /* Sign in with GitHub: the GitHub App's public client id and its slug (docs/GITHUB.md); empty = only the token way */
   support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://journal.the-daily.studio/' };
@@ -4153,7 +4153,7 @@ function vzAdjustOpen(anchor) {
   box.append(h('div', { class: 'row', style: { gap: '8px', alignItems: 'center' } },
     h('button', { class: 'btn sm', id: 'vzaReset', onclick: () => { VZA.forEach(([k]) => { CFG[k] = 1; rows[k].r.value = 1; rows[k].val.textContent = '1.00×'; }); VZ.spec = null; saveCfg(); mark(); } }, 'Reset'),
     h('span', { class: 'tiny muted' }, 'Double-click a slider to reset it.')),
-    h('div', { class: 'tiny muted', style: { lineHeight: 1.45 } }, 'Speed and Zoom work on every look; Size sets the hexagons of Hex Resonance and the pulse grid. On the Visuals tab, the Stage and in Perform. The camera, the chord, the words and the small neck stay as they are.'));
+    h('div', { class: 'tiny muted', style: { lineHeight: 1.45 } }, 'Speed and Zoom work on every look; Size sets the hexagons of Hex Resonance and the pulse grid. On the Visuals tab, the Stage and in Showtime. The camera, the chord, the words and the small neck stay as they are.'));
   popover(anchor, box);
 }
 
@@ -9186,7 +9186,7 @@ function perfOpen(opener) {
   PF.el = h('div', { id: 'perform', class: 'perform pf-pre pf-v-' + pfView() + ' ' + pfLayCls().join(' ') + (PF.bd ? '' : ' pf-solid'), role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Showtime' },
     h('div', { class: 'pf-top' }, h('b', { class: 'pf-song', id: 'pfSong' }), h('span', { class: 'pf-sec', id: 'pfSec' }), h('span', { class: 'grow' }), h('span', { class: 'pf-meta', id: 'pfMeta' }), dots,
       h('button', { class: 'btn sm pf-lay', id: 'pfLayout', title: 'Layout: where the controls and the words go, the text size, the song map', 'aria-haspopup': 'dialog', onclick: e => pfLayMenu(e.currentTarget) }, '⚙ Layout'),
-      h('button', { class: 'btn sm pf-view', id: 'pfView', title: 'How Perform looks: the chord shapes beside the lyrics, the big chord, or the lyric sheet', onclick: () => perfViewNext() }, (PF_VIEWS.find(v => v[0] === pfView()) || PF_VIEWS[0])[1]),
+      h('button', { class: 'btn sm pf-view', id: 'pfView', title: 'How Showtime looks: the chord shapes beside the lyrics, the big chord, or the lyric sheet', onclick: () => perfViewNext() }, (PF_VIEWS.find(v => v[0] === pfView()) || PF_VIEWS[0])[1]),
       h('button', { class: 'btn sm vzh-kill', id: 'pfKill', title: 'Stop all sound and release the microphone (Ctrl + .)', onclick: () => { try { audioKill(); } catch (e) { } } }, '■ Stop audio'), h('button', { class: 'btn sm', id: 'pfExit', onclick: () => perfClose() }, '✕ Exit')),
     PF.map,
     h('div', { class: 'pf-stage' }, h('div', { class: 'pf-chord', id: 'pfChord', 'aria-live': 'off' }, '·'), h('div', { class: 'pf-next', id: 'pfNext' }), h('div', { class: 'pf-lyr', id: 'pfLyr' }), h('aside', { class: 'pf-shapes', id: 'pfShapes', 'aria-label': 'Chord shapes' })),
@@ -12107,7 +12107,7 @@ function pbCard() {
       row('Background', sel('bg', [['visuals', 'The visuals (dimmed)'], ['black', 'Plain black'], ['green', 'Chroma-key green']])),
       row('Dimming', h('input', { type: 'range', id: 'pb_dim', min: 0, max: .9, step: .05, value: pb.dim, oninput: e => { pb.dim = +e.target.value; save(); } })),
       row('Lower third size', sel('size', [[.8, 'Small'], [1, 'Normal'], [1.25, 'Large']])), row('Lower third position', sel('pos', [['bottom', 'Bottom'], ['top', 'Top']])),
-      row('Concert lens', h('select', { class: 'in', id: 'pb_lens', style: { fontFamily: 'var(--sans)' }, title: 'Perform: big and calm · Teach: circle of fifths, numerals, what comes next · Sky: your session as a constellation', onchange: e => lxSetLens(e.target.value) }, LX_LENSES.map(o => h('option', { value: o[0], selected: o[0] === (CFG.lens || 'perform') }, o[1]))))),
+      row('Concert lens', h('select', { class: 'in', id: 'pb_lens', style: { fontFamily: 'var(--sans)' }, title: 'Live: big and calm · Teach: circle of fifths, numerals, what comes next · Sky: your session as a constellation', onchange: e => lxSetLens(e.target.value) }, LX_LENSES.map(o => h('option', { value: o[0], selected: o[0] === (CFG.lens || 'perform') }, o[1]))))),
     h('div', { class: 'row', style: { gap: '8px', marginTop: '8px', flexWrap: 'wrap' } },
       h('button', { class: 'btn sm', id: 'pbOut', title: 'A bare window with just the picture: drag it to the projector, then double-click it for full screen. Turns the backdrop on.', onclick: () => { pb.on = true; save(); renderStageUI(); stagePop(); } }, '▢ Clean output window'),
       h('button', { class: 'btn sm', id: 'pbFull', title: 'Fill this screen with the backdrop (Esc to leave)', onclick: () => { pb.on = true; save(); renderStageUI(); stageFull(); } }, '⛶ Full screen')),
@@ -12317,7 +12317,7 @@ function concertDraw(g, W, H, X) {
 }
 /** the lens switch (Visuals bar) */
 function lxLensBar() {
-  const bar = h('div', { class: 'seg', id: 'lxLens', role: 'group', 'aria-label': 'Concert lens', title: 'Perform: big and calm · Teach: the circle of fifths, roman numerals and what comes next · Sky: your session as a constellation' },
+  const bar = h('div', { class: 'seg', id: 'lxLens', role: 'group', 'aria-label': 'Concert lens', title: 'Live: big and calm · Teach: the circle of fifths, roman numerals and what comes next · Sky: your session as a constellation' },
     LX_LENSES.map(([k, n]) => h('button', { 'data-lens': k, class: (CFG.lens || 'perform') === k ? 'on' : '', onclick: () => lxSetLens(k) }, n)));
   const save = h('button', { class: 'btn sm', id: 'lxSkySave', title: 'Save the session sky as a picture', style: { display: (CFG.lens === 'sky') ? '' : 'none' }, onclick: () => lxSkySave() }, '⤓ Save sky'), clr = h('button', { class: 'btn sm', id: 'lxSkyClear', title: 'Clear the sky and start a new one', style: { display: (CFG.lens === 'sky') ? '' : 'none' }, onclick: () => { lxSkyClear(); toast('Sky cleared.', 'ok'); } }, 'New sky');
   return h('div', { class: 'row', id: 'lxLensRow', style: { gap: '6px', display: VZ.mode === 'concert' ? '' : 'none' } }, bar, save, clr);      /* 2.65: only while Concert is the look */
@@ -14343,8 +14343,8 @@ document.addEventListener('input', e => { if (!LH.el || !e.target || !e.target.m
      🎼 Practice    a practice room: the fretboard large in the middle, scales on the left; loop, slow down and speed up; lessons
                     that listen; and for teaching someone else, draw, keep notes and record the screen
      ⚙️ Full Rig    everything: every panel, both sidebars, every Monitor widget
-   Each has a colour, a one-line mission with three steps, a row of its tools (the main one highlighted), and a button to the next
-   workspace. Nothing is removed: every panel is still under ☰ and ▦. The tools are in part 68.
+   Each has a colour, a one-line mission with three steps (behind ?), one row of its main tools (the first highlighted) with ⋯ More for
+   the rest (2.65), and a button to the next workspace. Nothing is removed: every panel is still under ☰ and ▦. The tools are in part 68.
    ============================================================ */
 const GOALS = [
   { id: 'songwriter', ico: '🎸', name: 'Songwriter', layout: 'Songwriter', hue: '#d08a2e', next: ['performer', 'Into the Studio'],
@@ -14453,7 +14453,7 @@ function goalAudioFirst() { try { if (isDesk() && !E.hasInput && typeof sideShow
 /** the goal's colour, on the page (the goal bar, the open tab) */
 function goalMark() { const g = goalNow(); document.body.dataset.goal = g ? g.id : ''; document.documentElement.style.setProperty('--goal', g ? g.hue : 'var(--accent)'); }
 bus.on('dock', () => { if (document.body.dataset.goal !== ((goalNow() || {}).id || '')) { goalMark(); goalBarBuild(); } });
-/* ---------- the goal bar: the six goals, Create → Perform → Share, the mission, the goal's tools and its next step ---------- */
+/* ---------- the goal bar (2.65: one row): the four goals, ? (the mission and steps), the main tools, ⋯ More and the next step ---------- */
 function goalBar() { const box = h('div', { class: 'goalbar', id: 'goalbar' }); GOALBAR.el = box; goalBarBuild(); return box; }
 const GOALBAR = { el: null };
 /** the bar sits at the top of the centre, whichever of the panels or the arrangement is on top */
@@ -14504,7 +14504,7 @@ function workspaceOpen(at) {
   const chk = (label, get, set) => h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: get(), onchange: e => set(e.target.checked) }), label);
   const hub = $('#wsBtn');
   return hubOpen('workspace', { ico: '▦', title: 'Workspace', sub: 'Pick what you are here to do, and the studio arranges itself for it. Nothing is ever taken away.', at, sections: [
-    { key: 'goal', label: 'Goal', ico: '◎', sub: 'Create → Perform → Share. Each goal shows the panels and tools for one job.', wide: true, body: () => [h('div', { class: 'ws-grid' }, GOALS.map(card))] },
+    { key: 'goal', label: 'Goal', ico: '◎', sub: 'Four workspaces, each with the panels and tools for one job; ⋯ More in each has the rest.', wide: true, body: () => [h('div', { class: 'ws-grid' }, GOALS.map(card))] },
     { key: 'panels', label: 'Panels', ico: '▤', sub: 'Fine-tune the workspace you are in. Every panel area also has a labelled tab on its edge.', body: () => [
       chk('Panels above the arrangement', () => LAY.flip, v => { LAY.flip = v; saveLay(); applyLayout(); }),
       chk('Left sidebar  [', () => LAY.left, v => { LAY.left = v; saveLay(); applyLayout(); }),
@@ -15778,7 +15778,7 @@ agTool('transport', 'Play or stop the song (the band plays the chords), start fr
     return agTxt(st);
   });
 
-agTool('open_workspace', 'Arrange the studio for a goal: songwriter (words, chords and tab), performer (stage visuals, tones, tuner), creator (record and post a video), practice (fretboard, loop, metronome), teacher (whiteboard, notes, screen recording) or fullrig (everything).',
+agTool('open_workspace', 'Arrange the studio for a goal: songwriter (words, chords and tab), performer (the Studio workspace: stage visuals, tones, tuner, record and post a video), practice (fretboard, lessons, loop, tempo; and for teaching: annotate, lesson notes, screen recording) or fullrig (everything).',
   agObj({ workspace: agStr('Which workspace.', { enum: AG_GOALS }) }, ['workspace']),
   i => { if (!goalGo(i.workspace)) throw new Error('Unknown workspace'); agentSay('opened the ' + goalNow().name + ' workspace'); return agTxt({ done: true, workspace: i.workspace, panel: DOCK.cur }); });
 
@@ -15804,12 +15804,12 @@ agTool('set_visuals', 'Change the visuals: the look, how fast it moves (speed 0.
     if (i.look) vzSetMode(i.look); saveCfg(); VZ.spec = null; $$('[data-vza]').forEach(x => x.classList.toggle('on', vzAdjusted()));
     agentSay('changed the visuals'); return agTxt({ done: true, visuals: agVisuals() });
   }, { idempotentHint: true });
-agTool('perform', 'Open or close the full-screen Perform view, and choose its display: shapes (the big chord, the lyrics and the chord shapes beside them), big (the big chord and the lyrics) or sheet (the lyrics large, like a songbook). It opens on a short readiness check; it never turns the microphone or the camera on, and never records.',
+agTool('perform', 'Open or close the full-screen ★ Showtime view (called Perform until 2.64), and choose its display: shapes (the big chord, the lyrics and the chord shapes beside them), big (the big chord and the lyrics) or sheet (the lyrics large, like a songbook). It opens on a short readiness check; it never turns the microphone or the camera on, and never records.',
   agObj({ action: agStr('open or close (omit to only change the display).', { enum: ['open', 'close'] }), display: agStr('Which display.', { enum: ['shapes', 'big', 'sheet'] }) }),
   i => {
     if (i.display) perfViewSet(i.display);
     if (i.action === 'open' && !PF.on) perfOpen(); if (i.action === 'close' && PF.on) perfClose();
-    agentSay(i.action === 'open' ? 'opened Perform' : i.action === 'close' ? 'closed Perform' : 'changed the Perform display'); return agTxt({ done: true, open: !!PF.on, display: pfView() });
+    agentSay(i.action === 'open' ? 'opened Showtime' : i.action === 'close' ? 'closed Showtime' : 'changed the Showtime display'); return agTxt({ done: true, open: !!PF.on, display: pfView() });
   }, { idempotentHint: true });
 agTool('mute_band', 'Mute the whole backing band and the metronome click in one go (the same as the person pressing Shift+M), or bring back exactly the parts that were playing before. Omit muted to switch it.',
   agObj({ muted: agBool('true mutes the band and the click; false brings back what was playing.') }),
@@ -18079,7 +18079,7 @@ function megSettings() {
     h('div', { class: 'meg-live', id: 'megLive', role: 'status', 'aria-live': 'polite' }, h('i'), h('b', {}, 'Sing to test')),
     h('div', { class: 'row', style: { gap: '8px', flexWrap: 'wrap' } }, h('button', { class: 'btn', id: 'megTeach', onclick: async e => { const b = e.currentTarget; b.disabled = true; const m = await megTeach(w => { st.textContent = w === 'off' ? '1 of 2: pedal OFF. Sing for three seconds…' : '2 of 2: pedal ON. Sing for three seconds…'; }); b.disabled = false; st.textContent = m ? 'Taught. Stomp it and sing: the box above follows you.' : 'Not taught: try again.'; } }, '🎓 Teach it my voice'),
       h('button', { class: 'btn', onclick: () => { CFG.mega.model = null; saveCfg(); st.textContent = 'Back to general settings.'; } }, 'Forget')), st,
-    chk('stage', 'The stage and the Visuals turn gritty'), chk('lights', 'The lights flash as it comes on'), chk('words', 'The words go red and shake (Perform, the stream window)'));
+    chk('stage', 'The stage and the Visuals turn gritty'), chk('lights', 'The lights flash as it comes on'), chk('words', 'The words go red and shake (Showtime, the stream window)'));
 }
 bus.on('audiostate', () => { if (CFG.mega.on && !MEG.tm) megLoop(true); });
 if (CFG.mega.on) setTimeout(() => megLoop(true), 1500);
@@ -18718,7 +18718,7 @@ LESSONS.forEach(path => path.lessons.forEach(ls => ls.steps.forEach((s, i) => { 
 
 /* >>> parts/82-learn.js */
 /* ============================================================
-   Part 82 · LEARN (2.32) — the Teacher workspace's front door: a place to be taught
+   Part 82 · LEARN (2.32) — the Practice workspace's front door (Teacher until 2.64): a place to be taught
      · Lessons      paths (Foundations, Lead, Rhythm, Technique) whose steps demonstrate, then listen (part 80, 81)
      · Warm-ups     five minutes before you play
      · Riffs & licks  the library, by style and level: listen, play it, in time, in any key, put it in your song
@@ -18902,7 +18902,7 @@ function learnTeach() {
     b('lnFromSong', '🎯 This section as an exercise', 'The tab of the section you are in, note by note, ready to share.', () => { const p = learnFromSong(); if (p) coachOpen(p, 0, { title: 'From your song', actions: q => [h('button', { class: 'btn sm', id: 'coShare', onclick: () => learnFile([q], q.title) }, '⇩ Share as a file')] }); }),
     b('lnOpen', '📂 Open a lesson file', 'A lesson or riff a teacher shared (.daily-lesson.json).', () => file.click()));
 }
-/** the Teacher's front door */
+/** the lessons' front door (🎓 Learn in Practice) */
 function learnOpen(at) {
   const paths = LESSONS.filter(p => p.id !== 'warm'), warm = LESSONS.filter(p => p.id === 'warm'), all = LESSONS.reduce((a, p) => a + p.lessons.reduce((b, l) => b + l.steps.length, 0), 0), done = LESSONS.reduce((a, p) => a + p.lessons.reduce((b, l) => b + lsDone(l), 0), 0);
   return hubOpen('learn', { ico: '🎓', title: 'Learn', sub: 'A plan for today, lessons that listen while you play, your own song as lessons, ear training, riffs, a riff lab and an atlas of the neck. ' + done + ' of ' + all + ' lesson steps done.', at, sections: [
@@ -20113,7 +20113,7 @@ async function tuneTake(tk, mode, onProg) {
    Part 92 · Soundprint's doors (2.61). The Soundprint itself (part 93) is a room, loaded the first time it is used; prtOpen, prtLook
    and prtSongMake here are the core's stand-ins for it (part 00).
      · Visuals ▸ Soundprint: a look like the others. The open song's print, made once and kept with the song, moving with the
-       playhead. A row under the looks picks its world, listens again when the song has changed, and opens the full Soundprint.
+       playhead. Its row in the Visuals bar (beside the Look button, 2.65) picks its world, listens again when the song has changed, and opens the full Soundprint.
      · the-daily.studio/#soundprint opens Soundprint; a soundprint link (#p=…) opens that print.
    ============================================================ */
 VMODES.splice(2, 0, ['sprint', 'Soundprint']);
@@ -20128,7 +20128,7 @@ function prtVisDraw(g, W, H) {
   if (!prtRoomAsk) { prtRoomAsk = true; room('print').then(() => prtBarSync()).catch(() => { prtRoomAsk = false; }); }
   g.fillStyle = '#05060b'; g.fillRect(0, 0, W, H);
 }
-/** the row under the looks while Soundprint is the look */
+/** its row in the Visuals bar while Soundprint is the look */
 function prtBar() {
   const box = h('div', { class: 'prt-bar', id: 'prtBar', style: { display: VZ.mode === 'sprint' ? '' : 'none' } });
   box.append(h('div', { class: 'seg', role: 'radiogroup', 'aria-label': 'Soundprint world' }, PRT_LOOK_WORLDS.map(([k, n]) => h('button', { type: 'button', 'data-pw': k, role: 'radio', class: prtLookWorld() === k ? 'on' : '', 'aria-checked': prtLookWorld() === k ? 'true' : 'false', onclick: () => { CFG.prtWorld = k; saveCfg(); prtBarSync(); } }, n))),

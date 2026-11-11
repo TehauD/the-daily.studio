@@ -4,6 +4,18 @@ What the studio, its tutorials, its documents and its tests do **not** cover yet
 
 How to use it: before a release, move what the release closed into *Closed* with the version, and add what it opened. [RELEASE.md](RELEASE.md) has this as a checklist item. Items marked **(maintainer)** are decisions or facts only the project's owner can settle; nothing here blocks a build.
 
+## Closed in 2.65.1
+
+- **A song's soundprint was kept as it came.** A song from someone else (a link, a backup, sync) keeps its print only in the print's own shape, capped at 4,000 characters; a sound file over 400 MB is refused before it is read; an unknown Soundprint world in the settings draws Print.
+- **The small pages and the site's service worker shipped unminified.** The Drops pages, the journal move pages and `sw.js` are minified by the site build, with the same token check as the app.
+- **ARCHITECTURE.md had no entry for fourteen parts** (09e, 13b, 16b, 24b, 25b, 39a–d, 46b, 63c, 63d, 92, 93). Every part is listed now.
+- **Documents still described six workspaces** (TESTING, SECURITY_MODEL, PRIVACY, the user guide, the public guide's Showtime page).
+
+## Closed in 2.65.0
+
+- **The workspace and Visuals bars took up to six rows.** One row each, with ⋯ More; the collapsed arrangement is an edge rail like the sidebars.
+- **A stray vertical scroll bar on the panel tab strip** (a 1 px overflow).
+
 ## Closed in 2.64.0
 
 - **Six workspaces, two pairs of them alike** (Performer and Creator Studio, Practice and Teacher). Four now, and one ★ Showtime.
@@ -15,7 +27,7 @@ How to use it: before a release, move what the release closed into *Closed* with
 
 ## Closed in 2.62.0
 
-- **Soundprint was hard to find.** It's a look in the Visuals now, with doors in the drop strip and Creator Studio.
+- **Soundprint was hard to find.** It's a look in the Visuals now, with doors in the drop strip and the Studio workspace (then Creator Studio).
 
 ## Closed in 2.61.0
 

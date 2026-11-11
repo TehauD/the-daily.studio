@@ -2,7 +2,7 @@
 
 A practical walkthrough of every panel. For a two-minute orientation, press **?** in the app and choose **Take the guided tour** (on a phone, **⋯ More ▸ Guided tour**). Known gaps in the product and these docs are listed in [GAPS.md](GAPS.md).
 
-Contents: [Soundprint](#-soundprint-261) · [Whole song and Perform layouts](#-the-whole-song-and-perform-your-way-248) · [Guided tour](#guided-tour-247) · [Simple](#-simple-233) · [Better instruments](#-better-instruments-245) · [Songs that build](#-songs-that-build-244) · [Vocal tuning](#-vocal-tuning-243) · [Song links](#-send-a-song-as-a-link-240) · [Beats](#-beats-239) · [Getting started](#getting-started-and-guided-sessions-27) · [Show setup](#show-setup-26) · [Layouts](#layout-and-themes) · [Monitor widgets](#monitor-widgets-26) · [Concert](#concert-24) · [Voice](#voice-pitch-ribbon-your-range-find-my-key-23) · [Cut, silence and punch in](#cut-silence-and-punch-in-23) · [Heatmap](#heatmap-23) · [Performer backdrop](#performer-backdrop-23) · [Clips and the mix](#clips-move-trim-fade-split-22) · [Fast WAV render](#faster-than-real-time-wav-render-22) · [Open a MIDI file](#open-a-midi-file-22) · [Keep songs safe](#keep-songs-safe-22) · [Perform, share and back up](#perform-share-and-back-up-20) · [Getting sound](#getting-sound-in-and-out) · [Tones and the Rig](#tones-and-the-rig) · [The band](#the-band) · [Arrangement and recording](#arrangement-and-recording) · [Tab editor](#tab-editor) · [Song, tunings and capo](#song-tunings-and-capo) · [Fretboard and tuner](#fretboard-and-tuner) · [Transcribe](#transcribe-audio-to-tab) · [Stems](#stems-and-backing-tracks) · [Neural map](#neural-map) · [Visuals and Stage](#visuals-and-stage) · [Vision](#vision-lab) · [Research](#research-panel) · [Export, history and backup](#export-history-and-backup) · [MIDI](#midi) · [Layout](#layout-and-themes)
+Contents: [Soundprint](#-soundprint-261) · [Whole song and Showtime layouts](#-the-whole-song-and-showtime-your-way-248) · [Guided tour](#guided-tour-247) · [Simple](#-simple-233) · [Better instruments](#-better-instruments-245) · [Songs that build](#-songs-that-build-244) · [Vocal tuning](#-vocal-tuning-243) · [Song links](#-send-a-song-as-a-link-240) · [Beats](#-beats-239) · [Getting started](#getting-started-and-guided-sessions-27) · [Show setup](#show-setup-26) · [Layouts](#layout-and-themes) · [Monitor widgets](#monitor-widgets-26) · [Concert](#concert-24) · [Voice](#voice-pitch-ribbon-your-range-find-my-key-23) · [Cut, silence and punch in](#cut-silence-and-punch-in-23) · [Heatmap](#heatmap-23) · [Performer backdrop](#performer-backdrop-23) · [Clips and the mix](#clips-move-trim-fade-split-22) · [Fast WAV render](#faster-than-real-time-wav-render-22) · [Open a MIDI file](#open-a-midi-file-22) · [Keep songs safe](#keep-songs-safe-22) · [Perform, share and back up](#perform-share-and-back-up-20) · [Getting sound](#getting-sound-in-and-out) · [Tones and the Rig](#tones-and-the-rig) · [The band](#the-band) · [Arrangement and recording](#arrangement-and-recording) · [Tab editor](#tab-editor) · [Song, tunings and capo](#song-tunings-and-capo) · [Fretboard and tuner](#fretboard-and-tuner) · [Transcribe](#transcribe-audio-to-tab) · [Stems](#stems-and-backing-tracks) · [Neural map](#neural-map) · [Visuals and Stage](#visuals-and-stage) · [Vision](#vision-lab) · [Research](#research-panel) · [Export, history and backup](#export-history-and-backup) · [MIDI](#midi) · [Layout](#layout-and-themes)
 
 ---
 
@@ -10,9 +10,9 @@ Contents: [Soundprint](#-soundprint-261) · [Whole song and Perform layouts](#-t
 
 Every sound becomes something only it could make.
 
-**In the Visuals (2.62):** choose **Soundprint** in the list of looks. The open song is listened to once (a few seconds) and its print is kept with the song; press ▶ and it moves with the song. The row under the looks picks the world, says why it looks that way, offers **⟳ Listen again** after you've changed the song, and opens **◎ Save, share, or any sound…**.
+**In the Visuals (2.62):** choose **Soundprint** in the list of looks. The open song is listened to once (a few seconds) and its print is kept with the song; press ▶ and it moves with the song. Beside the **Look** button (2.65), its row picks the world, says why it looks that way, offers **⟳ Listen again** after you've changed the song, and opens **◎ Save, share, or any sound…**.
 
-**Any sound:** **◎ Soundprint** in the strip under the arrangement (also the Visuals row above, a clip's menu, **Finish it**, Studio, the address `#soundprint`, and on a phone **More ▸ Soundprint**), then:
+**Any sound:** **◎ Soundprint** in the drop strip of the open arrangement (also the Visuals row above, a clip's menu, **Finish it**, **Studio ▸ ⋯ More**, the address `#soundprint`, and on a phone **More ▸ Soundprint**), then:
 
 - **● Record a sound** (up to a minute: rain, a street, a friend laughing, a voice memo), **⤒ An audio file**, **♪ This song** (or **✦ The finished master**), or **A take…**
 - It's listened to here and becomes a **print** (about 1 kB). The sound decides what kind of picture it makes: its fingerprint class (arch, loop, whorl…), its colours (only its own notes), its ground (paper, night, stone or ink), its symmetry and its texture. The line under the reading says why. Five **worlds** grow from it; press one to see it, **▶ Play the piece** to watch it move:
@@ -94,11 +94,11 @@ When the song is ready for a proper mix, or for mastering in BandLab, a DAW or a
 
 ## ✦ Simple (2.33)
 
-**2.46: Simple works in every workspace.** It no longer moves you to Songwriter. Songwriter, Studio, Practice and Teacher each keep their own few panels and tools in Simple. **Full Rig** is the one workspace with everything: choosing it turns Simple off, and ✦ Simple there takes you back to the last workspace you used. Until an input is connected, every workspace opens its sidebar on **Audio input**, so connecting is the first thing you see.
+**2.46: Simple works in every workspace.** It no longer moves you to Songwriter. Songwriter, Studio and Practice each keep their own few panels and tools in Simple (Practice and Teacher were merged in 2.64). **Full Rig** is the one workspace with everything: choosing it turns Simple off, and ✦ Simple there takes you back to the last workspace you used. Until an input is connected, every workspace opens its sidebar on **Audio input**, so connecting is the first thing you see.
 
 **✦ Simple** (top right, next to ◐) shows just what you need to make something, for anyone who has never used a recording studio. A first visit starts in Simple; if you have been here before, you keep the full studio until you press it. **Settings ▸ Workflow** has the same switch.
-- **What stays:** play, stop, ● record, Loop and Click (now with their names), the tempo and the key. Also: your song's name, Songs, New and undo; Perform and Voice; the six workspaces and their tools; ● Capture; the tab and the words; Mute all; the arrangement and Loop & layer.
-- **What is tucked away:** return to start, the bar · beat counter, time signature, the master meter, the latency estimate, the workspace button, artist, tuning, capo, scale and notes, and the Canvas / Song / Studio switch. Also: the Create → Perform → Share flow, the Tools menu, each band part's own switch and the mix, tab techniques, fill styles, copy and paste, the arrangement's zoom, swing and lane tools, the stage's extra settings, and the status line at the bottom.
+- **What stays:** play, stop, ● record, Loop and Click (now with their names), the tempo and the key. Also: your song's name, Songs, New and undo; ★ Showtime and Voice; the four workspaces and each one's few tools (no ⋯ More); ● Capture; the tab and the words; Mute all; the arrangement and Loop & layer.
+- **What is tucked away:** return to start, the bar · beat counter, time signature, the master meter, the latency estimate, the workspace button, artist, tuning, capo, scale and notes, and the Canvas / Song / Full switch. Also: each band part's own switch and the mix, tab techniques, fill styles, copy and paste, the arrangement's zoom, swing and lane tools, the stage's extra settings, and the status line at the bottom.
 - **Inside the panels too (2.38):**
   - **Panel tabs:** only the workspace's own (see the table below), plus the backing track once one is loaded and whatever is open now.
   - **Tones:** eight core tones (clean, acoustic, edge of breakup, crunch, lead, metal, ambient and direct). **Show all 27 tones** lists the rest.
@@ -116,10 +116,10 @@ When the song is ready for a proper mix, or for mastering in BandLab, a DAW or a
   | ⚙️ Full Rig | Everything (choosing it turns Simple off) | Everything |
 
   Pressing ✦ Simple in the Full Rig goes to the last workspace you used; switching Simple off again brings the Full Rig back exactly as it was.
-- **Visuals in Simple (2.46):** four looks (hex, concert, bloom and the prompter); **More looks…** shows the rest.
+- **Visuals in Simple (2.46):** four looks (hex, concert, bloom and the prompter) in the **Look** list; **More looks…** there shows the rest.
 - **The band in Simple (2.39):** the Band panel is the beats and who plays (drums, bass, guitar and keys, each a switch and a level). **Show every band setting** brings the rest back.
 
-## ☰ The whole song, and Perform your way (2.48)
+## ☰ The whole song, and Showtime your way (2.48)
 
 **In Write:**
 - **☰ Whole song** (beside Tab, Words and Both) shows every section in order. It opens as a **📄 Sheet** (2.48.1), laid out like a pasted chord sheet:
@@ -131,7 +131,7 @@ When the song is ready for a proper mix, or for mastering in BandLab, a DAW or a
 - **The song map** above the section chips shows a block per section, as wide as its bars and coloured by kind. The one playing is lit; click a block to go there.
 - **＋** opens a menu: Intro, Verse, Pre-chorus, Chorus, Interlude, Bridge, Solo, Outro, or a copy of a section already in the song. The new section goes after the one you picked and is named for you (Verse 1, Verse 2…). A second verse or chorus starts with the first one's chords.
 
-**In Perform (⚙ Layout, remembered on this device):**
+**In ★ Showtime (⚙ Layout, remembered on this device; called Perform until 2.64):**
 
 | Choice | Options |
 | --- | --- |
@@ -190,7 +190,7 @@ Set the song's key first (the tuning follows it). Nothing is sent anywhere; it i
 **Writing a song together (2.51):**
 - **From and Note:** the send window has both. Your name is remembered on this device, and a note says what you need ("Can you write the chorus?").
 - **What the other person sees:** "🎵 Alice sent you a song", the note, and the rounds so far (who changed what, and when).
-- **Someone who has never been here** gets an invitation: **▶ Play it** opens the song and plays it in Perform with the words as a sing-along; **Open it in the studio** opens it to work on.
+- **Someone who has never been here** gets an invitation: **▶ Play it** opens the song and plays it in ★ Showtime with the words as a sing-along; **Open it in the studio** opens it to work on.
 - **↩ Send it back:** the send buttons say **↩ Send back to Alice**. The window lists **Your changes** (for example "wrote words for Chorus; added Bridge"), worked out from what the song was when it arrived, and they go into the link's history.
 - **Each round opens as a new song,** so nothing is ever overwritten. The history (the last eight rounds) travels with it.
 - **Share pages and printed sheets link back:** a share page ends with **Open this song in the-daily.studio**, and a printed sheet has a code to scan that opens it.
@@ -294,7 +294,7 @@ A small card names one step and outlines the control. The step ticks off when th
 
 **● Capture**: connect your input, press Capture, and play after the count-in. The section loops and each note or chord you play is written into the bar that is playing, on the nearest sixteenth. The strip says what it heard. Press **■ Stop capture** when you are done; **Undo** takes the whole capture back. ⚙ chooses the count-in, whether the section loops, whether a new pass replaces the last, and whether an empty bar is named after your chord. Let each note or chord ring for a moment; a soft low note right under a loud ringing chord may be missed.
 
-**Play · Create · Learn** (above the tabs) set the studio up for one job: *Play* (tone, band, backing track, tuner), *Create* (Write, band, tone, save) and *Learn* (backing track and Transcribe, the tab, the fretboard beside it). **Tools ▸ Everything** shows every tab; **Tools** also has *Show Song and Fretboard as separate tabs*.
+**Play · Create · Learn** (2.9) set the studio up for one job; they became the goal workspaces in 2.13, four since 2.64 (see [Goal workspaces](#goal-workspaces-213-four-since-264)).
 
 ---
 
@@ -551,7 +551,7 @@ Before you load it, the preview shows the sections, their bars and every chord, 
 - **Key**: read from the chords (or from `Key:`), or one you pick;
 - **Guitar part in the tab**: a strum or picking pattern written from the chords, or none.
 
-After loading, the band (drums, bass, rhythm guitar) plays the chords: press Space. While it plays, the stage's lyric line and 🎤 Perform show the line being sung with its chords above the words, where the sheet had them, the chord being played lit; each line comes up when its chords do. **Write** opens with the tab and the words with their chords, **Theory** shows the key, the **Fretboard** follows each chord, and **🎤 Perform** shows the chords and words full screen. With no title in the sheet, the first line of the chorus is offered as the title. A chord the app cannot play is played as the nearest simpler one (*Cadd11* as C, *A7sus2* as A7) and the preview lists them. ASCII tab in the sheet (`e|--0--3--|`) is left out; the tab is written from the chords.
+After loading, the band (drums, bass, rhythm guitar) plays the chords: press Space. While it plays, the stage's lyric line and ★ Showtime show the line being sung with its chords above the words, where the sheet had them, the chord being played lit; each line comes up when its chords do. **Write** opens with the tab and the words with their chords, **Theory** shows the key, the **Fretboard** follows each chord, and **★ Showtime** shows the chords and words full screen. With no title in the sheet, the first line of the chorus is offered as the title. A chord the app cannot play is played as the nearest simpler one (*Cadd11* as C, *A7sus2* as A7) and the preview lists them. ASCII tab in the sheet (`e|--0--3--|`) is left out; the tab is written from the chords.
 
 **AI agents can use the studio.** If your browser has an AI assistant that supports WebMCP (or you run an agent that drives web pages), it can use the studio's tools instead of clicking around: *get_song*, *get_studio_state*, *get_key_chords*, *load_chord_sheet*, *set_song_details*, *transpose_song*, *edit_section*, *add_section*, *remove_section*, *set_band*, *transport* (play, stop, loop, click; never record), *open_workspace*, *list_songs*, *open_song*, *export_song*, *undo*, and (2.16) *set_visuals* (look, speed, size, zoom; never the camera), *perform* (open Perform on a display; never the microphone) and *get_chord_shape* (how to play a chord in the song's tuning and capo). Ask it, for example, “load these chords and play it in G”, “write a bridge in the key of the song”, “open Perform on the lyric sheet”, “how do I play B/D# here?” or “give me the ChordPro”. Each change shows a 🤖 note and is one undo step. The tools run in the page; they cannot use the microphone, the camera, recording, deleting songs or Settings. **Settings ▸ Workflow ▸ Let AI agents in this browser use the studio** turns them off. Agents that run scripts find the same tools at `window.dailyStudio` (`dailyStudio.tools()`, `dailyStudio.call(name, input)`, `dailyStudio.describe()`). For developers: [AGENT_API.md](AGENT_API.md) (answers, error codes, limits, versioning).
 
@@ -723,11 +723,11 @@ A lighting rig that listens, and the default visual. It is built like a touring 
 * **A cue list from the song.** A build before a chorus, a drop on it (flash, wide beams, confetti), a cool sparse bridge, tight spots for a solo. Name your sections (Verse, Pre-Chorus, Chorus, Bridge, Solo, Outro) and it follows.
 * **Light comfort** (Calm, Standard or Full show; see [below](#light-comfort)) decides how hard the lights hit, and the show never flashes more than three times a second.
 
-Three **lenses** on the same show, in the Visuals bar and in Stage ▸ Performer backdrop:
+Three **lenses** on the same show, in the Visuals bar while Concert is the look (2.65) and in Stage ▸ Performer backdrop:
 
 ![Concert, Teach lens](screenshots/41-concert-teach.png)
 
-* **Perform**: big and calm, for an audience.
+* **Live** (Perform until 2.64): big and calm, for an audience.
 * **Teach**: the circle of fifths as a lit ring (home marked, your key's notes bright, the chord's notes joined, a dashed path to the next chord, and the note you are playing circled), a card with the **roman numeral** of what is playing and of the next four chords, and one line on why the next chord pulls the way it does. Energy, mood and tension are shown as meters.
 * **Sky**: every chord you play becomes a star and every move a line; lines that repeat glow brighter. **⤓ Save sky** downloads the session as a PNG poster, **New sky** starts again.
 
@@ -748,7 +748,7 @@ A Monitor widget that shows the show the way the room sees it: the visuals with 
 
 ### Speed, size and zoom (2.15)
 
-**🎚 Speed · size · zoom**, in the Visuals bar and the Stage's scene bar, opens three sliders that apply wherever the visuals are drawn (the Visuals tab, the Stage, Perform's backdrop, the Audience view) and are remembered:
+**🎚 Speed · size · zoom**, in the Visuals bar (⋯ More) and the Stage's scene bar, opens three sliders that apply wherever the visuals are drawn (the Visuals tab, the Stage, Showtime's backdrop, the Audience view) and are remembered:
 - **Speed** (¼× to 3×): how fast every look moves.
 - **Size** (½× to 2½×): how big the hexagons are in Hex Resonance and the Stage's pulse grid: fewer, larger tiles, or a fine mesh.
 - **Zoom** (1× to 3×): pushes in on the middle of any look, like a camera.
@@ -792,12 +792,12 @@ Live and session measurements: pitch-class usage and intonation (mean cents devi
 
 **★ Showtime.** Press **★ Showtime** in the song bar (or on the full-screen stage). A readiness check comes first: audio is running, your input is connected (with a live level), the camera if you want it, lyrics to follow, and the count-in length. **Start performing** then shows the chord huge with the next one under it, the lyrics scrolling with the song, a big count-in, and **Play**, **● Record**, **Loop**, **Click** and tempo −/+ within reach. Tick **Show the visuals behind** to put the stage behind the words, or leave it for a plain dark page. <kbd>Space</kbd> plays or stops, <kbd>R</kbd> records, <kbd>Esc</kbd> leaves, and <kbd>Ctrl/⌘</kbd>+<kbd>.</kbd> stops everything. A finished take goes straight into your song.
 
-**Perform's displays.** The **Display** button at the top switches between three looks, and the choice is remembered:
+**Showtime's displays.** The **Display** button at the top switches between three looks, and the choice is remembered:
 - **◫ Chords & shapes** (the default): the big chord and the lyrics, with a panel beside them showing the shape of the chord being played (NOW) and the next one (NEXT), worked out for the song's tuning and capo (the voicing you picked on the Fretboard, if you picked one), the frets under each (x = not played, 0 = open), and the chords after that. On a phone the panel sits above the lyrics, and the NOW and NEXT cards take the place of the big chord.
 - **◼ Big chord**: the big chord with the next one under it, and the lyrics.
 - **☰ Lyric sheet**: no big chord; the lyrics larger, with more lines and their chords over the words, like reading from a songbook.
 
-**Version.** The very bottom-right corner of Perform, and the end of the status bar, show the version and build code (for example *v2.15.0 · build 2a3be1d*), so you can tell which build is running. Help ▸ About shows the same version.
+**Version.** The very bottom-right corner of ★ Showtime, and the end of the status bar, show the version and build code (for example *v2.15.0 · build 2a3be1d*), so you can tell which build is running. Help ▸ About shows the same version.
 
 **Voice memo.** On a clean canvas, **🎤 Voice memo** records your voice as it is: one Vocal take at the start of the page, no analysis and no band. The page grows enough bars to play all of it.
 
@@ -831,7 +831,7 @@ The app switches layout by itself; **⋯ More ▸ Device layout** (or Settings) 
 
 | Section | What is there |
 |---|---|
-| **Words** | (2.49) A song map along the top (tap a section to write in it), section chips in their section's colour, **＋** for any kind of section (named and placed after the one you're in), **⋯** to rename, move, repeat, play or delete it, and **📄 Song**: the whole song as a chord sheet, with 🎤 Perform and 🔗 Send. Then a lyric notebook: the sections as chips (**＋** adds one). **✎ Write** is one big text box with the syllables of the line you are on; **♪ Chords** shows each word with its chord over it: pick a chord below and tap the word it lands on. **⧉ Paste** takes a whole lyric sheet. A new section's band plays the chords you put on its words. **Chords & key** opens the key, scale and progression tools |
+| **Words** | (2.49) A song map along the top (tap a section to write in it), section chips in their section's colour, **＋** for any kind of section (named and placed after the one you're in), **⋯** to rename, move, repeat, play or delete it, and **📄 Song**: the whole song as a chord sheet, with ★ Showtime and 🔗 Send. Then a lyric notebook: the sections as chips (**＋** adds one). **✎ Write** is one big text box with the syllables of the line you are on; **♪ Chords** shows each word with its chord over it: pick a chord below and tap the word it lands on. **⧉ Paste** takes a whole lyric sheet. A new section's band plays the chords you put on its words. **Chords & key** opens the key, scale and progression tools |
 | **Sing** | A live strip of the hexagons (your voice lights them), **🎤 Sing into this phone**, **● Record over the beat** (with a count-in), **▶ Hear it back**, your takes, one-tap voice sounds, pitch and your range, hum into a song, voice memo |
 | **Beats** | The beats and who plays; **Band** has every setting |
 | **Tracks** | Backing track (stems) · Transcribe |
@@ -859,7 +859,7 @@ The **Timeline** button at the right of the chip row (on panels that have the ar
 
 * **The header's dialogs (2.13).** **▦ Workspace**, **◐ Appearance**, **⚙ Settings** and **? Help** open the same kind of window: a header with ✕, the sections listed on the left (chips along the top on a phone) and the settings as cards in one scrolling column. Pick a section to jump to it; the list follows as you scroll. <kbd>Esc</kbd> or a click outside closes it.
 * **Appearance (2.13)** starts with **Light · Dark · System** (kept for this device only since 2.32.1: syncing never changes it; System follows the computer, which may switch at sunset). **Performance overlay** (2.32.1) shows frames a second in the bottom-left corner; its ✕ hides it. Under it, a dropdown shows the palette in use; open it to see only the palettes made for that mode (System shows a daytime and a night dropdown). **Looks** lists only the looks for that mode, then Accent, Feel and Type & access. Settings ▸ Appearance has the same mode switch and dropdown.
-* **Drag** dock tabs to reorder; **double-click** a tab to float it as a window and again to dock it back. **▦** (top right) opens Workspace: the six goals, then the sidebars, where each panel lives, show / hide or float for each panel, and a reset. Light / Dark / Match system is in **Appearance** (the ⚙ menu) and **Experience** (Automatic, Simple, More tools, Everything) is on the **Tools** button. There are no preset layouts any more; use the edge tabs.
+* **Drag** dock tabs to reorder; **double-click** a tab to float it as a window and again to dock it back. **▦** (top right) opens Workspace: the four workspaces, then the sidebars, where each panel lives, show / hide or float for each panel, and a reset. Light / Dark / Match system is in **Appearance** (the ⚙ menu), and how much shows is the one **✦ Simple** switch (the Tools levels went in 2.63). There are no preset layouts any more; use the edge tabs.
 * **Edge tabs (2.12).** Every panel area has a labelled tab on its own edge that is always there. Each sidebar's tab is named for the panel that is open (I/O, Monitor, Theory…): click it to collapse the sidebar. While a sidebar is collapsed its edge lists the panels that live there, so one click opens exactly the one you want. The divider between the arrangement and the panels has two tabs, **Arrangement** (collapses it to the transport) and **Panels** (collapses them to their tab strip). Click to collapse, click again to open. What you collapsed is remembered. On phones and tablets the drawers do this job instead.
 * **☰** at the end of the tab strip lists every panel (nothing is hidden when the strip scrolls). **⤢** expands the current panel to the whole centre; <kbd>Esc</kbd> goes back.
 * **Interchangeable panels.** **⇆** on a sidebar (or **☰ → Where panels live…**) lets you put any panel in the centre, the left sidebar or the right sidebar, swap the two sidebars, collapse or expand all cards and reset. Sidebar cards collapse with their ▾ and remember it.
@@ -1067,7 +1067,7 @@ It starts at 70% of the song's tempo, every clean go is 5 BPM faster, and it sto
 
 **Settings ▸ Pedal & MIDI sync ▸ 📢 Megaphone pedal** (folded away; press it to open) is for any megaphone, radio or telephone voice effect pedal between your mic and the interface. Such pedals usually have no MIDI, so the studio can't switch them, but it can hear them: the effect cuts your voice's lows and highs.
 - Switch on **React to my megaphone pedal**, then press **🎓 Teach it my voice**: sing three seconds with the pedal off, then three with it on. The meter shows what it hears.
-- While the pedal is on, the stage and the Visuals turn red-hot with scan lines (projector and stage videos included), the lights flash as you stomp it on, and the words in Perform and the stream window go red and shake. Each of these can be switched off.
+- While the pedal is on, the stage and the Visuals turn red-hot with scan lines (projector and stage videos included), the lights flash as you stomp it on, and the words in Showtime and the stream window go red and shake. Each of these can be switched off.
 - A breath between lines keeps it on; it lets go a moment after you sing clean again. Calm and reduced motion keep the colour and drop the shake.
 
 ## On air (2.25)

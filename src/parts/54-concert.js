@@ -192,7 +192,7 @@ function concertDraw(g, W, H, X) {
 }
 /** the lens switch (Visuals bar) */
 function lxLensBar() {
-  const bar = h('div', { class: 'seg', id: 'lxLens', role: 'group', 'aria-label': 'Concert lens', title: 'Perform: big and calm · Teach: the circle of fifths, roman numerals and what comes next · Sky: your session as a constellation' },
+  const bar = h('div', { class: 'seg', id: 'lxLens', role: 'group', 'aria-label': 'Concert lens', title: 'Live: big and calm · Teach: the circle of fifths, roman numerals and what comes next · Sky: your session as a constellation' },
     LX_LENSES.map(([k, n]) => h('button', { 'data-lens': k, class: (CFG.lens || 'perform') === k ? 'on' : '', onclick: () => lxSetLens(k) }, n)));
   const save = h('button', { class: 'btn sm', id: 'lxSkySave', title: 'Save the session sky as a picture', style: { display: (CFG.lens === 'sky') ? '' : 'none' }, onclick: () => lxSkySave() }, '⤓ Save sky'), clr = h('button', { class: 'btn sm', id: 'lxSkyClear', title: 'Clear the sky and start a new one', style: { display: (CFG.lens === 'sky') ? '' : 'none' }, onclick: () => { lxSkyClear(); toast('Sky cleared.', 'ok'); } }, 'New sky');
   return h('div', { class: 'row', id: 'lxLensRow', style: { gap: '6px', display: VZ.mode === 'concert' ? '' : 'none' } }, bar, save, clr);      /* 2.65: only while Concert is the look */

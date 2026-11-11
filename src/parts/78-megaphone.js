@@ -108,7 +108,7 @@ function megSettings() {
     h('div', { class: 'meg-live', id: 'megLive', role: 'status', 'aria-live': 'polite' }, h('i'), h('b', {}, 'Sing to test')),
     h('div', { class: 'row', style: { gap: '8px', flexWrap: 'wrap' } }, h('button', { class: 'btn', id: 'megTeach', onclick: async e => { const b = e.currentTarget; b.disabled = true; const m = await megTeach(w => { st.textContent = w === 'off' ? '1 of 2: pedal OFF. Sing for three seconds…' : '2 of 2: pedal ON. Sing for three seconds…'; }); b.disabled = false; st.textContent = m ? 'Taught. Stomp it and sing: the box above follows you.' : 'Not taught: try again.'; } }, '🎓 Teach it my voice'),
       h('button', { class: 'btn', onclick: () => { CFG.mega.model = null; saveCfg(); st.textContent = 'Back to general settings.'; } }, 'Forget')), st,
-    chk('stage', 'The stage and the Visuals turn gritty'), chk('lights', 'The lights flash as it comes on'), chk('words', 'The words go red and shake (Perform, the stream window)'));
+    chk('stage', 'The stage and the Visuals turn gritty'), chk('lights', 'The lights flash as it comes on'), chk('words', 'The words go red and shake (Showtime, the stream window)'));
 }
 bus.on('audiostate', () => { if (CFG.mega.on && !MEG.tm) megLoop(true); });
 if (CFG.mega.on) setTimeout(() => megLoop(true), 1500);

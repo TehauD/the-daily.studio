@@ -2,6 +2,22 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.65.1 — 2026-11-11 — Hardened, minified, and the documents caught up
+
+### Security
+- **A song's soundprint is kept only in its own shape.** A song that comes from someone else (a song link, a backup, sync) keeps its print only as a base64url code of at most 4,000 characters with a hex signature; anything else is dropped when the song is opened. It was already decoded by the checked reader, so nothing could run; now nothing oversized is kept either.
+- **A sound file over 400 MB is refused** before it is read into memory for a soundprint (ten minutes of 96 kHz 24-bit stereo fit well under that).
+- **An unknown Soundprint world in the settings draws Print** instead of whatever the value said.
+
+### Changed
+- **The site's service worker, the Drops pages and the journal move pages ship minified,** with the same check as the app (the code's tokens must be identical before and after) and their Content-Security-Policy hashes taken from what ships. The vendored journal page is still served byte for byte as its own project builds it.
+- **The AI-agent tool `open_workspace` describes the four workspaces** (it still accepted the old names, and still does).
+
+### Documents
+- **ARCHITECTURE.md** lists every part again: fourteen were missing (09e, 13b, 16b, 24b, 25b, 39a–d, 46b, 63c, 63d, 92, 93), and the goals, layout, Visuals and experience entries describe 2.63–2.65.
+- **The user guide, README, TESTING, SECURITY_MODEL, PRIVACY, GAPS and the public guide pages** say ★ Showtime, four workspaces, ⋯ More and the arrangement rail where they still said Perform, six workspaces, Teacher, Creator Studio or the Tools button.
+- **The pictures** in the README, the user guide and the public guide pages are made again from 2.65.1.
+
 ## 2.65.0 — 2026-11-11 — Less on screen, the same studio
 
 ### Changed

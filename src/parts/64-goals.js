@@ -8,8 +8,8 @@
      🎼 Practice    a practice room: the fretboard large in the middle, scales on the left; loop, slow down and speed up; lessons
                     that listen; and for teaching someone else, draw, keep notes and record the screen
      ⚙️ Full Rig    everything: every panel, both sidebars, every Monitor widget
-   Each has a colour, a one-line mission with three steps, a row of its tools (the main one highlighted), and a button to the next
-   workspace. Nothing is removed: every panel is still under ☰ and ▦. The tools are in part 68.
+   Each has a colour, a one-line mission with three steps (behind ?), one row of its main tools (the first highlighted) with ⋯ More for
+   the rest (2.65), and a button to the next workspace. Nothing is removed: every panel is still under ☰ and ▦. The tools are in part 68.
    ============================================================ */
 const GOALS = [
   { id: 'songwriter', ico: '🎸', name: 'Songwriter', layout: 'Songwriter', hue: '#d08a2e', next: ['performer', 'Into the Studio'],
@@ -118,7 +118,7 @@ function goalAudioFirst() { try { if (isDesk() && !E.hasInput && typeof sideShow
 /** the goal's colour, on the page (the goal bar, the open tab) */
 function goalMark() { const g = goalNow(); document.body.dataset.goal = g ? g.id : ''; document.documentElement.style.setProperty('--goal', g ? g.hue : 'var(--accent)'); }
 bus.on('dock', () => { if (document.body.dataset.goal !== ((goalNow() || {}).id || '')) { goalMark(); goalBarBuild(); } });
-/* ---------- the goal bar: the six goals, Create → Perform → Share, the mission, the goal's tools and its next step ---------- */
+/* ---------- the goal bar (2.65: one row): the four goals, ? (the mission and steps), the main tools, ⋯ More and the next step ---------- */
 function goalBar() { const box = h('div', { class: 'goalbar', id: 'goalbar' }); GOALBAR.el = box; goalBarBuild(); return box; }
 const GOALBAR = { el: null };
 /** the bar sits at the top of the centre, whichever of the panels or the arrangement is on top */
@@ -169,7 +169,7 @@ function workspaceOpen(at) {
   const chk = (label, get, set) => h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: get(), onchange: e => set(e.target.checked) }), label);
   const hub = $('#wsBtn');
   return hubOpen('workspace', { ico: '▦', title: 'Workspace', sub: 'Pick what you are here to do, and the studio arranges itself for it. Nothing is ever taken away.', at, sections: [
-    { key: 'goal', label: 'Goal', ico: '◎', sub: 'Create → Perform → Share. Each goal shows the panels and tools for one job.', wide: true, body: () => [h('div', { class: 'ws-grid' }, GOALS.map(card))] },
+    { key: 'goal', label: 'Goal', ico: '◎', sub: 'Four workspaces, each with the panels and tools for one job; ⋯ More in each has the rest.', wide: true, body: () => [h('div', { class: 'ws-grid' }, GOALS.map(card))] },
     { key: 'panels', label: 'Panels', ico: '▤', sub: 'Fine-tune the workspace you are in. Every panel area also has a labelled tab on its edge.', body: () => [
       chk('Panels above the arrangement', () => LAY.flip, v => { LAY.flip = v; saveLay(); applyLayout(); }),
       chk('Left sidebar  [', () => LAY.left, v => { LAY.left = v; saveLay(); applyLayout(); }),

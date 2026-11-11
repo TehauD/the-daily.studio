@@ -2,7 +2,7 @@
    Part 92 · Soundprint's doors (2.61). The Soundprint itself (part 93) is a room, loaded the first time it is used; prtOpen, prtLook
    and prtSongMake here are the core's stand-ins for it (part 00).
      · Visuals ▸ Soundprint: a look like the others. The open song's print, made once and kept with the song, moving with the
-       playhead. A row under the looks picks its world, listens again when the song has changed, and opens the full Soundprint.
+       playhead. Its row in the Visuals bar (beside the Look button, 2.65) picks its world, listens again when the song has changed, and opens the full Soundprint.
      · the-daily.studio/#soundprint opens Soundprint; a soundprint link (#p=…) opens that print.
    ============================================================ */
 VMODES.splice(2, 0, ['sprint', 'Soundprint']);
@@ -17,7 +17,7 @@ function prtVisDraw(g, W, H) {
   if (!prtRoomAsk) { prtRoomAsk = true; room('print').then(() => prtBarSync()).catch(() => { prtRoomAsk = false; }); }
   g.fillStyle = '#05060b'; g.fillRect(0, 0, W, H);
 }
-/** the row under the looks while Soundprint is the look */
+/** its row in the Visuals bar while Soundprint is the look */
 function prtBar() {
   const box = h('div', { class: 'prt-bar', id: 'prtBar', style: { display: VZ.mode === 'sprint' ? '' : 'none' } });
   box.append(h('div', { class: 'seg', role: 'radiogroup', 'aria-label': 'Soundprint world' }, PRT_LOOK_WORLDS.map(([k, n]) => h('button', { type: 'button', 'data-pw': k, role: 'radio', class: prtLookWorld() === k ? 'on' : '', 'aria-checked': prtLookWorld() === k ? 'true' : 'false', onclick: () => { CFG.prtWorld = k; saveCfg(); prtBarSync(); } }, n))),
