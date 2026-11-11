@@ -157,7 +157,7 @@ suite('e2e-journal', async t => {
   await hx.click('#hexTone [data-k="green"]'); await wait(300);
   const px2 = await corner(hx);
   ok(px2[0] < 40 && px2[1] < 60, 'Dark green turns it back (corner pixel ' + px2.join(',') + ')');
-  for (const [k, test] of [['ocean', p => p[2] > p[0] + 8 && p[0] < 30], ['ember', p => p[0] > p[2] + 8 && p[0] < 60], ['violet', p => p[2] > p[1] + 8 && p[0] < 40], ['blush', p => p[0] > 220 && p[1] > 220], ['mono', p => p[0] < 30 && Math.abs(p[0] - p[2]) < 6]]) {
+  for (const [k, test] of [['ocean', p => p[2] > p[0] + 8 && p[0] < 30], ['ember', p => p[0] > p[2] + 8 && p[0] < 60], ['violet', p => p[2] > p[1] + 8 && p[0] < 40], ['blush', p => p[0] > 220 && p[1] > 195 && p[0] > p[1]], ['mono', p => p[0] < 30 && Math.abs(p[0] - p[2]) < 6]]) {
     await hx.click('#hexTone [data-k="' + k + '"]'); await wait(250); const q = await corner(hx);
     ok(test(q), k + ' paints its own background (corner pixel ' + q.join(',') + ')');
   }
