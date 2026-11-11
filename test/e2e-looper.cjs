@@ -10,6 +10,7 @@ suite('e2e-looper', async t => {
   const st = () => ev(() => { const d = window.__daily, s = d.lpState(); return { on: d.LP.on, pass: d.LP.pass, rec: d.T.rec, playing: d.T.playing, recording: !!d.REC, takes: d.TAKES.map(x => x.name + ':' + x.dur.toFixed(1)), n: d.TAKES.length, state: s && s.t, bars: d.S.sections.reduce((a, x) => a + x.bars.length, 0), loop: [d.T.loopA, d.T.loopB, d.T.loop], band: [d.S.band.drumsOn, d.S.band.bassOn, d.S.band.compOn, d.S.band.leadOn].join(), metro: d.T.metro, armG: d.CFG.armG, hud: !!document.getElementById('lpHud'), hudText: (document.getElementById('lpHud') || {}).textContent || '' }; });
 
   // ---- the button and the window
+  await ev(() => { if (document.getElementById('center').classList.contains('tl-slim')) document.querySelector('#timeline .et-arr').click(); }); await wait(400);      /* 2.65: the arrangement starts as an edge rail */
   ok(await ev(() => { const b = document.getElementById('lpBtn'); return !!b && /Loop & layer/.test(b.textContent) && b.getClientRects().length > 0; }), 'the arrangement bar has a Loop & layer button');
   await ev(() => document.getElementById('lpBtn').click()); await wait(400);
   const dlg = await ev(() => { const d = document.getElementById('lpDlg'); return { open: !!d && d.open, segs: d ? [...d.querySelectorAll('.seg button')].map(b => b.textContent) : [], steps: d ? d.querySelectorAll('.lp-how li').length : 0 }; });

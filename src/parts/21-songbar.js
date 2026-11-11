@@ -182,7 +182,7 @@ function sbChip() {
     if (S.trackRef) t.append(h('button', { class: 'sb-chip', id: 'sbYourCopy', title: 'This song is played over a record that wasn’t sent. Load your own copy: it lines itself up with the song.', onclick: () => { sbLeave(); ycLoad(); } }, '♪ Load your copy of “' + (S.trackRef.t || 'the track') + '”'));
     else if (S.track) t.append(h('span', { class: 'tiny muted', title: 'This song was built from a track. Load it again to play along with it.' }, 'from “' + S.track.name + '”'));
   }
-  t.append(h('button', { class: 'sb-chip', id: 'sbPerform', title: 'Perform: full-screen chords and lyrics with a count-in, record and play', onclick: e => { sbLeave(); perfOpen(e.currentTarget); } }, '🎤 Perform'));
+  t.append(h('button', { class: 'sb-chip', id: 'sbPerform', title: 'Showtime: full-screen chords and lyrics with a count-in, record and play', onclick: e => { sbLeave(); perfOpen(e.currentTarget); } }, '★ Showtime'));
   t.append(h('button', { class: 'sb-chip', id: 'sbVoice', 'aria-label': 'Voice', title: 'Voice: see your pitch against the key, find your range, and find the key that suits your voice', onclick: e => { sbLeave(); voxOpen(e.currentTarget); } }, '〰', h('span', { class: 'sb-lbl' }, 'Voice')));
 }
 /** on a phone the song details are a sheet over the page: its buttons close it before they open something else */

@@ -14,7 +14,7 @@
    ============================================================ */
 VMODES.splice(1, 0, ['concert', 'Concert']);   /* Hex Resonance stays first: it is the default look */
 const lxHsl = (h, s, l, a) => `hsla(${(((h % 360) + 360) % 360) | 0},${Math.round(clamp(s, 0, 100))}%,${Math.round(clamp(l, 0, 100))}%,${clamp(a == null ? 1 : a, 0, 1).toFixed(3)})`;
-const LX_LENSES = [['perform', 'Perform'], ['teach', 'Teach'], ['sky', 'Sky']];
+const LX_LENSES = [['perform', 'Live'], ['teach', 'Teach'], ['sky', 'Sky']];      /* 2.64: “Live” (it was “Perform”): ★ Showtime is the only thing called that */
 const LX = {
   q: [], kick: 0, snare: 0, hat: 0, perc: 0, tom: 0, onset: 0, note: 0, strobe: 0, drop: 0, build: 0, strobeReq: false, lastStrobe: -1e9, chase: 0, pbSeq: 0,
   e: 0, v: 0, tn: 0, br: .4, hue: 38, ph: 0, sec: '', kind: 'ambient', int: .3, n: 4, pat: 'fan', sym: null, symT: 0, info: null, prog: null, pal: null,
@@ -195,7 +195,7 @@ function lxLensBar() {
   const bar = h('div', { class: 'seg', id: 'lxLens', role: 'group', 'aria-label': 'Concert lens', title: 'Perform: big and calm · Teach: the circle of fifths, roman numerals and what comes next · Sky: your session as a constellation' },
     LX_LENSES.map(([k, n]) => h('button', { 'data-lens': k, class: (CFG.lens || 'perform') === k ? 'on' : '', onclick: () => lxSetLens(k) }, n)));
   const save = h('button', { class: 'btn sm', id: 'lxSkySave', title: 'Save the session sky as a picture', style: { display: (CFG.lens === 'sky') ? '' : 'none' }, onclick: () => lxSkySave() }, '⤓ Save sky'), clr = h('button', { class: 'btn sm', id: 'lxSkyClear', title: 'Clear the sky and start a new one', style: { display: (CFG.lens === 'sky') ? '' : 'none' }, onclick: () => { lxSkyClear(); toast('Sky cleared.', 'ok'); } }, 'New sky');
-  return h('div', { class: 'row', style: { gap: '6px' } }, bar, save, clr, sgdBarButton());
+  return h('div', { class: 'row', id: 'lxLensRow', style: { gap: '6px', display: VZ.mode === 'concert' ? '' : 'none' } }, bar, save, clr);      /* 2.65: only while Concert is the look */
 }
 function lxSetLens(k) {
   CFG.lens = LX_LENSES.some(l => l[0] === k) ? k : 'perform'; saveCfg(); document.querySelectorAll('#lxLens [data-lens]').forEach(b => b.classList.toggle('on', b.dataset.lens === CFG.lens));

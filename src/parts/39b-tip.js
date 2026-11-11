@@ -7,7 +7,7 @@
      · on share pages, as a button and a code;
      · on a printed sign for a real guitar case, and as a picture to post.
    It can show all the time or only between songs, in any corner, in three sizes.
-   OFF BY DEFAULT. It is set up from 🎬 Creator Studio ▸ 🎸 Tip jar; until then nothing about it shows anywhere else. Once it is
+   OFF BY DEFAULT. It is set up from 🎤 Studio ▸ 🎸 Tip jar; until then nothing about it shows anywhere else. Once it is
    set up (a link saved and the terms agreed), a 🎸 Tips button appears in the Visuals and Stage bars to switch it on and off.
    Money goes straight from the audience to the service the artist chose. The studio never opens the link, never sees a
    payment and takes nothing. The link lives in this browser's settings, not in songs, backups or share files other than
@@ -37,7 +37,7 @@ const tipOk = () => CFG.tipOk === TIP_TERMS;
 /** the saved link, made safe (worked out again only when it changes: this is asked on every frame) */
 const TIPL = { raw: null, out: '' };
 const tipNow = () => { if (TIPL.raw !== CFG.tip.link) { TIPL.raw = CFG.tip.link; TIPL.out = tipLink(CFG.tip.link); } return TIPL.out; };
-/** set up in Creator Studio: a usable link saved and the terms agreed (the 🎸 Tips buttons in the Visuals and Stage bars appear only then) */
+/** set up in Studio: a usable link saved and the terms agreed (the 🎸 Tips buttons in the Visuals and Stage bars appear only then) */
 const tipSetUp = () => !!(tipOk() && tipNow());
 /** set up, agreed to and switched on */
 const tipReady = () => !!(CFG.tip.on && tipOk() && tipNow());
@@ -140,7 +140,7 @@ function tipPng() {
 }
 
 /* ---------- setting it up ---------- */
-/** the 🎸 Tips button for a toolbar (lit while the case is showing); cls: the bar's button class. Hidden until the tip jar is set up in Creator Studio */
+/** the 🎸 Tips button for a toolbar (lit while the case is showing); cls: the bar's button class. Hidden until the tip jar is set up in Studio */
 function tipBtn(cls) {
   return h('button', { class: (cls || 'btn sm') + (tipReady() ? ' on' : ''), 'data-tipbtn': '1', title: 'Tip jar: a QR code your audience can scan to tip you', style: { display: tipSetUp() ? '' : 'none' }, onclick: () => tipOpen() }, '🎸 Tips');
 }

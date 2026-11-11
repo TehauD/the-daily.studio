@@ -142,6 +142,23 @@ suite('e2e-soundprint', async t => {
     await p.click('#prtRecGo'); ok(await poll(() => ev(() => !!document.getElementById('prtCv') && /^A sound · /.test(window.__daily.PRT.cur.title)), 20000), 'and stopping makes its print (' + await ev(() => window.__daily.PRT.cur && window.__daily.PRT.cur.title) + ')');
   }
 
+  /* a look in the Visuals: the open song's own print, moving with it */
+  await ev(() => { const d = document.getElementById('prtDlg'); if (d) d.close(); const D = window.__daily; D.dockGo('vis'); D.vzSetMode('sprint', true); });
+  ok(await poll(() => ev(() => !!(window.__daily.S.sprint && window.__daily.S.sprint.c)), 90000), 'Soundprint is a look in the Visuals: choosing it makes the open song’s print and keeps it with the song');
+  await wait(1700);
+  const LK = await ev(() => { const D = window.__daily, list = [...document.querySelectorAll('#pane-vis .seg [data-m]')].map(b => b.dataset.m), bar = document.getElementById('prtBar'), cv = D.UI.vcv, d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data; let lit = 0; for (let i = 0; i < d.length; i += 4 * 13) if (Math.abs(d[i] - d[i + 1]) + Math.abs(d[i + 1] - d[i + 2]) > 40) lit++; return { third: list[2], bar: !!bar && bar.style.display !== 'none', worlds: bar ? bar.querySelectorAll('[data-pw]').length : 0, say: (document.getElementById('prtBarSay') || {}).textContent || '', lit, bytes: D.S.sprint.c.length }; });
+  ok(LK.third === 'sprint' && LK.bar && LK.worlds === 5 && /^Its print is /.test(LK.say) && LK.lit > 30, 'it sits beside Hex Resonance and Concert, with its five worlds under it, and draws the song (“' + LK.say + '”, ' + LK.bytes + ' characters kept with the song)');
+  for (const w of ['flow', 'terrain', 'bloom', 'harmono', 'print']) { await p.click('#prtBar [data-pw="' + w + '"]'); await wait(500); }
+  ok(await ev(() => window.__daily.CFG.prtWorld === 'print' && document.querySelector('#prtBar [data-pw="print"]').classList.contains('on')), 'its worlds switch from the row, and the choice is remembered');
+  await ev(() => document.activeElement && document.activeElement.blur()); await p.keyboard.press('Space'); await wait(2500);
+  const PL = await ev(() => { const D = window.__daily; return { playing: D.T.playing, sig: D.S.sprint.sig }; });
+  ok(PL.playing, 'it plays with the song (the print grows from its core as the song goes)');
+  await ev(() => document.activeElement && document.activeElement.blur()); await p.keyboard.press('Space'); await wait(500);
+  await ev(() => { const D = window.__daily; D.S.bpm += 7; D.commit(false); }); await wait(2600);
+  ok(/has changed/.test(await ev(() => document.getElementById('prtBarSay').textContent)), 'when the song changes, the row says its print is from before');
+  await p.click('#prtAgain'); ok(await poll(() => ev(sig => { const D = window.__daily; return D.S.sprint.sig !== sig && !/has changed|Listening/.test(document.getElementById('prtBarSay').textContent); }, PL.sig), 90000), '⟳ Listen again makes it again from the song as it is now');
+  await ev(() => window.__daily.vzSetMode('hex', true));
+
   /* start a song from it */
   await ev(async () => { const D = window.__daily; D.PRT.src = null; D.prtOpen(); }); await wait(300);
   await p.click('.prt-card .prt-open:has-text("Harbour at dusk")'); await wait(500); await p.click('#prtSongGo');

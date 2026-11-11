@@ -137,7 +137,7 @@ function kitScreenDone() {
 /* ---------- lesson notes: one card per song, kept in this browser ---------- */
 const kitNoteKey = () => (S.title || 'Untitled').slice(0, 80);
 function kitNotes() {
-  if (KIT.notesEl) { KIT.notesEl.remove(); KIT.notesEl = null; bus.emit('kit'); return; }
+  KIT.notesAuto = false; if (KIT.notesEl) { KIT.notesEl.remove(); KIT.notesEl = null; bus.emit('kit'); return; }
   const all = store.get('lessons', {}), ta = h('textarea', { class: 'in kit-ta', id: 'kitNotesText', 'aria-label': 'Lesson notes', placeholder: 'What to practise, the bars that need work, the next lesson…' });
   ta.value = all[kitNoteKey()] || '';
   ta.addEventListener('input', () => { const a = store.get('lessons', {}); if (ta.value.trim()) a[kitNoteKey()] = ta.value; else delete a[kitNoteKey()]; store.set('lessons', a); });

@@ -45,6 +45,7 @@ function stageInfo() {
 
 /* ---------- extra visual modes (dispatched from drawVis) ---------- */
 function stageExtra(mode, g, W, H, X) {
+  if (mode === 'sprint') return prtVisDraw(g, W, H, X);
   if (typeof HM_MODES !== 'undefined' && HM_MODES.has(mode)) return hmDraw(mode, g, W, H, X);
   if (typeof BK_MODES !== 'undefined' && BK_MODES.has(mode)) return bkDraw(mode, g, W, H, X);
   if (mode === 'concert') return concertDraw(g, W, H, X);

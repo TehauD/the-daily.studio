@@ -57,7 +57,7 @@ window.__dailyRoom = (id, make) => {
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.61.0', BUILD = '6ece9ee', PARTS_N = +'124' || 0, LINES_N = +'20835' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.65.0', BUILD = '5711186', PARTS_N = +'124' || 0, LINES_N = +'20942' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { ghApp: { clientId: 'Iv23liTjqEBQsgmGaE1Q', slug: 'tehaud-the-daily-studio' },   /* Sign in with GitHub: the GitHub App's public client id and its slug (docs/GITHUB.md); empty = only the token way */
   support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://journal.the-daily.studio/' };
@@ -1965,7 +1965,7 @@ function openHelp(at) {
       h('div', { class: 'hub-tiles' },
         h('button', { class: 'hub-tile primary', id: 'helpSessions', onclick: () => { close(); guideMenu(); } }, h('b', {}, '✦ Guided sessions'), h('span', {}, 'Play with a band, write a riff down, hum a song, loop and layer…')),
         h('button', { class: 'hub-tile', id: 'helpTour', onclick: () => { close(); tourStart(); } }, h('b', {}, '▶ Take the guided tour'), h('span', {}, 'A spotlight on each part of the screen.')),
-        h('button', { class: 'hub-tile', onclick: () => { close(); workspaceOpen(); } }, h('b', {}, '▦ Pick a workspace'), h('span', {}, 'Songwriter, Performer, Creator Studio, Practice, Teacher or Full Rig.')))] },
+        h('button', { class: 'hub-tile', onclick: () => { close(); workspaceOpen(); } }, h('b', {}, '▦ Pick a workspace'), h('span', {}, 'Songwriter, Studio, Practice or Full Rig.')))] },
     { key: 'keys', label: 'Shortcuts', ico: '⌨', wide: true, body: () => [h('div', { class: 'help-k' }, K.map(([a, b]) => [h('kbd', {}, a), h('span', {}, b)]))] },
     { key: 'data', label: 'Your work', ico: '🔒', sub: 'Local, private, kept on this device.', wide: true, body: () => [
       h('p', { class: 'small' }, 'Everything runs locally in your browser. Nothing is uploaded unless you choose to: GitHub sync (to your own account), a folder, or recordings sent with a link (encrypted, kept 7 days). Your work is autosaved to this browser: songs, recordings and backing tracks stay on this device (☰ Songs).'),
@@ -2935,7 +2935,7 @@ function renderBand() {
   const drums = h('div', { class: 'card' }, h('h4', {}, 'Drums ', tog('Enabled', 'drumsOn')), h('div', { class: 'card-b' },
     h('div', { class: 'row', style: { gap: '10px', alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: '8px' } }, sel('Kit', Object.keys(KITS), B.kit, v => { B.kit = v; commit(false); }), sel('Pattern', Object.keys(DPATS), B.patName, v => { setDrumPattern(v); renderBand(); }, 170),
       songField('Length (steps)', h('select', { onchange: e => { B.drumLen = +e.target.value; commit(false); renderBand(); } }, [8, 12, 16, 24, 32].map(n => h('option', { selected: n === (B.drumLen || 16) }, n)))),
-      h('button', { class: 'btn sm primary', id: 'bandPads', title: 'Play the drums with your fingers, tap the tempo, record a groove or beatbox it', onclick: () => padsOpen() }, '🥁 Pads'),
+      h('button', { class: 'btn sm primary', id: 'bandPads', title: 'Play the drums with your fingers, tap the tempo, record a groove or beatbox it', onclick: () => padsOpen() }, '👆 Pads'),
       h('button', { class: 'btn sm', onclick: () => { B.pat = DROWS.map(() => new Array(32).fill(0)); commit(false); renderBand(); } }, 'Clear'), h('button', { class: 'btn sm', onclick: () => { const pat = dpat(); pat.forEach(r => r.forEach((v, i) => { if (v && Math.random() < .25) r[i] = 0; else if (!v && Math.random() < .04) r[i] = 1; })); commit(false); renderBand(); } }, '🎲 Mutate'),
       h('span', { class: 'tiny muted' }, 'Click a step to cycle: off → ghost → normal → accent')),
     stepGrid()));
@@ -3095,22 +3095,41 @@ const VZ = { mode: CFG.visMode || 'hex', cam: false, spec: null, pulses: [], hex
 const VMODES = [['hex', 'Hex Resonance'], ['spectro', 'Spectrogram'], ['chroma', 'Chroma Wheel'], ['scope', 'Oscilloscope']];
 /** the readout views live on the Monitor tab now; they stay available as Stage scenes */
 const VZ_MONITOR = new Set(['spectro', 'chroma', 'scope']);
+const vzLookName = () => (VMODES.find(m => m[0] === VZ.mode) || (typeof VBACK !== 'undefined' && VBACK.find(m => m[0] === VZ.mode)) || [0, 'Look'])[1];
+/** the looks picker under the Look button (open: true/false, or toggle) */
+function vzLooksOpen(open) { const bar = document.querySelector('#pane-vis .vz-bar'); if (!bar) return; const on = bar.classList.toggle('looks-open', open == null ? undefined : !!open); const b = document.getElementById('vzLookBtn'); if (b) b.setAttribute('aria-expanded', String(on)); }
+/** keep the Look button, the Concert lens row and ⋯ More in step with the look */
+function vzLookSync() {
+  const b = document.getElementById('vzLookBtn'); if (b) b.textContent = vzLookName() + ' ▾';
+  const lr = document.getElementById('lxLensRow'); if (lr) lr.style.display = VZ.mode === 'concert' ? '' : 'none';
+  const bar = document.querySelector('#pane-vis .vz-bar'); if (bar) bar.classList.toggle('more-open', !!CFG.vzMore);
+  const m = document.getElementById('vzMore'); if (m) { m.setAttribute('aria-expanded', String(!!CFG.vzMore)); m.textContent = CFG.vzMore ? '‹ Less' : '⋯ More'; }
+}
 function buildVisPane() {
   const p = PANES.vis; p.classList.add('flex');
-  const bar = h('div', { class: 'row', style: { gap: '8px', marginBottom: '8px', flexWrap: 'wrap' } },
-    h('div', { class: 'seg' }, VMODES.filter(m => !VZ_MONITOR.has(m[0]) && !BK_MODES.has(m[0])).map(([k, n]) => h('button', { class: k === VZ.mode ? 'on' : '', 'data-m': k, onclick: e => { vzSetMode(k); $$('.seg [data-m]', bar).forEach(b => b.classList.toggle('on', b === e.target)); } }, n))),
-    h('div', { class: 'vz-back', id: 'vzBack' }, h('span', { class: 'hx-l', title: 'Looks made to sit behind you: set Camera look to “Me in front (green screen)” and you stand inside the picture' }, 'Behind you'), h('div', { class: 'seg', role: 'group', 'aria-label': 'Looks that sit behind you' }, VBACK.map(([k, n]) => h('button', { class: k === VZ.mode ? 'on' : '', 'data-m': k, onclick: e => { vzSetMode(k); $$('.seg [data-m]', bar).forEach(b => b.classList.toggle('on', b === e.currentTarget)); try { backTip(); } catch (er) { } } }, n))), vbgBtn()),
-    lxLensBar(), vzAdjustBtn(), tipBtn(),
-    hexSwatches(),
+  /* 2.65: one row: the look (its picker opens under it), what the look itself offers, then Record, Go on stage and Stage mode;
+     the rest (source, Auto look, camera, neck, pitch, speed, tip jar, show setup) are under ⋯ More */
+  const lookBtn = h('button', { class: 'btn sm vz-look', id: 'vzLookBtn', type: 'button', 'aria-expanded': 'false', title: 'Pick the look', onclick: () => vzLooksOpen() }, vzLookName() + ' ▾');
+  const moreBtn = h('button', { class: 'btn sm vz-morebtn', id: 'vzMore', type: 'button', 'aria-expanded': String(!!CFG.vzMore), title: 'Source, Auto look, the camera, the neck and pitch, speed and size, the tip jar, Show setup', onclick: () => { CFG.vzMore = !CFG.vzMore; saveCfg(); vzLookSync(); } }, CFG.vzMore ? '‹ Less' : '⋯ More');
+  const looks = h('div', { class: 'vz-looks', id: 'vzLooks' },
+    h('div', { class: 'seg' }, VMODES.filter(m => !VZ_MONITOR.has(m[0]) && !BK_MODES.has(m[0])).map(([k, n]) => h('button', { class: k === VZ.mode ? 'on' : '', 'data-m': k, onclick: e => { vzSetMode(k); $$('.seg [data-m]', bar).forEach(b => b.classList.toggle('on', b === e.target)); vzLooksOpen(false); } }, n))),
+    h('div', { class: 'vz-back', id: 'vzBack' }, h('span', { class: 'hx-l', title: 'Looks made to sit behind you: set Camera look to “Me in front (green screen)” and you stand inside the picture' }, 'Behind you'), h('div', { class: 'seg', role: 'group', 'aria-label': 'Looks that sit behind you' }, VBACK.map(([k, n]) => h('button', { class: k === VZ.mode ? 'on' : '', 'data-m': k, onclick: e => { vzSetMode(k); $$('.seg [data-m]', bar).forEach(b => b.classList.toggle('on', b === e.currentTarget)); try { backTip(); } catch (er) { } } }, n))), vbgBtn()));
+  looks.addEventListener('click', e => { if (e.target.closest('[data-m]')) vzLooksOpen(false); });
+  const sec = h('div', { class: 'vz-sec', id: 'vzSec' },
     h('select', { class: 'in', style: { width: 'auto', fontFamily: 'var(--sans)' }, title: 'Analysis source', onchange: e => { VZ.src = e.target.value; } }, [['auto', 'Source: auto (follows playback)'], ['rig', 'Source: guitar after the rig'], ['master', 'Source: master mix'], ['di', 'Source: what the detector hears'], ['vox', 'Source: vocal microphone']].map(([v, n]) => h('option', { value: v }, n))),
-    h('button', { class: 'btn sm', id: 'vzRecBtn', 'data-srec': '1', title: 'Record the stage as a video with the song’s sound (saved on this device)', onclick: e => srecMenu(e.currentTarget) }, '⏺ Record'),
     h('button', { class: 'btn sm' + (CFG.vzAuto ? ' on' : ''), id: 'vzAutoBtn', 'aria-pressed': String(!!CFG.vzAuto), title: 'Auto look: while the song plays, the look follows the section (verse calm, chorus wide, bridge strange)', onclick: e => { CFG.vzAuto = !CFG.vzAuto; saveCfg(); e.currentTarget.classList.toggle('on', !!CFG.vzAuto); e.currentTarget.setAttribute('aria-pressed', String(!!CFG.vzAuto)); toast('Auto look ' + (CFG.vzAuto ? 'on: the look follows the song’s sections' : 'off'), 'ok'); } }, '🎬 Auto look'),
-    h('button', { class: 'btn sm', id: 'vzGoStage', title: 'Full-screen visuals with the camera: you in front of the hexagons', onclick: () => goOnStage() }, '🎥 Go on stage'),
     h('button', { class: 'btn sm' + (VZ.cam ? ' on' : ''), id: 'vzCamBtn', title: 'Put yourself center stage: turns the camera on behind the visuals', onclick: () => vzCamPress() }, '📷 Camera backdrop'), camFxBox(),
     h('button', { class: 'btn sm' + (CFG.vzNeck !== false ? ' on' : ''), id: 'vzNeckBtn', title: 'Show a small guitar neck on the visuals: what is playing, what is coming next, the note you are singing', onclick: e => { CFG.vzNeck = CFG.vzNeck === false; saveCfg(); e.currentTarget.classList.toggle('on', CFG.vzNeck !== false); } }, '🎸 Neck'),
     h('button', { class: 'btn sm' + (CFG.vzRibbon ? ' on' : ''), id: 'vzRibbonBtn', 'aria-pressed': String(!!CFG.vzRibbon), title: 'Show your pitch on the visuals: the note you sing against the notes of the key and the chord that is playing', onclick: e => { CFG.vzRibbon = !CFG.vzRibbon; saveCfg(); e.currentTarget.classList.toggle('on', !!CFG.vzRibbon); e.currentTarget.setAttribute('aria-pressed', String(!!CFG.vzRibbon)); if (CFG.vzRibbon) voxReset(); } }, '〰 Pitch'),
-    h('button', { class: 'btn sm', onclick: () => { const w = UI.vwrap; (document.fullscreenElement ? document.exitFullscreen() : w.requestFullscreen && w.requestFullscreen()); } }, '⛶ Stage mode'));
-  { const more = h('button', { class: 'btn sm vz-more', id: 'vzMoreLooks', type: 'button', onclick: e => { const on = document.body.classList.toggle('vz-all'); e.currentTarget.textContent = on ? 'Fewer looks' : 'More looks…'; } }, 'More looks…'); if (bar.children[0]) bar.children[0].after(more); else bar.append(more); }      /* 2.46: Simple shows four looks */
+    vzAdjustBtn(), tipBtn(), sgdBarButton());
+  const bar = h('div', { class: 'row vz-bar' + (CFG.vzMore ? ' more-open' : ''), style: { gap: '6px', marginBottom: '8px', flexWrap: 'wrap' } },
+    lookBtn, looks, lxLensBar(), hexSwatches(), prtBar(),
+    h('span', { class: 'grow' }),
+    h('button', { class: 'btn sm', id: 'vzRecBtn', 'data-srec': '1', title: 'Record the stage as a video with the song’s sound (saved on this device)', onclick: e => srecMenu(e.currentTarget) }, '⏺ Record'),
+    h('button', { class: 'btn sm', id: 'vzGoStage', title: 'Full-screen visuals with the camera: you in front of the hexagons', onclick: () => goOnStage() }, '🎥 Go on stage'),
+    h('button', { class: 'btn sm', onclick: () => { const w = UI.vwrap; (document.fullscreenElement ? document.exitFullscreen() : w.requestFullscreen && w.requestFullscreen()); } }, '⛶ Stage mode'),
+    moreBtn, sec);
+  { const more = h('button', { class: 'btn sm vz-more', id: 'vzMoreLooks', type: 'button', onclick: e => { const on = document.body.classList.toggle('vz-all'); e.currentTarget.textContent = on ? 'Fewer looks' : 'More looks…'; } }, 'More looks…'); looks.children[0].after(more); }      /* 2.46: Simple shows four looks */
   UI.vwrap = h('div', { class: 'vwrap', style: { flex: 1, minHeight: '320px' } }, UI.vcv = h('canvas', { class: 'vcanvas', style: { height: '100%', minHeight: '320px' } }));
   p.append(bar, UI.vwrap); new ResizeObserver(() => { const d = (window.devicePixelRatio || 1) * (CFG.vq || 1), w = UI.vcv.clientWidth, hh = UI.vcv.clientHeight; if (w && (UI.vcv.width !== Math.floor(w * d) || UI.vcv.height !== Math.floor(hh * d))) { UI.vcv.width = Math.floor(w * d); UI.vcv.height = Math.floor(hh * d); VZ.spec = null; VZ.hexes = null; } }).observe(UI.vwrap);
   bus.on('onset', () => { VZ.pulses.push({ t: performance.now(), a: clamp((AN.rms + 50) / 40, .2, 1) }); if (VZ.pulses.length > 12) VZ.pulses.shift(); });
@@ -3120,7 +3139,7 @@ const vcol = () => { const cs = getComputedStyle(document.documentElement); retu
 const vzPlaying = () => T.playing || (typeof STP !== 'undefined' && STP.playing);
 function visAna() { const s = VZ.src || 'auto'; if (s === 'vox' && E.anaVox) return E.anaVox; return s === 'master' || (s === 'auto' && vzPlaying()) ? E.anaMaster : s === 'di' ? E.anaDI : E.anaRig; }
 /** looks that draw their whole picture themselves: no pitch read-out or mini fretboard on top */
-const vzBare = m => m === 'concert' || HM_MODES.has(m) || (typeof BK_MODES !== 'undefined' && BK_MODES.has(m));
+const vzBare = m => m === 'concert' || m === 'sprint' || HM_MODES.has(m) || (typeof BK_MODES !== 'undefined' && BK_MODES.has(m));
 /** cvo: draw on another canvas (the Stage, the Audience view) with the simpler picture; o.main: draw it as the Visuals themselves (your colours,
     the camera, the neck, the tip jar), at that canvas's size, for a video (part 37). o.noNeck, o.noText leave those out; o.avoid: more places the tip jar steps around */
 function drawVis(cvo, o) {
@@ -4225,7 +4244,7 @@ async function boot() {
   if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener('devicechange', () => { ioDeviceChange().catch(e => console.warn(e)); });
   bus.emit('song');
   try { ghBoot(); } catch (e) { console.warn('github', e); }      /* back from Sign in with GitHub, or a sync at start (part 74) */
-  DEV.make = () => { window.__daily = { tourStart, mpVision, slSendLabel, slcChanges, mkSection, perfViewSet, pfLay, pfLaySet, pfLayMenu, songMapEl, secAdd, secKind, secNameFor, smGo, renderWholeSong, normSong, bandRename, get TOUR() { return TOUR; }, SIMPLE_GOAL_TABS, SIMPLE_GOAL_TOOLS, simpleTabs, goalAudioFirst, guitarBody, pluck, BLD, BUILD_LIFT, buildLevel, secEnergy, buildCtx, buildParts, buildDrums, buildCard, buildCrash, buildRiser, tuneSelect, TUNE_LABELS, tuneTake, BASS_TONES, KITS, kitHit, sub808, M, MGROUPS, MW, mScreenDraw, mwRead, mwView, mwLyrics, mwSyl, mwEdited, mwPut, mSongOpen, msHexLoop, room, ROOM, slPack, slUnpack, slLink, slRead, slShare, slWelcome, slOpen, slFromHash, SL, BEATS, beatUse, beatRows, beatsShelf, SIMPLE_TOOLS, drumHit, RL, MO, GM_DRUM, duckAt, duckSet, duckCfg, duckNode, moNote, moDev, moDrum, moPanic, moSettings, kyOut, bassOut, rollOpen, rollBuild, rollLoop, isBass, instNow, nStr, yin, TUNINGS, setTuning, renderBarTab, tabLabels, voicingFor, toggleRec, closePop, spPause, encodeWav, PS, psOn, playDur, psSpeed, psKey, psSched, psDSPFactory, psPop, KY, keysOpen, keysVoice, keysStep, kyNoteOn, kyNoteOff, kyRec, kyClear, kyWrite, kyPiano, kyMarks, kyVoicing, KEYS_SOUNDS, KEYS_STYLES, coFinish, coDemo, coFeedback, coFbView, coTimeline, coBeat, coPractise, TAKE, learnPassed, todayPlan, todayPieces, todayStart, todayDone, streak, weekCount, dayKey, LSTEP, songLessons, songStart, songKey, earLick, earStart, EAR, simpleSet, simpleApply, ghTakeSettings, airMode, airSet, CO, coPos, coachOpen, coListen, coTick, coPlace, coNotes, coSetPiece, rfParse, LESSONS, RIFFS, RIFF_STYLES, learnOpen, learnToSong, learnFile, learnFileText, learnOpenFile, learnFromSong, labMake, labVary, labKeep, atlasPieces, atShape, MODE_VAMP, S, AIR, AIR_LAG, airSync, applyLayout, VB_PRESETS, VB_ORDER, VBS, vbAttach, vbApply, vbToggle, vbSet, vbPreset, vbPresetNext, vbThrow, vbLook, vbTick, vbScale, vocalBoardOpen, pedalRelease, MEG, megSpectrum, megFeatures, megScore, megStep, megSet, megLearn, megDraw, megLoop, megSettings, PAD, padsOpen, padHit, padTap, padRecord, padRecStop, padUndoPass, padClear, padResize, padBeatbox, bbHits, bbPattern, dpat, bassEvent, drumStep, PEDAL, pedalPress, pedalDo, pedalSecs, gearSettings, MCLK, mclkSlot, mclkMs, MIDI, MIDIRAW, onMidi, STRM, streamOpen, streamRoom, streamInfo, streamPanel, slotAtTime, SING, SHW, singStep, singScore, singSteamIR, singMicOff, showerOpen, shwGo, shwPlay, shwPrev, shwNext, shwStem, shwRecToggle, shwRecStop, shwHear, shwSave, shwAddFiles, shwRemove, shwMove, shwMode, shwLoadSet, shwPlaylist, shwWords, shwPrepare, shwFolderPull, lrcParse, readTags, spPos, spPlay, STP, trainOpen, projRestoreTrack, secretNote, secretArp, WS, WS_BASE, WS_ARPS, wsScaleRun, wsArpRun, wsFollow, wsStop, wsListen, wsEarNext, wsEarAnswer, wsOpen, bandMute, bandMuted, pdbPut, pdbKeys, projRename, FS, FS_B, fsUse, fsSync, fsHead, fsNeeds, fsTidy, fsOpen, syncOff, syncZips, PRJ_WAIT: () => PRJ.wait, EGG, EGG_LINES, EGG_ORDER, eggDay, eggFor, eggNow, eggText, eggTick, eggFit, saveCfg, projSave, projDelete, GH, ghSync, ghConnect, ghKick, ghRecheck, prtOpen, prtAnalyze, prtPack, prtUnpack, prtRead, prtCompose, prtFromCode, prtCode, prtDraw, prtArtwork, prtCopyLink, prtShelfRead, prtFromHash, PRT, audioKill, audioResume, drpOgg, drpOpen, drpOwn, encodeWav, stemUnload, ycEnv, ycPrint, ycUnprint, ycMatch, ycSetStart, ycLoad, ycMakeOurs, STM, stemLoad, cmtAdd, cmtOpen, cmtAll, cmtPack, cmtWhere, lhOpen, lhScheme, lhRhymes, lhLoad, lhSyl, LH, finOpen, finAB, finMaster, finPackage, finTone, finMatchEq, finLimit, finPeople, FIN, lufsMeasure, verMark, verRestore, verCopy, verList, verOpen, verRoundOf, verChanged, jrSteps, safeState, ghSongOut, pdbGet, lxExport, lxExportOpen, lxSaveLane, lxLanes, lxRender, LXO, zipRead, srxSend, srxReceive, srxTakeBack, srxEncode, srxDecodeTake, srxPack, srxBundle, srxCan, SRS, ghDisconnect, ghLocal, ghSha, ghJson, ghMerge3, ghShare, ghGallery, ghGalleryOpen, ghGalleryShow, ghKeepLook, ghKeepRig, rigClean, ghReturn, BRAND, ghSettingsOut, projRefresh, projCreate, projLoad, PRJ, SEC, SECRETS, secretFound, secretTiming, secretsOpen, secretSync, backstageOpen, startAudio, playheadSlot, GUARD, reportText, reportCopy, srecQ, srecSize, pdbGet, srecFmt, SREC_FMTS, VBG, vbgAdd, vbgRemove, vbgUse, vbgOpen, vbgDraw, vzSetMode, srecFrame, srecFmtBox, kitThumb, WORKLET_SRC, mkComp, mkShaper, rigLat, voxLat, restartAudio, satCurve, rigApply, qrMake, qrSvg, tipLink, tipShort, tipReady, tipCard, tipDraw, tipShareHtml, tipOpen, tipPrint, tipPng, tipVisAvoid, tipStageAvoid, TIP, TIP_TERMS, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, drawVis, peaksOf, uid, shareGate, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, TAKES, STM, ZOOM, CFG, store, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, SEL, mtof, spb, WR, HM, HMX, HM_MODES, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitInk, kitNotes, kitRecord, srecMime, mGo, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard}; };   // test hook: with ?debug, or Backstage ▸ Labs ▸ Developer handles
+  DEV.make = () => { window.__daily = { tourStart, mpVision, slSendLabel, slcChanges, mkSection, perfViewSet, pfLay, pfLaySet, pfLayMenu, songMapEl, secAdd, secKind, secNameFor, smGo, renderWholeSong, normSong, bandRename, get TOUR() { return TOUR; }, SIMPLE_GOAL_TABS, SIMPLE_GOAL_TOOLS, simpleTabs, goalAudioFirst, guitarBody, pluck, BLD, BUILD_LIFT, buildLevel, secEnergy, buildCtx, buildParts, buildDrums, buildCard, buildCrash, buildRiser, tuneSelect, TUNE_LABELS, tuneTake, BASS_TONES, KITS, kitHit, sub808, M, MGROUPS, MW, mScreenDraw, mwRead, mwView, mwLyrics, mwSyl, mwEdited, mwPut, mSongOpen, msHexLoop, room, ROOM, slPack, slUnpack, slLink, slRead, slShare, slWelcome, slOpen, slFromHash, SL, BEATS, beatUse, beatRows, beatsShelf, SIMPLE_TOOLS, drumHit, RL, MO, GM_DRUM, duckAt, duckSet, duckCfg, duckNode, moNote, moDev, moDrum, moPanic, moSettings, kyOut, bassOut, rollOpen, rollBuild, rollLoop, isBass, instNow, nStr, yin, TUNINGS, setTuning, renderBarTab, tabLabels, voicingFor, toggleRec, closePop, spPause, encodeWav, PS, psOn, playDur, psSpeed, psKey, psSched, psDSPFactory, psPop, KY, keysOpen, keysVoice, keysStep, kyNoteOn, kyNoteOff, kyRec, kyClear, kyWrite, kyPiano, kyMarks, kyVoicing, KEYS_SOUNDS, KEYS_STYLES, coFinish, coDemo, coFeedback, coFbView, coTimeline, coBeat, coPractise, TAKE, learnPassed, todayPlan, todayPieces, todayStart, todayDone, streak, weekCount, dayKey, LSTEP, songLessons, songStart, songKey, earLick, earStart, EAR, simpleSet, simpleApply, ghTakeSettings, airMode, airSet, CO, coPos, coachOpen, coListen, coTick, coPlace, coNotes, coSetPiece, rfParse, LESSONS, RIFFS, RIFF_STYLES, learnOpen, learnToSong, learnFile, learnFileText, learnOpenFile, learnFromSong, labMake, labVary, labKeep, atlasPieces, atShape, MODE_VAMP, S, AIR, AIR_LAG, airSync, applyLayout, VB_PRESETS, VB_ORDER, VBS, vbAttach, vbApply, vbToggle, vbSet, vbPreset, vbPresetNext, vbThrow, vbLook, vbTick, vbScale, vocalBoardOpen, pedalRelease, MEG, megSpectrum, megFeatures, megScore, megStep, megSet, megLearn, megDraw, megLoop, megSettings, PAD, padsOpen, padHit, padTap, padRecord, padRecStop, padUndoPass, padClear, padResize, padBeatbox, bbHits, bbPattern, dpat, bassEvent, drumStep, PEDAL, pedalPress, pedalDo, pedalSecs, gearSettings, MCLK, mclkSlot, mclkMs, MIDI, MIDIRAW, onMidi, STRM, streamOpen, streamRoom, streamInfo, streamPanel, slotAtTime, SING, SHW, singStep, singScore, singSteamIR, singMicOff, showerOpen, shwGo, shwPlay, shwPrev, shwNext, shwStem, shwRecToggle, shwRecStop, shwHear, shwSave, shwAddFiles, shwRemove, shwMove, shwMode, shwLoadSet, shwPlaylist, shwWords, shwPrepare, shwFolderPull, lrcParse, readTags, spPos, spPlay, STP, trainOpen, projRestoreTrack, secretNote, secretArp, WS, WS_BASE, WS_ARPS, wsScaleRun, wsArpRun, wsFollow, wsStop, wsListen, wsEarNext, wsEarAnswer, wsOpen, bandMute, bandMuted, pdbPut, pdbKeys, projRename, FS, FS_B, fsUse, fsSync, fsHead, fsNeeds, fsTidy, fsOpen, syncOff, syncZips, PRJ_WAIT: () => PRJ.wait, EGG, EGG_LINES, EGG_ORDER, eggDay, eggFor, eggNow, eggText, eggTick, eggFit, saveCfg, projSave, projDelete, GH, ghSync, ghConnect, ghKick, ghRecheck, prtOpen, prtAnalyze, prtPack, prtUnpack, prtRead, prtCompose, prtFromCode, prtCode, prtDraw, prtArtwork, prtCopyLink, prtShelfRead, prtFromHash, PRT, audioKill, audioResume, drpOgg, drpOpen, drpOwn, encodeWav, stemUnload, ycEnv, ycPrint, ycUnprint, ycMatch, ycSetStart, ycLoad, ycMakeOurs, STM, stemLoad, cmtAdd, cmtOpen, cmtAll, cmtPack, cmtWhere, lhOpen, lhScheme, lhRhymes, lhLoad, lhSyl, LH, finOpen, finAB, finMaster, finPackage, finTone, finMatchEq, finLimit, finPeople, FIN, lufsMeasure, verMark, verRestore, verCopy, verList, verOpen, verRoundOf, verChanged, jrSteps, safeState, ghSongOut, pdbGet, lxExport, lxExportOpen, lxSaveLane, lxLanes, lxRender, LXO, zipRead, srxSend, srxReceive, srxTakeBack, srxEncode, srxDecodeTake, srxPack, srxBundle, srxCan, SRS, ghDisconnect, ghLocal, ghSha, ghJson, ghMerge3, ghShare, ghGallery, ghGalleryOpen, ghGalleryShow, ghKeepLook, ghKeepRig, rigClean, ghReturn, BRAND, ghSettingsOut, projRefresh, projCreate, projLoad, PRJ, SEC, SECRETS, secretFound, secretTiming, secretsOpen, secretSync, backstageOpen, startAudio, playheadSlot, GUARD, reportText, reportCopy, srecQ, srecSize, pdbGet, srecFmt, SREC_FMTS, VBG, vbgAdd, vbgRemove, vbgUse, vbgOpen, vbgDraw, vzSetMode, srecFrame, srecFmtBox, kitThumb, WORKLET_SRC, mkComp, mkShaper, rigLat, voxLat, restartAudio, satCurve, rigApply, qrMake, qrSvg, tipLink, tipShort, tipReady, tipCard, tipDraw, tipShareHtml, tipOpen, tipPrint, tipPng, tipVisAvoid, tipStageAvoid, TIP, TIP_TERMS, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, drawVis, peaksOf, uid, shareGate, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, TAKES, STM, ZOOM, CFG, store, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, SEL, mtof, spb, WR, HM, HMX, HM_MODES, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, vzLookSync, vzLooksOpen, GOAL_MORE, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitInk, kitNotes, kitRecord, srecMime, mGo, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard}; };   // test hook: with ?debug, or Backstage ▸ Labs ▸ Developer handles
   if (/[?&]debug\b/.test(location.search) || (CFG.labs && CFG.labs.handles)) DEV.make();
   try { bksBoot(); } catch (e) { console.warn('backstage', e); }      /* #backstage in the address, the performance overlay (part 73c) */
   projInit().catch(e => { console.warn('library', e); PRJ.ready = true; if (PRJ.wantStart) startMaybe(); });
@@ -4249,7 +4268,7 @@ const TLH_DEFAULT = 'minmax(200px,40%)';
 /* ---------- apply ---------- */
 function applyLayout() {
   const c = $('#center'), w = $('#work'); if (!c || !w) return;
-  c.classList.toggle('flip', !!LAY.flip);
+  c.classList.toggle('flip', !!LAY.flip); c.classList.toggle('tl-slim', LAY.tlh === '84px');      /* 2.64: the collapsed arrangement is a clean strip */
   w.classList.remove('collapsed-l', 'collapsed-r');
   w.style.setProperty('--lw', (LAY.left ? sideW('left') : 0) + 'px'); w.style.setProperty('--rw', (LAY.right ? sideW('right') : 0) + 'px');
   c.style.setProperty('--tlh', LAY.tlh || TLH_DEFAULT); if (typeof edgeSync === 'function') edgeSync(); if (typeof goalPlace === 'function') goalPlace();
@@ -4301,7 +4320,6 @@ function rebuildTabs() {
       ondrop: e => { e.preventDefault(); b.classList.remove('dropl'); const t = e.dataTransfer.getData('text/plain'); if (t.startsWith('tab:')) { const from = t.slice(4); if (sideHosted(from)) { if (movePanel(from, 'dock')) moveTab(from, id); } else moveTab(from, id); } }
     }, xpTabText(id, name, i) + (FLOATS.has(id) ? ' ⧉' : '')); tabs.append(b);
   });
-  tabs.append(xpToolsButton());
 }
 function moveTab(id, beforeId) { if (id === beforeId) return; const a = DOCK.findIndex(d => d[0] === id), it = DOCK.splice(a, 1)[0], b = DOCK.findIndex(d => d[0] === beforeId); DOCK.splice(b < 0 ? DOCK.length : b, 0, it); LAY.order = DOCK.map(d => d[0]); saveLay(); rebuildTabs(); }
 function setTabHidden(id, hide) { const i = LAY.hidden.indexOf(id); if (hide && i < 0) { LAY.hidden.push(id); if (DOCK.cur === id) { const n = dockVisible().find(d => !FLOATS.has(d[0])); if (n) dockGo(n[0]); } } else if (!hide && i >= 0) LAY.hidden.splice(i, 1); saveLay(); rebuildTabs(); }
@@ -4366,6 +4384,8 @@ const LAYOUTS = [
 const MON_DEFAULT = ['tuner', 'levels'];
 function applyPreset(s, name) {
   Object.assign(LAY, { flip: s.flip, left: s.left, right: s.right, tlh: s.tlh == null ? null : s.tlh }); if (s.lw) LAY.lw = s.lw; if (s.rw) LAY.rw = s.rw;
+  /* 2.64: a layout can start with the arrangement collapsed and say how tall it opens (▴ Arrangement) */
+  if (s.tlhOpen !== undefined) LAY.tlhPrev = s.tlhOpen; else delete LAY.tlhPrev;
   /* the tab strip: which tabs, in which order (the shipped order when the layout names none) */
   LAY.hidden = (s.hidden || []).filter(id => id !== s.dock); LAY.order = s.order ? s.order.slice() : [];
   { const cur = DOCK.cur, ord = LAY.order.length ? LAY.order : DOCK_DEFAULT, ix = id => { const i = ord.indexOf(id); return i < 0 ? 999 : i; }; DOCK.sort((a, b) => ix(a[0]) - ix(b[0]) || DOCK_DEFAULT.indexOf(a[0]) - DOCK_DEFAULT.indexOf(b[0])); DOCK.cur = cur; }
@@ -4643,6 +4663,7 @@ function stageInfo() {
 
 /* ---------- extra visual modes (dispatched from drawVis) ---------- */
 function stageExtra(mode, g, W, H, X) {
+  if (mode === 'sprint') return prtVisDraw(g, W, H, X);
   if (typeof HM_MODES !== 'undefined' && HM_MODES.has(mode)) return hmDraw(mode, g, W, H, X);
   if (typeof BK_MODES !== 'undefined' && BK_MODES.has(mode)) return bkDraw(mode, g, W, H, X);
   if (mode === 'concert') return concertDraw(g, W, H, X);
@@ -5619,11 +5640,11 @@ function tourSteps() { const all = document.body.dataset.form === 'phone' ? tour
 function tourStepsDesk() {
   return [
     { t: null, title: 'Welcome to the-daily.studio', b: 'A studio for writing, singing and playing that runs entirely in this browser tab. <b>Write</b> the words and chords, put a <b>beat</b> under them, <b>record</b> your voice and guitar, tune the vocal, and <b>send</b> the song to someone. Your songs stay on this device: nothing is uploaded unless you choose to sync or send it.<br><br>This tour takes about two minutes and never changes your song. Use <kbd>→</kbd> and <kbd>←</kbd>, or <kbd>Esc</kbd> to leave.' },
-    { t: tq('#goalbar .gl-pick'), side: 'bottom', title: 'Pick what you want to do', b: 'Six workspaces: <b>Songwriter</b>, <b>Performer</b>, <b>Creator Studio</b>, <b>Practice</b>, <b>Teacher</b> and <b>Full Rig</b>. Each arranges the studio for that job and brings its own tools. Nothing is ever removed: every panel is still under <b>☰</b>.' },
+    { t: tq('#goalbar .gl-pick'), side: 'bottom', title: 'Pick what you want to do', b: 'Four workspaces: <b>Songwriter</b> to write, <b>Studio</b> to play it and share it, <b>Practice</b> to learn it (or teach it) and <b>Full Rig</b> for everything. Each arranges the studio for that job and brings its own tools. Nothing is ever removed: every panel is still under <b>☰</b>.' },
     { t: tq('#simpleBtn'), side: 'bottom', title: '✦ Simple', b: '<b>✦ Simple</b> keeps each workspace to the few panels and tools it needs, for anyone new to a studio. Press it again for everything. <b>Full Rig</b> is the one workspace with it all, so choosing it turns Simple off.' },
     { t: tq('#left'), pre: tourSide('io'), drawer: 'left', side: 'right', title: 'Connect your input', b: '<b>Audio input</b> opens first until something is connected: choose your microphone or audio interface and check the level moves when you sing or play. If the list is empty, allow microphone access in the browser and press ⟳.', tip: 'Wired headphones give the lowest delay and stop the speakers feeding back into the mic. Bluetooth adds a lot of delay.' },
     { t: tq('#transport'), side: 'bottom', title: 'Play, record and the tempo', b: '<kbd>Space</kbd> plays and stops. <b>●</b> records with a count-in. <b>Loop</b>, <b>Click</b>, the tempo and the key are here too. <kbd>Ctrl</kbd> + <kbd>.</kbd> turns all audio input off at once.' },
-    { t: tq('#goalbar .gl-tools'), side: 'bottom', title: 'The workspace\'s tools', b: 'Each workspace has a row of tools. In Songwriter: <b>🥁 Beats</b>, <b>Paste chords</b>, Pads, Keys and <b>🔗 Send as a link</b>. In Performer: record a video and the vocal pedals. The main one is highlighted, and the button at the end takes you to the next step.' },
+    { t: tq('#goalbar .gl-tools'), side: 'bottom', title: 'The workspace\'s tools', b: 'Each workspace has a row of tools. In Songwriter: <b>🥁 Beats</b>, <b>Paste chords</b>, Pads, Keys and <b>🔗 Send as a link</b>. In Studio: record a video, the camera and the vocal pedals. The main one is highlighted, <b>⋯ More</b> has the rest, <b>?</b> says what the workspace is for, and the button at the end takes you to the next workspace. <b>★ Showtime</b> in the song bar plays the song full screen.' },
     { t: tq('#dock > .dockbar, #dock .tabs'), side: 'bottom', title: 'Panels are tabs', b: 'Each workspace shows the tabs it needs. <b>Drag</b> a tab to reorder it, <b>double-click</b> it to float it as a window, and use <b>▦</b> in the top bar to rearrange. <kbd>Alt</kbd>+<kbd>1…9</kbd> jumps by position.' },
     { t: tq('#pane-band'), pane: 'band', side: 'left', title: 'Beats and the band', b: 'Tap a <b>beat</b> and a band plays it in your key: drums, bass, and guitar or keys. Choose <b>who plays</b> and how loud. With <b>Song build</b> on, each section plays at its own energy: quiet verses, big choruses, and fills and risers between them.' },
     { t: tq('#pane-tab'), pane: 'tab', side: 'left', title: 'Write: words, chords and tab', b: 'Type the words with chords over them, or paste a chord sheet. <b>☰ Whole song</b> shows every section in order with a map of the song, and <b>＋</b> adds an intro, a verse, a chorus, an interlude and the rest, named for you. For tab, click a cell and type a fret number; <kbd>h</kbd> <kbd>p</kbd> <kbd>/</kbd> <kbd>\\</kbd> <kbd>b</kbd> <kbd>~</kbd> <kbd>x</kbd> set hammer-ons, pull-offs, slides, bends, vibrato and mutes.' },
@@ -6402,7 +6423,7 @@ function sbChip() {
     if (S.trackRef) t.append(h('button', { class: 'sb-chip', id: 'sbYourCopy', title: 'This song is played over a record that wasn’t sent. Load your own copy: it lines itself up with the song.', onclick: () => { sbLeave(); ycLoad(); } }, '♪ Load your copy of “' + (S.trackRef.t || 'the track') + '”'));
     else if (S.track) t.append(h('span', { class: 'tiny muted', title: 'This song was built from a track. Load it again to play along with it.' }, 'from “' + S.track.name + '”'));
   }
-  t.append(h('button', { class: 'sb-chip', id: 'sbPerform', title: 'Perform: full-screen chords and lyrics with a count-in, record and play', onclick: e => { sbLeave(); perfOpen(e.currentTarget); } }, '🎤 Perform'));
+  t.append(h('button', { class: 'sb-chip', id: 'sbPerform', title: 'Showtime: full-screen chords and lyrics with a count-in, record and play', onclick: e => { sbLeave(); perfOpen(e.currentTarget); } }, '★ Showtime'));
   t.append(h('button', { class: 'sb-chip', id: 'sbVoice', 'aria-label': 'Voice', title: 'Voice: see your pitch against the key, find your range, and find the key that suits your voice', onclick: e => { sbLeave(); voxOpen(e.currentTarget); } }, '〰', h('span', { class: 'sb-lbl' }, 'Voice')));
 }
 /** on a phone the song details are a sheet over the page: its buttons close it before they open something else */
@@ -7671,7 +7692,7 @@ bus.on('projects', () => { jrPaint(); safePaint(); }); bus.on('song', () => jrPa
      Studio  arrangement, stems, takes, rig
    ============================================================ */
 const ZOOM = { cur: CFG.zoom || 'studio' };
-const ZOOMS = [['canvas', 'Canvas', 'Just the page: chords & lyrics, nothing else'], ['song', 'Song', 'Tab, chords & lyrics side by side'], ['studio', 'Studio', 'Arrangement, stems, takes and rig']];
+const ZOOMS = [['canvas', 'Canvas', 'Just the page: chords & lyrics, nothing else'], ['song', 'Song', 'Tab, chords & lyrics side by side'], ['studio', 'Full', 'Everything: the arrangement, stems, takes and rig']];      /* 2.64: “Full” (it was “Studio”, now the name of a workspace) */
 const layoutPreset = n => (LAYOUTS.find(l => l[0] === n) || LAYOUTS[0])[2];
 function zoomSet(z, quiet) {
   if (!quiet && z === 'studio') xpSignal(3);
@@ -8510,42 +8531,34 @@ function humGuitarBar(d, x) {
 
 /* >>> parts/33-adapt.js */
 /* ============================================================
-   Part 33 · Adaptive studio: the studio shows what you have shown you need.
-   Nobody is asked their level. Actions add to a private score kept in this browser (CFG.xp);
-   the score picks Simple, More tools or Everything. "Tools" in the tab strip overrides it.
+   Part 33 · How much of the studio shows. Since 2.63 there is one switch for it: ✦ Simple (part 33b). Simple on: each workspace's
+   few panels and tools, in plain words. Simple off: every panel the workspace has. (Until 2.62 a separate "Tools" level, Automatic /
+   Essentials / More tools / Everything, filtered the panel strip again; inside a workspace it changed almost nothing, and with Simple
+   on it was ignored, so it went.)
+   Actions still add to a private score kept in this browser (CFG.xp): someone who knows their way around (that score, or "I know my
+   way around" on the first visit) gets no coaching notes on the panels (part 60).
    ============================================================ */
 var XP = { quiet: 0, last: null };
-var XP_TABS = { new: ['vis', 'tab', 'band', 'exp'], some: ['vis', 'tab', 'band', 'rig', 'stems', 'exp'], pro: null };
-var XP_NAMES = { rig: 'Guitar sound', tab: 'Write', vis: 'Stage', song: 'Song', band: 'Band', exp: 'Save & export', fret: 'Fretboard', stems: 'Backing track' };
-var XP_LABEL = { new: 'Essentials', some: 'More tools', pro: 'Everything' };
-if (CFG.xp == null) { CFG.xp = (store.get('started', false) || store.get('song', null)) ? 40 : 0; saveCfg(); }   // people who already use the app keep the full studio
-function xpLevel() { const m = CFG.xpMode || 'auto'; if (XP_TABS[m] !== undefined) return m; const s = CFG.xp || 0; return s >= 12 ? 'pro' : s >= 4 ? 'some' : 'new'; }
-function xpAllowed(id, ignoreSimple) { if (CFG.simple && !ignoreSimple) return simpleTabs().includes(id) || id === DOCK.cur || (id === 'stems' && typeof STM !== 'undefined' && !!STM.ch); const l = XP_TABS[xpLevel()]; return !l || l.includes(id) || id === DOCK.cur || (typeof goalShows === 'function' && goalShows(id)); }
-function xpTabText(id, name, i) { return xpLevel() === 'pro' && !CFG.simple ? (i + 1) + ' · ' + name : (XP_NAMES[id] || name); }
-function xpSignal(pts) {
-  if (XP.quiet || (CFG.xpMode && CFG.xpMode !== 'auto')) return; const before = xpLevel(); CFG.xp = Math.min(40, (CFG.xp || 0) + pts); clearTimeout(XP.t); XP.t = setTimeout(saveCfg, 800);
-  const now = xpLevel(); if (now !== before) { try { rebuildTabs(); } catch (e) { } toast(now === 'some' ? 'More tools are now on the tab strip. Find the rest under “Tools”.' : 'Everything is unlocked. Welcome to the full studio.', 'ok'); }
-}
+var XP_NAMES = { rig: 'Guitar sound', tab: 'Write', vis: 'Visuals', song: 'Song', band: 'Band', exp: 'Save & export', fret: 'Fretboard', stems: 'Backing track' };
+if (CFG.xp == null) { CFG.xp = (store.get('started', false) || store.get('song', null)) ? 40 : 0; saveCfg(); }   // people who already use the app know their way around
+/** 'pro' once the person knows their way around (no coaching notes), else 'new' */
+function xpLevel() { return CFG.xpMode === 'pro' || (CFG.xp || 0) >= 12 ? 'pro' : 'new'; }
+function xpAllowed(id, ignoreSimple) { if (CFG.simple && !ignoreSimple) return simpleTabs().includes(id) || id === DOCK.cur || (id === 'stems' && typeof STM !== 'undefined' && !!STM.ch); return true; }
+function xpTabText(id, name, i) { return CFG.simple ? (XP_NAMES[id] || name) : (i + 1) + ' · ' + name; }
+function xpSignal(pts) { if (XP.quiet) return; CFG.xp = Math.min(40, (CFG.xp || 0) + pts); clearTimeout(XP.t); XP.t = setTimeout(saveCfg, 800); }
 const xpEdit = () => { if (!XP.quiet) { xpSignal(.25); try { if (performance.now() - JN.inp < 3000) JN.edit = performance.now(); } catch (e) { } } };       // a change the person made (a key or a tap just before it, not the app loading a song) counts as activity in the journal
 /** run a generator (like Hum to Song) without counting its changes as the person's own edits */
 function xpQuiet(fn) { XP.quiet++; try { return fn(); } finally { XP.quiet--; } }
-function xpToolsButton() {
-  const l = xpLevel(), b = h('button', { class: 'btn sm xp-tools', id: 'xpTools', title: 'Choose how much of the studio to show', 'aria-haspopup': 'dialog', onclick: () => {
-    const m = CFG.xpMode || 'auto', opt = (k, t, d) => h('button', { class: 'btn sm xp-opt' + (m === k ? ' on' : ''), 'aria-pressed': String(m === k), onclick: () => { CFG.xpMode = k; saveCfg(); closePop(); if (k === 'pro' && LAY.hidden.length) { LAY.hidden = []; saveLay(); }   /* “Everything” brings back any tab a layout had left off the strip */
-      rebuildTabs(); if (k !== 'auto') toast((XP_LABEL[k]) + ' tools', ''); } }, h('b', {}, t), h('span', { class: 'muted' }, d));
-    popover(b, h('div', { class: 'xp-pop' }, h('h5', {}, 'Which panels on the strip?'), opt('auto', 'Automatic', 'Starts simple and adds tools as you use them'), opt('new', 'Essentials', 'Hum, Song, Band, Stage, Save'), opt('some', 'More tools', 'Adds guitar sound, tab, fretboard, backing track'), opt('pro', 'Everything', 'All tabs, technical labels, numbered shortcuts'), h('label', { class: 'xp-sep tiny', style: { display: 'flex', gap: '8px', alignItems: 'center', marginTop: '8px', cursor: 'pointer' } }, h('input', { type: 'checkbox', id: 'xpSep', checked: !!CFG.sepTabs, onchange: e => { CFG.sepTabs = e.target.checked; saveCfg(); rebuildTabs(); toast(CFG.sepTabs ? 'Song and Fretboard are separate tabs again' : 'Song and Fretboard live inside Write', ''); } }), h('span', {}, 'Show Song and Fretboard as separate tabs'))), { style: { width: '320px', maxWidth: '92vw' } });
-  } }, l === 'pro' ? 'Tools' : '＋ More tools'); return b;
-}
 
 /* >>> parts/33b-simple.js */
 /* ============================================================
    Part 33b · SIMPLE MODE (2.33) — one switch for someone who has never seen a studio
    ✦ Simple (top right, and Settings ▸ Workflow) keeps what you need to make something and tucks the rest away:
      · kept      play, stop, ● record, loop, click, the tempo and the key; the song's name, Songs, New, undo; Perform and Voice;
-                 the six workspaces and each one's tools; ● Capture; the tab and the words; the band on or off; the arrangement
+                 the four workspaces and each one's tools; ● Capture; the tab and the words; the band on or off; the arrangement
      · tucked    return-to-start, the bar·beat counter, time signature, the master meter, the latency estimate, the workspace
-                 button, artist, tuning, capo, scale and notes; the view switch; the Create → Perform → Share flow; the panel
-                 strip's Tools level; each band part's own switch and the mix; tab techniques, fill styles, copy and paste;
+                 button, artist, tuning, capo, scale and notes; the view switch; each band
+                 part's own switch and the mix; tab techniques, fill styles, copy and paste;
                  the arrangement's zoom, swing, loop and lane tools; the status line
    Nothing is turned off or lost: it is only out of sight, and the same button brings it all back. The panel tabs keep the
    adaptive strip of part 33 (it still grows as you use the studio), without numbers. Phones already have their own simple layout, so this only changes larger screens.
@@ -8554,10 +8567,10 @@ function xpToolsButton() {
 /* what Simple keeps on the panel strip (and whatever is open, and the backing track once one is loaded), and the tones it offers */
 const SIMPLE_TABS = ['tab', 'band', 'vis', 'exp'];
 /* 2.46: Simple simplifies every workspace but Full Rig. Each keeps its own few panels and tools; Full Rig always has everything */
-const SIMPLE_GOAL_TABS = { songwriter: ['tab', 'band', 'exp'], performer: ['vis', 'band', 'exp'], creator: ['vis', 'exp'], practice: ['fret', 'tab', 'band'], teacher: ['tab', 'band'] };
+const SIMPLE_GOAL_TABS = { songwriter: ['tab', 'band', 'exp'], performer: ['vis', 'band', 'exp'], practice: ['fret', 'tab', 'band'] };
 const SIMPLE_GOAL_TOOLS = {
-  songwriter: ['gtBeats', 'gtSheet', 'gtPads', 'gtKeys', 'gtLink'], performer: ['gtVideo', 'gtCam', 'gtVox', 'gtReplay'], creator: ['gtVideo', 'gtFmt', 'gtReplay', 'gtThumb', 'gtExp'],
-  practice: ['gtSlow', 'gtBpm', 'gtFast', 'gtSongLearn', 'gtShed'], teacher: ['gtLearn', 'gtToday', 'gtSong', 'gtEar', 'gtRiffs'] };
+  songwriter: ['gtBeats', 'gtSheet', 'gtPads', 'gtKeys', 'gtLink'], performer: ['gtVideo', 'gtCam', 'gtVox', 'gtReplay', 'gtExp'],
+  practice: ['gtToday', 'gtSong', 'gtEar', 'gtSlow', 'gtBpm', 'gtFast'] };
 const SIMPLE_TOOLS = SIMPLE_GOAL_TOOLS.songwriter;
 /** the panels Simple keeps in the workspace in use */
 const simpleTabs = () => { const g = typeof goalNow === 'function' && goalNow(); return (g && SIMPLE_GOAL_TABS[g.id]) || SIMPLE_TABS; };
@@ -8647,7 +8660,7 @@ function vzImmersive(on) {
       h('span', { class: 'grow' }),
       h('button', { class: 'btn sm', id: 'vzhNew', title: 'Start a new song: hum, guitar, a song file or a blank page', onclick: () => humStageFirst() }, '＋', h('span', { class: 'lbl' }, ' New song')),
       h('button', { class: 'btn sm', id: 'vzhRec', 'data-srec': '1', title: 'Record the stage as a video with the song’s sound (saved on this device)', onclick: e => srecMenu(e.currentTarget) }, '⏺', h('span', { class: 'lbl' }, ' Record')),
-      h('button', { class: 'btn sm', id: 'vzhPerf', title: 'Perform: chords and lyrics over the stage, with a count-in', onclick: e => perfOpen(e.currentTarget) }, '🎤', h('span', { class: 'lbl' }, ' Perform')),
+      h('button', { class: 'btn sm', id: 'vzhPerf', title: 'Showtime: chords and lyrics over the stage, with a count-in', onclick: e => perfOpen(e.currentTarget) }, '★', h('span', { class: 'lbl' }, ' Showtime')),
       h('button', { class: 'btn sm', id: 'vzhLook', title: 'Change the look: Concert, Hex Resonance, Fifths Halo, Prism', onclick: () => vzCycleLook() }, '✦', h('span', { class: 'lbl' }, ' Look')),
       h('button', { class: 'btn sm', id: 'vzhIo', title: 'Connect your input, set your level, monitor and test the sound', onclick: () => audioOpen() }, '⚙', h('span', { class: 'lbl' }, ' Inputs')),
       h('button', { class: 'btn sm vzh-kill', id: 'vzhKill', title: 'Stop all sound and release the microphone (Ctrl + .)', onclick: () => { try { audioKill(); } catch (e) { } } }, '■', h('span', { class: 'lbl' }, ' Stop audio')),
@@ -8891,7 +8904,7 @@ function vzExtra2(mode, g, W, H, X) { if (mode === 'halo') return haloDraw(g, W,
 
 /** change the visual look from anywhere (the full-screen ✦ button, keys) and keep the Visuals buttons in step */
 const VZ_FAVS = ['hex', 'concert', 'halo', 'kaleido'];
-function vzSetMode(k, quiet) { VZ.mode = k; if (!quiet) { CFG.visMode = k; saveCfg(); } VZ.spec = null; VZ.hexes = null; document.querySelectorAll('#pane-vis .seg [data-m]').forEach(b => b.classList.toggle('on', b.dataset.m === k)); const n = (VMODES.find(m => m[0] === k) || [0, k])[1]; if (!quiet) toast(n, 'ok'); if (typeof hexToneSync === 'function') hexToneSync(); }
+function vzSetMode(k, quiet) { VZ.mode = k; if (!quiet) { CFG.visMode = k; saveCfg(); } VZ.spec = null; VZ.hexes = null; document.querySelectorAll('#pane-vis .seg [data-m]').forEach(b => b.classList.toggle('on', b.dataset.m === k)); const n = (VMODES.find(m => m[0] === k) || [0, k])[1]; if (!quiet) toast(n, 'ok'); if (typeof hexToneSync === 'function') hexToneSync(); if (typeof prtBarSync === 'function') prtBarSync(); if (typeof vzLookSync === 'function') vzLookSync(); }
 /** Auto look: while the song plays, the look follows the section: calm in verses, wide in choruses, strange in bridges. Your own look comes back when it stops. */
 const VZ_BY_SECTION = [[/chorus|hook|refrain/i, 'halo'], [/bridge|break|solo/i, 'kaleido'], [/intro|outro|tag|coda/i, 'hex']];
 let vzSecLast = '';
@@ -8966,7 +8979,7 @@ function srecWords(g, W, H) {
   }
   g.restore(); g.textAlign = 'left';
 }
-/** the choice of shape and words, for the Record menu and Creator Studio */
+/** the choice of shape and words, for the Record menu and Studio */
 function srecFmtBox() {
   const f = srecFmt(), words = h('input', { type: 'checkbox', id: 'srecWords', checked: srecWordsOn(f), onchange: e => srecWordsSet(srecFmt(), e.target.checked) });
   const seg = h('div', { class: 'seg', role: 'radiogroup', 'aria-label': 'Video shape', id: 'srecFmt' }, Object.entries(SREC_FMTS).map(([k, d]) => h('button', { type: 'button', role: 'radio', class: k === f ? 'on' : '', 'aria-checked': String(k === f), 'data-fmt': k, title: d[3] + (d[0] ? ' · ' + d[0] + ' × ' + d[1] : ''), onclick: e => {
@@ -9165,7 +9178,7 @@ function perfOpen(opener) {
   const dots = h('span', { class: 'pf-dots', id: 'pfDots', 'aria-hidden': 'true' });
   const ctl = (id, t, title, fn) => h('button', { class: 'btn pf-b', id, title, onclick: fn }, t);
   PF.map = songMapEl({ big: true, cls: 'pf-map' });
-  PF.el = h('div', { id: 'perform', class: 'perform pf-pre pf-v-' + pfView() + ' ' + pfLayCls().join(' ') + (PF.bd ? '' : ' pf-solid'), role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Perform' },
+  PF.el = h('div', { id: 'perform', class: 'perform pf-pre pf-v-' + pfView() + ' ' + pfLayCls().join(' ') + (PF.bd ? '' : ' pf-solid'), role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Showtime' },
     h('div', { class: 'pf-top' }, h('b', { class: 'pf-song', id: 'pfSong' }), h('span', { class: 'pf-sec', id: 'pfSec' }), h('span', { class: 'grow' }), h('span', { class: 'pf-meta', id: 'pfMeta' }), dots,
       h('button', { class: 'btn sm pf-lay', id: 'pfLayout', title: 'Layout: where the controls and the words go, the text size, the song map', 'aria-haspopup': 'dialog', onclick: e => pfLayMenu(e.currentTarget) }, '⚙ Layout'),
       h('button', { class: 'btn sm pf-view', id: 'pfView', title: 'How Perform looks: the chord shapes beside the lyrics, the big chord, or the lyric sheet', onclick: () => perfViewNext() }, (PF_VIEWS.find(v => v[0] === pfView()) || PF_VIEWS[0])[1]),
@@ -9430,7 +9443,7 @@ function qrDraw(g, qr, x, y, cell) {
      · on share pages, as a button and a code;
      · on a printed sign for a real guitar case, and as a picture to post.
    It can show all the time or only between songs, in any corner, in three sizes.
-   OFF BY DEFAULT. It is set up from 🎬 Creator Studio ▸ 🎸 Tip jar; until then nothing about it shows anywhere else. Once it is
+   OFF BY DEFAULT. It is set up from 🎤 Studio ▸ 🎸 Tip jar; until then nothing about it shows anywhere else. Once it is
    set up (a link saved and the terms agreed), a 🎸 Tips button appears in the Visuals and Stage bars to switch it on and off.
    Money goes straight from the audience to the service the artist chose. The studio never opens the link, never sees a
    payment and takes nothing. The link lives in this browser's settings, not in songs, backups or share files other than
@@ -9460,7 +9473,7 @@ const tipOk = () => CFG.tipOk === TIP_TERMS;
 /** the saved link, made safe (worked out again only when it changes: this is asked on every frame) */
 const TIPL = { raw: null, out: '' };
 const tipNow = () => { if (TIPL.raw !== CFG.tip.link) { TIPL.raw = CFG.tip.link; TIPL.out = tipLink(CFG.tip.link); } return TIPL.out; };
-/** set up in Creator Studio: a usable link saved and the terms agreed (the 🎸 Tips buttons in the Visuals and Stage bars appear only then) */
+/** set up in Studio: a usable link saved and the terms agreed (the 🎸 Tips buttons in the Visuals and Stage bars appear only then) */
 const tipSetUp = () => !!(tipOk() && tipNow());
 /** set up, agreed to and switched on */
 const tipReady = () => !!(CFG.tip.on && tipOk() && tipNow());
@@ -9563,7 +9576,7 @@ function tipPng() {
 }
 
 /* ---------- setting it up ---------- */
-/** the 🎸 Tips button for a toolbar (lit while the case is showing); cls: the bar's button class. Hidden until the tip jar is set up in Creator Studio */
+/** the 🎸 Tips button for a toolbar (lit while the case is showing); cls: the bar's button class. Hidden until the tip jar is set up in Studio */
 function tipBtn(cls) {
   return h('button', { class: (cls || 'btn sm') + (tipReady() ? ' on' : ''), 'data-tipbtn': '1', title: 'Tip jar: a QR code your audience can scan to tip you', style: { display: tipSetUp() ? '' : 'none' }, onclick: () => tipOpen() }, '🎸 Tips');
 }
@@ -10681,7 +10694,7 @@ function dropRowMake() {
   const inp = h('input', { type: 'file', multiple: true, accept: 'audio/*,video/*,.mp3,.wav,.flac,.m4a,.aac,.ogg,.opus,.aif,.aiff,.txt,.md,.lrc,.mid,.midi,.kar,.zip,.json', style: { display: 'none' }, 'aria-label': 'Choose files to add', onchange: e => { const fl = [...e.target.files]; e.target.value = ''; if (fl.length) dropFiles(fl); } });
   DROP.row = h('div', { class: 'tl-drop', id: 'tlDrop' }, inp, h('span', { class: 'tl-drop-ic', 'aria-hidden': 'true' }, '⤓'),
     h('span', { class: 'tl-drop-t' }, h('b', {}, h('span', { class: 'dr-d' }, 'Drop audio, lyrics, MIDI or a song file anywhere'), h('span', { class: 'dr-t' }, 'Add audio, lyrics, MIDI or a song file')), h('span', { class: 'muted' }, ' · it stays on this device')),
-    h('button', { class: 'btn sm', id: 'dropPick', onclick: () => inp.click() }, 'Choose a file…'), h('button', { class: 'btn sm', id: 'dropMemo', title: 'Record your voice as it is', onclick: () => humRecord(true) }, '🎤 Voice memo'));
+    h('button', { class: 'btn sm', id: 'dropPick', onclick: () => inp.click() }, 'Choose a file…'), h('button', { class: 'btn sm', id: 'dropMemo', title: 'Record your voice as it is', onclick: () => humRecord(true) }, '🎤 Voice memo'), h('button', { class: 'btn sm', id: 'dropPrint', title: 'Soundprint: any sound becomes a fingerprint, moving worlds and an ambient piece', onclick: () => prtOpen() }, '◎ Soundprint'));
   dropRowSync(); return DROP.row;
 }
 function dropRowSync() { if (!DROP.row) return; DROP.row.hidden = !!(TAKES.length || STM.ch || STM.busy); }
@@ -12121,7 +12134,7 @@ function pbPopSetup(w) {
    ============================================================ */
 VMODES.splice(1, 0, ['concert', 'Concert']);   /* Hex Resonance stays first: it is the default look */
 const lxHsl = (h, s, l, a) => `hsla(${(((h % 360) + 360) % 360) | 0},${Math.round(clamp(s, 0, 100))}%,${Math.round(clamp(l, 0, 100))}%,${clamp(a == null ? 1 : a, 0, 1).toFixed(3)})`;
-const LX_LENSES = [['perform', 'Perform'], ['teach', 'Teach'], ['sky', 'Sky']];
+const LX_LENSES = [['perform', 'Live'], ['teach', 'Teach'], ['sky', 'Sky']];      /* 2.64: “Live” (it was “Perform”): ★ Showtime is the only thing called that */
 const LX = {
   q: [], kick: 0, snare: 0, hat: 0, perc: 0, tom: 0, onset: 0, note: 0, strobe: 0, drop: 0, build: 0, strobeReq: false, lastStrobe: -1e9, chase: 0, pbSeq: 0,
   e: 0, v: 0, tn: 0, br: .4, hue: 38, ph: 0, sec: '', kind: 'ambient', int: .3, n: 4, pat: 'fan', sym: null, symT: 0, info: null, prog: null, pal: null,
@@ -12302,7 +12315,7 @@ function lxLensBar() {
   const bar = h('div', { class: 'seg', id: 'lxLens', role: 'group', 'aria-label': 'Concert lens', title: 'Perform: big and calm · Teach: the circle of fifths, roman numerals and what comes next · Sky: your session as a constellation' },
     LX_LENSES.map(([k, n]) => h('button', { 'data-lens': k, class: (CFG.lens || 'perform') === k ? 'on' : '', onclick: () => lxSetLens(k) }, n)));
   const save = h('button', { class: 'btn sm', id: 'lxSkySave', title: 'Save the session sky as a picture', style: { display: (CFG.lens === 'sky') ? '' : 'none' }, onclick: () => lxSkySave() }, '⤓ Save sky'), clr = h('button', { class: 'btn sm', id: 'lxSkyClear', title: 'Clear the sky and start a new one', style: { display: (CFG.lens === 'sky') ? '' : 'none' }, onclick: () => { lxSkyClear(); toast('Sky cleared.', 'ok'); } }, 'New sky');
-  return h('div', { class: 'row', style: { gap: '6px' } }, bar, save, clr, sgdBarButton());
+  return h('div', { class: 'row', id: 'lxLensRow', style: { gap: '6px', display: VZ.mode === 'concert' ? '' : 'none' } }, bar, save, clr);      /* 2.65: only while Concert is the look */
 }
 function lxSetLens(k) {
   CFG.lens = LX_LENSES.some(l => l[0] === k) ? k : 'perform'; saveCfg(); document.querySelectorAll('#lxLens [data-lens]').forEach(b => b.classList.toggle('on', b.dataset.lens === CFG.lens));
@@ -13383,7 +13396,7 @@ setInterval(() => { gdSniff(); gdPfRender(); }, 500);
 const GD_SESSIONS = {
   play: {
     name: 'Play with a band', mins: 3, icon: '🎸', blurb: 'Plug in, pick a tone and play along with a drummer and bassist.',
-    outro: 'That is the whole Performer workspace: your guitar, a tone, and a band following you. Load a song in Backing track to play along with a real recording.', next: 'write',
+    outro: 'That is the heart of the Studio workspace: your guitar, a tone, and a band following you. Load a song in Backing track to play along with a real recording.', next: 'write',
     steps: [
       { id: 'input', short: 'Connect your input', text: () => (isDesk() ? 'Press Connect (in the panel on the left, or Audio at the top right)' : 'Tap the round Audio button at the top') + ' and allow the microphone when asked. Use headphones so the speakers do not feed back into it.', target: () => { const c = document.querySelector('#left .btn.primary'); return c && c.getClientRects().length ? c : UI.aud; }, go: () => { if (!document.querySelector('#left .btn.primary')) { try { audioOpen(); } catch (e) { } } }, done: () => !!(E && E.hasInput && E.ctx && E.ctx.state === 'running') },
       { id: 'tone', short: 'Pick a tone', text: 'Choose a tone from the list on the left: a clean, a crunch, a lead. Strum and listen; try another if you like.', target: '#left .pitem', go: () => { try { sideShow('tones'); } catch (e) { } }, setup: () => { GD.seen.tone = 0; }, done: () => !!GD.seen.tone },
@@ -13519,12 +13532,12 @@ function gdDrag(e) {
 function gdFinish() {
   const id = GD.id, S0 = GD_SESSIONS[id], g = gdc(), first = !g.done[id]; GD.done = true; g.done[id] = Date.now(); g.prog[id] = 0; saveCfg();
   clearInterval(GD.timer); GD.timer = 0; gdPulse(null);
-  let unlocked = []; if (first) { const was = new Set(DOCK.filter(d => xpAllowed(d[0], true)).map(d => d[0])); try { xpSignal(5); } catch (e) { } unlocked = DOCK.filter(d => xpAllowed(d[0], true) && !was.has(d[0])).map(d => XP_NAMES[d[0]] || d[1]); }
+  if (first) { try { xpSignal(5); } catch (e) { } }
   const nx = S0.next && !g.done[S0.next] ? GD_SESSIONS[S0.next] : GD_ORDER.map(k => GD_SESSIONS[k]).find((s, i) => !g.done[GD_ORDER[i]]);
   const nxId = nx ? GD_ORDER.find(k => GD_SESSIONS[k] === nx) : null;
   if (!GD.el) gdBuild(); const el = GD.el; el.innerHTML = ''; el.classList.remove('min'); el.dataset.state = 'done';
   el.append(h('div', { class: 'gd-h' }, h('span', { class: 'gd-t' }, '✓ ' + S0.name), h('button', { class: 'gd-x', 'aria-label': 'Close', title: 'Close', onclick: () => guideStop(true) }, '✕')),
-    h('p', { class: 'gd-text' }, S0.outro), unlocked.length ? h('p', { class: 'gd-unlock' }, h('b', {}, CFG.simple ? 'New tools are ready: ' : 'Added to your tabs: '), unlocked.join(', '), CFG.simple ? '. ✦ Simple off (top right) shows them.' : '. Find the rest under Tools.') : null,
+    h('p', { class: 'gd-text' }, S0.outro),
     h('div', { class: 'gd-act' }, nxId ? h('button', { class: 'btn sm primary', id: 'gdNext', onclick: () => guideStart(nxId, { fresh: true, go: true }) }, 'Next: ' + nx.name) : null, h('button', { class: 'btn sm', onclick: () => guideStop(true) }, 'Done')));
   GD.id = null; document.body.classList.add('gd-on');
 }
@@ -14173,7 +14186,7 @@ function secMenu(anchor, si, done) {
 /** what comes after writing, from the sheet: sing it in Perform, send it as a link, print it */
 function wsNext(phone) {
   return h('div', { class: 'ws-next' + (phone ? ' ws-next-m' : '') },
-    h('button', { class: 'btn sm', id: phone ? 'mwPerform' : 'wsPerform', title: 'Sing or play it through: the words in time with the band, as a sing-along', onclick: () => { try { perfOpen(); } catch (e) { } } }, '🎤 Perform'),
+    phone ? h('button', { class: 'btn sm', id: 'mwPerform', title: 'Showtime: sing or play it through, the words in time with the band', onclick: () => { try { perfOpen(); } catch (e) { } } }, '★ Showtime') : null,
     h('button', { class: 'btn sm', id: phone ? 'mwSend' : 'wsSend', title: 'Send the song as a link: the chords, words and beat ride inside it (your recordings too, if you choose)', onclick: () => { try { slShare(); } catch (e) { } } }, slSendLabel(true)),
     phone ? '' : h('button', { class: 'btn sm', id: 'wsPrint', title: 'Print the chord sheet, or save it as a PDF', onclick: () => { try { printSheet(); } catch (e) { } } }, '🖨 Print'));
 }
@@ -14317,109 +14330,99 @@ document.addEventListener('input', e => { if (!LH.el || !e.target || !e.target.m
 /* >>> parts/64-goals.js */
 /* ============================================================
    Part 64 · Goal workspaces: the studio arranged around what a musician wants to do, not around its features.
-   Each goal is a complete workspace with its own shape, so the six do not look alike:
-     🎸 Songwriter      a notebook: the words and the tab together in the middle, theory beside it, no meters, the arrangement a strip
-     🎤 Performer       a stage: the visuals large, your tones on the left, tuner and levels on the right, lanes for your takes below
-     🎬 Creator Studio  an edit bay: the stage as the picture, the audience view and waveform views beside it, record → replay → post
-     🎼 Practice        a practice room: the fretboard large in the middle, scales on the left, the loop and the click in reach
-     🎓 Teacher         a whiteboard: the arrangement on top, the tab below to point at, the fretboard beside, notes open
-     ⚙️ Full Rig        everything: every panel, both sidebars, every Monitor widget
-   Each has a colour, a one-line mission with three steps, a row of its tools (the main one highlighted), and the button to
-   the next step of Create → Perform → Share. Nothing is removed: every panel is still under ☰ and ▦. The tools are in part 68.
+   Each goal is a complete workspace with its own shape, so the four do not look alike (2.64: Performer and Creator Studio became
+   Studio, Practice and Teacher became Practice; their old ids still open them):
+     🎸 Songwriter  a notebook: the words and the tab together in the middle, theory beside it, no meters, the arrangement a strip
+     🎤 Studio   a stage: the visuals large, your tones on the left, tuner, levels and the audience view on the right; play it
+                    live (★ Showtime is in the song bar), record it, watch it back, make it postable
+     🎼 Practice    a practice room: the fretboard large in the middle, scales on the left; loop, slow down and speed up; lessons
+                    that listen; and for teaching someone else, draw, keep notes and record the screen
+     ⚙️ Full Rig    everything: every panel, both sidebars, every Monitor widget
+   Each has a colour, a one-line mission with three steps, a row of its tools (the main one highlighted), and a button to the next
+   workspace. Nothing is removed: every panel is still under ☰ and ▦. The tools are in part 68.
    ============================================================ */
-const GOAL_STEPS = [['create', 'Create', 'songwriter'], ['perform', 'Perform', 'performer'], ['share', 'Share', 'creator']];
 const GOALS = [
-  { id: 'songwriter', ico: '🎸', name: 'Songwriter', layout: 'Songwriter', step: 'create', hue: '#d08a2e', next: ['performer', 'Perform it'],
+  { id: 'songwriter', ico: '🎸', name: 'Songwriter', layout: 'Songwriter', hue: '#d08a2e', next: ['performer', 'Into the Studio'],
     blurb: 'Lyrics, chords and progressions, and a quick way to catch an idea before it goes.',
     mission: 'Write the song', steps: ['Pick a key and a progression', 'Press ● Capture and play a riff', 'Put the words under the chords'],
     simple: { mission: 'Make a song', steps: ['Pick a beat', 'Play or sing over it, ● to record', 'Put the words under the chords'] },
     shape: 'Words and tab in the middle · Theory on the left · the arrangement a strip',
-    spec: { flip: true, left: true, right: false, tlh: '84px', dock: 'tab', order: ['tab', 'band', 'song', 'exp'], hidden: ['rig', 'fret', 'vis', 'stage', 'neural', 'stems', 'tx', 'cam', 'lab'], cur: { left: 'theory' }, mon: ['tuner', 'live'] },
+    spec: { flip: true, left: true, right: false, tlh: '84px', tlhOpen: null, dock: 'tab', order: ['tab', 'band', 'song', 'exp'], hidden: ['rig', 'fret', 'vis', 'stage', 'neural', 'stems', 'tx', 'cam', 'lab'], cur: { left: 'theory' }, mon: ['tuner', 'live'] },
     enter: () => { try { wrMode('both'); } catch (e) { } },
     tools: () => [
       ['gtBeats', '🥁 Beats', 'A ready band to play, sing or write over: tap a beat and it plays, in your song’s key', b => popover(b, h('div', { class: 'bt-pop' }, h('h5', {}, 'Beats'), h('p', { class: 'tiny muted' }, 'Tap one and it plays. Undo puts your band back.'), beatsShelf({ after: closePop }))), null, () => !!CFG.simple],
       ['gtSheet', '🎸 Paste chords', 'Paste a chord sheet (chords over the words): it becomes the song, with bars, key, words and a guitar part', () => liOpen(''), null, () => !CFG.simple],
       ['gtVox', '🎤 Vocal pedals', 'Scream, doubler, harmony, echo, reverb, de-esser and megaphone for your voice', () => vocalBoardOpen()],
-      ['gtPads', '🥁 Pads', 'Play the drums with your fingers, tap the tempo, record a groove or beatbox it', () => padsOpen()],
+      ['gtPads', '👆 Pads', 'Play the drums with your fingers, tap the tempo, record a groove or beatbox it', () => padsOpen()],
       ['gtKeys', '🎹 Keys', 'A piano to play with the mouse, the computer keys or a MIDI keyboard: its own sounds, or the band’s bass or lead; record what you play into the song', () => keysOpen()],
       ['gtLink', () => slSendLabel(), 'Send this song to a bandmate as a link: the chords, words, tab, beat, tempo and key ride inside it (your recordings too, if you choose)', () => slShare()],
       ['gtRoll', '🎛 Piano roll', 'Draw the keys part or the bass line on a grid, loop it, duck it to the kick', () => rollOpen()],
 
 
     ] },
-  { id: 'performer', ico: '🎤', name: 'Performer', layout: 'Performer', step: 'perform', hue: '#d6355a', next: ['creator', 'Share it'],
-    blurb: 'Your tone, the band and the stage visuals, with the camera and the record button in reach.',
-    mission: 'Play it for real', steps: ['Pick a tone', 'Turn the camera on', 'Record a take with ● at the top'],
-    shape: 'The stage large · Tones on the left · Tuner and levels on the right · lanes for your takes',
-    spec: { flip: true, left: true, right: true, tlh: 'minmax(150px,30%)', dock: 'vis', order: ['vis', 'rig', 'band', 'stage', 'exp'], hidden: ['tab', 'song', 'fret', 'neural', 'stems', 'tx', 'cam', 'lab'], cur: { left: 'tones', right: 'monitor' }, mon: ['tuner', 'levels'] },
+  { id: 'performer', ico: '🎤', name: 'Studio', layout: 'Studio workspace', hue: '#d6355a', next: ['songwriter', 'Write the next one'],
+    blurb: 'Play it live or record it: the stage visuals, your tone and camera, the record button, replay, and everything to make it postable.',
+    mission: 'Play it, record it, share it', steps: ['Pick a look and a tone', 'Play it with ★ Showtime, or ⏺ record a video', 'Watch it back, then save or share it'],
+    simple: { mission: 'Play it, record it, share it', steps: ['Pick a look', '⏺ Record a video', 'Watch it back and save it'] },
+    shape: 'The stage large · Tones on the left · Tuner, levels and the audience view on the right · lanes for your takes',
+    spec: { flip: true, left: true, right: true, tlh: '84px', tlhOpen: 'minmax(150px,30%)', dock: 'vis', order: ['vis', 'rig', 'band', 'stage', 'exp'], hidden: ['tab', 'song', 'fret', 'neural', 'stems', 'tx', 'cam', 'lab'], cur: { left: 'tones', right: 'monitor' }, mon: ['tuner', 'levels', 'audience'] },
     tools: () => [
-      ['gtVideo', '⏺ Record video', 'Record the stage, you and the sound as a video; Studio Replay opens when you stop', b => kitRecord(b), () => !!SREC.on, 1],
-      ['gtCam', '📷 Camera', 'Put yourself centre stage, in front of the visuals', () => vzCamPress(), () => !!VZ.cam],
-      ['gtVox', '🎤 Vocal pedals', 'Scream, doubler, harmony, echo, reverb, de-esser and megaphone for your voice', () => vocalBoardOpen()],
-      ['gtStream', '📺 Stream window', 'The words and the chord in a window of their own, for OBS or any streaming app', () => streamRoom()],
-      ['gtReplay', '▶ Replay', 'Watch the last video you recorded', () => kitReplay(), null, 0, () => !KIT.last]
-    ] },
-  { id: 'creator', ico: '🎬', name: 'Creator Studio', layout: 'Creator Studio', step: 'share', hue: '#6a45e0', next: ['songwriter', 'Write the next one'],
-    blurb: 'Record, replay, add overlays and a thumbnail, and save an MP4 to post.',
-    mission: 'Make it postable', steps: ['Record an MP4', 'Watch it in Studio Replay', 'Save it with a thumbnail'],
-    shape: 'The stage as the picture · the audience view and waveforms beside it · no left sidebar',
-    spec: { flip: true, left: false, right: true, tlh: '96px', dock: 'vis', order: ['vis', 'exp', 'stage', 'band'], hidden: ['rig', 'tab', 'song', 'fret', 'neural', 'stems', 'tx', 'cam', 'lab'], cur: { right: 'monitor' }, mon: ['audience', 'views', 'levels'] },
-    tools: () => [
-      ['gtVideo', '⏺ Record MP4', 'Record the stage, the camera and the sound; MP4 where this browser can make it', b => kitRecord(b), () => !!SREC.on, 1],
+      ['gtVideo', '⏺ Record video', 'Record the stage, the camera and the sound as a video (MP4 where this browser can make it); Studio Replay opens when you stop', b => kitRecord(b), () => !!SREC.on, 1],
       ['gtFmt', () => SREC_FMTS[srecFmt()][2], 'The shape of the video: wide 16:9 for YouTube, or vertical 9:16 for Reels, TikTok and Shorts; and whether the words and chord are on it', b => popover(b, h('div', { style: { display: 'grid', gap: '8px', minWidth: '250px' } }, h('h5', {}, 'Video shape'), srecFmtBox()))],
-      ['gtReplay', '▶ Studio Replay', 'Watch the last recording, then save it, share it or make a thumbnail from any frame', () => kitReplay(), null, 0, () => !KIT.last],
-      ['gtCam', '📷 Webcam', 'You in the picture, in front of or framed by the visuals', () => vzCamPress(), () => !!VZ.cam],
+      ['gtCam', '📷 Camera', 'You in the picture, in front of or framed by the visuals', () => vzCamPress(), () => !!VZ.cam],
       ['gtFx', '✨ Overlays', 'How the camera sits with the visuals: dimmed behind, framed, or you in front', b => popover(b, h('div', { style: { display: 'grid', gap: '8px', minWidth: '240px' } }, h('h5', {}, 'Overlays'), camFxBox(), h('div', { class: 'tiny muted' }, 'Pick a look in the Visuals panel for what moves behind you.')))],
       ['gtVox', '🎤 Vocal pedals', 'Scream, doubler, harmony, echo, reverb, de-esser and megaphone for your voice', () => vocalBoardOpen()],
+      ['gtReplay', '▶ Studio Replay', 'Watch the last recording, then save it, share it or make a thumbnail from any frame', () => kitReplay(), null, 0, () => !KIT.last],
       ['gtStream', '📺 Stream window', 'The words and the chord in a window of their own, for OBS or any streaming app', () => streamRoom()],
       ['gtThumb', '🖼 Thumbnail', 'Save a 1280 × 720 picture of the stage with the song title, for the post', () => kitThumb()],
       ['gtTip', '🎸 Tip jar', 'Let your audience tip you: your own tip link as a QR code on the stage, in your videos and on share pages. Off until you set it up', () => tipOpen(), () => tipReady()],
+      ['gtPrint', '◎ Soundprint', 'Any sound becomes a fingerprint, moving worlds, a reading and an ambient piece, to save or share', () => prtOpen()],
       ['gtExp', '⇩ Export', 'Audio, the share page, the lyric sheet and more', () => dockGo('exp')]
     ] },
-  { id: 'practice', ico: '🎼', name: 'Practice', layout: 'Practice', step: 'create', hue: '#1c9a63', next: ['performer', 'Perform it'],
-    blurb: 'Loop a part, slow it down, keep time with the click, and see the scale and the chord on the neck.',
-    mission: 'Get it under your fingers', steps: ['Loop the hard bars (⟲ Loop at the top)', 'Slow it down, add the click', 'Speed it up 5 at a time'],
+  { id: 'practice', ico: '🎼', name: 'Practice', layout: 'Practice', hue: '#1c9a63', next: ['performer', 'Into the Studio'],
+    blurb: 'Learn it and get it under your fingers: lessons that listen, loop and slow down, the scale on the neck. Teaching someone? Draw, keep notes and record the screen.',
+    mission: 'Learn it, then get it under your fingers', steps: ['Start 📅 Today, or 🎵 This song', 'Loop the hard bars and slow them down', 'Speed it up 5 at a time'],
     shape: 'The fretboard large in the middle · Theory (scales) on the left · Tuner and levels on the right',
-    spec: { flip: true, left: true, right: true, tlh: 'minmax(170px,32%)', dock: 'fret', order: ['fret', 'tab', 'stems', 'band', 'rig'], hidden: ['song', 'vis', 'stage', 'neural', 'tx', 'cam', 'lab', 'exp'], cur: { left: 'theory', right: 'monitor' }, mon: ['tuner', 'levels'] },
+    spec: { flip: true, left: true, right: true, tlh: '84px', tlhOpen: 'minmax(170px,32%)', dock: 'fret', order: ['fret', 'tab', 'stems', 'band', 'tx', 'rig'], hidden: ['song', 'vis', 'stage', 'neural', 'cam', 'lab', 'exp'], cur: { left: 'theory', right: 'monitor' }, mon: ['tuner', 'levels'] },
     tools: () => [
-
-      ['gtPads', '🥁 Pads', 'Play the drums with your fingers, tap the tempo, record a groove or beatbox it', () => padsOpen()],
+      ['gtLearn', '🎓 Learn', 'Lessons that show you, play it, then listen to you play it', () => learnOpen('lessons'), null, 1],
+      ['gtToday', '📅 Today', 'Today’s fifteen minutes: a warm-up, a review, something new and a riff', () => learnOpen('today')],
+      ['gtSong', '🎵 This song', 'The song you have open, as lessons: its strum, each section’s chords and riff, working up to its tempo', () => learnOpen('song')],
+      ['gtEar', '👂 By ear', 'Hear a phrase, play it back: no tab', () => learnOpen('ear')],
+      ['gtRiffs', '🎸 Riffs & licks', RIFFS.length + ' riffs in ' + RIFF_STYLES.length + ' styles, in any key; Riff Lab and the scale atlas are in Learn', () => learnOpen('riffs')],
+      ['gtShed', '🎼 Scales & ear', 'Scales anywhere on the neck, this song’s arpeggios and ear training, followed note by note', () => trainOpen()],
       ['gtSlow', '− 5', 'Slower by 5 BPM', () => goalTempo(-5)],
       ['gtBpm', () => S.bpm + ' BPM', 'The tempo', () => { if (UI.bpm) UI.bpm.focus(); }],
       ['gtFast', '+ 5', 'Faster by 5 BPM', () => goalTempo(5)],
       ['gtSpeed', '⏱ Speed & key', 'Slow the song down without lowering it, or move it to another key', b => psPop(b)],
-      ['gtSongLearn', '🎵 Teach me this song', 'This song as lessons: its strum, each section’s chords and riff, up to tempo', () => learnOpen('song')],
-      ['gtShed', '🎼 Scales & ear', 'Scales anywhere on the neck, this song’s arpeggios and ear training, followed note by note', () => trainOpen(), null, 1],
+      ['gtInk', '✎ Annotate', 'Teaching: draw over anything on the page; it stays until you clear it', () => kitInk(), () => !!KIT.inkOn],
+      ['gtNotes', '📝 Lesson notes', 'Teaching: notes for this song, kept in this browser', () => kitNotes(), () => !!KIT.notesEl],
+      ['gtScreen', '⏺ Record screen', 'Teaching: record this tab or your screen, with the studio’s sound and your voice', () => kitScreen(), () => !!KIT.scr],
+      ['gtTx', '♪ Transcribe', 'Turn a recording into notes and chords to learn or teach from', () => dockGo('tx')]
     ] },
-  { id: 'teacher', ico: '🎓', name: 'Teacher', layout: 'Teacher', step: 'share', hue: '#0b84d8', next: null,
-    blurb: 'Be taught, or teach: lessons that listen while you play, warm-ups, riffs and licks, a riff lab and a map of the neck. For teaching someone else: draw, keep notes and record the screen.',
-    mission: 'Learn something new, or show someone how', steps: ['Start 📅 Today’s fifteen minutes', 'Learn your song with 🎵 This song', 'Train your ear with 👂 By ear'],
-    shape: 'The arrangement on top · the tab below to point at · the fretboard on the right · notes open',
-    spec: { flip: false, left: false, right: true, tlh: 'minmax(200px,40%)', dock: 'tab', order: ['tab', 'tx', 'stems', 'vis', 'band'], hidden: ['rig', 'song', 'fret', 'stage', 'neural', 'cam', 'lab'], side: { fret: 'right' }, so: { left: [], right: ['fret', 'refine', 'monitor'] }, cur: { right: 'fret' }, mon: ['tuner', 'live'] },
-    enter: () => { if (typeof KIT !== 'undefined' && !KIT.notesEl) kitNotes(); },
-    tools: () => [
-      ['gtLearn', '🎓 Learn', 'Lessons that show you, play it, then listen to you play it', () => learnOpen('lessons'), null, 1],
-      ['gtToday', '📅 Today', 'Today’s fifteen minutes: a warm-up, a review, something new and a riff', () => learnOpen('today')],
-      ['gtSong', '🎵 This song', 'The song you have open, as lessons, working up to its tempo', () => learnOpen('song')],
-      ['gtEar', '👂 By ear', 'Hear a phrase, play it back: no tab', () => learnOpen('ear')],
-      ['gtRiffs', '🎸 Riffs & licks', RIFFS.length + ' riffs in ' + RIFF_STYLES.length + ' styles, in any key; Riff Lab and the scale atlas are in Learn', () => learnOpen('riffs')],
-      ['gtInk', '✎ Annotate', 'Draw over anything on the page; it stays until you clear it', () => kitInk(), () => !!KIT.inkOn],
-      ['gtNotes', '📝 Lesson notes', 'Notes for this song, kept in this browser', () => kitNotes(), () => !!KIT.notesEl],
-      ['gtScreen', '⏺ Record screen', 'Record this tab or your screen, with the studio’s sound and your voice', () => kitScreen(), () => !!KIT.scr],
-      ['gtTx', '♪ Transcribe', 'Turn a recording into notes and chords to teach from', () => dockGo('tx')]
-    ] },
-  { id: 'fullrig', ico: '⚙️', name: 'Full Rig', layout: 'Full Rig', step: null, hue: '#5b6b79', next: null, all: true,
+  { id: 'fullrig', ico: '⚙️', name: 'Full Rig', layout: 'Full Rig', hue: '#5b6b79', next: null, all: true,
     blurb: 'Every panel, both sidebars and every Monitor widget.',
     mission: 'Everything, your way', steps: ['Every panel on the strip', 'Both sidebars', 'Every Monitor widget'],
     shape: 'The rig in the middle · I/O and the Monitor either side · every panel on the strip',
-    spec: { flip: true, left: true, right: true, tlh: 'minmax(200px,38%)', dock: 'rig', order: [], hidden: [], cur: { left: 'io', right: 'monitor' }, mon: ['tuner', 'levels', 'live', 'spectrum', 'views', 'audience'] },
+    spec: { flip: true, left: true, right: true, tlh: '84px', tlhOpen: 'minmax(200px,38%)', dock: 'rig', order: [], hidden: [], cur: { left: 'io', right: 'monitor' }, mon: ['tuner', 'levels', 'live', 'spectrum', 'views', 'audience'] },
     tools: () => [
       ['gtLay', '▦ Workspace…', 'Sidebars, floating panels, which tabs show', () => workspaceOpen('panels')],
       ['gtPlace', '⇆ Where panels live…', 'Move any panel to either sidebar or the centre', b => placeMenu(b)]
     ] }
 ];
 /* the goals that came before (2.9's journeys, and the guided sessions that still name them) */
-const GOAL_ALIAS = { play: 'performer', create: 'songwriter', learn: 'practice', write: 'songwriter', perform: 'performer', share: 'creator' };
+const GOAL_ALIAS = { play: 'performer', create: 'songwriter', learn: 'practice', write: 'songwriter', perform: 'performer', share: 'performer', creator: 'performer', teacher: 'practice', spotlight: 'performer', studio_ws: 'performer' };
+/* 2.64: a studio last arranged as one of the workspaces that were merged opens as the one it became */
+const GOAL_OLD_LAYOUTS = { Performer: 'Studio workspace', 'Creator Studio': 'Studio workspace', Spotlight: 'Studio workspace', Teacher: 'Practice' };      /* the layout key isn't shown; 'Studio' alone is the base layout */
+if (GOAL_OLD_LAYOUTS[LAY.name]) { LAY.name = GOAL_OLD_LAYOUTS[LAY.name]; }
+/* 2.64: the arrangement starts collapsed (a strip under the panels; ▴ Arrangement opens it). Once, for a studio already set up too,
+   except in Arrange and Record, which are about the arrangement */
+if (CFG.arrFold !== 1) { CFG.arrFold = 1; if (!/^(Arrange|Record)$/.test(LAY.name || '') && LAY.tlh !== '84px') { LAY.tlhPrev = LAY.tlh == null ? null : LAY.tlh; LAY.tlh = '84px'; try { saveLay(); } catch (e) { } } saveCfg(); }
+/* 2.65: a new take opens the collapsed arrangement, so you see it land (opening a song that has takes leaves it as it is) */
+let tlTakesN = TAKES.length;
+bus.on('song', w => { if (w === 'reload') tlTakesN = TAKES.length; });      /* a song opened, an undo or redo: not a new take */
+bus.on('takes', () => { const n = TAKES.length; if (n > tlTakesN && LAY.tlh === '84px' && document.body.dataset.form !== 'phone') { try { arrangeToggle(); } catch (e) { } } tlTakesN = n; });
+if (CFG.ws === 'creator') CFG.ws = 'performer'; if (CFG.ws === 'teacher') CFG.ws = 'practice'; if (CFG.lastGoal === 'creator') CFG.lastGoal = 'performer'; if (CFG.lastGoal === 'teacher') CFG.lastGoal = 'practice';
 /* they are layouts too: after Studio in the layout list (the Practice goal replaces the old Practice layout) */
 LAYOUTS.splice(1, 0, ...GOALS.map(g => [g.layout, g.blurb, g.spec]));
 const goalById = id => GOALS.find(g => g.id === (GOAL_ALIAS[id] || id)) || null;
@@ -14430,7 +14433,8 @@ const goalShows = id => { const g = goalNow(); return !!g && (g.all || g.spec.or
 function goalTempo(d) { S.bpm = clamp(S.bpm + d, 30, 260); commit(false); bus.emit('bpm'); syncTransport(); goalSync(); }
 /** o.keepZoom: leave the Canvas view as it is (the first-visit default); a goal you pick always shows the studio */
 function goalGo(id, o) {
-  const g = goalById(id); if (!g) return false; CFG.ws = g.id; if (g.id !== 'fullrig') CFG.lastGoal = g.id; saveCfg();
+  const g = goalById(id); if (!g) return false; const was = goalNow(); if (was && was !== g && was.leave) { try { was.leave(); } catch (e) { } }
+  CFG.ws = g.id; if (g.id !== 'fullrig') CFG.lastGoal = g.id; saveCfg();
   if (g.id === 'fullrig' && CFG.simple) { CFG.preSimple = null; simpleSet(false, true); toast('Full Rig has every tool, so Simple is off here. ✦ Simple takes you back to the essentials.', ''); }      /* 2.46: Full Rig is everything */
   if (!(o && o.keepZoom) && typeof ZOOM !== 'undefined' && ZOOM.cur === 'canvas') { ZOOM.cur = CFG.zoom = 'studio'; saveCfg(); document.body.classList.remove('zoom-canvas'); try { zoomSync(); } catch (e) { } }
   applyPreset(g.spec, g.layout); if (typeof xpSignal === 'function') xpSignal(1);
@@ -14449,22 +14453,29 @@ function goalBar() { const box = h('div', { class: 'goalbar', id: 'goalbar' }); 
 const GOALBAR = { el: null };
 /** the bar sits at the top of the centre, whichever of the panels or the arrangement is on top */
 function goalPlace() { const el = GOALBAR.el, top = LAY.flip === false ? $('#timeline') : $('#dock'); if (el && top && (el.parentNode !== top || top.firstChild !== el)) top.insertBefore(el, top.firstChild); }
+/* 2.65: each workspace shows its main tools; the rest are one click away under ⋯ More (a tool in use stays showing) */
+const GOAL_MORE = { songwriter: ['gtVox', 'gtRoll'], performer: ['gtFmt', 'gtFx', 'gtStream', 'gtThumb', 'gtTip', 'gtPrint'], practice: ['gtEar', 'gtRiffs', 'gtSpeed', 'gtInk', 'gtNotes', 'gtScreen', 'gtTx'] };
 function goalBarBuild() {
   const box = GOALBAR.el; if (!box) return; box.innerHTML = ''; const cur = goalNow(); goalMark();
   const pick = h('div', { class: 'gl-pick', role: 'group', 'aria-label': 'What do you want to do?' }, GOALS.map(g => h('button', { class: 'gl-b' + (cur === g ? ' on' : ''), 'data-goal': g.id, style: '--gh:' + g.hue, 'aria-pressed': String(cur === g), title: g.name + ': ' + g.blurb, onclick: () => goalGo(g.id) }, h('span', { class: 'gl-i', 'aria-hidden': 'true' }, g.ico), h('span', { class: 'gl-t' }, g.name))));
-  const flow = h('ol', { class: 'gl-flow', 'aria-label': 'Create, perform, share' }, GOAL_STEPS.map(([k, n, gid]) => h('li', {}, h('button', { class: 'gl-st' + (cur && cur.step === k ? ' on' : ''), 'data-step': k, 'aria-current': cur && cur.step === k ? 'step' : null, title: n + ': open ' + goalById(gid).name, onclick: () => goalGo(gid) }, n))));
-  box.append(h('div', { class: 'gl-row' }, pick, flow));
-  if (!cur) { box.append(h('div', { class: 'gl-row gl-tools' }, h('span', { class: 'tiny muted' }, 'Pick what you want to do, and the studio arranges itself for it. Everything stays one click away.'))); return; }
-  const tools = h('div', { class: 'gl-row gl-tools', role: 'toolbar', 'aria-label': cur.name + ' tools' });
-  const ms = CFG.simple && cur.simple || cur, few = CFG.simple && SIMPLE_GOAL_TOOLS[cur.id];      /* ✦ Simple: each workspace keeps its few tools (part 33b) */      /* ✦ Simple: Songwriter's own words and fewer tools (part 33b) */
-  tools.append(h('div', { class: 'gl-mis', title: cur.shape }, h('b', {}, ms.mission), h('span', { class: 'gl-steps' }, ms.steps.map((s, i) => h('span', {}, h('i', {}, i + 1), s)))));
+  const row = h('div', { class: 'gl-row gl-one' }, pick); box.append(row);
+  if (!cur) { row.append(h('span', { class: 'tiny muted gl-hint' }, 'Pick what you want to do, and the studio arranges itself for it. Everything stays one click away.')); return; }
+  const tools = h('div', { class: 'gl-tools' + (CFG.glMore ? ' more-open' : ''), role: 'toolbar', 'aria-label': cur.name + ' tools' });
+  const ms = CFG.simple && cur.simple || cur, few = CFG.simple && SIMPLE_GOAL_TOOLS[cur.id];      /* ✦ Simple: each workspace keeps its few tools and its own words (part 33b) */
+  const how = ms.mission + ': ' + ms.steps.map((s, i) => (i + 1) + '. ' + s).join('  ') + '\n' + cur.shape;
+  tools.append(h('button', { class: 'gl-mis', type: 'button', title: how, 'aria-label': 'How ' + cur.name + ' works: ' + how, onclick: e => popover(e.currentTarget, h('div', { class: 'gl-how' }, h('b', {}, ms.mission), h('ol', {}, ms.steps.map(s => h('li', {}, s))), h('p', { class: 'tiny muted' }, cur.shape))) }, h('b', {}, ms.mission), h('span', { class: 'gl-steps' }, ms.steps.map((s, i) => h('span', {}, h('i', {}, i + 1), s)))));
+  const more = !few && GOAL_MORE[cur.id] || []; let nMore = 0;
   cur.tools().forEach(([id, label, title, fn, on, main, off]) => {
-    if (few && !few.includes(id)) return; if (typeof main === 'function') main = main();
-    const b = h('button', { class: 'btn sm gl-tool' + (main ? ' gl-main' : ''), id, type: 'button', title, onclick: e => { fn(e.currentTarget); setTimeout(goalSync, 60); } }, typeof label === 'function' ? label() : label);
+    if (few && !few.includes(id)) return; if (typeof main === 'function') main = main(); const sec = more.includes(id); if (sec) nMore++;
+    const b = h('button', { class: 'btn sm gl-tool' + (main ? ' gl-main' : '') + (sec ? ' gl-sec' : ''), id, type: 'button', title, onclick: e => { fn(e.currentTarget); setTimeout(goalSync, 60); } }, typeof label === 'function' ? label() : label);
     b._on = on; b._off = off; b._label = label; tools.append(b);
   });
-  if (cur.next) { const n = goalById(cur.next[0]); tools.append(h('span', { class: 'grow' }), h('button', { class: 'btn sm gl-next', id: 'gtNext', style: '--gh:' + n.hue, title: 'Next: ' + n.name, onclick: () => goalGo(n.id) }, cur.next[1] + ' → ' + n.ico)); }
-  box.append(tools); goalSync();
+  if (nMore) {
+    const mb = h('button', { class: 'btn sm gl-more', id: 'gtMore', type: 'button', 'aria-expanded': String(!!CFG.glMore), title: 'The rest of ' + cur.name + '’s tools', onclick: () => { CFG.glMore = !CFG.glMore; saveCfg(); tools.classList.toggle('more-open', !!CFG.glMore); mb.setAttribute('aria-expanded', String(!!CFG.glMore)); mb.textContent = CFG.glMore ? '‹ Less' : '⋯ More'; } }, CFG.glMore ? '‹ Less' : '⋯ More');
+    tools.append(mb);
+  }
+  if (cur.next) { const n = goalById(cur.next[0]); tools.append(h('button', { class: 'btn sm gl-next', id: 'gtNext', style: '--gh:' + n.hue, title: 'Next: ' + n.name, onclick: () => goalGo(n.id) }, h('span', { class: 'gl-nt' }, cur.next[1] + ' '), '→ ' + n.ico)); }
+  row.append(tools); goalSync();
 }
 /** refresh the on/off state of the goal's tools (recording, camera, loop, click…) */
 function goalSync() {
@@ -14478,11 +14489,11 @@ function goalSync() {
 ['transport', 'srec', 'kit', 'bpm', 'song', 'cam'].forEach(e => bus.on(e, goalSync));
 setInterval(() => { if (GOALBAR.el && !document.hidden) goalSync(); }, 1000);
 
-/* ---------- ▦ Workspace (part 05c's dialog): the six goals as cards, then where the panels go ---------- */
+/* ---------- ▦ Workspace (part 05c's dialog): the four goals as cards, then where the panels go ---------- */
 function workspaceOpen(at) {
   const close = () => { const d = $('#workspace'); if (d) d.close(); }, cur = goalNow();
   const card = g => h('button', { type: 'button', class: 'ws-card' + (cur === g ? ' on' : ''), 'data-goal': g.id, style: '--gh:' + g.hue, 'aria-pressed': String(cur === g), onclick: () => { goalGo(g.id); close(); } },
-    h('span', { class: 'ws-top' }, h('span', { class: 'ws-ico', 'aria-hidden': 'true' }, g.ico), h('span', { class: 'ws-nm' }, h('b', {}, g.name), h('small', {}, g.step ? GOAL_STEPS.find(s => s[0] === g.step)[1] : 'Advanced')), cur === g ? h('span', { class: 'ws-on' }, 'In use') : null),
+    h('span', { class: 'ws-top' }, h('span', { class: 'ws-ico', 'aria-hidden': 'true' }, g.ico), h('span', { class: 'ws-nm' }, h('b', {}, g.name), h('small', {}, g.all ? 'Advanced' : g.mission)), cur === g ? h('span', { class: 'ws-on' }, 'In use') : null),
     h('span', { class: 'ws-mis' }, g.mission), h('span', { class: 'ws-blurb' }, g.blurb),
     goalThumb(g), h('span', { class: 'ws-shape' }, g.shape));
   const chk = (label, get, set) => h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: get(), onchange: e => set(e.target.checked) }), label);
@@ -15045,7 +15056,7 @@ function kitScreenDone() {
 /* ---------- lesson notes: one card per song, kept in this browser ---------- */
 const kitNoteKey = () => (S.title || 'Untitled').slice(0, 80);
 function kitNotes() {
-  if (KIT.notesEl) { KIT.notesEl.remove(); KIT.notesEl = null; bus.emit('kit'); return; }
+  KIT.notesAuto = false; if (KIT.notesEl) { KIT.notesEl.remove(); KIT.notesEl = null; bus.emit('kit'); return; }
   const all = store.get('lessons', {}), ta = h('textarea', { class: 'in kit-ta', id: 'kitNotesText', 'aria-label': 'Lesson notes', placeholder: 'What to practise, the bars that need work, the next lesson…' });
   ta.value = all[kitNoteKey()] || '';
   ta.addEventListener('input', () => { const a = store.get('lessons', {}); if (ta.value.trim()) a[kitNoteKey()] = ta.value; else delete a[kitNoteKey()]; store.set('lessons', a); });
@@ -15633,7 +15644,7 @@ function songTranspose(d) {
 }
 
 /* ---------- the tools ---------- */
-const AG_GOALS = ['songwriter', 'performer', 'creator', 'practice', 'teacher', 'fullrig'];
+const AG_GOALS = ['songwriter', 'performer', 'practice', 'fullrig'];      /* performer is Studio (2.64); 'creator' and 'teacher' still open its merged workspaces */
 const agStr = (d, o) => Object.assign({ type: 'string', description: d }, o || {});
 const agNum = (d, o) => Object.assign({ type: 'number', description: d }, o || {});
 const agBool = d => ({ type: 'boolean', description: d });
@@ -17756,7 +17767,7 @@ function padsOpen() {
     onpointerdown: e => { e.preventDefault(); padHit(r, e.pointerType === 'pen' && e.pressure ? padLevel(e.pressure) : e.shiftKey ? 3 : 2); } },      /* a pen's pressure is real; fingers and mice play at the normal level (Shift: an accent) */
     h('i', { 'aria-hidden': 'true' }, PAD_ROWS[r][1]), h('b', {}, PAD_ROWS[r][0]), h('kbd', {}, PAD.keys[r].toUpperCase()));
   const d = h('dialog', { class: 'pads', id: 'pads', 'aria-label': 'Pads' },
-    h('div', { class: 'pad-top' }, h('b', { class: 'pad-title' }, '🥁 Pads'), h('span', { class: 'pad-bpm mono' }), h('button', { class: 'btn pad-tap', title: 'Tap four times or more to set the tempo (or press T here)', onclick: () => padTap() }, 'Tap tempo'),
+    h('div', { class: 'pad-top' }, h('b', { class: 'pad-title' }, '👆 Pads'), h('span', { class: 'pad-bpm mono' }), h('button', { class: 'btn pad-tap', title: 'Tap four times or more to set the tempo (or press T here)', onclick: () => padTap() }, 'Tap tempo'),
       h('button', { class: 'btn pad-play', onclick: () => { T.playing ? stopPlay(true) : play(); setTimeout(padPaint, 60); } }, '▶ Play'), h('span', { style: { flex: 1 } }), h('button', { class: 'btn icon', 'aria-label': 'Close the pads', onclick: () => d.close() }, '✕')),
     h('div', { class: 'pad-pads' }, [0, 1, 2, 3, 4, 5].map(pad)),
     h('div', { class: 'pad-row' }, h('button', { class: 'btn primary pad-rec', 'aria-pressed': 'false', onclick: () => padRecord(+d.querySelector('.pad-bars').value) }, '● Record'),
@@ -17936,7 +17947,7 @@ function streamOpen() {
   toast('Stream window open. In OBS: Window Capture of it, then a ' + (CFG.stream.bg === 'black' ? 'Luma Key' : 'Chroma Key (' + CFG.stream.bg + ')') + ' filter.', 'ok');
   return w;
 }
-/** the stream window's settings: where they appear (Perform's ⋯ and Creator Studio) */
+/** the stream window's settings: where they appear (Showtime's ⋯ and Studio) */
 function streamPanel() {
   const c = CFG.stream, upd = () => { saveCfg(); if (STRM.w && !STRM.w.closed) { streamStyle(STRM.w); STRM.last = ''; streamTick(); } };
   return h('div', { class: 'strm' },
@@ -17949,7 +17960,7 @@ function streamPanel() {
     h('button', { class: 'btn primary', id: 'strmOpen', onclick: () => streamOpen() }, '📺 Open the stream window'),
     h('p', { class: 'tiny muted' }, 'In OBS, Streamlabs or any streaming app: add a Window Capture of that window, then a Chroma Key filter on its colour (or a Luma Key on black). The words then float over your camera. The stage visuals have their own pop-out in Visuals.'));
 }
-/** a small room for it, from the Creator Studio and Performer tools */
+/** a small room for it, from Studio's tools */
 function streamRoom() { return hubOpen('streamwin', { ico: '📺', title: 'Stream window', sub: 'The words and the chord in a window of their own, on a colour your streaming app keys out.', sections: [{ key: 'win', label: 'Stream window', ico: '📺', wide: true, body: () => [streamPanel()] }] }); }
 
 /* >>> parts/78-megaphone.js */
@@ -20094,10 +20105,43 @@ async function tuneTake(tk, mode, onProg) {
 
 /* >>> parts/92-soundprint-door.js */
 /* ============================================================
-   Part 92 · Soundprint's door (2.61): a soundprint link in the address opens it. The Soundprint itself (part 93) is a room,
-   loaded the first time it is used; prtOpen here is the core's stand-in for it (part 00).
+   Part 92 · Soundprint's doors (2.61). The Soundprint itself (part 93) is a room, loaded the first time it is used; prtOpen, prtLook
+   and prtSongMake here are the core's stand-ins for it (part 00).
+     · Visuals ▸ Soundprint: a look like the others. The open song's print, made once and kept with the song, moving with the
+       playhead. A row under the looks picks its world, listens again when the song has changed, and opens the full Soundprint.
+     · the-daily.studio/#soundprint opens Soundprint; a soundprint link (#p=…) opens that print.
    ============================================================ */
+VMODES.splice(2, 0, ['sprint', 'Soundprint']);
+const PRT_LOOK_WORLDS = [['print', '◎ Print'], ['flow', '〰 Flow'], ['terrain', '⛰ Terrain'], ['bloom', '✿ Bloom'], ['harmono', '∞ Harmonograph']];
+const prtRoomReady = () => !ROOM.files || !ROOM.files.print || !!ROOM.done.print;
+let prtRoomAsk = false;
+/** the Visuals draw this for the Soundprint look (part 13 hands it over) */
+function prtVisDraw(g, W, H) {
+  if (prtRoomReady()) return prtLook(g, W, H);
+  if (!prtRoomAsk) { prtRoomAsk = true; room('print').then(() => prtBarSync()).catch(() => { prtRoomAsk = false; }); }
+  g.fillStyle = '#05060b'; g.fillRect(0, 0, W, H);
+}
+/** the row under the looks while Soundprint is the look */
+function prtBar() {
+  const box = h('div', { class: 'prt-bar', id: 'prtBar', style: { display: VZ.mode === 'sprint' ? '' : 'none' } });
+  box.append(h('div', { class: 'seg', role: 'radiogroup', 'aria-label': 'Soundprint world' }, PRT_LOOK_WORLDS.map(([k, n]) => h('button', { type: 'button', 'data-pw': k, role: 'radio', class: (CFG.prtWorld || 'print') === k ? 'on' : '', 'aria-checked': (CFG.prtWorld || 'print') === k ? 'true' : 'false', onclick: () => { CFG.prtWorld = k; saveCfg(); prtBarSync(); } }, n))),
+    h('button', { class: 'btn sm', id: 'prtAgain', type: 'button', title: 'Make the song’s print again from how it sounds now (playback stops while it listens)', onclick: () => { if (T.playing) stopPlay(true); prtSongMake(); } }, '⟳ Listen again'),
+    h('span', { class: 'tiny muted', id: 'prtBarSay' }),
+    h('button', { class: 'btn sm', id: 'prtMore', type: 'button', title: 'Its reading and ambient piece; save the artwork, the piece or a video; share it as a link; or make a print of any other sound', onclick: async () => { await room('print'); const sp = prtSongPrint(); prtOpen(sp ? { print: sp.P } : {}); } }, '◎ Save, share, or any sound…'));
+  return box;
+}
+function prtBarSync() {
+  const box = document.getElementById('prtBar'); if (!box) return; box.style.display = VZ.mode === 'sprint' ? '' : 'none';
+  box.querySelectorAll('[data-pw]').forEach(b => { const on = b.dataset.pw === (CFG.prtWorld || 'print'); b.classList.toggle('on', on); b.setAttribute('aria-checked', on ? 'true' : 'false'); });
+  const say = document.getElementById('prtBarSay'); if (!say) return;
+  if (!prtRoomReady()) { say.textContent = ''; return; }
+  const sp = prtSongPrint(); say.textContent = PRV.busy ? 'Listening to the song…' : sp && !sp.fresh ? 'The song has changed since its print was made.' : sp ? prtGenome(sp.P).why.split('. ')[0] + '.' : '';
+}
+setInterval(() => { if (VZ.mode === 'sprint' && prtRoomReady()) prtBarSync(); }, 1500);
+
+/* ---------- addresses ---------- */
 function prtFromHash() {
+  if (/^#soundprint$/i.test(location.hash || '')) { try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { } Promise.resolve(prtOpen()).catch(() => { }); return true; }
   const m = /^#p=(1[zr][A-Za-z0-9_-]+)$/.exec(location.hash || ''); if (!m) return false;
   try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { }
   Promise.resolve(prtOpen({ link: m[1] })).catch(e => toast('That soundprint could not be opened: ' + (e.message || e) + '.', 'warn')); return true;
@@ -20447,7 +20491,8 @@ function prtFlowSpawn(s, P, G, i, u, ex, ey) {
   s.x[i] = ex == null ? r() * 1.2 - .1 : ex + (r() - .5) * .03; s.y[i] = ey == null ? r() * 1.2 - .1 : ey + (r() - .5) * .03; s.px[i] = s.x[i]; s.py[i] = s.y[i]; s.vx[i] = 0; s.vy[i] = 0; s.life[i] = 40 + r() * (80 + 160 * G.lam);
   let tot = 0; G.pal.forEach(p => { tot += .2 + row[p.pc]; }); let q = r() * tot, k = 0; for (; k < G.pal.length - 1; k++) { q -= .2 + row[G.pal[k].pc]; if (q <= 0) break; } s.pi[i] = k; s.lu[i] = r() < .55 ? 0 : 1;
 }
-function prtFlowStep(s, g, S, P, G, u, still) {
+function prtFlowStep(s, g, S, P, G, u, still, Hy) {
+  Hy = Hy || S;
   const n2 = prtNoise(G.seed ^ 0x9f), e = prtAt(P.e, u), sp = .0034 * (.35 + 1.3 * e), fs = G.fs, ep = .0016, tu = s.tau;
   while (s.on < P.on.length && P.on[s.on].t <= u) {
     const q = P.on[s.on++]; if (q.s < .2) continue; const hr = prtRand(G.seed ^ (s.on * 977)), ex = .12 + .76 * hr(), ey = .12 + .76 * hr(), k = Math.round((20 + 150 * q.s) * s.N / 1500);
@@ -20464,7 +20509,7 @@ function prtFlowStep(s, g, S, P, G, u, still) {
   const a = (still ? (G.dark ? .045 : .06) : .2) * (.45 + .75 * e) * G.ink;
   for (let k = 0; k < G.pal.length; k++) for (let l = 0; l < 2; l++) {
     g.strokeStyle = prtCol(G, k, a, G.dark ? G.lit + (l ? 16 : -4) : G.lit + (l ? -12 : 0)); g.beginPath();
-    for (let i = 0; i < s.N; i++) if (s.pi[i] === k && s.lu[i] === l) { g.moveTo(s.px[i] * S, s.py[i] * S); g.lineTo(s.x[i] * S, s.y[i] * S); }
+    for (let i = 0; i < s.N; i++) if (s.pi[i] === k && s.lu[i] === l) { g.moveTo(s.px[i] * S, s.py[i] * Hy); g.lineTo(s.x[i] * S, s.y[i] * Hy); }
     g.stroke();
   }
   g.restore();
@@ -20640,6 +20685,7 @@ async function prtOpen(o = {}) {
   prtDlg();
   if (o.link) { try { const P = await prtFromCode(o.link); PRT.src = null; prtShow(P, { mine: false, link: true }); } catch (e) { prtChoose(); prtSay('That soundprint link could not be opened: ' + (e.message || e) + '.'); } return; }
   prtChoose();
+  if (o.print) { PRT.src = null; return prtShow(o.print, { mine: true }); }
   if (o.take) return prtFromTake(o.take); if (o.master || o.song) return prtFromSong(!!o.master);
 }
 function prtChoose() {
@@ -20740,31 +20786,92 @@ function prtWorld(k) { PRT.world = k; PRT.dirty = true; document.querySelectorAl
 function prtRetitle(t) { const P = PRT.cur; if (!P) return; P.title = String(t || '').slice(0, 60); const Q = prtUnpack(prtPack(P)); Object.assign(P, { bytes: Q.bytes, title: Q.title }); if (prtKept(P)) prtKeep(P); }
 /** where the playhead is (0..1), or null when nothing plays */
 function prtNow() { const p = PRT.play; if (!p || !E.ctx) return null; return clamp((E.ctx.currentTime - p.t0) / p.len, 0, 1); }
+/** draw world w of P live on g (W×W): now = playhead 0..1, or null when nothing plays. st keeps its caches (print, flow layer). */
+function prtLive(g, W, P, w, now, clock, st, nb) {
+  const G = prtGenome(P), playing = now != null, live = !CFG.reduce, idle = !playing && live && w !== 'print', key = w + '|' + P.id + '|' + W;
+  if (w === 'print' || (w === 'flow' && !live)) {
+    if (!st.cache || st.cache.key !== key) { const c = document.createElement('canvas'); c.width = c.height = W; prtDraw(c.getContext('2d'), W, W, P, w, 1, { still: true, G, noBg: !!nb }); c.key = key; st.cache = c; }
+    if (playing && w === 'print') {
+      /* the print grows out from the core as it plays; the ridges at the front shine; onsets flash */
+      const RG = prtRidges(P, G), r = RG.dmax * W * Math.min(1, now + .004), cx = RG.pcx * W, cy = RG.pcy * W, fl = P.on.reduce((m, x) => { const d = now - x.t; return d >= 0 && d < .012 ? Math.max(m, x.s * (1 - d / .012)) : m; }, 0);
+      if (!nb) prtGround(g, W, W, G); g.save(); g.globalAlpha = .13; g.drawImage(st.cache, 0, 0); g.restore();
+      g.save(); g.beginPath(); g.arc(cx, cy, r, 0, 6.2832); g.clip(); g.drawImage(st.cache, 0, 0); g.restore();
+      g.save(); g.beginPath(); g.arc(cx, cy, r, 0, 6.2832); g.arc(cx, cy, Math.max(0, r - W * (.03 + .05 * fl)), 0, 6.2832, true); g.clip(); g.globalCompositeOperation = G.dark ? 'lighter' : 'multiply'; g.globalAlpha = .55 + .45 * fl; g.drawImage(st.cache, 0, 0); g.restore();
+    } else g.drawImage(st.cache, 0, 0);
+  } else if (w === 'flow') {
+    /* a live field on its own layer: trails fade into the ground, the sound moves it */
+    let F = st.flow; const u = playing ? now : (clock / 45) % 1;
+    if (!F || F.key !== key) { const c = document.createElement('canvas'); c.width = c.height = W; prtDraw(c.getContext('2d'), W, W, P, 'flow', 1, { still: true, G }); F = st.flow = { key, c, s: prtFlowNew(P, G, Math.round(clamp(W * 2, 400, 2400) * (1 + .4 * Math.min(1, G.dens / 4)))), u }; }
+    if (u < F.u - .5) F.s.on = 0; while (F.s.on < P.on.length && P.on[F.s.on].t < u - .02) F.s.on++; F.u = u;
+    const lg = F.c.getContext('2d'); lg.save(); lg.globalAlpha = G.fade * .3; lg.fillStyle = G.bg; lg.fillRect(0, 0, W, W); lg.restore();
+    prtFlowStep(F.s, lg, W, P, G, u, false); g.drawImage(F.c, 0, 0);
+  } else prtDraw(g, W, W, P, w, playing ? now : (idle ? (clock / 40) % 1 : 1), { clock, still: !playing && !idle, playing, G, noBg: !!nb });
+}
 function prtLoop(ts) {
   PRT.raf = 0; const cv = PRT.cv, P = PRT.cur; if (!cv || !P || !document.getElementById('prtCv')) return;
-  const now = prtNow(), playing = now != null, live = !CFG.reduce, idle = !playing && live && PRT.world !== 'print', clock = ts / 1000, W = cv.width, G = prtGenome(P);
-  if (playing || idle || PRT.dirty) {
-    const g = cv.getContext('2d'), w = PRT.world, key = w + '|' + P.id + '|' + W;
-    if (w === 'print' || (w === 'flow' && !live)) {
-      if (!PRT.cache || PRT.cache.key !== key) { const c = document.createElement('canvas'); c.width = c.height = W; prtDraw(c.getContext('2d'), W, W, P, w, 1, { still: true, G }); c.key = key; PRT.cache = c; }
-      if (playing && w === 'print') {
-        /* the print grows out from the core as it plays; the ridges at the front shine; onsets flash */
-        const RG = prtRidges(P, G), r = RG.dmax * W * Math.min(1, now + .004), cx = RG.pcx * W, cy = RG.pcy * W, fl = P.on.reduce((m, x) => { const d = now - x.t; return d >= 0 && d < .012 ? Math.max(m, x.s * (1 - d / .012)) : m; }, 0);
-        prtGround(g, W, W, G); g.save(); g.globalAlpha = .13; g.drawImage(PRT.cache, 0, 0); g.restore();
-        g.save(); g.beginPath(); g.arc(cx, cy, r, 0, 6.2832); g.clip(); g.drawImage(PRT.cache, 0, 0); g.restore();
-        g.save(); g.beginPath(); g.arc(cx, cy, r, 0, 6.2832); g.arc(cx, cy, Math.max(0, r - W * (.03 + .05 * fl)), 0, 6.2832, true); g.clip(); g.globalCompositeOperation = G.dark ? 'lighter' : 'multiply'; g.globalAlpha = .55 + .45 * fl; g.drawImage(PRT.cache, 0, 0); g.restore();
-      } else g.drawImage(PRT.cache, 0, 0);
-    } else if (w === 'flow') {
-      /* a live field on its own layer: trails fade into the ground, the sound moves it */
-      let F = PRT.flow; const u = playing ? now : (clock / 45) % 1;
-      if (!F || F.key !== key) { const c = document.createElement('canvas'); c.width = c.height = W; prtDraw(c.getContext('2d'), W, W, P, 'flow', 1, { still: true, G }); F = PRT.flow = { key, c, s: prtFlowNew(P, G, Math.round(clamp(W * 2, 400, 2400) * (1 + .4 * Math.min(1, G.dens / 4)))), u }; }
-      if (u < F.u - .5) F.s.on = 0; while (F.s.on < P.on.length && P.on[F.s.on].t < u - .02) F.s.on++; F.u = u;
-      const lg = F.c.getContext('2d'); lg.save(); lg.globalAlpha = G.fade * .3; lg.fillStyle = G.bg; lg.fillRect(0, 0, W, W); lg.restore();
-      prtFlowStep(F.s, lg, W, P, G, u, false); g.drawImage(F.c, 0, 0);
-    } else prtDraw(g, W, W, P, w, playing ? now : (idle ? (clock / 40) % 1 : 1), { clock, still: !playing && !idle, playing, G });
-    PRT.dirty = false;
-  }
+  const now = prtNow(), moving = now != null || (!CFG.reduce && PRT.world !== 'print');
+  if (moving || PRT.dirty) { prtLive(cv.getContext('2d'), cv.width, P, PRT.world, now, ts / 1000, PRT); PRT.dirty = false; }
   PRT.raf = requestAnimationFrame(prtLoop);
+}
+
+/* ---------- the song's own soundprint, as a look in the Visuals (part 92 puts it in the list) ----------
+   The open song is rendered faster than it plays (the whole mix, as Finish it hears it), listened to, and its print is kept with the
+   song (S.sprint, about 1.6 kB) so it is there next time. It follows the playhead. When the song changes, the old print stays until
+   you press ⟳ Listen again (a render stops playback, so it never starts by itself while the song plays). */
+const PRV = { busy: false, pct: 0, err: '', c: '', P: null, sig: '', sigAt: 0, st: {}, off: null, flow: null };
+function prtSongSig() {
+  const now = performance.now(); if (now - PRV.sigAt < 1000 && PRV.sig) return PRV.sig; PRV.sigAt = now;
+  const txt = JSON.stringify([S.sections, S.band, S.bpm, S.key, S.minor, S.ts, S.swing, S.mix]) + '|' + TAKES.map(t => [tkKey(t), t.startSec, t.g, t.cg, t.mute, t.pan, (t.dry || []).length].join()).join(';') + '|' + (STM.ch ? STM.ch.length + ':' + STM.mute : '');
+  let hh = 0x811c9dc5; for (let i = 0; i < txt.length; i++) { hh ^= txt.charCodeAt(i); hh = Math.imul(hh, 16777619); } return PRV.sig = (hh >>> 0).toString(16);
+}
+/** { P, fresh } for the open song, or null if it has none yet */
+function prtSongPrint() {
+  const sp = S.sprint; if (!sp || typeof sp.c !== 'string') return null;
+  if (PRV.c !== sp.c) { try { PRV.P = prtUnpack(slUnB64(sp.c)); PRV.c = sp.c; } catch (e) { return null; } }
+  return { P: PRV.P, fresh: sp.sig === prtSongSig() };
+}
+async function prtSongMake() {
+  if (PRV.busy) return; PRV.busy = true; PRV.err = ''; PRV.pct = 0; if (typeof prtBarSync === 'function') prtBarSync();
+  const song = S;
+  try {
+    const o = await lxRender(null, p => { PRV.pct = p || 0; }); let pk = 0; const m = new Float32Array(o.l.length); for (let i = 0; i < m.length; i++) { m[i] = (o.l[i] + o.r[i]) * .5; pk = Math.max(pk, Math.abs(m[i])); }
+    if (pk < 1e-4) throw new Error('the song is silent so far: add chords, the band or a recording');
+    const A = prtAnalyze(m, o.sr); A.title = (S.title || 'Untitled').slice(0, 60); A.by = CFG.slName || ''; A.day = prtDayNow();
+    const P = prtUnpack(prtPack(A)); PRV.sigAt = 0; if (S === song) { S.sprint = { sig: prtSongSig(), c: slB64(P.bytes) }; try { await projSave(); } catch (e) { } }
+  } catch (e) { PRV.err = e && e.cancelled ? 'the render was stopped' : (e.message || String(e)); }
+  finally { PRV.busy = false; if (typeof prtBarSync === 'function') prtBarSync(); }
+}
+function prtLookMsg(g, W, H, text, sub) {
+  g.save(); g.fillStyle = '#05060b'; g.fillRect(0, 0, W, H); const s = Math.min(W, H) / 600;
+  g.strokeStyle = 'rgba(255,255,255,.12)'; g.lineWidth = 1.2 * s; for (let i = 1; i <= 9; i++) { g.beginPath(); g.ellipse(W / 2, H / 2 - 30 * s, i * 13 * s, i * 15 * s, 0, 0, 6.2832); g.stroke(); }
+  g.fillStyle = '#f0eee8'; g.textAlign = 'center'; g.font = '600 ' + Math.round(20 * s) + 'px Inter, system-ui, sans-serif'; g.fillText(text, W / 2, H / 2 + 120 * s);
+  if (sub) { g.fillStyle = 'rgba(240,238,232,.6)'; g.font = Math.round(14 * s) + 'px Inter, system-ui, sans-serif'; g.fillText(sub, W / 2, H / 2 + 148 * s); }
+  g.restore();
+}
+/** the look: called by the Visuals for every frame while Soundprint is the look */
+function prtLook(g, W, H) {
+  const sp = prtSongPrint(), playing = !!T.playing;
+  if (!sp) {
+    if (!PRV.busy && !PRV.err && !playing) prtSongMake();
+    return prtLookMsg(g, W, H, PRV.busy ? 'Listening to the song… ' + Math.round(PRV.pct * 100) + '%' : PRV.err ? 'No soundprint: ' + PRV.err + '.' : playing ? 'Stop the song to make its soundprint' : 'Listening to the song…', PRV.busy ? 'Its print is made once and kept with the song.' : PRV.err ? 'Press ⟳ Listen again when it is ready.' : '');
+  }
+  const P = sp.P, G = prtGenome(P), w = CFG.prtWorld || 'print', now = playing ? clamp(playheadSlot() / Math.max(1, songSlots()), 0, 1) : null, clock = performance.now() / 1000;
+  g.save(); g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1;
+  if (w === 'terrain') prtTerrain(g, W, H, P, G, now == null ? (CFG.reduce ? 1 : (clock / 40) % 1) : now, { clock, still: now == null && !!CFG.reduce, playing, G });
+  else if (w === 'flow') {
+    /* the field fills the whole area */
+    const key = P.id + '|' + W + 'x' + H; let F = PRV.flow; const u = now != null ? now : (clock / 45) % 1;
+    if (!F || F.key !== key) { const c = document.createElement('canvas'); c.width = W; c.height = H; prtGround(c.getContext('2d'), W, H, G); F = PRV.flow = { key, c, s: prtFlowNew(P, G, Math.round(clamp(Math.sqrt(W * H) * 2, 400, 2600) * (1 + .4 * Math.min(1, G.dens / 4)))), u }; }
+    if (u < F.u - .5) F.s.on = 0; while (F.s.on < P.on.length && P.on[F.s.on].t < u - .02) F.s.on++; F.u = u;
+    const lg = F.c.getContext('2d'); lg.save(); lg.globalAlpha = G.fade * .3; lg.fillStyle = G.bg; lg.fillRect(0, 0, W, H); lg.restore();
+    if (!CFG.reduce || now != null) prtFlowStep(F.s, lg, W, P, G, u, false, H); g.drawImage(F.c, 0, 0);
+  } else {
+    /* the print, the bloom and the harmonograph: square, in the middle of one ground */
+    const S2 = Math.max(1, Math.round(Math.min(W, H))); if (!PRV.off || PRV.off.width !== S2) { PRV.off = document.createElement('canvas'); PRV.off.width = PRV.off.height = S2; PRV.st = {}; }
+    const oc = PRV.off.getContext('2d'); oc.clearRect(0, 0, S2, S2); prtLive(oc, S2, P, w, now, clock, PRV.st, true);
+    prtGround(g, W, H, G); g.drawImage(PRV.off, Math.round((W - S2) / 2), Math.round((H - S2) / 2));
+  }
+  g.restore();
 }
 
 /* ---------- playing ---------- */

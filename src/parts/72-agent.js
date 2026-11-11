@@ -62,7 +62,7 @@ function songTranspose(d) {
 }
 
 /* ---------- the tools ---------- */
-const AG_GOALS = ['songwriter', 'performer', 'creator', 'practice', 'teacher', 'fullrig'];
+const AG_GOALS = ['songwriter', 'performer', 'practice', 'fullrig'];      /* performer is Studio (2.64); 'creator' and 'teacher' still open its merged workspaces */
 const agStr = (d, o) => Object.assign({ type: 'string', description: d }, o || {});
 const agNum = (d, o) => Object.assign({ type: 'number', description: d }, o || {});
 const agBool = d => ({ type: 'boolean', description: d });

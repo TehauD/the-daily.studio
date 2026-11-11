@@ -163,7 +163,7 @@ function openHelp(at) {
       h('div', { class: 'hub-tiles' },
         h('button', { class: 'hub-tile primary', id: 'helpSessions', onclick: () => { close(); guideMenu(); } }, h('b', {}, '✦ Guided sessions'), h('span', {}, 'Play with a band, write a riff down, hum a song, loop and layer…')),
         h('button', { class: 'hub-tile', id: 'helpTour', onclick: () => { close(); tourStart(); } }, h('b', {}, '▶ Take the guided tour'), h('span', {}, 'A spotlight on each part of the screen.')),
-        h('button', { class: 'hub-tile', onclick: () => { close(); workspaceOpen(); } }, h('b', {}, '▦ Pick a workspace'), h('span', {}, 'Songwriter, Performer, Creator Studio, Practice, Teacher or Full Rig.')))] },
+        h('button', { class: 'hub-tile', onclick: () => { close(); workspaceOpen(); } }, h('b', {}, '▦ Pick a workspace'), h('span', {}, 'Songwriter, Studio, Practice or Full Rig.')))] },
     { key: 'keys', label: 'Shortcuts', ico: '⌨', wide: true, body: () => [h('div', { class: 'help-k' }, K.map(([a, b]) => [h('kbd', {}, a), h('span', {}, b)]))] },
     { key: 'data', label: 'Your work', ico: '🔒', sub: 'Local, private, kept on this device.', wide: true, body: () => [
       h('p', { class: 'small' }, 'Everything runs locally in your browser. Nothing is uploaded unless you choose to: GitHub sync (to your own account), a folder, or recordings sent with a link (encrypted, kept 7 days). Your work is autosaved to this browser: songs, recordings and backing tracks stay on this device (☰ Songs).'),

@@ -4,6 +4,19 @@ What the studio, its tutorials, its documents and its tests do **not** cover yet
 
 How to use it: before a release, move what the release closed into *Closed* with the version, and add what it opened. [RELEASE.md](RELEASE.md) has this as a checklist item. Items marked **(maintainer)** are decisions or facts only the project's owner can settle; nothing here blocks a build.
 
+## Closed in 2.64.0
+
+- **Six workspaces, two pairs of them alike** (Performer and Creator Studio, Practice and Teacher). Four now, and one ★ Showtime.
+
+## Closed in 2.63.0
+
+- **Two switches for how much shows** (Tools and Simple). Simple is the only one.
+- **Panel tabs squeezed out of sight** on desktop by the band strip.
+
+## Closed in 2.62.0
+
+- **Soundprint was hard to find.** It's a look in the Visuals now, with doors in the drop strip and Creator Studio.
+
 ## Closed in 2.61.0
 
 - **Sound as art.** Soundprint turns any sound into a print, four moving worlds, a reading and an ambient piece, shared as a 1 kB link that never carries the sound.

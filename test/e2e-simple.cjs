@@ -12,6 +12,9 @@ suite('e2e-simple', async t => {
   const all = async qs => { const o = {}; for (const q of qs) o[q] = await seen(q); return o; };
 
   /* ---- someone who has been here before: the full studio, and the switch ---- */
+  /* 2.65: the arrangement starts collapsed to an edge rail; open it so its header (Loop & layer, the advanced tools) can be checked */
+  await ev(() => { if (document.getElementById('center').classList.contains('tl-slim')) document.querySelector('#timeline .et-arr').click(); }); await wait(400);
+  ok(await ev(() => !document.getElementById('center').classList.contains('tl-slim')), 'the ▴ Arrangement tab opens the arrangement');
   const F0 = await all(GONE.concat(KEPT));
   ok(await ev(() => !document.body.classList.contains('simple') && document.getElementById('simpleBtn').getAttribute('aria-pressed') === 'false'), 'someone who has been here before keeps the full studio; ✦ Simple waits in the top right');
   ok(Object.values(F0).every(v => v !== false), 'every tool is showing (' + Object.keys(F0).filter(k => F0[k] === false).join(', ') + ')');
@@ -41,6 +44,7 @@ suite('e2e-simple', async t => {
   const box = await ev(() => { const l = [...document.querySelectorAll('#settings label.chk')].find(x => /Simple/.test(x.textContent)); return l ? l.querySelector('input').checked : null; });
   ok(box === true, 'Settings ▸ Workflow has the same switch, ticked');
   await ev(() => { const l = [...document.querySelectorAll('#settings label.chk')].find(x => /Simple/.test(x.textContent)); l.querySelector('input').click(); document.getElementById('settings').close(); window.__daily.goalGo('songwriter'); }); await wait(600);
+  await ev(() => { if (document.getElementById('center').classList.contains('tl-slim')) document.querySelector('#timeline .et-arr').click(); }); await wait(400);
   const F1 = await all(GONE);
   ok(await ev(() => !document.body.classList.contains('simple')) && Object.values(F1).every(v => v !== false), 'unticked: every tool is back');
 
@@ -50,11 +54,11 @@ suite('e2e-simple', async t => {
   const A1 = await ev(() => { const D = window.__daily, vis = q => { const e = document.querySelector(q); return !!e && e.getBoundingClientRect().width > 0; };
     return { lay: D.LAY.name, tabs: [...document.querySelectorAll('#dock .tabs .tab')].map(b => b.dataset.id).join(), fullrig: vis('.gl-b[data-goal="fullrig"]'), goals: [...document.querySelectorAll('#goalbar .gl-b')].filter(b => b.getBoundingClientRect().width > 0).length, next: vis('#gtNext'),
       tools: [...document.querySelectorAll('#goalbar .gl-tool')].map(b => b.id + (b.classList.contains('gl-main') ? '*' : '')).join(), mis: document.querySelector('#goalbar .gl-mis').textContent }; });
-  ok(A1.lay === 'Performer' && A1.tabs === 'vis,band,exp', 'Simple stays in the workspace you are in (2.46) and keeps its essential panels: Performer shows Stage, Band and Save (' + A1.tabs + '; it was ' + A0.tabs + ')');
-  ok(A1.goals === 6 && A1.fullrig && A1.tools === 'gtVideo*,gtCam,gtVox,gtReplay', 'every workspace stays in the goal bar, and each keeps its own few tools: Performer has Record video, Camera, Vocal pedals and Replay (' + A1.tools + ')');
-  const SW = await ev(async () => { const D = window.__daily, tools = () => [...document.querySelectorAll('#goalbar .gl-tool')].map(b => b.id + (b.classList.contains('gl-main') ? '*' : '')).join(), out = {}; for (const g of ['songwriter', 'creator', 'practice', 'teacher']) { D.goalGo(g); await new Promise(r => setTimeout(r, 250)); out[g] = { tools: tools(), tabs: [...document.querySelectorAll('#dock .tabs .tab')].map(b => b.dataset.id).join(), simple: D.CFG.simple }; } out.mis = document.querySelector('#goalbar .gl-mis').textContent; D.goalGo('songwriter'); await new Promise(r => setTimeout(r, 250)); out.swMis = document.querySelector('#goalbar .gl-mis').textContent; D.goalGo('performer'); await new Promise(r => setTimeout(r, 300)); return out; });
-  ok(SW.songwriter.tools === 'gtBeats*,gtSheet,gtPads,gtKeys,gtLink' && /Pick a beat/.test(SW.swMis) && SW.creator.tools === 'gtVideo*,gtFmt,gtReplay,gtThumb,gtExp' && SW.practice.tools === 'gtSlow,gtBpm,gtFast,gtSongLearn,gtShed*' && SW.teacher.tools === 'gtLearn*,gtToday,gtSong,gtEar,gtRiffs', 'Songwriter, Creator Studio, Practice and Teacher each get their own essentials in Simple ' + JSON.stringify(SW));
-  ok(['songwriter', 'creator', 'practice', 'teacher'].every(g => SW[g].simple && SW[g].tabs.split(',').length <= 3), 'and their panel strips stay short (' + ['songwriter', 'creator', 'practice', 'teacher'].map(g => SW[g].tabs).join(' · ') + ')');
+  ok(A1.lay === 'Studio workspace' && A1.tabs === 'vis,band,exp', 'Simple stays in the workspace you are in (2.46) and keeps its essential panels: Studio shows Visuals, Band and Save (' + A1.tabs + '; it was ' + A0.tabs + ')');
+  ok(A1.goals === 4 && A1.fullrig && A1.tools === 'gtVideo*,gtCam,gtVox,gtReplay,gtExp', 'every workspace stays in the goal bar, and each keeps its own few tools: Studio has Record video, Camera, Vocal pedals, Studio Replay and Export (' + A1.tools + ')');
+  const SW = await ev(async () => { const D = window.__daily, tools = () => [...document.querySelectorAll('#goalbar .gl-tool')].map(b => b.id + (b.classList.contains('gl-main') ? '*' : '')).join(), out = {}; for (const g of ['songwriter', 'practice']) { D.goalGo(g); await new Promise(r => setTimeout(r, 250)); out[g] = { tools: tools(), tabs: [...document.querySelectorAll('#dock .tabs .tab')].map(b => b.dataset.id).join(), simple: D.CFG.simple }; } out.mis = document.querySelector('#goalbar .gl-mis').textContent; D.goalGo('songwriter'); await new Promise(r => setTimeout(r, 250)); out.swMis = document.querySelector('#goalbar .gl-mis').textContent; D.goalGo('performer'); await new Promise(r => setTimeout(r, 300)); return out; });
+  ok(SW.songwriter.tools === 'gtBeats*,gtSheet,gtPads,gtKeys,gtLink' && /Pick a beat/.test(SW.swMis) && SW.practice.tools === 'gtToday,gtSong,gtEar,gtSlow,gtBpm,gtFast', 'Songwriter and Practice each get their own essentials in Simple ' + JSON.stringify(SW));
+  ok(['songwriter', 'practice'].every(g => SW[g].simple && SW[g].tabs.split(',').length <= 3), 'and their panel strips stay short (' + ['songwriter', 'practice'].map(g => SW[g].tabs).join(' · ') + ')');
   await ev(() => document.querySelector('#left .side-tabs .tab[data-id="tones"]').click()); await wait(200);
   const A1t = await ev(() => { const vis = q => { const e = document.querySelector(q); return !!e && e.getBoundingClientRect().width > 0; }; return { tones: document.querySelectorAll('#left .plist .pitem').length, all: vis('#toneAll'), search: vis('#left .tone-q') }; });
   ok(A1t.tones === 8 && A1t.all && !A1t.search, 'eight core tones, with Show all 27 tones, and no search or categories');
@@ -83,12 +87,12 @@ suite('e2e-simple', async t => {
 
   await ev(() => { document.querySelector('#left .side-tabs .tab[data-id="io"]').click(); window.__daily.simpleSet(false, true); }); await wait(400);      /* back to the sidebar tab it was on: the test itself moved it */
   const A2 = await ev(() => { const D = window.__daily; return { name: D.LAY.name, lay: JSON.stringify(D.LAY), tabs: [...document.querySelectorAll('#dock .tabs .tab')].map(b => b.dataset.id).join(), tones: document.querySelectorAll('#left .plist .pitem').length }; });
-  ok(A2.name === 'Performer' && A2.lay === A0.lay && A2.tabs === A0.tabs && A2.tones === 27, 'Simple off: back in the Performer, exactly as it was (sidebars, panels, tabs), and every tone is back (' + A2.name + ')');
+  ok(A2.name === 'Studio workspace' && A2.lay === A0.lay && A2.tabs === A0.tabs && A2.tones === 27, 'Simple off: back in Studio, exactly as it was (sidebars, panels, tabs), and every tone is back (' + A2.name + ')');
   /* ---- 2.46: Full Rig is everything ---- */
   const FR = await ev(async () => { const D = window.__daily, w = () => new Promise(r => setTimeout(r, 350)); D.simpleSet(true, true); await w(); D.goalGo('fullrig'); await w(); const a = { simple: D.CFG.simple, name: D.LAY.name, tabs: document.querySelectorAll('#dock .tabs .tab').length };
     const lay0 = JSON.stringify(D.LAY); D.simpleSet(true, true); await w(); const b = { simple: D.CFG.simple, name: D.LAY.name }; D.simpleSet(false, true); await w(); const c = { simple: D.CFG.simple, name: D.LAY.name, same: JSON.stringify(D.LAY) === lay0 }; D.goalGo('songwriter'); return { a, b, c }; });
   ok(!FR.a.simple && FR.a.name === 'Full Rig' && FR.a.tabs >= 10, 'choosing Full Rig turns Simple off: it always has every tool (' + FR.a.tabs + ' panels)');
-  ok(FR.b.simple && FR.b.name === 'Performer' && !FR.c.simple && FR.c.name === 'Full Rig' && FR.c.same, 'Simple from Full Rig goes back to the last workspace (Performer), and Simple off brings Full Rig back exactly as it was');
+  ok(FR.b.simple && FR.b.name === 'Studio workspace' && !FR.c.simple && FR.c.name === 'Full Rig' && FR.c.same, 'Simple from Full Rig goes back to the last workspace (Studio), and Simple off brings Full Rig back exactly as it was');
   await ev(() => { window.__daily.CFG.ioVoice = false; window.__daily.saveCfg(); window.__daily.goalGo('songwriter'); });
 
   /* ---- a first visit starts Simple; "I know my way around" does not ---- */

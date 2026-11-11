@@ -15,7 +15,7 @@ const TLH_DEFAULT = 'minmax(200px,40%)';
 /* ---------- apply ---------- */
 function applyLayout() {
   const c = $('#center'), w = $('#work'); if (!c || !w) return;
-  c.classList.toggle('flip', !!LAY.flip);
+  c.classList.toggle('flip', !!LAY.flip); c.classList.toggle('tl-slim', LAY.tlh === '84px');      /* 2.64: the collapsed arrangement is a clean strip */
   w.classList.remove('collapsed-l', 'collapsed-r');
   w.style.setProperty('--lw', (LAY.left ? sideW('left') : 0) + 'px'); w.style.setProperty('--rw', (LAY.right ? sideW('right') : 0) + 'px');
   c.style.setProperty('--tlh', LAY.tlh || TLH_DEFAULT); if (typeof edgeSync === 'function') edgeSync(); if (typeof goalPlace === 'function') goalPlace();
@@ -67,7 +67,6 @@ function rebuildTabs() {
       ondrop: e => { e.preventDefault(); b.classList.remove('dropl'); const t = e.dataTransfer.getData('text/plain'); if (t.startsWith('tab:')) { const from = t.slice(4); if (sideHosted(from)) { if (movePanel(from, 'dock')) moveTab(from, id); } else moveTab(from, id); } }
     }, xpTabText(id, name, i) + (FLOATS.has(id) ? ' ⧉' : '')); tabs.append(b);
   });
-  tabs.append(xpToolsButton());
 }
 function moveTab(id, beforeId) { if (id === beforeId) return; const a = DOCK.findIndex(d => d[0] === id), it = DOCK.splice(a, 1)[0], b = DOCK.findIndex(d => d[0] === beforeId); DOCK.splice(b < 0 ? DOCK.length : b, 0, it); LAY.order = DOCK.map(d => d[0]); saveLay(); rebuildTabs(); }
 function setTabHidden(id, hide) { const i = LAY.hidden.indexOf(id); if (hide && i < 0) { LAY.hidden.push(id); if (DOCK.cur === id) { const n = dockVisible().find(d => !FLOATS.has(d[0])); if (n) dockGo(n[0]); } } else if (!hide && i >= 0) LAY.hidden.splice(i, 1); saveLay(); rebuildTabs(); }
@@ -132,6 +131,8 @@ const LAYOUTS = [
 const MON_DEFAULT = ['tuner', 'levels'];
 function applyPreset(s, name) {
   Object.assign(LAY, { flip: s.flip, left: s.left, right: s.right, tlh: s.tlh == null ? null : s.tlh }); if (s.lw) LAY.lw = s.lw; if (s.rw) LAY.rw = s.rw;
+  /* 2.64: a layout can start with the arrangement collapsed and say how tall it opens (▴ Arrangement) */
+  if (s.tlhOpen !== undefined) LAY.tlhPrev = s.tlhOpen; else delete LAY.tlhPrev;
   /* the tab strip: which tabs, in which order (the shipped order when the layout names none) */
   LAY.hidden = (s.hidden || []).filter(id => id !== s.dock); LAY.order = s.order ? s.order.slice() : [];
   { const cur = DOCK.cur, ord = LAY.order.length ? LAY.order : DOCK_DEFAULT, ix = id => { const i = ord.indexOf(id); return i < 0 ? 999 : i; }; DOCK.sort((a, b) => ix(a[0]) - ix(b[0]) || DOCK_DEFAULT.indexOf(a[0]) - DOCK_DEFAULT.indexOf(b[0])); DOCK.cur = cur; }

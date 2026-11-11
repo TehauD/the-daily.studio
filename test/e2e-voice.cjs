@@ -41,7 +41,7 @@ suite('e2e-voice', async t => {
   // stage ribbon toggle
   await p.click('#voxClose'); ok(await ev(() => !document.getElementById('voxPanel')), 'Close closes the window');
   await ev(() => { window.__daily.dockGo('vis'); }); await wait(500);
-  await p.click('#vzRibbonBtn'); ok(await ev(() => window.__daily.CFG.vzRibbon === true && document.getElementById('vzRibbonBtn').getAttribute('aria-pressed') === 'true'), 'the Pitch button puts the ribbon on the visuals');
+  await p.click('#vzMore'); await wait(150); await p.click('#vzRibbonBtn'); ok(await ev(() => window.__daily.CFG.vzRibbon === true && document.getElementById('vzRibbonBtn').getAttribute('aria-pressed') === 'true'), 'the Pitch button puts the ribbon on the visuals');
   await wait(1500); ok(await ev(() => window.__daily.VOX.hist.length > 20), 'it keeps reading while only the visuals are showing');
   // the kill switch ends it
   await p.keyboard.press('Control+.'); await wait(600);

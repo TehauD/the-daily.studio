@@ -111,7 +111,7 @@ function perfOpen(opener) {
   const dots = h('span', { class: 'pf-dots', id: 'pfDots', 'aria-hidden': 'true' });
   const ctl = (id, t, title, fn) => h('button', { class: 'btn pf-b', id, title, onclick: fn }, t);
   PF.map = songMapEl({ big: true, cls: 'pf-map' });
-  PF.el = h('div', { id: 'perform', class: 'perform pf-pre pf-v-' + pfView() + ' ' + pfLayCls().join(' ') + (PF.bd ? '' : ' pf-solid'), role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Perform' },
+  PF.el = h('div', { id: 'perform', class: 'perform pf-pre pf-v-' + pfView() + ' ' + pfLayCls().join(' ') + (PF.bd ? '' : ' pf-solid'), role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Showtime' },
     h('div', { class: 'pf-top' }, h('b', { class: 'pf-song', id: 'pfSong' }), h('span', { class: 'pf-sec', id: 'pfSec' }), h('span', { class: 'grow' }), h('span', { class: 'pf-meta', id: 'pfMeta' }), dots,
       h('button', { class: 'btn sm pf-lay', id: 'pfLayout', title: 'Layout: where the controls and the words go, the text size, the song map', 'aria-haspopup': 'dialog', onclick: e => pfLayMenu(e.currentTarget) }, '⚙ Layout'),
       h('button', { class: 'btn sm pf-view', id: 'pfView', title: 'How Perform looks: the chord shapes beside the lyrics, the big chord, or the lyric sheet', onclick: () => perfViewNext() }, (PF_VIEWS.find(v => v[0] === pfView()) || PF_VIEWS[0])[1]),

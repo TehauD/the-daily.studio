@@ -2,6 +2,66 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.65.0 — 2026-11-11 — Less on screen, the same studio
+
+### Changed
+- **The workspace bar is one row.** The four workspaces, the workspace's main tools, **⋯ More** and the next step share a single row, which wraps only when the centre is narrow (then the other workspaces show just their icons, and the next step just its arrow). The rest of each workspace's tools are under **⋯ More** (it remembers whether you left it open), and a tool that's switched on stays showing:
+  - **🎸 Songwriter:** 🥁 Beats · 🎸 Paste chords · 👆 Pads · 🎹 Keys · 🔗 Send as a link · *More:* 🎤 Vocal pedals · 🎛 Piano roll.
+  - **🎤 Studio:** ⏺ Record video · 📷 Camera · 🎤 Vocal pedals · ▶ Studio Replay · ⇩ Export · *More:* video shape · ✨ Overlays · 📺 Stream window · 🖼 Thumbnail · 🎸 Tip jar · ◎ Soundprint.
+  - **🎼 Practice:** 🎓 Learn · 📅 Today · 🎵 This song · 🎼 Scales & ear · − 5 / BPM / + 5 · *More:* 👂 By ear · 🎸 Riffs & licks · ⏱ Speed & key · ✎ Annotate · 📝 Lesson notes · ⏺ Record screen · ♪ Transcribe.
+  - The mission and its three steps are behind the **?** at the start of the tools.
+- **The Visuals bar is one row** (two when the centre is narrow), where it was up to six. The **Look** button names the look and opens the looks (and the Behind you looks) under it; picking one closes them. Then what the look itself offers (the hexagon colours, Soundprint's worlds, Concert's Live / Teach / Sky, which now shows only for Concert), then **⏺ Record**, **🎥 Go on stage** and **⛶ Stage mode**. **⋯ More** holds the source, Auto look, Camera backdrop and how it sits, Neck, Pitch, Speed · size · zoom, the tip jar and Show setup.
+- **The collapsed arrangement is an edge, like the sidebars:** a thin rail along the bottom with its **▴ Arrangement** tab in the middle, where it was a strip with its header and ruler. The tab opens it to the workspace's usual height, as before, and so does a new take (a recording, a dropped file, a hum), so you see it land. Opening a song that already has takes leaves it as it is.
+
+### Fixed
+- **The panel tab strip no longer shows a small vertical scroll bar** at its end. It was a pixel taller than its row.
+
+### Tests
+- **`e2e-goals`, `e2e-simple`, `e2e-tip`, `e2e-voice`, `e2e-camera`, `e2e-privacy`, `e2e-vz-adjust`, `e2e-lanes`, `e2e-looper`, `mobile`** follow the one-row workspace bar, ⋯ More, the Look button and the arrangement rail.
+
+## 2.64.0 — 2026-11-11 — Four workspaces, one Showtime, and the arrangement collapsed
+
+### Changed
+- **Four workspaces instead of six,** so it's clearer where to go:
+  - **🎸 Songwriter** — write the song.
+  - **🎤 Studio** — what were Performer and Creator Studio: the stage large, your tones, tuner, levels and the audience view; record a video in the shape you want, camera and overlays, vocal pedals, Studio Replay, stream window, thumbnail, tip jar, Soundprint and export.
+  - **🎼 Practice** — what were Practice and Teacher: the fretboard large; lessons that listen, Today, This song, By ear, riffs and licks, Scales & ear, tempo and Speed & key; and for teaching, annotate, lesson notes, screen recording and Transcribe. Lesson notes no longer open by themselves.
+  - **⚙️ Full Rig** — everything, as before.
+  - Anything that opened the old ones (a saved workspace, a guided session, an agent asking for "creator" or "teacher") opens what they became.
+- **★ Showtime is the one way to play the song full screen,** in the song bar of every workspace (it was "🎤 Perform"). Nothing else says Perform: the whole-song view's own button is gone on a computer (the song bar's is right there), the Visuals lens is **Live / Teach / Sky**, and the next-workspace buttons say **Into the Studio** and **Write the next one**.
+- **The Create → Perform → Share strip is gone.** It only repeated three of the workspace buttons beside it.
+- **The arrangement starts collapsed,** in every workspace: a strip with its header and ruler under the panels, so they get the room. **▴ Arrangement** opens it to the workspace's usual height, and the drop strip comes back with it (dropping a file anywhere works either way). This applies once to a studio already set up too, except in the Arrange and Record layouts, which are about the arrangement.
+- **The view switch is Canvas · Song · Full.** Its third option was called Studio, which is now a workspace's name.
+- **👆 Pads has its own icon,** no longer the same drum as 🥁 Beats.
+- **One Mute all on each screen:** in the band strip on a computer, beside the click on a phone (the transport's copy shows only on a phone).
+
+### Tests
+- **`e2e-goals`** walks the four workspaces, checks there's no strip, that ★ Showtime is the only Perform control on screen, the next-workspace path, and that the old ids open the merged workspaces. **`e2e-simple`, `e2e-workspace`, `e2e-tip`, `e2e-shapes`, `e2e-learn`** follow the new names.
+
+## 2.63.0 — 2026-11-11 — One switch for how much shows, and panel tabs you can see
+
+### Changed
+- **✦ Simple is the one switch for how much of the studio shows.** The separate **Tools** level on the panel strip (Automatic, Essentials, More tools, Everything) is gone. Inside a workspace it changed almost nothing, because each workspace already chooses its panels; with Simple on it was ignored. Now: Simple on, each workspace's few panels and tools in plain words; Simple off, every panel the workspace has, numbered for Alt+1…9. Nothing is turned off or lost.
+- **The Visuals panel is called Visuals in Simple too.** It was "Stage" there, beside a separate panel also called Stage.
+- **Finishing a guided session no longer announces "unlocked" tools,** since nothing is hidden by level. Coaching notes on the panels stay for newcomers and stay off for anyone who knows their way around.
+
+### Fixed
+- **The panel tabs were squeezed out of sight.** On a 1440 px screen the band strip left the panel strip 16–109 px: one tab in Performer, Creator Studio, Practice and Full Rig, none in Teacher (the rest scrolled out, with no scrollbar). The tabs now keep their width and the band strip takes its own line when it doesn't fit beside them; a strip wider than the dock shows a thin scrollbar.
+- **Teacher's Lesson notes followed you to every workspace.** The notes Teacher opens close when you leave it; notes you open yourself stay.
+
+## 2.62.0 — 2026-11-11 — Soundprint in the Visuals
+
+### New
+- **Soundprint is a look in the Visuals,** third in the list, beside Hex Resonance and Concert. Choose it and the open song becomes its print: the whole mix is rendered faster than it plays, listened to once, and its print (about 1.4 kB of shapes) is kept with the song. It moves with the playhead: the fingerprint grows from its core, Flow and Bloom follow the song, the terrain travels. It's on the Stage and in Stage mode like any other look.
+- **Its row, under the looks:** the five worlds (Print, Flow, Terrain, Bloom, Harmonograph), why it looks the way it does, **⟳ Listen again** (the old print stays until you ask, because listening stops playback) and **◎ Save, share, or any sound…** (the reading, the ambient piece, artwork, video, a link, or a print of any other sound).
+- **More ways in:** ◎ Soundprint in the drop strip under the arrangement, in Creator Studio's tools, and the address the-daily.studio/#soundprint.
+
+### Fixed
+- **Soundprint was hard to find.** Its only desktop door was in the Export tab, the eleventh panel tab, usually scrolled out of view and beyond the Alt+number shortcuts.
+
+### Tests
+- **`e2e-soundprint` (55 checks, 6 new):** the look is third in the list with its five worlds; choosing it makes and keeps the song's print and draws it; its worlds switch and are remembered; it plays with the song; a changed song says so, and ⟳ Listen again makes it again.
+
 ## 2.61.0 — 2026-11-10 — Soundprint: every sound becomes something only it could make
 
 ### New

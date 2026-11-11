@@ -111,7 +111,7 @@ function dropRowMake() {
   const inp = h('input', { type: 'file', multiple: true, accept: 'audio/*,video/*,.mp3,.wav,.flac,.m4a,.aac,.ogg,.opus,.aif,.aiff,.txt,.md,.lrc,.mid,.midi,.kar,.zip,.json', style: { display: 'none' }, 'aria-label': 'Choose files to add', onchange: e => { const fl = [...e.target.files]; e.target.value = ''; if (fl.length) dropFiles(fl); } });
   DROP.row = h('div', { class: 'tl-drop', id: 'tlDrop' }, inp, h('span', { class: 'tl-drop-ic', 'aria-hidden': 'true' }, '⤓'),
     h('span', { class: 'tl-drop-t' }, h('b', {}, h('span', { class: 'dr-d' }, 'Drop audio, lyrics, MIDI or a song file anywhere'), h('span', { class: 'dr-t' }, 'Add audio, lyrics, MIDI or a song file')), h('span', { class: 'muted' }, ' · it stays on this device')),
-    h('button', { class: 'btn sm', id: 'dropPick', onclick: () => inp.click() }, 'Choose a file…'), h('button', { class: 'btn sm', id: 'dropMemo', title: 'Record your voice as it is', onclick: () => humRecord(true) }, '🎤 Voice memo'));
+    h('button', { class: 'btn sm', id: 'dropPick', onclick: () => inp.click() }, 'Choose a file…'), h('button', { class: 'btn sm', id: 'dropMemo', title: 'Record your voice as it is', onclick: () => humRecord(true) }, '🎤 Voice memo'), h('button', { class: 'btn sm', id: 'dropPrint', title: 'Soundprint: any sound becomes a fingerprint, moving worlds and an ambient piece', onclick: () => prtOpen() }, '◎ Soundprint'));
   dropRowSync(); return DROP.row;
 }
 function dropRowSync() { if (!DROP.row) return; DROP.row.hidden = !!(TAKES.length || STM.ch || STM.busy); }
