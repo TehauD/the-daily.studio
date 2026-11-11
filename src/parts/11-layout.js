@@ -15,7 +15,7 @@ const TLH_DEFAULT = 'minmax(200px,40%)';
 /* ---------- apply ---------- */
 function applyLayout() {
   const c = $('#center'), w = $('#work'); if (!c || !w) return;
-  c.classList.toggle('flip', !!LAY.flip);
+  c.classList.toggle('flip', !!LAY.flip); c.classList.toggle('tl-slim', LAY.tlh === '84px');      /* 2.64: the collapsed arrangement is a clean strip */
   w.classList.remove('collapsed-l', 'collapsed-r');
   w.style.setProperty('--lw', (LAY.left ? sideW('left') : 0) + 'px'); w.style.setProperty('--rw', (LAY.right ? sideW('right') : 0) + 'px');
   c.style.setProperty('--tlh', LAY.tlh || TLH_DEFAULT); if (typeof edgeSync === 'function') edgeSync(); if (typeof goalPlace === 'function') goalPlace();
@@ -131,6 +131,8 @@ const LAYOUTS = [
 const MON_DEFAULT = ['tuner', 'levels'];
 function applyPreset(s, name) {
   Object.assign(LAY, { flip: s.flip, left: s.left, right: s.right, tlh: s.tlh == null ? null : s.tlh }); if (s.lw) LAY.lw = s.lw; if (s.rw) LAY.rw = s.rw;
+  /* 2.64: a layout can start with the arrangement collapsed and say how tall it opens (▴ Arrangement) */
+  if (s.tlhOpen !== undefined) LAY.tlhPrev = s.tlhOpen; else delete LAY.tlhPrev;
   /* the tab strip: which tabs, in which order (the shipped order when the layout names none) */
   LAY.hidden = (s.hidden || []).filter(id => id !== s.dock); LAY.order = s.order ? s.order.slice() : [];
   { const cur = DOCK.cur, ord = LAY.order.length ? LAY.order : DOCK_DEFAULT, ix = id => { const i = ord.indexOf(id); return i < 0 ? 999 : i; }; DOCK.sort((a, b) => ix(a[0]) - ix(b[0]) || DOCK_DEFAULT.indexOf(a[0]) - DOCK_DEFAULT.indexOf(b[0])); DOCK.cur = cur; }

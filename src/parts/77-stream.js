@@ -38,7 +38,7 @@ function streamOpen() {
   toast('Stream window open. In OBS: Window Capture of it, then a ' + (CFG.stream.bg === 'black' ? 'Luma Key' : 'Chroma Key (' + CFG.stream.bg + ')') + ' filter.', 'ok');
   return w;
 }
-/** the stream window's settings: where they appear (Showtime's ⋯ and Spotlight) */
+/** the stream window's settings: where they appear (Showtime's ⋯ and Studio) */
 function streamPanel() {
   const c = CFG.stream, upd = () => { saveCfg(); if (STRM.w && !STRM.w.closed) { streamStyle(STRM.w); STRM.last = ''; streamTick(); } };
   return h('div', { class: 'strm' },
@@ -51,5 +51,5 @@ function streamPanel() {
     h('button', { class: 'btn primary', id: 'strmOpen', onclick: () => streamOpen() }, '📺 Open the stream window'),
     h('p', { class: 'tiny muted' }, 'In OBS, Streamlabs or any streaming app: add a Window Capture of that window, then a Chroma Key filter on its colour (or a Luma Key on black). The words then float over your camera. The stage visuals have their own pop-out in Visuals.'));
 }
-/** a small room for it, from Spotlight's tools */
+/** a small room for it, from Studio's tools */
 function streamRoom() { return hubOpen('streamwin', { ico: '📺', title: 'Stream window', sub: 'The words and the chord in a window of their own, on a colour your streaming app keys out.', sections: [{ key: 'win', label: 'Stream window', ico: '📺', wide: true, body: () => [streamPanel()] }] }); }

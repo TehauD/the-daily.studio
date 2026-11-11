@@ -1822,3 +1822,5 @@ html:not(.ds-booted) #boot .boot-card{visibility:hidden}
 .prt-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .prt-bar .seg button { white-space: nowrap; }
 #prtBarSay { max-width: 42ch; }
+/* 2.64: the arrangement collapsed to a strip (the default): its header and ruler, with no drop strip spilling over the status line (drop a file anywhere still works) */
+body:not([data-form=phone]) #center.tl-slim #tlDrop{display:none}

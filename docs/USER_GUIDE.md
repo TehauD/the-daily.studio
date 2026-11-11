@@ -12,7 +12,7 @@ Every sound becomes something only it could make.
 
 **In the Visuals (2.62):** choose **Soundprint** in the list of looks. The open song is listened to once (a few seconds) and its print is kept with the song; press ▶ and it moves with the song. The row under the looks picks the world, says why it looks that way, offers **⟳ Listen again** after you've changed the song, and opens **◎ Save, share, or any sound…**.
 
-**Any sound:** **◎ Soundprint** in the strip under the arrangement (also the Visuals row above, a clip's menu, **Finish it**, Spotlight, the address `#soundprint`, and on a phone **More ▸ Soundprint**), then:
+**Any sound:** **◎ Soundprint** in the strip under the arrangement (also the Visuals row above, a clip's menu, **Finish it**, Studio, the address `#soundprint`, and on a phone **More ▸ Soundprint**), then:
 
 - **● Record a sound** (up to a minute: rain, a street, a friend laughing, a voice memo), **⤒ An audio file**, **♪ This song** (or **✦ The finished master**), or **A take…**
 - It's listened to here and becomes a **print** (about 1 kB). The sound decides what kind of picture it makes: its fingerprint class (arch, loop, whorl…), its colours (only its own notes), its ground (paper, night, stone or ink), its symmetry and its texture. The line under the reading says why. Five **worlds** grow from it; press one to see it, **▶ Play the piece** to watch it move:
@@ -94,7 +94,7 @@ When the song is ready for a proper mix, or for mastering in BandLab, a DAW or a
 
 ## ✦ Simple (2.33)
 
-**2.46: Simple works in every workspace.** It no longer moves you to Songwriter. Songwriter, Spotlight, Practice and Teacher each keep their own few panels and tools in Simple. **Full Rig** is the one workspace with everything: choosing it turns Simple off, and ✦ Simple there takes you back to the last workspace you used. Until an input is connected, every workspace opens its sidebar on **Audio input**, so connecting is the first thing you see.
+**2.46: Simple works in every workspace.** It no longer moves you to Songwriter. Songwriter, Studio, Practice and Teacher each keep their own few panels and tools in Simple. **Full Rig** is the one workspace with everything: choosing it turns Simple off, and ✦ Simple there takes you back to the last workspace you used. Until an input is connected, every workspace opens its sidebar on **Audio input**, so connecting is the first thing you see.
 
 **✦ Simple** (top right, next to ◐) shows just what you need to make something, for anyone who has never used a recording studio. A first visit starts in Simple; if you have been here before, you keep the full studio until you press it. **Settings ▸ Workflow** has the same switch.
 - **What stays:** play, stop, ● record, Loop and Click (now with their names), the tempo and the key. Also: your song's name, Songs, New and undo; Perform and Voice; the six workspaces and their tools; ● Capture; the tab and the words; Mute all; the arrangement and Loop & layer.
@@ -111,7 +111,7 @@ When the song is ready for a proper mix, or for mastering in BandLab, a DAW or a
   | Workspace | Panels in Simple | Tools in Simple |
   | --- | --- | --- |
   | 🎸 Songwriter | Write, Band, Save & export | 🥁 Beats · Paste chords · Pads · Keys · 🔗 Send as a link |
-  | 🎤 Spotlight | Visuals, Band, Save & export | ⏺ Record video · 📷 Camera · 🎤 Vocal pedals · ▶ Studio Replay · ⇩ Export |
+  | 🎤 Studio | Visuals, Band, Save & export | ⏺ Record video · 📷 Camera · 🎤 Vocal pedals · ▶ Studio Replay · ⇩ Export |
   | 🎼 Practice | Fretboard, Write, Band | 📅 Today · 🎵 This song · 👂 By ear · − 5 · BPM · + 5 |
   | ⚙️ Full Rig | Everything (choosing it turns Simple off) | Everything |
 
@@ -222,17 +222,19 @@ The row at the top of the centre holds four workspaces. Each one is a whole work
 | Workspace | Opens on | Its tools |
 | --- | --- | --- |
 | 🎸 **Songwriter** — *Write the song* | A notebook: Write in Both (words and tab), Theory on the left, no right sidebar, the arrangement a strip | 🥁 Beats · **🎸 Paste chords** · 🎤 Vocal pedals · 👆 Pads · 🎹 Keys · 🔗 Send as a link · 🎛 Piano roll (● Capture is above the tab, ● Record at the top) |
-| 🎤 **Spotlight** — *Play it, record it, share it* | A stage: Visuals large, Tones on the left, Tuner, Levels and the Audience view on the right, lanes for takes below | **⏺ Record video** · video shape · 📷 Camera · ✨ Overlays · 🎤 Vocal pedals · ▶ Studio Replay · 📺 Stream window · 🖼 Thumbnail · 🎸 Tip jar · ◎ Soundprint · ⇩ Export |
+| 🎤 **Studio** — *Play it, record it, share it* | A stage: Visuals large, Tones on the left, Tuner, Levels and the Audience view on the right, lanes for takes below | **⏺ Record video** · video shape · 📷 Camera · ✨ Overlays · 🎤 Vocal pedals · ▶ Studio Replay · 📺 Stream window · 🖼 Thumbnail · 🎸 Tip jar · ◎ Soundprint · ⇩ Export |
 | 🎼 **Practice** — *Learn it, then get it under your fingers* | A practice room: the Fretboard large in the middle, Theory (scales) on the left, Tuner and Levels on the right | **🎓 Learn** · 📅 Today · 🎵 This song · 👂 By ear · 🎸 Riffs & licks · 🎼 Scales & ear · − 5 / BPM / + 5 · ⏱ Speed & key · and for teaching: ✎ Annotate · 📝 Lesson notes · ⏺ Record screen · ♪ Transcribe |
 | ⚙️ **Full Rig** — *Everything, your way* | The Rig, both sidebars, every tab and every Monitor widget | ▦ Workspace… · ⇆ Where panels live… |
 
-Until 2.64 there were six: **Performer** and **Creator Studio** are now **Spotlight**, and **Practice** and **Teacher** are now **Practice**. Anything that opened the old ones opens the new ones.
+Until 2.64 there were six: **Performer** and **Creator Studio** are now **Studio**, and **Practice** and **Teacher** are now **Practice**. Anything that opened the old ones opens the new ones.
+
+**The arrangement starts collapsed** (2.64) in every workspace, a strip with its header and ruler, so the panels get the room. **▴ Arrangement** at its top edge opens it to the workspace's usual height; **▾** collapses it again.
 
 **★ Showtime** (in the song bar) plays the song full screen: chords and lyrics with a count-in, record and play. It is the one thing called that, in every workspace.
 
-**The next workspace.** Each workspace ends with a button to the next: Songwriter and Practice → **Into the Spotlight**, Spotlight → **Write the next one**. A first visit on a computer opens the **Songwriter** in ✦ Simple; anyone who has been here before keeps the workspace they had, and **I know my way around** on the start page opens the Full Rig. On a phone the bottom navigation does this job and the row is not shown.
+**The next workspace.** Each workspace ends with a button to the next: Songwriter and Practice → **Into the Studio**, Studio → **Write the next one**. A first visit on a computer opens the **Songwriter** in ✦ Simple; anyone who has been here before keeps the workspace they had, and **I know my way around** on the start page opens the Full Rig. On a phone the bottom navigation does this job and the row is not shown.
 
-**Studio Replay.** **⏺ Record video** (Spotlight) records the stage, the camera if it is on, and the sound. Press it again to stop and Studio Replay opens: watch it, **⇩ Save MP4**, **↗ Share…** (your device's share sheet, where the browser has one), **🖼 Thumbnail from this frame** or **⏺ Record again**. Videos made with the Visuals panel's own ● Record are kept for Replay too. Only the newest recording is kept, in memory. MP4 is used where the browser can make it (recent Chrome, Edge and Safari); otherwise the file is WebM and Replay says so.
+**Studio Replay.** **⏺ Record video** (Studio) records the stage, the camera if it is on, and the sound. Press it again to stop and Studio Replay opens: watch it, **⇩ Save MP4**, **↗ Share…** (your device's share sheet, where the browser has one), **🖼 Thumbnail from this frame** or **⏺ Record again**. Videos made with the Visuals panel's own ● Record are kept for Replay too. Only the newest recording is kept, in memory. MP4 is used where the browser can make it (recent Chrome, Edge and Safari); otherwise the file is WebM and Replay says so.
 
 **Sharing one track or the video.** In the arrangement, a recorded lane's **⋯** menu has **↗ Share…** (and **Clip options… ▸ ↗ Share clip…** for one clip). The track is turned into a small M4A (Opus where the browser cannot make M4A), about a tenth of the WAV. It plays through once, silently, so it takes as long as the recording; closing the progress window cancels it. It then opens in the same window as Studio Replay, titled *Share a track*. From there, or from Studio Replay for a video:
 - **⇩ Save** keeps the file.
@@ -804,7 +806,7 @@ Live and session measurements: pitch-class usage and intonation (mean cents devi
 * **Compressed audio** saves M4A (or Opus in a .webm where the browser cannot make M4A). It plays once in real time, like a bounce.
 * **Share page** saves **one HTML file** with the sound, lyrics, chords and a small player. Open it in any browser or send it. Click a lyric line to jump there. It loads nothing from anywhere.
 * **Print or PDF sheet** makes a clean sheet with chords over the words for the browser's Print dialog (choose **Save as PDF** there).
-* **⏺ Record the stage** (Visuals bar) saves a video of the visuals with the song's sound. Choose its shape (2.19): **▭ Wide 16:9** (1920 × 1080, for YouTube, a website or a TV), **▯ Vertical 9:16** (1080 × 1920, for Reels, TikTok and Shorts) or **▢ As on screen**. The video is drawn for its own frame, so the camera is cropped to keep you in the middle of a vertical video. **Quality** is **Auto** (1080p on a computer, 720p on a phone or tablet), **1080p** or **720p**; 720p is smoother on a phone, and if many frames came late while recording the app suggests it (2.19.1). **Words and chord on the video** puts the line being sung (with its chords over the words) and the chord in large type at the bottom; it starts on for vertical and off for wide. While it records, the Visuals show a preview, and it keeps recording if you open another panel. In **🎤 Spotlight** the shape is next to **⏺ Record video**, and the **🖼 Thumbnail** takes the same shape (1080 × 1920 for vertical).
+* **⏺ Record the stage** (Visuals bar) saves a video of the visuals with the song's sound. Choose its shape (2.19): **▭ Wide 16:9** (1920 × 1080, for YouTube, a website or a TV), **▯ Vertical 9:16** (1080 × 1920, for Reels, TikTok and Shorts) or **▢ As on screen**. The video is drawn for its own frame, so the camera is cropped to keep you in the middle of a vertical video. **Quality** is **Auto** (1080p on a computer, 720p on a phone or tablet), **1080p** or **720p**; 720p is smoother on a phone, and if many frames came late while recording the app suggests it (2.19.1). **Words and chord on the video** puts the line being sung (with its chords over the words) and the chord in large type at the bottom; it starts on for vertical and off for wide. While it records, the Visuals show a preview, and it keeps recording if you open another panel. In **🎤 Studio** the shape is next to **⏺ Record video**, and the **🖼 Thumbnail** takes the same shape (1080 × 1920 for vertical).
 
 **Folder sync** (Chrome and Edge on a computer; was *Backup folder* before 2.22) keeps your whole studio in a folder you choose, and can still save each song as a `.daily-song.zip` there too. See *Folder sync* below.
 
@@ -892,7 +894,7 @@ Open the **◐** button (or Settings ▸ Customize appearance…; on a phone Mor
 
 ## Tip jar: let your audience tip you (2.17)
 
-**🎤 Spotlight ▸ 🎸 Tip jar** puts your own tip link on screen as a QR code in a small open guitar case. Anyone with a phone camera can scan it and tip you directly. It is **off unless you set it up**: until then nothing about it appears anywhere else. Once it is set up, a **🎸 Tips** button appears in the Visuals and Stage bars so you can switch it on or off at a gig.
+**🎤 Studio ▸ 🎸 Tip jar** puts your own tip link on screen as a QR code in a small open guitar case. Anyone with a phone camera can scan it and tip you directly. It is **off unless you set it up**: until then nothing about it appears anywhere else. Once it is set up, a **🎸 Tips** button appears in the Visuals and Stage bars so you can switch it on or off at a gig.
 
 1. **Paste your link**: a Ko-fi, PayPal.me, Venmo, Cash App, Buy Me a Coffee, Patreon or Bandcamp page, or any `https` address. `ko-fi.com/yourname` gets the `https://` added for you, a `@venmo-name` becomes your Venmo profile link (`venmo.com/u/…`) and a `$cashtag` becomes a Cash App link. Press **Test the link** to check it goes to the right place.
 2. Add **your name or band** and a short **message** if you like ("Enjoying the music? Leave a tip" is the default).
@@ -965,7 +967,7 @@ The app ships no recordings and no one else's lyrics, and it never uploads anyth
 
 ## Stream window (2.29)
 
-**📺 Stream window** (a Spotlight tool) opens a window with only the line being sung, the next one and the chord, in large type on one colour. In OBS, Streamlabs or any streaming app, add a **Window Capture** of it and a **Chroma Key** filter on that colour (green, blue or magenta), or a **Luma Key** on black. The words then float over your camera. The stage visuals have their own pop-out in Visuals.
+**📺 Stream window** (a Studio tool) opens a window with only the line being sung, the next one and the chord, in large type on one colour. In OBS, Streamlabs or any streaming app, add a **Window Capture** of it and a **Chroma Key** filter on that colour (green, blue or magenta), or a **Luma Key** on black. The words then float over your camera. The stage visuals have their own pop-out in Visuals.
 
 ## For electronic music: piano roll, sidechain, MIDI out (2.37)
 
@@ -1048,7 +1050,7 @@ It starts at 70% of the song's tempo, every clean go is 5 BPM faster, and it sto
 
 ## Vocal pedals (2.31)
 
-**🎤 Vocal pedals** (the Voice window, the Songwriter and Spotlight tools, and on a phone in **More**) is a small pedalboard for your voice, after the vocal polish. You hear it while you monitor (Hear myself, on headphones). Vocal takes are recorded clean and played back through it, so you can change the sound after you sing. Bounces include it.
+**🎤 Vocal pedals** (the Voice window, the Songwriter and Studio tools, and on a phone in **More**) is a small pedalboard for your voice, after the vocal polish. You hear it while you monitor (Hear myself, on headphones). Vocal takes are recorded clean and played back through it, so you can change the sound after you sing. Bounces include it.
 - **🤘 Scream:** a gate, hard compression, grit blended beside your clean voice (so the words stay clear) and an instant octave down for growl. Styles: Rasp, Hardcore, Fry growl, Death growl. It lets you scream lighter: the pedal adds the grit so your throat doesn't have to. If it hurts, stop.
 - **De-esser:** turns down harsh "s" sounds only when they're loud.
 - **📢 Megaphone:** megaphone, radio or telephone.

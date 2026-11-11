@@ -59,7 +59,7 @@ function srecWords(g, W, H) {
   }
   g.restore(); g.textAlign = 'left';
 }
-/** the choice of shape and words, for the Record menu and Spotlight */
+/** the choice of shape and words, for the Record menu and Studio */
 function srecFmtBox() {
   const f = srecFmt(), words = h('input', { type: 'checkbox', id: 'srecWords', checked: srecWordsOn(f), onchange: e => srecWordsSet(srecFmt(), e.target.checked) });
   const seg = h('div', { class: 'seg', role: 'radiogroup', 'aria-label': 'Video shape', id: 'srecFmt' }, Object.entries(SREC_FMTS).map(([k, d]) => h('button', { type: 'button', role: 'radio', class: k === f ? 'on' : '', 'aria-checked': String(k === f), 'data-fmt': k, title: d[3] + (d[0] ? ' · ' + d[0] + ' × ' + d[1] : ''), onclick: e => {

@@ -1,9 +1,9 @@
 /* ============================================================
    Part 64 · Goal workspaces: the studio arranged around what a musician wants to do, not around its features.
    Each goal is a complete workspace with its own shape, so the four do not look alike (2.64: Performer and Creator Studio became
-   Spotlight, Practice and Teacher became Practice; their old ids still open them):
+   Studio, Practice and Teacher became Practice; their old ids still open them):
      🎸 Songwriter  a notebook: the words and the tab together in the middle, theory beside it, no meters, the arrangement a strip
-     🎤 Spotlight   a stage: the visuals large, your tones on the left, tuner, levels and the audience view on the right; play it
+     🎤 Studio   a stage: the visuals large, your tones on the left, tuner, levels and the audience view on the right; play it
                     live (★ Showtime is in the song bar), record it, watch it back, make it postable
      🎼 Practice    a practice room: the fretboard large in the middle, scales on the left; loop, slow down and speed up; lessons
                     that listen; and for teaching someone else, draw, keep notes and record the screen
@@ -12,12 +12,12 @@
    workspace. Nothing is removed: every panel is still under ☰ and ▦. The tools are in part 68.
    ============================================================ */
 const GOALS = [
-  { id: 'songwriter', ico: '🎸', name: 'Songwriter', layout: 'Songwriter', hue: '#d08a2e', next: ['performer', 'Into the Spotlight'],
+  { id: 'songwriter', ico: '🎸', name: 'Songwriter', layout: 'Songwriter', hue: '#d08a2e', next: ['performer', 'Into the Studio'],
     blurb: 'Lyrics, chords and progressions, and a quick way to catch an idea before it goes.',
     mission: 'Write the song', steps: ['Pick a key and a progression', 'Press ● Capture and play a riff', 'Put the words under the chords'],
     simple: { mission: 'Make a song', steps: ['Pick a beat', 'Play or sing over it, ● to record', 'Put the words under the chords'] },
     shape: 'Words and tab in the middle · Theory on the left · the arrangement a strip',
-    spec: { flip: true, left: true, right: false, tlh: '84px', dock: 'tab', order: ['tab', 'band', 'song', 'exp'], hidden: ['rig', 'fret', 'vis', 'stage', 'neural', 'stems', 'tx', 'cam', 'lab'], cur: { left: 'theory' }, mon: ['tuner', 'live'] },
+    spec: { flip: true, left: true, right: false, tlh: '84px', tlhOpen: null, dock: 'tab', order: ['tab', 'band', 'song', 'exp'], hidden: ['rig', 'fret', 'vis', 'stage', 'neural', 'stems', 'tx', 'cam', 'lab'], cur: { left: 'theory' }, mon: ['tuner', 'live'] },
     enter: () => { try { wrMode('both'); } catch (e) { } },
     tools: () => [
       ['gtBeats', '🥁 Beats', 'A ready band to play, sing or write over: tap a beat and it plays, in your song’s key', b => popover(b, h('div', { class: 'bt-pop' }, h('h5', {}, 'Beats'), h('p', { class: 'tiny muted' }, 'Tap one and it plays. Undo puts your band back.'), beatsShelf({ after: closePop }))), null, () => !!CFG.simple],
@@ -30,12 +30,12 @@ const GOALS = [
 
 
     ] },
-  { id: 'performer', ico: '🎤', name: 'Spotlight', layout: 'Spotlight', hue: '#d6355a', next: ['songwriter', 'Write the next one'],
+  { id: 'performer', ico: '🎤', name: 'Studio', layout: 'Studio workspace', hue: '#d6355a', next: ['songwriter', 'Write the next one'],
     blurb: 'Play it live or record it: the stage visuals, your tone and camera, the record button, replay, and everything to make it postable.',
     mission: 'Play it, record it, share it', steps: ['Pick a look and a tone', 'Play it with ★ Showtime, or ⏺ record a video', 'Watch it back, then save or share it'],
     simple: { mission: 'Play it, record it, share it', steps: ['Pick a look', '⏺ Record a video', 'Watch it back and save it'] },
     shape: 'The stage large · Tones on the left · Tuner, levels and the audience view on the right · lanes for your takes',
-    spec: { flip: true, left: true, right: true, tlh: 'minmax(150px,30%)', dock: 'vis', order: ['vis', 'rig', 'band', 'stage', 'exp'], hidden: ['tab', 'song', 'fret', 'neural', 'stems', 'tx', 'cam', 'lab'], cur: { left: 'tones', right: 'monitor' }, mon: ['tuner', 'levels', 'audience'] },
+    spec: { flip: true, left: true, right: true, tlh: '84px', tlhOpen: 'minmax(150px,30%)', dock: 'vis', order: ['vis', 'rig', 'band', 'stage', 'exp'], hidden: ['tab', 'song', 'fret', 'neural', 'stems', 'tx', 'cam', 'lab'], cur: { left: 'tones', right: 'monitor' }, mon: ['tuner', 'levels', 'audience'] },
     tools: () => [
       ['gtVideo', '⏺ Record video', 'Record the stage, the camera and the sound as a video (MP4 where this browser can make it); Studio Replay opens when you stop', b => kitRecord(b), () => !!SREC.on, 1],
       ['gtFmt', () => SREC_FMTS[srecFmt()][2], 'The shape of the video: wide 16:9 for YouTube, or vertical 9:16 for Reels, TikTok and Shorts; and whether the words and chord are on it', b => popover(b, h('div', { style: { display: 'grid', gap: '8px', minWidth: '250px' } }, h('h5', {}, 'Video shape'), srecFmtBox()))],
@@ -49,11 +49,11 @@ const GOALS = [
       ['gtPrint', '◎ Soundprint', 'Any sound becomes a fingerprint, moving worlds, a reading and an ambient piece, to save or share', () => prtOpen()],
       ['gtExp', '⇩ Export', 'Audio, the share page, the lyric sheet and more', () => dockGo('exp')]
     ] },
-  { id: 'practice', ico: '🎼', name: 'Practice', layout: 'Practice', hue: '#1c9a63', next: ['performer', 'Into the Spotlight'],
+  { id: 'practice', ico: '🎼', name: 'Practice', layout: 'Practice', hue: '#1c9a63', next: ['performer', 'Into the Studio'],
     blurb: 'Learn it and get it under your fingers: lessons that listen, loop and slow down, the scale on the neck. Teaching someone? Draw, keep notes and record the screen.',
     mission: 'Learn it, then get it under your fingers', steps: ['Start 📅 Today, or 🎵 This song', 'Loop the hard bars and slow them down', 'Speed it up 5 at a time'],
     shape: 'The fretboard large in the middle · Theory (scales) on the left · Tuner and levels on the right',
-    spec: { flip: true, left: true, right: true, tlh: 'minmax(170px,32%)', dock: 'fret', order: ['fret', 'tab', 'stems', 'band', 'tx', 'rig'], hidden: ['song', 'vis', 'stage', 'neural', 'cam', 'lab', 'exp'], cur: { left: 'theory', right: 'monitor' }, mon: ['tuner', 'levels'] },
+    spec: { flip: true, left: true, right: true, tlh: '84px', tlhOpen: 'minmax(170px,32%)', dock: 'fret', order: ['fret', 'tab', 'stems', 'band', 'tx', 'rig'], hidden: ['song', 'vis', 'stage', 'neural', 'cam', 'lab', 'exp'], cur: { left: 'theory', right: 'monitor' }, mon: ['tuner', 'levels'] },
     tools: () => [
       ['gtLearn', '🎓 Learn', 'Lessons that show you, play it, then listen to you play it', () => learnOpen('lessons'), null, 1],
       ['gtToday', '📅 Today', 'Today’s fifteen minutes: a warm-up, a review, something new and a riff', () => learnOpen('today')],
@@ -74,17 +74,20 @@ const GOALS = [
     blurb: 'Every panel, both sidebars and every Monitor widget.',
     mission: 'Everything, your way', steps: ['Every panel on the strip', 'Both sidebars', 'Every Monitor widget'],
     shape: 'The rig in the middle · I/O and the Monitor either side · every panel on the strip',
-    spec: { flip: true, left: true, right: true, tlh: 'minmax(200px,38%)', dock: 'rig', order: [], hidden: [], cur: { left: 'io', right: 'monitor' }, mon: ['tuner', 'levels', 'live', 'spectrum', 'views', 'audience'] },
+    spec: { flip: true, left: true, right: true, tlh: '84px', tlhOpen: 'minmax(200px,38%)', dock: 'rig', order: [], hidden: [], cur: { left: 'io', right: 'monitor' }, mon: ['tuner', 'levels', 'live', 'spectrum', 'views', 'audience'] },
     tools: () => [
       ['gtLay', '▦ Workspace…', 'Sidebars, floating panels, which tabs show', () => workspaceOpen('panels')],
       ['gtPlace', '⇆ Where panels live…', 'Move any panel to either sidebar or the centre', b => placeMenu(b)]
     ] }
 ];
 /* the goals that came before (2.9's journeys, and the guided sessions that still name them) */
-const GOAL_ALIAS = { play: 'performer', create: 'songwriter', learn: 'practice', write: 'songwriter', perform: 'performer', share: 'performer', creator: 'performer', teacher: 'practice', spotlight: 'performer' };
+const GOAL_ALIAS = { play: 'performer', create: 'songwriter', learn: 'practice', write: 'songwriter', perform: 'performer', share: 'performer', creator: 'performer', teacher: 'practice', spotlight: 'performer', studio_ws: 'performer' };
 /* 2.64: a studio last arranged as one of the workspaces that were merged opens as the one it became */
-const GOAL_OLD_LAYOUTS = { Performer: 'Spotlight', 'Creator Studio': 'Spotlight', Teacher: 'Practice' };
+const GOAL_OLD_LAYOUTS = { Performer: 'Studio workspace', 'Creator Studio': 'Studio workspace', Spotlight: 'Studio workspace', Teacher: 'Practice' };      /* the layout key isn't shown; 'Studio' alone is the base layout */
 if (GOAL_OLD_LAYOUTS[LAY.name]) { LAY.name = GOAL_OLD_LAYOUTS[LAY.name]; }
+/* 2.64: the arrangement starts collapsed (a strip under the panels; ▴ Arrangement opens it). Once, for a studio already set up too,
+   except in Arrange and Record, which are about the arrangement */
+if (CFG.arrFold !== 1) { CFG.arrFold = 1; if (!/^(Arrange|Record)$/.test(LAY.name || '') && LAY.tlh !== '84px') { LAY.tlhPrev = LAY.tlh == null ? null : LAY.tlh; LAY.tlh = '84px'; try { saveLay(); } catch (e) { } } saveCfg(); }
 if (CFG.ws === 'creator') CFG.ws = 'performer'; if (CFG.ws === 'teacher') CFG.ws = 'practice'; if (CFG.lastGoal === 'creator') CFG.lastGoal = 'performer'; if (CFG.lastGoal === 'teacher') CFG.lastGoal = 'practice';
 /* they are layouts too: after Studio in the layout list (the Practice goal replaces the old Practice layout) */
 LAYOUTS.splice(1, 0, ...GOALS.map(g => [g.layout, g.blurb, g.spec]));

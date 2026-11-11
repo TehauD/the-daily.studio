@@ -7,7 +7,7 @@ suite('e2e-workspace', async t => {
 
   // ---- the nine layouts
   const names = await ev(() => window.__daily.LAYOUTS.map(l => l[0]));
-  ok(names.join() === 'Studio,Songwriter,Spotlight,Practice,Full Rig,Write,Arrange,Record,Tone,Show,Focus,Classic', 'twelve layouts, each for one job, the four goals first: ' + names.join(', '));
+  ok(names.join() === 'Studio,Songwriter,Studio workspace,Practice,Full Rig,Write,Arrange,Record,Tone,Show,Focus,Classic', 'twelve layouts, each for one job, the four goals first: ' + names.join(', '));
   ok(!names.some(n => /^(Perform|Light show|Track study|Songwriting|Pedalboard|Compose|Play|Create|Learn)$/.test(n)), 'the old, overlapping layouts and journeys are gone');
   const fp = await ev(async () => {
     const d = window.__daily, out = {};

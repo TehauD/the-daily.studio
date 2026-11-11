@@ -49,7 +49,7 @@ setInterval(() => { gdSniff(); gdPfRender(); }, 500);
 const GD_SESSIONS = {
   play: {
     name: 'Play with a band', mins: 3, icon: '🎸', blurb: 'Plug in, pick a tone and play along with a drummer and bassist.',
-    outro: 'That is the heart of the Spotlight workspace: your guitar, a tone, and a band following you. Load a song in Backing track to play along with a real recording.', next: 'write',
+    outro: 'That is the heart of the Studio workspace: your guitar, a tone, and a band following you. Load a song in Backing track to play along with a real recording.', next: 'write',
     steps: [
       { id: 'input', short: 'Connect your input', text: () => (isDesk() ? 'Press Connect (in the panel on the left, or Audio at the top right)' : 'Tap the round Audio button at the top') + ' and allow the microphone when asked. Use headphones so the speakers do not feed back into it.', target: () => { const c = document.querySelector('#left .btn.primary'); return c && c.getClientRects().length ? c : UI.aud; }, go: () => { if (!document.querySelector('#left .btn.primary')) { try { audioOpen(); } catch (e) { } } }, done: () => !!(E && E.hasInput && E.ctx && E.ctx.state === 'running') },
       { id: 'tone', short: 'Pick a tone', text: 'Choose a tone from the list on the left: a clean, a crunch, a lead. Strum and listen; try another if you like.', target: '#left .pitem', go: () => { try { sideShow('tones'); } catch (e) { } }, setup: () => { GD.seen.tone = 0; }, done: () => !!GD.seen.tone },
