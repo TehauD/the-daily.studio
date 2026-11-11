@@ -11,9 +11,9 @@ Contents: [Soundprint](#-soundprint-261) · [Whole song and Perform layouts](#-t
 Every sound becomes something only it could make. Open **Save & export ▸ ◎ Soundprint…** (also a clip's menu, **Finish it**, and on a phone **More ▸ Soundprint**), then:
 
 - **● Record a sound** (up to a minute: rain, a street, a friend laughing, a voice memo), **⤒ An audio file**, **♪ This song** (or **✦ The finished master**), or **A take…**
-- It's listened to here and becomes a **print** (about 1 kB). Four **worlds** grow from it; press one to see it, **▶ Play the piece** to watch it move:
-  - **◎ Print:** a whorl, one ridge per moment from the centre out. Colours are notes, round the circle of fifths; a note's sector lights up while it sounds. Quiet moments break the ridges, and onsets leave small gaps.
-  - **〰 Ribbon**, **⛰ Terrain** (the spectrum as a landscape) and **∞ Harmonograph** (pendulums tuned to the chord playing).
+- It's listened to here and becomes a **print** (about 1 kB). The sound decides what kind of picture it makes: its fingerprint class (arch, loop, whorl…), its colours (only its own notes), its ground (paper, night, stone or ink), its symmetry and its texture. The line under the reading says why. Five **worlds** grow from it; press one to see it, **▶ Play the piece** to watch it move:
+  - **◎ Print:** a fingerprint. Time runs out from the core; colours are notes, round the circle of fifths. Silences leave rings, onsets end ridges, noise turns them to dots.
+  - **〰 Flow** (particles in a field the sound makes), **⛰ Terrain** (the spectrum as a landscape), **✿ Bloom** (a mandala, one ring per moment, its symmetry the pulse) and **∞ Harmonograph** (a figure for each chord).
 - **The reading:** its key, pulse, character, strongest colours and a chord progression. **✎ Start a song from it** makes a new song in that key and tempo with those chords.
 - **The piece:** an ambient piece grown from the print (pads on the chords, a drone, bells on the onsets, wind for the noise). **Weave in the recording** adds the sound itself an octave down, on your device only.
 - **Keep it, share it:** **⤓ Artwork** (a 2048-pixel picture of the world on screen, with its title and reading), **⤓ The piece (WAV)**, **⏺ Video** (the world moving with the piece; it plays through once while it records), **🔗 Copy link** (the print, not the sound: whoever opens it sees the same worlds and hears the same piece, made on their device).

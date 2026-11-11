@@ -1812,3 +1812,4 @@ html:not(.ds-booted) #boot .boot-card{visibility:hidden}
 #prtBack { justify-self: start; }
 @media (max-width: 760px) { .prt-grid { grid-template-columns: 1fr; } }
 .prt-title { font-family: var(--sans); }
+.prt-why { margin: 0; color: var(--muted); line-height: 1.45; }

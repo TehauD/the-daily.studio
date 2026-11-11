@@ -46,15 +46,30 @@ suite('e2e-soundprint', async t => {
   ok(D1.same && D1.id === A.id, 'the same sound makes the same print (' + A.id + ')');
   ok(D1.nid !== A.id && D1.ntonal < .35 && /texture/.test(D1.nkind) && D1.nbpm === 0, 'noise makes another: texture, no pulse (tonal ' + D1.ntonal.toFixed(2) + ', “' + D1.nkind + '”; pulse ' + D1.nbpm + ' at ' + D1.npc.toFixed(2) + ', the song’s ' + D1.pc.toFixed(2) + ')');
 
+  /* the sound decides the kind of picture: a calm pad, rain and fast drums get different classes, grounds and colours, at any sample rate */
+  const V = await ev(() => {
+    const D = window.__daily, hz = m => 440 * Math.pow(2, (m - 69) / 12); let sd = 11; const rnd = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
+    const mk = (sr, sec, fn) => { const n = Math.round(sec * sr), x = new Float32Array(n); fn(x, n, sr); let pk = 0; for (let i = 0; i < n; i++) pk = Math.max(pk, Math.abs(x[i])); for (let i = 0; i < n; i++) x[i] /= pk * 1.1 || 1; return x; };
+    const pad = (x, n, sr) => { const prog = [[48, 60, 64, 67], [45, 57, 60, 64], [41, 57, 60, 65], [43, 55, 59, 62]]; for (let i = 0; i < n; i++) { const t = i / sr, ch = prog[Math.floor(t / 6) % 4], sw = .3 + .7 * Math.pow(Math.sin(Math.PI * ((t % 6) / 6)), 2); let v = 0; ch.forEach(m => { v += Math.sin(2 * Math.PI * hz(m) * t) * .2; }); x[i] = v * sw; } };
+    const rain = (x, n, sr) => { sd = 11; let lp = 0; for (let i = 0; i < n; i++) { lp = .7 * lp + .3 * (rnd() * 2 - 1); x[i] = lp * .25; } for (let k = 0; k < 120; k++) { const at = Math.floor(rnd() * (n - 2000)), f = 2000 + rnd() * 3000; for (let i = 0; i < Math.round(sr * .04); i++) x[at + i] += .5 * rnd() * Math.sin(2 * Math.PI * f * i / sr) * Math.exp(-i / (sr * .005)); } };
+    const drums = (x, n, sr) => { sd = 5; const b8 = 60 / 150 / 2; for (let b = 0; b * b8 < n / sr; b++) { const at = Math.round(b * b8 * sr); if (b % 4 === 0) for (let i = 0; i < sr * .2 && at + i < n; i++) x[at + i] += .9 * Math.sin(2 * Math.PI * 55 * i / sr) * Math.exp(-i / (sr * .06)); if (b % 4 === 2) for (let i = 0; i < sr * .15 && at + i < n; i++) x[at + i] += .6 * (rnd() * 2 - 1) * Math.exp(-i / (sr * .04)); for (let i = 0; i < sr * .04 && at + i < n; i++) x[at + i] += .25 * (rnd() * 2 - 1) * Math.exp(-i / (sr * .008)); const bm = [40, 40, 47, 45][Math.floor(b / 8) % 4]; for (let i = 0; i < sr * b8 * .9 && at + i < n; i++) x[at + i] += .3 * Math.sign(Math.sin(2 * Math.PI * hz(bm) * i / sr)) * Math.exp(-i / (sr * .2)); } };
+    const gen = (fn, sr, sec) => { const P = D.prtUnpack(D.prtPack(Object.assign(D.prtAnalyze(mk(sr, sec, fn), sr), { title: '', by: '', day: 1 }))), G = D.prtGenome(P), c = document.createElement('canvas'); c.width = c.height = 160; D.prtDraw(c.getContext('2d'), 160, 160, P, 'print', 1, { still: true }); return { cls: G.cls, ground: G.ground, notes: G.notes.join(), key: G.R.key, bpm: P.bpm, px: c.getContext('2d').getImageData(0, 0, 160, 160).data }; };
+    const A = gen(pad, 22050, 24), B = gen(rain, 22050, 16), C = gen(drums, 22050, 14), A2 = gen(pad, 44100, 24), C2 = gen(drums, 48000, 14);
+    const diff = (a, b) => { let d = 0; for (let i = 0; i < a.length; i += 4) d += Math.abs(a[i] - b[i]) + Math.abs(a[i + 1] - b[i + 1]) + Math.abs(a[i + 2] - b[i + 2]); return d / (a.length / 4) / 765; };
+    return { k: [A, B, C].map(x => x.cls + ' on ' + x.ground + ' (' + x.notes + ')'), cls: new Set([A, B, C].map(x => x.cls)).size, gr: new Set([A, B, C].map(x => x.ground)).size, d: [diff(A.px, B.px), diff(A.px, C.px), diff(B.px, C.px)], same: [A.cls === A2.cls && A.ground === A2.ground && A.key === A2.key, C.cls === C2.cls && C.ground === C2.ground && C.key === C2.key && Math.abs(C.bpm - C2.bpm) <= 2], sr: [A2.cls + ' ' + A2.ground + ' ' + A2.key, C2.cls + ' ' + C2.ground + ' ' + C2.key + ' ' + C2.bpm] };
+  });
+  ok(V.cls === 3 && V.gr >= 2 && V.d.every(x => x > .08), 'a calm pad, rain and fast drums make different kinds of print: ' + V.k.join(' · ') + ' (pictures ' + V.d.map(x => Math.round(x * 100) + '%').join(', ') + ' apart)');
+  ok(V.same.every(Boolean), 'and a sound reads the same at 22.05, 44.1 and 48 kHz (' + V.sr.join(' · ') + ')');
+
   /* the worlds */
   const sig = [];
-  for (const w of ['print', 'ribbon', 'terrain', 'harmono']) {
+  for (const w of ['print', 'flow', 'terrain', 'bloom', 'harmono']) {
     await p.click('.prt-worlds button[data-w="' + w + '"]'); await wait(700);
     const s = await ev(() => { const cv = document.getElementById('prtCv'), g = cv.getContext('2d'), d = g.getImageData(0, 0, cv.width, cv.height).data; let lit = 0, hue = new Set(), sum = 0; for (let i = 0; i < d.length; i += 4 * 7) { const v = d[i] + d[i + 1] + d[i + 2]; sum += v; if (Math.abs(d[i] - d[i + 1]) + Math.abs(d[i + 1] - d[i + 2]) > 60) { lit++; hue.add(Math.round(Math.atan2(Math.sqrt(3) * (d[i + 1] - d[i + 2]), 2 * d[i] - d[i + 1] - d[i + 2]) * 3)); } } return { lit, hues: hue.size, sum, w: cv.width, sel: document.querySelector('.prt-worlds .on').dataset.w }; });
     sig.push(s.sum); ok(s.sel === w && s.lit > 150 && s.hues >= 4, 'the ' + w + ' world draws in colour (' + s.lit + ' coloured samples, ' + s.hues + ' hues, ' + s.w + ' px)');
     if (shots) await p.locator('#prtCv').screenshot({ path: path.join(shots, 'soundprint-' + w + '.png') });
   }
-  ok(new Set(sig).size === 4, 'and each world is its own picture');
+  ok(new Set(sig).size === 5, 'and each world is its own picture');
   if (shots) { await p.click('.prt-worlds button[data-w="print"]'); await wait(500); await p.locator('#prtDlg').screenshot({ path: path.join(shots, 'soundprint-dialog.png') }); }
 
   /* the piece */

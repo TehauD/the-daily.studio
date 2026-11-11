@@ -64,7 +64,8 @@ Each file starts its **own** static server, its own Chromium (fake microphone an
 | `e2e-soundprint.cjs` | Soundprint (2.61), with a made-up 19-second song (Am F C G, 100 BPM). `SHOTS=dir` saves a picture of each world:
   - the room loads when opened; the song is read as A minor, 100 BPM, Am – F – C – G, with its beats as onsets, in a print under 1.4 kB;
   - the same sound makes the same print, and noise another (texture, no pulse);
-  - each world draws its own picture in colour;
+  - a calm pad, rain and fast drums make different kinds of print, and a sound reads the same at 22.05, 44.1 and 48 kHz;
+  - each of the five worlds draws its own picture in colour;
   - the piece: length, −1 dBFS, sound throughout, the same from the print alone, the kill switch stops it;
   - artwork (2048 px), WAV and video downloads;
   - the link: the same print, reading and piece in another browser, no sound, address cleaned; it fits a phone;

@@ -5,24 +5,31 @@ All notable changes to the-daily.studio (earlier versions were released under th
 ## 2.61.0 — 2026-11-10 — Soundprint: every sound becomes something only it could make
 
 ### New
-- **◎ Soundprint.** Record a sound (up to a minute), choose an audio file, a take, the song or its master. It's listened to on this device and becomes a **print**: about 1 kB of shapes (its loudness, brightness and motion over 128 moments, its notes and spectrum over 64, its onsets, key and pulse). Everything else grows from the print:
-  - **Four worlds that move with it:**
-    - **◎ Print:** a whorl, one ridge per moment from the centre out. The colour wheel is the circle of fifths (C red, G orange…), each note's sector lights up while it sounds, quiet moments break the ridges, and onsets leave the small gaps a fingerprint has.
-    - **〰 Ribbon:** glowing ribbons coloured by the notes sounding, flowing past as it plays.
-    - **⛰ Terrain:** the spectrum as a landscape you travel over, low notes in the valley, high ones at the edges, onsets as sparks.
-    - **∞ Harmonograph:** pendulums tuned to the intervals of the chord at the playhead (3:2, 5:4, 6:5), a hair out of tune so the figure turns.
-  - **A reading of its music:** key, pulse, character (tone, motion, dynamics, how pitched it is), its strongest colours and a chord progression from the chords of the key that fit its notes.
-  - **An ambient piece grown from it:** pads on those chords (the filter follows the brightness), a drone, bells on its onsets in the key's pentatonic scale, wind for its noise and, if you like, the recording itself an octave down. Made faster than it plays.
-  - **✎ Start a song from it:** a new song in its key and tempo with its chords.
+- **◎ Soundprint.** Record a sound (up to a minute), choose an audio file, a take, the song or its master. It's listened to on this device and becomes a **print**: about 1 kB of shapes (its loudness, brightness and motion over 128 moments, its notes and spectrum over 64, its onsets, key and pulse). Everything else grows from the print.
+- **The sound decides the kind of picture, not only its details.** Each print has a genome, shown under its reading ("Its print is a loop: a sound that flows…"):
+  - **its fingerprint class,** as in fingerprint science: mostly texture makes an arch (busy texture, a tented arch), pitched and steady a whorl, dramatic a double loop, busy and pitched a central-pocket whorl, otherwise a loop (right in major, left in minor);
+  - **its colours:** only the notes it's made of, each its colour on the circle of fifths; noise mutes them;
+  - **its ground:** paper for bright or calm major sounds, night for dark minor ones, stone for textures, otherwise ink;
+  - **the rest:** turbulence from its motion, ridge spacing from its onsets, grain from its noise, a hand's wobble from its dynamics, symmetry from its pulse. The print's ID seeds the chance in between, like a fingerprint's minutiae.
+- **Five worlds that move with it:**
+  - **◎ Print:** ridges traced along an orientation field built from the class's cores and deltas, evenly spaced inside a fingertip. Time runs out from the core; each ridge's colour, weight and breaks are the sound at that moment. Silences leave rings, onsets end ridges, noise turns them to dots. While it plays, the print grows from the core and its onsets flash.
+  - **〰 Flow:** thousands of particles in a field made from the sound: a calm, pitched sound flows in long curving currents, motion makes eddies, each onset is a burst. The still is a long exposure of the whole sound; while it plays the field lives.
+  - **⛰ Terrain:** the spectrum as a landscape you travel over, in lines, a mesh or dots by how pitched it is, under a night sky or a pale dawn; onsets are fountains of light.
+  - **✿ Bloom:** a mandala of superformula rings, one for each moment: its symmetry is the pulse, petals rounder for a calm sound and sharper for a busy one, shaped by the spectrum.
+  - **∞ Harmonograph:** a figure for each chord of the progression, laid over each other: pendulums tuned to the chord (3:2, 5:4, 6:5), a hair out of tune so they turn. While it plays, the chord sounding shines.
+- **A reading of its music:** key (a key or its relative, by the chord it starts and ends on), pulse (only when there are real onsets), character, its strongest colours and a chord progression. **✎ Start a song from it** makes a new song in its key and tempo with its chords.
+- **An ambient piece grown from it:** pads on those chords (the filter follows the brightness), a drone, bells on its onsets in the key's pentatonic scale, wind for its noise and, if you like, the recording itself an octave down. Made faster than it plays.
+- **How it listens:** notes from interpolated spectral peaks; how pitched it is from the share of energy in sharp peaks; brightness from the spectral centroid; onsets and motion from each band's level in dB; all on the same frequency grid at any sample rate, so a sound reads the same at 22.05, 44.1 or 48 kHz.
 - **Keep it, share it:** ⤓ Artwork (2048 px PNG with its title and reading), ⤓ the piece (WAV), ⏺ a video of the world moving with the piece, and **🔗 Copy link**. The link carries the print, not the sound: whoever opens it sees the same worlds and the same reading, and hears the same piece, grown on their device.
 - **Your soundprints:** the prints you make (and ones you ☆ Keep) are kept in this browser, newest 48.
 - **Where it is:** Save & export ▸ ◎ Soundprint…, a clip's menu, Finish it (the master) and, on a phone, More ▸ Soundprint. It's a room: the site loads it the first time it's opened. The Audio kill switch stops it.
 
 ### Tests
-- **`e2e-soundprint` (46 checks):**
+- **`e2e-soundprint` (49 checks):**
   - a made-up song (Am F C G at 100 BPM) is read as A minor, 100 BPM, Am – F – C – G, its onsets the beats; the print is under 1.4 kB;
   - the same sound makes the same print, and noise makes another (texture, no pulse);
-  - each world draws its own picture in colour;
+  - a calm pad, rain and fast drums make different kinds of print (class, ground, colours), and a sound reads the same at 22.05, 44.1 and 48 kHz;
+  - each of the five worlds draws its own picture in colour;
   - the piece sounds all the way through at −1 dBFS, is the same every time from the print alone, and stops with the kill switch;
   - artwork, WAV and video downloads;
   - the link opens the same print, reading and piece elsewhere, with no sound, and a cleaned address; on a phone it fits;
