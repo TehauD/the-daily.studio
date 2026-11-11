@@ -19,7 +19,7 @@ suite('e2e-view', async t => {
   const e0 = await ev(() => { const r = k => { const b = document.querySelector('.edge-tab[data-edge="' + k + '"]'); if (!b) return null; const q = b.getBoundingClientRect(); return { x: Math.round(q.left), y: Math.round(q.top), w: Math.round(q.width), h: Math.round(q.height), exp: b.getAttribute('aria-expanded'), label: b.getAttribute('aria-label') }; }; return { left: r('left'), right: r('right'), arr: r('arr'), pan: r('pan'), lw: document.getElementById('left').getBoundingClientRect().right, rl: document.getElementById('right').getBoundingClientRect().left }; });
   ok(e0.left && e0.right && e0.arr && e0.pan, 'there is an edge tab for the left sidebar, the right sidebar, the arrangement and the panels');
   ok(e0.left.exp === 'true' && Math.abs(e0.left.x - e0.lw) < 6 && e0.right.exp === 'true' && Math.abs(e0.right.x + e0.right.w - e0.rl) < 6, 'the sidebar tabs sit on the sidebars’ inner edges (' + e0.left.x + '/' + Math.round(e0.lw) + ', ' + (e0.right.x + e0.right.w) + '/' + Math.round(e0.rl) + ')');
-  ok(/Collapse the left sidebar/.test(e0.left.label) && /Collapse the arrangement/.test(e0.arr.label), 'each says what it will do');
+  ok(/Collapse the left sidebar/.test(e0.left.label) && /Open the arrangement/.test(e0.arr.label), 'each says what it will do (the arrangement starts collapsed, 2.64: its tab opens it)');
   await ev(() => document.querySelector('.edge-tab[data-edge="left"]').click()); await wait(400);
   const e1 = await ev(() => { const b = document.querySelector('.edge-tab[data-edge="left"]'), q = b.getBoundingClientRect(); return { left: window.__daily.LAY.left, x: Math.round(q.left), w: Math.round(document.getElementById('left').getBoundingClientRect().width), exp: b.getAttribute('aria-expanded'), label: b.getAttribute('aria-label') }; });
   ok(e1.left === false && e1.w <= 2 && e1.x <= 2 && e1.exp === 'false' && /Open the left sidebar/.test(e1.label), 'clicking it collapses the sidebar, and the tab stays at the edge, ready to open it (' + JSON.stringify(e1) + ')');
@@ -40,12 +40,16 @@ suite('e2e-view', async t => {
   ok(await ev(() => { const q = document.querySelector('.edge-tab[data-edge="right"]').getBoundingClientRect(); return window.__daily.LAY.right === false && q.right >= innerWidth - 2; }), 'the right sidebar collapses to its edge the same way');
   await ev(() => document.querySelector('.edge-tab[data-edge="right"]').click()); await wait(300);
   // arrangement
-  const h0 = await ev(() => document.getElementById('timeline').getBoundingClientRect().height);
+  const h0 = await ev(() => ({ h: document.getElementById('timeline').getBoundingClientRect().height, tlh: window.__daily.LAY.tlh }));
+  ok(h0.tlh === '84px', 'the arrangement starts collapsed to a strip (2.64)');
+  await ev(() => document.querySelector('.edge-tab[data-edge="arr"]').click()); await wait(500);
+  const hOpen = await ev(() => ({ h: document.getElementById('timeline').getBoundingClientRect().height, tlh: window.__daily.LAY.tlh, label: document.querySelector('.edge-tab[data-edge="arr"]').getAttribute('aria-label'), drop: getComputedStyle(document.getElementById('tlDrop')).display }));
+  ok(hOpen.tlh !== '84px' && hOpen.h > h0.h + 40 && /Collapse the arrangement/.test(hOpen.label) && hOpen.drop !== 'none', 'its tab opens it, with the drop strip back (' + Math.round(h0.h) + ' → ' + Math.round(hOpen.h) + ' px)');
   await ev(() => document.querySelector('.edge-tab[data-edge="arr"]').click()); await wait(500);
   const h1 = await ev(() => ({ h: document.getElementById('timeline').getBoundingClientRect().height, tlh: window.__daily.LAY.tlh, label: document.querySelector('.edge-tab[data-edge="arr"]').getAttribute('aria-label') }));
-  ok(h1.tlh === '84px' && h1.h < h0 - 40 && /Open the arrangement/.test(h1.label), 'the arrangement tab collapses it to the transport (' + Math.round(h0) + ' → ' + Math.round(h1.h) + ' px)');
+  ok(h1.tlh === '84px' && h1.h < hOpen.h - 40 && /Open the arrangement/.test(h1.label), 'and collapses it to the transport again (' + Math.round(hOpen.h) + ' → ' + Math.round(h1.h) + ' px)');
   await ev(() => document.querySelector('.edge-tab[data-edge="arr"]').click()); await wait(500);
-  ok(await ev(h => Math.abs(document.getElementById('timeline').getBoundingClientRect().height - h) < 6, h0), 'and opens it back to where it was');
+  ok(await ev(h => Math.abs(document.getElementById('timeline').getBoundingClientRect().height - h) < 6, hOpen.h), 'and opens it back to where it was');
   // panels
   await ev(() => document.querySelector('.edge-tab[data-edge="pan"]').click()); await wait(500);
   const d1 = await ev(() => ({ dock: document.getElementById('dock').getBoundingClientRect().height, full: !!window.__daily.LAY.tlhFull, tab: !!document.querySelector('#dock .tabs .tab') && document.querySelector('#dock .tabs .tab').getBoundingClientRect().height > 10 }));

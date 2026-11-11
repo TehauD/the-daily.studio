@@ -7,7 +7,7 @@
      Studio  arrangement, stems, takes, rig
    ============================================================ */
 const ZOOM = { cur: CFG.zoom || 'studio' };
-const ZOOMS = [['canvas', 'Canvas', 'Just the page: chords & lyrics, nothing else'], ['song', 'Song', 'Tab, chords & lyrics side by side'], ['studio', 'Studio', 'Arrangement, stems, takes and rig']];
+const ZOOMS = [['canvas', 'Canvas', 'Just the page: chords & lyrics, nothing else'], ['song', 'Song', 'Tab, chords & lyrics side by side'], ['studio', 'Full', 'Everything: the arrangement, stems, takes and rig']];      /* 2.64: “Full” (it was “Studio”, now the name of a workspace) */
 const layoutPreset = n => (LAYOUTS.find(l => l[0] === n) || LAYOUTS[0])[2];
 function zoomSet(z, quiet) {
   if (!quiet && z === 'studio') xpSignal(3);
