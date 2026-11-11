@@ -4,8 +4,8 @@
      · kept      play, stop, ● record, loop, click, the tempo and the key; the song's name, Songs, New, undo; Perform and Voice;
                  the six workspaces and each one's tools; ● Capture; the tab and the words; the band on or off; the arrangement
      · tucked    return-to-start, the bar·beat counter, time signature, the master meter, the latency estimate, the workspace
-                 button, artist, tuning, capo, scale and notes; the view switch; the Create → Perform → Share flow; the panel
-                 strip's Tools level; each band part's own switch and the mix; tab techniques, fill styles, copy and paste;
+                 button, artist, tuning, capo, scale and notes; the view switch; the Create → Perform → Share flow; each band
+                 part's own switch and the mix; tab techniques, fill styles, copy and paste;
                  the arrangement's zoom, swing, loop and lane tools; the status line
    Nothing is turned off or lost: it is only out of sight, and the same button brings it all back. The panel tabs keep the
    adaptive strip of part 33 (it still grows as you use the studio), without numbers. Phones already have their own simple layout, so this only changes larger screens.

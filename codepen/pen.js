@@ -57,7 +57,7 @@ window.__dailyRoom = (id, make) => {
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.62.0', BUILD = '534f508', PARTS_N = +'124' || 0, LINES_N = +'20926' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.63.0', BUILD = 'a5af757', PARTS_N = +'124' || 0, LINES_N = +'20926' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { ghApp: { clientId: 'Iv23liTjqEBQsgmGaE1Q', slug: 'tehaud-the-daily-studio' },   /* Sign in with GitHub: the GitHub App's public client id and its slug (docs/GITHUB.md); empty = only the token way */
   support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://journal.the-daily.studio/' };
@@ -8536,8 +8536,8 @@ function xpQuiet(fn) { XP.quiet++; try { return fn(); } finally { XP.quiet--; } 
      · kept      play, stop, ● record, loop, click, the tempo and the key; the song's name, Songs, New, undo; Perform and Voice;
                  the six workspaces and each one's tools; ● Capture; the tab and the words; the band on or off; the arrangement
      · tucked    return-to-start, the bar·beat counter, time signature, the master meter, the latency estimate, the workspace
-                 button, artist, tuning, capo, scale and notes; the view switch; the Create → Perform → Share flow; the panel
-                 strip's Tools level; each band part's own switch and the mix; tab techniques, fill styles, copy and paste;
+                 button, artist, tuning, capo, scale and notes; the view switch; the Create → Perform → Share flow; each band
+                 part's own switch and the mix; tab techniques, fill styles, copy and paste;
                  the arrangement's zoom, swing, loop and lane tools; the status line
    Nothing is turned off or lost: it is only out of sight, and the same button brings it all back. The panel tabs keep the
    adaptive strip of part 33 (it still grows as you use the studio), without numbers. Phones already have their own simple layout, so this only changes larger screens.
