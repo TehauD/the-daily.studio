@@ -14,6 +14,7 @@ All notable changes to the-daily.studio (earlier versions were released under th
 - **★ Showtime is the one way to play the song full screen,** in the song bar of every workspace (it was "🎤 Perform"). Nothing else says Perform: the whole-song view's own button is gone on a computer (the song bar's is right there), the Visuals lens is **Live / Teach / Sky**, and the next-workspace buttons say **Into the Studio** and **Write the next one**.
 - **The Create → Perform → Share strip is gone.** It only repeated three of the workspace buttons beside it.
 - **The arrangement starts collapsed,** in every workspace: a strip with its header and ruler under the panels, so they get the room. **▴ Arrangement** opens it to the workspace's usual height, and the drop strip comes back with it (dropping a file anywhere works either way). This applies once to a studio already set up too, except in the Arrange and Record layouts, which are about the arrangement.
+- **The view switch is Canvas · Song · Full.** Its third option was called Studio, which is now a workspace's name.
 - **👆 Pads has its own icon,** no longer the same drum as 🥁 Beats.
 - **One Mute all on each screen:** in the band strip on a computer, beside the click on a phone (the transport's copy shows only on a phone).
 

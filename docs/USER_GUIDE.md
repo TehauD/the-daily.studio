@@ -877,7 +877,7 @@ The **Timeline** button at the right of the chip row (on panels that have the ar
 
 **Backing tracks.** The original file is stored and separated again when you reopen the song. On phones you tap **Restore track** (Settings ▸ Data ▸ Restore track changes this).
 
-**Zoom.** The song bar's **Canvas · Song · Studio** control changes how much of the workspace is shown for the same song. Canvas is just the lyric and chord page.
+**Zoom.** The song bar's **Canvas · Song · Full** control changes how much of the workspace is shown for the same song (Full was called Studio until 2.64, when Studio became a workspace). Canvas is just the lyric and chord page.
 
 **Reset.** Settings ▸ Data ▸ Reset… (or Reset… in My songs). Choose what to erase, or use *Layout only*, *Settings & layout* or *Everything*. Songs are only erased if "All songs & recordings" is ticked; click once to arm, again to erase. The app then restarts.
 
