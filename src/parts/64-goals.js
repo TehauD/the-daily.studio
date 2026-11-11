@@ -119,21 +119,29 @@ function goalBar() { const box = h('div', { class: 'goalbar', id: 'goalbar' }); 
 const GOALBAR = { el: null };
 /** the bar sits at the top of the centre, whichever of the panels or the arrangement is on top */
 function goalPlace() { const el = GOALBAR.el, top = LAY.flip === false ? $('#timeline') : $('#dock'); if (el && top && (el.parentNode !== top || top.firstChild !== el)) top.insertBefore(el, top.firstChild); }
+/* 2.65: each workspace shows its main tools; the rest are one click away under ⋯ More (a tool in use stays showing) */
+const GOAL_MORE = { songwriter: ['gtVox', 'gtRoll'], performer: ['gtFmt', 'gtFx', 'gtStream', 'gtThumb', 'gtTip', 'gtPrint'], practice: ['gtEar', 'gtRiffs', 'gtSpeed', 'gtInk', 'gtNotes', 'gtScreen', 'gtTx'] };
 function goalBarBuild() {
   const box = GOALBAR.el; if (!box) return; box.innerHTML = ''; const cur = goalNow(); goalMark();
   const pick = h('div', { class: 'gl-pick', role: 'group', 'aria-label': 'What do you want to do?' }, GOALS.map(g => h('button', { class: 'gl-b' + (cur === g ? ' on' : ''), 'data-goal': g.id, style: '--gh:' + g.hue, 'aria-pressed': String(cur === g), title: g.name + ': ' + g.blurb, onclick: () => goalGo(g.id) }, h('span', { class: 'gl-i', 'aria-hidden': 'true' }, g.ico), h('span', { class: 'gl-t' }, g.name))));
-  box.append(h('div', { class: 'gl-row' }, pick));
-  if (!cur) { box.append(h('div', { class: 'gl-row gl-tools' }, h('span', { class: 'tiny muted' }, 'Pick what you want to do, and the studio arranges itself for it. Everything stays one click away.'))); return; }
-  const tools = h('div', { class: 'gl-row gl-tools', role: 'toolbar', 'aria-label': cur.name + ' tools' });
-  const ms = CFG.simple && cur.simple || cur, few = CFG.simple && SIMPLE_GOAL_TOOLS[cur.id];      /* ✦ Simple: each workspace keeps its few tools (part 33b) */      /* ✦ Simple: Songwriter's own words and fewer tools (part 33b) */
-  tools.append(h('div', { class: 'gl-mis', title: cur.shape }, h('b', {}, ms.mission), h('span', { class: 'gl-steps' }, ms.steps.map((s, i) => h('span', {}, h('i', {}, i + 1), s)))));
+  const row = h('div', { class: 'gl-row gl-one' }, pick); box.append(row);
+  if (!cur) { row.append(h('span', { class: 'tiny muted gl-hint' }, 'Pick what you want to do, and the studio arranges itself for it. Everything stays one click away.')); return; }
+  const tools = h('div', { class: 'gl-tools' + (CFG.glMore ? ' more-open' : ''), role: 'toolbar', 'aria-label': cur.name + ' tools' });
+  const ms = CFG.simple && cur.simple || cur, few = CFG.simple && SIMPLE_GOAL_TOOLS[cur.id];      /* ✦ Simple: each workspace keeps its few tools and its own words (part 33b) */
+  const how = ms.mission + ': ' + ms.steps.map((s, i) => (i + 1) + '. ' + s).join('  ') + '\n' + cur.shape;
+  tools.append(h('button', { class: 'gl-mis', type: 'button', title: how, 'aria-label': 'How ' + cur.name + ' works: ' + how, onclick: e => popover(e.currentTarget, h('div', { class: 'gl-how' }, h('b', {}, ms.mission), h('ol', {}, ms.steps.map(s => h('li', {}, s))), h('p', { class: 'tiny muted' }, cur.shape))) }, h('b', {}, ms.mission), h('span', { class: 'gl-steps' }, ms.steps.map((s, i) => h('span', {}, h('i', {}, i + 1), s)))));
+  const more = !few && GOAL_MORE[cur.id] || []; let nMore = 0;
   cur.tools().forEach(([id, label, title, fn, on, main, off]) => {
-    if (few && !few.includes(id)) return; if (typeof main === 'function') main = main();
-    const b = h('button', { class: 'btn sm gl-tool' + (main ? ' gl-main' : ''), id, type: 'button', title, onclick: e => { fn(e.currentTarget); setTimeout(goalSync, 60); } }, typeof label === 'function' ? label() : label);
+    if (few && !few.includes(id)) return; if (typeof main === 'function') main = main(); const sec = more.includes(id); if (sec) nMore++;
+    const b = h('button', { class: 'btn sm gl-tool' + (main ? ' gl-main' : '') + (sec ? ' gl-sec' : ''), id, type: 'button', title, onclick: e => { fn(e.currentTarget); setTimeout(goalSync, 60); } }, typeof label === 'function' ? label() : label);
     b._on = on; b._off = off; b._label = label; tools.append(b);
   });
-  if (cur.next) { const n = goalById(cur.next[0]); tools.append(h('span', { class: 'grow' }), h('button', { class: 'btn sm gl-next', id: 'gtNext', style: '--gh:' + n.hue, title: 'Next: ' + n.name, onclick: () => goalGo(n.id) }, cur.next[1] + ' → ' + n.ico)); }
-  box.append(tools); goalSync();
+  if (nMore) {
+    const mb = h('button', { class: 'btn sm gl-more', id: 'gtMore', type: 'button', 'aria-expanded': String(!!CFG.glMore), title: 'The rest of ' + cur.name + '’s tools', onclick: () => { CFG.glMore = !CFG.glMore; saveCfg(); tools.classList.toggle('more-open', !!CFG.glMore); mb.setAttribute('aria-expanded', String(!!CFG.glMore)); mb.textContent = CFG.glMore ? '‹ Less' : '⋯ More'; } }, CFG.glMore ? '‹ Less' : '⋯ More');
+    tools.append(mb);
+  }
+  if (cur.next) { const n = goalById(cur.next[0]); tools.append(h('button', { class: 'btn sm gl-next', id: 'gtNext', style: '--gh:' + n.hue, title: 'Next: ' + n.name, onclick: () => goalGo(n.id) }, h('span', { class: 'gl-nt' }, cur.next[1] + ' '), '→ ' + n.ico)); }
+  row.append(tools); goalSync();
 }
 /** refresh the on/off state of the goal's tools (recording, camera, loop, click…) */
 function goalSync() {

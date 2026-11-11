@@ -12,6 +12,9 @@ suite('e2e-simple', async t => {
   const all = async qs => { const o = {}; for (const q of qs) o[q] = await seen(q); return o; };
 
   /* ---- someone who has been here before: the full studio, and the switch ---- */
+  /* 2.65: the arrangement starts collapsed to an edge rail; open it so its header (Loop & layer, the advanced tools) can be checked */
+  await ev(() => { if (document.getElementById('center').classList.contains('tl-slim')) document.querySelector('#timeline .et-arr').click(); }); await wait(400);
+  ok(await ev(() => !document.getElementById('center').classList.contains('tl-slim')), 'the ▴ Arrangement tab opens the arrangement');
   const F0 = await all(GONE.concat(KEPT));
   ok(await ev(() => !document.body.classList.contains('simple') && document.getElementById('simpleBtn').getAttribute('aria-pressed') === 'false'), 'someone who has been here before keeps the full studio; ✦ Simple waits in the top right');
   ok(Object.values(F0).every(v => v !== false), 'every tool is showing (' + Object.keys(F0).filter(k => F0[k] === false).join(', ') + ')');
@@ -41,6 +44,7 @@ suite('e2e-simple', async t => {
   const box = await ev(() => { const l = [...document.querySelectorAll('#settings label.chk')].find(x => /Simple/.test(x.textContent)); return l ? l.querySelector('input').checked : null; });
   ok(box === true, 'Settings ▸ Workflow has the same switch, ticked');
   await ev(() => { const l = [...document.querySelectorAll('#settings label.chk')].find(x => /Simple/.test(x.textContent)); l.querySelector('input').click(); document.getElementById('settings').close(); window.__daily.goalGo('songwriter'); }); await wait(600);
+  await ev(() => { if (document.getElementById('center').classList.contains('tl-slim')) document.querySelector('#timeline .et-arr').click(); }); await wait(400);
   const F1 = await all(GONE);
   ok(await ev(() => !document.body.classList.contains('simple')) && Object.values(F1).every(v => v !== false), 'unticked: every tool is back');
 

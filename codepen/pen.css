@@ -196,7 +196,7 @@ dialog::backdrop{background:rgba(5,15,15,.55);backdrop-filter:blur(3px)}
 .dockbar .tabs{flex:1;border-bottom:0;min-width:0;scrollbar-width:none}.dockbar .tabs::-webkit-scrollbar{display:none}
 /* 2.63: the panel tabs never shrink out of sight. They keep their natural width; when the band strip doesn't fit beside them it takes its own line (as on a tablet), and a strip wider than the dock scrolls with a thin visible bar */
 body:not([data-form=phone]):not([data-form=tablet]) .dockbar{flex-wrap:wrap}
-body:not([data-form=phone]):not([data-form=tablet]) .dockbar .tabs{flex:1 0 auto;max-width:100%;scrollbar-width:thin}
+body:not([data-form=phone]):not([data-form=tablet]) .dockbar .tabs{flex:1 0 auto;max-width:100%;scrollbar-width:thin;overflow-y:hidden;overscroll-behavior-x:contain}
 body:not([data-form=phone]):not([data-form=tablet]) .dockbar .tabs::-webkit-scrollbar{display:block;height:5px}body:not([data-form=phone]):not([data-form=tablet]) .dockbar .tabs::-webkit-scrollbar-thumb{background:var(--line2);border-radius:3px}
 body:not([data-form=phone]):not([data-form=tablet]) .dockbar .bandstrip{flex:1 1 auto;justify-content:flex-end}
 .tab.dragging{opacity:.4}.tab.dropl{box-shadow:-3px 0 0 var(--accent)}
@@ -1146,7 +1146,7 @@ body[data-form=phone] .lp-hud{top:auto;bottom:calc(132px + env(safe-area-inset-b
 body[data-form=phone] .wr-bar{gap:6px}body[data-form=phone] .wr-secs{flex-basis:100%;order:1}body[data-form=phone] .wr-mode{order:2}body[data-form=phone] .wr-fb{order:3}body[data-form=phone] .wr-capg{order:4;margin-left:auto}
 body[data-form=phone] .wr-sp{display:none}
 /* goal workspaces (part 64): the six goals, Create → Perform → Share, and the goal's own tools */
-.goalbar{flex:none;display:flex;flex-direction:column;gap:5px;padding:6px 10px 6px;background:var(--bg2);border-bottom:1px solid var(--line);min-width:0;container-type:inline-size}
+.goalbar{flex:none;display:flex;flex-direction:column;gap:5px;padding:5px 10px;background:var(--bg2);border-bottom:1px solid var(--line);min-width:0;container-type:inline-size}
 .gl-row{display:flex;align-items:center;gap:8px;min-width:0;flex-wrap:wrap}
 .gl-pick{display:inline-flex;flex-wrap:wrap;gap:2px;padding:2px;border:1px solid var(--line2);border-radius:999px;background:var(--panel2)}
 .gl-b{display:inline-flex;align-items:center;gap:5px;border:0;background:transparent;color:var(--muted);font:800 12px var(--sans);padding:4px 11px;border-radius:999px;cursor:pointer;letter-spacing:.02em;white-space:nowrap}
@@ -1155,10 +1155,18 @@ body[data-form=phone] .wr-sp{display:none}
 .gl-flow li{display:flex;align-items:center}.gl-flow li+li::before{content:'→';color:var(--muted);font-size:11px;padding:0 4px}
 .gl-st{border:1px solid transparent;background:transparent;color:var(--muted);font:700 11px var(--sans);text-transform:uppercase;letter-spacing:.08em;padding:2px 7px;border-radius:6px;cursor:pointer}
 .gl-st:hover{color:var(--text)}.gl-st.on{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 55%,transparent)}
-.gl-tools{gap:6px}.gl-tool.on{background:color-mix(in srgb,var(--accent) 22%,var(--panel2));border-color:var(--accent);color:var(--text)}
+.gl-tool.on{background:color-mix(in srgb,var(--accent) 22%,var(--panel2));border-color:var(--accent);color:var(--text)}
 #gtVideo.on,#gtScreen.on{background:color-mix(in srgb,var(--bad) 26%,var(--panel2));border-color:var(--bad)}
 .gl-next{white-space:nowrap}
-@container (max-width:820px){.gl-b:not(.on) .gl-t{display:none}.gl-flow{display:none}}
+/* 2.65: one row: the workspaces, the tools (the rest under ⋯ More), the next step at the end; it wraps only when it must */
+.gl-one{gap:6px 10px}.gl-hint{flex:1 1 240px}
+.gl-tools{display:flex;flex-wrap:wrap;align-items:center;gap:5px;flex:1 1 320px;min-width:0}
+.gl-tools:not(.more-open) .gl-sec:not(.on),.gl-tools:not(.more-open) #gtTip{display:none}
+.gl-sec{border-style:dashed}.gl-more{color:var(--muted);font-weight:800}.gl-more[aria-expanded=true]{color:var(--text)}
+.gl-tools .gl-next{margin-left:auto}
+.gl-how{max-width:280px;display:grid;gap:6px}.gl-how b{font:800 13px var(--display);color:var(--goal,var(--accent))}.gl-how ol{margin:0;padding-left:18px;display:grid;gap:3px;font-size:12px}.gl-how p{margin:0}
+@container (max-width:1060px){.gl-b:not(.on) .gl-t{display:none}.gl-flow{display:none}}
+@container (max-width:900px){.gl-nt{display:none}}
 body[data-form=phone] .goalbar{display:none}
 /* Studio Replay, lesson notes, annotate (part 68) */
 .kit-replay{display:grid;gap:10px}.kit-v{width:100%;max-height:62vh;background:#000;border-radius:10px}.kit-a{width:100%}.share-note{font-size:12px;line-height:1.45;color:var(--muted);border-left:3px solid var(--warn);padding:6px 10px;background:color-mix(in srgb,var(--warn) 8%,transparent);border-radius:0 8px 8px 0}.share-note b{color:var(--text)}.share-gate{display:grid;gap:8px;max-width:560px;font-size:13px;line-height:1.5}.share-gate ul{margin:0;padding-left:18px;display:grid;gap:4px}.share-gate .chk{font-weight:700;align-items:flex-start;gap:8px}.kit-acts{gap:8px;flex-wrap:wrap}
@@ -1304,12 +1312,9 @@ body[data-form=phone] dialog.hub{width:100vw;height:92dvh;max-height:92dvh;margi
 .gl-tool.gl-main{background:var(--goal,var(--accent));border-color:var(--goal,var(--accent));color:#fff;font-weight:800}
 .gl-tool.gl-main.on{box-shadow:0 0 0 2px color-mix(in srgb,var(--goal) 45%,transparent)}
 .gl-next{--gh:var(--accent);background:transparent;border:1px solid var(--gh);color:var(--text);font-weight:800}.gl-next:hover{background:var(--gh);color:#fff}
-.gl-mis{display:flex;flex-direction:column;gap:1px;padding-right:10px;margin-right:2px;border-right:1px solid var(--line);min-width:0}
-.gl-mis b{font:800 13px var(--display);color:var(--goal,var(--accent))}
-.gl-steps{display:flex;gap:10px;font-size:10.5px;color:var(--muted);white-space:nowrap}.gl-steps i{font-style:normal;font-weight:800;display:inline-grid;place-items:center;width:14px;height:14px;border-radius:50%;background:color-mix(in srgb,var(--goal,var(--accent)) 18%,transparent);color:var(--goal,var(--accent));margin-right:4px;font-size:9px}
+.gl-mis{flex:none;width:22px;height:22px;border-radius:50%;border:1px solid color-mix(in srgb,var(--goal,var(--accent)) 60%,transparent);background:transparent;color:var(--goal,var(--accent));font:800 12px/1 var(--sans);cursor:help;display:inline-grid;place-items:center;padding:0}
+.gl-mis>*{display:none}.gl-mis::before{content:'?'}.gl-mis:hover{background:color-mix(in srgb,var(--goal,var(--accent)) 16%,transparent)}
 body[data-goal]:not([data-goal=""]) #dock .tab.on{box-shadow:inset 0 -3px 0 var(--goal)}
-@container (max-width:1100px){.gl-steps{display:none}}
-@container (max-width:720px){.gl-mis{display:none}}
 /* ---- phones: the header dialogs fill the screen, and the welcome screen fits its choices on the first screen (2.15) ---- */
 @media (max-width:760px){
   dialog.hub,body[data-form=phone] dialog.hub{position:fixed;inset:0;width:100%;max-width:100%;height:100%;height:100dvh;max-height:100dvh;margin:0;border:0;border-radius:0}
@@ -1684,6 +1689,11 @@ body[data-form=phone] .bl-dot{width:34px;height:34px}
 
 /* 2.46 · Simple in every workspace: four core looks in Visuals, the rest a tap away */
 .vz-more{display:none}body.simple .vz-more{display:inline-flex}
+/* 2.65: the Visuals bar is one row: the Look button opens the looks under it; ⋯ More opens the rest */
+.vz-bar .vz-looks,.vz-bar .vz-sec{display:none;flex-basis:100%;flex-wrap:wrap;align-items:center;gap:6px;padding-top:2px}
+.vz-bar.looks-open .vz-looks{display:flex;order:10}.vz-bar.more-open .vz-sec{display:flex;order:11}
+.vz-look{font-weight:800}.vz-look[aria-expanded=true]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.vz-morebtn{color:var(--muted);font-weight:800}.vz-morebtn[aria-expanded=true]{color:var(--text)}
 body.simple:not(.vz-all) #pane-vis .seg [data-m]:not([data-m=hex]):not([data-m=concert]):not([data-m=bloom]):not([data-m=prompter]):not(.on){display:none}
 /* ---- 2.48: the song map (part 63b) and Write's Whole song ---- */
 .smap{display:flex;gap:3px;min-width:0;width:100%;align-items:stretch}
@@ -1822,5 +1832,12 @@ html:not(.ds-booted) #boot .boot-card{visibility:hidden}
 .prt-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .prt-bar .seg button { white-space: nowrap; }
 #prtBarSay { max-width: 42ch; }
-/* 2.64: the arrangement collapsed to a strip (the default): its header and ruler, with no drop strip spilling over the status line (drop a file anywhere still works) */
-body:not([data-form=phone]) #center.tl-slim #tlDrop{display:none}
+/* 2.65: the arrangement collapsed (the default) is an edge rail, like the sidebars: a thin line with its ▴ Arrangement tab in the middle.
+   Everything in it waits until it opens (dropping a file anywhere still works); the Panels tab hides, the panels already have the room */
+body:not([data-form=phone]) #center.tl-slim.flip{grid-template-rows:minmax(0,1fr) 6px!important}
+body:not([data-form=phone]) #center.tl-slim:not(.flip){grid-template-rows:6px minmax(0,1fr)!important}
+body:not([data-form=phone]) #center.tl-slim #timeline>*:not(.split-h){display:none!important}
+body:not([data-form=phone]) #center.tl-slim #timeline{overflow:visible;background:var(--bg2)}
+body:not([data-form=phone]) #center.tl-slim .split-h{cursor:default}
+body:not([data-form=phone]) #center.tl-slim .split-h .et-pan{display:none}
+body:not([data-form=phone]) #center.tl-slim .split-h .et-arr{right:auto;left:50%;transform:translateX(-50%);top:-14px;height:20px;border-radius:9px 9px 0 0;border-bottom:0}

@@ -37,7 +37,10 @@ suite('e2e-tip', async t => {
   /* ---- off by default: nothing shows until it is set up in Studio ---- */
   ok(await ev(() => { const b = [...document.querySelectorAll('[data-tipbtn]')]; return b.length >= 1 && b.every(x => x.style.display === 'none' && !x.offsetParent) && !document.getElementById('gtTip'); }), 'off by default: no 🎸 Tips button in the Visuals bar, and no tip jar tool outside Creator Studio');
   await ev(() => window.__daily.goalGo('performer')); await wait(800);
-  ok(await ev(() => { const b = document.getElementById('gtTip'); return !!(b && b.offsetParent && !b.classList.contains('on')); }), '🎤 Studio has the 🎸 Tip jar tool, not lit');
+  ok(await ev(() => { const b = document.getElementById('gtTip'); return !!(b && !b.offsetParent); }), '2.65: the 🎸 Tip jar is under ⋯ More until it is set up');
+  await p.click('#gtMore'); await wait(200);
+  ok(await ev(() => { const b = document.getElementById('gtTip'); return !!(b && b.offsetParent && !b.classList.contains('on')); }), '🎤 Studio ▸ ⋯ More has the 🎸 Tip jar tool, not lit');
+  await p.click('#gtMore'); await wait(100);
   await ev(() => document.getElementById('gtTip').click()); await wait(300);
   ok(await ev(() => { const d = document.getElementById('tipjar'); return !!(d && d.open && document.getElementById('tipLink') && document.getElementById('tipOn').disabled && document.getElementById('tipPrint').disabled); }), 'it opens the tip jar; Show and Print wait for a link');
   await p.fill('#tipLink', 'javascript:alert(1)');
