@@ -194,6 +194,11 @@ dialog::backdrop{background:rgba(5,15,15,.55);backdrop-filter:blur(3px)}
 .split-v:hover::after,.split-v.drag::after{opacity:1;background:var(--accent)}
 .dockbar{display:flex;align-items:flex-end;background:var(--bg2);border-bottom:1px solid var(--line);flex:none;min-width:0}
 .dockbar .tabs{flex:1;border-bottom:0;min-width:0;scrollbar-width:none}.dockbar .tabs::-webkit-scrollbar{display:none}
+/* 2.63: the panel tabs never shrink out of sight. They keep their natural width; when the band strip doesn't fit beside them it takes its own line (as on a tablet), and a strip wider than the dock scrolls with a thin visible bar */
+body:not([data-form=phone]):not([data-form=tablet]) .dockbar{flex-wrap:wrap}
+body:not([data-form=phone]):not([data-form=tablet]) .dockbar .tabs{flex:1 0 auto;max-width:100%;scrollbar-width:thin}
+body:not([data-form=phone]):not([data-form=tablet]) .dockbar .tabs::-webkit-scrollbar{display:block;height:5px}body:not([data-form=phone]):not([data-form=tablet]) .dockbar .tabs::-webkit-scrollbar-thumb{background:var(--line2);border-radius:3px}
+body:not([data-form=phone]):not([data-form=tablet]) .dockbar .bandstrip{flex:1 1 auto;justify-content:flex-end}
 .tab.dragging{opacity:.4}.tab.dropl{box-shadow:-3px 0 0 var(--accent)}
 .bandstrip{display:flex;align-items:center;gap:5px;padding:4px 8px;flex:none;border-left:1px solid var(--line);align-self:stretch;background:linear-gradient(var(--bg2),var(--panel))}
 .bs-l{font:800 9px var(--mono);letter-spacing:.14em;color:var(--muted);margin-right:2px}
@@ -779,7 +784,6 @@ body[data-form=phone] #topR>.aud{display:inline-flex}body[data-form=phone] .btn.
 .boot-more{margin:0 0 12px}.boot-more summary{cursor:pointer;font-size:12.5px;color:var(--muted)}
 @media (max-width:700px){.boot-lead{font-size:22px}}
 .boot-simple{max-width:560px}.boot-sub{margin:6px 0 18px;font-size:15px;line-height:1.5;color:var(--muted)}.boot-simple .boot-more{margin:18px 0 0}.hum-opts{display:flex;flex-direction:column;gap:10px;margin-top:10px}
-.xp-tools{margin-left:auto;flex:none}.xp-pop{display:flex;flex-direction:column;gap:6px}.xp-pop h5{margin:0 0 4px}.btn.xp-opt{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:8px 10px}.btn.xp-opt span{font-size:11.5px;font-weight:400}
 #boot.boot-live{background:color-mix(in srgb,var(--bg) 45%,transparent);backdrop-filter:blur(14px) saturate(1.2);-webkit-backdrop-filter:blur(14px) saturate(1.2)}
 .hum-hi{font-size:19px}.hum-sub{font-size:13px}
 .btn.srec-on{animation:srecpulse 1.4s ease-in-out infinite}@keyframes srecpulse{50%{opacity:.65}}@media (prefers-reduced-motion:reduce){.btn.srec-on{animation:none}}.hum-big2{gap:12px}.hum-big2 .btn{flex:1;min-width:200px;justify-content:center}
@@ -1529,7 +1533,7 @@ dialog.coach[open]{display:flex;flex-direction:column;gap:10px}
 .simple-btn[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--text)}
 body.simple:not([data-form=phone]) :is(#transport .rew,#transport .metro-more,#transport .lcd-pos,#transport .f-sig,#transport #bandMute,#topR #wsBtn,#topR .mst-chip,#topR .lat-chip,
   #songbar .f-artist,#songbar .f-tun,#songbar .f-capo,#songbar .f-scale,#songbar .sb-more,#songbar .sb-zoom,
-  #goalbar .gl-flow,.dockbar #xpTools,.dockbar .dock-tools,.bandstrip .bchip:not(.bmute),.bandstrip select,
+  #goalbar .gl-flow,.dockbar .dock-tools,.bandstrip .bchip:not(.bmute),.bandstrip select,
   #pane-tab .tech,#pane-tab .te-adv,#timeline .tl-adv,#timeline .tl-corner,footer#status){display:none!important}
 body.simple:not([data-form]) #app,body.simple[data-form=desktop] #app{grid-template-rows:56px auto minmax(0,1fr) 0}body.simple[data-form=tablet] #app{grid-template-rows:auto auto minmax(0,1fr) 0}
 body.simple:not([data-form=phone]) #transport .btn .lbl{display:inline}

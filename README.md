@@ -137,7 +137,7 @@ The hexagon field is back in both of its looks, **white** and **dark green**, on
 
 Checked with invented history and simulated chords, not months of real use. Chord detection is a guide; see the CHANGELOG for the limits.
 
-**Simpler to move around.** The twelve preset layouts are gone, and the ▦ menu is only about where panels go (light / dark is in Appearance; Experience is on the Tools button). Every panel area has a **labelled tab on its own edge**, like the journal's: each sidebar's tab is named for the panel that is open (click it to collapse), a collapsed sidebar lists its panels so one click opens the one you want, and the divider carries **Arrangement** and **Panels** tabs. **Video 2086, String Field, Ridgeline, Chord Landscape and Ecosystem were taken out**; a saved choice of one opens as Hex Resonance.
+**Simpler to move around.** The twelve preset layouts are gone, and the ▦ menu is only about where panels go (light / dark is in Appearance; how much shows is ✦ Simple). Every panel area has a **labelled tab on its own edge**, like the journal's: each sidebar's tab is named for the panel that is open (click it to collapse), a collapsed sidebar lists its panels so one click opens the one you want, and the divider carries **Arrangement** and **Panels** tabs. **Video 2086, String Field, Ridgeline, Chord Landscape and Ecosystem were taken out**; a saved choice of one opens as Hex Resonance.
 
 <p align="center"><img src="docs/screenshots/76-view-menu.png" width="720" alt="The ▦ menu: workspace only, with labelled tabs on the edges"></p>
 

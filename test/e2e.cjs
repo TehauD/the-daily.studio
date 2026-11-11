@@ -271,11 +271,10 @@ ok(he.length === 0, 'hum to song runs without script errors' + (he.length ? ' ' 
     ok(/Save & export/.test(await np.$eval('#dock .tabs', e => e.textContent)) && !/1 · /.test(await np.$eval('#dock .tabs', e => e.textContent)), 'tab names are plain words, not numbered technical names');
     ok(await np.evaluate(() => document.body.classList.contains('simple')), 'and the studio starts in ✦ Simple'); await np.click('#simpleBtn'); await wait(400);      /* the view switch below is a full-studio control */
     await np.click('.sb-zoom button[data-z="studio"]'); await wait(300); await np.click('.sb-zoom button[data-z="song"]'); await wait(300); await np.click('.sb-zoom button[data-z="studio"]'); await wait(600);
-    ok((await ids()).split(',').includes('rig') && (await ids()).split(',').includes('tab'), 'using the studio adds more tools by itself: ' + await ids());
-    await np.click('#xpTools'); await wait(300); await np.click('.xp-opt:has(b:text-is("Everything"))'); await wait(500);
-    ok((await ids()).split(',').length >= 11 && /1 · Rig/.test(await np.$eval('#dock .tabs', e => e.textContent)), 'Tools ▸ Everything shows every tab with the technical names');
-    await np.click('#xpTools'); await wait(300); await np.click('.xp-opt:has(b:text-is("Essentials"))'); await wait(500);
-    ok((await ids()).split(',').length <= 5, 'Tools ▸ Essentials brings the short list back: ' + await ids());
+    ok((await ids()).split(',').includes('rig') && (await ids()).split(',').includes('tab') && /1 · /.test(await np.$eval('#dock .tabs', e => e.textContent)), 'Simple off shows the workspace’s every panel, numbered for Alt+1…9: ' + await ids());
+    ok(!(await np.$('#xpTools')), 'one switch decides how much shows: Simple (there is no separate Tools level)');
+    await np.click('#simpleBtn'); await wait(500);
+    ok((await ids()).split(',').length <= 4, 'and Simple on brings the short list back: ' + await ids());
     ok(ne.length === 0, 'the adaptive studio runs without script errors' + (ne.length ? ' ' + ne[0] : '')); await nctx.close(); }
 
 

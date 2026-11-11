@@ -57,7 +57,7 @@ window.__dailyRoom = (id, make) => {
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.62.0', BUILD = '416eb4c', PARTS_N = +'124' || 0, LINES_N = +'20933' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.62.0', BUILD = '534f508', PARTS_N = +'124' || 0, LINES_N = +'20926' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { ghApp: { clientId: 'Iv23liTjqEBQsgmGaE1Q', slug: 'tehaud-the-daily-studio' },   /* Sign in with GitHub: the GitHub App's public client id and its slug (docs/GITHUB.md); empty = only the token way */
   support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://journal.the-daily.studio/' };
@@ -4301,7 +4301,6 @@ function rebuildTabs() {
       ondrop: e => { e.preventDefault(); b.classList.remove('dropl'); const t = e.dataTransfer.getData('text/plain'); if (t.startsWith('tab:')) { const from = t.slice(4); if (sideHosted(from)) { if (movePanel(from, 'dock')) moveTab(from, id); } else moveTab(from, id); } }
     }, xpTabText(id, name, i) + (FLOATS.has(id) ? ' ⧉' : '')); tabs.append(b);
   });
-  tabs.append(xpToolsButton());
 }
 function moveTab(id, beforeId) { if (id === beforeId) return; const a = DOCK.findIndex(d => d[0] === id), it = DOCK.splice(a, 1)[0], b = DOCK.findIndex(d => d[0] === beforeId); DOCK.splice(b < 0 ? DOCK.length : b, 0, it); LAY.order = DOCK.map(d => d[0]); saveLay(); rebuildTabs(); }
 function setTabHidden(id, hide) { const i = LAY.hidden.indexOf(id); if (hide && i < 0) { LAY.hidden.push(id); if (DOCK.cur === id) { const n = dockVisible().find(d => !FLOATS.has(d[0])); if (n) dockGo(n[0]); } } else if (!hide && i >= 0) LAY.hidden.splice(i, 1); saveLay(); rebuildTabs(); }
@@ -8511,32 +8510,24 @@ function humGuitarBar(d, x) {
 
 /* >>> parts/33-adapt.js */
 /* ============================================================
-   Part 33 · Adaptive studio: the studio shows what you have shown you need.
-   Nobody is asked their level. Actions add to a private score kept in this browser (CFG.xp);
-   the score picks Simple, More tools or Everything. "Tools" in the tab strip overrides it.
+   Part 33 · How much of the studio shows. Since 2.63 there is one switch for it: ✦ Simple (part 33b). Simple on: each workspace's
+   few panels and tools, in plain words. Simple off: every panel the workspace has. (Until 2.62 a separate "Tools" level, Automatic /
+   Essentials / More tools / Everything, filtered the panel strip again; inside a workspace it changed almost nothing, and with Simple
+   on it was ignored, so it went.)
+   Actions still add to a private score kept in this browser (CFG.xp): someone who knows their way around (that score, or "I know my
+   way around" on the first visit) gets no coaching notes on the panels (part 60).
    ============================================================ */
 var XP = { quiet: 0, last: null };
-var XP_TABS = { new: ['vis', 'tab', 'band', 'exp'], some: ['vis', 'tab', 'band', 'rig', 'stems', 'exp'], pro: null };
-var XP_NAMES = { rig: 'Guitar sound', tab: 'Write', vis: 'Stage', song: 'Song', band: 'Band', exp: 'Save & export', fret: 'Fretboard', stems: 'Backing track' };
-var XP_LABEL = { new: 'Essentials', some: 'More tools', pro: 'Everything' };
-if (CFG.xp == null) { CFG.xp = (store.get('started', false) || store.get('song', null)) ? 40 : 0; saveCfg(); }   // people who already use the app keep the full studio
-function xpLevel() { const m = CFG.xpMode || 'auto'; if (XP_TABS[m] !== undefined) return m; const s = CFG.xp || 0; return s >= 12 ? 'pro' : s >= 4 ? 'some' : 'new'; }
-function xpAllowed(id, ignoreSimple) { if (CFG.simple && !ignoreSimple) return simpleTabs().includes(id) || id === DOCK.cur || (id === 'stems' && typeof STM !== 'undefined' && !!STM.ch); const l = XP_TABS[xpLevel()]; return !l || l.includes(id) || id === DOCK.cur || (typeof goalShows === 'function' && goalShows(id)); }
-function xpTabText(id, name, i) { return xpLevel() === 'pro' && !CFG.simple ? (i + 1) + ' · ' + name : (XP_NAMES[id] || name); }
-function xpSignal(pts) {
-  if (XP.quiet || (CFG.xpMode && CFG.xpMode !== 'auto')) return; const before = xpLevel(); CFG.xp = Math.min(40, (CFG.xp || 0) + pts); clearTimeout(XP.t); XP.t = setTimeout(saveCfg, 800);
-  const now = xpLevel(); if (now !== before) { try { rebuildTabs(); } catch (e) { } toast(now === 'some' ? 'More tools are now on the tab strip. Find the rest under “Tools”.' : 'Everything is unlocked. Welcome to the full studio.', 'ok'); }
-}
+var XP_NAMES = { rig: 'Guitar sound', tab: 'Write', vis: 'Visuals', song: 'Song', band: 'Band', exp: 'Save & export', fret: 'Fretboard', stems: 'Backing track' };
+if (CFG.xp == null) { CFG.xp = (store.get('started', false) || store.get('song', null)) ? 40 : 0; saveCfg(); }   // people who already use the app know their way around
+/** 'pro' once the person knows their way around (no coaching notes), else 'new' */
+function xpLevel() { return CFG.xpMode === 'pro' || (CFG.xp || 0) >= 12 ? 'pro' : 'new'; }
+function xpAllowed(id, ignoreSimple) { if (CFG.simple && !ignoreSimple) return simpleTabs().includes(id) || id === DOCK.cur || (id === 'stems' && typeof STM !== 'undefined' && !!STM.ch); return true; }
+function xpTabText(id, name, i) { return CFG.simple ? (XP_NAMES[id] || name) : (i + 1) + ' · ' + name; }
+function xpSignal(pts) { if (XP.quiet) return; CFG.xp = Math.min(40, (CFG.xp || 0) + pts); clearTimeout(XP.t); XP.t = setTimeout(saveCfg, 800); }
 const xpEdit = () => { if (!XP.quiet) { xpSignal(.25); try { if (performance.now() - JN.inp < 3000) JN.edit = performance.now(); } catch (e) { } } };       // a change the person made (a key or a tap just before it, not the app loading a song) counts as activity in the journal
 /** run a generator (like Hum to Song) without counting its changes as the person's own edits */
 function xpQuiet(fn) { XP.quiet++; try { return fn(); } finally { XP.quiet--; } }
-function xpToolsButton() {
-  const l = xpLevel(), b = h('button', { class: 'btn sm xp-tools', id: 'xpTools', title: 'Choose how much of the studio to show', 'aria-haspopup': 'dialog', onclick: () => {
-    const m = CFG.xpMode || 'auto', opt = (k, t, d) => h('button', { class: 'btn sm xp-opt' + (m === k ? ' on' : ''), 'aria-pressed': String(m === k), onclick: () => { CFG.xpMode = k; saveCfg(); closePop(); if (k === 'pro' && LAY.hidden.length) { LAY.hidden = []; saveLay(); }   /* “Everything” brings back any tab a layout had left off the strip */
-      rebuildTabs(); if (k !== 'auto') toast((XP_LABEL[k]) + ' tools', ''); } }, h('b', {}, t), h('span', { class: 'muted' }, d));
-    popover(b, h('div', { class: 'xp-pop' }, h('h5', {}, 'Which panels on the strip?'), opt('auto', 'Automatic', 'Starts simple and adds tools as you use them'), opt('new', 'Essentials', 'Hum, Song, Band, Stage, Save'), opt('some', 'More tools', 'Adds guitar sound, tab, fretboard, backing track'), opt('pro', 'Everything', 'All tabs, technical labels, numbered shortcuts'), h('label', { class: 'xp-sep tiny', style: { display: 'flex', gap: '8px', alignItems: 'center', marginTop: '8px', cursor: 'pointer' } }, h('input', { type: 'checkbox', id: 'xpSep', checked: !!CFG.sepTabs, onchange: e => { CFG.sepTabs = e.target.checked; saveCfg(); rebuildTabs(); toast(CFG.sepTabs ? 'Song and Fretboard are separate tabs again' : 'Song and Fretboard live inside Write', ''); } }), h('span', {}, 'Show Song and Fretboard as separate tabs'))), { style: { width: '320px', maxWidth: '92vw' } });
-  } }, l === 'pro' ? 'Tools' : '＋ More tools'); return b;
-}
 
 /* >>> parts/33b-simple.js */
 /* ============================================================
@@ -13520,12 +13511,12 @@ function gdDrag(e) {
 function gdFinish() {
   const id = GD.id, S0 = GD_SESSIONS[id], g = gdc(), first = !g.done[id]; GD.done = true; g.done[id] = Date.now(); g.prog[id] = 0; saveCfg();
   clearInterval(GD.timer); GD.timer = 0; gdPulse(null);
-  let unlocked = []; if (first) { const was = new Set(DOCK.filter(d => xpAllowed(d[0], true)).map(d => d[0])); try { xpSignal(5); } catch (e) { } unlocked = DOCK.filter(d => xpAllowed(d[0], true) && !was.has(d[0])).map(d => XP_NAMES[d[0]] || d[1]); }
+  if (first) { try { xpSignal(5); } catch (e) { } }
   const nx = S0.next && !g.done[S0.next] ? GD_SESSIONS[S0.next] : GD_ORDER.map(k => GD_SESSIONS[k]).find((s, i) => !g.done[GD_ORDER[i]]);
   const nxId = nx ? GD_ORDER.find(k => GD_SESSIONS[k] === nx) : null;
   if (!GD.el) gdBuild(); const el = GD.el; el.innerHTML = ''; el.classList.remove('min'); el.dataset.state = 'done';
   el.append(h('div', { class: 'gd-h' }, h('span', { class: 'gd-t' }, '✓ ' + S0.name), h('button', { class: 'gd-x', 'aria-label': 'Close', title: 'Close', onclick: () => guideStop(true) }, '✕')),
-    h('p', { class: 'gd-text' }, S0.outro), unlocked.length ? h('p', { class: 'gd-unlock' }, h('b', {}, CFG.simple ? 'New tools are ready: ' : 'Added to your tabs: '), unlocked.join(', '), CFG.simple ? '. ✦ Simple off (top right) shows them.' : '. Find the rest under Tools.') : null,
+    h('p', { class: 'gd-text' }, S0.outro),
     h('div', { class: 'gd-act' }, nxId ? h('button', { class: 'btn sm primary', id: 'gdNext', onclick: () => guideStart(nxId, { fresh: true, go: true }) }, 'Next: ' + nx.name) : null, h('button', { class: 'btn sm', onclick: () => guideStop(true) }, 'Done')));
   GD.id = null; document.body.classList.add('gd-on');
 }
@@ -14398,7 +14389,8 @@ const GOALS = [
     mission: 'Learn something new, or show someone how', steps: ['Start 📅 Today’s fifteen minutes', 'Learn your song with 🎵 This song', 'Train your ear with 👂 By ear'],
     shape: 'The arrangement on top · the tab below to point at · the fretboard on the right · notes open',
     spec: { flip: false, left: false, right: true, tlh: 'minmax(200px,40%)', dock: 'tab', order: ['tab', 'tx', 'stems', 'vis', 'band'], hidden: ['rig', 'song', 'fret', 'stage', 'neural', 'cam', 'lab'], side: { fret: 'right' }, so: { left: [], right: ['fret', 'refine', 'monitor'] }, cur: { right: 'fret' }, mon: ['tuner', 'live'] },
-    enter: () => { if (typeof KIT !== 'undefined' && !KIT.notesEl) kitNotes(); },
+    enter: () => { if (typeof KIT !== 'undefined' && !KIT.notesEl) { kitNotes(); KIT.notesAuto = true; } },
+    leave: () => { if (typeof KIT !== 'undefined' && KIT.notesEl && KIT.notesAuto) kitNotes(); },      /* 2.63: the notes Teacher opened close when you leave it (ones you opened yourself stay) */
     tools: () => [
       ['gtLearn', '🎓 Learn', 'Lessons that show you, play it, then listen to you play it', () => learnOpen('lessons'), null, 1],
       ['gtToday', '📅 Today', 'Today’s fifteen minutes: a warm-up, a review, something new and a riff', () => learnOpen('today')],
@@ -14432,7 +14424,8 @@ const goalShows = id => { const g = goalNow(); return !!g && (g.all || g.spec.or
 function goalTempo(d) { S.bpm = clamp(S.bpm + d, 30, 260); commit(false); bus.emit('bpm'); syncTransport(); goalSync(); }
 /** o.keepZoom: leave the Canvas view as it is (the first-visit default); a goal you pick always shows the studio */
 function goalGo(id, o) {
-  const g = goalById(id); if (!g) return false; CFG.ws = g.id; if (g.id !== 'fullrig') CFG.lastGoal = g.id; saveCfg();
+  const g = goalById(id); if (!g) return false; const was = goalNow(); if (was && was !== g && was.leave) { try { was.leave(); } catch (e) { } }
+  CFG.ws = g.id; if (g.id !== 'fullrig') CFG.lastGoal = g.id; saveCfg();
   if (g.id === 'fullrig' && CFG.simple) { CFG.preSimple = null; simpleSet(false, true); toast('Full Rig has every tool, so Simple is off here. ✦ Simple takes you back to the essentials.', ''); }      /* 2.46: Full Rig is everything */
   if (!(o && o.keepZoom) && typeof ZOOM !== 'undefined' && ZOOM.cur === 'canvas') { ZOOM.cur = CFG.zoom = 'studio'; saveCfg(); document.body.classList.remove('zoom-canvas'); try { zoomSync(); } catch (e) { } }
   applyPreset(g.spec, g.layout); if (typeof xpSignal === 'function') xpSignal(1);
@@ -15047,7 +15040,7 @@ function kitScreenDone() {
 /* ---------- lesson notes: one card per song, kept in this browser ---------- */
 const kitNoteKey = () => (S.title || 'Untitled').slice(0, 80);
 function kitNotes() {
-  if (KIT.notesEl) { KIT.notesEl.remove(); KIT.notesEl = null; bus.emit('kit'); return; }
+  KIT.notesAuto = false; if (KIT.notesEl) { KIT.notesEl.remove(); KIT.notesEl = null; bus.emit('kit'); return; }
   const all = store.get('lessons', {}), ta = h('textarea', { class: 'in kit-ta', id: 'kitNotesText', 'aria-label': 'Lesson notes', placeholder: 'What to practise, the bars that need work, the next lesson…' });
   ta.value = all[kitNoteKey()] || '';
   ta.addEventListener('input', () => { const a = store.get('lessons', {}); if (ta.value.trim()) a[kitNoteKey()] = ta.value; else delete a[kitNoteKey()]; store.set('lessons', a); });

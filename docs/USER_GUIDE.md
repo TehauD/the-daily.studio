@@ -274,7 +274,7 @@ The first page asks **what you would like to do first**, not how good you are:
 
 A small card names one step and outlines the control. The step ticks off when the app sees you do it (it watches its own state; nothing is faked). **Show me** takes you to the control, **Skip** moves on, **–** folds the card, **✕** leaves and keeps your place, and you can drag the card anywhere. Finishing a session adds the tools it used to the tab strip and tells you which. Start, resume or repeat any of them from **? ▸ Guided sessions** (on a phone: More ▸ Guided sessions).
 
-**I know my way around** on the first page opens every tool with no coaching. You can also pick **Tools ▸ Everything** at any time.
+**I know my way around** on the first page opens every tool with no coaching. **✦ Simple** (top right) switches between the essentials and every tool at any time.
 
 **Notes on tabs.** The first time a tab opens, a short note says what it is and gives one thing to try. **Got it** folds it into a small “What is this tab?” line; it never comes back as a full note. Turn them all off in the sessions menu. They are not shown on *Everything* or during a session.
 
@@ -320,7 +320,7 @@ Limits: your interface's delay is compensated, but a note played in the last few
 
 **I have a guitar.** The coach walks you through three steps: **1 · Tune** each string (pluck it open; the bar fills when it is in tune), **2 · Learn the chords** of your song one at a time (the diagram shows where your fingers go; it says what it hears), **3 · Play along** with the band. You need an audio input for the guitar (the browser asks when you press the button). Skip any step with the buttons.
 
-**The studio grows with you.** New visitors see four tabs with plain names. As you use the studio (open Studio view, edit, record, connect an input) more tabs appear. **Tools** on the tab row changes this: Automatic, Essentials, More tools, Everything.
+**How much shows: one switch.** New visitors start in **✦ Simple**: each workspace's few panels and tools, with plain names. Press **✦ Simple** (top right) to see every panel the workspace has, numbered for Alt+1…9; press it again for the essentials. (Until 2.63 a separate **Tools** level on the tab row did something similar; Simple replaced it.)
 
 The fastest way in: **hum or sing a few seconds of melody and get a whole song back.**
 

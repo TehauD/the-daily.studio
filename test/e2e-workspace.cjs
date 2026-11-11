@@ -50,18 +50,14 @@ suite('e2e-workspace', async t => {
   const menu = await ev(() => { const m = document.getElementById('workspace'); return { open: !!m && m.open, secs: m ? [...m.querySelectorAll('.hub-sec')].map(x => x.dataset.sec).join() : '', cards: m ? m.querySelectorAll('.ws-card').length : 0, theme: m ? m.querySelectorAll('.lk-mode').length : 0, xp: m ? m.querySelectorAll('#vmXp').length : 0, boxes: m ? m.querySelectorAll('input[type=checkbox]').length : 0, over: m ? m.querySelector('.hub-body').scrollWidth - m.querySelector('.hub-body').clientWidth : 99 }; });
   ok(menu.open && menu.secs === 'goal,panels,list,reset' && menu.cards === 6 && menu.theme === 0 && menu.xp === 0 && menu.boxes >= 3 && menu.over <= 1, 'the ▦ Workspace dialog holds the goals and where panels go; light/dark and Experience live elsewhere (' + JSON.stringify(menu) + ')');
   await ev(() => document.getElementById('workspace').close()); await wait(200);
-  // light/dark belongs to Appearance; Experience to the Tools button
+  // light/dark belongs to Appearance; how much shows is ✦ Simple
   await ev(() => window.__daily.setTheme('light')); await wait(300);
   ok(await ev(() => window.__daily.CFG.lookMode === 'light' && document.documentElement.dataset.theme === 'light'), 'Appearance’s Light switches the whole app at once');
   await ev(() => window.__daily.setTheme('dark')); await wait(300);
   ok(await ev(() => window.__daily.CFG.lookMode === 'dark' && document.documentElement.dataset.theme === 'dark'), 'and Dark switches it back');
-  await ev(() => document.getElementById('xpTools') && document.getElementById('xpTools').click()); await wait(300);
-  const xpo = await ev(() => [...document.querySelectorAll('.xp-pop .xp-opt')].map(b => b.querySelector('b').textContent).join());
-  ok(/Automatic,Essentials,More tools/.test(xpo), 'Experience stays on the Tools button (' + xpo + ')');
-  await ev(() => { const o = [...document.querySelectorAll('.xp-pop .xp-opt')].find(b => b.querySelector('b').textContent === 'Essentials'); if (o) o.click(); }); await wait(300);
-  ok(await ev(() => window.__daily.xpLevel() === 'new'), 'Essentials narrows the panel strip');
+  ok(await ev(() => !document.getElementById('xpTools') && !document.querySelector('.xp-pop')), 'how much shows has one switch, ✦ Simple: there is no separate Tools level on the panel strip');
   await ev(() => window.__daily.CFG.xpMode = 'pro'); await wait(100);
-  ok(await ev(() => window.__daily.xpLevel() === 'pro'), 'and Everything opens it all up again');
+  ok(await ev(() => window.__daily.xpLevel() === 'pro'), 'someone who knows their way around is remembered (no coaching notes on the panels)');
   await ev(() => { document.body.click(); window.__daily.closePop && window.__daily.closePop(); }); await wait(200);
 
   // zoom levels pick a layout, too

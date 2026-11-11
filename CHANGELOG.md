@@ -2,6 +2,17 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.63.0 — 2026-11-11 — One switch for how much shows, and panel tabs you can see
+
+### Changed
+- **✦ Simple is the one switch for how much of the studio shows.** The separate **Tools** level on the panel strip (Automatic, Essentials, More tools, Everything) is gone. Inside a workspace it changed almost nothing, because each workspace already chooses its panels; with Simple on it was ignored. Now: Simple on, each workspace's few panels and tools in plain words; Simple off, every panel the workspace has, numbered for Alt+1…9. Nothing is turned off or lost.
+- **The Visuals panel is called Visuals in Simple too.** It was "Stage" there, beside a separate panel also called Stage.
+- **Finishing a guided session no longer announces "unlocked" tools,** since nothing is hidden by level. Coaching notes on the panels stay for newcomers and stay off for anyone who knows their way around.
+
+### Fixed
+- **The panel tabs were squeezed out of sight.** On a 1440 px screen the band strip left the panel strip 16–109 px: one tab in Performer, Creator Studio, Practice and Full Rig, none in Teacher (the rest scrolled out, with no scrollbar). The tabs now keep their width and the band strip takes its own line when it doesn't fit beside them; a strip wider than the dock shows a thin scrollbar.
+- **Teacher's Lesson notes followed you to every workspace.** The notes Teacher opens close when you leave it; notes you open yourself stay.
+
 ## 2.62.0 — 2026-11-11 — Soundprint in the Visuals
 
 ### New
