@@ -228,7 +228,7 @@ The row at the top of the centre holds four workspaces. Each one is a whole work
 
 Until 2.64 there were six: **Performer** and **Creator Studio** are now **Studio**, and **Practice** and **Teacher** are now **Practice**. Anything that opened the old ones opens the new ones.
 
-**The arrangement starts collapsed** (2.64) in every workspace, so the panels get the room. Collapsed, it is an edge like the sidebars (2.65): a thin rail along the bottom with its **▴ Arrangement** tab in the middle, which opens it to the workspace's usual height; **▾** collapses it again.
+**The arrangement starts collapsed** (2.64) in every workspace, so the panels get the room. Collapsed, it is an edge like the sidebars (2.65): a thin rail along the bottom with its **▴ Arrangement** tab in the middle, which opens it to the workspace's usual height; **▾** collapses it again. A new take (a recording, a dropped file, a hum) opens it too, so you see it land.
 
 **The Visuals bar** (2.65) is one row: the **Look** button (it names the look and opens all of them, with the Behind you looks, under it), what that look offers (hexagon colours, Soundprint's worlds, Concert's Live / Teach / Sky), **⏺ Record**, **🎥 Go on stage**, **⛶ Stage mode** and **⋯ More** (the source, Auto look, Camera backdrop, Neck, Pitch, Speed · size · zoom, the tip jar and Show setup).
 

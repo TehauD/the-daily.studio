@@ -5,7 +5,7 @@ suite('e2e-lanes', async t => {
   // v2.1 · lane strips, master chip, undo / saved, count-in
   { const mp = await (await freshCtx()).newPage(), me = []; mp.on('pageerror', e => me.push(e.message));
     const boot = async () => { await mp.goto(BASE + (BASE.includes('?') ? '&' : '?') + 'debug'); await wait(3500); await mp.evaluate(() => document.getElementById('bootNoMic').click()); await wait(2000); await mp.evaluate(() => { const b = document.querySelector('#tourOffer .btn:not(.primary)'); if (b) b.click(); const hb = document.getElementById('humbar'); if (hb) hb.remove(); }); };
-    await boot();
+    await boot(); await mp.evaluate(() => { if (document.getElementById('center').classList.contains('tl-slim')) document.querySelector('#timeline .et-arr').click(); }); await mp.waitForTimeout(400);      /* 2.65: the arrangement starts as an edge rail */
     // lane header: M S vol pan +Fx
     const hd = await mp.evaluate(() => { const hdr = [...document.querySelectorAll('.tl-head')].find(x => /Bass/.test(x.textContent)); if (!hdr) return null; return { m: !!hdr.querySelector('button[title="Mute"]'), s: !!hdr.querySelector('button[title="Solo"]'), vol: !!hdr.querySelector('input[type=range]'), pan: !!hdr.querySelector('input[title="Pan"]'), fx: hdr.querySelector('.fxchip') && hdr.querySelector('.fxchip').textContent }; });
     ok(hd && hd.m && hd.s && hd.vol && hd.pan && /Fx/.test(hd.fx), 'a band lane header has M, S, volume, pan and +Fx (' + JSON.stringify(hd) + ')');

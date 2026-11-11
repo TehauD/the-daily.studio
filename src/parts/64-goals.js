@@ -88,6 +88,10 @@ if (GOAL_OLD_LAYOUTS[LAY.name]) { LAY.name = GOAL_OLD_LAYOUTS[LAY.name]; }
 /* 2.64: the arrangement starts collapsed (a strip under the panels; ▴ Arrangement opens it). Once, for a studio already set up too,
    except in Arrange and Record, which are about the arrangement */
 if (CFG.arrFold !== 1) { CFG.arrFold = 1; if (!/^(Arrange|Record)$/.test(LAY.name || '') && LAY.tlh !== '84px') { LAY.tlhPrev = LAY.tlh == null ? null : LAY.tlh; LAY.tlh = '84px'; try { saveLay(); } catch (e) { } } saveCfg(); }
+/* 2.65: a new take opens the collapsed arrangement, so you see it land (opening a song that has takes leaves it as it is) */
+let tlTakesN = TAKES.length;
+bus.on('song', () => { tlTakesN = TAKES.length; });
+bus.on('takes', () => { const n = TAKES.length; if (n > tlTakesN && LAY.tlh === '84px' && document.body.dataset.form !== 'phone') { try { arrangeToggle(); } catch (e) { } } tlTakesN = n; });
 if (CFG.ws === 'creator') CFG.ws = 'performer'; if (CFG.ws === 'teacher') CFG.ws = 'practice'; if (CFG.lastGoal === 'creator') CFG.lastGoal = 'performer'; if (CFG.lastGoal === 'teacher') CFG.lastGoal = 'practice';
 /* they are layouts too: after Studio in the layout list (the Practice goal replaces the old Practice layout) */
 LAYOUTS.splice(1, 0, ...GOALS.map(g => [g.layout, g.blurb, g.spec]));

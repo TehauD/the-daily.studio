@@ -8,6 +8,7 @@ suite('e2e-vz-adjust', async t => {
 
   /* ---- the panel ---- */
   ok(!!(await p.$('#pane-vis [data-vza]')), 'the Visuals bar has 🎚 Speed · size · zoom');
+  await p.click('#vzMore'); await wait(200);      /* 2.65: under the Visuals bar's ⋯ More */
   await p.click('#pane-vis [data-vza]'); await wait(250);
   ok(await p.evaluate(() => ['vzSpeedIn', 'vzSizeIn', 'vzZoomIn'].every(id => !!document.getElementById(id)) && !!document.getElementById('vzaReset')), 'it opens Speed, Size and Zoom sliders with a Reset');
   const set = (id, v) => p.evaluate(([id, v]) => { const r = document.getElementById(id); r.value = v; r.dispatchEvent(new Event('input', { bubbles: true })); }, [id, v]);

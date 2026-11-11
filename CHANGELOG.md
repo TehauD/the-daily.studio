@@ -11,13 +11,13 @@ All notable changes to the-daily.studio (earlier versions were released under th
   - **🎼 Practice:** 🎓 Learn · 📅 Today · 🎵 This song · 🎼 Scales & ear · − 5 / BPM / + 5 · *More:* 👂 By ear · 🎸 Riffs & licks · ⏱ Speed & key · ✎ Annotate · 📝 Lesson notes · ⏺ Record screen · ♪ Transcribe.
   - The mission and its three steps are behind the **?** at the start of the tools.
 - **The Visuals bar is one row** (two when the centre is narrow), where it was up to six. The **Look** button names the look and opens the looks (and the Behind you looks) under it; picking one closes them. Then what the look itself offers (the hexagon colours, Soundprint's worlds, Concert's Live / Teach / Sky, which now shows only for Concert), then **⏺ Record**, **🎥 Go on stage** and **⛶ Stage mode**. **⋯ More** holds the source, Auto look, Camera backdrop and how it sits, Neck, Pitch, Speed · size · zoom, the tip jar and Show setup.
-- **The collapsed arrangement is an edge, like the sidebars:** a thin rail along the bottom with its **▴ Arrangement** tab in the middle, where it was a strip with its header and ruler. The tab opens it to the workspace's usual height, as before.
+- **The collapsed arrangement is an edge, like the sidebars:** a thin rail along the bottom with its **▴ Arrangement** tab in the middle, where it was a strip with its header and ruler. The tab opens it to the workspace's usual height, as before, and so does a new take (a recording, a dropped file, a hum), so you see it land. Opening a song that already has takes leaves it as it is.
 
 ### Fixed
 - **The panel tab strip no longer shows a small vertical scroll bar** at its end. It was a pixel taller than its row.
 
 ### Tests
-- **`e2e-goals`, `e2e-simple`, `e2e-tip`, `e2e-voice`, `e2e-view`** follow the one-row workspace bar, ⋯ More, the Look button and the arrangement rail.
+- **`e2e-goals`, `e2e-simple`, `e2e-tip`, `e2e-voice`, `e2e-camera`, `e2e-privacy`, `e2e-vz-adjust`, `e2e-lanes`, `e2e-looper`, `mobile`** follow the one-row workspace bar, ⋯ More, the Look button and the arrangement rail.
 
 ## 2.64.0 — 2026-11-11 — Four workspaces, one Showtime, and the arrangement collapsed
 

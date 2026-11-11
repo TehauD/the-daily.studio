@@ -6,6 +6,7 @@ suite('e2e-camera', async t => {
   await cp.evaluate(() => [...document.querySelectorAll('button')].find(b => /Camera on\/off/.test(b.textContent)).click());
   ok(await poll(() => cp.evaluate(() => window.__daily.CAM.on), 12000), 'the camera starts when you press the button');
   await cp.click('#dock .tab[data-id="vis"]'); await wait(500);
+  await cp.click('#vzMore'); await wait(200);      /* 2.65: the camera's settings are under the Visuals bar's ⋯ More */
   await cp.evaluate(() => [...document.querySelectorAll('button')].find(b => /Camera backdrop/.test(b.textContent)).click());
   ok(await cp.$$eval('select[aria-label="Camera look"] option', o => o.slice(0, 3).map(x => x.value).join()) === 'over,edges,person', 'camera look offers dimmed, edges-in and green-screen');
   const px = x => cp.evaluate(x => { const c = document.querySelector('.vcanvas'), g = c.getContext('2d'), d = g.getImageData(Math.floor(c.width * x), Math.floor(c.height * .5), 1, 1).data; return [d[0], d[1], d[2]]; }, x);
