@@ -57,7 +57,7 @@ window.__dailyRoom = (id, make) => {
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.63.0', BUILD = 'a5af757', PARTS_N = +'124' || 0, LINES_N = +'20926' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.64.0', BUILD = '9320c56', PARTS_N = +'124' || 0, LINES_N = +'20906' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { ghApp: { clientId: 'Iv23liTjqEBQsgmGaE1Q', slug: 'tehaud-the-daily-studio' },   /* Sign in with GitHub: the GitHub App's public client id and its slug (docs/GITHUB.md); empty = only the token way */
   support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://journal.the-daily.studio/' };
@@ -1965,7 +1965,7 @@ function openHelp(at) {
       h('div', { class: 'hub-tiles' },
         h('button', { class: 'hub-tile primary', id: 'helpSessions', onclick: () => { close(); guideMenu(); } }, h('b', {}, '✦ Guided sessions'), h('span', {}, 'Play with a band, write a riff down, hum a song, loop and layer…')),
         h('button', { class: 'hub-tile', id: 'helpTour', onclick: () => { close(); tourStart(); } }, h('b', {}, '▶ Take the guided tour'), h('span', {}, 'A spotlight on each part of the screen.')),
-        h('button', { class: 'hub-tile', onclick: () => { close(); workspaceOpen(); } }, h('b', {}, '▦ Pick a workspace'), h('span', {}, 'Songwriter, Performer, Creator Studio, Practice, Teacher or Full Rig.')))] },
+        h('button', { class: 'hub-tile', onclick: () => { close(); workspaceOpen(); } }, h('b', {}, '▦ Pick a workspace'), h('span', {}, 'Songwriter, Spotlight, Practice or Full Rig.')))] },
     { key: 'keys', label: 'Shortcuts', ico: '⌨', wide: true, body: () => [h('div', { class: 'help-k' }, K.map(([a, b]) => [h('kbd', {}, a), h('span', {}, b)]))] },
     { key: 'data', label: 'Your work', ico: '🔒', sub: 'Local, private, kept on this device.', wide: true, body: () => [
       h('p', { class: 'small' }, 'Everything runs locally in your browser. Nothing is uploaded unless you choose to: GitHub sync (to your own account), a folder, or recordings sent with a link (encrypted, kept 7 days). Your work is autosaved to this browser: songs, recordings and backing tracks stay on this device (☰ Songs).'),
@@ -2935,7 +2935,7 @@ function renderBand() {
   const drums = h('div', { class: 'card' }, h('h4', {}, 'Drums ', tog('Enabled', 'drumsOn')), h('div', { class: 'card-b' },
     h('div', { class: 'row', style: { gap: '10px', alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: '8px' } }, sel('Kit', Object.keys(KITS), B.kit, v => { B.kit = v; commit(false); }), sel('Pattern', Object.keys(DPATS), B.patName, v => { setDrumPattern(v); renderBand(); }, 170),
       songField('Length (steps)', h('select', { onchange: e => { B.drumLen = +e.target.value; commit(false); renderBand(); } }, [8, 12, 16, 24, 32].map(n => h('option', { selected: n === (B.drumLen || 16) }, n)))),
-      h('button', { class: 'btn sm primary', id: 'bandPads', title: 'Play the drums with your fingers, tap the tempo, record a groove or beatbox it', onclick: () => padsOpen() }, '🥁 Pads'),
+      h('button', { class: 'btn sm primary', id: 'bandPads', title: 'Play the drums with your fingers, tap the tempo, record a groove or beatbox it', onclick: () => padsOpen() }, '👆 Pads'),
       h('button', { class: 'btn sm', onclick: () => { B.pat = DROWS.map(() => new Array(32).fill(0)); commit(false); renderBand(); } }, 'Clear'), h('button', { class: 'btn sm', onclick: () => { const pat = dpat(); pat.forEach(r => r.forEach((v, i) => { if (v && Math.random() < .25) r[i] = 0; else if (!v && Math.random() < .04) r[i] = 1; })); commit(false); renderBand(); } }, '🎲 Mutate'),
       h('span', { class: 'tiny muted' }, 'Click a step to cycle: off → ghost → normal → accent')),
     stepGrid()));
@@ -5619,11 +5619,11 @@ function tourSteps() { const all = document.body.dataset.form === 'phone' ? tour
 function tourStepsDesk() {
   return [
     { t: null, title: 'Welcome to the-daily.studio', b: 'A studio for writing, singing and playing that runs entirely in this browser tab. <b>Write</b> the words and chords, put a <b>beat</b> under them, <b>record</b> your voice and guitar, tune the vocal, and <b>send</b> the song to someone. Your songs stay on this device: nothing is uploaded unless you choose to sync or send it.<br><br>This tour takes about two minutes and never changes your song. Use <kbd>→</kbd> and <kbd>←</kbd>, or <kbd>Esc</kbd> to leave.' },
-    { t: tq('#goalbar .gl-pick'), side: 'bottom', title: 'Pick what you want to do', b: 'Six workspaces: <b>Songwriter</b>, <b>Performer</b>, <b>Creator Studio</b>, <b>Practice</b>, <b>Teacher</b> and <b>Full Rig</b>. Each arranges the studio for that job and brings its own tools. Nothing is ever removed: every panel is still under <b>☰</b>.' },
+    { t: tq('#goalbar .gl-pick'), side: 'bottom', title: 'Pick what you want to do', b: 'Four workspaces: <b>Songwriter</b> to write, <b>Spotlight</b> to play it and share it, <b>Practice</b> to learn it (or teach it) and <b>Full Rig</b> for everything. Each arranges the studio for that job and brings its own tools. Nothing is ever removed: every panel is still under <b>☰</b>.' },
     { t: tq('#simpleBtn'), side: 'bottom', title: '✦ Simple', b: '<b>✦ Simple</b> keeps each workspace to the few panels and tools it needs, for anyone new to a studio. Press it again for everything. <b>Full Rig</b> is the one workspace with it all, so choosing it turns Simple off.' },
     { t: tq('#left'), pre: tourSide('io'), drawer: 'left', side: 'right', title: 'Connect your input', b: '<b>Audio input</b> opens first until something is connected: choose your microphone or audio interface and check the level moves when you sing or play. If the list is empty, allow microphone access in the browser and press ⟳.', tip: 'Wired headphones give the lowest delay and stop the speakers feeding back into the mic. Bluetooth adds a lot of delay.' },
     { t: tq('#transport'), side: 'bottom', title: 'Play, record and the tempo', b: '<kbd>Space</kbd> plays and stops. <b>●</b> records with a count-in. <b>Loop</b>, <b>Click</b>, the tempo and the key are here too. <kbd>Ctrl</kbd> + <kbd>.</kbd> turns all audio input off at once.' },
-    { t: tq('#goalbar .gl-tools'), side: 'bottom', title: 'The workspace\'s tools', b: 'Each workspace has a row of tools. In Songwriter: <b>🥁 Beats</b>, <b>Paste chords</b>, Pads, Keys and <b>🔗 Send as a link</b>. In Performer: record a video and the vocal pedals. The main one is highlighted, and the button at the end takes you to the next step.' },
+    { t: tq('#goalbar .gl-tools'), side: 'bottom', title: 'The workspace\'s tools', b: 'Each workspace has a row of tools. In Songwriter: <b>🥁 Beats</b>, <b>Paste chords</b>, Pads, Keys and <b>🔗 Send as a link</b>. In Spotlight: record a video, the camera and the vocal pedals. The main one is highlighted, and the button at the end takes you to the next workspace. <b>★ Showtime</b> in the song bar plays the song full screen.' },
     { t: tq('#dock > .dockbar, #dock .tabs'), side: 'bottom', title: 'Panels are tabs', b: 'Each workspace shows the tabs it needs. <b>Drag</b> a tab to reorder it, <b>double-click</b> it to float it as a window, and use <b>▦</b> in the top bar to rearrange. <kbd>Alt</kbd>+<kbd>1…9</kbd> jumps by position.' },
     { t: tq('#pane-band'), pane: 'band', side: 'left', title: 'Beats and the band', b: 'Tap a <b>beat</b> and a band plays it in your key: drums, bass, and guitar or keys. Choose <b>who plays</b> and how loud. With <b>Song build</b> on, each section plays at its own energy: quiet verses, big choruses, and fills and risers between them.' },
     { t: tq('#pane-tab'), pane: 'tab', side: 'left', title: 'Write: words, chords and tab', b: 'Type the words with chords over them, or paste a chord sheet. <b>☰ Whole song</b> shows every section in order with a map of the song, and <b>＋</b> adds an intro, a verse, a chorus, an interlude and the rest, named for you. For tab, click a cell and type a fret number; <kbd>h</kbd> <kbd>p</kbd> <kbd>/</kbd> <kbd>\\</kbd> <kbd>b</kbd> <kbd>~</kbd> <kbd>x</kbd> set hammer-ons, pull-offs, slides, bends, vibrato and mutes.' },
@@ -6402,7 +6402,7 @@ function sbChip() {
     if (S.trackRef) t.append(h('button', { class: 'sb-chip', id: 'sbYourCopy', title: 'This song is played over a record that wasn’t sent. Load your own copy: it lines itself up with the song.', onclick: () => { sbLeave(); ycLoad(); } }, '♪ Load your copy of “' + (S.trackRef.t || 'the track') + '”'));
     else if (S.track) t.append(h('span', { class: 'tiny muted', title: 'This song was built from a track. Load it again to play along with it.' }, 'from “' + S.track.name + '”'));
   }
-  t.append(h('button', { class: 'sb-chip', id: 'sbPerform', title: 'Perform: full-screen chords and lyrics with a count-in, record and play', onclick: e => { sbLeave(); perfOpen(e.currentTarget); } }, '🎤 Perform'));
+  t.append(h('button', { class: 'sb-chip', id: 'sbPerform', title: 'Showtime: full-screen chords and lyrics with a count-in, record and play', onclick: e => { sbLeave(); perfOpen(e.currentTarget); } }, '★ Showtime'));
   t.append(h('button', { class: 'sb-chip', id: 'sbVoice', 'aria-label': 'Voice', title: 'Voice: see your pitch against the key, find your range, and find the key that suits your voice', onclick: e => { sbLeave(); voxOpen(e.currentTarget); } }, '〰', h('span', { class: 'sb-lbl' }, 'Voice')));
 }
 /** on a phone the song details are a sheet over the page: its buttons close it before they open something else */
@@ -8534,9 +8534,9 @@ function xpQuiet(fn) { XP.quiet++; try { return fn(); } finally { XP.quiet--; } 
    Part 33b · SIMPLE MODE (2.33) — one switch for someone who has never seen a studio
    ✦ Simple (top right, and Settings ▸ Workflow) keeps what you need to make something and tucks the rest away:
      · kept      play, stop, ● record, loop, click, the tempo and the key; the song's name, Songs, New, undo; Perform and Voice;
-                 the six workspaces and each one's tools; ● Capture; the tab and the words; the band on or off; the arrangement
+                 the four workspaces and each one's tools; ● Capture; the tab and the words; the band on or off; the arrangement
      · tucked    return-to-start, the bar·beat counter, time signature, the master meter, the latency estimate, the workspace
-                 button, artist, tuning, capo, scale and notes; the view switch; the Create → Perform → Share flow; each band
+                 button, artist, tuning, capo, scale and notes; the view switch; each band
                  part's own switch and the mix; tab techniques, fill styles, copy and paste;
                  the arrangement's zoom, swing, loop and lane tools; the status line
    Nothing is turned off or lost: it is only out of sight, and the same button brings it all back. The panel tabs keep the
@@ -8546,10 +8546,10 @@ function xpQuiet(fn) { XP.quiet++; try { return fn(); } finally { XP.quiet--; } 
 /* what Simple keeps on the panel strip (and whatever is open, and the backing track once one is loaded), and the tones it offers */
 const SIMPLE_TABS = ['tab', 'band', 'vis', 'exp'];
 /* 2.46: Simple simplifies every workspace but Full Rig. Each keeps its own few panels and tools; Full Rig always has everything */
-const SIMPLE_GOAL_TABS = { songwriter: ['tab', 'band', 'exp'], performer: ['vis', 'band', 'exp'], creator: ['vis', 'exp'], practice: ['fret', 'tab', 'band'], teacher: ['tab', 'band'] };
+const SIMPLE_GOAL_TABS = { songwriter: ['tab', 'band', 'exp'], performer: ['vis', 'band', 'exp'], practice: ['fret', 'tab', 'band'] };
 const SIMPLE_GOAL_TOOLS = {
-  songwriter: ['gtBeats', 'gtSheet', 'gtPads', 'gtKeys', 'gtLink'], performer: ['gtVideo', 'gtCam', 'gtVox', 'gtReplay'], creator: ['gtVideo', 'gtFmt', 'gtReplay', 'gtThumb', 'gtExp'],
-  practice: ['gtSlow', 'gtBpm', 'gtFast', 'gtSongLearn', 'gtShed'], teacher: ['gtLearn', 'gtToday', 'gtSong', 'gtEar', 'gtRiffs'] };
+  songwriter: ['gtBeats', 'gtSheet', 'gtPads', 'gtKeys', 'gtLink'], performer: ['gtVideo', 'gtCam', 'gtVox', 'gtReplay', 'gtExp'],
+  practice: ['gtToday', 'gtSong', 'gtEar', 'gtSlow', 'gtBpm', 'gtFast'] };
 const SIMPLE_TOOLS = SIMPLE_GOAL_TOOLS.songwriter;
 /** the panels Simple keeps in the workspace in use */
 const simpleTabs = () => { const g = typeof goalNow === 'function' && goalNow(); return (g && SIMPLE_GOAL_TABS[g.id]) || SIMPLE_TABS; };
@@ -8639,7 +8639,7 @@ function vzImmersive(on) {
       h('span', { class: 'grow' }),
       h('button', { class: 'btn sm', id: 'vzhNew', title: 'Start a new song: hum, guitar, a song file or a blank page', onclick: () => humStageFirst() }, '＋', h('span', { class: 'lbl' }, ' New song')),
       h('button', { class: 'btn sm', id: 'vzhRec', 'data-srec': '1', title: 'Record the stage as a video with the song’s sound (saved on this device)', onclick: e => srecMenu(e.currentTarget) }, '⏺', h('span', { class: 'lbl' }, ' Record')),
-      h('button', { class: 'btn sm', id: 'vzhPerf', title: 'Perform: chords and lyrics over the stage, with a count-in', onclick: e => perfOpen(e.currentTarget) }, '🎤', h('span', { class: 'lbl' }, ' Perform')),
+      h('button', { class: 'btn sm', id: 'vzhPerf', title: 'Showtime: chords and lyrics over the stage, with a count-in', onclick: e => perfOpen(e.currentTarget) }, '★', h('span', { class: 'lbl' }, ' Showtime')),
       h('button', { class: 'btn sm', id: 'vzhLook', title: 'Change the look: Concert, Hex Resonance, Fifths Halo, Prism', onclick: () => vzCycleLook() }, '✦', h('span', { class: 'lbl' }, ' Look')),
       h('button', { class: 'btn sm', id: 'vzhIo', title: 'Connect your input, set your level, monitor and test the sound', onclick: () => audioOpen() }, '⚙', h('span', { class: 'lbl' }, ' Inputs')),
       h('button', { class: 'btn sm vzh-kill', id: 'vzhKill', title: 'Stop all sound and release the microphone (Ctrl + .)', onclick: () => { try { audioKill(); } catch (e) { } } }, '■', h('span', { class: 'lbl' }, ' Stop audio')),
@@ -8958,7 +8958,7 @@ function srecWords(g, W, H) {
   }
   g.restore(); g.textAlign = 'left';
 }
-/** the choice of shape and words, for the Record menu and Creator Studio */
+/** the choice of shape and words, for the Record menu and Spotlight */
 function srecFmtBox() {
   const f = srecFmt(), words = h('input', { type: 'checkbox', id: 'srecWords', checked: srecWordsOn(f), onchange: e => srecWordsSet(srecFmt(), e.target.checked) });
   const seg = h('div', { class: 'seg', role: 'radiogroup', 'aria-label': 'Video shape', id: 'srecFmt' }, Object.entries(SREC_FMTS).map(([k, d]) => h('button', { type: 'button', role: 'radio', class: k === f ? 'on' : '', 'aria-checked': String(k === f), 'data-fmt': k, title: d[3] + (d[0] ? ' · ' + d[0] + ' × ' + d[1] : ''), onclick: e => {
@@ -9157,7 +9157,7 @@ function perfOpen(opener) {
   const dots = h('span', { class: 'pf-dots', id: 'pfDots', 'aria-hidden': 'true' });
   const ctl = (id, t, title, fn) => h('button', { class: 'btn pf-b', id, title, onclick: fn }, t);
   PF.map = songMapEl({ big: true, cls: 'pf-map' });
-  PF.el = h('div', { id: 'perform', class: 'perform pf-pre pf-v-' + pfView() + ' ' + pfLayCls().join(' ') + (PF.bd ? '' : ' pf-solid'), role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Perform' },
+  PF.el = h('div', { id: 'perform', class: 'perform pf-pre pf-v-' + pfView() + ' ' + pfLayCls().join(' ') + (PF.bd ? '' : ' pf-solid'), role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Showtime' },
     h('div', { class: 'pf-top' }, h('b', { class: 'pf-song', id: 'pfSong' }), h('span', { class: 'pf-sec', id: 'pfSec' }), h('span', { class: 'grow' }), h('span', { class: 'pf-meta', id: 'pfMeta' }), dots,
       h('button', { class: 'btn sm pf-lay', id: 'pfLayout', title: 'Layout: where the controls and the words go, the text size, the song map', 'aria-haspopup': 'dialog', onclick: e => pfLayMenu(e.currentTarget) }, '⚙ Layout'),
       h('button', { class: 'btn sm pf-view', id: 'pfView', title: 'How Perform looks: the chord shapes beside the lyrics, the big chord, or the lyric sheet', onclick: () => perfViewNext() }, (PF_VIEWS.find(v => v[0] === pfView()) || PF_VIEWS[0])[1]),
@@ -9422,7 +9422,7 @@ function qrDraw(g, qr, x, y, cell) {
      · on share pages, as a button and a code;
      · on a printed sign for a real guitar case, and as a picture to post.
    It can show all the time or only between songs, in any corner, in three sizes.
-   OFF BY DEFAULT. It is set up from 🎬 Creator Studio ▸ 🎸 Tip jar; until then nothing about it shows anywhere else. Once it is
+   OFF BY DEFAULT. It is set up from 🎤 Spotlight ▸ 🎸 Tip jar; until then nothing about it shows anywhere else. Once it is
    set up (a link saved and the terms agreed), a 🎸 Tips button appears in the Visuals and Stage bars to switch it on and off.
    Money goes straight from the audience to the service the artist chose. The studio never opens the link, never sees a
    payment and takes nothing. The link lives in this browser's settings, not in songs, backups or share files other than
@@ -9452,7 +9452,7 @@ const tipOk = () => CFG.tipOk === TIP_TERMS;
 /** the saved link, made safe (worked out again only when it changes: this is asked on every frame) */
 const TIPL = { raw: null, out: '' };
 const tipNow = () => { if (TIPL.raw !== CFG.tip.link) { TIPL.raw = CFG.tip.link; TIPL.out = tipLink(CFG.tip.link); } return TIPL.out; };
-/** set up in Creator Studio: a usable link saved and the terms agreed (the 🎸 Tips buttons in the Visuals and Stage bars appear only then) */
+/** set up in Spotlight: a usable link saved and the terms agreed (the 🎸 Tips buttons in the Visuals and Stage bars appear only then) */
 const tipSetUp = () => !!(tipOk() && tipNow());
 /** set up, agreed to and switched on */
 const tipReady = () => !!(CFG.tip.on && tipOk() && tipNow());
@@ -9555,7 +9555,7 @@ function tipPng() {
 }
 
 /* ---------- setting it up ---------- */
-/** the 🎸 Tips button for a toolbar (lit while the case is showing); cls: the bar's button class. Hidden until the tip jar is set up in Creator Studio */
+/** the 🎸 Tips button for a toolbar (lit while the case is showing); cls: the bar's button class. Hidden until the tip jar is set up in Spotlight */
 function tipBtn(cls) {
   return h('button', { class: (cls || 'btn sm') + (tipReady() ? ' on' : ''), 'data-tipbtn': '1', title: 'Tip jar: a QR code your audience can scan to tip you', style: { display: tipSetUp() ? '' : 'none' }, onclick: () => tipOpen() }, '🎸 Tips');
 }
@@ -12113,7 +12113,7 @@ function pbPopSetup(w) {
    ============================================================ */
 VMODES.splice(1, 0, ['concert', 'Concert']);   /* Hex Resonance stays first: it is the default look */
 const lxHsl = (h, s, l, a) => `hsla(${(((h % 360) + 360) % 360) | 0},${Math.round(clamp(s, 0, 100))}%,${Math.round(clamp(l, 0, 100))}%,${clamp(a == null ? 1 : a, 0, 1).toFixed(3)})`;
-const LX_LENSES = [['perform', 'Perform'], ['teach', 'Teach'], ['sky', 'Sky']];
+const LX_LENSES = [['perform', 'Live'], ['teach', 'Teach'], ['sky', 'Sky']];      /* 2.64: “Live” (it was “Perform”): ★ Showtime is the only thing called that */
 const LX = {
   q: [], kick: 0, snare: 0, hat: 0, perc: 0, tom: 0, onset: 0, note: 0, strobe: 0, drop: 0, build: 0, strobeReq: false, lastStrobe: -1e9, chase: 0, pbSeq: 0,
   e: 0, v: 0, tn: 0, br: .4, hue: 38, ph: 0, sec: '', kind: 'ambient', int: .3, n: 4, pat: 'fan', sym: null, symT: 0, info: null, prog: null, pal: null,
@@ -13375,7 +13375,7 @@ setInterval(() => { gdSniff(); gdPfRender(); }, 500);
 const GD_SESSIONS = {
   play: {
     name: 'Play with a band', mins: 3, icon: '🎸', blurb: 'Plug in, pick a tone and play along with a drummer and bassist.',
-    outro: 'That is the whole Performer workspace: your guitar, a tone, and a band following you. Load a song in Backing track to play along with a real recording.', next: 'write',
+    outro: 'That is the heart of the Spotlight workspace: your guitar, a tone, and a band following you. Load a song in Backing track to play along with a real recording.', next: 'write',
     steps: [
       { id: 'input', short: 'Connect your input', text: () => (isDesk() ? 'Press Connect (in the panel on the left, or Audio at the top right)' : 'Tap the round Audio button at the top') + ' and allow the microphone when asked. Use headphones so the speakers do not feed back into it.', target: () => { const c = document.querySelector('#left .btn.primary'); return c && c.getClientRects().length ? c : UI.aud; }, go: () => { if (!document.querySelector('#left .btn.primary')) { try { audioOpen(); } catch (e) { } } }, done: () => !!(E && E.hasInput && E.ctx && E.ctx.state === 'running') },
       { id: 'tone', short: 'Pick a tone', text: 'Choose a tone from the list on the left: a clean, a crunch, a lead. Strum and listen; try another if you like.', target: '#left .pitem', go: () => { try { sideShow('tones'); } catch (e) { } }, setup: () => { GD.seen.tone = 0; }, done: () => !!GD.seen.tone },
@@ -14165,7 +14165,7 @@ function secMenu(anchor, si, done) {
 /** what comes after writing, from the sheet: sing it in Perform, send it as a link, print it */
 function wsNext(phone) {
   return h('div', { class: 'ws-next' + (phone ? ' ws-next-m' : '') },
-    h('button', { class: 'btn sm', id: phone ? 'mwPerform' : 'wsPerform', title: 'Sing or play it through: the words in time with the band, as a sing-along', onclick: () => { try { perfOpen(); } catch (e) { } } }, '🎤 Perform'),
+    phone ? h('button', { class: 'btn sm', id: 'mwPerform', title: 'Showtime: sing or play it through, the words in time with the band', onclick: () => { try { perfOpen(); } catch (e) { } } }, '★ Showtime') : null,
     h('button', { class: 'btn sm', id: phone ? 'mwSend' : 'wsSend', title: 'Send the song as a link: the chords, words and beat ride inside it (your recordings too, if you choose)', onclick: () => { try { slShare(); } catch (e) { } } }, slSendLabel(true)),
     phone ? '' : h('button', { class: 'btn sm', id: 'wsPrint', title: 'Print the chord sheet, or save it as a PDF', onclick: () => { try { printSheet(); } catch (e) { } } }, '🖨 Print'));
 }
@@ -14309,19 +14309,19 @@ document.addEventListener('input', e => { if (!LH.el || !e.target || !e.target.m
 /* >>> parts/64-goals.js */
 /* ============================================================
    Part 64 · Goal workspaces: the studio arranged around what a musician wants to do, not around its features.
-   Each goal is a complete workspace with its own shape, so the six do not look alike:
-     🎸 Songwriter      a notebook: the words and the tab together in the middle, theory beside it, no meters, the arrangement a strip
-     🎤 Performer       a stage: the visuals large, your tones on the left, tuner and levels on the right, lanes for your takes below
-     🎬 Creator Studio  an edit bay: the stage as the picture, the audience view and waveform views beside it, record → replay → post
-     🎼 Practice        a practice room: the fretboard large in the middle, scales on the left, the loop and the click in reach
-     🎓 Teacher         a whiteboard: the arrangement on top, the tab below to point at, the fretboard beside, notes open
-     ⚙️ Full Rig        everything: every panel, both sidebars, every Monitor widget
-   Each has a colour, a one-line mission with three steps, a row of its tools (the main one highlighted), and the button to
-   the next step of Create → Perform → Share. Nothing is removed: every panel is still under ☰ and ▦. The tools are in part 68.
+   Each goal is a complete workspace with its own shape, so the four do not look alike (2.64: Performer and Creator Studio became
+   Spotlight, Practice and Teacher became Practice; their old ids still open them):
+     🎸 Songwriter  a notebook: the words and the tab together in the middle, theory beside it, no meters, the arrangement a strip
+     🎤 Spotlight   a stage: the visuals large, your tones on the left, tuner, levels and the audience view on the right; play it
+                    live (★ Showtime is in the song bar), record it, watch it back, make it postable
+     🎼 Practice    a practice room: the fretboard large in the middle, scales on the left; loop, slow down and speed up; lessons
+                    that listen; and for teaching someone else, draw, keep notes and record the screen
+     ⚙️ Full Rig    everything: every panel, both sidebars, every Monitor widget
+   Each has a colour, a one-line mission with three steps, a row of its tools (the main one highlighted), and a button to the next
+   workspace. Nothing is removed: every panel is still under ☰ and ▦. The tools are in part 68.
    ============================================================ */
-const GOAL_STEPS = [['create', 'Create', 'songwriter'], ['perform', 'Perform', 'performer'], ['share', 'Share', 'creator']];
 const GOALS = [
-  { id: 'songwriter', ico: '🎸', name: 'Songwriter', layout: 'Songwriter', step: 'create', hue: '#d08a2e', next: ['performer', 'Perform it'],
+  { id: 'songwriter', ico: '🎸', name: 'Songwriter', layout: 'Songwriter', hue: '#d08a2e', next: ['performer', 'Into the Spotlight'],
     blurb: 'Lyrics, chords and progressions, and a quick way to catch an idea before it goes.',
     mission: 'Write the song', steps: ['Pick a key and a progression', 'Press ● Capture and play a riff', 'Put the words under the chords'],
     simple: { mission: 'Make a song', steps: ['Pick a beat', 'Play or sing over it, ● to record', 'Put the words under the chords'] },
@@ -14332,77 +14332,54 @@ const GOALS = [
       ['gtBeats', '🥁 Beats', 'A ready band to play, sing or write over: tap a beat and it plays, in your song’s key', b => popover(b, h('div', { class: 'bt-pop' }, h('h5', {}, 'Beats'), h('p', { class: 'tiny muted' }, 'Tap one and it plays. Undo puts your band back.'), beatsShelf({ after: closePop }))), null, () => !!CFG.simple],
       ['gtSheet', '🎸 Paste chords', 'Paste a chord sheet (chords over the words): it becomes the song, with bars, key, words and a guitar part', () => liOpen(''), null, () => !CFG.simple],
       ['gtVox', '🎤 Vocal pedals', 'Scream, doubler, harmony, echo, reverb, de-esser and megaphone for your voice', () => vocalBoardOpen()],
-      ['gtPads', '🥁 Pads', 'Play the drums with your fingers, tap the tempo, record a groove or beatbox it', () => padsOpen()],
+      ['gtPads', '👆 Pads', 'Play the drums with your fingers, tap the tempo, record a groove or beatbox it', () => padsOpen()],
       ['gtKeys', '🎹 Keys', 'A piano to play with the mouse, the computer keys or a MIDI keyboard: its own sounds, or the band’s bass or lead; record what you play into the song', () => keysOpen()],
       ['gtLink', () => slSendLabel(), 'Send this song to a bandmate as a link: the chords, words, tab, beat, tempo and key ride inside it (your recordings too, if you choose)', () => slShare()],
       ['gtRoll', '🎛 Piano roll', 'Draw the keys part or the bass line on a grid, loop it, duck it to the kick', () => rollOpen()],
 
 
     ] },
-  { id: 'performer', ico: '🎤', name: 'Performer', layout: 'Performer', step: 'perform', hue: '#d6355a', next: ['creator', 'Share it'],
-    blurb: 'Your tone, the band and the stage visuals, with the camera and the record button in reach.',
-    mission: 'Play it for real', steps: ['Pick a tone', 'Turn the camera on', 'Record a take with ● at the top'],
-    shape: 'The stage large · Tones on the left · Tuner and levels on the right · lanes for your takes',
-    spec: { flip: true, left: true, right: true, tlh: 'minmax(150px,30%)', dock: 'vis', order: ['vis', 'rig', 'band', 'stage', 'exp'], hidden: ['tab', 'song', 'fret', 'neural', 'stems', 'tx', 'cam', 'lab'], cur: { left: 'tones', right: 'monitor' }, mon: ['tuner', 'levels'] },
+  { id: 'performer', ico: '🎤', name: 'Spotlight', layout: 'Spotlight', hue: '#d6355a', next: ['songwriter', 'Write the next one'],
+    blurb: 'Play it live or record it: the stage visuals, your tone and camera, the record button, replay, and everything to make it postable.',
+    mission: 'Play it, record it, share it', steps: ['Pick a look and a tone', 'Play it with ★ Showtime, or ⏺ record a video', 'Watch it back, then save or share it'],
+    simple: { mission: 'Play it, record it, share it', steps: ['Pick a look', '⏺ Record a video', 'Watch it back and save it'] },
+    shape: 'The stage large · Tones on the left · Tuner, levels and the audience view on the right · lanes for your takes',
+    spec: { flip: true, left: true, right: true, tlh: 'minmax(150px,30%)', dock: 'vis', order: ['vis', 'rig', 'band', 'stage', 'exp'], hidden: ['tab', 'song', 'fret', 'neural', 'stems', 'tx', 'cam', 'lab'], cur: { left: 'tones', right: 'monitor' }, mon: ['tuner', 'levels', 'audience'] },
     tools: () => [
-      ['gtVideo', '⏺ Record video', 'Record the stage, you and the sound as a video; Studio Replay opens when you stop', b => kitRecord(b), () => !!SREC.on, 1],
-      ['gtCam', '📷 Camera', 'Put yourself centre stage, in front of the visuals', () => vzCamPress(), () => !!VZ.cam],
-      ['gtVox', '🎤 Vocal pedals', 'Scream, doubler, harmony, echo, reverb, de-esser and megaphone for your voice', () => vocalBoardOpen()],
-      ['gtStream', '📺 Stream window', 'The words and the chord in a window of their own, for OBS or any streaming app', () => streamRoom()],
-      ['gtReplay', '▶ Replay', 'Watch the last video you recorded', () => kitReplay(), null, 0, () => !KIT.last]
-    ] },
-  { id: 'creator', ico: '🎬', name: 'Creator Studio', layout: 'Creator Studio', step: 'share', hue: '#6a45e0', next: ['songwriter', 'Write the next one'],
-    blurb: 'Record, replay, add overlays and a thumbnail, and save an MP4 to post.',
-    mission: 'Make it postable', steps: ['Record an MP4', 'Watch it in Studio Replay', 'Save it with a thumbnail'],
-    shape: 'The stage as the picture · the audience view and waveforms beside it · no left sidebar',
-    spec: { flip: true, left: false, right: true, tlh: '96px', dock: 'vis', order: ['vis', 'exp', 'stage', 'band'], hidden: ['rig', 'tab', 'song', 'fret', 'neural', 'stems', 'tx', 'cam', 'lab'], cur: { right: 'monitor' }, mon: ['audience', 'views', 'levels'] },
-    tools: () => [
-      ['gtVideo', '⏺ Record MP4', 'Record the stage, the camera and the sound; MP4 where this browser can make it', b => kitRecord(b), () => !!SREC.on, 1],
+      ['gtVideo', '⏺ Record video', 'Record the stage, the camera and the sound as a video (MP4 where this browser can make it); Studio Replay opens when you stop', b => kitRecord(b), () => !!SREC.on, 1],
       ['gtFmt', () => SREC_FMTS[srecFmt()][2], 'The shape of the video: wide 16:9 for YouTube, or vertical 9:16 for Reels, TikTok and Shorts; and whether the words and chord are on it', b => popover(b, h('div', { style: { display: 'grid', gap: '8px', minWidth: '250px' } }, h('h5', {}, 'Video shape'), srecFmtBox()))],
-      ['gtReplay', '▶ Studio Replay', 'Watch the last recording, then save it, share it or make a thumbnail from any frame', () => kitReplay(), null, 0, () => !KIT.last],
-      ['gtCam', '📷 Webcam', 'You in the picture, in front of or framed by the visuals', () => vzCamPress(), () => !!VZ.cam],
+      ['gtCam', '📷 Camera', 'You in the picture, in front of or framed by the visuals', () => vzCamPress(), () => !!VZ.cam],
       ['gtFx', '✨ Overlays', 'How the camera sits with the visuals: dimmed behind, framed, or you in front', b => popover(b, h('div', { style: { display: 'grid', gap: '8px', minWidth: '240px' } }, h('h5', {}, 'Overlays'), camFxBox(), h('div', { class: 'tiny muted' }, 'Pick a look in the Visuals panel for what moves behind you.')))],
       ['gtVox', '🎤 Vocal pedals', 'Scream, doubler, harmony, echo, reverb, de-esser and megaphone for your voice', () => vocalBoardOpen()],
+      ['gtReplay', '▶ Studio Replay', 'Watch the last recording, then save it, share it or make a thumbnail from any frame', () => kitReplay(), null, 0, () => !KIT.last],
       ['gtStream', '📺 Stream window', 'The words and the chord in a window of their own, for OBS or any streaming app', () => streamRoom()],
       ['gtThumb', '🖼 Thumbnail', 'Save a 1280 × 720 picture of the stage with the song title, for the post', () => kitThumb()],
       ['gtTip', '🎸 Tip jar', 'Let your audience tip you: your own tip link as a QR code on the stage, in your videos and on share pages. Off until you set it up', () => tipOpen(), () => tipReady()],
       ['gtPrint', '◎ Soundprint', 'Any sound becomes a fingerprint, moving worlds, a reading and an ambient piece, to save or share', () => prtOpen()],
       ['gtExp', '⇩ Export', 'Audio, the share page, the lyric sheet and more', () => dockGo('exp')]
     ] },
-  { id: 'practice', ico: '🎼', name: 'Practice', layout: 'Practice', step: 'create', hue: '#1c9a63', next: ['performer', 'Perform it'],
-    blurb: 'Loop a part, slow it down, keep time with the click, and see the scale and the chord on the neck.',
-    mission: 'Get it under your fingers', steps: ['Loop the hard bars (⟲ Loop at the top)', 'Slow it down, add the click', 'Speed it up 5 at a time'],
+  { id: 'practice', ico: '🎼', name: 'Practice', layout: 'Practice', hue: '#1c9a63', next: ['performer', 'Into the Spotlight'],
+    blurb: 'Learn it and get it under your fingers: lessons that listen, loop and slow down, the scale on the neck. Teaching someone? Draw, keep notes and record the screen.',
+    mission: 'Learn it, then get it under your fingers', steps: ['Start 📅 Today, or 🎵 This song', 'Loop the hard bars and slow them down', 'Speed it up 5 at a time'],
     shape: 'The fretboard large in the middle · Theory (scales) on the left · Tuner and levels on the right',
-    spec: { flip: true, left: true, right: true, tlh: 'minmax(170px,32%)', dock: 'fret', order: ['fret', 'tab', 'stems', 'band', 'rig'], hidden: ['song', 'vis', 'stage', 'neural', 'tx', 'cam', 'lab', 'exp'], cur: { left: 'theory', right: 'monitor' }, mon: ['tuner', 'levels'] },
+    spec: { flip: true, left: true, right: true, tlh: 'minmax(170px,32%)', dock: 'fret', order: ['fret', 'tab', 'stems', 'band', 'tx', 'rig'], hidden: ['song', 'vis', 'stage', 'neural', 'cam', 'lab', 'exp'], cur: { left: 'theory', right: 'monitor' }, mon: ['tuner', 'levels'] },
     tools: () => [
-
-      ['gtPads', '🥁 Pads', 'Play the drums with your fingers, tap the tempo, record a groove or beatbox it', () => padsOpen()],
+      ['gtLearn', '🎓 Learn', 'Lessons that show you, play it, then listen to you play it', () => learnOpen('lessons'), null, 1],
+      ['gtToday', '📅 Today', 'Today’s fifteen minutes: a warm-up, a review, something new and a riff', () => learnOpen('today')],
+      ['gtSong', '🎵 This song', 'The song you have open, as lessons: its strum, each section’s chords and riff, working up to its tempo', () => learnOpen('song')],
+      ['gtEar', '👂 By ear', 'Hear a phrase, play it back: no tab', () => learnOpen('ear')],
+      ['gtRiffs', '🎸 Riffs & licks', RIFFS.length + ' riffs in ' + RIFF_STYLES.length + ' styles, in any key; Riff Lab and the scale atlas are in Learn', () => learnOpen('riffs')],
+      ['gtShed', '🎼 Scales & ear', 'Scales anywhere on the neck, this song’s arpeggios and ear training, followed note by note', () => trainOpen()],
       ['gtSlow', '− 5', 'Slower by 5 BPM', () => goalTempo(-5)],
       ['gtBpm', () => S.bpm + ' BPM', 'The tempo', () => { if (UI.bpm) UI.bpm.focus(); }],
       ['gtFast', '+ 5', 'Faster by 5 BPM', () => goalTempo(5)],
       ['gtSpeed', '⏱ Speed & key', 'Slow the song down without lowering it, or move it to another key', b => psPop(b)],
-      ['gtSongLearn', '🎵 Teach me this song', 'This song as lessons: its strum, each section’s chords and riff, up to tempo', () => learnOpen('song')],
-      ['gtShed', '🎼 Scales & ear', 'Scales anywhere on the neck, this song’s arpeggios and ear training, followed note by note', () => trainOpen(), null, 1],
+      ['gtInk', '✎ Annotate', 'Teaching: draw over anything on the page; it stays until you clear it', () => kitInk(), () => !!KIT.inkOn],
+      ['gtNotes', '📝 Lesson notes', 'Teaching: notes for this song, kept in this browser', () => kitNotes(), () => !!KIT.notesEl],
+      ['gtScreen', '⏺ Record screen', 'Teaching: record this tab or your screen, with the studio’s sound and your voice', () => kitScreen(), () => !!KIT.scr],
+      ['gtTx', '♪ Transcribe', 'Turn a recording into notes and chords to learn or teach from', () => dockGo('tx')]
     ] },
-  { id: 'teacher', ico: '🎓', name: 'Teacher', layout: 'Teacher', step: 'share', hue: '#0b84d8', next: null,
-    blurb: 'Be taught, or teach: lessons that listen while you play, warm-ups, riffs and licks, a riff lab and a map of the neck. For teaching someone else: draw, keep notes and record the screen.',
-    mission: 'Learn something new, or show someone how', steps: ['Start 📅 Today’s fifteen minutes', 'Learn your song with 🎵 This song', 'Train your ear with 👂 By ear'],
-    shape: 'The arrangement on top · the tab below to point at · the fretboard on the right · notes open',
-    spec: { flip: false, left: false, right: true, tlh: 'minmax(200px,40%)', dock: 'tab', order: ['tab', 'tx', 'stems', 'vis', 'band'], hidden: ['rig', 'song', 'fret', 'stage', 'neural', 'cam', 'lab'], side: { fret: 'right' }, so: { left: [], right: ['fret', 'refine', 'monitor'] }, cur: { right: 'fret' }, mon: ['tuner', 'live'] },
-    enter: () => { if (typeof KIT !== 'undefined' && !KIT.notesEl) { kitNotes(); KIT.notesAuto = true; } },
-    leave: () => { if (typeof KIT !== 'undefined' && KIT.notesEl && KIT.notesAuto) kitNotes(); },      /* 2.63: the notes Teacher opened close when you leave it (ones you opened yourself stay) */
-    tools: () => [
-      ['gtLearn', '🎓 Learn', 'Lessons that show you, play it, then listen to you play it', () => learnOpen('lessons'), null, 1],
-      ['gtToday', '📅 Today', 'Today’s fifteen minutes: a warm-up, a review, something new and a riff', () => learnOpen('today')],
-      ['gtSong', '🎵 This song', 'The song you have open, as lessons, working up to its tempo', () => learnOpen('song')],
-      ['gtEar', '👂 By ear', 'Hear a phrase, play it back: no tab', () => learnOpen('ear')],
-      ['gtRiffs', '🎸 Riffs & licks', RIFFS.length + ' riffs in ' + RIFF_STYLES.length + ' styles, in any key; Riff Lab and the scale atlas are in Learn', () => learnOpen('riffs')],
-      ['gtInk', '✎ Annotate', 'Draw over anything on the page; it stays until you clear it', () => kitInk(), () => !!KIT.inkOn],
-      ['gtNotes', '📝 Lesson notes', 'Notes for this song, kept in this browser', () => kitNotes(), () => !!KIT.notesEl],
-      ['gtScreen', '⏺ Record screen', 'Record this tab or your screen, with the studio’s sound and your voice', () => kitScreen(), () => !!KIT.scr],
-      ['gtTx', '♪ Transcribe', 'Turn a recording into notes and chords to teach from', () => dockGo('tx')]
-    ] },
-  { id: 'fullrig', ico: '⚙️', name: 'Full Rig', layout: 'Full Rig', step: null, hue: '#5b6b79', next: null, all: true,
+  { id: 'fullrig', ico: '⚙️', name: 'Full Rig', layout: 'Full Rig', hue: '#5b6b79', next: null, all: true,
     blurb: 'Every panel, both sidebars and every Monitor widget.',
     mission: 'Everything, your way', steps: ['Every panel on the strip', 'Both sidebars', 'Every Monitor widget'],
     shape: 'The rig in the middle · I/O and the Monitor either side · every panel on the strip',
@@ -14413,7 +14390,11 @@ const GOALS = [
     ] }
 ];
 /* the goals that came before (2.9's journeys, and the guided sessions that still name them) */
-const GOAL_ALIAS = { play: 'performer', create: 'songwriter', learn: 'practice', write: 'songwriter', perform: 'performer', share: 'creator' };
+const GOAL_ALIAS = { play: 'performer', create: 'songwriter', learn: 'practice', write: 'songwriter', perform: 'performer', share: 'performer', creator: 'performer', teacher: 'practice', spotlight: 'performer' };
+/* 2.64: a studio last arranged as one of the workspaces that were merged opens as the one it became */
+const GOAL_OLD_LAYOUTS = { Performer: 'Spotlight', 'Creator Studio': 'Spotlight', Teacher: 'Practice' };
+if (GOAL_OLD_LAYOUTS[LAY.name]) { LAY.name = GOAL_OLD_LAYOUTS[LAY.name]; }
+if (CFG.ws === 'creator') CFG.ws = 'performer'; if (CFG.ws === 'teacher') CFG.ws = 'practice'; if (CFG.lastGoal === 'creator') CFG.lastGoal = 'performer'; if (CFG.lastGoal === 'teacher') CFG.lastGoal = 'practice';
 /* they are layouts too: after Studio in the layout list (the Practice goal replaces the old Practice layout) */
 LAYOUTS.splice(1, 0, ...GOALS.map(g => [g.layout, g.blurb, g.spec]));
 const goalById = id => GOALS.find(g => g.id === (GOAL_ALIAS[id] || id)) || null;
@@ -14447,8 +14428,7 @@ function goalPlace() { const el = GOALBAR.el, top = LAY.flip === false ? $('#tim
 function goalBarBuild() {
   const box = GOALBAR.el; if (!box) return; box.innerHTML = ''; const cur = goalNow(); goalMark();
   const pick = h('div', { class: 'gl-pick', role: 'group', 'aria-label': 'What do you want to do?' }, GOALS.map(g => h('button', { class: 'gl-b' + (cur === g ? ' on' : ''), 'data-goal': g.id, style: '--gh:' + g.hue, 'aria-pressed': String(cur === g), title: g.name + ': ' + g.blurb, onclick: () => goalGo(g.id) }, h('span', { class: 'gl-i', 'aria-hidden': 'true' }, g.ico), h('span', { class: 'gl-t' }, g.name))));
-  const flow = h('ol', { class: 'gl-flow', 'aria-label': 'Create, perform, share' }, GOAL_STEPS.map(([k, n, gid]) => h('li', {}, h('button', { class: 'gl-st' + (cur && cur.step === k ? ' on' : ''), 'data-step': k, 'aria-current': cur && cur.step === k ? 'step' : null, title: n + ': open ' + goalById(gid).name, onclick: () => goalGo(gid) }, n))));
-  box.append(h('div', { class: 'gl-row' }, pick, flow));
+  box.append(h('div', { class: 'gl-row' }, pick));
   if (!cur) { box.append(h('div', { class: 'gl-row gl-tools' }, h('span', { class: 'tiny muted' }, 'Pick what you want to do, and the studio arranges itself for it. Everything stays one click away.'))); return; }
   const tools = h('div', { class: 'gl-row gl-tools', role: 'toolbar', 'aria-label': cur.name + ' tools' });
   const ms = CFG.simple && cur.simple || cur, few = CFG.simple && SIMPLE_GOAL_TOOLS[cur.id];      /* ✦ Simple: each workspace keeps its few tools (part 33b) */      /* ✦ Simple: Songwriter's own words and fewer tools (part 33b) */
@@ -14473,11 +14453,11 @@ function goalSync() {
 ['transport', 'srec', 'kit', 'bpm', 'song', 'cam'].forEach(e => bus.on(e, goalSync));
 setInterval(() => { if (GOALBAR.el && !document.hidden) goalSync(); }, 1000);
 
-/* ---------- ▦ Workspace (part 05c's dialog): the six goals as cards, then where the panels go ---------- */
+/* ---------- ▦ Workspace (part 05c's dialog): the four goals as cards, then where the panels go ---------- */
 function workspaceOpen(at) {
   const close = () => { const d = $('#workspace'); if (d) d.close(); }, cur = goalNow();
   const card = g => h('button', { type: 'button', class: 'ws-card' + (cur === g ? ' on' : ''), 'data-goal': g.id, style: '--gh:' + g.hue, 'aria-pressed': String(cur === g), onclick: () => { goalGo(g.id); close(); } },
-    h('span', { class: 'ws-top' }, h('span', { class: 'ws-ico', 'aria-hidden': 'true' }, g.ico), h('span', { class: 'ws-nm' }, h('b', {}, g.name), h('small', {}, g.step ? GOAL_STEPS.find(s => s[0] === g.step)[1] : 'Advanced')), cur === g ? h('span', { class: 'ws-on' }, 'In use') : null),
+    h('span', { class: 'ws-top' }, h('span', { class: 'ws-ico', 'aria-hidden': 'true' }, g.ico), h('span', { class: 'ws-nm' }, h('b', {}, g.name), h('small', {}, g.all ? 'Advanced' : g.mission)), cur === g ? h('span', { class: 'ws-on' }, 'In use') : null),
     h('span', { class: 'ws-mis' }, g.mission), h('span', { class: 'ws-blurb' }, g.blurb),
     goalThumb(g), h('span', { class: 'ws-shape' }, g.shape));
   const chk = (label, get, set) => h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: get(), onchange: e => set(e.target.checked) }), label);
@@ -15628,7 +15608,7 @@ function songTranspose(d) {
 }
 
 /* ---------- the tools ---------- */
-const AG_GOALS = ['songwriter', 'performer', 'creator', 'practice', 'teacher', 'fullrig'];
+const AG_GOALS = ['songwriter', 'performer', 'practice', 'fullrig'];      /* performer is Spotlight (2.64); 'creator' and 'teacher' still open its merged workspaces */
 const agStr = (d, o) => Object.assign({ type: 'string', description: d }, o || {});
 const agNum = (d, o) => Object.assign({ type: 'number', description: d }, o || {});
 const agBool = d => ({ type: 'boolean', description: d });
@@ -17751,7 +17731,7 @@ function padsOpen() {
     onpointerdown: e => { e.preventDefault(); padHit(r, e.pointerType === 'pen' && e.pressure ? padLevel(e.pressure) : e.shiftKey ? 3 : 2); } },      /* a pen's pressure is real; fingers and mice play at the normal level (Shift: an accent) */
     h('i', { 'aria-hidden': 'true' }, PAD_ROWS[r][1]), h('b', {}, PAD_ROWS[r][0]), h('kbd', {}, PAD.keys[r].toUpperCase()));
   const d = h('dialog', { class: 'pads', id: 'pads', 'aria-label': 'Pads' },
-    h('div', { class: 'pad-top' }, h('b', { class: 'pad-title' }, '🥁 Pads'), h('span', { class: 'pad-bpm mono' }), h('button', { class: 'btn pad-tap', title: 'Tap four times or more to set the tempo (or press T here)', onclick: () => padTap() }, 'Tap tempo'),
+    h('div', { class: 'pad-top' }, h('b', { class: 'pad-title' }, '👆 Pads'), h('span', { class: 'pad-bpm mono' }), h('button', { class: 'btn pad-tap', title: 'Tap four times or more to set the tempo (or press T here)', onclick: () => padTap() }, 'Tap tempo'),
       h('button', { class: 'btn pad-play', onclick: () => { T.playing ? stopPlay(true) : play(); setTimeout(padPaint, 60); } }, '▶ Play'), h('span', { style: { flex: 1 } }), h('button', { class: 'btn icon', 'aria-label': 'Close the pads', onclick: () => d.close() }, '✕')),
     h('div', { class: 'pad-pads' }, [0, 1, 2, 3, 4, 5].map(pad)),
     h('div', { class: 'pad-row' }, h('button', { class: 'btn primary pad-rec', 'aria-pressed': 'false', onclick: () => padRecord(+d.querySelector('.pad-bars').value) }, '● Record'),
@@ -17931,7 +17911,7 @@ function streamOpen() {
   toast('Stream window open. In OBS: Window Capture of it, then a ' + (CFG.stream.bg === 'black' ? 'Luma Key' : 'Chroma Key (' + CFG.stream.bg + ')') + ' filter.', 'ok');
   return w;
 }
-/** the stream window's settings: where they appear (Perform's ⋯ and Creator Studio) */
+/** the stream window's settings: where they appear (Showtime's ⋯ and Spotlight) */
 function streamPanel() {
   const c = CFG.stream, upd = () => { saveCfg(); if (STRM.w && !STRM.w.closed) { streamStyle(STRM.w); STRM.last = ''; streamTick(); } };
   return h('div', { class: 'strm' },
@@ -17944,7 +17924,7 @@ function streamPanel() {
     h('button', { class: 'btn primary', id: 'strmOpen', onclick: () => streamOpen() }, '📺 Open the stream window'),
     h('p', { class: 'tiny muted' }, 'In OBS, Streamlabs or any streaming app: add a Window Capture of that window, then a Chroma Key filter on its colour (or a Luma Key on black). The words then float over your camera. The stage visuals have their own pop-out in Visuals.'));
 }
-/** a small room for it, from the Creator Studio and Performer tools */
+/** a small room for it, from Spotlight's tools */
 function streamRoom() { return hubOpen('streamwin', { ico: '📺', title: 'Stream window', sub: 'The words and the chord in a window of their own, on a colour your streaming app keys out.', sections: [{ key: 'win', label: 'Stream window', ico: '📺', wide: true, body: () => [streamPanel()] }] }); }
 
 /* >>> parts/78-megaphone.js */

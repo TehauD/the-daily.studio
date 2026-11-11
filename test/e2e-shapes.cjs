@@ -69,9 +69,9 @@ suite('e2e-shapes', async t => {
   });
   ok(K.moving && K.got, 'a video keeps recording, picture and all, while another panel is open');
 
-  /* ---- Creator Studio ---- */
-  await ev(() => window.__daily.goalGo('creator')); await wait(700);
-  ok(await ev(() => { const b = document.getElementById('gtFmt'); window.__daily.CFG.recFmt = 'tall'; window.__daily.goalSync && window.__daily.goalSync(); return !!b; }), 'Creator Studio has the video shape next to Record MP4');
+  /* ---- Spotlight ---- */
+  await ev(() => window.__daily.goalGo('performer')); await wait(700);
+  ok(await ev(() => { const b = document.getElementById('gtFmt'); window.__daily.CFG.recFmt = 'tall'; window.__daily.goalSync && window.__daily.goalSync(); return !!b; }), 'Spotlight has the video shape next to Record video');
   const th = await ev(() => { const D = window.__daily; D.CFG.recFmt = 'tall'; const c = D.kitThumb(); D.CFG.recFmt = 'wide'; const d = D.kitThumb(); return [c.width, c.height, d.width, d.height]; });
   ok(th.join() === '1080,1920,1280,720', 'the thumbnail takes the shape too: 1080 × 1920 for vertical, 1280 × 720 for wide (' + th.join(', ') + ')');
 

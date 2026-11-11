@@ -300,7 +300,7 @@ function renderBand() {
   const drums = h('div', { class: 'card' }, h('h4', {}, 'Drums ', tog('Enabled', 'drumsOn')), h('div', { class: 'card-b' },
     h('div', { class: 'row', style: { gap: '10px', alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: '8px' } }, sel('Kit', Object.keys(KITS), B.kit, v => { B.kit = v; commit(false); }), sel('Pattern', Object.keys(DPATS), B.patName, v => { setDrumPattern(v); renderBand(); }, 170),
       songField('Length (steps)', h('select', { onchange: e => { B.drumLen = +e.target.value; commit(false); renderBand(); } }, [8, 12, 16, 24, 32].map(n => h('option', { selected: n === (B.drumLen || 16) }, n)))),
-      h('button', { class: 'btn sm primary', id: 'bandPads', title: 'Play the drums with your fingers, tap the tempo, record a groove or beatbox it', onclick: () => padsOpen() }, '🥁 Pads'),
+      h('button', { class: 'btn sm primary', id: 'bandPads', title: 'Play the drums with your fingers, tap the tempo, record a groove or beatbox it', onclick: () => padsOpen() }, '👆 Pads'),
       h('button', { class: 'btn sm', onclick: () => { B.pat = DROWS.map(() => new Array(32).fill(0)); commit(false); renderBand(); } }, 'Clear'), h('button', { class: 'btn sm', onclick: () => { const pat = dpat(); pat.forEach(r => r.forEach((v, i) => { if (v && Math.random() < .25) r[i] = 0; else if (!v && Math.random() < .04) r[i] = 1; })); commit(false); renderBand(); } }, '🎲 Mutate'),
       h('span', { class: 'tiny muted' }, 'Click a step to cycle: off → ghost → normal → accent')),
     stepGrid()));

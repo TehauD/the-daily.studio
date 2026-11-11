@@ -2,6 +2,23 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.64.0 — 2026-11-11 — Four workspaces, and one Showtime
+
+### Changed
+- **Four workspaces instead of six,** so it's clearer where to go:
+  - **🎸 Songwriter** — write the song.
+  - **🎤 Spotlight** — what were Performer and Creator Studio: the stage large, your tones, tuner, levels and the audience view; record a video in the shape you want, camera and overlays, vocal pedals, Studio Replay, stream window, thumbnail, tip jar, Soundprint and export.
+  - **🎼 Practice** — what were Practice and Teacher: the fretboard large; lessons that listen, Today, This song, By ear, riffs and licks, Scales & ear, tempo and Speed & key; and for teaching, annotate, lesson notes, screen recording and Transcribe. Lesson notes no longer open by themselves.
+  - **⚙️ Full Rig** — everything, as before.
+  - Anything that opened the old ones (a saved workspace, a guided session, an agent asking for "creator" or "teacher") opens what they became.
+- **★ Showtime is the one way to play the song full screen,** in the song bar of every workspace (it was "🎤 Perform"). Nothing else says Perform: the whole-song view's own button is gone on a computer (the song bar's is right there), the Visuals lens is **Live / Teach / Sky**, and the next-workspace buttons say **Into the Spotlight** and **Write the next one**.
+- **The Create → Perform → Share strip is gone.** It only repeated three of the workspace buttons beside it.
+- **👆 Pads has its own icon,** no longer the same drum as 🥁 Beats.
+- **One Mute all on each screen:** in the band strip on a computer, beside the click on a phone (the transport's copy shows only on a phone).
+
+### Tests
+- **`e2e-goals`** walks the four workspaces, checks there's no strip, that ★ Showtime is the only Perform control on screen, the next-workspace path, and that the old ids open the merged workspaces. **`e2e-simple`, `e2e-workspace`, `e2e-tip`, `e2e-shapes`, `e2e-learn`** follow the new names.
+
 ## 2.63.0 — 2026-11-11 — One switch for how much shows, and panel tabs you can see
 
 ### Changed

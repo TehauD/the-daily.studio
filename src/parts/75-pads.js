@@ -131,7 +131,7 @@ function padsOpen() {
     onpointerdown: e => { e.preventDefault(); padHit(r, e.pointerType === 'pen' && e.pressure ? padLevel(e.pressure) : e.shiftKey ? 3 : 2); } },      /* a pen's pressure is real; fingers and mice play at the normal level (Shift: an accent) */
     h('i', { 'aria-hidden': 'true' }, PAD_ROWS[r][1]), h('b', {}, PAD_ROWS[r][0]), h('kbd', {}, PAD.keys[r].toUpperCase()));
   const d = h('dialog', { class: 'pads', id: 'pads', 'aria-label': 'Pads' },
-    h('div', { class: 'pad-top' }, h('b', { class: 'pad-title' }, '🥁 Pads'), h('span', { class: 'pad-bpm mono' }), h('button', { class: 'btn pad-tap', title: 'Tap four times or more to set the tempo (or press T here)', onclick: () => padTap() }, 'Tap tempo'),
+    h('div', { class: 'pad-top' }, h('b', { class: 'pad-title' }, '👆 Pads'), h('span', { class: 'pad-bpm mono' }), h('button', { class: 'btn pad-tap', title: 'Tap four times or more to set the tempo (or press T here)', onclick: () => padTap() }, 'Tap tempo'),
       h('button', { class: 'btn pad-play', onclick: () => { T.playing ? stopPlay(true) : play(); setTimeout(padPaint, 60); } }, '▶ Play'), h('span', { style: { flex: 1 } }), h('button', { class: 'btn icon', 'aria-label': 'Close the pads', onclick: () => d.close() }, '✕')),
     h('div', { class: 'pad-pads' }, [0, 1, 2, 3, 4, 5].map(pad)),
     h('div', { class: 'pad-row' }, h('button', { class: 'btn primary pad-rec', 'aria-pressed': 'false', onclick: () => padRecord(+d.querySelector('.pad-bars').value) }, '● Record'),

@@ -14,7 +14,7 @@
    ============================================================ */
 VMODES.splice(1, 0, ['concert', 'Concert']);   /* Hex Resonance stays first: it is the default look */
 const lxHsl = (h, s, l, a) => `hsla(${(((h % 360) + 360) % 360) | 0},${Math.round(clamp(s, 0, 100))}%,${Math.round(clamp(l, 0, 100))}%,${clamp(a == null ? 1 : a, 0, 1).toFixed(3)})`;
-const LX_LENSES = [['perform', 'Perform'], ['teach', 'Teach'], ['sky', 'Sky']];
+const LX_LENSES = [['perform', 'Live'], ['teach', 'Teach'], ['sky', 'Sky']];      /* 2.64: “Live” (it was “Perform”): ★ Showtime is the only thing called that */
 const LX = {
   q: [], kick: 0, snare: 0, hat: 0, perc: 0, tom: 0, onset: 0, note: 0, strobe: 0, drop: 0, build: 0, strobeReq: false, lastStrobe: -1e9, chase: 0, pbSeq: 0,
   e: 0, v: 0, tn: 0, br: .4, hue: 38, ph: 0, sec: '', kind: 'ambient', int: .3, n: 4, pat: 'fan', sym: null, symT: 0, info: null, prog: null, pal: null,

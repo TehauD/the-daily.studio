@@ -4,6 +4,10 @@ What the studio, its tutorials, its documents and its tests do **not** cover yet
 
 How to use it: before a release, move what the release closed into *Closed* with the version, and add what it opened. [RELEASE.md](RELEASE.md) has this as a checklist item. Items marked **(maintainer)** are decisions or facts only the project's owner can settle; nothing here blocks a build.
 
+## Closed in 2.64.0
+
+- **Six workspaces, two pairs of them alike** (Performer and Creator Studio, Practice and Teacher). Four now, and one ★ Showtime.
+
 ## Closed in 2.63.0
 
 - **Two switches for how much shows** (Tools and Simple). Simple is the only one.

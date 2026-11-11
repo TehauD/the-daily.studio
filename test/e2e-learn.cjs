@@ -14,9 +14,9 @@ suite('e2e-learn', async t => {
   const res = () => ev(() => window.__daily.CO.res);
   const quiet = () => ev(() => Object.assign(window.__f, { active: false, midi: null, cents: 0, chord: [], vib: null }));
 
-  /* ---- the Teacher workspace ---- */
+  /* ---- the Practice workspace (Teacher's tools are in it since 2.64; 'teacher' still opens it) ---- */
   await ev(() => window.__daily.goalGo('teacher')); await wait(500);
-  ok(await ev(() => ['gtLearn', 'gtToday', 'gtSong', 'gtEar', 'gtRiffs', 'gtInk', 'gtNotes', 'gtScreen'].every(id => document.getElementById(id)) && document.getElementById('gtLearn').classList.contains('gl-main')), 'the Teacher: 🎓 Learn first, then Today, This song, By ear and riffs (Riff Lab and the atlas are inside Learn); annotate, lesson notes and record screen are still there');
+  ok(await ev(() => ['gtLearn', 'gtToday', 'gtSong', 'gtEar', 'gtRiffs', 'gtInk', 'gtNotes', 'gtScreen'].every(id => document.getElementById(id)) && document.getElementById('gtLearn').classList.contains('gl-main')), 'Practice: 🎓 Learn first, then Today, This song, By ear and riffs (Riff Lab and the atlas are inside Learn); annotate, lesson notes and record screen are still there');
   await ev(() => document.getElementById('gtLearn').click()); await wait(500);
   ok(await ev(() => { const d = document.getElementById('learn'); return !!(d && d.open) && ['today', 'lessons', 'warm', 'song', 'ear', 'riffs', 'lab', 'atlas', 'teach'].every(k => d.querySelector('section[data-sec="' + k + '"]')) && document.querySelectorAll('#learn [data-lesson]').length >= 20; }), 'Learn: lessons, warm-ups, riffs & licks, Riff Lab, the atlas and a room for teachers; four paths of lessons');
 
