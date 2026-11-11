@@ -128,6 +128,7 @@ function mSheet() {
     h('div', { class: 'mgrid' },
       tile(msvg('<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/>'), 'Hum or sing a song', () => { mCloseOverlays(); humOpen(); }),
       tile(msvg('<path d="M17 2l4 4-4 4M3 11V9a3 3 0 013-3h15M7 22l-4-4 4-4M21 13v2a3 3 0 01-3 3H3"/>'), 'Loop & layer', () => { mCloseOverlays(); looperOpen(); }),
+      tile(msvg('<circle cx="12" cy="12" r="9"/><path d="M12 6.5a5.5 5.5 0 105.5 5.5M12 9.5a2.5 2.5 0 102.5 2.5"/>'), 'Soundprint', () => { mCloseOverlays(); prtOpen(); }),
       tile(msvg('<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/>'), 'Audio · kill switch', () => { mCloseOverlays(); audioOpen(); }),
       tile(msvg('<path d="M21 14.5A8.5 8.5 0 119.5 3a6.7 6.7 0 0011.5 11.5z"/>'), CFG.theme === 'light' ? 'Dark theme' : 'Light theme', () => { setTheme(CFG.theme === 'light' ? 'dark' : 'light'); mSheetRefresh(); }),
       tile(msvg('<circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 000 18z" fill="currentColor"/>'), 'Appearance', () => { mCloseOverlays(); lookOpen(); }),

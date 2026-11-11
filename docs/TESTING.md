@@ -61,6 +61,15 @@ Each file starts its **own** static server, its own Chromium (fake microphone an
 | `e2e-finish.cjs` | Finish it (2.57):
 | `e2e-comments.cjs` | Comments and the lyric helper (2.58):
 | `e2e-yourcopy.cjs` | Load your copy and Make it ours (2.59), with a made-up 48-second record:
+| `e2e-soundprint.cjs` | Soundprint (2.61), with a made-up 19-second song (Am F C G, 100 BPM). `SHOTS=dir` saves a picture of each world:
+  - the room loads when opened; the song is read as A minor, 100 BPM, Am – F – C – G, with its beats as onsets, in a print under 1.4 kB;
+  - the same sound makes the same print, and noise another (texture, no pulse);
+  - a calm pad, rain and fast drums make different kinds of print, and a sound reads the same at 22.05, 44.1 and 48 kHz;
+  - each of the five worlds draws its own picture in colour;
+  - the piece: length, −1 dBFS, sound throughout, the same from the print alone, the kill switch stops it;
+  - artwork (2048 px), WAV and video downloads;
+  - the link: the same print, reading and piece in another browser, no sound, address cleaned; it fits a phone;
+  - Your soundprints, markup in a title shown as text, a broken link, the microphone, Start a song from it, and no outside requests. |
 | `e2e-drops.cjs` | Drops (2.60), through the site's real Worker with private and public in-memory buckets:
   - the Ogg file plays back at the master's length;
   - the sharing terms ask first, and Drop it waits for "this is mine";

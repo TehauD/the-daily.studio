@@ -18,7 +18,8 @@ export const ROOMS = {
   tx: ['09b-tx-engine.js'],          /* the transcription engine: its panel stays in the core and loads it when you transcribe */
   midi: ['47-midi-import.js'],       /* opening a .mid file */
   shower: ['73f-shower.js'],         /* Shower mode (Backstage) */
-  tune: ['90-tune.js']               /* vocal tuning (2.43): loaded when a take is first tuned */
+  tune: ['90-tune.js'],              /* vocal tuning (2.43): loaded when a take is first tuned */
+  print: ['93-soundprint.js']        /* Soundprint (2.61): loaded when it is first opened */
 };
 export const roomParts = new Set(Object.values(ROOMS).flat());
 

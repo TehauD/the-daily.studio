@@ -4,6 +4,10 @@ What the studio, its tutorials, its documents and its tests do **not** cover yet
 
 How to use it: before a release, move what the release closed into *Closed* with the version, and add what it opened. [RELEASE.md](RELEASE.md) has this as a checklist item. Items marked **(maintainer)** are decisions or facts only the project's owner can settle; nothing here blocks a build.
 
+## Closed in 2.61.0
+
+- **Sound as art.** Soundprint turns any sound into a print, four moving worlds, a reading and an ambient piece, shared as a 1 kB link that never carries the sound.
+
 ## Closed in 2.60.0
 
 - **No community page.** Drops is a public showcase, reviewed first and gone after 7 days. It's switched on by the owner (CLOUDFLARE_SETUP.md, Part H).
@@ -133,6 +137,13 @@ How to use it: before a release, move what the release closed into *Closed* with
 ### Song structure (opened by 2.48)
 - The **Stage** panel's prompter and the lower third have none of Perform's layout choices.
 - Sections can be reordered with ↑ ↓ but not dragged on the map.
+
+### Soundprint (opened by 2.61)
+- **Prints can't be dropped** to the public page yet. A soundprint gallery could use Drops' review, with the print instead of audio (no copyright question).
+- **No vertical (9:16) video** for stories; the video is square.
+- **The reading is a guess** from about a kilobyte: it hears one key for the whole sound, and chords only from the key's own (no borrowed chords).
+- **Prints are kept in this browser only.** They're not in backups, folder sync or GitHub sync yet.
+- **No caption or location** on a print, by design for now.
 
 ### Drops (opened by 2.60)
 - **Off until the owner sets it up** (public bucket, copyright agent, takedown email: CLOUDFLARE_SETUP.md, Part H).
