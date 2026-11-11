@@ -85,9 +85,14 @@ const projBytes = n => n >= 1073741824 ? (n / 1073741824).toFixed(1) + ' GB' : n
 const projAgo = t => { const s = (Date.now() - t) / 1000; if (s < 60) return 'just now'; if (s < 3600) return Math.floor(s / 60) + ' min ago'; if (s < 86400) return Math.floor(s / 3600) + ' h ago'; if (s < 604800) return Math.floor(s / 86400) + ' d ago'; return new Date(t).toLocaleDateString(); };
 const slug = s => (String(s || 'song').normalize('NFKD').replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '-').slice(0, 60) || 'song');
 /** a saved song, completed with any fields this version added since it was written */
+/** the longest song soundprint code kept (a print packs to about 1 kB, 1.4 k characters; part 93) */
+const PRT_CODE_MAX = 4000;
 function normSong(saved) {
   const d = newSong(), s = Object.assign(d, saved || {}); s.band = bandRename(Object.assign(d.band, (saved && saved.band) || {})); s.mix = Object.assign(d.mix, (saved && saved.mix) || {}); s.voicePref = (saved && saved.voicePref) || {};
-  s.tuning = ((saved && saved.tuning) || d.tuning).slice(); if (!Array.isArray(s.sections)) s.sections = []; if (!Array.isArray(s.ts) || s.ts.length < 2) s.ts = [4, 4]; return s;
+  s.tuning = ((saved && saved.tuning) || d.tuning).slice(); if (!Array.isArray(s.sections)) s.sections = []; if (!Array.isArray(s.ts) || s.ts.length < 2) s.ts = [4, 4];
+  /* 2.65.1: the song's soundprint (part 93) comes from whoever made the song: kept only in its own shape (a short base64url code and a hex signature) */
+  if (s.sprint != null) { const sp = s.sprint; s.sprint = sp && typeof sp === 'object' && typeof sp.c === 'string' && sp.c.length <= PRT_CODE_MAX && /^[A-Za-z0-9_-]+$/.test(sp.c) ? { sig: /^[0-9a-f]{1,16}$/.test(sp.sig) ? sp.sig : '', c: sp.c } : null; if (!s.sprint) delete s.sprint; }
+  return s;
 }
 const takeMeta = t => { const m = { hum: !!t.hum, id: t.id, kind: t.kind || 'gtr', name: t.name, startSec: t.startSec, sr: t.sr, g: t.g, pan: t.pan || 0, fx: fxOn(t.fx) ? Object.assign({}, t.fx) : null, mute: !!t.mute, solo: !!t.solo, mode: t.mode, bpm: t.bpm, preset: t.preset || '', peak: t.peak, rms: t.rms, dur: t.dur, t: t.t, hasWet: !!t.wet, hasCam: !!(t.cam && t.cam.length) };
   if (t.grp && t.grp !== t.id) m.grp = t.grp; if (t.src && t.src !== t.id) m.src = t.src; if (t.inS > 0) m.inS = t.inS; if (t.outS != null) m.outS = t.outS; if (t.fadeIn > 0) m.fadeIn = t.fadeIn; if (t.fadeOut > 0) m.fadeOut = t.fadeOut; if (t.cg != null && Math.abs(t.cg - 1) > 1e-6) m.cg = t.cg;

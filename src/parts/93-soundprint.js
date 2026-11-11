@@ -573,7 +573,10 @@ async function prtRecord() {
 }
 function prtRecStop(keep) { const r = PRT.rec; if (!r) return; r.keep = keep; cancelAnimationFrame(r.raf); try { if (r.mr.state !== 'inactive') r.mr.stop(); else prtRecEnd(r); } catch (e) { prtRecEnd(r); } if (!keep) prtSay(''); }
 function prtRecEnd(r) { if (PRT.rec === r) PRT.rec = null; cancelAnimationFrame(r.raf); try { r.stream.getTracks().forEach(t => t.stop()); } catch (e) { } try { r.actx.close(); } catch (e) { } const box = document.getElementById('prtRecBox'); if (box) box.hidden = true; }
+/** the largest sound file read for a print: ten minutes of 96 kHz 24-bit stereo, with room to spare */
+const PRT_FILE_MAX = 400 * 1048576;
 async function prtFromFile(f) {
+  if (!f || f.size > PRT_FILE_MAX) { prtSay('That file is too large to read here (over ' + Math.round(PRT_FILE_MAX / 1048576) + ' MB). The first ten minutes of a shorter or compressed copy make the same print.'); return; }      /* 2.65.1: never read a huge file into memory */
   prtSay('Opening ' + f.name + '…');
   try { const { pcm, sr } = await humDecode(await f.arrayBuffer(), 600); await prtMake(pcm, sr, f.name.replace(/\.[^.]+$/, '').slice(0, 60)); }
   catch (e) { prtSay('That file couldn’t be read as audio (' + (e.message || e) + ').'); }
@@ -674,7 +677,7 @@ function prtSongSig() {
 }
 /** { P, fresh } for the open song, or null if it has none yet */
 function prtSongPrint() {
-  const sp = S.sprint; if (!sp || typeof sp.c !== 'string') return null;
+  const sp = S.sprint; if (!sp || typeof sp.c !== 'string' || sp.c.length > PRT_CODE_MAX) return null;
   if (PRV.c !== sp.c) { try { PRV.P = prtUnpack(slUnB64(sp.c)); PRV.c = sp.c; } catch (e) { return null; } }
   return { P: PRV.P, fresh: sp.sig === prtSongSig() };
 }
@@ -703,7 +706,7 @@ function prtLook(g, W, H) {
     if (!PRV.busy && !PRV.err && !playing) prtSongMake();
     return prtLookMsg(g, W, H, PRV.busy ? 'Listening to the song… ' + Math.round(PRV.pct * 100) + '%' : PRV.err ? 'No soundprint: ' + PRV.err + '.' : playing ? 'Stop the song to make its soundprint' : 'Listening to the song…', PRV.busy ? 'Its print is made once and kept with the song.' : PRV.err ? 'Press ⟳ Listen again when it is ready.' : '');
   }
-  const P = sp.P, G = prtGenome(P), w = CFG.prtWorld || 'print', now = playing ? clamp(playheadSlot() / Math.max(1, songSlots()), 0, 1) : null, clock = performance.now() / 1000;
+  const P = sp.P, G = prtGenome(P), w = prtLookWorld(), now = playing ? clamp(playheadSlot() / Math.max(1, songSlots()), 0, 1) : null, clock = performance.now() / 1000;
   g.save(); g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1;
   if (w === 'terrain') prtTerrain(g, W, H, P, G, now == null ? (CFG.reduce ? 1 : (clock / 40) % 1) : now, { clock, still: now == null && !!CFG.reduce, playing, G });
   else if (w === 'flow') {

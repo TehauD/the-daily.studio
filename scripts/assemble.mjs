@@ -8,6 +8,13 @@ import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { PAGES, renderPage, SITE } from './seo-pages.mjs';
 import { backstagePages } from './backstage-pages.mjs';
+import { minifyJS, minifyCSS, tokens } from './minify.mjs';
+/** 2.65.1: a small page's one <script> and its <style> minified; the script's tokens must be the same before and after, or the build stops */
+const sig = x => tokens(x).filter(t => t.t !== 'ws' && t.t !== 'nl').map(t => t.t + ':' + t.v).join('\u0001');
+function minPage(src, what) {
+  return src.replace(/<script>([\s\S]*?)<\/script>/, (all, js) => { const m = minifyJS(js); if (sig(m) !== sig(js)) throw new Error('minifying ' + what + ' changed its script'); return '<script>' + m + '</script>'; })
+    .replace(/<style>([\s\S]*?)<\/style>/g, (all, css) => '<style>' + minifyCSS(css) + '</style>');
+}
 const root = join(dirname(fileURLToPath(import.meta.url)), '..'), out = join(root, 'dist');
 execFileSync(process.execPath, [join(root, 'scripts', 'build.mjs')], { stdio: 'inherit' });
 rmSync(out, { recursive: true, force: true }); mkdirSync(join(out, 'journal'), { recursive: true });
@@ -26,11 +33,11 @@ cpSync(join(root, 'journal', 'index.html'), join(out, 'journal', 'index.html'));
 /* Drops (2.60): the public page and the owner's review page, each with one script allowed by its hash */
 mkdirSync(join(out, 'drops', 'review'), { recursive: true });
 for (const [f, to] of [['index.html', 'drops/index.html'], ['review.html', 'drops/review/index.html']]) {
-  const src = readFileSync(join(root, 'drops', f), 'utf8'), m = src.match(/<script>([\s\S]*?)<\/script>/); if (!m || !src.includes('__SCRIPT_HASH__')) throw new Error('drops/' + f + ' needs one <script> and the __SCRIPT_HASH__ placeholder');
+  const src = minPage(readFileSync(join(root, 'drops', f), 'utf8'), 'drops/' + f), m = src.match(/<script>([\s\S]*?)<\/script>/); if (!m || !src.includes('__SCRIPT_HASH__')) throw new Error('drops/' + f + ' needs one <script> and the __SCRIPT_HASH__ placeholder');
   writeFileSync(join(out, to), src.replace('__SCRIPT_HASH__', 'sha256-' + createHash('sha256').update(m[1]).digest('base64')));
 }
 for (const f of ['moving.html', 'move.html']) {
-  const src = readFileSync(join(root, 'journal', f), 'utf8'), m = src.match(/<script>([\s\S]*?)<\/script>/); if (!m || !src.includes('__SCRIPT_HASH__')) throw new Error('journal/' + f + ' needs one <script> and the __SCRIPT_HASH__ placeholder');
+  const src = minPage(readFileSync(join(root, 'journal', f), 'utf8'), 'journal/' + f), m = src.match(/<script>([\s\S]*?)<\/script>/); if (!m || !src.includes('__SCRIPT_HASH__')) throw new Error('journal/' + f + ' needs one <script> and the __SCRIPT_HASH__ placeholder');
   writeFileSync(join(out, 'journal', f), src.replace('__SCRIPT_HASH__', 'sha256-' + createHash('sha256').update(m[1]).digest('base64')));
 }
 

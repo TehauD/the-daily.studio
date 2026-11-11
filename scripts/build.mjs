@@ -105,7 +105,8 @@ function siteBuild() {
   const extra = FONTS.map(([, f]) => 'fonts/' + f).concat(Object.values(files));
   const swS = sw.replace('const CORE = [', `const EXTRA = ${JSON.stringify(extra)};      /* the fonts and rooms: kept for offline use, but a missing one never stops the install */\nconst CORE = [`).replace('Promise.all(CORE.map(u => save(c, u))))', 'Promise.all(CORE.map(u => save(c, u))).then(() => Promise.all(EXTRA.map(u => save(c, new Request(u, { cache: \'force-cache\' })).catch(() => { })))))');
   if (swS === sw) { console.error('Could not make the site service worker'); process.exit(1); }
-  return { 'index.html': html, 'sw.js': swS, ...roomOut, info: sp.info };
+  const swMin = minifyJS(swS); proof(swS, swMin, 'the site service worker'); new vm.Script(swMin);      /* 2.65.1: minified like the site script */
+  return { 'index.html': html, 'sw.js': swMin, ...roomOut, info: sp.info };
 }
 
 /* installable web app: manifest + offline cache (the page registers sw.js only on https / localhost) */

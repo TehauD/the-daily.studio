@@ -166,5 +166,12 @@ suite('e2e-soundprint', async t => {
   const SG = await ev(() => { const S = window.__daily.S; return { key: S.key, minor: S.minor, bpm: S.bpm, chords: S.sections[0].bars.map(b => b.chord).join(' ') }; });
   ok(SG.key === 9 && SG.minor && Math.abs(SG.bpm - 100) <= 3 && /^Am F C G Am F C G$/.test(SG.chords), 'in its key and tempo, with its chords: A minor, ' + SG.bpm + ' BPM, ' + SG.chords);
 
+  /* 2.65.1: a song's print comes from whoever made the song: only its own shape is kept, and an unknown world draws Print */
+  const HD = await ev(() => { const D = window.__daily, n = x => D.normSong({ sections: [], sprint: x }).sprint, ok = 'AQ0iAB-_x' + 'Q'.repeat(1300);
+    const was = D.CFG.prtWorld; D.CFG.prtWorld = '<img>'; const w = D.prtLookWorld(); D.CFG.prtWorld = 'flow'; const w2 = D.prtLookWorld(); D.CFG.prtWorld = was;
+    return { keep: JSON.stringify(n({ sig: 'abc123', c: ok })) === JSON.stringify({ sig: 'abc123', c: ok }), badSig: n({ sig: '<b>', c: ok }).sig === '', html: n({ c: '<script>' }) === undefined, big: n({ c: 'A'.repeat(D.PRT_CODE_MAX + 1) }) === undefined, notObj: n('x') === undefined && n(7) === undefined, noKey: !('sprint' in D.normSong({ sections: [] })), w, w2 }; });
+  ok(HD.keep && HD.badSig && HD.html && HD.big && HD.notObj && HD.noKey, 'a song keeps a well-formed print, and drops one that is not base64url, too long or not an object ' + JSON.stringify(HD));
+  ok(HD.w === 'print' && HD.w2 === 'flow', 'an unknown Soundprint world in the settings draws Print');
+
   ok(req.length === 0, 'nothing was fetched from anywhere else (' + (req.join(', ') || 'none') + ')');
 });
