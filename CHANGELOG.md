@@ -18,6 +18,9 @@ All notable changes to the-daily.studio (earlier versions were released under th
 - **The user guide, README, TESTING, SECURITY_MODEL, PRIVACY, GAPS and the public guide pages** say ★ Showtime, four workspaces, ⋯ More and the arrangement rail where they still said Perform, six workspaces, Teacher, Creator Studio or the Tools button.
 - **The pictures** in the README, the user guide and the public guide pages are made again from 2.65.1.
 
+### Tests
+- **`e2e-soundprint`** checks the song-print guards and the world fallback. **`e2e-requests`** reads the minified service worker without depending on its spacing. **`e2e-concert`** gives the 2 MB Sky poster up to 15 s to encode (it sometimes took more than the 4 s it had on a slow software renderer).
+
 ## 2.65.0 — 2026-11-11 — Less on screen, the same studio
 
 ### Changed
