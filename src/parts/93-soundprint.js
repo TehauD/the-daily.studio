@@ -339,7 +339,8 @@ function prtFlowSpawn(s, P, G, i, u, ex, ey) {
   s.x[i] = ex == null ? r() * 1.2 - .1 : ex + (r() - .5) * .03; s.y[i] = ey == null ? r() * 1.2 - .1 : ey + (r() - .5) * .03; s.px[i] = s.x[i]; s.py[i] = s.y[i]; s.vx[i] = 0; s.vy[i] = 0; s.life[i] = 40 + r() * (80 + 160 * G.lam);
   let tot = 0; G.pal.forEach(p => { tot += .2 + row[p.pc]; }); let q = r() * tot, k = 0; for (; k < G.pal.length - 1; k++) { q -= .2 + row[G.pal[k].pc]; if (q <= 0) break; } s.pi[i] = k; s.lu[i] = r() < .55 ? 0 : 1;
 }
-function prtFlowStep(s, g, S, P, G, u, still) {
+function prtFlowStep(s, g, S, P, G, u, still, Hy) {
+  Hy = Hy || S;
   const n2 = prtNoise(G.seed ^ 0x9f), e = prtAt(P.e, u), sp = .0034 * (.35 + 1.3 * e), fs = G.fs, ep = .0016, tu = s.tau;
   while (s.on < P.on.length && P.on[s.on].t <= u) {
     const q = P.on[s.on++]; if (q.s < .2) continue; const hr = prtRand(G.seed ^ (s.on * 977)), ex = .12 + .76 * hr(), ey = .12 + .76 * hr(), k = Math.round((20 + 150 * q.s) * s.N / 1500);
@@ -356,7 +357,7 @@ function prtFlowStep(s, g, S, P, G, u, still) {
   const a = (still ? (G.dark ? .045 : .06) : .2) * (.45 + .75 * e) * G.ink;
   for (let k = 0; k < G.pal.length; k++) for (let l = 0; l < 2; l++) {
     g.strokeStyle = prtCol(G, k, a, G.dark ? G.lit + (l ? 16 : -4) : G.lit + (l ? -12 : 0)); g.beginPath();
-    for (let i = 0; i < s.N; i++) if (s.pi[i] === k && s.lu[i] === l) { g.moveTo(s.px[i] * S, s.py[i] * S); g.lineTo(s.x[i] * S, s.y[i] * S); }
+    for (let i = 0; i < s.N; i++) if (s.pi[i] === k && s.lu[i] === l) { g.moveTo(s.px[i] * S, s.py[i] * Hy); g.lineTo(s.x[i] * S, s.y[i] * Hy); }
     g.stroke();
   }
   g.restore();
@@ -532,6 +533,7 @@ async function prtOpen(o = {}) {
   prtDlg();
   if (o.link) { try { const P = await prtFromCode(o.link); PRT.src = null; prtShow(P, { mine: false, link: true }); } catch (e) { prtChoose(); prtSay('That soundprint link could not be opened: ' + (e.message || e) + '.'); } return; }
   prtChoose();
+  if (o.print) { PRT.src = null; return prtShow(o.print, { mine: true }); }
   if (o.take) return prtFromTake(o.take); if (o.master || o.song) return prtFromSong(!!o.master);
 }
 function prtChoose() {
@@ -632,31 +634,92 @@ function prtWorld(k) { PRT.world = k; PRT.dirty = true; document.querySelectorAl
 function prtRetitle(t) { const P = PRT.cur; if (!P) return; P.title = String(t || '').slice(0, 60); const Q = prtUnpack(prtPack(P)); Object.assign(P, { bytes: Q.bytes, title: Q.title }); if (prtKept(P)) prtKeep(P); }
 /** where the playhead is (0..1), or null when nothing plays */
 function prtNow() { const p = PRT.play; if (!p || !E.ctx) return null; return clamp((E.ctx.currentTime - p.t0) / p.len, 0, 1); }
+/** draw world w of P live on g (W×W): now = playhead 0..1, or null when nothing plays. st keeps its caches (print, flow layer). */
+function prtLive(g, W, P, w, now, clock, st, nb) {
+  const G = prtGenome(P), playing = now != null, live = !CFG.reduce, idle = !playing && live && w !== 'print', key = w + '|' + P.id + '|' + W;
+  if (w === 'print' || (w === 'flow' && !live)) {
+    if (!st.cache || st.cache.key !== key) { const c = document.createElement('canvas'); c.width = c.height = W; prtDraw(c.getContext('2d'), W, W, P, w, 1, { still: true, G, noBg: !!nb }); c.key = key; st.cache = c; }
+    if (playing && w === 'print') {
+      /* the print grows out from the core as it plays; the ridges at the front shine; onsets flash */
+      const RG = prtRidges(P, G), r = RG.dmax * W * Math.min(1, now + .004), cx = RG.pcx * W, cy = RG.pcy * W, fl = P.on.reduce((m, x) => { const d = now - x.t; return d >= 0 && d < .012 ? Math.max(m, x.s * (1 - d / .012)) : m; }, 0);
+      if (!nb) prtGround(g, W, W, G); g.save(); g.globalAlpha = .13; g.drawImage(st.cache, 0, 0); g.restore();
+      g.save(); g.beginPath(); g.arc(cx, cy, r, 0, 6.2832); g.clip(); g.drawImage(st.cache, 0, 0); g.restore();
+      g.save(); g.beginPath(); g.arc(cx, cy, r, 0, 6.2832); g.arc(cx, cy, Math.max(0, r - W * (.03 + .05 * fl)), 0, 6.2832, true); g.clip(); g.globalCompositeOperation = G.dark ? 'lighter' : 'multiply'; g.globalAlpha = .55 + .45 * fl; g.drawImage(st.cache, 0, 0); g.restore();
+    } else g.drawImage(st.cache, 0, 0);
+  } else if (w === 'flow') {
+    /* a live field on its own layer: trails fade into the ground, the sound moves it */
+    let F = st.flow; const u = playing ? now : (clock / 45) % 1;
+    if (!F || F.key !== key) { const c = document.createElement('canvas'); c.width = c.height = W; prtDraw(c.getContext('2d'), W, W, P, 'flow', 1, { still: true, G }); F = st.flow = { key, c, s: prtFlowNew(P, G, Math.round(clamp(W * 2, 400, 2400) * (1 + .4 * Math.min(1, G.dens / 4)))), u }; }
+    if (u < F.u - .5) F.s.on = 0; while (F.s.on < P.on.length && P.on[F.s.on].t < u - .02) F.s.on++; F.u = u;
+    const lg = F.c.getContext('2d'); lg.save(); lg.globalAlpha = G.fade * .3; lg.fillStyle = G.bg; lg.fillRect(0, 0, W, W); lg.restore();
+    prtFlowStep(F.s, lg, W, P, G, u, false); g.drawImage(F.c, 0, 0);
+  } else prtDraw(g, W, W, P, w, playing ? now : (idle ? (clock / 40) % 1 : 1), { clock, still: !playing && !idle, playing, G, noBg: !!nb });
+}
 function prtLoop(ts) {
   PRT.raf = 0; const cv = PRT.cv, P = PRT.cur; if (!cv || !P || !document.getElementById('prtCv')) return;
-  const now = prtNow(), playing = now != null, live = !CFG.reduce, idle = !playing && live && PRT.world !== 'print', clock = ts / 1000, W = cv.width, G = prtGenome(P);
-  if (playing || idle || PRT.dirty) {
-    const g = cv.getContext('2d'), w = PRT.world, key = w + '|' + P.id + '|' + W;
-    if (w === 'print' || (w === 'flow' && !live)) {
-      if (!PRT.cache || PRT.cache.key !== key) { const c = document.createElement('canvas'); c.width = c.height = W; prtDraw(c.getContext('2d'), W, W, P, w, 1, { still: true, G }); c.key = key; PRT.cache = c; }
-      if (playing && w === 'print') {
-        /* the print grows out from the core as it plays; the ridges at the front shine; onsets flash */
-        const RG = prtRidges(P, G), r = RG.dmax * W * Math.min(1, now + .004), cx = RG.pcx * W, cy = RG.pcy * W, fl = P.on.reduce((m, x) => { const d = now - x.t; return d >= 0 && d < .012 ? Math.max(m, x.s * (1 - d / .012)) : m; }, 0);
-        prtGround(g, W, W, G); g.save(); g.globalAlpha = .13; g.drawImage(PRT.cache, 0, 0); g.restore();
-        g.save(); g.beginPath(); g.arc(cx, cy, r, 0, 6.2832); g.clip(); g.drawImage(PRT.cache, 0, 0); g.restore();
-        g.save(); g.beginPath(); g.arc(cx, cy, r, 0, 6.2832); g.arc(cx, cy, Math.max(0, r - W * (.03 + .05 * fl)), 0, 6.2832, true); g.clip(); g.globalCompositeOperation = G.dark ? 'lighter' : 'multiply'; g.globalAlpha = .55 + .45 * fl; g.drawImage(PRT.cache, 0, 0); g.restore();
-      } else g.drawImage(PRT.cache, 0, 0);
-    } else if (w === 'flow') {
-      /* a live field on its own layer: trails fade into the ground, the sound moves it */
-      let F = PRT.flow; const u = playing ? now : (clock / 45) % 1;
-      if (!F || F.key !== key) { const c = document.createElement('canvas'); c.width = c.height = W; prtDraw(c.getContext('2d'), W, W, P, 'flow', 1, { still: true, G }); F = PRT.flow = { key, c, s: prtFlowNew(P, G, Math.round(clamp(W * 2, 400, 2400) * (1 + .4 * Math.min(1, G.dens / 4)))), u }; }
-      if (u < F.u - .5) F.s.on = 0; while (F.s.on < P.on.length && P.on[F.s.on].t < u - .02) F.s.on++; F.u = u;
-      const lg = F.c.getContext('2d'); lg.save(); lg.globalAlpha = G.fade * .3; lg.fillStyle = G.bg; lg.fillRect(0, 0, W, W); lg.restore();
-      prtFlowStep(F.s, lg, W, P, G, u, false); g.drawImage(F.c, 0, 0);
-    } else prtDraw(g, W, W, P, w, playing ? now : (idle ? (clock / 40) % 1 : 1), { clock, still: !playing && !idle, playing, G });
-    PRT.dirty = false;
-  }
+  const now = prtNow(), moving = now != null || (!CFG.reduce && PRT.world !== 'print');
+  if (moving || PRT.dirty) { prtLive(cv.getContext('2d'), cv.width, P, PRT.world, now, ts / 1000, PRT); PRT.dirty = false; }
   PRT.raf = requestAnimationFrame(prtLoop);
+}
+
+/* ---------- the song's own soundprint, as a look in the Visuals (part 92 puts it in the list) ----------
+   The open song is rendered faster than it plays (the whole mix, as Finish it hears it), listened to, and its print is kept with the
+   song (S.sprint, about 1.6 kB) so it is there next time. It follows the playhead. When the song changes, the old print stays until
+   you press ⟳ Listen again (a render stops playback, so it never starts by itself while the song plays). */
+const PRV = { busy: false, pct: 0, err: '', c: '', P: null, sig: '', sigAt: 0, st: {}, off: null, flow: null };
+function prtSongSig() {
+  const now = performance.now(); if (now - PRV.sigAt < 1000 && PRV.sig) return PRV.sig; PRV.sigAt = now;
+  const txt = JSON.stringify([S.sections, S.band, S.bpm, S.key, S.minor, S.ts, S.swing, S.mix]) + '|' + TAKES.map(t => [tkKey(t), t.startSec, t.g, t.cg, t.mute, t.pan, (t.dry || []).length].join()).join(';') + '|' + (STM.ch ? STM.ch.length + ':' + STM.mute : '');
+  let hh = 0x811c9dc5; for (let i = 0; i < txt.length; i++) { hh ^= txt.charCodeAt(i); hh = Math.imul(hh, 16777619); } return PRV.sig = (hh >>> 0).toString(16);
+}
+/** { P, fresh } for the open song, or null if it has none yet */
+function prtSongPrint() {
+  const sp = S.sprint; if (!sp || typeof sp.c !== 'string') return null;
+  if (PRV.c !== sp.c) { try { PRV.P = prtUnpack(slUnB64(sp.c)); PRV.c = sp.c; } catch (e) { return null; } }
+  return { P: PRV.P, fresh: sp.sig === prtSongSig() };
+}
+async function prtSongMake() {
+  if (PRV.busy) return; PRV.busy = true; PRV.err = ''; PRV.pct = 0; if (typeof prtBarSync === 'function') prtBarSync();
+  const song = S;
+  try {
+    const o = await lxRender(null, p => { PRV.pct = p || 0; }); let pk = 0; const m = new Float32Array(o.l.length); for (let i = 0; i < m.length; i++) { m[i] = (o.l[i] + o.r[i]) * .5; pk = Math.max(pk, Math.abs(m[i])); }
+    if (pk < 1e-4) throw new Error('the song is silent so far: add chords, the band or a recording');
+    const A = prtAnalyze(m, o.sr); A.title = (S.title || 'Untitled').slice(0, 60); A.by = CFG.slName || ''; A.day = prtDayNow();
+    const P = prtUnpack(prtPack(A)); PRV.sigAt = 0; if (S === song) { S.sprint = { sig: prtSongSig(), c: slB64(P.bytes) }; try { await projSave(); } catch (e) { } }
+  } catch (e) { PRV.err = e && e.cancelled ? 'the render was stopped' : (e.message || String(e)); }
+  finally { PRV.busy = false; if (typeof prtBarSync === 'function') prtBarSync(); }
+}
+function prtLookMsg(g, W, H, text, sub) {
+  g.save(); g.fillStyle = '#05060b'; g.fillRect(0, 0, W, H); const s = Math.min(W, H) / 600;
+  g.strokeStyle = 'rgba(255,255,255,.12)'; g.lineWidth = 1.2 * s; for (let i = 1; i <= 9; i++) { g.beginPath(); g.ellipse(W / 2, H / 2 - 30 * s, i * 13 * s, i * 15 * s, 0, 0, 6.2832); g.stroke(); }
+  g.fillStyle = '#f0eee8'; g.textAlign = 'center'; g.font = '600 ' + Math.round(20 * s) + 'px Inter, system-ui, sans-serif'; g.fillText(text, W / 2, H / 2 + 120 * s);
+  if (sub) { g.fillStyle = 'rgba(240,238,232,.6)'; g.font = Math.round(14 * s) + 'px Inter, system-ui, sans-serif'; g.fillText(sub, W / 2, H / 2 + 148 * s); }
+  g.restore();
+}
+/** the look: called by the Visuals for every frame while Soundprint is the look */
+function prtLook(g, W, H) {
+  const sp = prtSongPrint(), playing = !!T.playing;
+  if (!sp) {
+    if (!PRV.busy && !PRV.err && !playing) prtSongMake();
+    return prtLookMsg(g, W, H, PRV.busy ? 'Listening to the song… ' + Math.round(PRV.pct * 100) + '%' : PRV.err ? 'No soundprint: ' + PRV.err + '.' : playing ? 'Stop the song to make its soundprint' : 'Listening to the song…', PRV.busy ? 'Its print is made once and kept with the song.' : PRV.err ? 'Press ⟳ Listen again when it is ready.' : '');
+  }
+  const P = sp.P, G = prtGenome(P), w = CFG.prtWorld || 'print', now = playing ? clamp(playheadSlot() / Math.max(1, songSlots()), 0, 1) : null, clock = performance.now() / 1000;
+  g.save(); g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1;
+  if (w === 'terrain') prtTerrain(g, W, H, P, G, now == null ? (CFG.reduce ? 1 : (clock / 40) % 1) : now, { clock, still: now == null && !!CFG.reduce, playing, G });
+  else if (w === 'flow') {
+    /* the field fills the whole area */
+    const key = P.id + '|' + W + 'x' + H; let F = PRV.flow; const u = now != null ? now : (clock / 45) % 1;
+    if (!F || F.key !== key) { const c = document.createElement('canvas'); c.width = W; c.height = H; prtGround(c.getContext('2d'), W, H, G); F = PRV.flow = { key, c, s: prtFlowNew(P, G, Math.round(clamp(Math.sqrt(W * H) * 2, 400, 2600) * (1 + .4 * Math.min(1, G.dens / 4)))), u }; }
+    if (u < F.u - .5) F.s.on = 0; while (F.s.on < P.on.length && P.on[F.s.on].t < u - .02) F.s.on++; F.u = u;
+    const lg = F.c.getContext('2d'); lg.save(); lg.globalAlpha = G.fade * .3; lg.fillStyle = G.bg; lg.fillRect(0, 0, W, H); lg.restore();
+    if (!CFG.reduce || now != null) prtFlowStep(F.s, lg, W, P, G, u, false, H); g.drawImage(F.c, 0, 0);
+  } else {
+    /* the print, the bloom and the harmonograph: square, in the middle of one ground */
+    const S2 = Math.max(1, Math.round(Math.min(W, H))); if (!PRV.off || PRV.off.width !== S2) { PRV.off = document.createElement('canvas'); PRV.off.width = PRV.off.height = S2; PRV.st = {}; }
+    const oc = PRV.off.getContext('2d'); oc.clearRect(0, 0, S2, S2); prtLive(oc, S2, P, w, now, clock, PRV.st, true);
+    prtGround(g, W, H, G); g.drawImage(PRV.off, Math.round((W - S2) / 2), Math.round((H - S2) / 2));
+  }
+  g.restore();
 }
 
 /* ---------- playing ---------- */

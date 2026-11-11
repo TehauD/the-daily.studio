@@ -57,6 +57,7 @@ const GOALS = [
       ['gtStream', '📺 Stream window', 'The words and the chord in a window of their own, for OBS or any streaming app', () => streamRoom()],
       ['gtThumb', '🖼 Thumbnail', 'Save a 1280 × 720 picture of the stage with the song title, for the post', () => kitThumb()],
       ['gtTip', '🎸 Tip jar', 'Let your audience tip you: your own tip link as a QR code on the stage, in your videos and on share pages. Off until you set it up', () => tipOpen(), () => tipReady()],
+      ['gtPrint', '◎ Soundprint', 'Any sound becomes a fingerprint, moving worlds, a reading and an ambient piece, to save or share', () => prtOpen()],
       ['gtExp', '⇩ Export', 'Audio, the share page, the lyric sheet and more', () => dockGo('exp')]
     ] },
   { id: 'practice', ico: '🎼', name: 'Practice', layout: 'Practice', step: 'create', hue: '#1c9a63', next: ['performer', 'Perform it'],

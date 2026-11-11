@@ -8,7 +8,11 @@ Contents: [Soundprint](#-soundprint-261) · [Whole song and Perform layouts](#-t
 
 ## ◎ Soundprint (2.61)
 
-Every sound becomes something only it could make. Open **Save & export ▸ ◎ Soundprint…** (also a clip's menu, **Finish it**, and on a phone **More ▸ Soundprint**), then:
+Every sound becomes something only it could make.
+
+**In the Visuals (2.62):** choose **Soundprint** in the list of looks. The open song is listened to once (a few seconds) and its print is kept with the song; press ▶ and it moves with the song. The row under the looks picks the world, says why it looks that way, offers **⟳ Listen again** after you've changed the song, and opens **◎ Save, share, or any sound…**.
+
+**Any sound:** **◎ Soundprint** in the strip under the arrangement (also the Visuals row above, a clip's menu, **Finish it**, Creator Studio, the address `#soundprint`, and on a phone **More ▸ Soundprint**), then:
 
 - **● Record a sound** (up to a minute: rain, a street, a friend laughing, a voice memo), **⤒ An audio file**, **♪ This song** (or **✦ The finished master**), or **A take…**
 - It's listened to here and becomes a **print** (about 1 kB). The sound decides what kind of picture it makes: its fingerprint class (arch, loop, whorl…), its colours (only its own notes), its ground (paper, night, stone or ink), its symmetry and its texture. The line under the reading says why. Five **worlds** grow from it; press one to see it, **▶ Play the piece** to watch it move:

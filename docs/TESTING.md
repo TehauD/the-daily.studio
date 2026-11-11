@@ -61,7 +61,8 @@ Each file starts its **own** static server, its own Chromium (fake microphone an
 | `e2e-finish.cjs` | Finish it (2.57):
 | `e2e-comments.cjs` | Comments and the lyric helper (2.58):
 | `e2e-yourcopy.cjs` | Load your copy and Make it ours (2.59), with a made-up 48-second record:
-| `e2e-soundprint.cjs` | Soundprint (2.61), with a made-up 19-second song (Am F C G, 100 BPM). `SHOTS=dir` saves a picture of each world:
+| `e2e-soundprint.cjs` | Soundprint (2.61, in the Visuals 2.62), with a made-up 19-second song (Am F C G, 100 BPM). `SHOTS=dir` saves a picture of each world:
+  - the Visuals look: third in the list, the song's print made and kept, its worlds, playing with the song, ⟳ Listen again after a change;
   - the room loads when opened; the song is read as A minor, 100 BPM, Am – F – C – G, with its beats as onsets, in a print under 1.4 kB;
   - the same sound makes the same print, and noise another (texture, no pulse);
   - a calm pad, rain and fast drums make different kinds of print, and a sound reads the same at 22.05, 44.1 and 48 kHz;

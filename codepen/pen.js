@@ -57,7 +57,7 @@ window.__dailyRoom = (id, make) => {
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.61.0', BUILD = '6ece9ee', PARTS_N = +'124' || 0, LINES_N = +'20835' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.62.0', BUILD = '416eb4c', PARTS_N = +'124' || 0, LINES_N = +'20933' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { ghApp: { clientId: 'Iv23liTjqEBQsgmGaE1Q', slug: 'tehaud-the-daily-studio' },   /* Sign in with GitHub: the GitHub App's public client id and its slug (docs/GITHUB.md); empty = only the token way */
   support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://journal.the-daily.studio/' };
@@ -3101,7 +3101,7 @@ function buildVisPane() {
     h('div', { class: 'seg' }, VMODES.filter(m => !VZ_MONITOR.has(m[0]) && !BK_MODES.has(m[0])).map(([k, n]) => h('button', { class: k === VZ.mode ? 'on' : '', 'data-m': k, onclick: e => { vzSetMode(k); $$('.seg [data-m]', bar).forEach(b => b.classList.toggle('on', b === e.target)); } }, n))),
     h('div', { class: 'vz-back', id: 'vzBack' }, h('span', { class: 'hx-l', title: 'Looks made to sit behind you: set Camera look to “Me in front (green screen)” and you stand inside the picture' }, 'Behind you'), h('div', { class: 'seg', role: 'group', 'aria-label': 'Looks that sit behind you' }, VBACK.map(([k, n]) => h('button', { class: k === VZ.mode ? 'on' : '', 'data-m': k, onclick: e => { vzSetMode(k); $$('.seg [data-m]', bar).forEach(b => b.classList.toggle('on', b === e.currentTarget)); try { backTip(); } catch (er) { } } }, n))), vbgBtn()),
     lxLensBar(), vzAdjustBtn(), tipBtn(),
-    hexSwatches(),
+    hexSwatches(), prtBar(),
     h('select', { class: 'in', style: { width: 'auto', fontFamily: 'var(--sans)' }, title: 'Analysis source', onchange: e => { VZ.src = e.target.value; } }, [['auto', 'Source: auto (follows playback)'], ['rig', 'Source: guitar after the rig'], ['master', 'Source: master mix'], ['di', 'Source: what the detector hears'], ['vox', 'Source: vocal microphone']].map(([v, n]) => h('option', { value: v }, n))),
     h('button', { class: 'btn sm', id: 'vzRecBtn', 'data-srec': '1', title: 'Record the stage as a video with the song’s sound (saved on this device)', onclick: e => srecMenu(e.currentTarget) }, '⏺ Record'),
     h('button', { class: 'btn sm' + (CFG.vzAuto ? ' on' : ''), id: 'vzAutoBtn', 'aria-pressed': String(!!CFG.vzAuto), title: 'Auto look: while the song plays, the look follows the section (verse calm, chorus wide, bridge strange)', onclick: e => { CFG.vzAuto = !CFG.vzAuto; saveCfg(); e.currentTarget.classList.toggle('on', !!CFG.vzAuto); e.currentTarget.setAttribute('aria-pressed', String(!!CFG.vzAuto)); toast('Auto look ' + (CFG.vzAuto ? 'on: the look follows the song’s sections' : 'off'), 'ok'); } }, '🎬 Auto look'),
@@ -3120,7 +3120,7 @@ const vcol = () => { const cs = getComputedStyle(document.documentElement); retu
 const vzPlaying = () => T.playing || (typeof STP !== 'undefined' && STP.playing);
 function visAna() { const s = VZ.src || 'auto'; if (s === 'vox' && E.anaVox) return E.anaVox; return s === 'master' || (s === 'auto' && vzPlaying()) ? E.anaMaster : s === 'di' ? E.anaDI : E.anaRig; }
 /** looks that draw their whole picture themselves: no pitch read-out or mini fretboard on top */
-const vzBare = m => m === 'concert' || HM_MODES.has(m) || (typeof BK_MODES !== 'undefined' && BK_MODES.has(m));
+const vzBare = m => m === 'concert' || m === 'sprint' || HM_MODES.has(m) || (typeof BK_MODES !== 'undefined' && BK_MODES.has(m));
 /** cvo: draw on another canvas (the Stage, the Audience view) with the simpler picture; o.main: draw it as the Visuals themselves (your colours,
     the camera, the neck, the tip jar), at that canvas's size, for a video (part 37). o.noNeck, o.noText leave those out; o.avoid: more places the tip jar steps around */
 function drawVis(cvo, o) {
@@ -4643,6 +4643,7 @@ function stageInfo() {
 
 /* ---------- extra visual modes (dispatched from drawVis) ---------- */
 function stageExtra(mode, g, W, H, X) {
+  if (mode === 'sprint') return prtVisDraw(g, W, H, X);
   if (typeof HM_MODES !== 'undefined' && HM_MODES.has(mode)) return hmDraw(mode, g, W, H, X);
   if (typeof BK_MODES !== 'undefined' && BK_MODES.has(mode)) return bkDraw(mode, g, W, H, X);
   if (mode === 'concert') return concertDraw(g, W, H, X);
@@ -8891,7 +8892,7 @@ function vzExtra2(mode, g, W, H, X) { if (mode === 'halo') return haloDraw(g, W,
 
 /** change the visual look from anywhere (the full-screen ✦ button, keys) and keep the Visuals buttons in step */
 const VZ_FAVS = ['hex', 'concert', 'halo', 'kaleido'];
-function vzSetMode(k, quiet) { VZ.mode = k; if (!quiet) { CFG.visMode = k; saveCfg(); } VZ.spec = null; VZ.hexes = null; document.querySelectorAll('#pane-vis .seg [data-m]').forEach(b => b.classList.toggle('on', b.dataset.m === k)); const n = (VMODES.find(m => m[0] === k) || [0, k])[1]; if (!quiet) toast(n, 'ok'); if (typeof hexToneSync === 'function') hexToneSync(); }
+function vzSetMode(k, quiet) { VZ.mode = k; if (!quiet) { CFG.visMode = k; saveCfg(); } VZ.spec = null; VZ.hexes = null; document.querySelectorAll('#pane-vis .seg [data-m]').forEach(b => b.classList.toggle('on', b.dataset.m === k)); const n = (VMODES.find(m => m[0] === k) || [0, k])[1]; if (!quiet) toast(n, 'ok'); if (typeof hexToneSync === 'function') hexToneSync(); if (typeof prtBarSync === 'function') prtBarSync(); }
 /** Auto look: while the song plays, the look follows the section: calm in verses, wide in choruses, strange in bridges. Your own look comes back when it stops. */
 const VZ_BY_SECTION = [[/chorus|hook|refrain/i, 'halo'], [/bridge|break|solo/i, 'kaleido'], [/intro|outro|tag|coda/i, 'hex']];
 let vzSecLast = '';
@@ -10681,7 +10682,7 @@ function dropRowMake() {
   const inp = h('input', { type: 'file', multiple: true, accept: 'audio/*,video/*,.mp3,.wav,.flac,.m4a,.aac,.ogg,.opus,.aif,.aiff,.txt,.md,.lrc,.mid,.midi,.kar,.zip,.json', style: { display: 'none' }, 'aria-label': 'Choose files to add', onchange: e => { const fl = [...e.target.files]; e.target.value = ''; if (fl.length) dropFiles(fl); } });
   DROP.row = h('div', { class: 'tl-drop', id: 'tlDrop' }, inp, h('span', { class: 'tl-drop-ic', 'aria-hidden': 'true' }, '⤓'),
     h('span', { class: 'tl-drop-t' }, h('b', {}, h('span', { class: 'dr-d' }, 'Drop audio, lyrics, MIDI or a song file anywhere'), h('span', { class: 'dr-t' }, 'Add audio, lyrics, MIDI or a song file')), h('span', { class: 'muted' }, ' · it stays on this device')),
-    h('button', { class: 'btn sm', id: 'dropPick', onclick: () => inp.click() }, 'Choose a file…'), h('button', { class: 'btn sm', id: 'dropMemo', title: 'Record your voice as it is', onclick: () => humRecord(true) }, '🎤 Voice memo'));
+    h('button', { class: 'btn sm', id: 'dropPick', onclick: () => inp.click() }, 'Choose a file…'), h('button', { class: 'btn sm', id: 'dropMemo', title: 'Record your voice as it is', onclick: () => humRecord(true) }, '🎤 Voice memo'), h('button', { class: 'btn sm', id: 'dropPrint', title: 'Soundprint: any sound becomes a fingerprint, moving worlds and an ambient piece', onclick: () => prtOpen() }, '◎ Soundprint'));
   dropRowSync(); return DROP.row;
 }
 function dropRowSync() { if (!DROP.row) return; DROP.row.hidden = !!(TAKES.length || STM.ch || STM.busy); }
@@ -14374,6 +14375,7 @@ const GOALS = [
       ['gtStream', '📺 Stream window', 'The words and the chord in a window of their own, for OBS or any streaming app', () => streamRoom()],
       ['gtThumb', '🖼 Thumbnail', 'Save a 1280 × 720 picture of the stage with the song title, for the post', () => kitThumb()],
       ['gtTip', '🎸 Tip jar', 'Let your audience tip you: your own tip link as a QR code on the stage, in your videos and on share pages. Off until you set it up', () => tipOpen(), () => tipReady()],
+      ['gtPrint', '◎ Soundprint', 'Any sound becomes a fingerprint, moving worlds, a reading and an ambient piece, to save or share', () => prtOpen()],
       ['gtExp', '⇩ Export', 'Audio, the share page, the lyric sheet and more', () => dockGo('exp')]
     ] },
   { id: 'practice', ico: '🎼', name: 'Practice', layout: 'Practice', step: 'create', hue: '#1c9a63', next: ['performer', 'Perform it'],
@@ -20094,10 +20096,43 @@ async function tuneTake(tk, mode, onProg) {
 
 /* >>> parts/92-soundprint-door.js */
 /* ============================================================
-   Part 92 · Soundprint's door (2.61): a soundprint link in the address opens it. The Soundprint itself (part 93) is a room,
-   loaded the first time it is used; prtOpen here is the core's stand-in for it (part 00).
+   Part 92 · Soundprint's doors (2.61). The Soundprint itself (part 93) is a room, loaded the first time it is used; prtOpen, prtLook
+   and prtSongMake here are the core's stand-ins for it (part 00).
+     · Visuals ▸ Soundprint: a look like the others. The open song's print, made once and kept with the song, moving with the
+       playhead. A row under the looks picks its world, listens again when the song has changed, and opens the full Soundprint.
+     · the-daily.studio/#soundprint opens Soundprint; a soundprint link (#p=…) opens that print.
    ============================================================ */
+VMODES.splice(2, 0, ['sprint', 'Soundprint']);
+const PRT_LOOK_WORLDS = [['print', '◎ Print'], ['flow', '〰 Flow'], ['terrain', '⛰ Terrain'], ['bloom', '✿ Bloom'], ['harmono', '∞ Harmonograph']];
+const prtRoomReady = () => !ROOM.files || !ROOM.files.print || !!ROOM.done.print;
+let prtRoomAsk = false;
+/** the Visuals draw this for the Soundprint look (part 13 hands it over) */
+function prtVisDraw(g, W, H) {
+  if (prtRoomReady()) return prtLook(g, W, H);
+  if (!prtRoomAsk) { prtRoomAsk = true; room('print').then(() => prtBarSync()).catch(() => { prtRoomAsk = false; }); }
+  g.fillStyle = '#05060b'; g.fillRect(0, 0, W, H);
+}
+/** the row under the looks while Soundprint is the look */
+function prtBar() {
+  const box = h('div', { class: 'prt-bar', id: 'prtBar', style: { display: VZ.mode === 'sprint' ? '' : 'none' } });
+  box.append(h('div', { class: 'seg', role: 'radiogroup', 'aria-label': 'Soundprint world' }, PRT_LOOK_WORLDS.map(([k, n]) => h('button', { type: 'button', 'data-pw': k, role: 'radio', class: (CFG.prtWorld || 'print') === k ? 'on' : '', 'aria-checked': (CFG.prtWorld || 'print') === k ? 'true' : 'false', onclick: () => { CFG.prtWorld = k; saveCfg(); prtBarSync(); } }, n))),
+    h('button', { class: 'btn sm', id: 'prtAgain', type: 'button', title: 'Make the song’s print again from how it sounds now (playback stops while it listens)', onclick: () => { if (T.playing) stopPlay(true); prtSongMake(); } }, '⟳ Listen again'),
+    h('span', { class: 'tiny muted', id: 'prtBarSay' }),
+    h('button', { class: 'btn sm', id: 'prtMore', type: 'button', title: 'Its reading and ambient piece; save the artwork, the piece or a video; share it as a link; or make a print of any other sound', onclick: async () => { await room('print'); const sp = prtSongPrint(); prtOpen(sp ? { print: sp.P } : {}); } }, '◎ Save, share, or any sound…'));
+  return box;
+}
+function prtBarSync() {
+  const box = document.getElementById('prtBar'); if (!box) return; box.style.display = VZ.mode === 'sprint' ? '' : 'none';
+  box.querySelectorAll('[data-pw]').forEach(b => { const on = b.dataset.pw === (CFG.prtWorld || 'print'); b.classList.toggle('on', on); b.setAttribute('aria-checked', on ? 'true' : 'false'); });
+  const say = document.getElementById('prtBarSay'); if (!say) return;
+  if (!prtRoomReady()) { say.textContent = ''; return; }
+  const sp = prtSongPrint(); say.textContent = PRV.busy ? 'Listening to the song…' : sp && !sp.fresh ? 'The song has changed since its print was made.' : sp ? prtGenome(sp.P).why.split('. ')[0] + '.' : '';
+}
+setInterval(() => { if (VZ.mode === 'sprint' && prtRoomReady()) prtBarSync(); }, 1500);
+
+/* ---------- addresses ---------- */
 function prtFromHash() {
+  if (/^#soundprint$/i.test(location.hash || '')) { try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { } Promise.resolve(prtOpen()).catch(() => { }); return true; }
   const m = /^#p=(1[zr][A-Za-z0-9_-]+)$/.exec(location.hash || ''); if (!m) return false;
   try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { }
   Promise.resolve(prtOpen({ link: m[1] })).catch(e => toast('That soundprint could not be opened: ' + (e.message || e) + '.', 'warn')); return true;
@@ -20447,7 +20482,8 @@ function prtFlowSpawn(s, P, G, i, u, ex, ey) {
   s.x[i] = ex == null ? r() * 1.2 - .1 : ex + (r() - .5) * .03; s.y[i] = ey == null ? r() * 1.2 - .1 : ey + (r() - .5) * .03; s.px[i] = s.x[i]; s.py[i] = s.y[i]; s.vx[i] = 0; s.vy[i] = 0; s.life[i] = 40 + r() * (80 + 160 * G.lam);
   let tot = 0; G.pal.forEach(p => { tot += .2 + row[p.pc]; }); let q = r() * tot, k = 0; for (; k < G.pal.length - 1; k++) { q -= .2 + row[G.pal[k].pc]; if (q <= 0) break; } s.pi[i] = k; s.lu[i] = r() < .55 ? 0 : 1;
 }
-function prtFlowStep(s, g, S, P, G, u, still) {
+function prtFlowStep(s, g, S, P, G, u, still, Hy) {
+  Hy = Hy || S;
   const n2 = prtNoise(G.seed ^ 0x9f), e = prtAt(P.e, u), sp = .0034 * (.35 + 1.3 * e), fs = G.fs, ep = .0016, tu = s.tau;
   while (s.on < P.on.length && P.on[s.on].t <= u) {
     const q = P.on[s.on++]; if (q.s < .2) continue; const hr = prtRand(G.seed ^ (s.on * 977)), ex = .12 + .76 * hr(), ey = .12 + .76 * hr(), k = Math.round((20 + 150 * q.s) * s.N / 1500);
@@ -20464,7 +20500,7 @@ function prtFlowStep(s, g, S, P, G, u, still) {
   const a = (still ? (G.dark ? .045 : .06) : .2) * (.45 + .75 * e) * G.ink;
   for (let k = 0; k < G.pal.length; k++) for (let l = 0; l < 2; l++) {
     g.strokeStyle = prtCol(G, k, a, G.dark ? G.lit + (l ? 16 : -4) : G.lit + (l ? -12 : 0)); g.beginPath();
-    for (let i = 0; i < s.N; i++) if (s.pi[i] === k && s.lu[i] === l) { g.moveTo(s.px[i] * S, s.py[i] * S); g.lineTo(s.x[i] * S, s.y[i] * S); }
+    for (let i = 0; i < s.N; i++) if (s.pi[i] === k && s.lu[i] === l) { g.moveTo(s.px[i] * S, s.py[i] * Hy); g.lineTo(s.x[i] * S, s.y[i] * Hy); }
     g.stroke();
   }
   g.restore();
@@ -20640,6 +20676,7 @@ async function prtOpen(o = {}) {
   prtDlg();
   if (o.link) { try { const P = await prtFromCode(o.link); PRT.src = null; prtShow(P, { mine: false, link: true }); } catch (e) { prtChoose(); prtSay('That soundprint link could not be opened: ' + (e.message || e) + '.'); } return; }
   prtChoose();
+  if (o.print) { PRT.src = null; return prtShow(o.print, { mine: true }); }
   if (o.take) return prtFromTake(o.take); if (o.master || o.song) return prtFromSong(!!o.master);
 }
 function prtChoose() {
@@ -20740,31 +20777,92 @@ function prtWorld(k) { PRT.world = k; PRT.dirty = true; document.querySelectorAl
 function prtRetitle(t) { const P = PRT.cur; if (!P) return; P.title = String(t || '').slice(0, 60); const Q = prtUnpack(prtPack(P)); Object.assign(P, { bytes: Q.bytes, title: Q.title }); if (prtKept(P)) prtKeep(P); }
 /** where the playhead is (0..1), or null when nothing plays */
 function prtNow() { const p = PRT.play; if (!p || !E.ctx) return null; return clamp((E.ctx.currentTime - p.t0) / p.len, 0, 1); }
+/** draw world w of P live on g (W×W): now = playhead 0..1, or null when nothing plays. st keeps its caches (print, flow layer). */
+function prtLive(g, W, P, w, now, clock, st, nb) {
+  const G = prtGenome(P), playing = now != null, live = !CFG.reduce, idle = !playing && live && w !== 'print', key = w + '|' + P.id + '|' + W;
+  if (w === 'print' || (w === 'flow' && !live)) {
+    if (!st.cache || st.cache.key !== key) { const c = document.createElement('canvas'); c.width = c.height = W; prtDraw(c.getContext('2d'), W, W, P, w, 1, { still: true, G, noBg: !!nb }); c.key = key; st.cache = c; }
+    if (playing && w === 'print') {
+      /* the print grows out from the core as it plays; the ridges at the front shine; onsets flash */
+      const RG = prtRidges(P, G), r = RG.dmax * W * Math.min(1, now + .004), cx = RG.pcx * W, cy = RG.pcy * W, fl = P.on.reduce((m, x) => { const d = now - x.t; return d >= 0 && d < .012 ? Math.max(m, x.s * (1 - d / .012)) : m; }, 0);
+      if (!nb) prtGround(g, W, W, G); g.save(); g.globalAlpha = .13; g.drawImage(st.cache, 0, 0); g.restore();
+      g.save(); g.beginPath(); g.arc(cx, cy, r, 0, 6.2832); g.clip(); g.drawImage(st.cache, 0, 0); g.restore();
+      g.save(); g.beginPath(); g.arc(cx, cy, r, 0, 6.2832); g.arc(cx, cy, Math.max(0, r - W * (.03 + .05 * fl)), 0, 6.2832, true); g.clip(); g.globalCompositeOperation = G.dark ? 'lighter' : 'multiply'; g.globalAlpha = .55 + .45 * fl; g.drawImage(st.cache, 0, 0); g.restore();
+    } else g.drawImage(st.cache, 0, 0);
+  } else if (w === 'flow') {
+    /* a live field on its own layer: trails fade into the ground, the sound moves it */
+    let F = st.flow; const u = playing ? now : (clock / 45) % 1;
+    if (!F || F.key !== key) { const c = document.createElement('canvas'); c.width = c.height = W; prtDraw(c.getContext('2d'), W, W, P, 'flow', 1, { still: true, G }); F = st.flow = { key, c, s: prtFlowNew(P, G, Math.round(clamp(W * 2, 400, 2400) * (1 + .4 * Math.min(1, G.dens / 4)))), u }; }
+    if (u < F.u - .5) F.s.on = 0; while (F.s.on < P.on.length && P.on[F.s.on].t < u - .02) F.s.on++; F.u = u;
+    const lg = F.c.getContext('2d'); lg.save(); lg.globalAlpha = G.fade * .3; lg.fillStyle = G.bg; lg.fillRect(0, 0, W, W); lg.restore();
+    prtFlowStep(F.s, lg, W, P, G, u, false); g.drawImage(F.c, 0, 0);
+  } else prtDraw(g, W, W, P, w, playing ? now : (idle ? (clock / 40) % 1 : 1), { clock, still: !playing && !idle, playing, G, noBg: !!nb });
+}
 function prtLoop(ts) {
   PRT.raf = 0; const cv = PRT.cv, P = PRT.cur; if (!cv || !P || !document.getElementById('prtCv')) return;
-  const now = prtNow(), playing = now != null, live = !CFG.reduce, idle = !playing && live && PRT.world !== 'print', clock = ts / 1000, W = cv.width, G = prtGenome(P);
-  if (playing || idle || PRT.dirty) {
-    const g = cv.getContext('2d'), w = PRT.world, key = w + '|' + P.id + '|' + W;
-    if (w === 'print' || (w === 'flow' && !live)) {
-      if (!PRT.cache || PRT.cache.key !== key) { const c = document.createElement('canvas'); c.width = c.height = W; prtDraw(c.getContext('2d'), W, W, P, w, 1, { still: true, G }); c.key = key; PRT.cache = c; }
-      if (playing && w === 'print') {
-        /* the print grows out from the core as it plays; the ridges at the front shine; onsets flash */
-        const RG = prtRidges(P, G), r = RG.dmax * W * Math.min(1, now + .004), cx = RG.pcx * W, cy = RG.pcy * W, fl = P.on.reduce((m, x) => { const d = now - x.t; return d >= 0 && d < .012 ? Math.max(m, x.s * (1 - d / .012)) : m; }, 0);
-        prtGround(g, W, W, G); g.save(); g.globalAlpha = .13; g.drawImage(PRT.cache, 0, 0); g.restore();
-        g.save(); g.beginPath(); g.arc(cx, cy, r, 0, 6.2832); g.clip(); g.drawImage(PRT.cache, 0, 0); g.restore();
-        g.save(); g.beginPath(); g.arc(cx, cy, r, 0, 6.2832); g.arc(cx, cy, Math.max(0, r - W * (.03 + .05 * fl)), 0, 6.2832, true); g.clip(); g.globalCompositeOperation = G.dark ? 'lighter' : 'multiply'; g.globalAlpha = .55 + .45 * fl; g.drawImage(PRT.cache, 0, 0); g.restore();
-      } else g.drawImage(PRT.cache, 0, 0);
-    } else if (w === 'flow') {
-      /* a live field on its own layer: trails fade into the ground, the sound moves it */
-      let F = PRT.flow; const u = playing ? now : (clock / 45) % 1;
-      if (!F || F.key !== key) { const c = document.createElement('canvas'); c.width = c.height = W; prtDraw(c.getContext('2d'), W, W, P, 'flow', 1, { still: true, G }); F = PRT.flow = { key, c, s: prtFlowNew(P, G, Math.round(clamp(W * 2, 400, 2400) * (1 + .4 * Math.min(1, G.dens / 4)))), u }; }
-      if (u < F.u - .5) F.s.on = 0; while (F.s.on < P.on.length && P.on[F.s.on].t < u - .02) F.s.on++; F.u = u;
-      const lg = F.c.getContext('2d'); lg.save(); lg.globalAlpha = G.fade * .3; lg.fillStyle = G.bg; lg.fillRect(0, 0, W, W); lg.restore();
-      prtFlowStep(F.s, lg, W, P, G, u, false); g.drawImage(F.c, 0, 0);
-    } else prtDraw(g, W, W, P, w, playing ? now : (idle ? (clock / 40) % 1 : 1), { clock, still: !playing && !idle, playing, G });
-    PRT.dirty = false;
-  }
+  const now = prtNow(), moving = now != null || (!CFG.reduce && PRT.world !== 'print');
+  if (moving || PRT.dirty) { prtLive(cv.getContext('2d'), cv.width, P, PRT.world, now, ts / 1000, PRT); PRT.dirty = false; }
   PRT.raf = requestAnimationFrame(prtLoop);
+}
+
+/* ---------- the song's own soundprint, as a look in the Visuals (part 92 puts it in the list) ----------
+   The open song is rendered faster than it plays (the whole mix, as Finish it hears it), listened to, and its print is kept with the
+   song (S.sprint, about 1.6 kB) so it is there next time. It follows the playhead. When the song changes, the old print stays until
+   you press ⟳ Listen again (a render stops playback, so it never starts by itself while the song plays). */
+const PRV = { busy: false, pct: 0, err: '', c: '', P: null, sig: '', sigAt: 0, st: {}, off: null, flow: null };
+function prtSongSig() {
+  const now = performance.now(); if (now - PRV.sigAt < 1000 && PRV.sig) return PRV.sig; PRV.sigAt = now;
+  const txt = JSON.stringify([S.sections, S.band, S.bpm, S.key, S.minor, S.ts, S.swing, S.mix]) + '|' + TAKES.map(t => [tkKey(t), t.startSec, t.g, t.cg, t.mute, t.pan, (t.dry || []).length].join()).join(';') + '|' + (STM.ch ? STM.ch.length + ':' + STM.mute : '');
+  let hh = 0x811c9dc5; for (let i = 0; i < txt.length; i++) { hh ^= txt.charCodeAt(i); hh = Math.imul(hh, 16777619); } return PRV.sig = (hh >>> 0).toString(16);
+}
+/** { P, fresh } for the open song, or null if it has none yet */
+function prtSongPrint() {
+  const sp = S.sprint; if (!sp || typeof sp.c !== 'string') return null;
+  if (PRV.c !== sp.c) { try { PRV.P = prtUnpack(slUnB64(sp.c)); PRV.c = sp.c; } catch (e) { return null; } }
+  return { P: PRV.P, fresh: sp.sig === prtSongSig() };
+}
+async function prtSongMake() {
+  if (PRV.busy) return; PRV.busy = true; PRV.err = ''; PRV.pct = 0; if (typeof prtBarSync === 'function') prtBarSync();
+  const song = S;
+  try {
+    const o = await lxRender(null, p => { PRV.pct = p || 0; }); let pk = 0; const m = new Float32Array(o.l.length); for (let i = 0; i < m.length; i++) { m[i] = (o.l[i] + o.r[i]) * .5; pk = Math.max(pk, Math.abs(m[i])); }
+    if (pk < 1e-4) throw new Error('the song is silent so far: add chords, the band or a recording');
+    const A = prtAnalyze(m, o.sr); A.title = (S.title || 'Untitled').slice(0, 60); A.by = CFG.slName || ''; A.day = prtDayNow();
+    const P = prtUnpack(prtPack(A)); PRV.sigAt = 0; if (S === song) { S.sprint = { sig: prtSongSig(), c: slB64(P.bytes) }; try { await projSave(); } catch (e) { } }
+  } catch (e) { PRV.err = e && e.cancelled ? 'the render was stopped' : (e.message || String(e)); }
+  finally { PRV.busy = false; if (typeof prtBarSync === 'function') prtBarSync(); }
+}
+function prtLookMsg(g, W, H, text, sub) {
+  g.save(); g.fillStyle = '#05060b'; g.fillRect(0, 0, W, H); const s = Math.min(W, H) / 600;
+  g.strokeStyle = 'rgba(255,255,255,.12)'; g.lineWidth = 1.2 * s; for (let i = 1; i <= 9; i++) { g.beginPath(); g.ellipse(W / 2, H / 2 - 30 * s, i * 13 * s, i * 15 * s, 0, 0, 6.2832); g.stroke(); }
+  g.fillStyle = '#f0eee8'; g.textAlign = 'center'; g.font = '600 ' + Math.round(20 * s) + 'px Inter, system-ui, sans-serif'; g.fillText(text, W / 2, H / 2 + 120 * s);
+  if (sub) { g.fillStyle = 'rgba(240,238,232,.6)'; g.font = Math.round(14 * s) + 'px Inter, system-ui, sans-serif'; g.fillText(sub, W / 2, H / 2 + 148 * s); }
+  g.restore();
+}
+/** the look: called by the Visuals for every frame while Soundprint is the look */
+function prtLook(g, W, H) {
+  const sp = prtSongPrint(), playing = !!T.playing;
+  if (!sp) {
+    if (!PRV.busy && !PRV.err && !playing) prtSongMake();
+    return prtLookMsg(g, W, H, PRV.busy ? 'Listening to the song… ' + Math.round(PRV.pct * 100) + '%' : PRV.err ? 'No soundprint: ' + PRV.err + '.' : playing ? 'Stop the song to make its soundprint' : 'Listening to the song…', PRV.busy ? 'Its print is made once and kept with the song.' : PRV.err ? 'Press ⟳ Listen again when it is ready.' : '');
+  }
+  const P = sp.P, G = prtGenome(P), w = CFG.prtWorld || 'print', now = playing ? clamp(playheadSlot() / Math.max(1, songSlots()), 0, 1) : null, clock = performance.now() / 1000;
+  g.save(); g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1;
+  if (w === 'terrain') prtTerrain(g, W, H, P, G, now == null ? (CFG.reduce ? 1 : (clock / 40) % 1) : now, { clock, still: now == null && !!CFG.reduce, playing, G });
+  else if (w === 'flow') {
+    /* the field fills the whole area */
+    const key = P.id + '|' + W + 'x' + H; let F = PRV.flow; const u = now != null ? now : (clock / 45) % 1;
+    if (!F || F.key !== key) { const c = document.createElement('canvas'); c.width = W; c.height = H; prtGround(c.getContext('2d'), W, H, G); F = PRV.flow = { key, c, s: prtFlowNew(P, G, Math.round(clamp(Math.sqrt(W * H) * 2, 400, 2600) * (1 + .4 * Math.min(1, G.dens / 4)))), u }; }
+    if (u < F.u - .5) F.s.on = 0; while (F.s.on < P.on.length && P.on[F.s.on].t < u - .02) F.s.on++; F.u = u;
+    const lg = F.c.getContext('2d'); lg.save(); lg.globalAlpha = G.fade * .3; lg.fillStyle = G.bg; lg.fillRect(0, 0, W, H); lg.restore();
+    if (!CFG.reduce || now != null) prtFlowStep(F.s, lg, W, P, G, u, false, H); g.drawImage(F.c, 0, 0);
+  } else {
+    /* the print, the bloom and the harmonograph: square, in the middle of one ground */
+    const S2 = Math.max(1, Math.round(Math.min(W, H))); if (!PRV.off || PRV.off.width !== S2) { PRV.off = document.createElement('canvas'); PRV.off.width = PRV.off.height = S2; PRV.st = {}; }
+    const oc = PRV.off.getContext('2d'); oc.clearRect(0, 0, S2, S2); prtLive(oc, S2, P, w, now, clock, PRV.st, true);
+    prtGround(g, W, H, G); g.drawImage(PRV.off, Math.round((W - S2) / 2), Math.round((H - S2) / 2));
+  }
+  g.restore();
 }
 
 /* ---------- playing ---------- */

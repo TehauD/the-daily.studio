@@ -2,6 +2,19 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.62.0 — 2026-11-11 — Soundprint in the Visuals
+
+### New
+- **Soundprint is a look in the Visuals,** third in the list, beside Hex Resonance and Concert. Choose it and the open song becomes its print: the whole mix is rendered faster than it plays, listened to once, and its print (about 1.4 kB of shapes) is kept with the song. It moves with the playhead: the fingerprint grows from its core, Flow and Bloom follow the song, the terrain travels. It's on the Stage and in Stage mode like any other look.
+- **Its row, under the looks:** the five worlds (Print, Flow, Terrain, Bloom, Harmonograph), why it looks the way it does, **⟳ Listen again** (the old print stays until you ask, because listening stops playback) and **◎ Save, share, or any sound…** (the reading, the ambient piece, artwork, video, a link, or a print of any other sound).
+- **More ways in:** ◎ Soundprint in the drop strip under the arrangement, in Creator Studio's tools, and the address the-daily.studio/#soundprint.
+
+### Fixed
+- **Soundprint was hard to find.** Its only desktop door was in the Export tab, the eleventh panel tab, usually scrolled out of view and beyond the Alt+number shortcuts.
+
+### Tests
+- **`e2e-soundprint` (55 checks, 6 new):** the look is third in the list with its five worlds; choosing it makes and keeps the song's print and draws it; its worlds switch and are remembered; it plays with the song; a changed song says so, and ⟳ Listen again makes it again.
+
 ## 2.61.0 — 2026-11-10 — Soundprint: every sound becomes something only it could make
 
 ### New

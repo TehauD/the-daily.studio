@@ -86,7 +86,7 @@ function buildVisPane() {
     h('div', { class: 'seg' }, VMODES.filter(m => !VZ_MONITOR.has(m[0]) && !BK_MODES.has(m[0])).map(([k, n]) => h('button', { class: k === VZ.mode ? 'on' : '', 'data-m': k, onclick: e => { vzSetMode(k); $$('.seg [data-m]', bar).forEach(b => b.classList.toggle('on', b === e.target)); } }, n))),
     h('div', { class: 'vz-back', id: 'vzBack' }, h('span', { class: 'hx-l', title: 'Looks made to sit behind you: set Camera look to “Me in front (green screen)” and you stand inside the picture' }, 'Behind you'), h('div', { class: 'seg', role: 'group', 'aria-label': 'Looks that sit behind you' }, VBACK.map(([k, n]) => h('button', { class: k === VZ.mode ? 'on' : '', 'data-m': k, onclick: e => { vzSetMode(k); $$('.seg [data-m]', bar).forEach(b => b.classList.toggle('on', b === e.currentTarget)); try { backTip(); } catch (er) { } } }, n))), vbgBtn()),
     lxLensBar(), vzAdjustBtn(), tipBtn(),
-    hexSwatches(),
+    hexSwatches(), prtBar(),
     h('select', { class: 'in', style: { width: 'auto', fontFamily: 'var(--sans)' }, title: 'Analysis source', onchange: e => { VZ.src = e.target.value; } }, [['auto', 'Source: auto (follows playback)'], ['rig', 'Source: guitar after the rig'], ['master', 'Source: master mix'], ['di', 'Source: what the detector hears'], ['vox', 'Source: vocal microphone']].map(([v, n]) => h('option', { value: v }, n))),
     h('button', { class: 'btn sm', id: 'vzRecBtn', 'data-srec': '1', title: 'Record the stage as a video with the song’s sound (saved on this device)', onclick: e => srecMenu(e.currentTarget) }, '⏺ Record'),
     h('button', { class: 'btn sm' + (CFG.vzAuto ? ' on' : ''), id: 'vzAutoBtn', 'aria-pressed': String(!!CFG.vzAuto), title: 'Auto look: while the song plays, the look follows the section (verse calm, chorus wide, bridge strange)', onclick: e => { CFG.vzAuto = !CFG.vzAuto; saveCfg(); e.currentTarget.classList.toggle('on', !!CFG.vzAuto); e.currentTarget.setAttribute('aria-pressed', String(!!CFG.vzAuto)); toast('Auto look ' + (CFG.vzAuto ? 'on: the look follows the song’s sections' : 'off'), 'ok'); } }, '🎬 Auto look'),
@@ -105,7 +105,7 @@ const vcol = () => { const cs = getComputedStyle(document.documentElement); retu
 const vzPlaying = () => T.playing || (typeof STP !== 'undefined' && STP.playing);
 function visAna() { const s = VZ.src || 'auto'; if (s === 'vox' && E.anaVox) return E.anaVox; return s === 'master' || (s === 'auto' && vzPlaying()) ? E.anaMaster : s === 'di' ? E.anaDI : E.anaRig; }
 /** looks that draw their whole picture themselves: no pitch read-out or mini fretboard on top */
-const vzBare = m => m === 'concert' || HM_MODES.has(m) || (typeof BK_MODES !== 'undefined' && BK_MODES.has(m));
+const vzBare = m => m === 'concert' || m === 'sprint' || HM_MODES.has(m) || (typeof BK_MODES !== 'undefined' && BK_MODES.has(m));
 /** cvo: draw on another canvas (the Stage, the Audience view) with the simpler picture; o.main: draw it as the Visuals themselves (your colours,
     the camera, the neck, the tip jar), at that canvas's size, for a video (part 37). o.noNeck, o.noText leave those out; o.avoid: more places the tip jar steps around */
 function drawVis(cvo, o) {
