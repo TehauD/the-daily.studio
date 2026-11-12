@@ -70,7 +70,7 @@ const GOALS = [
     blurb: 'Every panel, both sidebars and every Monitor widget.',
     mission: 'Everything, your way', steps: ['Every panel on the strip', 'Both sidebars', 'Every Monitor widget'],
     shape: 'The rig in the middle · I/O and the Monitor either side · every panel on the strip',
-    spec: { flip: true, left: true, right: true, tlh: '84px', tlhOpen: 'minmax(200px,38%)', dock: 'rig', order: [], hidden: [], cur: { left: 'io', right: 'monitor' }, mon: ['tuner', 'levels', 'live', 'spectrum', 'views', 'audience'] },
+    spec: { flip: true, left: true, right: true, tlh: '84px', tlhOpen: 'minmax(200px,38%)', dock: 'rig', order: [], hidden: [], cur: { left: 'tones', right: 'monitor' },      /* 2.66: your tones beside the board (Audio input first until an input is connected) */ mon: ['tuner', 'levels', 'live', 'spectrum', 'views', 'audience'] },
     tools: () => [
       ['gtLay', '▦ Workspace…', 'Sidebars, floating panels, which tabs show', () => workspaceOpen('panels')],
       ['gtPlace', '⇆ Where panels live…', 'Move any panel to either sidebar or the centre', b => placeMenu(b)]

@@ -28,7 +28,7 @@ function wav(L, sr) { const n = L.length, b = Buffer.alloc(44 + n * 2); b.write(
   await page.click('#dock .tab[data-id="rig"]'); await wait(400);
   // rig deck has no empty rows: every row spans the card
   const deck = await page.evaluate(() => { const d = document.querySelector('.rigdeck'), w = d.getBoundingClientRect().width; return [...d.children].map(c => Math.round(c.getBoundingClientRect().width / w * 100)); });
-  ok(deck.length >= 4 && deck.every(p => p >= 90), 'rig control deck rows fill the card ' + JSON.stringify(deck));
+  ok(deck.length >= 2 && deck.every(p => p >= 90), 'rig control deck rows fill the card (2.66: the tone row and the scenes) ' + JSON.stringify(deck));
 
   // tunings
   await page.click('#dock .tab[data-id="tab"]'); await wait(300);

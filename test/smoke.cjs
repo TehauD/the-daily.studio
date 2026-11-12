@@ -22,7 +22,7 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
  await step('bootGo click',async()=>{w.document.getElementById('bootGo').click();await sleep(500)});
  for(const [id] of X.DOCK)await step('dock '+id,async()=>{X.dockGo(id);await sleep(120)});
  await step('play',async()=>{X.dockGo('tab');await X.play();await sleep(600);X.stopPlay(true)});
- await step('tab fill',async()=>{X.S.sections.forEach(s=>s.bars.forEach(b=>X.fillTab(b,'Fingerstyle pop',(b.chord||'Am').split(' ')[0])));X.commit();X.renderTab()});
+ await step('tab fill',async()=>{X.S.sections.forEach(s=>s.bars.forEach(b=>{b.chord=b.chord||'Am';X.fillTab(b,'Fingerstyle pop',b.chord.split(' ')[0])}));X.commit();X.renderTab()});
  await step('UG export',async()=>{const t=X.buildUG();if(!t.includes('[ch]')||!t.includes('[tab]'))throw new Error('bad UG');console.log(t.slice(0,1800))});
  await step('chordpro',async()=>{X.buildChordPro()});
  await step('midi',async()=>{const b=X.buildMidi();if(b.size<200)throw new Error('tiny midi '+b.size)});

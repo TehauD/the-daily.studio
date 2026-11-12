@@ -4,6 +4,12 @@ What the studio, its tutorials, its documents and its tests do **not** cover yet
 
 How to use it: before a release, move what the release closed into *Closed* with the version, and add what it opened. [RELEASE.md](RELEASE.md) has this as a checklist item. Items marked **(maintainer)** are decisions or facts only the project's owner can settle; nothing here blocks a build.
 
+## Closed in 2.66.0
+
+- **Learn was a window over Practice:** the band, the tempo, the tuner and the fretboard were behind it while you played. It's Practice's own panel now, and a lesson opens in it.
+- **The Rig showed all sixteen units, open, all the time** (a wall of knobs). The board shows the pedals on it, and the one you pick, large.
+- **⚙ ▸ Earlier / Later** could swap a pedal with an unused unit, so nothing visibly moved.
+
 ## Closed in 2.65.2
 
 - **Soundprints were kept in this browser only.** They travel with backups, folder sync and GitHub sync, merged so neither device loses one.
@@ -163,6 +169,11 @@ How to use it: before a release, move what the release closed into *Closed* with
 - **Agents** cannot tune a take, read or set the vocal pedals, or make a song link (`export_song` gives text formats only). Tuning edits a recording, which the tools have so far never touched; that is a decision, not an oversight.
 - `get_song` does not return section energies or whether Song build is on (`edit_section` and `set_band` answers do).
 - **Per-room usage:** the offline copy fetches every room on install, so the host's request counts cannot show which rooms people use. This is privacy-friendly and probably right; recorded so nobody reads the counts as usage.
+
+### Gigging (opened by 2.66)
+- **No setlist yet:** the songs of a set in order, each with its tone and scenes, stepped through with a foot pedal or MIDI, and a gig view that shows now and next in large type. Songs don't remember a tone of their own either.
+- **Scenes hold the whole rig;** there's no per-scene "only these pedals change" (as on some floor units), and no expression-pedal mapping to a knob beyond MIDI-learn.
+- **The board's look per pedal is a colour and a label;** no pedal skins or photos.
 
 ### Song structure (opened by 2.48)
 - The **Stage** panel's prompter and the lower third have none of Perform's layout choices.

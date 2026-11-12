@@ -223,8 +223,8 @@ The row at the top of the centre holds four workspaces. Each one is a whole work
 | --- | --- | --- |
 | 🎸 **Songwriter** — *Write the song* | A notebook: Write in Both (words and tab), Theory on the left, no right sidebar, the arrangement a strip | 🥁 Beats · **🎸 Paste chords** · 👆 Pads · 🎹 Keys · 🔗 Send as a link · *More:* 🎤 Vocal pedals · 🎛 Piano roll (● Capture is above the tab, ● Record at the top) |
 | 🎤 **Studio** — *Play it, record it, share it* | A stage: Visuals large, Tones on the left, Tuner, Levels and the Audience view on the right, lanes for takes below | **⏺ Record video** · 📷 Camera · 🎤 Vocal pedals · ▶ Studio Replay · ⇩ Export · *More:* video shape · ✨ Overlays · 📺 Stream window · 🖼 Thumbnail · 🎸 Tip jar · ◎ Soundprint |
-| 🎼 **Practice** — *Learn it, then get it under your fingers* | A practice room: the Fretboard large in the middle, Theory (scales) on the left, Tuner and Levels on the right | **🎓 Learn** · 📅 Today · 🎵 This song · 🎼 Scales & ear · − 5 / BPM / + 5 · *More:* 👂 By ear · 🎸 Riffs & licks · ⏱ Speed & key · and for teaching: ✎ Annotate · 📝 Lesson notes · ⏺ Record screen · ♪ Transcribe |
-| ⚙️ **Full Rig** — *Everything, your way* | The Rig, both sidebars, every tab and every Monitor widget | ▦ Workspace… · ⇆ Where panels live… |
+| 🎼 **Practice** — *Learn it, then get it under your fingers* | A practice room: Learn in the middle (2.66) with the Fretboard a tab away, Theory (scales) on the left, Tuner and Levels on the right | **🎓 Learn** (the panel: Today, lessons, This song, By ear, riffs, Riff Lab, the atlas, Scales & ear) · − 5 / BPM / + 5 · ⏱ Speed & key · *More:* ✎ Annotate · 📝 Lesson notes · ⏺ Record screen · ♪ Transcribe |
+| ⚙️ **Full Rig** — *Everything, your way* | The Rig as a pedalboard with your Tones beside it (2.66), the Monitor on the right, every tab and every Monitor widget | ▦ Workspace… · ⇆ Where panels live… |
 
 Until 2.64 there were six: **Performer** and **Creator Studio** are now **Studio**, and **Practice** and **Teacher** are now **Practice**. Anything that opened the old ones opens the new ones.
 
@@ -358,16 +358,15 @@ The fastest way in: **hum or sing a few seconds of melody and get a whole song b
 
 **Tones** (left sidebar) is the preset library, 27 starting tones from *Crystal Clean* to heavier and ambient sounds. Search, filter by category, click to load. Save your own in the Rig panel; they appear under **User**.
 
-The **Rig** tab (1) has a control deck on top and the pedalboard below.
+The **Rig** tab is laid out like a real pedalboard (2.66): one row for the tone, the scenes, your board, and the pedal you're editing.
 
-* **Current tone**, **Master** knob.
-* **Store A / A / B / Store B** and the slider between them: store two snapshots, then morph or compare.
-* **Mutate** nudges the active parameters randomly (a good source of happy accidents); **Reset all** goes to a direct signal.
-* **Preset name → Save / Export / Import** manage your own tones as files.
-* **Scenes** (eight slots): *Store* arms, then click a slot to keep the whole board. Click a slot to recall it with a smooth morph (the **Morph** time), **Shift+click** to overwrite, **right-click** to rename or clear. Number keys <kbd>1</kbd>…<kbd>8</kbd> recall scenes when **Live keys** is on, <kbd>0</kbd> switches every pedal off. **Scenes + band** makes scenes switch the band too.
-* **Board / Stomp**: *Board* shows full pedals; *Stomp* shows big footswitch tiles for playing live. **Width** sets pedal size; **Show hidden** reveals pedals you hid.
-* The **signal chain strip** shows order at a glance. Click a pedal to jump to it.
-* Each pedal has a bypass **stomp** button, parameter knobs (drag, wheel, <kbd>Shift</kbd> for fine, double-click to reset, right-click to MIDI-learn) and **⚙** for width, colour, collapse, hide and footswitch binding (a key or a MIDI note). **Drag a pedal's header** to change its place in the chain.
+* **The tone row:** **◀ ▶** step through your tones; the name opens a searchable list of all of them (type and press Enter). **A ⇄ B**: click A or B to recall it, **Shift+click** to store the rig there, and the slider morphs between them. **💾 Save** names and keeps the tone (and exports or imports it as a file). **⋯** has **Mutate** (nudges the active settings: a source of happy accidents), *Store as A / B* and **Reset all** (a straight signal). Then the **Master** knob.
+* **Scenes** (eight slots, under the tone row): *Store* arms, then click a slot to keep the whole board. Click a slot to recall it with a smooth morph, **Shift+click** to overwrite, **right-click** to rename or clear. An empty slot shows just its number. Number keys <kbd>1</kbd>…<kbd>8</kbd> recall scenes when *Live keys* is on, <kbd>0</kbd> switches every pedal off, and MIDI notes 36–43 recall them from a foot controller.
+* **The board** shows the pedals on it, in signal order from IN to OUT, not every unit. A pedal is on the board while it's on, or once you've put it there. Its **LED** stomps it (bypassed, it stays on the board); **click** it to open it; **drag** it to move it in the chain. **＋ Pedal** lists the pedals not on the board, by kind.
+* **Views:** **◎ Edit** (the board, and the pedal you picked, large, underneath), **▦ All** (every pedal on the board open) and **◉ Stomp** (big footswitch tiles for playing live).
+* **A pedal's ⚙:** a **label** of your own ("Klon", "Lead boost"), colour, width, collapse, hide, a footswitch key or MIDI note, **◀ Earlier / Later ▶** (past the next pedal on the board), and **✕ Off the board**.
+* **The board's ⚙:** pedal width (▦ All), scene morph time, whether scenes switch the band too, live keys, and *Show every unit* (every pedal in the chain, on the board or not).
+* Knobs: drag, wheel, <kbd>Shift</kbd> for fine, double-click to reset, right-click to MIDI-learn.
 
 Units: Noise Gate · Compressor · Wah · Overdrive · Distortion · Fuzz · Pitch / Harmony · Amp (Clean, Chime, Crunch, Lead, Hi-Gain) · Cabinet / IR (1×12, 2×12, 4×12, 1×10, Studio Flat, Acoustic Body Sim, or load an impulse response) · Parametric EQ · Chorus · Phaser · Flanger · Tremolo · Delay · Reverb (Room, Hall, Plate, Spring, Cathedral, Ethereal).
 
@@ -945,7 +944,7 @@ The app ships no recordings and no one else's lyrics, and it never uploads anyth
 
 ## Scales & ear: scales, arpeggios and your ear (2.25, in Practice since 2.27)
 
-**🎼 Scales & ear** is in the Practice workspace's tools, at the top of the **Theory** panel (**Practise this scale** opens it on the song's key and scale), and on a phone in **More**.
+**🎼 Scales & ear** is in the Learn panel's list (2.66: it opens in the panel, **◀ Learn** goes back), at the top of the **Theory** panel (**Practise this scale** opens it on the song's key and scale), and on a phone in **More**.
 - **Scales.** Choose a key, a scale, where on the neck to start, and one or two octaves. The fretboard shows the notes, with the roots in gold and the rest of the scale in that part of the neck faint. **▶ Listen** plays it up and back down through the studio's lead voice. **● Play it** listens to your guitar (the input the tuner uses) and follows you note by note. It marks the next note, ticks off each one you play, and counts wrong notes. The note you just played, still ringing, never counts as wrong, and octaves do not matter.
 - **Arpeggios.** This song's chords in order, one note at a time (root, third, fifth, and back to the root), or **One chord** up and down, around the fret you choose.
 - **Your ear.** **▶ Play a question** plays two notes, and you name the interval: 4, 6 or all 12 to choose from. It keeps your streak and your best.
@@ -1033,7 +1032,7 @@ It starts at 70% of the song's tempo, every clean go is 5 BPM faster, and it sto
 
 ## Learn: lessons, riffs, Riff Lab and the scale atlas (2.32)
 
-**🎓 Learn** is the first tool in the **Practice** workspace (and on a phone in **More**). Connect your guitar (Audio, top right): the coach listens through the same input as the tuner.
+**🎓 Learn** is the **Practice** workspace's own panel (2.66; on a phone it's in **More**). Its list on the left has Today, Lessons, Warm-ups, This song, By ear, Riffs & licks, Riff Lab, the Scale atlas, For teachers and **🎼 Scales & ear**. A lesson, riff or shape opens in the panel itself, with **◀ Back** to the list, so the band, the tempo, the tuner and the **Fretboard** tab stay in reach. Connect your guitar (Audio, top right): the coach listens through the same input as the tuner.
 
 **The coach.** Each step shows the notes on the neck and as tab. Press **▶ Listen** to hear it, then **● Play it** and play. It follows you note by note (a note still ringing is fine; a wrong one is counted), or checks your timing against its click. It plays its own small band (click, drums, chords, bass) and never changes your song.
 - What it can check: notes, timing (and whether you rush or drag), a chord held, chord changes in time, a minute of changes, strumming patterns, bends (how far and in tune), vibrato (how fast and how wide), and landing on a note of each new chord while it plays a progression.

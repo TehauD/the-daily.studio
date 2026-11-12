@@ -53,7 +53,7 @@ function hubOpen(id, o) {
 function hubGo(d, key, smooth) {
   const sec = d.querySelector('.hub-sec[data-sec="' + key + '"]'), body = d.querySelector('.hub-body'); if (!sec || !body) return;
   d._hubLock = Date.now() + (smooth ? 600 : 0);
-  body.scrollTo({ top: Math.max(0, sec.offsetTop - body.offsetTop - 4), behavior: smooth && !CFG.reduce ? 'smooth' : 'auto' }); hubMark(d, key);
+  { const top = Math.max(0, sec.offsetTop - body.offsetTop - 4); if (body.scrollTo) body.scrollTo({ top, behavior: smooth && !CFG.reduce ? 'smooth' : 'auto' }); else body.scrollTop = top; } hubMark(d, key);
 }
 function hubMark(d, key) { d.querySelectorAll('.hub-nb').forEach(b => { const on = b.dataset.sec === key; b.classList.toggle('on', on); if (on) { b.setAttribute('aria-current', 'true'); if (b.scrollIntoView && b.parentElement.scrollWidth > b.parentElement.clientWidth) b.scrollIntoView({ block: 'nearest', inline: 'nearest' }); } else b.removeAttribute('aria-current'); }); }
 function hubSpy(d) {
