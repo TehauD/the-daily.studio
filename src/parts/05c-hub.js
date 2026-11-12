@@ -12,11 +12,22 @@
  *   o.foot                        Node for the footer (optional)
  *   o.preview                     no dimming behind (Appearance: you watch the app change)
  */
+/** 2.66: a hub, or the coach, drawn in a panel instead of a dialog: a div that answers open / showModal / close as a dialog does, so the
+    code written for the dialog (and anything that asks whether it is open) works on it unchanged. close hides it and fires 'close'. */
+function hubInline(d) {
+  if (d._inline) return d; d._inline = true;
+  Object.defineProperty(d, 'open', { configurable: true, get: () => !d.hidden && d.isConnected });
+  d.showModal = d.show = () => { d.hidden = false; };
+  d.close = () => { if (d.hidden) return; d.hidden = true; d.dispatchEvent(new Event('close')); };
+  return d;
+}
 function hubOpen(id, o) {
-  let d = document.getElementById(id);
+  let d = document.getElementById(id); const host = o.into || null;
+  if (d && !!host !== !!d._inline) { try { if (d.open) d.close(); } catch (e) { } d.remove(); d = null; }      /* moved between a dialog and a panel (a phone turned into a tablet) */
   if (d && d.open) { try { d.close(); } catch (e) { } }
-  if (!d) { d = h('dialog', { id }); document.body.append(d); }
-  d.className = 'hub' + (o.preview ? ' hub-preview' : ''); d.innerHTML = ''; d.setAttribute('aria-labelledby', id + '-t');
+  if (!d) { d = host ? hubInline(h('div', { id, role: 'region' })) : h('dialog', { id }); (host || document.body).append(d); }
+  if (host) { if (d.parentNode !== host) host.append(d); [...host.children].forEach(x => { if (x !== d && x._inline && x.open && x.classList.contains('hub')) x.close(); }); }      /* one hub at a time in a panel */
+  d.className = 'hub' + (host ? ' hub-inline' : '') + (o.preview ? ' hub-preview' : ''); d.innerHTML = ''; d.setAttribute('aria-labelledby', id + '-t');
   const body = h('div', { class: 'hub-body' }), nav = h('nav', { class: 'hub-nav', 'aria-label': o.title + ' sections' });
   const secs = o.sections.filter(Boolean);
   secs.forEach(s => {
@@ -26,13 +37,15 @@ function hubOpen(id, o) {
       h('div', { class: 'hub-card' + (s.wide ? ' wide' : '') }, ...kids)));
     nav.append(h('button', { type: 'button', class: 'hub-nb', 'data-sec': s.key, onclick: () => hubGo(d, s.key, true) }, h('span', { class: 'hub-ni', 'aria-hidden': 'true' }, s.ico || '•'), h('span', {}, s.label)));
   });
+  /* o.links: more places in the list that open something else (another hub in the same panel) */
+  if (o.links && o.links.length) { nav.append(h('div', { class: 'hub-nsep', 'aria-hidden': 'true' })); o.links.forEach(l => nav.append(h('button', { type: 'button', class: 'hub-nb hub-nl', id: l.id || null, onclick: l.fn }, h('span', { class: 'hub-ni', 'aria-hidden': 'true' }, l.ico || '→'), h('span', {}, l.label)))); }
   d.append(
     h('header', { class: 'hub-h' }, h('span', { class: 'hub-ico', 'aria-hidden': 'true' }, o.ico), h('div', { class: 'hub-ht' }, h('h2', { id: id + '-t' }, o.title), o.sub ? h('p', {}, o.sub) : null),
-      h('button', { type: 'button', class: 'hub-x', 'aria-label': 'Close', title: 'Close (Esc)', onclick: () => d.close() }, '✕')),
+      o.back ? h('button', { type: 'button', class: 'btn sm hub-back', id: id + '-back', onclick: o.back.fn }, o.back.label) : host ? null : h('button', { type: 'button', class: 'hub-x', 'aria-label': 'Close', title: 'Close (Esc)', onclick: () => d.close() }, '✕')),
     h('div', { class: 'hub-main' }, nav, body));
   if (o.foot) d.append(h('footer', { class: 'hub-f' }, o.foot));
   body.addEventListener('scroll', () => hubSpy(d), { passive: true });
-  d.addEventListener('click', e => { if (e.target === d) d.close(); });   // a click on the backdrop closes it
+  if (!host) d.addEventListener('click', e => { if (e.target === d) d.close(); });   // a click on the backdrop closes it
   if (!d.open) { if (d.showModal) d.showModal(); else d.setAttribute('open', ''); }
   hubGo(d, o.at || secs[0].key, false); return d;
 }

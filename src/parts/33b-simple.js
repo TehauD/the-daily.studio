@@ -14,10 +14,10 @@
 /* what Simple keeps on the panel strip (and whatever is open, and the backing track once one is loaded), and the tones it offers */
 const SIMPLE_TABS = ['tab', 'band', 'vis', 'exp'];
 /* 2.46: Simple simplifies every workspace but Full Rig. Each keeps its own few panels and tools; Full Rig always has everything */
-const SIMPLE_GOAL_TABS = { songwriter: ['tab', 'band', 'exp'], performer: ['vis', 'band', 'exp'], practice: ['fret', 'tab', 'band'] };
+const SIMPLE_GOAL_TABS = { songwriter: ['tab', 'band', 'exp'], performer: ['vis', 'band', 'exp'], practice: ['learn', 'fret', 'band'] };
 const SIMPLE_GOAL_TOOLS = {
   songwriter: ['gtBeats', 'gtSheet', 'gtPads', 'gtKeys', 'gtLink'], performer: ['gtVideo', 'gtCam', 'gtVox', 'gtReplay', 'gtExp'],
-  practice: ['gtToday', 'gtSong', 'gtEar', 'gtSlow', 'gtBpm', 'gtFast'] };
+  practice: ['gtLearn', 'gtSlow', 'gtBpm', 'gtFast'] };
 const SIMPLE_TOOLS = SIMPLE_GOAL_TOOLS.songwriter;
 /** the panels Simple keeps in the workspace in use */
 const simpleTabs = () => { const g = typeof goalNow === 'function' && goalNow(); return (g && SIMPLE_GOAL_TABS[g.id]) || SIMPLE_TABS; };

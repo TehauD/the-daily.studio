@@ -212,8 +212,8 @@ function wsEarRoom() {
 }
 /** the room itself (part of Practice) */
 function trainOpen(at) {
-  wsStop(true);
-  const d = hubOpen('scales-ear', { ico: '🎼', title: 'Scales & ear', sub: 'Scales anywhere on the neck, this song’s chords one note at a time, and your ear. The studio listens and follows you note by note.', at, sections: [
+  wsStop(true); const host = typeof learnHost === 'function' ? learnHost() : null; if (host) { learnShow(); const c = document.getElementById('coach'); if (c && c._inline && c.open) c.close(); }      /* 2.66: in the Learn panel */
+  const d = hubOpen('scales-ear', { into: host, back: host ? { label: '◀ Learn', fn: () => learnOpen() } : null, ico: '🎼', title: 'Scales & ear', sub: 'Scales anywhere on the neck, this song’s chords one note at a time, and your ear. The studio listens and follows you note by note.', at, sections: [
     { key: 'scales', label: 'Scales', ico: '♯', sub: 'Choose a key, a scale and where on the neck. ● Play it follows you note by note, up and back down.', wide: true, body: () => [wsRoom('scale')] },
     { key: 'arps', label: 'Arpeggios', ico: '🎸', sub: 'This song’s chords one note at a time, or one chord up and down.', wide: true, body: () => [wsRoom('arp')] },
     { key: 'ear', label: 'Your ear', ico: '👂', sub: 'Two notes. Name the gap between them. Build a streak.', wide: true, body: () => [wsEarRoom()] },

@@ -57,7 +57,7 @@ window.__dailyRoom = (id, make) => {
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.65.1', BUILD = '7f3ec7c', PARTS_N = +'124' || 0, LINES_N = +'20970' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.65.1', BUILD = 'db2fc3b', PARTS_N = +'124' || 0, LINES_N = +'21001' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { ghApp: { clientId: 'Iv23liTjqEBQsgmGaE1Q', slug: 'tehaud-the-daily-studio' },   /* Sign in with GitHub: the GitHub App's public client id and its slug (docs/GITHUB.md); empty = only the token way */
   support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://journal.the-daily.studio/' };
@@ -2203,11 +2203,22 @@ function lookOpen(at) {
  *   o.foot                        Node for the footer (optional)
  *   o.preview                     no dimming behind (Appearance: you watch the app change)
  */
+/** 2.66: a hub, or the coach, drawn in a panel instead of a dialog: a div that answers open / showModal / close as a dialog does, so the
+    code written for the dialog (and anything that asks whether it is open) works on it unchanged. close hides it and fires 'close'. */
+function hubInline(d) {
+  if (d._inline) return d; d._inline = true;
+  Object.defineProperty(d, 'open', { configurable: true, get: () => !d.hidden && d.isConnected });
+  d.showModal = d.show = () => { d.hidden = false; };
+  d.close = () => { if (d.hidden) return; d.hidden = true; d.dispatchEvent(new Event('close')); };
+  return d;
+}
 function hubOpen(id, o) {
-  let d = document.getElementById(id);
+  let d = document.getElementById(id); const host = o.into || null;
+  if (d && !!host !== !!d._inline) { try { if (d.open) d.close(); } catch (e) { } d.remove(); d = null; }      /* moved between a dialog and a panel (a phone turned into a tablet) */
   if (d && d.open) { try { d.close(); } catch (e) { } }
-  if (!d) { d = h('dialog', { id }); document.body.append(d); }
-  d.className = 'hub' + (o.preview ? ' hub-preview' : ''); d.innerHTML = ''; d.setAttribute('aria-labelledby', id + '-t');
+  if (!d) { d = host ? hubInline(h('div', { id, role: 'region' })) : h('dialog', { id }); (host || document.body).append(d); }
+  if (host) { if (d.parentNode !== host) host.append(d); [...host.children].forEach(x => { if (x !== d && x._inline && x.open && x.classList.contains('hub')) x.close(); }); }      /* one hub at a time in a panel */
+  d.className = 'hub' + (host ? ' hub-inline' : '') + (o.preview ? ' hub-preview' : ''); d.innerHTML = ''; d.setAttribute('aria-labelledby', id + '-t');
   const body = h('div', { class: 'hub-body' }), nav = h('nav', { class: 'hub-nav', 'aria-label': o.title + ' sections' });
   const secs = o.sections.filter(Boolean);
   secs.forEach(s => {
@@ -2217,13 +2228,15 @@ function hubOpen(id, o) {
       h('div', { class: 'hub-card' + (s.wide ? ' wide' : '') }, ...kids)));
     nav.append(h('button', { type: 'button', class: 'hub-nb', 'data-sec': s.key, onclick: () => hubGo(d, s.key, true) }, h('span', { class: 'hub-ni', 'aria-hidden': 'true' }, s.ico || '•'), h('span', {}, s.label)));
   });
+  /* o.links: more places in the list that open something else (another hub in the same panel) */
+  if (o.links && o.links.length) { nav.append(h('div', { class: 'hub-nsep', 'aria-hidden': 'true' })); o.links.forEach(l => nav.append(h('button', { type: 'button', class: 'hub-nb hub-nl', id: l.id || null, onclick: l.fn }, h('span', { class: 'hub-ni', 'aria-hidden': 'true' }, l.ico || '→'), h('span', {}, l.label)))); }
   d.append(
     h('header', { class: 'hub-h' }, h('span', { class: 'hub-ico', 'aria-hidden': 'true' }, o.ico), h('div', { class: 'hub-ht' }, h('h2', { id: id + '-t' }, o.title), o.sub ? h('p', {}, o.sub) : null),
-      h('button', { type: 'button', class: 'hub-x', 'aria-label': 'Close', title: 'Close (Esc)', onclick: () => d.close() }, '✕')),
+      o.back ? h('button', { type: 'button', class: 'btn sm hub-back', id: id + '-back', onclick: o.back.fn }, o.back.label) : host ? null : h('button', { type: 'button', class: 'hub-x', 'aria-label': 'Close', title: 'Close (Esc)', onclick: () => d.close() }, '✕')),
     h('div', { class: 'hub-main' }, nav, body));
   if (o.foot) d.append(h('footer', { class: 'hub-f' }, o.foot));
   body.addEventListener('scroll', () => hubSpy(d), { passive: true });
-  d.addEventListener('click', e => { if (e.target === d) d.close(); });   // a click on the backdrop closes it
+  if (!host) d.addEventListener('click', e => { if (e.target === d) d.close(); });   // a click on the backdrop closes it
   if (!d.open) { if (d.showModal) d.showModal(); else d.setAttribute('open', ''); }
   hubGo(d, o.at || secs[0].key, false); return d;
 }
@@ -2248,11 +2261,11 @@ function hubRow(label, el, hint) { return h('div', { class: 'hub-row' }, h('div'
 /* ============================================================
    Part 06 · dock framework, left sidebar (Tones / I-O / Theory), Rig pane, right sidebar (tuner, meters, live analysis)
    ============================================================ */
-const DOCK = [['rig', 'Rig'], ['tab', 'Write'], ['song', 'Song'], ['band', 'Band'], ['fret', 'Fretboard'], ['vis', 'Visuals'], ['stage', 'Stage'], ['neural', 'Neural'], ['stems', 'Stems'], ['tx', 'Transcribe'], ['cam', 'Vision'], ['lab', 'Research'], ['exp', 'Export']];
+const DOCK = [['rig', 'Rig'], ['tab', 'Write'], ['song', 'Song'], ['band', 'Band'], ['fret', 'Fretboard'], ['vis', 'Visuals'], ['stage', 'Stage'], ['neural', 'Neural'], ['stems', 'Stems'], ['tx', 'Transcribe'], ['cam', 'Vision'], ['lab', 'Research'], ['exp', 'Export'], ['learn', 'Learn']];
 const paneVisible = id => DOCK.cur === id || (typeof FLOATS !== 'undefined' && FLOATS.has(id)) || (typeof sideVisible === 'function' && sideVisible(id));
 /* Song and Fretboard are part of Write now (63-write.js); they stay as panels, reachable from Write, and join the strip only when asked for (CFG.sepTabs) */
 const MERGED = ['song', 'fret'];
-const dockVisible = () => DOCK.filter(d => !(typeof LAY !== 'undefined' && LAY.hidden.includes(d[0])) && !(MERGED.includes(d[0]) && !CFG.sepTabs && DOCK.cur !== d[0] && !(typeof FLOATS !== 'undefined' && FLOATS.has(d[0]))) && !(typeof sideHosted === 'function' && sideHosted(d[0])) && (typeof xpAllowed !== 'function' || xpAllowed(d[0])));
+const dockVisible = () => DOCK.filter(d => !(typeof LAY !== 'undefined' && LAY.hidden.includes(d[0])) && !(MERGED.includes(d[0]) && !CFG.sepTabs && DOCK.cur !== d[0] && !(typeof LAY !== 'undefined' && (LAY.show || []).includes(d[0])) && !(typeof FLOATS !== 'undefined' && FLOATS.has(d[0]))) && !(typeof sideHosted === 'function' && sideHosted(d[0])) && (typeof xpAllowed !== 'function' || xpAllowed(d[0])));
 const PANES = {}, SEL = { sec: 0, bar: 0 };
 function buildDock() {
   const dock = $('#dock'), tabs = h('div', { class: 'tabs' });
@@ -4370,7 +4383,7 @@ function setCardHidden(n, hide) { LAY.rc.hide[n] = !!hide; const c = $('[data-ca
    so nothing from the previous layout leaks into the next.
    spec: flip · left · right (sidebars on or off) · tlh (arrangement height) · dock (the open panel; null leaves it) · order (tabs to put first) · hidden (tabs left off the strip)
          side {panel: 'left' | 'right'} (panels that live in a sidebar) · so {left: [], right: []} (their order) · cur {left, right} (which sidebar tab is open) · mon (Monitor widgets shown) · board */
-const DOCK_DEFAULT = ['rig', 'tab', 'song', 'band', 'fret', 'vis', 'stage', 'neural', 'stems', 'tx', 'cam', 'lab', 'exp'];
+const DOCK_DEFAULT = ['rig', 'tab', 'song', 'band', 'fret', 'vis', 'stage', 'neural', 'stems', 'tx', 'cam', 'lab', 'exp', 'learn'];
 const LAYOUTS = [
   ['Studio', 'Everything in reach: panels above the arrangement, a sidebar each side.', { flip: true, left: true, right: true, tlh: null, dock: 'tab', cur: { left: 'io', right: 'monitor' } }],
   ['Write', 'Tab in the middle, chords and lyrics beside it, theory at hand. The arrangement stays short.', { flip: true, left: true, right: true, tlh: 'minmax(130px,24%)', dock: 'tab', order: ['tab', 'band', 'rig'], hidden: ['song', 'fret', 'stage', 'neural', 'stems', 'tx', 'cam', 'lab'], cur: { left: 'theory', right: 'refine' } }],
@@ -4387,7 +4400,8 @@ function applyPreset(s, name) {
   /* 2.64: a layout can start with the arrangement collapsed and say how tall it opens (▴ Arrangement) */
   if (s.tlhOpen !== undefined) LAY.tlhPrev = s.tlhOpen; else delete LAY.tlhPrev;
   /* the tab strip: which tabs, in which order (the shipped order when the layout names none) */
-  LAY.hidden = (s.hidden || []).filter(id => id !== s.dock); LAY.order = s.order ? s.order.slice() : [];
+  LAY.hidden = (s.hidden || []).filter(id => id !== s.dock); LAY.order = s.order ? s.order.slice() : []; LAY.show = s.show ? s.show.slice() : [];      /* show: panels kept on the strip even though they are part of another (2.66: Practice keeps the Fretboard) */
+  if (!LAY.order.includes('learn') && s.dock !== 'learn' && LAY.hidden.length && !LAY.hidden.includes('learn')) LAY.hidden.push('learn');      /* 2.66: the Learn panel is Practice's; a layout that hides nothing (Studio, Full Rig) shows it too */
   { const cur = DOCK.cur, ord = LAY.order.length ? LAY.order : DOCK_DEFAULT, ix = id => { const i = ord.indexOf(id); return i < 0 ? 999 : i; }; DOCK.sort((a, b) => ix(a[0]) - ix(b[0]) || DOCK_DEFAULT.indexOf(a[0]) - DOCK_DEFAULT.indexOf(b[0])); DOCK.cur = cur; }
   /* the sidebars: which panels live in them, in what order, and which one is open */
   LAY.side = JSON.parse(JSON.stringify(s.side || {})); LAY.so = JSON.parse(JSON.stringify(s.so || { left: [], right: [] }));
@@ -8560,7 +8574,7 @@ function humGuitarBar(d, x) {
    way around" on the first visit) gets no coaching notes on the panels (part 60).
    ============================================================ */
 var XP = { quiet: 0, last: null };
-var XP_NAMES = { rig: 'Guitar sound', tab: 'Write', vis: 'Visuals', song: 'Song', band: 'Band', exp: 'Save & export', fret: 'Fretboard', stems: 'Backing track' };
+var XP_NAMES = { rig: 'Guitar sound', tab: 'Write', vis: 'Visuals', song: 'Song', band: 'Band', exp: 'Save & export', fret: 'Fretboard', stems: 'Backing track', learn: 'Learn' };
 if (CFG.xp == null) { CFG.xp = (store.get('started', false) || store.get('song', null)) ? 40 : 0; saveCfg(); }   // people who already use the app know their way around
 /** 'pro' once the person knows their way around (no coaching notes), else 'new' */
 function xpLevel() { return CFG.xpMode === 'pro' || (CFG.xp || 0) >= 12 ? 'pro' : 'new'; }
@@ -8588,10 +8602,10 @@ function xpQuiet(fn) { XP.quiet++; try { return fn(); } finally { XP.quiet--; } 
 /* what Simple keeps on the panel strip (and whatever is open, and the backing track once one is loaded), and the tones it offers */
 const SIMPLE_TABS = ['tab', 'band', 'vis', 'exp'];
 /* 2.46: Simple simplifies every workspace but Full Rig. Each keeps its own few panels and tools; Full Rig always has everything */
-const SIMPLE_GOAL_TABS = { songwriter: ['tab', 'band', 'exp'], performer: ['vis', 'band', 'exp'], practice: ['fret', 'tab', 'band'] };
+const SIMPLE_GOAL_TABS = { songwriter: ['tab', 'band', 'exp'], performer: ['vis', 'band', 'exp'], practice: ['learn', 'fret', 'band'] };
 const SIMPLE_GOAL_TOOLS = {
   songwriter: ['gtBeats', 'gtSheet', 'gtPads', 'gtKeys', 'gtLink'], performer: ['gtVideo', 'gtCam', 'gtVox', 'gtReplay', 'gtExp'],
-  practice: ['gtToday', 'gtSong', 'gtEar', 'gtSlow', 'gtBpm', 'gtFast'] };
+  practice: ['gtLearn', 'gtSlow', 'gtBpm', 'gtFast'] };
 const SIMPLE_TOOLS = SIMPLE_GOAL_TOOLS.songwriter;
 /** the panels Simple keeps in the workspace in use */
 const simpleTabs = () => { const g = typeof goalNow === 'function' && goalNow(); return (g && SIMPLE_GOAL_TABS[g.id]) || SIMPLE_TABS; };
@@ -14403,15 +14417,11 @@ const GOALS = [
   { id: 'practice', ico: '🎼', name: 'Practice', layout: 'Practice', hue: '#1c9a63', next: ['performer', 'Into the Studio'],
     blurb: 'Learn it and get it under your fingers: lessons that listen, loop and slow down, the scale on the neck. Teaching someone? Draw, keep notes and record the screen.',
     mission: 'Learn it, then get it under your fingers', steps: ['Start 📅 Today, or 🎵 This song', 'Loop the hard bars and slow them down', 'Speed it up 5 at a time'],
-    shape: 'The fretboard large in the middle · Theory (scales) on the left · Tuner and levels on the right',
-    spec: { flip: true, left: true, right: true, tlh: '84px', tlhOpen: 'minmax(170px,32%)', dock: 'fret', order: ['fret', 'tab', 'stems', 'band', 'tx', 'rig'], hidden: ['song', 'vis', 'stage', 'neural', 'cam', 'lab', 'exp'], cur: { left: 'theory', right: 'monitor' }, mon: ['tuner', 'levels'] },
+    shape: 'Learn in the middle (lessons, riffs, the atlas, Scales & ear) · the fretboard a tab away · Theory on the left · Tuner and levels on the right',
+    spec: { flip: true, left: true, right: true, tlh: '84px', tlhOpen: 'minmax(170px,32%)', dock: 'learn', order: ['learn', 'fret', 'tab', 'stems', 'band', 'tx', 'rig'], show: ['fret'], hidden: ['song', 'vis', 'stage', 'neural', 'cam', 'lab', 'exp'], cur: { left: 'theory', right: 'monitor' }, mon: ['tuner', 'levels'] },
     tools: () => [
-      ['gtLearn', '🎓 Learn', 'Lessons that show you, play it, then listen to you play it', () => learnOpen('lessons'), null, 1],
-      ['gtToday', '📅 Today', 'Today’s fifteen minutes: a warm-up, a review, something new and a riff', () => learnOpen('today')],
-      ['gtSong', '🎵 This song', 'The song you have open, as lessons: its strum, each section’s chords and riff, working up to its tempo', () => learnOpen('song')],
-      ['gtEar', '👂 By ear', 'Hear a phrase, play it back: no tab', () => learnOpen('ear')],
-      ['gtRiffs', '🎸 Riffs & licks', RIFFS.length + ' riffs in ' + RIFF_STYLES.length + ' styles, in any key; Riff Lab and the scale atlas are in Learn', () => learnOpen('riffs')],
-      ['gtShed', '🎼 Scales & ear', 'Scales anywhere on the neck, this song’s arpeggios and ear training, followed note by note', () => trainOpen()],
+      /* 2.66: Learn is the Practice panel itself (Today, lessons, This song, By ear, riffs, the lab, the atlas and Scales & ear are in its list) */
+      ['gtLearn', '🎓 Learn', 'Back to Learn: today’s plan, lessons that listen, this song, by ear, riffs, the riff lab, the scale atlas, Scales & ear', () => learnOpen(), () => DOCK.cur === 'learn' && paneVisible('learn'), 1],
       ['gtSlow', '− 5', 'Slower by 5 BPM', () => goalTempo(-5)],
       ['gtBpm', () => S.bpm + ' BPM', 'The tempo', () => { if (UI.bpm) UI.bpm.focus(); }],
       ['gtFast', '+ 5', 'Faster by 5 BPM', () => goalTempo(5)],
@@ -14439,6 +14449,8 @@ if (GOAL_OLD_LAYOUTS[LAY.name]) { LAY.name = GOAL_OLD_LAYOUTS[LAY.name]; }
 /* 2.64: the arrangement starts collapsed (a strip under the panels; ▴ Arrangement opens it). Once, for a studio already set up too,
    except in Arrange and Record, which are about the arrangement */
 if (CFG.arrFold !== 1) { CFG.arrFold = 1; if (!/^(Arrange|Record)$/.test(LAY.name || '') && LAY.tlh !== '84px') { LAY.tlhPrev = LAY.tlh == null ? null : LAY.tlh; LAY.tlh = '84px'; try { saveLay(); } catch (e) { } } saveCfg(); }
+/* 2.66: once, for a studio set up before the Learn panel: Practice opens on it, and other layouts keep it off their strip */
+if (CFG.learnPane !== 1) { CFG.learnPane = 1; try { if (LAY.name === 'Practice') { const g = GOALS.find(x => x.id === 'practice'); LAY.order = g.spec.order.slice(); LAY.show = g.spec.show.slice(); LAY.hidden = LAY.hidden.filter(x => x !== 'learn'); } else if (LAY.hidden.length && !LAY.hidden.includes('learn')) LAY.hidden.push('learn'); saveLay(); } catch (e) { } saveCfg(); }
 /* 2.65: a new take opens the collapsed arrangement, so you see it land (opening a song that has takes leaves it as it is) */
 let tlTakesN = TAKES.length;
 bus.on('song', w => { if (w === 'reload') tlTakesN = TAKES.length; });      /* a song opened, an undo or redo: not a new take */
@@ -14475,7 +14487,7 @@ const GOALBAR = { el: null };
 /** the bar sits at the top of the centre, whichever of the panels or the arrangement is on top */
 function goalPlace() { const el = GOALBAR.el, top = LAY.flip === false ? $('#timeline') : $('#dock'); if (el && top && (el.parentNode !== top || top.firstChild !== el)) top.insertBefore(el, top.firstChild); }
 /* 2.65: each workspace shows its main tools; the rest are one click away under ⋯ More (a tool in use stays showing) */
-const GOAL_MORE = { songwriter: ['gtVox', 'gtRoll'], performer: ['gtFmt', 'gtFx', 'gtStream', 'gtThumb', 'gtTip', 'gtPrint'], practice: ['gtEar', 'gtRiffs', 'gtSpeed', 'gtInk', 'gtNotes', 'gtScreen', 'gtTx'] };
+const GOAL_MORE = { songwriter: ['gtVox', 'gtRoll'], performer: ['gtFmt', 'gtFx', 'gtStream', 'gtThumb', 'gtTip', 'gtPrint'], practice: ['gtInk', 'gtNotes', 'gtScreen', 'gtTx'] };
 function goalBarBuild() {
   const box = GOALBAR.el; if (!box) return; box.innerHTML = ''; const cur = goalNow(); goalMark();
   const pick = h('div', { class: 'gl-pick', role: 'group', 'aria-label': 'What do you want to do?' }, GOALS.map(g => h('button', { class: 'gl-b' + (cur === g ? ' on' : ''), 'data-goal': g.id, style: '--gh:' + g.hue, 'aria-pressed': String(cur === g), title: g.name + ': ' + g.blurb, onclick: () => goalGo(g.id) }, h('span', { class: 'gl-i', 'aria-hidden': 'true' }, g.ico), h('span', { class: 'gl-t' }, g.name))));
@@ -16838,8 +16850,8 @@ function wsEarRoom() {
 }
 /** the room itself (part of Practice) */
 function trainOpen(at) {
-  wsStop(true);
-  const d = hubOpen('scales-ear', { ico: '🎼', title: 'Scales & ear', sub: 'Scales anywhere on the neck, this song’s chords one note at a time, and your ear. The studio listens and follows you note by note.', at, sections: [
+  wsStop(true); const host = typeof learnHost === 'function' ? learnHost() : null; if (host) { learnShow(); const c = document.getElementById('coach'); if (c && c._inline && c.open) c.close(); }      /* 2.66: in the Learn panel */
+  const d = hubOpen('scales-ear', { into: host, back: host ? { label: '◀ Learn', fn: () => learnOpen() } : null, ico: '🎼', title: 'Scales & ear', sub: 'Scales anywhere on the neck, this song’s chords one note at a time, and your ear. The studio listens and follows you note by note.', at, sections: [
     { key: 'scales', label: 'Scales', ico: '♯', sub: 'Choose a key, a scale and where on the neck. ● Play it follows you note by note, up and back down.', wide: true, body: () => [wsRoom('scale')] },
     { key: 'arps', label: 'Arpeggios', ico: '🎸', sub: 'This song’s chords one note at a time, or one chord up and down.', wide: true, body: () => [wsRoom('arp')] },
     { key: 'ear', label: 'Your ear', ico: '👂', sub: 'Two notes. Name the gap between them. Build a streak.', wide: true, body: () => [wsEarRoom()] },
@@ -18424,8 +18436,11 @@ function coNotesDone(R) {
 function coachOpen(pieces, at, o) {
   pieces = Array.isArray(pieces) ? pieces : [pieces]; coStopListen(); coSeqStop(); o = o || {};
   CO.list = pieces; CO.idx = Math.max(0, Math.min(pieces.length - 1, at || 0)); CO.title = o.title || ''; CO.onAct = o.actions || null; CO.key = o.key != null ? o.key : null;
-  let d = document.getElementById('coach'); if (!d) { d = h('dialog', { class: 'coach', id: 'coach', 'aria-labelledby': 'coachT' }); document.body.append(d); d.addEventListener('close', () => { if (d.open) return; coStopListen(); coSeqStop(); bus.emit('coach:close'); });      /* the close event comes late: if the coach was opened again since, leave it be */ }
-  coSetPiece(CO.idx); if (d.open) d.close(); d.showModal(); return d;      /* reopened, so it is always in front (of the Learn hub too) */
+  const host = typeof learnHost === 'function' ? learnHost() : null; let d = document.getElementById('coach');
+  if (d && !!host !== !!d._inline) { try { if (d.open) d.close(); } catch (e) { } d.remove(); d = null; }      /* 2.66: in the Learn panel on a computer, a window on a phone */
+  if (!d) { d = host ? hubInline(h('div', { class: 'coach co-inline', id: 'coach', role: 'region', 'aria-labelledby': 'coachT' })) : h('dialog', { class: 'coach', id: 'coach', 'aria-labelledby': 'coachT' }); (host || document.body).append(d); d.addEventListener('close', () => { if (d.open) return; coStopListen(); coSeqStop(); bus.emit('coach:close'); });      /* the close event comes late: if the coach was opened again since, leave it be */ }
+  if (host) { if (d.parentNode !== host) host.append(d); learnShow(); }
+  coSetPiece(CO.idx); if (d._inline) { d.showModal(); d.scrollTop = 0; return d; } if (d.open) d.close(); d.showModal(); return d;      /* reopened, so it is always in front (of the Learn hub too) */
 }
 function coSetPiece(i) { coStopListen(); coSeqStop(); CO.idx = i; const raw = CO.list[i]; CO.p = typeof raw === 'function' ? raw() : raw; CO.bpm = CO.p.bpm || 80; CO.res = ''; CO.fb = null; CO.reveal = false; coTakeDrop(); if (CO.p.kind === 'info' && CO.p.id && !CFG.learn.done[CO.p.id]) { CFG.learn.done[CO.p.id] = Date.now(); saveCfg(); bus.emit('coach:done', { id: CO.p.id, ok: true }); } coBuild(); }
 /** the piece's notes placed in this tuning (re-placed when the key or the tuning changes) */
@@ -18434,7 +18449,7 @@ function coBuild() {
   const d = document.getElementById('coach'); if (!d) return; const p = CO.p; coNotes(); d.innerHTML = '';
   const steps = CO.list.length > 12 ? h('span', { class: 'co-count mono', id: 'coCount' }, (CO.idx + 1) + ' / ' + CO.list.length) : CO.list.length > 1 ? h('div', { class: 'co-steps', role: 'list' }, CO.list.map((q, k) => { const qq = typeof q === 'function' ? null : q; return h('button', { role: 'listitem', class: 'co-dot' + (k === CO.idx ? ' on' : '') + (qq && CFG.learn.done[qq.id] ? ' done' : ''), 'aria-label': 'Step ' + (k + 1) + (qq && CFG.learn.done[qq.id] ? ', done' : ''), onclick: () => coSetPiece(k) }); })) : null;
   const playable = p.kind !== 'info' || (p.notes && p.notes.length);
-  d.append(...[h('div', { class: 'co-top' }, h('div', { class: 'co-tt' }, h('small', {}, CO.title || ''), h('b', { id: 'coachT' }, p.title)), steps, h('button', { class: 'btn icon', 'aria-label': 'Close the coach', onclick: () => d.close() }, '✕')),
+  d.append(...[h('div', { class: 'co-top' }, h('div', { class: 'co-tt' }, h('small', {}, CO.title || ''), h('b', { id: 'coachT' }, p.title)), steps, d._inline ? h('button', { class: 'btn sm co-back', 'aria-label': 'Close the coach', title: 'Back to the list', onclick: () => d.close() }, '◀ Back') : h('button', { class: 'btn icon', 'aria-label': 'Close the coach', onclick: () => d.close() }, '✕')),
     h('p', { class: 'co-text' }, p.text || ''),
     p.notes && p.notes.length && !['chord', 'changes', 'minute'].includes(p.kind) && !(p.ear && !CO.reveal) ? h('div', { class: 'co-board' }) : null,
     p.notes && p.notes.length && !['chord', 'changes', 'minute'].includes(p.kind) && !(p.ear && !CO.reveal) ? h('pre', { class: 'co-tab mono', 'aria-label': 'Tab' }) : null,
@@ -18914,16 +18929,29 @@ function learnTeach() {
   const file = h('input', { type: 'file', accept: '.json,application/json', hidden: true, onchange: async e => { const f = e.target.files[0]; e.target.value = ''; if (f) learnOpenFile(await f.text()); } });
   const b = (id, label, sub, fn) => h('button', { class: 'ln-card', id, onclick: fn }, h('b', {}, label), h('small', {}, sub));
   return h('div', { class: 'ln-grid' }, file,
-    b('lnInk', '✎ Annotate', 'Draw over anything on the page while you explain.', () => { document.getElementById('learn').close(); kitInk(); }),
-    b('lnNotes', '📝 Lesson notes', 'Notes for this song, kept in this browser.', () => { document.getElementById('learn').close(); kitNotes(); }),
-    b('lnScreen', '⏺ Record the screen', 'Your screen, the studio’s sound and your voice.', () => { document.getElementById('learn').close(); kitScreen(); }),
+    b('lnInk', '✎ Annotate', 'Draw over anything on the page while you explain.', () => { learnLeave(); kitInk(); }),
+    b('lnNotes', '📝 Lesson notes', 'Notes for this song, kept in this browser.', () => { learnLeave(); kitNotes(); }),
+    b('lnScreen', '⏺ Record the screen', 'Your screen, the studio’s sound and your voice.', () => { learnLeave(); kitScreen(); }),
     b('lnFromSong', '🎯 This section as an exercise', 'The tab of the section you are in, note by note, ready to share.', () => { const p = learnFromSong(); if (p) coachOpen(p, 0, { title: 'From your song', actions: q => [h('button', { class: 'btn sm', id: 'coShare', onclick: () => learnFile([q], q.title) }, '⇩ Share as a file')] }); }),
     b('lnOpen', '📂 Open a lesson file', 'A lesson or riff a teacher shared (.daily-lesson.json).', () => file.click()));
 }
+/** 2.66: where Learn and its lessons are drawn: the Learn panel on a computer or tablet, a full-screen window on a phone */
+const learnHost = () => document.body.dataset.form !== 'phone' && PANES.learn ? PANES.learn : null;
+let LRN_SHOWING = false;
+/** bring the Learn panel into view: it is Practice's, so a workspace that hides it moves to Practice */
+function learnShow() {
+  if (LRN_SHOWING) return; LRN_SHOWING = true;
+  try { if (LAY.hidden.includes('learn') && !(typeof sideHosted === 'function' && sideHosted('learn')) && !(typeof FLOATS !== 'undefined' && FLOATS.has('learn'))) goalGo('practice'); if (!paneVisible('learn')) dockGo('learn'); }
+  finally { LRN_SHOWING = false; }
+}
+/** close the Learn window if it is one (on a phone); in the panel there is nothing to close */
+const learnLeave = () => { const d = document.getElementById('learn'); if (d && !d._inline && d.open) d.close(); };
 /** the lessons' front door (🎓 Learn in Practice) */
 function learnOpen(at) {
+  const host = learnHost(); if (host) { learnShow(); const c = document.getElementById('coach'); if (c && c._inline && c.open) c.close(); }
   const paths = LESSONS.filter(p => p.id !== 'warm'), warm = LESSONS.filter(p => p.id === 'warm'), all = LESSONS.reduce((a, p) => a + p.lessons.reduce((b, l) => b + l.steps.length, 0), 0), done = LESSONS.reduce((a, p) => a + p.lessons.reduce((b, l) => b + lsDone(l), 0), 0);
-  return hubOpen('learn', { ico: '🎓', title: 'Learn', sub: 'A plan for today, lessons that listen while you play, your own song as lessons, ear training, riffs, a riff lab and an atlas of the neck. ' + done + ' of ' + all + ' lesson steps done.', at, sections: [
+  return hubOpen('learn', { into: host, ico: '🎓', title: 'Learn', sub: 'A plan for today, lessons that listen while you play, your own song as lessons, ear training, riffs, a riff lab and an atlas of the neck. ' + done + ' of ' + all + ' lesson steps done.', at,
+    links: [{ id: 'lnShed', ico: '🎼', label: 'Scales & ear', fn: () => trainOpen() }], sections: [
     { key: 'today', label: 'Today', ico: '📅', sub: 'About fifteen minutes: a warm-up, something to review, something new and a riff. A new plan every day.', wide: true, body: () => [todayView()] },
     { key: 'lessons', label: 'Lessons', ico: '🎓', sub: 'Each step shows it, plays it, then listens to you play it (through the input the tuner uses).', wide: true, body: () => [learnLessons(paths)] },
     { key: 'warm', label: 'Warm-ups', ico: '🔥', sub: 'Five minutes before you play.', wide: true, body: () => [learnLessons(warm)] },
@@ -18937,6 +18965,9 @@ function learnOpen(at) {
 }
 bus.on('coach:done', () => learnPaint());
 bus.on('coach:close', () => { if (LRN_DIRTY) learnPaint(); });
+
+/* 2.66: the Learn panel draws itself the first time it is shown (and again if nothing is in it) */
+bus.on('dock', id => { if (id !== 'learn' || LRN_SHOWING || !learnHost()) return; const P = PANES.learn; if (![...P.children].some(x => x._inline && x.open)) learnOpen(); });
 
 /* >>> parts/83-practice-plan.js */
 /* ============================================================

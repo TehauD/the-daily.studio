@@ -177,16 +177,29 @@ function learnTeach() {
   const file = h('input', { type: 'file', accept: '.json,application/json', hidden: true, onchange: async e => { const f = e.target.files[0]; e.target.value = ''; if (f) learnOpenFile(await f.text()); } });
   const b = (id, label, sub, fn) => h('button', { class: 'ln-card', id, onclick: fn }, h('b', {}, label), h('small', {}, sub));
   return h('div', { class: 'ln-grid' }, file,
-    b('lnInk', '✎ Annotate', 'Draw over anything on the page while you explain.', () => { document.getElementById('learn').close(); kitInk(); }),
-    b('lnNotes', '📝 Lesson notes', 'Notes for this song, kept in this browser.', () => { document.getElementById('learn').close(); kitNotes(); }),
-    b('lnScreen', '⏺ Record the screen', 'Your screen, the studio’s sound and your voice.', () => { document.getElementById('learn').close(); kitScreen(); }),
+    b('lnInk', '✎ Annotate', 'Draw over anything on the page while you explain.', () => { learnLeave(); kitInk(); }),
+    b('lnNotes', '📝 Lesson notes', 'Notes for this song, kept in this browser.', () => { learnLeave(); kitNotes(); }),
+    b('lnScreen', '⏺ Record the screen', 'Your screen, the studio’s sound and your voice.', () => { learnLeave(); kitScreen(); }),
     b('lnFromSong', '🎯 This section as an exercise', 'The tab of the section you are in, note by note, ready to share.', () => { const p = learnFromSong(); if (p) coachOpen(p, 0, { title: 'From your song', actions: q => [h('button', { class: 'btn sm', id: 'coShare', onclick: () => learnFile([q], q.title) }, '⇩ Share as a file')] }); }),
     b('lnOpen', '📂 Open a lesson file', 'A lesson or riff a teacher shared (.daily-lesson.json).', () => file.click()));
 }
+/** 2.66: where Learn and its lessons are drawn: the Learn panel on a computer or tablet, a full-screen window on a phone */
+const learnHost = () => document.body.dataset.form !== 'phone' && PANES.learn ? PANES.learn : null;
+let LRN_SHOWING = false;
+/** bring the Learn panel into view: it is Practice's, so a workspace that hides it moves to Practice */
+function learnShow() {
+  if (LRN_SHOWING) return; LRN_SHOWING = true;
+  try { if (LAY.hidden.includes('learn') && !(typeof sideHosted === 'function' && sideHosted('learn')) && !(typeof FLOATS !== 'undefined' && FLOATS.has('learn'))) goalGo('practice'); if (!paneVisible('learn')) dockGo('learn'); }
+  finally { LRN_SHOWING = false; }
+}
+/** close the Learn window if it is one (on a phone); in the panel there is nothing to close */
+const learnLeave = () => { const d = document.getElementById('learn'); if (d && !d._inline && d.open) d.close(); };
 /** the lessons' front door (🎓 Learn in Practice) */
 function learnOpen(at) {
+  const host = learnHost(); if (host) { learnShow(); const c = document.getElementById('coach'); if (c && c._inline && c.open) c.close(); }
   const paths = LESSONS.filter(p => p.id !== 'warm'), warm = LESSONS.filter(p => p.id === 'warm'), all = LESSONS.reduce((a, p) => a + p.lessons.reduce((b, l) => b + l.steps.length, 0), 0), done = LESSONS.reduce((a, p) => a + p.lessons.reduce((b, l) => b + lsDone(l), 0), 0);
-  return hubOpen('learn', { ico: '🎓', title: 'Learn', sub: 'A plan for today, lessons that listen while you play, your own song as lessons, ear training, riffs, a riff lab and an atlas of the neck. ' + done + ' of ' + all + ' lesson steps done.', at, sections: [
+  return hubOpen('learn', { into: host, ico: '🎓', title: 'Learn', sub: 'A plan for today, lessons that listen while you play, your own song as lessons, ear training, riffs, a riff lab and an atlas of the neck. ' + done + ' of ' + all + ' lesson steps done.', at,
+    links: [{ id: 'lnShed', ico: '🎼', label: 'Scales & ear', fn: () => trainOpen() }], sections: [
     { key: 'today', label: 'Today', ico: '📅', sub: 'About fifteen minutes: a warm-up, something to review, something new and a riff. A new plan every day.', wide: true, body: () => [todayView()] },
     { key: 'lessons', label: 'Lessons', ico: '🎓', sub: 'Each step shows it, plays it, then listens to you play it (through the input the tuner uses).', wide: true, body: () => [learnLessons(paths)] },
     { key: 'warm', label: 'Warm-ups', ico: '🔥', sub: 'Five minutes before you play.', wide: true, body: () => [learnLessons(warm)] },
@@ -200,3 +213,6 @@ function learnOpen(at) {
 }
 bus.on('coach:done', () => learnPaint());
 bus.on('coach:close', () => { if (LRN_DIRTY) learnPaint(); });
+
+/* 2.66: the Learn panel draws itself the first time it is shown (and again if nothing is in it) */
+bus.on('dock', id => { if (id !== 'learn' || LRN_SHOWING || !learnHost()) return; const P = PANES.learn; if (![...P.children].some(x => x._inline && x.open)) learnOpen(); });

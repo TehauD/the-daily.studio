@@ -52,15 +52,11 @@ const GOALS = [
   { id: 'practice', ico: '🎼', name: 'Practice', layout: 'Practice', hue: '#1c9a63', next: ['performer', 'Into the Studio'],
     blurb: 'Learn it and get it under your fingers: lessons that listen, loop and slow down, the scale on the neck. Teaching someone? Draw, keep notes and record the screen.',
     mission: 'Learn it, then get it under your fingers', steps: ['Start 📅 Today, or 🎵 This song', 'Loop the hard bars and slow them down', 'Speed it up 5 at a time'],
-    shape: 'The fretboard large in the middle · Theory (scales) on the left · Tuner and levels on the right',
-    spec: { flip: true, left: true, right: true, tlh: '84px', tlhOpen: 'minmax(170px,32%)', dock: 'fret', order: ['fret', 'tab', 'stems', 'band', 'tx', 'rig'], hidden: ['song', 'vis', 'stage', 'neural', 'cam', 'lab', 'exp'], cur: { left: 'theory', right: 'monitor' }, mon: ['tuner', 'levels'] },
+    shape: 'Learn in the middle (lessons, riffs, the atlas, Scales & ear) · the fretboard a tab away · Theory on the left · Tuner and levels on the right',
+    spec: { flip: true, left: true, right: true, tlh: '84px', tlhOpen: 'minmax(170px,32%)', dock: 'learn', order: ['learn', 'fret', 'tab', 'stems', 'band', 'tx', 'rig'], show: ['fret'], hidden: ['song', 'vis', 'stage', 'neural', 'cam', 'lab', 'exp'], cur: { left: 'theory', right: 'monitor' }, mon: ['tuner', 'levels'] },
     tools: () => [
-      ['gtLearn', '🎓 Learn', 'Lessons that show you, play it, then listen to you play it', () => learnOpen('lessons'), null, 1],
-      ['gtToday', '📅 Today', 'Today’s fifteen minutes: a warm-up, a review, something new and a riff', () => learnOpen('today')],
-      ['gtSong', '🎵 This song', 'The song you have open, as lessons: its strum, each section’s chords and riff, working up to its tempo', () => learnOpen('song')],
-      ['gtEar', '👂 By ear', 'Hear a phrase, play it back: no tab', () => learnOpen('ear')],
-      ['gtRiffs', '🎸 Riffs & licks', RIFFS.length + ' riffs in ' + RIFF_STYLES.length + ' styles, in any key; Riff Lab and the scale atlas are in Learn', () => learnOpen('riffs')],
-      ['gtShed', '🎼 Scales & ear', 'Scales anywhere on the neck, this song’s arpeggios and ear training, followed note by note', () => trainOpen()],
+      /* 2.66: Learn is the Practice panel itself (Today, lessons, This song, By ear, riffs, the lab, the atlas and Scales & ear are in its list) */
+      ['gtLearn', '🎓 Learn', 'Back to Learn: today’s plan, lessons that listen, this song, by ear, riffs, the riff lab, the scale atlas, Scales & ear', () => learnOpen(), () => DOCK.cur === 'learn' && paneVisible('learn'), 1],
       ['gtSlow', '− 5', 'Slower by 5 BPM', () => goalTempo(-5)],
       ['gtBpm', () => S.bpm + ' BPM', 'The tempo', () => { if (UI.bpm) UI.bpm.focus(); }],
       ['gtFast', '+ 5', 'Faster by 5 BPM', () => goalTempo(5)],
@@ -88,6 +84,8 @@ if (GOAL_OLD_LAYOUTS[LAY.name]) { LAY.name = GOAL_OLD_LAYOUTS[LAY.name]; }
 /* 2.64: the arrangement starts collapsed (a strip under the panels; ▴ Arrangement opens it). Once, for a studio already set up too,
    except in Arrange and Record, which are about the arrangement */
 if (CFG.arrFold !== 1) { CFG.arrFold = 1; if (!/^(Arrange|Record)$/.test(LAY.name || '') && LAY.tlh !== '84px') { LAY.tlhPrev = LAY.tlh == null ? null : LAY.tlh; LAY.tlh = '84px'; try { saveLay(); } catch (e) { } } saveCfg(); }
+/* 2.66: once, for a studio set up before the Learn panel: Practice opens on it, and other layouts keep it off their strip */
+if (CFG.learnPane !== 1) { CFG.learnPane = 1; try { if (LAY.name === 'Practice') { const g = GOALS.find(x => x.id === 'practice'); LAY.order = g.spec.order.slice(); LAY.show = g.spec.show.slice(); LAY.hidden = LAY.hidden.filter(x => x !== 'learn'); } else if (LAY.hidden.length && !LAY.hidden.includes('learn')) LAY.hidden.push('learn'); saveLay(); } catch (e) { } saveCfg(); }
 /* 2.65: a new take opens the collapsed arrangement, so you see it land (opening a song that has takes leaves it as it is) */
 let tlTakesN = TAKES.length;
 bus.on('song', w => { if (w === 'reload') tlTakesN = TAKES.length; });      /* a song opened, an undo or redo: not a new take */
@@ -124,7 +122,7 @@ const GOALBAR = { el: null };
 /** the bar sits at the top of the centre, whichever of the panels or the arrangement is on top */
 function goalPlace() { const el = GOALBAR.el, top = LAY.flip === false ? $('#timeline') : $('#dock'); if (el && top && (el.parentNode !== top || top.firstChild !== el)) top.insertBefore(el, top.firstChild); }
 /* 2.65: each workspace shows its main tools; the rest are one click away under ⋯ More (a tool in use stays showing) */
-const GOAL_MORE = { songwriter: ['gtVox', 'gtRoll'], performer: ['gtFmt', 'gtFx', 'gtStream', 'gtThumb', 'gtTip', 'gtPrint'], practice: ['gtEar', 'gtRiffs', 'gtSpeed', 'gtInk', 'gtNotes', 'gtScreen', 'gtTx'] };
+const GOAL_MORE = { songwriter: ['gtVox', 'gtRoll'], performer: ['gtFmt', 'gtFx', 'gtStream', 'gtThumb', 'gtTip', 'gtPrint'], practice: ['gtInk', 'gtNotes', 'gtScreen', 'gtTx'] };
 function goalBarBuild() {
   const box = GOALBAR.el; if (!box) return; box.innerHTML = ''; const cur = goalNow(); goalMark();
   const pick = h('div', { class: 'gl-pick', role: 'group', 'aria-label': 'What do you want to do?' }, GOALS.map(g => h('button', { class: 'gl-b' + (cur === g ? ' on' : ''), 'data-goal': g.id, style: '--gh:' + g.hue, 'aria-pressed': String(cur === g), title: g.name + ': ' + g.blurb, onclick: () => goalGo(g.id) }, h('span', { class: 'gl-i', 'aria-hidden': 'true' }, g.ico), h('span', { class: 'gl-t' }, g.name))));

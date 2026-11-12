@@ -1501,6 +1501,17 @@ body.mega .pf-l.cur{color:#ff4b3e!important;animation:megshake .12s steps(2) inf
 .vb-secs{display:grid;gap:6px}.vb-sec{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:8px;align-items:center;font-size:13px}
 @media (max-width:640px){.vb-grid{grid-template-columns:1fr}}
 /* ---------- Learn (2.32): the coach window and the Learn hub ---------- */
+/* 2.66: Learn is a panel (Practice opens on it): the hub fills it, and a lesson, riff or shape opens over the list in the same panel,
+   so the band strip, the tempo, the tuner and the fretboard stay at hand. On a phone they are still full-screen windows. */
+#pane-learn{padding:0;position:relative;overflow:hidden}#pane-learn.on{display:block}
+.hub.hub-inline{position:absolute;inset:0;display:flex;flex-direction:column;background:var(--panel);border:0;border-radius:0}.hub.hub-inline[hidden]{display:none}
+.hub-inline .hub-h{padding:10px 16px 9px}.hub-inline .hub-ico{width:32px;height:32px;font-size:16px;border-radius:10px}.hub-inline .hub-ht h2{font-size:15px}.hub-inline .hub-ht p{font-size:12px}
+.hub-inline .hub-main{grid-template-columns:190px minmax(0,1fr)}.hub-inline .hub-body{padding:14px 20px 24px}
+.hub-back{flex:none}.hub-nsep{height:1px;background:var(--line);margin:8px 6px}.hub-nl{color:var(--accent)}
+@container (max-width:640px){.hub-inline .hub-main{grid-template-columns:minmax(0,1fr)}.hub-inline .hub-nav{flex-direction:row;overflow-x:auto;border-right:0;border-bottom:1px solid var(--line)}}
+#pane-learn{container-type:inline-size}
+.coach.co-inline{position:absolute;inset:0;z-index:2;overflow:auto;background:var(--panel);padding:14px 20px 20px;display:flex;flex-direction:column;gap:10px}.coach.co-inline[hidden]{display:none}
+.coach.co-inline .co-board{max-width:1100px}.co-back{flex:none;align-self:flex-start}
 dialog.coach{width:min(820px,96vw);max-height:92dvh;padding:16px 18px 18px;border:1px solid var(--line2);border-radius:var(--r3,16px);overflow:auto}
 dialog.coach[open]{display:flex;flex-direction:column;gap:10px}
 .co-top{display:flex;align-items:flex-start;gap:12px}.co-tt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.co-tt small{color:var(--muted);font:650 11px var(--sans);text-transform:uppercase;letter-spacing:.06em}.co-tt b{font:750 19px var(--sans);line-height:1.2}
