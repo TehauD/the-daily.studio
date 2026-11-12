@@ -191,7 +191,7 @@ agTool('transport', 'Play or stop the song (the band plays the chords), start fr
     return agTxt(st);
   });
 
-agTool('open_workspace', 'Arrange the studio for a goal: songwriter (words, chords and tab), performer (stage visuals, tones, tuner), creator (record and post a video), practice (fretboard, loop, metronome), teacher (whiteboard, notes, screen recording) or fullrig (everything).',
+agTool('open_workspace', 'Arrange the studio for a goal: songwriter (words, chords and tab), performer (the Studio workspace: stage visuals, tones, tuner, record and post a video), practice (fretboard, lessons, loop, tempo; and for teaching: annotate, lesson notes, screen recording) or fullrig (everything).',
   agObj({ workspace: agStr('Which workspace.', { enum: AG_GOALS }) }, ['workspace']),
   i => { if (!goalGo(i.workspace)) throw new Error('Unknown workspace'); agentSay('opened the ' + goalNow().name + ' workspace'); return agTxt({ done: true, workspace: i.workspace, panel: DOCK.cur }); });
 
@@ -217,12 +217,12 @@ agTool('set_visuals', 'Change the visuals: the look, how fast it moves (speed 0.
     if (i.look) vzSetMode(i.look); saveCfg(); VZ.spec = null; $$('[data-vza]').forEach(x => x.classList.toggle('on', vzAdjusted()));
     agentSay('changed the visuals'); return agTxt({ done: true, visuals: agVisuals() });
   }, { idempotentHint: true });
-agTool('perform', 'Open or close the full-screen Perform view, and choose its display: shapes (the big chord, the lyrics and the chord shapes beside them), big (the big chord and the lyrics) or sheet (the lyrics large, like a songbook). It opens on a short readiness check; it never turns the microphone or the camera on, and never records.',
+agTool('perform', 'Open or close the full-screen ★ Showtime view (called Perform until 2.64), and choose its display: shapes (the big chord, the lyrics and the chord shapes beside them), big (the big chord and the lyrics) or sheet (the lyrics large, like a songbook). It opens on a short readiness check; it never turns the microphone or the camera on, and never records.',
   agObj({ action: agStr('open or close (omit to only change the display).', { enum: ['open', 'close'] }), display: agStr('Which display.', { enum: ['shapes', 'big', 'sheet'] }) }),
   i => {
     if (i.display) perfViewSet(i.display);
     if (i.action === 'open' && !PF.on) perfOpen(); if (i.action === 'close' && PF.on) perfClose();
-    agentSay(i.action === 'open' ? 'opened Perform' : i.action === 'close' ? 'closed Perform' : 'changed the Perform display'); return agTxt({ done: true, open: !!PF.on, display: pfView() });
+    agentSay(i.action === 'open' ? 'opened Showtime' : i.action === 'close' ? 'closed Showtime' : 'changed the Showtime display'); return agTxt({ done: true, open: !!PF.on, display: pfView() });
   }, { idempotentHint: true });
 agTool('mute_band', 'Mute the whole backing band and the metronome click in one go (the same as the person pressing Shift+M), or bring back exactly the parts that were playing before. Omit muted to switch it.',
   agObj({ muted: agBool('true mutes the band and the click; false brings back what was playing.') }),

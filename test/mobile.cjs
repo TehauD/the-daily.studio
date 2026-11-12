@@ -86,8 +86,9 @@ const DEV = { phone: { viewport: { width: 390, height: 844 }, deviceScaleFactor:
   await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: kb.x + kb.width / 2, y: kb.y + kb.height / 2 }] }); await wait(900); await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); await wait(300);
   ok(await p.evaluate(() => !!document.querySelector('.knob.learn')), 'long-press on a knob acts as right-click (MIDI-learn arms)');
   // pedal ordering without drag and drop
-  const order = () => p.evaluate(() => [...document.querySelectorAll('.board .pedal')].map(x => x.dataset.id).slice(0, 4).join(','));
-  const o0 = await order(); await p.tap('.board .pedal:nth-child(2) .pgear'); await wait(300); await p.tap('.pop button:has-text("Earlier")'); await wait(400);
+  await p.evaluate(() => { const b = document.querySelector('.bv [data-v="board"]'); if (b) b.click(); });      /* 2.66: ▦ All shows every pedal on the board, open */ await wait(200);
+  const order = () => p.evaluate(() => [...document.querySelectorAll('.board .pedal')].filter(x => x.offsetParent).map(x => x.dataset.id).slice(0, 4).join(','));
+  const o0 = await order(); await p.tap('.board .pedal:not(.offb) >> nth=1 >> .pgear'); await wait(300); await p.tap('.pop button:has-text("Earlier")'); await wait(400);
   ok((await order()) !== o0, 'pedal ⚙ ▸ Earlier reorders the chain on touch: ' + o0 + ' → ' + (await order()));
   // neural pinch (two touch points) and stage fill
   await goto(p, 'see', 'neural'); const cv = await (await p.$('#pane-neural canvas')).boundingBox(); const cx = cv.x + cv.width / 2, cy = cv.y + cv.height / 2;

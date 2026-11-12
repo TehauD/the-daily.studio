@@ -1,11 +1,11 @@
 /* ============================================================
    Part 06 · dock framework, left sidebar (Tones / I-O / Theory), Rig pane, right sidebar (tuner, meters, live analysis)
    ============================================================ */
-const DOCK = [['rig', 'Rig'], ['tab', 'Write'], ['song', 'Song'], ['band', 'Band'], ['fret', 'Fretboard'], ['vis', 'Visuals'], ['stage', 'Stage'], ['neural', 'Neural'], ['stems', 'Stems'], ['tx', 'Transcribe'], ['cam', 'Vision'], ['lab', 'Research'], ['exp', 'Export']];
+const DOCK = [['rig', 'Rig'], ['tab', 'Write'], ['song', 'Song'], ['band', 'Band'], ['fret', 'Fretboard'], ['vis', 'Visuals'], ['stage', 'Stage'], ['neural', 'Neural'], ['stems', 'Stems'], ['tx', 'Transcribe'], ['cam', 'Vision'], ['lab', 'Research'], ['exp', 'Export'], ['learn', 'Learn']];
 const paneVisible = id => DOCK.cur === id || (typeof FLOATS !== 'undefined' && FLOATS.has(id)) || (typeof sideVisible === 'function' && sideVisible(id));
 /* Song and Fretboard are part of Write now (63-write.js); they stay as panels, reachable from Write, and join the strip only when asked for (CFG.sepTabs) */
 const MERGED = ['song', 'fret'];
-const dockVisible = () => DOCK.filter(d => !(typeof LAY !== 'undefined' && LAY.hidden.includes(d[0])) && !(MERGED.includes(d[0]) && !CFG.sepTabs && DOCK.cur !== d[0] && !(typeof FLOATS !== 'undefined' && FLOATS.has(d[0]))) && !(typeof sideHosted === 'function' && sideHosted(d[0])) && (typeof xpAllowed !== 'function' || xpAllowed(d[0])));
+const dockVisible = () => DOCK.filter(d => !(typeof LAY !== 'undefined' && LAY.hidden.includes(d[0])) && !(MERGED.includes(d[0]) && !CFG.sepTabs && DOCK.cur !== d[0] && !(typeof LAY !== 'undefined' && (LAY.show || []).includes(d[0])) && !(typeof FLOATS !== 'undefined' && FLOATS.has(d[0]))) && !(typeof sideHosted === 'function' && sideHosted(d[0])) && (typeof xpAllowed !== 'function' || xpAllowed(d[0])));
 const PANES = {}, SEL = { sec: 0, bar: 0 };
 function buildDock() {
   const dock = $('#dock'), tabs = h('div', { class: 'tabs' });
@@ -145,23 +145,43 @@ function applyProg(i, append) {
 /* ---------- Rig pane ---------- */
 const PED = {}, AB = { A: null, B: null };
 function buildRig() {
+  /* 2.66: one row for the tone (◀ name ▶, with a searchable list), A ⇄ B, Save and ⋯, and the master; the scenes under it (part 12) */
   const p = PANES.rig, tb = h('div', { class: 'rigdeck' });
-  UI.rigName = h('div', { class: 'dk-tone' }, h('div', { class: 'tiny muted' }, 'CURRENT TONE'), h('div', { class: 'dk-name' }, '—')); bus.on('preset', n => { UI.rigName.lastChild.textContent = n; }); UI.rigName.lastChild.textContent = RIG.cur;
+  const tname = h('b', { class: 'dk-name' }, '—'), tsub = h('small', { class: 'dk-sub' });
+  const toneTo = d => { const L = allPresets(), i = L.findIndex(x => x.n === RIG.cur), n = L[((i < 0 ? 0 : i + d) % L.length + L.length) % L.length]; if (n) usePreset(n); };
+  UI.rigName = h('div', { class: 'dk-tone' }, h('button', { class: 'btn sm icon dk-step', id: 'rigPrev', type: 'button', 'aria-label': 'Previous tone', title: 'Previous tone', onclick: () => toneTo(-1) }, '◀'),
+    h('button', { class: 'dk-pick', id: 'rigPick', type: 'button', title: 'Pick a tone: search them all', onclick: e => rigTonePick(e.currentTarget) }, h('small', { class: 'tiny muted' }, 'TONE ▾'), tname, tsub),
+    h('button', { class: 'btn sm icon dk-step', id: 'rigNext', type: 'button', 'aria-label': 'Next tone', title: 'Next tone', onclick: () => toneTo(1) }, '▶'));
+  const sync = n => { tname.textContent = n; const pr = allPresets().find(x => x.n === n); tsub.textContent = pr ? pr.c + (pr.d ? ' · ' + pr.d : '') : ''; };
+  bus.on('preset', sync); sync(RIG.cur);
   const trimK = mkKnob({ key: 'master', label: 'Master', min: 0, max: 1.2, def: .9, step: .01, fmt: v => dB(v).toFixed(1) + ' dB', onChange: v => { CFG.master = v; saveCfg(); bus.emit('master'); if (E.ready) tc(E.master.gain, v, .02); } }); if (CFG.master != null) trimK.set(CFG.master, true);
-  const mix = h('input', { type: 'range', min: 0, max: 1, step: .01, value: 0, title: 'Morph between stored A and B', style: { flex: '1 1 90px', minWidth: '70px' }, oninput: e => { if (AB.A && AB.B) rigApply(rigLerp(AB.A, AB.B, +e.target.value)); else toast('Store A and B first'); } });
-  const abBtn = (k) => [h('button', { class: 'btn sm', onclick: () => { AB[k] = rigSnapshot(); toast('Stored ' + k, 'ok'); } }, 'Store ' + k), h('button', { class: 'btn sm', onclick: () => { if (AB[k]) rigApply(AB[k]); else toast('Nothing stored in ' + k); } }, k)];
-  const nm = h('input', { class: 'in', placeholder: 'Preset name', style: { width: '130px', fontFamily: 'var(--sans)' } });
-  const imp = h('input', { type: 'file', accept: '.json', style: { display: 'none' }, onchange: async e => { try { const j = JSON.parse(await e.target.files[0].text()); rigApply(j.rig || j); toast('Rig imported', 'ok'); } catch (err) { toast('Invalid rig JSON', 'bad'); } } });
+  const mix = h('input', { type: 'range', min: 0, max: 1, step: .01, value: 0, 'aria-label': 'Morph between A and B', title: 'Morph between stored A and B', style: { flex: '1 1 70px', minWidth: '50px' }, oninput: e => { if (AB.A && AB.B) rigApply(rigLerp(AB.A, AB.B, +e.target.value)); else toast('Store A and B first (⋯)'); } });
+  const abBtn = k => h('button', { class: 'btn sm', id: 'rig' + k, type: 'button', title: 'Recall ' + k + ' · Shift+click stores the rig as ' + k, onclick: e => { if (e.shiftKey || !AB[k]) { AB[k] = rigSnapshot(); toast('Stored ' + k, 'ok'); return; } rigApply(AB[k]); } }, k);
+  const imp = h('input', { type: 'file', accept: '.json', style: { display: 'none' }, onchange: async e => { try { const j = JSON.parse(await e.target.files[0].text()); rigApply(j.rig || j); toast('Rig imported', 'ok'); } catch (err) { toast('Invalid rig JSON', 'bad'); } e.target.value = ''; } });
+  const save = btn => { const nm = h('input', { class: 'in', id: 'rigSaveName', placeholder: 'Preset name', value: RIG.cur && !PRESETS.some(x => x.n === RIG.cur) && RIG.cur !== '—' ? RIG.cur : '', style: { flex: 1, fontFamily: 'var(--sans)' } }), go = () => { const n = nm.value.trim(); if (!n) return toast('Name your preset', 'warn'); const a = store.get('presets', []).filter(x => x.n !== n); a.push({ n, d: 'User preset ' + new Date().toLocaleDateString(), u: rigSnapshot().u }); store.set('presets', a); RIG.cur = n; renderTones(); bus.emit('preset', n); closePop(); toast('Saved “' + n + '”', 'ok'); };
+    nm.addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
+    popover(btn, h('div', { class: 'rig-save' }, h('h5', {}, 'Save this tone'), h('div', { class: 'row', style: { gap: '6px' } }, nm, h('button', { class: 'btn sm primary', id: 'rigSaveGo', onclick: go }, 'Save')), h('p', { class: 'tiny muted' }, 'It joins your tones (User), here and in Tones. A preset with the same name is replaced.'),
+      h('div', { class: 'row', style: { gap: '6px' } }, h('button', { class: 'btn sm', onclick: () => download('the-daily.studio-rig.json', JSON.stringify({ name: RIG.cur, rig: rigSnapshot() }, null, 2), 'application/json') }, '⇩ Export file'), h('button', { class: 'btn sm', onclick: () => { closePop(); imp.click(); } }, '⇧ Import file')))); setTimeout(() => nm.focus(), 30); };
+  const more = btn => popover(btn, h('div', { class: 'rig-more' }, h('h5', {}, 'Rig'),
+    h('button', { class: 'btn sm', title: 'Randomly nudge the active pedals', onclick: () => { closePop(); rigApply(rigMutate(.12)); toast('Mutated active units'); } }, '🎲 Mutate'),
+    h('button', { class: 'btn sm', onclick: () => { closePop(); AB.A = rigSnapshot(); toast('Stored A', 'ok'); } }, 'Store as A'), h('button', { class: 'btn sm', onclick: () => { closePop(); AB.B = rigSnapshot(); toast('Stored B', 'ok'); } }, 'Store as B'),
+    h('button', { class: 'btn sm bad', onclick: () => { closePop(); rigApply({ u: {} }); RIG.cur = 'Direct (No FX)'; bus.emit('preset', RIG.cur); } }, 'Reset all (straight signal)')), { right: true });
   UI.deck = tb;
-  nm.style.width = ''; nm.style.flex = '1 1 120px'; nm.style.minWidth = '90px';
-  tb.append(h('div', { class: 'dk dk1' }, UI.rigName, h('div', { class: 'dk-ab' }, ...abBtn('A'), mix, ...abBtn('B')), trimK.el),
-    h('div', { class: 'dk dk2' }, h('button', { class: 'btn sm', title: 'Randomly nudge active parameters', onclick: () => { rigApply(rigMutate(.12)); toast('Mutated active units'); } }, '🎲 Mutate'), h('button', { class: 'btn sm', onclick: () => { rigApply({ u: {} }); RIG.cur = 'Direct (No FX)'; bus.emit('preset', RIG.cur); } }, 'Reset all'), nm, h('button', { class: 'btn sm primary', onclick: () => { const n = nm.value.trim(); if (!n) return toast('Name your preset', 'warn'); const a = store.get('presets', []).filter(x => x.n !== n); a.push({ n, d: 'User preset ' + new Date().toLocaleDateString(), u: rigSnapshot().u }); store.set('presets', a); RIG.cur = n; renderTones(); toast('Saved “' + n + '”', 'ok'); } }, 'Save'), h('button', { class: 'btn sm', onclick: () => download('the-daily.studio-rig.json', JSON.stringify({ name: RIG.cur, rig: rigSnapshot() }, null, 2), 'application/json') }, 'Export'), h('button', { class: 'btn sm', onclick: () => imp.click() }, 'Import'), imp));
+  tb.append(h('div', { class: 'dk dk1' }, UI.rigName, h('div', { class: 'dk-ab', title: 'Compare two settings: A and B (Shift+click stores), or morph between them' }, abBtn('A'), mix, abBtn('B')),
+    h('button', { class: 'btn sm', id: 'rigSave', type: 'button', onclick: e => save(e.currentTarget) }, '💾 Save'), h('button', { class: 'btn sm', id: 'rigMore', type: 'button', title: 'Mutate, store A or B, reset', onclick: e => more(e.currentTarget) }, '⋯'), imp, trimK.el));
   UI.board = h('div', { class: 'board' }); p.append(tb, UI.board);
   RIG.order.forEach(id => UI.board.append(pedalEl(id))); bus.on('rig:refresh', syncPedals); bus.on('rig:order', () => RIG.order.forEach(id => UI.board.append(PED[id].el)));
 }
+/** every tone, searchable, by kind */
+function rigTonePick(btn) {
+  const L = allPresets(), list = h('div', { class: 'rig-tones', role: 'listbox', 'aria-label': 'Tones' }), q = h('input', { class: 'in', id: 'rigToneQ', placeholder: 'Search ' + L.length + ' tones…', style: { fontFamily: 'var(--sans)' } });
+  const draw = () => { list.innerHTML = ''; const t = q.value.toLowerCase(); let cat = ''; L.filter(x => !t || (x.n + ' ' + (x.d || '') + ' ' + x.c).toLowerCase().includes(t)).forEach(x => { if (x.c !== cat) { cat = x.c; list.append(h('small', { class: 'rig-tc' }, cat)); } list.append(h('button', { class: 'rig-t' + (x.n === RIG.cur ? ' on' : ''), role: 'option', 'aria-selected': String(x.n === RIG.cur), onclick: () => { closePop(); usePreset(x); } }, h('b', {}, x.n), x.d ? h('span', {}, x.d) : null)); }); if (!list.children.length) list.append(h('p', { class: 'small muted' }, 'No tones match.')); };
+  q.addEventListener('input', draw); q.addEventListener('keydown', e => { if (e.key === 'Enter') { const b = list.querySelector('.rig-t'); if (b) b.click(); } });
+  draw(); popover(btn, h('div', { class: 'rig-pick' }, q, list)); setTimeout(() => { q.focus(); const on = list.querySelector('.rig-t.on'); if (on && on.scrollIntoView) on.scrollIntoView({ block: 'center' }); }, 30);
+}
 function pedalEl(id) {
   const def = FX[id], card = h('div', { class: 'pedal', 'data-id': id }), ctr = {}, body = h('div', { class: 'pedal-b' });
-  const stomp = h('button', { class: 'stomp', title: 'Engage / bypass', onclick: () => { if (!E.ready) return toast('Power on first'); const u = RIG.units[id]; u.setActive(!u.on); card.classList.toggle('on', u.on); } });
+  const stomp = h('button', { class: 'stomp', title: 'Engage / bypass', onclick: () => { if (!E.ready) return toast('Power on first'); if (typeof pedalState === 'function') return pedalState(id); const u = RIG.units[id]; u.setActive(!u.on); card.classList.toggle('on', u.on); } });
   const head = h('div', { class: 'pedal-h', draggable: 'true', title: 'Drag to reorder in the signal chain', ondragstart: e => { e.dataTransfer.setData('text/plain', id); e.dataTransfer.effectAllowed = 'move'; } }, stomp, h('b', {}, def.name), h('small', {}, def.cat));
   card.addEventListener('dragover', e => { e.preventDefault(); card.classList.add('dragover'); }); card.addEventListener('dragleave', () => card.classList.remove('dragover'));
   card.addEventListener('drop', e => { e.preventDefault(); card.classList.remove('dragover'); const from = e.dataTransfer.getData('text/plain'); if (from && from !== id) rigMove(from, RIG.order.indexOf(id)); });

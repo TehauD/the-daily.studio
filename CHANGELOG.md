@@ -2,6 +2,54 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.66.0 — 2026-11-12 — Learn is Practice, and the rig is a board
+
+### Changed
+- **Learn is the Practice workspace's own panel,** not a window over it. Practice opens on it: Today, lessons, warm-ups, This song, By ear, riffs and licks, Riff Lab, the scale atlas, teaching, and **Scales & ear** in the same list.
+  - A lesson, riff or shape opens in the panel (**◀ Back** returns to the list), so the band strip, the tempo, the tuner, the Theory sidebar and the **Fretboard** tab stay in reach while you play.
+  - Learn from anywhere else (the Theory sidebar's "Practise this scale", the agent, a guided step) goes to Practice.
+  - On a phone, Learn and the coach are still full-screen, as before.
+  - Practice's tools are now 🎓 Learn, − 5 / BPM / + 5 and ⏱ Speed & key; the teaching tools (Annotate, Lesson notes, Record screen, Transcribe) are under ⋯ More. Today, This song, By ear, riffs and Scales & ear moved into the panel's list. In ✦ Simple, Practice shows Learn, the Fretboard and the Band.
+- **The Rig is laid out like a real pedalboard.**
+  - **One row** for the tone (**◀ ▶** step through your tones; the name opens a searchable list of all of them), **A ⇄ B** (click recalls, Shift+click stores, the slider morphs), **💾 Save** (name it; export and import files there too), **⋯** (Mutate, store A or B, reset) and the master. The scenes are under it; an empty scene slot is just its number.
+  - **The board shows only the pedals on it,** in chain order, not all sixteen units. A pedal is on the board while it's on, or once you put it there: **＋ Pedal** lists the rest by kind. Its LED stomps it (it stays on the board, bypassed); click it to open it.
+  - **◎ Edit** (the new default) opens the pedal you picked, large, under the board. **▦ All** opens every pedal on the board. **◉ Stomp** is big footswitches for playing live.
+  - **A pedal's ⚙** adds a **label** of your own ("Klon", "Lead boost") and **✕ Off the board**, beside its colour, width, collapse, hide, footswitch key and MIDI note. **◀ Earlier / Later ▶** step past the next pedal on the board.
+  - **⚙ (board)** holds pedal width, scene morph time, scenes-and-the-band, live keys and *show every unit*.
+- **Full Rig opens with your Tones beside the board** (Audio input first until an input is connected, as in every workspace).
+
+### Fixed
+- **⚙ ▸ Earlier / Later** moved a pedal one place among all sixteen units, so next to an unused one nothing visibly changed.
+
+### Tests
+- **`e2e-board`** (new, 19 checks): the tone row, the board before and after the audio starts, opening, stomping, adding and removing pedals, labels, Earlier among the board's pedals, the tone list, the three views, Save.
+- **`e2e-learn`, `e2e-goals`, `e2e-simple`, `e2e-workspace`** follow the Learn panel; **`e2e`** and **`mobile`** follow the two-row deck and ▦ All.
+
+## 2.65.2 — 2026-11-12 — Soundprints in backups, and CI that finishes
+
+### Changed
+- **Your soundprints travel with backups, folder sync and GitHub sync,** merged so neither device loses one (they were kept in this browser only).
+- **CI's Firefox pass stops after 20 minutes** and names the step it hung in after 8; it had run to GitHub's six-hour limit, so every run on main ended "cancelled".
+
+## 2.65.1 — 2026-11-11 — Hardened, minified, and the documents caught up
+
+### Security
+- **A song's soundprint is kept only in its own shape.** A song that comes from someone else (a song link, a backup, sync) keeps its print only as a base64url code of at most 4,000 characters with a hex signature; anything else is dropped when the song is opened. It was already decoded by the checked reader, so nothing could run; now nothing oversized is kept either.
+- **A sound file over 400 MB is refused** before it is read into memory for a soundprint (ten minutes of 96 kHz 24-bit stereo fit well under that).
+- **An unknown Soundprint world in the settings draws Print** instead of whatever the value said.
+
+### Changed
+- **The site's service worker, the Drops pages and the journal move pages ship minified,** with the same check as the app (the code's tokens must be identical before and after) and their Content-Security-Policy hashes taken from what ships. The vendored journal page is still served byte for byte as its own project builds it.
+- **The AI-agent tool `open_workspace` describes the four workspaces** (it still accepted the old names, and still does).
+
+### Documents
+- **ARCHITECTURE.md** lists every part again: fourteen were missing (09e, 13b, 16b, 24b, 25b, 39a–d, 46b, 63c, 63d, 92, 93), and the goals, layout, Visuals and experience entries describe 2.63–2.65.
+- **The user guide, README, TESTING, SECURITY_MODEL, PRIVACY, GAPS and the public guide pages** say ★ Showtime, four workspaces, ⋯ More and the arrangement rail where they still said Perform, six workspaces, Teacher, Creator Studio or the Tools button.
+- **The pictures** in the README, the user guide and the public guide pages are made again from 2.65.1.
+
+### Tests
+- **`e2e-soundprint`** checks the song-print guards and the world fallback. **`e2e-requests`** reads the minified service worker without depending on its spacing. **`e2e-concert`** gives the 2 MB Sky poster up to 15 s to encode (it sometimes took more than the 4 s it had on a slow software renderer).
+
 ## 2.65.0 — 2026-11-11 — Less on screen, the same studio
 
 ### Changed

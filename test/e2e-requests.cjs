@@ -35,6 +35,6 @@ suite('e2e-requests', async t => {
   await gp.goto(t.BASE + 'guide/about/guide/getting-started/'); await t.poll(() => !/\/guide\//.test(new URL(gp.url()).pathname), 6000);
   ok(new URL(gp.url()).pathname === new URL(t.BASE).pathname, 'the studio found inside another page’s address goes to its own address, so its links can’t pile up (' + new URL(gp.url()).pathname + ')');
   const swSrc = fs.readFileSync(path.join(__dirname, '..', 'dist', 'sw.js'), 'utf8');
-  ok(/You’re offline, and this page isn’t saved on this device/.test(swSrc) && /new URL\('\.\/', location\)\.pathname === u\.pathname/.test(swSrc), 'and offline, the saved studio is only given at its own address; any other page says it is offline, with a link home');
+  ok(/You’re offline, and this page isn’t saved on this device/.test(swSrc) && /new URL\('\.\/',\s*location\)\.pathname\s*===\s*u\.pathname/.test(swSrc), 'and offline, the saved studio is only given at its own address; any other page says it is offline, with a link home');
   await g.close();
 });

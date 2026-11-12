@@ -27,6 +27,6 @@ function vzAdjustOpen(anchor) {
   box.append(h('div', { class: 'row', style: { gap: '8px', alignItems: 'center' } },
     h('button', { class: 'btn sm', id: 'vzaReset', onclick: () => { VZA.forEach(([k]) => { CFG[k] = 1; rows[k].r.value = 1; rows[k].val.textContent = '1.00×'; }); VZ.spec = null; saveCfg(); mark(); } }, 'Reset'),
     h('span', { class: 'tiny muted' }, 'Double-click a slider to reset it.')),
-    h('div', { class: 'tiny muted', style: { lineHeight: 1.45 } }, 'Speed and Zoom work on every look; Size sets the hexagons of Hex Resonance and the pulse grid. On the Visuals tab, the Stage and in Perform. The camera, the chord, the words and the small neck stay as they are.'));
+    h('div', { class: 'tiny muted', style: { lineHeight: 1.45 } }, 'Speed and Zoom work on every look; Size sets the hexagons of Hex Resonance and the pulse grid. On the Visuals tab, the Stage and in Showtime. The camera, the chord, the words and the small neck stay as they are.'));
   popover(anchor, box);
 }

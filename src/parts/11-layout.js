@@ -117,7 +117,7 @@ function setCardHidden(n, hide) { LAY.rc.hide[n] = !!hide; const c = $('[data-ca
    so nothing from the previous layout leaks into the next.
    spec: flip · left · right (sidebars on or off) · tlh (arrangement height) · dock (the open panel; null leaves it) · order (tabs to put first) · hidden (tabs left off the strip)
          side {panel: 'left' | 'right'} (panels that live in a sidebar) · so {left: [], right: []} (their order) · cur {left, right} (which sidebar tab is open) · mon (Monitor widgets shown) · board */
-const DOCK_DEFAULT = ['rig', 'tab', 'song', 'band', 'fret', 'vis', 'stage', 'neural', 'stems', 'tx', 'cam', 'lab', 'exp'];
+const DOCK_DEFAULT = ['rig', 'tab', 'song', 'band', 'fret', 'vis', 'stage', 'neural', 'stems', 'tx', 'cam', 'lab', 'exp', 'learn'];
 const LAYOUTS = [
   ['Studio', 'Everything in reach: panels above the arrangement, a sidebar each side.', { flip: true, left: true, right: true, tlh: null, dock: 'tab', cur: { left: 'io', right: 'monitor' } }],
   ['Write', 'Tab in the middle, chords and lyrics beside it, theory at hand. The arrangement stays short.', { flip: true, left: true, right: true, tlh: 'minmax(130px,24%)', dock: 'tab', order: ['tab', 'band', 'rig'], hidden: ['song', 'fret', 'stage', 'neural', 'stems', 'tx', 'cam', 'lab'], cur: { left: 'theory', right: 'refine' } }],
@@ -134,7 +134,8 @@ function applyPreset(s, name) {
   /* 2.64: a layout can start with the arrangement collapsed and say how tall it opens (▴ Arrangement) */
   if (s.tlhOpen !== undefined) LAY.tlhPrev = s.tlhOpen; else delete LAY.tlhPrev;
   /* the tab strip: which tabs, in which order (the shipped order when the layout names none) */
-  LAY.hidden = (s.hidden || []).filter(id => id !== s.dock); LAY.order = s.order ? s.order.slice() : [];
+  LAY.hidden = (s.hidden || []).filter(id => id !== s.dock); LAY.order = s.order ? s.order.slice() : []; LAY.show = s.show ? s.show.slice() : [];      /* show: panels kept on the strip even though they are part of another (2.66: Practice keeps the Fretboard) */
+  if (!LAY.order.includes('learn') && s.dock !== 'learn' && LAY.hidden.length && !LAY.hidden.includes('learn')) LAY.hidden.push('learn');      /* 2.66: the Learn panel is Practice's; a layout that hides nothing (Studio, Full Rig) shows it too */
   { const cur = DOCK.cur, ord = LAY.order.length ? LAY.order : DOCK_DEFAULT, ix = id => { const i = ord.indexOf(id); return i < 0 ? 999 : i; }; DOCK.sort((a, b) => ix(a[0]) - ix(b[0]) || DOCK_DEFAULT.indexOf(a[0]) - DOCK_DEFAULT.indexOf(b[0])); DOCK.cur = cur; }
   /* the sidebars: which panels live in them, in what order, and which one is open */
   LAY.side = JSON.parse(JSON.stringify(s.side || {})); LAY.so = JSON.parse(JSON.stringify(s.so || { left: [], right: [] }));

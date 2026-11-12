@@ -57,7 +57,7 @@ window.__dailyRoom = (id, make) => {
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.65.0', BUILD = '5711186', PARTS_N = +'124' || 0, LINES_N = +'20942' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.66.0', BUILD = '611c95c', PARTS_N = +'124' || 0, LINES_N = +'21071' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { ghApp: { clientId: 'Iv23liTjqEBQsgmGaE1Q', slug: 'tehaud-the-daily-studio' },   /* Sign in with GitHub: the GitHub App's public client id and its slug (docs/GITHUB.md); empty = only the token way */
   support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://journal.the-daily.studio/' };
@@ -2203,11 +2203,22 @@ function lookOpen(at) {
  *   o.foot                        Node for the footer (optional)
  *   o.preview                     no dimming behind (Appearance: you watch the app change)
  */
+/** 2.66: a hub, or the coach, drawn in a panel instead of a dialog: a div that answers open / showModal / close as a dialog does, so the
+    code written for the dialog (and anything that asks whether it is open) works on it unchanged. close hides it and fires 'close'. */
+function hubInline(d) {
+  if (d._inline) return d; d._inline = true;
+  Object.defineProperty(d, 'open', { configurable: true, get: () => !d.hidden && d.isConnected });
+  d.showModal = d.show = () => { d.hidden = false; };
+  d.close = () => { if (d.hidden) return; d.hidden = true; d.dispatchEvent(new Event('close')); };
+  return d;
+}
 function hubOpen(id, o) {
-  let d = document.getElementById(id);
+  let d = document.getElementById(id); const host = o.into || null;
+  if (d && !!host !== !!d._inline) { try { if (d.open) d.close(); } catch (e) { } d.remove(); d = null; }      /* moved between a dialog and a panel (a phone turned into a tablet) */
   if (d && d.open) { try { d.close(); } catch (e) { } }
-  if (!d) { d = h('dialog', { id }); document.body.append(d); }
-  d.className = 'hub' + (o.preview ? ' hub-preview' : ''); d.innerHTML = ''; d.setAttribute('aria-labelledby', id + '-t');
+  if (!d) { d = host ? hubInline(h('div', { id, role: 'region' })) : h('dialog', { id }); (host || document.body).append(d); }
+  if (host) { if (d.parentNode !== host) host.append(d); [...host.children].forEach(x => { if (x !== d && x._inline && x.open && x.classList.contains('hub')) x.close(); }); }      /* one hub at a time in a panel */
+  d.className = 'hub' + (host ? ' hub-inline' : '') + (o.preview ? ' hub-preview' : ''); d.innerHTML = ''; d.setAttribute('aria-labelledby', id + '-t');
   const body = h('div', { class: 'hub-body' }), nav = h('nav', { class: 'hub-nav', 'aria-label': o.title + ' sections' });
   const secs = o.sections.filter(Boolean);
   secs.forEach(s => {
@@ -2217,13 +2228,15 @@ function hubOpen(id, o) {
       h('div', { class: 'hub-card' + (s.wide ? ' wide' : '') }, ...kids)));
     nav.append(h('button', { type: 'button', class: 'hub-nb', 'data-sec': s.key, onclick: () => hubGo(d, s.key, true) }, h('span', { class: 'hub-ni', 'aria-hidden': 'true' }, s.ico || '•'), h('span', {}, s.label)));
   });
+  /* o.links: more places in the list that open something else (another hub in the same panel) */
+  if (o.links && o.links.length) { nav.append(h('div', { class: 'hub-nsep', 'aria-hidden': 'true' })); o.links.forEach(l => nav.append(h('button', { type: 'button', class: 'hub-nb hub-nl', id: l.id || null, onclick: l.fn }, h('span', { class: 'hub-ni', 'aria-hidden': 'true' }, l.ico || '→'), h('span', {}, l.label)))); }
   d.append(
     h('header', { class: 'hub-h' }, h('span', { class: 'hub-ico', 'aria-hidden': 'true' }, o.ico), h('div', { class: 'hub-ht' }, h('h2', { id: id + '-t' }, o.title), o.sub ? h('p', {}, o.sub) : null),
-      h('button', { type: 'button', class: 'hub-x', 'aria-label': 'Close', title: 'Close (Esc)', onclick: () => d.close() }, '✕')),
+      o.back ? h('button', { type: 'button', class: 'btn sm hub-back', id: id + '-back', onclick: o.back.fn }, o.back.label) : host ? null : h('button', { type: 'button', class: 'hub-x', 'aria-label': 'Close', title: 'Close (Esc)', onclick: () => d.close() }, '✕')),
     h('div', { class: 'hub-main' }, nav, body));
   if (o.foot) d.append(h('footer', { class: 'hub-f' }, o.foot));
   body.addEventListener('scroll', () => hubSpy(d), { passive: true });
-  d.addEventListener('click', e => { if (e.target === d) d.close(); });   // a click on the backdrop closes it
+  if (!host) d.addEventListener('click', e => { if (e.target === d) d.close(); });   // a click on the backdrop closes it
   if (!d.open) { if (d.showModal) d.showModal(); else d.setAttribute('open', ''); }
   hubGo(d, o.at || secs[0].key, false); return d;
 }
@@ -2231,7 +2244,7 @@ function hubOpen(id, o) {
 function hubGo(d, key, smooth) {
   const sec = d.querySelector('.hub-sec[data-sec="' + key + '"]'), body = d.querySelector('.hub-body'); if (!sec || !body) return;
   d._hubLock = Date.now() + (smooth ? 600 : 0);
-  body.scrollTo({ top: Math.max(0, sec.offsetTop - body.offsetTop - 4), behavior: smooth && !CFG.reduce ? 'smooth' : 'auto' }); hubMark(d, key);
+  { const top = Math.max(0, sec.offsetTop - body.offsetTop - 4); if (body.scrollTo) body.scrollTo({ top, behavior: smooth && !CFG.reduce ? 'smooth' : 'auto' }); else body.scrollTop = top; } hubMark(d, key);
 }
 function hubMark(d, key) { d.querySelectorAll('.hub-nb').forEach(b => { const on = b.dataset.sec === key; b.classList.toggle('on', on); if (on) { b.setAttribute('aria-current', 'true'); if (b.scrollIntoView && b.parentElement.scrollWidth > b.parentElement.clientWidth) b.scrollIntoView({ block: 'nearest', inline: 'nearest' }); } else b.removeAttribute('aria-current'); }); }
 function hubSpy(d) {
@@ -2248,11 +2261,11 @@ function hubRow(label, el, hint) { return h('div', { class: 'hub-row' }, h('div'
 /* ============================================================
    Part 06 · dock framework, left sidebar (Tones / I-O / Theory), Rig pane, right sidebar (tuner, meters, live analysis)
    ============================================================ */
-const DOCK = [['rig', 'Rig'], ['tab', 'Write'], ['song', 'Song'], ['band', 'Band'], ['fret', 'Fretboard'], ['vis', 'Visuals'], ['stage', 'Stage'], ['neural', 'Neural'], ['stems', 'Stems'], ['tx', 'Transcribe'], ['cam', 'Vision'], ['lab', 'Research'], ['exp', 'Export']];
+const DOCK = [['rig', 'Rig'], ['tab', 'Write'], ['song', 'Song'], ['band', 'Band'], ['fret', 'Fretboard'], ['vis', 'Visuals'], ['stage', 'Stage'], ['neural', 'Neural'], ['stems', 'Stems'], ['tx', 'Transcribe'], ['cam', 'Vision'], ['lab', 'Research'], ['exp', 'Export'], ['learn', 'Learn']];
 const paneVisible = id => DOCK.cur === id || (typeof FLOATS !== 'undefined' && FLOATS.has(id)) || (typeof sideVisible === 'function' && sideVisible(id));
 /* Song and Fretboard are part of Write now (63-write.js); they stay as panels, reachable from Write, and join the strip only when asked for (CFG.sepTabs) */
 const MERGED = ['song', 'fret'];
-const dockVisible = () => DOCK.filter(d => !(typeof LAY !== 'undefined' && LAY.hidden.includes(d[0])) && !(MERGED.includes(d[0]) && !CFG.sepTabs && DOCK.cur !== d[0] && !(typeof FLOATS !== 'undefined' && FLOATS.has(d[0]))) && !(typeof sideHosted === 'function' && sideHosted(d[0])) && (typeof xpAllowed !== 'function' || xpAllowed(d[0])));
+const dockVisible = () => DOCK.filter(d => !(typeof LAY !== 'undefined' && LAY.hidden.includes(d[0])) && !(MERGED.includes(d[0]) && !CFG.sepTabs && DOCK.cur !== d[0] && !(typeof LAY !== 'undefined' && (LAY.show || []).includes(d[0])) && !(typeof FLOATS !== 'undefined' && FLOATS.has(d[0]))) && !(typeof sideHosted === 'function' && sideHosted(d[0])) && (typeof xpAllowed !== 'function' || xpAllowed(d[0])));
 const PANES = {}, SEL = { sec: 0, bar: 0 };
 function buildDock() {
   const dock = $('#dock'), tabs = h('div', { class: 'tabs' });
@@ -2392,23 +2405,43 @@ function applyProg(i, append) {
 /* ---------- Rig pane ---------- */
 const PED = {}, AB = { A: null, B: null };
 function buildRig() {
+  /* 2.66: one row for the tone (◀ name ▶, with a searchable list), A ⇄ B, Save and ⋯, and the master; the scenes under it (part 12) */
   const p = PANES.rig, tb = h('div', { class: 'rigdeck' });
-  UI.rigName = h('div', { class: 'dk-tone' }, h('div', { class: 'tiny muted' }, 'CURRENT TONE'), h('div', { class: 'dk-name' }, '—')); bus.on('preset', n => { UI.rigName.lastChild.textContent = n; }); UI.rigName.lastChild.textContent = RIG.cur;
+  const tname = h('b', { class: 'dk-name' }, '—'), tsub = h('small', { class: 'dk-sub' });
+  const toneTo = d => { const L = allPresets(), i = L.findIndex(x => x.n === RIG.cur), n = L[((i < 0 ? 0 : i + d) % L.length + L.length) % L.length]; if (n) usePreset(n); };
+  UI.rigName = h('div', { class: 'dk-tone' }, h('button', { class: 'btn sm icon dk-step', id: 'rigPrev', type: 'button', 'aria-label': 'Previous tone', title: 'Previous tone', onclick: () => toneTo(-1) }, '◀'),
+    h('button', { class: 'dk-pick', id: 'rigPick', type: 'button', title: 'Pick a tone: search them all', onclick: e => rigTonePick(e.currentTarget) }, h('small', { class: 'tiny muted' }, 'TONE ▾'), tname, tsub),
+    h('button', { class: 'btn sm icon dk-step', id: 'rigNext', type: 'button', 'aria-label': 'Next tone', title: 'Next tone', onclick: () => toneTo(1) }, '▶'));
+  const sync = n => { tname.textContent = n; const pr = allPresets().find(x => x.n === n); tsub.textContent = pr ? pr.c + (pr.d ? ' · ' + pr.d : '') : ''; };
+  bus.on('preset', sync); sync(RIG.cur);
   const trimK = mkKnob({ key: 'master', label: 'Master', min: 0, max: 1.2, def: .9, step: .01, fmt: v => dB(v).toFixed(1) + ' dB', onChange: v => { CFG.master = v; saveCfg(); bus.emit('master'); if (E.ready) tc(E.master.gain, v, .02); } }); if (CFG.master != null) trimK.set(CFG.master, true);
-  const mix = h('input', { type: 'range', min: 0, max: 1, step: .01, value: 0, title: 'Morph between stored A and B', style: { flex: '1 1 90px', minWidth: '70px' }, oninput: e => { if (AB.A && AB.B) rigApply(rigLerp(AB.A, AB.B, +e.target.value)); else toast('Store A and B first'); } });
-  const abBtn = (k) => [h('button', { class: 'btn sm', onclick: () => { AB[k] = rigSnapshot(); toast('Stored ' + k, 'ok'); } }, 'Store ' + k), h('button', { class: 'btn sm', onclick: () => { if (AB[k]) rigApply(AB[k]); else toast('Nothing stored in ' + k); } }, k)];
-  const nm = h('input', { class: 'in', placeholder: 'Preset name', style: { width: '130px', fontFamily: 'var(--sans)' } });
-  const imp = h('input', { type: 'file', accept: '.json', style: { display: 'none' }, onchange: async e => { try { const j = JSON.parse(await e.target.files[0].text()); rigApply(j.rig || j); toast('Rig imported', 'ok'); } catch (err) { toast('Invalid rig JSON', 'bad'); } } });
+  const mix = h('input', { type: 'range', min: 0, max: 1, step: .01, value: 0, 'aria-label': 'Morph between A and B', title: 'Morph between stored A and B', style: { flex: '1 1 70px', minWidth: '50px' }, oninput: e => { if (AB.A && AB.B) rigApply(rigLerp(AB.A, AB.B, +e.target.value)); else toast('Store A and B first (⋯)'); } });
+  const abBtn = k => h('button', { class: 'btn sm', id: 'rig' + k, type: 'button', title: 'Recall ' + k + ' · Shift+click stores the rig as ' + k, onclick: e => { if (e.shiftKey || !AB[k]) { AB[k] = rigSnapshot(); toast('Stored ' + k, 'ok'); return; } rigApply(AB[k]); } }, k);
+  const imp = h('input', { type: 'file', accept: '.json', style: { display: 'none' }, onchange: async e => { try { const j = JSON.parse(await e.target.files[0].text()); rigApply(j.rig || j); toast('Rig imported', 'ok'); } catch (err) { toast('Invalid rig JSON', 'bad'); } e.target.value = ''; } });
+  const save = btn => { const nm = h('input', { class: 'in', id: 'rigSaveName', placeholder: 'Preset name', value: RIG.cur && !PRESETS.some(x => x.n === RIG.cur) && RIG.cur !== '—' ? RIG.cur : '', style: { flex: 1, fontFamily: 'var(--sans)' } }), go = () => { const n = nm.value.trim(); if (!n) return toast('Name your preset', 'warn'); const a = store.get('presets', []).filter(x => x.n !== n); a.push({ n, d: 'User preset ' + new Date().toLocaleDateString(), u: rigSnapshot().u }); store.set('presets', a); RIG.cur = n; renderTones(); bus.emit('preset', n); closePop(); toast('Saved “' + n + '”', 'ok'); };
+    nm.addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
+    popover(btn, h('div', { class: 'rig-save' }, h('h5', {}, 'Save this tone'), h('div', { class: 'row', style: { gap: '6px' } }, nm, h('button', { class: 'btn sm primary', id: 'rigSaveGo', onclick: go }, 'Save')), h('p', { class: 'tiny muted' }, 'It joins your tones (User), here and in Tones. A preset with the same name is replaced.'),
+      h('div', { class: 'row', style: { gap: '6px' } }, h('button', { class: 'btn sm', onclick: () => download('the-daily.studio-rig.json', JSON.stringify({ name: RIG.cur, rig: rigSnapshot() }, null, 2), 'application/json') }, '⇩ Export file'), h('button', { class: 'btn sm', onclick: () => { closePop(); imp.click(); } }, '⇧ Import file')))); setTimeout(() => nm.focus(), 30); };
+  const more = btn => popover(btn, h('div', { class: 'rig-more' }, h('h5', {}, 'Rig'),
+    h('button', { class: 'btn sm', title: 'Randomly nudge the active pedals', onclick: () => { closePop(); rigApply(rigMutate(.12)); toast('Mutated active units'); } }, '🎲 Mutate'),
+    h('button', { class: 'btn sm', onclick: () => { closePop(); AB.A = rigSnapshot(); toast('Stored A', 'ok'); } }, 'Store as A'), h('button', { class: 'btn sm', onclick: () => { closePop(); AB.B = rigSnapshot(); toast('Stored B', 'ok'); } }, 'Store as B'),
+    h('button', { class: 'btn sm bad', onclick: () => { closePop(); rigApply({ u: {} }); RIG.cur = 'Direct (No FX)'; bus.emit('preset', RIG.cur); } }, 'Reset all (straight signal)')), { right: true });
   UI.deck = tb;
-  nm.style.width = ''; nm.style.flex = '1 1 120px'; nm.style.minWidth = '90px';
-  tb.append(h('div', { class: 'dk dk1' }, UI.rigName, h('div', { class: 'dk-ab' }, ...abBtn('A'), mix, ...abBtn('B')), trimK.el),
-    h('div', { class: 'dk dk2' }, h('button', { class: 'btn sm', title: 'Randomly nudge active parameters', onclick: () => { rigApply(rigMutate(.12)); toast('Mutated active units'); } }, '🎲 Mutate'), h('button', { class: 'btn sm', onclick: () => { rigApply({ u: {} }); RIG.cur = 'Direct (No FX)'; bus.emit('preset', RIG.cur); } }, 'Reset all'), nm, h('button', { class: 'btn sm primary', onclick: () => { const n = nm.value.trim(); if (!n) return toast('Name your preset', 'warn'); const a = store.get('presets', []).filter(x => x.n !== n); a.push({ n, d: 'User preset ' + new Date().toLocaleDateString(), u: rigSnapshot().u }); store.set('presets', a); RIG.cur = n; renderTones(); toast('Saved “' + n + '”', 'ok'); } }, 'Save'), h('button', { class: 'btn sm', onclick: () => download('the-daily.studio-rig.json', JSON.stringify({ name: RIG.cur, rig: rigSnapshot() }, null, 2), 'application/json') }, 'Export'), h('button', { class: 'btn sm', onclick: () => imp.click() }, 'Import'), imp));
+  tb.append(h('div', { class: 'dk dk1' }, UI.rigName, h('div', { class: 'dk-ab', title: 'Compare two settings: A and B (Shift+click stores), or morph between them' }, abBtn('A'), mix, abBtn('B')),
+    h('button', { class: 'btn sm', id: 'rigSave', type: 'button', onclick: e => save(e.currentTarget) }, '💾 Save'), h('button', { class: 'btn sm', id: 'rigMore', type: 'button', title: 'Mutate, store A or B, reset', onclick: e => more(e.currentTarget) }, '⋯'), imp, trimK.el));
   UI.board = h('div', { class: 'board' }); p.append(tb, UI.board);
   RIG.order.forEach(id => UI.board.append(pedalEl(id))); bus.on('rig:refresh', syncPedals); bus.on('rig:order', () => RIG.order.forEach(id => UI.board.append(PED[id].el)));
 }
+/** every tone, searchable, by kind */
+function rigTonePick(btn) {
+  const L = allPresets(), list = h('div', { class: 'rig-tones', role: 'listbox', 'aria-label': 'Tones' }), q = h('input', { class: 'in', id: 'rigToneQ', placeholder: 'Search ' + L.length + ' tones…', style: { fontFamily: 'var(--sans)' } });
+  const draw = () => { list.innerHTML = ''; const t = q.value.toLowerCase(); let cat = ''; L.filter(x => !t || (x.n + ' ' + (x.d || '') + ' ' + x.c).toLowerCase().includes(t)).forEach(x => { if (x.c !== cat) { cat = x.c; list.append(h('small', { class: 'rig-tc' }, cat)); } list.append(h('button', { class: 'rig-t' + (x.n === RIG.cur ? ' on' : ''), role: 'option', 'aria-selected': String(x.n === RIG.cur), onclick: () => { closePop(); usePreset(x); } }, h('b', {}, x.n), x.d ? h('span', {}, x.d) : null)); }); if (!list.children.length) list.append(h('p', { class: 'small muted' }, 'No tones match.')); };
+  q.addEventListener('input', draw); q.addEventListener('keydown', e => { if (e.key === 'Enter') { const b = list.querySelector('.rig-t'); if (b) b.click(); } });
+  draw(); popover(btn, h('div', { class: 'rig-pick' }, q, list)); setTimeout(() => { q.focus(); const on = list.querySelector('.rig-t.on'); if (on && on.scrollIntoView) on.scrollIntoView({ block: 'center' }); }, 30);
+}
 function pedalEl(id) {
   const def = FX[id], card = h('div', { class: 'pedal', 'data-id': id }), ctr = {}, body = h('div', { class: 'pedal-b' });
-  const stomp = h('button', { class: 'stomp', title: 'Engage / bypass', onclick: () => { if (!E.ready) return toast('Power on first'); const u = RIG.units[id]; u.setActive(!u.on); card.classList.toggle('on', u.on); } });
+  const stomp = h('button', { class: 'stomp', title: 'Engage / bypass', onclick: () => { if (!E.ready) return toast('Power on first'); if (typeof pedalState === 'function') return pedalState(id); const u = RIG.units[id]; u.setActive(!u.on); card.classList.toggle('on', u.on); } });
   const head = h('div', { class: 'pedal-h', draggable: 'true', title: 'Drag to reorder in the signal chain', ondragstart: e => { e.dataTransfer.setData('text/plain', id); e.dataTransfer.effectAllowed = 'move'; } }, stomp, h('b', {}, def.name), h('small', {}, def.cat));
   card.addEventListener('dragover', e => { e.preventDefault(); card.classList.add('dragover'); }); card.addEventListener('dragleave', () => card.classList.remove('dragover'));
   card.addEventListener('drop', e => { e.preventDefault(); card.classList.remove('dragover'); const from = e.dataTransfer.getData('text/plain'); if (from && from !== id) rigMove(from, RIG.order.indexOf(id)); });
@@ -4153,7 +4186,7 @@ function vzAdjustOpen(anchor) {
   box.append(h('div', { class: 'row', style: { gap: '8px', alignItems: 'center' } },
     h('button', { class: 'btn sm', id: 'vzaReset', onclick: () => { VZA.forEach(([k]) => { CFG[k] = 1; rows[k].r.value = 1; rows[k].val.textContent = '1.00×'; }); VZ.spec = null; saveCfg(); mark(); } }, 'Reset'),
     h('span', { class: 'tiny muted' }, 'Double-click a slider to reset it.')),
-    h('div', { class: 'tiny muted', style: { lineHeight: 1.45 } }, 'Speed and Zoom work on every look; Size sets the hexagons of Hex Resonance and the pulse grid. On the Visuals tab, the Stage and in Perform. The camera, the chord, the words and the small neck stay as they are.'));
+    h('div', { class: 'tiny muted', style: { lineHeight: 1.45 } }, 'Speed and Zoom work on every look; Size sets the hexagons of Hex Resonance and the pulse grid. On the Visuals tab, the Stage and in Showtime. The camera, the chord, the words and the small neck stay as they are.'));
   popover(anchor, box);
 }
 
@@ -4244,7 +4277,7 @@ async function boot() {
   if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener('devicechange', () => { ioDeviceChange().catch(e => console.warn(e)); });
   bus.emit('song');
   try { ghBoot(); } catch (e) { console.warn('github', e); }      /* back from Sign in with GitHub, or a sync at start (part 74) */
-  DEV.make = () => { window.__daily = { tourStart, mpVision, slSendLabel, slcChanges, mkSection, perfViewSet, pfLay, pfLaySet, pfLayMenu, songMapEl, secAdd, secKind, secNameFor, smGo, renderWholeSong, normSong, bandRename, get TOUR() { return TOUR; }, SIMPLE_GOAL_TABS, SIMPLE_GOAL_TOOLS, simpleTabs, goalAudioFirst, guitarBody, pluck, BLD, BUILD_LIFT, buildLevel, secEnergy, buildCtx, buildParts, buildDrums, buildCard, buildCrash, buildRiser, tuneSelect, TUNE_LABELS, tuneTake, BASS_TONES, KITS, kitHit, sub808, M, MGROUPS, MW, mScreenDraw, mwRead, mwView, mwLyrics, mwSyl, mwEdited, mwPut, mSongOpen, msHexLoop, room, ROOM, slPack, slUnpack, slLink, slRead, slShare, slWelcome, slOpen, slFromHash, SL, BEATS, beatUse, beatRows, beatsShelf, SIMPLE_TOOLS, drumHit, RL, MO, GM_DRUM, duckAt, duckSet, duckCfg, duckNode, moNote, moDev, moDrum, moPanic, moSettings, kyOut, bassOut, rollOpen, rollBuild, rollLoop, isBass, instNow, nStr, yin, TUNINGS, setTuning, renderBarTab, tabLabels, voicingFor, toggleRec, closePop, spPause, encodeWav, PS, psOn, playDur, psSpeed, psKey, psSched, psDSPFactory, psPop, KY, keysOpen, keysVoice, keysStep, kyNoteOn, kyNoteOff, kyRec, kyClear, kyWrite, kyPiano, kyMarks, kyVoicing, KEYS_SOUNDS, KEYS_STYLES, coFinish, coDemo, coFeedback, coFbView, coTimeline, coBeat, coPractise, TAKE, learnPassed, todayPlan, todayPieces, todayStart, todayDone, streak, weekCount, dayKey, LSTEP, songLessons, songStart, songKey, earLick, earStart, EAR, simpleSet, simpleApply, ghTakeSettings, airMode, airSet, CO, coPos, coachOpen, coListen, coTick, coPlace, coNotes, coSetPiece, rfParse, LESSONS, RIFFS, RIFF_STYLES, learnOpen, learnToSong, learnFile, learnFileText, learnOpenFile, learnFromSong, labMake, labVary, labKeep, atlasPieces, atShape, MODE_VAMP, S, AIR, AIR_LAG, airSync, applyLayout, VB_PRESETS, VB_ORDER, VBS, vbAttach, vbApply, vbToggle, vbSet, vbPreset, vbPresetNext, vbThrow, vbLook, vbTick, vbScale, vocalBoardOpen, pedalRelease, MEG, megSpectrum, megFeatures, megScore, megStep, megSet, megLearn, megDraw, megLoop, megSettings, PAD, padsOpen, padHit, padTap, padRecord, padRecStop, padUndoPass, padClear, padResize, padBeatbox, bbHits, bbPattern, dpat, bassEvent, drumStep, PEDAL, pedalPress, pedalDo, pedalSecs, gearSettings, MCLK, mclkSlot, mclkMs, MIDI, MIDIRAW, onMidi, STRM, streamOpen, streamRoom, streamInfo, streamPanel, slotAtTime, SING, SHW, singStep, singScore, singSteamIR, singMicOff, showerOpen, shwGo, shwPlay, shwPrev, shwNext, shwStem, shwRecToggle, shwRecStop, shwHear, shwSave, shwAddFiles, shwRemove, shwMove, shwMode, shwLoadSet, shwPlaylist, shwWords, shwPrepare, shwFolderPull, lrcParse, readTags, spPos, spPlay, STP, trainOpen, projRestoreTrack, secretNote, secretArp, WS, WS_BASE, WS_ARPS, wsScaleRun, wsArpRun, wsFollow, wsStop, wsListen, wsEarNext, wsEarAnswer, wsOpen, bandMute, bandMuted, pdbPut, pdbKeys, projRename, FS, FS_B, fsUse, fsSync, fsHead, fsNeeds, fsTidy, fsOpen, syncOff, syncZips, PRJ_WAIT: () => PRJ.wait, EGG, EGG_LINES, EGG_ORDER, eggDay, eggFor, eggNow, eggText, eggTick, eggFit, saveCfg, projSave, projDelete, GH, ghSync, ghConnect, ghKick, ghRecheck, prtOpen, prtAnalyze, prtPack, prtUnpack, prtRead, prtCompose, prtFromCode, prtCode, prtDraw, prtArtwork, prtCopyLink, prtShelfRead, prtFromHash, PRT, audioKill, audioResume, drpOgg, drpOpen, drpOwn, encodeWav, stemUnload, ycEnv, ycPrint, ycUnprint, ycMatch, ycSetStart, ycLoad, ycMakeOurs, STM, stemLoad, cmtAdd, cmtOpen, cmtAll, cmtPack, cmtWhere, lhOpen, lhScheme, lhRhymes, lhLoad, lhSyl, LH, finOpen, finAB, finMaster, finPackage, finTone, finMatchEq, finLimit, finPeople, FIN, lufsMeasure, verMark, verRestore, verCopy, verList, verOpen, verRoundOf, verChanged, jrSteps, safeState, ghSongOut, pdbGet, lxExport, lxExportOpen, lxSaveLane, lxLanes, lxRender, LXO, zipRead, srxSend, srxReceive, srxTakeBack, srxEncode, srxDecodeTake, srxPack, srxBundle, srxCan, SRS, ghDisconnect, ghLocal, ghSha, ghJson, ghMerge3, ghShare, ghGallery, ghGalleryOpen, ghGalleryShow, ghKeepLook, ghKeepRig, rigClean, ghReturn, BRAND, ghSettingsOut, projRefresh, projCreate, projLoad, PRJ, SEC, SECRETS, secretFound, secretTiming, secretsOpen, secretSync, backstageOpen, startAudio, playheadSlot, GUARD, reportText, reportCopy, srecQ, srecSize, pdbGet, srecFmt, SREC_FMTS, VBG, vbgAdd, vbgRemove, vbgUse, vbgOpen, vbgDraw, vzSetMode, srecFrame, srecFmtBox, kitThumb, WORKLET_SRC, mkComp, mkShaper, rigLat, voxLat, restartAudio, satCurve, rigApply, qrMake, qrSvg, tipLink, tipShort, tipReady, tipCard, tipDraw, tipShareHtml, tipOpen, tipPrint, tipPng, tipVisAvoid, tipStageAvoid, TIP, TIP_TERMS, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, drawVis, peaksOf, uid, shareGate, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, TAKES, STM, ZOOM, CFG, store, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, SEL, mtof, spb, WR, HM, HMX, HM_MODES, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, vzLookSync, vzLooksOpen, GOAL_MORE, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitInk, kitNotes, kitRecord, srecMime, mGo, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard}; };   // test hook: with ?debug, or Backstage ▸ Labs ▸ Developer handles
+  DEV.make = () => { window.__daily = { tourStart, mpVision, slSendLabel, slcChanges, mkSection, perfViewSet, pfLay, pfLaySet, pfLayMenu, songMapEl, secAdd, secKind, secNameFor, smGo, renderWholeSong, normSong, bandRename, get TOUR() { return TOUR; }, SIMPLE_GOAL_TABS, SIMPLE_GOAL_TOOLS, simpleTabs, goalAudioFirst, guitarBody, pluck, BLD, BUILD_LIFT, buildLevel, secEnergy, buildCtx, buildParts, buildDrums, buildCard, buildCrash, buildRiser, tuneSelect, TUNE_LABELS, tuneTake, BASS_TONES, KITS, kitHit, sub808, M, MGROUPS, MW, mScreenDraw, mwRead, mwView, mwLyrics, mwSyl, mwEdited, mwPut, mSongOpen, msHexLoop, room, ROOM, slPack, slUnpack, slLink, slRead, slShare, slWelcome, slOpen, slFromHash, SL, BEATS, beatUse, beatRows, beatsShelf, SIMPLE_TOOLS, drumHit, RL, MO, GM_DRUM, duckAt, duckSet, duckCfg, duckNode, moNote, moDev, moDrum, moPanic, moSettings, kyOut, bassOut, rollOpen, rollBuild, rollLoop, isBass, instNow, nStr, yin, TUNINGS, setTuning, renderBarTab, tabLabels, voicingFor, toggleRec, closePop, spPause, encodeWav, PS, psOn, playDur, psSpeed, psKey, psSched, psDSPFactory, psPop, KY, keysOpen, keysVoice, keysStep, kyNoteOn, kyNoteOff, kyRec, kyClear, kyWrite, kyPiano, kyMarks, kyVoicing, KEYS_SOUNDS, KEYS_STYLES, coFinish, coDemo, coFeedback, coFbView, coTimeline, coBeat, coPractise, TAKE, learnPassed, todayPlan, todayPieces, todayStart, todayDone, streak, weekCount, dayKey, LSTEP, songLessons, songStart, songKey, earLick, earStart, EAR, simpleSet, simpleApply, ghTakeSettings, airMode, airSet, CO, coPos, coachOpen, coListen, coTick, coPlace, coNotes, coSetPiece, rfParse, LESSONS, RIFFS, RIFF_STYLES, learnOpen, learnToSong, learnFile, learnFileText, learnOpenFile, learnFromSong, labMake, labVary, labKeep, atlasPieces, atShape, MODE_VAMP, S, AIR, AIR_LAG, airSync, applyLayout, VB_PRESETS, VB_ORDER, VBS, vbAttach, vbApply, vbToggle, vbSet, vbPreset, vbPresetNext, vbThrow, vbLook, vbTick, vbScale, vocalBoardOpen, pedalRelease, MEG, megSpectrum, megFeatures, megScore, megStep, megSet, megLearn, megDraw, megLoop, megSettings, PAD, padsOpen, padHit, padTap, padRecord, padRecStop, padUndoPass, padClear, padResize, padBeatbox, bbHits, bbPattern, dpat, bassEvent, drumStep, PEDAL, pedalPress, pedalDo, pedalSecs, gearSettings, MCLK, mclkSlot, mclkMs, MIDI, MIDIRAW, onMidi, STRM, streamOpen, streamRoom, streamInfo, streamPanel, slotAtTime, SING, SHW, singStep, singScore, singSteamIR, singMicOff, showerOpen, shwGo, shwPlay, shwPrev, shwNext, shwStem, shwRecToggle, shwRecStop, shwHear, shwSave, shwAddFiles, shwRemove, shwMove, shwMode, shwLoadSet, shwPlaylist, shwWords, shwPrepare, shwFolderPull, lrcParse, readTags, spPos, spPlay, STP, trainOpen, projRestoreTrack, secretNote, secretArp, WS, WS_BASE, WS_ARPS, wsScaleRun, wsArpRun, wsFollow, wsStop, wsListen, wsEarNext, wsEarAnswer, wsOpen, bandMute, bandMuted, pdbPut, pdbKeys, projRename, FS, FS_B, fsUse, fsSync, fsHead, fsNeeds, fsTidy, fsOpen, syncOff, syncZips, PRJ_WAIT: () => PRJ.wait, EGG, EGG_LINES, EGG_ORDER, eggDay, eggFor, eggNow, eggText, eggTick, eggFit, saveCfg, projSave, projDelete, GH, ghSync, ghConnect, ghKick, ghRecheck, prtOpen, prtAnalyze, prtPack, prtUnpack, prtRead, prtCompose, prtFromCode, prtCode, prtDraw, prtArtwork, prtCopyLink, prtShelfRead, prtFromHash, PRT, audioKill, audioResume, drpOgg, drpOpen, drpOwn, encodeWav, stemUnload, ycEnv, ycPrint, ycUnprint, ycMatch, ycSetStart, ycLoad, ycMakeOurs, STM, stemLoad, cmtAdd, cmtOpen, cmtAll, cmtPack, cmtWhere, lhOpen, lhScheme, lhRhymes, lhLoad, lhSyl, LH, finOpen, finAB, finMaster, finPackage, finTone, finMatchEq, finLimit, finPeople, FIN, lufsMeasure, verMark, verRestore, verCopy, verList, verOpen, verRoundOf, verChanged, jrSteps, safeState, ghSongOut, pdbGet, lxExport, lxExportOpen, lxSaveLane, lxLanes, lxRender, LXO, zipRead, srxSend, srxReceive, srxTakeBack, srxEncode, srxDecodeTake, srxPack, srxBundle, srxCan, SRS, ghDisconnect, ghLocal, ghSha, ghJson, ghMerge3, ghShare, ghGallery, ghGalleryOpen, ghGalleryShow, ghKeepLook, ghKeepRig, rigClean, ghReturn, BRAND, ghSettingsOut, projRefresh, projCreate, projLoad, PRJ, SEC, SECRETS, secretFound, secretTiming, secretsOpen, secretSync, backstageOpen, startAudio, playheadSlot, GUARD, reportText, reportCopy, srecQ, srecSize, pdbGet, srecFmt, SREC_FMTS, VBG, vbgAdd, vbgRemove, vbgUse, vbgOpen, vbgDraw, vzSetMode, srecFrame, srecFmtBox, kitThumb, WORKLET_SRC, mkComp, mkShaper, rigLat, voxLat, restartAudio, satCurve, rigApply, qrMake, qrSvg, tipLink, tipShort, tipReady, tipCard, tipDraw, tipShareHtml, tipOpen, tipPrint, tipPng, tipVisAvoid, tipStageAvoid, TIP, TIP_TERMS, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, drawVis, peaksOf, uid, shareGate, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, TAKES, STM, ZOOM, CFG, store, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, SEL, mtof, spb, WR, HM, HMX, HM_MODES, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, RIG, BRD, onBoard, brdSel, brdAdd, brdRemove, prtShelfAll, prtShelfMerge, ghTakeNotes, ghTakePrints, prtLookWorld, PRT_CODE_MAX, vzLookSync, vzLooksOpen, GOAL_MORE, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitInk, kitNotes, kitRecord, srecMime, mGo, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard}; };   // test hook: with ?debug, or Backstage ▸ Labs ▸ Developer handles
   if (/[?&]debug\b/.test(location.search) || (CFG.labs && CFG.labs.handles)) DEV.make();
   try { bksBoot(); } catch (e) { console.warn('backstage', e); }      /* #backstage in the address, the performance overlay (part 73c) */
   projInit().catch(e => { console.warn('library', e); PRJ.ready = true; if (PRJ.wantStart) startMaybe(); });
@@ -4370,7 +4403,7 @@ function setCardHidden(n, hide) { LAY.rc.hide[n] = !!hide; const c = $('[data-ca
    so nothing from the previous layout leaks into the next.
    spec: flip · left · right (sidebars on or off) · tlh (arrangement height) · dock (the open panel; null leaves it) · order (tabs to put first) · hidden (tabs left off the strip)
          side {panel: 'left' | 'right'} (panels that live in a sidebar) · so {left: [], right: []} (their order) · cur {left, right} (which sidebar tab is open) · mon (Monitor widgets shown) · board */
-const DOCK_DEFAULT = ['rig', 'tab', 'song', 'band', 'fret', 'vis', 'stage', 'neural', 'stems', 'tx', 'cam', 'lab', 'exp'];
+const DOCK_DEFAULT = ['rig', 'tab', 'song', 'band', 'fret', 'vis', 'stage', 'neural', 'stems', 'tx', 'cam', 'lab', 'exp', 'learn'];
 const LAYOUTS = [
   ['Studio', 'Everything in reach: panels above the arrangement, a sidebar each side.', { flip: true, left: true, right: true, tlh: null, dock: 'tab', cur: { left: 'io', right: 'monitor' } }],
   ['Write', 'Tab in the middle, chords and lyrics beside it, theory at hand. The arrangement stays short.', { flip: true, left: true, right: true, tlh: 'minmax(130px,24%)', dock: 'tab', order: ['tab', 'band', 'rig'], hidden: ['song', 'fret', 'stage', 'neural', 'stems', 'tx', 'cam', 'lab'], cur: { left: 'theory', right: 'refine' } }],
@@ -4387,7 +4420,8 @@ function applyPreset(s, name) {
   /* 2.64: a layout can start with the arrangement collapsed and say how tall it opens (▴ Arrangement) */
   if (s.tlhOpen !== undefined) LAY.tlhPrev = s.tlhOpen; else delete LAY.tlhPrev;
   /* the tab strip: which tabs, in which order (the shipped order when the layout names none) */
-  LAY.hidden = (s.hidden || []).filter(id => id !== s.dock); LAY.order = s.order ? s.order.slice() : [];
+  LAY.hidden = (s.hidden || []).filter(id => id !== s.dock); LAY.order = s.order ? s.order.slice() : []; LAY.show = s.show ? s.show.slice() : [];      /* show: panels kept on the strip even though they are part of another (2.66: Practice keeps the Fretboard) */
+  if (!LAY.order.includes('learn') && s.dock !== 'learn' && LAY.hidden.length && !LAY.hidden.includes('learn')) LAY.hidden.push('learn');      /* 2.66: the Learn panel is Practice's; a layout that hides nothing (Studio, Full Rig) shows it too */
   { const cur = DOCK.cur, ord = LAY.order.length ? LAY.order : DOCK_DEFAULT, ix = id => { const i = ord.indexOf(id); return i < 0 ? 999 : i; }; DOCK.sort((a, b) => ix(a[0]) - ix(b[0]) || DOCK_DEFAULT.indexOf(a[0]) - DOCK_DEFAULT.indexOf(b[0])); DOCK.cur = cur; }
   /* the sidebars: which panels live in them, in what order, and which one is open */
   LAY.side = JSON.parse(JSON.stringify(s.side || {})); LAY.so = JSON.parse(JSON.stringify(s.so || { left: [], right: [] }));
@@ -4504,46 +4538,84 @@ function buildLayout() {
 
 /* >>> parts/12-board.js */
 /* ============================================================
-   Part 12 · pedalboard v2 — signal-chain strip, per-pedal size / colour / collapse / hide,
-   footswitch keys + MIDI notes, 8 morphing scenes, big-footswitch stomp view
+   Part 12 · pedalboard v3 (2.66) — your board, not every unit at once:
+     · the board: the pedals on it, in chain order (IN › … › OUT). A pedal is on the board while it is on, or once you have put it
+       there (＋ Pedal, or bypassing one that was on); ✕ in its ⚙ takes it off. Click a pedal to edit it; its LED stomps it.
+     · three views: ◎ Edit (the board, and the pedal you picked, large), ▦ All (every pedal on the board, open) and ◉ Stomp (big
+       footswitches for playing live)
+     · per pedal (⚙): a label, colour, width, collapse, hide, a footswitch key and a MIDI note, order, off the board
+     · 8 morphing scenes, keys 1–8 and MIDI notes 36–43
    ============================================================ */
-const BRD = Object.assign({ view: 'board', items: {}, scenes: new Array(8).fill(null), morph: 250, incBand: false, live: true, midi: {}, dens: 250, cur: -1, storeArm: false, hidShow: false }, CFG.board || {});
+const BRD = Object.assign({ view: 'focus', sel: '', items: {}, scenes: new Array(8).fill(null), morph: 250, incBand: false, live: true, midi: {}, dens: 250, cur: -1, storeArm: false, hidShow: false }, CFG.board || {});
 while (BRD.scenes.length < 8) BRD.scenes.push(null);
 const saveBrd = () => { CFG.board = BRD; saveCfg(); };
 const BRD_COLORS = ['', '#e4572e', '#f2a900', '#3ddc84', '#35d3c2', '#4a90e2', '#a58bff', '#ff5fa2'];
 const BRD_RESERVED = new Set([' ', 'r', 'l', 'm', 'd', 'b', 'g', 't', '?', '[', ']', 'home', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'escape', 'tab', 'enter', 'f']);
 const bitem = id => BRD.items[id] || (BRD.items[id] = { size: 1, color: '', col: false, hid: false, key: '' });
+if (CFG.boardV3 !== 1) { CFG.boardV3 = 1; if (BRD.view === 'board') BRD.view = 'focus'; saveBrd(); }      /* 2.66: the board opens on ◎ Edit once */
+/** the tone's own settings, for before the audio starts (the units are made when it does) */
+const brdPresetU = () => { const p = (UI.pending && UI.pending.u ? UI.pending : null) || allPresets().find(x => x.n === RIG.cur) || null; return (p && p.u) || {}; };
+const unitOn = id => E.ready && RIG.units[id] ? !!RIG.units[id].on : !!(brdPresetU()[id] && brdPresetU()[id].on);
+/** on the board: on, or put there (and kept, bypassed, until taken off) */
+const onBoard = id => unitOn(id) || !!(BRD.items[id] && BRD.items[id].keep);
+const brdLabel = id => (BRD.items[id] && BRD.items[id].label) || FX[id].name;
+const BRD_CATS = [['Dynamics', 'Dynamics'], ['Filter', 'Filter & EQ'], ['Drive', 'Drive'], ['Pitch', 'Pitch'], ['Amp', 'Amp & cab'], ['Modulation', 'Modulation'], ['Time', 'Delay & reverb']];
 
 function paintPedal(id) {
   const P = PED[id]; if (!P) return; const it = bitem(id), el = P.el;
   el.classList.toggle('s2', it.size === 2); el.classList.toggle('s3', it.size === 3); el.classList.toggle('cc', !!it.col); el.classList.toggle('hid', !!it.hid && !BRD.hidShow);
+  el.classList.toggle('offb', !onBoard(id) && !BRD.hidShow); el.classList.toggle('sel', id === BRD.sel); el.classList.toggle('on', unitOn(id)); const t = el.querySelector('.pedal-h b'); if (t) t.textContent = brdLabel(id);
   if (it.color) el.style.setProperty('--pc', it.color); else el.style.removeProperty('--pc');
   const kb = el.querySelector('.kbadge'); if (kb) { kb.textContent = it.key ? it.key.toUpperCase() : ''; kb.style.display = it.key ? '' : 'none'; }
 }
 function boardView(v) {
-  BRD.view = v; saveBrd(); const b = UI.board; if (!b) return; b.classList.toggle('stompmode', v === 'stomp');
-  b.style.gridTemplateColumns = v === 'stomp' ? '' : 'repeat(auto-fill,minmax(' + BRD.dens + 'px,1fr))'; if (UI.chain) UI.chain.style.display = v === 'stomp' ? 'none' : '';
-  $$('.bv button', UI.boardTools).forEach(x => x.classList.toggle('on', x.dataset.v === v));
+  if (!['focus', 'board', 'stomp'].includes(v)) v = 'focus'; BRD.view = v; saveBrd(); const b = UI.board; if (!b) return;
+  b.classList.toggle('stompmode', v === 'stomp'); b.classList.toggle('focusmode', v === 'focus'); PANES.rig.classList.toggle('v-stomp', v === 'stomp');
+  b.style.gridTemplateColumns = v === 'board' ? 'repeat(auto-fill,minmax(' + BRD.dens + 'px,1fr))' : '';
+  $$('.bv button', PANES.rig).forEach(x => { const on = x.dataset.v === v; x.classList.toggle('on', on); x.setAttribute('aria-pressed', String(on)); }); brdPaint();
 }
-function pedalState(id, on) { if (!E.ready) return toast('Power on first'); const u = RIG.units[id]; if (!u) return; u.setActive(on == null ? !u.on : on); PED[id].el.classList.toggle('on', u.on); bus.emit('rig:state'); }
+/** the pedal being edited: the one picked, or the first on the board */
+function brdSel(id) {
+  if (id) BRD.sel = id; if (!BRD.sel || !onBoard(BRD.sel)) BRD.sel = RIG.order.find(onBoard) || ''; saveBrd(); brdPaint();
+}
+function brdPaint() { RIG.order.forEach(id => { if (PED[id]) paintPedal(id); }); renderChain(); const e = document.getElementById('brdEmpty'); if (e) e.hidden = RIG.order.some(onBoard) || BRD.hidShow; }
+
+function pedalState(id, on) { if (!E.ready) return toast('Power on first'); const u = RIG.units[id]; if (!u) return; const was = onBoard(id); u.setActive(on == null ? !u.on : on); if (!u.on && was) { bitem(id).keep = true; saveBrd(); } PED[id].el.classList.toggle('on', u.on); bus.emit('rig:state'); }
+/** move a pedal past the next one on the board, before (d −1) or after (d +1) it: the units not on the board don't count */
+function brdStep(id, d) { const vis = RIG.order.filter(x => x === id || onBoard(x) || BRD.hidShow), k = vis.indexOf(id), o = vis[k + d]; if (!o) return; rigMove(id, RIG.order.indexOf(o) + (d > 0 ? 1 : 0) - (d > 0 && RIG.order.indexOf(o) > RIG.order.indexOf(id) ? 1 : 0)); renderChain(); }
+/** put a pedal on the board (on), or take it off (bypassed, and off the board) */
+function brdAdd(id) { bitem(id).keep = true; saveBrd(); if (E.ready) pedalState(id, true); brdSel(id); }
+function brdRemove(id) { const it = bitem(id); it.keep = false; saveBrd(); if (E.ready && RIG.units[id] && RIG.units[id].on) { RIG.units[id].setActive(false); bus.emit('rig:state'); } if (BRD.sel === id) BRD.sel = ''; brdSel(); }
 
 /* ---------- signal chain strip ---------- */
 function renderChain() {
   const c = UI.chain; if (!c) return; c.innerHTML = ''; c.append(h('span', { class: 'io' }, 'IN'));
   RIG.order.forEach(id => {
-    const it = bitem(id), u = RIG.units[id], on = !!(u && u.on);
-    const chip = h('div', { class: 'cchip' + (on ? ' on' : '') + (it.hid ? ' hid' : ''), draggable: 'true', title: FX[id].name + ' — click: engage · drag: reorder the chain', style: it.color ? { '--pc': it.color } : {},
-      onclick: () => pedalState(id), ondragstart: e => { e.dataTransfer.setData('text/plain', id); }, ondragover: e => { e.preventDefault(); chip.classList.add('over'); }, ondragleave: () => chip.classList.remove('over'),
-      ondrop: e => { e.preventDefault(); chip.classList.remove('over'); const f = e.dataTransfer.getData('text/plain'); if (f && f !== id && FX[f]) rigMove(f, RIG.order.indexOf(id)); } }, h('i'), FX[id].name);
+    if (!onBoard(id) && !BRD.hidShow) return; const it = bitem(id), on = unitOn(id);
+    const led = h('button', { class: 'bp-led', type: 'button', 'aria-label': (on ? 'Bypass ' : 'Engage ') + brdLabel(id), 'aria-pressed': String(on), title: 'Stomp: on / bypass' + (it.key ? ' (key ' + it.key.toUpperCase() + ')' : ''), onclick: e => { e.stopPropagation(); pedalState(id); } });
+    const chip = h('div', { class: 'cchip bp' + (on ? ' on' : '') + (id === BRD.sel ? ' sel' : '') + (it.hid ? ' hid' : '') + (onBoard(id) ? '' : ' offb'), 'data-id': id, draggable: 'true', role: 'button', tabindex: '0', title: brdLabel(id) + ': click to edit · LED: on / bypass · drag to reorder', style: it.color ? { '--pc': it.color } : {},
+      onclick: () => { if (BRD.view === 'stomp') pedalState(id); else { if (!onBoard(id)) brdAdd(id); else brdSel(id); } }, onkeydown: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); chip.click(); } },
+      ondragstart: e => { e.dataTransfer.setData('text/plain', id); }, ondragover: e => { e.preventDefault(); chip.classList.add('over'); }, ondragleave: () => chip.classList.remove('over'),
+      ondrop: e => { e.preventDefault(); chip.classList.remove('over'); const f = e.dataTransfer.getData('text/plain'); if (f && f !== id && FX[f]) rigMove(f, RIG.order.indexOf(id)); } }, led, h('span', { class: 'bp-n' }, brdLabel(id)), h('small', {}, FX[id].cat));
     c.append(h('span', { class: 'arr' }, '›'), chip);
   });
-  c.append(h('span', { class: 'arr' }, '›'), h('span', { class: 'io' }, 'OUT'));
+  c.append(h('span', { class: 'arr' }, '›'), h('span', { class: 'io' }, 'OUT'), h('button', { class: 'btn sm bp-add', id: 'brdAdd', type: 'button', title: 'Put a pedal on the board', onclick: e => brdLibrary(e.currentTarget) }, '＋ Pedal'));
 }
+/** the pedals not on the board, by kind */
+function brdLibrary(btn) {
+  const off = RIG.order.filter(id => !onBoard(id)), box = h('div', { class: 'bp-lib' }, h('h5', {}, 'Put a pedal on the board'));
+  if (!off.length) box.append(h('p', { class: 'small muted' }, 'Every pedal is on the board.'));
+  BRD_CATS.forEach(([k, n]) => { const ids = off.filter(id => FX[id].cat === k); if (!ids.length) return; box.append(h('div', { class: 'bp-libc' }, h('small', {}, n), h('div', { class: 'row', style: { gap: '5px', flexWrap: 'wrap' } }, ids.map(id => h('button', { class: 'btn sm', 'data-add': id, onclick: () => { closePop(); brdAdd(id); } }, FX[id].name))))); });
+  const rest = off.filter(id => !BRD_CATS.some(([k]) => FX[id].cat === k)); if (rest.length) box.append(h('div', { class: 'row', style: { gap: '5px', flexWrap: 'wrap' } }, rest.map(id => h('button', { class: 'btn sm', 'data-add': id, onclick: () => { closePop(); brdAdd(id); } }, FX[id].name))));
+  popover(btn, box);
+}
+
 
 /* ---------- per-pedal settings popover ---------- */
 let BLEARN = null;
 function pedalGear(id, btn) {
   const it = bitem(id), box = h('div'); box.append(h('h5', {}, FX[id].name));
+  box.append(h('div', { class: 'lrow' }, h('span', { style: { width: '74px' } }, 'Label'), h('input', { class: 'in', id: 'pgLabel', value: it.label || '', placeholder: FX[id].name, maxLength: 24, style: { flex: 1, fontFamily: 'var(--sans)' }, onchange: e => { it.label = e.target.value.trim().slice(0, 24); saveBrd(); brdPaint(); } })));      /* 2.66: your name for it ("Klon", "Lead boost") */
   const seg = (label, opts, cur, fn) => box.append(h('div', { class: 'lrow' }, h('span', { style: { width: '74px' } }, label), h('div', { class: 'seg' }, opts.map(([v, n]) => h('button', { class: cur === v ? 'on' : '', onclick: e => { fn(v); $$('button', e.target.parentNode).forEach(b => b.classList.toggle('on', b === e.target)); } }, n)))));
   seg('Width', [[1, 'S'], [2, 'M'], [3, 'L']], it.size, v => { it.size = v; paintPedal(id); saveBrd(); });
   box.append(h('div', { class: 'lrow' }, h('span', { style: { width: '74px' } }, 'Colour'), h('div', { class: 'row', style: { gap: '5px' } }, BRD_COLORS.map(c => h('button', { class: 'swatch' + (it.color === c ? ' on' : ''), style: { background: c || 'var(--panel2)', border: c ? undefined : '2px dashed var(--line2)' }, onclick: e => { it.color = c; paintPedal(id); renderChain(); saveBrd(); $$('.swatch', e.target.parentNode).forEach(b => b.classList.toggle('on', b === e.target)); } })))));
@@ -4552,7 +4624,8 @@ function pedalGear(id, btn) {
   const mn = Object.keys(BRD.midi).find(n => BRD.midi[n] === 'p:' + id);
   const mbtn = h('button', { class: 'btn sm', onclick: () => { BLEARN = id; mbtn.textContent = 'Hit a pad / footswitch…'; initMIDI(); } }, mn != null ? 'MIDI note ' + mn : 'Learn MIDI note');
   box.append(h('div', { class: 'lrow' }, h('span', { style: { width: '74px' } }, 'Footswitch'), kbtn, mbtn));
-  box.append(h('div', { class: 'lrow' }, h('span', { style: { width: '74px' } }, 'Order'), h('button', { class: 'btn sm', title: 'Move this pedal one place earlier in the signal chain', onclick: () => { rigMove(id, RIG.order.indexOf(id) - 1); renderChain(); } }, '◀ Earlier'), h('button', { class: 'btn sm', title: 'Move this pedal one place later in the signal chain', onclick: () => { rigMove(id, RIG.order.indexOf(id) + 1); renderChain(); } }, 'Later ▶')));
+  box.append(h('div', { class: 'lrow' }, h('span', { style: { width: '74px' } }, 'Order'), h('button', { class: 'btn sm', title: 'Move this pedal one place earlier in the signal chain', onclick: () => { brdStep(id, -1); } }, '◀ Earlier'), h('button', { class: 'btn sm', title: 'Move this pedal one place later in the signal chain', onclick: () => { brdStep(id, 1); } }, 'Later ▶')));
+  box.append(h('div', { class: 'lrow' }, h('button', { class: 'btn sm bad', id: 'pgRemove', title: 'Bypass it and take it off the board (＋ Pedal puts it back)', onclick: () => { closePop(); brdRemove(id); } }, '✕ Off the board')));
   box.append(h('div', { class: 'tiny muted', style: { marginTop: '4px' } }, 'Backspace while assigning clears the key. Double-click a pedal title to collapse it.'));
   popover(btn, box, { right: true });
 }
@@ -4576,7 +4649,7 @@ function sceneMenu(i, btn) {
 }
 function renderScenes() {
   const b = UI.scenebar; if (!b) return; b.innerHTML = ''; b.append(h('span', { class: 'tiny muted', style: { fontWeight: 800, letterSpacing: '.1em' } }, 'SCENES'));
-  BRD.scenes.forEach((s, i) => { const bt = h('button', { class: 'scn' + (s ? '' : ' empty') + (BRD.cur === i && s ? ' cur' : '') + (BRD.storeArm ? ' store' : ''), title: s ? 'Click: recall · Shift+click: overwrite with the current rig · right-click: rename / clear  (key ' + (i + 1) + ', MIDI note ' + (36 + i) + ')' : 'Empty — Shift+click (or arm Store) to save the current rig here', onclick: e => { if (BRD.storeArm || e.shiftKey || !s) { if (!s && !BRD.storeArm && !e.shiftKey) { sceneSave(i); } else sceneSave(i); BRD.storeArm = false; renderScenes(); } else sceneRecall(i); }, oncontextmenu: e => { e.preventDefault(); sceneMenu(i, bt); } }, s ? s.n : '— empty —', h('small', {}, (i + 1) + (s && s.band ? ' · +band' : ''))); b.append(bt); });
+  BRD.scenes.forEach((s, i) => { const bt = h('button', { class: 'scn' + (s ? '' : ' empty') + (BRD.cur === i && s ? ' cur' : '') + (BRD.storeArm ? ' store' : ''), title: s ? 'Click: recall · Shift+click: overwrite with the current rig · right-click: rename / clear  (key ' + (i + 1) + ', MIDI note ' + (36 + i) + ')' : 'Empty — Shift+click (or arm Store) to save the current rig here', onclick: e => { if (BRD.storeArm || e.shiftKey || !s) { if (!s && !BRD.storeArm && !e.shiftKey) { sceneSave(i); } else sceneSave(i); BRD.storeArm = false; renderScenes(); } else sceneRecall(i); }, oncontextmenu: e => { e.preventDefault(); sceneMenu(i, bt); } }, s ? s.n : '＋', h('small', {}, (i + 1) + (s && s.band ? ' · +band' : ''))); if (!s) bt.setAttribute('aria-label', 'Scene ' + (i + 1) + ', empty: store the current rig here'); b.append(bt); });      /* 2.66: an empty slot is just its number */
   b.append(h('button', { class: 'btn sm' + (BRD.storeArm ? ' on' : ''), title: 'Arm, then click a slot to store the current rig', onclick: () => { BRD.storeArm = !BRD.storeArm; renderScenes(); } }, '● Store')); b.append(h('button', { class: 'btn sm', title: 'Switch every pedal off (0)', onclick: () => boardKey('0') }, '⏻ All off'));
 }
 function digitKey(n) { if (stageOwnsKeys()) return stageScene(n - 1); if (BRD.live) sceneRecall(n - 1); }
@@ -4593,27 +4666,38 @@ MIDIHOOKS.push((note, vel) => {
 });
 
 /* ---------- build ---------- */
+function brdOptions(btn) {
+  const box = h('div', { class: 'bp-opts' }, h('h5', {}, 'Board'));
+  const row = (label, el) => box.append(h('div', { class: 'lrow' }, h('span', { style: { width: '110px' } }, label), el));
+  row('Pedal width (▦ All)', h('input', { type: 'range', min: 190, max: 460, step: 10, value: BRD.dens, oninput: e => { BRD.dens = +e.target.value; if (BRD.view === 'board') UI.board.style.gridTemplateColumns = 'repeat(auto-fill,minmax(' + BRD.dens + 'px,1fr))'; saveBrd(); } }));
+  const mv = h('span', { class: 'mono tiny' }, BRD.morph + ' ms'); row('Scene morph', h('span', { class: 'row', style: { gap: '6px' } }, h('input', { type: 'range', min: 0, max: 3000, step: 50, value: BRD.morph, oninput: e => { BRD.morph = +e.target.value; mv.textContent = BRD.morph + ' ms'; saveBrd(); } }), mv));
+  const chk = (label, title, k, fn) => box.append(h('label', { class: 'lrow chk', title }, h('input', { type: 'checkbox', checked: !!BRD[k], onchange: e => { BRD[k] = e.target.checked; saveBrd(); if (fn) fn(); } }), label));
+  chk('Scenes switch the band too', 'A scene also stores which band instruments play', 'incBand');
+  chk('Live keys', 'Keys 1–8 recall scenes, 0 = all off, a pedal’s key stomps it', 'live');
+  chk('Show every unit', 'Every pedal in the chain, on the board or not, and hidden ones', 'hidShow', () => brdPaint());
+  box.append(h('p', { class: 'tiny muted' }, 'Footswitch keys and MIDI notes are set per pedal (its ⚙). MIDI notes 36–43 recall scenes 1–8.'));
+  popover(btn, box, { right: true });
+}
 function buildBoardExtras() {
   const p = PANES.rig; if (!p || !UI.board) return;
-  UI.scenebar = h('div', { class: 'scenebar' }); UI.chain = h('div', { class: 'chainbar', tabindex: '0', role: 'region', 'aria-label': 'Signal chain (scrolls sideways)' });
-  UI.boardTools = h('div', { class: 'dk dk4' },
-    h('div', { class: 'seg bv' }, [['board', '▦ Board'], ['stomp', '◉ Stomp']].map(([v, n]) => h('button', { 'data-v': v, class: BRD.view === v ? 'on' : '', title: v === 'stomp' ? 'Big footswitch tiles for playing live' : 'Chain strip + full pedals', onclick: () => boardView(v) }, n))),
-    h('label', { class: 'small', style: { fontWeight: 700 } }, 'Width ', h('input', { type: 'range', min: 190, max: 460, step: 10, value: BRD.dens, style: { width: '60px', verticalAlign: 'middle' }, oninput: e => { BRD.dens = +e.target.value; if (BRD.view !== 'stomp') UI.board.style.gridTemplateColumns = 'repeat(auto-fill,minmax(' + BRD.dens + 'px,1fr))'; saveBrd(); } })),
-    h('label', { class: 'small', style: { fontWeight: 700 } }, 'Morph ', h('input', { type: 'range', min: 0, max: 3000, step: 50, value: BRD.morph, style: { width: '60px', verticalAlign: 'middle' }, oninput: e => { BRD.morph = +e.target.value; e.target.nextSibling.textContent = BRD.morph + ' ms'; saveBrd(); } }), h('span', { class: 'mono tiny' }, BRD.morph + ' ms')),
-    h('label', { class: 'chk small', style: { display: 'flex', gap: '4px', alignItems: 'center', fontWeight: 700 }, title: 'Scenes also switch the band instruments' }, h('input', { type: 'checkbox', checked: BRD.incBand, onchange: e => { BRD.incBand = e.target.checked; saveBrd(); } }), 'Scenes + band'),
-    h('label', { class: 'chk small', style: { display: 'flex', gap: '4px', alignItems: 'center', fontWeight: 700 }, title: 'Keys 1–8 recall scenes, 0 = all off, bound keys toggle pedals' }, h('input', { type: 'checkbox', checked: BRD.live, onchange: e => { BRD.live = e.target.checked; saveBrd(); } }), 'Live keys'),
-    h('label', { class: 'chk small', style: { display: 'flex', gap: '4px', alignItems: 'center', fontWeight: 700 } }, h('input', { type: 'checkbox', checked: BRD.hidShow, onchange: e => { BRD.hidShow = e.target.checked; RIG.order.forEach(paintPedal); saveBrd(); } }), 'Show hidden'));
-  UI.deck.append(UI.scenebar, UI.boardTools); p.insertBefore(UI.chain, UI.board);
+  UI.scenebar = h('div', { class: 'scenebar' }); UI.chain = h('div', { class: 'chainbar', tabindex: '0', role: 'region', 'aria-label': 'Your pedalboard, in signal order (scrolls sideways)' });
+  UI.boardTools = h('div', { class: 'bp-tools' },
+    h('div', { class: 'seg bv', role: 'group', 'aria-label': 'Board view' }, [['focus', '◎ Edit', 'The board, and the pedal you click, large'], ['board', '▦ All', 'Every pedal on the board, open'], ['stomp', '◉ Stomp', 'Big footswitches for playing live']].map(([v, n, t]) => h('button', { 'data-v': v, type: 'button', title: t, class: BRD.view === v ? 'on' : '', onclick: () => boardView(v) }, n))),
+    h('button', { class: 'btn sm', id: 'brdOpts', type: 'button', title: 'Board options: pedal width, scene morph, scenes and the band, live keys, every unit', onclick: e => brdOptions(e.currentTarget) }, '⚙'));
+  UI.deck.append(UI.scenebar); p.insertBefore(h('div', { class: 'pbar' }, UI.chain, UI.boardTools), UI.board);
+  p.insertBefore(h('p', { class: 'small muted bp-empty', id: 'brdEmpty', hidden: true }, 'No pedals on the board: a straight signal. ＋ Pedal puts one on, or pick a tone.'), UI.board);
   RIG.order.forEach(id => {
     const P = PED[id]; if (!P) return; const head = P.el.querySelector('.pedal-h'), it = bitem(id);
-    const gear = h('button', { class: 'pgear', title: 'Pedal settings: width, colour, collapse, hide, footswitch key / MIDI', onclick: e => { e.stopPropagation(); pedalGear(id, gear); } }, '⚙'); head.append(h('span', { class: 'kbadge', style: { display: 'none' } }), gear);
+    const gear = h('button', { class: 'pgear', title: 'Pedal settings: label, width, colour, collapse, hide, footswitch key / MIDI, off the board', onclick: e => { e.stopPropagation(); pedalGear(id, gear); } }, '⚙'); head.append(h('span', { class: 'kbadge', style: { display: 'none' } }), gear);
     head.addEventListener('dblclick', e => { if (e.target.closest('.stomp,.pgear')) return; it.col = !it.col; paintPedal(id); saveBrd(); });
     head.addEventListener('click', e => { if (BRD.view === 'stomp' && !e.target.closest('.stomp,.pgear')) pedalState(id); });
+    P.el.addEventListener('pointerdown', () => { if (BRD.view === 'board' && BRD.sel !== id) { BRD.sel = id; saveBrd(); brdPaint(); } });
     paintPedal(id);
   });
-  renderScenes(); renderChain(); boardView(BRD.view);
-  bus.on('rig:order', renderChain); bus.on('rig:refresh', renderChain); bus.on('rig:state', renderChain); bus.on('preset', () => { BRD.cur = -1; renderScenes(); });
+  renderScenes(); boardView(BRD.view); brdSel();
+  const again = () => { brdSel(); }; bus.on('rig:order', again); bus.on('rig:refresh', again); bus.on('rig:state', again); bus.on('audio:ready', () => setTimeout(again, 80)); bus.on('preset', () => { BRD.cur = -1; renderScenes(); setTimeout(again, 0); });
 }
+
 
 /* >>> parts/13-stage.js */
 /* ============================================================
@@ -7336,9 +7420,27 @@ const projBytes = n => n >= 1073741824 ? (n / 1073741824).toFixed(1) + ' GB' : n
 const projAgo = t => { const s = (Date.now() - t) / 1000; if (s < 60) return 'just now'; if (s < 3600) return Math.floor(s / 60) + ' min ago'; if (s < 86400) return Math.floor(s / 3600) + ' h ago'; if (s < 604800) return Math.floor(s / 86400) + ' d ago'; return new Date(t).toLocaleDateString(); };
 const slug = s => (String(s || 'song').normalize('NFKD').replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '-').slice(0, 60) || 'song');
 /** a saved song, completed with any fields this version added since it was written */
+/** the longest song soundprint code kept (a print packs to about 1 kB, 1.4 k characters; part 93) */
+const PRT_CODE_MAX = 4000;
+/* 2.65.2: Your soundprints (part 93 keeps them in fw.prints, newest first, 48 at most) travel with backups, folder sync and GitHub sync.
+   An entry is { id, c, t }: c is the print's base64url code, checked as a song's print is; anything else is dropped. Merging keeps both
+   sides (one entry per print), newest first, so a print made on another device is never lost to one made here. */
+const PRT_SHELF_MAX = 48;
+const prtShelfOk = x => !!x && typeof x === 'object' && typeof x.c === 'string' && x.c.length <= PRT_CODE_MAX && /^[A-Za-z0-9_-]+$/.test(x.c);
+const prtShelfClean = x => ({ id: /^[0-9a-f]{1,16}$/.test(x.id) ? x.id : '', c: x.c, t: Number.isFinite(+x.t) ? +x.t : 0 });
+function prtShelfAll() { const a = store.get('prints', []); return Array.isArray(a) ? a.filter(prtShelfOk).map(prtShelfClean) : []; }
+/** merge a list from elsewhere into this device's shelf; true if it changed */
+function prtShelfMerge(list) {
+  if (!Array.isArray(list)) return false; const mine = prtShelfAll(), seen = new Set(), out = [];
+  for (const x of mine.concat(list.filter(prtShelfOk).map(prtShelfClean))) { const k = x.id || x.c; if (seen.has(k)) continue; seen.add(k); out.push(x); }
+  out.sort((a, b) => b.t - a.t); const next = out.slice(0, PRT_SHELF_MAX); if (JSON.stringify(next) === JSON.stringify(mine)) return false; store.set('prints', next); return true;
+}
 function normSong(saved) {
   const d = newSong(), s = Object.assign(d, saved || {}); s.band = bandRename(Object.assign(d.band, (saved && saved.band) || {})); s.mix = Object.assign(d.mix, (saved && saved.mix) || {}); s.voicePref = (saved && saved.voicePref) || {};
-  s.tuning = ((saved && saved.tuning) || d.tuning).slice(); if (!Array.isArray(s.sections)) s.sections = []; if (!Array.isArray(s.ts) || s.ts.length < 2) s.ts = [4, 4]; return s;
+  s.tuning = ((saved && saved.tuning) || d.tuning).slice(); if (!Array.isArray(s.sections)) s.sections = []; if (!Array.isArray(s.ts) || s.ts.length < 2) s.ts = [4, 4];
+  /* 2.65.1: the song's soundprint (part 93) comes from whoever made the song: kept only in its own shape (a short base64url code and a hex signature) */
+  if (s.sprint != null) { const sp = s.sprint; s.sprint = sp && typeof sp === 'object' && typeof sp.c === 'string' && sp.c.length <= PRT_CODE_MAX && /^[A-Za-z0-9_-]+$/.test(sp.c) ? { sig: /^[0-9a-f]{1,16}$/.test(sp.sig) ? sp.sig : '', c: sp.c } : null; if (!s.sprint) delete s.sprint; }
+  return s;
 }
 const takeMeta = t => { const m = { hum: !!t.hum, id: t.id, kind: t.kind || 'gtr', name: t.name, startSec: t.startSec, sr: t.sr, g: t.g, pan: t.pan || 0, fx: fxOn(t.fx) ? Object.assign({}, t.fx) : null, mute: !!t.mute, solo: !!t.solo, mode: t.mode, bpm: t.bpm, preset: t.preset || '', peak: t.peak, rms: t.rms, dur: t.dur, t: t.t, hasWet: !!t.wet, hasCam: !!(t.cam && t.cam.length) };
   if (t.grp && t.grp !== t.id) m.grp = t.grp; if (t.src && t.src !== t.id) m.src = t.src; if (t.inS > 0) m.inS = t.inS; if (t.outS != null) m.outS = t.outS; if (t.fadeIn > 0) m.fadeIn = t.fadeIn; if (t.fadeOut > 0) m.fadeOut = t.fadeOut; if (t.cg != null && Math.abs(t.cg - 1) > 1e-6) m.cg = t.cg;
@@ -7519,6 +7621,7 @@ async function projExportAll() {
   try {
     await projSave(); toast('Packing ' + PRJ.list.length + ' songs…'); let files = []; const seen = {};
     for (const r of PRJ.list) { let d = slug(r.title); if (seen[d]) d += '-' + r.id.slice(-4); seen[d] = 1; files = files.concat(await projEntries(r.id, 'songs/' + d + '/')); }
+    { const pr = prtShelfAll(); if (pr.length) files.push({ name: 'prints.json', data: new TextEncoder().encode(JSON.stringify({ format: 'the-daily-studio-prints', version: 1, prints: pr })) }); }      /* 2.65.2: Your soundprints */
     const blob = zipBuild(files); download('the-daily.studio-backup-' + new Date().toISOString().slice(0, 10) + '.zip', blob, 'application/zip'); toast('Backup saved (' + projBytes(blob.size) + ')', 'ok'); CFG.lastBackup = Date.now(); saveCfg(); return true;
   } catch (e) { console.warn(e); toast('Could not back up: ' + (e.message || e), 'bad'); return false; }
 }
@@ -7531,7 +7634,9 @@ async function projImport(file) {
       const d = JSON.parse(await file.text()), s = d.song || d; if (!s || !Array.isArray(s.sections)) throw new Error('this JSON has no song in it');
       await projCreate('import', { song: s, zoom: 'song' }); if (d.rig) try { rigApply(d.rig); } catch (e) { } toast('Imported “' + S.title + '”', 'ok'); return;
     }
-    const z = await zipRead(file), arrs = [...z.keys()].filter(k => /(^|\/)arrangement\.json$/.test(k)); if (!arrs.length) throw new Error('no song found in this zip');
+    const z = await zipRead(file), arrs = [...z.keys()].filter(k => /(^|\/)arrangement\.json$/.test(k));
+    let prints = 0; if (z.get('prints.json')) { try { const P = JSON.parse(new TextDecoder().decode(await z.get('prints.json').get())), n0 = prtShelfAll().length; if (prtShelfMerge(P.prints)) prints = Math.max(0, prtShelfAll().length - n0); } catch (e) { } }      /* 2.65.2 */
+    if (!arrs.length) { if (z.get('prints.json')) { toast(prints ? prints + ' soundprint' + (prints === 1 ? '' : 's') + ' added to Your soundprints' : 'Your soundprints already have these', 'ok'); return; } throw new Error('no song found in this zip'); }
     let last = null; const dec = new TextDecoder();
     for (const ak of arrs) {
       const pre = ak.slice(0, ak.length - 'arrangement.json'.length), arr = JSON.parse(dec.decode(await z.get(ak).get())), id = projId(); if (!arr.song) continue;
@@ -8539,7 +8644,7 @@ function humGuitarBar(d, x) {
    way around" on the first visit) gets no coaching notes on the panels (part 60).
    ============================================================ */
 var XP = { quiet: 0, last: null };
-var XP_NAMES = { rig: 'Guitar sound', tab: 'Write', vis: 'Visuals', song: 'Song', band: 'Band', exp: 'Save & export', fret: 'Fretboard', stems: 'Backing track' };
+var XP_NAMES = { rig: 'Guitar sound', tab: 'Write', vis: 'Visuals', song: 'Song', band: 'Band', exp: 'Save & export', fret: 'Fretboard', stems: 'Backing track', learn: 'Learn' };
 if (CFG.xp == null) { CFG.xp = (store.get('started', false) || store.get('song', null)) ? 40 : 0; saveCfg(); }   // people who already use the app know their way around
 /** 'pro' once the person knows their way around (no coaching notes), else 'new' */
 function xpLevel() { return CFG.xpMode === 'pro' || (CFG.xp || 0) >= 12 ? 'pro' : 'new'; }
@@ -8567,10 +8672,10 @@ function xpQuiet(fn) { XP.quiet++; try { return fn(); } finally { XP.quiet--; } 
 /* what Simple keeps on the panel strip (and whatever is open, and the backing track once one is loaded), and the tones it offers */
 const SIMPLE_TABS = ['tab', 'band', 'vis', 'exp'];
 /* 2.46: Simple simplifies every workspace but Full Rig. Each keeps its own few panels and tools; Full Rig always has everything */
-const SIMPLE_GOAL_TABS = { songwriter: ['tab', 'band', 'exp'], performer: ['vis', 'band', 'exp'], practice: ['fret', 'tab', 'band'] };
+const SIMPLE_GOAL_TABS = { songwriter: ['tab', 'band', 'exp'], performer: ['vis', 'band', 'exp'], practice: ['learn', 'fret', 'band'] };
 const SIMPLE_GOAL_TOOLS = {
   songwriter: ['gtBeats', 'gtSheet', 'gtPads', 'gtKeys', 'gtLink'], performer: ['gtVideo', 'gtCam', 'gtVox', 'gtReplay', 'gtExp'],
-  practice: ['gtToday', 'gtSong', 'gtEar', 'gtSlow', 'gtBpm', 'gtFast'] };
+  practice: ['gtLearn', 'gtSlow', 'gtBpm', 'gtFast'] };
 const SIMPLE_TOOLS = SIMPLE_GOAL_TOOLS.songwriter;
 /** the panels Simple keeps in the workspace in use */
 const simpleTabs = () => { const g = typeof goalNow === 'function' && goalNow(); return (g && SIMPLE_GOAL_TABS[g.id]) || SIMPLE_TABS; };
@@ -9181,7 +9286,7 @@ function perfOpen(opener) {
   PF.el = h('div', { id: 'perform', class: 'perform pf-pre pf-v-' + pfView() + ' ' + pfLayCls().join(' ') + (PF.bd ? '' : ' pf-solid'), role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Showtime' },
     h('div', { class: 'pf-top' }, h('b', { class: 'pf-song', id: 'pfSong' }), h('span', { class: 'pf-sec', id: 'pfSec' }), h('span', { class: 'grow' }), h('span', { class: 'pf-meta', id: 'pfMeta' }), dots,
       h('button', { class: 'btn sm pf-lay', id: 'pfLayout', title: 'Layout: where the controls and the words go, the text size, the song map', 'aria-haspopup': 'dialog', onclick: e => pfLayMenu(e.currentTarget) }, '⚙ Layout'),
-      h('button', { class: 'btn sm pf-view', id: 'pfView', title: 'How Perform looks: the chord shapes beside the lyrics, the big chord, or the lyric sheet', onclick: () => perfViewNext() }, (PF_VIEWS.find(v => v[0] === pfView()) || PF_VIEWS[0])[1]),
+      h('button', { class: 'btn sm pf-view', id: 'pfView', title: 'How Showtime looks: the chord shapes beside the lyrics, the big chord, or the lyric sheet', onclick: () => perfViewNext() }, (PF_VIEWS.find(v => v[0] === pfView()) || PF_VIEWS[0])[1]),
       h('button', { class: 'btn sm vzh-kill', id: 'pfKill', title: 'Stop all sound and release the microphone (Ctrl + .)', onclick: () => { try { audioKill(); } catch (e) { } } }, '■ Stop audio'), h('button', { class: 'btn sm', id: 'pfExit', onclick: () => perfClose() }, '✕ Exit')),
     PF.map,
     h('div', { class: 'pf-stage' }, h('div', { class: 'pf-chord', id: 'pfChord', 'aria-live': 'off' }, '·'), h('div', { class: 'pf-next', id: 'pfNext' }), h('div', { class: 'pf-lyr', id: 'pfLyr' }), h('aside', { class: 'pf-shapes', id: 'pfShapes', 'aria-label': 'Chord shapes' })),
@@ -12102,7 +12207,7 @@ function pbCard() {
       row('Background', sel('bg', [['visuals', 'The visuals (dimmed)'], ['black', 'Plain black'], ['green', 'Chroma-key green']])),
       row('Dimming', h('input', { type: 'range', id: 'pb_dim', min: 0, max: .9, step: .05, value: pb.dim, oninput: e => { pb.dim = +e.target.value; save(); } })),
       row('Lower third size', sel('size', [[.8, 'Small'], [1, 'Normal'], [1.25, 'Large']])), row('Lower third position', sel('pos', [['bottom', 'Bottom'], ['top', 'Top']])),
-      row('Concert lens', h('select', { class: 'in', id: 'pb_lens', style: { fontFamily: 'var(--sans)' }, title: 'Perform: big and calm · Teach: circle of fifths, numerals, what comes next · Sky: your session as a constellation', onchange: e => lxSetLens(e.target.value) }, LX_LENSES.map(o => h('option', { value: o[0], selected: o[0] === (CFG.lens || 'perform') }, o[1]))))),
+      row('Concert lens', h('select', { class: 'in', id: 'pb_lens', style: { fontFamily: 'var(--sans)' }, title: 'Live: big and calm · Teach: circle of fifths, numerals, what comes next · Sky: your session as a constellation', onchange: e => lxSetLens(e.target.value) }, LX_LENSES.map(o => h('option', { value: o[0], selected: o[0] === (CFG.lens || 'perform') }, o[1]))))),
     h('div', { class: 'row', style: { gap: '8px', marginTop: '8px', flexWrap: 'wrap' } },
       h('button', { class: 'btn sm', id: 'pbOut', title: 'A bare window with just the picture: drag it to the projector, then double-click it for full screen. Turns the backdrop on.', onclick: () => { pb.on = true; save(); renderStageUI(); stagePop(); } }, '▢ Clean output window'),
       h('button', { class: 'btn sm', id: 'pbFull', title: 'Fill this screen with the backdrop (Esc to leave)', onclick: () => { pb.on = true; save(); renderStageUI(); stageFull(); } }, '⛶ Full screen')),
@@ -12312,7 +12417,7 @@ function concertDraw(g, W, H, X) {
 }
 /** the lens switch (Visuals bar) */
 function lxLensBar() {
-  const bar = h('div', { class: 'seg', id: 'lxLens', role: 'group', 'aria-label': 'Concert lens', title: 'Perform: big and calm · Teach: the circle of fifths, roman numerals and what comes next · Sky: your session as a constellation' },
+  const bar = h('div', { class: 'seg', id: 'lxLens', role: 'group', 'aria-label': 'Concert lens', title: 'Live: big and calm · Teach: the circle of fifths, roman numerals and what comes next · Sky: your session as a constellation' },
     LX_LENSES.map(([k, n]) => h('button', { 'data-lens': k, class: (CFG.lens || 'perform') === k ? 'on' : '', onclick: () => lxSetLens(k) }, n)));
   const save = h('button', { class: 'btn sm', id: 'lxSkySave', title: 'Save the session sky as a picture', style: { display: (CFG.lens === 'sky') ? '' : 'none' }, onclick: () => lxSkySave() }, '⤓ Save sky'), clr = h('button', { class: 'btn sm', id: 'lxSkyClear', title: 'Clear the sky and start a new one', style: { display: (CFG.lens === 'sky') ? '' : 'none' }, onclick: () => { lxSkyClear(); toast('Sky cleared.', 'ok'); } }, 'New sky');
   return h('div', { class: 'row', id: 'lxLensRow', style: { gap: '6px', display: VZ.mode === 'concert' ? '' : 'none' } }, bar, save, clr);      /* 2.65: only while Concert is the look */
@@ -14338,8 +14443,8 @@ document.addEventListener('input', e => { if (!LH.el || !e.target || !e.target.m
      🎼 Practice    a practice room: the fretboard large in the middle, scales on the left; loop, slow down and speed up; lessons
                     that listen; and for teaching someone else, draw, keep notes and record the screen
      ⚙️ Full Rig    everything: every panel, both sidebars, every Monitor widget
-   Each has a colour, a one-line mission with three steps, a row of its tools (the main one highlighted), and a button to the next
-   workspace. Nothing is removed: every panel is still under ☰ and ▦. The tools are in part 68.
+   Each has a colour, a one-line mission with three steps (behind ?), one row of its main tools (the first highlighted) with ⋯ More for
+   the rest (2.65), and a button to the next workspace. Nothing is removed: every panel is still under ☰ and ▦. The tools are in part 68.
    ============================================================ */
 const GOALS = [
   { id: 'songwriter', ico: '🎸', name: 'Songwriter', layout: 'Songwriter', hue: '#d08a2e', next: ['performer', 'Into the Studio'],
@@ -14382,15 +14487,11 @@ const GOALS = [
   { id: 'practice', ico: '🎼', name: 'Practice', layout: 'Practice', hue: '#1c9a63', next: ['performer', 'Into the Studio'],
     blurb: 'Learn it and get it under your fingers: lessons that listen, loop and slow down, the scale on the neck. Teaching someone? Draw, keep notes and record the screen.',
     mission: 'Learn it, then get it under your fingers', steps: ['Start 📅 Today, or 🎵 This song', 'Loop the hard bars and slow them down', 'Speed it up 5 at a time'],
-    shape: 'The fretboard large in the middle · Theory (scales) on the left · Tuner and levels on the right',
-    spec: { flip: true, left: true, right: true, tlh: '84px', tlhOpen: 'minmax(170px,32%)', dock: 'fret', order: ['fret', 'tab', 'stems', 'band', 'tx', 'rig'], hidden: ['song', 'vis', 'stage', 'neural', 'cam', 'lab', 'exp'], cur: { left: 'theory', right: 'monitor' }, mon: ['tuner', 'levels'] },
+    shape: 'Learn in the middle (lessons, riffs, the atlas, Scales & ear) · the fretboard a tab away · Theory on the left · Tuner and levels on the right',
+    spec: { flip: true, left: true, right: true, tlh: '84px', tlhOpen: 'minmax(170px,32%)', dock: 'learn', order: ['learn', 'fret', 'tab', 'stems', 'band', 'tx', 'rig'], show: ['fret'], hidden: ['song', 'vis', 'stage', 'neural', 'cam', 'lab', 'exp'], cur: { left: 'theory', right: 'monitor' }, mon: ['tuner', 'levels'] },
     tools: () => [
-      ['gtLearn', '🎓 Learn', 'Lessons that show you, play it, then listen to you play it', () => learnOpen('lessons'), null, 1],
-      ['gtToday', '📅 Today', 'Today’s fifteen minutes: a warm-up, a review, something new and a riff', () => learnOpen('today')],
-      ['gtSong', '🎵 This song', 'The song you have open, as lessons: its strum, each section’s chords and riff, working up to its tempo', () => learnOpen('song')],
-      ['gtEar', '👂 By ear', 'Hear a phrase, play it back: no tab', () => learnOpen('ear')],
-      ['gtRiffs', '🎸 Riffs & licks', RIFFS.length + ' riffs in ' + RIFF_STYLES.length + ' styles, in any key; Riff Lab and the scale atlas are in Learn', () => learnOpen('riffs')],
-      ['gtShed', '🎼 Scales & ear', 'Scales anywhere on the neck, this song’s arpeggios and ear training, followed note by note', () => trainOpen()],
+      /* 2.66: Learn is the Practice panel itself (Today, lessons, This song, By ear, riffs, the lab, the atlas and Scales & ear are in its list) */
+      ['gtLearn', '🎓 Learn', 'Back to Learn: today’s plan, lessons that listen, this song, by ear, riffs, the riff lab, the scale atlas, Scales & ear', () => learnOpen(), () => DOCK.cur === 'learn' && paneVisible('learn'), 1],
       ['gtSlow', '− 5', 'Slower by 5 BPM', () => goalTempo(-5)],
       ['gtBpm', () => S.bpm + ' BPM', 'The tempo', () => { if (UI.bpm) UI.bpm.focus(); }],
       ['gtFast', '+ 5', 'Faster by 5 BPM', () => goalTempo(5)],
@@ -14404,7 +14505,7 @@ const GOALS = [
     blurb: 'Every panel, both sidebars and every Monitor widget.',
     mission: 'Everything, your way', steps: ['Every panel on the strip', 'Both sidebars', 'Every Monitor widget'],
     shape: 'The rig in the middle · I/O and the Monitor either side · every panel on the strip',
-    spec: { flip: true, left: true, right: true, tlh: '84px', tlhOpen: 'minmax(200px,38%)', dock: 'rig', order: [], hidden: [], cur: { left: 'io', right: 'monitor' }, mon: ['tuner', 'levels', 'live', 'spectrum', 'views', 'audience'] },
+    spec: { flip: true, left: true, right: true, tlh: '84px', tlhOpen: 'minmax(200px,38%)', dock: 'rig', order: [], hidden: [], cur: { left: 'tones', right: 'monitor' },      /* 2.66: your tones beside the board (Audio input first until an input is connected) */ mon: ['tuner', 'levels', 'live', 'spectrum', 'views', 'audience'] },
     tools: () => [
       ['gtLay', '▦ Workspace…', 'Sidebars, floating panels, which tabs show', () => workspaceOpen('panels')],
       ['gtPlace', '⇆ Where panels live…', 'Move any panel to either sidebar or the centre', b => placeMenu(b)]
@@ -14418,6 +14519,8 @@ if (GOAL_OLD_LAYOUTS[LAY.name]) { LAY.name = GOAL_OLD_LAYOUTS[LAY.name]; }
 /* 2.64: the arrangement starts collapsed (a strip under the panels; ▴ Arrangement opens it). Once, for a studio already set up too,
    except in Arrange and Record, which are about the arrangement */
 if (CFG.arrFold !== 1) { CFG.arrFold = 1; if (!/^(Arrange|Record)$/.test(LAY.name || '') && LAY.tlh !== '84px') { LAY.tlhPrev = LAY.tlh == null ? null : LAY.tlh; LAY.tlh = '84px'; try { saveLay(); } catch (e) { } } saveCfg(); }
+/* 2.66: once, for a studio set up before the Learn panel: Practice opens on it, and other layouts keep it off their strip */
+if (CFG.learnPane !== 1) { CFG.learnPane = 1; try { if (LAY.name === 'Practice') { const g = GOALS.find(x => x.id === 'practice'); LAY.order = g.spec.order.slice(); LAY.show = g.spec.show.slice(); LAY.hidden = LAY.hidden.filter(x => x !== 'learn'); } else if (LAY.hidden.length && !LAY.hidden.includes('learn')) LAY.hidden.push('learn'); saveLay(); } catch (e) { } saveCfg(); }
 /* 2.65: a new take opens the collapsed arrangement, so you see it land (opening a song that has takes leaves it as it is) */
 let tlTakesN = TAKES.length;
 bus.on('song', w => { if (w === 'reload') tlTakesN = TAKES.length; });      /* a song opened, an undo or redo: not a new take */
@@ -14448,13 +14551,13 @@ function goalAudioFirst() { try { if (isDesk() && !E.hasInput && typeof sideShow
 /** the goal's colour, on the page (the goal bar, the open tab) */
 function goalMark() { const g = goalNow(); document.body.dataset.goal = g ? g.id : ''; document.documentElement.style.setProperty('--goal', g ? g.hue : 'var(--accent)'); }
 bus.on('dock', () => { if (document.body.dataset.goal !== ((goalNow() || {}).id || '')) { goalMark(); goalBarBuild(); } });
-/* ---------- the goal bar: the six goals, Create → Perform → Share, the mission, the goal's tools and its next step ---------- */
+/* ---------- the goal bar (2.65: one row): the four goals, ? (the mission and steps), the main tools, ⋯ More and the next step ---------- */
 function goalBar() { const box = h('div', { class: 'goalbar', id: 'goalbar' }); GOALBAR.el = box; goalBarBuild(); return box; }
 const GOALBAR = { el: null };
 /** the bar sits at the top of the centre, whichever of the panels or the arrangement is on top */
 function goalPlace() { const el = GOALBAR.el, top = LAY.flip === false ? $('#timeline') : $('#dock'); if (el && top && (el.parentNode !== top || top.firstChild !== el)) top.insertBefore(el, top.firstChild); }
 /* 2.65: each workspace shows its main tools; the rest are one click away under ⋯ More (a tool in use stays showing) */
-const GOAL_MORE = { songwriter: ['gtVox', 'gtRoll'], performer: ['gtFmt', 'gtFx', 'gtStream', 'gtThumb', 'gtTip', 'gtPrint'], practice: ['gtEar', 'gtRiffs', 'gtSpeed', 'gtInk', 'gtNotes', 'gtScreen', 'gtTx'] };
+const GOAL_MORE = { songwriter: ['gtVox', 'gtRoll'], performer: ['gtFmt', 'gtFx', 'gtStream', 'gtThumb', 'gtTip', 'gtPrint'], practice: ['gtInk', 'gtNotes', 'gtScreen', 'gtTx'] };
 function goalBarBuild() {
   const box = GOALBAR.el; if (!box) return; box.innerHTML = ''; const cur = goalNow(); goalMark();
   const pick = h('div', { class: 'gl-pick', role: 'group', 'aria-label': 'What do you want to do?' }, GOALS.map(g => h('button', { class: 'gl-b' + (cur === g ? ' on' : ''), 'data-goal': g.id, style: '--gh:' + g.hue, 'aria-pressed': String(cur === g), title: g.name + ': ' + g.blurb, onclick: () => goalGo(g.id) }, h('span', { class: 'gl-i', 'aria-hidden': 'true' }, g.ico), h('span', { class: 'gl-t' }, g.name))));
@@ -14499,7 +14602,7 @@ function workspaceOpen(at) {
   const chk = (label, get, set) => h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: get(), onchange: e => set(e.target.checked) }), label);
   const hub = $('#wsBtn');
   return hubOpen('workspace', { ico: '▦', title: 'Workspace', sub: 'Pick what you are here to do, and the studio arranges itself for it. Nothing is ever taken away.', at, sections: [
-    { key: 'goal', label: 'Goal', ico: '◎', sub: 'Create → Perform → Share. Each goal shows the panels and tools for one job.', wide: true, body: () => [h('div', { class: 'ws-grid' }, GOALS.map(card))] },
+    { key: 'goal', label: 'Goal', ico: '◎', sub: 'Four workspaces, each with the panels and tools for one job; ⋯ More in each has the rest.', wide: true, body: () => [h('div', { class: 'ws-grid' }, GOALS.map(card))] },
     { key: 'panels', label: 'Panels', ico: '▤', sub: 'Fine-tune the workspace you are in. Every panel area also has a labelled tab on its edge.', body: () => [
       chk('Panels above the arrangement', () => LAY.flip, v => { LAY.flip = v; saveLay(); applyLayout(); }),
       chk('Left sidebar  [', () => LAY.left, v => { LAY.left = v; saveLay(); applyLayout(); }),
@@ -15773,7 +15876,7 @@ agTool('transport', 'Play or stop the song (the band plays the chords), start fr
     return agTxt(st);
   });
 
-agTool('open_workspace', 'Arrange the studio for a goal: songwriter (words, chords and tab), performer (stage visuals, tones, tuner), creator (record and post a video), practice (fretboard, loop, metronome), teacher (whiteboard, notes, screen recording) or fullrig (everything).',
+agTool('open_workspace', 'Arrange the studio for a goal: songwriter (words, chords and tab), performer (the Studio workspace: stage visuals, tones, tuner, record and post a video), practice (fretboard, lessons, loop, tempo; and for teaching: annotate, lesson notes, screen recording) or fullrig (everything).',
   agObj({ workspace: agStr('Which workspace.', { enum: AG_GOALS }) }, ['workspace']),
   i => { if (!goalGo(i.workspace)) throw new Error('Unknown workspace'); agentSay('opened the ' + goalNow().name + ' workspace'); return agTxt({ done: true, workspace: i.workspace, panel: DOCK.cur }); });
 
@@ -15799,12 +15902,12 @@ agTool('set_visuals', 'Change the visuals: the look, how fast it moves (speed 0.
     if (i.look) vzSetMode(i.look); saveCfg(); VZ.spec = null; $$('[data-vza]').forEach(x => x.classList.toggle('on', vzAdjusted()));
     agentSay('changed the visuals'); return agTxt({ done: true, visuals: agVisuals() });
   }, { idempotentHint: true });
-agTool('perform', 'Open or close the full-screen Perform view, and choose its display: shapes (the big chord, the lyrics and the chord shapes beside them), big (the big chord and the lyrics) or sheet (the lyrics large, like a songbook). It opens on a short readiness check; it never turns the microphone or the camera on, and never records.',
+agTool('perform', 'Open or close the full-screen ★ Showtime view (called Perform until 2.64), and choose its display: shapes (the big chord, the lyrics and the chord shapes beside them), big (the big chord and the lyrics) or sheet (the lyrics large, like a songbook). It opens on a short readiness check; it never turns the microphone or the camera on, and never records.',
   agObj({ action: agStr('open or close (omit to only change the display).', { enum: ['open', 'close'] }), display: agStr('Which display.', { enum: ['shapes', 'big', 'sheet'] }) }),
   i => {
     if (i.display) perfViewSet(i.display);
     if (i.action === 'open' && !PF.on) perfOpen(); if (i.action === 'close' && PF.on) perfClose();
-    agentSay(i.action === 'open' ? 'opened Perform' : i.action === 'close' ? 'closed Perform' : 'changed the Perform display'); return agTxt({ done: true, open: !!PF.on, display: pfView() });
+    agentSay(i.action === 'open' ? 'opened Showtime' : i.action === 'close' ? 'closed Showtime' : 'changed the Showtime display'); return agTxt({ done: true, open: !!PF.on, display: pfView() });
   }, { idempotentHint: true });
 agTool('mute_band', 'Mute the whole backing band and the metronome click in one go (the same as the person pressing Shift+M), or bring back exactly the parts that were playing before. Omit muted to switch it.',
   agObj({ muted: agBool('true mutes the band and the click; false brings back what was playing.') }),
@@ -16817,8 +16920,8 @@ function wsEarRoom() {
 }
 /** the room itself (part of Practice) */
 function trainOpen(at) {
-  wsStop(true);
-  const d = hubOpen('scales-ear', { ico: '🎼', title: 'Scales & ear', sub: 'Scales anywhere on the neck, this song’s chords one note at a time, and your ear. The studio listens and follows you note by note.', at, sections: [
+  wsStop(true); const host = typeof learnHost === 'function' ? learnHost() : null; if (host) { learnShow(); const c = document.getElementById('coach'); if (c && c._inline && c.open) c.close(); }      /* 2.66: in the Learn panel */
+  const d = hubOpen('scales-ear', { into: host, back: host ? { label: '◀ Learn', fn: () => learnOpen() } : null, ico: '🎼', title: 'Scales & ear', sub: 'Scales anywhere on the neck, this song’s chords one note at a time, and your ear. The studio listens and follows you note by note.', at, sections: [
     { key: 'scales', label: 'Scales', ico: '♯', sub: 'Choose a key, a scale and where on the neck. ● Play it follows you note by note, up and back down.', wide: true, body: () => [wsRoom('scale')] },
     { key: 'arps', label: 'Arpeggios', ico: '🎸', sub: 'This song’s chords one note at a time, or one chord up and down.', wide: true, body: () => [wsRoom('arp')] },
     { key: 'ear', label: 'Your ear', ico: '👂', sub: 'Two notes. Name the gap between them. Build a streak.', wide: true, body: () => [wsEarRoom()] },
@@ -17350,7 +17453,7 @@ async function ghLocal(o = {}) {
   f['rig/presets.json'] = ghJson({ format: 'the-daily-studio-presets', version: 1, presets: store.get('presets', []) });
   f['stage/looks.json'] = ghJson({ format: 'the-daily-studio-looks', version: 1, show: ghLooksOut() });
   f['stage/scenes.json'] = ghJson({ format: 'the-daily-studio-scenes', version: 1, stage: CFG.stage || STG });
-  f['notes.json'] = ghJson({ format: 'the-daily-studio-notes', version: 1, lessons: store.get('lessons', {}), notebook: store.get('notebook', null) });
+  f['notes.json'] = ghJson({ format: 'the-daily-studio-notes', version: 1, lessons: store.get('lessons', {}), notebook: store.get('notebook', null), prints: prtShelfAll() });
   const gone = new Set((o.st || CFG.gh).gone || []);
   for (const r of PRJ.list) { let rec = r; if (!rec.song) { try { rec = await pdbGet('projects', r.id); } catch (e) { continue; } } if (!ghSongKeep(rec) || gone.has(rec.id)) continue; const t = ghJson(out(rec)); if (t.length > max) continue; f['songs/' + rec.id + '.json'] = t; songs.push(rec); }
   songs.sort((a, b) => String(a.title).localeCompare(String(b.title)));
@@ -17378,7 +17481,9 @@ async function ghTakeLooks(remote, baseTxt) {
 }
 async function ghTakeScenes(remote) { const R = (ghParse(remote) || {}).stage; if (R && Array.isArray(R.scenes) && !ghSame(CFG.stage, R)) { CFG.stage = R; Object.assign(STG, R); saveCfg(); try { renderStageUI(); } catch (e) { } return true; } return false; }
 async function ghTakePresets(remote) { const R = (ghParse(remote) || {}).presets; if (Array.isArray(R)) { const clean = R.map(rigClean).filter(Boolean); if (!ghSame(store.get('presets', []), clean)) { store.set('presets', clean); try { renderTones(); } catch (e) { } return true; } } return false; }
-async function ghTakeNotes(remote) { const R = ghParse(remote) || {}; let ch = false; if (R.lessons && typeof R.lessons === 'object' && !ghSame(store.get('lessons', {}), R.lessons)) { store.set('lessons', R.lessons); ch = true; } if (R.notebook != null && !ghSame(store.get('notebook', null), R.notebook)) { store.set('notebook', R.notebook); ch = true; } return ch; }
+async function ghTakeNotes(remote) { const R = ghParse(remote) || {}; let ch = false; if (R.lessons && typeof R.lessons === 'object' && !ghSame(store.get('lessons', {}), R.lessons)) { store.set('lessons', R.lessons); ch = true; } if (R.notebook != null && !ghSame(store.get('notebook', null), R.notebook)) { store.set('notebook', R.notebook); ch = true; } if (prtShelfMerge(R.prints)) ch = true; return ch; }
+/** 2.65.2: when both sides changed their notes, this device's notes win, but soundprints are merged so neither side loses one */
+async function ghTakePrints(remote) { const R = ghParse(remote) || {}; return prtShelfMerge(R.prints); }
 /** a song from the repository into this browser's library (its recordings, if this device has any, are kept) */
 async function ghTakeSong(text, asCopy) {
   const d = ghParse(text); if (!d || !d.song || !Array.isArray(d.song.sections)) return null;
@@ -17428,7 +17533,7 @@ async function studioSync(B, why) {
       continue;
     }
     const bt = l === b || b ? await syncBaseGet(B, p) : null;
-    const ch = k === 'settings' ? await ghTakeSettings(rt, b ? bt : null) : k === 'looks' ? await ghTakeLooks(rt, b ? bt : null) : k === 'scenes' ? (l === b || !b ? await ghTakeScenes(rt) : false) : k === 'presets' ? (l === b || !b ? await ghTakePresets(rt) : false) : k === 'notes' ? (l === b || !b ? await ghTakeNotes(rt) : false) : false;
+    const ch = k === 'settings' ? await ghTakeSettings(rt, b ? bt : null) : k === 'looks' ? await ghTakeLooks(rt, b ? bt : null) : k === 'scenes' ? (l === b || !b ? await ghTakeScenes(rt) : false) : k === 'presets' ? (l === b || !b ? await ghTakePresets(rt) : false) : k === 'notes' ? (l === b || !b ? await ghTakeNotes(rt) : await ghTakePrints(rt)) : false;
     if (ch) rep.took.push(p);
   }
   /* songs deleted elsewhere: kept here, not sent back, until changed or removed here */
@@ -18074,7 +18179,7 @@ function megSettings() {
     h('div', { class: 'meg-live', id: 'megLive', role: 'status', 'aria-live': 'polite' }, h('i'), h('b', {}, 'Sing to test')),
     h('div', { class: 'row', style: { gap: '8px', flexWrap: 'wrap' } }, h('button', { class: 'btn', id: 'megTeach', onclick: async e => { const b = e.currentTarget; b.disabled = true; const m = await megTeach(w => { st.textContent = w === 'off' ? '1 of 2: pedal OFF. Sing for three seconds…' : '2 of 2: pedal ON. Sing for three seconds…'; }); b.disabled = false; st.textContent = m ? 'Taught. Stomp it and sing: the box above follows you.' : 'Not taught: try again.'; } }, '🎓 Teach it my voice'),
       h('button', { class: 'btn', onclick: () => { CFG.mega.model = null; saveCfg(); st.textContent = 'Back to general settings.'; } }, 'Forget')), st,
-    chk('stage', 'The stage and the Visuals turn gritty'), chk('lights', 'The lights flash as it comes on'), chk('words', 'The words go red and shake (Perform, the stream window)'));
+    chk('stage', 'The stage and the Visuals turn gritty'), chk('lights', 'The lights flash as it comes on'), chk('words', 'The words go red and shake (Showtime, the stream window)'));
 }
 bus.on('audiostate', () => { if (CFG.mega.on && !MEG.tm) megLoop(true); });
 if (CFG.mega.on) setTimeout(() => megLoop(true), 1500);
@@ -18401,8 +18506,11 @@ function coNotesDone(R) {
 function coachOpen(pieces, at, o) {
   pieces = Array.isArray(pieces) ? pieces : [pieces]; coStopListen(); coSeqStop(); o = o || {};
   CO.list = pieces; CO.idx = Math.max(0, Math.min(pieces.length - 1, at || 0)); CO.title = o.title || ''; CO.onAct = o.actions || null; CO.key = o.key != null ? o.key : null;
-  let d = document.getElementById('coach'); if (!d) { d = h('dialog', { class: 'coach', id: 'coach', 'aria-labelledby': 'coachT' }); document.body.append(d); d.addEventListener('close', () => { if (d.open) return; coStopListen(); coSeqStop(); bus.emit('coach:close'); });      /* the close event comes late: if the coach was opened again since, leave it be */ }
-  coSetPiece(CO.idx); if (d.open) d.close(); d.showModal(); return d;      /* reopened, so it is always in front (of the Learn hub too) */
+  const host = typeof learnHost === 'function' ? learnHost() : null; let d = document.getElementById('coach');
+  if (d && !!host !== !!d._inline) { try { if (d.open) d.close(); } catch (e) { } d.remove(); d = null; }      /* 2.66: in the Learn panel on a computer, a window on a phone */
+  if (!d) { d = host ? hubInline(h('div', { class: 'coach co-inline', id: 'coach', role: 'region', 'aria-labelledby': 'coachT' })) : h('dialog', { class: 'coach', id: 'coach', 'aria-labelledby': 'coachT' }); (host || document.body).append(d); d.addEventListener('close', () => { if (d.open) return; coStopListen(); coSeqStop(); bus.emit('coach:close'); });      /* the close event comes late: if the coach was opened again since, leave it be */ }
+  if (host) { if (d.parentNode !== host) host.append(d); learnShow(); }
+  coSetPiece(CO.idx); if (d._inline) { d.showModal(); d.scrollTop = 0; return d; } if (d.open) d.close(); d.showModal(); return d;      /* reopened, so it is always in front (of the Learn hub too) */
 }
 function coSetPiece(i) { coStopListen(); coSeqStop(); CO.idx = i; const raw = CO.list[i]; CO.p = typeof raw === 'function' ? raw() : raw; CO.bpm = CO.p.bpm || 80; CO.res = ''; CO.fb = null; CO.reveal = false; coTakeDrop(); if (CO.p.kind === 'info' && CO.p.id && !CFG.learn.done[CO.p.id]) { CFG.learn.done[CO.p.id] = Date.now(); saveCfg(); bus.emit('coach:done', { id: CO.p.id, ok: true }); } coBuild(); }
 /** the piece's notes placed in this tuning (re-placed when the key or the tuning changes) */
@@ -18411,7 +18519,7 @@ function coBuild() {
   const d = document.getElementById('coach'); if (!d) return; const p = CO.p; coNotes(); d.innerHTML = '';
   const steps = CO.list.length > 12 ? h('span', { class: 'co-count mono', id: 'coCount' }, (CO.idx + 1) + ' / ' + CO.list.length) : CO.list.length > 1 ? h('div', { class: 'co-steps', role: 'list' }, CO.list.map((q, k) => { const qq = typeof q === 'function' ? null : q; return h('button', { role: 'listitem', class: 'co-dot' + (k === CO.idx ? ' on' : '') + (qq && CFG.learn.done[qq.id] ? ' done' : ''), 'aria-label': 'Step ' + (k + 1) + (qq && CFG.learn.done[qq.id] ? ', done' : ''), onclick: () => coSetPiece(k) }); })) : null;
   const playable = p.kind !== 'info' || (p.notes && p.notes.length);
-  d.append(...[h('div', { class: 'co-top' }, h('div', { class: 'co-tt' }, h('small', {}, CO.title || ''), h('b', { id: 'coachT' }, p.title)), steps, h('button', { class: 'btn icon', 'aria-label': 'Close the coach', onclick: () => d.close() }, '✕')),
+  d.append(...[h('div', { class: 'co-top' }, h('div', { class: 'co-tt' }, h('small', {}, CO.title || ''), h('b', { id: 'coachT' }, p.title)), steps, d._inline ? h('button', { class: 'btn sm co-back', 'aria-label': 'Close the coach', title: 'Back to the list', onclick: () => d.close() }, '◀ Back') : h('button', { class: 'btn icon', 'aria-label': 'Close the coach', onclick: () => d.close() }, '✕')),
     h('p', { class: 'co-text' }, p.text || ''),
     p.notes && p.notes.length && !['chord', 'changes', 'minute'].includes(p.kind) && !(p.ear && !CO.reveal) ? h('div', { class: 'co-board' }) : null,
     p.notes && p.notes.length && !['chord', 'changes', 'minute'].includes(p.kind) && !(p.ear && !CO.reveal) ? h('pre', { class: 'co-tab mono', 'aria-label': 'Tab' }) : null,
@@ -18713,7 +18821,7 @@ LESSONS.forEach(path => path.lessons.forEach(ls => ls.steps.forEach((s, i) => { 
 
 /* >>> parts/82-learn.js */
 /* ============================================================
-   Part 82 · LEARN (2.32) — the Teacher workspace's front door: a place to be taught
+   Part 82 · LEARN (2.32) — the Practice workspace's front door (Teacher until 2.64): a place to be taught
      · Lessons      paths (Foundations, Lead, Rhythm, Technique) whose steps demonstrate, then listen (part 80, 81)
      · Warm-ups     five minutes before you play
      · Riffs & licks  the library, by style and level: listen, play it, in time, in any key, put it in your song
@@ -18891,16 +18999,29 @@ function learnTeach() {
   const file = h('input', { type: 'file', accept: '.json,application/json', hidden: true, onchange: async e => { const f = e.target.files[0]; e.target.value = ''; if (f) learnOpenFile(await f.text()); } });
   const b = (id, label, sub, fn) => h('button', { class: 'ln-card', id, onclick: fn }, h('b', {}, label), h('small', {}, sub));
   return h('div', { class: 'ln-grid' }, file,
-    b('lnInk', '✎ Annotate', 'Draw over anything on the page while you explain.', () => { document.getElementById('learn').close(); kitInk(); }),
-    b('lnNotes', '📝 Lesson notes', 'Notes for this song, kept in this browser.', () => { document.getElementById('learn').close(); kitNotes(); }),
-    b('lnScreen', '⏺ Record the screen', 'Your screen, the studio’s sound and your voice.', () => { document.getElementById('learn').close(); kitScreen(); }),
+    b('lnInk', '✎ Annotate', 'Draw over anything on the page while you explain.', () => { learnLeave(); kitInk(); }),
+    b('lnNotes', '📝 Lesson notes', 'Notes for this song, kept in this browser.', () => { learnLeave(); kitNotes(); }),
+    b('lnScreen', '⏺ Record the screen', 'Your screen, the studio’s sound and your voice.', () => { learnLeave(); kitScreen(); }),
     b('lnFromSong', '🎯 This section as an exercise', 'The tab of the section you are in, note by note, ready to share.', () => { const p = learnFromSong(); if (p) coachOpen(p, 0, { title: 'From your song', actions: q => [h('button', { class: 'btn sm', id: 'coShare', onclick: () => learnFile([q], q.title) }, '⇩ Share as a file')] }); }),
     b('lnOpen', '📂 Open a lesson file', 'A lesson or riff a teacher shared (.daily-lesson.json).', () => file.click()));
 }
-/** the Teacher's front door */
+/** 2.66: where Learn and its lessons are drawn: the Learn panel on a computer or tablet, a full-screen window on a phone */
+const learnHost = () => document.body.dataset.form !== 'phone' && PANES.learn ? PANES.learn : null;
+let LRN_SHOWING = false;
+/** bring the Learn panel into view: it is Practice's, so a workspace that hides it moves to Practice */
+function learnShow() {
+  if (LRN_SHOWING) return; LRN_SHOWING = true;
+  try { if (LAY.hidden.includes('learn') && !(typeof sideHosted === 'function' && sideHosted('learn')) && !(typeof FLOATS !== 'undefined' && FLOATS.has('learn'))) goalGo('practice'); if (!paneVisible('learn')) dockGo('learn'); }
+  finally { LRN_SHOWING = false; }
+}
+/** close the Learn window if it is one (on a phone); in the panel there is nothing to close */
+const learnLeave = () => { const d = document.getElementById('learn'); if (d && !d._inline && d.open) d.close(); };
+/** the lessons' front door (🎓 Learn in Practice) */
 function learnOpen(at) {
+  const host = learnHost(); if (host) { learnShow(); const c = document.getElementById('coach'); if (c && c._inline && c.open) c.close(); }
   const paths = LESSONS.filter(p => p.id !== 'warm'), warm = LESSONS.filter(p => p.id === 'warm'), all = LESSONS.reduce((a, p) => a + p.lessons.reduce((b, l) => b + l.steps.length, 0), 0), done = LESSONS.reduce((a, p) => a + p.lessons.reduce((b, l) => b + lsDone(l), 0), 0);
-  return hubOpen('learn', { ico: '🎓', title: 'Learn', sub: 'A plan for today, lessons that listen while you play, your own song as lessons, ear training, riffs, a riff lab and an atlas of the neck. ' + done + ' of ' + all + ' lesson steps done.', at, sections: [
+  return hubOpen('learn', { into: host, ico: '🎓', title: 'Learn', sub: 'A plan for today, lessons that listen while you play, your own song as lessons, ear training, riffs, a riff lab and an atlas of the neck. ' + done + ' of ' + all + ' lesson steps done.', at,
+    links: [{ id: 'lnShed', ico: '🎼', label: 'Scales & ear', fn: () => trainOpen() }], sections: [
     { key: 'today', label: 'Today', ico: '📅', sub: 'About fifteen minutes: a warm-up, something to review, something new and a riff. A new plan every day.', wide: true, body: () => [todayView()] },
     { key: 'lessons', label: 'Lessons', ico: '🎓', sub: 'Each step shows it, plays it, then listens to you play it (through the input the tuner uses).', wide: true, body: () => [learnLessons(paths)] },
     { key: 'warm', label: 'Warm-ups', ico: '🔥', sub: 'Five minutes before you play.', wide: true, body: () => [learnLessons(warm)] },
@@ -18914,6 +19035,9 @@ function learnOpen(at) {
 }
 bus.on('coach:done', () => learnPaint());
 bus.on('coach:close', () => { if (LRN_DIRTY) learnPaint(); });
+
+/* 2.66: the Learn panel draws itself the first time it is shown (and again if nothing is in it) */
+bus.on('dock', id => { if (id !== 'learn' || LRN_SHOWING || !learnHost()) return; const P = PANES.learn; if (![...P.children].some(x => x._inline && x.open)) learnOpen(); });
 
 /* >>> parts/83-practice-plan.js */
 /* ============================================================
@@ -20108,11 +20232,13 @@ async function tuneTake(tk, mode, onProg) {
    Part 92 · Soundprint's doors (2.61). The Soundprint itself (part 93) is a room, loaded the first time it is used; prtOpen, prtLook
    and prtSongMake here are the core's stand-ins for it (part 00).
      · Visuals ▸ Soundprint: a look like the others. The open song's print, made once and kept with the song, moving with the
-       playhead. A row under the looks picks its world, listens again when the song has changed, and opens the full Soundprint.
+       playhead. Its row in the Visuals bar (beside the Look button, 2.65) picks its world, listens again when the song has changed, and opens the full Soundprint.
      · the-daily.studio/#soundprint opens Soundprint; a soundprint link (#p=…) opens that print.
    ============================================================ */
 VMODES.splice(2, 0, ['sprint', 'Soundprint']);
 const PRT_LOOK_WORLDS = [['print', '◎ Print'], ['flow', '〰 Flow'], ['terrain', '⛰ Terrain'], ['bloom', '✿ Bloom'], ['harmono', '∞ Harmonograph']];
+/** the world the Soundprint look draws: one of the five, whatever is in the settings */
+const prtLookWorld = () => PRT_LOOK_WORLDS.some(x => x[0] === CFG.prtWorld) ? CFG.prtWorld : 'print';
 const prtRoomReady = () => !ROOM.files || !ROOM.files.print || !!ROOM.done.print;
 let prtRoomAsk = false;
 /** the Visuals draw this for the Soundprint look (part 13 hands it over) */
@@ -20121,10 +20247,10 @@ function prtVisDraw(g, W, H) {
   if (!prtRoomAsk) { prtRoomAsk = true; room('print').then(() => prtBarSync()).catch(() => { prtRoomAsk = false; }); }
   g.fillStyle = '#05060b'; g.fillRect(0, 0, W, H);
 }
-/** the row under the looks while Soundprint is the look */
+/** its row in the Visuals bar while Soundprint is the look */
 function prtBar() {
   const box = h('div', { class: 'prt-bar', id: 'prtBar', style: { display: VZ.mode === 'sprint' ? '' : 'none' } });
-  box.append(h('div', { class: 'seg', role: 'radiogroup', 'aria-label': 'Soundprint world' }, PRT_LOOK_WORLDS.map(([k, n]) => h('button', { type: 'button', 'data-pw': k, role: 'radio', class: (CFG.prtWorld || 'print') === k ? 'on' : '', 'aria-checked': (CFG.prtWorld || 'print') === k ? 'true' : 'false', onclick: () => { CFG.prtWorld = k; saveCfg(); prtBarSync(); } }, n))),
+  box.append(h('div', { class: 'seg', role: 'radiogroup', 'aria-label': 'Soundprint world' }, PRT_LOOK_WORLDS.map(([k, n]) => h('button', { type: 'button', 'data-pw': k, role: 'radio', class: prtLookWorld() === k ? 'on' : '', 'aria-checked': prtLookWorld() === k ? 'true' : 'false', onclick: () => { CFG.prtWorld = k; saveCfg(); prtBarSync(); } }, n))),
     h('button', { class: 'btn sm', id: 'prtAgain', type: 'button', title: 'Make the song’s print again from how it sounds now (playback stops while it listens)', onclick: () => { if (T.playing) stopPlay(true); prtSongMake(); } }, '⟳ Listen again'),
     h('span', { class: 'tiny muted', id: 'prtBarSay' }),
     h('button', { class: 'btn sm', id: 'prtMore', type: 'button', title: 'Its reading and ambient piece; save the artwork, the piece or a video; share it as a link; or make a print of any other sound', onclick: async () => { await room('print'); const sp = prtSongPrint(); prtOpen(sp ? { print: sp.P } : {}); } }, '◎ Save, share, or any sound…'));
@@ -20132,7 +20258,7 @@ function prtBar() {
 }
 function prtBarSync() {
   const box = document.getElementById('prtBar'); if (!box) return; box.style.display = VZ.mode === 'sprint' ? '' : 'none';
-  box.querySelectorAll('[data-pw]').forEach(b => { const on = b.dataset.pw === (CFG.prtWorld || 'print'); b.classList.toggle('on', on); b.setAttribute('aria-checked', on ? 'true' : 'false'); });
+  box.querySelectorAll('[data-pw]').forEach(b => { const on = b.dataset.pw === prtLookWorld(); b.classList.toggle('on', on); b.setAttribute('aria-checked', on ? 'true' : 'false'); });
   const say = document.getElementById('prtBarSay'); if (!say) return;
   if (!prtRoomReady()) { say.textContent = ''; return; }
   const sp = prtSongPrint(); say.textContent = PRV.busy ? 'Listening to the song…' : sp && !sp.fresh ? 'The song has changed since its print was made.' : sp ? prtGenome(sp.P).why.split('. ')[0] + '.' : '';
@@ -20170,7 +20296,7 @@ window.addEventListener('hashchange', () => { prtFromHash(); });
    only (#p=…): the sound never leaves this device. Prints you make are kept on this device (Your soundprints, newest 48).
    This part is a room (part 00): the hosted site loads it the first time it is opened.
    ============================================================ */
-const PRT = { cur: null, read: null, src: null, world: 'print', raf: 0, play: null, piece: null, rec: null, vid: null, body: null, cv: null, cache: null, weave: true, mine: false, dirty: true, KEEP: 'fw.prints', MAX: 48 };
+const PRT = { cur: null, read: null, src: null, world: 'print', raf: 0, play: null, piece: null, rec: null, vid: null, body: null, cv: null, cache: null, weave: true, mine: false, dirty: true, KEEP: 'fw.prints', MAX: PRT_SHELF_MAX };      /* the shelf travels with backups and sync (part 25, 2.65.2) */
 const PRT_N = 128, PRT_M = 64;                 /* moments for loudness, brightness and motion; for the notes and the spectrum */
 const PRT_WORLDS = [['print', '◎', 'Print'], ['flow', '〰', 'Flow'], ['terrain', '⛰', 'Terrain'], ['bloom', '✿', 'Bloom'], ['harmono', '∞', 'Harmonograph']];
 const PRT_FIFTHS = [0, 7, 2, 9, 4, 11, 6, 1, 8, 3, 10, 5];      /* the colour wheel: C, G, D, A, E, B, F#, C#, G#, D#, A#, F */
@@ -20725,7 +20851,10 @@ async function prtRecord() {
 }
 function prtRecStop(keep) { const r = PRT.rec; if (!r) return; r.keep = keep; cancelAnimationFrame(r.raf); try { if (r.mr.state !== 'inactive') r.mr.stop(); else prtRecEnd(r); } catch (e) { prtRecEnd(r); } if (!keep) prtSay(''); }
 function prtRecEnd(r) { if (PRT.rec === r) PRT.rec = null; cancelAnimationFrame(r.raf); try { r.stream.getTracks().forEach(t => t.stop()); } catch (e) { } try { r.actx.close(); } catch (e) { } const box = document.getElementById('prtRecBox'); if (box) box.hidden = true; }
+/** the largest sound file read for a print: ten minutes of 96 kHz 24-bit stereo, with room to spare */
+const PRT_FILE_MAX = 400 * 1048576;
 async function prtFromFile(f) {
+  if (!f || f.size > PRT_FILE_MAX) { prtSay('That file is too large to read here (over ' + Math.round(PRT_FILE_MAX / 1048576) + ' MB). The first ten minutes of a shorter or compressed copy make the same print.'); return; }      /* 2.65.1: never read a huge file into memory */
   prtSay('Opening ' + f.name + '…');
   try { const { pcm, sr } = await humDecode(await f.arrayBuffer(), 600); await prtMake(pcm, sr, f.name.replace(/\.[^.]+$/, '').slice(0, 60)); }
   catch (e) { prtSay('That file couldn’t be read as audio (' + (e.message || e) + ').'); }
@@ -20826,7 +20955,7 @@ function prtSongSig() {
 }
 /** { P, fresh } for the open song, or null if it has none yet */
 function prtSongPrint() {
-  const sp = S.sprint; if (!sp || typeof sp.c !== 'string') return null;
+  const sp = S.sprint; if (!sp || typeof sp.c !== 'string' || sp.c.length > PRT_CODE_MAX) return null;
   if (PRV.c !== sp.c) { try { PRV.P = prtUnpack(slUnB64(sp.c)); PRV.c = sp.c; } catch (e) { return null; } }
   return { P: PRV.P, fresh: sp.sig === prtSongSig() };
 }
@@ -20855,7 +20984,7 @@ function prtLook(g, W, H) {
     if (!PRV.busy && !PRV.err && !playing) prtSongMake();
     return prtLookMsg(g, W, H, PRV.busy ? 'Listening to the song… ' + Math.round(PRV.pct * 100) + '%' : PRV.err ? 'No soundprint: ' + PRV.err + '.' : playing ? 'Stop the song to make its soundprint' : 'Listening to the song…', PRV.busy ? 'Its print is made once and kept with the song.' : PRV.err ? 'Press ⟳ Listen again when it is ready.' : '');
   }
-  const P = sp.P, G = prtGenome(P), w = CFG.prtWorld || 'print', now = playing ? clamp(playheadSlot() / Math.max(1, songSlots()), 0, 1) : null, clock = performance.now() / 1000;
+  const P = sp.P, G = prtGenome(P), w = prtLookWorld(), now = playing ? clamp(playheadSlot() / Math.max(1, songSlots()), 0, 1) : null, clock = performance.now() / 1000;
   g.save(); g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1;
   if (w === 'terrain') prtTerrain(g, W, H, P, G, now == null ? (CFG.reduce ? 1 : (clock / 40) % 1) : now, { clock, still: now == null && !!CFG.reduce, playing, G });
   else if (w === 'flow') {

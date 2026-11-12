@@ -7,7 +7,7 @@
    way around" on the first visit) gets no coaching notes on the panels (part 60).
    ============================================================ */
 var XP = { quiet: 0, last: null };
-var XP_NAMES = { rig: 'Guitar sound', tab: 'Write', vis: 'Visuals', song: 'Song', band: 'Band', exp: 'Save & export', fret: 'Fretboard', stems: 'Backing track' };
+var XP_NAMES = { rig: 'Guitar sound', tab: 'Write', vis: 'Visuals', song: 'Song', band: 'Band', exp: 'Save & export', fret: 'Fretboard', stems: 'Backing track', learn: 'Learn' };
 if (CFG.xp == null) { CFG.xp = (store.get('started', false) || store.get('song', null)) ? 40 : 0; saveCfg(); }   // people who already use the app know their way around
 /** 'pro' once the person knows their way around (no coaching notes), else 'new' */
 function xpLevel() { return CFG.xpMode === 'pro' || (CFG.xp || 0) >= 12 ? 'pro' : 'new'; }

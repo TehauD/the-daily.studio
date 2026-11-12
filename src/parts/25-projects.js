@@ -85,9 +85,27 @@ const projBytes = n => n >= 1073741824 ? (n / 1073741824).toFixed(1) + ' GB' : n
 const projAgo = t => { const s = (Date.now() - t) / 1000; if (s < 60) return 'just now'; if (s < 3600) return Math.floor(s / 60) + ' min ago'; if (s < 86400) return Math.floor(s / 3600) + ' h ago'; if (s < 604800) return Math.floor(s / 86400) + ' d ago'; return new Date(t).toLocaleDateString(); };
 const slug = s => (String(s || 'song').normalize('NFKD').replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '-').slice(0, 60) || 'song');
 /** a saved song, completed with any fields this version added since it was written */
+/** the longest song soundprint code kept (a print packs to about 1 kB, 1.4 k characters; part 93) */
+const PRT_CODE_MAX = 4000;
+/* 2.65.2: Your soundprints (part 93 keeps them in fw.prints, newest first, 48 at most) travel with backups, folder sync and GitHub sync.
+   An entry is { id, c, t }: c is the print's base64url code, checked as a song's print is; anything else is dropped. Merging keeps both
+   sides (one entry per print), newest first, so a print made on another device is never lost to one made here. */
+const PRT_SHELF_MAX = 48;
+const prtShelfOk = x => !!x && typeof x === 'object' && typeof x.c === 'string' && x.c.length <= PRT_CODE_MAX && /^[A-Za-z0-9_-]+$/.test(x.c);
+const prtShelfClean = x => ({ id: /^[0-9a-f]{1,16}$/.test(x.id) ? x.id : '', c: x.c, t: Number.isFinite(+x.t) ? +x.t : 0 });
+function prtShelfAll() { const a = store.get('prints', []); return Array.isArray(a) ? a.filter(prtShelfOk).map(prtShelfClean) : []; }
+/** merge a list from elsewhere into this device's shelf; true if it changed */
+function prtShelfMerge(list) {
+  if (!Array.isArray(list)) return false; const mine = prtShelfAll(), seen = new Set(), out = [];
+  for (const x of mine.concat(list.filter(prtShelfOk).map(prtShelfClean))) { const k = x.id || x.c; if (seen.has(k)) continue; seen.add(k); out.push(x); }
+  out.sort((a, b) => b.t - a.t); const next = out.slice(0, PRT_SHELF_MAX); if (JSON.stringify(next) === JSON.stringify(mine)) return false; store.set('prints', next); return true;
+}
 function normSong(saved) {
   const d = newSong(), s = Object.assign(d, saved || {}); s.band = bandRename(Object.assign(d.band, (saved && saved.band) || {})); s.mix = Object.assign(d.mix, (saved && saved.mix) || {}); s.voicePref = (saved && saved.voicePref) || {};
-  s.tuning = ((saved && saved.tuning) || d.tuning).slice(); if (!Array.isArray(s.sections)) s.sections = []; if (!Array.isArray(s.ts) || s.ts.length < 2) s.ts = [4, 4]; return s;
+  s.tuning = ((saved && saved.tuning) || d.tuning).slice(); if (!Array.isArray(s.sections)) s.sections = []; if (!Array.isArray(s.ts) || s.ts.length < 2) s.ts = [4, 4];
+  /* 2.65.1: the song's soundprint (part 93) comes from whoever made the song: kept only in its own shape (a short base64url code and a hex signature) */
+  if (s.sprint != null) { const sp = s.sprint; s.sprint = sp && typeof sp === 'object' && typeof sp.c === 'string' && sp.c.length <= PRT_CODE_MAX && /^[A-Za-z0-9_-]+$/.test(sp.c) ? { sig: /^[0-9a-f]{1,16}$/.test(sp.sig) ? sp.sig : '', c: sp.c } : null; if (!s.sprint) delete s.sprint; }
+  return s;
 }
 const takeMeta = t => { const m = { hum: !!t.hum, id: t.id, kind: t.kind || 'gtr', name: t.name, startSec: t.startSec, sr: t.sr, g: t.g, pan: t.pan || 0, fx: fxOn(t.fx) ? Object.assign({}, t.fx) : null, mute: !!t.mute, solo: !!t.solo, mode: t.mode, bpm: t.bpm, preset: t.preset || '', peak: t.peak, rms: t.rms, dur: t.dur, t: t.t, hasWet: !!t.wet, hasCam: !!(t.cam && t.cam.length) };
   if (t.grp && t.grp !== t.id) m.grp = t.grp; if (t.src && t.src !== t.id) m.src = t.src; if (t.inS > 0) m.inS = t.inS; if (t.outS != null) m.outS = t.outS; if (t.fadeIn > 0) m.fadeIn = t.fadeIn; if (t.fadeOut > 0) m.fadeOut = t.fadeOut; if (t.cg != null && Math.abs(t.cg - 1) > 1e-6) m.cg = t.cg;
@@ -268,6 +286,7 @@ async function projExportAll() {
   try {
     await projSave(); toast('Packing ' + PRJ.list.length + ' songs…'); let files = []; const seen = {};
     for (const r of PRJ.list) { let d = slug(r.title); if (seen[d]) d += '-' + r.id.slice(-4); seen[d] = 1; files = files.concat(await projEntries(r.id, 'songs/' + d + '/')); }
+    { const pr = prtShelfAll(); if (pr.length) files.push({ name: 'prints.json', data: new TextEncoder().encode(JSON.stringify({ format: 'the-daily-studio-prints', version: 1, prints: pr })) }); }      /* 2.65.2: Your soundprints */
     const blob = zipBuild(files); download('the-daily.studio-backup-' + new Date().toISOString().slice(0, 10) + '.zip', blob, 'application/zip'); toast('Backup saved (' + projBytes(blob.size) + ')', 'ok'); CFG.lastBackup = Date.now(); saveCfg(); return true;
   } catch (e) { console.warn(e); toast('Could not back up: ' + (e.message || e), 'bad'); return false; }
 }
@@ -280,7 +299,9 @@ async function projImport(file) {
       const d = JSON.parse(await file.text()), s = d.song || d; if (!s || !Array.isArray(s.sections)) throw new Error('this JSON has no song in it');
       await projCreate('import', { song: s, zoom: 'song' }); if (d.rig) try { rigApply(d.rig); } catch (e) { } toast('Imported “' + S.title + '”', 'ok'); return;
     }
-    const z = await zipRead(file), arrs = [...z.keys()].filter(k => /(^|\/)arrangement\.json$/.test(k)); if (!arrs.length) throw new Error('no song found in this zip');
+    const z = await zipRead(file), arrs = [...z.keys()].filter(k => /(^|\/)arrangement\.json$/.test(k));
+    let prints = 0; if (z.get('prints.json')) { try { const P = JSON.parse(new TextDecoder().decode(await z.get('prints.json').get())), n0 = prtShelfAll().length; if (prtShelfMerge(P.prints)) prints = Math.max(0, prtShelfAll().length - n0); } catch (e) { } }      /* 2.65.2 */
+    if (!arrs.length) { if (z.get('prints.json')) { toast(prints ? prints + ' soundprint' + (prints === 1 ? '' : 's') + ' added to Your soundprints' : 'Your soundprints already have these', 'ok'); return; } throw new Error('no song found in this zip'); }
     let last = null; const dec = new TextDecoder();
     for (const ak of arrs) {
       const pre = ak.slice(0, ak.length - 'arrangement.json'.length), arr = JSON.parse(dec.decode(await z.get(ak).get())), id = projId(); if (!arr.song) continue;

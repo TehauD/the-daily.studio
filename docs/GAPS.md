@@ -4,6 +4,29 @@ What the studio, its tutorials, its documents and its tests do **not** cover yet
 
 How to use it: before a release, move what the release closed into *Closed* with the version, and add what it opened. [RELEASE.md](RELEASE.md) has this as a checklist item. Items marked **(maintainer)** are decisions or facts only the project's owner can settle; nothing here blocks a build.
 
+## Closed in 2.66.0
+
+- **Learn was a window over Practice:** the band, the tempo, the tuner and the fretboard were behind it while you played. It's Practice's own panel now, and a lesson opens in it.
+- **The Rig showed all sixteen units, open, all the time** (a wall of knobs). The board shows the pedals on it, and the one you pick, large.
+- **⚙ ▸ Earlier / Later** could swap a pedal with an unused unit, so nothing visibly moved.
+
+## Closed in 2.65.2
+
+- **Soundprints were kept in this browser only.** They travel with backups, folder sync and GitHub sync, merged so neither device loses one.
+- **CI on main ended "cancelled"** every time: the Firefox pass hung until GitHub's six-hour limit. It stops after 20 minutes now, and names the step it hung in after 8.
+
+## Closed in 2.65.1
+
+- **A song's soundprint was kept as it came.** A song from someone else (a link, a backup, sync) keeps its print only in the print's own shape, capped at 4,000 characters; a sound file over 400 MB is refused before it is read; an unknown Soundprint world in the settings draws Print.
+- **The small pages and the site's service worker shipped unminified.** The Drops pages, the journal move pages and `sw.js` are minified by the site build, with the same token check as the app.
+- **ARCHITECTURE.md had no entry for fourteen parts** (09e, 13b, 16b, 24b, 25b, 39a–d, 46b, 63c, 63d, 92, 93). Every part is listed now.
+- **Documents still described six workspaces** (TESTING, SECURITY_MODEL, PRIVACY, the user guide, the public guide's Showtime page).
+
+## Closed in 2.65.0
+
+- **The workspace and Visuals bars took up to six rows.** One row each, with ⋯ More; the collapsed arrangement is an edge rail like the sidebars.
+- **A stray vertical scroll bar on the panel tab strip** (a 1 px overflow).
+
 ## Closed in 2.64.0
 
 - **Six workspaces, two pairs of them alike** (Performer and Creator Studio, Practice and Teacher). Four now, and one ★ Showtime.
@@ -15,7 +38,7 @@ How to use it: before a release, move what the release closed into *Closed* with
 
 ## Closed in 2.62.0
 
-- **Soundprint was hard to find.** It's a look in the Visuals now, with doors in the drop strip and Creator Studio.
+- **Soundprint was hard to find.** It's a look in the Visuals now, with doors in the drop strip and the Studio workspace (then Creator Studio).
 
 ## Closed in 2.61.0
 
@@ -147,6 +170,11 @@ How to use it: before a release, move what the release closed into *Closed* with
 - `get_song` does not return section energies or whether Song build is on (`edit_section` and `set_band` answers do).
 - **Per-room usage:** the offline copy fetches every room on install, so the host's request counts cannot show which rooms people use. This is privacy-friendly and probably right; recorded so nobody reads the counts as usage.
 
+### Gigging (opened by 2.66)
+- **No setlist yet:** the songs of a set in order, each with its tone and scenes, stepped through with a foot pedal or MIDI, and a gig view that shows now and next in large type. Songs don't remember a tone of their own either.
+- **Scenes hold the whole rig;** there's no per-scene "only these pedals change" (as on some floor units), and no expression-pedal mapping to a knob beyond MIDI-learn.
+- **The board's look per pedal is a colour and a label;** no pedal skins or photos.
+
 ### Song structure (opened by 2.48)
 - The **Stage** panel's prompter and the lower third have none of Perform's layout choices.
 - Sections can be reordered with ↑ ↓ but not dragged on the map.
@@ -155,7 +183,6 @@ How to use it: before a release, move what the release closed into *Closed* with
 - **Prints can't be dropped** to the public page yet. A soundprint gallery could use Drops' review, with the print instead of audio (no copyright question).
 - **No vertical (9:16) video** for stories; the video is square.
 - **The reading is a guess** from about a kilobyte: it hears one key for the whole sound, and chords only from the key's own (no borrowed chords).
-- **Prints are kept in this browser only.** They're not in backups, folder sync or GitHub sync yet.
 - **No caption or location** on a print, by design for now.
 
 ### Drops (opened by 2.60)

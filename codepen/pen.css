@@ -302,6 +302,33 @@ body[data-form=phone] .card>h4 .wx{padding:8px 10px}body[data-form=phone] .mon-c
 .rigdeck .scn{flex:1 1 0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rigdeck .scenebar .btn{flex:none}
 .dk1 .knob{margin-left:auto}.dk-ab:first-child{border-left:0}
+/* 2.66: the rig, laid out like a real board: one header row, the scenes, the board (only the pedals on it), and the pedal you picked, large */
+.dk-tone{display:flex;align-items:center;gap:4px;flex:0 1 330px;min-width:200px}
+.dk-pick{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:0;text-align:left;border:1px solid var(--line2);background:var(--panel);border-radius:10px;padding:4px 10px;cursor:pointer;color:var(--text)}
+.dk-pick:hover{border-color:var(--accent)}.dk-pick .tiny{letter-spacing:.1em;font-size:9.5px}.dk-pick .dk-name{font:800 15px var(--mono);max-width:100%}
+.dk-sub{font-size:10.5px;color:var(--muted);max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dk-step{flex:none}.dk-ab{flex:1 1 220px;min-width:180px}
+.rig-pick{display:grid;gap:8px;width:min(340px,86vw)}.rig-tones{max-height:min(420px,60vh);overflow:auto;display:flex;flex-direction:column;gap:2px}
+.rig-tc{font:800 10px var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:8px 6px 2px}
+.rig-t{display:flex;flex-direction:column;align-items:flex-start;text-align:left;border:0;background:transparent;color:var(--text);padding:6px 8px;border-radius:8px;cursor:pointer}.rig-t:hover{background:var(--panel2)}.rig-t.on{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+.rig-t b{font-size:13px}.rig-t span{font-size:11px;color:var(--muted)}
+.rig-save,.rig-more{display:grid;gap:8px;min-width:260px}.rig-more .btn{justify-self:stretch;text-align:left}
+.pbar{display:flex;align-items:stretch;gap:8px;margin-bottom:10px}.pbar .chainbar{flex:1;min-width:0;margin:0}
+.bp-tools{display:flex;align-items:center;gap:6px;flex:none}
+.cchip.bp{flex-direction:column;align-items:center;gap:4px;padding:8px 12px 7px;min-width:86px;border-radius:10px;border:1px solid var(--line2);border-top:4px solid var(--pc,var(--line2));background:linear-gradient(var(--panel),var(--panel2))}
+.cchip.bp .bp-n{font:800 11.5px var(--sans);color:var(--text);white-space:nowrap}.cchip.bp small{font:700 8.5px var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.cchip.bp.sel{outline:2px solid var(--accent);outline-offset:1px}.cchip.bp.on{border-top-color:var(--pc,var(--accent))}.cchip.bp:not(.on) .bp-n{color:var(--muted)}.cchip.bp.offb{opacity:.45;border-style:dashed}
+.bp-led{width:14px;height:14px;border-radius:50%;border:1px solid var(--line2);background:radial-gradient(circle at 35% 30%,var(--raise),var(--bg2));padding:0;cursor:pointer;flex:none}
+.cchip.bp.on .bp-led{background:radial-gradient(circle at 35% 30%,#fff,var(--pc,var(--accent)) 55%);box-shadow:0 0 9px var(--pc,var(--accent));border-color:var(--pc,var(--accent))}
+.bp-add{flex:none;align-self:center;margin-left:6px}.bp-lib{display:grid;gap:8px;min-width:260px}.bp-libc{display:grid;gap:4px}.bp-libc small{font:800 10px var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.bp-opts{display:grid;gap:6px;min-width:280px}.bp-empty{margin:4px 2px 10px}
+.pedal.offb{display:none}
+.rigdeck .scn.empty{flex:0 0 44px;text-align:center;color:var(--muted)}.rigdeck .scn.empty small{display:inline;margin-left:3px}
+#pane-rig.v-stomp .chainbar{display:none}#pane-rig.v-stomp .pbar{justify-content:flex-end}
+.board.focusmode{display:block}.board.focusmode .pedal{display:none}.board.focusmode .pedal.sel{display:block;max-width:1100px}
+.board.focusmode .pedal.sel .pedal-b{gap:16px 22px;padding:18px 18px 20px}.board.focusmode .pedal.sel .knob{width:84px}.board.focusmode .pedal.sel .knob svg{width:64px;height:64px}
+.board.focusmode .pedal.sel .pedal-h{padding:9px 12px}.board.focusmode .pedal.sel .pedal-h b{font-size:14px}.board.focusmode .pedal.sel .stomp{width:30px;height:30px}
+.board.focusmode .pedal.sel.cc .pedal-b{display:flex}
 /* guided tour */
 .tour{position:fixed;inset:0;z-index:9000}
 .tour-block{position:absolute;inset:0;background:transparent}
@@ -1503,6 +1530,17 @@ body.mega .pf-l.cur{color:#ff4b3e!important;animation:megshake .12s steps(2) inf
 .vb-secs{display:grid;gap:6px}.vb-sec{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:8px;align-items:center;font-size:13px}
 @media (max-width:640px){.vb-grid{grid-template-columns:1fr}}
 /* ---------- Learn (2.32): the coach window and the Learn hub ---------- */
+/* 2.66: Learn is a panel (Practice opens on it): the hub fills it, and a lesson, riff or shape opens over the list in the same panel,
+   so the band strip, the tempo, the tuner and the fretboard stay at hand. On a phone they are still full-screen windows. */
+#pane-learn{padding:0;position:relative;overflow:hidden}#pane-learn.on{display:block}
+.hub.hub-inline{position:absolute;inset:0;display:flex;flex-direction:column;background:var(--panel);border:0;border-radius:0}.hub.hub-inline[hidden]{display:none}
+.hub-inline .hub-h{padding:10px 16px 9px}.hub-inline .hub-ico{width:32px;height:32px;font-size:16px;border-radius:10px}.hub-inline .hub-ht h2{font-size:15px}.hub-inline .hub-ht p{font-size:12px}
+.hub-inline .hub-main{grid-template-columns:190px minmax(0,1fr)}.hub-inline .hub-body{padding:14px 20px 24px}
+.hub-back{flex:none}.hub-nsep{height:1px;background:var(--line);margin:8px 6px}.hub-nl{color:var(--accent)}
+@container (max-width:640px){.hub-inline .hub-main{grid-template-columns:minmax(0,1fr)}.hub-inline .hub-nav{flex-direction:row;overflow-x:auto;border-right:0;border-bottom:1px solid var(--line)}}
+#pane-learn{container-type:inline-size}
+.coach.co-inline{position:absolute;inset:0;z-index:2;overflow:auto;background:var(--panel);padding:14px 20px 20px;display:flex;flex-direction:column;gap:10px}.coach.co-inline[hidden]{display:none}
+.coach.co-inline .co-board{max-width:1100px}.co-back{flex:none;align-self:flex-start}
 dialog.coach{width:min(820px,96vw);max-height:92dvh;padding:16px 18px 18px;border:1px solid var(--line2);border-radius:var(--r3,16px);overflow:auto}
 dialog.coach[open]{display:flex;flex-direction:column;gap:10px}
 .co-top{display:flex;align-items:flex-start;gap:12px}.co-tt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.co-tt small{color:var(--muted);font:650 11px var(--sans);text-transform:uppercase;letter-spacing:.06em}.co-tt b{font:750 19px var(--sans);line-height:1.2}
