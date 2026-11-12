@@ -11,9 +11,14 @@ suite('xbrowser-' + (process.env.BROWSER || 'chromium'), async t => {
   const { ok, wait, poll, engine } = t;
   const p = await t.open({ w: 1440, h: 900 });
   const ev = (f, a) => p.evaluate(f, a);
+  /* 2.65.2: a watchdog. A page that never answers (a promise the engine never settles) would otherwise hold CI until GitHub stops it after
+     six hours; this fails the run after XB_MAX ms and names the section it was in, so the hang can be found. */
+  let at = 'opening'; const XB_MAX = +process.env.XB_MAX || 8 * 60000;
+  const dog = setTimeout(() => { console.log('FAIL xbrowser stopped: no answer for ' + Math.round(XB_MAX / 60000) + ' min, in “' + at + '” (' + engine + ')'); process.exit(1); }, XB_MAX); dog.unref();
   console.log('engine: ' + engine + ' · ' + await ev(() => navigator.userAgent));
 
   /* ---- it opens, and the audio engine starts ---- */
+  at = 'it opens, and the audio engine starts'; console.log('· ' + at);
   ok(await ev(() => !!window.__daily && !document.getElementById('boot')), 'the studio opens past the welcome card');
   ok(await ev(() => !!document.querySelector('.build-tag') && /v\d+\.\d+\.\d+/.test(document.querySelector('.build-tag').textContent)), 'the version tag is shown');
   const A = await ev(async () => { const D = window.__daily; await D.startAudio(); const c = D.E.ctx; if (c.state !== 'running') { try { await c.resume(); } catch (e) { } } return { ready: D.E.ready, state: c.state, worklet: D.E.worklet, lim: D.E.limiter.constructor.name, sr: c.sampleRate }; });
@@ -21,11 +26,13 @@ suite('xbrowser-' + (process.env.BROWSER || 'chromium'), async t => {
   ok(A.lim === 'AudioWorkletNode', 'the zero-delay effects are in use (the limiter is ' + A.lim + ')');
 
   /* ---- the song plays, and the visuals draw ---- */
+  at = 'the song plays, and the visuals draw'; console.log('· ' + at);
   const P = await ev(async () => { const D = window.__daily; D.dockGo('vis'); D.T.cursor = 0; await D.play(); const a = D.playheadSlot(); await new Promise(r => setTimeout(r, 1500)); const b = D.playheadSlot(); const playing = D.T.playing; D.stopPlay(true); return { playing, moved: b - a }; });
   ok(P.playing && P.moved > 1, 'the song plays and the playhead moves (' + JSON.stringify(P) + ')');
   ok(await poll(() => ev(() => { const v = window.__daily.UI.vcv; if (!v || !v.width) return false; const d = v.getContext('2d').getImageData(0, 0, v.width, v.height).data; let n = 0; for (let i = 0; i < d.length; i += 4 * 97) if (d[i] + d[i + 1] + d[i + 2] > 40) n++; return n > 50; }), 5000), 'the visuals draw');
 
   /* ---- videos: wide and vertical, at their own sizes ---- */
+  at = 'videos: wide and vertical, at their own sizes'; console.log('· ' + at);
   const canRec = await ev(() => !!(window.MediaRecorder && HTMLCanvasElement.prototype.captureStream));
   if (!canRec) ok(true, 'NOTE: this engine has no canvas recording (MediaRecorder / captureStream), so videos are not checked here');
   else for (const f of ['wide', 'tall']) {
@@ -40,6 +47,7 @@ suite('xbrowser-' + (process.env.BROWSER || 'chromium'), async t => {
   }
 
   /* ---- Your video behind ---- */
+  at = 'Your video behind'; console.log('· ' + at);
   if (canRec) {
     const V = await ev(async () => {
       const D = window.__daily, cv = document.createElement('canvas'); cv.width = 160; cv.height = 90; const g = cv.getContext('2d');
@@ -58,6 +66,7 @@ suite('xbrowser-' + (process.env.BROWSER || 'chromium'), async t => {
   }
 
   /* ---- the tip jar, the dialogs, the report ---- */
+  at = 'the tip jar, the dialogs, the report'; console.log('· ' + at);
   const TJ = await ev(() => { const D = window.__daily, l = D.tipLink('@test-artist'); D.CFG.tip.link = '@test-artist'; const c = D.tipCard(300), q = D.qrMake(l); D.CFG.tip.link = ''; return { l, w: c && c.width, n: q.n }; });
   ok(TJ.l === 'https://venmo.com/u/test-artist' && TJ.w > 100 && TJ.n >= 21, 'the tip jar makes its link and draws its code (' + JSON.stringify(TJ) + ')');
   await ev(() => window.__daily.openSettings()); await wait(400);
