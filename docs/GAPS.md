@@ -4,6 +4,12 @@ What the studio, its tutorials, its documents and its tests do **not** cover yet
 
 How to use it: before a release, move what the release closed into *Closed* with the version, and add what it opened. [RELEASE.md](RELEASE.md) has this as a checklist item. Items marked **(maintainer)** are decisions or facts only the project's owner can settle; nothing here blocks a build.
 
+## Closed in 2.67.0
+
+- **The start page's buttons did and didn't lead somewhere.** Three of six landed outside the four workspaces (the old Record and Show layouts, or a panel missing from the tab strip), and for a returning visitor all six just opened the last song. Four ways in now, one per workspace, each with a journey; the six tasks land in a workspace; returning visitors are routed.
+- **No journey for a whole song.** *A song, start to finish* goes from an idea to sending it.
+- **Guided sessions assumed a guitarist.** The ways in ask what you mostly do and lead a singer, a guitarist and a newcomer differently.
+
 ## Closed in 2.66.0
 
 - **Learn was a window over Practice:** the band, the tempo, the tuner and the fretboard were behind it while you played. It's Practice's own panel now, and a lesson opens in it.
@@ -164,7 +170,10 @@ How to use it: before a release, move what the release closed into *Closed* with
 ## Open
 
 ### Product
-- **Guided sessions** (`src/parts/60-guide.js`: play, write, hum, record, loop, split, show) are still written for the full studio and a guitar. They work, but in ✦ Simple some steps point at panels the workspace does not show, and none is about singing on a phone. A singer's session (beat → words → sing → tune → send) would match 2.41 and 2.46.
+- **On a phone** the four ways in lead to the older sessions (hum, write, play) and Learn; the three new journeys point at desktop controls. A singer's phone journey (beat → words → sing → tune → send) is still to write.
+- **“I’m mostly a” shapes the ways in only.** It doesn't yet change what a workspace shows once you're inside (a singer's Studio could lead with Vocal pedals, a producer's Songwriter with the piano roll), and it can only be changed on the start page.
+- **Practice for singers is thin:** Voice (pitch ribbon, range, key) and vocal tuning exist, but there are no sung lessons or warm-ups the coach follows.
+- **The older guided sessions** (`src/parts/60-guide.js`: play, write, hum, record, loop, split, show) are still written for the full studio and a guitar. They work, but in ✦ Simple some steps point at panels the workspace does not show, and none is about singing on a phone. A singer's session (beat → words → sing → tune → send) would match 2.41 and 2.46.
 - **First-open hints and Help text** for each tab were not re-read for 2.46's per-workspace Simple.
 - **Agents** cannot tune a take, read or set the vocal pedals, or make a song link (`export_song` gives text formats only). Tuning edits a recording, which the tools have so far never touched; that is a decision, not an oversight.
 - `get_song` does not return section energies or whether Song build is on (`edit_section` and `set_band` answers do).

@@ -13,8 +13,9 @@ suite('e2e-guide', async t => {
 
   // ---- the first page: goals, not levels
   const p = await open({ w: 1440, h: 900 });
-  const f = await p.evaluate(() => ({ q: (document.getElementById('bootQ') || {}).textContent, goals: [...document.querySelectorAll('.boot-goal')].map(b => b.dataset.goal + ':' + b.querySelector('b').textContent), pro: !!document.getElementById('bootPro'), over: document.documentElement.scrollWidth > innerWidth, gum: window.__gum, lvl: /level|beginner|expert|skill/i.test(document.querySelector('.boot-card').textContent) }));
-  ok(/what would you like to do first/i.test(f.q) && f.goals.join('|') === 'play:Play with a band|write:Write down what you play|hum:Turn a hum into a song|loop:Record, loop and layer|split:Learn a song|show:Run a show', 'the first page asks what you want to do, with six goals (Play, Create, Learn first) (' + f.goals.join(' | ') + ')');
+  const f = await p.evaluate(() => ({ q: (document.getElementById('bootQ') || {}).textContent, goals: [...document.querySelectorAll('.boot-goal')].map(b => b.dataset.goal + ':' + b.querySelector('b').textContent), pro: !!document.querySelector('.boot-door[data-door="explore"]'), doors: [...document.querySelectorAll('.boot-door')].map(b => b.dataset.door + ':' + b.querySelector('small').textContent).join('|'), me: [...document.querySelectorAll('#bootMe [data-me]')].map(b => b.dataset.me).join(), over: document.documentElement.scrollWidth > innerWidth, gum: window.__gum, lvl: /level|beginner|expert|skill/i.test(document.querySelector('.boot-card').textContent) }));
+  ok(/choose your way in/i.test(f.q) && f.doors === 'song:Songwriter|stage:Studio|learn:Practice|explore:Full Rig' && f.me === 'sing,guitar,new,tech', '2.67: the first page offers four ways in, one per workspace, and an optional “I’m mostly a” (' + f.doors + ')');
+  ok(f.goals.join('|') === 'play:Play with a band|write:Write down what you play|hum:Turn a hum into a song|loop:Record, loop and layer|split:Learn a song|show:Run a show', 'then the six single tasks (' + f.goals.join(' | ') + ')');
   ok(!f.lvl && f.pro && !f.over && f.gum.audio === 0 && f.gum.video === 0, 'it never asks how good you are, offers a way to open everything, and asks for neither microphone nor camera');
   await p.ctx.close();
 
@@ -25,7 +26,7 @@ suite('e2e-guide', async t => {
   await r.evaluate(() => { window.__daily.guideStart('record', { fresh: true }); });
   let s = await st(r), info = await r.evaluate(() => { const D = window.__daily; return { title: D.S.title, lay: D.LAY.name, card: !!document.querySelector('#gd[role=region]'), steps: document.querySelectorAll('#gd .gd-steps li').length, gum: window.__gum }; });
   ok(s.id === 'record' && s.i === 0 && /Connect/.test(s.text) && s.pulse && info.card && info.steps === 5 && /1 of 5/.test(s.n), 'Record guitar and voice opens with step 1 of 5 and points at the control: "' + s.text.slice(0, 50) + '…"');
-  ok(info.title === 'My first loop' && info.lay === 'Record' && info.gum.audio === 0 && info.gum.video === 0, 'it starts a fresh page in the Record layout without asking for the microphone yet');
+  ok(info.title === 'My first loop' && info.lay === 'Studio workspace' && info.gum.audio === 0 && info.gum.video === 0, 'it starts a fresh page in the Studio workspace (2.67; it was the old Record layout) without asking for the microphone yet');
   const rect = await r.evaluate(() => { const a = document.getElementById('gd').getBoundingClientRect(), b = (document.querySelector('.gd-pulse') || document.body).getBoundingClientRect(); return { off: a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom, inside: a.left >= 0 && a.top >= 0 && a.right <= innerWidth && a.bottom <= innerHeight }; });
   ok(rect.off && rect.inside, 'the card sits clear of the control it points at and inside the window');
   await r.evaluate(async () => { const D = window.__daily; await D.ioConnect(); }); await wait(900);
@@ -62,7 +63,7 @@ suite('e2e-guide', async t => {
   await r.evaluate(() => { const D = window.__daily; D.STP.playing = false; D.STM.dur = 0; D.STM.mix[1].m = false; });
   await r.evaluate(() => window.__daily.guideMenu()); await wait(300);
   const mn = await r.evaluate(() => [...document.querySelectorAll('#gdMenu .gd-row')].map(x => x.querySelector('b').textContent.trim().replace(/\s*✓ done/, '') + ':' + x.querySelector('button').textContent));
-  ok(mn.length === 7 && mn.some(x => /Record guitar and voice:Again/.test(x)) && mn.some(x => /Learn a song:Resume/.test(x)) && mn.some(x => /Turn a hum into a song:Start/.test(x)), 'the menu lists all seven, with Again, Resume and Start as they apply (' + mn.join(' | ') + ')');
+  ok(mn.length === 10 && /^A song, start to finish/.test(mn[0]) && mn.some(x => /Record guitar and voice:Again/.test(x)) && mn.some(x => /Learn a song:Resume/.test(x)) && mn.some(x => /Turn a hum into a song:Start/.test(x)), 'the menu lists the three journeys and the seven tasks, with Again, Resume and Start as they apply (' + mn.join(' | ') + ')');
   await r.click('#gdMenu button[data-s="split"]'); await wait(700); s = await st(r);
   ok(s.id === 'split' && s.i === 4, 'Resume picks the session up where it was');
   await r.evaluate(() => window.__daily.guideStop(true));
@@ -136,15 +137,15 @@ suite('e2e-guide', async t => {
   await hn.ctx.close();
 
   // ---- "I know my way around"
-  const pr = await open({ w: 1440, h: 900 }); await pr.evaluate(() => document.getElementById('bootPro').click()); await wait(3600);
-  const px = await pr.evaluate(() => ({ lvl: window.__daily.xpLevel(), tabs: document.querySelectorAll('#dock .tab').length, gd: !!document.getElementById('gd') }));
-  ok(px.lvl === 'pro' && px.tabs >= 8 && !px.gd, 'I know my way around opens the studio with every tool and no coaching (' + px.tabs + ' tabs)');
+  const pr = await open({ w: 1440, h: 900 }); await pr.evaluate(() => document.querySelector('.boot-door[data-door="explore"]').click()); await wait(4200);
+  const px = await pr.evaluate(() => ({ lvl: window.__daily.xpLevel(), tabs: document.querySelectorAll('#dock .tab').length, gd: !!document.getElementById('gd'), ws: window.__daily.goalNow().id, song: window.__daily.S.title, tour: !!window.__daily.TOUR.on, simple: !!window.__daily.CFG.simple }));
+  ok(px.lvl === 'pro' && px.tabs >= 8 && !px.gd && px.ws === 'fullrig' && /demo/.test(px.song) && px.tour && !px.simple, 'Explore everything opens the Full Rig with every tool, a finished song and the tour (' + px.tabs + ' tabs)');
   await pr.ctx.close();
 
   // ---- someone who already has songs just carries on
   const rt = await open({ w: 1440, h: 900, returning: true });
   const RT = await rt.evaluate(() => { const g = document.getElementById('bootGoals'), r = document.getElementById('bootRoutes'); return { main: !!document.getElementById('bootNoMic'), pro: !!document.getElementById('bootPro'), after: !!g && !!(r.compareDocumentPosition(g) & Node.DOCUMENT_POSITION_FOLLOWING), small: !!g && g.classList.contains('boot-goals-sm'), n: g ? g.querySelectorAll('.boot-goal').length : 0, q: (document.getElementById('bootQ') || {}).textContent }; });
-  ok(RT.main && !RT.pro && RT.after && RT.small && RT.n === 6 && RT.q === 'Or start something new', 'a returning visitor gets one main button, then the six goals, smaller, as the way to start something new (2.49.1)');
+  ok(RT.main && !RT.pro && RT.after && RT.small && RT.n === 6 && RT.q === 'Or start something new', 'a returning visitor gets one main button, then the ways in and the six tasks as the way to start something new (2.49.1, 2.67)');
   await rt.ctx.close();
 
   // ---- a phone

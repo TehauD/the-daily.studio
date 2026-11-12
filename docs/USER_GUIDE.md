@@ -265,20 +265,29 @@ It is kept on this device only (counts and dates, never sound), is not part of s
 
 ## Getting started and guided sessions (2.7)
 
-**2.49.1:** a first visit always opens on the dark green page. Coming back, you see **Welcome back** in your own light or dark, with **Pick up where I left off** and, under it, **Or start something new**: the same goals, each starting a new song.
+**2.49.1:** a first visit always opens on the dark green page. Coming back, you see **Welcome back** in your own light or dark, with **Pick up where I left off** and, under it, **Or start something new**: the same ways in and tasks. Write a song and the single tasks start a new song; Play, Learn and Explore keep the one you have (2.67; before that they all just opened your last song).
 
-The first page asks **what you would like to do first**, not how good you are:
+The first page (2.67) offers **four ways in**, one per workspace, and an optional **I'm mostly a** *Singer · Guitarist · New to music · Producer*. It asks what you do, never how good you are; your answer is remembered and changes what each way in says and where it leads.
+
+| Way in | Opens | The journey |
+|---|---|---|
+| 🎸 **Write a song** | Songwriter, on a new song | *A song, start to finish:* an idea (a beat; a hum if you sing; a captured riff if you play) · hear it · a line of words · a second part · a take · Into the Studio · send it |
+| 🎤 **Play it live** | Studio, on your song or the demo | A look · your sound (singers skip this) · the band · ★ Showtime · a video |
+| 🎼 **Learn and practise** | Practice, on the Learn panel | Connect · open a lesson (the first one, or today's session for a guitarist) · play it to the coach. A singer gets Voice: the pitch ribbon, range and key |
+| ⚙️ **Explore everything** | Full Rig, every tool, a finished song | The full tour, the first time |
+
+Under them, **Or do one thing** has six single tasks. Each opens in one of the four workspaces:
 
 | Goal | Opens | The session |
 |---|---|---|
 | Turn a hum into a song | A clean page with the Sing or hum button | Start listening · hum 10–30 seconds · hear the band · change the feel · keep it |
-| Record, loop and layer | A new page in the Record layout | Connect your input · set the loop · play chords · play a lead on top · keep looping · stop (see [Loop & layer](#loop--layer-28)) |
-| Learn a song | The Backing track tab | Open it · load a song · mute your part · play along · loop a hard bit |
+| Record, loop and layer | A new page in Studio, with the arrangement open | Connect your input · set the loop · play chords · play a lead on top · keep looping · stop (see [Loop & layer](#loop--layer-28)) |
+| Learn a song | Practice, on the Backing track tab | Open it · load a song · mute your part · play along · loop a hard bit |
 | Run a show | The demo song in the Show layout, Show setup open | The seven-line preflight below |
 
-A small card names one step and outlines the control. The step ticks off when the app sees you do it (it watches its own state; nothing is faked). **Show me** takes you to the control, **Skip** moves on, **–** folds the card, **✕** leaves and keeps your place, and you can drag the card anywhere. Finishing a session adds the tools it used to the tab strip and tells you which. Start, resume or repeat any of them from **? ▸ Guided sessions** (on a phone: More ▸ Guided sessions).
+A small card names one step and outlines the control. The step ticks off when the app sees you do it (it watches its own state; nothing is faked). **Show me** takes you to the control, **Skip** moves on, **–** folds the card, **✕** leaves and keeps your place, and you can drag the card anywhere. Start, resume or repeat any of them from **? ▸ Guided sessions** (on a phone: More ▸ Guided sessions).
 
-**I know my way around** on the first page opens every tool with no coaching. **✦ Simple** (top right) switches between the essentials and every tool at any time.
+**Explore everything** on the first page opens every tool with no coaching (it was *I know my way around*). **✦ Simple** (top right) switches between the essentials and every tool at any time.
 
 **Notes on tabs.** The first time a tab opens, a short note says what it is and gives one thing to try. **Got it** folds it into a small “What is this tab?” line; it never comes back as a full note. Turn them all off in the sessions menu. They are not shown on *Everything* or during a session.
 

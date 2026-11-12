@@ -2,6 +2,28 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.67.0 — 2026-11-12 — Four ways in
+
+### Changed
+- **The start page offers four ways in, one per workspace,** where it had six separate tasks:
+  - **🎸 Write a song** (Songwriter): a new song and a journey that goes the whole way: an idea, hear it, a line of words, a second part, a take, the stage, and out the door.
+  - **🎤 Play it live** (Studio): a look, your sound, the band, ★ Showtime, and a video to post.
+  - **🎼 Learn and practise** (Practice): the Learn panel, with a lesson open and the coach listening.
+  - **⚙️ Explore everything** (Full Rig): every tool, a finished song to take apart and, the first time, the tour. It replaces "I know my way around".
+- **"I'm mostly a" Singer, Guitarist, New to music or Producer.** It's optional, it's remembered, and it asks what you do, never how good you are. It changes what each way in says and where it leads:
+  - a **singer's** song starts by humming, their Studio journey skips the guitar tone and sings from ★ Showtime, and their Practice opens Voice (the pitch ribbon, range and key);
+  - a **guitarist's** song starts by capturing a riff, and their Practice opens today's fifteen minutes;
+  - someone **new to music** starts a song from a beat and opens the first lesson.
+- **The six single tasks are still there, under "Or do one thing",** and each now opens in one of the four workspaces with what it needs showing: *Record, loop and layer* in Studio with the arrangement open (it opened the old Record layout), *Learn a song* in Practice with Backing track on the strip (its tab was missing), *Run a show* with every tab showing.
+- **Play, Learn and Explore keep your own song** if you have one with chords; a first visit gets the demo song.
+- **On a phone** the four ways in sit two to a row and the single tasks are small chips, so the main button stays on the first screen.
+
+### Fixed
+- **On Welcome back, every "start something new" button just opened your last song.** They were only routed on a first visit. Each one starts what it says now.
+
+### Tests
+- **`e2e-doors`** (new, 30 checks): the page, each way in for each kind of person, the whole-song journey walked to its end, the single tasks' workspaces, and a returning visitor with a song of their own. **`e2e-guide`, `e2e-welcome`, `e2e-mobile-fit`, `e2e-simple`** follow the new page.
+
 ## 2.66.0 — 2026-11-12 — Learn is Practice, and the rig is a board
 
 ### Changed
