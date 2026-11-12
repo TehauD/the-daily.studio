@@ -217,6 +217,14 @@ A beat is a ready band to play, sing or write over. Tap one at the top of the **
 
 ## Goal workspaces (2.13; four since 2.64)
 
+**Set up for you (2.68).** The round chip beside the workspaces (👤, or 🎤 🎸 🌱 🎛) sets them up for a **singer**, a **guitarist**, **someone new to music** or a **producer**; the start page asks the same thing. Songwriter, Studio and Practice then lead with different tools, tabs and sidebars. Nothing is removed (the rest is under ⋯ More and ☰), a guitarist and *Anyone* get each workspace as the table below describes, and Full Rig is the same for everyone.
+
+| Set up for | Songwriter | Studio | Practice |
+|---|---|---|---|
+| 🎤 A singer | Opens on the words · Beats · Hum an idea · Rhymes · Paste chords · Send · no fretboard under the page | Record video · Camera · Vocal pedals · 〰 Voice · Export · no Rig tab · the microphone beside it · your pitch on the visuals | Learn (🎤 Singing first) · 〰 Voice · Speed & key · the words and the backing track as tabs |
+| 🌱 Someone new | Opens on the words · Beats · Hum an idea · Paste chords · Pads · Send | as it comes | as it comes |
+| 🎛 A producer | Beats · Piano roll · Keys · Pads · Send · the arrangement open · Backing track on the strip | Record video · video shape · Camera · Stream window · Export | as it comes |
+
 The row at the top of the centre holds four workspaces. Each one is a whole workspace with its own shape: which panel fills the middle, whether the arrangement sits above or below it, which sidebars show and what is in them, which Monitor widgets are on. Each also has its own colour and one row: the workspaces, the main tools (the first highlighted), **⋯ More** for the rest, and a button to the next workspace (2.65). The **?** at the start of the tools shows the workspace's mission and three steps. A tool that is switched on stays showing when More is folded. Choosing one replaces the last completely. Nothing is removed: every panel is still under **☰**, and **▦ Workspace** shows the four as cards with a picture of each shape, then lets you move panels anywhere.
 
 | Workspace | Opens on | Its tools |
@@ -273,8 +281,10 @@ The first page (2.67) offers **four ways in**, one per workspace, and an optiona
 |---|---|---|
 | 🎸 **Write a song** | Songwriter, on a new song | *A song, start to finish:* an idea (a beat; a hum if you sing; a captured riff if you play) · hear it · a line of words · a second part · a take · Into the Studio · send it |
 | 🎤 **Play it live** | Studio, on your song or the demo | A look · your sound (singers skip this) · the band · ★ Showtime · a video |
-| 🎼 **Learn and practise** | Practice, on the Learn panel | Connect · open a lesson (the first one, or today's session for a guitarist) · play it to the coach. A singer gets Voice: the pitch ribbon, range and key |
+| 🎼 **Learn and practise** | Practice, on the Learn panel | Connect · open a lesson (the first one; today's session for a guitarist; 🎤 Singing for a singer) · play or sing it to the coach |
 | ⚙️ **Explore everything** | Full Rig, every tool, a finished song | The full tour, the first time |
+
+**On a phone (2.68)** the same ways in use the phone's own screens: *Write a song* is Beats → hear it → Words → Sing → Send; *Play it live* is the band → a look → ★ Showtime; *Learn* fills the screen.
 
 Under them, **Or do one thing** has six single tasks. Each opens in one of the four workspaces:
 
@@ -327,7 +337,7 @@ Limits: your interface's delay is compensated, but a note played in the last few
 
 **The band.** A new blank song starts with the band off, so pressing Play plays only what you recorded or wrote. The song that Hum to Song builds comes with the band; its panel has a **🥁 Band** button to switch drums, bass and rhythm off or on (your melody keeps playing), and the BAND row in the studio has the same switches.
 
-**The first page.** It says what the app is for: **Record it. Split it. Write it down.** Three things first: **Record guitar + mic** (plug in an interface or use any microphone; both inputs at once, dry and wet takes, count-in, punch-in), **Split any song** (drums, bass, vocals and guitar come apart; mute the part you play and jam over the rest) and **Chords, tab and lyrics** (from a song or from your own playing, with a lyric sheet that sits under the chords). Then the way in: **● Begin in the studio** opens a clean canvas: a blank page with the cursor in the lyrics, no camera and no full screen. A slim bar underneath lets you **sing or hum an idea**, plug in a guitar, or load a song file instead. First-timers also get **♫ Try the demo song**, a finished song that needs no microphone and no camera. Below that: **Presets and effects** and **Neural graph and visuals**.
+**The first page.** It says what the app is for: **Your song, start to finish.** (until 2.68, *Record it. Split it. Write it down.*) Three things first: **Record guitar + mic** (plug in an interface or use any microphone; both inputs at once, dry and wet takes, count-in, punch-in), **Split any song** (drums, bass, vocals and guitar come apart; mute the part you play and jam over the rest) and **Chords, tab and lyrics** (from a song or from your own playing, with a lyric sheet that sits under the chords). Then the way in: **● Begin in the studio** opens a clean canvas: a blank page with the cursor in the lyrics, no camera and no full screen. A slim bar underneath lets you **sing or hum an idea**, plug in a guitar, or load a song file instead. First-timers also get **♫ Try the demo song**, a finished song that needs no microphone and no camera. Below that: **Presets and effects** and **Neural graph and visuals**.
 
 **The camera is an optional extra.** It is never asked for on the first page. A small **Begin on stage** link at the bottom goes full screen with the visuals and your camera, you in front; you can also switch any time with **🎥 Go on stage** in the Visuals bar, or **Start in** under Settings ▸ Workflow or I/O ▸ Camera. The app remembers the route you used last. Either way you are offered **● Hum or sing** or **🎸 I have a guitar**; under them: **a song file…** (it is split into stems and the chords fill in), **a blank page** or **the demo song**. **＋ New song** (top right of the stage) brings this panel back; **⚙ Inputs** opens I/O, where you choose the microphone and camera once and the app remembers. "Start with camera and mic off" (under Other ways to start) never asks for either. ✕ Studio (top right) returns to the normal studio any time; ■ Stop audio stops all sound and releases the microphone.
 
@@ -1038,6 +1048,18 @@ It starts at 70% of the song's tempo, every clean go is 5 BPM faster, and it sto
 **👂 By ear:** the coach plays a short phrase in the key and scale you choose, with the neck and the tab hidden. Press **🎧 Hear it, then play it back** and play it.
 - Get it and the next phrase is a note longer (up to eight). Miss two in a row and it's a note shorter.
 - **▶ Hear it again** replays it, and **👁 Show me** reveals it.
+
+## Singing: lessons the coach follows as you sing (2.68)
+
+**🎤 Singing** is in Learn's list (second for a singer). Connect a microphone (Audio, top right); a vocal channel is used if you have one, else the main input.
+
+- **What it shows.** A sung step has a **keyboard**: the step's notes are lit, the one to sing now is red, and the note you are singing has an orange outline. The note names are underneath. **▶ Listen** plays it on a piano; **● Sing it** listens.
+- **How it listens.** Each note in turn, in **any octave**. A voice slides between notes, so a wrong note counts only when you hold it (about half a second).
+- **Hold a note.** Some steps ask for one note kept in tune for three or four seconds. The line under the keyboard says how long you have held it, and whether you are a little high or low.
+- **Where it sits.** The **Key** menu moves a step up or down a semitone at a time. After **〰 Voice ▸ Find my range**, steps start at the bottom of your comfortable range by themselves.
+- **The lessons:** Warm up and match a note · Five notes, and thirds · Arpeggios and the octave · The whole scale, in tune.
+- **📅 Today** for a singer is a held note to warm up, something to review and the next sung step.
+- It can't follow a slide or a siren, words, or vibrato; it hears pitch only.
 
 ## Learn: lessons, riffs, Riff Lab and the scale atlas (2.32)
 

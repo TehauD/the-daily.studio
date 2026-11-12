@@ -9,7 +9,7 @@ const VOX_WIN = 8;            // seconds of ribbon
 
 const voxNote = m => pcName(m) + (Math.floor(Math.round(m) / 12) - 1);
 const voxSrc = () => (CFG.vin && CFG.vin !== 'off' && E.anaVox) ? E.anaVox : E.anaDI;
-const voxWant = () => !!(CFG.vzRibbon || VOX.panel || VOX.capt || (typeof HM !== 'undefined' && performance.now() - HM.on < 700));   /* the harmony looks listen to the voice too */
+const voxWant = () => !!(CFG.vzRibbon || VOX.panel || VOX.capt || (typeof CO !== 'undefined' && CO.run && CO.p && CO.p.voice) ||      /* 2.68: the coach, for a sung piece */ (typeof HM !== 'undefined' && performance.now() - HM.on < 700));   /* the harmony looks listen to the voice too */
 /** the pitch classes of the song's scale and, while it plays, of the chord under the playhead */
 function voxScale() { const iv = SCALES[S.scale] || SCALES['Major (Ionian)']; return new Set(iv.map(i => (S.key + i) % 12)); }
 function voxChordPcs() { try { const i = stageInfo(), c = i && i.sym ? parseChord(i.sym) : null; return c ? new Set(c.pcs) : null; } catch (e) { return null; } }

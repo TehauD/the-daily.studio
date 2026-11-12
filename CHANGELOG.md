@@ -2,6 +2,32 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.68.0 — 2026-11-12 — Workspaces that adapt, lessons you can sing, the phone's own journeys
+
+### Changed
+- **The workspaces adapt to who you mostly are.** The choice on the start page (Singer, Guitarist, New to music, Producer) now shapes Songwriter, Studio and Practice too, and a small chip beside the workspaces changes it at any time. Nothing is removed: what a workspace doesn't lead with is under ⋯ More and ☰. A guitarist, and anyone who hasn't said, gets each workspace as it was. Full Rig is the same for everyone.
+  - **A singer:** Songwriter opens on the words, with 🥁 Beats, 🎤 Hum an idea, ✎ Rhymes, Paste chords and Send, and no fretboard under the page. Studio leads with Record video, Camera, Vocal pedals and 〰 Voice, has no Rig tab, opens the microphone beside it, and shows your pitch on the visuals in place of a guitar neck. Practice leads with Learn, 〰 Voice and ⏱ Speed & key, with the words and the backing track as tabs and no fretboard.
+  - **Someone new to music:** Songwriter is a beat, a hum, the words.
+  - **A producer:** Songwriter leads with the piano roll, Keys and Pads, with the arrangement open and the backing track on the strip; Studio leads with the video's shape and the stream window.
+  - **✦ Simple follows:** each keeps its own few tools and tabs.
+- **New tools, in every workspace's list:** 🎤 Hum an idea and ✎ Rhymes in Songwriter; 〰 Voice (your pitch against the key, your range, the key that suits you) in Studio and Practice.
+- **Practice for singers: 🎤 Singing in Learn.** Four lessons the coach follows as you sing: match a note, three and five notes, thirds, arpeggios, the octave, the whole scale, and notes held in tune.
+  - The coach hears your voice (the vocal channel if you have one, else the main input), in any octave. A voice slides between notes, so a wrong note counts only when it's held.
+  - A sung step shows a **keyboard** with its notes lit, the one to sing now, and the note you are singing, with the note names under it, where a guitar step shows the neck and tab. ▶ Listen plays it on a piano.
+  - **Hold a note:** a new kind of step. Keep one note in tune for three or four seconds; it says whether you're a little high or low.
+  - The **Key** menu moves an exercise to where your voice is comfortable. After **Voice ▸ Find my range**, exercises start at the bottom of your comfortable range by themselves.
+  - **A singer's 📅 Today** is sung: a held note to warm up, something to review, the next step. Nobody else's Today has sung steps in it.
+  - Learn's list also has **〰 Voice**, and a singer's way in from the start page opens Singing with its journey.
+- **On a phone, the ways in have journeys of their own,** on the phone's own screens (they led to older, shorter sessions):
+  - **Write a song:** Beats → hear it → Words → Sing → Send (📄 Song ▸ 🔗 Send). A singer starts on the hum bar.
+  - **Play it live:** the band → a look → ★ Showtime.
+  - **Learn** fills the screen as before, on Singing for a singer.
+- **The start page's headline is "Your song, start to finish."** with *Write it, sing it, play it, learn it, share it* under it. It was "Record it. Split it. Write it down."
+
+### Tests
+- **`e2e-adapt`** (new, 29 checks): each workspace for anyone, a guitarist, a singer, someone new and a producer; nothing removed; one row; the chip; ✦ Simple; Singing in Learn; a sung step's keyboard; the coach following a simulated voice (an octave up, a slide ignored, a held wrong note counted); holding a note in tune; the range moving the exercises; a singer's Today.
+- **`e2e-doors`** adds the phone's journeys and the singer's Learn (36 checks). **`e2e-welcome`** and **`e2e`** follow the headline.
+
 ## 2.67.0 — 2026-11-12 — Four ways in
 
 ### Changed

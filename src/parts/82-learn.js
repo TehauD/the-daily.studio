@@ -194,12 +194,14 @@ function learnShow() {
 }
 /** close the Learn window if it is one (on a phone); in the panel there is nothing to close */
 const learnLeave = () => { const d = document.getElementById('learn'); if (d && !d._inline && d.open) d.close(); };
+/** 2.68: Singing comes second for a singer (after Today), and after By ear for everyone else */
+function learnOrder(secs, sing) { const k = secs.findIndex(x => x.key === 'sing'), v = secs.splice(k, 1)[0]; secs.splice(sing ? 1 : secs.findIndex(x => x.key === 'ear') + 1, 0, v); return secs; }
 /** the lessons' front door (🎓 Learn in Practice) */
 function learnOpen(at) {
   const host = learnHost(); if (host) { learnShow(); const c = document.getElementById('coach'); if (c && c._inline && c.open) c.close(); }
-  const paths = LESSONS.filter(p => p.id !== 'warm'), warm = LESSONS.filter(p => p.id === 'warm'), all = LESSONS.reduce((a, p) => a + p.lessons.reduce((b, l) => b + l.steps.length, 0), 0), done = LESSONS.reduce((a, p) => a + p.lessons.reduce((b, l) => b + lsDone(l), 0), 0);
+  const paths = LESSONS.filter(p => p.id !== 'warm' && p.id !== 'voice'), warm = LESSONS.filter(p => p.id === 'warm'), voice = LESSONS.filter(p => p.id === 'voice'), sing = typeof meNow === 'function' && meNow() === 'sing', all = LESSONS.reduce((a, p) => a + p.lessons.reduce((b, l) => b + l.steps.length, 0), 0), done = LESSONS.reduce((a, p) => a + p.lessons.reduce((b, l) => b + lsDone(l), 0), 0);
   return hubOpen('learn', { into: host, ico: '🎓', title: 'Learn', sub: 'A plan for today, lessons that listen while you play, your own song as lessons, ear training, riffs, a riff lab and an atlas of the neck. ' + done + ' of ' + all + ' lesson steps done.', at,
-    links: [{ id: 'lnShed', ico: '🎼', label: 'Scales & ear', fn: () => trainOpen() }], sections: [
+    links: [{ id: 'lnShed', ico: '🎼', label: 'Scales & ear', fn: () => trainOpen() }, { id: 'lnVoice', ico: '〰', label: 'Voice: pitch, range, key', fn: () => { try { voxOpen(); } catch (e) { } } }], sections: learnOrder([
     { key: 'today', label: 'Today', ico: '📅', sub: 'About fifteen minutes: a warm-up, something to review, something new and a riff. A new plan every day.', wide: true, body: () => [todayView()] },
     { key: 'lessons', label: 'Lessons', ico: '🎓', sub: 'Each step shows it, plays it, then listens to you play it (through the input the tuner uses).', wide: true, body: () => [learnLessons(paths)] },
     { key: 'warm', label: 'Warm-ups', ico: '🔥', sub: 'Five minutes before you play.', wide: true, body: () => [learnLessons(warm)] },
@@ -208,8 +210,9 @@ function learnOpen(at) {
     { key: 'riffs', label: 'Riffs & licks', ico: '🎸', sub: RIFFS.length + ' riffs, written for this studio, in ' + RIFF_STYLES.length + ' styles. Any key; note by note or in time; straight into your song.', wide: true, body: () => [learnRiffs()] },
     { key: 'lab', label: 'Riff Lab', ico: '🧪', sub: 'New ideas, on tap.', wide: true, body: () => [learnLab()] },
     { key: 'atlas', label: 'Scale atlas', ico: '🗺', sub: 'The neck, mapped: boxes, positions, arpeggios, modes over a band, target notes.', wide: true, body: () => [learnAtlas()] },
-    { key: 'teach', label: 'For teachers', ico: '🍎', sub: 'Teaching someone else: draw, take notes, record, and hand out exercises as files.', wide: true, body: () => [learnTeach()] }
-  ] });
+    { key: 'teach', label: 'For teachers', ico: '🍎', sub: 'Teaching someone else: draw, take notes, record, and hand out exercises as files.', wide: true, body: () => [learnTeach()] },
+    { key: 'sing', label: 'Singing', ico: '🎤', sub: 'Warm-ups and exercises the coach follows as you sing: it hears each note, shows it on a keyboard, and the Key menu puts it where your voice sits.', wide: true, body: () => [learnLessons(voice)] }
+  ], sing) });
 }
 bus.on('coach:done', () => learnPaint());
 bus.on('coach:close', () => { if (LRN_DIRTY) learnPaint(); });

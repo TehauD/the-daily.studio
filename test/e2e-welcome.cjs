@@ -10,7 +10,7 @@ suite('e2e-welcome', async t => {
   // a first visit, on a desktop
   const p = await open({ w: 1440, h: 900 });
   const txt = await p.$eval('#boot', e => e.textContent);
-  ok(/Record it\. Split it\. Write it down\./.test(txt) && /guitar and voice studio/i.test(txt), 'the first page says what it is: record it, split it, write it down');
+  ok(/Your song, start to finish\./.test(txt) && /Write it, sing it, play it, learn it, share it/.test(txt) && /guitar and voice studio/i.test(txt), 'the first page says what it is for (2.68): your song, start to finish');
   const f = await p.evaluate(() => {
     const top = s => { const e = document.querySelector(s); return e ? Math.round(e.getBoundingClientRect().top) : null; }, st = document.getElementById('bootStage'), go = document.getElementById('bootNoMic');
     return { keys: [...document.querySelectorAll('.boot-goal b')].map(b => b.textContent), also: [...document.querySelectorAll('.boot-also li b')].map(b => b.textContent), key0: top('.boot-goal'), go: top('#bootNoMic'), also0: top('.boot-also li'), stage: top('#bootStage'), demo: !!document.getElementById('bootDemo'), stageH: st.getBoundingClientRect().height, goH: go.getBoundingClientRect().height, inCard: !!st.closest('.boot-card'), overflow: document.documentElement.scrollWidth > innerWidth };

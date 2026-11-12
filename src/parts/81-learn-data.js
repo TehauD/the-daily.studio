@@ -31,6 +31,9 @@ const LPC = {
   rhythm: (t, x, pat, o) => lp('rhythm', t, x, Object.assign({ pattern: pat, bars: 4, len: 16, back: { drums: true } }, o || {})),
   bend: (t, x, txt, o) => lpN('bend', t, x, txt, o),
   vib: (t, x, txt, o) => lpN('vib', t, x, txt, o),
+  /* 2.68: sung pieces (part 80): each note in turn, or one note held in tune; the Key menu moves them to where a voice sits */
+  sing: (t, x, txt, o) => lpN('notes', t, x, txt, Object.assign({ voice: true, keyed: true, keyPc: 0, bpm: 66 }, o || {})),
+  hold: (t, x, txt, o) => lpN('hold', t, x, txt, Object.assign({ voice: true, keyed: true, keyPc: 0, bpm: 66, secs: 3, ladder: false }, o || {})),
   landing: (t, x, cs, o) => lp('landing', t, x, Object.assign({ back: { drums: true, chords: cs, bass: true }, bars: 8, len: 16 * cs.length }, o || {}))
 };
 /* open strings, E2 A2 D3 G3 B3 E4 from E */
@@ -97,6 +100,26 @@ const LESSONS = [
     { id: 't3', name: 'Slides', steps: [LPC.notes('Slide up a step', 'Seventh fret to ninth on the G string, keeping the pressure on.', '10 12/ 10 12/', { keyPc: 9, near: 5, lift: 12 }), LPC.notes('Slide into the box', 'Slide up into the seventh fret on the D string, then play the box.', '5 7/ 10 12 15 17', { keyPc: 9, near: 5, lift: 12 })] },
     { id: 't4', name: 'String skipping', steps: [LPC.notes('Skip a string', 'Jump from the D string to the B and back.', '7 19 10 22 7 19 10 22', { keyPc: 9, near: 5 }), LPC.timed('Skips in time', 'The same, eighths with the click.', '7 19 10 22 7 19 10 22', { keyPc: 9, near: 5, bpm: 70 })] },
     { id: 't5', name: 'Legato runs', steps: [LPC.notes('Three notes a string', 'A major-scale run, three notes per string, picking only the first of each three.', '0 2h 4h 5 7h 9h 11 12h 14h', { keyPc: 0, near: 8 })] }
+  ] },
+  { id: 'voice', ico: '🎤', name: 'Singing', blurb: 'Warm up, match a note, sing scales and arpeggios in tune, hold a note, and find where your voice sits.', lessons: [
+    { id: 'v1', name: 'Warm up and match a note', steps: [
+      LPC.info('Before you sing', 'Stand or sit tall, drop your shoulders, and breathe low: the belly moves, not the chest. Hum on “mmm” for a few seconds, then slide from low to high and back on “ng”, like a siren. The coach cannot follow a slide: that part is for you.'),
+      LPC.hold('Match one note', 'Press ▶ Listen, then sing the note on “ah” and hold it. The keyboard shows the note you are singing in orange; move until it sits on the one asked for. Use the Key menu to put it where your voice is comfortable.', '0:8', { secs: 3 }),
+      LPC.sing('Three notes up and back', 'Do, re, mi, re, do: on “ah”, or on the names. One clear note at a time; the coach moves on when it hears each one.', '0:4 2:4 4:4 2:4 0:4')] },
+    { id: 'v2', name: 'Five notes, and thirds', steps: [
+      LPC.info('Why five notes', 'Most melodies live inside five notes. Singing them up and down, slowly and in tune, is the warm-up singers have always used. Move the key up a step each time it feels easy.'),
+      LPC.sing('Five up, five down', 'Do re mi fa sol, and back. Keep every note the same loudness.', '0:4 2:4 4:4 5:4 7:4 5:4 4:4 2:4 0:4'),
+      LPC.sing('Thirds', 'Skip a note each time: do mi, re fa, mi sol. Hear the jump before you sing it.', '0:4 4:4 2:4 5:4 4:4 7:4 4:8'),
+      LPC.hold('Hold the fifth', 'Sing “sol”, the top of the five, and hold it steady for four seconds. Start gently: a held note goes flat when the breath runs out.', '7:8', { secs: 4 })] },
+    { id: 'v3', name: 'Arpeggios and the octave', steps: [
+      LPC.sing('The major arpeggio', 'Do, mi, sol, and the do above; then back down. These are the notes of a major chord.', '0:4 4:4 7:4 12:4 7:4 4:4 0:4'),
+      LPC.sing('The octave jump', 'Low do, high do, and again. Think of the high note before you leave the low one.', '0:4 12:4 0:4 12:4'),
+      LPC.sing('The minor arpeggio', 'The same shape with a lowered third: darker. Sing it, then sing the major one again and hear the difference.', '0:4 3:4 7:4 12:4 7:4 3:4 0:4')] },
+    { id: 'v4', name: 'The whole scale, in tune', steps: [
+      LPC.sing('The major scale', 'All eight notes, up. The seventh wants to go flat: reach for it.', '0:4 2:4 4:4 5:4 7:4 9:4 11:4 12:4'),
+      LPC.sing('And back down', 'Coming down, the notes want to sag. Keep each one up where it belongs.', '12:4 11:4 9:4 7:4 5:4 4:4 2:4 0:4'),
+      LPC.hold('Hold the top note', 'The high do, steady, for four seconds.', '12:8', { secs: 4 }),
+      LPC.info('Your range and your key', 'Open 〰 Voice (in the tools) and press Find my range: sing your lowest and highest comfortable notes. From then on these exercises start where your voice sits, and Find my key says which key suits the song you have open. ⏱ Speed & key moves the song there.')] }
   ] },
   { id: 'warm', ico: '🔥', name: 'Warm-ups', blurb: 'Five minutes before you play: the spider, finger permutations, the chromatic walk, trills, changes, a scale sprint.', lessons: [
     { id: 'w1', name: 'The spider', steps: [LPC.notes('One finger a fret', 'Frets 1-2-3-4 on every string, low to high: one finger per fret, fingers stay down close to the strings.', '0 1 2 3 5 6 7 8 10 11 12 13 15 16 17 18 19 20 21 22 24 25 26 27', { keyPc: 5, near: 1 })] },

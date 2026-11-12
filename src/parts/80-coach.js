@@ -14,6 +14,11 @@
      · vib       a note held with vibrato (rate and width, from the analysis)
      · landing   over a backing vamp, land on a chord tone each time the chord changes
      · info      something to read and hear
+     · hold      (2.68, sung) one note held in tune for a few seconds
+   2.68: a piece marked `voice` is sung, not played. The coach hears it through the voice's own pitch reading (part 50: the vocal
+   channel if there is one, else the main input), shows a keyboard and the note names where a guitar piece shows the neck and tab,
+   plays it on a piano, and places it at the bottom of your comfortable range (Voice ▸ Find my range), or around C3 until that is
+   known; any octave counts. A voice slides between notes, so a wrong note counts only when it is held.
    A clean run can raise the tempo by 5 (the tempo ladder).
    ============================================================ */
 CFG.learn = Object.assign({ done: {}, best: {}, ladder: true, back: true, click: true, mine: [] }, CFG.learn && typeof CFG.learn === 'object' ? CFG.learn : {});
@@ -32,6 +37,10 @@ function coPlace(notes, root, near) {
 }
 /** the lowest root at or above the low string's open note (+ capo), for a key's pitch class */
 const coRoot = (pc, lift) => { const lo = wsTune()[0] + (S.capo || 0); return lo + (((pc - lo) % 12) + 12) % 12 + (lift || 0); };
+/** where a sung piece sits: the key's root at the bottom of the comfortable range, or from C3 until the range is known */
+const coVoiceRoot = pc => { const rg = CFG.vrange, lo = rg && isFinite(rg.c0) ? Math.round(rg.c0) : 48; return lo + (((pc - lo) % 12) + 12) % 12; };
+/** the pitch the coach hears: the voice's for a sung piece (a whole number of semitones), the tuner's otherwise */
+const coHeard = p => (p && p.voice ? (VOX.m != null ? Math.round(VOX.m) : null) : (AN.active && AN.midi != null ? AN.midi : null));
 const coName = m => pcName(m, keyUsesFlats((CO.key == null ? S.key : CO.key), false));
 /** a line of ASCII tab for the notes (strings high to low), the note `cur` marked */
 function coTab(notes, cur) {
@@ -54,7 +63,8 @@ async function coSeq(o) {
     if (k < 0) return;
     const b = o.back; if (b && b.drums) { if (pos % 8 === 0) drumHit(0, t, pos % 16 === 0 ? 3 : 2); if (pos % 8 === 4) drumHit(1, t, 2); if (pos % 2 === 0) drumHit(2, t, 1); }
     if (b && b.chords && b.chords.length) { const sym = b.chords[Math.floor(pos / bar) % b.chords.length]; if (pos % 8 === 0) { try { strumAt(t, sym, 'D', STRUMS['Down 4s']); } catch (e) { } } if (b.bass !== false && pos % 8 === 0) { const ch = parseChord(sym); if (ch) pluck('bass', t, bassMidi(ch.bass), .8, { id: 'cb' }); } }
-    if (o.demo && o.notes) o.notes.forEach(n => { if (n.r || n.at !== pos) return; (n.ch || [n]).forEach((x, j) => pluck('lead', t + j * .012, x.m, .8, { id: 'co' + x.s })); if (n.to != null) pluck('lead', t + Math.min(n.len || 2, 4) * sd * .45, n.to, .55, { id: 'co' + n.s, soft: true }); });
+    if (o.demo && o.notes && CO.p && CO.p.voice) o.notes.forEach(n => { if (n.r || n.at !== pos) return; try { keysVoice(t, n.m, .8, Math.max(.25, (n.len || 2) * sd * .95), 'piano'); } catch (e) { pluck('lead', t, n.m, .8, { id: 'cov' }); } });
+    else if (o.demo && o.notes) o.notes.forEach(n => { if (n.r || n.at !== pos) return; (n.ch || [n]).forEach((x, j) => pluck('lead', t + j * .012, x.m, .8, { id: 'co' + x.s })); if (n.to != null) pluck('lead', t + Math.min(n.len || 2, 4) * sd * .45, n.to, .55, { id: 'co' + n.s, soft: true }); });
     if (pos === len - 1) q.loops++;
   };
   q.tm = setInterval(() => { const now = c.currentTime; while (q.t0 + q.k * sd < now + .15) { step(q.k, q.t0 + q.k * sd); q.k++; if (!o.loop && q.k >= len) { break; } } if (!o.loop && q.k >= len && now > q.t0 + len * sd + .3) { coSeqStop(); o.onEnd && o.onEnd(); } }, 40);
@@ -70,7 +80,7 @@ const coPitch = () => AN.active && AN.midi != null ? AN.midi + (AN.cents || 0) /
 /** start listening for the current piece; result to CO.res and a call to `done(ok, msg)` */
 function coListen(done) {
   coStopListen(); const p = CO.p, R = CO.run = { kind: p.kind, i: 0, miss: 0, held: null, judged: false, prev: null, t0: performance.now(), on: [], ok: 0, n: 0, best: 0, done, hold: 0, last: null, sw: 0, log: [], timing: null, max: 0 }; CO.fb = null; coTakeStart();
-  if (!E.hasInput) toast('Connect your guitar (Audio, top right) so the coach can hear you.', 'warn');
+  if (!E.hasInput) toast(p.voice ? 'Connect your microphone (Audio, top right) so the coach can hear you sing.' : 'Connect your guitar (Audio, top right) so the coach can hear you.', 'warn');
   const tapOn = m => { if (m && m.onset && CO.run === R) R.on.push(m.t); }; bus.on('tap:di', tapOn); R.off = () => bus.off('tap:di', tapOn);
   const need = { timed: 1, changes: 1, minute: 0, rhythm: 1, landing: 1 }[p.kind] || (p.back && p.back.chords && p.kind === 'notes');      /* a scale over a vamp plays the vamp while you play */
   if (!need) coSeqStop();      /* the demo stops: the coach must hear you, not itself */
@@ -78,14 +88,22 @@ function coListen(done) {
   CO.tm = setInterval(() => coTick(R), 30); coPaint();
 }
 function coStopListen() { const R = CO.run; if (R) { clearInterval(CO.tm); if (R.off) R.off(); CO.run = null; coTakeStop(); } }
-function coFinish(R, ok, msg) { if (CO.run !== R) return; const at = CO.seq ? { t0: CO.seq.t0, sd: CO.seq.sd } : null; coStopListen(); coSeqStop(); CO.res = msg; const p = CO.p, bpm0 = CO.bpm; if (ok) { CFG.learn.done[p.id] = Date.now(); learnPassed(p); saveCfg(); } if (ok && CFG.learn.ladder && p.ladder !== false && ['notes', 'timed', 'rhythm', 'changes'].includes(p.kind)) { const cap = p.target || (p.bpm || 80) + 60; CO.bpm = Math.max(CO.bpm, Math.min(cap, CO.bpm + 5)); if (CO.bpm > bpm0) msg += ' Tempo up: ' + CO.bpm + ' BPM.'; else if (p.target && CO.bpm >= p.target) msg += ' That is the song’s own tempo.'; CO.res = msg; } CO.fb = coFeedback(R, ok, bpm0, at); bus.emit('coach:done', { id: p.id, ok }); if (ok) { const dot = document.querySelectorAll('#coach .co-dot')[CO.idx]; if (dot) dot.classList.add('done'); } if (R.done) R.done(ok, msg); coPaint(); }
+function coFinish(R, ok, msg) { if (CO.run !== R) return; const at = CO.seq ? { t0: CO.seq.t0, sd: CO.seq.sd } : null; coStopListen(); coSeqStop(); CO.res = msg; const p = CO.p, bpm0 = CO.bpm; if (ok) { CFG.learn.done[p.id] = Date.now(); learnPassed(p); saveCfg(); } if (ok && CFG.learn.ladder && p.ladder !== false && ['notes', 'timed', 'rhythm', 'changes'].includes(p.kind)) { const cap = p.target || (p.bpm || 80) + 60; CO.bpm = Math.max(CO.bpm, Math.min(cap, CO.bpm + 5)); if (CO.bpm > bpm0) msg += ' Tempo up: ' + CO.bpm + ' BPM.'; else if (p.target && CO.bpm >= p.target) msg += ' That is the song’s own tempo.'; CO.res = msg; } CO.fb = p.voice ? null : coFeedback(R, ok, bpm0, at); bus.emit('coach:done', { id: p.id, ok }); if (ok) { const dot = document.querySelectorAll('#coach .co-dot')[CO.idx]; if (dot) dot.classList.add('done'); } if (R.done) R.done(ok, msg); coPaint(); }
 function coTick(R) {
-  const p = CO.p, now = performance.now(), m = AN.active && AN.midi != null ? AN.midi : null;
+  const p = CO.p, now = performance.now(), m = coHeard(p);
   switch (p.kind) {
+    case 'hold': {      /* one note, held in tune (any octave) */
+      const want = p.notes.find(n => !n.r), v = VOX.m, secs = p.secs || 3; if (v != null && want) { const d = ((v - want.m) % 12 + 18) % 12 - 6; R.cents = Math.round(d * 100); if (Math.abs(d) <= .4) { R.hold += 30; R.max = Math.max(R.max, R.hold); } else R.hold = Math.max(0, R.hold - 90); } else { R.cents = null; R.hold = Math.max(0, R.hold - 45); }
+      if (R.hold >= secs * 1000) return coFinish(R, true, '✓ Held ' + coName(want.m) + ' for ' + secs + ' seconds, in tune.');
+      if (now - R.t0 > 30000) return coFinish(R, false, 'Longest in tune: ' + (R.max / 1000).toFixed(1) + ' of ' + secs + ' seconds. Listen again, start a little quieter, and keep the breath steady.');
+      break;
+    }
     case 'notes': case 'timed': {
       const ns = p.notes.filter(n => !n.r); if (m == null) { R.held = null; R.judged = false; } else if (!R.held || R.held.m !== m) { R.held = { m, t: now }; R.judged = false; }
-      else if (!R.judged && now - R.held.t >= 110) { R.judged = true; const want = ns[R.i], pcs = (want.ch || [want]).map(x => x.m % 12), pc = ((m % 12) + 12) % 12;
-        if (pcs.includes(pc)) { R.prev = m; R.i++; if (R.i >= ns.length) return coNotesDone(R); } else if (R.prev != null && pc === R.prev % 12) { } else { R.miss++; R.log.push({ i: R.i, got: m }); } coPaint(); }
+      else if (!R.judged && now - R.held.t >= (p.voice ? 160 : 110)) { const want = ns[R.i], pcs = (want.ch || [want]).map(x => ((x.m % 12) + 12) % 12), pc = ((m % 12) + 12) % 12;
+        if (pcs.includes(pc)) { R.judged = true; R.prev = m; R.i++; if (R.i >= ns.length) return coNotesDone(R); } else if (R.prev != null && pc === ((R.prev % 12) + 12) % 12) { R.judged = true; }
+        else if (!p.voice || now - R.held.t >= 480) { R.judged = true; R.miss++; R.log.push({ i: R.i, got: m }); }      /* a voice slides between notes: a wrong one counts only when it is held */
+        coPaint(); }
       if (p.kind === 'timed' && CO.seq && coPos() > (p.len || 16) * 2 + 2 && R.i < ns.length) { coNotesDone(R); }
       break;
     }
@@ -122,7 +140,7 @@ function coTick(R) {
   }
 }
 function coNotesDone(R) {
-  const p = CO.p, ns = p.notes.filter(n => !n.r), secs = (performance.now() - R.t0) / 1000; let msg = '', ok = R.i >= ns.length && R.miss <= Math.max(1, Math.floor(ns.length / 8));
+  const p = CO.p, ns = p.notes.filter(n => !n.r), secs = (performance.now() - R.t0) / 1000; let msg = '', ok = R.i >= ns.length && R.miss <= Math.max(1, Math.floor(ns.length / (p.voice ? 3 : 8)));
   if (p.kind === 'timed' && CO.seq) { const q = CO.seq, lat = (rttMs() || 20) / 1000, len = p.len || 16, errs = [];
     ns.forEach(n => { const e = q.t0 + n.at * q.sd; let best = null; R.on.forEach(t => { const d = (t - lat) - e; if (Math.abs(d) <= .12 && (best == null || Math.abs(d) < Math.abs(best))) best = d; }); if (best == null) R.on.forEach(t => { const d = (t - lat) - (e + len * q.sd); if (Math.abs(d) <= .12 && (best == null || Math.abs(d) < Math.abs(best))) best = d; }); R.timing = R.timing || { items: [], len }; R.timing.items.push({ at: n.at, d: best == null ? null : best * 1000 }); if (best != null) errs.push(best * 1000); });
     const avg = errs.length ? errs.reduce((x, y) => x + Math.abs(y), 0) / errs.length : null; if (avg != null && avg > 40) ok = false; msg = (avg != null ? ', ' + Math.round(avg) + ' ms from the beat on average' : ''); }
@@ -142,14 +160,16 @@ function coachOpen(pieces, at, o) {
 }
 function coSetPiece(i) { coStopListen(); coSeqStop(); CO.idx = i; const raw = CO.list[i]; CO.p = typeof raw === 'function' ? raw() : raw; CO.bpm = CO.p.bpm || 80; CO.res = ''; CO.fb = null; CO.reveal = false; coTakeDrop(); if (CO.p.kind === 'info' && CO.p.id && !CFG.learn.done[CO.p.id]) { CFG.learn.done[CO.p.id] = Date.now(); saveCfg(); bus.emit('coach:done', { id: CO.p.id, ok: true }); } coBuild(); }
 /** the piece's notes placed in this tuning (re-placed when the key or the tuning changes) */
-function coNotes() { const p = CO.p; if (!p.src) return p.notes || []; const pc = CO.key != null ? CO.key : (p.keyPc != null ? p.keyPc : 9); p.notes = coPlace(p.src, coRoot(pc, p.lift || 0), p.near); return p.notes; }
+function coNotes() { const p = CO.p; if (!p.src) return p.notes || []; const pc = CO.key != null ? CO.key : (p.keyPc != null ? p.keyPc : 9);
+  if (p.voice) { const root = coVoiceRoot(pc); p.notes = p.src.map(n => n.r ? Object.assign({}, n) : Object.assign({}, n, { m: root + n.i, s: 0, f: 0, ch: null, to: null })); return p.notes; }      /* sung: no strings or frets */
+  p.notes = coPlace(p.src, coRoot(pc, p.lift || 0), p.near); return p.notes; }
 function coBuild() {
   const d = document.getElementById('coach'); if (!d) return; const p = CO.p; coNotes(); d.innerHTML = '';
   const steps = CO.list.length > 12 ? h('span', { class: 'co-count mono', id: 'coCount' }, (CO.idx + 1) + ' / ' + CO.list.length) : CO.list.length > 1 ? h('div', { class: 'co-steps', role: 'list' }, CO.list.map((q, k) => { const qq = typeof q === 'function' ? null : q; return h('button', { role: 'listitem', class: 'co-dot' + (k === CO.idx ? ' on' : '') + (qq && CFG.learn.done[qq.id] ? ' done' : ''), 'aria-label': 'Step ' + (k + 1) + (qq && CFG.learn.done[qq.id] ? ', done' : ''), onclick: () => coSetPiece(k) }); })) : null;
   const playable = p.kind !== 'info' || (p.notes && p.notes.length);
   d.append(...[h('div', { class: 'co-top' }, h('div', { class: 'co-tt' }, h('small', {}, CO.title || ''), h('b', { id: 'coachT' }, p.title)), steps, d._inline ? h('button', { class: 'btn sm co-back', 'aria-label': 'Close the coach', title: 'Back to the list', onclick: () => d.close() }, '◀ Back') : h('button', { class: 'btn icon', 'aria-label': 'Close the coach', onclick: () => d.close() }, '✕')),
     h('p', { class: 'co-text' }, p.text || ''),
-    p.notes && p.notes.length && !['chord', 'changes', 'minute'].includes(p.kind) && !(p.ear && !CO.reveal) ? h('div', { class: 'co-board' }) : null,
+    p.notes && p.notes.length && !['chord', 'changes', 'minute'].includes(p.kind) && !(p.ear && !CO.reveal) ? h('div', { class: 'co-board' + (p.voice ? ' co-keys' : '') }) : null,
     p.notes && p.notes.length && !['chord', 'changes', 'minute'].includes(p.kind) && !(p.ear && !CO.reveal) ? h('pre', { class: 'co-tab mono', 'aria-label': 'Tab' }) : null,
     p.ear && !CO.reveal ? h('div', { class: 'co-hidden', id: 'coHidden' }, h('span', { class: 'co-hid-ic', 'aria-hidden': 'true' }, '👂'), h('div', {}, h('b', {}, 'No tab this time: use your ears.'), h('span', {}, 'Hear it, then play it back. ' + (p.notes || []).filter(n => !n.r).length + ' notes, starting on ' + (p.hint || 'the root') + '.'))) : null,
     ['chord', 'changes', 'minute'].includes(p.kind) ? h('div', { class: 'co-chords' }, (p.chords || p.back.chords).map(c => h('div', { class: 'co-chord' }, h('b', {}, c), h('pre', { class: 'mono co-shape' }, coShape(c))))) : null,
@@ -159,7 +179,7 @@ function coBuild() {
       p.ear ? h('button', { class: 'btn primary', id: 'coEarGo', onclick: () => coDemo(true) }, '🎧 Hear it, then play it back') : null,
       p.ear && !CO.reveal ? h('button', { class: 'btn', id: 'coReveal', onclick: () => { CO.reveal = true; coBuild(); } }, '👁 Show me') : null,
       playable ? h('button', { class: 'btn', id: 'coListen', onclick: () => coDemo() }, p.ear ? '▶ Hear it again' : '▶ Listen') : null,
-      p.kind !== 'info' ? h('button', { class: 'btn' + (p.ear ? '' : ' primary'), id: 'coGo', onclick: () => CO.run ? (coStopListen(), coSeqStop(), coPaint()) : coListen() }, '● Play it') : null,
+      p.kind !== 'info' ? h('button', { class: 'btn' + (p.ear ? '' : ' primary'), id: 'coGo', onclick: () => CO.run ? (coStopListen(), coSeqStop(), coPaint()) : coListen() }, p.voice ? '● Sing it' : '● Play it') : null,
       h('span', { class: 'co-bpm' }, h('button', { class: 'btn sm', 'aria-label': 'Slower', onclick: () => { CO.bpm = Math.max(40, CO.bpm - 5); coPaint(); } }, '−'), h('b', { class: 'mono' }), h('button', { class: 'btn sm', 'aria-label': 'Faster', onclick: () => { CO.bpm = Math.min(240, CO.bpm + 5); coPaint(); } }, '+')),
       p.ladder === false ? null : h('label', { class: 'chk' }, h('input', { type: 'checkbox', id: 'coLadder', checked: !!CFG.learn.ladder, onchange: e => { CFG.learn.ladder = e.target.checked; saveCfg(); } }), 'Tempo ladder'),
       p.back ? h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!CFG.learn.back, onchange: e => { CFG.learn.back = e.target.checked; saveCfg(); } }), 'Backing') : null,
@@ -175,19 +195,31 @@ function coDemo(then) { coStopListen(); const p = CO.p; coSeq({ len: p.len || 16
 function coPaint() {
   const d = document.getElementById('coach'); if (!d || !CO.p) return; const p = CO.p, R = CO.run, q = s => d.querySelector(s), ns = (p.notes || []).filter(n => !n.r);
   const b = q('.co-bpm b'); if (b) b.textContent = CO.bpm + ' BPM';
-  const go = q('#coGo'); if (go) go.textContent = R ? '■ Stop' : '● Play it';
+  const go = q('#coGo'); if (go) go.textContent = R ? '■ Stop' : p.voice ? '● Sing it' : '● Play it';
   const cur = R && (R.kind === 'notes' || R.kind === 'timed') ? R.i : null;
-  const bd = q('.co-board'); if (bd) { bd.innerHTML = ''; const pcs = p.pcs || null, ref = coRoot(CO.key != null ? CO.key : (p.keyPc != null ? p.keyPc : 9)); const run = { title: p.title, st: ns.length ? Math.min(...ns.map(n => n.f)) : 0, pcs, notes: ns.map(n => ({ s: n.s, f: n.f, m: n.m, deg: n.lab || degName(((n.m - ref) % 12 + 12) % 12) })) }; bd.append(wsFret(run, cur, innerWidth < 640)); }
-  const tb = q('.co-tab'); if (tb) tb.textContent = coTab(p.notes || [], cur == null ? -1 : (p.notes || []).indexOf(ns[cur]));
+  const bd = q('.co-board'); if (bd && p.voice) coKeys(bd, p, ns, cur == null && R && R.kind === 'hold' ? 0 : cur);
+  else if (bd) { bd.innerHTML = ''; const pcs = p.pcs || null, ref = coRoot(CO.key != null ? CO.key : (p.keyPc != null ? p.keyPc : 9)); const run = { title: p.title, st: ns.length ? Math.min(...ns.map(n => n.f)) : 0, pcs, notes: ns.map(n => ({ s: n.s, f: n.f, m: n.m, deg: n.lab || degName(((n.m - ref) % 12 + 12) % 12) })) }; bd.append(wsFret(run, cur, innerWidth < 640)); }
+  const tb = q('.co-tab'); if (tb) tb.textContent = p.voice ? ns.map((n, i) => (i === cur ? '[' + coName(n.m) + ']' : ' ' + coName(n.m) + ' ')).join(' ') : coTab(p.notes || [], cur == null ? -1 : (p.notes || []).indexOf(ns[cur]));
   const fbx = q('#coFb'); if (fbx) { fbx.innerHTML = ''; if (!R && CO.fb) fbx.append(coFbView(CO.fb)); }
   const lv = q('.co-live'); if (!lv) return; lv.innerHTML = '';
   if (R) {
-    const want = ns[R.i]; lv.append(h('b', {}, R.kind === 'notes' || R.kind === 'timed' ? (want ? 'Next: ' + (want.ch ? want.ch.map(x => coName(x.m)).join(' + ') : coName(want.m)) + ' (string ' + (wsTune().length - want.s) + ', ' + (want.f ? 'fret ' + want.f : 'open') + ')' : '') + ' · ' + R.i + ' of ' + ns.length + (R.miss ? ' · ' + R.miss + ' wrong' : '')
+    const want = ns[R.i]; lv.append(h('b', {}, R.kind === 'hold' ? 'Hold ' + (ns[0] ? coName(ns[0].m) : '') + ': ' + (R.hold / 1000).toFixed(1) + ' of ' + (p.secs || 3) + ' s' + (R.cents == null ? ' · sing…' : Math.abs(R.cents) <= 40 ? ' · in tune' : R.cents > 0 ? ' · a little high' : ' · a little low')
+      : p.voice && (R.kind === 'notes' || R.kind === 'timed') ? (want ? 'Sing ' + coName(want.m) : '') + ' · ' + R.i + ' of ' + ns.length + (R.miss ? ' · ' + R.miss + ' off' : '')
+      : R.kind === 'notes' || R.kind === 'timed' ? (want ? 'Next: ' + (want.ch ? want.ch.map(x => coName(x.m)).join(' + ') : coName(want.m)) + ' (string ' + (wsTune().length - want.s) + ', ' + (want.f ? 'fret ' + want.f : 'open') + ')' : '') + ' · ' + R.i + ' of ' + ns.length + (R.miss ? ' · ' + R.miss + ' wrong' : '')
       : R.kind === 'chord' ? 'Play ' + p.chords[0] + ' and let it ring…' : R.kind === 'changes' ? 'A chord a bar, with the click: ' + R.ok + ' right so far'
       : R.kind === 'minute' ? Math.max(0, 60 - Math.floor((performance.now() - R.t0) / 1000)) + ' s · ' + R.sw + ' changes' : R.kind === 'rhythm' ? 'Play the pattern with the click (four bars)…'
       : R.kind === 'bend' ? 'Bend: ' + (R.cur != null ? (R.cur >= 0 ? '+' : '') + R.cur.toFixed(2) : '–') + ' of +' + (ns[0] ? ns[0].to - ns[0].m : 2) + ' semitones' : R.kind === 'vib' ? (R.v ? 'Vibrato ' + R.v.rate.toFixed(1) + '/s, ' + Math.round(R.v.ext * 2) + ' cents' : 'Hold it and shake it…') : R.kind === 'landing' ? 'Land on a chord tone at each change: ' + R.ok + ' so far' : ''));
     if (!CO.tmP) CO.tmP = setInterval(() => { if (!CO.run) { clearInterval(CO.tmP); CO.tmP = 0; return; } coPaint(); }, 250);
   } else if (CO.res) lv.append(h('b', { class: /^✓/.test(CO.res) ? 'co-good' : '' }, CO.res));
-  else lv.append(h('span', { class: 'muted' }, p.kind === 'info' ? '' : p.ear ? 'Press 🎧 to hear it, then play it back.' : 'Press ▶ Listen to hear it, then ● Play it.'));
+  else lv.append(h('span', { class: 'muted' }, p.kind === 'info' ? '' : p.ear ? 'Press 🎧 to hear it, then play it back.' : p.voice ? 'Press ▶ Listen to hear it, then ● Sing it. Key moves it to where your voice is comfortable.' : 'Press ▶ Listen to hear it, then ● Play it.'));
+}
+/** a sung piece on a keyboard: its notes lit, the one to sing now, and the note you are singing (in the nearest octave shown) */
+function coKeys(box, p, ns, cur) {
+  const ms = ns.map(n => n.m); if (!ms.length) return; const lo = Math.floor(Math.min(...ms) / 12) * 12, hi0 = Math.max(lo + 16, Math.max(...ms) + 2), hi = [1, 3, 6, 8, 10].includes(hi0 % 12) ? hi0 + 1 : hi0;
+  let svg = box.querySelector('svg'); if (!svg || svg._lo !== lo || svg._hi !== hi) { box.innerHTML = ''; svg = kyPiano(lo, hi, { h: 84 }); svg.setAttribute('class', 'ky-svg co-ky'); box.append(h('div', { class: 'ky-wrap' }, svg)); }      /* co-ky: the Keys painter (part 86) leaves it alone */
+  const root = ms[0] - (p.src.find(n => !n.r) || { i: 0 }).i, v = VOX.m != null ? Math.round(VOX.m) : null; let me = null;
+  if (v != null && (CO.run || VOX.panel)) { for (let m = lo; m <= hi; m++) if ((m - v) % 12 === 0 && (me == null || Math.abs(m - ms[Math.max(0, cur || 0)]) < Math.abs(me - ms[Math.max(0, cur || 0)]))) me = m; }
+  svg.querySelectorAll('[data-m]').forEach(k => { const m = +k.dataset.m; k.classList.toggle('ch', ms.includes(m)); k.classList.toggle('root', ms.includes(m) && (m - root) % 12 === 0); k.classList.toggle('on', cur != null && cur >= 0 && ns[cur] && ns[cur].m === m); k.classList.toggle('me', me === m); });
+  svg.querySelectorAll('[data-l]').forEach(t => { const m = +t.dataset.l; t.textContent = ms.includes(m) ? coName(m) : ''; });
 }
 const degName = iv => ['R', 'b2', '2', 'b3', '3', '4', 'b5', '5', 'b6', '6', 'b7', '7'][iv];

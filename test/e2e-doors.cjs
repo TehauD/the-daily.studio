@@ -62,12 +62,28 @@ suite('e2e-doors', async t => {
   ok((await where(p)).coach && await p.evaluate(() => { window.__daily.gdTick(); return window.__daily.GD.i; }) === 2, 'opening the first lesson ticks “Open a lesson”');
   await p.ctx.close();
   p = await first(); w = await go(p, door('learn'), 'sing');
-  ok(w.ws === 'practice' && w.vox && !w.gd, 'a singer’s Practice opens Voice: the pitch ribbon, range and key');
+  ok(w.ws === 'practice' && w.dock === 'learn' && w.gd === 'learn' && await p.evaluate(() => { const d = window.__daily; d.GD.i = 1; d.gdTick(); return /Singing/.test(document.getElementById('gdText').textContent) && !!document.querySelector('#learn section[data-sec="sing"] [data-lesson="v1"]'); }), '2.68: a singer’s Practice opens Learn on 🎤 Singing, and the journey points at its first lesson');
   await p.ctx.close();
 
   p = await first(); w = await go(p, door('explore'), 'tech');
   ok(w.ws === 'fullrig' && !w.simple && /demo/.test(w.song) && w.tour, 'Explore everything: the Full Rig, every tool, a finished song, and the tour');
   await p.ctx.close();
+
+  /* ---- on a phone (2.68): the same journeys, on the phone's own screens ---- */
+  const phone = async () => { const q = await t.open({ boot: false, init: FRESH, w: 390, h: 844, mobile: true }); await q.goto(t.BASE + '?debug'); await wait(3200); return q; };
+  const pw = q => q.evaluate(() => { const d = window.__daily; return { form: document.body.dataset.form, g: d.M.g, song: d.S.title, gd: d.GD.id, steps: [...document.querySelectorAll('#gd .gd-steps li')].map(x => x.textContent.replace(/^[✓\d]+/, '')).join('|'), text: (document.getElementById('gdText') || {}).textContent || '', pulse: !!document.querySelector('.gd-pulse'), hum: !!document.getElementById('humbar'), learn: !!(document.getElementById('learn') && document.getElementById('learn').open && !document.getElementById('learn')._inline) }; });
+  p = await phone(); await p.evaluate(() => document.querySelector('.boot-door[data-door="song"]').click()); await wait(4500); let m = await pw(p);
+  ok(m.form === 'phone' && m.g === 'beats' && m.song === 'My song' && m.gd === 'song' && m.steps === 'Start with an idea|Hear it|Write a line|Sing it|Send it' && /Tap Beats/.test(m.text) && m.pulse, 'on a phone, Write a song opens Beats with five steps of its own: an idea, hear it, a line, sing it, send it');
+  await p.evaluate(() => { const d = window.__daily; d.S.sections[0].bars.forEach((b, i) => { b.chord = ['G', 'D', 'Em', 'C'][i % 4]; }); d.commit(); d.gdTick(); d.GD.i = 2; d.gdTick(); document.getElementById('gdShow').click(); }); await wait(500); m = await pw(p);
+  ok(m.g === 'words' && /Tap Words/.test(m.text) && await p.evaluate(() => !!document.getElementById('mwText')), 'Show me takes “Write a line” to the Words screen');
+  await p.evaluate(() => { const d = window.__daily; d.S.sections[0].lyrics = '[G]Morning on the water'; d.commit(); d.gdTick(); document.getElementById('gdShow').click(); }); await wait(500); m = await pw(p);
+  ok(m.g === 'sing' && /Tap Sing/.test(m.text) && m.pulse, 'and “Sing it” to the Sing screen, pointing at the microphone'); await p.ctx.close();
+  p = await phone(); await p.evaluate(() => { document.querySelector('[data-me="sing"]').click(); document.querySelector('.boot-door[data-door="song"]').click(); }); await wait(4500); m = await pw(p);
+  ok(m.hum && m.gd === 'song' && /hum/i.test(m.text), 'a singer on a phone starts by humming, with the same journey'); await p.ctx.close();
+  p = await phone(); await p.evaluate(() => document.querySelector('.boot-door[data-door="stage"]').click()); await wait(4500); m = await pw(p);
+  ok(m.g === 'see' && m.gd === 'stage' && m.steps === 'Start the band|Pick a look|Go full screen' && /demo/.test(m.song), 'Play it live on a phone: the Visuals, and three steps (the band, a look, ★ Showtime)'); await p.ctx.close();
+  p = await phone(); await p.evaluate(() => { document.querySelector('[data-me="sing"]').click(); document.querySelector('.boot-door[data-door="learn"]').click(); }); await wait(4500); m = await pw(p);
+  ok(m.learn && !m.gd && await p.evaluate(() => !!document.querySelector('#learn section[data-sec="sing"] [data-lesson]')), 'Learn on a phone fills the screen (no card over it), on Singing for a singer'); await p.ctx.close();
 
   /* ---- the six single tasks land in one of the four workspaces, with their panel on the strip ---- */
   for (const [g, ws, dock, extra] of [['loop', 'performer', 'vis', x => x.arr], ['split', 'practice', 'stems', x => x.inStrip], ['play', 'performer', 'vis', x => /demo/.test(x.song)], ['write', 'songwriter', 'tab', x => x.inStrip]]) {

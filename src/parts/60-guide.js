@@ -122,39 +122,53 @@ const GD_SESSIONS = {
   }
 };
 /* 2.67: the journeys behind the ways in. Steps marked `only` show for those people (CFG.me); the text of a step can depend on who you are. */
-const gdSteps = list => ({ get() { const m = meNow(); return list.filter(s => !s.only || s.only.includes(m)); }, enumerable: true });
+const gdSteps = list => ({ get() { const m = meNow(), f = isDesk() ? 'desk' : 'phone'; return list.filter(s => (!s.only || s.only.includes(m)) && (!s.on || s.on === f)); }, enumerable: true });      /* `on`: 'desk' or 'phone' (2.68: the phone has its own steps, on its own screens) */
+const gdPlayBtn = () => (isDesk() ? UI.play : document.querySelector('#mtrans .btn.play') || UI.play);
+/** the phone's Words screen, on the whole song (where ★ Showtime and 🔗 Send are) */
+const gdPhoneSong = () => { try { mGo('words'); const b = document.querySelector('.mw-mode [data-mode="song"], .mw-mode button:last-child'); if (b && !b.classList.contains('on')) b.click(); } catch (e) { } };
 Object.defineProperty(GD_SESSIONS.song = {
   name: 'A song, start to finish', mins: 10, icon: '🎸', blurb: 'An idea, chords, words, a second part, a take, the stage, and out the door.',
   outro: 'That is a whole song: an idea, chords and words, a take, and a way to send it. It is in Songs, and ✓ Mark this version keeps it as it is now.', next: 'stage'
 }, 'steps', gdSteps([
-  { id: 'idea', short: 'Start with an idea', text: () => ({ sing: 'Press ● Sing or hum an idea, hum or sing for 10 to 30 seconds, then ■ Stop and Done. A band plays it back with chords.', guitar: 'Connect your guitar (Audio, top right), press ● Capture above the tab and play a riff: it is written down as you play. Or press 🥁 Beats for chords and a band to play over.' }[meNow()] || 'Press 🥁 Beats and tap one. It plays in your song’s key, and its chords become your song.'),
+  { id: 'idea', on: 'desk', short: 'Start with an idea', text: () => ({ sing: 'Press ● Sing or hum an idea, hum or sing for 10 to 30 seconds, then ■ Stop and Done. A band plays it back with chords.', guitar: 'Connect your guitar (Audio, top right), press ● Capture above the tab and play a riff: it is written down as you play. Or press 🥁 Beats for chords and a band to play over.' }[meNow()] || 'Press 🥁 Beats and tap one. It plays in your song’s key, and its chords become your song.'),
     target: () => document.querySelector(meNow() === 'sing' ? '#humGo2, #humStop, .hum-acts .btn.primary' : meNow() === 'guitar' ? '#wrCap' : '#gtBeats'),
     go: () => { const m = meNow(); if (m === 'sing') { if (!document.getElementById('humbar')) { try { humCanvasFirst(); } catch (e) { } } } else { gdInSongwriter(); if (m === 'guitar') dockGo('tab'); else { const b = document.getElementById('gtBeats'); if (b && !document.querySelector('.bt-pop')) b.click(); } } },
     done: () => !!PRJ.cur && gdHasIdea() && (meNow() !== 'sing' || !!HUM.r) && !document.getElementById('humbar') && !(typeof CAP !== 'undefined' && CAP.on) },      /* a singer: once the hum is kept (not the song that was on screen before it) */
-  { id: 'hear', short: 'Hear it', text: 'Press ▶ (or Space) and listen to it once through. The band plays your chords; Drums, Bass and Rhythm in the band strip switch each one.', target: () => UI.play, setup: () => { gdInSongwriter(); GD.seen.played = 0; }, done: () => !!GD.seen.played && !T.playing },
-  { id: 'words', short: 'Write a line', text: 'Write a line of words. Words (or Both) at the top of Write shows the lyrics box: type, and put a chord in [brackets] before the syllable it lands on. ✎ Rhymes helps.', target: '.wr-mode', go: () => { gdInSongwriter(); dockGo('tab'); try { if (WR.mode === 'tab') wrMode('both'); } catch (e) { } }, setup: () => gdInSongwriter(), done: () => S.sections.some(s => (s.lyrics || '').trim().length > 3) },
-  { id: 'part', short: 'Add a second part', text: 'A song needs somewhere to go. Press ＋ beside the section chips and add a Chorus (or a Verse): it is named and placed for you, and can copy the chords of another part.', target: '#wrSecAdd', go: () => { gdInSongwriter(); dockGo('tab'); }, setup: () => { GD.base = S.sections.length; }, done: () => S.sections.length > (GD.base || 0) },
-  { id: 'take', short: 'Record a take', text: () => 'Connect your microphone or guitar (Audio, top right) if you have not. Press ● Record at the top (or R), ' + (meNow() === 'sing' ? 'sing' : 'play or sing') + ' it once through after the count-in, then ■ Stop.', target: () => UI.rec, setup: () => { GD.base = TAKES.length; }, done: () => TAKES.length > (GD.base || 0) && !REC },
-  { id: 'stage', short: 'Take it to the stage', text: 'Press Into the Studio → at the end of the tools row. The same song, on a stage: visuals that move with it, and ★ Showtime to play it full screen.', target: '#gtNext', done: () => !!goalNow() && goalNow().id === 'performer' },
-  { id: 'out', short: 'Send it', text: 'Press ⇩ Export in the tools row. Audio, a one-file share page, the lyric sheet, or the whole song as a link: choose how it leaves.', target: '#gtExp', done: () => DOCK.cur === 'exp' || !!document.getElementById('slUrl') }
+  { id: 'hear', on: 'desk', short: 'Hear it', text: 'Press ▶ (or Space) and listen to it once through. The band plays your chords; Drums, Bass and Rhythm in the band strip switch each one.', target: () => UI.play, setup: () => { gdInSongwriter(); GD.seen.played = 0; }, done: () => !!GD.seen.played && !T.playing },
+  { id: 'words', on: 'desk', short: 'Write a line', text: 'Write a line of words. Words (or Both) at the top of Write shows the lyrics box: type, and put a chord in [brackets] before the syllable it lands on. ✎ Rhymes helps.', target: '.wr-mode', go: () => { gdInSongwriter(); dockGo('tab'); try { if (WR.mode === 'tab') wrMode('both'); } catch (e) { } }, setup: () => gdInSongwriter(), done: () => S.sections.some(s => (s.lyrics || '').trim().length > 3) },
+  { id: 'part', on: 'desk', short: 'Add a second part', text: 'A song needs somewhere to go. Press ＋ beside the section chips and add a Chorus (or a Verse): it is named and placed for you, and can copy the chords of another part.', target: '#wrSecAdd', go: () => { gdInSongwriter(); dockGo('tab'); }, setup: () => { GD.base = S.sections.length; }, done: () => S.sections.length > (GD.base || 0) },
+  { id: 'take', on: 'desk', short: 'Record a take', text: () => 'Connect your microphone or guitar (Audio, top right) if you have not. Press ● Record at the top (or R), ' + (meNow() === 'sing' ? 'sing' : 'play or sing') + ' it once through after the count-in, then ■ Stop.', target: () => UI.rec, setup: () => { GD.base = TAKES.length; }, done: () => TAKES.length > (GD.base || 0) && !REC },
+  { id: 'stage', on: 'desk', short: 'Take it to the stage', text: 'Press Into the Studio → at the end of the tools row. The same song, on a stage: visuals that move with it, and ★ Showtime to play it full screen.', target: '#gtNext', done: () => !!goalNow() && goalNow().id === 'performer' },
+  { id: 'out', on: 'desk', short: 'Send it', text: 'Press ⇩ Export in the tools row. Audio, a one-file share page, the lyric sheet, or the whole song as a link: choose how it leaves.', target: '#gtExp', done: () => DOCK.cur === 'exp' || !!document.getElementById('slUrl') },
+  /* on a phone: the same song, on the phone's own screens (Beats, Words, Sing, and the whole song) */
+  { id: 'idea', on: 'phone', short: 'Start with an idea', text: () => (meNow() === 'sing' ? 'Tap ● Sing or hum an idea, hum or sing for 10 to 30 seconds, then ■ Stop and Done. A band plays it back with chords.' : 'Tap Beats at the bottom, then tap one. It plays, and its chords become your song.'),
+    target: () => (meNow() === 'sing' ? document.querySelector('#humGo2, #humStop, .hum-acts .btn.primary') : [...document.querySelectorAll('.bt-card')].find(x => x.getClientRects().length) || null), go: () => { if (meNow() === 'sing') { if (!document.getElementById('humbar')) { try { humCanvasFirst(); } catch (e) { } } } else { try { mGo('beats'); } catch (e) { } } },
+    done: () => !!PRJ.cur && gdHasIdea() && (meNow() !== 'sing' || !!HUM.r) && !document.getElementById('humbar') },
+  { id: 'hear', on: 'phone', short: 'Hear it', text: 'Tap ▶ at the top and listen to it once through, then ■.', target: gdPlayBtn, setup: () => { GD.seen.played = 0; }, done: () => !!GD.seen.played && !T.playing },
+  { id: 'words', on: 'phone', short: 'Write a line', text: 'Tap Words at the bottom and write a line. ♪ Chords puts a chord on a word with a tap; ✎ Rhymes helps.', target: '#mwText', go: () => { try { mGo('words'); } catch (e) { } }, done: () => S.sections.some(s => (s.lyrics || '').trim().length > 3) },
+  { id: 'take', on: 'phone', short: 'Sing it', text: 'Tap Sing at the bottom. Connect the microphone (headphones keep the beat out of it), tap ●, sing it once through after the count-in, then stop.', target: () => document.querySelector('#msMic, #msRec'), go: () => { try { mGo('sing'); } catch (e) { } }, setup: () => { GD.base = TAKES.length; }, done: () => TAKES.length > (GD.base || 0) && !REC },
+  { id: 'out', on: 'phone', short: 'Send it', text: 'Tap Words, then 📄 Song: the whole song as a sheet. 🔗 Send makes a link that carries the chords, the words and the beat (and your recordings, if you choose).', target: '#mwSend', go: gdPhoneSong, done: () => !!document.getElementById('slUrl') }
 ]));
 Object.defineProperty(GD_SESSIONS.stage = {
   name: 'Play it live', mins: 5, icon: '🎤', blurb: 'A look, your sound, the band, ★ Showtime, and a video to post.',
   outro: 'That is the stage: a look, your sound, the song full screen and a video. Studio Replay saves it as MP4 or shares it; ⋯ More has the shape of the video, the stream window and the tip jar.', next: 'learn'
 }, 'steps', gdSteps([
-  { id: 'look', short: 'Pick a look', text: 'Press the Look button at the top of the Visuals and choose one. Each look reads the song differently: try a few.', target: '#vzLookBtn', go: () => { dockGo('vis'); try { vzLooksOpen(true); } catch (e) { } }, setup: () => { GD.base = VZ.mode; }, done: () => VZ.mode !== GD.base },
-  { id: 'tone', short: 'Pick your sound', only: ['', 'guitar', 'new', 'tech'], text: 'Choose a tone from the list on the left: a clean, a crunch, a lead. With a guitar connected (Audio, top right) you hear it as you play.', target: '#left .pitem', go: () => { try { sideShow('tones'); } catch (e) { } }, setup: () => { GD.base = RIG.cur; }, done: () => RIG.cur !== GD.base },
-  { id: 'band', short: 'Start the band', text: 'Press ▶ (or Space). The band plays the song and the visuals move with it. Play or sing along, then ■ Stop.', target: () => UI.play, setup: () => { GD.seen.played = 0; }, done: () => !!GD.seen.played && !T.playing },
-  { id: 'show', short: 'Go full screen', text: () => 'Press ★ Showtime in the song bar' + (meNow() === 'sing' ? ': the words come up in time with their chords, to sing from.' : ': the chord, the next one and the words, full screen.') + ' Esc brings you back.', target: '#sbPerform', setup: () => { GD.seen.perf = 0; }, done: () => !!GD.seen.perf && !document.body.classList.contains('perform-on') },
-  { id: 'video', short: 'Record a video', text: 'Press ⏺ Record video, let it run for a few seconds, and press it again to stop. Studio Replay opens with your video, ready to save or share.', target: '#gtVideo', setup: () => { GD.base = KIT.last; }, done: () => !!KIT.last && KIT.last !== GD.base }
+  { id: 'look', on: 'desk', short: 'Pick a look', text: 'Press the Look button at the top of the Visuals and choose one. Each look reads the song differently: try a few.', target: '#vzLookBtn', go: () => { dockGo('vis'); try { vzLooksOpen(true); } catch (e) { } }, setup: () => { GD.base = VZ.mode; }, done: () => VZ.mode !== GD.base },
+  { id: 'tone', on: 'desk', short: 'Pick your sound', only: ['', 'guitar', 'new', 'tech'], text: 'Choose a tone from the list on the left: a clean, a crunch, a lead. With a guitar connected (Audio, top right) you hear it as you play.', target: '#left .pitem', go: () => { try { sideShow('tones'); } catch (e) { } }, setup: () => { GD.base = RIG.cur; }, done: () => RIG.cur !== GD.base },
+  { id: 'band', on: 'desk', short: 'Start the band', text: 'Press ▶ (or Space). The band plays the song and the visuals move with it. Play or sing along, then ■ Stop.', target: () => UI.play, setup: () => { GD.seen.played = 0; }, done: () => !!GD.seen.played && !T.playing },
+  { id: 'show', on: 'desk', short: 'Go full screen', text: () => 'Press ★ Showtime in the song bar' + (meNow() === 'sing' ? ': the words come up in time with their chords, to sing from.' : ': the chord, the next one and the words, full screen.') + ' Esc brings you back.', target: '#sbPerform', setup: () => { GD.seen.perf = 0; }, done: () => !!GD.seen.perf && !document.body.classList.contains('perform-on') },
+  { id: 'video', on: 'desk', short: 'Record a video', text: 'Press ⏺ Record video, let it run for a few seconds, and press it again to stop. Studio Replay opens with your video, ready to save or share.', target: '#gtVideo', setup: () => { GD.base = KIT.last; }, done: () => !!KIT.last && KIT.last !== GD.base },
+  { id: 'band', on: 'phone', short: 'Start the band', text: 'Tap ▶ at the top. The band plays the song; sing or play along, then ■.', target: gdPlayBtn, setup: () => { GD.seen.played = 0; }, done: () => !!GD.seen.played && !T.playing },
+  { id: 'look', on: 'phone', short: 'Pick a look', text: 'This is the Visuals: tap the Look button and choose one. Each look reads the song differently.', target: '#vzLookBtn', go: () => { try { mGo('see', 'vis'); vzLooksOpen(true); } catch (e) { } }, setup: () => { GD.base = VZ.mode; }, done: () => VZ.mode !== GD.base },
+  { id: 'show', on: 'phone', short: 'Go full screen', text: 'Tap Words, then 📄 Song, then ★ Showtime: the words come up in time with their chords, to sing or play from. ✕ brings you back.', target: '#mwPerform', go: gdPhoneSong, setup: () => { GD.seen.perf = 0; }, done: () => !!GD.seen.perf && !document.body.classList.contains('perform-on') }
 ]));
 Object.defineProperty(GD_SESSIONS.learn = {
   name: 'Learn and practise', mins: 4, icon: '🎼', blurb: 'Connect, open a lesson, and play it while the coach listens.',
   outro: 'Every lesson, riff and scale works that way: it shows you, plays it, then listens. 📅 Today builds fifteen minutes from what you have learned, and brings it back so it sticks.', next: 'song'
 }, 'steps', gdSteps([
   Object.assign({}, GD_SESSIONS.play.steps[0]),
-  { id: 'open', short: 'Open a lesson', text: () => (meNow() === 'guitar' || meNow() === 'tech' ? 'Press ▶ Start today’s session: a warm-up, something to review, something new and a riff.' : 'Open the first lesson in Foundations: Tune up and find the strings.'), target: () => document.querySelector(meNow() === 'guitar' || meNow() === 'tech' ? '#lnToday' : '#learn [data-lesson]'), go: () => { try { learnOpen(meNow() === 'guitar' || meNow() === 'tech' ? 'today' : 'lessons'); } catch (e) { } }, done: () => { const c = document.getElementById('coach'); return !!(c && c.open); } },
-  { id: 'play', short: 'Play it to the coach', text: 'Press ▶ Listen to hear the step, then ● Play it and play. The coach follows you note by note and says how it went. (Next ▶ moves on from a step that is only to read.)', target: '#coGo, #coNext', setup: () => { GD.seen.coach = 0; }, done: () => !!GD.seen.coach && !CO.run }
+  { id: 'open', short: 'Open a lesson', text: () => (meNow() === 'sing' ? 'Open the first lesson in 🎤 Singing: Warm up and match a note.' : meNow() === 'guitar' || meNow() === 'tech' ? 'Press ▶ Start today’s session: a warm-up, something to review, something new and a riff.' : 'Open the first lesson in Foundations: Tune up and find the strings.'), target: () => document.querySelector(meNow() === 'sing' ? '#learn [data-lesson="v1"]' : meNow() === 'guitar' || meNow() === 'tech' ? '#lnToday' : '#learn [data-lesson]'), go: () => { try { learnOpen(meNow() === 'sing' ? 'sing' : meNow() === 'guitar' || meNow() === 'tech' ? 'today' : 'lessons'); } catch (e) { } }, done: () => { const c = document.getElementById('coach'); return !!(c && c.open); } },
+  { id: 'play', short: 'Play it to the coach', text: () => (meNow() === 'sing' ? 'Press ▶ Listen to hear the step, then ● Sing it. The keyboard shows the note you are singing, and the coach follows you note by note.' : 'Press ▶ Listen to hear the step, then ● Play it and play. The coach follows you note by note and says how it went.') + ' (Next ▶ moves on from a step that is only to read.)', target: '#coGo, #coNext', setup: () => { GD.seen.coach = 0; }, done: () => !!GD.seen.coach && !CO.run }
 ]));
 const GD_ORDER = ['song', 'stage', 'learn', 'play', 'write', 'hum', 'record', 'loop', 'split', 'show'];
 
@@ -183,7 +197,7 @@ const meNow = () => (ME[CFG.me] ? CFG.me : '');
 const GD_DOOR_TEXT = {
   song: { '': 'Start with a beat, add chords and words, record it and send it. A whole song, start to finish.', sing: 'Hum or sing an idea and a band plays it back. Then the words, a take, and send it.', guitar: 'Play a riff and it is written down as tab. Then chords, words, a take, and send it.', new: 'Pick a beat, and the chords are there. Add your words, record it and send it. Your first whole song.', tech: 'Chords, tab and a piano roll, the band as lanes you can mix and export. A whole song, start to finish.' },
   stage: { '': 'Your sound with a band behind you, visuals that move with the song, and a video to post.', sing: 'Sing it full screen with the words in time, in front of the visuals, and record a video to post.', guitar: 'Your tone with a band behind you, visuals that follow the song, and a video to post.', new: 'A band plays a finished song. Pick how it looks, play or sing along, and record a video.', tech: 'Looks, lights and a second screen that follow the song; record the stage as a wide or vertical video.' },
-  learn: { '': 'Lessons that show you, play it, then listen to you. Fifteen minutes a day.', sing: 'See your pitch as you sing, find your range and your key, and practise over any song.', guitar: 'Today’s fifteen minutes, riffs and licks, the neck mapped out, any song slowed down.', new: 'From tuning up to your first song: each lesson shows you, plays it, then listens to you.', tech: 'Scales, arpeggios and modes on the neck, ear training, and any recording split and slowed down.' },
+  learn: { '': 'Lessons that show you, play it, then listen to you. Fifteen minutes a day.', sing: 'Warm-ups and exercises that listen as you sing, your pitch on a keyboard, your range and your key.', guitar: 'Today’s fifteen minutes, riffs and licks, the neck mapped out, any song slowed down.', new: 'From tuning up to your first song: each lesson shows you, plays it, then listens to you.', tech: 'Scales, arpeggios and modes on the neck, ear training, and any recording split and slowed down.' },
   explore: { '': 'Every panel and the whole rig, with a finished song to take apart. A tour shows you round.', sing: 'Everything: vocal pedals and tuning, the band, stems, the stage. A finished song to take apart.', guitar: 'Everything: the pedalboard, scenes, amps and cabinets, stems and the stage. A finished song to take apart.', new: 'Everything at once, with a finished song to poke at. A tour shows you round.', tech: 'Every panel: the rig, the mixer, stems, transcription, MIDI, the show console. A finished song to take apart.' }
 };
 /** the song on screen is the person's own, with chords: keep it */
@@ -195,18 +209,17 @@ const gdHasIdea = () => S.sections.some(s => s.bars.some(b => (b.chord || '').tr
 const GD_DOORS = {
   song: async () => {
     const m = meNow();
-    if (!isDesk()) { await GD_GOALS.write(); guideStart('write', { fresh: true }); return; }      /* (a phone that is not a guitarist's starts on the hum bar: gdDoor) */
+    if (!isDesk()) { await projCreate('blank', { form: 'empty', title: 'My song', zoom: 'studio' }); zoomSet('studio', true); try { mGo('beats'); } catch (e) { } guideStart('song', { fresh: true }); return; }      /* 2.68: on a phone, from a beat (a singer starts on the hum bar: gdDoor) */
     await projCreate('blank', { form: 'empty', title: 'My song', zoom: 'studio' }); zoomSet('studio', true); goalGo('songwriter');
     try { wrMode(m === 'tech' || m === 'guitar' ? 'both' : 'words'); } catch (e) { }
     guideStart('song', { fresh: true });
   },
-  stage: async () => { if (!isDesk()) { await GD_GOALS.play(); guideStart('play', { fresh: true }); return; } await gdDemoOrMine(); goalGo('performer'); guideStart('stage', { fresh: true }); },
+  stage: async () => { if (!isDesk()) { await gdDemoOrMine(); try { mGo('see', 'vis'); } catch (e) { } guideStart('stage', { fresh: true }); return; } await gdDemoOrMine(); goalGo('performer'); guideStart('stage', { fresh: true }); },
   learn: async () => {
     const m = meNow(); await gdDemoOrMine();
-    if (!isDesk()) { learnOpen(m === 'guitar' || m === 'tech' ? 'today' : 'lessons'); return; }
+    if (!isDesk()) { learnOpen(m === 'sing' ? 'sing' : m === 'guitar' || m === 'tech' ? 'today' : 'lessons'); return; }      /* on a phone Learn fills the screen, so it guides itself */
     goalGo('practice');
-    if (m === 'sing') { learnOpen('song'); try { voxOpen(); } catch (e) { } toast('🎤 Voice shows your pitch against the key as you sing. Find my range and Find my key are in it; This song has the song as steps.', '', 9000); return; }
-    learnOpen(m === 'guitar' || m === 'tech' ? 'today' : 'lessons'); guideStart('learn', { fresh: true });
+    learnOpen(m === 'sing' ? 'sing' : m === 'guitar' || m === 'tech' ? 'today' : 'lessons'); guideStart('learn', { fresh: true });      /* 2.68: a singer opens Singing */
   },
   explore: async () => {
     const first = !store.get('started', false); CFG.xpMode = 'pro'; CFG.xp = Math.max(CFG.xp || 0, 40); simpleSet(false, true); saveCfg();
@@ -217,7 +230,7 @@ const GD_DOORS = {
 /** a way in: true when it took over the first screen (false: the hum bar opens as usual, with its session) */
 function gdDoor(id) {
   const m = meNow();
-  if (id === 'song' && (m === 'sing' || (!isDesk() && m !== 'guitar'))) { guideStart(isDesk() ? 'song' : 'hum', { fresh: true }); return false; }
+  if (id === 'song' && m === 'sing') { guideStart('song', { fresh: true }); return false; }      /* a singer starts on the hum bar, on a computer or a phone */
   (async () => { try { await GD_DOORS[id](); } catch (e) { console.warn('door', e); } })(); return true;
 }
 /** called by startMaybe: true when a goal took over the first screen */
@@ -371,7 +384,7 @@ function guideBoot(bootStart) {
   });
   /* 2.67: who you are, and the four ways in */
   const paint = () => { const m = meNow(); document.querySelectorAll('#bootMe [data-me]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.me === m))); document.querySelectorAll('#bootDoors .boot-door').forEach(b => { const t = GD_DOOR_TEXT[b.dataset.door], s = b.querySelector('.bd-s'); if (t && s) s.textContent = t[m] || t['']; }); };
-  document.querySelectorAll('#bootMe [data-me]').forEach(b => b.onclick = () => { CFG.me = CFG.me === b.dataset.me ? '' : b.dataset.me; saveCfg(); paint(); });
+  document.querySelectorAll('#bootMe [data-me]').forEach(b => b.onclick = () => { CFG.me = CFG.me === b.dataset.me ? '' : b.dataset.me; try { meDefaults(); } catch (e) { } saveCfg(); paint(); });
   document.querySelectorAll('#bootDoors .boot-door').forEach(b => b.onclick = () => { const d = b.dataset.door; CFG.goal = d; PRJ.goal = d; saveCfg(); PRJ.bootDemo = false; bootStart('studio'); });
   paint();
 }
