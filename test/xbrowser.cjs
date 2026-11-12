@@ -21,7 +21,12 @@ suite('xbrowser-' + (process.env.BROWSER || 'chromium'), async t => {
   at = 'it opens, and the audio engine starts'; console.log('· ' + at);
   ok(await ev(() => !!window.__daily && !document.getElementById('boot')), 'the studio opens past the welcome card');
   ok(await ev(() => !!document.querySelector('.build-tag') && /v\d+\.\d+\.\d+/.test(document.querySelector('.build-tag').textContent)), 'the version tag is shown');
-  const A = await ev(async () => { const D = window.__daily; await D.startAudio(); const c = D.E.ctx; if (c.state !== 'running') { try { await c.resume(); } catch (e) { } } return { ready: D.E.ready, state: c.state, worklet: D.E.worklet, lim: D.E.limiter.constructor.name, sr: c.sampleRate }; });
+  /* 2.68: an engine with no audio output (Firefox on a machine with no sound device) never finishes starting its AudioContext. Say so
+     in 20 seconds and stop, where it used to wait for the watchdog: nothing after this can run without the audio engine. */
+  const A = await ev(async () => { const D = window.__daily, late = Symbol('late'), lim = ms => new Promise(r => setTimeout(() => r(late), ms));
+    if (await Promise.race([D.startAudio(), lim(20000)]) === late) return { stuck: 'startAudio', state: D.E.ctx ? D.E.ctx.state : 'no context' };
+    const c = D.E.ctx; if (c.state !== 'running') { try { await Promise.race([c.resume(), lim(5000)]); } catch (e) { } } return { ready: D.E.ready, state: c.state, worklet: D.E.worklet, lim: D.E.limiter.constructor.name, sr: c.sampleRate }; });
+  if (A.stuck) { ok(false, 'the audio engine did not start within 20 s (' + JSON.stringify(A) + '): this engine has no audio output here. CI starts a silent PulseAudio sink for Firefox; on your own machine, check the sound device.'); return; }
   ok(A.ready && A.worklet, 'the audio engine starts with its worklets (' + JSON.stringify(A) + ')');
   ok(A.lim === 'AudioWorkletNode', 'the zero-delay effects are in use (the limiter is ' + A.lim + ')');
 
