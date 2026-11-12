@@ -18,7 +18,7 @@
    only (#p=…): the sound never leaves this device. Prints you make are kept on this device (Your soundprints, newest 48).
    This part is a room (part 00): the hosted site loads it the first time it is opened.
    ============================================================ */
-const PRT = { cur: null, read: null, src: null, world: 'print', raf: 0, play: null, piece: null, rec: null, vid: null, body: null, cv: null, cache: null, weave: true, mine: false, dirty: true, KEEP: 'fw.prints', MAX: 48 };
+const PRT = { cur: null, read: null, src: null, world: 'print', raf: 0, play: null, piece: null, rec: null, vid: null, body: null, cv: null, cache: null, weave: true, mine: false, dirty: true, KEEP: 'fw.prints', MAX: PRT_SHELF_MAX };      /* the shelf travels with backups and sync (part 25, 2.65.2) */
 const PRT_N = 128, PRT_M = 64;                 /* moments for loudness, brightness and motion; for the notes and the spectrum */
 const PRT_WORLDS = [['print', '◎', 'Print'], ['flow', '〰', 'Flow'], ['terrain', '⛰', 'Terrain'], ['bloom', '✿', 'Bloom'], ['harmono', '∞', 'Harmonograph']];
 const PRT_FIFTHS = [0, 7, 2, 9, 4, 11, 6, 1, 8, 3, 10, 5];      /* the colour wheel: C, G, D, A, E, B, F#, C#, G#, D#, A#, F */

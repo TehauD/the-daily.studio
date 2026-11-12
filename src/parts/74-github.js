@@ -111,7 +111,7 @@ async function ghLocal(o = {}) {
   f['rig/presets.json'] = ghJson({ format: 'the-daily-studio-presets', version: 1, presets: store.get('presets', []) });
   f['stage/looks.json'] = ghJson({ format: 'the-daily-studio-looks', version: 1, show: ghLooksOut() });
   f['stage/scenes.json'] = ghJson({ format: 'the-daily-studio-scenes', version: 1, stage: CFG.stage || STG });
-  f['notes.json'] = ghJson({ format: 'the-daily-studio-notes', version: 1, lessons: store.get('lessons', {}), notebook: store.get('notebook', null) });
+  f['notes.json'] = ghJson({ format: 'the-daily-studio-notes', version: 1, lessons: store.get('lessons', {}), notebook: store.get('notebook', null), prints: prtShelfAll() });
   const gone = new Set((o.st || CFG.gh).gone || []);
   for (const r of PRJ.list) { let rec = r; if (!rec.song) { try { rec = await pdbGet('projects', r.id); } catch (e) { continue; } } if (!ghSongKeep(rec) || gone.has(rec.id)) continue; const t = ghJson(out(rec)); if (t.length > max) continue; f['songs/' + rec.id + '.json'] = t; songs.push(rec); }
   songs.sort((a, b) => String(a.title).localeCompare(String(b.title)));
@@ -139,7 +139,9 @@ async function ghTakeLooks(remote, baseTxt) {
 }
 async function ghTakeScenes(remote) { const R = (ghParse(remote) || {}).stage; if (R && Array.isArray(R.scenes) && !ghSame(CFG.stage, R)) { CFG.stage = R; Object.assign(STG, R); saveCfg(); try { renderStageUI(); } catch (e) { } return true; } return false; }
 async function ghTakePresets(remote) { const R = (ghParse(remote) || {}).presets; if (Array.isArray(R)) { const clean = R.map(rigClean).filter(Boolean); if (!ghSame(store.get('presets', []), clean)) { store.set('presets', clean); try { renderTones(); } catch (e) { } return true; } } return false; }
-async function ghTakeNotes(remote) { const R = ghParse(remote) || {}; let ch = false; if (R.lessons && typeof R.lessons === 'object' && !ghSame(store.get('lessons', {}), R.lessons)) { store.set('lessons', R.lessons); ch = true; } if (R.notebook != null && !ghSame(store.get('notebook', null), R.notebook)) { store.set('notebook', R.notebook); ch = true; } return ch; }
+async function ghTakeNotes(remote) { const R = ghParse(remote) || {}; let ch = false; if (R.lessons && typeof R.lessons === 'object' && !ghSame(store.get('lessons', {}), R.lessons)) { store.set('lessons', R.lessons); ch = true; } if (R.notebook != null && !ghSame(store.get('notebook', null), R.notebook)) { store.set('notebook', R.notebook); ch = true; } if (prtShelfMerge(R.prints)) ch = true; return ch; }
+/** 2.65.2: when both sides changed their notes, this device's notes win, but soundprints are merged so neither side loses one */
+async function ghTakePrints(remote) { const R = ghParse(remote) || {}; return prtShelfMerge(R.prints); }
 /** a song from the repository into this browser's library (its recordings, if this device has any, are kept) */
 async function ghTakeSong(text, asCopy) {
   const d = ghParse(text); if (!d || !d.song || !Array.isArray(d.song.sections)) return null;
@@ -189,7 +191,7 @@ async function studioSync(B, why) {
       continue;
     }
     const bt = l === b || b ? await syncBaseGet(B, p) : null;
-    const ch = k === 'settings' ? await ghTakeSettings(rt, b ? bt : null) : k === 'looks' ? await ghTakeLooks(rt, b ? bt : null) : k === 'scenes' ? (l === b || !b ? await ghTakeScenes(rt) : false) : k === 'presets' ? (l === b || !b ? await ghTakePresets(rt) : false) : k === 'notes' ? (l === b || !b ? await ghTakeNotes(rt) : false) : false;
+    const ch = k === 'settings' ? await ghTakeSettings(rt, b ? bt : null) : k === 'looks' ? await ghTakeLooks(rt, b ? bt : null) : k === 'scenes' ? (l === b || !b ? await ghTakeScenes(rt) : false) : k === 'presets' ? (l === b || !b ? await ghTakePresets(rt) : false) : k === 'notes' ? (l === b || !b ? await ghTakeNotes(rt) : await ghTakePrints(rt)) : false;
     if (ch) rep.took.push(p);
   }
   /* songs deleted elsewhere: kept here, not sent back, until changed or removed here */

@@ -21,7 +21,7 @@ Every sound becomes something only it could make.
 - **The reading:** its key, pulse, character, strongest colours and a chord progression. **✎ Start a song from it** makes a new song in that key and tempo with those chords.
 - **The piece:** an ambient piece grown from the print (pads on the chords, a drone, bells on the onsets, wind for the noise). **Weave in the recording** adds the sound itself an octave down, on your device only.
 - **Keep it, share it:** **⤓ Artwork** (a 2048-pixel picture of the world on screen, with its title and reading), **⤓ The piece (WAV)**, **⏺ Video** (the world moving with the piece; it plays through once while it records), **🔗 Copy link** (the print, not the sound: whoever opens it sees the same worlds and hears the same piece, made on their device).
-- **Your soundprints** keeps the prints you make, in this browser. Press one to open it, ✕ to remove it. Rename a print in its title box.
+- **Your soundprints** keeps the prints you make, in this browser, and (2.65.2) in your backups, folder sync and GitHub sync, so a new device or a restored backup has them too. Press one to open it, ✕ to remove it. Rename a print in its title box.
 
 ## 🌍 Drops (2.60)
 

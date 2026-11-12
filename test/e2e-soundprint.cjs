@@ -173,5 +173,26 @@ suite('e2e-soundprint', async t => {
   ok(HD.keep && HD.badSig && HD.html && HD.big && HD.notObj && HD.noKey, 'a song keeps a well-formed print, and drops one that is not base64url, too long or not an object ' + JSON.stringify(HD));
   ok(HD.w === 'print' && HD.w2 === 'flow', 'an unknown Soundprint world in the settings draws Print');
 
+  /* 2.65.2: Your soundprints travel with backups and sync */
+  const SY = await ev(async () => {
+    const D = window.__daily, code = n => 'AQ0iAB-_x' + String.fromCharCode(65 + n).repeat(1200), had = D.prtShelfAll(), r = {};
+    D.store.set('prints', [{ id: 'aa01', c: code(0), t: 100 }]);
+    r.merged = D.prtShelfMerge([{ id: 'bb02', c: code(1), t: 200 }, { id: 'aa01', c: code(0), t: 100 }, { id: 'evil', c: '<script>', t: 300 }, 'x', null]);
+    r.order = D.prtShelfAll().map(x => x.id).join();
+    r.again = D.prtShelfMerge([{ id: 'bb02', c: code(1), t: 200 }]);
+    const L = await D.ghLocal(); r.inNotes = (JSON.parse(L['notes.json']).prints || []).map(x => x.id).join();
+    D.store.set('prints', [{ id: 'aa01', c: code(0), t: 100 }]);
+    r.took = await D.ghTakePrints(JSON.stringify({ format: 'the-daily-studio-notes', version: 1, prints: [{ id: 'cc03', c: code(2), t: 50 }] }));
+    r.afterSync = D.prtShelfAll().map(x => x.id).join();
+    const zip = D.zipBuild([{ name: 'prints.json', data: new TextEncoder().encode(JSON.stringify({ format: 'the-daily-studio-prints', version: 1, prints: [{ id: 'dd04', c: code(3), t: 400 }] })) }]);
+    await D.projImport(new File([zip], 'the-daily.studio-backup.zip', { type: 'application/zip' }));
+    r.afterZip = D.prtShelfAll().map(x => x.id).join();
+    D.store.set('prints', had); return r;
+  });
+  ok(SY.merged && SY.order === 'bb02,aa01' && !SY.again, 'merging keeps one of each print, newest first, and drops anything that is not a print ' + JSON.stringify(SY));
+  ok(SY.inNotes === 'bb02,aa01', 'folder and GitHub sync carry Your soundprints in notes.json');
+  ok(SY.took && SY.afterSync === 'aa01,cc03', 'a print from the other device is added, even when this one changed its notes too');
+  ok(SY.afterZip === 'dd04,aa01,cc03', 'a backup with prints.json adds them to Your soundprints');
+
   ok(req.length === 0, 'nothing was fetched from anywhere else (' + (req.join(', ') || 'none') + ')');
 });

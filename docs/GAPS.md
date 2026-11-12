@@ -4,6 +4,11 @@ What the studio, its tutorials, its documents and its tests do **not** cover yet
 
 How to use it: before a release, move what the release closed into *Closed* with the version, and add what it opened. [RELEASE.md](RELEASE.md) has this as a checklist item. Items marked **(maintainer)** are decisions or facts only the project's owner can settle; nothing here blocks a build.
 
+## Closed in 2.65.2
+
+- **Soundprints were kept in this browser only.** They travel with backups, folder sync and GitHub sync, merged so neither device loses one.
+- **CI on main ended "cancelled"** every time: the Firefox pass hung until GitHub's six-hour limit. It stops after 20 minutes now, and names the step it hung in after 8.
+
 ## Closed in 2.65.1
 
 - **A song's soundprint was kept as it came.** A song from someone else (a link, a backup, sync) keeps its print only in the print's own shape, capped at 4,000 characters; a sound file over 400 MB is refused before it is read; an unknown Soundprint world in the settings draws Print.
@@ -167,7 +172,6 @@ How to use it: before a release, move what the release closed into *Closed* with
 - **Prints can't be dropped** to the public page yet. A soundprint gallery could use Drops' review, with the print instead of audio (no copyright question).
 - **No vertical (9:16) video** for stories; the video is square.
 - **The reading is a guess** from about a kilobyte: it hears one key for the whole sound, and chords only from the key's own (no borrowed chords).
-- **Prints are kept in this browser only.** They're not in backups, folder sync or GitHub sync yet.
 - **No caption or location** on a print, by design for now.
 
 ### Drops (opened by 2.60)
