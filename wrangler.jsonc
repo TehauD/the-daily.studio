@@ -34,6 +34,9 @@
     // Drops (2.60): switch it on by creating the PUBLIC bucket (docs/CLOUDFLARE_SETUP.md, Part H), then adding it here:
     // , { "binding": "DROPS", "bucket_name": "thedaily-drops" }
   ],
+  // Honeypot auto-block (2.69.1, worker/honeypot.mjs): off until a KV namespace is created and bound here (docs/CLOUDFLARE_SETUP.md,
+  // Part I), plus the CF_API_TOKEN / CF_ZONE_ID Worker secrets. Without all three, the honeypot stays a tarpit only, as before.
+  // "kv_namespaces": [ { "binding": "HONEY_KV", "id": "<paste the id `wrangler kv namespace create HONEY_KV` gives you>" } ],
   // Drops: the site owner's GitHub account number (public; it decides who can approve drops) and, once the public bucket has its own
   // address, that address (without it, the Worker serves the audio itself).
   "vars": { "OWNER_GITHUB_ID": "13037814", "DROPS_URL": "" },

@@ -4,6 +4,7 @@ import { handle, b64url } from '../worker/index.mjs';
 import { SHARE, shareDay } from '../worker/share.mjs';
 import { DROP } from '../worker/drops.mjs';
 import { fakeR2 } from './fake-r2.mjs';
+import { fakeKV } from './fake-kv.mjs';
 import { isHoneyPath } from '../worker/honeypot.mjs';
 let fails = 0, n = 0; const ok = (c, m) => { n++; console.log((c ? 'ok   ' : 'FAIL ') + m); if (!c) fails++; };
 const SITE = 'https://the-daily.studio', ENV = { GITHUB_CLIENT_ID: 'Iv1.abc', GITHUB_CLIENT_SECRET: 'shh', ASSETS: { fetch: r => new Response('asset ' + new URL(r.url).pathname) } };
@@ -61,6 +62,29 @@ ok(await r.text() === 'asset /guide/', 'every other address is the built site, a
   r = await handle(new Request('https://journal.the-daily.studio/.git/config'), ENV, gh({}), Date.now(), noSleep);
   ok(r.status === 404, 'the same goes for The Daily’s own address');
   r = await handle(new Request(SITE + '/environment.js'), ENV, gh({})); ok((await r.text()) === 'asset /environment.js', 'a path that only looks similar is still just the site, answered at once, not taxed');
+}
+/* ---- the honeypot's auto-block (2.69.1): off until HONEY_KV + CF_API_TOKEN + CF_ZONE_ID are all set up ---- */
+{
+  const noSleep = () => Promise.resolve();
+  const cfCalls = []; const cfApi = async (url, init) => { cfCalls.push({ url, headers: init.headers, body: JSON.parse(init.body) }); return new Response('{"success":true}'); };
+  const KV = fakeKV(), BENV = Object.assign({}, ENV, { HONEY_KV: KV, CF_API_TOKEN: 'cf-tok', CF_ZONE_ID: 'zone1' });
+  const hit = (ip, env = BENV, fetchFn = cfApi) => handle(new Request(SITE + '/.env', { headers: { 'cf-connecting-ip': ip } }), env, fetchFn, Date.now(), noSleep);
+  await hit('9.9.9.1'); await hit('9.9.9.1');
+  ok(cfCalls.length === 0, 'the first two hits from an IP are only tarpitted, never blocked (a shared IP could otherwise lock out people who never touched these paths)');
+  r = await hit('9.9.9.1');
+  ok(r.status === 404 && cfCalls.length === 1, 'the third hit in the window crosses the threshold and calls Cloudflare to block that IP, while still answering the tarpit as usual');
+  const call = cfCalls[0];
+  ok(call.url === 'https://api.cloudflare.com/client/v4/zones/zone1/firewall/access_rules/rules' && call.headers.Authorization === 'Bearer cf-tok' && call.body.mode === 'block' && call.body.configuration.target === 'ip' && call.body.configuration.value === '9.9.9.1', 'using the zone’s own scoped API token, as a real IP Access Rule — not a WAF Custom Rule, which cannot be created this way');
+  await hit('9.9.9.1'); ok(cfCalls.length === 1, 'past the threshold it is not asked again and again; the one block already stands');
+  await hit('9.9.9.2'); ok(cfCalls.length === 1, 'a different IP has its own count, untouched by the first one’s');
+  r = await handle(new Request(SITE + '/.env', { headers: { 'cf-connecting-ip': '9.9.9.9' } }), ENV, cfApi, Date.now(), noSleep);
+  ok(r.status === 404 && cfCalls.length === 1, 'without a KV namespace bound (as on the live site until it is set up), the tally is skipped and the honeypot stays a tarpit only');
+  const noTokEnv = Object.assign({}, ENV, { HONEY_KV: fakeKV() });
+  for (let i = 0; i < 3; i++) await handle(new Request(SITE + '/.env', { headers: { 'cf-connecting-ip': '9.9.9.8' } }), noTokEnv, cfApi, Date.now(), noSleep);
+  ok(cfCalls.length === 1, 'the count still runs with a KV namespace but no CF_API_TOKEN/CF_ZONE_ID, but nothing is ever called at Cloudflare without both');
+  const badKV = { get: async () => { throw new Error('kv down'); }, put: async () => { } };
+  r = await handle(new Request(SITE + '/.env', { headers: { 'cf-connecting-ip': '9.9.9.7' } }), Object.assign({}, ENV, { HONEY_KV: badKV, CF_API_TOKEN: 'x', CF_ZONE_ID: 'y' }), cfApi, Date.now(), noSleep);
+  ok(r.status === 404, 'and if the tally itself fails (KV unreachable), the tarpit still answers normally; the visitor never sees the difference');
 }
 /* The Daily's own address (2.50) */
 const J = 'https://journal.the-daily.studio';

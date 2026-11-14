@@ -2,6 +2,16 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.69.1 — 2026-11-14 — The honeypot gets teeth, and an edge-level block alongside it
+
+### Changed
+- **The honeypot can now auto-block repeat offenders.** Past 3 hits from the same IP inside an hour, the Worker adds that IP to the zone's IP Access Rules via Cloudflare's own API — a real block, not just the tarpit's few-second delay (`worker/honeypot.mjs`). It's off until the site owner sets up a KV namespace and two scoped Worker secrets (`CLOUDFLARE_SETUP.md`, Part I); without all three, nothing changes from 2.69.0. A single hit never blocks: a shared IP (a works VPN, a carrier's NAT, a WARP exit) could otherwise lock out people who never touched these paths, while a real scanner clears three hits in well under a second. The block has no expiry (Cloudflare's API doesn't offer one), so it needs the same occasional human look the R2 reports already get.
+- **The WAF Custom Rule for the same scanner-bait list** (previously described only in passing) now has the exact Expression Editor syntax to paste in (`CLOUDFLARE_SETUP.md`, Part C) — one Custom Rule, well inside the free plan's 5-rule limit (checked against Cloudflare's current docs), separate from the `/auth/` rate limit's own 1-rule quota. Turning it on blocks the list at the edge, before the Worker ever runs, which makes the tarpit and the auto-block above moot for exactly that list — both still matter for anything this list doesn't happen to name.
+- **Corrected course on a bad lead:** `cf.threat_score`, floated as a free "bot score" signal, turns out to be deprecated — Cloudflare's own field reference says it now always returns 0. It was never written into any doc or code; this note is so nobody chases it later.
+
+### Tests
+- **`worker.test.mjs`** adds 8 checks for the auto-block: the first two hits from an IP stay tarpit-only; the third calls Cloudflare's Access Rules API with the right URL, token and IP; it isn't called again once blocked; a different IP has its own count; no KV binding skips the tally entirely; a KV namespace with no API token/zone ID still counts but never calls Cloudflare; a failing KV read never breaks the tarpit's response. 77/77 passing.
+
 ## 2.69.0 — 2026-11-14 — Lessons that teach harmony and style, and a honeypot for scanners
 
 ### Changed

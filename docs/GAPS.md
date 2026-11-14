@@ -4,6 +4,10 @@ What the studio, its tutorials, its documents and its tests do **not** cover yet
 
 How to use it: before a release, move what the release closed into *Closed* with the version, and add what it opened. [RELEASE.md](RELEASE.md) has this as a checklist item. Items marked **(maintainer)** are decisions or facts only the project's owner can settle; nothing here blocks a build.
 
+## Closed in 2.69.1
+
+- **The honeypot taxed every scanner the same, with no way to actually stop a persistent one.** Past 3 hits from the same IP in an hour, the Worker now blocks it outright via Cloudflare's own API (`worker/honeypot.mjs`), and the WAF Custom Rule alternative (edge-level, before the Worker runs) has exact paste-in syntax rather than a vague mention. Both are opt-in setup steps (`CLOUDFLARE_SETUP.md`, Parts C and I); nothing changes until the site owner does them.
+
 ## Closed in 2.69.0
 
 - **A handful of Practice lesson steps that described a shape drew nothing** — an empty box between the text and the tempo row. The five that describe a shape (open strings, the pentatonic box, a bend, vibrato, landing on a chord tone) now draw it.
