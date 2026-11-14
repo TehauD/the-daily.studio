@@ -23,6 +23,8 @@ const lp = (kind, title, text, o) => Object.assign({ kind, title, text, id: 'lp'
 const lpN = (kind, title, text, txt, o) => { const src = rfParse(txt); return lp(kind, title, text, Object.assign({ src, len: rfLen(src), keyed: false }, o || {})); };
 const LPC = {
   info: (t, x, o) => lp('info', t, x, o),
+  /* 2.69: an info step with a diagram — the neck and tab draw it (▶ Listen plays it), but nothing is checked to move on */
+  show: (t, x, txt, o) => lpN('info', t, x, txt, o),
   notes: (t, x, txt, o) => lpN('notes', t, x, txt, o),
   timed: (t, x, txt, o) => lpN('timed', t, x, txt, Object.assign({ back: { drums: true } }, o || {})),
   chord: (t, x, c, o) => lp('chord', t, x, Object.assign({ chords: [c] }, o || {})),
@@ -40,7 +42,7 @@ const LPC = {
 const LESSONS = [
   { id: 'found', ico: '🌱', name: 'Foundations', blurb: 'Tune, first notes, first chords, changing in time, strumming, your first song.', lessons: [
     { id: 'f1', name: 'Tune up and find the strings', steps: [
-      LPC.info('Six strings, low to high', 'From the thickest string to the thinnest: E A D G B E. The tuner (top right) shows how far each one is from its note. Tune each until the needle sits in the middle.'),
+      LPC.show('Six strings, low to high', 'From the thickest string to the thinnest: E A D G B E. The tuner (top right) shows how far each one is from its note. Tune each until the needle sits in the middle.', '0:4 5:4 10:4 15:4 19:4 24:4', { keyPc: 4, near: 0 }),
       LPC.notes('Play each open string', 'Pick each string once, thickest first. The coach moves on when it hears the right note.', '0:4 5:4 10:4 15:4 19:4 24:4', { keyPc: 4, near: 0 }),
       LPC.notes('Your first fretted notes', 'Press just behind the fret, with your fingertip. Second fret on the D, G and B strings.', '12:4 17:4 21:4', { keyPc: 4, near: 1 })] },
     { id: 'f2', name: 'First chords: Em, G, C, D', steps: [
@@ -63,17 +65,17 @@ const LESSONS = [
   ] },
   { id: 'lead', ico: '🎸', name: 'Lead', blurb: 'The pentatonic box, bends, vibrato, your first licks, playing them in time, soloing over a band.', lessons: [
     { id: 'l1', name: 'The minor pentatonic, box one', steps: [
-      LPC.info('The most useful shape on the guitar', 'Five notes, two on each string, starting at the fifth fret for A. Roots (R) are the home notes: start and end there.'),
+      LPC.show('The most useful shape on the guitar', 'Five notes, two on each string, starting at the fifth fret for A. Roots (R) are the home notes: start and end there.', '0 3 5 7 10 12 15 17 19 22 24 27', { keyPc: 9, near: 5, keyed: true }),
       LPC.notes('Up the box', 'Low string to high, one note at a time.', '0 3 5 7 10 12 15 17 19 22 24 27', { keyPc: 9, near: 5, keyed: true }),
       LPC.notes('And back down', 'High to low.', '27 24 22 19 17 15 12 10 7 5 3 0', { keyPc: 9, near: 5, keyed: true }),
       LPC.timed('Up and down in time', 'Eighth notes with the click and the drums. Even and relaxed.', '0 3 5 7 10 12 15 17 19 22 24 22 19 17 15 12', { keyPc: 9, near: 5, bpm: 70, keyed: true })] },
     { id: 'l2', name: 'Bends', steps: [
-      LPC.info('Push the string with three fingers', 'Ring, middle and index all push together; turn from the wrist, like a door handle. Aim for the note two frets up.'),
+      LPC.show('Push the string with three fingers', 'Ring, middle and index all push together; turn from the wrist, like a door handle. Aim for the note two frets up.', '10:4', { keyPc: 9, near: 5, lift: 12 }),
       LPC.bend('A whole-step bend', 'Seventh fret on the G string (in A): bend it up until it sounds like the ninth fret.', '10b:8', { keyPc: 9, near: 5, lift: 12 }),
       LPC.bend('A bend on the B string', 'Eighth fret, B string: bend up a whole step.', '15b:8', { keyPc: 9, near: 6, lift: 12 }),
       LPC.bend('A half-step bend', 'Small and sweet: the eighth fret on the high E, up a half step.', '22b1:8', { keyPc: 9, near: 6, lift: 12 })] },
     { id: 'l3', name: 'Vibrato', steps: [
-      LPC.info('Shake the note', 'Bend a little and let go, over and over, steadily. Five or six times a second sounds human.'),
+      LPC.show('Shake the note', 'Bend a little and let go, over and over, steadily. Five or six times a second sounds human.', '24:4', { keyPc: 9, near: 9 }),
       LPC.vib('Vibrato on the root', 'Tenth fret, B string (an A): hold it and shake it.', '24~:16', { keyPc: 9, near: 9, lift: 0 })] },
     { id: 'l4', name: 'Your first licks', steps: [
       LPC.notes('Down the box', 'A classic shape: three notes on the top string, falling to the root.', '24 22 19 22 19 17 15 12', { keyPc: 9, near: 5, keyed: true }),
@@ -83,7 +85,7 @@ const LESSONS = [
       LPC.timed('Lick over the drums', 'The first lick again, now with the click and the drums: land each note on its eighth.', '24 22 19 22 19 17 15 12', { keyPc: 9, near: 5, bpm: 76, keyed: true }),
       LPC.timed('Bend lick in time', 'Bend on the beat, release, and resolve.', '15b:4 15 12 10 12:4 r:2', { keyPc: 9, near: 5, bpm: 76, keyed: true })] },
     { id: 'l6', name: 'Solo over the band', steps: [
-      LPC.info('Aim for the chord', 'When the chord changes, land on one of its notes. The fretboard shows the box; the chord tones are where the band agrees with you.'),
+      LPC.show('Aim for the chord', 'When the chord changes, land on one of its notes. The fretboard shows the box; the chord tones are where the band agrees with you.', '0 3 5 7 10 12 15 17 19 22 24 27', { keyPc: 9, near: 5, keyed: true }),
       LPC.landing('A minor to G', 'Play in box one. Each time the chord changes, make your first note one of its notes.', ['Am', 'G'], { bpm: 84 }),
       LPC.landing('Am – F – C – G', 'Four chords; the same idea.', ['Am', 'F', 'C', 'G'], { bpm: 84 })] }
   ] },
@@ -120,6 +122,47 @@ const LESSONS = [
       LPC.sing('And back down', 'Coming down, the notes want to sag. Keep each one up where it belongs.', '12:4 11:4 9:4 7:4 5:4 4:4 2:4 0:4'),
       LPC.hold('Hold the top note', 'The high do, steady, for four seconds.', '12:8', { secs: 4 }),
       LPC.info('Your range and your key', 'Open 〰 Voice (in the tools) and press Find my range: sing your lowest and highest comfortable notes. From then on these exercises start where your voice sits, and Find my key says which key suits the song you have open. ⏱ Speed & key moves the song there.')] }
+  ] },
+  { id: 'prog', ico: '🎶', name: 'Progressions', blurb: 'Six chord progressions behind thousands of songs: how they are counted, where you have heard them, and how they feel under your hand.', lessons: [
+    { id: 'pg1', name: 'I–IV–V: the three-chord song', steps: [
+      LPC.info('Three chords, one key', 'I, IV and V are built on the first, fourth and fifth notes of the scale — in G major that is G, C and D. Count them on your fingers: almost every simple song is some order of these three.'),
+      LPC.changes('G – C – D – C', 'A bar each, with the band. Say the numeral as you strum it: one, four, five, four.', ['G', 'C', 'D', 'C'], { bpm: 88 }),
+      LPC.info('Try it in your own key', 'Open Theory (the left sidebar) and press I, IV and V in the diatonic chord palette to hear the same shape in whatever key you have open.')] },
+    { id: 'pg2', name: 'I–V–vi–IV: the pop progression', steps: [
+      LPC.info('The most-used progression in pop', 'Major, major, minor, major: I–V–vi–IV. It has carried hundreds of hit songs because it never quite resolves — the vi keeps pulling you round again.'),
+      LPC.changes('G – D – Em – C', 'A bar each, round and round.', ['G', 'D', 'Em', 'C'], { bpm: 92 })] },
+    { id: 'pg3', name: '12-bar blues', steps: [
+      LPC.info('Four bars, two bars, two bars, then the turnaround', 'I for four bars, IV for two, back to I for two, then V, IV, I, V. Every blues, and half of early rock and roll, is this one shape.'),
+      LPC.changes('A7 – D7 – A7 – E7', 'The verse and the turnaround, with the shuffle feel in the band.', ['A7', 'A7', 'D7', 'D7', 'A7', 'A7', 'E7', 'A7'], { bpm: 84 })] },
+    { id: 'pg4', name: 'ii–V–I: the jazz cadence', steps: [
+      LPC.info('The strongest resolution there is', 'A minor chord a step above the key, then the dominant, then home: ii–V–I. Jazz leans on it constantly, and so does almost every standard you have ever hummed.'),
+      LPC.changes('Dm7 – G7 – Cmaj7', 'A bar each, twice through.', ['Dm7', 'G7', 'Cmaj7', 'Cmaj7'], { bpm: 100 })] },
+    { id: 'pg5', name: 'The Andalusian cadence', steps: [
+      LPC.info('A falling, Spanish sound', 'i–VII–VI–V in a minor key: each chord a step lower than the last, landing on the dominant. Flamenco lives here, and so does a lot of rock.'),
+      LPC.changes('Am – G – F – E', 'The whole shape falls; listen for it stepping down.', ['Am', 'G', 'F', 'E'], { bpm: 88 })] },
+    { id: 'pg6', name: 'The minor loop', steps: [
+      LPC.info('i–VI–III–VII: brooding and circular', 'Four minor-key chords that loop without ever quite landing — good for a verse that builds tension before a chorus resolves it.'),
+      LPC.changes('Am – F – C – G', 'Round and round, with the band.', ['Am', 'F', 'C', 'G'], { bpm: 90 })] }
+  ] },
+  { id: 'style', ico: '🎭', name: 'Styles', blurb: 'What makes blues, rock, funk, country, pop and reggae sound like themselves: the rhythm, the scale, and one riff from each.', lessons: [
+    { id: 'sy1', name: 'Blues', steps: [
+      LPC.info('Call, answer, and the note in between', 'The minor pentatonic with one extra note slipped in (the flat five) gives the blue note; a shuffle feel makes the eighth notes long-short instead of even. Box one, the same shape from Lead, is home.'),
+      LPC.timed('Box-one turnaround', 'The classic closing phrase: let the last note ring.', '24 22 19 22 19 17 15 12:4 r:2', { keyPc: 9, near: 5, bpm: 80, keyed: true })] },
+    { id: 'sy2', name: 'Rock', steps: [
+      LPC.info('Power chords and a pentatonic hook', 'Root and fifth, no third, driven hard on the low strings; straight eighths, hit on every click. The hook on top is usually the same minor pentatonic as the blues, played lower and louder.'),
+      LPC.timed('Power-chord climb', 'Move one shape up the neck; keep the palm light on the mute.', '0+7+12:4 3+10+15:4 5+12+17:4 3+10+15:2 0+7+12:2', { keyPc: 4, near: 0, bpm: 100 })] },
+    { id: 'sy3', name: 'Funk', steps: [
+      LPC.info('Everything leans on one', 'The first beat of the bar carries the weight; the rest is muted, percussive stabs with rests doing as much work as notes. Sixteenths, not eighths.'),
+      LPC.timed('The one-and', 'Hit beat one hard, then peck at the gaps.', '0:3 0:1 r:2 3:1 5:1 r:4 7:1 5:1 r:2', { keyPc: 4, near: 7, lift: 12, bpm: 96 })] },
+    { id: 'sy4', name: 'Country', steps: [
+      LPC.info('Bright, open, and a bend into the third', 'The major pentatonic near the nut, walking bass lines connecting the chords, and a bend from the second up into the major third — the country sweet spot.'),
+      LPC.timed('Major pentatonic run', 'Open and bright, low to high and back.', '0 2 4 7 9 12 9 7 4 2 0:4', { keyPc: 7, near: 2, lift: 12, bpm: 100 })] },
+    { id: 'sy5', name: 'Pop', steps: [
+      LPC.info('A chord, one note at a time', 'An arpeggio, often spread across an octave, turns a simple chord into a melody of its own: bright, open, built to sit under a voice rather than compete with it.'),
+      LPC.timed('Arpeggio hook', 'The chord, climbed and come back down.', '0 4 7 12 7 4 0:4', { keyPc: 0, near: 5, lift: 12, bpm: 96 })] },
+    { id: 'sy6', name: 'Reggae', steps: [
+      LPC.info('The one-drop', 'Nothing on beat one; everything leans on beat three instead, with the guitar skanking short chops on the off-beats behind it. The silence at the start of the bar is the whole point.'),
+      LPC.timed('One-drop bass riff', 'Leave the first beat empty, then fill the rest.', 'r:2 0 r:2 0 3 5 r:2 7 5 3 0:2 r:4', { keyPc: 9, near: 5, bpm: 76, keyed: true })] }
   ] },
   { id: 'warm', ico: '🔥', name: 'Warm-ups', blurb: 'Five minutes before you play: the spider, finger permutations, the chromatic walk, trills, changes, a scale sprint.', lessons: [
     { id: 'w1', name: 'The spider', steps: [LPC.notes('One finger a fret', 'Frets 1-2-3-4 on every string, low to high: one finger per fret, fingers stay down close to the strings.', '0 1 2 3 5 6 7 8 10 11 12 13 15 16 17 18 19 20 21 22 24 25 26 27', { keyPc: 5, near: 1 })] },

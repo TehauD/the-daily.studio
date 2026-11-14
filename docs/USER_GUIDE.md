@@ -1070,7 +1070,9 @@ It starts at 70% of the song's tempo, every clean go is 5 BPM faster, and it sto
 - Hammer-ons, pull-offs and slides are followed by their notes: the coach can't tell them from picked notes.
 - **Tempo ladder:** pass a step and it comes back 5 BPM faster. **−/+** change the tempo; **Backing** and **Click** switch the band and the click.
 
-**Lessons** come in four paths: Foundations, Lead, Rhythm and Technique. A lesson shows how many of its steps you have done (kept in this browser). **🔥 Warm-ups** are five minutes before you play.
+**Lessons** come in six paths: Foundations, Lead, Rhythm, Technique, **Progressions** and **Styles** (2.69). A lesson shows how many of its steps you have done (kept in this browser). **🔥 Warm-ups** are five minutes before you play.
+- **🎶 Progressions** teaches six named chord progressions behind thousands of songs — I–IV–V (the three-chord song), I–V–vi–IV (the pop progression), 12-bar blues, ii–V–I (the jazz cadence), the Andalusian cadence, and the minor loop — each explained, then played through with the band and its chord diagrams.
+- **🎭 Styles** teaches what makes Blues, Rock, Funk, Country, Pop and Reggae sound like themselves: each lesson explains the genre's rhythm and harmony, then plays a representative riff with the neck and tab shown.
 
 **🎸 Riffs & licks:** 40 riffs written for the studio, in nine styles, by level. Choose a key, play it note by note or **⏱ In time** with a drummer, **➕ Put it in my song** (a new section of tab after the one you are in, with the lead playing it; Undo takes it out), or **⇩ Share as a file**.
 

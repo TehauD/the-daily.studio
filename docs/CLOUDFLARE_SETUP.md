@@ -65,7 +65,7 @@ Everything the site owner does in Cloudflare (and GitHub) to run the-daily.studi
   - Then: **Block** for 10 seconds
   
   A person signing in makes two or three requests, so only scripts hit this.
-- [ ] *Custom rules* (optional): block requests whose URI path matches `/.env`, `/.git`, `/wp-`, `/.wrangler` or `/xmlrpc.php`. They already get 404s; blocking them at the edge keeps them out of your Worker's request count.
+- [ ] *Custom rules* (optional, 2.69): block requests whose URI path matches `/.env`, `/.git`, `/wp-`, `/.wrangler`, `/xmlrpc.php`, `/phpmyadmin`, `/.aws`, `/.docker`, `/.vscode`, `/config.php`, `/admin.php`, `/.htaccess`, `/.htpasswd` or `/id_rsa`. None of them, or anything behind them, exists on this site; they're only ever a scanner or bot. The Worker already answers that same short list itself, deliberately (`worker/honeypot.mjs`, SECURITY_MODEL.md "Scanner and bot traffic"), holding the connection a few seconds before the usual empty 404. A Custom Rule here blocks them a step earlier still, at Cloudflare's edge, before the Worker runs at all — turn it on if you'd rather these never reach the Worker's request count, at the cost of the Worker's own tarpit never getting the chance to run for them (whichever answers first wins; they are alternatives, not both-at-once).
 
 **Security ▸ Bots**
 - [ ] **Bot Fight Mode: off**, and **JavaScript detections: off**. They inject a script and set a `cf_clearance` cookie, which the privacy policy says the site doesn't do. The WAF and rate limit above cover abuse.

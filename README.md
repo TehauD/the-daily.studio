@@ -5,7 +5,7 @@
 <h1 align="center">the-daily.studio</h1>
 <p align="center"><b>Your song, start to finish.</b><br>
 A guitar and voice studio in one web page: record your guitar and mic · split any song into stems to play along with · get the chords, tab and lyrics · pedals, presets and live visuals</p>
-<p align="center"><sub>v2.68.0 · free, open source (MIT) · no account, no upload, no tracking</sub></p>
+<p align="center"><sub>v2.69.0 · free, open source (MIT) · no account, no upload, no tracking</sub></p>
 
 <p align="center">
   <a href="https://the-daily.studio/"><b>▶ Open the live app</b></a> ·

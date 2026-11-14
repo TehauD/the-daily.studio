@@ -4,6 +4,7 @@ import { handle, b64url } from '../worker/index.mjs';
 import { SHARE, shareDay } from '../worker/share.mjs';
 import { DROP } from '../worker/drops.mjs';
 import { fakeR2 } from './fake-r2.mjs';
+import { isHoneyPath } from '../worker/honeypot.mjs';
 let fails = 0, n = 0; const ok = (c, m) => { n++; console.log((c ? 'ok   ' : 'FAIL ') + m); if (!c) fails++; };
 const SITE = 'https://the-daily.studio', ENV = { GITHUB_CLIENT_ID: 'Iv1.abc', GITHUB_CLIENT_SECRET: 'shh', ASSETS: { fetch: r => new Response('asset ' + new URL(r.url).pathname) } };
 const calls = []; const gh = answer => async (url, init) => { calls.push({ url, body: Object.fromEntries(new URLSearchParams(init.body)), headers: init.headers }); return new Response(JSON.stringify(answer), { headers: { 'Content-Type': 'application/json' } }); };
@@ -47,6 +48,20 @@ ok(r.status === 401 && (await r.json()).error === 'bad_refresh_token', 'an expir
 /* everything else is the site */
 r = await handle(new Request(SITE + '/guide/'), ENV, gh({}));
 ok(await r.text() === 'asset /guide/', 'every other address is the built site, as before');
+/* ---- the honeypot (2.69): scanner/bot-bait paths are routed into the Worker on purpose, and taxed with a slow, empty 404 ---- */
+{
+  const waits = []; const noSleep = ms => { waits.push(ms); return Promise.resolve(); };
+  ok(isHoneyPath('/.env') && isHoneyPath('/.ENV') && isHoneyPath('/wp-admin/setup.php') && isHoneyPath('/.git/config'), 'well-known scanner-bait paths are recognised, case-insensitively, exact or by folder');
+  ok(!isHoneyPath('/guide/') && !isHoneyPath('/data/songs.json') && !isHoneyPath('/environment'), 'nothing that is actually part of the site is caught by it');
+  r = await handle(new Request(SITE + '/.env'), ENV, gh({}), Date.now(), noSleep);
+  const bytes = new Uint8Array(await r.arrayBuffer());
+  ok(r.status === 404 && bytes.length === 5 && waits.length === 5 && waits.every(w => w >= 800 && w < 1500), 'a probe for /.env gets the same empty 404 everyone gets, just trickled out over several seconds instead of all at once (' + waits.join('+') + 'ms, ' + bytes.length + ' bytes)');
+  r = await handle(new Request(SITE + '/wp-login.php', { method: 'POST' }), ENV, gh({}), Date.now(), noSleep);
+  ok(r.status === 404 && r.headers.get('X-Robots-Tag') === 'noindex, nofollow' && r.headers.get('Cache-Control') === 'no-store', 'and it never gets cached or indexed, whatever the method');
+  r = await handle(new Request('https://journal.the-daily.studio/.git/config'), ENV, gh({}), Date.now(), noSleep);
+  ok(r.status === 404, 'the same goes for The Daily’s own address');
+  r = await handle(new Request(SITE + '/environment.js'), ENV, gh({})); ok((await r.text()) === 'asset /environment.js', 'a path that only looks similar is still just the site, answered at once, not taxed');
+}
 /* The Daily's own address (2.50) */
 const J = 'https://journal.the-daily.studio';
 r = await handle(new Request(J + '/'), ENV, gh({})); ok(await r.text() === 'asset /journal/', 'journal.<site>/ is The Daily');

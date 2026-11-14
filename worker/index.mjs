@@ -10,9 +10,11 @@
    Secrets (npx wrangler secret put …): GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET. Without them both routes say so and the site works as before.
    The Daily (2.50) has its own address, journal.<site>: there "/" is The Daily and "/move/" receives a journal handed over from the old
    address. On the site itself, /journal/ is a page that moves a journal kept there to the new address; the receiving page is not served
-   here. Everything else is the site, as before. */
+   here. A short list of scanner/bot-bait paths (/.env, /wp-login.php, /.git/config, …) is deliberately routed here too and taxed with a
+   slow, empty 404 (worker/honeypot.mjs, 2.69) — everything else is the site, as before. */
 import { share } from './share.mjs';
 import { drops } from './drops.mjs';
+import { isHoneyPath, honeypot } from './honeypot.mjs';
 const NO_STORE = { 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer', 'X-Content-Type-Options': 'nosniff' };
 const TOKEN_URL = 'https://github.com/login/oauth/access_token';
 
@@ -30,8 +32,9 @@ const clean = s => String(s || '').replace(/[^\w.-]/g, '').slice(0, 60) || 'unkn
 
 /** the site's file at `path`, as the assets would serve it (keeping the method and headers of the request) */
 const asset = (env, req, u, path) => env.ASSETS.fetch(new Request(new URL(path, u), req));
-export async function handle(req, env, fetchFn = fetch, now = Date.now()) {
+export async function handle(req, env, fetchFn = fetch, now = Date.now(), sleepFn = ms => new Promise(r => setTimeout(r, ms))) {
   const u = new URL(req.url);
+  if (isHoneyPath(u.pathname)) return honeypot(req, u, sleepFn);      /* scanner/bot bait (2.69, worker/honeypot.mjs) */
   if (/^journal\./.test(u.hostname)) {      /* The Daily's own address */
     if (u.pathname === '/' || u.pathname === '/index.html') return asset(env, req, u, '/journal/');
     if (u.pathname === '/move/' || u.pathname === '/move') return asset(env, req, u, '/journal/move');

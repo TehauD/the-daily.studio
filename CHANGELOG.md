@@ -2,6 +2,20 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.69.0 — 2026-11-14 — Lessons that teach harmony and style, and a honeypot for scanners
+
+### Changed
+- **Practice lessons: the shapes they describe are now drawn.** A handful of steps in Foundations and Lead explained a shape in words and left the neck diagram blank — open strings, the pentatonic box, pushing a bend, vibrato, landing on a chord tone. All five now draw the fretboard and tab alongside the text, with ▶ Listen to demo it (there's nothing to check, so no ● Play it).
+- **Two new lesson paths in Learn ▸ Lessons:**
+  - **🎶 Progressions** — six named chord progressions behind thousands of songs, each explained and then played through with the band, full chord diagrams on screen: I–IV–V (the three-chord song), I–V–vi–IV (the pop progression), 12-bar blues, ii–V–I (the jazz cadence), the Andalusian cadence, the minor loop.
+  - **🎭 Styles** — what makes a genre sound like itself: Blues, Rock, Funk, Country, Pop and Reggae, each with a short explanation of its rhythm and harmony and a representative riff to play, neck diagram and tab included.
+  - Both sit after Singing and before Warm-ups; a singer's 📅 Today stays all-sung, untouched by either.
+- **A honeypot for scanner and bot probes** (`/.env`, `/wp-login.php`, `/.git/config` and the like). There is no legitimate reason for a real visitor ever to request one, so they are now deliberately routed into the Worker (unlike every other path, which the Worker runs for only when it has real work to do) and taxed: the same empty 404 they'd always have gotten, trickled out five bytes at a time over a few seconds instead of answered at once (`worker/honeypot.mjs`). A decompression or zip bomb was asked for and refused: it's a denial-of-service payload regardless of the target, risky to whoever actually receives it, not only whoever it's aimed at. An optional Cloudflare WAF Custom Rule (`CLOUDFLARE_SETUP.md`) blocks the same list even earlier, at the edge, for anyone who'd rather these never reach the Worker at all. Written up in `SECURITY_MODEL.md` ("Scanner and bot traffic: the honeypot"), with an honest note on what it does and doesn't do.
+
+### Tests
+- **`e2e-lessons`** (new, 13 checks): an info step with a shape draws the neck and tab (▶ Listen, no ● Play it) and still marks itself done; Progressions' six names and a full chord-diagram playthrough; Styles' six genres and a riff's neck/tab; both paths' position relative to Singing and Warm-ups; a singer's Today unaffected; both paths discoverable in Learn ▸ Lessons.
+- **`worker.test.mjs`** adds six checks for the honeypot: path recognition (exact and by folder, case-insensitive) without catching real site paths; a tarpit'd 404 with its five bytes and five waits; no caching or indexing on any method; the same behaviour at The Daily's own address; a near-miss path still served normally and at once.
+
 ## 2.68.0 — 2026-11-12 — Workspaces that adapt, lessons you can sing, the phone's own journeys
 
 ### Changed

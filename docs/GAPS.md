@@ -4,6 +4,12 @@ What the studio, its tutorials, its documents and its tests do **not** cover yet
 
 How to use it: before a release, move what the release closed into *Closed* with the version, and add what it opened. [RELEASE.md](RELEASE.md) has this as a checklist item. Items marked **(maintainer)** are decisions or facts only the project's owner can settle; nothing here blocks a build.
 
+## Closed in 2.69.0
+
+- **A handful of Practice lesson steps that described a shape drew nothing** — an empty box between the text and the tempo row. The five that describe a shape (open strings, the pentatonic box, a bend, vibrato, landing on a chord tone) now draw it.
+- **Practice taught technique but not harmony or genre.** Two new paths: **Progressions** (six named chord progressions — the three-chord song, the pop progression, 12-bar blues, the jazz cadence, the Andalusian cadence, the minor loop — each played through with the band) and **Styles** (what makes Blues, Rock, Funk, Country, Pop and Reggae sound like themselves, each with a representative riff).
+- **Scanner/bot probes for `/.env`, `/wp-login.php` and the like weren't addressed anywhere.** A short, well-known list of them is now deliberately routed into the Worker and taxed: the same empty 404 they'd always have gotten, trickled out over a few seconds instead of answered at once (`worker/honeypot.mjs`). A decompression/zip bomb was asked for and refused — a denial-of-service payload is a risk to everyone near it, including the site itself, whoever it's aimed at; an optional Cloudflare WAF Custom Rule (`CLOUDFLARE_SETUP.md`) is offered alongside it for anyone who'd rather block the same list at the edge instead.
+
 ## Closed in 2.68.0
 
 - **“I’m mostly a” shaped only the ways in.** Songwriter, Studio and Practice adapt to it now, and a chip beside the workspaces changes it.
