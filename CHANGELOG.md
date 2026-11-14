@@ -2,6 +2,14 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.69.2 — 2026-11-14 — The honeypot gets a sense of humor
+
+### Changed
+- **The honeypot's response is a shrug instead of a dot.** A probe for `/.env`, `/wp-login.php` and the rest still gets a 404 — nothing here ever pretends the path exists — but the body is now `¯\_(ツ)_/¯` and a short, fixed line about why there's nothing to find: the site is static on purpose, so there's no server-side secret to leak (`worker/honeypot.mjs`). Same small, fixed size every time, same trickle-it-out-over-a-few-seconds tax as before; only what's actually in the body changed.
+
+### Tests
+- **`worker.test.mjs`** updated to check the response reads like the quip (contains the shrug and "static on"), rather than counting bytes.
+
 ## 2.69.1 — 2026-11-14 — The honeypot gets teeth, and an edge-level block alongside it
 
 ### Changed

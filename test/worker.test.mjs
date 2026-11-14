@@ -55,8 +55,8 @@ ok(await r.text() === 'asset /guide/', 'every other address is the built site, a
   ok(isHoneyPath('/.env') && isHoneyPath('/.ENV') && isHoneyPath('/wp-admin/setup.php') && isHoneyPath('/.git/config'), 'well-known scanner-bait paths are recognised, case-insensitively, exact or by folder');
   ok(!isHoneyPath('/guide/') && !isHoneyPath('/data/songs.json') && !isHoneyPath('/environment'), 'nothing that is actually part of the site is caught by it');
   r = await handle(new Request(SITE + '/.env'), ENV, gh({}), Date.now(), noSleep);
-  const bytes = new Uint8Array(await r.arrayBuffer());
-  ok(r.status === 404 && bytes.length === 5 && waits.length === 5 && waits.every(w => w >= 800 && w < 1500), 'a probe for /.env gets the same empty 404 everyone gets, just trickled out over several seconds instead of all at once (' + waits.join('+') + 'ms, ' + bytes.length + ' bytes)');
+  const text = await r.text();
+  ok(r.status === 404 && text.includes('¯\\_(ツ)_/¯') && text.includes('static on') && text.length < 200 && waits.length === 5 && waits.every(w => w >= 800 && w < 1500), 'a probe for /.env still gets a 404 (nothing claims the path exists) — just a shrug and a small, fixed quip instead of a bare status line, trickled out over several seconds (' + waits.join('+') + 'ms, ' + text.length + ' chars)');
   r = await handle(new Request(SITE + '/wp-login.php', { method: 'POST' }), ENV, gh({}), Date.now(), noSleep);
   ok(r.status === 404 && r.headers.get('X-Robots-Tag') === 'noindex, nofollow' && r.headers.get('Cache-Control') === 'no-store', 'and it never gets cached or indexed, whatever the method');
   r = await handle(new Request('https://journal.the-daily.studio/.git/config'), ENV, gh({}), Date.now(), noSleep);

@@ -12,8 +12,9 @@
    end rather than letting it move straight to the next target. A scanner built to disconnect the moment it sees
    the status line will still get out quickly; this does not claim otherwise.
      What it will never do: no decompression bomb, zip bomb, or anything that amplifies what one request costs to
-   answer. The total body is a few bytes, the same handful of bytes repeated, never decoded or inflated into
-   anything larger; the total wait is capped; and the cost to this Worker is a few seconds of one invocation,
+   answer. The body is a small, fixed message (2.69.2: a shrug and a line about why there's nothing here to find) —
+   plain text, the same size every time, never decoded or inflated into anything larger; the total wait is capped;
+   and the cost to this Worker is a few seconds of one invocation,
    wall-clock only (await, not CPU) — never more, however many scanners hit it. For real protection, Cloudflare's
    own free Bot Fight Mode / WAF managed rules and the Custom Rule in CLOUDFLARE_SETUP.md do far more than any one
    path list could; this is a small, honest extra that lives in the code, not a replacement for them.
@@ -66,15 +67,23 @@ async function tally(req, env, fetchFn) {
   } catch (e) { /* best-effort only; see the note above */ }
 }
 
-const DOT = new Uint8Array([0x2e]);      /* one byte per chunk; five chunks, five bytes, never more */
-/** the same empty 404 this path would always have gotten, trickled out over a few seconds instead of answered at once */
+/* 2.69.2: still a 404 — this never claims the path exists — just a friendlier one than a bare status line. Five short
+   lines, one per chunk, so the tarpit's timing (and its total size) is unchanged; only what's actually in the body is. */
+const LINES = [
+  '      ¯\\_(ツ)_/¯\n',
+  '  nothing here to find.\n',
+  '  this site is static on\n',
+  '  purpose: no server, no\n',
+  '  secrets, nothing to break.\n',
+].map(s => new TextEncoder().encode(s));
+
+/** the same 404 this path would always have gotten, trickled out line by line over a few seconds instead of answered at once */
 export async function honeypot(req, u, env, fetchFn, sleepFn) {
   console.log('honeypot:', req.method, u.pathname);
   await tally(req, env, fetchFn);
-  const chunks = 5;
   const body = new ReadableStream({
     async start(controller) {
-      for (let i = 0; i < chunks; i++) { await sleepFn(800 + Math.floor(Math.random() * 700)); controller.enqueue(DOT); }
+      for (const line of LINES) { await sleepFn(800 + Math.floor(Math.random() * 700)); controller.enqueue(line); }
       controller.close();
     },
   });
