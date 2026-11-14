@@ -10,7 +10,7 @@ suite('e2e-welcome', async t => {
   // a first visit, on a desktop
   const p = await open({ w: 1440, h: 900 });
   const txt = await p.$eval('#boot', e => e.textContent);
-  ok(/Record it\. Split it\. Write it down\./.test(txt) && /guitar and voice studio/i.test(txt), 'the first page says what it is: record it, split it, write it down');
+  ok(/Your song, start to finish\./.test(txt) && /Write it, sing it, play it, learn it, share it/.test(txt) && /guitar and voice studio/i.test(txt), 'the first page says what it is for (2.68): your song, start to finish');
   const f = await p.evaluate(() => {
     const top = s => { const e = document.querySelector(s); return e ? Math.round(e.getBoundingClientRect().top) : null; }, st = document.getElementById('bootStage'), go = document.getElementById('bootNoMic');
     return { keys: [...document.querySelectorAll('.boot-goal b')].map(b => b.textContent), also: [...document.querySelectorAll('.boot-also li b')].map(b => b.textContent), key0: top('.boot-goal'), go: top('#bootNoMic'), also0: top('.boot-also li'), stage: top('#bootStage'), demo: !!document.getElementById('bootDemo'), stageH: st.getBoundingClientRect().height, goH: go.getBoundingClientRect().height, inCard: !!st.closest('.boot-card'), overflow: document.documentElement.scrollWidth > innerWidth };
@@ -45,20 +45,20 @@ suite('e2e-welcome', async t => {
 
   // a phone
   const ph = await open({ w: 390, h: 844, mobile: true, dpr: 2 });
-  const m = await ph.evaluate(() => { const r = e => document.querySelector(e).getBoundingClientRect(); return { goBottom: Math.round(r('#bootNoMic').bottom), vh: innerHeight, over: document.documentElement.scrollWidth > innerWidth, keyW: Math.round(r('.boot-goal').width), cardW: Math.round(r('.boot-card').width) }; });
+  const m = await ph.evaluate(() => { const r = e => document.querySelector(e).getBoundingClientRect(); return { goBottom: Math.round(r('#bootNoMic').bottom), vh: innerHeight, over: document.documentElement.scrollWidth > innerWidth, keyW: Math.round(r('.boot-door').width), chipH: Math.round(r('.boot-goal').height), cardW: Math.round(r('.boot-card').width) }; });
   ok(m.goBottom <= m.vh && !m.over, 'on a phone the way in is on the first screen and nothing scrolls sideways (button ends at ' + m.goBottom + ' of ' + m.vh + ')');
-  ok(m.keyW > m.cardW * .4 && m.keyW < m.cardW * .55, 'on a phone the goal cards sit two to a row and fill the width between them (' + m.keyW + ' of ' + m.cardW + ')');
+  ok(m.keyW > m.cardW * .4 && m.keyW < m.cardW * .55 && m.chipH < 40, 'on a phone the ways in sit two to a row and fill the width between them, and the single tasks are small chips (' + m.keyW + ' of ' + m.cardW + ', chips ' + m.chipH + ' px)');
   await ph.ctx.close();
   /* 2.49.1: no flash of the wrong first page. A first visit is always the dark green page, whatever light or dark is saved; someone coming
      back sees Welcome back in their own light or dark, from the first frame the card is shown */
   const watch = async (store) => {
     const c = await t.fresh({ w: 1280, h: 860 }); await c.addInitScript(new Function('s', `try { localStorage.clear(); for (const k in s) localStorage.setItem(k, s[k]); } catch (e) { }`), store);
     const q = await c.newPage(), seen = []; await q.goto(t.BASE + '?debug', { waitUntil: 'commit' });
-    for (let k = 0; k < 60 && seen.filter(x => x.vis).length < 8; k++) { try { seen.push(await q.evaluate(() => { const b = document.getElementById('boot'), card = b && b.querySelector('.boot-card'); return { vis: !!card && getComputedStyle(card).visibility === 'visible', bg: b ? getComputedStyle(b).backgroundColor : '', wb: !!document.getElementById('welcomeBack'), goals: !!document.querySelector('#bootGoals:not(.boot-goals-sm)') }; })); } catch (e) { } await wait(50); }
+    for (let k = 0; k < 60 && seen.filter(x => x.vis).length < 8; k++) { try { seen.push(await q.evaluate(() => { const b = document.getElementById('boot'), card = b && b.querySelector('.boot-card'); return { vis: !!card && getComputedStyle(card).visibility === 'visible', bg: b ? getComputedStyle(b).backgroundColor : '', wb: !!document.getElementById('welcomeBack'), goals: !!document.querySelector('#bootDoors .boot-door') && !document.querySelector('.boot-start-sm') }; })); } catch (e) { } await wait(50); }
     await c.close(); return seen.filter(x => x.vis);
   };
   const F = await watch({ 'fw.cfg': JSON.stringify({ lookMode: 'light', theme: 'light' }) });
-  ok(F.length && F.every(x => x.bg === 'rgb(4, 9, 10)' && !x.wb && x.goals), 'a first visit opens on the dark green page with the goals, even with light saved, from the first frame it shows (' + F.length + ' frames)');
+  ok(F.length && F.every(x => x.bg === 'rgb(4, 9, 10)' && !x.wb && x.goals), 'a first visit opens on the dark green page with the ways in, even with light saved, from the first frame it shows (' + F.length + ' frames)');
   const R = await watch({ 'fw.cfg': JSON.stringify({ lookMode: 'light', theme: 'light' }), 'fw.started': 'true' });
   ok(R.length && R.every(x => x.wb && x.bg !== 'rgb(4, 9, 10)' && !x.goals), 'someone coming back sees Welcome back in their own light theme from its first frame, never the first-visit page (' + R.length + ' frames)');
   const D = await watch({ 'fw.cfg': JSON.stringify({ lookMode: 'dark', theme: 'dark' }), 'fw.started': 'true' });

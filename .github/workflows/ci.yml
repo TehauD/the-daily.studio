@@ -58,6 +58,15 @@ jobs:
         with: { node-version: 22 }
       - run: npm ci --no-audit --no-fund
       - run: npx playwright install --with-deps ${{ matrix.browser }}
+      # 2.68: hosted runners have no sound device, and Firefox will not start an AudioContext without one (the pass stopped in
+      # "it opens, and the audio engine starts"). A silent PulseAudio sink gives it somewhere to play.
+      - name: A silent audio device for Firefox
+        if: matrix.browser == 'firefox'
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq pulseaudio
+          pulseaudio --start --exit-idle-time=-1
+          pactl load-module module-null-sink sink_name=silent
+          pactl set-default-sink silent
       - name: The studio in ${{ matrix.browser }}
         run: node test/xbrowser.cjs
         env:

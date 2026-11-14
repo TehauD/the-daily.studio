@@ -33,12 +33,18 @@ function streak() { let n = 0; const P = CFG.learn.passes, d = new Date(); if (!
 const weekCount = () => { let n = 0; const d = new Date(); for (let i = 0; i < 7; i++) { n += CFG.learn.passes[dayKey(d)] || 0; d.setDate(d.getDate() - 1); } return n; };
 /** the day's plan, made once a day so it does not shuffle as you go: [kind, step id] */
 function todayPlan() {
-  const L = CFG.learn, k = dayKey(); if (L.today && L.today.day === k && Array.isArray(L.today.ids) && L.today.ids.length) return L.today;
+  const L = CFG.learn, k = dayKey(), who = typeof meNow === 'function' && meNow() === 'sing' ? 'sing' : ''; if (L.today && L.today.day === k && (L.today.me || '') === who && Array.isArray(L.today.ids) && L.today.ids.length) return L.today;
   const n = Math.floor(Date.now() / 864e5), ids = [], now = Date.now();
+  if (who) {      /* 2.68: a singer's fifteen minutes: a held note to warm up, something to review, the next sung step, and the song */
+    const V = LESSONS.find(x => x.id === 'voice'), steps = V.lessons.reduce((a, ls) => a.concat(ls.steps), []), holds = steps.filter(s => s.kind === 'hold'); ids.push(['warm', holds[n % holds.length].id]);
+    const due = Object.keys(L.rev).filter(id => LSTEP[id] && LSTEP[id].pa.id === 'voice' && LSTEP[id].s.kind !== 'info').map(id => { const r = L.rev[id]; return [id, (now - r.at) / 864e5 - REV_DAYS[Math.min(REV_DAYS.length - 1, Math.max(0, r.n - 1))]]; }).filter(x => x[1] >= 0 && !ids.some(y => y[1] === x[0])).sort((a, b) => b[1] - a[1]); if (due.length) ids.push(['review', due[0][0]]);
+    const nw = steps.find(s => s.kind !== 'info' && !L.done[s.id] && !ids.some(y => y[1] === s.id)) || steps.filter(s => s.kind === 'notes')[n % steps.filter(s => s.kind === 'notes').length]; if (nw && !ids.some(y => y[1] === nw.id)) ids.push(['new', nw.id]);
+    L.today = { day: k, ids, told: false, me: who }; saveCfg(); return L.today;
+  }
   const warm = LESSONS.find(x => x.id === 'warm'), wl = warm.lessons[n % warm.lessons.length], ws = wl.steps.find(s => s.kind !== 'info') || wl.steps[0]; ids.push(['warm', ws.id]);
-  const due = Object.keys(L.rev).filter(id => (LSTEP[id] && LSTEP[id].s.kind !== 'info' && LSTEP[id].pa.id !== 'warm') || RIFF_BY[id]).map(id => { const r = L.rev[id]; return [id, (now - r.at) / 864e5 - REV_DAYS[Math.min(REV_DAYS.length - 1, Math.max(0, r.n - 1))]]; }).filter(x => x[1] >= 0).sort((a, b) => b[1] - a[1]);
+  const due = Object.keys(L.rev).filter(id => (LSTEP[id] && LSTEP[id].s.kind !== 'info' && LSTEP[id].pa.id !== 'warm' && LSTEP[id].pa.id !== 'voice') || RIFF_BY[id]).map(id => { const r = L.rev[id]; return [id, (now - r.at) / 864e5 - REV_DAYS[Math.min(REV_DAYS.length - 1, Math.max(0, r.n - 1))]]; }).filter(x => x[1] >= 0).sort((a, b) => b[1] - a[1]);
   if (due.length) ids.push(['review', due[0][0]]);
-  const paths = LESSONS.filter(x => x.id !== 'warm'), lp = paths.find(x => x.id === L.lastPath), order = lp ? [lp].concat(paths.filter(x => x !== lp)) : paths;
+  const paths = LESSONS.filter(x => x.id !== 'warm' && x.id !== 'voice'), lp = paths.find(x => x.id === L.lastPath), order = lp ? [lp].concat(paths.filter(x => x !== lp)) : paths;
   let nw = null; for (const pa of order) { for (const ls of pa.lessons) { const i = ls.steps.findIndex(s => s.kind !== 'info' && !L.done[s.id]); if (i >= 0) { if (i > 0 && ls.steps[i - 1].kind === 'info' && !L.done[ls.steps[i - 1].id]) ids.push(['read', ls.steps[i - 1].id]); nw = ls.steps[i]; break; } } if (nw) break; }
   if (nw) ids.push(['new', nw.id]);
   const level = Math.min(3, 1 + Math.floor(Object.keys(L.done).length / 15)), pool = RIFFS.filter(r => r.lvl <= level && !L.done[r.id] && !ids.some(x => x[1] === r.id)), rp = pool.length ? pool : RIFFS;

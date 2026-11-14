@@ -2,6 +2,86 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.69.2 — 2026-11-14 — The honeypot gets a sense of humor
+
+### Changed
+- **The honeypot's response is a shrug instead of a dot.** A probe for `/.env`, `/wp-login.php` and the rest still gets a 404 — nothing here ever pretends the path exists — but the body is now `¯\_(ツ)_/¯` and a short, fixed line about why there's nothing to find: the site is static on purpose, so there's no server-side secret to leak (`worker/honeypot.mjs`). Same small, fixed size every time, same trickle-it-out-over-a-few-seconds tax as before; only what's actually in the body changed.
+
+### Tests
+- **`worker.test.mjs`** updated to check the response reads like the quip (contains the shrug and "static on"), rather than counting bytes.
+
+## 2.69.1 — 2026-11-14 — The honeypot gets teeth, and an edge-level block alongside it
+
+### Changed
+- **The honeypot can now auto-block repeat offenders.** Past 3 hits from the same IP inside an hour, the Worker adds that IP to the zone's IP Access Rules via Cloudflare's own API — a real block, not just the tarpit's few-second delay (`worker/honeypot.mjs`). It's off until the site owner sets up a KV namespace and two scoped Worker secrets (`CLOUDFLARE_SETUP.md`, Part I); without all three, nothing changes from 2.69.0. A single hit never blocks: a shared IP (a works VPN, a carrier's NAT, a WARP exit) could otherwise lock out people who never touched these paths, while a real scanner clears three hits in well under a second. The block has no expiry (Cloudflare's API doesn't offer one), so it needs the same occasional human look the R2 reports already get.
+- **The WAF Custom Rule for the same scanner-bait list** (previously described only in passing) now has the exact Expression Editor syntax to paste in (`CLOUDFLARE_SETUP.md`, Part C) — one Custom Rule, well inside the free plan's 5-rule limit (checked against Cloudflare's current docs), separate from the `/auth/` rate limit's own 1-rule quota. Turning it on blocks the list at the edge, before the Worker ever runs, which makes the tarpit and the auto-block above moot for exactly that list — both still matter for anything this list doesn't happen to name.
+- **Corrected course on a bad lead:** `cf.threat_score`, floated as a free "bot score" signal, turns out to be deprecated — Cloudflare's own field reference says it now always returns 0. It was never written into any doc or code; this note is so nobody chases it later.
+
+### Tests
+- **`worker.test.mjs`** adds 8 checks for the auto-block: the first two hits from an IP stay tarpit-only; the third calls Cloudflare's Access Rules API with the right URL, token and IP; it isn't called again once blocked; a different IP has its own count; no KV binding skips the tally entirely; a KV namespace with no API token/zone ID still counts but never calls Cloudflare; a failing KV read never breaks the tarpit's response. 77/77 passing.
+
+## 2.69.0 — 2026-11-14 — Lessons that teach harmony and style, and a honeypot for scanners
+
+### Changed
+- **Practice lessons: the shapes they describe are now drawn.** A handful of steps in Foundations and Lead explained a shape in words and left the neck diagram blank — open strings, the pentatonic box, pushing a bend, vibrato, landing on a chord tone. All five now draw the fretboard and tab alongside the text, with ▶ Listen to demo it (there's nothing to check, so no ● Play it).
+- **Two new lesson paths in Learn ▸ Lessons:**
+  - **🎶 Progressions** — six named chord progressions behind thousands of songs, each explained and then played through with the band, full chord diagrams on screen: I–IV–V (the three-chord song), I–V–vi–IV (the pop progression), 12-bar blues, ii–V–I (the jazz cadence), the Andalusian cadence, the minor loop.
+  - **🎭 Styles** — what makes a genre sound like itself: Blues, Rock, Funk, Country, Pop and Reggae, each with a short explanation of its rhythm and harmony and a representative riff to play, neck diagram and tab included.
+  - Both sit after Singing and before Warm-ups; a singer's 📅 Today stays all-sung, untouched by either.
+- **A honeypot for scanner and bot probes** (`/.env`, `/wp-login.php`, `/.git/config` and the like). There is no legitimate reason for a real visitor ever to request one, so they are now deliberately routed into the Worker (unlike every other path, which the Worker runs for only when it has real work to do) and taxed: the same empty 404 they'd always have gotten, trickled out five bytes at a time over a few seconds instead of answered at once (`worker/honeypot.mjs`). A decompression or zip bomb was asked for and refused: it's a denial-of-service payload regardless of the target, risky to whoever actually receives it, not only whoever it's aimed at. An optional Cloudflare WAF Custom Rule (`CLOUDFLARE_SETUP.md`) blocks the same list even earlier, at the edge, for anyone who'd rather these never reach the Worker at all. Written up in `SECURITY_MODEL.md` ("Scanner and bot traffic: the honeypot"), with an honest note on what it does and doesn't do.
+
+### Tests
+- **`e2e-lessons`** (new, 13 checks): an info step with a shape draws the neck and tab (▶ Listen, no ● Play it) and still marks itself done; Progressions' six names and a full chord-diagram playthrough; Styles' six genres and a riff's neck/tab; both paths' position relative to Singing and Warm-ups; a singer's Today unaffected; both paths discoverable in Learn ▸ Lessons.
+- **`worker.test.mjs`** adds six checks for the honeypot: path recognition (exact and by folder, case-insensitive) without catching real site paths; a tarpit'd 404 with its five bytes and five waits; no caching or indexing on any method; the same behaviour at The Daily's own address; a near-miss path still served normally and at once.
+
+## 2.68.0 — 2026-11-12 — Workspaces that adapt, lessons you can sing, the phone's own journeys
+
+### Changed
+- **The workspaces adapt to who you mostly are.** The choice on the start page (Singer, Guitarist, New to music, Producer) now shapes Songwriter, Studio and Practice too, and a small chip beside the workspaces changes it at any time. Nothing is removed: what a workspace doesn't lead with is under ⋯ More and ☰. A guitarist, and anyone who hasn't said, gets each workspace as it was. Full Rig is the same for everyone.
+  - **A singer:** Songwriter opens on the words, with 🥁 Beats, 🎤 Hum an idea, ✎ Rhymes, Paste chords and Send, and no fretboard under the page. Studio leads with Record video, Camera, Vocal pedals and 〰 Voice, has no Rig tab, opens the microphone beside it, and shows your pitch on the visuals in place of a guitar neck. Practice leads with Learn, 〰 Voice and ⏱ Speed & key, with the words and the backing track as tabs and no fretboard.
+  - **Someone new to music:** Songwriter is a beat, a hum, the words.
+  - **A producer:** Songwriter leads with the piano roll, Keys and Pads, with the arrangement open and the backing track on the strip; Studio leads with the video's shape and the stream window.
+  - **✦ Simple follows:** each keeps its own few tools and tabs.
+- **New tools, in every workspace's list:** 🎤 Hum an idea and ✎ Rhymes in Songwriter; 〰 Voice (your pitch against the key, your range, the key that suits you) in Studio and Practice.
+- **Practice for singers: 🎤 Singing in Learn.** Four lessons the coach follows as you sing: match a note, three and five notes, thirds, arpeggios, the octave, the whole scale, and notes held in tune.
+  - The coach hears your voice (the vocal channel if you have one, else the main input), in any octave. A voice slides between notes, so a wrong note counts only when it's held.
+  - A sung step shows a **keyboard** with its notes lit, the one to sing now, and the note you are singing, with the note names under it, where a guitar step shows the neck and tab. ▶ Listen plays it on a piano.
+  - **Hold a note:** a new kind of step. Keep one note in tune for three or four seconds; it says whether you're a little high or low.
+  - The **Key** menu moves an exercise to where your voice is comfortable. After **Voice ▸ Find my range**, exercises start at the bottom of your comfortable range by themselves.
+  - **A singer's 📅 Today** is sung: a held note to warm up, something to review, the next step. Nobody else's Today has sung steps in it.
+  - Learn's list also has **〰 Voice**, and a singer's way in from the start page opens Singing with its journey.
+- **On a phone, the ways in have journeys of their own,** on the phone's own screens (they led to older, shorter sessions):
+  - **Write a song:** Beats → hear it → Words → Sing → Send (📄 Song ▸ 🔗 Send). A singer starts on the hum bar.
+  - **Play it live:** the band → a look → ★ Showtime.
+  - **Learn** fills the screen as before, on Singing for a singer.
+- **The start page's headline is "Your song, start to finish."** with *Write it, sing it, play it, learn it, share it* under it. It was "Record it. Split it. Write it down."
+
+### Tests
+- **`e2e-adapt`** (new, 29 checks): each workspace for anyone, a guitarist, a singer, someone new and a producer; nothing removed; one row; the chip; ✦ Simple; Singing in Learn; a sung step's keyboard; the coach following a simulated voice (an octave up, a slide ignored, a held wrong note counted); holding a note in tune; the range moving the exercises; a singer's Today.
+- **`e2e-doors`** adds the phone's journeys and the singer's Learn (36 checks). **`e2e-welcome`** and **`e2e`** follow the headline.
+
+## 2.67.0 — 2026-11-12 — Four ways in
+
+### Changed
+- **The start page offers four ways in, one per workspace,** where it had six separate tasks:
+  - **🎸 Write a song** (Songwriter): a new song and a journey that goes the whole way: an idea, hear it, a line of words, a second part, a take, the stage, and out the door.
+  - **🎤 Play it live** (Studio): a look, your sound, the band, ★ Showtime, and a video to post.
+  - **🎼 Learn and practise** (Practice): the Learn panel, with a lesson open and the coach listening.
+  - **⚙️ Explore everything** (Full Rig): every tool, a finished song to take apart and, the first time, the tour. It replaces "I know my way around".
+- **"I'm mostly a" Singer, Guitarist, New to music or Producer.** It's optional, it's remembered, and it asks what you do, never how good you are. It changes what each way in says and where it leads:
+  - a **singer's** song starts by humming, their Studio journey skips the guitar tone and sings from ★ Showtime, and their Practice opens Voice (the pitch ribbon, range and key);
+  - a **guitarist's** song starts by capturing a riff, and their Practice opens today's fifteen minutes;
+  - someone **new to music** starts a song from a beat and opens the first lesson.
+- **The six single tasks are still there, under "Or do one thing",** and each now opens in one of the four workspaces with what it needs showing: *Record, loop and layer* in Studio with the arrangement open (it opened the old Record layout), *Learn a song* in Practice with Backing track on the strip (its tab was missing), *Run a show* with every tab showing.
+- **Play, Learn and Explore keep your own song** if you have one with chords; a first visit gets the demo song.
+- **On a phone** the four ways in sit two to a row and the single tasks are small chips, so the main button stays on the first screen.
+
+### Fixed
+- **On Welcome back, every "start something new" button just opened your last song.** They were only routed on a first visit. Each one starts what it says now.
+
+### Tests
+- **`e2e-doors`** (new, 30 checks): the page, each way in for each kind of person, the whole-song journey walked to its end, the single tasks' workspaces, and a returning visitor with a song of their own. **`e2e-guide`, `e2e-welcome`, `e2e-mobile-fit`, `e2e-simple`** follow the new page.
+
 ## 2.66.0 — 2026-11-12 — Learn is Practice, and the rig is a board
 
 ### Changed

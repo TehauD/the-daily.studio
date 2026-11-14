@@ -3,9 +3,9 @@
 </p>
 
 <h1 align="center">the-daily.studio</h1>
-<p align="center"><b>Record it. Split it. Write it down.</b><br>
+<p align="center"><b>Your song, start to finish.</b><br>
 A guitar and voice studio in one web page: record your guitar and mic · split any song into stems to play along with · get the chords, tab and lyrics · pedals, presets and live visuals</p>
-<p align="center"><sub>v2.13.0 · free, open source (MIT) · no account, no upload, no tracking</sub></p>
+<p align="center"><sub>v2.69.2 · free, open source (MIT) · no account, no upload, no tracking</sub></p>
 
 <p align="center">
   <a href="https://the-daily.studio/"><b>▶ Open the live app</b></a> ·
@@ -48,7 +48,7 @@ the-daily.studio is a guitar and voice studio that runs **entirely in your brows
 
 Around that: **presets and effects** (a pedalboard, five amps, 27 tones, A/B morph and mutate to experiment), a **neural graph and live visuals** (your song as a living map, and the Concert light show that moves with it), a backing band, and a performer view. If you like, there is also a **camera on stage**, an optional extra that stays off unless you choose it.
 
-<p align="center"><img src="docs/screenshots/20-boot.png" alt="The first page: Record it. Split it. Write it down. Three features, then Begin in the studio and Try the demo song" width="860"></p>
+<p align="center"><img src="docs/screenshots/20-boot.png" alt="The first page: Your song, start to finish. Four ways in (Write a song, Play it live, Learn and practise, Explore everything), six single tasks, then Begin in the studio and Try the demo song" width="860"></p>
 <p align="center"><img src="docs/screenshots/40-concert-perform.png" alt="Concert: beams, an LED wall and a gradient stage that follow the chord and the drums" width="860"></p>
 <p align="center"><img src="docs/screenshots/41-concert-teach.png" alt="Concert, Teach lens: the circle of fifths as a lit ring, roman numerals and the next four chords" width="860"></p>
 <p align="center"><img src="docs/screenshots/22-guitar-coach.png" alt="The guitar coach teaching the first chord" width="860"></p>
@@ -109,6 +109,7 @@ It began as a guitar lab and grew into a place to turn an idea into a song. **Hu
 | **Safety nets** | Version history with automatic snapshots, calibration to *your* guitar, undo / redo, autosave. |
 | **Guided sessions and tour (2.7)** | Seven short sessions that tick off as you do each step (play with a band, write down what you play, hum a song, record, loop and layer, learn a song, run a show), a note the first time each tab opens, studio words in guitar terms, and the spotlight tour from **?**. |
 | **Write and Capture (2.9)** | One canvas for the tab, the words and a fretboard that follows the bar; ● Capture writes what you play, notes and chords, as you play. Its three journeys became the six goal workspaces in 2.13. |
+| **Set up for you (2.67–2.68)** | The start page offers four ways in (Write a song, Play it live, Learn and practise, Explore everything) and asks, optionally, whether you mostly sing, play guitar, are new to music or produce. The workspaces then lead with different tools and panels, and a singer gets **🎤 Singing**: lessons the coach follows by ear, on a keyboard, in their own range. |
 | **Goal workspaces (2.13, four since 2.64)** | 🎸 Songwriter · 🎤 Studio · 🎼 Practice · ⚙️ Full Rig. Each one arranges the panels, sidebars and Monitor for that job and puts everything in one row: the workspaces, its main tools, **⋯ More** for the rest, and a button to the next workspace. Studio (once Performer and Creator Studio) records video, Studio Replay, thumbnails and the tip jar; Practice (once Practice and Teacher) opens on its own Learn panel (2.66): lessons that listen, riffs, the scale atlas and Scales & ear, with the band, tempo and tuner still in reach; and for teaching annotations, lesson notes and screen recording. The Rig is a pedalboard: only the pedals on it, the one you pick opened large, and ◉ Stomp for gigs. **★ Showtime** in the song bar plays the song full screen. |
 | **Loop & layer (2.8)** | Record a track of chords, hear it loop, and play a lead on top in a new track on each pass. Keep looping, add a layer, undo a layer. Layers are ordinary tracks. |
 | **Phone, tablet, desktop** | One responsive app. On a phone: bottom transport, five-section navigation, an on-screen tab keypad, pinch-to-zoom Neural map and a wake lock while you play. Installable as an app (PWA). See [Phone and tablet](#phone-and-tablet). |
@@ -175,7 +176,7 @@ Capture was measured on synthetic string-like audio, not a real guitar; see the 
 
 ## What was new in 2.7
 
-The first page now asks what you want to **do** (hum a song, record, learn a song, run a show) and a short **guided session** takes you through it on the real controls, ticking each step when the app sees it done. Tabs explain themselves the first time they open, the studio's words are explained in guitar terms, and Show setup has a seven-line **preflight** for a technician. People who know the studio choose **I know my way around** and get every tool and no coaching. Details are in the [user guide](docs/USER_GUIDE.md#getting-started-and-guided-sessions-27).
+The first page asks what you want to **do** (since 2.67: four ways in, one per workspace, shaped by whether you mostly sing, play guitar, are new to music or produce; then six single tasks) and a **guided session** takes you through it on the real controls, ticking each step when the app sees it done. Tabs explain themselves the first time they open, the studio's words are explained in guitar terms, and Show setup has a seven-line **preflight** for a technician. People who know the studio choose **I know my way around** and get every tool and no coaching. Details are in the [user guide](docs/USER_GUIDE.md#getting-started-and-guided-sessions-27).
 
 <p align="center"><img src="docs/screenshots/59-goals.png" width="720" alt="The first page: four cards asking what you would like to do first"></p>
 

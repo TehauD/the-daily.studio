@@ -1083,7 +1083,7 @@ body:not([data-form=phone]) #songbar{gap:8px}
 .boot-goal svg{width:28px;height:28px;flex:none;color:var(--accent);fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;margin-top:1px}
 .boot-goal b{display:block;font:800 15px var(--display);margin-bottom:3px}.boot-goal span{display:block;font-size:12.5px;line-height:1.45;color:var(--muted)}
 .boot-cta{grid-template-columns:repeat(3,1fr)}.boot-cta.solo{grid-template-columns:1fr}
-.btn.boot-route.boot-pro{background:transparent;border-style:dashed}
+.boot-cta{grid-template-columns:1.6fr 1fr}.boot-cta.solo{grid-template-columns:1fr}
 @media (max-width:660px){.boot-goals{grid-template-columns:1fr;gap:7px;margin-bottom:10px}.boot-goal{padding:10px 12px;gap:10px}.boot-goal svg{width:24px;height:24px}.boot-goal b{font-size:14px;margin-bottom:1px}.boot-goal span{font-size:12px;line-height:1.35}.boot-q{font-size:14px}.boot-cta{grid-template-columns:1fr}}
 
 .gd{position:fixed;top:62px;right:14px;width:288px;max-width:calc(100vw - 28px);z-index:140;background:var(--panel);color:var(--text);border:1px solid var(--accent);border-radius:14px;box-shadow:0 14px 40px rgba(0,0,0,.4);padding:10px 12px 12px;font-size:13px;animation:tofade .3s ease}
@@ -1184,7 +1184,10 @@ body[data-form=phone] .wr-sp{display:none}
 #gtVideo.on,#gtScreen.on{background:color-mix(in srgb,var(--bad) 26%,var(--panel2));border-color:var(--bad)}
 .gl-next{white-space:nowrap}
 /* 2.65: one row: the workspaces, the tools (the rest under ⋯ More), the next step at the end; it wraps only when it must */
-.gl-one{gap:6px 10px}.gl-hint{flex:1 1 240px}
+.gl-one{gap:6px 10px}
+/* 2.68: who the workspaces are set up for */
+.gl-me{flex:none;width:26px;height:26px;display:inline-grid;place-items:center;border:1px solid var(--line2);background:var(--panel2);color:var(--text);border-radius:50%;padding:0;font:700 12px/1 var(--sans);cursor:pointer;margin-left:-4px}.gl-me:hover{border-color:var(--accent)}
+.gl-me-pop{display:grid;gap:4px;min-width:270px;max-width:320px}.gl-me-o{display:flex;flex-direction:column;align-items:flex-start;text-align:left;border:1px solid transparent;background:transparent;color:var(--text);border-radius:9px;padding:6px 9px;cursor:pointer}.gl-me-o:hover{background:var(--panel2)}.gl-me-o.on{border-color:var(--accent);background:var(--accent-soft)}.gl-me-o b{font-size:13px}.gl-me-o small{font-size:11.5px;color:var(--muted)}.gl-me-pop p{margin:4px 2px 0}.gl-hint{flex:1 1 240px}
 .gl-tools{display:flex;flex-wrap:wrap;align-items:center;gap:5px;flex:1 1 320px;min-width:0}
 .gl-tools:not(.more-open) .gl-sec:not(.on),.gl-tools:not(.more-open) #gtTip{display:none}
 .gl-sec{border-style:dashed}.gl-more{color:var(--muted);font-weight:800}.gl-more[aria-expanded=true]{color:var(--text)}
@@ -1538,7 +1541,9 @@ body.mega .pf-l.cur{color:#ff4b3e!important;animation:megshake .12s steps(2) inf
 @container (max-width:640px){.hub-inline .hub-main{grid-template-columns:minmax(0,1fr)}.hub-inline .hub-nav{flex-direction:row;overflow-x:auto;border-right:0;border-bottom:1px solid var(--line)}}
 #pane-learn{container-type:inline-size}
 .coach.co-inline{position:absolute;inset:0;z-index:2;overflow:auto;background:var(--panel);padding:14px 20px 20px;display:flex;flex-direction:column;gap:10px}.coach.co-inline[hidden]{display:none}
-.coach.co-inline .co-board{max-width:1100px}.co-back{flex:none;align-self:flex-start}
+.coach.co-inline .co-board{max-width:1100px}
+/* 2.68: a sung piece shows a keyboard, not a neck */
+.co-board.co-keys{background:none;border:0;padding:0}.co-board.co-keys .ky-wrap{max-width:760px}.co-board.co-keys .ky-svg{min-width:0}.co-board.co-keys .ky-l{font:700 9px var(--sans);text-anchor:middle;fill:#1c1814;pointer-events:none}.co-board.co-keys .ky-l.bl{fill:#fff}.co-back{flex:none;align-self:flex-start}
 dialog.coach{width:min(820px,96vw);max-height:92dvh;padding:16px 18px 18px;border:1px solid var(--line2);border-radius:var(--r3,16px);overflow:auto}
 dialog.coach[open]{display:flex;flex-direction:column;gap:10px}
 .co-top{display:flex;align-items:flex-start;gap:12px}.co-tt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.co-tt small{color:var(--muted);font:650 11px var(--sans);text-transform:uppercase;letter-spacing:.06em}.co-tt b{font:750 19px var(--sans);line-height:1.2}
@@ -1801,7 +1806,25 @@ body.ws-full .wsh{column-width:340px}
 /* ---- 2.49.1: no flash of the wrong first page (part 0); the goals for people coming back ---- */
 html:not(.ds-booted) #boot .boot-card{visibility:hidden}
 .boot-goals.boot-goals-sm{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:6px}.boot-goals-sm .boot-goal{padding:10px 12px}.boot-goals-sm .boot-goal span{display:none}.boot-goals-sm .boot-goal b{font-size:14px}
-#bootRoutes + .boot-q{margin-top:16px}
+#bootRoutes + .boot-start{margin-top:16px}
+/* 2.67: the start page: who you are (it changes where each way in leads), four ways in (one per workspace), then one thing */
+.boot-me{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 14px}
+.boot-me-l{font:700 12.5px var(--sans);color:var(--muted);margin-right:2px}
+.boot-me button{appearance:none;border:1px solid var(--line2);background:transparent;color:inherit;border-radius:999px;padding:5px 12px;font:700 12.5px var(--sans);cursor:pointer}
+.boot-me button:hover{border-color:var(--accent)}.boot-me button[aria-checked=true]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink,#fff)}
+.boot-doors{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:0 0 14px}
+.boot-door{display:flex;flex-direction:column;gap:5px;text-align:left;padding:13px 14px 11px;border:1px solid var(--line);border-top:4px solid var(--dh);border-radius:14px;background:color-mix(in srgb,var(--panel) 78%,transparent);color:var(--text);cursor:pointer;font:inherit;transition:border-color .15s,transform .15s,background .15s}
+.boot-door:hover,.boot-door:focus-visible{border-color:var(--dh);background:color-mix(in srgb,var(--dh) 14%,var(--panel));transform:translateY(-2px);outline:none}
+.bd-i{font-size:22px;line-height:1}.boot-door b{font:800 16px var(--display)}.bd-s{font-size:12.5px;line-height:1.45;color:var(--muted);flex:1}
+.boot-door small{font:800 10px var(--sans);letter-spacing:.09em;text-transform:uppercase;color:var(--dh);margin-top:2px}
+.boot-q2{margin-top:2px;font-size:13px;color:var(--muted)}
+.boot-start-sm .boot-door{padding:10px 12px 9px}.boot-start-sm .bd-i{font-size:18px}.boot-start-sm .boot-door b{font-size:14.5px}.boot-start-sm .bd-s{font-size:12px}
+@media (max-width:760px){.boot-doors{grid-template-columns:1fr 1fr;gap:7px;margin-bottom:10px}.boot-door{padding:10px 11px 9px;gap:3px}.bd-i{font-size:18px}.boot-door b{font-size:14px}.bd-s{font-size:11.5px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}.boot-me{margin-bottom:10px}.boot-me button{padding:5px 10px;font-size:12px}}
+/* on a phone the single tasks are short one-line chips, so the ways in and the main button stay on the first screen */
+@media (max-width:660px){.boot-goals.boot-goals-sm{display:flex;flex-wrap:wrap;gap:5px;margin:0 0 10px}.boot-goals-sm .boot-goal{flex:0 1 auto;flex-direction:row;align-items:center;gap:5px;padding:5px 9px;border-radius:999px}.boot-goals-sm .boot-goal svg{width:14px;height:14px;margin:0}
+  .boot-goals-sm .boot-goal b{font-size:0;line-height:1;margin:0}.boot-goals-sm .boot-goal b::after{content:attr(data-s);font:800 12px var(--display)}
+  #bootMe{flex-wrap:nowrap;gap:4px}#bootMe .boot-me-l{font-size:11.5px;white-space:nowrap;margin:0}#bootMe .bm-x{display:none}#bootMe button{padding:4px 7px;font-size:11.5px;white-space:nowrap;flex:none}
+  .boot-q2{margin:0 0 5px;font-size:12px}.boot-door .bd-s{-webkit-line-clamp:2}.boot-door{position:relative}.boot-door .bd-i{position:absolute;right:10px;top:9px;font-size:16px}.boot-door b{padding-right:22px}}
 @media (max-width:620px){.boot-goals.boot-goals-sm{grid-template-columns:repeat(2,minmax(0,1fr))}}
 /* ---- 2.51: passing a song back and forth (part 89) ---- */
 .slc-box{display:grid;gap:4px;margin:4px 0 8px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}

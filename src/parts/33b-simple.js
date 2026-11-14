@@ -20,7 +20,7 @@ const SIMPLE_GOAL_TOOLS = {
   practice: ['gtLearn', 'gtSlow', 'gtBpm', 'gtFast'] };
 const SIMPLE_TOOLS = SIMPLE_GOAL_TOOLS.songwriter;
 /** the panels Simple keeps in the workspace in use */
-const simpleTabs = () => { const g = typeof goalNow === 'function' && goalNow(); return (g && SIMPLE_GOAL_TABS[g.id]) || SIMPLE_TABS; };
+const simpleTabs = () => { const g = typeof goalNow === 'function' && goalNow(), L = g && typeof goalLens === 'function' && goalLens(g); return (L && L.tabs) || (g && SIMPLE_GOAL_TABS[g.id]) || SIMPLE_TABS; };      /* 2.68: or those of whoever it is set up for */
 const SIMPLE_TONES = ['Crystal Clean', 'Busker Corner', 'Edge of Breakup', 'Classic Crunch', 'Singing Lead', 'Tight Metal Rhythm', 'Shimmer Cathedral', 'Direct (No FX)'];
 if (CFG.simple == null) { CFG.simple = !store.get('started', false) && !store.get('song', null); saveCfg(); }
 function simpleApply() {

@@ -18,7 +18,14 @@
     // The Worker runs only where it has work to do (2.52): The Daily's address (its "/" and "/move/"), the moving page at /journal/, Sign in
     // with GitHub, and backstage (kept off The Daily's address). Everything else, fonts, code, icons, pictures and the guide, is served as
     // static assets, which Cloudflare does not count as Worker requests. One visit to the studio is one Worker request.
-    "run_worker_first": ["/", "/index.html", "/move", "/move/", "/journal", "/journal/*", "/auth/*", "/share/*", "/drops/api/*", "/drops/a/*", "/backstage", "/backstage/*"]
+    // The short list below (2.69, worker/honeypot.mjs) is the deliberate exception: these paths are only ever a scanner or bot probe, never
+    // a real visit, so they are routed into the Worker on purpose, to be taxed with a slow, empty 404 instead of the usual fast one.
+    "run_worker_first": [
+      "/", "/index.html", "/move", "/move/", "/journal", "/journal/*", "/auth/*", "/share/*", "/drops/api/*", "/drops/a/*", "/backstage", "/backstage/*",
+      "/.env", "/.env.local", "/.env.production", "/.env.development", "/.env.bak", "/.git/config", "/.git/HEAD", "/wp-login.php", "/xmlrpc.php",
+      "/.aws/credentials", "/.docker/config.json", "/.vscode/sftp.json", "/config.php", "/configuration.php", "/admin.php", "/.htaccess", "/.htpasswd",
+      "/id_rsa", "/id_rsa.pub", "/wp-admin/*", "/wp-content/*", "/phpmyadmin/*", "/phpMyAdmin/*", "/.git/*", "/.aws/*", "/.vscode/*", "/.docker/*"
+    ]
   },
   // Send with recordings (2.54, worker/share.mjs): sealed recordings people send with song links, kept 7 days (the bucket's lifecycle rule).
   // The bucket stays private: no public access, no r2.dev address and no custom domain on it. Only the Worker reads and writes it.
@@ -27,6 +34,9 @@
     // Drops (2.60): switch it on by creating the PUBLIC bucket (docs/CLOUDFLARE_SETUP.md, Part H), then adding it here:
     // , { "binding": "DROPS", "bucket_name": "thedaily-drops" }
   ],
+  // Honeypot auto-block (2.69.1, worker/honeypot.mjs): off until a KV namespace is created and bound here (docs/CLOUDFLARE_SETUP.md,
+  // Part I), plus the CF_API_TOKEN / CF_ZONE_ID Worker secrets. Without all three, the honeypot stays a tarpit only, as before.
+  // "kv_namespaces": [ { "binding": "HONEY_KV", "id": "<paste the id `wrangler kv namespace create HONEY_KV` gives you>" } ],
   // Drops: the site owner's GitHub account number (public; it decides who can approve drops) and, once the public bucket has its own
   // address, that address (without it, the Worker serves the audio itself).
   "vars": { "OWNER_GITHUB_ID": "13037814", "DROPS_URL": "" },

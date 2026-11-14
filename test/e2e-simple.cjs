@@ -98,8 +98,8 @@ suite('e2e-simple', async t => {
   /* ---- a first visit starts Simple; "I know my way around" does not ---- */
   const q = await t.open({ w: 1600, h: 900, boot: false }); await q.evaluate(() => { window.name = 'noseed'; }); await q.goto(t.BASE + '?debug'); await wait(3200);
   ok(await q.evaluate(() => window.__daily.CFG.simple === true), 'a first visit starts in Simple');
-  await q.evaluate(() => document.getElementById('bootPro').click()); await wait(1500);
-  ok(await q.evaluate(() => window.__daily.CFG.simple === false && !document.body.classList.contains('simple')), '“I know my way around” opens the full studio');
+  await q.evaluate(() => document.querySelector('.boot-door[data-door="explore"]').click()); await wait(2500);
+  ok(await q.evaluate(() => window.__daily.CFG.simple === false && !document.body.classList.contains('simple')), '“Explore everything” opens the full studio');
 
   /* ---- phones keep their own layout ---- */
   const m = await t.open({ w: 390, h: 844, mobile: true }), mv = (f, a) => m.evaluate(f, a);
