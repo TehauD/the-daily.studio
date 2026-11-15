@@ -57,7 +57,7 @@ window.__dailyRoom = (id, make) => {
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.70.0', BUILD = '524b8be', PARTS_N = +'124' || 0, LINES_N = +'21459' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.70.0', BUILD = '6606985', PARTS_N = +'124' || 0, LINES_N = +'21457' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { ghApp: { clientId: 'Iv23liTjqEBQsgmGaE1Q', slug: 'tehaud-the-daily-studio' },   /* Sign in with GitHub: the GitHub App's public client id and its slug (docs/GITHUB.md); empty = only the token way */
   support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://journal.the-daily.studio/' };
@@ -18547,14 +18547,12 @@ function vbScale() { const iv = SCALES[S.scale] || (S.minor ? SCALES['Natural Mi
 function vbAttach(c, from, to) {
   const B = { c, u: {} }; const mk = { scream: vbScream, tune: vbTune, deess: vbDeess, level: vbLevel, warm: vbWarm, mega: vbMega, double: vbDouble, harm: vbHarm, echo: vbEcho, verb: vbVerb };
   let prev = from; VB_ORDER.forEach(([k]) => { const w = vbWrap(mk[k](c)); B.u[k] = w; prev.connect(w.in); prev = w.out; });
-  /* an always-on, transparent safety limiter at the very end: with grit, a megaphone, stacked harmonies and echo feedback all pushing at once
-     the board can run hot, so this catches true peaks near 0 dBFS (and only then) so the output can never clip, however hard the pedals are driven */
-  const lim = c.createDynamicsCompressor(); lim.threshold.value = -1; lim.knee.value = 0; lim.ratio.value = 20; lim.attack.value = .002; lim.release.value = .05; B.lim = lim;
-  /* the compressor does the musical gain-reduction, but it is not a brick wall (it overshoots a little on a transient), so a transparent
-     hard clamp at ±1 after it is the actual guarantee the output can never exceed full scale — identity within range, so it only ever
-     touches a sample that would otherwise have clipped anyway */
-  const clip = c.createWaveShaper(); const cv = new Float32Array(1024); for (let i = 0; i < 1024; i++) cv[i] = i / 1023 * 2 - 1; clip.curve = cv; clip.oversample = 'none'; B.clip = clip;
-  prev.connect(lim); lim.connect(clip); clip.connect(to);
+  /* an always-on safety clipper at the very end: with grit, a megaphone, stacked harmonies and echo feedback all pushing at once the board can
+     run hot, so this gently rounds anything past about −3 dBFS and can never pass full scale — a WaveShaper, so (unlike a compressor's look-ahead)
+     it adds no delay and the live voice still comes through in well under a millisecond. Transparent below the knee, where a voice normally sits. */
+  const clip = c.createWaveShaper(), N = 2048, cv = new Float32Array(N), t = .7; for (let i = 0; i < N; i++) { const x = i / (N - 1) * 2 - 1, a = Math.abs(x); cv[i] = Math.sign(x) * (a <= t ? a : t + (1 - t) * Math.tanh((a - t) / (1 - t))); }
+  clip.curve = cv; clip.oversample = 'none'; B.clip = clip;
+  prev.connect(clip); clip.connect(to);
   E.vb = B; vbApply(B); return B;
 }
 /** CFG.vb onto a board */

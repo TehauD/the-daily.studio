@@ -106,8 +106,8 @@ suite('e2e-vocalboard', async t => {
   /* ---- the safety limiter at the board end (2.70): the output can never clip, however hard the pedals push ---- */
   const LIM = await ev(async () => { const D = window.__daily, c = D.E.ctx, B = D.E.vb, sr = c.sampleRate; D.vbPreset('Scream', true); D.vbSet('scream', 'grit', 1); D.vbSet('scream', 'level', 1);
     const tap = c.createGain(); B.clip.connect(tap); const x = window.__sine(200, .6, 1)(sr), b = c.createBuffer(1, x.length, sr); b.getChannelData(0).set(x); const s = c.createBufferSource(); s.buffer = b;
-    const r = await window.__rec([{ node: tap, ch: 1 }], Math.round(sr * .55), () => { s.connect(B.u.scream.in); s.start(c.currentTime + .05); }); try { s.disconnect(); B.clip.disconnect(tap); } catch (e) { } let mx = 0; for (let i = 0; i < r[0].length; i++) mx = Math.max(mx, Math.abs(r[0][i])); D.vbPreset('Off', true); return { peak: mx, thr: B.lim.threshold.value }; });
-  ok(LIM.thr === -1 && LIM.peak <= 1.0001, 'a safety limiter and hard clamp sit at the very end; even Scream at full grit cannot push the board past full scale (peak ' + LIM.peak.toFixed(3) + ')');
+    const r = await window.__rec([{ node: tap, ch: 1 }], Math.round(sr * .55), () => { s.connect(B.u.scream.in); s.start(c.currentTime + .05); }); try { s.disconnect(); B.clip.disconnect(tap); } catch (e) { } let mx = 0; for (let i = 0; i < r[0].length; i++) mx = Math.max(mx, Math.abs(r[0][i])); D.vbPreset('Off', true); return { peak: mx, shaper: !!B.clip }; });
+  ok(LIM.shaper && LIM.peak <= 1.0001, 'a safety clipper sits at the very end; even Scream at full grit cannot push the board past full scale (peak ' + LIM.peak.toFixed(3) + ')');
 
   /* ---- presets, and a preset per section ---- */
   ok(await ev(() => { const D = window.__daily; D.vbPreset('Ballad', true); const o = D.CFG.vb.on; return o.double && o.verb && o.echo && o.deess && !o.scream && !o.mega && !o.harm && D.CFG.vb.p.verb.type === 'Plate'; }), 'a preset sets the whole board (Ballad: doubler, plate, quarter-note echo, de-esser)');
