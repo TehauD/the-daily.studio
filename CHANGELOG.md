@@ -2,6 +2,18 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.72.0 — 2026-11-15 — Living cymatics: the sound made into physics, and into life
+
+On the GPU engine from 2.71, two looks that **simulate** the sound rather than draw it — full-precision ping-pong simulations running on your graphics card.
+
+### Added
+- **🌊 Ripple** — a real **wave-field (cymatic plate)**: the sound drops into a vibrating surface at several points (the frequency bands drive them, the beat sends a pulse), and the standing waves and interference ripples that form are the picture. The physics that turns a tone into a shape, live.
+- **🌱 Life** — a **reaction-diffusion** simulation (Gray-Scott): glowing organisms that grow, divide and crawl, fed and stirred by how loud you play. Sound made into something alive.
+- Both run as GPU simulations on **floating-point render targets** where available, through a reusable ping-pong sim layer added to the engine (so the looks to come can use it too). They take the chord's colour, react to the bands and the beat, ease in Calm, and never flash. Where a device has no float render targets they fall back to a 2D field, so nothing breaks.
+
+### Tests
+- **`e2e-gpu`** (14 checks) now covers all three GPU looks (Stardust, Ripple, Life): the engine builds and has float targets; each paints a real picture and moves; none flash in Calm or Standard; the 2D fallback still works; a separate canvas; the choice is remembered.
+
 ## 2.71.0 — 2026-11-15 — A GPU visual engine, and Stardust
 
 The first step of a bigger push to make the visuals rival a game: a real GPU rendering path, built inline on **WebGL2** with no new dependency.

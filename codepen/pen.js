@@ -57,7 +57,7 @@ window.__dailyRoom = (id, make) => {
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.71.0', BUILD = '5cbd6af', PARTS_N = +'125' || 0, LINES_N = +'21586' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.72.0', BUILD = '47a193e', PARTS_N = +'125' || 0, LINES_N = +'21665' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { ghApp: { clientId: 'Iv23liTjqEBQsgmGaE1Q', slug: 'tehaud-the-daily-studio' },   /* Sign in with GitHub: the GitHub App's public client id and its slug (docs/GITHUB.md); empty = only the token way */
   support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://journal.the-daily.studio/' };
@@ -15920,7 +15920,7 @@ function vbgOpen() {
        (Calm is slower and softer), and nothing flashes — brightness only ever glides, because it rides the smoothed energy, not raw peaks.
    The engine (gpuGet, gpuScene, gpuBlit) is written to be reused by the looks that come after it (the living cymatics, the 3D stage).
    ============================================================ */
-const GPU = { cv: null, gl: null, ok: null, w: 0, h: 0, N: 0, P: {}, T: {}, F: {}, vao: null, off: false };
+const GPU = { cv: null, gl: null, ok: null, w: 0, h: 0, N: 0, P: {}, T: {}, F: {}, vao: null, off: false, float: false, floatLin: false, sim: {}, simRes: 256, simProg: null };
 
 function gpuSh(gl, type, src) { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) { console.warn('gpu shader', gl.getShaderInfoLog(s)); return null; } return s; }
 function gpuProg(gl, vs, fs) { const a = gpuSh(gl, gl.VERTEX_SHADER, vs), b = gpuSh(gl, gl.FRAGMENT_SHADER, fs); if (!a || !b) return null; const p = gl.createProgram(); gl.attachShader(p, a); gl.attachShader(p, b); gl.linkProgram(p); if (!gl.getProgramParameter(p, gl.LINK_STATUS)) { console.warn('gpu link', gl.getProgramInfoLog(p)); return null; } return p; }
@@ -15937,6 +15937,7 @@ function gpuGet() {
     if (!gl) { GPU.ok = false; return false; }
     cv.addEventListener('webglcontextlost', e => { e.preventDefault(); GPU.ok = false; }, false);
     GPU.cv = cv; GPU.gl = gl; GPU.vao = gl.createVertexArray();
+    GPU.float = !!gl.getExtension('EXT_color_buffer_float'); GPU.floatLin = !!gl.getExtension('OES_texture_float_linear');      /* for the living simulations (2.72) */
     /* particle pass: attributeless — each point's path comes from its gl_VertexID and the time, its colour from the chord's hue */
     GPU.P.part = gpuProg(gl, `#version 300 es
       uniform float uT, uEn, uHue, uPulse; uniform vec2 uRes; out vec3 vCol;
@@ -15985,6 +15986,7 @@ function gpuScene(look, B) {
   const gl = GPU.gl, w = GPU.w, h = GPU.h; gl.viewport(0, 0, w, h); gl.disable(gl.DEPTH_TEST);
   gl.bindFramebuffer(gl.FRAMEBUFFER, GPU.F.a); const sky = gpuSkyRGB(B.hue); gl.clearColor(sky[0], sky[1], sky[2], 1); gl.clear(gl.COLOR_BUFFER_BIT);
   gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE); look(gl, B, w, h); gl.disable(gl.BLEND);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, GPU.F.a); gl.viewport(0, 0, w, h);      /* a sim look may have changed the bound target and viewport; put them back for the post chain */
   gl.bindFramebuffer(gl.FRAMEBUFFER, GPU.F.b); gl.useProgram(GPU.P.bright); gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, GPU.T.a); gpuFS(gl);
   gl.useProgram(GPU.P.blur);
   for (let i = 0; i < 2; i++) {
@@ -16027,13 +16029,90 @@ function gpuFallback2D(g, lookKey, W, H, B) {
   g.restore();
 }
 
+/* ---------- 2.72: living simulations — a wave-field (cymatic plate) and reaction-diffusion (life), run on the GPU as ping-pong state ---------- */
+function gpuSimTex(res) {
+  const gl = GPU.gl, t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t);
+  gl.texImage2D(gl.TEXTURE_2D, 0, GPU.float ? gl.RGBA16F : gl.RGBA8, res, res, 0, gl.RGBA, GPU.float ? gl.HALF_FLOAT : gl.UNSIGNED_BYTE, null);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  const f = gl.createFramebuffer(); gl.bindFramebuffer(gl.FRAMEBUFFER, f); gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, t, 0); return { t, f };
+}
+/** lazily compile the simulation programs once (they are only built when a living look is first chosen) */
+function gpuSimProgs() {
+  if (GPU.simProg) return GPU.simProg !== false; const gl = GPU.gl, P = {};
+  P.waveStep = gpuProg(gl, GPU_VS_FS, `#version 300 es
+    precision highp float; in vec2 vUv; uniform sampler2D S; uniform vec2 px; uniform vec4 uB; uniform float uPulse; out vec4 o;
+    void main(){ vec2 st=texture(S,vUv).xy; float h=st.x, hp=st.y;
+      float lap=texture(S,vUv+vec2(px.x,0)).x+texture(S,vUv-vec2(px.x,0)).x+texture(S,vUv+vec2(0,px.y)).x+texture(S,vUv-vec2(0,px.y)).x-4.*h;
+      float nh=(2.*h - hp + 0.49*lap)*0.9965;
+      vec2 src[4]=vec2[](vec2(.5,.5),vec2(.28,.36),vec2(.72,.4),vec2(.5,.74));
+      for(int i=0;i<4;i++){ float d=distance(vUv,src[i]); nh += (uB[i]*.022+uPulse*.01)*exp(-d*d*160.); }
+      o=vec4(clamp(nh,-2.,2.),h,0.,1.); }`);
+  P.waveShow = gpuProg(gl, GPU_VS_FS, `#version 300 es
+    precision highp float; in vec2 vUv; uniform sampler2D S; uniform float uHue,uEn; out vec4 o;
+    void main(){ float h=texture(S,vUv).x; float e=abs(h); float hu=uHue+h*60.;
+      vec3 c=.5+.5*cos(6.2831*(hu/360.)+vec3(0.,2.1,4.2)); float m=smoothstep(.01,.3,e)*(.5+.8*uEn); o=vec4(c*m, m); }`);
+  P.rdSeed = gpuProg(gl, GPU_VS_FS, `#version 300 es
+    precision highp float; in vec2 vUv; out vec4 o;
+    float h1(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5); }
+    void main(){ float b=0.; for(int i=0;i<24;i++){ vec2 c=vec2(h1(vec2(float(i),1.)),h1(vec2(float(i),2.))); if(distance(vUv,c)<.03) b=1.; } o=vec4(1.,b,0.,1.); }`);
+  P.rdStep = gpuProg(gl, GPU_VS_FS, `#version 300 es
+    precision highp float; in vec2 vUv; uniform sampler2D S; uniform vec2 px; uniform float f,k; out vec4 o;
+    vec2 lap(){ vec2 s=texture(S,vUv).xy*-1.;
+      s+=(texture(S,vUv+vec2(px.x,0)).xy+texture(S,vUv-vec2(px.x,0)).xy+texture(S,vUv+vec2(0,px.y)).xy+texture(S,vUv-vec2(0,px.y)).xy)*.2;
+      s+=(texture(S,vUv+px).xy+texture(S,vUv-px).xy+texture(S,vUv+vec2(px.x,-px.y)).xy+texture(S,vUv+vec2(-px.x,px.y)).xy)*.05; return s; }
+    void main(){ vec2 ab=texture(S,vUv).xy; float A=ab.x,B=ab.y,r=A*B*B; vec2 L=lap();
+      o=vec4(clamp(A+(1.0*L.x - r + f*(1.-A)),0.,1.), clamp(B+(0.5*L.y + r - (k+f)*B),0.,1.), 0.,1.); }`);
+  P.rdShow = gpuProg(gl, GPU_VS_FS, `#version 300 es
+    precision highp float; in vec2 vUv; uniform sampler2D S; uniform float uHue,uEn; out vec4 o;
+    void main(){ float b=texture(S,vUv).y; float hu=uHue - b*90.; vec3 c=.5+.5*cos(6.2831*(hu/360.)+vec3(0.,2.1,4.2));
+      float m=smoothstep(.06,.4,b)*(.55+.7*uEn); o=vec4(c*m, m); }`);
+  if (Object.values(P).some(x => !x)) { GPU.simProg = false; return false; }
+  P.u = { wpx: gl.getUniformLocation(P.waveStep, 'px'), wB: gl.getUniformLocation(P.waveStep, 'uB'), wPulse: gl.getUniformLocation(P.waveStep, 'uPulse'),
+    wsHue: gl.getUniformLocation(P.waveShow, 'uHue'), wsEn: gl.getUniformLocation(P.waveShow, 'uEn'),
+    rpx: gl.getUniformLocation(P.rdStep, 'px'), rf: gl.getUniformLocation(P.rdStep, 'f'), rk: gl.getUniformLocation(P.rdStep, 'k'),
+    rsHue: gl.getUniformLocation(P.rdShow, 'uHue'), rsEn: gl.getUniformLocation(P.rdShow, 'uEn') };
+  GPU.simProg = P; return true;
+}
+/** step a ping-pong sim `steps` times, then return the current state texture */
+function gpuSimRun(key, res, seedProg, stepProg, setU, steps) {
+  const gl = GPU.gl; let s = GPU.sim[key]; if (!s) { s = GPU.sim[key] = { a: gpuSimTex(res), b: gpuSimTex(res), res }; if (seedProg) { gl.viewport(0, 0, res, res); gl.disable(gl.BLEND); gl.bindFramebuffer(gl.FRAMEBUFFER, s.a.f); gl.useProgram(seedProg); gpuFS(gl); } else { gl.bindFramebuffer(gl.FRAMEBUFFER, s.a.f); gl.clearColor(0, 0, 0, 1); gl.clear(gl.COLOR_BUFFER_BIT); gl.bindFramebuffer(gl.FRAMEBUFFER, s.b.f); gl.clear(gl.COLOR_BUFFER_BIT); } }
+  gl.viewport(0, 0, res, res); gl.disable(gl.BLEND); gl.useProgram(stepProg);
+  for (let i = 0; i < steps; i++) { gl.bindFramebuffer(gl.FRAMEBUFFER, s.b.f); gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, s.a.t); setU(i); gpuFS(gl); const t = s.a; s.a = s.b; s.b = t; }
+  return s.a.t;
+}
+/** draw a sim's state texture into the scene target, so the bloom chain glows it */
+function gpuSimShow(stateTex, showProg, hueU, enU, B, w, h) {
+  const gl = GPU.gl; gl.bindFramebuffer(gl.FRAMEBUFFER, GPU.F.a); gl.viewport(0, 0, w, h); gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
+  gl.useProgram(showProg); gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, stateTex); gl.uniform1f(hueU, B.hue); gl.uniform1f(enU, B.en); gpuFS(gl);
+}
+function gpuRipple(gl, B, w, h) {
+  const P = GPU.simProg, res = GPU.simRes, steps = 1 + Math.round(2 * (hmCm().motion || 1));
+  const bands = [B.b[0] + B.b[1], B.b[2] + B.b[3], B.b[4] + B.b[5], B.b[6] + B.b[7]];
+  const state = gpuSimRun('ripple', res, null, P.waveStep, () => { gl.uniform2f(P.u.wpx, 1 / res, 1 / res); gl.uniform4f(P.u.wB, bands[0], bands[1], bands[2], bands[3]); gl.uniform1f(P.u.wPulse, B.pulse || 0); }, steps);
+  gpuSimShow(state, P.waveShow, P.u.wsHue, P.u.wsEn, B, w, h);
+}
+function gpuLife(gl, B, w, h) {
+  const P = GPU.simProg, res = GPU.simRes, steps = 4 + Math.round(6 * (hmCm().motion || 1));
+  const state = gpuSimRun('life', res, P.rdSeed, P.rdStep, () => { gl.uniform2f(P.u.rpx, 1 / res, 1 / res); gl.uniform1f(P.u.rf, .035 + .006 * B.en); gl.uniform1f(P.u.rk, .062); }, steps);
+  gpuSimShow(state, P.rdShow, P.u.rsHue, P.u.rsEn, B, w, h);
+}
+/** a GPU simulation look: needs WebGL2 + float render targets, else the 2D fallback */
+function gpuSimLook(key) {
+  return (g, W, H, B) => {
+    if (!gpuGet() || !GPU.float || !gpuSimProgs()) return gpuFallback2D(g, key, W, H, B);
+    try { gpuSize(W, H); gpuScene(key === 'life' ? gpuLife : gpuRipple, B); g.drawImage(GPU.cv, 0, 0, W, H); }
+    catch (e) { GPU.off = true; gpuFallback2D(g, key, W, H, B); }
+  };
+}
+
 /** register the GPU looks as "Behind you" looks, before Your video, so they sit with the other backdrops */
 (function gpuRegister() {
-  if (typeof VBACK === 'undefined') return; const entries = [['stardust', 'Stardust']];
+  if (typeof VBACK === 'undefined') return; const entries = [['stardust', 'Stardust'], ['ripple', 'Ripple'], ['life', 'Life']];
   const vi = VBACK.findIndex(m => m[0] === 'video'); const at = vi < 0 ? VBACK.length : vi;
   entries.forEach((e, k) => {
     VBACK.splice(at + k, 0, e); BK_MODES.add(e[0]); if (!VMODES.some(m => m[0] === e[0])) VMODES.splice(VMODES.findIndex(m => m[0] === 'video') < 0 ? VMODES.length : VMODES.findIndex(m => m[0] === 'video'), 0, e);
-    BK_FN[e[0]] = (g, W, H, Bb) => gpuBlit(g, e[0], W, H, Bb);
+    BK_FN[e[0]] = (e[0] === 'ripple' || e[0] === 'life') ? gpuSimLook(e[0]) : (g, W, H, Bb) => gpuBlit(g, e[0], W, H, Bb);
   });
 })();
 
