@@ -4,6 +4,16 @@ What the studio, its tutorials, its documents and its tests do **not** cover yet
 
 How to use it: before a release, move what the release closed into *Closed* with the version, and add what it opened. [RELEASE.md](RELEASE.md) has this as a checklist item. Items marked **(maintainer)** are decisions or facts only the project's owner can settle; nothing here blocks a build.
 
+## Closed in 2.71.0
+
+- **The visuals were 2D-canvas only — the ceiling on how cinematic they could look.** Added an inline **WebGL2 GPU engine** (particles + a real bloom glow, reused by future looks) with a first GPU look, **Stardust**, in the Behind-you group. It blits onto the 2D visuals so overlays still work, falls back to 2D with no WebGL2, and obeys the Calm/no-flash rules. First step toward GPU cymatics, a 3D stage and WebXR.
+
+## Open (toward rivalling a game)
+
+- **WebGPU fast-path** (compute shaders) on top of the WebGL2 baseline — not yet; this sandbox's browser has no WebGPU, so it needs hardware testing before it ships.
+- **Living cymatics** (GPU wave-field + reaction-diffusion), a **3D reactive stage** with the camera cut-out inside it, and **spatial audio + WebXR** are planned on this engine (2.72–2.74).
+- **An OffscreenCanvas + Worker render loop** so the GPU looks never share the main thread (a later optimisation; today they render on the main thread and blit).
+
 ## Closed in 2.70.0
 
 - **The vocal board had no pitch correction, no standalone compressor, and no tone/warmth control**, and a few pedals could run the output hot. Added **Tune** (pitch-correct to the key or chord, gentle to hard), **Leveler** (a compressor), **Warmth & Air** (a tone tilt with tape-style saturation) and an always-on safety limiter + hard clamp so the board can't clip. A **Crooner** preset and a **Spring** reverb give the nostalgic jazz/oldies voice.

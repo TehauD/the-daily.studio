@@ -2,6 +2,18 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.71.0 — 2026-11-15 — A GPU visual engine, and Stardust
+
+The first step of a bigger push to make the visuals rival a game: a real GPU rendering path, built inline on **WebGL2** with no new dependency.
+
+### Added
+- **A GPU visual engine (`src/parts/71-gpu.js`).** It owns its own WebGL2 canvas, renders a look with a true **bloom** glow (an additive particle pass, a bright-pass, a separable-gaussian blur and a tonemapped composite), and the ordinary 2D draw path blits the result onto the visuals — so every overlay (the neck, the words, the lower third) still draws on top, and it works the same on the stage and in a recording. The engine (`gpuGet`, `gpuScene`, `gpuBlit`) is written to be reused by the GPU looks that come next.
+- **🌌 Stardust**, the first GPU look: a drifting, audio-reactive particle galaxy, in the “Behind you” group. Like every look it takes the chord's colour, moves with the sound, slows and softens in Calm, and never flashes.
+- **It degrades gracefully.** With no WebGL2 (an old phone, a lost context) Stardust falls back to a 2D particle field, so nothing ever breaks. WebGPU, where a browser has it, is a planned fast-path on top of this WebGL2 baseline — not relied on yet.
+
+### Tests
+- **`e2e-gpu`** (new, 12 checks): the engine builds on WebGL2; Stardust paints a real picture and moves; nothing flashes in Calm or Standard; the 2D fallback still paints and moves when WebGL2 is turned off; it draws on a separate canvas; the choice is remembered; no errors. `e2e-backdrops` lists it in the Behind-you group.
+
 ## 2.70.0 — 2026-11-15 — A crooner's voice, pitch and warmth, and backdrops made of sound
 
 ### Added

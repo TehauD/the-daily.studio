@@ -9,9 +9,9 @@ suite('e2e-backdrops', async t => {
 
   // ---- listed, and in their own group in the Visuals bar
   const lst = await ev(() => { const d = window.__daily; d.dockGo('vis'); return { have: d.VMODES.map(m => m[0]), names: d.VBACK.map(m => m[1]).join('|') }; }); await wait(500);
-  ok(ALL.every(k => lst.have.includes(k)) && lst.names === 'Light Ribbons|Aurora|Warp Stars|Pulse Rings|Nebula|Skyline|Cymatics|Spectrum|Waveform|Your video', 'the looks are in the list, then Your video (2.19) (' + lst.names + ')');
+  ok(ALL.every(k => lst.have.includes(k)) && lst.names === 'Light Ribbons|Aurora|Warp Stars|Pulse Rings|Nebula|Skyline|Cymatics|Spectrum|Waveform|Stardust|Your video', 'the looks are in the list, Stardust (2.71, GPU) then Your video (2.19) (' + lst.names + ')');
   const bar = await ev(() => ({ back: [...document.querySelectorAll('#vzBack [data-m]')].map(b => b.dataset.m).join(), main: [...document.querySelectorAll('#pane-vis .seg:not([aria-label]) [data-m]')].map(b => b.dataset.m).join(), label: (document.querySelector('#vzBack .hx-l') || {}).textContent }));
-  ok(bar.back === ALL.concat('video').join() && bar.label === 'Behind you' && !ALL.some(k => bar.main.split(',').includes(k)), 'they sit in their own “Behind you” group, apart from the main looks (' + bar.back + ')');
+  ok(bar.back === ALL.concat('stardust', 'video').join() && bar.label === 'Behind you' && !ALL.some(k => bar.main.split(',').includes(k)), 'they sit in their own “Behind you” group, apart from the main looks (' + bar.back + ')');
 
   // ---- the colour follows the chord
   const hues = await ev(() => { const d = window.__daily; return { C: d.bkHueFor('C'), G: d.bkHueFor('G'), Fs: d.bkHueFor('F#'), none: d.bkHueFor(null), am: d.bkHueFor('Am') }; });
