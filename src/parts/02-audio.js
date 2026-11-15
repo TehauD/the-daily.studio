@@ -176,6 +176,30 @@ class Harm extends AudioWorkletProcessor{
     return true;}}
 registerProcessor('fw-harm',Harm);
 
+/* pitch correction (part 79, the Tune pedal): hears the note being sung and slides the voice itself to the nearest note of the
+   song's scale (or a chord tone), by the fractional amount — so a flat note is pulled up to pitch, not just shifted by whole steps.
+   strength = how far toward the note (0..1); glide = how fast it gets there (gentle and natural, up to the hard/robotic snap). */
+class Tune extends AudioWorkletProcessor{
+  constructor(){super();this.N=16384;this.b=new Float32Array(this.N);this.w=0;this.ph=0;this.win=0.035;this.semi=0;this.tgt=0;
+    this.D=new Float32Array(512);this.dw=0;this.acc=0;this.ac=0;this.cnt=0;this.scale=[1,0,1,0,1,1,0,1,0,1,0,1];this.chord=null;this.strength=0.85;this.glide=0.035;this.on=false;
+    this.port.onmessage=e=>{const d=e.data;if(d.scale)this.scale=d.scale;if('chord' in d)this.chord=d.chord;if(d.strength!=null)this.strength=d.strength;if(d.glide!=null)this.glide=d.glide;};}
+  rd(pos){const N=this.N;let p=pos;while(p<0)p+=N;const i=Math.floor(p),f=p-i;const a=this.b[i%N],c=this.b[(i+1)%N];return a+(c-a)*f;}
+  detect(){const sr=sampleRate/4,W=256,D=this.D,M=512,s0=(this.dw-W-180+M*4)%M,mn=Math.floor(sr/1000),mx=Math.min(175,Math.floor(sr/70));let e=0;
+    for(let j=0;j<W;j++){const v=D[(s0+j)%M];e+=v*v;}if(e/W<1e-6){this.on=false;this.tgt+=(0-this.tgt)*0.3;return;}
+    let run=0,best=-1;const d=new Float32Array(mx+2);for(let t=1;t<=mx+1;t++){let s=0;for(let j=0;j<W;j++){const q=D[(s0+j)%M]-D[(s0+j+t)%M];s+=q*q;}run+=s;d[t]=s*t/(run||1);}
+    for(let t=mn;t<=mx;t++){if(d[t]<0.15&&d[t]<=d[t-1]&&d[t]<=d[t+1]){best=t;break;}}
+    if(best<0){this.on=false;this.tgt+=(0-this.tgt)*0.3;return;}const a=d[best-1],b=d[best],c=d[best+1],den=a-2*b+c,tt=best+(den?0.5*(a-c)/den:0),f=sr/tt,m=69+12*Math.log2(f/440);
+    this.on=true;let tn,bestd=99,bn=Math.round(m);
+    if(this.chord&&this.chord.length){for(let k=-13;k<=13;k++){const q=Math.round(m)+k;if(this.chord.includes(((q%12)+12)%12)&&Math.abs(q-m)<bestd){bestd=Math.abs(q-m);bn=q;}}tn=bn;}
+    else{for(let k=-2;k<=2;k++){const q=Math.round(m)+k,pc=((q%12)+12)%12;if(this.scale[pc]&&Math.abs(q-m)<bestd){bestd=Math.abs(q-m);bn=q;}}tn=bn;}
+    this.tgt=(tn-m)*this.strength;}
+  process(i,o){const x=i[0],y=o[0];if(!x.length||!y.length)return true;const n=y[0].length,W=Math.min(this.N-8,Math.floor(this.win*sampleRate)),N=this.N;
+    for(let k=0;k<n;k++){const v=x[0][k];this.acc+=v;this.ac++;if(this.ac===4){this.D[this.dw%512]=this.acc/4;this.dw=(this.dw+1)%(512*1024);this.acc=0;this.ac=0;if(++this.cnt%32===0)this.detect();}
+      this.semi+=(this.tgt-this.semi)*this.glide;const ratio=Math.pow(2,this.semi/12);this.b[this.w]=v;const p1=this.ph,p2=(this.ph+0.5)%1,g1=Math.sin(Math.PI*p1),g2=Math.sin(Math.PI*p2);
+      const wet=this.rd(this.w-p1*W)*g1*g1+this.rd(this.w-p2*W)*g2*g2;for(let c=0;c<y.length;c++)y[c][k]=wet;this.ph+=(1-ratio)/W;if(this.ph>=1)this.ph-=1;else if(this.ph<0)this.ph+=1;this.w=(this.w+1)%N;}
+    return true;}}
+registerProcessor('fw-tune',Tune);
+
 /* a de-esser: the band above f is turned down only while it is loud (the rest of the voice is never touched) */
 class DeEss extends AudioWorkletProcessor{
   constructor(){super();this.f=6000;this.th=-30;this.l1=0;this.l2=0;this.env=0;this.g=1;this.port.onmessage=e=>Object.assign(this,e.data);}

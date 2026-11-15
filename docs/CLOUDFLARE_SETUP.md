@@ -65,7 +65,23 @@ Everything the site owner does in Cloudflare (and GitHub) to run the-daily.studi
   - Then: **Block** for 10 seconds
   
   A person signing in makes two or three requests, so only scripts hit this.
-- [ ] *Custom rules* (optional): block requests whose URI path matches `/.env`, `/.git`, `/wp-`, `/.wrangler` or `/xmlrpc.php`. They already get 404s; blocking them at the edge keeps them out of your Worker's request count.
+- [ ] *Custom rules* (2.69) ▸ Create rule — blocks the same short list of scanner-bait paths the Worker tarpits (`worker/honeypot.mjs`), a step earlier still, at Cloudflare's edge, before the Worker ever runs:
+  - Name: `honeypot-block`
+  - Use the **Expression Editor** (not the dropdown builder — it can't express `starts_with` or a path list in one rule) and paste:
+    ```
+    lower(http.request.uri.path) in {"/.env" "/.env.local" "/.env.production" "/.env.development" "/.env.bak" "/.git/config" "/.git/head" "/wp-login.php" "/xmlrpc.php" "/.aws/credentials" "/.docker/config.json" "/.vscode/sftp.json" "/config.php" "/configuration.php" "/admin.php" "/.htaccess" "/.htpasswd" "/id_rsa" "/id_rsa.pub"}
+    or starts_with(lower(http.request.uri.path), "/wp-admin/")
+    or starts_with(lower(http.request.uri.path), "/wp-content/")
+    or starts_with(lower(http.request.uri.path), "/phpmyadmin/")
+    or starts_with(lower(http.request.uri.path), "/.git/")
+    or starts_with(lower(http.request.uri.path), "/.aws/")
+    or starts_with(lower(http.request.uri.path), "/.vscode/")
+    or starts_with(lower(http.request.uri.path), "/.docker/")
+    ```
+  - Then: **Block**.
+  - This uses 1 of the free plan's 5 Custom Rule slots (checked against Cloudflare's current docs, November 2026); the `/auth/` rate limit above is a separate quota (1 of 1 on Free) and doesn't compete with it.
+  - **What this changes:** with the rule on, these paths are blocked at the edge and never reach the Worker at all — the tarpit in `worker/honeypot.mjs` (and its auto-block, Part I) never gets the chance to run for anything on this exact list, because the block already happened first. Both are still worth keeping: this list and the Worker's don't have to be kept in lockstep (miss a path here and the Worker still tarpits it), and the honeypot's auto-block (Part I) extends the same protection to any IP abusive enough to earn it, on paths beyond whatever this rule happens to name.
+  - **Check, after saving:** `curl -sI https://the-daily.studio/.env` should show `403` (or whatever status your Block action is configured to send) immediately — no multi-second wait, unlike the tarpit.
 
 **Security ▸ Bots**
 - [ ] **Bot Fight Mode: off**, and **JavaScript detections: off**. They inject a script and set a `cf_clearance` cookie, which the privacy policy says the site doesn't do. The WAF and rate limit above cover abuse.
@@ -182,6 +198,36 @@ Drops makes music public, so do the first two steps before switching it on.
 **Reviewing:** open **https://the-daily.studio/drops/review/** in the browser where you're signed in to the studio with GitHub. Listen to each waiting drop, then **Approve** (public for 7 days) or **Reject** (deleted). **Take it down** removes a live one.
 - **Reports:** they land in the private bucket under `reports/drops/`.
 - **Pace:** drops wait until you decide. Up to 100 can wait at once, and each account can send 3 a day.
+
+## Part I: Honeypot auto-block (optional, 2.69.1)
+
+The honeypot (`worker/honeypot.mjs`, Part C above and SECURITY_MODEL.md "Scanner and bot traffic") tarpits scanner-bait paths by default. This switches on the extra step: after 3 hits from the same IP inside an hour, that IP is added to the zone's **IP Access Rules** — a real block, not just a few seconds' delay — using Cloudflare's own API. It costs nothing extra (KV's free tier is generous; the API calls are a handful a day at most) and needs no plan upgrade.
+
+1. **Create a KV namespace:**
+   ```bash
+   npx wrangler@4 kv namespace create HONEY_KV
+   ```
+   This prints an `id`. Add it to `wrangler.jsonc`, uncommenting the line already there just after `r2_buckets`:
+   ```jsonc
+   "kv_namespaces": [ { "binding": "HONEY_KV", "id": "<the id it printed>" } ],
+   ```
+2. **Make a scoped API token** (not your Global API Key — that can do anything on your whole account, and should never be used here): *My Profile ▸ API Tokens ▸ Create Token ▸ Create Custom Token*.
+   - Permissions: **Zone ▸ Firewall Services ▸ Edit**.
+   - Zone Resources: **Specific zone ▸ the-daily.studio** only.
+   - No account-level permissions, no other zones. If this token ever leaked, the most it could do is add or remove IP Access Rules on this one zone — nothing else.
+3. **Find your Zone ID:** Cloudflare dashboard ▸ the-daily.studio ▸ Overview, right-hand side, **Zone ID**. It's not secret on its own (it's visible to anyone who can see the dashboard), but it's stored as a Worker secret here anyway, the same way `GITHUB_CLIENT_ID` is (Part D) — one consistent place for everything Cloudflare-account-specific, never in `wrangler.jsonc` or the repository.
+4. **Give the Worker its secrets:**
+   ```bash
+   npx wrangler@4 secret put CF_API_TOKEN
+   ```
+   ```bash
+   npx wrangler@4 secret put CF_ZONE_ID
+   ```
+   Never paste either into chat, a commit, `wrangler.jsonc` or a build variable.
+5. **Deploy.** Without all three of `HONEY_KV`, `CF_API_TOKEN` and `CF_ZONE_ID`, the honeypot stays a tarpit only — nothing breaks if you set up only one or two of them.
+6. **Check:** hit a honeypot path three times in under an hour (`curl` is enough; it doesn't need to look like a scanner) and then check *Security ▸ WAF ▸ Tools ▸ IP Access Rules* for a new entry noted `honeypot: repeat scanner probes (auto, <date>)`.
+
+**Maintenance this needs, since nothing here expires the block on its own:** IP Access Rules don't auto-expire, and residential/mobile IPs get reassigned over time, so a block made today could eventually sit on someone who was never the scanner. Look at the list now and then (same as the R2 reports in Part G) and remove entries that are old enough that you no longer trust them to still be the same visitor. This is a deliberate choice to keep the mechanism simple rather than add a second moving part (a Cron Trigger, a stored timestamp per entry) for a problem that's cheap to handle by occasionally looking.
 
 **What it costs:**
 - **Storage:** about 3–4 MB per drop for 7 days, so a few hundred drops a week is still inside R2's free 10 GB.

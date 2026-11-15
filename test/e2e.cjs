@@ -167,7 +167,7 @@ function wav(L, sr) { const n = L.length, b = Buffer.alloc(44 + n * 2); b.write(
   { const hp = await ctx0.newPage(), he = []; hp.on('pageerror', e => he.push(e.message));
     await hp.addInitScript(() => { try { const c = JSON.parse(localStorage.getItem('fw.cfg') || '{}'); delete c.humStage; localStorage.setItem('fw.cfg', JSON.stringify(c)); } catch (e) { } window.__gum = 0; window.__st = []; const md = navigator.mediaDevices, g = md.getUserMedia.bind(md); md.getUserMedia = c => { if (c && c.audio) window.__gum++; return g(c).then(st => { window.__st.push(st); return st; }); }; });
     await hp.goto(BASE + (BASE.includes('?') ? '&' : '?') + 'debug&start=1'); await wait(3500);
-    ok(/Record it\. Split it\. Write it down\./.test(await hp.$eval('#boot', e => e.textContent)), 'the welcome card leads with "Record it. Split it. Write it down."');
+    ok(/Your song, start to finish\./.test(await hp.$eval('#boot', e => e.textContent)), 'the welcome card leads with "Your song, start to finish." (2.68)');
     await hp.evaluate(() => document.getElementById('bootNoMic').click()); await wait(2500); await hp.evaluate(() => { const b = document.querySelector('#tourOffer .btn:not(.primary)'); if (b) b.click(); document.querySelectorAll('#origins').forEach(d => d.close()); }); await hp.click('.sb-new'); await wait(500);
     const hero = await hp.$('#originsHum'); ok(!!hero, 'the first screen offers "Hum or sing" before anything else');
     if (hero) { await hero.click(); await wait(500); }

@@ -4,6 +4,48 @@ What the studio, its tutorials, its documents and its tests do **not** cover yet
 
 How to use it: before a release, move what the release closed into *Closed* with the version, and add what it opened. [RELEASE.md](RELEASE.md) has this as a checklist item. Items marked **(maintainer)** are decisions or facts only the project's owner can settle; nothing here blocks a build.
 
+## Closed in 2.72.0
+
+- **The GPU engine had one look and no simulation layer.** Added a reusable ping-pong simulation layer (float render targets where available) and two living looks on it: **Ripple** (a wave-field / cymatic plate driven by the bands and the beat) and **Life** (a Gray-Scott reaction-diffusion of glowing organisms fed by how loud you play). Sound made into physics and into life. Both obey the Calm/no-flash rules and fall back to 2D with no float support.
+
+## Closed in 2.71.0
+
+- **The visuals were 2D-canvas only — the ceiling on how cinematic they could look.** Added an inline **WebGL2 GPU engine** (particles + a real bloom glow, reused by future looks) with a first GPU look, **Stardust**, in the Behind-you group. It blits onto the 2D visuals so overlays still work, falls back to 2D with no WebGL2, and obeys the Calm/no-flash rules. First step toward GPU cymatics, a 3D stage and WebXR.
+
+## Open (toward rivalling a game)
+
+- **WebGPU fast-path** (compute shaders) on top of the WebGL2 baseline — not yet; this sandbox's browser has no WebGPU, so it needs hardware testing before it ships.
+- **Living cymatics** (GPU wave-field + reaction-diffusion), a **3D reactive stage** with the camera cut-out inside it, and **spatial audio + WebXR** are planned on this engine (2.72–2.74).
+- **An OffscreenCanvas + Worker render loop** so the GPU looks never share the main thread (a later optimisation; today they render on the main thread and blit).
+
+## Closed in 2.70.0
+
+- **The vocal board had no pitch correction, no standalone compressor, and no tone/warmth control**, and a few pedals could run the output hot. Added **Tune** (pitch-correct to the key or chord, gentle to hard), **Leveler** (a compressor), **Warmth & Air** (a tone tilt with tape-style saturation) and an always-on safety limiter + hard clamp so the board can't clip. A **Crooner** preset and a **Spring** reverb give the nostalgic jazz/oldies voice.
+- **The “Behind you” backdrops didn't show the sound itself.** Added **Cymatics**, **Spectrum** and **Waveform** — standing waves, the live spectrum, and the waveform as oscilloscope traces — made for music-video takes that make what you hear visible.
+
+## Closed in 2.69.1
+
+- **The honeypot taxed every scanner the same, with no way to actually stop a persistent one.** Past 3 hits from the same IP in an hour, the Worker now blocks it outright via Cloudflare's own API (`worker/honeypot.mjs`), and the WAF Custom Rule alternative (edge-level, before the Worker runs) has exact paste-in syntax rather than a vague mention. Both are opt-in setup steps (`CLOUDFLARE_SETUP.md`, Parts C and I); nothing changes until the site owner does them.
+
+## Closed in 2.69.0
+
+- **A handful of Practice lesson steps that described a shape drew nothing** — an empty box between the text and the tempo row. The five that describe a shape (open strings, the pentatonic box, a bend, vibrato, landing on a chord tone) now draw it.
+- **Practice taught technique but not harmony or genre.** Two new paths: **Progressions** (six named chord progressions — the three-chord song, the pop progression, 12-bar blues, the jazz cadence, the Andalusian cadence, the minor loop — each played through with the band) and **Styles** (what makes Blues, Rock, Funk, Country, Pop and Reggae sound like themselves, each with a representative riff).
+- **Scanner/bot probes for `/.env`, `/wp-login.php` and the like weren't addressed anywhere.** A short, well-known list of them is now deliberately routed into the Worker and taxed: the same empty 404 they'd always have gotten, trickled out over a few seconds instead of answered at once (`worker/honeypot.mjs`). A decompression/zip bomb was asked for and refused — a denial-of-service payload is a risk to everyone near it, including the site itself, whoever it's aimed at; an optional Cloudflare WAF Custom Rule (`CLOUDFLARE_SETUP.md`) is offered alongside it for anyone who'd rather block the same list at the edge instead.
+
+## Closed in 2.68.0
+
+- **“I’m mostly a” shaped only the ways in.** Songwriter, Studio and Practice adapt to it now, and a chip beside the workspaces changes it.
+- **Practice was thin for singers.** 🎤 Singing: four lessons the coach follows by ear, on a keyboard, in the singer's own range; a singer's Today is sung.
+- **On a phone the ways in led to older, shorter sessions.** They have journeys on the phone's own screens.
+- **The headline described features** (“Record it. Split it. Write it down.”). It's “Your song, start to finish.”
+
+## Closed in 2.67.0
+
+- **The start page's buttons did and didn't lead somewhere.** Three of six landed outside the four workspaces (the old Record and Show layouts, or a panel missing from the tab strip), and for a returning visitor all six just opened the last song. Four ways in now, one per workspace, each with a journey; the six tasks land in a workspace; returning visitors are routed.
+- **No journey for a whole song.** *A song, start to finish* goes from an idea to sending it.
+- **Guided sessions assumed a guitarist.** The ways in ask what you mostly do and lead a singer, a guitarist and a newcomer differently.
+
 ## Closed in 2.66.0
 
 - **Learn was a window over Practice:** the band, the tempo, the tuner and the fretboard were behind it while you played. It's Practice's own panel now, and a lesson opens in it.
@@ -164,7 +206,11 @@ How to use it: before a release, move what the release closed into *Closed* with
 ## Open
 
 ### Product
-- **Guided sessions** (`src/parts/60-guide.js`: play, write, hum, record, loop, split, show) are still written for the full studio and a guitar. They work, but in ✦ Simple some steps point at panels the workspace does not show, and none is about singing on a phone. A singer's session (beat → words → sing → tune → send) would match 2.41 and 2.46.
+- **Singing lessons hear pitch only:** no words, vowels, breath, vibrato or slides, and no timing against a click. There are four lessons; harmony singing, intervals by ear and singing the open song's melody phrase by phrase are still to write.
+- **Learn on a phone** fills the screen, so no journey card sits over it; the phone's Studio journey has no video step (the phone has no workspace bar).
+- **Someone new to music and a producer** get their own Songwriter (and a producer's Studio), but Practice as it comes; a keyboard player or a bass player has no setting of their own.
+- **Adapting stops at tools, tabs and sidebars.** The demo song, the tones on offer and the tour are the same for everyone.
+- **The older guided sessions** (`src/parts/60-guide.js`: play, write, hum, record, loop, split, show) are still written for the full studio and a guitar. They work, but in ✦ Simple some steps point at panels the workspace does not show, and none is about singing on a phone. A singer's session (beat → words → sing → tune → send) would match 2.41 and 2.46.
 - **First-open hints and Help text** for each tab were not re-read for 2.46's per-workspace Simple.
 - **Agents** cannot tune a take, read or set the vocal pedals, or make a song link (`export_song` gives text formats only). Tuning edits a recording, which the tools have so far never touched; that is a decision, not an oversight.
 - `get_song` does not return section energies or whether Song build is on (`edit_section` and `set_band` answers do).

@@ -9,21 +9,36 @@
         <svg viewBox="0 0 100 100" width="64" height="64" aria-hidden="true"><path d="M50 6L88.11 28L88.11 72L50 94L11.89 72L11.89 28Z" fill="none" stroke="var(--accent)" stroke-width="3.3" stroke-linejoin="miter"/><path d="M11.89 28L50 50L88.11 28M50 50L50 94" fill="none" stroke="var(--accent)" stroke-width="2.1" stroke-linecap="butt" stroke-linejoin="miter"/><path d="M35 83.29V77.29M40 86.18V76.18M45 89.06V75.06M55 89.06V75.06M60 86.18V76.18M65 83.29V77.29" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="butt"/><path transform="translate(50 29.5)" d="M-6.4 -6.8H6.4M0 -6.8V7.6" fill="none" stroke="var(--text)" stroke-width="3" stroke-linejoin="miter" stroke-linecap="butt"/><path transform="translate(29.6 55.4)" d="M-3.8 -7.6H.4A7.8 7.6 0 0 1 .4 7.6H-3.8Z" fill="none" stroke="var(--text)" stroke-width="3" stroke-linejoin="miter" stroke-linecap="butt"/><path transform="translate(68.4 55.4)" d="M5 -4.6C4.1 -6.8 2.3 -7.8 0 -7.8C-3.2 -7.8 -5 -6.3 -5 -4C-5 -1.8 -3 -.9 0 0C3 .9 5 1.8 5 4.1C5 6.4 3.2 7.8 0 7.8C-2.3 7.8 -4.1 6.9 -5 4.9" fill="none" stroke="var(--text)" stroke-width="3" stroke-linejoin="miter" stroke-linecap="butt"/></svg>
         <h1><span>the-daily</span><span class="tld">.studio</span><small>Write. Play. Create.</small></h1>
       </div>
-      <h2 class="boot-lead">Record it. Split it. Write it down.</h2>
-      <p class="boot-sub">A guitar and voice studio that runs in your browser. Free, private, nothing to install.</p>
-      <h3 class="boot-q" id="bootQ">What would you like to do first?</h3>
-      <div class="boot-goals" id="bootGoals" role="group" aria-labelledby="bootQ">
-        <button class="boot-goal" type="button" data-goal="play"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h3.5L13 19V5L7.5 9z"/><path d="M16.5 9a4 4 0 010 6M19 6.5a7.5 7.5 0 010 11"/></svg><div><b>Play with a band</b><span>Plug in, pick a tone and play along with a drummer and bassist.</span></div></button>
-        <button class="boot-goal" type="button" data-goal="write"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1-4.2L16.2 4.6a1.6 1.6 0 012.2 0l1 1a1.6 1.6 0 010 2.2L8.2 19z"/><path d="M14 7l3 3"/></svg><div><b>Write down what you play</b><span>Press Capture, play a riff, and it appears as tab. Add lyrics beside it.</span></div></button>
-        <button class="boot-goal" type="button" data-goal="hum"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/></svg><div><b>Turn a hum into a song</b><span>Hum or sing a few seconds. A whole band plays it back, with chords.</span></div></button>
-        <button class="boot-goal" type="button" data-goal="loop"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.6" fill="currentColor" stroke="none"/></svg><div><b>Record, loop and layer</b><span>Record your chords, loop them, then play a lead on top. Guitar and voice.</span></div></button>
-        <button class="boot-goal" type="button" data-goal="split"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M3 10.7h12.5M3 15.3h16.5M3 20h8.5"/></svg><div><b>Learn a song</b><span>Split it into drums, bass, vocals and guitar. Mute yours and play along.</span></div></button>
-        <button class="boot-goal" type="button" data-goal="show"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l1.6 5.2L19 9l-5.4 1.8L12 16l-1.6-5.2L5 9l5.4-1.8zM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg><div><b>Run a show</b><span>Lights, lasers and visuals for a room. A preflight list for the output.</span></div></button>
+      <h2 class="boot-lead">Your song, start to finish.</h2>
+      <p class="boot-sub">Write it, sing it, play it, learn it, share it. A guitar and voice studio in your browser: free, private, nothing to install.</p>
+      <div class="boot-start" id="bootStart">
+      <div class="boot-me" id="bootMe" role="radiogroup" aria-label="What describes you best? It changes where each way in leads.">
+        <span class="boot-me-l">I’m <span class="bm-x">mostly </span>a</span>
+        <button type="button" role="radio" aria-checked="false" data-me="sing">🎤 Singer</button>
+        <button type="button" role="radio" aria-checked="false" data-me="guitar">🎸 Guitarist</button>
+        <button type="button" role="radio" aria-checked="false" data-me="new">🌱 New to music</button>
+        <button type="button" role="radio" aria-checked="false" data-me="tech">🎛 Producer</button>
+      </div>
+      <h3 class="boot-q" id="bootQ">Choose your way in</h3>
+      <div class="boot-doors" id="bootDoors" role="group" aria-labelledby="bootQ">
+        <button class="boot-door" type="button" data-door="song" style="--dh:#d08a2e"><span class="bd-i" aria-hidden="true">🎸</span><b>Write a song</b><span class="bd-s">Start with a beat, add chords and words, record it and send it. A whole song, start to finish.</span><small>Songwriter</small></button>
+        <button class="boot-door" type="button" data-door="stage" style="--dh:#d6355a"><span class="bd-i" aria-hidden="true">🎤</span><b>Play it live</b><span class="bd-s">Your sound with a band behind you, visuals that move with the song, and a video to post.</span><small>Studio</small></button>
+        <button class="boot-door" type="button" data-door="learn" style="--dh:#1c9a63"><span class="bd-i" aria-hidden="true">🎼</span><b>Learn and practise</b><span class="bd-s">Lessons that show you, play it, then listen to you. Fifteen minutes a day.</span><small>Practice</small></button>
+        <button class="boot-door" type="button" data-door="explore" style="--dh:#7f93a3"><span class="bd-i" aria-hidden="true">⚙️</span><b>Explore everything</b><span class="bd-s">Every panel and the whole rig, with a finished song to take apart. A tour shows you round.</span><small>Full Rig</small></button>
+      </div>
+      <h3 class="boot-q boot-q2" id="bootQ2">Or do one thing</h3>
+      <div class="boot-goals boot-goals-sm" id="bootGoals" role="group" aria-labelledby="bootQ2">
+        <button class="boot-goal" type="button" data-goal="play"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h3.5L13 19V5L7.5 9z"/><path d="M16.5 9a4 4 0 010 6M19 6.5a7.5 7.5 0 010 11"/></svg><div><b data-s="Play along">Play with a band</b><span>Plug in, pick a tone and play along with a drummer and bassist.</span></div></button>
+        <button class="boot-goal" type="button" data-goal="write"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1-4.2L16.2 4.6a1.6 1.6 0 012.2 0l1 1a1.6 1.6 0 010 2.2L8.2 19z"/><path d="M14 7l3 3"/></svg><div><b data-s="Capture tab">Write down what you play</b><span>Press Capture, play a riff, and it appears as tab. Add lyrics beside it.</span></div></button>
+        <button class="boot-goal" type="button" data-goal="hum"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/></svg><div><b data-s="Hum a song">Turn a hum into a song</b><span>Hum or sing a few seconds. A whole band plays it back, with chords.</span></div></button>
+        <button class="boot-goal" type="button" data-goal="loop"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.6" fill="currentColor" stroke="none"/></svg><div><b data-s="Loop & layer">Record, loop and layer</b><span>Record your chords, loop them, then play a lead on top. Guitar and voice.</span></div></button>
+        <button class="boot-goal" type="button" data-goal="split"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M3 10.7h12.5M3 15.3h16.5M3 20h8.5"/></svg><div><b data-s="Learn a song">Learn a song</b><span>Split it into drums, bass, vocals and guitar. Mute yours and play along.</span></div></button>
+        <button class="boot-goal" type="button" data-goal="show"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l1.6 5.2L19 9l-5.4 1.8L12 16l-1.6-5.2L5 9l5.4-1.8zM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg><div><b data-s="Run a show">Run a show</b><span>Lights, lasers and visuals for a room. A preflight list for the output.</span></div></button>
+      </div>
       </div>
       <div class="boot-cta" id="bootRoutes">
         <button class="btn boot-route" id="bootNoMic" type="button"><b>● Begin in the studio</b><span>A clean page to hum, play or load a track. Nothing is asked for until you choose.</span></button>
         <button class="btn boot-route" id="bootDemo" type="button"><b>♫ Try the demo song</b><span>See a finished song first. No microphone needed.</span></button>
-        <button class="btn boot-route boot-pro" id="bootPro" type="button"><b>I know my way around</b><span>Open the studio with every tool showing.</span></button>
       </div>
       <ul class="boot-also" aria-label="And also">
         <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19a9 9 0 1 1 14 0"/><circle cx="12" cy="13.5" r="3.4"/><path d="M12 13.5l3-4"/></svg><div><b>Presets and effects</b>Amps, pedals and one-click tones. Morph between two sounds and save your own.</div></li>

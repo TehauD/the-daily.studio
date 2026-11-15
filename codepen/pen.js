@@ -57,7 +57,7 @@ window.__dailyRoom = (id, make) => {
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.66.0', BUILD = '611c95c', PARTS_N = +'124' || 0, LINES_N = +'21071' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.72.0', BUILD = '47a193e', PARTS_N = +'125' || 0, LINES_N = +'21665' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { ghApp: { clientId: 'Iv23liTjqEBQsgmGaE1Q', slug: 'tehaud-the-daily-studio' },   /* Sign in with GitHub: the GitHub App's public client id and its slug (docs/GITHUB.md); empty = only the token way */
   support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://journal.the-daily.studio/' };
@@ -586,6 +586,30 @@ class Harm extends AudioWorkletProcessor{
       for(let c=0;c<y.length;c++)y[c][k]=wet;this.w=(this.w+1)%N;}
     return true;}}
 registerProcessor('fw-harm',Harm);
+
+/* pitch correction (part 79, the Tune pedal): hears the note being sung and slides the voice itself to the nearest note of the
+   song's scale (or a chord tone), by the fractional amount — so a flat note is pulled up to pitch, not just shifted by whole steps.
+   strength = how far toward the note (0..1); glide = how fast it gets there (gentle and natural, up to the hard/robotic snap). */
+class Tune extends AudioWorkletProcessor{
+  constructor(){super();this.N=16384;this.b=new Float32Array(this.N);this.w=0;this.ph=0;this.win=0.035;this.semi=0;this.tgt=0;
+    this.D=new Float32Array(512);this.dw=0;this.acc=0;this.ac=0;this.cnt=0;this.scale=[1,0,1,0,1,1,0,1,0,1,0,1];this.chord=null;this.strength=0.85;this.glide=0.035;this.on=false;
+    this.port.onmessage=e=>{const d=e.data;if(d.scale)this.scale=d.scale;if('chord' in d)this.chord=d.chord;if(d.strength!=null)this.strength=d.strength;if(d.glide!=null)this.glide=d.glide;};}
+  rd(pos){const N=this.N;let p=pos;while(p<0)p+=N;const i=Math.floor(p),f=p-i;const a=this.b[i%N],c=this.b[(i+1)%N];return a+(c-a)*f;}
+  detect(){const sr=sampleRate/4,W=256,D=this.D,M=512,s0=(this.dw-W-180+M*4)%M,mn=Math.floor(sr/1000),mx=Math.min(175,Math.floor(sr/70));let e=0;
+    for(let j=0;j<W;j++){const v=D[(s0+j)%M];e+=v*v;}if(e/W<1e-6){this.on=false;this.tgt+=(0-this.tgt)*0.3;return;}
+    let run=0,best=-1;const d=new Float32Array(mx+2);for(let t=1;t<=mx+1;t++){let s=0;for(let j=0;j<W;j++){const q=D[(s0+j)%M]-D[(s0+j+t)%M];s+=q*q;}run+=s;d[t]=s*t/(run||1);}
+    for(let t=mn;t<=mx;t++){if(d[t]<0.15&&d[t]<=d[t-1]&&d[t]<=d[t+1]){best=t;break;}}
+    if(best<0){this.on=false;this.tgt+=(0-this.tgt)*0.3;return;}const a=d[best-1],b=d[best],c=d[best+1],den=a-2*b+c,tt=best+(den?0.5*(a-c)/den:0),f=sr/tt,m=69+12*Math.log2(f/440);
+    this.on=true;let tn,bestd=99,bn=Math.round(m);
+    if(this.chord&&this.chord.length){for(let k=-13;k<=13;k++){const q=Math.round(m)+k;if(this.chord.includes(((q%12)+12)%12)&&Math.abs(q-m)<bestd){bestd=Math.abs(q-m);bn=q;}}tn=bn;}
+    else{for(let k=-2;k<=2;k++){const q=Math.round(m)+k,pc=((q%12)+12)%12;if(this.scale[pc]&&Math.abs(q-m)<bestd){bestd=Math.abs(q-m);bn=q;}}tn=bn;}
+    this.tgt=(tn-m)*this.strength;}
+  process(i,o){const x=i[0],y=o[0];if(!x.length||!y.length)return true;const n=y[0].length,W=Math.min(this.N-8,Math.floor(this.win*sampleRate)),N=this.N;
+    for(let k=0;k<n;k++){const v=x[0][k];this.acc+=v;this.ac++;if(this.ac===4){this.D[this.dw%512]=this.acc/4;this.dw=(this.dw+1)%(512*1024);this.acc=0;this.ac=0;if(++this.cnt%32===0)this.detect();}
+      this.semi+=(this.tgt-this.semi)*this.glide;const ratio=Math.pow(2,this.semi/12);this.b[this.w]=v;const p1=this.ph,p2=(this.ph+0.5)%1,g1=Math.sin(Math.PI*p1),g2=Math.sin(Math.PI*p2);
+      const wet=this.rd(this.w-p1*W)*g1*g1+this.rd(this.w-p2*W)*g2*g2;for(let c=0;c<y.length;c++)y[c][k]=wet;this.ph+=(1-ratio)/W;if(this.ph>=1)this.ph-=1;else if(this.ph<0)this.ph+=1;this.w=(this.w+1)%N;}
+    return true;}}
+registerProcessor('fw-tune',Tune);
 
 /* a de-esser: the band above f is turned down only while it is loud (the rest of the voice is never touched) */
 class DeEss extends AudioWorkletProcessor{
@@ -4267,8 +4291,8 @@ async function boot() {
   $('#bootNoMic').onclick = () => bootStart('studio'); $('#bootStage').onclick = () => bootStart('stage'); guideBoot(bootStart);
   if (CFG.route === 'stage') { $('#bootStage').classList.add('primary'); $('#bootNoMic').classList.remove('primary'); } else if (CFG.route === 'studio') $('#bootNoMic').classList.add('primary');
   // first-timers can look at a finished song before they give anything (no microphone, no camera); people who already have songs just carry on
-  const demoBtn = $('#bootDemo'); if (store.get('started', false)) { demoBtn.remove(); $('#bootRoutes').classList.add('solo'); { const pro = $('#bootPro'); if (pro) pro.remove(); }      /* 2.49.1: people who have been here keep the goals, under Pick up where I left off, as the way to start something new */
-    { const q = $('#bootQ'), g = $('#bootGoals'), rt = $('#bootRoutes'); if (q && g && rt) { q.textContent = 'Or start something new'; g.classList.add('boot-goals-sm'); rt.after(q, g); } } $('#bootNoMic').classList.add('primary'); if (typeof wbBoot === 'function') { try { wbBoot(); } catch (e) { console.warn('welcome back', e); } } } else demoBtn.onclick = () => { PRJ.bootDemo = true; bootStart('studio'); };
+  const demoBtn = $('#bootDemo'); if (store.get('started', false)) { demoBtn.remove(); $('#bootRoutes').classList.add('solo');      /* 2.49.1: people who have been here keep the goals, under Pick up where I left off, as the way to start something new */
+    { const q = $('#bootQ'), st = $('#bootStart'), rt = $('#bootRoutes'); if (q && st && rt) { q.textContent = 'Or start something new'; st.classList.add('boot-start-sm'); rt.after(st); } } $('#bootNoMic').classList.add('primary'); if (typeof wbBoot === 'function') { try { wbBoot(); } catch (e) { console.warn('welcome back', e); } } } else demoBtn.onclick = () => { PRJ.bootDemo = true; bootStart('studio'); };
   { const b = $('#boot'); if (b) b.classList.toggle('boot-first', !store.get('started', false)); }
   document.documentElement.classList.add('ds-booted');      /* the first page is laid out for this person: show it (part 0) */
   setInterval(anaTick, 33); requestAnimationFrame(frame);
@@ -4277,7 +4301,7 @@ async function boot() {
   if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener('devicechange', () => { ioDeviceChange().catch(e => console.warn(e)); });
   bus.emit('song');
   try { ghBoot(); } catch (e) { console.warn('github', e); }      /* back from Sign in with GitHub, or a sync at start (part 74) */
-  DEV.make = () => { window.__daily = { tourStart, mpVision, slSendLabel, slcChanges, mkSection, perfViewSet, pfLay, pfLaySet, pfLayMenu, songMapEl, secAdd, secKind, secNameFor, smGo, renderWholeSong, normSong, bandRename, get TOUR() { return TOUR; }, SIMPLE_GOAL_TABS, SIMPLE_GOAL_TOOLS, simpleTabs, goalAudioFirst, guitarBody, pluck, BLD, BUILD_LIFT, buildLevel, secEnergy, buildCtx, buildParts, buildDrums, buildCard, buildCrash, buildRiser, tuneSelect, TUNE_LABELS, tuneTake, BASS_TONES, KITS, kitHit, sub808, M, MGROUPS, MW, mScreenDraw, mwRead, mwView, mwLyrics, mwSyl, mwEdited, mwPut, mSongOpen, msHexLoop, room, ROOM, slPack, slUnpack, slLink, slRead, slShare, slWelcome, slOpen, slFromHash, SL, BEATS, beatUse, beatRows, beatsShelf, SIMPLE_TOOLS, drumHit, RL, MO, GM_DRUM, duckAt, duckSet, duckCfg, duckNode, moNote, moDev, moDrum, moPanic, moSettings, kyOut, bassOut, rollOpen, rollBuild, rollLoop, isBass, instNow, nStr, yin, TUNINGS, setTuning, renderBarTab, tabLabels, voicingFor, toggleRec, closePop, spPause, encodeWav, PS, psOn, playDur, psSpeed, psKey, psSched, psDSPFactory, psPop, KY, keysOpen, keysVoice, keysStep, kyNoteOn, kyNoteOff, kyRec, kyClear, kyWrite, kyPiano, kyMarks, kyVoicing, KEYS_SOUNDS, KEYS_STYLES, coFinish, coDemo, coFeedback, coFbView, coTimeline, coBeat, coPractise, TAKE, learnPassed, todayPlan, todayPieces, todayStart, todayDone, streak, weekCount, dayKey, LSTEP, songLessons, songStart, songKey, earLick, earStart, EAR, simpleSet, simpleApply, ghTakeSettings, airMode, airSet, CO, coPos, coachOpen, coListen, coTick, coPlace, coNotes, coSetPiece, rfParse, LESSONS, RIFFS, RIFF_STYLES, learnOpen, learnToSong, learnFile, learnFileText, learnOpenFile, learnFromSong, labMake, labVary, labKeep, atlasPieces, atShape, MODE_VAMP, S, AIR, AIR_LAG, airSync, applyLayout, VB_PRESETS, VB_ORDER, VBS, vbAttach, vbApply, vbToggle, vbSet, vbPreset, vbPresetNext, vbThrow, vbLook, vbTick, vbScale, vocalBoardOpen, pedalRelease, MEG, megSpectrum, megFeatures, megScore, megStep, megSet, megLearn, megDraw, megLoop, megSettings, PAD, padsOpen, padHit, padTap, padRecord, padRecStop, padUndoPass, padClear, padResize, padBeatbox, bbHits, bbPattern, dpat, bassEvent, drumStep, PEDAL, pedalPress, pedalDo, pedalSecs, gearSettings, MCLK, mclkSlot, mclkMs, MIDI, MIDIRAW, onMidi, STRM, streamOpen, streamRoom, streamInfo, streamPanel, slotAtTime, SING, SHW, singStep, singScore, singSteamIR, singMicOff, showerOpen, shwGo, shwPlay, shwPrev, shwNext, shwStem, shwRecToggle, shwRecStop, shwHear, shwSave, shwAddFiles, shwRemove, shwMove, shwMode, shwLoadSet, shwPlaylist, shwWords, shwPrepare, shwFolderPull, lrcParse, readTags, spPos, spPlay, STP, trainOpen, projRestoreTrack, secretNote, secretArp, WS, WS_BASE, WS_ARPS, wsScaleRun, wsArpRun, wsFollow, wsStop, wsListen, wsEarNext, wsEarAnswer, wsOpen, bandMute, bandMuted, pdbPut, pdbKeys, projRename, FS, FS_B, fsUse, fsSync, fsHead, fsNeeds, fsTidy, fsOpen, syncOff, syncZips, PRJ_WAIT: () => PRJ.wait, EGG, EGG_LINES, EGG_ORDER, eggDay, eggFor, eggNow, eggText, eggTick, eggFit, saveCfg, projSave, projDelete, GH, ghSync, ghConnect, ghKick, ghRecheck, prtOpen, prtAnalyze, prtPack, prtUnpack, prtRead, prtCompose, prtFromCode, prtCode, prtDraw, prtArtwork, prtCopyLink, prtShelfRead, prtFromHash, PRT, audioKill, audioResume, drpOgg, drpOpen, drpOwn, encodeWav, stemUnload, ycEnv, ycPrint, ycUnprint, ycMatch, ycSetStart, ycLoad, ycMakeOurs, STM, stemLoad, cmtAdd, cmtOpen, cmtAll, cmtPack, cmtWhere, lhOpen, lhScheme, lhRhymes, lhLoad, lhSyl, LH, finOpen, finAB, finMaster, finPackage, finTone, finMatchEq, finLimit, finPeople, FIN, lufsMeasure, verMark, verRestore, verCopy, verList, verOpen, verRoundOf, verChanged, jrSteps, safeState, ghSongOut, pdbGet, lxExport, lxExportOpen, lxSaveLane, lxLanes, lxRender, LXO, zipRead, srxSend, srxReceive, srxTakeBack, srxEncode, srxDecodeTake, srxPack, srxBundle, srxCan, SRS, ghDisconnect, ghLocal, ghSha, ghJson, ghMerge3, ghShare, ghGallery, ghGalleryOpen, ghGalleryShow, ghKeepLook, ghKeepRig, rigClean, ghReturn, BRAND, ghSettingsOut, projRefresh, projCreate, projLoad, PRJ, SEC, SECRETS, secretFound, secretTiming, secretsOpen, secretSync, backstageOpen, startAudio, playheadSlot, GUARD, reportText, reportCopy, srecQ, srecSize, pdbGet, srecFmt, SREC_FMTS, VBG, vbgAdd, vbgRemove, vbgUse, vbgOpen, vbgDraw, vzSetMode, srecFrame, srecFmtBox, kitThumb, WORKLET_SRC, mkComp, mkShaper, rigLat, voxLat, restartAudio, satCurve, rigApply, qrMake, qrSvg, tipLink, tipShort, tipReady, tipCard, tipDraw, tipShareHtml, tipOpen, tipPrint, tipPng, tipVisAvoid, tipStageAvoid, TIP, TIP_TERMS, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, drawVis, peaksOf, uid, shareGate, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, TAKES, STM, ZOOM, CFG, store, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, SEL, mtof, spb, WR, HM, HMX, HM_MODES, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, RIG, BRD, onBoard, brdSel, brdAdd, brdRemove, prtShelfAll, prtShelfMerge, ghTakeNotes, ghTakePrints, prtLookWorld, PRT_CODE_MAX, vzLookSync, vzLooksOpen, GOAL_MORE, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitInk, kitNotes, kitRecord, srecMime, mGo, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard}; };   // test hook: with ?debug, or Backstage ▸ Labs ▸ Developer handles
+  DEV.make = () => { window.__daily = { tourStart, mpVision, slSendLabel, slcChanges, mkSection, perfViewSet, pfLay, pfLaySet, pfLayMenu, songMapEl, secAdd, secKind, secNameFor, smGo, renderWholeSong, normSong, bandRename, get TOUR() { return TOUR; }, SIMPLE_GOAL_TABS, SIMPLE_GOAL_TOOLS, simpleTabs, goalAudioFirst, guitarBody, pluck, BLD, BUILD_LIFT, buildLevel, secEnergy, buildCtx, buildParts, buildDrums, buildCard, buildCrash, buildRiser, tuneSelect, TUNE_LABELS, tuneTake, BASS_TONES, KITS, kitHit, sub808, M, MGROUPS, MW, mScreenDraw, mwRead, mwView, mwLyrics, mwSyl, mwEdited, mwPut, mSongOpen, msHexLoop, room, ROOM, slPack, slUnpack, slLink, slRead, slShare, slWelcome, slOpen, slFromHash, SL, BEATS, beatUse, beatRows, beatsShelf, SIMPLE_TOOLS, drumHit, RL, MO, GM_DRUM, duckAt, duckSet, duckCfg, duckNode, moNote, moDev, moDrum, moPanic, moSettings, kyOut, bassOut, rollOpen, rollBuild, rollLoop, isBass, instNow, nStr, yin, TUNINGS, setTuning, renderBarTab, tabLabels, voicingFor, toggleRec, closePop, spPause, encodeWav, PS, psOn, playDur, psSpeed, psKey, psSched, psDSPFactory, psPop, KY, keysOpen, keysVoice, keysStep, kyNoteOn, kyNoteOff, kyRec, kyClear, kyWrite, kyPiano, kyMarks, kyVoicing, KEYS_SOUNDS, KEYS_STYLES, coFinish, coDemo, coFeedback, coFbView, coTimeline, coBeat, coPractise, TAKE, learnPassed, todayPlan, todayPieces, todayStart, todayDone, streak, weekCount, dayKey, LSTEP, songLessons, songStart, songKey, earLick, earStart, EAR, simpleSet, simpleApply, ghTakeSettings, airMode, airSet, CO, coPos, coachOpen, coListen, coTick, coPlace, coNotes, coSetPiece, rfParse, LESSONS, RIFFS, RIFF_STYLES, learnOpen, learnToSong, learnFile, learnFileText, learnOpenFile, learnFromSong, labMake, labVary, labKeep, atlasPieces, atShape, MODE_VAMP, S, AIR, AIR_LAG, airSync, applyLayout, VB_PRESETS, VB_ORDER, VBS, vbAttach, vbApply, vbToggle, vbSet, vbPreset, vbPresetNext, vbThrow, vbLook, vbTick, vbScale, vocalBoardOpen, pedalRelease, MEG, megSpectrum, megFeatures, megScore, megStep, megSet, megLearn, megDraw, megLoop, megSettings, PAD, padsOpen, padHit, padTap, padRecord, padRecStop, padUndoPass, padClear, padResize, padBeatbox, bbHits, bbPattern, dpat, bassEvent, drumStep, PEDAL, pedalPress, pedalDo, pedalSecs, gearSettings, MCLK, mclkSlot, mclkMs, MIDI, MIDIRAW, onMidi, STRM, streamOpen, streamRoom, streamInfo, streamPanel, slotAtTime, SING, SHW, singStep, singScore, singSteamIR, singMicOff, showerOpen, shwGo, shwPlay, shwPrev, shwNext, shwStem, shwRecToggle, shwRecStop, shwHear, shwSave, shwAddFiles, shwRemove, shwMove, shwMode, shwLoadSet, shwPlaylist, shwWords, shwPrepare, shwFolderPull, lrcParse, readTags, spPos, spPlay, STP, trainOpen, projRestoreTrack, secretNote, secretArp, WS, WS_BASE, WS_ARPS, wsScaleRun, wsArpRun, wsFollow, wsStop, wsListen, wsEarNext, wsEarAnswer, wsOpen, bandMute, bandMuted, pdbPut, pdbKeys, projRename, FS, FS_B, fsUse, fsSync, fsHead, fsNeeds, fsTidy, fsOpen, syncOff, syncZips, PRJ_WAIT: () => PRJ.wait, EGG, EGG_LINES, EGG_ORDER, eggDay, eggFor, eggNow, eggText, eggTick, eggFit, saveCfg, projSave, projDelete, GH, ghSync, ghConnect, ghKick, ghRecheck, prtOpen, prtAnalyze, prtPack, prtUnpack, prtRead, prtCompose, prtFromCode, prtCode, prtDraw, prtArtwork, prtCopyLink, prtShelfRead, prtFromHash, PRT, audioKill, audioResume, drpOgg, drpOpen, drpOwn, encodeWav, stemUnload, ycEnv, ycPrint, ycUnprint, ycMatch, ycSetStart, ycLoad, ycMakeOurs, STM, stemLoad, cmtAdd, cmtOpen, cmtAll, cmtPack, cmtWhere, lhOpen, lhScheme, lhRhymes, lhLoad, lhSyl, LH, finOpen, finAB, finMaster, finPackage, finTone, finMatchEq, finLimit, finPeople, FIN, lufsMeasure, verMark, verRestore, verCopy, verList, verOpen, verRoundOf, verChanged, jrSteps, safeState, ghSongOut, pdbGet, lxExport, lxExportOpen, lxSaveLane, lxLanes, lxRender, LXO, zipRead, srxSend, srxReceive, srxTakeBack, srxEncode, srxDecodeTake, srxPack, srxBundle, srxCan, SRS, ghDisconnect, ghLocal, ghSha, ghJson, ghMerge3, ghShare, ghGallery, ghGalleryOpen, ghGalleryShow, ghKeepLook, ghKeepRig, rigClean, ghReturn, BRAND, ghSettingsOut, projRefresh, projCreate, projLoad, PRJ, SEC, SECRETS, secretFound, secretTiming, secretsOpen, secretSync, backstageOpen, startAudio, playheadSlot, GUARD, reportText, reportCopy, srecQ, srecSize, pdbGet, srecFmt, SREC_FMTS, VBG, vbgAdd, vbgRemove, vbgUse, vbgOpen, vbgDraw, vzSetMode, srecFrame, srecFmtBox, kitThumb, WORKLET_SRC, mkComp, mkShaper, rigLat, voxLat, restartAudio, satCurve, rigApply, qrMake, qrSvg, tipLink, tipShort, tipReady, tipCard, tipDraw, tipShareHtml, tipOpen, tipPrint, tipPng, tipVisAvoid, tipStageAvoid, TIP, TIP_TERMS, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, GPU, gpuGet, gpuBlit, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, drawVis, peaksOf, uid, shareGate, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, TAKES, STM, ZOOM, CFG, store, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, SEL, mtof, spb, WR, HM, HMX, HM_MODES, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GD_DOORS, GD_DOOR_TEXT, meNow, gdDoor, meSet, goalLens, GOAL_ME, coVoiceRoot, coHeard, coBuild, RIG, BRD, onBoard, brdSel, brdAdd, brdRemove, prtShelfAll, prtShelfMerge, ghTakeNotes, ghTakePrints, prtLookWorld, PRT_CODE_MAX, vzLookSync, vzLooksOpen, GOAL_MORE, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitInk, kitNotes, kitRecord, srecMime, mGo, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard}; };   // test hook: with ?debug, or Backstage ▸ Labs ▸ Developer handles
   if (/[?&]debug\b/.test(location.search) || (CFG.labs && CFG.labs.handles)) DEV.make();
   try { bksBoot(); } catch (e) { console.warn('backstage', e); }      /* #backstage in the address, the performance overlay (part 73c) */
   projInit().catch(e => { console.warn('library', e); PRJ.ready = true; if (PRJ.wantStart) startMaybe(); });
@@ -8678,7 +8702,7 @@ const SIMPLE_GOAL_TOOLS = {
   practice: ['gtLearn', 'gtSlow', 'gtBpm', 'gtFast'] };
 const SIMPLE_TOOLS = SIMPLE_GOAL_TOOLS.songwriter;
 /** the panels Simple keeps in the workspace in use */
-const simpleTabs = () => { const g = typeof goalNow === 'function' && goalNow(); return (g && SIMPLE_GOAL_TABS[g.id]) || SIMPLE_TABS; };
+const simpleTabs = () => { const g = typeof goalNow === 'function' && goalNow(), L = g && typeof goalLens === 'function' && goalLens(g); return (L && L.tabs) || (g && SIMPLE_GOAL_TABS[g.id]) || SIMPLE_TABS; };      /* 2.68: or those of whoever it is set up for */
 const SIMPLE_TONES = ['Crystal Clean', 'Busker Corner', 'Edge of Breakup', 'Classic Crunch', 'Singing Lead', 'Tight Metal Rhythm', 'Shimmer Cathedral', 'Direct (No FX)'];
 if (CFG.simple == null) { CFG.simple = !store.get('started', false) && !store.get('song', null); saveCfg(); }
 function simpleApply() {
@@ -11783,7 +11807,7 @@ const VOX_WIN = 8;            // seconds of ribbon
 
 const voxNote = m => pcName(m) + (Math.floor(Math.round(m) / 12) - 1);
 const voxSrc = () => (CFG.vin && CFG.vin !== 'off' && E.anaVox) ? E.anaVox : E.anaDI;
-const voxWant = () => !!(CFG.vzRibbon || VOX.panel || VOX.capt || (typeof HM !== 'undefined' && performance.now() - HM.on < 700));   /* the harmony looks listen to the voice too */
+const voxWant = () => !!(CFG.vzRibbon || VOX.panel || VOX.capt || (typeof CO !== 'undefined' && CO.run && CO.p && CO.p.voice) ||      /* 2.68: the coach, for a sung piece */ (typeof HM !== 'undefined' && performance.now() - HM.on < 700));   /* the harmony looks listen to the voice too */
 /** the pitch classes of the song's scale and, while it plays, of the chord under the playhead */
 function voxScale() { const iv = SCALES[S.scale] || SCALES['Major (Ionian)']; return new Set(iv.map(i => (S.key + i) % 12)); }
 function voxChordPcs() { try { const i = stageInfo(), c = i && i.sym ? parseChord(i.sym) : null; return c ? new Set(c.pcs) : null; } catch (e) { return null; } }
@@ -13477,6 +13501,7 @@ function gdSniff() {
     if (GD.mBase === undefined) GD.mBase = O.master; else if (O.master !== GD.mBase) pf.master = 1;
     const visible = typeof SHC !== 'undefined' && SHC.root && SHC.root.isConnected && SHC.root.offsetParent;
     if (visible) { if (SHC.tab === 'rig') pf.rig = 1; if (T.playing) pf.run = 1; }
+    if (document.body.classList.contains('perform-on')) GD.seen.perf = 1; if (typeof CO !== 'undefined' && CO.run) GD.seen.coach = 1;      /* 2.67: ★ Showtime was opened; the coach listened */
     if (T.playing) GD.seen.played = 1; if (T.playing && AN.rms > -55) GD.seen.heard = 1; if (T.rec && !T.playing) GD.seen.armed = 1; if (typeof STP !== 'undefined' && STP.playing) GD.seen.splay = 1;
   } catch (e) { }
 }
@@ -13572,22 +13597,123 @@ const GD_SESSIONS = {
     steps: GD_PF.map(([id, short, text, ok, go, target]) => ({ id, short, text: text, target, go, done: ok, pf: true }))
   }
 };
-const GD_ORDER = ['play', 'write', 'hum', 'record', 'loop', 'split', 'show'];
+/* 2.67: the journeys behind the ways in. Steps marked `only` show for those people (CFG.me); the text of a step can depend on who you are. */
+const gdSteps = list => ({ get() { const m = meNow(), f = isDesk() ? 'desk' : 'phone'; return list.filter(s => (!s.only || s.only.includes(m)) && (!s.on || s.on === f)); }, enumerable: true });      /* `on`: 'desk' or 'phone' (2.68: the phone has its own steps, on its own screens) */
+const gdPlayBtn = () => (isDesk() ? UI.play : document.querySelector('#mtrans .btn.play') || UI.play);
+/** the phone's Words screen, on the whole song (where ★ Showtime and 🔗 Send are) */
+const gdPhoneSong = () => { try { mGo('words'); const b = document.querySelector('.mw-mode [data-mode="song"], .mw-mode button:last-child'); if (b && !b.classList.contains('on')) b.click(); } catch (e) { } };
+Object.defineProperty(GD_SESSIONS.song = {
+  name: 'A song, start to finish', mins: 10, icon: '🎸', blurb: 'An idea, chords, words, a second part, a take, the stage, and out the door.',
+  outro: 'That is a whole song: an idea, chords and words, a take, and a way to send it. It is in Songs, and ✓ Mark this version keeps it as it is now.', next: 'stage'
+}, 'steps', gdSteps([
+  { id: 'idea', on: 'desk', short: 'Start with an idea', text: () => ({ sing: 'Press ● Sing or hum an idea, hum or sing for 10 to 30 seconds, then ■ Stop and Done. A band plays it back with chords.', guitar: 'Connect your guitar (Audio, top right), press ● Capture above the tab and play a riff: it is written down as you play. Or press 🥁 Beats for chords and a band to play over.' }[meNow()] || 'Press 🥁 Beats and tap one. It plays in your song’s key, and its chords become your song.'),
+    target: () => document.querySelector(meNow() === 'sing' ? '#humGo2, #humStop, .hum-acts .btn.primary' : meNow() === 'guitar' ? '#wrCap' : '#gtBeats'),
+    go: () => { const m = meNow(); if (m === 'sing') { if (!document.getElementById('humbar')) { try { humCanvasFirst(); } catch (e) { } } } else { gdInSongwriter(); if (m === 'guitar') dockGo('tab'); else { const b = document.getElementById('gtBeats'); if (b && !document.querySelector('.bt-pop')) b.click(); } } },
+    done: () => !!PRJ.cur && gdHasIdea() && (meNow() !== 'sing' || !!HUM.r) && !document.getElementById('humbar') && !(typeof CAP !== 'undefined' && CAP.on) },      /* a singer: once the hum is kept (not the song that was on screen before it) */
+  { id: 'hear', on: 'desk', short: 'Hear it', text: 'Press ▶ (or Space) and listen to it once through. The band plays your chords; Drums, Bass and Rhythm in the band strip switch each one.', target: () => UI.play, setup: () => { gdInSongwriter(); GD.seen.played = 0; }, done: () => !!GD.seen.played && !T.playing },
+  { id: 'words', on: 'desk', short: 'Write a line', text: 'Write a line of words. Words (or Both) at the top of Write shows the lyrics box: type, and put a chord in [brackets] before the syllable it lands on. ✎ Rhymes helps.', target: '.wr-mode', go: () => { gdInSongwriter(); dockGo('tab'); try { if (WR.mode === 'tab') wrMode('both'); } catch (e) { } }, setup: () => gdInSongwriter(), done: () => S.sections.some(s => (s.lyrics || '').trim().length > 3) },
+  { id: 'part', on: 'desk', short: 'Add a second part', text: 'A song needs somewhere to go. Press ＋ beside the section chips and add a Chorus (or a Verse): it is named and placed for you, and can copy the chords of another part.', target: '#wrSecAdd', go: () => { gdInSongwriter(); dockGo('tab'); }, setup: () => { GD.base = S.sections.length; }, done: () => S.sections.length > (GD.base || 0) },
+  { id: 'take', on: 'desk', short: 'Record a take', text: () => 'Connect your microphone or guitar (Audio, top right) if you have not. Press ● Record at the top (or R), ' + (meNow() === 'sing' ? 'sing' : 'play or sing') + ' it once through after the count-in, then ■ Stop.', target: () => UI.rec, setup: () => { GD.base = TAKES.length; }, done: () => TAKES.length > (GD.base || 0) && !REC },
+  { id: 'stage', on: 'desk', short: 'Take it to the stage', text: 'Press Into the Studio → at the end of the tools row. The same song, on a stage: visuals that move with it, and ★ Showtime to play it full screen.', target: '#gtNext', done: () => !!goalNow() && goalNow().id === 'performer' },
+  { id: 'out', on: 'desk', short: 'Send it', text: 'Press ⇩ Export in the tools row. Audio, a one-file share page, the lyric sheet, or the whole song as a link: choose how it leaves.', target: '#gtExp', done: () => DOCK.cur === 'exp' || !!document.getElementById('slUrl') },
+  /* on a phone: the same song, on the phone's own screens (Beats, Words, Sing, and the whole song) */
+  { id: 'idea', on: 'phone', short: 'Start with an idea', text: () => (meNow() === 'sing' ? 'Tap ● Sing or hum an idea, hum or sing for 10 to 30 seconds, then ■ Stop and Done. A band plays it back with chords.' : 'Tap Beats at the bottom, then tap one. It plays, and its chords become your song.'),
+    target: () => (meNow() === 'sing' ? document.querySelector('#humGo2, #humStop, .hum-acts .btn.primary') : [...document.querySelectorAll('.bt-card')].find(x => x.getClientRects().length) || null), go: () => { if (meNow() === 'sing') { if (!document.getElementById('humbar')) { try { humCanvasFirst(); } catch (e) { } } } else { try { mGo('beats'); } catch (e) { } } },
+    done: () => !!PRJ.cur && gdHasIdea() && (meNow() !== 'sing' || !!HUM.r) && !document.getElementById('humbar') },
+  { id: 'hear', on: 'phone', short: 'Hear it', text: 'Tap ▶ at the top and listen to it once through, then ■.', target: gdPlayBtn, setup: () => { GD.seen.played = 0; }, done: () => !!GD.seen.played && !T.playing },
+  { id: 'words', on: 'phone', short: 'Write a line', text: 'Tap Words at the bottom and write a line. ♪ Chords puts a chord on a word with a tap; ✎ Rhymes helps.', target: '#mwText', go: () => { try { mGo('words'); } catch (e) { } }, done: () => S.sections.some(s => (s.lyrics || '').trim().length > 3) },
+  { id: 'take', on: 'phone', short: 'Sing it', text: 'Tap Sing at the bottom. Connect the microphone (headphones keep the beat out of it), tap ●, sing it once through after the count-in, then stop.', target: () => document.querySelector('#msMic, #msRec'), go: () => { try { mGo('sing'); } catch (e) { } }, setup: () => { GD.base = TAKES.length; }, done: () => TAKES.length > (GD.base || 0) && !REC },
+  { id: 'out', on: 'phone', short: 'Send it', text: 'Tap Words, then 📄 Song: the whole song as a sheet. 🔗 Send makes a link that carries the chords, the words and the beat (and your recordings, if you choose).', target: '#mwSend', go: gdPhoneSong, done: () => !!document.getElementById('slUrl') }
+]));
+Object.defineProperty(GD_SESSIONS.stage = {
+  name: 'Play it live', mins: 5, icon: '🎤', blurb: 'A look, your sound, the band, ★ Showtime, and a video to post.',
+  outro: 'That is the stage: a look, your sound, the song full screen and a video. Studio Replay saves it as MP4 or shares it; ⋯ More has the shape of the video, the stream window and the tip jar.', next: 'learn'
+}, 'steps', gdSteps([
+  { id: 'look', on: 'desk', short: 'Pick a look', text: 'Press the Look button at the top of the Visuals and choose one. Each look reads the song differently: try a few.', target: '#vzLookBtn', go: () => { dockGo('vis'); try { vzLooksOpen(true); } catch (e) { } }, setup: () => { GD.base = VZ.mode; }, done: () => VZ.mode !== GD.base },
+  { id: 'tone', on: 'desk', short: 'Pick your sound', only: ['', 'guitar', 'new', 'tech'], text: 'Choose a tone from the list on the left: a clean, a crunch, a lead. With a guitar connected (Audio, top right) you hear it as you play.', target: '#left .pitem', go: () => { try { sideShow('tones'); } catch (e) { } }, setup: () => { GD.base = RIG.cur; }, done: () => RIG.cur !== GD.base },
+  { id: 'band', on: 'desk', short: 'Start the band', text: 'Press ▶ (or Space). The band plays the song and the visuals move with it. Play or sing along, then ■ Stop.', target: () => UI.play, setup: () => { GD.seen.played = 0; }, done: () => !!GD.seen.played && !T.playing },
+  { id: 'show', on: 'desk', short: 'Go full screen', text: () => 'Press ★ Showtime in the song bar' + (meNow() === 'sing' ? ': the words come up in time with their chords, to sing from.' : ': the chord, the next one and the words, full screen.') + ' Esc brings you back.', target: '#sbPerform', setup: () => { GD.seen.perf = 0; }, done: () => !!GD.seen.perf && !document.body.classList.contains('perform-on') },
+  { id: 'video', on: 'desk', short: 'Record a video', text: 'Press ⏺ Record video, let it run for a few seconds, and press it again to stop. Studio Replay opens with your video, ready to save or share.', target: '#gtVideo', setup: () => { GD.base = KIT.last; }, done: () => !!KIT.last && KIT.last !== GD.base },
+  { id: 'band', on: 'phone', short: 'Start the band', text: 'Tap ▶ at the top. The band plays the song; sing or play along, then ■.', target: gdPlayBtn, setup: () => { GD.seen.played = 0; }, done: () => !!GD.seen.played && !T.playing },
+  { id: 'look', on: 'phone', short: 'Pick a look', text: 'This is the Visuals: tap the Look button and choose one. Each look reads the song differently.', target: '#vzLookBtn', go: () => { try { mGo('see', 'vis'); vzLooksOpen(true); } catch (e) { } }, setup: () => { GD.base = VZ.mode; }, done: () => VZ.mode !== GD.base },
+  { id: 'show', on: 'phone', short: 'Go full screen', text: 'Tap Words, then 📄 Song, then ★ Showtime: the words come up in time with their chords, to sing or play from. ✕ brings you back.', target: '#mwPerform', go: gdPhoneSong, setup: () => { GD.seen.perf = 0; }, done: () => !!GD.seen.perf && !document.body.classList.contains('perform-on') }
+]));
+Object.defineProperty(GD_SESSIONS.learn = {
+  name: 'Learn and practise', mins: 4, icon: '🎼', blurb: 'Connect, open a lesson, and play it while the coach listens.',
+  outro: 'Every lesson, riff and scale works that way: it shows you, plays it, then listens. 📅 Today builds fifteen minutes from what you have learned, and brings it back so it sticks.', next: 'song'
+}, 'steps', gdSteps([
+  Object.assign({}, GD_SESSIONS.play.steps[0]),
+  { id: 'open', short: 'Open a lesson', text: () => (meNow() === 'sing' ? 'Open the first lesson in 🎤 Singing: Warm up and match a note.' : meNow() === 'guitar' || meNow() === 'tech' ? 'Press ▶ Start today’s session: a warm-up, something to review, something new and a riff.' : 'Open the first lesson in Foundations: Tune up and find the strings.'), target: () => document.querySelector(meNow() === 'sing' ? '#learn [data-lesson="v1"]' : meNow() === 'guitar' || meNow() === 'tech' ? '#lnToday' : '#learn [data-lesson]'), go: () => { try { learnOpen(meNow() === 'sing' ? 'sing' : meNow() === 'guitar' || meNow() === 'tech' ? 'today' : 'lessons'); } catch (e) { } }, done: () => { const c = document.getElementById('coach'); return !!(c && c.open); } },
+  { id: 'play', short: 'Play it to the coach', text: () => (meNow() === 'sing' ? 'Press ▶ Listen to hear the step, then ● Sing it. The keyboard shows the note you are singing, and the coach follows you note by note.' : 'Press ▶ Listen to hear the step, then ● Play it and play. The coach follows you note by note and says how it went.') + ' (Next ▶ moves on from a step that is only to read.)', target: '#coGo, #coNext', setup: () => { GD.seen.coach = 0; }, done: () => !!GD.seen.coach && !CO.run }
+]));
+const GD_ORDER = ['song', 'stage', 'learn', 'play', 'write', 'hum', 'record', 'loop', 'split', 'show'];
 
 /* ---------- starting from a goal on the first page ---------- */
 const GD_GOALS = {
-  play: async () => { await projCreate('demo', { zoom: 'studio' }); zoomSet('studio', true); if (isDesk()) { goalGo('performer'); } else mGo('play'); },
+  play: async () => { await gdDemoOrMine(); if (isDesk()) { goalGo('performer'); } else mGo('play'); },
   write: async () => { await projCreate('blank', { form: 'empty', title: 'My first riff', zoom: 'studio' }); zoomSet('studio', true); if (isDesk()) { goalGo('songwriter'); dockGo('tab'); } else mGo('write', 'tab'); },
   hum: () => { /* the default first screen is already the hum bar on a clean page */ },
-  record: async () => { await projCreate('blank', { form: 'empty', title: 'My first take', zoom: 'studio' }); zoomSet('studio', true); if (!isDesk()) mGo('play'); },
-  loop: async () => { await projCreate('blank', { form: 'empty', title: 'My first loop', zoom: 'studio' }); zoomSet('studio', true); if (!isDesk()) mGo('play'); },
-  split: async () => { await projCreate('blank', { form: 'empty', title: 'Learn a song', zoom: 'studio' }); if (isDesk()) dockGo('stems'); else mGo('stems', 'stems'); },
-  show: async () => { await projCreate('demo', { zoom: 'song' }); if (isDesk()) { const L = LAYOUTS.find(l => l[0] === 'Show'); if (L) applyPreset(L[2], 'Show'); } else mGo('see', 'stage'); dockGo('stage'); try { shOpen('scene', 'looks'); } catch (e) { } }
+  /* 2.67: each lands in one of the four workspaces, with what it needs open (they opened the old Record layout, or a panel that was not on the strip) */
+  record: async () => { await projCreate('blank', { form: 'empty', title: 'My first take', zoom: 'studio' }); zoomSet('studio', true); if (isDesk()) { goalGo('performer'); gdArrOpen(); } else mGo('play'); },
+  loop: async () => { await projCreate('blank', { form: 'empty', title: 'My first loop', zoom: 'studio' }); zoomSet('studio', true); if (isDesk()) { goalGo('performer'); gdArrOpen(); } else mGo('play'); },
+  split: async () => { await projCreate('blank', { form: 'empty', title: 'Learn a song', zoom: 'studio' }); zoomSet('studio', true); if (isDesk()) { goalGo('practice'); dockGo('stems'); try { rebuildTabs(); } catch (e) { } } else mGo('stems', 'stems'); },      /* (in ✦ Simple the open panel joins the strip) */
+  show: async () => { await projCreate('demo', { zoom: 'song' }); if (isDesk()) { simpleSet(false, true); const L = LAYOUTS.find(l => l[0] === 'Show'); if (L) applyPreset(L[2], 'Show'); } else mGo('see', 'stage'); dockGo('stage'); try { shOpen('scene', 'looks'); } catch (e) { } }
 };
+/* ---------- 2.67: who you are, and the four ways in ----------
+   The start page asks one optional thing, what you mostly do, never how good you are (singer, guitarist, new to music, producer: CFG.me) and offers four ways in, one per workspace.
+   Who you are changes what each way in says and where it leads:
+     Write a song        Songwriter, and a session that goes the whole way: an idea, hear it, words, a second part, a take, the stage, out.
+                         A singer starts by humming; a guitarist by capturing a riff; anyone else by picking a beat.
+     Play it live        Studio: a look, your sound, the band, ★ Showtime, a video.
+     Learn and practise  Practice: a beginner opens the first lesson, a guitarist today's fifteen minutes, a singer the pitch ribbon and range.
+     Explore everything  Full Rig with every tool, a finished song to take apart, and (the first time) the tour.
+   Someone who already has a song with chords keeps it for Play, Learn and Explore; a first visit gets the demo song. */
+const ME = { sing: 'Singer', guitar: 'Guitarist', new: 'New to music', tech: 'Producer' };
+const meNow = () => (ME[CFG.me] ? CFG.me : '');
+const GD_DOOR_TEXT = {
+  song: { '': 'Start with a beat, add chords and words, record it and send it. A whole song, start to finish.', sing: 'Hum or sing an idea and a band plays it back. Then the words, a take, and send it.', guitar: 'Play a riff and it is written down as tab. Then chords, words, a take, and send it.', new: 'Pick a beat, and the chords are there. Add your words, record it and send it. Your first whole song.', tech: 'Chords, tab and a piano roll, the band as lanes you can mix and export. A whole song, start to finish.' },
+  stage: { '': 'Your sound with a band behind you, visuals that move with the song, and a video to post.', sing: 'Sing it full screen with the words in time, in front of the visuals, and record a video to post.', guitar: 'Your tone with a band behind you, visuals that follow the song, and a video to post.', new: 'A band plays a finished song. Pick how it looks, play or sing along, and record a video.', tech: 'Looks, lights and a second screen that follow the song; record the stage as a wide or vertical video.' },
+  learn: { '': 'Lessons that show you, play it, then listen to you. Fifteen minutes a day.', sing: 'Warm-ups and exercises that listen as you sing, your pitch on a keyboard, your range and your key.', guitar: 'Today’s fifteen minutes, riffs and licks, the neck mapped out, any song slowed down.', new: 'From tuning up to your first song: each lesson shows you, plays it, then listens to you.', tech: 'Scales, arpeggios and modes on the neck, ear training, and any recording split and slowed down.' },
+  explore: { '': 'Every panel and the whole rig, with a finished song to take apart. A tour shows you round.', sing: 'Everything: vocal pedals and tuning, the band, stems, the stage. A finished song to take apart.', guitar: 'Everything: the pedalboard, scenes, amps and cabinets, stems and the stage. A finished song to take apart.', new: 'Everything at once, with a finished song to poke at. A tour shows you round.', tech: 'Every panel: the rig, the mixer, stems, transcription, MIDI, the show console. A finished song to take apart.' }
+};
+/** the song on screen is the person's own, with chords: keep it */
+const gdKeepSong = () => !!(store.get('started', false) && PRJ.cur && S.sections.some(s => s.bars.some(b => (b.chord || '').trim())));
+async function gdDemoOrMine() { if (!gdKeepSong()) await projCreate('demo', { zoom: 'studio' }); zoomSet('studio', true); }
+function gdArrOpen() { try { if (LAY.tlh === '84px') arrangeToggle(); } catch (e) { } }
+const gdInSongwriter = () => { try { if (isDesk() && !document.getElementById('humbar') && (!goalNow() || goalNow().id !== 'songwriter' || ZOOM.cur !== 'studio')) goalGo('songwriter'); } catch (e) { } };
+const gdHasIdea = () => S.sections.some(s => s.bars.some(b => (b.chord || '').trim() || (b.tab && b.tab.length)));
+const GD_DOORS = {
+  song: async () => {
+    const m = meNow();
+    if (!isDesk()) { await projCreate('blank', { form: 'empty', title: 'My song', zoom: 'studio' }); zoomSet('studio', true); try { mGo('beats'); } catch (e) { } guideStart('song', { fresh: true }); return; }      /* 2.68: on a phone, from a beat (a singer starts on the hum bar: gdDoor) */
+    await projCreate('blank', { form: 'empty', title: 'My song', zoom: 'studio' }); zoomSet('studio', true); goalGo('songwriter');
+    try { wrMode(m === 'tech' || m === 'guitar' ? 'both' : 'words'); } catch (e) { }
+    guideStart('song', { fresh: true });
+  },
+  stage: async () => { if (!isDesk()) { await gdDemoOrMine(); try { mGo('see', 'vis'); } catch (e) { } guideStart('stage', { fresh: true }); return; } await gdDemoOrMine(); goalGo('performer'); guideStart('stage', { fresh: true }); },
+  learn: async () => {
+    const m = meNow(); await gdDemoOrMine();
+    if (!isDesk()) { learnOpen(m === 'sing' ? 'sing' : m === 'guitar' || m === 'tech' ? 'today' : 'lessons'); return; }      /* on a phone Learn fills the screen, so it guides itself */
+    goalGo('practice');
+    learnOpen(m === 'sing' ? 'sing' : m === 'guitar' || m === 'tech' ? 'today' : 'lessons'); guideStart('learn', { fresh: true });      /* 2.68: a singer opens Singing */
+  },
+  explore: async () => {
+    const first = !store.get('started', false); CFG.xpMode = 'pro'; CFG.xp = Math.max(CFG.xp || 0, 40); simpleSet(false, true); saveCfg();
+    await gdDemoOrMine(); if (isDesk()) goalGo('fullrig'); try { rebuildTabs(); } catch (e) { }
+    if (first && isDesk()) setTimeout(() => { try { tourStart(); } catch (e) { } }, 700);
+  }
+};
+/** a way in: true when it took over the first screen (false: the hum bar opens as usual, with its session) */
+function gdDoor(id) {
+  const m = meNow();
+  if (id === 'song' && m === 'sing') { guideStart('song', { fresh: true }); return false; }      /* a singer starts on the hum bar, on a computer or a phone */
+  (async () => { try { await GD_DOORS[id](); } catch (e) { console.warn('door', e); } })(); return true;
+}
 /** called by startMaybe: true when a goal took over the first screen */
 function guideRoute() {
-  const goal = CFG.goal || PRJ.goal; if (!goal || !GD_SESSIONS[goal]) return false;
+  const goal = CFG.goal || PRJ.goal; if (!goal || !(GD_SESSIONS[goal] || GD_DOORS[goal])) return false;
   PRJ.goal = null; CFG.goal = null; saveCfg();
+  if (GD_DOORS[goal]) return gdDoor(goal);
   if (goal === 'hum') { guideStart('hum', { fresh: true }); return false; }   // the hum bar still opens as usual
   (async () => { try { await GD_GOALS[goal](); } catch (e) { console.warn(e); } guideStart(goal, { fresh: true }); })(); return true;
 }
@@ -13663,7 +13789,7 @@ function gdBuild() {
 
 /* ---------- the menu: all sessions, one place ---------- */
 function guideMenu() {
-  const g = gdc(), body = h('div', { class: 'gd-menu' }, h('p', { class: 'muted small' }, 'Short, real tasks. Each one ticks off as you do it, and finishing one adds tools to your tab strip. You can leave at any point and come back to where you were.'),
+  const g = gdc(), body = h('div', { class: 'gd-menu' }, h('p', { class: 'muted small' }, 'Three journeys (a whole song, the stage, learning), then short single tasks. Each step ticks off as you do it. You can leave at any point and come back to where you were.'),
     GD_ORDER.map(k => { const s = GD_SESSIONS[k], done = !!g.done[k], part = (g.prog[k] || 0) > 0 && !done; return h('div', { class: 'gd-row' + (done ? ' ok' : '') }, h('span', { class: 'gd-ic', 'aria-hidden': 'true' }, s.icon), h('div', { class: 'grow' }, h('b', {}, s.name, done ? h('span', { class: 'gd-done' }, ' ✓ done') : null), h('span', { class: 'small muted' }, s.blurb + ' About ' + s.mins + ' min.')),
       h('button', { class: 'btn sm' + (done ? '' : ' primary'), 'data-s': k, onclick: () => { d.close(); guideStart(k, { fresh: !part, go: true }); } }, done ? 'Again' : part ? 'Resume' : 'Start')); }),
     h('div', { class: 'hr' }), h('div', { class: 'row', style: { gap: '8px', flexWrap: 'wrap' } },
@@ -13732,8 +13858,18 @@ function guideBoot(bootStart) {
     if (goal === 'show') PRJ.bootDemo = false;   // the show goal makes its own demo project
     bootStart('studio');
   });
-  const pro = document.getElementById('bootPro'); if (pro) pro.onclick = () => { CFG.xpMode = 'pro'; CFG.xp = 40; simpleSet(false, true); saveCfg(); try { rebuildTabs(); } catch (e) { } bootStart('studio'); };   /* opens on the Full Rig (part 64) */
+  /* 2.67: who you are, and the four ways in */
+  const paint = () => { const m = meNow(); document.querySelectorAll('#bootMe [data-me]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.me === m))); document.querySelectorAll('#bootDoors .boot-door').forEach(b => { const t = GD_DOOR_TEXT[b.dataset.door], s = b.querySelector('.bd-s'); if (t && s) s.textContent = t[m] || t['']; }); };
+  document.querySelectorAll('#bootMe [data-me]').forEach(b => b.onclick = () => { CFG.me = CFG.me === b.dataset.me ? '' : b.dataset.me; try { meDefaults(); } catch (e) { } saveCfg(); paint(); });
+  document.querySelectorAll('#bootDoors .boot-door').forEach(b => b.onclick = () => { const d = b.dataset.door; CFG.goal = d; PRJ.goal = d; saveCfg(); PRJ.bootDemo = false; bootStart('studio'); });
+  paint();
 }
+/* someone who has been here before: the ways in and the single tasks start something new for them too (before 2.67 they all just opened the last song) */
+bus.on('booted', () => {
+  if (!store.get('started', false) || !(CFG.goal || PRJ.goal)) return; let n = 0;
+  const go = () => { if ((!PRJ.ready || PRJ.loading) && n++ < 60) return setTimeout(go, 100); const g = CFG.goal || PRJ.goal; if (!guideRoute() && (g === 'hum' || g === 'song')) { try { humCanvasFirst(); } catch (e) { } } };
+  setTimeout(go, 150);
+});
 bus.on('booted', () => { const g = gdc(); if (g.sess && GD_SESSIONS[g.sess] && !GD.id && !(CFG.goal || PRJ.goal)) setTimeout(() => guideStart(g.sess, {}), 1200); });
 
 /* >>> parts/61-looper.js */
@@ -14461,6 +14597,8 @@ const GOALS = [
       ['gtPads', '👆 Pads', 'Play the drums with your fingers, tap the tempo, record a groove or beatbox it', () => padsOpen()],
       ['gtKeys', '🎹 Keys', 'A piano to play with the mouse, the computer keys or a MIDI keyboard: its own sounds, or the band’s bass or lead; record what you play into the song', () => keysOpen()],
       ['gtLink', () => slSendLabel(), 'Send this song to a bandmate as a link: the chords, words, tab, beat, tempo and key ride inside it (your recordings too, if you choose)', () => slShare()],
+      ['gtHum', '🎤 Hum an idea', 'Hum or sing a few seconds, or choose a voice memo: it becomes chords and a band', () => humOpen()],
+      ['gtRhyme', '✎ Rhymes', 'Rhymes, syllables and the rhyme scheme, beside the words you are writing', () => { const go = () => { const b = document.getElementById('lhBtn'); if (b && b.offsetParent) { b.click(); return true; } return false; }; if (!go()) { dockGo('tab'); try { if (WR.mode === 'tab') wrMode('words'); } catch (e) { } setTimeout(go, 200); } }],
       ['gtRoll', '🎛 Piano roll', 'Draw the keys part or the bass line on a grid, loop it, duck it to the kick', () => rollOpen()],
 
 
@@ -14477,6 +14615,7 @@ const GOALS = [
       ['gtCam', '📷 Camera', 'You in the picture, in front of or framed by the visuals', () => vzCamPress(), () => !!VZ.cam],
       ['gtFx', '✨ Overlays', 'How the camera sits with the visuals: dimmed behind, framed, or you in front', b => popover(b, h('div', { style: { display: 'grid', gap: '8px', minWidth: '240px' } }, h('h5', {}, 'Overlays'), camFxBox(), h('div', { class: 'tiny muted' }, 'Pick a look in the Visuals panel for what moves behind you.')))],
       ['gtVox', '🎤 Vocal pedals', 'Scream, doubler, harmony, echo, reverb, de-esser and megaphone for your voice', () => vocalBoardOpen()],
+      ['gtVoice', '〰 Voice', 'See your pitch against the key as you sing; find your range and the key that suits you', b => voxOpen(b), () => !!VOX.panel],
       ['gtReplay', '▶ Studio Replay', 'Watch the last recording, then save it, share it or make a thumbnail from any frame', () => kitReplay(), null, 0, () => !KIT.last],
       ['gtStream', '📺 Stream window', 'The words and the chord in a window of their own, for OBS or any streaming app', () => streamRoom()],
       ['gtThumb', '🖼 Thumbnail', 'Save a 1280 × 720 picture of the stage with the song title, for the post', () => kitThumb()],
@@ -14492,6 +14631,7 @@ const GOALS = [
     tools: () => [
       /* 2.66: Learn is the Practice panel itself (Today, lessons, This song, By ear, riffs, the lab, the atlas and Scales & ear are in its list) */
       ['gtLearn', '🎓 Learn', 'Back to Learn: today’s plan, lessons that listen, this song, by ear, riffs, the riff lab, the scale atlas, Scales & ear', () => learnOpen(), () => DOCK.cur === 'learn' && paneVisible('learn'), 1],
+      ['gtVoice', '〰 Voice', 'See your pitch against the key as you sing; find your range and the key that suits you', b => voxOpen(b), () => !!VOX.panel],
       ['gtSlow', '− 5', 'Slower by 5 BPM', () => goalTempo(-5)],
       ['gtBpm', () => S.bpm + ' BPM', 'The tempo', () => { if (UI.bpm) UI.bpm.focus(); }],
       ['gtFast', '+ 5', 'Faster by 5 BPM', () => goalTempo(5)],
@@ -14540,9 +14680,10 @@ function goalGo(id, o) {
   CFG.ws = g.id; if (g.id !== 'fullrig') CFG.lastGoal = g.id; saveCfg();
   if (g.id === 'fullrig' && CFG.simple) { CFG.preSimple = null; simpleSet(false, true); toast('Full Rig has every tool, so Simple is off here. ✦ Simple takes you back to the essentials.', ''); }      /* 2.46: Full Rig is everything */
   if (!(o && o.keepZoom) && typeof ZOOM !== 'undefined' && ZOOM.cur === 'canvas') { ZOOM.cur = CFG.zoom = 'studio'; saveCfg(); document.body.classList.remove('zoom-canvas'); try { zoomSync(); } catch (e) { } }
-  applyPreset(g.spec, g.layout); if (typeof xpSignal === 'function') xpSignal(1);
+  applyPreset(goalSpec(g), g.layout); if (typeof xpSignal === 'function') xpSignal(1);
   if (g.spec.side && g.spec.side.fret && typeof sideShow === 'function') { try { sideShow('fret'); } catch (e) { } }
   if (g.enter) { try { g.enter(); } catch (e) { console.warn('goal', e); } }
+  { const L = goalLens(g); if (L && L.enter) { try { L.enter(); } catch (e) { console.warn('goal', e); } } }
   goalAudioFirst();
   goalMark(); bus.emit('goal', g.id); goalBarBuild(); try { rebuildTabs(); } catch (e) { } return true;
 }
@@ -14557,19 +14698,59 @@ const GOALBAR = { el: null };
 /** the bar sits at the top of the centre, whichever of the panels or the arrangement is on top */
 function goalPlace() { const el = GOALBAR.el, top = LAY.flip === false ? $('#timeline') : $('#dock'); if (el && top && (el.parentNode !== top || top.firstChild !== el)) top.insertBefore(el, top.firstChild); }
 /* 2.65: each workspace shows its main tools; the rest are one click away under ⋯ More (a tool in use stays showing) */
-const GOAL_MORE = { songwriter: ['gtVox', 'gtRoll'], performer: ['gtFmt', 'gtFx', 'gtStream', 'gtThumb', 'gtTip', 'gtPrint'], practice: ['gtInk', 'gtNotes', 'gtScreen', 'gtTx'] };
+const GOAL_MORE = { songwriter: ['gtVox', 'gtHum', 'gtRhyme', 'gtRoll'], performer: ['gtVoice', 'gtFmt', 'gtFx', 'gtStream', 'gtThumb', 'gtTip', 'gtPrint'], practice: ['gtVoice', 'gtInk', 'gtNotes', 'gtScreen', 'gtTx'] };
+/* 2.68: the workspaces adapt to who you mostly are (CFG.me: part 60 asks on the start page; the chip beside the workspaces changes it).
+   For each workspace and person: the tools it leads with, in order (the rest go under ⋯ More; nothing is removed), the few it keeps in
+   ✦ Simple, changes to its layout (tabs, sidebars, Monitor widgets), its words, and what it does on the way in. A guitarist, and
+   anyone who has not said, gets each workspace as it was. Full Rig is everything for everyone. */
+const ME_ICO = { sing: '🎤', guitar: '🎸', new: '🌱', tech: '🎛' };
+const GOAL_ME = {
+  songwriter: {
+    sing: { tools: ['gtBeats', 'gtHum', 'gtRhyme', 'gtSheet', 'gtLink'], few: ['gtBeats', 'gtHum', 'gtRhyme', 'gtSheet', 'gtLink'], steps: ['Pick a beat, or hum an idea', 'Write the words; ✎ Rhymes helps', '● Record a take, then send it'],
+      shape: 'The words large in the middle · Theory on the left · the arrangement a strip', enter: () => { try { wrMode('words'); } catch (e) { } } },
+    new: { tools: ['gtBeats', 'gtHum', 'gtSheet', 'gtPads', 'gtLink'], few: ['gtBeats', 'gtHum', 'gtSheet', 'gtPads', 'gtLink'], steps: ['Pick a beat: its chords become your song', 'Write a line of words under them', '● Record yourself over it'], enter: () => { try { wrMode('words'); } catch (e) { } } },
+    tech: { tools: ['gtBeats', 'gtRoll', 'gtKeys', 'gtPads', 'gtLink'], steps: ['Chords and a beat, or draw the parts in the piano roll', 'Arrange the sections and the band', 'Mix the lanes and export them'],
+      shape: 'Words and tab in the middle · Theory on the left · the arrangement open, with its lanes', spec: { tlh: 'minmax(170px,32%)', order: ['tab', 'band', 'song', 'stems', 'exp'], hidden: ['rig', 'fret', 'vis', 'stage', 'neural', 'tx', 'cam', 'lab'] } }
+  },
+  performer: {
+    sing: { tools: ['gtVideo', 'gtCam', 'gtVox', 'gtVoice', 'gtExp'], few: ['gtVideo', 'gtCam', 'gtVox', 'gtVoice', 'gtExp'], steps: ['Pick a look, and your vocal pedals', 'Sing it with ★ Showtime, or ⏺ record a video', 'Watch it back, then save or share it'],
+      shape: 'The stage large · your microphone on the left · levels and the audience view on the right', tabs: ['vis', 'band', 'exp'],
+      spec: { order: ['vis', 'band', 'stage', 'exp'], hidden: ['rig', 'tab', 'song', 'fret', 'neural', 'stems', 'tx', 'cam', 'lab'], cur: { left: 'io', right: 'monitor' }, mon: ['levels', 'audience'] } },
+    tech: { tools: ['gtVideo', 'gtFmt', 'gtCam', 'gtStream', 'gtExp'], steps: ['Pick a look and the shape of the video', 'Play it, or ⏺ record the stage', 'Stream it, or export it'], spec: { order: ['vis', 'stage', 'rig', 'band', 'exp'] } }
+  },
+  practice: {
+    sing: { tools: ['gtLearn', 'gtVoice', 'gtSpeed', 'gtSlow', 'gtBpm', 'gtFast'], few: ['gtLearn', 'gtVoice', 'gtSpeed'], mission: 'Warm up, then sing it until it sits', steps: ['Warm up with 🎤 Singing in Learn', 'Sing the song over the band or the record', '⏱ Speed & key moves it to a key that suits you'],
+      shape: 'Learn in the middle (🎤 Singing first) · the words a tab away · Theory on the left · levels on the right', tabs: ['learn', 'tab', 'band'],
+      spec: { order: ['learn', 'tab', 'stems', 'band', 'tx'], show: [], hidden: ['fret', 'rig', 'song', 'vis', 'stage', 'neural', 'cam', 'lab', 'exp'], mon: ['levels'] } }
+  }
+};
+/** how the workspace differs for the person using it (null: as it is for everyone) */
+const goalLens = g => (g && typeof meNow === 'function' && GOAL_ME[g.id] && GOAL_ME[g.id][meNow()]) || null;
+const goalSpec = g => { const L = goalLens(g); return L && L.spec ? Object.assign({}, g.spec, L.spec) : g.spec; };
+/** who the workspaces are set up for: a few settings follow once (a singer sees their pitch on the visuals, not a guitar neck), then the workspace in use is set up again */
+function meDefaults() { const m = meNow(); if (m === 'sing') { CFG.vzRibbon = true; CFG.vzNeck = false; CFG.wrFret = false; try { WR.fret = false; } catch (e) { } } else if (m === 'guitar') { CFG.vzNeck = true; CFG.wrFret = null; try { WR.fret = null; } catch (e) { } }      /* a singer's Write has no fretboard under it (the Fretboard button brings it back) */ const r = document.getElementById('vzRibbonBtn'), n = document.getElementById('vzNeckBtn'); if (r) { r.classList.toggle('on', !!CFG.vzRibbon); r.setAttribute('aria-pressed', String(!!CFG.vzRibbon)); } if (n) n.classList.toggle('on', CFG.vzNeck !== false); }
+function meSet(m) { CFG.me = ME[m] ? m : ''; meDefaults(); saveCfg(); const g = goalNow(); if (g && !g.all) goalGo(g.id); else goalBarBuild(); if (document.getElementById('learn') && document.getElementById('learn').open && g && g.id === 'practice') { try { learnOpen(); } catch (e) { } } }
+function meMenu(btn) {
+  const m = meNow(), opt = (k, label, sub) => h('button', { class: 'gl-me-o' + (m === k ? ' on' : ''), type: 'button', role: 'radio', 'aria-checked': String(m === k), 'data-me': k, onclick: () => { closePop(); meSet(k); } }, h('b', {}, label), h('small', {}, sub));
+  popover(btn, h('div', { class: 'gl-me-pop', role: 'radiogroup', 'aria-label': 'Who the workspaces are set up for' }, h('h5', {}, 'Set the workspaces up for'),
+    opt('sing', '🎤 A singer', 'Words first, vocal pedals, your pitch, singing warm-ups'), opt('guitar', '🎸 A guitarist', 'Tab and the neck, tones and the rig, lessons that listen'),
+    opt('new', '🌱 Someone new to music', 'A beat, a few words, the first lessons'), opt('tech', '🎛 A producer', 'The piano roll, lanes, stems and exports'), opt('', 'Anyone', 'Each workspace as it comes'),
+    h('p', { class: 'tiny muted' }, 'Songwriter, Studio and Practice lead with different tools and panels. Nothing is removed: the rest is under ⋯ More and ☰. Full Rig always has everything.')));
+}
 function goalBarBuild() {
   const box = GOALBAR.el; if (!box) return; box.innerHTML = ''; const cur = goalNow(); goalMark();
   const pick = h('div', { class: 'gl-pick', role: 'group', 'aria-label': 'What do you want to do?' }, GOALS.map(g => h('button', { class: 'gl-b' + (cur === g ? ' on' : ''), 'data-goal': g.id, style: '--gh:' + g.hue, 'aria-pressed': String(cur === g), title: g.name + ': ' + g.blurb, onclick: () => goalGo(g.id) }, h('span', { class: 'gl-i', 'aria-hidden': 'true' }, g.ico), h('span', { class: 'gl-t' }, g.name))));
-  const row = h('div', { class: 'gl-row gl-one' }, pick); box.append(row);
+  const row = h('div', { class: 'gl-row gl-one' }, pick, h('button', { class: 'gl-me', id: 'gtMe', type: 'button', 'aria-haspopup': 'true', title: (meNow() ? 'Set up for ' + ME[meNow()].toLowerCase().replace(/^new/, 'someone new') : 'Set up for anyone') + ': change who the workspaces are set up for', 'aria-label': 'Who the workspaces are set up for: ' + (meNow() ? ME[meNow()] : 'anyone'), onclick: e => meMenu(e.currentTarget) }, ME_ICO[meNow()] || '👤')); box.append(row);
   if (!cur) { row.append(h('span', { class: 'tiny muted gl-hint' }, 'Pick what you want to do, and the studio arranges itself for it. Everything stays one click away.')); return; }
   const tools = h('div', { class: 'gl-tools' + (CFG.glMore ? ' more-open' : ''), role: 'toolbar', 'aria-label': cur.name + ' tools' });
-  const ms = CFG.simple && cur.simple || cur, few = CFG.simple && SIMPLE_GOAL_TOOLS[cur.id];      /* ✦ Simple: each workspace keeps its few tools and its own words (part 33b) */
-  const how = ms.mission + ': ' + ms.steps.map((s, i) => (i + 1) + '. ' + s).join('  ') + '\n' + cur.shape;
-  tools.append(h('button', { class: 'gl-mis', type: 'button', title: how, 'aria-label': 'How ' + cur.name + ' works: ' + how, onclick: e => popover(e.currentTarget, h('div', { class: 'gl-how' }, h('b', {}, ms.mission), h('ol', {}, ms.steps.map(s => h('li', {}, s))), h('p', { class: 'tiny muted' }, cur.shape))) }, h('b', {}, ms.mission), h('span', { class: 'gl-steps' }, ms.steps.map((s, i) => h('span', {}, h('i', {}, i + 1), s)))));
-  const more = !few && GOAL_MORE[cur.id] || []; let nMore = 0;
-  cur.tools().forEach(([id, label, title, fn, on, main, off]) => {
-    if (few && !few.includes(id)) return; if (typeof main === 'function') main = main(); const sec = more.includes(id); if (sec) nMore++;
+  const L = goalLens(cur), ms0 = CFG.simple && cur.simple || cur, ms = L ? { mission: L.mission || ms0.mission, steps: L.steps || ms0.steps } : ms0, shape = (L && L.shape) || cur.shape;      /* 2.68: the words of whoever it is set up for */
+  const few = CFG.simple && ((L && L.few) || SIMPLE_GOAL_TOOLS[cur.id]);      /* ✦ Simple: each workspace keeps its few tools and its own words (part 33b) */
+  const how = ms.mission + ': ' + ms.steps.map((s, i) => (i + 1) + '. ' + s).join('  ') + '\n' + shape;
+  tools.append(h('button', { class: 'gl-mis', type: 'button', title: how, 'aria-label': 'How ' + cur.name + ' works: ' + how, onclick: e => popover(e.currentTarget, h('div', { class: 'gl-how' }, h('b', {}, ms.mission), h('ol', {}, ms.steps.map(s => h('li', {}, s))), h('p', { class: 'tiny muted' }, shape))) }, h('b', {}, ms.mission), h('span', { class: 'gl-steps' }, ms.steps.map((s, i) => h('span', {}, h('i', {}, i + 1), s)))));
+  const all = cur.tools(), prim = L && L.tools ? (few || L.tools) : null, list = prim ? prim.map(id => all.find(x => x[0] === id)).filter(Boolean).concat(all.filter(x => !prim.includes(x[0]))) : all;      /* the lens's tools first, in its order */
+  const more = few ? [] : prim ? all.map(x => x[0]).filter(id => !prim.includes(id)) : GOAL_MORE[cur.id] || []; let nMore = 0;
+  list.forEach(([id, label, title, fn, on, main, off]) => {
+    if (few && !few.includes(id)) return; if (typeof main === 'function') main = main(); if (prim) main = id === prim[0]; const sec = more.includes(id); if (sec) nMore++;
     const b = h('button', { class: 'btn sm gl-tool' + (main ? ' gl-main' : '') + (sec ? ' gl-sec' : ''), id, type: 'button', title, onclick: e => { fn(e.currentTarget); setTimeout(goalSync, 60); } }, typeof label === 'function' ? label() : label);
     b._on = on; b._off = off; b._label = label; tools.append(b);
   });
@@ -15400,19 +15581,21 @@ window.addEventListener('pagehide', () => jnSave(true));
 
 /* >>> parts/70-backdrops.js */
 /* ============================================================
-   Part 70 · Behind you (2.12) — six integrated backdrops for the camera cut-out
-   Light Ribbons · Aurora · Warp Stars · Pulse Rings · Nebula · Skyline
+   Part 70 · Behind you (2.12; 2.70 Cymatics, Spectrum, Waveform) — integrated backdrops for the camera cut-out
+   Light Ribbons · Aurora · Warp Stars · Pulse Rings · Nebula · Skyline · Cymatics · Spectrum · Waveform
    They are made to sit behind the person: set Camera look to “Me in front (green screen)” and you stand inside the picture,
    the way a performer stands in front of a lit backdrop. Each one is plain 2D drawing on the visuals canvas, so it also works
    in full screen, in the stage designer and in a recorded video.
+   · Cymatics, Spectrum and Waveform (2.70) show the sound itself — a vibrating plate's standing waves, the live frequency spectrum,
+     and the waveform as glowing oscilloscope traces — for music-video takes that make what you hear visible.
    · The colour follows the chord: it glides to a new hue over about a second when the harmony changes (the circle of fifths
      walks round the colour wheel), and rests on a calm blue when nothing is playing.
    · The movement follows the sound (a few frequency bands set the size and brightness of its parts) and the comfort setting
      (Calm moves at about half the speed and softens every pulse).
    · Nothing here flashes: brightness only ever changes by gliding, and rings and pulses fade over a second or more.
    ============================================================ */
-const BK_MODES = new Set(['ribbons', 'aurora', 'warp', 'rings', 'nebula', 'skyline']);
-const VBACK = [['ribbons', 'Light Ribbons'], ['aurora', 'Aurora'], ['warp', 'Warp Stars'], ['rings', 'Pulse Rings'], ['nebula', 'Nebula'], ['skyline', 'Skyline']];
+const BK_MODES = new Set(['ribbons', 'aurora', 'warp', 'rings', 'nebula', 'skyline', 'cymatics', 'spectrum', 'wave']);
+const VBACK = [['ribbons', 'Light Ribbons'], ['aurora', 'Aurora'], ['warp', 'Warp Stars'], ['rings', 'Pulse Rings'], ['nebula', 'Nebula'], ['skyline', 'Skyline'], ['cymatics', 'Cymatics'], ['spectrum', 'Spectrum'], ['wave', 'Waveform']];
 VMODES.push(...VBACK);
 const BK = { hue: 215, en: .2, bands: new Float32Array(8), t: 0, st: null, rings: [], lastRing: 0, held: false, chord: '', tgt: 215 };
 const bkH = n => { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
@@ -15438,7 +15621,7 @@ function bkTick(X) {
 }
 
 /** what draws each of these looks (part 70b adds Your video) */
-const BK_FN = { ribbons: bkRibbons, aurora: bkAurora, warp: bkWarp, rings: bkRings, nebula: bkNebula, skyline: bkSkyline };
+const BK_FN = { ribbons: bkRibbons, aurora: bkAurora, warp: bkWarp, rings: bkRings, nebula: bkNebula, skyline: bkSkyline, cymatics: bkCymatics, spectrum: bkSpectrum, wave: bkWave };
 function bkDraw(mode, g, W, H, X) {
   const B = bkTick(X); g.save(); g.lineCap = 'round'; g.lineJoin = 'round';
   (BK_FN[mode] || bkRibbons)(g, W, H, B);
@@ -15528,6 +15711,49 @@ function bkSkyline(g, W, H, B) {
       x += bw + R * .004;
     }
   });
+}
+
+/* ----- Cymatics: sound made visible — a vibrating plate's standing waves. Higher frequencies raise the ring count, the low-mids set the
+   number of petals, and louder deepens the pattern; it turns slowly and breathes. The physics that links a tone to a shape. ----- */
+function bkCymatics(g, W, H, B) {
+  bkSky(g, W, H, B.hue, 2, 7); const cx = W / 2, cy = H / 2, R = Math.hypot(cx, cy), t = B.t;
+  const petals = 3 + Math.round((B.b[1] + B.b[2]) * 5), kr = 5 + Math.round((B.b[5] + B.b[6]) * 7), amp = .35 + .65 * B.en, rings = 11, segs = 76;
+  g.globalCompositeOperation = 'lighter';
+  for (let r = 1; r <= rings; r++) {
+    const rr = r / rings * R * .94, bd = B.b[(r + 1) % 8], radial = Math.cos(rr / R * kr * Math.PI - t * .8), bright = Math.abs(radial) * amp * (.4 + .6 * bd);
+    if (bright < .03) continue;
+    g.beginPath();
+    for (let s = 0; s <= segs; s++) { const th = s / segs * 6.2832, lit = radial * Math.cos(th * petals + t * .25), rad = rr + lit * R * .02 * (.6 + bd), x = cx + Math.cos(th) * rad, y = cy + Math.sin(th) * rad; g[s ? 'lineTo' : 'moveTo'](x, y); }
+    g.lineWidth = R * (.0022 + .004 * bd); g.strokeStyle = bkHsl(B.hue + (r - rings / 2) * 8, 88, 60, .12 + .5 * bright); g.stroke();
+  }
+  const orb = g.createRadialGradient(cx, cy, 0, cx, cy, R * .3); orb.addColorStop(0, bkHsl(B.hue + 20, 90, 66, .28 + .14 * B.en)); orb.addColorStop(1, bkHsl(B.hue + 20, 90, 60, 0)); g.fillStyle = orb; g.fillRect(0, 0, W, H);
+}
+
+/* ----- Spectrum: the live frequency spectrum as a glowing ridge over a horizon, with a dimmer reflection below. Low frequencies sit at the
+   left and warm, highs at the right and cool; each band has a bright dot that swells with its level. Reads at a glance as "this is the sound". ----- */
+function bkSpectrum(g, W, H, B) {
+  bkSky(g, W, H, B.hue, 3, 9); const n = B.b.length, hz = H * .6, steps = 96, pts = [];
+  const val = u => { const x = u * (n - 1), i = Math.floor(x), f = x - i, a = B.b[Math.max(0, i)], b2 = B.b[Math.min(n - 1, i + 1)], s = f * f * (3 - 2 * f); return Math.max(.05, a + (b2 - a) * s) * (.75 + .25 * Math.sin(u * 8 + B.t * .55)); };
+  for (let s = 0; s <= steps; s++) { const u = s / steps; pts.push([u * W, hz - H * (.1 + .6 * val(u) + .06 * B.en)]); }
+  g.globalCompositeOperation = 'lighter';
+  g.beginPath(); g.moveTo(0, hz); pts.forEach(p => g.lineTo(p[0], p[1])); g.lineTo(W, hz); g.closePath();
+  const gr = g.createLinearGradient(0, hz - H * .55, 0, hz); gr.addColorStop(0, bkHsl(B.hue - 10, 90, 60, .32)); gr.addColorStop(1, bkHsl(B.hue + 20, 85, 45, .05)); g.fillStyle = gr; g.fill();
+  g.save(); g.translate(0, hz * 2); g.scale(1, -.5); g.beginPath(); g.moveTo(0, hz); pts.forEach(p => g.lineTo(p[0], p[1])); g.lineTo(W, hz); g.closePath(); const gr2 = g.createLinearGradient(0, hz - H * .55, 0, hz); gr2.addColorStop(0, bkHsl(B.hue, 85, 55, .1)); gr2.addColorStop(1, bkHsl(B.hue, 85, 45, 0)); g.fillStyle = gr2; g.fill(); g.restore();
+  for (let k = 0; k < 2; k++) { g.beginPath(); pts.forEach((p, s) => g[s ? 'lineTo' : 'moveTo'](p[0], p[1])); g.lineWidth = k ? H * .006 : H * .018; g.strokeStyle = bkHsl(B.hue + 20, 92, 66, k ? .85 : .16); g.stroke(); }
+  for (let i = 0; i < n; i++) { const p = pts[Math.round((i + .5) / n * steps)], rad = H * (.006 + .012 * B.b[i]); g.beginPath(); g.arc(p[0], p[1], rad, 0, 6.2832); g.fillStyle = bkHsl(B.hue - 40 + i * 14, 90, 66, .45 + .4 * B.b[i]); g.fill(); }
+}
+
+/* ----- Waveform: the sound as glowing oscilloscope traces through the middle — a main line with two quieter harmonics above and below. The
+   shape is a sum of sines whose heights follow the frequency bands, so a richer sound draws a busier wave; it travels sideways as it plays. ----- */
+function bkWave(g, W, H, B) {
+  bkSky(g, W, H, B.hue + 8, 2, 7); const cy = H / 2;
+  const gl = g.createRadialGradient(W / 2, cy, 0, W / 2, cy, W * .6); gl.addColorStop(0, bkHsl(B.hue, 85, 50, .16 + .12 * B.en)); gl.addColorStop(1, bkHsl(B.hue, 85, 50, 0)); g.fillStyle = gl; g.fillRect(0, 0, W, H);
+  g.globalCompositeOperation = 'lighter'; const steps = 150, amp = H * (.035 + .3 * B.en);
+  for (let tr = 0; tr < 3; tr++) {
+    const yb = cy + (tr - 1) * H * .17, hue = B.hue + (tr - 1) * 26, phase = B.t * (.8 + tr * .25), a = tr === 1 ? 1 : .55, pts = [];
+    for (let s = 0; s <= steps; s++) { const u = s / steps, edge = Math.sin(u * Math.PI); let y = 0; for (let k = 0; k < 4; k++) { const bd = B.b[(k * 2 + tr) % 8]; y += Math.sin(u * (6 + k * 7 + tr * 3) * Math.PI + phase * (1 + k * .5)) * bd / (k + 1); } pts.push([u * W, yb + y * amp * edge * a]); }
+    [[H * .02, .1], [H * .007, .4 * a], [H * .0025, .85 * a]].forEach(([w, al]) => { g.beginPath(); pts.forEach((p, s) => g[s ? 'lineTo' : 'moveTo'](p[0], p[1])); g.lineWidth = w; g.strokeStyle = bkHsl(hue, 90, 60, al); g.stroke(); });
+  }
 }
 
 /** the first time one of these is chosen with the camera showing you dimmed behind the visuals, say how to stand inside the picture */
@@ -15681,6 +15907,214 @@ function vbgOpen() {
   pdlg('vbg', 'YOUR VIDEOS', box, { wide: true });
   paint();
 }
+
+/* >>> parts/71-gpu.js */
+/* ============================================================
+   Part 71 · GPU visual engine (2.71) — WebGL2 particles and bloom, behind you
+   The first of the GPU-powered looks (Stardust: a drifting, audio-reactive particle galaxy with a real bloom glow). The engine owns its
+   own WebGL2 canvas, renders a look into it, and the ordinary 2D draw path blits the result onto the visuals canvas — so every overlay
+   (the neck, the words, the lower third) still draws on top, and it works the same on the stage and in a recording.
+     · No new dependency: raw WebGL2, built inline. WebGPU, where a browser has it, is a later fast-path; this is the tested baseline.
+     · It degrades: with no WebGL2 (an old phone, a lost context) the look falls back to a plain 2D particle field, so nothing ever breaks.
+     · It obeys the same rules as every other look: the colour follows the chord, the movement follows the sound and the comfort setting
+       (Calm is slower and softer), and nothing flashes — brightness only ever glides, because it rides the smoothed energy, not raw peaks.
+   The engine (gpuGet, gpuScene, gpuBlit) is written to be reused by the looks that come after it (the living cymatics, the 3D stage).
+   ============================================================ */
+const GPU = { cv: null, gl: null, ok: null, w: 0, h: 0, N: 0, P: {}, T: {}, F: {}, vao: null, off: false, float: false, floatLin: false, sim: {}, simRes: 256, simProg: null };
+
+function gpuSh(gl, type, src) { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) { console.warn('gpu shader', gl.getShaderInfoLog(s)); return null; } return s; }
+function gpuProg(gl, vs, fs) { const a = gpuSh(gl, gl.VERTEX_SHADER, vs), b = gpuSh(gl, gl.FRAGMENT_SHADER, fs); if (!a || !b) return null; const p = gl.createProgram(); gl.attachShader(p, a); gl.attachShader(p, b); gl.linkProgram(p); if (!gl.getProgramParameter(p, gl.LINK_STATUS)) { console.warn('gpu link', gl.getProgramInfoLog(p)); return null; } return p; }
+
+const GPU_VS_FS = `#version 300 es
+  out vec2 vUv; void main(){ vec2 p=vec2((gl_VertexID<<1)&2, gl_VertexID&2); vUv=p; gl_Position=vec4(p*2.-1.,0.,1.); }`;
+
+/** build (once) the WebGL2 canvas, programs and the fullscreen VAO. Returns true if the GPU path is usable. */
+function gpuGet() {
+  if (GPU.ok !== null) return GPU.ok && !GPU.off;
+  try {
+    const cv = document.createElement('canvas'); cv.width = 2; cv.height = 2;
+    const gl = cv.getContext('webgl2', { alpha: false, antialias: false, depth: false, preserveDrawingBuffer: true, powerPreference: 'high-performance' });
+    if (!gl) { GPU.ok = false; return false; }
+    cv.addEventListener('webglcontextlost', e => { e.preventDefault(); GPU.ok = false; }, false);
+    GPU.cv = cv; GPU.gl = gl; GPU.vao = gl.createVertexArray();
+    GPU.float = !!gl.getExtension('EXT_color_buffer_float'); GPU.floatLin = !!gl.getExtension('OES_texture_float_linear');      /* for the living simulations (2.72) */
+    /* particle pass: attributeless — each point's path comes from its gl_VertexID and the time, its colour from the chord's hue */
+    GPU.P.part = gpuProg(gl, `#version 300 es
+      uniform float uT, uEn, uHue, uPulse; uniform vec2 uRes; out vec3 vCol;
+      float h1(float n){ return fract(sin(n*127.1)*43758.5); }
+      void main(){ float id=float(gl_VertexID); float seed=h1(id);
+        float a=seed*6.2831 + uT*(.05+h1(id+7.)*.22); float r=pow(h1(id+3.),.7)*.95; float rr=r+.05*sin(uT*.6+id*.3);
+        vec2 p=vec2(cos(a),sin(a))*rr*(.42+.5*uEn); p+=.12*vec2(sin(uT*.4+id),cos(uT*.33+id))*uEn;
+        p*=1.+uPulse*.15*seed; p.x*=uRes.y/uRes.x;
+        gl_Position=vec4(p,0.,1.); gl_PointSize=(1.5+5.5*h1(id+9.))*(.55+.8*uEn)*(uRes.y/420.);
+        float hu=uHue + (seed-.5)*70.; vCol=.5+.5*cos(6.2831*(hu/360.)+vec3(0.,2.1,4.2)); vCol*=.35+.95*uEn; }`,
+      `#version 300 es
+       precision highp float; in vec3 vCol; out vec4 o;
+       void main(){ float m=smoothstep(.5,0.,length(gl_PointCoord-.5)); o=vec4(vCol*m, m); }`);
+    GPU.P.bright = gpuProg(gl, GPU_VS_FS, `#version 300 es
+      precision highp float; in vec2 vUv; uniform sampler2D uTex; out vec4 o;
+      void main(){ vec3 c=texture(uTex,vUv).rgb; float l=dot(c,vec3(.299,.587,.114)); o=vec4(c*smoothstep(.32,.7,l),1.); }`);
+    GPU.P.blur = gpuProg(gl, GPU_VS_FS, `#version 300 es
+      precision highp float; in vec2 vUv; uniform sampler2D uTex; uniform vec2 uDir; out vec4 o;
+      void main(){ vec3 s=texture(uTex,vUv).rgb*.2270; float w[4]=float[](.1945,.1216,.0540,.0162);
+        for(int i=1;i<4;i++){ vec2 d=uDir*float(i); s+=texture(uTex,vUv+d).rgb*w[i-1]+texture(uTex,vUv-d).rgb*w[i-1]; } o=vec4(s,1.); }`);
+    GPU.P.comp = gpuProg(gl, GPU_VS_FS, `#version 300 es
+      precision highp float; in vec2 vUv; uniform sampler2D uScene, uBloom; uniform float uBloomAmt; out vec4 o;
+      void main(){ vec3 c=texture(uScene,vUv).rgb + texture(uBloom,vUv).rgb*uBloomAmt; c=c/(c+vec3(1.)); c=pow(c,vec3(.4545)); o=vec4(c,1.); }`);
+    if (!GPU.P.part || !GPU.P.bright || !GPU.P.blur || !GPU.P.comp) { GPU.ok = false; return false; }
+    GPU.U = { t: gl.getUniformLocation(GPU.P.part, 'uT'), en: gl.getUniformLocation(GPU.P.part, 'uEn'), hue: gl.getUniformLocation(GPU.P.part, 'uHue'), pulse: gl.getUniformLocation(GPU.P.part, 'uPulse'), res: gl.getUniformLocation(GPU.P.part, 'uRes'),
+      bdir: gl.getUniformLocation(GPU.P.blur, 'uDir'), cS: gl.getUniformLocation(GPU.P.comp, 'uScene'), cB: gl.getUniformLocation(GPU.P.comp, 'uBloom'), cA: gl.getUniformLocation(GPU.P.comp, 'uBloomAmt') };
+    GPU.ok = true; return !GPU.off;
+  } catch (e) { console.warn('gpu init', e); GPU.ok = false; return false; }
+}
+/** size the GPU canvas and its three ping-pong targets to w×h (capped), rebuilding the textures only when the size changes */
+function gpuSize(w, h) {
+  const gl = GPU.gl, scale = Math.min(1, 1920 / Math.max(w, h)); w = Math.max(2, Math.round(w * scale)); h = Math.max(2, Math.round(h * scale));
+  if (GPU.w === w && GPU.h === h && GPU.T.a) return; GPU.w = w; GPU.h = h; GPU.cv.width = w; GPU.cv.height = h;
+  ['a', 'b', 'c'].forEach(k => {
+    if (!GPU.T[k]) { GPU.T[k] = gl.createTexture(); GPU.F[k] = gl.createFramebuffer(); }
+    gl.bindTexture(gl.TEXTURE_2D, GPU.T[k]); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, GPU.F[k]); gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, GPU.T[k], 0);
+  });
+  GPU.N = Math.round(clamp(w * h / 520, 1800, 9000));      /* particle count scales with area, capped for weak GPUs */
+}
+const gpuFS = gl => { gl.bindVertexArray(GPU.vao); gl.drawArrays(gl.TRIANGLES, 0, 3); };
+/** render a look into GPU.cv: the scene (into target a), then a bright-pass + separable blur (b), then a tonemapped composite to the canvas */
+function gpuScene(look, B) {
+  const gl = GPU.gl, w = GPU.w, h = GPU.h; gl.viewport(0, 0, w, h); gl.disable(gl.DEPTH_TEST);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, GPU.F.a); const sky = gpuSkyRGB(B.hue); gl.clearColor(sky[0], sky[1], sky[2], 1); gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE); look(gl, B, w, h); gl.disable(gl.BLEND);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, GPU.F.a); gl.viewport(0, 0, w, h);      /* a sim look may have changed the bound target and viewport; put them back for the post chain */
+  gl.bindFramebuffer(gl.FRAMEBUFFER, GPU.F.b); gl.useProgram(GPU.P.bright); gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, GPU.T.a); gpuFS(gl);
+  gl.useProgram(GPU.P.blur);
+  for (let i = 0; i < 2; i++) {
+    gl.bindFramebuffer(gl.FRAMEBUFFER, GPU.F.c); gl.bindTexture(gl.TEXTURE_2D, GPU.T.b); gl.uniform2f(GPU.U.bdir, 1.4 / w, 0); gpuFS(gl);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, GPU.F.b); gl.bindTexture(gl.TEXTURE_2D, GPU.T.c); gl.uniform2f(GPU.U.bdir, 0, 1.4 / h); gpuFS(gl);
+  }
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.useProgram(GPU.P.comp);
+  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, GPU.T.a); gl.uniform1i(GPU.U.cS, 0);
+  gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, GPU.T.b); gl.uniform1i(GPU.U.cB, 1);
+  gl.uniform1f(GPU.U.cA, 1.1 * (hmCm().motion > .7 ? 1 : .8));      /* a touch less bloom in Calm */
+  gpuFS(gl); gl.flush();
+}
+/** the sky colour as linear-ish RGB (a deep tint of the chord's hue), matching the 2D looks' bkSky */
+function gpuSkyRGB(hue) { const h = ((hue % 360) + 360) % 360 / 60, c = .10, x = c * (1 - Math.abs(h % 2 - 1)); let r = 0, g = 0, b = 0; if (h < 1) { r = c; g = x; } else if (h < 2) { r = x; g = c; } else if (h < 3) { g = c; b = x; } else if (h < 4) { g = x; b = c; } else if (h < 5) { r = x; b = c; } else { r = c; b = x; } return [r * .5 + .02, g * .5 + .03, b * .5 + .06]; }
+
+/* ---------- the Stardust look (the particle galaxy) ---------- */
+function gpuStardust(gl, B) {
+  gl.useProgram(GPU.P.part);
+  gl.uniform1f(GPU.U.t, B.t); gl.uniform1f(GPU.U.en, B.en); gl.uniform1f(GPU.U.hue, B.hue); gl.uniform1f(GPU.U.pulse, B.pulse || 0); gl.uniform2f(GPU.U.res, GPU.w, GPU.h);
+  gl.bindVertexArray(GPU.vao); gl.drawArrays(gl.POINTS, 0, GPU.N);
+}
+/** draw a GPU look onto a 2D context `g` (the visuals canvas, a stage scene, or a recording), or the 2D fallback if the GPU is unavailable */
+function gpuBlit(g, lookKey, W, H, B) {
+  if (!gpuGet()) return gpuFallback2D(g, lookKey, W, H, B);
+  try { gpuSize(W, H); gpuScene(GPU_LOOKS[lookKey] || gpuStardust, B); g.drawImage(GPU.cv, 0, 0, W, H); }
+  catch (e) { GPU.off = true; gpuFallback2D(g, lookKey, W, H, B); }
+}
+const GPU_LOOKS = { stardust: gpuStardust };
+
+/* ---------- the 2D fallback: a plain additive particle field, so the look still works with no WebGL2 (and the tests cover both paths) ---------- */
+function gpuFallback2D(g, lookKey, W, H, B) {
+  bkSky(g, W, H, B.hue, 3, 8); g.save(); g.globalCompositeOperation = 'lighter';
+  const n = Math.round(clamp(W * H / 2600, 200, 1400)), cx = W / 2, cy = H / 2, R = Math.min(W, H) * .5, t = B.t;
+  for (let i = 0; i < n; i++) {
+    const seed = bkH(i), a = seed * 6.2831 + t * (.05 + bkH(i + 7) * .22), rr = (Math.pow(bkH(i + 3), .7) * .95 + .05 * Math.sin(t * .6 + i * .3)) * (.42 + .5 * B.en) * R;
+    const x = cx + Math.cos(a) * rr + Math.sin(t * .4 + i) * .12 * R * B.en, y = cy + Math.sin(a) * rr + Math.cos(t * .33 + i) * .12 * R * B.en;
+    const sz = (1 + 3 * bkH(i + 9)) * (.6 + .8 * B.en), hue = B.hue + (seed - .5) * 70;
+    g.fillStyle = bkHsl(hue, 85, 62, .25 + .5 * B.en); g.beginPath(); g.arc(x, y, sz, 0, 6.2832); g.fill();
+  }
+  g.restore();
+}
+
+/* ---------- 2.72: living simulations — a wave-field (cymatic plate) and reaction-diffusion (life), run on the GPU as ping-pong state ---------- */
+function gpuSimTex(res) {
+  const gl = GPU.gl, t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t);
+  gl.texImage2D(gl.TEXTURE_2D, 0, GPU.float ? gl.RGBA16F : gl.RGBA8, res, res, 0, gl.RGBA, GPU.float ? gl.HALF_FLOAT : gl.UNSIGNED_BYTE, null);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  const f = gl.createFramebuffer(); gl.bindFramebuffer(gl.FRAMEBUFFER, f); gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, t, 0); return { t, f };
+}
+/** lazily compile the simulation programs once (they are only built when a living look is first chosen) */
+function gpuSimProgs() {
+  if (GPU.simProg) return GPU.simProg !== false; const gl = GPU.gl, P = {};
+  P.waveStep = gpuProg(gl, GPU_VS_FS, `#version 300 es
+    precision highp float; in vec2 vUv; uniform sampler2D S; uniform vec2 px; uniform vec4 uB; uniform float uPulse; out vec4 o;
+    void main(){ vec2 st=texture(S,vUv).xy; float h=st.x, hp=st.y;
+      float lap=texture(S,vUv+vec2(px.x,0)).x+texture(S,vUv-vec2(px.x,0)).x+texture(S,vUv+vec2(0,px.y)).x+texture(S,vUv-vec2(0,px.y)).x-4.*h;
+      float nh=(2.*h - hp + 0.49*lap)*0.9965;
+      vec2 src[4]=vec2[](vec2(.5,.5),vec2(.28,.36),vec2(.72,.4),vec2(.5,.74));
+      for(int i=0;i<4;i++){ float d=distance(vUv,src[i]); nh += (uB[i]*.022+uPulse*.01)*exp(-d*d*160.); }
+      o=vec4(clamp(nh,-2.,2.),h,0.,1.); }`);
+  P.waveShow = gpuProg(gl, GPU_VS_FS, `#version 300 es
+    precision highp float; in vec2 vUv; uniform sampler2D S; uniform float uHue,uEn; out vec4 o;
+    void main(){ float h=texture(S,vUv).x; float e=abs(h); float hu=uHue+h*60.;
+      vec3 c=.5+.5*cos(6.2831*(hu/360.)+vec3(0.,2.1,4.2)); float m=smoothstep(.01,.3,e)*(.5+.8*uEn); o=vec4(c*m, m); }`);
+  P.rdSeed = gpuProg(gl, GPU_VS_FS, `#version 300 es
+    precision highp float; in vec2 vUv; out vec4 o;
+    float h1(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5); }
+    void main(){ float b=0.; for(int i=0;i<24;i++){ vec2 c=vec2(h1(vec2(float(i),1.)),h1(vec2(float(i),2.))); if(distance(vUv,c)<.03) b=1.; } o=vec4(1.,b,0.,1.); }`);
+  P.rdStep = gpuProg(gl, GPU_VS_FS, `#version 300 es
+    precision highp float; in vec2 vUv; uniform sampler2D S; uniform vec2 px; uniform float f,k; out vec4 o;
+    vec2 lap(){ vec2 s=texture(S,vUv).xy*-1.;
+      s+=(texture(S,vUv+vec2(px.x,0)).xy+texture(S,vUv-vec2(px.x,0)).xy+texture(S,vUv+vec2(0,px.y)).xy+texture(S,vUv-vec2(0,px.y)).xy)*.2;
+      s+=(texture(S,vUv+px).xy+texture(S,vUv-px).xy+texture(S,vUv+vec2(px.x,-px.y)).xy+texture(S,vUv+vec2(-px.x,px.y)).xy)*.05; return s; }
+    void main(){ vec2 ab=texture(S,vUv).xy; float A=ab.x,B=ab.y,r=A*B*B; vec2 L=lap();
+      o=vec4(clamp(A+(1.0*L.x - r + f*(1.-A)),0.,1.), clamp(B+(0.5*L.y + r - (k+f)*B),0.,1.), 0.,1.); }`);
+  P.rdShow = gpuProg(gl, GPU_VS_FS, `#version 300 es
+    precision highp float; in vec2 vUv; uniform sampler2D S; uniform float uHue,uEn; out vec4 o;
+    void main(){ float b=texture(S,vUv).y; float hu=uHue - b*90.; vec3 c=.5+.5*cos(6.2831*(hu/360.)+vec3(0.,2.1,4.2));
+      float m=smoothstep(.06,.4,b)*(.55+.7*uEn); o=vec4(c*m, m); }`);
+  if (Object.values(P).some(x => !x)) { GPU.simProg = false; return false; }
+  P.u = { wpx: gl.getUniformLocation(P.waveStep, 'px'), wB: gl.getUniformLocation(P.waveStep, 'uB'), wPulse: gl.getUniformLocation(P.waveStep, 'uPulse'),
+    wsHue: gl.getUniformLocation(P.waveShow, 'uHue'), wsEn: gl.getUniformLocation(P.waveShow, 'uEn'),
+    rpx: gl.getUniformLocation(P.rdStep, 'px'), rf: gl.getUniformLocation(P.rdStep, 'f'), rk: gl.getUniformLocation(P.rdStep, 'k'),
+    rsHue: gl.getUniformLocation(P.rdShow, 'uHue'), rsEn: gl.getUniformLocation(P.rdShow, 'uEn') };
+  GPU.simProg = P; return true;
+}
+/** step a ping-pong sim `steps` times, then return the current state texture */
+function gpuSimRun(key, res, seedProg, stepProg, setU, steps) {
+  const gl = GPU.gl; let s = GPU.sim[key]; if (!s) { s = GPU.sim[key] = { a: gpuSimTex(res), b: gpuSimTex(res), res }; if (seedProg) { gl.viewport(0, 0, res, res); gl.disable(gl.BLEND); gl.bindFramebuffer(gl.FRAMEBUFFER, s.a.f); gl.useProgram(seedProg); gpuFS(gl); } else { gl.bindFramebuffer(gl.FRAMEBUFFER, s.a.f); gl.clearColor(0, 0, 0, 1); gl.clear(gl.COLOR_BUFFER_BIT); gl.bindFramebuffer(gl.FRAMEBUFFER, s.b.f); gl.clear(gl.COLOR_BUFFER_BIT); } }
+  gl.viewport(0, 0, res, res); gl.disable(gl.BLEND); gl.useProgram(stepProg);
+  for (let i = 0; i < steps; i++) { gl.bindFramebuffer(gl.FRAMEBUFFER, s.b.f); gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, s.a.t); setU(i); gpuFS(gl); const t = s.a; s.a = s.b; s.b = t; }
+  return s.a.t;
+}
+/** draw a sim's state texture into the scene target, so the bloom chain glows it */
+function gpuSimShow(stateTex, showProg, hueU, enU, B, w, h) {
+  const gl = GPU.gl; gl.bindFramebuffer(gl.FRAMEBUFFER, GPU.F.a); gl.viewport(0, 0, w, h); gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
+  gl.useProgram(showProg); gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, stateTex); gl.uniform1f(hueU, B.hue); gl.uniform1f(enU, B.en); gpuFS(gl);
+}
+function gpuRipple(gl, B, w, h) {
+  const P = GPU.simProg, res = GPU.simRes, steps = 1 + Math.round(2 * (hmCm().motion || 1));
+  const bands = [B.b[0] + B.b[1], B.b[2] + B.b[3], B.b[4] + B.b[5], B.b[6] + B.b[7]];
+  const state = gpuSimRun('ripple', res, null, P.waveStep, () => { gl.uniform2f(P.u.wpx, 1 / res, 1 / res); gl.uniform4f(P.u.wB, bands[0], bands[1], bands[2], bands[3]); gl.uniform1f(P.u.wPulse, B.pulse || 0); }, steps);
+  gpuSimShow(state, P.waveShow, P.u.wsHue, P.u.wsEn, B, w, h);
+}
+function gpuLife(gl, B, w, h) {
+  const P = GPU.simProg, res = GPU.simRes, steps = 4 + Math.round(6 * (hmCm().motion || 1));
+  const state = gpuSimRun('life', res, P.rdSeed, P.rdStep, () => { gl.uniform2f(P.u.rpx, 1 / res, 1 / res); gl.uniform1f(P.u.rf, .035 + .006 * B.en); gl.uniform1f(P.u.rk, .062); }, steps);
+  gpuSimShow(state, P.rdShow, P.u.rsHue, P.u.rsEn, B, w, h);
+}
+/** a GPU simulation look: needs WebGL2 + float render targets, else the 2D fallback */
+function gpuSimLook(key) {
+  return (g, W, H, B) => {
+    if (!gpuGet() || !GPU.float || !gpuSimProgs()) return gpuFallback2D(g, key, W, H, B);
+    try { gpuSize(W, H); gpuScene(key === 'life' ? gpuLife : gpuRipple, B); g.drawImage(GPU.cv, 0, 0, W, H); }
+    catch (e) { GPU.off = true; gpuFallback2D(g, key, W, H, B); }
+  };
+}
+
+/** register the GPU looks as "Behind you" looks, before Your video, so they sit with the other backdrops */
+(function gpuRegister() {
+  if (typeof VBACK === 'undefined') return; const entries = [['stardust', 'Stardust'], ['ripple', 'Ripple'], ['life', 'Life']];
+  const vi = VBACK.findIndex(m => m[0] === 'video'); const at = vi < 0 ? VBACK.length : vi;
+  entries.forEach((e, k) => {
+    VBACK.splice(at + k, 0, e); BK_MODES.add(e[0]); if (!VMODES.some(m => m[0] === e[0])) VMODES.splice(VMODES.findIndex(m => m[0] === 'video') < 0 ? VMODES.length : VMODES.findIndex(m => m[0] === 'video'), 0, e);
+    BK_FN[e[0]] = (e[0] === 'ripple' || e[0] === 'life') ? gpuSimLook(e[0]) : (g, W, H, Bb) => gpuBlit(g, e[0], W, H, Bb);
+  });
+})();
 
 /* >>> parts/72-agent.js */
 /* ============================================================
@@ -18186,43 +18620,56 @@ if (CFG.mega.on) setTimeout(() => megLoop(true), 1500);
 
 /* >>> parts/79-vocalboard.js */
 /* ============================================================
-   Part 79 · VOCAL PEDALBOARD (2.31) — seven stompboxes for the voice
-   After the vocal polish, in this order: 🤘 Scream · De-esser · 📢 Megaphone · Doubler · Harmony · Echo · Reverb. The live voice and
+   Part 79 · VOCAL PEDALBOARD (2.31; 2.70 Tune, Leveler, Warmth & Air) — ten stompboxes for the voice
+   After the vocal polish, in this order: 🤘 Scream · 🎯 Tune · De-esser · 🗜 Leveler · ☀ Warmth & Air · 📢 Megaphone · Doubler · Harmony ·
+   Echo · Reverb, then an always-on safety limiter so the board can never clip however hard the pedals are driven. The live voice and
    vocal takes both go through it (takes are kept clean and played back through it, so the sound can still change after you sing),
    and a fast bounce builds the same board offline.
      · Scream     a gate, hard compression, grit blended beside the clean voice (focused on the mids, so words stay clear) and an
                   analog-style octave down for growl that adds no delay. Styles: Rasp, Hardcore, Fry growl, Death growl
+     · Tune       hears the note and slides the voice to the nearest note of the song's scale (or a chord tone): gentle polish up to the
+                  hard, robotic snap. Follows the key or the chord. Like Harmony it lands a few hundredths of a second after you
      · De-esser   turns the band above 4–9 kHz down only while it is loud
+     · Leveler    a compressor that evens the voice out and sets its level — placed early, so everything after it sits better
+     · Warmth & Air  a tone tilt from warm low-mids to an airy top, with a touch of tape-style saturation (the crooner/oldies warmth)
      · Megaphone  megaphone, radio or telephone: the voice squeezed into a band and driven
      · Doubler    two slightly delayed, slightly moving copies left and right: a double-tracked voice
      · Harmony    a voice a third or a fifth above or below that stays in the song's key (or on the chord playing): the worklet finds
                   the note you sing and moves it by steps of the scale. It lands a few hundredths of a second after you
      · Echo       in time with the song (1/4, dotted 1/8, 1/8 …); Throw: only while the pedal is held, so one word echoes
      · Reverb     room, plate or hall, with its lows cut so it does not muddy the voice
-   Presets (Clean lead, Rock grit, Scream, Ballad, Ambient echo, Harmony lead, Megaphone) set the whole board; a song can switch
+   Presets (Clean lead, Rock grit, Scream, Ballad, Crooner, Pitch polish, Hard tune, Ambient echo, Harmony lead, Megaphone) set the whole board; a song can switch
    presets per section as it plays (S.vbSec), and the foot pedal can switch Scream, step through presets and hold an echo throw.
    With Scream or Megaphone on, the show turns gritty, as it does for a megaphone pedal (part 78).
    ============================================================ */
 const VB_DEF = {
   scream: { style: 'Rasp', grit: .35, growl: 0, gate: -55, level: 1 },
+  tune: { strength: .8, speed: 'Smooth', follow: 'key' },
   deess: { amount: .5, freq: 6500 },
+  level: { amount: .5, out: 3 },
+  warm: { tone: -.15, warmth: .4 },
   mega: { style: 'Megaphone', drive: .6, level: 1 },
   double: { mix: .35, width: .8 },
   harm: { voice: 'Third above', mix: .45, follow: 'key' },
   echo: { time: '1/8 dotted', mix: .25, fb: .35, throw: false },
   verb: { type: 'Plate', mix: .2, decay: 1.6 }
 };
-const VB_ORDER = [['scream', '🤘', 'Scream'], ['deess', '𝑺', 'De-esser'], ['mega', '📢', 'Megaphone'], ['double', '👥', 'Doubler'], ['harm', '🎶', 'Harmony'], ['echo', '⟲', 'Echo'], ['verb', '◌', 'Reverb']];
+const VB_ORDER = [['scream', '🤘', 'Scream'], ['tune', '🎯', 'Tune'], ['deess', '𝑺', 'De-esser'], ['level', '🗜', 'Leveler'], ['warm', '☀', 'Warmth & Air'], ['mega', '📢', 'Megaphone'], ['double', '👥', 'Doubler'], ['harm', '🎶', 'Harmony'], ['echo', '⟲', 'Echo'], ['verb', '◌', 'Reverb']];
 const VB_SCREAM = { 'Rasp': { grit: .35, growl: 0, gate: -55 }, 'Hardcore': { grit: .65, growl: .15, gate: -50 }, 'Fry growl': { grit: .55, growl: .45, gate: -50 }, 'Death growl': { grit: .85, growl: .75, gate: -46 } };
 const VB_MEGA = { 'Megaphone': [500, 3000, 1600, 8], 'Radio': [300, 4200, 1800, 5], 'Telephone': [380, 3400, 1200, 4] };
 const VB_VOICES = { 'Third above': [2], 'Third below': [-2], 'Fifth above': [4], 'Third and fifth above': [2, 4], 'Octave below': [null, -12], 'Octave above': [null, 12] };
 const VB_TIMES = { '1/4': 1, '1/8 dotted': .75, '1/8': .5, '1/4 triplet': 2 / 3, '1/16': .25 };
+const VB_TUNE_SPEED = { 'Gentle': .012, 'Smooth': .035, 'Snappy': .09, 'Hard': .4 };      /* how fast the voice is pulled to the note; Hard is the robotic snap */
+const VB_VERB_SPACES = ['Room', 'Spring', 'Plate', 'Hall'];
 const VB_PRESETS = {
   'Off': {},
   'Clean lead': { deess: {}, verb: { type: 'Plate', mix: .15, decay: 1.4 } },
   'Rock grit': { scream: { style: 'Rasp', grit: .35, growl: 0 }, deess: {}, double: { mix: .25 }, verb: { type: 'Room', mix: .14, decay: 1 } },
   'Scream': { scream: { style: 'Hardcore', grit: .65, growl: .15 }, deess: {}, verb: { type: 'Room', mix: .12, decay: 1 } },
   'Ballad': { deess: {}, double: { mix: .35 }, echo: { time: '1/4', mix: .14, fb: .25 }, verb: { type: 'Plate', mix: .28, decay: 2.2 } },
+  'Crooner': { deess: {}, warm: { tone: -.3, warmth: .45 }, level: { amount: .45, out: 3 }, double: { mix: .2, width: .5 }, echo: { time: '1/4', mix: .12, fb: .15 }, verb: { type: 'Spring', mix: .26, decay: 1.8 } },
+  'Pitch polish': { tune: { strength: .6, speed: 'Smooth', follow: 'key' }, deess: {}, level: { amount: .4, out: 2 }, verb: { type: 'Plate', mix: .16, decay: 1.4 } },
+  'Hard tune': { tune: { strength: 1, speed: 'Hard', follow: 'key' }, deess: {}, double: { mix: .2 }, verb: { type: 'Plate', mix: .14, decay: 1.2 } },
   'Ambient echo': { deess: {}, double: { mix: .2 }, echo: { time: '1/8 dotted', mix: .32, fb: .5 }, verb: { type: 'Hall', mix: .32, decay: 3 } },
   'Harmony lead': { deess: {}, harm: { voice: 'Third above', mix: .45 }, double: { mix: .2 }, verb: { type: 'Plate', mix: .2, decay: 1.6 } },
   'Megaphone': { mega: { style: 'Megaphone', drive: .6 }, verb: { type: 'Room', mix: .1, decay: .8 } }
@@ -18245,6 +18692,35 @@ function vbScream(c) {
     case 'growl': tc(growlG.gain, v * .9); break; case 'gate': if (gate.port) gate.port.postMessage({ th: v }); break; case 'level': tc(lv.gain, v); break; } } };
 }
 function vbDeess(c) { const n = vbWorklet(c, 'fw-deess'); if (!n) { const g = gn(1); return { in: g, out: g, set() { } }; } return { in: n, out: n, set(k, v) { if (k === 'amount') n.port.postMessage({ th: -14 - v * 30 }); if (k === 'freq') n.port.postMessage({ f: v }); } }; }
+/* Tune: hears the note and slides the voice to the nearest note of the song's scale (or a chord tone). Gentle polish up to the hard robotic snap.
+   Like Harmony it has to hear the note first, so it lands a few hundredths of a second after you. The scale and chord are fed in from vbTick. */
+function vbTune(c) {
+  const n = vbWorklet(c, 'fw-tune'); if (!n) { const g = gn(1); return { in: g, out: g, voice: null, upd() { }, set() { } }; }
+  let strength = .8, speed = 'Smooth';
+  const upd = () => { try { n.port.postMessage({ scale: vbScale(), strength, glide: VB_TUNE_SPEED[speed] || .035 }); } catch (e) { } };
+  upd();
+  return { in: n, out: n, voice: n, upd, set(k, v) { if (k === 'strength') strength = v; if (k === 'speed') speed = v; upd(); } };
+}
+/* Leveler: a compressor that evens the voice out and (with a touch of make-up) sets its level. Placed early so everything after sits better;
+   the board's end also has an always-on safety limiter (vbAttach) so no pedal can push the output into clipping. */
+function vbLevel(c) {
+  const i = gn(1), cm = mkComp(c), mk = gn(1), o = gn(1); chainN(i, cm, mk, o);
+  const P = k => cm[k] || (cm.parameters && cm.parameters.get(k));
+  return { in: i, out: o, set(k, v) {
+    if (k === 'amount') { const th = P('threshold'), ra = P('ratio'), at = P('attack'), rl = P('release'), kn = P('knee'); if (th) th.value = -12 - v * 26; if (ra) ra.value = 2 + v * 6; if (at) at.value = .006; if (rl) rl.value = .18; if (kn) kn.value = 8; }
+    if (k === 'out') tc(mk.gain, Math.pow(10, v / 20));
+  } };
+}
+/* Warmth & Air: a tone tilt (warm low-mids ↔ an airy top) with a touch of tape-style saturation for vintage body — the crooner/oldies warmth */
+function vbWarm(c) {
+  const i = gn(1), lo = bq('lowshelf', 220), hi = bq('highshelf', 3500), hc = bq('lowpass', 16000), dry = gn(1), satG = gn(0), sh = mkShaper(c), o = gn(1);
+  sh.curve = satCurve(2.2); sh.oversample = '2x';
+  chainN(i, lo, hi, hc); hc.connect(dry); dry.connect(o); chainN(hc, sh, satG); satG.connect(o);
+  return { in: i, out: o, set(k, v) {
+    if (k === 'tone') { lo.gain.value = -9 * v; hi.gain.value = 9 * v; }      /* v < 0: warm (lows up, highs down); v > 0: air */
+    if (k === 'warmth') { tc(dry.gain, 1 - .35 * v); tc(satG.gain, v * .55); tc(hc.frequency, 16000 - v * 9000); }
+  } };
+}
 function vbMega(c) {
   const i = gn(1), h1 = bq('highpass', 500), h2 = bq('highpass', 500), pk = bq('peaking', 1600, 1, 8), drv = gn(4), sh = mkShaper(c), l1 = bq('lowpass', 3000), l2 = bq('lowpass', 3000), lv = gn(.8);
   sh.curve = satCurve(6); chainN(i, h1, h2, pk, drv, sh, l1, l2, lv);
@@ -18277,8 +18753,14 @@ function vbVerb(c) { const u = FX.reverb.build(c); u.set('lowcut', 220); u.set('
 function vbScale() { const iv = SCALES[S.scale] || (S.minor ? SCALES['Natural Minor (Aeolian)'] : SCALES['Major (Ionian)']), f = new Array(12).fill(0); iv.forEach(x => { f[(S.key + x) % 12] = 1; }); return f; }
 /** build the board between `from` and `to` on context c (called while the engine's graph is built, part 02) */
 function vbAttach(c, from, to) {
-  const B = { c, u: {} }; const mk = { scream: vbScream, deess: vbDeess, mega: vbMega, double: vbDouble, harm: vbHarm, echo: vbEcho, verb: vbVerb };
-  let prev = from; VB_ORDER.forEach(([k]) => { const w = vbWrap(mk[k](c)); B.u[k] = w; prev.connect(w.in); prev = w.out; }); prev.connect(to);
+  const B = { c, u: {} }; const mk = { scream: vbScream, tune: vbTune, deess: vbDeess, level: vbLevel, warm: vbWarm, mega: vbMega, double: vbDouble, harm: vbHarm, echo: vbEcho, verb: vbVerb };
+  let prev = from; VB_ORDER.forEach(([k]) => { const w = vbWrap(mk[k](c)); B.u[k] = w; prev.connect(w.in); prev = w.out; });
+  /* an always-on safety clipper at the very end: with grit, a megaphone, stacked harmonies and echo feedback all pushing at once the board can
+     run hot, so this gently rounds anything past about −3 dBFS and can never pass full scale — a WaveShaper, so (unlike a compressor's look-ahead)
+     it adds no delay and the live voice still comes through in well under a millisecond. Transparent below the knee, where a voice normally sits. */
+  const clip = c.createWaveShaper(), N = 2048, cv = new Float32Array(N), t = .7; for (let i = 0; i < N; i++) { const x = i / (N - 1) * 2 - 1, a = Math.abs(x); cv[i] = Math.sign(x) * (a <= t ? a : t + (1 - t) * Math.tanh((a - t) / (1 - t))); }
+  clip.curve = cv; clip.oversample = 'none'; B.clip = clip;
+  prev.connect(clip); clip.connect(to);
   E.vb = B; vbApply(B); return B;
 }
 /** CFG.vb onto a board */
@@ -18314,12 +18796,13 @@ const vbSecKey = (sec, i) => sec.id || ('#' + i);
 function vbTick() {
   const B = E.vb; if (!B || B.c !== E.ctx) return;
   if (VBS.bpm !== S.bpm) { VBS.bpm = S.bpm; B.u.echo.fx.retime(); }
-  if (CFG.vb.on.harm && CFG.vb.p.harm.follow === 'chord') { let sym = ''; try { const inf = stageInfo(); sym = inf && inf.sym || ''; } catch (e) { } if (sym !== VBS.chord) { VBS.chord = sym; const ch = sym ? parseChord(sym) : null; B.u.harm.fx.voices.forEach(v => v && v.n.port.postMessage({ chord: ch ? ch.pcs : null })); } }
-  else if (VBS.chord) { VBS.chord = ''; B.u.harm.fx.voices.forEach(v => v && v.n.port.postMessage({ chord: null })); }
+  const wantChord = (CFG.vb.on.harm && CFG.vb.p.harm.follow === 'chord') || (CFG.vb.on.tune && CFG.vb.p.tune.follow === 'chord');
+  if (wantChord) { let sym = ''; try { const inf = stageInfo(); sym = inf && inf.sym || ''; } catch (e) { } if (sym !== VBS.chord) { VBS.chord = sym; const ch = sym ? parseChord(sym) : null, pcs = ch ? ch.pcs : null; B.u.harm.fx.voices && B.u.harm.fx.voices.forEach(v => v && v.n.port.postMessage({ chord: pcs })); if (B.u.tune.fx.voice) B.u.tune.fx.voice.port.postMessage({ chord: pcs }); } }
+  else if (VBS.chord) { VBS.chord = ''; B.u.harm.fx.voices && B.u.harm.fx.voices.forEach(v => v && v.n.port.postMessage({ chord: null })); if (B.u.tune.fx.voice) B.u.tune.fx.voice.port.postMessage({ chord: null }); }
   if (T.playing && S.vbSec) { const sp = spb(), bi = Math.max(0, Math.floor(playheadSlot() / sp)), fb = barsCache()[Math.min(bi, barsCache().length - 1)]; if (fb) { const i = S.sections.indexOf(fb.sec), want = S.vbSec[vbSecKey(fb.sec, i)]; if (want && want !== VBS.applied && VB_PRESETS[want]) vbPreset(want, true); } }
 }
 setInterval(vbTick, 250);
-bus.on('song', () => { if (E.vb && E.vb.u.harm) E.vb.u.harm.fx.upd(); });
+bus.on('song', () => { if (E.vb && E.vb.u.harm) E.vb.u.harm.fx.upd(); if (E.vb && E.vb.u.tune) E.vb.u.tune.fx.upd(); });
 
 /* ---------- the room ---------- */
 function vbKnob(k, q, label, min, max, step, fmt) { const v = CFG.vb.p[k][q]; return h('label', { class: 'vb-k' }, h('span', {}, label), h('input', { type: 'range', min, max, step, value: v, 'aria-label': label, oninput: e => { vbSet(k, q, +e.target.value); const o = e.target.nextSibling; if (o) o.textContent = fmt ? fmt(+e.target.value) : ''; } }), h('output', {}, fmt ? fmt(v) : '')); }
@@ -18328,12 +18811,15 @@ const pc = v => Math.round(v * 100) + '%';
 function vbControls(k) {
   switch (k) {
     case 'scream': return [vbSel(k, 'style', 'Style', Object.keys(VB_SCREAM)), vbKnob(k, 'grit', 'Grit', 0, 1, .01, pc), vbKnob(k, 'growl', 'Growl', 0, 1, .01, pc), vbKnob(k, 'gate', 'Gate', -80, -30, 1, v => v + ' dB')];
+    case 'tune': return [vbSel(k, 'follow', 'Snap to', ['key', 'chord']), vbSel(k, 'speed', 'Speed', Object.keys(VB_TUNE_SPEED)), vbKnob(k, 'strength', 'Strength', 0, 1, .01, pc)];
     case 'deess': return [vbKnob(k, 'amount', 'Amount', 0, 1, .01, pc), vbKnob(k, 'freq', 'Above', 4000, 9000, 100, v => (v / 1000).toFixed(1) + ' kHz')];
+    case 'level': return [vbKnob(k, 'amount', 'Squeeze', 0, 1, .01, pc), vbKnob(k, 'out', 'Output', 0, 12, .5, v => '+' + v.toFixed(1) + ' dB')];
+    case 'warm': return [vbKnob(k, 'tone', 'Tone', -1, 1, .01, v => v < -.05 ? 'warm' : v > .05 ? 'air' : 'flat'), vbKnob(k, 'warmth', 'Warmth', 0, 1, .01, pc)];
     case 'mega': return [vbSel(k, 'style', 'Sound', Object.keys(VB_MEGA)), vbKnob(k, 'drive', 'Drive', 0, 1, .01, pc)];
     case 'double': return [vbKnob(k, 'mix', 'Blend', 0, 1, .01, pc), vbKnob(k, 'width', 'Width', 0, 1, .01, pc)];
     case 'harm': return [vbSel(k, 'voice', 'Voice', Object.keys(VB_VOICES)), vbSel(k, 'follow', 'Follows', ['key', 'chord']), vbKnob(k, 'mix', 'Blend', 0, 1, .01, pc)];
     case 'echo': return [vbSel(k, 'time', 'Time', Object.keys(VB_TIMES)), vbKnob(k, 'mix', 'Blend', 0, 1, .01, pc), vbKnob(k, 'fb', 'Repeats', 0, .9, .01, pc), h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!CFG.vb.p.echo.throw, onchange: e => vbSet('echo', 'throw', e.target.checked) }), 'Throw: only while the pedal is held')];
-    case 'verb': return [vbSel(k, 'type', 'Space', ['Room', 'Plate', 'Hall']), vbKnob(k, 'mix', 'Blend', 0, 1, .01, pc), vbKnob(k, 'decay', 'Length', .3, 5, .1, v => v.toFixed(1) + ' s')];
+    case 'verb': return [vbSel(k, 'type', 'Space', VB_VERB_SPACES), vbKnob(k, 'mix', 'Blend', 0, 1, .01, pc), vbKnob(k, 'decay', 'Length', .3, 5, .1, v => v.toFixed(1) + ' s')];
   }
   return [];
 }
@@ -18357,11 +18843,12 @@ function vbSections() {
 }
 function vbPaint() { const b = document.getElementById('vbBoard'); if (b && b._draw) b._draw(); }
 function vocalBoardOpen(at) {
-  return hubOpen('vocalboard', { ico: '🎤', title: 'Vocal pedals', sub: 'Seven stompboxes for your voice, after the vocal polish. You hear them while you monitor (Hear myself, on headphones), and vocal takes play back through them.', at, sections: [
+  return hubOpen('vocalboard', { ico: '🎤', title: 'Vocal pedals', sub: 'Ten stompboxes for your voice, after the vocal polish. You hear them while you monitor (Hear myself, on headphones), and vocal takes play back through them.', at, sections: [
     { key: 'board', label: 'The board', ico: '🎛', wide: true, body: () => [vbBoard()] },
     { key: 'song', label: 'By section', ico: '▦', body: () => [vbSections()] },
     { key: 'how', label: 'Good to know', ico: 'ⓘ', body: () => [
-      h('p', { class: 'small' }, 'Scream, the doubler, the de-esser, echo and reverb add no delay you would notice. Harmony lands a few hundredths of a second after you (it has to hear the note first), which sounds natural for a backing voice. Scream’s growl is an analog-style octave down, so it is instant.'),
+      h('p', { class: 'small' }, 'Scream, the doubler, the de-esser, the leveler, warmth, echo and reverb add no delay you would notice. Tune and Harmony land a few hundredths of a second after you (they have to hear the note first), which sounds natural. Scream’s growl is an analog-style octave down, so it is instant.'),
+      h('p', { class: 'small' }, 'Tune slides your voice to the nearest note of the song’s key or chord — gentle for a quiet polish, Hard for the robotic effect. The Leveler evens you out and sets your level, and an always-on safety limiter at the end keeps the board from clipping however hard you push the pedals (handy with Scream, Megaphone, stacked harmony or a lot of echo).'),
       h('p', { class: 'small' }, 'Use headphones, or your interface’s own monitoring: with speakers, any live vocal effect can feed back.'),
       h('p', { class: 'small' }, 'Scream lets you scream lighter: the pedal adds the grit so your throat does not have to. If it hurts or you go hoarse, stop; a coach who teaches fry and false-cord screaming is worth it.'),
       h('p', { class: 'small muted' }, 'Takes are recorded clean and played back through the board, so you can change the sound after you sing. Bounces include it. The foot pedal (Settings ▸ Pedal & MIDI sync) can switch Scream, step through presets and hold an echo throw.')] }
@@ -18386,6 +18873,11 @@ bus.on('vb', () => vbPaint());
      · vib       a note held with vibrato (rate and width, from the analysis)
      · landing   over a backing vamp, land on a chord tone each time the chord changes
      · info      something to read and hear
+     · hold      (2.68, sung) one note held in tune for a few seconds
+   2.68: a piece marked `voice` is sung, not played. The coach hears it through the voice's own pitch reading (part 50: the vocal
+   channel if there is one, else the main input), shows a keyboard and the note names where a guitar piece shows the neck and tab,
+   plays it on a piano, and places it at the bottom of your comfortable range (Voice ▸ Find my range), or around C3 until that is
+   known; any octave counts. A voice slides between notes, so a wrong note counts only when it is held.
    A clean run can raise the tempo by 5 (the tempo ladder).
    ============================================================ */
 CFG.learn = Object.assign({ done: {}, best: {}, ladder: true, back: true, click: true, mine: [] }, CFG.learn && typeof CFG.learn === 'object' ? CFG.learn : {});
@@ -18404,6 +18896,10 @@ function coPlace(notes, root, near) {
 }
 /** the lowest root at or above the low string's open note (+ capo), for a key's pitch class */
 const coRoot = (pc, lift) => { const lo = wsTune()[0] + (S.capo || 0); return lo + (((pc - lo) % 12) + 12) % 12 + (lift || 0); };
+/** where a sung piece sits: the key's root at the bottom of the comfortable range, or from C3 until the range is known */
+const coVoiceRoot = pc => { const rg = CFG.vrange, lo = rg && isFinite(rg.c0) ? Math.round(rg.c0) : 48; return lo + (((pc - lo) % 12) + 12) % 12; };
+/** the pitch the coach hears: the voice's for a sung piece (a whole number of semitones), the tuner's otherwise */
+const coHeard = p => (p && p.voice ? (VOX.m != null ? Math.round(VOX.m) : null) : (AN.active && AN.midi != null ? AN.midi : null));
 const coName = m => pcName(m, keyUsesFlats((CO.key == null ? S.key : CO.key), false));
 /** a line of ASCII tab for the notes (strings high to low), the note `cur` marked */
 function coTab(notes, cur) {
@@ -18426,7 +18922,8 @@ async function coSeq(o) {
     if (k < 0) return;
     const b = o.back; if (b && b.drums) { if (pos % 8 === 0) drumHit(0, t, pos % 16 === 0 ? 3 : 2); if (pos % 8 === 4) drumHit(1, t, 2); if (pos % 2 === 0) drumHit(2, t, 1); }
     if (b && b.chords && b.chords.length) { const sym = b.chords[Math.floor(pos / bar) % b.chords.length]; if (pos % 8 === 0) { try { strumAt(t, sym, 'D', STRUMS['Down 4s']); } catch (e) { } } if (b.bass !== false && pos % 8 === 0) { const ch = parseChord(sym); if (ch) pluck('bass', t, bassMidi(ch.bass), .8, { id: 'cb' }); } }
-    if (o.demo && o.notes) o.notes.forEach(n => { if (n.r || n.at !== pos) return; (n.ch || [n]).forEach((x, j) => pluck('lead', t + j * .012, x.m, .8, { id: 'co' + x.s })); if (n.to != null) pluck('lead', t + Math.min(n.len || 2, 4) * sd * .45, n.to, .55, { id: 'co' + n.s, soft: true }); });
+    if (o.demo && o.notes && CO.p && CO.p.voice) o.notes.forEach(n => { if (n.r || n.at !== pos) return; try { keysVoice(t, n.m, .8, Math.max(.25, (n.len || 2) * sd * .95), 'piano'); } catch (e) { pluck('lead', t, n.m, .8, { id: 'cov' }); } });
+    else if (o.demo && o.notes) o.notes.forEach(n => { if (n.r || n.at !== pos) return; (n.ch || [n]).forEach((x, j) => pluck('lead', t + j * .012, x.m, .8, { id: 'co' + x.s })); if (n.to != null) pluck('lead', t + Math.min(n.len || 2, 4) * sd * .45, n.to, .55, { id: 'co' + n.s, soft: true }); });
     if (pos === len - 1) q.loops++;
   };
   q.tm = setInterval(() => { const now = c.currentTime; while (q.t0 + q.k * sd < now + .15) { step(q.k, q.t0 + q.k * sd); q.k++; if (!o.loop && q.k >= len) { break; } } if (!o.loop && q.k >= len && now > q.t0 + len * sd + .3) { coSeqStop(); o.onEnd && o.onEnd(); } }, 40);
@@ -18442,7 +18939,7 @@ const coPitch = () => AN.active && AN.midi != null ? AN.midi + (AN.cents || 0) /
 /** start listening for the current piece; result to CO.res and a call to `done(ok, msg)` */
 function coListen(done) {
   coStopListen(); const p = CO.p, R = CO.run = { kind: p.kind, i: 0, miss: 0, held: null, judged: false, prev: null, t0: performance.now(), on: [], ok: 0, n: 0, best: 0, done, hold: 0, last: null, sw: 0, log: [], timing: null, max: 0 }; CO.fb = null; coTakeStart();
-  if (!E.hasInput) toast('Connect your guitar (Audio, top right) so the coach can hear you.', 'warn');
+  if (!E.hasInput) toast(p.voice ? 'Connect your microphone (Audio, top right) so the coach can hear you sing.' : 'Connect your guitar (Audio, top right) so the coach can hear you.', 'warn');
   const tapOn = m => { if (m && m.onset && CO.run === R) R.on.push(m.t); }; bus.on('tap:di', tapOn); R.off = () => bus.off('tap:di', tapOn);
   const need = { timed: 1, changes: 1, minute: 0, rhythm: 1, landing: 1 }[p.kind] || (p.back && p.back.chords && p.kind === 'notes');      /* a scale over a vamp plays the vamp while you play */
   if (!need) coSeqStop();      /* the demo stops: the coach must hear you, not itself */
@@ -18450,14 +18947,22 @@ function coListen(done) {
   CO.tm = setInterval(() => coTick(R), 30); coPaint();
 }
 function coStopListen() { const R = CO.run; if (R) { clearInterval(CO.tm); if (R.off) R.off(); CO.run = null; coTakeStop(); } }
-function coFinish(R, ok, msg) { if (CO.run !== R) return; const at = CO.seq ? { t0: CO.seq.t0, sd: CO.seq.sd } : null; coStopListen(); coSeqStop(); CO.res = msg; const p = CO.p, bpm0 = CO.bpm; if (ok) { CFG.learn.done[p.id] = Date.now(); learnPassed(p); saveCfg(); } if (ok && CFG.learn.ladder && p.ladder !== false && ['notes', 'timed', 'rhythm', 'changes'].includes(p.kind)) { const cap = p.target || (p.bpm || 80) + 60; CO.bpm = Math.max(CO.bpm, Math.min(cap, CO.bpm + 5)); if (CO.bpm > bpm0) msg += ' Tempo up: ' + CO.bpm + ' BPM.'; else if (p.target && CO.bpm >= p.target) msg += ' That is the song’s own tempo.'; CO.res = msg; } CO.fb = coFeedback(R, ok, bpm0, at); bus.emit('coach:done', { id: p.id, ok }); if (ok) { const dot = document.querySelectorAll('#coach .co-dot')[CO.idx]; if (dot) dot.classList.add('done'); } if (R.done) R.done(ok, msg); coPaint(); }
+function coFinish(R, ok, msg) { if (CO.run !== R) return; const at = CO.seq ? { t0: CO.seq.t0, sd: CO.seq.sd } : null; coStopListen(); coSeqStop(); CO.res = msg; const p = CO.p, bpm0 = CO.bpm; if (ok) { CFG.learn.done[p.id] = Date.now(); learnPassed(p); saveCfg(); } if (ok && CFG.learn.ladder && p.ladder !== false && ['notes', 'timed', 'rhythm', 'changes'].includes(p.kind)) { const cap = p.target || (p.bpm || 80) + 60; CO.bpm = Math.max(CO.bpm, Math.min(cap, CO.bpm + 5)); if (CO.bpm > bpm0) msg += ' Tempo up: ' + CO.bpm + ' BPM.'; else if (p.target && CO.bpm >= p.target) msg += ' That is the song’s own tempo.'; CO.res = msg; } CO.fb = p.voice ? null : coFeedback(R, ok, bpm0, at); bus.emit('coach:done', { id: p.id, ok }); if (ok) { const dot = document.querySelectorAll('#coach .co-dot')[CO.idx]; if (dot) dot.classList.add('done'); } if (R.done) R.done(ok, msg); coPaint(); }
 function coTick(R) {
-  const p = CO.p, now = performance.now(), m = AN.active && AN.midi != null ? AN.midi : null;
+  const p = CO.p, now = performance.now(), m = coHeard(p);
   switch (p.kind) {
+    case 'hold': {      /* one note, held in tune (any octave) */
+      const want = p.notes.find(n => !n.r), v = VOX.m, secs = p.secs || 3; if (v != null && want) { const d = ((v - want.m) % 12 + 18) % 12 - 6; R.cents = Math.round(d * 100); if (Math.abs(d) <= .4) { R.hold += 30; R.max = Math.max(R.max, R.hold); } else R.hold = Math.max(0, R.hold - 90); } else { R.cents = null; R.hold = Math.max(0, R.hold - 45); }
+      if (R.hold >= secs * 1000) return coFinish(R, true, '✓ Held ' + coName(want.m) + ' for ' + secs + ' seconds, in tune.');
+      if (now - R.t0 > 30000) return coFinish(R, false, 'Longest in tune: ' + (R.max / 1000).toFixed(1) + ' of ' + secs + ' seconds. Listen again, start a little quieter, and keep the breath steady.');
+      break;
+    }
     case 'notes': case 'timed': {
       const ns = p.notes.filter(n => !n.r); if (m == null) { R.held = null; R.judged = false; } else if (!R.held || R.held.m !== m) { R.held = { m, t: now }; R.judged = false; }
-      else if (!R.judged && now - R.held.t >= 110) { R.judged = true; const want = ns[R.i], pcs = (want.ch || [want]).map(x => x.m % 12), pc = ((m % 12) + 12) % 12;
-        if (pcs.includes(pc)) { R.prev = m; R.i++; if (R.i >= ns.length) return coNotesDone(R); } else if (R.prev != null && pc === R.prev % 12) { } else { R.miss++; R.log.push({ i: R.i, got: m }); } coPaint(); }
+      else if (!R.judged && now - R.held.t >= (p.voice ? 160 : 110)) { const want = ns[R.i], pcs = (want.ch || [want]).map(x => ((x.m % 12) + 12) % 12), pc = ((m % 12) + 12) % 12;
+        if (pcs.includes(pc)) { R.judged = true; R.prev = m; R.i++; if (R.i >= ns.length) return coNotesDone(R); } else if (R.prev != null && pc === ((R.prev % 12) + 12) % 12) { R.judged = true; }
+        else if (!p.voice || now - R.held.t >= 480) { R.judged = true; R.miss++; R.log.push({ i: R.i, got: m }); }      /* a voice slides between notes: a wrong one counts only when it is held */
+        coPaint(); }
       if (p.kind === 'timed' && CO.seq && coPos() > (p.len || 16) * 2 + 2 && R.i < ns.length) { coNotesDone(R); }
       break;
     }
@@ -18494,7 +18999,7 @@ function coTick(R) {
   }
 }
 function coNotesDone(R) {
-  const p = CO.p, ns = p.notes.filter(n => !n.r), secs = (performance.now() - R.t0) / 1000; let msg = '', ok = R.i >= ns.length && R.miss <= Math.max(1, Math.floor(ns.length / 8));
+  const p = CO.p, ns = p.notes.filter(n => !n.r), secs = (performance.now() - R.t0) / 1000; let msg = '', ok = R.i >= ns.length && R.miss <= Math.max(1, Math.floor(ns.length / (p.voice ? 3 : 8)));
   if (p.kind === 'timed' && CO.seq) { const q = CO.seq, lat = (rttMs() || 20) / 1000, len = p.len || 16, errs = [];
     ns.forEach(n => { const e = q.t0 + n.at * q.sd; let best = null; R.on.forEach(t => { const d = (t - lat) - e; if (Math.abs(d) <= .12 && (best == null || Math.abs(d) < Math.abs(best))) best = d; }); if (best == null) R.on.forEach(t => { const d = (t - lat) - (e + len * q.sd); if (Math.abs(d) <= .12 && (best == null || Math.abs(d) < Math.abs(best))) best = d; }); R.timing = R.timing || { items: [], len }; R.timing.items.push({ at: n.at, d: best == null ? null : best * 1000 }); if (best != null) errs.push(best * 1000); });
     const avg = errs.length ? errs.reduce((x, y) => x + Math.abs(y), 0) / errs.length : null; if (avg != null && avg > 40) ok = false; msg = (avg != null ? ', ' + Math.round(avg) + ' ms from the beat on average' : ''); }
@@ -18514,14 +19019,16 @@ function coachOpen(pieces, at, o) {
 }
 function coSetPiece(i) { coStopListen(); coSeqStop(); CO.idx = i; const raw = CO.list[i]; CO.p = typeof raw === 'function' ? raw() : raw; CO.bpm = CO.p.bpm || 80; CO.res = ''; CO.fb = null; CO.reveal = false; coTakeDrop(); if (CO.p.kind === 'info' && CO.p.id && !CFG.learn.done[CO.p.id]) { CFG.learn.done[CO.p.id] = Date.now(); saveCfg(); bus.emit('coach:done', { id: CO.p.id, ok: true }); } coBuild(); }
 /** the piece's notes placed in this tuning (re-placed when the key or the tuning changes) */
-function coNotes() { const p = CO.p; if (!p.src) return p.notes || []; const pc = CO.key != null ? CO.key : (p.keyPc != null ? p.keyPc : 9); p.notes = coPlace(p.src, coRoot(pc, p.lift || 0), p.near); return p.notes; }
+function coNotes() { const p = CO.p; if (!p.src) return p.notes || []; const pc = CO.key != null ? CO.key : (p.keyPc != null ? p.keyPc : 9);
+  if (p.voice) { const root = coVoiceRoot(pc); p.notes = p.src.map(n => n.r ? Object.assign({}, n) : Object.assign({}, n, { m: root + n.i, s: 0, f: 0, ch: null, to: null })); return p.notes; }      /* sung: no strings or frets */
+  p.notes = coPlace(p.src, coRoot(pc, p.lift || 0), p.near); return p.notes; }
 function coBuild() {
   const d = document.getElementById('coach'); if (!d) return; const p = CO.p; coNotes(); d.innerHTML = '';
   const steps = CO.list.length > 12 ? h('span', { class: 'co-count mono', id: 'coCount' }, (CO.idx + 1) + ' / ' + CO.list.length) : CO.list.length > 1 ? h('div', { class: 'co-steps', role: 'list' }, CO.list.map((q, k) => { const qq = typeof q === 'function' ? null : q; return h('button', { role: 'listitem', class: 'co-dot' + (k === CO.idx ? ' on' : '') + (qq && CFG.learn.done[qq.id] ? ' done' : ''), 'aria-label': 'Step ' + (k + 1) + (qq && CFG.learn.done[qq.id] ? ', done' : ''), onclick: () => coSetPiece(k) }); })) : null;
   const playable = p.kind !== 'info' || (p.notes && p.notes.length);
   d.append(...[h('div', { class: 'co-top' }, h('div', { class: 'co-tt' }, h('small', {}, CO.title || ''), h('b', { id: 'coachT' }, p.title)), steps, d._inline ? h('button', { class: 'btn sm co-back', 'aria-label': 'Close the coach', title: 'Back to the list', onclick: () => d.close() }, '◀ Back') : h('button', { class: 'btn icon', 'aria-label': 'Close the coach', onclick: () => d.close() }, '✕')),
     h('p', { class: 'co-text' }, p.text || ''),
-    p.notes && p.notes.length && !['chord', 'changes', 'minute'].includes(p.kind) && !(p.ear && !CO.reveal) ? h('div', { class: 'co-board' }) : null,
+    p.notes && p.notes.length && !['chord', 'changes', 'minute'].includes(p.kind) && !(p.ear && !CO.reveal) ? h('div', { class: 'co-board' + (p.voice ? ' co-keys' : '') }) : null,
     p.notes && p.notes.length && !['chord', 'changes', 'minute'].includes(p.kind) && !(p.ear && !CO.reveal) ? h('pre', { class: 'co-tab mono', 'aria-label': 'Tab' }) : null,
     p.ear && !CO.reveal ? h('div', { class: 'co-hidden', id: 'coHidden' }, h('span', { class: 'co-hid-ic', 'aria-hidden': 'true' }, '👂'), h('div', {}, h('b', {}, 'No tab this time: use your ears.'), h('span', {}, 'Hear it, then play it back. ' + (p.notes || []).filter(n => !n.r).length + ' notes, starting on ' + (p.hint || 'the root') + '.'))) : null,
     ['chord', 'changes', 'minute'].includes(p.kind) ? h('div', { class: 'co-chords' }, (p.chords || p.back.chords).map(c => h('div', { class: 'co-chord' }, h('b', {}, c), h('pre', { class: 'mono co-shape' }, coShape(c))))) : null,
@@ -18531,7 +19038,7 @@ function coBuild() {
       p.ear ? h('button', { class: 'btn primary', id: 'coEarGo', onclick: () => coDemo(true) }, '🎧 Hear it, then play it back') : null,
       p.ear && !CO.reveal ? h('button', { class: 'btn', id: 'coReveal', onclick: () => { CO.reveal = true; coBuild(); } }, '👁 Show me') : null,
       playable ? h('button', { class: 'btn', id: 'coListen', onclick: () => coDemo() }, p.ear ? '▶ Hear it again' : '▶ Listen') : null,
-      p.kind !== 'info' ? h('button', { class: 'btn' + (p.ear ? '' : ' primary'), id: 'coGo', onclick: () => CO.run ? (coStopListen(), coSeqStop(), coPaint()) : coListen() }, '● Play it') : null,
+      p.kind !== 'info' ? h('button', { class: 'btn' + (p.ear ? '' : ' primary'), id: 'coGo', onclick: () => CO.run ? (coStopListen(), coSeqStop(), coPaint()) : coListen() }, p.voice ? '● Sing it' : '● Play it') : null,
       h('span', { class: 'co-bpm' }, h('button', { class: 'btn sm', 'aria-label': 'Slower', onclick: () => { CO.bpm = Math.max(40, CO.bpm - 5); coPaint(); } }, '−'), h('b', { class: 'mono' }), h('button', { class: 'btn sm', 'aria-label': 'Faster', onclick: () => { CO.bpm = Math.min(240, CO.bpm + 5); coPaint(); } }, '+')),
       p.ladder === false ? null : h('label', { class: 'chk' }, h('input', { type: 'checkbox', id: 'coLadder', checked: !!CFG.learn.ladder, onchange: e => { CFG.learn.ladder = e.target.checked; saveCfg(); } }), 'Tempo ladder'),
       p.back ? h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!CFG.learn.back, onchange: e => { CFG.learn.back = e.target.checked; saveCfg(); } }), 'Backing') : null,
@@ -18547,20 +19054,32 @@ function coDemo(then) { coStopListen(); const p = CO.p; coSeq({ len: p.len || 16
 function coPaint() {
   const d = document.getElementById('coach'); if (!d || !CO.p) return; const p = CO.p, R = CO.run, q = s => d.querySelector(s), ns = (p.notes || []).filter(n => !n.r);
   const b = q('.co-bpm b'); if (b) b.textContent = CO.bpm + ' BPM';
-  const go = q('#coGo'); if (go) go.textContent = R ? '■ Stop' : '● Play it';
+  const go = q('#coGo'); if (go) go.textContent = R ? '■ Stop' : p.voice ? '● Sing it' : '● Play it';
   const cur = R && (R.kind === 'notes' || R.kind === 'timed') ? R.i : null;
-  const bd = q('.co-board'); if (bd) { bd.innerHTML = ''; const pcs = p.pcs || null, ref = coRoot(CO.key != null ? CO.key : (p.keyPc != null ? p.keyPc : 9)); const run = { title: p.title, st: ns.length ? Math.min(...ns.map(n => n.f)) : 0, pcs, notes: ns.map(n => ({ s: n.s, f: n.f, m: n.m, deg: n.lab || degName(((n.m - ref) % 12 + 12) % 12) })) }; bd.append(wsFret(run, cur, innerWidth < 640)); }
-  const tb = q('.co-tab'); if (tb) tb.textContent = coTab(p.notes || [], cur == null ? -1 : (p.notes || []).indexOf(ns[cur]));
+  const bd = q('.co-board'); if (bd && p.voice) coKeys(bd, p, ns, cur == null && R && R.kind === 'hold' ? 0 : cur);
+  else if (bd) { bd.innerHTML = ''; const pcs = p.pcs || null, ref = coRoot(CO.key != null ? CO.key : (p.keyPc != null ? p.keyPc : 9)); const run = { title: p.title, st: ns.length ? Math.min(...ns.map(n => n.f)) : 0, pcs, notes: ns.map(n => ({ s: n.s, f: n.f, m: n.m, deg: n.lab || degName(((n.m - ref) % 12 + 12) % 12) })) }; bd.append(wsFret(run, cur, innerWidth < 640)); }
+  const tb = q('.co-tab'); if (tb) tb.textContent = p.voice ? ns.map((n, i) => (i === cur ? '[' + coName(n.m) + ']' : ' ' + coName(n.m) + ' ')).join(' ') : coTab(p.notes || [], cur == null ? -1 : (p.notes || []).indexOf(ns[cur]));
   const fbx = q('#coFb'); if (fbx) { fbx.innerHTML = ''; if (!R && CO.fb) fbx.append(coFbView(CO.fb)); }
   const lv = q('.co-live'); if (!lv) return; lv.innerHTML = '';
   if (R) {
-    const want = ns[R.i]; lv.append(h('b', {}, R.kind === 'notes' || R.kind === 'timed' ? (want ? 'Next: ' + (want.ch ? want.ch.map(x => coName(x.m)).join(' + ') : coName(want.m)) + ' (string ' + (wsTune().length - want.s) + ', ' + (want.f ? 'fret ' + want.f : 'open') + ')' : '') + ' · ' + R.i + ' of ' + ns.length + (R.miss ? ' · ' + R.miss + ' wrong' : '')
+    const want = ns[R.i]; lv.append(h('b', {}, R.kind === 'hold' ? 'Hold ' + (ns[0] ? coName(ns[0].m) : '') + ': ' + (R.hold / 1000).toFixed(1) + ' of ' + (p.secs || 3) + ' s' + (R.cents == null ? ' · sing…' : Math.abs(R.cents) <= 40 ? ' · in tune' : R.cents > 0 ? ' · a little high' : ' · a little low')
+      : p.voice && (R.kind === 'notes' || R.kind === 'timed') ? (want ? 'Sing ' + coName(want.m) : '') + ' · ' + R.i + ' of ' + ns.length + (R.miss ? ' · ' + R.miss + ' off' : '')
+      : R.kind === 'notes' || R.kind === 'timed' ? (want ? 'Next: ' + (want.ch ? want.ch.map(x => coName(x.m)).join(' + ') : coName(want.m)) + ' (string ' + (wsTune().length - want.s) + ', ' + (want.f ? 'fret ' + want.f : 'open') + ')' : '') + ' · ' + R.i + ' of ' + ns.length + (R.miss ? ' · ' + R.miss + ' wrong' : '')
       : R.kind === 'chord' ? 'Play ' + p.chords[0] + ' and let it ring…' : R.kind === 'changes' ? 'A chord a bar, with the click: ' + R.ok + ' right so far'
       : R.kind === 'minute' ? Math.max(0, 60 - Math.floor((performance.now() - R.t0) / 1000)) + ' s · ' + R.sw + ' changes' : R.kind === 'rhythm' ? 'Play the pattern with the click (four bars)…'
       : R.kind === 'bend' ? 'Bend: ' + (R.cur != null ? (R.cur >= 0 ? '+' : '') + R.cur.toFixed(2) : '–') + ' of +' + (ns[0] ? ns[0].to - ns[0].m : 2) + ' semitones' : R.kind === 'vib' ? (R.v ? 'Vibrato ' + R.v.rate.toFixed(1) + '/s, ' + Math.round(R.v.ext * 2) + ' cents' : 'Hold it and shake it…') : R.kind === 'landing' ? 'Land on a chord tone at each change: ' + R.ok + ' so far' : ''));
     if (!CO.tmP) CO.tmP = setInterval(() => { if (!CO.run) { clearInterval(CO.tmP); CO.tmP = 0; return; } coPaint(); }, 250);
   } else if (CO.res) lv.append(h('b', { class: /^✓/.test(CO.res) ? 'co-good' : '' }, CO.res));
-  else lv.append(h('span', { class: 'muted' }, p.kind === 'info' ? '' : p.ear ? 'Press 🎧 to hear it, then play it back.' : 'Press ▶ Listen to hear it, then ● Play it.'));
+  else lv.append(h('span', { class: 'muted' }, p.kind === 'info' ? '' : p.ear ? 'Press 🎧 to hear it, then play it back.' : p.voice ? 'Press ▶ Listen to hear it, then ● Sing it. Key moves it to where your voice is comfortable.' : 'Press ▶ Listen to hear it, then ● Play it.'));
+}
+/** a sung piece on a keyboard: its notes lit, the one to sing now, and the note you are singing (in the nearest octave shown) */
+function coKeys(box, p, ns, cur) {
+  const ms = ns.map(n => n.m); if (!ms.length) return; const lo = Math.floor(Math.min(...ms) / 12) * 12, hi0 = Math.max(lo + 16, Math.max(...ms) + 2), hi = [1, 3, 6, 8, 10].includes(hi0 % 12) ? hi0 + 1 : hi0;
+  let svg = box.querySelector('svg'); if (!svg || svg._lo !== lo || svg._hi !== hi) { box.innerHTML = ''; svg = kyPiano(lo, hi, { h: 84 }); svg.setAttribute('class', 'ky-svg co-ky'); box.append(h('div', { class: 'ky-wrap' }, svg)); }      /* co-ky: the Keys painter (part 86) leaves it alone */
+  const root = ms[0] - (p.src.find(n => !n.r) || { i: 0 }).i, v = VOX.m != null ? Math.round(VOX.m) : null; let me = null;
+  if (v != null && (CO.run || VOX.panel)) { for (let m = lo; m <= hi; m++) if ((m - v) % 12 === 0 && (me == null || Math.abs(m - ms[Math.max(0, cur || 0)]) < Math.abs(me - ms[Math.max(0, cur || 0)]))) me = m; }
+  svg.querySelectorAll('[data-m]').forEach(k => { const m = +k.dataset.m; k.classList.toggle('ch', ms.includes(m)); k.classList.toggle('root', ms.includes(m) && (m - root) % 12 === 0); k.classList.toggle('on', cur != null && cur >= 0 && ns[cur] && ns[cur].m === m); k.classList.toggle('me', me === m); });
+  svg.querySelectorAll('[data-l]').forEach(t => { const m = +t.dataset.l; t.textContent = ms.includes(m) ? coName(m) : ''; });
 }
 const degName = iv => ['R', 'b2', '2', 'b3', '3', '4', 'b5', '5', 'b6', '6', 'b7', '7'][iv];
 
@@ -18679,6 +19198,8 @@ const lp = (kind, title, text, o) => Object.assign({ kind, title, text, id: 'lp'
 const lpN = (kind, title, text, txt, o) => { const src = rfParse(txt); return lp(kind, title, text, Object.assign({ src, len: rfLen(src), keyed: false }, o || {})); };
 const LPC = {
   info: (t, x, o) => lp('info', t, x, o),
+  /* 2.69: an info step with a diagram — the neck and tab draw it (▶ Listen plays it), but nothing is checked to move on */
+  show: (t, x, txt, o) => lpN('info', t, x, txt, o),
   notes: (t, x, txt, o) => lpN('notes', t, x, txt, o),
   timed: (t, x, txt, o) => lpN('timed', t, x, txt, Object.assign({ back: { drums: true } }, o || {})),
   chord: (t, x, c, o) => lp('chord', t, x, Object.assign({ chords: [c] }, o || {})),
@@ -18687,13 +19208,16 @@ const LPC = {
   rhythm: (t, x, pat, o) => lp('rhythm', t, x, Object.assign({ pattern: pat, bars: 4, len: 16, back: { drums: true } }, o || {})),
   bend: (t, x, txt, o) => lpN('bend', t, x, txt, o),
   vib: (t, x, txt, o) => lpN('vib', t, x, txt, o),
+  /* 2.68: sung pieces (part 80): each note in turn, or one note held in tune; the Key menu moves them to where a voice sits */
+  sing: (t, x, txt, o) => lpN('notes', t, x, txt, Object.assign({ voice: true, keyed: true, keyPc: 0, bpm: 66 }, o || {})),
+  hold: (t, x, txt, o) => lpN('hold', t, x, txt, Object.assign({ voice: true, keyed: true, keyPc: 0, bpm: 66, secs: 3, ladder: false }, o || {})),
   landing: (t, x, cs, o) => lp('landing', t, x, Object.assign({ back: { drums: true, chords: cs, bass: true }, bars: 8, len: 16 * cs.length }, o || {}))
 };
 /* open strings, E2 A2 D3 G3 B3 E4 from E */
 const LESSONS = [
   { id: 'found', ico: '🌱', name: 'Foundations', blurb: 'Tune, first notes, first chords, changing in time, strumming, your first song.', lessons: [
     { id: 'f1', name: 'Tune up and find the strings', steps: [
-      LPC.info('Six strings, low to high', 'From the thickest string to the thinnest: E A D G B E. The tuner (top right) shows how far each one is from its note. Tune each until the needle sits in the middle.'),
+      LPC.show('Six strings, low to high', 'From the thickest string to the thinnest: E A D G B E. The tuner (top right) shows how far each one is from its note. Tune each until the needle sits in the middle.', '0:4 5:4 10:4 15:4 19:4 24:4', { keyPc: 4, near: 0 }),
       LPC.notes('Play each open string', 'Pick each string once, thickest first. The coach moves on when it hears the right note.', '0:4 5:4 10:4 15:4 19:4 24:4', { keyPc: 4, near: 0 }),
       LPC.notes('Your first fretted notes', 'Press just behind the fret, with your fingertip. Second fret on the D, G and B strings.', '12:4 17:4 21:4', { keyPc: 4, near: 1 })] },
     { id: 'f2', name: 'First chords: Em, G, C, D', steps: [
@@ -18716,17 +19240,17 @@ const LESSONS = [
   ] },
   { id: 'lead', ico: '🎸', name: 'Lead', blurb: 'The pentatonic box, bends, vibrato, your first licks, playing them in time, soloing over a band.', lessons: [
     { id: 'l1', name: 'The minor pentatonic, box one', steps: [
-      LPC.info('The most useful shape on the guitar', 'Five notes, two on each string, starting at the fifth fret for A. Roots (R) are the home notes: start and end there.'),
+      LPC.show('The most useful shape on the guitar', 'Five notes, two on each string, starting at the fifth fret for A. Roots (R) are the home notes: start and end there.', '0 3 5 7 10 12 15 17 19 22 24 27', { keyPc: 9, near: 5, keyed: true }),
       LPC.notes('Up the box', 'Low string to high, one note at a time.', '0 3 5 7 10 12 15 17 19 22 24 27', { keyPc: 9, near: 5, keyed: true }),
       LPC.notes('And back down', 'High to low.', '27 24 22 19 17 15 12 10 7 5 3 0', { keyPc: 9, near: 5, keyed: true }),
       LPC.timed('Up and down in time', 'Eighth notes with the click and the drums. Even and relaxed.', '0 3 5 7 10 12 15 17 19 22 24 22 19 17 15 12', { keyPc: 9, near: 5, bpm: 70, keyed: true })] },
     { id: 'l2', name: 'Bends', steps: [
-      LPC.info('Push the string with three fingers', 'Ring, middle and index all push together; turn from the wrist, like a door handle. Aim for the note two frets up.'),
+      LPC.show('Push the string with three fingers', 'Ring, middle and index all push together; turn from the wrist, like a door handle. Aim for the note two frets up.', '10:4', { keyPc: 9, near: 5, lift: 12 }),
       LPC.bend('A whole-step bend', 'Seventh fret on the G string (in A): bend it up until it sounds like the ninth fret.', '10b:8', { keyPc: 9, near: 5, lift: 12 }),
       LPC.bend('A bend on the B string', 'Eighth fret, B string: bend up a whole step.', '15b:8', { keyPc: 9, near: 6, lift: 12 }),
       LPC.bend('A half-step bend', 'Small and sweet: the eighth fret on the high E, up a half step.', '22b1:8', { keyPc: 9, near: 6, lift: 12 })] },
     { id: 'l3', name: 'Vibrato', steps: [
-      LPC.info('Shake the note', 'Bend a little and let go, over and over, steadily. Five or six times a second sounds human.'),
+      LPC.show('Shake the note', 'Bend a little and let go, over and over, steadily. Five or six times a second sounds human.', '24:4', { keyPc: 9, near: 9 }),
       LPC.vib('Vibrato on the root', 'Tenth fret, B string (an A): hold it and shake it.', '24~:16', { keyPc: 9, near: 9, lift: 0 })] },
     { id: 'l4', name: 'Your first licks', steps: [
       LPC.notes('Down the box', 'A classic shape: three notes on the top string, falling to the root.', '24 22 19 22 19 17 15 12', { keyPc: 9, near: 5, keyed: true }),
@@ -18736,7 +19260,7 @@ const LESSONS = [
       LPC.timed('Lick over the drums', 'The first lick again, now with the click and the drums: land each note on its eighth.', '24 22 19 22 19 17 15 12', { keyPc: 9, near: 5, bpm: 76, keyed: true }),
       LPC.timed('Bend lick in time', 'Bend on the beat, release, and resolve.', '15b:4 15 12 10 12:4 r:2', { keyPc: 9, near: 5, bpm: 76, keyed: true })] },
     { id: 'l6', name: 'Solo over the band', steps: [
-      LPC.info('Aim for the chord', 'When the chord changes, land on one of its notes. The fretboard shows the box; the chord tones are where the band agrees with you.'),
+      LPC.show('Aim for the chord', 'When the chord changes, land on one of its notes. The fretboard shows the box; the chord tones are where the band agrees with you.', '0 3 5 7 10 12 15 17 19 22 24 27', { keyPc: 9, near: 5, keyed: true }),
       LPC.landing('A minor to G', 'Play in box one. Each time the chord changes, make your first note one of its notes.', ['Am', 'G'], { bpm: 84 }),
       LPC.landing('Am – F – C – G', 'Four chords; the same idea.', ['Am', 'F', 'C', 'G'], { bpm: 84 })] }
   ] },
@@ -18753,6 +19277,67 @@ const LESSONS = [
     { id: 't3', name: 'Slides', steps: [LPC.notes('Slide up a step', 'Seventh fret to ninth on the G string, keeping the pressure on.', '10 12/ 10 12/', { keyPc: 9, near: 5, lift: 12 }), LPC.notes('Slide into the box', 'Slide up into the seventh fret on the D string, then play the box.', '5 7/ 10 12 15 17', { keyPc: 9, near: 5, lift: 12 })] },
     { id: 't4', name: 'String skipping', steps: [LPC.notes('Skip a string', 'Jump from the D string to the B and back.', '7 19 10 22 7 19 10 22', { keyPc: 9, near: 5 }), LPC.timed('Skips in time', 'The same, eighths with the click.', '7 19 10 22 7 19 10 22', { keyPc: 9, near: 5, bpm: 70 })] },
     { id: 't5', name: 'Legato runs', steps: [LPC.notes('Three notes a string', 'A major-scale run, three notes per string, picking only the first of each three.', '0 2h 4h 5 7h 9h 11 12h 14h', { keyPc: 0, near: 8 })] }
+  ] },
+  { id: 'voice', ico: '🎤', name: 'Singing', blurb: 'Warm up, match a note, sing scales and arpeggios in tune, hold a note, and find where your voice sits.', lessons: [
+    { id: 'v1', name: 'Warm up and match a note', steps: [
+      LPC.info('Before you sing', 'Stand or sit tall, drop your shoulders, and breathe low: the belly moves, not the chest. Hum on “mmm” for a few seconds, then slide from low to high and back on “ng”, like a siren. The coach cannot follow a slide: that part is for you.'),
+      LPC.hold('Match one note', 'Press ▶ Listen, then sing the note on “ah” and hold it. The keyboard shows the note you are singing in orange; move until it sits on the one asked for. Use the Key menu to put it where your voice is comfortable.', '0:8', { secs: 3 }),
+      LPC.sing('Three notes up and back', 'Do, re, mi, re, do: on “ah”, or on the names. One clear note at a time; the coach moves on when it hears each one.', '0:4 2:4 4:4 2:4 0:4')] },
+    { id: 'v2', name: 'Five notes, and thirds', steps: [
+      LPC.info('Why five notes', 'Most melodies live inside five notes. Singing them up and down, slowly and in tune, is the warm-up singers have always used. Move the key up a step each time it feels easy.'),
+      LPC.sing('Five up, five down', 'Do re mi fa sol, and back. Keep every note the same loudness.', '0:4 2:4 4:4 5:4 7:4 5:4 4:4 2:4 0:4'),
+      LPC.sing('Thirds', 'Skip a note each time: do mi, re fa, mi sol. Hear the jump before you sing it.', '0:4 4:4 2:4 5:4 4:4 7:4 4:8'),
+      LPC.hold('Hold the fifth', 'Sing “sol”, the top of the five, and hold it steady for four seconds. Start gently: a held note goes flat when the breath runs out.', '7:8', { secs: 4 })] },
+    { id: 'v3', name: 'Arpeggios and the octave', steps: [
+      LPC.sing('The major arpeggio', 'Do, mi, sol, and the do above; then back down. These are the notes of a major chord.', '0:4 4:4 7:4 12:4 7:4 4:4 0:4'),
+      LPC.sing('The octave jump', 'Low do, high do, and again. Think of the high note before you leave the low one.', '0:4 12:4 0:4 12:4'),
+      LPC.sing('The minor arpeggio', 'The same shape with a lowered third: darker. Sing it, then sing the major one again and hear the difference.', '0:4 3:4 7:4 12:4 7:4 3:4 0:4')] },
+    { id: 'v4', name: 'The whole scale, in tune', steps: [
+      LPC.sing('The major scale', 'All eight notes, up. The seventh wants to go flat: reach for it.', '0:4 2:4 4:4 5:4 7:4 9:4 11:4 12:4'),
+      LPC.sing('And back down', 'Coming down, the notes want to sag. Keep each one up where it belongs.', '12:4 11:4 9:4 7:4 5:4 4:4 2:4 0:4'),
+      LPC.hold('Hold the top note', 'The high do, steady, for four seconds.', '12:8', { secs: 4 }),
+      LPC.info('Your range and your key', 'Open 〰 Voice (in the tools) and press Find my range: sing your lowest and highest comfortable notes. From then on these exercises start where your voice sits, and Find my key says which key suits the song you have open. ⏱ Speed & key moves the song there.')] }
+  ] },
+  { id: 'prog', ico: '🎶', name: 'Progressions', blurb: 'Six chord progressions behind thousands of songs: how they are counted, where you have heard them, and how they feel under your hand.', lessons: [
+    { id: 'pg1', name: 'I–IV–V: the three-chord song', steps: [
+      LPC.info('Three chords, one key', 'I, IV and V are built on the first, fourth and fifth notes of the scale — in G major that is G, C and D. Count them on your fingers: almost every simple song is some order of these three.'),
+      LPC.changes('G – C – D – C', 'A bar each, with the band. Say the numeral as you strum it: one, four, five, four.', ['G', 'C', 'D', 'C'], { bpm: 88 }),
+      LPC.info('Try it in your own key', 'Open Theory (the left sidebar) and press I, IV and V in the diatonic chord palette to hear the same shape in whatever key you have open.')] },
+    { id: 'pg2', name: 'I–V–vi–IV: the pop progression', steps: [
+      LPC.info('The most-used progression in pop', 'Major, major, minor, major: I–V–vi–IV. It has carried hundreds of hit songs because it never quite resolves — the vi keeps pulling you round again.'),
+      LPC.changes('G – D – Em – C', 'A bar each, round and round.', ['G', 'D', 'Em', 'C'], { bpm: 92 })] },
+    { id: 'pg3', name: '12-bar blues', steps: [
+      LPC.info('Four bars, two bars, two bars, then the turnaround', 'I for four bars, IV for two, back to I for two, then V, IV, I, V. Every blues, and half of early rock and roll, is this one shape.'),
+      LPC.changes('A7 – D7 – A7 – E7', 'The verse and the turnaround, with the shuffle feel in the band.', ['A7', 'A7', 'D7', 'D7', 'A7', 'A7', 'E7', 'A7'], { bpm: 84 })] },
+    { id: 'pg4', name: 'ii–V–I: the jazz cadence', steps: [
+      LPC.info('The strongest resolution there is', 'A minor chord a step above the key, then the dominant, then home: ii–V–I. Jazz leans on it constantly, and so does almost every standard you have ever hummed.'),
+      LPC.changes('Dm7 – G7 – Cmaj7', 'A bar each, twice through.', ['Dm7', 'G7', 'Cmaj7', 'Cmaj7'], { bpm: 100 })] },
+    { id: 'pg5', name: 'The Andalusian cadence', steps: [
+      LPC.info('A falling, Spanish sound', 'i–VII–VI–V in a minor key: each chord a step lower than the last, landing on the dominant. Flamenco lives here, and so does a lot of rock.'),
+      LPC.changes('Am – G – F – E', 'The whole shape falls; listen for it stepping down.', ['Am', 'G', 'F', 'E'], { bpm: 88 })] },
+    { id: 'pg6', name: 'The minor loop', steps: [
+      LPC.info('i–VI–III–VII: brooding and circular', 'Four minor-key chords that loop without ever quite landing — good for a verse that builds tension before a chorus resolves it.'),
+      LPC.changes('Am – F – C – G', 'Round and round, with the band.', ['Am', 'F', 'C', 'G'], { bpm: 90 })] }
+  ] },
+  { id: 'style', ico: '🎭', name: 'Styles', blurb: 'What makes blues, rock, funk, country, pop and reggae sound like themselves: the rhythm, the scale, and one riff from each.', lessons: [
+    { id: 'sy1', name: 'Blues', steps: [
+      LPC.info('Call, answer, and the note in between', 'The minor pentatonic with one extra note slipped in (the flat five) gives the blue note; a shuffle feel makes the eighth notes long-short instead of even. Box one, the same shape from Lead, is home.'),
+      LPC.timed('Box-one turnaround', 'The classic closing phrase: let the last note ring.', '24 22 19 22 19 17 15 12:4 r:2', { keyPc: 9, near: 5, bpm: 80, keyed: true })] },
+    { id: 'sy2', name: 'Rock', steps: [
+      LPC.info('Power chords and a pentatonic hook', 'Root and fifth, no third, driven hard on the low strings; straight eighths, hit on every click. The hook on top is usually the same minor pentatonic as the blues, played lower and louder.'),
+      LPC.timed('Power-chord climb', 'Move one shape up the neck; keep the palm light on the mute.', '0+7+12:4 3+10+15:4 5+12+17:4 3+10+15:2 0+7+12:2', { keyPc: 4, near: 0, bpm: 100 })] },
+    { id: 'sy3', name: 'Funk', steps: [
+      LPC.info('Everything leans on one', 'The first beat of the bar carries the weight; the rest is muted, percussive stabs with rests doing as much work as notes. Sixteenths, not eighths.'),
+      LPC.timed('The one-and', 'Hit beat one hard, then peck at the gaps.', '0:3 0:1 r:2 3:1 5:1 r:4 7:1 5:1 r:2', { keyPc: 4, near: 7, lift: 12, bpm: 96 })] },
+    { id: 'sy4', name: 'Country', steps: [
+      LPC.info('Bright, open, and a bend into the third', 'The major pentatonic near the nut, walking bass lines connecting the chords, and a bend from the second up into the major third — the country sweet spot.'),
+      LPC.timed('Major pentatonic run', 'Open and bright, low to high and back.', '0 2 4 7 9 12 9 7 4 2 0:4', { keyPc: 7, near: 2, lift: 12, bpm: 100 })] },
+    { id: 'sy5', name: 'Pop', steps: [
+      LPC.info('A chord, one note at a time', 'An arpeggio, often spread across an octave, turns a simple chord into a melody of its own: bright, open, built to sit under a voice rather than compete with it.'),
+      LPC.timed('Arpeggio hook', 'The chord, climbed and come back down.', '0 4 7 12 7 4 0:4', { keyPc: 0, near: 5, lift: 12, bpm: 96 })] },
+    { id: 'sy6', name: 'Reggae', steps: [
+      LPC.info('The one-drop', 'Nothing on beat one; everything leans on beat three instead, with the guitar skanking short chops on the off-beats behind it. The silence at the start of the bar is the whole point.'),
+      LPC.timed('One-drop bass riff', 'Leave the first beat empty, then fill the rest.', 'r:2 0 r:2 0 3 5 r:2 7 5 3 0:2 r:4', { keyPc: 9, near: 5, bpm: 76, keyed: true })] }
   ] },
   { id: 'warm', ico: '🔥', name: 'Warm-ups', blurb: 'Five minutes before you play: the spider, finger permutations, the chromatic walk, trills, changes, a scale sprint.', lessons: [
     { id: 'w1', name: 'The spider', steps: [LPC.notes('One finger a fret', 'Frets 1-2-3-4 on every string, low to high: one finger per fret, fingers stay down close to the strings.', '0 1 2 3 5 6 7 8 10 11 12 13 15 16 17 18 19 20 21 22 24 25 26 27', { keyPc: 5, near: 1 })] },
@@ -19016,12 +19601,14 @@ function learnShow() {
 }
 /** close the Learn window if it is one (on a phone); in the panel there is nothing to close */
 const learnLeave = () => { const d = document.getElementById('learn'); if (d && !d._inline && d.open) d.close(); };
+/** 2.68: Singing comes second for a singer (after Today), and after By ear for everyone else */
+function learnOrder(secs, sing) { const k = secs.findIndex(x => x.key === 'sing'), v = secs.splice(k, 1)[0]; secs.splice(sing ? 1 : secs.findIndex(x => x.key === 'ear') + 1, 0, v); return secs; }
 /** the lessons' front door (🎓 Learn in Practice) */
 function learnOpen(at) {
   const host = learnHost(); if (host) { learnShow(); const c = document.getElementById('coach'); if (c && c._inline && c.open) c.close(); }
-  const paths = LESSONS.filter(p => p.id !== 'warm'), warm = LESSONS.filter(p => p.id === 'warm'), all = LESSONS.reduce((a, p) => a + p.lessons.reduce((b, l) => b + l.steps.length, 0), 0), done = LESSONS.reduce((a, p) => a + p.lessons.reduce((b, l) => b + lsDone(l), 0), 0);
+  const paths = LESSONS.filter(p => p.id !== 'warm' && p.id !== 'voice'), warm = LESSONS.filter(p => p.id === 'warm'), voice = LESSONS.filter(p => p.id === 'voice'), sing = typeof meNow === 'function' && meNow() === 'sing', all = LESSONS.reduce((a, p) => a + p.lessons.reduce((b, l) => b + l.steps.length, 0), 0), done = LESSONS.reduce((a, p) => a + p.lessons.reduce((b, l) => b + lsDone(l), 0), 0);
   return hubOpen('learn', { into: host, ico: '🎓', title: 'Learn', sub: 'A plan for today, lessons that listen while you play, your own song as lessons, ear training, riffs, a riff lab and an atlas of the neck. ' + done + ' of ' + all + ' lesson steps done.', at,
-    links: [{ id: 'lnShed', ico: '🎼', label: 'Scales & ear', fn: () => trainOpen() }], sections: [
+    links: [{ id: 'lnShed', ico: '🎼', label: 'Scales & ear', fn: () => trainOpen() }, { id: 'lnVoice', ico: '〰', label: 'Voice: pitch, range, key', fn: () => { try { voxOpen(); } catch (e) { } } }], sections: learnOrder([
     { key: 'today', label: 'Today', ico: '📅', sub: 'About fifteen minutes: a warm-up, something to review, something new and a riff. A new plan every day.', wide: true, body: () => [todayView()] },
     { key: 'lessons', label: 'Lessons', ico: '🎓', sub: 'Each step shows it, plays it, then listens to you play it (through the input the tuner uses).', wide: true, body: () => [learnLessons(paths)] },
     { key: 'warm', label: 'Warm-ups', ico: '🔥', sub: 'Five minutes before you play.', wide: true, body: () => [learnLessons(warm)] },
@@ -19030,8 +19617,9 @@ function learnOpen(at) {
     { key: 'riffs', label: 'Riffs & licks', ico: '🎸', sub: RIFFS.length + ' riffs, written for this studio, in ' + RIFF_STYLES.length + ' styles. Any key; note by note or in time; straight into your song.', wide: true, body: () => [learnRiffs()] },
     { key: 'lab', label: 'Riff Lab', ico: '🧪', sub: 'New ideas, on tap.', wide: true, body: () => [learnLab()] },
     { key: 'atlas', label: 'Scale atlas', ico: '🗺', sub: 'The neck, mapped: boxes, positions, arpeggios, modes over a band, target notes.', wide: true, body: () => [learnAtlas()] },
-    { key: 'teach', label: 'For teachers', ico: '🍎', sub: 'Teaching someone else: draw, take notes, record, and hand out exercises as files.', wide: true, body: () => [learnTeach()] }
-  ] });
+    { key: 'teach', label: 'For teachers', ico: '🍎', sub: 'Teaching someone else: draw, take notes, record, and hand out exercises as files.', wide: true, body: () => [learnTeach()] },
+    { key: 'sing', label: 'Singing', ico: '🎤', sub: 'Warm-ups and exercises the coach follows as you sing: it hears each note, shows it on a keyboard, and the Key menu puts it where your voice sits.', wide: true, body: () => [learnLessons(voice)] }
+  ], sing) });
 }
 bus.on('coach:done', () => learnPaint());
 bus.on('coach:close', () => { if (LRN_DIRTY) learnPaint(); });
@@ -19075,12 +19663,18 @@ function streak() { let n = 0; const P = CFG.learn.passes, d = new Date(); if (!
 const weekCount = () => { let n = 0; const d = new Date(); for (let i = 0; i < 7; i++) { n += CFG.learn.passes[dayKey(d)] || 0; d.setDate(d.getDate() - 1); } return n; };
 /** the day's plan, made once a day so it does not shuffle as you go: [kind, step id] */
 function todayPlan() {
-  const L = CFG.learn, k = dayKey(); if (L.today && L.today.day === k && Array.isArray(L.today.ids) && L.today.ids.length) return L.today;
+  const L = CFG.learn, k = dayKey(), who = typeof meNow === 'function' && meNow() === 'sing' ? 'sing' : ''; if (L.today && L.today.day === k && (L.today.me || '') === who && Array.isArray(L.today.ids) && L.today.ids.length) return L.today;
   const n = Math.floor(Date.now() / 864e5), ids = [], now = Date.now();
+  if (who) {      /* 2.68: a singer's fifteen minutes: a held note to warm up, something to review, the next sung step, and the song */
+    const V = LESSONS.find(x => x.id === 'voice'), steps = V.lessons.reduce((a, ls) => a.concat(ls.steps), []), holds = steps.filter(s => s.kind === 'hold'); ids.push(['warm', holds[n % holds.length].id]);
+    const due = Object.keys(L.rev).filter(id => LSTEP[id] && LSTEP[id].pa.id === 'voice' && LSTEP[id].s.kind !== 'info').map(id => { const r = L.rev[id]; return [id, (now - r.at) / 864e5 - REV_DAYS[Math.min(REV_DAYS.length - 1, Math.max(0, r.n - 1))]]; }).filter(x => x[1] >= 0 && !ids.some(y => y[1] === x[0])).sort((a, b) => b[1] - a[1]); if (due.length) ids.push(['review', due[0][0]]);
+    const nw = steps.find(s => s.kind !== 'info' && !L.done[s.id] && !ids.some(y => y[1] === s.id)) || steps.filter(s => s.kind === 'notes')[n % steps.filter(s => s.kind === 'notes').length]; if (nw && !ids.some(y => y[1] === nw.id)) ids.push(['new', nw.id]);
+    L.today = { day: k, ids, told: false, me: who }; saveCfg(); return L.today;
+  }
   const warm = LESSONS.find(x => x.id === 'warm'), wl = warm.lessons[n % warm.lessons.length], ws = wl.steps.find(s => s.kind !== 'info') || wl.steps[0]; ids.push(['warm', ws.id]);
-  const due = Object.keys(L.rev).filter(id => (LSTEP[id] && LSTEP[id].s.kind !== 'info' && LSTEP[id].pa.id !== 'warm') || RIFF_BY[id]).map(id => { const r = L.rev[id]; return [id, (now - r.at) / 864e5 - REV_DAYS[Math.min(REV_DAYS.length - 1, Math.max(0, r.n - 1))]]; }).filter(x => x[1] >= 0).sort((a, b) => b[1] - a[1]);
+  const due = Object.keys(L.rev).filter(id => (LSTEP[id] && LSTEP[id].s.kind !== 'info' && LSTEP[id].pa.id !== 'warm' && LSTEP[id].pa.id !== 'voice') || RIFF_BY[id]).map(id => { const r = L.rev[id]; return [id, (now - r.at) / 864e5 - REV_DAYS[Math.min(REV_DAYS.length - 1, Math.max(0, r.n - 1))]]; }).filter(x => x[1] >= 0).sort((a, b) => b[1] - a[1]);
   if (due.length) ids.push(['review', due[0][0]]);
-  const paths = LESSONS.filter(x => x.id !== 'warm'), lp = paths.find(x => x.id === L.lastPath), order = lp ? [lp].concat(paths.filter(x => x !== lp)) : paths;
+  const paths = LESSONS.filter(x => x.id !== 'warm' && x.id !== 'voice'), lp = paths.find(x => x.id === L.lastPath), order = lp ? [lp].concat(paths.filter(x => x !== lp)) : paths;
   let nw = null; for (const pa of order) { for (const ls of pa.lessons) { const i = ls.steps.findIndex(s => s.kind !== 'info' && !L.done[s.id]); if (i >= 0) { if (i > 0 && ls.steps[i - 1].kind === 'info' && !L.done[ls.steps[i - 1].id]) ids.push(['read', ls.steps[i - 1].id]); nw = ls.steps[i]; break; } } if (nw) break; }
   if (nw) ids.push(['new', nw.id]);
   const level = Math.min(3, 1 + Math.floor(Object.keys(L.done).length / 15)), pool = RIFFS.filter(r => r.lvl <= level && !L.done[r.id] && !ids.some(x => x[1] === r.id)), rp = pool.length ? pool : RIFFS;
@@ -19495,9 +20089,9 @@ function kyPaint(svg, mk) {
     k.classList.toggle('ch', !!inCh); k.classList.toggle('root', !!root); k.classList.toggle('sc', mk.scale.includes(pc)); k.classList.toggle('on', mk.on.has(m)); k.classList.toggle('me', mk.me === m); });
   svg.querySelectorAll('[data-l]').forEach(t => { const m = +t.dataset.l, pc = m % 12, inCh = mk.ch && mk.ch.pcs.includes(pc); t.textContent = inCh ? (deg ? ['R', 'b2', '2', 'b3', '3', '4', 'b5', '5', 'b6', '6', 'b7', '7'][((pc - mk.ch.root) % 12 + 12) % 12] : pcName(pc, CFG.flats)) : ''; });
 }
-function kyPaintAll() { const mk = kyMarks(); document.querySelectorAll('svg.ky-svg').forEach(s => kyPaint(s, mk)); const st = document.getElementById('kyChord'); if (st) st.textContent = mk.sym ? 'Chord: ' + mk.sym : ''; }
+function kyPaintAll() { const mk = kyMarks(); document.querySelectorAll('svg.ky-svg:not(.co-ky)').forEach(s => kyPaint(s, mk)); const st = document.getElementById('kyChord'); if (st) st.textContent = mk.sym ? 'Chord: ' + mk.sym : ''; }
 /* keep it moving while it is on screen */
-(function kyLoop() { requestAnimationFrame(kyLoop); const vis = [...document.querySelectorAll('svg.ky-svg')].some(s => s.isConnected && s.getBoundingClientRect().width > 0); if (!vis) return; const now = performance.now(); if (now - (KY.pt || 0) < 60) return; KY.pt = now; kyPaintAll(); })();
+(function kyLoop() { requestAnimationFrame(kyLoop); const vis = [...document.querySelectorAll('svg.ky-svg:not(.co-ky)')].some(s => s.isConnected && s.getBoundingClientRect().width > 0); if (!vis) return; const now = performance.now(); if (now - (KY.pt || 0) < 60) return; KY.pt = now; kyPaintAll(); })();
 
 /* ---------- under Write, beside the fretboard ---------- */
 const kyWrOn = () => !!CFG.wrPiano;

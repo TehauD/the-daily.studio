@@ -26,6 +26,8 @@ const GOALS = [
       ['gtPads', '👆 Pads', 'Play the drums with your fingers, tap the tempo, record a groove or beatbox it', () => padsOpen()],
       ['gtKeys', '🎹 Keys', 'A piano to play with the mouse, the computer keys or a MIDI keyboard: its own sounds, or the band’s bass or lead; record what you play into the song', () => keysOpen()],
       ['gtLink', () => slSendLabel(), 'Send this song to a bandmate as a link: the chords, words, tab, beat, tempo and key ride inside it (your recordings too, if you choose)', () => slShare()],
+      ['gtHum', '🎤 Hum an idea', 'Hum or sing a few seconds, or choose a voice memo: it becomes chords and a band', () => humOpen()],
+      ['gtRhyme', '✎ Rhymes', 'Rhymes, syllables and the rhyme scheme, beside the words you are writing', () => { const go = () => { const b = document.getElementById('lhBtn'); if (b && b.offsetParent) { b.click(); return true; } return false; }; if (!go()) { dockGo('tab'); try { if (WR.mode === 'tab') wrMode('words'); } catch (e) { } setTimeout(go, 200); } }],
       ['gtRoll', '🎛 Piano roll', 'Draw the keys part or the bass line on a grid, loop it, duck it to the kick', () => rollOpen()],
 
 
@@ -42,6 +44,7 @@ const GOALS = [
       ['gtCam', '📷 Camera', 'You in the picture, in front of or framed by the visuals', () => vzCamPress(), () => !!VZ.cam],
       ['gtFx', '✨ Overlays', 'How the camera sits with the visuals: dimmed behind, framed, or you in front', b => popover(b, h('div', { style: { display: 'grid', gap: '8px', minWidth: '240px' } }, h('h5', {}, 'Overlays'), camFxBox(), h('div', { class: 'tiny muted' }, 'Pick a look in the Visuals panel for what moves behind you.')))],
       ['gtVox', '🎤 Vocal pedals', 'Scream, doubler, harmony, echo, reverb, de-esser and megaphone for your voice', () => vocalBoardOpen()],
+      ['gtVoice', '〰 Voice', 'See your pitch against the key as you sing; find your range and the key that suits you', b => voxOpen(b), () => !!VOX.panel],
       ['gtReplay', '▶ Studio Replay', 'Watch the last recording, then save it, share it or make a thumbnail from any frame', () => kitReplay(), null, 0, () => !KIT.last],
       ['gtStream', '📺 Stream window', 'The words and the chord in a window of their own, for OBS or any streaming app', () => streamRoom()],
       ['gtThumb', '🖼 Thumbnail', 'Save a 1280 × 720 picture of the stage with the song title, for the post', () => kitThumb()],
@@ -57,6 +60,7 @@ const GOALS = [
     tools: () => [
       /* 2.66: Learn is the Practice panel itself (Today, lessons, This song, By ear, riffs, the lab, the atlas and Scales & ear are in its list) */
       ['gtLearn', '🎓 Learn', 'Back to Learn: today’s plan, lessons that listen, this song, by ear, riffs, the riff lab, the scale atlas, Scales & ear', () => learnOpen(), () => DOCK.cur === 'learn' && paneVisible('learn'), 1],
+      ['gtVoice', '〰 Voice', 'See your pitch against the key as you sing; find your range and the key that suits you', b => voxOpen(b), () => !!VOX.panel],
       ['gtSlow', '− 5', 'Slower by 5 BPM', () => goalTempo(-5)],
       ['gtBpm', () => S.bpm + ' BPM', 'The tempo', () => { if (UI.bpm) UI.bpm.focus(); }],
       ['gtFast', '+ 5', 'Faster by 5 BPM', () => goalTempo(5)],
@@ -105,9 +109,10 @@ function goalGo(id, o) {
   CFG.ws = g.id; if (g.id !== 'fullrig') CFG.lastGoal = g.id; saveCfg();
   if (g.id === 'fullrig' && CFG.simple) { CFG.preSimple = null; simpleSet(false, true); toast('Full Rig has every tool, so Simple is off here. ✦ Simple takes you back to the essentials.', ''); }      /* 2.46: Full Rig is everything */
   if (!(o && o.keepZoom) && typeof ZOOM !== 'undefined' && ZOOM.cur === 'canvas') { ZOOM.cur = CFG.zoom = 'studio'; saveCfg(); document.body.classList.remove('zoom-canvas'); try { zoomSync(); } catch (e) { } }
-  applyPreset(g.spec, g.layout); if (typeof xpSignal === 'function') xpSignal(1);
+  applyPreset(goalSpec(g), g.layout); if (typeof xpSignal === 'function') xpSignal(1);
   if (g.spec.side && g.spec.side.fret && typeof sideShow === 'function') { try { sideShow('fret'); } catch (e) { } }
   if (g.enter) { try { g.enter(); } catch (e) { console.warn('goal', e); } }
+  { const L = goalLens(g); if (L && L.enter) { try { L.enter(); } catch (e) { console.warn('goal', e); } } }
   goalAudioFirst();
   goalMark(); bus.emit('goal', g.id); goalBarBuild(); try { rebuildTabs(); } catch (e) { } return true;
 }
@@ -122,19 +127,59 @@ const GOALBAR = { el: null };
 /** the bar sits at the top of the centre, whichever of the panels or the arrangement is on top */
 function goalPlace() { const el = GOALBAR.el, top = LAY.flip === false ? $('#timeline') : $('#dock'); if (el && top && (el.parentNode !== top || top.firstChild !== el)) top.insertBefore(el, top.firstChild); }
 /* 2.65: each workspace shows its main tools; the rest are one click away under ⋯ More (a tool in use stays showing) */
-const GOAL_MORE = { songwriter: ['gtVox', 'gtRoll'], performer: ['gtFmt', 'gtFx', 'gtStream', 'gtThumb', 'gtTip', 'gtPrint'], practice: ['gtInk', 'gtNotes', 'gtScreen', 'gtTx'] };
+const GOAL_MORE = { songwriter: ['gtVox', 'gtHum', 'gtRhyme', 'gtRoll'], performer: ['gtVoice', 'gtFmt', 'gtFx', 'gtStream', 'gtThumb', 'gtTip', 'gtPrint'], practice: ['gtVoice', 'gtInk', 'gtNotes', 'gtScreen', 'gtTx'] };
+/* 2.68: the workspaces adapt to who you mostly are (CFG.me: part 60 asks on the start page; the chip beside the workspaces changes it).
+   For each workspace and person: the tools it leads with, in order (the rest go under ⋯ More; nothing is removed), the few it keeps in
+   ✦ Simple, changes to its layout (tabs, sidebars, Monitor widgets), its words, and what it does on the way in. A guitarist, and
+   anyone who has not said, gets each workspace as it was. Full Rig is everything for everyone. */
+const ME_ICO = { sing: '🎤', guitar: '🎸', new: '🌱', tech: '🎛' };
+const GOAL_ME = {
+  songwriter: {
+    sing: { tools: ['gtBeats', 'gtHum', 'gtRhyme', 'gtSheet', 'gtLink'], few: ['gtBeats', 'gtHum', 'gtRhyme', 'gtSheet', 'gtLink'], steps: ['Pick a beat, or hum an idea', 'Write the words; ✎ Rhymes helps', '● Record a take, then send it'],
+      shape: 'The words large in the middle · Theory on the left · the arrangement a strip', enter: () => { try { wrMode('words'); } catch (e) { } } },
+    new: { tools: ['gtBeats', 'gtHum', 'gtSheet', 'gtPads', 'gtLink'], few: ['gtBeats', 'gtHum', 'gtSheet', 'gtPads', 'gtLink'], steps: ['Pick a beat: its chords become your song', 'Write a line of words under them', '● Record yourself over it'], enter: () => { try { wrMode('words'); } catch (e) { } } },
+    tech: { tools: ['gtBeats', 'gtRoll', 'gtKeys', 'gtPads', 'gtLink'], steps: ['Chords and a beat, or draw the parts in the piano roll', 'Arrange the sections and the band', 'Mix the lanes and export them'],
+      shape: 'Words and tab in the middle · Theory on the left · the arrangement open, with its lanes', spec: { tlh: 'minmax(170px,32%)', order: ['tab', 'band', 'song', 'stems', 'exp'], hidden: ['rig', 'fret', 'vis', 'stage', 'neural', 'tx', 'cam', 'lab'] } }
+  },
+  performer: {
+    sing: { tools: ['gtVideo', 'gtCam', 'gtVox', 'gtVoice', 'gtExp'], few: ['gtVideo', 'gtCam', 'gtVox', 'gtVoice', 'gtExp'], steps: ['Pick a look, and your vocal pedals', 'Sing it with ★ Showtime, or ⏺ record a video', 'Watch it back, then save or share it'],
+      shape: 'The stage large · your microphone on the left · levels and the audience view on the right', tabs: ['vis', 'band', 'exp'],
+      spec: { order: ['vis', 'band', 'stage', 'exp'], hidden: ['rig', 'tab', 'song', 'fret', 'neural', 'stems', 'tx', 'cam', 'lab'], cur: { left: 'io', right: 'monitor' }, mon: ['levels', 'audience'] } },
+    tech: { tools: ['gtVideo', 'gtFmt', 'gtCam', 'gtStream', 'gtExp'], steps: ['Pick a look and the shape of the video', 'Play it, or ⏺ record the stage', 'Stream it, or export it'], spec: { order: ['vis', 'stage', 'rig', 'band', 'exp'] } }
+  },
+  practice: {
+    sing: { tools: ['gtLearn', 'gtVoice', 'gtSpeed', 'gtSlow', 'gtBpm', 'gtFast'], few: ['gtLearn', 'gtVoice', 'gtSpeed'], mission: 'Warm up, then sing it until it sits', steps: ['Warm up with 🎤 Singing in Learn', 'Sing the song over the band or the record', '⏱ Speed & key moves it to a key that suits you'],
+      shape: 'Learn in the middle (🎤 Singing first) · the words a tab away · Theory on the left · levels on the right', tabs: ['learn', 'tab', 'band'],
+      spec: { order: ['learn', 'tab', 'stems', 'band', 'tx'], show: [], hidden: ['fret', 'rig', 'song', 'vis', 'stage', 'neural', 'cam', 'lab', 'exp'], mon: ['levels'] } }
+  }
+};
+/** how the workspace differs for the person using it (null: as it is for everyone) */
+const goalLens = g => (g && typeof meNow === 'function' && GOAL_ME[g.id] && GOAL_ME[g.id][meNow()]) || null;
+const goalSpec = g => { const L = goalLens(g); return L && L.spec ? Object.assign({}, g.spec, L.spec) : g.spec; };
+/** who the workspaces are set up for: a few settings follow once (a singer sees their pitch on the visuals, not a guitar neck), then the workspace in use is set up again */
+function meDefaults() { const m = meNow(); if (m === 'sing') { CFG.vzRibbon = true; CFG.vzNeck = false; CFG.wrFret = false; try { WR.fret = false; } catch (e) { } } else if (m === 'guitar') { CFG.vzNeck = true; CFG.wrFret = null; try { WR.fret = null; } catch (e) { } }      /* a singer's Write has no fretboard under it (the Fretboard button brings it back) */ const r = document.getElementById('vzRibbonBtn'), n = document.getElementById('vzNeckBtn'); if (r) { r.classList.toggle('on', !!CFG.vzRibbon); r.setAttribute('aria-pressed', String(!!CFG.vzRibbon)); } if (n) n.classList.toggle('on', CFG.vzNeck !== false); }
+function meSet(m) { CFG.me = ME[m] ? m : ''; meDefaults(); saveCfg(); const g = goalNow(); if (g && !g.all) goalGo(g.id); else goalBarBuild(); if (document.getElementById('learn') && document.getElementById('learn').open && g && g.id === 'practice') { try { learnOpen(); } catch (e) { } } }
+function meMenu(btn) {
+  const m = meNow(), opt = (k, label, sub) => h('button', { class: 'gl-me-o' + (m === k ? ' on' : ''), type: 'button', role: 'radio', 'aria-checked': String(m === k), 'data-me': k, onclick: () => { closePop(); meSet(k); } }, h('b', {}, label), h('small', {}, sub));
+  popover(btn, h('div', { class: 'gl-me-pop', role: 'radiogroup', 'aria-label': 'Who the workspaces are set up for' }, h('h5', {}, 'Set the workspaces up for'),
+    opt('sing', '🎤 A singer', 'Words first, vocal pedals, your pitch, singing warm-ups'), opt('guitar', '🎸 A guitarist', 'Tab and the neck, tones and the rig, lessons that listen'),
+    opt('new', '🌱 Someone new to music', 'A beat, a few words, the first lessons'), opt('tech', '🎛 A producer', 'The piano roll, lanes, stems and exports'), opt('', 'Anyone', 'Each workspace as it comes'),
+    h('p', { class: 'tiny muted' }, 'Songwriter, Studio and Practice lead with different tools and panels. Nothing is removed: the rest is under ⋯ More and ☰. Full Rig always has everything.')));
+}
 function goalBarBuild() {
   const box = GOALBAR.el; if (!box) return; box.innerHTML = ''; const cur = goalNow(); goalMark();
   const pick = h('div', { class: 'gl-pick', role: 'group', 'aria-label': 'What do you want to do?' }, GOALS.map(g => h('button', { class: 'gl-b' + (cur === g ? ' on' : ''), 'data-goal': g.id, style: '--gh:' + g.hue, 'aria-pressed': String(cur === g), title: g.name + ': ' + g.blurb, onclick: () => goalGo(g.id) }, h('span', { class: 'gl-i', 'aria-hidden': 'true' }, g.ico), h('span', { class: 'gl-t' }, g.name))));
-  const row = h('div', { class: 'gl-row gl-one' }, pick); box.append(row);
+  const row = h('div', { class: 'gl-row gl-one' }, pick, h('button', { class: 'gl-me', id: 'gtMe', type: 'button', 'aria-haspopup': 'true', title: (meNow() ? 'Set up for ' + ME[meNow()].toLowerCase().replace(/^new/, 'someone new') : 'Set up for anyone') + ': change who the workspaces are set up for', 'aria-label': 'Who the workspaces are set up for: ' + (meNow() ? ME[meNow()] : 'anyone'), onclick: e => meMenu(e.currentTarget) }, ME_ICO[meNow()] || '👤')); box.append(row);
   if (!cur) { row.append(h('span', { class: 'tiny muted gl-hint' }, 'Pick what you want to do, and the studio arranges itself for it. Everything stays one click away.')); return; }
   const tools = h('div', { class: 'gl-tools' + (CFG.glMore ? ' more-open' : ''), role: 'toolbar', 'aria-label': cur.name + ' tools' });
-  const ms = CFG.simple && cur.simple || cur, few = CFG.simple && SIMPLE_GOAL_TOOLS[cur.id];      /* ✦ Simple: each workspace keeps its few tools and its own words (part 33b) */
-  const how = ms.mission + ': ' + ms.steps.map((s, i) => (i + 1) + '. ' + s).join('  ') + '\n' + cur.shape;
-  tools.append(h('button', { class: 'gl-mis', type: 'button', title: how, 'aria-label': 'How ' + cur.name + ' works: ' + how, onclick: e => popover(e.currentTarget, h('div', { class: 'gl-how' }, h('b', {}, ms.mission), h('ol', {}, ms.steps.map(s => h('li', {}, s))), h('p', { class: 'tiny muted' }, cur.shape))) }, h('b', {}, ms.mission), h('span', { class: 'gl-steps' }, ms.steps.map((s, i) => h('span', {}, h('i', {}, i + 1), s)))));
-  const more = !few && GOAL_MORE[cur.id] || []; let nMore = 0;
-  cur.tools().forEach(([id, label, title, fn, on, main, off]) => {
-    if (few && !few.includes(id)) return; if (typeof main === 'function') main = main(); const sec = more.includes(id); if (sec) nMore++;
+  const L = goalLens(cur), ms0 = CFG.simple && cur.simple || cur, ms = L ? { mission: L.mission || ms0.mission, steps: L.steps || ms0.steps } : ms0, shape = (L && L.shape) || cur.shape;      /* 2.68: the words of whoever it is set up for */
+  const few = CFG.simple && ((L && L.few) || SIMPLE_GOAL_TOOLS[cur.id]);      /* ✦ Simple: each workspace keeps its few tools and its own words (part 33b) */
+  const how = ms.mission + ': ' + ms.steps.map((s, i) => (i + 1) + '. ' + s).join('  ') + '\n' + shape;
+  tools.append(h('button', { class: 'gl-mis', type: 'button', title: how, 'aria-label': 'How ' + cur.name + ' works: ' + how, onclick: e => popover(e.currentTarget, h('div', { class: 'gl-how' }, h('b', {}, ms.mission), h('ol', {}, ms.steps.map(s => h('li', {}, s))), h('p', { class: 'tiny muted' }, shape))) }, h('b', {}, ms.mission), h('span', { class: 'gl-steps' }, ms.steps.map((s, i) => h('span', {}, h('i', {}, i + 1), s)))));
+  const all = cur.tools(), prim = L && L.tools ? (few || L.tools) : null, list = prim ? prim.map(id => all.find(x => x[0] === id)).filter(Boolean).concat(all.filter(x => !prim.includes(x[0]))) : all;      /* the lens's tools first, in its order */
+  const more = few ? [] : prim ? all.map(x => x[0]).filter(id => !prim.includes(id)) : GOAL_MORE[cur.id] || []; let nMore = 0;
+  list.forEach(([id, label, title, fn, on, main, off]) => {
+    if (few && !few.includes(id)) return; if (typeof main === 'function') main = main(); if (prim) main = id === prim[0]; const sec = more.includes(id); if (sec) nMore++;
     const b = h('button', { class: 'btn sm gl-tool' + (main ? ' gl-main' : '') + (sec ? ' gl-sec' : ''), id, type: 'button', title, onclick: e => { fn(e.currentTarget); setTimeout(goalSync, 60); } }, typeof label === 'function' ? label() : label);
     b._on = on; b._off = off; b._label = label; tools.append(b);
   });

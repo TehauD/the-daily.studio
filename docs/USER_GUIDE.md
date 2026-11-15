@@ -217,6 +217,14 @@ A beat is a ready band to play, sing or write over. Tap one at the top of the **
 
 ## Goal workspaces (2.13; four since 2.64)
 
+**Set up for you (2.68).** The round chip beside the workspaces (👤, or 🎤 🎸 🌱 🎛) sets them up for a **singer**, a **guitarist**, **someone new to music** or a **producer**; the start page asks the same thing. Songwriter, Studio and Practice then lead with different tools, tabs and sidebars. Nothing is removed (the rest is under ⋯ More and ☰), a guitarist and *Anyone* get each workspace as the table below describes, and Full Rig is the same for everyone.
+
+| Set up for | Songwriter | Studio | Practice |
+|---|---|---|---|
+| 🎤 A singer | Opens on the words · Beats · Hum an idea · Rhymes · Paste chords · Send · no fretboard under the page | Record video · Camera · Vocal pedals · 〰 Voice · Export · no Rig tab · the microphone beside it · your pitch on the visuals | Learn (🎤 Singing first) · 〰 Voice · Speed & key · the words and the backing track as tabs |
+| 🌱 Someone new | Opens on the words · Beats · Hum an idea · Paste chords · Pads · Send | as it comes | as it comes |
+| 🎛 A producer | Beats · Piano roll · Keys · Pads · Send · the arrangement open · Backing track on the strip | Record video · video shape · Camera · Stream window · Export | as it comes |
+
 The row at the top of the centre holds four workspaces. Each one is a whole workspace with its own shape: which panel fills the middle, whether the arrangement sits above or below it, which sidebars show and what is in them, which Monitor widgets are on. Each also has its own colour and one row: the workspaces, the main tools (the first highlighted), **⋯ More** for the rest, and a button to the next workspace (2.65). The **?** at the start of the tools shows the workspace's mission and three steps. A tool that is switched on stays showing when More is folded. Choosing one replaces the last completely. Nothing is removed: every panel is still under **☰**, and **▦ Workspace** shows the four as cards with a picture of each shape, then lets you move panels anywhere.
 
 | Workspace | Opens on | Its tools |
@@ -265,20 +273,31 @@ It is kept on this device only (counts and dates, never sound), is not part of s
 
 ## Getting started and guided sessions (2.7)
 
-**2.49.1:** a first visit always opens on the dark green page. Coming back, you see **Welcome back** in your own light or dark, with **Pick up where I left off** and, under it, **Or start something new**: the same goals, each starting a new song.
+**2.49.1:** a first visit always opens on the dark green page. Coming back, you see **Welcome back** in your own light or dark, with **Pick up where I left off** and, under it, **Or start something new**: the same ways in and tasks. Write a song and the single tasks start a new song; Play, Learn and Explore keep the one you have (2.67; before that they all just opened your last song).
 
-The first page asks **what you would like to do first**, not how good you are:
+The first page (2.67) offers **four ways in**, one per workspace, and an optional **I'm mostly a** *Singer · Guitarist · New to music · Producer*. It asks what you do, never how good you are; your answer is remembered and changes what each way in says and where it leads.
+
+| Way in | Opens | The journey |
+|---|---|---|
+| 🎸 **Write a song** | Songwriter, on a new song | *A song, start to finish:* an idea (a beat; a hum if you sing; a captured riff if you play) · hear it · a line of words · a second part · a take · Into the Studio · send it |
+| 🎤 **Play it live** | Studio, on your song or the demo | A look · your sound (singers skip this) · the band · ★ Showtime · a video |
+| 🎼 **Learn and practise** | Practice, on the Learn panel | Connect · open a lesson (the first one; today's session for a guitarist; 🎤 Singing for a singer) · play or sing it to the coach |
+| ⚙️ **Explore everything** | Full Rig, every tool, a finished song | The full tour, the first time |
+
+**On a phone (2.68)** the same ways in use the phone's own screens: *Write a song* is Beats → hear it → Words → Sing → Send; *Play it live* is the band → a look → ★ Showtime; *Learn* fills the screen.
+
+Under them, **Or do one thing** has six single tasks. Each opens in one of the four workspaces:
 
 | Goal | Opens | The session |
 |---|---|---|
 | Turn a hum into a song | A clean page with the Sing or hum button | Start listening · hum 10–30 seconds · hear the band · change the feel · keep it |
-| Record, loop and layer | A new page in the Record layout | Connect your input · set the loop · play chords · play a lead on top · keep looping · stop (see [Loop & layer](#loop--layer-28)) |
-| Learn a song | The Backing track tab | Open it · load a song · mute your part · play along · loop a hard bit |
+| Record, loop and layer | A new page in Studio, with the arrangement open | Connect your input · set the loop · play chords · play a lead on top · keep looping · stop (see [Loop & layer](#loop--layer-28)) |
+| Learn a song | Practice, on the Backing track tab | Open it · load a song · mute your part · play along · loop a hard bit |
 | Run a show | The demo song in the Show layout, Show setup open | The seven-line preflight below |
 
-A small card names one step and outlines the control. The step ticks off when the app sees you do it (it watches its own state; nothing is faked). **Show me** takes you to the control, **Skip** moves on, **–** folds the card, **✕** leaves and keeps your place, and you can drag the card anywhere. Finishing a session adds the tools it used to the tab strip and tells you which. Start, resume or repeat any of them from **? ▸ Guided sessions** (on a phone: More ▸ Guided sessions).
+A small card names one step and outlines the control. The step ticks off when the app sees you do it (it watches its own state; nothing is faked). **Show me** takes you to the control, **Skip** moves on, **–** folds the card, **✕** leaves and keeps your place, and you can drag the card anywhere. Start, resume or repeat any of them from **? ▸ Guided sessions** (on a phone: More ▸ Guided sessions).
 
-**I know my way around** on the first page opens every tool with no coaching. **✦ Simple** (top right) switches between the essentials and every tool at any time.
+**Explore everything** on the first page opens every tool with no coaching (it was *I know my way around*). **✦ Simple** (top right) switches between the essentials and every tool at any time.
 
 **Notes on tabs.** The first time a tab opens, a short note says what it is and gives one thing to try. **Got it** folds it into a small “What is this tab?” line; it never comes back as a full note. Turn them all off in the sessions menu. They are not shown on *Everything* or during a session.
 
@@ -318,7 +337,7 @@ Limits: your interface's delay is compensated, but a note played in the last few
 
 **The band.** A new blank song starts with the band off, so pressing Play plays only what you recorded or wrote. The song that Hum to Song builds comes with the band; its panel has a **🥁 Band** button to switch drums, bass and rhythm off or on (your melody keeps playing), and the BAND row in the studio has the same switches.
 
-**The first page.** It says what the app is for: **Record it. Split it. Write it down.** Three things first: **Record guitar + mic** (plug in an interface or use any microphone; both inputs at once, dry and wet takes, count-in, punch-in), **Split any song** (drums, bass, vocals and guitar come apart; mute the part you play and jam over the rest) and **Chords, tab and lyrics** (from a song or from your own playing, with a lyric sheet that sits under the chords). Then the way in: **● Begin in the studio** opens a clean canvas: a blank page with the cursor in the lyrics, no camera and no full screen. A slim bar underneath lets you **sing or hum an idea**, plug in a guitar, or load a song file instead. First-timers also get **♫ Try the demo song**, a finished song that needs no microphone and no camera. Below that: **Presets and effects** and **Neural graph and visuals**.
+**The first page.** It says what the app is for: **Your song, start to finish.** (until 2.68, *Record it. Split it. Write it down.*) Three things first: **Record guitar + mic** (plug in an interface or use any microphone; both inputs at once, dry and wet takes, count-in, punch-in), **Split any song** (drums, bass, vocals and guitar come apart; mute the part you play and jam over the rest) and **Chords, tab and lyrics** (from a song or from your own playing, with a lyric sheet that sits under the chords). Then the way in: **● Begin in the studio** opens a clean canvas: a blank page with the cursor in the lyrics, no camera and no full screen. A slim bar underneath lets you **sing or hum an idea**, plug in a guitar, or load a song file instead. First-timers also get **♫ Try the demo song**, a finished song that needs no microphone and no camera. Below that: **Presets and effects** and **Neural graph and visuals**.
 
 **The camera is an optional extra.** It is never asked for on the first page. A small **Begin on stage** link at the bottom goes full screen with the visuals and your camera, you in front; you can also switch any time with **🎥 Go on stage** in the Visuals bar, or **Start in** under Settings ▸ Workflow or I/O ▸ Camera. The app remembers the route you used last. Either way you are offered **● Hum or sing** or **🎸 I have a guitar**; under them: **a song file…** (it is split into stems and the chords fill in), **a blank page** or **the demo song**. **＋ New song** (top right of the stage) brings this panel back; **⚙ Inputs** opens I/O, where you choose the microphone and camera once and the app remembers. "Start with camera and mic off" (under Other ways to start) never asks for either. ✕ Studio (top right) returns to the normal studio any time; ■ Stop audio stops all sound and releases the microphone.
 
@@ -627,7 +646,15 @@ A node graph of the music as it plays: notes, chords, functions (tonic, subdomin
 
 **Visuals** (6) offers **Hex Resonance** (the default; the **Hexagons** swatches pick the colours: *Match the theme* (the default), Dark green, White, Ocean, Ember, Violet, Mono, Blush, Daylight, or *Pick your own* for a background, cell and gold-cell colour; the start screen uses the same choice), **Concert**, Chord Bloom, Harmonic Orrery, Beat Grid, a Prompter, the Neural map, **Fifths Halo** (the circle of fifths as a ring around you, with the song's chords on it and your notes flying in) and **Prism** (a kaleidoscope that changes on the off-beat; its flashes and spin follow Light comfort). In full-screen, **✦ Look** cycles Hex Resonance, Concert, Fifths Halo and Prism. The pitch wheel, spectrogram and scope are readouts rather than shows, so they are on **Monitor ▸ Views** (and are still Stage scenes). **🎸 Neck** puts a small guitar neck on the visuals and the Neural map: what is playing, a dashed ghost of the note coming next, the note you are singing (pink, at every place it can be played) and any chord you click in the Neural map, driven by the rig output, the master mix or your dry DI. Add a **camera backdrop** or go **⛶ Stage mode**.
 
-**Behind you (2.12).** Under the looks (the Visuals bar's **Look** button) is a second row with six backdrops made to sit behind you: **Light Ribbons**, **Aurora**, **Warp Stars**, **Pulse Rings**, **Nebula** and **Skyline**. Choose one, then set **Camera look** to *Me in front (green screen)* and you stand inside the picture (the first time you need an internet connection to fetch the small segmentation model; see Privacy). The colour follows the chord and glides when it changes; the movement follows the sound; **Light comfort ▸ Calm** slows it to about half. Nothing flashes. They also work full screen, in the stage designer and in recordings.
+**Behind you (2.12; 2.70).** Under the looks (the Visuals bar's **Look** button) is a second row with backdrops made to sit behind you: **Light Ribbons**, **Aurora**, **Warp Stars**, **Pulse Rings**, **Nebula**, **Skyline**, and the sound-made-visible trio (2.70) **Cymatics**, **Spectrum** and **Waveform**. Choose one, then set **Camera look** to *Me in front (green screen)* and you stand inside the picture (the first time you need an internet connection to fetch the small segmentation model; see Privacy). The colour follows the chord and glides when it changes; the movement follows the sound; **Light comfort ▸ Calm** slows it to about half. Nothing flashes. They also work full screen, in the stage designer and in recordings.
+- **🌀 Cymatics** draws a vibrating plate's standing waves — the way a real tone shapes sand on a plate. Higher notes add more rings, the low-mids set how many petals, and louder deepens the pattern; it turns slowly and breathes.
+- **📊 Spectrum** is the live frequency spectrum as a glowing ridge over a horizon, with a dimmer reflection below: the lows sit at the left and warm, the highs at the right and cool, and each band has a dot that swells with its level.
+- **〰 Waveform** is the sound as glowing oscilloscope traces through the middle — a main line with two quieter harmonics — that travel sideways as the music plays. A busier sound draws a busier wave.
+- These three are made for music videos: they turn what you hear into what the camera sees. (Great for exploring how a note, a chord or a timbre looks — try singing a pure vowel into Cymatics, or a bright cymbal into Spectrum.)
+- **🌌 Stardust (2.71)** is the first **GPU-powered** look: a drifting particle galaxy with a real glow (bloom), drawn on your graphics card for a richer, more cinematic picture. It reacts to the sound and takes the chord's colour like the others. On a device without modern graphics support it automatically falls back to a simpler version, so it always works.
+- **🌊 Ripple (2.72)** *simulates* the sound rather than drawing it: your playing drops into a vibrating surface and the standing waves and ripples that form — a real cymatic plate — are the picture. The frequencies drive it and the beat sends a pulse through it.
+- **🌱 Life (2.72)** is a living simulation: glowing organisms that grow, divide and crawl, fed and stirred by how loud you play (a reaction-diffusion, the maths behind how a leopard gets its spots). Sound made into something alive.
+- Ripple and Life run as simulations on your graphics card; on a device that can't, they fall back to a simpler version. This is a growing series of GPU looks — more cinematic, more interactive ones are on the way.
 
 **Camera look.** Turn on **📷 Camera backdrop** (Visuals tab, or per scene in Stage) after starting the camera in the Vision tab, then pick how it sits with the visuals: *Dimmed behind the visuals*; *Visuals frame me (edges in)*, where you stay clear in a soft oval and the visuals live around the edges (drag the slider to size the clear area); or *Me in front (green screen)*, which cuts you out so the visuals play behind you. The cut-out downloads a small model the first time (Google's selfie segmenter, nothing is uploaded); offline it falls back to edges-in. Good light and a plain-ish background help the cut-out.
 
@@ -1030,6 +1057,18 @@ It starts at 70% of the song's tempo, every clean go is 5 BPM faster, and it sto
 - Get it and the next phrase is a note longer (up to eight). Miss two in a row and it's a note shorter.
 - **▶ Hear it again** replays it, and **👁 Show me** reveals it.
 
+## Singing: lessons the coach follows as you sing (2.68)
+
+**🎤 Singing** is in Learn's list (second for a singer). Connect a microphone (Audio, top right); a vocal channel is used if you have one, else the main input.
+
+- **What it shows.** A sung step has a **keyboard**: the step's notes are lit, the one to sing now is red, and the note you are singing has an orange outline. The note names are underneath. **▶ Listen** plays it on a piano; **● Sing it** listens.
+- **How it listens.** Each note in turn, in **any octave**. A voice slides between notes, so a wrong note counts only when you hold it (about half a second).
+- **Hold a note.** Some steps ask for one note kept in tune for three or four seconds. The line under the keyboard says how long you have held it, and whether you are a little high or low.
+- **Where it sits.** The **Key** menu moves a step up or down a semitone at a time. After **〰 Voice ▸ Find my range**, steps start at the bottom of your comfortable range by themselves.
+- **The lessons:** Warm up and match a note · Five notes, and thirds · Arpeggios and the octave · The whole scale, in tune.
+- **📅 Today** for a singer is a held note to warm up, something to review and the next sung step.
+- It can't follow a slide or a siren, words, or vibrato; it hears pitch only.
+
 ## Learn: lessons, riffs, Riff Lab and the scale atlas (2.32)
 
 **🎓 Learn** is the **Practice** workspace's own panel (2.66; on a phone it's in **More**). Its list on the left has Today, Lessons, Warm-ups, This song, By ear, Riffs & licks, Riff Lab, the Scale atlas, For teachers and **🎼 Scales & ear**. A lesson, riff or shape opens in the panel itself, with **◀ Back** to the list, so the band, the tempo, the tuner and the **Fretboard** tab stay in reach. Connect your guitar (Audio, top right): the coach listens through the same input as the tuner.
@@ -1039,7 +1078,9 @@ It starts at 70% of the song's tempo, every clean go is 5 BPM faster, and it sto
 - Hammer-ons, pull-offs and slides are followed by their notes: the coach can't tell them from picked notes.
 - **Tempo ladder:** pass a step and it comes back 5 BPM faster. **−/+** change the tempo; **Backing** and **Click** switch the band and the click.
 
-**Lessons** come in four paths: Foundations, Lead, Rhythm and Technique. A lesson shows how many of its steps you have done (kept in this browser). **🔥 Warm-ups** are five minutes before you play.
+**Lessons** come in six paths: Foundations, Lead, Rhythm, Technique, **Progressions** and **Styles** (2.69). A lesson shows how many of its steps you have done (kept in this browser). **🔥 Warm-ups** are five minutes before you play.
+- **🎶 Progressions** teaches six named chord progressions behind thousands of songs — I–IV–V (the three-chord song), I–V–vi–IV (the pop progression), 12-bar blues, ii–V–I (the jazz cadence), the Andalusian cadence, and the minor loop — each explained, then played through with the band and its chord diagrams.
+- **🎭 Styles** teaches what makes Blues, Rock, Funk, Country, Pop and Reggae sound like themselves: each lesson explains the genre's rhythm and harmony, then plays a representative riff with the neck and tab shown.
 
 **🎸 Riffs & licks:** 40 riffs written for the studio, in nine styles, by level. Choose a key, play it note by note or **⏱ In time** with a drummer, **➕ Put it in my song** (a new section of tab after the one you are in, with the lead playing it; Undo takes it out), or **⇩ Share as a file**.
 
@@ -1053,14 +1094,18 @@ It starts at 70% of the song's tempo, every clean go is 5 BPM faster, and it sto
 
 **🎤 Vocal pedals** (the Voice window, the Songwriter and Studio tools, and on a phone in **More**) is a small pedalboard for your voice, after the vocal polish. You hear it while you monitor (Hear myself, on headphones). Vocal takes are recorded clean and played back through it, so you can change the sound after you sing. Bounces include it.
 - **🤘 Scream:** a gate, hard compression, grit blended beside your clean voice (so the words stay clear) and an instant octave down for growl. Styles: Rasp, Hardcore, Fry growl, Death growl. It lets you scream lighter: the pedal adds the grit so your throat doesn't have to. If it hurts, stop.
+- **🎯 Tune (2.70):** hears the note you sing and slides your voice to the nearest note of the song's key — or the chord that's playing. **Strength** sets how far; **Speed** runs from *Gentle* (an invisible polish) through *Snappy* to *Hard* (the robotic snap). Like Harmony, it lands a few hundredths of a second after you.
 - **De-esser:** turns down harsh "s" sounds only when they're loud.
+- **🗜 Leveler (2.70):** a compressor that evens your voice out so the loud and soft parts sit together; **Output** adds make-up gain. Placed early, so everything after it sits better.
+- **☀ Warmth & Air (2.70):** a tone tilt — **Tone** goes from *warm* (fuller low-mids, softer top) to *air* (a bright, open top), and **Warmth** adds a little tape-style saturation for vintage body.
 - **📢 Megaphone:** megaphone, radio or telephone.
 - **Doubler:** a double-tracked voice, spread left and right.
 - **Harmony:** a third or a fifth above or below that stays in the song's key, or on the chord that is playing. It lands a few hundredths of a second after you, as it has to hear the note first.
 - **Echo:** in time with the song. **Throw** echoes only while the foot pedal is held.
-- **Reverb:** room, plate or hall.
+- **Reverb:** room, **spring** (classic for oldies and jazz), plate or hall.
+- **A safety limiter** sits at the very end (always on): Scream, Megaphone, stacked Harmony and Echo feedback can push as hard as you like and the board still won't clip.
 
-**Presets:** Clean lead, Rock grit, Scream, Ballad, Ambient echo, Harmony lead and Megaphone. **By section** switches presets as the song plays (for example, Scream in every chorus). The foot pedal can switch Scream, step through presets and hold an echo throw (Settings ▸ Pedal & MIDI sync). With Scream or Megaphone on, the show turns gritty. Use headphones: with speakers, any live vocal effect can feed back.
+**Presets:** Clean lead, Rock grit, Scream, Ballad, **Crooner** (a warm, intimate oldies voice: Warmth, a gentle Leveler, a little doubler, a soft slap and a spring reverb), **Pitch polish** (a light, natural Tune), **Hard tune** (the robotic effect), Ambient echo, Harmony lead and Megaphone. **By section** switches presets as the song plays (for example, Scream in every chorus). The foot pedal can switch Scream, step through presets and hold an echo throw (Settings ▸ Pedal & MIDI sync). With Scream or Megaphone on, the show turns gritty. Use headphones: with speakers, any live vocal effect can feed back.
 
 ## Megaphone pedal (2.30)
 

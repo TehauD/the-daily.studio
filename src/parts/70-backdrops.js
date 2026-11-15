@@ -1,17 +1,19 @@
 /* ============================================================
-   Part 70 · Behind you (2.12) — six integrated backdrops for the camera cut-out
-   Light Ribbons · Aurora · Warp Stars · Pulse Rings · Nebula · Skyline
+   Part 70 · Behind you (2.12; 2.70 Cymatics, Spectrum, Waveform) — integrated backdrops for the camera cut-out
+   Light Ribbons · Aurora · Warp Stars · Pulse Rings · Nebula · Skyline · Cymatics · Spectrum · Waveform
    They are made to sit behind the person: set Camera look to “Me in front (green screen)” and you stand inside the picture,
    the way a performer stands in front of a lit backdrop. Each one is plain 2D drawing on the visuals canvas, so it also works
    in full screen, in the stage designer and in a recorded video.
+   · Cymatics, Spectrum and Waveform (2.70) show the sound itself — a vibrating plate's standing waves, the live frequency spectrum,
+     and the waveform as glowing oscilloscope traces — for music-video takes that make what you hear visible.
    · The colour follows the chord: it glides to a new hue over about a second when the harmony changes (the circle of fifths
      walks round the colour wheel), and rests on a calm blue when nothing is playing.
    · The movement follows the sound (a few frequency bands set the size and brightness of its parts) and the comfort setting
      (Calm moves at about half the speed and softens every pulse).
    · Nothing here flashes: brightness only ever changes by gliding, and rings and pulses fade over a second or more.
    ============================================================ */
-const BK_MODES = new Set(['ribbons', 'aurora', 'warp', 'rings', 'nebula', 'skyline']);
-const VBACK = [['ribbons', 'Light Ribbons'], ['aurora', 'Aurora'], ['warp', 'Warp Stars'], ['rings', 'Pulse Rings'], ['nebula', 'Nebula'], ['skyline', 'Skyline']];
+const BK_MODES = new Set(['ribbons', 'aurora', 'warp', 'rings', 'nebula', 'skyline', 'cymatics', 'spectrum', 'wave']);
+const VBACK = [['ribbons', 'Light Ribbons'], ['aurora', 'Aurora'], ['warp', 'Warp Stars'], ['rings', 'Pulse Rings'], ['nebula', 'Nebula'], ['skyline', 'Skyline'], ['cymatics', 'Cymatics'], ['spectrum', 'Spectrum'], ['wave', 'Waveform']];
 VMODES.push(...VBACK);
 const BK = { hue: 215, en: .2, bands: new Float32Array(8), t: 0, st: null, rings: [], lastRing: 0, held: false, chord: '', tgt: 215 };
 const bkH = n => { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
@@ -37,7 +39,7 @@ function bkTick(X) {
 }
 
 /** what draws each of these looks (part 70b adds Your video) */
-const BK_FN = { ribbons: bkRibbons, aurora: bkAurora, warp: bkWarp, rings: bkRings, nebula: bkNebula, skyline: bkSkyline };
+const BK_FN = { ribbons: bkRibbons, aurora: bkAurora, warp: bkWarp, rings: bkRings, nebula: bkNebula, skyline: bkSkyline, cymatics: bkCymatics, spectrum: bkSpectrum, wave: bkWave };
 function bkDraw(mode, g, W, H, X) {
   const B = bkTick(X); g.save(); g.lineCap = 'round'; g.lineJoin = 'round';
   (BK_FN[mode] || bkRibbons)(g, W, H, B);
@@ -127,6 +129,49 @@ function bkSkyline(g, W, H, B) {
       x += bw + R * .004;
     }
   });
+}
+
+/* ----- Cymatics: sound made visible — a vibrating plate's standing waves. Higher frequencies raise the ring count, the low-mids set the
+   number of petals, and louder deepens the pattern; it turns slowly and breathes. The physics that links a tone to a shape. ----- */
+function bkCymatics(g, W, H, B) {
+  bkSky(g, W, H, B.hue, 2, 7); const cx = W / 2, cy = H / 2, R = Math.hypot(cx, cy), t = B.t;
+  const petals = 3 + Math.round((B.b[1] + B.b[2]) * 5), kr = 5 + Math.round((B.b[5] + B.b[6]) * 7), amp = .35 + .65 * B.en, rings = 11, segs = 76;
+  g.globalCompositeOperation = 'lighter';
+  for (let r = 1; r <= rings; r++) {
+    const rr = r / rings * R * .94, bd = B.b[(r + 1) % 8], radial = Math.cos(rr / R * kr * Math.PI - t * .8), bright = Math.abs(radial) * amp * (.4 + .6 * bd);
+    if (bright < .03) continue;
+    g.beginPath();
+    for (let s = 0; s <= segs; s++) { const th = s / segs * 6.2832, lit = radial * Math.cos(th * petals + t * .25), rad = rr + lit * R * .02 * (.6 + bd), x = cx + Math.cos(th) * rad, y = cy + Math.sin(th) * rad; g[s ? 'lineTo' : 'moveTo'](x, y); }
+    g.lineWidth = R * (.0022 + .004 * bd); g.strokeStyle = bkHsl(B.hue + (r - rings / 2) * 8, 88, 60, .12 + .5 * bright); g.stroke();
+  }
+  const orb = g.createRadialGradient(cx, cy, 0, cx, cy, R * .3); orb.addColorStop(0, bkHsl(B.hue + 20, 90, 66, .28 + .14 * B.en)); orb.addColorStop(1, bkHsl(B.hue + 20, 90, 60, 0)); g.fillStyle = orb; g.fillRect(0, 0, W, H);
+}
+
+/* ----- Spectrum: the live frequency spectrum as a glowing ridge over a horizon, with a dimmer reflection below. Low frequencies sit at the
+   left and warm, highs at the right and cool; each band has a bright dot that swells with its level. Reads at a glance as "this is the sound". ----- */
+function bkSpectrum(g, W, H, B) {
+  bkSky(g, W, H, B.hue, 3, 9); const n = B.b.length, hz = H * .6, steps = 96, pts = [];
+  const val = u => { const x = u * (n - 1), i = Math.floor(x), f = x - i, a = B.b[Math.max(0, i)], b2 = B.b[Math.min(n - 1, i + 1)], s = f * f * (3 - 2 * f); return Math.max(.05, a + (b2 - a) * s) * (.75 + .25 * Math.sin(u * 8 + B.t * .55)); };
+  for (let s = 0; s <= steps; s++) { const u = s / steps; pts.push([u * W, hz - H * (.1 + .6 * val(u) + .06 * B.en)]); }
+  g.globalCompositeOperation = 'lighter';
+  g.beginPath(); g.moveTo(0, hz); pts.forEach(p => g.lineTo(p[0], p[1])); g.lineTo(W, hz); g.closePath();
+  const gr = g.createLinearGradient(0, hz - H * .55, 0, hz); gr.addColorStop(0, bkHsl(B.hue - 10, 90, 60, .32)); gr.addColorStop(1, bkHsl(B.hue + 20, 85, 45, .05)); g.fillStyle = gr; g.fill();
+  g.save(); g.translate(0, hz * 2); g.scale(1, -.5); g.beginPath(); g.moveTo(0, hz); pts.forEach(p => g.lineTo(p[0], p[1])); g.lineTo(W, hz); g.closePath(); const gr2 = g.createLinearGradient(0, hz - H * .55, 0, hz); gr2.addColorStop(0, bkHsl(B.hue, 85, 55, .1)); gr2.addColorStop(1, bkHsl(B.hue, 85, 45, 0)); g.fillStyle = gr2; g.fill(); g.restore();
+  for (let k = 0; k < 2; k++) { g.beginPath(); pts.forEach((p, s) => g[s ? 'lineTo' : 'moveTo'](p[0], p[1])); g.lineWidth = k ? H * .006 : H * .018; g.strokeStyle = bkHsl(B.hue + 20, 92, 66, k ? .85 : .16); g.stroke(); }
+  for (let i = 0; i < n; i++) { const p = pts[Math.round((i + .5) / n * steps)], rad = H * (.006 + .012 * B.b[i]); g.beginPath(); g.arc(p[0], p[1], rad, 0, 6.2832); g.fillStyle = bkHsl(B.hue - 40 + i * 14, 90, 66, .45 + .4 * B.b[i]); g.fill(); }
+}
+
+/* ----- Waveform: the sound as glowing oscilloscope traces through the middle — a main line with two quieter harmonics above and below. The
+   shape is a sum of sines whose heights follow the frequency bands, so a richer sound draws a busier wave; it travels sideways as it plays. ----- */
+function bkWave(g, W, H, B) {
+  bkSky(g, W, H, B.hue + 8, 2, 7); const cy = H / 2;
+  const gl = g.createRadialGradient(W / 2, cy, 0, W / 2, cy, W * .6); gl.addColorStop(0, bkHsl(B.hue, 85, 50, .16 + .12 * B.en)); gl.addColorStop(1, bkHsl(B.hue, 85, 50, 0)); g.fillStyle = gl; g.fillRect(0, 0, W, H);
+  g.globalCompositeOperation = 'lighter'; const steps = 150, amp = H * (.035 + .3 * B.en);
+  for (let tr = 0; tr < 3; tr++) {
+    const yb = cy + (tr - 1) * H * .17, hue = B.hue + (tr - 1) * 26, phase = B.t * (.8 + tr * .25), a = tr === 1 ? 1 : .55, pts = [];
+    for (let s = 0; s <= steps; s++) { const u = s / steps, edge = Math.sin(u * Math.PI); let y = 0; for (let k = 0; k < 4; k++) { const bd = B.b[(k * 2 + tr) % 8]; y += Math.sin(u * (6 + k * 7 + tr * 3) * Math.PI + phase * (1 + k * .5)) * bd / (k + 1); } pts.push([u * W, yb + y * amp * edge * a]); }
+    [[H * .02, .1], [H * .007, .4 * a], [H * .0025, .85 * a]].forEach(([w, al]) => { g.beginPath(); pts.forEach((p, s) => g[s ? 'lineTo' : 'moveTo'](p[0], p[1])); g.lineWidth = w; g.strokeStyle = bkHsl(hue, 90, 60, al); g.stroke(); });
+  }
 }
 
 /** the first time one of these is chosen with the camera showing you dimmed behind the visuals, say how to stand inside the picture */

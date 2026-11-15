@@ -159,9 +159,9 @@ function kyPaint(svg, mk) {
     k.classList.toggle('ch', !!inCh); k.classList.toggle('root', !!root); k.classList.toggle('sc', mk.scale.includes(pc)); k.classList.toggle('on', mk.on.has(m)); k.classList.toggle('me', mk.me === m); });
   svg.querySelectorAll('[data-l]').forEach(t => { const m = +t.dataset.l, pc = m % 12, inCh = mk.ch && mk.ch.pcs.includes(pc); t.textContent = inCh ? (deg ? ['R', 'b2', '2', 'b3', '3', '4', 'b5', '5', 'b6', '6', 'b7', '7'][((pc - mk.ch.root) % 12 + 12) % 12] : pcName(pc, CFG.flats)) : ''; });
 }
-function kyPaintAll() { const mk = kyMarks(); document.querySelectorAll('svg.ky-svg').forEach(s => kyPaint(s, mk)); const st = document.getElementById('kyChord'); if (st) st.textContent = mk.sym ? 'Chord: ' + mk.sym : ''; }
+function kyPaintAll() { const mk = kyMarks(); document.querySelectorAll('svg.ky-svg:not(.co-ky)').forEach(s => kyPaint(s, mk)); const st = document.getElementById('kyChord'); if (st) st.textContent = mk.sym ? 'Chord: ' + mk.sym : ''; }
 /* keep it moving while it is on screen */
-(function kyLoop() { requestAnimationFrame(kyLoop); const vis = [...document.querySelectorAll('svg.ky-svg')].some(s => s.isConnected && s.getBoundingClientRect().width > 0); if (!vis) return; const now = performance.now(); if (now - (KY.pt || 0) < 60) return; KY.pt = now; kyPaintAll(); })();
+(function kyLoop() { requestAnimationFrame(kyLoop); const vis = [...document.querySelectorAll('svg.ky-svg:not(.co-ky)')].some(s => s.isConnected && s.getBoundingClientRect().width > 0); if (!vis) return; const now = performance.now(); if (now - (KY.pt || 0) < 60) return; KY.pt = now; kyPaintAll(); })();
 
 /* ---------- under Write, beside the fretboard ---------- */
 const kyWrOn = () => !!CFG.wrPiano;
