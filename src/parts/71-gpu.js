@@ -195,9 +195,43 @@ function gpuSimLook(key) {
   };
 }
 
+/* ---------- 2.73: Arena — a perspective 3D stage you stand inside (a reflective floor to a lit horizon, reactive light columns) ---------- */
+function gpuArenaProg() {
+  if (GPU.P.arena) return true; if (GPU.P.arena === false) return false; const gl = GPU.gl;
+  const pr = gpuProg(gl, GPU_VS_FS, `#version 300 es
+    precision highp float; in vec2 vUv; uniform vec2 uRes; uniform float uT,uEn,uHue; uniform vec4 uB; out vec4 o;
+    vec3 pal(float h){ return .5+.5*cos(6.2831*(h/360.)+vec3(0.,2.1,4.2)); }
+    float h1(float n){ return fract(sin(n*127.1)*43758.5); }
+    void main(){
+      vec2 p=(vUv*uRes - .5*uRes)/uRes.y; float hor=0.02; vec3 col;
+      if(p.y>hor){                                   /* sky: a tint of the chord, a horizon glow, a few calm stars */
+        float t=p.y-hor; col=pal(uHue)*(.05+.10*exp(-t*6.)); col+=pal(uHue+20.)*exp(-t*9.)*(.4+.8*uEn)*.5;
+        vec2 g=floor(p*uRes.y/26.); float st=step(.992,h1(g.x*57.+g.y*131.)); col+=st*(.25+.4*h1(g.x+g.y));
+      } else {                                       /* floor: a perspective grid scrolling toward you, with glowing columns */
+        float d=hor-p.y, z=1.0/(d*2.2), zz=z+uT*1.4, x=p.x*z*2.2, fog=exp(-d*7.5);
+        float gx=abs(fract(x)-.5), gz=abs(fract(zz)-.5), aa=max(fwidth(x),fwidth(zz));   /* screen-space width: distant lines fade instead of aliasing */
+        float grid=(1.-smoothstep(.0,.06+aa,gx))+(1.-smoothstep(.0,.06+aa,gz)); grid=clamp(grid*(1.-smoothstep(.0,.9,aa)),0.,1.);
+        col=pal(uHue+x*2.)*.025 + pal(uHue+40.)*grid*(.22+.5*uEn)*fog;
+        float b[4]=float[](uB.x,uB.y,uB.z,uB.w), xs[4]=float[](-2.4,-1.2,1.2,2.4);
+        for(int i=0;i<4;i++){ float dxc=x-xs[i]; col+=pal(uHue+60.)*exp(-dxc*dxc*5.)*fog*(.25+1.3*b[i]); }
+        col*=(.6+.4*fog)*smoothstep(.0,.08,d);
+      }
+      o=vec4(col,1.);                                /* linear-ish; the composite tonemaps once */
+    }`);
+  if (!pr) { GPU.P.arena = false; return false; }
+  GPU.P.arena = pr; GPU.arenaU = { res: gl.getUniformLocation(pr, 'uRes'), t: gl.getUniformLocation(pr, 'uT'), en: gl.getUniformLocation(pr, 'uEn'), hue: gl.getUniformLocation(pr, 'uHue'), b: gl.getUniformLocation(pr, 'uB') }; return true;
+}
+function gpuArena(gl, B, w, h) {
+  if (!gpuArenaProg()) return; const U = GPU.arenaU; gl.disable(gl.BLEND); gl.useProgram(GPU.P.arena);
+  gl.uniform2f(U.res, GPU.w, GPU.h); gl.uniform1f(U.t, B.t); gl.uniform1f(U.en, B.en); gl.uniform1f(U.hue, B.hue);
+  gl.uniform4f(U.b, B.b[0] + B.b[1], B.b[2] + B.b[3], B.b[4] + B.b[5], B.b[6] + B.b[7]);
+  gl.bindVertexArray(GPU.vao); gl.drawArrays(gl.TRIANGLES, 0, 3);
+}
+GPU_LOOKS.arena = gpuArena;
+
 /** register the GPU looks as "Behind you" looks, before Your video, so they sit with the other backdrops */
 (function gpuRegister() {
-  if (typeof VBACK === 'undefined') return; const entries = [['stardust', 'Stardust'], ['ripple', 'Ripple'], ['life', 'Life']];
+  if (typeof VBACK === 'undefined') return; const entries = [['stardust', 'Stardust'], ['arena', 'Arena'], ['ripple', 'Ripple'], ['life', 'Life']];
   const vi = VBACK.findIndex(m => m[0] === 'video'); const at = vi < 0 ? VBACK.length : vi;
   entries.forEach((e, k) => {
     VBACK.splice(at + k, 0, e); BK_MODES.add(e[0]); if (!VMODES.some(m => m[0] === e[0])) VMODES.splice(VMODES.findIndex(m => m[0] === 'video') < 0 ? VMODES.length : VMODES.findIndex(m => m[0] === 'video'), 0, e);

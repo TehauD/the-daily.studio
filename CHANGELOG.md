@@ -2,6 +2,15 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.73.0 — 2026-11-15 — Arena: a 3D stage you stand inside
+
+### Added
+- **🏟 Arena** — a GPU look that builds a **3D stage in perspective**: a reflective floor scrolling toward you to a lit horizon, a sky in the chord's colour with a few calm stars, and light columns that rise and glow with the frequency bands. Set **Camera look** to *Me in front (green screen)* and you stand inside the set — the music-video stage, live and reactive. Like the other GPU looks it takes the chord's colour, eases in Calm, never flashes, and falls back to a 2D field with no WebGL2.
+- Built on the 2.71 engine with no raymarching (all analytic per-pixel math), so it runs fast even on modest graphics.
+
+### Tests
+- **`e2e-gpu`** (15 checks) adds Arena to the GPU looks it covers (paints a real picture, moves, no flashing in Calm or Standard, registered in the Behind-you group).
+
 ## 2.72.0 — 2026-11-15 — Living cymatics: the sound made into physics, and into life
 
 On the GPU engine from 2.71, two looks that **simulate** the sound rather than draw it — full-precision ping-pong simulations running on your graphics card.

@@ -4,6 +4,10 @@ What the studio, its tutorials, its documents and its tests do **not** cover yet
 
 How to use it: before a release, move what the release closed into *Closed* with the version, and add what it opened. [RELEASE.md](RELEASE.md) has this as a checklist item. Items marked **(maintainer)** are decisions or facts only the project's owner can settle; nothing here blocks a build.
 
+## Closed in 2.73.0
+
+- **No 3D set to perform inside.** Added **Arena**, a GPU look that renders a perspective 3D stage (a reflective floor to a lit horizon, reactive light columns, a starry sky in the chord's colour). With the green-screen camera look you stand inside it — the music-video stage. No raymarching, so it stays fast; falls back to 2D with no WebGL2.
+
 ## Closed in 2.72.0
 
 - **The GPU engine had one look and no simulation layer.** Added a reusable ping-pong simulation layer (float render targets where available) and two living looks on it: **Ripple** (a wave-field / cymatic plate driven by the bands and the beat) and **Life** (a Gray-Scott reaction-diffusion of glowing organisms fed by how loud you play). Sound made into physics and into life. Both obey the Calm/no-flash rules and fall back to 2D with no float support.

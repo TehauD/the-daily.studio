@@ -5,11 +5,11 @@ const { suite } = require('./lib.cjs');
 suite('e2e-gpu', async t => {
   const { ok, wait } = t, p = await t.open({ w: 1280, h: 720, debug: true }), ev = (f, a) => p.evaluate(f, a);
 
-  const GPU_LOOKS = ['stardust', 'ripple', 'life'];      // Stardust (particles, 2.71); Ripple + Life (living simulations, 2.72)
+  const GPU_LOOKS = ['stardust', 'arena', 'ripple', 'life'];      // Stardust (particles, 2.71); Arena (3D stage, 2.73); Ripple + Life (living sims, 2.72)
 
   // ---- registered as "Behind you" looks, before Your video, and the engine builds on WebGL2 + float targets in this browser
-  const reg = await ev(() => { const d = window.__daily; return { inBack: d.VBACK.map(m => m[0]), modes: ['stardust', 'ripple', 'life'].map(k => d.VMODES.some(m => m[0] === k) && d.BK_MODES.has(k)), names: ['stardust', 'ripple', 'life'].map(k => (d.VBACK.find(m => m[0] === k) || [])[1]).join('|'), gpu: d.gpuGet(), hasCv: !!(d.GPU && d.GPU.cv), float: d.GPU.float }; });
-  ok(reg.modes.every(Boolean) && reg.names === 'Stardust|Ripple|Life', 'the three GPU looks are in the Behind-you group (' + reg.names + ')');
+  const reg = await ev(() => { const d = window.__daily, K = ['stardust', 'arena', 'ripple', 'life']; return { inBack: d.VBACK.map(m => m[0]), modes: K.map(k => d.VMODES.some(m => m[0] === k) && d.BK_MODES.has(k)), names: K.map(k => (d.VBACK.find(m => m[0] === k) || [])[1]).join('|'), gpu: d.gpuGet(), hasCv: !!(d.GPU && d.GPU.cv), float: d.GPU.float }; });
+  ok(reg.modes.every(Boolean) && reg.names === 'Stardust|Arena|Ripple|Life', 'the GPU looks are in the Behind-you group (' + reg.names + ')');
   ok(GPU_LOOKS.every(k => reg.inBack.includes(k)) && reg.inBack.indexOf('life') === reg.inBack.indexOf('video') - 1, 'they sit together, just before Your video (' + reg.inBack.join(',') + ')');
   ok(reg.gpu === true && reg.hasCv, 'the WebGL2 engine builds (this browser has WebGL2): ' + reg.gpu);
   ok(reg.float === true, 'and float render targets are available, so the living simulations run on the GPU (' + reg.float + ')');
