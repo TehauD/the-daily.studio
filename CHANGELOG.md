@@ -2,6 +2,15 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.74.0 — 2026-11-15 — The band around you, and your show in VR
+
+### Added
+- **🎧 Spatial audio** (Visuals ▸ ⋯ More). On headphones, the band is placed in a circle around you — drums and vocal ahead, bass just off-centre, the guitars to the sides, keys behind — with a **Spin** to turn the whole circle slowly. It uses 3D (HRTF) panners and only re-routes the live mix, so your dry recordings and the fast bounce are untouched; it heals itself if the audio engine restarts. Off by default, best on headphones.
+- **🥽 VR (experimental)** (Visuals ▸ ⋯ More, where a headset supports it). Opens an immersive WebXR session and shows your live, reactive visuals filling your view, so you can stand inside your own show. It uses its own small WebGL context (never the visuals engine's), so it can't disturb the normal app, and the button is simply absent where VR isn't supported. **Device-dependent and unverified without a headset** — it is gated and fails safe.
+
+### Tests
+- **`e2e-spatial`** (12 checks): off by default; turning it on routes each band part (not the click) through an HRTF panner placed at a distinct point, without silencing the mix; Spin moves the sources; turning it off restores the plain path; the control shows in ⋯ More; the VR button is absent where immersive VR isn't supported (so its render path never runs untested); no errors.
+
 ## 2.73.0 — 2026-11-15 — Arena: a 3D stage you stand inside
 
 ### Added
