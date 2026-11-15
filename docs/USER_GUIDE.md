@@ -1095,6 +1095,16 @@ It starts at 70% of the song's tempo, every clean go is 5 BPM faster, and it sto
 
 **🍎 For teachers:** ✎ Annotate, 📝 Lesson notes and ⏺ Record the screen, plus **This section as an exercise** (the tab of the section you are in, note by note) and lesson files: **⇩ Share as a file** in the coach saves a `.daily-lesson.json` to send a student, and **📂 Open a lesson file** opens one. A file can only contain notes, chords, words and tempos.
 
+## Compare takes (2.75)
+
+Recorded a few passes and can't decide? Click a clip in the arrangement and choose **⚖ Compare takes**. The studio listens to every take of the same kind (voices with voices, instruments with instruments) and lays them side by side:
+- **Timing** is the average distance from the song's grid: *behind the beat*, *ahead of the beat* or *on the grid*. **Steadiness** is how much the notes wander around that.
+- **Pitch** (voices only) is how far held notes sit from the nearest note of the song's key, whether the take tends sharp or flat, and how much of it is in tune.
+- **Level** is how even the loudness is, with the peak and a warning if the input clipped. **Noise** is the quietest tenth of the take.
+- The best figure in each column is marked, and a sentence says what stands out.
+
+Each column says whether it is **measured** or **estimated**, and *How it is measured* explains where it can be wrong: a take recorded without the click reads as loose, and a deliberate blue note counts as off. It never changes or deletes a take. The choice stays yours.
+
 ## Vocal pedals (2.31)
 
 **🎤 Vocal pedals** (the Voice window, the Songwriter and Studio tools, and on a phone in **More**) is a small pedalboard for your voice, after the vocal polish. You hear it while you monitor (Hear myself, on headphones). Vocal takes are recorded clean and played back through it, so you can change the sound after you sing. Bounces include it.

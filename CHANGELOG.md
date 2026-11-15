@@ -2,6 +2,20 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.75.0 — 2026-11-15 — Compare takes
+
+### Added
+- **⚖ Compare takes** (a clip's menu in the arrangement). You record three passes and have to choose; this listens to each one and lays them side by side:
+  - **Timing:** how far the notes land from the song's grid on average (behind or ahead of the beat), and how steady that is.
+  - **Pitch** (voices): how far held notes sit from the nearest note of the song's key, whether the take tends sharp or flat, and how much of it is in tune.
+  - **Level:** how even the loudness is, the peak, and whether the input clipped. **Noise:** the quietest tenth of the take.
+  - The best figure in each column is marked and one sentence says what stands out ("Take 3 is the steadiest in time; Take 2 is the most in tune").
+- **It informs, it doesn't decide.** Every column is labelled *measured* or *estimated*, the window explains how each is worked out and where it can be wrong (a take recorded without the click reads as loose; a deliberate blue note counts as off), and no take is ever changed or deleted.
+- Everything is worked out in the page. Nothing is uploaded.
+
+### Tests
+- **`e2e-takecheck`** (new, 14 checks): made-up takes with known faults. A click on the grid reads as on the grid; 30 ms late reads as 30 ms behind; a jittered one as less steady; a note 30 cents flat reads as 30 cents flat; the window compares like with like, marks the best figures, labels every column, and changes nothing.
+
 ## 2.74.0 — 2026-11-15 — The band around you, and your show in VR
 
 ### Added
