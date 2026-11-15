@@ -2,6 +2,14 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.69.3 — 2026-11-15 — A deploy fix for the honeypot's route list
+
+### Fixed
+- **The deploy failed on `wrangler.jsonc`.** Wrangler refuses a `run_worker_first` rule that another rule already covers, and the honeypot's list named five files (`/.git/config`, `/.git/HEAD`, `/.aws/credentials`, `/.docker/config.json`, `/.vscode/sftp.json`) as well as the folders that contain them. The five are dropped; the folder rules still send them to the Worker, so nothing about which paths are taxed changes. No Cloudflare dashboard change is needed.
+
+### Tests
+- **`worker.test.mjs`** (79 checks) now reads `wrangler.jsonc` and fails if any `run_worker_first` rule is covered by another or listed twice (what Wrangler checks at deploy time), and if any scanner-bait path the honeypot knows would no longer reach the Worker. Run against the broken list, the first check names exactly the five paths Wrangler rejected.
+
 ## 2.69.2 — 2026-11-14 — The honeypot gets a sense of humor
 
 ### Changed

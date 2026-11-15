@@ -63,6 +63,19 @@ ok(await r.text() === 'asset /guide/', 'every other address is the built site, a
   ok(r.status === 404, 'the same goes for The Daily’s own address');
   r = await handle(new Request(SITE + '/environment.js'), ENV, gh({})); ok((await r.text()) === 'asset /environment.js', 'a path that only looks similar is still just the site, answered at once, not taxed');
 }
+/* ---- wrangler.jsonc's run_worker_first (2.69.3): Wrangler refuses to deploy a rule that another already covers, and every bait path must still reach the Worker ---- */
+{
+  const fs = await import('node:fs'), path = await import('node:path'), url = await import('node:url');
+  const cfg = JSON.parse(fs.readFileSync(path.join(path.dirname(url.fileURLToPath(import.meta.url)), '..', 'wrangler.jsonc'), 'utf8').replace(/^\s*\/\/.*$/gm, ''));
+  const rwf = cfg.assets.run_worker_first, globs = rwf.filter(x => x.endsWith('/*'));
+  const covers = (g, x) => x !== g && x.startsWith(g.slice(0, -1));
+  const redundant = rwf.filter(x => globs.some(g => covers(g, x)));
+  ok(redundant.length === 0 && new Set(rwf).size === rwf.length, 'no run_worker_first rule is covered by another or listed twice, which Wrangler refuses to deploy' + (redundant.length ? ' (' + redundant.join(', ') + ')' : ''));
+  const routed = p => rwf.some(x => x === p || (x.endsWith('/*') && p.startsWith(x.slice(0, -1))));
+  const bait = ['/.env', '/.env.local', '/.env.production', '/.env.development', '/.env.bak', '/.git/config', '/.git/HEAD', '/wp-login.php', '/xmlrpc.php', '/.aws/credentials', '/.docker/config.json', '/.vscode/sftp.json', '/config.php', '/configuration.php', '/admin.php', '/.htaccess', '/.htpasswd', '/id_rsa', '/id_rsa.pub', '/wp-admin/x', '/wp-content/x', '/phpmyadmin/x', '/phpMyAdmin/x', '/.git/x', '/.aws/x', '/.vscode/x', '/.docker/x'];
+  const missed = bait.filter(p => isHoneyPath(p) && !routed(p));
+  ok(bait.every(isHoneyPath) && missed.length === 0, 'every scanner-bait path the honeypot knows is still sent to the Worker by wrangler.jsonc' + (missed.length ? ' (missing: ' + missed.join(', ') + ')' : ''));
+}
 /* ---- the honeypot's auto-block (2.69.1): off until HONEY_KV + CF_API_TOKEN + CF_ZONE_ID are all set up ---- */
 {
   const noSleep = () => Promise.resolve();
