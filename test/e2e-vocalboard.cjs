@@ -79,8 +79,40 @@ suite('e2e-vocalboard', async t => {
   ok(HM.inC.c > HM.inC.cs * 3 && HM.inC.c > .01, 'Harmony in C major: sing an A and a C comes in above it (a minor third, as the key says)');
   ok(HM.inA.cs > HM.inA.c * 3 && HM.inA.cs > .01, 'in A major the same A gets a C♯ (a major third): the harmony follows the song’s key');
 
+  /* ---- Tune (2.70): pitch-correct to the song's key ---- */
+  const TU = await ev(async () => { const D = window.__daily, sr = D.E.ctx.sampleRate, flat = D.mtof ? D.mtof(60) * Math.pow(2, -.35 / 12) : 261.63 * Math.pow(2, -.35 / 12);
+    D.S.key = 0; D.S.minor = false; D.S.scale = 'Major (Ionian)'; D.bus.emit('song');
+    const run = async () => { const [L] = await window.__through(window.__sine(flat, 1.1, .3), 1.2), a = Math.round(sr * .7), b = Math.round(sr * 1.05); return { at: window.__g(L, 261.63, sr, a, b), below: window.__g(L, flat, sr, a, b) }; };
+    D.vbPreset('Off', true); D.vbSet('tune', 'follow', 'key'); D.vbSet('tune', 'speed', 'Hard'); D.vbSet('tune', 'strength', 1); D.vbToggle('tune', true); await new Promise(r => setTimeout(r, 200));
+    const on = await run(); D.vbToggle('tune', false); await new Promise(r => setTimeout(r, 120)); const off = await run(); return { on, off, flat }; });
+  ok(TU.off.below > TU.off.at * 1.5, 'with Tune off, a note sung flat of C stays flat (more energy below C than at C: ' + TU.off.below.toFixed(3) + ' vs ' + TU.off.at.toFixed(3) + ')');
+  ok(TU.on.at > TU.off.at * 2 && TU.on.at > TU.on.below, 'with Tune on (Hard, snap to key) the flat note is pulled up onto C (energy at C ' + TU.on.at.toFixed(3) + ' now leads ' + TU.on.below.toFixed(3) + ')');
+
+  /* ---- Leveler (2.70): a compressor that evens the level ---- */
+  const LV = await ev(async () => { const D = window.__daily, sr = D.E.ctx.sampleRate, rms = x => { let s = 0, a = Math.round(sr * .3), b = Math.round(sr * .55); for (let i = a; i < b; i++) s += x[i] * x[i]; return Math.sqrt(s / (b - a)); };
+    D.vbPreset('Off', true); const loudOff = rms((await window.__through(window.__sine(300, .7, .8), .8))[0]), softOff = rms((await window.__through(window.__sine(300, .7, .08), .8))[0]);
+    D.vbSet('level', 'amount', .9); D.vbSet('level', 'out', 0); D.vbToggle('level', true); await new Promise(r => setTimeout(r, 150));
+    const loudOn = rms((await window.__through(window.__sine(300, .7, .8), .8))[0]), softOn = rms((await window.__through(window.__sine(300, .7, .08), .8))[0]); D.vbToggle('level', false);
+    return { offRatio: loudOff / (softOff || 1e-6), onRatio: loudOn / (softOn || 1e-6) }; });
+  ok(LV.onRatio < LV.offRatio * .7, 'the Leveler squeezes the gap between a loud and a soft note (loud/soft ' + LV.offRatio.toFixed(1) + '× → ' + LV.onRatio.toFixed(1) + '×)');
+
+  /* ---- Warmth & Air (2.70): a tone tilt ---- */
+  const WM = await ev(async () => { const D = window.__daily, sr = D.E.ctx.sampleRate, two = sr => { const n = Math.round(sr * .7), x = new Float32Array(n); for (let i = 0; i < n; i++) x[i] = .2 * Math.sin(2 * Math.PI * 200 * i / sr) + .2 * Math.sin(2 * Math.PI * 6000 * i / sr); return x; }, bal = L => { const a = Math.round(sr * .3), b = Math.round(sr * .55); return window.__g(L, 6000, sr, a, b) / (window.__g(L, 200, sr, a, b) || 1e-6); };
+    D.vbPreset('Off', true); D.vbToggle('warm', true);
+    D.vbSet('warm', 'warmth', 0); D.vbSet('warm', 'tone', 1); await new Promise(r => setTimeout(r, 120)); const air = bal((await window.__through(two, .8))[0]);
+    D.vbSet('warm', 'tone', -1); await new Promise(r => setTimeout(r, 120)); const warm = bal((await window.__through(two, .8))[0]); D.vbToggle('warm', false); return { air, warm }; });
+  ok(WM.air > WM.warm * 1.5, 'Warmth & Air tilts the tone: “air” lifts the top over the lows, “warm” does the opposite (high/low ' + WM.air.toFixed(2) + ' vs ' + WM.warm.toFixed(2) + ')');
+
+  /* ---- the safety limiter at the board end (2.70): the output can never clip, however hard the pedals push ---- */
+  const LIM = await ev(async () => { const D = window.__daily, c = D.E.ctx, B = D.E.vb, sr = c.sampleRate; D.vbPreset('Scream', true); D.vbSet('scream', 'grit', 1); D.vbSet('scream', 'level', 1);
+    const tap = c.createGain(); B.clip.connect(tap); const x = window.__sine(200, .6, 1)(sr), b = c.createBuffer(1, x.length, sr); b.getChannelData(0).set(x); const s = c.createBufferSource(); s.buffer = b;
+    const r = await window.__rec([{ node: tap, ch: 1 }], Math.round(sr * .55), () => { s.connect(B.u.scream.in); s.start(c.currentTime + .05); }); try { s.disconnect(); B.clip.disconnect(tap); } catch (e) { } let mx = 0; for (let i = 0; i < r[0].length; i++) mx = Math.max(mx, Math.abs(r[0][i])); D.vbPreset('Off', true); return { peak: mx, thr: B.lim.threshold.value }; });
+  ok(LIM.thr === -1 && LIM.peak <= 1.0001, 'a safety limiter and hard clamp sit at the very end; even Scream at full grit cannot push the board past full scale (peak ' + LIM.peak.toFixed(3) + ')');
+
   /* ---- presets, and a preset per section ---- */
   ok(await ev(() => { const D = window.__daily; D.vbPreset('Ballad', true); const o = D.CFG.vb.on; return o.double && o.verb && o.echo && o.deess && !o.scream && !o.mega && !o.harm && D.CFG.vb.p.verb.type === 'Plate'; }), 'a preset sets the whole board (Ballad: doubler, plate, quarter-note echo, de-esser)');
+  ok(await ev(() => { const D = window.__daily; D.vbPreset('Crooner', true); const o = D.CFG.vb.on; return o.warm && o.level && o.double && o.verb && !o.scream && !o.tune && D.CFG.vb.p.verb.type === 'Spring' && D.CFG.vb.p.warm.tone < 0; }), 'the Crooner preset is a warm, intimate oldies voice (Warmth, Leveler, doubler, a Spring reverb)');
+  ok(await ev(() => { const D = window.__daily; D.vbPreset('Hard tune', true); return D.CFG.vb.on.tune && D.CFG.vb.p.tune.speed === 'Hard' && D.CFG.vb.p.tune.strength === 1; }), 'the Hard tune preset turns Tune on at its robotic snap');
   const SEC = await ev(async () => { const D = window.__daily; await window.dailyStudio.call('load_chord_sheet', { text: '[Verse]\nG        D\nWalking down to the harbour wall\n[Chorus]\nC        G\nHold on, hold on', where: 'replace' }); D.S.bpm = 160; D.commit(false);
     D.vbPreset('Clean lead', true); D.S.vbSec = { [D.S.sections[1].id || '#1']: 'Scream' }; D.commit(false); D.T.cursor = 0; await D.play(); for (let i = 0; i < 40 && !D.CFG.vb.on.scream; i++) await new Promise(r => setTimeout(r, 150)); const got = D.CFG.vb.on.scream, name = D.CFG.vb.preset; D.stopPlay(true); return { got, name }; });
   ok(SEC.got && SEC.name === 'Scream', 'a section with its own preset switches the board when the song reaches it (the chorus: Scream)');
@@ -95,7 +127,7 @@ suite('e2e-vocalboard', async t => {
 
   /* ---- the room ---- */
   await ev(() => window.__daily.vocalBoardOpen()); await wait(400);
-  ok(await ev(() => document.querySelectorAll('#vocalboard .vb-ped').length === 7 && document.querySelectorAll('#vocalboard [data-sw][aria-pressed]').length === 7 && document.querySelectorAll('#vbPreset option').length >= 8), 'Vocal pedals: seven pedals, each with an on / off switch, and the presets');
+  ok(await ev(() => document.querySelectorAll('#vocalboard .vb-ped').length === 10 && document.querySelectorAll('#vocalboard [data-sw][aria-pressed]').length === 10 && document.querySelectorAll('#vbPreset option').length >= 11 && [...document.querySelectorAll('#vocalboard [data-ped="verb"] option')].some(o => o.value === 'Spring')), 'Vocal pedals: ten pedals, each with an on / off switch, the presets, and Spring among the reverb spaces');
   await p.click('#vocalboard [data-sw="double"]'); await wait(150);
   ok(await ev(() => window.__daily.CFG.vb.on.double && document.querySelector('#vocalboard [data-sw="double"]').getAttribute('aria-pressed') === 'true' && document.querySelector('#vocalboard [data-ped="double"]').classList.contains('on')), 'a stomp switches a pedal, and it shows');
   ok(await ev(() => !!document.querySelector('#vocalboard section[data-sec="song"] select[data-sec]')), 'By section lists the song’s sections with a preset for each');

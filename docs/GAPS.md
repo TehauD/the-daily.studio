@@ -4,6 +4,11 @@ What the studio, its tutorials, its documents and its tests do **not** cover yet
 
 How to use it: before a release, move what the release closed into *Closed* with the version, and add what it opened. [RELEASE.md](RELEASE.md) has this as a checklist item. Items marked **(maintainer)** are decisions or facts only the project's owner can settle; nothing here blocks a build.
 
+## Closed in 2.70.0
+
+- **The vocal board had no pitch correction, no standalone compressor, and no tone/warmth control**, and a few pedals could run the output hot. Added **Tune** (pitch-correct to the key or chord, gentle to hard), **Leveler** (a compressor), **Warmth & Air** (a tone tilt with tape-style saturation) and an always-on safety limiter + hard clamp so the board can't clip. A **Crooner** preset and a **Spring** reverb give the nostalgic jazz/oldies voice.
+- **The “Behind you” backdrops didn't show the sound itself.** Added **Cymatics**, **Spectrum** and **Waveform** — standing waves, the live spectrum, and the waveform as oscilloscope traces — made for music-video takes that make what you hear visible.
+
 ## Closed in 2.69.1
 
 - **The honeypot taxed every scanner the same, with no way to actually stop a persistent one.** Past 3 hits from the same IP in an hour, the Worker now blocks it outright via Cloudflare's own API (`worker/honeypot.mjs`), and the WAF Custom Rule alternative (edge-level, before the Worker runs) has exact paste-in syntax rather than a vague mention. Both are opt-in setup steps (`CLOUDFLARE_SETUP.md`, Parts C and I); nothing changes until the site owner does them.

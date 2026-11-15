@@ -1,41 +1,54 @@
 /* ============================================================
-   Part 79 · VOCAL PEDALBOARD (2.31) — seven stompboxes for the voice
-   After the vocal polish, in this order: 🤘 Scream · De-esser · 📢 Megaphone · Doubler · Harmony · Echo · Reverb. The live voice and
+   Part 79 · VOCAL PEDALBOARD (2.31; 2.70 Tune, Leveler, Warmth & Air) — ten stompboxes for the voice
+   After the vocal polish, in this order: 🤘 Scream · 🎯 Tune · De-esser · 🗜 Leveler · ☀ Warmth & Air · 📢 Megaphone · Doubler · Harmony ·
+   Echo · Reverb, then an always-on safety limiter so the board can never clip however hard the pedals are driven. The live voice and
    vocal takes both go through it (takes are kept clean and played back through it, so the sound can still change after you sing),
    and a fast bounce builds the same board offline.
      · Scream     a gate, hard compression, grit blended beside the clean voice (focused on the mids, so words stay clear) and an
                   analog-style octave down for growl that adds no delay. Styles: Rasp, Hardcore, Fry growl, Death growl
+     · Tune       hears the note and slides the voice to the nearest note of the song's scale (or a chord tone): gentle polish up to the
+                  hard, robotic snap. Follows the key or the chord. Like Harmony it lands a few hundredths of a second after you
      · De-esser   turns the band above 4–9 kHz down only while it is loud
+     · Leveler    a compressor that evens the voice out and sets its level — placed early, so everything after it sits better
+     · Warmth & Air  a tone tilt from warm low-mids to an airy top, with a touch of tape-style saturation (the crooner/oldies warmth)
      · Megaphone  megaphone, radio or telephone: the voice squeezed into a band and driven
      · Doubler    two slightly delayed, slightly moving copies left and right: a double-tracked voice
      · Harmony    a voice a third or a fifth above or below that stays in the song's key (or on the chord playing): the worklet finds
                   the note you sing and moves it by steps of the scale. It lands a few hundredths of a second after you
      · Echo       in time with the song (1/4, dotted 1/8, 1/8 …); Throw: only while the pedal is held, so one word echoes
      · Reverb     room, plate or hall, with its lows cut so it does not muddy the voice
-   Presets (Clean lead, Rock grit, Scream, Ballad, Ambient echo, Harmony lead, Megaphone) set the whole board; a song can switch
+   Presets (Clean lead, Rock grit, Scream, Ballad, Crooner, Pitch polish, Hard tune, Ambient echo, Harmony lead, Megaphone) set the whole board; a song can switch
    presets per section as it plays (S.vbSec), and the foot pedal can switch Scream, step through presets and hold an echo throw.
    With Scream or Megaphone on, the show turns gritty, as it does for a megaphone pedal (part 78).
    ============================================================ */
 const VB_DEF = {
   scream: { style: 'Rasp', grit: .35, growl: 0, gate: -55, level: 1 },
+  tune: { strength: .8, speed: 'Smooth', follow: 'key' },
   deess: { amount: .5, freq: 6500 },
+  level: { amount: .5, out: 3 },
+  warm: { tone: -.15, warmth: .4 },
   mega: { style: 'Megaphone', drive: .6, level: 1 },
   double: { mix: .35, width: .8 },
   harm: { voice: 'Third above', mix: .45, follow: 'key' },
   echo: { time: '1/8 dotted', mix: .25, fb: .35, throw: false },
   verb: { type: 'Plate', mix: .2, decay: 1.6 }
 };
-const VB_ORDER = [['scream', '🤘', 'Scream'], ['deess', '𝑺', 'De-esser'], ['mega', '📢', 'Megaphone'], ['double', '👥', 'Doubler'], ['harm', '🎶', 'Harmony'], ['echo', '⟲', 'Echo'], ['verb', '◌', 'Reverb']];
+const VB_ORDER = [['scream', '🤘', 'Scream'], ['tune', '🎯', 'Tune'], ['deess', '𝑺', 'De-esser'], ['level', '🗜', 'Leveler'], ['warm', '☀', 'Warmth & Air'], ['mega', '📢', 'Megaphone'], ['double', '👥', 'Doubler'], ['harm', '🎶', 'Harmony'], ['echo', '⟲', 'Echo'], ['verb', '◌', 'Reverb']];
 const VB_SCREAM = { 'Rasp': { grit: .35, growl: 0, gate: -55 }, 'Hardcore': { grit: .65, growl: .15, gate: -50 }, 'Fry growl': { grit: .55, growl: .45, gate: -50 }, 'Death growl': { grit: .85, growl: .75, gate: -46 } };
 const VB_MEGA = { 'Megaphone': [500, 3000, 1600, 8], 'Radio': [300, 4200, 1800, 5], 'Telephone': [380, 3400, 1200, 4] };
 const VB_VOICES = { 'Third above': [2], 'Third below': [-2], 'Fifth above': [4], 'Third and fifth above': [2, 4], 'Octave below': [null, -12], 'Octave above': [null, 12] };
 const VB_TIMES = { '1/4': 1, '1/8 dotted': .75, '1/8': .5, '1/4 triplet': 2 / 3, '1/16': .25 };
+const VB_TUNE_SPEED = { 'Gentle': .012, 'Smooth': .035, 'Snappy': .09, 'Hard': .4 };      /* how fast the voice is pulled to the note; Hard is the robotic snap */
+const VB_VERB_SPACES = ['Room', 'Spring', 'Plate', 'Hall'];
 const VB_PRESETS = {
   'Off': {},
   'Clean lead': { deess: {}, verb: { type: 'Plate', mix: .15, decay: 1.4 } },
   'Rock grit': { scream: { style: 'Rasp', grit: .35, growl: 0 }, deess: {}, double: { mix: .25 }, verb: { type: 'Room', mix: .14, decay: 1 } },
   'Scream': { scream: { style: 'Hardcore', grit: .65, growl: .15 }, deess: {}, verb: { type: 'Room', mix: .12, decay: 1 } },
   'Ballad': { deess: {}, double: { mix: .35 }, echo: { time: '1/4', mix: .14, fb: .25 }, verb: { type: 'Plate', mix: .28, decay: 2.2 } },
+  'Crooner': { deess: {}, warm: { tone: -.3, warmth: .45 }, level: { amount: .45, out: 3 }, double: { mix: .2, width: .5 }, echo: { time: '1/4', mix: .12, fb: .15 }, verb: { type: 'Spring', mix: .26, decay: 1.8 } },
+  'Pitch polish': { tune: { strength: .6, speed: 'Smooth', follow: 'key' }, deess: {}, level: { amount: .4, out: 2 }, verb: { type: 'Plate', mix: .16, decay: 1.4 } },
+  'Hard tune': { tune: { strength: 1, speed: 'Hard', follow: 'key' }, deess: {}, double: { mix: .2 }, verb: { type: 'Plate', mix: .14, decay: 1.2 } },
   'Ambient echo': { deess: {}, double: { mix: .2 }, echo: { time: '1/8 dotted', mix: .32, fb: .5 }, verb: { type: 'Hall', mix: .32, decay: 3 } },
   'Harmony lead': { deess: {}, harm: { voice: 'Third above', mix: .45 }, double: { mix: .2 }, verb: { type: 'Plate', mix: .2, decay: 1.6 } },
   'Megaphone': { mega: { style: 'Megaphone', drive: .6 }, verb: { type: 'Room', mix: .1, decay: .8 } }
@@ -58,6 +71,35 @@ function vbScream(c) {
     case 'growl': tc(growlG.gain, v * .9); break; case 'gate': if (gate.port) gate.port.postMessage({ th: v }); break; case 'level': tc(lv.gain, v); break; } } };
 }
 function vbDeess(c) { const n = vbWorklet(c, 'fw-deess'); if (!n) { const g = gn(1); return { in: g, out: g, set() { } }; } return { in: n, out: n, set(k, v) { if (k === 'amount') n.port.postMessage({ th: -14 - v * 30 }); if (k === 'freq') n.port.postMessage({ f: v }); } }; }
+/* Tune: hears the note and slides the voice to the nearest note of the song's scale (or a chord tone). Gentle polish up to the hard robotic snap.
+   Like Harmony it has to hear the note first, so it lands a few hundredths of a second after you. The scale and chord are fed in from vbTick. */
+function vbTune(c) {
+  const n = vbWorklet(c, 'fw-tune'); if (!n) { const g = gn(1); return { in: g, out: g, voice: null, upd() { }, set() { } }; }
+  let strength = .8, speed = 'Smooth';
+  const upd = () => { try { n.port.postMessage({ scale: vbScale(), strength, glide: VB_TUNE_SPEED[speed] || .035 }); } catch (e) { } };
+  upd();
+  return { in: n, out: n, voice: n, upd, set(k, v) { if (k === 'strength') strength = v; if (k === 'speed') speed = v; upd(); } };
+}
+/* Leveler: a compressor that evens the voice out and (with a touch of make-up) sets its level. Placed early so everything after sits better;
+   the board's end also has an always-on safety limiter (vbAttach) so no pedal can push the output into clipping. */
+function vbLevel(c) {
+  const i = gn(1), cm = mkComp(c), mk = gn(1), o = gn(1); chainN(i, cm, mk, o);
+  const P = k => cm[k] || (cm.parameters && cm.parameters.get(k));
+  return { in: i, out: o, set(k, v) {
+    if (k === 'amount') { const th = P('threshold'), ra = P('ratio'), at = P('attack'), rl = P('release'), kn = P('knee'); if (th) th.value = -12 - v * 26; if (ra) ra.value = 2 + v * 6; if (at) at.value = .006; if (rl) rl.value = .18; if (kn) kn.value = 8; }
+    if (k === 'out') tc(mk.gain, Math.pow(10, v / 20));
+  } };
+}
+/* Warmth & Air: a tone tilt (warm low-mids ↔ an airy top) with a touch of tape-style saturation for vintage body — the crooner/oldies warmth */
+function vbWarm(c) {
+  const i = gn(1), lo = bq('lowshelf', 220), hi = bq('highshelf', 3500), hc = bq('lowpass', 16000), dry = gn(1), satG = gn(0), sh = mkShaper(c), o = gn(1);
+  sh.curve = satCurve(2.2); sh.oversample = '2x';
+  chainN(i, lo, hi, hc); hc.connect(dry); dry.connect(o); chainN(hc, sh, satG); satG.connect(o);
+  return { in: i, out: o, set(k, v) {
+    if (k === 'tone') { lo.gain.value = -9 * v; hi.gain.value = 9 * v; }      /* v < 0: warm (lows up, highs down); v > 0: air */
+    if (k === 'warmth') { tc(dry.gain, 1 - .35 * v); tc(satG.gain, v * .55); tc(hc.frequency, 16000 - v * 9000); }
+  } };
+}
 function vbMega(c) {
   const i = gn(1), h1 = bq('highpass', 500), h2 = bq('highpass', 500), pk = bq('peaking', 1600, 1, 8), drv = gn(4), sh = mkShaper(c), l1 = bq('lowpass', 3000), l2 = bq('lowpass', 3000), lv = gn(.8);
   sh.curve = satCurve(6); chainN(i, h1, h2, pk, drv, sh, l1, l2, lv);
@@ -90,8 +132,16 @@ function vbVerb(c) { const u = FX.reverb.build(c); u.set('lowcut', 220); u.set('
 function vbScale() { const iv = SCALES[S.scale] || (S.minor ? SCALES['Natural Minor (Aeolian)'] : SCALES['Major (Ionian)']), f = new Array(12).fill(0); iv.forEach(x => { f[(S.key + x) % 12] = 1; }); return f; }
 /** build the board between `from` and `to` on context c (called while the engine's graph is built, part 02) */
 function vbAttach(c, from, to) {
-  const B = { c, u: {} }; const mk = { scream: vbScream, deess: vbDeess, mega: vbMega, double: vbDouble, harm: vbHarm, echo: vbEcho, verb: vbVerb };
-  let prev = from; VB_ORDER.forEach(([k]) => { const w = vbWrap(mk[k](c)); B.u[k] = w; prev.connect(w.in); prev = w.out; }); prev.connect(to);
+  const B = { c, u: {} }; const mk = { scream: vbScream, tune: vbTune, deess: vbDeess, level: vbLevel, warm: vbWarm, mega: vbMega, double: vbDouble, harm: vbHarm, echo: vbEcho, verb: vbVerb };
+  let prev = from; VB_ORDER.forEach(([k]) => { const w = vbWrap(mk[k](c)); B.u[k] = w; prev.connect(w.in); prev = w.out; });
+  /* an always-on, transparent safety limiter at the very end: with grit, a megaphone, stacked harmonies and echo feedback all pushing at once
+     the board can run hot, so this catches true peaks near 0 dBFS (and only then) so the output can never clip, however hard the pedals are driven */
+  const lim = c.createDynamicsCompressor(); lim.threshold.value = -1; lim.knee.value = 0; lim.ratio.value = 20; lim.attack.value = .002; lim.release.value = .05; B.lim = lim;
+  /* the compressor does the musical gain-reduction, but it is not a brick wall (it overshoots a little on a transient), so a transparent
+     hard clamp at ±1 after it is the actual guarantee the output can never exceed full scale — identity within range, so it only ever
+     touches a sample that would otherwise have clipped anyway */
+  const clip = c.createWaveShaper(); const cv = new Float32Array(1024); for (let i = 0; i < 1024; i++) cv[i] = i / 1023 * 2 - 1; clip.curve = cv; clip.oversample = 'none'; B.clip = clip;
+  prev.connect(lim); lim.connect(clip); clip.connect(to);
   E.vb = B; vbApply(B); return B;
 }
 /** CFG.vb onto a board */
@@ -127,12 +177,13 @@ const vbSecKey = (sec, i) => sec.id || ('#' + i);
 function vbTick() {
   const B = E.vb; if (!B || B.c !== E.ctx) return;
   if (VBS.bpm !== S.bpm) { VBS.bpm = S.bpm; B.u.echo.fx.retime(); }
-  if (CFG.vb.on.harm && CFG.vb.p.harm.follow === 'chord') { let sym = ''; try { const inf = stageInfo(); sym = inf && inf.sym || ''; } catch (e) { } if (sym !== VBS.chord) { VBS.chord = sym; const ch = sym ? parseChord(sym) : null; B.u.harm.fx.voices.forEach(v => v && v.n.port.postMessage({ chord: ch ? ch.pcs : null })); } }
-  else if (VBS.chord) { VBS.chord = ''; B.u.harm.fx.voices.forEach(v => v && v.n.port.postMessage({ chord: null })); }
+  const wantChord = (CFG.vb.on.harm && CFG.vb.p.harm.follow === 'chord') || (CFG.vb.on.tune && CFG.vb.p.tune.follow === 'chord');
+  if (wantChord) { let sym = ''; try { const inf = stageInfo(); sym = inf && inf.sym || ''; } catch (e) { } if (sym !== VBS.chord) { VBS.chord = sym; const ch = sym ? parseChord(sym) : null, pcs = ch ? ch.pcs : null; B.u.harm.fx.voices && B.u.harm.fx.voices.forEach(v => v && v.n.port.postMessage({ chord: pcs })); if (B.u.tune.fx.voice) B.u.tune.fx.voice.port.postMessage({ chord: pcs }); } }
+  else if (VBS.chord) { VBS.chord = ''; B.u.harm.fx.voices && B.u.harm.fx.voices.forEach(v => v && v.n.port.postMessage({ chord: null })); if (B.u.tune.fx.voice) B.u.tune.fx.voice.port.postMessage({ chord: null }); }
   if (T.playing && S.vbSec) { const sp = spb(), bi = Math.max(0, Math.floor(playheadSlot() / sp)), fb = barsCache()[Math.min(bi, barsCache().length - 1)]; if (fb) { const i = S.sections.indexOf(fb.sec), want = S.vbSec[vbSecKey(fb.sec, i)]; if (want && want !== VBS.applied && VB_PRESETS[want]) vbPreset(want, true); } }
 }
 setInterval(vbTick, 250);
-bus.on('song', () => { if (E.vb && E.vb.u.harm) E.vb.u.harm.fx.upd(); });
+bus.on('song', () => { if (E.vb && E.vb.u.harm) E.vb.u.harm.fx.upd(); if (E.vb && E.vb.u.tune) E.vb.u.tune.fx.upd(); });
 
 /* ---------- the room ---------- */
 function vbKnob(k, q, label, min, max, step, fmt) { const v = CFG.vb.p[k][q]; return h('label', { class: 'vb-k' }, h('span', {}, label), h('input', { type: 'range', min, max, step, value: v, 'aria-label': label, oninput: e => { vbSet(k, q, +e.target.value); const o = e.target.nextSibling; if (o) o.textContent = fmt ? fmt(+e.target.value) : ''; } }), h('output', {}, fmt ? fmt(v) : '')); }
@@ -141,12 +192,15 @@ const pc = v => Math.round(v * 100) + '%';
 function vbControls(k) {
   switch (k) {
     case 'scream': return [vbSel(k, 'style', 'Style', Object.keys(VB_SCREAM)), vbKnob(k, 'grit', 'Grit', 0, 1, .01, pc), vbKnob(k, 'growl', 'Growl', 0, 1, .01, pc), vbKnob(k, 'gate', 'Gate', -80, -30, 1, v => v + ' dB')];
+    case 'tune': return [vbSel(k, 'follow', 'Snap to', ['key', 'chord']), vbSel(k, 'speed', 'Speed', Object.keys(VB_TUNE_SPEED)), vbKnob(k, 'strength', 'Strength', 0, 1, .01, pc)];
     case 'deess': return [vbKnob(k, 'amount', 'Amount', 0, 1, .01, pc), vbKnob(k, 'freq', 'Above', 4000, 9000, 100, v => (v / 1000).toFixed(1) + ' kHz')];
+    case 'level': return [vbKnob(k, 'amount', 'Squeeze', 0, 1, .01, pc), vbKnob(k, 'out', 'Output', 0, 12, .5, v => '+' + v.toFixed(1) + ' dB')];
+    case 'warm': return [vbKnob(k, 'tone', 'Tone', -1, 1, .01, v => v < -.05 ? 'warm' : v > .05 ? 'air' : 'flat'), vbKnob(k, 'warmth', 'Warmth', 0, 1, .01, pc)];
     case 'mega': return [vbSel(k, 'style', 'Sound', Object.keys(VB_MEGA)), vbKnob(k, 'drive', 'Drive', 0, 1, .01, pc)];
     case 'double': return [vbKnob(k, 'mix', 'Blend', 0, 1, .01, pc), vbKnob(k, 'width', 'Width', 0, 1, .01, pc)];
     case 'harm': return [vbSel(k, 'voice', 'Voice', Object.keys(VB_VOICES)), vbSel(k, 'follow', 'Follows', ['key', 'chord']), vbKnob(k, 'mix', 'Blend', 0, 1, .01, pc)];
     case 'echo': return [vbSel(k, 'time', 'Time', Object.keys(VB_TIMES)), vbKnob(k, 'mix', 'Blend', 0, 1, .01, pc), vbKnob(k, 'fb', 'Repeats', 0, .9, .01, pc), h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!CFG.vb.p.echo.throw, onchange: e => vbSet('echo', 'throw', e.target.checked) }), 'Throw: only while the pedal is held')];
-    case 'verb': return [vbSel(k, 'type', 'Space', ['Room', 'Plate', 'Hall']), vbKnob(k, 'mix', 'Blend', 0, 1, .01, pc), vbKnob(k, 'decay', 'Length', .3, 5, .1, v => v.toFixed(1) + ' s')];
+    case 'verb': return [vbSel(k, 'type', 'Space', VB_VERB_SPACES), vbKnob(k, 'mix', 'Blend', 0, 1, .01, pc), vbKnob(k, 'decay', 'Length', .3, 5, .1, v => v.toFixed(1) + ' s')];
   }
   return [];
 }
@@ -170,11 +224,12 @@ function vbSections() {
 }
 function vbPaint() { const b = document.getElementById('vbBoard'); if (b && b._draw) b._draw(); }
 function vocalBoardOpen(at) {
-  return hubOpen('vocalboard', { ico: '🎤', title: 'Vocal pedals', sub: 'Seven stompboxes for your voice, after the vocal polish. You hear them while you monitor (Hear myself, on headphones), and vocal takes play back through them.', at, sections: [
+  return hubOpen('vocalboard', { ico: '🎤', title: 'Vocal pedals', sub: 'Ten stompboxes for your voice, after the vocal polish. You hear them while you monitor (Hear myself, on headphones), and vocal takes play back through them.', at, sections: [
     { key: 'board', label: 'The board', ico: '🎛', wide: true, body: () => [vbBoard()] },
     { key: 'song', label: 'By section', ico: '▦', body: () => [vbSections()] },
     { key: 'how', label: 'Good to know', ico: 'ⓘ', body: () => [
-      h('p', { class: 'small' }, 'Scream, the doubler, the de-esser, echo and reverb add no delay you would notice. Harmony lands a few hundredths of a second after you (it has to hear the note first), which sounds natural for a backing voice. Scream’s growl is an analog-style octave down, so it is instant.'),
+      h('p', { class: 'small' }, 'Scream, the doubler, the de-esser, the leveler, warmth, echo and reverb add no delay you would notice. Tune and Harmony land a few hundredths of a second after you (they have to hear the note first), which sounds natural. Scream’s growl is an analog-style octave down, so it is instant.'),
+      h('p', { class: 'small' }, 'Tune slides your voice to the nearest note of the song’s key or chord — gentle for a quiet polish, Hard for the robotic effect. The Leveler evens you out and sets your level, and an always-on safety limiter at the end keeps the board from clipping however hard you push the pedals (handy with Scream, Megaphone, stacked harmony or a lot of echo).'),
       h('p', { class: 'small' }, 'Use headphones, or your interface’s own monitoring: with speakers, any live vocal effect can feed back.'),
       h('p', { class: 'small' }, 'Scream lets you scream lighter: the pedal adds the grit so your throat does not have to. If it hurts or you go hoarse, stop; a coach who teaches fry and false-cord screaming is worth it.'),
       h('p', { class: 'small muted' }, 'Takes are recorded clean and played back through the board, so you can change the sound after you sing. Bounces include it. The foot pedal (Settings ▸ Pedal & MIDI sync) can switch Scream, step through presets and hold an echo throw.')] }

@@ -2,6 +2,22 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.70.0 — 2026-11-15 — A crooner's voice, pitch and warmth, and backdrops made of sound
+
+### Added
+- **Three new vocal pedals**, so the board is ten (after the vocal polish, in order: Scream · Tune · De-esser · Leveler · Warmth & Air · Megaphone · Doubler · Harmony · Echo · Reverb):
+  - **🎯 Tune** — hears the note you sing and slides your voice to the nearest note of the song's key (or the chord playing): **Gentle** for an invisible polish, up to **Hard** for the robotic snap. Strength sets how far, and it follows the key or the chord. Like Harmony it lands a few hundredths of a second after you.
+  - **🗜 Leveler** — a compressor that evens your voice out and sets its level. Placed early so everything after it sits better. (You noticed some pedals peak quickly; this is the fix.)
+  - **☀ Warmth & Air** — a tone tilt from warm low-mids to an airy top, with a touch of tape-style saturation for vintage body.
+- **An always-on safety limiter and hard clamp at the end of the board**, so Scream, Megaphone, stacked Harmony and Echo feedback can push as hard as you like and the output still can't clip.
+- **A Spring reverb** in the vocal reverb's Space menu (the engine already had it), classic for oldies and jazz.
+- **New presets: Crooner** (a warm, intimate oldies voice — Warmth, a gentle Leveler, a little doubler, a soft quarter-note slap and a Spring reverb), **Pitch polish** (a light, natural Tune) and **Hard tune** (the robotic effect).
+- **Three new “Behind you” backdrops that show the sound itself**, for music-video takes: **🌀 Cymatics** (a vibrating plate's standing waves — higher notes add rings, the low-mids set the petals), **📊 Spectrum** (the live frequency spectrum as a glowing ridge with a reflection, low frequencies warm at the left, highs cool at the right) and **〰 Waveform** (the sound as glowing oscilloscope traces that travel as it plays). Like the others they take the chord's colour, move with the music, obey Calm, and never flash.
+
+### Tests
+- **`e2e-vocalboard`** adds Tune (a flat note pulled onto the scale note), the Leveler (the loud-to-soft gap squeezed), Warmth & Air (the tone tilt), the end safety limiter (even Scream at full grit can't pass full scale), and the Crooner / Hard tune presets — 29 checks.
+- **`e2e-backdrops`** now covers all nine looks for painting, movement, no-flash in Calm and Standard, and drawing on a separate canvas — 13 checks.
+
 ## 2.69.3 — 2026-11-15 — A deploy fix for the honeypot's route list
 
 ### Fixed

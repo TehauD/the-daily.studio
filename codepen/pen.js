@@ -57,7 +57,7 @@ window.__dailyRoom = (id, make) => {
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.69.3', BUILD = '5bf6f15', PARTS_N = +'124' || 0, LINES_N = +'21335' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.70.0', BUILD = '524b8be', PARTS_N = +'124' || 0, LINES_N = +'21459' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { ghApp: { clientId: 'Iv23liTjqEBQsgmGaE1Q', slug: 'tehaud-the-daily-studio' },   /* Sign in with GitHub: the GitHub App's public client id and its slug (docs/GITHUB.md); empty = only the token way */
   support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://journal.the-daily.studio/' };
@@ -586,6 +586,30 @@ class Harm extends AudioWorkletProcessor{
       for(let c=0;c<y.length;c++)y[c][k]=wet;this.w=(this.w+1)%N;}
     return true;}}
 registerProcessor('fw-harm',Harm);
+
+/* pitch correction (part 79, the Tune pedal): hears the note being sung and slides the voice itself to the nearest note of the
+   song's scale (or a chord tone), by the fractional amount — so a flat note is pulled up to pitch, not just shifted by whole steps.
+   strength = how far toward the note (0..1); glide = how fast it gets there (gentle and natural, up to the hard/robotic snap). */
+class Tune extends AudioWorkletProcessor{
+  constructor(){super();this.N=16384;this.b=new Float32Array(this.N);this.w=0;this.ph=0;this.win=0.035;this.semi=0;this.tgt=0;
+    this.D=new Float32Array(512);this.dw=0;this.acc=0;this.ac=0;this.cnt=0;this.scale=[1,0,1,0,1,1,0,1,0,1,0,1];this.chord=null;this.strength=0.85;this.glide=0.035;this.on=false;
+    this.port.onmessage=e=>{const d=e.data;if(d.scale)this.scale=d.scale;if('chord' in d)this.chord=d.chord;if(d.strength!=null)this.strength=d.strength;if(d.glide!=null)this.glide=d.glide;};}
+  rd(pos){const N=this.N;let p=pos;while(p<0)p+=N;const i=Math.floor(p),f=p-i;const a=this.b[i%N],c=this.b[(i+1)%N];return a+(c-a)*f;}
+  detect(){const sr=sampleRate/4,W=256,D=this.D,M=512,s0=(this.dw-W-180+M*4)%M,mn=Math.floor(sr/1000),mx=Math.min(175,Math.floor(sr/70));let e=0;
+    for(let j=0;j<W;j++){const v=D[(s0+j)%M];e+=v*v;}if(e/W<1e-6){this.on=false;this.tgt+=(0-this.tgt)*0.3;return;}
+    let run=0,best=-1;const d=new Float32Array(mx+2);for(let t=1;t<=mx+1;t++){let s=0;for(let j=0;j<W;j++){const q=D[(s0+j)%M]-D[(s0+j+t)%M];s+=q*q;}run+=s;d[t]=s*t/(run||1);}
+    for(let t=mn;t<=mx;t++){if(d[t]<0.15&&d[t]<=d[t-1]&&d[t]<=d[t+1]){best=t;break;}}
+    if(best<0){this.on=false;this.tgt+=(0-this.tgt)*0.3;return;}const a=d[best-1],b=d[best],c=d[best+1],den=a-2*b+c,tt=best+(den?0.5*(a-c)/den:0),f=sr/tt,m=69+12*Math.log2(f/440);
+    this.on=true;let tn,bestd=99,bn=Math.round(m);
+    if(this.chord&&this.chord.length){for(let k=-13;k<=13;k++){const q=Math.round(m)+k;if(this.chord.includes(((q%12)+12)%12)&&Math.abs(q-m)<bestd){bestd=Math.abs(q-m);bn=q;}}tn=bn;}
+    else{for(let k=-2;k<=2;k++){const q=Math.round(m)+k,pc=((q%12)+12)%12;if(this.scale[pc]&&Math.abs(q-m)<bestd){bestd=Math.abs(q-m);bn=q;}}tn=bn;}
+    this.tgt=(tn-m)*this.strength;}
+  process(i,o){const x=i[0],y=o[0];if(!x.length||!y.length)return true;const n=y[0].length,W=Math.min(this.N-8,Math.floor(this.win*sampleRate)),N=this.N;
+    for(let k=0;k<n;k++){const v=x[0][k];this.acc+=v;this.ac++;if(this.ac===4){this.D[this.dw%512]=this.acc/4;this.dw=(this.dw+1)%(512*1024);this.acc=0;this.ac=0;if(++this.cnt%32===0)this.detect();}
+      this.semi+=(this.tgt-this.semi)*this.glide;const ratio=Math.pow(2,this.semi/12);this.b[this.w]=v;const p1=this.ph,p2=(this.ph+0.5)%1,g1=Math.sin(Math.PI*p1),g2=Math.sin(Math.PI*p2);
+      const wet=this.rd(this.w-p1*W)*g1*g1+this.rd(this.w-p2*W)*g2*g2;for(let c=0;c<y.length;c++)y[c][k]=wet;this.ph+=(1-ratio)/W;if(this.ph>=1)this.ph-=1;else if(this.ph<0)this.ph+=1;this.w=(this.w+1)%N;}
+    return true;}}
+registerProcessor('fw-tune',Tune);
 
 /* a de-esser: the band above f is turned down only while it is loud (the rest of the voice is never touched) */
 class DeEss extends AudioWorkletProcessor{
@@ -15557,19 +15581,21 @@ window.addEventListener('pagehide', () => jnSave(true));
 
 /* >>> parts/70-backdrops.js */
 /* ============================================================
-   Part 70 · Behind you (2.12) — six integrated backdrops for the camera cut-out
-   Light Ribbons · Aurora · Warp Stars · Pulse Rings · Nebula · Skyline
+   Part 70 · Behind you (2.12; 2.70 Cymatics, Spectrum, Waveform) — integrated backdrops for the camera cut-out
+   Light Ribbons · Aurora · Warp Stars · Pulse Rings · Nebula · Skyline · Cymatics · Spectrum · Waveform
    They are made to sit behind the person: set Camera look to “Me in front (green screen)” and you stand inside the picture,
    the way a performer stands in front of a lit backdrop. Each one is plain 2D drawing on the visuals canvas, so it also works
    in full screen, in the stage designer and in a recorded video.
+   · Cymatics, Spectrum and Waveform (2.70) show the sound itself — a vibrating plate's standing waves, the live frequency spectrum,
+     and the waveform as glowing oscilloscope traces — for music-video takes that make what you hear visible.
    · The colour follows the chord: it glides to a new hue over about a second when the harmony changes (the circle of fifths
      walks round the colour wheel), and rests on a calm blue when nothing is playing.
    · The movement follows the sound (a few frequency bands set the size and brightness of its parts) and the comfort setting
      (Calm moves at about half the speed and softens every pulse).
    · Nothing here flashes: brightness only ever changes by gliding, and rings and pulses fade over a second or more.
    ============================================================ */
-const BK_MODES = new Set(['ribbons', 'aurora', 'warp', 'rings', 'nebula', 'skyline']);
-const VBACK = [['ribbons', 'Light Ribbons'], ['aurora', 'Aurora'], ['warp', 'Warp Stars'], ['rings', 'Pulse Rings'], ['nebula', 'Nebula'], ['skyline', 'Skyline']];
+const BK_MODES = new Set(['ribbons', 'aurora', 'warp', 'rings', 'nebula', 'skyline', 'cymatics', 'spectrum', 'wave']);
+const VBACK = [['ribbons', 'Light Ribbons'], ['aurora', 'Aurora'], ['warp', 'Warp Stars'], ['rings', 'Pulse Rings'], ['nebula', 'Nebula'], ['skyline', 'Skyline'], ['cymatics', 'Cymatics'], ['spectrum', 'Spectrum'], ['wave', 'Waveform']];
 VMODES.push(...VBACK);
 const BK = { hue: 215, en: .2, bands: new Float32Array(8), t: 0, st: null, rings: [], lastRing: 0, held: false, chord: '', tgt: 215 };
 const bkH = n => { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
@@ -15595,7 +15621,7 @@ function bkTick(X) {
 }
 
 /** what draws each of these looks (part 70b adds Your video) */
-const BK_FN = { ribbons: bkRibbons, aurora: bkAurora, warp: bkWarp, rings: bkRings, nebula: bkNebula, skyline: bkSkyline };
+const BK_FN = { ribbons: bkRibbons, aurora: bkAurora, warp: bkWarp, rings: bkRings, nebula: bkNebula, skyline: bkSkyline, cymatics: bkCymatics, spectrum: bkSpectrum, wave: bkWave };
 function bkDraw(mode, g, W, H, X) {
   const B = bkTick(X); g.save(); g.lineCap = 'round'; g.lineJoin = 'round';
   (BK_FN[mode] || bkRibbons)(g, W, H, B);
@@ -15685,6 +15711,49 @@ function bkSkyline(g, W, H, B) {
       x += bw + R * .004;
     }
   });
+}
+
+/* ----- Cymatics: sound made visible — a vibrating plate's standing waves. Higher frequencies raise the ring count, the low-mids set the
+   number of petals, and louder deepens the pattern; it turns slowly and breathes. The physics that links a tone to a shape. ----- */
+function bkCymatics(g, W, H, B) {
+  bkSky(g, W, H, B.hue, 2, 7); const cx = W / 2, cy = H / 2, R = Math.hypot(cx, cy), t = B.t;
+  const petals = 3 + Math.round((B.b[1] + B.b[2]) * 5), kr = 5 + Math.round((B.b[5] + B.b[6]) * 7), amp = .35 + .65 * B.en, rings = 11, segs = 76;
+  g.globalCompositeOperation = 'lighter';
+  for (let r = 1; r <= rings; r++) {
+    const rr = r / rings * R * .94, bd = B.b[(r + 1) % 8], radial = Math.cos(rr / R * kr * Math.PI - t * .8), bright = Math.abs(radial) * amp * (.4 + .6 * bd);
+    if (bright < .03) continue;
+    g.beginPath();
+    for (let s = 0; s <= segs; s++) { const th = s / segs * 6.2832, lit = radial * Math.cos(th * petals + t * .25), rad = rr + lit * R * .02 * (.6 + bd), x = cx + Math.cos(th) * rad, y = cy + Math.sin(th) * rad; g[s ? 'lineTo' : 'moveTo'](x, y); }
+    g.lineWidth = R * (.0022 + .004 * bd); g.strokeStyle = bkHsl(B.hue + (r - rings / 2) * 8, 88, 60, .12 + .5 * bright); g.stroke();
+  }
+  const orb = g.createRadialGradient(cx, cy, 0, cx, cy, R * .3); orb.addColorStop(0, bkHsl(B.hue + 20, 90, 66, .28 + .14 * B.en)); orb.addColorStop(1, bkHsl(B.hue + 20, 90, 60, 0)); g.fillStyle = orb; g.fillRect(0, 0, W, H);
+}
+
+/* ----- Spectrum: the live frequency spectrum as a glowing ridge over a horizon, with a dimmer reflection below. Low frequencies sit at the
+   left and warm, highs at the right and cool; each band has a bright dot that swells with its level. Reads at a glance as "this is the sound". ----- */
+function bkSpectrum(g, W, H, B) {
+  bkSky(g, W, H, B.hue, 3, 9); const n = B.b.length, hz = H * .6, steps = 96, pts = [];
+  const val = u => { const x = u * (n - 1), i = Math.floor(x), f = x - i, a = B.b[Math.max(0, i)], b2 = B.b[Math.min(n - 1, i + 1)], s = f * f * (3 - 2 * f); return Math.max(.05, a + (b2 - a) * s) * (.75 + .25 * Math.sin(u * 8 + B.t * .55)); };
+  for (let s = 0; s <= steps; s++) { const u = s / steps; pts.push([u * W, hz - H * (.1 + .6 * val(u) + .06 * B.en)]); }
+  g.globalCompositeOperation = 'lighter';
+  g.beginPath(); g.moveTo(0, hz); pts.forEach(p => g.lineTo(p[0], p[1])); g.lineTo(W, hz); g.closePath();
+  const gr = g.createLinearGradient(0, hz - H * .55, 0, hz); gr.addColorStop(0, bkHsl(B.hue - 10, 90, 60, .32)); gr.addColorStop(1, bkHsl(B.hue + 20, 85, 45, .05)); g.fillStyle = gr; g.fill();
+  g.save(); g.translate(0, hz * 2); g.scale(1, -.5); g.beginPath(); g.moveTo(0, hz); pts.forEach(p => g.lineTo(p[0], p[1])); g.lineTo(W, hz); g.closePath(); const gr2 = g.createLinearGradient(0, hz - H * .55, 0, hz); gr2.addColorStop(0, bkHsl(B.hue, 85, 55, .1)); gr2.addColorStop(1, bkHsl(B.hue, 85, 45, 0)); g.fillStyle = gr2; g.fill(); g.restore();
+  for (let k = 0; k < 2; k++) { g.beginPath(); pts.forEach((p, s) => g[s ? 'lineTo' : 'moveTo'](p[0], p[1])); g.lineWidth = k ? H * .006 : H * .018; g.strokeStyle = bkHsl(B.hue + 20, 92, 66, k ? .85 : .16); g.stroke(); }
+  for (let i = 0; i < n; i++) { const p = pts[Math.round((i + .5) / n * steps)], rad = H * (.006 + .012 * B.b[i]); g.beginPath(); g.arc(p[0], p[1], rad, 0, 6.2832); g.fillStyle = bkHsl(B.hue - 40 + i * 14, 90, 66, .45 + .4 * B.b[i]); g.fill(); }
+}
+
+/* ----- Waveform: the sound as glowing oscilloscope traces through the middle — a main line with two quieter harmonics above and below. The
+   shape is a sum of sines whose heights follow the frequency bands, so a richer sound draws a busier wave; it travels sideways as it plays. ----- */
+function bkWave(g, W, H, B) {
+  bkSky(g, W, H, B.hue + 8, 2, 7); const cy = H / 2;
+  const gl = g.createRadialGradient(W / 2, cy, 0, W / 2, cy, W * .6); gl.addColorStop(0, bkHsl(B.hue, 85, 50, .16 + .12 * B.en)); gl.addColorStop(1, bkHsl(B.hue, 85, 50, 0)); g.fillStyle = gl; g.fillRect(0, 0, W, H);
+  g.globalCompositeOperation = 'lighter'; const steps = 150, amp = H * (.035 + .3 * B.en);
+  for (let tr = 0; tr < 3; tr++) {
+    const yb = cy + (tr - 1) * H * .17, hue = B.hue + (tr - 1) * 26, phase = B.t * (.8 + tr * .25), a = tr === 1 ? 1 : .55, pts = [];
+    for (let s = 0; s <= steps; s++) { const u = s / steps, edge = Math.sin(u * Math.PI); let y = 0; for (let k = 0; k < 4; k++) { const bd = B.b[(k * 2 + tr) % 8]; y += Math.sin(u * (6 + k * 7 + tr * 3) * Math.PI + phase * (1 + k * .5)) * bd / (k + 1); } pts.push([u * W, yb + y * amp * edge * a]); }
+    [[H * .02, .1], [H * .007, .4 * a], [H * .0025, .85 * a]].forEach(([w, al]) => { g.beginPath(); pts.forEach((p, s) => g[s ? 'lineTo' : 'moveTo'](p[0], p[1])); g.lineWidth = w; g.strokeStyle = bkHsl(hue, 90, 60, al); g.stroke(); });
+  }
 }
 
 /** the first time one of these is chosen with the camera showing you dimmed behind the visuals, say how to stand inside the picture */
@@ -18343,43 +18412,56 @@ if (CFG.mega.on) setTimeout(() => megLoop(true), 1500);
 
 /* >>> parts/79-vocalboard.js */
 /* ============================================================
-   Part 79 · VOCAL PEDALBOARD (2.31) — seven stompboxes for the voice
-   After the vocal polish, in this order: 🤘 Scream · De-esser · 📢 Megaphone · Doubler · Harmony · Echo · Reverb. The live voice and
+   Part 79 · VOCAL PEDALBOARD (2.31; 2.70 Tune, Leveler, Warmth & Air) — ten stompboxes for the voice
+   After the vocal polish, in this order: 🤘 Scream · 🎯 Tune · De-esser · 🗜 Leveler · ☀ Warmth & Air · 📢 Megaphone · Doubler · Harmony ·
+   Echo · Reverb, then an always-on safety limiter so the board can never clip however hard the pedals are driven. The live voice and
    vocal takes both go through it (takes are kept clean and played back through it, so the sound can still change after you sing),
    and a fast bounce builds the same board offline.
      · Scream     a gate, hard compression, grit blended beside the clean voice (focused on the mids, so words stay clear) and an
                   analog-style octave down for growl that adds no delay. Styles: Rasp, Hardcore, Fry growl, Death growl
+     · Tune       hears the note and slides the voice to the nearest note of the song's scale (or a chord tone): gentle polish up to the
+                  hard, robotic snap. Follows the key or the chord. Like Harmony it lands a few hundredths of a second after you
      · De-esser   turns the band above 4–9 kHz down only while it is loud
+     · Leveler    a compressor that evens the voice out and sets its level — placed early, so everything after it sits better
+     · Warmth & Air  a tone tilt from warm low-mids to an airy top, with a touch of tape-style saturation (the crooner/oldies warmth)
      · Megaphone  megaphone, radio or telephone: the voice squeezed into a band and driven
      · Doubler    two slightly delayed, slightly moving copies left and right: a double-tracked voice
      · Harmony    a voice a third or a fifth above or below that stays in the song's key (or on the chord playing): the worklet finds
                   the note you sing and moves it by steps of the scale. It lands a few hundredths of a second after you
      · Echo       in time with the song (1/4, dotted 1/8, 1/8 …); Throw: only while the pedal is held, so one word echoes
      · Reverb     room, plate or hall, with its lows cut so it does not muddy the voice
-   Presets (Clean lead, Rock grit, Scream, Ballad, Ambient echo, Harmony lead, Megaphone) set the whole board; a song can switch
+   Presets (Clean lead, Rock grit, Scream, Ballad, Crooner, Pitch polish, Hard tune, Ambient echo, Harmony lead, Megaphone) set the whole board; a song can switch
    presets per section as it plays (S.vbSec), and the foot pedal can switch Scream, step through presets and hold an echo throw.
    With Scream or Megaphone on, the show turns gritty, as it does for a megaphone pedal (part 78).
    ============================================================ */
 const VB_DEF = {
   scream: { style: 'Rasp', grit: .35, growl: 0, gate: -55, level: 1 },
+  tune: { strength: .8, speed: 'Smooth', follow: 'key' },
   deess: { amount: .5, freq: 6500 },
+  level: { amount: .5, out: 3 },
+  warm: { tone: -.15, warmth: .4 },
   mega: { style: 'Megaphone', drive: .6, level: 1 },
   double: { mix: .35, width: .8 },
   harm: { voice: 'Third above', mix: .45, follow: 'key' },
   echo: { time: '1/8 dotted', mix: .25, fb: .35, throw: false },
   verb: { type: 'Plate', mix: .2, decay: 1.6 }
 };
-const VB_ORDER = [['scream', '🤘', 'Scream'], ['deess', '𝑺', 'De-esser'], ['mega', '📢', 'Megaphone'], ['double', '👥', 'Doubler'], ['harm', '🎶', 'Harmony'], ['echo', '⟲', 'Echo'], ['verb', '◌', 'Reverb']];
+const VB_ORDER = [['scream', '🤘', 'Scream'], ['tune', '🎯', 'Tune'], ['deess', '𝑺', 'De-esser'], ['level', '🗜', 'Leveler'], ['warm', '☀', 'Warmth & Air'], ['mega', '📢', 'Megaphone'], ['double', '👥', 'Doubler'], ['harm', '🎶', 'Harmony'], ['echo', '⟲', 'Echo'], ['verb', '◌', 'Reverb']];
 const VB_SCREAM = { 'Rasp': { grit: .35, growl: 0, gate: -55 }, 'Hardcore': { grit: .65, growl: .15, gate: -50 }, 'Fry growl': { grit: .55, growl: .45, gate: -50 }, 'Death growl': { grit: .85, growl: .75, gate: -46 } };
 const VB_MEGA = { 'Megaphone': [500, 3000, 1600, 8], 'Radio': [300, 4200, 1800, 5], 'Telephone': [380, 3400, 1200, 4] };
 const VB_VOICES = { 'Third above': [2], 'Third below': [-2], 'Fifth above': [4], 'Third and fifth above': [2, 4], 'Octave below': [null, -12], 'Octave above': [null, 12] };
 const VB_TIMES = { '1/4': 1, '1/8 dotted': .75, '1/8': .5, '1/4 triplet': 2 / 3, '1/16': .25 };
+const VB_TUNE_SPEED = { 'Gentle': .012, 'Smooth': .035, 'Snappy': .09, 'Hard': .4 };      /* how fast the voice is pulled to the note; Hard is the robotic snap */
+const VB_VERB_SPACES = ['Room', 'Spring', 'Plate', 'Hall'];
 const VB_PRESETS = {
   'Off': {},
   'Clean lead': { deess: {}, verb: { type: 'Plate', mix: .15, decay: 1.4 } },
   'Rock grit': { scream: { style: 'Rasp', grit: .35, growl: 0 }, deess: {}, double: { mix: .25 }, verb: { type: 'Room', mix: .14, decay: 1 } },
   'Scream': { scream: { style: 'Hardcore', grit: .65, growl: .15 }, deess: {}, verb: { type: 'Room', mix: .12, decay: 1 } },
   'Ballad': { deess: {}, double: { mix: .35 }, echo: { time: '1/4', mix: .14, fb: .25 }, verb: { type: 'Plate', mix: .28, decay: 2.2 } },
+  'Crooner': { deess: {}, warm: { tone: -.3, warmth: .45 }, level: { amount: .45, out: 3 }, double: { mix: .2, width: .5 }, echo: { time: '1/4', mix: .12, fb: .15 }, verb: { type: 'Spring', mix: .26, decay: 1.8 } },
+  'Pitch polish': { tune: { strength: .6, speed: 'Smooth', follow: 'key' }, deess: {}, level: { amount: .4, out: 2 }, verb: { type: 'Plate', mix: .16, decay: 1.4 } },
+  'Hard tune': { tune: { strength: 1, speed: 'Hard', follow: 'key' }, deess: {}, double: { mix: .2 }, verb: { type: 'Plate', mix: .14, decay: 1.2 } },
   'Ambient echo': { deess: {}, double: { mix: .2 }, echo: { time: '1/8 dotted', mix: .32, fb: .5 }, verb: { type: 'Hall', mix: .32, decay: 3 } },
   'Harmony lead': { deess: {}, harm: { voice: 'Third above', mix: .45 }, double: { mix: .2 }, verb: { type: 'Plate', mix: .2, decay: 1.6 } },
   'Megaphone': { mega: { style: 'Megaphone', drive: .6 }, verb: { type: 'Room', mix: .1, decay: .8 } }
@@ -18402,6 +18484,35 @@ function vbScream(c) {
     case 'growl': tc(growlG.gain, v * .9); break; case 'gate': if (gate.port) gate.port.postMessage({ th: v }); break; case 'level': tc(lv.gain, v); break; } } };
 }
 function vbDeess(c) { const n = vbWorklet(c, 'fw-deess'); if (!n) { const g = gn(1); return { in: g, out: g, set() { } }; } return { in: n, out: n, set(k, v) { if (k === 'amount') n.port.postMessage({ th: -14 - v * 30 }); if (k === 'freq') n.port.postMessage({ f: v }); } }; }
+/* Tune: hears the note and slides the voice to the nearest note of the song's scale (or a chord tone). Gentle polish up to the hard robotic snap.
+   Like Harmony it has to hear the note first, so it lands a few hundredths of a second after you. The scale and chord are fed in from vbTick. */
+function vbTune(c) {
+  const n = vbWorklet(c, 'fw-tune'); if (!n) { const g = gn(1); return { in: g, out: g, voice: null, upd() { }, set() { } }; }
+  let strength = .8, speed = 'Smooth';
+  const upd = () => { try { n.port.postMessage({ scale: vbScale(), strength, glide: VB_TUNE_SPEED[speed] || .035 }); } catch (e) { } };
+  upd();
+  return { in: n, out: n, voice: n, upd, set(k, v) { if (k === 'strength') strength = v; if (k === 'speed') speed = v; upd(); } };
+}
+/* Leveler: a compressor that evens the voice out and (with a touch of make-up) sets its level. Placed early so everything after sits better;
+   the board's end also has an always-on safety limiter (vbAttach) so no pedal can push the output into clipping. */
+function vbLevel(c) {
+  const i = gn(1), cm = mkComp(c), mk = gn(1), o = gn(1); chainN(i, cm, mk, o);
+  const P = k => cm[k] || (cm.parameters && cm.parameters.get(k));
+  return { in: i, out: o, set(k, v) {
+    if (k === 'amount') { const th = P('threshold'), ra = P('ratio'), at = P('attack'), rl = P('release'), kn = P('knee'); if (th) th.value = -12 - v * 26; if (ra) ra.value = 2 + v * 6; if (at) at.value = .006; if (rl) rl.value = .18; if (kn) kn.value = 8; }
+    if (k === 'out') tc(mk.gain, Math.pow(10, v / 20));
+  } };
+}
+/* Warmth & Air: a tone tilt (warm low-mids ↔ an airy top) with a touch of tape-style saturation for vintage body — the crooner/oldies warmth */
+function vbWarm(c) {
+  const i = gn(1), lo = bq('lowshelf', 220), hi = bq('highshelf', 3500), hc = bq('lowpass', 16000), dry = gn(1), satG = gn(0), sh = mkShaper(c), o = gn(1);
+  sh.curve = satCurve(2.2); sh.oversample = '2x';
+  chainN(i, lo, hi, hc); hc.connect(dry); dry.connect(o); chainN(hc, sh, satG); satG.connect(o);
+  return { in: i, out: o, set(k, v) {
+    if (k === 'tone') { lo.gain.value = -9 * v; hi.gain.value = 9 * v; }      /* v < 0: warm (lows up, highs down); v > 0: air */
+    if (k === 'warmth') { tc(dry.gain, 1 - .35 * v); tc(satG.gain, v * .55); tc(hc.frequency, 16000 - v * 9000); }
+  } };
+}
 function vbMega(c) {
   const i = gn(1), h1 = bq('highpass', 500), h2 = bq('highpass', 500), pk = bq('peaking', 1600, 1, 8), drv = gn(4), sh = mkShaper(c), l1 = bq('lowpass', 3000), l2 = bq('lowpass', 3000), lv = gn(.8);
   sh.curve = satCurve(6); chainN(i, h1, h2, pk, drv, sh, l1, l2, lv);
@@ -18434,8 +18545,16 @@ function vbVerb(c) { const u = FX.reverb.build(c); u.set('lowcut', 220); u.set('
 function vbScale() { const iv = SCALES[S.scale] || (S.minor ? SCALES['Natural Minor (Aeolian)'] : SCALES['Major (Ionian)']), f = new Array(12).fill(0); iv.forEach(x => { f[(S.key + x) % 12] = 1; }); return f; }
 /** build the board between `from` and `to` on context c (called while the engine's graph is built, part 02) */
 function vbAttach(c, from, to) {
-  const B = { c, u: {} }; const mk = { scream: vbScream, deess: vbDeess, mega: vbMega, double: vbDouble, harm: vbHarm, echo: vbEcho, verb: vbVerb };
-  let prev = from; VB_ORDER.forEach(([k]) => { const w = vbWrap(mk[k](c)); B.u[k] = w; prev.connect(w.in); prev = w.out; }); prev.connect(to);
+  const B = { c, u: {} }; const mk = { scream: vbScream, tune: vbTune, deess: vbDeess, level: vbLevel, warm: vbWarm, mega: vbMega, double: vbDouble, harm: vbHarm, echo: vbEcho, verb: vbVerb };
+  let prev = from; VB_ORDER.forEach(([k]) => { const w = vbWrap(mk[k](c)); B.u[k] = w; prev.connect(w.in); prev = w.out; });
+  /* an always-on, transparent safety limiter at the very end: with grit, a megaphone, stacked harmonies and echo feedback all pushing at once
+     the board can run hot, so this catches true peaks near 0 dBFS (and only then) so the output can never clip, however hard the pedals are driven */
+  const lim = c.createDynamicsCompressor(); lim.threshold.value = -1; lim.knee.value = 0; lim.ratio.value = 20; lim.attack.value = .002; lim.release.value = .05; B.lim = lim;
+  /* the compressor does the musical gain-reduction, but it is not a brick wall (it overshoots a little on a transient), so a transparent
+     hard clamp at ±1 after it is the actual guarantee the output can never exceed full scale — identity within range, so it only ever
+     touches a sample that would otherwise have clipped anyway */
+  const clip = c.createWaveShaper(); const cv = new Float32Array(1024); for (let i = 0; i < 1024; i++) cv[i] = i / 1023 * 2 - 1; clip.curve = cv; clip.oversample = 'none'; B.clip = clip;
+  prev.connect(lim); lim.connect(clip); clip.connect(to);
   E.vb = B; vbApply(B); return B;
 }
 /** CFG.vb onto a board */
@@ -18471,12 +18590,13 @@ const vbSecKey = (sec, i) => sec.id || ('#' + i);
 function vbTick() {
   const B = E.vb; if (!B || B.c !== E.ctx) return;
   if (VBS.bpm !== S.bpm) { VBS.bpm = S.bpm; B.u.echo.fx.retime(); }
-  if (CFG.vb.on.harm && CFG.vb.p.harm.follow === 'chord') { let sym = ''; try { const inf = stageInfo(); sym = inf && inf.sym || ''; } catch (e) { } if (sym !== VBS.chord) { VBS.chord = sym; const ch = sym ? parseChord(sym) : null; B.u.harm.fx.voices.forEach(v => v && v.n.port.postMessage({ chord: ch ? ch.pcs : null })); } }
-  else if (VBS.chord) { VBS.chord = ''; B.u.harm.fx.voices.forEach(v => v && v.n.port.postMessage({ chord: null })); }
+  const wantChord = (CFG.vb.on.harm && CFG.vb.p.harm.follow === 'chord') || (CFG.vb.on.tune && CFG.vb.p.tune.follow === 'chord');
+  if (wantChord) { let sym = ''; try { const inf = stageInfo(); sym = inf && inf.sym || ''; } catch (e) { } if (sym !== VBS.chord) { VBS.chord = sym; const ch = sym ? parseChord(sym) : null, pcs = ch ? ch.pcs : null; B.u.harm.fx.voices && B.u.harm.fx.voices.forEach(v => v && v.n.port.postMessage({ chord: pcs })); if (B.u.tune.fx.voice) B.u.tune.fx.voice.port.postMessage({ chord: pcs }); } }
+  else if (VBS.chord) { VBS.chord = ''; B.u.harm.fx.voices && B.u.harm.fx.voices.forEach(v => v && v.n.port.postMessage({ chord: null })); if (B.u.tune.fx.voice) B.u.tune.fx.voice.port.postMessage({ chord: null }); }
   if (T.playing && S.vbSec) { const sp = spb(), bi = Math.max(0, Math.floor(playheadSlot() / sp)), fb = barsCache()[Math.min(bi, barsCache().length - 1)]; if (fb) { const i = S.sections.indexOf(fb.sec), want = S.vbSec[vbSecKey(fb.sec, i)]; if (want && want !== VBS.applied && VB_PRESETS[want]) vbPreset(want, true); } }
 }
 setInterval(vbTick, 250);
-bus.on('song', () => { if (E.vb && E.vb.u.harm) E.vb.u.harm.fx.upd(); });
+bus.on('song', () => { if (E.vb && E.vb.u.harm) E.vb.u.harm.fx.upd(); if (E.vb && E.vb.u.tune) E.vb.u.tune.fx.upd(); });
 
 /* ---------- the room ---------- */
 function vbKnob(k, q, label, min, max, step, fmt) { const v = CFG.vb.p[k][q]; return h('label', { class: 'vb-k' }, h('span', {}, label), h('input', { type: 'range', min, max, step, value: v, 'aria-label': label, oninput: e => { vbSet(k, q, +e.target.value); const o = e.target.nextSibling; if (o) o.textContent = fmt ? fmt(+e.target.value) : ''; } }), h('output', {}, fmt ? fmt(v) : '')); }
@@ -18485,12 +18605,15 @@ const pc = v => Math.round(v * 100) + '%';
 function vbControls(k) {
   switch (k) {
     case 'scream': return [vbSel(k, 'style', 'Style', Object.keys(VB_SCREAM)), vbKnob(k, 'grit', 'Grit', 0, 1, .01, pc), vbKnob(k, 'growl', 'Growl', 0, 1, .01, pc), vbKnob(k, 'gate', 'Gate', -80, -30, 1, v => v + ' dB')];
+    case 'tune': return [vbSel(k, 'follow', 'Snap to', ['key', 'chord']), vbSel(k, 'speed', 'Speed', Object.keys(VB_TUNE_SPEED)), vbKnob(k, 'strength', 'Strength', 0, 1, .01, pc)];
     case 'deess': return [vbKnob(k, 'amount', 'Amount', 0, 1, .01, pc), vbKnob(k, 'freq', 'Above', 4000, 9000, 100, v => (v / 1000).toFixed(1) + ' kHz')];
+    case 'level': return [vbKnob(k, 'amount', 'Squeeze', 0, 1, .01, pc), vbKnob(k, 'out', 'Output', 0, 12, .5, v => '+' + v.toFixed(1) + ' dB')];
+    case 'warm': return [vbKnob(k, 'tone', 'Tone', -1, 1, .01, v => v < -.05 ? 'warm' : v > .05 ? 'air' : 'flat'), vbKnob(k, 'warmth', 'Warmth', 0, 1, .01, pc)];
     case 'mega': return [vbSel(k, 'style', 'Sound', Object.keys(VB_MEGA)), vbKnob(k, 'drive', 'Drive', 0, 1, .01, pc)];
     case 'double': return [vbKnob(k, 'mix', 'Blend', 0, 1, .01, pc), vbKnob(k, 'width', 'Width', 0, 1, .01, pc)];
     case 'harm': return [vbSel(k, 'voice', 'Voice', Object.keys(VB_VOICES)), vbSel(k, 'follow', 'Follows', ['key', 'chord']), vbKnob(k, 'mix', 'Blend', 0, 1, .01, pc)];
     case 'echo': return [vbSel(k, 'time', 'Time', Object.keys(VB_TIMES)), vbKnob(k, 'mix', 'Blend', 0, 1, .01, pc), vbKnob(k, 'fb', 'Repeats', 0, .9, .01, pc), h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!CFG.vb.p.echo.throw, onchange: e => vbSet('echo', 'throw', e.target.checked) }), 'Throw: only while the pedal is held')];
-    case 'verb': return [vbSel(k, 'type', 'Space', ['Room', 'Plate', 'Hall']), vbKnob(k, 'mix', 'Blend', 0, 1, .01, pc), vbKnob(k, 'decay', 'Length', .3, 5, .1, v => v.toFixed(1) + ' s')];
+    case 'verb': return [vbSel(k, 'type', 'Space', VB_VERB_SPACES), vbKnob(k, 'mix', 'Blend', 0, 1, .01, pc), vbKnob(k, 'decay', 'Length', .3, 5, .1, v => v.toFixed(1) + ' s')];
   }
   return [];
 }
@@ -18514,11 +18637,12 @@ function vbSections() {
 }
 function vbPaint() { const b = document.getElementById('vbBoard'); if (b && b._draw) b._draw(); }
 function vocalBoardOpen(at) {
-  return hubOpen('vocalboard', { ico: '🎤', title: 'Vocal pedals', sub: 'Seven stompboxes for your voice, after the vocal polish. You hear them while you monitor (Hear myself, on headphones), and vocal takes play back through them.', at, sections: [
+  return hubOpen('vocalboard', { ico: '🎤', title: 'Vocal pedals', sub: 'Ten stompboxes for your voice, after the vocal polish. You hear them while you monitor (Hear myself, on headphones), and vocal takes play back through them.', at, sections: [
     { key: 'board', label: 'The board', ico: '🎛', wide: true, body: () => [vbBoard()] },
     { key: 'song', label: 'By section', ico: '▦', body: () => [vbSections()] },
     { key: 'how', label: 'Good to know', ico: 'ⓘ', body: () => [
-      h('p', { class: 'small' }, 'Scream, the doubler, the de-esser, echo and reverb add no delay you would notice. Harmony lands a few hundredths of a second after you (it has to hear the note first), which sounds natural for a backing voice. Scream’s growl is an analog-style octave down, so it is instant.'),
+      h('p', { class: 'small' }, 'Scream, the doubler, the de-esser, the leveler, warmth, echo and reverb add no delay you would notice. Tune and Harmony land a few hundredths of a second after you (they have to hear the note first), which sounds natural. Scream’s growl is an analog-style octave down, so it is instant.'),
+      h('p', { class: 'small' }, 'Tune slides your voice to the nearest note of the song’s key or chord — gentle for a quiet polish, Hard for the robotic effect. The Leveler evens you out and sets your level, and an always-on safety limiter at the end keeps the board from clipping however hard you push the pedals (handy with Scream, Megaphone, stacked harmony or a lot of echo).'),
       h('p', { class: 'small' }, 'Use headphones, or your interface’s own monitoring: with speakers, any live vocal effect can feed back.'),
       h('p', { class: 'small' }, 'Scream lets you scream lighter: the pedal adds the grit so your throat does not have to. If it hurts or you go hoarse, stop; a coach who teaches fry and false-cord screaming is worth it.'),
       h('p', { class: 'small muted' }, 'Takes are recorded clean and played back through the board, so you can change the sound after you sing. Bounces include it. The foot pedal (Settings ▸ Pedal & MIDI sync) can switch Scream, step through presets and hold an echo throw.')] }
