@@ -4,15 +4,19 @@ What the studio, its tutorials, its documents and its tests do **not** cover yet
 
 How to use it: before a release, move what the release closed into *Closed* with the version, and add what it opened. [RELEASE.md](RELEASE.md) has this as a checklist item. Items marked **(maintainer)** are decisions or facts only the project's owner can settle; nothing here blocks a build.
 
+## Closed in 2.76.0
+
+- **What the studio hears** gathers the key, range, tempo and structure of the open song into one labelled page with apply and undo. Still open from the assessment: show take figures on the lanes and per section, setlist and rehearsal, takes by section, an artist page. Not yet: chord recognition from recorded audio into the chart (the chart import and stem analysis do it for imports), melody extraction, automatic section identification from audio.
+
 ## Closed in 2.75.0
 
 - **Nothing helped you choose between takes.** The coach grades live playing, but recorded takes were never measured against the song. **Compare takes** reads each take's timing against the grid, a voice's pitch against the key, level and noise, side by side, labelled measured or estimated, and changes nothing.
 
-## Product assessment (2.75): the next opportunities, in order
+## Product assessment (2.75, updated 2.76): the next opportunities, in order
 
 The song is already one shared project (sections, words, chords, tab, band, mix, takes, versions, credits, soundprint), so the gaps are in what the studio *tells you* about it and in getting to the stage:
 1. **Compare takes** — done in 2.75. Next step: show the figures on the lanes, and per section, so the best chorus and the best verse can come from different takes.
-2. **What the studio hears** — one page for the open song: key, tempo steadiness, range, structure, each labelled measured / estimated / suggestion, each with one-tap apply and undo. The detectors exist in six places; nothing gathers them.
+2. **What the studio hears** — done in 2.76. The page for the open song: key, tempo steadiness, range, structure, each labelled measured / estimated / suggestion, each with one-tap apply and undo. The detectors exist in six places; nothing gathers them.
 3. **Setlist and rehearsal** — there is no setlist. Order songs, rehearse the transitions, carry tempo, key and capo per song into Showtime.
 4. **Takes by section** — alternate takes kept per section, chosen without cutting audio by hand.
 5. **An artist page** — a portable, self-contained page of finished songs with credits; Drops expire after 7 days and the share page is one song.

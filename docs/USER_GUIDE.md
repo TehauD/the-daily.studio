@@ -1095,6 +1095,10 @@ It starts at 70% of the song's tempo, every clean go is 5 BPM faster, and it sto
 
 **🍎 For teachers:** ✎ Annotate, 📝 Lesson notes and ⏺ Record the screen, plus **This section as an exercise** (the tab of the section you are in, note by note) and lesson files: **⇩ Share as a file** in the coach saves a `.daily-lesson.json` to send a student, and **📂 Open a lesson file** opens one. A file can only contain notes, chords, words and tempos.
 
+## What the studio hears (2.76)
+
+Open it from **Export ▸ 🧠 What the studio hears**, or from the song-journey popover. It is one plain page about the song you have open: its shape (sections, bars, length), the key your chords point to, your vocal range, the tempo you tend to play at, and a few thoughts about the structure. Every line says whether it is **Measured** (counted or timed), **Estimated** (a reasonable reading that can be wrong) or a **Suggestion**, and **Why?** says how it was worked out. If it thinks the song's key or tempo should change, it offers a button; the studio keeps a version first, and **Undo** puts it back. Nothing is changed unless you tap it, and nothing leaves the page.
+
 ## Compare takes (2.75)
 
 Recorded a few passes and can't decide? Click a clip in the arrangement and choose **⚖ Compare takes**. The studio listens to every take of the same kind (voices with voices, instruments with instruments) and lays them side by side:

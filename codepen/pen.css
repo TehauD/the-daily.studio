@@ -1910,3 +1910,7 @@ body:not([data-form=phone]) #center.tl-slim #timeline{overflow:visible;backgroun
 body:not([data-form=phone]) #center.tl-slim .split-h{cursor:default}
 body:not([data-form=phone]) #center.tl-slim .split-h .et-pan{display:none}
 body:not([data-form=phone]) #center.tl-slim .split-h .et-arr{right:auto;left:50%;transform:translateX(-50%);top:-14px;height:20px;border-radius:9px 9px 0 0;border-bottom:0}
+
+.tkc-s{background:color-mix(in srgb,var(--accent,#8cf) 22%,transparent)}
+.hrs-card{border:1px solid var(--line,#8884);border-radius:10px;padding:10px 12px;margin:0 0 8px}
+.hrs-why summary{cursor:pointer}

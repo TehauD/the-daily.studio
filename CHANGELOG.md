@@ -2,6 +2,21 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.76.0 — 2026-11-16 — What the studio hears
+
+### Added
+- **🧠 What the studio hears** (in Export beside Finish it, and at the bottom of the song-journey popover). One plain page about the open song, gathering what the studio can tell you, each finding labelled **Measured** (counted or timed), **Estimated** (a reasonable reading, not a fact) or **Suggestion** (a thought), each with a **Why?** that says how it was reached:
+  - **The shape:** sections, bars and length at the song's tempo (measured).
+  - **The key the chords point to** (estimated), against the key the song is set to; it says when it is the relative key (the same notes). **Set the song to…** keeps a version of the song first and **Undo** puts it back.
+  - **Your range** in your vocal takes (measured) and the key your sung notes sit in (estimated).
+  - **The tempo you tend to play at**, from the spacing of your attacks against the grid (estimated), with **Set the song to… BPM** and Undo.
+  - **Thoughts on the structure** (a verse but no chorus, a chorus that appears once, no intro or outro, no repeated chords, odd phrase lengths), never applied for you.
+- Nothing changes until you tap Apply; no take is touched; nothing leaves the page. Apply refreshes the history snapshot first, so Undo reverts only that change and never a take recorded since.
+- `test/e2e-hears.cjs` (15 checks): a song built to have known answers.
+
+### Changed
+- The release gate's minified-size limit for `index.html` goes from 2 MB to 2.1 MB (this release adds about 9 kB). The compressed limit (700 kB) is unchanged and still passes.
+
 ## 2.75.0 — 2026-11-15 — Compare takes
 
 ### Added
