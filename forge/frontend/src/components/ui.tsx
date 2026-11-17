@@ -158,10 +158,11 @@ export function Segmented<T extends string>({ value, options, onChange, label }:
 
 export const inputCls = "h-8 w-full rounded-[calc(var(--radius)-1px)] border border-line-strong bg-surface px-2.5 font-mono text-[12px] text-ink outline-none transition placeholder:text-ink-3 focus:border-accent focus:ring-2 focus:ring-accent-soft";
 
-export function Field({ label, hint, children }: { label: string; hint?: ReactNode; children: ReactNode }) {
+/** `math` keeps case: uppercasing would turn α into A and σ into Σ. */
+export function Field({ label, hint, children, math = false }: { label: string; hint?: ReactNode; children: ReactNode; math?: boolean }) {
   return (
     <label className="block">
-      <span className="micro mb-1 block text-ink-3">{label}</span>
+      <span className={cx("micro mb-1 block text-ink-3", math && "!normal-case !tracking-normal")}>{label}</span>
       {children}
       {hint && <span className="mt-1 block text-[11px] text-ink-3">{hint}</span>}
     </label>

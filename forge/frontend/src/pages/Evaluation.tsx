@@ -140,7 +140,7 @@ function Calculators() {
       <Panel title="Power planner" prov={<Prov kind="computed" source="paired-binary approximation" />}>
         <form onSubmit={runPw} className="space-y-3">
           <div className="grid grid-cols-4 gap-2">
-            {(["delta", "discordant", "alpha", "power"] as const).map((k) => <Field key={k} label={k === "delta" ? "δ gain" : k === "discordant" ? "q discordant" : k}><input className={inputCls} type="number" step="0.01" value={pw[k]} onChange={(e) => setPw({ ...pw, [k]: Number(e.target.value) })} /></Field>)}
+            {(["delta", "discordant", "alpha", "power"] as const).map((k) => <Field key={k} math label={k === "delta" ? "δ gain" : k === "discordant" ? "q discordant" : k}><input className={inputCls} type="number" step="0.01" value={pw[k]} onChange={(e) => setPw({ ...pw, [k]: Number(e.target.value) })} /></Field>)}
           </div>
           <div className="flex items-center gap-4"><Button type="submit" tone="primary">Compute n</Button>{pwr && <Readout label="groups needed" value={fmt.exact(pwr.n_pairs)} size="sm" />}</div>
           <div className="font-mono text-[11px] text-ink-3">n = ⌈(z₁₋α/₂ + z_power)² · (q − δ²) / δ²⌉</div>

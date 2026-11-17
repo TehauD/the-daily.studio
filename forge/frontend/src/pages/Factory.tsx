@@ -79,7 +79,7 @@ export function InspectionView({ d }: { d: Inspection }) {
         </div>
         {cur && (
           <div>
-            <div className="micro mb-1 text-ink-3">Singular spectrum · {cur.module.replace(/^model\./, "")}</div>
+            <div className="micro mb-1 !normal-case !tracking-normal text-ink-3">Singular spectrum · {cur.module.replace(/^model\./, "")}</div>
             <div className="mb-2 font-mono text-[10.5px] text-ink-3">shape {cur.shape.join(" × ")} · ‖ΔW‖_F {cur.delta_fro.toExponential(3)}</div>
             <Spectrum sigma={cur.singular_values} effRank={cur.effective_rank} />
           </div>

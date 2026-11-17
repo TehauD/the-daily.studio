@@ -49,12 +49,12 @@ export function LoraToy() {
       <div className="mb-3 flex items-center justify-between"><span className="text-[12.5px] font-medium text-ink">Interactive LoRA toy · 12×12 layer</span><Prov kind="illustration" source="random toy matrices, not your model" /></div>
       <div className="grid gap-5 md:grid-cols-[220px_1fr_220px]">
         <div className="space-y-3">
-          <Field label={`rank r = ${r}`}><input type="range" min={1} max={8} value={r} onChange={(e) => setR(Number(e.target.value))} className="w-full accent-[var(--accent)]" /></Field>
-          <Field label={`alpha α = ${alpha}  (scale s = α/r = ${(alpha / r).toFixed(2)})`}><input type="range" min={1} max={32} value={alpha} onChange={(e) => setAlpha(Number(e.target.value))} className="w-full accent-[var(--accent)]" /></Field>
-          <Field label={`direction decay = ${decay.toFixed(2)}`} hint="Lower = energy concentrates in fewer directions."><input type="range" min={0.1} max={1} step={0.05} value={decay} onChange={(e) => setDecay(Number(e.target.value))} className="w-full accent-[var(--accent)]" /></Field>
+          <Field math label={`rank r = ${r}`}><input type="range" min={1} max={8} value={r} onChange={(e) => setR(Number(e.target.value))} className="w-full accent-[var(--accent)]" /></Field>
+          <Field math label={`alpha α = ${alpha}  (scale s = α/r = ${(alpha / r).toFixed(2)})`}><input type="range" min={1} max={32} value={alpha} onChange={(e) => setAlpha(Number(e.target.value))} className="w-full accent-[var(--accent)]" /></Field>
+          <Field math label={`direction decay = ${decay.toFixed(2)}`} hint="Lower = energy concentrates in fewer directions."><input type="range" min={0.1} max={1} step={0.05} value={decay} onChange={(e) => setDecay(Number(e.target.value))} className="w-full accent-[var(--accent)]" /></Field>
         </div>
         <div>
-          <div className="micro mb-1 text-ink-3">ΔW = s · B · A (blue +, red −)</div>
+          <div className="micro mb-1 !normal-case !tracking-normal text-ink-3">ΔW = s · B · A (blue +, red −)</div>
           <svg viewBox={`0 0 ${N * 14} ${N * 14}`} className="mx-auto h-44 w-44" role="img" aria-label="Toy weight-update matrix">
             {dW.map((row, i) => row.map((v, j) => (
               <rect key={`${i}-${j}`} x={j * 14} y={i * 14} width={13} height={13} rx={1.5}
@@ -62,7 +62,7 @@ export function LoraToy() {
           </svg>
         </div>
         <div>
-          <div className="micro mb-1 text-ink-3">singular values σ</div>
+          <div className="micro mb-1 !normal-case !tracking-normal text-ink-3">singular values σ</div>
           <svg viewBox="0 0 200 90" className="w-full" role="img" aria-label="Singular values">
             <line x1={0} x2={200} y1={80} y2={80} stroke="var(--line-strong)" />
             {sigma.map((s, i) => <rect key={i} x={i * (200 / N) + 1} y={80 - (s / (sigma[0] || 1)) * 74} width={200 / N - 3} height={(s / (sigma[0] || 1)) * 74} rx={2} fill={i < r ? "var(--seq-2)" : "var(--surface-3)"} />)}
@@ -103,7 +103,7 @@ export function TokenMask() {
       </div>
       <div className="rounded-[var(--radius)] border border-dashed border-line-strong p-4">
         <div className="mb-3 flex items-center justify-between"><span className="text-[12.5px] font-medium text-ink">Temperature softens a distribution (logit KD, post-MVP)</span><Prov kind="illustration" source="5 made-up logits" /></div>
-        <Field label={`temperature T = ${T.toFixed(1)}`}><input type="range" min={0.3} max={4} step={0.1} value={T} onChange={(e) => setT(Number(e.target.value))} className="w-full max-w-sm accent-[var(--accent)]" /></Field>
+        <Field math label={`temperature T = ${T.toFixed(1)}`}><input type="range" min={0.3} max={4} step={0.1} value={T} onChange={(e) => setT(Number(e.target.value))} className="w-full max-w-sm accent-[var(--accent)]" /></Field>
         <ul className="mt-3 space-y-1">{labels.map((l, i) => (
           <li key={l} className="grid grid-cols-[90px_1fr_52px] items-center gap-2 font-mono text-[11px]"><span className="text-ink-2">{l}</span>
             <span className="h-2 rounded-full bg-surface-3"><span className="block h-full rounded-full bg-[color:var(--seq-2)]" style={{ width: `${(ex[i] / Z) * 100}%` }} /></span>
