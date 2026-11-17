@@ -1,0 +1,10 @@
+[project]
+name = "forge-lab"
+version = "0.1.0"
+description = "FORGE — Local Model Intelligence & Agent Distillation Laboratory"
+requires-python = ">=3.12,<3.13"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+filterwarnings = ["ignore::DeprecationWarning"]
