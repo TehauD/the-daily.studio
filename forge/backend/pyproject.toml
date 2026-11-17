@@ -1,7 +1,7 @@
 [project]
 name = "forge-lab"
-version = "0.1.0"
-description = "FORGE — Local Model Intelligence & Agent Distillation Laboratory"
+version = "0.5.0"
+description = "FORGE — local-first teacher→student distillation laboratory"
 requires-python = ">=3.12,<3.13"
 
 [tool.pytest.ini_options]

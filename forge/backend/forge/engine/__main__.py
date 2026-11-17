@@ -61,6 +61,33 @@ def cmd_verify_gpu(a: argparse.Namespace) -> int:
     return 0 if ok else 3
 
 
+def cmd_gpu_smoke(a: argparse.Namespace) -> int:
+    """GPU wiring smoke on the real student: oracle teacher (no LM Studio needed), 2-step LoRA, dev evaluation.
+
+    Exercises CUDA/BF16 pre-flight, the zero-adapter check, base-hash verification, adapter save +
+    inspection, and student generation on the GPU. Results are wiring evidence only.
+    """
+    import tempfile
+    os.environ.setdefault("HF_HUB_OFFLINE", "1")
+    from forge.engine.runtime import OracleBackend
+    from forge.engine.study import Study
+    root = Path(a.out) if a.out else Path(tempfile.mkdtemp(prefix="forge-gpu-smoke-"))
+    study = Study.init(root, name="gpu-smoke", profile="smoke", arms=["oracle_sft"], device="cuda",
+                       teacher={"provider": "oracle", "endpoint": a.teacher_endpoint, "model": "oracle"},
+                       student={"name": Path(a.student).name, "path": a.student},
+                       train_overrides={"max_steps": 2, "save_steps": 1, "min_free_vram_mb": a.min_free_vram_mb},
+                       taskset_overrides={"groups_per_family": 5, "ood_groups_per_family": 1, "regression_groups": 1})
+    emit({"event": "smoke_study", "path": str(study.root)})
+    tasks = {t.prompt: t for t in study.tasks()}
+    for stage in ("collect", "build", "train", "evaluate_dev", "analyze_dev"):
+        study.run_stage(stage, emit=emit, teacher_backend=OracleBackend(tasks) if stage == "collect" else None)
+        emit({"event": "smoke_stage_ok", "stage": stage})
+    run = json.loads((study.run_dir("oracle_sft", 0) / "run.json").read_text(encoding="utf-8"))
+    emit({"event": "gpu_smoke_passed", "peak_vram_mb": run.get("peak_vram_mb"), "zero_adapter_max_abs_diff":
+          run["zero_adapter_max_abs_diff"], "adapter_sha256": run["adapter_sha256"], "study": str(study.root)})
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="forge.engine")
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -77,6 +104,12 @@ def main(argv: list[str] | None = None) -> int:
     h.set_defaults(fn=cmd_hub_download)
     v = sub.add_parser("verify-gpu")
     v.set_defaults(fn=cmd_verify_gpu)
+    g = sub.add_parser("gpu-smoke")
+    g.add_argument("--student", required=True, help="Local HF snapshot directory of the student")
+    g.add_argument("--out")
+    g.add_argument("--teacher-endpoint", default="http://127.0.0.1:1234/v1", help="Checked only to confirm the teacher is unloaded")
+    g.add_argument("--min-free-vram-mb", type=int, default=8000)
+    g.set_defaults(fn=cmd_gpu_smoke)
     a = p.parse_args(argv)
     try:
         return a.fn(a)

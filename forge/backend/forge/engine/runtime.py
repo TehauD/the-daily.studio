@@ -278,7 +278,10 @@ class TransformersBackend:
             self.load()
         tok, model, torch = self._state["tok"], self._state["model"], self._state["torch"]
         prompt = render_prompt(tok, messages)
-        ids = tok(prompt, return_tensors="pt", add_special_tokens=False).to(self.device)
+        enc = tok(prompt, return_tensors="pt", add_special_tokens=False)
+        # Only the inputs a causal LM accepts: generic fast tokenizers also emit token_type_ids,
+        # which Qwen3/Llama `generate` rejects (found by the v0.5 browser smoke).
+        ids = {k: enc[k].to(self.device) for k in ("input_ids", "attention_mask") if k in enc}
         t0 = time.perf_counter()
         with torch.no_grad():
             out = model.generate(**ids, max_new_tokens=self.max_new_tokens, do_sample=False,

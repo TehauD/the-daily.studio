@@ -1,0 +1,214 @@
+import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { Icon } from "../components/icons";
+import { JobLog, useStudies } from "../components/live";
+import { Badge, Button, Empty, ErrorLine, Field, Hash, KV, Notice, PageHeader, Panel, Prov, Segmented, Status, cx, inputCls, td, th, tr } from "../components/ui";
+import { api, fmt } from "../lib/api";
+import { useAction, useApi } from "../lib/hooks";
+import { usePrefs } from "../lib/prefs";
+import type { Job, Model, Readiness, StudySummary } from "../lib/types";
+
+interface Catalog { profiles: Record<string, { seeds: number[]; purpose: string; train: Record<string, unknown>; taskset: Record<string, unknown> }>; arms: Record<string, { data: string; train: Record<string, unknown> }>; stages: string[]; gpu_stages: string[]; mvp_arms: string[] }
+
+const STAGE_LABEL: Record<string, string> = { init: "Init", collect: "Collect", build: "Build", train: "Train", evaluate_dev: "Eval · dev", analyze_dev: "Analyze · dev",
+  seal: "Seal", evaluate_test: "Eval · test", analyze_test: "Analyze · test", export: "Export" };
+const STAGE_HINT: Record<string, string> = {
+  collect: "Teacher runs every task (all splits) through the JSON tool protocol. Oracle trajectories are generated for eligibility.",
+  build: "Strict teacher successes on train become per-turn prompt/completion records. Arms share eligible task ids.",
+  train: "LoRA per arm × seed. Pre-flight gates; the teacher must be unloaded from the GPU first.",
+  evaluate_dev: "Base and tuned students on identical dev tasks, greedy decoding.",
+  analyze_dev: "Paired dev statistics for decisions before sealing.",
+  seal: "Freezes adapters by sha256. After this, no further training is permitted.",
+  evaluate_test: "Base and tuned on test, OOD wording, and regression split.",
+  analyze_test: "Confirmatory statistics and the review gate.",
+  export: "Merged bf16 copy (new directory) with mandatory post-merge re-evaluation.",
+};
+
+export default function Studio() {
+  const { prefs, set } = usePrefs();
+  const studies = useStudies();
+  const [creating, setCreating] = useState(false);
+  useEffect(() => { if (sessionStorage.getItem("forge.pair")) setCreating(true); }, []);
+  const sid = prefs.activeStudy;
+  return (
+    <div className="space-y-4">
+      <PageHeader kicker="Research" title="Experiment Studio" subtitle="A study freezes the pair, profile, seeds, arms, task set, hyperparameters, base-model hash, and engine source hash at creation. Stages run as separate processes, one GPU job at a time."
+        right={<Button tone="primary" icon="plus" onClick={() => setCreating((c) => !c)}>{creating ? "Close wizard" : "New study"}</Button>} />
+      {creating && <Wizard onCreated={(id) => { set("activeStudy", id); setCreating(false); void studies.reload(); }} />}
+      <div className="grid gap-4 xl:grid-cols-[300px_minmax(0,1fr)]">
+        <Panel flush title="Studies" right={<span className="num font-mono text-[10.5px] text-ink-3">{studies.data?.length ?? 0}</span>}>
+          {!studies.data?.length ? <Empty icon="flask">No studies yet. Create one to start the MVP loop.</Empty> : (
+            <ul className="divide-y divide-line">
+              {studies.data.map((s) => (
+                <li key={s.id}>
+                  <button type="button" onClick={() => set("activeStudy", s.id)} className={cx("w-full px-[var(--pad)] py-2.5 text-left transition hover:bg-surface-2", sid === s.id && "bg-accent-soft")}>
+                    <div className="flex items-center justify-between gap-2"><span className="truncate text-[12.5px] font-medium text-ink">{s.name}</span><Badge>{s.profile}</Badge></div>
+                    <div className="mt-0.5 truncate font-mono text-[10.5px] text-ink-3">{s.teacher} → {s.student}</div>
+                    <div className="mt-1 flex items-center gap-2 font-mono text-[10.5px] text-ink-3">{s.sealed && <span className="text-accent">● sealed</span>}<span>next: {s.next_stage ?? "done"}</span></div>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Panel>
+        {sid ? <StudyView key={sid} sid={sid} /> : <Panel><Empty icon="studio">Select or create a study.</Empty></Panel>}
+      </div>
+    </div>
+  );
+}
+
+function Wizard({ onCreated }: { onCreated: (id: string) => void }) {
+  const models = useApi<{ models: Model[] }>("/api/models");
+  const cat = useApi<Catalog>("/api/studies/catalog");
+  const rd = useApi<Readiness>("/api/system/readiness");
+  const pre = (() => { try { return JSON.parse(sessionStorage.getItem("forge.pair") || "null") as { teacher: string; student: string } | null; } catch { return null; } })();
+  const ms = models.data?.models ?? [];
+  const [f, setF] = useState({ name: "", profile: "smoke", teacher_id: pre?.teacher ?? "", student_id: pre?.student ?? "", arms: ["teacher_filtered"], min_gain: 0.05, max_steps: "", epochs: "", max_seq_len: "", device: "cuda" });
+  useEffect(() => {
+    if (!f.teacher_id && ms.length) setF((x) => ({ ...x, teacher_id: ms.find((m) => m.roles.includes("teacher"))?.id ?? "", student_id: x.student_id || (ms.find((m) => m.roles.includes("student"))?.id ?? "") }));
+  }, [ms, f.teacher_id]);
+  const act = useAction();
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    void act.run(async () => {
+      const body = { ...f, max_steps: f.max_steps ? Number(f.max_steps) : null, epochs: f.epochs ? Number(f.epochs) : null, max_seq_len: f.max_seq_len ? Number(f.max_seq_len) : null, name: f.name || `${f.profile}-${new Date().toISOString().slice(5, 16).replace("T", "-")}` };
+      const s = await api.post<StudySummary>("/api/studies", body);
+      sessionStorage.removeItem("forge.pair");
+      onCreated(s.id);
+    });
+  };
+  const prof = cat.data?.profiles[f.profile];
+  const teachers = ms.filter((m) => m.eligibility.teacher.verdict !== "fail" && m.status === "available");
+  const students = ms.filter((m) => m.capabilities.lora?.status === "supported" && m.eligibility.student.verdict !== "fail" && m.status === "available");
+  return (
+    <Panel title="New study" eyebrow="wizard" prov={<Prov kind="declared" source="frozen on create" />}>
+      <form onSubmit={submit} className="grid gap-5 lg:grid-cols-3">
+        <div className="space-y-3">
+          <Field label="Name"><input className={inputCls} value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} placeholder="e.g. qwen3-1.7b · catalog tools" /></Field>
+          <Field label="Teacher"><select className={inputCls} value={f.teacher_id} onChange={(e) => setF({ ...f, teacher_id: e.target.value })}><option value="">—</option>{teachers.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}</select></Field>
+          <Field label="Student" hint="Local safetensors with supported LoRA only."><select className={inputCls} value={f.student_id} onChange={(e) => setF({ ...f, student_id: e.target.value })}><option value="">—</option>{students.map((m) => <option key={m.id} value={m.id}>{m.name} · {fmt.params(m.parameter_count)}</option>)}</select></Field>
+        </div>
+        <div className="space-y-3">
+          <Field label="Profile">
+            <Segmented label="Profile" value={f.profile} onChange={(v) => setF({ ...f, profile: v })} options={["smoke", "pilot", "research"].map((p) => ({ value: p, label: p }))} />
+          </Field>
+          {prof && <div className="rounded-[var(--radius)] border border-line bg-surface-2 p-2.5 text-[11.5px] leading-relaxed text-ink-2"><b className="font-medium text-ink">{prof.seeds.length} seed{prof.seeds.length > 1 ? "s" : ""}</b> · {prof.purpose}<div className="mt-1 font-mono text-[10.5px] text-ink-3">train {JSON.stringify(prof.train)} · tasks {JSON.stringify(prof.taskset)}</div></div>}
+          <Field label="Arms" hint="First arm is the preregistered primary contrast vs base. Additional arms are ablations (one factor each).">
+            <div className="flex flex-wrap gap-1.5">
+              {Object.keys(cat.data?.arms ?? {}).map((a) => {
+                const on = f.arms.includes(a);
+                return <button key={a} type="button" onClick={() => setF({ ...f, arms: on ? f.arms.filter((x) => x !== a) : [...f.arms, a] })} aria-pressed={on}
+                  className={cx("rounded-[3px] border px-2 py-1 font-mono text-[11px] transition", on ? "border-accent bg-accent-soft text-ink" : "border-line text-ink-3 hover:text-ink")}>{a}{cat.data?.mvp_arms.includes(a) ? "" : " ·ablation"}</button>;
+              })}
+            </div>
+          </Field>
+        </div>
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-2">
+            <Field label="Min gain (prereg.)"><input className={inputCls} type="number" step="0.01" min="0" max="1" value={f.min_gain} onChange={(e) => setF({ ...f, min_gain: Number(e.target.value) })} /></Field>
+            <Field label="Max steps"><input className={inputCls} type="number" min="1" placeholder="profile" value={f.max_steps} onChange={(e) => setF({ ...f, max_steps: e.target.value })} /></Field>
+            <Field label="Epochs"><input className={inputCls} type="number" step="0.5" placeholder="profile" value={f.epochs} onChange={(e) => setF({ ...f, epochs: e.target.value })} /></Field>
+            <Field label="Max seq len"><input className={inputCls} type="number" step="256" placeholder="2048" value={f.max_seq_len} onChange={(e) => setF({ ...f, max_seq_len: e.target.value })} /></Field>
+          </div>
+          {rd.data?.cpu_wiring_mode && <Field label="Device"><Segmented label="Device" value={f.device} onChange={(v) => setF({ ...f, device: v })} options={[{ value: "cuda", label: "cuda" }, { value: "cpu", label: "cpu (wiring only)" }]} /></Field>}
+          <div className="text-[11.5px] leading-relaxed text-ink-3">LoRA r=16, α=32, all linear, LR 2e-4 cosine, 3% warmup, micro-batch 1 × accum 8, bf16, gradient checkpointing, thinking disabled.</div>
+          <Button type="submit" tone="primary" icon="seal" busy={act.busy} disabled={!f.teacher_id || !f.student_id || !f.arms.length}>Freeze plan & create</Button>
+          <ErrorLine error={act.error} />
+        </div>
+      </form>
+    </Panel>
+  );
+}
+
+function StageStepper({ s, onRun, blocked, busyStage }: { s: StudySummary; onRun: (stage: string) => void; blocked: Record<string, string[]>; busyStage: string | null }) {
+  const stages = Object.keys(STAGE_LABEL);
+  const st = s.state.stages;
+  return (
+    <ol className="grid grid-cols-2 gap-1.5 sm:grid-cols-5 2xl:grid-cols-10">
+      {stages.map((k, i) => {
+        const status: string = st[k]?.status ?? (k === s.next_stage ? "ready" : "pending");
+        const isNext = k === s.next_stage;
+        const gpu = s.gpu_stages.includes(k) || k === "collect";
+        const blk = blocked[k];
+        return (
+          <li key={k} className={cx("relative flex flex-col rounded-[var(--radius)] border p-2 transition",
+            status === "completed" ? "border-[color:var(--good)]/35 bg-[color:var(--good)]/[0.04]" : status === "failed" ? "border-[color:var(--crit)]/40" :
+            status === "running" ? "border-accent bg-accent-soft" : isNext ? "border-accent-line" : "border-line opacity-70")}>
+            <div className="flex items-center justify-between"><span className="num font-mono text-[10px] text-ink-3">{String(i).padStart(2, "0")}</span>{gpu && <Icon name="gpu" size={12} className="text-ink-3" title="GPU-exclusive" />}</div>
+            <div className="mt-1 text-[12px] font-medium text-ink">{STAGE_LABEL[k]}</div>
+            <div className="mt-1"><Status s={status === "ready" ? "pending" : status} label={status === "ready" ? "ready" : undefined} /></div>
+            {isNext && k !== "seal" && (
+              <div className="mt-2"><Button size="sm" tone="primary" icon="play" busy={busyStage === k} disabled={!!blk?.length} title={blk?.length ? `Blocked by: ${blk.join(", ")}` : STAGE_HINT[k]} onClick={() => onRun(k)}>Run</Button></div>
+            )}
+            {st[k]?.status === "failed" && <div className="mt-1 line-clamp-3 font-mono text-[9.5px] text-crit-ink" title={st[k].error}>{st[k].error}</div>}
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+function StudyView({ sid }: { sid: string }) {
+  const s = useApi<StudySummary>(`/api/studies/${sid}`, 4000);
+  const rd = useApi<Readiness>("/api/system/readiness", 20000);
+  const act = useAction();
+  const [jobId, setJobId] = useState<string | null>(null);
+  const [seal, setSeal] = useState("");
+  const [busyStage, setBusyStage] = useState<string | null>(null);
+  const running = s.data?.jobs?.find((j) => j.status === "running");
+  useEffect(() => { if (running && !jobId) setJobId(running.id); }, [running, jobId]);
+  const onDone = useCallback(() => { void s.reload(); }, [s]);
+  if (!s.data) return <Panel><ErrorLine error={s.error} />{!s.error && <div className="h-40" />}</Panel>;
+  const d = s.data, p = d.plan;
+  const run = (stage: string, confirm?: string) => void act.run(async () => {
+    setBusyStage(stage);
+    try { const j = await api.post<Job>(`/api/studies/${sid}/stages/${stage}`, { confirm }); setJobId(j.id); await s.reload(); }
+    finally { setBusyStage(null); }
+  });
+  return (
+    <div className="min-w-0 space-y-4">
+      <Panel title={p.name} eyebrow={p.profile} prov={<Prov kind="declared" source="frozen plan" />}
+        right={<>{d.state.sealed && <Badge tone="accent"><Icon name="lock" size={11} />sealed</Badge>}<Hash value={p.study_id} n={18} label="study id" /></>}>
+        <StageStepper s={d} onRun={(k) => run(k)} blocked={rd.data?.blocked_stages ?? {}} busyStage={busyStage} />
+        {d.next_stage && STAGE_HINT[d.next_stage] && <div className="mt-3 flex items-start gap-2 text-[12px] text-ink-2"><Icon name="info" size={14} className="mt-0.5 text-ink-3" /><span><b className="font-medium text-ink">Next — {STAGE_LABEL[d.next_stage]}.</b> {STAGE_HINT[d.next_stage]}</span></div>}
+        {d.next_stage === "train" && <div className="mt-2"><Notice tone="warn">Unload the teacher in LM Studio before training. Teacher and student share one 16 GB GPU; the pre-flight refuses to start while a generative model is loaded.</Notice></div>}
+        {d.next_stage === "seal" && (
+          <div className="mt-3 flex flex-wrap items-end gap-2 rounded-[var(--radius)] border border-accent-line bg-accent-soft p-3">
+            <div className="min-w-[260px] flex-1 text-[12px] text-ink-2"><b className="text-ink">Seal the study.</b> Adapters are frozen by sha256; build, train, and dev evaluation become impossible. Type <span className="font-mono text-ink">SEAL</span> to confirm.</div>
+            <input className={cx(inputCls, "w-28")} value={seal} onChange={(e) => setSeal(e.target.value)} aria-label="Type SEAL" placeholder="SEAL" />
+            <Button tone="primary" icon="seal" disabled={seal !== "SEAL"} busy={busyStage === "seal"} onClick={() => run("seal", "SEAL")}>Seal</Button>
+          </div>
+        )}
+        <div className="mt-3"><ErrorLine error={act.error} /></div>
+      </Panel>
+
+      {jobId && <Panel title="Live job" eyebrow="stdout · json events"><JobLog key={jobId} jobId={jobId} onDone={onDone} /></Panel>}
+
+      <div className="grid gap-4 2xl:grid-cols-2">
+        <Panel title="Frozen configuration" prov={<Prov kind="declared" />}>
+          <KV rows={[
+            ["teacher", `${p.teacher.model} · ${p.teacher.provider}`], ["endpoint", p.teacher.endpoint], ["student", p.student.name], ["student path", p.student.path],
+            ["base sha256", <Hash key="b" value={p.base_hash} n={20} />], ["engine sha256", <Hash key="e" value={p.engine_source_sha256} n={20} />],
+            ["taskset", <span key="t">{p.taskset.version} · <Hash value={p.taskset.sha256} n={12} /></span>],
+            ["tasks", Object.entries(p.taskset.counts).map(([k, v]) => `${k} ${v}`).join(" · ")],
+            ["seeds", p.seeds.join(", ")], ["arms", p.arms.join(", ")], ["primary", p.primary_contrast], ["min gain", fmt.pp(p.min_gain, 0)],
+            ["device", p.device], ["train", Object.entries(p.train).map(([k, v]) => `${k}=${typeof v === "object" ? JSON.stringify(v) : v}`).join("  ")],
+            ["environment", Object.entries(p.environment).map(([k, v]) => `${k}=${v}`).join("  ")],
+          ]} />
+        </Panel>
+        <Panel flush title="Job history" right={<span className="num font-mono text-[10.5px] text-ink-3">{d.jobs?.length ?? 0}</span>}>
+          {!d.jobs?.length ? <Empty>No jobs yet.</Empty> : (
+            <table className="w-full text-[12px]">
+              <thead><tr className="bg-surface-2"><th className={th}>Stage</th><th className={th}>Status</th><th className={th}>Started</th><th className={th}>Exit</th></tr></thead>
+              <tbody>{d.jobs.map((j) => (
+                <tr key={j.id} className={cx(tr, "cursor-pointer", jobId === j.id && "!bg-accent-soft")} onClick={() => setJobId(j.id)}>
+                  <td className={cx(td, "font-mono text-[11px]")}>{j.kind.replace("stage:", "")}</td><td className={td}><Status s={j.status} /></td>
+                  <td className={cx(td, "font-mono text-[11px] text-ink-3")}>{fmt.ago(j.started_at)}</td><td className={cx(td, "num font-mono text-[11px]")}>{j.exit_code ?? "—"}</td>
+                </tr>))}
+              </tbody>
+            </table>
+          )}
+        </Panel>
+      </div>
+    </div>
+  );
+}

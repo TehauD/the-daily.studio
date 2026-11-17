@@ -1,12 +1,11 @@
-# Phase 2-3 ML stack. Install torch FIRST from the CUDA index (setup.ps1 -WithML does this).
-# These are a conservative, mutually-compatible baseline. Phase 3 re-locks after a
-# measured end-to-end LoRA run on the target GPU; `pip check` gates the install.
+# Engine (job subprocess) stack. Install torch FIRST from the CUDA index (setup.ps1 -WithML does this):
+#   torch==2.14.1  --index-url https://download.pytorch.org/whl/cu126
+# Versions match the verified host (RTX 4070 Ti SUPER, Python 3.12.10). `pip check` gates the install.
 transformers==4.53.2
 peft==0.16.0
-trl==0.19.1
-datasets==4.0.0
-accelerate==1.9.0
-bitsandbytes==0.46.1
-smolagents==1.20.0
-mlflow==3.1.4
-safetensors>=0.5.3
+accelerate==1.8.1
+datasets==3.6.0
+safetensors==0.5.3
+scipy==1.14.1
+matplotlib==3.9.2
+# QLoRA (bitsandbytes), TRL, and logit KD are deferred until after the MVP.

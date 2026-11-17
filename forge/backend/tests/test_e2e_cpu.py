@@ -64,7 +64,9 @@ def test_full_study_on_cpu(tiny, tmp_path, monkeypatch):
     assert any(e.get("event") == "skip_trained" for e in events)
 
     study.run_stage("evaluate_dev", emit=events.append)
-    assert read_jsonl(study.episode_path("base", "dev", 0)) and read_jsonl(study.episode_path("teacher_filtered", "dev", 0))
+    for arm_ in ("base", "teacher_filtered"):
+        eps = read_jsonl(study.episode_path(arm_, "dev", 0))
+        assert eps and all(e["termination"] != "backend_error" for e in eps)  # real generation ran
     study.run_stage("analyze_dev", emit=events.append)
     study.run_stage("seal", emit=events.append, confirm="SEAL")
     study.run_stage("evaluate_test", emit=events.append)

@@ -103,3 +103,15 @@ def test_lock_blocks_second_process(study):
         pytest.skip("PID 1 not present")
     with pytest.raises(StudyError, match="locked"):
         study.run_stage("collect", teacher_backend=OracleBackend({}), emit=lambda e: None)
+
+
+def test_backend_error_stops_stage_and_is_never_recorded(study):
+    class Broken:
+        name = "broken"
+
+        def complete(self, messages):
+            raise RuntimeError("GPU fell over")
+    with pytest.raises(StudyError, match="backend error"):
+        study.run_stage("collect", teacher_backend=Broken(), emit=lambda e: None)
+    assert study.state["stages"]["collect"]["status"] == "failed"
+    assert read_jsonl(study.episode_path("teacher", "train", 0)) == []

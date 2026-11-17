@@ -240,6 +240,11 @@ class Study:
         cfg = EpisodeConfig(max_turns=self.plan["eval"]["max_turns"])
         for i, t in enumerate(todo, 1):
             ep = run_episode(t, backend, world, cfg, arm=arm, seed=seed)
+            if ep["termination"] == "backend_error":
+                # Infrastructure failure, not model behavior: never record it as a failed episode.
+                # The stage stops; a re-run resumes from the last recorded task.
+                detail = next((e["detail"] for e in ep["events"] if e["type"] == "error"), "")
+                raise StudyError(f"{arm}/{split}/seed{seed} {t.task_id}: backend error — {detail}")
             append_jsonl(path, ep)
             emit({"event": "episode", "arm": arm, "split": split, "seed": seed, "task_id": t.task_id,
                   "strict_success": ep["score"]["strict_success"], "progress": f"{len(done) + i}/{len(done) + len(todo)}"})

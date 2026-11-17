@@ -109,3 +109,31 @@ def test_stats_and_adapter_routes(client, tmp_path):
     assert client.post("/api/stats/power", json={"delta": 0.5, "discordant": 0.3}).status_code == 422
     assert client.get("/api/analysis/adapter", params={"path": "/etc"}).status_code == 422
     assert client.get("/api/jobs").json()["gpu_busy"] is None
+
+
+def test_episode_compare_and_changes_routes(client, tmp_path):
+    from forge.engine.runtime import OracleBackend, ScriptedBackend
+    from forge.engine.study import Study
+    st = client.app.state.forge
+    (tmp_path / "stu").mkdir()
+    study = Study.init(st.settings.studies_dir, name="r", profile="smoke", arms=["teacher_filtered"],
+                       teacher={"provider": "lmstudio", "endpoint": "http://127.0.0.1:1/v1", "model": "t"},
+                       student={"name": "s", "path": str(tmp_path / "stu")})
+    with st.db.tx() as c:
+        c.execute("INSERT INTO studies(id, name, path, profile, created_at) VALUES (?,?,?,?,?)",
+                  (study.plan["study_id"], "r", str(study.root), "smoke", study.plan["created_at"]))
+    tasks = study.tasks()
+    study._evaluate(OracleBackend({t.prompt: t for t in tasks}), "teacher", "dev", 0, tasks, lambda e: None)
+    study._evaluate(ScriptedBackend("b", ['{"answer":"0.00"}']), "base", "dev", 0, tasks, lambda e: None)
+    study._evaluate(OracleBackend({t.prompt: t for t in tasks}), "teacher_filtered", "dev", 0, tasks, lambda e: None)
+    sid = study.plan["study_id"]
+    tid = next(t.task_id for t in tasks if t.split == "dev")
+    cmp = client.get(f"/api/studies/{sid}/compare", params={"split": "dev", "task_id": tid})
+    assert cmp.status_code == 200, cmp.text
+    body = cmp.json()
+    assert body["outcome"] == "fixed" and [l["lane"] for l in body["lanes"]] == ["teacher", "base", "tuned"]
+    assert body["lanes"][1]["divergence_from_teacher"] == 0 and body["lanes"][2]["divergence_from_teacher"] is None
+    ch = client.get(f"/api/studies/{sid}/changes", params={"split": "dev"}).json()
+    assert ch["counts"]["fixed"] == len(ch["rows"]) > 0
+    ep = client.get(f"/api/studies/{sid}/episode", params={"arm": "base", "split": "dev", "seed": 0, "task_id": tid})
+    assert ep.status_code == 200 and ep.json()["graph"]["nodes"][0]["kind"] == "prompt"

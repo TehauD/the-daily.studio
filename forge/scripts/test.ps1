@@ -1,6 +1,14 @@
-[CmdletBinding()] param([string]$Filter = '')
+[CmdletBinding()] param([string]$Filter = '', [switch]$WithFrontend)
 $ErrorActionPreference = 'Stop'
-$Backend = Resolve-Path (Join-Path $PSScriptRoot '..\backend')
-$Py = Join-Path $Backend '.venv\Scripts\python.exe'
+. (Join-Path $PSScriptRoot '_venv.ps1')
+Assert-Venv
 Push-Location $Backend
-try { if ($Filter) { & $Py -m pytest -k $Filter } else { & $Py -m pytest }; exit $LASTEXITCODE } finally { Pop-Location }
+try {
+    if ($Filter) { & $Py -m pytest -q -k $Filter } else { & $Py -m pytest -q }
+    $code = $LASTEXITCODE
+} finally { Pop-Location }
+if ($WithFrontend -and $code -eq 0) {
+    Push-Location $script:Frontend
+    try { npm run build; $code = $LASTEXITCODE } finally { Pop-Location }
+}
+exit $code

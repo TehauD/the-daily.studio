@@ -1,7 +1,9 @@
-# Phase 1 runtime — exact versions validated by the FORGE test suite (67 tests).
+# API process runtime. Exact versions validated by the FORGE test suite.
 fastapi==0.136.3
 starlette==1.10.0
 pydantic==2.13.4
 uvicorn==0.54.0
 httpx==0.28.1
 psutil==7.2.2
+numpy==1.26.4
+huggingface_hub==0.36.2

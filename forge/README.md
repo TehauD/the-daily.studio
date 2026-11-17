@@ -1,53 +1,66 @@
-# FORGE — Local Model Intelligence & Agent Distillation Laboratory
+# FORGE — Local Distillation Lab (v0.5)
 
-Local-first research instrument for discovering, evaluating, fine-tuning, and distilling LLMs on one consumer NVIDIA GPU.
+A local-first research instrument for **teacher → student LLM distillation on one consumer NVIDIA GPU**.
+A large model you run in LM Studio (the teacher) solves tool-use tasks; its *verified* trajectories train a
+small Hugging Face model (the student) with LoRA; FORGE then measures — with paired statistics and
+confidence intervals — whether the student actually improved, where, why, and at what cost.
 
-**Status: Phase 1 (Foundation) complete** — hardware observatory, model observatory with capability matrix, registry + roles, REST API, dashboard. Phase 2 data contracts (trajectories, datasets, experiments) are implemented and tested.
+**One product, one backend, one UI, one port** (`127.0.0.1:8765`). The research engine runs inside FORGE as
+separate job processes; the API never imports torch.
 
-## Quick start (Windows)
+## Run order (Windows, PowerShell)
 
 ```powershell
-.\scripts\probe-host.ps1           # 0. Inspect the host (no installs). Writes forge-host-report.json
-.\scripts\setup.ps1                # 1. venv + pinned deps + npm + tests + FORGE hardware report
-.\scripts\launch.ps1               # 2. Build UI, serve UI + API at http://127.0.0.1:8765
-.\scripts\launch.ps1 -Mode dev     #    or hot-reload: API :8765 + Vite :5173
-.\scripts\setup.ps1 -WithML        # Phase 2-3: torch (cu128) + transformers/PEFT/TRL/smolagents/MLflow
+.\scripts\probe-host.ps1                 # 0. inspect the host — installs nothing
+.\scripts\setup.ps1 -WithML              # 1. project .venv (Python 3.12), torch 2.14.1+cu126, pinned stack, tests
+.\scripts\verify-gpu.ps1                 # 2. BF16 forward/backward on CUDA
+.\scripts\verify-gpu.ps1 -Student <snapshot-dir>   #    optional: 2-step LoRA + dev eval on the GPU
+.\scripts\launch.ps1                     # 3. build UI, serve UI + API on 127.0.0.1:8765
 ```
 
-Prerequisites: Python 3.12 (`winget install Python.Python.3.12`), Node.js LTS, current NVIDIA driver. Optional: Ollama, LM Studio.
+Then in the UI: **Observatory** (discover → Hub tab for a student → set roles → Pair builder) →
+**Experiment Studio** (new smoke study → Collect → Build → *unload teacher* → Train → Eval · dev →
+Analyze · dev → SEAL → Eval · test → Analyze · test) → **Evaluation Lab** / **Trajectory Explorer**.
 
-## What Phase 1 does
+Every script resolves `backend\.venv\Scripts\python.exe` explicitly and prints it (the global
+`C:\Python312` has CPU-only torch and is never used). State lives in `%LOCALAPPDATA%\Forge` (`FORGE_HOME`).
 
-| Capability | Implementation |
+## What is in v0.5
+
+| Area | Delivered |
 |---|---|
-| Hardware discovery | `nvidia-smi` (VRAM, util, temp, power, compute cap, CUDA driver), psutil (CPU/RAM/disk), torch probed in a **subprocess** (API never holds a CUDA context) |
-| Live telemetry | 2 s sampler that **stops itself** 60 s after the last viewer; missing sensors report `null` |
-| Model discovery | Ollama (`/api/tags` + `/api/show`), LM Studio (filesystem GGUF + REST v0 / v1), HF hub cache, user directories, any OpenAI-compatible `/v1/models` |
-| Exact metadata | Header-only GGUF and safetensors readers → exact parameter counts, quantization, context, license, chat-template tool support — no weights loaded |
-| Capability matrix | `inference · lora · qlora · logits · tool_calling · gguf_export · ollama_deploy` — each `supported / conditional / unsupported / unknown` **with a reason** |
-| Roles | Teacher requires supported inference; student requires LoRA/QLoRA trainability; pair-check reports behavioral vs. logit-KD eligibility |
-| Memory planning | Analytic VRAM estimator + adaptive profiles from measured free VRAM; verdict `safe / tight / unsafe` |
-| Security | Loopback bind enforced, Host-header allowlist (DNS-rebinding defense), path validation, remote endpoints opt-in, API keys referenced by env-var name only |
+| Discovery | Ollama, LM Studio (files + REST, slug-matched — no duplicate rows), HF cache, folders, OpenAI-compatible endpoints; header-only GGUF/safetensors readers |
+| Eligibility | Model kind (generative / encoder / embedding / vision / speech / seq2seq); non-generative models inventoried but hidden and role-ineligible; per-role checklists incl. license |
+| Parameters | Stored vs. unique vs. non-embedding counts; tied `lm_head` duplicates detected (the Qwen3-1.7B "2.03B vs 1.7B" question) |
+| Hub | Search, metadata-only inspection (remote safetensors headers), `snapshot_download(allow_patterns)` + shard verification, outbound call shown in UI |
+| Pair-check | Capacity ratio, tool templates, VRAM estimate (exact GQA LoRA counts), behavioral vs. logit-KD, one-GPU warning |
+| Engine | Seeded synthetic catalog tasks (lookup, multi-step quote, missing item, OOD wording, extraction regression), group-level splits, strict JSON action protocol, hidden-reasoning stripping |
+| Datasets | Per-turn records, completion-only loss mask, exact token-prefix assertion, no truncation, shared eligible ids across arms, nested quarter subset, provenance hashes |
+| Training | Transformers `Trainer` + PEFT LoRA (r16/α32, all-linear, bf16, grad-ckpt); pre-flight gates (CUDA, BF16, single GPU, free VRAM, teacher unloaded), zero-adapter logit equality, LoRA-only trainable, base hash before = after, resume, exact token exposure |
+| Studies | Frozen + hashed plan; ordered stages; study lock; resumable SHA-256-per-line JSONL; SEAL; backend errors abort a stage instead of becoming data |
+| Statistics | Seed × group paired matrix, crossed bootstrap (percentile, not BCa), exact/MC sign-flip, McNemar (diagnostic), Holm, power planner, review gate |
+| Visualization | Path graph, three-lane path comparison with first divergence, skill map, forest plot, lineage, adapter heat strip + singular spectrum, learning curves, telemetry |
+| UI | 10 pages, light default + dark/system, 5 accents, density/contrast/text-scale/radius/grid/motion, command palette (Ctrl K), provenance chip on every measurement, 390 px layout |
+| Security | Loopback bind, Host allowlist, per-session token on mutations, port pre-flight with PID, loopback-only runtime overrides, path confinement, `trust_remote_code=False`, `local_files_only=True` |
+
+Deferred until after the MVP: QLoRA, the six-seed research run in practice, logit KD, DPO/GRPO,
+multi-agent tasks, GGUF export / Ollama deployment.
+
+## Claims FORGE never makes
+
+Broad reasoning transfer · clinical validity · deployment readiness · causal speed-ups across backends ·
+"visualized chain of thought". A passing review gate means *candidate for human review*.
 
 ## Layout
 
 ```
-backend/forge/
-  config.py  db.py  util.py  logging_setup.py
-  hardware/   probe.py · telemetry.py · profiles.py
-  providers/  base.py · ollama.py · lmstudio.py · hf_cache.py · local_dir.py · openai_compat.py · formats.py · hf_config.py
-  registry/   capabilities.py · registry.py · discovery.py
-  domain/     trajectory.py · datasets.py · experiments.py      (Phase 2 contracts)
-  security/   paths.py
-  api/        app.py · routes_*.py
-backend/tests/   67 tests — discovery, providers, capabilities, trajectories, datasets, experiments, security, API
-frontend/src/    React + TS + Tailwind v4 + Recharts dashboard
-scripts/         probe-host.ps1 · setup.ps1 · launch.ps1 · test.ps1
-docs/            ARCHITECTURE.md · IMPLEMENTATION_PLAN.md · WSL2.md
+backend/forge/  config db util logging_setup readiness
+  hardware/ providers/ (…, hf_hub) registry/ (…, roles)   engine/ (tasks runtime datasets train statistics study __main__)
+  graphs/ (paths lineage)  analysis/ (adapters)  jobs/ (runner)  domain/ (v0.1 contracts)  security/  api/
+backend/tests/   136 tests
+frontend/src/    lib/ components/ pages/ pages/guide/
+scripts/         probe-host setup verify-gpu get-student launch test (+ _venv helper)
+docs/            ARCHITECTURE  RESEARCH_PROTOCOL  FIRST_RUN  VALIDATION  WSL2
 ```
 
-State lives in `%LOCALAPPDATA%\Forge` (override: `FORGE_HOME`): `forge.db`, `datasets/`, `trajectories/`, `artifacts/`, `logs/forge.jsonl`.
-
-## Data policy
-
-No healthcare or patient data in experiments until separately approved. Use public/synthetic tasks for the first milestone.
+See **docs/VALIDATION.md** for exactly what has and has not been executed.

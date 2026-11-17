@@ -187,7 +187,8 @@ def compare_paths(sid: str, split: str, task_id: str, arm: str | None = None, se
     arm = arm or s.plan["arms"][0]
     seed = s.plan["seeds"][0] if seed is None else seed
     c0 = s.plan["eval"]["control_seed_broadcast"]
-    return compare(_find(s, "teacher", split, 0), _find(s, "base", split, c0), _find(s, arm, split, seed))
+    return compare(_find(s, "teacher", split, 0, task_id), _find(s, "base", split, c0, task_id),
+                   _find(s, arm, split, seed, task_id))
 
 
 @router.get("/{sid}/changes")
