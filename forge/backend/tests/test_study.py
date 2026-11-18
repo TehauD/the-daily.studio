@@ -141,3 +141,28 @@ def test_cancelled_collect_resumes_cleanly(study):
     assert len(ids) == len(set(ids)) == sum(1 for t in study.tasks() if t.split == "train")
     assert study.state["stages"]["collect"]["status"] == "completed"
     assert sum(1 for e in done if e.get("event") == "episode" and e["arm"] == "teacher" and e["split"] == "train") == len(ids) - 5
+
+
+def test_knowledge_graph_from_study_files(study):
+    from forge.graphs.knowledge import build, to_graphml
+    g0 = build(study)  # before any stage: skills come from the task set, nothing measured
+    assert {n["kind"] for n in g0["nodes"]} >= {"teacher", "reference", "base", "dataset", "tuned", "skill", "tool"}
+    assert not any(e["kind"] == "performs" for e in g0["edges"])
+    tasks = {t.prompt: t for t in study.tasks()}
+    study.run_stage("collect", teacher_backend=OracleBackend(tasks), emit=lambda e: None)
+    study.run_stage("build", emit=lambda e: None)
+    study.run_stage("train", emit=lambda e: None)
+    study.run_stage("evaluate_dev", student_factory=_students(study), emit=lambda e: None)
+    g = build(study)
+    assert g["view"] == "dev"
+    perf = [e for e in g["edges"] if e["kind"] == "performs"]
+    assert {e["from"] for e in perf} == {"teacher", "base", "tuned:teacher_filtered"}
+    tuned = [e for e in perf if e["from"] == "tuned:teacher_filtered"]
+    assert all(e["metrics"]["strict_success"] == 1.0 and e["delta_vs_base"]["strict_success"] == 1.0 for e in tuned)
+    node = next(n for n in g["nodes"] if n["id"] == "tuned:teacher_filtered")
+    assert node["seeds_trained"] == 2 and node["gains"] and not node["regressions"]
+    assert any(e["kind"] == "produced" and e["measured"] for e in g["edges"])
+    xml = to_graphml(g)
+    assert xml.startswith("<?xml") and xml.count("<node ") == len(g["nodes"]) and xml.count("<edge ") == len(g["edges"])
+    with pytest.raises(ValueError):
+        build(study, "nope")

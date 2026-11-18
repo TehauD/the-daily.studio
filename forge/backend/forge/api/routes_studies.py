@@ -14,6 +14,7 @@ from pydantic import BaseModel, Field
 from forge.api.state import AppState, get_state
 from forge.engine.study import GPU_STAGES, PROFILES, STAGES, TRAIN_ARMS, Study, StudyError, read_jsonl
 from forge.engine.train import model_hash
+from forge.graphs import knowledge
 from forge.graphs.lineage import lineage
 from forge.graphs.paths import compare, outcome, path_graph
 from forge.hardware.probe import probe_torch
@@ -214,6 +215,28 @@ def changes(sid: str, split: str = "dev", arm: str | None = None, seed: int | No
 @router.get("/{sid}/lineage")
 def get_lineage(sid: str, st: AppState = Depends(get_state)):
     return lineage(_study(st, sid).root)
+
+
+@router.get("/{sid}/knowledge")
+def knowledge_graph(sid: str, view: str = "auto", format: Literal["json", "graphml"] = "json",
+                    st: AppState = Depends(get_state)):
+    s = _study(st, sid)
+    rows = {}
+    for key in ("teacher", "student"):
+        mid = s.plan[key].get("model_id")
+        if mid:
+            try:
+                rows[mid] = st.registry.get(mid)
+            except RegistryError:
+                pass  # model since purged from the registry; the frozen plan still names it
+    try:
+        g = knowledge.build(s, view, rows)
+    except ValueError as e:
+        raise HTTPException(422, str(e))
+    if format == "graphml":
+        return PlainTextResponse(knowledge.to_graphml(g), media_type="application/xml",
+                                 headers={"Content-Disposition": f'attachment; filename="forge-{sid}.graphml"'})
+    return g
 
 
 @router.get("/{sid}/training")
