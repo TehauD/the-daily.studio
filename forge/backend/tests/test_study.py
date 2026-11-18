@@ -97,10 +97,10 @@ def test_plan_is_frozen(study):
 
 
 def test_lock_blocks_second_process(study):
-    (study.root / ".lock").write_text("1")  # PID 1 exists on POSIX; on Windows System Idle (0) is skipped
+    import os
     import psutil
-    if not psutil.pid_exists(1):
-        pytest.skip("PID 1 not present")
+    parent = psutil.Process(os.getppid())
+    (study.root / ".lock").write_text(json.dumps({"pid": parent.pid, "created": parent.create_time()}))
     with pytest.raises(StudyError, match="locked"):
         study.run_stage("collect", teacher_backend=OracleBackend({}), emit=lambda e: None)
 
@@ -115,3 +115,29 @@ def test_backend_error_stops_stage_and_is_never_recorded(study):
         study.run_stage("collect", teacher_backend=Broken(), emit=lambda e: None)
     assert study.state["stages"]["collect"]["status"] == "failed"
     assert read_jsonl(study.episode_path("teacher", "train", 0)) == []
+
+
+def test_cancelled_collect_resumes_cleanly(study):
+    """Simulates a hard kill mid-collect: stale 'running' state, leftover lock whose PID was reused,
+    and a torn final JSONL line. Re-running collect must resume without duplicates or corruption."""
+    import os
+    import psutil
+    tasks = {t.prompt: t for t in study.tasks()}
+    study._evaluate(OracleBackend(tasks), "teacher", "train", 0,
+                    [t for t in study.tasks() if t.split == "train"][:5], lambda e: None)
+    p = study.episode_path("teacher", "train", 0)
+    with open(p, "a", encoding="utf-8") as f:
+        f.write('{"sha256": "abc", "record": {"task_id": "torn')          # killed mid-write
+    me = psutil.Process(os.getpid())
+    (study.root / ".lock").write_text(json.dumps({"pid": me.pid, "created": me.create_time() - 999}))  # reused PID
+    study._set_stage("collect", "running", pid=999999999, pid_created=1.0)  # dead process
+    assert study.summary()["state"]["stages"]["collect"]["status"] == "interrupted"
+    assert len(read_jsonl(p)) == 5  # torn line ignored on read
+
+    done = []
+    study.run_stage("collect", teacher_backend=OracleBackend(tasks), emit=done.append)
+    eps = read_jsonl(p)
+    ids = [e["task_id"] for e in eps]
+    assert len(ids) == len(set(ids)) == sum(1 for t in study.tasks() if t.split == "train")
+    assert study.state["stages"]["collect"]["status"] == "completed"
+    assert sum(1 for e in done if e.get("event") == "episode" and e["arm"] == "teacher" and e["split"] == "train") == len(ids) - 5

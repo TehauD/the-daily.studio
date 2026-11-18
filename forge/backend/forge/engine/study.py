@@ -81,9 +81,27 @@ def atomic_write_json(path: Path, obj: Any) -> None:
     os.replace(tmp, path)
 
 
+def _repair_torn_tail(path: Path) -> None:
+    """Drop a partial final line left by a hard kill mid-write (e.g. a cancelled job).
+
+    Without this, the next append would be glued onto the fragment, producing a corrupt line
+    that is no longer last — which read_jsonl rightly refuses.
+    """
+    if not path.exists() or path.stat().st_size == 0:
+        return
+    with open(path, "rb+") as f:
+        f.seek(-1, os.SEEK_END)
+        if f.read(1) == b"\n":
+            return
+        f.seek(0)
+        content = f.read()
+        f.truncate(content.rfind(b"\n") + 1)
+
+
 def append_jsonl(path: Path, record: dict[str, Any]) -> None:
     """Each line carries the SHA-256 of its canonical payload so resume can detect corruption."""
     path.parent.mkdir(parents=True, exist_ok=True)
+    _repair_torn_tail(path)
     payload = canonical_json(record)
     with open(path, "a", encoding="utf-8", newline="\n") as f:
         f.write(json.dumps({"sha256": sha256_text(payload), "record": record}, ensure_ascii=False) + "\n")
@@ -116,15 +134,30 @@ class StudyLock:
     def __init__(self, path: Path):
         self.path = path
 
+    @staticmethod
+    def holder_alive(pid: int, created: float | None) -> bool:
+        """A PID alone is not identity: Windows reuses PIDs quickly. Match the process start time too."""
+        if pid <= 0:
+            return False
+        try:
+            proc = psutil.Process(pid)
+            return created is None or abs(proc.create_time() - created) < 1.0
+        except psutil.Error:
+            return False
+
     def __enter__(self) -> "StudyLock":
         if self.path.exists():
             try:
-                pid = int(self.path.read_text(encoding="utf-8").strip() or 0)
-            except ValueError:
-                pid = 0
-            if pid and pid != os.getpid() and psutil.pid_exists(pid):
+                info = json.loads(self.path.read_text(encoding="utf-8") or "{}")
+                if isinstance(info, int):  # v0.5.0 lock format: bare PID
+                    info = {"pid": info}
+            except (ValueError, json.JSONDecodeError):
+                info = {}
+            pid = int(info.get("pid") or 0)
+            if pid and pid != os.getpid() and self.holder_alive(pid, info.get("created")):
                 raise StudyError(f"Study is locked by running process {pid}")
-        self.path.write_text(str(os.getpid()), encoding="utf-8")
+        me = psutil.Process(os.getpid())
+        self.path.write_text(json.dumps({"pid": me.pid, "created": me.create_time()}), encoding="utf-8")
         return self
 
     def __exit__(self, *exc: Any) -> None:
@@ -261,7 +294,7 @@ class Study:
                   hash_cache: Path | None = None) -> dict[str, Any]:
         self.check_can_run(stage)
         with StudyLock(self.root / ".lock"):
-            self._set_stage(stage, "running", pid=os.getpid())
+            self._set_stage(stage, "running", pid=os.getpid(), pid_created=psutil.Process(os.getpid()).create_time())
             try:
                 fn = getattr(self, f"_stage_{stage}")
                 kwargs: dict[str, Any] = {"emit": emit}
@@ -513,6 +546,11 @@ class Study:
     # ---- summaries for the API
     def summary(self) -> dict[str, Any]:
         s = self.state
+        # A stage left "running" by a killed process (cancel, crash, reboot) is reported as interrupted.
+        # Display-only: re-running the stage resumes from the verified JSONL and overwrites this status.
+        for st in s["stages"].values():
+            if st.get("status") == "running" and not StudyLock.holder_alive(int(st.get("pid") or 0), st.get("pid_created")):
+                st["status"] = "interrupted"
         reports = {}
         for k in ("dev", "test"):
             p = self.root / "reports" / f"analysis_{k}.json"
