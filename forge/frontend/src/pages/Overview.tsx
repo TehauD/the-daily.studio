@@ -49,7 +49,7 @@ export default function Overview() {
   ] as const;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 fit:flex fit:h-full fit:min-h-0 fit:flex-col fit:gap-3 fit:space-y-0">
       <PageHeader kicker="System state" title="Overview" subtitle="Measured hardware, readiness for each stage of the distillation loop, and live telemetry. A missing sensor reads —; nothing on this page is simulated."
         right={<>
           <Button icon="refresh" onClick={() => { void api.get("/api/system/hardware?refresh=true").then(() => { void hw.reload(); void rd.reload(); }); }}>Re-probe</Button>
@@ -57,7 +57,7 @@ export default function Overview() {
         </>} />
       <ErrorLine error={hw.error ?? ov.error ?? act.error} />
 
-      <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4 fit:shrink-0 fit:gap-3">
         <Panel title="GPU" eyebrow="01" prov={<Prov kind="measured" source="nvidia-smi" />}>
           {!h ? <div className="space-y-2"><Skeleton h={26} /><Skeleton h={12} w="60%" /></div> : gpu ? (
             <div className="space-y-3">
@@ -116,7 +116,7 @@ export default function Overview() {
         </Panel>
       </div>
 
-      <Panel title="Live telemetry" eyebrow="05" prov={<Prov kind="measured" source={tel?.gpu_source ?? "psutil"} />}
+      <Panel className="fit:shrink-0" title="Live telemetry" eyebrow="05" prov={<Prov kind="measured" source={tel?.gpu_source ?? "psutil"} />}
         right={<span className="font-mono text-[10.5px] text-ink-3">{tel?.scope ?? ""} · every {(prefs.telemetryPollMs / 1000).toFixed(0)}s · {samples.length} samples</span>}>
         {samples.length === 0 ? <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">{[0, 1, 2, 3].map((i) => <Skeleton key={i} h={86} />)}</div> : (
           <div className="grid gap-x-8 gap-y-5 sm:grid-cols-2 lg:grid-cols-4">
@@ -130,8 +130,8 @@ export default function Overview() {
         )}
       </Panel>
 
-      <div className="grid gap-4 xl:grid-cols-[1.25fr_1fr]">
-        <Panel title="Readiness" eyebrow="06" prov={<Prov kind="measured" />}
+      <div className="grid gap-4 xl:grid-cols-[1.25fr_1fr] fit:min-h-0 fit:flex-1 fit:gap-3 3xl:fit:grid-cols-[1.4fr_1fr_1fr]">
+        <Panel fill title="Readiness" eyebrow="06" prov={<Prov kind="measured" />}
           right={rd.data && (failing.length ? <Status s="fail" label={`${failing.length} blocking`} /> : <Status s="pass" label="all clear" />)}>
           {!rd.data ? <Skeleton h={200} /> : (
             <>
@@ -140,20 +140,20 @@ export default function Overview() {
             </>
           )}
         </Panel>
-        <div className="space-y-4">
-          <Panel title="MVP loop" eyebrow="07">
+        <div className="space-y-4 fit:flex fit:min-h-0 fit:flex-col fit:gap-3 fit:space-y-0 3xl:fit:contents">
+          <Panel fill title="MVP loop" eyebrow="07">
             <ol>{loop.map((s, i) => <LoopStep key={s.title} n={i + 1} title={s.title} state={s.state} detail={s.detail} />)}</ol>
           </Panel>
-          <Panel title="Laboratory inventory" eyebrow="08" prov={<Prov kind="measured" source="registry" />}>
+          <Panel fill className="3xl:fit:min-h-0" title="Laboratory inventory" eyebrow="08" prov={<Prov kind="measured" source="registry" />}>
             <div className="grid grid-cols-3 gap-4">
               <Readout label="models" value={o?.models_available ?? "—"} size="sm" sub={o ? `${o.models_hidden_non_generative} non-generative hidden` : ""} />
               <Readout label="LoRA-trainable" value={o?.models_trainable ?? "—"} size="sm" />
               <Readout label="studies" value={o?.studies ?? "—"} size="sm" sub={`last scan ${fmt.ago(o?.last_discovery)}`} />
             </div>
           </Panel>
+          {verifyJob && <Panel fill title="GPU verification" eyebrow="job"><JobLog fill jobId={verifyJob} height={180} onDone={onDone} /></Panel>}
         </div>
       </div>
-      {verifyJob && <Panel title="GPU verification" eyebrow="job"><JobLog jobId={verifyJob} height={180} onDone={onDone} /></Panel>}
     </div>
   );
 }

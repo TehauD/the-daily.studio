@@ -19,6 +19,7 @@ const Evaluation = lazy(() => import("./pages/Evaluation"));
 const Factory = lazy(() => import("./pages/Factory"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Guide = lazy(() => import("./pages/guide/Guide"));
+const Knowledge = lazy(() => import("./pages/Knowledge"));
 
 const NAV = [
   { group: "Orientation", items: [{ key: "guide", label: "Guide", icon: "guide" }, { key: "overview", label: "Overview", icon: "overview" }] },
@@ -26,10 +27,13 @@ const NAV = [
   { group: "Research", items: [
     { key: "studio", label: "Experiment Studio", icon: "studio" }, { key: "trajectories", label: "Trajectory Explorer", icon: "trajectory" },
     { key: "datasets", label: "Dataset Factory", icon: "dataset" }, { key: "training", label: "Training Lab", icon: "training" },
-    { key: "evaluation", label: "Evaluation Lab", icon: "evaluation" }, { key: "factory", label: "Model Factory", icon: "factory" }] },
+    { key: "evaluation", label: "Evaluation Lab", icon: "evaluation" }, { key: "knowledge", label: "Knowledge Graph", icon: "graph" },
+    { key: "factory", label: "Model Factory", icon: "factory" }] },
   { group: "System", items: [{ key: "settings", label: "System Settings", icon: "settings" }] },
 ] as const;
 type Key = (typeof NAV)[number]["items"][number]["key"];
+/** Workspace pages that lock to the viewport on wide screens (no page scroll; panels scroll inside). */
+const FIT = new Set<string>(["overview", "observatory", "studio", "trajectories", "evaluation", "knowledge"]);
 const KEYS = NAV.flatMap((g) => g.items.map((i) => i.key)) as Key[];
 const LABEL = Object.fromEntries(NAV.flatMap((g) => g.items.map((i) => [i.key, i.label]))) as Record<Key, string>;
 
@@ -157,17 +161,18 @@ function Shell() {
     { id: "verify", label: "Verify GPU (forward/backward, BF16)", group: "Actions", run: () => { void api.post("/api/jobs/verify-gpu"); go("overview"); } },
   ], [go, set, prefs.sidebarCollapsed]);
   const Page = { overview: Overview, observatory: Observatory, studio: Studio, trajectories: Trajectories, datasets: Datasets,
-    training: Training, evaluation: Evaluation, factory: Factory, settings: Settings, guide: Guide }[route];
+    training: Training, evaluation: Evaluation, knowledge: Knowledge, factory: Factory, settings: Settings, guide: Guide }[route];
   return (
     <div className="flex min-h-full">
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-[60] focus:rounded focus:bg-surface focus:px-3 focus:py-2">Skip to content</a>
       <Sidebar route={route} go={go} open={menu} onClose={() => setMenu(false)} />
       <div className="flex min-w-0 flex-1 flex-col">
         <InstrumentBar onMenu={() => setMenu(true)} onCommand={() => setPalette(true)} />
-        <main id="main" className="grid-plane min-w-0 flex-1 px-4 py-5 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-[1480px]">
+        <main id="main" className={cx("grid-plane min-w-0 flex-1 px-4 py-5 sm:px-6 lg:px-8 3xl:px-10",
+          FIT.has(route) && "fit:h-[calc(100dvh-3rem)] fit:min-h-0 fit:flex-none fit:overflow-hidden fit:py-4")}>
+          <div className={cx("mx-auto w-full max-w-[3200px]", FIT.has(route) && "fit:h-full")}>
             <Suspense fallback={<div className="space-y-3"><Skeleton h={28} w={260} /><Skeleton h={180} /><Skeleton h={240} /></div>}>
-              <div key={route} className="fade-in"><Page /></div>
+              <div key={route} className={cx("fade-in", FIT.has(route) && "fit:h-full")}><Page /></div>
             </Suspense>
           </div>
         </main>

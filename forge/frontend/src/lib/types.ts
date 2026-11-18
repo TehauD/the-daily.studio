@@ -133,3 +133,12 @@ export interface LineageT { nodes: LineageNode[]; edges: { from: string; to: str
 
 export interface InspectionModule { module: string; layer: number | null; kind: string; shape: number[]; rank: number; delta_fro: number; base_fro: number | null; relative_change: number | null; singular_values: number[]; effective_rank: number; trainable_params: number }
 export interface Inspection { computed: boolean; r: number; alpha: number; scale: number; use_rslora: boolean; modules: InspectionModule[]; layer_delta_fro: Record<string, number>; total_trainable_params: number; base_available: boolean; method: string }
+
+export type KMetric = "strict_success" | "answer_correct" | "tool_selection_correct" | "argument_accuracy" | "invalid_rate";
+export interface KNode { id: string; kind: "teacher" | "reference" | "base" | "tuned" | "dataset" | "skill" | "tool"; label: string; col: number; x: number; y: number; [k: string]: unknown }
+export interface KEdge { from: string; to: string; kind: "produced" | "trained" | "adapted" | "performs" | "requires"; label?: string; measured: boolean; n?: number;
+  metrics?: Record<KMetric, number>; ci?: Record<KMetric, [number, number] | null>; delta_vs_base?: Record<KMetric, number> }
+export interface KnowledgeT { study_id: string; view: string; splits: string[]; metrics: KMetric[]; nodes: KNode[]; edges: KEdge[]; rows: number; cols: number; provenance: string; honesty: string }
+export interface ProjToken { id: number; token: string; special: boolean; z: number }
+export interface ProjModule { module: string; layer: number; kind: string; sigma1: number; energy_share: number; plus: ProjToken[]; minus: ProjToken[] }
+export interface ProjectionT { computed: boolean; heuristic: boolean; unembedding: string; vocab_size: number; layers: number[]; k: number; modules: ProjModule[]; method: string; caveats: string[]; adapter_sha256: string }

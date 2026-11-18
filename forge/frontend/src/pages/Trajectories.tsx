@@ -27,14 +27,14 @@ export default function Trajectories() {
     && (outcome === "all" || (outcome === "pass") === r.strict_success)).slice(0, 400);
   const splits = useMemo(() => [...new Set(rows.map((r) => r.split))], [rows]);
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 fit:flex fit:h-full fit:min-h-0 fit:flex-col fit:gap-3 fit:space-y-0">
       <PageHeader kicker="Research" title="Trajectory Explorer" subtitle="Every episode as an observable path: prompt → tool call → tool result → … → answer. Compare teacher, base, and tuned students on the same task and see where they first diverge."
         right={<StudySelect />} />
       <Notice tone="honesty" icon="info">{HONESTY}</Notice>
       <ErrorLine error={eps.error} />
       {!sid ? <Panel><Empty icon="trajectory">Create a study and run the collect stage to see trajectories.</Empty></Panel> : (
-        <div className="grid gap-4 2xl:grid-cols-[420px_minmax(0,1fr)]">
-          <Panel flush title="Episodes" prov={<Prov kind="measured" source="episodes/*.jsonl" />} right={<span className="num font-mono text-[10.5px] text-ink-3">{list.length} shown</span>}>
+        <div className="grid gap-4 2xl:grid-cols-[420px_minmax(0,1fr)] fit:min-h-0 fit:flex-1 fit:grid-cols-[400px_minmax(0,1fr)] fit:gap-3">
+          <Panel fill flush title="Episodes" prov={<Prov kind="measured" source="episodes/*.jsonl" />} right={<span className="num font-mono text-[10.5px] text-ink-3">{list.length} shown</span>}>
             <div className="space-y-2 border-b border-line p-3">
               <Segmented label="Split" value={splits.includes(split) ? split : (splits[0] ?? split)} onChange={(v) => { setSplit(v); setSrc(""); }} options={(splits.length ? splits : ["dev"]).map((s) => ({ value: s, label: s }))} />
               <div className="grid grid-cols-3 gap-2">
@@ -44,7 +44,7 @@ export default function Trajectories() {
               </div>
             </div>
             {list.length === 0 ? <Empty>No episodes for this filter.</Empty> : (
-              <div className="scroll-thin max-h-[640px] overflow-y-auto">
+              <div className="scroll-thin max-h-[640px] overflow-y-auto fit:max-h-none fit:overflow-visible">
                 <table className="w-full text-[12px]">
                   <thead className="sticky top-0 bg-surface-2"><tr><th className={th}>Task</th><th className={th}>Source</th><th className={th}>Result</th><th className={cx(th, "text-right")}>Calls</th></tr></thead>
                   <tbody>{list.map((r) => (
@@ -75,7 +75,8 @@ function EpisodeDetail({ sid, e }: { sid: string; e: EpisodeRow }) {
   const d = ep.data;
   const color = e.arm === "teacher" ? "var(--s-teacher)" : e.arm === "base" ? "var(--s-base)" : "var(--s-tuned)";
   return (
-    <div className="min-w-0 space-y-4">
+    <div className="scroll-thin min-w-0 space-y-4 fit:grid fit:min-h-0 fit:content-start fit:gap-3 fit:space-y-0 fit:overflow-auto 3xl:fit:grid-cols-[minmax(0,1fr)_400px] 3xl:fit:overflow-hidden">
+      <div className="scroll-thin space-y-4 fit:space-y-3 3xl:fit:min-h-0 3xl:fit:overflow-auto 3xl:fit:pr-1">
       <Panel title={e.task_id} eyebrow={`${e.arm}${["teacher", "base", "oracle"].includes(e.arm) ? "" : ` · seed ${e.seed}`} · ${e.split}`} prov={<Prov kind="measured" />}
         right={<Hash value={e.trace_hash} n={16} label="trace hash" />}>
         <ErrorLine error={ep.error} />
@@ -97,15 +98,16 @@ function EpisodeDetail({ sid, e }: { sid: string; e: EpisodeRow }) {
         {cmp.data && <PathCompare c={cmp.data} onSelect={(lane, n) => setNode({ lane, n })} />}
         {cmp.data && <div className="mt-2 text-[11px] text-ink-3">{cmp.data.honesty} Divergence is measured on the canonical action sequence (tool, arguments, answer).</div>}
       </Panel>
-      <div className="grid gap-4 xl:grid-cols-2">
-        <Panel title="Node inspector">
+      </div>
+      <div className="grid gap-4 xl:grid-cols-2 3xl:fit:flex 3xl:fit:min-h-0 3xl:fit:flex-col 3xl:fit:gap-3">
+        <Panel fill title="Node inspector">
           {node ? (
             <div className="space-y-2"><div className="flex gap-2"><Badge>{node.lane}</Badge><Badge>{node.n.kind}</Badge><Status s={node.n.status === "neutral" ? "info" : node.n.status} /></div>
-              <pre className="scroll-thin max-h-72 overflow-auto rounded bg-surface-2 p-2.5 font-mono text-[11px] text-ink-2">{JSON.stringify(node.n.detail, null, 2)}</pre></div>
+              <pre className="scroll-thin max-h-72 overflow-auto rounded bg-surface-2 3xl:fit:max-h-none p-2.5 font-mono text-[11px] text-ink-2">{JSON.stringify(node.n.detail, null, 2)}</pre></div>
           ) : <Empty>Click any node to see its exact payload.</Empty>}
         </Panel>
-        <Panel title="Raw episode" right={<button type="button" className="micro text-accent" onClick={() => setRaw((r) => !r)}>{raw ? "hide" : "show"} JSON</button>}>
-          {raw && d ? <pre className="scroll-thin max-h-96 overflow-auto rounded bg-surface-2 p-2.5 font-mono text-[10.5px] text-ink-2">{JSON.stringify(d.episode, null, 2)}</pre>
+        <Panel fill title="Raw episode" right={<button type="button" className="micro text-accent" onClick={() => setRaw((r) => !r)}>{raw ? "hide" : "show"} JSON</button>}>
+          {raw && d ? <pre className="scroll-thin max-h-96 overflow-auto rounded bg-surface-2 3xl:fit:max-h-none p-2.5 font-mono text-[10.5px] text-ink-2">{JSON.stringify(d.episode, null, 2)}</pre>
             : <div className="text-[12px] text-ink-3">Exact JSONL record as stored, including messages fed to the model (assistant turns are canonical JSON re-serializations; malformed text is never stored).</div>}
         </Panel>
       </div>

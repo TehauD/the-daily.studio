@@ -15,8 +15,10 @@ export default function Training() {
     <div className="space-y-4">
       <PageHeader kicker="Research" title="Training Lab" subtitle="Plan memory against measured VRAM, then inspect each LoRA run: pre-flight gates, the zero-adapter check, loss curves, token exposure, and peak memory."
         right={<StudySelect />} />
-      <Runs />
-      <Estimator />
+      <div className="space-y-4 3xl:grid 3xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] 3xl:items-start 3xl:gap-4 3xl:space-y-0">
+        <Runs />
+        <Estimator />
+      </div>
     </div>
   );
 }

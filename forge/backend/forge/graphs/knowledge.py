@@ -130,16 +130,17 @@ def build(study: Study, view: str = "auto", registry_rows: dict[str, dict] | Non
             edges.append({"from": src, "to": ds_id, "kind": "produced",
                           "label": f"{man['episodes_used']} verified trajectories" if man else "not built yet",
                           "measured": man is not None})
-        runs = [r for r in (_json(study.run_dir(arm, sd) / "run.json") for sd in seeds) if r]
+        trained_seeds = [sd for sd in seeds if (study.run_dir(arm, sd) / "run.json").exists()]
+        runs = [r for r in (_json(study.run_dir(arm, sd) / "run.json") for sd in trained_seeds) if r]
         insp = [i for i in (_json(study.run_dir(arm, sd) / "inspection.json") for sd in seeds) if i]
         rel = [m["relative_change"] for i in insp for m in i["modules"] if m.get("relative_change") is not None]
         er = [m["effective_rank"] for i in insp for m in i["modules"]]
         tid = f"tuned:{arm}"
         overrides = TRAIN_ARMS[arm]["train"]
-        node(tid, "tuned", f"{s['name']} + {arm}", arm=arm, seeds_trained=len(runs), seeds_planned=len(seeds),
+        node(tid, "tuned", f"{s['name']} + {arm}", arm=arm, trained_seeds=trained_seeds, seeds_trained=len(runs), seeds_planned=len(seeds),
              adapter_sha256=[r.get("adapter_sha256") for r in runs], global_steps=[r.get("global_step") for r in runs],
              trainable_params=runs[0].get("trainable_params") if runs else None,
-             tokens_seen=_last_tokens_seen(study.run_dir(arm, seeds[0]) / "training.jsonl"),
+             tokens_seen=_last_tokens_seen(study.run_dir(arm, trained_seeds[0]) / "training.jsonl") if trained_seeds else None,
              peak_vram_mb=max((r.get("peak_vram_mb") or 0 for r in runs), default=None) or None,
              mean_relative_change=(sum(rel) / len(rel)) if rel else None, mean_effective_rank=(sum(er) / len(er)) if er else None,
              rank=overrides.get("rank", plan["train"]["rank"]), alpha=overrides.get("alpha", plan["train"]["alpha"]),

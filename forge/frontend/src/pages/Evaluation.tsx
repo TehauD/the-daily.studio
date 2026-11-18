@@ -23,7 +23,7 @@ export default function Evaluation() {
   const primary = s.data?.plan.arms[0];
   const c: Contrast | undefined = primary && sec ? sec.arms[primary] : undefined;
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 fit:flex fit:h-full fit:min-h-0 fit:flex-col fit:gap-3 fit:space-y-0">
       <PageHeader kicker="Research" title="Evaluation Lab" subtitle="Did the student improve, by how much, with what uncertainty, and where? Effects are paired per scenario group (paraphrases averaged), with a crossed seed × group bootstrap and exact sign-flip tests."
         right={<><StudySelect />{splitsAvail.length > 0 && <Segmented label="Split" value={sp ?? ""} onChange={setSplit} options={splitsAvail.map((x) => ({ value: x, label: x }))} />}</>} />
       <ErrorLine error={s.error} />
@@ -31,29 +31,34 @@ export default function Evaluation() {
         <>
           {sp === "dev" && <Notice tone="warn">Development split: used for decisions before SEAL. Confirmatory evidence comes only from the sealed test split.</Notice>}
           {c && primary && <Headline c={c} sec={sec} arm={primary} profile={s.data!.plan.profile} />}
-          <Panel title="Paired effects" eyebrow={sp} prov={<Prov kind="computed" source={c?.method ?? ""} />}>
-            <ForestPlot minGain={s.data?.plan.min_gain} rows={forestRows(rep!, sp!, s.data!.plan.arms)} />
-            <div className="mt-2 text-[11px] text-ink-3">Diamond = mean paired Δ; whiskers = 95% percentile CI from a crossed bootstrap over seeds and groups (not BCa). Blue: CI above zero · red: below · gray: crosses zero.</div>
-          </Panel>
-          <div className="grid gap-4 2xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
-            <ChangesTable sid={sid} split={sp!} arm={primary!} seeds={s.data!.plan.seeds} />
-            {c && <Panel title="Skill map" eyebrow="per task family" prov={<Prov kind="computed" source="Wilson 95% CI" />}><SkillMap families={Object.entries(c.families).map(([family, v]) => ({ family, teacher: v.teacher, base: v.base, tuned: v[primary!] } as SkillFamily))} /></Panel>}
+          {/* Wide screens: three instrument columns that fill the viewport; narrow screens: the same panels stacked. */}
+          <div className="space-y-4 fit:grid fit:min-h-0 fit:flex-1 fit:grid-cols-12 fit:gap-3 fit:space-y-0">
+            <div className="space-y-4 fit:col-span-5 fit:flex fit:min-h-0 fit:flex-col fit:gap-3 fit:space-y-0">
+              <Panel fill className="fit:flex-1" title="Paired effects" eyebrow={sp} prov={<Prov kind="computed" source={c?.method ?? ""} />}>
+                <ForestPlot minGain={s.data?.plan.min_gain} rows={forestRows(rep!, sp!, s.data!.plan.arms)} />
+                <div className="mt-2 text-[11px] text-ink-3">Diamond = mean paired Δ; whiskers = 95% percentile CI from a crossed bootstrap over seeds and groups (not BCa). Blue: CI above zero · red: below · gray: crosses zero.</div>
+              </Panel>
+              <ChangesTable sid={sid} split={sp!} arm={primary!} seeds={s.data!.plan.seeds} />
+            </div>
+            <div className="space-y-4 fit:col-span-4 fit:flex fit:min-h-0 fit:flex-col fit:gap-3 fit:space-y-0">
+              {c && <Panel fill className="fit:flex-1" title="Skill map" eyebrow="per task family" prov={<Prov kind="computed" source="Wilson 95% CI" />}><SkillMap families={Object.entries(c.families).map(([family, v]) => ({ family, teacher: v.teacher, base: v.base, tuned: v[primary!] } as SkillFamily))} /></Panel>}
+              <Panel fill className="fit:flex-1" title="Review gate" prov={<Prov kind="computed" />} right={rep?.gate && <Badge tone={rep.gate.verdict === "candidate_for_human_review" ? "good" : "default"}>{rep.gate.verdict.replace(/_/g, " ")}</Badge>}>
+                {rep?.gate ? <><Checklist items={rep.gate.checks} /><div className="mt-2 text-[11.5px] text-ink-3">{rep.gate.disclaimer}</div></> : <div className="text-[12px] text-ink-3">The gate is evaluated only on the sealed test analysis.</div>}
+                {rep?.holm_secondary && Object.keys(rep.holm_secondary).length > 0 && (
+                  <div className="mt-3"><div className="micro mb-1 text-ink-3">Secondary contrasts · Holm-adjusted p</div>
+                    {Object.entries(rep.holm_secondary).map(([k, p]) => <div key={k} className="flex justify-between font-mono text-[11.5px]"><span className="text-ink-2">{k}</span><span className="num text-ink">{fmt.p(p)}</span></div>)}</div>
+                )}
+              </Panel>
+            </div>
+            <div className="scroll-thin space-y-4 fit:col-span-3 fit:min-h-0 fit:space-y-3 fit:overflow-auto fit:pr-1">
+              {c && <Panel flush title="McNemar · diagnostic" prov={<Prov kind="computed" source="exact binomial" />}>
+                <table className="w-full text-[12px]"><thead><tr className="bg-surface-2"><th className={th}>Seed</th><th className={cx(th, "text-right")}>b</th><th className={cx(th, "text-right")}>c</th><th className={cx(th, "text-right")}>exact p</th></tr></thead>
+                  <tbody>{Object.entries(c.mcnemar_diagnostic).map(([seed, m]) => <tr key={seed} className={tr}><td className={cx(td, "font-mono")}>{seed}</td><td className={cx(td, "num text-right font-mono")}>{m.b}</td><td className={cx(td, "num text-right font-mono")}>{m.c}</td><td className={cx(td, "num text-right font-mono")}>{fmt.p(m.p)}</td></tr>)}</tbody></table>
+                <div className="px-[var(--pad)] py-2 text-[11px] text-ink-3">b = tuned-only successes, c = base-only, on one fixed paraphrase (p0) per group, per seed. Diagnostic only; inference uses the group-level sign-flip tests.</div>
+              </Panel>}
+              <Calculators stacked />
+            </div>
           </div>
-          <div className="grid gap-4 xl:grid-cols-2">
-            <Panel title="Review gate" prov={<Prov kind="computed" />} right={rep?.gate && <Badge tone={rep.gate.verdict === "candidate_for_human_review" ? "good" : "default"}>{rep.gate.verdict.replace(/_/g, " ")}</Badge>}>
-              {rep?.gate ? <><Checklist items={rep.gate.checks} /><div className="mt-2 text-[11.5px] text-ink-3">{rep.gate.disclaimer}</div></> : <div className="text-[12px] text-ink-3">The gate is evaluated only on the sealed test analysis.</div>}
-              {rep?.holm_secondary && Object.keys(rep.holm_secondary).length > 0 && (
-                <div className="mt-3"><div className="micro mb-1 text-ink-3">Secondary contrasts · Holm-adjusted p</div>
-                  {Object.entries(rep.holm_secondary).map(([k, p]) => <div key={k} className="flex justify-between font-mono text-[11.5px]"><span className="text-ink-2">{k}</span><span className="num text-ink">{fmt.p(p)}</span></div>)}</div>
-              )}
-            </Panel>
-            {c && <Panel flush title="McNemar · diagnostic" prov={<Prov kind="computed" source="exact binomial" />}>
-              <table className="w-full text-[12px]"><thead><tr className="bg-surface-2"><th className={th}>Seed</th><th className={cx(th, "text-right")}>b (tuned only)</th><th className={cx(th, "text-right")}>c (base only)</th><th className={cx(th, "text-right")}>exact p</th></tr></thead>
-                <tbody>{Object.entries(c.mcnemar_diagnostic).map(([seed, m]) => <tr key={seed} className={tr}><td className={cx(td, "font-mono")}>{seed}</td><td className={cx(td, "num text-right font-mono")}>{m.b}</td><td className={cx(td, "num text-right font-mono")}>{m.c}</td><td className={cx(td, "num text-right font-mono")}>{fmt.p(m.p)}</td></tr>)}</tbody></table>
-              <div className="px-[var(--pad)] py-2 text-[11px] text-ink-3">One fixed paraphrase (p0) per group, per seed. Diagnostic only; inference uses the group-level sign-flip tests.</div>
-            </Panel>}
-          </div>
-          <Calculators />
         </>
       )}
     </div>
@@ -102,12 +107,12 @@ function ChangesTable({ sid, split, arm, seeds }: { sid: string; split: string; 
   const cmp = useApi<CompareT>(task ? `/api/studies/${sid}/compare${qs({ split, task_id: task, arm, seed })}` : null);
   const rows = (ch.data?.rows ?? []).filter((r) => f === "all" || r.outcome === f);
   return (
-    <Panel flush title="Gains & regressions" eyebrow="per task" prov={<Prov kind="computed" />}
+    <Panel fill flush className="fit:flex-1" title="Gains & regressions" eyebrow="per task" prov={<Prov kind="computed" />}
       right={<div className="flex items-center gap-2">{seeds.length > 1 && <select className={cx(inputCls, "h-7 w-auto")} value={seed} onChange={(e) => setSeed(Number(e.target.value))} aria-label="Seed">{seeds.map((s) => <option key={s} value={s}>seed {s}</option>)}</select>}
         <Segmented label="Outcome" value={f} onChange={setF} options={(["fixed", "regressed", "unchanged", "all"] as const).map((k) => ({ value: k, label: <>{k} <span className="num font-mono text-[10px] text-ink-3">{k === "all" ? ch.data?.rows.length ?? 0 : ch.data?.counts[k] ?? 0}</span></> }))} /></div>}>
       <ErrorLine error={ch.error} />
       {rows.length === 0 ? <Empty>No {f} tasks.</Empty> : (
-        <div className="scroll-thin max-h-[300px] overflow-y-auto">
+        <div className="scroll-thin max-h-[300px] overflow-y-auto fit:max-h-none fit:overflow-visible">
           <table className="w-full text-[12px]">
             <thead className="sticky top-0 bg-surface-2"><tr><th className={th}>Task</th><th className={th}>Family</th><th className={th}>Teacher</th><th className={th}>Base</th><th className={th}>Tuned</th><th className={th}>Outcome</th></tr></thead>
             <tbody>{rows.map((r) => (
@@ -127,7 +132,7 @@ function ChangesTable({ sid, split, arm, seeds }: { sid: string; split: string; 
   );
 }
 
-function Calculators() {
+function Calculators({ stacked = false }: { stacked?: boolean }) {
   const [pw, setPw] = useState({ delta: 0.1, discordant: 0.3, alpha: 0.05, power: 0.8 });
   const [mc, setMc] = useState({ b: 18, c: 6 });
   const [pwr, setPwr] = useState<{ n_pairs: number; assumptions: string } | null>(null);
@@ -136,7 +141,7 @@ function Calculators() {
   const runPw = (e: FormEvent) => { e.preventDefault(); void a1.run(async () => setPwr(await api.post("/api/stats/power", pw))); };
   const runMc = (e: FormEvent) => { e.preventDefault(); void a2.run(async () => setMcr(await api.post("/api/stats/mcnemar", mc))); };
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
+    <div className={cx("grid gap-4", stacked ? "lg:grid-cols-2 fit:grid-cols-1 fit:gap-3" : "lg:grid-cols-2")}>
       <Panel title="Power planner" prov={<Prov kind="computed" source="paired-binary approximation" />}>
         <form onSubmit={runPw} className="space-y-3">
           <div className="grid grid-cols-4 gap-2">

@@ -44,3 +44,14 @@ trained on byte-identical canonical supervision produced byte-identical adapters
 - The memory estimator is an analytic upper bound (±25%) until calibrated against measured peaks.
 - FORGE cannot load/unload LM Studio models; you do that between collect and train.
 - QLoRA, logit KD, DPO/GRPO, GGUF export are deferred.
+
+## v0.6 additions (Knowledge Graph, token projection, wide-screen workspaces)
+
+| What | Result |
+|---|---|
+| Knowledge graph builder + GraphML export | Tested on empty and evaluated studies; node/edge counts match GraphML |
+| Token projection | Planted-direction test recovers the planted token far outside the vocab spread (\|z\| > 10); chunked reads equal full reads; tied-embedding fallback exercised on the tiny Qwen3; **1.3 s** at Qwen3-1.7B scale (151,936 × 2,048 BF16, 8 directions), cached per adapter hash + format version |
+| Wide-screen layout | Browser check: Overview, Observatory, Studio, Trajectories, Evaluation, Knowledge Graph **fit without page scroll** at 1600×900, 1920×1080, 2560×1440; screens below 1600×760 scroll normally; no overflow at 390 px; 0 console errors |
+| Backend suite | 147 passed |
+
+Not validated: projection output on a real trained Qwen3-1.7B adapter (only tiny/synthetic adapters here); whether its token lists are informative for your study is an empirical question.

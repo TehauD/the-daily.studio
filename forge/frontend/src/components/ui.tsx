@@ -26,13 +26,16 @@ export function Prov({ kind, source }: { kind: ProvKind; source?: string }) {
 }
 
 /* ---------------------------------------------------------------- frame */
-export function Panel({ title, eyebrow, right, prov, children, className = "", flush = false, id }: {
-  title?: ReactNode; eyebrow?: string; right?: ReactNode; prov?: ReactNode; children: ReactNode; className?: string; flush?: boolean; id?: string;
+/** `fill`: in fit layouts the panel stretches to its grid cell and its body scrolls internally. */
+export function Panel({ title, eyebrow, right, prov, children, className = "", flush = false, id, fill = false, bodyClass = "" }: {
+  title?: ReactNode; eyebrow?: string; right?: ReactNode; prov?: ReactNode; children: ReactNode; className?: string; flush?: boolean;
+  id?: string; fill?: boolean; bodyClass?: string;
 }) {
   return (
-    <section id={id} className={cx("reg min-w-0 rounded-[var(--radius)] border border-line bg-surface shadow-[var(--shadow)]", className)}>
+    <section id={id} className={cx("reg min-w-0 rounded-[var(--radius)] border border-line bg-surface shadow-[var(--shadow)]",
+      fill && "fit:flex fit:min-h-0 fit:flex-col", className)}>
       {(title || right || prov) && (
-        <header className="flex min-h-10 flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-line px-[var(--pad)] py-2">
+        <header className="flex min-h-10 shrink-0 flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-line px-[var(--pad)] py-2">
           <div className="flex min-w-0 items-baseline gap-2">
             {eyebrow && <span className="micro text-ink-3">{eyebrow}</span>}
             {title && <h2 className="truncate text-[13px] font-semibold tracking-tight text-ink">{title}</h2>}
@@ -41,18 +44,18 @@ export function Panel({ title, eyebrow, right, prov, children, className = "", f
           {right && <div className="flex flex-wrap items-center gap-2">{right}</div>}
         </header>
       )}
-      <div className={flush ? "" : "p-[var(--pad)]"}>{children}</div>
+      <div className={cx(flush ? "" : "p-[var(--pad)]", fill && "scroll-thin fit:min-h-0 fit:flex-1 fit:overflow-auto", bodyClass)}>{children}</div>
     </section>
   );
 }
 
 export function PageHeader({ title, kicker, subtitle, right }: { title: string; kicker?: string; subtitle?: ReactNode; right?: ReactNode }) {
   return (
-    <div className="mb-5 flex flex-wrap items-end justify-between gap-4 border-b border-line pb-4">
-      <div className="min-w-0">
-        {kicker && <div className="micro mb-1 text-accent">{kicker}</div>}
-        <h1 className="text-[22px] font-semibold leading-tight tracking-[-0.015em] text-ink">{title}</h1>
-        {subtitle && <p className="mt-1 max-w-3xl text-[13px] leading-relaxed text-ink-2">{subtitle}</p>}
+    <div className="mb-5 flex shrink-0 flex-wrap items-end justify-between gap-4 border-b border-line pb-4 fit:mb-3 fit:items-center fit:pb-3">
+      <div className="min-w-0 fit:flex fit:items-baseline fit:gap-4">
+        {kicker && <div className="micro mb-1 text-accent fit:mb-0">{kicker}</div>}
+        <h1 className="text-[22px] font-semibold leading-tight tracking-[-0.015em] text-ink fit:shrink-0 fit:text-[19px]">{title}</h1>
+        {subtitle && <p title={typeof subtitle === "string" ? subtitle : undefined} className="mt-1 max-w-3xl text-[13px] leading-relaxed text-ink-2 fit:mt-0 fit:line-clamp-1 fit:max-w-[70ch] fit:text-[12px] fit:text-ink-3">{subtitle}</p>}
       </div>
       {right && <div className="flex flex-wrap items-center gap-2">{right}</div>}
     </div>

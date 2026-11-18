@@ -37,7 +37,7 @@ function describe(e: JobEvent): { text: string; tone: "default" | "good" | "crit
   }
 }
 
-export function JobLog({ jobId, height = 280, onDone }: { jobId: string; height?: number; onDone?: (j: Job) => void }) {
+export function JobLog({ jobId, height = 280, onDone, fill = false }: { jobId: string; height?: number; onDone?: (j: Job) => void; fill?: boolean }) {
   const [events, setEvents] = useState<JobEvent[]>([]);
   const [job, setJob] = useState<Job | null>(null);
   const [follow, setFollow] = useState(true);
@@ -72,7 +72,7 @@ export function JobLog({ jobId, height = 280, onDone }: { jobId: string; height?
   }, [jobId, onDone]);
   useEffect(() => { if (follow && box.current) box.current.scrollTop = box.current.scrollHeight; }, [events, follow]);
   return (
-    <div className="overflow-hidden rounded-[var(--radius)] border border-line bg-surface-2">
+    <div className={cx("overflow-hidden rounded-[var(--radius)] border border-line bg-surface-2", fill && "fit:flex fit:h-full fit:min-h-0 fit:flex-col")}>
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-3 py-1.5">
         <div className="flex min-w-0 items-center gap-2">
           {job && <Status s={job.status} />}
@@ -85,7 +85,7 @@ export function JobLog({ jobId, height = 280, onDone }: { jobId: string; height?
           {job?.status === "running" && <Button size="sm" tone="danger" icon="stop" onClick={() => void api.post(`/api/jobs/${jobId}/cancel`)}>Cancel</Button>}
         </div>
       </div>
-      <div ref={box} className="scroll-thin overflow-y-auto px-3 py-2 font-mono text-[11px] leading-[1.55]" style={{ height }} aria-live="polite">
+      <div ref={box} className={cx("scroll-thin overflow-y-auto px-3 py-2 font-mono text-[11px] leading-[1.55]", fill && "fit:!h-auto fit:min-h-0 fit:flex-1")} style={{ height }} aria-live="polite">
         {events.length === 0 && <div className="text-ink-3">waiting for output…</div>}
         {events.map((e, i) => {
           const d = describe(e);

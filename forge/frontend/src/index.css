@@ -101,6 +101,15 @@
 :root[data-density="compact"] { --pad: 11px; --row: 28px; }
 :root[data-density="comfortable"] { --pad: 20px; --row: 40px; }
 
+/* Wide-screen layout.
+   3xl/4xl: extra columns on wide monitors.
+   fit: viewport-locked workspaces (≥1600×760) — the page never scrolls; panels scroll internally. */
+@theme {
+  --breakpoint-3xl: 120rem;
+  --breakpoint-4xl: 160rem;
+}
+@custom-variant fit (@media (min-width: 100rem) and (min-height: 47.5rem));
+
 @theme inline {
   --font-sans: "Inter", "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", "Cascadia Mono", "Cascadia Code", "SF Mono", Consolas, ui-monospace, monospace;

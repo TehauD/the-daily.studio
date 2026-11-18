@@ -16,7 +16,7 @@ export default function Observatory() {
   const models = useApi<ModelsResponse>("/api/models");
   const n = models.data?.models.length;
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 fit:flex fit:h-full fit:min-h-0 fit:flex-col fit:gap-3 fit:space-y-0">
       <PageHeader kicker="Models" title="Model Observatory" subtitle="Every model on this machine, measured from file headers — never by loading weights. Loading is not trainability: only complete local safetensors with a known causal-LM architecture can be students." />
       <Tabs value={tab} onChange={setTab} tabs={[{ value: "local", label: "Local inventory", count: n }, { value: "hub", label: "Hugging Face Hub" }, { value: "pair", label: "Pair builder" }]} />
       {tab === "local" && <Local models={models} />}
@@ -40,7 +40,7 @@ function Local({ models }: { models: ReturnType<typeof useApi<ModelsResponse>> }
   const caps = models.data?.capabilities ?? [];
   const sel = all.find((m) => m.id === selected) ?? null;
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 fit:flex fit:min-h-0 fit:flex-1 fit:flex-col fit:gap-3 fit:space-y-0">
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative w-full max-w-xs">
           <Icon name="search" size={14} className="absolute left-2.5 top-2 text-ink-3" />
@@ -60,8 +60,8 @@ function Local({ models }: { models: ReturnType<typeof useApi<ModelsResponse>> }
           ))}
         </div>
       )}
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_400px] 2xl:grid-cols-[minmax(0,1fr)_440px]">
-        <Panel flush title={`${list.length} models`} prov={<Prov kind="measured" source="file headers / provider APIs" />}
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_400px] 2xl:grid-cols-[minmax(0,1fr)_440px] fit:min-h-0 fit:flex-1 fit:gap-3 3xl:fit:grid-cols-[minmax(0,1fr)_520px]">
+        <Panel fill flush title={`${list.length} models`} prov={<Prov kind="measured" source="file headers / provider APIs" />}
           right={<span className="hidden font-mono text-[10px] text-ink-3 md:inline">● supported ◐ conditional ○ unsupported ? unknown · T/S = teacher/student eligibility</span>}>
           {list.length === 0 ? <Empty icon="observatory">No models. Run discovery, or add a model directory in System Settings.</Empty> : (
             <div className="scroll-thin overflow-x-auto">
@@ -93,8 +93,8 @@ function Local({ models }: { models: ReturnType<typeof useApi<ModelsResponse>> }
             </div>
           )}
         </Panel>
-        <div className="min-w-0 xl:sticky xl:top-16 xl:self-start">
-          {sel ? <ModelDetail key={sel.id} m={sel} onChange={models.reload} /> : <Panel title="Model detail"><Empty icon="observatory">Select a model to see its parameter reconciliation, eligibility, capability reasons, and VRAM fit.</Empty></Panel>}
+        <div className="min-w-0 xl:sticky xl:top-16 xl:self-start fit:static fit:flex fit:min-h-0 fit:flex-col">
+          {sel ? <ModelDetail key={sel.id} m={sel} onChange={models.reload} /> : <Panel fill title="Model detail"><Empty icon="observatory">Select a model to see its parameter reconciliation, eligibility, capability reasons, and VRAM fit.</Empty></Panel>}
         </div>
       </div>
     </div>
@@ -137,7 +137,7 @@ function ModelDetail({ m, onChange }: { m: Model; onChange: () => Promise<void> 
     await onChange();
   });
   return (
-    <Panel title="Model detail" prov={<Prov kind="measured" source={m.parameter_count_source} />}>
+    <Panel fill title="Model detail" prov={<Prov kind="measured" source={m.parameter_count_source} />}>
       <div className="space-y-4">
         <div>
           <div className="break-all text-[14px] font-semibold text-ink">{m.name}</div>
@@ -209,15 +209,15 @@ function Hub() {
   const search = useAction(), inspect = useAction(), dl = useAction();
   const submit = (e: FormEvent) => { e.preventDefault(); void search.run(async () => { const r = await api.get<{ results: HubResult[]; outbound: Outbound }>(`/api/hub/search${qs({ q })}`); setResults(r.results); setOutbound(r.outbound); }); };
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 fit:flex fit:min-h-0 fit:flex-1 fit:flex-col fit:gap-3 fit:space-y-0">
       <OutboundNote o={outbound} />
       <form onSubmit={submit} className="flex flex-wrap gap-2">
         <input className={cx(inputCls, "max-w-md")} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search text-generation models (safetensors)…" aria-label="Hub search" />
         <Button type="submit" tone="primary" icon="search" busy={search.busy}>Search Hub</Button>
       </form>
       <ErrorLine error={search.error} />
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_460px]">
-        <Panel flush title={results ? `${results.length} results` : "Results"} prov={<Prov kind="declared" source="Hub API" />}>
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_460px] fit:min-h-0 fit:flex-1 fit:gap-3 3xl:fit:grid-cols-[minmax(0,1fr)_560px]">
+        <Panel fill flush title={results ? `${results.length} results` : "Results"} prov={<Prov kind="declared" source="Hub API" />}>
           {!results ? <Empty icon="search">Search the Hub. Results show the Hub-reported safetensors parameter total; inspect a repo for exact headers and eligibility.</Empty> : (
             <div className="scroll-thin overflow-x-auto">
               <table className="w-full text-[12.5px]">
@@ -235,7 +235,7 @@ function Hub() {
             </div>
           )}
         </Panel>
-        <div className="space-y-3">
+        <div className="scroll-thin space-y-3 fit:min-h-0 fit:overflow-auto fit:pr-1">
           <ErrorLine error={inspect.error ?? dl.error} />
           {insp ? (
             <Panel title={insp.repo_id} prov={<Prov kind="measured" source="remote safetensors headers" />} right={<Status s={insp.verdict} label={insp.verdict === "pass" ? "eligible" : "not eligible"} />}>
@@ -273,8 +273,8 @@ function PairBuilder({ models }: { models: Model[] }) {
   const [pc, setPc] = useState<PairCheck | null>(null);
   const act = useAction();
   return (
-    <div className="grid gap-4 xl:grid-cols-[380px_minmax(0,1fr)]">
-      <Panel title="Select pair">
+    <div className="grid gap-4 xl:grid-cols-[380px_minmax(0,1fr)] fit:min-h-0 fit:flex-1 fit:gap-3">
+      <Panel fill title="Select pair">
         <div className="space-y-3">
           <label className="block"><span className="micro mb-1 block text-ink-3">Teacher</span>
             <select className={inputCls} value={t} onChange={(e) => setT(e.target.value)}><option value="">—</option>{teachers.map((m) => <option key={m.id} value={m.id}>{m.name} · {m.provider}</option>)}</select></label>
@@ -286,7 +286,7 @@ function PairBuilder({ models }: { models: Model[] }) {
         </div>
       </Panel>
       {pc ? (
-        <Panel title={`${pc.teacher}  →  ${pc.student}`} prov={<Prov kind="computed" />} right={<Status s={pc.verdict} />}>
+        <Panel fill title={`${pc.teacher}  →  ${pc.student}`} prov={<Prov kind="computed" />} right={<Status s={pc.verdict} />}>
           <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]">
             <Checklist items={pc.checks} />
             <div className="space-y-4">
@@ -297,7 +297,7 @@ function PairBuilder({ models }: { models: Model[] }) {
             </div>
           </div>
         </Panel>
-      ) : <Panel title="Pair-check"><Empty icon="link">Pick a teacher and a student. The check covers generativity, trainability, capacity, tool templates, VRAM, logit-KD eligibility, and the one-GPU constraint.</Empty></Panel>}
+      ) : <Panel fill title="Pair-check"><Empty icon="link">Pick a teacher and a student. The check covers generativity, trainability, capacity, tool templates, VRAM, logit-KD eligibility, and the one-GPU constraint.</Empty></Panel>}
     </div>
   );
 }

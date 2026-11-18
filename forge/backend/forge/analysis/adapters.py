@@ -63,6 +63,20 @@ class SafeTensorFile:
             raise AdapterError(f"Unsupported dtype {t['dtype']} for {name}")
         return arr.reshape(t["shape"]).astype(np.float64)
 
+    def rows(self, name: str, start: int, stop: int) -> np.ndarray:
+        """Rows [start, stop) of a 2-D tensor as float32 — reads only those bytes (for vocab-sized matrices)."""
+        t = self.header[name]
+        n_rows, n_cols = t["shape"]
+        stop = min(stop, n_rows)
+        width = {"BF16": 2, "F16": 2, "F32": 4, "F64": 8}[t["dtype"]]
+        a = self.base + t["data_offsets"][0] + start * n_cols * width
+        raw = self._mm[a: a + (stop - start) * n_cols * width].tobytes()
+        if t["dtype"] == "BF16":
+            arr = (np.frombuffer(raw, dtype=np.uint16).astype(np.uint32) << 16).view(np.float32)
+        else:
+            arr = np.frombuffer(raw, dtype=_DTYPES[t["dtype"]]).astype(np.float32)
+        return arr.reshape(stop - start, n_cols)
+
 
 def lora_spectrum(A: np.ndarray, B: np.ndarray, scale: float) -> np.ndarray:
     """Singular values of scale·B·A via thin QR; never materializes B·A."""

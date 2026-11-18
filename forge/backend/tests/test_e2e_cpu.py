@@ -59,6 +59,11 @@ def test_full_study_on_cpu(tiny, tmp_path, monkeypatch):
     assert any("loss" in r for r in rows) and all(r["tokens_seen"] >= 0 for r in rows)
     insp = json.loads((study.run_dir("teacher_filtered", 0) / "inspection.json").read_text())
     assert insp["computed"] and insp["modules"] and insp["base_available"]
+    from forge.analysis.projection import project
+    proj = project(study.run_dir("teacher_filtered", 0) / "adapter", tiny, last_layers=2, k=5)
+    assert proj["unembedding"] == "model.embed_tokens.weight"  # tied weights: no lm_head stored
+    assert {m["kind"] for m in proj["modules"]} == {"o_proj", "down_proj"}
+    assert all(len(m["plus"]) == 5 and isinstance(m["plus"][0]["token"], str) for m in proj["modules"])
     # Re-running train is a no-op (resume semantics), not a second adapter.
     study.run_stage("train", emit=events.append)
     assert any(e.get("event") == "skip_trained" for e in events)

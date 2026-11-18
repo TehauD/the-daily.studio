@@ -239,6 +239,34 @@ def knowledge_graph(sid: str, view: str = "auto", format: Literal["json", "graph
     return g
 
 
+@router.get("/{sid}/projection")
+async def token_projection(sid: str, arm: str, seed: int, layers: int = 4, k: int = 12, st: AppState = Depends(get_state)):
+    """Heuristic token projection of the adapter's residual-writing directions. Cached per adapter hash."""
+    from forge.analysis.adapters import AdapterError
+    from forge.analysis.projection import PROJECTION_VERSION, project
+    s = _study(st, sid)
+    if arm not in s.plan["arms"] or seed not in s.plan["seeds"]:
+        raise HTTPException(404, "Unknown arm/seed for this study")
+    rd = s.run_dir(arm, seed)
+    adapter = rd / "adapter" / "adapter_model.safetensors"
+    if not adapter.exists():
+        raise HTTPException(404, f"No adapter for {arm} seed {seed} yet (run Train)")
+    layers, k = max(1, min(layers, 12)), max(3, min(k, 40))
+    digest = await asyncio.to_thread(sha256_file, adapter)
+    cache = rd / f"token_projection.L{layers}.k{k}.json"
+    if cache.exists():
+        cached = json.loads(cache.read_text(encoding="utf-8"))
+        if cached.get("adapter_sha256") == digest and cached.get("projection_version") == PROJECTION_VERSION:
+            return cached
+    try:
+        res = await asyncio.to_thread(project, rd / "adapter", Path(s.plan["student"]["path"]), layers, k)
+    except (AdapterError, FileNotFoundError, KeyError) as e:
+        raise HTTPException(422, f"Projection unavailable: {e}")
+    res["adapter_sha256"] = digest
+    cache.write_text(json.dumps(res), encoding="utf-8")
+    return res
+
+
 @router.get("/{sid}/training")
 def training(sid: str, arm: str, seed: int, st: AppState = Depends(get_state)):
     rd = _study(st, sid).run_dir(arm, seed)

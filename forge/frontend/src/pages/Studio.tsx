@@ -30,12 +30,12 @@ export default function Studio() {
   useEffect(() => { if (sessionStorage.getItem("forge.pair")) setCreating(true); }, []);
   const sid = prefs.activeStudy;
   return (
-    <div className="space-y-4">
+    <div className={creating ? "space-y-4" : "space-y-4 fit:flex fit:h-full fit:min-h-0 fit:flex-col fit:gap-3 fit:space-y-0"}>
       <PageHeader kicker="Research" title="Experiment Studio" subtitle="A study freezes the pair, profile, seeds, arms, task set, hyperparameters, base-model hash, and engine source hash at creation. Stages run as separate processes, one GPU job at a time."
         right={<Button tone="primary" icon="plus" onClick={() => setCreating((c) => !c)}>{creating ? "Close wizard" : "New study"}</Button>} />
       {creating && <Wizard onCreated={(id) => { set("activeStudy", id); setCreating(false); void studies.reload(); }} />}
-      <div className="grid gap-4 xl:grid-cols-[300px_minmax(0,1fr)]">
-        <Panel flush title="Studies" right={<span className="num font-mono text-[10.5px] text-ink-3">{studies.data?.length ?? 0}</span>}>
+      <div className="grid gap-4 xl:grid-cols-[300px_minmax(0,1fr)] fit:min-h-0 fit:flex-1 fit:gap-3">
+        <Panel fill flush title="Studies" right={<span className="num font-mono text-[10.5px] text-ink-3">{studies.data?.length ?? 0}</span>}>
           {!studies.data?.length ? <Empty icon="flask">No studies yet. Create one to start the MVP loop.</Empty> : (
             <ul className="divide-y divide-line">
               {studies.data.map((s) => (
@@ -155,7 +155,9 @@ function StudyView({ sid }: { sid: string }) {
   const [seal, setSeal] = useState("");
   const [busyStage, setBusyStage] = useState<string | null>(null);
   const running = s.data?.jobs?.find((j) => j.status === "running");
-  useEffect(() => { if (running && !jobId) setJobId(running.id); }, [running, jobId]);
+  // Follow a running job; otherwise show the study's most recent job so the panel is never blank.
+  const latest = s.data?.jobs?.[0];
+  useEffect(() => { if (!jobId && (running ?? latest)) setJobId((running ?? latest)!.id); }, [running, latest, jobId]);
   const onDone = useCallback(() => { void s.reload(); }, [s]);
   if (!s.data) return <Panel><ErrorLine error={s.error} />{!s.error && <div className="h-40" />}</Panel>;
   const d = s.data, p = d.plan;
@@ -165,8 +167,8 @@ function StudyView({ sid }: { sid: string }) {
     finally { setBusyStage(null); }
   });
   return (
-    <div className="min-w-0 space-y-4">
-      <Panel title={p.name} eyebrow={p.profile} prov={<Prov kind="declared" source="frozen plan" />}
+    <div className="min-w-0 space-y-4 fit:flex fit:min-h-0 fit:flex-col fit:gap-3 fit:space-y-0">
+      <Panel className="fit:shrink-0" title={p.name} eyebrow={p.profile} prov={<Prov kind="declared" source="frozen plan" />}
         right={<>{d.state.sealed && <Badge tone="accent"><Icon name="lock" size={11} />sealed</Badge>}<Hash value={p.study_id} n={18} label="study id" /></>}>
         <StageStepper s={d} onRun={(k) => run(k)} blocked={rd.data?.blocked_stages ?? {}} busyStage={busyStage} />
         {d.next_stage && STAGE_HINT[d.next_stage] && <div className="mt-3 flex items-start gap-2 text-[12px] text-ink-2"><Icon name="info" size={14} className="mt-0.5 text-ink-3" /><span><b className="font-medium text-ink">Next — {STAGE_LABEL[d.next_stage]}.</b> {STAGE_HINT[d.next_stage]}</span></div>}
@@ -181,10 +183,12 @@ function StudyView({ sid }: { sid: string }) {
         <div className="mt-3"><ErrorLine error={act.error} /></div>
       </Panel>
 
-      {jobId && <Panel title="Live job" eyebrow="stdout · json events"><JobLog key={jobId} jobId={jobId} onDone={onDone} /></Panel>}
+      <div className="space-y-4 fit:grid fit:min-h-0 fit:flex-1 fit:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] fit:gap-3 fit:space-y-0">
+      {jobId ? <Panel fill title="Live job" eyebrow="stdout · json events"><JobLog fill key={jobId} jobId={jobId} onDone={onDone} /></Panel>
+        : <Panel fill title="Live job" eyebrow="stdout · json events"><Empty icon="play">Run a stage — its JSON event stream appears here.</Empty></Panel>}
 
-      <div className="grid gap-4 2xl:grid-cols-2">
-        <Panel title="Frozen configuration" prov={<Prov kind="declared" />}>
+      <div className="grid gap-4 2xl:grid-cols-2 fit:flex fit:min-h-0 fit:flex-col fit:gap-3">
+        <Panel fill title="Frozen configuration" prov={<Prov kind="declared" />}>
           <KV rows={[
             ["teacher", `${p.teacher.model} · ${p.teacher.provider}`], ["endpoint", p.teacher.endpoint], ["student", p.student.name], ["student path", p.student.path],
             ["base sha256", <Hash key="b" value={p.base_hash} n={20} />], ["engine sha256", <Hash key="e" value={p.engine_source_sha256} n={20} />],
@@ -195,7 +199,7 @@ function StudyView({ sid }: { sid: string }) {
             ["environment", Object.entries(p.environment).map(([k, v]) => `${k}=${v}`).join("  ")],
           ]} />
         </Panel>
-        <Panel flush title="Job history" right={<span className="num font-mono text-[10.5px] text-ink-3">{d.jobs?.length ?? 0}</span>}>
+        <Panel fill flush title="Job history" right={<span className="num font-mono text-[10.5px] text-ink-3">{d.jobs?.length ?? 0}</span>}>
           {!d.jobs?.length ? <Empty>No jobs yet.</Empty> : (
             <table className="w-full text-[12px]">
               <thead><tr className="bg-surface-2"><th className={th}>Stage</th><th className={th}>Status</th><th className={th}>Started</th><th className={th}>Exit</th></tr></thead>
@@ -208,6 +212,7 @@ function StudyView({ sid }: { sid: string }) {
             </table>
           )}
         </Panel>
+      </div>
       </div>
     </div>
   );
