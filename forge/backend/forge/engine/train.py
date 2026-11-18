@@ -94,7 +94,10 @@ def teacher_loaded(endpoint: str | None) -> tuple[bool | None, str]:
         if r.status_code != 200:
             return None, f"state not exposed (HTTP {r.status_code})"
         loaded = [m["id"] for m in r.json().get("data", []) if m.get("state") == "loaded" and m.get("type") != "embeddings"]
-        return bool(loaded), f"loaded: {loaded}" if loaded else "no generative model loaded"
+        if loaded:
+            return True, (f"LM Studio still has {', '.join(loaded)} loaded on the GPU. Eject it in LM Studio "
+                          "(or run `lms unload --all`), then run this stage again.")
+        return False, "no generative model loaded"
     except httpx.HTTPError:
         return False, "teacher server not running"
 

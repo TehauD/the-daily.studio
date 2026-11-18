@@ -49,12 +49,21 @@ export function JobLog({ jobId, height = 280, onDone }: { jobId: string; height?
     let alive = true;
     const tick = async () => {
       try {
-        const [log, j] = await Promise.all([api.get<{ events: JobEvent[]; offset: number }>(`/api/jobs/${jobId}/log${qs({ offset: off.current })}`), api.get<Job>(`/api/jobs/${jobId}`)]);
-        if (!alive) return;
-        off.current = log.offset;
-        if (log.events.length) setEvents((ev) => [...ev, ...log.events].slice(-KEEP));
+        // Status FIRST, then the log. The server closes the log file before it records a terminal
+        // status, so a log read issued after seeing "finished" is complete. (Fetching both in parallel
+        // lost the final lines of fast-failing jobs, e.g. a pre-flight refusal.)
+        const j = await api.get<Job>(`/api/jobs/${jobId}`);
+        const finished = j.status !== "running" && j.status !== "cancelling";
+        for (let page = 0; page < 50; page++) {
+          const log = await api.get<{ events: JobEvent[]; offset: number }>(`/api/jobs/${jobId}/log${qs({ offset: off.current })}`);
+          if (!alive) return;
+          const moved = log.offset !== off.current;
+          off.current = log.offset;
+          if (log.events.length) setEvents((ev) => [...ev, ...log.events].slice(-KEEP));
+          if (!finished || !moved) break; // drain fully only once the job has ended
+        }
         setJob(j);
-        if (j.status !== "running" && j.status !== "cancelling" && !done.current) { done.current = true; onDone?.(j); }
+        if (finished && !done.current) { done.current = true; onDone?.(j); }
       } catch { /* transient; next tick retries */ }
     };
     void tick();
