@@ -170,7 +170,7 @@ function StudyView({ sid }: { sid: string }) {
         right={<>{d.state.sealed && <Badge tone="accent"><Icon name="lock" size={11} />sealed</Badge>}<Hash value={p.study_id} n={18} label="study id" /></>}>
         <StageStepper s={d} onRun={(k) => run(k)} blocked={rd.data?.blocked_stages ?? {}} busyStage={busyStage} />
         {d.next_stage && STAGE_HINT[d.next_stage] && <div className="mt-3 flex items-start gap-2 text-[12px] text-ink-2"><Icon name="info" size={14} className="mt-0.5 text-ink-3" /><span><b className="font-medium text-ink">Next — {STAGE_LABEL[d.next_stage]}.</b> {STAGE_HINT[d.next_stage]}</span></div>}
-        {d.next_stage === "train" && <div className="mt-2"><Notice tone="warn">Unload the teacher in LM Studio before training. Teacher and student share one 16 GB GPU; the pre-flight refuses to start while a generative model is loaded.</Notice></div>}
+        {d.next_stage && ["train", "evaluate_dev", "evaluate_test", "export"].includes(d.next_stage) && <div className="mt-3"><TeacherGpu onFreed={() => { void rd.reload(); }} /></div>}
         {d.next_stage === "seal" && (
           <div className="mt-3 flex flex-wrap items-end gap-2 rounded-[var(--radius)] border border-accent-line bg-accent-soft p-3">
             <div className="min-w-[260px] flex-1 text-[12px] text-ink-2"><b className="text-ink">Seal the study.</b> Adapters are frozen by sha256; build, train, and dev evaluation become impossible. Type <span className="font-mono text-ink">SEAL</span> to confirm.</div>
@@ -209,6 +209,46 @@ function StudyView({ sid }: { sid: string }) {
           )}
         </Panel>
       </div>
+    </div>
+  );
+}
+
+interface LmsStatus { server_reachable: boolean; url: string; loaded: string[] | null; cli_path: string | null; cli_found: boolean; unload_command: string }
+
+/** Student stages need the GPU the teacher occupies. Show LM Studio's live state and offer `lms unload --all`. */
+function TeacherGpu({ onFreed }: { onFreed: () => void }) {
+  const st = useApi<LmsStatus>("/api/lmstudio/status", 5000);
+  const act = useAction();
+  const [done, setDone] = useState<{ duration_ms: number } | null>(null);
+  const loaded = st.data?.loaded ?? [];
+  if (!st.data) return null;
+  if (!st.data.server_reachable || st.data.loaded === null) {
+    return <Notice tone="info">LM Studio's server is not reachable at {st.data.url}, so nothing is loaded through it. If LM Studio is open with a model loaded in its chat window, eject it there before training.</Notice>;
+  }
+  if (loaded.length === 0) {
+    return (
+      <div className="flex flex-wrap items-center gap-3 rounded-[var(--radius)] border border-[color:var(--good)]/35 bg-[color:var(--good)]/[0.05] px-3 py-2.5 text-[12.5px] text-ink-2">
+        <Status s="pass" label="GPU free" /><span>LM Studio reports no model loaded. Training and student evaluation can use the full GPU.</span>
+        {done && <span className="font-mono text-[11px] text-ink-3">unloaded in {(done.duration_ms / 1000).toFixed(1)} s</span>}
+      </div>
+    );
+  }
+  return (
+    <div className="rounded-[var(--radius)] border border-[color:var(--warn)]/50 bg-[color:var(--warn)]/[0.07] p-3">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-[260px] flex-1 text-[12.5px] leading-relaxed text-ink-2">
+          <div className="flex items-center gap-2"><Status s="warn" label="teacher loaded" /><span className="font-mono text-[11.5px] text-ink">{loaded.join(", ")}</span></div>
+          <div className="mt-1">Teacher and student share one 16 GB GPU, so training refuses to start while this is loaded. Unloading only frees VRAM; nothing is deleted. Before a future Collect, load the teacher again in LM Studio (or let its just-in-time loading do it, if enabled).</div>
+        </div>
+        {st.data.cli_found ? (
+          <Button tone="primary" icon="stop" busy={act.busy}
+            onClick={() => void act.run(async () => { setDone(await api.post<{ duration_ms: number }>("/api/lmstudio/unload")); await st.reload(); onFreed(); })}>
+            Unload teacher
+          </Button>
+        ) : <span className="max-w-xs text-[11.5px] text-ink-3">The <span className="font-mono">lms</span> CLI was not found. Eject the model in LM Studio, or set <span className="font-mono">FORGE_LMS_PATH</span>.</span>}
+      </div>
+      {st.data.cli_found && <div className="mt-2 font-mono text-[10.5px] text-ink-3">runs: {st.data.unload_command} · {st.data.cli_path}</div>}
+      <div className="mt-2"><ErrorLine error={act.error} /></div>
     </div>
   );
 }
