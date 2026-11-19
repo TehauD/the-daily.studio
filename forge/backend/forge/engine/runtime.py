@@ -72,10 +72,16 @@ def parse_action(text: str) -> tuple[dict[str, Any], dict[str, Any]]:
         raise ActionError("invalid_json", f"Not a single JSON object: {e.msg}") from e
     if not isinstance(obj, dict):
         raise ActionError("invalid_action", "Top-level JSON must be an object")
-    if set(obj) == {"answer"}:
+    if "answer" in obj and set(obj) <= {"answer", "sources"}:
         if not isinstance(obj["answer"], (str, int, float)):
             raise ActionError("invalid_action", "answer must be a string or number")
-        return {"answer": str(obj["answer"])}, info
+        act: dict[str, Any] = {"answer": str(obj["answer"])}
+        if "sources" in obj:  # doc-QA citations: a list of passage ids
+            src = obj["sources"]
+            if not isinstance(src, list) or not all(isinstance(x, str) for x in src) or len(src) > 10:
+                raise ActionError("invalid_action", "sources must be a list of passage id strings")
+            act["sources"] = src
+        return act, info
     if set(obj) == {"tool", "arguments"} and isinstance(obj["tool"], str) and isinstance(obj["arguments"], dict):
         return {"tool": obj["tool"], "arguments": obj["arguments"]}, info
     raise ActionError("invalid_action", f"Expected {{tool, arguments}} or {{answer}}, got keys {sorted(obj)}")
@@ -94,12 +100,14 @@ class EpisodeConfig:
 def run_episode(task: Task, backend: ChatBackend, world: ToolWorld, cfg: EpisodeConfig | None = None,
                 arm: str = "", seed: int | None = None) -> dict[str, Any]:
     cfg = cfg or EpisodeConfig()
-    messages: list[dict[str, str]] = [{"role": "system", "content": SYSTEM_PROMPT},
+    # The world supplies its own instructions and scoring (catalog tools vs. document search).
+    messages: list[dict[str, str]] = [{"role": "system", "content": getattr(world, "system_prompt", SYSTEM_PROMPT)},
                                       {"role": "user", "content": task.prompt}]
     events: list[dict[str, Any]] = [{"type": "prompt", "content": task.prompt}]
     calls: list[dict[str, Any]] = []
     errors: list[str] = []
     answer: str | None = None
+    sources: list[str] | None = None
     usage = {"prompt_tokens": 0, "completion_tokens": 0, "latency_ms": 0}
     reasoning_stripped = 0
     started = utcnow()
@@ -131,6 +139,7 @@ def run_episode(task: Task, backend: ChatBackend, world: ToolWorld, cfg: Episode
         messages.append({"role": "assistant", "content": canonical_json(action)})
         if "answer" in action:
             answer = action["answer"]
+            sources = action.get("sources")
             events.append({"type": "answer", "content": answer, "turn": turn, "latency_ms": latency})
             termination = "answered"
             break
@@ -142,11 +151,13 @@ def run_episode(task: Task, backend: ChatBackend, world: ToolWorld, cfg: Episode
         if err:
             errors.append(err)
         messages.append({"role": "user", "content": tool_result_message(result)})
-    score = score_episode(task, calls, answer, errors)
+    score = (world.score(task, calls, answer, errors, events, sources) if hasattr(world, "score")
+             else score_episode(task, calls, answer, errors))
     record = {
         "task_id": task.task_id, "group_id": task.group_id, "family": task.family, "split": task.split,
         "paraphrase": task.paraphrase, "arm": arm, "seed": seed, "model": backend.name,
-        "messages": messages, "events": events, "calls": calls, "answer": answer, "termination": termination,
+        "messages": messages, "events": events, "calls": calls, "answer": answer, "sources": sources,
+        "termination": termination,
         "score": score, "usage": usage, "reasoning_blocks_stripped": reasoning_stripped,
         "started_at": started, "ended_at": utcnow(),
     }

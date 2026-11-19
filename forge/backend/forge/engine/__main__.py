@@ -40,6 +40,28 @@ def cmd_train_run(a: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_knowledge(a: argparse.Namespace) -> int:
+    """Knowledge-pack steps: import (local files), index (loopback embeddings), questions (teacher)."""
+    from forge.engine.runtime import OpenAICompatBackend
+    from forge.knowledge.pack import KnowledgePack
+    pack = KnowledgePack(Path(a.pack))
+    cfg = json.loads(a.config or "{}")
+    emit({"event": "pack_step_start", "step": a.step, "pack": pack.meta["name"]})
+    if a.step == "import":
+        res = pack.run_import(emit)
+    elif a.step == "index":
+        res = pack.run_index(cfg.get("endpoint"), cfg.get("model"), emit)
+    elif a.step == "questions":
+        teacher = OpenAICompatBackend(cfg["endpoint"], cfg["model"], temperature=0.2, max_tokens=400)
+        teacher.name = cfg["model"]
+        res = pack.run_questions(teacher, n=int(cfg.get("n", 60)), unanswerable_frac=float(cfg.get("unanswerable", 0.25)),
+                                 seed=int(cfg.get("seed", 7)), emit=emit)
+    else:
+        raise ValueError(f"unknown step {a.step}")
+    emit({"event": "pack_step_completed", "step": a.step, "result": res})
+    return 0
+
+
 def cmd_hub_download(a: argparse.Namespace) -> int:
     from forge.providers.hf_hub import download_and_verify
     res = download_and_verify(a.repo, revision=a.revision, cache_dir=Path(a.cache_dir) if a.cache_dir else None, emit=emit)
@@ -112,6 +134,11 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("--seed", required=True)
     r.add_argument("--hash-cache")
     r.set_defaults(fn=cmd_train_run)
+    k = sub.add_parser("knowledge")
+    k.add_argument("--pack", required=True)
+    k.add_argument("--step", required=True, choices=["import", "index", "questions"])
+    k.add_argument("--config")
+    k.set_defaults(fn=cmd_knowledge)
     h = sub.add_parser("hub-download")
     h.add_argument("--repo", required=True)
     h.add_argument("--revision")

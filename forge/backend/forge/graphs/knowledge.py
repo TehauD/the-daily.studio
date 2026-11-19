@@ -23,8 +23,10 @@ from forge.engine.study import TRAIN_ARMS, Study
 METRICS = ("strict_success", "answer_correct", "tool_selection_correct", "argument_accuracy", "invalid_rate")
 VIEWS = {"dev": ("dev",), "heldout": ("test", "ood", "regression")}
 SKILL_LABEL = {"catalog_lookup": "Catalog lookup", "multi_step_quote": "Multi-step quote",
-               "missing_item": "Missing-item detection", "extraction": "SKU extraction"}
-TOOLS_FOR = {"catalog_lookup": ["lookup"], "missing_item": ["lookup"], "multi_step_quote": ["quote"], "extraction": []}
+               "missing_item": "Missing-item detection", "extraction": "SKU extraction",
+               "doc_answerable": "Answer from your documents", "doc_unanswerable": "Say NOT_FOUND when absent"}
+TOOLS_FOR = {"catalog_lookup": ["lookup"], "missing_item": ["lookup"], "multi_step_quote": ["quote"], "extraction": [],
+             "doc_answerable": ["search"], "doc_unanswerable": ["search"]}
 COLS = {"teacher": 0, "reference": 0, "base": 0, "dataset": 1, "tuned": 2, "skill": 3, "tool": 4}
 
 

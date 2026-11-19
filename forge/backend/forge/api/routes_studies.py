@@ -73,6 +73,7 @@ class CreateStudy(BaseModel):
     epochs: float | None = Field(None, gt=0, le=50)
     max_seq_len: int | None = Field(None, ge=256, le=32768)
     device: Literal["cuda", "cpu"] = "cuda"
+    knowledge_pack_id: str | None = Field(None, pattern=r"^pack_[a-z0-9]+$")
 
 
 def _teacher_spec(st: AppState, t: dict) -> dict[str, Any]:
@@ -127,12 +128,21 @@ async def create_study(body: CreateStudy, st: AppState = Depends(get_state)):
     train_ov = {k: v for k, v in (("max_steps", body.max_steps), ("epochs", body.epochs),
                                   ("max_seq_len", body.max_seq_len)) if v is not None}
     train_ov.update(vram_gate(s, train_ov.get("max_seq_len", 2048)))
+    pack = None
+    if body.knowledge_pack_id:
+        from forge.knowledge.pack import KnowledgePack, PackError
+        try:
+            pack = KnowledgePack(st.settings.home / "knowledge" / body.knowledge_pack_id)
+        except PackError as e:
+            raise HTTPException(404, str(e))
+        if pack.meta["steps"].get("questions", {}).get("status") != "completed":
+            raise HTTPException(409, "This knowledge pack has no verified questions yet")
     try:
         study = Study.init(st.settings.studies_dir, name=body.name, profile=body.profile, teacher=_teacher_spec(st, t),
                            student={"model_id": s["id"], "name": s["name"], "path": str(student_dir),
                                     "parameter_report": s["metadata"].get("parameter_report")},
                            arms=body.arms, seeds=body.seeds, train_overrides=train_ov, min_gain=body.min_gain,
-                           device=body.device, environment=env, base_hash=base_hash)
+                           device=body.device, environment=env, base_hash=base_hash, knowledge_pack=pack)
     except StudyError as e:
         raise HTTPException(422, str(e))
     with st.db.tx() as c:

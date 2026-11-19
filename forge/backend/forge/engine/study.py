@@ -183,15 +183,23 @@ class Study:
     def init(studies_dir: Path, *, name: str, profile: str, teacher: dict, student: dict, arms: list[str],
              seeds: list[int] | None = None, train_overrides: dict | None = None, taskset_overrides: dict | None = None,
              min_gain: float = 0.05, device: str = "cuda", environment: dict | None = None,
-             base_hash: str | None = None) -> "Study":
+             base_hash: str | None = None, knowledge_pack: Any = None) -> "Study":
         if profile not in PROFILES:
             raise StudyError(f"profile must be one of {list(PROFILES)}")
         unknown = [a for a in arms if a not in TRAIN_ARMS]
         if unknown or not arms:
             raise StudyError(f"unknown/empty arms {unknown}; choose from {list(TRAIN_ARMS)}")
         prof = PROFILES[profile]
-        spec = TaskSetSpec(**{**prof["taskset"], **(taskset_overrides or {})})
-        tasks = generate_taskset(spec)
+        if knowledge_pack is not None:
+            # Doc-QA: tasks are the pack's verified questions (already split by document).
+            qs = knowledge_pack.questions()
+            if not qs:
+                raise StudyError("The knowledge pack has no verified questions yet (run its 'questions' step)")
+            tasks = [Task(**q) for q in qs]
+            spec = None
+        else:
+            spec = TaskSetSpec(**{**prof["taskset"], **(taskset_overrides or {})})
+            tasks = generate_taskset(spec)
         sid = new_id("study")
         root = studies_dir / sid
         root.mkdir(parents=True)
@@ -201,8 +209,13 @@ class Study:
             "seeds": seeds if seeds is not None else prof["seeds"], "arms": arms, "control": "base",
             "primary_contrast": f"{arms[0]} − base on test (strict success)", "min_gain": min_gain,
             "teacher": teacher, "student": student, "device": device,
-            "taskset": {"version": TASKSET_VERSION, "spec": asdict(spec), "sha256": taskset_hash(tasks),
-                        "counts": {s: sum(1 for t in tasks if t.split == s) for s in ("train", "dev", "test", "ood", "regression")}},
+            "taskset": ({"version": TASKSET_VERSION, "kind": "catalog", "spec": asdict(spec)} if spec is not None else {
+                "version": "forge-docqa-v1", "kind": "docqa", "spec": {"seed": 7},
+                "pack": {"id": knowledge_pack.meta["id"], "name": knowledge_pack.meta["name"], "path": str(knowledge_pack.root),
+                         "hashes": knowledge_pack.hashes(), "embedding": knowledge_pack.meta.get("embedding")},
+                "retrieval": {"k": 3, "mode": "hybrid" if knowledge_pack.meta.get("embedding") else "keyword"}}) | {
+                "sha256": taskset_hash(tasks),
+                "counts": {s: sum(1 for t in tasks if t.split == s) for s in ("train", "dev", "test", "ood", "regression")}},
             "train": train, "arm_overrides": {a: TRAIN_ARMS[a] for a in arms},
             "eval": {"max_turns": 6, "max_new_tokens": 128, "decoding": "greedy", "control_seed_broadcast": 0},
             "base_hash": base_hash, "engine_source_sha256": engine_source_hash(),
@@ -243,8 +256,24 @@ class Study:
             raise StudyError("tasks.jsonl does not match the frozen taskset hash")
         return tasks
 
-    def world(self) -> ToolWorld:
-        return ToolWorld(build_catalog(self.plan["taskset"]["spec"]["seed"]))
+    def world(self) -> Any:
+        ts = self.plan["taskset"]
+        if ts.get("kind") != "docqa":
+            return ToolWorld(build_catalog(ts["spec"]["seed"]))
+        from forge.engine.docqa import DocWorld
+        from forge.knowledge.pack import KnowledgePack, PackError
+        try:
+            pack = KnowledgePack(Path(ts["pack"]["path"]))
+        except PackError as e:
+            raise StudyError(f"Knowledge pack missing: {e}") from e
+        now = pack.hashes()
+        for k in ("chunks", "vectors"):
+            if now[k] != ts["pack"]["hashes"][k]:
+                raise StudyError(f"Knowledge pack {k} changed since this study was created (frozen plan); "
+                                 "create a new study for the new version")
+        cache_path = self.root / "query_embeddings.json"
+        cache = json.loads(cache_path.read_text(encoding="utf-8")) if cache_path.exists() else {}
+        return DocWorld(pack.search_index(cache), k=ts["retrieval"]["k"], cache_path=cache_path, cache=cache)
 
     def episode_path(self, arm: str, split: str, seed: int) -> Path:
         return self.root / "episodes" / arm / split / f"seed{seed}.jsonl"
@@ -479,6 +508,8 @@ class Study:
                                   (self.root / "plan.sha256").read_text(encoding="utf-8").strip()}
         for split in splits:
             base = self.observations("base", split)
+            if not base and not self.observations("teacher", split):
+                continue  # split has no tasks in this task set (e.g. doc-QA has no OOD/regression split)
             sec: dict[str, Any] = {"base_rate": self._rate("base", split), "teacher_rate": self._rate("teacher", split),
                                    "arms": {}}
             for arm in self.plan["arms"]:
