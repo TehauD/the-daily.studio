@@ -22,4 +22,19 @@ Target host: Windows 11, RTX 4070 Ti SUPER 16 GB, Python 3.12.10, LM Studio at `
    teacher / base / tuned path comparison with the first divergence marked.
 
 Collect needs the teacher **loaded**; train and student evaluation need it **unloaded** (one 16 GB GPU).
-FORGE enforces the second; it cannot load or unload LM Studio models for you.
+FORGE enforces the second. It cannot load models in LM Studio, but the **Unload LM Studio models** button (Overview / Studio) runs `lms unload --all` for you.
+
+## Your own documents — Knowledge Studio (v0.7)
+
+1. In LM Studio, load an **embedding model** (e.g. `text-embedding-nomic-embed-text-v1.5`, small enough to stay loaded) and your **teacher**.
+2. **Knowledge Studio → Add your documents.** Start with *FORGE's own docs* for a first run, then a folder of your own
+   non-sensitive documents (txt, md, rst, html, pdf). Tick the attestation (no PHI, no patient data, no secrets).
+3. **Make it searchable** → *Keywords + meaning* → pick the embedding model → **Build index**. Ask the search box a few questions
+   you know the answer to; if the right passage is not in the top 3, the student will not find it either.
+4. **Create practice questions** → pick the teacher → 60 questions, 25 % unanswerable to start. Read the *Rejected* tab: it shows why
+   questions failed verification. Aim for ≥ 40 accepted.
+5. **Teach the student** → choose the student and profile → creates the study and opens Experiment Studio. Run the stages as in
+   step 8 above (collect with the teacher loaded, unload before train).
+   If **Build** reports records over the max sequence length, nothing was truncated: recreate the study with a larger max length.
+6. **See what it learned** → base vs tuned on dev documents (never trained on), then Trajectory Explorer for each answer's search,
+   retrieved passages, and cited source.

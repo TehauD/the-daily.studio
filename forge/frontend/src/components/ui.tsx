@@ -150,7 +150,9 @@ export function Segmented<T extends string>({ value, options, onChange, label }:
   return (
     <div role="radiogroup" aria-label={label} className="inline-flex rounded-[var(--radius)] border border-line bg-surface-2 p-0.5">
       {options.map((o) => (
+        // Explicit aria-label: Segmented often sits inside a <label> (Field), which would otherwise name the FIRST option.
         <button key={o.value} type="button" role="radio" aria-checked={value === o.value} onClick={() => onChange(o.value)}
+          aria-label={typeof o.label === "string" ? o.label : o.value}
           className={cx("h-7 rounded-[calc(var(--radius)-2px)] px-2.5 text-[12px] transition", value === o.value ? "bg-surface text-ink shadow-[var(--shadow)] ring-1 ring-line" : "text-ink-3 hover:text-ink")}>
           {o.label}
         </button>

@@ -86,7 +86,9 @@ function EpisodeDetail({ sid, e }: { sid: string; e: EpisodeRow }) {
             <div className="grid gap-4 md:grid-cols-2">
               <KV rows={[["strict success", <Status key="s" s={d.graph.strict_success ? "pass" : "fail"} />], ["answer correct", String(d.episode.score.answer_correct)],
                 ["tool selection", String(d.episode.score.tool_selection_correct)], ["argument accuracy", fmt.pct(d.episode.score.argument_accuracy as number, 0)],
-                ["invalid calls", String(d.episode.score.invalid_calls)], ["unsupported answer", String(d.episode.score.unsupported_answer)]]} />
+                ["invalid calls", String(d.episode.score.invalid_calls)], ["unsupported answer", String(d.episode.score.unsupported_answer)],
+                ...("retrieval_hit" in d.episode.score ? [["retrieval hit", String(d.episode.score.retrieval_hit ?? "n/a (no answer exists)")],
+                  ["cited source", String(d.episode.score.cited_gold ?? "not cited")]] as [string, string][] : [])]} />
               <KV rows={[["termination", String(d.episode.termination)], ["latency", `${d.episode.usage.latency_ms} ms`], ["tokens in / out", `${d.episode.usage.prompt_tokens} / ${d.episode.usage.completion_tokens}`],
                 ["reasoning stripped", `${d.episode.reasoning_blocks_stripped} block(s)`], ["model", String(d.episode.model)], ["errors", ((d.episode.score.errors as string[]) ?? []).join(", ") || "none"]]} />
             </div>

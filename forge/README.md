@@ -25,6 +25,19 @@ Analyze · dev → SEAL → Eval · test → Analyze · test) → **Evaluation L
 Every script resolves `backend\.venv\Scripts\python.exe` explicitly and prints it (the global
 `C:\Python312` has CPU-only torch and is never used). State lives in `%LOCALAPPDATA%\Forge` (`FORGE_HOME`).
 
+## What is new in v0.7 — Knowledge Studio
+
+Teach a small local model to answer questions from **your own documents** — and to say “not found” when they don't contain the answer.
+Open **Knowledge Studio** in the sidebar; it walks you through five steps with a plain-language explanation beside each:
+
+1. **Add your documents** — pick a folder (txt, md, rst, html, pdf) or start with FORGE's own docs. FORGE cuts them into passages.
+2. **Make it searchable** — keyword search, optionally plus meaning search with an LM Studio embedding model. Try the search box: it is the exact tool the student will use.
+3. **Create practice questions** — the teacher writes questions whose answers are quoted from a passage; FORGE rejects any it cannot verify and shows why.
+4. **Teach the student** — creates a doc-QA study and hands you to the Experiment Studio stages (collect → build → train → evaluate).
+5. **See what it learned** — base vs tuned on documents the student never practised on, with every answer's path and cited passage.
+
+See docs/FIRST_RUN.md and the v0.7 section of docs/VALIDATION.md for what was and was not validated.
+
 ## What is in v0.5
 
 | Area | Delivered |

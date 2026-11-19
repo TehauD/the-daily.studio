@@ -68,3 +68,30 @@ Not validated: projection output on a real trained Qwen3-1.7B adapter (only tiny
 | Run button shown on a running stage | hidden while running | — |
 
 Backend suite: 148 passed.
+
+## v0.7.0 — Knowledge Studio (doc-QA on your own documents)
+
+A guided five-step workflow (add documents → make searchable → practice questions → teach → results) that turns a folder of
+txt/md/rst/html/pdf into a *knowledge pack*, then into a doc-QA study the existing engine collects, trains, and evaluates.
+
+| Check | Result here |
+|---|---|
+| Ingest + chunking (FORGE's own docs as sample corpus) | 5 documents → 35 passages, content hashes recorded |
+| Keyword (BM25) + meaning (embeddings) hybrid index, RRF fusion | built through the UI; search playground returns ranked passages with keyword/meaning ranks |
+| Teacher-written questions with verification (answer verbatim in passage, self-contained, no leakage; unanswerable questions verified as unanswerable) | 23 accepted / 12 rejected, every rejection carries its reason |
+| Document-level splits (no passage of a dev/test document is ever trained on) | asserted in tests |
+| Doc-QA scoring: strict success requires the reference span **and** that the gold passage was retrieved; unanswerable requires a search then `NOT_FOUND` | unit tests + 7 dev episodes inspected in Trajectory Explorer |
+| Study `docqa` through collect → build → train (tiny CPU student) → evaluate_dev → analyze_dev | completed end to end via UI and API |
+| UI: all five steps at 1600/1920/2560 px wide fit without page scroll; 390 px no horizontal overflow; console errors | fits / none / none |
+| Backend suite | 154 passed |
+
+Fixed during this validation: Segmented controls took their accessible name from the wrapping label (each option now has its own);
+a freshly created study could be replaced by a stale selection; the Teach step created CUDA studies on a CPU-only machine (device now
+follows readiness); the pack detail endpoint returned a different shape than the list (contract test added); overlength records now
+explain the fix (larger max sequence length or smaller passages) — nothing is ever truncated.
+
+**Not validated — requires your machine:** real LM Studio embedding models and the real teacher's question quality (a deterministic
+mock served both here); lesson lengths under the Qwen tokenizer (sequence-length gate worked with the test tokenizer at 4096);
+any GPU training on doc-QA; whether a 1.7B student actually learns your documents — the measured numbers here (base 0 / tuned 0 /
+teacher 0.86 strict on dev) come from a tiny random-weight model and say nothing about real capability.
+Synthetic or non-sensitive documents only: no PHI or patient data.

@@ -23,6 +23,7 @@ function Section({ id, n, title, children }: { id: string; n: number; title: str
 }
 
 const TOUR: [string, string, string][] = [
+  ["knowledge-studio", "Knowledge Studio", "Start here: teach a small model to answer from your own documents, step by step."],
   ["overview", "Overview", "Measured GPU, compute stack, readiness, and live telemetry."],
   ["observatory", "Model Observatory", "Local inventory, Hub search with pre-download inspection, eligibility, pair-check."],
   ["studio", "Experiment Studio", "Create a frozen study and run each stage as a separate process."],

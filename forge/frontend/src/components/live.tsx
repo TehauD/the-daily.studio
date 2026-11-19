@@ -31,6 +31,12 @@ function describe(e: JobEvent): { text: string; tone: "default" | "good" | "crit
     case "gates_passed": return { text: `gates passed · zero-adapter max|Δlogit| = ${e.zero_adapter_max_abs_diff} · trainable ${fmt.exact(e.trainable_params as number)} / ${fmt.exact(e.total_params as number)}`, tone: "good" };
     case "tokenized": return { text: `tokenized ${e.records} records · ${e.supervised_tokens} supervised tokens · max len ${e.max_len}`, tone: "default" };
     case "trained": return { text: `adapter saved · sha256 ${String(e.adapter_sha256).slice(0, 16)} · ${e.global_step} steps`, tone: "good" };
+    case "pack_step_start": return { text: `${e.step} started · ${e.pack}`, tone: "default" };
+    case "pack_step_completed": return { text: `${e.step} completed · ${JSON.stringify(e.result).slice(0, 200)}`, tone: "good" };
+    case "imported": return { text: `imported ${e.documents} documents → ${e.passages} passages (${e.skipped} files skipped)`, tone: "good" };
+    case "embedded": return { text: `embedded ${e.done}/${e.total} passages`, tone: "muted" };
+    case "indexed": return { text: `index ready · ${e.mode}${e.model ? ` · ${e.model} (${e.dim} dims)` : ""}`, tone: "good" };
+    case "question": return { text: `question ${e.done}/${e.total} · ${e.accepted} accepted · ${e.rejected} rejected`, tone: "muted" };
     case "dataset": return { text: `dataset ${e.arm}: ${e.records} records from ${e.episodes_used} episodes`, tone: "default" };
     case undefined: return { text: e.text ?? "", tone: "muted" };
     default: return { text: `${e.event} ${JSON.stringify(Object.fromEntries(Object.entries(e).filter(([k]) => !["ts", "event"].includes(k)))).slice(0, 220)}`, tone: "default" };
@@ -57,9 +63,10 @@ function fmtDur(s: number): string {
 /** Live summary derived from the event stream: stage, episode progress + ETA, latest training step. */
 function Progress({ lines, running }: { lines: Line[]; running: boolean }) {
   let stage: string | null = null, ep: JobEvent | null = null, log: JobEvent | null = null, train: JobEvent | null = null;
+  const counted = [...lines].reverse().find((l) => (l.e.event === "question" || l.e.event === "embedded") && typeof l.e.done === "number");
   for (let i = lines.length - 1; i >= 0 && !(stage && ep && log && train); i--) {
     const e = lines[i].e;
-    if (!stage && e.event === "stage_start") stage = String(e.stage);
+    if (!stage && (e.event === "stage_start" || e.event === "pack_step_start")) stage = String(e.stage ?? e.step);
     if (!ep && e.event === "episode") ep = e;
     if (!log && e.event === "log" && e.step != null) log = e;
     if (!train && e.event === "train_start") train = e;
@@ -73,6 +80,14 @@ function Progress({ lines, running }: { lines: Line[]; running: boolean }) {
     const per = same.length > 1 && t0 && t1 ? (t1.getTime() - t0.getTime()) / 1000 / (same.length - 1) : null;
     bar = { done: d, total: t, label: `${ep.arm} · ${ep.split}${ep.arm !== "teacher" && ep.arm !== "base" ? ` · seed ${ep.seed}` : ""}`,
             eta: per && running ? `${per.toFixed(1)} s/episode · ~${fmtDur((t - d) * per)} left in this split` : per ? `${per.toFixed(1)} s/episode` : null };
+  }
+  if (!bar && counted) {
+    const c = counted.e, same = lines.filter((l) => l.e.event === c.event);
+    const t0 = eventTime(same[0].e), t1 = eventTime(c);
+    const per = same.length > 1 && t0 && t1 ? (t1.getTime() - t0.getTime()) / 1000 / (same.length - 1) : null;
+    const left = per && running ? Math.max(0, (c.total as number) - (c.done as number)) * per : null;
+    bar = { done: c.done as number, total: c.total as number, label: c.event === "question" ? `writing questions · ${c.accepted} accepted · ${c.rejected} rejected` : "embedding passages",
+            eta: left != null ? `~${fmtDur(left)} left` : null };
   }
   if (!stage && !bar && !log) return null;
   return (
@@ -180,10 +195,16 @@ export function StudySelect({ compact = false }: { compact?: boolean }) {
   const { prefs, set } = usePrefs();
   const s = useStudies();
   const list = s.data ?? [];
+  const recheck = useRef<string | null>(null);
+  const reloadStudies = s.reload;
   useEffect(() => {
-    if (!prefs.activeStudy && list.length) set("activeStudy", list[0].id);
-    if (prefs.activeStudy && s.data && !list.some((x) => x.id === prefs.activeStudy)) set("activeStudy", list[0]?.id ?? null);
-  }, [list, prefs.activeStudy, s.data, set]);
+    if (!prefs.activeStudy && list.length) { set("activeStudy", list[0].id); return; }
+    if (!prefs.activeStudy || !s.data || list.some((x) => x.id === prefs.activeStudy)) return;
+    // Unknown id: usually a study created moments ago that this (cached) list predates. Refresh once
+    // before falling back — otherwise a just-created study gets replaced by an older one.
+    if (recheck.current !== prefs.activeStudy) { recheck.current = prefs.activeStudy; void reloadStudies(); return; }
+    set("activeStudy", list[0]?.id ?? null);
+  }, [list, prefs.activeStudy, s.data, set, reloadStudies]);
   if (!list.length) return compact ? null : <span className="text-[12px] text-ink-3">No studies yet</span>;
   return (
     <label className={cx("flex items-center gap-2", compact && "max-w-[260px]")}>

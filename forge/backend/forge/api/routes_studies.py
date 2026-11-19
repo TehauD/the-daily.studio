@@ -55,7 +55,8 @@ def list_studies(st: AppState = Depends(get_state)):
                         "next_stage": summ["next_stage"], "sealed": summ["state"]["sealed"],
                         "stages": {k: v["status"] for k, v in summ["state"]["stages"].items()},
                         "teacher": s.plan["teacher"]["model"], "student": s.plan["student"]["name"],
-                        "arms": s.plan["arms"], "seeds": s.plan["seeds"]})
+                        "arms": s.plan["arms"], "seeds": s.plan["seeds"],
+                        "knowledge_pack": (s.plan["taskset"].get("pack") or {}).get("id")})
         except StudyError as e:
             out.append({"id": r["id"], "name": r["name"], "error": str(e)})
     return out

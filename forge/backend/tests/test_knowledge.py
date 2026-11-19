@@ -178,6 +178,9 @@ def test_knowledge_api(tmp_path, settings, monkeypatch, corpus):
         assert c.post(f"/api/knowledge/{pid}/search", json={"query": "stove"}).status_code == 409
         pack = KnowledgePack(settings.home / "knowledge" / pid)
         pack.run_import()
+        full = c.get(f"/api/knowledge/{pid}").json()
+        assert full["steps"]["import"] == "completed" and full["summary"]["import"]["documents"] == 4   # UI contract
+        assert full["step_detail"]["import"]["status"] == "completed" and full["counts"]["passages"] >= 4
         r = c.post(f"/api/knowledge/{pid}/search", json={"query": "how long does the lantern battery last", "k": 2}).json()
         assert r["mode"] == "keyword" and r["results"][0]["title"] == "Lantern care"
         assert c.post(f"/api/knowledge/{pid}/search", json={"query": "x", "mode": "vector"}).status_code == 409

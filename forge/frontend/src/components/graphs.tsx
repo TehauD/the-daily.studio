@@ -8,6 +8,7 @@ function nodeText(n: GraphNode): string {
   if (n.kind === "tool_call") return JSON.stringify(n.detail).replace(/[{}"]/g, "").replace(/,/g, " ").slice(0, 34);
   if (n.kind === "tool_result") {
     const d = n.detail as Record<string, unknown>;
+    if (Array.isArray(d?.results)) return `${(d.results as unknown[]).length} passages · ${(d.results as { id: string }[]).map((r) => r.id.split(":")[1]).join(",")}`;
     return d?.error ? String(d.error) : d?.total ? `total ${d.total}` : d?.unit_price ? `${d.name ?? ""} ${d.unit_price}` : "";
   }
   if (n.kind === "prompt") return String(n.detail ?? "").slice(0, 34) + (String(n.detail ?? "").length > 34 ? "…" : "");

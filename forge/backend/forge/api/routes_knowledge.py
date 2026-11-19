@@ -111,7 +111,8 @@ async def embedding_models(st: AppState = Depends(get_state)):
 def get_pack(pid: str, st: AppState = Depends(get_state)):
     p = _pack(st, pid)
     qs = p.questions()
-    return {**p.summary(), "counts": {"documents": len(p.docs()), "passages": len(p.chunks()), "questions": len(qs),
+    # Same shape as the list endpoint (steps → status, summary → per-step results), raw records kept separately.
+    return {**p.summary(), **_short(p), "step_detail": p.meta["steps"], "counts": {"documents": len(p.docs()), "passages": len(p.chunks()), "questions": len(qs),
                                       "rejected": len(p.rejected())},
             "jobs": st.jobs.list(10, study_id=pid)}
 

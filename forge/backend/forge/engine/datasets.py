@@ -131,7 +131,9 @@ def tokenize_all(tokenizer: Any, records: list[dict], max_len: int, all_token_lo
         except (OverlengthError, PrefixMismatchError) as e:
             problems.append(str(e))
     if problems:
-        raise OverlengthError(f"{len(problems)} record(s) rejected; run blocked: " + "; ".join(problems[:10]))
+        raise OverlengthError(f"{len(problems)} record(s) rejected; run blocked: " + "; ".join(problems[:10]) +
+                              ". Nothing is truncated. Fix: create the study with a larger max sequence length, or (doc-QA) "
+                              "use a knowledge pack with smaller passages.")
     lens = [len(x["input_ids"]) for x in out]
     sup = [sum(1 for t in x["labels"] if t != IGNORE_INDEX) for x in out]
     return out, {"records": len(out), "tokens_total": sum(lens), "supervised_tokens": sum(sup),
