@@ -89,6 +89,7 @@ def test_study_api_lifecycle_guards(client, tmp_path, monkeypatch):
     assert r.status_code == 200, r.text
     study = r.json()
     assert study["plan"]["teacher"]["model"] == "qwen/t" and study["plan"]["base_hash"]
+    assert study["plan"]["train"]["min_free_vram_mb"] == 2048 and "estimate" in study["plan"]["train"]["min_free_vram_basis"]
     assert study["next_stage"] == "collect" and study["pair_check"]["verdict"] in ("pass", "warn")
     sid_ = study["id"]
     assert client.post(f"/api/studies/{sid_}/stages/build", json={}).status_code == 409

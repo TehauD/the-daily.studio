@@ -79,3 +79,27 @@ def test_full_study_on_cpu(tiny, tmp_path, monkeypatch):
     res = study.run_stage("export", emit=events.append)
     manifest = json.loads((study.root / "exports" / "teacher_filtered-seed0-merged" / "forge_export.json").read_text())
     assert 0.0 <= res["agreement_with_adapter"] <= 1.0 and manifest["post_merge_eval"]["split"] == "test"
+
+
+def test_train_runs_in_isolated_child_process(tiny, tmp_path, monkeypatch, capfd):
+    """Each arm × seed trains in its own process (default on CUDA) so the GPU is fully released between runs."""
+    monkeypatch.setenv("FORGE_ALLOW_CPU", "1")
+    monkeypatch.setenv("FORGE_ISOLATE_RUNS", "1")
+    study = Study.init(tmp_path / "studies", name="iso", profile="smoke", device="cpu", seeds=[0, 1],
+                       teacher={"provider": "lmstudio", "endpoint": "http://127.0.0.1:9/v1", "model": "t"},
+                       student={"name": "Qwen3-tiny", "path": str(tiny)}, arms=["teacher_filtered"],
+                       train_overrides={"max_steps": 1, "grad_accum": 1, "save_steps": 1, "min_free_vram_mb": 0})
+    tasks = {t.prompt: t for t in study.tasks()}
+    study.run_stage("collect", emit=lambda e: None, teacher_backend=OracleBackend(tasks))
+    study.run_stage("build", emit=lambda e: None)
+    events = []
+    study.run_stage("train", emit=events.append)
+    starts = [e for e in events if e.get("event") == "train_start"]
+    assert len(starts) == 2 and all(e["isolated"] for e in starts)
+    for seed in (0, 1):
+        run = json.loads((study.run_dir("teacher_filtered", seed) / "run.json").read_text())
+        assert run["zero_adapter_max_abs_diff"] == 0.0 and run["base_hash_before"] == run["base_hash_after"]
+    out = capfd.readouterr().out
+    child_logs = [json.loads(line) for line in out.splitlines() if line.startswith("{") and '"event": "log"' in line]
+    assert child_logs and all(isinstance(e["ts"], float) for e in child_logs)  # numeric ts, no ISO collision
+    assert "%|" not in out  # no tqdm bars in the job log

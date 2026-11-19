@@ -23,6 +23,7 @@ def _fake_train(cfg, hash_cache=None, emit=print):
 @pytest.fixture
 def study(tmp_path, monkeypatch):
     monkeypatch.setattr(train_mod, "train_lora", _fake_train)
+    monkeypatch.setenv("FORGE_ISOLATE_RUNS", "0")  # the fake trainer lives in this process
     student = tmp_path / "student"
     student.mkdir()
     return Study.init(tmp_path / "studies", name="t", profile="smoke", seeds=[0, 1],

@@ -37,21 +37,88 @@ function describe(e: JobEvent): { text: string; tone: "default" | "good" | "crit
   }
 }
 
+interface Line { n: number; e: JobEvent }
+
+function eventTime(e: JobEvent): Date | null {
+  if (typeof e.ts === "number") return new Date(e.ts * 1000);
+  if (typeof e.ts === "string") { const d = new Date(e.ts); return Number.isNaN(d.getTime()) ? null : d; }
+  return null;
+}
+
+/** Third-party progress-bar / dict noise (tqdm, Trainer printouts) that older engines wrote to stdout. */
+const NOISE = /(\d+%\|)|(\d+\/\d+ \[\d\d:\d\d)|^\{'(loss|train_runtime|eval_loss)'/;
+
+function fmtDur(s: number): string {
+  if (!Number.isFinite(s) || s < 0) return "—";
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = Math.round(s % 60);
+  return h ? `${h}h ${m}m` : m ? `${m}m ${sec}s` : `${sec}s`;
+}
+
+/** Live summary derived from the event stream: stage, episode progress + ETA, latest training step. */
+function Progress({ lines, running }: { lines: Line[]; running: boolean }) {
+  let stage: string | null = null, ep: JobEvent | null = null, log: JobEvent | null = null, train: JobEvent | null = null;
+  for (let i = lines.length - 1; i >= 0 && !(stage && ep && log && train); i--) {
+    const e = lines[i].e;
+    if (!stage && e.event === "stage_start") stage = String(e.stage);
+    if (!ep && e.event === "episode") ep = e;
+    if (!log && e.event === "log" && e.step != null) log = e;
+    if (!train && e.event === "train_start") train = e;
+  }
+  let bar: { done: number; total: number; label: string; eta: string | null } | null = null;
+  if (ep && typeof ep.progress === "string") {
+    const [d, t] = ep.progress.split("/").map(Number);
+    // Rate from episodes of the same arm/split in this log (resumed runs: only what this process did).
+    const same = lines.filter((l) => l.e.event === "episode" && l.e.arm === ep!.arm && l.e.split === ep!.split);
+    const t0 = eventTime(same[0].e), t1 = eventTime(same[same.length - 1].e);
+    const per = same.length > 1 && t0 && t1 ? (t1.getTime() - t0.getTime()) / 1000 / (same.length - 1) : null;
+    bar = { done: d, total: t, label: `${ep.arm} · ${ep.split}${ep.arm !== "teacher" && ep.arm !== "base" ? ` · seed ${ep.seed}` : ""}`,
+            eta: per && running ? `${per.toFixed(1)} s/episode · ~${fmtDur((t - d) * per)} left in this split` : per ? `${per.toFixed(1)} s/episode` : null };
+  }
+  if (!stage && !bar && !log) return null;
+  return (
+    <div className="grid gap-x-6 gap-y-1.5 border-b border-line px-3 py-2 sm:grid-cols-[auto_minmax(0,1fr)]">
+      {stage && <div className="font-mono text-[11px] text-ink"><span className="micro mr-2 text-ink-3">stage</span>{stage}</div>}
+      <div className="min-w-0 space-y-1">
+        {bar && (
+          <div>
+            <div className="flex flex-wrap justify-between gap-x-3 font-mono text-[10.5px] text-ink-2"><span>{bar.label}</span>
+              <span className="num">{bar.done}/{bar.total}{bar.eta && <span className="ml-2 text-ink-3">{bar.eta}</span>}</span></div>
+            <div className="mt-1 h-[4px] rounded-full bg-surface-3"><div className="h-full rounded-full bg-accent transition-[width] duration-500" style={{ width: `${(bar.done / Math.max(1, bar.total)) * 100}%` }} /></div>
+          </div>
+        )}
+        {log && (
+          <div className="num font-mono text-[10.5px] text-ink-2">
+            {train && <span className="mr-2 text-ink-3">{String(train.arm)} · seed {String(train.seed)}</span>}
+            step {String(log.step)}{typeof log.loss === "number" && <> · loss {log.loss.toFixed(4)}</>}
+            {log.tokens_per_s != null && <> · {String(log.tokens_per_s)} tok/s</>}{log.peak_vram_mb ? <> · peak {fmt.mb(log.peak_vram_mb as number)}</> : null}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function JobLog({ jobId, height = 280, onDone, fill = false }: { jobId: string; height?: number; onDone?: (j: Job) => void; fill?: boolean }) {
-  const [events, setEvents] = useState<JobEvent[]>([]);
+  const [lines, setLines] = useState<Line[]>([]);
   const [job, setJob] = useState<Job | null>(null);
   const [follow, setFollow] = useState(true);
   const off = useRef(0);
+  const seq = useRef(0);
   const box = useRef<HTMLDivElement>(null);
   const done = useRef(false);
+  const firstN = useRef<number | null>(null);  // last line present at first load (those are not highlighted)
+  // The completion callback is read through a ref: parents re-create it on every poll, and making it an
+  // effect dependency reset the log on each render (the "flashing" — and, for finished jobs, a reset loop).
+  const onDoneRef = useRef(onDone);
+  useEffect(() => { onDoneRef.current = onDone; }, [onDone]);
   useEffect(() => {
-    setEvents([]); off.current = 0; done.current = false;
-    let alive = true;
+    setLines([]); off.current = 0; seq.current = 0; done.current = false; firstN.current = null;
+    let alive = true, busy = false;
     const tick = async () => {
+      if (busy) return;  // never overlap requests
+      busy = true;
       try {
-        // Status FIRST, then the log. The server closes the log file before it records a terminal
-        // status, so a log read issued after seeing "finished" is complete. (Fetching both in parallel
-        // lost the final lines of fast-failing jobs, e.g. a pre-flight refusal.)
+        // Status FIRST, then the log: the server closes the log before recording a terminal status.
         const j = await api.get<Job>(`/api/jobs/${jobId}`);
         const finished = j.status !== "running" && j.status !== "cancelling";
         for (let page = 0; page < 50; page++) {
@@ -59,18 +126,20 @@ export function JobLog({ jobId, height = 280, onDone, fill = false }: { jobId: s
           if (!alive) return;
           const moved = log.offset !== off.current;
           off.current = log.offset;
-          if (log.events.length) setEvents((ev) => [...ev, ...log.events].slice(-KEEP));
-          if (!finished || !moved) break; // drain fully only once the job has ended
+          const fresh = log.events.filter((e) => !(e.event === undefined && (!e.text?.trim() || NOISE.test(e.text))));
+          if (fresh.length) setLines((cur) => [...cur, ...fresh.map((e) => ({ n: ++seq.current, e }))].slice(-KEEP));
+          if (!finished || !moved) break;
         }
-        setJob(j);
-        if (finished && !done.current) { done.current = true; onDone?.(j); }
-      } catch { /* transient; next tick retries */ }
+        if (alive) setJob((prev) => (prev && prev.status === j.status && prev.exit_code === j.exit_code ? prev : j));
+        if (finished && !done.current) { done.current = true; onDoneRef.current?.(j); }
+      } catch { /* transient; next tick retries */ } finally { busy = false; }
     };
     void tick();
     const t = window.setInterval(() => { if (!done.current) void tick(); }, 1000);
     return () => { alive = false; window.clearInterval(t); };
-  }, [jobId, onDone]);
-  useEffect(() => { if (follow && box.current) box.current.scrollTop = box.current.scrollHeight; }, [events, follow]);
+  }, [jobId]);
+  useEffect(() => { if (follow && box.current) box.current.scrollTop = box.current.scrollHeight; }, [lines, follow]);
+  if (firstN.current === null && lines.length) firstN.current = lines[lines.length - 1].n; // lines present on first load: no highlight
   return (
     <div className={cx("overflow-hidden rounded-[var(--radius)] border border-line bg-surface-2", fill && "fit:flex fit:h-full fit:min-h-0 fit:flex-col")}>
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-3 py-1.5">
@@ -85,13 +154,16 @@ export function JobLog({ jobId, height = 280, onDone, fill = false }: { jobId: s
           {job?.status === "running" && <Button size="sm" tone="danger" icon="stop" onClick={() => void api.post(`/api/jobs/${jobId}/cancel`)}>Cancel</Button>}
         </div>
       </div>
+      <Progress lines={lines} running={job?.status === "running"} />
       <div ref={box} className={cx("scroll-thin overflow-y-auto px-3 py-2 font-mono text-[11px] leading-[1.55]", fill && "fit:!h-auto fit:min-h-0 fit:flex-1")} style={{ height }} aria-live="polite">
-        {events.length === 0 && <div className="text-ink-3">waiting for output…</div>}
-        {events.map((e, i) => {
+        {lines.length === 0 && <div className="text-ink-3">{job && job.status !== "running" ? "no output recorded" : "waiting for output…"}</div>}
+        {lines.map(({ n, e }) => {
           const d = describe(e);
+          const t = eventTime(e);
           return (
-            <div key={i} className={cx("whitespace-pre-wrap break-words", { default: "text-ink-2", good: "text-good-ink", crit: "text-crit-ink", muted: "text-ink-3" }[d.tone])}>
-              <span className="mr-2 text-ink-3">{e.ts ? new Date(e.ts * 1000).toLocaleTimeString() : "        "}</span>{d.text}
+            <div key={n} className={cx("whitespace-pre-wrap break-words rounded-[2px]", firstN.current !== null && n > firstN.current && "log-new",
+              { default: "text-ink-2", good: "text-good-ink", crit: "text-crit-ink", muted: "text-ink-3" }[d.tone])}>
+              <span className="mr-2 text-ink-3">{t ? t.toLocaleTimeString() : "        "}</span>{d.text}
               {typeof e.traceback === "string" && <details className="text-ink-3"><summary>traceback</summary>{e.traceback}</details>}
             </div>
           );

@@ -89,6 +89,23 @@ def _teacher_spec(st: AppState, t: dict) -> dict[str, Any]:
     raise HTTPException(422, f"Teacher provider {t['provider']} cannot serve chat; use LM Studio, Ollama, or an endpoint")
 
 
+def vram_gate(s: dict, seq_len: int) -> dict[str, Any]:
+    """Free-VRAM pre-flight threshold derived from the analytic estimate (×1.1, ≥ 2 GB) instead of a fixed
+    12 GB, which sat too close to a 16 GB desktop GPU's idle free memory. Frozen into the plan with its basis."""
+    import math
+    from forge.hardware.profiles import EstimateInput, estimate_lora_memory
+    md = s.get("metadata") or {}
+    unique = (md.get("parameter_report") or {}).get("unique_total") or s.get("parameter_count")
+    if not unique:
+        return {}
+    est = estimate_lora_memory(EstimateInput(
+        params_b=unique / 1e9, quant="bf16", seq_len=seq_len, hidden=md.get("hidden_size"), layers=md.get("num_hidden_layers"),
+        intermediate=md.get("intermediate_size"), vocab=md.get("vocab_size"), num_heads=md.get("num_attention_heads"),
+        num_kv_heads=md.get("num_key_value_heads"), head_dim=md.get("head_dim")), None)
+    gate = max(2048, int(math.ceil(est.total_mb * 1.1 / 256) * 256))
+    return {"min_free_vram_mb": gate, "min_free_vram_basis": f"analytic estimate {est.total_mb:.0f} MB × 1.1 at seq {seq_len}"}
+
+
 @router.post("")
 async def create_study(body: CreateStudy, st: AppState = Depends(get_state)):
     try:
@@ -109,6 +126,7 @@ async def create_study(body: CreateStudy, st: AppState = Depends(get_state)):
            "numpy": torch.numpy_version, "bf16": torch.bf16_supported}
     train_ov = {k: v for k, v in (("max_steps", body.max_steps), ("epochs", body.epochs),
                                   ("max_seq_len", body.max_seq_len)) if v is not None}
+    train_ov.update(vram_gate(s, train_ov.get("max_seq_len", 2048)))
     try:
         study = Study.init(st.settings.studies_dir, name=body.name, profile=body.profile, teacher=_teacher_spec(st, t),
                            student={"model_id": s["id"], "name": s["name"], "path": str(student_dir),

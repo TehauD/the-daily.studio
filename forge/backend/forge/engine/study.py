@@ -376,12 +376,46 @@ class Study:
                                   eval_records=dev, teacher_endpoint=self.plan["teacher"].get("endpoint"),
                                   device=self.plan["device"], **{k: v for k, v in params.items()
                                                                  if k in TrainConfig.__dataclass_fields__})
-                emit({"event": "train_start", "arm": arm, "seed": seed, "records": len(records)})
-                rep = train_lora(cfg, hash_cache=hash_cache, emit=emit)
+                emit({"event": "train_start", "arm": arm, "seed": seed, "records": len(records),
+                      "isolated": self._isolate_runs()})
+                if self._isolate_runs():
+                    rep = self._train_in_child(arm, seed, hash_cache)
+                else:
+                    rep = train_lora(cfg, hash_cache=hash_cache, emit=emit)
                 if self.plan.get("base_hash") and rep["base_hash_before"] != self.plan["base_hash"]:
                     raise StudyError("Student weights differ from the base hash frozen at init")
                 out[f"{arm}/seed{seed}"] = rep["adapter_sha256"]
         return out
+
+    def _isolate_runs(self) -> bool:
+        """One child process per arm × seed on CUDA, so every run starts with a fully released GPU
+        (CUDA context, allocator caches, leaked cycles all die with the child). FORGE_ISOLATE_RUNS=1/0 overrides."""
+        env = os.environ.get("FORGE_ISOLATE_RUNS")
+        return env == "1" if env in ("0", "1") else self.plan["device"] == "cuda"
+
+    def _train_in_child(self, arm: str, seed: int, hash_cache: Path | None) -> dict:
+        import subprocess
+        argv = [sys.executable, "-m", "forge.engine", "train-run", "--study", str(self.root), "--arm", arm, "--seed", str(seed)]
+        if hash_cache:
+            argv += ["--hash-cache", str(hash_cache)]
+        sys.stdout.flush()
+        # stdout/stderr are inherited: the child's JSON events land in this job's log, in order.
+        code = subprocess.run(argv, cwd=Path(__file__).resolve().parents[2], check=False,
+                              creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0)).returncode
+        run_json = self.run_dir(arm, seed) / "run.json"
+        if code != 0 or not run_json.exists():
+            raise StudyError(f"Training {arm} seed {seed} failed in its child process (exit {code}); see the error above")
+        return json.loads(run_json.read_text(encoding="utf-8"))
+
+    def train_one(self, arm: str, seed: int, emit: Callable, hash_cache: Path | None = None) -> dict:
+        """Train a single arm × seed in this process (the child side of _train_in_child)."""
+        from forge.engine.train import TrainConfig, train_lora
+        records = [json.loads(line) for line in (self.root / "datasets" / arm / "records.jsonl").read_text(encoding="utf-8").splitlines() if line]
+        params = {**self.plan["train"], **TRAIN_ARMS[arm]["train"]}
+        cfg = TrainConfig(model_path=self.plan["student"]["path"], records=records, output_dir=str(self.run_dir(arm, seed)),
+                          seed=seed, eval_records=self._dev_records(), teacher_endpoint=self.plan["teacher"].get("endpoint"),
+                          device=self.plan["device"], **{k: v for k, v in params.items() if k in TrainConfig.__dataclass_fields__})
+        return train_lora(cfg, hash_cache=hash_cache, emit=emit)
 
     def _student(self, factory: Callable | None, adapter: Path | None) -> ChatBackend:
         if factory:

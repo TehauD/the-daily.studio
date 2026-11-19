@@ -32,7 +32,8 @@ export default function Overview() {
   const { prefs } = usePrefs();
   const act = useAction();
   const [verifyJob, setVerifyJob] = useState<string | null>(null);
-  const onDone = useCallback(() => { void rd.reload(); }, [rd]);
+  const reloadReadiness = rd.reload;
+  const onDone = useCallback(() => { void reloadReadiness(); }, [reloadReadiness]);
   const h = hw.data, o = ov.data;
   const gpu = h?.gpus[0];
   const samples = (tel?.samples ?? []).slice(-prefs.telemetryWindow);

@@ -103,7 +103,12 @@ def teacher_loaded(endpoint: str | None) -> tuple[bool | None, str]:
 
 
 def preflight(cfg: TrainConfig) -> list[dict[str, Any]]:
+    import gc
+
     import torch
+    gc.collect()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
     checks: list[dict[str, Any]] = []
 
     def add(name: str, ok: bool | None, detail: str, blocking: bool = True) -> None:
@@ -122,8 +127,12 @@ def preflight(cfg: TrainConfig) -> list[dict[str, Any]]:
             n = torch.cuda.device_count()
             add("single_gpu", n == 1, f"{n} visible device(s)")
             free, total = torch.cuda.mem_get_info()
-            add("free_vram", free / 2 ** 20 >= cfg.min_free_vram_mb,
-                f"{free / 2**20:.0f} MB free of {total / 2**20:.0f} MB (need ≥ {cfg.min_free_vram_mb})")
+            own = torch.cuda.memory_reserved()  # cached by this process's allocator: reusable by this run
+            usable = (free + own) / 2 ** 20
+            add("free_vram", usable >= cfg.min_free_vram_mb,
+                f"{usable:.0f} MB usable ({free / 2**20:.0f} free + {own / 2**20:.0f} cached by FORGE) of "
+                f"{total / 2**20:.0f} MB; need ≥ {cfg.min_free_vram_mb}. Close other GPU apps (browser, games, "
+                "LM Studio) if this fails.")
     loaded, detail = teacher_loaded(cfg.teacher_endpoint)
     add("teacher_unloaded", None if loaded is None else (not loaded), detail)
     failing = [c for c in checks if c["status"] == "fail" and c["blocking"]]
@@ -218,7 +227,8 @@ def train_lora(cfg: TrainConfig, hash_cache: Path | None = None, emit=print) -> 
                    "objective": "all_token_ce" if cfg.all_token_loss else "completion_ce", **logs}
             with open(log_path, "a", encoding="utf-8") as f:
                 f.write(json.dumps(row) + "\n")
-            emit({"event": "log", **row})
+            # training.jsonl keeps the ISO timestamp; the event stream uses emit's numeric ts.
+            emit({"event": "log", **{k: v for k, v in row.items() if k != "ts"}})
 
     args = TrainingArguments(
         output_dir=str(out / "checkpoints"), per_device_train_batch_size=cfg.micro_batch,
@@ -231,9 +241,12 @@ def train_lora(cfg: TrainConfig, hash_cache: Path | None = None, emit=print) -> 
         per_device_eval_batch_size=1, report_to=[], seed=cfg.seed, data_seed=cfg.seed,
         remove_unused_columns=False, use_cpu=cfg.device == "cpu", dataloader_num_workers=0,
         include_num_input_tokens_seen=True,
+        disable_tqdm=True,  # progress bars flood the job log; the Telemetry callback reports every step
     )
     trainer = Trainer(model=model, args=args, train_dataset=train_set, eval_dataset=eval_set or None,
                       data_collator=_collate(tok.pad_token_id), callbacks=[Telemetry()])
+    from transformers.trainer_callback import PrinterCallback
+    trainer.remove_callback(PrinterCallback)  # raw dict prints duplicate the structured "log" events
     ckpts = sorted((out / "checkpoints").glob("checkpoint-*"), key=lambda p: int(p.name.split("-")[-1]))
     resume = str(ckpts[-1]) if ckpts else None
     report["resumed_from"] = resume
@@ -260,6 +273,8 @@ def train_lora(cfg: TrainConfig, hash_cache: Path | None = None, emit=print) -> 
     except Exception as e:  # inspection failure does not invalidate training, but is recorded
         report["inspection_error"] = repr(e)
     del trainer, model
+    import gc
+    gc.collect()  # PEFT/checkpointing hooks form reference cycles; collect before releasing cached blocks
     if cfg.device == "cuda":
         torch.cuda.empty_cache()
     report["base_hash_after"] = model_hash(base_dir, None)  # re-read content, bypass cache

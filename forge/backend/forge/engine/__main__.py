@@ -31,6 +31,15 @@ def cmd_stage(a: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_train_run(a: argparse.Namespace) -> int:
+    """One arm × seed, in its own process (spawned by the train stage)."""
+    os.environ.setdefault("HF_HUB_OFFLINE", "1")
+    os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
+    from forge.engine.study import Study
+    Study(Path(a.study)).train_one(a.arm, int(a.seed), emit, Path(a.hash_cache) if a.hash_cache else None)
+    return 0
+
+
 def cmd_hub_download(a: argparse.Namespace) -> int:
     from forge.providers.hf_hub import download_and_verify
     res = download_and_verify(a.repo, revision=a.revision, cache_dir=Path(a.cache_dir) if a.cache_dir else None, emit=emit)
@@ -97,6 +106,12 @@ def main(argv: list[str] | None = None) -> int:
     s.add_argument("--confirm")
     s.add_argument("--hash-cache")
     s.set_defaults(fn=cmd_stage)
+    r = sub.add_parser("train-run")
+    r.add_argument("--study", required=True)
+    r.add_argument("--arm", required=True)
+    r.add_argument("--seed", required=True)
+    r.add_argument("--hash-cache")
+    r.set_defaults(fn=cmd_train_run)
     h = sub.add_parser("hub-download")
     h.add_argument("--repo", required=True)
     h.add_argument("--revision")

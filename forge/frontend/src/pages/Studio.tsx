@@ -136,7 +136,7 @@ function StageStepper({ s, onRun, blocked, busyStage }: { s: StudySummary; onRun
             <div className="flex items-center justify-between"><span className="num font-mono text-[10px] text-ink-3">{String(i).padStart(2, "0")}</span>{gpu && <Icon name="gpu" size={12} className="text-ink-3" title="GPU-exclusive" />}</div>
             <div className="mt-1 text-[12px] font-medium text-ink">{STAGE_LABEL[k]}</div>
             <div className="mt-1"><Status s={status === "ready" ? "pending" : status} label={status === "ready" ? "ready" : undefined} /></div>
-            {isNext && k !== "seal" && (
+            {isNext && k !== "seal" && status !== "running" && (
               <div className="mt-2"><Button size="sm" tone="primary" icon="play" busy={busyStage === k} disabled={!!blk?.length} title={blk?.length ? `Blocked by: ${blk.join(", ")}` : STAGE_HINT[k]} onClick={() => onRun(k)}>Run</Button></div>
             )}
             {st[k]?.status === "failed" && <div className="mt-1 line-clamp-3 font-mono text-[9.5px] text-crit-ink" title={st[k].error}>{st[k].error}</div>}
@@ -158,7 +158,8 @@ function StudyView({ sid }: { sid: string }) {
   // Follow a running job; otherwise show the study's most recent job so the panel is never blank.
   const latest = s.data?.jobs?.[0];
   useEffect(() => { if (!jobId && (running ?? latest)) setJobId((running ?? latest)!.id); }, [running, latest, jobId]);
-  const onDone = useCallback(() => { void s.reload(); }, [s]);
+  const reloadStudy = s.reload;
+  const onDone = useCallback(() => { void reloadStudy(); }, [reloadStudy]);
   if (!s.data) return <Panel><ErrorLine error={s.error} />{!s.error && <div className="h-40" />}</Panel>;
   const d = s.data, p = d.plan;
   const run = (stage: string, confirm?: string) => void act.run(async () => {

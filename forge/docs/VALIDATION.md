@@ -55,3 +55,16 @@ trained on byte-identical canonical supervision produced byte-identical adapters
 | Backend suite | 147 passed |
 
 Not validated: projection output on a real trained Qwen3-1.7B adapter (only tiny/synthetic adapters here); whether its token lists are informative for your study is an empirical question.
+
+## v0.6.1 fixes (from a real Windows/RTX run)
+
+| Defect | Fix | Verified here |
+|---|---|---|
+| Live job log reset in a loop ("flashing"): the parent re-created the completion callback each poll and it was an effect dependency | callback read via ref; log resets only on job change; append-only lines with stable keys and a fade-in on arrival; progress header (stage, episode bar, s/episode, ETA, latest step) | Browser: 60 samples at 250 ms during a live collect, line count never decreased |
+| "Invalid Date" on training log lines (ISO `ts` overwrote the numeric one) | event stream keeps numeric `ts`; viewer accepts both | Test asserts numeric `ts` on child-process log events |
+| tqdm bars and Trainer dict prints flooded the log | `disable_tqdm=True`, PrinterCallback removed, residual noise filtered | Test asserts no `%\|` in output |
+| Second arm failed free-VRAM gate (11,631 < 12,000 MB): first run's CUDA context/caches still held in the same process | each arm × seed trains in its own child process on CUDA; gc + empty_cache around runs; gate counts FORGE's own cached memory | Isolated 2-seed run on CPU; **not yet re-run on your GPU** |
+| Fixed 12 GB gate too close to idle free VRAM on a 16 GB desktop GPU | new studies: gate = analytic estimate × 1.1 (≥ 2 GB), basis frozen in the plan (Qwen3-1.7B @ 2048 → 8,960 MB) | API test |
+| Run button shown on a running stage | hidden while running | — |
+
+Backend suite: 148 passed.
