@@ -70,7 +70,8 @@ suite('e2e-backstage-everywhere', async t => {
   await p.click('#bksOnMaster'); await wait(200); await p.keyboard.press('Escape');
   await p.keyboard.press('Control+k'); await p.keyboard.press('Control+`'); await wait(250);
   ok(await ev(() => !document.getElementById('bkp') && !document.getElementById('bkd') && typeof window.studio === 'undefined' && JSON.parse(localStorage.getItem('fw.cfg')).bks.on === false), 'the master switch turns all of it off, and it is kept');
-  ok(await ev(() => { window.__daily.openSettings('backstage'); const r = !!document.getElementById('bksGo') && !!document.getElementById('bksOnMaster'); document.getElementById('settings').close(); return r; }), 'the Backstage section stays (it is how you turn it back on), and the room is still there');
+  await ev(() => window.__daily.openSettings('backstage')); await wait(400);
+  ok(await ev(() => { const r = !!document.getElementById('bksGo') && !!document.getElementById('bksOnMaster'); document.getElementById('settings').close(); return r; }), 'the Backstage section stays (it is how you turn it back on), and the room is still there');
   await ev(() => { window.__daily.openSettings('backstage'); }); await wait(300); await p.click('#bksOnMaster'); await wait(100); await p.keyboard.press('Escape'); await wait(150);
   ok(await ev(() => typeof window.studio === 'undefined'), 'turning the master back on does not switch back on the pieces you turned off');
   ok(t.errs.length === 0, 'no errors (' + t.errs.length + ')');

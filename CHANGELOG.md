@@ -2,6 +2,16 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.85.0 — 2026-11-21 — Two big rooms load when they are needed
+
+The hosted site had grown past its size limits three releases running. Two large parts now load the first time they are used, and the limit is back where it was.
+
+### Changed
+- **The look worlds are a room.** Harmonic Wheel, Tonnetz, Pitch Spiral, Rhythm Polygons, Overtone Series, Chladni Plate, Pitch Trace, Fifths Tower, Chord Web, Song Journey, the Voice-Leading Web and the Neural Map's own settings (parts 66b–66f, about 60 kB minified) load the first time one is chosen. The look strip is complete before they arrive (their names and which have options are in the core, part 66a), a look not yet loaded draws a quiet veil (the Neural Map draws its default network), and the settings are drawn again when the room lands. Nothing changes in the single-file app, where everything is inline.
+- **Backstage is a room.** The shell, the palette, the terminal drawer and the console toolkit (parts 73c, 73d, about 43 kB minified) load when you knock, open Backstage, or start the studio already on the list. The door stays in the core (part 73a): the knock, the pass, `#backstage` in the address and the code answer a stranger without loading anything. Settings ▸ Backstage fills in when the room arrives.
+- `index.html` is 1,982 kB minified and 677 kB compressed (from 2,135 kB and 711 kB), and the compressed limit goes back from 745 kB to 720 kB. Two rooms now stand beside Shower mode, Soundprint, vocal tuning, transcription and MIDI import.
+- For tests and scripts: the names of a room are on `window.__daily` once it has loaded (`await __daily.room('worlds')`).
+
 ## 2.84.0 — 2026-11-21 — Agents that make music, and Backstage everywhere
 
 ### Added: agents can make music
