@@ -21,17 +21,6 @@ const BKS_ROOMS = ['pass', 'engine', 'perf', 'storage', 'bus', 'terminal', 'labs
 const BKS_PAGES = [['', 'The lobby', 'Your pass, the rooms, and this build at a glance.'], ['source/', 'Source map', 'Every part of the page: what it does, how big it is, and its source.'], ['data/', 'Your data, raw', 'What this browser keeps for the studio, read straight from storage.'], ['api/', 'Console and agent API', 'window.dailyStudio, WebMCP, the tools, and this shell.'], ['changelog/', 'How it was built', 'Every release, as a timeline.']];
 const bksBase = () => location.origin + location.pathname.replace(/[^/]*$/, '') + 'backstage/';
 
-/** this browser's pass: a number of its own, the day and the build it was issued on */
-function bksPass() { if (!CFG.bksPass || !CFG.bksPass.n) { CFG.bksPass = { n: 1000 + Math.floor(Math.random() * 9000), at: Date.now(), build: BUILD }; saveCfg(); } return CFG.bksPass; }
-/** the door. Guest list only: the password is this page's build. Called as dailyStudio.backstage() from the console */
-function backstage(word) {
-  if (CFG.backstage) { const p = bksPass(); setTimeout(() => backstageOpen(), 30); return '🎭 Welcome back, pass #' + p.n + '. Backstage is open.'; }
-  if (word == null || word === '') return '🎟 Backstage is guest list only. The password is the build you are running: it is in the bottom-right corner of the studio (and in dailyStudio.describe().build). Then:  dailyStudio.backstage(\'<build>\')';
-  if (String(word).trim().toLowerCase() !== String(BUILD).toLowerCase()) { BKS.tries++; return '🚪 Not on the list. ' + (BKS.tries > 2 ? 'Psst: seven characters, after “build” in the bottom-right corner.' : 'Look again: the bottom-right corner.'); }
-  CFG.backstage = true; const p = bksPass(); saveCfg(); secretFound('backstage', true); setTimeout(() => backstageOpen(), 30);
-  return '🎭 You are on the list. All-access pass #' + p.n + ' issued to this browser. Come on in. ' + secretCount();
-}
-
 /* ---------- the event bus, tapped (only while Backstage is open, or the Labs log is on) ---------- */
 const BKS_EMIT = bus.emit;
 bus.emit = function (e, ...a) { if (BKS.on || CFG.labs.buslog) bksTap(e, a); return BKS_EMIT.call(this, e, ...a); };
@@ -120,6 +109,7 @@ async function bksTool(name, input) { const r = await window.dailyStudio.call(na
 async function bksRun(line, out) {
   const raw = String(line || '').trim(); if (!raw) return; const [cmd, ...rest] = raw.split(/\s+/), arg = rest.join(' '), c = cmd.toLowerCase();
   if (BKS_FUN[c] != null || /^rm$|^sudo$/.test(c)) return out(BKS_FUN[c] || BKS_FUN.rm, 'fun');
+  if (typeof BKS_X !== 'undefined' && BKS_X[c]) return BKS_X[c](arg, out, rest);      /* 2.84: the commands made for the console and the palette (part 73d) */
   switch (c) {
     case 'help': return out(Object.values(BKS_CMDS).map(([u, d]) => u.padEnd(22) + d).join('\n') + '\n\n↑ ↓ for history, Tab to complete. A few other words work too.');
     case 'clear': return out(null, 'clear');
@@ -158,14 +148,14 @@ async function bksRun(line, out) {
     case 'open': { const p = BKS_PAGES.find(([x, n]) => x.replace(/\/$/, '') === arg.replace(/\/$/, '') || n.toLowerCase().startsWith(arg.toLowerCase())) || (arg === 'lobby' ? BKS_PAGES[0] : null); if (!p) return out('open ' + BKS_PAGES.map(x => x[0].replace(/\/$/, '') || 'lobby').join(' | '), 'err'); window.open(bksBase() + p[0], '_blank', 'noopener'); return out('↗ ' + bksBase() + p[0]); }
     case 'history': return out(BKS.hist.map((x, i) => String(i + 1).padStart(4) + '  ' + x).join('\n') || 'nothing yet');
     case 'uptime': { const s = Math.round((Date.now() - BKS.t0) / 1000); return out('up ' + (s >= 3600 ? Math.floor(s / 3600) + ' h ' : '') + Math.floor(s % 3600 / 60) + ' min ' + s % 60 + ' s · ' + (frameN || 0).toLocaleString('en') + ' frames drawn'); }
-    case 'shower': setTimeout(() => showerOpen(), 300); return out('🚿 Running the water. Not responsible for damage to electronic devices.');
+    case 'shower': setTimeout(() => bksShower(), 300); return out('🚿 Running the water. Not responsible for damage to electronic devices.');
     case 'scales': case 'woodshed': setTimeout(() => trainOpen(), 300); return out('🎼 Scales & ear.');
     case 'exit': case 'quit': case 'logout': { const d = document.getElementById('backstage'); if (d) setTimeout(() => d.close(), 350); return out('See you at soundcheck. 🎸'); }
   }
   return out('command not found: ' + cmd + ' · type help', 'err');
 }
-function bksTerminal() {
-  const pre = h('pre', { class: 'bks-term-out mono', id: 'bksTermOut', role: 'log', 'aria-live': 'polite', 'aria-label': 'Backstage shell output' }), inp = h('input', { class: 'bks-term-in mono', id: 'bksTermIn', autocomplete: 'off', spellcheck: false, 'aria-label': 'Backstage shell command' });
+function bksTerminal(pfx) {
+  pfx = pfx || 'bksTerm'; const pre = h('pre', { class: 'bks-term-out mono', id: pfx + 'Out', role: 'log', 'aria-live': 'polite', 'aria-label': 'Backstage shell output' }), inp = h('input', { class: 'bks-term-in mono', id: pfx + 'In', autocomplete: 'off', spellcheck: false, 'aria-label': 'Backstage shell command' });
   const out = (t, cls) => { if (cls === 'clear') { pre.textContent = ''; return; } if (t == null) return; const s = h('span', { class: 'bks-t-' + (cls || 'out') }, t + '\n'); pre.append(s); while (pre.childNodes.length > 400) pre.firstChild.remove(); pre.scrollTop = pre.scrollHeight; };
   const run = async () => {
     const v = inp.value; inp.value = ''; if (!v.trim()) return; BKS.hist.push(v); if (BKS.hist.length > 100) BKS.hist.shift(); BKS.hi = BKS.hist.length;
@@ -272,23 +262,3 @@ function backstageOpen(at) {
   return d;
 }
 
-/* ---------- other ways in: the address (#backstage, #backstage/<room>) and ↑↑↓↓←→←→BA ---------- */
-function bksFromHash() {
-  const m = /^#backstage(?:\/([\w-]+))?$/.exec(location.hash || ''); if (!m) return false;
-  try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { }
-  BKS.want = m[1] && BKS_ROOMS.includes(m[1]) ? m[1] : null;
-  const go = () => { const w = BKS.want; if (w === undefined) return; BKS.want = undefined; if (CFG.backstage) backstageOpen(w || undefined); else toast('🎟 Backstage is guest list only. The door is in the browser console.', ''); };
-  if (document.getElementById('boot')) bus.on('booted', () => setTimeout(go, 400)); else setTimeout(go, 600);
-  return true;
-}
-/** part 10 calls this at start-up */
-function bksBoot() { if (CFG.labs.perf) bksOverlay(); bksFromHash(); }
-window.addEventListener('hashchange', () => { bksFromHash(); });
-const BKS_KONAMI = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
-document.addEventListener('keydown', e => {
-  const t = e.target; if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) { BKS.k = 0; return; }
-  const key = e.key && e.key.length === 1 ? e.key.toLowerCase() : e.key, near = BKS.k >= 8;
-  BKS.k = key === BKS_KONAMI[BKS.k] ? BKS.k + 1 : key === BKS_KONAMI[0] ? 1 : 0;
-  if (near && (key === 'b' || key === 'a')) { e.preventDefault(); e.stopPropagation(); }      /* B and A finish the code here, not the bass and the rest */
-  if (BKS.k === BKS_KONAMI.length) { BKS.k = 0; if (CFG.backstage) backstageOpen('terminal'); else toast('🎟 Nice moves. Backstage is guest list only, and the door is in the browser console.', ''); }
-}, true);

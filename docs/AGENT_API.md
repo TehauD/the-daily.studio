@@ -38,9 +38,41 @@ Both run the same functions as the buttons. (`window.dailyStudio` has one more m
 | `open_practice_room` | changes (never the microphone, never unlocks) | none |
 | `open_workspace` | changes | `workspace` |
 | `open_song` | changes | `song` |
+| `get_music_guide` | reads | none |
+| `write_drums` | changes | none |
+| `write_notes` | changes (that part of one section; undoable) | `part`, `section`, `notes` |
+| `read_notes` | reads | `part`, `section` |
+| `arrange_sections` | changes (destructive, undoable) | `order` |
+| `render_audio` | reads (stops playback; the song is not changed) | none |
 | `undo` | changes | none |
 
 `dailyStudio.tools()` gives each tool's description, JSON input schema and annotations (`readOnlyHint`, `destructiveHint`, `idempotentHint`; WebMCP also gets `openWorldHint: false` and a title).
+
+## Making music (2.84)
+
+Read `get_music_guide` first. Then, in the order that works well:
+
+1. `set_song_details` / `set_band {beat}`: the key, tempo and a ready groove.
+2. `write_song`, `load_chord_sheet` or `add_section` and `edit_section` (with `energy`): the chords and how hard each section plays.
+3. `write_drums`: a grid, one row of 16 characters per drum (`.` rest, `g` ghost, `x` hit, `X` accent), or a ready pattern.
+4. `write_notes`: a keys part, a bass line or a lead melody into one section. `bar` counts from 1, `step` from 0 (16 steps to a 4/4 bar, a step is a sixteenth), `note` is `"C4"` (middle C), `"F#3"`, `"Bb2"` or a MIDI number, `length` is in steps, `velocity` 0–1. It replaces that part of the section unless `replace:false`, and switches the part on. `read_notes` returns the same notes. A lead melody is fretted on the guitar.
+5. `arrange_sections`: reorder and repeat sections (a section named twice is copied).
+6. `render_audio`: mixes the song faster than it plays and returns loudness (LUFS), true peak, crest, the balance of low (under 250 Hz), mid and high (over 4 kHz), silences, clipping, each section's loudness and plain advice. It needs sound to have started (the person has clicked the page once).
+7. `transport {action:"play"}` for the person to hear it.
+
+`dailyStudio.render({ bits: 16 | 24, tail })` returns `{ wav_base64, bytes, sample_rate, bits, seconds, metrics }` for scripts; nothing is downloaded.
+
+### The MCP bridge (no browser extension needed)
+
+`scripts/mcp-bridge.mjs` opens the studio in a headless browser on your own computer and offers every tool over MCP on stdio, plus `save_audio` (the mix as a WAV), `save_export` (the song as text) and `screenshot`. Files are written only inside `--out`, and only as `.wav`, text or `.png`.
+
+```bash
+npm install
+npm run build:site
+node scripts/mcp-bridge.mjs --dist dist --out ./the-daily-output
+```
+
+In Claude Desktop or Claude Code, add it as a server: `{ "command": "node", "args": ["/path/to/the-daily.studio/scripts/mcp-bridge.mjs", "--dist", "/path/to/the-daily.studio/dist", "--out", "/path/to/music"] }`. `--url https://the-daily.studio/` opens the hosted studio instead of a local build; `--profile <dir>` keeps songs between runs; `--headed` shows the browser. Set `CHROMIUM_PATH` to use another Chromium and `NO_SANDBOX=1` inside a container.
 
 ## Where an agent starts (2.26)
 

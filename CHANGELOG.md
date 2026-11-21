@@ -2,6 +2,34 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.85.0 — 2026-11-21 — Two big rooms load when they are needed
+
+The hosted site had grown past its size limits three releases running. Two large parts now load the first time they are used, and the limit is back where it was.
+
+### Changed
+- **The look worlds are a room.** Harmonic Wheel, Tonnetz, Pitch Spiral, Rhythm Polygons, Overtone Series, Chladni Plate, Pitch Trace, Fifths Tower, Chord Web, Song Journey, the Voice-Leading Web and the Neural Map's own settings (parts 66b–66f, about 60 kB minified) load the first time one is chosen. The look strip is complete before they arrive (their names and which have options are in the core, part 66a), a look not yet loaded draws a quiet veil (the Neural Map draws its default network), and the settings are drawn again when the room lands. Nothing changes in the single-file app, where everything is inline.
+- **Backstage is a room.** The shell, the palette, the terminal drawer and the console toolkit (parts 73c, 73d, about 43 kB minified) load when you knock, open Backstage, or start the studio already on the list. The door stays in the core (part 73a): the knock, the pass, `#backstage` in the address and the code answer a stranger without loading anything. Settings ▸ Backstage fills in when the room arrives.
+- `index.html` is 1,982 kB minified and 677 kB compressed (from 2,135 kB and 711 kB), and the compressed limit goes back from 745 kB to 720 kB. Two rooms now stand beside Shower mode, Soundprint, vocal tuning, transcription and MIDI import.
+- For tests and scripts: the names of a room are on `window.__daily` once it has loaded (`await __daily.room('worlds')`).
+
+## 2.84.0 — 2026-11-21 — Agents that make music, and Backstage everywhere
+
+### Added: agents can make music
+- **Six new agent tools.** `get_music_guide` (every beat, drum pattern, kit and sound to choose from, how notes are written, and a good order of work); `write_drums` (the drum grid step by step, or a ready pattern); `write_notes` (a keys part, a bass line or a lead melody, note by note: "C4", "F#3" or a MIDI number, in sixteenth-note steps, refused with the reason when a bar, step, note or range is wrong; a lead melody is fretted on the guitar); `read_notes` (the same notes back); `arrange_sections` (reorder and repeat sections: a chorus twice, a bridge before the last chorus); and `render_audio`, which mixes the song faster than it plays and measures it: loudness (LUFS), peaks, the balance of low, mid and high, silences, clipping, each section's loudness, with plain advice. API version stays 2 (new tools only).
+- **`dailyStudio.render()`** returns the mix as a WAV (base64) with its measurements, for scripts and the bridge.
+- **The MCP bridge** (`scripts/mcp-bridge.mjs`, `npm run mcp`). An agent that speaks MCP over stdio (Claude Desktop, Claude Code, Cursor…) can now use the studio without a browser extension: the bridge opens the studio in a headless browser on your own computer, offers every tool over MCP, and adds `save_audio` (the mix as a WAV file), `save_export` (the song as text) and `screenshot`. Files are written only inside an output folder you choose, and only as WAV, text or PNG. Needs Playwright (already a dev dependency).
+
+### Added: Backstage everywhere
+- Once you are on the list, Backstage comes with you. **Command palette** (Ctrl/⌘ K, from anywhere): jump to a panel, switch a look, load a beat or a song, run a command. **Terminal drawer** (Ctrl + `) slides the Backstage shell up over whatever you are doing. **Console toolkit**: `studio` in the browser's DevTools console, every Backstage command as a function (`studio.bpm(96)`, `studio.sketch("Am F C G | F C G Am", "bpm=88 beat=lofi")`, `studio.render()`, `studio.listen()`, `studio.perf()`, `studio.call(tool, input)`), with `studio.help()`. **Agent activity**: one quiet line in the console for each change an agent makes.
+- New shell commands for all of it: `guide`, `sketch`, `drums`, `render`, `save`, `listen`, `perf`, `song`.
+- **Settings ▸ Backstage** (only there once you have found Backstage) has a master switch and one for each piece. Nothing is on before you have found it.
+
+### Changed
+- **A tidier console.** The banner is now three short lines (what it is, the source, and the knock, or what Backstage has brought if you are in).
+- The browser's own "Banner not shown" message no longer appears on a desktop: the install prompt is held back only where the studio has its own Install tile.
+- The site now sends `Cache-Control: no-transform` on its pages. Cloudflare's automatic Web Analytics beacon and bot-detection script (the inline-script and `cloudflareinsights` errors that showed in the console) are added to pages by Cloudflare, not by the studio, and the Content-Security-Policy refuses them; `no-transform` tells Cloudflare to leave the page as it is. The dashboard switches in docs/CLOUDFLARE_SETUP.md Part C remain the surest fix.
+- The release gate's compressed-size limit for `index.html` goes from 720 kB to 745 kB (this release adds about 15 kB compressed). Moving the visual worlds and Backstage into rooms would win most of it back.
+
 ## 2.83.0 — 2026-11-21 — The Voice-Leading Web
 
 A look made from how music actually moves: chords placed by how little their notes have to travel to get from one to the next.

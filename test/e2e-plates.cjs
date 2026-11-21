@@ -4,7 +4,7 @@
 const { suite } = require('./lib.cjs');
 suite('e2e-plates', async t => {
   const { ok, wait } = t, p = await t.open({ w: 1400, h: 860, debug: true }), ev = (f, a) => p.evaluate(f, a);
-  await ev(() => window.__daily.dockGo('vis')); await wait(900);
+  await ev(() => window.__daily.dockGo('vis')); await wait(900); await ev(() => window.__daily.room('worlds'));
   // ---- the plate's patterns
   const C = await ev(() => { const D = window.__daily, M = D.CH_MODES, d = (n, m, x) => Math.abs(D.chPsi(n, m, x, x)), idx = f => D.chModeFor(f), sorted = M.every((q, i) => i === 0 || q[0] * q[0] + q[1] * q[1] >= M[i - 1][0] * M[i - 1][0] + M[i - 1][1] * M[i - 1][1]);
     return { first: M[0].join(), n: M.length, sorted, diag: [.13, .4, .77].map(x => d(0, 1, x)), anti: Math.abs(D.chPsi(0, 1, .2, .7)) > .3, swap: Math.abs(D.chPsi(2, 5, .3, .6) + D.chPsi(5, 2, .3, .6)) < 1e-9, mono: idx(100) < idx(400) && idx(400) < idx(1600), lo: idx(20), hi: idx(20000), top: M.length - 1 }; });

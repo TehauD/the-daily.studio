@@ -107,8 +107,10 @@ bus.on('transport', () => { if (!T.playing) SEC.pocket = 0; });
 
 /* ---------- a word for developers, in the console ---------- */
 try {
+  const pass = !!CFG.backstage && !(CFG.bks && CFG.bks.on === false), mono = 'font:600 11px ui-monospace,Menlo,monospace;color:#f7c95a;background:#1b130d;padding:2px 6px;border-radius:4px';
   console.log('%c the-daily.studio %c v' + VERSION + ' · build ' + BUILD + ' ', 'background:#1f8a56;color:#fff;font:700 14px system-ui,sans-serif;padding:4px 8px;border-radius:6px 0 0 6px', 'background:#0b100e;color:#7dbf9b;font:600 12px ui-monospace,Menlo,monospace;padding:5px 8px;border-radius:0 6px 6px 0');
-  console.log('%cHey, you opened the console. 🎸 Respect.\n%cNo framework, no tracking, nothing kept on a server: one HTML file made from ' + PARTS_N + ' plain JavaScript parts (' + LINES_N.toLocaleString('en') + ' lines), a hand-made minifier, a QR encoder and a lot of Web Audio. The source is at ' + BRAND.repo + '\n\nThere is a door backstage for people like you. Knock:  %cdailyStudio.backstage()',
-    'font:700 13px system-ui,sans-serif', 'font:12px/1.5 system-ui,sans-serif;color:#9db3a5', 'font:700 12px ui-monospace,Menlo,monospace;color:#f7c95a;background:#1b130d;padding:2px 6px;border-radius:4px');
+  console.log('%cFree and open source. No framework, no tracking, nothing kept on a server: one HTML file made from ' + PARTS_N + ' plain JavaScript parts (' + LINES_N.toLocaleString('en') + ' lines) and a lot of Web Audio.  Source: ' + BRAND.repo, 'font:12px/1.5 system-ui,sans-serif;color:#9db3a5');
+  if (pass) console.log('%c🎭 Backstage is open.%c  %cstudio.help()%c  ·  Ctrl/⌘ K palette  ·  Ctrl + ` terminal  ·  Settings ▸ Backstage', 'font:700 12px system-ui,sans-serif', '', mono, 'font:12px system-ui,sans-serif;color:#9db3a5');
+  else console.log('%cThere is a door backstage for people like you.%c  Knock:  %cdailyStudio.backstage()', 'font:700 12px system-ui,sans-serif', '', mono);
 } catch (e) { }
 /* Backstage itself (the door, the pass and its rooms) is part 73c. */

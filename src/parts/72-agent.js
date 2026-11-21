@@ -70,6 +70,7 @@ const agSecP = d => ({ type: ['string', 'number'], description: d });
 const agObj = (props, req) => ({ type: 'object', properties: props || {}, required: req || [], additionalProperties: false });
 /** good first calls, for an agent that has just arrived (describe().start_here) */
 const AG_START = [
+  { call: 'get_music_guide', input: {}, why: 'To make music: every beat, pattern, kit and sound you can choose, how notes are written, and a good order of work.' },
   { call: 'get_studio_state', input: {}, why: 'What is open and playing, and which band parts are on.' },
   { call: 'explain_song', input: {}, why: 'The key, the Roman numerals and how the sections are built.' },
   { call: 'write_song', input: { lyrics: '[Verse]\nWalking down to the harbour\nLights along the water\n[Chorus]\nHold on, hold on', key: 'G', chorus_progression: 'IV I V vi' }, why: 'Lyrics to a song the band plays.' },
@@ -377,9 +378,10 @@ async function agentCall(name, input) {
   try {
     let r; if (ro) r = await go(); else { const job = AGT.q.then(go, go); AGT.q = job.catch(() => { }); r = await job; }   /* changes wait their turn */
     const txt = r && r.content && r.content[0] && r.content[0].text;
+    if (bksOn('agentlog')) bksAgentLog(t.name, inp, r);
     if (txt && txt.length > AG_LIMIT.maxOut) return { content: [{ type: 'text', text: txt.slice(0, AG_LIMIT.maxOut) + '\n… (cut: the answer was longer than ' + AG_LIMIT.maxOut + ' characters)' }] };
     return r;
-  } catch (e) { return agFail(e && e.code || 'rejected', (e && e.message) || String(e)); }
+  } catch (e) { const f = agFail(e && e.code || 'rejected', (e && e.message) || String(e)); if (bksOn('agentlog')) bksAgentLog(t.name, inp, f); return f; }
 }
 const agWebTool = t => ({ name: t.name, title: t.title || t.name.replace(/_/g, ' '), description: t.description, inputSchema: t.inputSchema, annotations: Object.assign({ title: t.name.replace(/_/g, ' '), openWorldHint: false }, t.annotations), execute: input => agentCall(t.name, input) });
 function agentUnregister() {
@@ -420,6 +422,8 @@ try {
     tools: () => AGT.tools.map(t => ({ name: t.name, description: t.description, inputSchema: t.inputSchema, annotations: t.annotations })),
     describe: () => ({ api: AG_API, app: VERSION, build: BUILD, webmcp: AGT.via || null, enabled: agentOn(), aliases: Object.assign({}, AG_ALIAS), limits: Object.assign({}, AG_LIMIT), tools: AGT.tools.map(t => t.name), start_here: AG_START, docs: 'https://the-daily.studio/guide/for-ai-assistants/' }),
     call: (name, input) => agentCall(name, input),
+    /* the song as audio (2.84): a WAV (base64) and its measurements, for scripts and the local bridge; nothing is downloaded */
+    render: opt => agRenderFile(opt),
     /* not a tool: the door the console note points developers to (part 73b) */
     backstage: w => backstage(w) }) });
 } catch (e) { }

@@ -4,7 +4,7 @@
 const { suite } = require('./lib.cjs');
 suite('e2e-theory', async t => {
   const { ok, wait } = t, p = await t.open({ w: 1400, h: 860, debug: true }), ev = (f, a) => p.evaluate(f, a);
-  await ev(() => window.__daily.dockGo('vis')); await wait(900);
+  await ev(() => window.__daily.dockGo('vis')); await wait(900); await ev(() => window.__daily.room('worlds'));
   // ---- they are in the picker, in Harmony, and Simple keeps the wheel beside the hexagons
   const P = await ev(() => ({ harm: [...document.querySelectorAll('#vzLooks .vz-fam[data-fam=harm] [data-m]')].map(b => b.dataset.m), core: [...document.querySelectorAll('#vzLooks [data-core]')].map(b => b.dataset.m) }));
   ok(P.harm.join() === 'wheel,tonnetz,neural,nxtower,nxweb,nxjourney,vlweb,halo,kaleido,mood', 'Harmonic Wheel, Tonnetz, Neural Map (and its three siblings), Fifths Halo, Prism and Mood Colour are the Harmony group (' + P.harm.join() + ')');

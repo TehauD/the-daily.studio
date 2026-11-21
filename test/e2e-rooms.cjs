@@ -16,7 +16,7 @@ suite('e2e-rooms', async t => {
   const p = await t.open({ w: 1280, h: 800 }), ev = (f, a) => p.evaluate(f, a), req = [];
   p.on('request', r => req.push(new URL(r.url()).pathname));
   const R0 = await ev(() => ({ files: Object.keys(window.__daily.ROOM.files || {}).sort().join(), loaded: Object.keys(window.__daily.ROOM.done).length, tags: document.querySelectorAll('script[src*="rooms/"]').length, shw: typeof window.__daily.SHW, fn: typeof window.__daily.smfParse, fonts: [...document.fonts].filter(f => /DS /.test(f.family) && f.status === 'loaded').length }));
-  ok(R0.files === 'midi,print,shower,tune,tx' && R0.loaded === 0 && R0.tags === 0, 'the studio starts without its rooms (' + R0.files + ' wait to be used)');
+  ok(R0.files === 'backstage,midi,print,shower,tune,tx,worlds' && R0.loaded === 0 && R0.tags === 0, 'the studio starts without its rooms (' + R0.files + ' wait to be used)');
   ok(R0.shw === 'undefined' && R0.fn === 'function', 'until then the core holds stand-ins: a room’s functions load it when called, its objects are not there yet');
   ok(R0.fonts >= 1, 'the fonts load from their files (' + R0.fonts + ' in use)');
 

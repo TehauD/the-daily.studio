@@ -1967,3 +1967,12 @@ body[data-form=phone] .vz-cap{display:none}
 /* on a computer the settings float over the right of the picture, so the picture keeps its size while you tune it (on a phone they open under it) */
 body:not([data-form=phone]) .vz-bar{position:relative}
 body:not([data-form=phone]) .vz-bar.design-open .vz-design{position:absolute;top:calc(100% + 6px);right:0;left:auto;flex-basis:auto;width:min(410px,94%);max-height:min(540px,64vh);overflow:auto;z-index:20;box-shadow:0 16px 44px rgba(0,0,0,.38)}
+/* 2.84: Backstage everywhere: the command palette, the terminal drawer, and its settings */
+.bkp{position:fixed;inset:0;z-index:2600;background:rgba(5,9,8,.55);display:flex;justify-content:center;align-items:flex-start;padding:12vh 16px 16px}
+.bkp-box{width:min(640px,100%);background:#0b100e;color:#cfe7d8;border:1px solid #24362d;border-radius:14px;box-shadow:0 24px 80px rgba(0,0,0,.55);overflow:hidden;display:flex;flex-direction:column;max-height:70vh}
+.bkp-top{padding:10px 14px 0;font-size:12px;color:#7dbf9b}.bkp-in{background:transparent;border:0;border-bottom:1px solid #1d2a24;color:#e8f6ee;font-size:15px;padding:12px 14px;outline:0}
+.bkp-list{overflow:auto;max-height:42vh}.bkp-it{display:flex;justify-content:space-between;gap:12px;padding:8px 14px;font-size:13px;cursor:pointer}.bkp-it em{font-style:normal;color:#6f8a7b;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.bkp-it.on{background:#14231b;color:#fff}
+.bkp-out{margin:0;padding:0 14px;max-height:30vh;overflow:auto;font-size:12px;line-height:1.5;color:#c9e9d6;white-space:pre-wrap}.bkp-out:not(:empty){padding:10px 14px;border-top:1px solid #1d2a24}
+.bkd{position:fixed;left:0;right:0;bottom:0;z-index:2500;background:#070b0a;border-top:1px solid #24362d;padding:6px 12px 10px;box-shadow:0 -12px 40px rgba(0,0,0,.4)}.bkd .bks-term{border:0;padding:4px 0;border-radius:0}.bkd .bks-term-out{height:min(30vh,260px)}
+.bkd-bar{display:flex;align-items:center;gap:10px;color:#7dbf9b;font-size:12px;padding:2px 0 4px}.bkd-bar .btn{margin-left:auto}body.bkd-open #app{padding-bottom:min(34vh,300px)}
+.bks-set{display:grid;gap:10px}.bks-set-r{display:grid;gap:2px;margin-left:4px}.bks-set-r.off{opacity:.45}

@@ -5,7 +5,7 @@
 const { suite } = require('./lib.cjs');
 suite('e2e-voiceleading', async t => {
   const { ok, wait } = t, p = await t.open({ w: 1400, h: 860, debug: true }), ev = (f, a) => p.evaluate(f, a);
-  await ev(() => window.__daily.dockGo('vis')); await wait(900);
+  await ev(() => window.__daily.dockGo('vis')); await wait(900); await ev(() => window.__daily.room('worlds'));
   // ---- in Harmony, with its dials
   const P = await ev(() => ({ harm: [...document.querySelectorAll('#vzLooks .vz-fam[data-fam=harm] [data-m]')].map(b => b.dataset.m), opt: [...document.querySelectorAll('#vzLooks .has-opts')].map(b => b.dataset.m).includes('vlweb') }));
   ok(P.harm.includes('vlweb') && P.harm.indexOf('vlweb') === P.harm.indexOf('nxjourney') + 1 && P.opt, 'the Voice-Leading Web is in Harmony, beside the Neural looks, with its own options (' + P.harm.join() + ')');

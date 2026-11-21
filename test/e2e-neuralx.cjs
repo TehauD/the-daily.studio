@@ -4,7 +4,7 @@
 const { suite } = require('./lib.cjs');
 suite('e2e-neuralx', async t => {
   const { ok, wait } = t, p = await t.open({ w: 1400, h: 860, debug: true }), ev = (f, a) => p.evaluate(f, a);
-  await ev(() => window.__daily.dockGo('vis')); await wait(900);
+  await ev(() => window.__daily.dockGo('vis')); await wait(900); await ev(() => window.__daily.room('worlds'));
   // ---- the looks are in Harmony, with their options marked
   const P = await ev(() => ({ harm: [...document.querySelectorAll('#vzLooks .vz-fam[data-fam=harm] [data-m]')].map(b => b.dataset.m), opt: [...document.querySelectorAll('#vzLooks .has-opts')].map(b => b.dataset.m) }));
   ok(P.harm.join() === 'wheel,tonnetz,neural,nxtower,nxweb,nxjourney,vlweb,halo,kaleido,mood', 'Fifths Tower, Chord Web and Song Journey sit beside the Neural Map in Harmony (' + P.harm.join() + ')');

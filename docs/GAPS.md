@@ -4,6 +4,15 @@ What the studio, its tutorials, its documents and its tests do **not** cover yet
 
 How to use it: before a release, move what the release closed into *Closed* with the version, and add what it opened. [RELEASE.md](RELEASE.md) has this as a checklist item. Items marked **(maintainer)** are decisions or facts only the project's owner can settle; nothing here blocks a build.
 
+## Closed in 2.85.0
+
+- **The hosted page kept growing past its size limits.** The look worlds and Backstage are now rooms (about 100 kB minified, 34 kB compressed, off the first load) and the compressed limit is back at 720 kB. Tested in `e2e-lazy-rooms`.
+
+## Closed in 2.84.0
+
+- **An agent could chord a song but not make music.** Now it can write drums, keys, bass and lead notes, arrange sections, hear the result as numbers, and (through the bridge) save a WAV. Tested in `e2e-agent-music` and `mcp-bridge.test.mjs`.
+- **Backstage was a room, not part of the studio.** Now a palette, a drawer and a console toolkit, switchable in Settings ▸ Backstage. Tested in `e2e-backstage-everywhere`.
+
 ## Closed in 2.83.0
 
 - **There was no look about how music moves between chords.** The Voice-Leading Web places chords by the fewest semitones their notes travel, walks the song through it, draws the voices of each change and offers smooth ideas. Tested in `e2e-voiceleading`.

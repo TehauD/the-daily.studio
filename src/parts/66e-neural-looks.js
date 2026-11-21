@@ -8,7 +8,6 @@
      Song Journey   the song as a spiral staircase round the circle of fifths: every note you play climbs one step higher as the song goes on, coloured by time.
    All four draw the same learning network, so what one has learned the others show; each keeps its own settings. The Neural pane (the tab) is untouched:
    the settings are applied for the one frame the look is drawn and put back after. */
-VMODES.push(['nxtower', 'Fifths Tower'], ['nxweb', 'Chord Web'], ['nxjourney', 'Song Journey']);
 
 const NXKEYS = ['layout', 'color', 'edges', 'labels', 'links', 'floor', 'ghosts', 'ev', 'trans', 'pulses', 'nodeS', 'lineW', 'labelS', 'evMax', 'depth', 'pred', 'lBand', 'lPc', 'lForm'];
 const nxT = (k, label, tip, def) => ({ k, label, type: 'toggle', def: def == null ? 1 : def, tip });

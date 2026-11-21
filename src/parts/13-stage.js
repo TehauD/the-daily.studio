@@ -45,6 +45,7 @@ function stageInfo() {
 
 /* ---------- extra visual modes (dispatched from drawVis) ---------- */
 function stageExtra(mode, g, W, H, X) {
+  if (worldLook(mode) && !worldsLoaded()) { worldsEnsure(); if (mode !== 'neural') { g.fillStyle = 'rgba(0,0,0,.3)'; g.fillRect(0, 0, W, H); return; } }      /* 2.85: the looks of the worlds room load the first time they are drawn */
   if (mode === 'sprint') return prtVisDraw(g, W, H, X);
   if (typeof VL_DRAW !== 'undefined' && VL_DRAW[mode]) { g.save(); g.textBaseline = 'alphabetic'; try { VL_DRAW[mode](g, W, H, X); } catch (e) { if (!VLX.err) { VLX.err = 1; console.warn('world', mode, e); } } g.restore(); g.textAlign = 'left'; g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1; return; }
   if (typeof HM_MODES !== 'undefined' && HM_MODES.has(mode)) return hmDraw(mode, g, W, H, X);
