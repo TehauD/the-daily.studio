@@ -2,6 +2,103 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.81.0 — 2026-11-21 — The Visuals, reorganised
+
+The Visuals had grown to some thirty-five looks in a wall of pills, with controls that did not all apply to every look. They are now organised around what a look is for, and the controls follow the look.
+
+### Changed
+- **The looks are a strip of four groups.** **Sound** (Hex Resonance, Pitch Spiral, Cymatics, Chladni Plate, Beat Grid), **Harmony** (Harmonic Wheel, Tonnetz, Neural Map, Fifths Halo, Prism, Mood Colour), **Atmosphere** (Aurora, Nebula, Arena, Your video) and **Performance** (Concert, Prompter, Voice & Guitar, Improv Field, Pitch Trace): one row of tabs and one row of looks, a line under them saying what the selected look shows, and the strip follows the look you are on. The other seventeen looks are not removed: they are under **More looks**. On a phone the looks are one scrolling row.
+- **Settings is one panel that shows only what applies to the look.** The six tabs are gone. The hexagon field has its own sections (Cells, How it listens, Colour); a look with options shows them first; **Frame** (glow, trails, mirror, speed, zoom) and **Listens to** (source) appear only where they suit the look: a prompter has only Glow, a Pitch Trace is never mirrored. A setting that does not apply to a look is also not applied to it (a mirror set on the hexagons does not fold the prompter). On a computer the panel floats over the right of the picture, so the picture keeps its size while you tune it; on a phone it opens under a smaller picture.
+- **★ Saved** is a menu of saved looks (a look and its settings): twelve starting points, all using looks you kept, and your own. It replaces the Designs tab, and switching looks is one click while you record.
+
+### Added
+- **Chladni Plate** (Sound). A square plate that sings: the note you sing or play picks one of its 36 vibration patterns (a higher note, a finer pattern), and sand jitters where the plate moves and sticks where it is still, so it collects on the nodal lines the formula cos(nπx)cos(mπy) − cos(mπx)cos(nπy) draws; loud shakes it, quiet lets it settle. Options: what the pattern follows (the note, the chord root, a mode you choose), style (sand, glowing lines, both), grains, shake, colour.
+- **Pitch Trace** (Performance). Your voice, and your lead guitar, as a line scrolling across the notes of the key, with the chord's notes lit: gold where you are in tune, warmer as you drift, with the note and its cents at the head. For a take, a rehearsal or a video. Options: seconds shown, range (follows you or two fixed octaves), chord notes, tuning, lead guitar.
+
+### Tests
+- `test/e2e-plates.cjs` (10 checks): the plate's patterns and nodal lines, a higher note picking a finer pattern, sand collecting on the lines (mean distance from a line 0.61 to 0.00), a held voice drawn gold and one 45 cents sharp drawn warmer. `e2e-design`, `e2e-spectral`, `e2e-theory` and `e2e-vz-adjust` were updated to the new strip and panel.
+
+## 2.80.1 — 2026-11-21 — A compact Welcome Back
+
+### Changed
+- **Welcome Back (the start screen for someone who has been here before) is compact.** On a 390 px phone it took about 400 px of height, pushing the button to carry on below the fold; it is now about 230 px. Short facts (Last practiced, Current streak) are two tiles, the rest (Working on with its ✎, Latest recording, Progress) are one line each, My progress is in the header, the yearly summary is quieter, and the "Pick up where you left off" line is dropped on a phone because the button below says it. Nothing was removed; on a larger screen the same layout simply has more room. A gentle fade-in (none if you ask your device for less motion).
+
+### Tests
+- Two checks in `test/e2e-journal.cjs`: the card is under 290 px tall on a 390 px phone with the start button well up the screen, and every row is still there.
+
+## 2.80.0 — 2026-11-21 — Sound made geometric: Pitch Spiral, Rhythm Polygons, Overtone Series
+
+Three more worlds in the same spirit as the Harmonic Wheel and the Tonnetz (music theory and physics made visible), each with its own dials.
+
+### Added
+- **Pitch Spiral** (Frequency). The spectrum wound into a spiral, one turn to the octave, so the same note is always on the same spoke (C at the top). Lit by what sounds; joins the first ten harmonics of the note you sing or play (or the root of the chord the song is on), so you see the shape of an overtone series; the notes of the key are brighter on the rim. Options: **octaves** (3–8), **lowest note** (E2 guitar, A1 bass, C2, C1), **style** (ribbon, dots, or a hexagon cell for each semitone), **colour** (by note, by fifths, theme), **tilt** (0–70°: tip it over into a helix), **spin**, **show harmonics**, **peak hold**, **note names**.
+- **Rhythm Polygons** (Time). The song's drum groove as rings of steps, one ring per drum, the hits (ghost, normal, accent) joined into polygons, a playhead sweeping, the beats and bar round the outside. A ring that is a **Euclidean rhythm** (hits spread as evenly as possible) is named, e.g. E(3,8) tresillo, E(4,16) four on the floor. Your own hits land on an outer ring, **gold on the beat, orange behind, blue ahead**, with the average in the middle (the same measure Compare takes uses). Options: **drums** (those in the groove, kick/snare/hat, all six), **polygons**, **name the rhythm**, **playhead**, **your hits**, **turn with the beat**.
+- **Overtone Series** (Frequency). The harmonics of the note you sing or play, **measured** from the spectrum: strength, and how far each is from a perfect multiple in cents (shown only where the spectrum is fine enough to tell). Three views: a **rose** (each harmonic at its note, further out by octave), **bars**, and the **string** (its standing waves built from the measured amplitudes). Each harmonic is named as what it is above the note (the 3rd is a fifth, the 5th a major third, the 7th "≈♭7"). Options: view, harmonics (6–24), decibels or linear, labels (interval, number, note, none), tuning offsets, peak hold.
+- **Per-world options.** A world can offer its own dials: Design ▸ **This world** shows them; the world picker marks such worlds ⚙; they are kept with your designs, cleared by Reset all, and fit a phone screen.
+- **Hexagon field ▸ Pitch spiral** layout of pitch (Design ▸ Sound → Sight): each turn an octave, each spoke a note, your note lights its own spoke.
+- Four built-in designs: **Spiral of cells**, **Pitch helix**, **Rhythm necklace**, **Overtone rose**.
+
+### Changed
+- The release gate's compressed-size limit for `index.html` goes from 700 kB to 720 kB (the visual worlds of 2.77–2.80 added about 30 kB compressed; the page is 687 kB gzip). The uncompressed limit is 2.1 MB. Moving the visual worlds into rooms (loaded on first use) would win this back; it is listed in docs/GAPS.md.
+
+### Tests
+- `test/e2e-spectral.cjs` (22 checks) on made-up sound with known answers: harmonics found with the right strength and a 30-cent offset measured; the harmonic names; a tresillo and four on the floor named (and a non-Euclidean row left alone); A at 110, 220 and 440 Hz on one spoke; light landing at C4's place on the spiral with every other bin silent (`-Infinity` dB, as in a real analyser, which once made a blend NaN); a late hit drawn orange; options shown, changed, saved in a design, cleared; the hexagon spiral layout; each view drawing with Finish on; the options fitting 390 px.
+
+## 2.79.0 — 2026-11-21 — The circle of fifths, made a world
+
+The circle of fifths is now the second pillar of the Visuals, after the hexagon field: two new looks made of music theory, and the Neural Map's circle of fifths fixed.
+
+### Added
+- **Harmonic Wheel**, the circle of fifths as a live network. Twelve keys round the rim (major chords outside, their relative minors inside), the key you are in lit as a band, the chords of the open song as nodes, and every change of chord, from the song or from your playing, drawn as a curve from one chord to the next: the more often, the brighter. The sounding chord glows; the notes sounding now are bars on the rim at their place on the circle; your voice is a ring on its note; the middle names the chord, the key and, from what has happened so far in this song and this session, the chord likely to come next (labelled as a count, not a prediction). In Simple it sits beside Hex Resonance.
+- **Tonnetz**, the lattice of music theory: a fifth along one direction, a major third along another, a minor third along the third; every triangle is a major or minor chord. The view follows the chord, the triangle for each chord is the one nearest the last, so the line the song draws across the lattice shows how little each chord moves (Am to C shares an edge), and the key's own chords are a faint patchwork behind it.
+- Both are in the **Harmony** family, first in the list, with the Neural Map moved there from You; both honour Calm, Speed and Zoom, and Finish (glow, trails, mirror).
+
+### Fixed
+- **Neural Map ▸ Fifths.** The ring was drawn about 55 px wide in a large canvas, seen from a shallow angle so it read as a smear, with the Function, Form and Key labels stacked on one another and the notes corkscrewing off their own spoke. Now the layout is drawn larger so the ring fills the canvas, tips to look down on it (until you orbit it yourself; double-click resets), the Function, Form and Key nodes have their own room, and a note stays near its spoke.
+
+### Tests
+- `test/e2e-theory.cjs` (13 checks): the wheel counts the progression and names the likely next chord; the Tonnetz finds each chord's triangle with its quality and moves the smallest step; the Fifths layout is larger and tips down; the family order.
+
+## 2.78.1 — 2026-11-21 — The Visual Instrument on a phone
+
+### Fixed
+- **Phone and small screens (Visuals).** The worlds picker and the Design drawer opened into a sliver under a picture that takes almost half the screen, and the drawer was wider than the screen (its tabs and slider values were cut off). Now, while the worlds, the drawer or ⋯ More is open, the picture steps back to a short preview; the panel scrolls into view; the worlds are one column; the drawer's tab strip scrolls inside it and its labels stay on one line; sliders and buttons have touch-sized heights. The drawer fits at 320, 390 and 820 px with no sideways scrolling.
+- The test harness waits for the welcome card to go instead of sleeping a fixed 1.8 s (the Firefox smoke job failed on that timing), and `xbrowser` prints how long the card took.
+
+### Added
+- Six phone checks in `test/e2e-design.cjs` (390 and 320 px): one-column worlds inside the screen, the picture stepping back, every drawer tab fitting without sideways scrolling, the tab labels on one line.
+
+## 2.78.0 — 2026-11-21 — Tehau
+
+The site now says who made it in one consistent way: **Tehau** is the public name and brand; **Tehau DeBarthe** is the alternate name that joins the full name to the same person. See docs/SEARCH_IDENTITY.md.
+
+### Changed
+- **One Person in the structured data**, `https://the-daily.studio/#tehau`: name Tehau, alternate name Tehau DeBarthe, the GitHub profile picture, the About page as its url, a description, and `sameAs` for GitHub, LinkedIn, Instagram and the journal. The same node is on the homepage and the About page, so search engines see one entity; the old `#author` entity is gone. The studio and the site name Tehau as author and publisher, and every guide page names Tehau as its author.
+- **The About page** (same URL, `/guide/about/`) is a `ProfilePage`: H1 "Tehau", the subtitle "Musician, Software Engineer & Independent Creator.", the relationship to the-daily.studio, the origin story kept, and links to GitHub, LinkedIn, Instagram and the journal. Title "Tehau — Musician, Engineer & Creator of the-daily.studio", a new description, Open Graph type `profile`. A portrait is served from this domain (`icons/tehau.jpg`, the GitHub picture at 32 kB).
+- **The homepage** title is "the-daily.studio — Free Guitar & Voice Studio by Tehau"; a crawlable "Made by Tehau." line near the footer links to the About page; `<meta name="author">` and `<link rel="author">` say Tehau. The in-app About has an Instagram link. `llms.txt` says who made it. `humans.txt` and the README name both forms.
+- The release gate (`verify:site`) now checks all of it: one Person with the right id, names, picture and `sameAs`, the titles and canonical URLs, the Open Graph type, the links; the audit knows `www.instagram.com` as a link-only host.
+
+### Added
+- `docs/SEARCH_IDENTITY.md`: what the site says, the Google Search Console steps after a deploy, the copy for the GitHub, LinkedIn and Instagram profiles, and prioritised next steps.
+
+## 2.77.0 — 2026-11-21 — The Visual Instrument
+
+The Visuals had grown to some thirty looks in two rows, each with its own controls, and no idea tying them together. They now share the idea Hex Resonance was already built on: **where** a sound sits is its pitch (the middle is low, the edge is high, the way the ear lays frequency out), **how bright** is its energy, **when** is the beat, **what colour** is the harmony.
+
+### Changed
+- **Worlds, in five families.** Every look is kept, sorted by what it shows you, each family with a one-line meaning: **Frequency** (Hex Resonance, Spectrum, Cymatics, Ripple, Waveform), **Harmony** (Fifths Halo, Chord Bloom, Harmonic Orrery, Harmonic Gravity, Chord DNA, Constellation, Prism, Mood Colour), **Time** (Beat Grid, Rhythm Flow, Pulse Rings, Light Ribbons, Skyline), **Life & space** (Life, Stardust, Aurora, Warp Stars, Nebula, Arena) and **You** (Concert, Prompter, Voice & Guitar, Improv Field, Neural Map, Session Painting, Soundprint, Your video). Each world has a tooltip saying what it shows.
+- **The Visuals bar is one clean row:** the World button, **🎛 Design**, Record, Go on stage, Stage mode and ⋯ More. The two rows of looks, the colour swatches, Soundprint's extra row, the source list and the speed · size · zoom button moved into the drawer, so each control lives once.
+- **Soundprint's controls are in the drawer** (**This world**), and choosing Soundprint opens them: its five worlds, **Listen again**, and Save, share or any sound.
+
+### Added
+- **The design drawer** with six tabs:
+  - **Sound → Sight:** the layout of pitch (**Rings** is the original; **Circle of fifths**: each spoke a note, each ring an octave, your sung note lights its own spoke; **Sweep**: low to high from left to right, rising like an equaliser), sensitivity, memory, beat pulse, **colour follows the note** (neighbours on the circle of fifths are neighbours in colour), and what the visuals listen to.
+  - **Shape:** the lattice (hexagon, square, triangle, dot), size, roundness, spacing, turn and spin.
+  - **Finish, on every world:** glow, trails, mirror and 4-, 6- and 8-fold kaleidoscope, speed and zoom. The camera stays crisp on top.
+  - **Colour:** the hexagon palettes. **Designs:** seven built-in designs (Original hexagons, Circle of fifths, Spectrum wall, Honeycomb of dots, Kaleidoscope, Cymatic plate, Living cells) and **Save this design**, kept in this browser. **Reset all** returns the original.
+- With every dial at its default the original hexagon drawing is used, and the reshapeable lattice draws the identical picture (tested pixel for pixel), so nothing changes until you move something.
+- `test/e2e-design.cjs` (24 checks). `e2e-backdrops`, `e2e-concert`, `e2e-journal`, `e2e-soundprint` and `e2e-vz-adjust` were updated to the new layout.
+
 ## 2.76.0 — 2026-11-16 — What the studio hears
 
 ### Added

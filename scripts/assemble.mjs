@@ -56,7 +56,7 @@ for (const f of ['moving.html', 'move.html']) {
 {
   const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')), log = readFileSync(join(root, 'CHANGELOG.md'), 'utf8').match(/^## (\d+\.\d+\.\d+) — (\d{4}-\d{2}-\d{2})/m);
   const build = (readFileSync(join(out, 'index.html'), 'utf8').match(/BUILD\s*=\s*'([0-9a-f]{7})'/) || [])[1] || 'dev';
-  const { files } = backstagePages({ root, version: pkg.version, build, modified: log ? log[2] : new Date().toISOString().slice(0, 10), repo: SITE.repo, origin: SITE.origin, author: SITE.author });
+  const { files } = backstagePages({ root, version: pkg.version, build, modified: log ? log[2] : new Date().toISOString().slice(0, 10), repo: SITE.repo, origin: SITE.origin, author: SITE.author + ' (' + SITE.authorAlt + ')' });
   for (const [rel, text] of files) { mkdirSync(dirname(join(out, rel)), { recursive: true }); writeFileSync(join(out, rel), text); }
 }
 

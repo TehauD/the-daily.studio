@@ -5,7 +5,7 @@
 <h1 align="center">the-daily.studio</h1>
 <p align="center"><b>Your song, start to finish.</b><br>
 A guitar and voice studio in one web page: record your guitar and mic · split any song into stems to play along with · get the chords, tab and lyrics · pedals, presets and live visuals</p>
-<p align="center"><sub>v2.76.0 · free, open source (MIT) · no account, no upload, no tracking</sub></p>
+<p align="center"><sub>v2.81.0 · free, open source (MIT) · no account, no upload, no tracking</sub></p>
 
 <p align="center">
   <a href="https://the-daily.studio/"><b>▶ Open the live app</b></a> ·
@@ -491,7 +491,7 @@ Ideas and pull requests are welcome.
 
 Code: **[MIT License](LICENSE)**, © 2026 Tehau DeBarthe. You may use, copy, change and share it; keep the licence notice.
 
-* **About me and credits** are inside the app under *Help & shortcuts*. Maker: [Tehau DeBarthe](https://github.com/TehauD) · [LinkedIn](https://www.linkedin.com/in/tehau/). A sibling project, [The Daily](https://journal.the-daily.studio/), a developer journal in the same spirit, is hosted at its own address, `journal.the-daily.studio` (source: [TehauD/daily](https://github.com/TehauD/daily)).
+* **About me and credits** are inside the app under *Help & shortcuts*. Maker: [Tehau](https://the-daily.studio/guide/about/) (Tehau DeBarthe) · [GitHub](https://github.com/TehauD) · [LinkedIn](https://www.linkedin.com/in/tehau/) · [Instagram](https://www.instagram.com/tehaud/). A sibling project, [The Daily](https://journal.the-daily.studio/), a developer journal in the same spirit, is hosted at its own address, `journal.the-daily.studio` (source: [TehauD/daily](https://github.com/TehauD/daily)).
 * **[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)**: optional hand tracking uses [MediaPipe Tasks Vision](https://developers.google.com/mediapipe) (Apache-2.0), loaded from a CDN only after you agree to a one-time download. Techniques: YIN pitch estimation (de Cheveigné and Kawahara, 2002), harmonic / percussive separation by median filtering (Fitzgerald, 2010), Karplus–Strong synthesis (1983).
 * **[PRIVACY.md](PRIVACY.md)**: what is processed on your device, what can travel over the network and when, and what is kept.
 * **[docs/LICENSING.md](docs/LICENSING.md)**: the licence and provenance register: every shipped file, font, dependency, model and downloadable output, and what is still open.

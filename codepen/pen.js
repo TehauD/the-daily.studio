@@ -57,10 +57,10 @@ window.__dailyRoom = (id, make) => {
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.76.0', BUILD = 'f1f938c', PARTS_N = +'129' || 0, LINES_N = +'22023' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.81.0', BUILD = '4ea4dc5', PARTS_N = +'133' || 0, LINES_N = +'22682' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { ghApp: { clientId: 'Iv23liTjqEBQsgmGaE1Q', slug: 'tehaud-the-daily-studio' },   /* Sign in with GitHub: the GitHub App's public client id and its slug (docs/GITHUB.md); empty = only the token way */
-  support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://journal.the-daily.studio/' };
+  support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', instagram: 'https://www.instagram.com/tehaud/', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://journal.the-daily.studio/' };
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 const SVGNS = 'http://www.w3.org/2000/svg';
@@ -3154,10 +3154,10 @@ const VMODES = [['hex', 'Hex Resonance'], ['spectro', 'Spectrogram'], ['chroma',
 const VZ_MONITOR = new Set(['spectro', 'chroma', 'scope']);
 const vzLookName = () => (VMODES.find(m => m[0] === VZ.mode) || (typeof VBACK !== 'undefined' && VBACK.find(m => m[0] === VZ.mode)) || [0, 'Look'])[1];
 /** the looks picker under the Look button (open: true/false, or toggle) */
-function vzLooksOpen(open) { const bar = document.querySelector('#pane-vis .vz-bar'); if (!bar) return; const on = bar.classList.toggle('looks-open', open == null ? undefined : !!open); const b = document.getElementById('vzLookBtn'); if (b) b.setAttribute('aria-expanded', String(on)); }
+function vzLooksOpen(open) { if (open && typeof vzGroupShow === 'function') vzGroupShow(vzFamOf(VZ.mode, true)); }   /* 2.81: the looks are a strip, always showing; this stays for callers */
 /** keep the Look button, the Concert lens row and ⋯ More in step with the look */
 function vzLookSync() {
-  const b = document.getElementById('vzLookBtn'); if (b) b.textContent = vzLookName() + ' ▾';
+  if (typeof vzStripSync === 'function') vzStripSync();
   const lr = document.getElementById('lxLensRow'); if (lr) lr.style.display = VZ.mode === 'concert' ? '' : 'none';
   const bar = document.querySelector('#pane-vis .vz-bar'); if (bar) bar.classList.toggle('more-open', !!CFG.vzMore);
   const m = document.getElementById('vzMore'); if (m) { m.setAttribute('aria-expanded', String(!!CFG.vzMore)); m.textContent = CFG.vzMore ? '‹ Less' : '⋯ More'; }
@@ -3166,29 +3166,24 @@ function buildVisPane() {
   const p = PANES.vis; p.classList.add('flex');
   /* 2.65: one row: the look (its picker opens under it), what the look itself offers, then Record, Go on stage and Stage mode;
      the rest (source, Auto look, camera, neck, pitch, speed, tip jar, show setup) are under ⋯ More */
-  const lookBtn = h('button', { class: 'btn sm vz-look', id: 'vzLookBtn', type: 'button', 'aria-expanded': 'false', title: 'Pick the look', onclick: () => vzLooksOpen() }, vzLookName() + ' ▾');
   const moreBtn = h('button', { class: 'btn sm vz-morebtn', id: 'vzMore', type: 'button', 'aria-expanded': String(!!CFG.vzMore), title: 'Source, Auto look, the camera, the neck and pitch, speed and size, the tip jar, Show setup', onclick: () => { CFG.vzMore = !CFG.vzMore; saveCfg(); vzLookSync(); } }, CFG.vzMore ? '‹ Less' : '⋯ More');
-  const looks = h('div', { class: 'vz-looks', id: 'vzLooks' },
-    h('div', { class: 'seg' }, VMODES.filter(m => !VZ_MONITOR.has(m[0]) && !BK_MODES.has(m[0])).map(([k, n]) => h('button', { class: k === VZ.mode ? 'on' : '', 'data-m': k, onclick: e => { vzSetMode(k); $$('.seg [data-m]', bar).forEach(b => b.classList.toggle('on', b === e.target)); vzLooksOpen(false); } }, n))),
-    h('div', { class: 'vz-back', id: 'vzBack' }, h('span', { class: 'hx-l', title: 'Looks made to sit behind you: set Camera look to “Me in front (green screen)” and you stand inside the picture' }, 'Behind you'), h('div', { class: 'seg', role: 'group', 'aria-label': 'Looks that sit behind you' }, VBACK.map(([k, n]) => h('button', { class: k === VZ.mode ? 'on' : '', 'data-m': k, onclick: e => { vzSetMode(k); $$('.seg [data-m]', bar).forEach(b => b.classList.toggle('on', b === e.currentTarget)); try { backTip(); } catch (er) { } } }, n))), vbgBtn()));
-  looks.addEventListener('click', e => { if (e.target.closest('[data-m]')) vzLooksOpen(false); });
+  const looks = vzWorlds();      /* 2.77: five families (part 09f) */
+  const designBtn = h('button', { class: 'btn sm vz-design-btn' + (vdChanged() ? ' on' : ''), id: 'vzDesignBtn', type: 'button', 'aria-expanded': 'false', title: 'Settings for this look: only what applies to it', onclick: () => vzDesignOpen() }, '⚙ Settings'), savedBtn = h('button', { class: 'btn sm', id: 'vzSavedBtn', type: 'button', title: 'Saved looks: switch quickly between looks you have set up, or save this one', onclick: e => vzSavedOpen(e.currentTarget) }, '★ Saved'), design = vdDrawer();
   const sec = h('div', { class: 'vz-sec', id: 'vzSec' },
-    h('select', { class: 'in', style: { width: 'auto', fontFamily: 'var(--sans)' }, title: 'Analysis source', onchange: e => { VZ.src = e.target.value; } }, [['auto', 'Source: auto (follows playback)'], ['rig', 'Source: guitar after the rig'], ['master', 'Source: master mix'], ['di', 'Source: what the detector hears'], ['vox', 'Source: vocal microphone']].map(([v, n]) => h('option', { value: v }, n))),
     h('button', { class: 'btn sm' + (CFG.vzAuto ? ' on' : ''), id: 'vzAutoBtn', 'aria-pressed': String(!!CFG.vzAuto), title: 'Auto look: while the song plays, the look follows the section (verse calm, chorus wide, bridge strange)', onclick: e => { CFG.vzAuto = !CFG.vzAuto; saveCfg(); e.currentTarget.classList.toggle('on', !!CFG.vzAuto); e.currentTarget.setAttribute('aria-pressed', String(!!CFG.vzAuto)); toast('Auto look ' + (CFG.vzAuto ? 'on: the look follows the song’s sections' : 'off'), 'ok'); } }, '🎬 Auto look'),
     h('button', { class: 'btn sm' + (VZ.cam ? ' on' : ''), id: 'vzCamBtn', title: 'Put yourself center stage: turns the camera on behind the visuals', onclick: () => vzCamPress() }, '📷 Camera backdrop'), camFxBox(),
     h('button', { class: 'btn sm' + (CFG.vzNeck !== false ? ' on' : ''), id: 'vzNeckBtn', title: 'Show a small guitar neck on the visuals: what is playing, what is coming next, the note you are singing', onclick: e => { CFG.vzNeck = CFG.vzNeck === false; saveCfg(); e.currentTarget.classList.toggle('on', CFG.vzNeck !== false); } }, '🎸 Neck'),
     h('button', { class: 'btn sm' + (CFG.vzRibbon ? ' on' : ''), id: 'vzRibbonBtn', 'aria-pressed': String(!!CFG.vzRibbon), title: 'Show your pitch on the visuals: the note you sing against the notes of the key and the chord that is playing', onclick: e => { CFG.vzRibbon = !CFG.vzRibbon; saveCfg(); e.currentTarget.classList.toggle('on', !!CFG.vzRibbon); e.currentTarget.setAttribute('aria-pressed', String(!!CFG.vzRibbon)); if (CFG.vzRibbon) voxReset(); } }, '〰 Pitch'),
-    vzAdjustBtn(), (typeof spatControl === 'function' ? spatControl() : ''), (typeof xrControl === 'function' ? xrControl() : ''), tipBtn(), sgdBarButton());
+    (typeof spatControl === 'function' ? spatControl() : ''), (typeof xrControl === 'function' ? xrControl() : ''), tipBtn(), sgdBarButton());
   const bar = h('div', { class: 'row vz-bar' + (CFG.vzMore ? ' more-open' : ''), style: { gap: '6px', marginBottom: '8px', flexWrap: 'wrap' } },
-    lookBtn, looks, lxLensBar(), hexSwatches(), prtBar(),
+    looks, designBtn, savedBtn, lxLensBar(),
     h('span', { class: 'grow' }),
     h('button', { class: 'btn sm', id: 'vzRecBtn', 'data-srec': '1', title: 'Record the stage as a video with the song’s sound (saved on this device)', onclick: e => srecMenu(e.currentTarget) }, '⏺ Record'),
     h('button', { class: 'btn sm', id: 'vzGoStage', title: 'Full-screen visuals with the camera: you in front of the hexagons', onclick: () => goOnStage() }, '🎥 Go on stage'),
     h('button', { class: 'btn sm', onclick: () => { const w = UI.vwrap; (document.fullscreenElement ? document.exitFullscreen() : w.requestFullscreen && w.requestFullscreen()); } }, '⛶ Stage mode'),
-    moreBtn, sec);
-  { const more = h('button', { class: 'btn sm vz-more', id: 'vzMoreLooks', type: 'button', onclick: e => { const on = document.body.classList.toggle('vz-all'); e.currentTarget.textContent = on ? 'Fewer looks' : 'More looks…'; } }, 'More looks…'); looks.children[0].after(more); }      /* 2.46: Simple shows four looks */
+    moreBtn, sec, design);
   UI.vwrap = h('div', { class: 'vwrap', style: { flex: 1, minHeight: '320px' } }, UI.vcv = h('canvas', { class: 'vcanvas', style: { height: '100%', minHeight: '320px' } }));
-  p.append(bar, UI.vwrap); new ResizeObserver(() => { const d = (window.devicePixelRatio || 1) * (CFG.vq || 1), w = UI.vcv.clientWidth, hh = UI.vcv.clientHeight; if (w && (UI.vcv.width !== Math.floor(w * d) || UI.vcv.height !== Math.floor(hh * d))) { UI.vcv.width = Math.floor(w * d); UI.vcv.height = Math.floor(hh * d); VZ.spec = null; VZ.hexes = null; } }).observe(UI.vwrap);
+  p.append(bar, UI.vwrap); if (typeof vzStripSync === 'function') vzStripSync(); new ResizeObserver(() => { const d = (window.devicePixelRatio || 1) * (CFG.vq || 1), w = UI.vcv.clientWidth, hh = UI.vcv.clientHeight; if (w && (UI.vcv.width !== Math.floor(w * d) || UI.vcv.height !== Math.floor(hh * d))) { UI.vcv.width = Math.floor(w * d); UI.vcv.height = Math.floor(hh * d); VZ.spec = null; VZ.hexes = null; } }).observe(UI.vwrap);
   bus.on('onset', () => { VZ.pulses.push({ t: performance.now(), a: clamp((AN.rms + 50) / 40, .2, 1) }); if (VZ.pulses.length > 12) VZ.pulses.shift(); });
 }
 const vcol = () => { const cs = getComputedStyle(document.documentElement); return { a: cs.getPropertyValue('--accent').trim(), b: cs.getPropertyValue('--accent2').trim(), c: cs.getPropertyValue('--cv3').trim(), d: cs.getPropertyValue('--cv4').trim() }; };
@@ -3196,7 +3191,7 @@ const vcol = () => { const cs = getComputedStyle(document.documentElement); retu
 const vzPlaying = () => T.playing || (typeof STP !== 'undefined' && STP.playing);
 function visAna() { const s = VZ.src || 'auto'; if (s === 'vox' && E.anaVox) return E.anaVox; return s === 'master' || (s === 'auto' && vzPlaying()) ? E.anaMaster : s === 'di' ? E.anaDI : E.anaRig; }
 /** looks that draw their whole picture themselves: no pitch read-out or mini fretboard on top */
-const vzBare = m => m === 'concert' || m === 'sprint' || HM_MODES.has(m) || (typeof BK_MODES !== 'undefined' && BK_MODES.has(m));
+const vzBare = m => m === 'concert' || (typeof VL_DRAW !== 'undefined' && !!VL_DRAW[m]) || m === 'sprint' || HM_MODES.has(m) || (typeof BK_MODES !== 'undefined' && BK_MODES.has(m));
 /** cvo: draw on another canvas (the Stage, the Audience view) with the simpler picture; o.main: draw it as the Visuals themselves (your colours,
     the camera, the neck, the tip jar), at that canvas's size, for a video (part 37). o.noNeck, o.noText leave those out; o.avoid: more places the tip jar steps around */
 function drawVis(cvo, o) {
@@ -3211,16 +3206,17 @@ function drawVis(cvo, o) {
   const energy = (() => { let s = 0, n = 0; for (let k = bin(80); k < bin(5000); k += 2) { s += lvl(fd[k]); n++; } return s / n; })();
   const pulse = VZ.pulses.reduce((a, p) => Math.max(a, (1 - (now - p.t) / 900) * p.a), 0);
   /* zoom (part 09e): the look is pushed in from the middle of the picture; size is applied by the looks made of tiles (drawHex, the pulse grid) */
-  const vk = vzZoom(), tf = vk !== 1, VW = W, VH = H;
+  const vk = vsCaps(MODE).zoom ? vzZoom() : 1, tf = vk !== 1, VW = W, VH = H;
   if (tf) { g.save(); g.translate(W / 2, H / 2); g.scale(vk, vk); g.translate(-W / 2, -H / 2); }
   try {
-    if (MODE === 'hex') drawHex(g, VW, VH, fd, bh, lvl, C, pulse, HP || hexPal(true));
+    if (MODE === 'hex') (!main || vdShapeDefault() ? drawHex : drawLattice)(g, VW, VH, fd, bh, lvl, C, pulse, HP || hexPal(true));
     else if (MODE === 'tunnel') drawTunnel(g, VW, VH, energy, C, pulse, dt);
     else if (MODE === 'spectro') drawSpectro(g, VW, VH, fd, bin, lvl, C);
     else if (MODE === 'chroma') drawChroma(g, VW, VH, C);
     else if (MODE === 'scope') drawScope(g, VW, VH, C);
     else if (typeof stageExtra === 'function') stageExtra(MODE, g, VW, VH, { fd, bin, lvl, C, pulse, energy, dt, o });
   } finally { if (tf) g.restore(); }
+  if (main && !o.noPost && vdPostOn(MODE)) vdPost(g, W, H, HEXL, MODE);   /* Finish (part 09f): glow, trails, mirror, on every world, under the camera */
   if (camOn && main) camTop(g, W, H);
   if (MODE === 'halo' && main) haloFront(g);   // stage draws its own camera layer after trails and kaleidoscope
   if (main && !o.noNeck && CFG.vzNeck !== false && !document.body.classList.contains('perform-on') && !vzBare(MODE)) { const r = neckRect(W, H); drawMiniNeck(g, r[0], r[1], r[2], r[3], { C }); }
@@ -4214,6 +4210,229 @@ function vzAdjustOpen(anchor) {
   popover(anchor, box);
 }
 
+/* >>> parts/09f-design.js */
+/* ============================================================
+   Part 09f · The Visual Instrument (2.77) — worlds, a design drawer, and a hexagon field you can reshape
+   The Visuals had grown to some thirty looks in two rows, each with its own controls. They now share one idea, taken from the Hex Resonance field:
+       WHERE is the pitch (space is frequency: the middle is low, the edge is high — the way the ear lays frequency out along the cochlea)
+       HOW BRIGHT is the energy (light is loudness)           WHEN is the beat (a ring of light is a pulse)           WHAT COLOUR is the harmony
+   · Worlds: every look is kept, sorted into five families by what it shows you (frequency, harmony, time, life and space, you), each with a one-line meaning.
+   · The design drawer: Shape and Sound → Sight reshape the hexagon field (the lattice, the layout of pitch, how it listens); Finish (glow, trails,
+     mirror and kaleidoscope, speed, zoom) works on every world; Colour; saved Designs. Soundprint's controls live here too.
+   Everything defaults to the original hexagon field, drawn by the original code, so nothing changes until you move something.
+   ============================================================ */
+const VD_DEF = { shape: 'hex', round: 0, gap: 0, twist: 0, spin: 0, layout: 'rings', sens: 1, memory: .86, pulse: 1, noteHue: 0, glow: 0, trails: 0, mirror: 1 };
+const vdv = k => { const v = (CFG.vd || {})[k]; return v == null ? VD_DEF[k] : v; };
+let vdSaveT = 0;
+function vdSet(k, v) { const o = Object.assign({}, CFG.vd || {}); if (v === VD_DEF[k]) delete o[k]; else o[k] = v; CFG.vd = o; VZ.sm = null; clearTimeout(vdSaveT); vdSaveT = setTimeout(saveCfg, 300); vdMark(); }
+const vdShapeDefault = () => ['shape', 'round', 'gap', 'twist', 'spin', 'layout', 'sens', 'memory', 'pulse', 'noteHue'].every(k => vdv(k) === VD_DEF[k]);
+const vdPostOn = m => { const c = vsCaps(m || VZ.mode); return !!((c.glow && vdv('glow') > 0) || (c.trails && vdv('trails') > 0) || (c.mirror && vdv('mirror') !== 1)); };
+const vdChanged = () => !vdShapeDefault() || vdPostOn() || vzAdjusted() || vlChanged();
+function vdMark() { const b = document.getElementById('vzDesignBtn'); if (b) b.classList.toggle('on', vdChanged()); }
+
+/* ---------- per-world options (2.80): a world can offer its own dials; they are drawn in Design ▸ This world, kept in CFG.vo, saved in designs ---------- */
+const VLOOK = {};          /* mode → { title, opts: [{ k, label, type: 'range'|'choice'|'toggle', def, min, max, step, unit, opts: [[value, label, tip]], tip }] } (filled by the looks) */
+const VL_DRAW = {};        /* mode → draw function (g, W, H, X) for the worlds that bring their own options */
+const vlDef = (mode, k) => { const d = VLOOK[mode] && VLOOK[mode].opts.find(x => x.k === k); return d ? d.def : undefined; };
+const vlv = (mode, k) => { const o = ((CFG.vo || {})[mode] || {})[k]; return o == null ? vlDef(mode, k) : o; };
+function vlSet(mode, k, v) {
+  const all = Object.assign({}, CFG.vo || {}), m = Object.assign({}, all[mode] || {}); if (v === vlDef(mode, k)) delete m[k]; else m[k] = v; if (Object.keys(m).length) all[mode] = m; else delete all[mode];
+  CFG.vo = all; VDX.prevOk = false; clearTimeout(vdSaveT); vdSaveT = setTimeout(saveCfg, 300); vdMark();
+}
+const vlChanged = () => !!CFG.vo && Object.keys(CFG.vo).length > 0;
+/** the dials of the world now showing, as controls */
+function vlControls(mode) {
+  const L = VLOOK[mode]; if (!L) return null; const rows = [];
+  L.opts.forEach(o => {
+    const cur = vlv(mode, o.k);
+    if (o.type === 'range') { const fmt = v => o.unit === 'deg' ? Math.round(v) + '°' : o.unit === '%' ? Math.round(v * 100) + '%' : o.unit === 'x' ? (+v).toFixed(2) + '×' : String(Math.round(v * 100) / 100), val = h('b', { class: 'mono tiny vd-v' }, fmt(cur));
+      rows.push(h('label', { class: 'vd-row', title: (o.tip || '') + ' (double-click to reset)' }, h('span', { class: 'vd-l' }, o.label), h('input', { type: 'range', min: o.min, max: o.max, step: o.step || 1, value: cur, 'data-vo': o.k, id: 'vo_' + mode + '_' + o.k, 'aria-label': o.label, title: o.tip || '', oninput: e => { vlSet(mode, o.k, +e.target.value); val.textContent = fmt(+e.target.value); }, ondblclick: e => { vlSet(mode, o.k, o.def); e.target.value = o.def; val.textContent = fmt(o.def); } }), val)); }
+    else if (o.type === 'toggle') rows.push(h('label', { class: 'vd-row', title: o.tip || '' }, h('span', { class: 'vd-l' }, o.label), h('input', { type: 'checkbox', 'data-vo': o.k, id: 'vo_' + mode + '_' + o.k, checked: !!cur, 'aria-label': o.label, onchange: e => vlSet(mode, o.k, e.target.checked ? 1 : 0) })));
+    else { const box = h('div', { class: 'vd-row', title: o.tip || '' }, h('span', { class: 'vd-l' }, o.label), h('div', { class: 'seg', role: 'radiogroup', 'aria-label': o.label }, o.opts.map(([v, n, t]) => h('button', { type: 'button', role: 'radio', 'data-vo': o.k, 'data-v': String(v), class: String(cur) === String(v) ? 'on' : '', 'aria-checked': String(String(cur) === String(v)), title: t || n,
+        onclick: e => { vlSet(mode, o.k, v); box.querySelectorAll('button').forEach(b => { const on = b === e.currentTarget; b.classList.toggle('on', on); b.setAttribute('aria-checked', String(on)); }); } }, n)))); rows.push(box); }
+  });
+  rows.push(h('div', { class: 'row', style: { gap: '6px' } }, h('button', { class: 'btn sm', type: 'button', id: 'vlReset', onclick: () => { const all = Object.assign({}, CFG.vo || {}); delete all[mode]; CFG.vo = all; saveCfg(); vdPaint(); vdMark(); } }, 'Reset this world’s options')));
+  return h('div', { class: 'vd-opts', id: 'vdOpts', 'data-mode': mode }, rows);
+}
+
+/* ---------- the families: what each world shows you ---------- */
+const VFAMS = [
+  ['sound', 'Sound', 'What the sound is doing: where the pitches are and how they move.', ['hex', 'spiral', 'cymatics', 'chladni', 'pulse']],
+  ['harm', 'Harmony', 'What the music means: keys, chords and how they connect.', ['wheel', 'tonnetz', 'neural', 'halo', 'kaleido', 'mood']],
+  ['air', 'Atmosphere', 'Cinematic backdrops that move with the song, for videos and for behind you.', ['aurora', 'nebula', 'arena', 'video']],
+  ['perf', 'Performance', 'You in the picture: your voice, your words, your show.', ['concert', 'prompter', 'swarms', 'field', 'pitchtrace']]];
+const VSAY = { chladni: 'A vibrating plate: the note you sing or play picks a pattern, and sand collects on the lines where the plate stays still. When it is quiet the sand settles.', pitchtrace: 'Your voice (and your lead guitar) as a line across the notes of the key, with the chord’s notes brightest, so you can see where you are in the song.', spiral: 'The spectrum wound into a spiral, one turn to the octave: the same note is always on the same spoke. Tip it into a helix; it joins the harmonics of the note you play.', rhythm: 'The groove as rings of steps, the hits joined into polygons, with your own hits landing on an outer ring coloured by how far from the beat they are.', overtones: 'The harmonics of the note you sing or play, measured from the sound: as a rose, as bars, or as the string’s standing waves.', wheel: 'The circle of fifths as a live network: the key lit, every chord change drawn from one chord to the next, the notes you play on the rim, and the chord likely to come next.', tonnetz: 'The lattice of music theory: fifths, major thirds and minor thirds, with every triangle a chord. The view follows the chord, and the line it draws is how little each chord moves.', hex: 'The original: a honeycomb that lights where the sound is. Reshape it in Settings.', spectrum: 'The spectrum as glowing bars behind you.', cymatics: 'Sound made into the patterns it draws on a vibrating plate.', ripple: 'A wave field: the bands and the beat disturb a surface.', wave: 'The waveform itself, large.',
+  halo: 'The twelve notes on the circle of fifths, lit as you play.', neural: 'A 3D network that learns the song as it plays: bands, notes, chords and the chords that follow. Switch it to Fifths for the circle.', bloom: 'A flower that opens on each chord.', orbit: 'Chords as orbiting bodies around their key.', gravity: 'Notes pulled toward the chord that is home.', dna: 'The chords of the song as a double helix.', stars: 'Notes you play become a constellation.', kaleido: 'A kaleidoscope turned by the harmony.', mood: 'The colour of the mood: warm, cool, tense, open.',
+  pulse: 'A grid that throbs on the beat.', fluid: 'Rhythm as flowing ink.', rings: 'Rings that leave the middle on each hit.', ribbons: 'Ribbons of light that follow the sound.', skyline: 'A city skyline the music builds.',
+  life: 'Organisms that grow where you play loudest (reaction-diffusion).', stardust: 'A particle galaxy.', aurora: 'Curtains of northern light.', warp: 'Flying through stars at the speed of the song.', nebula: 'Clouds of gas lit by the sound.', arena: 'A 3D stage you stand inside.',
+  concert: 'A show: lights, lasers and a crowd, for the camera.', prompter: 'Your words and chords, large, in time.', swarms: 'Your voice and guitar as two swarms.', field: 'A field that shows where in the key you are improvising.', paint: 'The session painted as you play.', sprint: 'A picture of the whole song, made once and kept with it.', video: 'Your own clips, behind you.' };
+const VCORE = new Set(['hex', 'wheel', 'aurora', 'concert', 'prompter']);
+
+/** the picker: five families, every look kept. Buttons keep data-m inside .seg so every other part still finds them */
+function vzWorlds() {
+  const all = new Map(); VMODES.filter(m => !VZ_MONITOR.has(m[0])).concat(VBACK).forEach(([k, n]) => { if (!all.has(k)) all.set(k, n); });
+  const used = new Set(), btn = (k, n) => h('button', { type: 'button', class: (k === VZ.mode ? 'on' : '') + (VLOOK[k] ? ' has-opts' : ''), 'data-m': k, 'data-core': VCORE.has(k) ? '1' : null, title: (VSAY[k] || n) + (VLOOK[k] ? ' · has its own options in Settings' : ''), onclick: () => vzSetMode(k) }, n);
+  const groups = VFAMS.map(([id, name, say, ids]) => ({ id, name, say, list: ids.filter(k => all.has(k)) })); groups.forEach(g => g.list.forEach(k => used.add(k)));
+  const rest = [...all].filter(([k]) => !used.has(k)).map(([k]) => k); groups.push({ id: 'more', name: 'More looks', say: 'The rest of the library.', list: rest });
+  const cur = vzFamOf(VZ.mode, true);
+  const tabs = h('div', { class: 'vz-groups', role: 'tablist', 'aria-label': 'Looks, by what they show' }, groups.filter(g => g.list.length).map(g => h('button', { type: 'button', role: 'tab', 'data-grp': g.id, 'aria-selected': String(g.id === cur), class: g.id === cur ? 'on' : '', title: g.say, onclick: () => vzGroupShow(g.id) }, g.name)));
+  const fams = h('div', { class: 'vz-fams', id: 'vzBack' }, groups.filter(g => g.list.length).map(g => h('section', { class: 'vz-fam' + (g.id === cur ? ' on' : ''), 'data-fam': g.id, 'aria-label': g.name }, h('div', { class: 'seg', role: 'group', 'aria-label': g.name }, g.list.map(k => btn(k, all.get(k))), g.id === 'air' && typeof vbgBtn === 'function' ? vbgBtn() : null))));
+  return h('div', { class: 'vz-strip', id: 'vzLooks' }, tabs, fams, h('p', { class: 'vz-cap tiny', id: 'vzCap' }), h('button', { class: 'btn sm vz-more', id: 'vzMoreLooks', type: 'button', onclick: e => { const on = document.body.classList.toggle('vz-all'); e.currentTarget.textContent = on ? 'Fewer looks' : 'More looks…'; } }, 'More looks…'));
+}
+/** the group a look belongs to (its id, or its name); the looks no group names are in More looks */
+const vzFamOf = (k, id) => { const f = VFAMS.find(x => x[3].includes(k)); return id ? (f ? f[0] : 'more') : (f ? f[1] : 'More looks'); };
+/** show one group's looks under the tabs (this does not change the look) */
+function vzGroupShow(id) { document.querySelectorAll('#vzLooks .vz-fam').forEach(f => f.classList.toggle('on', f.dataset.fam === id)); document.querySelectorAll('#vzLooks .vz-groups [data-grp]').forEach(b => { const on = b.dataset.grp === id; b.classList.toggle('on', on); b.setAttribute('aria-selected', String(on)); }); }
+/** the strip follows the look: its group, and a line saying what it shows */
+function vzStripSync() { vzGroupShow(vzFamOf(VZ.mode, true)); const c = document.getElementById('vzCap'); if (c) c.textContent = (VSAY[VZ.mode] || '') + (VLOOK[VZ.mode] ? ' · options in Settings' : ''); }
+
+
+/* ---------- the reshapeable lattice (Hex Resonance with the dials) ---------- */
+function vdHue() { /* colour follows the note you sing, or the chord that is playing; neighbours on the circle of fifths are neighbours in colour */
+  let pc = null; if (typeof PB !== 'undefined' && vzPlaying() && PB.sym) { const c = parseChord(PB.sym); if (c) pc = c.root; } else if (AN.active && AN.midi != null) pc = ((Math.round(AN.midi) % 12) + 12) % 12;
+  const V = vdHue.s || (vdHue.s = { h: 140 }); if (pc != null) { const tgt = ((pc * 7) % 12) * 30 + 140; let d = ((tgt - V.h + 540) % 360) - 180; V.h = (V.h + d * .08 + 360) % 360; } return V.h;
+}
+function hslHex(hh, s, l) { s /= 100; l /= 100; const k = n => (n + hh / 30) % 12, a = s * Math.min(l, 1 - l), f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1))); return '#' + [f(0), f(8), f(4)].map(x => Math.round(x * 255).toString(16).padStart(2, '0')).join(''); }
+/** one cell's outline: hexagon, square, triangle or dot, with softened corners */
+function vdCell(g, shape, x, y, r, rr, flip) {
+  g.beginPath();
+  if (shape === 'dot') { g.arc(x, y, r * .92, 0, Math.PI * 2); return; }
+  const n = shape === 'square' ? 4 : shape === 'tri' ? 3 : 6, a0 = shape === 'square' ? Math.PI / 4 : shape === 'tri' ? (flip ? Math.PI / 2 : -Math.PI / 2) : Math.PI / 6, rad = shape === 'square' ? r * 1.12 : shape === 'tri' ? r * 1.1 : r, P = [];
+  for (let i = 0; i < n; i++) { const a = a0 + Math.PI * 2 * i / n; P.push([x + rad * Math.cos(a), y + rad * Math.sin(a)]); }
+  if (!rr) { P.forEach((p, i) => g[i ? 'lineTo' : 'moveTo'](p[0], p[1])); g.closePath(); return; }
+  const t = clamp(rr, 0, 1) * .5, mid = (a, b) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+  P.forEach((p, i) => { const pv = P[(i + n - 1) % n], nx = P[(i + 1) % n], s = mid(p, pv), e = mid(p, nx); if (i) g.lineTo(s[0], s[1]); else g.moveTo(s[0], s[1]); g.quadraticCurveTo(p[0], p[1], e[0], e[1]); }); g.closePath();
+}
+/** Hex Resonance, with its dials. With every dial at its default the original drawHex is used instead, so nothing changes until you move one. */
+function drawLattice(g, W, H, fd, bh, lvl, C, pulse, P) {
+  const lt = P.lt, shape = vdv('shape'), lay = vdv('layout'), sens = vdv('sens'), mem = vdv('memory'), pg = vdv('pulse'), rr = vdv('round'), gap = vdv('gap'), tri = shape === 'tri', sq = shape === 'square';
+  let CA = P.useC ? C.a : P.a, CB = P.useC ? C.b : P.b;
+  if (vdv('noteHue')) { const hu = vdHue(); CA = hslHex(hu, 70, lt ? 36 : 58); CB = hslHex(hu + 40, 85, lt ? 44 : 66); }
+  const R = Math.max(14, Math.min(W, H) / 15) * vzSize(), dx = sq ? R * 1.8 : tri ? R * 1.05 : R * Math.sqrt(3), dy = sq ? R * 1.8 : tri ? R * 1.82 : R * 1.5;
+  const rot = vdv('twist') * Math.PI / 180 + vdv('spin') * VZ.t * .12, spin = rot !== 0, cx = W / 2, cy = H / 2, maxd = Math.hypot(cx, cy), span = spin ? Math.hypot(W, H) : 0, ox = spin ? cx - span / 2 : 0, oy = spin ? cy - span / 2 : 0;
+  const cols = Math.ceil((spin ? span : W) / dx) + 2, rows = Math.ceil((spin ? span : H) / dy) + 2;
+  if (!VZ.sm || VZ.sm.length !== cols * rows) VZ.sm = new Float32Array(cols * rows); const fmin = 70, fmax = 7000, lr = Math.log(fmax / fmin), now = performance.now();
+  const bt = ((now / 1000) % 1.9) / 1.9, key = AN.active && AN.midi != null ? ((Math.round(AN.midi) % 12) + 12) % 12 : -1;
+  { const gl = g.createRadialGradient(cx, cy * .92, 0, cx, cy * .92, Math.hypot(W, H) * .55); gl.addColorStop(0, `rgba(${P.glow},${lt ? .12 : .16})`); gl.addColorStop(.5, `rgba(${P.glow},.04)`); gl.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gl; g.fillRect(0, 0, W, H); }
+  if (spin) { g.save(); g.translate(cx, cy); g.rotate(rot); g.translate(-cx, -cy); }
+  const warmRgb = '#' + P.warm.split(',').map(v => (+v).toString(16).padStart(2, '0')).join('');
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+    const flip = (r + c) % 2, x = ox + c * dx + (tri || sq ? 0 : (r % 2 ? dx / 2 : 0)) - dx / 2, y = oy + r * dy - R / 2 + (tri ? (flip ? dy / 3 : dy * 2 / 3) - dy / 2 : 0);
+    const d = Math.hypot(x - cx, y - cy) / maxd, ang = (Math.atan2(y - cy, x - cx) + Math.PI) / (2 * Math.PI), i = r * cols + c; let f, own = 0;
+    if (lay === 'fifths') { const slot = Math.floor(ang * 12) % 12, pc = (slot * 7) % 12, oct = 3 + Math.floor(clamp(d, 0, .999) * 5), m = 12 * (oct + 1) + pc; f = 440 * Math.pow(2, (m - 69) / 12); own = key === pc ? 1 : 0; }
+    else if (lay === 'spiral') { const u = clamp(d, 0, .999) * 5.2, fr = (ang - .25 + 1) % 1, k = Math.max(0, Math.round(u - fr));  /* C is at the top */ f = 65.4 * Math.pow(2, k + fr); own = key >= 0 && (((Math.round(fr * 12) % 12) + 12) % 12) === key ? 1 : 0; }
+    else if (lay === 'sweep') f = fmin * Math.exp(lr * clamp((x - ox) / (spin ? span : W), 0, 1));
+    else f = fmin * Math.exp(lr * clamp(d * .92 + ((ang * 5) % 1) * .08, 0, 1));
+    const k = clamp(Math.round(f / bh), 1, fd.length - 1), v = clamp(lvl(Math.max(fd[k], fd[k + 1] || -120)) * sens, 0, 1.4);
+    VZ.sm[i] = Math.max(v, VZ.sm[i] * mem - .004); const s = VZ.sm[i];
+    let a, ring = 0;
+    if (lay === 'sweep') { const yy = 1 - clamp((y - oy) / (spin ? span : H), 0, 1); a = clamp((s - yy * .95) * 5 + (s > .05 ? .35 : 0), 0, 1) * (s > .03 ? 1 : 0) + .04; }
+    else { ring = pulse * pg * Math.max(0, 1 - Math.abs(d - (1 - pulse) * 1.05) * 6); const amb = .2 * Math.pow(Math.max(0, Math.sin(d * 11 - now / 780)), 2) * Math.max(0, 1 - d * .9), idle = .42 * Math.max(0, 1 - Math.abs(d - bt * 1.1) * 7) * Math.max(0, 1 - d * .9);
+      a = clamp(s * 1.15 + ring * .8 + amb + idle + own * .5 * Math.max(0, 1 - d * .5), 0, 1); }
+    if (a < .03) { g.strokeStyle = `rgba(${P.line},${lt ? .13 : .07})`; g.lineWidth = 1; vdCell(g, shape, x, y, R * .94 * (1 - gap * .4), rr, flip); g.stroke(); continue; }
+    const warm = ((c * 7 + r * 13) % 11) === 0, rad = R * (.5 + .46 * Math.min(1, a)) * (1 - gap * .4);
+    g.fillStyle = warm ? mixc(CB, warmRgb, .55, a * (lt ? .9 : .8)) : mixc(CA, CB, clamp(s * 1.4 - .15 + ring, 0, 1), a * .92);
+    vdCell(g, shape, x, y, rad, rr, flip); g.fill(); g.strokeStyle = `rgba(${P.line},` + (.05 + a * (lt ? .4 : .45)).toFixed(3) + ')'; g.lineWidth = 1; g.stroke();
+  }
+  if (spin) g.restore();
+}
+
+/* ---------- Finish: glow, trails and mirror, on every world ---------- */
+const VDX = { tmp: null, sm: null, sm2: null, prev: null };
+const vdCv = (k, w, h2) => { let c = VDX[k]; if (!c) c = VDX[k] = document.createElement('canvas'); if (c.width !== w || c.height !== h2) { c.width = w; c.height = h2; } return c; };
+/** after a world is drawn (and before the camera goes on top): fold it into a mirror or kaleidoscope, leave trails behind it, and let it glow */
+function vdPost(g, W, H, lt, mode) {
+  const cp = vsCaps(mode || VZ.mode), mir = cp.mirror ? vdv('mirror') : 1, glow = cp.glow ? vdv('glow') : 0, tr = cp.trails ? vdv('trails') : 0; if (mir === 1 && !glow && !tr) { VDX.prevOk = false; return; }
+  const tmp = vdCv('tmp', W, H), t = tmp.getContext('2d'); t.globalCompositeOperation = 'copy'; t.drawImage(g.canvas, 0, 0); t.globalCompositeOperation = 'source-over';
+  if (mir === 2) { g.save(); g.beginPath(); g.rect(W / 2, 0, W / 2, H); g.clip(); g.translate(W, 0); g.scale(-1, 1); g.drawImage(tmp, 0, 0); g.restore(); }
+  else if (mir > 2) { const N = mir, cx = W / 2, cy = H / 2, Rr = Math.hypot(W, H) / 2 + 4;
+    for (let j = 0; j < 2 * N; j++) { g.save(); g.translate(cx, cy); if (j % 2) { g.rotate((j + 1) * Math.PI / N); g.scale(1, -1); } else g.rotate(j * Math.PI / N); g.beginPath(); g.moveTo(0, 0); g.arc(0, 0, Rr, 0, Math.PI / N); g.closePath(); g.clip(); g.drawImage(tmp, -cx, -cy); g.restore(); } }
+  if (tr > 0 && VDX.prevOk && VDX.prev && VDX.prev.width === W && VDX.prev.height === H) { g.save(); g.globalCompositeOperation = lt ? 'darken' : 'lighten'; g.globalAlpha = clamp(tr, 0, .96); g.drawImage(VDX.prev, 0, 0); g.restore(); }
+  if (glow > 0) { const sw = Math.max(16, W >> 3), sh = Math.max(9, H >> 3), s1 = vdCv('sm', sw, sh), q = s1.getContext('2d'); q.imageSmoothingEnabled = true; q.globalCompositeOperation = 'copy'; q.drawImage(g.canvas, 0, 0, sw, sh);
+    const s2 = vdCv('sm2', sw >> 1, sh >> 1), q2 = s2.getContext('2d'); q2.imageSmoothingEnabled = true; q2.globalCompositeOperation = 'copy'; q2.drawImage(s1, 0, 0, s2.width, s2.height);
+    g.save(); g.imageSmoothingEnabled = true; g.globalCompositeOperation = lt ? 'multiply' : 'lighter'; g.globalAlpha = clamp(glow * .9, 0, 1); g.drawImage(s1, 0, 0, W, H); g.globalAlpha = clamp(glow * .7, 0, 1); g.drawImage(s2, 0, 0, W, H); g.restore(); }
+  if (tr > 0) { const pv = vdCv('prev', W, H), p = pv.getContext('2d'); p.globalCompositeOperation = 'copy'; p.drawImage(g.canvas, 0, 0); p.globalCompositeOperation = 'source-over'; VDX.prevOk = true; } else VDX.prevOk = false;
+}
+
+/* ---------- Designs: built-in and your own ---------- */
+const VD_PRESETS = [
+  { id: 'original', name: 'Original hexagons', say: 'The field you know. Everything at its default.', mode: 'hex', vd: {}, speed: 1, size: 1, zoom: 1 },
+  { id: 'fifths', name: 'Circle of fifths', say: 'Each spoke is a note, each ring an octave. Your voice lights its own spoke, and the colour follows the note.', mode: 'hex', vd: { layout: 'fifths', noteHue: 1, glow: .3 }, size: 1.3 },
+  { id: 'spiralcells', name: 'Spiral of cells', say: 'The hexagon field laid out as a pitch spiral: each turn an octave, each spoke a note.', mode: 'hex', vd: { layout: 'spiral', noteHue: 1, glow: .25 }, size: 1.1 },
+  { id: 'wall', name: 'Spectrum wall', say: 'Left to right is low to high pitch; the cells rise like an equaliser.', mode: 'hex', vd: { layout: 'sweep', shape: 'square', gap: .25, round: .3 }, size: .8 },
+  { id: 'kaleido', name: 'Kaleidoscope', say: 'The hexagon field folded six ways, slowly turning.', mode: 'hex', vd: { mirror: 6, spin: .5, glow: .35, noteHue: 1 }, size: 1.2 },
+  { id: 'helix', name: 'Pitch helix', say: 'The spectrum as a helix of hexagons, tipped and turning slowly.', mode: 'spiral', vd: { glow: .3 }, vo: { spiral: { style: 'cells', tilt: 52, spin: .35 } } },
+  { id: 'plate', name: 'Cymatic plate', say: 'A vibrating plate, folded four ways.', mode: 'cymatics', vd: { mirror: 4, trails: .35, glow: .3 } },
+  { id: 'sand', name: 'Chladni sand', say: 'Sand on a plate that sings: it settles on the lines where the plate is still.', mode: 'chladni', vd: { glow: .25 }, vo: { chladni: { style: 'both' } } },
+  { id: 'wheelglow', name: 'Wheel, glowing', say: 'The circle of fifths as a network, with a soft glow.', mode: 'wheel', vd: { glow: .35 } },
+  { id: 'tonnetz', name: 'Tonnetz with a trail', say: 'The chord lattice, leaving a trail as the song moves.', mode: 'tonnetz', vd: { trails: .3, glow: .25 } },
+  { id: 'aurora', name: 'Aurora, soft', say: 'Northern light behind you, with a gentle glow.', mode: 'aurora', vd: { glow: .35 } },
+  { id: 'trace', name: 'Singing line', say: 'Your voice as a line across the notes of the key, for a take or a video.', mode: 'pitchtrace', vd: {}, vo: { pitchtrace: { window: 10 } } }];
+
+const vdPersonal = () => Array.isArray(CFG.vdPresets) ? CFG.vdPresets : [];
+function vdApply(pr) {
+  CFG.vd = Object.assign({}, pr.vd || {}); CFG.vo = JSON.parse(JSON.stringify(pr.vo || {})); ['Speed', 'Size', 'Zoom'].forEach(k => { CFG['vz' + k] = pr[k.toLowerCase()] || 1; }); if (pr.tone) { if (pr.tone === 'auto') delete CFG.hexTone; else CFG.hexTone = pr.tone; }
+  VZ.sm = null; VZ.spec = null; VDX.prevOk = false; saveCfg(); if (pr.mode && pr.mode !== VZ.mode) vzSetMode(pr.mode, true); if (pr.mode) { CFG.visMode = pr.mode; saveCfg(); } if (typeof hexToneSync === 'function') hexToneSync(); vzLookSync(); vdPaint(); vdMark(); toast('Design: ' + pr.name, 'ok');
+}
+function vdSave(name) {
+  name = (name || '').trim().slice(0, 40); if (!name) return toast('Name the design first', 'warn');
+  const list = vdPersonal().filter(p => p.name !== name); list.push({ id: 'u' + Date.now().toString(36), name, mode: VZ.mode, vd: Object.assign({}, CFG.vd || {}), vo: JSON.parse(JSON.stringify(CFG.vo || {})), speed: vzSpeed(), size: vzSize(), zoom: vzZoom(), tone: CFG.hexTone || 'auto' });
+  CFG.vdPresets = list.slice(-24); saveCfg(); vdPaint(); toast('Saved “' + name + '”', 'ok');
+}
+function vdDelete(id) { CFG.vdPresets = vdPersonal().filter(p => p.id !== id); saveCfg(); vdPaint(); }
+function vdReset() { CFG.vd = {}; CFG.vo = {}; ['vzSpeed', 'vzSize', 'vzZoom'].forEach(k => { CFG[k] = 1; }); VZ.sm = null; VZ.spec = null; VDX.prevOk = false; saveCfg(); vdPaint(); vdMark(); }
+
+/* ---------- the drawer ---------- */
+const VDUI = { tab: 'sound' };
+function vdRange(key, label, lo, hi, step, tip, unit, store) {
+  const get = () => store ? vzSet(key) : vdv(key), def = store ? 1 : VD_DEF[key], fmt = v => unit === 'x' ? (+v).toFixed(2) + '×' : unit === 'deg' ? Math.round(v) + '°' : unit === '%' ? Math.round(v * 100) + '%' : (+v).toFixed(2);
+  const val = h('b', { class: 'mono tiny vd-v' }, fmt(get())), put = v => { if (store) { CFG[key] = v; VZ.spec = null; clearTimeout(vdSaveT); vdSaveT = setTimeout(saveCfg, 300); vdMark(); } else vdSet(key, v); };
+  const r = h('input', { type: 'range', min: lo, max: hi, step, value: get(), 'data-vd': key, id: store ? key + 'In' : 'vd_' + key, 'aria-label': label, title: tip, oninput: e => { put(+e.target.value); val.textContent = fmt(+e.target.value); }, ondblclick: e => { put(def); e.target.value = def; val.textContent = fmt(def); } });
+  return h('label', { class: 'vd-row', title: tip + ' (double-click to reset)' }, h('span', { class: 'vd-l' }, label), r, val);
+}
+function vdChoice(key, label, opts, tip) {
+  const box = h('div', { class: 'vd-row', title: tip }, h('span', { class: 'vd-l' }, label), h('div', { class: 'seg', role: 'radiogroup', 'aria-label': label }, opts.map(([v, n, t]) => h('button', { type: 'button', role: 'radio', 'data-vd': key, 'data-v': String(v), class: String(vdv(key)) === String(v) ? 'on' : '', 'aria-checked': String(vdv(key)) === String(v), title: t || n,
+    onclick: e => { vdSet(key, typeof VD_DEF[key] === 'number' ? +v : v); box.querySelectorAll('button').forEach(b => { const on = b === e.currentTarget; b.classList.toggle('on', on); b.setAttribute('aria-checked', String(on)); }); } }, n))));
+  return box;
+}
+/** which controls make sense for a look: one that does not is not shown, and is not applied to it (a prompter is not mirrored, a 3D stage is not zoomed) */
+const VCAPS = { prompter: { trails: 0, mirror: 0, speed: 0, zoom: 0, source: 0 }, neural: { trails: 0, mirror: 0, speed: 0, zoom: 0, source: 0 }, video: { trails: 0, mirror: 0, source: 0 }, concert: { mirror: 0 }, arena: { mirror: 0, zoom: 0 }, pitchtrace: { mirror: 0, trails: 0, zoom: 0 }, sprint: { glow: 0, trails: 0, mirror: 0, speed: 0, zoom: 0, source: 0 } };
+const vsCaps = m => Object.assign({ glow: 1, trails: 1, mirror: 1, speed: 1, zoom: 1, source: 1 }, VCAPS[m] || {});
+const vsG = (title, kids) => { kids = kids.filter(Boolean); return kids.length ? h('section', { class: 'vs-g' }, h('h6', {}, title), ...kids) : null; };
+/** the settings of the look now showing: only what applies to it, in the order you reach for it */
+function vsSections() {
+  const m = VZ.mode, caps = vsCaps(m), out = [h('p', { class: 'small vs-what' }, h('b', {}, vzLookName()), ' · ', vzFamOf(m), ' — ', VSAY[m] || '')];
+  if (m === 'hex') {
+    out.push(vsG('Cells', [vdChoice('shape', 'Lattice', [['hex', '⬢ Hexagon'], ['square', '■ Square'], ['tri', '▲ Triangle'], ['dot', '● Dot']], 'The shape of each cell'), vdRange('vzSize', 'Size', .5, 2.5, .05, 'How big the cells are: bigger means fewer', 'x', true), vdRange('round', 'Roundness', 0, 1, .05, 'Soften the corners', '%'), vdRange('gap', 'Spacing', 0, 1, .05, 'Space between the cells', '%'), vdRange('twist', 'Turn', -90, 90, 1, 'Turn the whole field', 'deg'), vdRange('spin', 'Spin', 0, 3, .05, 'Let the field turn slowly by itself', 'x')]));
+    out.push(vsG('How it listens', [vdChoice('layout', 'Layout of pitch', [['rings', 'Rings', 'Space is frequency: low in the middle, high at the edge (the original)'], ['fifths', 'Circle of fifths', 'Each spoke is a note, each ring an octave: your note lights its own spoke'], ['spiral', 'Pitch spiral', 'Each turn is an octave and each spoke a note: the same note is always on the same spoke'], ['sweep', 'Sweep', 'Low to high from left to right, rising like an equaliser']], 'Where pitch lives in the picture'),
+      vdRange('sens', 'Sensitivity', .4, 2.5, .05, 'How strongly the cells answer', 'x'), vdRange('memory', 'Memory', .5, .97, .01, 'How long a cell stays lit after the sound: short is crisp, long is smeared'), vdRange('pulse', 'Beat pulse', 0, 2.5, .05, 'How strongly the ring of light follows each beat', 'x'),
+      h('label', { class: 'vd-row' }, h('span', { class: 'vd-l' }, 'Colour follows the note'), h('input', { type: 'checkbox', id: 'vd_noteHue', checked: !!vdv('noteHue'), title: 'Hue follows the note you sing or the chord that plays; notes a fifth apart are neighbours in colour', onchange: e => vdSet('noteHue', e.target.checked ? 1 : 0) }))]));
+    out.push(vsG('Colour', [hexSwatches()]));
+  } else if (VLOOK[m]) out.push(vsG('This look', [vlControls(m)]));
+  if (m === 'sprint') out.push(vsG('Soundprint', [prtBar()]));
+  out.push(vsG('Frame', [caps.glow ? vdRange('glow', 'Glow', 0, 1, .05, 'A soft bloom around everything bright', '%') : null, caps.trails ? vdRange('trails', 'Trails', 0, .95, .05, 'Let moving light leave a trail', '%') : null,
+    caps.mirror ? vdChoice('mirror', 'Mirror', [[1, 'Off'], [2, '↔ Mirror'], [4, '4-fold'], [6, '6-fold'], [8, '8-fold']], 'Fold the picture into a mirror or a kaleidoscope') : null, caps.speed ? vdRange('vzSpeed', 'Speed', .25, 3, .05, 'How fast everything moves', 'x', true) : null, caps.zoom ? vdRange('vzZoom', 'Zoom', 1, 3, .05, 'Push in on the middle', 'x', true) : null]));
+  out.push(vsG('Listens to', [caps.source ? h('label', { class: 'vd-row' }, h('span', { class: 'vd-l' }, 'Source'), h('select', { class: 'in', id: 'vd_src', title: 'What the visuals listen to', onchange: e => { VZ.src = e.target.value; } }, [['auto', 'Auto (follows playback)'], ['rig', 'The guitar after the rig'], ['master', 'The master mix'], ['di', 'What the detector hears'], ['vox', 'The vocal microphone']].map(([v, n]) => h('option', { value: v, selected: (VZ.src || 'auto') === v }, n)))) : null]));
+  out.push(h('div', { class: 'row vs-foot', style: { gap: '6px' } }, h('button', { class: 'btn sm', type: 'button', id: 'vdReset', onclick: () => vdReset() }, 'Reset all settings'), h('span', { class: 'tiny muted' }, 'Controls that do not apply to a look are not shown.')));
+  return out;
+}
+function vdPaint() { const b = document.getElementById('vdBody'); if (!b) return; b.replaceChildren(...vsSections().filter(Boolean)); if (typeof hexToneSync === 'function') hexToneSync(); if (typeof prtBarSync === 'function') prtBarSync(); }
+function vdDrawer() { return h('div', { class: 'vz-design', id: 'vzDesign' }, h('div', { class: 'vd-body', id: 'vdBody' }, vsSections().filter(Boolean))); }
+function vzDesignOpen(open) { const bar = document.querySelector('#pane-vis .vz-bar'); if (!bar) return; const on = bar.classList.toggle('design-open', open == null ? undefined : !!open); if (on) vdPaint(); const b = document.getElementById('vzDesignBtn'); if (b) b.setAttribute('aria-expanded', String(on)); vzPanelIntoView(on ? 'vzDesign' : null); }
+/** on a phone a panel opens under the (now small) picture: bring it into view */
+function vzPanelIntoView(id) { if (!id || document.body.dataset.form !== 'phone') return; setTimeout(() => { const e = document.getElementById(id); if (e && e.offsetParent) e.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }, 80); }
+/** the settings follow the look; Soundprint opens them, so its controls are never hunted for */
+function vdOnLook(k) { if (k === 'sprint') vzDesignOpen(true); else if (document.querySelector('#pane-vis .vz-bar.design-open')) vdPaint(); vzStripSync(); }
+
+/* ---------- Saved looks: a menu for switching quickly (a take, a rehearsal, a video) ---------- */
+function vzSavedOpen(anchor) {
+  const inp = h('input', { class: 'in', id: 'vdName', placeholder: 'Name this look', maxlength: 40, 'aria-label': 'Name this look', onkeydown: e => { if (e.key === 'Enter') { vdSave(e.target.value); closePop(); } } });
+  const row = (p, mine) => h('div', { class: 'vd-pre', 'data-pre': p.id }, h('button', { class: 'btn sm', type: 'button', onclick: () => { vdApply(p); closePop(); } }, p.name), h('span', { class: 'tiny muted grow' }, p.say || (VMODES.find(m => m[0] === p.mode) || [0, p.mode])[1]), mine ? h('button', { class: 'btn sm', type: 'button', 'aria-label': 'Delete ' + p.name, title: 'Delete', onclick: e => { vdDelete(p.id); e.currentTarget.closest('.vd-pre').remove(); } }, '✕') : null);
+  const mine = vdPersonal();
+  popover(anchor, h('div', { class: 'vd-saved', id: 'vdSaved' }, h('h5', {}, 'Saved looks'), mine.length ? h('h6', {}, 'Yours') : null, ...mine.map(p => row(p, true)), h('h6', {}, 'Starting points'), ...VD_PRESETS.map(p => row(p, false)),
+    h('div', { class: 'row', style: { gap: '6px', marginTop: '8px' } }, inp, h('button', { class: 'btn sm primary', type: 'button', id: 'vdSave', onclick: () => { vdSave(inp.value); closePop(); } }, 'Save this look'))), { style: { maxWidth: '380px' } });
+}
+
 /* >>> parts/10-main.js */
 /* ============================================================
    Part 10 · boot, frame loop, wiring
@@ -4301,7 +4520,7 @@ async function boot() {
   if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener('devicechange', () => { ioDeviceChange().catch(e => console.warn(e)); });
   bus.emit('song');
   try { ghBoot(); } catch (e) { console.warn('github', e); }      /* back from Sign in with GitHub, or a sync at start (part 74) */
-  DEV.make = () => { window.__daily = { tourStart, mpVision, slSendLabel, slcChanges, mkSection, perfViewSet, pfLay, pfLaySet, pfLayMenu, songMapEl, secAdd, secKind, secNameFor, smGo, renderWholeSong, normSong, bandRename, get TOUR() { return TOUR; }, SIMPLE_GOAL_TABS, SIMPLE_GOAL_TOOLS, simpleTabs, goalAudioFirst, guitarBody, pluck, BLD, BUILD_LIFT, buildLevel, secEnergy, buildCtx, buildParts, buildDrums, buildCard, buildCrash, buildRiser, tuneSelect, TUNE_LABELS, tuneTake, BASS_TONES, KITS, kitHit, sub808, M, MGROUPS, MW, mScreenDraw, mwRead, mwView, mwLyrics, mwSyl, mwEdited, mwPut, mSongOpen, msHexLoop, room, ROOM, slPack, slUnpack, slLink, slRead, slShare, slWelcome, slOpen, slFromHash, SL, BEATS, beatUse, beatRows, beatsShelf, SIMPLE_TOOLS, drumHit, RL, MO, GM_DRUM, duckAt, duckSet, duckCfg, duckNode, moNote, moDev, moDrum, moPanic, moSettings, kyOut, bassOut, rollOpen, rollBuild, rollLoop, isBass, instNow, nStr, yin, TUNINGS, setTuning, renderBarTab, tabLabels, voicingFor, toggleRec, closePop, spPause, encodeWav, PS, psOn, playDur, psSpeed, psKey, psSched, psDSPFactory, psPop, KY, keysOpen, keysVoice, keysStep, kyNoteOn, kyNoteOff, kyRec, kyClear, kyWrite, kyPiano, kyMarks, kyVoicing, KEYS_SOUNDS, KEYS_STYLES, coFinish, coDemo, coFeedback, coFbView, coTimeline, coBeat, coPractise, TAKE, learnPassed, todayPlan, todayPieces, todayStart, todayDone, streak, weekCount, dayKey, LSTEP, songLessons, songStart, songKey, earLick, earStart, EAR, simpleSet, simpleApply, ghTakeSettings, airMode, airSet, CO, coPos, coachOpen, coListen, coTick, coPlace, coNotes, coSetPiece, rfParse, LESSONS, RIFFS, RIFF_STYLES, learnOpen, learnToSong, learnFile, learnFileText, learnOpenFile, learnFromSong, labMake, labVary, labKeep, atlasPieces, atShape, MODE_VAMP, S, AIR, AIR_LAG, airSync, applyLayout, VB_PRESETS, VB_ORDER, VBS, vbAttach, vbApply, vbToggle, vbSet, vbPreset, vbPresetNext, vbThrow, vbLook, vbTick, vbScale, vocalBoardOpen, pedalRelease, MEG, megSpectrum, megFeatures, megScore, megStep, megSet, megLearn, megDraw, megLoop, megSettings, PAD, padsOpen, padHit, padTap, padRecord, padRecStop, padUndoPass, padClear, padResize, padBeatbox, bbHits, bbPattern, dpat, bassEvent, drumStep, PEDAL, pedalPress, pedalDo, pedalSecs, gearSettings, MCLK, mclkSlot, mclkMs, MIDI, MIDIRAW, onMidi, STRM, streamOpen, streamRoom, streamInfo, streamPanel, slotAtTime, SING, SHW, singStep, singScore, singSteamIR, singMicOff, showerOpen, shwGo, shwPlay, shwPrev, shwNext, shwStem, shwRecToggle, shwRecStop, shwHear, shwSave, shwAddFiles, shwRemove, shwMove, shwMode, shwLoadSet, shwPlaylist, shwWords, shwPrepare, shwFolderPull, lrcParse, readTags, spPos, spPlay, STP, trainOpen, projRestoreTrack, secretNote, secretArp, WS, WS_BASE, WS_ARPS, wsScaleRun, wsArpRun, wsFollow, wsStop, wsListen, wsEarNext, wsEarAnswer, wsOpen, bandMute, bandMuted, pdbPut, pdbKeys, projRename, FS, FS_B, fsUse, fsSync, fsHead, fsNeeds, fsTidy, fsOpen, syncOff, syncZips, PRJ_WAIT: () => PRJ.wait, EGG, EGG_LINES, EGG_ORDER, eggDay, eggFor, eggNow, eggText, eggTick, eggFit, saveCfg, projSave, projDelete, GH, ghSync, ghConnect, ghKick, ghRecheck, prtOpen, prtAnalyze, prtPack, prtUnpack, prtRead, prtCompose, prtFromCode, prtCode, prtDraw, prtArtwork, prtCopyLink, prtShelfRead, prtFromHash, PRT, audioKill, audioResume, drpOgg, drpOpen, drpOwn, encodeWav, stemUnload, ycEnv, ycPrint, ycUnprint, ycMatch, ycSetStart, ycLoad, ycMakeOurs, STM, stemLoad, cmtAdd, cmtOpen, cmtAll, cmtPack, cmtWhere, lhOpen, lhScheme, lhRhymes, lhLoad, lhSyl, LH, finOpen, finAB, finMaster, finPackage, finTone, finMatchEq, finLimit, finPeople, FIN, lufsMeasure, verMark, verRestore, verCopy, verList, verOpen, verRoundOf, verChanged, jrSteps, safeState, ghSongOut, pdbGet, lxExport, lxExportOpen, lxSaveLane, lxLanes, lxRender, LXO, zipRead, srxSend, srxReceive, srxTakeBack, srxEncode, srxDecodeTake, srxPack, srxBundle, srxCan, SRS, ghDisconnect, ghLocal, ghSha, ghJson, ghMerge3, ghShare, ghGallery, ghGalleryOpen, ghGalleryShow, ghKeepLook, ghKeepRig, rigClean, ghReturn, BRAND, ghSettingsOut, projRefresh, projCreate, projLoad, PRJ, SEC, SECRETS, secretFound, secretTiming, secretsOpen, secretSync, backstageOpen, startAudio, playheadSlot, GUARD, reportText, reportCopy, srecQ, srecSize, pdbGet, srecFmt, SREC_FMTS, VBG, vbgAdd, vbgRemove, vbgUse, vbgOpen, vbgDraw, vzSetMode, srecFrame, srecFmtBox, kitThumb, WORKLET_SRC, mkComp, mkShaper, rigLat, voxLat, restartAudio, satCurve, rigApply, qrMake, qrSvg, tipLink, tipShort, tipReady, tipCard, tipDraw, tipShareHtml, tipOpen, tipPrint, tipPng, tipVisAvoid, tipStageAvoid, TIP, TIP_TERMS, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, GPU, gpuGet, gpuBlit, takeCheck, hearsOpen, hearsGather, hrsChordKey, hrsTempo, HRS, takeCheckOpen, tkcPeers, tkcVerdict, TKC, SPAT, spatToggle, spatSet, spatControl, XR, xrControl, xrEnter, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, drawVis, peaksOf, uid, shareGate, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, TAKES, STM, ZOOM, CFG, store, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, SEL, mtof, spb, WR, HM, HMX, HM_MODES, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GD_DOORS, GD_DOOR_TEXT, meNow, gdDoor, meSet, goalLens, GOAL_ME, coVoiceRoot, coHeard, coBuild, RIG, BRD, onBoard, brdSel, brdAdd, brdRemove, prtShelfAll, prtShelfMerge, ghTakeNotes, ghTakePrints, prtLookWorld, PRT_CODE_MAX, vzLookSync, vzLooksOpen, GOAL_MORE, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitInk, kitNotes, kitRecord, srecMime, mGo, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard}; };   // test hook: with ?debug, or Backstage ▸ Labs ▸ Developer handles
+  DEV.make = () => { window.__daily = { tourStart, mpVision, slSendLabel, slcChanges, mkSection, perfViewSet, pfLay, pfLaySet, pfLayMenu, songMapEl, secAdd, secKind, secNameFor, smGo, renderWholeSong, normSong, bandRename, get TOUR() { return TOUR; }, SIMPLE_GOAL_TABS, SIMPLE_GOAL_TOOLS, simpleTabs, goalAudioFirst, guitarBody, pluck, BLD, BUILD_LIFT, buildLevel, secEnergy, buildCtx, buildParts, buildDrums, buildCard, buildCrash, buildRiser, tuneSelect, TUNE_LABELS, tuneTake, BASS_TONES, KITS, kitHit, sub808, M, MGROUPS, MW, mScreenDraw, mwRead, mwView, mwLyrics, mwSyl, mwEdited, mwPut, mSongOpen, msHexLoop, room, ROOM, slPack, slUnpack, slLink, slRead, slShare, slWelcome, slOpen, slFromHash, SL, BEATS, beatUse, beatRows, beatsShelf, SIMPLE_TOOLS, drumHit, RL, MO, GM_DRUM, duckAt, duckSet, duckCfg, duckNode, moNote, moDev, moDrum, moPanic, moSettings, kyOut, bassOut, rollOpen, rollBuild, rollLoop, isBass, instNow, nStr, yin, TUNINGS, setTuning, renderBarTab, tabLabels, voicingFor, toggleRec, closePop, spPause, encodeWav, PS, psOn, playDur, psSpeed, psKey, psSched, psDSPFactory, psPop, KY, keysOpen, keysVoice, keysStep, kyNoteOn, kyNoteOff, kyRec, kyClear, kyWrite, kyPiano, kyMarks, kyVoicing, KEYS_SOUNDS, KEYS_STYLES, coFinish, coDemo, coFeedback, coFbView, coTimeline, coBeat, coPractise, TAKE, learnPassed, todayPlan, todayPieces, todayStart, todayDone, streak, weekCount, dayKey, LSTEP, songLessons, songStart, songKey, earLick, earStart, EAR, simpleSet, simpleApply, ghTakeSettings, airMode, airSet, CO, coPos, coachOpen, coListen, coTick, coPlace, coNotes, coSetPiece, rfParse, LESSONS, RIFFS, RIFF_STYLES, learnOpen, learnToSong, learnFile, learnFileText, learnOpenFile, learnFromSong, labMake, labVary, labKeep, atlasPieces, atShape, MODE_VAMP, S, AIR, AIR_LAG, airSync, applyLayout, VB_PRESETS, VB_ORDER, VBS, vbAttach, vbApply, vbToggle, vbSet, vbPreset, vbPresetNext, vbThrow, vbLook, vbTick, vbScale, vocalBoardOpen, pedalRelease, MEG, megSpectrum, megFeatures, megScore, megStep, megSet, megLearn, megDraw, megLoop, megSettings, PAD, padsOpen, padHit, padTap, padRecord, padRecStop, padUndoPass, padClear, padResize, padBeatbox, bbHits, bbPattern, dpat, bassEvent, drumStep, PEDAL, pedalPress, pedalDo, pedalSecs, gearSettings, MCLK, mclkSlot, mclkMs, MIDI, MIDIRAW, onMidi, STRM, streamOpen, streamRoom, streamInfo, streamPanel, slotAtTime, SING, SHW, singStep, singScore, singSteamIR, singMicOff, showerOpen, shwGo, shwPlay, shwPrev, shwNext, shwStem, shwRecToggle, shwRecStop, shwHear, shwSave, shwAddFiles, shwRemove, shwMove, shwMode, shwLoadSet, shwPlaylist, shwWords, shwPrepare, shwFolderPull, lrcParse, readTags, spPos, spPlay, STP, trainOpen, projRestoreTrack, secretNote, secretArp, WS, WS_BASE, WS_ARPS, wsScaleRun, wsArpRun, wsFollow, wsStop, wsListen, wsEarNext, wsEarAnswer, wsOpen, bandMute, bandMuted, pdbPut, pdbKeys, projRename, FS, FS_B, fsUse, fsSync, fsHead, fsNeeds, fsTidy, fsOpen, syncOff, syncZips, PRJ_WAIT: () => PRJ.wait, EGG, EGG_LINES, EGG_ORDER, eggDay, eggFor, eggNow, eggText, eggTick, eggFit, saveCfg, projSave, projDelete, GH, ghSync, ghConnect, ghKick, ghRecheck, prtOpen, prtAnalyze, prtPack, prtUnpack, prtRead, prtCompose, prtFromCode, prtCode, prtDraw, prtArtwork, prtCopyLink, prtShelfRead, prtFromHash, PRT, audioKill, audioResume, drpOgg, drpOpen, drpOwn, encodeWav, stemUnload, ycEnv, ycPrint, ycUnprint, ycMatch, ycSetStart, ycLoad, ycMakeOurs, STM, stemLoad, cmtAdd, cmtOpen, cmtAll, cmtPack, cmtWhere, lhOpen, lhScheme, lhRhymes, lhLoad, lhSyl, LH, finOpen, finAB, finMaster, finPackage, finTone, finMatchEq, finLimit, finPeople, FIN, lufsMeasure, verMark, verRestore, verCopy, verList, verOpen, verRoundOf, verChanged, jrSteps, safeState, ghSongOut, pdbGet, lxExport, lxExportOpen, lxSaveLane, lxLanes, lxRender, LXO, zipRead, srxSend, srxReceive, srxTakeBack, srxEncode, srxDecodeTake, srxPack, srxBundle, srxCan, SRS, ghDisconnect, ghLocal, ghSha, ghJson, ghMerge3, ghShare, ghGallery, ghGalleryOpen, ghGalleryShow, ghKeepLook, ghKeepRig, rigClean, ghReturn, BRAND, ghSettingsOut, projRefresh, projCreate, projLoad, PRJ, SEC, SECRETS, secretFound, secretTiming, secretsOpen, secretSync, backstageOpen, startAudio, playheadSlot, GUARD, reportText, reportCopy, srecQ, srecSize, pdbGet, srecFmt, SREC_FMTS, VBG, vbgAdd, vbgRemove, vbgUse, vbgOpen, vbgDraw, vzSetMode, srecFrame, srecFmtBox, kitThumb, WORKLET_SRC, mkComp, mkShaper, rigLat, voxLat, restartAudio, satCurve, rigApply, qrMake, qrSvg, tipLink, tipShort, tipReady, tipCard, tipDraw, tipShareHtml, tipOpen, tipPrint, tipPng, tipVisAvoid, tipStageAvoid, TIP, TIP_TERMS, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, GPU, gpuGet, gpuBlit, takeCheck, mGo, vdPostOn, chPsi, chModeFor, CH_MODES, CHX, vlPtPush, PTX, vlChladni, vlPitchTrace, vzSavedOpen, vsSections, vsCaps, VFAMS, vzStripSync, vzGroupShow, vlHarmonics, vlHarmName, vlEuclid, vlEuclidOf, vlSpiralPos, vlSpiral, vlRhythm, vlOvertones, VLOOK, VL_DRAW, vlv, vlSet, vlControls, THX, TN, thNext, thNode, thWheel, thTonnetz, NG, ngCam, HM, drawHex, drawLattice, vdPost, vdv, vdSet, vdApply, vdSave, vdDelete, vdReset, vdPersonal, vdShapeDefault, VD_PRESETS, VFAMS, vzDesignOpen, VDX, hearsOpen, hearsGather, hrsChordKey, hrsTempo, HRS, takeCheckOpen, tkcPeers, tkcVerdict, TKC, SPAT, spatToggle, spatSet, spatControl, XR, xrControl, xrEnter, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, drawVis, peaksOf, uid, shareGate, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, TAKES, STM, ZOOM, CFG, store, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, SEL, mtof, spb, WR, HM, HMX, HM_MODES, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GD_DOORS, GD_DOOR_TEXT, meNow, gdDoor, meSet, goalLens, GOAL_ME, coVoiceRoot, coHeard, coBuild, RIG, BRD, onBoard, brdSel, brdAdd, brdRemove, prtShelfAll, prtShelfMerge, ghTakeNotes, ghTakePrints, prtLookWorld, PRT_CODE_MAX, vzLookSync, vzLooksOpen, GOAL_MORE, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitInk, kitNotes, kitRecord, srecMime, mGo, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard}; };   // test hook: with ?debug, or Backstage ▸ Labs ▸ Developer handles
   if (/[?&]debug\b/.test(location.search) || (CFG.labs && CFG.labs.handles)) DEV.make();
   try { bksBoot(); } catch (e) { console.warn('backstage', e); }      /* #backstage in the address, the performance overlay (part 73c) */
   projInit().catch(e => { console.warn('library', e); PRJ.ready = true; if (PRJ.wantStart) startMaybe(); });
@@ -4772,6 +4991,7 @@ function stageInfo() {
 /* ---------- extra visual modes (dispatched from drawVis) ---------- */
 function stageExtra(mode, g, W, H, X) {
   if (mode === 'sprint') return prtVisDraw(g, W, H, X);
+  if (typeof VL_DRAW !== 'undefined' && VL_DRAW[mode]) { g.save(); g.textBaseline = 'alphabetic'; try { VL_DRAW[mode](g, W, H, X); } catch (e) { if (!VLX.err) { VLX.err = 1; console.warn('world', mode, e); } } g.restore(); g.textAlign = 'left'; g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1; return; }
   if (typeof HM_MODES !== 'undefined' && HM_MODES.has(mode)) return hmDraw(mode, g, W, H, X);
   if (typeof BK_MODES !== 'undefined' && BK_MODES.has(mode)) return bkDraw(mode, g, W, H, X);
   if (mode === 'concert') return concertDraw(g, W, H, X);
@@ -5091,9 +5311,9 @@ function ngLayout() {
   by('band').forEach(n => { const u = n.i / (NR.nBands - 1); n.t_net = [-2 * XS, (u - .5) * 6.4, Math.sin(u * Math.PI) * 1.1]; n.t_fif = [Math.cos(u * 8.4) * .55, (u - .5) * 3.4, Math.sin(u * 8.4) * .55]; });
   by('pc').forEach(n => { const k = FIFTH(n.pc); n.t_net = [-XS, ((k / 11) - .5) * 5.6, (k % 2 ? .7 : -.7)]; n.t_fif = [Math.cos(FANG(n.pc)) * 2.5, -.2, Math.sin(FANG(n.pc)) * 2.5]; });
   const ch = by('chord'); ch.forEach((n, i) => { const c = n.cp; if (!c) return; const k = FIFTH(c.root), u = k / 11; n.t_net = [0, (u - .5) * 6.2, QH(c.q) * 2.2]; n.t_fif = [Math.cos(FANG(c.root)) * (1.45 + QH(c.q) * .4), QH(c.q) * 1.6 + .6, Math.sin(FANG(c.root)) * (1.45 + QH(c.q) * .4)]; });
-  by('func').forEach((n, i) => { n.t_net = [XS, 2.5 - i * .75, 0]; n.t_fif = [Math.cos(i * 1.57) * .8, 2.6, Math.sin(i * 1.57) * .8]; });
-  const ss = by('section'); ss.forEach((n, i) => { const u = ss.length > 1 ? i / (ss.length - 1) : .5; n.t_net = [XS, -.9 - u * 2.4, 0]; n.t_fif = [Math.cos(i / ss.length * 6.28) * 1.5, 3.4, Math.sin(i / ss.length * 6.28) * 1.5]; });
-  const kk = NR.nodes.get('k:key'), kt = NR.nodes.get('k:ten'); if (kk) { kk.t_net = [2 * XS, .9, 0]; kk.t_fif = [0, 4.1, 0]; } if (kt) { kt.t_net = [2 * XS, -1.2, 0]; kt.t_fif = [.9, 3.8, .3]; }
+  by('func').forEach((n, i) => { n.t_net = [XS, 2.5 - i * .75, 0]; n.t_fif = [Math.cos(i * 1.57 + .8) * 1.25, 2.5, Math.sin(i * 1.57 + .8) * 1.25]; });
+  const ss = by('section'); ss.forEach((n, i) => { const u = ss.length > 1 ? i / (ss.length - 1) : .5; n.t_net = [XS, -.9 - u * 2.4, 0]; n.t_fif = [Math.cos(i / Math.max(1, ss.length) * 6.28 - 1.2) * 2.3, 3.3, Math.sin(i / Math.max(1, ss.length) * 6.28 - 1.2) * 2.3]; });
+  const kk = NR.nodes.get('k:key'), kt = NR.nodes.get('k:ten'); if (kk) { kk.t_net = [2 * XS, .9, 0]; kk.t_fif = [0, 2.9, 0]; } if (kt) { kt.t_net = [2 * XS, -1.2, 0]; kt.t_fif = [0, 1.6, 0]; }
   nodes.forEach(n => { n.tgt = L === 'net' ? n.t_net : n.t_fif; });
 }
 function ngForce(dt) {
@@ -5177,15 +5397,16 @@ function ngUpdate(dt, vis) {
   if (NG.layout === 'force') ngForce(dt); const kk_ = 1 - Math.pow(.0009, dt);
   NR.nodes.forEach(n => { if (NG.layout === 'force' && n.kind !== 'band') return; const g = n.tgt || n.t_net || [0, 0, 0]; for (let q = 0; q < 3; q++) n.p[q] += (g[q] - n.p[q]) * kk_; });
   NR.pulses.forEach(p => { p.t += dt * p.s; }); NR.pulses = NR.pulses.filter(p => p.t < 1);
+  if (!NR.drag && !NR.userTilt) NG.pit += ((NG.layout === 'fifths' ? .8 : .38) - NG.pit) * Math.min(1, dt * 2.5);      /* 2.79: from above, the circle of fifths reads as a circle */
   if (NG.rot && !NR.drag) { NR.spinT = (NR.spinT || 0) + dt * .3; NG.yaw += NG.layout === 'net' ? Math.cos(NR.spinT) * dt * .14 : dt * .09; }
   if (NR.pred === null && cur) NR.pred = ngPredict(cur.sym);
 }
 
 /* ---------- projection & render ---------- */
-function ngCam(c, W, H) { const cy = Math.cos(c.yaw), sy = Math.sin(c.yaw), cp = Math.cos(c.pit), sp = Math.sin(c.pit), sc = Math.min(W * .6, H * 1.02) * .095 * c.zoom, D = 13; return p => { const x1 = cy * p[0] + sy * p[2], z1 = -sy * p[0] + cy * p[2], y2 = cp * p[1] - sp * z1, z2 = sp * p[1] + cp * z1, w = D / (D - z2); return [W / 2 + c.px + x1 * sc * w, H * .54 + c.py - y2 * sc * w, z2, w]; }; }
+function ngCam(c, W, H) { const cy = Math.cos(c.yaw), sy = Math.sin(c.yaw), cp = Math.cos(c.pit), sp = Math.sin(c.pit), sc = Math.min(W * .6, H * 1.02) * .095 * c.zoom * (NG.layout === 'fifths' ? 1.45 : 1), D = 13; return p => { const x1 = cy * p[0] + sy * p[2], z1 = -sy * p[0] + cy * p[2], y2 = cp * p[1] - sp * z1, z2 = sp * p[1] + cp * z1, w = D / (D - z2); return [W / 2 + c.px + x1 * sc * w, H * .54 + c.py - y2 * sc * w, z2, w]; }; }
 function evPos(e) {
   const L = NG.layout; const pn = NR.nodes.get('p' + e.pc); const oc = (e.midi - 36) / 12;
-  if (L === 'fifths') { const r = 2.7 + oc * .42; return [Math.cos(FANG(e.pc) + e.prog * 2.2) * r, -1.9 + e.prog * 5.4 + e.jy * .25, Math.sin(FANG(e.pc) + e.prog * 2.2) * r]; }
+  if (L === 'fifths') { const r = 2.7 + oc * .42; return [Math.cos(FANG(e.pc) + e.prog * .5) * r, -1.9 + e.prog * 5.4 + e.jy * .25, Math.sin(FANG(e.pc) + e.prog * .5) * r]; }
   const b = pn ? pn.p : [0, 0, 0]; return [b[0] + (e.jx * .55 - .1) - oc * .1, b[1] + e.jy * .5 + (oc - 1.2) * .08, b[2] + e.jz * .55 + oc * .12];
 }
 const NCOL = n => n.kind === 'band' ? ramp(1 - n.i / 23) : n.kind === 'pc' ? pcCol(n.pc) : n.kind === 'chord' ? (n.cp ? pcCol(n.cp.root) : '#aaa') : n.kind === 'func' ? ({ T: '#35d3c2', S: '#f2a900', D: '#e4572e', O: '#a58bff' })[n.fn] : n.kind === 'section' ? `hsl(${hashHue(n.label)},70%,${light_() ? 42 : 62}%)` : n.kind === 'key' ? (light_() ? '#223' : '#ffffff') : '#ff5fa2';
@@ -5281,12 +5502,12 @@ function buildNeuralPane() {
   const pinStat = () => { const [a, b] = [...pts.values()]; return { d: Math.hypot(a[0] - b[0], a[1] - b[1]) || 1, mx: (a[0] + b[0]) / 2, my: (a[1] + b[1]) / 2 }; };
   cv.addEventListener('pointerdown', e => { pts.set(e.pointerId, [e.clientX, e.clientY]); cv.setPointerCapture(e.pointerId); if (pts.size === 2) { const st = pinStat(); pin = { d: st.d, z: NG.zoom, mx: st.mx, my: st.my }; if (down) down.moved = true; return; } down = { x: e.clientX, y: e.clientY, pan: e.shiftKey || e.button === 2, moved: false }; NR.drag = true; cv.style.cursor = 'grabbing'; });
   cv.addEventListener('contextmenu', e => e.preventDefault());
-  cv.addEventListener('pointermove', e => { if (pts.has(e.pointerId)) pts.set(e.pointerId, [e.clientX, e.clientY]); if (pin && pts.size >= 2) { const st = pinStat(), k = cv.width / cv.getBoundingClientRect().width; NG.zoom = clamp(pin.z * st.d / pin.d, .35, 4); NG.px += (st.mx - pin.mx) * k; NG.py += (st.my - pin.my) * k; pin.mx = st.mx; pin.my = st.my; return; } const [x, y, r] = xy(e); if (down) { const dx = e.clientX - down.x, dy = e.clientY - down.y; if (Math.abs(dx) + Math.abs(dy) > 3) down.moved = true; if (down.pan) { NG.px += dx * (cv.width / r.width); NG.py += dy * (cv.width / r.width); } else { NG.yaw += dx * .007; NG.pit = clamp(NG.pit + dy * .006, -1.4, 1.4); } down.x = e.clientX; down.y = e.clientY; return; } const hit = ngPick(x, y); NR.hover = hit ? (hit.e ? hit : hit.n) : null; cv.style.cursor = hit ? 'pointer' : 'grab'; if (hit) { NR.tip.style.display = 'block'; NR.tip.style.left = (e.clientX - r.left + 14) + 'px'; NR.tip.style.top = (e.clientY - r.top + 10) + 'px'; NR.tip.textContent = hit.e ? pcName(hit.e.pc) + (Math.floor(hit.e.midi / 12) - 1) + ' · ' + (hit.e.chord || hit.e.src) : hit.n.label; } else NR.tip.style.display = 'none'; });
+  cv.addEventListener('pointermove', e => { if (pts.has(e.pointerId)) pts.set(e.pointerId, [e.clientX, e.clientY]); if (pin && pts.size >= 2) { const st = pinStat(), k = cv.width / cv.getBoundingClientRect().width; NG.zoom = clamp(pin.z * st.d / pin.d, .35, 4); NG.px += (st.mx - pin.mx) * k; NG.py += (st.my - pin.my) * k; pin.mx = st.mx; pin.my = st.my; return; } const [x, y, r] = xy(e); if (down) { const dx = e.clientX - down.x, dy = e.clientY - down.y; if (Math.abs(dx) + Math.abs(dy) > 3) down.moved = true; if (down.pan) { NG.px += dx * (cv.width / r.width); NG.py += dy * (cv.width / r.width); } else { NG.yaw += dx * .007; NG.pit = clamp(NG.pit + dy * .006, -1.4, 1.4); NR.userTilt = true; } down.x = e.clientX; down.y = e.clientY; return; } const hit = ngPick(x, y); NR.hover = hit ? (hit.e ? hit : hit.n) : null; cv.style.cursor = hit ? 'pointer' : 'grab'; if (hit) { NR.tip.style.display = 'block'; NR.tip.style.left = (e.clientX - r.left + 14) + 'px'; NR.tip.style.top = (e.clientY - r.top + 10) + 'px'; NR.tip.textContent = hit.e ? pcName(hit.e.pc) + (Math.floor(hit.e.midi / 12) - 1) + ' · ' + (hit.e.chord || hit.e.src) : hit.n.label; } else NR.tip.style.display = 'none'; });
   cv.addEventListener('pointercancel', e => { pts.delete(e.pointerId); if (!pts.size) { pin = null; down = null; NR.drag = false; } });
   cv.addEventListener('pointerup', e => { pts.delete(e.pointerId); if (pin) { if (pts.size < 2) pin = null; if (down) down.moved = true; if (!pts.size) { down = null; NR.drag = false; cv.style.cursor = 'grab'; } return; } const [x, y] = xy(e); if (down && !down.moved) { const hit = ngPick(x, y); NR.sel = hit ? (hit.e ? hit : hit.n) : null; ngPanel(); if (hit && !hit.e && hit.n && hit.n.kind === 'chord' && hit.n.sym) nkPinChord(hit.n.sym); } down = null; NR.drag = false; cv.style.cursor = 'grab'; });
   cv.addEventListener('pointerleave', () => { NR.hover = null; NR.tip.style.display = 'none'; });
   cv.addEventListener('wheel', e => { e.preventDefault(); NG.zoom = clamp(NG.zoom * Math.exp(-e.deltaY * .0012), .35, 4); }, { passive: false });
-  cv.addEventListener('dblclick', () => { NG.yaw = -.6; NG.pit = .38; NG.zoom = 1; NG.px = NG.py = 0; NR.sel = null; });
+  cv.addEventListener('dblclick', () => { NG.yaw = -.6; NG.pit = NG.layout === 'fifths' ? .8 : .38; NR.userTilt = false; NG.zoom = 1; NG.px = NG.py = 0; NR.sel = null; });
   ngPanel();
 }
 
@@ -8023,7 +8244,7 @@ function aboutBlock() {
       h('p', {}, 'And above all, may it bring you joy.'),
       h('p', {}, 'Welcome to the-daily.studio.'),
       h('p', { class: 'ab-sig' }, '-Tehau'),
-      h('div', { class: 'row', style: { gap: '6px', flexWrap: 'wrap' } }, BRAND.support ? link('☕ ' + BRAND.supportLabel, BRAND.support, 'primary') : '', link('The story', 'guide/about/'), link('GitHub', BRAND.github), link('LinkedIn', BRAND.linkedin), link('The Daily', BRAND.journal), link('Source & issues', BRAND.repo))),
+      h('div', { class: 'row', style: { gap: '6px', flexWrap: 'wrap' } }, BRAND.support ? link('☕ ' + BRAND.supportLabel, BRAND.support, 'primary') : '', link('The story', 'guide/about/'), link('GitHub', BRAND.github), link('LinkedIn', BRAND.linkedin), link('Instagram', BRAND.instagram), link('The Daily', BRAND.journal), link('Source & issues', BRAND.repo))),
     h('details', { class: 'ab-cr', id: 'abPriv' }, h('summary', {}, 'Privacy at a glance'),
       h('ul', {},
         li(h('b', {}, 'Stays on this device: '), 'everything you play, sing, record, drop in or type: audio, camera pictures, songs, takes, lyrics and settings. There is no account of its own, no analytics and no advertising. Nothing is uploaded unless you choose to: GitHub sync (to your own account), a folder, or recordings sent with a link (encrypted, kept 7 days).'),
@@ -9034,7 +9255,7 @@ function vzExtra2(mode, g, W, H, X) { if (mode === 'halo') return haloDraw(g, W,
 
 /** change the visual look from anywhere (the full-screen ✦ button, keys) and keep the Visuals buttons in step */
 const VZ_FAVS = ['hex', 'concert', 'halo', 'kaleido'];
-function vzSetMode(k, quiet) { VZ.mode = k; if (!quiet) { CFG.visMode = k; saveCfg(); } VZ.spec = null; VZ.hexes = null; document.querySelectorAll('#pane-vis .seg [data-m]').forEach(b => b.classList.toggle('on', b.dataset.m === k)); const n = (VMODES.find(m => m[0] === k) || [0, k])[1]; if (!quiet) toast(n, 'ok'); if (typeof hexToneSync === 'function') hexToneSync(); if (typeof prtBarSync === 'function') prtBarSync(); if (typeof vzLookSync === 'function') vzLookSync(); }
+function vzSetMode(k, quiet) { VZ.mode = k; if (!quiet) { CFG.visMode = k; saveCfg(); } VZ.spec = null; VZ.hexes = null; document.querySelectorAll('#pane-vis .seg [data-m]').forEach(b => b.classList.toggle('on', b.dataset.m === k)); const n = (VMODES.find(m => m[0] === k) || [0, k])[1]; if (!quiet) toast(n, 'ok'); if (typeof hexToneSync === 'function') hexToneSync(); if (typeof prtBarSync === 'function') prtBarSync(); if (typeof vzLookSync === 'function') vzLookSync(); if (typeof vdOnLook === 'function') vdOnLook(k); }
 /** Auto look: while the song plays, the look follows the section: calm in verses, wide in choruses, strange in bridges. Your own look comes back when it stops. */
 const VZ_BY_SECTION = [[/chorus|hook|refrain/i, 'halo'], [/bridge|break|solo/i, 'kaleido'], [/intro|outro|tag|coda/i, 'hex']];
 let vzSecLast = '';
@@ -13891,13 +14112,13 @@ Object.defineProperty(GD_SESSIONS.stage = {
   name: 'Play it live', mins: 5, icon: '🎤', blurb: 'A look, your sound, the band, ★ Showtime, and a video to post.',
   outro: 'That is the stage: a look, your sound, the song full screen and a video. Studio Replay saves it as MP4 or shares it; ⋯ More has the shape of the video, the stream window and the tip jar.', next: 'learn'
 }, 'steps', gdSteps([
-  { id: 'look', on: 'desk', short: 'Pick a look', text: 'Press the Look button at the top of the Visuals and choose one. Each look reads the song differently: try a few.', target: '#vzLookBtn', go: () => { dockGo('vis'); try { vzLooksOpen(true); } catch (e) { } }, setup: () => { GD.base = VZ.mode; }, done: () => VZ.mode !== GD.base },
+  { id: 'look', on: 'desk', short: 'Pick a look', text: 'Choose a look from the strip at the top of the Visuals: Sound, Harmony, Atmosphere or Performance. Each reads the song differently: try a few.', target: '#vzLooks', go: () => { dockGo('vis'); try { vzLooksOpen(true); } catch (e) { } }, setup: () => { GD.base = VZ.mode; }, done: () => VZ.mode !== GD.base },
   { id: 'tone', on: 'desk', short: 'Pick your sound', only: ['', 'guitar', 'new', 'tech'], text: 'Choose a tone from the list on the left: a clean, a crunch, a lead. With a guitar connected (Audio, top right) you hear it as you play.', target: '#left .pitem', go: () => { try { sideShow('tones'); } catch (e) { } }, setup: () => { GD.base = RIG.cur; }, done: () => RIG.cur !== GD.base },
   { id: 'band', on: 'desk', short: 'Start the band', text: 'Press ▶ (or Space). The band plays the song and the visuals move with it. Play or sing along, then ■ Stop.', target: () => UI.play, setup: () => { GD.seen.played = 0; }, done: () => !!GD.seen.played && !T.playing },
   { id: 'show', on: 'desk', short: 'Go full screen', text: () => 'Press ★ Showtime in the song bar' + (meNow() === 'sing' ? ': the words come up in time with their chords, to sing from.' : ': the chord, the next one and the words, full screen.') + ' Esc brings you back.', target: '#sbPerform', setup: () => { GD.seen.perf = 0; }, done: () => !!GD.seen.perf && !document.body.classList.contains('perform-on') },
   { id: 'video', on: 'desk', short: 'Record a video', text: 'Press ⏺ Record video, let it run for a few seconds, and press it again to stop. Studio Replay opens with your video, ready to save or share.', target: '#gtVideo', setup: () => { GD.base = KIT.last; }, done: () => !!KIT.last && KIT.last !== GD.base },
   { id: 'band', on: 'phone', short: 'Start the band', text: 'Tap ▶ at the top. The band plays the song; sing or play along, then ■.', target: gdPlayBtn, setup: () => { GD.seen.played = 0; }, done: () => !!GD.seen.played && !T.playing },
-  { id: 'look', on: 'phone', short: 'Pick a look', text: 'This is the Visuals: tap the Look button and choose one. Each look reads the song differently.', target: '#vzLookBtn', go: () => { try { mGo('see', 'vis'); vzLooksOpen(true); } catch (e) { } }, setup: () => { GD.base = VZ.mode; }, done: () => VZ.mode !== GD.base },
+  { id: 'look', on: 'phone', short: 'Pick a look', text: 'This is the Visuals: choose a look from the strip under the picture. Each reads the song differently.', target: '#vzLooks', go: () => { try { mGo('see', 'vis'); vzLooksOpen(true); } catch (e) { } }, setup: () => { GD.base = VZ.mode; }, done: () => VZ.mode !== GD.base },
   { id: 'show', on: 'phone', short: 'Go full screen', text: 'Tap Words, then 📄 Song, then ★ Showtime: the words come up in time with their chords, to sing or play from. ✕ brings you back.', target: '#mwPerform', go: gdPhoneSong, setup: () => { GD.seen.perf = 0; }, done: () => !!GD.seen.perf && !document.body.classList.contains('perform-on') }
 ]));
 Object.defineProperty(GD_SESSIONS.learn = {
@@ -15398,6 +15619,444 @@ function hmDraw(mode, g, W, H, X) {
   try { HM_DRAW[mode](g, W, H, X); } catch (e) { if (!HMX.err) { HMX.err = 1; console.warn('harmony look', mode, e); } } g.restore(); g.textAlign = 'left'; g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1;
 }
 
+/* >>> parts/66b-theory.js */
+/* ============================================================
+   Part 66b · Two looks made of music theory (2.79)
+     Harmonic Wheel   the circle of fifths as a live network. Twelve keys round the rim (the major chords outside, their relative minors
+                      inside), the key you are in lit as a zone, the chords of the song as nodes, and every chord change you play or the song
+                      plays drawn as a curve from one chord to the next: the more often, the brighter. The chord sounding now glows; the
+                      notes sounding now are bars on the rim at their place on the circle; the middle says which chord is likely next, from
+                      what this song and your playing have done so far.
+     Tonnetz          the lattice music theorists draw: along one direction the notes are a fifth apart, along another a major third, along
+                      the third a minor third. Every triangle is a major or minor chord. The view follows the chord and the line the song
+                      draws across the lattice is how little each chord moves from the one before.
+   Both read the harmony state in part 65 and draw on the visuals canvas, so they also work in the stage designer and full screen. Neither
+   decides anything for you: "likely next" is a count of what has already happened here, and says so.
+   ============================================================ */
+VMODES.push(['wheel', 'Harmonic Wheel'], ['tonnetz', 'Tonnetz']); HM_MODES.add('wheel'); HM_MODES.add('tonnetz');
+const THX = { trans: new Map(), last: null, from: null, to: null, moveT: -99, song: new Set(), seed: null, hist: [], cam: null, cent: null, base: null };
+const thFif = pc => ((pc % 12) * 7 + 84) % 12;                           /* a note's place on the circle of fifths (C = 0 at the top, G = 1, D = 2 ...) */
+const thMinorOf = ch => !!ch && ch.iv.includes(3) && !ch.iv.includes(4);   /* minor and diminished chords sit on the inner ring */
+/** a chord as its place on the wheel: its fifths position, and whether it is on the inner (minor) ring. A minor chord sits under its relative major. */
+function thNode(ch) { const m = thMinorOf(ch), k = thFif(m ? ch.root + 3 : ch.root); return { id: (m ? 'm' : 'M') + k, k, m, root: ch.root }; }
+const thName = (k, m) => { const root = ((m ? k * 7 + 9 : k * 7) % 12 + 12) % 12; return pcName(root) + (m ? 'm' : ''); };
+const thNodeRoot = id => (((+id.slice(1)) * 7 + (id[0] === 'm' ? 9 : 0)) % 12 + 12) % 12;
+const thHue = root => lxHueOf(lxFifths(root));
+const thCol = (root, l, a) => `hsla(${thHue(root)},80%,${l}%,${a})`;
+/** the chords of the open song, in order: they seed the transitions, so the wheel shows the song's own path before anything plays */
+function thSeed() {
+  const sig = S.sections.map(s => s.bars.map(b => b.chord || '').join('|')).join('/'); if (THX.seed === sig) return; THX.seed = sig; THX.song = new Set(); const seed = new Map(); let prev = null;
+  S.sections.forEach(s => s.bars.forEach(b => barChords(b).forEach(sym => { const ch = parseChord(sym); if (!ch) return; const n = thNode(ch); THX.song.add(n.id); if (prev && prev !== n.id) seed.set(prev + '>' + n.id, (seed.get(prev + '>' + n.id) || 0) + 1); prev = n.id; })));
+  THX.trans.forEach((v, k) => { if (v.live) seed.set(k, (seed.get(k) || 0) + 0); });
+  THX.base = seed;
+}
+/** note a change of chord, from the song or from your playing */
+function thTrack(now) {
+  thSeed(); const ch = HM.chord; if (!ch) return; const n = thNode(ch);
+  if (THX.last !== n.id) { if (THX.last) { const k = THX.last + '>' + n.id; THX.trans.set(k, (THX.trans.get(k) || 0) + 1); THX.from = THX.last; THX.to = n.id; THX.moveT = now; } THX.last = n.id; }
+}
+const thCount = k => (THX.trans.get(k) || 0) + (THX.base ? (THX.base.get(k) || 0) * .6 : 0);
+const thAll = () => { const all = new Map(); if (THX.base) THX.base.forEach((v, k) => all.set(k, v * .6)); THX.trans.forEach((v, k) => all.set(k, (all.get(k) || 0) + v)); return all; };
+/** what has followed this chord so far, most often first */
+function thNext(id) { const out = []; thAll().forEach((v, k) => { const [a, b] = k.split('>'); if (a === id) out.push([b, v]); }); out.sort((x, y) => y[1] - x[1]); const tot = out.reduce((s, x) => s + x[1], 0); return out.map(([b, v]) => ({ id: b, p: v / (tot || 1) })); }
+/** how loud each of the twelve notes is right now (0..1): what is played, or what the song is playing */
+function thChroma() {
+  const c = new Float32Array(12), live = AN.active ? AN.chroma : null, play = vzPlaying() ? PB.chroma : null; let mx = .001;
+  if (live) for (let i = 0; i < 12; i++) mx = Math.max(mx, live[i]);
+  for (let i = 0; i < 12; i++) c[i] = Math.max(live ? live[i] / mx : 0, play ? PB.chroma[i] : 0);
+  return c;
+}
+const thSc = (W, H) => clamp(Math.min(W, H * 1.15) / 760, .55, 1.7);
+
+/* ---------- Harmonic Wheel ---------- */
+function thWheel(g, W, H, X) {
+  const now = HM.now, mo = hmCm().motion; thTrack(now); const sc = thSc(W, H), cx = W / 2, cy = H * .5, R = Math.min(W * .42, H * .385), Ri = R * .66, Rc = R * .3, pulse = (X && X.pulse) || 0;
+  const ang = k => k / 12 * Math.PI * 2 - Math.PI / 2, pos = (k, m, r) => { const rr = r || (m ? Ri : R), a = ang(k); return [cx + Math.cos(a) * rr, cy + Math.sin(a) * rr]; };
+  const keyM = S.minor ? thFif(S.key + 3) : thFif(S.key), keyRoot = S.key, cur = HM.chord ? thNode(HM.chord) : null, chroma = thChroma();
+  g.fillStyle = 'rgba(0,0,0,.28)'; g.fillRect(0, 0, W, H);
+  // the key's zone: the three neighbours (IV, I, V) and their relatives, lit as a band across both rings
+  { const a0 = ang(keyM - 1.5), a1 = ang(keyM + 1.5); g.beginPath(); g.arc(cx, cy, R + 24 * sc, a0, a1); g.arc(cx, cy, Rc + 6 * sc, a1, a0, true); g.closePath(); const gr = g.createRadialGradient(cx, cy, Rc, cx, cy, R + 24 * sc); gr.addColorStop(0, thCol(keyRoot, 55, .02)); gr.addColorStop(1, thCol(keyRoot, 60, .14 + .06 * pulse)); g.fillStyle = gr; g.fill(); g.strokeStyle = thCol(keyRoot, 66, .35); g.lineWidth = 1.2; g.stroke(); }
+  // the rings and spokes
+  g.lineWidth = 1; g.strokeStyle = 'rgba(255,255,255,.12)'; [R, Ri, Rc].forEach(r => { g.beginPath(); g.arc(cx, cy, r, 0, 7); g.stroke(); });
+  g.strokeStyle = 'rgba(255,255,255,.07)'; for (let k = 0; k < 12; k++) { const a = pos(k, 0, Rc), b = pos(k, 0, R); g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.stroke(); }
+  // the notes sounding: bars on the rim at their place on the circle
+  for (let pc = 0; pc < 12; pc++) { const v = chroma[pc]; if (v < .06) continue; const k = thFif(pc), a = ang(k), r0 = R + 28 * sc, r1 = r0 + v * 34 * sc; g.strokeStyle = thCol(pc, 62, .25 + .65 * v); g.lineWidth = 7 * sc; g.lineCap = 'round'; g.beginPath(); g.moveTo(cx + Math.cos(a) * r0, cy + Math.sin(a) * r0); g.lineTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1); g.stroke(); }
+  g.lineCap = 'butt';
+  // the chord changes: a curve from each chord to the next, brighter the more often it has happened
+  const all = thAll(); let mxC = 1; all.forEach(v => { mxC = Math.max(mxC, v); });
+  const nodeXY = id => { const m = id[0] === 'm', k = +id.slice(1); return pos(k, m); };
+  all.forEach((v, key) => { const [a, b] = key.split('>'), A = nodeXY(a), B = nodeXY(b), u = v / mxC, hot = cur && a === cur.id, mx = (A[0] + B[0]) / 2, my = (A[1] + B[1]) / 2, qx = lerp(mx, cx, .62), qy = lerp(my, cy, .62), root = ((+a.slice(1)) * 7 + (a[0] === 'm' ? 9 : 0)) % 12;
+    g.strokeStyle = thCol(root, 62, clamp(.1 + u * .45 + (hot ? .3 : 0), 0, .95)); g.lineWidth = (1 + u * 3.6 + (hot ? 1.2 : 0)) * sc; g.beginPath(); g.moveTo(A[0], A[1]); g.quadraticCurveTo(qx, qy, B[0], B[1]); g.stroke();
+    // an arrowhead near the end, so the direction reads
+    const t = .86, ex = (1 - t) * (1 - t) * A[0] + 2 * (1 - t) * t * qx + t * t * B[0], ey = (1 - t) * (1 - t) * A[1] + 2 * (1 - t) * t * qy + t * t * B[1], dx = B[0] - ex, dy = B[1] - ey, dl = Math.hypot(dx, dy) || 1, ux = dx / dl, uy = dy / dl, s = (5 + 4 * u) * sc;
+    g.fillStyle = thCol(root, 66, clamp(.18 + u * .5, 0, .9)); g.beginPath(); g.moveTo(ex + ux * s, ey + uy * s); g.lineTo(ex - uy * s * .6, ey + ux * s * .6); g.lineTo(ex + uy * s * .6, ey - ux * s * .6); g.closePath(); g.fill(); });
+  // a spark travelling along the change that just happened
+  if (THX.from && now - THX.moveT < 1400 && mo > 0) { const A = nodeXY(THX.from), B = nodeXY(THX.to), t = clamp((now - THX.moveT) / 1100, 0, 1), qx = lerp((A[0] + B[0]) / 2, cx, .62), qy = lerp((A[1] + B[1]) / 2, cy, .62), x = (1 - t) * (1 - t) * A[0] + 2 * (1 - t) * t * qx + t * t * B[0], y = (1 - t) * (1 - t) * A[1] + 2 * (1 - t) * t * qy + t * t * B[1]; hmGlow(g, x, y, 22 * sc, 'rgba(255,255,255,A)', .9 * (1 - t * .6)); }
+  // the twelve keys
+  for (let k = 0; k < 12; k++) for (const m of [0, 1]) {
+    const id = (m ? 'm' : 'M') + k, [x, y] = pos(k, m), root = ((m ? k * 7 + 9 : k * 7) % 12 + 12) % 12, inKey = Math.abs(((k - keyM + 18) % 12) - 6) <= 1, inSong = THX.song.has(id), now_ = cur && cur.id === id, v = chroma[root], r = (m ? 15 : 19) * sc * (1 + (now_ ? .35 : 0) + v * .25);
+    if (now_) hmGlow(g, x, y, r * 3.2, thCol(root, 60, 'A'), .55 + .25 * pulse);
+    g.beginPath(); g.arc(x, y, r, 0, 7);
+    if (inSong || now_) { g.fillStyle = thCol(root, now_ ? 62 : 48, now_ ? .95 : .55 + v * .3); g.fill(); g.strokeStyle = thCol(root, 78, .9); g.lineWidth = (now_ ? 2.4 : 1.4) * sc; g.stroke(); }
+    else { g.fillStyle = `rgba(255,255,255,${inKey ? .07 : .025})`; g.fill(); g.strokeStyle = `rgba(255,255,255,${inKey ? .3 : .13})`; g.lineWidth = 1; g.stroke(); }
+    if (inSong || now_ || inKey) hmText(g, thName(k, m), x, y + 4 * sc, Math.round((m ? 11 : 13) * sc * (m ? .95 : 1)), now_ || inSong ? '#0a0f10' : 'rgba(255,255,255,.62)', 'center', 800);
+  }
+  // your voice: a ring on its note
+  if (HM.vm != null && HM.vOn) { const pc = ((Math.round(HM.vm) % 12) + 12) % 12, a = ang(thFif(pc)), x = cx + Math.cos(a) * (R + 22 * sc), y = cy + Math.sin(a) * (R + 22 * sc); g.strokeStyle = 'rgba(255,214,102,.95)'; g.lineWidth = 2.2 * sc; g.beginPath(); g.arc(x, y, 7 * sc, 0, 7); g.stroke(); }
+  // the middle: the chord, the key, and what has tended to come next
+  const fs = Math.round(clamp(Rc * .58, 18, 54)); hmText(g, HM.sym || '—', cx, cy - fs * .02, fs, '#fff', 'center', 800);
+  hmText(g, (pcName(S.key) + (S.minor ? ' minor' : ' major')), cx, cy + fs * .45, Math.round(fs * .3), 'rgba(255,255,255,.6)', 'center', 600);
+  const nx = cur ? thNext(cur.id) : [];
+  if (nx.length) { const top = nx[0], nm = thName(+top.id.slice(1), top.id[0] === 'm'); hmText(g, 'next: ' + nm + ' ' + Math.round(top.p * 100) + '%', cx, cy + fs * .98, Math.round(fs * .3), thCol(thNodeRoot(top.id), 72, .9), 'center', 700); }
+  if (H > 260) hmText(g, 'outer ring: major · inner ring: relative minor · lit band: the key · “next” counts what has already happened here', 14, H - 12, hmFz(W, H, 13), 'rgba(255,255,255,.3)', 'left', 500);
+}
+
+/* ---------- Tonnetz ---------- */
+const TN = { cam: null, trail: [], last: null };
+const thTriPcs = (i, j, up) => up ? [(7 * i + 4 * j) % 12, (7 * (i + 1) + 4 * j) % 12, (7 * i + 4 * (j + 1)) % 12] : [(7 * (i + 1) + 4 * j) % 12, (7 * i + 4 * (j + 1)) % 12, (7 * (i + 1) + 4 * (j + 1)) % 12];
+const thMod = x => ((x % 12) + 12) % 12;
+function thTonnetz(g, W, H, X) {
+  const now = HM.now, mo = hmCm().motion, dt = HM.dt || .016, s = clamp(Math.min(W, H) / 8.5, 44, 120) / vzSize(), h3 = s * Math.sqrt(3) / 2, cx = W / 2, cy = H * .52, chroma = thChroma(), pulse = (X && X.pulse) || 0;
+  const P = (i, j) => [s * (i + j * .5), h3 * j];                                       /* the plane position of lattice point (i, j) */
+  const ch = HM.chord, minor = thMinorOf(ch), root = ch ? ch.root : S.key;
+  // find the triangle for the chord that sits nearest where the last one was, so the line it draws is the smallest possible step
+  const ref = TN.cam || [0, 0]; let best = null, bd = 1e9;
+  const ci = Math.round(ref[0] / s) , cj = Math.round(ref[1] / h3);
+  for (let j = cj - 9; j <= cj + 9; j++) for (let i = ci - 12; i <= ci + 12; i++) {
+    if (!minor && thMod(7 * i + 4 * j) !== thMod(root)) continue; if (minor && thMod(7 * i + 4 * j + 4) !== thMod(root)) continue;
+    const vs = minor ? [P(i + 1, j), P(i, j + 1), P(i + 1, j + 1)] : [P(i, j), P(i + 1, j), P(i, j + 1)], c = [(vs[0][0] + vs[1][0] + vs[2][0]) / 3, (vs[0][1] + vs[1][1] + vs[2][1]) / 3], d = Math.hypot(c[0] - ref[0], c[1] - ref[1]);
+    if (d < bd) { bd = d; best = { vs, c, i, j }; } }
+  if (!TN.cam) TN.cam = best ? best.c.slice() : [0, 0];
+  if (best && TN.last !== HM.sym) { TN.last = HM.sym; TN.trail.push({ c: best.c, root, minor, t: now }); if (TN.trail.length > 12) TN.trail.shift(); }
+  if (best) { const k = 1 - Math.exp(-dt * 2.4); TN.cam[0] += (best.c[0] - TN.cam[0]) * k; TN.cam[1] += (best.c[1] - TN.cam[1]) * k; }
+  const X0 = cx - TN.cam[0], Y0 = cy - TN.cam[1], scr = (i, j) => { const p = P(i, j); return [X0 + p[0], Y0 + p[1]]; };
+  g.fillStyle = 'rgba(0,0,0,.3)'; g.fillRect(0, 0, W, H);
+  const j0 = Math.floor((TN.cam[1] - H / 2) / h3) - 2, j1 = Math.ceil((TN.cam[1] + H / 2) / h3) + 2, iR = j => [Math.floor((TN.cam[0] - W / 2) / s - j / 2) - 2, Math.ceil((TN.cam[0] + W / 2) / s - j / 2) + 2];
+  const scale = (S.minor ? [0, 2, 3, 5, 7, 8, 10] : [0, 2, 4, 5, 7, 9, 11]).map(x => thMod(x + S.key)), inScale = pc => scale.includes(pc);
+  // the key's territory: every triangle whose three notes are all in the key
+  for (let j = j0; j <= j1; j++) for (let i = iR(j)[0]; i <= iR(j)[1]; i++) for (const up of [true, false]) {
+    const pcs = thTriPcs(i, j, up); if (!pcs.every(inScale)) continue; const vs = up ? [scr(i, j), scr(i + 1, j), scr(i, j + 1)] : [scr(i + 1, j), scr(i, j + 1), scr(i + 1, j + 1)];
+    if (vs[0][0] < -s * 2 || vs[0][0] > W + s * 2 || vs[0][1] < -s * 2 || vs[0][1] > H + s * 2) continue; g.beginPath(); g.moveTo(vs[0][0], vs[0][1]); g.lineTo(vs[1][0], vs[1][1]); g.lineTo(vs[2][0], vs[2][1]); g.closePath(); g.fillStyle = thCol(S.key, 60, .055); g.fill(); }
+  // the lattice
+  g.lineWidth = 1; g.strokeStyle = 'rgba(255,255,255,.1)'; g.beginPath();
+  for (let j = j0; j <= j1; j++) for (let i = iR(j)[0]; i <= iR(j)[1]; i++) { const a = scr(i, j), b = scr(i + 1, j), c = scr(i, j + 1), d = scr(i - 1, j + 1); if (a[1] < -s || a[1] > H + s) continue; g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.moveTo(a[0], a[1]); g.lineTo(c[0], c[1]); g.moveTo(a[0], a[1]); g.lineTo(d[0], d[1]); }
+  g.stroke();
+  // the line the chords have drawn across it
+  if (TN.trail.length > 1) { g.lineJoin = 'round'; for (let n = 1; n < TN.trail.length; n++) { const a = TN.trail[n - 1], b = TN.trail[n], age = n / TN.trail.length; g.strokeStyle = thCol(b.root, 66, .12 + .6 * age); g.lineWidth = (1.5 + 3 * age) * thSc(W, H); g.beginPath(); g.moveTo(X0 + a.c[0], Y0 + a.c[1]); g.lineTo(X0 + b.c[0], Y0 + b.c[1]); g.stroke(); } }
+  // the chord now: its triangle, filled and glowing
+  if (best) { const v = best.vs.map(p => [X0 + p[0], Y0 + p[1]]); g.beginPath(); g.moveTo(v[0][0], v[0][1]); g.lineTo(v[1][0], v[1][1]); g.lineTo(v[2][0], v[2][1]); g.closePath(); g.save(); g.shadowColor = thCol(root, 60, .9); g.shadowBlur = 26 + 14 * pulse; g.fillStyle = thCol(root, 56, .55); g.fill(); g.restore(); g.strokeStyle = thCol(root, 80, .95); g.lineWidth = 2.4; g.stroke(); }
+  // the notes
+  for (let j = j0; j <= j1; j++) for (let i = iR(j)[0]; i <= iR(j)[1]; i++) {
+    const pc = thMod(7 * i + 4 * j), [x, y] = scr(i, j); if (x < -s || x > W + s || y < -s || y > H + s) continue; const v = chroma[pc], inCh = ch && ch.pcs.includes(pc), r = s * (.1 + .12 * v + (inCh ? .05 : 0));
+    g.beginPath(); g.arc(x, y, r, 0, 7); g.fillStyle = v > .05 || inCh ? thCol(pc, 66, .35 + .6 * Math.max(v, inCh ? .5 : 0)) : inScale(pc) ? 'rgba(255,255,255,.34)' : 'rgba(255,255,255,.14)'; g.fill();
+    if (s > 36 && (inScale(pc) || v > .05 || inCh)) hmText(g, pcName(pc), x, y - r - 4, Math.round(s * .24), inCh ? '#fff' : 'rgba(255,255,255,.55)', 'center', 700);
+  }
+  if (HM.vm != null && HM.vOn) { const pc = thMod(Math.round(HM.vm)); for (let j = j0; j <= j1; j++) for (let i = iR(j)[0]; i <= iR(j)[1]; i++) if (thMod(7 * i + 4 * j) === pc) { const [x, y] = scr(i, j); if (x > 0 && x < W && y > 0 && y < H) { g.strokeStyle = 'rgba(255,214,102,.95)'; g.lineWidth = 2; g.beginPath(); g.arc(x, y, s * .26, 0, 7); g.stroke(); } } }
+  const fz = hmFz(W, H, 26); hmText(g, HM.sym || '—', 16, H - 16, fz, '#fff', 'left', 800);
+  if (H > 260) hmText(g, 'across: a fifth · up-right: a major third · up-left: a minor third · every triangle is a chord', 16, H - 16 - fz - 6, hmFz(W, H, 13), 'rgba(255,255,255,.34)', 'left', 500);
+}
+HM_DRAW.wheel = thWheel; HM_DRAW.tonnetz = thTonnetz;
+bus.on('song', () => { THX.seed = null; });
+
+/* >>> parts/66c-spectral.js */
+/* ============================================================
+   Part 66c · Three worlds of sound made geometric (2.80), each with its own dials (Design ▸ This world)
+     Pitch Spiral       the spectrum wound into a spiral, one turn to the octave, so the same note is always on the same spoke. Tip it and it is a
+                        helix. Joins the first harmonics of the note you play, and shows the notes of the key. (The hexagon field has the same
+                        layout: Design ▸ Sound → Sight ▸ Pitch spiral.)
+     Rhythm Polygons    the song's drum groove as rings of steps, one ring per drum, the hits joined into polygons; a playhead sweeps; your own
+                        hits land on an outer ring, coloured by how far they are from the beat; a ring that is a Euclidean rhythm is named.
+     Overtone Series    the harmonics of the note you sing or play, measured from the spectrum: as a rose (each harmonic at its note, further out
+                        by octave), as bars (with how far each is from a perfect multiple) or as the string's own standing waves.
+   Everything shown is measured from the sound or counted from the pattern; the pictures say what they are. They read the harmony state of part 65
+   and the options in part 09f, and draw wherever the visuals draw (the stage, full screen, videos).
+   ============================================================ */
+VMODES.push(['spiral', 'Pitch Spiral'], ['rhythm', 'Rhythm Polygons'], ['overtones', 'Overtone Series']);
+const VLX = { sp: null, ot: new Float32Array(33), live: [] };
+const vlMtof = m => 440 * Math.pow(2, (m - 69) / 12), vlFtom = f => 69 + 12 * Math.log2(f / 440), vlMod = x => ((x % 12) + 12) % 12;
+const vlHue = pc => (vlMod(pc) * 30 + 205) % 360;                                   /* a smooth rainbow round the octave: one hue per note */
+const vlLow = k => ({ E2: 82.41, A1: 55, C2: 65.41, C1: 32.7 })[k] || 82.41;
+const vlNoteName = f => { const m = Math.round(vlFtom(f)); return pcName(vlMod(m)) + (Math.floor(m / 12) - 1); };
+
+/** the note to show: your voice, else the lead note you play, else the root of the chord the song is playing; null when nothing sounds */
+function vlFund() {
+  hmUpdate(); if (HM.vm != null && HM.vOn) return { f: vlMtof(HM.vm), src: 'voice' };
+  if (AN.active && AN.f0 > 30) return { f: AN.f0, src: 'played' };
+  if (vzPlaying() && HM.chord) return { f: vlMtof(36 + HM.chord.root), src: 'chord' };
+  return null;
+}
+
+/** the first n harmonics of f0 as measured in the spectrum fd (dB per bin, bin width bh): where each peak is, how loud, how far from a perfect multiple */
+function vlHarmonics(fd, bh, f0, n, lvlFn) {
+  const out = [], nyq = (fd.length - 1) * bh;
+  for (let k = 1; k <= n; k++) {
+    const fk = f0 * k; if (fk > nyq - bh) break;
+    const lo = Math.max(1, Math.floor(fk * Math.pow(2, -1 / 28) / bh)), hi = Math.min(fd.length - 2, Math.max(lo, Math.ceil(fk * Math.pow(2, 1 / 28) / bh)));
+    let bi = lo; for (let i = lo; i <= hi; i++) if (fd[i] > fd[bi]) bi = i;
+    let fp = bi * bh; if (bi > 1 && bi < fd.length - 2) { const a = Math.max(-140, fd[bi - 1]), b = Math.max(-140, fd[bi]), c = Math.max(-140, fd[bi + 1]), den = a - 2 * b + c; if (den < 0) fp = (bi + clamp(.5 * (a - c) / den, -.5, .5)) * bh; }   /* (silent bins are -Infinity dB) */
+    out.push({ k, f: fp, v: lvlFn(fd[bi]), cents: 1200 * Math.log2(fp / fk), ok: bh <= fk * .03 });
+  }
+  return out;
+}
+const VL_DEG = ['1', '♭2', '2', '♭3', '3', '4', '♯4', '5', '♭6', '6', '♭7', '7'];
+/** what a harmonic is, as a scale degree above the fundamental ("≈" where the harmonic is more than a quarter-tone from it) */
+function vlHarmName(k) { const s = 12 * Math.log2(k), r = Math.round(s); return (Math.abs(s - r) > .25 ? '≈' : '') + VL_DEG[vlMod(r)]; }
+
+/** a Euclidean rhythm: k hits spread as evenly as possible over n steps; the row matches if some turning of it is that rhythm */
+function vlEuclid(k, n) { const p = []; for (let i = 0; i < n; i++) p.push(Math.floor((i + 1) * k / n) - Math.floor(i * k / n)); return p; }
+const VL_EUC = { '3,8': 'tresillo', '5,8': 'cinquillo', '4,16': 'four on the floor', '7,12': 'West African bell', '5,16': 'bossa nova', '7,16': 'samba' };
+function vlEuclidOf(row, n) {
+  const bits = []; for (let i = 0; i < n; i++) bits.push(row[i] ? 1 : 0); const k = bits.reduce((a, b) => a + b, 0); if (k < 2 || k >= n) return null;
+  const e = vlEuclid(k, n); for (let r = 0; r < n; r++) { let ok = true; for (let i = 0; i < n && ok; i++) if (e[(i + r) % n] !== bits[i]) ok = false; if (ok) return { k, n, name: 'E(' + k + ',' + n + ')', say: VL_EUC[k + ',' + n] || null }; }
+  return null;
+}
+
+/* ---------- Pitch Spiral ---------- */
+VLOOK.spiral = { title: 'Pitch Spiral', opts: [
+  { k: 'octaves', label: 'Octaves', type: 'range', min: 3, max: 8, step: 1, def: 6, tip: 'How many octaves the spiral holds' },
+  { k: 'low', label: 'Lowest note', type: 'choice', def: 'E2', opts: [['E2', 'E2 · guitar'], ['A1', 'A1 · bass'], ['C2', 'C2'], ['C1', 'C1']], tip: 'Where the spiral starts' },
+  { k: 'style', label: 'Style', type: 'choice', def: 'ribbon', opts: [['ribbon', 'Ribbon'], ['dots', 'Dots'], ['cells', 'Hex cells']], tip: 'A ribbon of light, dots, or hexagons, one for each semitone' },
+  { k: 'colour', label: 'Colour', type: 'choice', def: 'pitch', opts: [['pitch', 'By note'], ['fifths', 'By fifths'], ['theme', 'Theme']], tip: 'By note: a rainbow round the octave. By fifths: neighbours on the circle of fifths share a colour. Theme: your accent colours' },
+  { k: 'tilt', label: 'Tilt', type: 'range', min: 0, max: 70, step: 1, def: 0, unit: 'deg', tip: 'Tip the spiral over into a helix' },
+  { k: 'spin', label: 'Spin', type: 'range', min: 0, max: 1, step: .05, def: 0, unit: 'x', tip: 'Turn it slowly (the notes turn with it)' },
+  { k: 'harm', label: 'Show harmonics', type: 'toggle', def: 1, tip: 'Join the first harmonics of the note you play' },
+  { k: 'hold', label: 'Peak hold', type: 'toggle', def: 1, tip: 'Let peaks fade rather than vanish' },
+  { k: 'labels', label: 'Note names', type: 'toggle', def: 1, tip: 'Name the twelve notes round the rim' }] };
+/** where a frequency sits on the spiral: u octaves above the lowest note, and the angle (radians, C at the top) of its note */
+function vlSpiralPos(f, low) { const u = Math.log2(f / low), m = vlFtom(low) + 12 * u; return { u, pc: vlMod(m), ang: vlMod(m) / 12 * Math.PI * 2 - Math.PI / 2 }; }
+
+function vlSpiral(g, W, H, X) {
+  hmUpdate(); const { fd, bin, lvl, C } = X, bh = X.bh || (fd.length > 1 ? (E.ctx.sampleRate / 2) / (fd.length - 1) : 21);
+  const oc = vlv('spiral', 'octaves'), low = vlLow(vlv('spiral', 'low')), style = vlv('spiral', 'style'), colour = vlv('spiral', 'colour'), tilt = vlv('spiral', 'tilt') * Math.PI / 180, spin = vlv('spiral', 'spin'), harm = vlv('spiral', 'harm'), hold = vlv('spiral', 'hold'), labels = vlv('spiral', 'labels');
+  const sc = clamp(Math.min(W, H * 1.25) / 700, .55, 1.6), cx = W / 2, cy = H * .53 + Math.sin(tilt) * H * .05, R = Math.min(W * .44, H * (.45 - Math.sin(tilt) * .07)), rot = VZ.t * spin * .12, dt = HM.dt || .016;
+  const N = oc * 96, Hh = R * 1.1 * Math.sin(tilt), lowM = vlFtom(low), ct = Math.cos(tilt);
+  const hue = pc => colour === 'fifths' ? (thFif(Math.round(pc)) * 30 + 200) % 360 : vlHue(pc), col = (pc, l, a) => colour === 'theme' ? (l > 62 ? C.b : C.a) : `hsla(${hue(pc)},85%,${l}%,${a})`;
+  const P = (u, ang) => { const r = R * (.1 + .9 * u / oc), a = ang + rot, x = r * Math.cos(a), y = r * Math.sin(a), z = Hh * (u / oc); return [cx + x, cy + y * ct - (z - Hh / 2), y / (R || 1)]; };
+  const A = u => { const m = lowM + 12 * u; return vlMod(m) / 12 * Math.PI * 2 - Math.PI / 2; };
+  g.fillStyle = 'rgba(0,0,0,.25)'; g.fillRect(0, 0, W, H);
+  const scale = (S.minor ? [0, 2, 3, 5, 7, 8, 10] : [0, 2, 4, 5, 7, 9, 11]).map(x => vlMod(x + S.key));
+  // the twelve notes as spokes (flat only: tipped over, the rim carries the names instead)
+  if (tilt < .35) { g.lineWidth = 1; for (let pc = 0; pc < 12; pc++) { const a = pc / 12 * Math.PI * 2 - Math.PI / 2 + rot, inK = scale.includes(pc); g.strokeStyle = `rgba(255,255,255,${inK ? .1 : .04})`; g.beginPath(); g.moveTo(cx + Math.cos(a) * R * .1, cy + Math.sin(a) * R * .1 * ct); g.lineTo(cx + Math.cos(a) * R * 1.02, cy + Math.sin(a) * R * 1.02 * ct); g.stroke(); } }
+  // the spiral's path
+  g.strokeStyle = 'rgba(255,255,255,.1)'; g.lineWidth = 1; g.beginPath(); for (let i = 0; i <= N; i++) { const u = i / 96, p = P(u, A(u)); i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1]); } g.stroke();
+  // the sound along it
+  if (!VLX.sp || VLX.sp.length !== N + 1) VLX.sp = new Float32Array(N + 1); const sp = VLX.sp, dec = Math.pow(.18, dt), vs = new Float32Array(N + 1);
+  for (let i = 0; i <= N; i++) { const f = low * Math.pow(2, i / 96), b = f / bh, i0 = Math.floor(b); let v = 0; if (i0 >= 1 && i0 < fd.length - 1) { const t = b - i0; v = lvl(fd[i0]) * (1 - t) + lvl(fd[i0 + 1]) * t; }   /* (silent bins are -Infinity dB: blend the levels, not the decibels) */
+    if (!(v >= 0)) v = 0; sp[i] = hold ? Math.max(v, sp[i] * dec) : v; vs[i] = sp[i]; }
+  if (style === 'ribbon') {
+    g.lineCap = 'round'; for (let i = 1; i <= N; i++) { const v = vs[i]; if (v < .05) continue; const u0 = (i - 1) / 96, u1 = i / 96, a = P(u0, A(u0)), b = P(u1, A(u1)), pc = vlMod(lowM + 12 * u1), back = tilt > .05 ? .6 + .4 * ((a[2] + 1) / 2) : 1;
+      g.strokeStyle = col(pc, 38 + 44 * v, clamp(.12 + v * 1.1, 0, 1) * back); g.lineWidth = (1.2 + 15 * v * v + 4 * v) * sc * (tilt > .05 ? .7 + .3 * back : 1); g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.stroke(); }
+    g.lineCap = 'butt';
+  } else {
+    for (let n = 0; n <= oc * 12; n++) { const u = n / 12, f = low * Math.pow(2, u), b = f / bh, b0 = Math.max(1, Math.floor(f * Math.pow(2, -1 / 24) / bh)), b1 = Math.min(fd.length - 1, Math.max(b0, Math.ceil(f * Math.pow(2, 1 / 24) / bh)));
+      let v = 0; for (let i = b0; i <= b1; i++) v = Math.max(v, lvl(fd[i])); const key = n; VLX.cell = VLX.cell || []; VLX.cell[key] = hold ? Math.max(v, (VLX.cell[key] || 0) * dec) : v; v = VLX.cell[key];
+      const p = P(u, A(u)), pc = vlMod(lowM + 12 * u), back = tilt > .05 ? .6 + .4 * ((p[2] + 1) / 2) : 1, rr = clamp(Math.min(R / oc * .5, 2 * Math.PI * R * (.1 + .9 * u / oc) / 12 * .52), 4 * sc, 40 * sc);
+      if (style === 'dots') { if (v < .06) { g.fillStyle = 'rgba(255,255,255,.1)'; g.beginPath(); g.arc(p[0], p[1], 2 * sc, 0, 7); g.fill(); continue; } g.fillStyle = col(pc, 40 + 40 * v, clamp(.2 + v, 0, 1) * back); g.beginPath(); g.arc(p[0], p[1], (2 + v * 11) * sc * (.8 + .2 * back), 0, 7); g.fill(); }
+      else { hexPath(g, p[0], p[1], rr * (.5 + .5 * v)); g.fillStyle = col(pc, 34 + 40 * v, clamp(.07 + v * .95, 0, 1) * back); g.fill(); g.strokeStyle = col(pc, 70, (.12 + .6 * v) * back); g.lineWidth = 1; g.stroke(); }
+    }
+  }
+  // the note, and the harmonics that build on it
+  const nt = vlFund(); let label = '';
+  if (nt && nt.f >= low * .97) {
+    const sp0 = vlSpiralPos(nt.f, low), pts = [];
+    if (harm) for (let k = 1; k <= 10; k++) { const u = Math.log2(k * nt.f / low); if (u < 0 || u > oc) continue; const p = P(u, A(u)); pts.push({ k, p, u }); }
+    if (pts.length > 1) { g.strokeStyle = 'rgba(255,255,255,.22)'; g.lineWidth = 1 * sc; g.beginPath(); pts.forEach((q, i) => i ? g.lineTo(q.p[0], q.p[1]) : g.moveTo(q.p[0], q.p[1])); g.stroke(); }
+    pts.forEach(q => { const first = q.k === 1; g.fillStyle = first ? '#fff' : 'rgba(255,255,255,.85)'; g.beginPath(); g.arc(q.p[0], q.p[1], (first ? 7 : 4.4) * sc, 0, 7); g.fill(); if (labels || first) hmText(g, String(q.k), q.p[0], q.p[1] - 9 * sc, Math.round(11 * sc), 'rgba(255,255,255,.8)', 'center', 700); });
+    if (!harm && sp0.u >= 0 && sp0.u <= oc) { const p = P(sp0.u, A(sp0.u)); g.strokeStyle = '#fff'; g.lineWidth = 2.2 * sc; g.beginPath(); g.arc(p[0], p[1], 8 * sc, 0, 7); g.stroke(); }
+    label = (nt.src === 'chord' ? HM.sym + ' · root ' : '') + vlNoteName(nt.f) + (nt.src !== 'chord' ? ' · ' + Math.round(nt.f) + ' Hz' : '');
+  }
+  // the rim: the notes' names (the key's own brighter)
+  if (labels) for (let pc = 0; pc < 12; pc++) { const a = pc / 12 * Math.PI * 2 - Math.PI / 2 + rot, x = cx + Math.cos(a) * R * 1.1, y = cy + Math.sin(a) * R * 1.1 * ct - Hh / 2; hmText(g, pcName(pc), x, y + 4 * sc, Math.round(13 * sc), scale.includes(pc) ? 'rgba(255,255,255,.75)' : 'rgba(255,255,255,.3)', 'center', 700); }
+  hmText(g, label || (vzPlaying() ? '' : 'sing or play a note'), cx, cy + 5 * sc, Math.round(16 * sc), 'rgba(255,255,255,.9)', 'center', 800);
+  if (H > 260) hmText(g, 'each turn is an octave · the same note is always on the same spoke · lit by what is sounding', 14, H - 12, hmFz(W, H, 13), 'rgba(255,255,255,.3)', 'left', 500);
+}
+
+/* ---------- Rhythm Polygons ---------- */
+VLOOK.rhythm = { title: 'Rhythm Polygons', opts: [
+  { k: 'rows', label: 'Drums', type: 'choice', def: 'active', opts: [['active', 'Those in the groove'], ['main', 'Kick · snare · hat'], ['all', 'All six']], tip: 'Which drums get a ring' },
+  { k: 'polygons', label: 'Polygons', type: 'toggle', def: 1, tip: 'Join each ring’s hits into a shape' },
+  { k: 'euclid', label: 'Name the rhythm', type: 'toggle', def: 1, tip: 'Label a ring that is a Euclidean rhythm (hits spread as evenly as possible), like E(3,8)' },
+  { k: 'sweep', label: 'Playhead', type: 'toggle', def: 1, tip: 'A sweep that follows the song' },
+  { k: 'live', label: 'Your hits', type: 'toggle', def: 1, tip: 'Show where your playing lands against the beat, on an outer ring' },
+  { k: 'follow', label: 'Turn with the beat', type: 'toggle', def: 0, tip: 'Keep the playhead at the top and let the rings turn' }] };
+const VL_RHUE = [18, 48, 175, 205, 300, 265];
+function vlRhythm(g, W, H, X) {
+  hmUpdate(); const pat = dpat(), L = Math.max(4, Math.min(S.band.drumLen || 16, 32)), now = HM.now, mo = hmCm().motion, sc = clamp(Math.min(W, H * 1.25) / 700, .55, 1.6);
+  const mode = vlv('rhythm', 'rows'), poly = vlv('rhythm', 'polygons'), eu = vlv('rhythm', 'euclid'), sweep = vlv('rhythm', 'sweep'), live = vlv('rhythm', 'live'), follow = vlv('rhythm', 'follow');
+  let rows = DROWS.map((n, i) => i); if (mode === 'main') rows = [0, 1, 2]; else if (mode === 'active') { rows = rows.filter(r => pat[r] && pat[r].slice(0, L).some(v => v)); if (!rows.length) rows = [0, 1, 2]; }
+  const cx = W / 2, cy = H * .52, Rmax = Math.min(W * .4, H * .37) , n = rows.length, rIn = Rmax * .46, ring = j => Rmax - j * ((Rmax - rIn) / Math.max(1, n - 1 + (n === 1 ? 1 : 0)));
+  const ph = T.playing ? (playheadSlot() % L + L) % L : -1, turn = follow && ph >= 0 ? ph / L * Math.PI * 2 : 0, ang = i => i / L * Math.PI * 2 - Math.PI / 2 - turn;
+  g.fillStyle = 'rgba(0,0,0,.25)'; g.fillRect(0, 0, W, H);
+  // the beats round the outside
+  const perBeat = Math.max(1, Math.round(spb() / S.ts[0])), outer = Rmax * 1.08;
+  for (let i = 0; i < L; i++) { const a = ang(i), strong = i % spb() === 0, beat = i % perBeat === 0, r0 = Rmax * 1.02, r1 = r0 + (strong ? 16 : beat ? 9 : 4) * sc; g.strokeStyle = `rgba(255,255,255,${strong ? .55 : beat ? .3 : .12})`; g.lineWidth = (strong ? 2.4 : 1) * sc; g.beginPath(); g.moveTo(cx + Math.cos(a) * r0, cy + Math.sin(a) * r0); g.lineTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1); g.stroke(); }
+  // the rings, the hits, the polygons
+  const names = [];
+  rows.forEach((row, j) => {
+    const r = n === 1 ? Rmax * .7 : ring(j), hue = VL_RHUE[row] || 200, hits = []; for (let i = 0; i < L; i++) { const v = pat[row][i] || 0; if (v) hits.push({ i, v }); }
+    g.strokeStyle = 'rgba(255,255,255,.1)'; g.lineWidth = 1; g.beginPath(); g.arc(cx, cy, r, 0, 7); g.stroke();
+    for (let i = 0; i < L; i++) { const a = ang(i); g.fillStyle = 'rgba(255,255,255,.12)'; g.beginPath(); g.arc(cx + Math.cos(a) * r, cy + Math.sin(a) * r, 1.6 * sc, 0, 7); g.fill(); }
+    if (poly && hits.length > 1) { g.beginPath(); hits.forEach((h, q) => { const a = ang(h.i), x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r; q ? g.lineTo(x, y) : g.moveTo(x, y); }); if (hits.length > 2) g.closePath(); g.fillStyle = `hsla(${hue},80%,55%,.09)`; if (hits.length > 2) g.fill(); g.strokeStyle = `hsla(${hue},85%,62%,.65)`; g.lineWidth = 1.6 * sc; g.stroke(); }
+    hits.forEach(hh => { const a = ang(hh.i), x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r, age = ph >= 0 ? ((ph - hh.i) % L + L) % L : 99, fl = ph >= 0 && age < 1.5 ? 1 - age / 1.5 : 0, rr = (hh.v === 1 ? 4 : hh.v === 2 ? 6.5 : 8.5) * sc * (1 + fl * .7 * mo);
+      if (fl > 0 && mo > 0) hmGlow(g, x, y, rr * 4, `hsla(${hue},90%,62%,A)`, .6 * fl); g.fillStyle = `hsla(${hue},85%,${58 + 22 * fl}%,${hh.v === 1 ? .7 : .95})`; g.beginPath(); g.arc(x, y, rr, 0, 7); g.fill(); });
+    const e = eu ? vlEuclidOf(pat[row], L) : null; names.push({ row, r, hits: hits.length, e, hue });
+  });
+  // the ring names, at the top of each ring
+  names.forEach(nm => { const lab = DROWS[nm.row] + ' · ' + nm.hits + '/' + L + (nm.e ? ' · ' + nm.e.name + (nm.e.say ? ' ' + nm.e.say : '') : ''); hmText(g, lab, cx + 6 * sc, cy - nm.r - 5 * sc, Math.round(11 * sc), `hsla(${nm.hue},80%,72%,.9)`, 'left', 700); });
+  // the playhead
+  if (sweep && ph >= 0) { const a = ang(ph); g.strokeStyle = 'rgba(255,255,255,.55)'; g.lineWidth = 1.6 * sc; g.beginPath(); g.moveTo(cx, cy); g.lineTo(cx + Math.cos(a) * outer, cy + Math.sin(a) * outer); g.stroke(); }
+  // your hits: on the outer ring, coloured by how far from the beat
+  let meanMs = null; const sd = slotDur() * 1000;
+  if (live) { const rl = Rmax * 1.2, recent = HM.onsets.filter(o => o.slot >= 0 && now - o.t < 6000); g.strokeStyle = 'rgba(255,255,255,.08)'; g.lineWidth = 1; g.beginPath(); g.arc(cx, cy, rl, 0, 7); g.stroke();
+    recent.forEach(o => { const age = (now - o.t) / 6000, a = ((((o.slot % L) + L) % L) / L) * Math.PI * 2 - Math.PI / 2 - turn, ms = o.dev * sd, ab = Math.abs(ms), c = ab < 12 ? '48,95%,64%' : ms > 0 ? '22,95%,60%' : '195,90%,62%';
+      g.fillStyle = `hsla(${c},${clamp(1 - age, .1, 1)})`; g.beginPath(); g.arc(cx + Math.cos(a) * rl, cy + Math.sin(a) * rl, (3 + o.a * 5) * sc, 0, 7); g.fill(); });
+    if (recent.length) meanMs = HM.dev * sd; }
+  // the middle
+  const bpm = Math.round(S.bpm * 10) / 10, fs = Math.round(clamp(rIn * .38, 15, 36)); hmText(g, bpm + ' BPM', cx, cy + fs * .1, fs, '#fff', 'center', 800); hmText(g, S.ts[0] + '/' + S.ts[1] + ' · ' + (S.band.patName || 'groove'), cx, cy + fs * .55, Math.round(fs * .34), 'rgba(255,255,255,.55)', 'center', 600);
+  if (meanMs != null) { const ab = Math.abs(meanMs); hmText(g, ab < 8 ? 'on the beat' : Math.round(ab) + ' ms ' + (meanMs > 0 ? 'behind' : 'ahead'), cx, cy + fs * 1.05, Math.round(fs * .4), ab < 8 ? 'hsl(48,95%,66%)' : meanMs > 0 ? 'hsl(22,95%,66%)' : 'hsl(195,90%,68%)', 'center', 700); }
+  else if (live && H > 260) hmText(g, T.playing ? 'play along: your hits land on the outer ring' : 'press play, then play along', cx, cy + fs * 1.05, Math.round(fs * .34), 'rgba(255,255,255,.35)', 'center', 500);
+  if (H > 260) hmText(g, 'a ring per drum · hits joined into a shape · gold: on the beat, orange: behind, blue: ahead', 14, H - 12, hmFz(W, H, 13), 'rgba(255,255,255,.3)', 'left', 500);
+}
+
+/* ---------- Overtone Series ---------- */
+VLOOK.overtones = { title: 'Overtone Series', opts: [
+  { k: 'view', label: 'View', type: 'choice', def: 'rose', opts: [['rose', 'Rose', 'Each harmonic at its note, further out by octave'], ['bars', 'Bars', 'Loudness of each harmonic, with its tuning offset'], ['string', 'String', 'The string’s own standing waves, built from what is measured']], tip: 'How to look at the harmonics' },
+  { k: 'count', label: 'Harmonics', type: 'range', min: 6, max: 24, step: 1, def: 12, tip: 'How many harmonics to measure' },
+  { k: 'scale', label: 'Loudness', type: 'choice', def: 'db', opts: [['db', 'Decibels'], ['lin', 'Linear']], tip: 'Decibels show quiet harmonics too; linear shows only the strong ones' },
+  { k: 'labels', label: 'Labels', type: 'choice', def: 'interval', opts: [['interval', 'Interval'], ['number', 'Number'], ['note', 'Note'], ['none', 'None']], tip: 'Interval: what each harmonic is above the note (the 3rd is a fifth, the 5th a major third)' },
+  { k: 'cents', label: 'Tuning offsets', type: 'toggle', def: 1, tip: 'How far each harmonic is from a perfect multiple, in cents (where the spectrum is fine enough to tell)' },
+  { k: 'hold', label: 'Peak hold', type: 'toggle', def: 1, tip: 'Let peaks fade rather than vanish' }] };
+function vlOvertones(g, W, H, X) {
+  hmUpdate(); const { fd, lvl, C } = X, bh = X.bh || (E.ctx.sampleRate / 2) / (fd.length - 1), dt = HM.dt || .016;
+  const view = vlv('overtones', 'view'), n = vlv('overtones', 'count'), scl = vlv('overtones', 'scale'), lab = vlv('overtones', 'labels'), cents = vlv('overtones', 'cents'), hold = vlv('overtones', 'hold');
+  const sc = clamp(Math.min(W, H * 1.25) / 700, .55, 1.6), nt = vlFund(); g.fillStyle = 'rgba(0,0,0,.25)'; g.fillRect(0, 0, W, H);
+  if (!nt) { hmText(g, 'sing or play a note to see its overtones', W / 2, H / 2, Math.round(18 * sc), 'rgba(255,255,255,.45)', 'center', 600); return; }
+  const hs = vlHarmonics(fd, bh, nt.f, n, lvl), dec = Math.pow(.2, dt), rv = v => scl === 'lin' ? v * v : v;
+  hs.forEach(h => { const vv = rv(h.v); VLX.ot[h.k] = hold ? Math.max(vv, VLX.ot[h.k] * dec) : vv; h.s = VLX.ot[h.k]; });
+  const f0m = vlFtom(nt.f), lblOf = h => lab === 'interval' ? vlHarmName(h.k) : lab === 'number' ? String(h.k) : lab === 'note' ? pcName(vlMod(Math.round(vlFtom(nt.f * h.k)))) : '';
+  const head = (nt.src === 'chord' ? 'following the chord root · ' : '') + vlNoteName(nt.f) + ' · ' + nt.f.toFixed(1) + ' Hz'; hmText(g, head, 16, hmY(H, 14), hmFz(W, H, 22), '#fff', 'left', 800);
+  if (view === 'bars') {
+    const x0 = W * .06, x1 = W * .94, bw = (x1 - x0) / n, base = H * .78, mh = H * .6;
+    g.strokeStyle = 'rgba(255,255,255,.12)'; g.lineWidth = 1; g.beginPath(); g.moveTo(x0, base); g.lineTo(x1, base); g.stroke();
+    hs.forEach((h, i) => { const x = x0 + i * bw, bhh = h.s * mh, pc = vlMod(f0m + 12 * Math.log2(h.k)); g.fillStyle = `hsla(${vlHue(pc)},80%,${40 + 25 * h.s}%,${.3 + .65 * h.s})`; g.fillRect(x + bw * .16, base - bhh, bw * .68, bhh); g.strokeStyle = `hsla(${vlHue(pc)},90%,70%,.8)`; g.strokeRect(x + bw * .16, base - bhh, bw * .68, bhh);
+      hmText(g, String(h.k), x + bw / 2, base + 16 * sc, Math.round(12 * sc), 'rgba(255,255,255,.55)', 'center', 700); if (lab !== 'none' && lab !== 'number') hmText(g, lblOf(h), x + bw / 2, base + 32 * sc, Math.round(12 * sc), 'rgba(255,255,255,.8)', 'center', 700);
+      if (cents && h.ok && h.s > .15) { const c = clamp(h.cents, -50, 50), y = base - bhh - 8 * sc; g.strokeStyle = Math.abs(c) < 8 ? 'hsl(48,90%,64%)' : 'hsl(22,90%,62%)'; g.lineWidth = 2; g.beginPath(); g.moveTo(x + bw / 2, y); g.lineTo(x + bw / 2 + c / 50 * bw * .4, y); g.stroke(); hmText(g, (c > 0 ? '+' : '') + Math.round(h.cents), x + bw / 2, y - 6 * sc, Math.round(10 * sc), 'rgba(255,255,255,.55)', 'center', 600); } });
+    if (H > 260) hmText(g, 'harmonic number, and what it is above the note · tick: how far from a perfect multiple, in cents', 14, H - 12, hmFz(W, H, 13), 'rgba(255,255,255,.3)', 'left', 500);
+  } else if (view === 'string') {
+    const x0 = W * .08, x1 = W * .92, cy = H * .55, amp = H * .26, t = VZ.t * .8, pts = 240; let tot = 0; hs.forEach(h => { tot += h.s; }); const norm = tot > .05 ? 1 / Math.max(1, tot * .6) : 1;
+    g.strokeStyle = 'rgba(255,255,255,.1)'; g.lineWidth = 1; g.beginPath(); g.moveTo(x0, cy); g.lineTo(x1, cy); g.stroke();
+    hs.slice(0, 5).forEach(h => { if (h.s < .08) return; g.strokeStyle = `hsla(${vlHue(vlMod(f0m + 12 * Math.log2(h.k)))},80%,62%,${.2 + .3 * h.s})`; g.lineWidth = 1.2 * sc; g.beginPath(); for (let i = 0; i <= pts; i++) { const x = i / pts, y = Math.sin(h.k * Math.PI * x) * Math.cos(t * h.k * 1.7) * h.s * amp * .8 * norm; const px = lerp(x0, x1, x), py = cy + y; i ? g.lineTo(px, py) : g.moveTo(px, py); } g.stroke(); });
+    g.strokeStyle = '#fff'; g.lineWidth = 3 * sc; g.lineJoin = 'round'; g.beginPath(); for (let i = 0; i <= pts; i++) { const x = i / pts; let y = 0; hs.forEach(h => { y += Math.sin(h.k * Math.PI * x) * Math.cos(t * h.k * 1.7) * h.s * norm; }); const px = lerp(x0, x1, x), py = cy + y * amp; i ? g.lineTo(px, py) : g.moveTo(px, py); } g.stroke();
+    g.fillStyle = '#fff'; [x0, x1].forEach(x => { g.beginPath(); g.arc(x, cy, 6 * sc, 0, 7); g.fill(); });
+    if (H > 260) hmText(g, 'the string’s standing waves, built from the harmonics measured in the sound (slowed down so you can see them)', 14, H - 12, hmFz(W, H, 13), 'rgba(255,255,255,.3)', 'left', 500);
+  } else {
+    const cx = W / 2, cy = H * .54, R = Math.min(W * .42, H * .4), rad = k => R * (.16 + .84 * Math.log2(k) / Math.log2(Math.max(2, n)));
+    // the note itself is always at the top: each harmonic's place is its note measured from the fundamental
+    const A = k => (12 * Math.log2(k) % 12 + 12) % 12 / 12 * Math.PI * 2 - Math.PI / 2;
+    g.strokeStyle = 'rgba(255,255,255,.08)'; g.lineWidth = 1; for (let o = 1; o <= Math.floor(Math.log2(n)); o++) { g.beginPath(); g.arc(cx, cy, rad(Math.pow(2, o)), 0, 7); g.stroke(); } for (let s = 0; s < 12; s++) { const a = s / 12 * Math.PI * 2 - Math.PI / 2; g.beginPath(); g.moveTo(cx + Math.cos(a) * R * .12, cy + Math.sin(a) * R * .12); g.lineTo(cx + Math.cos(a) * R * 1.02, cy + Math.sin(a) * R * 1.02); g.stroke(); }
+    g.strokeStyle = 'rgba(255,255,255,.28)'; g.lineWidth = 1.2 * sc; g.beginPath(); hs.forEach((h, i) => { const a = A(h.k), r = rad(h.k), x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r; i ? g.lineTo(x, y) : g.moveTo(x, y); }); g.stroke();
+    hs.forEach(h => { const a = A(h.k), r = rad(h.k), x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r, pc = vlMod(f0m + 12 * Math.log2(h.k)), rr = (4 + 20 * h.s) * sc; hmGlow(g, x, y, rr * 3, `hsla(${vlHue(pc)},90%,62%,A)`, .15 + .5 * h.s); g.fillStyle = `hsla(${vlHue(pc)},85%,${45 + 30 * h.s}%,${.35 + .6 * h.s})`; g.beginPath(); g.arc(x, y, rr, 0, 7); g.fill(); g.strokeStyle = 'rgba(255,255,255,.55)'; g.lineWidth = 1; g.stroke();
+      hmText(g, String(h.k), x, y + 4 * sc, Math.round(Math.max(9, rr * .9)), '#0a0f10', 'center', 800); const t = lab !== 'number' && lab !== 'none' ? lblOf(h) : ''; const tt = (t ? t : '') + (cents && h.ok && h.s > .15 && lab !== 'none' ? (t ? ' ' : '') + (h.cents > 0 ? '+' : '') + Math.round(h.cents) + '¢' : ''); if (tt) hmText(g, tt, x, y - rr - 5 * sc, Math.round(11 * sc), 'rgba(255,255,255,.75)', 'center', 700); });
+    if (H > 260) hmText(g, 'each harmonic at its note, further out by octave · 1 at the top is the note itself · the size is how loud it is', 14, H - 12, hmFz(W, H, 13), 'rgba(255,255,255,.3)', 'left', 500);
+  }
+}
+VL_DRAW.spiral = vlSpiral; VL_DRAW.rhythm = vlRhythm; VL_DRAW.overtones = vlOvertones;
+
+/* >>> parts/66d-plates.js */
+/* ============================================================
+   Part 66d · Two more worlds, in the directions the library is growing (2.81)
+     Chladni Plate   a square plate that sings. The note you sing or play picks one of the plate's own vibration patterns (higher note, finer pattern);
+                     sand jitters wherever the plate moves and sticks where it stays still, so it collects on the nodal lines, the real figures a
+                     Chladni plate draws: the plate's shape is  cos(nπx)·cos(mπy) − cos(mπx)·cos(nπy). Loud shakes it; quiet lets it settle.
+     Pitch Trace     your voice (and your lead guitar) as a line across the notes of the key, scrolling like a score, with the notes of the chord
+                     lit, so you can see where you are in the song: for a take, a rehearsal or a video. Gold where it is in tune, warmer as it drifts.
+   Each has its own options (Settings), reads the harmony state of part 65, and draws wherever the visuals draw.
+   ============================================================ */
+VMODES.push(['chladni', 'Chladni Plate'], ['pitchtrace', 'Pitch Trace']);
+
+/* ---------- Chladni Plate ---------- */
+VLOOK.chladni = { title: 'Chladni Plate', opts: [
+  { k: 'follow', label: 'Pattern follows', type: 'choice', def: 'note', opts: [['note', 'The note you play'], ['chord', 'The chord root'], ['manual', 'A mode I choose']], tip: 'What picks the vibration pattern' },
+  { k: 'mode', label: 'Mode', type: 'range', min: 1, max: 40, step: 1, def: 8, tip: 'For “a mode I choose”: higher is a finer pattern' },
+  { k: 'style', label: 'Style', type: 'choice', def: 'sand', opts: [['sand', 'Sand'], ['lines', 'Glowing lines'], ['both', 'Both']], tip: 'Sand on the plate, the nodal lines glowing, or both' },
+  { k: 'sand', label: 'Sand', type: 'range', min: 500, max: 6000, step: 100, def: 2800, tip: 'How many grains' },
+  { k: 'shake', label: 'Shake', type: 'range', min: .3, max: 2.5, step: .05, def: 1, unit: 'x', tip: 'How hard loudness drives the plate' },
+  { k: 'colour', label: 'Colour', type: 'choice', def: 'note', opts: [['note', 'By note'], ['theme', 'Theme']], tip: 'By note: the colour of the note that picked the pattern' }] };
+/** the plate's vibration patterns, from the simplest to the finest (pitch rises with n² + m²) */
+const CH_MODES = (() => { const a = []; for (let n = 0; n <= 8; n++) for (let m = n + 1; m <= 8; m++) a.push([n, m]); return a.sort((x, y) => (x[0] * x[0] + x[1] * x[1]) - (y[0] * y[0] + y[1] * y[1]) || x[0] - y[0]); })();
+/** how far the plate moves at (x, y) in 0..1, for the pattern (n, m): zero on the nodal lines */
+const chPsi = (n, m, x, y) => Math.cos(n * Math.PI * x) * Math.cos(m * Math.PI * y) - Math.cos(m * Math.PI * x) * Math.cos(n * Math.PI * y);
+/** which pattern a frequency drives: a low note a simple pattern, a high note a fine one */
+const chModeFor = f => clamp(Math.floor(clamp(Math.log2(f / 82) / Math.log2(2400 / 82), 0, 1) * (CH_MODES.length - 1) + .5), 0, CH_MODES.length - 1);
+const CHX = { idx: -1, want: -1, wantT: 0, sand: null, fld: null, fldIdx: -1, hue: 140, randn: () => (Math.random() + Math.random() + Math.random() - 1.5) * 1.15 };
+
+function vlChladni(g, W, H, X) {
+  hmUpdate(); const follow = vlv('chladni', 'follow'), style = vlv('chladni', 'style'), nSand = vlv('chladni', 'sand'), shake = vlv('chladni', 'shake'), colour = vlv('chladni', 'colour'), now = HM.now, dt = HM.dt || .016, mo = hmCm().motion;
+  const nt = follow === 'note' ? vlFund() : follow === 'chord' && HM.chord ? { f: vlMtof(36 + HM.chord.root), src: 'chord' } : null;
+  let idx = follow === 'manual' ? clamp(vlv('chladni', 'mode') - 1, 0, CH_MODES.length - 1) : nt ? chModeFor(nt.f) : (CHX.idx >= 0 ? CHX.idx : 6);
+  if (!nt && follow !== 'manual') idx = (Math.floor(VZ.t * .12) % 14) + 4;           /* nothing sounding: the plate wanders slowly through its patterns */
+  if (idx !== CHX.want) { CHX.want = idx; CHX.wantT = now; } if (CHX.idx < 0 || (now - CHX.wantT > 140 && idx !== CHX.idx)) { CHX.idx = idx; CHX.fldIdx = -1; }
+  const [n, m] = CH_MODES[CHX.idx], S0 = Math.min(W * .9, H * .84), px = (W - S0) / 2, py = (H - S0) / 2 + H * .015, sc = clamp(Math.min(W, H * 1.25) / 700, .55, 1.6);
+  const hue = nt ? vlHue(Math.round(vlFtom(nt.f))) : 175; CHX.hue += (((hue - CHX.hue + 540) % 360) - 180) * .08; const hu = (CHX.hue + 360) % 360, col = (l, a) => colour === 'theme' ? (l > 62 ? X.C.b : X.C.a) : `hsla(${hu},85%,${l}%,${a})`;
+  g.fillStyle = 'rgba(0,0,0,.28)'; g.fillRect(0, 0, W, H);
+  // the plate
+  g.fillStyle = 'rgba(255,255,255,.035)'; g.strokeStyle = 'rgba(255,255,255,.18)'; g.lineWidth = 1.4 * sc; g.beginPath(); g.roundRect ? g.roundRect(px, py, S0, S0, 14 * sc) : g.rect(px, py, S0, S0); g.fill(); g.stroke();
+  // the nodal lines, glowing (a small picture of where the plate is still, drawn once per pattern)
+  if (style !== 'sand') { const R = 96; if (!CHX.fld) { CHX.fld = document.createElement('canvas'); CHX.fld.width = CHX.fld.height = R; }
+    if (CHX.fldIdx !== CHX.idx) { const q = CHX.fld.getContext('2d'), im = q.createImageData(R, R), sig = .09; for (let j = 0; j < R; j++) for (let i = 0; i < R; i++) { const v = chPsi(n, m, i / (R - 1), j / (R - 1)), a = Math.exp(-(v * v) / (sig * sig * 2)); const o = (j * R + i) * 4; im.data[o] = 255; im.data[o + 1] = 255; im.data[o + 2] = 255; im.data[o + 3] = Math.round(a * 255); } q.putImageData(im, 0, 0); CHX.fldIdx = CHX.idx; CHX.tint = null; }
+    const key = CHX.idx + ':' + Math.round(hu / 6) + ':' + colour; if (CHX.tintKey !== key || !CHX.tintC) { const t = CHX.tintC || (CHX.tintC = document.createElement('canvas')); t.width = t.height = R; const tq = t.getContext('2d'); tq.clearRect(0, 0, R, R); tq.drawImage(CHX.fld, 0, 0); tq.globalCompositeOperation = 'source-in'; tq.fillStyle = colour === 'theme' ? X.C.a : `hsl(${hu},85%,62%)`; tq.fillRect(0, 0, R, R); CHX.tintKey = key; }
+    g.save(); g.imageSmoothingEnabled = true; g.globalAlpha = style === 'both' ? .5 : .9; g.globalCompositeOperation = 'lighter'; g.drawImage(CHX.tintC, px, py, S0, S0); g.restore(); }
+  // the sand: it jitters where the plate moves (louder: harder) and sticks where it is still
+  if (style !== 'lines') {
+    if (!CHX.sand || CHX.sand.length !== nSand * 2) { CHX.sand = new Float32Array(nSand * 2); for (let i = 0; i < nSand * 2; i++) CHX.sand[i] = Math.random(); }
+    const sd = CHX.sand, drive = shake * (.35 + 3.2 * clamp(X.energy || 0, 0, 1)) * (mo > 0 ? 1 : .4), step = .028 * Math.min(1, dt * 60);
+    for (let i = 0; i < nSand; i++) { let x = sd[2 * i], y = sd[2 * i + 1]; const a = Math.abs(chPsi(n, m, x, y)); if (a * drive > .004 || Math.random() < .002) { x += CHX.randn() * a * drive * step * 2; y += CHX.randn() * a * drive * step * 2; if (x < 0) x = -x; if (x > 1) x = 2 - x; if (y < 0) y = -y; if (y > 1) y = 2 - y; sd[2 * i] = x; sd[2 * i + 1] = y; } }
+    g.fillStyle = colour === 'theme' ? X.C.b : `hsla(${hu},75%,80%,.95)`; const gs = Math.max(1.9, S0 / 250); g.beginPath(); for (let i = 0; i < nSand; i++) g.rect(px + sd[2 * i] * S0, py + sd[2 * i + 1] * S0, gs, gs); g.fill();
+  }
+  hmText(g, 'mode (' + n + ', ' + m + ')' + (nt ? ' · ' + (nt.src === 'chord' ? 'chord root ' : '') + vlNoteName(nt.f) : follow === 'manual' ? ' · chosen' : ' · wandering'), px, py - 8 * sc, Math.round(15 * sc), 'rgba(255,255,255,.75)', 'left', 700);
+  if (H > 260) hmText(g, 'a note picks the pattern · sand collects where the plate stays still · loud shakes it, quiet lets it settle', 14, H - 12, hmFz(W, H, 13), 'rgba(255,255,255,.3)', 'left', 500);
+}
+
+/* ---------- Pitch Trace ---------- */
+VLOOK.pitchtrace = { title: 'Pitch Trace', opts: [
+  { k: 'window', label: 'Seconds shown', type: 'range', min: 4, max: 20, step: 1, def: 10, tip: 'How much of your line stays on the screen' },
+  { k: 'range', label: 'Range', type: 'choice', def: 'auto', opts: [['auto', 'Follows you'], ['fixed', 'Two octaves, fixed']], tip: 'Follow your voice up and down, or keep the same two octaves' },
+  { k: 'chord', label: 'Chord notes', type: 'toggle', def: 1, tip: 'Light the lanes of the notes in the chord that is playing' },
+  { k: 'cents', label: 'Tuning', type: 'toggle', def: 1, tip: 'Say how far from the note you are, in cents' },
+  { k: 'guitar', label: 'Lead guitar', type: 'toggle', def: 1, tip: 'Draw the lead guitar’s line too, in blue' }] };
+const PTX = { v: [], gt: [], c: 60, last: -1 };
+/** keep a line of (time, note) for the voice and the lead: a gap breaks the line */
+function vlPtPush(now) {
+  const v = HM.vm != null && HM.vOn ? { t: now, m: HM.vm, a: clamp((AN.rms + 60) / 45, .15, 1) } : null, gm = AN.active && AN.midi != null ? { t: now, m: AN.midi + AN.cents / 100, a: clamp((AN.rms + 60) / 45, .15, 1) } : null;
+  const put = (arr, s) => { const l = arr[arr.length - 1]; if (s) arr.push(s); else if (l) arr.push(null); if (arr.length > 1800) arr.splice(0, 600); };
+  put(PTX.v, v); put(PTX.gt, gm);
+}
+function vlPitchTrace(g, W, H, X) {
+  hmUpdate(); const now = HM.now, win = vlv('pitchtrace', 'window') * 1000, fixed = vlv('pitchtrace', 'range') === 'fixed', showCh = vlv('pitchtrace', 'chord'), showC = vlv('pitchtrace', 'cents'), showG = vlv('pitchtrace', 'guitar'), sc = clamp(Math.min(W, H * 1.25) / 700, .55, 1.6);
+  if (PTX.last !== VZ.t) { PTX.last = VZ.t; vlPtPush(now); }
+  const live = HM.vm != null && HM.vOn ? HM.vm : AN.active && AN.midi != null ? AN.midi : null; if (live != null) PTX.c += (live - PTX.c) * .04;
+  const centre = fixed ? 60 : PTX.c, lo = Math.round(centre) - 12, hi = lo + 24, x0 = W * .09, x1 = W * .94, y0 = H * .1, y1 = H * .9, Y = m => y1 - (m - lo) / (hi - lo) * (y1 - y0), X_ = t => x1 - (now - t) / win * (x1 - x0);
+  g.fillStyle = 'rgba(0,0,0,.28)'; g.fillRect(0, 0, W, H);
+  const scale = (S.minor ? [0, 2, 3, 5, 7, 8, 10] : [0, 2, 4, 5, 7, 9, 11]).map(x => vlMod(x + S.key));
+  // the notes of the key as lanes; the chord's brightest
+  for (let mm = lo; mm <= hi; mm++) { const pc = vlMod(mm); if (!scale.includes(pc)) continue; const cls = showCh ? HM.cls[pc] : null, tone = cls === 'tone', colr = cls === 'colour', y = Y(mm);
+    g.strokeStyle = tone ? 'rgba(255,205,90,.55)' : colr ? 'rgba(90,210,200,.28)' : 'rgba(255,255,255,.1)'; g.lineWidth = (tone ? 2.2 : 1) * sc; g.beginPath(); g.moveTo(x0, y); g.lineTo(x1, y); g.stroke();
+    hmText(g, pcName(pc) + (pc === vlMod(S.key) || pc === 0 ? Math.floor(mm / 12) - 1 : ''), x0 - 8 * sc, y + 4 * sc, Math.round(12 * sc), tone ? 'rgba(255,215,120,.95)' : pc === vlMod(S.key) ? 'rgba(255,255,255,.8)' : 'rgba(255,255,255,.4)', 'right', tone || pc === vlMod(S.key) ? 800 : 600); }
+  // now
+  g.strokeStyle = 'rgba(255,255,255,.18)'; g.lineWidth = 1; g.beginPath(); g.moveTo(x1, y0 - 6 * sc); g.lineTo(x1, y1 + 6 * sc); g.stroke();
+  const trace = (arr, rgb, wide) => { g.lineCap = 'round'; g.lineJoin = 'round'; let prev = null;
+    for (const s of arr) { if (!s || now - s.t > win) { prev = null; continue; } if (prev) { const x = X_(s.t), y = Y(s.m), age = 1 - (now - s.t) / win, off = Math.abs(s.m - Math.round(s.m)) * 100, hot = rgb ? 0 : clamp((off - 12) / 40, 0, 1);
+        g.strokeStyle = rgb ? `rgba(${rgb},${.15 + .8 * age})` : `hsla(${48 - 40 * hot},95%,${62 - 6 * hot}%,${.15 + .85 * age})`; g.lineWidth = (wide ? (2 + 7 * s.a) : (1.5 + 3 * s.a)) * sc * (.5 + .5 * age); g.beginPath(); g.moveTo(X_(prev.t), Y(prev.m)); g.lineTo(x, y); g.stroke(); } prev = s; } g.lineCap = 'butt'; };
+  if (showG) trace(PTX.gt, '120,180,255', false); trace(PTX.v, null, true);
+  // the head: where you are now
+  const hv = live != null ? live : null; if (hv != null) { const y = Y(hv), cents = (hv - Math.round(hv)) * 100, ok = Math.abs(cents) < 12; hmGlow(g, x1, y, 26 * sc, ok ? 'rgba(255,214,102,A)' : 'rgba(255,140,80,A)', .7); g.fillStyle = '#fff'; g.beginPath(); g.arc(x1, y, 5 * sc, 0, 7); g.fill();
+    hmText(g, pcName(vlMod(Math.round(hv))) + (Math.floor(Math.round(hv) / 12) - 1) + (showC ? '  ' + (cents >= 0 ? '+' : '−') + Math.abs(Math.round(cents)) + '¢' : ''), x1 - 12 * sc, y - 14 * sc, Math.round(15 * sc), ok ? 'rgb(255,222,130)' : 'rgb(255,170,120)', 'right', 800); }
+  else hmText(g, vzPlaying() ? 'listening…' : 'sing or play a note', x1 - 12 * sc, (y0 + y1) / 2, Math.round(16 * sc), 'rgba(255,255,255,.4)', 'right', 600);
+  hmText(g, HM.sym ? HM.sym : '', x0, y0 - 14 * sc, Math.round(22 * sc), 'rgba(255,255,255,.85)', 'left', 800);
+  if (H > 260) hmText(g, 'the lanes are the notes of the key · gold: the chord’s notes · the line is gold where you are in tune, warmer as it drifts', 14, H - 12, hmFz(W, H, 13), 'rgba(255,255,255,.3)', 'left', 500);
+}
+VL_DRAW.chladni = vlChladni; VL_DRAW.pitchtrace = vlPitchTrace;
+
 /* >>> parts/67-audience.js */
 /* ============================================================
    Part 67 · Audience view, and the video take (2.11)
@@ -15782,7 +16441,7 @@ function wbCard(start) {
   const dl = h('dl', { class: 'wb-list' }); const fillRows = () => {
     dl.innerHTML = '';
     wbRows().forEach(([k, v, f]) => {
-      const dd = h('dd', {}, v); dl.append(h('dt', {}, k), dd);
+      const dd = h('dd', {}, v), tile = !f && String(v).length <= 14; dl.append(h('div', { class: 'wb-i' + (tile ? ' wb-t' : '') }, h('dt', {}, k), dd));      /* short facts are tiles; the rest are one line each */
       if (f) { dd.append(' ', h('button', { class: 'wb-edit', type: 'button', 'aria-label': 'Change what you are working on', title: 'Change what you are working on', onclick: () => {
         const inp = h('input', { class: 'in wb-in', value: jnLoad().focus || '', maxlength: 60, placeholder: 'For example: 90s alternative guitar', 'aria-label': 'What you are working on' }); dd.textContent = ''; dd.append(inp); inp.focus();
         const fin = ok => { inp.onblur = null; if (ok) { jnLoad().focus = inp.value.trim().slice(0, 60); jnSave(true); } fillRows(); }; inp.onblur = () => fin(true); inp.onkeydown = e => { if (e.key === 'Enter') fin(true); else if (e.key === 'Escape') fin(false); };
@@ -15790,9 +16449,9 @@ function wbCard(start) {
     });
   };
   fillRows(); const sum = wbSummary();
-  return h('section', { id: 'welcomeBack', class: 'wb', 'aria-label': 'Welcome back' }, h('h3', { class: 'wb-h' }, head), h('p', { class: 'wb-sub' }, sub), dl,
+  return h('section', { id: 'welcomeBack', class: 'wb', 'aria-label': 'Welcome back' }, h('div', { class: 'wb-top' }, h('h3', { class: 'wb-h' }, head), h('button', { class: 'btn sm wb-prog', id: 'wbProgress', type: 'button', onclick: () => progressOpen() }, 'My progress ›')), h('p', { class: 'wb-sub' + (gap < 14 ? ' wb-quick' : '') }, sub), dl,
     sum ? h('p', { class: 'wb-sum', id: 'wbSummary' }, sum) : h('p', { class: 'wb-sum', id: 'wbSummary' }, jnHasAny() ? '' : 'Your journal starts now. It keeps counts and dates on this device, never sound.'),
-    h('div', { class: 'row', style: { gap: '8px', marginTop: '8px' } }, h('button', { class: 'btn sm', id: 'wbProgress', type: 'button', onclick: () => progressOpen() }, 'My progress…')));
+  );
 }
 /** called from the boot screen for people who have been here before */
 function wbBoot() {

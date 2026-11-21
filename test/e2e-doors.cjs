@@ -51,7 +51,7 @@ suite('e2e-doors', async t => {
   await p.ctx.close();
 
   p = await first(); w = await go(p, door('stage'));
-  ok(w.ws === 'performer' && w.dock === 'vis' && /demo/.test(w.song) && w.gd === 'stage' && /Look/.test(w.step), 'Play it live: Studio, the finished song, and a journey that starts with a look');
+  ok(w.ws === 'performer' && w.dock === 'vis' && /demo/.test(w.song) && w.gd === 'stage' && /look/i.test(w.step), 'Play it live: Studio, the finished song, and a journey that starts with a look');
   const st = await p.evaluate(async () => { const d = window.__daily, n0 = document.querySelectorAll('#gd .gd-steps li').length; d.vzSetMode('halo', true); d.gdTick(); const a = d.GD.i; d.CFG.me = 'sing'; const nSing = d.GD_SESSIONS.stage.steps.length; d.CFG.me = ''; return { n0, a, nSing }; });
   ok(st.n0 === 5 && st.a === 1 && st.nSing === 4, 'five steps (look, sound, band, ★ Showtime, video); a singer skips the guitar tone');
   await p.ctx.close();

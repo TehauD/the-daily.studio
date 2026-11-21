@@ -19,7 +19,7 @@ suite('xbrowser-' + (process.env.BROWSER || 'chromium'), async t => {
 
   /* ---- it opens, and the audio engine starts ---- */
   at = 'it opens, and the audio engine starts'; console.log('· ' + at);
-  ok(await ev(() => !!window.__daily && !document.getElementById('boot')), 'the studio opens past the welcome card');
+  ok(await ev(() => !!window.__daily && !document.getElementById('boot')), 'the studio opens past the welcome card' + (p.bootMs != null ? ' (the card went ' + p.bootMs + ' ms after the start button)' : ''));
   ok(await ev(() => !!document.querySelector('.build-tag') && /v\d+\.\d+\.\d+/.test(document.querySelector('.build-tag').textContent)), 'the version tag is shown');
   /* 2.68: an engine with no audio output (Firefox on a machine with no sound device) never finishes starting its AudioContext. Say so
      in 20 seconds and stop, where it used to wait for the watchdog: nothing after this can run without the audio engine. */

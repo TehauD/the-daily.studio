@@ -5,14 +5,25 @@
 import { markSvg } from './brand-mark.mjs';
 
 export const SITE = {
-  origin: 'https://the-daily.studio', name: 'the-daily.studio', author: 'Tehau DeBarthe', authorUrl: 'https://the-daily.studio/guide/about/',
-  /* the author's own profiles, so search engines know the site and these are one person (2.53) */
-  profiles: ['https://www.linkedin.com/in/tehau/', 'https://github.com/TehauD'],
+  /* 2.78: Tehau is the public name (the brand); Tehau DeBarthe is the full name, kept as the alternate so search engines can join the two */
+  origin: 'https://the-daily.studio', name: 'the-daily.studio', author: 'Tehau', authorAlt: 'Tehau DeBarthe', authorUrl: 'https://the-daily.studio/guide/about/',
+  /* the author's own profiles, so search engines know the site and these are one person (2.53; Instagram and the journal 2.78) */
+  profiles: ['https://github.com/TehauD', 'https://www.linkedin.com/in/tehau/', 'https://www.instagram.com/tehaud/', 'https://journal.the-daily.studio/'],
   repo: 'https://github.com/TehauD/the-daily.studio', card: 'https://the-daily.studio/icons/social-card.png',
   tagline: 'a guitar and voice studio in your browser',
-  title: 'the-daily.studio — free guitar and voice studio in your browser',
-  description: 'Record guitar and voice, split a song into stems, get chords, tab and lyrics, and run a live light show. Free, in your browser, no account needed.'
+  title: 'the-daily.studio — Free Guitar & Voice Studio by Tehau',
+  description: 'Record guitar and voice, split songs into stems, get chords, tab and lyrics, and run a live light show. Free, in your browser, made by Tehau.'
 };
+
+/** Tehau: the one Person every page points at. The same node, with the same @id, wherever it appears, so search engines see one entity (2.78).
+    image: the public GitHub profile picture; photo is an identical copy on this domain for the visible page (and a fallback if GitHub is ever unreachable). */
+export const PERSON = {
+  id: SITE.origin + '/#tehau', name: 'Tehau', alt: 'Tehau DeBarthe', url: SITE.authorUrl, slogan: 'Make things that matter.',
+  role: 'Musician, Software Engineer & Independent Creator', image: 'https://github.com/TehauD.png', photo: 'icons/tehau.jpg', photoUrl: SITE.origin + '/icons/tehau.jpg',
+  description: 'Musician, software engineer and independent creator building creative technology, open-source software and tools that make music more accessible, including the-daily.studio.'
+};
+export const personNode = () => ({ '@type': 'Person', '@id': PERSON.id, name: PERSON.name, alternateName: PERSON.alt, url: PERSON.url, image: PERSON.image, description: PERSON.description, jobTitle: PERSON.role, brand: { '@type': 'Brand', name: PERSON.name, slogan: PERSON.slogan }, mainEntityOfPage: PERSON.url, sameAs: SITE.profiles });
+const siteNode = () => ({ '@type': 'WebSite', '@id': SITE.origin + '/#site', url: SITE.origin + '/', name: SITE.name, description: SITE.description, inLanguage: 'en', publisher: { '@id': PERSON.id } });
 
 /** the things the app does, in the words people search with (also the JSON-LD featureList) */
 export const FEATURES = [
@@ -54,7 +65,7 @@ export const PAGES = [
       ['Which browser should I use?', 'A current Chrome or Edge on a computer is the one it is built and tested in. Core features also work in current Firefox and Safari; choosing a separate output device and folder sync need Chrome or Edge on a computer.'],
       ['Do I need an audio interface?', 'No. Any microphone works. To record a guitar and a voice at the same time, use a two-input interface (a Focusrite Scarlett Solo, 2i2 or 4i4, for example), which the browser sees as one device with two channels.'],
       ['How accurate are the chords and the tab?', 'They are estimates. Chords from a clear recording are usually good; dense mixes can fool them. On the built-in synthetic self-test the tab detector scores about 87 % F1, and real rooms and heavy distortion do worse.'],
-      ['Who makes it?', 'Tehau DeBarthe, as an open-source project. The source, the licence and the third-party notices are public.']
+      ['Who makes it?', 'Tehau (Tehau DeBarthe), a musician and software engineer, as an open-source project. The source, the licence and the third-party notices are public.']
     ],
     related: ['getting-started', 'record-guitar-and-voice', 'keep-your-studio-in-sync']
   },
@@ -278,9 +289,10 @@ export const PAGES = [
   },
   {
     /* 2.53: who made it, and why: the story from Help ▸ About, as a page of its own that people and search engines can find */
-    slug: 'about', about: true, ico: '🎸', title: 'About: made for creators, by Tehau DeBarthe',
-    description: 'Why the-daily.studio exists: a free, private place to write, sing and play, built by Tehau DeBarthe, a musician, software engineer and dad.',
-    h1: 'Made for creators', eyebrow: 'About', blurb: 'Who made it, and why.',
+    slug: 'about', about: true, photo: true, ico: '🎸',
+    title: 'Tehau — Musician, Engineer & Creator of the-daily.studio', fullTitle: 'Tehau — Musician, Engineer & Creator of the-daily.studio',
+    description: 'Meet Tehau, a musician, software engineer, and independent creator building creative technology, open-source software, and tools for musicians.',
+    h1: 'Tehau', eyebrow: 'About', subtitle: 'Musician, Software Engineer & Independent Creator.', blurb: 'Who made it, and why.',
     lead: 'My mom put a guitar in my hands when I was five years old. It changed my life.',
     sections: [
       { h: 'Why I built it', p: [
@@ -293,7 +305,8 @@ export const PAGES = [
         'If the-daily.studio helps you discover a new sound, finish a song, find your voice, or simply enjoy making music a little more, then it\'s doing exactly what I hoped it would do. Make something. Explore something. Find your sound. And above all, may it bring you joy.',
         '— Tehau'] },
       { h: 'How it is made', p: ['the-daily.studio is free and open source (MIT licence). It runs in your browser, with no account to make, no ads and no tracking. Your songs, recordings and settings live on your device.', 'Three things are yours to switch on: keeping your studio in step with your own GitHub repository (your browser talks to GitHub directly; this site only helps you sign in), keeping it in a folder on your computer, and sending a song\'s recordings with a link (sealed in your browser and kept on this site for 7 days, where it can\'t be opened).', 'It is built with the browser\'s own audio, drawing and storage, and no frameworks. A small Cloudflare Worker handles the sign-in and those 7-day recordings; everything else is plain files. I made it with AI assistance (Claude, by Anthropic): the design choices, the music and any mistakes are mine.'] },
-      { h: 'Find me', links: [['LinkedIn', 'https://www.linkedin.com/in/tehau/'], ['GitHub', 'https://github.com/TehauD'], ['The source code', 'https://github.com/TehauD/the-daily.studio'], ['The Daily, my developer journal', 'https://journal.the-daily.studio/']] }
+      { h: 'The rest of what I make', p: ['I go by Tehau; on paper I\'m Tehau DeBarthe. the-daily.studio is one of the things I make. I write about building it in The Daily, my developer journal, and the code is open source on GitHub.'] },
+      { h: 'Find me', links: [['GitHub', 'https://github.com/TehauD'], ['LinkedIn', 'https://www.linkedin.com/in/tehau/'], ['Instagram', 'https://www.instagram.com/tehaud/'], ['The Daily, my developer journal', 'https://journal.the-daily.studio/'], ['The studio\'s source code', 'https://github.com/TehauD/the-daily.studio']] }
     ],
     related: ['getting-started', 'write-a-song-over-a-beat', 'sing-record-and-tune']
   },
@@ -331,13 +344,13 @@ export function appJsonLd(version, modified) {
   return ldJson({
     '@context': 'https://schema.org',
     '@graph': [
-      { '@type': 'WebSite', '@id': SITE.origin + '/#site', url: SITE.origin + '/', name: SITE.name, description: SITE.description, inLanguage: 'en', publisher: { '@id': SITE.origin + '/#author' } },
+      siteNode(),
       {
         '@type': 'WebApplication', '@id': SITE.origin + '/#app', url: SITE.origin + '/', name: SITE.name, alternateName: 'The Daily', description: SITE.description, applicationCategory: 'MultimediaApplication', applicationSubCategory: 'Music',
         operatingSystem: 'Any operating system with a current web browser', browserRequirements: 'Requires JavaScript and the Web Audio API. Chrome or Edge recommended.', softwareVersion: version, dateModified: modified, inLanguage: 'en', isAccessibleForFree: true,
-        offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' }, license: 'https://opensource.org/licenses/MIT', image: SITE.card, featureList: FEATURES, author: { '@id': SITE.origin + '/#author' }, isPartOf: { '@id': SITE.origin + '/#site' }, sameAs: [SITE.repo], mainEntityOfPage: SITE.origin + '/'
+        offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' }, license: 'https://opensource.org/licenses/MIT', image: SITE.card, featureList: FEATURES, author: { '@id': PERSON.id }, creator: { '@id': PERSON.id }, isPartOf: { '@id': SITE.origin + '/#site' }, sameAs: [SITE.repo], mainEntityOfPage: SITE.origin + '/'
       },
-      { '@type': 'Person', '@id': SITE.origin + '/#author', name: SITE.author, url: SITE.authorUrl, jobTitle: 'Musician and software engineer', sameAs: SITE.profiles }
+      personNode()
     ]
   });
 }
@@ -348,7 +361,8 @@ function pageJsonLd(p, modified) {
     { '@type': 'WebPage', '@id': url, url, name: p.title, description: p.description, inLanguage: 'en', dateModified: modified, isPartOf: { '@id': SITE.origin + '/#site' }, about: { '@id': SITE.origin + '/#app' }, breadcrumb: { '@id': url + '#crumbs' }, ...(p.img ? { primaryImageOfPage: { '@type': 'ImageObject', url: SITE.origin + '/guide/img/' + p.img.src, width: p.img.w, height: p.img.h } } : {}) },
     { '@type': 'BreadcrumbList', '@id': url + '#crumbs', itemListElement: crumbs }
   ];
-  if (p.about) { g[0]['@type'] = ['WebPage', 'AboutPage']; g[0].mainEntity = { '@id': SITE.origin + '/#author' }; g.push({ '@type': 'Person', '@id': SITE.origin + '/#author', name: SITE.author, url, jobTitle: 'Musician and software engineer', sameAs: SITE.profiles }); }      /* 2.53: the author, and the profiles that are theirs */
+  if (p.about) { g[0]['@type'] = 'ProfilePage'; g[0].mainEntity = { '@id': PERSON.id }; g[0].about = { '@id': PERSON.id }; g[0].primaryImageOfPage = { '@type': 'ImageObject', url: PERSON.photoUrl, width: 448, height: 448, caption: 'Tehau' }; g.push(personNode(), siteNode()); }
+  else g[0].author = { '@type': 'Person', '@id': PERSON.id, name: PERSON.name, url: PERSON.url };
   if (p.faq) g.push({ '@type': 'FAQPage', '@id': url + '#faq', mainEntity: p.faq.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })) });
   return ldJson({ '@context': 'https://schema.org', '@graph': g });
 }
@@ -373,6 +387,8 @@ h1{font:800 clamp(30px,5.4vw,46px)/1.08 var(--display);letter-spacing:-.025em;ma
 p{margin:0 0 14px}p.lead{font-size:19px;line-height:1.6;color:var(--muted);margin:0 0 20px}
 .ctas{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 26px}.cta,.cta2{display:inline-flex;align-items:center;gap:8px;padding:12px 20px;border-radius:12px;font-weight:700;text-decoration:none}
 .cta{background:var(--accent);color:var(--ink);box-shadow:var(--shadow)}.cta:hover{filter:brightness(1.07)}.cta2{border:1px solid var(--line);color:var(--text);background:var(--raise)}.cta2:hover{border-color:var(--accent)}
+p.sub{font:600 19px/1.4 var(--sans);color:var(--text);margin:0 0 4px}p.tag{font-size:14px;color:var(--muted);margin:0}
+.who{display:flex;align-items:center;gap:20px;margin:0 0 22px}.who img{width:112px;height:112px;border-radius:50%;object-fit:cover;border:1px solid var(--line);box-shadow:var(--shadow);flex:none;background:var(--panel)}.who h1{margin:0 0 4px}.who .eyebrow{margin:0 0 4px}
 figure{margin:0 0 8px}figure img{display:block;width:100%;height:auto;border-radius:14px;border:1px solid var(--line);background:var(--panel);box-shadow:var(--shadow)}figcaption{font-size:13px;color:var(--muted);margin-top:8px}
 ul,ol{margin:0 0 14px;padding-left:1.3em}li{margin:.35em 0}
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;list-style:none;padding:0;margin:0}.cards li{margin:0}
@@ -386,7 +402,7 @@ details{border:1px solid var(--line);border-radius:12px;background:var(--raise);
 summary::after{content:"+";position:absolute;right:16px;top:50%;transform:translateY(-50%);font:400 22px var(--sans);color:var(--muted)}details[open] summary::after{content:"–"}details p{margin:0;padding:0 16px 16px;color:var(--muted)}
 .end{margin-top:40px;padding:22px;border-radius:16px;background:var(--panel);border:1px solid var(--line);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px}.end p{margin:0;font-weight:600}
 footer{border-top:1px solid var(--line);color:var(--muted);font-size:13px}footer .wrap{padding-top:18px;padding-bottom:30px}footer a{color:var(--muted)}
-@media (max-width:560px){body{font-size:16px}p.lead{font-size:17px}h2{margin-top:36px}.cards{grid-template-columns:1fr 1fr}.card{padding:13px}.card span.t{font-size:14px}}
+@media (max-width:560px){.who{gap:14px}.who img{width:84px;height:84px}p.sub{font-size:17px}body{font-size:16px}p.lead{font-size:17px}h2{margin-top:36px}.cards{grid-template-columns:1fr 1fr}.card{padding:13px}.card span.t{font-size:14px}}
 @media (max-width:380px){.cards{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:reduce){a.card{transition:none}a.card:hover{transform:none}}`;
 
@@ -413,9 +429,9 @@ export function renderPage(p, { version, modified }) {
   const second = p.slug === 'guide' ? `<a class="cta2" href="getting-started/">New here? Start here →</a>` : `<a class="cta2" href="${p.slug === 'guide' ? '' : '../'}">All topics</a>`;
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src 'self'; font-src 'self'; base-uri 'none'; form-action 'none'">
-<title>${esc(p.title)} · ${SITE.name}</title><meta name="description" content="${esc(p.description)}"><link rel="canonical" href="${url}"><meta name="robots" content="index,follow,max-image-preview:large">
-<meta property="og:type" content="article"><meta property="og:site_name" content="${SITE.name}"><meta property="og:locale" content="en_US"><meta property="og:url" content="${url}"><meta property="og:title" content="${esc(p.title)}"><meta property="og:description" content="${esc(p.description)}"><meta property="og:image" content="${p.img ? SITE.origin + '/guide/img/' + p.img.src : SITE.card}">
-<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${esc(p.title)}"><meta name="twitter:description" content="${esc(p.description)}"><meta name="twitter:image" content="${p.img ? SITE.origin + '/guide/img/' + p.img.src : SITE.card}">
+<title>${esc(p.fullTitle || p.title + ' · ' + SITE.name)}</title><meta name="description" content="${esc(p.description)}"><link rel="canonical" href="${url}"><meta name="robots" content="index,follow,max-image-preview:large">
+<meta property="og:type" content="${p.about ? 'profile' : 'article'}"><meta property="og:site_name" content="${SITE.name}"><meta property="og:locale" content="en_US"><meta property="og:url" content="${url}"><meta property="og:title" content="${esc(p.title)}"><meta property="og:description" content="${esc(p.description)}"><meta property="og:image" content="${p.about ? PERSON.photoUrl : p.img ? SITE.origin + '/guide/img/' + p.img.src : SITE.card}">${p.about ? `<meta property="og:image:width" content="448"><meta property="og:image:height" content="448"><meta property="og:image:alt" content="Tehau, musician, software engineer and independent creator"><meta property="profile:first_name" content="Tehau"><meta property="profile:username" content="TehauD">` : ''}<meta name="author" content="${SITE.author}"><link rel="author" href="${SITE.authorUrl}">
+<meta name="twitter:card" content="${p.about ? 'summary' : 'summary_large_image'}"><meta name="twitter:title" content="${esc(p.title)}"><meta name="twitter:description" content="${esc(p.description)}"><meta name="twitter:image" content="${p.about ? PERSON.photoUrl : p.img ? SITE.origin + '/guide/img/' + p.img.src : SITE.card}">
 <link rel="icon" href="${depth}icons/favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="${depth}icons/apple-touch-icon.png">
 <link rel="preload" href="${depth}fonts/inter-latin-wght.woff2" as="font" type="font/woff2" crossorigin>
 <script type="application/ld+json">${pageJsonLd(p, modified)}</script>
@@ -423,8 +439,8 @@ export function renderPage(p, { version, modified }) {
 <header class="top"><div class="bar"><a class="brand" href="${depth}" aria-label="${SITE.name}: open the studio">${mark}<span>the-daily<span class="tld">.studio</span></span></a><nav class="pages" aria-label="Guide topics">${nav}</nav></div></header>
 <main class="wrap">
 <nav class="crumbs" aria-label="Breadcrumb"><a href="${depth}">${SITE.name}</a> › ${p.slug === 'guide' ? 'Guide' : `<a href="${depth}guide/">Guide</a> › ${esc(p.eyebrow || p.h1)}`}</nav>
-<p class="eyebrow">${esc(p.eyebrow || 'Guide')}</p>
-<h1>${esc(p.h1)}</h1>
+${p.photo ? `<div class="who"><img src="${depth}${PERSON.photo}" width="448" height="448" alt="Tehau, musician, software engineer and independent creator" fetchpriority="high" decoding="async"><div><p class="eyebrow">${esc(p.eyebrow || 'About')}</p><h1>${esc(p.h1)}</h1><p class="sub">${esc(p.subtitle)}</p><p class="tag">${esc(PERSON.slogan)}</p></div></div>` : `<p class="eyebrow">${esc(p.eyebrow || 'Guide')}</p>
+<h1>${esc(p.h1)}</h1>`}
 <p class="lead">${esc(p.lead)}</p>
 <div class="ctas"><a class="cta" href="${depth}">Open the studio, free</a>${second}</div>
 ${imgTag}
@@ -435,14 +451,14 @@ ${p.faq ? `<section><h2>Questions</h2>${p.faq.map(([q, a], i) => `<details${i ? 
 ${related.length ? `<section><h2>Keep reading</h2>${topicCards(related, p.slug === 'guide' ? '' : '../')}</section>` : ''}
 <div class="end"><p>Free, private, in your browser. Nothing to install.</p><a class="cta" href="${depth}">Open the studio</a></div>
 </main>
-<footer><div class="wrap">${SITE.name} v${esc(version)} · free and open source (MIT) · no account, no tracking, your audio stays on your device unless you send it · <a href="${depth}legal/">Licences, notices and privacy</a> · <a href="${SITE.repo}" rel="noopener noreferrer">Source on GitHub</a> · by <a href="${SITE.authorUrl}" rel="noopener noreferrer">${esc(SITE.author)}</a></div></footer>
+<footer><div class="wrap">${SITE.name} v${esc(version)} · free and open source (MIT) · no account, no tracking, your audio stays on your device unless you send it · <a href="${depth}legal/">Licences, notices and privacy</a> · <a href="${SITE.repo}" rel="noopener noreferrer">Source on GitHub</a> · by <a href="${SITE.authorUrl}" rel="author">${esc(SITE.author)}</a></div></footer>
 </body></html>
 `;
 }
 
 /** sitemap.xml: the app, the guide and the pages under it, the journal; lastmod from the newest CHANGELOG entry */
 export function sitemap(modified) {
-  const urls = [[SITE.origin + '/', '1.0'], ...PAGES.map(p => [pageUrl(p), p.slug === 'guide' ? '0.8' : '0.7'])];
+  const urls = [[SITE.origin + '/', '1.0'], ...PAGES.map(p => [pageUrl(p), p.slug === 'guide' || p.about ? '0.8' : '0.7'])];
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map(([u, pr]) => `  <url><loc>${u}</loc><lastmod>${modified}</lastmod><priority>${pr}</priority></url>`).join('\n')}\n</urlset>\n`;
 }
 /** the links under the first page's buttons (also in <noscript>), so every guide is one crawlable link away from the app */
@@ -458,6 +474,10 @@ export function llmsTxt(version, agentApiMd) {
   return `# ${SITE.name}
 
 > ${SITE.description} Version ${version}. An AI assistant in the person's browser can use the studio through tools (WebMCP, or window.dailyStudio from a script). Nothing is sent to a server.
+
+## Who made it
+
+- [Tehau](${PERSON.url}): Tehau DeBarthe, a musician, software engineer and independent creator ("Make things that matter."). GitHub ${SITE.profiles[0]}, LinkedIn ${SITE.profiles[1]}, Instagram ${SITE.profiles[2]}, journal ${SITE.profiles[3]}
 
 ## For AI assistants
 

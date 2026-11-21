@@ -4,6 +4,18 @@ What the studio, its tutorials, its documents and its tests do **not** cover yet
 
 How to use it: before a release, move what the release closed into *Closed* with the version, and add what it opened. [RELEASE.md](RELEASE.md) has this as a checklist item. Items marked **(maintainer)** are decisions or facts only the project's owner can settle; nothing here blocks a build.
 
+## Closed in 2.81.0
+
+- **The Visuals were a wall of thirty-five looks, with controls that did not all apply.** Now four purpose groups of the looks you chose to keep, the rest under More looks, one Settings panel that shows only what applies (and only applies what suits), and a Saved menu. Added Chladni Plate and Pitch Trace. Still open: the seventeen looks under More looks could be removed outright (it would slim the page and win back the size budget); a Stage scene cannot yet be made from a look in one click (the Stage designer has its own scenes with their own trails, kaleidoscope and glow); looks do not yet change by song section from here (the Stage's per-section scenes do); the agent tool `set_visuals` does not know the new groups or per-look options.
+
+## Closed in 2.80.0
+
+- **More geometric, theory-and-physics worlds, with dials of their own.** Pitch Spiral, Rhythm Polygons and Overtone Series, a per-world options panel, and a spiral layout for the hexagon field. Still open: the other worlds have no per-world options yet (only these three and Soundprint), the agent tool `set_visuals` cannot set a world's options, Rhythm Polygons shows only the song's drum pattern (not a recorded drum take), and the cents offsets in Overtone Series are hidden below the frequency where the analyser's bins are too wide to tell. The page is 687 kB compressed against a 720 kB limit (raised from 700 in 2.80): moving the visual worlds into rooms, loaded on first use, would win it back. Ideas not yet built: Pitch Trace for singers, Song Arcs, Chladni plates, Consonance Web, Voice-Leading Braid, and a modulation matrix.
+
+## Closed in 2.77.0
+
+- **The Visuals were thirty looks with no shared idea, two rows of controls and no way to reshape them.** Now five families, one design drawer, a hexagon field with its own dials (shape, layout of pitch, how it listens) and glow, trails and mirror on every world. Still open: the other worlds have no dials of their own beyond Finish (each draws its own geometry), the agent tool `set_visuals` does not yet take a design, and a design is not yet carried inside a song or a share link.
+
 ## Closed in 2.76.0
 
 - **What the studio hears** gathers the key, range, tempo and structure of the open song into one labelled page with apply and undo. Still open from the assessment: show take figures on the lanes and per section, setlist and rehearsal, takes by section, an artist page. Not yet: chord recognition from recorded audio into the chart (the chart import and stem analysis do it for imports), melody extraction, automatic section identification from audio.
