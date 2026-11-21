@@ -29,6 +29,8 @@
     "test:mobile": "node test/mobile.cjs",
     "test:xbrowser": "node test/xbrowser.cjs",
     "test:worker": "node test/worker.test.mjs",
+    "test:scanguard": "node test/scan-guard.test.mjs",
+    "scan-guard": "node scripts/scan-guard.mjs",
     "test:e2e:core": "node test/e2e.cjs",
     "test:all": "npm test && node test/run.cjs",
     "shots": "node test/shots.cjs"
