@@ -82,7 +82,7 @@ const VMODES = [['hex', 'Hex Resonance'], ['spectro', 'Spectrogram'], ['chroma',
 const VZ_MONITOR = new Set(['spectro', 'chroma', 'scope']);
 const vzLookName = () => (VMODES.find(m => m[0] === VZ.mode) || (typeof VBACK !== 'undefined' && VBACK.find(m => m[0] === VZ.mode)) || [0, 'Look'])[1];
 /** the looks picker under the Look button (open: true/false, or toggle) */
-function vzLooksOpen(open) { const bar = document.querySelector('#pane-vis .vz-bar'); if (!bar) return; const on = bar.classList.toggle('looks-open', open == null ? undefined : !!open); if (on) { bar.classList.remove('design-open'); const db = document.getElementById('vzDesignBtn'); if (db) db.setAttribute('aria-expanded', 'false'); } const b = document.getElementById('vzLookBtn'); if (b) b.setAttribute('aria-expanded', String(on)); }
+function vzLooksOpen(open) { const bar = document.querySelector('#pane-vis .vz-bar'); if (!bar) return; const on = bar.classList.toggle('looks-open', open == null ? undefined : !!open); if (on) { bar.classList.remove('design-open'); const db = document.getElementById('vzDesignBtn'); if (db) db.setAttribute('aria-expanded', 'false'); } const b = document.getElementById('vzLookBtn'); if (b) b.setAttribute('aria-expanded', String(on)); if (on && typeof vzPanelIntoView === 'function') vzPanelIntoView('vzLooks'); }
 /** keep the Look button, the Concert lens row and ⋯ More in step with the look */
 function vzLookSync() {
   const b = document.getElementById('vzLookBtn'); if (b) b.textContent = vzLookName() + ' ▾';

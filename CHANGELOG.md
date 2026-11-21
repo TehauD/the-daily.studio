@@ -2,6 +2,15 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.78.1 — 2026-11-21 — The Visual Instrument on a phone
+
+### Fixed
+- **Phone and small screens (Visuals).** The worlds picker and the Design drawer opened into a sliver under a picture that takes almost half the screen, and the drawer was wider than the screen (its tabs and slider values were cut off). Now, while the worlds, the drawer or ⋯ More is open, the picture steps back to a short preview; the panel scrolls into view; the worlds are one column; the drawer's tab strip scrolls inside it and its labels stay on one line; sliders and buttons have touch-sized heights. The drawer fits at 320, 390 and 820 px with no sideways scrolling.
+- The test harness waits for the welcome card to go instead of sleeping a fixed 1.8 s (the Firefox smoke job failed on that timing), and `xbrowser` prints how long the card took.
+
+### Added
+- Six phone checks in `test/e2e-design.cjs` (390 and 320 px): one-column worlds inside the screen, the picture stepping back, every drawer tab fitting without sideways scrolling, the tab labels on one line.
+
 ## 2.78.0 — 2026-11-21 — Tehau
 
 The site now says who made it in one consistent way: **Tehau** is the public name and brand; **Tehau DeBarthe** is the alternate name that joins the full name to the same person. See docs/SEARCH_IDENTITY.md.

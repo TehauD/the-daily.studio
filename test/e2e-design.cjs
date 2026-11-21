@@ -65,5 +65,22 @@ suite('e2e-design', async t => {
   const E0 = t.errs.length; const drawn = await ev(async () => { const D = window.__daily; D.CFG.vd = { glow: .5, trails: .4, mirror: 6 }; const ks = [...document.querySelectorAll('#vzLooks [data-m]')].map(b => b.dataset.m).filter(k => k !== 'video'); for (const k of ks) { D.vzSetMode(k, true); await new Promise(r => setTimeout(r, 120)); } D.CFG.vd = {}; D.vzSetMode('hex', true); return ks.length; });
   ok(drawn >= 28 && t.errs.length === E0, 'all ' + drawn + ' worlds still draw with glow, trails and a six-fold mirror on, without an error');
   await ev(() => { window.__daily.CFG.vd = {}; });
+  // ---- on a phone (2.78.1): the picker and the drawer fit the screen, and the picture steps back while they are open
+  for (const [w, h] of [[390, 844], [320, 640]]) {
+    const q = await t.open({ w, h, mobile: true, debug: true }), qe = f => q.evaluate(f);
+    await qe(() => window.__daily.mGo('see', 'vis')); await wait(1100);
+    const closed = await qe(() => document.querySelector('#pane-vis .vwrap').getBoundingClientRect().height);
+    await q.click('#vzLookBtn'); await wait(500);
+    const W = await qe(() => { const f = document.getElementById('vzLooks'), r = f.getBoundingClientRect(), cols = new Set([...f.querySelectorAll('.vz-fam')].map(e => Math.round(e.getBoundingClientRect().left))).size; return { right: Math.round(r.right), vw: document.documentElement.clientWidth, cols, wrap: document.querySelector('#pane-vis .vwrap').getBoundingClientRect().height }; });
+    ok(W.right <= W.vw && W.cols === 1 && W.wrap < closed * .75, w + ' px phone: the worlds are one column inside the screen, and the picture steps back to a preview (' + Math.round(closed) + ' → ' + Math.round(W.wrap) + ' px)');
+    await q.click('#vzDesignBtn'); await wait(500);
+    const bad = [];
+    for (const tab of ['sound', 'shape', 'finish', 'colour', 'pre', 'world']) { await q.click('#vzDesign [data-tab=' + tab + ']'); await wait(250);
+      const m = await qe(() => { const d = document.getElementById('vzDesign'), r = d.getBoundingClientRect(), vw = document.documentElement.clientWidth; return { out: Math.round(r.right) > vw || Math.round(r.left) < 0 || [...d.querySelectorAll('*')].some(e => e.offsetParent && !e.closest('.vd-tabs') && e.getBoundingClientRect().right > r.right + 1), page: document.documentElement.scrollWidth > vw }; });
+      if (m.out || m.page) bad.push(tab); }
+    ok(!bad.length, w + ' px phone: every tab of the drawer fits the screen without sideways scrolling' + (bad.length ? ' (not: ' + bad.join() + ')' : ''));
+    ok(await qe(() => { const e = document.querySelector('#vzDesign .vd-tabs'); return getComputedStyle(e).whiteSpace !== 'normal' || [...e.querySelectorAll('button')].every(b => getComputedStyle(b).whiteSpace === 'nowrap'); }), w + ' px phone: the tab labels stay on one line (the strip scrolls)');
+    await q.close();
+  }
   ok(t.errs.length === 0, 'no errors (' + t.errs.length + ')');
 });

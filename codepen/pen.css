@@ -1933,3 +1933,15 @@ body.simple:not(.vz-all) .vz-fam:not(:has([data-core])):not(:has(.on)){display:n
 .vd-pres{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:6px}.vd-pre{display:flex;align-items:center;gap:8px}
 #vzDesign .hx-pal{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 @media (max-width:640px){.vd-row{grid-template-columns:1fr 56px}.vd-row .vd-l{grid-column:1/3}.vd-row input[type=range]{grid-column:1}.vd-row>.seg{grid-column:1/3}}
+/* 2.77.1: the Visual Instrument on a phone: while the worlds, the design drawer or ⋯ More is open the picture shrinks to a preview, so the controls have room */
+body[data-form=phone] #pane-vis:has(.vz-bar.looks-open,.vz-bar.design-open,.vz-bar.more-open)>.vwrap{height:clamp(120px,24dvh,190px)}
+.vd-tabs button{white-space:nowrap}
+body[data-form=phone] .vd-tabs button,body[data-form=phone] .vd-row .seg button,body[data-form=phone] .vz-fam .seg button,body[data-form=phone] .vd-pre .btn{min-height:40px}
+body[data-form=phone] .vd-row input[type=range]{height:32px}
+body[data-form=phone] .vz-fams{grid-template-columns:1fr}
+body[data-form=phone] .vz-bar .vz-design,body[data-form=phone] .vz-bar .vz-worlds{scroll-margin-top:8px}
+/* the drawer and the worlds never grow wider than the screen: their tabs scroll inside them */
+.vz-bar .vz-design,.vz-bar .vz-worlds{min-width:0;max-width:100%;box-sizing:border-box}
+.vd-tabs{min-width:0;max-width:100%;overflow-x:auto;scrollbar-width:none}.vd-tabs::-webkit-scrollbar{display:none}.vd-tabs button{flex:none}
+.vd-body,.vd-row,.vd-row>*{min-width:0}
+body[data-form=phone] .vd-row input[type=range]{height:28px}
