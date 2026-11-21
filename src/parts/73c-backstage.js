@@ -28,8 +28,8 @@ function backstage(word) {
   if (CFG.backstage) { const p = bksPass(); setTimeout(() => backstageOpen(), 30); return '🎭 Welcome back, pass #' + p.n + '. Backstage is open.'; }
   if (word == null || word === '') return '🎟 Backstage is guest list only. The password is the build you are running: it is in the bottom-right corner of the studio (and in dailyStudio.describe().build). Then:  dailyStudio.backstage(\'<build>\')';
   if (String(word).trim().toLowerCase() !== String(BUILD).toLowerCase()) { BKS.tries++; return '🚪 Not on the list. ' + (BKS.tries > 2 ? 'Psst: seven characters, after “build” in the bottom-right corner.' : 'Look again: the bottom-right corner.'); }
-  CFG.backstage = true; const p = bksPass(); saveCfg(); secretFound('backstage', true); setTimeout(() => backstageOpen(), 30);
-  return '🎭 You are on the list. All-access pass #' + p.n + ' issued to this browser. Come on in. ' + secretCount();
+  CFG.backstage = true; const p = bksPass(); saveCfg(); secretFound('backstage', true); if (typeof bksSync === 'function') bksSync(); setTimeout(() => backstageOpen(), 30);
+  return '🎭 You are on the list. All-access pass #' + p.n + ' issued to this browser. Come on in. ' + secretCount() + '  Backstage now comes with you: studio.help() here in the console, Ctrl/⌘ K for the palette, Ctrl + ` for the terminal. Settings ▸ Backstage turns it on and off.';
 }
 
 /* ---------- the event bus, tapped (only while Backstage is open, or the Labs log is on) ---------- */
@@ -120,6 +120,7 @@ async function bksTool(name, input) { const r = await window.dailyStudio.call(na
 async function bksRun(line, out) {
   const raw = String(line || '').trim(); if (!raw) return; const [cmd, ...rest] = raw.split(/\s+/), arg = rest.join(' '), c = cmd.toLowerCase();
   if (BKS_FUN[c] != null || /^rm$|^sudo$/.test(c)) return out(BKS_FUN[c] || BKS_FUN.rm, 'fun');
+  if (typeof BKS_X !== 'undefined' && BKS_X[c]) return BKS_X[c](arg, out, rest);      /* 2.84: the commands made for the console and the palette (part 73d) */
   switch (c) {
     case 'help': return out(Object.values(BKS_CMDS).map(([u, d]) => u.padEnd(22) + d).join('\n') + '\n\n↑ ↓ for history, Tab to complete. A few other words work too.');
     case 'clear': return out(null, 'clear');
@@ -164,8 +165,8 @@ async function bksRun(line, out) {
   }
   return out('command not found: ' + cmd + ' · type help', 'err');
 }
-function bksTerminal() {
-  const pre = h('pre', { class: 'bks-term-out mono', id: 'bksTermOut', role: 'log', 'aria-live': 'polite', 'aria-label': 'Backstage shell output' }), inp = h('input', { class: 'bks-term-in mono', id: 'bksTermIn', autocomplete: 'off', spellcheck: false, 'aria-label': 'Backstage shell command' });
+function bksTerminal(pfx) {
+  pfx = pfx || 'bksTerm'; const pre = h('pre', { class: 'bks-term-out mono', id: pfx + 'Out', role: 'log', 'aria-live': 'polite', 'aria-label': 'Backstage shell output' }), inp = h('input', { class: 'bks-term-in mono', id: pfx + 'In', autocomplete: 'off', spellcheck: false, 'aria-label': 'Backstage shell command' });
   const out = (t, cls) => { if (cls === 'clear') { pre.textContent = ''; return; } if (t == null) return; const s = h('span', { class: 'bks-t-' + (cls || 'out') }, t + '\n'); pre.append(s); while (pre.childNodes.length > 400) pre.firstChild.remove(); pre.scrollTop = pre.scrollHeight; };
   const run = async () => {
     const v = inp.value; inp.value = ''; if (!v.trim()) return; BKS.hist.push(v); if (BKS.hist.length > 100) BKS.hist.shift(); BKS.hi = BKS.hist.length;

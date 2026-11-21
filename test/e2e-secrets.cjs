@@ -11,7 +11,7 @@ suite('e2e-secrets', async t => {
   await ev(async () => { await window.__daily.startAudio(); });
 
   /* ---- the console says hello ---- */
-  ok(logs.some(l => /Hey, you opened the console/.test(l) && /dailyStudio\.backstage\(\)/.test(l)) && logs.some(l => /the-daily\.studio/.test(l) && /build [0-9a-f]{7}/.test(l)), 'the console greets developers and points at dailyStudio.backstage()');
+  ok(logs.some(l => /There is a door backstage/.test(l) && /dailyStudio\.backstage\(\)/.test(l)) && logs.some(l => /the-daily\.studio/.test(l) && /build [0-9a-f]{7}/.test(l)), 'the console greets developers and points at dailyStudio.backstage()');
   ok(logs.some(l => /made from \d+ plain JavaScript parts \([\d,]+ lines\)/.test(l)), 'it says what the page is made of');
 
   /* ---- nothing shows until something is found ---- */

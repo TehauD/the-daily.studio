@@ -189,7 +189,7 @@ function buildMobile() {
     if (M.form === 'desktop' || !M.ready || (typeof SD !== 'undefined' && SD.nat[id])) return; const g = mGroupOf(id); if (!g) return;      /* panels the studio opens while it starts do not move the phone off the words */
     M.g = g.id; M.s = id; M.last[g.id] = id; M.view = 'center'; mSync();
   });
-  window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); M.installEvt = e; });
+  window.addEventListener('beforeinstallprompt', e => { if (M.form === 'desktop') return; e.preventDefault(); M.installEvt = e; });      /* 2.84: only where the Install tile is; on a desktop the browser keeps its own and the console stays quiet */
   ['pointerdown', 'keydown'].forEach(ev => document.addEventListener(ev, () => { M.ready = true; }, { once: true, capture: true }));
   applyForm();
   if (M.form !== 'desktop') mGo(MGROUPS.some(g => g.id === CFG.mg) ? CFG.mg : 'words');      /* a phone opens on the words (2.41), or where you were */

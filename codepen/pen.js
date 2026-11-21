@@ -57,7 +57,7 @@ window.__dailyRoom = (id, make) => {
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.83.0', BUILD = 'c0824c8', PARTS_N = +'135' || 0, LINES_N = +'22940' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.84.0', BUILD = '7ee9374', PARTS_N = +'137' || 0, LINES_N = +'23241' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { ghApp: { clientId: 'Iv23liTjqEBQsgmGaE1Q', slug: 'tehaud-the-daily-studio' },   /* Sign in with GitHub: the GitHub App's public client id and its slug (docs/GITHUB.md); empty = only the token way */
   support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', instagram: 'https://www.instagram.com/tehaud/', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://journal.the-daily.studio/' };
@@ -1976,7 +1976,8 @@ function openSettings(at) {
     { key: 'data', label: 'Songs & data', ico: '☰', sub: 'Your songs stay in this browser. Nothing is uploaded unless you turn on sync or send recordings.', body: () => [
       F('Backing track when a song opens', sel('trackRestore', [['auto', 'Restore it automatically'], ['tap', 'Wait until I tap Restore']])),
       note('Songs and recordings are kept in this browser (My songs). Stems are separated again when a song with a track opens; the song itself opens instantly.'),
-      h('div', { class: 'hub-acts' }, h('button', { class: 'btn', onclick: () => { close(); libraryOpen(); } }, '☰ My songs'), h('button', { class: 'btn', onclick: () => { close(); progressOpen(); } }, '📈 My progress'), h('button', { class: 'btn', onclick: () => download('daily-songs-settings.json', JSON.stringify(CFG, null, 2), 'application/json') }, 'Export settings JSON'), h('button', { class: 'btn bad', title: 'Choose what to erase: layout, settings, songs, offline copy…', onclick: () => { close(); resetOpen(); } }, 'Reset…'))] }
+      h('div', { class: 'hub-acts' }, h('button', { class: 'btn', onclick: () => { close(); libraryOpen(); } }, '☰ My songs'), h('button', { class: 'btn', onclick: () => { close(); progressOpen(); } }, '📈 My progress'), h('button', { class: 'btn', onclick: () => download('daily-songs-settings.json', JSON.stringify(CFG, null, 2), 'application/json') }, 'Export settings JSON'), h('button', { class: 'btn bad', title: 'Choose what to erase: layout, settings, songs, offline copy…', onclick: () => { close(); resetOpen(); } }, 'Reset…'))] },
+    CFG.backstage ? { key: 'backstage', label: 'Backstage', ico: '🎭', sub: 'You are on the list. Backstage comes with you: the command palette, the terminal and the console toolkit. Switch any of it off here.', wide: true, body: () => [bksSettings()] } : null,
   ] });
 }
 /** ? Help (part 05c's dialog) */
@@ -6278,7 +6279,7 @@ function buildMobile() {
     if (M.form === 'desktop' || !M.ready || (typeof SD !== 'undefined' && SD.nat[id])) return; const g = mGroupOf(id); if (!g) return;      /* panels the studio opens while it starts do not move the phone off the words */
     M.g = g.id; M.s = id; M.last[g.id] = id; M.view = 'center'; mSync();
   });
-  window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); M.installEvt = e; });
+  window.addEventListener('beforeinstallprompt', e => { if (M.form === 'desktop') return; e.preventDefault(); M.installEvt = e; });      /* 2.84: only where the Install tile is; on a desktop the browser keeps its own and the console stays quiet */
   ['pointerdown', 'keydown'].forEach(ev => document.addEventListener(ev, () => { M.ready = true; }, { once: true, capture: true }));
   applyForm();
   if (M.form !== 'desktop') mGo(MGROUPS.some(g => g.id === CFG.mg) ? CFG.mg : 'words');      /* a phone opens on the words (2.41), or where you were */
@@ -17402,6 +17403,7 @@ const agSecP = d => ({ type: ['string', 'number'], description: d });
 const agObj = (props, req) => ({ type: 'object', properties: props || {}, required: req || [], additionalProperties: false });
 /** good first calls, for an agent that has just arrived (describe().start_here) */
 const AG_START = [
+  { call: 'get_music_guide', input: {}, why: 'To make music: every beat, pattern, kit and sound you can choose, how notes are written, and a good order of work.' },
   { call: 'get_studio_state', input: {}, why: 'What is open and playing, and which band parts are on.' },
   { call: 'explain_song', input: {}, why: 'The key, the Roman numerals and how the sections are built.' },
   { call: 'write_song', input: { lyrics: '[Verse]\nWalking down to the harbour\nLights along the water\n[Chorus]\nHold on, hold on', key: 'G', chorus_progression: 'IV I V vi' }, why: 'Lyrics to a song the band plays.' },
@@ -17709,9 +17711,10 @@ async function agentCall(name, input) {
   try {
     let r; if (ro) r = await go(); else { const job = AGT.q.then(go, go); AGT.q = job.catch(() => { }); r = await job; }   /* changes wait their turn */
     const txt = r && r.content && r.content[0] && r.content[0].text;
+    bksAgentLog(t.name, inp, r);
     if (txt && txt.length > AG_LIMIT.maxOut) return { content: [{ type: 'text', text: txt.slice(0, AG_LIMIT.maxOut) + '\n… (cut: the answer was longer than ' + AG_LIMIT.maxOut + ' characters)' }] };
     return r;
-  } catch (e) { return agFail(e && e.code || 'rejected', (e && e.message) || String(e)); }
+  } catch (e) { const f = agFail(e && e.code || 'rejected', (e && e.message) || String(e)); bksAgentLog(t.name, inp, f); return f; }
 }
 const agWebTool = t => ({ name: t.name, title: t.title || t.name.replace(/_/g, ' '), description: t.description, inputSchema: t.inputSchema, annotations: Object.assign({ title: t.name.replace(/_/g, ' '), openWorldHint: false }, t.annotations), execute: input => agentCall(t.name, input) });
 function agentUnregister() {
@@ -17752,6 +17755,8 @@ try {
     tools: () => AGT.tools.map(t => ({ name: t.name, description: t.description, inputSchema: t.inputSchema, annotations: t.annotations })),
     describe: () => ({ api: AG_API, app: VERSION, build: BUILD, webmcp: AGT.via || null, enabled: agentOn(), aliases: Object.assign({}, AG_ALIAS), limits: Object.assign({}, AG_LIMIT), tools: AGT.tools.map(t => t.name), start_here: AG_START, docs: 'https://the-daily.studio/guide/for-ai-assistants/' }),
     call: (name, input) => agentCall(name, input),
+    /* the song as audio (2.84): a WAV (base64) and its measurements, for scripts and the local bridge; nothing is downloaded */
+    render: opt => agRenderFile(opt),
     /* not a tool: the door the console note points developers to (part 73b) */
     backstage: w => backstage(w) }) });
 } catch (e) { }
@@ -17817,6 +17822,148 @@ function xrControl() {
   const b = h('button', { class: 'btn sm', id: 'xrBtn', title: 'Experimental: watch your reactive visuals in a VR headset', onclick: () => xrEnter() }, '🥽 VR');
   xrSupported(ok => { if (!ok && b.parentNode) b.remove(); else if (!ok) b.dataset.off = '1'; });
   return b;
+}
+
+/* >>> parts/72b-agent-music.js */
+/* ============================================================
+   Part 72b · AGENT TOOLS FOR MAKING MUSIC (2.84)
+   Part 72 lets an agent read and edit chords, lyrics and the band. These are what an agent needs to make a piece, hear it and refine it:
+     get_music_guide    everything it can choose from (beats, patterns, kits, sounds, progressions), the note format, and how to go about it
+     write_drums        the drum grid, step by step (or a ready pattern)
+     write_notes        a keys part, a bass line or a lead melody, note by note (the same notes the Keys room and the piano roll write)
+     read_notes         the same notes back, so it can edit what it wrote
+     arrange_sections   put the sections in a new order, repeat them (a chorus twice, a bridge before the last chorus)
+     render_audio       mix the song faster than it plays and measure it: loudness, peak, tone balance, each section, silences, with plain advice
+   dailyStudio.render() (for agents that drive the page with scripts, and the local bridge, scripts/mcp-bridge.mjs) returns the WAV itself.
+   Same rules as part 72: it all runs in this page, one undo step per change, a 🤖 note, and nothing here touches the microphone, the camera or recording.
+   ============================================================ */
+/** "C4", "F#3", "Bb2" (C4 = middle C = 60) or a MIDI number 0–127 → the number, else null */
+function agMidi(x) {
+  if (typeof x === 'number') return Number.isInteger(x) && x >= 0 && x <= 127 ? x : null;
+  const s = String(x == null ? '' : x).trim(), m = /^([A-Ga-g])([#b♯♭]?)(-?\d)$/.exec(s);
+  if (!m) return /^\d{1,3}$/.test(s) && +s <= 127 ? +s : null; const pc = parsePc(m[1].toUpperCase() + m[2].replace('♯', '#').replace('♭', 'b')); return pc == null ? null : (+m[3] + 1) * 12 + pc;
+}
+const agNoteName = m => pcName(((m % 12) + 12) % 12, keyUsesFlats(S.key, S.minor)) + (Math.floor(m / 12) - 1);
+const AG_RANGE = { keys: [24, 108], bass: [24, 72] };
+/** a string and fret for a lead note: the fret nearest the hand's last position, on a string not already sounding at that moment */
+function agFret(m, used, last) {
+  const c = S.tuning.map((open, st) => ({ st, f: m - open - (S.capo || 0) })).filter(x => x.f >= 0 && x.f <= 22 && !used.has(x.st)); if (!c.length) return null;
+  c.sort((a, b) => Math.abs(a.f - last) - Math.abs(b.f - last) || a.st - b.st); return c[0];
+}
+/** the part's notes in a section, as the tools speak them: bar (1 = first), step (0 = the downbeat, in 16ths), note, length (steps), velocity */
+function agNotesOf(sec, part) {
+  const out = []; sec.bars.forEach((b, bi) => {
+    if (part === 'lead') (b.tab || []).filter(n => typeof n.f === 'number').forEach(n => out.push({ bar: bi + 1, step: n.s, note: agNoteName(noteMidi(n)), string: S.tuning.length - n.st, fret: n.f }));
+    else (part === 'bass' ? b.bassLine : b.keys || []).forEach(n => out.push({ bar: bi + 1, step: n.s, note: agNoteName(n.m), length: n.d || 1, velocity: Math.round((n.v || .8) * 100) / 100 }));
+  });
+  return out.sort((a, b) => a.bar - b.bar || a.step - b.step);
+}
+const AG_PART = { type: 'string', enum: ['keys', 'bass', 'lead'], description: 'keys (the piano, pad or strings part), bass (the bass line) or lead (a melody played on the guitar: written into the tab).' };
+
+agTool('get_music_guide', 'Everything you can choose from when making music here, and how to go about it: the ready beats (with tempo and feel), drum patterns and kits, bass styles and sounds, rhythm-guitar patterns, keys sounds, scales, chord progressions, what the section energies mean, how notes are written, and a good order of work. Read this once at the start.',
+  agObj(), () => agTxt({
+    beats: BEATS.map(b => ({ id: b.id, name: b.name, feel: b.feel, bpm: b.bpm, progression: b.prog || null })), drum_patterns: Object.keys(DPATS), drum_kits: Object.keys(KITS), bass_styles: BASS_STYLES, bass_sounds: BASS_TONES, strum_patterns: Object.keys(STRUMS), keys_sounds: KEYS_SOUNDS.slice(), scales: Object.keys(SCALES),
+    progressions: PROGS.map(([n, r]) => ({ name: n.replace(/\s{2,}/g, ' · '), numerals: r })),
+    section_energy: '1 = just hats, 2 = light, 3 = normal, 4 = big, 5 = everything. Set it per section with edit_section and turn Song build on in set_band: verses sit low, choruses lift, with fills and risers between.',
+    notes: { keys_and_bass: 'write_notes {part, section, notes:[{bar, step, note, length, velocity}]}. bar 1 = the first bar of the section. step 0 = the downbeat; 16 steps to a 4/4 bar (a step is a sixteenth). note is "C4" (middle C), "F#3", "Bb2" or a MIDI number. length is in steps (4 = a quarter note). velocity 0–1.', lead: 'The same, played on the guitar: each note is given a string and fret near the last one (read_notes shows them).', drums: 'write_drums {grid:{kick, snare, hat, open_hat, clap, tom}}: 16 characters each, one per sixteenth. . = rest, g = ghost, x = hit, X = accent.' },
+    how_to: ['1. set_song_details: title, key, tempo, time signature. Or set_band {beat} for a ready groove and tempo.', '2. add_section / edit_section: the chords, one per bar (get_key_chords lists the key\'s chords and progressions). Give each section an energy.', '3. set_band {song_build:true}, then choose drum_kit, bass_style, keys_sound.', '4. write_drums for your own groove; write_notes for a keys part, a bass line, a lead melody.', '5. arrange_sections to repeat or reorder (verse, chorus, verse, chorus, bridge, chorus).', '6. render_audio to hear it as numbers: loudness, balance, each section, silence. Fix what it says, render again. transport {action:"play"} for the person to hear it.'],
+    limits: 'The studio plays chords as a band, so you do not have to write every part: write notes where you want a specific melody, bass line or riff, and let the band play the rest.'
+  }), { readOnlyHint: true });
+
+const AG_ROWS = { kick: 0, snare: 1, hat: 2, open_hat: 3, clap: 4, tom: 5 };
+agTool('write_drums', 'Set the drum pattern: pick a ready one (pattern), or write your own as a grid, one row of 16 characters per drum, one character per sixteenth note: . rest, g ghost (quiet), x hit, X accent. Rows you leave out keep what they had. It applies to the whole song (the band repeats it every bar).',
+  agObj({ pattern: agStr('A ready pattern.', { enum: Object.keys(DPATS) }), grid: { type: 'object', description: 'Rows of 16 characters (4, 8 or 16: a shorter row repeats). kick, snare, hat, open_hat, clap (clap or rim), tom (tom or percussion).', properties: Object.fromEntries(Object.keys(AG_ROWS).map(k => [k, { type: 'string' }])), additionalProperties: false },
+    kit: agStr('The drum kit.', { enum: Object.keys(KITS) }), on: agBool('Drums on or off.') }),
+  i => {
+    if (i.kit && !KITS[i.kit]) throw new Error('Unknown drum kit'); if (i.pattern && !DPATS[i.pattern]) throw new Error('Unknown pattern. Patterns: ' + Object.keys(DPATS).join(', '));
+    const rows = {}; if (i.grid) Object.entries(i.grid).forEach(([k, v]) => {
+      if (!(k in AG_ROWS)) throw new Error('Unknown drum “' + k + '”. Rows: ' + Object.keys(AG_ROWS).join(', ')); const s = String(v).replace(/[\s|]/g, ''); if (![4, 8, 16].includes(s.length)) throw new Error(k + ': a row is 4, 8 or 16 characters, not ' + s.length);
+      if (!/^[.\-_gxX0-3]+$/.test(s)) throw new Error(k + ': use . for a rest, g for a ghost note, x for a hit and X for an accent'); rows[k] = s.repeat(16 / s.length).split('').map(c => ({ '.': 0, '-': 0, '_': 0, g: 1, x: 2, X: 3 }[c] != null ? { '.': 0, '-': 0, '_': 0, g: 1, x: 2, X: 3 }[c] : +c));
+    });
+    if (!i.pattern && !i.grid && !i.kit && i.on == null) throw new Error('Give a pattern, a grid, a kit or on');
+    agChange('wrote the drums', () => { const B = S.band; if (i.pattern) setDrumPattern(i.pattern); if (i.grid) { const pat = dpat(); Object.entries(rows).forEach(([k, r]) => { pat[AG_ROWS[k]] = r; }); } if (i.kit) B.kit = i.kit; if (i.on != null) B.drumsOn = !!i.on; else if (i.pattern || i.grid) B.drumsOn = true; commit(false); });
+    try { syncBandStrip(); if (paneVisible('band')) renderBand(); } catch (e) { }
+    const sym = ['.', 'g', 'x', 'X'], g = {}; Object.keys(AG_ROWS).forEach(k => { g[k] = dpat()[AG_ROWS[k]].map(v => sym[v] || '.').join(''); });
+    return agTxt({ done: true, kit: S.band.kit, drums_on: !!S.band.drumsOn, grid: g });
+  });
+
+agTool('write_notes', 'Write a part note by note into one section: keys (piano, pad, strings), bass, or lead (a melody on the guitar). Replaces that part in the section by default (undoable); the band plays your notes instead of making the part up from the chords, and the part is switched on. Bars and steps count from the start of the section: bar 1, step 0 is its downbeat (16 steps to a 4/4 bar, a step is a sixteenth note).',
+  agObj({ part: AG_PART, section: agSecP('Section number (1 = first) or name.'),
+    notes: { type: 'array', minItems: 1, maxItems: 600, description: 'Each note: { bar, step, note, length, velocity }. note is "C4" (middle C), "F#3", "Bb2" or a MIDI number. step 0–15, default 0. length in steps, default 1 (4 = a quarter note, 16 = a whole bar). velocity 0–1, default 0.8.', items: { type: 'object' } },
+    replace: agBool('Clear that part in the section first (default true). false adds to what is there.') }, ['part', 'section', 'notes']),
+  i => {
+    const si = agSec(i.section); if (si < 0) throw new Error('No section “' + i.section + '”. Sections: ' + S.sections.map((s, n) => (n + 1) + ' ' + s.name).join(', '));
+    const sec = S.sections[si], sp = spb(), nb = sec.bars.length, part = i.part, rg = AG_RANGE[part], out = [];
+    if (!Array.isArray(i.notes) || !i.notes.length) throw new Error('notes needs at least one note');
+    i.notes.forEach((n, k) => {
+      const w = 'notes[' + k + ']: ', o = n && typeof n === 'object' ? n : {}, bar = Math.round(+o.bar), step = o.step == null ? 0 : Math.round(+o.step), len = o.length == null ? 1 : Math.round(+o.length), v = o.velocity == null ? .8 : +o.velocity, m = agMidi(o.note);
+      if (!(bar >= 1 && bar <= nb)) throw new Error(w + 'bar must be 1–' + nb + ' (“' + sec.name + '” has ' + nb + ' bars)'); if (!(step >= 0 && step < sp)) throw new Error(w + 'step must be 0–' + (sp - 1) + ' (a bar has ' + sp + ' steps)');
+      if (m == null) throw new Error(w + '“' + o.note + '” is not a note: use "C4", "F#3", "Bb2" or a MIDI number'); if (rg && (m < rg[0] || m > rg[1])) throw new Error(w + part + ' notes go from ' + agNoteName(rg[0]) + ' to ' + agNoteName(rg[1]));
+      if (!(len >= 1 && len <= sp * nb)) throw new Error(w + 'length must be 1–' + sp * nb + ' steps'); if (!(v > 0 && v <= 1)) throw new Error(w + 'velocity must be above 0 and at most 1'); out.push({ bar, step, m, len, v });
+    });
+    out.sort((a, b) => a.bar - b.bar || a.step - b.step || a.m - b.m); let skipped = 0;
+    agChange('wrote ' + part + ' notes in ' + sec.name, () => {
+      if (i.replace !== false) sec.bars.forEach(b => { if (part === 'keys') b.keys = []; else if (part === 'bass') b.bassLine = []; else b.tab = []; });
+      let last = 5; const taken = new Set();
+      out.forEach(n => { const b = sec.bars[n.bar - 1];
+        if (part === 'lead') { const key = n.bar + ':' + n.step, used = new Set(b.tab.filter(t => t.s === n.step).map(t => t.st)); const f = agFret(n.m, used, last); if (!f) { skipped++; return; } last = f.f; taken.add(key); b.tab.push({ s: n.step, st: f.st, f: f.f, t: '' }); }
+        else (part === 'bass' ? (b.bassLine = b.bassLine || []) : (b.keys = b.keys || [])).push({ s: n.step, m: n.m, v: n.v, d: n.len }); });
+      const B = S.band; if (part === 'keys') { B.keysOn = true; if (!S.mix.keys) S.mix.keys = { g: .7, p: .1, m: 0, s: 0 }; } else if (part === 'bass') B.bassOn = true; else B.leadOn = true; T.bars = null;
+    });
+    try { syncBandStrip(); if (paneVisible('band')) renderBand(); } catch (e) { }
+    return agTxt({ done: true, section: sec.name, part, written: out.length - skipped, skipped: skipped || undefined, note: skipped ? 'Some lead notes were out of reach of the guitar\'s strings and were left out.' : undefined, notes: agNotesOf(sec, part).slice(0, 80) });
+  });
+
+agTool('read_notes', 'The notes of one part in one section, in the form write_notes takes (bar, step, note, length, velocity; for lead also the string and fret). Use it to see what is there before you change it.',
+  agObj({ part: AG_PART, section: agSecP('Section number (1 = first) or name.') }, ['part', 'section']),
+  i => { const si = agSec(i.section); if (si < 0) throw new Error('No section “' + i.section + '”'); const sec = S.sections[si]; return agTxt({ section: sec.name, bars: sec.bars.length, steps_per_bar: spb(), part: i.part, notes: agNotesOf(sec, i.part) }); }, { readOnlyHint: true });
+
+agTool('arrange_sections', 'Put the sections in a new order, and repeat them. order lists sections by number or name; a section named twice is copied (a chorus twice); a section you leave out is removed. Undoable.',
+  agObj({ order: { type: 'array', minItems: 1, maxItems: 40, description: 'Section numbers (1 = first) or names, in the new order, e.g. ["Verse 1", "Chorus", "Verse 1", "Chorus", "Bridge", "Chorus"].', items: { type: ['string', 'number'] } } }, ['order']),
+  i => {
+    const idx = i.order.map(r => { const k = agSec(r); if (k < 0) throw new Error('No section “' + r + '”. Sections: ' + S.sections.map((s, n) => (n + 1) + ' ' + s.name).join(', ')); return k; }), seen = new Map(), names = new Set();
+    const made = idx.map(k => { const n = (seen.get(k) || 0) + 1; seen.set(k, n); const src = S.sections[k]; if (n === 1) { names.add(src.name); return src; } const c = JSON.parse(JSON.stringify(src)); c.id = uid(); let nm = src.name.replace(/\s+\d+$/, ''), q = 2; while (names.has(nm + ' ' + q)) q++; c.name = nm + ' ' + q; names.add(c.name); return c; });
+    agChange('rearranged the sections', () => { S.sections = made; SEL.sec = 0; SEL.bar = 0; TE.sec = 0; TE.bi = 0; T.bars = null; });
+    return agTxt({ done: true, sections: S.sections.map((s, n) => (n + 1) + ' ' + s.name), total_bars: totalBars(), length_seconds: Math.round(songSlots() * slotDur()) });
+  }, { destructiveHint: true });
+
+/* ---------- hearing it: render and measure ---------- */
+/** loudness, peak, tone balance, silences and clipping of a stereo signal, and what to do about them */
+function agMetrics(l, r, sr) {
+  const n = l.length, db = x => x > 1e-9 ? 20 * Math.log10(x) : -Infinity, rd = x => isFinite(x) ? Math.round(x * 10) / 10 : null; let pk = 0, ss = 0, clip = 0;
+  for (let k = 0; k < n; k++) { const a = Math.max(Math.abs(l[k]), Math.abs(r[k])); if (a > pk) pk = a; if (a >= .999) clip++; const m = (l[k] + r[k]) / 2; ss += m * m; }
+  const lu = lufsMeasure(l, r, sr), rms = Math.sqrt(ss / Math.max(1, n)), a1 = 1 - Math.exp(-2 * Math.PI * 250 / sr), a2 = 1 - Math.exp(-2 * Math.PI * 4000 / sr); let y1 = 0, y2 = 0; const e = [0, 0, 0];
+  for (let k = 0; k < n; k++) { const x = (l[k] + r[k]) / 2; y1 += a1 * (x - y1); y2 += a2 * (x - y2); e[0] += y1 * y1; e[1] += (y2 - y1) * (y2 - y1); e[2] += (x - y2) * (x - y2); }
+  const tot = e[0] + e[1] + e[2] || 1, share = e.map(x => Math.round(x / tot * 100)), w = Math.round(sr * .1); let lead = 0, trail = 0, gap = 0, run = 0, started = false;
+  const quiet = j => { let s = 0; for (let k = j; k < Math.min(n, j + w); k++) s += l[k] * l[k] + r[k] * r[k]; return Math.sqrt(s / (2 * w)) < .001; };
+  for (let j = 0; j + w <= n; j += w) { if (quiet(j)) { run += .1; if (!started) lead += .1; gap = Math.max(gap, run); } else { run = 0; started = true; } } for (let j = Math.floor(n / w) * w - w; j >= 0 && quiet(j); j -= w) trail += .1;
+  const hints = [], L = lu.lufs;
+  if (!isFinite(L)) hints.push('The render is silent: check that the band parts are on, the chords are not empty and nothing is muted.'); else {
+    if (L < -23) hints.push('Quiet (' + rd(L) + ' LUFS): the mix is well under streaming level. Raise the strip levels or the master.'); else if (L > -9) hints.push('Very loud (' + rd(L) + ' LUFS): little room left; lower the master or the loudest part.');
+    if (clip) hints.push(clip + ' samples reach full scale: lower the master or the loudest part.'); if (share[0] > 62) hints.push('Heavy in the low end (' + share[0] + '% below 250 Hz): thin out the bass or the keys.'); if (share[0] < 12) hints.push('Little low end (' + share[0] + '% below 250 Hz): turn up the bass or add a low part.'); if (share[2] < 1) hints.push('Almost nothing above 4 kHz: a brighter kit, hats or a lead would open it up.');
+    if (gap > 1.5) hints.push('A silence of ' + rd(gap) + ' s somewhere in the song.');
+  }
+  return { duration_s: rd(n / sr), loudness_lufs: rd(L), true_peak_dbfs: rd(lu.tp), peak_dbfs: rd(db(pk)), rms_dbfs: rd(db(rms)), crest_db: rd(db(pk) - db(rms)), clipped_samples: clip, balance_percent: { low_under_250hz: share[0], mid: share[1], high_over_4khz: share[2] }, silence_s: { start: rd(lead), end: rd(trail), longest_gap: rd(gap) }, hints };
+}
+/** render the song (the same signal path as playing it) and return { l, r, sr, seconds } */
+async function agRenderRaw(opt) {
+  try { await startAudio(); } catch (e) { }
+  if (!ofrAvailable()) throw new Error('The studio cannot render yet. The browser only starts sound after the person has clicked or tapped the page once: ask them to click anywhere in the studio, then try again.');
+  if (T.rec) throw new Error('The studio is recording; the person has to stop it.');
+  return ofrRender({ tail: opt && opt.tail != null ? clamp(+opt.tail || 0, 0, 8) : 2 });
+}
+agTool('render_audio', 'Mix the song to audio faster than it plays (the same signal as pressing play, with the band, your notes, the effects and the master) and measure it: loudness (LUFS), peaks, how the sound is spread between low, mid and high, silences, clipping, and each section\'s loudness, with plain advice on what to fix. Use it to hear your work as numbers, change something, and render again. It does not change the song.',
+  agObj({ tail: agNum('Seconds of ring-out after the last bar, 0–8 (default 2).'), sections: agBool('Include each section\'s loudness (default true).') }),
+  async i => {
+    const o = await agRenderRaw(i), m = agMetrics(o.l, o.r, o.sr);
+    if (i.sections !== false) { let at = 0; m.sections = S.sections.map(s => { const a = Math.round(at * o.sr), len = s.bars.length * spb() * slotDur(); at += len; const b = Math.min(o.l.length, Math.round(at * o.sr)); let v = null, pk = 0; if (b - a > o.sr * .8) { const lu = lufsMeasure(o.l.subarray(a, b), o.r.subarray(a, b), o.sr); v = isFinite(lu.lufs) ? Math.round(lu.lufs * 10) / 10 : null; pk = lu.peak; } return { name: s.name, bars: s.bars.length, energy: secEnergy(s), loudness_lufs: v }; }); }
+    return agTxt(Object.assign({ done: true, bpm: S.bpm, key: agKeyName(S.key, S.minor) }, m));
+  });
+/** for scripts and the local bridge (dailyStudio.render): the mix as a WAV, base64, with its measurements. Nothing is downloaded. */
+async function agRenderFile(opt) {
+  if (!agentOn()) throw new Error('The person has turned off AI agent access in Settings ▸ Workflow.'); opt = opt || {};
+  const o = await agRenderRaw(opt), bits = opt.bits === 24 ? 24 : 16, buf = new Uint8Array(await encodeWav([o.l, o.r], o.sr, bits).arrayBuffer()); let s = ''; for (let k = 0; k < buf.length; k += 0x8000) s += String.fromCharCode.apply(null, buf.subarray(k, k + 0x8000));
+  return { wav_base64: btoa(s), bytes: buf.length, sample_rate: o.sr, bits, seconds: Math.round(o.l.length / o.sr * 10) / 10, metrics: agMetrics(o.l, o.r, o.sr) };
 }
 
 /* >>> parts/73-build-egg.js */
@@ -18112,9 +18259,11 @@ bus.on('transport', () => { if (!T.playing) SEC.pocket = 0; });
 
 /* ---------- a word for developers, in the console ---------- */
 try {
+  const pass = !!CFG.backstage && !(CFG.bks && CFG.bks.on === false), mono = 'font:600 11px ui-monospace,Menlo,monospace;color:#f7c95a;background:#1b130d;padding:2px 6px;border-radius:4px';
   console.log('%c the-daily.studio %c v' + VERSION + ' · build ' + BUILD + ' ', 'background:#1f8a56;color:#fff;font:700 14px system-ui,sans-serif;padding:4px 8px;border-radius:6px 0 0 6px', 'background:#0b100e;color:#7dbf9b;font:600 12px ui-monospace,Menlo,monospace;padding:5px 8px;border-radius:0 6px 6px 0');
-  console.log('%cHey, you opened the console. 🎸 Respect.\n%cNo framework, no tracking, nothing kept on a server: one HTML file made from ' + PARTS_N + ' plain JavaScript parts (' + LINES_N.toLocaleString('en') + ' lines), a hand-made minifier, a QR encoder and a lot of Web Audio. The source is at ' + BRAND.repo + '\n\nThere is a door backstage for people like you. Knock:  %cdailyStudio.backstage()',
-    'font:700 13px system-ui,sans-serif', 'font:12px/1.5 system-ui,sans-serif;color:#9db3a5', 'font:700 12px ui-monospace,Menlo,monospace;color:#f7c95a;background:#1b130d;padding:2px 6px;border-radius:4px');
+  console.log('%cFree and open source. No framework, no tracking, nothing kept on a server: one HTML file made from ' + PARTS_N + ' plain JavaScript parts (' + LINES_N.toLocaleString('en') + ' lines) and a lot of Web Audio.  Source: ' + BRAND.repo, 'font:12px/1.5 system-ui,sans-serif;color:#9db3a5');
+  if (pass) console.log('%c🎭 Backstage is open.%c  %cstudio.help()%c  ·  Ctrl/⌘ K palette  ·  Ctrl + ` terminal  ·  Settings ▸ Backstage', 'font:700 12px system-ui,sans-serif', '', mono, 'font:12px system-ui,sans-serif;color:#9db3a5');
+  else console.log('%cThere is a door backstage for people like you.%c  Knock:  %cdailyStudio.backstage()', 'font:700 12px system-ui,sans-serif', '', mono);
 } catch (e) { }
 /* Backstage itself (the door, the pass and its rooms) is part 73c. */
 
@@ -18149,8 +18298,8 @@ function backstage(word) {
   if (CFG.backstage) { const p = bksPass(); setTimeout(() => backstageOpen(), 30); return '🎭 Welcome back, pass #' + p.n + '. Backstage is open.'; }
   if (word == null || word === '') return '🎟 Backstage is guest list only. The password is the build you are running: it is in the bottom-right corner of the studio (and in dailyStudio.describe().build). Then:  dailyStudio.backstage(\'<build>\')';
   if (String(word).trim().toLowerCase() !== String(BUILD).toLowerCase()) { BKS.tries++; return '🚪 Not on the list. ' + (BKS.tries > 2 ? 'Psst: seven characters, after “build” in the bottom-right corner.' : 'Look again: the bottom-right corner.'); }
-  CFG.backstage = true; const p = bksPass(); saveCfg(); secretFound('backstage', true); setTimeout(() => backstageOpen(), 30);
-  return '🎭 You are on the list. All-access pass #' + p.n + ' issued to this browser. Come on in. ' + secretCount();
+  CFG.backstage = true; const p = bksPass(); saveCfg(); secretFound('backstage', true); if (typeof bksSync === 'function') bksSync(); setTimeout(() => backstageOpen(), 30);
+  return '🎭 You are on the list. All-access pass #' + p.n + ' issued to this browser. Come on in. ' + secretCount() + '  Backstage now comes with you: studio.help() here in the console, Ctrl/⌘ K for the palette, Ctrl + ` for the terminal. Settings ▸ Backstage turns it on and off.';
 }
 
 /* ---------- the event bus, tapped (only while Backstage is open, or the Labs log is on) ---------- */
@@ -18241,6 +18390,7 @@ async function bksTool(name, input) { const r = await window.dailyStudio.call(na
 async function bksRun(line, out) {
   const raw = String(line || '').trim(); if (!raw) return; const [cmd, ...rest] = raw.split(/\s+/), arg = rest.join(' '), c = cmd.toLowerCase();
   if (BKS_FUN[c] != null || /^rm$|^sudo$/.test(c)) return out(BKS_FUN[c] || BKS_FUN.rm, 'fun');
+  if (typeof BKS_X !== 'undefined' && BKS_X[c]) return BKS_X[c](arg, out, rest);      /* 2.84: the commands made for the console and the palette (part 73d) */
   switch (c) {
     case 'help': return out(Object.values(BKS_CMDS).map(([u, d]) => u.padEnd(22) + d).join('\n') + '\n\n↑ ↓ for history, Tab to complete. A few other words work too.');
     case 'clear': return out(null, 'clear');
@@ -18285,8 +18435,8 @@ async function bksRun(line, out) {
   }
   return out('command not found: ' + cmd + ' · type help', 'err');
 }
-function bksTerminal() {
-  const pre = h('pre', { class: 'bks-term-out mono', id: 'bksTermOut', role: 'log', 'aria-live': 'polite', 'aria-label': 'Backstage shell output' }), inp = h('input', { class: 'bks-term-in mono', id: 'bksTermIn', autocomplete: 'off', spellcheck: false, 'aria-label': 'Backstage shell command' });
+function bksTerminal(pfx) {
+  pfx = pfx || 'bksTerm'; const pre = h('pre', { class: 'bks-term-out mono', id: pfx + 'Out', role: 'log', 'aria-live': 'polite', 'aria-label': 'Backstage shell output' }), inp = h('input', { class: 'bks-term-in mono', id: pfx + 'In', autocomplete: 'off', spellcheck: false, 'aria-label': 'Backstage shell command' });
   const out = (t, cls) => { if (cls === 'clear') { pre.textContent = ''; return; } if (t == null) return; const s = h('span', { class: 'bks-t-' + (cls || 'out') }, t + '\n'); pre.append(s); while (pre.childNodes.length > 400) pre.firstChild.remove(); pre.scrollTop = pre.scrollHeight; };
   const run = async () => {
     const v = inp.value; inp.value = ''; if (!v.trim()) return; BKS.hist.push(v); if (BKS.hist.length > 100) BKS.hist.shift(); BKS.hi = BKS.hist.length;
@@ -18413,6 +18563,157 @@ document.addEventListener('keydown', e => {
   if (near && (key === 'b' || key === 'a')) { e.preventDefault(); e.stopPropagation(); }      /* B and A finish the code here, not the bass and the rest */
   if (BKS.k === BKS_KONAMI.length) { BKS.k = 0; if (CFG.backstage) backstageOpen('terminal'); else toast('🎟 Nice moves. Backstage is guest list only, and the door is in the browser console.', ''); }
 }, true);
+
+/* >>> parts/73d-backstage-everywhere.js */
+/* ============================================================
+   Part 73d · BACKSTAGE, EVERYWHERE (2.84)
+   Backstage (part 73c) was a room you went to. Once you are on the list it now comes with you:
+     · The console toolkit    `studio` in the browser's DevTools console: every Backstage command as a function (studio.status(), studio.bpm(96)),
+                              plus the ones made for the console (studio.sketch(), studio.render(), studio.listen(), studio.song(), studio.perf()).
+     · The command palette    Ctrl/⌘ + K, from anywhere in the studio: jump to a panel, switch a look, load a beat or a song, run a command.
+     · The terminal drawer    Ctrl + ` slides the Backstage shell up from the bottom of whatever you are doing.
+     · Agent activity         what an AI agent changes, one quiet line in the console.
+   All of it is off until you have found Backstage (the pass), and one switch turns it all off again: Settings ▸ Backstage (which is itself
+   only there once you are on the list), with a switch for each piece. Nothing here leaves the page.
+   ============================================================ */
+CFG.bks = Object.assign({ on: true, palette: true, drawer: true, console: true, agentlog: true }, CFG.bks && typeof CFG.bks === 'object' ? CFG.bks : {});
+/** is this piece of Backstage on: you have the pass, the master switch is on, and so is its own */
+const bksOn = k => !!CFG.backstage && CFG.bks.on !== false && (k == null || CFG.bks[k] !== false);
+const BKS_PIECES = [['palette', 'Command palette', 'Ctrl/⌘ K from anywhere: jump to a panel, switch a look, load a beat or a song, run a command.'], ['drawer', 'Terminal drawer', 'Ctrl + ` slides the Backstage shell up from the bottom, over whatever you are doing.'], ['console', 'Console toolkit', '`studio` in the browser’s DevTools console: every Backstage command as a function, and more.'], ['agentlog', 'Agent activity in the console', 'One quiet line for each change an AI agent makes.']];
+const bksSay = (t, cls) => { if (cls === 'clear') return console.clear(); if (t == null) return; console.log('%c' + t, cls === 'err' ? 'color:#ff8a7a' : cls === 'dim' ? 'color:#7e9288' : cls === 'fun' ? 'color:#f7c95a' : 'color:inherit'); };
+const bksWait = ms => new Promise(r => setTimeout(r, ms));
+const bksKV = s => { const o = {}; const body = String(s || '').replace(/\b(\w+)=("[^"]*"|\S+)/g, (_, k, v) => { o[k] = v.replace(/^"|"$/g, ''); return ''; }).trim(); return { o, body }; };
+const bksFail = r => r && r.error ? r.error.message || String(r.error) : null;
+
+/* ---------- commands made for the console and the palette (the shell in part 73c finds them here first) ---------- */
+const BKS_X = {
+  guide: async (a, out) => { const g = await bksTool('get_music_guide'); out(['beats       ' + g.beats.map(b => b.id).join(' · '), 'patterns    ' + g.drum_patterns.join(' · '), 'kits        ' + g.drum_kits.join(' · '), 'bass        ' + g.bass_styles.join(' · '), 'keys        ' + g.keys_sounds.join(' · '), '', g.how_to.join('\n')].join('\n')); },
+  sketch: async (a, out) => {
+    const { o, body } = bksKV(a); if (!body) return out('sketch <chords> [| more chords…] [bpm=96] [beat=lofi] [title="…"]\ne.g.  sketch Am F C G | F C G Am bpm=96 beat=lofi', 'err');
+    const names = ['Verse', 'Chorus', 'Bridge', 'Outro'], text = body.split('|').map(s => s.trim()).filter(Boolean).map((p, i) => '[' + (names[i] || 'Part ' + (i + 1)) + ']\n' + p).join('\n');
+    let r = await bksTool('load_chord_sheet', Object.assign({ text }, o.title ? { title: o.title } : {})); if (bksFail(r)) return out('✗ ' + bksFail(r), 'err');
+    if (o.beat) { r = await bksTool('set_band', { beat: o.beat }); if (bksFail(r)) out('✗ ' + bksFail(r), 'err'); } if (o.bpm) { r = await bksTool('set_song_details', { bpm: +o.bpm }); if (bksFail(r)) out('✗ ' + bksFail(r), 'err'); }
+    out('♪ ' + S.sections.length + ' section' + (S.sections.length === 1 ? '' : 's') + ', ' + totalBars() + ' bars at ' + S.bpm + ' bpm in ' + agKeyName(S.key, S.minor) + '. play to hear it.');
+  },
+  drums: async (a, out) => {
+    const { o, body } = bksKV(a); if (!body && !Object.keys(o).length) return out('drums <pattern name> | drums kick=X...x... snare=....X... hat=x.x.x.x. [kit=Rock Room]\npatterns: ' + Object.keys(DPATS).join(' · '), 'err');
+    const grid = {}, inp = {}; Object.entries(o).forEach(([k, v]) => { if (k === 'kit') inp.kit = v; else grid[k] = v; }); if (Object.keys(grid).length) inp.grid = grid; if (body) inp.pattern = Object.keys(DPATS).find(n => n.toLowerCase() === body.toLowerCase()) || body;
+    const r = await bksTool('write_drums', inp); if (bksFail(r)) return out('✗ ' + bksFail(r), 'err'); out(Object.entries(r.grid).map(([k, v]) => k.padEnd(9) + v).join('\n') + '\nkit       ' + r.kit);
+  },
+  render: async (a, out) => {
+    out('rendering…', 'dim'); const r = await bksTool('render_audio', { tail: 1 }); if (bksFail(r)) return out('✗ ' + bksFail(r), 'err');
+    out([r.duration_s + ' s · ' + r.loudness_lufs + ' LUFS · true peak ' + r.true_peak_dbfs + ' dBFS · crest ' + r.crest_db + ' dB', 'balance   low ' + r.balance_percent.low_under_250hz + '% · mid ' + r.balance_percent.mid + '% · high ' + r.balance_percent.high_over_4khz + '%'].concat((r.sections || []).map(s => ('  ' + s.name).padEnd(16) + (s.loudness_lufs == null ? '—' : s.loudness_lufs + ' LUFS') + '  energy ' + s.energy), r.hints.length ? ['', ...r.hints.map(h => '• ' + h)] : ['', '• no problems found']).join('\n'));
+    return r;
+  },
+  save: async (a, out) => {
+    out('rendering the WAV…', 'dim'); const o = await window.dailyStudio.render({ bits: /24/.test(a) ? 24 : 16 }), bin = atob(o.wav_base64), u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+    download((S.title || 'song').replace(/[^\w -]+/g, '').trim().replace(/\s+/g, '-') + '.wav', new Blob([u], { type: 'audio/wav' })); out('⤓ ' + (o.bytes / 1e6).toFixed(1) + ' MB, ' + o.seconds + ' s, ' + o.bits + '-bit');
+  },
+  listen: async (a, out) => {
+    const sec = clamp(+a || 20, 3, 120); if (!(AN && AN.active)) out('Nothing is connected to listen to: connect an input (or play the song) first.', 'dim'); let last = '', end = performance.now() + sec * 1000; out('listening for ' + sec + ' s…', 'dim');
+    while (performance.now() < end) { await bksWait(350); const pc = AN.active && AN.midi != null ? agNoteName(Math.round(AN.midi)) : '—', ch = AN.chord && AN.chord[0] ? AN.chord[0].sym : '—', k = AN.key && AN.key[0] ? pcName(AN.key[0].root) + (AN.key[0].minor ? 'm' : '') : '—', line = 'note ' + pc.padEnd(4) + ' chord ' + ch.padEnd(7) + ' key ' + k; if (line !== last) { out(line); last = line; } }
+    out('done.', 'dim');
+  },
+  perf: async (a, out) => { const f = BKS.fps.length ? BKS.fps : [FPS]; out(['frames      ' + FPS + ' fps (min ' + Math.min(...f) + ', max ' + Math.max(...f) + ')', 'long tasks  ' + BKS.longs + ' (worst ' + Math.round(BKS.longMax) + ' ms)', 'audio       ' + (E.ctx ? E.ctx.state + ' · ' + E.ctx.sampleRate + ' Hz · ' + Math.round((E.ctx.baseLatency || 0) * 1000) + ' ms base latency' : 'off'), 'memory      ' + bksMem()].join('\n')); },
+  song: async (a, out) => { out(S.sections.map((s, i) => ((i + 1) + ' ' + s.name).padEnd(16) + s.bars.map(b => b.chord || '·').join(' ') + '   energy ' + secEnergy(s)).join('\n') + '\n\n' + (S.title || 'Untitled') + ' · ' + agKeyName(S.key, S.minor) + ' · ' + S.bpm + ' bpm · ' + totalBars() + ' bars'); }
+};
+Object.assign(BKS_CMDS, {
+  guide: ['guide', 'everything you can choose from when making music: beats, patterns, kits, sounds'],
+  sketch: ['sketch <chords> [| …]', 'a song from chords in one line: sketch Am F C G | F C G Am bpm=96 beat=lofi'],
+  drums: ['drums <pattern> | kick=…', 'a drum pattern, or your own grid: drums kick=X...x... snare=....X...'],
+  render: ['render', 'mix the song faster than it plays and measure it: loudness, balance, sections, advice'],
+  save: ['save [24]', 'download the mix as a WAV'],
+  listen: ['listen [seconds]', 'what the studio hears: note, chord, key'],
+  perf: ['perf', 'frames, long tasks, audio and memory at a glance'],
+  song: ['song', 'the sections, the chords and their energy']
+});
+
+/* ---------- the console toolkit: `studio` ---------- */
+function bksConsoleSync() {
+  const on = bksOn('console'); try { if (!on) { delete window.studio; return; } } catch (e) { return; }
+  if (window.studio) return;
+  const T_ = {}, run = async (line) => { try { return await bksRun(line, bksSay); } catch (e) { bksSay('error: ' + (e && e.message || e), 'err'); } };
+  Object.keys(BKS_CMDS).forEach(c => { if (!/^(clear|exit|history|whoami|room|ls)$/.test(c)) T_[c] = (...a) => run(c + ' ' + a.join(' ')); });
+  T_.help = () => { console.log('%c studio %c  the Backstage toolkit', 'background:#f7c95a;color:#1b130d;font:700 12px ui-monospace,monospace;padding:2px 6px;border-radius:4px 0 0 4px', 'color:#7e9288;font:12px system-ui'); console.table(Object.fromEntries(Object.entries(BKS_CMDS).filter(([c]) => T_[c]).map(([c, [u, d]]) => ['studio.' + c.padEnd(10) + '()', { 'what it does': d, usage: u }]))); console.log('%cArguments are plain text: studio.bpm(96) · studio.sketch("Am F C G", "bpm=96") · studio.call("get_song") · studio.run("labs perf on").  Ctrl/⌘ K is the palette, Ctrl + ` the terminal.', 'color:#7e9288'); };
+  T_.run = line => run(String(line || ''));
+  T_.sketch = (...a) => run('sketch ' + a.join(' '));
+  T_.render = async () => { const r = await BKS_X.render('', bksSay); if (r) console.table(r.sections || []); return r; };
+  T_.call = (n, i) => bksTool(n, i); T_.song = () => run('song'); T_.state = () => ({ song: agSong(false), band: S.band, cfg: CFG });
+  T_.off = () => { CFG.bks.on = false; saveCfg(); bksSync(); return 'Backstage everywhere is off (Settings ▸ Backstage turns it back on).'; };
+  T_.toString = () => 'studio: the Backstage toolkit. studio.help()';
+  try { Object.defineProperty(window, 'studio', { configurable: true, enumerable: false, writable: false, value: Object.freeze(T_) }); } catch (e) { }
+}
+
+/* ---------- the command palette: Ctrl/⌘ K ---------- */
+const BKP = { el: null, items: [], sel: 0, hits: [] };
+function bkpItems() {
+  const a = [], go = (label, hint, fn) => a.push({ label, hint, run: fn });
+  DOCK.forEach(([id, name]) => go('Go to ' + name, 'panel', () => dockGo(id)));
+  VMODES.forEach(([id, name]) => go('Look: ' + name, 'visuals', () => { dockGo('vis'); vzSetMode(id); }));
+  BEATS.forEach(b => go('Beat: ' + b.name, b.bpm + ' bpm · ' + b.feel, () => bksRun('call set_band {"beat":"' + b.id + '"}', bksSay)));
+  PRJ.list.forEach(r => go('Open: ' + (r.title || 'Untitled'), 'song', () => projLoad(r.id)));
+  go('Play / stop', 'transport', () => (T.playing ? bksRun('stop', bksSay) : bksRun('play', bksSay))); go('Undo', 'edit', () => { try { undo(); } catch (e) { } });
+  go('Theme: dark', 'appearance', () => setTheme('dark')); go('Theme: light', 'appearance', () => setTheme('light'));
+  Object.entries(BKS_CMDS).forEach(([c, [u, d]]) => go('> ' + u, d, null)); a.forEach(x => { x.k = (x.label + ' ' + x.hint).toLowerCase(); }); return a;
+}
+function bkpOpen() {
+  if (!bksOn('palette')) return; if (BKP.el) return bkpClose();
+  BKP.items = bkpItems(); BKP.sel = 0;
+  const inp = h('input', { class: 'bkp-in mono', id: 'bkpIn', placeholder: 'Jump to a panel, a look, a beat, a song, or type a command…', autocomplete: 'off', spellcheck: false, 'aria-label': 'Backstage command palette', role: 'combobox', 'aria-expanded': 'true', 'aria-controls': 'bkpList' }), list = h('div', { class: 'bkp-list', id: 'bkpList', role: 'listbox' }), outp = h('pre', { class: 'bkp-out mono', role: 'log', 'aria-live': 'polite' });
+  const draw = () => {
+    const q = inp.value.trim().toLowerCase(), words = q.split(/\s+/).filter(Boolean); BKP.hits = (q ? BKP.items.filter(x => words.every(w => x.k.includes(w))) : BKP.items.slice(0, 40)).slice(0, 40); BKP.sel = clamp(BKP.sel, 0, Math.max(0, BKP.hits.length - 1));
+    list.replaceChildren(...BKP.hits.map((x, i) => h('div', { class: 'bkp-it' + (i === BKP.sel ? ' on' : ''), role: 'option', 'aria-selected': String(i === BKP.sel), onmousedown: e => { e.preventDefault(); BKP.sel = i; go(); } }, h('span', {}, x.label), h('em', {}, x.hint))));
+    if (!BKP.hits.length && q) list.replaceChildren(h('div', { class: 'bkp-it on' }, h('span', {}, 'Run “' + q + '” as a command'), h('em', {}, 'Enter')));
+    const on = list.querySelector('.on'); if (on) on.scrollIntoView({ block: 'nearest' });
+  };
+  const go = async () => {
+    const x = BKP.hits[BKP.sel], q = inp.value.trim(); outp.textContent = '';
+    const out = (t, cls) => { if (cls === 'clear') { outp.textContent = ''; return; } if (t != null) outp.textContent += t + '\n'; };
+    if (x && x.run) { bkpClose(); try { await x.run(); } catch (e) { toast('Could not: ' + (e.message || e), 'bad'); } return; }
+    const line = x && !x.run ? x.label.slice(2).split(/[ <\[|]/)[0] + (q.includes(' ') ? ' ' + q.split(/\s+/).slice(1).join(' ') : '') : q; if (!line) return;
+    try { await bksRun(line, out); } catch (e) { out('error: ' + (e.message || e), 'err'); }
+  };
+  inp.addEventListener('input', () => { BKP.sel = 0; draw(); });
+  inp.addEventListener('keydown', e => {
+    e.stopPropagation(); if (e.key === 'Escape') { e.preventDefault(); bkpClose(); } else if (e.key === 'ArrowDown') { e.preventDefault(); BKP.sel = Math.min(BKP.hits.length - 1, BKP.sel + 1); draw(); } else if (e.key === 'ArrowUp') { e.preventDefault(); BKP.sel = Math.max(0, BKP.sel - 1); draw(); }
+    else if (e.key === 'Enter') { e.preventDefault(); go(); } else if (e.key === 'Tab') { e.preventDefault(); const x = BKP.hits[BKP.sel]; if (x && !x.run) inp.value = x.label.slice(2).split(/[<\[|]/)[0].trim() + ' '; draw(); }
+  });
+  BKP.el = h('div', { class: 'bkp', id: 'bkp', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Command palette', onmousedown: e => { if (e.target === BKP.el) bkpClose(); } }, h('div', { class: 'bkp-box' }, h('div', { class: 'bkp-top mono' }, '🎭 Backstage', h('span', { class: 'muted' }, '  Esc to close · ↑ ↓ · Enter')), inp, list, outp));
+  document.body.append(BKP.el); draw(); inp.focus();
+}
+function bkpClose() { if (BKP.el) { BKP.el.remove(); BKP.el = null; } }
+
+/* ---------- the terminal drawer: Ctrl + ` ---------- */
+const BKD = { el: null };
+function bkdToggle(open) {
+  if (!bksOn('drawer')) return; const want = open == null ? !BKD.el : !!open;
+  if (!want) { if (BKD.el) { BKD.el.remove(); BKD.el = null; document.body.classList.remove('bkd-open'); } return; } if (BKD.el) return;
+  BKD.el = h('section', { class: 'bkd', id: 'bkd', 'aria-label': 'Backstage terminal' }, h('div', { class: 'bkd-bar mono' }, h('b', {}, '🎭 studio $'), h('span', { class: 'muted' }, 'Ctrl + ` closes'), h('button', { class: 'btn sm', type: 'button', 'aria-label': 'Close the terminal', onclick: () => bkdToggle(false) }, '✕')), bksTerminal('bkdTerm'));
+  document.body.append(BKD.el); document.body.classList.add('bkd-open'); const i = BKD.el.querySelector('input'); if (i) i.focus();
+}
+const bksTyping = e => { const t = e.target; return t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable); };
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === 'k' && bksOn('palette')) { e.preventDefault(); e.stopPropagation(); bkpOpen(); }
+  else if (e.ctrlKey && !e.metaKey && !e.altKey && (e.key === '`' || e.code === 'Backquote') && bksOn('drawer')) { e.preventDefault(); e.stopPropagation(); bkdToggle(); }
+}, true);
+
+/* ---------- agent activity: one quiet line in the console ---------- */
+function bksAgentLog(name, input, res) { if (!bksOn('agentlog')) return; try { const bad = res && res.isError, ro = (AGT.tools.find(t => t.name === name) || { annotations: {} }).annotations.readOnlyHint; if (ro && !bad) return; console.info('%c🤖 agent%c ' + name + (bad ? ' ✗ ' + ((res.structuredContent || {}).error || {}).message : '') + ' ' + JSON.stringify(input || {}).slice(0, 120), 'background:#1b2a24;color:#7dbf9b;font:600 11px ui-monospace,monospace;padding:1px 5px;border-radius:3px', 'color:#9db3a5;font:11px ui-monospace,monospace'); } catch (e) { } }
+
+/** everything that depends on the settings, set again whenever they change */
+function bksSync() { bksConsoleSync(); if (!bksOn('palette')) bkpClose(); if (!bksOn('drawer')) bkdToggle(false); bus.emit('bks'); }
+/** the body of Settings ▸ Backstage (once you are on the list): the master switch, and a switch for each piece */
+function bksSettings() {
+  const chk = (id, label, on, fn, tip) => h('label', { class: 'chk', title: tip || '' }, h('input', { type: 'checkbox', id, checked: !!on, onchange: e => fn(e.target.checked) }), label);
+  const box = h('div', { class: 'bks-set' });
+  const draw = () => {
+    box.replaceChildren(h('div', { class: 'hub-acts' }, h('button', { class: 'btn primary', id: 'bksGo', type: 'button', onclick: () => backstageOpen() }, '🎭 Go backstage'), h('button', { class: 'btn', id: 'bksPaletteBtn', type: 'button', onclick: () => bkpOpen() }, 'Command palette  Ctrl/⌘ K'), h('button', { class: 'btn', id: 'bksDrawerBtn', type: 'button', onclick: () => bkdToggle() }, 'Terminal  Ctrl + `')),
+      chk('bksOnMaster', 'Backstage everywhere', CFG.bks.on !== false, v => { CFG.bks.on = v; saveCfg(); bksSync(); draw(); }, 'One switch for everything below. Off: Backstage is only the room you go to.'),
+      ...BKS_PIECES.map(([k, n, t]) => h('div', { class: 'bks-set-r' + (CFG.bks.on === false ? ' off' : '') }, chk('bksPiece_' + k, n, CFG.bks[k] !== false, v => { CFG.bks[k] = v; saveCfg(); bksSync(); }, t), h('span', { class: 'small muted' }, t))),
+      h('p', { class: 'small muted' }, 'These are only here because you found Backstage. Nothing here leaves the page.'));
+  }; draw(); return box;
+}
+bksSync();
 
 /* >>> parts/73d-scales-ear.js */
 /* ============================================================

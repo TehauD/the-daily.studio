@@ -85,6 +85,7 @@ Everything the site owner does in Cloudflare (and GitHub) to run the-daily.studi
 
 **Security ▸ Bots**
 - [ ] **Bot Fight Mode: off**, and **JavaScript detections: off**. They inject a script and set a `cf_clearance` cookie, which the privacy policy says the site doesn't do. The WAF and rate limit above cover abuse.
+  If the browser console shows red errors saying an *inline script* or `static.cloudflareinsights.com/beacon.min.js` violates the Content-Security-Policy, that is Cloudflare adding its detection script or Web Analytics beacon to the page (the studio adds neither). Since 2.84 the site sends `Cache-Control: no-transform` on its pages, which tells Cloudflare to leave them alone; these two switches (and Web Analytics' automatic setup, below) are the surest fix.
 
 **Analytics & Logs ▸ Web Analytics**
 - [ ] Turn off the **automatic setup** for the-daily.studio. It injects a beacon script, which the site's policy blocks with console errors. Cloudflare's own request counts stay available without it.

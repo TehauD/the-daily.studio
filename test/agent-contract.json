@@ -46,6 +46,21 @@
     "write_song": [
       "lyrics"
     ],
-    "set_up_practice": []
+    "set_up_practice": [],
+    "get_music_guide": [],
+    "write_drums": [],
+    "write_notes": [
+      "part",
+      "section",
+      "notes"
+    ],
+    "read_notes": [
+      "part",
+      "section"
+    ],
+    "arrange_sections": [
+      "order"
+    ],
+    "render_audio": []
   }
 }

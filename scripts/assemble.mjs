@@ -111,20 +111,22 @@ writeFileSync(join(out, '_headers'), `/*
 ${common}
 /
   Content-Security-Policy: ${csp}
-  Cache-Control: no-cache
+  Cache-Control: no-cache, no-transform
 /index.html
   Content-Security-Policy: ${csp}
-  Cache-Control: no-cache
+  Cache-Control: no-cache, no-transform
 /sw.js
   Cache-Control: no-cache
 /manifest.webmanifest
   Cache-Control: no-cache
 /journal/*
-  Cache-Control: no-cache
+  Cache-Control: no-cache, no-transform
 /legal/*
-  Cache-Control: no-cache
+  Cache-Control: no-cache, no-transform
+/guide/*
+  Cache-Control: no-cache, no-transform
 /backstage/*
-  Cache-Control: no-cache
+  Cache-Control: no-cache, no-transform
   X-Robots-Tag: noindex, nofollow
 /humans.txt
   Cache-Control: no-cache
