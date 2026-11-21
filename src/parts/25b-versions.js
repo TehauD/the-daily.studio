@@ -96,6 +96,7 @@ function jrPaint() {
 function jrOpen(anchor) {
   const st = jrSteps(), box = h('div', { class: 'jr-pop', id: 'jrPop' }, h('h5', {}, 'Song journey'));
   st.forEach(x => box.append(h('div', { class: 'jr-row' + (x.on ? ' on' : '') }, h('span', { class: 'jr-ck' }, x.on ? '✓' : '○'), h('div', { class: 'grow' }, h('b', {}, x.t), x.on ? null : h('div', { class: 'tiny muted' }, x.how)), x.go ? h('button', { class: 'btn sm', onclick: () => { closePop(); x.go(); } }, x.k === 'ver' ? 'Versions…' : x.k === 'shared' ? 'Send…' : x.k === 'done' ? 'Finish…' : 'Open') : null)));
+  box.append(h('button', { class: 'btn sm', id: 'jrHears', onclick: () => { closePop(); hearsOpen(); } }, '🧠 What the studio hears'));
   popover(anchor, box, { style: { maxWidth: '340px' } });
 }
 

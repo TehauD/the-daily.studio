@@ -57,7 +57,7 @@ window.__dailyRoom = (id, make) => {
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.72.0', BUILD = '47a193e', PARTS_N = +'125' || 0, LINES_N = +'21665' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.76.0', BUILD = 'f1f938c', PARTS_N = +'129' || 0, LINES_N = +'22023' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { ghApp: { clientId: 'Iv23liTjqEBQsgmGaE1Q', slug: 'tehaud-the-daily-studio' },   /* Sign in with GitHub: the GitHub App's public client id and its slug (docs/GITHUB.md); empty = only the token way */
   support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://journal.the-daily.studio/' };
@@ -694,7 +694,7 @@ function buildGraph() {
   E.rigOut.connect(E.anaRig);
   TRACKS.forEach(([id]) => {
     const t = { id, in: gn(1), g: gn(1), pan: c.createStereoPanner(), ana: mkAna(512, 0.4) };
-    t.duck = gn(1); t.nrg = gn(1); t.in.connect(t.nrg); t.nrg.connect(t.duck); t.duck.connect(t.g);      /* nrg: the section's energy (Song build, part 03c) */ t.g.connect(t.pan); t.pan.connect(t.ana); E.tr[id] = t; if (FX_TRACKS.includes(id)) { t.fx = fxStrip(E.mix); t.pan.connect(t.fx.in); } else t.pan.connect(E.mix);
+    t.duck = gn(1); t.nrg = gn(1); t.in.connect(t.nrg); t.nrg.connect(t.duck); t.duck.connect(t.g);      /* nrg: the section's energy (Song build, part 03c) */ t.g.connect(t.pan); t.pan.connect(t.ana); E.tr[id] = t; if (FX_TRACKS.includes(id)) { t.fx = fxStrip(E.mix); t.dst = t.fx.in; } else t.dst = E.mix; t.pan.connect(t.dst);      /* t.dst: where the track joins the mix — the spatial mode (part 43) reroutes pan→dst through a 3D panner */
   });
   E.takesIn = gn(1); E.takesIn.connect(E.mix);
   /* vocal path: the second input channel → trim → (meter · recorder tap) and → monitor switch → polish strip → Vocal track */
@@ -3060,7 +3060,7 @@ function buildExportPane() {
     h('div', { class: 'card' }, h('h4', {}, 'Files'), h('div', { class: 'card-b row', style: { gap: '8px', flexWrap: 'wrap' } }, h('div', { class: 'tiny muted', style: { flexBasis: '100%' } }, 'Audio, share pages and project files carry your words and sound, and anything you brought in. Send them only where you have the right to.'),
       h('button', { class: 'btn', onclick: () => { download(fn('.mid'), buildMidi()); toast('MIDI saved (rhythm, lead, bass, drums on separate tracks)', 'ok'); } }, '⤓ MIDI'),
       h('button', { class: 'btn', onclick: () => bounceMaster() }, '⤓ Bounce master WAV'), exportExtras(),
-      h('button', { class: 'btn primary', id: 'finOpenBtn', title: 'Master the song to a streaming loudness (with a before/after), then make the release package: masters, lyrics, chord sheet, credits and splits', onclick: () => finOpen() }, '✦ Finish it…'), h('button', { class: 'btn', id: 'prtOpenBtn', title: 'Any sound, take or the song as a soundprint: a picture only it could make, moving worlds, a reading of its music and an ambient piece', onclick: () => prtOpen() }, '◎ Soundprint…'), h('button', { class: 'btn', id: 'lxOpenBtn', title: 'Every lane as its own WAV, lined up from the first beat, plus a premaster and a README with the tempo and key: ready to mix and master in BandLab or any DAW', onclick: () => lxExportOpen() }, '📦 Export for mixing & mastering…'),
+      h('button', { class: 'btn', id: 'hearsOpenBtn', title: 'Key, tempo, range and shape of the open song, each labelled measured, estimated or a suggestion', onclick: () => hearsOpen() }, '🧠 What the studio hears'), h('button', { class: 'btn primary', id: 'finOpenBtn', title: 'Master the song to a streaming loudness (with a before/after), then make the release package: masters, lyrics, chord sheet, credits and splits', onclick: () => finOpen() }, '✦ Finish it…'), h('button', { class: 'btn', id: 'prtOpenBtn', title: 'Any sound, take or the song as a soundprint: a picture only it could make, moving worlds, a reading of its music and an ambient piece', onclick: () => prtOpen() }, '◎ Soundprint…'), h('button', { class: 'btn', id: 'lxOpenBtn', title: 'Every lane as its own WAV, lined up from the first beat, plus a premaster and a README with the tempo and key: ready to mix and master in BandLab or any DAW', onclick: () => lxExportOpen() }, '📦 Export for mixing & mastering…'),
       h('button', { class: 'btn', onclick: () => { if (!TAKES.length) return toast('No takes recorded yet', 'warn'); tkLeads().forEach((t, i) => setTimeout(() => dlTake(t), i * 700)); } }, '⤓ All takes (dry DI + wet)'),
       h('button', { class: 'btn primary', id: 'exLink', title: 'The chords, words, tab, beat, tempo and key inside a link (and, if you choose, your recordings, encrypted for 7 days)', onclick: () => slShare() }, slSendLabel()),
       h('button', { class: 'btn', onclick: exportProject }, '⤓ Project JSON (Ctrl+S)'), h('button', { class: 'btn', onclick: () => imp.click() }, '⤒ Import project'), imp,
@@ -3178,7 +3178,7 @@ function buildVisPane() {
     h('button', { class: 'btn sm' + (VZ.cam ? ' on' : ''), id: 'vzCamBtn', title: 'Put yourself center stage: turns the camera on behind the visuals', onclick: () => vzCamPress() }, '📷 Camera backdrop'), camFxBox(),
     h('button', { class: 'btn sm' + (CFG.vzNeck !== false ? ' on' : ''), id: 'vzNeckBtn', title: 'Show a small guitar neck on the visuals: what is playing, what is coming next, the note you are singing', onclick: e => { CFG.vzNeck = CFG.vzNeck === false; saveCfg(); e.currentTarget.classList.toggle('on', CFG.vzNeck !== false); } }, '🎸 Neck'),
     h('button', { class: 'btn sm' + (CFG.vzRibbon ? ' on' : ''), id: 'vzRibbonBtn', 'aria-pressed': String(!!CFG.vzRibbon), title: 'Show your pitch on the visuals: the note you sing against the notes of the key and the chord that is playing', onclick: e => { CFG.vzRibbon = !CFG.vzRibbon; saveCfg(); e.currentTarget.classList.toggle('on', !!CFG.vzRibbon); e.currentTarget.setAttribute('aria-pressed', String(!!CFG.vzRibbon)); if (CFG.vzRibbon) voxReset(); } }, '〰 Pitch'),
-    vzAdjustBtn(), tipBtn(), sgdBarButton());
+    vzAdjustBtn(), (typeof spatControl === 'function' ? spatControl() : ''), (typeof xrControl === 'function' ? xrControl() : ''), tipBtn(), sgdBarButton());
   const bar = h('div', { class: 'row vz-bar' + (CFG.vzMore ? ' more-open' : ''), style: { gap: '6px', marginBottom: '8px', flexWrap: 'wrap' } },
     lookBtn, looks, lxLensBar(), hexSwatches(), prtBar(),
     h('span', { class: 'grow' }),
@@ -4301,7 +4301,7 @@ async function boot() {
   if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener('devicechange', () => { ioDeviceChange().catch(e => console.warn(e)); });
   bus.emit('song');
   try { ghBoot(); } catch (e) { console.warn('github', e); }      /* back from Sign in with GitHub, or a sync at start (part 74) */
-  DEV.make = () => { window.__daily = { tourStart, mpVision, slSendLabel, slcChanges, mkSection, perfViewSet, pfLay, pfLaySet, pfLayMenu, songMapEl, secAdd, secKind, secNameFor, smGo, renderWholeSong, normSong, bandRename, get TOUR() { return TOUR; }, SIMPLE_GOAL_TABS, SIMPLE_GOAL_TOOLS, simpleTabs, goalAudioFirst, guitarBody, pluck, BLD, BUILD_LIFT, buildLevel, secEnergy, buildCtx, buildParts, buildDrums, buildCard, buildCrash, buildRiser, tuneSelect, TUNE_LABELS, tuneTake, BASS_TONES, KITS, kitHit, sub808, M, MGROUPS, MW, mScreenDraw, mwRead, mwView, mwLyrics, mwSyl, mwEdited, mwPut, mSongOpen, msHexLoop, room, ROOM, slPack, slUnpack, slLink, slRead, slShare, slWelcome, slOpen, slFromHash, SL, BEATS, beatUse, beatRows, beatsShelf, SIMPLE_TOOLS, drumHit, RL, MO, GM_DRUM, duckAt, duckSet, duckCfg, duckNode, moNote, moDev, moDrum, moPanic, moSettings, kyOut, bassOut, rollOpen, rollBuild, rollLoop, isBass, instNow, nStr, yin, TUNINGS, setTuning, renderBarTab, tabLabels, voicingFor, toggleRec, closePop, spPause, encodeWav, PS, psOn, playDur, psSpeed, psKey, psSched, psDSPFactory, psPop, KY, keysOpen, keysVoice, keysStep, kyNoteOn, kyNoteOff, kyRec, kyClear, kyWrite, kyPiano, kyMarks, kyVoicing, KEYS_SOUNDS, KEYS_STYLES, coFinish, coDemo, coFeedback, coFbView, coTimeline, coBeat, coPractise, TAKE, learnPassed, todayPlan, todayPieces, todayStart, todayDone, streak, weekCount, dayKey, LSTEP, songLessons, songStart, songKey, earLick, earStart, EAR, simpleSet, simpleApply, ghTakeSettings, airMode, airSet, CO, coPos, coachOpen, coListen, coTick, coPlace, coNotes, coSetPiece, rfParse, LESSONS, RIFFS, RIFF_STYLES, learnOpen, learnToSong, learnFile, learnFileText, learnOpenFile, learnFromSong, labMake, labVary, labKeep, atlasPieces, atShape, MODE_VAMP, S, AIR, AIR_LAG, airSync, applyLayout, VB_PRESETS, VB_ORDER, VBS, vbAttach, vbApply, vbToggle, vbSet, vbPreset, vbPresetNext, vbThrow, vbLook, vbTick, vbScale, vocalBoardOpen, pedalRelease, MEG, megSpectrum, megFeatures, megScore, megStep, megSet, megLearn, megDraw, megLoop, megSettings, PAD, padsOpen, padHit, padTap, padRecord, padRecStop, padUndoPass, padClear, padResize, padBeatbox, bbHits, bbPattern, dpat, bassEvent, drumStep, PEDAL, pedalPress, pedalDo, pedalSecs, gearSettings, MCLK, mclkSlot, mclkMs, MIDI, MIDIRAW, onMidi, STRM, streamOpen, streamRoom, streamInfo, streamPanel, slotAtTime, SING, SHW, singStep, singScore, singSteamIR, singMicOff, showerOpen, shwGo, shwPlay, shwPrev, shwNext, shwStem, shwRecToggle, shwRecStop, shwHear, shwSave, shwAddFiles, shwRemove, shwMove, shwMode, shwLoadSet, shwPlaylist, shwWords, shwPrepare, shwFolderPull, lrcParse, readTags, spPos, spPlay, STP, trainOpen, projRestoreTrack, secretNote, secretArp, WS, WS_BASE, WS_ARPS, wsScaleRun, wsArpRun, wsFollow, wsStop, wsListen, wsEarNext, wsEarAnswer, wsOpen, bandMute, bandMuted, pdbPut, pdbKeys, projRename, FS, FS_B, fsUse, fsSync, fsHead, fsNeeds, fsTidy, fsOpen, syncOff, syncZips, PRJ_WAIT: () => PRJ.wait, EGG, EGG_LINES, EGG_ORDER, eggDay, eggFor, eggNow, eggText, eggTick, eggFit, saveCfg, projSave, projDelete, GH, ghSync, ghConnect, ghKick, ghRecheck, prtOpen, prtAnalyze, prtPack, prtUnpack, prtRead, prtCompose, prtFromCode, prtCode, prtDraw, prtArtwork, prtCopyLink, prtShelfRead, prtFromHash, PRT, audioKill, audioResume, drpOgg, drpOpen, drpOwn, encodeWav, stemUnload, ycEnv, ycPrint, ycUnprint, ycMatch, ycSetStart, ycLoad, ycMakeOurs, STM, stemLoad, cmtAdd, cmtOpen, cmtAll, cmtPack, cmtWhere, lhOpen, lhScheme, lhRhymes, lhLoad, lhSyl, LH, finOpen, finAB, finMaster, finPackage, finTone, finMatchEq, finLimit, finPeople, FIN, lufsMeasure, verMark, verRestore, verCopy, verList, verOpen, verRoundOf, verChanged, jrSteps, safeState, ghSongOut, pdbGet, lxExport, lxExportOpen, lxSaveLane, lxLanes, lxRender, LXO, zipRead, srxSend, srxReceive, srxTakeBack, srxEncode, srxDecodeTake, srxPack, srxBundle, srxCan, SRS, ghDisconnect, ghLocal, ghSha, ghJson, ghMerge3, ghShare, ghGallery, ghGalleryOpen, ghGalleryShow, ghKeepLook, ghKeepRig, rigClean, ghReturn, BRAND, ghSettingsOut, projRefresh, projCreate, projLoad, PRJ, SEC, SECRETS, secretFound, secretTiming, secretsOpen, secretSync, backstageOpen, startAudio, playheadSlot, GUARD, reportText, reportCopy, srecQ, srecSize, pdbGet, srecFmt, SREC_FMTS, VBG, vbgAdd, vbgRemove, vbgUse, vbgOpen, vbgDraw, vzSetMode, srecFrame, srecFmtBox, kitThumb, WORKLET_SRC, mkComp, mkShaper, rigLat, voxLat, restartAudio, satCurve, rigApply, qrMake, qrSvg, tipLink, tipShort, tipReady, tipCard, tipDraw, tipShareHtml, tipOpen, tipPrint, tipPng, tipVisAvoid, tipStageAvoid, TIP, TIP_TERMS, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, GPU, gpuGet, gpuBlit, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, drawVis, peaksOf, uid, shareGate, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, TAKES, STM, ZOOM, CFG, store, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, SEL, mtof, spb, WR, HM, HMX, HM_MODES, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GD_DOORS, GD_DOOR_TEXT, meNow, gdDoor, meSet, goalLens, GOAL_ME, coVoiceRoot, coHeard, coBuild, RIG, BRD, onBoard, brdSel, brdAdd, brdRemove, prtShelfAll, prtShelfMerge, ghTakeNotes, ghTakePrints, prtLookWorld, PRT_CODE_MAX, vzLookSync, vzLooksOpen, GOAL_MORE, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitInk, kitNotes, kitRecord, srecMime, mGo, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard}; };   // test hook: with ?debug, or Backstage ▸ Labs ▸ Developer handles
+  DEV.make = () => { window.__daily = { tourStart, mpVision, slSendLabel, slcChanges, mkSection, perfViewSet, pfLay, pfLaySet, pfLayMenu, songMapEl, secAdd, secKind, secNameFor, smGo, renderWholeSong, normSong, bandRename, get TOUR() { return TOUR; }, SIMPLE_GOAL_TABS, SIMPLE_GOAL_TOOLS, simpleTabs, goalAudioFirst, guitarBody, pluck, BLD, BUILD_LIFT, buildLevel, secEnergy, buildCtx, buildParts, buildDrums, buildCard, buildCrash, buildRiser, tuneSelect, TUNE_LABELS, tuneTake, BASS_TONES, KITS, kitHit, sub808, M, MGROUPS, MW, mScreenDraw, mwRead, mwView, mwLyrics, mwSyl, mwEdited, mwPut, mSongOpen, msHexLoop, room, ROOM, slPack, slUnpack, slLink, slRead, slShare, slWelcome, slOpen, slFromHash, SL, BEATS, beatUse, beatRows, beatsShelf, SIMPLE_TOOLS, drumHit, RL, MO, GM_DRUM, duckAt, duckSet, duckCfg, duckNode, moNote, moDev, moDrum, moPanic, moSettings, kyOut, bassOut, rollOpen, rollBuild, rollLoop, isBass, instNow, nStr, yin, TUNINGS, setTuning, renderBarTab, tabLabels, voicingFor, toggleRec, closePop, spPause, encodeWav, PS, psOn, playDur, psSpeed, psKey, psSched, psDSPFactory, psPop, KY, keysOpen, keysVoice, keysStep, kyNoteOn, kyNoteOff, kyRec, kyClear, kyWrite, kyPiano, kyMarks, kyVoicing, KEYS_SOUNDS, KEYS_STYLES, coFinish, coDemo, coFeedback, coFbView, coTimeline, coBeat, coPractise, TAKE, learnPassed, todayPlan, todayPieces, todayStart, todayDone, streak, weekCount, dayKey, LSTEP, songLessons, songStart, songKey, earLick, earStart, EAR, simpleSet, simpleApply, ghTakeSettings, airMode, airSet, CO, coPos, coachOpen, coListen, coTick, coPlace, coNotes, coSetPiece, rfParse, LESSONS, RIFFS, RIFF_STYLES, learnOpen, learnToSong, learnFile, learnFileText, learnOpenFile, learnFromSong, labMake, labVary, labKeep, atlasPieces, atShape, MODE_VAMP, S, AIR, AIR_LAG, airSync, applyLayout, VB_PRESETS, VB_ORDER, VBS, vbAttach, vbApply, vbToggle, vbSet, vbPreset, vbPresetNext, vbThrow, vbLook, vbTick, vbScale, vocalBoardOpen, pedalRelease, MEG, megSpectrum, megFeatures, megScore, megStep, megSet, megLearn, megDraw, megLoop, megSettings, PAD, padsOpen, padHit, padTap, padRecord, padRecStop, padUndoPass, padClear, padResize, padBeatbox, bbHits, bbPattern, dpat, bassEvent, drumStep, PEDAL, pedalPress, pedalDo, pedalSecs, gearSettings, MCLK, mclkSlot, mclkMs, MIDI, MIDIRAW, onMidi, STRM, streamOpen, streamRoom, streamInfo, streamPanel, slotAtTime, SING, SHW, singStep, singScore, singSteamIR, singMicOff, showerOpen, shwGo, shwPlay, shwPrev, shwNext, shwStem, shwRecToggle, shwRecStop, shwHear, shwSave, shwAddFiles, shwRemove, shwMove, shwMode, shwLoadSet, shwPlaylist, shwWords, shwPrepare, shwFolderPull, lrcParse, readTags, spPos, spPlay, STP, trainOpen, projRestoreTrack, secretNote, secretArp, WS, WS_BASE, WS_ARPS, wsScaleRun, wsArpRun, wsFollow, wsStop, wsListen, wsEarNext, wsEarAnswer, wsOpen, bandMute, bandMuted, pdbPut, pdbKeys, projRename, FS, FS_B, fsUse, fsSync, fsHead, fsNeeds, fsTidy, fsOpen, syncOff, syncZips, PRJ_WAIT: () => PRJ.wait, EGG, EGG_LINES, EGG_ORDER, eggDay, eggFor, eggNow, eggText, eggTick, eggFit, saveCfg, projSave, projDelete, GH, ghSync, ghConnect, ghKick, ghRecheck, prtOpen, prtAnalyze, prtPack, prtUnpack, prtRead, prtCompose, prtFromCode, prtCode, prtDraw, prtArtwork, prtCopyLink, prtShelfRead, prtFromHash, PRT, audioKill, audioResume, drpOgg, drpOpen, drpOwn, encodeWav, stemUnload, ycEnv, ycPrint, ycUnprint, ycMatch, ycSetStart, ycLoad, ycMakeOurs, STM, stemLoad, cmtAdd, cmtOpen, cmtAll, cmtPack, cmtWhere, lhOpen, lhScheme, lhRhymes, lhLoad, lhSyl, LH, finOpen, finAB, finMaster, finPackage, finTone, finMatchEq, finLimit, finPeople, FIN, lufsMeasure, verMark, verRestore, verCopy, verList, verOpen, verRoundOf, verChanged, jrSteps, safeState, ghSongOut, pdbGet, lxExport, lxExportOpen, lxSaveLane, lxLanes, lxRender, LXO, zipRead, srxSend, srxReceive, srxTakeBack, srxEncode, srxDecodeTake, srxPack, srxBundle, srxCan, SRS, ghDisconnect, ghLocal, ghSha, ghJson, ghMerge3, ghShare, ghGallery, ghGalleryOpen, ghGalleryShow, ghKeepLook, ghKeepRig, rigClean, ghReturn, BRAND, ghSettingsOut, projRefresh, projCreate, projLoad, PRJ, SEC, SECRETS, secretFound, secretTiming, secretsOpen, secretSync, backstageOpen, startAudio, playheadSlot, GUARD, reportText, reportCopy, srecQ, srecSize, pdbGet, srecFmt, SREC_FMTS, VBG, vbgAdd, vbgRemove, vbgUse, vbgOpen, vbgDraw, vzSetMode, srecFrame, srecFmtBox, kitThumb, WORKLET_SRC, mkComp, mkShaper, rigLat, voxLat, restartAudio, satCurve, rigApply, qrMake, qrSvg, tipLink, tipShort, tipReady, tipCard, tipDraw, tipShareHtml, tipOpen, tipPrint, tipPng, tipVisAvoid, tipStageAvoid, TIP, TIP_TERMS, VZ_FAVS, JN, jnLoad, jnStep, jnTick, jnSum, jnStreak, jnBestPair, jnIdea, jnFinish, jnChange, jnHeard, wbBoot, wbRows, wbSummary, progressOpen, hexLight, bkHueFor, bkTick, BK, BK_MODES, VBACK, bkDraw, GPU, gpuGet, gpuBlit, takeCheck, hearsOpen, hearsGather, hrsChordKey, hrsTempo, HRS, takeCheckOpen, tkcPeers, tkcVerdict, TKC, SPAT, spatToggle, spatSet, spatControl, XR, xrControl, xrEnter, hexPal, hexSet, hexToneSync, HEX_PALS, setTheme, barsCache, rttMs, hmChordSym, lxComfort, AUD, audDraw, audSync, srecTakeBegin, srecTakeEnd, SREC, getREC: () => REC, srecStart, srecStop, camFxBox, LP, looperStart, looperOpen, looperKeep, looperMore, looperUndo, looperEnd, lpLayers, lpState, recEnd, zoomSet, UI, xpLevel, xpAllowed, humBar, GD, GD_SESSIONS, GD_PF, GD_HINTS, GD_WORDS, guideStart, guideStop, guideMenu, guideHint, guideWords, guideRoute, gdTick, gdc, applyPreset, LAYOUTS, LAY, SD, DOCK, monShown, MV, drawMonView, lxPreview, lxPreviewStop, lxProg, SHOW_ALIAS, lxStrobe, lxEvt, lxFireX, lxResolve, lxComfortKey, lxSetComfort, lxGovMeasure, LXG, LX_COMFORT, SHOW_DESIGNS, SHOW_PATS, lxDesign, lxLasers, lxPerform, lxAutoDesign, lxHexHsl, LZ, lxStage, lxHaze, lxWall, lxBeams, lxParticles, lxBackdrop, lxVignette, lxScrim, lxRing, lxCard, lxMeters, voicings, shImg, SHIMG, shAdd, shRemove, SHC, shOpen, shcDraw, shcSpec, shcSet, shcCueSet, shcPick, shClean, shSaveLook, shUseLook, shImportLooks, shExportLooks, shBlackout, shFreeze, shOutFrame, shTestPattern, shPoster, SH_RESP, stgRestoreStarters, starterScenes, lxAt, lxHudPal, lxMakeBand, lxSkyPos, lxSkyGeom, pbLowerRect, VMODES, VZ_RETIRED, LX, LX_PROG, lxKind, lxNumeral, lxQual, lxFifths, lxHueOf, lxHit, lxFire, lxUpdate, lxUpcoming, lxCaption, lxSkyAdd, lxSkyClear, lxSkySave, lxSetLens, concertDraw, lxHsl, pbDim, pbFill, pbCard, commit, STG, SG, PBK, pbScene, pbOn, pbSolid, drawLowerThird, stageFrame, stageInfo, HEAT, heatLive, heatMap, heatReset, heatSongBuild, paintHeat, FB, renderFret, paintFret, VIS, projExportAll, projNudge, keepToast, keepRisk, keepCard, keepOpen, keepText, smfParse, smfParts, smfBuild, smfOpen, bounceFast, ofrRender, ofrAbort, OFR, bounceMaster, stemLoad, scheduleTakes, stopTakes, takeLive, projEntries, projImport, zipBuild, tkSplit, tkDup, tkDelete, tkDeleteLane, tkReset, tkSelect, tkSel, tkLeads, tkClips, tkLead, tkLen, tkEnd, tkIn, tkOut, tkRender, tkRenderClip, tkHistGet, tkHistSet, stmHistGet, stmHistSet, stmReset, TKSEL, TK_BIN, snap, histPush, histBegin, histEnd, histStack, tkResched, tkHit, tkPps, tkNowSec, tkMenu, tkFades, tkSetFade, tkDownload, autoBalance, abMeasure, abApply, abUndo, BAL, dropKind, dropFiles, dropTake, rigSnapshot, undo, redo, MST_PRE, mstSet, fxOn, applyMix, laneSelect, IO, ioBrowser, ioPermHelp, ioErrMsg, ioDiagnose, ioPlan, ioNewInputs, ioOffer, ioLevelWizard, ioTestSound, ioConnectEl, ioConnect, ioLevels, closeInput, ioApplyTrim, ioTrimOf, KNOBS, play, SYNC, syncNow, syncChoose, lufsMeasure, loudAfterBounce, shareHtml, shareData, printSheetHtml, printSheet, songSlots, slotDur, get PF() { return PF; }, perfOpen, perfClose, get SREC() { return SREC; }, get S() { return S; }, get REC() { return REC; }, set REC(v) { REC = v; }, tkSetGain, TL, tkKey, PUNCH, TKR, tkrApply, tkrMark, tkrSet, tkrClear, tkrPunch, tkrLane, VOX, voxOpen, voxClose, voxRange, voxPlan, voxTranspose, voxXSym, voxTarget, voxMelody, voxScale, voxDraw, PB, visAna, E, T, humPlay, dockGo, stopPlay, bouncePart, NK, neckMarks, sideShow, chSetRoles, chRoles, chFocusriteDefault, outApply, chordSheetParse, chordSheetLike, chordSheetSong, chordSheetApply, csTitleGuess, kitTake, kitPage, kitShare, drawVis, peaksOf, uid, shareGate, shareMake, lyAt, lyLayout, lyTimeline, perfInfo, AGT, agentCall, agentRegister, songTranspose, csTok, csSym, csChordLine, csBars, csKey, liOpen, setMonitor, setOutputDevice, setVoxInput, setAnaSource, haloDraw, HL, KS, nkNext, nkPinChord, TAKES, STM, ZOOM, CFG, store, bus, CAM, CF, VZ, cfFeed, camTop, esc, humAnalyze, humSong, HUM, parseChord, humOpen, humApply, humNotes, AN, humGuitar, humGuitarTick, humStringHz, humStageFirst, vzImmersive , CAP, CX, capSay, capNotes, capInterpret, capAssign, capName, capShape, capPut, capOnset, capEval, capStart, capStop, capInfo, capCommit, capPlayable, capSpec, capTick, capToggle, TE, renderTab, assignFret, flatBars, SEL, mtof, spb, WR, HM, HMX, HM_MODES, hmUpdate, hmDiss, hmClear, hmDraw, hmSave, hmPaintRender, writeBuild, goalGo, goalNow, goalShows, GD_DOORS, GD_DOOR_TEXT, meNow, gdDoor, meSet, goalLens, GOAL_ME, coVoiceRoot, coHeard, coBuild, RIG, BRD, onBoard, brdSel, brdAdd, brdRemove, prtShelfAll, prtShelfMerge, ghTakeNotes, ghTakePrints, prtLookWorld, PRT_CODE_MAX, vzLookSync, vzLooksOpen, GOAL_MORE, GOALS, workspaceOpen, lookOpen, lookReset, openSettings, openHelp, KIT, kitKeep, kitReplay, kitInk, kitNotes, kitRecord, srecMime, mGo, wrMode, wrSel, wrFretPaint, wrFretPlace, wrFretBuild, renderWords, writeFrame, wrBarDraw, wrCapUI, curBar, curSec, setNote, MERGED, dockVisible, rebuildTabs, sectionCard}; };   // test hook: with ?debug, or Backstage ▸ Labs ▸ Developer handles
   if (/[?&]debug\b/.test(location.search) || (CFG.labs && CFG.labs.handles)) DEV.make();
   try { bksBoot(); } catch (e) { console.warn('backstage', e); }      /* #backstage in the address, the performance overlay (part 73c) */
   projInit().catch(e => { console.warn('library', e); PRJ.ready = true; if (PRJ.wantStart) startMaybe(); });
@@ -7794,6 +7794,7 @@ function jrPaint() {
 function jrOpen(anchor) {
   const st = jrSteps(), box = h('div', { class: 'jr-pop', id: 'jrPop' }, h('h5', {}, 'Song journey'));
   st.forEach(x => box.append(h('div', { class: 'jr-row' + (x.on ? ' on' : '') }, h('span', { class: 'jr-ck' }, x.on ? '✓' : '○'), h('div', { class: 'grow' }, h('b', {}, x.t), x.on ? null : h('div', { class: 'tiny muted' }, x.how)), x.go ? h('button', { class: 'btn sm', onclick: () => { closePop(); x.go(); } }, x.k === 'ver' ? 'Versions…' : x.k === 'shared' ? 'Send…' : x.k === 'done' ? 'Finish…' : 'Open') : null)));
+  box.append(h('button', { class: 'btn sm', id: 'jrHears', onclick: () => { closePop(); hearsOpen(); } }, '🧠 What the studio hears'));
   popover(anchor, box, { style: { maxWidth: '340px' } });
 }
 
@@ -10829,6 +10830,54 @@ function dropRowMake() {
 function dropRowSync() { if (!DROP.row) return; DROP.row.hidden = !!(TAKES.length || STM.ch || STM.busy); }
 bus.on('takes', dropRowSync); bus.on('track', dropRowSync); bus.on('song', dropRowSync);
 
+/* >>> parts/43b-spatial.js */
+/* ============================================================
+   Part 43b · Spatial audio (2.74) — the band placed around you
+   Off by default. When on, each band part is routed through a 3D panner (HRTF) at a fixed place on a circle around you — drums and
+   vocal ahead, bass just off-centre, the guitars to the sides, keys behind — so on headphones the band surrounds you. A gentle Spin
+   turns the whole circle. It only re-routes the live mix (pan → a panner → the mix); the dry recording and the fast bounce are untouched,
+   so takes and exports are unchanged. It heals itself if the audio engine restarts (it notices the panners belong to an old context).
+   ============================================================ */
+const SPAT = { on: false, spin: 0, t: 0, R: 2.2, p: {}, az: { drums: 0, bass: -18, rhythm: -78, lead: 78, keys: -140, live: 140, vox: 0 } };
+CFG.spatial = !!CFG.spatial;
+
+function spatPanner() { const c = E.ctx, n = c.createPanner(); try { n.panningModel = 'HRTF'; } catch (e) { } n.distanceModel = 'inverse'; n.refDistance = 1; n.rolloffFactor = .25; n.coneInnerAngle = 360; return n; }
+/** point the listener forward and set every source on its circle (the Spin offset uses SPAT.t); `imm` places them at once, else it glides */
+function spatPlace(imm) {
+  const c = E.ctx; if (!c) return; const L = c.listener;
+  try { if (L.positionX) { L.positionX.value = 0; L.positionY.value = 0; L.positionZ.value = 0; L.forwardX.value = 0; L.forwardY.value = 0; L.forwardZ.value = -1; L.upX.value = 0; L.upY.value = 1; L.upZ.value = 0; } else if (L.setPosition) { L.setPosition(0, 0, 0); L.setOrientation(0, 0, -1, 0, 1, 0); } } catch (e) { }
+  Object.keys(SPAT.p).forEach(id => { const p = SPAT.p[id]; if (!p) return; const a = (SPAT.az[id] || 0) * Math.PI / 180 + SPAT.t, x = Math.sin(a) * SPAT.R, z = -Math.cos(a) * SPAT.R; try { if (p.positionX) { if (imm) { p.positionX.value = x; p.positionZ.value = z; } else { tc(p.positionX, x, .06); tc(p.positionZ, z, .06); } p.positionY.value = 0; } else p.setPosition(x, 0, z); } catch (e) { } });
+}
+/** turn spatial audio on or off by re-routing each band track's pan → (panner) → its mix destination (t.dst, part 02) */
+function spatToggle(on) {
+  if (!E.ctx || !E.tr) return false; on = on == null ? !SPAT.on : !!on;
+  if (on) {
+    SPAT.p = {};      /* fresh panners on the current context */
+    Object.keys(SPAT.az).forEach(id => { const t = E.tr[id]; if (!t || !t.dst) return; const p = SPAT.p[id] = spatPanner(); try { t.pan.disconnect(t.dst); } catch (e) { } try { t.pan.connect(p); p.connect(t.dst); } catch (e) { } });
+    SPAT.on = true; spatPlace(true);
+  } else {
+    Object.keys(SPAT.p).forEach(id => { const t = E.tr[id], p = SPAT.p[id]; if (t) { try { t.pan.disconnect(p); } catch (e) { } try { t.pan.connect(t.dst); } catch (e) { } } try { p.disconnect(); } catch (e) { } });
+    SPAT.p = {}; SPAT.on = false;
+  }
+  CFG.spatial = SPAT.on; saveCfg(); bus.emit('spatial', SPAT.on); return SPAT.on;
+}
+function spatSet(k, v) { if (k === 'spin') SPAT.spin = clamp(v, 0, 1); saveCfg(); }
+/** every 80 ms: advance the Spin, keep the sources placed, and heal after an audio restart (the panners would belong to an old context) */
+setInterval(() => {
+  if (!SPAT.on || !E.ctx) return; const any = SPAT.p[Object.keys(SPAT.p)[0]];
+  if (any && any.context !== E.ctx) { SPAT.on = false; spatToggle(true); return; }      /* engine restarted: rebuild on the new context */
+  SPAT.t += SPAT.spin * .09; spatPlace();
+}, 80);
+
+/** the control in the visuals ⋯ More panel (referenced at runtime by part 09) */
+function spatControl() {
+  const wrap = h('span', { class: 'vz-spat', style: { display: 'inline-flex', gap: '4px', alignItems: 'center' } });
+  const btn = h('button', { class: 'btn sm' + (SPAT.on ? ' on' : ''), id: 'spatBtn', 'aria-pressed': String(!!SPAT.on), title: 'Spatial audio: on headphones, place the band in a circle around you (drums and vocal ahead, guitars to the sides, keys behind)', onclick: () => { const on = spatToggle(); btn.classList.toggle('on', on); btn.setAttribute('aria-pressed', String(on)); spin.style.display = on ? '' : 'none'; toast(on ? '🎧 Spatial audio on — best on headphones' : 'Spatial audio off', 'ok'); } }, '🎧 Spatial');
+  const spin = h('label', { class: 'vz-spin', title: 'Spin: turn the band slowly around you', style: { display: SPAT.on ? '' : 'none', alignItems: 'center', gap: '2px' } }, h('span', { class: 'small muted' }, 'Spin'), h('input', { type: 'range', min: 0, max: 1, step: .01, value: SPAT.spin, 'aria-label': 'Spatial spin', style: { width: '54px' }, oninput: e => spatSet('spin', +e.target.value) }));
+  wrap.append(btn, spin); return wrap;
+}
+bus.on('song', () => { });
+
 /* >>> parts/44-balance.js */
 /* ============================================================
    Part 44 · Auto-balance
@@ -11215,7 +11264,7 @@ function tkMenu(anchor, tk) {
     fade('Fade in', fi, 'in'), fade('Fade out', fo, 'out'),
     h('div', { class: 'lrow' }, h('span', { style: { width: '62px' } }, 'Clip level'), h('input', { type: 'range', id: 'cmLevel', min: -24, max: 12, step: .5, value: Math.round(20 * Math.log10(Math.max(.0631, tk.cg == null ? 1 : tk.cg)) * 2) / 2, 'aria-label': 'Clip level in dB', title: 'Louder or quieter for this clip only (double-click to reset); the lane’s own level still applies', style: { flex: 1 }, ondblclick: e => { histBegin(); tkSetGain(tk, 0, true); e.target.value = 0; if (!histEnd()) bus.emit('takes'); }, oninput: e => { histBegin(); tkSetGain(tk, +e.target.value, true); }, onchange: () => { if (!histEnd()) bus.emit('takes'); } }), h('span', { class: 'tiny muted', id: 'cmLevelV', style: { width: '44px', textAlign: 'right' } }, ((tk.cg == null ? 1 : tk.cg) === 1 ? '0' : (20 * Math.log10(tk.cg)).toFixed(1)) + ' dB')),
     row(h('span', { class: 'tiny muted', style: { width: '62px' } }, 'Move'), ...[['◀◀', -S.ts[0], 'A bar earlier'], ['◀', -1, 'A beat earlier'], ['▶', 1, 'A beat later'], ['▶▶', S.ts[0], 'A bar later']].map(([t, d, ti]) => h('button', { class: 'btn sm', title: ti, 'aria-label': ti, onclick: () => tkNudge(tk, d) }, t))),
-    row(h('button', { class: 'btn sm', id: 'cmReset', disabled: !tkEdited(tk), title: 'Put the whole recording back: no trim, no fades', onclick: () => { closePop(); tkReset(tk); } }, '↺ Reset trim'), h('button', { class: 'btn sm', onclick: () => { closePop(); tkDownloadClip(tk); } }, '⤓ Save clip (WAV)'), h('button', { class: 'btn sm', id: 'cmPrint', title: 'This take as a soundprint: a picture, moving worlds, a reading and an ambient piece', onclick: () => { closePop(); prtOpen({ take: tk }); } }, '◎ Soundprint'), h('button', { class: 'btn sm', id: 'cmShare', title: 'A small M4A of this clip to send or post, or a one-file share page', onclick: () => { closePop(); kitTake(tk, true); } }, '↗ Share clip…')),
+    row(h('button', { class: 'btn sm', id: 'cmReset', disabled: !tkEdited(tk), title: 'Put the whole recording back: no trim, no fades', onclick: () => { closePop(); tkReset(tk); } }, '↺ Reset trim'), h('button', { class: 'btn sm', onclick: () => { closePop(); tkDownloadClip(tk); } }, '⤓ Save clip (WAV)'), h('button', { class: 'btn sm', id: 'cmPrint', title: 'This take as a soundprint: a picture, moving worlds, a reading and an ambient piece', onclick: () => { closePop(); prtOpen({ take: tk }); } }, '◎ Soundprint'), h('button', { class: 'btn sm', id: 'cmCheck', title: 'Compare takes: timing, pitch and level of each take, side by side', onclick: () => { closePop(); takeCheckOpen(tk); } }, '⚖ Compare takes'), h('button', { class: 'btn sm', id: 'cmShare', title: 'A small M4A of this clip to send or post, or a one-file share page', onclick: () => { closePop(); kitTake(tk, true); } }, '↗ Share clip…')),
     row(h('button', { class: 'btn sm bad', id: 'cmDel', title: 'Delete (Del). Undo brings it back.', onclick: () => { closePop(); tkDelete(tk); } }, '✕ Delete clip')),
     h('div', { class: 'tiny muted' }, 'Drag a clip to move it · drag its edges to trim · drag the top corners to fade · hold Alt for no snapping.'));
   popover(anchor, box, { style: { maxWidth: '330px' } });
@@ -11239,6 +11288,219 @@ function clipBarSync() {
   const n = tkClips(tkLead(t)).length; $('#clipName', bar).textContent = tkLead(t).name + (n > 1 ? ' · clip ' + (tkClips(tkLead(t)).indexOf(t) + 1) + '/' + n : '') + rl;
 }
 bus.on('clipsel', clipBarSync); bus.on('takes', clipBarSync);
+
+/* >>> parts/45b-takecheck.js */
+/* ============================================================
+   Part 45b · Compare takes (2.75) — what each take actually did, side by side
+   You record three passes and have to choose. This listens to each one (in the page, nothing is sent anywhere) and lays them side by side:
+     · Timing   how far the notes land from the song's grid, on average (early or late) and how steady that is     — measured
+     · Pitch    for a voice: how far held notes sit from the nearest note of the song's key, and how often in tune   — measured; which
+                note was meant is an estimate (the nearest one in the key)
+     · Level    the peak, how even the loudness is, and whether anything clipped                                     — measured
+     · Noise    how quiet the quietest tenth of the take is                                                          — estimated
+   It never chooses for you and never changes or deletes a take: it marks the best figure in each column, says in a sentence what stands
+   out, and labels every number as measured or estimated. The figures are kept on the take (t.chk) so the lanes can show them later.
+   ============================================================ */
+const TKC = { busy: false, rows: null };
+const tkcMs = v => (v >= 0 ? '+' : '−') + Math.abs(Math.round(v)) + ' ms';
+const tkcDb = v => (20 * Math.log10(Math.max(1e-6, v)));
+
+/** measure one take (its trimmed part). Resolves to { timing, pitch, level, noise } with nulls where there was not enough to measure. */
+async function takeCheck(tk) {
+  const sr = tk.sr, d = tk.dry, a = Math.floor(tkIn(tk) * sr), b = Math.min(d.length, Math.floor(tkOut(tk) * sr)), win = 1024, hop = 512;
+  const n = Math.max(0, Math.floor((b - a - win) / hop)), e = new Float32Array(n); let pk = 0, clip = 0;
+  for (let i = 0; i < n; i++) { let s = 0; const o = a + i * hop; for (let k = 0; k < win; k++) { const v = d[o + k]; s += v * v; if (k < hop) { const av = v < 0 ? -v : v; if (av > pk) pk = av; if (av >= .999) clip++; } } e[i] = Math.sqrt(s / win); if (i % 2000 === 1999) await new Promise(r => setTimeout(r, 0)); }
+  const out = { timing: null, pitch: null, level: null, noise: null, dur: (b - a) / sr }; if (n < 8) return out;
+  const srt = Float32Array.from(e).sort(), floor = srt[Math.floor(n * .1)], loud = srt[Math.floor(n * .9)], gate = Math.max(Math.min(floor * 3, loud * .5), loud * .12, 1e-4);      /* a held note has no quiet tenth: never set the gate above half the loud level */
+  /* level: the peak, clipping, and how even the played parts are (the spread of short-term loudness, in dB) */
+  { let m = 0, c = 0; for (let i = 0; i < n; i++) if (e[i] > gate) { m += tkcDb(e[i]); c++; } m /= c || 1; let v = 0; for (let i = 0; i < n; i++) if (e[i] > gate) { const q = tkcDb(e[i]) - m; v += q * q; }
+    out.level = { peak: tkcDb(pk), even: Math.sqrt(v / (c || 1)), clip, active: c / n }; out.noise = { floor: tkcDb(floor) }; }
+  /* timing: each attack (loudness jumps over what came just before), placed to the sample, against the nearest sixteenth of the song's grid */
+  { const slot = slotDur(), offs = []; let last = -1;
+    for (let i = 3; i < n; i++) { const prev = (e[i - 1] + e[i - 2] + e[i - 3]) / 3; if (e[i] > gate && e[i] > prev * 1.8 && (i * hop / sr - last) > .07) {
+      const o = a + i * hop; let wp = 0; for (let k = 0; k < win; k++) { const av = Math.abs(d[o + k]); if (av > wp) wp = av; } let k0 = 0; while (k0 < win && Math.abs(d[o + k0]) < wp * .25) k0++;
+      const tSong = tk.startSec + (o + k0 - a) / sr, off = tSong - Math.round(tSong / slot) * slot; offs.push(off * 1000); last = i * hop / sr; } }
+    if (offs.length >= 4) { const m = offs.reduce((x, y) => x + y, 0) / offs.length, sd = Math.sqrt(offs.reduce((x, y) => x + (y - m) * (y - m), 0) / offs.length); out.timing = { mean: m, spread: sd, hits: offs.length }; } }
+  /* pitch (a voice): held, clear notes against the nearest note of the song's key */
+  if (tk.kind === 'vox') { const F = 2048, sc = (typeof vbScale === 'function') ? vbScale() : null, cents = []; let done = 0;
+    for (let i = 0; i + 4 < n && done < 500; i += 4) { if (e[i] <= gate || e[i + 2] <= gate) continue; const r = yin(d.subarray(a + i * hop, a + i * hop + F), sr, .12, 70); done++; if (done % 40 === 0) await new Promise(r2 => setTimeout(r2, 0));
+      if (!r || r.clarity < .8) continue; const m = 69 + 12 * Math.log2(r.f / 440); let best = Math.round(m), bd = 9;
+      for (let k = -2; k <= 2; k++) { const q = Math.round(m) + k; if (sc && !sc[((q % 12) + 12) % 12]) continue; if (Math.abs(q - m) < bd) { bd = Math.abs(q - m); best = q; } } cents.push((m - best) * 100); }
+    if (cents.length >= 6) { const ab = cents.map(Math.abs).sort((x, y) => x - y); out.pitch = { off: ab[ab.length >> 1], bias: cents.reduce((x, y) => x + y, 0) / cents.length, inTune: ab.filter(c => c <= 25).length / ab.length, notes: cents.length }; } }
+  tk.chk = out; return out;
+}
+/** the takes worth comparing with `tk`: the same kind (voice with voice, instrument with instrument), at least a second long */
+function tkcPeers(tk) { const vox = tk && tk.kind === 'vox'; return TAKES.filter(t => ((t.kind === 'vox') === vox) && tkLen(t) >= 1 && t.dry && t.dry.length).slice(0, 8); }
+/** which row is best in each column (lower is better, except "in tune"), and a sentence about what stands out — only when there is something to compare */
+function tkcVerdict(rows) {
+  const best = {}, pick = (key, get, hi) => { let bi = -1, bv = null; rows.forEach((r, i) => { const v = get(r.c); if (v == null) return; if (bv == null || (hi ? v > bv : v < bv)) { bv = v; bi = i; } }); if (bi >= 0 && rows.filter(r => get(r.c) != null).length > 1) best[key] = bi; };
+  pick('spread', c => c.timing && c.timing.spread); pick('mean', c => c.timing && Math.abs(c.timing.mean)); pick('pitch', c => c.pitch && c.pitch.off); pick('inTune', c => c.pitch && c.pitch.inTune, true); pick('even', c => c.level && c.level.even); pick('noise', c => c.noise && c.noise.floor);
+  const say = []; if (best.spread != null) say.push(rows[best.spread].name + ' is the steadiest in time (±' + Math.round(rows[best.spread].c.timing.spread) + ' ms)');
+  if (best.pitch != null) say.push(rows[best.pitch].name + ' is the most in tune (' + Math.round(rows[best.pitch].c.pitch.off) + ' cents off, typically)');
+  if (best.even != null && best.even !== best.spread) say.push(rows[best.even].name + ' is the most even in level');
+  const clip = rows.filter(r => r.c.level && r.c.level.clip > 0).map(r => r.name); if (clip.length) say.push(clip.join(' and ') + (clip.length > 1 ? ' clip' : ' clips') + ' (the input was too hot)');
+  return { best, say };
+}
+function tkcTable(rows) {
+  const V = tkcVerdict(rows), tag = (k, t) => h('abbr', { class: 'tkc-tag tkc-' + k, title: k === 'm' ? 'Measured from the recording' : 'Estimated: a reasonable reading, not a fact' }, t || (k === 'm' ? 'measured' : 'estimated'));
+  const cell = (txt, on, sub) => h('td', { class: on ? 'tkc-best' : '' }, txt == null ? h('span', { class: 'muted' }, '—') : txt, sub ? h('div', { class: 'tiny muted' }, sub) : null);
+  const tb = h('table', { class: 'tkc-t', id: 'tkcTable' }, h('thead', {}, h('tr', {}, h('th', {}, 'Take'),
+    h('th', {}, 'Timing ', tag('m')), h('th', {}, 'Steadiness ', tag('m')), h('th', {}, 'Pitch ', tag('m')), h('th', {}, 'In tune ', tag('m')), h('th', {}, 'Level ', tag('m')), h('th', {}, 'Noise ', tag('e')))),
+    h('tbody', {}, rows.map((r, i) => { const c = r.c, t = c.timing, p = c.pitch, l = c.level;
+      return h('tr', { 'data-take': r.tk.id }, h('th', { scope: 'row' }, r.name, h('div', { class: 'tiny muted' }, c.dur.toFixed(1) + ' s')),
+        cell(t ? tkcMs(t.mean) : null, V.best.mean === i, t ? (Math.abs(t.mean) < 8 ? 'on the grid' : t.mean > 0 ? 'behind the beat' : 'ahead of the beat') : 'too few attacks'),
+        cell(t ? '±' + Math.round(t.spread) + ' ms' : null, V.best.spread === i, t ? t.hits + ' attacks' : ''),
+        cell(p ? Math.round(p.off) + ' cents' : null, V.best.pitch === i, p ? (Math.abs(p.bias) < 6 ? 'centred' : p.bias > 0 ? 'tends sharp' : 'tends flat') : (r.tk.kind === 'vox' ? 'no clear notes' : 'voices only')),
+        cell(p ? Math.round(p.inTune * 100) + '%' : null, V.best.inTune === i, p ? p.notes + ' notes' : ''),
+        cell(l ? '±' + l.even.toFixed(1) + ' dB' : null, V.best.even === i, l ? 'peak ' + l.peak.toFixed(1) + ' dB' + (l.clip ? ' · clips' : '') : ''),
+        cell(c.noise ? Math.round(c.noise.floor) + ' dB' : null, V.best.noise === i, '')); })));
+  return [h('div', { class: 'tkc-wrap' }, tb),
+    h('p', { class: 'small', id: 'tkcSay' }, V.say.length ? V.say.join('. ') + '.' : (rows.length < 2 ? 'Record another pass and they will sit side by side here.' : 'Nothing separates these clearly.')),
+    h('p', { class: 'tiny muted' }, 'The best figure in each column is marked. Nothing is changed or deleted: the choice is yours, and a take that is a little loose can still be the one with the feeling.')];
+}
+/** open the window and measure the takes of the same kind as `tk` (or the selected take, or the newest) */
+function takeCheckOpen(tk) {
+  tk = tk || TAKES.find(t => t.id === TKSEL.id) || TAKES[TAKES.length - 1]; if (!tk) { toast('Record a take first', ''); return null; }
+  const box = h('div', { id: 'tkcBox' }, h('p', { class: 'small muted' }, 'Listening to the takes…'));
+  const d = hubOpen('takecheck', { ico: '⚖', title: 'Compare takes', sub: 'What each take did, side by side. Measured in this page; nothing leaves it.', sections: [
+    { key: 'cmp', label: 'Side by side', ico: '⚖', wide: true, body: () => [box] },
+    { key: 'how', label: 'How it is measured', ico: 'ⓘ', body: () => [
+      h('p', { class: 'small' }, 'Timing: every attack is placed against the nearest sixteenth of the song’s tempo. “Timing” is the average (behind or ahead of the beat); “Steadiness” is how much the attacks wander around that average. A take recorded without the click, or at another tempo, will read as loose.'),
+      h('p', { class: 'small' }, 'Pitch (voices): held, clear notes against the nearest note of the song’s key. The distance is measured; which note you meant is an estimate, so a deliberate blue note or slide counts as “off”.'),
+      h('p', { class: 'small' }, 'Level: how much the loudness of the played parts varies, the peak, and whether the input clipped. Noise is the quietest tenth of the take, an estimate of the room and the hiss.')] }] });
+  TKC.busy = true; const peers = tkcPeers(tk);
+  TKC.done = (async () => { const rows = []; for (const t of peers) { const lead = tkLead(t), cl = tkClips(lead); rows.push({ tk: t, name: lead.name + (cl.length > 1 ? ' · clip ' + (cl.indexOf(t) + 1) : ''), c: await takeCheck(t) }); }
+    TKC.rows = rows; TKC.busy = false; box.innerHTML = ''; box.append(...tkcTable(rows)); bus.emit('takecheck', rows.length); return rows; })();
+  return d;
+}
+
+/* >>> parts/45c-hears.js */
+/* ============================================================
+   Part 45c · What the studio hears (2.76) — one page about the open song
+   The detectors lived in six places (chart import, stems, hum, the coach, the take check, the soundprint) and nothing gathered them.
+   This listens to the song you have open and says, in plain words, what it found, each finding labelled:
+     · Measured    counted or timed from your sound or your chart (a range, a bar count, how long the song is)
+     · Estimated   a reasonable reading, not a fact (the key the chords point to; the tempo you tend to play at)
+     · Suggestion  a thought for you to take or leave
+   Every finding says how it was reached ("Why?"). The ones that would change the song (its key, its tempo) have an Apply that first keeps
+   a version of the song and can be undone with one tap. Nothing is applied for you, nothing is uploaded, no take is touched.
+   ============================================================ */
+const HRS = { busy: false, rows: [], done: null };
+const hrsYield = () => new Promise(r => setTimeout(r, 0));
+const hrsKeyName = k => pcName(k.root) + (k.minor ? ' minor' : ' major');
+
+/** the key the chords point to: every chord's notes counted (roots a little more), the first and last chord weighted — estimated */
+function hrsChordKey() {
+  const hst = new Array(12).fill(0); let n = 0, first = null, last = null;
+  S.sections.forEach(s => s.bars.forEach(b => barChords(b).forEach(sym => { const c = parseChord(sym); if (!c) return; n++; c.pcs.forEach(p => { hst[p] += p === c.root ? 1.4 : 1; }); if (!first) first = c; last = c; })));
+  if (n < 3) return null;
+  hst[first.root] += 3; hst[last.root] += 2;
+  const r = detectKey(hst); return { root: r[0].root, minor: r[0].minor, gap: r[0].r - r[1].r, n, alt: r[1] };
+}
+
+/** attack times in a take (seconds into the trimmed part) */
+function hrsOnsets(tk) {
+  const sr = tk.sr, d = tk.dry, a = Math.floor(tkIn(tk) * sr), b = Math.min(d.length, Math.floor(tkOut(tk) * sr)), win = 1024, hop = 512, n = Math.max(0, Math.floor((b - a - win) / hop)), e = new Float32Array(n);
+  for (let i = 0; i < n; i++) { let s = 0; const o = a + i * hop; for (let k = 0; k < win; k += 2) { const v = d[o + k]; s += v * v; } e[i] = Math.sqrt(s / (win / 2)); }
+  if (n < 16) return [];
+  const srt = Float32Array.from(e).sort(), floor = srt[Math.floor(n * .1)], loud = srt[Math.floor(n * .9)], gate = Math.max(Math.min(floor * 3, loud * .5), loud * .12, 1e-4), out = []; let last = -1;
+  for (let i = 3; i < n; i++) { const prev = (e[i - 1] + e[i - 2] + e[i - 3]) / 3, t = i * hop / sr; if (e[i] > gate && e[i] > prev * 1.8 && t - last > .07) { out.push(t); last = t; } }
+  return out;
+}
+/** the tempo a take was played at, read from the spacing of its attacks against the song's grid (only near the song's own tempo) — estimated */
+function hrsTempo(takes) {
+  const imp = [];
+  for (const tk of takes) { const on = hrsOnsets(tk), beat = 60 / S.bpm;
+    for (let i = 1; i < on.length; i++) { const ioi = on[i] - on[i - 1]; if (ioi < .12 || ioi > 2) continue; const q = Math.max(.25, Math.round(ioi / beat * 4) / 4), bpm = 60 * q / ioi; if (bpm > S.bpm * .75 && bpm < S.bpm * 1.33) imp.push(bpm); } }
+  if (imp.length < 8) return null; imp.sort((x, y) => x - y);
+  const med = imp[imp.length >> 1], dev = imp.map(v => Math.abs(v - med)).sort((x, y) => x - y)[imp.length >> 1]; return { bpm: med, wob: dev / med * 100, n: imp.length };
+}
+/** the notes a voice held, across its takes: the range (5th to 95th percentile, so one stray squeak does not count) and the key they sit in — measured / estimated */
+async function hrsVoice(takes) {
+  const midis = [], hst = new Array(12).fill(0);
+  for (const tk of takes) { const sr = tk.sr, d = tk.dry, a = Math.floor(tkIn(tk) * sr), b = Math.min(d.length, Math.floor(tkOut(tk) * sr)), F = 2048, hop = 2048, n = Math.floor((b - a - F) / hop); if (n < 4) continue;
+    let mx = 0; const rm = new Float32Array(n); for (let i = 0; i < n; i++) { let s = 0; for (let k = 0; k < F; k += 4) { const v = d[a + i * hop + k]; s += v * v; } rm[i] = Math.sqrt(s / (F / 4)); if (rm[i] > mx) mx = rm[i]; }
+    let done = 0; for (let i = 0; i < n && done < 400; i++) { if (rm[i] < mx * .2) continue; const r = yin(d.subarray(a + i * hop, a + i * hop + F), sr, .12, 70); done++; if (done % 40 === 0) await hrsYield();
+      if (!r || r.clarity < .85 || r.f < 70 || r.f > 1400) continue; const m = 69 + 12 * Math.log2(r.f / 440); midis.push(m); hst[((Math.round(m) % 12) + 12) % 12] += 1; } }
+  if (midis.length < 12) return null; midis.sort((x, y) => x - y);
+  const lo = midis[Math.floor(midis.length * .05)], hi = midis[Math.floor(midis.length * .95)], k = detectKey(hst);
+  return { lo: Math.round(lo), hi: Math.round(hi), n: midis.length, key: { root: k[0].root, minor: k[0].minor, gap: k[0].r - k[1].r } };
+}
+/** sections, repeats, length — counted from the chart */
+function hrsStructure() {
+  const bars = totalBars(), secs = S.sections.length, sec = bars * S.ts[0] * (60 / S.bpm) * (4 / S.ts[1]);
+  const sig = s => s.bars.map(b => (b.chord || '').trim()).join('|'), seen = {}; let repeats = 0;
+  S.sections.forEach(s => { const g = sig(s); if (g.replace(/\|/g, '')) { if (seen[g]) repeats++; seen[g] = 1; } });
+  const names = S.sections.map(s => (s.name || '').toLowerCase()), has = re => names.some(n => re.test(n)), count = re => names.filter(n => re.test(n)).length;
+  return { bars, secs, sec, repeats, has, count };
+}
+const hrsTime = s => Math.floor(s / 60) + ':' + String(Math.round(s % 60)).padStart(2, '0');
+
+/** gather everything into findings: { id, kind: 'measured'|'estimated'|'suggestion', title, text, why, apply?, applied? } */
+async function hearsGather() {
+  const F = [], takes = (typeof TAKES !== 'undefined' ? TAKES : []).filter(t => t.dry && t.dry.length && tkLen(t) >= 1), vox = takes.filter(t => t.kind === 'vox').slice(0, 4), any = takes.slice(0, 6);
+  const st = hrsStructure();
+  if (!st.bars) return [{ id: 'empty', kind: 'measured', title: 'Nothing here yet', text: 'This song has no bars. Add a section, or hum or play an idea, and this page will have something to say.', why: 'It reads the chords, bars and takes of the song that is open.' }];
+  /* structure (measured) */
+  F.push({ id: 'shape', kind: 'measured', title: 'The shape', text: st.secs + ' section' + (st.secs === 1 ? '' : 's') + ', ' + st.bars + ' bars, about ' + hrsTime(st.sec) + ' at ' + (Math.round(S.bpm * 10) / 10) + ' BPM in ' + S.ts[0] + '/' + S.ts[1] + '.', why: 'Counted from the chart: the bars in every section, at the song’s tempo and time signature.' });
+  /* key from the chords (estimated), against what the song says */
+  const ck = hrsChordKey(), cur = { root: S.key, minor: !!S.minor };
+  if (ck) { const same = ck.root === cur.root && ck.minor === cur.minor, rel = ck.minor !== cur.minor && (ck.minor ? ck.root === (cur.root + 9) % 12 : ck.root === (cur.root + 3) % 12);
+    if (same) F.push({ id: 'key', kind: 'estimated', title: 'The chords agree with the key', text: 'The chords point to ' + hrsKeyName(ck) + ', which is the key the song is set to.', why: 'Every chord’s notes were counted (roots a little more), the first and last chords weighted, and compared with the profile of each major and minor key. ' + ck.n + ' chords were read. It is a reading, not a fact.' });
+    else F.push({ id: 'key', kind: 'suggestion', title: rel ? 'The chords sit in the relative key' : 'The chords point to a different key', text: 'The chords look like ' + hrsKeyName(ck) + '; the song is set to ' + hrsKeyName(cur) + '.' + (rel ? ' They share the same notes, so nothing is wrong: it is a question of which chord feels like home.' : ''),
+      why: 'Every chord’s notes were counted (roots a little more), the first and last chords weighted, and compared with the profile of each major and minor key (' + ck.n + ' chords). ' + (ck.gap < .05 ? 'It was close, so this is a weak reading. ' : '') + 'The key setting drives the scale shown on the neck and what the coach and the take check call “in tune”, so set it to what you hear.',
+      apply: () => { S.key = ck.root; S.minor = ck.minor; S.scale = ck.minor ? 'Natural Minor (Aeolian)' : 'Major (Ionian)'; }, applyLabel: 'Set the song to ' + hrsKeyName(ck) }); }
+  else F.push({ id: 'key', kind: 'suggestion', title: 'No chords to read a key from', text: 'Add a few chords and this will say which key they point to.', why: 'At least three chords are needed.' });
+  /* what was sung (measured range, estimated key) */
+  if (vox.length) { HRS.status('Listening to your voice…'); const v = await hrsVoice(vox);
+    if (v) { F.push({ id: 'range', kind: 'measured', title: 'Your range in these takes', text: midiName(v.lo) + ' to ' + midiName(v.hi) + ' (' + (v.hi - v.lo) + ' semitones).', why: 'The lowest and highest held, clear notes across ' + vox.length + ' vocal take' + (vox.length === 1 ? '' : 's') + ' (' + v.n + ' notes; the outer 5% is ignored so a stray squeak does not count). It is where you sang, not the limit of your voice.' });
+      const sk = v.key; if (sk.gap > .08 && (sk.root !== cur.root || sk.minor !== cur.minor) && !(ck && sk.root === ck.root && sk.minor === ck.minor)) F.push({ id: 'vkey', kind: 'estimated', title: 'What you sang sits in ' + hrsKeyName(sk), text: 'The notes you held look like ' + hrsKeyName(sk) + (ck ? ', the chords say ' + hrsKeyName(ck) : '') + '.', why: 'The notes held in your vocal takes were counted and compared with each key’s profile. A melody can wander outside its key on purpose, so this only tells you where it spends its time.' }); } }
+  /* tempo played (estimated) */
+  if (any.length) { HRS.status('Listening to the timing…'); await hrsYield(); const t = hrsTempo(any);
+    if (t) { const diff = (t.bpm - S.bpm) / S.bpm * 100, round = Math.round(t.bpm * 10) / 10;
+      if (Math.abs(diff) < 3) F.push({ id: 'tempo', kind: 'estimated', title: 'You play with the tempo', text: 'Your attacks average about ' + round + ' BPM against the song’s ' + (Math.round(S.bpm * 10) / 10) + ', within ' + Math.abs(diff).toFixed(1) + '%.' + (t.wob > 4 ? ' The spacing wanders by about ' + t.wob.toFixed(0) + '%.' : ' The spacing is steady.'), why: 'The spacing between attacks in your takes was set against the song’s grid (to the nearest sixteenth) and the middle value taken (' + t.n + ' gaps). It only looks near the song’s tempo.' });
+      else F.push({ id: 'tempo', kind: 'suggestion', title: 'You tend to play ' + (diff > 0 ? 'faster' : 'slower') + ' than the song', text: 'Your attacks average about ' + round + ' BPM; the song is at ' + (Math.round(S.bpm * 10) / 10) + '.', why: 'The spacing between attacks in your takes was set against the song’s grid (to the nearest sixteenth) and the middle value taken (' + t.n + ' gaps). If the song feels better where you naturally play, set it there; if you are rushing or dragging, leave the tempo alone and practise to the click.',
+        apply: () => { S.bpm = round; }, applyLabel: 'Set the song to ' + round + ' BPM' }); } }
+  /* structure thoughts (suggestions, never applied) */
+  const T = []; const hasCh = st.has(/chorus|hook|refrain/), hasV = st.has(/verse/);
+  if (st.secs >= 2 && hasV && !hasCh) T.push('There is a verse but no chorus. A section that comes back, with the same words, is usually what people remember.');
+  if (hasCh && st.count(/chorus|hook|refrain/) === 1 && st.secs >= 3) T.push('The chorus appears once. Repeating it after the last verse (or after a bridge) is the common way to land the song.');
+  if (st.secs >= 3 && !st.has(/intro/) && !st.has(/outro|end/)) T.push('There is no intro or outro. A few bars of either can make the song feel finished.');
+  if (st.sec && st.sec < 60 && st.secs >= 2) T.push('At about ' + hrsTime(st.sec) + ' this is a sketch. That is a good place to start: try repeating the part you like most.');
+  if (st.repeats === 0 && st.secs >= 3) T.push('No two sections share the same chords. Reusing a progression in two places helps a listener find their footing.');
+  const odd = S.sections.filter(s => s.bars.length % 2 === 1).map(s => s.name); if (odd.length) T.push((odd.length > 2 ? 'Several sections' : odd.join(' and ')) + ' ' + (odd.length === 1 ? 'has' : 'have') + ' an odd number of bars. That is fine if you meant it; most phrases are 2, 4 or 8.');
+  T.forEach((t, i) => F.push({ id: 'think' + i, kind: 'suggestion', title: 'A thought', text: t, why: 'A pattern common in songs, read from the section names, bar counts and chords. It is not a rule; your song, your call.' }));
+  if (!T.length) F.push({ id: 'think0', kind: 'suggestion', title: 'Nothing to flag in the structure', text: 'The sections, repeats and phrase lengths look ordinary. Whether it is good is for you to say.', why: 'Section names, bar counts and repeated chords were checked against common song shapes.' });
+  return F;
+}
+HRS.status = t => { const b = document.getElementById('hrsBox'); if (b && HRS.busy && b.firstChild && b.firstChild.className === 'hrs-wait') b.firstChild.textContent = t; };
+
+/** one finding as a card: a label, the words, "Why?", and (for the ones that change the song) Apply / Undo */
+function hrsCard(f) {
+  const lab = f.kind === 'measured' ? ['m', 'Measured'] : f.kind === 'estimated' ? ['e', 'Estimated'] : ['s', 'Suggestion'], card = h('div', { class: 'hrs-card', 'data-id': f.id, 'data-kind': f.kind });
+  const row = h('div', { class: 'row', style: { gap: '8px', flexWrap: 'wrap' } });
+  const paint = () => { row.replaceChildren(); if (!f.apply) return;
+    if (!f.applied) row.append(h('button', { class: 'btn sm primary', type: 'button', 'data-act': 'apply', onclick: () => { vhSnap('before “' + f.title + '”', true); histStack.cur = snap(); /* so Undo reverts only this change, never a take recorded since the last snapshot */ f.apply(); commit(true); f.applied = true; toast('Done. Undo is one tap away.', 'ok'); paint(); bus.emit('hears', f.id); } }, f.applyLabel || 'Apply'));
+    else row.append(h('span', { class: 'tiny muted' }, 'Applied. '), h('button', { class: 'btn sm', type: 'button', 'data-act': 'undo', onclick: () => { undo(); f.applied = false; toast('Put back.', 'ok'); paint(); bus.emit('hears', f.id); } }, '↶ Undo')); };
+  paint();
+  card.append(h('div', { class: 'row', style: { gap: '8px', alignItems: 'baseline' } }, h('abbr', { class: 'tkc-tag tkc-' + lab[0], title: lab[0] === 'm' ? 'Counted or timed from the sound or the chart' : lab[0] === 'e' ? 'A reasonable reading, not a fact' : 'A thought for you to take or leave' }, lab[1]), h('b', {}, f.title)),
+    h('p', { class: 'small', style: { margin: '4px 0' } }, f.text), row, h('details', { class: 'hrs-why' }, h('summary', { class: 'tiny muted' }, 'Why?'), h('p', { class: 'tiny muted' }, f.why)));
+  return card;
+}
+
+function hearsOpen() {
+  const box = h('div', { id: 'hrsBox' }, h('p', { class: 'small muted hrs-wait' }, 'Listening to the song…'));
+  const d = hubOpen('hears', { ico: '🧠', title: 'What the studio hears', sub: 'A plain reading of the open song. Measured, estimated or a suggestion, always labelled. Nothing leaves this page.', sections: [
+    { key: 'now', label: 'This song', ico: '🧠', wide: true, body: () => [box] },
+    { key: 'how', label: 'How to read this', ico: 'ⓘ', body: () => [
+      h('p', { class: 'small' }, h('b', {}, 'Measured'), ' means counted or timed from your sound or your chart: a range, a bar count, a length.'),
+      h('p', { class: 'small' }, h('b', {}, 'Estimated'), ' means a reasonable reading that can be wrong: the key the chords point to, the tempo you tend to play at.'),
+      h('p', { class: 'small' }, h('b', {}, 'Suggestion'), ' is a thought, never a rule. Anything that would change the song keeps a version first and can be undone with one tap. Nothing is changed unless you tap it.')] }] });
+  HRS.busy = true;
+  HRS.done = hearsGather().then(rows => { HRS.rows = rows; HRS.busy = false; box.replaceChildren(...rows.map(hrsCard), h('div', { class: 'row', style: { gap: '8px', marginTop: '8px' } }, h('button', { class: 'btn sm', type: 'button', id: 'hrsAgain', onclick: () => { d && d.close && d.close(); hearsOpen(); } }, '↻ Listen again'), TAKES.length > 1 ? h('button', { class: 'btn sm', type: 'button', onclick: () => takeCheckOpen() }, '⚖ Compare takes') : null)); bus.emit('hears', rows.length); return rows; })
+    .catch(e => { HRS.busy = false; box.replaceChildren(h('p', { class: 'small' }, 'Could not read this song: ' + (e && e.message || e))); return []; });
+  return d;
+}
 
 /* >>> parts/46-render.js */
 /* ============================================================
@@ -16106,9 +16368,43 @@ function gpuSimLook(key) {
   };
 }
 
+/* ---------- 2.73: Arena — a perspective 3D stage you stand inside (a reflective floor to a lit horizon, reactive light columns) ---------- */
+function gpuArenaProg() {
+  if (GPU.P.arena) return true; if (GPU.P.arena === false) return false; const gl = GPU.gl;
+  const pr = gpuProg(gl, GPU_VS_FS, `#version 300 es
+    precision highp float; in vec2 vUv; uniform vec2 uRes; uniform float uT,uEn,uHue; uniform vec4 uB; out vec4 o;
+    vec3 pal(float h){ return .5+.5*cos(6.2831*(h/360.)+vec3(0.,2.1,4.2)); }
+    float h1(float n){ return fract(sin(n*127.1)*43758.5); }
+    void main(){
+      vec2 p=(vUv*uRes - .5*uRes)/uRes.y; float hor=0.02; vec3 col;
+      if(p.y>hor){                                   /* sky: a tint of the chord, a horizon glow, a few calm stars */
+        float t=p.y-hor; col=pal(uHue)*(.05+.10*exp(-t*6.)); col+=pal(uHue+20.)*exp(-t*9.)*(.4+.8*uEn)*.5;
+        vec2 g=floor(p*uRes.y/26.); float st=step(.992,h1(g.x*57.+g.y*131.)); col+=st*(.25+.4*h1(g.x+g.y));
+      } else {                                       /* floor: a perspective grid scrolling toward you, with glowing columns */
+        float d=hor-p.y, z=1.0/(d*2.2), zz=z+uT*1.4, x=p.x*z*2.2, fog=exp(-d*7.5);
+        float gx=abs(fract(x)-.5), gz=abs(fract(zz)-.5), aa=max(fwidth(x),fwidth(zz));   /* screen-space width: distant lines fade instead of aliasing */
+        float grid=(1.-smoothstep(.0,.06+aa,gx))+(1.-smoothstep(.0,.06+aa,gz)); grid=clamp(grid*(1.-smoothstep(.0,.9,aa)),0.,1.);
+        col=pal(uHue+x*2.)*.025 + pal(uHue+40.)*grid*(.22+.5*uEn)*fog;
+        float b[4]=float[](uB.x,uB.y,uB.z,uB.w), xs[4]=float[](-2.4,-1.2,1.2,2.4);
+        for(int i=0;i<4;i++){ float dxc=x-xs[i]; col+=pal(uHue+60.)*exp(-dxc*dxc*5.)*fog*(.25+1.3*b[i]); }
+        col*=(.6+.4*fog)*smoothstep(.0,.08,d);
+      }
+      o=vec4(col,1.);                                /* linear-ish; the composite tonemaps once */
+    }`);
+  if (!pr) { GPU.P.arena = false; return false; }
+  GPU.P.arena = pr; GPU.arenaU = { res: gl.getUniformLocation(pr, 'uRes'), t: gl.getUniformLocation(pr, 'uT'), en: gl.getUniformLocation(pr, 'uEn'), hue: gl.getUniformLocation(pr, 'uHue'), b: gl.getUniformLocation(pr, 'uB') }; return true;
+}
+function gpuArena(gl, B, w, h) {
+  if (!gpuArenaProg()) return; const U = GPU.arenaU; gl.disable(gl.BLEND); gl.useProgram(GPU.P.arena);
+  gl.uniform2f(U.res, GPU.w, GPU.h); gl.uniform1f(U.t, B.t); gl.uniform1f(U.en, B.en); gl.uniform1f(U.hue, B.hue);
+  gl.uniform4f(U.b, B.b[0] + B.b[1], B.b[2] + B.b[3], B.b[4] + B.b[5], B.b[6] + B.b[7]);
+  gl.bindVertexArray(GPU.vao); gl.drawArrays(gl.TRIANGLES, 0, 3);
+}
+GPU_LOOKS.arena = gpuArena;
+
 /** register the GPU looks as "Behind you" looks, before Your video, so they sit with the other backdrops */
 (function gpuRegister() {
-  if (typeof VBACK === 'undefined') return; const entries = [['stardust', 'Stardust'], ['ripple', 'Ripple'], ['life', 'Life']];
+  if (typeof VBACK === 'undefined') return; const entries = [['stardust', 'Stardust'], ['arena', 'Arena'], ['ripple', 'Ripple'], ['life', 'Life']];
   const vi = VBACK.findIndex(m => m[0] === 'video'); const at = vi < 0 ? VBACK.length : vi;
   entries.forEach((e, k) => {
     VBACK.splice(at + k, 0, e); BK_MODES.add(e[0]); if (!VMODES.some(m => m[0] === e[0])) VMODES.splice(VMODES.findIndex(m => m[0] === 'video') < 0 ? VMODES.length : VMODES.findIndex(m => m[0] === 'video'), 0, e);
@@ -16543,6 +16839,68 @@ try {
     backstage: w => backstage(w) }) });
 } catch (e) { }
 agentWatch();
+
+/* >>> parts/72-xr.js */
+/* ============================================================
+   Part 72 · WebXR (2.74, experimental) — watch your reactive visuals in a headset
+   Where the browser and a connected headset support immersive VR, a 🥽 VR button appears in the visuals ⋯ More panel. It opens an
+   immersive session and shows the live visuals (whatever look is running, with the camera cut-out if it is on) filling your view, so you
+   can stand inside your own reactive show. It uses its own small WebGL context (never the visuals engine's), uploads the visuals canvas
+   as a texture each frame and draws it per eye — nothing here changes the normal, non-VR app, and the button is simply absent where VR is
+   not supported. This is experimental and device-dependent: it cannot be verified without a headset, so it is gated and fails safe.
+   ============================================================ */
+const XR = { supported: null, session: null, gl: null, cv: null, prog: null, tex: null, vao: null, ref: null };
+
+function xrSupported(cb) {
+  if (XR.supported != null) return cb(XR.supported);
+  if (!(typeof navigator !== 'undefined' && navigator.xr && navigator.xr.isSessionSupported)) { XR.supported = false; return cb(false); }
+  navigator.xr.isSessionSupported('immersive-vr').then(s => { XR.supported = !!s; cb(!!s); }).catch(() => { XR.supported = false; cb(false); });
+}
+function xrInitGL() {
+  if (XR.gl) return true;
+  try {
+    const cv = document.createElement('canvas'); const gl = cv.getContext('webgl2', { xrCompatible: true, alpha: false, antialias: false });
+    if (!gl) return false; XR.cv = cv; XR.gl = gl; XR.vao = gl.createVertexArray();
+    const mk = (t, s) => { const o = gl.createShader(t); gl.shaderSource(o, s); gl.compileShader(o); return gl.getShaderParameter(o, gl.COMPILE_STATUS) ? o : null; };
+    const vs = mk(gl.VERTEX_SHADER, `#version 300 es
+      out vec2 vUv; void main(){ vec2 p=vec2((gl_VertexID<<1)&2, gl_VertexID&2); vUv=vec2(p.x,1.-p.y); gl_Position=vec4(p*2.-1.,0.,1.); }`);
+    const fs = mk(gl.FRAGMENT_SHADER, `#version 300 es
+      precision highp float; in vec2 vUv; uniform sampler2D T; out vec4 o; void main(){ o=texture(T,vUv); }`);
+    if (!vs || !fs) return false; const p = gl.createProgram(); gl.attachShader(p, vs); gl.attachShader(p, fs); gl.linkProgram(p);
+    if (!gl.getProgramParameter(p, gl.LINK_STATUS)) return false; XR.prog = p;
+    XR.tex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, XR.tex);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    return true;
+  } catch (e) { console.warn('xr gl', e); return false; }
+}
+async function xrEnter() {
+  if (XR.session) { try { await XR.session.end(); } catch (e) { } return; }
+  if (!(navigator.xr && navigator.xr.requestSession) || !xrInitGL()) { toast('VR is not available on this device', ''); return; }
+  try {
+    const gl = XR.gl; if (gl.makeXRCompatible) await gl.makeXRCompatible();
+    const session = await navigator.xr.requestSession('immersive-vr'); XR.session = session;
+    session.updateRenderState({ baseLayer: new XRWebGLLayer(session, gl) });
+    XR.ref = await session.requestReferenceSpace('local');
+    session.addEventListener('end', () => { XR.session = null; XR.ref = null; bus.emit('xr', false); });
+    const onFrame = (t, frame) => {
+      if (!XR.session) return; XR.session.requestAnimationFrame(onFrame);
+      const layer = XR.session.renderState.baseLayer, pose = XR.ref && frame.getViewerPose(XR.ref);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, layer.framebuffer); gl.clearColor(0, 0, 0, 1); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+      try { const src = (typeof UI !== 'undefined' && UI.vcv); if (src && src.width) { gl.bindTexture(gl.TEXTURE_2D, XR.tex); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, src); } } catch (e) { }
+      if (!pose) return; gl.useProgram(XR.prog); gl.bindVertexArray(XR.vao); gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, XR.tex); gl.uniform1i(gl.getUniformLocation(XR.prog, 'T'), 0);
+      for (const view of pose.views) { const vp = layer.getViewport(view); gl.viewport(vp.x, vp.y, vp.width, vp.height); gl.drawArrays(gl.TRIANGLES, 0, 3); }      /* head-locked: the live visuals fill each eye */
+    };
+    session.requestAnimationFrame(onFrame); bus.emit('xr', true); toast('🥽 In VR — take the headset off or press the menu button to leave', 'ok');
+  } catch (e) { console.warn('xr enter', e); XR.session = null; toast('Could not start VR', ''); }
+}
+/** the VR button in the visuals ⋯ More panel (referenced at runtime by part 09); absent unless a headset supports immersive VR */
+function xrControl() {
+  if (!(typeof navigator !== 'undefined' && navigator.xr && navigator.xr.isSessionSupported)) return '';
+  const b = h('button', { class: 'btn sm', id: 'xrBtn', title: 'Experimental: watch your reactive visuals in a VR headset', onclick: () => xrEnter() }, '🥽 VR');
+  xrSupported(ok => { if (!ok && b.parentNode) b.remove(); else if (!ok) b.dataset.off = '1'; });
+  return b;
+}
 
 /* >>> parts/73-build-egg.js */
 /* ============================================================

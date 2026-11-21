@@ -4,6 +4,37 @@ What the studio, its tutorials, its documents and its tests do **not** cover yet
 
 How to use it: before a release, move what the release closed into *Closed* with the version, and add what it opened. [RELEASE.md](RELEASE.md) has this as a checklist item. Items marked **(maintainer)** are decisions or facts only the project's owner can settle; nothing here blocks a build.
 
+## Closed in 2.76.0
+
+- **What the studio hears** gathers the key, range, tempo and structure of the open song into one labelled page with apply and undo. Still open from the assessment: show take figures on the lanes and per section, setlist and rehearsal, takes by section, an artist page. Not yet: chord recognition from recorded audio into the chart (the chart import and stem analysis do it for imports), melody extraction, automatic section identification from audio.
+
+## Closed in 2.75.0
+
+- **Nothing helped you choose between takes.** The coach grades live playing, but recorded takes were never measured against the song. **Compare takes** reads each take's timing against the grid, a voice's pitch against the key, level and noise, side by side, labelled measured or estimated, and changes nothing.
+
+## Product assessment (2.75, updated 2.76): the next opportunities, in order
+
+The song is already one shared project (sections, words, chords, tab, band, mix, takes, versions, credits, soundprint), so the gaps are in what the studio *tells you* about it and in getting to the stage:
+1. **Compare takes** — done in 2.75. Next step: show the figures on the lanes, and per section, so the best chorus and the best verse can come from different takes.
+2. **What the studio hears** — done in 2.76. The page for the open song: key, tempo steadiness, range, structure, each labelled measured / estimated / suggestion, each with one-tap apply and undo. The detectors exist in six places; nothing gathers them.
+3. **Setlist and rehearsal** — there is no setlist. Order songs, rehearse the transitions, carry tempo, key and capo per song into Showtime.
+4. **Takes by section** — alternate takes kept per section, chosen without cutting audio by hand.
+5. **An artist page** — a portable, self-contained page of finished songs with credits; Drops expire after 7 days and the share page is one song.
+
+## Closed in 2.74.0
+
+- **The sound was stereo-only, and there was no way into VR.** Added **spatial audio** (the band placed in a circle around you on headphones, with a Spin; HRTF panners re-routing only the live mix, so takes and bounces are unchanged) and an **experimental WebXR** mode that shows your live visuals in a headset (its own WebGL context, feature-detected, absent where unsupported). Spatial audio is fully tested; the VR render path is device-only and cannot be verified here, so it is gated and fails safe.
+
+## Open (toward rivalling a game)
+
+- **Verify WebXR on a real headset** and deepen it (per-eye scene rendering rather than a head-locked panel; place the Arena stage around the viewer; controllers). Needs hardware.
+- **WebGPU fast-path** (compute shaders) on the GPU engine — needs hardware with WebGPU to test.
+- **Light-spill onto the performer** (tint the camera cut-out from the scene), an **OffscreenCanvas + Worker** render loop, and more GPU looks.
+
+## Closed in 2.73.0
+
+- **No 3D set to perform inside.** Added **Arena**, a GPU look that renders a perspective 3D stage (a reflective floor to a lit horizon, reactive light columns, a starry sky in the chord's colour). With the green-screen camera look you stand inside it — the music-video stage. No raymarching, so it stays fast; falls back to 2D with no WebGL2.
+
 ## Closed in 2.72.0
 
 - **The GPU engine had one look and no simulation layer.** Added a reusable ping-pong simulation layer (float render targets where available) and two living looks on it: **Ripple** (a wave-field / cymatic plate driven by the bands and the beat) and **Life** (a Gray-Scott reaction-diffusion of glowing organisms fed by how loud you play). Sound made into physics and into life. Both obey the Calm/no-flash rules and fall back to 2D with no float support.
@@ -11,12 +42,6 @@ How to use it: before a release, move what the release closed into *Closed* with
 ## Closed in 2.71.0
 
 - **The visuals were 2D-canvas only — the ceiling on how cinematic they could look.** Added an inline **WebGL2 GPU engine** (particles + a real bloom glow, reused by future looks) with a first GPU look, **Stardust**, in the Behind-you group. It blits onto the 2D visuals so overlays still work, falls back to 2D with no WebGL2, and obeys the Calm/no-flash rules. First step toward GPU cymatics, a 3D stage and WebXR.
-
-## Open (toward rivalling a game)
-
-- **WebGPU fast-path** (compute shaders) on top of the WebGL2 baseline — not yet; this sandbox's browser has no WebGPU, so it needs hardware testing before it ships.
-- **Living cymatics** (GPU wave-field + reaction-diffusion), a **3D reactive stage** with the camera cut-out inside it, and **spatial audio + WebXR** are planned on this engine (2.72–2.74).
-- **An OffscreenCanvas + Worker render loop** so the GPU looks never share the main thread (a later optimisation; today they render on the main thread and blit).
 
 ## Closed in 2.70.0
 

@@ -654,7 +654,12 @@ A node graph of the music as it plays: notes, chords, functions (tonic, subdomin
 - **🌌 Stardust (2.71)** is the first **GPU-powered** look: a drifting particle galaxy with a real glow (bloom), drawn on your graphics card for a richer, more cinematic picture. It reacts to the sound and takes the chord's colour like the others. On a device without modern graphics support it automatically falls back to a simpler version, so it always works.
 - **🌊 Ripple (2.72)** *simulates* the sound rather than drawing it: your playing drops into a vibrating surface and the standing waves and ripples that form — a real cymatic plate — are the picture. The frequencies drive it and the beat sends a pulse through it.
 - **🌱 Life (2.72)** is a living simulation: glowing organisms that grow, divide and crawl, fed and stirred by how loud you play (a reaction-diffusion, the maths behind how a leopard gets its spots). Sound made into something alive.
-- Ripple and Life run as simulations on your graphics card; on a device that can't, they fall back to a simpler version. This is a growing series of GPU looks — more cinematic, more interactive ones are on the way.
+- **🏟 Arena (2.73)** builds a **3D stage in perspective**: a reflective floor that scrolls toward a lit horizon, a sky in the chord's colour, and light columns that rise with the frequencies. With **Camera look ▸ Me in front (green screen)** you stand inside the set — a music-video stage that reacts as you play.
+- Ripple, Life and Arena run on your graphics card; on a device that can't, they fall back to a simpler version. This is a growing series of GPU looks — more cinematic, more interactive ones are on the way.
+
+**🎧 Spatial audio (2.74)** (Visuals ▸ ⋯ More). On headphones, it places the band in a circle around you — drums and vocal ahead, bass just off-centre, the guitars to the sides, keys behind — so it feels like standing in the middle of the group. **Spin** turns the whole circle slowly. It only changes what you hear live (your recordings and exports are unchanged), and it's best on headphones; on speakers the effect is subtle. Off by default.
+
+**🥽 VR (2.74, experimental)** (Visuals ▸ ⋯ More, only if your browser and headset support it). Opens a VR session and shows your live, reactive visuals all around you, so you can stand inside your own show. It's experimental and only appears where VR is supported; take the headset off or press its menu button to leave.
 
 **Camera look.** Turn on **📷 Camera backdrop** (Visuals tab, or per scene in Stage) after starting the camera in the Vision tab, then pick how it sits with the visuals: *Dimmed behind the visuals*; *Visuals frame me (edges in)*, where you stay clear in a soft oval and the visuals live around the edges (drag the slider to size the clear area); or *Me in front (green screen)*, which cuts you out so the visuals play behind you. The cut-out downloads a small model the first time (Google's selfie segmenter, nothing is uploaded); offline it falls back to edges-in. Good light and a plain-ish background help the cut-out.
 
@@ -1089,6 +1094,20 @@ It starts at 70% of the song's tempo, every clean go is 5 BPM faster, and it sto
 **🗺 Scale atlas:** the five pentatonic boxes, three-notes-per-string positions, arpeggios in five positions, the modes over a band vamp (the ★ is the note that gives each mode its sound), and target notes over a progression.
 
 **🍎 For teachers:** ✎ Annotate, 📝 Lesson notes and ⏺ Record the screen, plus **This section as an exercise** (the tab of the section you are in, note by note) and lesson files: **⇩ Share as a file** in the coach saves a `.daily-lesson.json` to send a student, and **📂 Open a lesson file** opens one. A file can only contain notes, chords, words and tempos.
+
+## What the studio hears (2.76)
+
+Open it from **Export ▸ 🧠 What the studio hears**, or from the song-journey popover. It is one plain page about the song you have open: its shape (sections, bars, length), the key your chords point to, your vocal range, the tempo you tend to play at, and a few thoughts about the structure. Every line says whether it is **Measured** (counted or timed), **Estimated** (a reasonable reading that can be wrong) or a **Suggestion**, and **Why?** says how it was worked out. If it thinks the song's key or tempo should change, it offers a button; the studio keeps a version first, and **Undo** puts it back. Nothing is changed unless you tap it, and nothing leaves the page.
+
+## Compare takes (2.75)
+
+Recorded a few passes and can't decide? Click a clip in the arrangement and choose **⚖ Compare takes**. The studio listens to every take of the same kind (voices with voices, instruments with instruments) and lays them side by side:
+- **Timing** is the average distance from the song's grid: *behind the beat*, *ahead of the beat* or *on the grid*. **Steadiness** is how much the notes wander around that.
+- **Pitch** (voices only) is how far held notes sit from the nearest note of the song's key, whether the take tends sharp or flat, and how much of it is in tune.
+- **Level** is how even the loudness is, with the peak and a warning if the input clipped. **Noise** is the quietest tenth of the take.
+- The best figure in each column is marked, and a sentence says what stands out.
+
+Each column says whether it is **measured** or **estimated**, and *How it is measured* explains where it can be wrong: a take recorded without the click reads as loose, and a deliberate blue note counts as off. It never changes or deletes a take. The choice stays yours.
 
 ## Vocal pedals (2.31)
 

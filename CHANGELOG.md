@@ -2,6 +2,53 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.76.0 — 2026-11-16 — What the studio hears
+
+### Added
+- **🧠 What the studio hears** (in Export beside Finish it, and at the bottom of the song-journey popover). One plain page about the open song, gathering what the studio can tell you, each finding labelled **Measured** (counted or timed), **Estimated** (a reasonable reading, not a fact) or **Suggestion** (a thought), each with a **Why?** that says how it was reached:
+  - **The shape:** sections, bars and length at the song's tempo (measured).
+  - **The key the chords point to** (estimated), against the key the song is set to; it says when it is the relative key (the same notes). **Set the song to…** keeps a version of the song first and **Undo** puts it back.
+  - **Your range** in your vocal takes (measured) and the key your sung notes sit in (estimated).
+  - **The tempo you tend to play at**, from the spacing of your attacks against the grid (estimated), with **Set the song to… BPM** and Undo.
+  - **Thoughts on the structure** (a verse but no chorus, a chorus that appears once, no intro or outro, no repeated chords, odd phrase lengths), never applied for you.
+- Nothing changes until you tap Apply; no take is touched; nothing leaves the page. Apply refreshes the history snapshot first, so Undo reverts only that change and never a take recorded since.
+- `test/e2e-hears.cjs` (15 checks): a song built to have known answers.
+
+### Changed
+- The release gate's minified-size limit for `index.html` goes from 2 MB to 2.1 MB (this release adds about 9 kB). The compressed limit (700 kB) is unchanged and still passes.
+
+## 2.75.0 — 2026-11-15 — Compare takes
+
+### Added
+- **⚖ Compare takes** (a clip's menu in the arrangement). You record three passes and have to choose; this listens to each one and lays them side by side:
+  - **Timing:** how far the notes land from the song's grid on average (behind or ahead of the beat), and how steady that is.
+  - **Pitch** (voices): how far held notes sit from the nearest note of the song's key, whether the take tends sharp or flat, and how much of it is in tune.
+  - **Level:** how even the loudness is, the peak, and whether the input clipped. **Noise:** the quietest tenth of the take.
+  - The best figure in each column is marked and one sentence says what stands out ("Take 3 is the steadiest in time; Take 2 is the most in tune").
+- **It informs, it doesn't decide.** Every column is labelled *measured* or *estimated*, the window explains how each is worked out and where it can be wrong (a take recorded without the click reads as loose; a deliberate blue note counts as off), and no take is ever changed or deleted.
+- Everything is worked out in the page. Nothing is uploaded.
+
+### Tests
+- **`e2e-takecheck`** (new, 14 checks): made-up takes with known faults. A click on the grid reads as on the grid; 30 ms late reads as 30 ms behind; a jittered one as less steady; a note 30 cents flat reads as 30 cents flat; the window compares like with like, marks the best figures, labels every column, and changes nothing.
+
+## 2.74.0 — 2026-11-15 — The band around you, and your show in VR
+
+### Added
+- **🎧 Spatial audio** (Visuals ▸ ⋯ More). On headphones, the band is placed in a circle around you — drums and vocal ahead, bass just off-centre, the guitars to the sides, keys behind — with a **Spin** to turn the whole circle slowly. It uses 3D (HRTF) panners and only re-routes the live mix, so your dry recordings and the fast bounce are untouched; it heals itself if the audio engine restarts. Off by default, best on headphones.
+- **🥽 VR (experimental)** (Visuals ▸ ⋯ More, where a headset supports it). Opens an immersive WebXR session and shows your live, reactive visuals filling your view, so you can stand inside your own show. It uses its own small WebGL context (never the visuals engine's), so it can't disturb the normal app, and the button is simply absent where VR isn't supported. **Device-dependent and unverified without a headset** — it is gated and fails safe.
+
+### Tests
+- **`e2e-spatial`** (12 checks): off by default; turning it on routes each band part (not the click) through an HRTF panner placed at a distinct point, without silencing the mix; Spin moves the sources; turning it off restores the plain path; the control shows in ⋯ More; the VR button is absent where immersive VR isn't supported (so its render path never runs untested); no errors.
+
+## 2.73.0 — 2026-11-15 — Arena: a 3D stage you stand inside
+
+### Added
+- **🏟 Arena** — a GPU look that builds a **3D stage in perspective**: a reflective floor scrolling toward you to a lit horizon, a sky in the chord's colour with a few calm stars, and light columns that rise and glow with the frequency bands. Set **Camera look** to *Me in front (green screen)* and you stand inside the set — the music-video stage, live and reactive. Like the other GPU looks it takes the chord's colour, eases in Calm, never flashes, and falls back to a 2D field with no WebGL2.
+- Built on the 2.71 engine with no raymarching (all analytic per-pixel math), so it runs fast even on modest graphics.
+
+### Tests
+- **`e2e-gpu`** (15 checks) adds Arena to the GPU looks it covers (paints a real picture, moves, no flashing in Calm or Standard, registered in the Behind-you group).
+
 ## 2.72.0 — 2026-11-15 — Living cymatics: the sound made into physics, and into life
 
 On the GPU engine from 2.71, two looks that **simulate** the sound rather than draw it — full-precision ping-pong simulations running on your graphics card.

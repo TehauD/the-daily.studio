@@ -106,7 +106,7 @@ function buildVisPane() {
     h('button', { class: 'btn sm' + (VZ.cam ? ' on' : ''), id: 'vzCamBtn', title: 'Put yourself center stage: turns the camera on behind the visuals', onclick: () => vzCamPress() }, '📷 Camera backdrop'), camFxBox(),
     h('button', { class: 'btn sm' + (CFG.vzNeck !== false ? ' on' : ''), id: 'vzNeckBtn', title: 'Show a small guitar neck on the visuals: what is playing, what is coming next, the note you are singing', onclick: e => { CFG.vzNeck = CFG.vzNeck === false; saveCfg(); e.currentTarget.classList.toggle('on', CFG.vzNeck !== false); } }, '🎸 Neck'),
     h('button', { class: 'btn sm' + (CFG.vzRibbon ? ' on' : ''), id: 'vzRibbonBtn', 'aria-pressed': String(!!CFG.vzRibbon), title: 'Show your pitch on the visuals: the note you sing against the notes of the key and the chord that is playing', onclick: e => { CFG.vzRibbon = !CFG.vzRibbon; saveCfg(); e.currentTarget.classList.toggle('on', !!CFG.vzRibbon); e.currentTarget.setAttribute('aria-pressed', String(!!CFG.vzRibbon)); if (CFG.vzRibbon) voxReset(); } }, '〰 Pitch'),
-    vzAdjustBtn(), tipBtn(), sgdBarButton());
+    vzAdjustBtn(), (typeof spatControl === 'function' ? spatControl() : ''), (typeof xrControl === 'function' ? xrControl() : ''), tipBtn(), sgdBarButton());
   const bar = h('div', { class: 'row vz-bar' + (CFG.vzMore ? ' more-open' : ''), style: { gap: '6px', marginBottom: '8px', flexWrap: 'wrap' } },
     lookBtn, looks, lxLensBar(), hexSwatches(), prtBar(),
     h('span', { class: 'grow' }),

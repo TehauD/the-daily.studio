@@ -52,7 +52,7 @@ ok(/"binding":\s*"SHARES"/.test(wr), 'the Worker has its bucket for shared recor
 ok(/"\/share\/\*"/.test(wr) && /\(journal\|api\|auth\|share\)/.test(rd('sw.js')), 'shared recordings (2.54) go through the Worker, and the service worker never caches them'); ok(/"workers_dev":\s*false/.test(wr) && /"preview_urls":\s*false/.test(wr), 'the site is served only at its own addresses: no workers.dev copy, no preview addresses');
 ok(!/document\.cookie/.test(rd('index.html')) && !/document\.cookie/.test(j), 'neither the studio nor The Daily uses cookies, so nothing is shared between their two addresses');
 ok(!/\/journal\//.test(rd('sitemap.xml')), 'the sitemap no longer lists /journal/ (The Daily has its own address)');
-ok(statSync(join(d, 'index.html')).size < 2_000_000, 'index.html is under 2 MB');
+ok(statSync(join(d, 'index.html')).size < 2_100_000, 'index.html is under 2.1 MB');
 { /* what a visitor downloads: the page travels compressed, so this is the number that sets the first load. Raise it on purpose, not by drift. */
   const gz = gzipSync(readFileSync(join(d, 'index.html')), { level: 9 }).length;
   /* 2.37.0 crossed 700 kB and raised this to 750; 2.37.1 dropped the line breaks the minifier can safely drop and came back under, so 700 again.
