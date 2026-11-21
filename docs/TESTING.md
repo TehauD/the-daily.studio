@@ -132,6 +132,7 @@ Each file starts its **own** static server, its own Chromium (fake microphone an
 | `e2e-chordsheet.cjs` | Chord sheets (2.14): a pasted sheet (tab-site and ChordPro layouts, invented for the test) becomes a song |
 | `e2e-lyrics-live.cjs` | Lyrics in time with their chords (2.15): the line on screen is the one playing, with its chords over the right words, on the Stage, the lower third and Perform |
 | `e2e-perform-views.cjs` | Perform's display options (2.15): chords and shapes, big chord, lyric sheet, and the build version |
+| `e2e-design.cjs` | The Visual Instrument (2.77): five families holding every look once, the one-row bar, the default lattice pixel-identical to the original hexagon field, every shape and layout changes the picture (a sung note lights its spoke; bass lights the left in Sweep), Finish (mirror, 4-fold, glow, trails) read from pixels, the drawer's tabs, designs saved/applied/deleted, Soundprint's controls open in the drawer, every world draws with Finish on. |
 | `e2e-vz-adjust.cjs` | Speed, size and zoom for the visuals (2.15; under the Visuals bar's ⋯ More since 2.65), remembered and applied wherever the visuals are drawn |
 | `e2e-share.cjs` | Sharing one recording (2.15): a lane or clip as a small M4A, a one-file share page with the words in time, and the one-time "I have the right to share this" |
 | `e2e-mobile-fit.cjs` | Phones (2.15): the header dialogs fill the screen, and the welcome screen fits its choices on the first screen, at three phone sizes |

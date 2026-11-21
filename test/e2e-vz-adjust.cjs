@@ -7,14 +7,14 @@ suite('e2e-vz-adjust', async t => {
   await p.evaluate(() => { const D = window.__daily; D.dockGo('vis'); D.vzSetMode('hex'); }); await wait(500);
 
   /* ---- the panel ---- */
-  ok(!!(await p.$('#pane-vis [data-vza]')), 'the Visuals bar has 🎚 Speed · size · zoom');
-  await p.click('#vzMore'); await wait(200);      /* 2.65: under the Visuals bar's ⋯ More */
-  await p.click('#pane-vis [data-vza]'); await wait(250);
-  ok(await p.evaluate(() => ['vzSpeedIn', 'vzSizeIn', 'vzZoomIn'].every(id => !!document.getElementById(id)) && !!document.getElementById('vzaReset')), 'it opens Speed, Size and Zoom sliders with a Reset');
+  ok(!!(await p.$('#vzDesignBtn')), 'the Visuals bar has 🎛 Design (2.77: speed, size and zoom live in its drawer)');
+  await p.click('#vzDesignBtn'); await p.click('#vzDesign [data-tab=finish]'); await wait(250);
+  ok(await p.evaluate(() => ['vzSpeedIn', 'vzZoomIn'].every(id => !!document.getElementById(id))), 'Finish has Speed and Zoom sliders');
+  await p.click('#vzDesign [data-tab=shape]'); ok(!!(await p.$('#vzSizeIn')), 'Shape has the Size slider'); await p.click('#vzDesign [data-tab=finish]');
   const set = (id, v) => p.evaluate(([id, v]) => { const r = document.getElementById(id); r.value = v; r.dispatchEvent(new Event('input', { bubbles: true })); }, [id, v]);
-  await set('vzSpeedIn', 3); await set('vzSizeIn', 2); await set('vzZoomIn', 2); await wait(500);
-  const cfg = await p.evaluate(() => { const C = window.__daily.CFG, s = JSON.parse(localStorage.getItem('fw.cfg') || '{}'); return { now: [C.vzSpeed, C.vzSize, C.vzZoom], saved: [s.vzSpeed, s.vzSize, s.vzZoom], on: document.querySelector('#pane-vis [data-vza]').classList.contains('on') }; });
-  ok(cfg.now.join() === '3,2,2' && cfg.saved.join() === '3,2,2' && cfg.on, 'moving them sets and remembers them, and the button shows they are changed (' + cfg.now + ')');
+  await set('vzSpeedIn', 3); await set('vzZoomIn', 2); await p.click('#vzDesign [data-tab=shape]'); await set('vzSizeIn', 2); await wait(500);
+  const cfg = await p.evaluate(() => { const C = window.__daily.CFG, s = JSON.parse(localStorage.getItem('fw.cfg') || '{}'); return { now: [C.vzSpeed, C.vzSize, C.vzZoom], saved: [s.vzSpeed, s.vzSize, s.vzZoom], on: document.getElementById('vzDesignBtn').classList.contains('on') }; });
+  ok(cfg.now.join() === '3,2,2' && cfg.saved.join() === '3,2,2' && cfg.on, 'moving them sets and remembers them, and the Design button shows they are changed (' + cfg.now + ')');
 
   /* ---- what they do ---- */
   const rate = async sp => { await p.evaluate(s => { window.__daily.CFG.vzSpeed = s; }, sp); const a = await p.evaluate(() => [window.__daily.VZ.t, performance.now()]); await wait(1200); const b = await p.evaluate(() => [window.__daily.VZ.t, performance.now()]); return (b[0] - a[0]) / ((b[1] - a[1]) / 1000); };
@@ -27,8 +27,8 @@ suite('e2e-vz-adjust', async t => {
 
   /* ---- Reset, and the Stage has it too ---- */
   await p.evaluate(() => { const D = window.__daily; D.CFG.vzSpeed = 3; D.CFG.vzSize = 2; D.CFG.vzZoom = 2; });
-  await p.click('#vzaReset'); await wait(200);
-  ok(await p.evaluate(() => { const C = window.__daily.CFG; return C.vzSpeed === 1 && C.vzSize === 1 && C.vzZoom === 1 && document.getElementById('vzSpeedIn').value === '1'; }), 'Reset puts all three back to 1×');
+  await p.click('#vzDesign [data-tab=pre]'); await p.click('#vdReset'); await wait(200);
+  ok(await p.evaluate(() => { const C = window.__daily.CFG; return C.vzSpeed === 1 && C.vzSize === 1 && C.vzZoom === 1; }), 'Reset all puts all three back to 1×');
   await p.keyboard.press('Escape'); await p.evaluate(() => window.__daily.dockGo('stage')); await wait(400);
   ok(!!(await p.$('#pane-stage [data-vza]')), 'the Stage has the same button');
   ok(!t.errs.length, 'no console / page / network errors' + (t.errs.length ? ': ' + t.errs.join(' | ') : ''));

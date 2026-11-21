@@ -2,6 +2,24 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.77.0 — 2026-11-21 — The Visual Instrument
+
+The Visuals had grown to some thirty looks in two rows, each with its own controls, and no idea tying them together. They now share the idea Hex Resonance was already built on: **where** a sound sits is its pitch (the middle is low, the edge is high, the way the ear lays frequency out), **how bright** is its energy, **when** is the beat, **what colour** is the harmony.
+
+### Changed
+- **Worlds, in five families.** Every look is kept, sorted by what it shows you, each family with a one-line meaning: **Frequency** (Hex Resonance, Spectrum, Cymatics, Ripple, Waveform), **Harmony** (Fifths Halo, Chord Bloom, Harmonic Orrery, Harmonic Gravity, Chord DNA, Constellation, Prism, Mood Colour), **Time** (Beat Grid, Rhythm Flow, Pulse Rings, Light Ribbons, Skyline), **Life & space** (Life, Stardust, Aurora, Warp Stars, Nebula, Arena) and **You** (Concert, Prompter, Voice & Guitar, Improv Field, Neural Map, Session Painting, Soundprint, Your video). Each world has a tooltip saying what it shows.
+- **The Visuals bar is one clean row:** the World button, **🎛 Design**, Record, Go on stage, Stage mode and ⋯ More. The two rows of looks, the colour swatches, Soundprint's extra row, the source list and the speed · size · zoom button moved into the drawer, so each control lives once.
+- **Soundprint's controls are in the drawer** (**This world**), and choosing Soundprint opens them: its five worlds, **Listen again**, and Save, share or any sound.
+
+### Added
+- **The design drawer** with six tabs:
+  - **Sound → Sight:** the layout of pitch (**Rings** is the original; **Circle of fifths**: each spoke a note, each ring an octave, your sung note lights its own spoke; **Sweep**: low to high from left to right, rising like an equaliser), sensitivity, memory, beat pulse, **colour follows the note** (neighbours on the circle of fifths are neighbours in colour), and what the visuals listen to.
+  - **Shape:** the lattice (hexagon, square, triangle, dot), size, roundness, spacing, turn and spin.
+  - **Finish, on every world:** glow, trails, mirror and 4-, 6- and 8-fold kaleidoscope, speed and zoom. The camera stays crisp on top.
+  - **Colour:** the hexagon palettes. **Designs:** seven built-in designs (Original hexagons, Circle of fifths, Spectrum wall, Honeycomb of dots, Kaleidoscope, Cymatic plate, Living cells) and **Save this design**, kept in this browser. **Reset all** returns the original.
+- With every dial at its default the original hexagon drawing is used, and the reshapeable lattice draws the identical picture (tested pixel for pixel), so nothing changes until you move something.
+- `test/e2e-design.cjs` (24 checks). `e2e-backdrops`, `e2e-concert`, `e2e-journal`, `e2e-soundprint` and `e2e-vz-adjust` were updated to the new layout.
+
 ## 2.76.0 — 2026-11-16 — What the studio hears
 
 ### Added

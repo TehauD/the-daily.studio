@@ -148,8 +148,9 @@ suite('e2e-journal', async t => {
   }
   const hx = await t.open({ w: 1440, h: 900, debug: true }); await hx.evaluate(() => { const d = window.__daily; d.vzSetMode('hex'); d.dockGo('vis'); }); await wait(900);
   const corner = pg => pg.evaluate(() => { const cv = document.querySelector('canvas.vcanvas'); const g = cv.getContext('2d'), w = cv.width, h = cv.height, a = g.getImageData(Math.floor(w * .02), Math.floor(h * .02), 6, 6).data; return [a[0], a[1], a[2]]; });
+  await hx.evaluate(() => window.__daily.vzDesignOpen(true, 'colour')); await wait(300);
   const sw = await hx.evaluate(() => { const s = document.getElementById('hexTone'); return !!s && s.style.display !== 'none' ? [...s.querySelectorAll('.hx-sw')].map(b => b.dataset.k).join() : 'hidden'; });
-  ok(sw === 'auto,green,white,ocean,ember,violet,mono,blush,sky,custom', 'the Visuals bar offers colour swatches for the hexagons while Hex Resonance is showing (' + sw + ')');
+  ok(sw === 'auto,green,white,ocean,ember,violet,mono,blush,sky,custom', 'the Design drawer’s Colour tab offers swatches for the hexagons while Hex Resonance is showing (' + sw + ')');
   await hx.click('#hexTone [data-k="white"]'); await wait(300);
   ok(await hx.evaluate(() => window.__daily.hexLight() === true && window.__daily.CFG.hexTone === 'white' && document.querySelector('#hexTone [data-k="white"]').getAttribute('aria-checked') === 'true'), 'choosing White is kept, and the swatch is marked');
   const px = await corner(hx);

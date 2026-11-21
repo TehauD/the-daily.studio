@@ -36,7 +36,7 @@ function vzWorlds() {
   const all = new Map(); VMODES.filter(m => !VZ_MONITOR.has(m[0])).concat(VBACK).forEach(([k, n]) => { if (!all.has(k)) all.set(k, n); });
   const used = new Set(), btn = (k, n) => h('button', { type: 'button', class: k === VZ.mode ? 'on' : '', 'data-m': k, 'data-core': VCORE.has(k) ? '1' : null, title: VSAY[k] || n, onclick: e => { vzSetMode(k); vzLooksOpen(false); } }, n);
   const fams = VFAMS.map(([id, name, say, ids]) => { const have = ids.filter(k => all.has(k)); have.forEach(k => used.add(k));
-    return have.length ? h('section', { class: 'vz-fam', 'data-fam': id }, h('h6', {}, name), h('p', { class: 'tiny muted' }, say), h('div', { class: 'seg', role: 'group', 'aria-label': name }, have.map(k => btn(k, all.get(k))))) : null; });
+    return have.length ? h('section', { class: 'vz-fam', 'data-fam': id }, h('h6', {}, name), h('p', { class: 'tiny muted' }, say), h('div', { class: 'seg', role: 'group', 'aria-label': name }, have.map(k => btn(k, all.get(k)))), id === 'you' && typeof vbgBtn === 'function' ? vbgBtn() : null) : null; });
   const rest = [...all].filter(([k]) => !used.has(k));
   if (rest.length) fams.push(h('section', { class: 'vz-fam', 'data-fam': 'more' }, h('h6', {}, 'More'), h('div', { class: 'seg', role: 'group', 'aria-label': 'More' }, rest.map(([k, n]) => btn(k, n)))));
   const box = h('div', { class: 'vz-looks vz-worlds', id: 'vzLooks' }, h('div', { class: 'vz-fams', id: 'vzBack' }, fams),
@@ -55,9 +55,9 @@ function hslHex(hh, s, l) { s /= 100; l /= 100; const k = n => (n + hh / 30) % 1
 /** one cell's outline: hexagon, square, triangle or dot, with softened corners */
 function vdCell(g, shape, x, y, r, rr, flip) {
   g.beginPath();
-  if (shape === 'dot') { g.arc(x, y, r * .92, 0, 6.2832); return; }
+  if (shape === 'dot') { g.arc(x, y, r * .92, 0, Math.PI * 2); return; }
   const n = shape === 'square' ? 4 : shape === 'tri' ? 3 : 6, a0 = shape === 'square' ? Math.PI / 4 : shape === 'tri' ? (flip ? Math.PI / 2 : -Math.PI / 2) : Math.PI / 6, rad = shape === 'square' ? r * 1.12 : shape === 'tri' ? r * 1.1 : r, P = [];
-  for (let i = 0; i < n; i++) { const a = a0 + 6.2832 * i / n; P.push([x + rad * Math.cos(a), y + rad * Math.sin(a)]); }
+  for (let i = 0; i < n; i++) { const a = a0 + Math.PI * 2 * i / n; P.push([x + rad * Math.cos(a), y + rad * Math.sin(a)]); }
   if (!rr) { P.forEach((p, i) => g[i ? 'lineTo' : 'moveTo'](p[0], p[1])); g.closePath(); return; }
   const t = clamp(rr, 0, 1) * .5, mid = (a, b) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
   P.forEach((p, i) => { const pv = P[(i + n - 1) % n], nx = P[(i + 1) % n], s = mid(p, pv), e = mid(p, nx); if (i) g.lineTo(s[0], s[1]); else g.moveTo(s[0], s[1]); g.quadraticCurveTo(p[0], p[1], e[0], e[1]); }); g.closePath();
@@ -83,13 +83,13 @@ function drawLattice(g, W, H, fd, bh, lvl, C, pulse, P) {
     else f = fmin * Math.exp(lr * clamp(d * .92 + ((ang * 5) % 1) * .08, 0, 1));
     const k = clamp(Math.round(f / bh), 1, fd.length - 1), v = clamp(lvl(Math.max(fd[k], fd[k + 1] || -120)) * sens, 0, 1.4);
     VZ.sm[i] = Math.max(v, VZ.sm[i] * mem - .004); const s = VZ.sm[i];
-    let a;
+    let a, ring = 0;
     if (lay === 'sweep') { const yy = 1 - clamp((y - oy) / (spin ? span : H), 0, 1); a = clamp((s - yy * .95) * 5 + (s > .05 ? .35 : 0), 0, 1) * (s > .03 ? 1 : 0) + .04; }
-    else { const ring = pulse * pg * Math.max(0, 1 - Math.abs(d - (1 - pulse) * 1.05) * 6), amb = .2 * Math.pow(Math.max(0, Math.sin(d * 11 - now / 780)), 2) * Math.max(0, 1 - d * .9), idle = .42 * Math.max(0, 1 - Math.abs(d - bt * 1.1) * 7) * Math.max(0, 1 - d * .9);
+    else { ring = pulse * pg * Math.max(0, 1 - Math.abs(d - (1 - pulse) * 1.05) * 6); const amb = .2 * Math.pow(Math.max(0, Math.sin(d * 11 - now / 780)), 2) * Math.max(0, 1 - d * .9), idle = .42 * Math.max(0, 1 - Math.abs(d - bt * 1.1) * 7) * Math.max(0, 1 - d * .9);
       a = clamp(s * 1.15 + ring * .8 + amb + idle + own * .5 * Math.max(0, 1 - d * .5), 0, 1); }
-    if (a < .03) { g.strokeStyle = `rgba(${P.line},${lt ? .13 : .07})`; g.lineWidth = 1; vdCell(g, shape, x, y, R * .5 * (1 - gap * .4), rr, flip); g.stroke(); continue; }
+    if (a < .03) { g.strokeStyle = `rgba(${P.line},${lt ? .13 : .07})`; g.lineWidth = 1; vdCell(g, shape, x, y, R * .94 * (1 - gap * .4), rr, flip); g.stroke(); continue; }
     const warm = ((c * 7 + r * 13) % 11) === 0, rad = R * (.5 + .46 * Math.min(1, a)) * (1 - gap * .4);
-    g.fillStyle = warm ? mixc(CB, warmRgb, .55, a * (lt ? .9 : .8)) : mixc(CA, CB, clamp(s * 1.4 - .15, 0, 1), a * .92);
+    g.fillStyle = warm ? mixc(CB, warmRgb, .55, a * (lt ? .9 : .8)) : mixc(CA, CB, clamp(s * 1.4 - .15 + ring, 0, 1), a * .92);
     vdCell(g, shape, x, y, rad, rr, flip); g.fill(); g.strokeStyle = `rgba(${P.line},` + (.05 + a * (lt ? .4 : .45)).toFixed(3) + ')'; g.lineWidth = 1; g.stroke();
   }
   if (spin) g.restore();

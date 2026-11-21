@@ -4,6 +4,10 @@ What the studio, its tutorials, its documents and its tests do **not** cover yet
 
 How to use it: before a release, move what the release closed into *Closed* with the version, and add what it opened. [RELEASE.md](RELEASE.md) has this as a checklist item. Items marked **(maintainer)** are decisions or facts only the project's owner can settle; nothing here blocks a build.
 
+## Closed in 2.77.0
+
+- **The Visuals were thirty looks with no shared idea, two rows of controls and no way to reshape them.** Now five families, one design drawer, a hexagon field with its own dials (shape, layout of pitch, how it listens) and glow, trails and mirror on every world. Still open: the other worlds have no dials of their own beyond Finish (each draws its own geometry), the agent tool `set_visuals` does not yet take a design, and a design is not yet carried inside a song or a share link.
+
 ## Closed in 2.76.0
 
 - **What the studio hears** gathers the key, range, tempo and structure of the open song into one labelled page with apply and undo. Still open from the assessment: show take figures on the lanes and per section, setlist and rehearsal, takes by section, an artist page. Not yet: chord recognition from recorded audio into the chart (the chart import and stem analysis do it for imports), melody extraction, automatic section identification from audio.
