@@ -2,6 +2,21 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.83.0 — 2026-11-21 — The Voice-Leading Web
+
+A look made from how music actually moves: chords placed by how little their notes have to travel to get from one to the next.
+
+### Added
+- **Voice-Leading Web** (Visuals ▸ Harmony). The distance between two chords is the fewest semitones their voices travel in all, found by trying every way of pairing the notes (C → Am is 2, C → Cm 1, C → F 3, a seventh is one step from its triad). The chords are laid out in 3D (or flat) by classical multidimensional scaling of that distance table, refined by stress majorisation, so chords a smooth move apart sit close together in any key (the 24 triads reproduce the real distances with a correlation of 0.89 in 3D). The layout moves, rather than jumps, when a chord is added.
+- **The song walks through it.** A glowing path through the chords you have just played (or the whole song, faintly), a dashed line to the chords ahead while it plays, and a comet on the chord now sounding that pulses on the beat and glows with the notes actually heard.
+- **Voices.** For every change, a small diagram of which note goes where, how far, and what is held (Am → F: A and C held, E up a step), with the move named as P, L or R where it is a Neo-Riemannian move.
+- **Ideas.** Chords one or two steps from the one now playing that the song does not use, named and numbered (Em: 1 step, an L move; Cm: 1 step, a P move), ringed in the web when they are on it.
+- **The song's own smoothness**: steps per change, and the smoothest and the leapingest move.
+- **Settings:** the chords on show (the song, song + key, all 24 triads), 3D or flat, how smooth a move must be to draw a line (1–4 steps), path, chords ahead, voices, ideas, P·L·R names, connections, names, colour (by fifths or major/minor), sizes, trail length, and camera (turn, angle, zoom, depth, follow the chord). Chords you play that the song does not use join the web.
+
+### Changed
+- The release gate's minified-size limit for `index.html` goes from 2.1 MB to 2.2 MB (this and 2.82 added about 80 kB minified, 20 kB compressed). The compressed limit (720 kB) is unchanged and now has about 20 kB left; the next step is to move the visual worlds into rooms, which would win most of it back.
+
 ## 2.82.0 — 2026-11-21 — The Neural Map, with dials
 
 The Neural Map is one of the favourite looks, and in the Visuals it had one control (Glow). It now has its own Settings, and three more looks run on the same learning network.

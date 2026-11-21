@@ -9,7 +9,7 @@ suite('e2e-spectral', async t => {
   // ---- in the picker, with their options marked
   const P = await ev(() => { const q = f => [...document.querySelectorAll('#vzLooks .vz-fam[data-fam=' + f + '] [data-m]')].map(b => b.dataset.m), D = window.__daily; return { freq: q('sound'), time: q('more'), opt: [...document.querySelectorAll('#vzLooks .has-opts')].map(b => b.dataset.m).sort().join(), ids: Object.keys(D.VLOOK).sort().join() }; });
   ok(P.freq.slice(0, 2).join() === 'hex,spiral' && P.time.includes('overtones') && P.time.includes('rhythm'), 'Pitch Spiral is in Sound (a look you kept); Overtone Series and Rhythm Polygons are in More looks (' + P.freq.slice(0, 2) + ' / ' + P.time.length + ' more)');
-  ok(P.opt === 'chladni,neural,nxjourney,nxtower,nxweb,overtones,pitchtrace,rhythm,spiral', 'the worlds with their own options are marked in the picker (' + P.opt + ')');
+  ok(P.opt === 'chladni,neural,nxjourney,nxtower,nxweb,overtones,pitchtrace,rhythm,spiral,vlweb', 'the worlds with their own options are marked in the picker (' + P.opt + ')');
   // ---- the harmonics of a note are measured
   const H = await ev(() => { const D = window.__daily, bh = 44100 / 2048, fd = new Float32Array(1024).fill(-Infinity), put = (f, db) => { const b = f / bh; for (let i = Math.round(b) - 3; i <= Math.round(b) + 3; i++) fd[i] = Math.max(fd[i], db - 7 * (i - b) * (i - b)); }, f0 = 220,   /* a peak is a smooth lobe, as an analyser's window makes it */ cents = k => Math.pow(2, (k === 5 ? 30 : 0) / 1200);
     for (let k = 1; k <= 8; k++) put(f0 * k * cents(k), -20 - 6 * (k - 1)); const lvl = x => Math.max(0, Math.min(1, (x + 88) / 62)), hs = D.vlHarmonics(fd, bh, f0, 8, lvl);

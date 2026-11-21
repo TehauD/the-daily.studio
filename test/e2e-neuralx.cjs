@@ -7,7 +7,7 @@ suite('e2e-neuralx', async t => {
   await ev(() => window.__daily.dockGo('vis')); await wait(900);
   // ---- the looks are in Harmony, with their options marked
   const P = await ev(() => ({ harm: [...document.querySelectorAll('#vzLooks .vz-fam[data-fam=harm] [data-m]')].map(b => b.dataset.m), opt: [...document.querySelectorAll('#vzLooks .has-opts')].map(b => b.dataset.m) }));
-  ok(P.harm.join() === 'wheel,tonnetz,neural,nxtower,nxweb,nxjourney,halo,kaleido,mood', 'Fifths Tower, Chord Web and Song Journey sit beside the Neural Map in Harmony (' + P.harm.join() + ')');
+  ok(P.harm.join() === 'wheel,tonnetz,neural,nxtower,nxweb,nxjourney,vlweb,halo,kaleido,mood', 'Fifths Tower, Chord Web and Song Journey sit beside the Neural Map in Harmony (' + P.harm.join() + ')');
   ok(['neural', 'nxtower', 'nxweb', 'nxjourney'].every(m => P.opt.includes(m)), 'all four are marked as having their own options');
   // ---- the Neural Map has its dials, grouped
   await ev(() => { const D = window.__daily; D.CFG.vo = {}; D.vzSetMode('neural', true); D.vzDesignOpen(true); }); await wait(400);

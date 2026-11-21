@@ -7,7 +7,7 @@ suite('e2e-theory', async t => {
   await ev(() => window.__daily.dockGo('vis')); await wait(900);
   // ---- they are in the picker, in Harmony, and Simple keeps the wheel beside the hexagons
   const P = await ev(() => ({ harm: [...document.querySelectorAll('#vzLooks .vz-fam[data-fam=harm] [data-m]')].map(b => b.dataset.m), core: [...document.querySelectorAll('#vzLooks [data-core]')].map(b => b.dataset.m) }));
-  ok(P.harm.join() === 'wheel,tonnetz,neural,nxtower,nxweb,nxjourney,halo,kaleido,mood', 'Harmonic Wheel, Tonnetz, Neural Map (and its three siblings), Fifths Halo, Prism and Mood Colour are the Harmony group (' + P.harm.join() + ')');
+  ok(P.harm.join() === 'wheel,tonnetz,neural,nxtower,nxweb,nxjourney,vlweb,halo,kaleido,mood', 'Harmonic Wheel, Tonnetz, Neural Map (and its three siblings), Fifths Halo, Prism and Mood Colour are the Harmony group (' + P.harm.join() + ')');
   ok(P.core.includes('wheel') && P.core.includes('hex'), 'in Simple the wheel is kept beside Hex Resonance');
   // ---- the wheel: a progression is counted, and the next chord is named from it
   const W = await ev(() => { const D = window.__daily, cv = document.createElement('canvas'); cv.width = 900; cv.height = 560; D.S.key = 9; D.S.minor = true; D.THX.trans.clear(); D.THX.last = null; D.THX.seed = null; D.S.sections = [D.mkSection('Verse', ['Am', 'F', 'C', 'G'])];
