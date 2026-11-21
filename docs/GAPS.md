@@ -4,6 +4,10 @@ What the studio, its tutorials, its documents and its tests do **not** cover yet
 
 How to use it: before a release, move what the release closed into *Closed* with the version, and add what it opened. [RELEASE.md](RELEASE.md) has this as a checklist item. Items marked **(maintainer)** are decisions or facts only the project's owner can settle; nothing here blocks a build.
 
+## Closed in 2.82.0
+
+- **The Neural Map had one control in the Visuals (Glow).** Now its own Settings (layout, colour, layers, what to show, sizes, camera with Follow the chord, how many notes stay on screen, Pre-train / Forget), and three more looks on the same network (Fifths Tower, Chord Web, Song Journey). Tested in `e2e-neuralx`.
+
 ## Closed in 2.81.0
 
 - **The Visuals were a wall of thirty-five looks, with controls that did not all apply.** Now four purpose groups of the looks you chose to keep, the rest under More looks, one Settings panel that shows only what applies (and only applies what suits), and a Saved menu. Added Chladni Plate and Pitch Trace. Still open: the seventeen looks under More looks could be removed outright (it would slim the page and win back the size budget); a Stage scene cannot yet be made from a look in one click (the Stage designer has its own scenes with their own trails, kaleidoscope and glow); looks do not yet change by song section from here (the Stage's per-section scenes do); the agent tool `set_visuals` does not know the new groups or per-look options.
