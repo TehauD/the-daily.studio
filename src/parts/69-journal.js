@@ -135,7 +135,7 @@ function wbCard(start) {
   const dl = h('dl', { class: 'wb-list' }); const fillRows = () => {
     dl.innerHTML = '';
     wbRows().forEach(([k, v, f]) => {
-      const dd = h('dd', {}, v); dl.append(h('dt', {}, k), dd);
+      const dd = h('dd', {}, v), tile = !f && String(v).length <= 14; dl.append(h('div', { class: 'wb-i' + (tile ? ' wb-t' : '') }, h('dt', {}, k), dd));      /* short facts are tiles; the rest are one line each */
       if (f) { dd.append(' ', h('button', { class: 'wb-edit', type: 'button', 'aria-label': 'Change what you are working on', title: 'Change what you are working on', onclick: () => {
         const inp = h('input', { class: 'in wb-in', value: jnLoad().focus || '', maxlength: 60, placeholder: 'For example: 90s alternative guitar', 'aria-label': 'What you are working on' }); dd.textContent = ''; dd.append(inp); inp.focus();
         const fin = ok => { inp.onblur = null; if (ok) { jnLoad().focus = inp.value.trim().slice(0, 60); jnSave(true); } fillRows(); }; inp.onblur = () => fin(true); inp.onkeydown = e => { if (e.key === 'Enter') fin(true); else if (e.key === 'Escape') fin(false); };
@@ -143,9 +143,9 @@ function wbCard(start) {
     });
   };
   fillRows(); const sum = wbSummary();
-  return h('section', { id: 'welcomeBack', class: 'wb', 'aria-label': 'Welcome back' }, h('h3', { class: 'wb-h' }, head), h('p', { class: 'wb-sub' }, sub), dl,
+  return h('section', { id: 'welcomeBack', class: 'wb', 'aria-label': 'Welcome back' }, h('div', { class: 'wb-top' }, h('h3', { class: 'wb-h' }, head), h('button', { class: 'btn sm wb-prog', id: 'wbProgress', type: 'button', onclick: () => progressOpen() }, 'My progress ›')), h('p', { class: 'wb-sub' + (gap < 14 ? ' wb-quick' : '') }, sub), dl,
     sum ? h('p', { class: 'wb-sum', id: 'wbSummary' }, sum) : h('p', { class: 'wb-sum', id: 'wbSummary' }, jnHasAny() ? '' : 'Your journal starts now. It keeps counts and dates on this device, never sound.'),
-    h('div', { class: 'row', style: { gap: '8px', marginTop: '8px' } }, h('button', { class: 'btn sm', id: 'wbProgress', type: 'button', onclick: () => progressOpen() }, 'My progress…')));
+  );
 }
 /** called from the boot screen for people who have been here before */
 function wbBoot() {

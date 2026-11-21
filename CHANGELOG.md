@@ -2,6 +2,14 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.80.1 — 2026-11-21 — A compact Welcome Back
+
+### Changed
+- **Welcome Back (the start screen for someone who has been here before) is compact.** On a 390 px phone it took about 400 px of height, pushing the button to carry on below the fold; it is now about 230 px. Short facts (Last practiced, Current streak) are two tiles, the rest (Working on with its ✎, Latest recording, Progress) are one line each, My progress is in the header, the yearly summary is quieter, and the "Pick up where you left off" line is dropped on a phone because the button below says it. Nothing was removed; on a larger screen the same layout simply has more room. A gentle fade-in (none if you ask your device for less motion).
+
+### Tests
+- Two checks in `test/e2e-journal.cjs`: the card is under 290 px tall on a 390 px phone with the start button well up the screen, and every row is still there.
+
 ## 2.80.0 — 2026-11-21 — Sound made geometric: Pitch Spiral, Rhythm Polygons, Overtone Series
 
 Three more worlds in the same spirit as the Harmonic Wheel and the Tonnetz (music theory and physics made visible), each with its own dials.

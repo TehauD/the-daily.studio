@@ -182,4 +182,10 @@ suite('e2e-journal', async t => {
   }
   ok(await hx.evaluate(() => getComputedStyle(document.getElementById('hexTone')).display === 'none'), 'the choice hides again on the other looks');
   ok(t.errs.length === 0, 'no errors in the hexagon choice (' + t.errs.length + ')');
+  // ---- on a phone the card is compact (2.80.1): short facts are tiles, the rest one line each, and the button to carry on stays high on the screen
+  { const dk = n => { const d = new Date(Date.now() - n * 864e5); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }, J2 = JSON.parse(JSON.stringify(H.J)); J2.days[dk(0)] = { t: 600, s: 1, i: 0 }; J2.days[dk(1)] = { t: 600, s: 1, i: 0 };    /* someone who played yesterday and today */
+    const q = await t.open({ w: 390, h: 844, mobile: true, debug: true, boot: false, init: seed(J2) }); await q.goto(t.BASE + (t.BASE.includes('?') ? '&' : '?') + 'debug'); await wait(3200);
+    const m = await q.evaluate(() => { const c = document.getElementById('welcomeBack'), r = c.getBoundingClientRect(), b = document.getElementById('bootNoMic').getBoundingClientRect(), dts = [...c.querySelectorAll('dt')].map(x => x.textContent); return { h: Math.round(r.height), cta: Math.round(b.bottom), vh: innerHeight, tiles: c.querySelectorAll('.wb-t').length, out: Math.round(r.right) > document.documentElement.clientWidth || document.documentElement.scrollWidth > document.documentElement.clientWidth, dts, prog: !!c.querySelector('#wbProgress') }; });
+    ok(m.h < 290 && m.cta < m.vh * .8 && !m.out, 'on a 390 px phone Welcome Back is compact (' + m.h + ' px tall) and the start button is well up the screen (its bottom at ' + m.cta + ' of ' + m.vh + ' px)');
+    ok(m.tiles >= 1 && m.dts.includes('Last practiced') && m.dts.includes('Working on') && m.prog, 'short facts are tiles, every row is still there, and My progress is in the header (' + m.dts.join(', ') + ')'); await q.ctx.close(); }
 });
