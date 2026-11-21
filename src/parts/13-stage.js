@@ -46,6 +46,7 @@ function stageInfo() {
 /* ---------- extra visual modes (dispatched from drawVis) ---------- */
 function stageExtra(mode, g, W, H, X) {
   if (mode === 'sprint') return prtVisDraw(g, W, H, X);
+  if (typeof VL_DRAW !== 'undefined' && VL_DRAW[mode]) { g.save(); g.textBaseline = 'alphabetic'; try { VL_DRAW[mode](g, W, H, X); } catch (e) { if (!VLX.err) { VLX.err = 1; console.warn('world', mode, e); } } g.restore(); g.textAlign = 'left'; g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1; return; }
   if (typeof HM_MODES !== 'undefined' && HM_MODES.has(mode)) return hmDraw(mode, g, W, H, X);
   if (typeof BK_MODES !== 'undefined' && BK_MODES.has(mode)) return bkDraw(mode, g, W, H, X);
   if (mode === 'concert') return concertDraw(g, W, H, X);

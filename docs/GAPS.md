@@ -4,6 +4,10 @@ What the studio, its tutorials, its documents and its tests do **not** cover yet
 
 How to use it: before a release, move what the release closed into *Closed* with the version, and add what it opened. [RELEASE.md](RELEASE.md) has this as a checklist item. Items marked **(maintainer)** are decisions or facts only the project's owner can settle; nothing here blocks a build.
 
+## Closed in 2.80.0
+
+- **More geometric, theory-and-physics worlds, with dials of their own.** Pitch Spiral, Rhythm Polygons and Overtone Series, a per-world options panel, and a spiral layout for the hexagon field. Still open: the other worlds have no per-world options yet (only these three and Soundprint), the agent tool `set_visuals` cannot set a world's options, Rhythm Polygons shows only the song's drum pattern (not a recorded drum take), and the cents offsets in Overtone Series are hidden below the frequency where the analyser's bins are too wide to tell. The page is 687 kB compressed against a 720 kB limit (raised from 700 in 2.80): moving the visual worlds into rooms, loaded on first use, would win it back. Ideas not yet built: Pitch Trace for singers, Song Arcs, Chladni plates, Consonance Web, Voice-Leading Braid, and a modulation matrix.
+
 ## Closed in 2.77.0
 
 - **The Visuals were thirty looks with no shared idea, two rows of controls and no way to reshape them.** Now five families, one design drawer, a hexagon field with its own dials (shape, layout of pitch, how it listens) and glow, trails and mirror on every world. Still open: the other worlds have no dials of their own beyond Finish (each draws its own geometry), the agent tool `set_visuals` does not yet take a design, and a design is not yet carried inside a song or a share link.

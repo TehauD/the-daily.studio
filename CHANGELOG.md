@@ -2,6 +2,24 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.80.0 — 2026-11-21 — Sound made geometric: Pitch Spiral, Rhythm Polygons, Overtone Series
+
+Three more worlds in the same spirit as the Harmonic Wheel and the Tonnetz (music theory and physics made visible), each with its own dials.
+
+### Added
+- **Pitch Spiral** (Frequency). The spectrum wound into a spiral, one turn to the octave, so the same note is always on the same spoke (C at the top). Lit by what sounds; joins the first ten harmonics of the note you sing or play (or the root of the chord the song is on), so you see the shape of an overtone series; the notes of the key are brighter on the rim. Options: **octaves** (3–8), **lowest note** (E2 guitar, A1 bass, C2, C1), **style** (ribbon, dots, or a hexagon cell for each semitone), **colour** (by note, by fifths, theme), **tilt** (0–70°: tip it over into a helix), **spin**, **show harmonics**, **peak hold**, **note names**.
+- **Rhythm Polygons** (Time). The song's drum groove as rings of steps, one ring per drum, the hits (ghost, normal, accent) joined into polygons, a playhead sweeping, the beats and bar round the outside. A ring that is a **Euclidean rhythm** (hits spread as evenly as possible) is named, e.g. E(3,8) tresillo, E(4,16) four on the floor. Your own hits land on an outer ring, **gold on the beat, orange behind, blue ahead**, with the average in the middle (the same measure Compare takes uses). Options: **drums** (those in the groove, kick/snare/hat, all six), **polygons**, **name the rhythm**, **playhead**, **your hits**, **turn with the beat**.
+- **Overtone Series** (Frequency). The harmonics of the note you sing or play, **measured** from the spectrum: strength, and how far each is from a perfect multiple in cents (shown only where the spectrum is fine enough to tell). Three views: a **rose** (each harmonic at its note, further out by octave), **bars**, and the **string** (its standing waves built from the measured amplitudes). Each harmonic is named as what it is above the note (the 3rd is a fifth, the 5th a major third, the 7th "≈♭7"). Options: view, harmonics (6–24), decibels or linear, labels (interval, number, note, none), tuning offsets, peak hold.
+- **Per-world options.** A world can offer its own dials: Design ▸ **This world** shows them; the world picker marks such worlds ⚙; they are kept with your designs, cleared by Reset all, and fit a phone screen.
+- **Hexagon field ▸ Pitch spiral** layout of pitch (Design ▸ Sound → Sight): each turn an octave, each spoke a note, your note lights its own spoke.
+- Four built-in designs: **Spiral of cells**, **Pitch helix**, **Rhythm necklace**, **Overtone rose**.
+
+### Changed
+- The release gate's compressed-size limit for `index.html` goes from 700 kB to 720 kB (the visual worlds of 2.77–2.80 added about 30 kB compressed; the page is 687 kB gzip). The uncompressed limit is 2.1 MB. Moving the visual worlds into rooms (loaded on first use) would win this back; it is listed in docs/GAPS.md.
+
+### Tests
+- `test/e2e-spectral.cjs` (22 checks) on made-up sound with known answers: harmonics found with the right strength and a 30-cent offset measured; the harmonic names; a tresillo and four on the floor named (and a non-Euclidean row left alone); A at 110, 220 and 440 Hz on one spoke; light landing at C4's place on the spiral with every other bin silent (`-Infinity` dB, as in a real analyser, which once made a blend NaN); a late hit drawn orange; options shown, changed, saved in a design, cleared; the hexagon spiral layout; each view drawing with Finish on; the options fitting 390 px.
+
 ## 2.79.0 — 2026-11-21 — The circle of fifths, made a world
 
 The circle of fifths is now the second pillar of the Visuals, after the hexagon field: two new looks made of music theory, and the Neural Map's circle of fifths fixed.

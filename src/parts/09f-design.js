@@ -14,17 +14,42 @@ let vdSaveT = 0;
 function vdSet(k, v) { const o = Object.assign({}, CFG.vd || {}); if (v === VD_DEF[k]) delete o[k]; else o[k] = v; CFG.vd = o; VZ.sm = null; clearTimeout(vdSaveT); vdSaveT = setTimeout(saveCfg, 300); vdMark(); }
 const vdShapeDefault = () => ['shape', 'round', 'gap', 'twist', 'spin', 'layout', 'sens', 'memory', 'pulse', 'noteHue'].every(k => vdv(k) === VD_DEF[k]);
 const vdPostOn = () => vdv('glow') > 0 || vdv('trails') > 0 || vdv('mirror') !== 1;
-const vdChanged = () => !vdShapeDefault() || vdPostOn() || vzAdjusted();
+const vdChanged = () => !vdShapeDefault() || vdPostOn() || vzAdjusted() || vlChanged();
 function vdMark() { const b = document.getElementById('vzDesignBtn'); if (b) b.classList.toggle('on', vdChanged()); }
+
+/* ---------- per-world options (2.80): a world can offer its own dials; they are drawn in Design ▸ This world, kept in CFG.vo, saved in designs ---------- */
+const VLOOK = {};          /* mode → { title, opts: [{ k, label, type: 'range'|'choice'|'toggle', def, min, max, step, unit, opts: [[value, label, tip]], tip }] } (filled by the looks) */
+const VL_DRAW = {};        /* mode → draw function (g, W, H, X) for the worlds that bring their own options */
+const vlDef = (mode, k) => { const d = VLOOK[mode] && VLOOK[mode].opts.find(x => x.k === k); return d ? d.def : undefined; };
+const vlv = (mode, k) => { const o = ((CFG.vo || {})[mode] || {})[k]; return o == null ? vlDef(mode, k) : o; };
+function vlSet(mode, k, v) {
+  const all = Object.assign({}, CFG.vo || {}), m = Object.assign({}, all[mode] || {}); if (v === vlDef(mode, k)) delete m[k]; else m[k] = v; if (Object.keys(m).length) all[mode] = m; else delete all[mode];
+  CFG.vo = all; VDX.prevOk = false; clearTimeout(vdSaveT); vdSaveT = setTimeout(saveCfg, 300); vdMark();
+}
+const vlChanged = () => !!CFG.vo && Object.keys(CFG.vo).length > 0;
+/** the dials of the world now showing, as controls */
+function vlControls(mode) {
+  const L = VLOOK[mode]; if (!L) return null; const rows = [];
+  L.opts.forEach(o => {
+    const cur = vlv(mode, o.k);
+    if (o.type === 'range') { const fmt = v => o.unit === 'deg' ? Math.round(v) + '°' : o.unit === '%' ? Math.round(v * 100) + '%' : o.unit === 'x' ? (+v).toFixed(2) + '×' : String(Math.round(v * 100) / 100), val = h('b', { class: 'mono tiny vd-v' }, fmt(cur));
+      rows.push(h('label', { class: 'vd-row', title: (o.tip || '') + ' (double-click to reset)' }, h('span', { class: 'vd-l' }, o.label), h('input', { type: 'range', min: o.min, max: o.max, step: o.step || 1, value: cur, 'data-vo': o.k, id: 'vo_' + mode + '_' + o.k, 'aria-label': o.label, title: o.tip || '', oninput: e => { vlSet(mode, o.k, +e.target.value); val.textContent = fmt(+e.target.value); }, ondblclick: e => { vlSet(mode, o.k, o.def); e.target.value = o.def; val.textContent = fmt(o.def); } }), val)); }
+    else if (o.type === 'toggle') rows.push(h('label', { class: 'vd-row', title: o.tip || '' }, h('span', { class: 'vd-l' }, o.label), h('input', { type: 'checkbox', 'data-vo': o.k, id: 'vo_' + mode + '_' + o.k, checked: !!cur, 'aria-label': o.label, onchange: e => vlSet(mode, o.k, e.target.checked ? 1 : 0) })));
+    else { const box = h('div', { class: 'vd-row', title: o.tip || '' }, h('span', { class: 'vd-l' }, o.label), h('div', { class: 'seg', role: 'radiogroup', 'aria-label': o.label }, o.opts.map(([v, n, t]) => h('button', { type: 'button', role: 'radio', 'data-vo': o.k, 'data-v': String(v), class: String(cur) === String(v) ? 'on' : '', 'aria-checked': String(String(cur) === String(v)), title: t || n,
+        onclick: e => { vlSet(mode, o.k, v); box.querySelectorAll('button').forEach(b => { const on = b === e.currentTarget; b.classList.toggle('on', on); b.setAttribute('aria-checked', String(on)); }); } }, n)))); rows.push(box); }
+  });
+  rows.push(h('div', { class: 'row', style: { gap: '6px' } }, h('button', { class: 'btn sm', type: 'button', id: 'vlReset', onclick: () => { const all = Object.assign({}, CFG.vo || {}); delete all[mode]; CFG.vo = all; saveCfg(); vdPaint(); vdMark(); } }, 'Reset this world’s options')));
+  return h('div', { class: 'vd-opts', id: 'vdOpts', 'data-mode': mode }, rows);
+}
 
 /* ---------- the families: what each world shows you ---------- */
 const VFAMS = [
-  ['freq', 'Frequency', 'Space is pitch: the middle is low, the edge is high, and you stand inside the spectrum.', ['hex', 'spectrum', 'cymatics', 'ripple', 'wave']],
+  ['freq', 'Frequency', 'Space is pitch: the middle is low, the edge is high, and you stand inside the spectrum.', ['hex', 'spiral', 'overtones', 'spectrum', 'cymatics', 'ripple', 'wave']],
   ['harm', 'Harmony', 'Angle is the note and colour is the chord: the circle of fifths and the lattice of chords, made visible.', ['wheel', 'neural', 'halo', 'tonnetz', 'bloom', 'orbit', 'gravity', 'dna', 'stars', 'kaleido', 'mood']],
-  ['time', 'Time', 'Motion is the beat: what the rhythm does to space.', ['pulse', 'fluid', 'rings', 'ribbons', 'skyline']],
+  ['time', 'Time', 'Motion is the beat: what the rhythm does to space.', ['rhythm', 'pulse', 'fluid', 'rings', 'ribbons', 'skyline']],
   ['life', 'Life & space', 'Sound as something alive or physical: cells, swarms, weather, galaxies.', ['life', 'stardust', 'aurora', 'warp', 'nebula', 'arena']],
   ['you', 'You', 'The picture is made of you and your song: your voice, your words, your whole piece.', ['concert', 'prompter', 'swarms', 'field', 'paint', 'sprint', 'video']]];
-const VSAY = { wheel: 'The circle of fifths as a live network: the key lit, every chord change drawn from one chord to the next, the notes you play on the rim, and the chord likely to come next.', tonnetz: 'The lattice of music theory: fifths, major thirds and minor thirds, with every triangle a chord. The view follows the chord, and the line it draws is how little each chord moves.', hex: 'The original: a honeycomb that lights where the sound is. Reshape it in Design.', spectrum: 'The spectrum as glowing bars behind you.', cymatics: 'Sound made into the patterns it draws on a vibrating plate.', ripple: 'A wave field: the bands and the beat disturb a surface.', wave: 'The waveform itself, large.',
+const VSAY = { spiral: 'The spectrum wound into a spiral, one turn to the octave: the same note is always on the same spoke. Tip it into a helix; it joins the harmonics of the note you play.', rhythm: 'The groove as rings of steps, the hits joined into polygons, with your own hits landing on an outer ring coloured by how far from the beat they are.', overtones: 'The harmonics of the note you sing or play, measured from the sound: as a rose, as bars, or as the string’s standing waves.', wheel: 'The circle of fifths as a live network: the key lit, every chord change drawn from one chord to the next, the notes you play on the rim, and the chord likely to come next.', tonnetz: 'The lattice of music theory: fifths, major thirds and minor thirds, with every triangle a chord. The view follows the chord, and the line it draws is how little each chord moves.', hex: 'The original: a honeycomb that lights where the sound is. Reshape it in Design.', spectrum: 'The spectrum as glowing bars behind you.', cymatics: 'Sound made into the patterns it draws on a vibrating plate.', ripple: 'A wave field: the bands and the beat disturb a surface.', wave: 'The waveform itself, large.',
   halo: 'The twelve notes on the circle of fifths, lit as you play.', neural: 'A 3D network that learns the song as it plays: bands, notes, chords and the chords that follow. Switch it to Fifths for the circle.', bloom: 'A flower that opens on each chord.', orbit: 'Chords as orbiting bodies around their key.', gravity: 'Notes pulled toward the chord that is home.', dna: 'The chords of the song as a double helix.', stars: 'Notes you play become a constellation.', kaleido: 'A kaleidoscope turned by the harmony.', mood: 'The colour of the mood: warm, cool, tense, open.',
   pulse: 'A grid that throbs on the beat.', fluid: 'Rhythm as flowing ink.', rings: 'Rings that leave the middle on each hit.', ribbons: 'Ribbons of light that follow the sound.', skyline: 'A city skyline the music builds.',
   life: 'Organisms that grow where you play loudest (reaction-diffusion).', stardust: 'A particle galaxy.', aurora: 'Curtains of northern light.', warp: 'Flying through stars at the speed of the song.', nebula: 'Clouds of gas lit by the sound.', arena: 'A 3D stage you stand inside.',
@@ -34,7 +59,7 @@ const VCORE = new Set(['hex', 'wheel', 'concert', 'bloom', 'prompter']);
 /** the picker: five families, every look kept. Buttons keep data-m inside .seg so every other part still finds them */
 function vzWorlds() {
   const all = new Map(); VMODES.filter(m => !VZ_MONITOR.has(m[0])).concat(VBACK).forEach(([k, n]) => { if (!all.has(k)) all.set(k, n); });
-  const used = new Set(), btn = (k, n) => h('button', { type: 'button', class: k === VZ.mode ? 'on' : '', 'data-m': k, 'data-core': VCORE.has(k) ? '1' : null, title: VSAY[k] || n, onclick: e => { vzSetMode(k); vzLooksOpen(false); } }, n);
+  const used = new Set(), btn = (k, n) => h('button', { type: 'button', class: (k === VZ.mode ? 'on' : '') + (VLOOK[k] ? ' has-opts' : ''), 'data-m': k, 'data-core': VCORE.has(k) ? '1' : null, title: (VSAY[k] || n) + (VLOOK[k] ? ' · has its own options: Design ▸ This world' : ''), onclick: e => { vzSetMode(k); vzLooksOpen(false); } }, n);
   const fams = VFAMS.map(([id, name, say, ids]) => { const have = ids.filter(k => all.has(k)); have.forEach(k => used.add(k));
     return have.length ? h('section', { class: 'vz-fam', 'data-fam': id }, h('h6', {}, name), h('p', { class: 'tiny muted' }, say), h('div', { class: 'seg', role: 'group', 'aria-label': name }, have.map(k => btn(k, all.get(k)))), id === 'you' && typeof vbgBtn === 'function' ? vbgBtn() : null) : null; });
   const rest = [...all].filter(([k]) => !used.has(k));
@@ -79,6 +104,7 @@ function drawLattice(g, W, H, fd, bh, lvl, C, pulse, P) {
     const flip = (r + c) % 2, x = ox + c * dx + (tri || sq ? 0 : (r % 2 ? dx / 2 : 0)) - dx / 2, y = oy + r * dy - R / 2 + (tri ? (flip ? dy / 3 : dy * 2 / 3) - dy / 2 : 0);
     const d = Math.hypot(x - cx, y - cy) / maxd, ang = (Math.atan2(y - cy, x - cx) + Math.PI) / (2 * Math.PI), i = r * cols + c; let f, own = 0;
     if (lay === 'fifths') { const slot = Math.floor(ang * 12) % 12, pc = (slot * 7) % 12, oct = 3 + Math.floor(clamp(d, 0, .999) * 5), m = 12 * (oct + 1) + pc; f = 440 * Math.pow(2, (m - 69) / 12); own = key === pc ? 1 : 0; }
+    else if (lay === 'spiral') { const u = clamp(d, 0, .999) * 5.2, fr = (ang - .25 + 1) % 1, k = Math.max(0, Math.round(u - fr));  /* C is at the top */ f = 65.4 * Math.pow(2, k + fr); own = key >= 0 && (((Math.round(fr * 12) % 12) + 12) % 12) === key ? 1 : 0; }
     else if (lay === 'sweep') f = fmin * Math.exp(lr * clamp((x - ox) / (spin ? span : W), 0, 1));
     else f = fmin * Math.exp(lr * clamp(d * .92 + ((ang * 5) % 1) * .08, 0, 1));
     const k = clamp(Math.round(f / bh), 1, fd.length - 1), v = clamp(lvl(Math.max(fd[k], fd[k + 1] || -120)) * sens, 0, 1.4);
@@ -120,19 +146,23 @@ const VD_PRESETS = [
   { id: 'dots', name: 'Honeycomb of dots', say: 'Soft round cells that leave a trail.', mode: 'hex', vd: { shape: 'dot', trails: .55, glow: .25 }, size: 1 },
   { id: 'kaleido', name: 'Kaleidoscope', say: 'The field folded six ways, slowly turning.', mode: 'hex', vd: { mirror: 6, spin: .5, glow: .35, noteHue: 1 }, size: 1.2 },
   { id: 'plate', name: 'Cymatic plate', say: 'A vibrating plate, folded four ways.', mode: 'ripple', vd: { mirror: 4, trails: .35, glow: .3 } },
+  { id: 'spiralcells', name: 'Spiral of cells', say: 'The hexagon field laid out as a pitch spiral: each turn an octave, each spoke a note, the colour following what you sing.', mode: 'hex', vd: { layout: 'spiral', noteHue: 1, glow: .25 }, size: 1.1 },
+  { id: 'helix', name: 'Pitch helix', say: 'The spectrum as a helix of hexagons, tipped and turning slowly.', mode: 'spiral', vd: { glow: .3 }, vo: { spiral: { style: 'cells', tilt: 52, spin: .35 } } },
+  { id: 'necklace', name: 'Rhythm necklace', say: 'Your groove as rings and polygons, with a soft trail.', mode: 'rhythm', vd: { trails: .3, glow: .2 } },
+  { id: 'rose', name: 'Overtone rose', say: 'The harmonics of the note you play, each at its note, glowing.', mode: 'overtones', vd: { glow: .35 }, vo: { overtones: { view: 'rose', count: 16 } } },
   { id: 'cells', name: 'Living cells', say: 'Organisms that grow where you play loudest, with a soft glow.', mode: 'life', vd: { glow: .4, trails: .2 } }];
 const vdPersonal = () => Array.isArray(CFG.vdPresets) ? CFG.vdPresets : [];
 function vdApply(pr) {
-  CFG.vd = Object.assign({}, pr.vd || {}); ['Speed', 'Size', 'Zoom'].forEach(k => { CFG['vz' + k] = pr[k.toLowerCase()] || 1; }); if (pr.tone) { if (pr.tone === 'auto') delete CFG.hexTone; else CFG.hexTone = pr.tone; }
+  CFG.vd = Object.assign({}, pr.vd || {}); CFG.vo = JSON.parse(JSON.stringify(pr.vo || {})); ['Speed', 'Size', 'Zoom'].forEach(k => { CFG['vz' + k] = pr[k.toLowerCase()] || 1; }); if (pr.tone) { if (pr.tone === 'auto') delete CFG.hexTone; else CFG.hexTone = pr.tone; }
   VZ.sm = null; VZ.spec = null; VDX.prevOk = false; saveCfg(); if (pr.mode && pr.mode !== VZ.mode) vzSetMode(pr.mode, true); if (pr.mode) { CFG.visMode = pr.mode; saveCfg(); } if (typeof hexToneSync === 'function') hexToneSync(); vzLookSync(); vdPaint(); vdMark(); toast('Design: ' + pr.name, 'ok');
 }
 function vdSave(name) {
   name = (name || '').trim().slice(0, 40); if (!name) return toast('Name the design first', 'warn');
-  const list = vdPersonal().filter(p => p.name !== name); list.push({ id: 'u' + Date.now().toString(36), name, mode: VZ.mode, vd: Object.assign({}, CFG.vd || {}), speed: vzSpeed(), size: vzSize(), zoom: vzZoom(), tone: CFG.hexTone || 'auto' });
+  const list = vdPersonal().filter(p => p.name !== name); list.push({ id: 'u' + Date.now().toString(36), name, mode: VZ.mode, vd: Object.assign({}, CFG.vd || {}), vo: JSON.parse(JSON.stringify(CFG.vo || {})), speed: vzSpeed(), size: vzSize(), zoom: vzZoom(), tone: CFG.hexTone || 'auto' });
   CFG.vdPresets = list.slice(-24); saveCfg(); vdPaint(); toast('Saved “' + name + '”', 'ok');
 }
 function vdDelete(id) { CFG.vdPresets = vdPersonal().filter(p => p.id !== id); saveCfg(); vdPaint(); }
-function vdReset() { CFG.vd = {}; ['vzSpeed', 'vzSize', 'vzZoom'].forEach(k => { CFG[k] = 1; }); VZ.sm = null; VZ.spec = null; VDX.prevOk = false; saveCfg(); vdPaint(); vdMark(); }
+function vdReset() { CFG.vd = {}; CFG.vo = {}; ['vzSpeed', 'vzSize', 'vzZoom'].forEach(k => { CFG[k] = 1; }); VZ.sm = null; VZ.spec = null; VDX.prevOk = false; saveCfg(); vdPaint(); vdMark(); }
 
 /* ---------- the drawer ---------- */
 const VDUI = { tab: 'sound' };
@@ -152,14 +182,14 @@ function vdTabBody(tab) {
   if (tab === 'shape') return [note, vdChoice('shape', 'Lattice', [['hex', '⬢ Hexagon'], ['square', '■ Square'], ['tri', '▲ Triangle'], ['dot', '● Dot']], 'The shape of each cell'),
     vdRange('vzSize', 'Size', .5, 2.5, .05, 'How big the cells are: bigger means fewer', 'x', true), vdRange('round', 'Roundness', 0, 1, .05, 'Soften the corners', '%'), vdRange('gap', 'Spacing', 0, 1, .05, 'Space between the cells', '%'),
     vdRange('twist', 'Turn', -90, 90, 1, 'Turn the whole field', 'deg'), vdRange('spin', 'Spin', 0, 3, .05, 'Let the field turn slowly by itself', 'x')];
-  if (tab === 'sound') return [note, vdChoice('layout', 'Layout of pitch', [['rings', 'Rings', 'Space is frequency: low in the middle, high at the edge (the original)'], ['fifths', 'Circle of fifths', 'Each spoke is a note, each ring an octave: your note lights its own spoke'], ['sweep', 'Sweep', 'Low to high from left to right, rising like an equaliser']], 'Where pitch lives in the picture'),
+  if (tab === 'sound') return [note, vdChoice('layout', 'Layout of pitch', [['rings', 'Rings', 'Space is frequency: low in the middle, high at the edge (the original)'], ['fifths', 'Circle of fifths', 'Each spoke is a note, each ring an octave: your note lights its own spoke'], ['spiral', 'Pitch spiral', 'Each turn is an octave and each spoke a note: the same note is always on the same spoke'], ['sweep', 'Sweep', 'Low to high from left to right, rising like an equaliser']], 'Where pitch lives in the picture'),
     vdRange('sens', 'Sensitivity', .4, 2.5, .05, 'How strongly the cells answer', 'x'), vdRange('memory', 'Memory', .5, .97, .01, 'How long a cell stays lit after the sound: short is crisp, long is smeared'), vdRange('pulse', 'Beat pulse', 0, 2.5, .05, 'How strongly the ring of light follows each beat', 'x'),
     h('label', { class: 'vd-row' }, h('span', { class: 'vd-l' }, 'Colour follows the note'), h('input', { type: 'checkbox', id: 'vd_noteHue', checked: !!vdv('noteHue'), title: 'Hue follows the note you sing or the chord that plays; notes a fifth apart are neighbours in colour', onchange: e => vdSet('noteHue', e.target.checked ? 1 : 0) })),
     h('label', { class: 'vd-row' }, h('span', { class: 'vd-l' }, 'Listen to'), h('select', { class: 'in', id: 'vd_src', title: 'What the visuals listen to', onchange: e => { VZ.src = e.target.value; } }, [['auto', 'Auto (follows playback)'], ['rig', 'The guitar after the rig'], ['master', 'The master mix'], ['di', 'What the detector hears'], ['vox', 'The vocal microphone']].map(([v, n]) => h('option', { value: v, selected: (VZ.src || 'auto') === v }, n))))];
   if (tab === 'finish') return [h('p', { class: 'tiny muted' }, 'These work on every world.'), vdRange('glow', 'Glow', 0, 1, .05, 'A soft bloom around everything bright', '%'), vdRange('trails', 'Trails', 0, .95, .05, 'Let moving light leave a trail', '%'),
     vdChoice('mirror', 'Mirror', [[1, 'Off'], [2, '↔ Mirror'], [4, '4-fold'], [6, '6-fold'], [8, '8-fold']], 'Fold the picture into a mirror or a kaleidoscope'), vdRange('vzSpeed', 'Speed', .25, 3, .05, 'How fast everything moves', 'x', true), vdRange('vzZoom', 'Zoom', 1, 3, .05, 'Push in on the middle', 'x', true)];
   if (tab === 'colour') return [h('p', { class: 'tiny muted' }, VZ.mode === 'hex' ? 'The palette of the hexagon field. “Match the theme” follows your light or dark choice.' : 'Palettes apply to the hexagon field; the other worlds take their colour from your theme.'), hexSwatches()];
-  if (tab === 'world') return [h('p', { class: 'small' }, h('b', {}, vzLookName()), ' — ', VSAY[VZ.mode] || ''), VZ.mode === 'sprint' ? null : h('p', { class: 'tiny muted' }, 'This world has no dials of its own. Finish works on it, and so do the saved Designs.'), prtBar()];
+  if (tab === 'world') return [h('p', { class: 'small' }, h('b', {}, vzLookName()), ' — ', VSAY[VZ.mode] || ''), VZ.mode === 'sprint' || VLOOK[VZ.mode] ? null : h('p', { class: 'tiny muted' }, 'This world has no dials of its own. Finish works on it, and so do the saved Designs.'), vlControls(VZ.mode), prtBar()];
   const inp = h('input', { class: 'in', id: 'vdName', placeholder: 'Name this design', maxlength: 40, 'aria-label': 'Name this design', onkeydown: e => { if (e.key === 'Enter') vdSave(e.target.value); } });
   const card = (p, mine) => h('div', { class: 'vd-pre', 'data-pre': p.id }, h('button', { class: 'btn sm', type: 'button', onclick: () => vdApply(p) }, p.name), h('span', { class: 'tiny muted grow' }, p.say || (VMODES.find(m => m[0] === p.mode) || [0, p.mode])[1]), mine ? h('button', { class: 'btn sm', type: 'button', 'aria-label': 'Delete ' + p.name, title: 'Delete', onclick: () => vdDelete(p.id) }, '✕') : null);
   return [h('div', { class: 'vd-pres' }, VD_PRESETS.map(p => card(p, false)), vdPersonal().map(p => card(p, true))), h('div', { class: 'row', style: { gap: '6px', marginTop: '6px' } }, inp, h('button', { class: 'btn sm primary', type: 'button', id: 'vdSave', onclick: () => vdSave(inp.value) }, 'Save this design'), h('button', { class: 'btn sm', type: 'button', id: 'vdReset', onclick: () => vdReset() }, 'Reset all'))];

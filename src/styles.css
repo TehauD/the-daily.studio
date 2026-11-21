@@ -1943,3 +1943,6 @@ body[data-form=phone] .vz-bar .vz-design,body[data-form=phone] .vz-bar .vz-world
 .vd-tabs{min-width:0;max-width:100%;overflow-x:auto;scrollbar-width:none}.vd-tabs::-webkit-scrollbar{display:none}.vd-tabs button{flex:none}
 .vd-body,.vd-row,.vd-row>*{min-width:0}
 body[data-form=phone] .vd-row input[type=range]{height:28px}
+
+.vz-fam .seg button.has-opts::after{content:" ⚙";opacity:.55;font-size:.85em}
+.vd-opts{display:grid;gap:9px}
