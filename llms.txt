@@ -1,6 +1,10 @@
 # the-daily.studio
 
-> Record guitar and voice, split a song into stems, get chords, tab and lyrics, and run a live light show. Free, in your browser, no account needed. Version 2.77.0. An AI assistant in the person's browser can use the studio through tools (WebMCP, or window.dailyStudio from a script). Nothing is sent to a server.
+> Record guitar and voice, split songs into stems, get chords, tab and lyrics, and run a live light show. Free, in your browser, made by Tehau. Version 2.78.0. An AI assistant in the person's browser can use the studio through tools (WebMCP, or window.dailyStudio from a script). Nothing is sent to a server.
+
+## Who made it
+
+- [Tehau](https://the-daily.studio/guide/about/): Tehau DeBarthe, a musician, software engineer and independent creator ("Make things that matter."). GitHub https://github.com/TehauD, LinkedIn https://www.linkedin.com/in/tehau/, Instagram https://www.instagram.com/tehaud/, journal https://journal.the-daily.studio/
 
 ## For AI assistants
 
@@ -52,7 +56,7 @@ The tools never reach the microphone, the camera, recording, deleting songs or S
 - [Live visuals and a light show for your music](https://the-daily.studio/guide/live-visuals-and-stage-show/): Lights, lasers and an LED wall that follow the music.
 - [Perform live and share what you make](https://the-daily.studio/guide/perform-and-share/): Big chords on stage, videos for every screen, share pages, tips.
 - [Your studio, on every computer](https://the-daily.studio/guide/keep-your-studio-in-sync/): Your whole studio on every computer, through a folder or GitHub.
-- [Made for creators](https://the-daily.studio/guide/about/): Who made it, and why.
+- [Tehau](https://the-daily.studio/guide/about/): Who made it, and why.
 
 ## Optional
 

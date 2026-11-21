@@ -7,7 +7,7 @@ import { execFileSync } from 'node:child_process';
 import { gzipSync } from 'node:zlib';
 import { dirname, join, posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { PAGES, SITE, pageUrl } from './seo-pages.mjs';
+import { PAGES, SITE, PERSON, pageUrl } from './seo-pages.mjs';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..'), d = join(root, 'dist');
 let bad = 0; const ok = (c, m) => { console.log((c ? 'ok   ' : 'FAIL ') + m); if (!c) bad++; };
 const rd = f => readFileSync(join(d, f), 'utf8');
@@ -76,6 +76,15 @@ const bodyOf = h => h.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>
   const ld = ldOf(html), g = ld[0] && ld[0]['@graph'] || [];
   ok(ld.length === 1 && ld[0] && g.some(n => n['@type'] === 'WebApplication' && n.isAccessibleForFree === true && n.featureList.length >= 5) && g.some(n => n['@type'] === 'WebSite'), 'first page: structured data parses and describes a free WebApplication');
   ok((bodyOf(html).match(/<h1[ >]/g) || []).length === 1, 'first page: exactly one <h1>');
+  { /* 2.78: Tehau is the one Person; the homepage, the About page and the product point at the same node */
+    const pe = g.filter(n => [].concat(n['@type']).includes('Person')), me = pe[0] || {};
+    ok(pe.length === 1 && me['@id'] === PERSON.id && me.name === 'Tehau' && me.alternateName === 'Tehau DeBarthe' && me.image === PERSON.image, 'first page: one Person, ' + PERSON.id + ', named Tehau with the alternate name Tehau DeBarthe and the profile image');
+    ok(['github.com/TehauD', 'linkedin.com/in/tehau', 'instagram.com/tehaud'].every(u => (me.sameAs || []).some(x => x.includes(u))), 'first page: the Person lists GitHub, LinkedIn and Instagram (sameAs)');
+    ok(g.some(n => n['@type'] === 'WebApplication' && n.author && n.author['@id'] === PERSON.id) && g.some(n => n['@type'] === 'WebSite' && n.publisher && n.publisher['@id'] === PERSON.id), 'first page: the product and the site name Tehau as their author and publisher');
+    ok(!g.some(n => n['@id'] && /#author$/.test(n['@id'])), 'first page: no old #author entity is left to conflict with Tehau');
+    ok(t.replace(/&amp;/g, '&') === 'the-daily.studio — Free Guitar & Voice Studio by Tehau', 'first page: the title names the creator: ' + t);
+    ok(/<p class="boot-made">Made by <a href="guide\/about\/"[^>]*>Tehau<\/a>\./.test(html) && /independent creator building tools that make music more accessible/.test(bodyOf(html)), 'first page: a crawlable "Made by Tehau." line links to the About page');
+    ok(/<meta name="author" content="Tehau">/.test(html) && html.includes('<link rel="author" href="' + SITE.authorUrl + '">'), 'first page: the author is Tehau, with a link to the About page'); }
   ok(PAGES.filter(p => !p.unlisted).every(p => html.includes('href="guide/' + (p.slug === 'guide' ? '' : p.slug + '/') + '"')), 'first page: links to every listed guide page (crawlable)');
   ok(PAGES.filter(p => p.unlisted).every(p => !new RegExp('href="[^"]*guide/' + p.slug).test(html)) && html.includes('<link rel="alternate" type="text/plain" href="llms.txt"'), 'first page: the page for AI assistants is not linked anywhere a person looks; the head points assistants to llms.txt');
   ok(/<noscript>[\s\S]*guide\/[\s\S]*<\/noscript>/.test(html), 'first page: the no-JavaScript text carries the guide links');
@@ -90,8 +99,15 @@ for (const p of PAGES) {
   ok(h.includes('<link rel="canonical" href="' + url + '">') && metaOf(h, 'og:url') === url, name + 'canonical and og:url are ' + url);
   ok((b.match(/<h1[ >]/g) || []).length === 1 && (b.match(/<h2[ >]/g) || []).length >= 2, name + 'one <h1> and at least two <h2>');
   ok((b.replace(/<[^>]+>/g, ' ').split(/\s+/).filter(Boolean).length) >= 280, name + 'has real text (280+ words)');
-  const ld = ldOf(h); ok(ld.length === 1 && ld[0] && ld[0]['@graph'].some(n => [].concat(n['@type']).includes('WebPage')) && ld[0]['@graph'].some(n => n['@type'] === 'BreadcrumbList') && (!p.faq || ld[0]['@graph'].some(n => n['@type'] === 'FAQPage' && n.mainEntity.length === p.faq.length)), name + 'structured data parses (page, breadcrumbs' + (p.faq ? ', FAQ' : '') + ')');
-  if (p.about) ok(ld[0]['@graph'].some(n => [].concat(n['@type']).includes('AboutPage')) && ld[0]['@graph'].some(n => n['@type'] === 'Person' && Array.isArray(n.sameAs) && n.sameAs.some(u => /linkedin\.com\/in\//.test(u)) && n.sameAs.some(u => /github\.com\//.test(u))), name + 'it is an About page, and names the author with their LinkedIn and GitHub (2.53)');
+  const ld = ldOf(h); ok(ld.length === 1 && ld[0] && ld[0]['@graph'].some(n => [].concat(n['@type']).some(x => x === 'WebPage' || x === 'ProfilePage')) && ld[0]['@graph'].some(n => n['@type'] === 'BreadcrumbList') && (!p.faq || ld[0]['@graph'].some(n => n['@type'] === 'FAQPage' && n.mainEntity.length === p.faq.length)), name + 'structured data parses (page, breadcrumbs' + (p.faq ? ', FAQ' : '') + ')');
+  if (p.about) { const G = ld[0]['@graph'], pp = G.find(n => n['@type'] === 'ProfilePage'), pe = G.filter(n => n['@type'] === 'Person'), me = pe[0] || {}, ids = G.map(n => n['@id']).filter(Boolean);
+    ok(!!pp && pp.mainEntity && pp.mainEntity['@id'] === PERSON.id && pp.url === url, name + 'it is a ProfilePage whose main entity is Tehau (' + PERSON.id + ')');
+    ok(pe.length === 1 && me['@id'] === PERSON.id && me.name === 'Tehau' && me.alternateName === 'Tehau DeBarthe' && me.url === url && me.image === PERSON.image && !!me.description && me.sameAs.length >= 3 && ['github.com/TehauD', 'linkedin.com/in/tehau', 'instagram.com/tehaud'].every(u => me.sameAs.some(x => x.includes(u))), name + 'one Person: Tehau, also Tehau DeBarthe, with the image, the About page as its url, and GitHub, LinkedIn and Instagram');
+    ok(ids.length === new Set(ids).size, name + 'no entity is described twice');
+    ok(t === 'Tehau — Musician, Engineer &amp; Creator of the-daily.studio' && desc === 'Meet Tehau, a musician, software engineer, and independent creator building creative technology, open-source software, and tools for musicians.', name + 'the SEO title and description are the chosen ones (' + t + ')');
+    ok(metaOf(h, 'og:type') === 'profile' && metaOf(h, 'og:image') === PERSON.photoUrl && existsSync(join(d, PERSON.photo)), name + 'Open Graph says profile, with the picture served from this domain (' + PERSON.photo + ')');
+    ok(/<h1>Tehau<\/h1>/.test(h) && h.includes('Musician, Software Engineer &amp; Independent Creator.') && /<img src="[^"]*icons\/tehau\.jpg"[^>]*alt="Tehau/.test(h), name + 'the H1 is Tehau, with the subtitle and the picture');
+    ok(['https://github.com/TehauD"', 'https://www.linkedin.com/in/tehau/"', 'https://www.instagram.com/tehaud/"', 'https://journal.the-daily.studio/"'].every(u => h.includes('href="' + u)) && /My mom put a guitar in my hands/.test(h) && /The rest of what I make/.test(h) && /may it bring you joy/.test(h) && !/my line is simple/.test(h), name + 'it links to GitHub, LinkedIn, Instagram and the journal, explains the relationship, and keeps the origin story'); }
   ok(p.faq ? p.faq.every(([q]) => b.includes(q.replace(/&/g, '&amp;'))) : true, name + 'every FAQ question in the data is visible on the page');
   ok(!/<script[^>]+\bsrc=/i.test(h) && !/<img(?![^>]*\balt="[^"]+")/i.test(h) && !/<img(?![^>]*\bwidth=)/i.test(h), name + 'no external script; every image has alt text and a size');
   const bad2 = [...h.matchAll(/(?:href|src)="([^"#]+)(?:#[^"]*)?"/g)].map(m => m[1]).filter(u => !/^(https?:|mailto:|data:)/.test(u)).filter(u => { const f = posix.normalize(posix.join(here, u)); const g = f.endsWith('/') ? f + 'index.html' : f; return !existsSync(join(d, g)); });

@@ -2,6 +2,19 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.78.0 — 2026-11-21 — Tehau
+
+The site now says who made it in one consistent way: **Tehau** is the public name and brand; **Tehau DeBarthe** is the alternate name that joins the full name to the same person. See docs/SEARCH_IDENTITY.md.
+
+### Changed
+- **One Person in the structured data**, `https://the-daily.studio/#tehau`: name Tehau, alternate name Tehau DeBarthe, the GitHub profile picture, the About page as its url, a description, and `sameAs` for GitHub, LinkedIn, Instagram and the journal. The same node is on the homepage and the About page, so search engines see one entity; the old `#author` entity is gone. The studio and the site name Tehau as author and publisher, and every guide page names Tehau as its author.
+- **The About page** (same URL, `/guide/about/`) is a `ProfilePage`: H1 "Tehau", the subtitle "Musician, Software Engineer & Independent Creator.", the relationship to the-daily.studio, the origin story kept, and links to GitHub, LinkedIn, Instagram and the journal. Title "Tehau — Musician, Engineer & Creator of the-daily.studio", a new description, Open Graph type `profile`. A portrait is served from this domain (`icons/tehau.jpg`, the GitHub picture at 32 kB).
+- **The homepage** title is "the-daily.studio — Free Guitar & Voice Studio by Tehau"; a crawlable "Made by Tehau." line near the footer links to the About page; `<meta name="author">` and `<link rel="author">` say Tehau. The in-app About has an Instagram link. `llms.txt` says who made it. `humans.txt` and the README name both forms.
+- The release gate (`verify:site`) now checks all of it: one Person with the right id, names, picture and `sameAs`, the titles and canonical URLs, the Open Graph type, the links; the audit knows `www.instagram.com` as a link-only host.
+
+### Added
+- `docs/SEARCH_IDENTITY.md`: what the site says, the Google Search Console steps after a deploy, the copy for the GitHub, LinkedIn and Instagram profiles, and prioritised next steps.
+
 ## 2.77.0 — 2026-11-21 — The Visual Instrument
 
 The Visuals had grown to some thirty looks in two rows, each with its own controls, and no idea tying them together. They now share the idea Hex Resonance was already built on: **where** a sound sits is its pitch (the middle is low, the edge is high, the way the ear lays frequency out), **how bright** is its energy, **when** is the beat, **what colour** is the harmony.

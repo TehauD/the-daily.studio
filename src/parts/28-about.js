@@ -26,7 +26,7 @@ function aboutBlock() {
       h('p', {}, 'And above all, may it bring you joy.'),
       h('p', {}, 'Welcome to the-daily.studio.'),
       h('p', { class: 'ab-sig' }, '-Tehau'),
-      h('div', { class: 'row', style: { gap: '6px', flexWrap: 'wrap' } }, BRAND.support ? link('☕ ' + BRAND.supportLabel, BRAND.support, 'primary') : '', link('The story', 'guide/about/'), link('GitHub', BRAND.github), link('LinkedIn', BRAND.linkedin), link('The Daily', BRAND.journal), link('Source & issues', BRAND.repo))),
+      h('div', { class: 'row', style: { gap: '6px', flexWrap: 'wrap' } }, BRAND.support ? link('☕ ' + BRAND.supportLabel, BRAND.support, 'primary') : '', link('The story', 'guide/about/'), link('GitHub', BRAND.github), link('LinkedIn', BRAND.linkedin), link('Instagram', BRAND.instagram), link('The Daily', BRAND.journal), link('Source & issues', BRAND.repo))),
     h('details', { class: 'ab-cr', id: 'abPriv' }, h('summary', {}, 'Privacy at a glance'),
       h('ul', {},
         li(h('b', {}, 'Stays on this device: '), 'everything you play, sing, record, drop in or type: audio, camera pictures, songs, takes, lyrics and settings. There is no account of its own, no analytics and no advertising. Nothing is uploaded unless you choose to: GitHub sync (to your own account), a folder, or recordings sent with a link (encrypted, kept 7 days).'),

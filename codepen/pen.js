@@ -57,10 +57,10 @@ window.__dailyRoom = (id, make) => {
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.77.0', BUILD = '3b5ae30', PARTS_N = +'130' || 0, LINES_N = +'22197' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.78.0', BUILD = '84d4f15', PARTS_N = +'130' || 0, LINES_N = +'22197' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { ghApp: { clientId: 'Iv23liTjqEBQsgmGaE1Q', slug: 'tehaud-the-daily-studio' },   /* Sign in with GitHub: the GitHub App's public client id and its slug (docs/GITHUB.md); empty = only the token way */
-  support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://journal.the-daily.studio/' };
+  support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', instagram: 'https://www.instagram.com/tehaud/', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://journal.the-daily.studio/' };
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 const SVGNS = 'http://www.w3.org/2000/svg';
@@ -8197,7 +8197,7 @@ function aboutBlock() {
       h('p', {}, 'And above all, may it bring you joy.'),
       h('p', {}, 'Welcome to the-daily.studio.'),
       h('p', { class: 'ab-sig' }, '-Tehau'),
-      h('div', { class: 'row', style: { gap: '6px', flexWrap: 'wrap' } }, BRAND.support ? link('☕ ' + BRAND.supportLabel, BRAND.support, 'primary') : '', link('The story', 'guide/about/'), link('GitHub', BRAND.github), link('LinkedIn', BRAND.linkedin), link('The Daily', BRAND.journal), link('Source & issues', BRAND.repo))),
+      h('div', { class: 'row', style: { gap: '6px', flexWrap: 'wrap' } }, BRAND.support ? link('☕ ' + BRAND.supportLabel, BRAND.support, 'primary') : '', link('The story', 'guide/about/'), link('GitHub', BRAND.github), link('LinkedIn', BRAND.linkedin), link('Instagram', BRAND.instagram), link('The Daily', BRAND.journal), link('Source & issues', BRAND.repo))),
     h('details', { class: 'ab-cr', id: 'abPriv' }, h('summary', {}, 'Privacy at a glance'),
       h('ul', {},
         li(h('b', {}, 'Stays on this device: '), 'everything you play, sing, record, drop in or type: audio, camera pictures, songs, takes, lyrics and settings. There is no account of its own, no analytics and no advertising. Nothing is uploaded unless you choose to: GitHub sync (to your own account), a folder, or recordings sent with a link (encrypted, kept 7 days).'),

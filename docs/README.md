@@ -17,6 +17,7 @@
 | [SECURITY_MODEL.md](SECURITY_MODEL.md) | reviewers | trust boundaries, permissions, data inventory, controls, residual risk |
 | [LICENSING.md](LICENSING.md) | maintainers, reviewers | the file-by-file licensing and provenance register, methods and patents, open items (checked by `npm run audit`) |
 | [GITHUB.md](GITHUB.md) | whoever deploys | setting up Sign in with GitHub and the studio's GitHub sync |
+| [SEARCH_IDENTITY.md](SEARCH_IDENTITY.md) | the site owner | how the site says who made it (Tehau), the Search Console steps after a deploy, and the copy for the GitHub, LinkedIn and Instagram profiles |
 | [GAPS.md](GAPS.md) | maintainers | the gaps register: what the docs, tests and product do not cover yet, and what each release closed |
 | [BRAND.md](BRAND.md) | designers | logo, palette, type, assets |
 | [../PRIVACY.md](../PRIVACY.md), [../TERMS.md](../TERMS.md), [../SECURITY.md](../SECURITY.md), [../THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md), [../CHANGELOG.md](../CHANGELOG.md) | everyone | policies, terms of use, licences, history |
