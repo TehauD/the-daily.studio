@@ -50,9 +50,9 @@
     "get_music_guide": [],
     "write_drums": [],
     "write_notes": [
+      "notes",
       "part",
-      "section",
-      "notes"
+      "section"
     ],
     "read_notes": [
       "part",
