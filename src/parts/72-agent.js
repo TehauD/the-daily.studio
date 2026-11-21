@@ -378,10 +378,10 @@ async function agentCall(name, input) {
   try {
     let r; if (ro) r = await go(); else { const job = AGT.q.then(go, go); AGT.q = job.catch(() => { }); r = await job; }   /* changes wait their turn */
     const txt = r && r.content && r.content[0] && r.content[0].text;
-    bksAgentLog(t.name, inp, r);
+    if (bksOn('agentlog')) bksAgentLog(t.name, inp, r);
     if (txt && txt.length > AG_LIMIT.maxOut) return { content: [{ type: 'text', text: txt.slice(0, AG_LIMIT.maxOut) + '\n… (cut: the answer was longer than ' + AG_LIMIT.maxOut + ' characters)' }] };
     return r;
-  } catch (e) { const f = agFail(e && e.code || 'rejected', (e && e.message) || String(e)); bksAgentLog(t.name, inp, f); return f; }
+  } catch (e) { const f = agFail(e && e.code || 'rejected', (e && e.message) || String(e)); if (bksOn('agentlog')) bksAgentLog(t.name, inp, f); return f; }
 }
 const agWebTool = t => ({ name: t.name, title: t.title || t.name.replace(/_/g, ' '), description: t.description, inputSchema: t.inputSchema, annotations: Object.assign({ title: t.name.replace(/_/g, ' '), openWorldHint: false }, t.annotations), execute: input => agentCall(t.name, input) });
 function agentUnregister() {

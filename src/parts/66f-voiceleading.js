@@ -10,7 +10,6 @@
    Everything is measured from the chord symbols and what you play: nothing is guessed from the sound but the chord the detector reports. Settings are
    in the look's own panel; it draws wherever the visuals draw. The layout is worked out when the set of chords changes, not every frame.
    ============================================================ */
-VMODES.push(['vlweb', 'Voice-Leading Web']);
 
 /* ---------- the metric (pure) ---------- */
 const vwMod = x => ((x % 12) + 12) % 12;

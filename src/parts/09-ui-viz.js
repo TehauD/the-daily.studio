@@ -119,7 +119,7 @@ const vcol = () => { const cs = getComputedStyle(document.documentElement); retu
 const vzPlaying = () => T.playing || (typeof STP !== 'undefined' && STP.playing);
 function visAna() { const s = VZ.src || 'auto'; if (s === 'vox' && E.anaVox) return E.anaVox; return s === 'master' || (s === 'auto' && vzPlaying()) ? E.anaMaster : s === 'di' ? E.anaDI : E.anaRig; }
 /** looks that draw their whole picture themselves: no pitch read-out or mini fretboard on top */
-const vzBare = m => m === 'concert' || (typeof VL_DRAW !== 'undefined' && !!VL_DRAW[m]) || m === 'sprint' || HM_MODES.has(m) || (typeof BK_MODES !== 'undefined' && BK_MODES.has(m));
+const vzBare = m => m === 'concert' || (typeof worldLook === 'function' && worldLook(m) && m !== 'neural') || (typeof VL_DRAW !== 'undefined' && !!VL_DRAW[m]) || m === 'sprint' || HM_MODES.has(m) || (typeof BK_MODES !== 'undefined' && BK_MODES.has(m));
 /** cvo: draw on another canvas (the Stage, the Audience view) with the simpler picture; o.main: draw it as the Visuals themselves (your colours,
     the camera, the neck, the tip jar), at that canvas's size, for a video (part 37). o.noNeck, o.noText leave those out; o.avoid: more places the tip jar steps around */
 function drawVis(cvo, o) {

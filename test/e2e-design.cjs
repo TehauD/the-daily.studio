@@ -4,7 +4,7 @@
 const { suite } = require('./lib.cjs');
 suite('e2e-design', async t => {
   const { ok, wait } = t, p = await t.open({ w: 1400, h: 860, debug: true }), ev = (f, a) => p.evaluate(f, a);
-  await ev(() => window.__daily.dockGo('vis')); await wait(900);
+  await ev(() => window.__daily.dockGo('vis')); await wait(900); await ev(() => window.__daily.room('worlds'));
   // ---- the picker: four groups by what a look is for, everything else under More looks
   const P = await ev(() => { const D = window.__daily, ids = [...document.querySelectorAll('#vzLooks [data-m]')].map(b => b.dataset.m), want = new Set(D.VMODES.filter(m => !['spectro', 'chroma', 'scope'].includes(m[0])).map(m => m[0]).concat(D.VBACK.map(m => m[0]))), grp = f => [...document.querySelectorAll('#vzLooks .vz-fam[data-fam=' + f + '] [data-m]')].map(b => b.dataset.m);
     return { dup: ids.length !== new Set(ids).size, missing: [...want].filter(k => !ids.includes(k)), groups: [...document.querySelectorAll('#vzLooks [data-grp]')].map(b => b.dataset.grp).join(), sound: grp('sound').join(), harm: grp('harm').join(), air: grp('air').join(), perf: grp('perf').join(), more: grp('more'), titled: [...document.querySelectorAll('#vzLooks [data-grp]')].every(b => b.title.length > 10) }; });

@@ -10,8 +10,6 @@
    only there once you are on the list), with a switch for each piece. Nothing here leaves the page.
    ============================================================ */
 CFG.bks = Object.assign({ on: true, palette: true, drawer: true, console: true, agentlog: true }, CFG.bks && typeof CFG.bks === 'object' ? CFG.bks : {});
-/** is this piece of Backstage on: you have the pass, the master switch is on, and so is its own */
-const bksOn = k => !!CFG.backstage && CFG.bks.on !== false && (k == null || CFG.bks[k] !== false);
 const BKS_PIECES = [['palette', 'Command palette', 'Ctrl/⌘ K from anywhere: jump to a panel, switch a look, load a beat or a song, run a command.'], ['drawer', 'Terminal drawer', 'Ctrl + ` slides the Backstage shell up from the bottom, over whatever you are doing.'], ['console', 'Console toolkit', '`studio` in the browser’s DevTools console: every Backstage command as a function, and more.'], ['agentlog', 'Agent activity in the console', 'One quiet line for each change an AI agent makes.']];
 const bksSay = (t, cls) => { if (cls === 'clear') return console.clear(); if (t == null) return; console.log('%c' + t, cls === 'err' ? 'color:#ff8a7a' : cls === 'dim' ? 'color:#7e9288' : cls === 'fun' ? 'color:#f7c95a' : 'color:inherit'); };
 const bksWait = ms => new Promise(r => setTimeout(r, ms));

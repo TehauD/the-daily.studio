@@ -60,7 +60,7 @@ const VCORE = new Set(['hex', 'wheel', 'aurora', 'concert', 'prompter']);
 /** the picker: five families, every look kept. Buttons keep data-m inside .seg so every other part still finds them */
 function vzWorlds() {
   const all = new Map(); VMODES.filter(m => !VZ_MONITOR.has(m[0])).concat(VBACK).forEach(([k, n]) => { if (!all.has(k)) all.set(k, n); });
-  const used = new Set(), btn = (k, n) => h('button', { type: 'button', class: (k === VZ.mode ? 'on' : '') + (VLOOK[k] ? ' has-opts' : ''), 'data-m': k, 'data-core': VCORE.has(k) ? '1' : null, title: (VSAY[k] || n) + (VLOOK[k] ? ' · has its own options in Settings' : ''), onclick: () => vzSetMode(k) }, n);
+  const used = new Set(), btn = (k, n) => h('button', { type: 'button', class: (k === VZ.mode ? 'on' : '') + (lookHasOpts(k) ? ' has-opts' : ''), 'data-m': k, 'data-core': VCORE.has(k) ? '1' : null, title: (VSAY[k] || n) + (lookHasOpts(k) ? ' · has its own options in Settings' : ''), onclick: () => vzSetMode(k) }, n);
   const groups = VFAMS.map(([id, name, say, ids]) => ({ id, name, say, list: ids.filter(k => all.has(k)) })); groups.forEach(g => g.list.forEach(k => used.add(k)));
   const rest = [...all].filter(([k]) => !used.has(k)).map(([k]) => k); groups.push({ id: 'more', name: 'More looks', say: 'The rest of the library.', list: rest });
   const cur = vzFamOf(VZ.mode, true);
@@ -73,7 +73,7 @@ const vzFamOf = (k, id) => { const f = VFAMS.find(x => x[3].includes(k)); return
 /** show one group's looks under the tabs (this does not change the look) */
 function vzGroupShow(id) { document.querySelectorAll('#vzLooks .vz-fam').forEach(f => f.classList.toggle('on', f.dataset.fam === id)); document.querySelectorAll('#vzLooks .vz-groups [data-grp]').forEach(b => { const on = b.dataset.grp === id; b.classList.toggle('on', on); b.setAttribute('aria-selected', String(on)); }); }
 /** the strip follows the look: its group, and a line saying what it shows */
-function vzStripSync() { vzGroupShow(vzFamOf(VZ.mode, true)); const c = document.getElementById('vzCap'); if (c) c.textContent = (VSAY[VZ.mode] || '') + (VLOOK[VZ.mode] ? ' · options in Settings' : ''); }
+function vzStripSync() { vzGroupShow(vzFamOf(VZ.mode, true)); const c = document.getElementById('vzCap'); if (c) c.textContent = (VSAY[VZ.mode] || '') + (lookHasOpts(VZ.mode) ? ' · options in Settings' : ''); }
 
 
 /* ---------- the reshapeable lattice (Hex Resonance with the dials) ---------- */

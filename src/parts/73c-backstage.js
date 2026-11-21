@@ -21,17 +21,6 @@ const BKS_ROOMS = ['pass', 'engine', 'perf', 'storage', 'bus', 'terminal', 'labs
 const BKS_PAGES = [['', 'The lobby', 'Your pass, the rooms, and this build at a glance.'], ['source/', 'Source map', 'Every part of the page: what it does, how big it is, and its source.'], ['data/', 'Your data, raw', 'What this browser keeps for the studio, read straight from storage.'], ['api/', 'Console and agent API', 'window.dailyStudio, WebMCP, the tools, and this shell.'], ['changelog/', 'How it was built', 'Every release, as a timeline.']];
 const bksBase = () => location.origin + location.pathname.replace(/[^/]*$/, '') + 'backstage/';
 
-/** this browser's pass: a number of its own, the day and the build it was issued on */
-function bksPass() { if (!CFG.bksPass || !CFG.bksPass.n) { CFG.bksPass = { n: 1000 + Math.floor(Math.random() * 9000), at: Date.now(), build: BUILD }; saveCfg(); } return CFG.bksPass; }
-/** the door. Guest list only: the password is this page's build. Called as dailyStudio.backstage() from the console */
-function backstage(word) {
-  if (CFG.backstage) { const p = bksPass(); setTimeout(() => backstageOpen(), 30); return '🎭 Welcome back, pass #' + p.n + '. Backstage is open.'; }
-  if (word == null || word === '') return '🎟 Backstage is guest list only. The password is the build you are running: it is in the bottom-right corner of the studio (and in dailyStudio.describe().build). Then:  dailyStudio.backstage(\'<build>\')';
-  if (String(word).trim().toLowerCase() !== String(BUILD).toLowerCase()) { BKS.tries++; return '🚪 Not on the list. ' + (BKS.tries > 2 ? 'Psst: seven characters, after “build” in the bottom-right corner.' : 'Look again: the bottom-right corner.'); }
-  CFG.backstage = true; const p = bksPass(); saveCfg(); secretFound('backstage', true); if (typeof bksSync === 'function') bksSync(); setTimeout(() => backstageOpen(), 30);
-  return '🎭 You are on the list. All-access pass #' + p.n + ' issued to this browser. Come on in. ' + secretCount() + '  Backstage now comes with you: studio.help() here in the console, Ctrl/⌘ K for the palette, Ctrl + ` for the terminal. Settings ▸ Backstage turns it on and off.';
-}
-
 /* ---------- the event bus, tapped (only while Backstage is open, or the Labs log is on) ---------- */
 const BKS_EMIT = bus.emit;
 bus.emit = function (e, ...a) { if (BKS.on || CFG.labs.buslog) bksTap(e, a); return BKS_EMIT.call(this, e, ...a); };
@@ -273,23 +262,3 @@ function backstageOpen(at) {
   return d;
 }
 
-/* ---------- other ways in: the address (#backstage, #backstage/<room>) and ↑↑↓↓←→←→BA ---------- */
-function bksFromHash() {
-  const m = /^#backstage(?:\/([\w-]+))?$/.exec(location.hash || ''); if (!m) return false;
-  try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { }
-  BKS.want = m[1] && BKS_ROOMS.includes(m[1]) ? m[1] : null;
-  const go = () => { const w = BKS.want; if (w === undefined) return; BKS.want = undefined; if (CFG.backstage) backstageOpen(w || undefined); else toast('🎟 Backstage is guest list only. The door is in the browser console.', ''); };
-  if (document.getElementById('boot')) bus.on('booted', () => setTimeout(go, 400)); else setTimeout(go, 600);
-  return true;
-}
-/** part 10 calls this at start-up */
-function bksBoot() { if (CFG.labs.perf) bksOverlay(); bksFromHash(); }
-window.addEventListener('hashchange', () => { bksFromHash(); });
-const BKS_KONAMI = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
-document.addEventListener('keydown', e => {
-  const t = e.target; if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) { BKS.k = 0; return; }
-  const key = e.key && e.key.length === 1 ? e.key.toLowerCase() : e.key, near = BKS.k >= 8;
-  BKS.k = key === BKS_KONAMI[BKS.k] ? BKS.k + 1 : key === BKS_KONAMI[0] ? 1 : 0;
-  if (near && (key === 'b' || key === 'a')) { e.preventDefault(); e.stopPropagation(); }      /* B and A finish the code here, not the bass and the rest */
-  if (BKS.k === BKS_KONAMI.length) { BKS.k = 0; if (CFG.backstage) backstageOpen('terminal'); else toast('🎟 Nice moves. Backstage is guest list only, and the door is in the browser console.', ''); }
-}, true);

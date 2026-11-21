@@ -10,7 +10,6 @@
    Everything shown is measured from the sound or counted from the pattern; the pictures say what they are. They read the harmony state of part 65
    and the options in part 09f, and draw wherever the visuals draw (the stage, full screen, videos).
    ============================================================ */
-VMODES.push(['spiral', 'Pitch Spiral'], ['rhythm', 'Rhythm Polygons'], ['overtones', 'Overtone Series']);
 const VLX = { sp: null, ot: new Float32Array(33), live: [] };
 const vlMtof = m => 440 * Math.pow(2, (m - 69) / 12), vlFtom = f => 69 + 12 * Math.log2(f / 440), vlMod = x => ((x % 12) + 12) % 12;
 const vlHue = pc => (vlMod(pc) * 30 + 205) % 360;                                   /* a smooth rainbow round the octave: one hue per note */

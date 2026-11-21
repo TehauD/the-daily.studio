@@ -5,7 +5,7 @@
 const { suite } = require('./lib.cjs');
 suite('e2e-spectral', async t => {
   const { ok, wait } = t, p = await t.open({ w: 1400, h: 860, debug: true }), ev = (f, a) => p.evaluate(f, a);
-  await ev(() => window.__daily.dockGo('vis')); await wait(900);
+  await ev(() => window.__daily.dockGo('vis')); await wait(900); await ev(() => window.__daily.room('worlds'));
   // ---- in the picker, with their options marked
   const P = await ev(() => { const q = f => [...document.querySelectorAll('#vzLooks .vz-fam[data-fam=' + f + '] [data-m]')].map(b => b.dataset.m), D = window.__daily; return { freq: q('sound'), time: q('more'), opt: [...document.querySelectorAll('#vzLooks .has-opts')].map(b => b.dataset.m).sort().join(), ids: Object.keys(D.VLOOK).sort().join() }; });
   ok(P.freq.slice(0, 2).join() === 'hex,spiral' && P.time.includes('overtones') && P.time.includes('rhythm'), 'Pitch Spiral is in Sound (a look you kept); Overtone Series and Rhythm Polygons are in More looks (' + P.freq.slice(0, 2) + ' / ' + P.time.length + ' more)');

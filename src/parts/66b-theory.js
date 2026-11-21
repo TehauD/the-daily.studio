@@ -11,7 +11,7 @@
    Both read the harmony state in part 65 and draw on the visuals canvas, so they also work in the stage designer and full screen. Neither
    decides anything for you: "likely next" is a count of what has already happened here, and says so.
    ============================================================ */
-VMODES.push(['wheel', 'Harmonic Wheel'], ['tonnetz', 'Tonnetz']); HM_MODES.add('wheel'); HM_MODES.add('tonnetz');
+HM_MODES.add('wheel'); HM_MODES.add('tonnetz');
 const THX = { trans: new Map(), last: null, from: null, to: null, moveT: -99, song: new Set(), seed: null, hist: [], cam: null, cent: null, base: null };
 const thFif = pc => ((pc % 12) * 7 + 84) % 12;                           /* a note's place on the circle of fifths (C = 0 at the top, G = 1, D = 2 ...) */
 const thMinorOf = ch => !!ch && ch.iv.includes(3) && !ch.iv.includes(4);   /* minor and diminished chords sit on the inner ring */

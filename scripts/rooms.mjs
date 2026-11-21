@@ -19,7 +19,9 @@ export const ROOMS = {
   midi: ['47-midi-import.js'],       /* opening a .mid file */
   shower: ['73f-shower.js'],         /* Shower mode (Backstage) */
   tune: ['90-tune.js'],              /* vocal tuning (2.43): loaded when a take is first tuned */
-  print: ['93-soundprint.js']        /* Soundprint (2.61): loaded when it is first opened */
+  print: ['93-soundprint.js'],       /* Soundprint (2.61): loaded when it is first opened */
+  backstage: ['73c-backstage.js', '73d-backstage-everywhere.js'],      /* Backstage (2.85): loaded when you knock, open it, or start the studio already on the list; the door stays in part 73a */
+  worlds: ['66b-theory.js', '66c-spectral.js', '66d-plates.js', '66e-neural-looks.js', '66f-voiceleading.js']      /* the music-theory, spectral, plate and network looks (2.85): loaded when one is first chosen */
 };
 export const roomParts = new Set(Object.values(ROOMS).flat());
 

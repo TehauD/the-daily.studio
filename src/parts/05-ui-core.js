@@ -151,7 +151,7 @@ function openSettings(at) {
       F('Backing track when a song opens', sel('trackRestore', [['auto', 'Restore it automatically'], ['tap', 'Wait until I tap Restore']])),
       note('Songs and recordings are kept in this browser (My songs). Stems are separated again when a song with a track opens; the song itself opens instantly.'),
       h('div', { class: 'hub-acts' }, h('button', { class: 'btn', onclick: () => { close(); libraryOpen(); } }, '☰ My songs'), h('button', { class: 'btn', onclick: () => { close(); progressOpen(); } }, '📈 My progress'), h('button', { class: 'btn', onclick: () => download('daily-songs-settings.json', JSON.stringify(CFG, null, 2), 'application/json') }, 'Export settings JSON'), h('button', { class: 'btn bad', title: 'Choose what to erase: layout, settings, songs, offline copy…', onclick: () => { close(); resetOpen(); } }, 'Reset…'))] },
-    CFG.backstage ? { key: 'backstage', label: 'Backstage', ico: '🎭', sub: 'You are on the list. Backstage comes with you: the command palette, the terminal and the console toolkit. Switch any of it off here.', wide: true, body: () => [bksSettings()] } : null,
+    CFG.backstage ? { key: 'backstage', label: 'Backstage', ico: '🎭', sub: 'You are on the list. Backstage comes with you: the command palette, the terminal and the console toolkit. Switch any of it off here.', wide: true, body: () => [bksSettingsBox()] } : null,
   ] });
 }
 /** ? Help (part 05c's dialog) */

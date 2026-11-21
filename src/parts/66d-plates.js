@@ -7,7 +7,6 @@
                      lit, so you can see where you are in the song: for a take, a rehearsal or a video. Gold where it is in tune, warmer as it drifts.
    Each has its own options (Settings), reads the harmony state of part 65, and draws wherever the visuals draw.
    ============================================================ */
-VMODES.push(['chladni', 'Chladni Plate'], ['pitchtrace', 'Pitch Trace']);
 
 /* ---------- Chladni Plate ---------- */
 VLOOK.chladni = { title: 'Chladni Plate', opts: [
