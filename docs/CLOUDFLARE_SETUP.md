@@ -233,3 +233,31 @@ The honeypot (`worker/honeypot.mjs`, Part C above and SECURITY_MODEL.md "Scanner
 - **Storage:** about 3–4 MB per drop for 7 days, so a few hundred drops a week is still inside R2's free 10 GB.
 - **Plays:** served from the bucket's own address through Cloudflare's cache, so they don't count as Worker requests, and R2 doesn't charge for downloads.
 - **The list:** one Worker request per page view, cached for a minute.
+
+## Part J: Scan guard, a rotating block list for scanners (optional, tooling)
+
+`scripts/scan-guard.mjs` is a small command-line tool, not part of the site or the Worker. It watches Cloudflare's own request analytics for scanners and keeps the worst ones blocked in a few custom-rule **slots**, one IP per rule, reusing the slots as scanners come and go. It is for when the plan only allows a handful of custom rules (the free plan allows 5), so a block list has to rotate.
+
+**How it recognises a scanner:** by *what* an address asks for, not how much. Each address's refused (4xx) requests in the last 15 minutes are scored by endpoint: a path on the honeypot list (`.env`, `.git`, `wp-login.php`, `phpmyadmin`…) is 5 points, another well-known probe kind (`cgi-bin`, `actuator`, a backup file, an admin panel) is 3, an ordinary missing path is 1 (up to 20). Each different path counts once, so a stale bookmark or one broken file asked for a thousand times never scores much, while an address that tries a dozen different well-known paths reaches the threshold of 20 in a single sweep. The report names the kinds it saw (`wordpress×2 secrets×3 git/svn×1`).
+
+**How the slots work:** the rule is the only state. Each one is named `scan-guard ip=… since=… seen=… score=… why=…`, and the tool never reads or changes a rule whose description does not start with `scan-guard` (so `honeypot-block` from Part C is safe).
+- A free slot takes a new scanner at once.
+- With all slots full, a new scanner takes over the **quietest** blocked one, but only if that block is at least 10 minutes old (no thrashing). If every slot holds a scanner that is still active, the newcomer waits, unless it scores at least 1.5× the holder.
+- A blocked address that asks for nothing for an hour is released, so a reassigned address is not blocked forever (unlike the Part I IP Access Rules).
+- More than 5 scanners at once will let a sixth through for a while; the tool is meant to slow a sweep down, not to be a complete wall. Cloudflare's managed rules, the rate limit and the Part I auto-block are all still doing their own work beside it.
+
+**Set it up (dry run first):**
+1. **A scoped token** (My Profile ▸ API Tokens ▸ Create Custom Token): **Zone ▸ Zone WAF ▸ Edit** and **Zone ▸ Analytics ▸ Read**, this one zone only. Use a different token from Part I's.
+2. **Slots:** the free plan's 5 custom rules include `honeypot-block` if you made it in Part C. Either run with `--slots 4`, or leave 5 if you did not.
+3. **Try it, it writes nothing.** Put the two values in your shell first (so the token does not end up on a command line in your history):
+   ```bash
+   read -rs CF_API_TOKEN && export CF_API_TOKEN CF_ZONE_ID=<the zone id> SCAN_GUARD_ALLOW=<your.ip,another.ip>
+   ```
+   ```bash
+   node scripts/scan-guard.mjs
+   ```
+   It prints how many addresses had refused requests, the highest scores and what it *would* do. `SCAN_GUARD_ALLOW` keeps your own address from ever being blocked.
+4. **Turn it on:** add `--apply`. Add `--watch 60` to keep it running and checking every minute, or run it from cron / a scheduled task every 5 minutes.
+5. **Check:** *Security ▸ WAF ▸ Custom rules* shows the `scan-guard …` rules; the description says what each address tried.
+
+**What it can and cannot see:** only web requests that pass through Cloudflare. It will not see raw port scans against other services, and IPv6 scanners are blocked by their /64 (one host is usually given a whole /64). Tests: `npm run test:scanguard` (no network).

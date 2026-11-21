@@ -6,7 +6,7 @@ import { markSvg } from './brand-mark.mjs';
 
 export const SITE = {
   /* 2.78: Tehau is the public name (the brand); Tehau DeBarthe is the full name, kept as the alternate so search engines can join the two */
-  origin: 'https://the-daily.studio', name: 'the-daily.studio', author: 'Tehau', authorAlt: 'Tehau DeBarthe', authorUrl: 'https://the-daily.studio/guide/about/',
+  origin: 'https://the-daily.studio', name: 'the-daily.studio', author: 'Tehau', authorAlt: 'Tehau DeBarthe', authorUrl: 'https://the-daily.studio/guide/about/', bingVerify: 'CB179DEC17807E665F98BAD3C935BE45',
   /* the author's own profiles, so search engines know the site and these are one person (2.53; Instagram and the journal 2.78) */
   profiles: ['https://github.com/TehauD', 'https://www.linkedin.com/in/tehau/', 'https://www.instagram.com/tehaud/', 'https://journal.the-daily.studio/'],
   repo: 'https://github.com/TehauD/the-daily.studio', card: 'https://the-daily.studio/icons/social-card.png',

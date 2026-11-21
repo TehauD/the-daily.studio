@@ -52,7 +52,7 @@ ok(/"binding":\s*"SHARES"/.test(wr), 'the Worker has its bucket for shared recor
 ok(/"\/share\/\*"/.test(wr) && /\(journal\|api\|auth\|share\)/.test(rd('sw.js')), 'shared recordings (2.54) go through the Worker, and the service worker never caches them'); ok(/"workers_dev":\s*false/.test(wr) && /"preview_urls":\s*false/.test(wr), 'the site is served only at its own addresses: no workers.dev copy, no preview addresses');
 ok(!/document\.cookie/.test(rd('index.html')) && !/document\.cookie/.test(j), 'neither the studio nor The Daily uses cookies, so nothing is shared between their two addresses');
 ok(!/\/journal\//.test(rd('sitemap.xml')), 'the sitemap no longer lists /journal/ (The Daily has its own address)');
-ok(statSync(join(d, 'index.html')).size < 2_100_000, 'index.html is under 2.1 MB');
+ok(statSync(join(d, 'index.html')).size < 2_200_000, 'index.html is under 2.2 MB');      /* 2.83: raised from 2.1 MB for the Voice-Leading Web and the Neural looks (2.82). Moving the visual worlds into rooms would win it back. */
 { /* what a visitor downloads: the page travels compressed, so this is the number that sets the first load. Raise it on purpose, not by drift. */
   const gz = gzipSync(readFileSync(join(d, 'index.html')), { level: 9 }).length;
   /* 2.37.0 crossed 700 kB and raised this to 750; 2.37.1 dropped the line breaks the minifier can safely drop and came back under, so 700 again.
@@ -85,6 +85,7 @@ const bodyOf = h => h.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>
     ok(t.replace(/&amp;/g, '&') === 'the-daily.studio — Free Guitar & Voice Studio by Tehau', 'first page: the title names the creator: ' + t);
     ok(/<p class="boot-made">Made by <a href="guide\/about\/"[^>]*>Tehau<\/a>\./.test(html) && /independent creator building tools that make music more accessible/.test(bodyOf(html)), 'first page: a crawlable "Made by Tehau." line links to the About page');
     ok(/<meta name="author" content="Tehau">/.test(html) && html.includes('<link rel="author" href="' + SITE.authorUrl + '">'), 'first page: the author is Tehau, with a link to the About page'); }
+  ok(html.includes('<meta name="msvalidate.01" content="' + SITE.bingVerify + '">'), 'first page: carries the Bing Webmaster Tools verification tag');
   ok(PAGES.filter(p => !p.unlisted).every(p => html.includes('href="guide/' + (p.slug === 'guide' ? '' : p.slug + '/') + '"')), 'first page: links to every listed guide page (crawlable)');
   ok(PAGES.filter(p => p.unlisted).every(p => !new RegExp('href="[^"]*guide/' + p.slug).test(html)) && html.includes('<link rel="alternate" type="text/plain" href="llms.txt"'), 'first page: the page for AI assistants is not linked anywhere a person looks; the head points assistants to llms.txt');
   ok(/<noscript>[\s\S]*guide\/[\s\S]*<\/noscript>/.test(html), 'first page: the no-JavaScript text carries the guide links');
