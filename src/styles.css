@@ -1912,3 +1912,22 @@ body:not([data-form=phone]) #center.tl-slim .split-h .et-arr{right:auto;left:50%
 .tkc-s{background:color-mix(in srgb,var(--accent,#8cf) 22%,transparent)}
 .hrs-card{border:1px solid var(--line,#8884);border-radius:10px;padding:10px 12px;margin:0 0 8px}
 .hrs-why summary{cursor:pointer}
+/* ---- 2.77: the Visual Instrument (part 09f): worlds in five families, and the design drawer ---- */
+.vz-bar .vz-design{display:none;flex-basis:100%;order:10;flex-direction:column;gap:10px;padding:12px 14px;border:1px solid var(--line2);border-radius:12px;background:var(--panel)}
+.vz-bar.design-open .vz-design{display:flex}.vz-bar.design-open .vz-looks{display:none}
+.vz-design-btn{font-weight:800}.vz-design-btn.on,.vz-design-btn[aria-expanded=true]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.vz-worlds{flex-direction:column;align-items:stretch;gap:10px;padding:12px 14px;border:1px solid var(--line2);border-radius:12px;background:var(--panel)}
+.vz-fams{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px 18px;width:100%}
+.vz-fam h6{margin:0 0 2px;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent)}.vz-fam p{margin:0 0 6px;line-height:1.4}
+.vz-fam .seg{display:flex;flex-wrap:wrap;gap:5px;border:0;background:none;overflow:visible}
+.vz-fam .seg button{border:1px solid var(--line2);border-radius:999px;padding:4px 11px;background:var(--panel2)}.vz-fam .seg button:last-child{border:1px solid var(--line2)}
+.vz-fam .seg button.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+body.simple:not(.vz-all) .vz-fam:not(:has([data-core])):not(:has(.on)){display:none}
+.vd-tabs{align-self:flex-start;max-width:100%;overflow-x:auto}
+.vd-body{display:grid;gap:9px}
+.vd-row{display:grid;grid-template-columns:170px 1fr 56px;align-items:center;gap:10px}.vd-row>.seg{grid-column:2/4;justify-self:start;flex-wrap:wrap}
+.vd-row input[type=range]{width:100%;min-width:0}.vd-l{font-size:12px;font-weight:700}.vd-v{text-align:right}
+.vd-note{padding:8px 10px;border:1px dashed var(--line2);border-radius:8px}
+.vd-pres{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:6px}.vd-pre{display:flex;align-items:center;gap:8px}
+#vzDesign .hx-pal{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+@media (max-width:640px){.vd-row{grid-template-columns:1fr 56px}.vd-row .vd-l{grid-column:1/3}.vd-row input[type=range]{grid-column:1}.vd-row>.seg{grid-column:1/3}}
