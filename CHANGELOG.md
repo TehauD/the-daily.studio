@@ -2,6 +2,21 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.79.0 — 2026-11-21 — The circle of fifths, made a world
+
+The circle of fifths is now the second pillar of the Visuals, after the hexagon field: two new looks made of music theory, and the Neural Map's circle of fifths fixed.
+
+### Added
+- **Harmonic Wheel**, the circle of fifths as a live network. Twelve keys round the rim (major chords outside, their relative minors inside), the key you are in lit as a band, the chords of the open song as nodes, and every change of chord, from the song or from your playing, drawn as a curve from one chord to the next: the more often, the brighter. The sounding chord glows; the notes sounding now are bars on the rim at their place on the circle; your voice is a ring on its note; the middle names the chord, the key and, from what has happened so far in this song and this session, the chord likely to come next (labelled as a count, not a prediction). In Simple it sits beside Hex Resonance.
+- **Tonnetz**, the lattice of music theory: a fifth along one direction, a major third along another, a minor third along the third; every triangle is a major or minor chord. The view follows the chord, the triangle for each chord is the one nearest the last, so the line the song draws across the lattice shows how little each chord moves (Am to C shares an edge), and the key's own chords are a faint patchwork behind it.
+- Both are in the **Harmony** family, first in the list, with the Neural Map moved there from You; both honour Calm, Speed and Zoom, and Finish (glow, trails, mirror).
+
+### Fixed
+- **Neural Map ▸ Fifths.** The ring was drawn about 55 px wide in a large canvas, seen from a shallow angle so it read as a smear, with the Function, Form and Key labels stacked on one another and the notes corkscrewing off their own spoke. Now the layout is drawn larger so the ring fills the canvas, tips to look down on it (until you orbit it yourself; double-click resets), the Function, Form and Key nodes have their own room, and a note stays near its spoke.
+
+### Tests
+- `test/e2e-theory.cjs` (13 checks): the wheel counts the progression and names the likely next chord; the Tonnetz finds each chord's triangle with its quality and moves the smallest step; the Fifths layout is larger and tips down; the family order.
+
 ## 2.78.1 — 2026-11-21 — The Visual Instrument on a phone
 
 ### Fixed

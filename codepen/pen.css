@@ -1745,7 +1745,7 @@ body[data-form=phone] .bl-dot{width:34px;height:34px}
 .vz-bar.looks-open .vz-looks{display:flex;order:10}.vz-bar.more-open .vz-sec{display:flex;order:11}
 .vz-look{font-weight:800}.vz-look[aria-expanded=true]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .vz-morebtn{color:var(--muted);font-weight:800}.vz-morebtn[aria-expanded=true]{color:var(--text)}
-body.simple:not(.vz-all) #pane-vis .seg [data-m]:not([data-m=hex]):not([data-m=concert]):not([data-m=bloom]):not([data-m=prompter]):not(.on){display:none}
+body.simple:not(.vz-all) #pane-vis .seg [data-m]:not([data-m=hex]):not([data-m=wheel]):not([data-m=concert]):not([data-m=bloom]):not([data-m=prompter]):not(.on){display:none}
 /* ---- 2.48: the song map (part 63b) and Write's Whole song ---- */
 .smap{display:flex;gap:3px;min-width:0;width:100%;align-items:stretch}
 .smap-b{position:relative;flex:1 1 0;min-width:28px;height:26px;border:0;border-radius:6px;padding:0 6px;background:hsl(var(--sh) 45% 50% / .22);color:var(--text);font:700 11px var(--sans);cursor:pointer;overflow:hidden;text-align:left;box-shadow:inset 0 0 0 1px hsl(var(--sh) 45% 50% / .45)}
