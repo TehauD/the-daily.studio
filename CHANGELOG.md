@@ -2,6 +2,19 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.82.0 — 2026-11-21 — The Neural Map, with dials
+
+The Neural Map is one of the favourite looks, and in the Visuals it had one control (Glow). It now has its own Settings, and three more looks run on the same learning network.
+
+### Added
+- **Neural Map settings** (Visuals ▸ Settings), in six small groups. **View**: layout (Layers, Fifths, Web) and what colours it (note, time, section, loudness, octave, chord quality). **Layers**: the spectrum, the notes, and function · form · key can each be taken away, leaving only the chords if you like. **Show**: connections, learned paths, light pulses, the notes you play, the note trail, labels, next-chord rings, floor glow, and chords not heard yet. **Size**: nodes, lines and text. **Camera**: turn, angle, sway, zoom, depth (perspective) and **Follow the chord**, which slides the picture so the chord that is playing stays in the middle. **Memory**: how many of the notes you played stay on screen (a few shows the recent past, all of them draws the whole performance), plus **Pre-train** and **Forget**.
+- **Three looks on the same network** (Harmony): **Fifths Tower** (the circle of fifths standing up: chords on their note's spoke, taller as they get more tense, coloured by quality), **Chord Web** (only the chords, pulled together by the paths the song really takes) and **Song Journey** (a spiral staircase round the circle of fifths: each note you play climbs a step, coloured by time, the camera following the chord). Each starts differently and keeps its own settings; they draw the same network, so what one has learned the others show.
+- A heading and a button type for looks with many dials (a small group title; an action such as Pre-train).
+
+### Changed
+- The Neural pane (the tab) is untouched: the look's settings are laid over the network for the one frame it is drawn and put back. Pre-train and Forget are one function used by both.
+- The four looks are drawn without the small neck and text overlay, like the other looks in the library, which keeps the picture clean for a video.
+
 ## 2.81.0 — 2026-11-21 — The Visuals, reorganised
 
 The Visuals had grown to some thirty-five looks in a wall of pills, with controls that did not all apply to every look. They are now organised around what a look is for, and the controls follow the look.
