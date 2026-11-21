@@ -180,7 +180,7 @@ suite('e2e-journal', async t => {
     const bp = await q.evaluate(() => { const cv = document.getElementById('bootHex'); if (!cv) return null; const a = cv.getContext('2d').getImageData(2, 2, 4, 4).data; return [a[0], a[1], a[2]]; });
     ok(bp && test(bp), 'the start screen paints the hexagon colours you chose (' + tone + ': ' + (bp ? bp.join(',') : 'no canvas') + ')'); await q.ctx.close();
   }
-  ok(await hx.evaluate(() => getComputedStyle(document.getElementById('hexTone')).display === 'none'), 'the choice hides again on the other looks');
+  ok(await hx.evaluate(() => { const e = document.getElementById('hexTone'); return !e || getComputedStyle(e).display === 'none'; }), 'the swatches are not shown on the other looks (2.81: Settings shows only what applies)');
   ok(t.errs.length === 0, 'no errors in the hexagon choice (' + t.errs.length + ')');
   // ---- on a phone the card is compact (2.80.1): short facts are tiles, the rest one line each, and the button to carry on stays high on the screen
   { const dk = n => { const d = new Date(Date.now() - n * 864e5); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }, J2 = JSON.parse(JSON.stringify(H.J)); J2.days[dk(0)] = { t: 600, s: 1, i: 0 }; J2.days[dk(1)] = { t: 600, s: 1, i: 0 };    /* someone who played yesterday and today */
