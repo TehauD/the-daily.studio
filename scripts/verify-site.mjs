@@ -85,6 +85,7 @@ const bodyOf = h => h.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>
     ok(t.replace(/&amp;/g, '&') === 'the-daily.studio — Free Guitar & Voice Studio by Tehau', 'first page: the title names the creator: ' + t);
     ok(/<p class="boot-made">Made by <a href="guide\/about\/"[^>]*>Tehau<\/a>\./.test(html) && /independent creator building tools that make music more accessible/.test(bodyOf(html)), 'first page: a crawlable "Made by Tehau." line links to the About page');
     ok(/<meta name="author" content="Tehau">/.test(html) && html.includes('<link rel="author" href="' + SITE.authorUrl + '">'), 'first page: the author is Tehau, with a link to the About page'); }
+  ok(html.includes('<meta name="msvalidate.01" content="' + SITE.bingVerify + '">'), 'first page: carries the Bing Webmaster Tools verification tag');
   ok(PAGES.filter(p => !p.unlisted).every(p => html.includes('href="guide/' + (p.slug === 'guide' ? '' : p.slug + '/') + '"')), 'first page: links to every listed guide page (crawlable)');
   ok(PAGES.filter(p => p.unlisted).every(p => !new RegExp('href="[^"]*guide/' + p.slug).test(html)) && html.includes('<link rel="alternate" type="text/plain" href="llms.txt"'), 'first page: the page for AI assistants is not linked anywhere a person looks; the head points assistants to llms.txt');
   ok(/<noscript>[\s\S]*guide\/[\s\S]*<\/noscript>/.test(html), 'first page: the no-JavaScript text carries the guide links');

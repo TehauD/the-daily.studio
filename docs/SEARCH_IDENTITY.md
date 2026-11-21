@@ -11,6 +11,10 @@ How the site says who made it, what to do after a deploy, and the words for the 
 - **The picture.** The JSON-LD `image` is the GitHub URL as requested. If you would rather not depend on GitHub for it, set `PERSON.image` to `PERSON.photoUrl` in `scripts/seo-pages.mjs` (same picture, your own domain).
 - `scripts/verify-site.mjs` fails the release if any of this drifts (one Person, the right `@id`, names, `sameAs`, titles, canonical URLs, the picture, the links).
 
+## Bing Webmaster Tools
+
+The first page carries `<meta name="msvalidate.01" content="CB179DEC…">` (the value is `SITE.bingVerify` in `scripts/seo-pages.mjs`; `verify-site` checks it is in the built page). After you deploy, press **Verify** in Bing Webmaster Tools, then submit `https://the-daily.studio/sitemap.xml`.
+
 ## After you deploy: Google Search Console
 
 1. Add a **Domain property** for `the-daily.studio` (DNS TXT record in Cloudflare). It covers `journal.the-daily.studio` too.
