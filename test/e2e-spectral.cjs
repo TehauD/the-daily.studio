@@ -7,9 +7,9 @@ suite('e2e-spectral', async t => {
   const { ok, wait } = t, p = await t.open({ w: 1400, h: 860, debug: true }), ev = (f, a) => p.evaluate(f, a);
   await ev(() => window.__daily.dockGo('vis')); await wait(900);
   // ---- in the picker, with their options marked
-  const P = await ev(() => { const q = f => [...document.querySelectorAll('#vzLooks .vz-fam[data-fam=' + f + '] [data-m]')].map(b => b.dataset.m), D = window.__daily; return { freq: q('freq'), time: q('time'), opt: [...document.querySelectorAll('#vzLooks .has-opts')].map(b => b.dataset.m).sort().join(), ids: Object.keys(D.VLOOK).sort().join() }; });
-  ok(P.freq.slice(0, 3).join() === 'hex,spiral,overtones' && P.time[0] === 'rhythm', 'Pitch Spiral and Overtone Series are in Frequency, Rhythm Polygons leads Time (' + P.freq.slice(0, 3) + ' / ' + P.time[0] + ')');
-  ok(P.opt === 'overtones,rhythm,spiral', 'the worlds with their own options are marked in the picker (' + P.opt + ')');
+  const P = await ev(() => { const q = f => [...document.querySelectorAll('#vzLooks .vz-fam[data-fam=' + f + '] [data-m]')].map(b => b.dataset.m), D = window.__daily; return { freq: q('sound'), time: q('more'), opt: [...document.querySelectorAll('#vzLooks .has-opts')].map(b => b.dataset.m).sort().join(), ids: Object.keys(D.VLOOK).sort().join() }; });
+  ok(P.freq.slice(0, 2).join() === 'hex,spiral' && P.time.includes('overtones') && P.time.includes('rhythm'), 'Pitch Spiral is in Sound (a look you kept); Overtone Series and Rhythm Polygons are in More looks (' + P.freq.slice(0, 2) + ' / ' + P.time.length + ' more)');
+  ok(P.opt === 'chladni,overtones,pitchtrace,rhythm,spiral', 'the worlds with their own options are marked in the picker (' + P.opt + ')');
   // ---- the harmonics of a note are measured
   const H = await ev(() => { const D = window.__daily, bh = 44100 / 2048, fd = new Float32Array(1024).fill(-Infinity), put = (f, db) => { const b = f / bh; for (let i = Math.round(b) - 3; i <= Math.round(b) + 3; i++) fd[i] = Math.max(fd[i], db - 7 * (i - b) * (i - b)); }, f0 = 220,   /* a peak is a smooth lobe, as an analyser's window makes it */ cents = k => Math.pow(2, (k === 5 ? 30 : 0) / 1200);
     for (let k = 1; k <= 8; k++) put(f0 * k * cents(k), -20 - 6 * (k - 1)); const lvl = x => Math.max(0, Math.min(1, (x + 88) / 62)), hs = D.vlHarmonics(fd, bh, f0, 8, lvl);
@@ -38,7 +38,7 @@ suite('e2e-spectral', async t => {
   ok(D2.kickTop[0] > 150 && D2.kickTop[2] < 140, 'the kick on step 0 is a lit node at the top of its ring (' + D2.kickTop + ')');
   ok(D2.live[0] > 180 && D2.live[0] > D2.live[2] + 80, 'a hit 0.45 of a step late is drawn orange on the outer ring (' + D2.live + ')');
   // ---- the options: shown, changed, kept in a design, cleared
-  await ev(() => { const D = window.__daily; D.vzSetMode('overtones', true); D.CFG.vo = {}; D.vzDesignOpen(true, 'world'); }); await wait(400);
+  await ev(() => { const D = window.__daily; D.vzSetMode('overtones', true); D.CFG.vo = {}; D.vzDesignOpen(true); }); await wait(400);
   const O = await ev(() => ({ ids: [...document.querySelectorAll('#vdOpts [data-vo]')].map(e => e.dataset.vo).filter((v, i, a) => a.indexOf(v) === i).join(), n: document.querySelectorAll('#vdOpts .vd-row').length }));
   ok(O.ids === 'view,count,scale,labels,cents,hold' && O.n === 6, 'Design ▸ This world shows the world’s own dials (' + O.ids + ')');
   await p.click('#vdOpts [data-vo=view][data-v=bars]'); await wait(150);

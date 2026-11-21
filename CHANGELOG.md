@@ -2,6 +2,22 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.81.0 — 2026-11-21 — The Visuals, reorganised
+
+The Visuals had grown to some thirty-five looks in a wall of pills, with controls that did not all apply to every look. They are now organised around what a look is for, and the controls follow the look.
+
+### Changed
+- **The looks are a strip of four groups.** **Sound** (Hex Resonance, Pitch Spiral, Cymatics, Chladni Plate, Beat Grid), **Harmony** (Harmonic Wheel, Tonnetz, Neural Map, Fifths Halo, Prism, Mood Colour), **Atmosphere** (Aurora, Nebula, Arena, Your video) and **Performance** (Concert, Prompter, Voice & Guitar, Improv Field, Pitch Trace): one row of tabs and one row of looks, a line under them saying what the selected look shows, and the strip follows the look you are on. The other seventeen looks are not removed: they are under **More looks**. On a phone the looks are one scrolling row.
+- **Settings is one panel that shows only what applies to the look.** The six tabs are gone. The hexagon field has its own sections (Cells, How it listens, Colour); a look with options shows them first; **Frame** (glow, trails, mirror, speed, zoom) and **Listens to** (source) appear only where they suit the look: a prompter has only Glow, a Pitch Trace is never mirrored. A setting that does not apply to a look is also not applied to it (a mirror set on the hexagons does not fold the prompter). On a computer the panel floats over the right of the picture, so the picture keeps its size while you tune it; on a phone it opens under a smaller picture.
+- **★ Saved** is a menu of saved looks (a look and its settings): twelve starting points, all using looks you kept, and your own. It replaces the Designs tab, and switching looks is one click while you record.
+
+### Added
+- **Chladni Plate** (Sound). A square plate that sings: the note you sing or play picks one of its 36 vibration patterns (a higher note, a finer pattern), and sand jitters where the plate moves and sticks where it is still, so it collects on the nodal lines the formula cos(nπx)cos(mπy) − cos(mπx)cos(nπy) draws; loud shakes it, quiet lets it settle. Options: what the pattern follows (the note, the chord root, a mode you choose), style (sand, glowing lines, both), grains, shake, colour.
+- **Pitch Trace** (Performance). Your voice, and your lead guitar, as a line scrolling across the notes of the key, with the chord's notes lit: gold where you are in tune, warmer as you drift, with the note and its cents at the head. For a take, a rehearsal or a video. Options: seconds shown, range (follows you or two fixed octaves), chord notes, tuning, lead guitar.
+
+### Tests
+- `test/e2e-plates.cjs` (10 checks): the plate's patterns and nodal lines, a higher note picking a finer pattern, sand collecting on the lines (mean distance from a line 0.61 to 0.00), a held voice drawn gold and one 45 cents sharp drawn warmer. `e2e-design`, `e2e-spectral`, `e2e-theory` and `e2e-vz-adjust` were updated to the new strip and panel.
+
 ## 2.80.1 — 2026-11-21 — A compact Welcome Back
 
 ### Changed

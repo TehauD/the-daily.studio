@@ -82,10 +82,10 @@ const VMODES = [['hex', 'Hex Resonance'], ['spectro', 'Spectrogram'], ['chroma',
 const VZ_MONITOR = new Set(['spectro', 'chroma', 'scope']);
 const vzLookName = () => (VMODES.find(m => m[0] === VZ.mode) || (typeof VBACK !== 'undefined' && VBACK.find(m => m[0] === VZ.mode)) || [0, 'Look'])[1];
 /** the looks picker under the Look button (open: true/false, or toggle) */
-function vzLooksOpen(open) { const bar = document.querySelector('#pane-vis .vz-bar'); if (!bar) return; const on = bar.classList.toggle('looks-open', open == null ? undefined : !!open); if (on) { bar.classList.remove('design-open'); const db = document.getElementById('vzDesignBtn'); if (db) db.setAttribute('aria-expanded', 'false'); } const b = document.getElementById('vzLookBtn'); if (b) b.setAttribute('aria-expanded', String(on)); if (on && typeof vzPanelIntoView === 'function') vzPanelIntoView('vzLooks'); }
+function vzLooksOpen(open) { if (open && typeof vzGroupShow === 'function') vzGroupShow(vzFamOf(VZ.mode, true)); }   /* 2.81: the looks are a strip, always showing; this stays for callers */
 /** keep the Look button, the Concert lens row and ⋯ More in step with the look */
 function vzLookSync() {
-  const b = document.getElementById('vzLookBtn'); if (b) b.textContent = vzLookName() + ' ▾';
+  if (typeof vzStripSync === 'function') vzStripSync();
   const lr = document.getElementById('lxLensRow'); if (lr) lr.style.display = VZ.mode === 'concert' ? '' : 'none';
   const bar = document.querySelector('#pane-vis .vz-bar'); if (bar) bar.classList.toggle('more-open', !!CFG.vzMore);
   const m = document.getElementById('vzMore'); if (m) { m.setAttribute('aria-expanded', String(!!CFG.vzMore)); m.textContent = CFG.vzMore ? '‹ Less' : '⋯ More'; }
@@ -94,11 +94,9 @@ function buildVisPane() {
   const p = PANES.vis; p.classList.add('flex');
   /* 2.65: one row: the look (its picker opens under it), what the look itself offers, then Record, Go on stage and Stage mode;
      the rest (source, Auto look, camera, neck, pitch, speed, tip jar, show setup) are under ⋯ More */
-  const lookBtn = h('button', { class: 'btn sm vz-look', id: 'vzLookBtn', type: 'button', 'aria-expanded': 'false', title: 'Pick a world: what the picture shows you', onclick: () => vzLooksOpen() }, vzLookName() + ' ▾');
   const moreBtn = h('button', { class: 'btn sm vz-morebtn', id: 'vzMore', type: 'button', 'aria-expanded': String(!!CFG.vzMore), title: 'Source, Auto look, the camera, the neck and pitch, speed and size, the tip jar, Show setup', onclick: () => { CFG.vzMore = !CFG.vzMore; saveCfg(); vzLookSync(); } }, CFG.vzMore ? '‹ Less' : '⋯ More');
   const looks = vzWorlds();      /* 2.77: five families (part 09f) */
-  const designBtn = h('button', { class: 'btn sm vz-design-btn' + (vdChanged() ? ' on' : ''), id: 'vzDesignBtn', type: 'button', 'aria-expanded': 'false', title: 'Reshape the picture: the lattice, how it listens, glow, trails, mirror, colour, saved designs', onclick: () => vzDesignOpen() }, '🎛 Design'), design = vdDrawer();
-  looks.addEventListener('click', e => { if (e.target.closest('[data-m]')) vzLooksOpen(false); });
+  const designBtn = h('button', { class: 'btn sm vz-design-btn' + (vdChanged() ? ' on' : ''), id: 'vzDesignBtn', type: 'button', 'aria-expanded': 'false', title: 'Settings for this look: only what applies to it', onclick: () => vzDesignOpen() }, '⚙ Settings'), savedBtn = h('button', { class: 'btn sm', id: 'vzSavedBtn', type: 'button', title: 'Saved looks: switch quickly between looks you have set up, or save this one', onclick: e => vzSavedOpen(e.currentTarget) }, '★ Saved'), design = vdDrawer();
   const sec = h('div', { class: 'vz-sec', id: 'vzSec' },
     h('button', { class: 'btn sm' + (CFG.vzAuto ? ' on' : ''), id: 'vzAutoBtn', 'aria-pressed': String(!!CFG.vzAuto), title: 'Auto look: while the song plays, the look follows the section (verse calm, chorus wide, bridge strange)', onclick: e => { CFG.vzAuto = !CFG.vzAuto; saveCfg(); e.currentTarget.classList.toggle('on', !!CFG.vzAuto); e.currentTarget.setAttribute('aria-pressed', String(!!CFG.vzAuto)); toast('Auto look ' + (CFG.vzAuto ? 'on: the look follows the song’s sections' : 'off'), 'ok'); } }, '🎬 Auto look'),
     h('button', { class: 'btn sm' + (VZ.cam ? ' on' : ''), id: 'vzCamBtn', title: 'Put yourself center stage: turns the camera on behind the visuals', onclick: () => vzCamPress() }, '📷 Camera backdrop'), camFxBox(),
@@ -106,14 +104,14 @@ function buildVisPane() {
     h('button', { class: 'btn sm' + (CFG.vzRibbon ? ' on' : ''), id: 'vzRibbonBtn', 'aria-pressed': String(!!CFG.vzRibbon), title: 'Show your pitch on the visuals: the note you sing against the notes of the key and the chord that is playing', onclick: e => { CFG.vzRibbon = !CFG.vzRibbon; saveCfg(); e.currentTarget.classList.toggle('on', !!CFG.vzRibbon); e.currentTarget.setAttribute('aria-pressed', String(!!CFG.vzRibbon)); if (CFG.vzRibbon) voxReset(); } }, '〰 Pitch'),
     (typeof spatControl === 'function' ? spatControl() : ''), (typeof xrControl === 'function' ? xrControl() : ''), tipBtn(), sgdBarButton());
   const bar = h('div', { class: 'row vz-bar' + (CFG.vzMore ? ' more-open' : ''), style: { gap: '6px', marginBottom: '8px', flexWrap: 'wrap' } },
-    lookBtn, designBtn, looks, design, lxLensBar(),
+    looks, designBtn, savedBtn, lxLensBar(),
     h('span', { class: 'grow' }),
     h('button', { class: 'btn sm', id: 'vzRecBtn', 'data-srec': '1', title: 'Record the stage as a video with the song’s sound (saved on this device)', onclick: e => srecMenu(e.currentTarget) }, '⏺ Record'),
     h('button', { class: 'btn sm', id: 'vzGoStage', title: 'Full-screen visuals with the camera: you in front of the hexagons', onclick: () => goOnStage() }, '🎥 Go on stage'),
     h('button', { class: 'btn sm', onclick: () => { const w = UI.vwrap; (document.fullscreenElement ? document.exitFullscreen() : w.requestFullscreen && w.requestFullscreen()); } }, '⛶ Stage mode'),
-    moreBtn, sec);
+    moreBtn, sec, design);
   UI.vwrap = h('div', { class: 'vwrap', style: { flex: 1, minHeight: '320px' } }, UI.vcv = h('canvas', { class: 'vcanvas', style: { height: '100%', minHeight: '320px' } }));
-  p.append(bar, UI.vwrap); new ResizeObserver(() => { const d = (window.devicePixelRatio || 1) * (CFG.vq || 1), w = UI.vcv.clientWidth, hh = UI.vcv.clientHeight; if (w && (UI.vcv.width !== Math.floor(w * d) || UI.vcv.height !== Math.floor(hh * d))) { UI.vcv.width = Math.floor(w * d); UI.vcv.height = Math.floor(hh * d); VZ.spec = null; VZ.hexes = null; } }).observe(UI.vwrap);
+  p.append(bar, UI.vwrap); if (typeof vzStripSync === 'function') vzStripSync(); new ResizeObserver(() => { const d = (window.devicePixelRatio || 1) * (CFG.vq || 1), w = UI.vcv.clientWidth, hh = UI.vcv.clientHeight; if (w && (UI.vcv.width !== Math.floor(w * d) || UI.vcv.height !== Math.floor(hh * d))) { UI.vcv.width = Math.floor(w * d); UI.vcv.height = Math.floor(hh * d); VZ.spec = null; VZ.hexes = null; } }).observe(UI.vwrap);
   bus.on('onset', () => { VZ.pulses.push({ t: performance.now(), a: clamp((AN.rms + 50) / 40, .2, 1) }); if (VZ.pulses.length > 12) VZ.pulses.shift(); });
 }
 const vcol = () => { const cs = getComputedStyle(document.documentElement); return { a: cs.getPropertyValue('--accent').trim(), b: cs.getPropertyValue('--accent2').trim(), c: cs.getPropertyValue('--cv3').trim(), d: cs.getPropertyValue('--cv4').trim() }; };
@@ -136,7 +134,7 @@ function drawVis(cvo, o) {
   const energy = (() => { let s = 0, n = 0; for (let k = bin(80); k < bin(5000); k += 2) { s += lvl(fd[k]); n++; } return s / n; })();
   const pulse = VZ.pulses.reduce((a, p) => Math.max(a, (1 - (now - p.t) / 900) * p.a), 0);
   /* zoom (part 09e): the look is pushed in from the middle of the picture; size is applied by the looks made of tiles (drawHex, the pulse grid) */
-  const vk = vzZoom(), tf = vk !== 1, VW = W, VH = H;
+  const vk = vsCaps(MODE).zoom ? vzZoom() : 1, tf = vk !== 1, VW = W, VH = H;
   if (tf) { g.save(); g.translate(W / 2, H / 2); g.scale(vk, vk); g.translate(-W / 2, -H / 2); }
   try {
     if (MODE === 'hex') (!main || vdShapeDefault() ? drawHex : drawLattice)(g, VW, VH, fd, bh, lvl, C, pulse, HP || hexPal(true));
@@ -146,7 +144,7 @@ function drawVis(cvo, o) {
     else if (MODE === 'scope') drawScope(g, VW, VH, C);
     else if (typeof stageExtra === 'function') stageExtra(MODE, g, VW, VH, { fd, bin, lvl, C, pulse, energy, dt, o });
   } finally { if (tf) g.restore(); }
-  if (main && !o.noPost && vdPostOn()) vdPost(g, W, H, HEXL);   /* Finish (part 09f): glow, trails, mirror, on every world, under the camera */
+  if (main && !o.noPost && vdPostOn(MODE)) vdPost(g, W, H, HEXL, MODE);   /* Finish (part 09f): glow, trails, mirror, on every world, under the camera */
   if (camOn && main) camTop(g, W, H);
   if (MODE === 'halo' && main) haloFront(g);   // stage draws its own camera layer after trails and kaleidoscope
   if (main && !o.noNeck && CFG.vzNeck !== false && !document.body.classList.contains('perform-on') && !vzBare(MODE)) { const r = neckRect(W, H); drawMiniNeck(g, r[0], r[1], r[2], r[3], { C }); }
