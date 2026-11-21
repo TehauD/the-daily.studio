@@ -57,7 +57,7 @@ window.__dailyRoom = (id, make) => {
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.84.0', BUILD = 'bb6c708', PARTS_N = +'138' || 0, LINES_N = +'23261' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.84.0', BUILD = '6676794', PARTS_N = +'139' || 0, LINES_N = +'23279' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { ghApp: { clientId: 'Iv23liTjqEBQsgmGaE1Q', slug: 'tehaud-the-daily-studio' },   /* Sign in with GitHub: the GitHub App's public client id and its slug (docs/GITHUB.md); empty = only the token way */
   support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', instagram: 'https://www.instagram.com/tehaud/', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://journal.the-daily.studio/' };
@@ -1977,7 +1977,7 @@ function openSettings(at) {
       F('Backing track when a song opens', sel('trackRestore', [['auto', 'Restore it automatically'], ['tap', 'Wait until I tap Restore']])),
       note('Songs and recordings are kept in this browser (My songs). Stems are separated again when a song with a track opens; the song itself opens instantly.'),
       h('div', { class: 'hub-acts' }, h('button', { class: 'btn', onclick: () => { close(); libraryOpen(); } }, '☰ My songs'), h('button', { class: 'btn', onclick: () => { close(); progressOpen(); } }, '📈 My progress'), h('button', { class: 'btn', onclick: () => download('daily-songs-settings.json', JSON.stringify(CFG, null, 2), 'application/json') }, 'Export settings JSON'), h('button', { class: 'btn bad', title: 'Choose what to erase: layout, settings, songs, offline copy…', onclick: () => { close(); resetOpen(); } }, 'Reset…'))] },
-    CFG.backstage ? { key: 'backstage', label: 'Backstage', ico: '🎭', sub: 'You are on the list. Backstage comes with you: the command palette, the terminal and the console toolkit. Switch any of it off here.', wide: true, body: () => [bksSettings()] } : null,
+    CFG.backstage ? { key: 'backstage', label: 'Backstage', ico: '🎭', sub: 'You are on the list. Backstage comes with you: the command palette, the terminal and the console toolkit. Switch any of it off here.', wide: true, body: () => [bksSettingsBox()] } : null,
   ] });
 }
 /** ? Help (part 05c's dialog) */
@@ -17731,10 +17731,10 @@ async function agentCall(name, input) {
   try {
     let r; if (ro) r = await go(); else { const job = AGT.q.then(go, go); AGT.q = job.catch(() => { }); r = await job; }   /* changes wait their turn */
     const txt = r && r.content && r.content[0] && r.content[0].text;
-    bksAgentLog(t.name, inp, r);
+    if (bksOn('agentlog')) bksAgentLog(t.name, inp, r);
     if (txt && txt.length > AG_LIMIT.maxOut) return { content: [{ type: 'text', text: txt.slice(0, AG_LIMIT.maxOut) + '\n… (cut: the answer was longer than ' + AG_LIMIT.maxOut + ' characters)' }] };
     return r;
-  } catch (e) { const f = agFail(e && e.code || 'rejected', (e && e.message) || String(e)); bksAgentLog(t.name, inp, f); return f; }
+  } catch (e) { const f = agFail(e && e.code || 'rejected', (e && e.message) || String(e)); if (bksOn('agentlog')) bksAgentLog(t.name, inp, f); return f; }
 }
 const agWebTool = t => ({ name: t.name, title: t.title || t.name.replace(/_/g, ' '), description: t.description, inputSchema: t.inputSchema, annotations: Object.assign({ title: t.name.replace(/_/g, ' '), openWorldHint: false }, t.annotations), execute: input => agentCall(t.name, input) });
 function agentUnregister() {
@@ -18169,6 +18169,57 @@ function eggFit(el) {
   el._eggA = t.animate([{ transform: a, offset: 0 }, { transform: a, offset: wait / tot, easing: e }, { transform: b, offset: (wait + g) / tot }, { transform: b, offset: (wait + g + hold) / tot, easing: e }, { transform: a, offset: (wait + g + hold + back) / tot }, { transform: a, offset: 1 }], { duration: tot, iterations: Infinity });
 }
 
+/* >>> parts/73a-door.js */
+/* ============================================================
+   Part 73a · THE DOOR TO BACKSTAGE (2.85)
+   Backstage itself (parts 73c and 73d: the rooms, the shell, the palette, the console toolkit) loads from the "backstage" room the first time it is
+   needed: when you knock, when you open it, or when you start the studio already on the list. This part is what the core keeps without it:
+     · the knock             dailyStudio.backstage() in the console: guest list only, the password is the build
+     · the pass              a number of its own for this browser
+     · other ways in         #backstage in the address, and ↑ ↑ ↓ ↓ ← → ← → B A (a short note for anyone not on the list)
+     · bksOn(piece)          is a piece of Backstage switched on (the master switch and each piece are in Settings ▸ Backstage)
+     · the Settings section  a box that fills in when the room arrives
+   ============================================================ */
+const BKDR = { tries: 0, k: 0, want: undefined }, BKS_ROOM_IDS = ['pass', 'engine', 'perf', 'storage', 'bus', 'terminal', 'labs', 'pages', 'made', 'agent', 'secrets'];
+/** is this piece of Backstage on: you have the pass, the master switch is on, and so is its own */
+const bksOn = k => !!CFG.backstage && (CFG.bks || {}).on !== false && (k == null || (CFG.bks || {})[k] !== false);
+const bksLoad = () => room('backstage').catch(() => { });
+/** this browser's pass: a number of its own, the day and the build it was issued on */
+function bksPass() { if (!CFG.bksPass || !CFG.bksPass.n) { CFG.bksPass = { n: 1000 + Math.floor(Math.random() * 9000), at: Date.now(), build: BUILD }; saveCfg(); } return CFG.bksPass; }
+/** the door. Guest list only: the password is this page's build. Called as dailyStudio.backstage() from the console */
+function backstage(word) {
+  if (CFG.backstage) { const p = bksPass(); bksLoad(); setTimeout(() => backstageOpen(), 30); return '🎭 Welcome back, pass #' + p.n + '. Backstage is open.'; }
+  if (word == null || word === '') return '🎟 Backstage is guest list only. The password is the build you are running: it is in the bottom-right corner of the studio (and in dailyStudio.describe().build). Then:  dailyStudio.backstage(\'<build>\')';
+  if (String(word).trim().toLowerCase() !== String(BUILD).toLowerCase()) { BKDR.tries++; return '🚪 Not on the list. ' + (BKDR.tries > 2 ? 'Psst: seven characters, after “build” in the bottom-right corner.' : 'Look again: the bottom-right corner.'); }
+  CFG.backstage = true; const p = bksPass(); saveCfg(); secretFound('backstage', true); bksLoad(); setTimeout(() => backstageOpen(), 30);
+  return '🎭 You are on the list. All-access pass #' + p.n + ' issued to this browser. Come on in. ' + secretCount() + '  Backstage now comes with you: studio.help() here in the console, Ctrl/⌘ K for the palette, Ctrl + ` for the terminal. Settings ▸ Backstage turns it on and off.';
+}
+/** Shower mode (its own room) for the Backstage shell, which may not use another room's names */
+const bksShower = () => showerOpen();
+/** the body of Settings ▸ Backstage: filled in when the room has arrived */
+function bksSettingsBox() { const box = h('div', { class: 'bks-set' }, h('p', { class: 'small muted' }, 'Loading Backstage…')); Promise.resolve(bksSettings()).then(el => { if (el) box.replaceChildren(el); }, () => { }); return box; }
+
+/* ---------- other ways in: the address (#backstage, #backstage/<room>) and ↑↑↓↓←→←→BA ---------- */
+function bksFromHash() {
+  const m = /^#backstage(?:\/([\w-]+))?$/.exec(location.hash || ''); if (!m) return false;
+  try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { }
+  BKDR.want = m[1] && BKS_ROOM_IDS.includes(m[1]) ? m[1] : null;
+  const go = () => { const w = BKDR.want; if (w === undefined) return; BKDR.want = undefined; if (CFG.backstage) backstageOpen(w || undefined); else toast('🎟 Backstage is guest list only. The door is in the browser console.', ''); };
+  if (document.getElementById('boot')) bus.on('booted', () => setTimeout(go, 400)); else setTimeout(go, 600);
+  return true;
+}
+/** part 10 calls this at start-up: when you are on the list (or the performance overlay is on) the room loads now, so the console toolkit and the palette are ready */
+function bksBoot() { if (CFG.backstage || (CFG.labs && CFG.labs.perf)) bksLoad().then(() => { if (CFG.labs && CFG.labs.perf) bksOverlay(); }); bksFromHash(); }
+window.addEventListener('hashchange', () => { bksFromHash(); });
+const BKS_KONAMI = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+document.addEventListener('keydown', e => {
+  const t = e.target; if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) { BKDR.k = 0; return; }
+  const key = e.key && e.key.length === 1 ? e.key.toLowerCase() : e.key, near = BKDR.k >= 8;
+  BKDR.k = key === BKS_KONAMI[BKDR.k] ? BKDR.k + 1 : key === BKS_KONAMI[0] ? 1 : 0;
+  if (near && (key === 'b' || key === 'a')) { e.preventDefault(); e.stopPropagation(); }      /* B and A finish the code here, not the bass and the rest */
+  if (BKDR.k === BKS_KONAMI.length) { BKDR.k = 0; if (CFG.backstage) backstageOpen('terminal'); else toast('🎟 Nice moves. Backstage is guest list only, and the door is in the browser console.', ''); }
+}, true);
+
 /* >>> parts/73b-secrets.js */
 /* ============================================================
    Part 73b · SECRETS (2.20) — small surprises for people who look, and a door backstage for developers
@@ -18311,17 +18362,6 @@ const BKS_ROOMS = ['pass', 'engine', 'perf', 'storage', 'bus', 'terminal', 'labs
 const BKS_PAGES = [['', 'The lobby', 'Your pass, the rooms, and this build at a glance.'], ['source/', 'Source map', 'Every part of the page: what it does, how big it is, and its source.'], ['data/', 'Your data, raw', 'What this browser keeps for the studio, read straight from storage.'], ['api/', 'Console and agent API', 'window.dailyStudio, WebMCP, the tools, and this shell.'], ['changelog/', 'How it was built', 'Every release, as a timeline.']];
 const bksBase = () => location.origin + location.pathname.replace(/[^/]*$/, '') + 'backstage/';
 
-/** this browser's pass: a number of its own, the day and the build it was issued on */
-function bksPass() { if (!CFG.bksPass || !CFG.bksPass.n) { CFG.bksPass = { n: 1000 + Math.floor(Math.random() * 9000), at: Date.now(), build: BUILD }; saveCfg(); } return CFG.bksPass; }
-/** the door. Guest list only: the password is this page's build. Called as dailyStudio.backstage() from the console */
-function backstage(word) {
-  if (CFG.backstage) { const p = bksPass(); setTimeout(() => backstageOpen(), 30); return '🎭 Welcome back, pass #' + p.n + '. Backstage is open.'; }
-  if (word == null || word === '') return '🎟 Backstage is guest list only. The password is the build you are running: it is in the bottom-right corner of the studio (and in dailyStudio.describe().build). Then:  dailyStudio.backstage(\'<build>\')';
-  if (String(word).trim().toLowerCase() !== String(BUILD).toLowerCase()) { BKS.tries++; return '🚪 Not on the list. ' + (BKS.tries > 2 ? 'Psst: seven characters, after “build” in the bottom-right corner.' : 'Look again: the bottom-right corner.'); }
-  CFG.backstage = true; const p = bksPass(); saveCfg(); secretFound('backstage', true); if (typeof bksSync === 'function') bksSync(); setTimeout(() => backstageOpen(), 30);
-  return '🎭 You are on the list. All-access pass #' + p.n + ' issued to this browser. Come on in. ' + secretCount() + '  Backstage now comes with you: studio.help() here in the console, Ctrl/⌘ K for the palette, Ctrl + ` for the terminal. Settings ▸ Backstage turns it on and off.';
-}
-
 /* ---------- the event bus, tapped (only while Backstage is open, or the Labs log is on) ---------- */
 const BKS_EMIT = bus.emit;
 bus.emit = function (e, ...a) { if (BKS.on || CFG.labs.buslog) bksTap(e, a); return BKS_EMIT.call(this, e, ...a); };
@@ -18449,7 +18489,7 @@ async function bksRun(line, out) {
     case 'open': { const p = BKS_PAGES.find(([x, n]) => x.replace(/\/$/, '') === arg.replace(/\/$/, '') || n.toLowerCase().startsWith(arg.toLowerCase())) || (arg === 'lobby' ? BKS_PAGES[0] : null); if (!p) return out('open ' + BKS_PAGES.map(x => x[0].replace(/\/$/, '') || 'lobby').join(' | '), 'err'); window.open(bksBase() + p[0], '_blank', 'noopener'); return out('↗ ' + bksBase() + p[0]); }
     case 'history': return out(BKS.hist.map((x, i) => String(i + 1).padStart(4) + '  ' + x).join('\n') || 'nothing yet');
     case 'uptime': { const s = Math.round((Date.now() - BKS.t0) / 1000); return out('up ' + (s >= 3600 ? Math.floor(s / 3600) + ' h ' : '') + Math.floor(s % 3600 / 60) + ' min ' + s % 60 + ' s · ' + (frameN || 0).toLocaleString('en') + ' frames drawn'); }
-    case 'shower': setTimeout(() => showerOpen(), 300); return out('🚿 Running the water. Not responsible for damage to electronic devices.');
+    case 'shower': setTimeout(() => bksShower(), 300); return out('🚿 Running the water. Not responsible for damage to electronic devices.');
     case 'scales': case 'woodshed': setTimeout(() => trainOpen(), 300); return out('🎼 Scales & ear.');
     case 'exit': case 'quit': case 'logout': { const d = document.getElementById('backstage'); if (d) setTimeout(() => d.close(), 350); return out('See you at soundcheck. 🎸'); }
   }
@@ -18563,26 +18603,6 @@ function backstageOpen(at) {
   return d;
 }
 
-/* ---------- other ways in: the address (#backstage, #backstage/<room>) and ↑↑↓↓←→←→BA ---------- */
-function bksFromHash() {
-  const m = /^#backstage(?:\/([\w-]+))?$/.exec(location.hash || ''); if (!m) return false;
-  try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { }
-  BKS.want = m[1] && BKS_ROOMS.includes(m[1]) ? m[1] : null;
-  const go = () => { const w = BKS.want; if (w === undefined) return; BKS.want = undefined; if (CFG.backstage) backstageOpen(w || undefined); else toast('🎟 Backstage is guest list only. The door is in the browser console.', ''); };
-  if (document.getElementById('boot')) bus.on('booted', () => setTimeout(go, 400)); else setTimeout(go, 600);
-  return true;
-}
-/** part 10 calls this at start-up */
-function bksBoot() { if (CFG.labs.perf) bksOverlay(); bksFromHash(); }
-window.addEventListener('hashchange', () => { bksFromHash(); });
-const BKS_KONAMI = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
-document.addEventListener('keydown', e => {
-  const t = e.target; if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) { BKS.k = 0; return; }
-  const key = e.key && e.key.length === 1 ? e.key.toLowerCase() : e.key, near = BKS.k >= 8;
-  BKS.k = key === BKS_KONAMI[BKS.k] ? BKS.k + 1 : key === BKS_KONAMI[0] ? 1 : 0;
-  if (near && (key === 'b' || key === 'a')) { e.preventDefault(); e.stopPropagation(); }      /* B and A finish the code here, not the bass and the rest */
-  if (BKS.k === BKS_KONAMI.length) { BKS.k = 0; if (CFG.backstage) backstageOpen('terminal'); else toast('🎟 Nice moves. Backstage is guest list only, and the door is in the browser console.', ''); }
-}, true);
 
 /* >>> parts/73d-backstage-everywhere.js */
 /* ============================================================
@@ -18597,8 +18617,6 @@ document.addEventListener('keydown', e => {
    only there once you are on the list), with a switch for each piece. Nothing here leaves the page.
    ============================================================ */
 CFG.bks = Object.assign({ on: true, palette: true, drawer: true, console: true, agentlog: true }, CFG.bks && typeof CFG.bks === 'object' ? CFG.bks : {});
-/** is this piece of Backstage on: you have the pass, the master switch is on, and so is its own */
-const bksOn = k => !!CFG.backstage && CFG.bks.on !== false && (k == null || CFG.bks[k] !== false);
 const BKS_PIECES = [['palette', 'Command palette', 'Ctrl/⌘ K from anywhere: jump to a panel, switch a look, load a beat or a song, run a command.'], ['drawer', 'Terminal drawer', 'Ctrl + ` slides the Backstage shell up from the bottom, over whatever you are doing.'], ['console', 'Console toolkit', '`studio` in the browser’s DevTools console: every Backstage command as a function, and more.'], ['agentlog', 'Agent activity in the console', 'One quiet line for each change an AI agent makes.']];
 const bksSay = (t, cls) => { if (cls === 'clear') return console.clear(); if (t == null) return; console.log('%c' + t, cls === 'err' ? 'color:#ff8a7a' : cls === 'dim' ? 'color:#7e9288' : cls === 'fun' ? 'color:#f7c95a' : 'color:inherit'); };
 const bksWait = ms => new Promise(r => setTimeout(r, ms));
