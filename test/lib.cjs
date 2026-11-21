@@ -60,7 +60,9 @@ async function suite(name, fn) {
     };
     const boot = async (p, o = {}) => {
       await p.goto(BASE + (o.debug === false ? '' : (BASE.includes('?') ? '&' : '?') + 'debug')); await wait(3000);
-      await p.evaluate(() => { const b = document.getElementById('bootNoMic') || document.getElementById('bootGo'); if (b) b.click(); }); await wait(o.settle || 1800);
+      await p.evaluate(() => { const b = document.getElementById('bootNoMic') || document.getElementById('bootGo'); if (b) b.click(); window.__bootT0 = performance.now(); });
+      /* wait for the welcome card to actually go (it goes when the audio engine has started, which takes longer in some engines and on busy machines), not a fixed time; then settle */
+      const bootGone = await poll(() => p.evaluate(() => !document.getElementById('boot')), 12000, 100); p.bootMs = bootGone ? await p.evaluate(() => Math.round(performance.now() - window.__bootT0)) : null; await wait(o.settle || 1800);
       await p.evaluate(() => { const b = document.querySelector('#tourOffer .btn:not(.primary)'); if (b) b.click(); const hb = document.getElementById('humbar'); if (hb) hb.remove(); document.querySelectorAll('#toasts .toast').forEach(x => x.remove()); });
     };
     const open = async (o = {}) => {
