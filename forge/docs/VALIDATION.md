@@ -155,3 +155,16 @@ rows (lookups are in-memory, find is a linear scan).
 
 **Not validated — requires your Azure resource:** real Azure OpenAI responses and their quality, latency, rate limits, content
 filtering, and whether your deployment/API version accepts `max_completion_tokens` (FORGE falls back to `max_tokens` automatically).
+
+## v0.11.0 — Domain starter agents
+
+| Check | Result here |
+|---|---|
+| Every template: synthetic tables pass the sensitive-data scan; no column named like a personal identifier; examples verify; generators produce ≥ 15 verified tasks per skill; dev and test non-empty; no primary entity crosses splits | tests (`test_templates.py`, parametrised over all six) |
+| Generated tasks are solvable with the tools (oracle teacher strict success on every dev task) and build into training records | test (ITSM, patient access) |
+| Side-by-side run on the tiny CPU student (mock teacher, template generator, smoke profile, 2 seeds, 60 steps) | **ITSM**: 153 tasks accepted / 49 rejected (duplicates and give-away answers), splits 92/36/25; Lens surprise 6.45 → 6.31. **Patient access**: 122 accepted / 40 rejected, splits 74/24/24; Lens surprise 6.45 → 6.28, top-1 agreement 1% → 2%. Strict success: teacher 1.0, base 0.0, tuned 0.0 on dev — the tiny random-weight student does not learn these tasks; these numbers show the instrument working, not a result |
+| UI: template gallery by domain, task-source selector, generated-task provenance shown | browser, no console errors |
+| Backend suite | 176 passed |
+
+**Not validated — requires your machine:** real students on these templates (expect large gains on routing / lookup skills from
+format learning alone — check evidence and per-skill results), and how a real teacher's tasks compare with the generator's.

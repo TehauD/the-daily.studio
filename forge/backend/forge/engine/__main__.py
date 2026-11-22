@@ -81,9 +81,12 @@ def cmd_agent(a: argparse.Namespace) -> int:
     emit({"event": "agent_step_start", "step": a.step, "agent": agent.meta["name"]})
     if a.step != "tasks":
         raise ValueError(f"unknown step {a.step}")
-    teacher = OpenAICompatBackend(cfg["endpoint"], cfg["model"], temperature=0.4, max_tokens=600)
-    teacher.name = cfg["model"]
-    res = agent.run_tasks(teacher, per_skill=int(cfg.get("per_skill", 40)), seed=int(cfg.get("seed", 7)), emit=emit)
+    teacher = None
+    if cfg.get("source", "teacher") == "teacher":
+        teacher = OpenAICompatBackend(cfg["endpoint"], cfg["model"], temperature=0.4, max_tokens=600)
+        teacher.name = cfg["model"]
+    res = agent.run_tasks(teacher, per_skill=int(cfg.get("per_skill", 40)), seed=int(cfg.get("seed", 7)), emit=emit,
+                          source=cfg.get("source", "teacher"))
     emit({"event": "agent_step_completed", "step": a.step, "result": res})
     return 0
 

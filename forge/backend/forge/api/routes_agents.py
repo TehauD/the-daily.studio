@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from forge.agents.agent import Agent, AgentError
-from forge.agents.templates import TEMPLATES
+from forge.agents.templates import catalogue
 from forge.agents.tools import OPS, UNIT_NAMES
 from forge.api.state import AppState, get_state
 from forge.jobs.runner import JobError
@@ -54,8 +54,7 @@ def list_agents(st: AppState = Depends(get_state)):
 
 @router.get("/templates")
 def templates():
-    return {"templates": [{"id": k, "title": v["title"], "description": v["description"]} for k, v in TEMPLATES.items()],
-            "operators": list(OPS), "units": UNIT_NAMES}
+    return {"templates": catalogue(), "operators": list(OPS), "units": UNIT_NAMES}
 
 
 class CreateAgent(BaseModel):
@@ -153,7 +152,8 @@ def try_tool(aid: str, body: TryBody, st: AppState = Depends(get_state)):
 
 
 class TasksBody(BaseModel):
-    teacher_id: str
+    source: Literal["teacher", "template"] = "teacher"
+    teacher_id: str | None = None
     per_skill: int = Field(40, ge=2, le=500)
     seed: int = 7
 
@@ -166,14 +166,21 @@ def run_tasks(aid: str, body: TasksBody, st: AppState = Depends(get_state)):
         a.check_can_run()
     except AgentError as e:
         raise HTTPException(409, str(e))
+    cfg: dict[str, Any] = {"per_skill": body.per_skill, "seed": body.seed, "source": body.source}
+    if body.source == "teacher":
+        if not body.teacher_id:
+            raise HTTPException(422, "Choose a teacher model")
+        try:
+            t = _teacher_spec(st, st.registry.get(body.teacher_id))
+        except RegistryError as e:
+            raise HTTPException(404, str(e))
+        cfg |= {"endpoint": t["endpoint"], "model": t["model"]}
+    elif not any(s.get("generator") for s in a.meta["skills"]):
+        raise HTTPException(409, "None of this agent's skills has a built-in generator; use the teacher")
     try:
-        t = _teacher_spec(st, st.registry.get(body.teacher_id))
-    except RegistryError as e:
-        raise HTTPException(404, str(e))
-    cfg = {"endpoint": t["endpoint"], "model": t["model"], "per_skill": body.per_skill, "seed": body.seed}
-    try:
+        # Teacher-written tasks drive the teacher on the GPU (exclusive); template generators are pure Python.
         return st.jobs.start("agent:tasks", ["agent", "--agent", str(a.root), "--step", "tasks", "--config", json.dumps(cfg)],
-                             gpu=True, study_id=aid, label=f"{a.meta['name']} · practice tasks")
+                             gpu=body.source == "teacher", study_id=aid, label=f"{a.meta['name']} · practice tasks ({body.source})")
     except JobError as e:
         raise HTTPException(409, str(e))
 

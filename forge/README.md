@@ -1,4 +1,4 @@
-# FORGE — Local Distillation Lab (v0.10.0)
+# FORGE — Local Distillation Lab (v0.11.0)
 
 A local-first research instrument for **teacher → student LLM distillation on one consumer NVIDIA GPU**.
 A large model you run in LM Studio (the *teacher*) solves tool-use or document-QA tasks. FORGE keeps only its
@@ -78,11 +78,16 @@ Full walkthrough: [docs/FIRST_RUN.md](docs/FIRST_RUN.md).
 
 Open **Agent Studio** and follow the five steps:
 
-1. **Define the agent**: start from the *Pharmacy-benefits assistant (synthetic)* template or blank; write its role (what it does, what it must never do).
+1. **Define the agent**: start from a starter template or blank; write its role (what it does, what it must never do). Templates (all synthetic):
+   - *IT service desk*: ServiceNow-style routing, priority from impact × urgency, CMDB enrichment, SLA due dates, major-incident rule
+   - *Patient access*: request and referral routing, clinic and location, scheduling windows, administrative expedite rule (no clinical triage)
+   - *Pharmacy benefits*, *Claims denials* (revenue cycle), *Prior authorization criteria*, *Security alert triage* (defensive, MITRE ATT&CK)
 2. **Give it tools**: add your tables (CSV / JSON; scanned and refused if they look like personal data), switch on the exact calculator, unit conversion and date arithmetic, define yes/no **rules** (e.g. "review if tier ≥ 4 or quantity > 90"), optionally link a Knowledge Studio pack. Try any tool in the console.
 3. **Describe skills**: a name, one sentence, the tools it may use, a few examples, and an optional share of not-found cases.
-4. **Practice tasks**: the teacher writes many more; FORGE re-runs every tool call and keeps only tasks it can prove. Rejections are listed with reasons.
+4. **Practice tasks**: the teacher writes many more — or, for template skills, the built-in **template generator** writes them in seconds with no teacher. Either way FORGE re-runs every tool call and keeps only tasks it can prove. Rejections are listed with reasons.
 5. **Teach & measure**: pick focus skills, create the study, run the stages, then open the Distillation Lens.
+
+![Agent Studio: starter templates by domain](docs/images/agent-templates.png)
 
 ![Agent Studio: tools step with tables, calculators, rules and the tool console](docs/images/agent-studio-tools.png)
 <sub>Validation instance: synthetic template plus a synthetic fee schedule.</sub>
@@ -174,7 +179,7 @@ Security and robustness controls, with how each is checked: [docs/HARDENING.md](
 ## Developing
 
 ```powershell
-.\scripts\test.ps1                 # backend test suite (168 tests)
+.\scripts\test.ps1                 # backend test suite (176 tests)
 .\scripts\launch.ps1 -Mode dev     # Vite dev server with hot reload
 ```
 

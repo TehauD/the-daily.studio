@@ -1,5 +1,12 @@
 # FORGE changelog
 
+## 0.11.0 — Domain starter agents
+- Six synthetic starter templates grouped by domain: IT service desk (ServiceNow-style routing & enrichment), Patient access
+  (request & referral routing, administrative only), Pharmacy benefits, Claims denials, Prior authorization criteria, Security
+  alert triage (defensive; MITRE ATT&CK references).
+- Built-in task generators per template skill: verified practice tasks without a teacher (no GPU, reproducible).
+- Splits group tasks by their primary entity (first lookup), so cross-entity skills no longer starve dev/test.
+
 ## 0.10.0 — Azure OpenAI assistant (optional)
 - In-app assistant powered by your Azure OpenAI deployment; hidden until configured (System Settings → Integrations or env vars).
 - Answers from FORGE's own data per page (study, agent, knowledge pack, general) with FORGE's methods built in; quick questions and

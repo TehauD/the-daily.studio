@@ -102,10 +102,10 @@ class Agent:
         aid = new_id("agent")
         root = base / aid
         (root / "tables").mkdir(parents=True)
-        tables, rows0 = [], []
+        data = templates.build_tables(template)
+        tables = []
         for ts in t["tables"]:
-            rows = getattr(templates, ts["rows"])()
-            rows0 = rows0 or rows
+            rows = data[ts["name"]]
             cols = list(rows[0])
             (root / "tables" / f"{ts['name']}.json").write_text(json.dumps(rows), encoding="utf-8")
             tables.append({"name": ts["name"], "description": ts["description"], "key": ts["key"], "columns": cols,
@@ -113,7 +113,7 @@ class Agent:
         m = {"id": aid, "name": name.strip() or t["title"], "template": template, "created_at": utcnow(),
              "attestation": {"no_sensitive_data": True, "at": utcnow()}, "role": t["role"],
              "tools": {**{k: v for k, v in t["tools"].items()}, "tables": tables},
-             "skills": templates.fill_examples(t["skills"], rows0), "steps": {"tasks": {"status": None}}}
+             "skills": templates.stored_skills(template, data), "steps": {"tasks": {"status": None}}}
         a = Agent.__new__(Agent)
         a.root = root
         a._save(m)
@@ -293,7 +293,14 @@ class Agent:
             raise AgentError("Add at least one skill first")
         self.validate(m)
 
-    def run_tasks(self, teacher: ChatBackend, per_skill: int = 40, seed: int = 7, emit: Callable[[dict], None] = lambda e: None) -> dict:
+    def run_tasks(self, teacher: ChatBackend | None, per_skill: int = 40, seed: int = 7, emit: Callable[[dict], None] = lambda e: None,
+                  source: str = "teacher") -> dict:
+        """source='teacher': the teacher writes candidates. source='template': the template's built-in generators write them
+        (no teacher needed). Either way every candidate passes the same verification."""
+        if source not in ("teacher", "template"):
+            raise AgentError("source must be 'teacher' or 'template'")
+        if source == "teacher" and teacher is None:
+            raise AgentError("Choose a teacher model")
         self.check_can_run()
         m = self.meta
         m["steps"]["tasks"] = {"status": "running", "at": utcnow()}
@@ -335,14 +342,19 @@ class Agent:
             while got < want and attempts < want * 3:
                 attempts += 1
                 nf = got_nf < want_nf and (got - got_nf) >= (want - want_nf) or (got_nf < want_nf and rng.random() < 0.3)
+                gen = templates.generator(m["template"], skill["id"]) if source == "template" else None
+                if source == "template" and gen is None:
+                    rejected.append({"skill": skill["id"], "source": "template", "candidate": None,
+                                     "reason": "this skill has no built-in generator (use the teacher)"})
+                    break
                 try:
-                    cand = self._ask(teacher, m, skill, tables, ts, rng, nf, accepted)
-                except (ActionError, json.JSONDecodeError, KeyError, TypeError, ValueError) as e:
-                    rejected.append({"skill": skill["id"], "source": "teacher", "candidate": None, "reason": f"unreadable reply ({type(e).__name__})"})
+                    cand = gen(tables, rng, nf) if gen else self._ask(teacher, m, skill, tables, ts, rng, nf, accepted)
+                except (ActionError, json.JSONDecodeError, KeyError, TypeError, ValueError, StopIteration, IndexError) as e:
+                    rejected.append({"skill": skill["id"], "source": source, "candidate": None, "reason": f"unreadable candidate ({type(e).__name__})"})
                     continue
-                reason = add(skill, str(cand.get("question", "")), cand.get("calls"), cand.get("answer", ""), "teacher")
+                reason = add(skill, str(cand.get("question", "")), cand.get("calls"), cand.get("answer", ""), source)
                 if reason:
-                    rejected.append({"skill": skill["id"], "source": "teacher", "candidate": cand, "reason": reason})
+                    rejected.append({"skill": skill["id"], "source": source, "candidate": cand, "reason": reason})
                 else:
                     got += 1
                     got_nf += int(accepted[-1]["not_found"])
@@ -361,7 +373,8 @@ class Agent:
                    "by_skill": {s["id"]: sum(t.family == s["id"] for t in tasks) for s in m["skills"]},
                    "from_you": sum(t.meta["source"] == "you" for t in tasks), "not_found": sum(t.meta["not_found"] for t in tasks),
                    "splits": {sp: sum(t.split == sp for t in tasks) for sp, _ in SPLITS},
-                   "config": {"per_skill": per_skill, "seed": seed, "teacher": getattr(teacher, "name", "")}}
+                   "config": {"per_skill": per_skill, "seed": seed, "source": source,
+                              "teacher": getattr(teacher, "name", "") if teacher else None}}
         m = self.meta
         m["steps"]["tasks"] = {"status": "completed", "at": utcnow(), "summary": summary}
         self._save(m)
@@ -396,7 +409,7 @@ class Agent:
 
     @staticmethod
     def _split(acc: list[dict], seed: int) -> list[Task]:
-        """Group tasks that share an entity (any text argument), then split groups 60/20/20 — no entity crosses splits."""
+        """Group tasks by their primary entity (first lookup / search value), then split groups 60/20/20 — no primary entity crosses splits."""
         parent = list(range(len(acc)))
 
         def find(i: int) -> int:
@@ -406,8 +419,10 @@ class Agent:
             return i
         owner: dict[str, int] = {}
         for i, a in enumerate(acc):
-            ents = {norm_cell(v) for c in a["calls"] for k, v in c["arguments"].items()
-                    if k in ("key", "value", "query") and isinstance(v, str)} or {f"task:{norm_cell(a['prompt'])}"}
+            # The primary entity is the first looked-up / searched value (the item the task is about). Grouping on every
+            # value would chain cross-entity tasks (rule × host) into one giant group and starve dev/test.
+            first = next((v for c in a["calls"] for k, v in c["arguments"].items() if k in ("key", "value", "query") and isinstance(v, str)), None)
+            ents = {norm_cell(first)} if first else {f"task:{norm_cell(a['prompt'])}"}
             for e in ents:
                 if e in owner:
                     parent[find(i)] = find(owner[e])

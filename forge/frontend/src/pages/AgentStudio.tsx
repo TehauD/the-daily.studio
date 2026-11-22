@@ -11,7 +11,8 @@ import type { Job, Model, Readiness, StudyRow, StudySummary } from "../lib/types
 /* ------------------------------------------------------------------ types */
 interface Call { tool: string; arguments: Record<string, unknown> }
 interface Example { prompt: string; answer: string; calls?: Call[] }
-interface Skill { id: string; name: string; description: string; tools: string[]; not_found: number; examples: Example[] }
+interface Skill { id: string; name: string; description: string; tools: string[]; not_found: number; examples: Example[]; generator?: boolean }
+interface TemplateInfo { id: string; title: string; domain: string; description: string; skills: string[]; tables: string[] }
 interface Rule { name: string; description: string; inputs: { name: string; type: "number" | "text" }[]; match: "all" | "any"; conditions: { input: string; op: string; value: string | number }[]; true_text: string; false_text: string }
 interface TableMeta { name: string; description: string; key: string; columns: string[]; rows: number; source: string }
 interface ToolInfo { name: string; description: string; parameters: { properties: Record<string, { type: string; enum?: string[] }>; required: string[] } }
@@ -117,25 +118,37 @@ function AgentExplainer({ step }: { step: SKey }) {
 
 /* ------------------------------------------------------------------ step 1 */
 function CreateAgent({ onCreated }: { onCreated: (id: string) => void }) {
-  const tpl = useApi<{ templates: { id: string; title: string; description: string }[] }>("/api/agents/templates");
-  const [t, setT] = useState("pharmacy_benefits");
+  const tpl = useApi<{ templates: TemplateInfo[] }>("/api/agents/templates");
+  const [t, setT] = useState("itsm_servicenow");
+  const groups = useMemo(() => {
+    const g = new Map<string, TemplateInfo[]>();
+    (tpl.data?.templates ?? []).forEach((x) => g.set(x.domain, [...(g.get(x.domain) ?? []), x]));
+    return [...g].sort((a, b) => (a[0] === "Any" ? 1 : b[0] === "Any" ? -1 : a[0].localeCompare(b[0])));
+  }, [tpl.data]);
+  const cur = tpl.data?.templates.find((x) => x.id === t);
   const [f, setF] = useState({ name: "", ok: false });
   const act = useAction();
   const submit = (e: FormEvent) => { e.preventDefault(); void act.run(async () => onCreated((await api.post<{ id: string }>("/api/agents", { name: f.name, template: t, no_sensitive_data: f.ok })).id)); };
   return (
     <Panel title="1 · Define the agent" eyebrow="new agent">
       <form onSubmit={submit} className="space-y-4">
-        <div className="grid gap-3 md:grid-cols-2">
-          {(tpl.data?.templates ?? []).map((x) => (
-            <button key={x.id} type="button" onClick={() => setT(x.id)} aria-pressed={t === x.id}
-              className={cx("rounded-[var(--radius)] border p-3 text-left transition", t === x.id ? "border-accent bg-accent-soft" : "border-line hover:border-accent-line")}>
-              <div className="flex items-center gap-2 text-[13px] font-semibold text-ink"><span className={cx("h-3.5 w-3.5 rounded-full border-2", t === x.id ? "border-accent bg-accent" : "border-line-strong")} />{x.title}</div>
-              <div className="mt-1 text-[12px] text-ink-3">{x.description}</div>
-            </button>
-          ))}
-        </div>
-        {t === "pharmacy_benefits" && <Notice tone="info">Everything in this template is <b>invented</b>: drug names, tiers, copays and the review rule belong to a fictional plan. It shows a healthcare-operations agent end to end; it is not clinical or formulary data.</Notice>}
-        <Field label="Name this agent"><input className={inputCls} value={f.name} placeholder={t === "pharmacy_benefits" ? "Pharmacy-benefits assistant" : "e.g. Billing-code helper"} onChange={(e) => setF({ ...f, name: e.target.value })} /></Field>
+        {groups.map(([domain, list]) => (
+          <div key={domain}>
+            <div className="micro mb-1.5 text-ink-3">{domain === "Any" ? "start from scratch" : domain}</div>
+            <div className="grid gap-2.5 md:grid-cols-2 2xl:grid-cols-3">
+              {list.map((x) => (
+                <button key={x.id} type="button" onClick={() => setT(x.id)} aria-pressed={t === x.id}
+                  className={cx("rounded-[var(--radius)] border p-3 text-left transition", t === x.id ? "border-accent bg-accent-soft" : "border-line hover:border-accent-line")}>
+                  <div className="flex items-start gap-2 text-[13px] font-semibold text-ink"><span className={cx("mt-0.5 h-3.5 w-3.5 shrink-0 rounded-full border-2", t === x.id ? "border-accent bg-accent" : "border-line-strong")} />{x.title}</div>
+                  <div className="mt-1 text-[12px] leading-snug text-ink-3">{x.description}</div>
+                  {x.skills.length > 0 && <div className="mt-2 flex flex-wrap gap-1">{x.skills.map((k) => <Badge key={k}>{k}</Badge>)}</div>}
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
+        {t !== "blank" && <Notice tone="info">Everything in this template is <b>invented</b> — organisations, records, codes and rules{t === "security_triage" ? " (ATT&CK technique IDs are public MITRE references)" : ""}. It shows a domain agent end to end; it is not real operational, clinical, or security data, and FORGE makes no claim of fitness for real use.{cur?.tables.length ? ` Tables: ${cur.tables.join(", ")}.` : ""}</Notice>}
+        <Field label="Name this agent"><input className={inputCls} value={f.name} placeholder={cur?.title.replace(/\s*\(synthetic.*\)$/, "") ?? "e.g. Billing-code helper"} onChange={(e) => setF({ ...f, name: e.target.value })} /></Field>
         <label className={cx("flex items-start gap-3 rounded-[var(--radius)] border p-3", f.ok ? "border-[color:var(--good)]/40 bg-[color:var(--good)]/[0.04]" : "border-[color:var(--warn)]/60 bg-[color:var(--warn)]/[0.07]")}>
           <input type="checkbox" className="mt-0.5 h-4 w-4 accent-[var(--accent)]" checked={f.ok} onChange={(e) => setF({ ...f, ok: e.target.checked })} />
           <span className="text-[12.5px] leading-relaxed text-ink-2"><b className="text-ink">I will only give this agent synthetic or non-sensitive data — no patient, personal, or confidential information.</b> FORGE also scans every table you add and refuses ones that look like personal data, but it cannot catch everything.</span>
@@ -475,6 +488,8 @@ function StepTasks({ a, busy, onStarted }: { a: AgentFull; busy: boolean; onStar
   const [teacher, setTeacher] = useState("");
   useEffect(() => { if (!teacher && teachers.length) setTeacher((teachers.find((m) => m.roles.includes("teacher")) ?? teachers[0]).id); }, [teachers, teacher]);
   const [n, setN] = useState(40);
+  const canGenerate = a.skills.some((k) => k.generator);
+  const [src, setSrc] = useState<"teacher" | "template">(canGenerate ? "template" : "teacher");
   const act = useAction();
   const status = a.steps.tasks.status;
   const data = useApi<{ tasks: TaskRow[]; rejected: Rejected[] }>(status === "completed" || status === "stale" ? `/api/agents/${a.id}/tasks` : null);
@@ -484,17 +499,24 @@ function StepTasks({ a, busy, onStarted }: { a: AgentFull; busy: boolean; onStar
       <Panel title="4 · Practice tasks" eyebrow={a.name} right={status && <Status s={status === "completed" ? "pass" : status === "stale" ? "warn" : status} label={status} />}>
         <div className="space-y-4">
           {status === "stale" && <Notice tone="warn">The agent's tools or skills changed since these tasks were written. Write them again before teaching.</Notice>}
-          <div className="grid gap-4 md:grid-cols-2">
-            <Field label="Teacher (writes the tasks)" hint="Must be loaded in LM Studio for this step.">
-              <select className={inputCls} value={teacher} onChange={(e) => setTeacher(e.target.value)}>{teachers.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}</select>
+          {canGenerate && (
+            <Field label="Who writes the tasks?" hint={src === "template" ? "The template's built-in generator writes tasks from your tables — no teacher needed, fully reproducible. Every task still passes verification." : "The teacher writes varied, natural tasks in the style of your examples."}>
+              <Segmented label="Task source" value={src} onChange={setSrc} options={[{ value: "template", label: "template generator" }, { value: "teacher", label: "teacher model" }]} />
             </Field>
-            <Field label={`Tasks per skill · ${n}`} hint={`${a.skills.length} skills → up to ${a.skills.length * n} tasks, plus your examples. ≈ 10 s each with a 27B teacher.`}>
+          )}
+          <div className="grid gap-4 md:grid-cols-2">
+            {src === "teacher" ? (
+              <Field label="Teacher (writes the tasks)" hint="Must be loaded in LM Studio for this step.">
+                <select className={inputCls} value={teacher} onChange={(e) => setTeacher(e.target.value)}>{teachers.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}</select>
+              </Field>
+            ) : <div className="text-[12px] leading-relaxed text-ink-3">Skills without a generator (ones you added yourself) are skipped — write those with the teacher.</div>}
+            <Field label={`Tasks per skill · ${n}`} hint={`${a.skills.length} skills → up to ${a.skills.length * n} tasks, plus your examples. ${src === "teacher" ? "≈ 10 s each with a 27B teacher." : "Seconds in total; no GPU needed."}`}>
               <input type="range" min={10} max={300} step={10} value={n} onChange={(e) => setN(Number(e.target.value))} className="w-full accent-[var(--accent)]" />
             </Field>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <Button tone="primary" icon="flask" busy={act.busy} disabled={busy || !teacher}
-              onClick={() => void act.run(async () => { await api.post(`/api/agents/${a.id}/steps/tasks`, { teacher_id: teacher, per_skill: n }); await onStarted(); })}>
+            <Button tone="primary" icon="flask" busy={act.busy} disabled={busy || (src === "teacher" && !teacher)}
+              onClick={() => void act.run(async () => { await api.post(`/api/agents/${a.id}/steps/tasks`, { source: src, teacher_id: src === "teacher" ? teacher : null, per_skill: n }); await onStarted(); })}>
               {status === "completed" ? "Write a new set" : "Write practice tasks"}</Button>
             {!teachers.length && <span className="text-[12px] text-ink-3">No teacher available — assign one in the Model Observatory.</span>}
           </div>
@@ -538,7 +560,7 @@ function TaskTable({ a, data }: { a: AgentFull; data: { tasks: TaskRow[]; reject
                   <td className={cx(td, "font-mono")}>{t.meta.not_found ? <Badge>NOT_FOUND</Badge> : t.reference_answer}</td>
                   <td className={cx(td, "text-ink-3")}>{name(t.family)}</td>
                   <td className={td}><Badge tone={t.split === "test" ? "accent" : "default"}>{t.split}</Badge></td>
-                  <td className={cx(td, "text-ink-3")}>{t.meta.source === "you" ? "you" : "teacher"}</td>
+                  <td className={cx(td, "text-ink-3")}>{t.meta.source === "template" ? "generator" : t.meta.source}</td>
                 </tr>
                 {sel === t.task_id && <tr><td colSpan={5} className="bg-surface-2 px-[var(--pad)] py-2"><div className="micro mb-1 text-ink-3">verified tool calls</div>
                   {t.reference_calls.length ? t.reference_calls.map((c, i) => <div key={i} className="font-mono text-[11px] text-ink-2">{i + 1}. {c.tool}({JSON.stringify(c.arguments)})</div>) : <div className="text-[11.5px] text-ink-3">Your example without tool calls — the teacher's solution will be checked against your answer.</div>}</td></tr>}
