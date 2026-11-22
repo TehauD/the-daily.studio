@@ -5,7 +5,7 @@ import asyncio
 import json
 import os
 from pathlib import Path
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import PlainTextResponse
@@ -41,7 +41,10 @@ def catalog():
     return {"profiles": {k: {"seeds": v["seeds"], "purpose": v["purpose"], "train": v["train"], "taskset": v["taskset"]}
                          for k, v in PROFILES.items()},
             "arms": {k: v for k, v in TRAIN_ARMS.items()}, "stages": STAGES, "gpu_stages": sorted(GPU_STAGES),
-            "mvp_arms": ["teacher_filtered"]}
+            "mvp_arms": ["teacher_filtered"],
+            # Trainable skills per task-set kind (focus selection); regression-only skills are evaluated, never trained.
+            "skills": {"catalog": [{"id": f, "label": knowledge.SKILL_LABEL[f]} for f in ("catalog_lookup", "multi_step_quote", "missing_item")],
+                       "docqa": [{"id": f, "label": knowledge.SKILL_LABEL[f]} for f in ("doc_answerable", "doc_unanswerable")]}}
 
 
 @router.get("")
@@ -56,7 +59,8 @@ def list_studies(st: AppState = Depends(get_state)):
                         "stages": {k: v["status"] for k, v in summ["state"]["stages"].items()},
                         "teacher": s.plan["teacher"]["model"], "student": s.plan["student"]["name"],
                         "arms": s.plan["arms"], "seeds": s.plan["seeds"],
-                        "knowledge_pack": (s.plan["taskset"].get("pack") or {}).get("id")})
+                        "knowledge_pack": (s.plan["taskset"].get("pack") or {}).get("id"),
+                        "focus_skills": (s.plan.get("focus") or {}).get("skills")})
         except StudyError as e:
             out.append({"id": r["id"], "name": r["name"], "error": str(e)})
     return out
@@ -75,6 +79,7 @@ class CreateStudy(BaseModel):
     max_seq_len: int | None = Field(None, ge=256, le=32768)
     device: Literal["cuda", "cpu"] = "cuda"
     knowledge_pack_id: str | None = Field(None, pattern=r"^pack_[a-z0-9]+$")
+    focus_skills: list[Annotated[str, Field(pattern=r"^[a-z_]{1,40}$")]] | None = Field(None, max_length=10)
 
 
 def _teacher_spec(st: AppState, t: dict) -> dict[str, Any]:
@@ -143,7 +148,8 @@ async def create_study(body: CreateStudy, st: AppState = Depends(get_state)):
                            student={"model_id": s["id"], "name": s["name"], "path": str(student_dir),
                                     "parameter_report": s["metadata"].get("parameter_report")},
                            arms=body.arms, seeds=body.seeds, train_overrides=train_ov, min_gain=body.min_gain,
-                           device=body.device, environment=env, base_hash=base_hash, knowledge_pack=pack)
+                           device=body.device, environment=env, base_hash=base_hash, knowledge_pack=pack,
+                           focus_skills=body.focus_skills)
     except StudyError as e:
         raise HTTPException(422, str(e))
     with st.db.tx() as c:
@@ -294,6 +300,68 @@ async def token_projection(sid: str, arm: str, seed: int, layers: int = 4, k: in
     res["adapter_sha256"] = digest
     cache.write_text(json.dumps(res), encoding="utf-8")
     return res
+
+
+class LensBody(BaseModel):
+    arm: str
+    seed: int
+
+
+@router.post("/{sid}/lens")
+def start_lens(sid: str, body: LensBody, st: AppState = Depends(get_state)):
+    """Distillation lens as a GPU job: teacher-forced log-probs of dev teacher actions (base → snapshots → final)."""
+    s = _study(st, sid)
+    if body.arm not in s.plan["arms"] or body.seed not in s.plan["seeds"]:
+        raise HTTPException(404, "Unknown arm/seed for this study")
+    if not (s.run_dir(body.arm, body.seed) / "adapter" / "adapter_model.safetensors").exists():
+        raise HTTPException(409, f"No adapter for {body.arm} seed {body.seed} yet (run Train)")
+    env = {"FORGE_ALLOW_CPU": "1"} if s.plan["device"] == "cpu" and os.environ.get("FORGE_ALLOW_CPU") == "1" else None
+    try:
+        return st.jobs.start("lens", ["lens", "--study", str(s.root), "--arm", body.arm, "--seed", str(body.seed)],
+                             gpu=True, study_id=sid, label=f"{s.plan['name']} · lens {body.arm} s{body.seed}", env=env)
+    except JobError as e:
+        raise HTTPException(409, str(e))
+
+
+@router.get("/{sid}/lens")
+async def get_lens(sid: str, arm: str, seed: int, st: AppState = Depends(get_state)):
+    from forge.engine.lens import LENS_VERSION, snapshots
+    s = _study(st, sid)
+    if arm not in s.plan["arms"] or seed not in s.plan["seeds"]:
+        raise HTTPException(404, "Unknown arm/seed for this study")
+    rd = s.run_dir(arm, seed)
+    adapter = rd / "adapter" / "adapter_model.safetensors"
+    avail = {"snapshots": len(snapshots(rd)) - 1 if adapter.exists() else 0, "trained": adapter.exists()}
+    p = rd / "lens.json"
+    if not p.exists():
+        return {"available": False, **avail}
+    data = json.loads(p.read_text(encoding="utf-8"))
+    stale = data.get("lens_version") != LENS_VERSION or data.get("adapter_sha256") != await asyncio.to_thread(sha256_file, adapter)
+    return {"available": True, "stale": stale, **avail, **data}
+
+
+@router.get("/{sid}/skillspace")
+def skill_space(sid: str, split: str = "dev", st: AppState = Depends(get_state)):
+    """Per-skill strict success for teacher, base, and every trained run (arm × seed), from the episodes."""
+    s = _study(st, sid)
+    if split not in ("dev", "test", "ood", "regression"):
+        raise HTTPException(422, "split must be dev, test, ood or regression")
+
+    def rates(arm: str, seed: int) -> dict[str, dict]:
+        out: dict[str, list[float]] = {}
+        p = s.episode_path(arm, split, seed)
+        for e in (read_jsonl(p, verify=False) if p.exists() else []):
+            out.setdefault(e["family"], []).append(float(e["score"]["strict_success"]))
+        return {f: {"rate": sum(v) / len(v), "n": len(v)} for f, v in sorted(out.items())}
+
+    c0 = s.plan["eval"]["control_seed_broadcast"]
+    runs = [{"arm": a, "seed": sd, "rates": rates(a, sd)} for a in s.plan["arms"] for sd in s.plan["seeds"]]
+    runs = [r for r in runs if r["rates"]]
+    teacher, base = rates("teacher", 0), rates("base", c0)
+    fams = sorted(set(teacher) | set(base) | {f for r in runs for f in r["rates"]})
+    return {"split": split, "skills": fams, "teacher": teacher, "base": base, "runs": runs,
+            "focus": (s.plan.get("focus") or {}).get("skills"), "sealed": s.state["sealed"], "computed": True,
+            "basis": "strict success per skill from the study's episode files; descriptive (no intervals)"}
 
 
 @router.get("/{sid}/training")

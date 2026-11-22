@@ -38,3 +38,12 @@ FORGE enforces the second. It cannot load models in LM Studio, but the **Unload 
    If **Build** reports records over the max sequence length, nothing was truncated: recreate the study with a larger max length.
 6. **See what it learned** → base vs tuned on dev documents (never trained on), then Trajectory Explorer for each answer's search,
    retrieved passages, and cited source.
+
+## Seeing what changed — Distillation Lens (v0.8)
+
+After **Train** (and ideally **Eval · dev**), open **Distillation Lens**, pick the run, and press **Measure** (teacher unloaded).
+- **Skill space**: per skill, the untrained → trained arrow against the teacher; "gap closed" on the right.
+- **Distance to the teacher**: falling surprise means training is still moving the student toward the teacher; a flat tail means more steps will not help much.
+- **Word heatmap**: which of the teacher's tokens the student now expects. Early gains are usually the JSON format and stop token.
+
+To target one skill, choose **Focus skills** in the study wizard. Every skill is still evaluated, so the Lens and Evaluation Lab show side effects.

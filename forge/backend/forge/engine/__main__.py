@@ -40,6 +40,16 @@ def cmd_train_run(a: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_lens(a: argparse.Namespace) -> int:
+    """Distillation lens for one arm × seed (teacher-forced log-probs: base, snapshots, final)."""
+    os.environ.setdefault("HF_HUB_OFFLINE", "1")
+    os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
+    from forge.engine.lens import run_lens
+    from forge.engine.study import Study
+    run_lens(Study(Path(a.study)), a.arm, int(a.seed), emit)
+    return 0
+
+
 def cmd_knowledge(a: argparse.Namespace) -> int:
     """Knowledge-pack steps: import (local files), index (loopback embeddings), questions (teacher)."""
     from forge.engine.runtime import OpenAICompatBackend
@@ -134,6 +144,11 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("--seed", required=True)
     r.add_argument("--hash-cache")
     r.set_defaults(fn=cmd_train_run)
+    lz = sub.add_parser("lens")
+    lz.add_argument("--study", required=True)
+    lz.add_argument("--arm", required=True)
+    lz.add_argument("--seed", required=True)
+    lz.set_defaults(fn=cmd_lens)
     k = sub.add_parser("knowledge")
     k.add_argument("--pack", required=True)
     k.add_argument("--step", required=True, choices=["import", "index", "questions"])

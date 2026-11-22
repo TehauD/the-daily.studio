@@ -22,6 +22,7 @@
   --shadow: 0 1px 0 rgb(11 12 12 / 0.03), 0 1px 2px rgb(11 12 12 / 0.04);
 
   --s-teacher: #2a78d6;
+  --cat-1: #2a78d6; --cat-2: #eb6834; --cat-3: #1baf7a; --cat-4: #eda100; --cat-5: #e87ba4; --cat-6: #008300; --cat-7: #6250d6; --cat-8: #e34948;
   --s-base: #eb6834;
   --s-tuned: #1baf7a;
   --div-pos: #2a78d6;
@@ -67,6 +68,7 @@
   --grid-ink: rgb(255 255 255 / 0.028);
   --shadow: 0 0 0 1px rgb(0 0 0 / 0.2);
   --s-teacher: #3987e5;
+  --cat-1: #3987e5; --cat-2: #d95926; --cat-3: #199e70; --cat-4: #c98500; --cat-5: #d55181; --cat-6: #0ca30c; --cat-7: #9085e9; --cat-8: #e66767;
   --s-base: #d95926;
   --s-tuned: #199e70;
   --div-pos: #3987e5;

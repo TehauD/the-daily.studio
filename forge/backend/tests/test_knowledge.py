@@ -124,11 +124,28 @@ def test_pack_pipeline_and_doc_study(corpus, tmp_path, monkeypatch):
     assert {q["family"] for q in qs} == {"doc_answerable", "doc_unanswerable"}
     assert all(q["meta"]["gold_chunk"] for q in qs if q["family"] == "doc_answerable")
 
+    from forge.knowledge.embmap import build_map, neighbour_preservation
+    m = build_map(pack)
+    assert len(m["passages"]) == len(pack.chunks()) and len(m["questions"]) == len(qs) and m["note"] is None
+    assert 0 <= m["projection"]["neighbour_preservation"] <= 1 and len(m["projection"]["explained_variance"]) == 2
+    ans = [q for q in m["questions"] if q["family"] == "doc_answerable"]
+    assert all(q["gold"] is not None and q["gold_vector_rank"] >= 1 and len(q["retrieved"]) <= 3 for q in ans)
+    assert all(q["gold"] is None and q["hit"] is None for q in m["questions"] if q["family"] == "doc_unanswerable")
+    assert build_map(pack)["generated_at"] == m["generated_at"]            # cached by content hashes
+    import numpy as np
+    pts = np.random.default_rng(0).normal(size=(40, 6)).astype(np.float32)
+    pts /= np.linalg.norm(pts, axis=1, keepdims=True)
+    assert neighbour_preservation(pts, pts[:, :2] * 0 + pts[:, :2]) < 1.0  # a 2D slice loses some neighbours
+
     monkeypatch.setenv("FORGE_ISOLATE_RUNS", "0")
     study = Study.init(tmp_path / "studies", name="docs", profile="smoke", arms=["teacher_filtered"], knowledge_pack=pack,
                        teacher={"provider": "lmstudio", "endpoint": "http://127.0.0.1:9/v1", "model": "t"},
                        student={"name": "s", "path": str(tmp_path)})
     assert study.plan["taskset"]["kind"] == "docqa" and study.plan["taskset"]["retrieval"]["mode"] == "hybrid"
+    focused = Study.init(tmp_path / "studies", name="neg", profile="smoke", arms=["teacher_filtered"], knowledge_pack=pack,
+                         teacher={"provider": "lmstudio", "endpoint": "http://127.0.0.1:9/v1", "model": "t"},
+                         student={"name": "s", "path": str(tmp_path)}, focus_skills=["doc_unanswerable"])
+    assert focused.plan["focus"]["skills"] == ["doc_unanswerable"]
     tasks = {t.prompt: t for t in study.tasks()}
     study.run_stage("collect", emit=lambda e: None, teacher_backend=OracleBackend(tasks))
     eps = read_jsonl(study.episode_path("teacher", "train", 0)) + read_jsonl(study.episode_path("teacher", "dev", 0))

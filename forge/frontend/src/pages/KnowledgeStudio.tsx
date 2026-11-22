@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { Icon } from "../components/icons";
+import { EmbeddingMap } from "../components/embmap";
 import { JobLog } from "../components/live";
 import { Badge, Button, Empty, ErrorLine, Field, Notice, PageHeader, Panel, Prov, Readout, Segmented, Status, Tabs, cx, inputCls, td, th, tr } from "../components/ui";
 import { api, fmt, qs } from "../lib/api";
@@ -13,7 +14,7 @@ interface PackShort { id: string; name: string; source_dir: string; created_at: 
 interface PackFull extends PackShort {
   path: string; attestation: { no_sensitive_data: boolean; at: string }; chunking: { size: number; overlap: number };
   skipped: { path: string; reason: string }[]; counts: { documents: number; passages: number; questions: number; rejected: number };
-  jobs: Job[]; steps: Record<string, StepStatus>; stepsDetail?: never;
+  jobs: Job[]; steps: Record<string, StepStatus>; stepsDetail?: never; hashes?: Record<string, string | null>;
 }
 interface DocRow { doc_id: string; path: string; title: string; chars: number; kind: string; passages: number }
 interface ChunkRow { chunk_id: string; doc_id: string; order: number; text: string }
@@ -306,6 +307,7 @@ function StepSearch({ p, busy, onChange }: { p: PackFull; busy: boolean; onChang
         </div>
       </Panel>
       {p.steps.index === "completed" && <Playground p={p} />}
+      {p.steps.index === "completed" && p.embedding && <EmbeddingMap key={`${p.hashes?.vectors}${p.hashes?.questions}`} pid={p.id} />}
     </>
   );
 }
@@ -390,6 +392,7 @@ function StepQuestions({ p, busy, onChange }: { p: PackFull; busy: boolean; onCh
         </div>
       </Panel>
       {qdata.data && <QuestionTable data={qdata.data} />}
+      {p.steps.questions === "completed" && p.embedding && <EmbeddingMap key={`${p.hashes?.vectors}${p.hashes?.questions}`} pid={p.id} />}
     </>
   );
 }
@@ -450,6 +453,7 @@ function StepTeach({ p, studies, onCreated }: { p: PackFull; studies: StudyRow[]
   const [student, setStudent] = useState("");
   const [teacher, setTeacher] = useState("");
   const [profile, setProfile] = useState<"smoke" | "pilot" | "research">("pilot");
+  const [focus, setFocus] = useState<"both" | "doc_answerable" | "doc_unanswerable">("both");
   const rd = useApi<Readiness>("/api/system/readiness");
   const cudaOk = rd.data?.checks.find((c) => c.id === "cuda")?.status === "pass";
   const device: "cuda" | "cpu" = cudaOk || !rd.data?.cpu_wiring_mode ? "cuda" : "cpu";
@@ -459,7 +463,7 @@ function StepTeach({ p, studies, onCreated }: { p: PackFull; studies: StudyRow[]
   }, [students, teachers, student, teacher]);
   const act = useAction();
   const create = () => void act.run(async () => {
-    const s = await api.post<StudySummary>("/api/studies", { name: `${profile} · ${p.name}`, profile, teacher_id: teacher, student_id: student, knowledge_pack_id: p.id, arms: ["teacher_filtered"], device });
+    const s = await api.post<StudySummary>("/api/studies", { name: `${profile} · ${p.name}${focus === "both" ? "" : focus === "doc_answerable" ? " · answering" : " · not-found"}`, profile, teacher_id: teacher, student_id: student, knowledge_pack_id: p.id, arms: ["teacher_filtered"], device, focus_skills: focus === "both" ? null : [focus] });
     set("activeStudy", s.id);
     onCreated();
     window.location.hash = "/studio";
@@ -478,6 +482,9 @@ function StepTeach({ p, studies, onCreated }: { p: PackFull; studies: StudyRow[]
         </div>
         <Field label="How thorough?"><Segmented label="Profile" value={profile} onChange={setProfile} options={[{ value: "smoke", label: "quick check" }, { value: "pilot", label: "pilot" }, { value: "research", label: "research" }]} /></Field>
         <div className="text-[12.5px] text-ink-2">{PROF[profile]}</div>
+        <Field label="What should it get better at?" hint={focus === "both" ? "Trains on both kinds of question." : "Trains only on this kind of question. Both kinds are still tested, so you see the gain here and any side effect on the other."}>
+          <Segmented label="Focus" value={focus} onChange={setFocus} options={[{ value: "both", label: "both" }, { value: "doc_answerable", label: "answering from documents" }, { value: "doc_unanswerable", label: "saying “not found”" }]} />
+        </Field>
         {rd.data && (device === "cpu"
           ? <Notice tone="warn">No CUDA GPU is available to FORGE, and CPU wiring mode is on: this study will train on the CPU. That only checks the plumbing — its results are not meaningful.</Notice>
           : !cudaOk && <Notice tone="warn">FORGE cannot see a CUDA GPU right now (see Overview → Readiness). You can create the study, but training will refuse to start until the GPU is available.</Notice>)}

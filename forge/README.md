@@ -1,4 +1,4 @@
-# FORGE — Local Distillation Lab (v0.7.0)
+# FORGE — Local Distillation Lab (v0.8.0)
 
 A local-first research instrument for **teacher → student LLM distillation on one consumer NVIDIA GPU**.
 A large model you run in LM Studio (the *teacher*) solves tool-use or document-QA tasks. FORGE keeps only its
@@ -78,6 +78,8 @@ Full walkthrough: [docs/FIRST_RUN.md](docs/FIRST_RUN.md).
 - Use **pilot** or **research** profiles; smoke shows roughly zero gain by design.
 - Pick the teacher with the highest *strict success* on your tasks (a short collect per candidate), then keep it fixed for the study.
 - More verified examples help (e.g. 200+ practice questions in Knowledge Studio).
+- **Focus on the skills you care about**: pick *Focus skills* in the study wizard (or "What should it get better at?" in Knowledge Studio). Training uses only those skills; every skill is still evaluated, so side effects show up.
+- Use the **Distillation Lens** to check training is still moving the student toward the teacher before adding steps or data.
 - Choose settings on **dev** results only; seal once, then run **test** once. Report the seed confidence interval.
 
 ## What's inside
@@ -87,15 +89,22 @@ Full walkthrough: [docs/FIRST_RUN.md](docs/FIRST_RUN.md).
 | **Guide** | Concepts and the research protocol in plain language |
 | **Overview** | Readiness for each stage of the loop, live GPU / VRAM / temperature / power telemetry |
 | **Model Observatory** | Discovers LM Studio, Ollama, Hugging Face cache and folder models; parameter reconciliation; Hub search and download; teacher/student roles; pair-check with VRAM estimate |
-| **Knowledge Studio** | Guided doc-QA workflow: documents → search index → verified questions → study |
-| **Experiment Studio** | Frozen, hashed study plans; stages run as separate jobs with a live log and ETA |
+| **Knowledge Studio** | Guided doc-QA workflow: documents → search index → verified questions → study; a *Map of meaning* shows every passage and question in embedding space with the student's real search results |
+| **Experiment Studio** | Frozen, hashed study plans, optional focus skills; stages run as separate jobs with a live log and ETA |
 | **Trajectory Explorer** | Every episode as an observable path; teacher / base / tuned comparison with first divergence |
 | **Dataset Factory** | Per-arm training records, exclusions with reasons, token counts, provenance hashes |
 | **Training Lab** | VRAM planning, pre-flight gates, zero-adapter check, loss curves, token exposure, peak memory |
 | **Evaluation Lab** | Paired gain with crossed-bootstrap CI, sign-flip tests, Holm correction, skill map, review gate |
 | **Knowledge Graph** | Teacher → data → tuned students → measured skills → tools; adapter statistics and token projection; SVG / JSON / GraphML export |
+| **Distillation Lens** | Skill space (each skill: untrained → trained vs teacher, gap closed); distance to the teacher over training (teacher-forced surprise and top-1 agreement at saved snapshots); word heatmap of which teacher tokens the student learned to expect |
 | **Model Factory** | What each adapter changed (measured from its weights), artifact provenance, and merged exports as new hashed copies; originals are never modified |
 | **System Settings** | Runtime endpoints (loopback only), theme, accent, density, contrast, text scale, motion |
+
+![Distillation Lens: skill space, distance to the teacher, word heatmap](docs/images/distillation-lens.png)
+<sub>Distillation Lens on a validation run (tiny random-weight CPU student, mock teacher): shows the instrument working, not a learning result.</sub>
+
+![Knowledge Studio: map of meaning with the student's real search results for one question](docs/images/knowledge-studio-map.png)
+<sub>Map of meaning on FORGE's own docs with a stand-in embedding service.</sub>
 
 ![Knowledge Graph inspector: adapter statistics and token projection](docs/images/knowledge-graph-inspector.webp)
 
@@ -127,7 +136,7 @@ See [docs/VALIDATION.md](docs/VALIDATION.md) for exactly what has and has not be
 ## Developing
 
 ```powershell
-.\scripts\test.ps1                 # backend test suite (154 tests)
+.\scripts\test.ps1                 # backend test suite (157 tests)
 .\scripts\launch.ps1 -Mode dev     # Vite dev server with hot reload
 ```
 

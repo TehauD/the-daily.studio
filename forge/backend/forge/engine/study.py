@@ -183,7 +183,8 @@ class Study:
     def init(studies_dir: Path, *, name: str, profile: str, teacher: dict, student: dict, arms: list[str],
              seeds: list[int] | None = None, train_overrides: dict | None = None, taskset_overrides: dict | None = None,
              min_gain: float = 0.05, device: str = "cuda", environment: dict | None = None,
-             base_hash: str | None = None, knowledge_pack: Any = None) -> "Study":
+             base_hash: str | None = None, knowledge_pack: Any = None,
+             focus_skills: list[str] | None = None) -> "Study":
         if profile not in PROFILES:
             raise StudyError(f"profile must be one of {list(PROFILES)}")
         unknown = [a for a in arms if a not in TRAIN_ARMS]
@@ -200,6 +201,16 @@ class Study:
         else:
             spec = TaskSetSpec(**{**prof["taskset"], **(taskset_overrides or {})})
             tasks = generate_taskset(spec)
+        focus = None
+        if focus_skills:
+            trainable = sorted({t.family for t in tasks if t.split == "train"})
+            unknown_f = sorted(set(focus_skills) - set(trainable))
+            if unknown_f:
+                raise StudyError(f"Unknown focus skill(s) {unknown_f}; this task set trains {trainable}")
+            if set(focus_skills) != set(trainable):  # all skills selected = no focus
+                focus = {"skills": sorted(set(focus_skills)), "all_skills": trainable,
+                         "applies_to": "training data only; evaluation always covers every skill",
+                         "primary": "strict-success gain on the focus skills"}
         sid = new_id("study")
         root = studies_dir / sid
         root.mkdir(parents=True)
@@ -207,7 +218,8 @@ class Study:
         plan = {
             "study_id": sid, "name": name, "created_at": utcnow(), "profile": profile, "profile_purpose": prof["purpose"],
             "seeds": seeds if seeds is not None else prof["seeds"], "arms": arms, "control": "base",
-            "primary_contrast": f"{arms[0]} − base on test (strict success)", "min_gain": min_gain,
+            "primary_contrast": f"{arms[0]} − base on test (strict success" + (
+                f", focus skills: {', '.join(focus['skills'])})" if focus else ")"), "min_gain": min_gain, "focus": focus,
             "teacher": teacher, "student": student, "device": device,
             "taskset": ({"version": TASKSET_VERSION, "kind": "catalog", "spec": asdict(spec)} if spec is not None else {
                 "version": "forge-docqa-v1", "kind": "docqa", "spec": {"seed": 7},
@@ -360,10 +372,18 @@ class Study:
 
     def _stage_build(self, emit: Callable) -> dict:
         teacher_eps, oracle_eps = self.episodes("teacher", "train", 0), self.episodes("oracle", "train", 0)
+        focus = (self.plan.get("focus") or {}).get("skills")
+        off_focus = 0
+        if focus:  # skill-targeted study: train only on the focus skills (evaluation still covers all)
+            off_focus = sum(1 for e in teacher_eps if e["family"] not in focus)
+            teacher_eps = [e for e in teacher_eps if e["family"] in focus]
+            oracle_eps = [e for e in oracle_eps if e["family"] in focus]
         out = {}
         for arm in self.plan["arms"]:
             data_arm = TRAIN_ARMS[arm]["data"]
             res = ds.build_arm(ds.BuildPolicy(arm=data_arm, seed=self.plan["taskset"]["spec"]["seed"]), teacher_eps, oracle_eps)
+            if off_focus:
+                res["exclusions"]["outside_focus_skills"] = off_focus
             if not res["records"]:
                 raise StudyError(f"Arm {arm}: zero training records (teacher produced no strict successes?)")
             d = self.root / "datasets" / arm
@@ -372,7 +392,7 @@ class Study:
             rec_path.write_text("".join(canonical_json(r) + "\n" for r in res["records"]), encoding="utf-8")
             manifest = {"arm": arm, "data_policy": data_arm, "records": len(res["records"]),
                         "episodes_used": res["episodes_used"], "exclusions": res["exclusions"],
-                        "eligible_task_ids": len(res["eligible_task_ids"]),
+                        "eligible_task_ids": len(res["eligible_task_ids"]), "focus_skills": focus,
                         "eligible_task_ids_sha256": sha256_text(canonical_json(res["eligible_task_ids"])),
                         "records_sha256": sha256_file(rec_path), "created_at": utcnow()}
             atomic_write_json(d / "manifest.json", manifest)
@@ -537,12 +557,30 @@ class Study:
                         k = sum(o["success"] for o in fo)
                         fam.setdefault(f, {})[name] = {"rate": k / len(fo), "n": len(fo), "ci": st.wilson(k, len(fo))}
                 c["families"] = fam
+                focus = (self.plan.get("focus") or {}).get("skills")
+                if focus:  # skill-targeted study: separate contrasts for the focus skills and everything else
+                    for key, keep in (("focus", lambda f: f in focus), ("off_focus", lambda f: f not in focus)):
+                        af, bf = [o for o in a if keep(o["family"])], [o for o in base if keep(o["family"])]
+                        if af and bf:
+                            fc = st.analyze_contrast(af, bf, broadcast_control_seed=control_seed)
+                            fc.pop("per_group_delta", None)
+                            fc["families"] = sorted({o["family"] for o in af})
+                            fc["invalid_rate_arm"] = sum(o["invalid"] > 0 for o in af) / len(af)
+                            fc["invalid_rate_control"] = sum(o["invalid"] > 0 for o in bf) / len(bf)
+                            c[key] = fc
                 sec["arms"][arm] = c
             report["splits"][split] = sec
         primary = self.plan["arms"][0]
         test = report["splits"].get("test", {}).get("arms", {}).get(primary)
+        if test and self.plan.get("focus"):
+            # Preregistered at init: the focus-skill contrast is primary; everything else is secondary.
+            report["primary_scope"] = "focus"
+            off = test.get("off_focus")
+            test = test.get("focus")
         if test:
             secondary = {}
+            if report.get("primary_scope") == "focus" and off:
+                secondary["test:off_focus"] = off["sign_flip_groups"]["p"]
             for split in ("ood", "regression"):
                 c = report["splits"].get(split, {}).get("arms", {}).get(primary)
                 if c:

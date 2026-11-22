@@ -7,7 +7,7 @@ import { useAction, useApi } from "../lib/hooks";
 import { usePrefs } from "../lib/prefs";
 import type { Job, Model, Readiness, StudySummary } from "../lib/types";
 
-interface Catalog { profiles: Record<string, { seeds: number[]; purpose: string; train: Record<string, unknown>; taskset: Record<string, unknown> }>; arms: Record<string, { data: string; train: Record<string, unknown> }>; stages: string[]; gpu_stages: string[]; mvp_arms: string[] }
+interface Catalog { profiles: Record<string, { seeds: number[]; purpose: string; train: Record<string, unknown>; taskset: Record<string, unknown> }>; arms: Record<string, { data: string; train: Record<string, unknown> }>; stages: string[]; gpu_stages: string[]; mvp_arms: string[]; skills: Record<string, { id: string; label: string }[]> }
 
 const STAGE_LABEL: Record<string, string> = { init: "Init", collect: "Collect", build: "Build", train: "Train", evaluate_dev: "Eval · dev", analyze_dev: "Analyze · dev",
   seal: "Seal", evaluate_test: "Eval · test", analyze_test: "Analyze · test", export: "Export" };
@@ -62,7 +62,7 @@ function Wizard({ onCreated }: { onCreated: (id: string) => void }) {
   const rd = useApi<Readiness>("/api/system/readiness");
   const pre = (() => { try { return JSON.parse(sessionStorage.getItem("forge.pair") || "null") as { teacher: string; student: string } | null; } catch { return null; } })();
   const ms = models.data?.models ?? [];
-  const [f, setF] = useState({ name: "", profile: "smoke", teacher_id: pre?.teacher ?? "", student_id: pre?.student ?? "", arms: ["teacher_filtered"], min_gain: 0.05, max_steps: "", epochs: "", max_seq_len: "", device: "cuda" });
+  const [f, setF] = useState({ name: "", profile: "smoke", teacher_id: pre?.teacher ?? "", student_id: pre?.student ?? "", arms: ["teacher_filtered"], min_gain: 0.05, max_steps: "", epochs: "", max_seq_len: "", device: "cuda", focus_skills: [] as string[] });
   useEffect(() => {
     if (!f.teacher_id && ms.length) setF((x) => ({ ...x, teacher_id: ms.find((m) => m.roles.includes("teacher"))?.id ?? "", student_id: x.student_id || (ms.find((m) => m.roles.includes("student"))?.id ?? "") }));
   }, [ms, f.teacher_id]);
@@ -70,7 +70,7 @@ function Wizard({ onCreated }: { onCreated: (id: string) => void }) {
   const submit = (e: FormEvent) => {
     e.preventDefault();
     void act.run(async () => {
-      const body = { ...f, max_steps: f.max_steps ? Number(f.max_steps) : null, epochs: f.epochs ? Number(f.epochs) : null, max_seq_len: f.max_seq_len ? Number(f.max_seq_len) : null, name: f.name || `${f.profile}-${new Date().toISOString().slice(5, 16).replace("T", "-")}` };
+      const body = { ...f, max_steps: f.max_steps ? Number(f.max_steps) : null, epochs: f.epochs ? Number(f.epochs) : null, max_seq_len: f.max_seq_len ? Number(f.max_seq_len) : null, focus_skills: f.focus_skills.length ? f.focus_skills : null, name: f.name || `${f.profile}-${new Date().toISOString().slice(5, 16).replace("T", "-")}` };
       const s = await api.post<StudySummary>("/api/studies", body);
       sessionStorage.removeItem("forge.pair");
       onCreated(s.id);
@@ -98,6 +98,15 @@ function Wizard({ onCreated }: { onCreated: (id: string) => void }) {
                 const on = f.arms.includes(a);
                 return <button key={a} type="button" onClick={() => setF({ ...f, arms: on ? f.arms.filter((x) => x !== a) : [...f.arms, a] })} aria-pressed={on}
                   className={cx("rounded-[3px] border px-2 py-1 font-mono text-[11px] transition", on ? "border-accent bg-accent-soft text-ink" : "border-line text-ink-3 hover:text-ink")}>{a}{cat.data?.mvp_arms.includes(a) ? "" : " ·ablation"}</button>;
+              })}
+            </div>
+          </Field>
+          <Field label="Focus skills (optional)" hint={f.focus_skills.length ? "Training uses only these skills. Every skill is still evaluated, so you see the gain on the focus and any spill-over or regression elsewhere. The focus-skill gain becomes the preregistered primary result." : "None selected: train on every skill."}>
+            <div className="flex flex-wrap gap-1.5">
+              {(cat.data?.skills?.catalog ?? []).map((k) => {
+                const on = f.focus_skills.includes(k.id);
+                return <button key={k.id} type="button" aria-pressed={on} onClick={() => setF({ ...f, focus_skills: on ? f.focus_skills.filter((x) => x !== k.id) : [...f.focus_skills, k.id] })}
+                  className={cx("rounded-[3px] border px-2 py-1 text-[11.5px] transition", on ? "border-accent bg-accent-soft text-ink" : "border-line text-ink-3 hover:text-ink")}>{k.label}</button>;
               })}
             </div>
           </Field>

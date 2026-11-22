@@ -230,21 +230,42 @@ def train_lora(cfg: TrainConfig, hash_cache: Path | None = None, emit=print) -> 
             # training.jsonl keeps the ISO timestamp; the event stream uses emit's numeric ts.
             emit({"event": "log", **{k: v for k, v in row.items() if k != "ts"}})
 
+    # Evenly spaced adapter snapshots (≈5 per run) for the distance-to-teacher curve. Saving does not touch the
+    # optimisation; only the adapter weights are kept (no optimizer state), so each snapshot is small.
+    import math
+    per_epoch = math.ceil(len(train_set) / (cfg.micro_batch * cfg.grad_accum))
+    total_steps = cfg.max_steps if cfg.max_steps > 0 else max(1, math.ceil(per_epoch * cfg.epochs))
+    save_steps = max(1, min(cfg.save_steps, math.ceil(total_steps / 5)))
+    report["snapshot_every_steps"] = save_steps
+    snap_root = out / "snapshots"
+
+    class Snapshots(TrainerCallback):
+        def on_save(self, args, state, control, **kw):
+            import shutil
+            src = Path(args.output_dir) / f"checkpoint-{state.global_step}"
+            dst = snap_root / f"step-{state.global_step:06d}"
+            if src.is_dir() and (src / "adapter_model.safetensors").exists() and not dst.exists():
+                tmp = dst.with_name(dst.name + ".tmp")
+                tmp.mkdir(parents=True, exist_ok=True)
+                for name in ("adapter_model.safetensors", "adapter_config.json"):
+                    shutil.copy2(src / name, tmp / name)
+                tmp.rename(dst)
+
     args = TrainingArguments(
         output_dir=str(out / "checkpoints"), per_device_train_batch_size=cfg.micro_batch,
         gradient_accumulation_steps=cfg.grad_accum, learning_rate=cfg.lr, lr_scheduler_type="cosine",
         warmup_ratio=cfg.warmup_ratio, num_train_epochs=cfg.epochs, max_steps=cfg.max_steps,
         bf16=cfg.device == "cuda", gradient_checkpointing=cfg.gradient_checkpointing,
         gradient_checkpointing_kwargs={"use_reentrant": False} if cfg.gradient_checkpointing else None,
-        logging_steps=1, save_strategy="steps", save_steps=cfg.save_steps, save_total_limit=2,
-        eval_strategy="steps" if eval_set else "no", eval_steps=max(1, cfg.save_steps // 2) if eval_set else None,
+        logging_steps=1, save_strategy="steps", save_steps=save_steps, save_total_limit=2,
+        eval_strategy="steps" if eval_set else "no", eval_steps=save_steps if eval_set else None,
         per_device_eval_batch_size=1, report_to=[], seed=cfg.seed, data_seed=cfg.seed,
         remove_unused_columns=False, use_cpu=cfg.device == "cpu", dataloader_num_workers=0,
         include_num_input_tokens_seen=True,
         disable_tqdm=True,  # progress bars flood the job log; the Telemetry callback reports every step
     )
     trainer = Trainer(model=model, args=args, train_dataset=train_set, eval_dataset=eval_set or None,
-                      data_collator=_collate(tok.pad_token_id), callbacks=[Telemetry()])
+                      data_collator=_collate(tok.pad_token_id), callbacks=[Telemetry(), Snapshots()])
     from transformers.trainer_callback import PrinterCallback
     trainer.remove_callback(PrinterCallback)  # raw dict prints duplicate the structured "log" events
     ckpts = sorted((out / "checkpoints").glob("checkpoint-*"), key=lambda p: int(p.name.split("-")[-1]))

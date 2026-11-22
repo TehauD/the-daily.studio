@@ -175,6 +175,19 @@ def questions(pid: str, st: AppState = Depends(get_state)):
     return {"questions": qs, "rejected": p.rejected()}
 
 
+@router.get("/{pid}/map")
+async def embedding_map(pid: str, st: AppState = Depends(get_state)):
+    """Passages and questions on a 2D PCA plane, with the student's real search results per question."""
+    from forge.knowledge.embmap import MapError, build_map
+    p = _pack(st, pid)
+    if p.meta["steps"].get("index", {}).get("status") != "completed":
+        raise HTTPException(409, "Build the search index first (step 2)")
+    try:
+        return await asyncio.to_thread(build_map, p)
+    except MapError as e:
+        raise HTTPException(409, str(e))
+
+
 class SearchBody(BaseModel):
     query: str = Field(min_length=1, max_length=400)
     k: int = Field(5, ge=1, le=20)

@@ -95,3 +95,25 @@ mock served both here); lesson lengths under the Qwen tokenizer (sequence-length
 any GPU training on doc-QA; whether a 1.7B student actually learns your documents — the measured numbers here (base 0 / tuned 0 /
 teacher 0.86 strict on dev) come from a tiny random-weight model and say nothing about real capability.
 Synthetic or non-sensitive documents only: no PHI or patient data.
+
+## v0.8.0 — Distillation Lens, skill-targeted studies, embedding map
+
+| Feature | What it measures | Checked here |
+|---|---|---|
+| **Focus skills** (study wizard; Knowledge Studio "What should it get better at?") | Training data restricted to chosen skills (`outside_focus_skills` exclusion counted); evaluation still covers every skill; analysis adds separate *focus* and *off-focus* contrasts; the focus contrast is the preregistered primary for the review gate, off-focus enters Holm as secondary | Unit tests (unknown / regression-only skills refused; all skills = no focus); CPU study: 30 records all from the focus skill, 20 episodes excluded; focus and off-focus contrasts present |
+| **Training snapshots** | Adapter weights only (no optimizer state) every ⌈total/5⌉ steps; eval cadence aligned | 4 snapshots + final on a 60-step run (704 KB on the tiny model; ≈ 35 MB each for Qwen3-1.7B r16 in bf16 — estimate) |
+| **Distance to the teacher** | Teacher-forced NLL per teacher action token and top-1 agreement on dev teacher episodes (balanced across skills, ≤ 40), for base, every snapshot, final | Tiny CPU model: 6.42 → 6.35 → 6.27 → 6.21 → 6.19 → 6.19 nats; agreement flat at 1.5 % (a random-weight model — wiring only) |
+| **Word heatmap** | Per token log p under base vs final adapter; tokens most / least gained (≥ 2 occurrences) | Decoded pieces reassemble the teacher action text (test); top gains on the tiny model were JSON structure and `<\|im_end\|>` |
+| **Skill space** | Strict success per skill: teacher, base, every arm × seed, gap closed = (tuned − base)/(teacher − base) | API + UI; descriptive only (intervals stay in Evaluation Lab) |
+| **Map of meaning** | PCA of passage embeddings with questions projected in; neighbour preservation (k=10) and explained variance reported; per question the student's real hybrid search top-k and the true cosine rank of the right passage | 35 passages / 23 questions: 67 % found, neighbour preservation 54 %, 14 % variance on two axes (mock embeddings) |
+| UI | Lens fits 1920×1080 without page scroll, no horizontal overflow at 390 px, no console errors; light and dark | yes |
+| Backend suite | | 157 passed |
+
+**Not validated — requires your machine:** lens runtime and memory on Qwen3-1.7B (one forward pass per teacher turn per snapshot;
+expected seconds to a few minutes on a 16 GB GPU — not measured); snapshot sizes on real adapters; whether real training shows
+the falling curve and per-skill gains (the tiny model here barely learns, so its skill space is flat at 0 %); map quality with a real
+embedding model (the mock's bag-of-words vectors cluster questions artificially). Studies trained before v0.8 have no snapshots:
+their curve has two points (before / after).
+
+The lens shows which teacher tokens the student learned to expect under teacher forcing. It does not show why, it is not task
+success, and it does not visualize reasoning.

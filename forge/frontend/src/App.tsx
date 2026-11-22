@@ -21,6 +21,7 @@ const Settings = lazy(() => import("./pages/Settings"));
 const Guide = lazy(() => import("./pages/guide/Guide"));
 const Knowledge = lazy(() => import("./pages/Knowledge"));
 const KnowledgeStudio = lazy(() => import("./pages/KnowledgeStudio"));
+const Lens = lazy(() => import("./pages/Lens"));
 
 const NAV = [
   { group: "Orientation", items: [{ key: "guide", label: "Guide", icon: "guide" }, { key: "overview", label: "Overview", icon: "overview" }] },
@@ -30,12 +31,13 @@ const NAV = [
     { key: "studio", label: "Experiment Studio", icon: "studio" }, { key: "trajectories", label: "Trajectory Explorer", icon: "trajectory" },
     { key: "datasets", label: "Dataset Factory", icon: "dataset" }, { key: "training", label: "Training Lab", icon: "training" },
     { key: "evaluation", label: "Evaluation Lab", icon: "evaluation" }, { key: "knowledge", label: "Knowledge Graph", icon: "graph" },
+    { key: "lens", label: "Distillation Lens", icon: "lens" },
     { key: "factory", label: "Model Factory", icon: "factory" }] },
   { group: "System", items: [{ key: "settings", label: "System Settings", icon: "settings" }] },
 ] as const;
 type Key = (typeof NAV)[number]["items"][number]["key"];
 /** Workspace pages that lock to the viewport on wide screens (no page scroll; panels scroll inside). */
-const FIT = new Set<string>(["overview", "observatory", "studio", "trajectories", "evaluation", "knowledge", "knowledge-studio"]);
+const FIT = new Set<string>(["overview", "observatory", "studio", "trajectories", "evaluation", "knowledge", "knowledge-studio", "lens"]);
 const KEYS = NAV.flatMap((g) => g.items.map((i) => i.key)) as Key[];
 const LABEL = Object.fromEntries(NAV.flatMap((g) => g.items.map((i) => [i.key, i.label]))) as Record<Key, string>;
 
@@ -163,7 +165,7 @@ function Shell() {
     { id: "verify", label: "Verify GPU (forward/backward, BF16)", group: "Actions", run: () => { void api.post("/api/jobs/verify-gpu"); go("overview"); } },
   ], [go, set, prefs.sidebarCollapsed]);
   const Page = { overview: Overview, observatory: Observatory, studio: Studio, trajectories: Trajectories, datasets: Datasets,
-    training: Training, evaluation: Evaluation, knowledge: Knowledge, "knowledge-studio": KnowledgeStudio, factory: Factory, settings: Settings, guide: Guide }[route];
+    training: Training, evaluation: Evaluation, knowledge: Knowledge, "knowledge-studio": KnowledgeStudio, lens: Lens, factory: Factory, settings: Settings, guide: Guide }[route];
   return (
     <div className="flex min-h-full">
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-[60] focus:rounded focus:bg-surface focus:px-3 focus:py-2">Skip to content</a>

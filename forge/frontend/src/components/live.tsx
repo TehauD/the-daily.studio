@@ -37,6 +37,9 @@ function describe(e: JobEvent): { text: string; tone: "default" | "good" | "crit
     case "embedded": return { text: `embedded ${e.done}/${e.total} passages`, tone: "muted" };
     case "indexed": return { text: `index ready · ${e.mode}${e.model ? ` · ${e.model} (${e.dim} dims)` : ""}`, tone: "good" };
     case "question": return { text: `question ${e.done}/${e.total} · ${e.accepted} accepted · ${e.rejected} rejected`, tone: "muted" };
+    case "lens_start": return { text: `lens ${e.arm} s${e.seed}: ${e.episodes} dev episodes · ${e.records} teacher turns · ${e.tokens} tokens`, tone: "default" };
+    case "lens_point": return { text: `${e.label}${e.total ? ` (${e.done}/${e.total})` : ""} · surprise ${(e.nll as number).toFixed(3)} nats/token · same top guess ${fmt.pct(e.agreement as number, 1)}`, tone: "default" };
+    case "lens_done": return { text: `lens saved · ${e.points} points`, tone: "good" };
     case "dataset": return { text: `dataset ${e.arm}: ${e.records} records from ${e.episodes_used} episodes`, tone: "default" };
     case undefined: return { text: e.text ?? "", tone: "muted" };
     default: return { text: `${e.event} ${JSON.stringify(Object.fromEntries(Object.entries(e).filter(([k]) => !["ts", "event"].includes(k)))).slice(0, 220)}`, tone: "default" };
