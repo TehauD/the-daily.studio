@@ -4,6 +4,7 @@ import { JobLog } from "../components/live";
 import { Badge, Button, Empty, ErrorLine, Field, Notice, PageHeader, Panel, Readout, Segmented, Status, Tabs, Toggle, cx, inputCls, td, th, tr } from "../components/ui";
 import { api, fmt, qs } from "../lib/api";
 import { useAction, useApi } from "../lib/hooks";
+import { AskAI, useAssistantScope } from "../lib/assistant";
 import { usePrefs } from "../lib/prefs";
 import type { Job, Model, Readiness, StudyRow, StudySummary } from "../lib/types";
 
@@ -44,6 +45,7 @@ export default function AgentStudio() {
   const ag = useApi<AgentFull>(aid ? `/api/agents/${aid}` : null, 3000);
   const studies = useApi<StudyRow[]>("/api/studies", 8000);
   const a = ag.data;
+  useAssistantScope("agent", a?.id, a?.name);
   const mine = useMemo(() => (studies.data ?? []).filter((s) => a && (s as StudyRow & { agent?: string }).agent === a.id), [studies.data, a]);
   const hasTools = !!a && a.tool_names.length > 0, hasSkills = !!a && a.skills.length > 0, tasksOk = a?.steps.tasks.status === "completed";
   const reached: Record<SKey, boolean> = { define: true, tools: !!a, skills: hasTools, tasks: hasSkills, teach: tasksOk || mine.length > 0 };
@@ -398,7 +400,7 @@ function StepSkills({ a, onSaved }: { a: AgentFull; onSaved: () => Promise<void>
     await api.put(`/api/agents/${a.id}`, { skills: out }); await onSaved();
   });
   return (
-    <Panel title="3 · Describe skills" eyebrow={a.name} right={<Button size="sm" icon="plus" onClick={add}>Add skill</Button>}>
+    <Panel title="3 · Describe skills" eyebrow={a.name} right={<><AskAI q="Review my skill examples and sample tasks. Suggest better examples (with tool calls) and point out tasks that are too easy, ambiguous, or repetitive." content label="Improve examples" /><Button size="sm" icon="plus" onClick={add}>Add skill</Button></>}>
       <div className="space-y-3">
         {skills.length === 0 && <Empty>Add a skill — a kind of task this agent should get good at.</Empty>}
         {skills.map((s, i) => (
@@ -523,7 +525,7 @@ function TaskTable({ a, data }: { a: AgentFull; data: { tasks: TaskRow[]; reject
   const no = data.rejected.filter((r) => !skill || r.skill === skill);
   const reasons = useMemo(() => { const m = new Map<string, number>(); no.forEach((r) => { const k = r.reason.replace(/'[^']*'/g, "…").replace(/\d+(\.\d+)?/g, "#"); m.set(k, (m.get(k) ?? 0) + 1); }); return [...m].sort((x, y) => y[1] - x[1]).slice(0, 5); }, [no]);
   return (
-    <Panel flush title="Tasks" right={<select className={cx(inputCls, "h-7 !w-auto font-sans")} value={skill} onChange={(e) => setSkill(e.target.value)} aria-label="Skill filter"><option value="">all skills</option>{a.skills.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</select>}>
+    <Panel flush title="Tasks" right={<><AskAI q="Explain the rejection reasons and how to change the skills, examples or tools so more tasks pass verification." label="Why rejected?" /><select className={cx(inputCls, "h-7 !w-auto font-sans")} value={skill} onChange={(e) => setSkill(e.target.value)} aria-label="Skill filter"><option value="">all skills</option>{a.skills.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</select></>}>
       <div className="px-[var(--pad)] pt-2"><Tabs value={tab} onChange={setTab} tabs={[{ value: "ok", label: "Accepted", count: ok.length }, { value: "no", label: "Rejected", count: no.length }]} /></div>
       {tab === "ok" ? (
         <div className="scroll-thin max-h-[460px] overflow-auto">

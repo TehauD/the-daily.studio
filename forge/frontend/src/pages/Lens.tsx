@@ -4,6 +4,7 @@ import { JobLog, StudySelect } from "../components/live";
 import { Badge, Button, Empty, ErrorLine, Notice, PageHeader, Panel, Prov, Readout, Segmented, Skeleton, cx, inputCls } from "../components/ui";
 import { api, fmt, qs } from "../lib/api";
 import { useAction, useApi } from "../lib/hooks";
+import { AskAI } from "../lib/assistant";
 import { usePrefs } from "../lib/prefs";
 import type { Job, StudySummary } from "../lib/types";
 
@@ -46,6 +47,7 @@ export default function Lens() {
       <PageHeader kicker="Research" title="Distillation Lens"
         subtitle="What distillation changed, three ways: which skills moved toward the teacher, how close the student's predictions came to the teacher's over training, and which words it now expects."
         right={<>
+          <AskAI q="Interpret the Distillation Lens: the skill space, the surprise / agreement curve and the tokens gained or lost. Is training still helping? What did the student actually learn?" content label="Interpret with AI" />
           <StudySelect />
           {runs.length > 0 && <select className={cx(inputCls, "h-8 !w-auto font-sans")} value={run} onChange={(e) => setRun(e.target.value)} aria-label="Trained run">
             {runs.map((r) => <option key={r} value={r}>{r.replace("|", " · seed ")}</option>)}</select>}

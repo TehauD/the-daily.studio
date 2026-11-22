@@ -140,3 +140,18 @@ agent; it is not clinical or formulary data, and FORGE makes no claim of clinica
 **Not validated — requires your machine:** a real teacher writing tasks (the mock follows the prompt mechanically; a real model will
 produce more varied tasks and different rejection rates); real student gains on agent skills; tables much larger than a few thousand
 rows (lookups are in-memory, find is a linear scan).
+
+## v0.10.0 — Azure OpenAI assistant
+
+| Check | Result here |
+|---|---|
+| Hidden until configured (no button, no inline actions, API answers 409) | test + browser |
+| Config validation (https, Azure hosts only, bare resource URL, deployment / API-version / key-variable formats; a key pasted as the variable name is refused) | test |
+| Key never stored or returned; audit log contains no key | test |
+| Summary-only questions sent directly; content questions require `/preview` hash approval; wrong hash → nothing sent; sent body equals previewed messages | test (mock transport) |
+| Redaction of absolute paths; personal-data patterns refuse the send; history cannot inject system messages | test |
+| UI: Settings → Integrations, test connection, *Explain with AI* on Evaluation Lab, review dialog + receipt in Agent Studio, 390 px, no console errors | browser against a **mock** Azure endpoint |
+| Backend suite | 168 passed |
+
+**Not validated — requires your Azure resource:** real Azure OpenAI responses and their quality, latency, rate limits, content
+filtering, and whether your deployment/API version accepts `max_completion_tokens` (FORGE falls back to `max_tokens` automatically).

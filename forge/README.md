@@ -1,4 +1,4 @@
-# FORGE — Local Distillation Lab (v0.9.1)
+# FORGE — Local Distillation Lab (v0.10.0)
 
 A local-first research instrument for **teacher → student LLM distillation on one consumer NVIDIA GPU**.
 A large model you run in LM Studio (the *teacher*) solves tool-use or document-QA tasks. FORGE keeps only its
@@ -87,6 +87,28 @@ Open **Agent Studio** and follow the five steps:
 ![Agent Studio: tools step with tables, calculators, rules and the tool console](docs/images/agent-studio-tools.png)
 <sub>Validation instance: synthetic template plus a synthetic fee schedule.</sub>
 
+### 6. Optional: AI assistant (Azure OpenAI)
+
+Off and invisible until you configure it. In **System Settings → Integrations → Set up Azure OpenAI** enter your resource
+endpoint (`https://<resource>.openai.azure.com`), the chat deployment name, and the **name** of the environment variable that holds
+your key (default `AZURE_OPENAI_API_KEY`). FORGE never stores the key. Set it for your user and restart FORGE:
+
+```powershell
+setx AZURE_OPENAI_API_KEY "<key from Azure portal → Keys and Endpoint>"
+```
+
+Then **Test connection**. An **Ask FORGE AI** button appears on every page, plus *Explain with AI* / *Interpret with AI* /
+*Why rejected?* / *Improve examples* buttons where they help. The assistant knows FORGE's methods and answers from your actual
+study, agent or knowledge pack.
+
+- **Summaries are sent when you ask**: metrics, settings, statistics, skill and tool names.
+- **Real text is sent only after you review it**: tasks, examples, table rows, passages and episodes are shown in a review dialog;
+  FORGE sends exactly that payload, checked by hash.
+- File paths are removed, anything resembling personal data is refused, and a local audit log records what was sent.
+
+![Review dialog before real text is sent to Azure OpenAI](docs/images/assistant-review.png)
+<sub>Validation instance with a mock Azure endpoint.</sub>
+
 ## Tips for larger, trustworthy gains
 
 - Use **pilot** or **research** profiles; smoke shows roughly zero gain by design.
@@ -152,7 +174,7 @@ Security and robustness controls, with how each is checked: [docs/HARDENING.md](
 ## Developing
 
 ```powershell
-.\scripts\test.ps1                 # backend test suite (165 tests)
+.\scripts\test.ps1                 # backend test suite (168 tests)
 .\scripts\launch.ps1 -Mode dev     # Vite dev server with hot reload
 ```
 

@@ -2,7 +2,9 @@ import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { Sparkline } from "./components/sparkline";
 import { CommandPalette, type Command } from "./components/CommandPalette";
 import { Icon, type IconName } from "./components/icons";
+import { AssistantDrawer } from "./components/AssistantDrawer";
 import { StudySelect, TelemetryProvider, useTelemetry } from "./components/live";
+import { AssistantProvider } from "./lib/assistant";
 import { Kbd, Skeleton, cx } from "./components/ui";
 import { api } from "./lib/api";
 import { useApi, useHashRoute } from "./lib/hooks";
@@ -169,6 +171,7 @@ function Shell() {
   const Page = { overview: Overview, observatory: Observatory, studio: Studio, trajectories: Trajectories, datasets: Datasets,
     training: Training, evaluation: Evaluation, knowledge: Knowledge, "knowledge-studio": KnowledgeStudio, lens: Lens, "agent-studio": AgentStudio, factory: Factory, settings: Settings, guide: Guide }[route];
   return (
+    <AssistantProvider route={route}>
     <div className="flex min-h-full">
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-[60] focus:rounded focus:bg-surface focus:px-3 focus:py-2">Skip to content</a>
       <Sidebar route={route} go={go} open={menu} onClose={() => setMenu(false)} />
@@ -184,7 +187,9 @@ function Shell() {
         </main>
       </div>
       {palette && <CommandPalette commands={commands} onClose={() => setPalette(false)} />}
+      <AssistantDrawer />
     </div>
+    </AssistantProvider>
   );
 }
 

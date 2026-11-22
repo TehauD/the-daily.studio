@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { fmt } from "../lib/api";
+import { AskAI } from "../lib/assistant";
 import { useApi } from "../lib/hooks";
 import { Badge, Empty, Notice, Panel, Prov, Readout, Segmented, Skeleton, cx } from "./ui";
 
@@ -45,7 +46,8 @@ export function EmbeddingMap({ pid }: { pid: string }) {
   const hp = hover != null ? d.passages[hover] : null;
   const title = (i: number) => d.docs[d.passages[i].doc]?.title ?? "";
   return (
-    <Panel title="Map of meaning" eyebrow="embedding space · every passage and question" prov={<Prov kind="computed" source={`${d.model} · ${d.dim}-d → PCA 2-d`} />}>
+    <Panel title="Map of meaning" eyebrow="embedding space · every passage and question" prov={<Prov kind="computed" source={`${d.model} · ${d.dim}-d → PCA 2-d`} />}
+      right={<AskAI q="Look at the questions search missed. Explain why each was missed and what would fix it (chunk size, embedding model, wording)." content label="Why does search miss?" />}>
       <div className="space-y-3">
         <p className="text-[12.5px] leading-relaxed text-ink-2">
           Each dot is a passage, coloured by document; each <b className="font-medium text-ink">◆</b> is a practice question. Passages that mean similar things sit close together.

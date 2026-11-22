@@ -1,3 +1,4 @@
+import { AskAI } from "../lib/assistant";
 import { useMemo, useState, type FormEvent } from "react";
 import { ForestPlot, SkillMap, type ForestRow, type SkillFamily } from "../components/charts";
 import { PathCompare } from "../components/graphs";
@@ -25,7 +26,7 @@ export default function Evaluation() {
   return (
     <div className="space-y-4 fit:flex fit:h-full fit:min-h-0 fit:flex-col fit:gap-3 fit:space-y-0">
       <PageHeader kicker="Research" title="Evaluation Lab" subtitle="Did the student improve, by how much, with what uncertainty, and where? Effects are paired per scenario group (paraphrases averaged), with a crossed seed × group bootstrap and exact sign-flip tests."
-        right={<><StudySelect />{splitsAvail.length > 0 && <Segmented label="Split" value={sp ?? ""} onChange={setSplit} options={splitsAvail.map((x) => ({ value: x, label: x }))} />}</>} />
+        right={<><AskAI q="Explain this study's results in plain language: what improved, by how much, how certain, and what did not. Then say whether the gain is trustworthy." label="Explain with AI" /><StudySelect />{splitsAvail.length > 0 && <Segmented label="Split" value={sp ?? ""} onChange={setSplit} options={splitsAvail.map((x) => ({ value: x, label: x }))} />}</>} />
       <ErrorLine error={s.error} />
       {!sid || !sec ? <><Panel><Empty icon="evaluation">No analysis yet. Run evaluate_dev → analyze_dev (and, after SEAL, the test stages) in Experiment Studio.</Empty></Panel><Calculators /></> : (
         <>

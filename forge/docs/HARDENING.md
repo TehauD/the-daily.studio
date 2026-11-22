@@ -1,4 +1,4 @@
-# FORGE hardening (v0.9.1)
+# FORGE hardening (v0.10.0)
 
 What FORGE defends against, the control that does it, and how each control is checked.
 "Test" names the automated test in `backend/tests/` and "browser" a check on the built UI.
@@ -26,6 +26,7 @@ clinical use. FORGE makes **no clinical-validity or deployment-readiness claims*
 | Script injection in the UI | Strict Content-Security-Policy: same-origin only; the one inline pre-paint script allowed by its SHA-256; no `eval`, no plugins, no remote hosts. React escapes all rendered text | test + browser (all 14 pages, zero CSP violations) |
 | Content sniffing / leaking URLs | `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`, explicit `charset=utf-8` | test |
 | Outbound calls | Teacher, embedding and runtime endpoints must be loopback unless you opt in per endpoint; `trust_env=False` (no system proxy), no redirects; API keys referenced by environment-variable name only | tests |
+| Azure OpenAI assistant (optional) | Off until endpoint, deployment, *enabled* and the key variable are all set; https only, host must be an Azure OpenAI / Azure AI domain, bare resource URL (no path, credentials or custom port); key read from an environment variable at call time, never stored or returned; no redirects; system proxy only if opted in. Summaries only by default; real text requires approving the exact payload (SHA-256 checked server-side; a mismatch sends nothing). Paths redacted; personal-data patterns refused; history cannot inject system messages; local audit log of size + hash | tests (`test_assistant.py`) + browser |
 | Telemetry | None. Nothing leaves the machine except Hugging Face Hub downloads you start (the outbound call is shown first) | — |
 
 ## Files and paths
@@ -78,5 +79,6 @@ clinical use. FORGE makes **no clinical-validity or deployment-readiness claims*
 - Any program running as your Windows user can read `%LOCALAPPDATA%\Forge` and could read the session token from the running page.
 - The personal-data scan uses patterns and cannot recognise every identifier (free-text names, rare ID formats). **Synthetic or non-sensitive data only.**
 - A malicious *teacher* model can still write wrong but verifiable-looking tasks. Verification proves that the answers come from your tools and data, not that the questions are sensible. Read the accepted tasks.
+- When the assistant is on, summaries (metrics, settings, skill and tool names, your agent's role text) go to your Azure resource and are processed under your Azure terms and region.
 - Inline style attributes are allowed by the CSP (the charts need them); inline scripts are not.
 - PowerShell scripts were reviewed but are only exercised on your Windows machine; the CI-style checks here run on Linux.

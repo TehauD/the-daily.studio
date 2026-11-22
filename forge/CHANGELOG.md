@@ -1,5 +1,12 @@
 # FORGE changelog
 
+## 0.10.0 — Azure OpenAI assistant (optional)
+- In-app assistant powered by your Azure OpenAI deployment; hidden until configured (System Settings → Integrations or env vars).
+- Answers from FORGE's own data per page (study, agent, knowledge pack, general) with FORGE's methods built in; quick questions and
+  contextual buttons (Explain / Interpret / Why rejected? / Improve examples / Why does search miss?).
+- Data policy: summaries sent on ask; real text only after reviewing the exact payload (hash-checked); redaction, personal-data
+  refusal, local audit + history. Key only from an environment variable.
+
 ## 0.9.1 — hardened release
 - Security: Content-Security-Policy (same-origin, hashed inline script, no eval, no framing); `X-Frame-Options: DENY`.
 - Security: path traversal fixed in agent table deletion; arm/split path components validated centrally; refused input returns 422, not 500.

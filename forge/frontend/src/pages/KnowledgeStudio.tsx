@@ -5,6 +5,7 @@ import { JobLog } from "../components/live";
 import { Badge, Button, Empty, ErrorLine, Field, Notice, PageHeader, Panel, Prov, Readout, Segmented, Status, Tabs, cx, inputCls, td, th, tr } from "../components/ui";
 import { api, fmt, qs } from "../lib/api";
 import { useAction, useApi } from "../lib/hooks";
+import { useAssistantScope } from "../lib/assistant";
 import { usePrefs } from "../lib/prefs";
 import type { Job, Model, Readiness, StudyRow, StudySummary } from "../lib/types";
 
@@ -41,6 +42,7 @@ export default function KnowledgeStudio() {
   const pack = useApi<PackFull>(pid ? `/api/knowledge/${pid}` : null, 3000);
   const studies = useApi<StudyRow[]>("/api/studies", 8000);
   const p = pack.data;
+  useAssistantScope("pack", p?.id, p?.name);
   const done = (s: string) => p?.steps[s] === "completed";
   const packStudies = useMemo(() => (studies.data ?? []).filter((s) => p && s.knowledge_pack === p.id), [studies.data, p]);
   const reached: Record<JKey, boolean> = { docs: true, search: !!p && done("import"), questions: !!p && done("index"), teach: !!p && done("questions"), results: packStudies.length > 0 };
