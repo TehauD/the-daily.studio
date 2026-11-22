@@ -9,6 +9,7 @@ How to use it: before a release, move what the release closed into *Closed* with
 **Held fixed until these are done: no new looks and no new agent tools.** The Visuals have 40 looks and the agent has 30 tools; what is missing now is proof and the parts of the product that were ranked and never started.
 
 *Needs you (maintainer)*
+- **Repository settings** (docs/REPO_SECURITY.md): protect `main` with a ruleset, turn on secret scanning and push protection and private vulnerability reporting, set the Actions fork-approval rule, check Cloudflare Workers Builds, and keep your email private for new commits. None of these can be set from a commit.
 - **Markdown for agents: add the Transform Rule** (CLOUDFLARE_SETUP.md, Part K, two minutes), then press Rescan in Agent Readiness. The Markdown files ship with 2.87.1; the rule is what sends `Accept: text/markdown` to them.
 - **Network Error Logging is on at Cloudflare.** The live site sends `nel` and `report-to` headers (Cloudflare ▸ Speed ▸ Network Error Logging). PRIVACY.md and CLOUDFLARE_SETUP.md say it is off; switch it off, or say so in PRIVACY.md.
 - **Bing Webmaster Tools:** press Verify (the tag is live) and submit the sitemap. Google Search Console steps are in SEARCH_IDENTITY.md.
@@ -25,6 +26,10 @@ How to use it: before a release, move what the release closed into *Closed* with
 - Next rooms, by size: the guide (60-guide, 53 kB), the agent tools (72-agent, 50 kB), the neural pane (14-neural, 40 kB), the looks (66-looks, 36 kB). The compressed budget is 720 kB; the page is about 677 kB.
 - The full e2e suite is 100 files and about 35 minutes; CI runs it twice per push. Splitting it into a fast set (every push) and the full set (before merge) would halve that.
 - Per-section looks and the Stage scenes are separate systems (Auto look maps three section types to three looks); joining them is a design decision, not a bug.
+
+## Closed in 2.87.2
+
+- **CI actions were pinned by tag, and the repository had no code scanning or owners file.** Pinned to commits, CodeQL added, CODEOWNERS added, and `npm run audit` holds all three.
 
 ## Closed in 2.87.1
 

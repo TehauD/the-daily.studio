@@ -2,6 +2,19 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.87.2 — 2026-11-22 — Hardening for a public repository
+
+The code is public, so what a stranger can change or run in CI matters more than what they can read. Repository and CI only; the studio itself does not change.
+
+### Added
+- **Every CI action is pinned to a full commit hash** (`actions/checkout`, `actions/setup-node`, and the new CodeQL steps), with the version in a comment. Dependabot proposes new hashes; `npm run audit` now fails on an unpinned action, a workflow without a `permissions:` block, or one that runs fork code with secrets (`pull_request_target`, `workflow_run`, `secrets.`).
+- **CodeQL code scanning** (`.github/workflows/codeql.yml`, javascript-typescript, on push, pull request and weekly), skipping the generated files.
+- **`.github/CODEOWNERS`**, naming the owner for workflows, the Worker, the build and the security files.
+- **`docs/REPO_SECURITY.md`**: step by step, the settings a commit cannot change: a ruleset for `main`, secret scanning with push protection, private vulnerability reporting, Actions settings, Cloudflare Workers Builds, and email privacy for new commits.
+
+### Notes
+- The tracked files and all 249 commits were checked for keys and tokens by pattern: none. Runtime secrets live in Cloudflare, not the repository.
+
 ## 2.87.1 — 2026-11-22 — Easier for AI assistants and crawlers to read
 
 A small release for what Cloudflare's *AI Crawl Control* reported: crawlers were asking for things the site did not have. Nothing in the studio itself changes.

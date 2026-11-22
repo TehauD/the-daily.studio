@@ -57,6 +57,7 @@ Create a GitHub release from the tag, using that version's CHANGELOG entry (and 
 - [ ] Hand tracking (Vision panel) and the camera **person** look: the one-time question appears first; **Download** then loads from jsDelivr and Google storage (the real download is not covered by the automated tests, the question and the refusal are). Confirm the segmenter model URL resolves.
 - [ ] `BASE_URL=https://the-daily.studio/ node test/e2e-privacy.cjs` passes against the live site (no request to any other site, no cookie). From a sandbox that reaches the internet through a proxy, add `PW_PROXY=1`.
 - [ ] In Cloudflare: Web Analytics' automatic setup, bot detection's JavaScript and Network Error Logging are off (see SECURITY_MODEL.md, *Live site evaluation*). `curl -s https://the-daily.studio/nope | grep -c cloudflareinsights` prints 0.
+- [ ] On GitHub and Cloudflare: the repository settings in `docs/REPO_SECURITY.md` (ruleset on `main`, secret scanning with push protection, private vulnerability reporting, Actions fork approval, Workers Builds, email privacy) are on. A commit cannot set them; check them after any change of account or repository.
 - [ ] `https://the-daily.studio/.well-known/security.txt` answers, and its `Expires` date is more than a month away.
 - [ ] `https://journal.the-daily.studio/` opens The Daily, and `https://the-daily.studio/journal/` shows the moving page.
 - [ ] `https://the-daily.studio/legal/` opens and shows the licence, notices, privacy statement, terms and both font licences.

@@ -1,0 +1,8 @@
+# Who is asked to review a change (2.87.2). With the branch rule in docs/REPO_SECURITY.md, a change to these needs the owner's approval.
+*                       @TehauD
+/.github/               @TehauD
+/worker/                @TehauD
+/wrangler.jsonc         @TehauD
+/scripts/assemble.mjs   @TehauD
+/scripts/verify-site.mjs @TehauD
+/SECURITY.md            @TehauD
