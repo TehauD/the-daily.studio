@@ -74,6 +74,10 @@ node scripts/mcp-bridge.mjs --dist dist --out ./the-daily-output
 
 In Claude Desktop or Claude Code, add it as a server: `{ "command": "node", "args": ["/path/to/the-daily.studio/scripts/mcp-bridge.mjs", "--dist", "/path/to/the-daily.studio/dist", "--out", "/path/to/music"] }`. `--url https://the-daily.studio/` opens the hosted studio instead of a local build; `--profile <dir>` keeps songs between runs; `--headed` shows the browser. Set `CHROMIUM_PATH` to use another Chromium and `NO_SANDBOX=1` inside a container.
 
+## The visuals (2.87)
+
+`get_studio_state.visuals` lists every look with its **group** (`sound`, `harm`, `air`, `perf`, or `more`), and the **dials** of the look that is showing: `options: [{ key, label, type: number | boolean | choice, default, current, min, max, choices }]`. `set_visuals` takes the new optional input `options: { key: value }` for that look (set `look` first, in the same call or an earlier one): a number inside its range, `true`/`false` for a switch, one of the choices. A dial that does not exist, a value outside its range or a wrong choice is refused with the reason (`invalid_input`). The looks of the worlds room load the first time one is chosen, and the call waits for them.
+
 ## Where an agent starts (2.26)
 
 - `dailyStudio.describe()` has `start_here`: five good first calls with example inputs and why, and `docs`, the address of the page for assistants.

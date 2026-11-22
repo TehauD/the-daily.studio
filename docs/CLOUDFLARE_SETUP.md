@@ -262,3 +262,32 @@ The honeypot (`worker/honeypot.mjs`, Part C above and SECURITY_MODEL.md "Scanner
 5. **Check:** *Security ▸ WAF ▸ Custom rules* shows the `scan-guard …` rules; the description says what each address tried.
 
 **What it can and cannot see:** only web requests that pass through Cloudflare. It will not see raw port scans against other services, and IPv6 scanners are blocked by their /64 (one host is usually given a whole /64). Tests: `npm run test:scanguard` (no network).
+
+## Part K: Markdown for AI assistants and Content Signals (free, 2.87.1)
+
+Cloudflare's *Agent Readiness* scan (AI Crawl Control) asks for two things on the Quick Wins list. Both can be done on the free plan; the paid *Markdown for Agents* toggle is not needed.
+
+**Content Signals: nothing to do.** `robots.txt` carries `Content-Signal: search=yes, ai-input=yes, ai-train=no` (search and AI answers allowed, training not), matching the crawler rules under it. Leave **Enable Bot Preference Sync** off: it would put Cloudflare's own block above ours. These are preferences; a crawler can ignore them.
+
+**Markdown negotiation: one Transform Rule.** Every page already has a Markdown twin made at build time from the same text as the HTML (`/index.md`, `/guide/index.md`, `/guide/<topic>/index.md`, and the whole guide in `/llms-full.txt`), and each page links its twin with `<link rel="alternate" type="text/markdown">`. What is left is sending a request that says `Accept: text/markdown` to the twin:
+
+1. *Rules ▸ Overview ▸ Create rule ▸ URL Rewrite Rule* (the free plan allows several).
+2. Name: `markdown for agents`. **Custom filter expression** (Edit expression), paste:
+   ```
+   (http.request.headers["accept"][0] contains "text/markdown") and (http.request.uri.path eq "/" or starts_with(http.request.uri.path, "/guide/")) and ends_with(http.request.uri.path, "/")
+   ```
+3. **Path ▸ Rewrite to… ▸ Dynamic**, paste `concat(http.request.uri.path, "index.md")`. Leave the query string alone. Deploy.
+4. **Check:**
+   ```bash
+   curl -sI -H "Accept: text/markdown" https://the-daily.studio/guide/ | grep -i "content-type\|vary"
+   ```
+   It should say `content-type: text/markdown` and `vary: Accept`. Without the header the same address still answers with HTML. Then press **Rescan** in *AI Crawl Control ▸ Agent Readiness*.
+
+**API catalog (RFC 9727): nothing to do.** `/.well-known/api-catalog` is served as `application/linkset+json`, and the front page points to it with a `Link: </.well-known/api-catalog>; rel="api-catalog"` header. It lists the one API the studio has: the agent tools that run in the page (WebMCP and `window.dailyStudio`). Its `service-desc` is `/agent-tools.json` (the tool names and required inputs, the file the tests hold the studio to), not an OpenAPI document, because there is no HTTP API to describe, and its `service-doc` links the guide for assistants and `docs/AGENT_API.md`. There is no `status` entry: the page is the service. The Worker's own routes (sign-in, sharing, Drops) belong to the app and are deliberately not offered as an API. Check:
+```bash
+curl -sI https://the-daily.studio/.well-known/api-catalog | grep -i "content-type"
+```
+
+**Left alone on purpose:** an *MCP server card* and OAuth discovery describe a remote server, and the studio has none: its tools run in the visitor's browser and the MCP bridge on the visitor's own machine. Publishing them would say something untrue. The scan may keep those at zero.
+
+**The "unsuccessful" crawler requests** (AI Crawl Control ▸ Overview) are not blocks: they are 404s and redirects on addresses crawlers guess. 2.87.1 serves `/favicon.ico`, `/apple-touch-icon.png` and `/llms-full.txt`, which were the common ones; the rest (`/ads.txt`, `/feed`, `/rss.xml`, WordPress paths) rightly stay 404, and a redirect from `/guide` to `/guide/` is normal.

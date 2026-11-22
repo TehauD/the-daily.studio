@@ -57,7 +57,7 @@ window.__dailyRoom = (id, make) => {
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.85.0', BUILD = '6676794', PARTS_N = +'139' || 0, LINES_N = +'23279' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.87.2', BUILD = 'b969393', PARTS_N = +'139' || 0, LINES_N = +'23296' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { ghApp: { clientId: 'Iv23liTjqEBQsgmGaE1Q', slug: 'tehaud-the-daily-studio' },   /* Sign in with GitHub: the GitHub App's public client id and its slug (docs/GITHUB.md); empty = only the token way */
   support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', instagram: 'https://www.instagram.com/tehaud/', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://journal.the-daily.studio/' };
@@ -3179,10 +3179,12 @@ function buildVisPane() {
   const bar = h('div', { class: 'row vz-bar' + (CFG.vzMore ? ' more-open' : ''), style: { gap: '6px', marginBottom: '8px', flexWrap: 'wrap' } },
     looks, designBtn, savedBtn, lxLensBar(),
     h('span', { class: 'grow' }),
+    h('div', { class: 'vz-acts' },
     h('button', { class: 'btn sm', id: 'vzRecBtn', 'data-srec': '1', title: 'Record the stage as a video with the song’s sound (saved on this device)', onclick: e => srecMenu(e.currentTarget) }, '⏺ Record'),
     h('button', { class: 'btn sm', id: 'vzGoStage', title: 'Full-screen visuals with the camera: you in front of the hexagons', onclick: () => goOnStage() }, '🎥 Go on stage'),
     h('button', { class: 'btn sm', onclick: () => { const w = UI.vwrap; (document.fullscreenElement ? document.exitFullscreen() : w.requestFullscreen && w.requestFullscreen()); } }, '⛶ Stage mode'),
-    moreBtn, sec, design);
+      moreBtn),
+    sec, design);
   UI.vwrap = h('div', { class: 'vwrap', style: { flex: 1, minHeight: '320px' } }, UI.vcv = h('canvas', { class: 'vcanvas', style: { height: '100%', minHeight: '320px' } }));
   p.append(bar, UI.vwrap); if (typeof vzStripSync === 'function') vzStripSync(); new ResizeObserver(() => { const d = (window.devicePixelRatio || 1) * (CFG.vq || 1), w = UI.vcv.clientWidth, hh = UI.vcv.clientHeight; if (w && (UI.vcv.width !== Math.floor(w * d) || UI.vcv.height !== Math.floor(hh * d))) { UI.vcv.width = Math.floor(w * d); UI.vcv.height = Math.floor(hh * d); VZ.spec = null; VZ.hexes = null; } }).observe(UI.vwrap);
   bus.on('onset', () => { VZ.pulses.push({ t: performance.now(), a: clamp((AN.rms + 50) / 40, .2, 1) }); if (VZ.pulses.length > 12) VZ.pulses.shift(); });
@@ -17562,13 +17564,28 @@ agTool('undo', 'Undo or redo the last change to the song (yours or the person\'s
 
 /* ---------- 2.16: the visuals, Perform and chord shapes ---------- */
 const AG_LOOKS = VMODES.map(m => m[0]);
-const agVisuals = () => ({ look: VZ.mode, look_name: (VMODES.find(m => m[0] === VZ.mode) || [, VZ.mode])[1], speed: vzSpeed(), size: vzSize(), zoom: vzZoom(), looks: VMODES.map(([id, name]) => ({ id, name })) });
-agTool('set_visuals', 'Change the visuals: the look, how fast it moves (speed 0.25–3), how big the hexagons of Hex Resonance and the pulse grid are (size 0.5–2.5) and how far it is pushed in (zoom 1–3). Applies on the Visuals tab, the Stage and in Perform. It never turns the camera on. get_studio_state lists the looks.',
-  agObj({ look: agStr('Which look (an id from get_studio_state.visuals.looks, e.g. "hex", "concert", "halo", "aurora").', { enum: AG_LOOKS }), speed: agNum('0.25 to 3 (1 = normal).'), size: agNum('0.5 to 2.5 (1 = normal).'), zoom: agNum('1 to 3 (1 = the whole picture).'), reset: agBool('Put speed, size and zoom back to 1 first.') }),
-  i => {
+/** the dials a look offers (its own options), as an agent can set them; empty while the worlds room has not loaded, or when the look has none */
+const agLookOpts = m => ((VLOOK[m] || { opts: [] }).opts).filter(o => o.k && o.type !== 'action').map(o => ({ key: o.k, label: o.label, type: o.type === 'toggle' ? 'boolean' : o.type === 'range' ? 'number' : 'choice', default: o.def, current: vlv(m, o.k), min: o.min, max: o.max, choices: o.opts ? o.opts.map(x => x[0]) : undefined }));
+const agVisuals = () => ({ look: VZ.mode, look_name: (VMODES.find(m => m[0] === VZ.mode) || [, VZ.mode])[1], group: vzFamOf(VZ.mode, true), speed: vzSpeed(), size: vzSize(), zoom: vzZoom(), options: agLookOpts(VZ.mode), looks: VMODES.map(([id, name]) => ({ id, name, group: vzFamOf(id, true) })) });
+agTool('set_visuals', 'Change the visuals: the look, how fast it moves (speed 0.25–3), how big the hexagons of Hex Resonance and the pulse grid are (size 0.5–2.5), how far it is pushed in (zoom 1–3), and the look\'s own dials (options). Applies on the Visuals tab, the Stage and in Perform. It never turns the camera on. get_studio_state.visuals lists the looks (with their group) and the dials of the one that is showing.',
+  agObj({ look: agStr('Which look (an id from get_studio_state.visuals.looks, e.g. "hex", "concert", "halo", "aurora").', { enum: AG_LOOKS }), speed: agNum('0.25 to 3 (1 = normal).'), size: agNum('0.5 to 2.5 (1 = normal).'), zoom: agNum('1 to 3 (1 = the whole picture).'), reset: agBool('Put speed, size and zoom back to 1 first.'), options: { type: 'object', description: 'The look\'s own dials as { key: value }: a number for a slider, true or false for a switch, one of the choices for a choice. The keys and ranges are in get_studio_state.visuals.options for the look that is showing (set look first, in the same call or an earlier one).' } }),
+  async i => {
     if (i.reset) VZA.forEach(([k]) => { CFG[k] = 1; });
     [['speed', 'vzSpeed'], ['size', 'vzSize'], ['zoom', 'vzZoom']].forEach(([a, k]) => { if (i[a] == null) return; const d = VZA.find(x => x[0] === k); if (i[a] < d[2] || i[a] > d[3]) throw agErr('invalid_input', '“' + a + '” must be from ' + d[2] + ' to ' + d[3]); CFG[k] = i[a]; });
-    if (i.look) vzSetMode(i.look); saveCfg(); VZ.spec = null; $$('[data-vza]').forEach(x => x.classList.toggle('on', vzAdjusted()));
+    if (i.look) vzSetMode(i.look);
+    if (i.options && Object.keys(i.options).length) {
+      if (worldLook(VZ.mode)) await worldsEnsure();
+      const m = VZ.mode, L = VLOOK[m]; if (!L) throw agErr('invalid_input', 'The look \u201c' + m + '\u201d has no dials of its own. Looks with dials show them in get_studio_state.visuals.options.');
+      const defs = L.opts.filter(o => o.k && o.type !== 'action'), put = [];
+      Object.entries(i.options).forEach(([k, v]) => {
+        const o = defs.find(x => x.k === k); if (!o) throw agErr('invalid_input', '\u201c' + k + '\u201d is not a dial of ' + m + '. Dials: ' + defs.map(x => x.k).join(', '));
+        if (o.type === 'toggle') { if (typeof v !== 'boolean' && v !== 0 && v !== 1) throw agErr('invalid_input', '\u201c' + k + '\u201d is a switch: true or false'); put.push([k, v ? 1 : 0]); }
+        else if (o.type === 'range') { const n = +v; if (!isFinite(n) || n < o.min || n > o.max) throw agErr('invalid_input', '\u201c' + k + '\u201d must be a number from ' + o.min + ' to ' + o.max); put.push([k, n]); }
+        else { const c = o.opts.find(x => String(x[0]) === String(v)); if (!c) throw agErr('invalid_input', '\u201c' + k + '\u201d must be one of: ' + o.opts.map(x => x[0]).join(', ')); put.push([k, c[0]]); }
+      });
+      put.forEach(([k, v]) => vlSet(m, k, v));
+    }
+    saveCfg(); VZ.spec = null; $$('[data-vza]').forEach(x => x.classList.toggle('on', vzAdjusted())); try { vdPaint(); } catch (e) { }
     agentSay('changed the visuals'); return agTxt({ done: true, visuals: agVisuals() });
   }, { idempotentHint: true });
 agTool('perform', 'Open or close the full-screen ★ Showtime view (called Perform until 2.64), and choose its display: shapes (the big chord, the lyrics and the chord shapes beside them), big (the big chord and the lyrics) or sheet (the lyrics large, like a songbook). It opens on a short readiness check; it never turns the microphone or the camera on, and never records.',

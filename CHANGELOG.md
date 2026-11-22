@@ -2,6 +2,62 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.87.2 — 2026-11-22 — Hardening for a public repository
+
+The code is public, so what a stranger can change or run in CI matters more than what they can read. Repository and CI only; the studio itself does not change.
+
+### Added
+- **Every CI action is pinned to a full commit hash** (`actions/checkout`, `actions/setup-node`, and the new CodeQL steps), with the version in a comment. Dependabot proposes new hashes; `npm run audit` now fails on an unpinned action, a workflow without a `permissions:` block, or one that runs fork code with secrets (`pull_request_target`, `workflow_run`, `secrets.`).
+- **CodeQL code scanning** (`.github/workflows/codeql.yml`, javascript-typescript, on push, pull request and weekly), skipping the generated files.
+- **`.github/CODEOWNERS`**, naming the owner for workflows, the Worker, the build and the security files.
+- **`docs/REPO_SECURITY.md`**: step by step, the settings a commit cannot change: a ruleset for `main`, secret scanning with push protection, private vulnerability reporting, Actions settings, Cloudflare Workers Builds, and email privacy for new commits.
+
+### Notes
+- The tracked files and all 249 commits were checked for keys and tokens by pattern: none. Runtime secrets live in Cloudflare, not the repository.
+
+## 2.87.1 — 2026-11-22 — Easier for AI assistants and crawlers to read
+
+A small release for what Cloudflare's *AI Crawl Control* reported: crawlers were asking for things the site did not have. Nothing in the studio itself changes.
+
+### Added
+- **Every public page has a Markdown twin** (`/index.md`, `/guide/**/index.md`) made at build time from the same text as the HTML, plus **`/llms-full.txt`**, the whole guide in one file. Each page names its twin in `<link rel="alternate" type="text/markdown">`, and the HTML pages now say `Vary: Accept`. A free Cloudflare Transform Rule (CLOUDFLARE_SETUP.md, Part K) sends `Accept: text/markdown` requests to the twin, so the paid *Markdown for Agents* is not needed.
+- **Content Signals in `robots.txt`**: `search=yes, ai-input=yes, ai-train=no`, the same stance as the crawler rules beneath it.
+- **`/favicon.ico` and `/apple-touch-icon.png` at the root**, the two addresses browsers and crawlers try first; they were answering 404.
+- **An API catalog** (RFC 9727): `/.well-known/api-catalog` (`application/linkset+json`, announced by a `Link` header on the front page) lists the one API the studio has, the agent tools that run in the page, with `/agent-tools.json` (tool names and required inputs, from the same contract the tests use) as its description and the assistant guide and `AGENT_API.md` as its documentation. It does not claim a server: the description says the tools run in the visitor\u2019s browser.
+- Release gates for all of it (`verify:site`): the signals line, the API catalog, a twin for every page, `text/markdown` headers, the alternate links, `llms-full.txt` and the root icons. `llms.txt` points to the Markdown forms.
+
+### Notes
+- The "unsuccessful" requests in AI Crawl Control were 404s and redirects, not blocks. The rest (`/ads.txt`, feeds, WordPress paths) stay 404 on purpose.
+- An MCP server card and OAuth discovery (Agent Readiness Level 2 and 3) are left alone: they describe a remote server, and the studio has none.
+
+## 2.87.0 — 2026-11-22 — Prove and tidy
+
+A consolidation release: nothing new to look at or call, and the things that had fallen behind brought up to date. The Visuals (40 looks) and the agent tools (30) are held where they are until the open items in docs/GAPS.md are done.
+
+### Changed
+- **The pictures match the build.** All 75 screenshots in `docs/screenshots` (the README and the guides) are regenerated from this version.
+- **The user guide starts with an index by what you want to do** (write, play and record, learn, perform, finish and share, keep your history, understand your music, use it with an assistant), and the Visuals are described once, as they are now; the old Visual Instrument paragraph and the stale list of looks are gone.
+- **`set_visuals` knows the groups and the dials.** `get_studio_state.visuals` lists each look's group and the options of the look that is showing; `set_visuals` takes an optional `options` object to set them (validated: an unknown dial, a value outside its range or a wrong choice is refused with the reason). No new tool; the API version stays 2.
+- **The release gate checks the `Cache-Control: no-transform` header** that keeps Cloudflare from adding its analytics beacon and detection script to the pages (the live site sends it, and its HTML has neither).
+- **docs/GAPS.md** now opens with what is next, in order (what needs you, the three product items left from the assessment, and the engineering), and **docs/RELEASE.md** has the rules that keep a release to the framework: no new look without replacing one, no new tool without folding one, everything labelled measured, estimated or suggested, local first, the size gate not raised, space for the picture.
+
+### Checked
+- The MCP bridge runs under the official MCP TypeScript SDK client: 33 tools listed, a song written and mixed, a WAV saved.
+- The live site: serves `Cache-Control: no-cache, no-transform`, has no injected beacon or detection script, and serves the new rooms. It still sends Cloudflare's Network Error Logging headers (`nel`, `report-to`), which PRIVACY.md and the setup guide say are off: that is a Cloudflare setting (Speed ▸ Network Error Logging) for you to switch off; it is the first item in GAPS.
+
+## 2.86.0 — 2026-11-22 — Room for the picture
+
+The Visuals had drifted: controls on four stacked rows with empty boxes beside them, a blank column where a hidden panel had been, a transport that cut off its own controls, a blank block on the phone. The picture is the point; everything else now makes room for it.
+
+### Changed
+- **The Visuals controls are a deck.** On a wide screen the groups, the looks of the chosen group, Settings, Saved and Record · Go on stage · Stage mode · More are one row; on a narrower one they are two (groups and actions, then the looks with Settings and Saved at the right). The caption row is gone (what a look shows is in its tooltip and at the top of its Settings). The picture gains about 50 px of height.
+- **Slimmer rows above the picture**: the song bar, the workspace bar and the panel padding.
+- **The song bar fills the width.** Title, artist, tuning and scale grow on a wide screen and shrink on a narrow one, so the bar needs no scrollbar.
+- **The transport is never cut.** At narrower widths it gives up the tagline, then the mode, then the clock time (the bar and beat stay), before it would clip a control, and keeps its start edge.
+- **A hidden Monitor gives its column back.** Between 860 and 1180 px the right panel is hidden but its column was still reserved as 292 px of blank; an inline width was overriding the media rule.
+- **On a phone** the picture takes the height the controls leave (with ⋯ More open it keeps a preview), and the arrangement takes the room a short panel leaves (the Tracks screen no longer has a blank block above it).
+- The release gate for compressed size is unchanged (720 kB).
+
 ## 2.85.0 — 2026-11-21 — Two big rooms load when they are needed
 
 The hosted site had grown past its size limits three releases running. Two large parts now load the first time they are used, and the limit is back where it was.

@@ -1,0 +1,8 @@
+# The built files are made from src/ and scripts/ (npm run build): scanning them again would only repeat every finding, a megabyte at a time.
+paths-ignore:
+  - index.html
+  - index.debug.html
+  - codepen
+  - dist
+  - sw.js
+  - samples

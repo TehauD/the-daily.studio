@@ -4,6 +4,46 @@ What the studio, its tutorials, its documents and its tests do **not** cover yet
 
 How to use it: before a release, move what the release closed into *Closed* with the version, and add what it opened. [RELEASE.md](RELEASE.md) has this as a checklist item. Items marked **(maintainer)** are decisions or facts only the project's owner can settle; nothing here blocks a build.
 
+## Open (as of 2.87): what is next, in order
+
+**Held fixed until these are done: no new looks and no new agent tools.** The Visuals have 40 looks and the agent has 30 tools; what is missing now is proof and the parts of the product that were ranked and never started.
+
+*Needs you (maintainer)*
+- **Repository settings** (docs/REPO_SECURITY.md): protect `main` with a ruleset, turn on secret scanning and push protection and private vulnerability reporting, set the Actions fork-approval rule, check Cloudflare Workers Builds, and keep your email private for new commits. None of these can be set from a commit.
+- **Markdown for agents: add the Transform Rule** (CLOUDFLARE_SETUP.md, Part K, two minutes), then press Rescan in Agent Readiness. The Markdown files ship with 2.87.1; the rule is what sends `Accept: text/markdown` to them.
+- **Network Error Logging is on at Cloudflare.** The live site sends `nel` and `report-to` headers (Cloudflare ▸ Speed ▸ Network Error Logging). PRIVACY.md and CLOUDFLARE_SETUP.md say it is off; switch it off, or say so in PRIVACY.md.
+- **Bing Webmaster Tools:** press Verify (the tag is live) and submit the sitemap. Google Search Console steps are in SEARCH_IDENTITY.md.
+- **Scan guard** (scripts/scan-guard.mjs) has never run against the real zone: a dry run first (CLOUDFLARE_SETUP.md, Part J).
+- **MCP bridge** is verified with the official MCP TypeScript SDK client (tools list, a song made and mixed, a WAV saved); try it once in Claude Desktop or Claude Code (AGENT_API.md).
+- **Hardware pass** for WebXR and WebGPU (HARDWARE_CHECKLIST.md).
+
+*Product, from the assessment below (each closes an item, none adds a surface)*
+1. **Setlist and rehearsal**: order songs, carry tempo, key and capo per song into Showtime, rehearse the transitions.
+2. **Takes by section**: alternate takes kept per section, chosen without cutting audio by hand; and the take figures on the lanes.
+3. **An artist page**: a portable page of finished songs with credits (Drops expire; the share page is one song).
+
+*Engineering*
+- Next rooms, by size: the guide (60-guide, 53 kB), the agent tools (72-agent, 50 kB), the neural pane (14-neural, 40 kB), the looks (66-looks, 36 kB). The compressed budget is 720 kB; the page is about 677 kB.
+- The full e2e suite is 100 files and about 35 minutes; CI runs it twice per push. Splitting it into a fast set (every push) and the full set (before merge) would halve that.
+- Per-section looks and the Stage scenes are separate systems (Auto look maps three section types to three looks); joining them is a design decision, not a bug.
+
+## Closed in 2.87.2
+
+- **CI actions were pinned by tag, and the repository had no code scanning or owners file.** Pinned to commits, CodeQL added, CODEOWNERS added, and `npm run audit` holds all three.
+
+## Closed in 2.87.1
+
+- **Crawlers hit 404s on `/favicon.ico`, `/apple-touch-icon.png` and `/llms-full.txt`, and the Agent Readiness scan found no Content Signals or Markdown.** The Markdown, the signals, the root icons and an API catalog for the in-page tools now exist and are held by `verify:site`.
+
+## Closed in 2.87.0
+
+- **The README pictures, the Visuals guide text and `set_visuals` had fallen behind.** The 75 screenshots are regenerated from the current build; the user guide starts with an index by task and describes the Visuals as they are now (the old Visual Instrument paragraph is gone); `set_visuals` reports each look's group and its own dials and sets them (`options`). The release gate now checks the `no-transform` header that keeps Cloudflare from injecting scripts. Tested in `e2e-agent-music`.
+- **The MCP bridge had only been tried by our own test.** It now has also been run by the official MCP SDK client: 33 tools listed, a song written, mixed and saved as a WAV.
+
+## Closed in 2.86.0
+
+- **The layout wasted space.** Empty boxes beside the Visuals controls, a blank reserved column, a clipped transport and a blank block on the phone are gone. Tested in `e2e-space`.
+
 ## Closed in 2.85.0
 
 - **The hosted page kept growing past its size limits.** The look worlds and Backstage are now rooms (about 100 kB minified, 34 kB compressed, off the first load) and the compressed limit is back at 720 kB. Tested in `e2e-lazy-rooms`.

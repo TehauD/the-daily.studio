@@ -139,6 +139,18 @@ for (const f of say) rd(f).split('\n').forEach((l, i) => { const m = OVER.exec(l
 ok(over.length === 0, 'no over-claiming phrases in the app text or documents' + (over.length ? ' · ' + over.join('; ') : ''));
 ok(/collects nothing|has no server/i.test(priv) && /can be sent over the network/i.test(priv) && /What is kept/i.test(priv), 'PRIVACY.md says what is processed, what can be transmitted and what is retained');
 
+/* ---------- 5 · the repository (2.87.2): the CI that runs on a public repository ---------- */
+console.log('\nRepository');
+{
+  const wfDir = '.github/workflows', wfs = has(wfDir) ? readdirSync(join(root, wfDir)).filter(f => /\.ya?ml$/.test(f)) : [], uses = [];
+  wfs.forEach(f => rd(wfDir + '/' + f).split('\n').forEach((l, i) => { const m = /^\s*-?\s*uses:\s*(\S+)/.exec(l); if (m && !m[1].startsWith('./')) uses.push([f + ':' + (i + 1), m[1]]); }));
+  const loose = uses.filter(([, u]) => !/@[0-9a-f]{40}$/.test(u));
+  ok(uses.length > 0 && loose.length === 0, uses.length + ' workflow actions, each pinned to a full commit' + (loose.length ? ' · NOT PINNED: ' + loose.map(([w, u]) => w + ' ' + u).join('; ') : ''));
+  ok(wfs.every(f => /^permissions:/m.test(rd(wfDir + '/' + f))), 'every workflow sets its token permissions at the top (read-only unless a job asks for more)');
+  ok(wfs.every(f => !/pull_request_target|workflow_run/.test(rd(wfDir + '/' + f).replace(/^\s*#.*$/gm, ''))) && wfs.every(f => !/\bsecrets\./.test(rd(wfDir + '/' + f).replace(/^\s*#.*$/gm, ''))), 'no workflow runs a change from a fork with the repository\u2019s secrets (no pull_request_target, workflow_run or secrets)');
+  ok(has('.github/CODEOWNERS') && /advisories\/new|private vulnerability/i.test(rd('SECURITY.md')) && has('docs/REPO_SECURITY.md'), 'CODEOWNERS, the reporting route in SECURITY.md and the settings guide (docs/REPO_SECURITY.md) are in the repository');
+}
+
 console.log('\nShipped files:');
 for (const f of files.sort()) console.log('  ' + String(statSync(join(dist, f)).size).padStart(9) + '  ' + f);
 console.log(bad ? `\n${bad} check(s) failed` : '\naudit passed'); process.exit(bad ? 1 : 0);

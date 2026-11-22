@@ -430,7 +430,7 @@ export function renderPage(p, { version, modified }) {
   const second = p.slug === 'guide' ? `<a class="cta2" href="getting-started/">New here? Start here →</a>` : `<a class="cta2" href="${p.slug === 'guide' ? '' : '../'}">All topics</a>`;
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src 'self'; font-src 'self'; base-uri 'none'; form-action 'none'">
-<title>${esc(p.fullTitle || p.title + ' · ' + SITE.name)}</title><meta name="description" content="${esc(p.description)}"><link rel="canonical" href="${url}"><meta name="robots" content="index,follow,max-image-preview:large">
+<title>${esc(p.fullTitle || p.title + ' · ' + SITE.name)}</title><meta name="description" content="${esc(p.description)}"><link rel="canonical" href="${url}"><link rel="alternate" type="text/markdown" href="${url}index.md"><meta name="robots" content="index,follow,max-image-preview:large">
 <meta property="og:type" content="${p.about ? 'profile' : 'article'}"><meta property="og:site_name" content="${SITE.name}"><meta property="og:locale" content="en_US"><meta property="og:url" content="${url}"><meta property="og:title" content="${esc(p.title)}"><meta property="og:description" content="${esc(p.description)}"><meta property="og:image" content="${p.about ? PERSON.photoUrl : p.img ? SITE.origin + '/guide/img/' + p.img.src : SITE.card}">${p.about ? `<meta property="og:image:width" content="448"><meta property="og:image:height" content="448"><meta property="og:image:alt" content="Tehau, musician, software engineer and independent creator"><meta property="profile:first_name" content="Tehau"><meta property="profile:username" content="TehauD">` : ''}<meta name="author" content="${SITE.author}"><link rel="author" href="${SITE.authorUrl}">
 <meta name="twitter:card" content="${p.about ? 'summary' : 'summary_large_image'}"><meta name="twitter:title" content="${esc(p.title)}"><meta name="twitter:description" content="${esc(p.description)}"><meta name="twitter:image" content="${p.about ? PERSON.photoUrl : p.img ? SITE.origin + '/guide/img/' + p.img.src : SITE.card}">
 <link rel="icon" href="${depth}icons/favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="${depth}icons/apple-touch-icon.png">
@@ -486,7 +486,7 @@ export function llmsTxt(version, agentApiMd) {
 - [Agent API reference](${SITE.repo}/blob/main/docs/AGENT_API.md): every tool, its inputs and its errors
 - [Tool contract](${SITE.repo}/blob/main/test/agent-contract.json): the tools and required inputs the tests hold the studio to
 
-How to call: in the page, navigator.modelContext lists the tools (WebMCP); or window.dailyStudio.tools(), window.dailyStudio.call(name, input) and window.dailyStudio.describe(). Start with describe(), then get_studio_state.
+Markdown: any page of this site as Markdown (send Accept: text/markdown, or add index.md to its address), and the whole guide in one file at ${SITE.origin}/llms-full.txt.\n\nHow to call: in the page, navigator.modelContext lists the tools (WebMCP); or window.dailyStudio.tools(), window.dailyStudio.call(name, input) and window.dailyStudio.describe(). Start with describe(), then get_studio_state.
 The tools never reach the microphone, the camera, recording, deleting songs or Settings. Sound starts only after the person has clicked the page once.
 
 ## Tools
@@ -503,4 +503,19 @@ ${pages.join('\n')}
 - [Source](${SITE.repo}): MIT licence
 - [Privacy](${SITE.origin}/legal/): no account, no tracking; audio stays on the device
 `;
+}
+
+/** /.well-known/api-catalog (RFC 9727, a linkset): the one API the studio has, the agent tools that run in the page (WebMCP and window.dailyStudio).
+    There is no server API to list, so this entry says where the tools live and links their description (/agent-tools.json) and their documentation.
+    The Worker's own routes (sign-in, sharing, Drops) belong to the app and are not offered as an API. */
+export function apiCatalog() {
+  return JSON.stringify({ linkset: [{
+    anchor: SITE.origin + '/',
+    'service-desc': [{ href: SITE.origin + '/agent-tools.json', type: 'application/json', title: 'The studio\u2019s agent tools and the inputs each requires' }],
+    'service-doc': [{ href: SITE.origin + '/guide/for-ai-assistants/', type: 'text/html', title: 'Use the-daily.studio with an AI assistant' }, { href: SITE.repo + '/blob/main/docs/AGENT_API.md', type: 'text/markdown', title: 'Agent API reference' }]
+  }] }, null, 2) + '\n';
+}
+/** /agent-tools.json: the published tools and their required inputs (the same file the tests hold the studio to), with a plain statement of where they run */
+export function agentToolsJson(contract) {
+  return JSON.stringify({ about: 'The agent tools the studio publishes in the page (WebMCP: navigator.modelContext, and window.dailyStudio) and the inputs each requires. They run in the visitor\u2019s browser: there is no server endpoint to call. Reference: ' + SITE.repo + '/blob/main/docs/AGENT_API.md', api: contract.api, tools: contract.tools }, null, 2) + '\n';
 }
