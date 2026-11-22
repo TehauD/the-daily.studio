@@ -13,6 +13,8 @@ import time
 from pathlib import Path
 from typing import Any, Callable
 
+from forge.config import user_home
+
 UNLOAD_ARGS = ("unload", "--all")
 
 
@@ -23,8 +25,8 @@ def find_lms() -> str | None:
     found = shutil.which("lms")
     if found:
         return found
-    for cand in (Path.home() / ".lmstudio" / "bin" / "lms.exe", Path.home() / ".lmstudio" / "bin" / "lms",
-                 Path.home() / ".cache" / "lm-studio" / "bin" / "lms.exe", Path.home() / ".cache" / "lm-studio" / "bin" / "lms"):
+    for cand in (user_home() / ".lmstudio" / "bin" / "lms.exe", user_home() / ".lmstudio" / "bin" / "lms",
+                 user_home() / ".cache" / "lm-studio" / "bin" / "lms.exe", user_home() / ".cache" / "lm-studio" / "bin" / "lms"):
         if cand.is_file():
             return str(cand)
     return None

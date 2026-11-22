@@ -12,11 +12,21 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 
+def user_home() -> Path:
+    """Path.home(), or a harmless fallback when the OS profile is unresolvable (e.g. Windows without USERPROFILE).
+    Only used for *discovery* defaults; FORGE_HOME / LOCALAPPDATA decide where state lives."""
+    try:
+        return Path.home()
+    except (RuntimeError, KeyError):
+        import tempfile
+        return Path(tempfile.gettempdir())
+
+
 def _default_home() -> Path:
     # Windows: keep state out of roaming profiles (large artifacts must not sync).
     if sys.platform == "win32" and os.environ.get("LOCALAPPDATA"):
         return Path(os.environ["LOCALAPPDATA"]) / "Forge"
-    return Path.home() / ".forge"
+    return user_home() / ".forge"
 
 
 def _hf_hub_cache() -> Path:
@@ -24,7 +34,7 @@ def _hf_hub_cache() -> Path:
         return Path(os.environ["HF_HUB_CACHE"])
     if os.environ.get("HF_HOME"):
         return Path(os.environ["HF_HOME"]) / "hub"
-    return Path.home() / ".cache" / "huggingface" / "hub"
+    return user_home() / ".cache" / "huggingface" / "hub"
 
 
 def _ollama_url() -> str:
@@ -54,7 +64,7 @@ class Settings:
     ollama_url: str = field(default_factory=_ollama_url)
     lmstudio_url: str = field(default_factory=lambda: os.environ.get("LMSTUDIO_URL", "http://127.0.0.1:1234").rstrip("/"))
     lmstudio_model_dirs: tuple[Path, ...] = field(
-        default_factory=lambda: (Path.home() / ".lmstudio" / "models", Path.home() / ".cache" / "lm-studio" / "models")
+        default_factory=lambda: (user_home() / ".lmstudio" / "models", user_home() / ".cache" / "lm-studio" / "models")
     )
     http_timeout_s: float = field(default_factory=lambda: float(os.environ.get("FORGE_HTTP_TIMEOUT", "3.0")))
     telemetry_interval_s: float = 2.0

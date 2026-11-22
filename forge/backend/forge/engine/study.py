@@ -475,9 +475,17 @@ class Study:
         if hash_cache:
             argv += ["--hash-cache", str(hash_cache)]
         sys.stdout.flush()
-        # stdout/stderr are inherited: the child's JSON events land in this job's log, in order.
-        code = subprocess.run(argv, cwd=Path(__file__).resolve().parents[2], check=False,
-                              creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0)).returncode
+        # The child's stdout is relayed line by line through this process's sys.stdout, so its JSON events land in
+        # this job's log, in order, on every platform (on Windows an inherited handle can bypass redirection).
+        # stderr stays inherited. UTF-8 both ways regardless of the console code page.
+        env = {**os.environ, "PYTHONIOENCODING": "utf-8", "PYTHONUTF8": "1"}
+        with subprocess.Popen(argv, cwd=Path(__file__).resolve().parents[2], stdout=subprocess.PIPE, env=env,
+                              creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0)) as proc:
+            assert proc.stdout is not None
+            for raw in proc.stdout:
+                sys.stdout.write(raw.decode("utf-8", errors="replace"))
+                sys.stdout.flush()
+            code = proc.wait()
         run_json = self.run_dir(arm, seed) / "run.json"
         if code != 0 or not run_json.exists():
             raise StudyError(f"Training {arm} seed {seed} failed in its child process (exit {code}); see the error above")
