@@ -59,6 +59,14 @@ suite('e2e-agent-music', async t => {
   ok(!(await call('transport', {})).isError && sc(await call('get_studio_state')).band.drums, 'rendering leaves the studio ready to play');
   const W = await p.evaluate(async () => { const r = await window.dailyStudio.render({ tail: 0.5, bits: 16 }); const bin = atob(r.wav_base64.slice(0, 48)); return { riff: bin.slice(0, 4), wave: bin.slice(8, 12), bytes: r.bytes, b64: r.wav_base64.length, sr: r.sample_rate, secs: r.seconds, bits: r.bits, lufs: r.metrics.loudness_lufs }; });
   ok(W.riff === 'RIFF' && W.wave === 'WAVE' && W.bits === 16 && Math.abs(W.bytes - (44 + Math.round(W.secs * W.sr) * 4)) < W.sr * 4 * .2 && W.b64 > W.bytes, 'dailyStudio.render() returns the mix as a WAV (' + (W.bytes / 1e6).toFixed(1) + ' MB, ' + W.secs + ' s)');
+  // ---- the look's own dials (2.87): set_visuals knows the groups and the options of the look that is showing
+  const sv = sc(await call('set_visuals', { look: 'vlweb', options: { space: 'all', dims: '2', ahead: false, trail: 12 } })), vis = sv.visuals;
+  ok(vis.look === 'vlweb' && vis.group === 'harm' && vis.looks.find(l => l.id === 'chladni').group === 'sound' && vis.options.length > 15, 'set_visuals reports each look\'s group and the dials of the one showing (' + vis.options.length + ' dials of ' + vis.look_name + ')');
+  const byKey = Object.fromEntries(vis.options.map(o => [o.key, o]));
+  ok(byKey.space.current === 'all' && byKey.dims.current === '2' && byKey.ahead.current === 0 && byKey.trail.current === 12 && byKey.space.choices.includes('song') && byKey.trail.min === 2 && byKey.trail.max === 32, 'the options were set and are read back with their choices and ranges (' + ['space', 'dims', 'ahead', 'trail'].map(k => k + '=' + byKey[k].current).join(', ') + ')');
+  const bo = [await call('set_visuals', { options: { nope: 1 } }), await call('set_visuals', { options: { trail: 99 } }), await call('set_visuals', { options: { space: 'galaxy' } }), await call('set_visuals', { look: 'hex', options: { space: 'all' } })];
+  ok(bo.every(r => r.isError && r.structuredContent.error.code === 'invalid_input') && /Dials:/.test(bo[0].structuredContent.error.message) && /from 2 to 32/.test(bo[1].structuredContent.error.message) && /one of: song, key, all/.test(bo[2].structuredContent.error.message), 'an unknown dial, an out-of-range number, a wrong choice, or dials on a look that has none are refused with the reason');
+  await call('set_visuals', { look: 'hex' });
   // ---- agents off
   await p.evaluate(() => { window.__daily.CFG.agents = false; }); const off = await call('render_audio'), off2 = await p.evaluate(() => window.dailyStudio.render().then(() => 'ok', e => e.message));
   ok(off.isError && off.structuredContent.error.code === 'disabled' && /turned off/.test(off2), 'with agent access off, the new tools and render() are refused'); await p.evaluate(() => { window.__daily.CFG.agents = true; });

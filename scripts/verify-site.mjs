@@ -19,6 +19,7 @@ const scripts = [...html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/scri
 const inline = scripts.sort((a, b) => b.length - a.length)[0] || '';
 const hash = "'sha256-" + createHash('sha256').update(inline).digest('base64') + "'";
 const meta = (html.match(/http-equiv="Content-Security-Policy" content="([^"]+)"/) || [])[1] || '';
+ok(['/', '/index.html', '/journal/*', '/legal/*', '/guide/*', '/backstage/*'].every(r => new RegExp('^' + r.replace(/[*/]/g, m => m === '*' ? '\\*' : '\\/') + '\\n(?:  .*\\n)*?  Cache-Control: [^\\n]*no-transform', 'm').test(hdr)), 'the pages are sent with Cache-Control: no-transform (Cloudflare adds no analytics beacon or detection script to them)');
 ok(meta.includes(hash), 'CSP meta hash matches the shipped inline script');
 ok(hdr.includes(meta.trim().replace(/;$/, '')), 'CSP header carries the same policy as the meta tag');
 ok(/frame-ancestors 'none'/.test(hdr) && /X-Frame-Options: DENY/.test(hdr), 'framing is denied');

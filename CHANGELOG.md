@@ -2,6 +2,21 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.87.0 — 2026-11-22 — Prove and tidy
+
+A consolidation release: nothing new to look at or call, and the things that had fallen behind brought up to date. The Visuals (40 looks) and the agent tools (30) are held where they are until the open items in docs/GAPS.md are done.
+
+### Changed
+- **The pictures match the build.** All 75 screenshots in `docs/screenshots` (the README and the guides) are regenerated from this version.
+- **The user guide starts with an index by what you want to do** (write, play and record, learn, perform, finish and share, keep your history, understand your music, use it with an assistant), and the Visuals are described once, as they are now; the old Visual Instrument paragraph and the stale list of looks are gone.
+- **`set_visuals` knows the groups and the dials.** `get_studio_state.visuals` lists each look's group and the options of the look that is showing; `set_visuals` takes an optional `options` object to set them (validated: an unknown dial, a value outside its range or a wrong choice is refused with the reason). No new tool; the API version stays 2.
+- **The release gate checks the `Cache-Control: no-transform` header** that keeps Cloudflare from adding its analytics beacon and detection script to the pages (the live site sends it, and its HTML has neither).
+- **docs/GAPS.md** now opens with what is next, in order (what needs you, the three product items left from the assessment, and the engineering), and **docs/RELEASE.md** has the rules that keep a release to the framework: no new look without replacing one, no new tool without folding one, everything labelled measured, estimated or suggested, local first, the size gate not raised, space for the picture.
+
+### Checked
+- The MCP bridge runs under the official MCP TypeScript SDK client: 33 tools listed, a song written and mixed, a WAV saved.
+- The live site: serves `Cache-Control: no-cache, no-transform`, has no injected beacon or detection script, and serves the new rooms. It still sends Cloudflare's Network Error Logging headers (`nel`, `report-to`), which PRIVACY.md and the setup guide say are off: that is a Cloudflare setting (Speed ▸ Network Error Logging) for you to switch off; it is the first item in GAPS.
+
 ## 2.86.0 — 2026-11-22 — Room for the picture
 
 The Visuals had drifted: controls on four stacked rows with empty boxes beside them, a blank column where a hidden panel had been, a transport that cut off its own controls, a blank block on the phone. The picture is the point; everything else now makes room for it.

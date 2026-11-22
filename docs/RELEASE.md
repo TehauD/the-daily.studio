@@ -10,6 +10,15 @@
 - [ ] Look over [GAPS.md](GAPS.md): move what this release closed, and add what it opened.
 - [ ] Optional: delete the "Made with AI assistance" line in `src/parts/28-about.js` if you would rather not state it.
 
+## Keeping to the framework
+Every release closes an item in [GAPS.md](GAPS.md), and the rules below hold unless you say otherwise:
+- **No new look without replacing or merging one.** The Visuals are a deck for the picture, not a catalogue; new dials go into an existing look's Settings.
+- **No new agent tool without retiring or folding one.** Prefer a new optional input on an existing tool, so the API version stays put.
+- **Everything the studio says about your music is labelled** measured, estimated or suggested, can be edited, and can be undone.
+- **Local first.** No new network request, account or tracker; anything optional asks first and is described in PRIVACY.md.
+- **The size gate is not raised.** The compressed `index.html` stays under 720 kB: move a big, rarely used part into a room (`scripts/rooms.mjs`) instead.
+- **Space belongs to the picture.** The controls are one band; no empty boxes, no reserved blank columns (`test/e2e-space.cjs`).
+
 ## Repository
 1. Rename the GitHub repository to `the-daily.studio` (Settings ▸ General). Links in the app and docs already use `github.com/TehauD/the-daily.studio`; GitHub redirects the old name.
 2. Settings ▸ Pages: leave **disabled** (production is on Cloudflare; the Pages workflow and `CNAME` were removed).
