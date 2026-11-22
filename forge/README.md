@@ -1,4 +1,4 @@
-# FORGE — Local Distillation Lab (v0.9.0)
+# FORGE — Local Distillation Lab (v0.9.1)
 
 A local-first research instrument for **teacher → student LLM distillation on one consumer NVIDIA GPU**.
 A large model you run in LM Studio (the *teacher*) solves tool-use or document-QA tasks. FORGE keeps only its
@@ -147,11 +147,12 @@ Open **Agent Studio** and follow the five steps:
 Broad reasoning transfer · clinical validity · deployment readiness · causal speed-ups across backends ·
 "visualized chain of thought". A passing review gate means *candidate for human review*, nothing more.
 See [docs/VALIDATION.md](docs/VALIDATION.md) for exactly what has and has not been executed.
+Security and robustness controls, with how each is checked: [docs/HARDENING.md](docs/HARDENING.md). Release history: [CHANGELOG.md](CHANGELOG.md).
 
 ## Developing
 
 ```powershell
-.\scripts\test.ps1                 # backend test suite (163 tests)
+.\scripts\test.ps1                 # backend test suite (165 tests)
 .\scripts\launch.ps1 -Mode dev     # Vite dev server with hot reload
 ```
 

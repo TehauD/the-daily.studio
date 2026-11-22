@@ -171,3 +171,42 @@ def test_agent_api(settings):
         assert c.get(f"/api/agents/{aid}").json()["skills"][0]["id"] == "fee_lookup"
         assert c.get("/api/agents/..%2Fx").status_code in (404, 422)
         assert re.match(r"agent_[a-z0-9]+", c.get("/api/agents").json()[0]["id"])
+
+
+def test_path_components_are_validated(settings, tmp_path):
+    from fastapi.testclient import TestClient
+
+    from forge.api.app import create_app
+    victim = settings.home / "victim.json"
+    with TestClient(create_app(settings)) as c:
+        c.headers["X-Forge-Token"] = c.get("/api/system/session").json()["token"]
+        victim.write_text("{}")
+        aid = c.post("/api/agents", json={"name": "x", "template": "blank", "no_sensitive_data": True}).json()["id"]
+        for name in ("..%2F..%2Fvictim", "../../victim", "no_such_table"):
+            r = c.delete(f"/api/agents/{aid}/tables/{name}")
+            assert r.status_code in (404, 405, 409, 422)  # 405: the URL was normalised to a different route
+        assert victim.exists()
+    study = Study.init(tmp_path / "s", name="x", profile="smoke", arms=["teacher_filtered"],
+                       teacher={"provider": "lmstudio", "endpoint": "x", "model": "t"}, student={"name": "s", "path": str(tmp_path)})
+    for bad in ("../x", "..", "a/b", "A"):
+        with pytest.raises(StudyError):
+            study.run_dir(bad, 0)
+        with pytest.raises(StudyError):
+            study.episode_path("teacher", bad, 0)
+
+
+def test_security_headers(settings, tmp_path, monkeypatch):
+    from fastapi.testclient import TestClient
+
+    from forge.api.app import create_app
+    dist = tmp_path / "dist"
+    dist.mkdir()
+    (dist / "index.html").write_text("<html><head><script>var a=1;</script></head><body><script src='/x.js'></script></body></html>")
+    monkeypatch.setenv("FORGE_FRONTEND_DIST", str(dist))
+    with TestClient(create_app(settings)) as c:
+        ui = c.get("/")
+        csp = ui.headers["content-security-policy"]
+        assert "frame-ancestors 'none'" in csp and "'unsafe-eval'" not in csp and "script-src 'self' 'sha256-" in csp
+        assert ui.headers["x-frame-options"] == "DENY" and c.get("/api/system/health").headers["x-frame-options"] == "DENY"
+        assert c.post("/api/agents", json={}).status_code == 403            # no session token
+        assert c.get("/", headers={"host": "evil.example"}).status_code == 400  # DNS rebinding

@@ -29,6 +29,22 @@ MUTATING = {"POST", "PUT", "PATCH", "DELETE"}
 TOKEN_HEADER = "X-Forge-Token"
 
 
+def content_security_policy(index_html: Path) -> str:
+    """Strict CSP for the UI: same-origin only; the one inline pre-paint script is allowed by its exact hash.
+    Inline *style attributes* are allowed (charts set them); no inline script, eval, plugins, framing or remote hosts."""
+    import base64
+    import hashlib
+    import re as _re
+    hashes = []
+    if index_html.exists():
+        html = index_html.read_text(encoding="utf-8")
+        for body in _re.findall(r"<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>", html, _re.S):
+            hashes.append("'sha256-" + base64.b64encode(hashlib.sha256(body.encode("utf-8")).digest()).decode() + "'")
+    return ("default-src 'self'; script-src 'self' " + " ".join(hashes) + "; style-src 'self' 'unsafe-inline'; "
+            "img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; "
+            "form-action 'self'; frame-ancestors 'none'")
+
+
 def create_app(settings: Settings | None = None, token: str | None = None) -> FastAPI:
     settings = settings or Settings()
     settings.ensure_dirs()
@@ -54,6 +70,18 @@ def create_app(settings: Settings | None = None, token: str | None = None) -> Fa
         db.close()
 
     app = FastAPI(title="FORGE", version=__version__, lifespan=lifespan)
+    dist = Path(os.environ.get("FORGE_FRONTEND_DIST", Path(__file__).resolve().parents[3] / "frontend" / "dist"))
+    csp = content_security_policy(dist / "index.html")
+
+    from fastapi.responses import JSONResponse
+
+    from forge.agents.agent import AgentError
+    from forge.engine.study import StudyError
+
+    @app.exception_handler(StudyError)
+    @app.exception_handler(AgentError)
+    async def domain_error(request: Request, exc: Exception):  # refused input → 422, never a 500 with a traceback
+        return JSONResponse({"detail": str(exc)}, status_code=422)
 
     @app.middleware("http")
     async def guard(request: Request, call_next):
@@ -67,6 +95,9 @@ def create_app(settings: Settings | None = None, token: str | None = None) -> Fa
             response.headers["content-type"] = f"{ct}; charset=utf-8"
         response.headers.setdefault("X-Content-Type-Options", "nosniff")
         response.headers.setdefault("Referrer-Policy", "no-referrer")
+        response.headers.setdefault("X-Frame-Options", "DENY")  # no framing: blocks click-jacking of stage buttons
+        if not request.url.path.startswith("/api/"):
+            response.headers.setdefault("Content-Security-Policy", csp)
         return response
 
     # DNS-rebinding defense: a localhost service must reject foreign Host headers.
@@ -77,7 +108,7 @@ def create_app(settings: Settings | None = None, token: str | None = None) -> Fa
               routes_hub, routes_analysis, routes_lmstudio, routes_knowledge, routes_agents):
         app.include_router(r.router)
 
-    dist = Path(os.environ.get("FORGE_FRONTEND_DIST", Path(__file__).resolve().parents[3] / "frontend" / "dist"))
+
     if (dist / "index.html").exists():
         app.mount("/", StaticFiles(directory=dist, html=True), name="ui")
     return app

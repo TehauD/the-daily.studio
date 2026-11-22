@@ -24,7 +24,7 @@ from forge.agents.tools import NAME, OPS, ToolSet, norm_cell
 from forge.agents.verify import answer_norm, verify_task
 from forge.engine.runtime import ActionError, ChatBackend, strip_reasoning
 from forge.engine.tasks import Task
-from forge.util import canonical_json, new_id, sha256_file, sha256_text, utcnow
+from forge.util import canonical_json, new_id, sha256_file, sha256_text, utcnow, write_json_atomic
 
 MAX_ROWS, MAX_COLS, MAX_CELL, MAX_BYTES = 20000, 40, 500, 5_000_000
 SPLITS = (("train", 0.6), ("dev", 0.2), ("test", 0.2))
@@ -90,9 +90,7 @@ class Agent:
         return json.loads((self.root / "agent.json").read_text(encoding="utf-8"))
 
     def _save(self, m: dict[str, Any]) -> None:
-        tmp = self.root / "agent.json.tmp"
-        tmp.write_text(json.dumps(m, indent=2, ensure_ascii=False), encoding="utf-8")
-        tmp.replace(self.root / "agent.json")
+        write_json_atomic(self.root / "agent.json", json.dumps(m, indent=2, ensure_ascii=False))
 
     @staticmethod
     def create(base: Path, name: str, template: str, no_sensitive_data: bool) -> "Agent":
@@ -123,8 +121,7 @@ class Agent:
         return a
 
     def tables(self) -> dict[str, list[dict]]:
-        return {t["name"]: json.loads((self.root / "tables" / f"{t['name']}.json").read_text(encoding="utf-8"))
-                for t in self.meta["tools"].get("tables", [])}
+        return {t["name"]: self._rows_for(t["name"]) for t in self.meta["tools"].get("tables", [])}
 
     def tasks(self) -> list[dict]:
         p = self.root / "tasks.jsonl"
@@ -179,6 +176,14 @@ class Agent:
         m = m or self.meta
         t = m["tools"]
         names = set()
+        kp = t.get("knowledge_pack")
+        if kp is not None and not (isinstance(kp, str) and re.fullmatch(r"pack_[a-z0-9]+", kp)):
+            raise AgentError("Invalid knowledge pack id")
+        for k in ("calculator", "units", "dates"):
+            if not isinstance(t.get(k, False), bool):
+                raise AgentError(f"tools.{k} must be true or false")
+        if not isinstance(m.get("skills"), list) or not isinstance(t.get("rules", []), list):
+            raise AgentError("skills and rules must be lists")
         for tb in t.get("tables", []):
             if not NAME.match(tb["name"]) or tb["key"] not in tb["columns"]:
                 raise AgentError(f"Table '{tb['name']}': name must be lower_snake_case and key must be a column")
@@ -208,6 +213,8 @@ class Agent:
                 raise AgentError("not-found share must be between 0 and 0.5")
 
     def _rows_for(self, name: str) -> list[dict]:
+        if not NAME.match(name or ""):
+            raise AgentError("Invalid table name")
         p = self.root / "tables" / f"{name}.json"
         return json.loads(p.read_text(encoding="utf-8")) if p.exists() else []
 
@@ -266,7 +273,11 @@ class Agent:
         return {"name": name, "columns": cols, "rows": len(rows), "key": key, "duplicate_keys": dup, "warnings": scan["warn"]}
 
     def remove_table(self, name: str) -> None:
+        if not NAME.match(name or ""):
+            raise AgentError("Invalid table name")
         m = self.meta
+        if not any(t["name"] == name for t in m["tools"].get("tables", [])):
+            raise AgentError(f"No table named '{name}'")
         used = [s["name"] for s in m["skills"] if any(t in (f"lookup_{name}", f"find_{name}") for t in s["tools"])]
         if used:
             raise AgentError(f"Table '{name}' is used by skills: {', '.join(used)}")

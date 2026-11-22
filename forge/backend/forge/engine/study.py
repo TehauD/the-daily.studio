@@ -15,6 +15,7 @@ from __future__ import annotations
 import json
 import os
 import platform
+import re
 import sys
 from dataclasses import asdict
 from pathlib import Path
@@ -27,7 +28,7 @@ from forge.engine import statistics as st
 from forge.engine.runtime import (ChatBackend, EpisodeConfig, OllamaBackend, OpenAICompatBackend, OracleBackend,
                                   TransformersBackend, run_episode)
 from forge.engine.tasks import TASKSET_VERSION, Task, TaskSetSpec, ToolWorld, build_catalog, generate_taskset, taskset_hash
-from forge.util import canonical_json, new_id, sha256_file, sha256_text, utcnow
+from forge.util import canonical_json, new_id, sha256_file, sha256_text, utcnow, write_json_atomic
 
 STAGES = ("init", "collect", "build", "train", "evaluate_dev", "analyze_dev", "seal", "evaluate_test",
           "analyze_test", "export")
@@ -76,9 +77,7 @@ def engine_source_hash() -> str:
 # ------------------------------------------------------------------ IO primitives
 
 def atomic_write_json(path: Path, obj: Any) -> None:
-    tmp = path.with_suffix(path.suffix + f".tmp-{os.getpid()}")
-    tmp.write_text(json.dumps(obj, indent=2, default=str, ensure_ascii=False), encoding="utf-8")
-    os.replace(tmp, path)
+    write_json_atomic(path, json.dumps(obj, indent=2, default=str, ensure_ascii=False))
 
 
 def _repair_torn_tail(path: Path) -> None:
@@ -314,8 +313,15 @@ class Study:
         cache = json.loads(cache_path.read_text(encoding="utf-8")) if cache_path.exists() else {}
         return DocWorld(pack.search_index(cache), k=ts["retrieval"]["k"], cache_path=cache_path, cache=cache)
 
+    @staticmethod
+    def _part(v: str) -> str:
+        """Arm / split names become path components: only [a-z0-9_] — never '..' or separators."""
+        if not isinstance(v, str) or not re.fullmatch(r"[a-z0-9_]{1,40}", v):
+            raise StudyError(f"Invalid name {v!r}")
+        return v
+
     def episode_path(self, arm: str, split: str, seed: int) -> Path:
-        return self.root / "episodes" / arm / split / f"seed{seed}.jsonl"
+        return self.root / "episodes" / self._part(arm) / self._part(split) / f"seed{int(seed)}.jsonl"
 
     def episodes(self, arm: str, split: str, seed: int) -> list[dict]:
         return read_jsonl(self.episode_path(arm, split, seed))
@@ -330,7 +336,7 @@ class Study:
                     yield arm_dir.name, split_dir.name, int(f.stem[4:]), f
 
     def run_dir(self, arm: str, seed: int) -> Path:
-        return self.root / "runs" / arm / f"seed{seed}"
+        return self.root / "runs" / self._part(arm) / f"seed{int(seed)}"
 
     # ---- episodes
     def _evaluate(self, backend: ChatBackend, arm: str, split: str, seed: int, tasks: list[Task], emit: Callable) -> None:

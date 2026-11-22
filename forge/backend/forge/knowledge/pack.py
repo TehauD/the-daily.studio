@@ -23,7 +23,7 @@ import numpy as np
 
 from forge.knowledge import index as ix
 from forge.knowledge import ingest, questions
-from forge.util import canonical_json, new_id, sha256_file, sha256_text, utcnow
+from forge.util import canonical_json, new_id, sha256_file, sha256_text, utcnow, write_json_atomic
 
 STEPS = ("import", "index", "questions")
 
@@ -70,9 +70,7 @@ class KnowledgePack:
         return json.loads((self.root / "pack.json").read_text(encoding="utf-8"))
 
     def _save(self, meta: dict) -> None:
-        tmp = self.root / "pack.json.tmp"
-        tmp.write_text(json.dumps(meta, indent=2), encoding="utf-8")
-        os.replace(tmp, self.root / "pack.json")
+        write_json_atomic(self.root / "pack.json", json.dumps(meta, indent=2))
 
     def _set_step(self, step: str, status: str, **extra: Any) -> None:
         m = self.meta
