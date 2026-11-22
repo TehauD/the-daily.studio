@@ -36,9 +36,9 @@ def _skill_key(family: str, split: str) -> str:
     return family
 
 
-def _skill_label(key: str) -> str:
+def _skill_label(key: str, extra: dict[str, str] | None = None) -> str:
     fam, _, mod = key.partition("@")
-    base = SKILL_LABEL.get(fam, fam)
+    base = (extra or {}).get(fam) or SKILL_LABEL.get(fam, fam)
     return f"{base} · OOD wording" if mod == "ood" else (f"{base} (regression check)" if fam == "extraction" else base)
 
 
@@ -159,9 +159,19 @@ def build(study: Study, view: str = "auto", registry_rows: dict[str, dict] | Non
         tasks = study.tasks()
         skills = sorted({_skill_key(t.family, t.split) for t in tasks if t.split in splits})
     tools: set[str] = set()
+    ts_plan = study.plan["taskset"]
+    labels: dict[str, str] = {}
+    tools_for = dict(TOOLS_FOR)
+    if ts_plan.get("kind") == "agent":  # purpose-built agent: skill names and tools come from the frozen agent
+        labels = {sk["id"]: sk["name"] for sk in ts_plan["agent"].get("skills", [])}
+        for t in study.tasks():
+            tools_for.setdefault(t.family, [])
+            for c in t.reference_calls:
+                if c["tool"] not in tools_for[t.family]:
+                    tools_for[t.family].append(c["tool"])
     for k in skills:
-        node(f"skill:{k}", "skill", _skill_label(k), family=k.partition("@")[0], ood=k.endswith("@ood"))
-        for tool in TOOLS_FOR.get(k.partition("@")[0], []):
+        node(f"skill:{k}", "skill", _skill_label(k, labels), family=k.partition("@")[0], ood=k.endswith("@ood"))
+        for tool in tools_for.get(k.partition("@")[0], []):
             tools.add(tool)
             edges.append({"from": f"skill:{k}", "to": f"tool:{tool}", "kind": "requires", "measured": True, "label": "reference calls"})
     for tool in sorted(tools):

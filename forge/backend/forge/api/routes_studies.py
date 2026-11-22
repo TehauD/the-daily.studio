@@ -60,7 +60,8 @@ def list_studies(st: AppState = Depends(get_state)):
                         "teacher": s.plan["teacher"]["model"], "student": s.plan["student"]["name"],
                         "arms": s.plan["arms"], "seeds": s.plan["seeds"],
                         "knowledge_pack": (s.plan["taskset"].get("pack") or {}).get("id"),
-                        "focus_skills": (s.plan.get("focus") or {}).get("skills")})
+                        "focus_skills": (s.plan.get("focus") or {}).get("skills"),
+                        "agent": (s.plan["taskset"].get("agent") or {}).get("id")})
         except StudyError as e:
             out.append({"id": r["id"], "name": r["name"], "error": str(e)})
     return out
@@ -79,6 +80,7 @@ class CreateStudy(BaseModel):
     max_seq_len: int | None = Field(None, ge=256, le=32768)
     device: Literal["cuda", "cpu"] = "cuda"
     knowledge_pack_id: str | None = Field(None, pattern=r"^pack_[a-z0-9]+$")
+    agent_id: str | None = Field(None, pattern=r"^agent_[a-z0-9]+$")
     focus_skills: list[Annotated[str, Field(pattern=r"^[a-z_]{1,40}$")]] | None = Field(None, max_length=10)
 
 
@@ -143,13 +145,22 @@ async def create_study(body: CreateStudy, st: AppState = Depends(get_state)):
             raise HTTPException(404, str(e))
         if pack.meta["steps"].get("questions", {}).get("status") != "completed":
             raise HTTPException(409, "This knowledge pack has no verified questions yet")
+    agent = None
+    if body.agent_id:
+        if pack is not None:
+            raise HTTPException(422, "Choose either a knowledge pack or an agent, not both")
+        from forge.agents.agent import Agent, AgentError
+        try:
+            agent = Agent(st.settings.home / "agents" / body.agent_id)
+        except AgentError as e:
+            raise HTTPException(404, str(e))
     try:
         study = Study.init(st.settings.studies_dir, name=body.name, profile=body.profile, teacher=_teacher_spec(st, t),
                            student={"model_id": s["id"], "name": s["name"], "path": str(student_dir),
                                     "parameter_report": s["metadata"].get("parameter_report")},
                            arms=body.arms, seeds=body.seeds, train_overrides=train_ov, min_gain=body.min_gain,
                            device=body.device, environment=env, base_hash=base_hash, knowledge_pack=pack,
-                           focus_skills=body.focus_skills)
+                           focus_skills=body.focus_skills, agent=agent)
     except StudyError as e:
         raise HTTPException(422, str(e))
     with st.db.tx() as c:

@@ -23,13 +23,16 @@ export const SKILL: Record<string, string> = {
   catalog_lookup: "Catalog lookup", multi_step_quote: "Multi-step quote", missing_item: "Missing-item detection", extraction: "SKU extraction (regression check)",
   doc_answerable: "Answer from your documents", doc_unanswerable: "Say NOT_FOUND when absent",
 };
-const skill = (f: string) => SKILL[f] ?? f;
+// Agent studies name their own skills (frozen in the plan); set per render by the page before children read it.
+let AGENT_SKILLS: Record<string, string> = {};
+const skill = (f: string) => AGENT_SKILLS[f] ?? SKILL[f] ?? f;
 
 export default function Lens() {
   const { prefs } = usePrefs();
   const sid = prefs.activeStudy;
   const s = useApi<StudySummary>(sid ? `/api/studies/${sid}` : null, 5000);
   const plan = s.data?.plan;
+  AGENT_SKILLS = Object.fromEntries(((plan?.taskset as { agent?: { skills?: { id: string; name: string }[] } } | undefined)?.agent?.skills ?? []).map((k) => [k.id, k.name]));
   const runs = useMemo(() => (plan ? plan.arms.flatMap((a) => plan.seeds.map((sd) => `${a}|${sd}`)) : []), [plan]);
   const [run, setRun] = useState("");
   useEffect(() => { if (runs.length && !runs.includes(run)) setRun(runs[0]); }, [runs, run]);

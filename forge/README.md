@@ -1,4 +1,4 @@
-# FORGE — Local Distillation Lab (v0.8.0)
+# FORGE — Local Distillation Lab (v0.9.0)
 
 A local-first research instrument for **teacher → student LLM distillation on one consumer NVIDIA GPU**.
 A large model you run in LM Studio (the *teacher*) solves tool-use or document-QA tasks. FORGE keeps only its
@@ -73,6 +73,19 @@ Full walkthrough: [docs/FIRST_RUN.md](docs/FIRST_RUN.md).
 
 ---
 
+### 5. Build a purpose-built agent: Agent Studio
+
+Open **Agent Studio** and follow the five steps:
+
+1. **Define the agent**: start from the *Pharmacy-benefits assistant (synthetic)* template or blank; write its role (what it does, what it must never do).
+2. **Give it tools**: add your tables (CSV / JSON; scanned and refused if they look like personal data), switch on the exact calculator, unit conversion and date arithmetic, define yes/no **rules** (e.g. "review if tier ≥ 4 or quantity > 90"), optionally link a Knowledge Studio pack. Try any tool in the console.
+3. **Describe skills**: a name, one sentence, the tools it may use, a few examples, and an optional share of not-found cases.
+4. **Practice tasks**: the teacher writes many more; FORGE re-runs every tool call and keeps only tasks it can prove. Rejections are listed with reasons.
+5. **Teach & measure**: pick focus skills, create the study, run the stages, then open the Distillation Lens.
+
+![Agent Studio: tools step with tables, calculators, rules and the tool console](docs/images/agent-studio-tools.png)
+<sub>Validation instance: synthetic template plus a synthetic fee schedule.</sub>
+
 ## Tips for larger, trustworthy gains
 
 - Use **pilot** or **research** profiles; smoke shows roughly zero gain by design.
@@ -89,6 +102,7 @@ Full walkthrough: [docs/FIRST_RUN.md](docs/FIRST_RUN.md).
 | **Guide** | Concepts and the research protocol in plain language |
 | **Overview** | Readiness for each stage of the loop, live GPU / VRAM / temperature / power telemetry |
 | **Model Observatory** | Discovers LM Studio, Ollama, Hugging Face cache and folder models; parameter reconciliation; Hub search and download; teacher/student roles; pair-check with VRAM estimate |
+| **Agent Studio** | Guided builder for purpose-built agents: role, read-only tools over your data (tables, exact calculator, units, dates, rules, documents), skills with examples, verified practice tasks, focus-skill studies |
 | **Knowledge Studio** | Guided doc-QA workflow: documents → search index → verified questions → study; a *Map of meaning* shows every passage and question in embedding space with the student's real search results |
 | **Experiment Studio** | Frozen, hashed study plans, optional focus skills; stages run as separate jobs with a live log and ETA |
 | **Trajectory Explorer** | Every episode as an observable path; teacher / base / tuned comparison with first divergence |
@@ -136,7 +150,7 @@ See [docs/VALIDATION.md](docs/VALIDATION.md) for exactly what has and has not be
 ## Developing
 
 ```powershell
-.\scripts\test.ps1                 # backend test suite (157 tests)
+.\scripts\test.ps1                 # backend test suite (163 tests)
 .\scripts\launch.ps1 -Mode dev     # Vite dev server with hot reload
 ```
 

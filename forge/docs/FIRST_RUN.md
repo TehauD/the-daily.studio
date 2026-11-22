@@ -47,3 +47,13 @@ After **Train** (and ideally **Eval · dev**), open **Distillation Lens**, pick 
 - **Word heatmap**: which of the teacher's tokens the student now expects. Early gains are usually the JSON format and stop token.
 
 To target one skill, choose **Focus skills** in the study wizard. Every skill is still evaluated, so the Lens and Evaluation Lab show side effects.
+
+## Purpose-built agents — Agent Studio (v0.9)
+
+1. **Agent Studio → New agent** → *Pharmacy-benefits assistant (synthetic)* for a first run (everything in it is invented), tick the attestation.
+2. **Give it tools**: add your own table as CSV (export from Excel with *Save as CSV*). Pick the key column the agent looks rows up by. Files that look like personal data are refused. Use the console to check a lookup returns what you expect.
+3. **Describe skills**: keep each skill narrow ("copay for one drug", not "anything about drugs"). Give 2–3 examples with their tool calls.
+4. **Practice tasks** (teacher loaded): start with 40 per skill. Read the *Rejected* tab — common reasons tell you how to improve examples or the role.
+5. **Teach & measure**: choose focus skills, create the study, run the stages as in step 8 above, then open the **Distillation Lens**.
+
+Any change to the agent (role, tools, tables, skills) marks its practice tasks stale; studies already created keep their frozen copy.

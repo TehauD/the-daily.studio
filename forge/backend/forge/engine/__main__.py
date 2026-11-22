@@ -72,6 +72,22 @@ def cmd_knowledge(a: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_agent(a: argparse.Namespace) -> int:
+    """Agent steps: tasks (the teacher writes practice tasks; FORGE verifies each by running the tools)."""
+    from forge.agents.agent import Agent
+    from forge.engine.runtime import OpenAICompatBackend
+    agent = Agent(Path(a.agent))
+    cfg = json.loads(a.config or "{}")
+    emit({"event": "agent_step_start", "step": a.step, "agent": agent.meta["name"]})
+    if a.step != "tasks":
+        raise ValueError(f"unknown step {a.step}")
+    teacher = OpenAICompatBackend(cfg["endpoint"], cfg["model"], temperature=0.4, max_tokens=600)
+    teacher.name = cfg["model"]
+    res = agent.run_tasks(teacher, per_skill=int(cfg.get("per_skill", 40)), seed=int(cfg.get("seed", 7)), emit=emit)
+    emit({"event": "agent_step_completed", "step": a.step, "result": res})
+    return 0
+
+
 def cmd_hub_download(a: argparse.Namespace) -> int:
     from forge.providers.hf_hub import download_and_verify
     res = download_and_verify(a.repo, revision=a.revision, cache_dir=Path(a.cache_dir) if a.cache_dir else None, emit=emit)
@@ -149,6 +165,11 @@ def main(argv: list[str] | None = None) -> int:
     lz.add_argument("--arm", required=True)
     lz.add_argument("--seed", required=True)
     lz.set_defaults(fn=cmd_lens)
+    ag = sub.add_parser("agent")
+    ag.add_argument("--agent", required=True)
+    ag.add_argument("--step", required=True, choices=["tasks"])
+    ag.add_argument("--config")
+    ag.set_defaults(fn=cmd_agent)
     k = sub.add_parser("knowledge")
     k.add_argument("--pack", required=True)
     k.add_argument("--step", required=True, choices=["import", "index", "questions"])

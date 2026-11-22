@@ -117,3 +117,26 @@ their curve has two points (before / after).
 
 The lens shows which teacher tokens the student learned to expect under teacher forcing. It does not show why, it is not task
 success, and it does not visualize reasoning.
+
+## v0.9.0 — Agent Studio (purpose-built agents and your own skills)
+
+A guided five-step workflow: define the agent's role → give it read-only tools → describe skills with a few examples →
+the teacher writes many practice tasks that FORGE verifies → train and measure (focus skills, Lens, Evaluation Lab).
+
+| Component | Behaviour | Checked here |
+|---|---|---|
+| Tools | `lookup_<table>`, `find_<table>` (CSV/JSON you add), exact decimal `calculate` (AST-whitelisted: numbers, + − × ÷, min/max/abs/round — no names, attributes, powers or calls beyond those), `convert_units` (mass, volume, length, temperature, time), `date_math`, `check_<rule>` (all/any of conditions you define), `search_documents` (linked Knowledge Studio pack). Read-only, deterministic, no network (except the loopback embedding endpoint), no user code | Unit tests incl. `__import__`, `open`, `2**…` refused; console in the UI |
+| Sensitive-data guard | Tables refused if a column is named like a personal identifier (patient, MRN, DOB, name, address, phone, e-mail, member/insurance id, SSN …) or a value looks like an SSN, e-mail, phone number or MRN; instruction-like text is flagged. Role text and examples are scanned too. In addition to the attestation — it cannot recognise every identifier | Tests; browser: a `patient_name,dob` CSV was refused |
+| Task verification | FORGE re-executes every proposed call; arguments must come from the question or an earlier result (calculator numbers too, plus 0/1/100); the answer must be a value a tool returned (or NOT_FOUND after a lookup that found nothing, if the skill allows it) and must not appear in the question | Tests for each rejection reason; demo: 53 accepted / 14 rejected (mock teacher's deliberate errors caught) |
+| Splits | Tasks sharing an entity (lookup key / filter value / search query) are grouped; groups split 60/20/20 — no entity crosses splits | Test asserts no drug appears in two splits |
+| Scoring | Strict success = answer matches AND is backed by a tool result in this episode AND every reference tool used AND no errors AND ≤ reference calls + 2. A right answer without evidence fails | Tests (guessing without a tool call is not a success) |
+| Study integration | `kind: agent` task set; agent spec, tables and tasks hashed into the frozen plan; editing the agent afterwards is refused for that study; stale tasks block new studies; focus skills, Lens, skill space, knowledge graph use the agent's skill names | Demo: agent → tasks → study → collect → build → train → eval · dev → analyze · dev → lens on the tiny CPU model |
+| UI | Agent Studio fits 1920×1080; no horizontal overflow at 390 px; no console errors | yes |
+| Backend suite | | 163 passed |
+
+The **pharmacy-benefits template is entirely synthetic** (invented drugs, tiers, copays, rule). It demonstrates a healthcare-operations
+agent; it is not clinical or formulary data, and FORGE makes no claim of clinical validity or fitness for use.
+
+**Not validated — requires your machine:** a real teacher writing tasks (the mock follows the prompt mechanically; a real model will
+produce more varied tasks and different rejection rates); real student gains on agent skills; tables much larger than a few thousand
+rows (lookups are in-memory, find is a linear scan).

@@ -184,14 +184,23 @@ class Study:
              seeds: list[int] | None = None, train_overrides: dict | None = None, taskset_overrides: dict | None = None,
              min_gain: float = 0.05, device: str = "cuda", environment: dict | None = None,
              base_hash: str | None = None, knowledge_pack: Any = None,
-             focus_skills: list[str] | None = None) -> "Study":
+             focus_skills: list[str] | None = None, agent: Any = None) -> "Study":
         if profile not in PROFILES:
             raise StudyError(f"profile must be one of {list(PROFILES)}")
         unknown = [a for a in arms if a not in TRAIN_ARMS]
         if unknown or not arms:
             raise StudyError(f"unknown/empty arms {unknown}; choose from {list(TRAIN_ARMS)}")
         prof = PROFILES[profile]
-        if knowledge_pack is not None:
+        if agent is not None:
+            # Purpose-built agent: tasks are the agent's verified practice tasks (split by entity).
+            rows = agent.tasks()
+            if not rows:
+                raise StudyError("This agent has no verified practice tasks yet (run its 'tasks' step)")
+            if agent.meta["steps"]["tasks"].get("status") != "completed":
+                raise StudyError("The agent's practice tasks are stale (its tools or skills changed); write them again first")
+            tasks = [Task(**r) for r in rows]
+            spec = None
+        elif knowledge_pack is not None:
             # Doc-QA: tasks are the pack's verified questions (already split by document).
             qs = knowledge_pack.questions()
             if not qs:
@@ -222,6 +231,9 @@ class Study:
                 f", focus skills: {', '.join(focus['skills'])})" if focus else ")"), "min_gain": min_gain, "focus": focus,
             "teacher": teacher, "student": student, "device": device,
             "taskset": ({"version": TASKSET_VERSION, "kind": "catalog", "spec": asdict(spec)} if spec is not None else {
+                "version": "forge-agent-v1", "kind": "agent", "spec": {"seed": 7},
+                "agent": {"id": agent.meta["id"], "name": agent.meta["name"], "path": str(agent.root), "hashes": agent.hashes(),
+                          "skills": [{"id": sk["id"], "name": sk["name"]} for sk in agent.meta["skills"]]}} if agent is not None else {
                 "version": "forge-docqa-v1", "kind": "docqa", "spec": {"seed": 7},
                 "pack": {"id": knowledge_pack.meta["id"], "name": knowledge_pack.meta["name"], "path": str(knowledge_pack.root),
                          "hashes": knowledge_pack.hashes(), "embedding": knowledge_pack.meta.get("embedding")},
@@ -229,7 +241,7 @@ class Study:
                 "sha256": taskset_hash(tasks),
                 "counts": {s: sum(1 for t in tasks if t.split == s) for s in ("train", "dev", "test", "ood", "regression")}},
             "train": train, "arm_overrides": {a: TRAIN_ARMS[a] for a in arms},
-            "eval": {"max_turns": 6, "max_new_tokens": 128, "decoding": "greedy", "control_seed_broadcast": 0},
+            "eval": {"max_turns": 8 if agent is not None else 6, "max_new_tokens": 128, "decoding": "greedy", "control_seed_broadcast": 0},
             "base_hash": base_hash, "engine_source_sha256": engine_source_hash(),
             "environment": environment or {"python": sys.version.split()[0], "platform": platform.platform()},
         }
@@ -270,6 +282,21 @@ class Study:
 
     def world(self) -> Any:
         ts = self.plan["taskset"]
+        if ts.get("kind") == "agent":
+            from forge.agents.agent import Agent, AgentError
+            from forge.agents.world import AgentWorld
+            try:
+                ag = Agent(Path(ts["agent"]["path"]))
+            except AgentError as e:
+                raise StudyError(f"Agent missing: {e}") from e
+            now = ag.hashes()
+            for k in ("spec", "tables"):
+                if now[k] != ts["agent"]["hashes"][k]:
+                    raise StudyError(f"The agent's {k} changed since this study was created (frozen plan); "
+                                     "create a new study for the new version")
+            cache_path = self.root / "search_cache.json"
+            cache = json.loads(cache_path.read_text(encoding="utf-8")) if cache_path.exists() else {}
+            return AgentWorld(ag.meta["role"], ag.toolset(cache, cache_path))
         if ts.get("kind") != "docqa":
             return ToolWorld(build_catalog(ts["spec"]["seed"]))
         from forge.engine.docqa import DocWorld

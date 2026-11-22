@@ -121,7 +121,7 @@ export interface StudySummary {
   id: string; plan: StudyPlan; state: { stages: Record<string, StageState>; sealed: boolean; history: { stage: string; status?: string; at: string }[] };
   next_stage: string | null; reports: Record<string, AnalysisReport>; gpu_stages: string[]; path: string; jobs?: Job[];
 }
-export interface StudyRow { id: string; name: string; profile: string; created_at: string; next_stage: string | null; sealed: boolean; stages: Record<string, string>; teacher: string; student: string; arms: string[]; seeds: number[]; error?: string; knowledge_pack?: string | null }
+export interface StudyRow { id: string; name: string; profile: string; created_at: string; next_stage: string | null; sealed: boolean; stages: Record<string, string>; teacher: string; student: string; arms: string[]; seeds: number[]; error?: string; knowledge_pack?: string | null; agent?: string | null; focus_skills?: string[] | null }
 
 export interface EpisodeRow { arm: string; split: string; seed: number; task_id: string; family: string; group_id: string; strict_success: boolean; answer_correct: boolean; calls: number; invalid: number; termination: string; latency_ms: number; trace_hash: string }
 export interface GraphNode { id: string; kind: string; label: string; detail: unknown; status: "pass" | "fail" | "neutral"; layer: number; x: number; y: number }
