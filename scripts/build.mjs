@@ -63,7 +63,7 @@ const head = `<meta charset="utf-8"><meta name="viewport" content="width=device-
 <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${T}"><meta name="twitter:description" content="${SHORT}"><meta name="twitter:image" content="${SITE.card}"><meta name="twitter:image:alt" content="the-daily.studio: lyrics, chords, recording and stems in one browser page">
 <meta name="author" content="${SITE.author}"><link rel="author" href="${SITE.authorUrl}"><meta name="referrer" content="no-referrer"><meta name="color-scheme" content="light dark">
 <script type="application/ld+json">${appJsonLd(pkg.version, modified)}</script>
-<link rel="icon" href="data:image/svg+xml,${icon}"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png"><link rel="manifest" href="manifest.webmanifest"><link rel="alternate" type="text/plain" href="llms.txt" title="For AI assistants">`;
+<link rel="icon" href="data:image/svg+xml,${icon}"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png"><link rel="manifest" href="manifest.webmanifest"><link rel="alternate" type="text/markdown" href="index.md"><link rel="alternate" type="text/plain" href="llms.txt" title="For AI assistants">`;
 const cssMin = PRETTY ? css : minifyCSS(css);
 { const br = x => [(x.match(/\{/g) || []).length, (x.match(/\}/g) || []).length].join(); if (br(cssMin) !== br(css.replace(/\/\*[\s\S]*?\*\//g, ''))) { console.error('Minifying the stylesheet changed its braces'); process.exit(1); } }
 const inlineJs = `\n${jsMin.replace(/<\/script>/g, '<\\/script>')}\n`;

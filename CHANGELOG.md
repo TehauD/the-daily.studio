@@ -2,6 +2,21 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.87.1 — 2026-11-22 — Easier for AI assistants and crawlers to read
+
+A small release for what Cloudflare's *AI Crawl Control* reported: crawlers were asking for things the site did not have. Nothing in the studio itself changes.
+
+### Added
+- **Every public page has a Markdown twin** (`/index.md`, `/guide/**/index.md`) made at build time from the same text as the HTML, plus **`/llms-full.txt`**, the whole guide in one file. Each page names its twin in `<link rel="alternate" type="text/markdown">`, and the HTML pages now say `Vary: Accept`. A free Cloudflare Transform Rule (CLOUDFLARE_SETUP.md, Part K) sends `Accept: text/markdown` requests to the twin, so the paid *Markdown for Agents* is not needed.
+- **Content Signals in `robots.txt`**: `search=yes, ai-input=yes, ai-train=no`, the same stance as the crawler rules beneath it.
+- **`/favicon.ico` and `/apple-touch-icon.png` at the root**, the two addresses browsers and crawlers try first; they were answering 404.
+- **An API catalog** (RFC 9727): `/.well-known/api-catalog` (`application/linkset+json`, announced by a `Link` header on the front page) lists the one API the studio has, the agent tools that run in the page, with `/agent-tools.json` (tool names and required inputs, from the same contract the tests use) as its description and the assistant guide and `AGENT_API.md` as its documentation. It does not claim a server: the description says the tools run in the visitor\u2019s browser.
+- Release gates for all of it (`verify:site`): the signals line, the API catalog, a twin for every page, `text/markdown` headers, the alternate links, `llms-full.txt` and the root icons. `llms.txt` points to the Markdown forms.
+
+### Notes
+- The "unsuccessful" requests in AI Crawl Control were 404s and redirects, not blocks. The rest (`/ads.txt`, feeds, WordPress paths) stay 404 on purpose.
+- An MCP server card and OAuth discovery (Agent Readiness Level 2 and 3) are left alone: they describe a remote server, and the studio has none.
+
 ## 2.87.0 — 2026-11-22 — Prove and tidy
 
 A consolidation release: nothing new to look at or call, and the things that had fallen behind brought up to date. The Visuals (40 looks) and the agent tools (30) are held where they are until the open items in docs/GAPS.md are done.

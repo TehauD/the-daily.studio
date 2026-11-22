@@ -2,6 +2,8 @@
 # Not for training AI models: the crawlers below only collect pages for model training, so they are turned away.
 
 User-agent: *
+# Content Signals (contentsignals.org): what automated systems may do with the pages. Search and answering from them: yes. Training models on them: no.
+Content-Signal: search=yes, ai-input=yes, ai-train=no
 Allow: /
 # Backstage is for people, not robots. If you are a person: open the studio, then the browser's console.
 Disallow: /backstage/

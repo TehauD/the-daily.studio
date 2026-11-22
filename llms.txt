@@ -1,6 +1,6 @@
 # the-daily.studio
 
-> Record guitar and voice, split songs into stems, get chords, tab and lyrics, and run a live light show. Free, in your browser, made by Tehau. Version 2.87.0. An AI assistant in the person's browser can use the studio through tools (WebMCP, or window.dailyStudio from a script). Nothing is sent to a server.
+> Record guitar and voice, split songs into stems, get chords, tab and lyrics, and run a live light show. Free, in your browser, made by Tehau. Version 2.87.1. An AI assistant in the person's browser can use the studio through tools (WebMCP, or window.dailyStudio from a script). Nothing is sent to a server.
 
 ## Who made it
 
@@ -11,6 +11,8 @@
 - [For AI assistants](https://the-daily.studio/guide/for-ai-assistants/): what the tools do, what they never touch, and good first calls
 - [Agent API reference](https://github.com/TehauD/the-daily.studio/blob/main/docs/AGENT_API.md): every tool, its inputs and its errors
 - [Tool contract](https://github.com/TehauD/the-daily.studio/blob/main/test/agent-contract.json): the tools and required inputs the tests hold the studio to
+
+Markdown: any page of this site as Markdown (send Accept: text/markdown, or add index.md to its address), and the whole guide in one file at https://the-daily.studio/llms-full.txt.
 
 How to call: in the page, navigator.modelContext lists the tools (WebMCP); or window.dailyStudio.tools(), window.dailyStudio.call(name, input) and window.dailyStudio.describe(). Start with describe(), then get_studio_state.
 The tools never reach the microphone, the camera, recording, deleting songs or Settings. Sound starts only after the person has clicked the page once.

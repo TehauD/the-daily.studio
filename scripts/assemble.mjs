@@ -6,8 +6,9 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { PAGES, renderPage, SITE } from './seo-pages.mjs';
+import { PAGES, renderPage, SITE, apiCatalog, agentToolsJson } from './seo-pages.mjs';
 import { backstagePages } from './backstage-pages.mjs';
+import { pageMarkdown, homeMarkdown, llmsFull } from './markdown-pages.mjs';
 import { minifyJS, minifyCSS, tokens } from './minify.mjs';
 /** 2.65.1: a small page's one <script> and its <style> minified; the script's tokens must be the same before and after, or the build stops */
 const sig = x => tokens(x).filter(t => t.t !== 'ws' && t.t !== 'nl').map(t => t.t + ':' + t.v).join('\u0001');
@@ -26,6 +27,10 @@ writeFileSync(join(out, '.assetsignore'), ['.env', '.env.*', '.dev.vars', '.dev.
 mkdirSync(join(out, 'data'), { recursive: true }); cpSync(join(root, 'data', 'rhymes.txt'), join(out, 'data', 'rhymes.txt'));      /* the lyric helper's words (2.58), fetched the first time it opens */
 mkdirSync(join(out, '.well-known'), { recursive: true }); cpSync(join(root, '.well-known', 'security.txt'), join(out, '.well-known', 'security.txt'));      /* how to report a security problem (2.49.2) */
 cpSync(join(root, 'icons'), join(out, 'icons'), { recursive: true });
+/* 2.87.1: the two icon addresses browsers and crawlers try at the root before reading the page's <link>s; without them each visit was a 404 */
+/* 2.87.1: the API catalog (RFC 9727) for the one API the studio has, the agent tools that run in the page, and their description */
+writeFileSync(join(out, '.well-known', 'api-catalog'), apiCatalog()); writeFileSync(join(out, 'agent-tools.json'), agentToolsJson(JSON.parse(readFileSync(join(root, 'test', 'agent-contract.json'), 'utf8'))));
+cpSync(join(root, 'icons', 'favicon.ico'), join(out, 'favicon.ico')); cpSync(join(root, 'icons', 'apple-touch-icon.png'), join(out, 'apple-touch-icon.png'));
 if (existsSync(join(root, 'samples'))) cpSync(join(root, 'samples'), join(out, 'samples'), { recursive: true });
 cpSync(join(root, 'journal', 'index.html'), join(out, 'journal', 'index.html'));
 /* 2.50: the page that moves a journal from the old address (served at /journal/ on the site) and the one that receives it (served at /move/ on
@@ -45,7 +50,12 @@ for (const f of ['moving.html', 'move.html']) {
    Written by scripts/seo-pages.mjs; the pictures are the small WebP files in site/img (see docs/OPERATIONS.md). */
 {
   const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')), log = readFileSync(join(root, 'CHANGELOG.md'), 'utf8').match(/^## (\d+\.\d+\.\d+) — (\d{4}-\d{2}-\d{2})/m), modified = log ? log[2] : new Date().toISOString().slice(0, 10);
-  for (const p of PAGES) { const dir = p.slug === 'guide' ? join(out, 'guide') : join(out, 'guide', p.slug); mkdirSync(dir, { recursive: true }); writeFileSync(join(dir, 'index.html'), renderPage(p, { version: pkg.version, modified })); }
+  for (const p of PAGES) {
+    const dir = p.slug === 'guide' ? join(out, 'guide') : join(out, 'guide', p.slug); mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, 'index.html'), renderPage(p, { version: pkg.version, modified }));
+    writeFileSync(join(dir, 'index.md'), pageMarkdown(p, { version: pkg.version, modified }));      /* 2.87.1: the same page as Markdown, for a request that asks for text/markdown */
+  }
+  writeFileSync(join(out, 'index.md'), homeMarkdown(pkg.version)); writeFileSync(join(out, 'llms-full.txt'), llmsFull(pkg.version, modified));
   if (existsSync(join(root, 'site', 'img'))) cpSync(join(root, 'site', 'img'), join(out, 'guide', 'img'), { recursive: true });
   /* the studio's own two fonts (the same files index.html embeds), so the guide pages look like the studio */
   mkdirSync(join(out, 'fonts'), { recursive: true }); for (const f of ['inter-latin-wght.woff2', 'montserrat-latin-wght.woff2']) cpSync(join(root, 'src', 'fonts', f), join(out, 'fonts', f));
@@ -107,11 +117,15 @@ const common = `  X-Content-Type-Options: nosniff
   Strict-Transport-Security: max-age=31536000
   Cross-Origin-Opener-Policy: same-origin
   Permissions-Policy: microphone=(self), camera=(self), midi=(self), display-capture=(self), geolocation=(), payment=(), usb=(), serial=()`;
+/* the Markdown twins are named one by one (a pattern in the middle of a path is not something every host reads the same way); /guide/* already gives them their cache rule */
+const mdHeaders = ['/index.md', '/guide/index.md', ...PAGES.filter(p => p.slug !== 'guide').map(p => '/guide/' + p.slug + '/index.md')].map(u => u + '\n  Content-Type: text/markdown; charset=utf-8\n').join('');
 writeFileSync(join(out, '_headers'), `/*
 ${common}
 /
   Content-Security-Policy: ${csp}
   Cache-Control: no-cache, no-transform
+  Vary: Accept
+  Link: </.well-known/api-catalog>; rel="api-catalog"
 /index.html
   Content-Security-Policy: ${csp}
   Cache-Control: no-cache, no-transform
@@ -125,6 +139,20 @@ ${common}
   Cache-Control: no-cache, no-transform
 /guide/*
   Cache-Control: no-cache, no-transform
+  Vary: Accept
+${mdHeaders}/.well-known/api-catalog
+  Content-Type: application/linkset+json
+  Cache-Control: no-cache
+/agent-tools.json
+  Content-Type: application/json
+  Cache-Control: no-cache
+/llms-full.txt
+  Content-Type: text/markdown; charset=utf-8
+  Cache-Control: no-cache
+/favicon.ico
+  Cache-Control: public, max-age=604800
+/apple-touch-icon.png
+  Cache-Control: public, max-age=604800
 /backstage/*
   Cache-Control: no-cache, no-transform
   X-Robots-Tag: noindex, nofollow

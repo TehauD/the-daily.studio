@@ -136,4 +136,23 @@ ok(known.size === PAGES.length, 'every guide page has its own title');
   ok(['OAI-SearchBot', 'ChatGPT-User', 'Claude-SearchBot', 'Claude-User', 'PerplexityBot'].every(u => !blocked(u)), 'robots.txt lets AI search and answer bots in');
   ok(['GPTBot', 'ClaudeBot', 'Google-Extended', 'CCBot', 'Applebot-Extended', 'Meta-ExternalAgent'].every(blocked), 'robots.txt turns AI training crawlers away');
 }
+/* 2.87.1: the Markdown twins, the one-file guide, the Content Signals line and the root icons (what AI crawlers and browsers ask for before anything else) */
+{
+  const robots = rd('robots.txt'), cs = (robots.match(/^Content-Signal:\s*(.+)$/mi) || [])[1] || '';
+  ok(/search=yes/.test(cs) && /ai-input=yes/.test(cs) && /ai-train=no/.test(cs), 'robots.txt declares Content Signals: search and AI answers yes, AI training no (' + cs + ')');
+  const twins = ['index.md', 'guide/index.md', ...PAGES.filter(p => p.slug !== 'guide').map(p => 'guide/' + p.slug + '/index.md')], hdr = rd('_headers');
+  ok(twins.every(f => existsSync(join(d, f)) && /^# \S/.test(rd(f))), 'the front page and every guide page have a Markdown twin (' + twins.length + ' files)');
+  ok(twins.every(f => new RegExp('^/' + f.replace(/[./]/g, '\\$&') + '\\n(?:  .*\\n)*?  Content-Type: text/markdown', 'm').test(hdr)), 'each twin is sent as text/markdown');
+  ok(PAGES.every(p => rd(p.slug === 'guide' ? 'guide/index.html' : 'guide/' + p.slug + '/index.html').includes('<link rel="alternate" type="text/markdown" href="' + pageUrl(p) + 'index.md">')) && html.includes('<link rel="alternate" type="text/markdown" href="index.md">'), 'each page names its Markdown twin in a <link rel="alternate">');
+  const full = rd('llms-full.txt');
+  ok(PAGES.filter(p => !p.unlisted).every(p => full.includes('# ' + p.h1)) && !/<[a-z][^>]*>/i.test(full.replace(/<!--[\s\S]*?-->/, '')), 'llms-full.txt holds the front page and every listed guide page, as plain Markdown');
+  ok(/^\/llms-full\.txt\n(?:  .*\n)*?  Content-Type: text\/markdown/m.test(hdr) && /^Vary: Accept$/m.test(hdr.replace(/^ +/gm, '')), 'llms-full.txt is Markdown and the pages that have a twin say Vary: Accept');
+  /* the API catalog (RFC 9727): a linkset the site root points to, whose one entry describes the agent tools and links to files that exist */
+  const cat = existsSync(join(d, '.well-known', 'api-catalog')) ? JSON.parse(rd('.well-known/api-catalog')) : {}, ents = cat.linkset || [], local = h => h.startsWith(SITE.origin + '/') ? h.slice(SITE.origin.length + 1) : null, here = h => { const f = local(h); return f === null || existsSync(join(d, f.endsWith('/') ? f + 'index.html' : f || 'index.html')); };
+  ok(ents.length >= 1 && ents.every(e => /^https:\/\//.test(e.anchor) && e['service-desc'] && e['service-desc'].length && e['service-doc'] && e['service-doc'].length && [...e['service-desc'], ...e['service-doc']].every(l => /^https:\/\//.test(l.href) && l.type && here(l.href))), '/.well-known/api-catalog is a linkset: each entry has an anchor, a service-desc and a service-doc, and the files on this site exist');
+  ok(/^\/\.well-known\/api-catalog\n(?:  .*\n)*?  Content-Type: application\/linkset\+json$/m.test(hdr) && /^  Link: <\/\.well-known\/api-catalog>; rel="api-catalog"$/m.test(hdr), 'the catalog is sent as application/linkset+json and the front page points to it with a Link header');
+  { const at = existsSync(join(d, 'agent-tools.json')) ? JSON.parse(rd('agent-tools.json')) : {}, ct = JSON.parse(readFileSync(join(root, 'test', 'agent-contract.json'), 'utf8')); ok(at.api === ct.api && JSON.stringify(at.tools) === JSON.stringify(ct.tools) && /no server endpoint/.test(at.about || ''), '/agent-tools.json is the tool contract the tests hold, and says the tools run in the page'); }
+  const ico = existsSync(join(d, 'favicon.ico')) ? readFileSync(join(d, 'favicon.ico')) : Buffer.alloc(0);
+  ok(ico.length > 100 && ico.readUInt16LE(0) === 0 && ico.readUInt16LE(2) === 1 && existsSync(join(d, 'apple-touch-icon.png')), '/favicon.ico and /apple-touch-icon.png are served from the root (crawlers and browsers ask for them first)');
+}
 console.log(bad ? `\n${bad} check(s) failed` : '\nsite verified'); process.exit(bad ? 1 : 0);
