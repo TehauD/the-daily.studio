@@ -37,6 +37,7 @@ no telemetry, original model weights are never modified.
 
 If PowerShell blocks the scripts, run `Set-ExecutionPolicy -Scope Process Bypass` in that window first.
 If port 8765 is taken, FORGE exits and names the process using it (`.\scripts\launch.ps1 -Port 8766` to change it).
+If setup fails with **`No module named 'pip._vendor'`** (or any broken-pip error), the project venv is damaged — usually an interrupted upgrade, antivirus quarantine, or a new copy of FORGE unpacked over an old `backend\.venv`. Setup now repairs it automatically; to force a clean rebuild run `.\scripts\setup.ps1 -WithML -Recreate`.
 App state lives in `%LOCALAPPDATA%\Forge` (override with `FORGE_HOME`).
 
 ### 3. Your first study (about 15 minutes on a 16 GB GPU)

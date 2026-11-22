@@ -5,9 +5,10 @@
 .PARAMETER TorchVersion  Pinned torch (verified host: 2.14.1).
 .PARAMETER SkipFrontend  Skip npm install.
 .PARAMETER SkipTests     Skip the test run.
+.PARAMETER Recreate      Delete and rebuild backend\.venv from scratch (packages are re-downloaded).
 #>
 [CmdletBinding()]
-param([switch]$WithML, [string]$CudaIndex = 'cu126', [string]$TorchVersion = '2.14.1', [switch]$SkipFrontend, [switch]$SkipTests)
+param([switch]$WithML, [string]$CudaIndex = 'cu126', [string]$TorchVersion = '2.14.1', [switch]$SkipFrontend, [switch]$SkipTests, [switch]$Recreate)
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot '_venv.ps1')
 $Venv = Join-Path $Backend '.venv'
@@ -22,8 +23,31 @@ try {
     Write-Host "Found Python $ver"
 
     Step 'Project virtual environment'
-    if (-not (Test-Path $Py)) { Invoke-Checked 'py' @('-3.12', '-m', 'venv', $Venv) } else { Write-Host 'Reusing existing .venv' }
-    Assert-Venv
+    function New-Venv {
+        if (Test-Path $Venv) {
+            Write-Host "Removing $Venv (generated; packages will be re-downloaded)" -ForegroundColor Yellow
+            try { Remove-Item -Recurse -Force $Venv -ErrorAction Stop }
+            catch { throw "Could not delete $Venv ($($_.Exception.Message)). Close FORGE (launch.ps1 window) and any Python using it, then re-run." }
+        }
+        Invoke-Checked 'py' @('-3.12', '-m', 'venv', $Venv)
+    }
+    function Test-Pip { & $Py -m pip --version *> $null; return ($LASTEXITCODE -eq 0) }
+    if ($Recreate -or -not (Test-Path $Py)) { New-Venv } else { Write-Host 'Reusing existing .venv' }
+    # A venv whose interpreter or pip is damaged (interrupted upgrade, antivirus quarantine, a new copy unpacked
+    # over an old .venv) is repaired: first ensurepip, then a clean rebuild. The venv holds no user data.
+    $healthy = $true
+    try { Assert-Venv } catch { $healthy = $false; Write-Warning "Interpreter check failed: $_" }
+    if ($healthy -and -not (Test-Pip)) {
+        Write-Warning 'pip in the project venv is broken (e.g. "No module named pip._vendor"). Repairing with ensurepip...'
+        & $Py -m ensurepip --upgrade --default-pip *> $null
+        $healthy = Test-Pip
+    }
+    if (-not $healthy) {
+        Write-Warning 'Repair did not work; rebuilding the project venv from scratch.'
+        New-Venv
+        Assert-Venv
+        if (-not (Test-Pip)) { throw 'pip is still unavailable in a fresh venv. Check that antivirus is not quarantining files under backend\.venv, then re-run.' }
+    }
     Invoke-Checked $Py @('-m', 'pip', 'install', '--upgrade', 'pip', '--disable-pip-version-check', '-q')
 
     Step 'Core + dev dependencies (full pinned set, never --no-deps)'
