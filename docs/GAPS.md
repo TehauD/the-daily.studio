@@ -4,6 +4,10 @@ What the studio, its tutorials, its documents and its tests do **not** cover yet
 
 How to use it: before a release, move what the release closed into *Closed* with the version, and add what it opened. [RELEASE.md](RELEASE.md) has this as a checklist item. Items marked **(maintainer)** are decisions or facts only the project's owner can settle; nothing here blocks a build.
 
+## Closed in 2.86.0
+
+- **The layout wasted space.** Empty boxes beside the Visuals controls, a blank reserved column, a clipped transport and a blank block on the phone are gone. Tested in `e2e-space`.
+
 ## Closed in 2.85.0
 
 - **The hosted page kept growing past its size limits.** The look worlds and Backstage are now rooms (about 100 kB minified, 34 kB compressed, off the first load) and the compressed limit is back at 720 kB. Tested in `e2e-lazy-rooms`.

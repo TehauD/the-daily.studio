@@ -1,6 +1,6 @@
 # the-daily.studio
 
-> Record guitar and voice, split songs into stems, get chords, tab and lyrics, and run a live light show. Free, in your browser, made by Tehau. Version 2.85.0. An AI assistant in the person's browser can use the studio through tools (WebMCP, or window.dailyStudio from a script). Nothing is sent to a server.
+> Record guitar and voice, split songs into stems, get chords, tab and lyrics, and run a live light show. Free, in your browser, made by Tehau. Version 2.86.0. An AI assistant in the person's browser can use the studio through tools (WebMCP, or window.dailyStudio from a script). Nothing is sent to a server.
 
 ## Who made it
 

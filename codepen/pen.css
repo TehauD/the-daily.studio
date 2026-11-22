@@ -1983,12 +1983,14 @@ body:not([data-form=phone]) .vz-bar.design-open .vz-design{position:absolute;top
 body:not([data-form=phone]) .vz-bar{align-items:center;column-gap:6px;row-gap:6px;margin-bottom:6px}
 body:not([data-form=phone]) .vz-bar .vz-strip{display:contents}
 body:not([data-form=phone]) .vz-bar .vz-groups{order:1;flex:0 1 auto;max-width:100%}
-body:not([data-form=phone]) .vz-bar .vz-fams{order:20;flex:1 1 100%;width:auto;max-width:100%;min-width:0}
-body:not([data-form=phone]) .vz-bar .vz-acts{display:flex;gap:6px;flex:none;order:7}
+body:not([data-form=phone]) .vz-bar .vz-fams{order:20;flex:1 1 auto;width:auto;max-width:100%;min-width:0}
+body:not([data-form=phone]) .vz-bar .vz-acts{display:flex;gap:6px;flex:none;order:3}
 body[data-form=phone] .vz-bar .vz-acts{display:contents}
-@media (min-width:1940px){body:not([data-form=phone]) .vz-bar .vz-fams{order:2;flex:0 1 auto;border-left:1px solid var(--line2);padding-left:8px}}      /* the picture's pane is about 1400 px wide here: the looks fit beside the groups */
-body:not([data-form=phone]) .vz-bar #vzDesignBtn{order:3}body:not([data-form=phone]) .vz-bar #vzSavedBtn{order:4}body:not([data-form=phone]) .vz-bar #lxLensRow{order:5}
-body:not([data-form=phone]) .vz-bar>.grow{order:6;flex:1 1 0;min-width:0}
+body:not([data-form=phone]) .vz-bar .vz-groups{order:1}
+body:not([data-form=phone]) .vz-bar>.grow{order:2;flex:1 1 0;min-width:0}
+body:not([data-form=phone]) .vz-bar::after{content:'';order:10;flex:1 0 100%;height:0}
+body:not([data-form=phone]) .vz-bar #vzDesignBtn{order:21}body:not([data-form=phone]) .vz-bar #vzSavedBtn{order:22}body:not([data-form=phone]) .vz-bar #lxLensRow{order:23}
+@media (min-width:1940px){body:not([data-form=phone]) .vz-bar::after{display:none}body:not([data-form=phone]) .vz-bar .vz-fams{order:2;flex:0 1 auto;border-left:1px solid var(--line2);padding-left:8px}body:not([data-form=phone]) .vz-bar #vzDesignBtn{order:3}body:not([data-form=phone]) .vz-bar #vzSavedBtn{order:4}body:not([data-form=phone]) .vz-bar #lxLensRow{order:5}body:not([data-form=phone]) .vz-bar>.grow{order:6}body:not([data-form=phone]) .vz-bar .vz-acts{order:7}}
 body:not([data-form=phone]) .vz-bar .vz-cap{display:none}      /* what a look shows is in its tooltip and at the top of its Settings */
 body:not([data-form=phone]) .vz-bar .vz-sec{order:30}body:not([data-form=phone]) .vz-bar .vz-design{order:40}
 body[data-form=phone] #pane-vis>.vz-bar{flex:none}
@@ -2007,7 +2009,7 @@ body:not([data-form=phone]) .vz-groups button{padding:5px 11px;font-size:12.5px}
 /* the transport is never clipped: it keeps its start edge, and gives up the tagline and some spacing before it gives up a control */
 body:not([data-form=phone]):not([data-form=tablet]) #transport{justify-content:flex-start;justify-content:safe center}
 @media (max-width:1500px){body[data-form=desktop] #top{grid-template-columns:auto 1fr auto;gap:10px}body[data-form=desktop] .brand small{display:none}body[data-form=desktop] #transport{gap:5px}}
-@media (max-width:1330px){body[data-form=desktop] #transport .lcd:not(.lcd-pos){display:none}}      /* the clock time goes first (the bar and beat stay), then the mode (the song bar has the scale) */
-@media (max-width:1230px){body[data-form=desktop] #transport .f-mode{display:none}}
+@media (max-width:1330px){body[data-form=desktop] #transport .f-mode{display:none}}      /* the mode goes first (the song bar has the scale), then the clock time (the bar and beat stay) */
+@media (max-width:1240px){body[data-form=desktop] #transport .lcd:not(.lcd-pos){display:none}}
 /* on a phone the arrangement takes the room a short panel leaves, instead of a blank block above it */
 body[data-form=phone][data-tl=mini] #center{grid-template-rows:minmax(0,auto) minmax(var(--tlp,0px),1fr)}

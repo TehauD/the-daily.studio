@@ -2,6 +2,19 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.86.0 — 2026-11-22 — Room for the picture
+
+The Visuals had drifted: controls on four stacked rows with empty boxes beside them, a blank column where a hidden panel had been, a transport that cut off its own controls, a blank block on the phone. The picture is the point; everything else now makes room for it.
+
+### Changed
+- **The Visuals controls are a deck.** On a wide screen the groups, the looks of the chosen group, Settings, Saved and Record · Go on stage · Stage mode · More are one row; on a narrower one they are two (groups and actions, then the looks with Settings and Saved at the right). The caption row is gone (what a look shows is in its tooltip and at the top of its Settings). The picture gains about 50 px of height.
+- **Slimmer rows above the picture**: the song bar, the workspace bar and the panel padding.
+- **The song bar fills the width.** Title, artist, tuning and scale grow on a wide screen and shrink on a narrow one, so the bar needs no scrollbar.
+- **The transport is never cut.** At narrower widths it gives up the tagline, then the mode, then the clock time (the bar and beat stay), before it would clip a control, and keeps its start edge.
+- **A hidden Monitor gives its column back.** Between 860 and 1180 px the right panel is hidden but its column was still reserved as 292 px of blank; an inline width was overriding the media rule.
+- **On a phone** the picture takes the height the controls leave (with ⋯ More open it keeps a preview), and the arrangement takes the room a short panel leaves (the Tracks screen no longer has a blank block above it).
+- The release gate for compressed size is unchanged (720 kB).
+
 ## 2.85.0 — 2026-11-21 — Two big rooms load when they are needed
 
 The hosted site had grown past its size limits three releases running. Two large parts now load the first time they are used, and the limit is back where it was.
