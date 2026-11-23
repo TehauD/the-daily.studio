@@ -80,6 +80,11 @@ clinical use. FORGE makes **no clinical-validity or deployment-readiness claims*
 - Each line carries the SHA-256 of its content and of the previous line; FORGE reports the first line where the chain breaks. This detects edits and deletions inside the file, not replacement of the whole file by someone who recomputes every hash.
 - Reports are served as downloads with `Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'`; every value in them is HTML-escaped.
 
+## Auto-tune
+
+- The auto-tune job receives the local API address and session token in its own environment only; it refuses to run without a `127.0.0.1` address.
+- The Azure payload is built by the API process from metrics and recipe history; task text, table rows, documents, paths and weights are never included. Proposals are validated against a closed recipe schema before anything is built.
+
 ## Residual risks (known, accepted for a local lab)
 
 - The audit actor is a self-declared name, not an authenticated identity (FORGE has no accounts).

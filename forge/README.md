@@ -144,7 +144,11 @@ After SEAL, test analysis and **Export**: clone llama.cpp (`git clone https://gi
 
 Type your name once (Governance page or any review panel) so your actions are recorded with it. **Measure → Governance** shows the model card, how the model fails and what training fixed or broke, whether it knows when it doesn't know, per-skill curves, and a hash-checked timeline of who did what. **Reports** produces a printable HTML report for executives, operations / clinical reviewers, or technical staff.
 
-### 11. Optional: AI assistant (Azure OpenAI)
+### 11. Optional: auto-tune with Azure OpenAI
+
+With the AI assistant configured (next section), **Weight Lab → Auto-tune with Azure** lets your Azure model propose weight edits round by round; you approve each, FORGE builds and measures it on practice tasks. It runs through FORGE's own API, so you can drive the same loop from a script. See [docs/AUTOTUNE.md](docs/AUTOTUNE.md).
+
+### 12. Optional: AI assistant (Azure OpenAI)
 
 Off and invisible until you configure it. In **System Settings → Integrations → Set up Azure OpenAI** enter your resource
 endpoint (`https://<resource>.openai.azure.com`), the chat deployment name, and the **name** of the environment variable that holds

@@ -1,3 +1,4 @@
+import { AutoTune } from "../components/AutoTune";
 import { Fragment, useMemo, useState } from "react";
 import { JobLog } from "../components/live";
 import { Badge, Button, Empty, ErrorLine, Field, Notice, PageHeader, Panel, Prov, Segmented, Status, cx, inputCls, td, th, tr } from "../components/ui";
@@ -34,6 +35,7 @@ export default function WeightLab() {
         subtitle="Build new adapters from trained ones — turn their strength up or down, mix them, keep only some layers, compress them — then measure each variant on held-out tasks and try it in the Playground. Originals are never changed." />
       <div className="grid gap-4 fit:min-h-0 fit:flex-1 fit:grid-cols-[440px_minmax(0,1fr)] fit:gap-3">
         <div className="scroll-thin flex min-w-0 flex-col gap-4 fit:min-h-0 fit:gap-3 fit:overflow-auto fit:pr-1">
+          <AutoTune studies={trained.filter((s) => s.stages?.analyze_dev === "completed")} />
           <Builder studies={trained} onStarted={(j) => { setJobId(j); void variants.reload(); }} />
           {jobId && <Panel title="Working…" eyebrow="live"><JobLog key={jobId} jobId={jobId} height={150} onDone={() => { setJobId(null); void variants.reload(); }} /></Panel>}
           <Panel title="The four dials" eyebrow="what each one does">

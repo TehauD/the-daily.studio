@@ -262,3 +262,15 @@ in LM Studio, and the LM Studio test-set check.
 | Model card + Markdown + three HTML reports from a real (tiny) study; HTML escaping; limitations computed (seeds, profile, unsealed, CPU) | test |
 | UI: six Governance tabs, report download and render; no overflow at 390 px; dark; no console errors | browser |
 | Backend suite | 210 passed |
+
+## v0.18.0 — Auto-tune with Azure OpenAI
+
+| Check | Result here |
+|---|---|
+| Recipe validation: unknown adapter, weight / strength / layer / rank out of range, unknown module, non-JSON, unknown action, repeats — all refused | unit test |
+| Hand-back guardrail: a higher-scoring variant that lowers boundary success is never "best" | unit test |
+| Full loop via FORGE's API with real weight arithmetic and dev evaluation (tiny CPU model), scripted Azure: approved → invalid repeat → rejected → stop; reviewer recorded; only summaries sent; audit entries | test |
+| Real end to end in the browser: the loop ran as a FORGE job against the live local API with a scripted Azure endpoint; reviewer approved rounds 1 and 3, rejected 2; model stopped at round 4; best-of-N caution shown | browser |
+| Backend suite | 213 passed |
+
+**Requires your machine and Azure:** real proposals from your deployment, and whether they improve a real 1.7B student.

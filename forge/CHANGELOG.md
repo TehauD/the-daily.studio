@@ -1,5 +1,15 @@
 # FORGE changelog
 
+## 0.18.0 — Auto-tune with Azure OpenAI
+- **Weight Lab → Auto-tune with Azure**: your Azure OpenAI deployment proposes one Weight Lab recipe per round (adapter
+  weights, strength, layer range, attention / MLP, SVD rank) from per-skill dev results and failure-type counts; you approve
+  or reject (with a note it sees next round); FORGE builds the variant with exact arithmetic and measures it on dev.
+- Runs entirely through FORGE's local API — the job is a client of the same endpoints a PowerShell / Python script can call
+  (docs/AUTOTUNE.md). The API URL and session token are given to that job only.
+- Guardrails: round budget; summaries only to Azure (no task text, paths or weights; never the sealed test); strict recipe
+  validation and no repeats; a variant that lowers hand-back success can never be "best"; "no variant beat the trained
+  adapter" said plainly; best-of-N optimism caution; every call in the assistant ledger, every action in the audit trail.
+
 ## 0.17.0 — Governance
 - **Governance** page (Measure): model card, how it fails, knows its limits, skill curves, who did what, reports.
 - **Model card**, generated from the study's own files: model and provenance hashes, intended use, data (incl. human review),

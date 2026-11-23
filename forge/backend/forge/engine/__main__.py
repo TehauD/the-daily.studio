@@ -87,6 +87,23 @@ def cmd_gguf(a: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_autotune(a: argparse.Namespace) -> int:
+    """The auto-tune loop. Talks only to FORGE's local API (URL and session token are given to this job alone)."""
+    import httpx
+    from forge.engine.autotune import loop
+    url, tok = os.environ.get("FORGE_API_URL", ""), os.environ.get("FORGE_SESSION_TOKEN", "")
+    if not url.startswith("http://127.0.0.1:") or not tok:
+        raise RuntimeError("auto-tune must be started by FORGE (no local API address or session token)")
+    with httpx.Client(base_url=url, timeout=300, trust_env=False, follow_redirects=False,
+                      headers={"X-Forge-Token": tok, "X-Forge-Actor": "auto-tune loop"}) as api:
+        try:
+            loop(api, a.run, emit)
+        except Exception:
+            api.post(f"/api/autotune/{a.run}/finish", params={"failed": "true"})
+            raise
+    return 0
+
+
 def cmd_weightlab(a: argparse.Namespace) -> int:
     """Build a Weight Lab variant, or evaluate one on a study's dev split."""
     os.environ.setdefault("HF_HUB_OFFLINE", "1")
@@ -274,6 +291,9 @@ def main(argv: list[str] | None = None) -> int:
     gg.add_argument("--step", required=True, choices=["export", "check"])
     gg.add_argument("--config", required=True)
     gg.set_defaults(fn=cmd_gguf)
+    au = sub.add_parser("autotune")
+    au.add_argument("--run", required=True)
+    au.set_defaults(fn=cmd_autotune)
     wl = sub.add_parser("weightlab")
     wl.add_argument("--variant", required=True)
     wl.add_argument("--step", required=True, choices=["build", "evaluate"])
