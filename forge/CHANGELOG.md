@@ -1,5 +1,22 @@
 # FORGE changelog
 
+## 0.17.0 — Governance
+- **Governance** page (Measure): model card, how it fails, knows its limits, skill curves, who did what, reports.
+- **Model card**, generated from the study's own files: model and provenance hashes, intended use, data (incl. human review),
+  results with 95 % ranges and gate verdict, calibration, failures, efficiency, computed limitations, claims never made.
+  Download as Markdown.
+- **Failure types**: every failed episode placed in one of 11 plain-language categories (missed hand-back, over-refusal,
+  confident answer where nothing exists, gave up too early, wrong tool, wrong lookup, right but unbacked, …) with examples,
+  plus what training fixed and what it broke.
+- **Knows its limits?** (answer-or-abstain calibration): accuracy when answering, confident-wrong rate, abstained when right
+  to, abstained wrongly — per model and split.
+- **Skill curves**: per-skill distance to the teacher over training snapshots (lens), per-skill success over data share
+  (data curve), and per-skill untrained vs trained with ranges.
+- **Audit trail**: every change made through the API (POST / PUT / DELETE) is appended to a hash-chained log with time, the
+  reviewer name sent by the browser, action and status — never request bodies; a broken chain is reported. Study timelines
+  merge it with stage history, jobs, task reviews and accept / override decisions.
+- **One-click reports** for executives, operations / clinical reviewers and technical staff: self-contained HTML, printable.
+
 ## 0.16.0 — Efficiency, GGUF for LM Studio, learning paths
 - **Efficiency** (Robustness & limits → Efficiency): per model and split — success, median / 90th-percentile time per task,
   calls, prompt and generated tokens per task, generated tokens/s, tasks/min, generated tokens per success; per training run —

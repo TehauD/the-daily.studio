@@ -74,7 +74,15 @@ clinical use. FORGE makes **no clinical-validity or deployment-readiness claims*
 - Startup no longer needs a resolvable home directory, and the port check always runs first.
 - A training child's output is relayed through its parent as UTF-8, so the job log is complete regardless of console code page.
 
+## Audit trail
+
+- Every mutating API call is appended to `FORGE_HOME/audit/audit.jsonl`: time, method, path, status, action, and the reviewer name the browser sends (`X-Forge-Actor`, sanitised to 60 characters). Request bodies are never written.
+- Each line carries the SHA-256 of its content and of the previous line; FORGE reports the first line where the chain breaks. This detects edits and deletions inside the file, not replacement of the whole file by someone who recomputes every hash.
+- Reports are served as downloads with `Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'`; every value in them is HTML-escaped.
+
 ## Residual risks (known, accepted for a local lab)
+
+- The audit actor is a self-declared name, not an authenticated identity (FORGE has no accounts).
 
 - Any program running as your Windows user can read `%LOCALAPPDATA%\Forge` and could read the session token from the running page.
 - The personal-data scan uses patterns and cannot recognise every identifier (free-text names, rare ID formats). **Synthetic or non-sensitive data only.**

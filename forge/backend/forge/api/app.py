@@ -13,8 +13,9 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from forge import __version__
+from forge.audit import ACTOR_HEADER, Audit
 from forge.api import (routes_analysis, routes_experiments, routes_hub, routes_jobs, routes_lmstudio, routes_models,
-                       routes_settings, routes_studies, routes_system, routes_knowledge, routes_agents, routes_assistant, routes_playground, routes_modelmap, routes_projects)
+                       routes_settings, routes_studies, routes_system, routes_knowledge, routes_agents, routes_assistant, routes_playground, routes_modelmap, routes_projects, routes_governance)
 from forge.api.state import AppState
 from forge.config import Settings
 from forge.db import Database
@@ -64,6 +65,7 @@ def create_app(settings: Settings | None = None, token: str | None = None) -> Fa
                                                     jobs.active_count),
                          jobs=jobs, token=session_token, overrides=db.get_setting("runtime_overrides", {}))
         app.state.forge = state
+        app.state.audit = Audit(settings.home)
         # The listening socket is bound before the lifespan runs (see forge.__main__), so this marks a live server.
         log_event(log, logging.INFO, "forge.started", version=__version__, home=str(settings.home),
                   recovered_runs=recovered, interrupted_jobs=interrupted, bind=f"{settings.host}:{settings.port}")
@@ -91,6 +93,11 @@ def create_app(settings: Settings | None = None, token: str | None = None) -> Fa
             if not secrets.compare_digest(request.headers.get(TOKEN_HEADER, ""), session_token):
                 return JSONResponse({"detail": "Missing or invalid session token"}, status_code=403)
         response = await call_next(request)
+        if request.method in MUTATING and request.url.path.startswith("/api/") and response.status_code < 500:
+            try:  # who did what — never the request body
+                getattr(app.state, "audit", None) and app.state.audit.append(request.headers.get(ACTOR_HEADER), request.method, request.url.path, response.status_code)
+            except OSError as e:
+                log_event(log, logging.WARNING, "audit.write_failed", error=str(e))
         ct = response.headers.get("content-type", "")
         if (ct.startswith(("application/json", "text/", "application/javascript")) and "charset" not in ct.lower()):
             response.headers["content-type"] = f"{ct}; charset=utf-8"
@@ -104,9 +111,9 @@ def create_app(settings: Settings | None = None, token: str | None = None) -> Fa
     # DNS-rebinding defense: a localhost service must reject foreign Host headers.
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=["127.0.0.1", "localhost", "testserver", settings.host])
     app.add_middleware(CORSMiddleware, allow_origins=["http://127.0.0.1:5173", "http://localhost:5173"],
-                       allow_methods=["GET", "POST", "PUT", "DELETE"], allow_headers=["Content-Type", TOKEN_HEADER])
+                       allow_methods=["GET", "POST", "PUT", "DELETE"], allow_headers=["Content-Type", TOKEN_HEADER, ACTOR_HEADER])
     for r in (routes_system, routes_models, routes_settings, routes_experiments, routes_studies, routes_jobs,
-              routes_hub, routes_analysis, routes_lmstudio, routes_knowledge, routes_agents, routes_assistant, routes_playground, routes_modelmap, routes_projects):
+              routes_hub, routes_analysis, routes_lmstudio, routes_knowledge, routes_agents, routes_assistant, routes_playground, routes_modelmap, routes_projects, routes_governance):
         app.include_router(r.router)
 
 

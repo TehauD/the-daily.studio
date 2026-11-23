@@ -19,7 +19,11 @@ async function getToken(): Promise<string> {
 async function request<T>(method: string, path: string, body?: unknown, retry = true): Promise<T> {
   const headers: Record<string, string> = {};
   if (body !== undefined) headers["Content-Type"] = "application/json";
-  if (method !== "GET") headers["X-Forge-Token"] = await getToken();
+  if (method !== "GET") {
+    headers["X-Forge-Token"] = await getToken();
+    // Who did it, for the audit trail: the reviewer name typed in this browser (a label, not authentication).
+    try { const who = localStorage.getItem("forge.reviewer"); if (who) headers["X-Forge-Actor"] = who.replace(/[^\w .,'@-]/g, "").slice(0, 60); } catch { /* storage blocked */ }
+  }
   const res = await fetch(path, { method, headers, body: body !== undefined ? JSON.stringify(body) : undefined });
   if (res.status === 403 && method !== "GET" && retry) { token = null; return request<T>(method, path, body, false); }
   if (!res.ok) {

@@ -250,3 +250,15 @@ These demo numbers show the plumbing, not model quality. **Requires your machine
 
 **Not validated here — requires your machine:** running llama.cpp's real converter (not executed in this sandbox), loading the GGUF
 in LM Studio, and the LM Studio test-set check.
+
+## v0.17.0 — Governance
+
+| Check | Result here |
+|---|---|
+| Failure types: one test per category (11) | unit test |
+| Calibration: confident-wrong, abstained when right to / wrongly, accuracy when answering on constructed episodes; sealed and train splits excluded | unit test |
+| What training fixed / broke, by failure type | unit test |
+| Audit chain: append, read, tamper detection (first broken line), actor sanitised, readable actions; via API with the actor header, no bodies stored | tests |
+| Model card + Markdown + three HTML reports from a real (tiny) study; HTML escaping; limitations computed (seeds, profile, unsealed, CPU) | test |
+| UI: six Governance tabs, report download and render; no overflow at 390 px; dark; no console errors | browser |
+| Backend suite | 210 passed |

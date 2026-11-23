@@ -140,7 +140,11 @@ generated text, not a trace of its computation.
 
 After SEAL, test analysis and **Export**: clone llama.cpp (`git clone https://github.com/ggml-org/llama.cpp`; build it if you want 4–6-bit files), set its folder in **Model Factory → GGUF for LM Studio**, choose q8_0 (recommended) and *Make GGUF*. The file lands in LM Studio's models folder under `forge/`. Load it in LM Studio, enter its model id and run the **test-set check** to see how much conversion changed behaviour. **Robustness & limits → Efficiency** shows time, tokens, energy and sizes.
 
-### 10. Optional: AI assistant (Azure OpenAI)
+### 10. Governance: model card, audit trail, reports
+
+Type your name once (Governance page or any review panel) so your actions are recorded with it. **Measure → Governance** shows the model card, how the model fails and what training fixed or broke, whether it knows when it doesn't know, per-skill curves, and a hash-checked timeline of who did what. **Reports** produces a printable HTML report for executives, operations / clinical reviewers, or technical staff.
+
+### 11. Optional: AI assistant (Azure OpenAI)
 
 Off and invisible until you configure it. In **System Settings → Integrations → Set up Azure OpenAI** enter your resource
 endpoint (`https://<resource>.openai.azure.com`), the chat deployment name, and the **name** of the environment variable that holds
@@ -177,6 +181,7 @@ study, agent or knowledge pack.
 |---|---|
 | **Home** | Projects (agents, document sets, built-in catalog) with stage progress, latest results and next step; quick starts; role tours; glossary |
 | **Robustness & limits** | Boundary suite (hand-back held vs over-refusal), stress tests (typos, wording, noise, hidden instructions), and the "how much data?" curve |
+| **Governance** | Model card, failure types, knows-its-limits calibration, per-skill curves, audit trail (who did what), one-click reports for executives / operations / technical staff |
 | **Learn** | Role-based learning paths: hands-on lessons with a self-check each |
 | **Guide** | Concepts and the research protocol in plain language |
 | **Overview** | Readiness for each stage of the loop, live GPU / VRAM / temperature / power telemetry |
