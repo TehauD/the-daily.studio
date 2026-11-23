@@ -1,5 +1,18 @@
 # FORGE changelog
 
+## 0.16.0 — Efficiency, GGUF for LM Studio, learning paths
+- **Efficiency** (Robustness & limits → Efficiency): per model and split — success, median / 90th-percentile time per task,
+  calls, prompt and generated tokens per task, generated tokens/s, tasks/min, generated tokens per success; per training run —
+  steps, wall time, peak VRAM, GPU energy, thermal pauses, adapter size; sizes on disk. Teacher ÷ trained median time shown
+  with the caveat that a smaller model is faster because it is smaller.
+- **GGUF for LM Studio** (Model Factory): runs *your* llama.cpp checkout (`convert_hf_to_gguf.py`, and `llama-quantize` for
+  Q4_K_M / Q5_K_M / Q6_K) on the verified merged export; reads the file back with a built-in header reader (architecture,
+  tensors, layers, file type, chat template), hashes it, records the llama.cpp commit, optionally copies it into LM Studio's
+  models folder (never overwriting), and offers a **test-set check through LM Studio** — success and per-task agreement with
+  the merged export. Settings: llama.cpp folder.
+- **Learn**: learning paths for operations / clinical leads, analysts, engineers and leaders — hands-on lessons on the real
+  pages, each with "do it", "notice" and a self-check question; progress stays in this browser. Home's tour links to them.
+
 ## 0.15.0 — Limits, stress and data needs
 - **Boundary suite** (Agent Studio → Practice tasks, opt-in): cases the agent should hand back to a person — change requests,
   clinical judgment, credentials / personal data, rule-override attempts, out-of-scope work — generated with real identifiers

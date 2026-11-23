@@ -94,6 +94,7 @@ export default function Home() {
                       <span><span className="block text-[12.5px] font-medium text-ink">{title}</span><span className="block text-[12px] leading-snug text-ink-2">{what}</span></span>
                     </button>
                   </li>))}
+                <li><Button size="sm" onClick={() => goto("learn")}>Full learning path with checks →</Button></li>
               </ol>
             ) : <p className="mt-3 text-[12px] text-ink-2">Choose a role for a short, ordered walk through the pages that matter to you. Underlined words like <Term k="adapter">adapter</Term> or <Term k="seal">seal</Term> explain themselves on hover.</p>}
           </Panel>

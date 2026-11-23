@@ -31,10 +31,11 @@ const Playground = lazy(() => import("./pages/Playground"));
 const WeightLab = lazy(() => import("./pages/WeightLab"));
 const ModelMap = lazy(() => import("./pages/ModelMap"));
 const Robustness = lazy(() => import("./pages/Robustness"));
+const Learn = lazy(() => import("./pages/Learn"));
 
 /** Four workspaces, in the order people work: build it, see and steer it, measure it, run the lab. `expert` pages are hidden in Simple mode. */
 const NAV = [
-  { group: "", items: [{ key: "home", label: "Home", icon: "home" }] },
+  { group: "", items: [{ key: "home", label: "Home", icon: "home" }, { key: "learn", label: "Learn", icon: "guide" }] },
   { group: "Build", items: [
     { key: "agent-studio", label: "Agent Studio", icon: "agent" },
     { key: "knowledge-studio", label: "Knowledge Studio", icon: "layers" },
@@ -199,7 +200,7 @@ function Shell() {
     { id: "verify", label: "Verify GPU (forward/backward, BF16)", group: "Actions", run: () => { void api.post("/api/jobs/verify-gpu"); go("overview"); } },
   ], [go, set, prefs.sidebarCollapsed]);
   const Page = { home: Home, overview: Overview, observatory: Observatory, studio: Studio, trajectories: Trajectories, datasets: Datasets,
-    training: Training, evaluation: Evaluation, knowledge: Knowledge, "knowledge-studio": KnowledgeStudio, lens: Lens, "agent-studio": AgentStudio, playground: Playground, weightlab: WeightLab, modelmap: ModelMap, robustness: Robustness, factory: Factory, settings: Settings, guide: Guide }[route];
+    training: Training, evaluation: Evaluation, knowledge: Knowledge, "knowledge-studio": KnowledgeStudio, lens: Lens, "agent-studio": AgentStudio, playground: Playground, weightlab: WeightLab, modelmap: ModelMap, robustness: Robustness, learn: Learn, factory: Factory, settings: Settings, guide: Guide }[route];
   return (
     <AssistantProvider route={route}>
     <div className="flex min-h-full">

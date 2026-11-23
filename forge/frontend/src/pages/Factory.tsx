@@ -2,6 +2,7 @@ import { useMemo, useState, type FormEvent } from "react";
 import { HeatStrip, Spectrum } from "../components/charts";
 import { LineageGraph } from "../components/graphs";
 import { StudySelect } from "../components/live";
+import { GGUFPanel } from "../components/GGUFPanel";
 import { Badge, Button, Empty, ErrorLine, Field, KV, Notice, PageHeader, Panel, Prov, Readout, Segmented, Status, cx, inputCls, td, th, tr } from "../components/ui";
 import { api, fmt, qs } from "../lib/api";
 import { useAction, useApi } from "../lib/hooks";
@@ -21,6 +22,7 @@ export default function Factory() {
           {s.data && <Inspector sid={sid} s={s.data} />}
           {s.data && <Lineage sid={sid} />}
           {s.data && <ExportPanel s={s.data} />}
+          {s.data && <GGUFPanel s={s.data} />}
         </>
       )}
       <ManualInspect />
@@ -122,7 +124,7 @@ function ExportPanel({ s }: { s: StudySummary }) {
         <div className="space-y-2 text-[12px] text-ink-2">
           <p>Export merges the primary arm's seed-0 adapter into a <b className="text-ink">new</b> bf16 directory and immediately re-evaluates it on the test split. An export is only usable if its post-merge behaviour agrees with the adapter run.</p>
           {st?.summary ? <KV rows={Object.entries(st.summary as Record<string, unknown>).map(([k, v]) => [k, typeof v === "number" ? (k.includes("agreement") ? fmt.pct(v) : String(v)) : String(v)])} /> : null}
-          <Notice tone="warn">GGUF conversion and Ollama deployment are deferred until after the MVP. A merged export is not deployment approval.</Notice>
+          <Notice tone="warn">A merged export is not deployment approval. For LM Studio, make a GGUF from it below.</Notice>
         </div>
         <div className="flex flex-col items-start gap-2">
           <Badge>{s.state.sealed ? "sealed" : "requires SEAL + test analysis"}</Badge>

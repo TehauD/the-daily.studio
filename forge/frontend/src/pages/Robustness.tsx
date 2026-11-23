@@ -15,7 +15,7 @@ export default function Robustness() {
   const { prefs } = usePrefs();
   const sid = prefs.activeStudy;
   const s = useApi<StudySummary & { jobs: Job[] }>(sid ? `/api/studies/${sid}` : null, 4000);
-  const [tab, setTab] = useState<"boundary" | "stress" | "data">("boundary");
+  const [tab, setTab] = useState<"boundary" | "stress" | "data" | "efficiency">("boundary");
   const running = s.data?.jobs?.find((j) => j.status === "running" && ["stress", "datacurve"].includes(j.kind));
   return (
     <div className="space-y-4">
@@ -23,10 +23,11 @@ export default function Robustness() {
         subtitle={<>Beyond the headline score: does the agent hand back what it should, survive messy real-world wording, and how much data does it actually need? <Term k="heldout">Held-out</Term> practice tasks only; the sealed test is untouched until you seal.</>} />
       {!sid || !s.data ? <Panel title="No study selected"><Empty icon="evaluation">Choose a study in the top bar.</Empty></Panel> : (
         <>
-          <Tabs value={tab} onChange={setTab} tabs={[{ value: "boundary", label: "Boundaries" }, { value: "stress", label: "Stress tests" }, { value: "data", label: "How much data?" }]} />
+          <Tabs value={tab} onChange={setTab} tabs={[{ value: "boundary", label: "Boundaries" }, { value: "stress", label: "Stress tests" }, { value: "data", label: "How much data?" }, { value: "efficiency", label: "Efficiency" }]} />
           {tab === "boundary" && <Boundary sid={sid} />}
           {tab === "stress" && <Stress s={s.data} busy={!!running} onStarted={s.reload} />}
           {tab === "data" && <DataCurve s={s.data} busy={!!running} onStarted={s.reload} />}
+          {tab === "efficiency" && <Efficiency sid={sid} />}
           {running && <Panel title="Running" eyebrow={running.label}><JobLog jobId={running.id} height={200} onDone={() => void s.reload()} /></Panel>}
         </>
       )}
@@ -176,6 +177,54 @@ function DataCurve({ s, busy, onStarted }: { s: StudySummary; busy: boolean; onS
         </ul>
         {d?.honesty && <div className="mt-3 text-[11.5px] text-ink-3">{d.honesty}</div>}
       </Panel>
+    </div>
+  );
+}
+
+interface ERow { arm: string; split: string; seed: number; episodes: number; success: number; median_s: number | null; p90_s: number | null; calls_per_task: number;
+  prompt_tokens: number; generated_tokens: number; generated_per_s: number | null; tasks_per_min: number | null; tokens_per_success: number | null; tokens_reported: boolean }
+interface Eff { rows: ERow[]; runs: { arm: string; seed: number; wall_s: number | null; peak_vram_mb: number | null; steps: number | null; energy_wh: number | null; thermal_pauses: number | null; adapter_bytes: number | null }[];
+  sizes: { student_weights_bytes: number | null }; exports: { name: string; bytes: number | null }[]; teacher_vs_trained_median_ratio: number | null; teacher: string; student: string; device: string; honesty: string }
+const MB = (b: number | null | undefined) => (b == null ? "—" : b >= 2 ** 30 ? `${(b / 2 ** 30).toFixed(2)} GB` : `${(b / 2 ** 20).toFixed(1)} MB`);
+const n1 = (v: number | null | undefined, d = 1) => (v == null ? "—" : v.toFixed(d));
+
+function Efficiency({ sid }: { sid: string }) {
+  const e = useApi<Eff>(`/api/studies/${sid}/efficiency`);
+  const d = e.data;
+  if (!d) return <ErrorLine error={e.error} />;
+  return (
+    <div className="space-y-4">
+      <Panel flush title="Running the models" eyebrow={`${d.student} vs ${d.teacher} · ${d.device}`} prov={<Prov kind="measured" source="evaluation episodes" />}
+        right={d.teacher_vs_trained_median_ratio ? <Badge tone="accent">teacher median time ÷ trained = {d.teacher_vs_trained_median_ratio.toFixed(1)}×</Badge> : undefined}>
+        {!d.rows.length ? <Empty icon="evaluation">No evaluation episodes yet.</Empty> : (
+          <div className="overflow-x-auto"><table className="w-full text-[12.5px]">
+            <thead><tr>{["Model", "Split", "Success", "Median s / task", "90th pct s", "Calls / task", "Prompt tok / task", "Generated tok / task", "Generated tok/s", "Tasks / min", "Generated tok / success"].map((h, i) => <th key={h} className={cx(th, i > 1 && "text-right")}>{h}</th>)}</tr></thead>
+            <tbody>{d.rows.map((r) => (
+              <tr key={`${r.arm}${r.split}${r.seed}`} className={tr}>
+                <td className={td}>{ARM(r.arm)}{r.seed ? ` · s${r.seed}` : ""}</td><td className={cx(td, "font-mono text-ink-3")}>{r.split}</td>
+                {[pct(r.success), n1(r.median_s, 2), n1(r.p90_s, 2), n1(r.calls_per_task), r.tokens_reported ? n1(r.prompt_tokens, 0) : "—", r.tokens_reported ? n1(r.generated_tokens, 0) : "—",
+                  r.tokens_reported ? n1(r.generated_per_s) : "—", n1(r.tasks_per_min), r.tokens_reported ? n1(r.tokens_per_success, 0) : "—"].map((v, i) => <td key={i} className={cx(td, "num text-right font-mono")}>{v}</td>)}
+              </tr>))}</tbody></table></div>)}
+        <div className="p-[var(--pad)] text-[11.5px] text-ink-3">{d.honesty}</div>
+      </Panel>
+      <div className="grid gap-4 xl:grid-cols-2 [&>*]:min-w-0">
+        <Panel flush title="Training cost" prov={<Prov kind="measured" source="run.json" />}>
+          {!d.runs.length ? <Empty icon="training">Not trained yet.</Empty> : (
+            <div className="overflow-x-auto"><table className="w-full text-[12.5px]"><thead><tr>{["Run", "Steps", "Wall time", "Peak VRAM", "GPU energy", "Thermal pauses", "Adapter"].map((h, i) => <th key={h} className={cx(th, i > 0 && "text-right")}>{h}</th>)}</tr></thead>
+              <tbody>{d.runs.map((r) => (
+                <tr key={`${r.arm}${r.seed}`} className={tr}><td className={td}>{r.arm} · s{r.seed}</td>
+                  {[r.steps ?? "—", r.wall_s != null ? `${Math.round(r.wall_s)} s` : "—", r.peak_vram_mb != null ? `${(r.peak_vram_mb / 1024).toFixed(1)} GB` : "—",
+                    r.energy_wh != null ? `${r.energy_wh.toFixed(1)} Wh` : "—", r.thermal_pauses ?? "—", MB(r.adapter_bytes)].map((v, i) => <td key={i} className={cx(td, "num text-right font-mono")}>{v}</td>)}</tr>))}</tbody></table></div>)}
+        </Panel>
+        <Panel title="Sizes on disk" prov={<Prov kind="measured" />}>
+          <ul className="space-y-1.5 font-mono text-[12px]">
+            <li className="flex justify-between"><span className="text-ink-2">student weights (original, untouched)</span><span>{MB(d.sizes.student_weights_bytes)}</span></li>
+            {d.runs.slice(0, 1).map((r) => <li key="ad" className="flex justify-between"><span className="text-ink-2">one adapter (what training adds)</span><span>{MB(r.adapter_bytes)}</span></li>)}
+            {d.exports.map((x) => <li key={x.name} className="flex justify-between"><span className="truncate text-ink-2">{x.name}</span><span>{MB(x.bytes)}</span></li>)}
+          </ul>
+          <p className="mt-3 text-[11.5px] text-ink-3">An adapter is usually a few megabytes: you can keep one per skill or per version and switch between them without copying the model.</p>
+        </Panel>
+      </div>
     </div>
   );
 }

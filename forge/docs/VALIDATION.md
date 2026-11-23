@@ -237,3 +237,16 @@ figure on your RTX card; below-normal priority on Windows (psutil).
 The mock teacher replays answers by exact prompt, so it fails every perturbed prompt by construction; the tiny student scores 0 %.
 These demo numbers show the plumbing, not model quality. **Requires your machine:** stress and data-curve results for a real
 1.7B student and LM Studio teacher.
+
+## v0.16.0 — Efficiency, GGUF export, learning paths
+
+| Check | Result here |
+|---|---|
+| Efficiency from recorded episodes: dev rows only before SEAL, train never counted, sizes on disk | test |
+| GGUF header reader: magic, version, tensors, architecture, file type, layers, chat template; bad magic and truncation refused | unit tests |
+| GGUF export with a stand-in converter: manifest with hashes, install into an LM Studio folder, immutability, converter failure surfaced with its exit code, quantize refused without llama-quantize, requires the merged export | test |
+| UI: Learn (self-check feedback), Efficiency tab, Factory GGUF panel; no overflow at 390 px (fixed one table); dark; no console errors | browser |
+| Backend suite | 205 passed |
+
+**Not validated here — requires your machine:** running llama.cpp's real converter (not executed in this sandbox), loading the GGUF
+in LM Studio, and the LM Studio test-set check.

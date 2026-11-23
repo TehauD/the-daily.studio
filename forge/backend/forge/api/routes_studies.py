@@ -482,3 +482,77 @@ def start_datacurve(sid: str, st: AppState = Depends(get_state)):
 def get_datacurve(sid: str, st: AppState = Depends(get_state)):
     p = _study(st, sid).root / "datacurve" / "curve.json"
     return json.loads(p.read_text(encoding="utf-8")) if p.exists() else {"computed": False}
+
+
+@router.get("/{sid}/efficiency")
+def get_efficiency(sid: str, st: AppState = Depends(get_state)):
+    from forge.engine.efficiency import efficiency
+    return efficiency(_study(st, sid))
+
+
+class GGUFBody(BaseModel):
+    outtype: Literal["q8_0", "bf16", "f16"] = "q8_0"
+    quant: Literal["Q4_K_M", "Q5_K_M", "Q6_K"] | None = None
+    install: bool = True
+    name: str | None = Field(None, max_length=60)
+
+
+@router.get("/{sid}/gguf")
+def gguf_status(sid: str, st: AppState = Depends(get_state)):
+    from forge.engine import gguf
+    s = _study(st, sid)
+    d = st.db.get_setting("llama_cpp_dir", "") or ""
+    try:
+        src = str(gguf.merged_export(s))
+    except gguf.GGUFError:
+        src = None
+    lms = [str(p) for p in st.settings.lmstudio_model_dirs if p.is_dir()]
+    return {"tools": gguf.find_tools(d), "merged_export": src, "lmstudio_dir": lms[0] if lms else None, "exports": gguf.list_exports(s),
+            "outtypes": list(gguf.OUTTYPES), "quants": list(gguf.QUANTS)}
+
+
+def _env(s: Study) -> dict | None:
+    import os as _os
+    return {"FORGE_ALLOW_CPU": "1"} if s.plan["device"] == "cpu" and _os.environ.get("FORGE_ALLOW_CPU") == "1" else None
+
+
+@router.post("/{sid}/gguf")
+def gguf_export(sid: str, body: GGUFBody, st: AppState = Depends(get_state)):
+    from forge.engine import gguf
+    s = _study(st, sid)
+    try:
+        gguf.merged_export(s)
+    except gguf.GGUFError as e:
+        raise HTTPException(409, str(e))
+    d = st.db.get_setting("llama_cpp_dir", "") or ""
+    tools = gguf.find_tools(d)
+    if not tools["ok"]:
+        raise HTTPException(409, "; ".join(tools["problems"]))
+    lms = [str(p) for p in st.settings.lmstudio_model_dirs if p.is_dir()]
+    cfg = {**body.model_dump(), "llama_cpp_dir": d, "lmstudio_dir": lms[0] if lms else None}
+    try:
+        return st.jobs.start("gguf", ["gguf", "--study", str(s.root), "--step", "export", "--config", json.dumps(cfg)], gpu=False,
+                             study_id=sid, label=f"{s.plan['name']} · GGUF {body.quant or body.outtype}", env=_env(s))
+    except JobError as e:
+        raise HTTPException(409, str(e))
+
+
+class GGUFCheck(BaseModel):
+    file: str = Field(pattern=r"^[a-z0-9\-_.]+\.gguf$")
+    model_id: str = Field(min_length=1, max_length=200)
+
+
+@router.post("/{sid}/gguf/check")
+def gguf_check(sid: str, body: GGUFCheck, st: AppState = Depends(get_state)):
+    s = _study(st, sid)
+    if not s.state["sealed"]:
+        raise HTTPException(409, "The study must be sealed")
+    man = s.root / "exports" / "gguf" / body.file.replace(".gguf", ".json")
+    if not man.exists():
+        raise HTTPException(404, "Unknown GGUF export")
+    cfg = {"manifest": str(man), "model_id": body.model_id, "base_url": st.settings.lmstudio_url}
+    try:
+        return st.jobs.start("gguf:check", ["gguf", "--study", str(s.root), "--step", "check", "--config", json.dumps(cfg)], gpu=True,
+                             study_id=sid, label=f"{s.plan['name']} · check {body.file} in LM Studio", env=_env(s))
+    except JobError as e:
+        raise HTTPException(409, str(e))

@@ -74,6 +74,19 @@ def cmd_datacurve(a: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_gguf(a: argparse.Namespace) -> int:
+    """Convert the verified merged export to GGUF with your llama.cpp, or check a GGUF loaded in LM Studio."""
+    os.environ.setdefault("HF_HUB_OFFLINE", "1")
+    from forge.engine import gguf
+    from forge.engine.study import Study
+    st, cfg = Study(Path(a.study)), json.loads(a.config)
+    if a.step == "export":
+        gguf.export(st, cfg, emit)
+    else:
+        gguf.lmstudio_check(st, Path(cfg["manifest"]), cfg["model_id"], cfg["base_url"], emit)
+    return 0
+
+
 def cmd_weightlab(a: argparse.Namespace) -> int:
     """Build a Weight Lab variant, or evaluate one on a study's dev split."""
     os.environ.setdefault("HF_HUB_OFFLINE", "1")
@@ -256,6 +269,11 @@ def main(argv: list[str] | None = None) -> int:
     dc.add_argument("--study", required=True)
     dc.add_argument("--train-fraction")
     dc.set_defaults(fn=cmd_datacurve)
+    gg = sub.add_parser("gguf")
+    gg.add_argument("--study", required=True)
+    gg.add_argument("--step", required=True, choices=["export", "check"])
+    gg.add_argument("--config", required=True)
+    gg.set_defaults(fn=cmd_gguf)
     wl = sub.add_parser("weightlab")
     wl.add_argument("--variant", required=True)
     wl.add_argument("--step", required=True, choices=["build", "evaluate"])
@@ -290,7 +308,7 @@ def main(argv: list[str] | None = None) -> int:
     g.add_argument("--min-free-vram-mb", type=int, default=8000)
     g.set_defaults(fn=cmd_gpu_smoke)
     a = p.parse_args(argv)
-    guarded = a.cmd in ("stage", "train-run", "lens", "agent", "knowledge", "gpu-smoke", "playground", "weightlab", "modelmap", "stress", "datacurve")
+    guarded = a.cmd in ("stage", "train-run", "lens", "agent", "knowledge", "gpu-smoke", "playground", "weightlab", "modelmap", "stress", "datacurve", "gguf")
     if guarded:
         keep_awake()
         from forge.engine import guard

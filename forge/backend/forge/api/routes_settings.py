@@ -172,3 +172,34 @@ def put_guard(body: GuardBody, st: AppState = Depends(get_state)):
         raise HTTPException(422, "Leave at least one core for the job")
     st.db.set_setting(GUARD_KEY, {**body.model_dump(), "sample_s": 5.0})
     return get_guard(st)
+
+
+# ------------------------------------------------------------------ llama.cpp (GGUF export)
+LLAMA_KEY = "llama_cpp_dir"
+
+
+class LlamaBody(BaseModel):
+    path: str = Field("", max_length=500)
+
+
+@router.get("/llama-cpp")
+def get_llama(st: AppState = Depends(get_state)):
+    from forge.engine.gguf import find_tools
+    d = st.db.get_setting(LLAMA_KEY, "") or ""
+    return {"path": d, **find_tools(d)}
+
+
+@router.put("/llama-cpp")
+def put_llama(body: LlamaBody, st: AppState = Depends(get_state)):
+    from pathlib import Path as _P
+    from forge.engine.gguf import find_tools
+    p = body.path.strip()
+    if p:
+        if not _P(p).is_absolute() or ".." in _P(p).parts:
+            raise HTTPException(422, "Use an absolute local folder path")
+        if not _P(p).is_dir():
+            raise HTTPException(422, "Folder not found")
+        if not find_tools(p)["ok"]:
+            raise HTTPException(422, "convert_hf_to_gguf.py not found in that folder (choose the llama.cpp checkout's top folder)")
+    st.db.set_setting(LLAMA_KEY, p)
+    return get_llama(st)
