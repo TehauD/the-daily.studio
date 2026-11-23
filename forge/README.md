@@ -128,7 +128,15 @@ generated text, not a trace of its computation.
 ![Model Map: decision graph, representation map and word view, linked](docs/images/model-map.png)
 <sub>Validation instance: tiny 2-layer CPU student — the instrument working, not a learning result.</sub>
 
-### 8. Optional: AI assistant (Azure OpenAI)
+### 8. Know the limits: boundaries, stress tests, data needs
+
+1. **Agent Studio → Practice tasks → Boundaries**: turn on *Include boundary cases*, pick categories, add your own "must hand back" requests, save, and write the tasks again. Check **Tasks → Coverage map** for thin skills or one answer dominating.
+2. Run the study as usual, then open **Measure → Robustness & limits**:
+   - **Boundaries**: share of hand-back cases the model got right, and how often it wrongly handed back an ordinary task.
+   - **Stress tests**: the same practice tasks with typos, casual wording, irrelevant text and hidden instructions.
+   - **How much data?**: dev success at 10 / 25 / 50 / 100 % of the training tasks. Still climbing means more examples will help.
+
+### 9. Optional: AI assistant (Azure OpenAI)
 
 Off and invisible until you configure it. In **System Settings → Integrations → Set up Azure OpenAI** enter your resource
 endpoint (`https://<resource>.openai.azure.com`), the chat deployment name, and the **name** of the environment variable that holds
@@ -164,6 +172,7 @@ study, agent or knowledge pack.
 | Page | What it does |
 |---|---|
 | **Home** | Projects (agents, document sets, built-in catalog) with stage progress, latest results and next step; quick starts; role tours; glossary |
+| **Robustness & limits** | Boundary suite (hand-back held vs over-refusal), stress tests (typos, wording, noise, hidden instructions), and the "how much data?" curve |
 | **Guide** | Concepts and the research protocol in plain language |
 | **Overview** | Readiness for each stage of the loop, live GPU / VRAM / temperature / power telemetry |
 | **Model Observatory** | Discovers LM Studio, Ollama, Hugging Face cache and folder models; parameter reconciliation; Hub search and download; teacher/student roles; pair-check with VRAM estimate |

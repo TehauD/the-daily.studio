@@ -50,6 +50,30 @@ def cmd_playground(a: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_stress(a: argparse.Namespace) -> int:
+    """Run held-out tasks with typos, rewording, noise and embedded instructions through several models."""
+    os.environ.setdefault("HF_HUB_OFFLINE", "1")
+    os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
+    from forge.engine.stress import run
+    from forge.engine.study import Study
+    run(Study(Path(a.study)), json.loads(a.config), emit)
+    return 0
+
+
+def cmd_datacurve(a: argparse.Namespace) -> int:
+    """Train on 10/25/50/100 % of the training tasks and measure each on dev (or, as a child, train one share)."""
+    os.environ.setdefault("HF_HUB_OFFLINE", "1")
+    os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
+    from forge.engine import datacurve
+    from forge.engine.study import Study
+    st = Study(Path(a.study))
+    if a.train_fraction:
+        datacurve.train_point(st, float(a.train_fraction), emit)
+    else:
+        datacurve.run(st, emit=emit)
+    return 0
+
+
 def cmd_weightlab(a: argparse.Namespace) -> int:
     """Build a Weight Lab variant, or evaluate one on a study's dev split."""
     os.environ.setdefault("HF_HUB_OFFLINE", "1")
@@ -224,6 +248,14 @@ def main(argv: list[str] | None = None) -> int:
     pg.add_argument("--study", required=True)
     pg.add_argument("--config", required=True)
     pg.set_defaults(fn=cmd_playground)
+    sp = sub.add_parser("stress")
+    sp.add_argument("--study", required=True)
+    sp.add_argument("--config", required=True)
+    sp.set_defaults(fn=cmd_stress)
+    dc = sub.add_parser("datacurve")
+    dc.add_argument("--study", required=True)
+    dc.add_argument("--train-fraction")
+    dc.set_defaults(fn=cmd_datacurve)
     wl = sub.add_parser("weightlab")
     wl.add_argument("--variant", required=True)
     wl.add_argument("--step", required=True, choices=["build", "evaluate"])
@@ -258,7 +290,7 @@ def main(argv: list[str] | None = None) -> int:
     g.add_argument("--min-free-vram-mb", type=int, default=8000)
     g.set_defaults(fn=cmd_gpu_smoke)
     a = p.parse_args(argv)
-    guarded = a.cmd in ("stage", "train-run", "lens", "agent", "knowledge", "gpu-smoke", "playground", "weightlab", "modelmap")
+    guarded = a.cmd in ("stage", "train-run", "lens", "agent", "knowledge", "gpu-smoke", "playground", "weightlab", "modelmap", "stress", "datacurve")
     if guarded:
         keep_awake()
         from forge.engine import guard

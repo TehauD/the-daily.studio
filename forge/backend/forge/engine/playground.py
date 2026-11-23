@@ -59,6 +59,27 @@ def _actions(ep: dict) -> list[str]:
     return acts
 
 
+def lane_backend(study: Any, lane: dict) -> Any:
+    """The chat backend for one lane: base student, a trained adapter, a Weight Lab variant, or the teacher."""
+    kind = lane.get("kind")
+    if kind == "teacher":
+        return study.teacher_backend()
+    mk = lambda ad: TransformersBackend(study.plan["student"]["path"], ad, device=study.plan["device"], max_new_tokens=study.plan["eval"]["max_new_tokens"])
+    if kind == "base":
+        return mk(None)
+    if kind == "adapter":
+        ad = study.run_dir(lane["arm"], int(lane["seed"])) / "adapter"
+        if not (ad / "adapter_model.safetensors").exists():
+            raise PlaygroundError(f"No adapter for {lane['arm']} seed {lane['seed']}")
+        return mk(str(ad))
+    if kind == "variant":
+        ad = Path(lane["path"]) / "adapter"
+        if not (ad / "adapter_model.safetensors").exists():
+            raise PlaygroundError("Variant not built")
+        return mk(str(ad))
+    raise PlaygroundError(f"Unknown lane {kind}")
+
+
 def run(study: Any, spec: dict, emit: Callable[[dict], None] = lambda e: None,
         backend_for: Callable[[dict], Any] | None = None) -> dict:
     from forge.graphs.paths import path_graph
@@ -74,24 +95,7 @@ def run(study: Any, spec: dict, emit: Callable[[dict], None] = lambda e: None,
     for i, lane in enumerate(lanes, 1):
         guard.check()
         kind = lane.get("kind")
-        if backend_for:
-            backend = backend_for(lane)
-        elif kind == "teacher":
-            backend = study.teacher_backend()
-        elif kind == "base":
-            backend = TransformersBackend(study.plan["student"]["path"], None, device=study.plan["device"], max_new_tokens=study.plan["eval"]["max_new_tokens"])
-        elif kind == "adapter":
-            ad = study.run_dir(lane["arm"], int(lane["seed"])) / "adapter"
-            if not (ad / "adapter_model.safetensors").exists():
-                raise PlaygroundError(f"No adapter for {lane['arm']} seed {lane['seed']}")
-            backend = TransformersBackend(study.plan["student"]["path"], str(ad), device=study.plan["device"], max_new_tokens=study.plan["eval"]["max_new_tokens"])
-        elif kind == "variant":
-            ad = Path(lane["path"]) / "adapter"
-            if not (ad / "adapter_model.safetensors").exists():
-                raise PlaygroundError("Variant not built")
-            backend = TransformersBackend(study.plan["student"]["path"], str(ad), device=study.plan["device"], max_new_tokens=study.plan["eval"]["max_new_tokens"])
-        else:
-            raise PlaygroundError(f"Unknown lane {kind}")
+        backend = backend_for(lane) if backend_for else lane_backend(study, lane)
         emit({"event": "playground_lane", "lane": lane.get("label") or kind, "done": i - 1, "total": len(lanes)})
         ep = run_episode(task, backend, world, cfg, arm=kind, seed=int(lane.get("seed", 0)))
         getattr(backend, "unload", lambda: None)()

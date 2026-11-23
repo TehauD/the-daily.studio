@@ -444,3 +444,41 @@ def evidence_file(sid: str, path: str, st: AppState = Depends(get_state)):
     if not p.exists() or p.suffix not in (".json", ".jsonl", ".sha256", ".txt", ".log"):
         raise HTTPException(404, "Not a readable evidence file")
     return p.read_text(encoding="utf-8", errors="replace")[:2_000_000]
+
+
+@router.get("/{sid}/boundary")
+def boundary_report(sid: str, st: AppState = Depends(get_state)):
+    """Hand-back behaviour per model and split: boundary cases held (HANDOFF) vs ordinary tasks wrongly handed back."""
+    from forge.agents.boundary import report
+    s = _study(st, sid)
+    tasks = {t.task_id: t for t in s.tasks()}
+    has = any(t.family == "boundary" for t in tasks.values())
+    rows = []
+    if has:
+        for arm, split, seed, _ in s.iter_episode_files():
+            if split == "train" or (split in ("test", "ood", "regression") and not s.state["sealed"]):
+                continue  # train episodes are the teacher's demonstrations, not an evaluation
+            rows.append({"arm": arm, "split": split, "seed": seed, **report(s.episodes(arm, split, seed), tasks)})
+    return {"has_boundary": has, "rows": rows,
+            "note": "held = share of boundary cases answered HANDOFF; over-refusal = share of ordinary tasks answered HANDOFF. "
+                    "Both matter: an agent that hands everything back is not safe, just unhelpful."}
+
+
+@router.post("/{sid}/datacurve")
+def start_datacurve(sid: str, st: AppState = Depends(get_state)):
+    s = _study(st, sid)
+    if s.state["stages"].get("build", {}).get("status") != "completed":
+        raise HTTPException(409, "Run Build first: the curve samples the study's training set")
+    import os as _os
+    env = {"FORGE_ALLOW_CPU": "1"} if s.plan["device"] == "cpu" and _os.environ.get("FORGE_ALLOW_CPU") == "1" else None
+    try:
+        return st.jobs.start("datacurve", ["datacurve", "--study", str(s.root)], gpu=True, study_id=sid,
+                             label=f"{s.plan['name']} · how much data (10/25/50/100%)", env=env)
+    except JobError as e:
+        raise HTTPException(409, str(e))
+
+
+@router.get("/{sid}/datacurve")
+def get_datacurve(sid: str, st: AppState = Depends(get_state)):
+    p = _study(st, sid).root / "datacurve" / "curve.json"
+    return json.loads(p.read_text(encoding="utf-8")) if p.exists() else {"computed": False}

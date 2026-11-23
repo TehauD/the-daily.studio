@@ -218,3 +218,22 @@ runtime on GPU (one forward + one backward pass per task — expected seconds).
 
 **Not validated — requires your machine:** real nvidia-smi readings during a long run, an actual thermal pause and the energy
 figure on your RTX card; below-normal priority on Windows (psutil).
+
+## v0.15.0 — Boundaries, stress tests, variety, coverage, data curve
+
+| Check | Result here |
+|---|---|
+| ROUGE-L: identical 1.0, disjoint 0, near-identical between; per-skill nearest-neighbour summary | unit test |
+| Near-duplicate = same tool calls + ROUGE-L ≥ 0.7 (caught a template generator reusing 12 input combinations) | tests + demo |
+| Boundary cases: every category, real identifiers, HANDOFF scoring (with or without tool use), over-refusal on ordinary tasks | unit tests |
+| Instruction line only when the suite is on; 'boundary' skill id reserved; spec hash unchanged for older agents | tests |
+| Template agent with boundaries: 32 boundary cases across train / dev / test; coverage map counts and warnings | test + demo |
+| Stress perturbations deterministic, identifiers intact; a gullible model obeys the injection (obeyed 100 %), a robust one doesn't (0 %); test split refused before SEAL | tests |
+| Data curve: nested subsets (4 ⊂ 10 ⊂ 20 ⊂ 40 tasks), Wilson intervals, CPU end to end, study's own episodes untouched | tests |
+| Demo (mock teacher, tiny CPU student): agent → tasks → study → boundary report → 3-model stress test → 4-point curve | API end to end |
+| UI: Robustness page tabs, coverage map; no overflow at 390 px; dark; no console errors | browser |
+| Backend suite | 202 passed |
+
+The mock teacher replays answers by exact prompt, so it fails every perturbed prompt by construction; the tiny student scores 0 %.
+These demo numbers show the plumbing, not model quality. **Requires your machine:** stress and data-curve results for a real
+1.7B student and LM Studio teacher.

@@ -1,4 +1,5 @@
 import { takeHandoff } from "../lib/handoff";
+import { BoundaryPanel, CoverageMap, type BoundaryCfg } from "../components/AgentQuality";
 import { Fragment, useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { Explainer, Journey, type GuideStep } from "../components/guided";
 import { JobLog } from "../components/live";
@@ -23,7 +24,7 @@ interface AgentFull {
   id: string; name: string; template: string; role: string; created_at: string;
   tools: { calculator: boolean; units: boolean; dates: boolean; rules: Rule[]; knowledge_pack: string | null; tables: TableMeta[] };
   skills: Skill[]; steps: { tasks: { status: string | null; summary?: TaskSummary; error?: string } }; tool_names: ToolInfo[];
-  counts: { tasks: number; rejected: number }; jobs: Job[]; review?: ReviewStats;
+  counts: { tasks: number; rejected: number }; jobs: Job[]; review?: ReviewStats; boundary?: BoundaryCfg;
 }
 interface TaskSummary { accepted: number; rejected: number; by_skill: Record<string, number>; from_you: number; not_found: number; splits: Record<string, number> }
 interface Review { status: "approved" | "corrected" | "rejected"; reviewer: string; at: string; note: string; question?: string; answer?: string }
@@ -537,13 +538,14 @@ function StepTasks({ a, busy, onStarted }: { a: AgentFull; busy: boolean; onStar
           <ErrorLine error={act.error ?? a.steps.tasks.error} />
         </div>
       </Panel>
+      <BoundaryPanel aid={a.id} value={a.boundary} onSaved={onStarted} />
       {data.data && <TaskTable a={a} data={data.data} onChange={() => void data.reload()} />}
     </>
   );
 }
 
 function TaskTable({ a, data, onChange }: { a: AgentFull; data: { tasks: TaskRow[]; rejected: Rejected[]; review?: ReviewStats }; onChange: () => void }) {
-  const [tab, setTab] = useState<"ok" | "no" | "review">("ok");
+  const [tab, setTab] = useState<"ok" | "no" | "review" | "coverage">("ok");
   const [skill, setSkill] = useState("");
   const [sel, setSel] = useState<string | null>(null);
   const name = (id: string) => a.skills.find((s) => s.id === id)?.name ?? id;
@@ -553,8 +555,8 @@ function TaskTable({ a, data, onChange }: { a: AgentFull; data: { tasks: TaskRow
   return (
     <Panel flush title="Tasks" right={<><AskAI q="Explain the rejection reasons and how to change the skills, examples or tools so more tasks pass verification." label="Why rejected?" /><select className={cx(inputCls, "h-7 !w-auto font-sans")} value={skill} onChange={(e) => setSkill(e.target.value)} aria-label="Skill filter"><option value="">all skills</option>{a.skills.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</select></>}>
       <div className="px-[var(--pad)] pt-2"><Tabs value={tab} onChange={setTab} tabs={[{ value: "ok", label: "Accepted", count: ok.length }, { value: "no", label: "Rejected", count: no.length },
-        { value: "review", label: "Human review", count: data.review?.pending }]} /></div>
-      {tab === "review" ? <ReviewQueue a={a} tasks={ok} stats={data.review} onChange={onChange} /> : tab === "ok" ? (
+        { value: "review", label: "Human review", count: data.review?.pending }, { value: "coverage", label: "Coverage map" }]} /></div>
+      {tab === "coverage" ? <CoverageMap aid={a.id} name={name} /> : tab === "review" ? <ReviewQueue a={a} tasks={ok} stats={data.review} onChange={onChange} /> : tab === "ok" ? (
         <div className="scroll-thin max-h-[460px] overflow-auto">
           <table className="w-full text-[12px]">
             <thead className="sticky top-0 bg-surface-2"><tr><th className={th}>Question</th><th className={th}>Answer</th><th className={th}>Skill</th><th className={th}>Split</th><th className={th}>From</th><th className={th}>Review</th></tr></thead>

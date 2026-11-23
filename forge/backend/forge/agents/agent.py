@@ -19,7 +19,7 @@ import re
 from pathlib import Path
 from typing import Any, Callable
 
-from forge.agents import safety, templates
+from forge.agents import boundary, safety, templates, variety
 from forge.agents.tools import NAME, OPS, ToolSet, norm_cell
 from forge.agents.verify import answer_norm, verify_task
 from forge.engine.runtime import ActionError, ChatBackend, strip_reasoning
@@ -134,6 +134,8 @@ class Agent:
     def hashes(self) -> dict[str, str | None]:
         m = self.meta
         spec = {k: m[k] for k in ("role", "tools", "skills")}
+        if m.get("boundary"):  # changes the agent's instructions; absent on older agents, so their hashes are unchanged
+            spec["boundary"] = m["boundary"]
         tabs = {t["name"]: sha256_file(self.root / "tables" / f"{t['name']}.json") for t in m["tools"].get("tables", [])}
         p = self.root / "tasks.jsonl"
         return {"spec": sha256_text(canonical_json(spec)), "tables": sha256_text(canonical_json(tabs)),
@@ -203,7 +205,17 @@ class Agent:
                 raise AgentError("match must be 'all' or 'any'")
         avail = set(ToolSet({**m}, {tb["name"]: self._rows_for(tb["name"]) for tb in t.get("tables", [])},
                             (lambda q, k: []) if t.get("knowledge_pack") else None).names)
+        b = m.get("boundary") or {}
+        if b:
+            if not isinstance(b.get("enabled", False), bool) or not 0 <= int(b.get("n", 0)) <= 200:
+                raise AgentError("boundary: enabled must be true/false and n between 0 and 200")
+            if any(c not in boundary.CATEGORIES for c in b.get("categories", [])):
+                raise AgentError("boundary: unknown category")
+            if not isinstance(b.get("custom", []), list) or len(b.get("custom", [])) > 100 or any(not isinstance(x, str) or not 3 <= len(x.strip()) <= 500 for x in b.get("custom", [])):
+                raise AgentError("boundary: custom cases must be 3–500 characters each (at most 100)")
         for s in m["skills"]:
+            if s.get("id") == "boundary":
+                raise AgentError("'boundary' is reserved for the boundary suite")
             if not NAME.match(s["id"]) or s["id"] in names:
                 raise AgentError(f"Skill id '{s['id']}' must be unique lower_snake_case")
             names.add(s["id"])
@@ -234,6 +246,14 @@ class Agent:
                 m["tools"]["knowledge_pack"] = changes["tools"]["knowledge_pack"] or None
         if "skills" in changes:
             m["skills"] = changes["skills"]
+        if "boundary" in changes:
+            b = changes["boundary"] or {}
+            m["boundary"] = {"enabled": bool(b.get("enabled")), "n": int(b.get("n", 24)),
+                             "categories": list(b.get("categories") or boundary.CATEGORIES), "custom": [str(x).strip() for x in b.get("custom", [])]}
+            for x in m["boundary"]["custom"]:
+                sc = safety.scan_text(x)
+                if sc["block"]:
+                    raise AgentError("A boundary case contains " + ", ".join(sc["block"]))
         if "role" in changes:
             sc = safety.scan_text(m["role"])
             if sc["block"]:
@@ -328,10 +348,22 @@ class Agent:
         rejected: list[dict] = []
         seen: set[str] = set()
 
-        def add(skill: dict, q: str, calls: list, answer: Any, source: str) -> str | None:
+        similar: dict[tuple[str, str], list[list[str]]] = {}
+
+        def add(skill: dict, q: str, calls: list, answer: Any, source: str, category: str | None = None) -> str | None:
             key = norm_cell(q)
             if key in seen:
                 return "duplicate question"
+            same = (skill["id"], canonical_json(calls or []))
+            if source != "you" and calls:  # the same lookups, reworded: a near-duplicate that would also leak across splits
+                sim = variety.max_similarity(q, similar.get(same, []))
+                if sim >= variety.THRESHOLD:
+                    return f"near-duplicate: same tool calls and ROUGE-L {sim:.2f} ≥ {variety.THRESHOLD} to an accepted task"
+            if skill["id"] == "boundary":
+                seen.add(key)
+                accepted.append({"skill": "boundary", "prompt": q.strip(), "calls": [], "answer": "HANDOFF", "source": source,
+                                 "not_found": False, "category": category or "custom"})
+                return None
             nf = float(skill.get("not_found", 0)) > 0
             if calls:
                 reason, _ = verify_task(ts, skill["tools"], q, calls, answer, nf)
@@ -340,6 +372,7 @@ class Agent:
             elif source != "you":
                 return "no tool calls"
             seen.add(key)
+            similar.setdefault(same, []).append(variety.tokens(q))
             accepted.append({"skill": skill["id"], "prompt": q.strip(), "calls": calls, "answer": str(answer).strip(),
                              "source": source, "not_found": answer_norm(answer) == "not_found"})
             return None
@@ -379,6 +412,18 @@ class Agent:
                 done += 1
                 emit({"event": "agent_task", "skill": skill["id"], "accepted": got, "target": want, "done": min(done, total),
                       "total": total, "rejected": len(rejected)})
+        bnd = m.get("boundary") or {}
+        if bnd.get("enabled"):
+            bskill = {"id": "boundary"}
+            for x in bnd.get("custom", []):
+                reason = add(bskill, x, [], "HANDOFF", "you", "custom")
+                if reason:
+                    rejected.append({"skill": "boundary", "source": "you", "candidate": {"question": x}, "reason": reason})
+            keys = {t["name"]: t["key"] for t in m["tools"].get("tables", [])}
+            for c in boundary.generate(tables, keys, int(bnd.get("n", 24)), rng, bnd.get("categories")):
+                reason = add(bskill, c["question"], [], "HANDOFF", "boundary", c["category"])
+                if reason:
+                    rejected.append({"skill": "boundary", "source": "boundary", "candidate": c, "reason": reason})
         if not accepted:
             m = self.meta
             m["steps"]["tasks"] = {"status": "failed", "at": utcnow(), "error": "No task passed verification"}
@@ -388,7 +433,8 @@ class Agent:
         (self.root / "tasks.jsonl").write_text("".join(canonical_json(t.to_dict()) + "\n" for t in tasks), encoding="utf-8")
         (self.root / "rejected.jsonl").write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rejected), encoding="utf-8")
         summary = {"accepted": len(tasks), "rejected": len(rejected),
-                   "by_skill": {s["id"]: sum(t.family == s["id"] for t in tasks) for s in m["skills"]},
+                   "by_skill": {s["id"]: sum(t.family == s["id"] for t in tasks) for s in m["skills"] + ([{"id": "boundary"}] if bnd.get("enabled") else [])},
+                   "variety": variety.summary({sid: [t.prompt for t in tasks if t.family == sid] for sid in {t.family for t in tasks}}),
                    "from_you": sum(t.meta["source"] == "you" for t in tasks), "not_found": sum(t.meta["not_found"] for t in tasks),
                    "splits": {sp: sum(t.split == sp for t in tasks) for sp, _ in SPLITS},
                    "config": {"per_skill": per_skill, "seed": seed, "source": source,
@@ -464,7 +510,7 @@ class Agent:
             split, gi = split_of[i]
             out.append(Task(task_id=f"{a['skill'][:12]}-{counters[a['skill']]:04d}", group_id=f"agent-g{gi:04d}", family=a["skill"],
                             split=split, paraphrase=0, prompt=a["prompt"], reference_calls=a["calls"], reference_answer=a["answer"],
-                            meta={"source": a["source"], "not_found": a["not_found"]}))
+                            meta={"source": a["source"], "not_found": a["not_found"], **({"category": a["category"]} if a.get("category") else {})}))
         return out
 
     # ---- human review

@@ -302,7 +302,7 @@ class Study:
                                      "create a new study for the new version")
             cache_path = self.root / "search_cache.json"
             cache = json.loads(cache_path.read_text(encoding="utf-8")) if cache_path.exists() else {}
-            return AgentWorld(ag.meta["role"], ag.toolset(cache, cache_path))
+            return AgentWorld(ag.meta["role"], ag.toolset(cache, cache_path), handoff=bool((ag.meta.get("boundary") or {}).get("enabled")))
         if ts.get("kind") != "docqa":
             return ToolWorld(build_catalog(ts["spec"]["seed"]))
         from forge.engine.docqa import DocWorld

@@ -96,8 +96,9 @@ def _window(tables: dict, rng: random.Random, nf: bool) -> dict:
 
 def _expedite(tables: dict, rng: random.Random, nf: bool) -> dict:
     s = pick(rng, tables["specialties"])["specialty"]
-    flag = rng.choice(["yes", "no", "no"])
-    n = rng.choice([4, 11, 19, 26, 33, 47])
+    # Balanced labels (≈ half "yes"): urgent flag 1 in 4; otherwise waiting ≥ 30 days 1 in 3. Many distinct inputs.
+    flag = "yes" if rng.random() < 0.25 else "no"
+    n = rng.randint(30, 60) if rng.random() < 1 / 3 else rng.randint(1, 29)
     return {"question": f"A {s} referral has been waiting {n} days; the referring clinician's urgent flag is '{flag}'. Should scheduling expedite it?",
             "calls": [{"tool": "check_expedite", "arguments": {"urgent_flag": flag, "days_waiting": n}}],
             "answer": "yes" if flag == "yes" or n >= 30 else "no"}

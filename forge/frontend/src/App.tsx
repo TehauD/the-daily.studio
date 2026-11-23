@@ -30,6 +30,7 @@ const AgentStudio = lazy(() => import("./pages/AgentStudio"));
 const Playground = lazy(() => import("./pages/Playground"));
 const WeightLab = lazy(() => import("./pages/WeightLab"));
 const ModelMap = lazy(() => import("./pages/ModelMap"));
+const Robustness = lazy(() => import("./pages/Robustness"));
 
 /** Four workspaces, in the order people work: build it, see and steer it, measure it, run the lab. `expert` pages are hidden in Simple mode. */
 const NAV = [
@@ -48,7 +49,8 @@ const NAV = [
     { key: "trajectories", label: "Trajectory Explorer", icon: "trajectory", expert: true },
     { key: "knowledge", label: "Knowledge Graph", icon: "graph", expert: true }] },
   { group: "Measure", items: [
-    { key: "evaluation", label: "Evaluation Lab", icon: "evaluation" }] },
+    { key: "evaluation", label: "Evaluation Lab", icon: "evaluation" },
+    { key: "robustness", label: "Robustness & limits", icon: "alert" }] },
   { group: "Operate", items: [
     { key: "overview", label: "System Overview", icon: "overview", expert: true },
     { key: "observatory", label: "Model Observatory", icon: "observatory" },
@@ -197,7 +199,7 @@ function Shell() {
     { id: "verify", label: "Verify GPU (forward/backward, BF16)", group: "Actions", run: () => { void api.post("/api/jobs/verify-gpu"); go("overview"); } },
   ], [go, set, prefs.sidebarCollapsed]);
   const Page = { home: Home, overview: Overview, observatory: Observatory, studio: Studio, trajectories: Trajectories, datasets: Datasets,
-    training: Training, evaluation: Evaluation, knowledge: Knowledge, "knowledge-studio": KnowledgeStudio, lens: Lens, "agent-studio": AgentStudio, playground: Playground, weightlab: WeightLab, modelmap: ModelMap, factory: Factory, settings: Settings, guide: Guide }[route];
+    training: Training, evaluation: Evaluation, knowledge: Knowledge, "knowledge-studio": KnowledgeStudio, lens: Lens, "agent-studio": AgentStudio, playground: Playground, weightlab: WeightLab, modelmap: ModelMap, robustness: Robustness, factory: Factory, settings: Settings, guide: Guide }[route];
   return (
     <AssistantProvider route={route}>
     <div className="flex min-h-full">

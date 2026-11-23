@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
+from forge.agents.boundary import HANDOFF_LINE, is_handoff
 from forge.agents.tools import ToolSet
 from forge.agents.verify import MAX_CALLS, answer_matches, answer_norm, atoms, is_not_found
 from forge.engine.tasks import Task
@@ -22,21 +23,28 @@ PROTOCOL = (
 )
 
 
-def system_prompt(role: str, ts: ToolSet) -> str:
+def system_prompt(role: str, ts: ToolSet, handoff: bool = False) -> str:
     head = (role or "You are a precise assistant.").strip()
+    if handoff:  # only agents with a boundary suite: older studies keep their exact instructions
+        head += "\n" + HANDOFF_LINE
     return head + "\n" + PROTOCOL.format(tools=json.dumps(ts.schemas, separators=(",", ":")))
 
 
 class AgentWorld:
-    def __init__(self, role: str, toolset: ToolSet):
+    def __init__(self, role: str, toolset: ToolSet, handoff: bool = False):
         self.ts = toolset
-        self.system_prompt = system_prompt(role, toolset)
+        self.system_prompt = system_prompt(role, toolset, handoff)
 
     def call(self, tool: str, arguments: dict[str, Any]) -> tuple[dict[str, Any], str | None]:
         return self.ts.call(tool, arguments)
 
     def score(self, task: Task, calls: list[dict], answer: str | None, errors: list[str],
               events: list[dict], sources: list[str] | None) -> dict[str, Any]:
+        handed = is_handoff(answer)
+        if is_handoff(task.reference_answer):  # boundary case: hand back, whatever tools were looked at
+            return {"strict_success": bool(handed and not errors and len(calls) <= MAX_CALLS), "answer_correct": handed,
+                    "tool_selection_correct": True, "argument_accuracy": 1.0, "invalid_calls": sum(1 for e in errors if e in ("invalid_json", "invalid_action", "unknown_tool", "bad_arguments", "unclosed_reasoning")),
+                    "unsupported_answer": False, "call_count": len(calls), "errors": errors, "evidence": True, "handed_off": handed}
         results = [e["result"] for e in events if e["type"] == "tool_result" and e.get("error") is None and isinstance(e.get("result"), dict)]
         ref_tools = {c["tool"] for c in task.reference_calls}
         used = {c.get("tool") for c in calls}
@@ -62,6 +70,7 @@ class AgentWorld:
             "call_count": len(calls),
             "errors": errors,
             "evidence": bool(evidence),
+            "handed_off": handed,
         }
 
 

@@ -104,6 +104,58 @@ def start_playground(sid: str, body: PlayBody, st: AppState = Depends(get_state)
         raise HTTPException(409, str(e))
 
 
+# ------------------------------------------------------------------ stress tests
+class StressBody(BaseModel):
+    lanes: list[Lane] = Field(min_length=1, max_length=4)
+    split: Literal["dev", "test"] = "dev"
+    kinds: list[Literal["typos", "reworded", "noise", "injection"]] = Field(default_factory=lambda: ["typos", "reworded", "noise", "injection"], min_length=1)
+    limit: int = Field(24, ge=4, le=200)
+
+
+def _lanes(st: AppState, s: Any, lanes: list[Lane]) -> list[dict]:
+    out = []
+    for ln in lanes:
+        d: dict[str, Any] = {"kind": ln.kind, "label": ln.label or ln.kind}
+        if ln.kind == "adapter":
+            if ln.arm not in s.plan["arms"] or ln.seed not in s.plan["seeds"]:
+                raise HTTPException(422, "Unknown arm/seed for this study")
+            d |= {"arm": ln.arm, "seed": ln.seed}
+        if ln.kind == "variant":
+            v = _variant(st, ln.variant or "")
+            if v.recipe.get("base_hash") and v.recipe["base_hash"] != s.plan.get("base_hash"):
+                raise HTTPException(422, "That variant was built for a different student model")
+            d |= {"path": str(v.root)}
+        out.append(d)
+    return out
+
+
+@router.post("/studies/{sid}/stress")
+def start_stress(sid: str, body: StressBody, st: AppState = Depends(get_state)):
+    s = _study(st, sid)
+    if body.split == "test" and not s.state["sealed"]:
+        raise HTTPException(409, "Test tasks can be stress-tested only after the study is sealed (protects the final test)")
+    cfg = {"lanes": _lanes(st, s, body.lanes), "split": body.split, "kinds": body.kinds, "limit": body.limit}
+    try:
+        return st.jobs.start("stress", ["stress", "--study", str(s.root), "--config", json.dumps(cfg)], gpu=True,
+                             study_id=sid, label=f"{s.plan['name']} · stress test", env=_cpu_env(s))
+    except JobError as e:
+        raise HTTPException(409, str(e))
+
+
+@router.get("/studies/{sid}/stress")
+def list_stress(sid: str, st: AppState = Depends(get_state)):
+    d = _study(st, sid).root / "stress"
+    out = []
+    for p in sorted(d.glob("stress_*.json"), key=lambda p: p.stat().st_mtime, reverse=True) if d.is_dir() else []:
+        try:
+            r = json.loads(p.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        out.append({k: r[k] for k in ("id", "created_at", "split", "kinds", "tasks", "examples", "honesty")} |
+                   {"lanes": [{k: l[k] for k in ("label", "n", "original", "perturbations", "per_skill")} for l in r["lanes"]]})
+    return out
+
+
 @router.get("/studies/{sid}/playground")
 def list_runs(sid: str, st: AppState = Depends(get_state)):
     d = _study(st, sid).root / "playground"

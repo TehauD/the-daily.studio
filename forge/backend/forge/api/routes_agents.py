@@ -77,11 +77,25 @@ def get_agent(aid: str, st: AppState = Depends(get_state)):
     return {**a.summary(), "jobs": st.jobs.list(10, study_id=aid)}
 
 
+@router.get("/{aid}/coverage")
+def agent_coverage(aid: str, st: AppState = Depends(get_state)):
+    from forge.agents.coverage import coverage
+    return coverage(_agent(st, aid))
+
+
+@router.get("/boundary/categories")
+def boundary_categories():
+    from forge.agents.boundary import CATEGORIES, HANDOFF_LINE
+    return {"categories": {k: {"label": v["label"], "why": v["why"], "example": v["phrases"][0].format(e="<record>")} for k, v in CATEGORIES.items()},
+            "instruction": HANDOFF_LINE}
+
+
 class UpdateAgent(BaseModel):
     name: str | None = Field(None, max_length=80)
     role: str | None = Field(None, max_length=4000)
     tools: dict[str, Any] | None = None
     skills: list[dict[str, Any]] | None = Field(None, max_length=30)
+    boundary: dict[str, Any] | None = None
 
 
 @router.put("/{aid}")
