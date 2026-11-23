@@ -1,5 +1,14 @@
 # FORGE changelog
 
+## 0.13.0 — Model Map
+- Decision graph: episodes merged into skill → actions → outcome with per-skill procedure consistency; click to follow tasks.
+- Representation map: decision-point hidden states at every layer, untrained vs trained on shared PCA axes (each centred on its own
+  mean, so axes show structure), skill purity and silhouette by layer, training shift per layer; linked selection.
+- Word view: gradient × input word influence for the first action; layer-by-layer prediction at the decision token.
+- Held-out splits only after SEAL; personal-data patterns refused.
+- Agent studies keep their own frozen copy of the agent: editing the agent (e.g. adding an example from the Playground) no longer
+  breaks studies built from it; tampering with the copy is still refused.
+
 ## 0.12.0 — See it, control it, keep people in charge
 - Agent Playground: free-text or practice-task input through base, trained adapters, Weight Lab variants and the teacher, side by
   side, with path graphs, evidence and first divergence; held-out tasks only after SEAL; accept / override decisions recorded with

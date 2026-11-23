@@ -185,3 +185,21 @@ format learning alone — check evidence and per-skill results), and how a real 
 **Not validated — requires your machine:** Playground latency with a real 1.7B student and the teacher sharing a 16 GB GPU; whether
 merged / scaled adapters behave as expected on real students (the tiny test student scores 0 everywhere, so the measurements only
 prove the plumbing).
+
+## v0.13.0 — Model Map
+
+| Check | Result here |
+|---|---|
+| Decision graph: prefix tree per skill, counts, outcome classes, consistency = most-common-path share, outcomes aligned | unit test + browser |
+| Cluster metrics: separated synthetic clusters → silhouette > 0.8, purity 1.0; random → ≈ 0; one label → none | unit test |
+| Joint PCA centres each model first: identical structure with a large offset projects identically | unit test |
+| Representation map on a trained tiny student: one row per dev task per layer; embeddings unchanged by LoRA (shift 0); deeper layers shifted | test |
+| Word view: one lens row per layer, chosen-token rank, word influence normalised to [0, 1] over the user's words, free text supported | test |
+| Held-out splits / tasks refused before SEAL (engine and API); personal-data patterns refused | tests |
+| Agent studies keep a frozen copy: editing the live agent leaves the study working; tampering with the copy is refused | test |
+| UI: three linked views fit 1920×1080, no horizontal overflow at 390 px, light and dark, no console errors | browser |
+| Backend suite | 190 passed |
+
+Demo on the patient-access study (tiny 2-layer student): skill purity 27 % (embeddings) → 55 % (layer 2), training shift 0 % → 65 %.
+**Not validated — requires your machine:** maps of a real 1.7B student (28 layers) and how cleanly real skills separate; word-view
+runtime on GPU (one forward + one backward pass per task — expected seconds).

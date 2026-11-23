@@ -64,6 +64,20 @@ def cmd_weightlab(a: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_modelmap(a: argparse.Namespace) -> int:
+    """Model Map: representation map (all tasks of a split) or word view (one task / message)."""
+    os.environ.setdefault("HF_HUB_OFFLINE", "1")
+    os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
+    from forge.engine import modelmap
+    from forge.engine.study import Study
+    st, cfg = Study(Path(a.study)), json.loads(a.config or "{}")
+    if a.step == "map":
+        modelmap.run_map(st, cfg.get("split", "dev"), cfg.get("arm"), cfg.get("seed"), emit)
+    else:
+        modelmap.run_explain(st, cfg.get("task_id"), cfg.get("prompt"), cfg.get("model", "trained"), cfg.get("arm"), cfg.get("seed"), emit)
+    return 0
+
+
 def cmd_lens(a: argparse.Namespace) -> int:
     """Distillation lens for one arm × seed (teacher-forced log-probs: base, snapshots, final)."""
     os.environ.setdefault("HF_HUB_OFFLINE", "1")
@@ -201,6 +215,11 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("--seed", required=True)
     r.add_argument("--hash-cache")
     r.set_defaults(fn=cmd_train_run)
+    mm = sub.add_parser("modelmap")
+    mm.add_argument("--study", required=True)
+    mm.add_argument("--step", required=True, choices=["map", "explain"])
+    mm.add_argument("--config")
+    mm.set_defaults(fn=cmd_modelmap)
     pg = sub.add_parser("playground")
     pg.add_argument("--study", required=True)
     pg.add_argument("--config", required=True)
@@ -239,7 +258,7 @@ def main(argv: list[str] | None = None) -> int:
     g.add_argument("--min-free-vram-mb", type=int, default=8000)
     g.set_defaults(fn=cmd_gpu_smoke)
     a = p.parse_args(argv)
-    if a.cmd in ("stage", "train-run", "lens", "agent", "knowledge", "gpu-smoke", "playground", "weightlab"):
+    if a.cmd in ("stage", "train-run", "lens", "agent", "knowledge", "gpu-smoke", "playground", "weightlab", "modelmap"):
         keep_awake()
     try:
         return a.fn(a)

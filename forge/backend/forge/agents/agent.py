@@ -149,8 +149,9 @@ class Agent:
         if not pid:
             return None
         from forge.knowledge.pack import KnowledgePack, PackError
+        snap = self.meta.get("snapshot_pack_path")  # frozen study copies remember where the pack lives
         try:
-            return KnowledgePack(self.root.parent.parent / "knowledge" / pid)
+            return KnowledgePack(Path(snap) if snap else self.root.parent.parent / "knowledge" / pid)
         except PackError as e:
             raise AgentError(f"Linked knowledge pack missing: {e}") from e
 
@@ -287,6 +288,21 @@ class Agent:
         self._save(m)
 
     # ---- practice tasks
+    def snapshot(self, dest: Path) -> "Agent":
+        """A frozen copy (spec + tables) for a study: later edits to the agent never break studies built from it."""
+        import shutil
+        if dest.exists():
+            raise AgentError("Snapshot already exists")
+        (dest / "tables").mkdir(parents=True)
+        m = self.meta
+        pack = self.pack()
+        m["snapshot_of"] = m["id"]
+        m["snapshot_pack_path"] = str(pack.root) if pack else None
+        for t in m["tools"].get("tables", []):
+            shutil.copy2(self.root / "tables" / f"{t['name']}.json", dest / "tables" / f"{t['name']}.json")
+        write_json_atomic(dest / "agent.json", json.dumps(m, indent=2, ensure_ascii=False))
+        return Agent(dest)
+
     def check_can_run(self) -> None:
         m = self.meta
         if not m["skills"]:

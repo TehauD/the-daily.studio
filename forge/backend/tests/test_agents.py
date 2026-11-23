@@ -114,8 +114,12 @@ def test_practice_tasks_splits_and_study(tmp_path, monkeypatch):
     study.run_stage("build", emit=lambda e: None)
     recs = [json.loads(x) for x in (study.root / "datasets" / "teacher_filtered" / "records.jsonl").read_text().splitlines()]
     assert recs and {r["family"] for r in recs} == {"coverage_review"}
-    # Editing the agent after the study froze it is refused.
+    # The study keeps its own frozen copy: editing the live agent does not break it …
     a.update({"role": "changed"})
+    assert "pharmacy-benefits assistant" in study.world().system_prompt
+    # … but tampering with the study's copy is refused.
+    snap = study.root / "agent_snapshot" / "agent.json"
+    m = json.loads(snap.read_text()); m["role"] = "tampered"; snap.write_text(json.dumps(m))
     with pytest.raises(StudyError, match="changed since this study"):
         study.world()
     with pytest.raises(StudyError, match="stale"):

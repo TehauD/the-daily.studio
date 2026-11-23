@@ -246,6 +246,10 @@ class Study:
             "base_hash": base_hash, "engine_source_sha256": engine_source_hash(),
             "environment": environment or {"python": sys.version.split()[0], "platform": platform.platform()},
         }
+        if agent is not None:  # the study keeps its own frozen copy of the agent
+            snap = agent.snapshot(root / "agent_snapshot")
+            plan["taskset"]["agent"]["snapshot"] = "agent_snapshot"
+            plan["taskset"]["agent"]["hashes"] = {**snap.hashes(), "tasks": plan["taskset"]["agent"]["hashes"].get("tasks")}
         (root / "tasks.jsonl").write_text("".join(canonical_json(t.to_dict()) + "\n" for t in tasks), encoding="utf-8")
         atomic_write_json(root / "plan.json", plan)
         (root / "plan.sha256").write_text(sha256_text(canonical_json(plan)), encoding="utf-8")
@@ -287,7 +291,8 @@ class Study:
             from forge.agents.agent import Agent, AgentError
             from forge.agents.world import AgentWorld
             try:
-                ag = Agent(Path(ts["agent"]["path"]))
+                # New studies use their own frozen copy; older studies (≤ v0.12) still check the live agent.
+                ag = Agent(self.root / ts["agent"]["snapshot"]) if ts["agent"].get("snapshot") else Agent(Path(ts["agent"]["path"]))
             except AgentError as e:
                 raise StudyError(f"Agent missing: {e}") from e
             now = ag.hashes()

@@ -1,4 +1,4 @@
-# FORGE — Local Distillation Lab (v0.12.0)
+# FORGE — Local Distillation Lab (v0.13.0)
 
 A local-first research instrument for **teacher → student LLM distillation on one consumer NVIDIA GPU**.
 A large model you run in LM Studio (the *teacher*) solves tool-use or document-QA tasks. FORGE keeps only its
@@ -109,7 +109,24 @@ Open **Agent Studio** and follow the five steps:
 ![Weight Lab: variants with recipes and per-skill measurements](docs/images/weight-lab.png)
 <sub>Validation instance: tiny CPU student and a mock teacher — the instruments working, not learning results.</sub>
 
-### 7. Optional: AI assistant (Azure OpenAI)
+### 7. See how a model is organised: Model Map
+
+Three linked, measured views of the same tasks:
+- **Decision graph**: every episode of one model merged into *skill → action → action → … → outcome*; line width = number of tasks.
+  Per skill it reports how consistently the model follows one procedure. Click a step to follow its tasks.
+- **Representation map**: the student's internal state at the moment it decides, for every task, at every layer — untrained and
+  trained side by side on shared axes, coloured by skill, with cluster quality (skill purity, silhouette) by layer. Drag the layer
+  slider to watch skills separate; click a point to open it in the word view.
+- **Word view**: which words of the message pushed the student's first action (gradient × input), and what each layer would have
+  predicted at the decision point (logit lens).
+
+These are measurements of behaviour and activations. FORGE does not draw a "chain of thought": a model's written reasoning is
+generated text, not a trace of its computation.
+
+![Model Map: decision graph, representation map and word view, linked](docs/images/model-map.png)
+<sub>Validation instance: tiny 2-layer CPU student — the instrument working, not a learning result.</sub>
+
+### 8. Optional: AI assistant (Azure OpenAI)
 
 Off and invisible until you configure it. In **System Settings → Integrations → Set up Azure OpenAI** enter your resource
 endpoint (`https://<resource>.openai.azure.com`), the chat deployment name, and the **name** of the environment variable that holds
@@ -156,6 +173,7 @@ study, agent or knowledge pack.
 | **Evaluation Lab** | Paired gain with crossed-bootstrap CI, sign-flip tests, Holm correction, skill map, review gate |
 | **Knowledge Graph** | Teacher → data → tuned students → measured skills → tools; adapter statistics and token projection; SVG / JSON / GraphML export |
 | **Agent Playground** | One message through several models side by side (tool calls, evidence, divergence from the teacher); human accept / override, overrides become examples |
+| **Model Map** | Decision graph of observable actions, per-layer representation map (untrained vs trained, cluster quality), word influence and layer-by-layer predictions for one decision |
 | **Weight Lab** | Exact adapter arithmetic: strength, seed averaging, skill merging, layer / module masks, rank compression; dev evaluation per skill; originals untouched |
 | **Distillation Lens** | Skill space (each skill: untrained → trained vs teacher, gap closed); distance to the teacher over training (teacher-forced surprise and top-1 agreement at saved snapshots); word heatmap of which teacher tokens the student learned to expect |
 | **Model Factory** | What each adapter changed (measured from its weights), artifact provenance, and merged exports as new hashed copies; originals are never modified |
@@ -198,7 +216,7 @@ Security and robustness controls, with how each is checked: [docs/HARDENING.md](
 ## Developing
 
 ```powershell
-.\scripts\test.ps1                 # backend test suite (185 tests)
+.\scripts\test.ps1                 # backend test suite (190 tests)
 .\scripts\launch.ps1 -Mode dev     # Vite dev server with hot reload
 ```
 
