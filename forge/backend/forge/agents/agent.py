@@ -449,10 +449,83 @@ class Agent:
                             meta={"source": a["source"], "not_found": a["not_found"]}))
         return out
 
+    # ---- human review
+    @staticmethod
+    def review_key(prompt: str) -> str:
+        return sha256_text(norm_cell(prompt))[:20]
+
+    def reviews(self) -> dict[str, dict]:
+        p = self.root / "reviews.json"
+        return json.loads(p.read_text(encoding="utf-8")) if p.exists() else {}
+
+    def review(self, task_id: str, decision: str, reviewer: str, note: str = "", answer: str | None = None,
+               question: str | None = None) -> dict:
+        """approve | correct | reject | reset. A correction is re-verified by running the task's tool calls again."""
+        if decision not in ("approve", "correct", "reject", "reset"):
+            raise AgentError("decision must be approve, correct, reject or reset")
+        reviewer = " ".join((reviewer or "").split())[:60]
+        if not reviewer:
+            raise AgentError("Enter your name or initials as the reviewer")
+        t = next((x for x in self.tasks() if x["task_id"] == task_id), None)
+        if t is None:
+            raise AgentError("Unknown task")
+        key = self.review_key(t["prompt"])
+        revs = self.reviews()
+        if decision == "reset":
+            revs.pop(key, None)
+        else:
+            rec: dict[str, Any] = {"status": {"approve": "approved", "correct": "corrected", "reject": "rejected"}[decision],
+                                   "reviewer": reviewer, "at": utcnow(), "note": (note or "")[:500], "task_id": task_id}
+            if decision == "correct":
+                q = (question or t["prompt"]).strip()
+                ans = (answer if answer is not None else t["reference_answer"]).strip()
+                if q == t["prompt"] and ans == t["reference_answer"]:
+                    raise AgentError("Change the question or the answer to record a correction")
+                sc = safety.scan_text(q + " " + ans)
+                if sc["block"]:
+                    raise AgentError("The correction looks like it contains personal data: " + ", ".join(sc["block"]))
+                skill = next((x for x in self.meta["skills"] if x["id"] == t["family"]), None)
+                if t["reference_calls"]:
+                    reason, _ = verify_task(self.toolset(), skill["tools"] if skill else [c["tool"] for c in t["reference_calls"]],
+                                            q, t["reference_calls"], ans, bool(skill and float(skill.get("not_found", 0)) > 0) or ans.upper() == "NOT_FOUND")
+                    if reason:
+                        raise AgentError(f"The correction does not verify against the tools: {reason}")
+                rec |= {"question": q, "answer": ans}
+            revs[key] = rec
+        write_json_atomic(self.root / "reviews.json", json.dumps(revs, indent=2, ensure_ascii=False))
+        return self.review_stats()
+
+    def review_stats(self) -> dict[str, int]:
+        revs = self.reviews()
+        keys = [self.review_key(t["prompt"]) for t in self.tasks()]
+        c = {"approved": 0, "corrected": 0, "rejected": 0}
+        for k in keys:
+            if k in revs:
+                c[revs[k]["status"]] += 1
+        return c | {"pending": len(keys) - sum(c.values()), "total": len(keys)}
+
+    def tasks_for_study(self, require_review: bool = False) -> list[dict]:
+        """Corrections applied, rejected tasks removed; with require_review only approved / corrected tasks are kept.
+        Splits are the ones assigned at generation, so entity grouping still holds."""
+        revs = self.reviews()
+        out = []
+        for t in self.tasks():
+            r = revs.get(self.review_key(t["prompt"]))
+            if r and r["status"] == "rejected":
+                continue
+            if require_review and not r:
+                continue
+            if r and r["status"] == "corrected":
+                t = {**t, "prompt": r["question"], "reference_answer": r["answer"], "meta": {**t["meta"], "corrected_by": r["reviewer"]}}
+            elif r:
+                t = {**t, "meta": {**t["meta"], "approved_by": r["reviewer"]}}
+            out.append(t)
+        return out
+
     def summary(self) -> dict[str, Any]:
         m = self.meta
         return {**m, "path": str(self.root), "hashes": self.hashes(),
-                "tool_names": self.toolset_names(), "counts": {"tasks": len(self.tasks()), "rejected": len(self.rejected())}}
+                "tool_names": self.toolset_names(), "counts": {"tasks": len(self.tasks()), "rejected": len(self.rejected())}, "review": self.review_stats()}
 
     def toolset_names(self) -> list[dict[str, str]]:
         try:

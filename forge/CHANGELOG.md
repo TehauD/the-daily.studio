@@ -1,5 +1,14 @@
 # FORGE changelog
 
+## 0.12.0 — See it, control it, keep people in charge
+- Agent Playground: free-text or practice-task input through base, trained adapters, Weight Lab variants and the teacher, side by
+  side, with path graphs, evidence and first divergence; held-out tasks only after SEAL; accept / override decisions recorded with
+  the reviewer; overrides can be added as skill examples.
+- Weight Lab: exact LoRA arithmetic (stacked factors) — strength, weighted merges / seed averaging / skill merging, layer and
+  module masks, SVD rank compression with energy kept; dev-only evaluation vs untrained, trained and teacher per skill.
+- Human review queue for agent practice tasks (approve / correct with re-verification / reject, reviewer recorded); studies can
+  require reviewed tasks.
+
 ## 0.11.1 — resilient collection
 - Model-server errors keep the server's own reason (e.g. LM Studio's context-length or "no models loaded" message) plus a plain fix.
 - Temporary trouble — server restarting, model reloading after sleep or idle unload, timeouts, 5xx, rate limits — is retried for

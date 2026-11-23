@@ -96,7 +96,8 @@ export interface StudyPlan {
   primary_contrast: string; min_gain: number; device: string;
   teacher: { provider: string; endpoint: string; model: string };
   student: { name: string; path: string; parameter_report?: ParamReport | null };
-  taskset: { version: string; sha256: string; counts: Record<string, number>; spec: Record<string, unknown> };
+  taskset: { version: string; sha256: string; counts: Record<string, number>; spec: Record<string, unknown>; kind?: string;
+    agent?: { id: string; name: string; skills?: { id: string; name: string }[]; review?: Record<string, unknown> } };
   train: Record<string, unknown>; eval: Record<string, unknown>; base_hash: string | null; engine_source_sha256: string;
   environment: Record<string, unknown>;
 }

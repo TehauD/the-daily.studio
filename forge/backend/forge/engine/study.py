@@ -183,7 +183,7 @@ class Study:
              seeds: list[int] | None = None, train_overrides: dict | None = None, taskset_overrides: dict | None = None,
              min_gain: float = 0.05, device: str = "cuda", environment: dict | None = None,
              base_hash: str | None = None, knowledge_pack: Any = None,
-             focus_skills: list[str] | None = None, agent: Any = None) -> "Study":
+             focus_skills: list[str] | None = None, agent: Any = None, require_review: bool = False) -> "Study":
         if profile not in PROFILES:
             raise StudyError(f"profile must be one of {list(PROFILES)}")
         unknown = [a for a in arms if a not in TRAIN_ARMS]
@@ -192,9 +192,10 @@ class Study:
         prof = PROFILES[profile]
         if agent is not None:
             # Purpose-built agent: tasks are the agent's verified practice tasks (split by entity).
-            rows = agent.tasks()
+            rows = agent.tasks_for_study(require_review)
             if not rows:
-                raise StudyError("This agent has no verified practice tasks yet (run its 'tasks' step)")
+                raise StudyError("This agent has no usable practice tasks yet" + (" — none are approved; review some first" if require_review else
+                                 " (run its 'tasks' step)"))
             if agent.meta["steps"]["tasks"].get("status") != "completed":
                 raise StudyError("The agent's practice tasks are stale (its tools or skills changed); write them again first")
             tasks = [Task(**r) for r in rows]
@@ -232,6 +233,7 @@ class Study:
             "taskset": ({"version": TASKSET_VERSION, "kind": "catalog", "spec": asdict(spec)} if spec is not None else {
                 "version": "forge-agent-v1", "kind": "agent", "spec": {"seed": 7},
                 "agent": {"id": agent.meta["id"], "name": agent.meta["name"], "path": str(agent.root), "hashes": agent.hashes(),
+                          "review": {"required": require_review, **agent.review_stats()},
                           "skills": [{"id": sk["id"], "name": sk["name"]} for sk in agent.meta["skills"]]}} if agent is not None else {
                 "version": "forge-docqa-v1", "kind": "docqa", "spec": {"seed": 7},
                 "pack": {"id": knowledge_pack.meta["id"], "name": knowledge_pack.meta["name"], "path": str(knowledge_pack.root),

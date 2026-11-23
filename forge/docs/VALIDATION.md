@@ -168,3 +168,20 @@ filtering, and whether your deployment/API version accepts `max_completion_token
 
 **Not validated — requires your machine:** real students on these templates (expect large gains on routing / lookup skills from
 format learning alone — check evidence and per-skill results), and how a real teacher's tasks compare with the generator's.
+
+## v0.12.0 — Agent Playground, Weight Lab, human review
+
+| Check | Result here |
+|---|---|
+| Weight Lab exactness: a weighted merge of two trained adapters at 1.5× strength equals 1.5 · (0.6 ΔW₁ + 0.4 ΔW₂) per module | test, max error ≈ 3e-9 on real adapters |
+| Strength 0 switches every module off; attention-only / layer masks keep exactly the selected modules; SVD at full rank reproduces ΔW; lower rank reports the energy kept | tests |
+| Variant evaluation runs the study's dev tasks and reports untrained / trained / variant / teacher per skill | test + demo (ITSM + patient-access merge measured on both studies) |
+| Playground: lanes run with the study's own tools; strict score for practice tasks; free text has no reference (answer status neutral, evidence reported); held-out tasks refused until SEAL (API and engine); personal-data patterns refused | tests + browser |
+| Decisions: accept / override recorded with reviewer; an override added as a skill example | browser |
+| Review queue: approve / reject recorded with reviewer; a correction that the tools do not support is refused with the reason; studies with "reviewed only" use exactly the approved / corrected tasks | tests + browser |
+| UI: Weight Lab fits 1920×1080; Playground and Weight Lab have no horizontal overflow at 390 px; no console errors | browser |
+| Backend suite | 185 passed |
+
+**Not validated — requires your machine:** Playground latency with a real 1.7B student and the teacher sharing a 16 GB GPU; whether
+merged / scaled adapters behave as expected on real students (the tiny test student scores 0 everywhere, so the measurements only
+prove the plumbing).

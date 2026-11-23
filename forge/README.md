@@ -1,4 +1,4 @@
-# FORGE — Local Distillation Lab (v0.11.1)
+# FORGE — Local Distillation Lab (v0.12.0)
 
 A local-first research instrument for **teacher → student LLM distillation on one consumer NVIDIA GPU**.
 A large model you run in LM Studio (the *teacher*) solves tool-use or document-QA tasks. FORGE keeps only its
@@ -92,7 +92,24 @@ Open **Agent Studio** and follow the five steps:
 ![Agent Studio: tools step with tables, calculators, rules and the tool console](docs/images/agent-studio-tools.png)
 <sub>Validation instance: synthetic template plus a synthetic fee schedule.</sub>
 
-### 6. Optional: AI assistant (Azure OpenAI)
+### 6. See it and control it: Agent Playground, Weight Lab, human review
+
+- **Agent Playground**: type a message (or pick a practice task) and watch the untrained student, trained students, Weight Lab
+  variants and the teacher handle it side by side — every tool call, the evidence behind each answer, and where each model first
+  differs from the teacher. A person **accepts** or **overrides** each recommendation; overrides can become new examples.
+- **Weight Lab**: build new adapters from trained ones without retraining — change **strength** (0 = untrained, 1 = as trained,
+  >1 = amplified), **mix** adapters (average seeds, or merge skills from different agents; the sum is exact), keep only some
+  **layers / module types**, or **compress the rank**. Measure each variant on dev tasks against the untrained and trained student
+  and the teacher, skill by skill, then try it in the Playground. Sources and base weights are never changed.
+- **Human review** (Agent Studio → Practice tasks → *Human review*): approve, correct (re-verified against the tools) or reject
+  each practice task, with the reviewer's name. Studies can be told to **teach only reviewed tasks**.
+
+![Agent Playground: the same message through teacher, untrained, trained and merged students](docs/images/agent-playground.png)
+
+![Weight Lab: variants with recipes and per-skill measurements](docs/images/weight-lab.png)
+<sub>Validation instance: tiny CPU student and a mock teacher — the instruments working, not learning results.</sub>
+
+### 7. Optional: AI assistant (Azure OpenAI)
 
 Off and invisible until you configure it. In **System Settings → Integrations → Set up Azure OpenAI** enter your resource
 endpoint (`https://<resource>.openai.azure.com`), the chat deployment name, and the **name** of the environment variable that holds
@@ -138,6 +155,8 @@ study, agent or knowledge pack.
 | **Training Lab** | VRAM planning, pre-flight gates, zero-adapter check, loss curves, token exposure, peak memory |
 | **Evaluation Lab** | Paired gain with crossed-bootstrap CI, sign-flip tests, Holm correction, skill map, review gate |
 | **Knowledge Graph** | Teacher → data → tuned students → measured skills → tools; adapter statistics and token projection; SVG / JSON / GraphML export |
+| **Agent Playground** | One message through several models side by side (tool calls, evidence, divergence from the teacher); human accept / override, overrides become examples |
+| **Weight Lab** | Exact adapter arithmetic: strength, seed averaging, skill merging, layer / module masks, rank compression; dev evaluation per skill; originals untouched |
 | **Distillation Lens** | Skill space (each skill: untrained → trained vs teacher, gap closed); distance to the teacher over training (teacher-forced surprise and top-1 agreement at saved snapshots); word heatmap of which teacher tokens the student learned to expect |
 | **Model Factory** | What each adapter changed (measured from its weights), artifact provenance, and merged exports as new hashed copies; originals are never modified |
 | **System Settings** | Runtime endpoints (loopback only), theme, accent, density, contrast, text scale, motion |
@@ -179,7 +198,7 @@ Security and robustness controls, with how each is checked: [docs/HARDENING.md](
 ## Developing
 
 ```powershell
-.\scripts\test.ps1                 # backend test suite (180 tests)
+.\scripts\test.ps1                 # backend test suite (185 tests)
 .\scripts\launch.ps1 -Mode dev     # Vite dev server with hot reload
 ```
 

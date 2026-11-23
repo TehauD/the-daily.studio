@@ -25,23 +25,27 @@ const Knowledge = lazy(() => import("./pages/Knowledge"));
 const KnowledgeStudio = lazy(() => import("./pages/KnowledgeStudio"));
 const Lens = lazy(() => import("./pages/Lens"));
 const AgentStudio = lazy(() => import("./pages/AgentStudio"));
+const Playground = lazy(() => import("./pages/Playground"));
+const WeightLab = lazy(() => import("./pages/WeightLab"));
 
 const NAV = [
   { group: "Orientation", items: [{ key: "guide", label: "Guide", icon: "guide" }, { key: "overview", label: "Overview", icon: "overview" }] },
   { group: "Models", items: [{ key: "observatory", label: "Model Observatory", icon: "observatory" }] },
   { group: "Research", items: [
     { key: "agent-studio", label: "Agent Studio", icon: "agent" },
+    { key: "playground", label: "Agent Playground", icon: "play" },
     { key: "knowledge-studio", label: "Knowledge Studio", icon: "layers" },
     { key: "studio", label: "Experiment Studio", icon: "studio" }, { key: "trajectories", label: "Trajectory Explorer", icon: "trajectory" },
     { key: "datasets", label: "Dataset Factory", icon: "dataset" }, { key: "training", label: "Training Lab", icon: "training" },
     { key: "evaluation", label: "Evaluation Lab", icon: "evaluation" }, { key: "knowledge", label: "Knowledge Graph", icon: "graph" },
     { key: "lens", label: "Distillation Lens", icon: "lens" },
+    { key: "weightlab", label: "Weight Lab", icon: "sliders" },
     { key: "factory", label: "Model Factory", icon: "factory" }] },
   { group: "System", items: [{ key: "settings", label: "System Settings", icon: "settings" }] },
 ] as const;
 type Key = (typeof NAV)[number]["items"][number]["key"];
 /** Workspace pages that lock to the viewport on wide screens (no page scroll; panels scroll inside). */
-const FIT = new Set<string>(["overview", "observatory", "studio", "trajectories", "evaluation", "knowledge", "knowledge-studio", "lens", "agent-studio"]);
+const FIT = new Set<string>(["overview", "observatory", "studio", "trajectories", "evaluation", "knowledge", "knowledge-studio", "lens", "agent-studio", "playground", "weightlab"]);
 const KEYS = NAV.flatMap((g) => g.items.map((i) => i.key)) as Key[];
 const LABEL = Object.fromEntries(NAV.flatMap((g) => g.items.map((i) => [i.key, i.label]))) as Record<Key, string>;
 
@@ -169,7 +173,7 @@ function Shell() {
     { id: "verify", label: "Verify GPU (forward/backward, BF16)", group: "Actions", run: () => { void api.post("/api/jobs/verify-gpu"); go("overview"); } },
   ], [go, set, prefs.sidebarCollapsed]);
   const Page = { overview: Overview, observatory: Observatory, studio: Studio, trajectories: Trajectories, datasets: Datasets,
-    training: Training, evaluation: Evaluation, knowledge: Knowledge, "knowledge-studio": KnowledgeStudio, lens: Lens, "agent-studio": AgentStudio, factory: Factory, settings: Settings, guide: Guide }[route];
+    training: Training, evaluation: Evaluation, knowledge: Knowledge, "knowledge-studio": KnowledgeStudio, lens: Lens, "agent-studio": AgentStudio, playground: Playground, weightlab: WeightLab, factory: Factory, settings: Settings, guide: Guide }[route];
   return (
     <AssistantProvider route={route}>
     <div className="flex min-h-full">

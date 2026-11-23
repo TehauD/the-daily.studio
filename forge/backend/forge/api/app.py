@@ -14,7 +14,7 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from forge import __version__
 from forge.api import (routes_analysis, routes_experiments, routes_hub, routes_jobs, routes_lmstudio, routes_models,
-                       routes_settings, routes_studies, routes_system, routes_knowledge, routes_agents, routes_assistant)
+                       routes_settings, routes_studies, routes_system, routes_knowledge, routes_agents, routes_assistant, routes_playground)
 from forge.api.state import AppState
 from forge.config import Settings
 from forge.db import Database
@@ -105,7 +105,7 @@ def create_app(settings: Settings | None = None, token: str | None = None) -> Fa
     app.add_middleware(CORSMiddleware, allow_origins=["http://127.0.0.1:5173", "http://localhost:5173"],
                        allow_methods=["GET", "POST", "PUT", "DELETE"], allow_headers=["Content-Type", TOKEN_HEADER])
     for r in (routes_system, routes_models, routes_settings, routes_experiments, routes_studies, routes_jobs,
-              routes_hub, routes_analysis, routes_lmstudio, routes_knowledge, routes_agents, routes_assistant):
+              routes_hub, routes_analysis, routes_lmstudio, routes_knowledge, routes_agents, routes_assistant, routes_playground):
         app.include_router(r.router)
 
 

@@ -81,6 +81,7 @@ class CreateStudy(BaseModel):
     device: Literal["cuda", "cpu"] = "cuda"
     knowledge_pack_id: str | None = Field(None, pattern=r"^pack_[a-z0-9]+$")
     agent_id: str | None = Field(None, pattern=r"^agent_[a-z0-9]+$")
+    require_review: bool = False
     focus_skills: list[Annotated[str, Field(pattern=r"^[a-z_]{1,40}$")]] | None = Field(None, max_length=10)
 
 
@@ -160,7 +161,7 @@ async def create_study(body: CreateStudy, st: AppState = Depends(get_state)):
                                     "parameter_report": s["metadata"].get("parameter_report")},
                            arms=body.arms, seeds=body.seeds, train_overrides=train_ov, min_gain=body.min_gain,
                            device=body.device, environment=env, base_hash=base_hash, knowledge_pack=pack,
-                           focus_skills=body.focus_skills, agent=agent)
+                           focus_skills=body.focus_skills, agent=agent, require_review=body.require_review)
     except StudyError as e:
         raise HTTPException(422, str(e))
     with st.db.tx() as c:

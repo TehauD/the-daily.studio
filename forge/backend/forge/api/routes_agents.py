@@ -185,8 +185,28 @@ def run_tasks(aid: str, body: TasksBody, st: AppState = Depends(get_state)):
         raise HTTPException(409, str(e))
 
 
+class ReviewBody(BaseModel):
+    task_id: str = Field(min_length=1, max_length=80)
+    decision: Literal["approve", "correct", "reject", "reset"]
+    reviewer: str = Field(min_length=1, max_length=60)
+    note: str = Field("", max_length=500)
+    answer: str | None = Field(None, max_length=500)
+    question: str | None = Field(None, max_length=500)
+
+
+@router.post("/{aid}/review")
+def review(aid: str, body: ReviewBody, st: AppState = Depends(get_state)):
+    """Human review of a practice task. Corrections are re-verified against the tools."""
+    a = _agent(st, aid)
+    try:
+        return a.review(body.task_id, body.decision, body.reviewer, body.note, body.answer, body.question)
+    except AgentError as e:
+        raise HTTPException(422, str(e))
+
+
 @router.get("/{aid}/tasks")
 def tasks(aid: str, split: Literal["all", "train", "dev", "test"] = "all", st: AppState = Depends(get_state)):
     a = _agent(st, aid)
-    rows = [t for t in a.tasks() if split == "all" or t["split"] == split]
-    return {"tasks": rows, "rejected": a.rejected()}
+    revs = a.reviews()
+    rows = [t | {"review": revs.get(Agent.review_key(t["prompt"]))} for t in a.tasks() if split == "all" or t["split"] == split]
+    return {"tasks": rows, "rejected": a.rejected(), "review": a.review_stats()}

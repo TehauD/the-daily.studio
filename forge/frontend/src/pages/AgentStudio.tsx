@@ -6,6 +6,7 @@ import { api, fmt, qs } from "../lib/api";
 import { useAction, useApi } from "../lib/hooks";
 import { AskAI, useAssistantScope } from "../lib/assistant";
 import { usePrefs } from "../lib/prefs";
+import { useReviewer } from "../lib/reviewer";
 import type { Job, Model, Readiness, StudyRow, StudySummary } from "../lib/types";
 
 /* ------------------------------------------------------------------ types */
@@ -21,10 +22,12 @@ interface AgentFull {
   id: string; name: string; template: string; role: string; created_at: string;
   tools: { calculator: boolean; units: boolean; dates: boolean; rules: Rule[]; knowledge_pack: string | null; tables: TableMeta[] };
   skills: Skill[]; steps: { tasks: { status: string | null; summary?: TaskSummary; error?: string } }; tool_names: ToolInfo[];
-  counts: { tasks: number; rejected: number }; jobs: Job[];
+  counts: { tasks: number; rejected: number }; jobs: Job[]; review?: ReviewStats;
 }
 interface TaskSummary { accepted: number; rejected: number; by_skill: Record<string, number>; from_you: number; not_found: number; splits: Record<string, number> }
-interface TaskRow { task_id: string; family: string; split: string; prompt: string; reference_calls: Call[]; reference_answer: string; meta: { source: string; not_found: boolean } }
+interface Review { status: "approved" | "corrected" | "rejected"; reviewer: string; at: string; note: string; question?: string; answer?: string }
+interface TaskRow { task_id: string; family: string; split: string; prompt: string; reference_calls: Call[]; reference_answer: string; meta: { source: string; not_found: boolean }; review?: Review | null }
+interface ReviewStats { approved: number; corrected: number; rejected: number; pending: number; total: number }
 interface Rejected { skill: string; source: string; candidate: { question?: string; prompt?: string; answer?: string } | null; reason: string }
 
 const STEPS = [
@@ -533,13 +536,13 @@ function StepTasks({ a, busy, onStarted }: { a: AgentFull; busy: boolean; onStar
           <ErrorLine error={act.error ?? a.steps.tasks.error} />
         </div>
       </Panel>
-      {data.data && <TaskTable a={a} data={data.data} />}
+      {data.data && <TaskTable a={a} data={data.data} onChange={() => void data.reload()} />}
     </>
   );
 }
 
-function TaskTable({ a, data }: { a: AgentFull; data: { tasks: TaskRow[]; rejected: Rejected[] } }) {
-  const [tab, setTab] = useState<"ok" | "no">("ok");
+function TaskTable({ a, data, onChange }: { a: AgentFull; data: { tasks: TaskRow[]; rejected: Rejected[]; review?: ReviewStats }; onChange: () => void }) {
+  const [tab, setTab] = useState<"ok" | "no" | "review">("ok");
   const [skill, setSkill] = useState("");
   const [sel, setSel] = useState<string | null>(null);
   const name = (id: string) => a.skills.find((s) => s.id === id)?.name ?? id;
@@ -548,11 +551,12 @@ function TaskTable({ a, data }: { a: AgentFull; data: { tasks: TaskRow[]; reject
   const reasons = useMemo(() => { const m = new Map<string, number>(); no.forEach((r) => { const k = r.reason.replace(/'[^']*'/g, "…").replace(/\d+(\.\d+)?/g, "#"); m.set(k, (m.get(k) ?? 0) + 1); }); return [...m].sort((x, y) => y[1] - x[1]).slice(0, 5); }, [no]);
   return (
     <Panel flush title="Tasks" right={<><AskAI q="Explain the rejection reasons and how to change the skills, examples or tools so more tasks pass verification." label="Why rejected?" /><select className={cx(inputCls, "h-7 !w-auto font-sans")} value={skill} onChange={(e) => setSkill(e.target.value)} aria-label="Skill filter"><option value="">all skills</option>{a.skills.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</select></>}>
-      <div className="px-[var(--pad)] pt-2"><Tabs value={tab} onChange={setTab} tabs={[{ value: "ok", label: "Accepted", count: ok.length }, { value: "no", label: "Rejected", count: no.length }]} /></div>
-      {tab === "ok" ? (
+      <div className="px-[var(--pad)] pt-2"><Tabs value={tab} onChange={setTab} tabs={[{ value: "ok", label: "Accepted", count: ok.length }, { value: "no", label: "Rejected", count: no.length },
+        { value: "review", label: "Human review", count: data.review?.pending }]} /></div>
+      {tab === "review" ? <ReviewQueue a={a} tasks={ok} stats={data.review} onChange={onChange} /> : tab === "ok" ? (
         <div className="scroll-thin max-h-[460px] overflow-auto">
           <table className="w-full text-[12px]">
-            <thead className="sticky top-0 bg-surface-2"><tr><th className={th}>Question</th><th className={th}>Answer</th><th className={th}>Skill</th><th className={th}>Split</th><th className={th}>From</th></tr></thead>
+            <thead className="sticky top-0 bg-surface-2"><tr><th className={th}>Question</th><th className={th}>Answer</th><th className={th}>Skill</th><th className={th}>Split</th><th className={th}>From</th><th className={th}>Review</th></tr></thead>
             <tbody>{ok.map((t) => (
               <Fragment key={t.task_id}>
                 <tr className={cx(tr, "cursor-pointer")} onClick={() => setSel(sel === t.task_id ? null : t.task_id)}>
@@ -561,8 +565,9 @@ function TaskTable({ a, data }: { a: AgentFull; data: { tasks: TaskRow[]; reject
                   <td className={cx(td, "text-ink-3")}>{name(t.family)}</td>
                   <td className={td}><Badge tone={t.split === "test" ? "accent" : "default"}>{t.split}</Badge></td>
                   <td className={cx(td, "text-ink-3")}>{t.meta.source === "template" ? "generator" : t.meta.source}</td>
+                  <td className={td}>{t.review ? <Badge tone={t.review.status === "rejected" ? "crit" : t.review.status === "corrected" ? "warn" : "good"} title={`${t.review.reviewer} · ${t.review.note}`}>{t.review.status}</Badge> : <span className="text-[11px] text-ink-3">pending</span>}</td>
                 </tr>
-                {sel === t.task_id && <tr><td colSpan={5} className="bg-surface-2 px-[var(--pad)] py-2"><div className="micro mb-1 text-ink-3">verified tool calls</div>
+                {sel === t.task_id && <tr><td colSpan={6} className="bg-surface-2 px-[var(--pad)] py-2"><div className="micro mb-1 text-ink-3">verified tool calls</div>
                   {t.reference_calls.length ? t.reference_calls.map((c, i) => <div key={i} className="font-mono text-[11px] text-ink-2">{i + 1}. {c.tool}({JSON.stringify(c.arguments)})</div>) : <div className="text-[11.5px] text-ink-3">Your example without tool calls — the teacher's solution will be checked against your answer.</div>}</td></tr>}
               </Fragment>
             ))}</tbody>
@@ -588,6 +593,71 @@ function TaskTable({ a, data }: { a: AgentFull; data: { tasks: TaskRow[]; reject
   );
 }
 
+function ReviewQueue({ a, tasks, stats, onChange }: { a: AgentFull; tasks: TaskRow[]; stats?: ReviewStats; onChange: () => void }) {
+  const [reviewer, setReviewer] = useReviewer();
+  const [showAll, setShowAll] = useState(false);
+  const queue = tasks.filter((t) => showAll || !t.review);
+  const [i, setI] = useState(0);
+  const t = queue[Math.min(i, Math.max(0, queue.length - 1))];
+  const [edit, setEdit] = useState<{ q: string; a: string } | null>(null);
+  const [note, setNote] = useState("");
+  const act = useAction();
+  const name = (id: string) => a.skills.find((s) => s.id === id)?.name ?? id;
+  const send = (decision: "approve" | "reject" | "correct" | "reset") => void act.run(async () => {
+    await api.post(`/api/agents/${a.id}/review`, { task_id: t.task_id, decision, reviewer, note,
+      ...(decision === "correct" && edit ? { question: edit.q, answer: edit.a } : {}) });
+    setEdit(null); setNote(""); onChange();
+    if (showAll) setI(i + 1);
+  });
+  const done = stats ? stats.total - stats.pending : 0;
+  return (
+    <div className="space-y-3 p-[var(--pad)]">
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="min-w-[200px] flex-1">
+          <div className="flex justify-between text-[11.5px] text-ink-3"><span>{done} of {stats?.total ?? 0} reviewed</span>
+            <span>{stats?.approved ?? 0} approved · {stats?.corrected ?? 0} corrected · {stats?.rejected ?? 0} rejected</span></div>
+          <div className="mt-1 h-[6px] overflow-hidden rounded-full bg-surface-3"><div className="h-full rounded-full bg-[color:var(--good)]" style={{ width: `${stats?.total ? (done / stats.total) * 100 : 0}%` }} /></div>
+        </div>
+        <input className={cx(inputCls, "!w-36 font-sans")} placeholder="your name / initials" value={reviewer} onChange={(e) => setReviewer(e.target.value)} aria-label="Reviewer" />
+        <label className="flex items-center gap-1.5 text-[11.5px] text-ink-3"><input type="checkbox" checked={showAll} onChange={(e) => { setShowAll(e.target.checked); setI(0); }} />show reviewed too</label>
+      </div>
+      <p className="text-[12px] leading-relaxed text-ink-2">People stay in charge of what the agent learns. Approve tasks that are right and realistic, correct the wording or the answer (FORGE re-checks a correction against the tools), or reject anything you would not want taught. Studies can be told to use <b className="text-ink">only reviewed tasks</b>.</p>
+      {!t ? <Empty>Nothing left to review{showAll ? "" : " — tick “show reviewed too” to revisit decisions"}.</Empty> : (
+        <div className="space-y-3 rounded-[var(--radius)] border border-line p-3">
+          <div className="flex flex-wrap items-center gap-2 text-[11.5px] text-ink-3"><Badge>{name(t.family)}</Badge><Badge>{t.split}</Badge><span>from {t.meta.source === "template" ? "generator" : t.meta.source}</span>
+            {t.review && <Badge tone={t.review.status === "rejected" ? "crit" : "good"}>{t.review.status} by {t.review.reviewer}</Badge>}
+            <span className="ml-auto font-mono">{Math.min(i, queue.length - 1) + 1} / {queue.length}</span></div>
+          {edit ? (
+            <div className="space-y-2">
+              <Field label="Question"><textarea className={cx(inputCls, "h-16 py-1.5 font-sans text-[13px]")} value={edit.q} onChange={(e) => setEdit({ ...edit, q: e.target.value })} /></Field>
+              <Field label="Answer"><input className={inputCls} value={edit.a} onChange={(e) => setEdit({ ...edit, a: e.target.value })} /></Field>
+            </div>
+          ) : (
+            <>
+              <div className="text-[13.5px] text-ink">{t.review?.question ?? t.prompt}</div>
+              <div className="font-mono text-[12px] text-ink-2">{t.reference_calls.map((c, k) => <div key={k}>{k + 1}. {c.tool}({JSON.stringify(c.arguments)})</div>)}</div>
+              <div className="text-[12.5px]">Answer: <span className="font-mono font-semibold text-ink">{t.review?.answer ?? t.reference_answer}</span></div>
+            </>
+          )}
+          <input className={cx(inputCls, "font-sans")} placeholder="note (optional): why?" value={note} onChange={(e) => setNote(e.target.value)} aria-label="Review note" />
+          <div className="flex flex-wrap gap-2">
+            {edit ? (<>
+              <Button tone="primary" icon="check" busy={act.busy} disabled={!reviewer.trim()} onClick={() => send("correct")}>Save correction</Button>
+              <Button tone="ghost" onClick={() => setEdit(null)}>Cancel</Button></>) : (<>
+              <Button tone="primary" icon="check" busy={act.busy} disabled={!reviewer.trim()} onClick={() => send("approve")}>Approve</Button>
+              <Button busy={act.busy} disabled={!reviewer.trim()} onClick={() => setEdit({ q: t.review?.question ?? t.prompt, a: t.review?.answer ?? t.reference_answer })}>Correct…</Button>
+              <Button tone="danger" busy={act.busy} disabled={!reviewer.trim()} onClick={() => send("reject")}>Reject</Button>
+              {t.review && <Button tone="ghost" busy={act.busy} disabled={!reviewer.trim()} onClick={() => send("reset")}>Undo review</Button>}
+              <Button tone="ghost" onClick={() => setI(i + 1)} disabled={i >= queue.length - 1}>Skip</Button></>)}
+          </div>
+          {!reviewer.trim() && <div className="text-[11.5px] text-warn-ink">Enter your name or initials — every review is recorded with who made it.</div>}
+          <ErrorLine error={act.error} />
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ------------------------------------------------------------------ step 5 */
 function StepTeach({ a, studies, onCreated }: { a: AgentFull; studies: StudyRow[]; onCreated: () => void }) {
   const { set } = usePrefs();
@@ -599,6 +669,8 @@ function StepTeach({ a, studies, onCreated }: { a: AgentFull; studies: StudyRow[
   const [teacher, setTeacher] = useState("");
   const [profile, setProfile] = useState<"smoke" | "pilot" | "research">("pilot");
   const [focus, setFocus] = useState<string[]>([]);
+  const [reviewedOnly, setReviewedOnly] = useState(false);
+  const rv = a.review;
   const rd = useApi<Readiness>("/api/system/readiness");
   const cudaOk = rd.data?.checks.find((c) => c.id === "cuda")?.status === "pass";
   const device: "cuda" | "cpu" = cudaOk || !rd.data?.cpu_wiring_mode ? "cuda" : "cpu";
@@ -611,7 +683,7 @@ function StepTeach({ a, studies, onCreated }: { a: AgentFull; studies: StudyRow[
   const trainable = a.skills.filter((k) => (s?.by_skill[k.id] ?? 0) > 0);
   const create = (go: "studio" | "lens") => void act.run(async () => {
     const st = await api.post<StudySummary>("/api/studies", { name: `${profile} · ${a.name}${focus.length ? ` · ${focus.map((f) => a.skills.find((k) => k.id === f)?.name ?? f).join(", ")}` : ""}`,
-      profile, teacher_id: teacher, student_id: student, agent_id: a.id, arms: ["teacher_filtered"], device, focus_skills: focus.length && focus.length < trainable.length ? focus : null });
+      profile, teacher_id: teacher, student_id: student, agent_id: a.id, arms: ["teacher_filtered"], device, focus_skills: focus.length && focus.length < trainable.length ? focus : null, require_review: reviewedOnly });
     set("activeStudy", st.id); onCreated(); window.location.hash = go === "studio" ? "/studio" : "/lens";
   });
   return (
@@ -631,6 +703,12 @@ function StepTeach({ a, studies, onCreated }: { a: AgentFull; studies: StudyRow[
               className={cx("rounded-[3px] border px-2 py-1 text-[11.5px] transition", on ? "border-accent bg-accent-soft text-ink" : "border-line text-ink-3 hover:text-ink")}>{k.name} <span className="font-mono text-[10px] text-ink-3">{s?.by_skill[k.id]}</span></button>;
           })}</div>
         </Field>
+        {rv && (
+          <label className="flex items-start gap-2.5 rounded-[var(--radius)] border border-line p-3 text-[12.5px] text-ink-2">
+            <input type="checkbox" className="mt-0.5 h-4 w-4 accent-[var(--accent)]" checked={reviewedOnly} onChange={(e) => setReviewedOnly(e.target.checked)} disabled={rv.approved + rv.corrected === 0} />
+            <span><b className="text-ink">Teach only tasks a person reviewed</b> ({rv.approved + rv.corrected} of {rv.total} approved or corrected). Rejected tasks are always left out ({rv.rejected}).</span>
+          </label>
+        )}
         {rd.data && (device === "cpu"
           ? <Notice tone="warn">No CUDA GPU is available to FORGE and CPU wiring mode is on: this study will train on the CPU. That only checks the plumbing — its results are not meaningful.</Notice>
           : !cudaOk && <Notice tone="warn">FORGE cannot see a CUDA GPU right now. You can create the study, but training will refuse to start until the GPU is available.</Notice>)}

@@ -40,6 +40,30 @@ def cmd_train_run(a: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_playground(a: argparse.Namespace) -> int:
+    """Run one message / task through several models side by side."""
+    os.environ.setdefault("HF_HUB_OFFLINE", "1")
+    os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
+    from forge.engine.playground import run
+    from forge.engine.study import Study
+    run(Study(Path(a.study)), json.loads(a.config), emit)
+    return 0
+
+
+def cmd_weightlab(a: argparse.Namespace) -> int:
+    """Build a Weight Lab variant, or evaluate one on a study's dev split."""
+    os.environ.setdefault("HF_HUB_OFFLINE", "1")
+    os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
+    from forge.engine import weightlab
+    v = weightlab.Variant(Path(a.variant))
+    if a.step == "build":
+        weightlab.run_build(v, emit)
+    else:
+        from forge.engine.study import Study
+        weightlab.evaluate(v, Study(Path(a.study)), emit)
+    return 0
+
+
 def cmd_lens(a: argparse.Namespace) -> int:
     """Distillation lens for one arm × seed (teacher-forced log-probs: base, snapshots, final)."""
     os.environ.setdefault("HF_HUB_OFFLINE", "1")
@@ -177,6 +201,15 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("--seed", required=True)
     r.add_argument("--hash-cache")
     r.set_defaults(fn=cmd_train_run)
+    pg = sub.add_parser("playground")
+    pg.add_argument("--study", required=True)
+    pg.add_argument("--config", required=True)
+    pg.set_defaults(fn=cmd_playground)
+    wl = sub.add_parser("weightlab")
+    wl.add_argument("--variant", required=True)
+    wl.add_argument("--step", required=True, choices=["build", "evaluate"])
+    wl.add_argument("--study")
+    wl.set_defaults(fn=cmd_weightlab)
     lz = sub.add_parser("lens")
     lz.add_argument("--study", required=True)
     lz.add_argument("--arm", required=True)
@@ -206,7 +239,7 @@ def main(argv: list[str] | None = None) -> int:
     g.add_argument("--min-free-vram-mb", type=int, default=8000)
     g.set_defaults(fn=cmd_gpu_smoke)
     a = p.parse_args(argv)
-    if a.cmd in ("stage", "train-run", "lens", "agent", "knowledge", "gpu-smoke"):
+    if a.cmd in ("stage", "train-run", "lens", "agent", "knowledge", "gpu-smoke", "playground", "weightlab"):
         keep_awake()
     try:
         return a.fn(a)
