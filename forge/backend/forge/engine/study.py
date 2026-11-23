@@ -345,6 +345,8 @@ class Study:
         todo = [t for t in tasks if t.split == split and t.task_id not in done]
         world = self.world()
         cfg = EpisodeConfig(max_turns=self.plan["eval"]["max_turns"])
+        if hasattr(backend, "on_retry"):  # temporary server trouble is retried (and shown) before the stage gives up
+            backend.on_retry = lambda info: emit({**info, "arm": arm, "split": split, "seed": seed})
         for i, t in enumerate(todo, 1):
             ep = run_episode(t, backend, world, cfg, arm=arm, seed=seed)
             if ep["termination"] == "backend_error":

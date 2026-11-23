@@ -148,6 +148,20 @@ def cmd_gpu_smoke(a: argparse.Namespace) -> int:
     return 0
 
 
+def keep_awake() -> None:
+    """Windows: stop idle sleep while this engine job runs (long collects and training runs take hours). Released
+    automatically when the process exits. Closing the lid or choosing Sleep still sleeps."""
+    if sys.platform != "win32":
+        return
+    try:
+        import ctypes
+        ES_CONTINUOUS, ES_SYSTEM_REQUIRED = 0x80000000, 0x00000001
+        if ctypes.windll.kernel32.SetThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED):
+            emit({"event": "keep_awake", "detail": "Windows idle sleep is paused while this job runs"})
+    except (AttributeError, OSError):
+        pass
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="forge.engine")
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -192,6 +206,8 @@ def main(argv: list[str] | None = None) -> int:
     g.add_argument("--min-free-vram-mb", type=int, default=8000)
     g.set_defaults(fn=cmd_gpu_smoke)
     a = p.parse_args(argv)
+    if a.cmd in ("stage", "train-run", "lens", "agent", "knowledge", "gpu-smoke"):
+        keep_awake()
     try:
         return a.fn(a)
     except Exception as e:

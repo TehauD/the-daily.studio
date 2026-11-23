@@ -16,7 +16,7 @@ import json
 import re
 import time
 from dataclasses import dataclass, field
-from typing import Any, Protocol
+from typing import Any, Callable, Protocol
 from urllib.parse import urlparse
 
 import httpx
@@ -118,7 +118,7 @@ def run_episode(task: Task, backend: ChatBackend, world: ToolWorld, cfg: Episode
             comp = backend.complete(messages)
         except Exception as exc:  # backend failure is recorded, not fatal to the study
             errors.append("backend_error")
-            events.append({"type": "error", "code": "backend_error", "detail": repr(exc)[:500], "turn": turn})
+            events.append({"type": "error", "code": "backend_error", "detail": f"{type(exc).__name__}: {exc}"[:800], "turn": turn})
             termination = "backend_error"
             break
         latency = comp.latency_ms if comp.latency_ms is not None else int((time.perf_counter() - t0) * 1000)
@@ -206,6 +206,71 @@ def validate_endpoint(url: str, allow_remote: bool = False) -> str:
     return url.rstrip("/")
 
 
+class BackendHTTPError(RuntimeError):
+    """A model server refused or failed a request. `kind` decides whether retrying can help."""
+
+    def __init__(self, status: int | None, message: str, kind: str, url: str):
+        self.status, self.message, self.kind, self.url = status, message, kind, url
+        hint = {
+            "context_overflow": " — the conversation is longer than the context length the model is loaded with. In LM Studio, "
+                                "reload the teacher with a larger context length (e.g. 8192 or 16384), then run the stage again: it resumes.",
+            "model_not_loaded": " — the model is not loaded (unloaded, crashed, idle time-out, or the PC slept). Load it in LM Studio, "
+                                "then run the stage again: it resumes from this task.",
+            "unreachable": " — the model server is not reachable. Start LM Studio's server (Developer → Start server), then run the stage again.",
+        }.get(kind, "")
+        super().__init__(f"HTTP {status}: {message}{hint}" if status else f"{message}{hint}")
+
+
+_NOT_LOADED = ("no models loaded", "model unloaded", "not loaded", "model crashed", "failed to load", "model is loading",
+               "model not found", "no model", "unloaded")
+_OVERFLOW = ("context length", "context the overflows", "context overflow", "exceeds the context", "maximum context",
+             "n_ctx", "too many tokens", "tokens to keep")
+RETRY_DELAYS_S = (5.0, 15.0, 30.0, 60.0, 120.0)  # ~4 minutes in total, then the stage stops (and resumes later)
+
+
+def _server_error(r: httpx.Response) -> BackendHTTPError:
+    try:
+        body = r.json()
+        err = body.get("error", body)
+        msg = err.get("message", str(err)) if isinstance(err, dict) else str(err)
+    except ValueError:
+        msg = r.text
+    msg = " ".join(str(msg).split())[:400] or r.reason_phrase
+    low = msg.lower()
+    if any(k in low for k in _OVERFLOW):
+        kind = "context_overflow"
+    elif any(k in low for k in _NOT_LOADED) or r.status_code == 404:
+        kind = "model_not_loaded"
+    elif r.status_code in (408, 409, 429) or r.status_code >= 500:
+        kind = "transient"
+    else:
+        kind = "client"
+    return BackendHTTPError(r.status_code, msg, kind, str(r.url))
+
+
+def post_with_retry(client: httpx.Client, url: str, payload: dict, on_retry: Callable[[dict], None] | None = None,
+                    delays: tuple[float, ...] = RETRY_DELAYS_S) -> httpx.Response:
+    """POST with patient retries for failures that can heal by themselves (server restarting, model reloading after
+    sleep or idle unload, rate limits). Deterministic refusals (context overflow, bad request) fail immediately."""
+    for attempt in range(len(delays) + 1):
+        try:
+            r = client.post(url, json=payload)
+            if r.status_code < 400:
+                return r
+            err = _server_error(r)
+        except (httpx.ConnectError, httpx.RemoteProtocolError, httpx.ReadError, httpx.WriteError) as e:
+            err = BackendHTTPError(None, f"{type(e).__name__}: {e}", "unreachable", url)
+        except httpx.TimeoutException as e:
+            err = BackendHTTPError(None, f"timed out ({type(e).__name__})", "transient", url)
+        if err.kind not in ("transient", "model_not_loaded", "unreachable") or attempt == len(delays):
+            raise err
+        if on_retry:
+            on_retry({"event": "backend_retry", "attempt": attempt + 1, "of": len(delays), "wait_s": delays[attempt],
+                      "kind": err.kind, "detail": str(err)[:300]})
+        time.sleep(delays[attempt])
+    raise AssertionError("unreachable")
+
+
 class OpenAICompatBackend:
     """LM Studio / llama.cpp / vLLM chat completions. Loopback by default, no proxy, no redirects."""
 
@@ -219,12 +284,13 @@ class OpenAICompatBackend:
         headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
         self.client = httpx.Client(timeout=timeout_s, trust_env=False, follow_redirects=False,
                                    headers=headers, transport=transport)
+        self.on_retry: Callable[[dict], None] | None = None
+        self.retry_delays = RETRY_DELAYS_S
 
     def complete(self, messages: list[dict[str, str]]) -> Completion:
         t0 = time.perf_counter()
-        r = self.client.post(self.url, json={"model": self.model, "messages": messages, "temperature": self.temperature,
-                                             "max_tokens": self.max_tokens, "stream": False})
-        r.raise_for_status()
+        r = post_with_retry(self.client, self.url, {"model": self.model, "messages": messages, "temperature": self.temperature,
+                                                    "max_tokens": self.max_tokens, "stream": False}, self.on_retry, self.retry_delays)
         data = r.json()
         msg = data["choices"][0]["message"]
         text = msg.get("content") or ""
@@ -241,12 +307,14 @@ class OllamaBackend:
         self.url = validate_endpoint(base_url) + "/api/chat"
         self.model, self.temperature, self.name = model, temperature, f"ollama:{model}"
         self.client = httpx.Client(timeout=timeout_s, trust_env=False, follow_redirects=False, transport=transport)
+        self.on_retry: Callable[[dict], None] | None = None
+        self.retry_delays = RETRY_DELAYS_S
 
     def complete(self, messages: list[dict[str, str]]) -> Completion:
         t0 = time.perf_counter()
-        r = self.client.post(self.url, json={"model": self.model, "messages": messages, "stream": False,
-                                             "think": False, "options": {"temperature": self.temperature}})
-        r.raise_for_status()
+        r = post_with_retry(self.client, self.url, {"model": self.model, "messages": messages, "stream": False,
+                                                    "think": False, "options": {"temperature": self.temperature}},
+                            self.on_retry, self.retry_delays)
         d = r.json()
         return Completion(text=d.get("message", {}).get("content", ""), prompt_tokens=d.get("prompt_eval_count"),
                           completion_tokens=d.get("eval_count"), latency_ms=int((time.perf_counter() - t0) * 1000),

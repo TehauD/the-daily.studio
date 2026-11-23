@@ -37,6 +37,8 @@ function describe(e: JobEvent): { text: string; tone: "default" | "good" | "crit
     case "embedded": return { text: `embedded ${e.done}/${e.total} passages`, tone: "muted" };
     case "indexed": return { text: `index ready · ${e.mode}${e.model ? ` · ${e.model} (${e.dim} dims)` : ""}`, tone: "good" };
     case "question": return { text: `question ${e.done}/${e.total} · ${e.accepted} accepted · ${e.rejected} rejected`, tone: "muted" };
+    case "backend_retry": return { text: `model server trouble (${e.kind}) — retry ${e.attempt}/${e.of} in ${e.wait_s}s · ${String(e.detail).slice(0, 160)}`, tone: "muted" };
+    case "keep_awake": return { text: String(e.detail), tone: "muted" };
     case "lens_start": return { text: `lens ${e.arm} s${e.seed}: ${e.episodes} dev episodes · ${e.records} teacher turns · ${e.tokens} tokens`, tone: "default" };
     case "lens_point": return { text: `${e.label}${e.total ? ` (${e.done}/${e.total})` : ""} · surprise ${(e.nll as number).toFixed(3)} nats/token · same top guess ${fmt.pct(e.agreement as number, 1)}`, tone: "default" };
     case "lens_done": return { text: `lens saved · ${e.points} points`, tone: "good" };

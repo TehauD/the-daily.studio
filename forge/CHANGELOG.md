@@ -1,5 +1,12 @@
 # FORGE changelog
 
+## 0.11.1 — resilient collection
+- Model-server errors keep the server's own reason (e.g. LM Studio's context-length or "no models loaded" message) plus a plain fix.
+- Temporary trouble — server restarting, model reloading after sleep or idle unload, timeouts, 5xx, rate limits — is retried for
+  about four minutes (shown in the job log) before the stage stops; deterministic refusals such as context overflow are not retried.
+- Windows idle sleep is paused while an engine job runs (collect, train, lens, task writing).
+- A stopped stage still resumes from the last recorded task.
+
 ## 0.11.0 — Domain starter agents
 - Six synthetic starter templates grouped by domain: IT service desk (ServiceNow-style routing & enrichment), Patient access
   (request & referral routing, administrative only), Pharmacy benefits, Claims denials, Prior authorization criteria, Security

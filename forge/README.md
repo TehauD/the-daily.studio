@@ -1,4 +1,4 @@
-# FORGE — Local Distillation Lab (v0.11.0)
+# FORGE — Local Distillation Lab (v0.11.1)
 
 A local-first research instrument for **teacher → student LLM distillation on one consumer NVIDIA GPU**.
 A large model you run in LM Studio (the *teacher*) solves tool-use or document-QA tasks. FORGE keeps only its
@@ -179,7 +179,7 @@ Security and robustness controls, with how each is checked: [docs/HARDENING.md](
 ## Developing
 
 ```powershell
-.\scripts\test.ps1                 # backend test suite (176 tests)
+.\scripts\test.ps1                 # backend test suite (180 tests)
 .\scripts\launch.ps1 -Mode dev     # Vite dev server with hot reload
 ```
 
