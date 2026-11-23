@@ -30,12 +30,13 @@ class JobError(RuntimeError):
 
 
 class JobRunner:
-    def __init__(self, db: Database, logs_dir: Path, python: str = sys.executable, cwd: Path | None = None):
+    def __init__(self, db: Database, logs_dir: Path, python: str = sys.executable, cwd: Path | None = None, env_provider=None):
         self.db, self.logs_dir, self.python = db, logs_dir, python
         self.cwd = cwd or Path(__file__).resolve().parents[2]  # backend/ (so `-m forge.engine` resolves)
         self.logs_dir.mkdir(parents=True, exist_ok=True)
         self._procs: dict[str, subprocess.Popen] = {}
         self._lock = threading.Lock()
+        self.env_provider = env_provider  # e.g. hardware-guard settings, read at every job start
 
     def recover(self) -> list[str]:
         stale = []
@@ -57,7 +58,8 @@ class JobRunner:
             jid = new_id("job")
             log_path = self.logs_dir / f"{jid}.log"
             argv = [self.python, "-m", "forge.engine", *args]
-            child_env = {**os.environ, "PYTHONIOENCODING": "utf-8", "PYTHONUTF8": "1", **(env or {})}
+            extra = self.env_provider() if self.env_provider else {}
+            child_env = {**os.environ, "PYTHONIOENCODING": "utf-8", "PYTHONUTF8": "1", **extra, **(env or {})}
             logf = open(log_path, "w", encoding="utf-8")
             proc = subprocess.Popen(argv, cwd=self.cwd, stdout=logf, stderr=subprocess.STDOUT, env=child_env,
                                     creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))

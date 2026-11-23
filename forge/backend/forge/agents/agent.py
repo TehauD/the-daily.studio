@@ -357,6 +357,8 @@ class Agent:
             attempts = 0
             while got < want and attempts < want * 3:
                 attempts += 1
+                from forge.engine import guard
+                guard.check()
                 nf = got_nf < want_nf and (got - got_nf) >= (want - want_nf) or (got_nf < want_nf and rng.random() < 0.3)
                 gen = templates.generator(m["template"], skill["id"]) if source == "template" else None
                 if source == "template" and gen is None:

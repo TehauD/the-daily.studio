@@ -16,12 +16,16 @@ export interface Prefs {
   sidebarCollapsed: boolean;
   activeStudy: string | null;
   showIneligible: boolean;
+  /** Simple hides expert pages (datasets, raw trajectories…); Expert shows everything. */
+  mode: "simple" | "expert";
+  /** Role chosen on Home, for the guided tour. */
+  role: string | null;
 }
 
 export const DEFAULT_PREFS: Prefs = {
   theme: "light", accent: "teal", density: "standard", contrast: "standard", textScale: 1, radius: 6, grid: true,
   motion: "system", chartAnimation: true, telemetryPollMs: 2000, telemetryWindow: 120, sidebarCollapsed: false,
-  activeStudy: null, showIneligible: false,
+  activeStudy: null, showIneligible: false, mode: "simple", role: null,
 };
 const KEY = "forge.ui.v1";
 

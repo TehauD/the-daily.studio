@@ -78,7 +78,9 @@ def _score(model: Any, items: list[dict], device: str) -> list[tuple[list[float]
     res = []
     model.eval()
     with torch.no_grad():
+        from forge.engine import guard
         for it in items:
+            guard.check()
             ids = torch.tensor([it["input_ids"]], device=device)
             logits = model(input_ids=ids, attention_mask=torch.ones_like(ids)).logits[0, :-1].float()
             lp = torch.log_softmax(logits, dim=-1)

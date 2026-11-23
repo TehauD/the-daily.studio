@@ -1,5 +1,6 @@
 /** 1.5px-stroke 20×20 icon set, drawn for FORGE. currentColor only. */
 const P: Record<string, string> = {
+  home: "M3.5 9.5 10 4l6.5 5.5M5.5 8v8.5h9V8M8.5 16.5v-4h3v4",
   guide: "M4 4.5h5a2 2 0 0 1 2 2V16a1.5 1.5 0 0 0-1.5-1.5H4zM16 4.5h-5M16 4.5v10h-4.5A1.5 1.5 0 0 0 10 16",
   overview: "M3.5 10a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0M10 10l3.2-2.4M10 3.5v1.6M3.5 10h1.6M16.5 10h-1.6",
   observatory: "M10 3v2M10 15v2M3 10h2M15 10h2M10 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6M5.4 5.4l1.4 1.4M13.2 13.2l1.4 1.4",

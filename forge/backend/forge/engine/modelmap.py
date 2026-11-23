@@ -123,7 +123,9 @@ def decision_states(tok: Any, model: Any, device: str, texts: list[str], emit: C
     import torch
     out = []
     with torch.no_grad():
+        from forge.engine import guard
         for i, t in enumerate(texts, 1):
+            guard.check()
             ids = tok(t, return_tensors="pt", add_special_tokens=False)["input_ids"].to(device)
             hs = model(input_ids=ids, output_hidden_states=True).hidden_states
             out.append(np.stack([h[0, -1].float().cpu().numpy() for h in hs]))

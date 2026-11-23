@@ -50,6 +50,14 @@ function Runs() {
             <Readout label="trainable" value={fmt.params(r?.trainable_params as number)} size="sm" sub={r ? `of ${fmt.params(r.total_params as number)}` : ""} />
             <Readout label="wall time" value={r?.wall_s ? `${Number(r.wall_s).toFixed(0)}` : "—"} unit="s" size="sm" />
           </div>
+          {(() => { const h = r?.hardware as { energy_wh: number; avg_power_w: number | null; peak_temp_c: number | null; paused_s: number; thermal_pauses: number; gpu_measured: boolean; scope: string } | undefined;
+            return h ? (
+              <div className="grid grid-cols-2 gap-4 border-t border-line pt-4 sm:grid-cols-4" title={h.scope}>
+                <Readout label="GPU energy" value={h.gpu_measured ? h.energy_wh.toFixed(1) : "—"} unit="Wh" size="sm" sub={h.gpu_measured ? "whole card, nvidia-smi" : "no GPU reading"} prov={<Prov kind="measured" />} />
+                <Readout label="avg power" value={h.avg_power_w ?? "—"} unit="W" size="sm" />
+                <Readout label="peak GPU temp" value={h.peak_temp_c ?? "—"} unit="°C" size="sm" />
+                <Readout label="thermal pauses" value={h.thermal_pauses} size="sm" sub={`${h.paused_s}s waiting to cool`} />
+              </div>) : null; })()}
           <LearningCurve rows={run.data?.rows ?? []} />
           {r && (
             <div className="grid gap-5 xl:grid-cols-2">

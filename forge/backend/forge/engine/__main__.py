@@ -258,13 +258,23 @@ def main(argv: list[str] | None = None) -> int:
     g.add_argument("--min-free-vram-mb", type=int, default=8000)
     g.set_defaults(fn=cmd_gpu_smoke)
     a = p.parse_args(argv)
-    if a.cmd in ("stage", "train-run", "lens", "agent", "knowledge", "gpu-smoke", "playground", "weightlab", "modelmap"):
+    guarded = a.cmd in ("stage", "train-run", "lens", "agent", "knowledge", "gpu-smoke", "playground", "weightlab", "modelmap")
+    if guarded:
         keep_awake()
+        from forge.engine import guard
+        g = guard.install(emit)
+        emit({"event": "hardware_guard", **{k: g.cfg[k] for k in ("enabled", "max_temp_c", "resume_temp_c", "cpu_reserve", "low_priority")},
+              "threads": getattr(g, "threads", None)})
     try:
         return a.fn(a)
     except Exception as e:
         emit({"event": "error", "error": f"{type(e).__name__}: {e}", "traceback": traceback.format_exc()[-4000:]})
         return 1
+    finally:
+        if guarded:
+            from forge.engine import guard
+            if guard.current() is not None:
+                emit({"event": "hardware_summary", **guard.current().stop()})
 
 
 if __name__ == "__main__":

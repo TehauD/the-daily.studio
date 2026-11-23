@@ -3,6 +3,7 @@ import { Sparkline } from "./components/sparkline";
 import { CommandPalette, type Command } from "./components/CommandPalette";
 import { Icon, type IconName } from "./components/icons";
 import { AssistantDrawer } from "./components/AssistantDrawer";
+import { JobDock } from "./components/JobDock";
 import { StudySelect, TelemetryProvider, useTelemetry } from "./components/live";
 import { AssistantProvider } from "./lib/assistant";
 import { Kbd, Skeleton, cx } from "./components/ui";
@@ -11,6 +12,7 @@ import { useApi, useHashRoute } from "./lib/hooks";
 import { PrefsProvider, usePrefs } from "./lib/prefs";
 import type { OverviewT } from "./lib/types";
 
+const Home = lazy(() => import("./pages/Home"));
 const Overview = lazy(() => import("./pages/Overview"));
 const Observatory = lazy(() => import("./pages/Observatory"));
 const Studio = lazy(() => import("./pages/Studio"));
@@ -29,22 +31,32 @@ const Playground = lazy(() => import("./pages/Playground"));
 const WeightLab = lazy(() => import("./pages/WeightLab"));
 const ModelMap = lazy(() => import("./pages/ModelMap"));
 
+/** Four workspaces, in the order people work: build it, see and steer it, measure it, run the lab. `expert` pages are hidden in Simple mode. */
 const NAV = [
-  { group: "Orientation", items: [{ key: "guide", label: "Guide", icon: "guide" }, { key: "overview", label: "Overview", icon: "overview" }] },
-  { group: "Models", items: [{ key: "observatory", label: "Model Observatory", icon: "observatory" }] },
-  { group: "Research", items: [
+  { group: "", items: [{ key: "home", label: "Home", icon: "home" }] },
+  { group: "Build", items: [
     { key: "agent-studio", label: "Agent Studio", icon: "agent" },
-    { key: "playground", label: "Agent Playground", icon: "play" },
     { key: "knowledge-studio", label: "Knowledge Studio", icon: "layers" },
-    { key: "studio", label: "Experiment Studio", icon: "studio" }, { key: "trajectories", label: "Trajectory Explorer", icon: "trajectory" },
-    { key: "datasets", label: "Dataset Factory", icon: "dataset" }, { key: "training", label: "Training Lab", icon: "training" },
-    { key: "evaluation", label: "Evaluation Lab", icon: "evaluation" }, { key: "knowledge", label: "Knowledge Graph", icon: "graph" },
-    { key: "lens", label: "Distillation Lens", icon: "lens" },
+    { key: "studio", label: "Experiment Studio", icon: "studio" },
+    { key: "datasets", label: "Dataset Factory", icon: "dataset", expert: true },
+    { key: "training", label: "Training Lab", icon: "training", expert: true }] },
+  { group: "See & control", items: [
+    { key: "playground", label: "Playground", icon: "play" },
     { key: "modelmap", label: "Model Map", icon: "map" },
+    { key: "lens", label: "Distillation Lens", icon: "lens" },
     { key: "weightlab", label: "Weight Lab", icon: "sliders" },
-    { key: "factory", label: "Model Factory", icon: "factory" }] },
-  { group: "System", items: [{ key: "settings", label: "System Settings", icon: "settings" }] },
+    { key: "trajectories", label: "Trajectory Explorer", icon: "trajectory", expert: true },
+    { key: "knowledge", label: "Knowledge Graph", icon: "graph", expert: true }] },
+  { group: "Measure", items: [
+    { key: "evaluation", label: "Evaluation Lab", icon: "evaluation" }] },
+  { group: "Operate", items: [
+    { key: "overview", label: "System Overview", icon: "overview", expert: true },
+    { key: "observatory", label: "Model Observatory", icon: "observatory" },
+    { key: "factory", label: "Model Factory", icon: "factory", expert: true },
+    { key: "guide", label: "Guide", icon: "guide" },
+    { key: "settings", label: "Settings", icon: "settings" }] },
 ] as const;
+type NavItem = { key: string; label: string; icon: string; expert?: boolean };
 type Key = (typeof NAV)[number]["items"][number]["key"];
 /** Workspace pages that lock to the viewport on wide screens (no page scroll; panels scroll inside). */
 const FIT = new Set<string>(["overview", "observatory", "studio", "trajectories", "evaluation", "knowledge", "knowledge-studio", "lens", "agent-studio", "playground", "weightlab", "modelmap"]);
@@ -121,16 +133,16 @@ function Sidebar({ route, go, open, onClose }: { route: Key; go: (k: Key) => voi
           {!collapsed && (
             <div className="leading-none">
               <div className="font-mono text-[13px] font-semibold tracking-[0.32em] text-ink">FORGE</div>
-              <div className="micro mt-1 !text-[8.5px] text-ink-3">Distillation lab · local</div>
+              <div className="micro mt-1 !text-[8.5px] text-ink-3">Agent lab · local</div>
             </div>
           )}
         </div>
         <nav className="scroll-thin flex-1 overflow-y-auto px-2 py-3">
-          {NAV.map((g) => (
-            <div key={g.group} className="mb-3">
-              {!collapsed && <div className="micro px-2.5 pb-1.5 !text-[9px] text-ink-3">{g.group}</div>}
+          {NAV.map((g) => ({ ...g, items: (g.items as readonly NavItem[]).filter((n) => prefs.mode === "expert" || !n.expert || n.key === route) })).map((g) => (
+            <div key={g.group || "home"} className="mb-3">
+              {!collapsed && g.group && <div className="micro px-2.5 pb-1.5 !text-[9px] text-ink-3">{g.group}</div>}
               {g.items.map((n) => (
-                <button key={n.key} type="button" onClick={() => { go(n.key); onClose(); }} title={collapsed ? n.label : undefined}
+                <button key={n.key} type="button" onClick={() => { go(n.key as Key); onClose(); }} title={collapsed ? n.label : undefined}
                   aria-current={route === n.key ? "page" : undefined}
                   className={cx("group relative mb-px flex h-8 w-full items-center gap-2.5 rounded-[calc(var(--radius)-1px)] text-left text-[12.5px] transition",
                     collapsed ? "justify-center" : "px-2.5",
@@ -147,6 +159,16 @@ function Sidebar({ route, go, open, onClose }: { route: Key; go: (k: Key) => voi
           <button type="button" onClick={() => set("sidebarCollapsed", !prefs.sidebarCollapsed)} className="hidden h-8 w-full items-center justify-center gap-2 rounded text-[11.5px] text-ink-3 hover:bg-surface-3 hover:text-ink lg:flex" aria-label="Collapse sidebar">
             <Icon name="sidebar" size={15} />{!collapsed && "Collapse"}
           </button>
+          {!collapsed && (
+            <div className="mb-1 flex items-center justify-between gap-2 px-2.5 pt-1 text-[11px] text-ink-3" title="Simple hides expert pages; Expert shows everything">
+              <span>Mode</span>
+              <div className="flex rounded-full border border-line p-0.5" role="group" aria-label="Interface mode">
+                {(["simple", "expert"] as const).map((m) => (
+                  <button key={m} type="button" aria-pressed={prefs.mode === m} onClick={() => set("mode", m)}
+                    className={cx("rounded-full px-2 py-0.5 text-[10.5px] capitalize", prefs.mode === m ? "bg-accent-soft text-ink" : "text-ink-3 hover:text-ink")}>{m}</button>))}
+              </div>
+            </div>
+          )}
           {!collapsed && <div className="px-2.5 pb-1 pt-2 font-mono text-[9.5px] leading-relaxed text-ink-3">loopback 127.0.0.1 · no telemetry leaves this machine</div>}
         </div>
       </aside>
@@ -155,7 +177,7 @@ function Sidebar({ route, go, open, onClose }: { route: Key; go: (k: Key) => voi
 }
 
 function Shell() {
-  const [route, go] = useHashRoute(KEYS, "overview");
+  const [route, go] = useHashRoute(KEYS, "home");
   const [menu, setMenu] = useState(false);
   const [palette, setPalette] = useState(false);
   const { prefs, set } = usePrefs();
@@ -174,7 +196,7 @@ function Shell() {
     { id: "discover", label: "Run model discovery", group: "Actions", run: () => { void api.post("/api/models/discover"); go("observatory"); } },
     { id: "verify", label: "Verify GPU (forward/backward, BF16)", group: "Actions", run: () => { void api.post("/api/jobs/verify-gpu"); go("overview"); } },
   ], [go, set, prefs.sidebarCollapsed]);
-  const Page = { overview: Overview, observatory: Observatory, studio: Studio, trajectories: Trajectories, datasets: Datasets,
+  const Page = { home: Home, overview: Overview, observatory: Observatory, studio: Studio, trajectories: Trajectories, datasets: Datasets,
     training: Training, evaluation: Evaluation, knowledge: Knowledge, "knowledge-studio": KnowledgeStudio, lens: Lens, "agent-studio": AgentStudio, playground: Playground, weightlab: WeightLab, modelmap: ModelMap, factory: Factory, settings: Settings, guide: Guide }[route];
   return (
     <AssistantProvider route={route}>
@@ -193,6 +215,7 @@ function Shell() {
         </main>
       </div>
       {palette && <CommandPalette commands={commands} onClose={() => setPalette(false)} />}
+      <JobDock />
       <AssistantDrawer />
     </div>
     </AssistantProvider>

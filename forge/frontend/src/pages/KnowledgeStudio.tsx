@@ -1,3 +1,4 @@
+import { takeHandoff } from "../lib/handoff";
 import { Fragment, useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { Icon } from "../components/icons";
 import { EmbeddingMap } from "../components/embmap";
@@ -35,8 +36,8 @@ type JKey = (typeof JOURNEY)[number]["key"];
 /* ------------------------------------------------------------------ page */
 export default function KnowledgeStudio() {
   const packs = useApi<PackShort[]>("/api/knowledge", 6000);
-  const [pid, setPid] = useState<string | null>(null);
-  const [creating, setCreating] = useState(false);
+  const [pid, setPid] = useState<string | null>(() => takeHandoff("pack"));
+  const [creating, setCreating] = useState(() => takeHandoff("new-pack") === "1");
   const list = packs.data ?? [];
   useEffect(() => { if (!pid && list.length) setPid(list[0].id); }, [list, pid]);
   const pack = useApi<PackFull>(pid ? `/api/knowledge/${pid}` : null, 3000);

@@ -39,6 +39,10 @@ function describe(e: JobEvent): { text: string; tone: "default" | "good" | "crit
     case "question": return { text: `question ${e.done}/${e.total} · ${e.accepted} accepted · ${e.rejected} rejected`, tone: "muted" };
     case "backend_retry": return { text: `model server trouble (${e.kind}) — retry ${e.attempt}/${e.of} in ${e.wait_s}s · ${String(e.detail).slice(0, 160)}`, tone: "muted" };
     case "keep_awake": return { text: String(e.detail), tone: "muted" };
+    case "hardware_guard": return { text: `hardware guard · pause ≥ ${e.max_temp_c} °C, resume ≤ ${e.resume_temp_c} °C · ${e.threads} CPU threads${e.low_priority ? " · low priority" : ""}${e.enabled ? "" : " · thermal pause OFF"}`, tone: "muted" };
+    case "thermal_pause": return { text: `GPU at ${e.temp_c} °C — pausing at a safe point until ≤ ${e.resume_c} °C (results unaffected)`, tone: "crit" };
+    case "thermal_resume": return { text: `cooled to ${e.temp_c ?? "—"} °C after ${e.paused_s}s — resuming`, tone: "good" };
+    case "hardware_summary": return { text: `energy ${e.energy_wh} Wh${e.avg_power_w ? ` · avg ${e.avg_power_w} W` : ""}${e.peak_temp_c != null ? ` · peak ${e.peak_temp_c} °C` : " · GPU not measured"} · paused ${e.paused_s}s (${e.thermal_pauses}×) · ${e.wall_s}s wall`, tone: "muted" };
     case "lens_start": return { text: `lens ${e.arm} s${e.seed}: ${e.episodes} dev episodes · ${e.records} teacher turns · ${e.tokens} tokens`, tone: "default" };
     case "lens_point": return { text: `${e.label}${e.total ? ` (${e.done}/${e.total})` : ""} · surprise ${(e.nll as number).toFixed(3)} nats/token · same top guess ${fmt.pct(e.agreement as number, 1)}`, tone: "default" };
     case "lens_done": return { text: `lens saved · ${e.points} points`, tone: "good" };

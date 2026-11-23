@@ -14,7 +14,7 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from forge import __version__
 from forge.api import (routes_analysis, routes_experiments, routes_hub, routes_jobs, routes_lmstudio, routes_models,
-                       routes_settings, routes_studies, routes_system, routes_knowledge, routes_agents, routes_assistant, routes_playground, routes_modelmap)
+                       routes_settings, routes_studies, routes_system, routes_knowledge, routes_agents, routes_assistant, routes_playground, routes_modelmap, routes_projects)
 from forge.api.state import AppState
 from forge.config import Settings
 from forge.db import Database
@@ -56,7 +56,8 @@ def create_app(settings: Settings | None = None, token: str | None = None) -> Fa
         db = Database(settings.db_path)
         experiments = ExperimentManager(db)
         recovered = experiments.recover_interrupted()
-        jobs = JobRunner(db, settings.jobs_log_dir)
+        from forge.api.routes_settings import guard_env
+        jobs = JobRunner(db, settings.jobs_log_dir, env_provider=lambda: guard_env(db))
         interrupted = jobs.recover()
         state = AppState(env_settings=settings, db=db, registry=ModelRegistry(db), experiments=experiments,
                          telemetry=TelemetrySampler(settings.telemetry_interval_s, settings.telemetry_idle_stop_s,
@@ -105,7 +106,7 @@ def create_app(settings: Settings | None = None, token: str | None = None) -> Fa
     app.add_middleware(CORSMiddleware, allow_origins=["http://127.0.0.1:5173", "http://localhost:5173"],
                        allow_methods=["GET", "POST", "PUT", "DELETE"], allow_headers=["Content-Type", TOKEN_HEADER])
     for r in (routes_system, routes_models, routes_settings, routes_experiments, routes_studies, routes_jobs,
-              routes_hub, routes_analysis, routes_lmstudio, routes_knowledge, routes_agents, routes_assistant, routes_playground, routes_modelmap):
+              routes_hub, routes_analysis, routes_lmstudio, routes_knowledge, routes_agents, routes_assistant, routes_playground, routes_modelmap, routes_projects):
         app.include_router(r.router)
 
 

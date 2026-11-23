@@ -70,7 +70,9 @@ def run(study: Any, spec: dict, emit: Callable[[dict], None] = lambda e: None,
     cfg = EpisodeConfig(max_turns=study.plan["eval"]["max_turns"])
     agent_world = study.plan["taskset"].get("kind") == "agent"
     out_lanes = []
+    from forge.engine import guard
     for i, lane in enumerate(lanes, 1):
+        guard.check()
         kind = lane.get("kind")
         if backend_for:
             backend = backend_for(lane)

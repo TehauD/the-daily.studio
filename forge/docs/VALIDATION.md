@@ -203,3 +203,18 @@ prove the plumbing).
 Demo on the patient-access study (tiny 2-layer student): skill purity 27 % (embeddings) → 55 % (layer 2), training shift 0 % → 65 %.
 **Not validated — requires your machine:** maps of a real 1.7B student (28 layers) and how cleanly real skills separate; word-view
 runtime on GPU (one forward + one backward pass per task — expected seconds).
+
+## v0.14.0 — Projects, workspaces, hardware guard
+
+| Check | Result here |
+|---|---|
+| Thermal pause: pauses at ≥ pause temperature at a safe point, resumes at ≤ resume temperature, logs both; counts pauses and time | unit test (simulated readings) |
+| Disabled guard or no GPU reading never pauses; energy integrates board power over time; suspended while a child process trains | unit tests |
+| Settings validated (resume < pause, at least one core left) and passed to every engine job (FORGE_GUARD, OMP / MKL / OpenBLAS threads) | test |
+| Projects derived from agents / packs / studies / variants with one next step (incl. "regenerate tasks" when the agent changed) | test + demo data |
+| Home: fits 1920×1080 and 1440 dark, no horizontal overflow at 390 px, no console errors; Open → Agent Studio on that agent | browser |
+| Simple → Expert reveals 6 more pages; glossary tooltip on hover and focus; job dock toast for a 1.5 s job | browser |
+| Backend suite | 195 passed |
+
+**Not validated — requires your machine:** real nvidia-smi readings during a long run, an actual thermal pause and the energy
+figure on your RTX card; below-normal priority on Windows (psutil).

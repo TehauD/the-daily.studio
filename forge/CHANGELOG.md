@@ -1,5 +1,21 @@
 # FORGE changelog
 
+## 0.14.0 — Projects, workspaces and a hardware guard
+- **Home** is the new start page: one card per project (an agent, a document set, or the built-in catalog) with its studies,
+  Weight Lab variants, stage progress, latest untrained / trained / teacher strict-success (labelled practice vs sealed final
+  test) and the one sensible next step. Projects are derived on read (`GET /api/projects`), so they never disagree with their parts.
+- Navigation regrouped into four workspaces: **Build**, **See & control**, **Measure**, **Operate**.
+- **Simple / Expert** mode: Simple hides the expert pages (Dataset Factory, Training Lab, Trajectory Explorer, Knowledge Graph,
+  System Overview, Model Factory); Expert shows everything.
+- **Guided tours by role** (operations / clinical lead, analyst, engineer, leader) and a plain-language **glossary**: underlined
+  terms explain themselves on hover or keyboard focus.
+- **Job dock**: running jobs stay visible from every page with their live log on demand, and a toast appears when a job
+  finishes or fails (including jobs shorter than one poll).
+- **Hardware guard** (Settings → Hardware guard) for every engine job: thermal pause at safe points (default pause at 83 °C,
+  resume at 75 °C; results unaffected), cool start, CPU cores kept free (torch / BLAS / OpenMP threads), below-normal priority,
+  and GPU energy (Wh), average power, peak temperature and time paused per job — stored with training runs and shown in
+  Training Lab. Readings are whole-card (nvidia-smi).
+
 ## 0.13.0 — Model Map
 - Decision graph: episodes merged into skill → actions → outcome with per-skill procedure consistency; click to follow tasks.
 - Representation map: decision-point hidden states at every layer, untrained vs trained on shared PCA axes (each centred on its own

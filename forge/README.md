@@ -42,7 +42,9 @@ App state lives in `%LOCALAPPDATA%\Forge` (override with `FORGE_HOME`).
 
 ### 3. Your first study (about 15 minutes on a 16 GB GPU)
 
-1. **Overview**: every Readiness row should be green (CUDA, BF16, venv, teacher endpoint).
+FORGE opens on **Home**: one card per project with its progress and next step, quick starts, and a guided tour for your role. Use the *Simple / Expert* switch (sidebar or Home) to show the expert pages. Before long runs, check **Settings → Hardware guard** (thermal pause, CPU cores kept free, low priority).
+
+1. **System Overview** (Expert mode): every Readiness row should be green (CUDA, BF16, venv, teacher endpoint).
 2. **Model Observatory** → *Run discovery* → mark your LM Studio model as **teacher** and Qwen3-1.7B as **student** → *Pair builder* → run pair-check → **Create study with this pair**.
 3. **Experiment Studio** → profile **smoke**, arm `teacher_filtered` → *Freeze plan & create*.
 4. Run the stages in order:
@@ -161,6 +163,7 @@ study, agent or knowledge pack.
 
 | Page | What it does |
 |---|---|
+| **Home** | Projects (agents, document sets, built-in catalog) with stage progress, latest results and next step; quick starts; role tours; glossary |
 | **Guide** | Concepts and the research protocol in plain language |
 | **Overview** | Readiness for each stage of the loop, live GPU / VRAM / temperature / power telemetry |
 | **Model Observatory** | Discovers LM Studio, Ollama, Hugging Face cache and folder models; parameter reconciliation; Hub search and download; teacher/student roles; pair-check with VRAM estimate |

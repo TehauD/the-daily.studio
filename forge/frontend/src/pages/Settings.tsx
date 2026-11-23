@@ -1,4 +1,5 @@
 import { AzureSettings } from "../components/AzureSettings";
+import { GuardSettings } from "../components/GuardSettings";
 import { useState, type FormEvent } from "react";
 import { Badge, Button, ErrorLine, Field, KV, PageHeader, Panel, Prov, Segmented, Status, Toggle, cx, inputCls } from "../components/ui";
 import { api } from "../lib/api";
@@ -27,7 +28,7 @@ export default function Settings() {
     <div className="space-y-4">
       <PageHeader kicker="System" title="System Settings" subtitle="Appearance is stored in this browser (localStorage forge.ui.v1). Runtime configuration is stored server-side and layered over environment variables; only loopback URLs are accepted." />
       <div className="grid gap-4 xl:grid-cols-2">
-        <Appearance />
+        <div className="space-y-4"><Appearance /><GuardSettings /></div>
         <div className="space-y-4"><Runtime /><AzureSettings /><Environment /></div>
       </div>
     </div>

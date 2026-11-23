@@ -198,7 +198,9 @@ def evaluate(v: Variant, study: Any, emit: Callable[[dict], None] = lambda e: No
                                                                      max_new_tokens=study.plan["eval"]["max_new_tokens"])
     cfg = EpisodeConfig(max_turns=study.plan["eval"]["max_turns"])
     eps = []
+    from forge.engine import guard
     for i, t in enumerate(tasks, 1):
+        guard.check()
         ep = run_episode(t, backend, world, cfg, arm=f"variant:{r['id']}", seed=0)
         if ep["termination"] == "backend_error":
             raise WeightLabError(f"backend error on {t.task_id}")

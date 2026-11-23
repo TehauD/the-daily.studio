@@ -354,7 +354,9 @@ class Study:
         cfg = EpisodeConfig(max_turns=self.plan["eval"]["max_turns"])
         if hasattr(backend, "on_retry"):  # temporary server trouble is retried (and shown) before the stage gives up
             backend.on_retry = lambda info: emit({**info, "arm": arm, "split": split, "seed": seed})
+        from forge.engine import guard
         for i, t in enumerate(todo, 1):
+            guard.check()  # thermal safe point between episodes
             ep = run_episode(t, backend, world, cfg, arm=arm, seed=seed)
             if ep["termination"] == "backend_error":
                 # Infrastructure failure, not model behavior: never record it as a failed episode.
@@ -494,7 +496,8 @@ class Study:
         # this job's log, in order, on every platform (on Windows an inherited handle can bypass redirection).
         # stderr stays inherited. UTF-8 both ways regardless of the console code page.
         env = {**os.environ, "PYTHONIOENCODING": "utf-8", "PYTHONUTF8": "1"}
-        with subprocess.Popen(argv, cwd=Path(__file__).resolve().parents[2], stdout=subprocess.PIPE, env=env,
+        from forge.engine import guard
+        with guard.suspended(), subprocess.Popen(argv, cwd=Path(__file__).resolve().parents[2], stdout=subprocess.PIPE, env=env,
                               creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0)) as proc:
             assert proc.stdout is not None
             for raw in proc.stdout:

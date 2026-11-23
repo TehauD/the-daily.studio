@@ -1,0 +1,19 @@
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+import { useEffect, useState } from "react";
+import { api } from "../lib/api";
+import { useAction, useApi } from "../lib/hooks";
+import { Button, ErrorLine, Field, Notice, Panel, Prov, Status, Toggle } from "./ui";
+/** System Settings → Hardware guard. Applies to every engine job started after saving. */
+export function GuardSettings() {
+    const g = useApi("/api/settings/hardware-guard");
+    const act = useAction();
+    const [f, setF] = useState(null);
+    const [saved, setSaved] = useState(false);
+    useEffect(() => { if (g.data)
+        setF(g.data); }, [g.data]);
+    if (!f)
+        return _jsx(Panel, { title: "Hardware guard", children: _jsx(ErrorLine, { error: g.error }) });
+    const set = (p) => { setF({ ...f, ...p }); setSaved(false); };
+    const bad = f.resume_temp_c >= f.max_temp_c;
+    return (_jsx(Panel, { title: "Hardware guard", eyebrow: "every engine job", prov: _jsx(Prov, { kind: "declared", source: "FORGE database" }), right: _jsx(Status, { s: f.enabled ? "pass" : "warn", label: f.enabled ? "thermal pause on" : "thermal pause off" }), children: _jsxs("div", { className: "space-y-4", children: [_jsx("p", { className: "text-[12.5px] text-ink-2", children: "Long runs stay cool and the PC stays usable. When the GPU reaches the pause temperature, the job waits at the next safe point (between training steps or episodes) until it cools \u2014 nothing is skipped and results are unchanged. Energy, peak temperature and time paused are recorded with each job." }), _jsxs("div", { className: "grid gap-4 sm:grid-cols-2", children: [_jsx(Field, { label: `Pause at · ${f.max_temp_c} °C`, hint: "NVIDIA cards throttle themselves near 83\u201390 \u00B0C; pausing earlier is gentler on fans.", children: _jsx("input", { type: "range", min: 60, max: 92, value: f.max_temp_c, onChange: (e) => set({ max_temp_c: Number(e.target.value) }), className: "w-full accent-[var(--accent)]", "aria-label": "Pause temperature" }) }), _jsx(Field, { label: `Resume at · ${f.resume_temp_c} °C`, hint: "Must be below the pause temperature.", children: _jsx("input", { type: "range", min: 40, max: 90, value: f.resume_temp_c, onChange: (e) => set({ resume_temp_c: Number(e.target.value) }), className: "w-full accent-[var(--accent)]", "aria-label": "Resume temperature" }) }), _jsx(Field, { label: `Keep free · ${f.cpu_reserve} of ${f.cpu_cores} CPU cores`, hint: `Jobs use ${Math.max(1, f.cpu_cores - f.cpu_reserve)} threads.`, children: _jsx("input", { type: "range", min: 0, max: Math.max(0, f.cpu_cores - 1), value: f.cpu_reserve, onChange: (e) => set({ cpu_reserve: Number(e.target.value) }), className: "w-full accent-[var(--accent)]", "aria-label": "CPU cores kept free" }) }), _jsxs("div", { className: "flex flex-col justify-center gap-2", children: [_jsx(Toggle, { checked: f.enabled, onChange: (v) => set({ enabled: v }), label: "Thermal pause" }), _jsx(Toggle, { checked: f.low_priority, onChange: (v) => set({ low_priority: v }), label: "Run jobs at low priority" })] })] }), bad && _jsx(Notice, { tone: "warn", children: "Resume temperature must be below the pause temperature." }), _jsxs("div", { className: "flex flex-wrap items-center gap-2", children: [_jsx(Button, { tone: "primary", busy: act.busy, disabled: bad, onClick: () => void act.run(async () => { const { cpu_cores: _c, ...body } = f; void _c; await api.put("/api/settings/hardware-guard", body); await g.reload(); setSaved(true); }), children: "Save" }), _jsx(Button, { tone: "ghost", onClick: () => set({ enabled: true, max_temp_c: 83, resume_temp_c: 75, cpu_reserve: Math.min(2, f.cpu_cores - 1), low_priority: true }), children: "Defaults" }), saved && _jsx("span", { className: "text-[12px] text-good-ink", children: "Saved \u00B7 applies to jobs started from now on" })] }), _jsx(ErrorLine, { error: act.error })] }) }));
+}

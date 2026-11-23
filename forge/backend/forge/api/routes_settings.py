@@ -129,3 +129,46 @@ def remove_endpoint(label: str, st: AppState = Depends(get_state)):
     eps = [e for e in st.db.get_setting("endpoints", []) if e["label"] != label]
     st.db.set_setting("endpoints", eps)
     return {"endpoints": eps}
+
+
+# ------------------------------------------------------------------ hardware guard
+GUARD_KEY = "hardware_guard"
+
+
+def guard_config(db) -> dict:
+    from forge.engine.guard import DEFAULTS
+    return {**DEFAULTS, **(db.get_setting(GUARD_KEY, {}) or {})}
+
+
+def guard_env(db) -> dict[str, str]:
+    """Environment for every engine job: the guard's settings, and BLAS / OpenMP thread caps set before Python starts."""
+    import json
+    import os as _os
+    cfg = guard_config(db)
+    threads = str(max(1, (_os.cpu_count() or 1) - int(cfg.get("cpu_reserve") or 0)))
+    return {"FORGE_GUARD": json.dumps(cfg), "OMP_NUM_THREADS": threads, "MKL_NUM_THREADS": threads, "OPENBLAS_NUM_THREADS": threads}
+
+
+class GuardBody(BaseModel):
+    enabled: bool = True
+    max_temp_c: int = Field(83, ge=60, le=92)
+    resume_temp_c: int = Field(75, ge=40, le=90)
+    cpu_reserve: int = Field(2, ge=0, le=64)
+    low_priority: bool = True
+
+
+@router.get("/hardware-guard")
+def get_guard(st: AppState = Depends(get_state)):
+    import os as _os
+    return {**guard_config(st.db), "cpu_cores": _os.cpu_count() or 1}
+
+
+@router.put("/hardware-guard")
+def put_guard(body: GuardBody, st: AppState = Depends(get_state)):
+    import os as _os
+    if body.resume_temp_c >= body.max_temp_c:
+        raise HTTPException(422, "Resume temperature must be below the pause temperature")
+    if body.cpu_reserve >= (_os.cpu_count() or 1):
+        raise HTTPException(422, "Leave at least one core for the job")
+    st.db.set_setting(GUARD_KEY, {**body.model_dump(), "sample_s": 5.0})
+    return get_guard(st)

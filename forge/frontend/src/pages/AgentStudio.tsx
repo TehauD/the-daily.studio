@@ -1,3 +1,4 @@
+import { takeHandoff } from "../lib/handoff";
 import { Fragment, useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { Explainer, Journey, type GuideStep } from "../components/guided";
 import { JobLog } from "../components/live";
@@ -42,8 +43,8 @@ type SKey = (typeof STEPS)[number]["key"];
 /* ------------------------------------------------------------------ page */
 export default function AgentStudio() {
   const list = useApi<AgentShort[]>("/api/agents", 6000);
-  const [aid, setAid] = useState<string | null>(null);
-  const [creating, setCreating] = useState(false);
+  const [aid, setAid] = useState<string | null>(() => takeHandoff("agent"));
+  const [creating, setCreating] = useState(() => takeHandoff("new-agent") === "1");
   const agents = list.data ?? [];
   useEffect(() => { if (!aid && agents.length) setAid(agents[0].id); }, [agents, aid]);
   const ag = useApi<AgentFull>(aid ? `/api/agents/${aid}` : null, 3000);

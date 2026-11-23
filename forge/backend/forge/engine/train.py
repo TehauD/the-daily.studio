@@ -216,6 +216,10 @@ def train_lora(cfg: TrainConfig, hash_cache: Path | None = None, emit=print) -> 
     t_start = time.perf_counter()
 
     class Telemetry(TrainerCallback):
+        def on_step_end(self, args, state, control, **kw):
+            from forge.engine import guard
+            guard.check()  # thermal safe point between optimizer steps
+
         def on_log(self, args, state, control, logs=None, **kw):
             if not logs:
                 return
@@ -302,6 +306,9 @@ def train_lora(cfg: TrainConfig, hash_cache: Path | None = None, emit=print) -> 
     if report["base_hash_after"] != report["base_hash_before"]:
         raise GateError("Base model hash changed during training — original weights were modified")
     report["ended_at"] = utcnow()
+    from forge.engine import guard
+    if guard.current() is not None:
+        report["hardware"] = guard.current().summary()  # energy, peak temperature, thermal pauses (whole GPU)
     (out / "run.json").write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
     emit({"event": "trained", "adapter_sha256": report["adapter_sha256"], "global_step": report["global_step"]})
     return report
