@@ -1,3 +1,4 @@
+import { TurboPicker, type TurboT } from "../components/Turbo";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { Icon } from "../components/icons";
 import { JobLog, useStudies } from "../components/live";
@@ -63,6 +64,7 @@ function Wizard({ onCreated }: { onCreated: (id: string) => void }) {
   const pre = (() => { try { return JSON.parse(sessionStorage.getItem("forge.pair") || "null") as { teacher: string; student: string } | null; } catch { return null; } })();
   const ms = models.data?.models ?? [];
   const [f, setF] = useState({ name: "", profile: "smoke", teacher_id: pre?.teacher ?? "", student_id: pre?.student ?? "", arms: ["teacher_filtered"], min_gain: 0.05, max_steps: "", epochs: "", max_seq_len: "", device: "cuda", focus_skills: [] as string[] });
+  const [turbo, setTurbo] = useState<TurboT | null>(null);
   useEffect(() => {
     if (!f.teacher_id && ms.length) setF((x) => ({ ...x, teacher_id: ms.find((m) => m.roles.includes("teacher"))?.id ?? "", student_id: x.student_id || (ms.find((m) => m.roles.includes("student"))?.id ?? "") }));
   }, [ms, f.teacher_id]);
@@ -70,7 +72,7 @@ function Wizard({ onCreated }: { onCreated: (id: string) => void }) {
   const submit = (e: FormEvent) => {
     e.preventDefault();
     void act.run(async () => {
-      const body = { ...f, max_steps: f.max_steps ? Number(f.max_steps) : null, epochs: f.epochs ? Number(f.epochs) : null, max_seq_len: f.max_seq_len ? Number(f.max_seq_len) : null, focus_skills: f.focus_skills.length ? f.focus_skills : null, name: f.name || `${f.profile}-${new Date().toISOString().slice(5, 16).replace("T", "-")}` };
+      const body = { ...f, max_steps: f.max_steps ? Number(f.max_steps) : null, epochs: f.epochs ? Number(f.epochs) : null, max_seq_len: f.max_seq_len ? Number(f.max_seq_len) : null, focus_skills: f.focus_skills.length ? f.focus_skills : null, turbo: turbo ?? undefined, name: f.name || `${f.profile}-${new Date().toISOString().slice(5, 16).replace("T", "-")}` };
       const s = await api.post<StudySummary>("/api/studies", body);
       sessionStorage.removeItem("forge.pair");
       onCreated(s.id);
@@ -119,6 +121,8 @@ function Wizard({ onCreated }: { onCreated: (id: string) => void }) {
             <Field label="Max seq len"><input className={inputCls} type="number" step="256" placeholder="2048" value={f.max_seq_len} onChange={(e) => setF({ ...f, max_seq_len: e.target.value })} /></Field>
           </div>
           {rd.data?.cpu_wiring_mode && <Field label="Device"><Segmented label="Device" value={f.device} onChange={(v) => setF({ ...f, device: v })} options={[{ value: "cuda", label: "cuda" }, { value: "cpu", label: "cpu (wiring only)" }]} /></Field>}
+          <details className="rounded-[var(--radius)] border border-line p-2.5"><summary className="cursor-pointer text-[12px] text-ink">Training engine — FORGE Turbo {turbo ? "(custom)" : "(standard)"}</summary>
+            <div className="mt-2"><TurboPicker value={turbo ?? { attention: "sdpa", packing: false, liger: false, quant_4bit: false, optim_8bit: false, checkpointing: "on", compile: false }} onChange={setTurbo} device={f.device} /></div></details>
           <div className="text-[11.5px] leading-relaxed text-ink-3">LoRA r=16, α=32, all linear, LR 2e-4 cosine, 3% warmup, micro-batch 1 × accum 8, bf16, gradient checkpointing, thinking disabled.</div>
           <Button type="submit" tone="primary" icon="seal" busy={act.busy} disabled={!f.teacher_id || !f.student_id || !f.arms.length}>Freeze plan & create</Button>
           <ErrorLine error={act.error} />

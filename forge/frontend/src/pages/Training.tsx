@@ -1,3 +1,4 @@
+import { TurboCompare } from "../components/Turbo";
 import { useState, type FormEvent } from "react";
 import { LearningCurve } from "../components/charts";
 import { StudySelect } from "../components/live";
@@ -59,6 +60,7 @@ function Runs() {
                 <Readout label="thermal pauses" value={h.thermal_pauses} size="sm" sub={`${h.paused_s}s waiting to cool`} />
               </div>) : null; })()}
           <LearningCurve rows={run.data?.rows ?? []} />
+          {s.data && <TurboCompare s={s.data} />}
           {r && (
             <div className="grid gap-5 xl:grid-cols-2">
               <div><div className="micro mb-2 text-ink-3">Pre-flight & integrity gates</div>

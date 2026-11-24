@@ -287,3 +287,17 @@ in LM Studio, and the LM Studio test-set check.
 | Demo, new prior-auth study (mock teacher, tiny CPU student): overall **adequate**; four skills good (headroom 100 pts, ≥ 20 final-test tasks) | API end to end |
 | CSV download / re-upload round trip; template table before agent creation; formula neutralisation | test |
 | Backend suite | 215 passed |
+
+## v0.20.0 — FORGE Turbo
+
+| Check | Result here |
+|---|---|
+| Switch validation: unknown switch, bad choice, packing without FlashAttention 2, GPU-only switches on CPU, unavailable packages — each refused with the reason | unit test |
+| Clone: refused before Collect, refused for learning-changing settings (e.g. learning rate) or a changed effective batch; tasks and teacher episodes byte-identical | test |
+| Real CPU training with CPU activation offload (micro-batch 2 × 4) vs standard (1 × 8): gates pass, base weights untouched, both in the engine comparison | test |
+| Demo (prior auth v2, tiny CPU student, 60 steps): final loss 6.2909 standard vs 6.2911 offload; tokens/s 11,000 vs 11,474 | API end to end |
+| UI: Turbo picker (availability shown), engine comparison with overlaid loss curves, adequacy panel; 390 px; no console errors | browser |
+| Backend suite | 217 passed |
+
+**Not validated here — requires your GPU:** Liger kernels, 4-bit QLoRA, 8-bit optimizer, FlashAttention 2 / packing and
+torch.compile (their code paths run only on CUDA with the packages installed); their speed and memory gains on your RTX card.

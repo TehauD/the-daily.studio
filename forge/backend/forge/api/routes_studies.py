@@ -79,6 +79,9 @@ class CreateStudy(BaseModel):
     epochs: float | None = Field(None, gt=0, le=50)
     max_seq_len: int | None = Field(None, ge=256, le=32768)
     device: Literal["cuda", "cpu"] = "cuda"
+    turbo: dict[str, Any] | None = None
+    micro_batch: int | None = Field(None, ge=1, le=64)
+    grad_accum: int | None = Field(None, ge=1, le=256)
     knowledge_pack_id: str | None = Field(None, pattern=r"^pack_[a-z0-9]+$")
     agent_id: str | None = Field(None, pattern=r"^agent_[a-z0-9]+$")
     require_review: bool = False
@@ -116,6 +119,23 @@ def vram_gate(s: dict, seq_len: int) -> dict[str, Any]:
     return {"min_free_vram_mb": gate, "min_free_vram_basis": f"analytic estimate {est.total_mb:.0f} MB × 1.1 at seq {seq_len}"}
 
 
+def _turbo(turbo: dict | None, device: str, micro_batch: int, torch_info: Any) -> dict:
+    from forge.engine import turbo as tb
+    try:
+        t = tb.validate(turbo, device, micro_batch, availability=tb.probe(cuda=bool(torch_info.cuda_available), torch_version=torch_info.version))
+    except tb.TurboError as e:
+        raise HTTPException(422, f"Turbo: {e}")
+    return {k: v for k, v in t.items() if k != "note"}
+
+
+@router.get("/turbo/options")
+def turbo_options():
+    from forge.engine import turbo as tb
+    torch = probe_torch()
+    return {"defaults": tb.DEFAULTS, "choices": tb.CHOICES, "labels": tb.LABELS,
+            "availability": tb.probe(cuda=bool(torch.cuda_available), torch_version=torch.version)}
+
+
 @router.post("")
 async def create_study(body: CreateStudy, st: AppState = Depends(get_state)):
     try:
@@ -137,6 +157,10 @@ async def create_study(body: CreateStudy, st: AppState = Depends(get_state)):
     train_ov = {k: v for k, v in (("max_steps", body.max_steps), ("epochs", body.epochs),
                                   ("max_seq_len", body.max_seq_len)) if v is not None}
     train_ov.update(vram_gate(s, train_ov.get("max_seq_len", 2048)))
+    for k in ("micro_batch", "grad_accum"):
+        if getattr(body, k) is not None:
+            train_ov[k] = getattr(body, k)
+    train_ov["turbo"] = _turbo(body.turbo, body.device, train_ov.get("micro_batch", 1), torch)
     pack = None
     if body.knowledge_pack_id:
         from forge.knowledge.pack import KnowledgePack, PackError
@@ -556,3 +580,63 @@ def gguf_check(sid: str, body: GGUFCheck, st: AppState = Depends(get_state)):
                              study_id=sid, label=f"{s.plan['name']} · check {body.file} in LM Studio", env=_env(s))
     except JobError as e:
         raise HTTPException(409, str(e))
+
+
+class CloneBody(BaseModel):
+    name: str = Field(min_length=1, max_length=80)
+    turbo: dict[str, Any] | None = None
+    micro_batch: int | None = Field(None, ge=1, le=64)
+    grad_accum: int | None = Field(None, ge=1, le=256)
+
+
+@router.post("/{sid}/clone")
+async def clone_study(sid: str, body: CloneBody, st: AppState = Depends(get_state)):
+    """Same study, other training settings: reuses tasks and teacher episodes; only how training runs changes."""
+    src = _study(st, sid)
+    ov: dict[str, Any] = {k: getattr(body, k) for k in ("micro_batch", "grad_accum") if getattr(body, k) is not None}
+    torch = await asyncio.to_thread(probe_torch)
+    ov["turbo"] = _turbo(body.turbo, src.plan["device"], ov.get("micro_batch", src.plan["train"]["micro_batch"]), torch)
+    try:
+        study = Study.clone(src, st.settings.studies_dir, body.name, ov)
+    except StudyError as e:
+        raise HTTPException(422, str(e))
+    with st.db.tx() as c:
+        c.execute("INSERT INTO studies(id, name, path, profile, created_at) VALUES (?,?,?,?,?)",
+                  (study.plan["study_id"], body.name, str(study.root), study.plan["profile"], study.plan["created_at"]))
+    return study.summary()
+
+
+@router.get("/{sid}/engine-compare")
+def engine_compare(sid: str, st: AppState = Depends(get_state)):
+    """This study and every study cloned from it (or its source): same data, different training settings, side by side."""
+    from forge.engine.turbo import describe, DEFAULTS
+    s = _study(st, sid)
+    root_id = (s.plan.get("cloned_from") or {}).get("study_id") or sid
+    rows = []
+    for r in st.db.query("SELECT * FROM studies ORDER BY created_at"):
+        try:
+            x = Study(Path(r["path"]))
+        except StudyError:
+            continue
+        if x.plan["study_id"] != root_id and (x.plan.get("cloned_from") or {}).get("study_id") != root_id:
+            continue
+        arm, seed = x.plan["arms"][0], x.plan["seeds"][0]
+        rj = x.run_dir(arm, seed) / "run.json"
+        run = json.loads(rj.read_text(encoding="utf-8")) if rj.exists() else {}
+        logs = []
+        lp = x.run_dir(arm, seed) / "training.jsonl"
+        if lp.exists():
+            logs = [json.loads(l) for l in lp.read_text(encoding="utf-8").splitlines() if l.strip()]
+        losses = [l for l in logs if "loss" in l]
+        rep = x.summary()["reports"].get("dev", {}).get("splits", {}).get("dev")
+        t = {**DEFAULTS, **(x.plan["train"].get("turbo") or {})}
+        rows.append({"study_id": x.plan["study_id"], "name": x.plan["name"], "is_source": x.plan["study_id"] == root_id, "turbo": t, "engine": describe(t),
+                     "micro_batch": x.plan["train"]["micro_batch"], "grad_accum": x.plan["train"]["grad_accum"],
+                     "trained": bool(run), "wall_s": run.get("wall_s"), "peak_vram_mb": run.get("peak_vram_mb"), "steps": run.get("global_step"),
+                     "tokens_per_s": (logs[-1].get("tokens_per_s") if logs else None),
+                     "energy_wh": (run.get("hardware") or {}).get("energy_wh") if (run.get("hardware") or {}).get("gpu_measured") else None,
+                     "final_loss": losses[-1]["loss"] if losses else None, "loss_curve": [[l["step"], l["loss"]] for l in losses][:400],
+                     "dev_success": (rep["arms"].get(arm) or {}).get("arm_rate") if rep else None,
+                     "per_skill": {f: (d.get(arm) or {}).get("rate") for f, d in ((rep["arms"].get(arm) or {}).get("families") or {}).items()} if rep else {}})
+    return {"rows": rows, "note": "Same tasks and teacher examples in every row; only the training settings differ. One seed each — "
+                                  "small differences in success are noise. Loss curves should overlap if a switch changes speed but not learning."}

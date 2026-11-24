@@ -257,6 +257,45 @@ class Study:
                                                 "sealed": False, "history": [{"stage": "init", "at": utcnow()}]})
         return Study(root)
 
+    @staticmethod
+    def clone(src: "Study", studies_dir: Path, name: str, train_overrides: dict) -> "Study":
+        """Same study, other training settings (e.g. FORGE Turbo switches): reuses the source's tasks, frozen agent and
+        collected teacher episodes byte for byte, so the only difference between the two studies is how training runs."""
+        import shutil
+        if src.state["stages"].get("collect", {}).get("status") != "completed":
+            raise StudyError("Run Collect on the source study first: the clone reuses its teacher examples")
+        allowed = {"turbo", "micro_batch", "grad_accum"}
+        if set(train_overrides) - allowed:
+            raise StudyError(f"A clone may only change {', '.join(sorted(allowed))} (anything else would change what is learned)")
+        if "micro_batch" in train_overrides or "grad_accum" in train_overrides:
+            mb = int(train_overrides.get("micro_batch", src.plan["train"]["micro_batch"]))
+            ga = int(train_overrides.get("grad_accum", src.plan["train"]["grad_accum"]))
+            if mb * ga != src.plan["train"]["micro_batch"] * src.plan["train"]["grad_accum"]:
+                raise StudyError("Keep micro-batch × gradient accumulation equal to the source's so the effective batch is unchanged")
+        sid = new_id("study")
+        root = studies_dir / sid
+        root.mkdir(parents=True)
+        plan = json.loads(json.dumps(src.plan))
+        plan.update({"study_id": sid, "name": name, "created_at": utcnow(),
+                     "cloned_from": {"study_id": src.plan["study_id"], "plan_sha256": (src.root / "plan.sha256").read_text(encoding="utf-8").strip(),
+                                     "reused": ["tasks", "agent snapshot", "teacher episodes"], "changed": sorted(train_overrides)}})
+        plan["train"] = {**plan["train"], **train_overrides}
+        plan["engine_source_sha256"] = engine_source_hash()
+        shutil.copy2(src.root / "tasks.jsonl", root / "tasks.jsonl")
+        if (src.root / "agent_snapshot").is_dir():
+            shutil.copytree(src.root / "agent_snapshot", root / "agent_snapshot")
+        for arm in ("teacher", "oracle"):
+            if (src.root / "episodes" / arm).is_dir():
+                shutil.copytree(src.root / "episodes" / arm, root / "episodes" / arm)
+        atomic_write_json(root / "plan.json", plan)
+        (root / "plan.sha256").write_text(sha256_text(canonical_json(plan)), encoding="utf-8")
+        now = utcnow()
+        atomic_write_json(root / "state.json", {"stages": {"init": {"status": "completed", "at": now},
+                                                           "collect": {"status": "completed", "at": now, "copied_from": src.plan["study_id"]}},
+                                                "sealed": False, "history": [{"stage": "init", "at": now},
+                                                                             {"stage": "collect", "status": "completed (copied from source study)", "at": now}]})
+        return Study(root)
+
     # ---- state
     @property
     def state(self) -> dict[str, Any]:

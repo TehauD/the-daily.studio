@@ -1,6 +1,7 @@
 <#
 .SYNOPSIS  Idempotent FORGE setup on Windows: project venv, pinned stack, frontend, tests, readiness.
 .PARAMETER WithML        Install torch (CUDA) + the training stack into the venv.
+.PARAMETER WithTurbo     Also install FORGE Turbo's optional GPU packages (liger-kernel, bitsandbytes; flash-attn if a wheel exists). Non-fatal.
 .PARAMETER CudaIndex     PyTorch wheel index (verified host: cu126).
 .PARAMETER TorchVersion  Pinned torch (verified host: 2.14.1).
 .PARAMETER SkipFrontend  Skip npm install.
@@ -8,7 +9,7 @@
 .PARAMETER Recreate      Delete and rebuild backend\.venv from scratch (packages are re-downloaded).
 #>
 [CmdletBinding()]
-param([switch]$WithML, [string]$CudaIndex = 'cu126', [string]$TorchVersion = '2.14.1', [switch]$SkipFrontend, [switch]$SkipTests, [switch]$Recreate)
+param([switch]$WithML, [switch]$WithTurbo, [string]$CudaIndex = 'cu126', [string]$TorchVersion = '2.14.1', [switch]$SkipFrontend, [switch]$SkipTests, [switch]$Recreate)
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot '_venv.ps1')
 $Venv = Join-Path $Backend '.venv'
@@ -59,6 +60,17 @@ try {
         Step 'Training stack'
         Invoke-Checked $Py @('-m', 'pip', 'install', '-q', '-r', (Join-Path $Backend 'requirements\ml.txt'))
         Invoke-Checked $Py @('-m', 'pip', 'check')
+    }
+    if ($WithTurbo) {
+        Step 'FORGE Turbo optional packages (each is optional; FORGE checks availability before using a switch)'
+        foreach ($pkg in @('liger-kernel', 'bitsandbytes')) {
+            & $Py -m pip install -q $pkg
+            if ($LASTEXITCODE -ne 0) { Write-Warning "$pkg did not install; its Turbo switch stays unavailable." }
+        }
+        & $Py -m pip install -q --only-binary=:all: flash-attn 2>$null
+        if ($LASTEXITCODE -ne 0) { Write-Host '  flash-attn: no prebuilt wheel for this setup (normal on Windows); PyTorch fused attention is used instead.' }
+        & $Py -m pip check
+        if ($LASTEXITCODE -ne 0) { Write-Warning 'pip check reports a conflict after the Turbo packages; remove the one named above if training fails.' }
     }
 
     Step 'Readiness imports (NumPy is required; torch reported if present)'

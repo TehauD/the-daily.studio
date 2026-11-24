@@ -94,6 +94,8 @@ Open **Agent Studio** and follow the five steps:
 ![Agent Studio: tools step with tables, calculators, rules and the tool console](docs/images/agent-studio-tools.png)
 <sub>Validation instance: synthetic template plus a synthetic fee schedule.</sub>
 
+**Faster training:** FORGE Turbo switches (fused kernels, 4-bit QLoRA, 8-bit optimizer, activation offload, packing) — set them when creating a study, or re-train a study with other settings and compare engines on identical data in **Training Lab**. See [docs/TURBO.md](docs/TURBO.md).
+
 **Loading your own data:** download a template's table as CSV, fill it in the same shape and load it. See [docs/LOADING_DATA.md](docs/LOADING_DATA.md) (prior authorization worked example). After the first evaluation, check **Evaluation Lab → Is this a good test?** before reading any gain.
 
 ### 6. See it and control it: Agent Playground, Weight Lab, human review

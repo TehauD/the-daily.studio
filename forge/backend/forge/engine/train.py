@@ -56,6 +56,7 @@ class TrainConfig:
     device: str = "cuda"
     eval_records: list[dict[str, Any]] = field(default_factory=list)
     save_steps: int = 50
+    turbo: dict[str, Any] = field(default_factory=dict)  # FORGE Turbo switches (see forge.engine.turbo); empty = standard
 
 
 def model_hash(model_dir: Path, cache_file: Path | None = None) -> str:
@@ -182,9 +183,20 @@ def train_lora(cfg: TrainConfig, hash_cache: Path | None = None, emit=print) -> 
     report["token_stats"] = tstats
     emit({"event": "tokenized", **tstats})
 
+    from forge.engine import turbo as tb
+    t = tb.validate(cfg.turbo, cfg.device, cfg.micro_batch)
+    report["turbo"] = {**t, "description": tb.describe(t)}
+    if t["liger"]:
+        mtype = json.loads((base_dir / "config.json").read_text(encoding="utf-8")).get("model_type", "")
+        report["turbo"]["liger_patch"] = tb.apply_liger(mtype)  # must run before the model is constructed
+    emit({"event": "turbo", "switches": tb.describe(t), **({"note": t["note"]} if t.get("note") else {})})
     dtype = torch.bfloat16 if cfg.device == "cuda" else torch.float32
-    model = AutoModelForCausalLM.from_pretrained(base_dir, local_files_only=True, trust_remote_code=False,
-                                                 torch_dtype=dtype).to(cfg.device)
+    model = AutoModelForCausalLM.from_pretrained(base_dir, local_files_only=True, trust_remote_code=False, **tb.model_kwargs(t, dtype))
+    if not t["quant_4bit"]:
+        model = model.to(cfg.device)
+    else:
+        from peft import prepare_model_for_kbit_training
+        model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=t["checkpointing"] == "on")
     model.config.use_cache = False
     lcfg = LoraConfig(r=cfg.rank, lora_alpha=cfg.alpha, lora_dropout=cfg.dropout, target_modules=cfg.target_modules,
                       task_type="CAUSAL_LM", bias="none")
@@ -255,12 +267,14 @@ def train_lora(cfg: TrainConfig, hash_cache: Path | None = None, emit=print) -> 
                     shutil.copy2(src / name, tmp / name)
                 tmp.rename(dst)
 
+    ckpt = cfg.gradient_checkpointing and t["checkpointing"] == "on"
     args = TrainingArguments(
         output_dir=str(out / "checkpoints"), per_device_train_batch_size=cfg.micro_batch,
         gradient_accumulation_steps=cfg.grad_accum, learning_rate=cfg.lr, lr_scheduler_type="cosine",
         warmup_ratio=cfg.warmup_ratio, num_train_epochs=cfg.epochs, max_steps=cfg.max_steps,
-        bf16=cfg.device == "cuda", gradient_checkpointing=cfg.gradient_checkpointing,
-        gradient_checkpointing_kwargs={"use_reentrant": False} if cfg.gradient_checkpointing else None,
+        bf16=cfg.device == "cuda", gradient_checkpointing=ckpt,
+        gradient_checkpointing_kwargs={"use_reentrant": False} if ckpt else None,
+        optim="paged_adamw_8bit" if t["optim_8bit"] else "adamw_torch", torch_compile=t["compile"],
         logging_steps=1, save_strategy="steps", save_steps=save_steps, save_total_limit=2,
         eval_strategy="steps" if eval_set else "no", eval_steps=save_steps if eval_set else None,
         per_device_eval_batch_size=1, report_to=[], seed=cfg.seed, data_seed=cfg.seed,
@@ -268,8 +282,22 @@ def train_lora(cfg: TrainConfig, hash_cache: Path | None = None, emit=print) -> 
         include_num_input_tokens_seen=True,
         disable_tqdm=True,  # progress bars flood the job log; the Telemetry callback reports every step
     )
-    trainer = Trainer(model=model, args=args, train_dataset=train_set, eval_dataset=eval_set or None,
-                      data_collator=_collate(tok.pad_token_id), callbacks=[Telemetry(), Snapshots()])
+    if t["packing"]:  # padding-free: examples concatenated per micro-batch, position ids reset at each boundary
+        from transformers import DataCollatorWithFlattening
+        collator = DataCollatorWithFlattening(return_position_ids=True)
+    else:
+        collator = _collate(tok.pad_token_id)
+    TrainerCls = Trainer
+    if t["checkpointing"] == "offload":
+        from torch.autograd.graph import save_on_cpu
+
+        class OffloadTrainer(Trainer):  # activations saved for backward live in (pinned) CPU memory instead of being recomputed
+            def training_step(self, *a, **k):
+                with save_on_cpu(pin_memory=cfg.device == "cuda"):
+                    return super().training_step(*a, **k)
+        TrainerCls = OffloadTrainer
+    trainer = TrainerCls(model=model, args=args, train_dataset=train_set, eval_dataset=eval_set or None,
+                         data_collator=collator, callbacks=[Telemetry(), Snapshots()])
     from transformers.trainer_callback import PrinterCallback
     trainer.remove_callback(PrinterCallback)  # raw dict prints duplicate the structured "log" events
     ckpts = sorted((out / "checkpoints").glob("checkpoint-*"), key=lambda p: int(p.name.split("-")[-1]))

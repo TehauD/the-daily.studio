@@ -1,5 +1,17 @@
 # FORGE changelog
 
+## 0.20.0 — FORGE Turbo
+- **FORGE Turbo**: your own switchable training engine — attention kernel (PyTorch fused / FlashAttention 2 / reference),
+  activation memory (recompute / CPU offload / keep), Liger fused kernels, 4-bit QLoRA base, 8-bit optimizer,
+  padding-free packing, torch.compile. Each switch is validated (GPU-only and package-dependent switches are refused with
+  the reason), frozen in the study plan, recorded in run.json, and the integrity gates (zero-adapter no-op, LoRA-only
+  trainables, untouched base weights) still apply.
+- **Same study, other engine**: clone a study with different Turbo switches; tasks, frozen agent and teacher examples are
+  reused byte for byte and the effective batch is kept. Training Lab compares engines side by side (wall time, tokens/s,
+  peak VRAM, energy, final loss, dev success) with overlaid loss curves. Demo: CPU offload with micro-batch 2 vs standard —
+  final loss 6.2911 vs 6.2909.
+- New studies can choose Turbo switches in Experiment Studio. `setup.ps1 -WithTurbo` installs the optional packages.
+
 ## 0.19.0 — Tests worth trusting
 - **"Is this a good test?"** (Evaluation Lab, model card): per skill — room to improve (untrained well below the teacher),
   a capable teacher (≥ 80 %), balanced answers, ≥ 20 final-test tasks — with a verdict (good / weak / unusable) and what to
