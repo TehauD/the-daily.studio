@@ -1,7 +1,8 @@
+import { Figure, Limits, RangeBar } from "../components/results";
 import { useMemo, useState } from "react";
 import { Icon } from "../components/icons";
 import { JobLog } from "../components/live";
-import { Badge, Button, Empty, ErrorLine, Field, Notice, PageHeader, Panel, Prov, Segmented, Tabs, cx, inputCls, td, th, tr } from "../components/ui";
+import { Badge, Button, Empty, ErrorLine, Field, PageHeader, Panel, Prov, Segmented, Tabs, cx, inputCls, td, th, tr } from "../components/ui";
 import { api } from "../lib/api";
 import { useAction, useApi } from "../lib/hooks";
 import { useHashParamless } from "../lib/benchTab";
@@ -81,7 +82,7 @@ function SuiteView({ suite, info }: { suite: Suite; info: SuiteInfo }) {
       <div className="space-y-4">
         <Builder suite={suite} info={info} onStarted={(id) => { setSel(id); void runs.reload(); }} />
         {job && <Panel title="Running" eyebrow="live"><JobLog jobId={job.id} height={180} onDone={() => { void run.reload(); void runs.reload(); }} /></Panel>}
-        <Notice tone="honesty">{info.honesty}</Notice>
+        <Limits>{info.honesty}</Limits>
       </div>
       <div className="space-y-4">
         {mine.length > 0 && (
@@ -157,11 +158,8 @@ function CI({ a }: { a?: Agg }) {
   if (!a) return <span className="text-ink-3">—</span>;
   return (
     <span className="inline-flex w-full flex-col gap-0.5" title={`${a.correct}/${a.n} · 95% ${a.ci ? `${pct(a.ci[0])}–${pct(a.ci[1])}` : ""}`}>
-      <span className="num font-mono text-[12.5px] text-ink">{pct(a.rate)}</span>
-      <span className="relative h-1.5 w-full rounded-full bg-surface-3">
-        {a.ci && <span className="absolute top-0 h-1.5 rounded-full bg-accent/30" style={{ left: `${a.ci[0] * 100}%`, width: `${(a.ci[1] - a.ci[0]) * 100}%` }} />}
-        <span className="absolute -top-0.5 h-2.5 w-0.5 bg-accent" style={{ left: `calc(${a.rate * 100}% - 1px)` }} />
-      </span>
+      <span className="num font-mono text-[12.5px] text-ink">{pct(a.rate)} <span className="text-[10.5px] text-ink-3">{a.correct}/{a.n}</span></span>
+      <RangeBar rate={a.rate} ci={a.ci} />
     </span>
   );
 }
@@ -214,7 +212,9 @@ function DiffChart({ series, vision }: { series: { key: string; i: number; dashe
   const x = (d: number) => L + ((d - 1) / 3) * (W - L - R), y = (v: number) => T + (1 - v) * (H - T - B);
   const lbl = vision ? ["clean", "low-res", "rotated", "fax"] : ["easy", "medium", "hard", "hardest"];
   return (
-    <>
+    <Figure title="Success by difficulty" subtitle="share answered exactly right" y="success (% of items)" x={vision ? "image quality" : "difficulty level"}
+      legend={series.map((s) => ({ label: s.key, color: `var(--cat-${(s.i % 8) + 1})`, dashed: s.dashed }))}
+      caption="Each point is the share of items answered correctly at that level (hover for counts). Dashed = the model on its own, without tools.">
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full max-w-[560px]" role="img" aria-label="Success by difficulty">
         {[0, 0.5, 1].map((v) => <g key={v}><line x1={L} x2={W - R} y1={y(v)} y2={y(v)} stroke="var(--line)" /><text x={L - 6} y={y(v) + 4} textAnchor="end" fontSize="10" fill="var(--ink-3)">{v * 100}%</text></g>)}
         {lbl.map((t, i) => <text key={t} x={x(i + 1)} y={H - 8} textAnchor="middle" fontSize="10" fill="var(--ink-3)">{t}</text>)}
@@ -225,8 +225,7 @@ function DiffChart({ series, vision }: { series: { key: string; i: number; dashe
             {s.pts.map((p, d) => p && <circle key={d} cx={x(d + 1)} cy={y(p.rate)} r="3" fill={`var(--cat-${(s.i % 8) + 1})`}><title>{`${s.key} · ${lbl[d]}: ${pct(p.rate)} (${p.correct}/${p.n})`}</title></circle>)}
           </g>))}
       </svg>
-      <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-ink-2">{series.map((s) => <span key={s.key} className="flex items-center gap-1.5"><span className="h-0.5 w-4" style={{ background: `var(--cat-${(s.i % 8) + 1})`, opacity: s.dashed ? 0.6 : 1 }} />{s.key}</span>)}</div>
-    </>
+    </Figure>
   );
 }
 

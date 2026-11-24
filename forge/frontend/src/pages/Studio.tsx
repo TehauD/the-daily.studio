@@ -32,7 +32,7 @@ export default function Studio() {
   const sid = prefs.activeStudy;
   return (
     <div className={creating ? "space-y-4" : "space-y-4 fit:flex fit:h-full fit:min-h-0 fit:flex-col fit:gap-3 fit:space-y-0"}>
-      <PageHeader kicker="Research" title="Experiment Studio" subtitle="A study freezes the pair, profile, seeds, arms, task set, hyperparameters, base-model hash, and engine source hash at creation. Stages run as separate processes, one GPU job at a time."
+      <PageHeader kicker="Build" title="Experiment Studio" subtitle="A study freezes the pair, profile, seeds, arms, task set, hyperparameters, base-model hash, and engine source hash at creation. Stages run as separate processes, one GPU job at a time."
         right={<Button tone="primary" icon="plus" onClick={() => setCreating((c) => !c)}>{creating ? "Close wizard" : "New study"}</Button>} />
       {creating && <Wizard onCreated={(id) => { set("activeStudy", id); setCreating(false); void studies.reload(); }} />}
       <div className="grid gap-4 xl:grid-cols-[300px_minmax(0,1fr)] fit:min-h-0 fit:flex-1 fit:gap-3">
@@ -145,7 +145,7 @@ function StageStepper({ s, onRun, blocked, busyStage }: { s: StudySummary; onRun
         return (
           <li key={k} className={cx("relative flex flex-col rounded-[var(--radius)] border p-2 transition",
             status === "completed" ? "border-[color:var(--good)]/35 bg-[color:var(--good)]/[0.04]" : status === "failed" ? "border-[color:var(--crit)]/40" :
-            status === "running" ? "border-accent bg-accent-soft" : isNext ? "border-accent-line" : "border-line opacity-70")}>
+            status === "running" ? "border-accent bg-accent-soft" : isNext ? "border-accent-line" : "border-line bg-surface-2/60")}>
             <div className="flex items-center justify-between"><span className="num font-mono text-[10px] text-ink-3">{String(i).padStart(2, "0")}</span>{gpu && <Icon name="gpu" size={12} className="text-ink-3" title="GPU-exclusive" />}</div>
             <div className="mt-1 text-[12px] font-medium text-ink">{STAGE_LABEL[k]}</div>
             <div className="mt-1"><Status s={status === "ready" ? "pending" : status} label={status === "ready" ? "ready" : undefined} /></div>

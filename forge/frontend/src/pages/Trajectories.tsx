@@ -28,7 +28,7 @@ export default function Trajectories() {
   const splits = useMemo(() => [...new Set(rows.map((r) => r.split))], [rows]);
   return (
     <div className="space-y-4 fit:flex fit:h-full fit:min-h-0 fit:flex-col fit:gap-3 fit:space-y-0">
-      <PageHeader kicker="Research" title="Trajectory Explorer" subtitle="Every episode as an observable path: prompt → tool call → tool result → … → answer. Compare teacher, base, and tuned students on the same task and see where they first diverge."
+      <PageHeader kicker="See inside & control" title="Trajectory Explorer" subtitle="Every episode as an observable path: prompt → tool call → tool result → … → answer. Compare teacher, base, and tuned students on the same task and see where they first diverge."
         right={<StudySelect />} />
       <Notice tone="honesty" icon="info">{HONESTY}</Notice>
       <ErrorLine error={eps.error} />

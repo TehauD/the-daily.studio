@@ -54,7 +54,7 @@ export default function KnowledgeStudio() {
 
   return (
     <div className="space-y-4 fit:flex fit:h-full fit:min-h-0 fit:flex-col fit:gap-3 fit:space-y-0">
-      <PageHeader kicker="Your knowledge" title="Knowledge Studio"
+      <PageHeader kicker="Build" title="Knowledge Studio"
         subtitle="Teach a small local model to answer questions from your own documents — and to say “not found” when they don't contain the answer. Everything stays on this computer."
         right={<>
           {list.length > 0 && (

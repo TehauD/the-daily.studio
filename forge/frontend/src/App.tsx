@@ -4,6 +4,7 @@ import { CommandPalette, type Command } from "./components/CommandPalette";
 import { Icon, type IconName } from "./components/icons";
 import { AssistantDrawer } from "./components/AssistantDrawer";
 import { JobDock } from "./components/JobDock";
+import { Inspector } from "./components/Inspector";
 import { StudySelect, TelemetryProvider, useTelemetry } from "./components/live";
 import { AssistantProvider } from "./lib/assistant";
 import { Kbd, Skeleton, cx } from "./components/ui";
@@ -34,6 +35,7 @@ const Robustness = lazy(() => import("./pages/Robustness"));
 const Learn = lazy(() => import("./pages/Learn"));
 const Governance = lazy(() => import("./pages/Governance"));
 const BenchLab = lazy(() => import("./pages/BenchLab"));
+const ModelHub = lazy(() => import("./pages/ModelHub"));
 
 /** Four workspaces, in the order people work: build it, see and steer it, measure it, run the lab. `expert` pages are hidden in Simple mode. */
 const NAV = [
@@ -44,7 +46,7 @@ const NAV = [
     { key: "studio", label: "Experiment Studio", icon: "studio" },
     { key: "datasets", label: "Dataset Factory", icon: "dataset", expert: true },
     { key: "training", label: "Training Lab", icon: "training", expert: true }] },
-  { group: "See & control", items: [
+  { group: "See inside & control", items: [
     { key: "playground", label: "Playground", icon: "play" },
     { key: "modelmap", label: "Model Map", icon: "map" },
     { key: "lens", label: "Distillation Lens", icon: "lens" },
@@ -57,8 +59,9 @@ const NAV = [
     { key: "bench", label: "Bench Lab", icon: "flask" },
     { key: "governance", label: "Governance", icon: "seal" }] },
   { group: "Operate", items: [
-    { key: "overview", label: "System Overview", icon: "overview", expert: true },
+    { key: "model", label: "Model Hub", icon: "spark" },
     { key: "observatory", label: "Model Observatory", icon: "observatory" },
+    { key: "overview", label: "System Overview", icon: "overview", expert: true },
     { key: "factory", label: "Model Factory", icon: "factory", expert: true },
     { key: "guide", label: "Guide", icon: "guide" },
     { key: "settings", label: "Settings", icon: "settings" }] },
@@ -70,7 +73,7 @@ const FIT = new Set<string>(["overview", "observatory", "studio", "trajectories"
 const KEYS = NAV.flatMap((g) => g.items.map((i) => i.key)) as Key[];
 const LABEL = Object.fromEntries(NAV.flatMap((g) => g.items.map((i) => [i.key, i.label]))) as Record<Key, string>;
 
-function InstrumentBar({ onMenu, onCommand }: { onMenu: () => void; onCommand: () => void }) {
+function InstrumentBar({ onMenu, onCommand, onInspect }: { onMenu: () => void; onCommand: () => void; onInspect: () => void }) {
   const { data } = useTelemetry();
   const { prefs, set } = usePrefs();
   const ov = useApi<OverviewT>("/api/overview", 5000);
@@ -111,6 +114,9 @@ function InstrumentBar({ onMenu, onCommand }: { onMenu: () => void; onCommand: (
           <span className={cx("h-1.5 w-1.5 rounded-full", job ? "live-dot bg-accent" : "bg-line-strong")} />
           {job ? <span className="max-w-[180px] truncate">{job.label}</span> : "GPU idle"}
         </div>
+        <button type="button" onClick={onInspect} className="flex items-center gap-1.5 rounded-[var(--radius)] border border-line px-2 py-1 text-[11.5px] text-ink-2 hover:border-accent-line hover:text-ink" aria-label="Open the context inspector (shortcut: period)">
+          <Icon name="info" size={13} /><span className="max-sm:hidden">Inspect</span>
+        </button>
         <button type="button" onClick={onCommand} className="hidden items-center gap-2 rounded-[var(--radius)] border border-line px-2 py-1 text-[11.5px] text-ink-3 hover:border-accent-line hover:text-ink md:flex" aria-label="Open command palette">
           <Icon name="search" size={13} />Command <Kbd>Ctrl K</Kbd>
         </button>
@@ -123,6 +129,30 @@ function InstrumentBar({ onMenu, onCommand }: { onMenu: () => void; onCommand: (
         </span>
       </div>
     </header>
+  );
+}
+
+/** Breadcrumb (workspace › page) and the workspace's sibling pages as tabs, so related pages read as one workspace. */
+function SectionNav({ route, go }: { route: Key; go: (k: Key) => void }) {
+  const { prefs } = usePrefs();
+  const g = NAV.find((x) => (x.items as readonly NavItem[]).some((i) => i.key === route));
+  if (!g || !g.group) return null;
+  const items = (g.items as readonly NavItem[]).filter((n) => prefs.mode === "expert" || !n.expert || n.key === route);
+  return (
+    <nav aria-label={`${g.group} workspace`} className="mb-3 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1.5 fit:shrink-0 print:hidden">
+      <ol className="flex items-center gap-1.5 text-[11.5px] text-ink-3" aria-label="Breadcrumb">
+        <li><button type="button" className="hover:text-ink" onClick={() => go("home" as Key)}>Home</button></li>
+        <li aria-hidden>›</li><li className="text-ink-2">{g.group}</li>
+      </ol>
+      <div className="flex min-w-0 flex-wrap gap-1" role="tablist" aria-label={`${g.group} pages`}>
+        {items.map((n) => (
+          <button key={n.key} type="button" role="tab" aria-selected={n.key === route} onClick={() => go(n.key as Key)}
+            className={cx("flex h-7 items-center gap-1.5 rounded-full border px-2.5 text-[11.5px] transition",
+              n.key === route ? "border-accent-line bg-accent-soft font-medium text-ink" : "border-transparent text-ink-2 hover:border-line hover:bg-surface")}>
+            <Icon name={n.icon as IconName} size={13} className={n.key === route ? "text-accent" : "text-ink-3"} />{n.label}
+          </button>))}
+      </div>
+    </nav>
   );
 }
 
@@ -187,6 +217,15 @@ function Shell() {
   const [route, go] = useHashRoute(KEYS, "home");
   const [menu, setMenu] = useState(false);
   const [palette, setPalette] = useState(false);
+  const [inspect, setInspect] = useState(false);
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement;
+      if (e.key === "." && !e.ctrlKey && !e.metaKey && !(t.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(t.tagName))) { e.preventDefault(); setInspect((v) => !v); }
+    };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, []);
   const { prefs, set } = usePrefs();
   useEffect(() => { document.title = `${LABEL[route]} · FORGE`; }, [route]);
   useEffect(() => {
@@ -204,24 +243,26 @@ function Shell() {
     { id: "verify", label: "Verify GPU (forward/backward, BF16)", group: "Actions", run: () => { void api.post("/api/jobs/verify-gpu"); go("overview"); } },
   ], [go, set, prefs.sidebarCollapsed]);
   const Page = { home: Home, overview: Overview, observatory: Observatory, studio: Studio, trajectories: Trajectories, datasets: Datasets,
-    training: Training, evaluation: Evaluation, knowledge: Knowledge, "knowledge-studio": KnowledgeStudio, lens: Lens, "agent-studio": AgentStudio, playground: Playground, weightlab: WeightLab, modelmap: ModelMap, robustness: Robustness, learn: Learn, governance: Governance, bench: BenchLab, factory: Factory, settings: Settings, guide: Guide }[route];
+    training: Training, evaluation: Evaluation, knowledge: Knowledge, "knowledge-studio": KnowledgeStudio, lens: Lens, "agent-studio": AgentStudio, playground: Playground, weightlab: WeightLab, modelmap: ModelMap, robustness: Robustness, learn: Learn, governance: Governance, bench: BenchLab, model: ModelHub, factory: Factory, settings: Settings, guide: Guide }[route];
   return (
     <AssistantProvider route={route}>
     <div className="flex min-h-full">
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-[60] focus:rounded focus:bg-surface focus:px-3 focus:py-2">Skip to content</a>
       <Sidebar route={route} go={go} open={menu} onClose={() => setMenu(false)} />
       <div className="flex min-w-0 flex-1 flex-col">
-        <InstrumentBar onMenu={() => setMenu(true)} onCommand={() => setPalette(true)} />
+        <InstrumentBar onMenu={() => setMenu(true)} onCommand={() => setPalette(true)} onInspect={() => setInspect(true)} />
         <main id="main" className={cx("grid-plane min-w-0 flex-1 px-4 py-5 sm:px-6 lg:px-8 3xl:px-10",
           FIT.has(route) && "fit:h-[calc(100dvh-3rem)] fit:min-h-0 fit:flex-none fit:overflow-hidden fit:py-4")}>
-          <div className={cx("mx-auto w-full max-w-[3200px]", FIT.has(route) && "fit:h-full")}>
+          <div className={cx("mx-auto w-full max-w-[3200px]", FIT.has(route) && "fit:flex fit:h-full fit:flex-col")}>
+            <SectionNav route={route} go={go} />
             <Suspense fallback={<div className="space-y-3"><Skeleton h={28} w={260} /><Skeleton h={180} /><Skeleton h={240} /></div>}>
-              <div key={route} className={cx("fade-in", FIT.has(route) && "fit:h-full")}><Page /></div>
+              <div key={route} className={cx("fade-in", FIT.has(route) && "fit:min-h-0 fit:flex-1")}><Page /></div>
             </Suspense>
           </div>
         </main>
       </div>
       {palette && <CommandPalette commands={commands} onClose={() => setPalette(false)} />}
+      <Inspector open={inspect} onClose={() => setInspect(false)} />
       <JobDock />
       <AssistantDrawer />
     </div>

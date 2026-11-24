@@ -1,3 +1,4 @@
+import { Figure } from "./results";
 import { useState } from "react";
 import { api } from "../lib/api";
 import { goto } from "../lib/handoff";
@@ -82,11 +83,13 @@ export function TurboCompare({ s }: { s: StudySummary }) {
                 </> : <td colSpan={6} className={cx(td, "text-ink-3")}>not trained yet — open it and run Build → Train → Evaluate · dev</td>}
               </tr>))}</tbody></table></div>)}
         {pts.length > 1 && (
+          <Figure title="Training loss by engine" y="training loss (cross-entropy, nats/token)" x="optimizer step"
+            caption="Overlapping curves = same learning, different speed. Colours match the table above.">
           <svg viewBox={`0 0 ${W} ${H}`} className="w-full max-w-[640px]" role="img" aria-label="Training loss by engine">
             <text x={P} y={12} fontSize="10" fill="var(--ink-3)">training loss by step — overlapping curves = same learning, different speed</text>
             {rows.map((r, i) => r.loss_curve.length > 1 && <polyline key={r.study_id} fill="none" stroke={`var(--cat-${(i % 8) + 1})`} strokeWidth="1.6" points={r.loss_curve.map(([a, b]) => `${x(a)},${y(b)}`).join(" ")} />)}
             <text x={W - P} y={H - 8} textAnchor="end" fontSize="10" fill="var(--ink-3)">step {maxX}</text>
-          </svg>)}
+          </svg></Figure>)}
         {pts.length > 1 && <div className="flex flex-wrap gap-x-4 text-[11px] text-ink-2">{rows.filter((r) => r.loss_curve.length > 1).map((r) => {
           const i = rows.indexOf(r); return <span key={r.study_id} className="flex items-center gap-1.5"><span className="h-0.5 w-4" style={{ background: `var(--cat-${(i % 8) + 1})` }} />{r.engine}</span>; })}
           <span className="text-ink-3">(drawn in this order; if you see one line, the curves coincide)</span></div>}

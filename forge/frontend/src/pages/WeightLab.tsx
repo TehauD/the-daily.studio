@@ -31,7 +31,7 @@ export default function WeightLab() {
   const [jobId, setJobId] = useState<string | null>(null);
   return (
     <div className="space-y-4 fit:flex fit:h-full fit:min-h-0 fit:flex-col fit:gap-3 fit:space-y-0">
-      <PageHeader kicker="Control the weights" title="Weight Lab"
+      <PageHeader kicker="See inside & control" title="Weight Lab"
         subtitle="Build new adapters from trained ones — turn their strength up or down, mix them, keep only some layers, compress them — then measure each variant on held-out tasks and try it in the Playground. Originals are never changed." />
       <div className="grid gap-4 fit:min-h-0 fit:flex-1 fit:grid-cols-[440px_minmax(0,1fr)] fit:gap-3">
         <div className="scroll-thin flex min-w-0 flex-col gap-4 fit:min-h-0 fit:gap-3 fit:overflow-auto fit:pr-1">

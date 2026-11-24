@@ -19,7 +19,7 @@ export default function Governance() {
     <div className="space-y-4">
       <PageHeader kicker="Measure" title="Governance" right={<StudySelect />}
         subtitle={<>Everything a reviewer needs: what the model is, how it fails, whether it knows when it doesn't know, who did what, and reports for each audience. Derived from recorded results only. <Term k="human">People decide</Term>.</>} />
-      <div className="flex flex-wrap items-end gap-3">
+      <div className="flex flex-wrap items-end gap-3 print:hidden">
         <div className="w-64"><Field label="Your name (recorded with your actions)" hint="Stored in this browser; a label, not a login."><input className={inputCls} value={who} onChange={(e) => setWho(e.target.value)} placeholder="e.g. J. Rivera, Patient Access" /></Field></div>
       </div>
       {!sid ? <Panel title="No study selected"><Empty icon="evaluation">Choose a study in the top bar.</Empty></Panel> : (
@@ -140,7 +140,7 @@ function Limits({ sid }: { sid: string }) {
 
 interface SkillsT { lens: { arm: string; seed: number; points: { label: string; step: number | null; families: Record<string, number> }[] }[]; datacurve: { share: number; per_skill: Record<string, number> }[] | null;
   families: Record<string, Record<string, Record<string, { rate: number; n: number; ci: [number, number] } | unknown>> | null> }
-function Mini({ title, xs, series, fmt, lowerBetter = false }: { title: string; xs: string[]; series: Record<string, (number | null)[]>; fmt: (v: number) => string; lowerBetter?: boolean }) {
+function Mini({ title, xs, series, fmt, lowerBetter = false, xLabel, yLabel }: { title: string; xs: string[]; series: Record<string, (number | null)[]>; fmt: (v: number) => string; lowerBetter?: boolean; xLabel: string; yLabel: string }) {
   const all = Object.values(series).flat().filter((v): v is number => v != null);
   if (!all.length) return null;
   const lo = Math.min(...all), hi = Math.max(...all) || 1, W = 280, H = 120, P = 22;
@@ -148,7 +148,8 @@ function Mini({ title, xs, series, fmt, lowerBetter = false }: { title: string; 
   return (
     <div className="rounded-[var(--radius)] border border-line p-2.5">
       <div className="mb-1 text-[12px] text-ink">{title} <span className="text-ink-3">{lowerBetter ? "(lower = closer to teacher)" : ""}</span></div>
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label={title}>
+      <div className="mb-0.5 text-[10.5px] text-ink-3">y: {yLabel} · x: {xLabel}</div>
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label={`${title}: ${yLabel} by ${xLabel}`}>
         {xs.map((l, i) => <text key={l + i} x={x(i)} y={H - 6} textAnchor="middle" fontSize="9" fill="var(--ink-3)">{l}</text>)}
         {Object.entries(series).map(([k, v], si) => (
           <g key={k}><polyline fill="none" stroke={`var(--cat-${(si % 8) + 1})`} strokeWidth="1.8" points={v.map((p, i) => (p == null ? "" : `${x(i)},${y(p)}`)).filter(Boolean).join(" ")} />
@@ -169,11 +170,11 @@ function Skills({ sid }: { sid: string }) {
     <div className="space-y-4">
       <div className="grid gap-4 md:grid-cols-2 [&>*]:min-w-0">
         <Panel title="During training — distance to the teacher per skill" prov={<Prov kind="measured" source="distillation lens" />}>
-          {lens ? <Mini title={`${lens.arm} · seed ${lens.seed}`} xs={lens.points.map((p) => p.label)} lowerBetter fmt={(v) => `${v.toFixed(3)} nats`}
+          {lens ? <Mini title={`${lens.arm} · seed ${lens.seed}`} xs={lens.points.map((p) => p.label)} lowerBetter fmt={(v) => `${v.toFixed(3)} nats`} yLabel="surprise at the teacher's tokens (nats/token)" xLabel="training snapshot"
             series={Object.fromEntries(fams.map((f) => [f, lens.points.map((p) => p.families[f] ?? null)]))} /> : <Empty icon="lens">Run the Distillation Lens to see per-skill curves over training snapshots.</Empty>}
         </Panel>
         <Panel title="With more data — success per skill" prov={<Prov kind="measured" source="data-size curve" />}>
-          {d.datacurve ? <Mini title="dev success" xs={d.datacurve.map((p) => `${Math.round(p.share * 100)}%`)} fmt={pct}
+          {d.datacurve ? <Mini title="dev success" xs={d.datacurve.map((p) => `${Math.round(p.share * 100)}%`)} fmt={pct} yLabel="practice-task success" xLabel="share of training data"
             series={Object.fromEntries(dcf.map((f) => [f, d.datacurve!.map((p) => p.per_skill[f] ?? null)]))} /> : <Empty icon="training">Run Robustness → How much data? to see this.</Empty>}
         </Panel>
       </div>

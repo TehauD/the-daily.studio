@@ -1,3 +1,4 @@
+import { Figure, Limits } from "../components/results";
 import { useState } from "react";
 import { JobLog, StudySelect } from "../components/live";
 import { Badge, Button, Empty, ErrorLine, Notice, PageHeader, Panel, Prov, Segmented, Tabs, Toggle, cx, td, th, tr } from "../components/ui";
@@ -130,7 +131,7 @@ function Stress({ s, busy, onStarted }: { s: StudySummary; busy: boolean; onStar
                   <div className="whitespace-pre-wrap font-mono text-ink-2">{e.perturbed}</div>
                 </div>))}
             </div>
-            <div className="px-[var(--pad)] pb-[var(--pad)] text-[11.5px] text-ink-3">{r.honesty}</div>
+            <div className="px-[var(--pad)] pb-[var(--pad)]"><Limits>{r.honesty}</Limits></div>
           </>
         )}
         <ErrorLine error={runs.error} />
@@ -156,6 +157,9 @@ function DataCurve({ s, busy, onStarted }: { s: StudySummary; busy: boolean; onS
         right={<Button size="sm" tone="primary" icon="play" busy={act.busy} disabled={busy || !built} onClick={() => void act.run(async () => { await api.post(`/api/studies/${s.id}/datacurve`); await onStarted(); })}>{d?.computed ? "Re-run" : "Measure"} 10 / 25 / 50 / 100 %</Button>}>
         {!built ? <Empty icon="training">Run Collect and Build first — the curve samples the study's training set.</Empty>
           : !d?.computed ? <Empty icon="evaluation">Not measured yet. Trains three extra adapters (10, 25, 50 %) with the study's own settings; the 100 % point reuses the study's adapter.</Empty> : (
+          <Figure title="Practice-task success vs share of training data" y="dev success (% of tasks)" x="share of training tasks · number of tasks"
+            legend={[{ label: "trained on that share (95% range bars)", color: "var(--accent)" }, { label: "untrained", color: "var(--ink-3)", dashed: true }, { label: "teacher", color: "var(--cat-2)", dashed: true }]}
+            caption="One seed per point; overlapping bars mean no clear difference.">
           <svg viewBox={`0 0 ${W} ${H}`} className="mx-auto block w-full max-w-[820px]" role="img" aria-label="Data size curve">
             {[0, 0.25, 0.5, 0.75, 1].map((v) => <g key={v}><line x1={L} x2={W - R} y1={y(v)} y2={y(v)} stroke="var(--line)" /><text x={L - 6} y={y(v) + 4} textAnchor="end" fontSize="10.5" fill="var(--ink-3)">{v * 100}%</text></g>)}
             {d.points.map((p) => <text key={p.share} x={x(p.share)} y={H - 10} textAnchor="middle" fontSize="10.5" fill="var(--ink-3)">{Math.round(p.share * 100)}% · {p.tasks}</text>)}
@@ -164,7 +168,7 @@ function DataCurve({ s, busy, onStarted }: { s: StudySummary; busy: boolean; onS
             {d.points.filter((p) => p.ci).map((p) => <line key={`ci${p.share}`} x1={x(p.share)} x2={x(p.share)} y1={y(p.ci![0])} y2={y(p.ci![1])} stroke="var(--accent)" strokeOpacity="0.35" strokeWidth="6" strokeLinecap="round" />)}
             <polyline fill="none" stroke="var(--accent)" strokeWidth="2" points={d.points.filter((p) => p.success != null).map((p) => `${x(p.share)},${y(p.success!)}`).join(" ")} />
             {d.points.filter((p) => p.success != null).map((p) => <circle key={p.share} cx={x(p.share)} cy={y(p.success!)} r="4" fill="var(--surface)" stroke="var(--accent)" strokeWidth="2"><title>{`${Math.round(p.share * 100)}%: ${pct(p.success)} (95% ${pct(p.ci?.[0])}–${pct(p.ci?.[1])}) · ${p.records} records · ${p.steps ?? "?"} steps`}</title></circle>)}
-          </svg>)}
+          </svg></Figure>)}
         <ErrorLine error={act.error ?? c.error} />
       </Panel>
       <Panel title="Reading it">
@@ -175,7 +179,7 @@ function DataCurve({ s, busy, onStarted }: { s: StudySummary; busy: boolean; onS
           <li><b className="text-ink">Bars are 95 % ranges</b> over {d?.dev_tasks ?? "the"} dev tasks with one seed — overlapping bars mean "no clear difference".</li>
           {d?.points.length ? <li className="font-mono text-[11.5px]">{d.points.map((p) => <span key={p.share} className="mr-3">{Math.round(p.share * 100)}% → {pct(p.success)}{p.reused_study_adapter ? <Badge>study</Badge> : null}</span>)}</li> : null}
         </ul>
-        {d?.honesty && <div className="mt-3 text-[11.5px] text-ink-3">{d.honesty}</div>}
+        {d?.honesty && <div className="mt-3"><Limits>{d.honesty}</Limits></div>}
       </Panel>
     </div>
   );

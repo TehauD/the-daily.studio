@@ -61,7 +61,7 @@ export default function Guide() {
   }, []);
   return (
     <div>
-      <PageHeader kicker="Orientation" title="Guide" subtitle="How FORGE turns a large local teacher into a measured improvement in a small, purpose-built student — and what it will and will not claim." />
+      <PageHeader kicker="Operate" title="Guide" subtitle="How FORGE turns a large local teacher into a measured improvement in a small, purpose-built student — and what it will and will not claim." />
       <div className="grid gap-6 lg:grid-cols-[200px_minmax(0,1fr)]">
         <nav className="min-w-0 lg:sticky lg:top-16 lg:self-start" aria-label="Guide sections">
           <ol className="flex gap-1 overflow-x-auto lg:flex-col lg:gap-0.5">

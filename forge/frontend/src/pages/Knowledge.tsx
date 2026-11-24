@@ -77,7 +77,7 @@ export default function Knowledge() {
   const node = g.data?.nodes.find((n) => n.id === sel) ?? null;
   return (
     <div className="space-y-4 fit:flex fit:h-full fit:min-h-0 fit:flex-col fit:space-y-0">
-      <PageHeader kicker="Research" title="Knowledge Graph" subtitle="Teacher, data, base and tuned students, skills, and tools — with measured capability on every edge. Built from the study's own files; nothing is inferred about concepts inside the weights."
+      <PageHeader kicker="See inside & control" title="Knowledge Graph" subtitle="Teacher, data, base and tuned students, skills, and tools — with measured capability on every edge. Built from the study's own files; nothing is inferred about concepts inside the weights."
         right={<>
           <StudySelect />
           <Segmented label="Evaluation view" value={view} onChange={setView} options={[{ value: "auto", label: "auto" }, { value: "dev", label: "dev" }, { value: "heldout", label: "held-out" }]} />

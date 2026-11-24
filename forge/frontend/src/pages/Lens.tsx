@@ -44,7 +44,7 @@ export default function Lens() {
   const running = s.data?.jobs?.find((j) => j.status === "running" && j.kind === "lens");
   return (
     <div className="space-y-4 fit:flex fit:h-full fit:min-h-0 fit:flex-col fit:gap-3 fit:space-y-0">
-      <PageHeader kicker="Research" title="Distillation Lens"
+      <PageHeader kicker="See inside & control" title="Distillation Lens"
         subtitle="What distillation changed, three ways: which skills moved toward the teacher, how close the student's predictions came to the teacher's over training, and which words it now expects."
         right={<>
           <AskAI q="Interpret the Distillation Lens: the skill space, the surprise / agreement curve and the tokens gained or lost. Is training still helping? What did the student actually learn?" content label="Interpret with AI" />
@@ -200,6 +200,7 @@ function MiniLine({ pts, value, label, fmtV, better }: { pts: LensPoint[]; value
           <text x={Math.min(Math.max(xs(hi), L + 40), W - R - 40)} y={T - 3} textAnchor="middle" fontSize={10.5} fill="var(--ink)" fontFamily="var(--font-mono)">{pts[hi].label}: {fmtV(vs[hi])}</text>
         </g>}
       </svg>
+      <div className="mt-0.5 text-center text-[10.5px] text-ink-3">training snapshot (optimizer step) · base = untrained</div>
     </div>
   );
 }

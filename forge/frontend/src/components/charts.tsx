@@ -1,7 +1,6 @@
 import { useMemo, useState, type ReactNode } from "react";
-import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { fmt } from "../lib/api";
-import { useChartVars, usePrefs } from "../lib/prefs";
+import { useChartVars } from "../lib/prefs";
 import { cx } from "./ui";
 
 /* ------------------------------------------------------------- shared */
@@ -70,39 +69,8 @@ export function TraceStrip({ title, unit, values, times, max = 100, current, sub
 }
 
 /* ------------------------------------------------------------- learning curves */
-export function LearningCurve({ rows }: { rows: Record<string, unknown>[] }) {
-  const v = useChartVars();
-  const tt = useTooltipStyle();
-  const { prefs } = usePrefs();
-  const data = rows.filter((r) => r.loss != null || r.eval_loss != null).map((r) => ({
-    step: r.step as number, train: (r.loss as number) ?? null, eval: (r.eval_loss as number) ?? null }));
-  const objective = (rows.find((r) => r.objective)?.objective as string) ?? "completion_ce";
-  const hasEval = data.some((d) => d.eval != null);
-  return (
-    <div>
-      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-        <LegendKey items={[{ label: "train loss", color: v["s-teacher"] }, ...(hasEval ? [{ label: "dev loss (teacher successes)", color: v["s-tuned"] }] : [])]} />
-        <span className="micro text-ink-3">objective · {objective === "all_token_ce" ? "all-token CE (not comparable to completion-only)" : "completion-only CE"}</span>
-      </div>
-      <div className="h-56">
-        <ResponsiveContainer>
-          <LineChart data={data} margin={{ top: 6, right: 12, left: -6, bottom: 0 }}>
-            <CartesianGrid stroke={v.line} vertical={false} />
-            <XAxis dataKey="step" tick={{ fill: v["ink-3"], fontSize: 10.5, fontFamily: "var(--font-mono)" }} stroke={v["line-strong"]} tickLine={false} />
-            <YAxis tick={{ fill: v["ink-3"], fontSize: 10.5, fontFamily: "var(--font-mono)" }} stroke={v["line-strong"]} tickLine={false} width={48} tickFormatter={(x: number) => x.toFixed(2)} />
-            <Tooltip {...tt} formatter={(x: number) => x?.toFixed(4)} labelFormatter={(s) => `step ${s}`} />
-            <Legend content={() => null} />
-            <Line type="monotone" dataKey="train" stroke={v["s-teacher"]} strokeWidth={2} dot={false} connectNulls isAnimationActive={prefs.chartAnimation} />
-            {hasEval && <Line type="monotone" dataKey="eval" stroke={v["s-tuned"]} strokeWidth={2} dot={{ r: 3.5, strokeWidth: 0, fill: v["s-tuned"] }} connectNulls isAnimationActive={prefs.chartAnimation} />}
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------- forest plot (paired effects) */
 export interface ForestRow { key: string; label: string; sub?: string; mean: number; lo: number; hi: number; note?: ReactNode }
+
 export function ForestPlot({ rows, minGain, domain }: { rows: ForestRow[]; minGain?: number; domain?: [number, number] }) {
   const [hover, setHover] = useState<string | null>(null);
   const ext = Math.max(0.1, ...rows.flatMap((r) => [Math.abs(r.lo), Math.abs(r.hi)]), minGain ?? 0);
@@ -200,8 +168,7 @@ export function SkillMap({ families }: { families: SkillFamily[] }) {
                 <dl className="num space-y-1 font-mono text-[10.5px]">
                   {rings.map((g) => (
                     <div key={g.key} className="flex items-center gap-1.5" title={f[g.key] ? `Wilson 95% CI ${fmt.pct(f[g.key]!.ci[0], 0)}–${fmt.pct(f[g.key]!.ci[1], 0)} · n=${f[g.key]!.n}` : "not measured"}>
-                      <span className="inline-block h-1.5 w-1.5 rounded-full" style={{ background: g.color }} />
-                      <dt className="w-12 text-ink-3">{g.key}</dt><dd className="text-ink">{f[g.key] ? fmt.pct(f[g.key]!.rate, 0) : "—"}</dd>
+                      <dt className="flex w-14 items-center gap-1.5 text-ink-3"><span className="inline-block h-1.5 w-1.5 rounded-full" style={{ background: g.color }} aria-hidden />{g.key}</dt><dd className="text-ink">{f[g.key] ? fmt.pct(f[g.key]!.rate, 0) : "—"}</dd>
                     </div>
                   ))}
                 </dl>

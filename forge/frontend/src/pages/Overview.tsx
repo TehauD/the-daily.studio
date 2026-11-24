@@ -51,7 +51,7 @@ export default function Overview() {
 
   return (
     <div className="space-y-4 fit:flex fit:h-full fit:min-h-0 fit:flex-col fit:gap-3 fit:space-y-0">
-      <PageHeader kicker="System state" title="Overview" subtitle="Measured hardware, readiness for each stage of the distillation loop, and live telemetry. A missing sensor reads —; nothing on this page is simulated."
+      <PageHeader kicker="Operate" title="Overview" subtitle="Measured hardware, readiness for each stage of the distillation loop, and live telemetry. A missing sensor reads —; nothing on this page is simulated."
         right={<>
           <Button icon="refresh" onClick={() => { void api.get("/api/system/hardware?refresh=true").then(() => { void hw.reload(); void rd.reload(); }); }}>Re-probe</Button>
           <Button tone="primary" icon="gpu" busy={act.busy} onClick={() => void act.run(async () => setVerifyJob((await api.post<Job>("/api/jobs/verify-gpu")).id))}>Verify GPU</Button>

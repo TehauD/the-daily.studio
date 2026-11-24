@@ -58,7 +58,7 @@ export default function Playground() {
   const example = isAgent ? "e.g. Night shift says the barcode scanner keeps failing on 5 East. Which assignment group should it go to?" : "Ask the agent something its tools can answer…";
   return (
     <div className="space-y-4 fit:flex fit:h-full fit:min-h-0 fit:flex-col fit:gap-3 fit:space-y-0">
-      <PageHeader kicker="See it yourself" title="Agent Playground"
+      <PageHeader kicker="See inside & control" title="Agent Playground"
         subtitle="One message, several models, side by side — the untrained student, trained students, Weight Lab variants and the teacher — with every tool call they make. A person decides whether to accept each recommendation."
         right={<StudySelect />} />
       <ErrorLine error={s.error} />

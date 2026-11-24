@@ -1,6 +1,6 @@
 import { TurboCompare } from "../components/Turbo";
 import { useState, type FormEvent } from "react";
-import { LearningCurve } from "../components/charts";
+import { LearningCurve } from "../components/LearningCurve";
 import { StudySelect } from "../components/live";
 import { Button, Checklist, Empty, ErrorLine, Field, Hash, KV, PageHeader, Panel, Prov, Readout, Status, Toggle, cx, inputCls, td, th, tr } from "../components/ui";
 import { api, fmt, qs } from "../lib/api";
@@ -14,7 +14,7 @@ interface RunT { rows: Record<string, unknown>[]; run: Record<string, unknown> &
 export default function Training() {
   return (
     <div className="space-y-4">
-      <PageHeader kicker="Research" title="Training Lab" subtitle="Plan memory against measured VRAM, then inspect each LoRA run: pre-flight gates, the zero-adapter check, loss curves, token exposure, and peak memory."
+      <PageHeader kicker="Build" title="Training Lab" subtitle="Plan memory against measured VRAM, then inspect each LoRA run: pre-flight gates, the zero-adapter check, loss curves, token exposure, and peak memory."
         right={<StudySelect />} />
       <div className="space-y-4 3xl:grid 3xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] 3xl:items-start 3xl:gap-4 3xl:space-y-0">
         <Runs />

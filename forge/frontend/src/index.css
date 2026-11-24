@@ -17,7 +17,7 @@
   --line-strong: #c9cbc3;
   --ink: #0b0c0c;
   --ink-2: #4b4d4a;
-  --ink-3: #7c7e78;
+  --ink-3: #666863;  /* ≥ 4.5:1 on every light surface (WCAG AA small text) */
   --grid-ink: rgb(11 12 12 / 0.035);
   --shadow: 0 1px 0 rgb(11 12 12 / 0.03), 0 1px 2px rgb(11 12 12 / 0.04);
 
@@ -42,10 +42,10 @@
   --crit: #d03b3b;
   --crit-ink: #b42323;
 
-  --accent: #0f8f84;
+  --accent: #0c736a;  /* accent is also used as text: ≥ 4.5:1 */
   --accent-ink: #ffffff;
-  --accent-soft: rgb(15 143 132 / 0.09);
-  --accent-line: rgb(15 143 132 / 0.35);
+  --accent-soft: rgb(12 115 106 / 0.09);
+  --accent-line: rgb(12 115 106 / 0.35);
 
   --radius: 6px;
   --pad: 16px;
@@ -64,7 +64,7 @@
   --line-strong: #353a3e;
   --ink: #eef0ee;
   --ink-2: #b9bdb8;
-  --ink-3: #82877f;
+  --ink-3: #8c9089;  /* ≥ 4.5:1 on every dark surface */
   --grid-ink: rgb(255 255 255 / 0.028);
   --shadow: 0 0 0 1px rgb(0 0 0 / 0.2);
   --s-teacher: #3987e5;
@@ -89,8 +89,8 @@
 }
 
 /* Accent palettes (chrome only). */
-:root[data-accent="cyan"] { --accent: #0e7fa6; --accent-soft: rgb(14 127 166 / 0.09); --accent-line: rgb(14 127 166 / 0.35); }
-:root[data-accent="green"] { --accent: #1f8a4c; --accent-soft: rgb(31 138 76 / 0.09); --accent-line: rgb(31 138 76 / 0.35); }
+:root[data-accent="cyan"] { --accent: #0c6f92; --accent-soft: rgb(12 111 146 / 0.09); --accent-line: rgb(12 111 146 / 0.35); }
+:root[data-accent="green"] { --accent: #1a7641; --accent-soft: rgb(26 118 65 / 0.09); --accent-line: rgb(26 118 65 / 0.35); }
 :root[data-accent="blue"] { --accent: #2f5fd0; --accent-soft: rgb(47 95 208 / 0.09); --accent-line: rgb(47 95 208 / 0.35); }
 :root[data-accent="graphite"] { --accent: #3f4650; --accent-soft: rgb(63 70 80 / 0.09); --accent-line: rgb(63 70 80 / 0.35); }
 :root[data-theme="dark"][data-accent="cyan"] { --accent: #38bdf8; --accent-ink: #04202c; --accent-soft: rgb(56 189 248 / 0.12); --accent-line: rgb(56 189 248 / 0.45); }
@@ -198,4 +198,18 @@ button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 }
 @media (forced-colors: active) {
   .reg::before, .reg::after { display: none; }
+}
+
+/* Keyboard users can scroll every scrolling panel (WCAG 2.1.1); the ring shows which one has focus. */
+[data-scroll-focus]:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+/* Print: reports and results print cleanly — no navigation, panels expanded, ink on white. */
+@media print {
+  :root { --bg: #fff; --surface: #fff; --surface-2: #f6f6f6; }
+  aside[aria-label="Primary"], header.sticky, nav[aria-label$="workspace"], [aria-label="Running jobs"], button[aria-label="Open FORGE AI assistant"] { display: none !important; }
+  main { padding: 0 !important; height: auto !important; overflow: visible !important; }
+  .fit\:h-full, .fit\:overflow-hidden, .fit\:overflow-auto, .overflow-auto, .scroll-thin { height: auto !important; max-height: none !important; overflow: visible !important; }
+  section, figure, table { break-inside: avoid; }
+  .grid-plane { background: none !important; }
+  input, select, textarea, [role="tablist"] button[aria-selected="false"], .print\\:hidden { display: none !important; }
 }

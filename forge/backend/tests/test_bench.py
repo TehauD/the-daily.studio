@@ -117,3 +117,25 @@ def test_bench_api_and_runner_end_to_end(settings, monkeypatch):
         assert c.get(f"/api/bench/runs/{rid}/images/..%2Fspec.json").status_code == 404
         sc = c.get("/api/bench/scorecard").json()["rows"]
         assert {(r["lane"], r["suite"]) for r in sc} >= {("perfect", "compute"), ("gullible", "security"), ("reader", "vision")}
+
+
+def test_model_hub_gathers_bench_results(settings, monkeypatch):
+    from fastapi.testclient import TestClient
+
+    from forge.api.app import create_app
+    from forge.bench import runner
+    model = {"id": "m_x", "name": "x-model", "provider": "lmstudio", "roles": ["teacher"], "status": "available", "capabilities": {},
+             "metadata": {"lmstudio_id": "x-model", "lmstudio_type": "vlm"}}
+    with TestClient(create_app(settings)) as c:
+        c.headers["X-Forge-Token"] = c.get("/api/system/session").json()["token"]
+        st = c.app.state.forge
+        monkeypatch.setattr(st.registry, "get", lambda mid: model if mid == "m_x" else (_ for _ in ()).throw(__import__("forge.registry.registry", fromlist=["RegistryError"]).RegistryError("nope")))
+        monkeypatch.setattr(st.jobs, "start", lambda *a, **k: {"id": "job_x"})
+        rid = c.post("/api/bench/runs", json={"suite": "security", "lanes": [{"model_id": "m_x", "label": "x"}], "n_per_cell": 1}).json()["id"]
+        d = settings.home / "bench" / rid
+        runner.run(d, backend_for=lambda lane: Scripted(runner.load_items(d)))
+        hub = c.get("/api/models/m_x/hub").json()
+        assert hub["model"]["vision"] is True and hub["model"]["trainable"] is False
+        assert hub["bench"] and hub["bench"][0]["suite"] == "security" and hub["bench"][0]["rate"] == 1.0
+        assert hub["studies"] == [] and hub["adapters"] == []
+        assert c.get("/api/models/nope/hub").status_code == 404

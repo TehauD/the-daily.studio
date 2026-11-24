@@ -1,5 +1,24 @@
 # FORGE changelog
 
+## 0.22.0 — Experience pass: workspaces, Model Hub, Inspector, accessibility
+- **Workspaces**: Build · See inside & control · Measure · Operate. Every page has a breadcrumb and its workspace's sibling
+  pages as tabs; page kickers name the workspace.
+- **Model Hub** (Operate): one page per model — capabilities, best measured scores with ranges, bench results, trained
+  adapters (practice and sealed-test), studies, Weight Lab variants and GGUF exports, and next actions. Reachable from the
+  Observatory and the Inspector.
+- **Inspector** (top bar "Inspect", or `.`): active study (stages, headline with ranges, test adequacy, next step) and active
+  model, from any page.
+- **One way to show results**: shared Score (rate + 95 % range + k/n), RangeBar, Limits ("What this doesn't show") and
+  Figure (title, axis titles with units, legend, caption) components; charts across Bench Lab, Robustness, Turbo, Governance,
+  Distillation Lens, Model Map and Training Lab now carry axis titles and units.
+- **Accessibility — WCAG 2.2 AA, 0 violations on all 23 pages in light and dark** (axe-core audit, from 1,291): text tokens
+  re-tuned to ≥ 4.5:1 on every surface (role and provenance colours mixed toward text when used as text), every scrolling
+  panel keyboard-focusable and named, 24 px minimum targets, valid definition lists. `frontend/scripts/a11y-audit.cjs`
+  re-runs the audit.
+- **Print**: navigation, controls and unselected tabs hidden, panels expanded — results and model cards print as documents.
+- **Performance**: the charting library loads only with Training Lab (shared chart code 419 KB → 11 KB for other pages).
+- docs/DESIGN.md: the design system, colour and accessibility rules.
+
 ## 0.21.0 — Bench Lab
 - **Bench Lab** (Measure): exact-answer test suites for any model — endpoint models, local students, trained adapters —
   with items generated and frozen before the run, Wilson 95 % ranges, results by category and difficulty, an item explorer

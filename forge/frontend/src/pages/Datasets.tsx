@@ -16,7 +16,7 @@ export default function Datasets() {
   const cur = ds.data?.find((d) => d.arm === arm) ?? ds.data?.[0] ?? null;
   return (
     <div className="space-y-4">
-      <PageHeader kicker="Research" title="Dataset Factory" subtitle="One supervised record per assistant turn, with the loss restricted to the completion, an exact token-prefix check, and no truncation — an over-length record blocks the run. Every record links back to the trajectory that produced it."
+      <PageHeader kicker="Build" title="Dataset Factory" subtitle="One supervised record per assistant turn, with the loss restricted to the completion, an exact token-prefix check, and no truncation — an over-length record blocks the run. Every record links back to the trajectory that produced it."
         right={<StudySelect />} />
       <ErrorLine error={ds.error} />
       {!sid || !ds.data?.length ? <Panel><Empty icon="dataset">No dataset built yet. Run collect → build in Experiment Studio.</Empty></Panel> : (

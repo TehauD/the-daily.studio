@@ -316,3 +316,17 @@ torch.compile (their code paths run only on CUDA with the packages installed); t
 
 The demo models are simulated (their accuracy is scripted to fall with difficulty) — the numbers show the plumbing, not any
 real model. **Requires your machine:** real LM Studio models (including a vision model such as Qwen2.5-VL) and GPU students.
+
+## v0.22.0 — Experience pass
+
+| Check | Result here |
+|---|---|
+| WCAG 2.2 AA (axe-core 4.10.3), all 23 pages × light and dark, demo data loaded | **0 violations** (1,291 before: contrast, scrollable regions, target size, definition lists) |
+| Layout: 23 pages at 1920 px, 390 px and 1440 px dark | no horizontal overflow, no console errors |
+| Model Hub endpoint: identity, vision / trainable flags, bench results for the model, unknown model 404 | test |
+| Inspector: active study stages, headline with ranges, adequacy, next step; Escape and `.` | browser |
+| Print: navigation and controls hidden, panels expanded | browser (print emulation) |
+| Bundle: charting library isolated to Training Lab | build output |
+| Backend suite | 222 passed |
+
+**Not covered:** manual screen-reader walk-throughs (NVDA / JAWS) and keyboard-only completion of every task flow.

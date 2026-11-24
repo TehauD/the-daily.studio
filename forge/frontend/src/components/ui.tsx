@@ -9,7 +9,7 @@ export { cx };
 export type ProvKind = "measured" | "computed" | "declared" | "estimate" | "illustration" | "stale";
 const PROV: Record<ProvKind, string> = {
   measured: "text-good-ink border-[color:var(--good)]/40",
-  computed: "text-[color:var(--s-teacher)] border-[color:var(--s-teacher)]/40",
+  computed: "text-[color:color-mix(in_oklab,var(--s-teacher)_55%,var(--ink))] border-[color:var(--s-teacher)]/40",
   declared: "text-ink-2 border-line-strong",
   estimate: "text-warn-ink border-[color:var(--warn)]/50",
   illustration: "text-ink-3 border-line-strong border-dashed",
@@ -20,7 +20,7 @@ export function Prov({ kind, source }: { kind: ProvKind; source?: string }) {
   return (
     <span title={source ? `${kind} · ${source}` : kind}
       className={cx("micro inline-flex items-center gap-1 rounded-[3px] border px-1.5 py-[1px] !text-[9.5px] leading-[14px]", PROV[kind])}>
-      {kind}{source && <span className="normal-case tracking-normal opacity-80">· {source}</span>}
+      {kind}{source && <span className="normal-case tracking-normal">· {source}</span>}
     </span>
   );
 }
@@ -119,8 +119,8 @@ export function Badge({ children, tone = "default", title }: { children: ReactNo
   const t = {
     default: "border-line-strong text-ink-2", accent: "border-accent-line text-accent bg-accent-soft",
     good: "border-[color:var(--good)]/40 text-good-ink", warn: "border-[color:var(--warn)]/60 text-warn-ink",
-    crit: "border-[color:var(--crit)]/40 text-crit-ink", teacher: "border-teacher/50 text-teacher",
-    base: "border-base/50 text-base", tuned: "border-tuned/60 text-tuned",
+    crit: "border-[color:var(--crit)]/40 text-crit-ink", teacher: "border-teacher/50 text-[color:color-mix(in_oklab,var(--s-teacher)_55%,var(--ink))]",
+    base: "border-base/50 text-[color:color-mix(in_oklab,var(--s-base)_55%,var(--ink))]", tuned: "border-tuned/60 text-[color:color-mix(in_oklab,var(--s-tuned)_55%,var(--ink))]",
   }[tone];
   return <span title={title} className={cx("micro inline-flex items-center gap-1 whitespace-nowrap rounded-[3px] border px-1.5 py-[2px] !text-[9.5px]", t)}>{children}</span>;
 }
@@ -250,7 +250,7 @@ export function Hash({ value, n = 12, label }: { value: string | null | undefine
   return (
     <button type="button" title={`${label ? label + ": " : ""}${value} (click to copy)`}
       onClick={() => { void navigator.clipboard?.writeText(value); setCopied(true); setTimeout(() => setCopied(false), 1200); }}
-      className="num inline-flex items-center gap-1 rounded-[3px] bg-surface-3 px-1.5 py-[1px] font-mono text-[11px] text-ink-2 hover:text-ink">
+      className="num inline-flex min-h-6 items-center gap-1 rounded-[3px] bg-surface-3 px-1.5 font-mono text-[11px] text-ink-2 hover:text-ink">
       {copied ? "copied" : value.slice(0, n)}<Icon name="copy" size={11} className="opacity-50" />
     </button>
   );

@@ -94,6 +94,8 @@ Open **Agent Studio** and follow the five steps:
 ![Agent Studio: tools step with tables, calculators, rules and the tool console](docs/images/agent-studio-tools.png)
 <sub>Validation instance: synthetic template plus a synthetic fee schedule.</sub>
 
+**Find your way:** pages are grouped into workspaces (Build · See inside & control · Measure · Operate) with tabs across the top of each page; the **Model Hub** gathers everything about one model, and **Inspect** (or `.`) shows the active study and model from anywhere. Design and accessibility rules: [docs/DESIGN.md](docs/DESIGN.md).
+
 **Test any model:** **Measure → Bench Lab** runs computation, vision (synthetic documents) and security (blue team) benches on LM Studio models, local students and trained adapters. See [docs/BENCH.md](docs/BENCH.md).
 
 **Faster training:** FORGE Turbo switches (fused kernels, 4-bit QLoRA, 8-bit optimizer, activation offload, packing) — set them when creating a study, or re-train a study with other settings and compare engines on identical data in **Training Lab**. See [docs/TURBO.md](docs/TURBO.md).
@@ -191,6 +193,7 @@ study, agent or knowledge pack.
 |---|---|
 | **Home** | Projects (agents, document sets, built-in catalog) with stage progress, latest results and next step; quick starts; role tours; glossary |
 | **Robustness & limits** | Boundary suite (hand-back held vs over-refusal), stress tests (typos, wording, noise, hidden instructions), and the "how much data?" curve |
+| **Model Hub** | One page per model: capabilities, best measured scores with ranges, bench results, trained adapters, studies, variants, exports, next actions |
 | **Bench Lab** | Exact-answer benches for any model: computation (on its own vs with tools), document images (vision), and blue-team security analysis; cross-model scorecard |
 | **Governance** | Model card, failure types, knows-its-limits calibration, per-skill curves, audit trail (who did what), one-click reports for executives / operations / technical staff |
 | **Learn** | Role-based learning paths: hands-on lessons with a self-check each |

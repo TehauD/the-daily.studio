@@ -17,7 +17,7 @@ export default function Observatory() {
   const n = models.data?.models.length;
   return (
     <div className="space-y-4 fit:flex fit:h-full fit:min-h-0 fit:flex-col fit:gap-3 fit:space-y-0">
-      <PageHeader kicker="Models" title="Model Observatory" subtitle="Every model on this machine, measured from file headers — never by loading weights. Loading is not trainability: only complete local safetensors with a known causal-LM architecture can be students." />
+      <PageHeader kicker="Operate" title="Model Observatory" subtitle="Every model on this machine, measured from file headers — never by loading weights. Loading is not trainability: only complete local safetensors with a known causal-LM architecture can be students." />
       <Tabs value={tab} onChange={setTab} tabs={[{ value: "local", label: "Local inventory", count: n }, { value: "hub", label: "Hugging Face Hub" }, { value: "pair", label: "Pair builder" }]} />
       {tab === "local" && <Local models={models} />}
       {tab === "hub" && <Hub />}
@@ -127,6 +127,7 @@ function ParamBars({ m }: { m: Model }) {
 }
 
 function ModelDetail({ m, onChange }: { m: Model; onChange: () => Promise<void> }) {
+  const { set } = usePrefs();
   const trainable = m.capabilities.lora?.status === "supported";
   const fit = useApi<FitResponse>(trainable ? `/api/models/${m.id}/fit` : null);
   const act = useAction();
@@ -141,6 +142,7 @@ function ModelDetail({ m, onChange }: { m: Model; onChange: () => Promise<void> 
       <div className="space-y-4">
         <div>
           <div className="break-all text-[14px] font-semibold text-ink">{m.name}</div>
+          <button type="button" className="mt-0.5 text-[11.5px] text-accent underline-offset-2 hover:underline" onClick={() => { set("activeModel", m.id); window.location.hash = "/model"; }}>Open in Model Hub →</button>
           <div className="mt-0.5 break-all font-mono text-[10.5px] text-ink-3">{m.locator}</div>
         </div>
         <div className="grid grid-cols-3 gap-3">

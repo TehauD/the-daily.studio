@@ -38,7 +38,7 @@ export default function ModelMap() {
   const running = s.data?.jobs?.find((j) => j.status === "running" && j.kind.startsWith("modelmap"));
   return (
     <div className="space-y-4 fit:flex fit:h-full fit:min-h-0 fit:flex-col fit:gap-3 fit:space-y-0">
-      <PageHeader kicker="See how it is organised" title="Model Map"
+      <PageHeader kicker="See inside & control" title="Model Map"
         subtitle="Three linked, measured views of the same tasks: how each model behaves (decision graph), how the student organises tasks inside its layers (representation map), and which words drove one decision (word view)."
         right={<>
           <StudySelect />
@@ -159,6 +159,7 @@ function MetricLine({ layers, get, label, lo }: { layers: LayerMap[]; get: (l: L
         <path d={line("tuned")} fill="none" stroke="var(--s-tuned)" strokeWidth={2} />
         {layers.map((l, i) => <text key={i} x={xs(i)} y={H - 4} fontSize={9} textAnchor="middle" fill="var(--ink-3)" fontFamily="var(--font-mono)">{layers.length <= 12 || i % Math.ceil(layers.length / 10) === 0 ? l.layer : ""}</text>)}
       </svg>
+      <div className="text-center text-[10px] text-ink-3">layer (0 = embeddings)</div>
     </div>
   );
 }

@@ -15,7 +15,7 @@ export default function Factory() {
   const s = useApi<StudySummary>(sid ? `/api/studies/${sid}` : null);
   return (
     <div className="space-y-4">
-      <PageHeader kicker="Research" title="Model Factory" subtitle="What the adapter actually changed, measured from its weights; the provenance of every artifact; and merged exports. Original weights are never modified — every derivative is a new hashed artifact."
+      <PageHeader kicker="Operate" title="Model Factory" subtitle="What the adapter actually changed, measured from its weights; the provenance of every artifact; and merged exports. Original weights are never modified — every derivative is a new hashed artifact."
         right={<StudySelect />} />
       {!sid ? <Panel><Empty icon="factory">No study selected.</Empty></Panel> : (
         <>

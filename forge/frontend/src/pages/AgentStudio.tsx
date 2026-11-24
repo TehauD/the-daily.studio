@@ -63,7 +63,7 @@ export default function AgentStudio() {
   const reload = async () => { await ag.reload(); await list.reload(); };
   return (
     <div className="space-y-4 fit:flex fit:h-full fit:min-h-0 fit:flex-col fit:gap-3 fit:space-y-0">
-      <PageHeader kicker="Your agents" title="Agent Studio"
+      <PageHeader kicker="Build" title="Agent Studio"
         subtitle="Build a purpose-built agent: its job, read-only tools over your own data, and the skills it should get good at — then train a small local model to do it, and measure the result."
         right={<>
           {agents.length > 0 && (

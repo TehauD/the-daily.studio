@@ -20,12 +20,14 @@ export interface Prefs {
   mode: "simple" | "expert";
   /** Role chosen on Home, for the guided tour. */
   role: string | null;
+  /** Model shown in the Model Hub and the inspector. */
+  activeModel: string | null;
 }
 
 export const DEFAULT_PREFS: Prefs = {
   theme: "light", accent: "teal", density: "standard", contrast: "standard", textScale: 1, radius: 6, grid: true,
   motion: "system", chartAnimation: true, telemetryPollMs: 2000, telemetryWindow: 120, sidebarCollapsed: false,
-  activeStudy: null, showIneligible: false, mode: "simple", role: null,
+  activeStudy: null, showIneligible: false, mode: "simple", role: null, activeModel: null,
 };
 const KEY = "forge.ui.v1";
 

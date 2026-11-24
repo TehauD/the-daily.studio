@@ -13,7 +13,7 @@ interface SettingsT {
   endpoints: { label: string; base_url: string; api_key_env: string | null; allow_remote: boolean }[];
 }
 const ACCENTS: { v: Prefs["accent"]; light: string; dark: string }[] = [
-  { v: "teal", light: "#0f8f84", dark: "#2bb3a6" }, { v: "cyan", light: "#0e7fa6", dark: "#38bdf8" }, { v: "green", light: "#1f8a4c", dark: "#3ecf7a" },
+  { v: "teal", light: "#0c736a", dark: "#2bb3a6" }, { v: "cyan", light: "#0c6f92", dark: "#38bdf8" }, { v: "green", light: "#1a7641", dark: "#3ecf7a" },
   { v: "blue", light: "#2f5fd0", dark: "#6d94f5" }, { v: "graphite", light: "#3f4650", dark: "#c4cad1" }];
 
 function download(name: string, data: unknown) {
@@ -26,7 +26,7 @@ function download(name: string, data: unknown) {
 export default function Settings() {
   return (
     <div className="space-y-4">
-      <PageHeader kicker="System" title="System Settings" subtitle="Appearance is stored in this browser (localStorage forge.ui.v1). Runtime configuration is stored server-side and layered over environment variables; only loopback URLs are accepted." />
+      <PageHeader kicker="Operate" title="System Settings" subtitle="Appearance is stored in this browser (localStorage forge.ui.v1). Runtime configuration is stored server-side and layered over environment variables; only loopback URLs are accepted." />
       <div className="grid gap-4 xl:grid-cols-2">
         <div className="space-y-4"><Appearance /><GuardSettings /></div>
         <div className="space-y-4"><Runtime /><AzureSettings /><Environment /></div>
