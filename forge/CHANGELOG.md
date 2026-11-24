@@ -1,5 +1,23 @@
 # FORGE changelog
 
+## 0.19.0 — Tests worth trusting
+- **"Is this a good test?"** (Evaluation Lab, model card): per skill — room to improve (untrained well below the teacher),
+  a capable teacher (≥ 80 %), balanced answers, ≥ 20 final-test tasks — with a verdict (good / weak / unusable) and what to
+  fix. Coverage-map warnings now use the same thresholds before training.
+- **Per-skill stratified splits** for agent tasks: every skill now gets ~60 / 20 / 20 practice / check-in / final-test tasks
+  (before, some skills had none in a split), still never splitting one item across splits.
+- **Prior authorization template rebuilt**: 64 services with codes, unit rates and documentation; four balanced skills —
+  authorization requirements, units over the limit (lookup + arithmetic), decision due date (lookup + dates), high-cost
+  review (lookup + arithmetic + rule); worked examples; 96 hand-back cases on by default (medical necessity, approvals,
+  overrides).
+- **Other templates enlarged and rebalanced**: ITSM routing 24 → 40 keywords and balanced major-incident answers; patient
+  access 14 → 30 request types; claims 13 → 31 denial codes and 6 → 12 payers; pharmacy 36 → 60 drugs; security 28 → 60
+  detections, 20 → 48 advisories and balanced escalation.
+- **Load your own data**: download any table as CSV (Agent Studio → Tools, or a template's table before creating an agent);
+  docs/LOADING_DATA.md walks through a prior-authorization criteria table; sample CSVs in docs/examples/. Exported CSVs
+  neutralise spreadsheet formulas.
+- Template task generation now defaults to 100 tasks per skill (seconds; ≈ 20 final-test tasks each).
+
 ## 0.18.0 — Auto-tune with Azure OpenAI
 - **Weight Lab → Auto-tune with Azure**: your Azure OpenAI deployment proposes one Weight Lab recipe per round (adapter
   weights, strength, layer range, attention / MLP, SVD rank) from per-skill dev results and failure-type counts; you approve

@@ -106,3 +106,32 @@ def test_model_card_and_reports(tmp_path):
         h = gov.report_html(card, aud, [{"at": "2026-01-01T00:00:00", "actor": "<i>x</i>", "what": "ran stage train"}])
         assert "Not an approval" in h and "<b>" not in h.split("<h1>")[1].split("</h1>")[0] and "&lt;i&gt;" in h or aud == "executive"
     assert json.dumps(card)  # serialisable
+
+
+def test_test_adequacy_flags_each_problem(tmp_path):
+    def T(i, fam, split, ans, calls=1):
+        return Task(f"{fam}{i}", f"g{fam}{i}", fam, split, 0, f"q {fam} {i}", [{"tool": "x", "arguments": {}}] * calls, ans, {})
+    tasks = []
+    for fam, mk in (("easy", lambda i: str(i)), ("skewed", lambda i: "yes" if i % 10 else "no"), ("hard", lambda i: str(i)), ("tiny", lambda i: str(i))):
+        n = 10 if fam == "tiny" else 100
+        for i in range(n):
+            tasks.append(T(i, fam, "train" if i % 5 < 3 else ("dev" if i % 5 == 3 else "test"), mk(i), 2 if fam == "hard" else 1))
+    rates = {"base": {"easy": 0.95, "skewed": 0.5, "hard": 0.1, "tiny": 0.1}, "teacher": {"easy": 1.0, "skewed": 0.95, "hard": 0.9, "tiny": 0.5}}
+
+    def eps(arm, sp, seed):
+        out = []
+        for f, r in rates[arm].items():
+            dev = [t for t in tasks if t.family == f and t.split == "dev"]
+            k = round(r * len(dev))
+            out += [{"family": f, "score": {"strict_success": j < k}} for j in range(len(dev))]
+        return out
+    st = SimpleNamespace(tasks=lambda: tasks, plan={"eval": {"control_seed_broadcast": 0}},
+                         episode_path=lambda a, sp, s: tmp_path, episodes=eps)
+    a = gov.adequacy(st)
+    by = {s["skill"]: s for s in a["skills"]}
+    kinds = {k: {i["kind"] for i in v["issues"]} for k, v in by.items()}
+    assert kinds["easy"] == {"no_headroom"} and by["easy"]["verdict"] == "unusable"
+    assert "imbalanced" in kinds["skewed"] and by["skewed"]["top_share"] == 0.9
+    assert kinds["hard"] == set() and by["hard"]["verdict"] == "good" and by["hard"]["avg_steps"] == 2
+    assert {"too_few", "weak_teacher"} <= kinds["tiny"] and by["tiny"]["verdict"] == "weak"
+    assert a["measured"] and a["overall"] == "weak"

@@ -22,6 +22,14 @@ REQUESTS = [  # keyword, queue, department, channel, response_hours
     ("interpreter", "Language Services", "Care Experience", "phone", 24), ("transportation", "Care Navigation", "Care Management", "phone", 48),
     ("portal access", "Portal Support", "Digital Health", "portal", 24), ("form completion", "Clinic Forms Desk", "Ambulatory Operations", "portal", 120),
     ("insurance update", "Registration", "Access Center", "portal", 48), ("parking", "Guest Services", "Facilities", "phone", 72),
+    ("test results question", "Clinic Nurse Line", "Ambulatory Operations", "portal", 24), ("lab appointment", "Lab Scheduling", "Laboratory", "portal", 24),
+    ("imaging appointment", "Imaging Scheduling", "Radiology", "phone", 24), ("medical records correction", "Release of Information", "Health Information Management", "portal", 120),
+    ("financial assistance", "Financial Counseling", "Revenue Cycle", "phone", 72), ("prior authorization status", "Authorization Desk", "Access Center", "portal", 48),
+    ("vaccine appointment", "Central Scheduling", "Access Center", "portal", 24), ("disability paperwork", "Clinic Forms Desk", "Ambulatory Operations", "portal", 120),
+    ("medical equipment order", "Care Navigation", "Care Management", "phone", 48), ("telehealth link", "Portal Support", "Digital Health", "portal", 24),
+    ("proxy access", "Portal Support", "Digital Health", "portal", 48), ("pharmacy change", "Pharmacy Refill Queue", "Pharmacy", "portal", 48),
+    ("estimate dispute", "Billing Support", "Revenue Cycle", "phone", 72), ("care team message", "Clinic Nurse Line", "Ambulatory Operations", "portal", 48),
+    ("home health referral", "Referral Coordination", "Access Center", "phone", 48), ("chaplain visit", "Spiritual Care", "Care Experience", "phone", 24),
 ]
 SPECIALTIES = ["cardiology", "dermatology", "orthopedics", "gastroenterology", "neurology", "endocrinology", "pulmonology",
                "rheumatology", "urology", "ophthalmology", "otolaryngology", "sleep medicine"]

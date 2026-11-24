@@ -63,11 +63,10 @@ def coverage(agent: Any) -> dict[str, Any]:
                         "top_share": cnt.most_common(1)[0][1] / total if total else None, "not_found": nf[fam], "n": total}
     warnings = []
     for s, row in grid.items():
-        for sp in ("dev", "test"):
-            if row.get(sp, 0) < 3:
-                warnings.append(f"{s}: only {row.get(sp, 0)} {sp} tasks — too few to measure this skill")
+        if row.get("test", 0) < 20 or row.get("dev", 0) < 10:
+            warnings.append(f"{s}: {row.get('dev', 0)} check-in / {row.get('test', 0)} final-test tasks — aim for ≥ 10 / ≥ 20 (about 100 tasks per skill) or results will have wide ranges")
     for fam, a in ans_out.items():
-        if fam != "boundary" and a["n"] >= 10 and a["top_share"] and a["top_share"] >= 0.5:
+        if fam != "boundary" and a["n"] >= 10 and a["distinct"] <= 4 and a["top_share"] and a["top_share"] >= 0.65:
             warnings.append(f"{fam}: one answer ({a['top'][0]['answer']}) is {round(a['top_share'] * 100)}% of tasks — always giving it would score well")
     return {"tasks": len(tasks), "skills": skills, "grid": grid, "tables": tab_out, "tools": dict(tools.most_common()),
             "answers": ans_out, "variety": variety.summary({f: [t["prompt"] for t in tasks if t["family"] == f] for f in skills}),

@@ -14,7 +14,7 @@ _C = ["lex", "dril", "vant", "pine", "zole", "mab", "tide", "stat"]
 FORMS = ["tablet", "capsule", "oral solution", "injection pen", "inhaler"]
 
 
-def synthetic_formulary(seed: int = 11, n: int = 36) -> list[dict[str, Any]]:
+def synthetic_formulary(seed: int = 11, n: int = 60) -> list[dict[str, Any]]:
     rng = random.Random(f"formulary:{seed}")
     names: set[str] = set()
     while len(names) < n:

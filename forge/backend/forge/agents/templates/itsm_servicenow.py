@@ -14,6 +14,14 @@ from forge.agents.templates._util import date, num, pick
 ID = "itsm_servicenow"
 
 ROUTES = [  # keyword, category, subcategory, assignment group
+    ("epic login", "Application", "EHR access", "EHR Support"), ("order set", "Application", "EHR build", "EHR Clinical Build"),
+    ("barcode scanner", "Hardware", "Scanner", "Field Services"), ("label printer", "Hardware", "Printer", "Field Services"),
+    ("pager", "Telecom", "Paging", "Telecom Services"), ("desk phone", "Telecom", "Voice", "Telecom Services"),
+    ("teams meeting", "Collaboration", "Meetings", "Collaboration Services"), ("shared drive", "Storage", "File share", "Infrastructure Services"),
+    ("monitor", "Hardware", "Display", "Field Services"), ("software install", "Software", "Request", "Desktop Engineering"),
+    ("dictation", "Application", "Dictation", "Clinical Applications"), ("fax", "Telecom", "Fax", "Telecom Services"),
+    ("workstation on wheels", "Hardware", "Mobile cart", "Field Services"), ("phishing email", "Security", "Suspicious email", "Security Operations"),
+    ("data export", "Reporting", "Extract", "Analytics & BI"), ("dashboard", "Reporting", "Dashboard", "Analytics & BI"),
     ("vpn", "Network", "Remote access", "Network Operations"), ("wifi", "Network", "Wireless", "Network Operations"),
     ("network drop", "Network", "Wired", "Network Operations"), ("password reset", "Access", "Password", "Service Desk"),
     ("account locked", "Access", "Account", "Identity & Access"), ("mfa", "Access", "Multi-factor", "Identity & Access"),
@@ -118,8 +126,14 @@ def _sla(tables: dict, rng: random.Random, nf: bool) -> dict:
 
 
 def _major(tables: dict, rng: random.Random, nf: bool) -> dict:
-    r = pick(rng, tables["cmdb_ci"])
-    n = rng.choice([4, 12, 35, 60, 120, 400])
+    # Balanced (≈ half "yes"): yes needs a criticality-1 CI AND ≥ 50 users; "no" cases mix low criticality and few users.
+    crit1 = [x for x in tables["cmdb_ci"] if x["criticality"] == 1]
+    if rng.random() < 0.5 and crit1:
+        r, n = pick(rng, crit1), rng.randrange(50, 600)
+    elif rng.random() < 0.5 and crit1:
+        r, n = pick(rng, crit1), rng.randrange(2, 50)
+    else:
+        r, n = pick(rng, [x for x in tables["cmdb_ci"] if x["criticality"] != 1]), rng.randrange(2, 600)
     yes = r["criticality"] == 1 and n >= 50
     return {"question": f"{n} users report problems with {r['ci_name']}. Should this be declared a major incident?",
             "calls": [{"tool": "lookup_cmdb_ci", "arguments": {"key": r["ci_name"]}},

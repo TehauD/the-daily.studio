@@ -114,6 +114,8 @@ class Agent:
              "attestation": {"no_sensitive_data": True, "at": utcnow()}, "role": t["role"],
              "tools": {**{k: v for k, v in t["tools"].items()}, "tables": tables},
              "skills": templates.stored_skills(template, data), "steps": {"tasks": {"status": None}}}
+        if t.get("boundary"):  # templates may ship a default boundary suite (hand-back cases) — editable like any agent's
+            m["boundary"] = json.loads(json.dumps(t["boundary"]))
         a = Agent.__new__(Agent)
         a.root = root
         a._save(m)
@@ -495,14 +497,27 @@ class Agent:
         groups: dict[int, list[int]] = {}
         for i in range(len(acc)):
             groups.setdefault(find(i), []).append(i)
-        order = sorted(groups.values(), key=lambda g: sha256_text(f"{seed}:" + acc[g[0]]["prompt"]))
-        n, cum, split_of = len(acc), 0, {}
+        # Stratified by skill: groups are placed one at a time (largest first, then a seeded order) into the split that is
+        # furthest below its 60/20/20 target for the skills the group contains — so every skill gets practice, check-in and
+        # final-test tasks, while no primary entity crosses splits.
+        order = sorted(groups.values(), key=lambda g: (-len(g), sha256_text(f"{seed}:" + acc[g[0]]["prompt"])))
+        per_skill: dict[str, int] = {}
+        for a in acc:
+            per_skill[a["skill"]] = per_skill.get(a["skill"], 0) + 1
+        target = {sk: {sp: n * frac for sp, frac in SPLITS} for sk, n in per_skill.items()}
+        have = {sk: {sp: 0 for sp, _ in SPLITS} for sk in per_skill}
+        split_of = {}
         for gi, g in enumerate(order):
-            frac = cum / n
-            split = "train" if frac < SPLITS[0][1] else ("dev" if frac < SPLITS[0][1] + SPLITS[1][1] else "test")
+            cnt: dict[str, int] = {}
+            for i in g:
+                cnt[acc[i]["skill"]] = cnt.get(acc[i]["skill"], 0) + 1
+            def need(sp: str) -> float:
+                return sum(c * (target[sk][sp] - have[sk][sp]) / max(target[sk][sp], 1e-9) for sk, c in cnt.items())
+            split = max((sp for sp, _ in SPLITS), key=lambda sp: (need(sp), sp == "train"))
+            for sk, c in cnt.items():
+                have[sk][split] += c
             for i in g:
                 split_of[i] = (split, gi)
-            cum += len(g)
         out = []
         counters: dict[str, int] = {}
         for i, a in enumerate(acc):

@@ -268,6 +268,7 @@ function Tables({ a, onSaved }: { a: AgentFull; onSaved: () => Promise<void> }) 
               <td className={cx(td, "num text-right font-mono")}>{fmt.exact(t.rows)}</td>
               <td className={cx(td, "whitespace-nowrap text-right")}>
                 <button type="button" className="micro text-accent" onClick={() => setView(view === t.name ? null : t.name)}>{view === t.name ? "hide" : "view"}</button>{" · "}
+                <a className="micro text-accent" href={`/api/agents/${a.id}/tables/${t.name}/csv`} download title="Download as CSV — also the shape for loading your own data">csv</a>{" · "}
                 <button type="button" className="micro text-crit-ink" onClick={() => void act.run(async () => { await api.del(`/api/agents/${a.id}/tables/${t.name}`); await onSaved(); })}>remove</button>
               </td>
             </tr>))}
@@ -492,8 +493,8 @@ function StepTasks({ a, busy, onStarted }: { a: AgentFull; busy: boolean; onStar
   const teachers = (models.data?.models ?? []).filter((m) => m.eligibility.teacher.verdict !== "fail" && m.status === "available");
   const [teacher, setTeacher] = useState("");
   useEffect(() => { if (!teacher && teachers.length) setTeacher((teachers.find((m) => m.roles.includes("teacher")) ?? teachers[0]).id); }, [teachers, teacher]);
-  const [n, setN] = useState(40);
   const canGenerate = a.skills.some((k) => k.generator);
+  const [n, setN] = useState(canGenerate ? 100 : 40);  // ~100 per skill gives ≥ 20 final-test tasks each; template generation takes seconds
   const [src, setSrc] = useState<"teacher" | "template">(canGenerate ? "template" : "teacher");
   const act = useAction();
   const status = a.steps.tasks.status;

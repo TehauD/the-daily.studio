@@ -19,6 +19,11 @@ def study_failures(sid: str, st: AppState = Depends(get_state)):
     return gov.failures(_study(st, sid))
 
 
+@router.get("/studies/{sid}/adequacy")
+def study_adequacy(sid: str, st: AppState = Depends(get_state)):
+    return gov.adequacy(_study(st, sid))
+
+
 @router.get("/studies/{sid}/calibration")
 def study_calibration(sid: str, st: AppState = Depends(get_state)):
     return gov.calibration(_study(st, sid))

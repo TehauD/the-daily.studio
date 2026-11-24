@@ -1,0 +1,41 @@
+keyword,category,subcategory,assignment_group
+epic login,Application,EHR access,EHR Support
+order set,Application,EHR build,EHR Clinical Build
+barcode scanner,Hardware,Scanner,Field Services
+label printer,Hardware,Printer,Field Services
+pager,Telecom,Paging,Telecom Services
+desk phone,Telecom,Voice,Telecom Services
+teams meeting,Collaboration,Meetings,Collaboration Services
+shared drive,Storage,File share,Infrastructure Services
+monitor,Hardware,Display,Field Services
+software install,Software,Request,Desktop Engineering
+dictation,Application,Dictation,Clinical Applications
+fax,Telecom,Fax,Telecom Services
+workstation on wheels,Hardware,Mobile cart,Field Services
+phishing email,Security,Suspicious email,Security Operations
+data export,Reporting,Extract,Analytics & BI
+dashboard,Reporting,Dashboard,Analytics & BI
+vpn,Network,Remote access,Network Operations
+wifi,Network,Wireless,Network Operations
+network drop,Network,Wired,Network Operations
+password reset,Access,Password,Service Desk
+account locked,Access,Account,Identity & Access
+mfa,Access,Multi-factor,Identity & Access
+badge access,Access,Physical access,Facilities Security
+printer,Hardware,Printer,Field Services
+label printer,Hardware,Specimen labels,Field Services
+laptop,Hardware,Laptop,Field Services
+docking station,Hardware,Peripheral,Field Services
+outlook,Software,Email,Messaging
+teams,Software,Collaboration,Collaboration Services
+sharepoint,Software,Collaboration,Collaboration Services
+ehr login,Clinical Applications,EHR access,Clinical Applications
+order set,Clinical Applications,EHR build,Clinical Applications
+barcode scanner,Clinical Applications,Medication scanning,Clinical Devices
+pacs viewer,Clinical Applications,Imaging,Imaging Informatics
+lab interface,Integration,Interface,Integration Engineering
+phishing,Security,Suspicious email,Security Operations
+pager,Telecom,Paging,Telecom Services
+desk phone,Telecom,Phone,Telecom Services
+shared drive,Infrastructure,File share,Server & Storage
+citrix,Infrastructure,Virtual desktop,End User Computing

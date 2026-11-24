@@ -1,3 +1,4 @@
+import { Adequacy } from "../components/Adequacy";
 import { AskAI } from "../lib/assistant";
 import { useMemo, useState, type FormEvent } from "react";
 import { ForestPlot, SkillMap, type ForestRow, type SkillFamily } from "../components/charts";
@@ -32,6 +33,7 @@ export default function Evaluation() {
         <>
           {sp === "dev" && <Notice tone="warn">Development split: used for decisions before SEAL. Confirmatory evidence comes only from the sealed test split.</Notice>}
           {c && primary && <Headline c={c} sec={sec} arm={primary} profile={s.data!.plan.profile} />}
+          <Adequacy sid={sid} />
           {/* Wide screens: three instrument columns that fill the viewport; narrow screens: the same panels stacked. */}
           <div className="space-y-4 fit:grid fit:min-h-0 fit:flex-1 fit:grid-cols-12 fit:gap-3 fit:space-y-0">
             <div className="space-y-4 fit:col-span-5 fit:flex fit:min-h-0 fit:flex-col fit:gap-3 fit:space-y-0">

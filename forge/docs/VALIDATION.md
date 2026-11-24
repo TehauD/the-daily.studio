@@ -274,3 +274,16 @@ in LM Studio, and the LM Studio test-set check.
 | Backend suite | 213 passed |
 
 **Requires your machine and Azure:** real proposals from your deployment, and whether they improve a real 1.7B student.
+
+## v0.19.0 — Tests worth trusting
+
+| Check | Result here |
+|---|---|
+| Template audit (all six, 40 tasks / skill): every skill now has train / dev / test tasks (before: ITSM set_priority 0 test, claims appeal_deadline 0 dev, security remediation_due 1 test) | script |
+| Binary skills balanced: prior-auth high-cost 85 % → ~50 % "yes"; security escalation and ITSM major incident ~50 % at the generator (1,000 draws) | script |
+| Prior auth v2 at 100 / skill: 101 tasks per skill, 20 final-test each; all worked examples pass verification | test + demo |
+| Adequacy: no-headroom, imbalanced, weak-teacher and too-few cases each flagged; verdicts and overall | unit test |
+| Demo, existing studies: every older demo study rated inadequate (small splits, skewed skills) — the problem you saw | API |
+| Demo, new prior-auth study (mock teacher, tiny CPU student): overall **adequate**; four skills good (headroom 100 pts, ≥ 20 final-test tasks) | API end to end |
+| CSV download / re-upload round trip; template table before agent creation; formula neutralisation | test |
+| Backend suite | 215 passed |

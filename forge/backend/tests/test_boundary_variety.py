@@ -60,3 +60,26 @@ def test_agent_boundary_tasks_and_coverage(settings):
         cov = c.get(f"/api/agents/{aid}/coverage").json()
         assert cov["grid"]["boundary"]["train"] > 0 and cov["tables"] and sum(cov["boundary"].values()) == 21
         assert all(0 <= t["touched"] <= t["rows"] for t in cov["tables"])
+
+
+def test_table_csv_downloads_and_round_trip(settings):
+    from fastapi.testclient import TestClient
+
+    from forge.agents.agent import parse_table
+    from forge.api.app import create_app
+    with TestClient(create_app(settings)) as c:
+        c.headers["X-Forge-Token"] = c.get("/api/system/session").json()["token"]
+        r = c.get("/api/agents/templates/prior_auth/tables/services/csv")
+        assert r.status_code == 200 and r.headers["content-type"].startswith("text/csv")
+        cols, rows = parse_table(r.text, "services.csv")
+        assert len(rows) == 64 and cols[0] == "service_code" and {"requires_auth", "unit_cost"} <= set(cols)
+        assert c.get("/api/agents/templates/prior_auth/tables/nope/csv").status_code == 404
+        aid = c.post("/api/agents", json={"name": "PA", "template": "prior_auth", "no_sensitive_data": True}).json()["id"]
+        a = c.get(f"/api/agents/{aid}").json()
+        assert a["boundary"]["enabled"] and len(a["boundary"]["custom"]) >= 5  # the template ships hand-back cases
+        assert c.get(f"/api/agents/{aid}/tables/services/csv").text.count("\n") == 65
+        # Your own data in the same shape replaces the synthetic table
+        mine = "Service Code,Service,Requires Auth\nPA-1,=HYPERLINK(1),yes\n"
+        r = c.post(f"/api/agents/{aid}/tables", json={"name": "my_services", "description": "x", "key": "service_code", "content": mine, "filename": "m.csv"})
+        assert r.status_code == 200
+        assert "'=HYPERLINK(1)" in c.get(f"/api/agents/{aid}/tables/my_services/csv").text  # formulas neutralised on export

@@ -30,7 +30,7 @@ def techniques() -> list[dict]:
 def detections() -> list[dict]:
     rng = random.Random("det:4")
     rows = []
-    for i in range(28):
+    for i in range(60):
         t = rng.choice(TECHNIQUES)
         rows.append({"rule_id": f"DR-{1040 + i * 7}", "title": f"{t[1]} indicator #{i + 4}", "technique_id": t[0],
                      "severity": rng.choice([1, 2, 2, 3, 3, 4]), "queue": rng.choice(["SOC Tier 1", "SOC Tier 2", "Threat Hunting"])})
@@ -53,7 +53,7 @@ def assets() -> list[dict]:
 def advisories() -> list[dict]:
     rng = random.Random("vuln:2")
     out = []
-    for i in range(20):
+    for i in range(48):
         sev = rng.choice(["critical", "high", "medium", "low"])
         out.append({"advisory_id": f"VULN-2025-{1100 + i * 13}", "component": rng.choice(["web server", "VPN appliance", "database driver",
                     "imaging gateway", "identity provider", "file transfer tool"]), "severity": sev,
@@ -81,8 +81,13 @@ def _owner(tables: dict, rng: random.Random, nf: bool) -> dict:
 
 
 def _escalate(tables: dict, rng: random.Random, nf: bool) -> dict:
-    d, a = pick(rng, tables["detections"]), pick(rng, tables["assets"])
-    yes = d["severity"] >= 4 or a["criticality"] == 1
+    # Balanced (≈ half "yes"): escalate when severity ≥ 4 or the asset is criticality 1.
+    want = rng.random() < 0.5
+    for _ in range(200):
+        d, a = pick(rng, tables["detections"]), pick(rng, tables["assets"])
+        yes = d["severity"] >= 4 or a["criticality"] == 1
+        if yes == want:
+            break
     return {"question": f"Detection rule {d['rule_id']} fired on host {a['hostname']}. Should it be escalated to the incident response team?",
             "calls": [{"tool": "lookup_detections", "arguments": {"key": d["rule_id"]}}, {"tool": "lookup_assets", "arguments": {"key": a["hostname"]}},
                       {"tool": "check_escalate", "arguments": {"severity": d["severity"], "asset_criticality": a["criticality"]}}],

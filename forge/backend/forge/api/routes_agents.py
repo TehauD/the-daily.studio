@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from forge.agents.agent import Agent, AgentError
-from forge.agents.templates import catalogue
+from forge.agents.templates import TEMPLATES, catalogue
 from forge.agents.tools import OPS, UNIT_NAMES
 from forge.api.state import AppState, get_state
 from forge.jobs.runner import JobError
@@ -129,6 +129,40 @@ def add_table(aid: str, body: TableBody, st: AppState = Depends(get_state)):
         return a.add_table(body.name, body.description, body.key, body.content, body.filename)
     except AgentError as e:
         raise HTTPException(422, str(e))
+
+
+def _csv(rows: list[dict], filename: str):
+    import csv as _csv_mod
+    import io
+
+    from fastapi.responses import Response
+    buf = io.StringIO()
+    cols = list(dict.fromkeys(k for r in rows for k in r))
+    w = _csv_mod.DictWriter(buf, fieldnames=cols, lineterminator="\n")
+    w.writeheader()
+    for r in rows:  # neutralise spreadsheet formulas (CSV injection) — a leading quote keeps the text as text
+        w.writerow({k: (f"'{v}" if isinstance(v, str) and v[:1] in ("=", "+", "-", "@") else v) for k, v in r.items()})
+    return Response("\ufeff" + buf.getvalue(), media_type="text/csv", headers={"Content-Disposition": f'attachment; filename="{filename}"'})
+
+
+@router.get("/{aid}/tables/{name}/csv")
+def table_csv(aid: str, name: str, st: AppState = Depends(get_state)):
+    """Download a table as CSV — also the template for loading your own data in the same shape."""
+    a = _agent(st, aid)
+    if name not in {t["name"] for t in a.meta["tools"].get("tables", [])}:
+        raise HTTPException(404, "Unknown table")
+    return _csv(a._rows_for(name), f"{name}.csv")
+
+
+@router.get("/templates/{tid}/tables/{name}/csv")
+def template_table_csv(tid: str, name: str):
+    """A template's synthetic table as CSV, before creating an agent: the shape to fill with your own data."""
+    if tid not in TEMPLATES or not re.fullmatch(r"[a-z][a-z0-9_]{0,40}", name):
+        raise HTTPException(404, "Unknown template or table")
+    t = next((x for x in TEMPLATES[tid]["tables"] if x["name"] == name), None)
+    if not t:
+        raise HTTPException(404, "Unknown table")
+    return _csv(t["rows"](), f"{tid}-{name}.csv")
 
 
 @router.delete("/{aid}/tables/{name}")

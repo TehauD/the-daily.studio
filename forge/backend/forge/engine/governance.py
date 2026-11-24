@@ -226,6 +226,11 @@ def model_card(study: Any) -> dict[str, Any]:
         limitations.append("Not sealed: only practice (dev) results exist; there is no confirmatory result.")
     if plan["device"] == "cpu":
         limitations.append("Run on CPU (wiring test); not representative of a GPU study.")
+    adq = adequacy(study)
+    for sk in adq["skills"]:
+        for i in sk["issues"]:
+            if i["kind"] in ("no_headroom", "imbalanced", "weak_teacher"):
+                limitations.append(f"Skill {sk['skill']}: {i['text']}")
     return {
         "card_version": 1, "generated_at": utcnow(), "forge_version": __version__,
         "study": {"id": plan["study_id"], "name": plan["name"], "profile": plan.get("profile"), "sealed": state["sealed"],
@@ -237,7 +242,7 @@ def model_card(study: Any) -> dict[str, Any]:
         "data": {"tasks": len(study.tasks()), "splits": {sp: sum(1 for t in study.tasks() if t.split == sp) for sp in ("train", "dev", "test")},
                  "training_records": ds.get("records"), "episodes_used": ds.get("episodes_used"), "exclusions": ds.get("exclusions"),
                  "records_sha256": ds.get("records_sha256"), "human_review": _review_stats(study), "synthetic": True},
-        "results": results, "calibration": cal["rows"], "failures": [{k: r[k] for k in ("arm", "split", "seed", "episodes", "failed", "types")} for r in fail["rows"]],
+        "results": results, "test_adequacy": {"overall": adq["overall"], "skills": {x["skill"]: x["verdict"] for x in adq["skills"]}}, "calibration": cal["rows"], "failures": [{k: r[k] for k in ("arm", "split", "seed", "episodes", "failed", "types")} for r in fail["rows"]],
         "failure_changes": fail["changes"],
         "efficiency": {"rows": [{k: r[k] for k in ("arm", "split", "median_s", "generated_per_s", "success")} for r in eff["rows"]], "runs": eff["runs"], "sizes": eff["sizes"]},
         "limitations": limitations,
@@ -330,3 +335,53 @@ def report_html(c: dict, audience: str, audit: list[dict] | None = None) -> str:
     out.append("<h2>Limitations</h2><ul>" + "".join(f"<li>{e(x)}</li>" for x in c["limitations"]) + "</ul>")
     out.append("<h2>FORGE never claims</h2><ul>" + "".join(f"<li>{e(x)}</li>" for x in c["never_claimed"]) + "</ul></body></html>")
     return "".join(out)
+
+
+ADEQ = {"headroom": 0.15, "ceiling": 0.8, "teacher": 0.8, "imbalance": 0.65, "min_test": 20, "min_dev": 10}
+
+
+def adequacy(study: Any) -> dict[str, Any]:
+    """Is this a good test? Per skill, from the task set and the untrained / teacher evaluation on dev:
+    room to improve (headroom), a capable teacher, balanced answers, and enough tasks. A skill that fails these can't
+    show a training effect, however good the training is."""
+    from collections import Counter as _C
+    tasks = study.tasks()
+    cb = study.plan["eval"]["control_seed_broadcast"]
+
+    def rates(arm: str, seed: int) -> dict[str, float]:
+        p = study.episode_path(arm, "dev", seed)
+        if not p.exists():
+            return {}
+        by: dict[str, list[int]] = defaultdict(list)
+        for e in study.episodes(arm, "dev", seed):
+            by[e["family"]].append(int(e["score"]["strict_success"]))
+        return {f: sum(v) / len(v) for f, v in by.items()}
+    base, teacher = rates("base", cb), rates("teacher", 0)
+    skills = []
+    for fam in sorted({t.family for t in tasks}):
+        ts = [t for t in tasks if t.family == fam]
+        n = {sp: sum(1 for t in ts if t.split == sp) for sp in ("train", "dev", "test")}
+        ans = _C(answer_norm(t.reference_answer) for t in ts)
+        top, top_n = ans.most_common(1)[0]
+        share = top_n / len(ts)
+        steps = sum(len(t.reference_calls) for t in ts) / len(ts)
+        b, te = base.get(fam), teacher.get(fam)
+        issues = []
+        if b is not None and te is not None and (te - b < ADEQ["headroom"] or b >= ADEQ["ceiling"]):
+            issues.append({"kind": "no_headroom", "text": f"The untrained model already scores {b:.0%} (teacher {te:.0%}): too little room to show improvement."})
+        if te is not None and te < ADEQ["teacher"]:
+            issues.append({"kind": "weak_teacher", "text": f"The teacher scores only {te:.0%}: few correct examples to learn from. Check the skill, tools and examples, or use a stronger teacher."})
+        if fam != "boundary" and len(ans) <= 4 and share >= ADEQ["imbalance"]:
+            issues.append({"kind": "imbalanced", "text": f"‘{top}’ is the answer to {share:.0%} of tasks: always answering it would score {share:.0%}."})
+        if n["test"] < ADEQ["min_test"] or n["dev"] < ADEQ["min_dev"]:
+            issues.append({"kind": "too_few", "text": f"Only {n['dev']} check-in and {n['test']} final-test tasks: results will have wide ranges. Aim for ≥ {ADEQ['min_test']} final-test tasks per skill."})
+        verdict = "good" if not issues else ("unusable" if any(i["kind"] in ("no_headroom", "imbalanced") for i in issues) else "weak")
+        skills.append({"skill": fam, "tasks": n, "untrained": b, "teacher": te, "headroom": (te - b) if b is not None and te is not None else None,
+                       "top_answer": top, "top_share": share, "avg_steps": round(steps, 2), "issues": issues, "verdict": verdict})
+    good = [s for s in skills if s["verdict"] == "good"]
+    measured = bool(base and teacher)
+    overall = ("not yet measured — run Collect and Evaluate · dev" if not measured else
+               "adequate" if len(good) >= max(1, len(skills) // 2) else "weak" if good else "inadequate")
+    return {"overall": overall, "measured": measured, "skills": skills, "thresholds": ADEQ,
+            "note": "A good test needs, per skill: room to improve (untrained well below the teacher), a teacher that succeeds ≥ 80 %, "
+                    "balanced answers, and ≥ 20 final-test tasks. Skills that fail can't show a training effect either way."}
