@@ -15,7 +15,41 @@ import type { Job, Model, Readiness, StudyRow, StudySummary } from "../lib/types
 interface Call { tool: string; arguments: Record<string, unknown> }
 interface Example { prompt: string; answer: string; calls?: Call[] }
 interface Skill { id: string; name: string; description: string; tools: string[]; not_found: number; examples: Example[]; generator?: boolean }
-interface TemplateInfo { id: string; title: string; domain: string; description: string; skills: string[]; tables: string[] }
+interface Guide { tier: number; risk: string; owner: string; value: string; size_it: string; load: string[]; guardrails: string[]; measure: string; pilot: string; never: string }
+interface TemplateInfo { id: string; title: string; domain: string; description: string; skills: string[]; tables: string[]; guide: Guide | null }
+
+const RISK_TONE: Record<string, "good" | "warn" | "crit" | "default"> = { low: "good", moderate: "warn", "compliance-sensitive": "crit" };
+const SOURCE_NOTE: Record<string, string> = {
+  security_triage: " ATT&CK technique IDs are public MITRE references.",
+  coding_edits: " Codes are FORGE's own formats, not CPT® (AMA-licensed) or ICD-10-CM; the table shapes match the public CMS NCCI PTP and MUE files, so you can load your licensed data later.",
+  hl7_interfaces: " HL7 v2 segment fields, trigger events and code tables 0008 / 0357 are public references with FORGE's own short descriptions; interfaces, systems and teams are invented.",
+};
+
+/** Recommendations for the selected template: why it matters, what to load, guardrails, how FORGE measures it, a first pilot. */
+function UseCaseGuide({ t }: { t: TemplateInfo }) {
+  const g = t.guide;
+  if (!g) return null;
+  return (
+    <section aria-label={`Recommendations for ${t.title}`} className="rounded-[var(--radius)] border border-line bg-surface-2 p-3.5">
+      <div className="mb-2 flex flex-wrap items-center gap-2">
+        <span className="text-[13px] font-semibold text-ink">Recommendations</span>
+        <Badge tone={g.tier === 1 ? "accent" : "default"}>{g.tier === 1 ? "Tier 1 · first-pilot candidate" : "Tier 2 · needs groundwork"}</Badge>
+        <Badge tone={RISK_TONE[g.risk] ?? "default"}>{g.risk} risk</Badge>
+        <span className="text-[11.5px] text-ink-3">owner: {g.owner}</span>
+      </div>
+      <div className="grid gap-x-6 gap-y-3 text-[12.5px] leading-relaxed text-ink-2 lg:grid-cols-2">
+        <div><div className="micro mb-0.5 text-ink-3">why it matters</div>{g.value}</div>
+        <div><div className="micro mb-0.5 text-ink-3">size the opportunity — count</div>{g.size_it}</div>
+        <div><div className="micro mb-0.5 text-ink-3">real data to load later (after approval)</div><ul className="list-disc space-y-0.5 pl-4">{g.load.map((x) => <li key={x}>{x}</li>)}</ul></div>
+        <div><div className="micro mb-0.5 text-ink-3">guardrails</div><ul className="list-disc space-y-0.5 pl-4">{g.guardrails.map((x) => <li key={x}>{x}</li>)}</ul></div>
+        <div><div className="micro mb-0.5 text-ink-3">how FORGE measures it</div>{g.measure}</div>
+        <div><div className="micro mb-0.5 text-ink-3">recommended first pilot</div>{g.pilot}</div>
+      </div>
+      <div className="mt-2.5 rounded border border-[color:var(--crit)]/30 bg-[color:var(--crit)]/[0.05] px-2.5 py-1.5 text-[12px] text-ink-2"><b className="text-crit-ink">Never:</b> {g.never}</div>
+      <div className="mt-2 text-[11px] text-ink-3">Planning recommendations, not results — nothing here predicts an accuracy. See docs/USE_CASES.md for all templates side by side.</div>
+    </section>
+  );
+}
 interface Rule { name: string; description: string; inputs: { name: string; type: "number" | "text" }[]; match: "all" | "any"; conditions: { input: string; op: string; value: string | number }[]; true_text: string; false_text: string }
 interface TableMeta { name: string; description: string; key: string; columns: string[]; rows: number; source: string }
 interface ToolInfo { name: string; description: string; parameters: { properties: Record<string, { type: string; enum?: string[] }>; required: string[] } }
@@ -146,13 +180,15 @@ function CreateAgent({ onCreated }: { onCreated: (id: string) => void }) {
                   className={cx("rounded-[var(--radius)] border p-3 text-left transition", t === x.id ? "border-accent bg-accent-soft" : "border-line hover:border-accent-line")}>
                   <div className="flex items-start gap-2 text-[13px] font-semibold text-ink"><span className={cx("mt-0.5 h-3.5 w-3.5 shrink-0 rounded-full border-2", t === x.id ? "border-accent bg-accent" : "border-line-strong")} />{x.title}</div>
                   <div className="mt-1 text-[12px] leading-snug text-ink-3">{x.description}</div>
+                  {x.guide && <div className="mt-1.5 flex flex-wrap gap-1"><Badge tone={x.guide.tier === 1 ? "accent" : "default"}>Tier {x.guide.tier}</Badge><Badge tone={RISK_TONE[x.guide.risk] ?? "default"}>{x.guide.risk} risk</Badge></div>}
                   {x.skills.length > 0 && <div className="mt-2 flex flex-wrap gap-1">{x.skills.map((k) => <Badge key={k}>{k}</Badge>)}</div>}
                 </button>
               ))}
             </div>
+            {cur && list.some((x) => x.id === cur.id) && <div className="mt-2.5"><UseCaseGuide t={cur} /></div>}
           </div>
         ))}
-        {t !== "blank" && <Notice tone="info">Everything in this template is <b>invented</b> — organisations, records, codes and rules{t === "security_triage" ? " (ATT&CK technique IDs are public MITRE references)" : ""}. It shows a domain agent end to end; it is not real operational, clinical, or security data, and FORGE makes no claim of fitness for real use.{cur?.tables.length ? ` Tables: ${cur.tables.join(", ")}.` : ""}</Notice>}
+        {t !== "blank" && <Notice tone="info">Everything in this template is <b>invented</b> — organisations, records, codes and rules.{SOURCE_NOTE[t] ?? ""} It shows a domain agent end to end; it is not real operational, clinical, or security data, and FORGE makes no claim of fitness for real use.{cur?.tables.length ? ` Tables: ${cur.tables.join(", ")}.` : ""}</Notice>}
         <Field label="Name this agent"><input className={inputCls} value={f.name} placeholder={cur?.title.replace(/\s*\(synthetic.*\)$/, "") ?? "e.g. Billing-code helper"} onChange={(e) => setF({ ...f, name: e.target.value })} /></Field>
         <label className={cx("flex items-start gap-3 rounded-[var(--radius)] border p-3", f.ok ? "border-[color:var(--good)]/40 bg-[color:var(--good)]/[0.04]" : "border-[color:var(--warn)]/60 bg-[color:var(--warn)]/[0.07]")}>
           <input type="checkbox" className="mt-0.5 h-4 w-4 accent-[var(--accent)]" checked={f.ok} onChange={(e) => setF({ ...f, ok: e.target.checked })} />

@@ -1,0 +1,24 @@
+event,description,message_structure
+ADT^A01,Admit / visit notification,ADT_A01
+ADT^A02,Transfer a patient,ADT_A02
+ADT^A03,Discharge / end visit,ADT_A03
+ADT^A04,Register a patient (outpatient),ADT_A01
+ADT^A05,Pre-admit a patient,ADT_A05
+ADT^A06,Change outpatient to inpatient,ADT_A06
+ADT^A07,Change inpatient to outpatient,ADT_A06
+ADT^A08,Update patient information,ADT_A01
+ADT^A11,Cancel admit / visit,ADT_A09
+ADT^A13,Cancel discharge,ADT_A01
+ADT^A28,Add person information,ADT_A05
+ADT^A31,Update person information,ADT_A05
+ADT^A40,Merge patient identifier list,ADT_A39
+ORM^O01,General order message,ORM_O01
+OML^O21,Laboratory order,OML_O21
+ORU^R01,Unsolicited observation result,ORU_R01
+SIU^S12,New appointment booking,SIU_S12
+SIU^S14,Appointment modification,SIU_S12
+SIU^S15,Appointment cancellation,SIU_S12
+MDM^T02,Original document with content,MDM_T02
+DFT^P03,Post detail financial transaction,DFT_P03
+VXU^V04,Unsolicited vaccination record update,VXU_V04
+ACK,General acknowledgment,ACK

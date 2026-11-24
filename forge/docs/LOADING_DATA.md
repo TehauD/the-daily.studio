@@ -10,7 +10,12 @@ queues, turnaround times — never member, patient or claim-level records. FORGE
 - Agent Studio → choose the template → **Tools** → each table has **Download CSV**; or before creating an agent:
   `GET /api/agents/templates/prior_auth/tables/services/csv`.
 - Samples in this repo: [`docs/examples/prior_auth-services.csv`](examples/prior_auth-services.csv) (64 services) and the
-  claims, patient-access and ITSM equivalents next to it.
+  claims, patient-access and ITSM equivalents next to it — plus coding edits (procedures, PTP edits, diagnoses, coverage),
+  pharmacy formulary, provider credentialing (providers, enrollments), supply-chain item master and HL7 interfaces (errors,
+  fields, events, interfaces). [USE_CASES.md](USE_CASES.md) lists, per template, which real tables to load and the guardrails.
+- **Licensed and public code sets:** the coding-edit template uses FORGE's own code formats. CPT® descriptions are licensed by
+  the AMA — load them only under your organisation's licence; CMS NCCI PTP and MUE files are public and match the
+  `ptp_edits` / `procedures` shapes. HL7 v2 tables and field names are public references.
 
 ## 2. The prior-authorization criteria table
 

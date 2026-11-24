@@ -20,3 +20,12 @@ def num(v: Any) -> str:
 
     from forge.agents.tools import fmt_num
     return fmt_num(Decimal(str(v)))
+
+
+def example_values(tables: dict, gens: dict) -> dict[str, Any]:
+    """Worked examples for each skill, produced by the skill's own generator (so they always verify): {ex_<k>_q|c|a}."""
+    out: dict[str, Any] = {}
+    for k, g in gens.items():
+        c = g(tables, random.Random(f"example:{k}"), False)
+        out[f"ex_{k}_q"], out[f"ex_{k}_c"], out[f"ex_{k}_a"] = c["question"], c["calls"], str(c["answer"])
+    return out

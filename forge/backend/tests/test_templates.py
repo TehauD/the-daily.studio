@@ -56,9 +56,35 @@ def test_catalogue_and_template_source_api(settings):
     with TestClient(create_app(settings)) as c:
         c.headers["X-Forge-Token"] = c.get("/api/system/session").json()["token"]
         cat = c.get("/api/agents/templates").json()["templates"]
-        assert {"itsm_servicenow", "patient_access", "security_triage", "claims_denials", "prior_auth", "pharmacy_benefits"} <= {t["id"] for t in cat}
+        assert {"itsm_servicenow", "patient_access", "security_triage", "claims_denials", "prior_auth", "pharmacy_benefits", "coding_edits",
+                "provider_credentialing", "supply_chain", "hl7_interfaces"} <= {t["id"] for t in cat}
         assert all(t["domain"] and t["skills"] is not None for t in cat)
         blank = c.post("/api/agents", json={"name": "b", "template": "blank", "no_sensitive_data": True}).json()["id"]
         c.put(f"/api/agents/{blank}", json={"skills": [{"id": "x", "name": "X", "description": "d", "tools": ["calculate"], "not_found": 0, "examples": []}]})
         assert c.post(f"/api/agents/{blank}/steps/tasks", json={"source": "template"}).status_code == 409   # no generator
         assert c.post(f"/api/agents/{blank}/steps/tasks", json={"source": "teacher"}).status_code == 422    # teacher required
+
+
+def test_every_domain_template_has_recommendations_and_docs():
+    from pathlib import Path
+
+    from forge.agents.templates.guides import GUIDES
+    keys = {"tier", "risk", "owner", "value", "size_it", "load", "guardrails", "measure", "pilot", "never"}
+    assert set(GUIDES) == set(DOMAIN)
+    for tid, g in GUIDES.items():
+        assert keys <= set(g) and g["tier"] in (1, 2) and g["risk"] in ("low", "moderate", "compliance-sensitive") and g["load"] and g["guardrails"], tid
+    assert all(c["guide"] for c in templates.catalogue() if c["id"] != "blank")
+    doc = (Path(__file__).resolve().parents[2] / "docs" / "USE_CASES.md").read_text(encoding="utf-8")
+    for tid, g in GUIDES.items():   # the guide doc is generated from GUIDES: it must not drift
+        assert f"Template `{tid}`" in doc and g["pilot"] in doc and g["never"] in doc, tid
+    for tid in ("coding_edits", "provider_credentialing", "supply_chain", "hl7_interfaces"):
+        assert any(p.name.startswith(tid) for p in (Path(__file__).resolve().parents[2] / "docs" / "examples").glob("*.csv")), tid
+
+
+def test_tier2_templates_hand_back_what_they_must():
+    """The compliance-sensitive asks are boundary cases, and the roles say so."""
+    t = templates.TEMPLATES
+    assert "never choose or suggest codes" in t["coding_edits"]["role"] and any("modifier 59" in x for x in t["coding_edits"]["boundary"]["custom"])
+    assert "never" in t["pharmacy_benefits"]["role"] and t["pharmacy_benefits"]["boundary"]["enabled"]
+    assert "never grant" in t["provider_credentialing"]["role"] and "never place" in t["supply_chain"]["role"]
+    assert "never resend" in t["hl7_interfaces"]["role"] and any("patient name" in x for x in t["hl7_interfaces"]["boundary"]["custom"])

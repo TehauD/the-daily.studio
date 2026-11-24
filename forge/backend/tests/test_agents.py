@@ -88,8 +88,8 @@ def test_practice_tasks_splits_and_study(tmp_path, monkeypatch):
     a = Agent.create(tmp_path / "agents", "PB", "pharmacy_benefits", True)
     s = a.run_tasks(FakeTeacher(a.tables()["formulary"]), per_skill=10, seed=3)
     tasks = a.tasks()
-    assert s["accepted"] == len(tasks) >= 25 and s["rejected"] >= 5 and s["from_you"] == 5
-    assert s["not_found"] >= 1 and all(t["meta"]["source"] in ("you", "teacher") for t in tasks)
+    assert s["accepted"] == len(tasks) >= 25 and s["rejected"] >= 5 and s["from_you"] == 12  # 6 worked examples + 6 custom hand-back cases
+    assert s["not_found"] >= 1 and all(t["meta"]["source"] in ("you", "teacher", "boundary") for t in tasks)
     assert any("not a value the tools returned" in x["reason"] for x in a.rejected())
     # No entity (drug) crosses splits.
     by_drug = {}

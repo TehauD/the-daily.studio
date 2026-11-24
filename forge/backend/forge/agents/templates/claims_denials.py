@@ -87,7 +87,7 @@ def _small(tables: dict, rng: random.Random, nf: bool) -> dict:
 
 
 TEMPLATE = {
-    "title": "Claims denials — revenue-cycle routing (synthetic)", "domain": "Health system operations",
+    "title": "Claims denials — revenue-cycle routing (synthetic)", "domain": "Revenue cycle",
     "description": "Route denials by reason code to work queues with the next action, compute appeal deadlines per payer, flag small balances.",
     "role": ("You are a revenue-cycle denials assistant for a fictional health system (synthetic data). You classify claim denials by "
              "reason code, route them to the right work queue with the next action, and compute appeal deadlines — using your tools only. "

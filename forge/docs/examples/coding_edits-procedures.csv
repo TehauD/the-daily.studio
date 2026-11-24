@@ -1,0 +1,57 @@
+proc_code,description,category,mue_units_per_day,global_days
+PRC-1001,"Office visit, new, low complexity",Visits,1,0
+PRC-1002,"Office visit, new, moderate complexity",Visits,2,0
+PRC-1003,"Office visit, established, brief",Visits,1,0
+PRC-1004,"Office visit, established, moderate",Visits,1,0
+PRC-1005,"Office visit, established, high complexity",Visits,1,0
+PRC-1006,"Consultation, outpatient",Visits,1,0
+PRC-1007,"Preventive visit, adult",Visits,2,0
+PRC-1008,"Telehealth visit, established",Visits,1,0
+PRC-1009,"Joint injection, large joint",Injections,3,0
+PRC-1010,"Joint injection, small joint",Injections,4,0
+PRC-1011,"Trigger point injection, 1-2 muscles",Injections,3,0
+PRC-1012,"Trigger point injection, 3+ muscles",Injections,3,0
+PRC-1013,"Nerve block injection, peripheral",Injections,1,0
+PRC-1014,Tendon sheath injection,Injections,4,0
+PRC-1015,Bursa aspiration,Injections,2,0
+PRC-1016,"Intramuscular injection, therapeutic",Injections,4,0
+PRC-1017,"Lesion removal, benign, small",Skin,3,10
+PRC-1018,"Lesion removal, benign, medium",Skin,6,0
+PRC-1019,"Lesion biopsy, single",Skin,6,10
+PRC-1020,"Lesion biopsy, each additional",Skin,6,0
+PRC-1021,"Wound repair, simple, small",Skin,1,10
+PRC-1022,"Wound repair, intermediate",Skin,1,10
+PRC-1023,"Abscess drainage, simple",Skin,6,0
+PRC-1024,"Skin tag removal, up to 15",Skin,6,10
+PRC-1025,"Knee arthroscopy, diagnostic",Musculoskeletal,1,90
+PRC-1026,"Knee arthroscopy, meniscus repair",Musculoskeletal,1,90
+PRC-1027,"Shoulder arthroscopy, decompression",Musculoskeletal,2,10
+PRC-1028,Carpal tunnel release,Musculoskeletal,1,10
+PRC-1029,Trigger finger release,Musculoskeletal,2,10
+PRC-1030,"Fracture care, wrist, closed",Musculoskeletal,1,90
+PRC-1031,"Ankle fracture repair, open",Musculoskeletal,2,90
+PRC-1032,Ganglion cyst excision,Musculoskeletal,2,10
+PRC-1033,"Upper endoscopy, diagnostic",Digestive,1,0
+PRC-1034,Upper endoscopy with biopsy,Digestive,2,10
+PRC-1035,"Colonoscopy, diagnostic",Digestive,1,10
+PRC-1036,Colonoscopy with biopsy,Digestive,1,0
+PRC-1037,Colonoscopy with polyp removal,Digestive,1,10
+PRC-1038,Hemorrhoid banding,Digestive,1,10
+PRC-1039,"Anoscopy, diagnostic",Digestive,2,10
+PRC-1040,Feeding tube replacement,Digestive,1,10
+PRC-1041,"Therapeutic exercise, each 15 min",Therapy,8,0
+PRC-1042,"Manual therapy, each 15 min",Therapy,4,0
+PRC-1043,"Gait training, each 15 min",Therapy,4,0
+PRC-1044,"Neuromuscular re-education, each 15 min",Therapy,6,0
+PRC-1045,"Therapy evaluation, low complexity",Therapy,6,0
+PRC-1046,Therapy re-evaluation,Therapy,8,0
+PRC-1047,"Ultrasound therapy, each 15 min",Therapy,6,0
+PRC-1048,"Aquatic therapy, each 15 min",Therapy,6,0
+PRC-1049,"X-ray knee, 2 views",Imaging,3,0
+PRC-1050,"X-ray chest, 2 views",Imaging,3,0
+PRC-1051,"X-ray spine, lumbar",Imaging,3,0
+PRC-1052,"Ultrasound abdomen, complete",Imaging,2,0
+PRC-1053,"Ultrasound abdomen, limited",Imaging,2,0
+PRC-1054,CT head without contrast,Imaging,1,0
+PRC-1055,MRI knee without contrast,Imaging,3,0
+PRC-1056,Bone density scan,Imaging,3,0

@@ -317,6 +317,21 @@ torch.compile (their code paths run only on CUDA with the packages installed); t
 The demo models are simulated (their accuracy is scripted to fall with difficulty) — the numbers show the plumbing, not any
 real model. **Requires your machine:** real LM Studio models (including a vision model such as Qwen2.5-VL) and GPU students.
 
+## v0.25.0 — Tier-2 templates and recommendations
+
+| Check | Result here |
+|---|---|
+| Every domain template (10): synthetic tables pass the sensitive-data scan, worked examples verify, generators give ≥ 15 verified tasks per skill, no primary entity crosses splits | test |
+| New templates at 100 tasks per skill: coding edits 500, pharmacy 492, credentialing 481, supply chain 490, HL7 559 tasks (incl. hand-back cases) | script |
+| Oracle solves every generated task with the tools alone (train / dev / test, all five templates) | 100 % |
+| Answer balance: yes / no skills between 29 % and 56 % per answer; no single answer above 34 % in any multi-answer skill | script |
+| Recommendations present and complete for every domain template; docs/USE_CASES.md in sync with them | test |
+| Compliance-sensitive asks are hand-back cases and the roles say "never" | test |
+| WCAG 2.2 AA: all pages × light and dark, plus the template picker with recommendations open | **0 violations** |
+
+**Not covered:** whether a student learns these skills — that needs studies on your GPU. Real CPT®, NCCI, credentialing,
+item-master or interface data were not used.
+
 ## v0.24.0 — Compare and History
 
 | Check | Result here |

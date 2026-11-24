@@ -14,16 +14,18 @@ import random
 from types import ModuleType
 from typing import Any, Callable
 
-from forge.agents.templates import blank, claims_denials, itsm_servicenow, patient_access, pharmacy_benefits, prior_auth, security_triage
+from forge.agents.templates import (blank, claims_denials, coding_edits, hl7_interfaces, itsm_servicenow, patient_access, pharmacy_benefits,
+                                    prior_auth, provider_credentialing, security_triage, supply_chain)
+from forge.agents.templates.guides import GUIDES
 
-MODULES: dict[str, ModuleType] = {m.ID: m for m in (blank, itsm_servicenow, patient_access, pharmacy_benefits, claims_denials,
-                                                   prior_auth, security_triage)}
+MODULES: dict[str, ModuleType] = {m.ID: m for m in (blank, itsm_servicenow, patient_access, prior_auth, claims_denials, security_triage,
+                                                   pharmacy_benefits, coding_edits, provider_credentialing, supply_chain, hl7_interfaces)}
 TEMPLATES = {k: m.TEMPLATE for k, m in MODULES.items()}
 
 
 def catalogue() -> list[dict[str, Any]]:
     return [{"id": k, "title": t["title"], "domain": t["domain"], "description": t["description"],
-             "skills": [s["name"] for s in t["skills"]], "tables": [x["name"] for x in t["tables"]]} for k, t in TEMPLATES.items()]
+             "skills": [s["name"] for s in t["skills"]], "tables": [x["name"] for x in t["tables"]], "guide": GUIDES.get(k)} for k, t in TEMPLATES.items()]
 
 
 def build_tables(template: str) -> dict[str, list[dict]]:

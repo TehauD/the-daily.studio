@@ -1,0 +1,25 @@
+interface_id,name,message_type,source,destination,direction,protocol,port,owner_team,retry_minutes,alert_queue_depth,messages_per_minute
+IF-101,ADT^A01 EHR to Lab,ADT^A01,EHR (Evergreen),Lab (Quartz LIS),outbound,MLLP,6600,Clinical Applications,5,1000,200
+IF-102,ADT^A08 EHR to Lab,ADT^A08,EHR (Evergreen),Lab (Quartz LIS),outbound,MLLP,6607,Interface Analysts,1,1000,200
+IF-103,ADT^A03 EHR to Billing,ADT^A03,EHR (Evergreen),Billing (Ledger),outbound,MLLP,6614,Interface Analysts,1,500,40
+IF-104,ORM^O01 EHR to Radiology,ORM^O01,EHR (Evergreen),Radiology (Halo RIS),outbound,HTTPS,6621,Interface Analysts,1,200,40
+IF-105,OML^O21 EHR to Lab,OML^O21,EHR (Evergreen),Lab (Quartz LIS),outbound,SFTP batch,6628,Clinical Applications,2,200,40
+IF-106,ORU^R01 Lab to EHR,ORU^R01,Lab (Quartz LIS),EHR (Evergreen),inbound,HTTPS,6635,Clinical Applications,5,500,40
+IF-107,ORU^R01 Radiology to EHR,ORU^R01,Radiology (Halo RIS),EHR (Evergreen),inbound,MLLP,6642,Lab Systems,1,200,60
+IF-108,ORU^R01 Cardiology to EHR,ORU^R01,Cardiology (PulseView),EHR (Evergreen),inbound,MLLP,6649,Clinical Applications,2,2000,120
+IF-109,SIU^S12 Scheduling to EHR,SIU^S12,Scheduling (SlotWise),EHR (Evergreen),inbound,MLLP,6656,Lab Systems,10,2000,40
+IF-110,SIU^S15 Scheduling to EHR,SIU^S15,Scheduling (SlotWise),EHR (Evergreen),inbound,MLLP,6663,Lab Systems,2,200,60
+IF-111,DFT^P03 EHR to Billing,DFT^P03,EHR (Evergreen),Billing (Ledger),outbound,SFTP batch,6670,Interface Analysts,2,500,120
+IF-112,DFT^P03 Lab to Billing,DFT^P03,Lab (Quartz LIS),Billing (Ledger),inbound,MLLP,6677,Revenue Cycle Systems,1,2000,20
+IF-113,MDM^T02 Transcription to EHR,MDM^T02,Transcription (ScribeLine),EHR (Evergreen),inbound,MLLP,6684,Revenue Cycle Systems,10,1000,200
+IF-114,MDM^T02 EHR to Document imaging,MDM^T02,EHR (Evergreen),Document imaging (Archivo),outbound,MLLP,6691,Revenue Cycle Systems,5,2000,60
+IF-115,VXU^V04 EHR to Immunization registry,VXU^V04,EHR (Evergreen),Immunization registry (state),outbound,MLLP,6698,Lab Systems,5,1000,20
+IF-116,ADT^A40 EHR to Lab,ADT^A40,EHR (Evergreen),Lab (Quartz LIS),outbound,SFTP batch,6705,Integration Engineering,5,1000,80
+IF-117,ADT^A40 EHR to Radiology,ADT^A40,EHR (Evergreen),Radiology (Halo RIS),outbound,SFTP batch,6712,Interface Analysts,5,2000,20
+IF-118,ORM^O01 EHR to Pharmacy,ORM^O01,EHR (Evergreen),Pharmacy (Rx Hub),outbound,HTTPS,6719,Lab Systems,5,500,60
+IF-119,ORU^R01 Pharmacy to EHR,ORU^R01,Pharmacy (Rx Hub),EHR (Evergreen),inbound,MLLP,6726,Revenue Cycle Systems,5,2000,40
+IF-120,ADT^A08 EHR to Pharmacy,ADT^A08,EHR (Evergreen),Pharmacy (Rx Hub),outbound,MLLP,6733,Clinical Applications,5,2000,20
+IF-121,SIU^S14 Scheduling to EHR,SIU^S14,Scheduling (SlotWise),EHR (Evergreen),inbound,MLLP,6740,Revenue Cycle Systems,2,2000,60
+IF-122,ADT^A04 EHR to Scheduling,ADT^A04,EHR (Evergreen),Scheduling (SlotWise),outbound,MLLP,6747,Lab Systems,2,1000,80
+IF-123,ORM^O01 EHR to Cardiology,ORM^O01,EHR (Evergreen),Cardiology (PulseView),outbound,MLLP,6754,Interface Analysts,2,1000,20
+IF-124,DFT^P03 Radiology to Billing,DFT^P03,Radiology (Halo RIS),Billing (Ledger),inbound,MLLP,6761,Integration Engineering,10,1000,200

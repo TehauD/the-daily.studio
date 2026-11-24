@@ -119,7 +119,7 @@ def _cost(tables: dict, rng: random.Random, nf: bool) -> dict:
 
 
 TEMPLATE = {
-    "title": "Prior authorization criteria (synthetic)", "domain": "Health system operations",
+    "title": "Prior authorization criteria (synthetic)", "domain": "Patient access & authorizations",
     "description": "64 services with authorization rules: needs-auth lookups, units over the limit, decision due dates, and a high-cost rule (units × unit rate). Boundary cases on.",
     "role": ("You are a prior-authorization intake assistant for a fictional health plan (synthetic data). You answer administrative "
              "authorization questions — whether a service needs authorization, unit limits, documentation, review team, decision dates, and "

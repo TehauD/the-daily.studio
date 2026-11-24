@@ -1,5 +1,23 @@
 # FORGE changelog
 
+## 0.25.0 — Tier-2 use-case templates and recommendations
+- **Four new Agent Studio templates** (synthetic, with built-in task generators, hand-back cases and sample CSVs):
+  - *Coding edit checks* — assistive only: procedure-to-procedure (NCCI-style) edits and whether a modifier may bypass them,
+    MUE unit limits, diagnosis-group coverage policy, global surgical periods. FORGE's own code formats (not CPT® / ICD-10-CM);
+    requests to add modifiers, change units or pick diagnoses are hand-back cases.
+  - *Provider credentialing & enrollment* — licence / board / malpractice expiry with a 90-day renewal rule, re-credentialing
+    due dates (1,095 days), payer enrollment status. No NPIs, contact or personal details.
+  - *Supply chain* — item-master duplicates → active record, manufacturer-part matching, unit-of-measure conversion and cost,
+    reorder-point rule, order-to-par and days on hand.
+  - *HL7 interface troubleshooting* — ACK codes (table 0008), error conditions (table 0357) and engine errors; segment fields
+    and trigger events; interface owners and connection details; queue drain time and an escalation rule. No message content.
+- **Pharmacy benefits extended**: formulary status, step therapy, therapeutic class, and a *lower-tier alternatives* skill
+  (lowest tier in the same class — benefit information, not a recommendation); clinical questions are now hand-back cases.
+- **Recommendations for every template** (tier, risk, owner, how to size it, real data to load later, guardrails, how FORGE
+  measures it, first pilot, "never") — shown under the selected template in Agent Studio; tier and risk badges on every card;
+  templates grouped by department. **docs/USE_CASES.md** collects them with the fit criteria, scoring method and a suggested order.
+- Generated at 100 tasks per skill, every task of the five templates is solved by the oracle using only the tools (100 %).
+
 ## 0.24.0 — Compare any two models, and history over time
 - **Compare** (Measure): pick any two measured things — a study's base, teacher or trained arm, one seed, a Weight Lab
   variant, or a bench lane — and see them on exactly the same tasks. A task is paired only when its content is

@@ -1,0 +1,49 @@
+dx_code,description,dx_group
+DX-A10,Low back pain,Musculoskeletal pain
+DX-A11,Neck pain,Musculoskeletal pain
+DX-A12,Knee pain,Musculoskeletal pain
+DX-A13,Shoulder pain,Musculoskeletal pain
+DX-A14,Hip pain,Musculoskeletal pain
+DX-A15,Wrist pain,Musculoskeletal pain
+DX-B10,Meniscus tear,Joint injury
+DX-B11,Rotator cuff strain,Joint injury
+DX-B12,Ankle sprain,Joint injury
+DX-B13,Wrist fracture,Joint injury
+DX-B14,Knee ligament sprain,Joint injury
+DX-B15,Finger dislocation,Joint injury
+DX-C10,Benign skin lesion,Skin lesion
+DX-C11,Seborrheic keratosis,Skin lesion
+DX-C12,Skin tag,Skin lesion
+DX-C13,Epidermal cyst,Skin lesion
+DX-C14,Atypical mole,Skin lesion
+DX-C15,Actinic lesion,Skin lesion
+DX-D10,"Laceration, forearm",Wound
+DX-D11,"Laceration, scalp",Wound
+DX-D12,"Puncture wound, foot",Wound
+DX-D13,Skin abscess,Wound
+DX-D14,"Burn, minor",Wound
+DX-D15,"Abrasion, knee",Wound
+DX-E10,Abdominal pain,Digestive symptom
+DX-E11,Rectal bleeding,Digestive symptom
+DX-E12,Heartburn,Digestive symptom
+DX-E13,Change in bowel habit,Digestive symptom
+DX-E14,Difficulty swallowing,Digestive symptom
+DX-E15,"Anemia, unspecified",Digestive symptom
+DX-F10,Colon cancer screening,Screening
+DX-F11,Bone density screening,Screening
+DX-F12,"Routine screening, adult",Screening
+DX-F13,Family history screening,Screening
+DX-F14,Polyp follow-up,Screening
+DX-F15,Lung screening,Screening
+DX-G10,Numbness of hand,Neurologic symptom
+DX-G11,Headache,Neurologic symptom
+DX-G12,Dizziness,Neurologic symptom
+DX-G13,Nerve entrapment,Neurologic symptom
+DX-G14,Tingling of foot,Neurologic symptom
+DX-G15,Weakness of arm,Neurologic symptom
+DX-H10,"Annual exam, adult",General exam
+DX-H11,Pre-operative exam,General exam
+DX-H12,Follow-up exam,General exam
+DX-H13,Work physical,General exam
+DX-H14,Medication review,General exam
+DX-H15,Health check,General exam

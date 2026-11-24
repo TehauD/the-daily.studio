@@ -143,7 +143,7 @@ def _major(tables: dict, rng: random.Random, nf: bool) -> dict:
 
 TEMPLATE = {
     "title": "IT service desk — ServiceNow-style routing & enrichment (synthetic)",
-    "domain": "IT service management",
+    "domain": "IT, integration & security",
     "description": "Route tickets to the right group, set priority from impact × urgency, enrich with CMDB data, compute SLA due dates, flag major incidents.",
     "role": ("You are an IT service-desk triage assistant for a fictional health system (synthetic data). For each ticket you route it to "
              "the right assignment group, set its priority from impact and urgency, enrich it from the CMDB, and compute SLA dates — "

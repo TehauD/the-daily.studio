@@ -1,4 +1,4 @@
-# FORGE — Local Distillation Lab (v0.24.0)
+# FORGE — Local Distillation Lab (v0.25.0)
 
 A local-first research instrument for **teacher → student LLM distillation on one consumer NVIDIA GPU**.
 A large model you run in LM Studio (the *teacher*) solves tool-use or document-QA tasks. FORGE keeps only its
@@ -83,7 +83,15 @@ Open **Agent Studio** and follow the five steps:
 1. **Define the agent**: start from a starter template or blank; write its role (what it does, what it must never do). Templates (all synthetic):
    - *IT service desk*: ServiceNow-style routing, priority from impact × urgency, CMDB enrichment, SLA due dates, major-incident rule
    - *Patient access*: request and referral routing, clinic and location, scheduling windows, administrative expedite rule (no clinical triage)
-   - *Pharmacy benefits*, *Claims denials* (revenue cycle), *Prior authorization criteria*, *Security alert triage* (defensive, MITRE ATT&CK)
+   - *Prior authorization criteria*, *Claims denials* (revenue cycle), *Security alert triage* (defensive, MITRE ATT&CK)
+   - *Coding edit checks* (assistive only: PTP / NCCI-style edits, MUE limits, diagnosis-to-procedure coverage, global periods — never picks codes)
+   - *Pharmacy benefits* (formulary status, step therapy, lowest-tier alternatives in a class — never clinical advice)
+   - *Provider credentialing & enrollment* (expiry and 90-day renewal windows, re-credentialing due dates, payer enrollment status)
+   - *Supply chain* (item-master duplicates → active record, units of measure and cost, reorder point, order-to-par)
+   - *HL7 interface troubleshooting* (ACK / error codes, segment fields, trigger events, interface owners, queue drain and escalation)
+
+   Every template carries **recommendations** — tier, risk, owner, how to size it, what real data to load later, guardrails, how
+   FORGE measures it and a first pilot — shown when you pick it and collected in [docs/USE_CASES.md](docs/USE_CASES.md).
 2. **Give it tools**: add your tables (CSV / JSON; scanned and refused if they look like personal data), switch on the exact calculator, unit conversion and date arithmetic, define yes/no **rules** (e.g. "review if tier ≥ 4 or quantity > 90"), optionally link a Knowledge Studio pack. Try any tool in the console.
 3. **Describe skills**: a name, one sentence, the tools it may use, a few examples, and an optional share of not-found cases.
 4. **Practice tasks**: the teacher writes many more — or, for template skills, the built-in **template generator** writes them in seconds with no teacher. Either way FORGE re-runs every tool call and keeps only tasks it can prove. Rejections are listed with reasons.

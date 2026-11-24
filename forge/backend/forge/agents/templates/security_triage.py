@@ -104,7 +104,7 @@ def _patch(tables: dict, rng: random.Random, nf: bool) -> dict:
 
 
 TEMPLATE = {
-    "title": "Security alert triage (synthetic, defensive)", "domain": "Security operations",
+    "title": "Security alert triage (synthetic, defensive)", "domain": "IT, integration & security",
     "description": "Map detections to MITRE ATT&CK techniques and tactics, find asset owners, decide escalation, compute remediation deadlines.",
     "role": ("You are a security-operations triage assistant for a fictional health system (synthetic data). You classify alerts, "
              "identify asset owners, decide escalation by policy, and compute remediation deadlines — using your tools only. You do not "

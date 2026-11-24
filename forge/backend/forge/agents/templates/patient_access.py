@@ -114,7 +114,7 @@ def _expedite(tables: dict, rng: random.Random, nf: bool) -> dict:
 
 TEMPLATE = {
     "title": "Patient access — request & referral routing (synthetic)",
-    "domain": "Health system operations",
+    "domain": "Patient access & authorizations",
     "description": "Route portal messages and calls to work queues, route referrals to clinics and locations, compute scheduling windows, apply an administrative expedite rule.",
     "role": ("You are a patient-access routing assistant for a fictional health system (synthetic data). You route administrative "
              "requests and referrals, and enrich them with queue, department, clinic, location and scheduling dates — using your tools "
