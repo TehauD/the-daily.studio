@@ -5,6 +5,7 @@ import { Badge, Button, Empty, ErrorLine, Field, Notice, PageHeader, Panel, Prov
 import { api, fmt } from "../lib/api";
 import { useAction, useApi } from "../lib/hooks";
 import { usePrefs } from "../lib/prefs";
+import { goto, handoff } from "../lib/handoff";
 import type { Job, StudyRow } from "../lib/types";
 
 interface Rates { overall: number | null; n: number; per_skill: Record<string, number> }
@@ -165,6 +166,7 @@ function VariantCard({ v, studies, onJob, onChange }: { v: Variant; studies: Stu
               {compatible.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</select>
             <Button size="sm" icon="evaluation" busy={act.busy} onClick={() => void act.run(async () => onJob((await api.post<Job>(`/api/weightlab/${v.id}/evaluate`, { study_id: target })).id))}>Measure on dev</Button>
             <Button size="sm" icon="play" onClick={() => { try { sessionStorage.setItem("forge.playground.variant", v.id); } catch { /* ignore */ } set("activeStudy", target); window.location.hash = "/playground"; }}>Try in Playground</Button>
+            {v.evaluations[target] && <Button size="sm" icon="compare" onClick={() => { handoff("compare.a", `variant:${v.id}:${target}`); handoff("compare.b", `arm:${target}:${v.evaluations[target].tuned?.arm ?? "teacher_filtered"}`); goto("compare"); }}>Compare with the trained arm</Button>}
             <Button size="sm" tone="ghost" onClick={() => void act.run(async () => { await api.del(`/api/weightlab/${v.id}`); onChange(); })}>Delete</Button>
           </div>
         )}

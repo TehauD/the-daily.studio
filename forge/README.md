@@ -1,4 +1,4 @@
-# FORGE — Local Distillation Lab (v0.23.0)
+# FORGE — Local Distillation Lab (v0.24.0)
 
 A local-first research instrument for **teacher → student LLM distillation on one consumer NVIDIA GPU**.
 A large model you run in LM Studio (the *teacher*) solves tool-use or document-QA tasks. FORGE keeps only its
@@ -155,6 +155,14 @@ nine phases, with what each has produced, what is blocking it, and a button for 
 before and after training, where it changed, its spectra, whether training reused the model's existing directions, how the
 change grew over training and whether other seeds agree. Hover or focus any symbol in a formula for its meaning; **Explain**
 opens a side panel that walks through the view with this module's numbers.
+
+### Compare any two, and see history
+
+**Measure → Compare** puts any two measured things side by side on exactly the same tasks — a trained arm against the base,
+seed against seed, a study against its Turbo clone, a Weight Lab variant against the arm it came from, or two bench lanes:
+rates with ranges, the difference, skill by skill, both transcripts of any task, what differs in their configuration and,
+for two adapters, how similar their weight changes are. **Measure → History** shows every result over time, marked by the
+task set it was measured on; click any point to compare it.
 
 ### 9. Try it in LM Studio: GGUF export
 

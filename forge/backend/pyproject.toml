@@ -1,6 +1,6 @@
 [project]
 name = "forge-lab"
-version = "0.23.0"
+version = "0.24.0"
 description = "FORGE — local-first teacher→student distillation laboratory"
 requires-python = ">=3.12,<3.13"
 

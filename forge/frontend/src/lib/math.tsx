@@ -18,6 +18,11 @@ export const MATH: Record<string, { sym: string; plain: string; exact: string }>
   H: { sym: "H", plain: "A measure of how evenly the change is spread across its directions.", exact: "Shannon entropy H(p) = −Σ pᵢ log pᵢ." },
   part: { sym: "σᵢ uᵢ vᵢᵀ", plain: "One building block of the change: a single direction in, a single direction out, with strength σᵢ.", exact: "Rank-1 component i of the SVD of ΔW; its share = σᵢ² / Σσ²." },
   align: { sym: "share in W's top-k", plain: "How much of the change points along directions W already uses most. High = training reinforced existing directions; near the random baseline = new directions.", exact: "‖P_k ΔW‖_F² / ‖ΔW‖_F², P_k = projection onto W's top-k left (output) or right (input) singular vectors." },
+  delta: { sym: "Δ = A − B", plain: "How much higher A's success rate is than B's on the same tasks, in percentage points. Negative = B is higher.", exact: "Mean over task groups of (A's rate − B's rate) in that group; a task's rate is the mean over that side's seeds." },
+  wilson: { sym: "Wilson 95 %", plain: "The range the true success rate plausibly lies in, given how many tasks were run.", exact: "Wilson score interval for k successes in n tasks, z = 1.96." },
+  boot: { sym: "bootstrap", plain: "Re-draw the task groups at random many times and see how much the result moves — the middle 95 % is the range.", exact: "Percentile bootstrap over task groups (paraphrases of one task stay together), 10 000 resamples, fixed seed." },
+  mcnemar: { sym: "McNemar", plain: "Looks only at tasks where exactly one side was right, and asks whether that split is more lopsided than chance.", exact: "Exact two-sided binomial test on the discordant counts b (only A right) and c (only B right)." },
+  signflip: { sym: "sign-flip p", plain: "How often a difference this large would appear if A and B were really the same and the labels were swapped at random.", exact: "Two-sided sign-flip permutation test on per-group differences (exact for ≤ 16 groups)." },
   cos: { sym: "cosine", plain: "How similar two changes are: 1 = identical direction, 0 = unrelated, −1 = opposite.", exact: "⟨ΔW₁, ΔW₂⟩ / (‖ΔW₁‖_F ‖ΔW₂‖_F), computed from the small factors." },
 };
 

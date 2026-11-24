@@ -317,6 +317,25 @@ torch.compile (their code paths run only on CUDA with the packages installed); t
 The demo models are simulated (their accuracy is scripted to fall with difficulty) — the numbers show the plumbing, not any
 real model. **Requires your machine:** real LM Studio models (including a vision model such as Qwen2.5-VL) and GPU students.
 
+## v0.24.0 — Compare and History
+
+| Check | Result here |
+|---|---|
+| Binary comparison: rates, difference, outcome grid, exact McNemar (b = 3, c = 0 → p = 0.25), Wilson ranges, per-skill rows, config diff | test |
+| Pairing: only byte-identical tasks; same id with different content counted and excluded; no shared tasks → refused with the reason | test |
+| Several seeds per task: per-task mean, bootstrap ranges, per-seed spread | test |
+| Weight comparison equals dense ΔW computations (norms, cosine, distance, overall cosine) to 1e-9; same file refused; different base refused | test |
+| API on a tiny 2-seed study: subjects listed, arm vs teacher, seed vs seed with weights, side-by-side transcripts, unsealed test refused, history kinds | test |
+| Demo data: standard vs Turbo clone of one study — 92 paired tasks, only the Turbo settings differ, weight cosine 0.998 | browser + API |
+| Demo data: two seeds of one study — weight cosine 0.21 (same results, different changes) | browser + API |
+| Demo data: compute bench with vs without tools — +43.8 pts (95 % +32.5 to +55.0), McNemar p = 5.5e-10 | browser + API |
+| WCAG 2.2 AA (axe-core 4.10.3), all 26 pages × light and dark | **0 violations** |
+| Layout: 26 pages at 1920 / 1440 dark / 390 px | no horizontal overflow, no console errors |
+| Backend suite | 229 passed |
+
+**Not covered:** comparisons on full-size adapters on Windows (weight comparison is O(r²·d) per module and was only timed on
+the demo models here).
+
 ## v0.23.0 — Pipeline, decision & release, weight microscope
 
 | Check | Result here |

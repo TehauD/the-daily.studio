@@ -1,3 +1,4 @@
+import { takeHandoff } from "../lib/handoff";
 import { useState } from "react";
 import { StudySelect } from "../components/live";
 import { Badge, Button, Empty, ErrorLine, Field, Notice, PageHeader, Panel, Prov, Status, Tabs, cx, inputCls, td, th, tr } from "../components/ui";
@@ -14,7 +15,7 @@ type TabK = "card" | "failures" | "limits" | "skills" | "audit" | "reports" | "d
 export default function Governance() {
   const { prefs } = usePrefs();
   const sid = prefs.activeStudy;
-  const [tab, setTab] = useState<TabK>("card");
+  const [tab, setTab] = useState<TabK>(() => (takeHandoff("governance.tab") as TabK | null) ?? "card");
   const [who, setWho] = useReviewer();
   return (
     <div className="space-y-4">

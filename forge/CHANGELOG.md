@@ -1,5 +1,23 @@
 # FORGE changelog
 
+## 0.24.0 — Compare any two models, and history over time
+- **Compare** (Measure): pick any two measured things — a study's base, teacher or trained arm, one seed, a Weight Lab
+  variant, or a bench lane — and see them on exactly the same tasks. A task is paired only when its content is
+  byte-identical on both sides (SHA-256); tasks only one side ran, or with the same id but different content, are counted
+  and left out. Shows each side's rate with its 95 % range, the difference A − B with a bootstrap range over task groups,
+  sign-flip and (one outcome per task) exact McNemar tests, an outcome grid (both right / only A / only B / both wrong),
+  differences skill by skill, seed spread, invalid-call rate, tokens and latency, every task with **both transcripts side
+  by side** (bench items: expected, answer, raw reply, image), and a configuration diff (plan, training settings, recipe,
+  adapter). For two adapters on one base model, **inside the weights**: cosine of ΔW per module (layer × module heatmap),
+  sizes and distances — exact from the LoRA factors.
+- **History** (Measure): every measured result for a project or the whole lab over time — practice, sealed final tests,
+  Weight Lab variants, teacher references, benches — each with its 95 % range, coloured by the task set it was measured on
+  (moves between task sets are flagged as not comparable), evenly spaced or on real time, with a table of every result and a
+  timeline of what happened (studies, training, sealing, analyses, human decisions, release bundles). Any point opens in
+  Compare.
+- Weight Lab: "Compare with the trained arm" on every measured variant.
+- Fix: one-shot page hand-offs (e.g. "open this agent", "compare this") could be lost when a page mounted twice.
+
 ## 0.23.0 — Pipeline, human decision & release, weight microscope
 - **Pipeline** (top of the navigation): one project from set-up to a human decision in nine phases — Set up, Define the
   job, Practice data, Study & train, Look inside & steer (optional), Measure (practice), Seal & final test, Package,
