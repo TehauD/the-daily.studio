@@ -1,14 +1,15 @@
 import { useState } from "react";
 import { StudySelect } from "../components/live";
-import { Badge, Empty, ErrorLine, Field, Notice, PageHeader, Panel, Prov, Status, Tabs, cx, inputCls, td, th, tr } from "../components/ui";
+import { Badge, Button, Empty, ErrorLine, Field, Notice, PageHeader, Panel, Prov, Status, Tabs, cx, inputCls, td, th, tr } from "../components/ui";
 import { Term } from "../lib/glossary";
-import { useApi } from "../lib/hooks";
+import { api } from "../lib/api";
+import { useAction, useApi } from "../lib/hooks";
 import { usePrefs } from "../lib/prefs";
 import { useReviewer } from "../lib/reviewer";
 
 const pct = (v: number | null | undefined) => (v == null ? "—" : `${Math.round(v * 100)}%`);
 const ARM = (a: string) => (a === "base" ? "untrained" : a === "teacher" ? "teacher" : a === "merged" ? "merged export" : `trained · ${a}`);
-type TabK = "card" | "failures" | "limits" | "skills" | "audit" | "reports";
+type TabK = "card" | "failures" | "limits" | "skills" | "audit" | "reports" | "decide";
 
 export default function Governance() {
   const { prefs } = usePrefs();
@@ -25,13 +26,14 @@ export default function Governance() {
       {!sid ? <Panel title="No study selected"><Empty icon="evaluation">Choose a study in the top bar.</Empty></Panel> : (
         <>
           <Tabs value={tab} onChange={setTab} tabs={[{ value: "card", label: "Model card" }, { value: "failures", label: "How it fails" }, { value: "limits", label: "Knows its limits?" },
-            { value: "skills", label: "Skill curves" }, { value: "audit", label: "Who did what" }, { value: "reports", label: "Reports" }]} />
+            { value: "skills", label: "Skill curves" }, { value: "audit", label: "Who did what" }, { value: "reports", label: "Reports" }, { value: "decide", label: "Decide & release" }]} />
           {tab === "card" && <Card sid={sid} />}
           {tab === "failures" && <Failures sid={sid} />}
           {tab === "limits" && <Limits sid={sid} />}
           {tab === "skills" && <Skills sid={sid} />}
           {tab === "audit" && <Audit sid={sid} />}
           {tab === "reports" && <Reports sid={sid} />}
+          {tab === "decide" && <Decide sid={sid} who={who} />}
         </>
       )}
     </div>
@@ -223,6 +225,56 @@ function Reports({ sid }: { sid: string }) {
           <a href={`/api/studies/${sid}/report?audience=${k}`} download className="inline-flex h-8 items-center rounded-[calc(var(--radius)-1px)] bg-accent px-3 text-[12.5px] font-medium text-white hover:opacity-90">Download HTML report</a>
           <p className="mt-2 text-[11px] text-ink-3">Self-contained file; open in any browser and print to PDF. Generated from the study's recorded results at the moment you click.</p>
         </Panel>))}
+    </div>
+  );
+}
+
+interface SignoffT { at: string; decision: string; decision_label: string; reviewer: string; role: string; purpose: string; rationale: string; conditions: string;
+  pinned: { adapter: string; adapter_sha256: string | null; plan_sha256: string; final_test: { trained: number | null; untrained: number | null; gain: number | null; gate: string | null } | null } }
+function Decide({ sid, who }: { sid: string; who: string }) {
+  const d = useApi<{ signoffs: SignoffT[]; decisions: Record<string, string>; bundles: { name: string; bytes: number; sha256: string }[] }>(`/api/studies/${sid}/signoffs`);
+  const [f, setF] = useState({ decision: "approved_evaluation", role: "", purpose: "", rationale: "", conditions: "" });
+  const act = useAction();
+  const [msg, setMsg] = useState<string | null>(null);
+  return (
+    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] [&>*]:min-w-0">
+      <Panel title="Record a human decision" eyebrow="FORGE records it; the decision is yours" prov={<Prov kind="declared" source="reviewer" />}>
+        <form className="space-y-3 text-[12.5px]" onSubmit={(e) => { e.preventDefault(); void act.run(async () => { await api.post(`/api/studies/${sid}/signoffs`, f); setMsg("Decision recorded."); await d.reload(); }); }}>
+          <Field label="Decision"><select className={cx(inputCls, "font-sans")} value={f.decision} onChange={(e) => setF({ ...f, decision: e.target.value })}>
+            {Object.entries(d.data?.decisions ?? {}).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></Field>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="Your role"><input className={cx(inputCls, "font-sans")} value={f.role} onChange={(e) => setF({ ...f, role: e.target.value })} placeholder="e.g. Prior-auth operations manager" required minLength={2} /></Field>
+            <Field label="Recorded as"><input className={cx(inputCls, "font-sans")} value={who || "set your name above"} readOnly aria-readonly /></Field>
+          </div>
+          <Field label="Purpose — what exactly is decided"><input className={cx(inputCls, "font-sans")} value={f.purpose} onChange={(e) => setF({ ...f, purpose: e.target.value })} placeholder="e.g. 4-week supervised pilot on the synthetic intake queue" required minLength={3} /></Field>
+          <Field label="Rationale"><textarea className={cx(inputCls, "h-20 py-1.5 font-sans")} value={f.rationale} onChange={(e) => setF({ ...f, rationale: e.target.value })} placeholder="What evidence you relied on, and what concerns remain" required minLength={20} /></Field>
+          <Field label="Conditions (optional)"><textarea className={cx(inputCls, "h-14 py-1.5 font-sans")} value={f.conditions} onChange={(e) => setF({ ...f, conditions: e.target.value })} placeholder="e.g. every hand-back reviewed by staff; re-evaluate after 200 cases" /></Field>
+          <div className="flex items-center gap-3"><Button type="submit" tone="primary" busy={act.busy} disabled={!who}>Record decision</Button>{msg && <span className="text-good-ink">{msg}</span>}</div>
+          <p className="text-[11.5px] text-ink-3">Approvals can be recorded only on a sealed study with its final test analysed. Each record is pinned to the exact plan, adapter (SHA-256) and final-test result, and appears in the audit trail.</p>
+          <ErrorLine error={act.error} />
+        </form>
+      </Panel>
+      <div className="space-y-4">
+        <Panel flush title="Decisions" prov={<Prov kind="declared" source="signoffs.jsonl" />}>
+          {!d.data?.signoffs.length ? <Empty icon="check">No decisions recorded for this study.</Empty> : (
+            <ol className="divide-y divide-line">{[...d.data.signoffs].reverse().map((x) => (
+              <li key={x.at} className="space-y-1 p-[var(--pad)] text-[12px]">
+                <div className="flex flex-wrap items-center justify-between gap-2"><Badge tone={x.decision.startsWith("approved") ? "good" : x.decision === "rejected" ? "crit" : "warn"}>{x.decision_label}</Badge>
+                  <span className="font-mono text-[11px] text-ink-3">{new Date(x.at).toLocaleString()}</span></div>
+                <div className="text-ink"><b>{x.reviewer}</b> · {x.role} — {x.purpose}</div>
+                <p className="text-ink-2">{x.rationale}</p>{x.conditions && <p className="text-ink-2"><span className="text-ink-3">Conditions:</span> {x.conditions}</p>}
+                <div className="font-mono text-[10.5px] text-ink-3">pinned: {x.pinned.adapter} · adapter {x.pinned.adapter_sha256?.slice(0, 12) ?? "—"}… · plan {x.pinned.plan_sha256.slice(0, 12)}…
+                  {x.pinned.final_test ? ` · final test ${pct(x.pinned.final_test.trained)} vs ${pct(x.pinned.final_test.untrained)} · gate ${x.pinned.final_test.gate ?? "—"}` : " · no final test yet"}</div>
+              </li>))}</ol>)}
+        </Panel>
+        <Panel title="Release bundle" prov={<Prov kind="computed" source="study files" />}
+          right={<Button size="sm" icon="download" busy={act.busy} onClick={() => void act.run(async () => { await api.post(`/api/studies/${sid}/release`); await d.reload(); })}>Build bundle</Button>}>
+          <p className="text-[12px] text-ink-2">One zip with the adapter, model card, all three reports, analyses, plan, decisions, export manifests and a SHA-256 manifest of every file — what a reviewer or deployment team needs. Requires a sealed study with the final test analysed.</p>
+          <ul className="mt-2 space-y-1.5">{(d.data?.bundles ?? []).map((b) => (
+            <li key={b.name} className="flex flex-wrap items-center justify-between gap-2 text-[12px]"><a className="font-mono text-accent underline-offset-2 hover:underline" href={`/api/studies/${sid}/release/${b.name}`} download>{b.name}</a>
+              <span className="font-mono text-[10.5px] text-ink-3">{(b.bytes / 2 ** 20).toFixed(1)} MB · sha256 {b.sha256.slice(0, 12)}…</span></li>))}</ul>
+        </Panel>
+      </div>
     </div>
   );
 }

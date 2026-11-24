@@ -5,6 +5,7 @@ import { Icon, type IconName } from "./components/icons";
 import { AssistantDrawer } from "./components/AssistantDrawer";
 import { JobDock } from "./components/JobDock";
 import { Inspector } from "./components/Inspector";
+import { PHASE_OF } from "./lib/phases";
 import { StudySelect, TelemetryProvider, useTelemetry } from "./components/live";
 import { AssistantProvider } from "./lib/assistant";
 import { Kbd, Skeleton, cx } from "./components/ui";
@@ -36,10 +37,11 @@ const Learn = lazy(() => import("./pages/Learn"));
 const Governance = lazy(() => import("./pages/Governance"));
 const BenchLab = lazy(() => import("./pages/BenchLab"));
 const ModelHub = lazy(() => import("./pages/ModelHub"));
+const Pipeline = lazy(() => import("./pages/Pipeline"));
 
 /** Four workspaces, in the order people work: build it, see and steer it, measure it, run the lab. `expert` pages are hidden in Simple mode. */
 const NAV = [
-  { group: "", items: [{ key: "home", label: "Home", icon: "home" }, { key: "learn", label: "Learn", icon: "guide" }] },
+  { group: "", items: [{ key: "home", label: "Home", icon: "home" }, { key: "pipeline", label: "Pipeline", icon: "trajectory" }, { key: "learn", label: "Learn", icon: "guide" }] },
   { group: "Build", items: [
     { key: "agent-studio", label: "Agent Studio", icon: "agent" },
     { key: "knowledge-studio", label: "Knowledge Studio", icon: "layers" },
@@ -144,6 +146,10 @@ function SectionNav({ route, go }: { route: Key; go: (k: Key) => void }) {
         <li><button type="button" className="hover:text-ink" onClick={() => go("home" as Key)}>Home</button></li>
         <li aria-hidden>›</li><li className="text-ink-2">{g.group}</li>
       </ol>
+      {PHASE_OF[route] && (
+        <button type="button" onClick={() => go("pipeline" as Key)} title="Open the pipeline map"
+          className="flex h-7 items-center gap-1.5 rounded-full border border-line px-2.5 text-[11px] text-ink-2 hover:border-accent-line hover:text-ink">
+          <Icon name="trajectory" size={12} className="text-ink-3" />Pipeline phase {PHASE_OF[route].n}: {PHASE_OF[route].name}</button>)}
       <div className="flex min-w-0 flex-wrap gap-1" role="tablist" aria-label={`${g.group} pages`}>
         {items.map((n) => (
           <button key={n.key} type="button" role="tab" aria-selected={n.key === route} onClick={() => go(n.key as Key)}
@@ -243,7 +249,7 @@ function Shell() {
     { id: "verify", label: "Verify GPU (forward/backward, BF16)", group: "Actions", run: () => { void api.post("/api/jobs/verify-gpu"); go("overview"); } },
   ], [go, set, prefs.sidebarCollapsed]);
   const Page = { home: Home, overview: Overview, observatory: Observatory, studio: Studio, trajectories: Trajectories, datasets: Datasets,
-    training: Training, evaluation: Evaluation, knowledge: Knowledge, "knowledge-studio": KnowledgeStudio, lens: Lens, "agent-studio": AgentStudio, playground: Playground, weightlab: WeightLab, modelmap: ModelMap, robustness: Robustness, learn: Learn, governance: Governance, bench: BenchLab, model: ModelHub, factory: Factory, settings: Settings, guide: Guide }[route];
+    training: Training, evaluation: Evaluation, knowledge: Knowledge, "knowledge-studio": KnowledgeStudio, lens: Lens, "agent-studio": AgentStudio, playground: Playground, weightlab: WeightLab, modelmap: ModelMap, robustness: Robustness, learn: Learn, governance: Governance, bench: BenchLab, model: ModelHub, pipeline: Pipeline, factory: Factory, settings: Settings, guide: Guide }[route];
   return (
     <AssistantProvider route={route}>
     <div className="flex min-h-full">

@@ -149,7 +149,8 @@ function ProjectCard({ pr, onOpen }: { pr: Project; onOpen: (p: Project) => void
       )}
       <div className="mt-auto pt-3">
         <div className="mb-2 text-[12px] text-ink-2"><span className="text-ink-3">Next: </span>{pr.next.label}</div>
-        <Button size="sm" tone="primary" icon="chevron" onClick={() => { onOpen(pr); goto(pr.next.route); }}>Open</Button>
+        <div className="flex flex-wrap gap-2"><Button size="sm" tone="primary" icon="chevron" onClick={() => { onOpen(pr); goto(pr.next.route); }}>Next step</Button>
+          <Button size="sm" icon="trajectory" onClick={() => { onOpen(pr); goto("pipeline"); }}>Pipeline</Button></div>
       </div>
     </div>
   );

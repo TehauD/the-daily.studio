@@ -1,3 +1,3 @@
 """FORGE — local-first teacher → student distillation laboratory."""
-__version__ = "0.22.0"
+__version__ = "0.23.0"
 SCHEMA_VERSION = 2

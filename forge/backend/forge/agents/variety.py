@@ -10,6 +10,7 @@ Exact duplicates are always rejected.
 from __future__ import annotations
 
 import re
+from collections import Counter
 
 THRESHOLD = 0.7
 _TOK = re.compile(r"[a-z0-9]+")
@@ -46,12 +47,33 @@ def max_similarity(candidate: str, others: list[list[str]]) -> float:
     return max((rouge_l(tc, o) for o in others), default=0.0)
 
 
+def _bound(ca: Counter[str], la: int, cb: Counter[str], lb: int) -> float:
+    """Upper bound on ROUGE-L F1: the LCS can be no longer than the bag-of-words overlap, and F1 = 2·m/(|a|+|b|)."""
+    if not la or not lb:
+        return 0.0
+    m = sum((ca & cb).values())
+    return 2 * m / (la + lb)
+
+
 def summary(prompts_by_skill: dict[str, list[str]]) -> dict[str, dict[str, float]]:
-    """Per skill: mean and max nearest-neighbour similarity (lower = more varied)."""
+    """Per skill: mean and max nearest-neighbour similarity (lower = more varied).
+
+    Exact: candidates are tried in order of an upper bound and the search stops once no remaining bound can beat the best
+    score found, so the full O(n²) LCS sweep is only paid for tasks whose wording really is close.
+    """
     out = {}
     for s, ps in prompts_by_skill.items():
         toks = [tokens(p) for p in ps]
-        nn = [max((rouge_l(t, u) for j, u in enumerate(toks) if j != i), default=0.0) for i, t in enumerate(toks)]
+        bags = [Counter(t) for t in toks]
+        nn = []
+        for i, t in enumerate(toks):
+            cand = sorted(((_bound(bags[i], len(t), bags[j], len(u)), j) for j, u in enumerate(toks) if j != i), reverse=True)
+            best = 0.0
+            for b, j in cand:
+                if b <= best:
+                    break
+                best = max(best, rouge_l(t, toks[j]))
+            nn.append(best)
         if nn:
             out[s] = {"n": len(nn), "mean_nearest": round(sum(nn) / len(nn), 3), "max_nearest": round(max(nn), 3)}
     return out

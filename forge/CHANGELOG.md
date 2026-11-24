@@ -1,5 +1,27 @@
 # FORGE changelog
 
+## 0.23.0 — Pipeline, human decision & release, weight microscope
+- **Pipeline** (top of the navigation): one project from set-up to a human decision in nine phases — Set up, Define the
+  job, Practice data, Study & train, Look inside & steer (optional), Measure (practice), Seal & final test, Package,
+  Govern & decide. Each phase shows what exists on disk, what is blocking it, warnings ("done — read the warnings") and a
+  button to the exact page for the next step. Every page shows which pipeline phase it belongs to; Home cards gain
+  "Next step" and "Pipeline". Statuses are computed from files, never from a judgement that a result is good.
+- **Decide & release** (Governance): record a human decision — approved for a supervised pilot, approved for further
+  evaluation only, changes needed, rejected — with role, purpose, rationale and conditions. Approvals are refused unless
+  the study is sealed and its final test analysed; each record is pinned to the plan hash, the adapter's SHA-256 and the
+  final-test result, kept in `signoffs.jsonl` and the audit trail. **Release bundle**: one zip with adapter, model card,
+  the three reports, analyses, plan, decisions, export manifests and a SHA-256 manifest of every file.
+- **Weight microscope** (Model Factory → any module → "Open in weight microscope"): one matrix before and after training,
+  read-only from the base and adapter files — sizes, a change map (absolute, relative, or one rank-1 part at a time),
+  weight histograms before/after, singular-value spectra of W, W′ and ΔW, whether the change reuses W's main directions
+  (with a random baseline), which input/output dimensions changed most, how the change grew across saved snapshots and
+  whether other seeds learned the same change (cosine). All exact (QR-core SVD; block means, not samples).
+- **Math explained in place**: every symbol in formulas (ΔW, s, B, A, σ, ‖·‖_F, effective rank, …) is focusable and
+  shows its meaning and definition; "Explain" opens a side panel with what the view shows, how to read it, and the math
+  with this module's numbers.
+- **Faster**: the variety statistic (nearest-neighbour ROUGE-L) prunes with an exact upper bound and coverage is cached until
+  the agent's files change — pipeline and coverage load in ~0.25 s instead of ~2.8 s on 440 tasks (same numbers).
+
 ## 0.22.0 — Experience pass: workspaces, Model Hub, Inspector, accessibility
 - **Workspaces**: Build · See inside & control · Measure · Operate. Every page has a breadcrumb and its workspace's sibling
   pages as tabs; page kickers name the workspace.

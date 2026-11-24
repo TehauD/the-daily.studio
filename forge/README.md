@@ -1,4 +1,4 @@
-# FORGE — Local Distillation Lab (v0.13.0)
+# FORGE — Local Distillation Lab (v0.23.0)
 
 A local-first research instrument for **teacher → student LLM distillation on one consumer NVIDIA GPU**.
 A large model you run in LM Studio (the *teacher*) solves tool-use or document-QA tasks. FORGE keeps only its
@@ -144,13 +144,25 @@ generated text, not a trace of its computation.
    - **Stress tests**: the same practice tasks with typos, casual wording, irrelevant text and hidden instructions.
    - **How much data?**: dev success at 10 / 25 / 50 / 100 % of the training tasks. Still climbing means more examples will help.
 
+### The whole route: Pipeline
+
+**Pipeline** (top of the navigation) shows one project — an agent or a document set — from set-up to a human decision in
+nine phases, with what each has produced, what is blocking it, and a button for the next step. Start here when unsure.
+
+### See exactly what changed: weight microscope
+
+**Model Factory** → click any module (for example `layers.22.self_attn.k_proj`) → **Open in weight microscope**: the matrix
+before and after training, where it changed, its spectra, whether training reused the model's existing directions, how the
+change grew over training and whether other seeds agree. Hover or focus any symbol in a formula for its meaning; **Explain**
+opens a side panel that walks through the view with this module's numbers.
+
 ### 9. Try it in LM Studio: GGUF export
 
 After SEAL, test analysis and **Export**: clone llama.cpp (`git clone https://github.com/ggml-org/llama.cpp`; build it if you want 4–6-bit files), set its folder in **Model Factory → GGUF for LM Studio**, choose q8_0 (recommended) and *Make GGUF*. The file lands in LM Studio's models folder under `forge/`. Load it in LM Studio, enter its model id and run the **test-set check** to see how much conversion changed behaviour. **Robustness & limits → Efficiency** shows time, tokens, energy and sizes.
 
 ### 10. Governance: model card, audit trail, reports
 
-Type your name once (Governance page or any review panel) so your actions are recorded with it. **Measure → Governance** shows the model card, how the model fails and what training fixed or broke, whether it knows when it doesn't know, per-skill curves, and a hash-checked timeline of who did what. **Reports** produces a printable HTML report for executives, operations / clinical reviewers, or technical staff.
+Type your name once (Governance page or any review panel) so your actions are recorded with it. **Decide & release** records a human decision (approvals only after SEAL and the final test) and builds a release bundle with a SHA-256 manifest. **Measure → Governance** shows the model card, how the model fails and what training fixed or broke, whether it knows when it doesn't know, per-skill curves, and a hash-checked timeline of who did what. **Reports** produces a printable HTML report for executives, operations / clinical reviewers, or technical staff.
 
 ### 11. Optional: auto-tune with Azure OpenAI
 

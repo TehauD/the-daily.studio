@@ -1,3 +1,5 @@
+import { Microscope } from "../components/Microscope";
+import { Sym } from "../lib/math";
 import { useMemo, useState, type FormEvent } from "react";
 import { HeatStrip, Spectrum } from "../components/charts";
 import { LineageGraph } from "../components/graphs";
@@ -34,17 +36,21 @@ function Inspector({ sid, s }: { sid: string; s: StudySummary }) {
   const [arm, setArm] = useState(s.plan.arms[0]);
   const [seed, setSeed] = useState(s.plan.seeds[0]);
   const insp = useApi<Inspection>(`/api/studies/${sid}/inspection${qs({ arm, seed })}`);
+  const [micro, setMicro] = useState<string | null>(null);
   return (
+    <>
     <Panel title="Adapter inspector" prov={<Prov kind="computed" source="safetensors · QR-core SVD" />}
       right={<div className="flex gap-2">
         <select className={cx(inputCls, "h-7 w-auto")} value={arm} onChange={(e) => setArm(e.target.value)} aria-label="Arm">{s.plan.arms.map((a) => <option key={a}>{a}</option>)}</select>
         <select className={cx(inputCls, "h-7 w-auto")} value={seed} onChange={(e) => setSeed(Number(e.target.value))} aria-label="Seed">{s.plan.seeds.map((x) => <option key={x} value={x}>seed {x}</option>)}</select></div>}>
-      {insp.error ? <Empty icon="factory">{insp.error}</Empty> : insp.data ? <InspectionView d={insp.data} /> : <div className="h-40" />}
+      {insp.error ? <Empty icon="factory">{insp.error}</Empty> : insp.data ? <InspectionView d={insp.data} onMicroscope={setMicro} /> : <div className="h-40" />}
     </Panel>
+    {micro && <div id="microscope" className="mt-4"><Microscope key={`${arm}${seed}${micro}`} sid={sid} arm={arm} seed={seed} module={micro} /></div>}
+    </>
   );
 }
 
-export function InspectionView({ d }: { d: Inspection }) {
+export function InspectionView({ d, onMicroscope }: { d: Inspection; onMicroscope?: (module: string) => void }) {
   const [metric, setMetric] = useState<"relative" | "fro">(d.base_available ? "relative" : "fro");
   const [sel, setSel] = useState<string | null>(null);
   const layers = useMemo(() => [...new Set(d.modules.map((m) => m.layer).filter((x): x is number => x != null))].sort((a, b) => a - b), [d]);
@@ -84,10 +90,14 @@ export function InspectionView({ d }: { d: Inspection }) {
             <div className="micro mb-1 !normal-case !tracking-normal text-ink-3">Singular spectrum · {cur.module.replace(/^model\./, "")}</div>
             <div className="mb-2 font-mono text-[10.5px] text-ink-3">shape {cur.shape.join(" × ")} · ‖ΔW‖_F {cur.delta_fro.toExponential(3)}</div>
             <Spectrum sigma={cur.singular_values} effRank={cur.effective_rank} />
+            {onMicroscope && d.base_available && <div className="mt-3"><Button size="sm" tone="primary" icon="search" onClick={() => { onMicroscope(cur.module); setTimeout(() => document.getElementById("microscope")?.scrollIntoView({ behavior: "smooth" }), 50); }}>Open in weight microscope: before vs after</Button></div>}
           </div>
         )}
       </div>
-      <div className="text-[11px] leading-relaxed text-ink-3">ΔW = s·B·A. σ(ΔW) is computed from the r×r core after thin QR of B and Aᵀ — the full matrix is never materialized. ‖ΔW‖_F = √Σσ²; effective rank = exp(H(σ/Σσ)). These are measured weight changes, not explanations of behavior.</div>
+      <div className="text-[11.5px] leading-relaxed text-ink-2">
+        <Sym k="dW" /> = <Sym k="s" />·<Sym k="B" />·<Sym k="A" />. <Sym k="sigma">σ(ΔW)</Sym> is computed from the r×r core after <Sym k="qr" /> of B and Aᵀ — the full matrix is never built for this view.{" "}
+        <Sym k="fro" /> = √Σσ²; <Sym k="effrank" /> = exp(<Sym k="H" />(σ/Σσ)). <span className="text-ink-3">Hover or focus any underlined symbol for its meaning. These are measured weight changes, not explanations of behaviour.</span>
+      </div>
     </div>
   );
 }

@@ -7,6 +7,8 @@
   trained adapters (practice and sealed-test results), studies, variants and GGUF exports, and next actions.
 - **Inspector** (top bar "Inspect", or press `.`): the active study (stages, headline results with ranges, test adequacy,
   next step) and the active model, from any page.
+- **Pipeline**: the nine phases are the spine of the product; every page's breadcrumb shows its phase, and statuses
+  (done · done — read the warnings · running · next up · blocked · optional · not yet) always pair an icon with a word.
 - **Simple / Expert** mode hides or shows the expert pages; nothing is removed, only hidden.
 
 ## Results, always the same way
@@ -33,3 +35,9 @@ darkens lines and secondary text further.
 ## Print
 Printing any page hides navigation, controls and unselected tabs, expands scrolling panels and prints ink on white —
 model cards, results and bench tables print as documents.
+
+## Math, explained in place
+- Every symbol in a formula is a `<Sym>`: focusable (24 px wide), dotted underline, a tooltip with its meaning in words and
+  its definition. The dictionary lives in `frontend/src/lib/math.tsx`, so a symbol means the same thing everywhere.
+- Complex views carry an **Explain** button: a side panel with "What you're looking at", "How to read it" and "The math, with
+  these numbers" — the formulas filled in with the current values, never a generic textbook.

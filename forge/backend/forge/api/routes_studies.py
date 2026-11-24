@@ -640,3 +640,40 @@ def engine_compare(sid: str, st: AppState = Depends(get_state)):
                      "per_skill": {f: (d.get(arm) or {}).get("rate") for f, d in ((rep["arms"].get(arm) or {}).get("families") or {}).items()} if rep else {}})
     return {"rows": rows, "note": "Same tasks and teacher examples in every row; only the training settings differ. One seed each — "
                                   "small differences in success are noise. Loss curves should overlap if a switch changes speed but not learning."}
+
+
+MICROSCOPE_VERSION = 2  # bump when the microscope output changes, so stale cached results are not served
+
+
+@router.get("/{sid}/microscope")
+async def weight_microscope(sid: str, arm: str, seed: int, module: str, st: AppState = Depends(get_state)):
+    """One adapted matrix before and after training (exact, read-only). Cached per adapter + module."""
+    import hashlib
+    import re as _re
+
+    from forge.analysis.adapters import AdapterError
+    from forge.analysis.microscope import microscope
+    from forge.engine.lens import snapshots as _snaps
+    s = _study(st, sid)
+    if arm not in s.plan["arms"] or seed not in s.plan["seeds"]:
+        raise HTTPException(422, "Unknown arm/seed")
+    if not _re.fullmatch(r"[A-Za-z0-9_.]{3,200}", module):
+        raise HTTPException(422, "Invalid module name")
+    rd = s.run_dir(arm, seed)
+    ad = rd / "adapter"
+    if not (ad / "adapter_model.safetensors").exists():
+        raise HTTPException(409, "Not trained yet")
+    sha = hashlib.sha256((ad / "adapter_model.safetensors").read_bytes()).hexdigest()[:16]
+    cache = rd / "microscope" / f"v{MICROSCOPE_VERSION}-{module}-{sha}.json"
+    if cache.exists():
+        return json.loads(cache.read_text(encoding="utf-8"))
+    snaps = [(lbl, d) for lbl, _, d in _snaps(rd) if lbl != "final"]
+    others = [(f"seed {x}", s.run_dir(arm, x) / "adapter") for x in s.plan["seeds"] if x != seed and (s.run_dir(arm, x) / "adapter" / "adapter_model.safetensors").exists()]
+    try:
+        out = await asyncio.to_thread(microscope, ad, Path(s.plan["student"]["path"]), module, snapshots=snaps, other_seeds=others)
+    except AdapterError as e:
+        raise HTTPException(422, str(e))
+    out["adapter_sha256_prefix"] = sha
+    cache.parent.mkdir(exist_ok=True)
+    cache.write_text(json.dumps(out), encoding="utf-8")
+    return out

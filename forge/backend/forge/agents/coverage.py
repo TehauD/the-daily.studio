@@ -21,7 +21,31 @@ SPLITS = ("train", "dev", "test")
 KEY_ARGS = ("key", "value", "query")
 
 
+_CACHE: dict[str, tuple[tuple, dict[str, Any]]] = {}
+
+
+def _fingerprint(agent: Any) -> tuple:
+    root = getattr(agent, "root", None)
+    if root is None:
+        return ()
+    files = [root / n for n in ("agent.json", "tasks.jsonl", "reviews.json")] + sorted((root / "tables").glob("*.json"))
+    return tuple((f.name, st.st_mtime_ns, st.st_size) for f in files if f.exists() for st in [f.stat()])
+
+
 def coverage(agent: Any) -> dict[str, Any]:
+    """Cached per agent until its definition, tasks, reviews or tables change on disk (counts only, so caching is safe)."""
+    fp = _fingerprint(agent)
+    key = str(getattr(agent, "root", id(agent)))
+    hit = _CACHE.get(key)
+    if fp and hit and hit[0] == fp:
+        return hit[1]
+    out = _coverage(agent)
+    if fp:
+        _CACHE[key] = (fp, out)
+    return out
+
+
+def _coverage(agent: Any) -> dict[str, Any]:
     tasks = agent.tasks_for_study()
     m = agent.meta
     tables = agent.tables()

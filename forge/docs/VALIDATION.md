@@ -317,6 +317,23 @@ torch.compile (their code paths run only on CUDA with the packages installed); t
 The demo models are simulated (their accuracy is scripted to fall with difficulty) — the numbers show the plumbing, not any
 real model. **Requires your machine:** real LM Studio models (including a vision model such as Qwen2.5-VL) and GPU students.
 
+## v0.23.0 — Pipeline, decision & release, weight microscope
+
+| Check | Result here |
+|---|---|
+| Pipeline phases on a tiny study through its whole life (new → trained → sealed → tested → decided → bundled) | test |
+| Approvals refused before SEAL and before the final test is analysed; record pinned to plan / adapter / test | test |
+| Release bundle: every file listed in MANIFEST.json with a matching SHA-256; download name validated | test |
+| Microscope: singular values equal a dense SVD of s·B·A; rank-1 parts sum to ΔW; snapshot growth; cosine of a seed with itself = 1; random baseline = k / dimension | test |
+| Variety statistic with pruning equals the brute-force all-pairs result (120 random prompts) | check |
+| Pipeline endpoint on a 440-task agent | 2.76 s → 0.25 s first load, 0.03 s cached |
+| WCAG 2.2 AA (axe-core 4.10.3), all 24 pages × light and dark | **0 violations** |
+| Layout: 24 pages at 1920 / 1440 dark / 390 px; Pipeline and Factory at 390 px | no horizontal overflow, no console errors |
+| Backend suite | 224 passed |
+
+**Not covered:** the microscope on a full-size model on Windows (validated on the demo models here); screen-reader
+walk-throughs of the new pages.
+
 ## v0.22.0 — Experience pass
 
 | Check | Result here |
