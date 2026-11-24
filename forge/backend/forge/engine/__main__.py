@@ -104,6 +104,15 @@ def cmd_autotune(a: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_bench(a: argparse.Namespace) -> int:
+    """Run a bench (compute / vision / security) over its model lanes."""
+    os.environ.setdefault("HF_HUB_OFFLINE", "1")
+    os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
+    from forge.bench.runner import run
+    run(Path(a.run), emit)
+    return 0
+
+
 def cmd_weightlab(a: argparse.Namespace) -> int:
     """Build a Weight Lab variant, or evaluate one on a study's dev split."""
     os.environ.setdefault("HF_HUB_OFFLINE", "1")
@@ -294,6 +303,9 @@ def main(argv: list[str] | None = None) -> int:
     au = sub.add_parser("autotune")
     au.add_argument("--run", required=True)
     au.set_defaults(fn=cmd_autotune)
+    bn = sub.add_parser("bench")
+    bn.add_argument("--run", required=True)
+    bn.set_defaults(fn=cmd_bench)
     wl = sub.add_parser("weightlab")
     wl.add_argument("--variant", required=True)
     wl.add_argument("--step", required=True, choices=["build", "evaluate"])
@@ -328,7 +340,7 @@ def main(argv: list[str] | None = None) -> int:
     g.add_argument("--min-free-vram-mb", type=int, default=8000)
     g.set_defaults(fn=cmd_gpu_smoke)
     a = p.parse_args(argv)
-    guarded = a.cmd in ("stage", "train-run", "lens", "agent", "knowledge", "gpu-smoke", "playground", "weightlab", "modelmap", "stress", "datacurve", "gguf")
+    guarded = a.cmd in ("stage", "train-run", "lens", "agent", "knowledge", "gpu-smoke", "playground", "weightlab", "modelmap", "stress", "datacurve", "gguf", "bench")
     if guarded:
         keep_awake()
         from forge.engine import guard

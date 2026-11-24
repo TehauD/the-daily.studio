@@ -1,5 +1,18 @@
 # FORGE changelog
 
+## 0.21.0 — Bench Lab
+- **Bench Lab** (Measure): exact-answer test suites for any model — endpoint models, local students, trained adapters —
+  with items generated and frozen before the run, Wilson 95 % ranges, results by category and difficulty, an item explorer
+  (expected vs answer, raw reply, image) and a cross-model **Scorecard**.
+- **Model Bench — computation**: arithmetic, percentages, dates, units, multi-step word problems × 4 difficulties, run
+  "on its own" and "with tools" (answer must be backed by a tool result). Every answer verified by the tools at generation.
+- **Vision Bench — documents**: synthetic prior-authorization forms, member cards, tables and bar charts drawn by FORGE;
+  clean → low-res → rotated → fax-like (all human-readable). Vision models only; text-only models recorded as skipped.
+- **Security Bench — blue team with red-team knowledge**: log triage, indicator extraction, phishing, ATT&CK technique
+  mapping and kill-chain reasoning, mitigations, hardening, break / fix, vulnerability prioritisation, injection resistance,
+  incident-response recommendations (rubric coverage) and declining offensive tooling. Synthetic artifacts only.
+- Pillow added (pinned) for drawing the vision items.
+
 ## 0.20.0 — FORGE Turbo
 - **FORGE Turbo**: your own switchable training engine — attention kernel (PyTorch fused / FlashAttention 2 / reference),
   activation memory (recompute / CPU offload / keep), Liger fused kernels, 4-bit QLoRA base, 8-bit optimizer,

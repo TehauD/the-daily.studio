@@ -301,3 +301,18 @@ in LM Studio, and the LM Studio test-set check.
 
 **Not validated here — requires your GPU:** Liger kernels, 4-bit QLoRA, 8-bit optimizer, FlashAttention 2 / packing and
 torch.compile (their code paths run only on CUDA with the packages installed); their speed and memory gains on your RTX card.
+
+## v0.21.0 — Bench Lab
+
+| Check | Result here |
+|---|---|
+| Computation: every generated answer equals what the reference tool calls return (600 items, three seeds) | test + script |
+| Scoring kinds: numbers with stated tolerance, dates, yes/no, letters, indicator sets (precision / recall), declines, rubric coverage; JSON / "Answer:" parsing; Wilson intervals | unit test |
+| Security generator: every category, expected answers self-score correct, documentation IP ranges only; vision images rendered, degraded levels smaller and readable | test + visual check |
+| API + runner with scripted models: perfect model 100 % in both compute modes; gullible model obeys 100 % of planted instructions (and fails them); vision model 100 %, text-only model skipped on all 32 images; image path traversal refused; scorecard | test |
+| Demo through FORGE jobs (simulated LM Studio models + tiny CPU student): compute 50 % on its own vs 94 % with tools; security 77 % (obeyed 25 %, rubric 81 %); vision 85 %, text-only skipped | API end to end |
+| UI: scorecard, three suites, item explorer with images; 390 px (fixed one select); dark; no console errors | browser |
+| Backend suite | 221 passed |
+
+The demo models are simulated (their accuracy is scripted to fall with difficulty) — the numbers show the plumbing, not any
+real model. **Requires your machine:** real LM Studio models (including a vision model such as Qwen2.5-VL) and GPU students.
