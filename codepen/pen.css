@@ -2194,3 +2194,28 @@ body[data-form=phone][data-tl=mini] #center{grid-template-rows:minmax(0,auto) mi
 }
 @media (max-height:620px){.rf-lcd{font-size:56px}.rf-roll{height:64px}.rf-rec{gap:12px}}
 @media (prefers-reduced-motion:reduce){.rf-dbar i,.rf-sw i,.rf-sw i::after,.rf-kill{transition:none}}
+
+/* ---- 2.88 · the recorder in light: same tone as the start card it opened from, so Light never flips to dark ---- */
+.rf.rf-light{background:radial-gradient(120% 90% at 50% 0%,#ffffff 0%,#f4f8f3 62%);color:#14211b;--muted:#4f6358}
+.rf-light .rf-card{background:linear-gradient(180deg,rgba(255,255,255,.88),rgba(255,255,255,.62));border-color:rgba(30,80,55,.2);box-shadow:0 24px 60px rgba(30,70,50,.16),inset 0 1px 0 #fff}
+.rf-light .rf-card h2{color:#0d1f16}.rf-light .rf-card p,.rf-light .rf-card ol,.rf-light .rf-note,.rf-light .rf-tip,.rf-light .rf-sub{color:#4f6358}
+.rf-light .rf-btn,.rf-light .rf-chip,.rf-light .rf-mini,.rf-light .rf-name,.rf-light .rf-back,.rf-light .rf-pill,.rf-light .rf-circ{background:rgba(255,255,255,.78);border-color:rgba(20,33,27,.2);color:#14211b}
+.rf-light .rf-btn:hover,.rf-light .rf-back:hover,.rf-light .rf-pill:hover{background:#fff;border-color:#2f7d57}
+.rf-light .rf-primary{background:linear-gradient(158deg,#ffe08a,#f2b632 55%,#d99a22);color:#251703;border:0}.rf-light .rf-ghost{background:transparent}
+.rf-light .rf-main2{background:rgba(242,182,50,.16);border-color:rgba(190,130,20,.7);color:#6b4a00}.rf-light .rf-chip[aria-pressed=true]{background:rgba(242,182,50,.28);border-color:rgba(190,130,20,.8);color:#5a3d00}
+.rf-light .rf-warn{color:#9a6200}.rf-light .rf-danger{background:#c9383c;color:#fff}.rf-light .rf-circ span{color:#4f6358}
+.rf-light .rf-lcd{color:#14211b;text-shadow:none}.rf-light .rf-sel{color:#14211b}.rf-light .rf-live{color:#14211b}
+.rf-light .rf-roll span{background:linear-gradient(180deg,#4bb383,#2f7d57)}.rf-light .rf-roll span.warm{background:linear-gradient(180deg,#f2b632,#c98a14)}.rf-light .rf-roll span.hot{background:linear-gradient(180deg,#ff6a6c,#e03438)}
+.rf-light .rf-wavebox{background:rgba(255,255,255,.7);border-color:rgba(20,33,27,.18)}.rf-light .rf-sh{background:rgba(244,248,243,.82)}.rf-light .rf-ph{background:#14211b;box-shadow:0 0 6px rgba(20,33,27,.5)}
+.rf-light .rf-warnline{color:#7a5200;background:rgba(242,182,50,.16);border-color:rgba(190,130,20,.45)}
+.rf-light .rf-dock{background:linear-gradient(180deg,rgba(255,255,255,.9),rgba(255,255,255,.7));border-color:rgba(20,33,27,.16);box-shadow:0 18px 50px rgba(30,70,50,.2),inset 0 1px 0 #fff;color:#14211b}
+.rf-light .rf-dtog{background:rgba(255,255,255,.85);border-color:rgba(20,33,27,.2);color:#14211b}
+.rf-light .rf-dr,.rf-light .rf-dtxt{color:#4f6358}.rf-light .rf-do{color:#14211b}.rf-light .rf-dtxt.bad{color:#c0262b}
+.rf-light .rf-in{background:#fff;color:#14211b;border-color:rgba(20,33,27,.22)}
+.rf-light .rf-dock input[type=range]::-webkit-slider-runnable-track{background:rgba(20,33,27,.22)}.rf-light .rf-dock input[type=range]::-moz-range-track{background:rgba(20,33,27,.22)}
+.rf-light .rf-sw{color:#14211b}.rf-light .rf-sw i{background:rgba(20,33,27,.28)}.rf-light .rf-sw.on i{background:#e0a233}
+.rf-light .rf-dbar{background:rgba(20,33,27,.1);border-color:rgba(20,33,27,.18)}
+.rf-light .rf-kill{background:rgba(255,77,79,.1);color:#b3262a;border-color:rgba(214,47,51,.75)}.rf-light .rf-kill:hover{background:#e03438;color:#fff}
+.rf-light .rf-dock.killed .rf-kill{background:linear-gradient(158deg,#ffe08a,#f2b632);color:#251703}
+.rf-light .rf-h::before,.rf-light .rf-h::after{background:#d99a22}
+

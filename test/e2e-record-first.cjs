@@ -18,6 +18,11 @@ suite('e2e-record-first', async t => {
   ok(tl === 'light' && td === 'dark' && wl !== wd, 'choosing Light turns the first page light and Dark turns it dark, even on a first visit (' + tl + ', ' + td + ')');
   ok(await ev(() => !/user-select:\s*text/.test('') && getComputedStyle(document.querySelector('.boot-about')).userSelect === 'none'), 'the small print is not selectable text, so it never shows as highlighted boxes');
   ok(await ev(() => { const t = document.querySelector('.boot-fine').innerText; return !/Plus hum-to-song/.test(t) && /Begin on stage/.test(t) && /stay on this device/.test(t); }), 'and the small print is shorter');
+  // ---- the recorder keeps the tone of the page it opened from: Light stays light, Dark stays dark
+  const recTone = async which => { await p.click('#bootTheme [data-t=' + which + ']'); await wait(300); await p.click('#bootRec'); await wait(500); const r = await ev(() => { const f = document.getElementById('rf'), bg = getComputedStyle(f).backgroundImage, m = (getComputedStyle(f).color.match(/\d+/g) || []).map(Number); return { light: f.classList.contains('rf-light'), whiteBg: /rgb\(255, 255, 255\)/.test(bg), textLum: (m[0] + m[1] + m[2]) / 765 }; }); await p.keyboard.press('Escape'); await wait(300); return r; };
+  const rl = await recTone('light'), rd = await recTone('dark');
+  ok(rl.light && rl.whiteBg && rl.textLum < .2, 'opening the recorder from the Light start page keeps it light, with dark text');
+  ok(!rd.light && !rd.whiteBg && rd.textLum > .8, 'and from the Dark start page it stays dark, with light text');
   // ---- Rooms: the rooms by name (Writing room, Stage, Practice room, Control room), with the workspace each opens to
   await p.click('#bootWays'); await wait(300);
   ok(await ev(() => [...document.querySelectorAll('#bootDoors .boot-door b')].map(b => b.textContent).join('|') === 'Writing room|Stage|Practice room|Control room' && document.getElementById('bootQ').textContent === 'Choose a room'), 'Rooms lists the Writing room, the Stage, the Practice room and the Control room');
@@ -46,7 +51,7 @@ suite('e2e-record-first', async t => {
   ok(await ev(() => { const d = document.getElementById('rfDock'); return !!d && d.getBoundingClientRect().height > 30 && !!document.getElementById('rfIn') && !!document.getElementById('rfGain') && !!document.getElementById('rfMaster') && !!document.getElementById('rfHear') && /Kill audio/.test(document.getElementById('rfKill').textContent); }), 'while recording the Sound dock is there: Input, Level, Master, Hear myself and Kill audio');
   ok(await ev(() => document.getElementById('rfIn').disabled), 'the input cannot be switched in the middle of a take');
   await ev(() => { const g = document.getElementById('rfGain'); g.value = 12; g.dispatchEvent(new Event('input', { bubbles: true })); const m = document.getElementById('rfMaster'); m.value = .5; m.dispatchEvent(new Event('input', { bubbles: true })); });
-  ok(await ev(() => window.__daily.CFG.rcfGain === 12 && /\+12\.0 dB/.test(document.getElementById('rfGainO').textContent) && Math.abs(window.__daily.E.master.gain.value - .5) < .2 && /−6\.0 dB|-6\.0 dB/.test(document.getElementById('rfMasterO').textContent)), 'the Level and Master sliders work and say what they are in dB');
+  ok(await poll(() => ev(() => window.__daily.CFG.rcfGain === 12 && /\+12\.0 dB/.test(document.getElementById('rfGainO').textContent) && Math.abs(window.__daily.E.master.gain.value - .5) < .2 && /−6\.0 dB|-6\.0 dB/.test(document.getElementById('rfMasterO').textContent)), 4000, 100), 'the Level and Master sliders work and say what they are in dB');
   await wait(1800);
   ok(await poll(() => ev(() => /dB|Quiet|Too loud/.test(document.getElementById('rfDtxt').textContent) && parseFloat(document.getElementById('rfDm').style.width) > 0), 6000, 100), 'the dock meter reads the input in dB');
   const lcd = await ev(() => document.getElementById('rfLcd').textContent); ok(/^0:0[1-9]$/.test(lcd), 'the clock runs (' + lcd + ')');

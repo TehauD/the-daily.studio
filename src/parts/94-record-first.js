@@ -32,9 +32,15 @@ const rcfStamp = () => { const d = new Date(), w = ['Sun', 'Mon', 'Tue', 'Wed', 
 const rcfLen = s => Math.floor(s / 60) + ':' + ('0' + Math.floor(s % 60)).slice(-2);
 const rcfBytes = n => n > 1e6 ? (n / 1e6).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1e3)) + ' kB';
 
+/** light or dark: the recorder takes the same tone as the start card it opened from (that card's field), otherwise the app's hexagon palette, so going from Light to Record never flips the page to dark */
+function rcfTone() {
+  const b = document.getElementById('boot'), P = typeof hexPal === 'function' ? hexPal() : null, lt = b ? b.classList.contains('bg-light') : !!(P && P.lt);
+  const pal = P && P.lt === lt ? P : { lt, cell: lt ? '40,130,90' : '61,220,132', warm: '242,182,50', line: lt ? '45,110,80' : '125,191,155' };
+  if (RCF.el) RCF.el.classList.toggle('rf-light', lt); return pal;
+}
 /* ---------- the hexagon field (the start card's canvas, behind the recorder) ---------- */
 function rcfHex(now) {
-  RCF.hxT = requestAnimationFrame(rcfHex); const cv = $('#rfHex'); if (!cv) return cancelAnimationFrame(RCF.hxT);
+  RCF.hxT = requestAnimationFrame(rcfHex); const cv = $('#rfHex'); if (!cv) return cancelAnimationFrame(RCF.hxT); const TP = rcfTone();
   const mode = CFG.hexbg || 'on', calm = mode === 'calm' || CFG.reduce || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
   if (mode === 'off') { const g0 = cv.getContext('2d'); g0.clearRect(0, 0, cv.width, cv.height); return; }
   if (document.hidden || now - (rcfHex.last || 0) < (calm ? 700 : 33)) return; rcfHex.last = now;
@@ -49,7 +55,7 @@ function rcfHex(now) {
     RCF.rings = RCF.rings.filter(r => t - r.t0 < r.life); RCF.lvl *= .9;
   }
   g.clearRect(0, 0, W, H); if (RCF.st === 'rec' && !RCF.paused) { const rg = g.createRadialGradient(cx, cy, 0, cx, cy, R * 4.6), lvn = Math.min(1, RCF.lvl * 4); rg.addColorStop(0, 'rgba(255,77,79,' + (.2 + lvn * .22).toFixed(3) + ')'); rg.addColorStop(1, 'rgba(255,77,79,0)'); g.fillStyle = rg; g.fillRect(0, 0, W, H); }
-  const glow = g.createRadialGradient(cx, cy, 0, cx, cy, maxd); glow.addColorStop(0, 'rgba(61,220,132,.13)'); glow.addColorStop(.55, 'rgba(61,220,132,.03)'); glow.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = glow; g.fillRect(0, 0, W, H);
+  const glow = g.createRadialGradient(cx, cy, 0, cx, cy, maxd); glow.addColorStop(0, 'rgba(' + TP.cell + ',.14)'); glow.addColorStop(.55, 'rgba(' + TP.cell + ',.04)'); glow.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = glow; g.fillRect(0, 0, W, H);
   const sc = W < 800 ? .55 : 1;
   for (let row = -1; row * dy < H + R; row++) for (let col = -1; col * dx < W + dx; col++) {
     const x = col * dx + (row & 1 ? dx / 2 : 0), y = row * dy, d = Math.hypot(x - cx, y - cy), fall = Math.max(0, 1 - d / maxd);
@@ -57,7 +63,7 @@ function rcfHex(now) {
     for (const r of RCF.rings) { const age = (t - r.t0) / r.life; a += Math.max(0, 1 - Math.abs(d - age * maxd * 1.05) / (R * 2.4)) * (1 - age) * r.s * (.35 + fall); }
     a = Math.min(1, a); const warm = ((col * 7 + row * 13) % 11) === 0;
     g.beginPath(); for (let i = 0; i < 6; i++) { const an = Math.PI / 6 + i * Math.PI / 3; g.lineTo(x + R * .9 * Math.cos(an), y + R * .9 * Math.sin(an)); } g.closePath();
-    g.fillStyle = (warm ? 'rgba(242,182,50,' : 'rgba(61,220,132,') + (a * sc * (warm ? .34 : .26)).toFixed(3) + ')'; g.fill(); g.strokeStyle = 'rgba(125,191,155,' + (.04 + a * .4 * sc).toFixed(3) + ')'; g.lineWidth = 1; g.stroke();
+    g.fillStyle = 'rgba(' + (warm ? TP.warm : TP.cell) + ',' + (a * sc * (warm ? .34 : .26)).toFixed(3) + ')'; g.fill(); g.strokeStyle = 'rgba(' + TP.line + ',' + (.04 + a * .4 * sc * (TP.lt ? .8 : 1)).toFixed(3) + ')'; g.lineWidth = 1; g.stroke();
   }
 }
 
@@ -65,7 +71,7 @@ function rcfHex(now) {
 function rcfOpen() {
   if (RCF.el) return; RCF.st = ''; RCF.take = null; RCF.rings = [];
   RCF.el = h('div', { class: 'rf', id: 'rf', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Record a sample' }, h('canvas', { id: 'rfHex', 'aria-hidden': 'true' }), h('div', { class: 'rf-main', id: 'rfMain' }), rcfDockBuild());
-  document.body.append(RCF.el); try { listDevices(); } catch (e) { } RCF.dock = setInterval(rcfDockTick, 50); rcfDockSync(); document.addEventListener('keydown', rcfKey, true); RCF.hxT = requestAnimationFrame(rcfHex);
+  document.body.append(RCF.el); rcfTone(); try { listDevices(); } catch (e) { } RCF.dock = setInterval(rcfDockTick, 50); rcfDockSync(); document.addEventListener('keydown', rcfKey, true); RCF.hxT = requestAnimationFrame(rcfHex);
   if (!E.hasInput && !store.get('rfAsked', false)) { RCF.st = 'ask'; rcfDraw(); } else rcfBegin();
 }
 function rcfClose() {
@@ -205,7 +211,7 @@ function rcfDraw() {
       h('div', { class: 'rf-row' }, btn('rf-primary', 'Keep sample', () => rcfKeep('shelf')), btn('rf-main2', 'Keep and use in a song', () => rcfKeep('use'))),
       h('div', { class: 'rf-row' }, btn('rf-ghost', 'Record again', () => { rcfPlayStop(); RCF.take = null; rcfBegin(); }), RCF.sure === 'discard' ? btn('rf-danger', 'Sure? Discard it', () => { RCF.sure = null; rcfClose(); }) : btn('rf-ghost rf-warn', 'Discard', () => { RCF.sure = 'discard'; rcfDraw(); setTimeout(() => { if (RCF.sure === 'discard') { RCF.sure = null; if (RCF.st === 'review') rcfDraw(); } }, 4000); }))));
     rcfTrimSync();
-    const g = cv.getContext('2d'), W = cv.width, H = cv.height, pk = tk.peaks; g.fillStyle = 'rgba(125,191,155,.9)'; for (let i = 0; i < pk.length; i++) { const hh = Math.max(2, pk[i] * (H - 10)), x = i * (W / pk.length); g.fillRect(x, (H - hh) / 2, Math.max(1, W / pk.length - 1.4), hh); }
+    const g = cv.getContext('2d'), W = cv.width, H = cv.height, pk = tk.peaks; g.fillStyle = RCF.el && RCF.el.classList.contains('rf-light') ? 'rgba(36,112,78,.92)' : 'rgba(125,191,155,.9)'; for (let i = 0; i < pk.length; i++) { const hh = Math.max(2, pk[i] * (H - 10)), x = i * (W / pk.length); g.fillRect(x, (H - hh) / 2, Math.max(1, W / pk.length - 1.4), hh); }
   }
   const f = m.querySelector('button.rf-primary, .rf-stop'); if (f) try { f.focus({ preventScroll: true }); } catch (e) { }
   rcfDockSync();
