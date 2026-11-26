@@ -75,7 +75,7 @@ async function boot() {
   if (CFG.route === 'stage') { $('#bootStage').classList.add('primary'); $('#bootNoMic').classList.remove('primary'); } else if (CFG.route === 'studio') $('#bootNoMic').classList.add('primary');
   // first-timers can look at a finished song before they give anything (no microphone, no camera); people who already have songs just carry on
   const demoBtn = $('#bootDemo'); if (store.get('started', false)) { demoBtn.remove(); $('#bootRoutes').classList.add('solo');      /* 2.49.1: people who have been here keep the goals, under Pick up where I left off, as the way to start something new */
-    { const q = $('#bootQ'), st = $('#bootStart'), rt = $('#bootRoutes'); if (q && st && rt) { q.textContent = 'Or start something new'; st.classList.add('boot-start-sm'); rt.after(st); } } $('#bootNoMic').classList.add('primary'); if (typeof wbBoot === 'function') { try { wbBoot(); } catch (e) { console.warn('welcome back', e); } } } else demoBtn.onclick = () => { PRJ.bootDemo = true; bootStart('studio'); };
+    { const q = $('#bootQ'), st = $('#bootStart'), rt = $('#bootRoutes'); if (q && st && rt) { st.classList.add('boot-start-sm'); rt.after(st); } } $('#bootNoMic').classList.add('primary'); if (typeof wbBoot === 'function') { try { wbBoot(); } catch (e) { console.warn('welcome back', e); } } } else demoBtn.onclick = () => { PRJ.bootDemo = true; bootStart('studio'); };
   { const b = $('#boot'); if (b) b.classList.toggle('boot-first', !store.get('started', false)); }
   document.documentElement.classList.add('ds-booted');      /* the first page is laid out for this person: show it (part 0) */
   setInterval(anaTick, 33); requestAnimationFrame(frame);

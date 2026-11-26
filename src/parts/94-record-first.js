@@ -160,7 +160,7 @@ const rcfInput = () => { try { const t = E.stream && E.stream.getAudioTracks()[0
 /** the top bar of every screen but the recording itself: Back, and a way to the Samples shelf and to the Control room (the studio) */
 function rcfBar(label, hint) {
   const sm = h('button', { class: 'rf-pill', type: 'button', onclick: () => { rcfClose(); rcfShelf(); } }, '🎙 Samples' + (RCF.items.length ? ' (' + RCF.items.length + ')' : '')),
-    cr = h('button', { class: 'rf-pill', type: 'button', onclick: () => { rcfClose(); const b = $('#bootNoMic'); if (b) b.click(); } }, '🎛 Control room');
+    cr = h('button', { class: 'rf-pill', type: 'button', onclick: () => { rcfClose(); const b = $('#bootNoMic'); if (b) b.click(); } }, '🎛 Studio');
   return h('div', { class: 'rf-bar' }, h('button', { class: 'rf-back', id: 'rfBack', type: 'button', title: hint, onclick: rcfBack }, '‹ ' + label), h('span', { class: 'rf-bar-sp' }), RCF.st === 'review' ? null : [sm, cr]);
 }
 

@@ -57,7 +57,7 @@ window.__dailyRoom = (id, make) => {
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.88.0', BUILD = '73ab6d8', PARTS_N = +'140' || 0, LINES_N = +'23555' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.88.0', BUILD = '135d344', PARTS_N = +'140' || 0, LINES_N = +'23555' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { ghApp: { clientId: 'Iv23liTjqEBQsgmGaE1Q', slug: 'tehaud-the-daily-studio' },   /* Sign in with GitHub: the GitHub App's public client id and its slug (docs/GITHUB.md); empty = only the token way */
   support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', instagram: 'https://www.instagram.com/tehaud/', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://journal.the-daily.studio/' };
@@ -4518,7 +4518,7 @@ async function boot() {
   if (CFG.route === 'stage') { $('#bootStage').classList.add('primary'); $('#bootNoMic').classList.remove('primary'); } else if (CFG.route === 'studio') $('#bootNoMic').classList.add('primary');
   // first-timers can look at a finished song before they give anything (no microphone, no camera); people who already have songs just carry on
   const demoBtn = $('#bootDemo'); if (store.get('started', false)) { demoBtn.remove(); $('#bootRoutes').classList.add('solo');      /* 2.49.1: people who have been here keep the goals, under Pick up where I left off, as the way to start something new */
-    { const q = $('#bootQ'), st = $('#bootStart'), rt = $('#bootRoutes'); if (q && st && rt) { q.textContent = 'Or start something new'; st.classList.add('boot-start-sm'); rt.after(st); } } $('#bootNoMic').classList.add('primary'); if (typeof wbBoot === 'function') { try { wbBoot(); } catch (e) { console.warn('welcome back', e); } } } else demoBtn.onclick = () => { PRJ.bootDemo = true; bootStart('studio'); };
+    { const q = $('#bootQ'), st = $('#bootStart'), rt = $('#bootRoutes'); if (q && st && rt) { st.classList.add('boot-start-sm'); rt.after(st); } } $('#bootNoMic').classList.add('primary'); if (typeof wbBoot === 'function') { try { wbBoot(); } catch (e) { console.warn('welcome back', e); } } } else demoBtn.onclick = () => { PRJ.bootDemo = true; bootStart('studio'); };
   { const b = $('#boot'); if (b) b.classList.toggle('boot-first', !store.get('started', false)); }
   document.documentElement.classList.add('ds-booted');      /* the first page is laid out for this person: show it (part 0) */
   setInterval(anaTick, 33); requestAnimationFrame(frame);
@@ -23462,7 +23462,7 @@ const rcfInput = () => { try { const t = E.stream && E.stream.getAudioTracks()[0
 /** the top bar of every screen but the recording itself: Back, and a way to the Samples shelf and to the Control room (the studio) */
 function rcfBar(label, hint) {
   const sm = h('button', { class: 'rf-pill', type: 'button', onclick: () => { rcfClose(); rcfShelf(); } }, '🎙 Samples' + (RCF.items.length ? ' (' + RCF.items.length + ')' : '')),
-    cr = h('button', { class: 'rf-pill', type: 'button', onclick: () => { rcfClose(); const b = $('#bootNoMic'); if (b) b.click(); } }, '🎛 Control room');
+    cr = h('button', { class: 'rf-pill', type: 'button', onclick: () => { rcfClose(); const b = $('#bootNoMic'); if (b) b.click(); } }, '🎛 Studio');
   return h('div', { class: 'rf-bar' }, h('button', { class: 'rf-back', id: 'rfBack', type: 'button', title: hint, onclick: rcfBack }, '‹ ' + label), h('span', { class: 'rf-bar-sp' }), RCF.st === 'review' ? null : [sm, cr]);
 }
 

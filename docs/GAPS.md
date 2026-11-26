@@ -11,7 +11,7 @@ How to use it: before a release, move what the release closed into *Closed* with
 *Next, from the Record-first direction (2.88)*
 - **Rooms** (named spaces for a sample: Dry booth, Tavern, Tiled bathroom, Stairwell, Subway platform, Concert hall, Opera house, Canyon amphitheater, Stone cathedral; modelled in the browser, never a real venue name such as Red Rocks) with a room dial, then **the Booth** (Shower mode's engine without the hidden door, fog and joke titles; its own song list becomes the Setlist).
 - **Samples are not in backups, folder sync or GitHub sync yet**, and a crash during a long recording loses it (no recovery chunks yet). Both before the Booth.
-- The start card still leads with the song-shaped ways in below Record; the Control room as a named room (today Studio and Full Rig) is the next naming step.
+- The start card still leads with the song-shaped ways in below Record; the start card's Rooms now use the workspace names (Songwriter, Studio, Practice, Full Rig); naming the workspaces as rooms in the studio bar is a later, optional step.
 
 *Needs you (maintainer)*
 - **Repository settings** (docs/REPO_SECURITY.md): protect `main` with a ruleset, turn on secret scanning and push protection and private vulnerability reporting, set the Actions fork-approval rule, check Cloudflare Workers Builds, and keep your email private for new commits. None of these can be set from a commit.
