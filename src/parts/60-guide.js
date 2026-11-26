@@ -184,7 +184,7 @@ const GD_GOALS = {
   show: async () => { await projCreate('demo', { zoom: 'song' }); if (isDesk()) { simpleSet(false, true); const L = LAYOUTS.find(l => l[0] === 'Show'); if (L) applyPreset(L[2], 'Show'); } else mGo('see', 'stage'); dockGo('stage'); try { shOpen('scene', 'looks'); } catch (e) { } }
 };
 /* ---------- 2.67: who you are, and the four ways in ----------
-   The start page asks one optional thing, what you mostly do, never how good you are (singer, guitarist, new to music, producer: CFG.me) and offers four ways in, one per workspace.
+   The start page (2.88: a big Record button, with the choices as glass pills and these in the Rooms panel) asks one optional thing, what you mostly do, never how good you are (singer, guitarist, new to music, producer: CFG.me) and offers four ways in, one per workspace.
    Who you are changes what each way in says and where it leads:
      Write a song        Songwriter, and a session that goes the whole way: an idea, hear it, words, a second part, a take, the stage, out.
                          A singer starts by humming; a guitarist by capturing a riff; anyone else by picking a beat.

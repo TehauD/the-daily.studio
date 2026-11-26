@@ -57,7 +57,7 @@ window.__dailyRoom = (id, make) => {
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.88.0', BUILD = '209a7f3', PARTS_N = +'140' || 0, LINES_N = +'23503' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.88.0', BUILD = '04d1581', PARTS_N = +'140' || 0, LINES_N = +'23503' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { ghApp: { clientId: 'Iv23liTjqEBQsgmGaE1Q', slug: 'tehaud-the-daily-studio' },   /* Sign in with GitHub: the GitHub App's public client id and its slug (docs/GITHUB.md); empty = only the token way */
   support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', instagram: 'https://www.instagram.com/tehaud/', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://journal.the-daily.studio/' };
@@ -14163,7 +14163,7 @@ const GD_GOALS = {
   show: async () => { await projCreate('demo', { zoom: 'song' }); if (isDesk()) { simpleSet(false, true); const L = LAYOUTS.find(l => l[0] === 'Show'); if (L) applyPreset(L[2], 'Show'); } else mGo('see', 'stage'); dockGo('stage'); try { shOpen('scene', 'looks'); } catch (e) { } }
 };
 /* ---------- 2.67: who you are, and the four ways in ----------
-   The start page asks one optional thing, what you mostly do, never how good you are (singer, guitarist, new to music, producer: CFG.me) and offers four ways in, one per workspace.
+   The start page (2.88: a big Record button, with the choices as glass pills and these in the Rooms panel) asks one optional thing, what you mostly do, never how good you are (singer, guitarist, new to music, producer: CFG.me) and offers four ways in, one per workspace.
    Who you are changes what each way in says and where it leads:
      Write a song        Songwriter, and a session that goes the whole way: an idea, hear it, words, a second part, a take, the stage, out.
                          A singer starts by humming; a guitarist by capturing a riff; anyone else by picking a beat.

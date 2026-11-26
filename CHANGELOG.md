@@ -6,6 +6,10 @@ All notable changes to the-daily.studio (earlier versions were released under th
 
 The first thing on the start screen is now a big Record button, and what you record is a **sample**: not a song, but something that goes into any song.
 
+### Changed
+- **The start card is the Record button.** A big red Record button leads (the first button on the page, high on a phone too), with “Hit record. Sort it out later.” under it. The other choices are glass pills: **Samples** (with a count), **Rooms**, **Control room** (begin in the studio, or pick up where you left off) and **Try the demo song** (first visits). The persona row (“I’m mostly a…”), the four ways in and the “do one thing” goals are inside **Rooms**; the guides, the camera route and the credits are small print. Nothing was removed and every id and handler is where it was. The page fits a 360 × 740 phone without scrolling.
+- The **Samples** chip is in the song bar of the studio (labels fold away on narrow screens), not the header, which has no room.
+
 ### Added
 - **A Record button first on the start card.** One tap opens a full-screen recorder: the clock, a level meter, a rolling waveform, ⚑ Mark, Pause and a big Stop. The first time, a short note says why the microphone is needed before the browser asks. The microphone is opened only when you press Record, through the studio's own input (so its error messages and device choice apply), and is blocked or missing gets a plain explanation with the steps for your browser.
 - **A sample, not a song.** Stop, hear it, name it, say whether it is Voice or Instrument, then **Keep sample** or **Keep and use in a song**. The recording is kept as it came in (16-bit, a mono mix of the input, up to 10 minutes) in this browser's storage beside your songs. Nothing is uploaded. Discard asks twice. Space stops (even right after Mark), Esc keeps and closes, so nothing is lost by accident.
@@ -15,7 +19,7 @@ The first thing on the start screen is now a big Record button, and what you rec
 
 ### Notes
 - Rooms (named spaces for a sample: tavern, subway platform, opera house, canyon amphitheater and more, all modelled in the browser, none a real venue) and the Booth that replaces Shower mode come next. Samples are not yet in backups, folder sync or GitHub sync: **WAV** keeps a copy meanwhile (GAPS).
-- Tested in `e2e-record-first` with the browser's fake microphone: Record first on the card, the first-time note, recording, Mark, Space, review, Keep, the shelf, a reload, Use in a song, Delete.
+- The start-card tests follow the new card (lead line, the Rooms panel, the Samples and Control room pills); `e2e-record-first` is tested with the browser's fake microphone: Record first on the card, the first-time note, recording, Mark, Space, review, Keep, the shelf, a reload, Use in a song, Delete.
 
 ## 2.87.2 — 2026-11-22 — Hardening for a public repository
 
