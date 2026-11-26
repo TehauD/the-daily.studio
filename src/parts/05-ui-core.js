@@ -65,7 +65,7 @@ function buildHeader() {
   const R = $('#topR');
   UI.lat = h('span', { class: 'lat-chip', title: 'Round-trip latency estimate. Run the Loopback Test in I/O for a measured value.' }, h('i', { class: 'led' }), h('span', {}, 'audio off'));
   UI.theme = h('button', { class: 'btn icon', title: 'Appearance: light / dark, palettes, accent, density…', 'aria-haspopup': 'dialog', onclick: () => lookOpen() }, '◐');
-  R.append(mstChip(), audioButton(), h('button', { class: 'btn icon', id: 'samplesBtn', title: 'Samples: recordings to use in any song', 'aria-haspopup': 'dialog', onclick: () => rcfShelf() }, '🎙'), UI.theme, h('button', { class: 'btn icon', title: 'Settings', 'aria-haspopup': 'dialog', onclick: () => openSettings() }, '⚙'), h('button', { class: 'btn icon', title: 'Help & shortcuts (?)', 'aria-haspopup': 'dialog', onclick: () => openHelp() }, '?'));
+  R.append(mstChip(), audioButton(), UI.theme, h('button', { class: 'btn icon', title: 'Settings', 'aria-haspopup': 'dialog', onclick: () => openSettings() }, '⚙'), h('button', { class: 'btn icon', title: 'Help & shortcuts (?)', 'aria-haspopup': 'dialog', onclick: () => openHelp() }, '?'));
   try { simpleMount(); } catch (e) { }
 }
 /** count-in and click volume, next to the Click button */
