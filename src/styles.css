@@ -2059,12 +2059,12 @@ body[data-form=phone][data-tl=mini] #center{grid-template-rows:minmax(0,auto) mi
 .boot-glass .glass:hover{background:color-mix(in srgb,var(--panel) 75%,transparent);border-color:var(--accent);transform:translateY(-2px)}.boot-glass .glass:active{transform:scale(.97)}
 .boot-glass .glass.sub{font-weight:500;background:color-mix(in srgb,var(--panel) 35%,transparent)}
 .boot-glass .glass.primary{background:var(--accent);color:var(--accent-ink,#fff);border-color:var(--accent)}
-.boot-glass .boot-route span{display:none}.boot-glass .boot-route b{font:inherit;display:inline}
+.boot-glass .boot-route span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}.boot-glass .boot-route b{font:inherit;display:inline}
 .boot-glass #bootWays[aria-expanded=true]{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 18%,transparent)}
 .boot-glass.solo{display:flex}
 #bootStart{display:none;margin:14px 0 0;text-align:left;padding:14px;border-radius:20px;background:color-mix(in srgb,var(--panel) 70%,transparent);border:1px solid color-mix(in srgb,var(--text) 16%,transparent);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px)}
 #bootStart.open{display:block}
 .boot-fine{margin-top:18px;font-size:12px;color:var(--muted);text-align:center;display:grid;gap:6px}
-.boot-fine .boot-opt,.boot-fine .boot-made{margin:0;font-size:12px}.boot-fine .boot-guides{justify-content:center;font-size:12px}
+.boot-fine .boot-opt,.boot-fine .boot-made,.boot-fine .boot-about{margin:0;font-size:12px}.boot-fine .boot-guides{justify-content:center;font-size:12px}
 @media (max-width:600px){#boot.boot-live .boot-card.boot-simple{padding:8px 12px}.boot-top svg{width:34px;height:34px}.boot-top h1{font-size:20px}.boot-rec{width:116px;height:116px;border-width:4px}.boot-rec i{width:48px;height:48px}.boot-hero{padding-top:4px;gap:4px}#boot.boot-live .boot-hero .boot-lead{font-size:23px}.boot-hero .boot-sub{font-size:12.5px}.boot-glass{gap:8px;margin-top:10px}.boot-glass .glass{padding:9px 14px;min-height:42px;font-size:13px}.boot-fine{margin-top:12px}.boot-fine .boot-opt{display:none}}
 @media (prefers-reduced-motion:reduce){.boot-rec,.boot-glass .glass{transition:none}}

@@ -7,7 +7,8 @@ suite('e2e-record-first', async t => {
   // ---- the start card leads with Record
   ok(await ev(() => { const b = document.querySelector('#boot .boot-card button'); return !!b && b.id === 'bootRec'; }), 'Record is the first button on the start card');
   ok(await ev(() => { const r = document.getElementById('bootRec').getBoundingClientRect(); return r.width >= 80 && r.top < 420; }), 'and it is big and high on the page');
-  ok(await ev(() => { const s = document.getElementById('bootSamples'); return !s || s.hidden; }), 'there is no “Your samples” link until there is a sample');
+  ok(await ev(() => { const s = document.getElementById('bootSamples'); return !!s && s.getBoundingClientRect().height > 30 && /^🎙 Samples$/.test(s.textContent.trim()); }), 'the Samples choice is on the start card, with no count until there is a sample');
+  ok(await ev(() => { const k = [...document.querySelectorAll('#bootRoutes .glass')].map(b => b.id); return k.includes('bootWays') && k.includes('bootNoMic'); }), 'beside the Rooms and Control room choices');
   ok(await ev(() => !document.getElementById('rf') && !(window.__daily && window.__daily.E && window.__daily.E.hasInput)), 'nothing is recording and the microphone is not open before the tap');
   // ---- the first tap explains, then records
   await p.click('#bootRec'); await wait(500);
@@ -32,7 +33,7 @@ suite('e2e-record-first', async t => {
   await p.keyboard.press('Escape'); await wait(300);
   // ---- it survives a reload, and the start card knows
   await p.reload(); await wait(3200);
-  ok(await ev(() => { const s = document.getElementById('bootSamples'); return !!s && !s.hidden && /Your samples \(1\)/.test(s.textContent); }), 'after a reload the start card says “Your samples (1)”');
+  ok(await ev(() => { const s = document.getElementById('bootSamples'); return !!s && /Samples \(1\)/.test(s.textContent); }), 'after a reload the start card says “Samples (1)”');
   // ---- use it in a song
   await p.click('#bootSamples'); await wait(600); await p.click('#rfShelf .btn.primary.sm');
   ok(await poll(() => ev(() => !document.getElementById('boot') && [...document.querySelectorAll('#toasts .toast')].some(x => /Added “Verse hum”/.test(x.textContent))), 12000, 150), 'Use in a song starts the studio and adds it as a take');
