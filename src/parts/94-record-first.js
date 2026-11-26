@@ -27,7 +27,7 @@ async function rcfSave(meta, pcm) {
 async function rcfPcm(id) { try { const a = await pdbGet('blobs', RCF_A + id); return a ? fromI16(a) : null; } catch (e) { return null; } }
 async function rcfDel(id) { try { await pdbDel('blobs', RCF_A + id); await pdbDel('blobs', RCF_I + id); } catch (e) { console.warn(e); } RCF.items = RCF.items.filter(x => x.id !== id); rcfCount(); bus.emit('samples'); }
 /** the start card says how many samples there are, once they are known */
-function rcfCount() { const b = $('#bootSamples'); if (!b) return; b.hidden = !RCF.items.length; b.textContent = 'Your samples (' + RCF.items.length + ')'; }
+function rcfCount() { const b = $('#bootSamples'); if (!b) return; b.textContent = '🎙 Samples' + (RCF.items.length ? ' (' + RCF.items.length + ')' : ''); }
 const rcfStamp = () => { const d = new Date(), w = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()], hr = d.getHours(); return w + ' ' + ((hr + 11) % 12 + 1) + ':' + ('0' + d.getMinutes()).slice(-2) + (hr < 12 ? ' am' : ' pm'); };
 const rcfLen = s => Math.floor(s / 60) + ':' + ('0' + Math.floor(s % 60)).slice(-2);
 const rcfBytes = n => n > 1e6 ? (n / 1e6).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1e3)) + ' kB';
@@ -186,5 +186,12 @@ async function rcfShelf() {
   pdlg('rfShelf', 'Samples', h('div', { class: 'rf-shelf' }, h('p', { class: 'muted' }, 'Recordings you have kept. Any of them can go into any song, as a Vocal or Guitar take where the playhead is.'),
     h('div', { class: 'row', style: { gap: '10px', margin: '0 0 12px' } }, h('button', { class: 'btn primary', type: 'button', onclick: () => { const d = $('#rfShelf'); if (d) d.close(); rcfOpen(); } }, '● Record'), h('span', { class: 'grow' }), h('span', { class: 'tiny muted' }, RCF.items.length + ' on this device · ' + rcfBytes(tot) + ' · never uploaded')), list), { onclose: rcfPlayStop });
 }
-document.addEventListener('DOMContentLoaded', () => { const b = $('#bootRec'); if (b) b.addEventListener('click', rcfOpen); const s = $('#bootSamples'); if (s) s.addEventListener('click', rcfShelf); rcfLoad().catch(() => { }); });
-if (document.readyState !== 'loading') { const b = $('#bootRec'); if (b && !b._rf) { b._rf = 1; b.addEventListener('click', rcfOpen); } const s = $('#bootSamples'); if (s && !s._rf) { s._rf = 1; s.addEventListener('click', rcfShelf); } rcfLoad().catch(() => { }); }
+/* the start card: Record, the Samples shelf and the Rooms panel (the persona row, the four ways in and the one-thing goals live in it) */
+function rcfWire() {
+  const rec = $('#bootRec'), sm = $('#bootSamples'), ways = $('#bootWays'), panel = $('#bootStart');
+  if (rec && !rec._rcf) { rec._rcf = 1; rec.addEventListener('click', rcfOpen); } if (sm && !sm._rcf) { sm._rcf = 1; sm.addEventListener('click', rcfShelf); }
+  if (ways && panel && !ways._rcf) { ways._rcf = 1; ways.addEventListener('click', () => { const on = !panel.classList.contains('open'); panel.classList.toggle('open', on); ways.setAttribute('aria-expanded', String(on)); if (on) { try { panel.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) { } } }); }
+  rcfCount();
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', rcfWire); else rcfWire();
+rcfLoad().catch(() => { });

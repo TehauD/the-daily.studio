@@ -5,13 +5,22 @@
   <div id="boot" class="boot-live">
     <canvas id="bootHex" aria-hidden="true"></canvas>
     <div class="boot-card boot-simple">
-      <div class="row" style="gap:14px">
-        <svg viewBox="0 0 100 100" width="64" height="64" aria-hidden="true">__MARK_INNER__</svg>
+      <div class="row boot-top">
+        <svg viewBox="0 0 100 100" width="44" height="44" aria-hidden="true">__MARK_INNER__</svg>
         <h1><span>the-daily</span><span class="tld">.studio</span><small>Write. Play. Create.</small></h1>
       </div>
-      <h2 class="boot-lead">Your song, start to finish.</h2>
-      <p class="boot-sub">Write it, sing it, play it, learn it, share it. A guitar and voice studio in your browser: free, private, nothing to install.</p>
-      <div class="boot-rec-wrap"><button type="button" class="boot-rec" id="bootRec" aria-label="Record a sample"><i></i></button><div class="boot-rec-l"><b>Record</b><span>Catch it first, sort it out later. It stays on this device.</span></div><button type="button" class="boot-link" id="bootSamples" hidden>Your samples</button></div>
+      <section class="boot-hero" aria-label="Record">
+        <button type="button" class="boot-rec" id="bootRec" aria-label="Record"><i></i></button>
+        <div class="boot-rec-l">Record</div>
+        <h2 class="boot-lead">Hit record. Sort it out later.</h2>
+        <p class="boot-sub">Catch it first, here on this device. Everything else is one tap away.</p>
+      </section>
+      <div class="boot-cta boot-glass" id="bootRoutes">
+        <button class="glass" id="bootSamples" type="button">🎙 Samples</button>
+        <button class="glass" id="bootWays" type="button" aria-expanded="false" aria-controls="bootStart">▦ Rooms</button>
+        <button class="btn boot-route glass" id="bootNoMic" type="button"><b>🎛 Control room</b><span>Begin in the studio: a clean page to hum, play or load a track. Nothing is asked for until you choose.</span></button>
+        <button class="btn boot-route glass sub" id="bootDemo" type="button"><b>♫ Try the demo song</b><span>See a finished song first. No microphone needed.</span></button>
+      </div>
       <div class="boot-start" id="bootStart">
       <div class="boot-me" id="bootMe" role="radiogroup" aria-label="What describes you best? It changes where each way in leads.">
         <span class="boot-me-l">I’m <span class="bm-x">mostly </span>a</span>
@@ -36,18 +45,16 @@
         <button class="boot-goal" type="button" data-goal="split"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M3 10.7h12.5M3 15.3h16.5M3 20h8.5"/></svg><div><b data-s="Learn a song">Learn a song</b><span>Split it into drums, bass, vocals and guitar. Mute yours and play along.</span></div></button>
         <button class="boot-goal" type="button" data-goal="show"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l1.6 5.2L19 9l-5.4 1.8L12 16l-1.6-5.2L5 9l5.4-1.8zM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg><div><b data-s="Run a show">Run a show</b><span>Lights, lasers and visuals for a room. A preflight list for the output.</span></div></button>
       </div>
-      </div>
-      <div class="boot-cta" id="bootRoutes">
-        <button class="btn boot-route" id="bootNoMic" type="button"><b>● Begin in the studio</b><span>A clean page to hum, play or load a track. Nothing is asked for until you choose.</span></button>
-        <button class="btn boot-route" id="bootDemo" type="button"><b>♫ Try the demo song</b><span>See a finished song first. No microphone needed.</span></button>
-      </div>
       <ul class="boot-also" aria-label="And also">
         <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19a9 9 0 1 1 14 0"/><circle cx="12" cy="13.5" r="3.4"/><path d="M12 13.5l3-4"/></svg><div><b>Presets and effects</b>Amps, pedals and one-click tones. Morph between two sounds and save your own.</div></li>
         <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8l7-3.5L19 9M5 8l3 10M19 9l-2 9M8 18h9M12 4.5l-4 13.5M12 4.5l5 13.5"/><circle cx="5" cy="8" r="1.7" fill="currentColor"/><circle cx="12" cy="4.5" r="1.7" fill="currentColor"/><circle cx="19" cy="9" r="1.7" fill="currentColor"/><circle cx="8" cy="18" r="1.7" fill="currentColor"/><circle cx="17" cy="18" r="1.7" fill="currentColor"/></svg><div><b>Neural graph and visuals</b>See your song as a living map and a light show that moves with it.</div></li>
       </ul>
+      </div>
+      <div class="boot-fine">
       <p class="boot-opt">Plus hum-to-song, ★ Showtime for the stage, print sheets and one-file sharing. Songs and recordings stay on this device unless you choose to share them.<br>Optional extra: put yourself in front of the visuals with your camera. It stays off unless you choose it. <button class="boot-stage" id="bootStage" type="button">Begin on stage</button></p>
       <nav class="boot-guides" aria-label="Guides and answers"><b>Guides</b> __GUIDE_LINKS__</nav>
       <p class="boot-made">Made by <a href="guide/about/" rel="author">Tehau</a>. Musician, software engineer, and independent creator building tools that make music more accessible.</p>
+      </div>
       <details class="boot-more"><summary>Other ways to start</summary>
         <div class="row" style="gap:10px;margin:10px 0">
           <button class="btn" id="bootGo" style="padding:10px 16px">🎙 Start and connect my input</button>

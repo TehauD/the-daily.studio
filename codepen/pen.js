@@ -57,7 +57,7 @@ window.__dailyRoom = (id, make) => {
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.88.0', BUILD = 'b33bc97', PARTS_N = +'140' || 0, LINES_N = +'23495' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.88.0', BUILD = '209a7f3', PARTS_N = +'140' || 0, LINES_N = +'23503' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { ghApp: { clientId: 'Iv23liTjqEBQsgmGaE1Q', slug: 'tehaud-the-daily-studio' },   /* Sign in with GitHub: the GitHub App's public client id and its slug (docs/GITHUB.md); empty = only the token way */
   support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', instagram: 'https://www.instagram.com/tehaud/', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://journal.the-daily.studio/' };
@@ -1892,7 +1892,7 @@ function buildHeader() {
   const R = $('#topR');
   UI.lat = h('span', { class: 'lat-chip', title: 'Round-trip latency estimate. Run the Loopback Test in I/O for a measured value.' }, h('i', { class: 'led' }), h('span', {}, 'audio off'));
   UI.theme = h('button', { class: 'btn icon', title: 'Appearance: light / dark, palettes, accent, density…', 'aria-haspopup': 'dialog', onclick: () => lookOpen() }, '◐');
-  R.append(mstChip(), audioButton(), h('button', { class: 'btn icon', id: 'samplesBtn', title: 'Samples: recordings to use in any song', 'aria-haspopup': 'dialog', onclick: () => rcfShelf() }, '🎙'), UI.theme, h('button', { class: 'btn icon', title: 'Settings', 'aria-haspopup': 'dialog', onclick: () => openSettings() }, '⚙'), h('button', { class: 'btn icon', title: 'Help & shortcuts (?)', 'aria-haspopup': 'dialog', onclick: () => openHelp() }, '?'));
+  R.append(mstChip(), audioButton(), UI.theme, h('button', { class: 'btn icon', title: 'Settings', 'aria-haspopup': 'dialog', onclick: () => openSettings() }, '⚙'), h('button', { class: 'btn icon', title: 'Help & shortcuts (?)', 'aria-haspopup': 'dialog', onclick: () => openHelp() }, '?'));
   try { simpleMount(); } catch (e) { }
 }
 /** count-in and click volume, next to the Click button */
@@ -6767,6 +6767,7 @@ function sbChip() {
     else if (S.track) t.append(h('span', { class: 'tiny muted', title: 'This song was built from a track. Load it again to play along with it.' }, 'from “' + S.track.name + '”'));
   }
   t.append(h('button', { class: 'sb-chip', id: 'sbPerform', title: 'Showtime: full-screen chords and lyrics with a count-in, record and play', onclick: e => { sbLeave(); perfOpen(e.currentTarget); } }, '★ Showtime'));
+  t.append(h('button', { class: 'sb-chip', id: 'samplesBtn', 'aria-label': 'Samples', title: 'Samples: recordings to use in any song', 'aria-haspopup': 'dialog', onclick: () => { sbLeave(); if (typeof rcfShelf === 'function') rcfShelf(); } }, '🎙', h('span', { class: 'sb-lbl' }, 'Samples')));
   t.append(h('button', { class: 'sb-chip', id: 'sbVoice', 'aria-label': 'Voice', title: 'Voice: see your pitch against the key, find your range, and find the key that suits your voice', onclick: e => { sbLeave(); voxOpen(e.currentTarget); } }, '〰', h('span', { class: 'sb-lbl' }, 'Voice')));
 }
 /** on a phone the song details are a sheet over the page: its buttons close it before they open something else */
@@ -23328,7 +23329,7 @@ async function rcfSave(meta, pcm) {
 async function rcfPcm(id) { try { const a = await pdbGet('blobs', RCF_A + id); return a ? fromI16(a) : null; } catch (e) { return null; } }
 async function rcfDel(id) { try { await pdbDel('blobs', RCF_A + id); await pdbDel('blobs', RCF_I + id); } catch (e) { console.warn(e); } RCF.items = RCF.items.filter(x => x.id !== id); rcfCount(); bus.emit('samples'); }
 /** the start card says how many samples there are, once they are known */
-function rcfCount() { const b = $('#bootSamples'); if (!b) return; b.hidden = !RCF.items.length; b.textContent = 'Your samples (' + RCF.items.length + ')'; }
+function rcfCount() { const b = $('#bootSamples'); if (!b) return; b.textContent = '🎙 Samples' + (RCF.items.length ? ' (' + RCF.items.length + ')' : ''); }
 const rcfStamp = () => { const d = new Date(), w = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()], hr = d.getHours(); return w + ' ' + ((hr + 11) % 12 + 1) + ':' + ('0' + d.getMinutes()).slice(-2) + (hr < 12 ? ' am' : ' pm'); };
 const rcfLen = s => Math.floor(s / 60) + ':' + ('0' + Math.floor(s % 60)).slice(-2);
 const rcfBytes = n => n > 1e6 ? (n / 1e6).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1e3)) + ' kB';
@@ -23487,8 +23488,15 @@ async function rcfShelf() {
   pdlg('rfShelf', 'Samples', h('div', { class: 'rf-shelf' }, h('p', { class: 'muted' }, 'Recordings you have kept. Any of them can go into any song, as a Vocal or Guitar take where the playhead is.'),
     h('div', { class: 'row', style: { gap: '10px', margin: '0 0 12px' } }, h('button', { class: 'btn primary', type: 'button', onclick: () => { const d = $('#rfShelf'); if (d) d.close(); rcfOpen(); } }, '● Record'), h('span', { class: 'grow' }), h('span', { class: 'tiny muted' }, RCF.items.length + ' on this device · ' + rcfBytes(tot) + ' · never uploaded')), list), { onclose: rcfPlayStop });
 }
-document.addEventListener('DOMContentLoaded', () => { const b = $('#bootRec'); if (b) b.addEventListener('click', rcfOpen); const s = $('#bootSamples'); if (s) s.addEventListener('click', rcfShelf); rcfLoad().catch(() => { }); });
-if (document.readyState !== 'loading') { const b = $('#bootRec'); if (b && !b._rf) { b._rf = 1; b.addEventListener('click', rcfOpen); } const s = $('#bootSamples'); if (s && !s._rf) { s._rf = 1; s.addEventListener('click', rcfShelf); } rcfLoad().catch(() => { }); }
+/* the start card: Record, the Samples shelf and the Rooms panel (the persona row, the four ways in and the one-thing goals live in it) */
+function rcfWire() {
+  const rec = $('#bootRec'), sm = $('#bootSamples'), ways = $('#bootWays'), panel = $('#bootStart');
+  if (rec && !rec._rcf) { rec._rcf = 1; rec.addEventListener('click', rcfOpen); } if (sm && !sm._rcf) { sm._rcf = 1; sm.addEventListener('click', rcfShelf); }
+  if (ways && panel && !ways._rcf) { ways._rcf = 1; ways.addEventListener('click', () => { const on = !panel.classList.contains('open'); panel.classList.toggle('open', on); ways.setAttribute('aria-expanded', String(on)); if (on) { try { panel.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) { } } }); }
+  rcfCount();
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', rcfWire); else rcfWire();
+rcfLoad().catch(() => { });
 
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
