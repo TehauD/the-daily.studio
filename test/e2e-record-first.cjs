@@ -14,6 +14,7 @@ suite('e2e-record-first', async t => {
   await p.click('#bootRec'); await wait(500);
   ok(await ev(() => !!document.getElementById('rf') && /One quick thing/.test(document.getElementById('rfMain').textContent)), 'the first tap opens the recorder and says why the microphone is needed');
   ok(await ev(() => !!document.getElementById('rfHex')), 'the hexagon field is behind it');
+  ok(await ev(() => { const b = document.getElementById('rfBack'); return !!b && /Back/.test(b.textContent) && [...document.querySelectorAll('#rfMain .rf-pill')].map(x => x.textContent).join('|').includes('Samples') && /Control room/.test(document.getElementById('rfMain').textContent); }), 'every screen has a visible Back, and a way to Samples and the Control room (not only Esc and Space)');
   await p.click('#rfMain .rf-primary'); ok(await poll(() => ev(() => !!document.querySelector('#rfMain .rf-stop')), 9000, 150), 'allowing opens the microphone and starts recording');
   await wait(1800);
   const lcd = await ev(() => document.getElementById('rfLcd').textContent); ok(/^0:0[1-9]$/.test(lcd), 'the clock runs (' + lcd + ')');
@@ -42,6 +43,15 @@ suite('e2e-record-first', async t => {
   // ---- delete asks twice
   await p.click('#rfShelf .rf-del'); await p.click('#rfShelf .rf-del'); await wait(500);
   ok(await ev(() => /Nothing recorded yet/.test(document.getElementById('rfShelf').textContent)), 'Delete asks twice, then the shelf is empty again');
+  // ---- the way out: Back while recording stops and shows what you have; Done keeps it and goes back
+  await p.keyboard.press('Escape'); await wait(300);
+  await p.click('#samplesBtn'); await wait(500); await p.click('#rfShelf .btn.primary:not(.sm)'); ok(await poll(() => ev(() => !!document.querySelector('#rfMain .rf-stop')), 9000, 150), 'Record from the shelf opens the recorder (the microphone is already allowed)');
+  ok(await ev(() => { const b = document.getElementById('rfBack'); return !!b && /Back/.test(b.textContent) && b.getBoundingClientRect().height >= 36; }), 'while recording there is a visible Back');
+  await wait(1200); await p.click('#rfBack'); ok(await poll(() => ev(() => !!document.querySelector('#rfMain .rf-wave')), 4000, 100), 'Back while recording stops and shows what you have');
+  ok(await ev(() => /Done/.test(document.getElementById('rfBack').textContent)), 'where the top button now says Done');
+  await p.click('#rfBack'); ok(await poll(() => ev(() => !document.getElementById('rf')), 4000, 100), 'Done keeps it and goes back, to where you were');
+  await p.click('#samplesBtn'); await wait(500); ok(await ev(() => document.querySelectorAll('#rfShelf .rf-item').length === 1), 'and the sample is on the shelf');
+  await p.keyboard.press('Escape'); await wait(200);
   // ---- hexagon setting
   ok(await ev(() => window.__daily ? true : true), 'settings default is on');
   ok(t.errs.length === 0, 'no errors (' + t.errs.length + ')');

@@ -20,8 +20,8 @@ Contents: [Soundprint](#-soundprint-261) · [Whole song and Showtime layouts](#-
 
 The big **Record** button is the first thing on the start screen. Tap it (or press Space) and a full-screen recorder opens over the living hexagons. The first time it tells you why it needs the microphone; your browser then asks once.
 
-- **Recording:** the clock, a level meter and a rolling waveform. **⚑ Mark** drops a flag at that moment; **Pause** holds the recording; the red button (or Space) stops. Up to 10 minutes.
-- **After it:** hear it, name it, choose Voice or Instrument, then **Keep sample** or **Keep and use in a song**. **Save a WAV** keeps a plain file. Discard asks twice; Esc keeps what you have and closes.
+- **Recording:** the clock, a level meter and a rolling waveform. **⚑ Mark** drops a flag at that moment; **Pause** holds the recording; the red button (or Space) stops. Up to 10 minutes. **‹ Back** (top left) stops and shows what you have.
+- **After it:** hear it, name it, choose Voice or Instrument, then **Keep sample** or **Keep and use in a song**. **Save a WAV** keeps a plain file. Discard asks twice; **‹ Done** (or Esc) keeps what you have and goes back.
 - **Samples** are not songs. They live on the **Samples** shelf (🎙 at the top right, or **Samples** on the start card), on this device, never uploaded. **Use in a song** puts one in as a Vocal or Guitar take at the playhead; the song is not changed until you do. A sample can also be played, renamed, saved as a WAV or deleted from the shelf.
 - **Hexagons:** Appearance ▸ Hexagons sets the field behind the recorder to Moving, Calm or Off. The Control room (the workspaces) never has it.
 - Samples are not yet in backups, folder sync or GitHub sync, so save a WAV of anything you cannot lose.

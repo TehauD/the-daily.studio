@@ -57,7 +57,7 @@ window.__dailyRoom = (id, make) => {
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.88.0', BUILD = '04d1581', PARTS_N = +'140' || 0, LINES_N = +'23503' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.88.0', BUILD = '730104c', PARTS_N = +'140' || 0, LINES_N = +'23519' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { ghApp: { clientId: 'Iv23liTjqEBQsgmGaE1Q', slug: 'tehaud-the-daily-studio' },   /* Sign in with GitHub: the GitHub App's public client id and its slug (docs/GITHUB.md); empty = only the token way */
   support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', instagram: 'https://www.instagram.com/tehaud/', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://journal.the-daily.studio/' };
@@ -23402,7 +23402,7 @@ function rcfTick() {
 function rcfStop() {
   if (RCF.st !== 'rec') return; clearInterval(RCF.tick); RCF.st = 'stopping'; if (RCF.tap) { try { RCF.tap.on(false); E.src.disconnect(RCF.tap.node); } catch (e) { } RCF.tap = null; }
   const sr = E.ctx.sampleRate, pcm = new Float32Array(RCF.n); let k = 0; for (const p of RCF.parts) { pcm.set(p, k); k += p.length; } RCF.parts = [];
-  if (pcm.length < sr * .3 || RCF.pk < .002) { toast('Nothing was heard. Is the microphone on and its level up? Check Audio at the top right.', 'warn'); RCF.st = ''; return rcfBegin(); }
+  if (pcm.length < sr * .3 || RCF.pk < .002) { RCF.st = 'silent'; return rcfDraw(); }      /* nothing was heard: say so and let the person choose, never start again by itself */
   const kind = CFG.me === 'guitar' ? 'gtr' : 'vox';
   RCF.take = { pcm, sr, dur: pcm.length / sr, kind, name: (kind === 'vox' ? 'Voice' : 'Instrument') + ' · ' + rcfStamp(), marks: RCF.marks.slice(), peaks: rcfPeaks(pcm, 360) }; RCF.st = 'review'; rcfDraw();
 }
@@ -23424,29 +23424,45 @@ async function rcfKeep(then) {
 }
 function rcfSaveWav() { const tk = RCF.take; if (tk) download(((($('#rfName') || {}).value || tk.name).replace(/[\\/:*?"<>|]/g, '-')) + '.wav', new Blob([wavI16(toI16(tk.pcm), tk.sr)], { type: 'audio/wav' })); }
 
+
+/** the way out: while recording it stops and shows what you have; on the review it keeps the sample and goes back; elsewhere it just closes */
+function rcfBack() { if (RCF.st === 'rec') rcfStop(); else if (RCF.st === 'review') rcfKeep(false); else rcfClose(); }
+const rcfInput = () => { try { const t = E.stream && E.stream.getAudioTracks()[0]; return t && t.label ? t.label : ''; } catch (e) { return ''; } };
+/** the top bar of every screen but the recording itself: Back, and a way to the Samples shelf and to the Control room (the studio) */
+function rcfBar(label, hint) {
+  const sm = h('button', { class: 'rf-pill', type: 'button', onclick: () => { rcfClose(); rcfShelf(); } }, '🎙 Samples' + (RCF.items.length ? ' (' + RCF.items.length + ')' : '')),
+    cr = h('button', { class: 'rf-pill', type: 'button', onclick: () => { rcfClose(); const b = $('#bootNoMic'); if (b) b.click(); } }, '🎛 Control room');
+  return h('div', { class: 'rf-bar' }, h('button', { class: 'rf-back', id: 'rfBack', type: 'button', title: hint, onclick: rcfBack }, '‹ ' + label), h('span', { class: 'rf-bar-sp' }), RCF.st === 'review' ? null : [sm, cr]);
+}
+
 /* ---------- what the recorder shows ---------- */
 function rcfDraw() {
   const m = $('#rfMain'); if (!m) return; m.textContent = '';
   const btn = (cls, txt, fn, extra) => h('button', Object.assign({ class: 'rf-btn ' + cls, type: 'button', onclick: fn }, extra || {}), txt);
   if (RCF.st === 'ask') {
-    m.append(h('div', { class: 'rf-card' }, h('div', { class: 'rf-big', 'aria-hidden': 'true' }, '🎙'), h('h2', {}, 'One quick thing before we listen'),
+    m.append(rcfBar('Back', 'Close the recorder'), h('div', { class: 'rf-card' }, h('div', { class: 'rf-big', 'aria-hidden': 'true' }, '🎙'), h('h2', {}, 'One quick thing before we listen'),
       h('p', {}, 'The studio listens only while you record. Nothing leaves this device. Your browser will ask once: choose ', h('b', {}, 'Allow'), '.'),
       btn('rf-primary', 'Allow the microphone and record', () => rcfBegin()), btn('rf-ghost', 'Not now', rcfClose)));
   } else if (RCF.st === 'wait') {
-    m.append(h('div', { class: 'rf-card' }, h('div', { class: 'rf-big', 'aria-hidden': 'true' }, '🎙'), h('h2', {}, 'Opening the microphone…'), h('p', {}, 'If your browser asks, choose Allow.')));
+    m.append(rcfBar('Back', 'Close the recorder'), h('div', { class: 'rf-card' }, h('div', { class: 'rf-big', 'aria-hidden': 'true' }, '🎙'), h('h2', {}, 'Opening the microphone…'), h('p', {}, 'If your browser asks, choose Allow.')));
   } else if (RCF.st === 'blocked') {
     const hp = typeof ioPermHelp === 'function' ? ioPermHelp(E.lastInKind) : null;
-    m.append(h('div', { class: 'rf-card' }, h('div', { class: 'rf-big', 'aria-hidden': 'true' }, '🔇'), h('h2', {}, hp ? hp.title : 'The microphone did not open'), h('p', {}, E.lastInErr || 'Check that a microphone is connected and allowed for this site.'),
+    m.append(rcfBar('Back', 'Close the recorder'), h('div', { class: 'rf-card' }, h('div', { class: 'rf-big', 'aria-hidden': 'true' }, '🔇'), h('h2', {}, hp ? hp.title : 'The microphone did not open'), h('p', {}, E.lastInErr || 'Check that a microphone is connected and allowed for this site.'),
       hp && hp.steps.length ? h('ol', {}, hp.steps.map(s => h('li', {}, s))) : null, btn('rf-primary', 'Try again', () => rcfBegin()), btn('rf-ghost', 'Close', rcfClose)));
+  } else if (RCF.st === 'silent') {
+    const dev = rcfInput();
+    m.append(rcfBar('Back', 'Close the recorder'), h('div', { class: 'rf-card' }, h('div', { class: 'rf-big', 'aria-hidden': 'true' }, '🔇'), h('h2', {}, 'Nothing was heard'),
+      h('p', {}, 'That recording was silent' + (dev ? ', from “' + dev + '”' : '') + '. Check that this is the microphone you mean and that its level is up (Audio, at the top right of the studio), then try again.'),
+      btn('rf-primary', 'Try again', () => rcfBegin()), btn('rf-ghost', 'Back', rcfClose)));
   } else if (RCF.st === 'rec') {
-    m.append(h('div', { class: 'rf-rec' }, h('div', { class: 'rf-top' }, h('span', { class: 'rf-live' + (RCF.paused ? ' paused' : '') }, h('i'), RCF.paused ? 'Paused' : 'Recording'), h('span', { class: 'rf-sub' }, 'Stays on this device')),
+    m.append(h('div', { class: 'rf-rec' }, h('div', { class: 'rf-top' }, h('button', { class: 'rf-back', id: 'rfBack', type: 'button', title: 'Stop, and decide what to do with what you have', onclick: rcfBack }, '‹ Back'), h('span', { class: 'rf-live' + (RCF.paused ? ' paused' : '') }, h('i'), RCF.paused ? 'Paused' : 'Recording'), h('span', { class: 'rf-sub' }, 'Stays on this device')),
       h('div', { class: 'rf-mid' }, h('div', { class: 'rf-lcd', id: 'rfLcd', 'aria-live': 'off' }, rcfLen(RCF.n / E.ctx.sampleRate)), h('div', { class: 'rf-meter' }, h('i', { id: 'rfLvl' })), h('div', { class: 'rf-roll', id: 'rfRoll', 'aria-hidden': 'true' }, Array.from({ length: 56 }, () => h('span')))),
       h('div', { class: 'rf-ctl' }, h('div', { class: 'rf-side' }, h('button', { class: 'rf-circ', type: 'button', 'aria-label': 'Drop a marker', onclick: () => { RCF.marks.push(RCF.n / E.ctx.sampleRate); toast('Marker at ' + rcfLen(RCF.n / E.ctx.sampleRate)); } }, '⚑', h('span', {}, 'Mark'))),
         h('button', { class: 'rf-stop', type: 'button', 'aria-label': 'Stop', onclick: rcfStop }, h('i')), h('div', { class: 'rf-side' }, h('button', { class: 'rf-circ', type: 'button', 'aria-label': RCF.paused ? 'Resume' : 'Pause', onclick: () => { RCF.paused = !RCF.paused; rcfDraw(); } }, RCF.paused ? '▶' : '❚❚', h('span', {}, RCF.paused ? 'Resume' : 'Pause')))),
       h('p', { class: 'rf-tip' }, 'Space or the red button stops. Wear headphones if something else is playing.')));
   } else if (RCF.st === 'review') {
     const tk = RCF.take, cv = h('canvas', { class: 'rf-wave', width: 720, height: 120, 'aria-label': 'The recording' });
-    m.append(h('div', { class: 'rf-card rf-wide' }, h('h2', {}, 'Got it. ' + rcfLen(tk.dur) + ' of you.'), h('p', {}, 'Hear it, name it, keep it. It goes on your Samples shelf, ready to use in any song.'),
+    m.append(rcfBar('Done', 'Keep this sample and go back (Esc does the same)'), h('div', { class: 'rf-card rf-wide' }, h('h2', {}, 'Got it. ' + rcfLen(tk.dur) + ' of you.'), h('p', {}, 'Hear it, name it, keep it. It goes on your Samples shelf, ready to use in any song.'),
       h('div', { class: 'rf-wavebox' }, cv, h('i', { class: 'rf-ph', id: 'rfPh' }), tk.marks.map(s => h('b', { class: 'rf-mk', style: { left: (s / tk.dur * 100) + '%' }, title: 'Marker at ' + rcfLen(s) }))),
       h('div', { class: 'rf-row' }, btn('rf-primary', '▶ Play', rcfPlayToggle, { id: 'rfPlay' }), btn('rf-ghost', 'Save a WAV', rcfSaveWav)),
       h('input', { class: 'rf-name', id: 'rfName', type: 'text', value: tk.name, maxlength: 60, 'aria-label': 'Name this sample' }),
@@ -23478,7 +23494,7 @@ async function rcfShelf() {
     RCF.items.forEach(m => {
       const pb = h('button', { class: 'btn sm rf-pbtn', type: 'button', 'aria-label': 'Play ' + m.name, onclick: e => rcfPlaySample(m.id, e.currentTarget) }, '▶');
       const nm = h('input', { class: 'in rf-nm', type: 'text', value: m.name, maxlength: 60, 'aria-label': 'Name', onchange: async e => { m.name = e.target.value.trim().slice(0, 60) || m.name; e.target.value = m.name; try { await pdbPut('blobs', m, RCF_I + m.id); } catch (x) { } } });
-      let sure = false; const del = h('button', { class: 'btn sm rf-del', type: 'button', onclick: async e => { if (!sure) { sure = true; e.currentTarget.textContent = 'Sure?'; setTimeout(() => { sure = false; e.currentTarget.textContent = 'Delete'; }, 3500); return; } rcfPlayStop(); await rcfDel(m.id); draw(); } }, 'Delete');
+      let sure = false; const del = h('button', { class: 'btn sm rf-del', type: 'button', onclick: async e => { const el = e.currentTarget; if (!sure) { sure = true; el.textContent = 'Sure?'; setTimeout(() => { sure = false; el.textContent = 'Delete'; }, 3500); return; } rcfPlayStop(); await rcfDel(m.id); draw(); } }, 'Delete');
       list.append(h('div', { class: 'rf-item' }, pb, h('div', { class: 'rf-info' }, nm, h('span', { class: 'tiny muted' }, rcfLen(m.dur) + ' · ' + (m.kind === 'gtr' ? 'Instrument' : 'Voice') + ' · ' + rcfBytes(m.bytes || 0) + ' · ' + new Date(m.t).toLocaleDateString())),
         h('button', { class: 'btn sm primary', type: 'button', onclick: () => rcfUse(m.id) }, 'Use in a song'),
         h('button', { class: 'btn sm', type: 'button', onclick: async () => { const p = await rcfPcm(m.id); if (p) download(m.name.replace(/[\\/:*?"<>|]/g, '-') + '.wav', new Blob([wavI16(toI16(p), m.sr)], { type: 'audio/wav' })); } }, 'WAV'), del));
