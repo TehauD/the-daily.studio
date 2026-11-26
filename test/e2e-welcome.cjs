@@ -10,7 +10,7 @@ suite('e2e-welcome', async t => {
   // a first visit, on a desktop
   const p = await open({ w: 1440, h: 900 });
   const txt = await p.$eval('#boot', e => e.textContent);
-  ok(/Hit record\. Sort it out later\./.test(txt) && /Write it, sing it, play it, learn it, share it/.test(txt) && /guitar and voice studio/i.test(txt), 'the first page leads with Record and still says what it is (2.88)');
+  ok(/Begin with a sound\./.test(txt) && /Write it, sing it, play it, learn it, share it/.test(txt) && /guitar and voice studio/i.test(txt), 'the first page leads with a gold hexagon to record on and still says what it is (2.88)');
   await p.evaluate(() => document.getElementById('bootWays').click()); await new Promise(r => setTimeout(r, 300));      /* the goals live in the Rooms panel */
   const f = await p.evaluate(() => {
     const top = s => { const e = document.querySelector(s); return e ? Math.round(e.getBoundingClientRect().top) : null; }, st = document.getElementById('bootStage'), go = document.getElementById('bootNoMic');

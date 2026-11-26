@@ -3,7 +3,7 @@
 </p>
 
 <h1 align="center">the-daily.studio</h1>
-<p align="center"><b>Hit record. Sort it out later.</b><br>
+<p align="center"><b>Begin with a sound.</b><br>
 A guitar and voice studio in one web page: record your guitar and mic · split any song into stems to play along with · get the chords, tab and lyrics · pedals, presets and live visuals</p>
 <p align="center"><sub>v2.88.0 · free, open source (MIT) · no account, no upload, no tracking</sub></p>
 

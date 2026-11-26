@@ -823,9 +823,9 @@ body[data-form=phone] #topR>.aud{display:inline-flex}body[data-form=phone] .btn.
 
 
 /* the same start page on the light (white) field: the two looks of one design */
-[data-theme=light] #boot.boot-live:not(.boot-first){background:#f4f8f3;color:#14211b;--bg:#f7f9f6;--bg2:#eef3ee;--panel:#ffffff;--panel2:#f1f6f1;--raise:#e8f0e9;--line:#d3dfd6;--line2:#bccbc1;--text:#14211b;--muted:#4f6358;--accent:#1f7a4d;--accent-ink:#ffffff;--accent-soft:#dcefe3}
-[data-theme=light] #boot.boot-live:not(.boot-first) .boot-card{background:rgba(255,255,255,.82);border:1px solid rgba(45,110,80,.28);box-shadow:0 0 0 1px rgba(255,255,255,.7),0 24px 70px rgba(30,70,50,.16),0 0 90px rgba(31,138,86,.1);color:#14211b}
-[data-theme=light] #boot.boot-live:not(.boot-first) .boot-lead{color:#0d1f16}
+#boot.boot-live.bg-light{background:#f4f8f3;color:#14211b;--bg:#f7f9f6;--bg2:#eef3ee;--panel:#ffffff;--panel2:#f1f6f1;--raise:#e8f0e9;--line:#d3dfd6;--line2:#bccbc1;--text:#14211b;--muted:#4f6358;--accent:#1f7a4d;--accent-ink:#ffffff;--accent-soft:#dcefe3}
+#boot.boot-live.bg-light .boot-card{background:rgba(255,255,255,.82);border:1px solid rgba(45,110,80,.28);box-shadow:0 0 0 1px rgba(255,255,255,.7),0 24px 70px rgba(30,70,50,.16),0 0 90px rgba(31,138,86,.1);color:#14211b}
+#boot.boot-live.bg-light .boot-lead{color:#0d1f16}
 
 
 body.vz-imm .vwrap{position:fixed!important;inset:0;z-index:50;width:auto!important;height:auto!important;min-height:0!important;margin:0;border-radius:0;background:#000}
@@ -2056,7 +2056,7 @@ body[data-form=phone][data-tl=mini] #center{grid-template-rows:minmax(0,auto) mi
 @media (prefers-reduced-motion:reduce){.rf-live i{animation:none}.boot-rec,.rf-stop{transition:none}}
 
 /* ---- 2.88 · the start card is the Record button; everything else is glass ---- */
-#boot.boot-live .boot-card.boot-simple,[data-theme=light] #boot.boot-live:not(.boot-first) .boot-card.boot-simple{background:transparent;border:0;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;max-width:660px;text-align:center}
+#boot.boot-live .boot-card.boot-simple,#boot.boot-live.bg-light .boot-card.boot-simple{background:transparent;border:0;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;max-width:660px;text-align:center}
 .boot-top{justify-content:center;gap:12px}.boot-top h1{text-align:left}
 .boot-hero{display:grid;justify-items:center;gap:6px;padding:10px 0 2px}
 .boot-rec{width:168px;height:168px;border-radius:50%;border:5px solid color-mix(in srgb,#ff4d4f 60%,var(--bg));background:radial-gradient(circle at 50% 35%,#3a1a1c,#170c0d 70%);display:grid;place-items:center;cursor:pointer;padding:0;box-shadow:0 18px 50px rgba(0,0,0,.35);transition:transform .15s,box-shadow .25s}
@@ -2090,3 +2090,35 @@ body[data-form=phone][data-tl=mini] #center{grid-template-rows:minmax(0,auto) mi
 .boot-goal.sug b::before{content:"★ ";color:var(--accent);font-size:11px}
 #bootStart .boot-me{flex-wrap:wrap}
 @media (max-width:600px){.bd-rec{position:static;display:inline-block;align-self:flex-start;margin-top:6px}}
+
+/* ---- 2.88 · a bolder first page: the second line of the headline in the accent, rings around Record, the page rising in, more air on a big screen ---- */
+.boot-lead-2{display:block;background:linear-gradient(92deg,var(--accent),color-mix(in srgb,var(--accent) 50%,var(--text)));-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:none}
+.boot-hero .boot-lead{letter-spacing:-.03em}
+.boot-rec{position:relative}
+@keyframes bootRing{0%{transform:scale(.86);opacity:.85}100%{transform:scale(1.28);opacity:0}}
+@keyframes bootUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.boot-top,.boot-hero>*,.boot-glass,.boot-fine{animation:bootUp .75s cubic-bezier(.2,.7,.2,1) both}
+.boot-hero>:nth-child(1){animation-delay:.05s}.boot-hero>:nth-child(2){animation-delay:.12s}.boot-hero>:nth-child(3){animation-delay:.2s}.boot-hero>:nth-child(4){animation-delay:.28s}.boot-glass{animation-delay:.36s}.boot-fine{animation-delay:.5s}
+@media (min-width:700px) and (min-height:760px){.boot-rec{width:196px;height:196px}.boot-rec i{width:82px;height:82px}#boot.boot-live .boot-hero .boot-lead{font-size:clamp(40px,5.6vw,66px);line-height:1.02}.boot-hero{gap:10px;padding-top:24px}.boot-hero .boot-sub{font-size:16px}.boot-glass{margin-top:22px}}
+@media (prefers-reduced-motion:reduce){.boot-rec::before,.boot-rec::after{animation:none;opacity:0}.boot-top,.boot-hero>*,.boot-glass,.boot-fine{animation:none}}
+
+/* ---- 2.88 · Record is a glowing gold hexagon that belongs to the field, and turns red while you record ---- */
+.boot-rec-glow{display:inline-block;filter:drop-shadow(0 0 22px rgba(242,182,50,.55)) drop-shadow(0 10px 26px rgba(0,0,0,.35));transition:filter .3s}
+.boot-rec-glow:hover{filter:drop-shadow(0 0 34px rgba(255,205,90,.75)) drop-shadow(0 10px 26px rgba(0,0,0,.35))}
+#boot .boot-hero .boot-rec{--hx:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);width:176px;height:203px;border:0;border-radius:0;clip-path:var(--hx);background:linear-gradient(158deg,#ffe08a 0%,#f2b632 46%,#c4841a 100%);box-shadow:none;position:relative;display:grid;place-items:center;transition:transform .2s cubic-bezier(.2,.7,.2,1)}
+#boot .boot-hero .boot-rec:hover{transform:scale(1.04)}#boot .boot-hero .boot-rec:active{transform:scale(.96)}
+#boot .boot-hero .boot-rec::before,#boot .boot-hero .boot-rec::after{display:none}
+#boot .boot-hero .boot-rec::before{display:block;content:"";position:absolute;inset:11%;clip-path:var(--hx);background:linear-gradient(200deg,#e6a52a,#9a6212);opacity:.92}
+#boot .boot-hero .boot-rec i{position:relative;z-index:1;width:30%;height:26%;border-radius:50%;background:radial-gradient(circle at 40% 30%,#fff7d6,#ffd36a 60%,#e0a233);box-shadow:0 0 22px rgba(255,214,120,.95),0 0 4px #fff}
+.rf-stop-glow{display:inline-block;--lv:0;filter:drop-shadow(0 0 calc(18px + var(--lv) * 26px) rgba(255,77,79,calc(.45 + var(--lv) * .45))) drop-shadow(0 10px 26px rgba(0,0,0,.4));transform:scale(calc(1 + var(--lv) * .07));transition:transform .09s linear,filter .09s linear}
+.rf-stop{--hx:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);width:96px;height:111px;border:0;border-radius:0;clip-path:var(--hx);background:linear-gradient(158deg,#ff8a8c 0%,#ff4d4f 48%,#c92b30 100%);box-shadow:none;display:grid;place-items:center;cursor:pointer;padding:0;position:relative}
+.rf-stop::before{content:"";position:absolute;inset:11%;clip-path:var(--hx);background:linear-gradient(200deg,#e23a3f,#8f1a1f);opacity:.92}
+.rf-stop i{position:relative;z-index:1;width:26px;height:26px;border-radius:6px;background:#fff;box-shadow:0 0 16px rgba(255,255,255,.7)}
+.rf-stop:active{transform:scale(.94)}
+@media (min-width:700px) and (min-height:760px){#boot .boot-hero .boot-rec{width:208px;height:240px}}
+@media (max-width:600px){#boot .boot-hero .boot-rec{width:124px;height:143px}}
+@media (prefers-reduced-motion:reduce){.rf-stop-glow,.boot-rec-glow{transition:none}}
+/* a card taller than the window starts at its top (and scrolls) instead of being cut off above: margin centering, not align-items */
+#boot.boot-live{align-items:flex-start}
+#boot.boot-live .boot-card.boot-simple{margin:auto}
+@media (min-width:700px) and (min-height:760px){#boot .boot-hero .boot-rec{width:190px;height:219px}#boot.boot-live .boot-hero .boot-lead{font-size:clamp(38px,4.8vw,58px)}.boot-hero{padding-top:14px}.boot-glass{margin-top:16px}}

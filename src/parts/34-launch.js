@@ -9,6 +9,14 @@
   let W = 0, H = 0, dpr = 1, t0 = performance.now(), last = 0;
   const size = () => { dpr = Math.min(1.5, window.devicePixelRatio || 1); W = cv.width = Math.floor(innerWidth * dpr); H = cv.height = Math.floor(innerHeight * dpr); };
   size(); addEventListener('resize', size);
+  /* 2.88: the start card takes its text colours from the field it sits on (light or dark), not from the app's theme: a dark field with a light theme used to give dark words on dark */
+  const DG = { lt: false, bg: '#04090a', glow: '61,220,132', cell: '61,220,132', warm: '242,182,50', line: '125,191,155' }, bootEl = document.getElementById('boot');
+  const tone = () => { const first = !!document.querySelector('#boot.boot-first') && !CFG.hexTone, P = first ? DG : typeof hexPal === 'function' ? hexPal() : DG; if (bootEl) { bootEl.classList.toggle('bg-light', !!P.lt); bootEl.classList.toggle('bg-dark', !P.lt); } return P; };
+  try { tone(); } catch (e) { }
+  /* the field leans toward the pointer (a finger too), and lets go after a moment */
+  /* the field's centre is the Record hexagon itself: rings leave it, and the cells near it turn gold */
+  const ctr = () => { const b = document.getElementById('bootRec'); if (b) { const r = b.getBoundingClientRect(); if (r.width) return [(r.left + r.width / 2) * dpr, (r.top + r.height / 2) * dpr]; } return [W / 2, H * .46]; };
+  let ptr = null; addEventListener('pointermove', e => { ptr = { x: e.clientX * dpr, y: e.clientY * dpr, t: performance.now() }; }, { passive: true });
   const hexPath = (x, y, r) => { g.beginPath(); for (let i = 0; i < 6; i++) { const a = Math.PI / 6 + i * Math.PI / 3; g.lineTo(x + r * Math.cos(a), y + r * Math.sin(a)); } g.closePath(); };
   function frame(now) {
     if (!document.getElementById('bootHex')) return;
@@ -16,15 +24,16 @@
     try { paint(now); } catch (e) { last = Infinity; }
   }
   function paint(now) {
-    const t = (now - t0) / 1000, R = Math.max(26, Math.min(W, H) / 15) * (dpr > 1 ? 1 : 1), dx = R * Math.sqrt(3), dy = R * 1.5, cx = W / 2, cy = H * .46, maxd = Math.hypot(W, H) * .55;
-    const DG = { lt: false, bg: '#04090a', glow: '61,220,132', cell: '61,220,132', warm: '242,182,50', line: '125,191,155' }, first = !!document.querySelector('#boot.boot-first') && !CFG.hexTone, P = first ? DG : typeof hexPal === 'function' ? hexPal() : DG, lt = P.lt;      /* 2.49.1: a first visit is the dark green page, unless hexagon colours were chosen on purpose */   /* the palette you chose for the hexagons; light (white) and dark green are the original two looks */
+    const t = (now - t0) / 1000, R = Math.max(26, Math.min(W, H) / 15) * (dpr > 1 ? 1 : 1), dx = R * Math.sqrt(3), dy = R * 1.5, cx = ctr()[0], cy = ctr()[1], maxd = Math.hypot(W, H) * .55;
+    const P = tone(), lt = P.lt, pk = ptr && !still ? Math.max(0, 1 - (now - ptr.t) / 2600) : 0;      /* 2.49.1: a first visit is the dark green page, unless hexagon colours were chosen on purpose */   /* the palette you chose for the hexagons; light (white) and dark green are the original two looks */
     g.fillStyle = P.bg; g.fillRect(0, 0, W, H);
     const glow = g.createRadialGradient(cx, cy, 0, cx, cy, maxd); glow.addColorStop(0, `rgba(${P.glow},${lt ? .12 : .16})`); glow.addColorStop(.5, `rgba(${P.glow},.04)`); glow.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = glow; g.fillRect(0, 0, W, H);
+    const gold = g.createRadialGradient(cx, cy, 0, cx, cy, R * 4.4); gold.addColorStop(0, `rgba(${P.warm},${lt ? .34 : .3})`); gold.addColorStop(.55, `rgba(${P.warm},.07)`); gold.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gold; g.fillRect(0, 0, W, H);
     const beat = (t % 1.9) / 1.9;
     for (let row = -1; row * dy < H + R; row++) for (let col = -1; col * dx < W + dx; col++) {
       const x = col * dx + (row & 1 ? dx / 2 : 0), y = row * dy, d = Math.hypot(x - cx, y - cy), fall = Math.max(0, 1 - d / maxd);
-      const ring = Math.max(0, 1 - Math.abs(d / maxd - beat * 1.1) * 7), wave = .5 + .5 * Math.sin(d * .011 - t * 1.4 + Math.sin(x * .004 + t * .3) * 2), a = Math.min(1, fall * fall * (.2 + wave * .55) + ring * .85 * fall);
-      const warm = ((col * 7 + row * 13) % 11) === 0;
+      const ring = Math.max(0, 1 - Math.abs(d / maxd - beat * 1.1) * 7), wave = .5 + .5 * Math.sin(d * .011 - t * 1.4 + Math.sin(x * .004 + t * .3) * 2), pt = pk ? Math.pow(Math.max(0, 1 - Math.hypot(x - ptr.x, y - ptr.y) / (R * 5)), 2) * .75 * pk : 0, a = Math.min(1, fall * fall * (.2 + wave * .55) + ring * .85 * fall + pt);
+      const near = Math.max(0, 1 - d / (R * 3.3)), warm = ((col * 7 + row * 13) % 11) === 0 || near > .3;
       g.fillStyle = `rgba(${warm ? P.warm : P.cell},` + (a * (warm ? (lt ? .55 : .5) : (lt ? .3 : .42))).toFixed(3) + ')'; hexPath(x, y, R * (.9 + ring * .08)); g.fill();
       g.strokeStyle = `rgba(${P.line},` + (.05 + a * (lt ? .4 : .5)).toFixed(3) + ')'; g.lineWidth = 1; g.stroke();
     }

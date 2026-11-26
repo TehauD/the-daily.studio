@@ -39,7 +39,7 @@ function rcfHex(now) {
   if (mode === 'off') { const g0 = cv.getContext('2d'); g0.clearRect(0, 0, cv.width, cv.height); return; }
   if (document.hidden || now - (rcfHex.last || 0) < (calm ? 700 : 33)) return; rcfHex.last = now;
   const dpr = Math.min(1.5, window.devicePixelRatio || 1), W = cv.width = Math.floor(innerWidth * dpr), H = cv.height = Math.floor(innerHeight * dpr), g = cv.getContext('2d');
-  const t = calm ? 0 : now / 1000, R = Math.max(26, Math.min(W, H) / 13), dx = R * Math.sqrt(3), dy = R * 1.5, cx = W / 2, cy = H * .44, maxd = Math.hypot(W, H) * .6;
+  const t = calm ? 0 : now / 1000, R = Math.max(26, Math.min(W, H) / 13), dx = R * Math.sqrt(3), dy = R * 1.5, sbEl = RCF.st === 'rec' ? $('.rf-stop') : null, sbr = sbEl && sbEl.getBoundingClientRect(), cx = sbr && sbr.width ? (sbr.left + sbr.width / 2) * dpr : W / 2, cy = sbr && sbr.width ? (sbr.top + sbr.height / 2) * dpr : H * .44, maxd = Math.hypot(W, H) * .6;
   /* rings: loud sound while recording, the take while it plays, and a slow beat the rest of the time; a bigger room will make them longer (next) */
   if (!calm) {
     const lv = Math.min(1, RCF.lvl * 4), playing = !!RCF.play;
@@ -48,7 +48,8 @@ function rcfHex(now) {
     else if (!playing && RCF.st !== 'rec' && now - RCF.emit > 1900) { RCF.rings.push({ t0: t, s: .5, life: 2.6 }); RCF.emit = now; }
     RCF.rings = RCF.rings.filter(r => t - r.t0 < r.life); RCF.lvl *= .9;
   }
-  g.clearRect(0, 0, W, H); const glow = g.createRadialGradient(cx, cy, 0, cx, cy, maxd); glow.addColorStop(0, 'rgba(61,220,132,.13)'); glow.addColorStop(.55, 'rgba(61,220,132,.03)'); glow.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = glow; g.fillRect(0, 0, W, H);
+  g.clearRect(0, 0, W, H); if (RCF.st === 'rec' && !RCF.paused) { const rg = g.createRadialGradient(cx, cy, 0, cx, cy, R * 4.6), lvn = Math.min(1, RCF.lvl * 4); rg.addColorStop(0, 'rgba(255,77,79,' + (.2 + lvn * .22).toFixed(3) + ')'); rg.addColorStop(1, 'rgba(255,77,79,0)'); g.fillStyle = rg; g.fillRect(0, 0, W, H); }
+  const glow = g.createRadialGradient(cx, cy, 0, cx, cy, maxd); glow.addColorStop(0, 'rgba(61,220,132,.13)'); glow.addColorStop(.55, 'rgba(61,220,132,.03)'); glow.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = glow; g.fillRect(0, 0, W, H);
   const sc = W < 800 ? .55 : 1;
   for (let row = -1; row * dy < H + R; row++) for (let col = -1; col * dx < W + dx; col++) {
     const x = col * dx + (row & 1 ? dx / 2 : 0), y = row * dy, d = Math.hypot(x - cx, y - cy), fall = Math.max(0, 1 - d / maxd);
@@ -93,7 +94,7 @@ async function rcfBegin() {
 }
 function rcfTick() {
   if (RCF.st !== 'rec') return; const sr = E.ctx.sampleRate, s = RCF.n / sr, tm = $('#rfLcd'), lv = $('#rfLvl'), roll = $('#rfRoll');
-  if (tm) tm.textContent = rcfLen(s); if (lv) lv.style.width = Math.min(100, RCF.lvl * 320) + '%';
+  if (tm) tm.textContent = rcfLen(s); if (lv) lv.style.width = Math.min(100, RCF.lvl * 320) + '%'; const sb = $('.rf-stop'); if (sb) sb.parentNode.style.setProperty('--lv', Math.min(1, RCF.lvl * 4).toFixed(2));
   if (roll) { const c = roll.children, n = c.length; for (let i = 0; i < n; i++) { const b = RCF.bars[RCF.bars.length - n + i]; c[i].style.height = Math.max(3, Math.min(100, (b || 0) * 320)) + '%'; } }
   if (s >= RCF_MAX) { toast('That is ' + RCF_MAX / 60 + ' minutes: the longest one recording can be. It has been stopped and kept.', 'warn'); rcfStop(); }
 }
@@ -187,7 +188,7 @@ function rcfDraw() {
     m.append(h('div', { class: 'rf-rec' }, h('div', { class: 'rf-top' }, h('button', { class: 'rf-back', id: 'rfBack', type: 'button', title: 'Stop, and decide what to do with what you have', onclick: rcfBack }, '‹ Back'), h('span', { class: 'rf-live' + (RCF.paused ? ' paused' : '') }, h('i'), RCF.paused ? 'Paused' : 'Recording'), h('span', { class: 'rf-sub' }, 'Stays on this device')),
       h('div', { class: 'rf-mid' }, h('div', { class: 'rf-lcd', id: 'rfLcd', 'aria-live': 'off' }, rcfLen(RCF.n / E.ctx.sampleRate)), h('div', { class: 'rf-meter' }, h('i', { id: 'rfLvl' })), h('div', { class: 'rf-roll', id: 'rfRoll', 'aria-hidden': 'true' }, Array.from({ length: 56 }, () => h('span')))),
       h('div', { class: 'rf-ctl' }, h('div', { class: 'rf-side' }, h('button', { class: 'rf-circ', type: 'button', 'aria-label': 'Drop a marker', onclick: () => { RCF.marks.push(RCF.n / E.ctx.sampleRate); toast('Marker at ' + rcfLen(RCF.n / E.ctx.sampleRate)); } }, '⚑', h('span', {}, 'Mark'))),
-        h('button', { class: 'rf-stop', type: 'button', 'aria-label': 'Stop', onclick: rcfStop }, h('i')), h('div', { class: 'rf-side' }, h('button', { class: 'rf-circ', type: 'button', 'aria-label': RCF.paused ? 'Resume' : 'Pause', onclick: () => { RCF.paused = !RCF.paused; rcfDraw(); } }, RCF.paused ? '▶' : '❚❚', h('span', {}, RCF.paused ? 'Resume' : 'Pause')))),
+        h('span', { class: 'rf-stop-glow' }, h('button', { class: 'rf-stop', type: 'button', 'aria-label': 'Stop', onclick: rcfStop }, h('i'))), h('div', { class: 'rf-side' }, h('button', { class: 'rf-circ', type: 'button', 'aria-label': RCF.paused ? 'Resume' : 'Pause', onclick: () => { RCF.paused = !RCF.paused; rcfDraw(); } }, RCF.paused ? '▶' : '❚❚', h('span', {}, RCF.paused ? 'Resume' : 'Pause')))),
       h('p', { class: 'rf-tip' }, 'Space or the red button stops. Wear headphones if something else is playing.')));
   } else if (RCF.st === 'review') {
     const tk = RCF.take, cv = h('canvas', { class: 'rf-wave', width: 720, height: 120, 'aria-label': 'The recording' });
