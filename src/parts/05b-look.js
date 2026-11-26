@@ -147,6 +147,7 @@ function lookOpen(at) {
     box.type.innerHTML = ''; box.type.append(
       hubRow('Typeface', h('select', { class: 'in', 'aria-label': 'Typeface', onchange: e => { lookApply({ font: e.target.value }); } }, Object.entries(LK_FONTS).map(([k, [t]]) => h('option', { value: k, selected: CFG.font === k }, t))), 'Uses fonts already on your device'),
       hubRow('Contrast', seg('contrast', [['standard', 'Standard'], ['high', 'High']], 'Contrast')),
+      hubRow('Hexagons', seg('hexbg', [['on', 'Moving'], ['calm', 'Calm'], ['off', 'Off']], 'Hexagons behind the recorder'), 'The field behind the recorder. The Control room never has it'),
       hubRow('Data colours', seg('data', [['standard', 'Standard'], ['cvd', 'Colour-blind safe']], 'Data colours'), 'Charts, meters, visuals, status lights'),
       h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!CFG.reduce, onchange: e => { CFG.reduce = e.target.checked; saveCfg(); applyAppearance(); } }), 'Reduce motion'));
   }

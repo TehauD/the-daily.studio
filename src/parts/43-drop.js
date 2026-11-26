@@ -96,14 +96,19 @@ async function dropAudio(files, kind) {
 /** an audio file as a Vocal or Guitar take (a new lane) that starts at the playhead; bars are added so the whole recording plays */
 async function dropTake(file, kind) {
   try {
-    const vox = kind === 'vox', { pcm, sr } = await humDecode(await file.arrayBuffer(), 600);
-    let pk = 0, e = 0; for (let i = 0; i < pcm.length; i++) { const a = Math.abs(pcm[i]); if (a > pk) pk = a; e += pcm[i] * pcm[i]; }
-    if (!pcm.length || pk < 1e-4) { toast('“' + file.name + '” is silent.', 'warn'); return null; }
-    const nth = TAKES.filter(t => tkIsLead(t) && (t.kind === 'vox') === vox).length + 1, nm = (cleanTitle(file.name) || (vox ? 'Vocal ' : 'Take ') + nth).slice(0, 40), at = Math.max(0, tkNowSec()), before = snap();
-    const tk = { id: uid(), kind: vox ? 'vox' : 'gtr', name: nm, startSec: at, sr, dry: pcm, wet: null, peaks: peaksOf(pcm), g: 1, pan: 0, mute: false, solo: false, mode: 'wet', bpm: S.bpm, preset: '', peak: dB(pk), rms: dB(Math.sqrt(e / pcm.length)), dur: pcm.length / sr, t: Date.now(), stats: null, cam: [], imported: true };
-    TAKES.push(tk); tkSelect(tk.id); tkDone(before); toast('Added “' + tk.name + '” (' + fmtT(tk.dur) + ') as a ' + (vox ? 'Vocal' : 'Guitar') + ' take at ' + tkFmt(at), 'ok');
-    return tk;
+    const { pcm, sr } = await humDecode(await file.arrayBuffer(), 600);
+    return takeAddPcm(pcm, sr, cleanTitle(file.name) || '', kind, file.name);
   } catch (err) { console.warn(err); toast('Could not read “' + file.name + '” (' + (err.message || err.name) + '). Try a WAV, MP3 or M4A.', 'warn'); return null; }
+}
+/** audio already in memory (decoded from a file, or a sample from the Samples shelf, 2.88) as a Vocal or Guitar take that starts at the playhead */
+function takeAddPcm(pcm, sr, name, kind, label) {
+  const vox = kind === 'vox';
+  let pk = 0, e = 0; for (let i = 0; i < pcm.length; i++) { const a = Math.abs(pcm[i]); if (a > pk) pk = a; e += pcm[i] * pcm[i]; }
+  if (!pcm.length || pk < 1e-4) { toast('“' + (label || name || 'That recording') + '” is silent.', 'warn'); return null; }
+  const nth = TAKES.filter(t => tkIsLead(t) && (t.kind === 'vox') === vox).length + 1, nm = (name || (vox ? 'Vocal ' : 'Take ') + nth).slice(0, 40), at = Math.max(0, tkNowSec()), before = snap();
+  const tk = { id: uid(), kind: vox ? 'vox' : 'gtr', name: nm, startSec: at, sr, dry: pcm, wet: null, peaks: peaksOf(pcm), g: 1, pan: 0, mute: false, solo: false, mode: 'wet', bpm: S.bpm, preset: '', peak: dB(pk), rms: dB(Math.sqrt(e / pcm.length)), dur: pcm.length / sr, t: Date.now(), stats: null, cam: [], imported: true };
+  TAKES.push(tk); tkSelect(tk.id); tkDone(before); toast('Added “' + tk.name + '” (' + fmtT(tk.dur) + ') as a ' + (vox ? 'Vocal' : 'Guitar') + ' take at ' + tkFmt(at), 'ok');
+  return tk;
 }
 
 /** the drop row under the arrangement: only while there is nothing in it yet */

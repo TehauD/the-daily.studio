@@ -2,6 +2,21 @@
 
 All notable changes to the-daily.studio (earlier versions were released under the name FRETWORK). Versions follow [Semantic Versioning](https://semver.org/).
 
+## 2.88.0 — 2026-11-26 — Record first
+
+The first thing on the start screen is now a big Record button, and what you record is a **sample**: not a song, but something that goes into any song.
+
+### Added
+- **A Record button first on the start card.** One tap opens a full-screen recorder: the clock, a level meter, a rolling waveform, ⚑ Mark, Pause and a big Stop. The first time, a short note says why the microphone is needed before the browser asks. The microphone is opened only when you press Record, through the studio's own input (so its error messages and device choice apply), and is blocked or missing gets a plain explanation with the steps for your browser.
+- **A sample, not a song.** Stop, hear it, name it, say whether it is Voice or Instrument, then **Keep sample** or **Keep and use in a song**. The recording is kept as it came in (16-bit, a mono mix of the input, up to 10 minutes) in this browser's storage beside your songs. Nothing is uploaded. Discard asks twice. Space stops (even right after Mark), Esc keeps and closes, so nothing is lost by accident.
+- **The Samples shelf**: 🎙 in the header, or “Your samples” on the start card. Play, rename, **Use in a song** (a Vocal or Guitar take at the playhead, starting the studio first if you are on the start card), WAV, Delete (asks twice), and a line saying it is never uploaded.
+- **The hexagon field behind the recorder.** The start card's living hexagons now stay behind the recorder: rings spread from the middle when you get loud and while a take plays. Appearance ▸ Hexagons: Moving, Calm (a still pattern) or Off. Reduced motion is always calm. The Control room (every workspace in the studio) does not get it.
+- `takeAddPcm()`: a recording already in memory becomes a take (dropping a file now uses it too). Toasts sit above the recorder.
+
+### Notes
+- Rooms (named spaces for a sample: tavern, subway platform, opera house, canyon amphitheater and more, all modelled in the browser, none a real venue) and the Booth that replaces Shower mode come next. Samples are not yet in backups, folder sync or GitHub sync: **WAV** keeps a copy meanwhile (GAPS).
+- Tested in `e2e-record-first` with the browser's fake microphone: Record first on the card, the first-time note, recording, Mark, Space, review, Keep, the shelf, a reload, Use in a song, Delete.
+
 ## 2.87.2 — 2026-11-22 — Hardening for a public repository
 
 The code is public, so what a stranger can change or run in CI matters more than what they can read. Repository and CI only; the studio itself does not change.

@@ -8,6 +8,11 @@ How to use it: before a release, move what the release closed into *Closed* with
 
 **Held fixed until these are done: no new looks and no new agent tools.** The Visuals have 40 looks and the agent has 30 tools; what is missing now is proof and the parts of the product that were ranked and never started.
 
+*Next, from the Record-first direction (2.88)*
+- **Rooms** (named spaces for a sample: Dry booth, Tavern, Tiled bathroom, Stairwell, Subway platform, Concert hall, Opera house, Canyon amphitheater, Stone cathedral; modelled in the browser, never a real venue name such as Red Rocks) with a room dial, then **the Booth** (Shower mode's engine without the hidden door, fog and joke titles; its own song list becomes the Setlist).
+- **Samples are not in backups, folder sync or GitHub sync yet**, and a crash during a long recording loses it (no recovery chunks yet). Both before the Booth.
+- The start card still leads with the song-shaped ways in below Record; the Control room as a named room (today Studio and Full Rig) is the next naming step.
+
 *Needs you (maintainer)*
 - **Repository settings** (docs/REPO_SECURITY.md): protect `main` with a ruleset, turn on secret scanning and push protection and private vulnerability reporting, set the Actions fork-approval rule, check Cloudflare Workers Builds, and keep your email private for new commits. None of these can be set from a commit.
 - **Markdown for agents: add the Transform Rule** (CLOUDFLARE_SETUP.md, Part K, two minutes), then press Rescan in Agent Readiness. The Markdown files ship with 2.87.1; the rule is what sends `Accept: text/markdown` to them.
@@ -26,6 +31,10 @@ How to use it: before a release, move what the release closed into *Closed* with
 - Next rooms, by size: the guide (60-guide, 53 kB), the agent tools (72-agent, 50 kB), the neural pane (14-neural, 40 kB), the looks (66-looks, 36 kB). The compressed budget is 720 kB; the page is about 677 kB.
 - The full e2e suite is 100 files and about 35 minutes; CI runs it twice per push. Splitting it into a fast set (every push) and the full set (before merge) would halve that.
 - Per-section looks and the Stage scenes are separate systems (Auto look maps three section types to three looks); joining them is a design decision, not a bug.
+
+## Closed in 2.88.0
+
+- **Nothing on the start screen said "record something".** Record is the first button, and a recording is a sample on a shelf, usable in any song.
 
 ## Closed in 2.87.2
 
