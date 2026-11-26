@@ -8,18 +8,18 @@ suite('e2e-record-first', async t => {
   ok(await ev(() => { const b = document.querySelector('#boot .boot-card button'); return !!b && b.id === 'bootRec'; }), 'Record is the first button on the start card');
   ok(await ev(() => { const r = document.getElementById('bootRec').getBoundingClientRect(); return r.width >= 80 && r.top < 420; }), 'and it is big and high on the page');
   ok(await ev(() => { const s = document.getElementById('bootSamples'); return !!s && s.getBoundingClientRect().height > 30 && /^🎙 Samples$/.test(s.textContent.trim()); }), 'the Samples choice is on the start card, with no count until there is a sample');
-  ok(await ev(() => { const k = [...document.querySelectorAll('#bootRoutes .glass')].map(b => b.id); return k.includes('bootWays') && k.includes('bootNoMic'); }), 'beside the Rooms and Studio choices');
+  ok(await ev(() => { const k = [...document.querySelectorAll('#bootRoutes .glass')].map(b => b.id); return k.includes('bootWays') && k.includes('bootNoMic'); }), 'beside the Rooms and Control room choices');
   ok(await ev(() => !document.getElementById('rf') && !(window.__daily && window.__daily.E && window.__daily.E.hasInput)), 'nothing is recording and the microphone is not open before the tap');
-  // ---- Rooms: the rooms are presented by the names the studio uses (Songwriter, Studio, Practice, Full Rig)
+  // ---- Rooms: the rooms by name (Writing room, Stage, Practice room, Control room), with the workspace each opens to
   await p.click('#bootWays'); await wait(300);
-  ok(await ev(() => [...document.querySelectorAll('#bootDoors .boot-door b')].map(b => b.textContent).join('|') === 'Songwriter|Studio|Practice|Full Rig' && document.getElementById('bootQ').textContent === 'Choose a room'), 'Rooms lists Songwriter, Studio, Practice and Full Rig, the names the studio bar uses');
-  ok(await ev(() => [...document.querySelectorAll('#bootDoors .boot-door small')].map(b => b.textContent).join('|') === 'Write a song|Play it live|Learn and practise|Explore everything'), 'with what each is for beside it');
+  ok(await ev(() => [...document.querySelectorAll('#bootDoors .boot-door b')].map(b => b.textContent).join('|') === 'Writing room|Stage|Practice room|Control room' && document.getElementById('bootQ').textContent === 'Choose a room'), 'Rooms lists the Writing room, the Stage, the Practice room and the Control room');
+  ok(await ev(() => [...document.querySelectorAll('#bootDoors .boot-door small')].map(b => b.textContent).join('|') === 'Opens Songwriter|Opens Studio|Opens Practice|Opens the Full Rig'), 'each says which workspace it opens (the names on the studio bar)');
   await p.click('#bootWays'); await wait(200);
   // ---- the first tap explains, then records
   await p.click('#bootRec'); await wait(500);
   ok(await ev(() => !!document.getElementById('rf') && /One quick thing/.test(document.getElementById('rfMain').textContent)), 'the first tap opens the recorder and says why the microphone is needed');
   ok(await ev(() => !!document.getElementById('rfHex')), 'the hexagon field is behind it');
-  ok(await ev(() => { const b = document.getElementById('rfBack'); return !!b && /Back/.test(b.textContent) && [...document.querySelectorAll('#rfMain .rf-pill')].map(x => x.textContent).join('|').includes('Samples') && /Studio/.test(document.getElementById('rfMain').textContent); }), 'every screen has a visible Back, and a way to Samples and the Studio (not only Esc and Space)');
+  ok(await ev(() => { const b = document.getElementById('rfBack'); return !!b && /Back/.test(b.textContent) && [...document.querySelectorAll('#rfMain .rf-pill')].map(x => x.textContent).join('|').includes('Samples') && /Control room/.test(document.getElementById('rfMain').textContent); }), 'every screen has a visible Back, and a way to Samples and the Control room (not only Esc and Space)');
   await p.click('#rfMain .rf-primary'); ok(await poll(() => ev(() => !!document.querySelector('#rfMain .rf-stop')), 9000, 150), 'allowing opens the microphone and starts recording');
   await wait(1800);
   const lcd = await ev(() => document.getElementById('rfLcd').textContent); ok(/^0:0[1-9]$/.test(lcd), 'the clock runs (' + lcd + ')');

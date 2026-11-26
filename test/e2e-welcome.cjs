@@ -19,7 +19,7 @@ suite('e2e-welcome', async t => {
   ok(f.keys.join('|') === 'Play with a band|Write down what you play|Turn a hum into a song|Record, loop and layer|Learn a song|Run a show', 'the first thing on the page is what you want to do: play with a band, write down what you play, hum a song, loop, learn a song, run a show (' + f.keys.join(' | ') + ')');
   ok(f.also.join('|') === 'Presets and effects|Neural graph and visuals', 'presets and effects, and the neural graph with visuals, come next (' + f.also.join(' | ') + ')');
   ok(f.go < f.key0 && f.key0 < f.also0 && f.also0 < f.stage, 'order on the page: the choices under Record, then (in Rooms) the goals, the extras, then the camera route (' + [f.go, f.key0, f.also0, f.stage].join(' < ') + ')');
-  ok(f.stageH < 24 && f.goH >= 40 && f.recH > 120 && f.inCard, 'the camera route is a small text link, Open the studio a glass pill and Record the big button (' + Math.round(f.stageH) + ' px, ' + Math.round(f.goH) + ' px, ' + Math.round(f.recH) + ' px)');
+  ok(f.stageH < 24 && f.goH >= 40 && f.recH > 120 && f.inCard, 'the camera route is a small text link, the Control room a glass pill and Record the big button (' + Math.round(f.stageH) + ' px, ' + Math.round(f.goH) + ' px, ' + Math.round(f.recH) + ' px)');
   ok(/optional/i.test(txt) && /camera/i.test(txt) && /stays off unless you choose/i.test(txt), 'the camera is described as optional and off unless chosen');
   ok(f.demo && !f.overflow, 'a first-timer can try the demo song, and the page does not scroll sideways');
   ok(await p.evaluate(() => window.__gum.audio === 0 && window.__gum.video === 0), 'nothing asks for the microphone or the camera on load');

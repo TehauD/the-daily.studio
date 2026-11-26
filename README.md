@@ -48,7 +48,7 @@ the-daily.studio is a guitar and voice studio that runs **entirely in your brows
 
 Around that: **presets and effects** (a pedalboard, five amps, 27 tones, A/B morph and mutate to experiment), a **neural graph and live visuals** (your song as a living map, and the Concert light show that moves with it), a backing band, and a performer view. If you like, there is also a **camera on stage**, an optional extra that stays off unless you choose it.
 
-<p align="center"><img src="docs/screenshots/20-boot.png" alt="The first page: a big Record button, then glass choices (Samples, Rooms, Open the studio, Try the demo song) over the hexagon field. The four ways in and the single tasks are inside Rooms" width="860"></p>
+<p align="center"><img src="docs/screenshots/20-boot.png" alt="The first page: a big Record button, then glass choices (Samples, Rooms, Control room, Try the demo song) over the hexagon field. The four ways in and the single tasks are inside Rooms" width="860"></p>
 <p align="center"><img src="docs/screenshots/40-concert-perform.png" alt="Concert: beams, an LED wall and a gradient stage that follow the chord and the drums" width="860"></p>
 <p align="center"><img src="docs/screenshots/41-concert-teach.png" alt="Concert, Teach lens: the circle of fifths as a lit ring, roman numerals and the next four chords" width="860"></p>
 <p align="center"><img src="docs/screenshots/22-guitar-coach.png" alt="The guitar coach teaching the first chord" width="860"></p>

@@ -70,7 +70,7 @@ suite('e2e-journal', async t => {
   await n.goto(t.BASE + (t.BASE.includes('?') ? '&' : '?') + 'debug'); await wait(3000);
   const nj = await n.evaluate(() => ({ text: (document.getElementById('welcomeBack') || {}).innerText || '', btn: document.getElementById('bootNoMic').innerText }));
   ok(/Welcome back/.test(nj.text) && /journal starts now/i.test(nj.text) && !/Last practiced|Current streak/.test(nj.text), 'someone who upgrades with no journal yet is told it starts now, and nothing is invented');
-  ok(/Open the studio/.test(nj.btn) && /Begin in the studio/.test(nj.btn), 'and the button keeps its usual wording (open the studio, begin in the studio)'); await n.ctx.close();
+  ok(/Control room/.test(nj.btn) && /Begin in the studio/.test(nj.btn), 'and the button keeps its usual wording (the Control room, begin in the studio)'); await n.ctx.close();
 
   // ================= counting =================
   p = await t.open({ w: 1440, h: 900, debug: true, init: `try{localStorage.removeItem('fw.jn');}catch(e){}` }); const ev2 = (f, a) => p.evaluate(f, a);
