@@ -17,6 +17,7 @@ The first thing on the start screen is now a big Record button, and what you rec
 - **The hexagon field behind the recorder.** The start card's living hexagons now stay behind the recorder: rings spread from the middle when you get loud and while a take plays. Appearance ▸ Hexagons: Moving, Calm (a still pattern) or Off. Reduced motion is always calm. The Control room (every workspace in the studio) does not get it.
 - `takeAddPcm()`: a recording already in memory becomes a take (dropping a file now uses it too). Toasts sit above the recorder.
 
+- **Cut it right after recording.** The review's waveform has a start and an end handle (drag them, or use the arrow keys; Shift moves further). Your ⚑ flags pull a handle to them when it comes near. **Trim quiet ends** cuts the silence at both ends (keeping a breath either side), **Reset** puts the whole recording back. Play, **Save a WAV**, **Keep sample** and **Keep and use in a song** all use only the part between the handles, with a few milliseconds of fade at each cut so it never clicks. Flags inside the cut are kept; the others go.
 - **A visible way out of the recorder, on every screen.** ‹ Back while recording (stops and shows what you have), ‹ Done on the review (keeps the sample and goes back, like Esc), and ‹ Back with **Samples** and **Control room** shortcuts on the other screens. A silent recording now says “Nothing was heard” and which microphone it listened to, instead of starting another by itself. Fixed an error 3.5 seconds after the first tap on a shelf item's Delete.
 
 ### Notes

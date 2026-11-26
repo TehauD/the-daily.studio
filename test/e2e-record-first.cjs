@@ -24,11 +24,23 @@ suite('e2e-record-first', async t => {
   await p.keyboard.press('Space'); ok(await poll(() => ev(() => !!document.querySelector('#rfMain .rf-wave')), 4000, 100), 'Space stops and shows the recording');
   ok(await ev(() => /Got it\./.test(document.getElementById('rfMain').textContent) && document.querySelectorAll('.rf-mk').length === 1), 'the review shows the length and the marker');
   const nm = await ev(() => document.getElementById('rfName').value); ok(/^Voice · /.test(nm), 'it is named for you (' + nm + ')');
+  // ---- cutting: handles on the waveform, the keyboard, Reset, Trim quiet ends, and only the part between them is kept
+  const len0 = await ev(() => +document.getElementById('rfSel').dataset.len);
+  ok(len0 > 2 && await ev(() => !!document.getElementById('rfHa') && !!document.getElementById('rfHb') && !!document.getElementById('rfQuiet') && !!document.getElementById('rfReset')), 'the review has a start and an end handle on the waveform, Trim quiet ends and Reset (' + len0 + ' s)');
+  const bx = await ev(() => { const r = document.getElementById('rfBox').getBoundingClientRect(), a = document.getElementById('rfHa').getBoundingClientRect(); return { x: r.left, w: r.width, y: r.top + r.height / 2, ax: a.left + a.width / 2 }; });
+  await p.mouse.move(bx.ax, bx.y); await p.mouse.down(); await p.mouse.move(bx.x + bx.w * .5, bx.y, { steps: 6 }); await p.mouse.up(); await wait(200);
+  const len1 = await ev(() => +document.getElementById('rfSel').dataset.len); ok(len1 < len0 * .65 && len1 > len0 * .35, 'dragging the start handle to the middle cuts the front off (' + len0 + ' → ' + len1 + ' s)');
+  await p.focus('#rfHb'); await p.keyboard.press('ArrowLeft'); await wait(100); const len2 = await ev(() => +document.getElementById('rfSel').dataset.len);
+  ok(len2 < len1 && len1 - len2 < .2, 'the arrow keys nudge a handle (' + len1 + ' → ' + len2 + ' s)');
+  await p.click('#rfReset'); ok(Math.abs(await ev(() => +document.getElementById('rfSel').dataset.len) - len0) < .01, 'Reset puts the whole recording back');
+  await p.mouse.move(bx.ax, bx.y); await p.mouse.down(); await p.mouse.move(bx.x + bx.w * .5, bx.y, { steps: 6 }); await p.mouse.up(); await wait(200);
+  const keepLen = await ev(() => +document.getElementById('rfSel').dataset.len);
   await p.click('#rfPlay'); await wait(300); ok(await ev(() => /Pause/.test(document.getElementById('rfPlay').textContent)), 'Play plays it back');
   await p.click('#rfMain .rf-warn'); ok(await ev(() => /Sure\?/.test(document.getElementById('rfMain').textContent)), 'Discard asks once more, so a tap cannot lose a recording');
   await p.fill('#rfName', 'Verse hum'); await p.click('#rfMain .rf-primary:not(#rfPlay)');
   ok(await poll(() => ev(() => !document.getElementById('rf') && !!document.getElementById('rfShelf')), 6000, 150), 'Keep sample closes the recorder and opens the shelf');
   ok(await ev(() => document.querySelectorAll('#rfShelf .rf-item').length === 1 && document.querySelector('#rfShelf .rf-nm').value === 'Verse hum'), 'the shelf has the sample, with the name you gave it');
+  ok(await ev(k => { const m = /^0:0(\d) /.exec(document.querySelector('#rfShelf .rf-info .tiny').textContent); return !!m && Math.abs(+m[1] - k) <= 1; }, keepLen), 'and it is only the part that was cut (' + Math.floor(keepLen) + ' s of ' + Math.floor(len0) + ' s)');
   ok(await ev(() => /never uploaded/.test(document.getElementById('rfShelf').textContent)), 'and says it is never uploaded');
   await p.click('#rfShelf .rf-pbtn'); await wait(400); ok(await ev(() => document.querySelector('#rfShelf .rf-pbtn').textContent === '■'), 'a sample plays from the shelf');
   await p.keyboard.press('Escape'); await wait(300);

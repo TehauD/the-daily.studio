@@ -102,26 +102,57 @@ function rcfStop() {
   const sr = E.ctx.sampleRate, pcm = new Float32Array(RCF.n); let k = 0; for (const p of RCF.parts) { pcm.set(p, k); k += p.length; } RCF.parts = [];
   if (pcm.length < sr * .3 || RCF.pk < .002) { RCF.st = 'silent'; return rcfDraw(); }      /* nothing was heard: say so and let the person choose, never start again by itself */
   const kind = CFG.me === 'guitar' ? 'gtr' : 'vox';
-  RCF.take = { pcm, sr, dur: pcm.length / sr, kind, name: (kind === 'vox' ? 'Voice' : 'Instrument') + ' · ' + rcfStamp(), marks: RCF.marks.slice(), peaks: rcfPeaks(pcm, 360) }; RCF.st = 'review'; rcfDraw();
+  RCF.take = { pcm, sr, dur: pcm.length / sr, a: 0, b: pcm.length / sr, kind, name: (kind === 'vox' ? 'Voice' : 'Instrument') + ' · ' + rcfStamp(), marks: RCF.marks.slice(), peaks: rcfPeaks(pcm, 360) }; RCF.st = 'review'; rcfDraw();
 }
 function rcfPeaks(pcm, n) { const o = new Float32Array(n), per = Math.max(1, Math.floor(pcm.length / n)); for (let i = 0; i < n; i++) { let m = 0; for (let k = i * per, e = Math.min(pcm.length, k + per); k < e; k += 4) { const v = Math.abs(pcm[k]); if (v > m) m = v; } o[i] = m; } let mx = 0; for (const v of o) if (v > mx) mx = v; if (mx > 0) for (let i = 0; i < n; i++) o[i] /= mx; return o; }
 function rcfPlayStop() { if (RCF.play) { try { RCF.play.s.stop(); } catch (e) { } RCF.play = null; } cancelAnimationFrame(RCF.raf); const ph = $('#rfPh'); if (ph) ph.style.display = 'none'; const b = $('#rfPlay'); if (b) b.textContent = '▶ Play'; }
 function rcfPlayToggle() {
   if (RCF.play) return rcfPlayStop(); const tk = RCF.take; if (!tk || !E.ctx) return;
-  const b = E.ctx.createBuffer(1, tk.pcm.length, tk.sr); b.copyToChannel(tk.pcm, 0); const s = E.ctx.createBufferSource(); s.buffer = b; s.connect(E.master);
-  s.onended = () => { if (RCF.play && RCF.play.s === s) rcfPlayStop(); }; s.start(); RCF.play = { s, t0: E.ctx.currentTime, dur: b.duration };
+  const pcm = rcfSlice(tk), b = E.ctx.createBuffer(1, pcm.length, tk.sr); b.copyToChannel(pcm, 0); const s = E.ctx.createBufferSource(); s.buffer = b; s.connect(E.master);
+  s.onended = () => { if (RCF.play && RCF.play.s === s) rcfPlayStop(); }; s.start(); RCF.play = { s, t0: E.ctx.currentTime, dur: b.duration, from: tk.a, total: tk.dur };
   const pb = $('#rfPlay'); if (pb) pb.textContent = '⏸ Pause';
-  const step = () => { if (!RCF.play) return; const ph = $('#rfPh'); if (ph) { ph.style.display = 'block'; ph.style.left = Math.min(100, (E.ctx.currentTime - RCF.play.t0) / RCF.play.dur * 100) + '%'; } RCF.raf = requestAnimationFrame(step); }; step();
+  const step = () => { if (!RCF.play) return; const ph = $('#rfPh'); if (ph) { ph.style.display = 'block'; ph.style.left = Math.min(100, (RCF.play.from + Math.min(RCF.play.dur, E.ctx.currentTime - RCF.play.t0)) / RCF.play.total * 100) + '%'; } RCF.raf = requestAnimationFrame(step); }; step();
 }
 async function rcfKeep(then) {
   const tk = RCF.take; if (!tk) return rcfClose(); const nm = ($('#rfName') || {}).value || tk.name;
-  const meta = { id: uid(), name: nm.trim().slice(0, 60) || tk.name, kind: tk.kind, sr: tk.sr, dur: tk.dur, marks: tk.marks, t: Date.now() };
-  try { await rcfSave(meta, tk.pcm); } catch (e) { return toast('Could not keep it: ' + (e.message || e.name) + '. Use “Save a WAV” so it is not lost.', 'bad'); }
+  const keep = rcfSlice(tk), meta = { id: uid(), name: nm.trim().slice(0, 60) || tk.name, kind: tk.kind, sr: tk.sr, dur: keep.length / tk.sr, marks: tk.marks.filter(x => x >= tk.a && x <= tk.b).map(x => x - tk.a), t: Date.now() };
+  try { await rcfSave(meta, keep); } catch (e) { return toast('Could not keep it: ' + (e.message || e.name) + '. Use “Save a WAV” so it is not lost.', 'bad'); }
   rcfClose(); toast('Kept: “' + meta.name + '” is on your Samples shelf.', 'ok');
   if (then === 'use') rcfUse(meta.id); else if (then === 'shelf') rcfShelf();
 }
-function rcfSaveWav() { const tk = RCF.take; if (tk) download(((($('#rfName') || {}).value || tk.name).replace(/[\\/:*?"<>|]/g, '-')) + '.wav', new Blob([wavI16(toI16(tk.pcm), tk.sr)], { type: 'audio/wav' })); }
+function rcfSaveWav() { const tk = RCF.take; if (tk) download(((($('#rfName') || {}).value || tk.name).replace(/[\\/:*?"<>|]/g, '-')) + '.wav', new Blob([wavI16(toI16(rcfSlice(tk)), tk.sr)], { type: 'audio/wav' })); }
 
+
+/* ---------- cutting: the start and the end of the take, right after recording ---------- */
+const rcfT = x => Math.floor(x / 60) + ':' + (x % 60).toFixed(1).padStart(4, '0');
+/** the part of the take that is kept, with a few milliseconds of fade at each cut so a cut never clicks (the recording itself is not changed until you keep it) */
+function rcfSlice(tk) {
+  const i0 = Math.max(0, Math.round(tk.a * tk.sr)), i1 = Math.min(tk.pcm.length, Math.round(tk.b * tk.sr)); if (i0 === 0 && i1 === tk.pcm.length) return tk.pcm;
+  const o = tk.pcm.slice(i0, i1), f = Math.min(Math.round(tk.sr * .006), o.length >> 1);
+  for (let i = 0; i < f; i++) { const g = i / f; if (i0 > 0) o[i] *= g; if (i1 < tk.pcm.length) o[o.length - 1 - i] *= g; } return o;
+}
+function rcfTrimSync() {
+  const tk = RCF.take; if (!tk || !$('#rfBox')) return; const pa = tk.a / tk.dur * 100, pb = tk.b / tk.dur * 100;
+  $('#rfShA').style.width = pa + '%'; $('#rfShB').style.width = (100 - pb) + '%'; const ha = $('#rfHa'), hb = $('#rfHb'); ha.style.left = pa + '%'; hb.style.left = pb + '%';
+  ha.setAttribute('aria-valuenow', tk.a.toFixed(2)); hb.setAttribute('aria-valuenow', tk.b.toFixed(2)); const sel = $('#rfSel'); sel.dataset.len = (tk.b - tk.a).toFixed(3); sel.textContent = rcfT(tk.a) + ' – ' + rcfT(tk.b) + ' · ' + (tk.b - tk.a).toFixed(1) + ' s';
+}
+function rcfCut(which, t) { const tk = RCF.take; if (which === 'a') tk.a = Math.max(0, Math.min(t, tk.b - .1)); else tk.b = Math.min(tk.dur, Math.max(t, tk.a + .1)); rcfPlayStop(); rcfTrimSync(); }
+function rcfDrag(which, e) {
+  e.preventDefault(); const tk = RCF.take, box = $('#rfBox'), el = e.currentTarget; try { el.setPointerCapture(e.pointerId); } catch (x) { }
+  const move = ev => { const r = box.getBoundingClientRect(); let t = Math.max(0, Math.min(1, (ev.clientX - r.left) / r.width)) * tk.dur; for (const m of tk.marks) if (Math.abs(m - t) / tk.dur * r.width < 10) t = m; rcfCut(which, t); };      /* a flag pulls the cut to it */
+  const up = () => { el.removeEventListener('pointermove', move); el.removeEventListener('pointerup', up); el.removeEventListener('pointercancel', up); };
+  el.addEventListener('pointermove', move); el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
+}
+function rcfHandleKey(which, e) {
+  const tk = RCF.take, d = e.shiftKey ? .5 : .05; if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') { e.preventDefault(); e.stopPropagation(); rcfCut(which, (which === 'a' ? tk.a : tk.b) - d); } else if (e.key === 'ArrowRight' || e.key === 'ArrowUp') { e.preventDefault(); e.stopPropagation(); rcfCut(which, (which === 'a' ? tk.a : tk.b) + d); }
+}
+/** cut the quiet from both ends (anything below about −48 dB), keeping a little breath either side */
+function rcfTrimQuiet() {
+  const tk = RCF.take, d = tk.pcm, sr = tk.sr; let i = 0, j = d.length - 1; while (i < d.length && Math.abs(d[i]) < .004) i++; while (j > i && Math.abs(d[j]) < .004) j--;
+  const pad = Math.round(sr * .08), a = Math.max(0, (i - pad) / sr), b = Math.min(tk.dur, (j + pad) / sr);
+  if (j - i < sr * .1 || (a <= .02 && b >= tk.dur - .02)) return toast('Already tight at both ends.'); rcfPlayStop(); tk.a = a; tk.b = Math.max(a + .1, b); rcfTrimSync(); toast('Trimmed the quiet from the ends.');
+}
+function rcfTrimReset() { const tk = RCF.take; rcfPlayStop(); tk.a = 0; tk.b = tk.dur; rcfTrimSync(); }
 
 /** the way out: while recording it stops and shows what you have; on the review it keeps the sample and goes back; elsewhere it just closes */
 function rcfBack() { if (RCF.st === 'rec') rcfStop(); else if (RCF.st === 'review') rcfKeep(false); else rcfClose(); }
@@ -161,12 +192,17 @@ function rcfDraw() {
   } else if (RCF.st === 'review') {
     const tk = RCF.take, cv = h('canvas', { class: 'rf-wave', width: 720, height: 120, 'aria-label': 'The recording' });
     m.append(rcfBar('Done', 'Keep this sample and go back (Esc does the same)'), h('div', { class: 'rf-card rf-wide' }, h('h2', {}, 'Got it. ' + rcfLen(tk.dur) + ' of you.'), h('p', {}, 'Hear it, name it, keep it. It goes on your Samples shelf, ready to use in any song.'),
-      h('div', { class: 'rf-wavebox' }, cv, h('i', { class: 'rf-ph', id: 'rfPh' }), tk.marks.map(s => h('b', { class: 'rf-mk', style: { left: (s / tk.dur * 100) + '%' }, title: 'Marker at ' + rcfLen(s) }))),
+      h('div', { class: 'rf-wavebox', id: 'rfBox' }, cv, tk.marks.map(s => h('b', { class: 'rf-mk', style: { left: (s / tk.dur * 100) + '%' }, title: 'Marker at ' + rcfLen(s) })), h('i', { class: 'rf-sh', id: 'rfShA', style: { left: 0 } }), h('i', { class: 'rf-sh', id: 'rfShB', style: { right: 0 } }), h('i', { class: 'rf-ph', id: 'rfPh' }),
+        h('div', { class: 'rf-h', id: 'rfHa', role: 'slider', tabindex: 0, 'aria-label': 'Start of the sample', 'aria-valuemin': 0, 'aria-valuemax': tk.dur.toFixed(2), 'aria-valuenow': 0, onpointerdown: e => rcfDrag('a', e), onkeydown: e => rcfHandleKey('a', e) }),
+        h('div', { class: 'rf-h', id: 'rfHb', role: 'slider', tabindex: 0, 'aria-label': 'End of the sample', 'aria-valuemin': 0, 'aria-valuemax': tk.dur.toFixed(2), 'aria-valuenow': tk.dur.toFixed(2), onpointerdown: e => rcfDrag('b', e), onkeydown: e => rcfHandleKey('b', e) })),
+      h('div', { class: 'rf-trim' }, h('span', { class: 'rf-sel', id: 'rfSel', 'aria-live': 'polite' }), h('span', { class: 'rf-sp' }), h('button', { class: 'rf-mini', type: 'button', id: 'rfQuiet', onclick: rcfTrimQuiet }, 'Trim quiet ends'), h('button', { class: 'rf-mini', type: 'button', id: 'rfReset', onclick: rcfTrimReset }, 'Reset')),
+      h('p', { class: 'rf-note' }, 'Drag the handles to cut the start and the end' + (tk.marks.length ? '; your flags pull the cut to them' : '') + '. Only the part between them is played and kept.'),
       h('div', { class: 'rf-row' }, btn('rf-primary', '▶ Play', rcfPlayToggle, { id: 'rfPlay' }), btn('rf-ghost', 'Save a WAV', rcfSaveWav)),
       h('input', { class: 'rf-name', id: 'rfName', type: 'text', value: tk.name, maxlength: 60, 'aria-label': 'Name this sample' }),
       h('div', { class: 'rf-row rf-kinds', role: 'group', 'aria-label': 'What it is' }, [['vox', 'Voice'], ['gtr', 'Instrument']].map(([k, t]) => h('button', { class: 'rf-chip', type: 'button', 'aria-pressed': String(tk.kind === k), onclick: e => { tk.kind = k; $$('.rf-kinds .rf-chip').forEach(c => c.setAttribute('aria-pressed', String(c === e.currentTarget))); } }, t))),
       h('div', { class: 'rf-row' }, btn('rf-primary', 'Keep sample', () => rcfKeep('shelf')), btn('rf-main2', 'Keep and use in a song', () => rcfKeep('use'))),
       h('div', { class: 'rf-row' }, btn('rf-ghost', 'Record again', () => { rcfPlayStop(); RCF.take = null; rcfBegin(); }), RCF.sure === 'discard' ? btn('rf-danger', 'Sure? Discard it', () => { RCF.sure = null; rcfClose(); }) : btn('rf-ghost rf-warn', 'Discard', () => { RCF.sure = 'discard'; rcfDraw(); setTimeout(() => { if (RCF.sure === 'discard') { RCF.sure = null; if (RCF.st === 'review') rcfDraw(); } }, 4000); }))));
+    rcfTrimSync();
     const g = cv.getContext('2d'), W = cv.width, H = cv.height, pk = tk.peaks; g.fillStyle = 'rgba(125,191,155,.9)'; for (let i = 0; i < pk.length; i++) { const hh = Math.max(2, pk[i] * (H - 10)), x = i * (W / pk.length); g.fillRect(x, (H - hh) / 2, Math.max(1, W / pk.length - 1.4), hh); }
   }
   const f = m.querySelector('button.rf-primary, .rf-stop'); if (f) try { f.focus({ preventScroll: true }); } catch (e) { }
