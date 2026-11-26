@@ -10,6 +10,14 @@ suite('e2e-record-first', async t => {
   ok(await ev(() => { const s = document.getElementById('bootSamples'); return !!s && s.getBoundingClientRect().height > 30 && /^🎙 Samples$/.test(s.textContent.trim()); }), 'the Samples choice is on the start card, with no count until there is a sample');
   ok(await ev(() => { const k = [...document.querySelectorAll('#bootRoutes .glass')].map(b => b.id); return k.includes('bootWays') && k.includes('bootNoMic'); }), 'beside the Rooms and Control room choices');
   ok(await ev(() => !document.getElementById('rf') && !(window.__daily && window.__daily.E && window.__daily.E.hasInput)), 'nothing is recording and the microphone is not open before the tap');
+  // ---- Light / Dark is on the first page and changes the first page (it used to do nothing on a first visit)
+  ok(await ev(() => { const t = document.getElementById('bootTheme'); return !!t && t.getBoundingClientRect().height > 20 && t.getBoundingClientRect().top < 80; }), 'Light and Dark are at the top of the first page');
+  const bgOf = () => ev(() => { const b = document.getElementById('boot'); return b.classList.contains('bg-light') ? 'light' : b.classList.contains('bg-dark') ? 'dark' : '?'; });
+  await p.click('#bootTheme [data-t=light]'); await wait(350); const tl = await bgOf(), wl = await ev(() => getComputedStyle(document.querySelector('.boot-top h1 span')).color);
+  await p.click('#bootTheme [data-t=dark]'); await wait(350); const td = await bgOf(), wd = await ev(() => getComputedStyle(document.querySelector('.boot-top h1 span')).color);
+  ok(tl === 'light' && td === 'dark' && wl !== wd, 'choosing Light turns the first page light and Dark turns it dark, even on a first visit (' + tl + ', ' + td + ')');
+  ok(await ev(() => !/user-select:\s*text/.test('') && getComputedStyle(document.querySelector('.boot-about')).userSelect === 'none'), 'the small print is not selectable text, so it never shows as highlighted boxes');
+  ok(await ev(() => { const t = document.querySelector('.boot-fine').innerText; return !/Plus hum-to-song/.test(t) && /Begin on stage/.test(t) && /stay on this device/.test(t); }), 'and the small print is shorter');
   // ---- Rooms: the rooms by name (Writing room, Stage, Practice room, Control room), with the workspace each opens to
   await p.click('#bootWays'); await wait(300);
   ok(await ev(() => [...document.querySelectorAll('#bootDoors .boot-door b')].map(b => b.textContent).join('|') === 'Writing room|Stage|Practice room|Control room' && document.getElementById('bootQ').textContent === 'Choose a room'), 'Rooms lists the Writing room, the Stage, the Practice room and the Control room');
@@ -35,7 +43,12 @@ suite('e2e-record-first', async t => {
   ok(await ev(() => { const b = document.getElementById('rfBack'); return !!b && /Back/.test(b.textContent) && [...document.querySelectorAll('#rfMain .rf-pill')].map(x => x.textContent).join('|').includes('Samples') && /Control room/.test(document.getElementById('rfMain').textContent); }), 'every screen has a visible Back, and a way to Samples and the Control room (not only Esc and Space)');
   await p.click('#rfMain .rf-primary'); ok(await poll(() => ev(() => !!document.querySelector('#rfMain .rf-stop')), 9000, 150), 'allowing opens the microphone and starts recording');
   ok(await ev(() => { const b = document.querySelector('#rfMain .rf-stop'), cs = getComputedStyle(b); return /polygon/.test(cs.clipPath) && /rgb\(255, 138, 140\)|rgb\(255, 77, 79\)/.test(cs.backgroundImage); }), 'while recording the button is a red hexagon, and the field glows red behind it');
+  ok(await ev(() => { const d = document.getElementById('rfDock'); return !!d && d.getBoundingClientRect().height > 30 && !!document.getElementById('rfIn') && !!document.getElementById('rfGain') && !!document.getElementById('rfMaster') && !!document.getElementById('rfHear') && /Kill audio/.test(document.getElementById('rfKill').textContent); }), 'while recording the Sound dock is there: Input, Level, Master, Hear myself and Kill audio');
+  ok(await ev(() => document.getElementById('rfIn').disabled), 'the input cannot be switched in the middle of a take');
+  await ev(() => { const g = document.getElementById('rfGain'); g.value = 12; g.dispatchEvent(new Event('input', { bubbles: true })); const m = document.getElementById('rfMaster'); m.value = .5; m.dispatchEvent(new Event('input', { bubbles: true })); });
+  ok(await ev(() => window.__daily.CFG.rcfGain === 12 && /\+12\.0 dB/.test(document.getElementById('rfGainO').textContent) && Math.abs(window.__daily.E.master.gain.value - .5) < .2 && /−6\.0 dB|-6\.0 dB/.test(document.getElementById('rfMasterO').textContent)), 'the Level and Master sliders work and say what they are in dB');
   await wait(1800);
+  ok(await ev(() => /dB|Quiet|Too loud/.test(document.getElementById('rfDtxt').textContent) && parseFloat(document.getElementById('rfDm').style.width) > 0), 'the dock meter reads the input in dB');
   const lcd = await ev(() => document.getElementById('rfLcd').textContent); ok(/^0:0[1-9]$/.test(lcd), 'the clock runs (' + lcd + ')');
   ok(await ev(() => parseFloat(document.getElementById('rfLvl').style.width || '0') > 0 || [...document.querySelectorAll('#rfRoll span')].some(s => parseFloat(s.style.height) > 3)), 'the level meter and the rolling waveform move with the sound');
   await p.click('#rfMain .rf-circ[aria-label="Drop a marker"]'); await wait(300);
@@ -83,6 +96,15 @@ suite('e2e-record-first', async t => {
   await p.click('#rfBack'); ok(await poll(() => ev(() => !document.getElementById('rf')), 4000, 100), 'Done keeps it and goes back, to where you were');
   await p.click('#samplesBtn'); await wait(500); ok(await ev(() => document.querySelectorAll('#rfShelf .rf-item').length === 1), 'and the sample is on the shelf');
   await p.keyboard.press('Escape'); await wait(200);
+  // ---- Kill audio: Ctrl + . while recording keeps what was recorded, and Resume brings the engine back
+  await p.click('#samplesBtn'); await wait(500); await p.click('#rfShelf .btn.primary:not(.sm)'); ok(await poll(() => ev(() => !!document.querySelector('#rfMain .rf-stop')), 9000, 150), 'recording again');
+  await wait(1500); await p.keyboard.press('Control+.');
+  ok(await poll(() => ev(() => !!document.querySelector('#rfMain .rf-wave') && window.__daily.AK.killed), 4000, 100), 'Ctrl + . while recording kills the audio and keeps what was recorded');
+  ok(await ev(() => document.getElementById('rfDock').classList.contains('killed') && /Resume audio/.test(document.getElementById('rfKill').textContent)), 'the dock says audio is killed and offers Resume');
+  await p.click('#rfPlay'); await wait(300); ok(await ev(() => !window.__daily.E.hasInput && /▶ Play/.test(document.getElementById('rfPlay').textContent)), 'playing while killed does not start anything, and the microphone is released');
+  await p.click('#rfKill'); await wait(600); ok(await ev(() => !window.__daily.AK.killed && /Kill audio/.test(document.getElementById('rfKill').textContent)), 'Resume brings the engine back (the microphone stays off)');
+  await p.click('#rfKill'); await wait(400); ok(await ev(() => window.__daily.AK.killed), 'and the Kill button kills it again');
+  await p.click('#rfKill'); await wait(400); await p.click('#rfBack'); await wait(400);
   // ---- hexagon setting
   ok(await ev(() => window.__daily ? true : true), 'settings default is on');
   ok(t.errs.length === 0, 'no errors (' + t.errs.length + ')');

@@ -9,7 +9,7 @@
      · CFG.hexbg: 'on' (rings move with the sound), 'calm' (a still pattern) or 'off'. Reduced motion is always calm. The Control room never gets it
    Rooms (named spaces for a sample) and the Booth (the Shower's engine, repurposed) come next.
    ============================================================ */
-const RCF = { items: [], loaded: false, el: null, st: '', tap: null, parts: [], n: 0, pk: 0, marks: [], bars: [], lvl: 0, paused: false, take: null, tick: 0, raf: 0, play: null, rings: [], emit: 0, hxT: 0, sure: null, asked: false };
+const RCF = { items: [], loaded: false, el: null, st: '', tap: null, parts: [], n: 0, pk: 0, marks: [], bars: [], lvl: 0, paused: false, take: null, tick: 0, raf: 0, play: null, rings: [], emit: 0, hxT: 0, sure: null, asked: false, gn: null, an: null, src: null, buf: null, clip: 0, clipAt: 0, dock: 0 };
 const RCF_I = 'smp:i:', RCF_A = 'smp:a:', RCF_MAX = 600;      /* keys in the songs' blob store; the longest recording, in seconds */
 
 /* ---------- the shelf, kept on this device ---------- */
@@ -64,12 +64,12 @@ function rcfHex(now) {
 /* ---------- the recorder ---------- */
 function rcfOpen() {
   if (RCF.el) return; RCF.st = ''; RCF.take = null; RCF.rings = [];
-  RCF.el = h('div', { class: 'rf', id: 'rf', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Record a sample' }, h('canvas', { id: 'rfHex', 'aria-hidden': 'true' }), h('div', { class: 'rf-main', id: 'rfMain' }));
-  document.body.append(RCF.el); document.addEventListener('keydown', rcfKey, true); RCF.hxT = requestAnimationFrame(rcfHex);
+  RCF.el = h('div', { class: 'rf', id: 'rf', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Record a sample' }, h('canvas', { id: 'rfHex', 'aria-hidden': 'true' }), h('div', { class: 'rf-main', id: 'rfMain' }), rcfDockBuild());
+  document.body.append(RCF.el); try { listDevices(); } catch (e) { } RCF.dock = setInterval(rcfDockTick, 50); rcfDockSync(); document.addEventListener('keydown', rcfKey, true); RCF.hxT = requestAnimationFrame(rcfHex);
   if (!E.hasInput && !store.get('rfAsked', false)) { RCF.st = 'ask'; rcfDraw(); } else rcfBegin();
 }
 function rcfClose() {
-  rcfPlayStop(); clearInterval(RCF.tick); if (RCF.tap) { try { RCF.tap.on(false); E.src.disconnect(RCF.tap.node); } catch (e) { } RCF.tap = null; }
+  rcfPlayStop(); clearInterval(RCF.tick); clearInterval(RCF.dock); if (RCF.tap) { try { RCF.tap.on(false); } catch (e) { } RCF.tap = null; } rcfUnchain();
   document.removeEventListener('keydown', rcfKey, true); cancelAnimationFrame(RCF.hxT); cancelAnimationFrame(RCF.raf); if (RCF.el) RCF.el.remove(); RCF.el = null; RCF.st = ''; RCF.take = null; RCF.parts = [];
 }
 function rcfKey(e) {
@@ -85,30 +85,31 @@ async function rcfBegin() {
   try { await startAudio(); if (!E.hasInput) await pickInput(); } catch (e) { console.warn(e); }
   if (!RCF.el) return; if (!E.ctx || !E.hasInput || !E.src) { RCF.st = 'blocked'; return rcfDraw(); }
   if (E.ctx.state === 'suspended') { try { await E.ctx.resume(); } catch (e) { } }
-  RCF.parts = []; RCF.n = 0; RCF.pk = 0; RCF.marks = []; RCF.bars = []; RCF.lvl = 0; RCF.paused = false; RCF.take = null;
-  RCF.tap = makeTap(E.src, {}, m => {
+  RCF.parts = []; RCF.n = 0; RCF.pk = 0; RCF.clip = 0; RCF.marks = []; RCF.bars = []; RCF.lvl = 0; RCF.paused = false; RCF.take = null; rcfChain();
+  RCF.tap = makeTap(RCF.gn || E.src, {}, m => {
     if (m.onset || !m.l || RCF.st !== 'rec' || RCF.paused) return; RCF.parts.push(m.l); RCF.n += m.l.length; let p = 0; for (let i = 0; i < m.l.length; i += 8) { const v = Math.abs(m.l[i]); if (v > p) p = v; }
-    RCF.lvl = Math.max(RCF.lvl * .6, p); if (p > RCF.pk) RCF.pk = p; RCF.bars.push(p);
+    RCF.lvl = Math.max(RCF.lvl * .6, p); if (p > RCF.pk) RCF.pk = p; if (p >= .985) { RCF.clip++; RCF.clipAt = performance.now(); } RCF.bars.push(p);
   });
   RCF.tap.on(true); RCF.st = 'rec'; rcfDraw(); RCF.tick = setInterval(rcfTick, 80);
 }
 function rcfTick() {
   if (RCF.st !== 'rec') return; const sr = E.ctx.sampleRate, s = RCF.n / sr, tm = $('#rfLcd'), lv = $('#rfLvl'), roll = $('#rfRoll');
   if (tm) tm.textContent = rcfLen(s); if (lv) lv.style.width = Math.min(100, RCF.lvl * 320) + '%'; const sb = $('.rf-stop'); if (sb) sb.parentNode.style.setProperty('--lv', Math.min(1, RCF.lvl * 4).toFixed(2));
-  if (roll) { const c = roll.children, n = c.length; for (let i = 0; i < n; i++) { const b = RCF.bars[RCF.bars.length - n + i]; c[i].style.height = Math.max(3, Math.min(100, (b || 0) * 320)) + '%'; } }
+  if (roll) { const c = roll.children, n = c.length; for (let i = 0; i < n; i++) { const b = RCF.bars[RCF.bars.length - n + i]; c[i].style.height = Math.max(3, Math.min(100, (b || 0) * 320)) + '%'; c[i].className = b >= .985 ? 'hot' : b >= .5 ? 'warm' : ''; } }
   if (s >= RCF_MAX) { toast('That is ' + RCF_MAX / 60 + ' minutes: the longest one recording can be. It has been stopped and kept.', 'warn'); rcfStop(); }
 }
 function rcfStop() {
-  if (RCF.st !== 'rec') return; clearInterval(RCF.tick); RCF.st = 'stopping'; if (RCF.tap) { try { RCF.tap.on(false); E.src.disconnect(RCF.tap.node); } catch (e) { } RCF.tap = null; }
+  if (RCF.st !== 'rec') return; clearInterval(RCF.tick); RCF.st = 'stopping'; if (RCF.tap) { try { RCF.tap.on(false); (RCF.gn || E.src).disconnect(RCF.tap.node); } catch (e) { } RCF.tap = null; }
   const sr = E.ctx.sampleRate, pcm = new Float32Array(RCF.n); let k = 0; for (const p of RCF.parts) { pcm.set(p, k); k += p.length; } RCF.parts = [];
   if (pcm.length < sr * .3 || RCF.pk < .002) { RCF.st = 'silent'; return rcfDraw(); }      /* nothing was heard: say so and let the person choose, never start again by itself */
   const kind = CFG.me === 'guitar' ? 'gtr' : 'vox';
-  RCF.take = { pcm, sr, dur: pcm.length / sr, a: 0, b: pcm.length / sr, kind, name: (kind === 'vox' ? 'Voice' : 'Instrument') + ' · ' + rcfStamp(), marks: RCF.marks.slice(), peaks: rcfPeaks(pcm, 360) }; RCF.st = 'review'; rcfDraw();
+  RCF.take = { pcm, sr, dur: pcm.length / sr, a: 0, b: pcm.length / sr, kind, name: (kind === 'vox' ? 'Voice' : 'Instrument') + ' · ' + rcfStamp(), marks: RCF.marks.slice(), clip: RCF.clip, peaks: rcfPeaks(pcm, 360) }; RCF.st = 'review'; rcfDraw();
 }
 function rcfPeaks(pcm, n) { const o = new Float32Array(n), per = Math.max(1, Math.floor(pcm.length / n)); for (let i = 0; i < n; i++) { let m = 0; for (let k = i * per, e = Math.min(pcm.length, k + per); k < e; k += 4) { const v = Math.abs(pcm[k]); if (v > m) m = v; } o[i] = m; } let mx = 0; for (const v of o) if (v > mx) mx = v; if (mx > 0) for (let i = 0; i < n; i++) o[i] /= mx; return o; }
 function rcfPlayStop() { if (RCF.play) { try { RCF.play.s.stop(); } catch (e) { } RCF.play = null; } cancelAnimationFrame(RCF.raf); const ph = $('#rfPh'); if (ph) ph.style.display = 'none'; const b = $('#rfPlay'); if (b) b.textContent = '▶ Play'; }
 function rcfPlayToggle() {
   if (RCF.play) return rcfPlayStop(); const tk = RCF.take; if (!tk || !E.ctx) return;
+  if (typeof AK !== 'undefined' && AK.killed) return toast('Audio is stopped (killed). Press “Resume audio” below to hear it.', 'warn'); if (E.ctx.state === 'suspended') { try { E.ctx.resume(); } catch (e) { } }
   const pcm = rcfSlice(tk), b = E.ctx.createBuffer(1, pcm.length, tk.sr); b.copyToChannel(pcm, 0); const s = E.ctx.createBufferSource(); s.buffer = b; s.connect(E.master);
   s.onended = () => { if (RCF.play && RCF.play.s === s) rcfPlayStop(); }; s.start(); RCF.play = { s, t0: E.ctx.currentTime, dur: b.duration, from: tk.a, total: tk.dur };
   const pb = $('#rfPlay'); if (pb) pb.textContent = '⏸ Pause';
@@ -167,7 +168,7 @@ function rcfBar(label, hint) {
 
 /* ---------- what the recorder shows ---------- */
 function rcfDraw() {
-  const m = $('#rfMain'); if (!m) return; m.textContent = '';
+  const m = $('#rfMain'); if (!m) return; m.textContent = ''; if (RCF.el) RCF.el.dataset.st = RCF.st;
   const btn = (cls, txt, fn, extra) => h('button', Object.assign({ class: 'rf-btn ' + cls, type: 'button', onclick: fn }, extra || {}), txt);
   if (RCF.st === 'ask') {
     m.append(rcfBar('Back', 'Close the recorder'), h('div', { class: 'rf-card' }, h('div', { class: 'rf-big', 'aria-hidden': 'true' }, '🎙'), h('h2', {}, 'One quick thing before we listen'),
@@ -182,17 +183,17 @@ function rcfDraw() {
   } else if (RCF.st === 'silent') {
     const dev = rcfInput();
     m.append(rcfBar('Back', 'Close the recorder'), h('div', { class: 'rf-card' }, h('div', { class: 'rf-big', 'aria-hidden': 'true' }, '🔇'), h('h2', {}, 'Nothing was heard'),
-      h('p', {}, 'That recording was silent' + (dev ? ', from “' + dev + '”' : '') + '. Check that this is the microphone you mean and that its level is up (Audio, at the top right of the studio), then try again.'),
+      h('p', {}, 'That recording was silent' + (dev ? ', from “' + dev + '”' : '') + '. Check that this is the microphone you mean (the Input list below) and raise the Level, then try again.'),
       btn('rf-primary', 'Try again', () => rcfBegin()), btn('rf-ghost', 'Back', rcfClose)));
   } else if (RCF.st === 'rec') {
     m.append(h('div', { class: 'rf-rec' }, h('div', { class: 'rf-top' }, h('button', { class: 'rf-back', id: 'rfBack', type: 'button', title: 'Stop, and decide what to do with what you have', onclick: rcfBack }, '‹ Back'), h('span', { class: 'rf-live' + (RCF.paused ? ' paused' : '') }, h('i'), RCF.paused ? 'Paused' : 'Recording'), h('span', { class: 'rf-sub' }, 'Stays on this device')),
       h('div', { class: 'rf-mid' }, h('div', { class: 'rf-lcd', id: 'rfLcd', 'aria-live': 'off' }, rcfLen(RCF.n / E.ctx.sampleRate)), h('div', { class: 'rf-meter' }, h('i', { id: 'rfLvl' })), h('div', { class: 'rf-roll', id: 'rfRoll', 'aria-hidden': 'true' }, Array.from({ length: 56 }, () => h('span')))),
       h('div', { class: 'rf-ctl' }, h('div', { class: 'rf-side' }, h('button', { class: 'rf-circ', type: 'button', 'aria-label': 'Drop a marker', onclick: () => { RCF.marks.push(RCF.n / E.ctx.sampleRate); toast('Marker at ' + rcfLen(RCF.n / E.ctx.sampleRate)); } }, '⚑', h('span', {}, 'Mark'))),
         h('span', { class: 'rf-stop-glow' }, h('button', { class: 'rf-stop', type: 'button', 'aria-label': 'Stop', onclick: rcfStop }, h('i'))), h('div', { class: 'rf-side' }, h('button', { class: 'rf-circ', type: 'button', 'aria-label': RCF.paused ? 'Resume' : 'Pause', onclick: () => { RCF.paused = !RCF.paused; rcfDraw(); } }, RCF.paused ? '▶' : '❚❚', h('span', {}, RCF.paused ? 'Resume' : 'Pause')))),
-      h('p', { class: 'rf-tip' }, 'Space or the red button stops. Wear headphones if something else is playing.')));
+      h('p', { class: 'rf-tip' }, 'Space or the red hexagon stops. Wear headphones if something else is playing. Ctrl + . kills all audio at once.')));
   } else if (RCF.st === 'review') {
     const tk = RCF.take, cv = h('canvas', { class: 'rf-wave', width: 720, height: 120, 'aria-label': 'The recording' });
-    m.append(rcfBar('Done', 'Keep this sample and go back (Esc does the same)'), h('div', { class: 'rf-card rf-wide' }, h('h2', {}, 'Got it. ' + rcfLen(tk.dur) + ' of you.'), h('p', {}, 'Hear it, name it, keep it. It goes on your Samples shelf, ready to use in any song.'),
+    m.append(rcfBar('Done', 'Keep this sample and go back (Esc does the same)'), h('div', { class: 'rf-card rf-wide' }, h('h2', {}, 'Got it. ' + rcfLen(tk.dur) + ' of you.'), h('p', {}, 'Hear it, name it, keep it. It goes on your Samples shelf, ready to use in any song.'), tk.clip ? h('p', { class: 'rf-warnline', role: 'status' }, '⚠ It peaked and may sound harsh (' + tk.clip + ' loud moment' + (tk.clip === 1 ? '' : 's') + '). Lower the Level below and record again, or keep it if that is the sound you want.') : null,
       h('div', { class: 'rf-wavebox', id: 'rfBox' }, cv, tk.marks.map(s => h('b', { class: 'rf-mk', style: { left: (s / tk.dur * 100) + '%' }, title: 'Marker at ' + rcfLen(s) })), h('i', { class: 'rf-sh', id: 'rfShA', style: { left: 0 } }), h('i', { class: 'rf-sh', id: 'rfShB', style: { right: 0 } }), h('i', { class: 'rf-ph', id: 'rfPh' }),
         h('div', { class: 'rf-h', id: 'rfHa', role: 'slider', tabindex: 0, 'aria-label': 'Start of the sample', 'aria-valuemin': 0, 'aria-valuemax': tk.dur.toFixed(2), 'aria-valuenow': 0, onpointerdown: e => rcfDrag('a', e), onkeydown: e => rcfHandleKey('a', e) }),
         h('div', { class: 'rf-h', id: 'rfHb', role: 'slider', tabindex: 0, 'aria-label': 'End of the sample', 'aria-valuemin': 0, 'aria-valuemax': tk.dur.toFixed(2), 'aria-valuenow': tk.dur.toFixed(2), onpointerdown: e => rcfDrag('b', e), onkeydown: e => rcfHandleKey('b', e) })),
@@ -207,7 +208,56 @@ function rcfDraw() {
     const g = cv.getContext('2d'), W = cv.width, H = cv.height, pk = tk.peaks; g.fillStyle = 'rgba(125,191,155,.9)'; for (let i = 0; i < pk.length; i++) { const hh = Math.max(2, pk[i] * (H - 10)), x = i * (W / pk.length); g.fillRect(x, (H - hh) / 2, Math.max(1, W / pk.length - 1.4), hh); }
   }
   const f = m.querySelector('button.rf-primary, .rf-stop'); if (f) try { f.focus({ preventScroll: true }); } catch (e) { }
+  rcfDockSync();
 }
+
+/* ---------- sound controls: always one touch away while the recorder is open ----------
+   Input (the microphone or interface), the recording Level with a real peak meter that shows clipping, the Master volume, Hear myself and a KILL
+   button (the same one as Ctrl + . everywhere in the studio). Killing while recording keeps what was captured; Resume brings the engine back and the
+   microphone stays off until you press Record. The Level is a gain stage in front of the recorder only: it changes what is kept, not your other tracks. */
+function rcfChain() {
+  if (!E.ctx || !E.src) return false; if (RCF.gn && RCF.src === E.src) return true;
+  rcfUnchain(); RCF.gn = E.ctx.createGain(); RCF.gn.gain.value = fromDB(CFG.rcfGain || 0); RCF.an = E.ctx.createAnalyser(); RCF.an.fftSize = 1024; RCF.buf = new Float32Array(RCF.an.fftSize);
+  RCF.gn.connect(RCF.an); E.src.connect(RCF.gn); RCF.src = E.src; return true;
+}
+function rcfUnchain() { try { if (RCF.src && RCF.gn) RCF.src.disconnect(RCF.gn); } catch (e) { } try { if (RCF.gn) RCF.gn.disconnect(); } catch (e) { } RCF.gn = RCF.an = RCF.src = RCF.buf = null; }
+const rcfDb1 = v => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(1) + ' dB';
+function rcfDockBuild() {
+  const sel = h('select', { class: 'rf-in', id: 'rfIn', 'aria-label': 'Input: which microphone or interface to record from', onchange: async e => { const id = e.target.value; await ioConnect(id || ''); if (RCF.el && RCF.st !== 'rec') rcfChain(); rcfDockSync(); } });
+  const gain = h('input', { type: 'range', id: 'rfGain', min: -12, max: 24, step: .5, value: CFG.rcfGain || 0, 'aria-label': 'Recording level', oninput: e => { CFG.rcfGain = +e.target.value; saveCfg(); if (RCF.gn) tc(RCF.gn.gain, fromDB(CFG.rcfGain), .02); rcfDockSync(); } });
+  const mst = h('input', { type: 'range', id: 'rfMaster', min: 0, max: 1.2, step: .01, value: .9, 'aria-label': 'Master volume', oninput: e => { const k = KNOBS.get('master'); if (k) k.set(+e.target.value); else if (E.ready) tc(E.master.gain, +e.target.value, .02); CFG.master = +e.target.value; rcfDockSync(); } });
+  const hear = h('button', { class: 'rf-sw', id: 'rfHear', type: 'button', role: 'switch', 'aria-checked': 'false', onclick: () => { setMonitor(!CFG.monitor); if (CFG.monitor) toast('Hearing yourself: wear headphones, or it can feed back. Kill audio stops it at once.', 'warn'); rcfDockSync(); } }, h('i'), h('span', {}, 'Hear myself'));
+  const kill = h('button', { class: 'rf-kill', id: 'rfKill', type: 'button', onclick: () => { if (typeof AK !== 'undefined' && AK.killed) audioResume(); else audioKill(); } });
+  const tog = h('button', { class: 'rf-dtog', id: 'rfDtog', type: 'button', 'aria-expanded': 'false', 'aria-controls': 'rfDpanel', onclick: () => { const d = $('#rfDock'), on = !d.classList.contains('open'); d.classList.toggle('open', on); RCF.el.classList.toggle('dock-open', on); tog.setAttribute('aria-expanded', String(on)); } }, '🎚 Sound');
+  const row = (lab, el, out) => h('label', { class: 'rf-dr' }, h('span', { class: 'rf-dl' }, lab), el, out ? h('output', { class: 'rf-do', id: out }) : null);
+  return h('div', { class: 'rf-dock', id: 'rfDock', role: 'region', 'aria-label': 'Sound controls' }, tog,
+    h('div', { class: 'rf-dpanel', id: 'rfDpanel' }, row('Input', sel), row('Level', gain, 'rfGainO'), row('Master', mst, 'rfMasterO'), hear),
+    h('div', { class: 'rf-dm', title: 'Input peak. It turns red when it clips.' }, h('div', { class: 'rf-dbar' }, h('i', { id: 'rfDm' })), h('span', { class: 'rf-dtxt', id: 'rfDtxt', 'aria-live': 'polite' }, '')), kill);
+}
+/** keep the dock true: the device list, the sliders, Hear myself, and Kill/Resume */
+function rcfDockSync() {
+  const d = $('#rfDock'); if (!d) return; const killed = typeof AK !== 'undefined' && AK.killed, rec = RCF.st === 'rec';
+  const sel = $('#rfIn'), devs = (E.devs && E.devs.in) || [], cur = (() => { try { const t = E.stream && E.stream.getAudioTracks()[0]; return (t && t.getSettings && t.getSettings().deviceId) || CFG.inDev || ''; } catch (e) { return CFG.inDev || ''; } })();
+  const sig = devs.map(x => x.deviceId + x.label).join('|') + '|' + cur;
+  if (sel && sel._sig !== sig) { sel._sig = sig; sel.textContent = ''; sel.append(h('option', { value: '' }, E.hasInput ? 'Default input' : 'Choose an input…'));
+    devs.filter(x => x.deviceId && x.deviceId !== 'default').forEach((x, i) => sel.append(h('option', { value: x.deviceId }, x.label || 'Input ' + (i + 1)))); const named = devs.filter(x => x.deviceId && x.deviceId !== 'default'); sel.value = named.some(x => x.deviceId === cur) ? cur : ''; }
+  if (sel) { sel.disabled = rec; sel.title = rec ? 'Stop recording to change the input' : ''; }
+  const g = $('#rfGain'), gv = CFG.rcfGain || 0; if (g && +g.value !== gv) g.value = gv; const go = $('#rfGainO'); if (go) go.textContent = rcfDb1(gv);
+  const k = KNOBS.get('master'), mv = k ? k.get() : (CFG.master != null ? CFG.master : .9), m = $('#rfMaster'); if (m && Math.abs(+m.value - mv) > .004) m.value = mv; const mo = $('#rfMasterO'); if (mo) mo.textContent = (mv <= .001 ? '−∞' : dB(mv).toFixed(1)) + ' dB';
+  const hr = $('#rfHear'); if (hr) { hr.setAttribute('aria-checked', String(!!CFG.monitor)); hr.classList.toggle('on', !!CFG.monitor); }
+  const kb = $('#rfKill'); if (kb) { kb.textContent = killed ? '▶ Resume audio' : '⏹ Kill audio'; kb.title = killed ? 'Audio is stopped. Resume brings the engine back; the microphone stays off until you record.' : 'Stop everything now: playback, recording, monitoring, the microphone (Ctrl + .)'; kb.setAttribute('aria-label', killed ? 'Resume audio' : 'Kill audio (Ctrl and full stop)'); }
+  d.classList.toggle('killed', killed);
+}
+function rcfDockTick() {
+  const bar = $('#rfDm'), tx = $('#rfDtxt'); if (!bar || !tx) return; const on = RCF.an && E.ctx && E.ctx.state === 'running'; let pk = 0;
+  if (on) { try { RCF.an.getFloatTimeDomainData(RCF.buf); for (let i = 0; i < RCF.buf.length; i++) { const v = Math.abs(RCF.buf[i]); if (v > pk) pk = v; } } catch (e) { } }
+  const db = pk > 0 ? dB(pk) : -90; RCF._pk = Math.max(db, (RCF._pk == null ? -90 : RCF._pk) - 1.2); if (pk >= .985) RCF.clipAt = performance.now();
+  bar.style.width = Math.max(0, Math.min(100, (RCF._pk + 60) / 60 * 100)) + '%'; const hot = performance.now() - RCF.clipAt < 2200;
+  bar.className = hot || RCF._pk > -1.5 ? 'hot' : RCF._pk > -9 ? 'warm' : ''; const killed = typeof AK !== 'undefined' && AK.killed;
+  tx.textContent = killed ? 'Audio stopped' : hot ? 'Too loud: lower Level' : !E.hasInput ? 'No input' : RCF._pk < -80 ? 'Quiet' : Math.round(RCF._pk) + ' dB'; tx.classList.toggle('bad', hot && !killed);
+}
+bus.on('input', () => { if (!RCF.el) return; if (RCF.st === 'rec' && !E.src) { toast('The input went away. What you had is kept.', 'warn'); rcfStop(); } else if (E.src && RCF.st !== 'rec') rcfChain(); rcfDockSync(); });
+['audiostate', 'devices', 'monitor', 'master'].forEach(ev => bus.on(ev, () => { if (RCF.el) { if (ev === 'audiostate' && typeof AK !== 'undefined' && AK.killed && RCF.st === 'rec') { toast('Audio killed. What you recorded so far is kept.', 'warn'); rcfStop(); } rcfDockSync(); } }));
 
 /* ---------- the shelf, and using a sample in a song ---------- */
 async function rcfUse(id) {

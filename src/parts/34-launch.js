@@ -11,7 +11,7 @@
   size(); addEventListener('resize', size);
   /* 2.88: the start card takes its text colours from the field it sits on (light or dark), not from the app's theme: a dark field with a light theme used to give dark words on dark */
   const DG = { lt: false, bg: '#04090a', glow: '61,220,132', cell: '61,220,132', warm: '242,182,50', line: '125,191,155' }, bootEl = document.getElementById('boot');
-  const tone = () => { const first = !!document.querySelector('#boot.boot-first') && !CFG.hexTone, P = first ? DG : typeof hexPal === 'function' ? hexPal() : DG; if (bootEl) { bootEl.classList.toggle('bg-light', !!P.lt); bootEl.classList.toggle('bg-dark', !P.lt); } return P; };
+  const tone = () => { const first = !!document.querySelector('#boot.boot-first') && !CFG.hexTone && !CFG.bootPick, P = first ? DG : typeof hexPal === 'function' ? hexPal() : DG; if (bootEl) { bootEl.classList.toggle('bg-light', !!P.lt); bootEl.classList.toggle('bg-dark', !P.lt); } return P; };
   try { tone(); } catch (e) { }
   /* the field leans toward the pointer (a finger too), and lets go after a moment */
   /* the field's centre is the Record hexagon itself: rings leave it, and the cells near it turn gold */
