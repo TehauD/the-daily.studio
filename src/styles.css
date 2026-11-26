@@ -2048,3 +2048,4 @@ body[data-form=phone][data-tl=mini] #center{grid-template-rows:minmax(0,auto) mi
 .rf-empty{display:grid;gap:6px;text-align:center;padding:26px 12px;border:1px dashed var(--line);border-radius:14px}
 @media (max-width:620px){.rf-item{grid-template-columns:auto 1fr;}.rf-item>button:not(.rf-pbtn){grid-column:2}.rf-lcd{font-size:54px}}
 @media (prefers-reduced-motion:reduce){.rf-live i{animation:none}.boot-rec,.rf-stop{transition:none}}
+@media (max-width:600px){.boot-rec-wrap{gap:12px;margin:0 0 10px}.boot-rec{width:56px;height:56px;border-width:2px}.boot-rec i{width:24px;height:24px}.boot-rec-l b{font-size:17px}.boot-rec-l span{font-size:12px;line-height:1.3}}
