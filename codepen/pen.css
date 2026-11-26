@@ -2082,3 +2082,13 @@ body[data-form=phone][data-tl=mini] #center{grid-template-rows:minmax(0,auto) mi
 .boot-fine .boot-opt,.boot-fine .boot-made,.boot-fine .boot-about{margin:0;font-size:12px}.boot-fine .boot-guides{justify-content:center;font-size:12px}
 @media (max-width:600px){#boot.boot-live .boot-card.boot-simple{padding:8px 12px}.boot-top svg{width:34px;height:34px}.boot-top h1{font-size:20px}.boot-rec{width:116px;height:116px;border-width:4px}.boot-rec i{width:48px;height:48px}.boot-hero{padding-top:4px;gap:4px}#boot.boot-live .boot-hero .boot-lead{font-size:23px}.boot-hero .boot-sub{font-size:12.5px}.boot-glass{gap:8px;margin-top:10px}.boot-glass .glass{padding:9px 14px;min-height:42px;font-size:13px}.boot-fine{margin-top:12px}.boot-fine .boot-opt{display:none}}
 @media (prefers-reduced-motion:reduce){.boot-rec,.boot-glass .glass{transition:none}}
+/* ---- 2.88 · who you are is a lens: the first room says "Start here", the rest follow in the order that fits ---- */
+.boot-doors,.boot-goals{display:grid}
+.boot-door.rec{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent),0 10px 30px color-mix(in srgb,var(--accent) 22%,transparent)}
+.bd-rec{position:absolute;top:8px;right:8px;font:700 10px var(--sans);letter-spacing:.08em;text-transform:uppercase;font-style:normal;color:var(--accent-ink,#fff);background:var(--accent);padding:2px 8px;border-radius:999px}
+.boot-door{position:relative}
+.boot-why{margin:2px 0 12px;font-size:13px;line-height:1.45;color:var(--muted)}
+.boot-goal.sug{border-color:color-mix(in srgb,var(--accent) 60%,var(--line))}
+.boot-goal.sug b::before{content:"★ ";color:var(--accent);font-size:11px}
+#bootStart .boot-me{flex-wrap:wrap}
+@media (max-width:600px){.bd-rec{position:static;display:inline-block;align-self:flex-start;margin-top:6px}}

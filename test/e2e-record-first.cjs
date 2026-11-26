@@ -14,6 +14,13 @@ suite('e2e-record-first', async t => {
   await p.click('#bootWays'); await wait(300);
   ok(await ev(() => [...document.querySelectorAll('#bootDoors .boot-door b')].map(b => b.textContent).join('|') === 'Writing room|Stage|Practice room|Control room' && document.getElementById('bootQ').textContent === 'Choose a room'), 'Rooms lists the Writing room, the Stage, the Practice room and the Control room');
   ok(await ev(() => [...document.querySelectorAll('#bootDoors .boot-door small')].map(b => b.textContent).join('|') === 'Opens Songwriter|Opens Studio|Opens Practice|Opens the Full Rig'), 'each says which workspace it opens (the names on the studio bar)');
+  const lens = await ev(() => { document.querySelector('[data-me="tech"]').click(); const doors = [...document.querySelectorAll('#bootDoors .boot-door')].map(b => [getComputedStyle(b).order, b.dataset.door, !!b.querySelector('.bd-rec')]).sort((a, b) => a[0] - b[0]), goals = [...document.querySelectorAll('#bootGoals .boot-goal')].map(b => [getComputedStyle(b).order, b.dataset.goal, b.classList.contains('sug')]).sort((a, b) => a[0] - b[0]); return { q: document.getElementById('bootQ').textContent, why: (document.getElementById('bootWhy') || {}).textContent || '', doors, goals, hero: document.querySelector('.boot-hero .boot-sub').textContent }; });
+  ok(lens.q === 'For a producer: start here' && /Control room has every panel/.test(lens.why) && /Everything else is still here/.test(lens.why), 'choosing Producer says where to start and why (' + lens.q + ')');
+  ok(lens.doors[0][1] === 'explore' && lens.doors[0][2] && lens.doors.filter(d => d[2]).length === 1 && lens.doors.map(d => d[1]).join() === 'explore,song,stage,learn', 'the Control room comes first, marked Start here, the others follow in that order (' + lens.doors.map(d => d[1]).join() + ')');
+  ok(lens.goals.map(g => g[1]).join() === 'loop,show,play,write,hum,split' && lens.goals.filter(g => g[2]).length === 2, 'the single tasks are reordered too, with two suggested');
+  ok(/Control room/.test(lens.hero), 'and the line under Record speaks to them (' + lens.hero + ')');
+  const back = await ev(() => { document.querySelector('[data-me="tech"]').click(); return { q: document.getElementById('bootQ').textContent, why: !!document.getElementById('bootWhy'), tags: document.querySelectorAll('.bd-rec').length, order: [...document.querySelectorAll('#bootDoors .boot-door')].map(b => b.style.order).join('') }; });
+  ok(back.q === 'Choose a room' && !back.why && back.tags === 0 && back.order === '', 'choosing it again puts everything back, nothing was hidden');
   await p.click('#bootWays'); await wait(200);
   // ---- the first tap explains, then records
   await p.click('#bootRec'); await wait(500);
