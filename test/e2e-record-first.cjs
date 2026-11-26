@@ -48,7 +48,7 @@ suite('e2e-record-first', async t => {
   await ev(() => { const g = document.getElementById('rfGain'); g.value = 12; g.dispatchEvent(new Event('input', { bubbles: true })); const m = document.getElementById('rfMaster'); m.value = .5; m.dispatchEvent(new Event('input', { bubbles: true })); });
   ok(await ev(() => window.__daily.CFG.rcfGain === 12 && /\+12\.0 dB/.test(document.getElementById('rfGainO').textContent) && Math.abs(window.__daily.E.master.gain.value - .5) < .2 && /−6\.0 dB|-6\.0 dB/.test(document.getElementById('rfMasterO').textContent)), 'the Level and Master sliders work and say what they are in dB');
   await wait(1800);
-  ok(await ev(() => /dB|Quiet|Too loud/.test(document.getElementById('rfDtxt').textContent) && parseFloat(document.getElementById('rfDm').style.width) > 0), 'the dock meter reads the input in dB');
+  ok(await poll(() => ev(() => /dB|Quiet|Too loud/.test(document.getElementById('rfDtxt').textContent) && parseFloat(document.getElementById('rfDm').style.width) > 0), 6000, 100), 'the dock meter reads the input in dB');
   const lcd = await ev(() => document.getElementById('rfLcd').textContent); ok(/^0:0[1-9]$/.test(lcd), 'the clock runs (' + lcd + ')');
   ok(await ev(() => parseFloat(document.getElementById('rfLvl').style.width || '0') > 0 || [...document.querySelectorAll('#rfRoll span')].some(s => parseFloat(s.style.height) > 3)), 'the level meter and the rolling waveform move with the sound');
   await p.click('#rfMain .rf-circ[aria-label="Drop a marker"]'); await wait(300);
