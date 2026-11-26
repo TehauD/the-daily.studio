@@ -2124,3 +2124,5 @@ body[data-form=phone][data-tl=mini] #center{grid-template-rows:minmax(0,auto) mi
 #boot.boot-live{align-items:flex-start}
 #boot.boot-live .boot-card.boot-simple{margin:auto}
 @media (min-width:700px) and (min-height:760px){#boot .boot-hero .boot-rec{width:190px;height:219px}#boot.boot-live .boot-hero .boot-lead{font-size:clamp(38px,4.8vw,58px)}.boot-hero{padding-top:14px}.boot-glass{margin-top:16px}}
+/* on a phone, a returning visitor's Welcome Back card needs the room: the explanatory line under the headline waits, and the hexagon is a little smaller */
+@media (max-width:600px){#boot:has(#welcomeBack) .boot-hero .boot-sub{display:none}#boot:has(#welcomeBack) .boot-hero .boot-rec{width:108px;height:125px}}
