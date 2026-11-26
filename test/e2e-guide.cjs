@@ -14,7 +14,7 @@ suite('e2e-guide', async t => {
   // ---- the first page: goals, not levels
   const p = await open({ w: 1440, h: 900 });
   const f = await p.evaluate(() => ({ q: (document.getElementById('bootQ') || {}).textContent, goals: [...document.querySelectorAll('.boot-goal')].map(b => b.dataset.goal + ':' + b.querySelector('b').textContent), pro: !!document.querySelector('.boot-door[data-door="explore"]'), doors: [...document.querySelectorAll('.boot-door')].map(b => b.dataset.door + ':' + b.querySelector('small').textContent).join('|'), me: [...document.querySelectorAll('#bootMe [data-me]')].map(b => b.dataset.me).join(), over: document.documentElement.scrollWidth > innerWidth, gum: window.__gum, lvl: /level|beginner|expert|skill/i.test(document.querySelector('.boot-card').textContent) }));
-  ok(/choose your way in/i.test(f.q) && f.doors === 'song:Songwriter|stage:Studio|learn:Practice|explore:Full Rig' && f.me === 'sing,guitar,new,tech', '2.67: the first page offers four ways in, one per workspace, and an optional “I’m mostly a” (' + f.doors + ')');
+  ok(/choose a room/i.test(f.q) && f.doors === 'song:Opens Songwriter|stage:Opens Studio|learn:Opens Practice|explore:Opens the Full Rig' && f.me === 'sing,guitar,new,tech', '2.67, 2.88: Rooms offers four ways in, one per workspace (each says which it opens), and an optional “I’m mostly a” (' + f.doors + ')');
   ok(f.goals.join('|') === 'play:Play with a band|write:Write down what you play|hum:Turn a hum into a song|loop:Record, loop and layer|split:Learn a song|show:Run a show', 'then the six single tasks (' + f.goals.join(' | ') + ')');
   ok(!f.lvl && f.pro && !f.over && f.gum.audio === 0 && f.gum.video === 0, 'it never asks how good you are, offers a way to open everything, and asks for neither microphone nor camera');
   await p.ctx.close();
@@ -145,7 +145,7 @@ suite('e2e-guide', async t => {
   // ---- someone who already has songs just carries on
   const rt = await open({ w: 1440, h: 900, returning: true });
   const RT = await rt.evaluate(() => { const g = document.getElementById('bootGoals'), r = document.getElementById('bootRoutes'); return { main: !!document.getElementById('bootNoMic'), pro: !!document.getElementById('bootPro'), after: !!g && !!(r.compareDocumentPosition(g) & Node.DOCUMENT_POSITION_FOLLOWING), small: !!g && g.classList.contains('boot-goals-sm'), n: g ? g.querySelectorAll('.boot-goal').length : 0, q: (document.getElementById('bootQ') || {}).textContent }; });
-  ok(RT.main && !RT.pro && RT.after && RT.small && RT.n === 6 && RT.q === 'Or start something new', 'a returning visitor gets one main button, then the ways in and the six tasks as the way to start something new (2.49.1, 2.67)');
+  ok(RT.main && !RT.pro && RT.after && RT.small && RT.n === 6 && RT.q === 'Choose a room', 'a returning visitor gets one main button, then the ways in and the six tasks as the way to start something new (2.49.1, 2.67)');
   await rt.ctx.close();
 
   // ---- a phone
