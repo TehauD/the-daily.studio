@@ -11,15 +11,16 @@ suite('e2e-record-first', async t => {
   ok(await ev(() => { const k = [...document.querySelectorAll('#bootRoutes .glass')].map(b => b.id); return k.includes('bootWays') && k.includes('bootNoMic'); }), 'beside the Rooms and Control room choices');
   ok(await ev(() => !document.getElementById('rf') && !(window.__daily && window.__daily.E && window.__daily.E.hasInput)), 'nothing is recording and the microphone is not open before the tap');
   // ---- Light / Dark is on the first page and changes the first page (it used to do nothing on a first visit)
-  ok(await ev(() => { const t = document.getElementById('bootTheme'); return !!t && t.getBoundingClientRect().height > 20 && t.getBoundingClientRect().top < 80; }), 'Light and Dark are at the top of the first page');
+  ok(await ev(() => { const t = document.getElementById('bootTheme'); return !!t && t.getBoundingClientRect().height > 20 && t.getBoundingClientRect().top < 80; }), 'a small Light/Dark icon button is at the top right of the first page');
   const bgOf = () => ev(() => { const b = document.getElementById('boot'); return b.classList.contains('bg-light') ? 'light' : b.classList.contains('bg-dark') ? 'dark' : '?'; });
-  await p.click('#bootTheme [data-t=light]'); await wait(350); const tl = await bgOf(), wl = await ev(() => getComputedStyle(document.querySelector('.boot-top h1 span')).color);
-  await p.click('#bootTheme [data-t=dark]'); await wait(350); const td = await bgOf(), wd = await ev(() => getComputedStyle(document.querySelector('.boot-top h1 span')).color);
+  const toTone = async w => { if ((await bgOf()) !== w) { await p.click('#bootTheme'); await wait(350); } };
+  await toTone('light'); const tl = await bgOf(), wl = await ev(() => getComputedStyle(document.querySelector('.boot-top h1 span')).color);
+  await toTone('dark'); const td = await bgOf(), wd = await ev(() => getComputedStyle(document.querySelector('.boot-top h1 span')).color);
   ok(tl === 'light' && td === 'dark' && wl !== wd, 'choosing Light turns the first page light and Dark turns it dark, even on a first visit (' + tl + ', ' + td + ')');
   ok(await ev(() => !/user-select:\s*text/.test('') && getComputedStyle(document.querySelector('.boot-about')).userSelect === 'none'), 'the small print is not selectable text, so it never shows as highlighted boxes');
   ok(await ev(() => { const t = document.querySelector('.boot-fine').innerText; return !/Plus hum-to-song/.test(t) && /Begin on stage/.test(t) && /stay on this device/.test(t); }), 'and the small print is shorter');
   // ---- the recorder keeps the tone of the page it opened from: Light stays light, Dark stays dark
-  const recTone = async which => { await p.click('#bootTheme [data-t=' + which + ']'); await wait(300); await p.click('#bootRec'); await wait(500); const r = await ev(() => { const f = document.getElementById('rf'), bg = getComputedStyle(f).backgroundImage, m = (getComputedStyle(f).color.match(/\d+/g) || []).map(Number); return { light: f.classList.contains('rf-light'), whiteBg: /rgb\(255, 255, 255\)/.test(bg), textLum: (m[0] + m[1] + m[2]) / 765 }; }); await p.keyboard.press('Escape'); await wait(300); return r; };
+  const recTone = async which => { await toTone(which); await wait(300); await p.click('#bootRec'); await wait(500); const r = await ev(() => { const f = document.getElementById('rf'), bg = getComputedStyle(f).backgroundImage, m = (getComputedStyle(f).color.match(/\d+/g) || []).map(Number); return { light: f.classList.contains('rf-light'), whiteBg: /rgb\(255, 255, 255\)/.test(bg), textLum: (m[0] + m[1] + m[2]) / 765 }; }); await p.keyboard.press('Escape'); await wait(300); return r; };
   const rl = await recTone('light'), rd = await recTone('dark');
   ok(rl.light && rl.whiteBg && rl.textLum < .2, 'opening the recorder from the Light start page keeps it light, with dark text');
   ok(!rd.light && !rd.whiteBg && rd.textLum > .8, 'and from the Dark start page it stays dark, with light text');
