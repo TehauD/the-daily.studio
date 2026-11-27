@@ -183,6 +183,7 @@ function sbChip() {
     else if (S.track) t.append(h('span', { class: 'tiny muted', title: 'This song was built from a track. Load it again to play along with it.' }, 'from “' + S.track.name + '”'));
   }
   t.append(h('button', { class: 'sb-chip', id: 'sbPerform', title: 'Showtime: full-screen chords and lyrics with a count-in, record and play', onclick: e => { sbLeave(); perfOpen(e.currentTarget); } }, '★ Showtime'));
+  t.append(h('button', { class: 'sb-chip', id: 'samplesBtn', 'aria-label': 'Samples', title: 'Samples: recordings to use in any song', 'aria-haspopup': 'dialog', onclick: () => { sbLeave(); if (typeof rcfShelf === 'function') rcfShelf(); } }, '🎙', h('span', { class: 'sb-lbl' }, 'Samples')));
   t.append(h('button', { class: 'sb-chip', id: 'sbVoice', 'aria-label': 'Voice', title: 'Voice: see your pitch against the key, find your range, and find the key that suits your voice', onclick: e => { sbLeave(); voxOpen(e.currentTarget); } }, '〰', h('span', { class: 'sb-lbl' }, 'Voice')));
 }
 /** on a phone the song details are a sheet over the page: its buttons close it before they open something else */

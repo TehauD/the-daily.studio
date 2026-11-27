@@ -94,7 +94,7 @@ suite('e2e-doors', async t => {
   /* ---- someone who has been here before, with a song of their own ---- */
   const back = async () => { const q = await t.open({ w: 1440, h: 900 }); await q.evaluate(async () => { const d = window.__daily; await d.projCreate('blank', { form: 'verse', title: 'Joy', zoom: 'studio' }); d.S.sections[0].bars.forEach((b, i) => { b.chord = ['G', 'D', 'Em', 'C'][i % 4]; }); d.commit(); d.goalGo('songwriter'); await d.projSave(); }); await wait(700); await q.reload(); await wait(3200); return q; };
   p = await back();
-  ok(await p.evaluate(() => document.getElementById('bootQ').textContent === 'Or start something new' && document.querySelectorAll('#bootStart .boot-door').length === 4 && document.querySelectorAll('#bootStart .boot-goal').length === 6 && !!(document.getElementById('bootRoutes').compareDocumentPosition(document.getElementById('bootStart')) & Node.DOCUMENT_POSITION_FOLLOWING)), 'Welcome back: the main button, then the four ways in and the six tasks');
+  ok(await p.evaluate(() => document.getElementById('bootQ').textContent === 'Choose a room' && document.querySelectorAll('#bootStart .boot-door').length === 4 && document.querySelectorAll('#bootStart .boot-goal').length === 6 && !!(document.getElementById('bootRoutes').compareDocumentPosition(document.getElementById('bootStart')) & Node.DOCUMENT_POSITION_FOLLOWING)), 'Welcome back: the main button, then the four ways in and the six tasks');
   w = await go(p, door('stage'));
   ok(w.ws === 'performer' && w.song === 'Joy' && w.gd === 'stage', 'Play it live keeps their own song (Joy), not the demo'); await p.ctx.close();
   p = await back(); w = await go(p, door('song'));

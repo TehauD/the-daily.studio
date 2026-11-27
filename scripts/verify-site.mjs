@@ -84,7 +84,7 @@ const bodyOf = h => h.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>
     ok(g.some(n => n['@type'] === 'WebApplication' && n.author && n.author['@id'] === PERSON.id) && g.some(n => n['@type'] === 'WebSite' && n.publisher && n.publisher['@id'] === PERSON.id), 'first page: the product and the site name Tehau as their author and publisher');
     ok(!g.some(n => n['@id'] && /#author$/.test(n['@id'])), 'first page: no old #author entity is left to conflict with Tehau');
     ok(t.replace(/&amp;/g, '&') === 'the-daily.studio — Free Guitar & Voice Studio by Tehau', 'first page: the title names the creator: ' + t);
-    ok(/<p class="boot-made">Made by <a href="guide\/about\/"[^>]*>Tehau<\/a>\./.test(html) && /independent creator building tools that make music more accessible/.test(bodyOf(html)), 'first page: a crawlable "Made by Tehau." line links to the About page');
+    ok(/<p class="boot-made">Made by <a href="guide\/about\/"[^>]*>Tehau<\/a>/.test(html), 'first page: a crawlable "Made by Tehau" line links to the About page');
     ok(/<meta name="author" content="Tehau">/.test(html) && html.includes('<link rel="author" href="' + SITE.authorUrl + '">'), 'first page: the author is Tehau, with a link to the About page'); }
   ok(html.includes('<meta name="msvalidate.01" content="' + SITE.bingVerify + '">'), 'first page: carries the Bing Webmaster Tools verification tag');
   ok(PAGES.filter(p => !p.unlisted).every(p => html.includes('href="guide/' + (p.slug === 'guide' ? '' : p.slug + '/') + '"')), 'first page: links to every listed guide page (crawlable)');

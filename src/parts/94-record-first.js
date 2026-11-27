@@ -1,0 +1,311 @@
+/* ============================================================
+   Part 94 · RECORD FIRST (2.88) — Record is the first thing on the start screen, and a recording is a sample
+   One big button on the start card opens a full-screen recorder over a living hexagon field (the start card's own canvas, kept alive behind the
+   recorder: rings spread from the middle when you get loud). Stop, hear it, name it, keep it. What you keep is a SAMPLE, not a song: it goes on the
+   Samples shelf (header 🎙, or "Your samples" on the start card) and can be used in any song as a Vocal or Guitar take at the playhead.
+     · the microphone is opened only when you press Record (the first time, a short note says why), through the studio's own input and its errors
+     · the recording is kept as it came in (16-bit, mono mix of the input), in this browser's own storage beside your songs; nothing is uploaded
+     · the recorder takes the Space bar while it is open (stop, then Keep); Esc keeps what you have and closes it. Nothing is lost by accident
+     · CFG.hexbg: 'on' (rings move with the sound), 'calm' (a still pattern) or 'off'. Reduced motion is always calm. The Control room never gets it
+   Rooms (named spaces for a sample) and the Booth (the Shower's engine, repurposed) come next.
+   ============================================================ */
+const RCF = { items: [], loaded: false, el: null, st: '', tap: null, parts: [], n: 0, pk: 0, marks: [], bars: [], lvl: 0, paused: false, take: null, tick: 0, raf: 0, play: null, rings: [], emit: 0, hxT: 0, sure: null, asked: false, gn: null, an: null, src: null, buf: null, clip: 0, clipAt: 0, dock: 0 };
+const RCF_I = 'smp:i:', RCF_A = 'smp:a:', RCF_MAX = 600;      /* keys in the songs' blob store; the longest recording, in seconds */
+
+/* ---------- the shelf, kept on this device ---------- */
+async function rcfDb() { for (let i = 0; i < 40 && !PRJ.ready; i++) await new Promise(r => setTimeout(r, 100)); return !!PRJ.db; }
+async function rcfLoad(force) {
+  if (RCF.loaded && !force) return RCF.items; const out = [];
+  if (await rcfDb()) try { for (const k of await pdbKeys('blobs', RCF_I)) { const m = await pdbGet('blobs', k); if (m && m.id) out.push(m); } } catch (e) { console.warn('samples', e); }
+  out.sort((a, b) => b.t - a.t); RCF.items = out; RCF.loaded = true; rcfCount(); bus.emit('samples'); return out;
+}
+async function rcfSave(meta, pcm) {
+  if (!(await rcfDb())) throw new Error('this browser will not let the studio keep recordings here');
+  const a = toI16(pcm); meta.bytes = a.length * 2; await pdbPut('blobs', a, RCF_A + meta.id); await pdbPut('blobs', meta, RCF_I + meta.id);
+  RCF.items = [meta].concat(RCF.items.filter(x => x.id !== meta.id)); rcfCount(); bus.emit('samples');
+}
+async function rcfPcm(id) { try { const a = await pdbGet('blobs', RCF_A + id); return a ? fromI16(a) : null; } catch (e) { return null; } }
+async function rcfDel(id) { try { await pdbDel('blobs', RCF_A + id); await pdbDel('blobs', RCF_I + id); } catch (e) { console.warn(e); } RCF.items = RCF.items.filter(x => x.id !== id); rcfCount(); bus.emit('samples'); }
+/** the start card says how many samples there are, once they are known */
+function rcfCount() { const b = $('#bootSamples'); if (!b) return; b.textContent = '🎙 Samples' + (RCF.items.length ? ' (' + RCF.items.length + ')' : ''); }
+const rcfStamp = () => { const d = new Date(), w = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()], hr = d.getHours(); return w + ' ' + ((hr + 11) % 12 + 1) + ':' + ('0' + d.getMinutes()).slice(-2) + (hr < 12 ? ' am' : ' pm'); };
+const rcfLen = s => Math.floor(s / 60) + ':' + ('0' + Math.floor(s % 60)).slice(-2);
+const rcfBytes = n => n > 1e6 ? (n / 1e6).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1e3)) + ' kB';
+
+/** light or dark: the recorder takes the same tone as the start card it opened from (that card's field), otherwise the app's hexagon palette, so going from Light to Record never flips the page to dark */
+function rcfTone() {
+  const b = document.getElementById('boot'), P = typeof hexPal === 'function' ? hexPal() : null, lt = b ? b.classList.contains('bg-light') : !!(P && P.lt);
+  const pal = P && P.lt === lt ? P : { lt, cell: lt ? '40,130,90' : '61,220,132', warm: '242,182,50', line: lt ? '45,110,80' : '125,191,155' };
+  if (RCF.el) RCF.el.classList.toggle('rf-light', lt); return pal;
+}
+/* ---------- the hexagon field (the start card's canvas, behind the recorder) ---------- */
+function rcfHex(now) {
+  RCF.hxT = requestAnimationFrame(rcfHex); const cv = $('#rfHex'); if (!cv) return cancelAnimationFrame(RCF.hxT); const TP = rcfTone();
+  const mode = CFG.hexbg || 'on', calm = mode === 'calm' || CFG.reduce || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  if (mode === 'off') { const g0 = cv.getContext('2d'); g0.clearRect(0, 0, cv.width, cv.height); return; }
+  if (document.hidden || now - (rcfHex.last || 0) < (calm ? 700 : 33)) return; rcfHex.last = now;
+  const dpr = Math.min(1.5, window.devicePixelRatio || 1), W = cv.width = Math.floor(innerWidth * dpr), H = cv.height = Math.floor(innerHeight * dpr), g = cv.getContext('2d');
+  const t = calm ? 0 : now / 1000, R = hexCellR() * dpr, dx = R * Math.sqrt(3), dy = R * 1.5, sbEl = RCF.st === 'rec' ? $('.rf-stop') : null, sbr = sbEl && sbEl.getBoundingClientRect(), cx = sbr && sbr.width ? (sbr.left + sbr.width / 2) * dpr : W / 2, cy = sbr && sbr.width ? (sbr.top + sbr.height / 2) * dpr : H * .44, maxd = Math.hypot(W, H) * .6;
+  /* rings: loud sound while recording, the take while it plays, and a slow beat the rest of the time; a bigger room will make them longer (next) */
+  if (!calm) {
+    const lv = Math.min(1, RCF.lvl * 4), playing = !!RCF.play;
+    if (RCF.st === 'rec' && !RCF.paused && lv > .35 && now - RCF.emit > 380) { RCF.rings.push({ t0: t, s: Math.min(1, lv + .15), life: 1.6 }); RCF.emit = now; }
+    else if (playing && now - RCF.emit > 650) { RCF.rings.push({ t0: t, s: .8, life: 1.8 }); RCF.emit = now; }
+    else if (!playing && RCF.st !== 'rec' && now - RCF.emit > 1900) { RCF.rings.push({ t0: t, s: .5, life: 2.6 }); RCF.emit = now; }
+    RCF.rings = RCF.rings.filter(r => t - r.t0 < r.life); RCF.lvl *= .9;
+  }
+  g.clearRect(0, 0, W, H); if (RCF.st === 'rec' && !RCF.paused) { const rg = g.createRadialGradient(cx, cy, 0, cx, cy, R * 4.6), lvn = Math.min(1, RCF.lvl * 4); rg.addColorStop(0, 'rgba(255,77,79,' + (.2 + lvn * .22).toFixed(3) + ')'); rg.addColorStop(1, 'rgba(255,77,79,0)'); g.fillStyle = rg; g.fillRect(0, 0, W, H); }
+  const glow = g.createRadialGradient(cx, cy, 0, cx, cy, maxd); glow.addColorStop(0, 'rgba(' + TP.cell + ',.14)'); glow.addColorStop(.55, 'rgba(' + TP.cell + ',.04)'); glow.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = glow; g.fillRect(0, 0, W, H);
+  const sc = W < 800 ? .55 : 1;
+  const r0 = Math.ceil(cy / dy) + 1, r1 = Math.ceil((H - cy) / dy) + 1, c0 = Math.ceil(cx / dx) + 1, c1 = Math.ceil((W - cx) / dx) + 1;      /* anchored on the stop button, the way the start card is anchored on Record */
+  for (let row = -r0; row <= r1; row++) for (let col = -c0; col <= c1; col++) {
+    const x = cx + (col + (Math.abs(row) & 1 ? .5 : 0)) * dx, y = cy + row * dy, d = Math.hypot(x - cx, y - cy), fall = Math.max(0, 1 - d / maxd);
+    let a = fall * fall * (.1 + (.5 + .5 * Math.sin(d * .011 - t * 1.2 + Math.sin(x * .004 + t * .3) * 2)) * .32);
+    for (const r of RCF.rings) { const age = (t - r.t0) / r.life; a += Math.max(0, 1 - Math.abs(d - age * maxd * 1.05) / (R * 2.4)) * (1 - age) * r.s * (.35 + fall); }
+    a = Math.min(1, a); if (RCF.st === 'rec' && !RCF.paused && d < dx * 1.1) a = Math.max(a, .45); const warm = ((col * 7 + row * 13) % 11) === 0;
+    g.beginPath(); for (let i = 0; i < 6; i++) { const an = Math.PI / 6 + i * Math.PI / 3; g.lineTo(x + R * .9 * Math.cos(an), y + R * .9 * Math.sin(an)); } g.closePath();
+    g.fillStyle = 'rgba(' + (warm ? TP.warm : TP.cell) + ',' + (a * sc * (warm ? .34 : .26)).toFixed(3) + ')'; g.fill(); g.strokeStyle = 'rgba(' + TP.line + ',' + (.04 + a * .4 * sc * (TP.lt ? .8 : 1)).toFixed(3) + ')'; g.lineWidth = 1; g.stroke();
+  }
+}
+
+/* ---------- the recorder ---------- */
+function rcfOpen() {
+  if (RCF.el) return; RCF.st = ''; RCF.take = null; RCF.rings = [];
+  { const sb = $('#bootRec'), r = sb && $('#boot') ? sb.getBoundingClientRect() : null; RCF.from = r && r.width ? { cx: r.left + r.width / 2, cy: r.top + r.height / 2, w: r.width, t: performance.now() } : null; }
+  RCF.el = h('div', { class: 'rf', id: 'rf', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Record a sample' }, h('canvas', { id: 'rfHex', 'aria-hidden': 'true' }), h('div', { class: 'rf-main', id: 'rfMain' }), rcfDockBuild());
+  hexCellVars(RCF.el); document.body.append(RCF.el); rcfTone(); try { listDevices(); } catch (e) { } RCF.dock = setInterval(rcfDockTick, 50); rcfDockSync(); document.addEventListener('keydown', rcfKey, true); RCF.hxT = requestAnimationFrame(rcfHex);
+  if (!E.hasInput && !store.get('rfAsked', false)) { RCF.st = 'ask'; rcfDraw(); } else rcfBegin();
+}
+function rcfClose() {
+  rcfPlayStop(); clearInterval(RCF.tick); clearInterval(RCF.dock); if (RCF.tap) { try { RCF.tap.on(false); } catch (e) { } RCF.tap = null; } rcfUnchain();
+  document.removeEventListener('keydown', rcfKey, true); cancelAnimationFrame(RCF.hxT); cancelAnimationFrame(RCF.raf); if (RCF.el) RCF.el.remove(); RCF.el = null; RCF.st = ''; RCF.take = null; RCF.parts = [];
+}
+function rcfKey(e) {
+  if (!RCF.el) return; const t = e.target;
+  if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); if (RCF.st === 'rec') rcfStop(); else if (RCF.st === 'review') rcfKeep(false); else rcfClose(); return; }
+  if (e.code === 'Space') {      /* while recording Space always stops (a button you pressed a moment ago, like Mark, must not take it); elsewhere it leaves a focused button or field alone */
+    const typing = t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName), onBtn = t && t.tagName === 'BUTTON'; if (typing || (onBtn && RCF.st !== 'rec')) return;
+    e.preventDefault(); e.stopImmediatePropagation(); if (RCF.st === 'rec') rcfStop(); else if (RCF.st === 'review') rcfPlayToggle(); else if (RCF.st === '' || RCF.st === 'blocked') rcfBegin();
+  }
+}
+async function rcfBegin() {
+  RCF.st = 'wait'; rcfDraw(); store.set('rfAsked', true);
+  try { await startAudio(); if (!E.hasInput) await pickInput(); } catch (e) { console.warn(e); }
+  if (!RCF.el) return; if (!E.ctx || !E.hasInput || !E.src) { RCF.st = 'blocked'; return rcfDraw(); }
+  if (E.ctx.state === 'suspended') { try { await E.ctx.resume(); } catch (e) { } }
+  RCF.parts = []; RCF.n = 0; RCF.pk = 0; RCF.clip = 0; RCF.marks = []; RCF.bars = []; RCF.lvl = 0; RCF.paused = false; RCF.take = null; rcfChain();
+  RCF.tap = makeTap(RCF.gn || E.src, {}, m => {
+    if (m.onset || !m.l || RCF.st !== 'rec' || RCF.paused) return; RCF.parts.push(m.l); RCF.n += m.l.length; let p = 0; for (let i = 0; i < m.l.length; i += 8) { const v = Math.abs(m.l[i]); if (v > p) p = v; }
+    RCF.lvl = Math.max(RCF.lvl * .6, p); if (p > RCF.pk) RCF.pk = p; if (p >= .985) { RCF.clip++; RCF.clipAt = performance.now(); } RCF.bars.push(p);
+  });
+  RCF.tap.on(true); RCF.st = 'rec'; rcfDraw(); RCF.tick = setInterval(rcfTick, 80);
+}
+function rcfTick() {
+  if (RCF.st !== 'rec') return; const sr = E.ctx.sampleRate, s = RCF.n / sr, tm = $('#rfLcd'), lv = $('#rfLvl'), roll = $('#rfRoll');
+  if (tm) tm.textContent = rcfLen(s); if (lv) lv.style.width = Math.min(100, RCF.lvl * 320) + '%'; const sb = $('.rf-stop'); if (sb) sb.parentNode.style.setProperty('--lv', Math.min(1, RCF.lvl * 4).toFixed(2));
+  if (roll) { const c = roll.children, n = c.length; for (let i = 0; i < n; i++) { const b = RCF.bars[RCF.bars.length - n + i]; c[i].style.height = Math.max(3, Math.min(100, (b || 0) * 320)) + '%'; c[i].className = b >= .985 ? 'hot' : b >= .5 ? 'warm' : ''; } }
+  if (s >= RCF_MAX) { toast('That is ' + RCF_MAX / 60 + ' minutes: the longest one recording can be. It has been stopped and kept.', 'warn'); rcfStop(); }
+}
+function rcfStop() {
+  if (RCF.st !== 'rec') return; clearInterval(RCF.tick); RCF.st = 'stopping'; if (RCF.tap) { try { RCF.tap.on(false); (RCF.gn || E.src).disconnect(RCF.tap.node); } catch (e) { } RCF.tap = null; }
+  const sr = E.ctx.sampleRate, pcm = new Float32Array(RCF.n); let k = 0; for (const p of RCF.parts) { pcm.set(p, k); k += p.length; } RCF.parts = [];
+  if (pcm.length < sr * .3 || RCF.pk < .002) { RCF.st = 'silent'; return rcfDraw(); }      /* nothing was heard: say so and let the person choose, never start again by itself */
+  const kind = CFG.me === 'guitar' ? 'gtr' : 'vox';
+  RCF.take = { pcm, sr, dur: pcm.length / sr, a: 0, b: pcm.length / sr, kind, name: (kind === 'vox' ? 'Voice' : 'Instrument') + ' · ' + rcfStamp(), marks: RCF.marks.slice(), clip: RCF.clip, peaks: rcfPeaks(pcm, 360) }; RCF.st = 'review'; rcfDraw();
+}
+function rcfPeaks(pcm, n) { const o = new Float32Array(n), per = Math.max(1, Math.floor(pcm.length / n)); for (let i = 0; i < n; i++) { let m = 0; for (let k = i * per, e = Math.min(pcm.length, k + per); k < e; k += 4) { const v = Math.abs(pcm[k]); if (v > m) m = v; } o[i] = m; } let mx = 0; for (const v of o) if (v > mx) mx = v; if (mx > 0) for (let i = 0; i < n; i++) o[i] /= mx; return o; }
+function rcfPlayStop() { if (RCF.play) { try { RCF.play.s.stop(); } catch (e) { } RCF.play = null; } cancelAnimationFrame(RCF.raf); const ph = $('#rfPh'); if (ph) ph.style.display = 'none'; const b = $('#rfPlay'); if (b) b.textContent = '▶ Play'; }
+function rcfPlayToggle() {
+  if (RCF.play) return rcfPlayStop(); const tk = RCF.take; if (!tk || !E.ctx) return;
+  if (typeof AK !== 'undefined' && AK.killed) return toast('Audio is stopped (killed). Press “Resume audio” below to hear it.', 'warn'); if (E.ctx.state === 'suspended') { try { E.ctx.resume(); } catch (e) { } }
+  const pcm = rcfSlice(tk), b = E.ctx.createBuffer(1, pcm.length, tk.sr); b.copyToChannel(pcm, 0); const s = E.ctx.createBufferSource(); s.buffer = b; s.connect(E.master);
+  s.onended = () => { if (RCF.play && RCF.play.s === s) rcfPlayStop(); }; s.start(); RCF.play = { s, t0: E.ctx.currentTime, dur: b.duration, from: tk.a, total: tk.dur };
+  const pb = $('#rfPlay'); if (pb) pb.textContent = '⏸ Pause';
+  const step = () => { if (!RCF.play) return; const ph = $('#rfPh'); if (ph) { ph.style.display = 'block'; ph.style.left = Math.min(100, (RCF.play.from + Math.min(RCF.play.dur, E.ctx.currentTime - RCF.play.t0)) / RCF.play.total * 100) + '%'; } RCF.raf = requestAnimationFrame(step); }; step();
+}
+async function rcfKeep(then) {
+  const tk = RCF.take; if (!tk) return rcfClose(); const nm = ($('#rfName') || {}).value || tk.name;
+  const keep = rcfSlice(tk), meta = { id: uid(), name: nm.trim().slice(0, 60) || tk.name, kind: tk.kind, sr: tk.sr, dur: keep.length / tk.sr, marks: tk.marks.filter(x => x >= tk.a && x <= tk.b).map(x => x - tk.a), t: Date.now() };
+  try { await rcfSave(meta, keep); } catch (e) { return toast('Could not keep it: ' + (e.message || e.name) + '. Use “Save a WAV” so it is not lost.', 'bad'); }
+  rcfClose(); toast('Kept: “' + meta.name + '” is on your Samples shelf.', 'ok');
+  if (then === 'use') rcfUse(meta.id); else if (then === 'shelf') rcfShelf();
+}
+function rcfSaveWav() { const tk = RCF.take; if (tk) download(((($('#rfName') || {}).value || tk.name).replace(/[\\/:*?"<>|]/g, '-')) + '.wav', new Blob([wavI16(toI16(rcfSlice(tk)), tk.sr)], { type: 'audio/wav' })); }
+
+
+/* ---------- cutting: the start and the end of the take, right after recording ---------- */
+const rcfT = x => Math.floor(x / 60) + ':' + (x % 60).toFixed(1).padStart(4, '0');
+/** the part of the take that is kept, with a few milliseconds of fade at each cut so a cut never clicks (the recording itself is not changed until you keep it) */
+function rcfSlice(tk) {
+  const i0 = Math.max(0, Math.round(tk.a * tk.sr)), i1 = Math.min(tk.pcm.length, Math.round(tk.b * tk.sr)); if (i0 === 0 && i1 === tk.pcm.length) return tk.pcm;
+  const o = tk.pcm.slice(i0, i1), f = Math.min(Math.round(tk.sr * .006), o.length >> 1);
+  for (let i = 0; i < f; i++) { const g = i / f; if (i0 > 0) o[i] *= g; if (i1 < tk.pcm.length) o[o.length - 1 - i] *= g; } return o;
+}
+function rcfTrimSync() {
+  const tk = RCF.take; if (!tk || !$('#rfBox')) return; const pa = tk.a / tk.dur * 100, pb = tk.b / tk.dur * 100;
+  $('#rfShA').style.width = pa + '%'; $('#rfShB').style.width = (100 - pb) + '%'; const ha = $('#rfHa'), hb = $('#rfHb'); ha.style.left = pa + '%'; hb.style.left = pb + '%';
+  ha.setAttribute('aria-valuenow', tk.a.toFixed(2)); hb.setAttribute('aria-valuenow', tk.b.toFixed(2)); const sel = $('#rfSel'); sel.dataset.len = (tk.b - tk.a).toFixed(3); sel.textContent = rcfT(tk.a) + ' – ' + rcfT(tk.b) + ' · ' + (tk.b - tk.a).toFixed(1) + ' s';
+}
+function rcfCut(which, t) { const tk = RCF.take; if (which === 'a') tk.a = Math.max(0, Math.min(t, tk.b - .1)); else tk.b = Math.min(tk.dur, Math.max(t, tk.a + .1)); rcfPlayStop(); rcfTrimSync(); }
+function rcfDrag(which, e) {
+  e.preventDefault(); const tk = RCF.take, box = $('#rfBox'), el = e.currentTarget; try { el.setPointerCapture(e.pointerId); } catch (x) { }
+  const move = ev => { const r = box.getBoundingClientRect(); let t = Math.max(0, Math.min(1, (ev.clientX - r.left) / r.width)) * tk.dur; for (const m of tk.marks) if (Math.abs(m - t) / tk.dur * r.width < 10) t = m; rcfCut(which, t); };      /* a flag pulls the cut to it */
+  const up = () => { el.removeEventListener('pointermove', move); el.removeEventListener('pointerup', up); el.removeEventListener('pointercancel', up); };
+  el.addEventListener('pointermove', move); el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
+}
+function rcfHandleKey(which, e) {
+  const tk = RCF.take, d = e.shiftKey ? .5 : .05; if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') { e.preventDefault(); e.stopPropagation(); rcfCut(which, (which === 'a' ? tk.a : tk.b) - d); } else if (e.key === 'ArrowRight' || e.key === 'ArrowUp') { e.preventDefault(); e.stopPropagation(); rcfCut(which, (which === 'a' ? tk.a : tk.b) + d); }
+}
+/** cut the quiet from both ends (anything below about −48 dB), keeping a little breath either side */
+function rcfTrimQuiet() {
+  const tk = RCF.take, d = tk.pcm, sr = tk.sr; let i = 0, j = d.length - 1; while (i < d.length && Math.abs(d[i]) < .004) i++; while (j > i && Math.abs(d[j]) < .004) j--;
+  const pad = Math.round(sr * .08), a = Math.max(0, (i - pad) / sr), b = Math.min(tk.dur, (j + pad) / sr);
+  if (j - i < sr * .1 || (a <= .02 && b >= tk.dur - .02)) return toast('Already tight at both ends.'); rcfPlayStop(); tk.a = a; tk.b = Math.max(a + .1, b); rcfTrimSync(); toast('Trimmed the quiet from the ends.');
+}
+function rcfTrimReset() { const tk = RCF.take; rcfPlayStop(); tk.a = 0; tk.b = tk.dur; rcfTrimSync(); }
+
+/** the way out: while recording it stops and shows what you have; on the review it keeps the sample and goes back; elsewhere it just closes */
+function rcfBack() { if (RCF.st === 'rec') rcfStop(); else if (RCF.st === 'review') rcfKeep(false); else rcfClose(); }
+const rcfInput = () => { try { const t = E.stream && E.stream.getAudioTracks()[0]; return t && t.label ? t.label : ''; } catch (e) { return ''; } };
+/** the top bar of every screen but the recording itself: Back, and a way to the Samples shelf and to the Control room (the studio) */
+function rcfBar(label, hint) {
+  const sm = h('button', { class: 'rf-pill', type: 'button', onclick: () => { rcfClose(); rcfShelf(); } }, '🎙 Samples' + (RCF.items.length ? ' (' + RCF.items.length + ')' : '')),
+    cr = h('button', { class: 'rf-pill', type: 'button', onclick: () => { rcfClose(); const b = $('#bootNoMic'); if (b) b.click(); } }, '🎛 Control room');
+  return h('div', { class: 'rf-bar' }, h('button', { class: 'rf-back', id: 'rfBack', type: 'button', title: hint, onclick: rcfBack }, '‹ ' + label), h('span', { class: 'rf-bar-sp' }), RCF.st === 'review' ? null : [sm, cr]);
+}
+
+/* ---------- what the recorder shows ---------- */
+function rcfDraw() {
+  const m = $('#rfMain'); if (!m) return; m.textContent = ''; if (RCF.el) RCF.el.dataset.st = RCF.st;
+  const btn = (cls, txt, fn, extra) => h('button', Object.assign({ class: 'rf-btn ' + cls, type: 'button', onclick: fn }, extra || {}), txt);
+  if (RCF.st === 'ask') {
+    m.append(rcfBar('Back', 'Close the recorder'), h('div', { class: 'rf-card' }, h('div', { class: 'rf-big', 'aria-hidden': 'true' }, '🎙'), h('h2', {}, 'One quick thing before we listen'),
+      h('p', {}, 'The studio listens only while you record. Nothing leaves this device. Your browser will ask once: choose ', h('b', {}, 'Allow'), '.'),
+      btn('rf-primary', 'Allow the microphone and record', () => rcfBegin()), btn('rf-ghost', 'Not now', rcfClose)));
+  } else if (RCF.st === 'wait') {
+    m.append(rcfBar('Back', 'Close the recorder'), h('div', { class: 'rf-card' }, h('div', { class: 'rf-big', 'aria-hidden': 'true' }, '🎙'), h('h2', {}, 'Opening the microphone…'), h('p', {}, 'If your browser asks, choose Allow.')));
+  } else if (RCF.st === 'blocked') {
+    const hp = typeof ioPermHelp === 'function' ? ioPermHelp(E.lastInKind) : null;
+    m.append(rcfBar('Back', 'Close the recorder'), h('div', { class: 'rf-card' }, h('div', { class: 'rf-big', 'aria-hidden': 'true' }, '🔇'), h('h2', {}, hp ? hp.title : 'The microphone did not open'), h('p', {}, E.lastInErr || 'Check that a microphone is connected and allowed for this site.'),
+      hp && hp.steps.length ? h('ol', {}, hp.steps.map(s => h('li', {}, s))) : null, btn('rf-primary', 'Try again', () => rcfBegin()), btn('rf-ghost', 'Close', rcfClose)));
+  } else if (RCF.st === 'silent') {
+    const dev = rcfInput();
+    m.append(rcfBar('Back', 'Close the recorder'), h('div', { class: 'rf-card' }, h('div', { class: 'rf-big', 'aria-hidden': 'true' }, '🔇'), h('h2', {}, 'Nothing was heard'),
+      h('p', {}, 'That recording was silent' + (dev ? ', from “' + dev + '”' : '') + '. Check that this is the microphone you mean (the Input list below) and raise the Level, then try again.'),
+      btn('rf-primary', 'Try again', () => rcfBegin()), btn('rf-ghost', 'Back', rcfClose)));
+  } else if (RCF.st === 'rec') {
+    m.append(h('div', { class: 'rf-rec' }, h('div', { class: 'rf-top' }, h('button', { class: 'rf-back', id: 'rfBack', type: 'button', title: 'Stop, and decide what to do with what you have', onclick: rcfBack }, '‹ Back'), h('span', { class: 'rf-live' + (RCF.paused ? ' paused' : '') }, h('i'), RCF.paused ? 'Paused' : 'Recording'), h('span', { class: 'rf-sub' }, 'Stays on this device')),
+      h('div', { class: 'rf-mid' }, h('div', { class: 'rf-lcd', id: 'rfLcd', 'aria-live': 'off' }, rcfLen(RCF.n / E.ctx.sampleRate)), h('div', { class: 'rf-meter' }, h('i', { id: 'rfLvl' })), h('div', { class: 'rf-roll', id: 'rfRoll', 'aria-hidden': 'true' }, Array.from({ length: 56 }, () => h('span')))),
+      h('div', { class: 'rf-ctl' }, h('div', { class: 'rf-side' }, h('button', { class: 'rf-circ', type: 'button', 'aria-label': 'Drop a marker', onclick: () => { RCF.marks.push(RCF.n / E.ctx.sampleRate); toast('Marker at ' + rcfLen(RCF.n / E.ctx.sampleRate)); } }, '⚑', h('span', {}, 'Mark'))),
+        h('span', { class: 'rf-stop-glow' }, h('button', { class: 'rf-stop', type: 'button', 'aria-label': 'Stop', onclick: rcfStop }, h('i'))), h('div', { class: 'rf-side' }, h('button', { class: 'rf-circ', type: 'button', 'aria-label': RCF.paused ? 'Resume' : 'Pause', onclick: () => { RCF.paused = !RCF.paused; rcfDraw(); } }, RCF.paused ? '▶' : '❚❚', h('span', {}, RCF.paused ? 'Resume' : 'Pause')))),
+      h('p', { class: 'rf-tip' }, 'Space or the red hexagon stops. Wear headphones if something else is playing. Ctrl + . kills all audio at once.')));
+  } else if (RCF.st === 'review') {
+    const tk = RCF.take, cv = h('canvas', { class: 'rf-wave', width: 720, height: 120, 'aria-label': 'The recording' });
+    m.append(rcfBar('Done', 'Keep this sample and go back (Esc does the same)'), h('div', { class: 'rf-card rf-wide' }, h('h2', {}, 'Got it. ' + rcfLen(tk.dur) + ' of you.'), h('p', {}, 'Hear it, name it, keep it. It goes on your Samples shelf, ready to use in any song.'), tk.clip ? h('p', { class: 'rf-warnline', role: 'status' }, '⚠ It peaked and may sound harsh (' + tk.clip + ' loud moment' + (tk.clip === 1 ? '' : 's') + '). Lower the Level below and record again, or keep it if that is the sound you want.') : null,
+      h('div', { class: 'rf-wavebox', id: 'rfBox' }, cv, tk.marks.map(s => h('b', { class: 'rf-mk', style: { left: (s / tk.dur * 100) + '%' }, title: 'Marker at ' + rcfLen(s) })), h('i', { class: 'rf-sh', id: 'rfShA', style: { left: 0 } }), h('i', { class: 'rf-sh', id: 'rfShB', style: { right: 0 } }), h('i', { class: 'rf-ph', id: 'rfPh' }),
+        h('div', { class: 'rf-h', id: 'rfHa', role: 'slider', tabindex: 0, 'aria-label': 'Start of the sample', 'aria-valuemin': 0, 'aria-valuemax': tk.dur.toFixed(2), 'aria-valuenow': 0, onpointerdown: e => rcfDrag('a', e), onkeydown: e => rcfHandleKey('a', e) }),
+        h('div', { class: 'rf-h', id: 'rfHb', role: 'slider', tabindex: 0, 'aria-label': 'End of the sample', 'aria-valuemin': 0, 'aria-valuemax': tk.dur.toFixed(2), 'aria-valuenow': tk.dur.toFixed(2), onpointerdown: e => rcfDrag('b', e), onkeydown: e => rcfHandleKey('b', e) })),
+      h('div', { class: 'rf-trim' }, h('span', { class: 'rf-sel', id: 'rfSel', 'aria-live': 'polite' }), h('span', { class: 'rf-sp' }), h('button', { class: 'rf-mini', type: 'button', id: 'rfQuiet', onclick: rcfTrimQuiet }, 'Trim quiet ends'), h('button', { class: 'rf-mini', type: 'button', id: 'rfReset', onclick: rcfTrimReset }, 'Reset')),
+      h('p', { class: 'rf-note' }, 'Drag the handles to cut the start and the end' + (tk.marks.length ? '; your flags pull the cut to them' : '') + '. Only the part between them is played and kept.'),
+      h('div', { class: 'rf-row' }, btn('rf-primary', '▶ Play', rcfPlayToggle, { id: 'rfPlay' }), btn('rf-ghost', 'Save a WAV', rcfSaveWav)),
+      h('input', { class: 'rf-name', id: 'rfName', type: 'text', value: tk.name, maxlength: 60, 'aria-label': 'Name this sample' }),
+      h('div', { class: 'rf-row rf-kinds', role: 'group', 'aria-label': 'What it is' }, [['vox', 'Voice'], ['gtr', 'Instrument']].map(([k, t]) => h('button', { class: 'rf-chip', type: 'button', 'aria-pressed': String(tk.kind === k), onclick: e => { tk.kind = k; $$('.rf-kinds .rf-chip').forEach(c => c.setAttribute('aria-pressed', String(c === e.currentTarget))); } }, t))),
+      h('div', { class: 'rf-row' }, btn('rf-primary', 'Keep sample', () => rcfKeep('shelf')), btn('rf-main2', 'Keep and use in a song', () => rcfKeep('use'))),
+      h('div', { class: 'rf-row' }, btn('rf-ghost', 'Record again', () => { rcfPlayStop(); RCF.take = null; rcfBegin(); }), RCF.sure === 'discard' ? btn('rf-danger', 'Sure? Discard it', () => { RCF.sure = null; rcfClose(); }) : btn('rf-ghost rf-warn', 'Discard', () => { RCF.sure = 'discard'; rcfDraw(); setTimeout(() => { if (RCF.sure === 'discard') { RCF.sure = null; if (RCF.st === 'review') rcfDraw(); } }, 4000); }))));
+    rcfTrimSync();
+    const g = cv.getContext('2d'), W = cv.width, H = cv.height, pk = tk.peaks; g.fillStyle = RCF.el && RCF.el.classList.contains('rf-light') ? 'rgba(36,112,78,.92)' : 'rgba(125,191,155,.9)'; for (let i = 0; i < pk.length; i++) { const hh = Math.max(2, pk[i] * (H - 10)), x = i * (W / pk.length); g.fillRect(x, (H - hh) / 2, Math.max(1, W / pk.length - 1.4), hh); }
+  }
+  const f = m.querySelector('button.rf-primary, .rf-stop'); if (f) try { f.focus({ preventScroll: true }); } catch (e) { }
+  /* the gold hexagon you pressed arrives as the red stop hexagon: it flies from where Record was, and goes from gold to red */
+  if (RCF.st === 'rec' && RCF.from && performance.now() - RCF.from.t < 8000) { const sg = m.querySelector('.rf-stop-glow'), fr = RCF.from; RCF.from = null;
+    if (sg && sg.animate && !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) { const r = sg.getBoundingClientRect(); if (r.width) try { sg.animate([{ transform: 'translate(' + (fr.cx - (r.left + r.width / 2)) + 'px,' + (fr.cy - (r.top + r.height / 2)) + 'px) scale(' + (fr.w / r.width).toFixed(3) + ')', filter: 'hue-rotate(50deg) brightness(1.12)' }, { transform: 'none', filter: 'none' }], { duration: 650, easing: 'cubic-bezier(.2,.7,.2,1)' }); } catch (e) { } } }
+  rcfDockSync();
+}
+
+/* ---------- sound controls: always one touch away while the recorder is open ----------
+   Input (the microphone or interface), the recording Level with a real peak meter that shows clipping, the Master volume, Hear myself and a KILL
+   button (the same one as Ctrl + . everywhere in the studio). Killing while recording keeps what was captured; Resume brings the engine back and the
+   microphone stays off until you press Record. The Level is a gain stage in front of the recorder only: it changes what is kept, not your other tracks. */
+function rcfChain() {
+  if (!E.ctx || !E.src) return false; if (RCF.gn && RCF.src === E.src) return true;
+  rcfUnchain(); RCF.gn = E.ctx.createGain(); RCF.gn.gain.value = fromDB(CFG.rcfGain || 0); RCF.an = E.ctx.createAnalyser(); RCF.an.fftSize = 1024; RCF.buf = new Float32Array(RCF.an.fftSize);
+  RCF.gn.connect(RCF.an); E.src.connect(RCF.gn); RCF.src = E.src; return true;
+}
+function rcfUnchain() { try { if (RCF.src && RCF.gn) RCF.src.disconnect(RCF.gn); } catch (e) { } try { if (RCF.gn) RCF.gn.disconnect(); } catch (e) { } RCF.gn = RCF.an = RCF.src = RCF.buf = null; }
+const rcfDb1 = v => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(1) + ' dB';
+function rcfDockBuild() {
+  const sel = h('select', { class: 'rf-in', id: 'rfIn', 'aria-label': 'Input: which microphone or interface to record from', onchange: async e => { const id = e.target.value; await ioConnect(id || ''); if (RCF.el && RCF.st !== 'rec') rcfChain(); rcfDockSync(); } });
+  const gain = h('input', { type: 'range', id: 'rfGain', min: -12, max: 24, step: .5, value: CFG.rcfGain || 0, 'aria-label': 'Recording level', oninput: e => { CFG.rcfGain = +e.target.value; saveCfg(); if (RCF.gn) tc(RCF.gn.gain, fromDB(CFG.rcfGain), .02); rcfDockSync(); } });
+  const mst = h('input', { type: 'range', id: 'rfMaster', min: 0, max: 1.2, step: .01, value: .9, 'aria-label': 'Master volume', oninput: e => { const k = KNOBS.get('master'); if (k) k.set(+e.target.value); else if (E.ready) tc(E.master.gain, +e.target.value, .02); CFG.master = +e.target.value; rcfDockSync(); } });
+  const hear = h('button', { class: 'rf-sw', id: 'rfHear', type: 'button', role: 'switch', 'aria-checked': 'false', onclick: () => { setMonitor(!CFG.monitor); if (CFG.monitor) toast('Hearing yourself: wear headphones, or it can feed back. Kill audio stops it at once.', 'warn'); rcfDockSync(); } }, h('i'), h('span', {}, 'Hear myself'));
+  const kill = h('button', { class: 'rf-kill', id: 'rfKill', type: 'button', onclick: () => { if (typeof AK !== 'undefined' && AK.killed) audioResume(); else audioKill(); } });
+  const tog = h('button', { class: 'rf-dtog', id: 'rfDtog', type: 'button', 'aria-expanded': 'false', 'aria-controls': 'rfDpanel', onclick: () => { const d = $('#rfDock'), on = !d.classList.contains('open'); d.classList.toggle('open', on); RCF.el.classList.toggle('dock-open', on); tog.setAttribute('aria-expanded', String(on)); } }, '🎚 Sound');
+  const row = (lab, el, out) => h('label', { class: 'rf-dr' }, h('span', { class: 'rf-dl' }, lab), el, out ? h('output', { class: 'rf-do', id: out }) : null);
+  return h('div', { class: 'rf-dock', id: 'rfDock', role: 'region', 'aria-label': 'Sound controls' }, tog,
+    h('div', { class: 'rf-dpanel', id: 'rfDpanel' }, row('Input', sel), row('Level', gain, 'rfGainO'), row('Master', mst, 'rfMasterO'), hear),
+    h('div', { class: 'rf-dm', title: 'Input peak. It turns red when it clips.' }, h('div', { class: 'rf-dbar' }, h('i', { id: 'rfDm' })), h('span', { class: 'rf-dtxt', id: 'rfDtxt', 'aria-live': 'polite' }, '')), kill);
+}
+/** keep the dock true: the device list, the sliders, Hear myself, and Kill/Resume */
+function rcfDockSync() {
+  const d = $('#rfDock'); if (!d) return; const killed = typeof AK !== 'undefined' && AK.killed, rec = RCF.st === 'rec';
+  const sel = $('#rfIn'), devs = (E.devs && E.devs.in) || [], cur = (() => { try { const t = E.stream && E.stream.getAudioTracks()[0]; return (t && t.getSettings && t.getSettings().deviceId) || CFG.inDev || ''; } catch (e) { return CFG.inDev || ''; } })();
+  const sig = devs.map(x => x.deviceId + x.label).join('|') + '|' + cur;
+  if (sel && sel._sig !== sig) { sel._sig = sig; sel.textContent = ''; sel.append(h('option', { value: '' }, E.hasInput ? 'Default input' : 'Choose an input…'));
+    devs.filter(x => x.deviceId && x.deviceId !== 'default').forEach((x, i) => sel.append(h('option', { value: x.deviceId }, x.label || 'Input ' + (i + 1)))); const named = devs.filter(x => x.deviceId && x.deviceId !== 'default'); sel.value = named.some(x => x.deviceId === cur) ? cur : ''; }
+  if (sel) { sel.disabled = rec; sel.title = rec ? 'Stop recording to change the input' : ''; }
+  const g = $('#rfGain'), gv = CFG.rcfGain || 0; if (g && +g.value !== gv) g.value = gv; const go = $('#rfGainO'); if (go) go.textContent = rcfDb1(gv);
+  const k = KNOBS.get('master'), mv = k ? k.get() : (CFG.master != null ? CFG.master : .9), m = $('#rfMaster'); if (m && Math.abs(+m.value - mv) > .004) m.value = mv; const mo = $('#rfMasterO'); if (mo) mo.textContent = (mv <= .001 ? '−∞' : dB(mv).toFixed(1)) + ' dB';
+  const hr = $('#rfHear'); if (hr) { hr.setAttribute('aria-checked', String(!!CFG.monitor)); hr.classList.toggle('on', !!CFG.monitor); }
+  const kb = $('#rfKill'); if (kb) { kb.textContent = killed ? '▶ Resume audio' : '⏹ Kill audio'; kb.title = killed ? 'Audio is stopped. Resume brings the engine back; the microphone stays off until you record.' : 'Stop everything now: playback, recording, monitoring, the microphone (Ctrl + .)'; kb.setAttribute('aria-label', killed ? 'Resume audio' : 'Kill audio (Ctrl and full stop)'); }
+  d.classList.toggle('killed', killed);
+}
+function rcfDockTick() {
+  const bar = $('#rfDm'), tx = $('#rfDtxt'); if (!bar || !tx) return; const on = RCF.an && E.ctx && E.ctx.state === 'running'; let pk = 0;
+  if (on) { try { RCF.an.getFloatTimeDomainData(RCF.buf); for (let i = 0; i < RCF.buf.length; i++) { const v = Math.abs(RCF.buf[i]); if (v > pk) pk = v; } } catch (e) { } }
+  const db = pk > 0 ? dB(pk) : -90; RCF._pk = Math.max(db, (RCF._pk == null ? -90 : RCF._pk) - 1.2); if (pk >= .985) RCF.clipAt = performance.now();
+  bar.style.width = Math.max(0, Math.min(100, (RCF._pk + 60) / 60 * 100)) + '%'; const hot = performance.now() - RCF.clipAt < 2200;
+  bar.className = hot || RCF._pk > -1.5 ? 'hot' : RCF._pk > -9 ? 'warm' : ''; const killed = typeof AK !== 'undefined' && AK.killed;
+  tx.textContent = killed ? 'Audio stopped' : hot ? 'Too loud: lower Level' : !E.hasInput ? 'No input' : RCF._pk < -80 ? 'Quiet' : Math.round(RCF._pk) + ' dB'; tx.classList.toggle('bad', hot && !killed);
+}
+bus.on('input', () => { if (!RCF.el) return; if (RCF.st === 'rec' && !E.src) { toast('The input went away. What you had is kept.', 'warn'); rcfStop(); } else if (E.src && RCF.st !== 'rec') rcfChain(); rcfDockSync(); });
+['audiostate', 'devices', 'monitor', 'master'].forEach(ev => bus.on(ev, () => { if (RCF.el) { if (ev === 'audiostate' && typeof AK !== 'undefined' && AK.killed && RCF.st === 'rec') { toast('Audio killed. What you recorded so far is kept.', 'warn'); rcfStop(); } rcfDockSync(); } }));
+
+/* ---------- the shelf, and using a sample in a song ---------- */
+async function rcfUse(id) {
+  const m = RCF.items.find(x => x.id === id); if (!m) return; const pcm = await rcfPcm(id); if (!pcm) return toast('That sample could not be read.', 'warn');
+  const dl = $('#rfShelf'); if (dl) { try { dl.close(); } catch (e) { } }
+  if ($('#boot')) { const b = $('#bootNoMic'); if (b) b.click(); for (let i = 0; i < 30 && $('#boot'); i++) await new Promise(r => setTimeout(r, 100)); }
+  const tk = takeAddPcm(pcm, m.sr, m.name, m.kind); if (tk && ZOOM.cur === 'canvas') zoomSet('song', true);
+}
+async function rcfPlaySample(id, btnEl) {
+  if (RCF.play && RCF.play.id === id) { rcfPlayStop(); return; } rcfPlayStop(); const m = RCF.items.find(x => x.id === id), pcm = m && await rcfPcm(id); if (!pcm) return;
+  if (!E.ctx) await startAudio(); if (!E.ctx) return; const b = E.ctx.createBuffer(1, pcm.length, m.sr); b.copyToChannel(pcm, 0); const s = E.ctx.createBufferSource(); s.buffer = b; s.connect(E.master);
+  s.onended = () => { if (RCF.play && RCF.play.s === s) { RCF.play = null; if (btnEl) btnEl.textContent = '▶'; } }; s.start(); RCF.play = { s, id, t0: E.ctx.currentTime, dur: b.duration }; if (btnEl) btnEl.textContent = '■';
+}
+async function rcfShelf() {
+  await rcfLoad(); const list = h('div', { class: 'rf-list' });
+  const draw = () => {
+    list.textContent = '';
+    if (!RCF.items.length) list.append(h('div', { class: 'rf-empty' }, h('b', {}, 'Nothing recorded yet.'), h('span', { class: 'muted' }, 'A hum, a riff, a clap: press Record and it lands here, on this device.')));
+    RCF.items.forEach(m => {
+      const pb = h('button', { class: 'btn sm rf-pbtn', type: 'button', 'aria-label': 'Play ' + m.name, onclick: e => rcfPlaySample(m.id, e.currentTarget) }, '▶');
+      const nm = h('input', { class: 'in rf-nm', type: 'text', value: m.name, maxlength: 60, 'aria-label': 'Name', onchange: async e => { m.name = e.target.value.trim().slice(0, 60) || m.name; e.target.value = m.name; try { await pdbPut('blobs', m, RCF_I + m.id); } catch (x) { } } });
+      let sure = false; const del = h('button', { class: 'btn sm rf-del', type: 'button', onclick: async e => { const el = e.currentTarget; if (!sure) { sure = true; el.textContent = 'Sure?'; setTimeout(() => { sure = false; el.textContent = 'Delete'; }, 3500); return; } rcfPlayStop(); await rcfDel(m.id); draw(); } }, 'Delete');
+      list.append(h('div', { class: 'rf-item' }, pb, h('div', { class: 'rf-info' }, nm, h('span', { class: 'tiny muted' }, rcfLen(m.dur) + ' · ' + (m.kind === 'gtr' ? 'Instrument' : 'Voice') + ' · ' + rcfBytes(m.bytes || 0) + ' · ' + new Date(m.t).toLocaleDateString())),
+        h('button', { class: 'btn sm primary', type: 'button', onclick: () => rcfUse(m.id) }, 'Use in a song'),
+        h('button', { class: 'btn sm', type: 'button', onclick: async () => { const p = await rcfPcm(m.id); if (p) download(m.name.replace(/[\\/:*?"<>|]/g, '-') + '.wav', new Blob([wavI16(toI16(p), m.sr)], { type: 'audio/wav' })); } }, 'WAV'), del));
+    });
+  };
+  draw(); const tot = RCF.items.reduce((a, m) => a + (m.bytes || 0), 0);
+  pdlg('rfShelf', 'Samples', h('div', { class: 'rf-shelf' }, h('p', { class: 'muted' }, 'Recordings you have kept. Any of them can go into any song, as a Vocal or Guitar take where the playhead is.'),
+    h('div', { class: 'row', style: { gap: '10px', margin: '0 0 12px' } }, h('button', { class: 'btn primary', type: 'button', onclick: () => { const d = $('#rfShelf'); if (d) d.close(); rcfOpen(); } }, '● Record'), h('span', { class: 'grow' }), h('span', { class: 'tiny muted' }, RCF.items.length + ' on this device · ' + rcfBytes(tot) + ' · never uploaded')), list), { onclose: rcfPlayStop });
+}
+/* the start card: Record, the Samples shelf and the Rooms panel (the persona row, the four ways in and the one-thing goals live in it) */
+function rcfWire() {
+  const rec = $('#bootRec'), sm = $('#bootSamples'), ways = $('#bootWays'), panel = $('#bootStart');
+  if (rec && !rec._rcf) { rec._rcf = 1; rec.addEventListener('click', rcfOpen); } if (sm && !sm._rcf) { sm._rcf = 1; sm.addEventListener('click', rcfShelf); }
+  if (ways && panel && !ways._rcf) { ways._rcf = 1; ways.addEventListener('click', () => { const on = !panel.classList.contains('open'); panel.classList.toggle('open', on); ways.setAttribute('aria-expanded', String(on)); if (on) { try { panel.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) { } } }); }
+  rcfCount();
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', rcfWire); else rcfWire();
+rcfLoad().catch(() => { });

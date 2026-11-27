@@ -6,7 +6,7 @@ suite('e2e-mobile-fit', async t => {
   for (const [w, hh] of [[412, 915], [390, 844], [360, 740]]) {
     /* ---- the welcome screen, for a first visit ---- */
     const c = await t.fresh({ w, h: hh, mobile: true }); await c.addInitScript(() => { try { localStorage.removeItem('fw.started'); } catch (e) { } });
-    const b = await c.newPage(); await b.goto(t.BASE); await wait(2200);
+    const b = await c.newPage(); await b.goto(t.BASE); await wait(2200); await b.evaluate(() => document.getElementById('bootWays').click()); await wait(300);      /* the four ways in are in the Rooms panel */
     const wl = await b.evaluate(() => { const r = id => document.getElementById(id).getBoundingClientRect(), g = [...document.querySelectorAll('#bootDoors .boot-door')].map(x => Math.round(x.getBoundingClientRect().left)); return { card: Math.round(document.querySelector('.boot-card').getBoundingClientRect().width), cols: new Set(g).size, studio: Math.round(r('bootNoMic').bottom), demo: Math.round(r('bootDemo').bottom), vh: innerHeight, vw: innerWidth }; });
     ok(wl.card === wl.vw && wl.cols === 2, w + '×' + hh + ' welcome: the card is the full width and the four ways in are in two columns (2.67) (' + JSON.stringify(wl) + ')');
     ok(wl.studio <= wl.vh && wl.demo <= wl.vh, w + '×' + hh + ' welcome: “Begin in the studio” and “Try the demo song” are on the first screen (' + wl.studio + ', ' + wl.demo + ' of ' + wl.vh + ')');

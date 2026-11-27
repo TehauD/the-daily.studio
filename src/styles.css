@@ -158,7 +158,7 @@ textarea{width:100%;background:var(--panel2);border:1px solid var(--line2);borde
 /* status / misc */
 #status{display:flex;align-items:center;gap:14px;padding:0 12px;background:var(--panel);border-top:1px solid var(--line);font:600 10.5px var(--mono);color:var(--muted);overflow:hidden;white-space:nowrap}
 #status .sp{flex:1}
-#toasts{position:fixed;right:14px;bottom:40px;display:flex;flex-direction:column;gap:6px;z-index:100;pointer-events:none}
+#toasts{position:fixed;right:14px;bottom:40px;display:flex;flex-direction:column;gap:6px;z-index:300;pointer-events:none}
 .toast{background:var(--text);color:var(--bg);padding:8px 13px;border-radius:9px;font-weight:600;font-size:12px;box-shadow:0 8px 24px rgba(0,0,0,.3);max-width:380px;animation:tin .25s;transition:opacity .4s}.toast.out{opacity:0}.toast.ok{background:var(--ok);color:#fff}.toast.bad{background:var(--bad);color:#fff}.toast.warn{background:var(--warn);color:#000}
 @keyframes tin{from{transform:translateY(8px);opacity:0}}
 dialog{border:1px solid var(--line2);border-radius:14px;background:var(--panel);color:var(--text);padding:0;width:min(760px,94vw);max-height:90vh;box-shadow:0 30px 80px rgba(0,0,0,.45)}
@@ -823,9 +823,9 @@ body[data-form=phone] #topR>.aud{display:inline-flex}body[data-form=phone] .btn.
 
 
 /* the same start page on the light (white) field: the two looks of one design */
-[data-theme=light] #boot.boot-live:not(.boot-first){background:#f4f8f3;color:#14211b;--bg:#f7f9f6;--bg2:#eef3ee;--panel:#ffffff;--panel2:#f1f6f1;--raise:#e8f0e9;--line:#d3dfd6;--line2:#bccbc1;--text:#14211b;--muted:#4f6358;--accent:#1f7a4d;--accent-ink:#ffffff;--accent-soft:#dcefe3}
-[data-theme=light] #boot.boot-live:not(.boot-first) .boot-card{background:rgba(255,255,255,.82);border:1px solid rgba(45,110,80,.28);box-shadow:0 0 0 1px rgba(255,255,255,.7),0 24px 70px rgba(30,70,50,.16),0 0 90px rgba(31,138,86,.1);color:#14211b}
-[data-theme=light] #boot.boot-live:not(.boot-first) .boot-lead{color:#0d1f16}
+#boot.boot-live.bg-light{background:#f4f8f3;color:#14211b;--bg:#f7f9f6;--bg2:#eef3ee;--panel:#ffffff;--panel2:#f1f6f1;--raise:#e8f0e9;--line:#d3dfd6;--line2:#bccbc1;--text:#14211b;--muted:#4f6358;--accent:#1f7a4d;--accent-ink:#ffffff;--accent-soft:#dcefe3}
+#boot.boot-live.bg-light .boot-card{background:rgba(255,255,255,.82);border:1px solid rgba(45,110,80,.28);box-shadow:0 0 0 1px rgba(255,255,255,.7),0 24px 70px rgba(30,70,50,.16),0 0 90px rgba(31,138,86,.1);color:#14211b}
+#boot.boot-live.bg-light .boot-lead{color:#0d1f16}
 
 
 body.vz-imm .vwrap{position:fixed!important;inset:0;z-index:50;width:auto!important;height:auto!important;min-height:0!important;margin:0;border-radius:0;background:#000}
@@ -2011,3 +2011,218 @@ body:not([data-form=phone]):not([data-form=tablet]) #transport{justify-content:f
 @media (max-width:1240px){body[data-form=desktop] #transport .lcd:not(.lcd-pos){display:none}}
 /* on a phone the arrangement takes the room a short panel leaves, instead of a blank block above it */
 body[data-form=phone][data-tl=mini] #center{grid-template-rows:minmax(0,auto) minmax(var(--tlp,0px),1fr)}
+
+/* ---- 2.88 · Record first: the big button on the start card, the full-screen recorder over the hexagon field, and the Samples shelf ---- */
+.boot-rec:focus-visible,.rf button:focus-visible,.rf input:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.rf{position:fixed;inset:0;z-index:260;background:#04090a;color:#e8e8e6;display:grid;place-items:center;overflow:auto;padding:max(14px,env(safe-area-inset-top)) 16px max(14px,env(safe-area-inset-bottom));--accent:#7dbf9b;--muted:#a3b6aa}
+#rfHex{position:fixed;inset:0;width:100%;height:100%;pointer-events:none}
+.rf-main{position:relative;width:min(560px,100%);display:grid;gap:14px;z-index:1}
+.rf-card{background:rgba(7,13,12,.78);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(125,191,155,.35);border-radius:20px;padding:24px 22px;display:grid;gap:12px;text-align:center;box-shadow:0 24px 80px rgba(0,0,0,.5)}
+.rf-card h2{margin:0;font:800 24px/1.15 var(--display,inherit);letter-spacing:-.01em}.rf-card p{margin:0;color:var(--muted)}.rf-card ol{margin:0;padding-left:20px;text-align:left;color:var(--muted);display:grid;gap:4px}
+.rf-big{font-size:38px}.rf-wide{text-align:left}.rf-wide h2,.rf-wide p{text-align:left}
+.rf-btn{border:1px solid rgba(125,191,155,.35);background:rgba(23,38,33,.9);color:#e8e8e6;border-radius:12px;padding:12px 18px;font:600 14px var(--sans);cursor:pointer;min-height:46px}
+.rf-btn:hover{border-color:#7dbf9b}.rf-primary{background:#7dbf9b;color:#04150d;border-color:#7dbf9b;font-weight:700}.rf-ghost{background:transparent}.rf-warn{color:#e8b44a}.rf-danger{background:#7a2a2c;border-color:#ff6a6c}.rf-main2{border-color:#7dbf9b}
+.rf-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.rf-row .rf-btn{flex:1 1 auto}.rf-kinds{gap:8px}
+.rf-chip{background:rgba(23,38,33,.9);border:1px solid rgba(125,191,155,.3);color:var(--muted);border-radius:999px;padding:7px 14px;font:600 13px var(--sans);cursor:pointer;min-height:36px}.rf-chip[aria-pressed=true]{background:#7dbf9b;color:#04150d;border-color:#7dbf9b}
+.rf-name{background:rgba(23,38,33,.9);border:1px solid rgba(125,191,155,.3);color:#e8e8e6;border-radius:10px;padding:11px 12px;font:inherit;width:100%}
+.rf-wavebox{position:relative;border:1px solid rgba(125,191,155,.25);border-radius:14px;background:rgba(4,9,10,.7);overflow:hidden}.rf-wave{display:block;width:100%;height:96px}
+.rf-ph{position:absolute;top:0;bottom:0;width:2px;background:#fff;box-shadow:0 0 8px #fff;display:none;left:0}
+.rf-wavebox{touch-action:none;user-select:none;-webkit-user-select:none;overflow:visible}.rf-wave{border-radius:14px}#rfShA{border-radius:14px 0 0 14px}#rfShB{border-radius:0 14px 14px 0}.rf-sh{position:absolute;top:0;bottom:0;background:rgba(0,0,0,.62);pointer-events:none}
+.rf-h{position:absolute;top:0;bottom:0;width:26px;margin-left:-13px;cursor:ew-resize;z-index:3;touch-action:none;outline:none}
+.rf-h::before{content:"";position:absolute;left:12px;top:0;bottom:0;width:2px;background:#7dbf9b;box-shadow:0 0 8px rgba(125,191,155,.7)}
+.rf-h::after{content:"";position:absolute;left:7px;top:50%;width:12px;height:34px;margin-top:-17px;border-radius:7px;background:#7dbf9b;box-shadow:0 2px 10px rgba(0,0,0,.5)}
+.rf-h:focus-visible::after{outline:2px solid #fff;outline-offset:2px}.rf-ph{z-index:2}
+.rf-trim{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.rf-sp{flex:1}.rf-sel{font:500 13px var(--mono,monospace);color:#e8e8e6}
+.rf-mini{background:rgba(23,38,33,.9);border:1px solid rgba(125,191,155,.3);color:#e8e8e6;border-radius:999px;padding:6px 13px;font:600 12px var(--sans);cursor:pointer;min-height:32px}.rf-mini:hover{border-color:#7dbf9b}
+.rf-note{margin:0;font-size:12px;color:var(--muted)}.rf-mk{position:absolute;top:0;bottom:0;width:2px;background:#ffd166}
+.rf-rec{display:grid;gap:22px;min-height:min(620px,90vh);grid-template-rows:auto 1fr auto auto}
+.rf-top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.rf-live{display:flex;align-items:center;gap:8px;font:700 13px var(--sans)}.rf-live i{width:10px;height:10px;border-radius:50%;background:#ff4d4f;box-shadow:0 0 10px #ff4d4f;animation:rfPulse 1.2s ease-in-out infinite}.rf-live.paused i{animation:none;background:#d9a441;box-shadow:none}
+@keyframes rfPulse{50%{opacity:.35}}.rf-sub{font-size:12px;color:var(--muted)}
+.rf-mid{display:grid;place-items:center;align-content:center;gap:16px}.rf-lcd{font:400 64px/1 var(--mono,monospace);color:#7dbf9b;letter-spacing:.06em;text-shadow:0 0 24px rgba(125,191,155,.45)}
+.rf-meter{width:100%;max-width:360px;height:10px;background:#04090a;border:1px solid rgba(125,191,155,.3);border-radius:6px;overflow:hidden}.rf-meter i{display:block;height:100%;width:0;background:linear-gradient(90deg,#7dbf9b 70%,#e8c35a 85%,#ff4d4f);transition:width .08s}
+.rf-roll{display:flex;align-items:center;gap:3px;height:92px;width:100%}.rf-roll span{flex:1;background:#7dbf9b;border-radius:2px;min-height:3px;opacity:.9;height:3%}
+.rf-ctl{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:14px}.rf-side{display:flex}.rf-side:last-child{justify-content:flex-end}
+.rf-circ{width:60px;height:60px;border-radius:50%;background:rgba(23,38,33,.9);border:1px solid rgba(125,191,155,.3);color:#e8e8e6;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:15px;line-height:1;cursor:pointer;padding:0}.rf-circ span{font:600 10px var(--sans);color:var(--muted)}
+.rf-stop{width:92px;height:92px;border-radius:50%;background:radial-gradient(circle at 50% 35%,#ff6a6c,#d62f33);border:5px solid rgba(255,77,79,.4);display:grid;place-items:center;box-shadow:0 10px 34px rgba(255,77,79,.4);cursor:pointer;padding:0}.rf-stop i{width:30px;height:30px;border-radius:6px;background:#fff;display:block}.rf-stop:active{transform:scale(.94)}
+.rf-tip{margin:0;font-size:12px;color:var(--muted);text-align:center}
+.rf-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.rf-bar-sp{flex:1}
+.rf-back,.rf-pill{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;min-height:42px;border-radius:999px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.18);box-shadow:inset 0 1px 0 rgba(255,255,255,.16);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);color:#e8e8e6;font:600 14px var(--sans);cursor:pointer}
+.rf-back:hover,.rf-pill:hover{background:rgba(255,255,255,.13);border-color:#7dbf9b}
+.rf-top .rf-back{margin-right:auto}
+.rf-shelf .rf-list{display:grid;gap:8px}.rf-item{display:grid;grid-template-columns:auto 1fr auto auto auto;gap:8px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+.rf-info{display:grid;gap:2px;min-width:0}.rf-nm{width:100%}.rf-pbtn{width:36px;height:36px;border-radius:50%;padding:0}
+.rf-empty{display:grid;gap:6px;text-align:center;padding:26px 12px;border:1px dashed var(--line);border-radius:14px}
+@media (max-width:620px){.rf-item{grid-template-columns:auto 1fr;}.rf-item>button:not(.rf-pbtn){grid-column:2}.rf-lcd{font-size:54px}}
+@media (prefers-reduced-motion:reduce){.rf-live i{animation:none}.boot-rec,.rf-stop{transition:none}}
+
+/* ---- 2.88 · the start card is the Record button; everything else is glass ---- */
+#boot.boot-live .boot-card.boot-simple,#boot.boot-live.bg-light .boot-card.boot-simple{background:transparent;border:0;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;max-width:660px;text-align:center}
+.boot-top{justify-content:center;gap:12px}.boot-top h1{text-align:left}
+.boot-hero{display:grid;justify-items:center;gap:6px;padding:10px 0 2px}
+.boot-rec{width:168px;height:168px;border-radius:50%;border:5px solid color-mix(in srgb,#ff4d4f 60%,var(--bg));background:radial-gradient(circle at 50% 35%,#3a1a1c,#170c0d 70%);display:grid;place-items:center;cursor:pointer;padding:0;box-shadow:0 18px 50px rgba(0,0,0,.35);transition:transform .15s,box-shadow .25s}
+.boot-rec i{width:70px;height:70px;border-radius:50%;background:radial-gradient(circle at 40% 30%,#ff7d7f,#ff4d4f);box-shadow:0 0 26px rgba(255,77,79,.6);display:block}
+.boot-rec:hover{transform:scale(1.04);box-shadow:0 0 44px rgba(255,77,79,.32),0 18px 50px rgba(0,0,0,.35)}.boot-rec:active{transform:scale(.96)}
+.boot-rec-l{font:700 13px var(--sans);letter-spacing:.18em;text-transform:uppercase;color:var(--text)}
+#boot.boot-live .boot-hero .boot-lead{margin:2px 0 0;font-size:clamp(26px,6vw,42px);text-wrap:balance}
+.boot-hero .boot-sub{max-width:44ch;margin:0 auto;font-size:14px;color:var(--muted)}
+.boot-hero .boot-lead,.boot-hero .boot-sub,.boot-rec-l{text-shadow:0 1px 14px color-mix(in srgb,var(--bg) 85%,transparent)}
+.boot-glass{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin:14px 0 0}
+.boot-glass .glass{display:inline-flex;align-items:center;gap:8px;padding:11px 18px;min-height:46px;border-radius:999px;background:color-mix(in srgb,var(--panel) 55%,transparent);border:1px solid color-mix(in srgb,var(--text) 18%,transparent);box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 8px 28px rgba(0,0,0,.18);-webkit-backdrop-filter:blur(16px) saturate(1.4);backdrop-filter:blur(16px) saturate(1.4);color:var(--text);font:600 14px var(--sans);cursor:pointer;width:auto;flex:none;transition:transform .15s,background .2s,border-color .2s}
+.boot-glass .glass:hover{background:color-mix(in srgb,var(--panel) 75%,transparent);border-color:var(--accent);transform:translateY(-2px)}.boot-glass .glass:active{transform:scale(.97)}
+.boot-glass .glass.sub{font-weight:500;background:color-mix(in srgb,var(--panel) 35%,transparent)}
+.boot-glass .glass.primary{background:var(--accent);color:var(--accent-ink,#fff);border-color:var(--accent)}
+.boot-glass .boot-route span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}.boot-glass .boot-route b{font:inherit;display:inline}
+.boot-glass #bootWays[aria-expanded=true]{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 18%,transparent)}
+.boot-glass.solo{display:flex}
+#bootStart{display:none;margin:14px 0 0;text-align:left;padding:14px;border-radius:20px;background:color-mix(in srgb,var(--panel) 70%,transparent);border:1px solid color-mix(in srgb,var(--text) 16%,transparent);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px)}
+#bootStart.open{display:block}
+.boot-fine{margin-top:18px;font-size:12px;color:var(--muted);text-align:center;display:grid;gap:6px}
+.boot-fine .boot-opt,.boot-fine .boot-made,.boot-fine .boot-about{margin:0;font-size:12px}.boot-fine .boot-guides{justify-content:center;font-size:12px}
+@media (max-width:600px){#boot.boot-live .boot-card.boot-simple{padding:8px 12px}.boot-top svg{width:34px;height:34px}.boot-top h1{font-size:20px}.boot-rec{width:116px;height:116px;border-width:4px}.boot-rec i{width:48px;height:48px}.boot-hero{padding-top:4px;gap:4px}#boot.boot-live .boot-hero .boot-lead{font-size:23px}.boot-hero .boot-sub{font-size:12.5px}.boot-glass{gap:8px;margin-top:10px}.boot-glass .glass{padding:9px 14px;min-height:42px;font-size:13px}.boot-fine{margin-top:12px}.boot-fine .boot-opt{display:none}}
+@media (prefers-reduced-motion:reduce){.boot-rec,.boot-glass .glass{transition:none}}
+/* ---- 2.88 · who you are is a lens: the first room says "Start here", the rest follow in the order that fits ---- */
+.boot-doors,.boot-goals{display:grid}
+.boot-door.rec{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent),0 10px 30px color-mix(in srgb,var(--accent) 22%,transparent)}
+.bd-rec{position:absolute;top:8px;right:8px;font:700 10px var(--sans);letter-spacing:.08em;text-transform:uppercase;font-style:normal;color:var(--accent-ink,#fff);background:var(--accent);padding:2px 8px;border-radius:999px}
+.boot-door{position:relative}
+.boot-why{margin:2px 0 12px;font-size:13px;line-height:1.45;color:var(--muted)}
+.boot-goal.sug{border-color:color-mix(in srgb,var(--accent) 60%,var(--line))}
+.boot-goal.sug b::before{content:"★ ";color:var(--accent);font-size:11px}
+#bootStart .boot-me{flex-wrap:wrap}
+@media (max-width:600px){.bd-rec{position:static;display:inline-block;align-self:flex-start;margin-top:6px}}
+
+/* ---- 2.88 · a bolder first page: the second line of the headline in the accent, rings around Record, the page rising in, more air on a big screen ---- */
+.boot-lead-2{display:block;background:linear-gradient(92deg,var(--accent),color-mix(in srgb,var(--accent) 50%,var(--text)));-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:none}
+.boot-hero .boot-lead{letter-spacing:-.03em}
+.boot-rec{position:relative}
+@keyframes bootRing{0%{transform:scale(.86);opacity:.85}100%{transform:scale(1.28);opacity:0}}
+@keyframes bootUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.boot-top,.boot-hero>*,.boot-glass,.boot-fine{animation:bootUp .75s cubic-bezier(.2,.7,.2,1) both}
+.boot-hero>:nth-child(1){animation-delay:.05s}.boot-hero>:nth-child(2){animation-delay:.12s}.boot-hero>:nth-child(3){animation-delay:.2s}.boot-hero>:nth-child(4){animation-delay:.28s}.boot-glass{animation-delay:.36s}.boot-fine{animation-delay:.5s}
+@media (min-width:700px) and (min-height:760px){.boot-rec{width:196px;height:196px}.boot-rec i{width:82px;height:82px}#boot.boot-live .boot-hero .boot-lead{font-size:clamp(40px,5.6vw,66px);line-height:1.02}.boot-hero{gap:10px;padding-top:24px}.boot-hero .boot-sub{font-size:16px}.boot-glass{margin-top:22px}}
+@media (prefers-reduced-motion:reduce){.boot-rec::before,.boot-rec::after{animation:none;opacity:0}.boot-top,.boot-hero>*,.boot-glass,.boot-fine{animation:none}}
+
+/* ---- 2.88 · Record is a glowing gold hexagon that belongs to the field, and turns red while you record ---- */
+.boot-rec-glow{display:inline-block;filter:drop-shadow(0 0 22px rgba(242,182,50,.55)) drop-shadow(0 10px 26px rgba(0,0,0,.35));transition:filter .3s}
+.boot-rec-glow:hover{filter:drop-shadow(0 0 34px rgba(255,205,90,.75)) drop-shadow(0 10px 26px rgba(0,0,0,.35))}
+#boot .boot-hero .boot-rec{--hx:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);width:176px;height:203px;border:0;border-radius:0;clip-path:var(--hx);background:linear-gradient(158deg,#ffe08a 0%,#f2b632 46%,#c4841a 100%);box-shadow:none;position:relative;display:grid;place-items:center;transition:transform .2s cubic-bezier(.2,.7,.2,1)}
+#boot .boot-hero .boot-rec:hover{transform:scale(1.04)}#boot .boot-hero .boot-rec:active{transform:scale(.96)}
+#boot .boot-hero .boot-rec::before,#boot .boot-hero .boot-rec::after{display:none}
+#boot .boot-hero .boot-rec::before{display:block;content:"";position:absolute;inset:11%;clip-path:var(--hx);background:linear-gradient(200deg,#e6a52a,#9a6212);opacity:.92}
+#boot .boot-hero .boot-rec i{position:relative;z-index:1;width:30%;height:26%;border-radius:50%;background:radial-gradient(circle at 40% 30%,#fff7d6,#ffd36a 60%,#e0a233);box-shadow:0 0 22px rgba(255,214,120,.95),0 0 4px #fff}
+.rf-stop-glow{display:inline-block;--lv:0;filter:drop-shadow(0 0 calc(18px + var(--lv) * 26px) rgba(255,77,79,calc(.45 + var(--lv) * .45))) drop-shadow(0 10px 26px rgba(0,0,0,.4));transform:scale(calc(1 + var(--lv) * .07));transition:transform .09s linear,filter .09s linear}
+.rf-stop{--hx:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);width:96px;height:111px;border:0;border-radius:0;clip-path:var(--hx);background:linear-gradient(158deg,#ff8a8c 0%,#ff4d4f 48%,#c92b30 100%);box-shadow:none;display:grid;place-items:center;cursor:pointer;padding:0;position:relative}
+.rf-stop::before{content:"";position:absolute;inset:11%;clip-path:var(--hx);background:linear-gradient(200deg,#e23a3f,#8f1a1f);opacity:.92}
+.rf-stop i{position:relative;z-index:1;width:26px;height:26px;border-radius:6px;background:#fff;box-shadow:0 0 16px rgba(255,255,255,.7)}
+.rf-stop:active{transform:scale(.94)}
+@media (min-width:700px) and (min-height:760px){#boot .boot-hero .boot-rec{width:208px;height:240px}}
+@media (max-width:600px){#boot .boot-hero .boot-rec{width:124px;height:143px}}
+@media (prefers-reduced-motion:reduce){.rf-stop-glow,.boot-rec-glow{transition:none}}
+/* a card taller than the window starts at its top (and scrolls) instead of being cut off above: margin centering, not align-items */
+#boot.boot-live{align-items:flex-start}
+#boot.boot-live .boot-card.boot-simple{margin:auto}
+@media (min-width:700px) and (min-height:760px){#boot .boot-hero .boot-rec{width:190px;height:219px}#boot.boot-live .boot-hero .boot-lead{font-size:clamp(38px,4.8vw,58px)}.boot-hero{padding-top:14px}.boot-glass{margin-top:16px}}
+/* on a phone, a returning visitor's Welcome Back card needs the room: the explanatory line under the headline waits, and the hexagon is a little smaller */
+@media (max-width:600px){#boot:has(#welcomeBack) .boot-hero .boot-sub{display:none}#boot:has(#welcomeBack) .boot-hero .boot-rec{width:108px;height:125px}}
+
+/* ---- 2.88 · nothing on the start card or the recorder is selectable text (it showed as boxes), except what you type ---- */
+#boot,.rf{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.rf input[type=text],.rf select,#boot input,#boot select,#boot textarea{-webkit-user-select:text;user-select:text}
+#boot a,#boot button,.rf button{-webkit-user-select:none;user-select:none}
+
+/* ---- 2.88 · Light / Dark at the top of the first page ---- */
+#boot .boot-theme{position:fixed;top:max(12px,env(safe-area-inset-top));right:max(14px,env(safe-area-inset-right));z-index:6;width:40px;height:40px;padding:0;border-radius:50%;display:grid;place-items:center;cursor:pointer;backdrop-filter:blur(14px) saturate(1.3);-webkit-backdrop-filter:blur(14px) saturate(1.3);border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.1);color:#f4f1e6;transition:background .2s,transform .15s}
+#boot .boot-theme:hover{background:rgba(255,255,255,.2)}#boot .boot-theme:active{transform:scale(.94)}
+#boot .boot-theme svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;grid-area:1/1}
+#boot .boot-theme .bt-moon{display:none;fill:currentColor;stroke:none}#boot.bg-light .boot-theme .bt-sun{display:none}#boot.bg-light .boot-theme .bt-moon{display:block}
+#boot.bg-light .boot-theme{border-color:rgba(20,33,27,.2);background:rgba(255,255,255,.7);color:#14211b}#boot.bg-light .boot-theme:hover{background:#fff}
+#boot .boot-theme:focus-visible{outline:2px solid #f2b632;outline-offset:2px}
+
+/* ---- 2.88 · a quieter bottom of the start card ---- */
+.boot-fine .boot-about{font-size:12.5px;opacity:.9}
+.boot-fine .boot-opt{max-width:46ch;margin-inline:auto;font-size:11.5px;opacity:.8}
+.boot-fine .boot-made{font-size:11px;opacity:.6;max-width:52ch;margin-inline:auto}.boot-fine .boot-made a{font-weight:600}
+.boot-fine .boot-guides{opacity:.85}
+
+/* ---- 2.88 · recorder: premium glass, a gold primary, a sound dock ---- */
+.rf{background:radial-gradient(120% 90% at 50% 0%,#0b1613 0%,#04090a 62%);padding-bottom:calc(98px + env(safe-area-inset-bottom))}.rf.dock-open{padding-bottom:calc(340px + env(safe-area-inset-bottom))}
+.rf[data-st=ask] .rf-dock,.rf[data-st=wait] .rf-dock{display:none}
+.rf-card{background:linear-gradient(180deg,rgba(255,255,255,.075),rgba(255,255,255,.025));border:1px solid rgba(255,255,255,.12);box-shadow:0 30px 80px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.1);backdrop-filter:blur(22px) saturate(1.25);-webkit-backdrop-filter:blur(22px) saturate(1.25);border-radius:26px}
+.rf-card h2{font-weight:300;font-size:28px;letter-spacing:-.02em}.rf-card h2 b{font-weight:700}
+.rf-btn{border-radius:999px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16);backdrop-filter:blur(10px);transition:background .2s,border-color .2s,transform .15s}
+.rf-btn:hover{background:rgba(255,255,255,.13);border-color:rgba(255,255,255,.3)}.rf-btn:active{transform:scale(.98)}
+.rf-primary{background:linear-gradient(158deg,#ffe08a,#f2b632 55%,#d99a22);color:#251703;border:0;box-shadow:0 6px 26px rgba(242,182,50,.35)}.rf-primary:hover{background:linear-gradient(158deg,#ffe9a8,#f6c04a 55%,#e0a228)}
+.rf-main2{background:rgba(242,182,50,.12);border-color:rgba(242,182,50,.55);color:#ffe3a0}.rf-main2:hover{background:rgba(242,182,50,.22)}
+.rf-chip,.rf-mini,.rf-name{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.16);color:#e8ece9}.rf-chip[aria-pressed=true]{background:rgba(242,182,50,.18);border-color:rgba(242,182,50,.7);color:#ffe3a0}
+.rf-name{border-radius:14px}.rf-wavebox{border-color:rgba(255,255,255,.14);background:rgba(0,0,0,.35)}
+.rf-h::before{background:#f2b632;box-shadow:0 0 8px rgba(242,182,50,.7)}.rf-h::after{background:#f2b632}
+.rf-back,.rf-pill{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.16);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.rf-lcd{font-weight:200;font-size:78px;letter-spacing:.04em;color:#f6f3ea;text-shadow:0 0 34px rgba(255,255,255,.18)}
+.rf-live{letter-spacing:.14em;text-transform:uppercase;font-size:11px}
+.rf-roll span{background:linear-gradient(180deg,#9ce0ba,#5fae86)}.rf-roll span.warm{background:linear-gradient(180deg,#ffe08a,#e0a233)}.rf-roll span.hot{background:linear-gradient(180deg,#ff8a8c,#ff4d4f)}
+.rf-meter{display:none}
+.rf-circ{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.16);backdrop-filter:blur(12px)}
+.rf-warnline{color:#ffcf6a;font-size:13px;background:rgba(242,182,50,.1);border:1px solid rgba(242,182,50,.35);border-radius:12px;padding:8px 12px;text-align:left}
+.rf-tip{opacity:.7}
+.rf-dock{position:fixed;left:50%;transform:translateX(-50%);bottom:max(12px,env(safe-area-inset-bottom));width:min(1160px,calc(100% - 24px));z-index:4;display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;padding:10px 14px;border-radius:22px;background:linear-gradient(180deg,rgba(255,255,255,.11),rgba(255,255,255,.045));border:1px solid rgba(255,255,255,.15);backdrop-filter:blur(22px) saturate(1.3);-webkit-backdrop-filter:blur(22px) saturate(1.3);box-shadow:0 22px 60px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.14);color:#e8ece9}
+.rf-dtog{display:none;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);color:#e8ece9;border-radius:999px;padding:8px 14px;min-height:40px;font:700 13px var(--sans);cursor:pointer}
+.rf-dpanel{order:1;flex:1 1 auto;display:flex;align-items:center;gap:6px 18px;flex-wrap:wrap;min-width:0}
+.rf-dr{display:flex;align-items:center;gap:8px;font:600 11px var(--sans);color:#a9b9b0;min-width:0}.rf-dl{letter-spacing:.08em;text-transform:uppercase;font-size:10px;opacity:.85}
+.rf-do{font:500 11px var(--mono,monospace);color:#e8ece9;min-width:54px;text-align:right}
+.rf-in{max-width:180px;min-height:36px;background:rgba(0,0,0,.35);color:#e8ece9;border:1px solid rgba(255,255,255,.18);border-radius:10px;padding:6px 10px;font:600 12px var(--sans)}.rf-in:disabled{opacity:.55}
+.rf-dock input[type=range]{-webkit-appearance:none;appearance:none;width:96px;height:26px;background:transparent;cursor:pointer}
+.rf-dock input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:4px;background:rgba(255,255,255,.2)}.rf-dock input[type=range]::-moz-range-track{height:4px;border-radius:4px;background:rgba(255,255,255,.2)}
+.rf-dock input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;margin-top:-7px;border-radius:50%;background:linear-gradient(158deg,#ffe08a,#e0a233);border:0;box-shadow:0 2px 8px rgba(0,0,0,.5)}.rf-dock input[type=range]::-moz-range-thumb{width:18px;height:18px;border:0;border-radius:50%;background:#f2b632}
+.rf-dock input[type=range]:focus-visible,.rf-in:focus-visible,.rf-sw:focus-visible,.rf-kill:focus-visible,.rf-dtog:focus-visible{outline:2px solid #f2b632;outline-offset:2px}
+.rf-sw{display:inline-flex;align-items:center;gap:8px;background:transparent;border:0;color:#cfd9d3;font:600 12px var(--sans);cursor:pointer;padding:6px 2px;min-height:36px}
+.rf-sw i{position:relative;width:34px;height:20px;border-radius:999px;background:rgba(255,255,255,.2);transition:background .2s}.rf-sw i::after{content:"";position:absolute;left:3px;top:3px;width:14px;height:14px;border-radius:50%;background:#fff;transition:transform .2s}
+.rf-sw.on i{background:#f2b632}.rf-sw.on i::after{transform:translateX(14px)}
+.rf-dm{order:2;display:flex;align-items:center;gap:10px;min-width:150px;flex:0 1 190px}.rf-dbar{flex:1;height:10px;border-radius:6px;background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.14);overflow:hidden}
+.rf-dbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#5fae86,#9ce0ba);transition:width .06s linear}.rf-dbar i.warm{background:linear-gradient(90deg,#e0a233,#ffe08a)}.rf-dbar i.hot{background:linear-gradient(90deg,#ff4d4f,#ff8a8c);box-shadow:0 0 12px rgba(255,77,79,.8)}
+.rf-dtxt{font:600 11px var(--mono,monospace);color:#a9b9b0;min-width:84px;white-space:nowrap}.rf-dtxt.bad{color:#ff8a8c}
+.rf-kill{order:3;border-radius:999px;padding:11px 18px;min-height:44px;background:rgba(255,77,79,.14);border:1.5px solid rgba(255,77,79,.7);color:#ffb0b1;font:800 12px var(--sans);letter-spacing:.07em;text-transform:uppercase;cursor:pointer;white-space:nowrap;transition:background .15s,color .15s,box-shadow .15s}
+.rf-kill:hover{background:#ff4d4f;color:#fff;box-shadow:0 0 26px rgba(255,77,79,.55)}.rf-kill:active{transform:scale(.97)}
+.rf-dock.killed{border-color:rgba(255,77,79,.6);box-shadow:0 22px 60px rgba(0,0,0,.55),0 0 0 1px rgba(255,77,79,.35),0 0 40px rgba(255,77,79,.25)}
+.rf-dock.killed .rf-kill{background:linear-gradient(158deg,#ffe08a,#f2b632);border-color:transparent;color:#251703}
+@media (max-width:1199px){
+  .rf-dock{gap:8px 10px;padding:8px 10px;border-radius:20px}.rf-dtog{display:inline-flex;align-items:center;order:0}
+  .rf-dm{order:1;flex:1 1 0;min-width:0;overflow:hidden}.rf-dbar{min-width:28px}.rf-dtxt{min-width:0;font-size:10px;overflow:hidden;text-overflow:ellipsis}.rf-kill{order:2;padding:10px 14px}
+  .rf-dpanel{order:3;flex:1 1 100%;display:none;flex-direction:column;align-items:stretch;gap:8px;padding-top:6px;border-top:1px solid rgba(255,255,255,.12)}.rf-dock.open .rf-dpanel{display:flex}
+  .rf-dr{justify-content:space-between}.rf-dr input[type=range]{flex:1;width:auto}.rf-in{max-width:none;flex:1}.rf-lcd{font-size:64px}
+}
+@media (max-height:620px){.rf-lcd{font-size:56px}.rf-roll{height:64px}.rf-rec{gap:12px}}
+@media (prefers-reduced-motion:reduce){.rf-dbar i,.rf-sw i,.rf-sw i::after,.rf-kill{transition:none}}
+
+/* ---- 2.88 · the recorder in light: same tone as the start card it opened from, so Light never flips to dark ---- */
+.rf.rf-light{background:radial-gradient(120% 90% at 50% 0%,#ffffff 0%,#f4f8f3 62%);color:#14211b;--muted:#4f6358}
+.rf-light .rf-card{background:linear-gradient(180deg,rgba(255,255,255,.88),rgba(255,255,255,.62));border-color:rgba(30,80,55,.2);box-shadow:0 24px 60px rgba(30,70,50,.16),inset 0 1px 0 #fff}
+.rf-light .rf-card h2{color:#0d1f16}.rf-light .rf-card p,.rf-light .rf-card ol,.rf-light .rf-note,.rf-light .rf-tip,.rf-light .rf-sub{color:#4f6358}
+.rf-light .rf-btn,.rf-light .rf-chip,.rf-light .rf-mini,.rf-light .rf-name,.rf-light .rf-back,.rf-light .rf-pill,.rf-light .rf-circ{background:rgba(255,255,255,.78);border-color:rgba(20,33,27,.2);color:#14211b}
+.rf-light .rf-btn:hover,.rf-light .rf-back:hover,.rf-light .rf-pill:hover{background:#fff;border-color:#2f7d57}
+.rf-light .rf-primary{background:linear-gradient(158deg,#ffe08a,#f2b632 55%,#d99a22);color:#251703;border:0}.rf-light .rf-ghost{background:transparent}
+.rf-light .rf-main2{background:rgba(242,182,50,.16);border-color:rgba(190,130,20,.7);color:#6b4a00}.rf-light .rf-chip[aria-pressed=true]{background:rgba(242,182,50,.28);border-color:rgba(190,130,20,.8);color:#5a3d00}
+.rf-light .rf-warn{color:#9a6200}.rf-light .rf-danger{background:#c9383c;color:#fff}.rf-light .rf-circ span{color:#4f6358}
+.rf-light .rf-lcd{color:#14211b;text-shadow:none}.rf-light .rf-sel{color:#14211b}.rf-light .rf-live{color:#14211b}
+.rf-light .rf-roll span{background:linear-gradient(180deg,#4bb383,#2f7d57)}.rf-light .rf-roll span.warm{background:linear-gradient(180deg,#f2b632,#c98a14)}.rf-light .rf-roll span.hot{background:linear-gradient(180deg,#ff6a6c,#e03438)}
+.rf-light .rf-wavebox{background:rgba(255,255,255,.7);border-color:rgba(20,33,27,.18)}.rf-light .rf-sh{background:rgba(244,248,243,.82)}.rf-light .rf-ph{background:#14211b;box-shadow:0 0 6px rgba(20,33,27,.5)}
+.rf-light .rf-warnline{color:#7a5200;background:rgba(242,182,50,.16);border-color:rgba(190,130,20,.45)}
+.rf-light .rf-dock{background:linear-gradient(180deg,rgba(255,255,255,.9),rgba(255,255,255,.7));border-color:rgba(20,33,27,.16);box-shadow:0 18px 50px rgba(30,70,50,.2),inset 0 1px 0 #fff;color:#14211b}
+.rf-light .rf-dtog{background:rgba(255,255,255,.85);border-color:rgba(20,33,27,.2);color:#14211b}
+.rf-light .rf-dr,.rf-light .rf-dtxt{color:#4f6358}.rf-light .rf-do{color:#14211b}.rf-light .rf-dtxt.bad{color:#c0262b}
+.rf-light .rf-in{background:#fff;color:#14211b;border-color:rgba(20,33,27,.22)}
+.rf-light .rf-dock input[type=range]::-webkit-slider-runnable-track{background:rgba(20,33,27,.22)}.rf-light .rf-dock input[type=range]::-moz-range-track{background:rgba(20,33,27,.22)}
+.rf-light .rf-sw{color:#14211b}.rf-light .rf-sw i{background:rgba(20,33,27,.28)}.rf-light .rf-sw.on i{background:#e0a233}
+.rf-light .rf-dbar{background:rgba(20,33,27,.1);border-color:rgba(20,33,27,.18)}
+.rf-light .rf-kill{background:rgba(255,77,79,.1);color:#b3262a;border-color:rgba(214,47,51,.75)}.rf-light .rf-kill:hover{background:#e03438;color:#fff}
+.rf-light .rf-dock.killed .rf-kill{background:linear-gradient(158deg,#ffe08a,#f2b632);color:#251703}
+.rf-light .rf-h::before,.rf-light .rf-h::after{background:#d99a22}
+
+/* ---- 2.88 · the Record button is one cell of the hexagon field (sized by the field itself), and it breathes ---- */
+#boot .boot-hero .boot-rec{width:var(--rec-w,150px)!important;height:var(--rec-h,173px)!important}
+.rf-stop{width:var(--rec-w,96px);height:var(--rec-h,111px)}
+/* the glow breathes, the button itself never moves (so it is always steady to click) */
+@keyframes bootBreath{0%,100%{filter:drop-shadow(0 0 18px rgba(242,182,50,.45)) drop-shadow(0 10px 26px rgba(0,0,0,.35))}50%{filter:drop-shadow(0 0 40px rgba(255,205,90,.85)) drop-shadow(0 10px 26px rgba(0,0,0,.35))}}
+.boot-rec-glow{animation:bootBreath 3.6s ease-in-out infinite}.boot-rec-glow:hover{animation-play-state:paused}
+@keyframes rfIn{from{opacity:0}to{opacity:1}}.rf{animation:rfIn .24s ease-out}
+@media (prefers-reduced-motion:reduce){.boot-rec-glow,.rf{animation:none}}
+

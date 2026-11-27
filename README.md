@@ -3,9 +3,9 @@
 </p>
 
 <h1 align="center">the-daily.studio</h1>
-<p align="center"><b>Your song, start to finish.</b><br>
+<p align="center"><b>Begin with a sound.</b><br>
 A guitar and voice studio in one web page: record your guitar and mic · split any song into stems to play along with · get the chords, tab and lyrics · pedals, presets and live visuals</p>
-<p align="center"><sub>v2.87.2 · free, open source (MIT) · no account, no upload, no tracking</sub></p>
+<p align="center"><sub>v2.88.0 · free, open source (MIT) · no account, no upload, no tracking</sub></p>
 
 <p align="center">
   <a href="https://the-daily.studio/"><b>▶ Open the live app</b></a> ·
@@ -48,7 +48,7 @@ the-daily.studio is a guitar and voice studio that runs **entirely in your brows
 
 Around that: **presets and effects** (a pedalboard, five amps, 27 tones, A/B morph and mutate to experiment), a **neural graph and live visuals** (your song as a living map, and the Concert light show that moves with it), a backing band, and a performer view. If you like, there is also a **camera on stage**, an optional extra that stays off unless you choose it.
 
-<p align="center"><img src="docs/screenshots/20-boot.png" alt="The first page: Your song, start to finish. Four ways in (Write a song, Play it live, Learn and practise, Explore everything), six single tasks, then Begin in the studio and Try the demo song" width="860"></p>
+<p align="center"><img src="docs/screenshots/20-boot.png" alt="The first page: a big Record button, then glass choices (Samples, Rooms, Control room, Try the demo song) over the hexagon field. The four ways in and the single tasks are inside Rooms" width="860"></p>
 <p align="center"><img src="docs/screenshots/40-concert-perform.png" alt="Concert: beams, an LED wall and a gradient stage that follow the chord and the drums" width="860"></p>
 <p align="center"><img src="docs/screenshots/41-concert-teach.png" alt="Concert, Teach lens: the circle of fifths as a lit ring, roman numerals and the next four chords" width="860"></p>
 <p align="center"><img src="docs/screenshots/22-guitar-coach.png" alt="The guitar coach teaching the first chord" width="860"></p>

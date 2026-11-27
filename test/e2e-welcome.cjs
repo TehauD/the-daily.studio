@@ -10,15 +10,16 @@ suite('e2e-welcome', async t => {
   // a first visit, on a desktop
   const p = await open({ w: 1440, h: 900 });
   const txt = await p.$eval('#boot', e => e.textContent);
-  ok(/Your song, start to finish\./.test(txt) && /Write it, sing it, play it, learn it, share it/.test(txt) && /guitar and voice studio/i.test(txt), 'the first page says what it is for (2.68): your song, start to finish');
+  ok(/Begin with a sound\./.test(txt) && /Write it, sing it, play it, learn it, share it/.test(txt) && /guitar and voice studio/i.test(txt), 'the first page leads with a gold hexagon to record on and still says what it is (2.88)');
+  await p.evaluate(() => document.getElementById('bootWays').click()); await new Promise(r => setTimeout(r, 300));      /* the goals live in the Rooms panel */
   const f = await p.evaluate(() => {
     const top = s => { const e = document.querySelector(s); return e ? Math.round(e.getBoundingClientRect().top) : null; }, st = document.getElementById('bootStage'), go = document.getElementById('bootNoMic');
-    return { keys: [...document.querySelectorAll('.boot-goal b')].map(b => b.textContent), also: [...document.querySelectorAll('.boot-also li b')].map(b => b.textContent), key0: top('.boot-goal'), go: top('#bootNoMic'), also0: top('.boot-also li'), stage: top('#bootStage'), demo: !!document.getElementById('bootDemo'), stageH: st.getBoundingClientRect().height, goH: go.getBoundingClientRect().height, inCard: !!st.closest('.boot-card'), overflow: document.documentElement.scrollWidth > innerWidth };
+    return { keys: [...document.querySelectorAll('.boot-goal b')].map(b => b.textContent), also: [...document.querySelectorAll('.boot-also li b')].map(b => b.textContent), key0: top('.boot-goal'), go: top('#bootNoMic'), also0: top('.boot-also li'), stage: top('#bootStage'), demo: !!document.getElementById('bootDemo'), stageH: st.getBoundingClientRect().height, goH: go.getBoundingClientRect().height, recH: document.getElementById('bootRec').getBoundingClientRect().height, inCard: !!st.closest('.boot-card'), overflow: document.documentElement.scrollWidth > innerWidth };
   });
   ok(f.keys.join('|') === 'Play with a band|Write down what you play|Turn a hum into a song|Record, loop and layer|Learn a song|Run a show', 'the first thing on the page is what you want to do: play with a band, write down what you play, hum a song, loop, learn a song, run a show (' + f.keys.join(' | ') + ')');
   ok(f.also.join('|') === 'Presets and effects|Neural graph and visuals', 'presets and effects, and the neural graph with visuals, come next (' + f.also.join(' | ') + ')');
-  ok(f.key0 < f.go && f.go < f.also0 && f.also0 < f.stage, 'order on the page: the goals, then the way in, then the extras, then the camera route (' + [f.key0, f.go, f.also0, f.stage].join(' < ') + ')');
-  ok(f.stageH < 24 && f.goH > 60 && f.inCard, 'the camera route is a small text link while the studio is the big button (' + Math.round(f.stageH) + ' px against ' + Math.round(f.goH) + ' px)');
+  ok(f.go < f.key0 && f.key0 < f.also0 && f.also0 < f.stage, 'order on the page: the choices under Record, then (in Rooms) the goals, the extras, then the camera route (' + [f.go, f.key0, f.also0, f.stage].join(' < ') + ')');
+  ok(f.stageH < 24 && f.goH >= 40 && f.recH > 120 && f.inCard, 'the camera route is a small text link, the Control room a glass pill and Record the big button (' + Math.round(f.stageH) + ' px, ' + Math.round(f.goH) + ' px, ' + Math.round(f.recH) + ' px)');
   ok(/optional/i.test(txt) && /camera/i.test(txt) && /stays off unless you choose/i.test(txt), 'the camera is described as optional and off unless chosen');
   ok(f.demo && !f.overflow, 'a first-timer can try the demo song, and the page does not scroll sideways');
   ok(await p.evaluate(() => window.__gum.audio === 0 && window.__gum.video === 0), 'nothing asks for the microphone or the camera on load');
@@ -45,6 +46,7 @@ suite('e2e-welcome', async t => {
 
   // a phone
   const ph = await open({ w: 390, h: 844, mobile: true, dpr: 2 });
+  await ph.evaluate(() => document.getElementById('bootWays').click()); await new Promise(r => setTimeout(r, 300));
   const m = await ph.evaluate(() => { const r = e => document.querySelector(e).getBoundingClientRect(); return { goBottom: Math.round(r('#bootNoMic').bottom), vh: innerHeight, over: document.documentElement.scrollWidth > innerWidth, keyW: Math.round(r('.boot-door').width), chipH: Math.round(r('.boot-goal').height), cardW: Math.round(r('.boot-card').width) }; });
   ok(m.goBottom <= m.vh && !m.over, 'on a phone the way in is on the first screen and nothing scrolls sideways (button ends at ' + m.goBottom + ' of ' + m.vh + ')');
   ok(m.keyW > m.cardW * .4 && m.keyW < m.cardW * .55 && m.chipH < 40, 'on a phone the ways in sit two to a row and fill the width between them, and the single tasks are small chips (' + m.keyW + ' of ' + m.cardW + ', chips ' + m.chipH + ' px)');

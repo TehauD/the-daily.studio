@@ -184,7 +184,7 @@ const GD_GOALS = {
   show: async () => { await projCreate('demo', { zoom: 'song' }); if (isDesk()) { simpleSet(false, true); const L = LAYOUTS.find(l => l[0] === 'Show'); if (L) applyPreset(L[2], 'Show'); } else mGo('see', 'stage'); dockGo('stage'); try { shOpen('scene', 'looks'); } catch (e) { } }
 };
 /* ---------- 2.67: who you are, and the four ways in ----------
-   The start page asks one optional thing, what you mostly do, never how good you are (singer, guitarist, new to music, producer: CFG.me) and offers four ways in, one per workspace.
+   The start page (2.88: a big Record button, with the choices as glass pills and these in the Rooms panel) asks one optional thing, what you mostly do, never how good you are (singer, guitarist, new to music, producer: CFG.me) and offers four ways in, one per workspace.
    Who you are changes what each way in says and where it leads:
      Write a song        Songwriter, and a session that goes the whole way: an idea, hear it, words, a second part, a take, the stage, out.
                          A singer starts by humming; a guitarist by capturing a riff; anyone else by picking a beat.
@@ -199,6 +199,17 @@ const GD_DOOR_TEXT = {
   stage: { '': 'Your sound with a band behind you, visuals that move with the song, and a video to post.', sing: 'Sing it full screen with the words in time, in front of the visuals, and record a video to post.', guitar: 'Your tone with a band behind you, visuals that follow the song, and a video to post.', new: 'A band plays a finished song. Pick how it looks, play or sing along, and record a video.', tech: 'Looks, lights and a second screen that follow the song; record the stage as a wide or vertical video.' },
   learn: { '': 'Lessons that show you, play it, then listen to you. Fifteen minutes a day.', sing: 'Warm-ups and exercises that listen as you sing, your pitch on a keyboard, your range and your key.', guitar: 'Today’s fifteen minutes, riffs and licks, the neck mapped out, any song slowed down.', new: 'From tuning up to your first song: each lesson shows you, plays it, then listens to you.', tech: 'Scales, arpeggios and modes on the neck, ear training, and any recording split and slowed down.' },
   explore: { '': 'Every panel and the whole rig, with a finished song to take apart. A tour shows you round.', sing: 'Everything: vocal pedals and tuning, the band, stems, the stage. A finished song to take apart.', guitar: 'Everything: the pedalboard, scenes, amps and cabinets, stems and the stage. A finished song to take apart.', new: 'Everything at once, with a finished song to poke at. A tour shows you round.', tech: 'Every panel: the rig, the mixer, stems, transcription, MIDI, the show console. A finished song to take apart.' }
+};
+/* 2.88: who you are is a lens, not a label. Picking it puts the rooms and the single tasks in the order that fits, says where to start and why (only what each room really does for that person: see GD_DOOR_TEXT), marks the first room "Start here", and changes the line under Record. Nothing is hidden; choosing it again puts everything back. */
+const GD_LENS = {
+  sing: { who: 'a singer', order: ['song', 'learn', 'stage', 'explore'], goals: ['hum', 'loop', 'split', 'play', 'write', 'show'], hero: 'Sing it now. It is kept here, ready to use in any song.',
+    why: 'Your voice leads. Hum or sing an idea and a band plays it back; warm up with exercises that listen as you sing; then put the words in time on the Stage.' },
+  guitar: { who: 'a guitarist', order: ['stage', 'song', 'learn', 'explore'], goals: ['write', 'play', 'loop', 'split', 'hum', 'show'], hero: 'Plug in or hold the phone up. Your take is kept here, ready to use in any song.',
+    why: 'Your playing leads. Your tone with a band behind you, a riff written down as tab, and today’s fifteen minutes of practice.' },
+  new: { who: 'new to music', order: ['learn', 'song', 'stage', 'explore'], goals: ['hum', 'play', 'split', 'loop', 'write', 'show'], hero: 'No setup. One button. Everything else can wait.',
+    why: 'Nothing is assumed. Start with a lesson that shows you, plays it and listens to you, or pick a beat and the chords are there.' },
+  tech: { who: 'a producer', order: ['explore', 'song', 'stage', 'learn'], goals: ['loop', 'show', 'play', 'write', 'hum', 'split'], hero: 'Catch the idea first, then take it into the Control room.',
+    why: 'You want the whole kit. The Control room has every panel (the rig, the mixer, stems, transcription, MIDI); the Writing room builds a song as lanes you can mix and export.' }
 };
 /** the song on screen is the person's own, with chords: keep it */
 const gdKeepSong = () => !!(store.get('started', false) && PRJ.cur && S.sections.some(s => s.bars.some(b => (b.chord || '').trim())));
@@ -383,7 +394,18 @@ function guideBoot(bootStart) {
     bootStart('studio');
   });
   /* 2.67: who you are, and the four ways in */
-  const paint = () => { const m = meNow(); document.querySelectorAll('#bootMe [data-me]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.me === m))); document.querySelectorAll('#bootDoors .boot-door').forEach(b => { const t = GD_DOOR_TEXT[b.dataset.door], s = b.querySelector('.bd-s'); if (t && s) s.textContent = t[m] || t['']; }); };
+  const paint = () => {
+    const m = meNow(), lens = GD_LENS[m]; document.querySelectorAll('#bootMe [data-me]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.me === m)));
+    document.querySelectorAll('#bootDoors .boot-door').forEach(b => {
+      const t = GD_DOOR_TEXT[b.dataset.door], s = b.querySelector('.bd-s'); if (t && s) s.textContent = t[m] || t[''];
+      const at = lens ? lens.order.indexOf(b.dataset.door) : -1; b.style.order = at < 0 ? '' : String(at); b.classList.toggle('rec', at === 0);
+      let tag = b.querySelector('.bd-rec'); if (at === 0 && !tag) { tag = document.createElement('em'); tag.className = 'bd-rec'; tag.textContent = 'Start here'; b.append(tag); } else if (at !== 0 && tag) tag.remove();
+    });
+    document.querySelectorAll('#bootGoals .boot-goal').forEach(b => { const at = lens ? lens.goals.indexOf(b.dataset.goal) : -1; b.style.order = at < 0 ? '' : String(at); b.classList.toggle('sug', at > -1 && at < 2); });
+    const q = document.getElementById('bootQ'); if (q) q.textContent = lens ? 'For ' + lens.who + ': start here' : 'Choose a room';
+    let why = document.getElementById('bootWhy'); if (lens) { if (!why && q) { why = document.createElement('p'); why.id = 'bootWhy'; why.className = 'boot-why'; q.after(why); } if (why) why.textContent = lens.why + ' Everything else is still here.'; } else if (why) why.remove();
+    const sub = document.querySelector('.boot-hero .boot-sub'); if (sub) { if (!sub.dataset.d) sub.dataset.d = sub.textContent; sub.textContent = lens ? lens.hero : sub.dataset.d; }
+  };
   document.querySelectorAll('#bootMe [data-me]').forEach(b => b.onclick = () => { CFG.me = CFG.me === b.dataset.me ? '' : b.dataset.me; try { meDefaults(); } catch (e) { } saveCfg(); paint(); });
   document.querySelectorAll('#bootDoors .boot-door').forEach(b => b.onclick = () => { const d = b.dataset.door; CFG.goal = d; PRJ.goal = d; saveCfg(); PRJ.bootDemo = false; bootStart('studio'); });
   paint();
