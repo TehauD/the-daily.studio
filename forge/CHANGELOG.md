@@ -1,5 +1,23 @@
 # FORGE changelog
 
+## 0.28.0 — Open-model lineage: layer types, provenance, training-data overlap, checkpoint timeline
+- **Layer types** (OLMo 3 mixes sliding-window and full-attention layers): Model Factory's per-layer heatmap has an attention
+  row (solid = full, dashed = sliding window) and a **Change by attention type** panel — each type's share of layers vs its share
+  of the change (‖ΔW‖²) with a plain-language reading; the weight microscope names its module's layer type. Read from the base
+  model's `config.json`; models with one attention type show nothing extra.
+- **Base model lineage** in the model card (screen, Markdown and technical report): repository and exact revision, what FORGE
+  verified from the files (architecture, weight files and size, layer layout) kept apart from what the publisher *declares* in
+  its model card (licence, derived-from, training datasets) and what the publisher states is open (OLMo: weights, data, code,
+  checkpoints, post-training data).
+- **Seen in training?** — training-data overlap check in *Is this a good test?*: 13-word windows of each final-test question are
+  looked up in an index of the base model's training data (infini-gram API format: AI2's hosted indexes of its open corpora, or
+  a local index). Off by default; **Settings → Training-data index**; https or this machine only; only the synthetic questions
+  are sent. Hits become a per-skill *seen in training* issue and a model-card limitation.
+- **Checkpoint timeline** (History → Checkpoint timeline): run the study's practice tasks — or, after SEAL, the final test — with
+  any local checkpoint (e.g. OLMo 3 base / SFT / DPO / Instruct) and chart the skill through the model's own training, then this
+  study's untrained student, trained student and the teacher, with Wilson ranges; every point opens in Compare (paired on the
+  same tasks).
+
 ## 0.27.0 — OLMo 3 as teacher and student
 - **Default chain is OLMo 3** (fully open: weights, data, code): **OLMo 3 32B** teacher in LM Studio, **OLMo 3 7B Instruct**
   student. docs/OLMO3.md covers setup, memory and what was validated; Qwen3-1.7B stays supported for the smallest footprint.

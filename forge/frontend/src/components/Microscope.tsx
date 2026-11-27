@@ -16,6 +16,7 @@ interface Micro {
   alignment: Record<string, number>; random_baseline: Record<string, number>;
   parts: { i: number; sigma: number; share: number; grid: number[][] }[];
   over_training?: { label: string; dW: number }[]; across_seeds?: { label: string; cosine: number | null }[]; honesty: string;
+  layer_type?: { type: string; sliding_window: number | null; pattern: string } | null;
 }
 const e3 = (v: number) => (Math.abs(v) >= 0.01 && Math.abs(v) < 1000 ? v.toPrecision(3) : v.toExponential(2));
 const pc = (v: number) => `${(v * 100).toFixed(1)}%`;
@@ -70,7 +71,7 @@ export function Microscope({ sid, arm, seed, module }: { sid: string; arm: strin
   const selShare = d.parts.filter((p) => (on ?? new Set(d.parts.map((x) => x.i))).has(p.i)).reduce((a, p) => a + p.share, 0);
   const hmax = Math.max(...d.hist.before, ...d.hist.after);
   return (
-    <Panel title={`Weight microscope · ${short}`} eyebrow={`${arm} · seed ${seed}`} prov={<Prov kind="computed" source="adapter + base safetensors, read-only" />}
+    <Panel title={`Weight microscope · ${short}`} eyebrow={`${arm} · seed ${seed}${d.layer_type && d.layer_type.pattern !== "all full attention" ? ` · ${d.layer_type.type === "full" ? "full-attention layer" : `sliding-window layer (${d.layer_type.sliding_window ?? "?"} tokens)`}` : ""}`} prov={<Prov kind="computed" source="adapter + base safetensors, read-only" />}
       right={<Explain title="Weight microscope" what={<>One matrix of the model — <b>{short}</b>, {out} outputs × {inn} inputs — before training (<Sym k="W" />) and after (<Sym k="Wp" /> = W + <Sym k="dW" />). Training never edits W; it adds a small learned change.</>}
         read={<ul className="list-disc space-y-1 pl-4"><li><b>Size</b>: the change is {d.norms.relative != null ? pc(d.norms.relative) : "—"} of W's size. Small percentages are normal: LoRA nudges, it doesn't rewrite.</li>
           <li><b>Change map</b>: darker cells are blocks of the matrix that changed more. Bands across a row mean some <i>outputs</i> changed for many inputs; bands down a column mean some <i>inputs</i> are now used differently.</li>

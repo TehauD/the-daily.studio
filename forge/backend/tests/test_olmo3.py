@@ -93,3 +93,43 @@ def test_memory_gate_follows_the_4bit_base():
     bf16, nf4 = vram_gate(s, 3072, "bf16"), vram_gate(s, 3072, "nf4")
     assert bf16["min_free_vram_mb"] > 16384 > nf4["min_free_vram_mb"]
     assert "4-bit" in nf4["min_free_vram_basis"] and "4-bit" not in bf16["min_free_vram_basis"]
+
+
+def test_layer_types_and_lineage(olmo, tmp_path):
+    """Sliding / full layer layout and declared-vs-verified lineage, read from the files only."""
+    import shutil
+
+    from forge.analysis.lineage import by_layer_type, layer_types, model_lineage
+    lt = layer_types(olmo)
+    assert lt["types"] == ["sliding", "sliding", "sliding", "full"] and lt["mixed"] and lt["sliding_window"] == 256
+    insp = {"modules": [{"layer": i, "delta_fro": d, "relative_change": 0.1} for i, d in enumerate([1.0, 1.0, 1.0, 3.0])]}
+    rows = {r["type"]: r for r in by_layer_type(insp, lt)}
+    assert rows["full"]["share_of_layers"] == 0.25 and abs(rows["full"]["share_of_change"] - 0.75) < 1e-9
+    assert abs(sum(r["share_of_change"] for r in rows.values()) - 1) < 1e-9
+    assert by_layer_type(insp, {"types": ["full"] * 4, "mixed": False}) is None            # Qwen-style: nothing to split
+    snap = tmp_path / "models--allenai--Olmo-3-tiny" / "snapshots" / "0123456789abcdef"
+    shutil.copytree(olmo, snap)
+    (snap / "README.md").write_text("---\nlicense: apache-2.0\nbase_model:\n- allenai/example-base\ndatasets: [allenai/example-data]\n---\n# x\n")
+    lin = model_lineage(snap)
+    assert lin["repo"] == "allenai/Olmo-3-tiny" and lin["revision"] == "0123456789abcdef"
+    assert lin["declared"]["license"] == "apache-2.0" and lin["declared"]["base_model"] == ["allenai/example-base"]
+    assert lin["declared"]["datasets"] == ["allenai/example-data"] and lin["verified"]["model_type"] == "olmo3"
+    assert lin["publisher"]["publisher"].startswith("Allen Institute") and "not verified" in lin["note"]
+    assert model_lineage(tmp_path / "missing") is None
+
+
+def test_model_card_carries_lineage(olmo, tmp_path, monkeypatch):
+    monkeypatch.setenv("FORGE_ALLOW_CPU", "1")
+    monkeypatch.setenv("FORGE_ISOLATE_RUNS", "0")
+    from forge.engine import governance as gov
+    study = Study.init(tmp_path / "studies", name="olmo3-card", profile="smoke", device="cpu",
+                       teacher={"provider": "lmstudio", "endpoint": "http://127.0.0.1:9/v1", "model": "t"},
+                       student={"name": "allenai/Olmo-3-tiny", "path": str(olmo)}, arms=["teacher_filtered"],
+                       train_overrides={"max_steps": 1, "grad_accum": 1, "min_free_vram_mb": 0, "max_seq_len": 4096})
+    study.run_stage("collect", emit=lambda e: None, teacher_backend=OracleBackend({t.prompt: t for t in study.tasks()}))
+    c = gov.model_card(study)
+    assert c["lineage"]["verified"]["layers"]["pattern"].startswith("3 sliding-window")
+    md = gov.card_markdown(c)
+    assert "## Base model lineage" in md and "allenai/Olmo-3-tiny" in md and "not verified" in md
+    html = gov.report_html(c, "technical", [])
+    assert "Base model lineage" in html

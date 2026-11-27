@@ -50,6 +50,16 @@ tokens on every example. A smaller footprint than 7B is still available with **Q
 It prints `4-bit base (QLoRA): on`, runs every stage, unloads the teacher before training and reports trained vs untrained on
 the sealed final test. See [SKILL_CHECK.md](SKILL_CHECK.md).
 
+## What an open-data model adds in FORGE
+
+- **Layer types**: Model Factory marks sliding-window vs full-attention layers and shows which type training changed more.
+- **Base model lineage** in the model card: verified files vs the publisher's declared licence, base model and training data.
+- **Seen in training?** (Is this a good test?): look the final-test questions up in an index of OLMo's published training data
+  (Settings → Training-data index; copy the index name from AI2's infini-gram documentation for the OLMo 3 corpus).
+- **Checkpoint timeline** (History): download OLMo 3 stage checkpoints (base, SFT, DPO, Instruct — separate repositories or
+  revisions; `get-student.ps1 -Repo … -Revision …`), run discovery, and add them to the timeline to see where in OLMo's own
+  training the skill appears, before your adapter.
+
 ## Validated here, and not
 
 - **Validated (CPU, tiny model with the OLMo 3 architecture)**: discovery marks `Olmo3ForCausalLM` as trainable; LoRA training on

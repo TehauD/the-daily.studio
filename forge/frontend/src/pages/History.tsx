@@ -6,6 +6,8 @@ import { Badge, Button, Empty, ErrorLine, PageHeader, Panel, Prov, Segmented, Sk
 import { goto, handoff } from "../lib/handoff";
 import { useApi } from "../lib/hooks";
 import { Sym } from "../lib/math";
+import { usePrefs } from "../lib/prefs";
+import { CheckpointTimeline } from "../components/Lineage";
 
 interface Point { t: string; kind: string; series: string; label: string; rate: number; ci: number[]; n: number; seeds: number; taskset: string; ref?: string; role: string; study?: string; split?: string }
 interface Ev { t: string; kind: string; label: string; detail?: string; study?: string }
@@ -83,6 +85,19 @@ function TimeChart({ pts, tsIndex, onPick, picked, order }: { pts: Point[]; tsIn
 /** Every measured result for a project — or the whole lab — over time, with ranges, task sets made explicit, and the events
  *  (training, sealing, decisions, releases) that explain the moves. */
 export default function History() {
+  const { prefs } = usePrefs();
+  const [view, setView] = useState<"time" | "lineage">("time");
+  return (
+    <div className="space-y-4">
+      <PageHeader kicker="Measure" title="History"
+        subtitle="Every measured result over time — and, for the active study, the skill through the base model's own training checkpoints."
+        right={<Segmented label="View" value={view} onChange={setView} options={[{ value: "time", label: "Over time" }, { value: "lineage", label: "Checkpoint timeline" }]} />} />
+      {view === "time" ? <OverTime /> : <CheckpointTimeline sid={prefs.activeStudy ?? null} />}
+    </div>
+  );
+}
+
+function OverTime() {
   const projects = useApi<ProjectsT>("/api/projects", 30000);
   const [project, setProject] = useState("");
   const h = useApi<HistoryT>(`/api/history${project ? `?project=${encodeURIComponent(project)}` : ""}`, 30000);
@@ -96,10 +111,11 @@ export default function History() {
   const compare = (p: Point) => { if (!p.ref) return; handoff("compare.a", p.ref); goto("compare"); };
   return (
     <div className="space-y-4">
-      <PageHeader kicker="Measure" title="History"
-        subtitle="Every measured result over time — practice, sealed final tests, Weight Lab variants, benches — with its range, which task set it was measured on, and what happened in between."
-        right={<select className={cx(inputCls, "!w-auto max-w-[320px] font-sans")} value={project} onChange={(e) => setProject(e.target.value)} aria-label="Project">
-          <option value="">All projects</option>{(projects.data?.projects ?? []).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select>} />
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-[12.5px] text-ink-2">Practice, sealed final tests, Weight Lab variants and benches — each with its range, the task set it was measured on, and what happened in between.</p>
+        <select className={cx(inputCls, "!w-auto max-w-[320px] font-sans")} value={project} onChange={(e) => setProject(e.target.value)} aria-label="Project">
+          <option value="">All projects</option>{(projects.data?.projects ?? []).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select>
+      </div>
       <ErrorLine error={h.error} />
       {!d ? <div className="space-y-3" aria-busy="true" aria-label="Loading history"><Skeleton h={360} /><Skeleton h={200} /></div> : !d.points.length ? (
         <Panel><Empty icon="clock">Nothing measured yet for this scope — results appear here once a study is evaluated, a variant is measured or a bench is run.</Empty></Panel>) : (

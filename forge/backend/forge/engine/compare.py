@@ -193,9 +193,12 @@ def load_subject(ref: str, split: str, find_study: Callable[[str], Any], home: P
             for e in _read_episodes(study.episode_path(arm, split, s)):
                 _add_episode(units, ids, tasks, e, s)
         plan = study.plan
-        trained = arm not in ("base", "teacher", "oracle")
+        trained = arm not in ("base", "teacher", "oracle") and not arm.startswith("ckpt_")
         model = plan["teacher"]["model"] if arm == "teacher" else plan["student"]["name"]
-        desc: dict[str, Any] = {"what": "teacher" if arm == "teacher" else ("untrained student" if arm == "base" else f"trained student · {arm}"),
+        ck = json.loads((study.root / "checkpoints" / f"{arm[5:]}.json").read_text(encoding="utf-8")) if arm.startswith("ckpt_") and (study.root / "checkpoints" / f"{arm[5:]}.json").exists() else None
+        if ck:
+            model = ck.get("label") or model
+        desc: dict[str, Any] = {"what": "teacher" if arm == "teacher" else ("untrained student" if arm == "base" else f"checkpoint · {ck['label']}" if ck else f"trained student · {arm}"),
                                 "model": model, "study": plan["name"], "study profile": plan["profile"],
                                 "task set": f"{(plan['taskset'].get('kind') or 'catalog')} · {plan['taskset']['sha256'][:12]}",
                                 "split": split, "seeds": ", ".join(map(str, seeds)), "decoding": plan["eval"].get("decoding"),
@@ -470,12 +473,12 @@ def subjects(studies: list[Any], home: Path) -> list[dict[str, Any]]:
         for arm, sp in _arm_dirs(s).items():
             if arm == "merged":
                 continue
-            what = "teacher" if arm == "teacher" else ("untrained student" if arm == "base" else f"trained · {arm}")
+            what = "teacher" if arm == "teacher" else ("untrained student" if arm == "base" else f"checkpoint · {arm[5:]}" if arm.startswith("ckpt_") else f"trained · {arm}")
             seeds = sorted({x for v in sp.values() for x in v})
             out.append({"ref": f"arm:{p['study_id']}:{arm}", "label": f"{p['name']} · {what}" + (f" (all {len(seeds)} seeds)" if len(seeds) > 1 and arm not in ("base", "teacher") else ""),
                         "group": p["name"], "splits": sorted(sp, key=SPLITS.index), "kind": "arm", "taskset": p["taskset"]["sha256"][:12],
                         "adapter": arm not in ("base", "teacher") and len(seeds) == 1, "model": p["teacher"]["model"] if arm == "teacher" else p["student"]["name"]})
-            if arm not in ("base", "teacher", "oracle") and len(seeds) > 1:
+            if arm not in ("base", "teacher", "oracle") and not arm.startswith("ckpt_") and len(seeds) > 1:
                 for sd in seeds:
                     out.append({"ref": f"arm:{p['study_id']}:{arm}:{sd}", "label": f"{p['name']} · trained · {arm} · seed {sd}", "group": p["name"],
                                 "splits": sorted([k for k, v in sp.items() if sd in v], key=SPLITS.index), "kind": "arm", "taskset": p["taskset"]["sha256"][:12],
@@ -539,6 +542,8 @@ def history(studies: list[Any], home: Path, model_id: str | None = None) -> dict
                 lbl = {"train": "Trained", "seal": "Sealed", "analyze_dev": "Practice results analysed", "analyze_test": "Final test analysed", "export": "Exported"}[stg]
                 events.append({"t": v["at"], "kind": stg, "label": f"{lbl}: {name}", "study": sid})
         for arm, sp in _arm_dirs(s).items():
+            if arm.startswith("ckpt_"):
+                continue  # checkpoints have their own timeline (Evaluation Lab); History follows this study's models
             if arm == "merged" or (role == "teacher" and arm != "teacher") or (role == "student" and arm == "teacher"):
                 continue
             for split, seeds in sp.items():

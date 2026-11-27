@@ -1,4 +1,4 @@
-# FORGE — Local Distillation Lab (v0.27.0)
+# FORGE — Local Distillation Lab (v0.28.0)
 
 A local-first research instrument for **teacher → student LLM distillation on one consumer NVIDIA GPU**.
 A large model you run in LM Studio (the *teacher*) solves tool-use or document-QA tasks. FORGE keeps only its
@@ -168,7 +168,9 @@ opens a side panel that walks through the view with this module's numbers.
 
 The default chain is fully open **OLMo 3**: 32B as teacher (LM Studio), 7B Instruct as student — trained on a 4-bit base so it
 fits a 16 GB GPU, and run day to day as a ≈ 4.5 GB GGUF. Setup, memory and what was validated: [docs/OLMO3.md](docs/OLMO3.md).
-Qwen3-1.7B remains supported for the smallest footprint.
+Qwen3-1.7B remains supported for the smallest footprint. Open training data also enables **layer-type views**, **base-model
+lineage** in the model card, a **seen-in-training** check of the final test, and a **checkpoint timeline** across OLMo's own
+training stages (docs/OLMO3.md).
 
 ### Does a real small model learn? The skill check
 

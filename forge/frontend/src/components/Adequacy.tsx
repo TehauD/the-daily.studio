@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useApi } from "../lib/hooks";
 import { Badge, cx } from "./ui";
+import { OverlapBlock } from "./Lineage";
 
 interface Skill { skill: string; tasks: Record<string, number>; untrained: number | null; teacher: number | null; top_answer: string; top_share: number; avg_steps: number;
   issues: { kind: string; text: string }[]; verdict: "good" | "weak" | "unusable" }
@@ -25,6 +26,7 @@ export function Adequacy({ sid }: { sid: string }) {
       </button>
       {open && (
         <div className="mt-2 space-y-2 border-t border-line pt-2">
+          <OverlapBlock sid={sid} onJob={() => void a.reload()} />
           <div className="overflow-x-auto"><table className="w-full text-[12px]"><thead><tr className="text-ink-3">{["Skill", "Untrained", "Teacher", "Steps", "Most common answer", "Check-in / final-test tasks", "What to fix"].map((h) => <th key={h} className="py-1 pr-3 text-left font-normal">{h}</th>)}</tr></thead>
             <tbody>{d.skills.map((s) => (
               <tr key={s.skill} className="border-t border-line align-top">

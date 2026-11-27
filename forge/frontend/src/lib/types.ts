@@ -133,7 +133,10 @@ export interface LineageNode { id: string; kind: string; label: string; digest: 
 export interface LineageT { nodes: LineageNode[]; edges: { from: string; to: string }[]; width: number; height: number }
 
 export interface InspectionModule { module: string; layer: number | null; kind: string; shape: number[]; rank: number; delta_fro: number; base_fro: number | null; relative_change: number | null; singular_values: number[]; effective_rank: number; trainable_params: number }
-export interface Inspection { computed: boolean; r: number; alpha: number; scale: number; use_rslora: boolean; modules: InspectionModule[]; layer_delta_fro: Record<string, number>; total_trainable_params: number; base_available: boolean; method: string }
+export interface Inspection { computed: boolean; r: number; alpha: number; scale: number; use_rslora: boolean; modules: InspectionModule[]; layer_delta_fro: Record<string, number>; total_trainable_params: number; base_available: boolean; method: string;
+  layer_types?: LayerTypes | null; by_layer_type?: LayerTypeRow[] | null }
+export interface LayerTypes { types: string[]; sliding_window: number | null; pattern: string; mixed: boolean }
+export interface LayerTypeRow { type: string; layers: number; modules: number; delta_fro: number; share_of_change: number; share_of_layers: number; mean_relative_change: number | null }
 
 export type KMetric = "strict_success" | "answer_correct" | "tool_selection_correct" | "argument_accuracy" | "invalid_rate";
 export interface KNode { id: string; kind: "teacher" | "reference" | "base" | "tuned" | "dataset" | "skill" | "tool"; label: string; col: number; x: number; y: number; [k: string]: unknown }

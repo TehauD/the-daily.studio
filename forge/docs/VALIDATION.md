@@ -317,6 +317,21 @@ torch.compile (their code paths run only on CUDA with the packages installed); t
 The demo models are simulated (their accuracy is scripted to fall with difficulty) — the numbers show the plumbing, not any
 real model. **Requires your machine:** real LM Studio models (including a vision model such as Qwen2.5-VL) and GPU students.
 
+## v0.28.0 — Open-model lineage
+
+| Check | Result here |
+|---|---|
+| Layer types from config (OLMo 3 pattern, Qwen3 all-full); split by type sums to 100 %; nothing shown for single-type models | test |
+| Lineage: repo + revision from the cache path, declared fields from model-card front matter, verified fields from files; missing dir → none; card Markdown + HTML carry it | test |
+| Overlap: 13-word windows; planted questions found, unplanted not; only question windows sent; result becomes a per-skill issue; URL must be https or loopback; off until configured | test |
+| Checkpoint timeline: resumable episodes under `ckpt_<label>`; final test refused before SEAL; Compare pairs a checkpoint with the teacher on identical tasks; History excludes checkpoints; a real tiny OLMo 3 checkpoint runs | test |
+| Demo through the API (tiny OLMo 3 student, mock teacher, mock index planted with 1 in 6 test questions): skill check, SFT stand-in checkpoint on dev + test, overlap 5 / 21 found; sliding layers took 75 % of the change for 75 % of layers | browser + API |
+| WCAG 2.2 AA: all pages × light / dark, plus timeline, overlap panel, Factory, card and Settings with the OLMo study active | **0 violations** |
+| Backend suite | 246 passed |
+
+**Not validated here:** AI2's real index names and service terms, real OLMo 3 checkpoints (Hugging Face and AI2 services are not
+reachable from this environment), and what the layer-type split looks like on a real 7B adapter.
+
 ## v0.27.0 — OLMo 3
 
 | Check | Result here |

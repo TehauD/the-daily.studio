@@ -1,3 +1,4 @@
+import { IndexSettings } from "../components/Lineage";
 import { AzureSettings } from "../components/AzureSettings";
 import { GuardSettings } from "../components/GuardSettings";
 import { useState, type FormEvent } from "react";
@@ -96,6 +97,7 @@ function Runtime() {
   const addEp = (e: FormEvent) => { e.preventDefault(); run(() => api.post("/api/settings/endpoints", { ...ep, api_key_env: ep.api_key_env || null })); };
   return (
     <>
+      <IndexSettings />
       <Panel title="Runtime configuration" prov={<Prov kind="declared" source="env → DB overrides" />}>
         {cur && (
           <form onSubmit={(e) => { e.preventDefault(); run(() => api.put("/api/settings/runtime", cur)); }} className="space-y-3">

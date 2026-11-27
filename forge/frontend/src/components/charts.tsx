@@ -182,10 +182,11 @@ export function SkillMap({ families }: { families: SkillFamily[] }) {
 }
 
 /* ------------------------------------------------------------- weight-change heat strip */
-export function HeatStrip({ cells, layers, kinds, metric, onSelect, selected }: {
+export function HeatStrip({ cells, layers, kinds, metric, onSelect, selected, layerTypes }: {
   cells: { layer: number; kind: string; value: number | null; module: string }[]; layers: number[]; kinds: string[]; metric: string;
-  onSelect?: (module: string) => void; selected?: string | null;
+  onSelect?: (module: string) => void; selected?: string | null; layerTypes?: string[] | null;
 }) {
+  const typeRow = layerTypes && new Set(layerTypes).size > 1 ? 11 : 0; // a sliding / full marker row only when the model mixes them
   const [hover, setHover] = useState<{ module: string; value: number | null; layer: number; kind: string } | null>(null);
   const vals = cells.map((c) => c.value).filter((v): v is number => v != null);
   const max = Math.max(1e-12, ...vals);
@@ -193,18 +194,18 @@ export function HeatStrip({ cells, layers, kinds, metric, onSelect, selected }: 
   const color = (v: number | null) => (v == null ? "var(--surface-3)" : ramp[Math.min(4, Math.floor((v / max) * 4.999))]);
   const map = useMemo(() => new Map(cells.map((c) => [`${c.layer}|${c.kind}`, c])), [cells]);
   const cw = Math.max(10, Math.min(26, 720 / Math.max(1, layers.length)));
-  const W = 92 + layers.length * cw, H = 18 + kinds.length * 22;
+  const W = 92 + layers.length * cw, H = 18 + typeRow + kinds.length * 22;
   return (
     <div>
       <div className="scroll-thin overflow-x-auto">
         <svg viewBox={`0 0 ${W} ${H}`} style={{ width: W, maxWidth: "none" }} role="img" aria-label={`Per-layer ${metric}`}>
           {kinds.map((k, ki) => (
             <g key={k}>
-              <text x={84} y={14 + ki * 22 + 13} textAnchor="end" className="fill-[var(--ink-2)] font-mono text-[10px]">{k}</text>
+              <text x={84} y={14 + typeRow + ki * 22 + 13} textAnchor="end" className="fill-[var(--ink-2)] font-mono text-[10px]">{k}</text>
               {layers.map((l, li) => {
                 const c = map.get(`${l}|${k}`);
                 return (
-                  <rect key={l} x={92 + li * cw} y={14 + ki * 22} width={cw - 2} height={20} rx={2}
+                  <rect key={l} x={92 + li * cw} y={14 + typeRow + ki * 22} width={cw - 2} height={20} rx={2}
                     fill={color(c?.value ?? null)} stroke={c && selected === c.module ? "var(--ink)" : "none"} strokeWidth={1.5}
                     className={c ? "cursor-pointer" : ""} onPointerEnter={() => c && setHover({ module: c.module, value: c.value, layer: l, kind: k })}
                     onPointerLeave={() => setHover(null)} onClick={() => c && onSelect?.(c.module)} />
@@ -212,6 +213,10 @@ export function HeatStrip({ cells, layers, kinds, metric, onSelect, selected }: 
               })}
             </g>
           ))}
+          {typeRow > 0 && <text x={84} y={21} textAnchor="end" className="fill-[var(--ink-3)] font-mono text-[9px]">attention</text>}
+          {typeRow > 0 && layers.map((l, li) => { const t = layerTypes![l]; return (
+            <rect key={`t${l}`} x={92 + li * cw} y={14} width={cw - 2} height={7} rx={1.5} fill={t === "full" ? "var(--ink-2)" : "none"}
+              stroke="var(--ink-3)" strokeWidth={t === "full" ? 0 : 1} strokeDasharray={t === "full" ? undefined : "2 1.5"}><title>{`layer ${l}: ${t === "full" ? "full attention" : "sliding-window attention"}`}</title></rect>); })}
           {layers.map((l, li) => (li % Math.ceil(layers.length / 14) === 0 ? (
             <text key={l} x={92 + li * cw + (cw - 2) / 2} y={10} textAnchor="middle" className="num fill-[var(--ink-3)] font-mono text-[9px]">{l}</text>) : null))}
         </svg>
@@ -221,6 +226,8 @@ export function HeatStrip({ cells, layers, kinds, metric, onSelect, selected }: 
           <span>0</span>
           <span className="flex h-2 w-28 overflow-hidden rounded-sm">{ramp.map((c) => <span key={c} className="flex-1" style={{ background: c }} />)}</span>
           <span>{max.toExponential(2)}</span><span>· {metric}</span>
+          {typeRow > 0 && <span className="ml-2 flex items-center gap-1.5"><span className="inline-block h-2 w-3 rounded-[1.5px] bg-ink-2" />full attention
+            <span className="ml-1 inline-block h-2 w-3 rounded-[1.5px] border border-dashed border-ink-3" />sliding window</span>}
         </div>
         <span className="num font-mono text-[11px] text-ink-2">{hover ? `L${hover.layer} ${hover.kind} · ${hover.value == null ? "—" : hover.value.toExponential(3)}` : "hover a cell · click to inspect"}</span>
       </div>

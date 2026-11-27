@@ -9,7 +9,8 @@ import { Badge, Button, Empty, ErrorLine, Field, KV, Notice, PageHeader, Panel, 
 import { api, fmt, qs } from "../lib/api";
 import { useAction, useApi } from "../lib/hooks";
 import { usePrefs } from "../lib/prefs";
-import type { Inspection, LineageNode, LineageT, StudySummary } from "../lib/types";
+import type { Inspection, LayerTypeRow, LineageNode, LineageT, StudySummary } from "../lib/types";
+import { Figure } from "../components/results";
 
 export default function Factory() {
   const { prefs } = usePrefs();
@@ -50,6 +51,25 @@ function Inspector({ sid, s }: { sid: string; s: StudySummary }) {
   );
 }
 
+/** Did training change sliding-window and full-attention layers in proportion to how many there are? */
+function LayerTypeSplit({ rows }: { rows: LayerTypeRow[] }) {
+  const full = rows.find((r) => r.type === "full");
+  return (
+    <Figure title="Change by attention type" caption={<>Bars: share of the layers (grey) and share of the total change <Sym k="fro">‖ΔW‖_F²</Sym> (colour) for each layer type. A type taking much more of the change than its share of layers is where training concentrated. Sliding-window layers see only the most recent tokens; full-attention layers see the whole context.</>}>
+      <div className="overflow-x-auto" tabIndex={0} aria-label="Change by attention type, scrollable">
+      <table className="w-full min-w-[560px] text-[12px]"><thead><tr><th className={th}>layer type</th><th className={cx(th, "text-right")}>layers</th><th className={cx(th, "w-[42%]")}>share of layers vs share of change</th><th className={cx(th, "text-right")}>change</th><th className={cx(th, "text-right")}>mean ‖ΔW‖/‖W‖</th></tr></thead>
+        <tbody>{rows.map((r) => (
+          <tr key={r.type} className={tr}><td className={td}>{r.type === "full" ? "full attention" : "sliding window"}</td><td className={cx(td, "num text-right font-mono")}>{r.layers}</td>
+            <td className={td}><div className="space-y-1"><div className="h-1.5 rounded-full bg-surface-3"><div className="h-1.5 rounded-full bg-ink-3" style={{ width: `${r.share_of_layers * 100}%` }} /></div>
+              <div className="h-1.5 rounded-full bg-surface-3"><div className="h-1.5 rounded-full bg-accent" style={{ width: `${r.share_of_change * 100}%` }} /></div></div></td>
+            <td className={cx(td, "num text-right font-mono")}>{(r.share_of_change * 100).toFixed(0)}% <span className="text-ink-3">of {(r.share_of_layers * 100).toFixed(0)}%</span></td>
+            <td className={cx(td, "num text-right font-mono")}>{r.mean_relative_change == null ? "—" : r.mean_relative_change.toExponential(2)}</td></tr>))}</tbody></table>
+      </div>
+      {full && <p className="mt-1.5 text-[12px] text-ink-2">Full-attention layers are {(full.share_of_layers * 100).toFixed(0)}% of the layers and took {(full.share_of_change * 100).toFixed(0)}% of the change{full.share_of_change > full.share_of_layers * 1.25 ? " — more than their share" : full.share_of_change < full.share_of_layers * 0.8 ? " — less than their share" : " — about their share"}.</p>}
+    </Figure>
+  );
+}
+
 export function InspectionView({ d, onMicroscope }: { d: Inspection; onMicroscope?: (module: string) => void }) {
   const [metric, setMetric] = useState<"relative" | "fro">(d.base_available ? "relative" : "fro");
   const [sel, setSel] = useState<string | null>(null);
@@ -73,8 +93,10 @@ export function InspectionView({ d, onMicroscope }: { d: Inspection; onMicroscop
           <Segmented label="Metric" value={metric} onChange={setMetric} options={[{ value: "relative", label: "‖ΔW‖/‖W‖" }, { value: "fro", label: "‖ΔW‖_F" }]} />
         </div>
         {metric === "relative" && !d.base_available && <div className="mb-2 text-[11.5px] text-warn-ink">Base weights unavailable — relative change cannot be computed.</div>}
-        <HeatStrip cells={cells} layers={layers} kinds={kinds} metric={metric === "relative" ? "‖ΔW‖_F / ‖W‖_F" : "‖ΔW‖_F"} onSelect={setSel} selected={cur?.module} />
+        <HeatStrip cells={cells} layers={layers} kinds={kinds} metric={metric === "relative" ? "‖ΔW‖_F / ‖W‖_F" : "‖ΔW‖_F"} onSelect={setSel} selected={cur?.module} layerTypes={d.layer_types?.types} />
+        {d.layer_types && <div className="mt-1 text-[11.5px] text-ink-3">Base model layout: {d.layer_types.pattern}{d.layer_types.sliding_window ? ` · sliding window ${d.layer_types.sliding_window.toLocaleString()} tokens` : ""}.</div>}
       </div>
+      {d.by_layer_type && d.by_layer_type.length > 1 && <LayerTypeSplit rows={d.by_layer_type} />}
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
         <div className="min-w-0">
           <div className="micro mb-2 text-ink-3">Largest changes</div>

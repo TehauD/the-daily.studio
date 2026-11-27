@@ -48,6 +48,9 @@ interface CardT {
   data: { tasks: number; splits: Record<string, number>; training_records: number | null; human_review: { approved: number; corrected: number; rejected: number; pending: number } | null };
   results: Record<string, { untrained: number | null; trained: number | null; teacher: number | null; gain: number | null; ci: [number | null, number | null]; gate: string | null; confirmatory: boolean; per_skill: Record<string, Record<string, number>> }>;
   limitations: string[]; never_claimed: string[]; approval: string;
+  lineage?: { repo: string; revision: string | null; note: string; publisher: { publisher: string; open: string[]; note: string } | null;
+    verified: { architecture: string | null; model_type: string | null; weight_files: number; weight_bytes: number; layers: { pattern: string; sliding_window: number | null } | null };
+    declared: { license: string | null; base_model: string[]; datasets: string[]; language: string[]; has_model_card: boolean } } | null;
 }
 
 function Card({ sid }: { sid: string }) {
@@ -63,6 +66,16 @@ function Card({ sid }: { sid: string }) {
           <Notice tone="honesty"><b>Not an approval.</b> {d.approval}</Notice>
           <section><div className="micro mb-1 text-ink-3">Intended use</div><p className="text-ink">{d.intended_use.statement}</p>
             {d.intended_use.agent && <p className="mt-1 text-ink-2"><b className="text-ink">{d.intended_use.agent.name}</b> · skills: {d.intended_use.agent.skills.join(", ")} · boundary suite {d.intended_use.agent.boundary ? "on" : "off"}</p>}</section>
+          {d.lineage && <section aria-label="Base model lineage"><div className="micro mb-1 text-ink-3">Base model lineage</div>
+            <dl className="grid grid-cols-[150px_1fr] gap-x-3 gap-y-1 text-ink-2">
+              <dt className="text-ink-3">base model</dt><dd className="font-mono text-ink">{d.lineage.repo}{d.lineage.revision ? ` @ ${d.lineage.revision.slice(0, 12)}` : ""}</dd>
+              <dt className="text-ink-3">verified from files</dt><dd>{d.lineage.verified.architecture ?? "—"} · {d.lineage.verified.weight_files} weight file(s), {d.lineage.verified.weight_bytes >= 1e8 ? `${(d.lineage.verified.weight_bytes / 1e9).toFixed(2)} GB` : `${(d.lineage.verified.weight_bytes / 1e6).toFixed(1)} MB`}{d.lineage.verified.layers ? ` · ${d.lineage.verified.layers.pattern}` : ""}</dd>
+              <dt className="text-ink-3">declared: licence</dt><dd>{d.lineage.declared.license ?? "not stated"}</dd>
+              <dt className="text-ink-3">declared: derived from</dt><dd className="font-mono">{d.lineage.declared.base_model.join(", ") || "not stated"}</dd>
+              <dt className="text-ink-3">declared: training data</dt><dd className="font-mono">{d.lineage.declared.datasets.join(", ") || "not listed"}</dd>
+              {d.lineage.publisher && <><dt className="text-ink-3">publisher states open</dt><dd>{d.lineage.publisher.open.join(" · ")} <span className="text-ink-3">({d.lineage.publisher.publisher})</span></dd></>}
+            </dl>
+            <p className="mt-1 text-[11.5px] text-ink-3">{d.lineage.note}</p></section>}
           <section><div className="micro mb-1 text-ink-3">Results (strict success)</div>
             {!Object.keys(d.results).length ? <p className="text-ink-3">No analysed results yet.</p> : (
               <div className="overflow-x-auto"><table className="w-full"><thead><tr>{["Split", "Untrained", "Trained", "Teacher", "Gain (95 % range)", "Gate"].map((x) => <th key={x} className={th}>{x}</th>)}</tr></thead>

@@ -413,10 +413,14 @@ def training(sid: str, arm: str, seed: int, st: AppState = Depends(get_state)):
 
 @router.get("/{sid}/inspection")
 def inspection(sid: str, arm: str, seed: int, st: AppState = Depends(get_state)):
-    p = _study(st, sid).run_dir(arm, seed) / "inspection.json"
+    s = _study(st, sid)
+    p = s.run_dir(arm, seed) / "inspection.json"
     if not p.exists():
         raise HTTPException(404, "No inspection yet (train this arm first)")
-    return json.loads(p.read_text(encoding="utf-8"))
+    from forge.analysis.lineage import by_layer_type, layer_types
+    out = json.loads(p.read_text(encoding="utf-8"))
+    lt = layer_types(s.plan["student"].get("path"))
+    return {**out, "layer_types": lt, "by_layer_type": by_layer_type(out, lt)}
 
 
 @router.get("/{sid}/datasets")
@@ -666,8 +670,13 @@ async def weight_microscope(sid: str, arm: str, seed: int, module: str, st: AppS
         raise HTTPException(409, "Not trained yet")
     sha = hashlib.sha256((ad / "adapter_model.safetensors").read_bytes()).hexdigest()[:16]
     cache = rd / "microscope" / f"v{MICROSCOPE_VERSION}-{module}-{sha}.json"
+    from forge.analysis.lineage import layer_types
+    lt = layer_types(s.plan["student"].get("path"))
+    lm = _re.search(r"\.layers\.(\d+)\.", "." + module)
+    ltype = {"type": lt["types"][int(lm.group(1))], "sliding_window": lt["sliding_window"], "pattern": lt["pattern"]} \
+        if lt and lm and int(lm.group(1)) < len(lt["types"]) else None
     if cache.exists():
-        return json.loads(cache.read_text(encoding="utf-8"))
+        return {**json.loads(cache.read_text(encoding="utf-8")), "layer_type": ltype}
     snaps = [(lbl, d) for lbl, _, d in _snaps(rd) if lbl != "final"]
     others = [(f"seed {x}", s.run_dir(arm, x) / "adapter") for x in s.plan["seeds"] if x != seed and (s.run_dir(arm, x) / "adapter" / "adapter_model.safetensors").exists()]
     try:
@@ -677,4 +686,4 @@ async def weight_microscope(sid: str, arm: str, seed: int, module: str, st: AppS
     out["adapter_sha256_prefix"] = sha
     cache.parent.mkdir(exist_ok=True)
     cache.write_text(json.dumps(out), encoding="utf-8")
-    return out
+    return {**out, "layer_type": ltype}

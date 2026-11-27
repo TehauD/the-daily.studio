@@ -229,7 +229,7 @@ def model_card(study: Any) -> dict[str, Any]:
     adq = adequacy(study)
     for sk in adq["skills"]:
         for i in sk["issues"]:
-            if i["kind"] in ("no_headroom", "imbalanced", "weak_teacher"):
+            if i["kind"] in ("no_headroom", "imbalanced", "weak_teacher", "seen_in_training"):
                 limitations.append(f"Skill {sk['skill']}: {i['text']}")
     return {
         "card_version": 1, "generated_at": utcnow(), "forge_version": __version__,
@@ -237,6 +237,7 @@ def model_card(study: Any) -> dict[str, Any]:
                   "stages": {k: v.get("status") for k, v in state["stages"].items()}, "plan_sha256": (study.root / "plan.sha256").read_text(encoding="utf-8").strip() if (study.root / "plan.sha256").exists() else None},
         "model": {"student": plan["student"]["name"], "base_hash": plan.get("base_hash"), "method": f"LoRA adapter ({arm}), original weights unchanged",
                   "adapter_sha256": run.get("adapter_sha256"), "teacher": plan["teacher"]["model"], "train": {k: plan["train"].get(k) for k in ("epochs", "max_steps", "lr", "lora_r", "lora_alpha", "max_seq_len") if k in plan["train"]}},
+        "lineage": _lineage(plan),
         "intended_use": {"agent": agent, "kind": ts.get("kind") or "catalog",
                          "statement": "Research and education inside FORGE: a candidate for human review on these routine tasks. Not for clinical decisions, not for unsupervised use."},
         "data": {"tasks": len(study.tasks()), "splits": {sp: sum(1 for t in study.tasks() if t.split == sp) for sp in ("train", "dev", "test")},
@@ -249,6 +250,27 @@ def model_card(study: Any) -> dict[str, Any]:
         "never_claimed": ["clinical validity", "deployment readiness", "broad reasoning transfer", "causal speed-ups", "a visualised chain of thought"],
         "approval": "No approval is given: the best outcome FORGE gives is ‘candidate for human review’.",
     }
+
+
+def _lineage(plan: dict) -> dict | None:
+    from forge.analysis.lineage import model_lineage
+    return model_lineage(plan["student"].get("path"), plan["student"].get("name"))
+
+
+def _lineage_lines(lin: dict | None) -> list[str]:
+    if not lin:
+        return []
+    v, d, p = lin["verified"], lin["declared"], lin.get("publisher")
+    lt = v.get("layers")
+    L = ["", "## Base model lineage", f"- Base model: **{lin['repo']}**" + (f", revision `{lin['revision'][:12]}`" if lin.get("revision") else ""),
+         f"- Verified from the files: {v.get('architecture') or '—'} ({v.get('model_type') or '—'}), {v['weight_files']} weight file(s), "
+         + (f"{v['weight_bytes'] / 1e9:.2f} GB" if v["weight_bytes"] >= 1e8 else f"{v['weight_bytes'] / 1e6:.1f} MB") + (f"; layers: {lt['pattern']}" + (f", sliding window {lt['sliding_window']} tokens" if lt.get("sliding_window") else "") if lt else ""),
+         f"- Declared in its model card: licence {d.get('license') or 'not stated'}; base model {', '.join(d['base_model']) or 'not stated'}; "
+         f"training datasets {', '.join(d['datasets']) or 'not listed'}"]
+    if p:
+        L.append(f"- Publisher ({p['publisher']}) states as open: {', '.join(p['open'])}. {p['note']}")
+    L.append(f"- {lin['note']}")
+    return L
 
 
 def _gain(v: float | None) -> str:
@@ -265,6 +287,7 @@ def card_markdown(c: dict) -> str:
     if ag:
         L += ["", f"Agent **{ag['name']}** ({ag['template']}): {ag['role'][:400]}", f"Skills: {', '.join(ag['skills'])}. Boundary suite: {'on' if ag['boundary'] else 'off'}."]
     d = c["data"]
+    L += _lineage_lines(c.get("lineage"))
     L += ["", "## Data", f"- {d['tasks']} synthetic tasks (train {d['splits']['train']}, dev {d['splits']['dev']}, test {d['splits']['test']}); {d['training_records'] or '—'} training records."]
     if d["human_review"]:
         h = d["human_review"]
@@ -323,6 +346,8 @@ def report_html(c: dict, audience: str, audit: list[dict] | None = None) -> str:
         out.append(f"<h2>Model & data</h2><table><tr><td>Student</td><td>{e(m['student'])}</td></tr><tr><td>Base hash</td><td><code>{e(str(m['base_hash']))}</code></td></tr><tr><td>Adapter sha256</td><td><code>{e(str(m['adapter_sha256']))}</code></td></tr>"
                    f"<tr><td>Teacher</td><td>{e(m['teacher'])}</td></tr><tr><td>Training</td><td>{e(json.dumps(m['train']))}</td></tr><tr><td>Tasks</td><td>{e(json.dumps(c['data']['splits']))}</td></tr>"
                    f"<tr><td>Records sha256</td><td><code>{e(str(c['data']['records_sha256']))}</code></td></tr><tr><td>Plan sha256</td><td><code>{e(str(c['study']['plan_sha256']))}</code></td></tr></table>")
+        if c.get("lineage"):
+            out.append("<h2>Base model lineage</h2><ul>" + "".join(f"<li>{e(x[2:])}</li>" for x in _lineage_lines(c["lineage"])[2:]) + "</ul>")
         if c["efficiency"]["runs"]:
             out.append("<h2>Cost</h2><table><tr><th>Run</th><th>Wall s</th><th>Peak VRAM MB</th><th>GPU Wh</th></tr>" + "".join(
                 f"<tr><td>{e(r['arm'])} s{r['seed']}</td><td>{r['wall_s'] or '—'}</td><td>{r['peak_vram_mb'] or '—'}</td><td>{r['energy_wh'] if r['energy_wh'] is not None else '—'}</td></tr>" for r in c["efficiency"]["runs"]) + "</table>")
@@ -357,6 +382,9 @@ def adequacy(study: Any) -> dict[str, Any]:
             by[e["family"]].append(int(e["score"]["strict_success"]))
         return {f: sum(v) / len(v) for f, v in by.items()}
     base, teacher = rates("base", cb), rates("teacher", 0)
+    root = getattr(study, "root", None)
+    ov_p = root / "reports" / "overlap.json" if root else None
+    overlap = json.loads(ov_p.read_text(encoding="utf-8")) if ov_p and ov_p.exists() else None
     skills = []
     for fam in sorted({t.family for t in tasks}):
         ts = [t for t in tasks if t.family == fam]
@@ -375,6 +403,10 @@ def adequacy(study: Any) -> dict[str, Any]:
             issues.append({"kind": "imbalanced", "text": f"‘{top}’ is the answer to {share:.0%} of tasks: always answering it would score {share:.0%}."})
         if n["test"] < ADEQ["min_test"] or n["dev"] < ADEQ["min_dev"]:
             issues.append({"kind": "too_few", "text": f"Only {n['dev']} check-in and {n['test']} final-test tasks: results will have wide ranges. Aim for ≥ {ADEQ['min_test']} final-test tasks per skill."})
+        o = (overlap or {}).get("by_skill", {}).get(fam)
+        if o and o.get("hits"):
+            issues.append({"kind": "seen_in_training", "text": f"{o['hits']} of {o['tested']} {overlap['split']} questions share an exact {overlap['ngram']}-word passage with the "
+                                                               f"indexed training data ({overlap['index']}): the base model may have seen them, which can inflate its score."})
         verdict = "good" if not issues else ("unusable" if any(i["kind"] in ("no_headroom", "imbalanced") for i in issues) else "weak")
         skills.append({"skill": fam, "tasks": n, "untrained": b, "teacher": te, "headroom": (te - b) if b is not None and te is not None else None,
                        "top_answer": top, "top_share": share, "avg_steps": round(steps, 2), "issues": issues, "verdict": verdict})
@@ -382,6 +414,6 @@ def adequacy(study: Any) -> dict[str, Any]:
     measured = bool(base and teacher)
     overall = ("not yet measured — run Collect and Evaluate · dev" if not measured else
                "adequate" if len(good) >= max(1, len(skills) // 2) else "weak" if good else "inadequate")
-    return {"overall": overall, "measured": measured, "skills": skills, "thresholds": ADEQ,
+    return {"overall": overall, "measured": measured, "skills": skills, "thresholds": ADEQ, "overlap": {k: overlap[k] for k in ("split", "index", "tested", "hits", "share", "generated_at")} if overlap else None,
             "note": "A good test needs, per skill: room to improve (untrained well below the teacher), a teacher that succeeds ≥ 80 %, "
                     "balanced answers, and ≥ 20 final-test tasks. Skills that fail can't show a training effect either way."}

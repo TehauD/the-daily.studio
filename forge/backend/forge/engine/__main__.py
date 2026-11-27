@@ -60,6 +60,24 @@ def cmd_stress(a: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_overlap(a: argparse.Namespace) -> int:
+    """Look the final-test questions up in a training-data index (contamination check)."""
+    from forge.engine.lineage_eval import overlap
+    from forge.engine.study import Study
+    overlap(Study(Path(a.study)), json.loads(a.config), emit)
+    return 0
+
+
+def cmd_checkpoint_eval(a: argparse.Namespace) -> int:
+    """Run the study's tasks with another checkpoint of the base model (checkpoint timeline)."""
+    os.environ.setdefault("HF_HUB_OFFLINE", "1")
+    os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
+    from forge.engine.lineage_eval import evaluate_checkpoint
+    from forge.engine.study import Study
+    evaluate_checkpoint(Study(Path(a.study)), json.loads(a.config), emit)
+    return 0
+
+
 def cmd_datacurve(a: argparse.Namespace) -> int:
     """Train on 10/25/50/100 % of the training tasks and measure each on dev (or, as a child, train one share)."""
     os.environ.setdefault("HF_HUB_OFFLINE", "1")
@@ -291,6 +309,14 @@ def main(argv: list[str] | None = None) -> int:
     sp.add_argument("--study", required=True)
     sp.add_argument("--config", required=True)
     sp.set_defaults(fn=cmd_stress)
+    ov = sub.add_parser("overlap")
+    ov.add_argument("--study", required=True)
+    ov.add_argument("--config", required=True)
+    ov.set_defaults(fn=cmd_overlap)
+    ce = sub.add_parser("checkpoint-eval")
+    ce.add_argument("--study", required=True)
+    ce.add_argument("--config", required=True)
+    ce.set_defaults(fn=cmd_checkpoint_eval)
     dc = sub.add_parser("datacurve")
     dc.add_argument("--study", required=True)
     dc.add_argument("--train-fraction")
