@@ -1,5 +1,16 @@
 # FORGE changelog
 
+## 0.26.0 — Skill check: test a real student end to end
+- **`scripts/skill-check.ps1`** (and `skill_check.py`, standard library only): one command runs the whole route through FORGE's
+  API — template agent, verified practice tasks, study with your teacher and student, collect, build, train, evaluate, analyse,
+  the test-adequacy verdict, optional seal + final test — and prints teacher / untrained / trained per skill with 95 % ranges,
+  a paired comparison and a plain verdict (LEARNED / NOT SHOWN / WORSE); saves JSON. `-Resume` continues a study after a
+  failed stage; LM Studio models are unloaded before training; default max sequence length 3,072 (agent prompts carry the
+  tool schemas and FORGE never truncates). Runbook: docs/SKILL_CHECK.md.
+- Template fixes found while validating it: patient-access **expedite check** was 71–73 % "yes" → balanced (55 / 45), now
+  also from received and today's dates (the agent counts the days); IT service desk **set priority** and patient-access
+  **referral routing** were capped at 36 unique tasks → about 100 each (realistic ticket / referral context, more fields).
+
 ## 0.25.0 — Tier-2 use-case templates and recommendations
 - **Four new Agent Studio templates** (synthetic, with built-in task generators, hand-back cases and sample CSVs):
   - *Coding edit checks* — assistive only: procedure-to-procedure (NCCI-style) edits and whether a modifier may bypass them,

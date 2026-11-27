@@ -317,6 +317,17 @@ torch.compile (their code paths run only on CUDA with the packages installed); t
 The demo models are simulated (their accuracy is scripted to fall with difficulty) — the numbers show the plumbing, not any
 real model. **Requires your machine:** real LM Studio models (including a vision model such as Qwen2.5-VL) and GPU students.
 
+## v0.26.0 — Skill check script
+
+| Check | Result here |
+|---|---|
+| `skill_check.py` end to end through FORGE's API (tiny stand-in student, mock teacher, smoke, 1 seed): agent → 103 tasks → study → 9 stages → adequacy → seal → final test → paired comparison → JSON | completed in 2 min; verdict NOT SHOWN (0 % → 0 %, the stand-in cannot learn) |
+| Failure handling: teacher server down → clear stop + `--resume`; teacher still loaded → unload attempted, pre-flight names the fix; examples over 2,048 tokens → default 3,072 | exercised |
+| Answer balance at 100 tasks per skill, Tier 1 templates: every yes/no skill 45–57 % after the expedite fix | script |
+
+**Not run here:** a real Qwen3 student — this container cannot reach Hugging Face (network policy) and has no GPU. The real
+test is `skill-check.ps1` on your machine (docs/SKILL_CHECK.md).
+
 ## v0.25.0 — Tier-2 templates and recommendations
 
 | Check | Result here |

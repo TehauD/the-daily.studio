@@ -95,13 +95,22 @@ def _route(tables: dict, rng: random.Random, nf: bool) -> dict:
             "calls": [{"tool": "lookup_routing", "arguments": {"key": r["keyword"]}}], "answer": r[field]}
 
 
+_PRIO_CONTEXT = ["The badge printer on 4 West is jamming", "Outlook keeps asking for a password", "The lab label printer is offline",
+                 "A nurse cannot log in to the medication cart", "The scheduling screen freezes when booking", "VPN drops every few minutes",
+                 "Radiology images load slowly", "The pharmacy fax queue is stuck", "A shared drive folder is missing", "Wi-Fi is down in the cafeteria",
+                 "The patient portal shows an error page", "Barcode scanners in the ED are not reading", "A laptop will not boot",
+                 "The time-clock kiosk is frozen", "Dictation software crashes on start", "The OR whiteboard display is blank",
+                 "A new hire has no network access", "Single sign-on fails for one clinic", "The call-center phones drop calls", "A monitor flickers"]
+_PRIO_FORMS = ["{c}. It has {i} impact and {u} urgency. What priority should it get?", "{c}. Impact is {i}, urgency is {u}. Which priority applies?",
+               "Ticket: {c}. Set the priority — impact {i}, urgency {u}.", "{c}. The caller rates urgency {u}; the service owner rates impact {i}. What is the incident priority?",
+               "Triage this: {c} (impact {i}, urgency {u}). Priority number?"]
+
+
 def _priority(tables: dict, rng: random.Random, nf: bool) -> dict:
+    """Real tickets carry detail the agent must read past; the priority still comes only from impact and urgency."""
     lv = {r["level"]: r["value"] for r in tables["impact_urgency"]}
     i, u = rng.choice(list(lv)), rng.choice(list(lv))
-    form = rng.choice(["An incident has {i} impact and {u} urgency. What priority should it get?",
-                       "Impact is {i}, urgency is {u}. Which priority applies?", "Set the priority: impact {i}, urgency {u}.",
-                       "The caller rates urgency {u}; the service owner rates impact {i}. What is the incident priority?"])
-    return {"question": form.format(i=i, u=u),
+    return {"question": rng.choice(_PRIO_FORMS).format(c=rng.choice(_PRIO_CONTEXT), i=i, u=u),
             "calls": [{"tool": "lookup_impact_urgency", "arguments": {"key": i}}, {"tool": "lookup_impact_urgency", "arguments": {"key": u}},
                       {"tool": "calculate", "arguments": {"expression": f"{lv[i]} + {lv[u]} - 1"}}],
             "answer": num(lv[i] + lv[u] - 1)}

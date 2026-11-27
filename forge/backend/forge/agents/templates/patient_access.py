@@ -10,7 +10,7 @@ from __future__ import annotations
 import datetime as dt
 import random
 
-from forge.agents.templates._util import date, pick
+from forge.agents.templates._util import date, num, pick
 
 ID = "patient_access"
 
@@ -78,16 +78,24 @@ def _route(tables: dict, rng: random.Random, nf: bool) -> dict:
             "calls": [{"tool": "lookup_requests", "arguments": {"key": r["keyword"]}}], "answer": str(r[field])}
 
 
+_REF_CONTEXT = ["came in by fax from an outside practice", "was sent through the patient portal", "arrived from the ED follow-up list",
+                "was entered by a primary-care clinic", "came from a hospital discharge planner", "was forwarded by a payer's care manager",
+                "was keyed in by the call center", "arrived through the e-referral interface", "was dropped off at the front desk",
+                "came from a community health partner"]
+
+
 def _referral(tables: dict, rng: random.Random, nf: bool) -> dict:
     s = pick(rng, tables["specialties"])
     c = next(x for x in tables["clinics"] if x["clinic_code"] == s["default_clinic"])
     field, ask = rng.choice([("location", "At which location will it be scheduled?"), ("clinic_code", "Which clinic should it be routed to?"),
-                             ("accepting_new", "Is that clinic accepting new referrals (yes/no)?")])
+                             ("accepting_new", "Is that clinic accepting new referrals (yes/no)?"),
+                             ("referral_required", "Does this specialty require a referral on file (yes/no)?"),
+                             ("routine_window_days", "Within how many days should a routine referral be scheduled?")])
     calls = [{"tool": "lookup_specialties", "arguments": {"key": s["specialty"]}}]
-    if field != "clinic_code":
+    if field in ("location", "accepting_new"):
         calls.append({"tool": "lookup_clinics", "arguments": {"key": c["clinic_code"]}})
-    return {"question": f"A {s['specialty']} referral just arrived. {ask}", "calls": calls,
-            "answer": s["default_clinic"] if field == "clinic_code" else c[field]}
+    ans = {"clinic_code": s["default_clinic"], "referral_required": s["referral_required"], "routine_window_days": num(s["routine_window_days"])}.get(field, c.get(field))
+    return {"question": f"A {s['specialty']} referral {rng.choice(_REF_CONTEXT)}. {ask}", "calls": calls, "answer": ans}
 
 
 def _window(tables: dict, rng: random.Random, nf: bool) -> dict:
@@ -104,12 +112,21 @@ def _window(tables: dict, rng: random.Random, nf: bool) -> dict:
 
 def _expedite(tables: dict, rng: random.Random, nf: bool) -> dict:
     s = pick(rng, tables["specialties"])["specialty"]
-    # Balanced labels (≈ half "yes"): urgent flag 1 in 4; otherwise waiting ≥ 30 days 1 in 3. Many distinct inputs.
-    flag = "yes" if rng.random() < 0.25 else "no"
-    n = rng.randint(30, 60) if rng.random() < 1 / 3 else rng.randint(1, 29)
+    # Balanced labels: decide the answer first. "yes" = urgent flag (any wait) or no flag and ≥ 30 days; "no" = no flag and < 30 days.
+    if rng.random() < 0.5:
+        flag, n = ("yes", rng.randint(1, 60)) if rng.random() < 0.5 else ("no", rng.randint(30, 90))
+    else:
+        flag, n = "no", rng.randint(1, 29)
+    check = {"tool": "check_expedite", "arguments": {"urgent_flag": flag, "days_waiting": n}}
+    ans = "yes" if flag == "yes" or n >= 30 else "no"
+    if rng.random() < 0.6:  # as it arrives in a work queue: dates, not a day count — the agent counts the days itself
+        today = date(rng)
+        got = (dt.date.fromisoformat(today) - dt.timedelta(days=n)).isoformat()
+        return {"question": rng.choice(["A {s} referral was received on {g}; today is {t}. The referring clinician's urgent flag is '{f}'. Should scheduling expedite it?",
+                                        "Today is {t}. A {s} referral has been in the queue since {g} with urgent flag '{f}'. Expedite it under the rule?"]).format(s=s, g=got, t=today, f=flag),
+                "calls": [{"tool": "date_math", "arguments": {"op": "days_between", "start": got, "end": today}}, check], "answer": ans}
     return {"question": f"A {s} referral has been waiting {n} days; the referring clinician's urgent flag is '{flag}'. Should scheduling expedite it?",
-            "calls": [{"tool": "check_expedite", "arguments": {"urgent_flag": flag, "days_waiting": n}}],
-            "answer": "yes" if flag == "yes" or n >= 30 else "no"}
+            "calls": [check], "answer": ans}
 
 
 TEMPLATE = {
@@ -141,8 +158,8 @@ TEMPLATE = {
               "calls": [{"tool": "lookup_specialties", "arguments": {"key": "{spec0}"}}, {"tool": "lookup_clinics", "arguments": {"key": "{clinic0}"}}]}]},
         {"id": "scheduling_window", "name": "Scheduling window", "description": "Look up the specialty's routine or urgent window and add it to the received date.",
          "tools": ["lookup_specialties", "date_math"], "not_found": 0.0, "generate": _window, "examples": []},
-        {"id": "expedite_check", "name": "Expedite check", "description": "Apply the administrative expedite rule (clinician's urgent flag, days waiting).",
-         "tools": ["check_expedite"], "not_found": 0.0, "generate": _expedite, "examples": []},
+        {"id": "expedite_check", "name": "Expedite check", "description": "Apply the administrative expedite rule (clinician's urgent flag, days waiting) — counting the days from the received date when only dates are given.",
+         "tools": ["check_expedite", "date_math"], "not_found": 0.0, "generate": _expedite, "examples": []},
     ],
 }
 

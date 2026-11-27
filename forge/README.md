@@ -1,4 +1,4 @@
-# FORGE — Local Distillation Lab (v0.25.0)
+# FORGE — Local Distillation Lab (v0.26.0)
 
 A local-first research instrument for **teacher → student LLM distillation on one consumer NVIDIA GPU**.
 A large model you run in LM Studio (the *teacher*) solves tool-use or document-QA tasks. FORGE keeps only its
@@ -163,6 +163,13 @@ nine phases, with what each has produced, what is blocking it, and a button for 
 before and after training, where it changed, its spectra, whether training reused the model's existing directions, how the
 change grew over training and whether other seeds agree. Hover or focus any symbol in a formula for its meaning; **Explain**
 opens a side panel that walks through the view with this module's numbers.
+
+### Does a real small model learn? The skill check
+
+The screenshots in these docs use a tiny random-weight test model and a mock teacher: they show the instruments, not learning.
+To test a real student, run **`.\scripts\skill-check.ps1 -Teacher "<your LM Studio model>" -Student "Qwen3-1.7B" -Profile pilot -Seal`**
+— template agent → verified tasks → study → train → sealed final test → trained vs untrained with ranges. See
+[docs/SKILL_CHECK.md](docs/SKILL_CHECK.md).
 
 ### Compare any two, and see history
 
