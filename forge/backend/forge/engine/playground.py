@@ -64,7 +64,7 @@ def lane_backend(study: Any, lane: dict) -> Any:
     kind = lane.get("kind")
     if kind == "teacher":
         return study.teacher_backend()
-    mk = lambda ad: TransformersBackend(study.plan["student"]["path"], ad, device=study.plan["device"], max_new_tokens=study.plan["eval"]["max_new_tokens"])
+    mk = lambda ad: TransformersBackend(study.plan["student"]["path"], ad, device=study.plan["device"], max_new_tokens=study.plan["eval"]["max_new_tokens"], load_4bit=study.base_4bit)
     if kind == "base":
         return mk(None)
     if kind == "adapter":

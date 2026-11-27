@@ -4,7 +4,7 @@
            evaluate -> analyze -> [seal -> final test] and prints trained vs untrained, skill by skill, with 95 % ranges.
            Start FORGE first (.\scripts\launch.ps1) and LM Studio's server with your teacher model.
 .EXAMPLE   .\scripts\skill-check.ps1 -ListModels
-.EXAMPLE   .\scripts\skill-check.ps1 -Teacher "qwen2.5-14b" -Student "Qwen3-1.7B" -Profile pilot -Seal
+.EXAMPLE   .\scripts\skill-check.ps1 -Teacher "olmo-3-32b" -Student "Olmo-3-7B-Instruct" -Profile pilot -Seal
 .EXAMPLE   .\scripts\skill-check.ps1 -Resume study_1234abcd -Seal      # continue after fixing a failed stage
 #>
 [CmdletBinding()]
@@ -13,6 +13,7 @@ param(
     [string]$Template = 'itsm_servicenow',
     [ValidateSet('smoke', 'pilot', 'research')][string]$Profile = 'pilot',
     [ValidateSet('template', 'teacher')][string]$TasksFrom = 'template',
+    [ValidateSet('auto', 'on', 'off')][string]$Base4bit = 'auto',
     [int]$PerSkill = 60, [int]$MaxSeqLen = 3072,
     [switch]$Seal, [switch]$ListModels, [string]$Resume,
     [string]$Url = 'http://127.0.0.1:8765', [string]$Out = 'skill-check-result.json'
@@ -27,7 +28,7 @@ elseif ($Resume) { $a += @('--resume', $Resume) }
 else {
     if (-not $Teacher -or -not $Student) { throw 'Pass -Teacher and -Student (see -ListModels), or -Resume STUDY_ID.' }
     $a += @('--teacher', $Teacher, '--student', $Student, '--template', $Template, '--profile', $Profile,
-            '--tasks-from', $TasksFrom, '--per-skill', "$PerSkill", '--max-seq-len', "$MaxSeqLen")
+            '--tasks-from', $TasksFrom, '--per-skill', "$PerSkill", '--max-seq-len', "$MaxSeqLen", '--base-4bit', $Base4bit)
 }
 if ($Seal) { $a += '--seal' }
 Invoke-Checked $Py $a

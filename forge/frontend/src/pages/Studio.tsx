@@ -88,6 +88,12 @@ function Wizard({ onCreated }: { onCreated: (id: string) => void }) {
           <Field label="Name"><input className={inputCls} value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} placeholder="e.g. qwen3-1.7b · catalog tools" /></Field>
           <Field label="Teacher"><select className={inputCls} value={f.teacher_id} onChange={(e) => setF({ ...f, teacher_id: e.target.value })}><option value="">—</option>{teachers.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}</select></Field>
           <Field label="Student" hint="Local safetensors with supported LoRA only."><select className={inputCls} value={f.student_id} onChange={(e) => setF({ ...f, student_id: e.target.value })}><option value="">—</option>{students.map((m) => <option key={m.id} value={m.id}>{m.name} · {fmt.params(m.parameter_count)}</option>)}</select></Field>
+          {(() => { const st = students.find((m) => m.id === f.student_id); const big = (st?.parameter_count ?? 0) > 4e9;
+            return big && f.device === "cuda" && !turbo?.quant_4bit ? (
+              <div className="flex flex-wrap items-center gap-2 rounded-[var(--radius)] border border-[color:var(--warn)]/50 bg-[color:var(--warn)]/[0.07] px-2.5 py-2 text-[12px] text-ink-2">
+                <span>{st?.name} has {fmt.params(st?.parameter_count)} parameters: training it in bf16 needs more than a 16 GB GPU has (about 21 GB for a 7B model). Use the <b>4-bit base (QLoRA)</b> — evaluation and the Playground then load it in 4-bit too.</span>
+                <Button size="sm" onClick={() => setTurbo({ attention: "sdpa", packing: false, liger: false, optim_8bit: false, checkpointing: "on", compile: false, ...(turbo ?? {}), quant_4bit: true })}>Use 4-bit base</Button>
+              </div>) : null; })()}
         </div>
         <div className="space-y-3">
           <Field label="Profile">

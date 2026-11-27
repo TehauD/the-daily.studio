@@ -1,4 +1,4 @@
-# FORGE — Local Distillation Lab (v0.26.0)
+# FORGE — Local Distillation Lab (v0.27.0)
 
 A local-first research instrument for **teacher → student LLM distillation on one consumer NVIDIA GPU**.
 A large model you run in LM Studio (the *teacher*) solves tool-use or document-QA tasks. FORGE keeps only its
@@ -30,7 +30,7 @@ no telemetry, original model weights are never modified.
 ```powershell
 .\scripts\probe-host.ps1                        # inspect the machine; installs nothing
 .\scripts\setup.ps1 -WithML                     # backend\.venv, CUDA torch, pinned stack, UI deps, runs the tests
-.\scripts\get-student.ps1 -Repo Qwen/Qwen3-1.7B # download a student (safetensors only, every shard verified)
+.\scripts\get-student.ps1 -Repo allenai/Olmo-3-7B-Instruct # default student (or Qwen/Qwen3-1.7B for the smallest footprint); see docs/OLMO3.md
 .\scripts\verify-gpu.ps1                        # BF16 forward/backward check on the GPU
 .\scripts\launch.ps1                            # build the UI and open http://127.0.0.1:8765
 ```
@@ -45,7 +45,7 @@ App state lives in `%LOCALAPPDATA%\Forge` (override with `FORGE_HOME`).
 FORGE opens on **Home**: one card per project with its progress and next step, quick starts, and a guided tour for your role. Use the *Simple / Expert* switch (sidebar or Home) to show the expert pages. Before long runs, check **Settings → Hardware guard** (thermal pause, CPU cores kept free, low priority).
 
 1. **System Overview** (Expert mode): every Readiness row should be green (CUDA, BF16, venv, teacher endpoint).
-2. **Model Observatory** → *Run discovery* → mark your LM Studio model as **teacher** and Qwen3-1.7B as **student** → *Pair builder* → run pair-check → **Create study with this pair**.
+2. **Model Observatory** → *Run discovery* → mark your LM Studio model (default: OLMo 3 32B) as **teacher** and OLMo 3 7B Instruct (or Qwen3-1.7B) as **student** → *Pair builder* → run pair-check → **Create study with this pair**.
 3. **Experiment Studio** → profile **smoke**, arm `teacher_filtered` → *Freeze plan & create*.
 4. Run the stages in order:
    **Collect** (teacher *loaded*) → **Build** → **Unload LM Studio models** (button) → **Train** → **Eval · dev** → **Analyze · dev**
@@ -164,10 +164,16 @@ before and after training, where it changed, its spectra, whether training reuse
 change grew over training and whether other seeds agree. Hover or focus any symbol in a formula for its meaning; **Explain**
 opens a side panel that walks through the view with this module's numbers.
 
+### Default models: OLMo 3
+
+The default chain is fully open **OLMo 3**: 32B as teacher (LM Studio), 7B Instruct as student — trained on a 4-bit base so it
+fits a 16 GB GPU, and run day to day as a ≈ 4.5 GB GGUF. Setup, memory and what was validated: [docs/OLMO3.md](docs/OLMO3.md).
+Qwen3-1.7B remains supported for the smallest footprint.
+
 ### Does a real small model learn? The skill check
 
 The screenshots in these docs use a tiny random-weight test model and a mock teacher: they show the instruments, not learning.
-To test a real student, run **`.\scripts\skill-check.ps1 -Teacher "<your LM Studio model>" -Student "Qwen3-1.7B" -Profile pilot -Seal`**
+To test a real student, run **`.\scripts\skill-check.ps1 -Teacher "olmo-3-32b" -Student "Olmo-3-7B-Instruct" -Profile pilot -Seal`**
 — template agent → verified tasks → study → train → sealed final test → trained vs untrained with ranges. See
 [docs/SKILL_CHECK.md](docs/SKILL_CHECK.md).
 

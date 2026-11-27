@@ -381,6 +381,11 @@ class Study:
                 for f in sorted(split_dir.glob("seed*.jsonl")):
                     yield arm_dir.name, split_dir.name, int(f.stem[4:]), f
 
+    @property
+    def base_4bit(self) -> bool:
+        """Trained with a 4-bit (QLoRA) base → evaluated, played with and benched the same way, so a 7B student fits 16 GB."""
+        return bool(((self.plan.get("train") or {}).get("turbo") or {}).get("quant_4bit"))
+
     def run_dir(self, arm: str, seed: int) -> Path:
         return self.root / "runs" / self._part(arm) / f"seed{int(seed)}"
 
@@ -561,7 +566,7 @@ class Study:
     def _student(self, factory: Callable | None, adapter: Path | None) -> ChatBackend:
         if factory:
             return factory(adapter)
-        return TransformersBackend(self.plan["student"]["path"], str(adapter) if adapter else None,
+        return TransformersBackend(self.plan["student"]["path"], str(adapter) if adapter else None, load_4bit=self.base_4bit,
                                    device=self.plan["device"], max_new_tokens=self.plan["eval"]["max_new_tokens"])
 
     def _evaluate_students(self, splits: tuple[str, ...], emit: Callable, factory: Callable | None) -> dict:
@@ -725,7 +730,7 @@ class Study:
         files = {p.name: sha256_file(p) for p in sorted(out.iterdir()) if p.is_file()}
         tasks = self.tasks()
         backend = student_factory(None, model_path=str(out)) if student_factory else TransformersBackend(
-            str(out), None, device=self.plan["device"], max_new_tokens=self.plan["eval"]["max_new_tokens"])
+            str(out), None, device=self.plan["device"], max_new_tokens=self.plan["eval"]["max_new_tokens"], load_4bit=self.base_4bit)
         self._evaluate(backend, "merged", "test", seed, tasks, emit)
         getattr(backend, "unload", lambda: None)()
         merged_eps = {e["task_id"]: e["score"]["strict_success"] for e in self.episodes("merged", "test", seed)}

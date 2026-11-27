@@ -117,7 +117,7 @@ export default function Guide() {
             <pre className="scroll-thin overflow-x-auto rounded-[var(--radius)] bg-surface-2 p-3 font-mono text-[11.5px] text-ink">{`.\\scripts\\probe-host.ps1
 .\\scripts\\setup.ps1 -WithML
 .\\scripts\\verify-gpu.ps1
-.\\scripts\\get-student.ps1 -Repo Qwen/Qwen3-1.7B   # optional; the Hub tab does the same
+.\\scripts\\get-student.ps1 -Repo allenai/Olmo-3-7B-Instruct   # optional; the Hub tab does the same
 .\\scripts\\launch.ps1`}</pre>
           </Section>
           <Section id="myths" n={8} title="Myths vs facts">

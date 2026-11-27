@@ -11,7 +11,7 @@ Runs the whole FORGE route through its own API against a running FORGE (start it
 
 Nothing here decides anything: it reports measured numbers and where to look in the app. Synthetic data only.
 
-  python scripts/skill_check.py --teacher "qwen2.5-14b" --student "Qwen3-1.7B" --profile pilot --seal
+  python scripts/skill_check.py --teacher "olmo-3-32b" --student "Olmo-3-7B-Instruct" --profile pilot --seal
   python scripts/skill_check.py --list-models
 """
 from __future__ import annotations
@@ -142,6 +142,8 @@ def main() -> None:
     ap.add_argument("--max-seq-len", type=int, default=3072,
                     help="longest training example in tokens (default 3072: agent prompts carry the tool schemas; FORGE never truncates)")
     ap.add_argument("--seal", action="store_true", help="after the practice analysis, seal and run the final test")
+    ap.add_argument("--base-4bit", choices=["auto", "on", "off"], default="auto",
+                    help="train (and evaluate) on a 4-bit base — QLoRA. auto: on for students above 4B parameters on CUDA (e.g. OLMo 3 7B)")
     ap.add_argument("--yes-seal", action="store_true", help="do not ask before sealing (sealing is irreversible for this study)")
     ap.add_argument("--name", help="study name (default: skill check · <template> · <student>)")
     ap.add_argument("--out", default="skill-check-result.json")
@@ -193,6 +195,11 @@ def new_study(api: Api, a, models: list[dict]):
     for k in ("seeds", "max_steps", "epochs", "max_seq_len"):
         if getattr(a, k) is not None:
             sb[k] = getattr(a, k)
+    params = ((student.get("metadata") or {}).get("parameter_report") or {}).get("unique_total") or student.get("parameter_count") or 0
+    q4 = a.base_4bit == "on" or (a.base_4bit == "auto" and a.device == "cuda" and params > 4e9)
+    if q4:
+        sb["turbo"] = {"quant_4bit": True}
+        print(f"   4-bit base (QLoRA): on — {params / 1e9:.1f}B parameters; training, evaluation and the Playground load the base in 4-bit")
     study = api.post("/api/studies", sb)
     sid = study["id"]
     print(f"   study {sid} · pair check: {study.get('pair_check', {}).get('verdict')}")

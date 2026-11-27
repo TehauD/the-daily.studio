@@ -76,7 +76,9 @@ def _lane(st: AppState, ln: LaneIn, device: str) -> dict[str, Any]:
                 "allow_remote": spec.get("allow_remote", False)}
     if not m.get("storage_path") or m["capabilities"]["lora"]["status"] != "supported":
         raise HTTPException(422, f"{m['name']} can't be run locally (use it through LM Studio / Ollama)")
-    lane = {"kind": "student", "label": ln.label or m["name"], "model_id": m["id"], "path": m["storage_path"], "device": device, "vision": False}
+    params = ((m.get("metadata") or {}).get("parameter_report") or {}).get("unique_total") or m.get("parameter_count") or 0
+    lane = {"kind": "student", "label": ln.label or m["name"], "model_id": m["id"], "path": m["storage_path"], "device": device, "vision": False,
+            "load_4bit": device == "cuda" and params > 4e9}  # a 7B base in bf16 does not leave room to run on a 16 GB card
     if ln.study_id:
         s = _study(st, ln.study_id)
         if ln.arm not in s.plan["arms"] or ln.seed not in s.plan["seeds"]:
@@ -84,7 +86,8 @@ def _lane(st: AppState, ln: LaneIn, device: str) -> dict[str, Any]:
         ad = s.run_dir(ln.arm, ln.seed) / "adapter"
         if not (ad / "adapter_model.safetensors").exists():
             raise HTTPException(409, "That adapter is not trained yet")
-        lane |= {"adapter": str(ad), "label": ln.label or f"{m['name']} + {s.plan['name']} ({ln.arm} s{ln.seed})"}
+        lane |= {"adapter": str(ad), "label": ln.label or f"{m['name']} + {s.plan['name']} ({ln.arm} s{ln.seed})",
+                 "load_4bit": lane["load_4bit"] or s.base_4bit}
     return lane
 
 

@@ -2,7 +2,7 @@
 
 Every screenshot and demo study in the FORGE docs uses a **tiny random-weight test model** and a **mock teacher** — they show
 the instruments working, not learning (the student scores 0 % everywhere). This is the first test that answers the real
-question on your machine: train **Qwen3-1.7B** from **your LM Studio teacher's** examples and measure it against the untrained
+question on your machine: train **OLMo 3 7B Instruct** (or Qwen3-1.7B) from **your LM Studio teacher's** (default OLMo 3 32B) examples and measure it against the untrained
 student on a **sealed final test**.
 
 ## Before you start
@@ -10,8 +10,8 @@ student on a **sealed final test**.
 | Need | Check |
 |---|---|
 | FORGE running | `.\scripts\launch.ps1`, open http://127.0.0.1:8765 |
-| Student downloaded and discovered | `.\scripts\get-student.ps1 -Repo Qwen/Qwen3-1.7B`, then **Model Observatory → Run discovery** |
-| Teacher in LM Studio | LM Studio → Developer → **Start server**, load your teacher (e.g. a 14B instruct model with tool use), run discovery |
+| Student downloaded and discovered | `.\scripts\get-student.ps1 -Repo allenai/Olmo-3-7B-Instruct` (see [OLMO3.md](OLMO3.md)), then **Model Observatory → Run discovery** |
+| Teacher in LM Studio | LM Studio → Developer → **Start server**, load your teacher (default OLMo 3 32B — see [OLMO3.md](OLMO3.md) for its memory needs), run discovery |
 | GPU free | close other GPU apps; FORGE unloads the teacher before training and refuses to train while it is still loaded |
 | Synthetic data only | the script uses an Agent Studio template — no patient or personal data |
 
@@ -20,7 +20,7 @@ student on a **sealed final test**.
 ## Run it
 
 ```powershell
-.\scripts\skill-check.ps1 -Teacher "<teacher name or id>" -Student "Qwen3-1.7B" -Profile pilot -Seal
+.\scripts\skill-check.ps1 -Teacher "olmo-3-32b" -Student "Olmo-3-7B-Instruct" -Profile pilot -Seal
 ```
 
 What happens (every step is also visible in the app — Pipeline, Agent Studio, the job dock):
@@ -62,7 +62,10 @@ Then look in the app:
 Useful follow-ups, in order: **Robustness** (reworded and unfamiliar requests, hand-back cases), **GGUF export + LM Studio check**
 (the small file should behave the same), and only then the use case you actually care about.
 
-## Rough time (16 GB GPU, Qwen3-1.7B, pilot, ~300 tasks)
+For a student above 4B parameters (OLMo 3 7B) the script turns on the **4-bit base (QLoRA)** automatically and prints it;
+`-Base4bit off` forces bf16 (only on a GPU with enough memory).
+
+## Rough time (16 GB GPU, pilot, ~300 tasks)
 
 Not measured on your hardware yet — expect **hours, not days**: collect depends on your teacher's speed; training is three short
 LoRA runs; evaluation runs every dev and test task through the base and three adapters. The script prints elapsed time per step.

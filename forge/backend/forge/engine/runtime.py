@@ -330,6 +330,7 @@ class TransformersBackend:
     device: str = "cuda"
     max_new_tokens: int = 256
     name: str = "transformers"
+    load_4bit: bool = False  # NF4 base with bf16 compute (CUDA + bitsandbytes): how a QLoRA-trained 7B student fits 16 GB
     _state: dict[str, Any] = field(default_factory=dict)
 
     def load(self) -> None:
@@ -337,8 +338,14 @@ class TransformersBackend:
         from transformers import AutoModelForCausalLM, AutoTokenizer
         dtype = torch.bfloat16 if self.device == "cuda" else torch.float32
         tok = AutoTokenizer.from_pretrained(self.model_path, local_files_only=True, trust_remote_code=False)
-        model = AutoModelForCausalLM.from_pretrained(self.model_path, local_files_only=True, trust_remote_code=False,
-                                                     torch_dtype=dtype).to(self.device)
+        if self.load_4bit and self.device == "cuda":
+            from transformers import BitsAndBytesConfig
+            q = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4", bnb_4bit_compute_dtype=torch.bfloat16, bnb_4bit_use_double_quant=True)
+            model = AutoModelForCausalLM.from_pretrained(self.model_path, local_files_only=True, trust_remote_code=False,
+                                                         torch_dtype=dtype, quantization_config=q, device_map={"": 0})
+        else:
+            model = AutoModelForCausalLM.from_pretrained(self.model_path, local_files_only=True, trust_remote_code=False,
+                                                         torch_dtype=dtype).to(self.device)
         if self.adapter_path:
             from peft import PeftModel
             model = PeftModel.from_pretrained(model, self.adapter_path, is_trainable=False)

@@ -317,6 +317,20 @@ torch.compile (their code paths run only on CUDA with the packages installed); t
 The demo models are simulated (their accuracy is scripted to fall with difficulty) — the numbers show the plumbing, not any
 real model. **Requires your machine:** real LM Studio models (including a vision model such as Qwen2.5-VL) and GPU students.
 
+## v0.27.0 — OLMo 3
+
+| Check | Result here |
+|---|---|
+| transformers 4.57.1: `olmo3` in the causal-LM mapping; `pip check` clean with peft 0.16.0 / accelerate 1.8.1 | check |
+| Full backend suite on transformers 4.57.1 | 239 passed |
+| Tiny `Olmo3ForCausalLM` (4 layers: sliding + full attention, untied head): discovery says inference and LoRA *supported*; train (base hash unchanged, all 7 projection types adapted), evaluate, seal, final test, merged export (`model_type: olmo3`), weight microscope | test |
+| Memory gate, OLMo 3 7B shape at 3,072 tokens: bf16 > 16 GB (refused), 4-bit ≈ 11.3 GB (admitted) | test |
+| 4-bit load flag falls back to a normal load where CUDA / bitsandbytes are absent | test |
+
+**Not validated here:** the real OLMo 3 7B / 32B weights (Hugging Face is not reachable from this environment), 4-bit training and
+inference (need CUDA + bitsandbytes), OLMo 3's real chat template, memory and speed on your GPU, and learning quality — run
+`skill-check.ps1` with OLMo 3 (docs/OLMO3.md).
+
 ## v0.26.0 — Skill check script
 
 | Check | Result here |

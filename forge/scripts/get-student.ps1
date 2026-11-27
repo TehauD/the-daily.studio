@@ -2,6 +2,7 @@
 .SYNOPSIS  Download a student from the Hugging Face Hub with allow-patterns and verify every shard.
            Uses huggingface_hub.snapshot_download — NOT `hf download --include` (it ignores filters
            when filenames are given). Pickle weights are never fetched.
+.EXAMPLE   .\scripts\get-student.ps1 -Repo allenai/Olmo-3-7B-Instruct
 .EXAMPLE   .\scripts\get-student.ps1 -Repo Qwen/Qwen3-1.7B
 #>
 [CmdletBinding()]

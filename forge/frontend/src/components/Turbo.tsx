@@ -35,8 +35,8 @@ export function TurboPicker({ value, onChange, device }: { value: TurboT; onChan
       {(["liger", "quant_4bit", "optim_8bit", "packing", "compile"] as const).map((k) => {
         const ok = k === "packing" ? can("packing") && value.attention === "flash_attention_2" : can(k);
         return (
-          <div key={k} className={cx("flex items-start justify-between gap-3", !ok && "opacity-60")} title={ok ? WHAT[k] : why(k)}>
-            <div><div className="text-ink">{o.data?.labels[k] ?? k}</div><div className="text-[11px] text-ink-3">{ok ? WHAT[k] : `Unavailable: ${k === "packing" && can("packing") ? "choose flash-attn 2" : why(k)}`}</div></div>
+          <div key={k} className="flex items-start justify-between gap-3" title={ok ? WHAT[k] : why(k)}>
+            <div><div className={ok ? "text-ink" : "text-ink-2"}>{o.data?.labels[k] ?? k}{!ok && <span className="ml-1.5 rounded border border-line px-1 font-mono text-[10px] text-ink-3">unavailable</span>}</div><div className="text-[11px] text-ink-3">{ok ? WHAT[k] : `Unavailable: ${k === "packing" && can("packing") ? "choose flash-attn 2" : why(k)}`}</div></div>
             <Toggle checked={value[k] && ok} onChange={(v) => ok && set({ [k]: v } as Partial<TurboT>)} label={o.data?.labels[k] ?? k} />
           </div>);
       })}

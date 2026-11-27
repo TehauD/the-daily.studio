@@ -10,7 +10,8 @@ switches ("same study, other engine") and compare tokens/s, peak memory, energy,
     liger           Liger Kernel fused Triton kernels (fused linear + cross-entropy that never materialises the full
                     vocabulary logits, RMSNorm, RoPE, SwiGLU) — less memory, often faster (needs liger-kernel, CUDA)
     quant_4bit      QLoRA: the frozen base is loaded in 4-bit NF4 with bf16 compute; LoRA adapters stay 16-bit (needs
-                    bitsandbytes, CUDA). Lets a 16 GB card train larger students. Evaluation uses the bf16 base + adapter.
+                    bitsandbytes, CUDA). Lets a 16 GB card train larger students (OLMo 3 7B). Evaluation, the final test,
+                    Playground, Weight Lab and Bench Lab then load the base in 4-bit too (TransformersBackend.load_4bit).
     optim_8bit      paged 8-bit AdamW states (needs bitsandbytes, CUDA) — smaller optimizer memory
     checkpointing   on (recompute activations, default) · off (fastest, most memory) · offload (keep activations in
                     CPU memory instead of recomputing — trades PCIe traffic for compute)

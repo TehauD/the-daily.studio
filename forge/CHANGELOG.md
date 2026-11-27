@@ -1,5 +1,20 @@
 # FORGE changelog
 
+## 0.27.0 — OLMo 3 as teacher and student
+- **Default chain is OLMo 3** (fully open: weights, data, code): **OLMo 3 32B** teacher in LM Studio, **OLMo 3 7B Instruct**
+  student. docs/OLMO3.md covers setup, memory and what was validated; Qwen3-1.7B stays supported for the smallest footprint.
+- **ML stack**: `transformers` 4.53.2 → **4.57.1** (adds `Olmo3ForCausalLM`); **`bitsandbytes` 0.48.2** now part of the
+  training stack (4-bit base). Full suite passes on the new version.
+- **7B students on a 16 GB GPU**:
+  - the study's free-memory gate now uses the 4-bit estimate when Turbo's 4-bit base is on (it always assumed bf16, so a 7B
+    study was refused: ≈ 23.5 GB required vs ≈ 11.3 GB with 4-bit at 3,072 tokens);
+  - evaluation, the sealed final test, the post-export check, Playground, Weight Lab and Bench Lab load the base in 4-bit when
+    the study trained that way (or, in Bench Lab, for any local model above 4B parameters) — previously they always loaded bf16;
+  - Experiment Studio suggests the 4-bit base when a student above 4B parameters is chosen; the skill check turns it on
+    automatically (`-Base4bit auto|on|off`).
+- **Tests**: a tiny OLMo 3-architecture model (sliding-window + full attention, untied head) runs discovery, LoRA training,
+  evaluation, seal, final test, merged export and the weight microscope on CPU.
+
 ## 0.26.0 — Skill check: test a real student end to end
 - **`scripts/skill-check.ps1`** (and `skill_check.py`, standard library only): one command runs the whole route through FORGE's
   API — template agent, verified practice tasks, study with your teacher and student, collect, build, train, evaluate, analyse,

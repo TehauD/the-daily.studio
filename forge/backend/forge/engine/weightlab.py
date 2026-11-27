@@ -194,7 +194,7 @@ def evaluate(v: Variant, study: Any, emit: Callable[[dict], None] = lambda e: No
     if not tasks:
         raise WeightLabError("The study has no dev tasks")
     world = study.world()
-    backend = factory(v.adapter) if factory else TransformersBackend(study.plan["student"]["path"], str(v.adapter), device=study.plan["device"],
+    backend = factory(v.adapter) if factory else TransformersBackend(study.plan["student"]["path"], str(v.adapter), device=study.plan["device"], load_4bit=study.base_4bit,
                                                                      max_new_tokens=study.plan["eval"]["max_new_tokens"])
     cfg = EpisodeConfig(max_turns=study.plan["eval"]["max_turns"])
     eps = []

@@ -158,7 +158,7 @@ def run(run_dir: Path, emit: Callable[[dict], None] = lambda e: None, backend_fo
 def make_backend(lane: dict) -> Any:
     from forge.engine.runtime import OllamaBackend, OpenAICompatBackend, TransformersBackend
     if lane["kind"] == "student":
-        return TransformersBackend(lane["path"], lane.get("adapter"), device=lane.get("device", "cuda"), max_new_tokens=256)
+        return TransformersBackend(lane["path"], lane.get("adapter"), device=lane.get("device", "cuda"), max_new_tokens=256, load_4bit=bool(lane.get("load_4bit")))
     if lane.get("provider") == "ollama":
         return OllamaBackend(lane["endpoint"], lane["model"])
     return OpenAICompatBackend(lane["endpoint"], lane["model"], temperature=0.0, max_tokens=600, allow_remote=bool(lane.get("allow_remote")))

@@ -102,7 +102,7 @@ def _teacher_spec(st: AppState, t: dict) -> dict[str, Any]:
     raise HTTPException(422, f"Teacher provider {t['provider']} cannot serve chat; use LM Studio, Ollama, or an endpoint")
 
 
-def vram_gate(s: dict, seq_len: int) -> dict[str, Any]:
+def vram_gate(s: dict, seq_len: int, quant: str = "bf16") -> dict[str, Any]:
     """Free-VRAM pre-flight threshold derived from the analytic estimate (×1.1, ≥ 2 GB) instead of a fixed
     12 GB, which sat too close to a 16 GB desktop GPU's idle free memory. Frozen into the plan with its basis."""
     import math
@@ -112,11 +112,11 @@ def vram_gate(s: dict, seq_len: int) -> dict[str, Any]:
     if not unique:
         return {}
     est = estimate_lora_memory(EstimateInput(
-        params_b=unique / 1e9, quant="bf16", seq_len=seq_len, hidden=md.get("hidden_size"), layers=md.get("num_hidden_layers"),
+        params_b=unique / 1e9, quant=quant, seq_len=seq_len, hidden=md.get("hidden_size"), layers=md.get("num_hidden_layers"),
         intermediate=md.get("intermediate_size"), vocab=md.get("vocab_size"), num_heads=md.get("num_attention_heads"),
         num_kv_heads=md.get("num_key_value_heads"), head_dim=md.get("head_dim")), None)
     gate = max(2048, int(math.ceil(est.total_mb * 1.1 / 256) * 256))
-    return {"min_free_vram_mb": gate, "min_free_vram_basis": f"analytic estimate {est.total_mb:.0f} MB × 1.1 at seq {seq_len}"}
+    return {"min_free_vram_mb": gate, "min_free_vram_basis": f"analytic estimate {est.total_mb:.0f} MB × 1.1 at seq {seq_len}" + (" (4-bit base)" if quant == "nf4" else "")}
 
 
 def _turbo(turbo: dict | None, device: str, micro_batch: int, torch_info: Any) -> dict:
@@ -156,11 +156,12 @@ async def create_study(body: CreateStudy, st: AppState = Depends(get_state)):
            "numpy": torch.numpy_version, "bf16": torch.bf16_supported}
     train_ov = {k: v for k, v in (("max_steps", body.max_steps), ("epochs", body.epochs),
                                   ("max_seq_len", body.max_seq_len)) if v is not None}
-    train_ov.update(vram_gate(s, train_ov.get("max_seq_len", 2048)))
     for k in ("micro_batch", "grad_accum"):
         if getattr(body, k) is not None:
             train_ov[k] = getattr(body, k)
     train_ov["turbo"] = _turbo(body.turbo, body.device, train_ov.get("micro_batch", 1), torch)
+    # The free-memory gate must match how the base is loaded: a 4-bit (QLoRA) 7B fits a 16 GB card, a bf16 one does not.
+    train_ov.update(vram_gate(s, train_ov.get("max_seq_len", 2048), "nf4" if train_ov["turbo"].get("quant_4bit") else "bf16"))
     pack = None
     if body.knowledge_pack_id:
         from forge.knowledge.pack import KnowledgePack, PackError
