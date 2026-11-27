@@ -3,11 +3,17 @@
    (camera + hexagons) that the first song starts on. Nothing here touches the microphone or camera;
    those are requested only by the buttons that say so.
    ============================================================ */
+/** One cell of the hexagon field, in CSS px. The Record button on the start card and the stop button in the recorder are exactly one cell (a little larger, for emphasis), and the grid is
+    anchored on them, so the button reads as part of the field and not a button on top of it. */
+const HEX_EMPH = 1.3;
+function hexCellR() { return Math.max(46, Math.min(80, Math.min(innerWidth, innerHeight) / 11)); }
+function hexCellSize(R) { return { w: Math.sqrt(3) * R * .9 * HEX_EMPH, h: 2 * R * .9 * HEX_EMPH }; }
+function hexCellVars(el) { if (!el) return; const R = hexCellR(), s = hexCellSize(R); el.style.setProperty('--rec-w', s.w.toFixed(1) + 'px'); el.style.setProperty('--rec-h', s.h.toFixed(1) + 'px'); }
 (function bootHexInit() {
   const cv = document.getElementById('bootHex'); if (!cv) return;
   const g = cv.getContext('2d'), still = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
   let W = 0, H = 0, dpr = 1, t0 = performance.now(), last = 0;
-  const size = () => { dpr = Math.min(1.5, window.devicePixelRatio || 1); W = cv.width = Math.floor(innerWidth * dpr); H = cv.height = Math.floor(innerHeight * dpr); };
+  const size = () => { dpr = Math.min(1.5, window.devicePixelRatio || 1); W = cv.width = Math.floor(innerWidth * dpr); H = cv.height = Math.floor(innerHeight * dpr); hexCellVars(document.getElementById('boot')); };
   size(); addEventListener('resize', size);
   /* 2.88: the start card takes its text colours from the field it sits on (light or dark), not from the app's theme: a dark field with a light theme used to give dark words on dark */
   const DG = { lt: false, bg: '#04090a', glow: '61,220,132', cell: '61,220,132', warm: '242,182,50', line: '125,191,155' }, bootEl = document.getElementById('boot');
@@ -24,15 +30,17 @@
     try { paint(now); } catch (e) { last = Infinity; }
   }
   function paint(now) {
-    const t = (now - t0) / 1000, R = Math.max(26, Math.min(W, H) / 15) * (dpr > 1 ? 1 : 1), dx = R * Math.sqrt(3), dy = R * 1.5, cx = ctr()[0], cy = ctr()[1], maxd = Math.hypot(W, H) * .55;
+    const t = (now - t0) / 1000, R = hexCellR() * dpr, dx = R * Math.sqrt(3), dy = R * 1.5, cx = ctr()[0], cy = ctr()[1], maxd = Math.hypot(W, H) * .55;
     const P = tone(), lt = P.lt, pk = ptr && !still ? Math.max(0, 1 - (now - ptr.t) / 2600) : 0;      /* 2.49.1: a first visit is the dark green page, unless hexagon colours were chosen on purpose */   /* the palette you chose for the hexagons; light (white) and dark green are the original two looks */
     g.fillStyle = P.bg; g.fillRect(0, 0, W, H);
     const glow = g.createRadialGradient(cx, cy, 0, cx, cy, maxd); glow.addColorStop(0, `rgba(${P.glow},${lt ? .12 : .16})`); glow.addColorStop(.5, `rgba(${P.glow},.04)`); glow.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = glow; g.fillRect(0, 0, W, H);
     const gold = g.createRadialGradient(cx, cy, 0, cx, cy, R * 4.4); gold.addColorStop(0, `rgba(${P.warm},${lt ? .34 : .3})`); gold.addColorStop(.55, `rgba(${P.warm},.07)`); gold.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gold; g.fillRect(0, 0, W, H);
     const beat = (t % 1.9) / 1.9;
-    for (let row = -1; row * dy < H + R; row++) for (let col = -1; col * dx < W + dx; col++) {
-      const x = col * dx + (row & 1 ? dx / 2 : 0), y = row * dy, d = Math.hypot(x - cx, y - cy), fall = Math.max(0, 1 - d / maxd);
-      const ring = Math.max(0, 1 - Math.abs(d / maxd - beat * 1.1) * 7), wave = .5 + .5 * Math.sin(d * .011 - t * 1.4 + Math.sin(x * .004 + t * .3) * 2), pt = pk ? Math.pow(Math.max(0, 1 - Math.hypot(x - ptr.x, y - ptr.y) / (R * 5)), 2) * .75 * pk : 0, a = Math.min(1, fall * fall * (.2 + wave * .55) + ring * .85 * fall + pt);
+    /* the grid is anchored on the Record button: its cell is (0,0), every other cell is counted from it */
+    const r0 = Math.ceil(cy / dy) + 1, r1 = Math.ceil((H - cy) / dy) + 1, c0 = Math.ceil(cx / dx) + 1, c1 = Math.ceil((W - cx) / dx) + 1, breath = .78 + .22 * Math.sin(t * 2.2);
+    for (let row = -r0; row <= r1; row++) for (let col = -c0; col <= c1; col++) {
+      const x = cx + (col + (Math.abs(row) & 1 ? .5 : 0)) * dx, y = cy + row * dy, d = Math.hypot(x - cx, y - cy), fall = Math.max(0, 1 - d / maxd);
+      const ring = Math.max(0, 1 - Math.abs(d / maxd - beat * 1.1) * 7), wave = .5 + .5 * Math.sin(d * .011 - t * 1.4 + Math.sin(x * .004 + t * .3) * 2), pt = pk ? Math.pow(Math.max(0, 1 - Math.hypot(x - ptr.x, y - ptr.y) / (R * 5)), 2) * .75 * pk : 0, a0 = Math.min(1, fall * fall * (.2 + wave * .55) + ring * .85 * fall + pt), a = d < dx * 1.1 ? Math.max(a0, d < 2 ? .85 : .55 * breath) : a0;      /* the button's own cell and the six around it glow, and breathe */
       const near = Math.max(0, 1 - d / (R * 3.3)), warm = ((col * 7 + row * 13) % 11) === 0 || near > .3;
       g.fillStyle = `rgba(${warm ? P.warm : P.cell},` + (a * (warm ? (lt ? .55 : .5) : (lt ? .3 : .42))).toFixed(3) + ')'; hexPath(x, y, R * (.9 + ring * .08)); g.fill();
       g.strokeStyle = `rgba(${P.line},` + (.05 + a * (lt ? .4 : .5)).toFixed(3) + ')'; g.lineWidth = 1; g.stroke();

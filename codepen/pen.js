@@ -57,7 +57,7 @@ window.__dailyRoom = (id, make) => {
    Single-file vanilla JS · Web Audio · AudioWorklet · WebMIDI · getUserMedia
    Part 01 · core helpers, settings, music theory, chord voicing engine
    ============================================================ */
-const VERSION = '2.88.0', BUILD = '1844b2c', PARTS_N = +'140' || 0, LINES_N = +'23647' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
+const VERSION = '2.88.0', BUILD = 'ebfd013', PARTS_N = +'140' || 0, LINES_N = +'23660' || 0;   /* filled in by scripts/build.mjs: the package version, and a code from the bundle's own hash */
 /* support: paste your tip-jar page here (Ko-fi, Buy Me a Coffee, GitHub Sponsors, PayPal.me...). Empty = no support link is shown anywhere. */
 const BRAND = { ghApp: { clientId: 'Iv23liTjqEBQsgmGaE1Q', slug: 'tehaud-the-daily-studio' },   /* Sign in with GitHub: the GitHub App's public client id and its slug (docs/GITHUB.md); empty = only the token way */
   support: '', supportLabel: 'Buy me a coffee', name: 'the-daily.studio', short: 'the-daily.studio', tag: 'Write. Play. Create.', domain: 'the-daily.studio', url: 'https://the-daily.studio/', author: 'Tehau DeBarthe', github: 'https://github.com/TehauD', instagram: 'https://www.instagram.com/tehaud/', linkedin: 'https://www.linkedin.com/in/tehau/', repo: 'https://github.com/TehauD/the-daily.studio', journal: 'https://journal.the-daily.studio/' };
@@ -8989,11 +8989,17 @@ bus.on('booted', simpleMount);
    (camera + hexagons) that the first song starts on. Nothing here touches the microphone or camera;
    those are requested only by the buttons that say so.
    ============================================================ */
+/** One cell of the hexagon field, in CSS px. The Record button on the start card and the stop button in the recorder are exactly one cell (a little larger, for emphasis), and the grid is
+    anchored on them, so the button reads as part of the field and not a button on top of it. */
+const HEX_EMPH = 1.3;
+function hexCellR() { return Math.max(46, Math.min(80, Math.min(innerWidth, innerHeight) / 11)); }
+function hexCellSize(R) { return { w: Math.sqrt(3) * R * .9 * HEX_EMPH, h: 2 * R * .9 * HEX_EMPH }; }
+function hexCellVars(el) { if (!el) return; const R = hexCellR(), s = hexCellSize(R); el.style.setProperty('--rec-w', s.w.toFixed(1) + 'px'); el.style.setProperty('--rec-h', s.h.toFixed(1) + 'px'); }
 (function bootHexInit() {
   const cv = document.getElementById('bootHex'); if (!cv) return;
   const g = cv.getContext('2d'), still = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
   let W = 0, H = 0, dpr = 1, t0 = performance.now(), last = 0;
-  const size = () => { dpr = Math.min(1.5, window.devicePixelRatio || 1); W = cv.width = Math.floor(innerWidth * dpr); H = cv.height = Math.floor(innerHeight * dpr); };
+  const size = () => { dpr = Math.min(1.5, window.devicePixelRatio || 1); W = cv.width = Math.floor(innerWidth * dpr); H = cv.height = Math.floor(innerHeight * dpr); hexCellVars(document.getElementById('boot')); };
   size(); addEventListener('resize', size);
   /* 2.88: the start card takes its text colours from the field it sits on (light or dark), not from the app's theme: a dark field with a light theme used to give dark words on dark */
   const DG = { lt: false, bg: '#04090a', glow: '61,220,132', cell: '61,220,132', warm: '242,182,50', line: '125,191,155' }, bootEl = document.getElementById('boot');
@@ -9010,15 +9016,17 @@ bus.on('booted', simpleMount);
     try { paint(now); } catch (e) { last = Infinity; }
   }
   function paint(now) {
-    const t = (now - t0) / 1000, R = Math.max(26, Math.min(W, H) / 15) * (dpr > 1 ? 1 : 1), dx = R * Math.sqrt(3), dy = R * 1.5, cx = ctr()[0], cy = ctr()[1], maxd = Math.hypot(W, H) * .55;
+    const t = (now - t0) / 1000, R = hexCellR() * dpr, dx = R * Math.sqrt(3), dy = R * 1.5, cx = ctr()[0], cy = ctr()[1], maxd = Math.hypot(W, H) * .55;
     const P = tone(), lt = P.lt, pk = ptr && !still ? Math.max(0, 1 - (now - ptr.t) / 2600) : 0;      /* 2.49.1: a first visit is the dark green page, unless hexagon colours were chosen on purpose */   /* the palette you chose for the hexagons; light (white) and dark green are the original two looks */
     g.fillStyle = P.bg; g.fillRect(0, 0, W, H);
     const glow = g.createRadialGradient(cx, cy, 0, cx, cy, maxd); glow.addColorStop(0, `rgba(${P.glow},${lt ? .12 : .16})`); glow.addColorStop(.5, `rgba(${P.glow},.04)`); glow.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = glow; g.fillRect(0, 0, W, H);
     const gold = g.createRadialGradient(cx, cy, 0, cx, cy, R * 4.4); gold.addColorStop(0, `rgba(${P.warm},${lt ? .34 : .3})`); gold.addColorStop(.55, `rgba(${P.warm},.07)`); gold.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gold; g.fillRect(0, 0, W, H);
     const beat = (t % 1.9) / 1.9;
-    for (let row = -1; row * dy < H + R; row++) for (let col = -1; col * dx < W + dx; col++) {
-      const x = col * dx + (row & 1 ? dx / 2 : 0), y = row * dy, d = Math.hypot(x - cx, y - cy), fall = Math.max(0, 1 - d / maxd);
-      const ring = Math.max(0, 1 - Math.abs(d / maxd - beat * 1.1) * 7), wave = .5 + .5 * Math.sin(d * .011 - t * 1.4 + Math.sin(x * .004 + t * .3) * 2), pt = pk ? Math.pow(Math.max(0, 1 - Math.hypot(x - ptr.x, y - ptr.y) / (R * 5)), 2) * .75 * pk : 0, a = Math.min(1, fall * fall * (.2 + wave * .55) + ring * .85 * fall + pt);
+    /* the grid is anchored on the Record button: its cell is (0,0), every other cell is counted from it */
+    const r0 = Math.ceil(cy / dy) + 1, r1 = Math.ceil((H - cy) / dy) + 1, c0 = Math.ceil(cx / dx) + 1, c1 = Math.ceil((W - cx) / dx) + 1, breath = .78 + .22 * Math.sin(t * 2.2);
+    for (let row = -r0; row <= r1; row++) for (let col = -c0; col <= c1; col++) {
+      const x = cx + (col + (Math.abs(row) & 1 ? .5 : 0)) * dx, y = cy + row * dy, d = Math.hypot(x - cx, y - cy), fall = Math.max(0, 1 - d / maxd);
+      const ring = Math.max(0, 1 - Math.abs(d / maxd - beat * 1.1) * 7), wave = .5 + .5 * Math.sin(d * .011 - t * 1.4 + Math.sin(x * .004 + t * .3) * 2), pt = pk ? Math.pow(Math.max(0, 1 - Math.hypot(x - ptr.x, y - ptr.y) / (R * 5)), 2) * .75 * pk : 0, a0 = Math.min(1, fall * fall * (.2 + wave * .55) + ring * .85 * fall + pt), a = d < dx * 1.1 ? Math.max(a0, d < 2 ? .85 : .55 * breath) : a0;      /* the button's own cell and the six around it glow, and breathe */
       const near = Math.max(0, 1 - d / (R * 3.3)), warm = ((col * 7 + row * 13) % 11) === 0 || near > .3;
       g.fillStyle = `rgba(${warm ? P.warm : P.cell},` + (a * (warm ? (lt ? .55 : .5) : (lt ? .3 : .42))).toFixed(3) + ')'; hexPath(x, y, R * (.9 + ring * .08)); g.fill();
       g.strokeStyle = `rgba(${P.line},` + (.05 + a * (lt ? .4 : .5)).toFixed(3) + ')'; g.lineWidth = 1; g.stroke();
@@ -23382,7 +23390,7 @@ function rcfHex(now) {
   if (mode === 'off') { const g0 = cv.getContext('2d'); g0.clearRect(0, 0, cv.width, cv.height); return; }
   if (document.hidden || now - (rcfHex.last || 0) < (calm ? 700 : 33)) return; rcfHex.last = now;
   const dpr = Math.min(1.5, window.devicePixelRatio || 1), W = cv.width = Math.floor(innerWidth * dpr), H = cv.height = Math.floor(innerHeight * dpr), g = cv.getContext('2d');
-  const t = calm ? 0 : now / 1000, R = Math.max(26, Math.min(W, H) / 13), dx = R * Math.sqrt(3), dy = R * 1.5, sbEl = RCF.st === 'rec' ? $('.rf-stop') : null, sbr = sbEl && sbEl.getBoundingClientRect(), cx = sbr && sbr.width ? (sbr.left + sbr.width / 2) * dpr : W / 2, cy = sbr && sbr.width ? (sbr.top + sbr.height / 2) * dpr : H * .44, maxd = Math.hypot(W, H) * .6;
+  const t = calm ? 0 : now / 1000, R = hexCellR() * dpr, dx = R * Math.sqrt(3), dy = R * 1.5, sbEl = RCF.st === 'rec' ? $('.rf-stop') : null, sbr = sbEl && sbEl.getBoundingClientRect(), cx = sbr && sbr.width ? (sbr.left + sbr.width / 2) * dpr : W / 2, cy = sbr && sbr.width ? (sbr.top + sbr.height / 2) * dpr : H * .44, maxd = Math.hypot(W, H) * .6;
   /* rings: loud sound while recording, the take while it plays, and a slow beat the rest of the time; a bigger room will make them longer (next) */
   if (!calm) {
     const lv = Math.min(1, RCF.lvl * 4), playing = !!RCF.play;
@@ -23394,11 +23402,12 @@ function rcfHex(now) {
   g.clearRect(0, 0, W, H); if (RCF.st === 'rec' && !RCF.paused) { const rg = g.createRadialGradient(cx, cy, 0, cx, cy, R * 4.6), lvn = Math.min(1, RCF.lvl * 4); rg.addColorStop(0, 'rgba(255,77,79,' + (.2 + lvn * .22).toFixed(3) + ')'); rg.addColorStop(1, 'rgba(255,77,79,0)'); g.fillStyle = rg; g.fillRect(0, 0, W, H); }
   const glow = g.createRadialGradient(cx, cy, 0, cx, cy, maxd); glow.addColorStop(0, 'rgba(' + TP.cell + ',.14)'); glow.addColorStop(.55, 'rgba(' + TP.cell + ',.04)'); glow.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = glow; g.fillRect(0, 0, W, H);
   const sc = W < 800 ? .55 : 1;
-  for (let row = -1; row * dy < H + R; row++) for (let col = -1; col * dx < W + dx; col++) {
-    const x = col * dx + (row & 1 ? dx / 2 : 0), y = row * dy, d = Math.hypot(x - cx, y - cy), fall = Math.max(0, 1 - d / maxd);
+  const r0 = Math.ceil(cy / dy) + 1, r1 = Math.ceil((H - cy) / dy) + 1, c0 = Math.ceil(cx / dx) + 1, c1 = Math.ceil((W - cx) / dx) + 1;      /* anchored on the stop button, the way the start card is anchored on Record */
+  for (let row = -r0; row <= r1; row++) for (let col = -c0; col <= c1; col++) {
+    const x = cx + (col + (Math.abs(row) & 1 ? .5 : 0)) * dx, y = cy + row * dy, d = Math.hypot(x - cx, y - cy), fall = Math.max(0, 1 - d / maxd);
     let a = fall * fall * (.1 + (.5 + .5 * Math.sin(d * .011 - t * 1.2 + Math.sin(x * .004 + t * .3) * 2)) * .32);
     for (const r of RCF.rings) { const age = (t - r.t0) / r.life; a += Math.max(0, 1 - Math.abs(d - age * maxd * 1.05) / (R * 2.4)) * (1 - age) * r.s * (.35 + fall); }
-    a = Math.min(1, a); const warm = ((col * 7 + row * 13) % 11) === 0;
+    a = Math.min(1, a); if (RCF.st === 'rec' && !RCF.paused && d < dx * 1.1) a = Math.max(a, .45); const warm = ((col * 7 + row * 13) % 11) === 0;
     g.beginPath(); for (let i = 0; i < 6; i++) { const an = Math.PI / 6 + i * Math.PI / 3; g.lineTo(x + R * .9 * Math.cos(an), y + R * .9 * Math.sin(an)); } g.closePath();
     g.fillStyle = 'rgba(' + (warm ? TP.warm : TP.cell) + ',' + (a * sc * (warm ? .34 : .26)).toFixed(3) + ')'; g.fill(); g.strokeStyle = 'rgba(' + TP.line + ',' + (.04 + a * .4 * sc * (TP.lt ? .8 : 1)).toFixed(3) + ')'; g.lineWidth = 1; g.stroke();
   }
@@ -23407,8 +23416,9 @@ function rcfHex(now) {
 /* ---------- the recorder ---------- */
 function rcfOpen() {
   if (RCF.el) return; RCF.st = ''; RCF.take = null; RCF.rings = [];
+  { const sb = $('#bootRec'), r = sb && $('#boot') ? sb.getBoundingClientRect() : null; RCF.from = r && r.width ? { cx: r.left + r.width / 2, cy: r.top + r.height / 2, w: r.width, t: performance.now() } : null; }
   RCF.el = h('div', { class: 'rf', id: 'rf', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Record a sample' }, h('canvas', { id: 'rfHex', 'aria-hidden': 'true' }), h('div', { class: 'rf-main', id: 'rfMain' }), rcfDockBuild());
-  document.body.append(RCF.el); rcfTone(); try { listDevices(); } catch (e) { } RCF.dock = setInterval(rcfDockTick, 50); rcfDockSync(); document.addEventListener('keydown', rcfKey, true); RCF.hxT = requestAnimationFrame(rcfHex);
+  hexCellVars(RCF.el); document.body.append(RCF.el); rcfTone(); try { listDevices(); } catch (e) { } RCF.dock = setInterval(rcfDockTick, 50); rcfDockSync(); document.addEventListener('keydown', rcfKey, true); RCF.hxT = requestAnimationFrame(rcfHex);
   if (!E.hasInput && !store.get('rfAsked', false)) { RCF.st = 'ask'; rcfDraw(); } else rcfBegin();
 }
 function rcfClose() {
@@ -23551,6 +23561,9 @@ function rcfDraw() {
     const g = cv.getContext('2d'), W = cv.width, H = cv.height, pk = tk.peaks; g.fillStyle = RCF.el && RCF.el.classList.contains('rf-light') ? 'rgba(36,112,78,.92)' : 'rgba(125,191,155,.9)'; for (let i = 0; i < pk.length; i++) { const hh = Math.max(2, pk[i] * (H - 10)), x = i * (W / pk.length); g.fillRect(x, (H - hh) / 2, Math.max(1, W / pk.length - 1.4), hh); }
   }
   const f = m.querySelector('button.rf-primary, .rf-stop'); if (f) try { f.focus({ preventScroll: true }); } catch (e) { }
+  /* the gold hexagon you pressed arrives as the red stop hexagon: it flies from where Record was, and goes from gold to red */
+  if (RCF.st === 'rec' && RCF.from && performance.now() - RCF.from.t < 8000) { const sg = m.querySelector('.rf-stop-glow'), fr = RCF.from; RCF.from = null;
+    if (sg && sg.animate && !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) { const r = sg.getBoundingClientRect(); if (r.width) try { sg.animate([{ transform: 'translate(' + (fr.cx - (r.left + r.width / 2)) + 'px,' + (fr.cy - (r.top + r.height / 2)) + 'px) scale(' + (fr.w / r.width).toFixed(3) + ')', filter: 'hue-rotate(50deg) brightness(1.12)' }, { transform: 'none', filter: 'none' }], { duration: 650, easing: 'cubic-bezier(.2,.7,.2,1)' }); } catch (e) { } } }
   rcfDockSync();
 }
 

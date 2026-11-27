@@ -2217,3 +2217,12 @@ body[data-form=phone][data-tl=mini] #center{grid-template-rows:minmax(0,auto) mi
 .rf-light .rf-dock.killed .rf-kill{background:linear-gradient(158deg,#ffe08a,#f2b632);color:#251703}
 .rf-light .rf-h::before,.rf-light .rf-h::after{background:#d99a22}
 
+/* ---- 2.88 · the Record button is one cell of the hexagon field (sized by the field itself), and it breathes ---- */
+#boot .boot-hero .boot-rec{width:var(--rec-w,150px)!important;height:var(--rec-h,173px)!important}
+.rf-stop{width:var(--rec-w,96px);height:var(--rec-h,111px)}
+/* the glow breathes, the button itself never moves (so it is always steady to click) */
+@keyframes bootBreath{0%,100%{filter:drop-shadow(0 0 18px rgba(242,182,50,.45)) drop-shadow(0 10px 26px rgba(0,0,0,.35))}50%{filter:drop-shadow(0 0 40px rgba(255,205,90,.85)) drop-shadow(0 10px 26px rgba(0,0,0,.35))}}
+.boot-rec-glow{animation:bootBreath 3.6s ease-in-out infinite}.boot-rec-glow:hover{animation-play-state:paused}
+@keyframes rfIn{from{opacity:0}to{opacity:1}}.rf{animation:rfIn .24s ease-out}
+@media (prefers-reduced-motion:reduce){.boot-rec-glow,.rf{animation:none}}
+
