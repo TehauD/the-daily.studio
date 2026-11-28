@@ -57,6 +57,17 @@ export default function Studio() {
   );
 }
 
+type FormLike = { profile: string; arms: string[]; fewshot_k: number };
+const same = (a: string[], b: string[]) => a.length === b.length && a.every((x, i) => x === b[i]);
+const PRESETS: { id: string; label: string; sub: string; why: string; set: FormLike; match: (f: FormLike) => boolean }[] = [
+  { id: "quick", label: "Quick look", sub: "1 seed · wiring and a first impression", why: "Shows the pipeline works and gives a first impression. Cannot support a claim.",
+    set: { profile: "smoke", arms: ["teacher_filtered"], fewshot_k: 0 }, match: (f) => f.profile === "smoke" && same(f.arms, ["teacher_filtered"]) && f.fewshot_k === 0 },
+  { id: "pilot", label: "Pilot", sub: "3 seeds · control + prompting baseline", why: "Measures the gain and its spread with a negative control and a prompting baseline. Use it to plan the publishable study.",
+    set: { profile: "pilot", arms: ["teacher_filtered", "shuffled_control"], fewshot_k: 3 }, match: (f) => f.profile === "pilot" && same(f.arms, ["teacher_filtered", "shuffled_control"]) && f.fewshot_k === 3 },
+  { id: "publish", label: "Publishable", sub: "6 seeds · control + baseline · review gate", why: "Six seeds so the seed-level test can pass, a negative control and a prompting baseline: eligible for the review gate.",
+    set: { profile: "research", arms: ["teacher_filtered", "shuffled_control"], fewshot_k: 3 }, match: (f) => f.profile === "research" && same(f.arms, ["teacher_filtered", "shuffled_control"]) && f.fewshot_k === 3 },
+];
+
 /** Live power analysis of the chosen design, frozen into the plan on create. */
 function PowerPreview({ profile, minGain }: { profile: string; minGain: number }) {
   const [p, setP] = useState<{ mde_groups: number | null; seed_floor_p: number; design: { groups: number; seeds: number; paraphrases: number }; power_at_min_gain: { power_groups: number }; notes: string[] } | null>(null);
@@ -76,12 +87,13 @@ function PowerPreview({ profile, minGain }: { profile: string; minGain: number }
 }
 
 function Wizard({ onCreated }: { onCreated: (id: string) => void }) {
+  const { prefs } = usePrefs();
   const models = useApi<{ models: Model[] }>("/api/models");
   const cat = useApi<Catalog>("/api/studies/catalog");
   const rd = useApi<Readiness>("/api/system/readiness");
   const pre = (() => { try { return JSON.parse(sessionStorage.getItem("forge.pair") || "null") as { teacher: string; student: string } | null; } catch { return null; } })();
   const ms = models.data?.models ?? [];
-  const [f, setF] = useState({ name: "", profile: "smoke", teacher_id: pre?.teacher ?? "", student_id: pre?.student ?? "", arms: ["teacher_filtered"], min_gain: 0.05, max_steps: "", epochs: "", max_seq_len: "", device: "cuda", focus_skills: [] as string[], fewshot_k: 3 });
+  const [f, setF] = useState({ name: "", profile: "pilot", teacher_id: pre?.teacher ?? "", student_id: pre?.student ?? "", arms: ["teacher_filtered", "shuffled_control"], min_gain: 0.05, max_steps: "", epochs: "", max_seq_len: "", device: "cuda", focus_skills: [] as string[], fewshot_k: 3 });
   const [turbo, setTurbo] = useState<TurboT | null>(null);
   useEffect(() => {
     if (!f.teacher_id && ms.length) setF((x) => ({ ...x, teacher_id: ms.find((m) => m.roles.includes("teacher"))?.id ?? "", student_id: x.student_id || (ms.find((m) => m.roles.includes("student"))?.id ?? "") }));
@@ -114,16 +126,24 @@ function Wizard({ onCreated }: { onCreated: (id: string) => void }) {
               </div>) : null; })()}
         </div>
         <div className="space-y-3">
+          <Field label="Recommended setup" hint={PRESETS.find((x) => x.match(f))?.why ?? "Custom: you changed the profile, arms or baseline."}>
+            <div className="grid gap-1.5 sm:grid-cols-3" role="radiogroup" aria-label="Recommended setup">
+              {PRESETS.map((x) => { const on = x.match(f); return (
+                <button key={x.id} type="button" role="radio" aria-checked={on} onClick={() => setF({ ...f, ...x.set })}
+                  className={cx("rounded-[var(--radius)] border p-2 text-left transition", on ? "border-accent bg-accent-soft" : "border-line hover:border-line-strong")}>
+                  <div className="text-[12.5px] font-medium text-ink">{x.label}</div><div className="text-[11px] leading-snug text-ink-2">{x.sub}</div></button>); })}
+            </div>
+          </Field>
           <Field label="Profile">
             <Segmented label="Profile" value={f.profile} onChange={(v) => setF({ ...f, profile: v })} options={["smoke", "pilot", "research"].map((p) => ({ value: p, label: p }))} />
           </Field>
-          {prof && <div className="rounded-[var(--radius)] border border-line bg-surface-2 p-2.5 text-[11.5px] leading-relaxed text-ink-2"><b className="font-medium text-ink">{prof.seeds.length} seed{prof.seeds.length > 1 ? "s" : ""}</b> · {prof.purpose}<div className="mt-1 font-mono text-[10.5px] text-ink-3">train {JSON.stringify(prof.train)} · tasks {JSON.stringify(prof.taskset)}</div></div>}
+          {prof && <div className="rounded-[var(--radius)] border border-line bg-surface-2 p-2.5 text-[11.5px] leading-relaxed text-ink-2"><b className="font-medium text-ink">{prof.seeds.length} seed{prof.seeds.length > 1 ? "s" : ""}</b> · {prof.purpose}{prefs.mode === "expert" && <div className="mt-1 font-mono text-[10.5px] text-ink-3">train {JSON.stringify(prof.train)} · tasks {JSON.stringify(prof.taskset)}</div>}</div>}
           <Field label="Arms" hint="First arm is the preregistered primary contrast vs base. Additional arms are ablations (one factor each).">
             <div className="flex flex-wrap gap-1.5">
               {Object.keys(cat.data?.arms ?? {}).map((a) => {
                 const on = f.arms.includes(a);
                 return <button key={a} type="button" onClick={() => setF({ ...f, arms: on ? f.arms.filter((x) => x !== a) : [...f.arms, a] })} aria-pressed={on}
-                  className={cx("rounded-[3px] border px-2 py-1 font-mono text-[11px] transition", on ? "border-accent bg-accent-soft text-ink" : "border-line text-ink-3 hover:text-ink")}>{a}{cat.data?.mvp_arms.includes(a) ? "" : " ·ablation"}</button>;
+                  className={cx("rounded-[3px] border px-2 py-1 font-mono text-[11px] transition", on ? "border-accent bg-accent-soft text-ink" : "border-line text-ink-3 hover:text-ink")}>{a}{a === "shuffled_control" ? " ·negative control" : cat.data?.mvp_arms.includes(a) ? "" : " ·ablation"}</button>;
               })}
             </div>
           </Field>

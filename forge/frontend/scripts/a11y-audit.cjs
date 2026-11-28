@@ -7,7 +7,7 @@ const path = require("path");
 const { chromium } = require("playwright");
 const BASE = process.argv[2] || "http://127.0.0.1:8765";
 const AXE = fs.readFileSync(path.join(__dirname, "..", "node_modules", "axe-core", "axe.min.js"), "utf8");
-const ROUTES = ["home", "quant", "pipeline", "learn", "agent-studio", "knowledge-studio", "studio", "datasets", "training", "playground", "modelmap", "lens", "weightlab",
+const ROUTES = ["home", "quant", "share", "pipeline", "learn", "agent-studio", "knowledge-studio", "studio", "datasets", "training", "playground", "modelmap", "lens", "weightlab",
   "trajectories", "knowledge", "evaluation", "robustness", "bench", "compare", "history", "evidence", "governance", "model", "observatory", "overview", "factory", "guide", "settings"];
 (async () => {
   const browser = await chromium.launch();

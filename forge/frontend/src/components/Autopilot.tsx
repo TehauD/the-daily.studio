@@ -16,6 +16,7 @@ export function Autopilot({ sid, sealed, onChange }: { sid: string; sealed: bool
   const plan = useApi<PlanT>(`/api/studies/${sid}/autopilot?quant=${quant}`, 4000);
   const [seal, setSeal] = useState("");
   const [job, setJob] = useState<string | null>(null);
+  const [ran, setRan] = useState(false);
   const act = useAction();
   const steps = plan.data?.steps ?? [];
   const running = plan.data?.running ?? null;
@@ -59,7 +60,8 @@ export function Autopilot({ sid, sealed, onChange }: { sid: string; sealed: bool
               {sealPending && seal !== "SEAL" ? "Run up to the seal" : "Run everything that's left"}</Button>
             <ErrorLine error={act.error} />
           </>)}
-          {jid && <JobLog key={jid} jobId={jid} height={220} onDone={() => { setJob(null); void plan.reload(); onChange?.(); }} />}
+          {ran && !jid && sealPending && <Notice tone="info">The run stopped before the seal: practice results are ready. Read them on <button type="button" className="text-accent underline" onClick={() => goto("evidence")}>Evidence</button>; when you are satisfied, type SEAL here and run again for the final test and checks.</Notice>}
+          {jid && <JobLog key={jid} jobId={jid} height={220} onDone={() => { setJob(null); setRan(true); void plan.reload(); onChange?.(); }} />}
           {!left.length && <Notice tone="info">Nothing left to run for this study.</Notice>}
         </div>
       </div>

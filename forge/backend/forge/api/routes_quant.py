@@ -110,3 +110,22 @@ def get_layers(sid: str, label: str, st: AppState = Depends(get_state)):
     if not (s.root / "quant" / lab.slug(label) / "manifest.json").exists():
         raise HTTPException(404, "Unknown variant")
     return lab.layers(s, lab.slug(label))
+
+
+@router.get("/served-models")
+def served_models(sid: str, endpoint: str, st: AppState = Depends(get_state)):
+    """Models an OpenAI-compatible server on this machine is serving (LM Studio, vLLM) — so the id is picked, not typed."""
+    from urllib.parse import urlparse
+
+    import httpx
+    _study(st, sid)
+    if urlparse(endpoint).hostname not in ("127.0.0.1", "localhost", "::1"):
+        raise HTTPException(422, "Only servers on this machine (loopback) can be listed")
+    url = endpoint.rstrip("/") + "/models"
+    try:
+        r = httpx.get(url, timeout=3.0, trust_env=False)   # loopback: never through a proxy
+        r.raise_for_status()
+        ids = [m.get("id") for m in (r.json().get("data") or []) if m.get("id")]
+    except (httpx.HTTPError, ValueError) as e:
+        raise HTTPException(502, f"No OpenAI-compatible server answered at {url} ({type(e).__name__}). Start LM Studio's server or `vllm serve` first.")
+    return {"endpoint": endpoint, "models": [i for i in ids if "embed" not in i.lower()]}

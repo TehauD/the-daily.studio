@@ -41,38 +41,43 @@ const Pipeline = lazy(() => import("./pages/Pipeline"));
 const Compare = lazy(() => import("./pages/Compare"));
 const Evidence = lazy(() => import("./pages/Evidence"));
 const QuantLab = lazy(() => import("./pages/QuantLab"));
+const Share = lazy(() => import("./pages/Share"));
 const History = lazy(() => import("./pages/History"));
 
-/** Four workspaces, in the order people work: build it, see and steer it, measure it, run the lab. `expert` pages are hidden in Simple mode. */
+/** Grouped by the question people are asking: build it, did it work, what's inside, make it smaller, share and decide, set up.
+ * `expert` pages are hidden in Simple mode. */
 const NAV = [
   { group: "", items: [{ key: "home", label: "Home", icon: "home" }, { key: "pipeline", label: "Pipeline", icon: "trajectory" }, { key: "learn", label: "Learn", icon: "guide" }] },
-  { group: "Build", items: [
+  { group: "Build it", items: [
     { key: "agent-studio", label: "Agent Studio", icon: "agent" },
     { key: "knowledge-studio", label: "Knowledge Studio", icon: "layers" },
     { key: "studio", label: "Experiment Studio", icon: "studio" },
     { key: "datasets", label: "Dataset Factory", icon: "dataset", expert: true },
     { key: "training", label: "Training Lab", icon: "training", expert: true }] },
-  { group: "See inside & control", items: [
+  { group: "Did it work?", items: [
+    { key: "evidence", label: "Evidence", icon: "check" },
+    { key: "compare", label: "Compare", icon: "compare" },
+    { key: "robustness", label: "Robustness & limits", icon: "alert" },
+    { key: "history", label: "History", icon: "clock" },
+    { key: "evaluation", label: "Evaluation Lab", icon: "evaluation", expert: true },
+    { key: "bench", label: "Bench Lab", icon: "flask", expert: true }] },
+  { group: "Look inside", items: [
     { key: "playground", label: "Playground", icon: "play" },
     { key: "modelmap", label: "Model Map", icon: "map" },
-    { key: "lens", label: "Distillation Lens", icon: "lens" },
-    { key: "weightlab", label: "Weight Lab", icon: "sliders" },
+    { key: "lens", label: "Distillation Lens", icon: "lens", expert: true },
+    { key: "weightlab", label: "Weight Lab", icon: "sliders", expert: true },
     { key: "trajectories", label: "Trajectory Explorer", icon: "trajectory", expert: true },
     { key: "knowledge", label: "Knowledge Graph", icon: "graph", expert: true }] },
-  { group: "Measure", items: [
-    { key: "evidence", label: "Evidence", icon: "check" },
-    { key: "evaluation", label: "Evaluation Lab", icon: "evaluation" },
-    { key: "robustness", label: "Robustness & limits", icon: "alert" },
-    { key: "bench", label: "Bench Lab", icon: "flask" },
-    { key: "compare", label: "Compare", icon: "compare" },
-    { key: "history", label: "History", icon: "clock" },
-    { key: "governance", label: "Governance", icon: "seal" }] },
-  { group: "Operate", items: [
-    { key: "model", label: "Model Hub", icon: "spark" },
-    { key: "observatory", label: "Model Observatory", icon: "observatory" },
-    { key: "overview", label: "System Overview", icon: "overview", expert: true },
-    { key: "factory", label: "Model Factory", icon: "factory", expert: true },
+  { group: "Make it smaller & ship", items: [
     { key: "quant", label: "Quantization Lab", icon: "layers" },
+    { key: "factory", label: "Model Factory", icon: "factory" }] },
+  { group: "Share & decide", items: [
+    { key: "share", label: "Share", icon: "external" },
+    { key: "governance", label: "Governance", icon: "seal" }] },
+  { group: "Set up", items: [
+    { key: "observatory", label: "Model Observatory", icon: "observatory" },
+    { key: "model", label: "Model Hub", icon: "spark" },
+    { key: "overview", label: "System Overview", icon: "overview", expert: true },
     { key: "guide", label: "Guide", icon: "guide" },
     { key: "settings", label: "Settings", icon: "settings" }] },
 ] as const;
@@ -257,7 +262,7 @@ function Shell() {
     { id: "verify", label: "Verify GPU (forward/backward, BF16)", group: "Actions", run: () => { void api.post("/api/jobs/verify-gpu"); go("overview"); } },
   ], [go, set, prefs.sidebarCollapsed]);
   const Page = { home: Home, overview: Overview, observatory: Observatory, studio: Studio, trajectories: Trajectories, datasets: Datasets,
-    training: Training, evaluation: Evaluation, knowledge: Knowledge, "knowledge-studio": KnowledgeStudio, lens: Lens, "agent-studio": AgentStudio, playground: Playground, weightlab: WeightLab, modelmap: ModelMap, robustness: Robustness, learn: Learn, governance: Governance, bench: BenchLab, model: ModelHub, pipeline: Pipeline, compare: Compare, evidence: Evidence, quant: QuantLab, history: History, factory: Factory, settings: Settings, guide: Guide }[route];
+    training: Training, evaluation: Evaluation, knowledge: Knowledge, "knowledge-studio": KnowledgeStudio, lens: Lens, "agent-studio": AgentStudio, playground: Playground, weightlab: WeightLab, modelmap: ModelMap, robustness: Robustness, learn: Learn, governance: Governance, bench: BenchLab, model: ModelHub, pipeline: Pipeline, compare: Compare, evidence: Evidence, quant: QuantLab, share: Share, history: History, factory: Factory, settings: Settings, guide: Guide }[route];
   return (
     <AssistantProvider route={route}>
     <div className="flex min-h-full">

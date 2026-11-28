@@ -1,12 +1,13 @@
 import { useMemo, useState } from "react";
 import { Explain } from "../components/Explain";
-import { StudySelect } from "../components/live";
+import { JobLog, StudySelect } from "../components/live";
 import { Figure, Limits, fmtPct } from "../components/results";
 import { Badge, Button, Empty, ErrorLine, Field, Notice, PageHeader, Panel, Prov, Segmented, Skeleton, cx, inputCls, td, th, tr } from "../components/ui";
 import { api } from "../lib/api";
 import { goto, handoff } from "../lib/handoff";
 import { useAction, useApi } from "../lib/hooks";
 import { usePrefs } from "../lib/prefs";
+import type { Job } from "../lib/types";
 
 interface Rate { rate: number | null; ci: number[] | null; n: number; speed?: { tokens_per_s: number; median_episode_ms: number | null } | null }
 interface VRes extends Rate { agreement: number | null; only_quant_right: number; only_unquantized_right: number; mcnemar_p: number | null }
@@ -102,107 +103,129 @@ function LayerMap({ sid, label }: { sid: string; label: string }) {
   );
 }
 
+/** The plain answer: the smallest variant that behaves like the unquantized student on these tasks. */
+function pick(d: LabT, split: string): { v: Variant; diff: number } | null {
+  const u = d.unquantized[split]?.rate;
+  if (u == null) return null;
+  const ok = d.variants.map((v) => ({ v, r: v.results[split] })).filter(({ v, r }) => r?.rate != null && v.size_bytes && (r.agreement ?? 0) >= 0.95 && (r.rate! - u) >= -0.02 && (r.mcnemar_p ?? 1) >= 0.05);
+  ok.sort((a, b) => (a.v.size_bytes ?? 0) - (b.v.size_bytes ?? 0));
+  return ok[0] ? { v: ok[0].v, diff: ok[0].r!.rate! - u } : null;
+}
+
 export default function QuantLab() {
   const { prefs } = usePrefs();
+  const expert = prefs.mode === "expert";
   const sid = prefs.activeStudy ?? null;
   const q = useApi<LabT>(sid ? `/api/studies/${sid}/quant` : null, 5000);
   const d = q.data;
   const [split, setSplit] = useState<"dev" | "test">("dev");
-  const [pick, setPick] = useState<string | null>(null);
+  const [pickL, setPickL] = useState<string | null>(null);
   const [labels, setLabels] = useState<Record<string, string>>({});
   const [recipe, setRecipe] = useState<RecipeT | null>(null);
+  const [fam, setFam] = useState("reference");
   const [srv, setSrv] = useState({ method: "gguf_q4_k_m_imatrix", label: "", endpoint: "http://127.0.0.1:1234/v1", model: "", size_gb: "" });
+  const [found, setFound] = useState<string[] | null>(null);
+  const [job, setJob] = useState<{ id: string; what: string } | null>(null);
   const act = useAction();
+  const start = (what: string, path: string, body: unknown) => void act.run(async () => { const j = await api.post<Job>(path, body); setJob({ id: j.id, what }); });
   const refVariants = useMemo(() => d?.variants.filter((v) => v.family === "reference") ?? [], [d]);
-  const layerPick = pick && d?.variants.some((v) => v.label === pick) ? pick : refVariants[0]?.label ?? null;
+  const layerPick = pickL && d?.variants.some((v) => v.label === pickL) ? pickL : refVariants[0]?.label ?? null;
   const served = d?.methods.filter((m) => m.family !== "reference") ?? [];
   const unq = d?.unquantized[split];
+  const best = d ? pick(d, split) : null;
+  const cols = expert ? ["variant", "method", "size", "strict success", "vs unquantized", "same verdict", "only-q / only-u", "McNemar p", "speed", ""] : ["variant", "how", "size", "strict success", "vs unquantized", "same verdict on", ""];
   return (
     <div className="space-y-4">
-      <PageHeader kicker="Package" title="Quantization Lab"
-        subtitle="Make your own smaller variants of the trained student — in FORGE, for LM Studio (GGUF) or for vLLM — and measure exactly what each one costs on the study's own tasks."
+      <PageHeader kicker="Make it smaller & ship" title="Quantization Lab"
+        subtitle="Make smaller versions of the trained student — in FORGE, for LM Studio or for vLLM — and see exactly what each one costs on the study's own tasks."
         right={<div className="flex flex-wrap items-center gap-2"><StudySelect /><Segmented label="Split" value={split} onChange={setSplit} options={[{ value: "dev", label: "practice (dev)" }, { value: "test", label: "final test" }]} /></div>} />
       <ErrorLine error={q.error} />
       {!sid ? <Panel><Empty icon="layers">Choose a study in the top bar.</Empty></Panel> : !d ? <Skeleton h={300} /> : (
         <>
-          {!d.source && <Notice tone="warn">This study has no verified merged export yet. Quantization starts from it: seal the study, run the final test, then Model Factory → Export. Served variants can still be registered once you have them.</Notice>}
-          <Panel title="Size against accuracy" prov={<Prov kind="measured" source={`${split === "test" ? "sealed final test" : "practice tasks"} · same tasks, tools and scoring`} />}
-            right={<Explain title="Quantization" what={<>Quantization stores each weight with fewer bits. Each variant here is a new model, measured on the same tasks as the unquantized student, task by task.</>}
-              read={<ul className="list-disc space-y-1 pl-4"><li><b>Agreement</b>: share of tasks where the variant and the unquantized student give the same verdict.</li><li><b>Only-q / only-u</b>: tasks only the variant / only the unquantized model gets right; McNemar tests whether the difference is more than chance.</li><li>Choose on practice tasks; confirm the chosen variant once on the sealed test.</li></ul>}
+          {!d.source && <Notice tone="warn">Quantization starts from the study's verified merged export. Seal the study, run the final test, then export (Pipeline → Make it smaller &amp; ship). Served variants can still be measured.</Notice>}
+          {job && <Panel title={`Working: ${job.what}`} eyebrow="live"><JobLog key={job.id} jobId={job.id} height={160} onDone={() => { setJob(null); void q.reload(); }} /></Panel>}
+          <Panel title="The answer" prov={<Prov kind="measured" source={split === "test" ? "sealed final test" : "practice tasks"} />}>
+            {!d.variants.length ? <p className="text-[13px] text-ink-2">No smaller versions yet. Start with <b>8-bit</b> (almost always safe) and <b>4-bit activation-aware</b> below, then compare.</p>
+              : best ? <p className="text-[13px] text-ink-2"><b className="text-good-ink">Smallest version that behaves like the original: {best.v.label}</b> — {GB(best.v.size_bytes)}{best.v.simulated ? " (estimated)" : ""} instead of {GB(d.bf16_bytes)}, {best.diff >= 0 ? "+" : "−"}{Math.abs(best.diff * 100).toFixed(1)} pts, same verdict on {fmtPct(best.v.results[split]?.agreement)} of tasks{split === "dev" ? ". Confirm it once on the final test." : "."}
+                {best.v.simulated && " It is a FORGE simulation: make the real file for LM Studio or vLLM with the same bit width, then measure that."}</p>
+              : <p className="text-[13px] text-warn-ink"><b>No version matches the original yet</b> on {split === "test" ? "the final test" : "practice tasks"} (needs ≥ 95 % same verdicts and no measurable drop). Try a higher bit width{unq?.rate == null ? " — or measure the unquantized student first" : ""}.</p>}
+          </Panel>
+          <Panel title="Size against accuracy" prov={<Prov kind="measured" source="same tasks, tools and scoring" />}
+            right={<Explain title="Quantization" what={<>Quantization stores each weight with fewer bits. Each smaller version is a new model, measured on the same tasks as the original, task by task.</>}
+              read={<ul className="list-disc space-y-1 pl-4"><li><b>Same verdict</b>: share of tasks where the smaller version and the original are both right or both wrong.</li><li>Expert mode adds which tasks only one of them gets right and McNemar's test of that difference.</li><li>Choose on practice tasks; confirm the chosen version once on the final test.</li></ul>}
               math={<p>Reference quantizer: per group of g weights, scale = max|w| / (2^(b−1) − 1), ŵ = round(w/scale)·scale. Activation-aware: scale input channels by a^α before rounding, α chosen per layer to minimise ‖(W − Ŵ)·diag(a)‖.</p>} />}>
             <Frontier d={d} split={split} />
           </Panel>
-          <Panel title="Variants" prov={<Prov kind="measured" />}>
-            {!d.variants.length ? <Empty icon="layers">No variants yet — make one below.</Empty> : (
-              <div className="overflow-x-auto" tabIndex={0} aria-label="Variants, scrollable"><table className="w-full min-w-[920px] text-[12px]">
-                <thead><tr>{["variant", "method", "size", "strict success", "vs unquantized", "agreement", "only-q / only-u", "McNemar p", "speed", ""].map((h, i) => <th key={h + i} className={cx(th, i >= 2 && i <= 8 && "text-right")}>{h}</th>)}</tr></thead>
+          <Panel title="Versions" prov={<Prov kind="measured" />}>
+            {!d.variants.length ? <Empty icon="layers">None yet — make one below.</Empty> : (
+              <div className="overflow-x-auto" tabIndex={0} aria-label="Versions, scrollable"><table className={cx("w-full text-[12px]", expert ? "min-w-[920px]" : "min-w-[640px]")}>
+                <thead><tr>{cols.map((h, i) => <th key={h + i} className={cx(th, i >= 2 && i < cols.length - 1 && "text-right")}>{h}</th>)}</tr></thead>
                 <tbody>
-                  {unq && <tr className={tr}><td className={cx(td, "font-medium")}>unquantized</td><td className={td}>16-bit merged export</td><td className={cx(td, "num text-right font-mono")}>{GB(d.bf16_bytes)}</td>
-                    <td className={cx(td, "num text-right font-mono")}>{fmtPct(unq.rate, 1)}</td><td className={td} /><td className={td} /><td className={td} /><td className={td} />
-                    <td className={cx(td, "num whitespace-nowrap text-right font-mono")}>{unq.speed ? `${unq.speed.tokens_per_s.toFixed(1)} tok/s` : "—"}</td><td className={td} /></tr>}
+                  {unq && <tr className={tr}><td className={cx(td, "font-medium")}>original</td><td className={td}>16-bit merged export</td><td className={cx(td, "num whitespace-nowrap text-right font-mono")}>{GB(d.bf16_bytes)}</td>
+                    <td className={cx(td, "num whitespace-nowrap text-right font-mono")}>{fmtPct(unq.rate, 1)}</td>{Array.from({ length: cols.length - 4 }, (_, k) => <td key={k} className={td} />)}</tr>}
                   {d.variants.map((v) => { const r = v.results[split]; const diff = r?.rate != null && unq?.rate != null ? r.rate - unq.rate : null; return (
-                    <tr key={v.label} className={tr}>
-                      <td className={cx(td, "whitespace-nowrap font-mono")}><span className="mr-1.5 inline-block h-2 w-2 rounded-full" style={{ background: FAM_COLOR[v.family] }} />{v.label}</td>
+                    <tr key={v.label} className={cx(tr, best?.v.label === v.label && "bg-[color:var(--good)]/[0.05]")}>
+                      <td className={cx(td, "whitespace-nowrap font-mono")}><span className="mr-1.5 inline-block h-2 w-2 rounded-full" style={{ background: FAM_COLOR[v.family] }} />{v.label}{best?.v.label === v.label && <span className="ml-1.5"><Badge tone="good">smallest match</Badge></span>}</td>
                       <td className={td}>{v.method_label}{v.simulated && <span className="ml-1"><Badge>simulated</Badge></span>}</td>
                       <td className={cx(td, "num whitespace-nowrap text-right font-mono")}>{GB(v.size_bytes)}{v.simulated && v.size_bytes ? " est." : ""}</td>
-                      <td className={cx(td, "num whitespace-nowrap text-right font-mono")}>{r ? `${fmtPct(r.rate, 1)}${r.ci ? ` (${fmtPct(r.ci[0])}–${fmtPct(r.ci[1])})` : ""}` : "—"}</td>
+                      <td className={cx(td, "num whitespace-nowrap text-right font-mono")}>{r ? `${fmtPct(r.rate, 1)}${expert && r.ci ? ` (${fmtPct(r.ci[0])}–${fmtPct(r.ci[1])})` : ""}` : "—"}</td>
                       <td className={cx(td, "num text-right font-mono", diff != null && diff < -0.02 && "text-crit-ink")}>{diff == null ? "—" : `${diff >= 0 ? "+" : "−"}${Math.abs(diff * 100).toFixed(1)} pts`}</td>
-                      <td className={cx(td, "num text-right font-mono")}>{fmtPct(r?.agreement)}</td>
-                      <td className={cx(td, "num text-right font-mono")}>{r ? `${r.only_quant_right} / ${r.only_unquantized_right}` : "—"}</td>
-                      <td className={cx(td, "num text-right font-mono")}>{r?.mcnemar_p == null ? "—" : r.mcnemar_p.toFixed(3)}</td>
-                      <td className={cx(td, "num whitespace-nowrap text-right font-mono")} title={v.simulated ? "16-bit simulation speed, not a real low-bit kernel" : "measured while answering the tasks"}>{r?.speed ? `${r.speed.tokens_per_s.toFixed(1)} tok/s${v.simulated ? "*" : ""}` : "—"}</td>
+                      <td className={cx(td, "num text-right font-mono")}>{r?.agreement == null ? "—" : `${fmtPct(r.agreement)}${expert ? "" : " of tasks"}`}</td>
+                      {expert && <><td className={cx(td, "num text-right font-mono")}>{r ? `${r.only_quant_right} / ${r.only_unquantized_right}` : "—"}</td>
+                        <td className={cx(td, "num text-right font-mono")}>{r?.mcnemar_p == null ? "—" : r.mcnemar_p.toFixed(3)}</td>
+                        <td className={cx(td, "num whitespace-nowrap text-right font-mono")} title={v.simulated ? "16-bit simulation speed, not a real low-bit kernel" : "measured while answering the tasks"}>{r?.speed ? `${r.speed.tokens_per_s.toFixed(1)} tok/s${v.simulated ? "*" : ""}` : "—"}</td></>}
                       <td className={cx(td, "whitespace-nowrap text-right [&>*+*]:ml-1")}>
-                        {!r && (split === "dev" || d.sealed) && <Button size="sm" busy={act.busy} onClick={() => void act.run(() => api.post(`/api/studies/${sid}/quant/${v.label}/evaluate`, { split }))}>Measure</Button>}
-                        {v.family === "reference" && <Button size="sm" onClick={() => setPick(v.label)}>Layers</Button>}
+                        {!r && (split === "dev" || d.sealed) && <Button size="sm" busy={act.busy} disabled={!!job} onClick={() => start(`measure ${v.label} on ${split}`, `/api/studies/${sid}/quant/${v.label}/evaluate`, { split })}>Measure</Button>}
+                        {v.family === "reference" && <Button size="sm" onClick={() => { setPickL(v.label); document.getElementById("q-layers")?.scrollIntoView({ behavior: "smooth" }); }}>Layers</Button>}
                         <Button size="sm" icon="compare" onClick={() => { handoff("compare.a", v.ref); handoff("compare.b", d.unquantized_ref); goto("compare"); }}>Compare</Button>
                       </td>
                     </tr>); })}
                 </tbody></table>
-                <p className="mt-1 text-[11px] text-ink-3">* speed of the 16-bit simulation, not representative of a low-bit kernel.</p></div>)}
+                {expert && <p className="mt-1 text-[11px] text-ink-3">* speed of the 16-bit simulation, not representative of a low-bit kernel.</p>}</div>)}
             {split === "test" && !d.sealed && <div className="mt-2"><Notice tone="info">The final test opens after SEAL.</Notice></div>}
             <ErrorLine error={act.error} />
           </Panel>
           <div className="grid gap-4 xl:grid-cols-2 [&>*]:min-w-0">
-            <Panel title="Make a variant" prov={<Prov kind="declared" source="method catalogue" />}>
-              <div className="space-y-4">{RUNTIMES.map((rt) => (
-                <section key={rt.family} aria-label={rt.title}>
-                  <div className="flex items-center gap-2"><span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: FAM_COLOR[rt.family] }} /><h3 className="text-[13px] font-semibold text-ink">{rt.title}</h3></div>
-                  <p className="mb-2 text-[11.5px] text-ink-3">{rt.sub}</p>
-                  <ul className="space-y-2">{d.methods.filter((m) => m.family === rt.family).map((m) => (
-                    <li key={m.id} className="rounded-[var(--radius)] border border-line p-2.5">
-                      <div className="flex flex-wrap items-center justify-between gap-2"><div><div className="text-[12.5px] font-medium text-ink">{m.label}</div><div className="text-[11.5px] text-ink-2">{m.about}</div>
-                        <div className="mt-0.5 font-mono text-[10.5px] text-ink-3">≈{m.bits} bits{m.group ? ` · group ${m.group}` : ""}{m.calibrated ? " · calibrated on training split" : ""}{m.needs.length ? ` · needs ${m.needs.join(", ")}` : ""}</div></div>
-                        {m.family === "reference" ? (
-                          <div className="flex items-center gap-1.5"><input aria-label={`Label for ${m.label}`} className={cx(inputCls, "w-28")} placeholder={m.id} value={labels[m.id] ?? ""} onChange={(e) => setLabels({ ...labels, [m.id]: e.target.value })} />
-                            <span className="whitespace-nowrap"><Button size="sm" tone="primary" disabled={!d.source} busy={act.busy} onClick={() => void act.run(() => api.post(`/api/studies/${sid}/quant/reference`, { method: m.id, label: labels[m.id] || null, split: "dev" }))}>Make & measure</Button></span></div>
-                        ) : <Button size="sm" disabled={!d.source} busy={act.busy} onClick={() => void act.run(async () => setRecipe(await api.get<RecipeT>(`/api/studies/${sid}/quant/recipe?method=${m.id}`)))}>Recipe</Button>}
-                      </div>
-                    </li>))}</ul>
-                </section>))}</div>
+            <Panel title="Make a smaller version" prov={<Prov kind="declared" source="method catalogue" />}>
+              <div className="mb-3"><Segmented label="Where it will run" value={fam} onChange={(v) => { setFam(v); setRecipe(null); }} options={RUNTIMES.map((r) => ({ value: r.family, label: r.title }))} /></div>
+              <p className="mb-2 text-[12px] text-ink-2">{RUNTIMES.find((r) => r.family === fam)?.sub}</p>
+              <ul className="space-y-2">{d.methods.filter((m) => m.family === fam).map((m) => (
+                <li key={m.id} className="rounded-[var(--radius)] border border-line p-2.5">
+                  <div className="flex flex-wrap items-center justify-between gap-2"><div className="min-w-0"><div className="text-[12.5px] font-medium text-ink">{m.label}</div><div className="text-[11.5px] text-ink-2">{m.about}</div>
+                    {expert && <div className="mt-0.5 font-mono text-[10.5px] text-ink-3">≈{m.bits} bits{m.group ? ` · group ${m.group}` : ""}{m.calibrated ? " · calibrated on training split" : ""}{m.needs.length ? ` · needs ${m.needs.join(", ")}` : ""}</div>}</div>
+                    {m.family === "reference" ? (
+                      <span className="flex items-center gap-1.5 whitespace-nowrap"><input aria-label={`Label for ${m.label}`} className={cx(inputCls, "!w-28")} placeholder={m.id} value={labels[m.id] ?? ""} onChange={(e) => setLabels({ ...labels, [m.id]: e.target.value })} />
+                        <Button size="sm" tone="primary" disabled={!d.source || !!job} busy={act.busy} onClick={() => start(`make ${labels[m.id] || m.id}`, `/api/studies/${sid}/quant/reference`, { method: m.id, label: labels[m.id] || null, split: "dev" })}>Make & measure</Button></span>
+                    ) : <Button size="sm" disabled={!d.source} busy={act.busy} onClick={() => void act.run(async () => setRecipe(await api.get<RecipeT>(`/api/studies/${sid}/quant/recipe?method=${m.id}`)))}>How to make it</Button>}
+                  </div>
+                </li>))}</ul>
+              {recipe && recipe.method.family === fam && (
+                <div className="mt-3 rounded-[var(--radius)] border border-line bg-surface-2 p-3">
+                  <div className="mb-1.5 text-[12.5px] font-medium text-ink">{recipe.method.label}: steps</div>
+                  <ol className="list-decimal space-y-1.5 pl-5 text-[12px] text-ink-2">{recipe.steps.map((x) => <li key={x} className="break-words">{x}</li>)}</ol>
+                  {expert && <div className="mt-2 font-mono text-[11px] text-ink-3 break-all">calibration: {recipe.calibration.samples} samples · {recipe.calibration.source} · sha256 {recipe.calibration.sha256.slice(0, 16)}…{recipe.spec ? <><br />spec: {recipe.spec}</> : null}</div>}
+                </div>)}
             </Panel>
-            <div className="space-y-4">
-              {recipe && (
-                <Panel title={`Recipe · ${recipe.method.label}`} prov={<Prov kind="computed" source="written by FORGE" />}>
-                  <ol className="list-decimal space-y-1.5 pl-5 text-[12px] text-ink-2">{recipe.steps.map((s) => <li key={s} className="break-words">{s}</li>)}</ol>
-                  <div className="mt-2 rounded-[var(--radius)] bg-surface-2 p-2 font-mono text-[11px] text-ink-2 break-all">calibration: {recipe.calibration.samples} samples · {recipe.calibration.source}<br />{recipe.calibration.file}<br />sha256 {recipe.calibration.sha256.slice(0, 16)}…{recipe.spec ? <><br />spec: {recipe.spec}</> : null}</div>
-                </Panel>)}
-              <Panel title="Measure a served model" prov={<Prov kind="measured" source="loopback endpoint on this machine" />}>
-                <p className="mb-2 text-[12px] text-ink-2">A GGUF loaded in LM Studio, or a compressed-tensors model served by vLLM: FORGE runs the study's tasks through its OpenAI-compatible endpoint and records it as a variant.</p>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  <Field label="Method"><select className={inputCls} value={srv.method} onChange={(e) => setSrv({ ...srv, method: e.target.value, endpoint: e.target.value.startsWith("vllm") ? "http://127.0.0.1:8000/v1" : "http://127.0.0.1:1234/v1" })}>{served.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}</select></Field>
-                  <Field label="Label"><input className={inputCls} value={srv.label} placeholder="e.g. q4km lmstudio" onChange={(e) => setSrv({ ...srv, label: e.target.value })} /></Field>
-                  <Field label="Endpoint"><input className={inputCls} value={srv.endpoint} onChange={(e) => setSrv({ ...srv, endpoint: e.target.value })} /></Field>
-                  <Field label="Model id"><input className={inputCls} value={srv.model} placeholder="as the server lists it" onChange={(e) => setSrv({ ...srv, model: e.target.value })} /></Field>
-                  <Field label="File size (GB, optional)"><input className={inputCls} inputMode="decimal" value={srv.size_gb} onChange={(e) => setSrv({ ...srv, size_gb: e.target.value })} /></Field>
-                </div>
-                <div className="mt-2"><Button tone="primary" icon="play" busy={act.busy} disabled={!srv.label.trim() || !srv.model.trim()}
-                  onClick={() => void act.run(() => api.post(`/api/studies/${sid}/quant/served`, { method: srv.method, label: srv.label, endpoint: srv.endpoint, model: srv.model, split: "dev", size_bytes: srv.size_gb ? Math.round(Number(srv.size_gb) * 1e9) : null }))}>Measure on practice tasks</Button></div>
-              </Panel>
-            </div>
+            <Panel title="Measure one that's running" prov={<Prov kind="measured" source="server on this machine" />}>
+              <p className="mb-2 text-[12px] text-ink-2">A GGUF loaded in LM Studio, or a model served by vLLM: FORGE runs the study's tasks through it and adds it to the comparison.</p>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <Field label="Server"><select className={inputCls} value={srv.endpoint} onChange={(e) => { setSrv({ ...srv, endpoint: e.target.value, method: e.target.value.includes(":8000") ? "vllm_w4a16_gptq" : "gguf_q4_k_m_imatrix", model: "" }); setFound(null); }}>
+                  <option value="http://127.0.0.1:1234/v1">LM Studio (127.0.0.1:1234)</option><option value="http://127.0.0.1:8000/v1">vLLM (127.0.0.1:8000)</option></select></Field>
+                <Field label="Model">{found ? <select className={inputCls} value={srv.model} onChange={(e) => setSrv({ ...srv, model: e.target.value, label: srv.label || e.target.value.split("/").pop()!.toLowerCase().replace(/[^a-z0-9]+/g, "_").slice(0, 30) })}>
+                  <option value="">— choose —</option>{found.map((m) => <option key={m}>{m}</option>)}</select>
+                  : <Button size="sm" busy={act.busy} onClick={() => void act.run(async () => setFound((await api.get<{ models: string[] }>(`/api/studies/${sid}/quant/served-models?endpoint=${encodeURIComponent(srv.endpoint)}`)).models))}>Find running models</Button>}</Field>
+                <Field label="How it was made"><select className={inputCls} value={srv.method} onChange={(e) => setSrv({ ...srv, method: e.target.value })}>{served.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}</select></Field>
+                <Field label="Label"><input className={inputCls} value={srv.label} placeholder="e.g. q4km_lmstudio" onChange={(e) => setSrv({ ...srv, label: e.target.value })} /></Field>
+                {expert && <Field label="File size (GB, optional)"><input className={inputCls} inputMode="decimal" value={srv.size_gb} onChange={(e) => setSrv({ ...srv, size_gb: e.target.value })} /></Field>}
+              </div>
+              <div className="mt-2"><Button tone="primary" icon="play" busy={act.busy} disabled={!srv.label.trim() || !srv.model.trim() || !!job}
+                onClick={() => start(`measure served ${srv.label}`, `/api/studies/${sid}/quant/served`, { method: srv.method, label: srv.label, endpoint: srv.endpoint, model: srv.model, split: "dev", size_bytes: srv.size_gb ? Math.round(Number(srv.size_gb) * 1e9) : null })}>Measure on practice tasks</Button></div>
+            </Panel>
           </div>
-          {layerPick && <Panel title="Per-layer error" prov={<Prov kind="measured" source="exact, from the quantized weights" />}
-            right={refVariants.length > 1 ? <select aria-label="Variant" className={cx(inputCls, "w-40")} value={layerPick} onChange={(e) => setPick(e.target.value)}>{refVariants.map((v) => <option key={v.label}>{v.label}</option>)}</select> : undefined}>
-            <LayerMap sid={sid} label={layerPick} /></Panel>}
+          {layerPick && expert && <div id="q-layers"><Panel title="Per-layer error" prov={<Prov kind="measured" source="exact, from the quantized weights" />}
+            right={refVariants.length > 1 ? <select aria-label="Version" className={cx(inputCls, "w-40")} value={layerPick} onChange={(e) => setPickL(e.target.value)}>{refVariants.map((v) => <option key={v.label}>{v.label}</option>)}</select> : undefined}>
+            <LayerMap sid={sid} label={layerPick} /></Panel></div>}
+          {layerPick && !expert && <div id="q-layers"><Notice tone="info">Expert mode shows where in the model each version's rounding error is (per-layer map).</Notice></div>}
           <Limits>{d.honesty}</Limits>
         </>)}
     </div>

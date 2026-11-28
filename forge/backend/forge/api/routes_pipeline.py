@@ -159,7 +159,7 @@ def pipeline(project: str, study_id: str | None = None, st: AppState = Depends(g
     tsec = (trep.get("splits") or {}).get("test")
     ph.append(_phase("final", "locked" if not mdone else "done" if stg.get("analyze_test") == "completed" else "todo",
                      [f"sealed: {'yes' if sealed else 'no'}"] + ([f"final test: trained {tsec['arms'][arm]['arm_rate']:.0%} vs untrained {tsec['base_rate']:.0%}", f"review gate: {trep.get('gate', {}).get('verdict', '—')}"] if tsec else []),
-                     {"label": "Seal the study" if not sealed else "Run the final test", "route": "studio"} if stg.get("analyze_test") != "completed" else {"label": "Read the final result", "route": "evaluation"}))
+                     {"label": "Seal the study" if not sealed else "Run the final test", "route": "studio"} if stg.get("analyze_test") != "completed" else {"label": "Read the final result", "route": "evidence"}))
     # 8 evidence & checks
     from forge.engine import evidence as evm
     from forge.engine import forgetting as fg

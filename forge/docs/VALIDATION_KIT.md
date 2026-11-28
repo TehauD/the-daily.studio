@@ -9,7 +9,8 @@ sealed final test, a forgetting check, optional quantization, and a verified rep
 .\scripts\validate.ps1 -Teacher "olmo-3-32b" -Student "Olmo-3-7B-Instruct" -YesSeal -Quant
 ```
 
-(`python scripts/validate.py --help` on any OS.) If a stage fails — LM Studio not running, out of memory — fix it and continue
+(`python scripts/validate.py --help` on any OS.) **In the app:** Pipeline → *Run everything that's left* runs the same steps for an
+existing study as one resumable job, with a live checklist (it stops before SEAL unless you type SEAL). If a stage fails — LM Studio not running, out of memory — fix it and continue
 with `-Resume study_…`; finished stages are not repeated, and episodes resume from the last recorded task.
 
 ## What it runs

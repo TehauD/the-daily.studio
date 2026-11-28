@@ -1,4 +1,4 @@
-# FORGE — Local Distillation Lab (v0.30.0)
+# FORGE — Local Distillation Lab (v0.31.0)
 
 A local-first research instrument for **teacher → student LLM distillation on one consumer NVIDIA GPU**.
 A large model you run in LM Studio (the *teacher*) solves tool-use or document-QA tasks. FORGE keeps only its
@@ -188,7 +188,10 @@ with the plan** (could this design detect the gain?), a **forgetting check** (ge
 parts of success, loss curves, per-seed results and the tasks training fixed. See [docs/EVIDENCE.md](docs/EVIDENCE.md) and
 [docs/RIGOR.md](docs/RIGOR.md).
 
-**Validation kit**: `.\scripts\validate.ps1 -Teacher "olmo-3-32b" -Student "Olmo-3-7B-Instruct" -YesSeal -Quant` runs all of it
+**In the app**, Evidence leads with four plain answers (did it learn · better than prompting · could this study tell · what
+did it cost), and **Pipeline → Run everything that's left** runs the remaining protocol as one resumable job.
+
+**Validation kit** (command line): `.\scripts\validate.ps1 -Teacher "olmo-3-32b" -Student "Olmo-3-7B-Instruct" -YesSeal -Quant` runs all of it
 — preregistered design, controls, sealed test, forgetting, quantization — and writes `VALIDATION.md` with a verified
 reproducibility bundle. See [docs/VALIDATION_KIT.md](docs/VALIDATION_KIT.md).
 

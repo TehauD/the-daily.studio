@@ -1,5 +1,28 @@
 # FORGE changelog
 
+## 0.31.0 — UX pass: answer first, one path, plain words
+- **Evidence answers first**: four tiles — *Did it learn? · Better than just prompting? · Could this study tell? · What did it
+  cost?* — each a plain verdict with one number and a line of explanation, linking to its evidence below. Details (parts,
+  curves, seeds, skills, fixed tasks) fold away in Simple mode; p-values, the prompting table and design alternatives are
+  Expert-mode. Older studies say plainly what was not measured.
+- **Pipeline is the spine**: ten phases with a new *Evidence & checks* phase (verdict, control, prompting baseline, power,
+  forgetting; warns when no gain is shown, the control gains, prompting wins or language is lost); *Make it smaller & ship*
+  counts quantized variants and routes to the Quantization Lab; *Govern, share & decide* counts reproducibility bundles.
+  Next steps that start a job run **in place** with their live log.
+- **Run everything that's left** (Pipeline): the validation kit inside the app — one resumable job (`autopilot`) runs the
+  remaining stages, the forgetting check, optional quantization and a verified bundle, with a live checklist. It stops
+  before SEAL unless you type SEAL, and says so. `POST /api/studies/{id}/autopilot`; tested stop-at-seal and resume.
+- **Navigation by question**: Build it · Did it work? · Look inside · Make it smaller & ship · Share & decide · Set up.
+  Simple mode shows 20 pages in six groups (was 22 in four); Evaluation Lab, Bench Lab, Distillation Lens and Weight Lab move to Expert.
+  New **Share** page: reproducibility bundles and task-pack install in one place.
+- **Study wizard presets**: *Quick look* (1 seed), *Pilot* (3 seeds, negative control, prompting baseline — the new
+  default), *Publishable* (6 seeds, control, baseline; eligible for the review gate). The control arm is labelled as such.
+- **Quantization Lab**: a plain answer first (*smallest version that behaves like the original* — ≥ 95 % same verdicts, no
+  measurable drop), methods behind a runtime switch (FORGE / LM Studio / vLLM), *How to make it* steps inline, **Find running
+  models** lists what LM Studio or vLLM is serving (`GET …/quant/served-models`, loopback only, never through a proxy),
+  live progress for every job, statistics and per-layer map in Expert mode.
+- Live job progress where the forgetting check is started. WCAG 2.2 AA audit covers Quantization Lab and Share: 0 issues.
+
 ## 0.30.0 — Rigour, Quantization Lab, validation kit, sharing
 - **Power analysis, preregistered**: every new study freezes a simulation-based power analysis of its exact design into the
   plan — the smallest gain it detects with 80 % power, power at the preregistered minimum gain, the seed-test floor

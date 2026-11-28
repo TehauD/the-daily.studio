@@ -3,7 +3,9 @@ import { Explain } from "./Explain";
 import { Figure, fmtPct } from "./results";
 import { Badge, Button, Empty, ErrorLine, Notice, Panel, Prov, cx, td, th, tr } from "./ui";
 import { api } from "../lib/api";
+import { JobLog } from "./live";
 import { useAction, useApi } from "../lib/hooks";
+import type { Job } from "../lib/types";
 import { usePrefs } from "../lib/prefs";
 
 export interface PowerT {
@@ -70,6 +72,7 @@ const FSTATUS: Record<string, { tone: "good" | "warn" | "crit"; label: string }>
 export function ForgettingPanel({ sid, arms, name }: { sid: string; arms: string[]; name: (a: string) => string }) {
   const r = useApi<ForgettingT>(`/api/studies/${sid}/forgetting`);
   const act = useAction();
+  const [job, setJob] = useState<string | null>(null);
   const [file, setFile] = useState("");
   const f = r.data && r.data.computed !== false ? r.data : null;
   const span = f ? Math.min(1, Math.max(0.3, ...Object.values(f.arms).flatMap((a) => [Math.abs(a.pooled.ci[0]), Math.abs(a.pooled.ci[1]), ...Object.values(a.seeds).map((z) => Math.abs(z.change))]))) : 0.3;
@@ -100,9 +103,10 @@ export function ForgettingPanel({ sid, arms, name }: { sid: string; arms: string
       <div className="mt-3 flex flex-wrap items-end gap-2">
         <label className="flex min-w-[220px] flex-1 flex-col gap-1 text-[11.5px] text-ink-2">Your own general text (optional, a .txt on this machine; blank lines separate passages)
           <input className="rounded-[var(--radius)] border border-line bg-surface px-2 py-1.5 font-mono text-[12px] text-ink" value={file} placeholder="built-in passages" onChange={(e) => setFile(e.target.value)} /></label>
-        <Button icon="play" busy={act.busy} onClick={() => void act.run(async () => { await api.post(`/api/studies/${sid}/forgetting`, { text_file: file.trim() || null }); })}>{f ? "Run again" : "Run the forgetting check"}</Button>
+        <Button icon="play" busy={act.busy || !!job} onClick={() => void act.run(async () => { setJob((await api.post<Job>(`/api/studies/${sid}/forgetting`, { text_file: file.trim() || null })).id); })}>{f ? "Run again" : "Run the forgetting check"}</Button>
       </div>
       <ErrorLine error={act.error} />
+      {job && <div className="mt-2"><JobLog key={job} jobId={job} height={140} onDone={() => { setJob(null); void r.reload(); }} /></div>}
       {f && <p className="mt-2 text-[11.5px] text-ink-3">{f.honesty}</p>}
     </Panel>
   );
