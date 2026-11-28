@@ -57,13 +57,31 @@ export default function Studio() {
   );
 }
 
+/** Live power analysis of the chosen design, frozen into the plan on create. */
+function PowerPreview({ profile, minGain }: { profile: string; minGain: number }) {
+  const [p, setP] = useState<{ mde_groups: number | null; seed_floor_p: number; design: { groups: number; seeds: number; paraphrases: number }; power_at_min_gain: { power_groups: number }; notes: string[] } | null>(null);
+  useEffect(() => {
+    let live = true;
+    const t = setTimeout(() => { api.post<typeof p>("/api/power", { profile, min_gain: minGain || 0.05 }).then((r) => { if (live) setP(r); }).catch(() => { if (live) setP(null); }); }, 300);
+    return () => { live = false; clearTimeout(t); };
+  }, [profile, minGain]);
+  if (!p) return null;
+  return (
+    <div className="rounded-[var(--radius)] border border-line bg-surface-2 p-2.5 text-[11.5px] text-ink-2" aria-live="polite">
+      <div className="font-medium text-ink">Power of this design (preregistered on create)</div>
+      <div className="mt-0.5">{p.design.groups} test groups × {p.design.paraphrases} wordings, {p.design.seeds} seed(s): detects gains ≥ <b className="text-ink">{p.mde_groups == null ? "60" : (p.mde_groups * 100).toFixed(1)} pts</b> 80 % of the time; {(p.power_at_min_gain.power_groups * 100).toFixed(0)} % power at the minimum gain. Seed test floor p = {p.seed_floor_p.toFixed(3)}.</div>
+      {p.notes.length > 0 && <div className="mt-1 text-ink-3">{p.notes.join(" ")}</div>}
+    </div>
+  );
+}
+
 function Wizard({ onCreated }: { onCreated: (id: string) => void }) {
   const models = useApi<{ models: Model[] }>("/api/models");
   const cat = useApi<Catalog>("/api/studies/catalog");
   const rd = useApi<Readiness>("/api/system/readiness");
   const pre = (() => { try { return JSON.parse(sessionStorage.getItem("forge.pair") || "null") as { teacher: string; student: string } | null; } catch { return null; } })();
   const ms = models.data?.models ?? [];
-  const [f, setF] = useState({ name: "", profile: "smoke", teacher_id: pre?.teacher ?? "", student_id: pre?.student ?? "", arms: ["teacher_filtered"], min_gain: 0.05, max_steps: "", epochs: "", max_seq_len: "", device: "cuda", focus_skills: [] as string[] });
+  const [f, setF] = useState({ name: "", profile: "smoke", teacher_id: pre?.teacher ?? "", student_id: pre?.student ?? "", arms: ["teacher_filtered"], min_gain: 0.05, max_steps: "", epochs: "", max_seq_len: "", device: "cuda", focus_skills: [] as string[], fewshot_k: 3 });
   const [turbo, setTurbo] = useState<TurboT | null>(null);
   useEffect(() => {
     if (!f.teacher_id && ms.length) setF((x) => ({ ...x, teacher_id: ms.find((m) => m.roles.includes("teacher"))?.id ?? "", student_id: x.student_id || (ms.find((m) => m.roles.includes("student"))?.id ?? "") }));
@@ -125,7 +143,9 @@ function Wizard({ onCreated }: { onCreated: (id: string) => void }) {
             <Field label="Max steps"><input className={inputCls} type="number" min="1" placeholder="profile" value={f.max_steps} onChange={(e) => setF({ ...f, max_steps: e.target.value })} /></Field>
             <Field label="Epochs"><input className={inputCls} type="number" step="0.5" placeholder="profile" value={f.epochs} onChange={(e) => setF({ ...f, epochs: e.target.value })} /></Field>
             <Field label="Max seq len"><input className={inputCls} type="number" step="256" placeholder="2048" value={f.max_seq_len} onChange={(e) => setF({ ...f, max_seq_len: e.target.value })} /></Field>
+            <Field label="Prompting baseline" hint="Untrained student + k worked training examples (0 = off)"><input className={inputCls} type="number" min="0" max="8" value={f.fewshot_k} onChange={(e) => setF({ ...f, fewshot_k: Math.max(0, Math.min(8, Number(e.target.value) || 0)) })} /></Field>
           </div>
+          <PowerPreview profile={f.profile} minGain={f.min_gain} />
           {rd.data?.cpu_wiring_mode && <Field label="Device"><Segmented label="Device" value={f.device} onChange={(v) => setF({ ...f, device: v })} options={[{ value: "cuda", label: "cuda" }, { value: "cpu", label: "cpu (wiring only)" }]} /></Field>}
           <details className="rounded-[var(--radius)] border border-line p-2.5"><summary className="cursor-pointer text-[12px] text-ink">Training engine — FORGE Turbo {turbo ? "(custom)" : "(standard)"}</summary>
             <div className="mt-2"><TurboPicker value={turbo ?? { attention: "sdpa", packing: false, liger: false, quant_4bit: false, optim_8bit: false, checkpointing: "on", compile: false }} onChange={setTurbo} device={f.device} /></div></details>

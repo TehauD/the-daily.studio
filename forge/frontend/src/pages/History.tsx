@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Explain } from "../components/Explain";
 import { Icon, type IconName } from "../components/icons";
 import { Figure, Limits, RangeBar, fmtPct } from "../components/results";
+import { BundlePanel } from "../components/Share";
 import { Badge, Button, Empty, ErrorLine, PageHeader, Panel, Prov, Segmented, Skeleton, cx, inputCls, td, th, tr } from "../components/ui";
 import { goto, handoff } from "../lib/handoff";
 import { useApi } from "../lib/hooks";
@@ -86,13 +87,13 @@ function TimeChart({ pts, tsIndex, onPick, picked, order }: { pts: Point[]; tsIn
  *  (training, sealing, decisions, releases) that explain the moves. */
 export default function History() {
   const { prefs } = usePrefs();
-  const [view, setView] = useState<"time" | "lineage">("time");
+  const [view, setView] = useState<"time" | "lineage" | "bundle">("time");
   return (
     <div className="space-y-4">
       <PageHeader kicker="Measure" title="History"
         subtitle="Every measured result over time — and, for the active study, the skill through the base model's own training checkpoints."
-        right={<Segmented label="View" value={view} onChange={setView} options={[{ value: "time", label: "Over time" }, { value: "lineage", label: "Checkpoint timeline" }]} />} />
-      {view === "time" ? <OverTime /> : <CheckpointTimeline sid={prefs.activeStudy ?? null} />}
+        right={<Segmented label="View" value={view} onChange={setView} options={[{ value: "time", label: "Over time" }, { value: "lineage", label: "Checkpoint timeline" }, { value: "bundle", label: "Reproducibility" }]} />} />
+      {view === "time" ? <OverTime /> : view === "lineage" ? <CheckpointTimeline sid={prefs.activeStudy ?? null} /> : <BundlePanel sid={prefs.activeStudy ?? null} />}
     </div>
   );
 }

@@ -48,6 +48,15 @@ What this does **not** establish, stated plainly:
   *instrument* (it detects learning and rejects format-only training), not a production model.
 - Synthetic tasks only. No performance on real requests, clinical validity or deployment readiness is claimed.
 
+## Since v0.30: prompting baseline, power, forgetting
+
+New studies also carry a **few-shot prompting baseline** (does training beat showing three worked examples?), a **power
+analysis frozen with the plan** (could this design detect the gain? — it would have warned that 3 seeds cap the seed test at
+p = 0.25), and a **forgetting check** (general-text perplexity). All three appear on the Evidence page; see docs/RIGOR.md.
+The forgetting check on this run: perplexity on the built-in general text fell (−81 % trained, −86 % control) — the tiny
+stand-in barely knew English before training, so its training text made ordinary prose easier; it says nothing about a
+real 7B model. The `scripts/validate.ps1` kit runs the whole protocol on your hardware (docs/VALIDATION_KIT.md).
+
 ## Reproduce
 
 1. Create a study with arms *teacher_filtered* and *Negative control (shuffled answers)*, at least 3 seeds.

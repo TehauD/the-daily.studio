@@ -40,6 +40,7 @@ const ModelHub = lazy(() => import("./pages/ModelHub"));
 const Pipeline = lazy(() => import("./pages/Pipeline"));
 const Compare = lazy(() => import("./pages/Compare"));
 const Evidence = lazy(() => import("./pages/Evidence"));
+const QuantLab = lazy(() => import("./pages/QuantLab"));
 const History = lazy(() => import("./pages/History"));
 
 /** Four workspaces, in the order people work: build it, see and steer it, measure it, run the lab. `expert` pages are hidden in Simple mode. */
@@ -71,6 +72,7 @@ const NAV = [
     { key: "observatory", label: "Model Observatory", icon: "observatory" },
     { key: "overview", label: "System Overview", icon: "overview", expert: true },
     { key: "factory", label: "Model Factory", icon: "factory", expert: true },
+    { key: "quant", label: "Quantization Lab", icon: "layers" },
     { key: "guide", label: "Guide", icon: "guide" },
     { key: "settings", label: "Settings", icon: "settings" }] },
 ] as const;
@@ -255,7 +257,7 @@ function Shell() {
     { id: "verify", label: "Verify GPU (forward/backward, BF16)", group: "Actions", run: () => { void api.post("/api/jobs/verify-gpu"); go("overview"); } },
   ], [go, set, prefs.sidebarCollapsed]);
   const Page = { home: Home, overview: Overview, observatory: Observatory, studio: Studio, trajectories: Trajectories, datasets: Datasets,
-    training: Training, evaluation: Evaluation, knowledge: Knowledge, "knowledge-studio": KnowledgeStudio, lens: Lens, "agent-studio": AgentStudio, playground: Playground, weightlab: WeightLab, modelmap: ModelMap, robustness: Robustness, learn: Learn, governance: Governance, bench: BenchLab, model: ModelHub, pipeline: Pipeline, compare: Compare, evidence: Evidence, history: History, factory: Factory, settings: Settings, guide: Guide }[route];
+    training: Training, evaluation: Evaluation, knowledge: Knowledge, "knowledge-studio": KnowledgeStudio, lens: Lens, "agent-studio": AgentStudio, playground: Playground, weightlab: WeightLab, modelmap: ModelMap, robustness: Robustness, learn: Learn, governance: Governance, bench: BenchLab, model: ModelHub, pipeline: Pipeline, compare: Compare, evidence: Evidence, quant: QuantLab, history: History, factory: Factory, settings: Settings, guide: Guide }[route];
   return (
     <AssistantProvider route={route}>
     <div className="flex min-h-full">

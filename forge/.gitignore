@@ -8,3 +8,8 @@ forge-host-report.json
 
 # tsc -b output next to sources (Vite builds from .tsx)
 frontend/src/**/*.js
+
+# validation kit reports and generated task packs (keep out of the repo; share them deliberately)
+validation/
+packs/
+skill-check-result.json

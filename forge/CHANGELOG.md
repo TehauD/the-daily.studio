@@ -1,5 +1,32 @@
 # FORGE changelog
 
+## 0.30.0 — Rigour, Quantization Lab, validation kit, sharing
+- **Power analysis, preregistered**: every new study freezes a simulation-based power analysis of its exact design into the
+  plan — the smallest gain it detects with 80 % power, power at the preregistered minimum gain, the seed-test floor
+  (2/2^S: fewer than 6 seeds can never reach p < 0.05) and what more seeds or task groups would buy. Calibrate it from a
+  pilot study. Live preview in the study wizard; `POST /api/power`. Null calibration tested (rejects at ≈ α or less).
+- **Few-shot prompting baseline** (`fewshot` arm, default k = 3, new studies): the untrained student with worked training
+  conversations in its prompt (training split only, one per skill first, frozen with a hash). Analyses add prompting vs
+  untrained and trained vs prompting; Evidence says whether training beats the cheaper option.
+- **Forgetting check**: general-text perplexity (exp of loss) before and after training, per arm and seed, paired per
+  passage with bootstrap ranges → forgetting / no material drift / lower / inconclusive. Built-in general text written for
+  FORGE, or your own file. Evidence panel with a *Run* button; `POST /api/studies/{id}/forgetting`.
+- **Quantization Lab screen** (Package): accuracy-vs-size frontier with ranges (untrained and teacher as reference lines),
+  variants table (agreement, only-q / only-u, McNemar, measured speed), per-layer error map (weight or output-weighted),
+  methods grouped by runtime (FORGE reference / LM Studio GGUF / vLLM), recipes, *Measure a served model*. Measured on the
+  evidence study: W8, W4, W4 activation-aware and W3 activation-aware, practice and sealed test.
+- **Validation kit** (`scripts/validate.ps1` / `validate.py`): preflight → verified tasks or a task pack → research design
+  with negative control, prompting baseline and preregistered power → full sealed run → forgetting, adequacy, evidence →
+  optional quantization → verified reproducibility bundle and `VALIDATION.md`. Resumable. docs/VALIDATION_KIT.md.
+- **Task packs**: share a use case as data (agent spec, synthetic tables, verified tasks; no code). Install checks hashes,
+  paths and file types, refuses personal identifiers, validates the spec and **re-verifies every task** by re-running its
+  tools; leaking task groups are dropped. `scripts/make_packs.py` builds one per template (10; all re-verify 100 %).
+  Agent Studio: *Share as a task pack* / *install a task pack*. docs/SHARING.md.
+- **Reproducibility bundles**: plan, tasks, seal, every raw episode, analyses, logs, manifests (adapters optional), each
+  hashed. *Verify* recomputes every analysis from the raw episodes and compares gains, ranges and p-values; a single changed
+  measurement is caught even when re-hashed. History → Reproducibility; `python -m forge.engine bundle`.
+- **Real-request path**: design only, gated on separate approval (docs/REAL_REQUESTS.md). Nothing implemented.
+
 ## 0.29.0 — Evidence (positive and negative controls) and the Quantization Lab backend
 - **Evidence page** (Measure → Evidence): one verdict on whether the student learned — gain over the untrained student on
   the sealed test with bootstrap range, the parts of success (tool, arguments, answer, invalid calls) with Wilson ranges,

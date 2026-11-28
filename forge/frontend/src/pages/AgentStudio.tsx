@@ -1,3 +1,4 @@
+import { PackInstall, PackShare } from "../components/Share";
 import { takeHandoff } from "../lib/handoff";
 import { BoundaryPanel, CoverageMap, type BoundaryCfg } from "../components/AgentQuality";
 import { Fragment, useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
@@ -114,13 +115,15 @@ export default function AgentStudio() {
       <div className="grid gap-4 fit:min-h-0 fit:flex-1 fit:grid-cols-[minmax(0,1fr)_380px] fit:gap-3 3xl:fit:grid-cols-[minmax(0,1fr)_440px]">
         <div className="scroll-thin min-w-0 space-y-4 fit:min-h-0 fit:space-y-3 fit:overflow-auto fit:pr-1">
           {running && <Panel title="Working…" eyebrow="live"><JobLog key={running.id} jobId={running.id} height={200} onDone={() => { void reload(); }} /></Panel>}
-          {(creating || !a) && cur === "define" ? <CreateAgent onCreated={(id) => { setCreating(false); setAid(id); setStep("define"); void list.reload(); }} /> : a && (
+          {(creating || !a) && cur === "define" ? <><CreateAgent onCreated={(id) => { setCreating(false); setAid(id); setStep("define"); void list.reload(); }} />
+            <PackInstall onInstalled={(id) => { setCreating(false); setAid(id); setStep(null); void list.reload(); }} /></> : a && (
             <>
               {cur === "define" && <StepDefine a={a} onSaved={reload} />}
               {cur === "tools" && <StepTools a={a} onSaved={reload} />}
               {cur === "skills" && <StepSkills a={a} onSaved={reload} />}
               {cur === "tasks" && <StepTasks a={a} busy={!!running} onStarted={reload} />}
               {cur === "teach" && <StepTeach a={a} studies={mine} onCreated={() => { void studies.reload(); }} />}
+              {(cur === "teach" || cur === "tasks") && tasksOk && <PackShare aid={a.id} name={a.name} />}
             </>
           )}
         </div>

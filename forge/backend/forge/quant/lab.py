@@ -50,7 +50,8 @@ LLMC_RECIPES = {  # llm-compressor modifiers per method (written for llm-compres
     "vllm_w4a16_gptq": [{"GPTQModifier": {"targets": "Linear", "scheme": "W4A16", "ignore": ["lm_head"]}}],
     "vllm_w4a16_awq": [{"AWQModifier": {"targets": ["Linear"], "scheme": "W4A16_ASYM", "ignore": ["lm_head"]}}],
 }
-HONESTY = ("Every variant ran the same tasks with the same tools and scoring. FORGE reference variants are simulated (exact quantized "
+HONESTY = ("Speed is measured while answering the tasks on this machine; for FORGE reference variants it is the speed of the "
+           "16-bit simulation, not of a real low-bit kernel. Every variant ran the same tasks with the same tools and scoring. FORGE reference variants are simulated (exact quantized "
            "values, stored in 16-bit): they measure behaviour, not size or speed — sizes shown for them are estimates. GGUF and vLLM "
            "variants are measured as served. Choose on practice tasks; confirm the chosen one on the sealed test.")
 
@@ -190,7 +191,18 @@ def recipe(study: Any, mid: str) -> dict[str, Any]:
 
 def _rate(eps: list[dict]) -> dict[str, Any]:
     k, n = sum(1 for e in eps if e["score"]["strict_success"]), len(eps)
-    return {"rate": k / n if n else None, "ci": list(st.wilson(k, n)) if n else None, "n": n}
+    return {"rate": k / n if n else None, "ci": list(st.wilson(k, n)) if n else None, "n": n, "speed": _speed(eps)}
+
+
+def _speed(eps: list[dict]) -> dict[str, Any] | None:
+    """Generation speed as measured while answering the tasks (completion tokens per second of model time, per-episode latency)."""
+    rows = [(e.get("usage") or {}) for e in eps]
+    tok = sum(r.get("completion_tokens") or 0 for r in rows)
+    ms = sum(r.get("latency_ms") or 0 for r in rows)
+    lat = sorted(r.get("latency_ms") or 0 for r in rows if r.get("latency_ms"))
+    if not tok or not ms:
+        return None
+    return {"tokens_per_s": tok / (ms / 1000), "median_episode_ms": lat[len(lat) // 2] if lat else None, "completion_tokens": tok}
 
 
 def lab(study: Any) -> dict[str, Any]:
@@ -231,7 +243,14 @@ def lab(study: Any) -> dict[str, Any]:
                          "runtime": man["runtime"], "simulated": man.get("simulated", False), "created_at": man["created_at"],
                          "size_bytes": man.get("size_bytes") or summ.get("estimated_bytes"), "effective_bits": summ.get("effective_bits") or man["method"].get("bits"),
                          "calibration": man.get("calibration"), "summary": summ, "results": res, "ref": f"arm:{study.plan['study_id']}:{man['arm']}"})
-    return {"source": str(src) if src else None, "bf16_bytes": bf16, "sealed": bool(study.state.get("sealed")),
+    anchors: dict[str, Any] = {}
+    ctl = study.plan["eval"]["control_seed_broadcast"]
+    for name, a in (("untrained", "base"), ("teacher", "teacher")):
+        for split in ("dev", "test"):
+            p = study.episode_path(a, split, ctl)
+            if p.exists():
+                anchors.setdefault(name, {})[split] = {k: v for k, v in _rate(read_jsonl(p)).items() if k != "speed"}
+    return {"source": str(src) if src else None, "bf16_bytes": bf16, "sealed": bool(study.state.get("sealed")), "anchors": anchors,
             "unquantized": {sp: {k: v for k, v in r.items() if k != "by_task"} for sp, r in ref.items()}, "unquantized_ref": f"arm:{study.plan['study_id']}:{arm}",
             "variants": variants, "methods": METHODS, "honesty": HONESTY}
 

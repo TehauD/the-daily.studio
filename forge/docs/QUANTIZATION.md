@@ -6,7 +6,7 @@ statistics alone. Variants are immutable, carry a manifest with file hashes, and
 — practice and final-test prompts never reach a calibrator (checked by `tests/test_quant.py`).
 
 Source: the study's merged export (`exports/<arm>-seed<seed>-merged`, Export stage). Backend: `forge/quant/`,
-API `/api/studies/{id}/quant`, CLI `python -m forge.engine quant …`. The Lab screen is in progress; the API is complete.
+API `/api/studies/{id}/quant`, CLI `python -m forge.engine quant …`, screen **Package → Quantization Lab** (size-vs-accuracy frontier with ranges, variants table with agreement, McNemar and measured speed, per-layer error map, recipes, served-model measurement).
 
 ## Three runtimes, one measurement
 

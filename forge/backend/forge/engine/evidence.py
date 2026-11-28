@@ -54,7 +54,8 @@ def evidence(study: Any) -> dict[str, Any]:
     plan = study.plan
     ctl = plan["eval"]["control_seed_broadcast"]
     trained = list(plan["arms"])
-    models = [("base", "untrained student", [ctl])] + [(a, ("negative control (shuffled answers)" if a in CONTROL_ARMS else f"trained · {a}"), plan["seeds"]) for a in trained] \
+    fs = (plan.get("baselines") or {}).get("fewshot") or {}
+    models = [("base", "untrained student", [ctl])] + ([("fewshot", f"untrained + {fs['k']} examples in prompt", [ctl])] if fs.get("k") else []) + [(a, ("negative control (shuffled answers)" if a in CONTROL_ARMS else f"trained · {a}"), plan["seeds"]) for a in trained] \
         + [("teacher", "teacher", [0])]
     reports = {}
     for sp in ("dev", "test"):
@@ -80,12 +81,15 @@ def evidence(study: Any) -> dict[str, Any]:
             for f, v in fam.items():
                 skills[sp][f][arm] = sum(v) / len(v)
     contrasts: dict[str, dict[str, Any]] = {}
+    vs_prompting: dict[str, dict[str, Any]] = {}
     for sp, rep in reports.items():
         sec = rep.get("splits", {}).get(sp, {})
         for arm, c in (sec.get("arms") or {}).items():
-            contrasts.setdefault(sp, {})[arm] = {"gain": c.get("mean"), "ci": [c.get("ci_low"), c.get("ci_high")], "arm_rate": c.get("arm_rate"),
-                                                 "control_rate": c.get("control_rate"), "p_groups": (c.get("sign_flip_groups") or {}).get("p"),
-                                                 "p_seeds": (c.get("sign_flip_seeds") or {}).get("p"), "min_p_seeds": (c.get("sign_flip_seeds") or {}).get("min_attainable_p")}
+            contrasts.setdefault(sp, {})[arm] = _contrast(c)
+            if c.get("vs_fewshot"):
+                vs_prompting.setdefault(sp, {})[arm] = _contrast(c["vs_fewshot"])
+        if sec.get("fewshot_vs_base"):
+            vs_prompting.setdefault(sp, {})["fewshot"] = _contrast(sec["fewshot_vs_base"])
     curves: dict[str, list[dict[str, Any]]] = {}
     for arm in trained:
         for s in plan["seeds"]:
@@ -108,14 +112,70 @@ def evidence(study: Any) -> dict[str, Any]:
             if tid in b and not b[tid]["score"]["strict_success"] and sum(v) * 2 > len(v):
                 fixed.append({"task_id": tid, "family": b[tid]["family"], "seeds_right": sum(v), "seeds": len(v)})
     verdict = _verdict(contrasts, trained, splits)
+    verdict["prompting"] = _prompting(vs_prompting, trained)
+    pw = plan.get("power")
+    power = None
+    if pw:
+        power = {k: pw.get(k) for k in ("design", "assumptions", "min_gain", "power_at_min_gain", "mde_groups", "mde_both", "seed_floor_p", "notes", "alternatives")}
+        r = contrasts.get(verdict.get("split") or "", {}).get(verdict.get("real_arm") or "")
+        if r and r.get("gain") is not None and pw.get("mde_groups") is not None:
+            power["observed_gain"] = r["gain"]
+            power["reading"] = ("The observed gain is at or above what this design detects reliably." if r["gain"] >= pw["mde_groups"] else
+                                "The observed gain is smaller than what this design detects reliably (80 % power): a non-significant result "
+                                "here is weak evidence of no effect. Add task groups or seeds.")
+    from forge.engine import forgetting as fg
+    fr = fg.report(study)
     return {"study": {"id": plan["study_id"], "name": plan["name"], "sealed": bool(study.state.get("sealed")), "seeds": plan["seeds"],
                       "student": plan["student"]["name"], "arms": trained, "train": {k: plan["train"].get(k) for k in ("lr", "rank", "max_steps", "epochs")}},
             "splits": splits, "parts": [{"key": k, "label": l} for k, l in PARTS], "components": comp, "contrasts": contrasts, "seeds": seeds,
             "skills": {sp: dict(v) for sp, v in skills.items()}, "curves": curves, "fixed": fixed[:12], "fixed_total": len(fixed), "fixed_split": sp0,
-            "verdict": verdict,
+            "verdict": verdict, "vs_prompting": vs_prompting, "fewshot": ({"k": fs["k"], **_fewshot_meta(study)} if fs.get("k") else None),
+            "power": power, "forgetting": fr,
             "honesty": "Strict success on synthetic tasks. A gain over the untrained student with the negative control flat shows the student learned "
                        "the skill and that the measurement responds to real learning, not to format alone. It does not show performance on real requests, "
                        "clinical validity or deployment readiness."}
+
+
+def _contrast(c: dict) -> dict[str, Any]:
+    return {"gain": c.get("mean"), "ci": [c.get("ci_low"), c.get("ci_high")], "arm_rate": c.get("arm_rate"),
+            "control_rate": c.get("control_rate"), "p_groups": (c.get("sign_flip_groups") or {}).get("p"),
+            "p_seeds": (c.get("sign_flip_seeds") or {}).get("p"), "min_p_seeds": (c.get("sign_flip_seeds") or {}).get("min_attainable_p")}
+
+
+def _fewshot_meta(study: Any) -> dict[str, Any]:
+    p = study.root / "reports" / "fewshot_examples.json"
+    if not p.exists():
+        return {}
+    m = json.loads(p.read_text(encoding="utf-8"))
+    return {"task_ids": m.get("task_ids"), "families": m.get("families"), "sha256": m.get("sha256")}
+
+
+def _prompting(vs: dict, trained: list[str]) -> dict[str, Any] | None:
+    """Training vs prompting the untrained student with worked examples."""
+    sp = "test" if "test" in vs else ("dev" if "dev" in vs else None)
+    if not sp:
+        return None
+    c = vs[sp]
+    real = next((a for a in trained if a not in CONTROL_ARMS and a in c), None)
+    where = "the sealed final test" if sp == "test" else "practice (dev) tasks"
+    out: dict[str, Any] = {"split": sp, "arm": real}
+    f = c.get("fewshot")
+    if f:
+        out["prompting_gain"] = f["gain"]
+    if not real:
+        return out
+    r = c[real]
+    lo, hi = r["ci"]
+    if lo is not None and lo > 0:
+        out |= {"status": "training_beats_prompting", "text": f"Training adds value beyond prompting: on {where} the trained student beats the untrained "
+                f"student given worked examples by {r['gain'] * 100:+.1f} pts (95 % {lo * 100:+.1f} to {hi * 100:+.1f})."}
+    elif hi is not None and hi < 0:
+        out |= {"status": "prompting_beats_training", "text": f"Prompting with worked examples does better than training on {where} "
+                f"({-r['gain'] * 100:.1f} pts ahead): training is not justified for this task set as it stands."}
+    else:
+        out |= {"status": "no_difference_shown", "text": f"No difference shown between training and prompting with worked examples on {where} "
+                f"({r['gain'] * 100:+.1f} pts, 95 % {lo * 100:+.1f} to {hi * 100:+.1f}): the cheaper option may be enough."}
+    return out
 
 
 def _verdict(contrasts: dict, trained: list[str], splits: list[str]) -> dict[str, Any]:

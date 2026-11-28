@@ -138,3 +138,19 @@ def test_episode_compare_and_changes_routes(client, tmp_path):
     assert ch["counts"]["fixed"] == len(ch["rows"]) > 0
     ep = client.get(f"/api/studies/{sid}/episode", params={"arm": "base", "split": "dev", "seed": 0, "task_id": tid})
     assert ep.status_code == 200 and ep.json()["graph"]["nodes"][0]["kind"] == "prompt"
+
+
+def test_rigor_and_sharing_routes(client, tmp_path):
+    p = client.post("/api/power", json={"profile": "pilot", "min_gain": 0.05})
+    assert p.status_code == 200 and p.json()["seed_floor_p"] == 0.25 and p.json()["mde_groups"] is not None
+    assert client.post("/api/power", json={"profile": "nope"}).status_code == 422
+    assert client.post("/api/packs/inspect", json={"path": str(tmp_path / "missing.zip")}).status_code == 422
+    assert client.post("/api/bundles/verify", json={"path": str(tmp_path / "missing.zip")}).status_code == 422
+    assert client.get("/api/packs/..%2Fsecret.forgepack.zip").status_code in (404, 422)
+    a = client.post("/api/agents", json={"name": "desk", "template": "itsm_servicenow", "no_sensitive_data": True}).json()
+    assert client.post(f"/api/agents/{a['id']}/pack", json={}).status_code == 200      # spec + tables, no tasks yet
+    lst = client.get("/api/packs").json()["packs"]
+    assert len(lst) == 1 and lst[0]["pack"]["tasks"] == 0
+    r = client.post("/api/packs/install", json={"path": lst[0]["path"], "no_sensitive_data": True})
+    assert r.status_code == 200 and r.json()["agent_id"].startswith("agent_")
+    assert client.post("/api/packs/install", json={"path": lst[0]["path"]}).status_code == 422   # attestation required

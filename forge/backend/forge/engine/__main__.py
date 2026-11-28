@@ -78,6 +78,30 @@ def cmd_checkpoint_eval(a: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_forgetting(a: argparse.Namespace) -> int:
+    """Forgetting check: general-text perplexity of the untrained and every trained student."""
+    os.environ.setdefault("HF_HUB_OFFLINE", "1")
+    os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
+    from forge.engine import forgetting
+    from forge.engine.study import Study
+    forgetting.run(Study(Path(a.study)), (json.loads(a.config) or {}).get("text_file"), emit)
+    return 0
+
+
+def cmd_bundle(a: argparse.Namespace) -> int:
+    """Reproducibility bundle: write one (--study) or verify one (--verify)."""
+    from forge.engine import bundle
+    if a.verify:
+        r = bundle.verify(a.verify)
+        for c in r["checks"]:
+            print(("PASS " if c["ok"] else "FAIL ") + f"{c['check']}: {c['detail']}")
+        print("VERIFIED" if r["ok"] else "NOT VERIFIED")
+        return 0 if r["ok"] else 1
+    from forge.engine.study import Study
+    print(json.dumps(bundle.export(Study(Path(a.study)), Path(a.out) if a.out else None, a.include_adapters), indent=2))
+    return 0
+
+
 def cmd_quant(a: argparse.Namespace) -> int:
     """Quantization Lab: make a reference variant, evaluate a variant, or measure a served one."""
     os.environ.setdefault("HF_HUB_OFFLINE", "1")
@@ -329,6 +353,16 @@ def main(argv: list[str] | None = None) -> int:
     ce.add_argument("--study", required=True)
     ce.add_argument("--config", required=True)
     ce.set_defaults(fn=cmd_checkpoint_eval)
+    fg = sub.add_parser("forgetting")
+    fg.add_argument("--study", required=True)
+    fg.add_argument("--config", default="{}")
+    fg.set_defaults(fn=cmd_forgetting)
+    bd = sub.add_parser("bundle", help="write (--study) or verify (--verify ZIP) a reproducibility bundle")
+    bd.add_argument("--study")
+    bd.add_argument("--out")
+    bd.add_argument("--include-adapters", action="store_true")
+    bd.add_argument("--verify")
+    bd.set_defaults(fn=cmd_bundle)
     qt = sub.add_parser("quant")
     qt.add_argument("--study", required=True)
     qt.add_argument("--config", required=True)

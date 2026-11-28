@@ -3,6 +3,7 @@ import { Explain } from "../components/Explain";
 import { Icon } from "../components/icons";
 import { StudySelect } from "../components/live";
 import { Figure, Limits, fmtPct } from "../components/results";
+import { ForgettingPanel, PowerPanel, PromptingTable, type PowerT } from "../components/Rigor";
 import { Badge, Button, Empty, ErrorLine, PageHeader, Panel, Prov, Segmented, Skeleton, cx, td, th, tr } from "../components/ui";
 import { goto, handoff } from "../lib/handoff";
 import { useApi } from "../lib/hooks";
@@ -18,12 +19,14 @@ interface EvidenceT {
   seeds: Record<string, Record<string, Record<string, number>>>; skills: Record<string, Record<string, Record<string, number>>>;
   curves: Record<string, { seed: number; train: [number, number][]; heldout: [number, number][] }[]>;
   fixed: { task_id: string; family: string; seeds_right: number; seeds: number }[]; fixed_total: number; fixed_split: string | null;
-  verdict: { status: string; text: string; split?: string; real_arm?: string; control_arm?: string | null }; honesty: string;
+  verdict: { status: string; text: string; split?: string; real_arm?: string; control_arm?: string | null; prompting?: { status?: string; text?: string; split: string } | null }; honesty: string;
+  vs_prompting: Record<string, Record<string, Contrast>>; fewshot: { k: number; task_ids?: string[]; families?: string[]; sha256?: string } | null; power: PowerT | null;
 }
 
 const CTRL = "shuffled_control";
-const color = (arm: string) => (arm === "base" ? "var(--s-base)" : arm === "teacher" ? "var(--s-teacher)" : arm === CTRL ? "var(--ink-3)" : "var(--s-tuned)");
-const name = (arm: string) => (arm === "base" ? "untrained" : arm === "teacher" ? "teacher" : arm === CTRL ? "negative control" : "trained");
+const FS = "fewshot";
+const color = (arm: string) => (arm === "base" ? "var(--s-base)" : arm === "teacher" ? "var(--s-teacher)" : arm === CTRL ? "var(--ink-3)" : arm === FS ? "var(--cat-7)" : "var(--s-tuned)");
+const name = (arm: string) => (arm === "base" ? "untrained" : arm === "teacher" ? "teacher" : arm === CTRL ? "negative control" : arm === FS ? "prompted" : "trained");
 const pp = (v: number | null | undefined) => (v == null ? "—" : `${v >= 0 ? "+" : "−"}${Math.abs(v * 100).toFixed(1)} pts`);
 const VERDICT: Record<string, { tone: "good" | "warn" | "crit" | "default"; icon: "check" | "alert" | "info"; title: string }> = {
   learned_and_valid: { tone: "good", icon: "check", title: "Learned — and the measurement passes its control" },
@@ -52,7 +55,7 @@ function GainCard({ title, c, tone, sub }: { title: string; c?: Contrast; tone: 
 function Parts({ comp, parts, order }: { comp: Record<string, Comp>; parts: EvidenceT["parts"]; order: string[] }) {
   return (
     <Figure title="What changed: the score, part by part" x="share of tasks (95 % range where the part is right / wrong)"
-      legend={order.map((a) => ({ label: a === "base" || a === "teacher" || a === CTRL ? (comp[a] as Comp).label : `trained (${a})`, color: color(a) }))}
+      legend={order.map((a) => ({ label: a === "base" || a === "teacher" || a === CTRL || a === FS ? (comp[a] as Comp).label : `trained (${a})`, color: color(a) }))}
       caption={<>Strict success needs every part right. Parts moving while strict success lags is real but incomplete learning — usually arguments (copying the exact ID) are last to come.</>}>
       <div className="space-y-3.5">
         {parts.map((p) => (
@@ -123,10 +126,11 @@ export default function Evidence() {
   const d = e.data && e.data.study.id === sid ? e.data : null;
   const [sp, setSp] = useState<string | null>(null);
   const split = sp && d?.splits.includes(sp) ? sp : d?.splits[0] ?? null;
-  const order = useMemo(() => (d && split ? ["base", ...d.study.arms.filter((a) => a !== CTRL), ...d.study.arms.filter((a) => a === CTRL), "teacher"].filter((a) => d.components[split]?.[a]) : []), [d, split]);
+  const order = useMemo(() => (d && split ? ["base", FS, ...d.study.arms.filter((a) => a !== CTRL), ...d.study.arms.filter((a) => a === CTRL), "teacher"].filter((a) => d.components[split]?.[a]) : []), [d, split]);
   const real = d?.study.arms.find((a) => a !== CTRL);
   const v = d ? VERDICT[d.verdict.status] ?? VERDICT.not_measured : null;
   const con = d && split ? d.contrasts[split] ?? {} : {};
+  const vp = d && split ? d.vs_prompting?.[split] ?? {} : {};
   return (
     <div className="space-y-4">
       <PageHeader kicker="Measure" title="Evidence"
@@ -142,11 +146,13 @@ export default function Evidence() {
               math={<><p>Gain <Sym k="delta" />: crossed <Sym k="boot" /> over seeds × task groups; <Sym k="signflip" /> over groups and seeds.</p><p>Part rates: <Sym k="wilson" /> ranges (argument accuracy is an average, shown without a range).</p></>} />}>
             <div className={cx("mb-3 flex items-start gap-2 rounded-[var(--radius)] border px-3 py-2.5", v!.tone === "good" ? "border-[color:var(--good)]/50 bg-[color:var(--good)]/[0.06]" : v!.tone === "crit" ? "border-[color:var(--crit)]/50 bg-[color:var(--crit)]/[0.05]" : "border-line bg-surface-2")}>
               <Icon name={v!.icon} className={v!.tone === "good" ? "text-good-ink" : v!.tone === "crit" ? "text-crit-ink" : "text-ink-3"} />
-              <div><div className="text-[13.5px] font-semibold text-ink">{v!.title}</div><div className="text-[12.5px] text-ink-2">{d.verdict.text}</div></div>
+              <div><div className="text-[13.5px] font-semibold text-ink">{v!.title}</div><div className="text-[12.5px] text-ink-2">{d.verdict.text}</div>
+                {d.verdict.prompting?.text && <div className="mt-1 text-[12.5px] text-ink-2"><b className="text-ink">Versus prompting:</b> {d.verdict.prompting.text}</div>}</div>
             </div>
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
               {real && <GainCard title="Trained on verified examples" c={con[real]} tone={color(real)} sub={`trained ${fmtPct(con[real]?.arm_rate)} vs untrained ${fmtPct(con[real]?.control_rate)}`} />}
               {d.study.arms.includes(CTRL) && <GainCard title="Negative control (answers shuffled)" c={con[CTRL]} tone={color(CTRL)} sub="should stay at or near zero" />}
+              {real && vp[real] && <GainCard title={`Training beyond prompting (${d.fewshot?.k ?? "k"} examples)`} c={vp[real]} tone={color(FS)} sub={`trained ${fmtPct(vp[real]?.arm_rate)} vs prompted ${fmtPct(vp[real]?.control_rate)}`} />}
               <div className="rounded-[var(--radius)] border border-line p-3 text-[12px] text-ink-2">
                 <div className="text-[12.5px] font-medium text-ink">This study</div>
                 <div className="mt-1 font-mono text-[11.5px] leading-relaxed">student {d.study.student}<br />seeds {d.study.seeds.join(", ")} · {d.study.sealed ? "sealed" : "not sealed"}<br />
@@ -175,6 +181,20 @@ export default function Evidence() {
                   <ul className="space-y-1">{d.fixed.map((x) => <li key={x.task_id} className="flex items-center justify-between gap-2 text-[12px]"><span className="font-mono text-ink-2">{x.family} · {x.task_id}</span><Badge tone="good">{x.seeds_right}/{x.seeds} seeds</Badge></li>)}</ul>
                   <div className="mt-2"><Button size="sm" icon="compare" onClick={() => { if (real) { handoff("compare.a", `arm:${d.study.id}:${real}`); handoff("compare.b", `arm:${d.study.id}:base`); } goto("compare"); }}>Compare trained vs untrained</Button></div></>)}
             </Panel>
+          </div>
+          <div className="grid gap-4 xl:grid-cols-2 [&>*]:min-w-0">
+            <PowerPanel p={d.power} />
+            <div className="space-y-4">
+              <ForgettingPanel sid={d.study.id} arms={d.study.arms} name={(a) => (a === CTRL ? "negative control" : `trained · ${a}`)} />
+              {d.fewshot && (
+                <Panel title="Training versus prompting" prov={<Prov kind="measured" source={`${d.fewshot.k} training examples in the prompt`} />}>
+                  <p className="mb-2 text-[12.5px] text-ink-2">The untrained student given {d.fewshot.k} worked training conversations ({(d.fewshot.families ?? []).join(", ")}) in its prompt — the cheapest alternative to training. Examples are from the training split only and frozen (sha256 {d.fewshot.sha256?.slice(0, 12) ?? "—"}…).</p>
+                  {Object.keys(vp).length ? <PromptingTable rows={[
+                    ...(vp[FS] ? [{ label: "prompting − untrained", gain: vp[FS].gain, ci: vp[FS].ci, p: vp[FS].p_groups }] : []),
+                    ...d.study.arms.filter((a) => vp[a]).map((a) => ({ label: `${a === CTRL ? "negative control" : `trained (${a})`} − prompting`, gain: vp[a].gain, ci: vp[a].ci, p: vp[a].p_groups }))]} />
+                    : <Empty icon="dot">Analyse the study to compare training with prompting.</Empty>}
+                </Panel>)}
+            </div>
           </div>
           <Limits>{d.honesty}</Limits>
         </>)}

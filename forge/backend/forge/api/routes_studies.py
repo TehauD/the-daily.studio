@@ -88,6 +88,9 @@ class CreateStudy(BaseModel):
     agent_id: str | None = Field(None, pattern=r"^agent_[a-z0-9]+$")
     require_review: bool = False
     focus_skills: list[Annotated[str, Field(pattern=r"^[a-z_]{1,40}$")]] | None = Field(None, max_length=10)
+    fewshot_k: int = Field(3, ge=0, le=8)                  # few-shot prompting baseline (0 = off)
+    preregister_power: bool = True                         # freeze a power analysis of this design into the plan
+    power_calibrate_from: str | None = Field(None, pattern=r"^study_[a-z0-9]+$")  # an analysed pilot to take assumptions from
 
 
 def _teacher_spec(st: AppState, t: dict) -> dict[str, Any]:
@@ -184,13 +187,23 @@ async def create_study(body: CreateStudy, st: AppState = Depends(get_state)):
             agent = Agent(st.settings.home / "agents" / body.agent_id)
         except AgentError as e:
             raise HTTPException(404, str(e))
+    power_assumptions = None
+    if body.preregister_power:
+        power_assumptions = {}
+        if body.power_calibrate_from:
+            from forge.engine import power as pw
+            cal = pw.calibrate(_study(st, body.power_calibrate_from))
+            if not cal:
+                raise HTTPException(409, "The pilot study has no analysed practice results to calibrate the power analysis from")
+            power_assumptions = cal
     try:
-        study = Study.init(st.settings.studies_dir, name=body.name, profile=body.profile, teacher=_teacher_spec(st, t),
+        study = await asyncio.to_thread(Study.init, st.settings.studies_dir, name=body.name, profile=body.profile, teacher=_teacher_spec(st, t),
                            student={"model_id": s["id"], "name": s["name"], "path": str(student_dir),
                                     "parameter_report": s["metadata"].get("parameter_report")},
                            arms=body.arms, seeds=body.seeds, train_overrides=train_ov, min_gain=body.min_gain,
                            device=body.device, environment=env, base_hash=base_hash, knowledge_pack=pack,
-                           focus_skills=body.focus_skills, agent=agent, require_review=body.require_review)
+                           focus_skills=body.focus_skills, agent=agent, require_review=body.require_review,
+                           fewshot_k=body.fewshot_k, power=power_assumptions)
     except StudyError as e:
         raise HTTPException(422, str(e))
     with st.db.tx() as c:

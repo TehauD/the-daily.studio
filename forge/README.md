@@ -1,4 +1,4 @@
-# FORGE — Local Distillation Lab (v0.29.0)
+# FORGE — Local Distillation Lab (v0.30.0)
 
 A local-first research instrument for **teacher → student LLM distillation on one consumer NVIDIA GPU**.
 A large model you run in LM Studio (the *teacher*) solves tool-use or document-QA tasks. FORGE keeps only its
@@ -178,6 +178,34 @@ The screenshots in these docs use a tiny random-weight test model and a mock tea
 To test a real student, run **`.\scripts\skill-check.ps1 -Teacher "olmo-3-32b" -Student "Olmo-3-7B-Instruct" -Profile pilot -Seal`**
 — template agent → verified tasks → study → train → sealed final test → trained vs untrained with ranges. See
 [docs/SKILL_CHECK.md](docs/SKILL_CHECK.md).
+
+### Evidence: did it learn, and is the result trustworthy?
+
+**Measure → Evidence** gives one verdict per study and the evidence behind it: the gain over the untrained student on the
+sealed test with its range, a **negative control** (same examples, answers shuffled — it must not gain), a **few-shot
+prompting baseline** (does training beat showing the untrained student three worked examples?), the **power analysis frozen
+with the plan** (could this design detect the gain?), a **forgetting check** (general-text perplexity before and after), the
+parts of success, loss curves, per-seed results and the tasks training fixed. See [docs/EVIDENCE.md](docs/EVIDENCE.md) and
+[docs/RIGOR.md](docs/RIGOR.md).
+
+**Validation kit**: `.\scripts\validate.ps1 -Teacher "olmo-3-32b" -Student "Olmo-3-7B-Instruct" -YesSeal -Quant` runs all of it
+— preregistered design, controls, sealed test, forgetting, quantization — and writes `VALIDATION.md` with a verified
+reproducibility bundle. See [docs/VALIDATION_KIT.md](docs/VALIDATION_KIT.md).
+
+### Make it smaller: Quantization Lab
+
+**Package → Quantization Lab** makes your own quantized variants and measures each on the study's own tasks: FORGE's
+transparent reference quantizer (8/4/3-bit, activation-aware, exact per-layer error), GGUF for **LM Studio** (importance
+matrix from training prompts) and compressed-tensors for **vLLM** (FP8, W8A8, GPTQ, AWQ recipes for llm-compressor). One
+chart: accuracy against size with ranges and the frontier; agreement and McNemar against the unquantized student; measured
+speed. See [docs/QUANTIZATION.md](docs/QUANTIZATION.md).
+
+### Share it: task packs and reproducibility bundles
+
+A **task pack** is a use case as data — agent spec, synthetic tables, verified tasks, no code — re-verified on install
+(`scripts/make_packs.py` builds one per template). A **reproducibility bundle** holds a study's raw episodes and analyses;
+anyone can verify it by recomputing every statistic. See [docs/SHARING.md](docs/SHARING.md). A governed path to measuring
+the synthetic-to-real gap is designed (not built) in [docs/REAL_REQUESTS.md](docs/REAL_REQUESTS.md).
 
 ### Compare any two, and see history
 

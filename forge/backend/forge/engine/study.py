@@ -185,7 +185,8 @@ class Study:
              seeds: list[int] | None = None, train_overrides: dict | None = None, taskset_overrides: dict | None = None,
              min_gain: float = 0.05, device: str = "cuda", environment: dict | None = None,
              base_hash: str | None = None, knowledge_pack: Any = None,
-             focus_skills: list[str] | None = None, agent: Any = None, require_review: bool = False) -> "Study":
+             focus_skills: list[str] | None = None, agent: Any = None, require_review: bool = False,
+             fewshot_k: int = 0, power: dict | None = None) -> "Study":
         if profile not in PROFILES:
             raise StudyError(f"profile must be one of {list(PROFILES)}")
         unknown = [a for a in arms if a not in TRAIN_ARMS]
@@ -245,9 +246,18 @@ class Study:
                 "counts": {s: sum(1 for t in tasks if t.split == s) for s in ("train", "dev", "test", "ood", "regression")}},
             "train": train, "arm_overrides": {a: TRAIN_ARMS[a] for a in arms},
             "eval": {"max_turns": 8 if agent is not None else 6, "max_new_tokens": 128, "decoding": "greedy", "control_seed_broadcast": 0},
+            # Preregistered baselines and power analysis (frozen with the plan, before any training).
+            "baselines": {"fewshot": {"k": int(fewshot_k), "source": "training split only"}} if fewshot_k else {},
+            "power": None,
             "base_hash": base_hash, "engine_source_sha256": engine_source_hash(),
             "environment": environment or {"python": sys.version.split()[0], "platform": platform.platform()},
         }
+        if power is not None:  # preregistered power analysis for this exact design (assumptions: defaults, a pilot, or given)
+            from forge.engine import power as pw
+            d = pw.design_from_tasks(tasks)
+            if d["groups"] >= 3:
+                plan["power"] = pw.plan(groups=d["groups"], paraphrases=d["paraphrases"], seeds=len(plan["seeds"]),
+                                        min_gain=min_gain, assumptions=power, sims=300)
         if agent is not None:  # the study keeps its own frozen copy of the agent
             snap = agent.snapshot(root / "agent_snapshot")
             plan["taskset"]["agent"]["snapshot"] = "agent_snapshot"
@@ -574,8 +584,15 @@ class Study:
     def _evaluate_students(self, splits: tuple[str, ...], emit: Callable, factory: Callable | None) -> dict:
         tasks = self.tasks()
         b = self._student(factory, None)
+        ctl = self.plan["eval"]["control_seed_broadcast"]
         for split in splits:
-            self._evaluate(b, "base", split, self.plan["eval"]["control_seed_broadcast"], tasks, emit)
+            self._evaluate(b, "base", split, ctl, tasks, emit)
+        fs = (self.plan.get("baselines") or {}).get("fewshot")
+        if fs and fs.get("k"):  # same untrained student, with k training examples in its prompt
+            from forge.engine import baselines
+            ex = baselines.choose(self, int(fs["k"]))
+            for split in splits:
+                self._evaluate(baselines.FewShotBackend(b, ex["text"]), baselines.ARM, split, ctl, tasks, emit)
         getattr(b, "unload", lambda: None)()
         for arm in self.plan["arms"]:
             for seed in self.plan["seeds"]:
@@ -608,7 +625,7 @@ class Study:
 
     # ---- analysis
     def observations(self, arm: str, split: str) -> list[dict]:
-        seeds = [self.plan["eval"]["control_seed_broadcast"]] if arm in ("base", "teacher") else self.plan["seeds"]
+        seeds = [self.plan["eval"]["control_seed_broadcast"]] if arm in ("base", "teacher", "fewshot") else self.plan["seeds"]
         rows = []
         for s in seeds:
             for e in self.episodes(arm, split, s):
@@ -631,6 +648,13 @@ class Study:
                 continue  # split has no tasks in this task set (e.g. doc-QA has no OOD/regression split)
             sec: dict[str, Any] = {"base_rate": self._rate("base", split), "teacher_rate": self._rate("teacher", split),
                                    "arms": {}}
+            fewshot = self.observations("fewshot", split)
+            if fewshot:
+                sec["fewshot_rate"] = self._rate("fewshot", split)
+                if base:  # does prompting alone help?
+                    fc = st.analyze_contrast(fewshot, base, broadcast_control_seed=control_seed)
+                    fc.pop("per_group_delta", None)
+                    sec["fewshot_vs_base"] = fc
             for arm in self.plan["arms"]:
                 a = self.observations(arm, split)
                 if not a or not base:
@@ -638,6 +662,10 @@ class Study:
                 c = st.analyze_contrast(a, base, broadcast_control_seed=control_seed)
                 c["invalid_rate_arm"] = sum(o["invalid"] > 0 for o in a) / len(a)
                 c["invalid_rate_control"] = sum(o["invalid"] > 0 for o in base) / len(base)
+                if fewshot:  # what training adds over prompting with examples
+                    vf = st.analyze_contrast(a, fewshot, broadcast_control_seed=control_seed)
+                    vf.pop("per_group_delta", None)
+                    c["vs_fewshot"] = vf
                 c["teacher_gap_closed"] = st.teacher_gap_closed(c["control_rate"], c["arm_rate"], sec["teacher_rate"])
                 # McNemar (diagnostic): one fixed paraphrase (p0) per group, per seed.
                 mc = {}
