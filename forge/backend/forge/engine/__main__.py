@@ -88,6 +88,17 @@ def cmd_forgetting(a: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_autopilot(a: argparse.Namespace) -> int:
+    """Run everything that is left in a study as one resumable job (the validation kit inside the app)."""
+    os.environ.setdefault("HF_HUB_OFFLINE", "1")
+    os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
+    from forge.engine import autopilot
+    from forge.engine.study import Study
+    res = autopilot.run(Study(Path(a.study)), json.loads(a.config), emit)
+    emit({"event": "autopilot_finished", "stopped_at": res["stopped_at"]})
+    return 0
+
+
 def cmd_bundle(a: argparse.Namespace) -> int:
     """Reproducibility bundle: write one (--study) or verify one (--verify)."""
     from forge.engine import bundle
@@ -357,6 +368,10 @@ def main(argv: list[str] | None = None) -> int:
     fg.add_argument("--study", required=True)
     fg.add_argument("--config", default="{}")
     fg.set_defaults(fn=cmd_forgetting)
+    ap_ = sub.add_parser("autopilot")
+    ap_.add_argument("--study", required=True)
+    ap_.add_argument("--config", default="{}")
+    ap_.set_defaults(fn=cmd_autopilot)
     bd = sub.add_parser("bundle", help="write (--study) or verify (--verify ZIP) a reproducibility bundle")
     bd.add_argument("--study")
     bd.add_argument("--out")

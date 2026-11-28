@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Autopilot, InlineAction } from "../components/Autopilot";
 import { Icon, type IconName } from "../components/icons";
 import { Limits } from "../components/results";
 import { Badge, Button, Empty, ErrorLine, PageHeader, Panel, Skeleton, cx, inputCls } from "../components/ui";
@@ -6,7 +7,7 @@ import { goto, handoff } from "../lib/handoff";
 import { useApi } from "../lib/hooks";
 import { usePrefs } from "../lib/prefs";
 
-interface Phase { key: string; name: string; what: string; status: string; facts: string[]; blockers: string[]; next: { label: string; route: string; handoff?: Record<string, string> } | null }
+interface Phase { key: string; name: string; what: string; status: string; facts: string[]; blockers: string[]; next: { label: string; route: string; handoff?: Record<string, string>; action?: { path: string; body?: unknown } } | null }
 interface PipelineT { project: string; study: { id: string; name: string; profile: string; sealed: boolean } | null; studies: { id: string; name: string }[]; phases: Phase[] }
 interface ProjectsT { projects: { id: string; name: string; kind: string; studies: { id: string }[] }[] }
 
@@ -20,7 +21,7 @@ export const STATUS: Record<string, { label: string; icon: IconName; cls: string
   locked: { label: "not yet", icon: "lock", cls: "text-ink-3", ring: "border-line bg-surface-2" },
 };
 const ICON: Record<string, IconName> = { setup: "observatory", define: "agent", data: "dataset", study: "training", inside: "map", measure: "evaluation",
-  final: "seal", package: "factory", decide: "check" };
+  final: "seal", evidence: "flask", package: "layers", decide: "check" };
 
 /** The whole project on one page: nine phases from set-up to a human decision, each with its evidence and next step. */
 export default function Pipeline() {
@@ -44,7 +45,7 @@ export default function Pipeline() {
   return (
     <div className="space-y-4">
       <PageHeader kicker="Pipeline" title="Pipeline"
-        subtitle="One project from set-up to a human decision — nine phases, what each has produced, what is blocking it, and the next step."
+        subtitle="One project from set-up to a human decision — ten phases, what each has produced, what is blocking it, and the next step. Or run everything that's left in one go."
         right={<div className="flex flex-wrap gap-2">
           <select className={cx(inputCls, "!w-auto max-w-[280px] font-sans")} value={project ?? ""} onChange={(e) => { setPid(e.target.value); setSid(null); }} aria-label="Project">
             {list.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select>
@@ -74,6 +75,7 @@ export default function Pipeline() {
               <div className="text-[13px] text-ink"><b>Next:</b> {nextUp.name} — {nextUp.next?.label ?? nextUp.what}{d.study && <span className="text-ink-2"> · study {d.study.name}</span>}</div>
               {nextUp.next && <Button tone="primary" icon="chevron" onClick={() => act(nextUp)}>{nextUp.next.label}</Button>}
             </div>)}
+          {d.study && <Autopilot sid={d.study.id} sealed={d.study.sealed} onChange={() => void pl.reload()} />}
           <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
             {d.phases.map((p, i) => { const st = STATUS[p.status] ?? STATUS.locked; return (
               <section key={p.key} id={`phase-${p.key}`} aria-labelledby={`h-${p.key}`} className={cx("scroll-mt-20 rounded-[var(--radius)] border bg-surface p-4", p.status === "locked" ? "border-line opacity-[.92]" : "border-line")}>
@@ -87,7 +89,9 @@ export default function Pipeline() {
                 <ul className="mt-3 space-y-1 text-[12px] text-ink-2">{p.facts.map((f) => <li key={f} className="flex gap-2"><span aria-hidden className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-ink-3" />{f}</li>)}</ul>
                 {p.blockers.length > 0 && <ul className="mt-2 space-y-1 rounded border border-[color:var(--warn)]/50 bg-[color:var(--warn)]/8 p-2 text-[11.5px] text-warn-ink">
                   {p.blockers.slice(0, 3).map((b) => <li key={b} className="flex gap-1.5"><Icon name="alert" size={12} className="mt-0.5 shrink-0" />{b}</li>)}</ul>}
-                {p.next && p.status !== "locked" && <div className="mt-3"><Button size="sm" tone={["todo", "blocked"].includes(p.status) ? "primary" : "default"} icon="chevron" onClick={() => act(p)}>{p.next.label}</Button></div>}
+                {p.next && p.status !== "locked" && <div className="mt-3">{p.next.action
+                  ? <InlineAction label={p.next.label} path={p.next.action.path} body={p.next.action.body} onDone={() => void pl.reload()} />
+                  : <Button size="sm" tone={["todo", "blocked"].includes(p.status) ? "primary" : "default"} icon="chevron" onClick={() => act(p)}>{p.next.label}</Button>}</div>}
               </section>); })}
           </div>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-ink-3" aria-label="Status legend">

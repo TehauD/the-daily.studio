@@ -20,8 +20,9 @@ router = APIRouter(prefix="/api", tags=["pipeline"])
 PHASES = [("setup", "Set up", "GPU, models, teacher–student pair"), ("define", "Define the job", "role, tools, data, skills, hand-back cases"),
           ("data", "Practice data", "verified tasks, human review, coverage"), ("study", "Study & train", "frozen plan → collect → build → train"),
           ("inside", "Look inside & steer", "playground, lens, model map, weight lab"), ("measure", "Measure (practice)", "results, test adequacy, robustness, benches"),
-          ("final", "Seal & final test", "the confirmatory result"), ("package", "Package", "merged export → GGUF → LM Studio check"),
-          ("decide", "Govern & decide", "model card, sign-off, release bundle")]
+          ("final", "Seal & final test", "the confirmatory result"), ("evidence", "Evidence & checks", "control, prompting baseline, power, forgetting"),
+          ("package", "Make it smaller & ship", "quantized variants, GGUF / vLLM, LM Studio check"),
+          ("decide", "Govern, share & decide", "model card, reproducibility bundle, sign-off")]
 
 
 def _phase(key: str, status: str, facts: list[str], next_: dict | None = None, blockers: list[str] | None = None) -> dict:
@@ -101,7 +102,7 @@ def pipeline(project: str, study_id: str | None = None, st: AppState = Depends(g
     # 4 study
     if not s:
         ph.append(_phase("study", "todo", ["no study yet"], {"label": "Create a study", "route": "studio"}))
-        for k in ("inside", "measure", "final", "package", "decide"):
+        for k in ("inside", "measure", "final", "evidence", "package", "decide"):
             ph.append(_phase(k, "locked", ["needs a study"]))
         return {"project": project, "study": None, "studies": [], "phases": ph}
     summ = s.summary()
@@ -159,20 +160,54 @@ def pipeline(project: str, study_id: str | None = None, st: AppState = Depends(g
     ph.append(_phase("final", "locked" if not mdone else "done" if stg.get("analyze_test") == "completed" else "todo",
                      [f"sealed: {'yes' if sealed else 'no'}"] + ([f"final test: trained {tsec['arms'][arm]['arm_rate']:.0%} vs untrained {tsec['base_rate']:.0%}", f"review gate: {trep.get('gate', {}).get('verdict', '—')}"] if tsec else []),
                      {"label": "Seal the study" if not sealed else "Run the final test", "route": "studio"} if stg.get("analyze_test") != "completed" else {"label": "Read the final result", "route": "evaluation"}))
-    # 8 package
+    # 8 evidence & checks
+    from forge.engine import evidence as evm
+    from forge.engine import forgetting as fg
+    final_done = stg.get("analyze_test") == "completed"
+    ev = evm.evidence(s) if mdone else None
+    fr = fg.report(s)
+    farm = (fr or {}).get("arms", {}).get(arm)
+    prm = (ev or {}).get("verdict", {}).get("prompting") or {}
+    efacts = []
+    if ev:
+        efacts.append(f"verdict ({ev['verdict'].get('split', '—')}): {ev['verdict']['status'].replace('_', ' ')}")
+        efacts.append("negative control: " + ("included" if "shuffled_control" in s.plan["arms"] else "not in this study"))
+        efacts.append("prompting baseline: " + (prm.get("status", "measured").replace("_", " ") if s.plan.get("baselines", {}).get("fewshot") else "not in this study"))
+        pw = s.plan.get("power")
+        efacts.append(f"power: detects ≥ {pw['mde_groups'] * 100:.0f} pts" if pw and pw.get("mde_groups") is not None else "power: not planned" if not pw else "power: too small to tell")
+    efacts.append(f"forgetting check: {farm['status'].replace('_', ' ')}" if farm else "forgetting check: not run")
+    ewarn = []
+    if ev and ev["verdict"]["status"] == "not_shown":
+        ewarn.append(f"No gain shown on the {'final test' if ev['verdict'].get('split') == 'test' else 'practice tasks'}")
+    if ev and ev["verdict"]["status"] == "control_failed":
+        ewarn.append("The negative control also gained: the score may reward format")
+    if farm and farm["status"] == "forgetting":
+        ewarn.append("General language got worse after training")
+    if prm.get("status") == "prompting_beats_training":
+        ewarn.append("Prompting with examples beats training on these tasks")
+    ph.append(_phase("evidence", "locked" if not mdone else "done" if final_done and farm else "todo" if final_done else "optional",
+                     efacts, {"label": "Run the forgetting check" if not farm and trained else "Read the evidence", "route": "evidence",
+                              **({"action": {"path": f"/api/studies/{s.plan['study_id']}/forgetting", "body": {}}} if not farm and trained else {})}, ewarn))
+    # 9 package
     exp = stg.get("export") == "completed"
     g = s.root / "exports" / "gguf"
     ggufs = [json.loads(p.read_text(encoding="utf-8")) for p in g.glob("*.json")] if g.is_dir() else []
     checked = sum(1 for x in ggufs if x.get("lmstudio_check"))
-    ph.append(_phase("package", "locked" if stg.get("analyze_test") != "completed" else "done" if ggufs and checked else "optional" if exp else "todo",
-                     [f"merged export: {'yes' if exp else 'no'}", f"GGUF files: {len(ggufs)}", f"checked in LM Studio: {checked}"],
-                     {"label": "Export, then make a GGUF", "route": "factory"}))
+    qd = s.root / "quant"
+    variants = [d for d in qd.iterdir() if (d / "manifest.json").exists()] if qd.is_dir() else []
+    measured_q = sum(1 for d in variants if s.episode_path(f"quant_{d.name}", "test", 0).exists())
+    ph.append(_phase("package", "locked" if stg.get("analyze_test") != "completed" else "done" if (variants and measured_q) or (ggufs and checked) else "optional" if exp else "todo",
+                     [f"merged export: {'yes' if exp else 'no'}", f"quantized variants: {len(variants)} ({measured_q} on the final test)", f"GGUF files: {len(ggufs)} · checked in LM Studio: {checked}"],
+                     {"label": "Make smaller variants" if exp else "Export, then quantize", "route": "quant" if exp else "factory"}))
     # 9 decide
     so = rel.signoffs(s)
     bundles = rel.bundles(s)
     last = so[-1] if so else None
+    rb = s.root / "bundles"
+    repro = len(list(rb.glob("*.zip"))) if rb.is_dir() else 0
     ph.append(_phase("decide", "locked" if stg.get("analyze_test") != "completed" else "done" if last and bundles else "todo",
-                     [f"decision: {last['decision_label']} — {last['reviewer']}" if last else "no human decision recorded", f"release bundles: {len(bundles)}"],
+                     [f"decision: {last['decision_label']} — {last['reviewer']}" if last else "no human decision recorded", f"release bundles: {len(bundles)}",
+                      f"reproducibility bundles: {repro}"],
                      {"label": "Record a decision / build the bundle", "route": "governance"}))
     return {"project": project, "study": {"id": s.plan["study_id"], "name": s.plan["name"], "profile": s.plan["profile"], "sealed": sealed},
             "studies": [{"id": x.plan["study_id"], "name": x.plan["name"]} for x in studies], "phases": ph}

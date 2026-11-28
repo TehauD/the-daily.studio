@@ -124,3 +124,33 @@ async def verify_bundle(body: VerifyBody):
     if not body.path.lower().endswith(".zip") or not os.path.isfile(body.path):
         raise HTTPException(422, "Give the path of a bundle .zip on this machine")
     return await asyncio.to_thread(bundle.verify, body.path)
+
+
+class AutopilotBody(BaseModel):
+    seal_confirm: str | None = Field(None, max_length=10)   # "SEAL" lets the run seal and run the final test
+    quant: bool = True
+    text_file: str | None = Field(None, max_length=1000)
+
+
+@router.get("/studies/{sid}/autopilot")
+def autopilot_plan(sid: str, quant: bool = True, st: AppState = Depends(get_state)):
+    from forge.engine import autopilot
+    s = _study(st, sid)
+    running = next((j for j in st.jobs.list(study_id=sid) if j.get("kind") == "autopilot" and j.get("status") in ("running", "queued", "cancelling")), None)
+    return {"steps": autopilot.steps(s, {"quant": quant}), "running": running}
+
+
+@router.post("/studies/{sid}/autopilot")
+def autopilot_start(sid: str, body: AutopilotBody, st: AppState = Depends(get_state)):
+    s = _study(st, sid)
+    if body.seal_confirm not in (None, "", "SEAL"):
+        raise HTTPException(422, "Type SEAL exactly to allow sealing, or leave it empty to stop before the final test")
+    if body.text_file and not os.path.isfile(body.text_file):
+        raise HTTPException(422, "General-text file not found on this machine")
+    cfg = {**body.model_dump(), "hash_cache": str(st.settings.home / "hash_cache.json")}
+    env = {"FORGE_ALLOW_CPU": "1"} if s.plan["device"] == "cpu" else None
+    try:
+        return st.jobs.start("autopilot", ["autopilot", "--study", str(s.root), "--config", json.dumps(cfg)], gpu=True, study_id=sid,
+                             label=f"{s.plan['name']} · run everything left", env=env)
+    except JobError as e:
+        raise HTTPException(409, str(e))

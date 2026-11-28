@@ -4,6 +4,7 @@ import { Figure, fmtPct } from "./results";
 import { Badge, Button, Empty, ErrorLine, Notice, Panel, Prov, cx, td, th, tr } from "./ui";
 import { api } from "../lib/api";
 import { useAction, useApi } from "../lib/hooks";
+import { usePrefs } from "../lib/prefs";
 
 export interface PowerT {
   design: { groups: number; paraphrases: number; seeds: number; alpha: number; target_power: number };
@@ -21,15 +22,16 @@ const pct = (v: number) => `${v >= 0 ? "+" : "−"}${Math.abs(v * 100).toFixed(1
 
 /** Preregistered power: what this design can detect, frozen before training. */
 export function PowerPanel({ p }: { p: PowerT | null }) {
+  const { prefs } = usePrefs();
   if (!p) return (
-    <Panel title="Could this study detect the gain?" prov={<Prov kind="declared" />}>
+    <Panel title="Could this study tell?" prov={<Prov kind="declared" />}>
       <Empty icon="info">No power analysis was frozen with this study (created before v0.30). New studies preregister one automatically.</Empty>
     </Panel>);
   const d = p.design;
   const seedsOk = p.seed_floor_p < d.alpha;
   const maxM = Math.max(...p.alternatives.map((a) => a.mde_groups ?? 0), p.observed_gain ?? 0, 0.01);
   return (
-    <Panel title="Could this study detect the gain?" prov={<Prov kind="computed" source="preregistered with the plan" />}
+    <Panel title="Could this study tell?" prov={<Prov kind="computed" source="preregistered with the plan" />}
       right={<Explain title="Power analysis" what={<>Before training, FORGE simulated thousands of replicate studies with this exact design ({d.groups} task groups × {d.paraphrases} wordings, {d.seeds} seed(s)) to find the smallest gain it would detect 80 % of the time.</>}
         read={<ul className="list-disc space-y-1 pl-4"><li><b>Detectable gain</b>: smaller real gains are often missed, so "no significant gain" is weak evidence of no effect.</li><li><b>Seed floor</b>: with S seeds the seed test can never go below 2/2^S; the review gate needs ≥ 6 seeds.</li><li>Assumptions come from a pilot study when one is given — the recommended path.</li></ul>}
         math={<p>Beta-binomial task groups; true gain varies by group (sd {p.assumptions.sd_group}) and seed (sd {p.assumptions.sd_seed}); t-test over groups, exact sign-flip over seeds; α = {d.alpha}.</p>} />}>
@@ -40,7 +42,7 @@ export function PowerPanel({ p }: { p: PowerT | null }) {
       </div>
       {p.reading && <p className="mt-3 text-[12.5px] text-ink-2"><b className="text-ink">Observed {pts(p.observed_gain)}.</b> {p.reading}</p>}
       {p.notes.map((n) => <div key={n} className="mt-2"><Notice tone="info">{n}</Notice></div>)}
-      <Figure title="Detectable gain by design" x="smallest gain detected 80 % of the time (task-group test) — shorter is more sensitive"
+      {prefs.mode !== "expert" ? <p className="mt-3 text-[12px] text-ink-3">Expert mode shows how more seeds or task groups would change this.</p> : <Figure title="Detectable gain by design" x="smallest gain detected 80 % of the time (task-group test) — shorter is more sensitive"
         caption={<>Assumptions: untrained rate {fmtPct(p.assumptions.base_rate)}, group spread {p.assumptions.sd_group}, seed spread {p.assumptions.sd_seed} — {p.assumptions.source}.</>}>
         <div className="space-y-1.5">{p.alternatives.map((a) => {
           const cur = a.seeds === d.seeds && a.groups === d.groups;
@@ -56,7 +58,7 @@ export function PowerPanel({ p }: { p: PowerT | null }) {
             </div>); })}
           {p.observed_gain != null && <div className="pl-[158px] text-[10.5px] text-ink-3">black tick = observed gain</div>}
         </div>
-      </Figure>
+      </Figure>}
     </Panel>
   );
 }
@@ -73,7 +75,7 @@ export function ForgettingPanel({ sid, arms, name }: { sid: string; arms: string
   const span = f ? Math.min(1, Math.max(0.3, ...Object.values(f.arms).flatMap((a) => [Math.abs(a.pooled.ci[0]), Math.abs(a.pooled.ci[1]), ...Object.values(a.seeds).map((z) => Math.abs(z.change))]))) : 0.3;
   const x = (v: number) => 50 + (Math.max(-span, Math.min(span, v)) / span) * 50;
   return (
-    <Panel title="Did it forget general language?" prov={<Prov kind="measured" source={f ? f.source : "not run yet"} />}
+    <Panel title="What did it cost? Everyday language" prov={<Prov kind="measured" source={f ? f.source : "not run yet"} />}
       right={<Explain title="Forgetting check" what={<>Perplexity — how surprised the model is by ordinary English, exp(loss) per token — on general text unrelated to the tasks, before and after training.</>}
         read={<ul className="list-disc space-y-1 pl-4"><li>A rise means the student now predicts everyday text less well: it traded general language for the skill.</li><li><b>Forgetting</b> = the whole 95 % range above +{((f?.threshold ?? 0.05) * 100).toFixed(0)} %; <b>no material drift</b> = the whole range below it; <b>lower</b> = the whole range below −{((f?.threshold ?? 0.05) * 100).toFixed(0)} % (ordinary text became easier to predict).</li></ul>}
         math={<p>{f?.method ?? "perplexity = exp(mean token NLL); paired per passage; bootstrap over passages"}</p>} />}>

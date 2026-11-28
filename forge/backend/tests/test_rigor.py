@@ -98,3 +98,33 @@ def test_forgetting_check_on_tiny_olmo3(tmp_path, monkeypatch):
     assert rep["passages"] == len(PASSAGES) and rep["base"]["perplexity"] > 1
     assert a["status"] in ("forgetting", "no_material_drift", "inconclusive") and a["pooled"]["ci"][0] <= a["pooled"]["change"] <= a["pooled"]["ci"][1]
     assert forgetting.report(s)["arms"]["teacher_filtered"]["seeds"]["0"]["passages"] == len(PASSAGES)
+
+
+def test_autopilot_stops_before_seal_then_finishes(tmp_path, monkeypatch):
+    pytest.importorskip("peft")
+    pytest.importorskip("transformers.models.olmo3")
+    monkeypatch.setenv("FORGE_ALLOW_CPU", "1")
+    monkeypatch.setenv("FORGE_ISOLATE_RUNS", "0")
+    from forge.engine import autopilot
+    from forge.engine.general_text import PASSAGES
+    from forge.engine.tasks import SYSTEM_PROMPT, TaskSetSpec, generate_taskset
+    from tests.tiny_model import build_tiny_olmo3
+    tasks = generate_taskset(TaskSetSpec(groups_per_family=3))
+    olmo = build_tiny_olmo3(tmp_path / "olmo", [SYSTEM_PROMPT] + [t.prompt for t in tasks] + PASSAGES)
+    s = Study.init(tmp_path / "studies", name="ap", profile="smoke", device="cpu",
+                   teacher={"provider": "lmstudio", "endpoint": "http://127.0.0.1:9/v1", "model": "t"},
+                   student={"name": "olmo-tiny", "path": str(olmo)}, arms=["teacher_filtered"], fewshot_k=2,
+                   train_overrides={"max_steps": 2, "grad_accum": 1, "min_free_vram_mb": 0, "max_seq_len": 4096})
+    s.plan["eval"]["max_new_tokens"] = 8
+    monkeypatch.setattr(Study, "teacher_backend", lambda self: OracleBackend({t.prompt: t for t in self.tasks()}))
+    events = []
+    r1 = autopilot.run(s, {"quant": False}, events.append)
+    assert r1["stopped_at"] == "seal" and not s.state.get("sealed")
+    assert any(e.get("status") == "stopped" for e in events if e.get("event") == "autopilot")
+    assert (s.root / "episodes" / "fewshot").is_dir()                     # baseline evaluated with the student
+    r2 = autopilot.run(s, {"quant": False, "seal_confirm": "SEAL"}, events.append)
+    assert r2["stopped_at"] is None and all(x["done"] for x in r2["steps"])
+    assert s.state.get("sealed") and (s.root / "reports" / "forgetting.json").exists() and any((s.root / "bundles").glob("*.zip"))
+    assert any(e.get("event") == "bundle" and e["verified"] for e in events)
+    skipped = [e["step"] for e in events if e.get("event") == "autopilot" and e["status"] == "skipped"]
+    assert {"collect", "build", "train", "evaluate_dev", "analyze_dev"} <= set(skipped)    # resumed, not repeated
