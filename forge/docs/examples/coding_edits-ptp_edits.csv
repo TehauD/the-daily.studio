@@ -1,0 +1,101 @@
+edit_id,column1,column2,modifier_allowed,rationale
+E-5001,PRC-1001,PRC-1008,yes,Standard of care for column 1
+E-5002,PRC-1001,PRC-1046,yes,Standard of care for column 1
+E-5003,PRC-1003,PRC-1002,no,Column 2 is a component of column 1
+E-5004,PRC-1003,PRC-1051,yes,Standard of care for column 1
+E-5005,PRC-1005,PRC-1001,yes,Standard of care for column 1
+E-5006,PRC-1005,PRC-1006,yes,More extensive procedure includes the lesser
+E-5007,PRC-1005,PRC-1008,yes,Standard of care for column 1
+E-5008,PRC-1005,PRC-1021,no,Standard of care for column 1
+E-5009,PRC-1007,PRC-1005,yes,Column 2 is a component of column 1
+E-5010,PRC-1007,PRC-1001,yes,More extensive procedure includes the lesser
+E-5011,PRC-1007,PRC-1042,yes,"Same anatomic site, same session"
+E-5012,PRC-1007,PRC-1022,no,Column 2 is a component of column 1
+E-5013,PRC-1009,PRC-1016,no,Column 2 is a component of column 1
+E-5014,PRC-1009,PRC-1018,no,Standard of care for column 1
+E-5015,PRC-1011,PRC-1016,yes,Mutually exclusive procedures
+E-5016,PRC-1011,PRC-1015,yes,Column 2 is a component of column 1
+E-5017,PRC-1011,PRC-1009,no,Mutually exclusive procedures
+E-5018,PRC-1011,PRC-1008,yes,Standard of care for column 1
+E-5019,PRC-1011,PRC-1041,yes,Standard of care for column 1
+E-5020,PRC-1013,PRC-1014,yes,More extensive procedure includes the lesser
+E-5021,PRC-1013,PRC-1054,yes,Column 2 is a component of column 1
+E-5022,PRC-1013,PRC-1025,yes,Mutually exclusive procedures
+E-5023,PRC-1015,PRC-1014,yes,"Same anatomic site, same session"
+E-5024,PRC-1015,PRC-1006,yes,More extensive procedure includes the lesser
+E-5025,PRC-1015,PRC-1055,yes,Standard of care for column 1
+E-5026,PRC-1017,PRC-1019,yes,Standard of care for column 1
+E-5027,PRC-1017,PRC-1022,no,Standard of care for column 1
+E-5028,PRC-1017,PRC-1054,yes,Column 2 is a component of column 1
+E-5029,PRC-1017,PRC-1026,no,Column 2 is a component of column 1
+E-5030,PRC-1019,PRC-1020,no,Standard of care for column 1
+E-5031,PRC-1019,PRC-1040,yes,Standard of care for column 1
+E-5032,PRC-1019,PRC-1039,no,Column 2 is a component of column 1
+E-5033,PRC-1021,PRC-1024,yes,Mutually exclusive procedures
+E-5034,PRC-1021,PRC-1022,yes,Column 2 is a component of column 1
+E-5035,PRC-1021,PRC-1034,no,Standard of care for column 1
+E-5036,PRC-1021,PRC-1005,no,Column 2 is a component of column 1
+E-5037,PRC-1023,PRC-1017,yes,"Same anatomic site, same session"
+E-5038,PRC-1023,PRC-1024,yes,"Same anatomic site, same session"
+E-5039,PRC-1023,PRC-1022,yes,More extensive procedure includes the lesser
+E-5040,PRC-1023,PRC-1004,yes,More extensive procedure includes the lesser
+E-5041,PRC-1025,PRC-1026,no,"Same anatomic site, same session"
+E-5042,PRC-1025,PRC-1030,yes,"Same anatomic site, same session"
+E-5043,PRC-1025,PRC-1027,no,"Same anatomic site, same session"
+E-5044,PRC-1025,PRC-1038,no,Standard of care for column 1
+E-5045,PRC-1025,PRC-1011,no,Standard of care for column 1
+E-5046,PRC-1027,PRC-1029,no,Column 2 is a component of column 1
+E-5047,PRC-1027,PRC-1032,yes,"Same anatomic site, same session"
+E-5048,PRC-1027,PRC-1031,yes,Column 2 is a component of column 1
+E-5049,PRC-1027,PRC-1051,no,More extensive procedure includes the lesser
+E-5050,PRC-1029,PRC-1031,no,More extensive procedure includes the lesser
+E-5051,PRC-1029,PRC-1032,no,More extensive procedure includes the lesser
+E-5052,PRC-1029,PRC-1049,no,Column 2 is a component of column 1
+E-5053,PRC-1031,PRC-1025,no,Standard of care for column 1
+E-5054,PRC-1031,PRC-1032,no,"Same anatomic site, same session"
+E-5055,PRC-1031,PRC-1002,no,Standard of care for column 1
+E-5056,PRC-1031,PRC-1004,no,Standard of care for column 1
+E-5057,PRC-1033,PRC-1038,no,Mutually exclusive procedures
+E-5058,PRC-1033,PRC-1039,no,Mutually exclusive procedures
+E-5059,PRC-1033,PRC-1037,no,Mutually exclusive procedures
+E-5060,PRC-1033,PRC-1028,no,Standard of care for column 1
+E-5061,PRC-1033,PRC-1029,yes,Column 2 is a component of column 1
+E-5062,PRC-1035,PRC-1033,yes,Mutually exclusive procedures
+E-5063,PRC-1035,PRC-1040,no,"Same anatomic site, same session"
+E-5064,PRC-1035,PRC-1039,no,More extensive procedure includes the lesser
+E-5065,PRC-1035,PRC-1053,no,Mutually exclusive procedures
+E-5066,PRC-1037,PRC-1034,yes,Mutually exclusive procedures
+E-5067,PRC-1037,PRC-1039,no,"Same anatomic site, same session"
+E-5068,PRC-1037,PRC-1040,no,Standard of care for column 1
+E-5069,PRC-1037,PRC-1012,no,Column 2 is a component of column 1
+E-5070,PRC-1039,PRC-1040,no,More extensive procedure includes the lesser
+E-5071,PRC-1039,PRC-1018,no,Standard of care for column 1
+E-5072,PRC-1039,PRC-1009,yes,More extensive procedure includes the lesser
+E-5073,PRC-1041,PRC-1042,yes,"Same anatomic site, same session"
+E-5074,PRC-1041,PRC-1048,no,Standard of care for column 1
+E-5075,PRC-1041,PRC-1051,yes,Standard of care for column 1
+E-5076,PRC-1043,PRC-1047,yes,Mutually exclusive procedures
+E-5077,PRC-1043,PRC-1014,yes,Standard of care for column 1
+E-5078,PRC-1043,PRC-1040,no,Mutually exclusive procedures
+E-5079,PRC-1045,PRC-1042,yes,"Same anatomic site, same session"
+E-5080,PRC-1045,PRC-1041,no,Column 2 is a component of column 1
+E-5081,PRC-1045,PRC-1043,no,Standard of care for column 1
+E-5082,PRC-1045,PRC-1015,yes,"Same anatomic site, same session"
+E-5083,PRC-1047,PRC-1046,no,"Same anatomic site, same session"
+E-5084,PRC-1047,PRC-1043,no,"Same anatomic site, same session"
+E-5085,PRC-1047,PRC-1003,no,More extensive procedure includes the lesser
+E-5086,PRC-1049,PRC-1054,no,Column 2 is a component of column 1
+E-5087,PRC-1049,PRC-1050,no,Standard of care for column 1
+E-5088,PRC-1049,PRC-1028,yes,More extensive procedure includes the lesser
+E-5089,PRC-1049,PRC-1012,no,More extensive procedure includes the lesser
+E-5090,PRC-1051,PRC-1052,yes,More extensive procedure includes the lesser
+E-5091,PRC-1051,PRC-1056,yes,More extensive procedure includes the lesser
+E-5092,PRC-1051,PRC-1019,no,Standard of care for column 1
+E-5093,PRC-1053,PRC-1050,yes,Standard of care for column 1
+E-5094,PRC-1053,PRC-1013,yes,"Same anatomic site, same session"
+E-5095,PRC-1053,PRC-1010,no,"Same anatomic site, same session"
+E-5096,PRC-1055,PRC-1049,yes,More extensive procedure includes the lesser
+E-5097,PRC-1055,PRC-1054,no,Mutually exclusive procedures
+E-5098,PRC-1055,PRC-1056,yes,"Same anatomic site, same session"
+E-5099,PRC-1055,PRC-1013,no,"Same anatomic site, same session"
+E-5100,PRC-1055,PRC-1006,yes,"Same anatomic site, same session"

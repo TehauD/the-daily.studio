@@ -1,0 +1,215 @@
+@import "tailwindcss";
+
+/* ------------------------------------------------------------------------------------------------
+   FORGE design tokens.
+   Roles, not hex, are used everywhere. Data colors (teacher / base / tuned, status, diverging) are the
+   validated reference palette (dataviz validator: all-pairs CVD ΔE ≥ 9.2 light / 9.4 dark).
+   UI accent is chrome only (focus, selection, primary action) and never encodes data.
+   ------------------------------------------------------------------------------------------------ */
+
+:root {
+  color-scheme: light;
+  --bg: #f3f4f2;
+  --surface: #fcfcfb;
+  --surface-2: #f6f7f5;
+  --surface-3: #eceeeb;
+  --line: #e1e2dc;
+  --line-strong: #c9cbc3;
+  --ink: #0b0c0c;
+  --ink-2: #4b4d4a;
+  --ink-3: #666863;  /* ≥ 4.5:1 on every light surface (WCAG AA small text) */
+  --grid-ink: rgb(11 12 12 / 0.035);
+  --shadow: 0 1px 0 rgb(11 12 12 / 0.03), 0 1px 2px rgb(11 12 12 / 0.04);
+
+  --s-teacher: #2a78d6;
+  --cat-1: #2a78d6; --cat-2: #eb6834; --cat-3: #1baf7a; --cat-4: #eda100; --cat-5: #e87ba4; --cat-6: #008300; --cat-7: #6250d6; --cat-8: #e34948;
+  --s-base: #eb6834;
+  --s-tuned: #1baf7a;
+  --div-pos: #2a78d6;
+  --div-neg: #d03b3b;
+  --div-mid: #c3c2b7;
+  --seq-0: #cde2fb;
+  --seq-1: #86b6ef;
+  --seq-2: #3987e5;
+  --seq-3: #1c5cab;
+  --seq-4: #0d366b;
+
+  --good: #0ca30c;
+  --good-ink: #006300;
+  --warn: #fab219;
+  --warn-ink: #8a5a00;
+  --serious: #ec835a;
+  --crit: #d03b3b;
+  --crit-ink: #b42323;
+
+  --accent: #0c736a;  /* accent is also used as text: ≥ 4.5:1 */
+  --accent-ink: #ffffff;
+  --accent-soft: rgb(12 115 106 / 0.09);
+  --accent-line: rgb(12 115 106 / 0.35);
+
+  --radius: 6px;
+  --pad: 16px;
+  --row: 34px;
+  --text-scale: 1;
+  font-size: calc(14px * var(--text-scale));
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0b0c0d;
+  --surface: #141617;
+  --surface-2: #191b1d;
+  --surface-3: #212427;
+  --line: #262a2d;
+  --line-strong: #353a3e;
+  --ink: #eef0ee;
+  --ink-2: #b9bdb8;
+  --ink-3: #8c9089;  /* ≥ 4.5:1 on every dark surface */
+  --grid-ink: rgb(255 255 255 / 0.028);
+  --shadow: 0 0 0 1px rgb(0 0 0 / 0.2);
+  --s-teacher: #3987e5;
+  --cat-1: #3987e5; --cat-2: #d95926; --cat-3: #199e70; --cat-4: #c98500; --cat-5: #d55181; --cat-6: #0ca30c; --cat-7: #9085e9; --cat-8: #e66767;
+  --s-base: #d95926;
+  --s-tuned: #199e70;
+  --div-pos: #3987e5;
+  --div-neg: #e66767;
+  --div-mid: #44484c;
+  --seq-0: #13263d;
+  --seq-1: #184f95;
+  --seq-2: #2a78d6;
+  --seq-3: #6da7ec;
+  --seq-4: #cde2fb;
+  --good-ink: #2ec42e;
+  --warn-ink: #fab219;
+  --crit-ink: #ef7a7a;
+  --accent: #2bb3a6;
+  --accent-ink: #04201d;
+  --accent-soft: rgb(43 179 166 / 0.12);
+  --accent-line: rgb(43 179 166 / 0.45);
+}
+
+/* Accent palettes (chrome only). */
+:root[data-accent="cyan"] { --accent: #0c6f92; --accent-soft: rgb(12 111 146 / 0.09); --accent-line: rgb(12 111 146 / 0.35); }
+:root[data-accent="green"] { --accent: #1a7641; --accent-soft: rgb(26 118 65 / 0.09); --accent-line: rgb(26 118 65 / 0.35); }
+:root[data-accent="blue"] { --accent: #2f5fd0; --accent-soft: rgb(47 95 208 / 0.09); --accent-line: rgb(47 95 208 / 0.35); }
+:root[data-accent="graphite"] { --accent: #3f4650; --accent-soft: rgb(63 70 80 / 0.09); --accent-line: rgb(63 70 80 / 0.35); }
+:root[data-theme="dark"][data-accent="cyan"] { --accent: #38bdf8; --accent-ink: #04202c; --accent-soft: rgb(56 189 248 / 0.12); --accent-line: rgb(56 189 248 / 0.45); }
+:root[data-theme="dark"][data-accent="green"] { --accent: #3ecf7a; --accent-ink: #052012; --accent-soft: rgb(62 207 122 / 0.12); --accent-line: rgb(62 207 122 / 0.45); }
+:root[data-theme="dark"][data-accent="blue"] { --accent: #6d94f5; --accent-ink: #081633; --accent-soft: rgb(109 148 245 / 0.12); --accent-line: rgb(109 148 245 / 0.45); }
+:root[data-theme="dark"][data-accent="graphite"] { --accent: #c4cad1; --accent-ink: #111; --accent-soft: rgb(196 202 209 / 0.1); --accent-line: rgb(196 202 209 / 0.4); }
+
+:root[data-contrast="high"] { --line: #b8bab2; --line-strong: #8d8f88; --ink-2: #2b2c2a; --ink-3: #50524d; }
+:root[data-theme="dark"][data-contrast="high"] { --line: #4a4f53; --line-strong: #6b7176; --ink-2: #dcdfdb; --ink-3: #a9ada6; }
+:root[data-density="compact"] { --pad: 11px; --row: 28px; }
+:root[data-density="comfortable"] { --pad: 20px; --row: 40px; }
+
+/* Wide-screen layout.
+   3xl/4xl: extra columns on wide monitors.
+   fit: viewport-locked workspaces (≥1600×760) — the page never scrolls; panels scroll internally. */
+@theme {
+  --breakpoint-3xl: 120rem;
+  --breakpoint-4xl: 160rem;
+}
+@custom-variant fit (@media (min-width: 100rem) and (min-height: 47.5rem));
+
+@theme inline {
+  --font-sans: "Inter", "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", "Cascadia Mono", "Cascadia Code", "SF Mono", Consolas, ui-monospace, monospace;
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-line: var(--accent-line);
+  --color-good: var(--good);
+  --color-good-ink: var(--good-ink);
+  --color-warn: var(--warn);
+  --color-warn-ink: var(--warn-ink);
+  --color-crit: var(--crit);
+  --color-crit-ink: var(--crit-ink);
+  --color-teacher: var(--s-teacher);
+  --color-base: var(--s-base);
+  --color-tuned: var(--s-tuned);
+  --radius-panel: var(--radius);
+}
+
+html, body, #root { height: 100%; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-feature-settings: "cv11", "ss01";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+::selection { background: var(--accent-soft); color: var(--ink); }
+
+/* Instrument grid: a faint measurement lattice behind the work surface (toggleable). */
+:root[data-grid="on"] .grid-plane {
+  background-image:
+    linear-gradient(var(--grid-ink) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-ink) 1px, transparent 1px);
+  background-size: 24px 24px;
+  background-position: -1px -1px;
+}
+
+.num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum", "zero"; }
+.micro { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; }
+
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+
+.scroll-thin { scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
+.scroll-thin::-webkit-scrollbar { width: 8px; height: 8px; }
+.scroll-thin::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 4px; }
+
+/* Registration ticks at panel corners — the instrument's frame. */
+.reg { position: relative; }
+.reg::before, .reg::after {
+  content: ""; position: absolute; width: 7px; height: 7px; pointer-events: none;
+  border-color: var(--line-strong); border-style: solid; opacity: 0.9;
+}
+.reg::before { top: -1px; left: -1px; border-width: 1px 0 0 1px; border-top-left-radius: var(--radius); }
+.reg::after { bottom: -1px; right: -1px; border-width: 0 1px 1px 0; border-bottom-right-radius: var(--radius); }
+
+@keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+.live-dot { animation: pulse-dot 1.6s ease-in-out infinite; }
+@keyframes sweep { from { transform: translateX(-100%); } to { transform: translateX(300%); } }
+.sweep { animation: sweep 1.4s cubic-bezier(.4,0,.2,1) infinite; }
+.fade-in { animation: fade-in 180ms ease-out; }
+/* New log lines: a brief accent wash that fades — distinct arrivals without re-rendering old lines. */
+@keyframes log-new { from { background: var(--accent-soft); box-shadow: inset 2px 0 0 var(--accent); } to { background: transparent; box-shadow: inset 2px 0 0 transparent; } }
+.log-new { animation: log-new 1.6s ease-out; }
+@keyframes fade-in { from { opacity: 0; transform: translateY(2px); } to { opacity: 1; transform: none; } }
+
+:root[data-motion="reduced"] *, :root[data-motion="reduced"] *::before, :root[data-motion="reduced"] *::after {
+  animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-motion="full"]) *, :root:not([data-motion="full"]) *::before {
+    animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important;
+  }
+}
+@media (forced-colors: active) {
+  .reg::before, .reg::after { display: none; }
+}
+
+/* Keyboard users can scroll every scrolling panel (WCAG 2.1.1); the ring shows which one has focus. */
+[data-scroll-focus]:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+/* Print: reports and results print cleanly — no navigation, panels expanded, ink on white. */
+@media print {
+  :root { --bg: #fff; --surface: #fff; --surface-2: #f6f6f6; }
+  aside[aria-label="Primary"], header.sticky, nav[aria-label$="workspace"], [aria-label="Running jobs"], button[aria-label="Open FORGE AI assistant"] { display: none !important; }
+  main { padding: 0 !important; height: auto !important; overflow: visible !important; }
+  .fit\:h-full, .fit\:overflow-hidden, .fit\:overflow-auto, .overflow-auto, .scroll-thin { height: auto !important; max-height: none !important; overflow: visible !important; }
+  section, figure, table { break-inside: avoid; }
+  .grid-plane { background: none !important; }
+  input, select, textarea, [role="tablist"] button[aria-selected="false"], .print\\:hidden { display: none !important; }
+}

@@ -1,0 +1,61 @@
+drug,strength,form,tier,copay_30day,quantity_limit_30day,prior_auth,therapeutic_class,status,step_therapy
+Briavadril,40 mg,capsule,1,5.00,30,no,Class A (lipid),preferred,no
+Briinapine,20 mg,injection pen,1,10.00,90,no,Class B (blood pressure),preferred,no
+Brioradril,50 mg,injection pen,1,0.00,120,no,Class C (glucose),preferred,no
+Brioramab,250 mg,injection pen,1,5.00,60,no,Class D (acid reflux),preferred,no
+Coravalex,100 mg,tablet,1,5.00,60,no,Class E (allergy),preferred,no
+Corelapine,20 mg,capsule,1,10.00,30,no,Class F (inflammation),preferred,no
+Coridozole,10 mg,inhaler,1,10.00,30,no,Class G (sleep),preferred,no
+Corixazole,2 mg,capsule,1,0.00,120,no,Class H (inhaled airway),preferred,no
+Corumadril,10 mg,tablet,2,15.00,90,no,Class A (lipid),preferred,no
+Daxidomab,100 mg/mL,oral solution,3,45.00,60,no,Class B (blood pressure),non-preferred,yes
+Daxidotide,10 mg,capsule,4,75.00,30,yes,Class C (glucose),specialty,no
+Daxinapine,100 mg,capsule,2,20.00,30,no,Class D (acid reflux),preferred,no
+Daxixalex,25 mg,tablet,2,15.00,90,no,Class E (allergy),preferred,no
+Daxixavant,5 mg,tablet,5,150.00,30,yes,Class F (inflammation),specialty,no
+Daxixazole,25 mg,inhaler,3,50.00,120,no,Class G (sleep),non-preferred,no
+Daxumavant,5 mg,capsule,3,50.00,120,yes,Class H (inhaled airway),non-preferred,yes
+Fenelazole,5 mg,injection pen,4,90.00,90,yes,Class A (lipid),specialty,no
+Fenidopine,5 mg,inhaler,3,45.00,60,no,Class B (blood pressure),non-preferred,no
+Kalixadril,40 mg/mL,oral solution,3,40.00,30,no,Class C (glucose),non-preferred,yes
+Kalixavant,20 mg,inhaler,3,45.00,60,no,Class D (acid reflux),non-preferred,no
+Lumavavant,40 mg,injection pen,2,25.00,120,no,Class E (allergy),preferred,no
+Lumelatide,5 mg,tablet,2,20.00,60,yes,Class F (inflammation),preferred,no
+Lumelavant,25 mg/mL,oral solution,2,15.00,30,no,Class G (sleep),preferred,no
+Lumenostat,2 mg,tablet,2,15.00,60,no,Class H (inhaled airway),preferred,no
+Lumidomab,100 mg,inhaler,2,25.00,120,yes,Class A (lipid),preferred,no
+Lumixavant,25 mg,inhaler,4,75.00,30,yes,Class B (blood pressure),specialty,no
+Lumoralex,25 mg/mL,oral solution,2,25.00,30,no,Class C (glucose),preferred,no
+Mirelapine,40 mg/mL,oral solution,2,15.00,90,no,Class D (acid reflux),preferred,no
+Mirinadril,5 mg/mL,oral solution,2,15.00,30,no,Class E (allergy),preferred,no
+Nevenodril,25 mg,injection pen,4,100.00,30,yes,Class F (inflammation),specialty,no
+Oxelamab,2 mg,injection pen,2,20.00,60,no,Class G (sleep),preferred,no
+Oxenomab,20 mg,capsule,3,50.00,60,no,Class H (inhaled airway),non-preferred,no
+Oxinatide,50 mg,inhaler,2,20.00,60,no,Class A (lipid),preferred,no
+Pexelapine,250 mg,capsule,5,150.00,30,yes,Class B (blood pressure),specialty,no
+Pexenolex,100 mg,injection pen,2,20.00,30,no,Class C (glucose),preferred,no
+Pexidostat,2 mg/mL,oral solution,4,75.00,30,yes,Class D (acid reflux),specialty,no
+Pexixapine,5 mg/mL,oral solution,4,100.00,90,yes,Class E (allergy),specialty,no
+Pexorapine,250 mg,tablet,3,40.00,90,no,Class F (inflammation),non-preferred,yes
+Pexorastat,5 mg,capsule,2,20.00,60,no,Class G (sleep),preferred,no
+Pexumazole,25 mg,tablet,5,150.00,30,yes,Class H (inhaled airway),specialty,no
+Quinumatide,2 mg,inhaler,4,75.00,90,yes,Class A (lipid),specialty,no
+Ralelapine,2 mg,injection pen,2,20.00,30,no,Class B (blood pressure),preferred,no
+Ralenotide,100 mg,inhaler,2,25.00,90,no,Class C (glucose),preferred,no
+Ralenozole,25 mg/mL,oral solution,3,50.00,30,no,Class D (acid reflux),non-preferred,yes
+Ralixatide,100 mg,inhaler,2,20.00,30,yes,Class E (allergy),preferred,no
+Raloralex,50 mg,capsule,4,100.00,90,yes,Class F (inflammation),specialty,no
+Ralorapine,50 mg,injection pen,2,20.00,120,no,Class G (sleep),preferred,no
+Ralumavant,100 mg,capsule,2,25.00,60,no,Class H (inhaled airway),preferred,no
+Soreladril,10 mg,inhaler,2,20.00,90,no,Class A (lipid),preferred,no
+Sorenostat,2 mg,inhaler,5,200.00,60,yes,Class B (blood pressure),specialty,no
+Torenopine,250 mg,inhaler,4,90.00,60,yes,Class C (glucose),specialty,no
+Torinavant,2 mg,tablet,3,50.00,120,no,Class D (acid reflux),non-preferred,no
+Valavamab,25 mg,inhaler,3,50.00,30,no,Class E (allergy),non-preferred,yes
+Validovant,40 mg,capsule,2,20.00,120,yes,Class F (inflammation),preferred,no
+Valinavant,25 mg,tablet,2,25.00,60,no,Class G (sleep),preferred,no
+Valumapine,25 mg,capsule,2,15.00,120,no,Class H (inhaled airway),preferred,no
+Zelenotide,40 mg/mL,oral solution,2,25.00,30,no,Class A (lipid),preferred,no
+Zelixadril,25 mg/mL,oral solution,3,40.00,30,no,Class B (blood pressure),non-preferred,yes
+Zeloravant,100 mg,tablet,3,45.00,60,no,Class C (glucose),non-preferred,yes
+Zelumazole,40 mg,inhaler,3,40.00,30,no,Class D (acid reflux),non-preferred,no

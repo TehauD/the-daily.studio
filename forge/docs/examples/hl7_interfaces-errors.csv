@@ -1,0 +1,34 @@
+error_code,category,meaning,likely_cause,next_action,team
+AA,ACK code,Application accept,Message processed successfully,No action,None
+AE,ACK code,Application error,Receiver found a problem in the message content,"Read the ERR segment and fix the source data, then resend",Interface Analysts
+AR,ACK code,Application reject,"Receiver refused the message (type, version, processing id or system problem)","Check MSH-9, MSH-11 and MSH-12 against the receiver's spec",Interface Analysts
+CA,ACK code,Commit accept,Enhanced-mode receipt: message stored,No action,None
+CE,ACK code,Commit error,Enhanced-mode receipt: message could not be stored,Check the receiver's storage and resend,Integration Engineering
+CR,ACK code,Commit reject,Enhanced-mode receipt: message refused before storage,Check the header fields and resend,Interface Analysts
+0,Error condition,Message accepted,No error,No action,None
+100,Error condition,Segment sequence error,Segments out of order or a required segment missing,Compare segment order with the message structure,Interface Analysts
+101,Error condition,Required field missing,A field the receiver requires is empty,Find the empty field in ERR-2 and fix the source mapping,Interface Analysts
+102,Error condition,Data type error,A value does not match the field's data type,"Check the field format (dates, numbers, coded values)",Interface Analysts
+103,Error condition,Table value not found,A coded value is not in the receiver's table,Add or map the code in the translation table,Application Analysts
+104,Error condition,Value too long,A value exceeds the receiver's maximum length,Truncate or remap in the outbound transform,Interface Analysts
+200,Error condition,Unsupported message type,The receiver does not accept this message type,Confirm routing: this message should not go to this receiver,Integration Engineering
+201,Error condition,Unsupported event code,The receiver does not accept this trigger event,Filter the event out or request support from the receiver,Integration Engineering
+202,Error condition,Unsupported processing id,MSH-11 is not what the receiver expects (e.g. test vs production),Set the correct processing id for the environment,Integration Engineering
+203,Error condition,Unsupported version id,MSH-12 version is not accepted,Align the version with the receiver's spec,Integration Engineering
+204,Error condition,Unknown key identifier,The record the message refers to does not exist at the receiver,Check whether the create message was sent first,Application Analysts
+205,Error condition,Duplicate key identifier,The record already exists at the receiver,Check for a duplicate send; do not resend blindly,Application Analysts
+206,Error condition,Application record locked,The receiver's record was in use,Retry after the lock clears,Application Analysts
+207,Error condition,Application internal error,Unexpected error inside the receiving application,Open a ticket with the receiving application's team,Application Analysts
+IE-01,Engine error,Connection refused,Destination host or port not listening,"Check the destination service and port, then restart the connection",Integration Engineering
+IE-02,Engine error,TLS handshake failed,Certificate or protocol mismatch,Check certificate validity and TLS versions on both ends,Integration Engineering
+IE-03,Engine error,MLLP framing error,Missing start or end block characters,Check the sender's MLLP wrapper settings,Integration Engineering
+IE-04,Engine error,ACK timeout,No acknowledgement within the timeout,Check the receiver's health; messages queue until it responds,Integration Engineering
+IE-05,Engine error,Queue full,Outbound queue reached its limit,Escalate to the on-call owner; find why the destination is not consuming,Integration Engineering
+IE-06,Engine error,Message too large,Message exceeds the configured size limit,Check for embedded documents; route to the document channel,Interface Analysts
+IE-07,Engine error,Character encoding error,Unexpected characters for the declared encoding,Check MSH-18 and the source system's encoding,Interface Analysts
+IE-08,Engine error,No route matched,No filter or route accepted the message,Review routing filters for this message type,Interface Analysts
+IE-09,Engine error,Transform script error,The mapping script failed on this message,Read the transform log and fix the script in test first,Interface Analysts
+IE-10,Engine error,Duplicate control id,MSH-10 repeated within the duplicate window,Check the sender for resends before releasing,Interface Analysts
+IE-11,Engine error,Destination disabled,The destination connection is turned off,Confirm the change window before re-enabling,Integration Engineering
+IE-12,Engine error,Certificate expired,The connection certificate is past its end date,Renew and install the certificate,Integration Engineering
+IE-13,Engine error,Retry limit reached,Delivery retries exhausted,"Fix the cause, then release the held messages with approval",Integration Engineering

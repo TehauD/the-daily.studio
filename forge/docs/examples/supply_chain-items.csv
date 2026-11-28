@@ -1,0 +1,44 @@
+item_id,description,category,manufacturer,mfr_part,uom,each_per_uom,unit_cost,par_level,avg_daily_use,lead_time_days,safety_stock,status,duplicate_of
+ITM-3001,"Glove, exam, nitrile, small",Gloves,Tallis Labware,TA-4543E,BX,100,3.16,22,2,7,4,active,none
+ITM-3002,"Glove, exam, nitrile, medium",Gloves,Meridian Disposables,ME-8136F,BX,100,5.40,460,20,14,60,active,none
+ITM-3003,"Glove, exam, nitrile, large",Gloves,Northgate Medical,NO-5900F,BX,100,3.44,36,4,4,4,active,none
+ITM-3004,"Glove, surgical, sterile, size 7",Gloves,Tallis Labware,TA-7037E,BX,50,3.54,40,4,4,8,active,none
+ITM-3005,"Glove, surgical, sterile, size 8",Gloves,Northgate Medical,NO-5165D,BX,50,6.20,210,15,7,45,active,none
+ITM-3006,IV start kit,IV & infusion,Alder Surgical,AL-1717D,CS,50,1.74,170,10,10,30,active,none
+ITM-3007,"Catheter, IV, 20 gauge",IV & infusion,Brightline Supply,BR-2394C,BX,50,4.03,120,8,10,24,active,none
+ITM-3008,"Catheter, IV, 22 gauge",IV & infusion,Northgate Medical,NO-8957B,BX,50,5.05,85,5,10,15,active,none
+ITM-3009,"Extension set, 7 inch",IV & infusion,Corvane Health,CO-4194E,CS,100,8.21,75,5,7,10,active,none
+ITM-3010,"Saline flush syringe, 10 mL",IV & infusion,Meridian Disposables,ME-1731B,CS,120,2.02,60,10,3,10,active,none
+ITM-3011,"Infusion set, primary",IV & infusion,Brightline Supply,BR-4550D,CS,48,4.82,40,4,3,4,active,none
+ITM-3012,"Gauze sponge, 4 x 4, sterile",Wound care,Meridian Disposables,ME-7904F,BX,50,5.76,325,25,10,25,active,none
+ITM-3013,"Foam dressing, 4 x 4",Wound care,Alder Surgical,AL-4360E,BX,10,4.78,440,40,2,120,active,none
+ITM-3014,"Transparent film dressing, 4 x 5",Wound care,Tallis Labware,TA-2955B,BX,50,4.87,66,6,4,6,active,none
+ITM-3015,"Tape, paper, 1 inch",Wound care,Meridian Disposables,ME-7251D,BX,12,7.95,380,20,14,60,active,none
+ITM-3016,"Abdominal pad, 8 x 10",Wound care,Meridian Disposables,ME-9963B,CS,36,3.38,390,30,5,60,active,none
+ITM-3017,"Nasal cannula, adult",Respiratory,Meridian Disposables,ME-6562H,CS,50,1.68,40,4,5,12,active,none
+ITM-3018,"Oxygen mask, adult",Respiratory,Corvane Health,CO-5123C,CS,50,1.67,30,3,5,9,active,none
+ITM-3019,Nebulizer kit,Respiratory,Brightline Supply,BR-4326H,CS,50,1.49,168,12,10,24,active,none
+ITM-3020,"Suction catheter, 14 Fr",Respiratory,Brightline Supply,BR-1243B,CS,100,0.51,105,15,2,15,active,none
+ITM-3021,"Specimen cup, sterile, 4 oz",Specimen,Meridian Disposables,ME-8216H,CS,100,5.53,50,5,3,5,active,none
+ITM-3022,"Swab, culture, single",Specimen,Northgate Medical,NO-3453F,BX,50,2.83,450,30,10,90,active,none
+ITM-3023,"Blood collection tube, 4 mL",Specimen,Brightline Supply,BR-4621D,BX,100,5.68,200,25,3,75,active,none
+ITM-3024,"Biohazard bag, 6 x 9",Specimen,Meridian Disposables,ME-5812D,CS,1000,8.70,300,25,4,50,active,none
+ITM-3025,"Underpad, 23 x 36",General,Meridian Disposables,ME-8515H,CS,150,2.94,68,4,10,4,active,none
+ITM-3026,Alcohol prep pad,General,Corvane Health,CO-7014B,BX,200,7.38,80,8,5,24,active,none
+ITM-3027,Disinfecting wipe canister,General,Alder Surgical,AL-5347F,CS,12,3.41,24,2,4,4,active,none
+ITM-3028,"Isolation gown, yellow",General,Brightline Supply,BR-2772E,CS,50,2.85,180,15,7,15,active,none
+ITM-3029,"Face mask, procedure",General,Brightline Supply,BR-4954F,BX,50,3.31,60,5,7,15,active,none
+ITM-3030,Thermometer probe cover,General,Tallis Labware,TA-9105E,BX,25,7.64,80,5,7,15,active,none
+ITM-3031,Nitrile glove LG box,Gloves,Northgate Medical,NO-5900F,BX,100,3.44,36,4,4,4,duplicate,ITM-3003
+ITM-3032,Surg glove sz 8,Gloves,Northgate Medical,NO-5165D,BX,50,6.20,210,15,7,45,duplicate,ITM-3005
+ITM-3033,IV START KIT W/ TEGADERM,IV & infusion,Alder Surgical,AL-1717D,CS,50,1.74,170,10,10,30,duplicate,ITM-3006
+ITM-3034,EXT SET 7IN,IV & infusion,Corvane Health,CO-4194E,CS,100,8.21,75,5,7,10,duplicate,ITM-3009
+ITM-3035,NS FLUSH 10ML,IV & infusion,Meridian Disposables,ME-1731B,CS,120,2.02,60,10,3,10,duplicate,ITM-3010
+ITM-3036,PRIMARY IV SET,IV & infusion,Brightline Supply,BR-4550D,CS,48,4.82,40,4,3,4,duplicate,ITM-3011
+ITM-3037,GAUZE 4X4 STER 2PK,Wound care,Meridian Disposables,ME-7904F,BX,50,5.76,325,25,10,25,duplicate,ITM-3012
+ITM-3038,FOAM DRSG 4X4,Wound care,Alder Surgical,AL-4360E,BX,10,4.78,440,40,2,120,duplicate,ITM-3013
+ITM-3039,CANNULA NASAL ADLT,Respiratory,Meridian Disposables,ME-6562H,CS,50,1.68,40,4,5,12,duplicate,ITM-3017
+ITM-3040,NEB KIT HANDHELD,Respiratory,Brightline Supply,BR-4326H,CS,50,1.49,168,12,10,24,duplicate,ITM-3019
+ITM-3041,BIOHAZ BAG 6X9,Specimen,Meridian Disposables,ME-5812D,CS,1000,8.70,300,25,4,50,duplicate,ITM-3024
+ITM-3042,GOWN ISOL YEL,General,Brightline Supply,BR-2772E,CS,50,2.85,180,15,7,15,duplicate,ITM-3028
+ITM-3043,PROBE COVERS,General,Tallis Labware,TA-9105E,BX,25,7.64,80,5,7,15,duplicate,ITM-3030

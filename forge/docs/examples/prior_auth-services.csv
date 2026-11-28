@@ -1,0 +1,65 @@
+service_code,service,category,requires_auth,units_without_auth,unit_cost,standard_turnaround_days,expedited_turnaround_days,review_team,documentation
+PA-1001,MRI lumbar spine,Imaging,no,4,1440,5,2,Imaging Review,order + prior imaging report
+PA-1002,MRI cervical spine,Imaging,yes,0,1450,3,3,Imaging Review,order + prior imaging report
+PA-1003,MRI brain,Imaging,no,8,1440,3,3,Imaging Review,order + prior imaging report
+PA-1004,MRI knee,Imaging,no,8,2150,7,1,Imaging Review,order + prior imaging report
+PA-1005,MRI shoulder,Imaging,yes,0,390,7,1,Imaging Review,order + prior imaging report
+PA-1006,CT abdomen,Imaging,no,12,1240,10,3,Imaging Review,order + prior imaging report
+PA-1007,CT chest,Imaging,yes,0,1120,14,1,Imaging Review,order + prior imaging report
+PA-1008,CT sinus,Imaging,no,20,1510,3,3,Imaging Review,order + prior imaging report
+PA-1009,PET scan,Imaging,yes,0,2430,7,1,Imaging Review,order + prior imaging report
+PA-1010,nuclear stress test,Imaging,no,12,820,7,3,Imaging Review,order + prior imaging report
+PA-1011,DEXA scan,Imaging,yes,0,2260,3,3,Imaging Review,order + prior imaging report
+PA-1012,ultrasound pelvis,Imaging,yes,0,1570,5,3,Imaging Review,order + prior imaging report
+PA-1013,echocardiogram,Imaging,yes,0,1540,5,2,Imaging Review,order + prior imaging report
+PA-1014,carotid duplex,Imaging,yes,0,1930,10,3,Imaging Review,order + prior imaging report
+PA-1015,physical therapy visit,Therapy,no,20,140,7,1,Therapy Review,plan of care + progress notes
+PA-1016,occupational therapy visit,Therapy,no,10,150,3,1,Therapy Review,plan of care + progress notes
+PA-1017,speech therapy visit,Therapy,yes,0,160,3,2,Therapy Review,plan of care + progress notes
+PA-1018,cardiac rehab session,Therapy,yes,0,130,7,2,Therapy Review,plan of care + progress notes
+PA-1019,pulmonary rehab session,Therapy,yes,0,190,5,2,Therapy Review,plan of care + progress notes
+PA-1020,aquatic therapy visit,Therapy,yes,0,160,5,1,Therapy Review,plan of care + progress notes
+PA-1021,vestibular therapy visit,Therapy,no,6,160,3,2,Therapy Review,plan of care + progress notes
+PA-1022,pelvic floor therapy visit,Therapy,no,6,190,14,3,Therapy Review,plan of care + progress notes
+PA-1023,standard wheelchair,Durable equipment,no,4,3600,10,2,DME Review,order + face-to-face note
+PA-1024,power wheelchair,Durable equipment,yes,0,280,14,3,DME Review,order + face-to-face note
+PA-1025,hospital bed,Durable equipment,no,20,2150,14,3,DME Review,order + face-to-face note
+PA-1026,CPAP device,Durable equipment,no,12,2180,14,2,DME Review,order + face-to-face note
+PA-1027,BiPAP device,Durable equipment,no,8,2460,14,1,DME Review,order + face-to-face note
+PA-1028,home oxygen concentrator,Durable equipment,no,6,570,5,2,DME Review,order + face-to-face note
+PA-1029,insulin pump,Durable equipment,no,20,890,7,2,DME Review,order + face-to-face note
+PA-1030,continuous glucose monitor,Durable equipment,yes,0,330,7,1,DME Review,order + face-to-face note
+PA-1031,knee brace,Durable equipment,no,12,550,14,3,DME Review,order + face-to-face note
+PA-1032,walker with seat,Durable equipment,yes,0,1310,7,2,DME Review,order + face-to-face note
+PA-1033,nebulizer,Durable equipment,no,12,300,14,3,DME Review,order + face-to-face note
+PA-1034,pressure-relief mattress,Durable equipment,yes,0,960,14,1,DME Review,order + face-to-face note
+PA-1035,knee arthroscopy,Procedures,no,20,9030,7,2,Medical Review,clinical notes + operative plan
+PA-1036,shoulder arthroscopy,Procedures,no,6,4300,10,1,Medical Review,clinical notes + operative plan
+PA-1037,carpal tunnel release,Procedures,yes,0,7910,10,3,Medical Review,clinical notes + operative plan
+PA-1038,cataract surgery,Procedures,yes,0,9350,3,2,Medical Review,clinical notes + operative plan
+PA-1039,sinus surgery,Procedures,no,6,4100,14,1,Medical Review,clinical notes + operative plan
+PA-1040,hernia repair,Procedures,no,12,5430,3,3,Medical Review,clinical notes + operative plan
+PA-1041,upper endoscopy,Procedures,no,8,6510,5,3,Medical Review,clinical notes + operative plan
+PA-1042,colonoscopy,Procedures,no,6,9010,5,2,Medical Review,clinical notes + operative plan
+PA-1043,spinal injection,Procedures,no,12,4080,7,2,Medical Review,clinical notes + operative plan
+PA-1044,sleep study,Procedures,yes,0,5260,3,3,Medical Review,clinical notes + operative plan
+PA-1045,allergy testing panel,Procedures,no,10,3800,5,1,Medical Review,clinical notes + operative plan
+PA-1046,varicose vein ablation,Procedures,no,12,8680,5,2,Medical Review,clinical notes + operative plan
+PA-1047,home health nursing visit,Home & infusion,no,10,210,7,2,Home Care Review,order + home assessment
+PA-1048,home infusion day,Home & infusion,yes,0,1030,14,1,Home Care Review,order + home assessment
+PA-1049,outpatient infusion,Home & infusion,no,8,340,7,1,Home Care Review,order + home assessment
+PA-1050,enteral nutrition supply,Home & infusion,no,12,1750,10,2,Home Care Review,order + home assessment
+PA-1051,wound care visit,Home & infusion,yes,0,360,3,1,Home Care Review,order + home assessment
+PA-1052,home hospice visit,Home & infusion,yes,0,390,7,3,Home Care Review,order + home assessment
+PA-1053,IV antibiotic home day,Home & infusion,no,4,570,10,1,Home Care Review,order + home assessment
+PA-1054,ostomy supply,Home & infusion,yes,0,890,7,1,Home Care Review,order + home assessment
+PA-1055,genetic panel,Specialty,yes,0,4360,10,2,Specialty Review,specialist referral + history
+PA-1056,bariatric consult,Specialty,yes,0,1630,3,2,Specialty Review,specialist referral + history
+PA-1057,hearing aid fitting,Specialty,no,20,4590,10,2,Specialty Review,specialist referral + history
+PA-1058,transplant evaluation,Specialty,yes,0,1720,10,2,Specialty Review,specialist referral + history
+PA-1059,fertility consult,Specialty,yes,0,3300,10,2,Specialty Review,specialist referral + history
+PA-1060,gender-affirming consult,Specialty,yes,0,380,7,1,Specialty Review,specialist referral + history
+PA-1061,pain management consult,Specialty,yes,0,2880,5,3,Specialty Review,specialist referral + history
+PA-1062,neuropsychological testing,Specialty,no,8,3840,10,2,Specialty Review,specialist referral + history
+PA-1063,allergy immunotherapy,Specialty,yes,0,1130,3,3,Specialty Review,specialist referral + history
+PA-1064,dialysis session,Specialty,yes,0,3790,10,3,Specialty Review,specialist referral + history

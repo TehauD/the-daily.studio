@@ -1,0 +1,423 @@
+# Validation report — v0.5
+
+Environment where validation ran: Linux container, **no GPU**, Python 3.12, torch 2.15.0 (CPU execution),
+transformers 4.53.2, PEFT 0.16.0, Node 22, Chromium (Playwright). Hugging Face Hub was **not reachable** (proxy).
+
+## Executed and passing
+
+| What | Result |
+|---|---|
+| Backend test suite | **136 passed** (67 v0.1 baseline + 69 new) in ~33 s |
+| Statistics known values | McNemar 18/6 → p = 0.0227; Holm; exact sign-flip resolution (3 units → 0.25, 6 → 2/64); zero-effect CI = [0, 0]; power formula; pairing integrity errors |
+| Adapter math | σ from QR core = dense SVD (rtol 1e-9); ‖ΔW‖_F, relative change vs BF16 base, effective rank |
+| §10 regressions | async telemetry starts sampler; CUDA banner + `-q` parse; LM Studio publisher-namespaced ids → no duplicates; GGUF 36/37/38 → TQ1_0/TQ2_0/MXFP4; encoder/vision/speech excluded; port conflict exits 3 before DB init; `charset=utf-8`; NumPy readiness; interpreter path reported; tied-lm_head parameter report; session token required |
+| Real training code path (CPU) | `test_e2e_cpu`: tiny Qwen3-architecture model built offline; real `Trainer` + PEFT; pre-flight; zero-adapter max \|Δlogit\| = 0; LoRA-only trainable; base hash before = after; adapter save + inspection; resume no-op; real `generate` evaluation; SEAL; test eval; merged export + post-merge re-eval |
+| Real tokenizer prefix assertion | Byte-level BPE with the Qwen2/3 pre-tokenizer pattern and a Qwen3-style template: every record prefix-stable; `<|im_end|>` supervised |
+| Full MVP loop over HTTP | Real server + built UI on one port; mock LM Studio (`forge-mock/oracle-teacher`, oracle answers with deliberate errors, `<think>` and fenced outputs); discovery → roles (encoder refused) → pair-check → study → collect → build → train (150 steps, CPU) → eval/analyze dev → SEAL (wrong confirm 422, train after seal 409) → eval/analyze test → export. 2 min 12 s |
+| Frontend | `tsc --noEmit` clean; production build OK (main chunk 228 KB) |
+| Browser smoke | 10 pages × light/dark rendered, **0 console errors**; theme toggle; command palette; trajectory selection + path comparison; **no horizontal overflow at 390 px** on any page |
+
+### Defects found by this validation and fixed
+- Student generation passed `token_type_ids` to `generate` (crash) — and backend errors were being **recorded as model
+  failures**. Fixed: only `input_ids`/`attention_mask` are passed, and a backend error now aborts the stage.
+- `/compare` route raised 500 (missing argument). Fixed, with an API regression test.
+- 390 px overflow on Guide and Factory; Observatory detail placement; forest-plot text scaling; lineage label. Fixed.
+
+### What the wiring run showed (not a result)
+The random-weight 115K-parameter student did not learn the task: strict success 0% before and after; training loss
+6.44 → 5.87, dev loss 6.24 → 5.88; tuned outputs changed from blank lines to JSON-shaped but invalid text. Two arms
+trained on byte-identical canonical supervision produced byte-identical adapters (determinism check).
+
+## NOT validated — requires your machine
+- **Any CUDA execution**: BF16, VRAM gates, peak-memory telemetry, real throughput, OOM behavior. Run `verify-gpu.ps1 -Student …`.
+- **Qwen3-1.7B itself**: tokenizer/template prefix stability on the real tokenizer, memory at seq 2048, and whether a pilot
+  study produces a gain. The parameter-report logic predicts stored 2.03B = unique ~1.72B + a duplicated 311M tied `lm_head`; unconfirmed on the real files.
+- **LM Studio integration**: real teacher responses, REST v0 state reporting, slug matching on your exact folders.
+- **Hugging Face Hub**: search/inspect/download were tested only against mocks (network blocked here).
+- **PowerShell scripts**: not executed (no PowerShell in the container). Review on first run.
+- **Windows specifics**: `SO_EXCLUSIVEADDRUSE`, PID lookup for port conflicts, `CREATE_NO_WINDOW` job spawning, path rules.
+- Firefox/Safari rendering; screen-reader pass.
+
+## Known limitations
+- Teacher episodes are collected once (seed 0, temperature 0); seeds vary only training.
+- Base control is evaluated once and explicitly broadcast across seeds (deterministic greedy decoding).
+- The memory estimator is an analytic upper bound (±25%) until calibrated against measured peaks.
+- FORGE cannot load/unload LM Studio models; you do that between collect and train.
+- QLoRA, logit KD, DPO/GRPO, GGUF export are deferred.
+
+## v0.6 additions (Knowledge Graph, token projection, wide-screen workspaces)
+
+| What | Result |
+|---|---|
+| Knowledge graph builder + GraphML export | Tested on empty and evaluated studies; node/edge counts match GraphML |
+| Token projection | Planted-direction test recovers the planted token far outside the vocab spread (\|z\| > 10); chunked reads equal full reads; tied-embedding fallback exercised on the tiny Qwen3; **1.3 s** at Qwen3-1.7B scale (151,936 × 2,048 BF16, 8 directions), cached per adapter hash + format version |
+| Wide-screen layout | Browser check: Overview, Observatory, Studio, Trajectories, Evaluation, Knowledge Graph **fit without page scroll** at 1600×900, 1920×1080, 2560×1440; screens below 1600×760 scroll normally; no overflow at 390 px; 0 console errors |
+| Backend suite | 147 passed |
+
+Not validated: projection output on a real trained Qwen3-1.7B adapter (only tiny/synthetic adapters here); whether its token lists are informative for your study is an empirical question.
+
+## v0.6.1 fixes (from a real Windows/RTX run)
+
+| Defect | Fix | Verified here |
+|---|---|---|
+| Live job log reset in a loop ("flashing"): the parent re-created the completion callback each poll and it was an effect dependency | callback read via ref; log resets only on job change; append-only lines with stable keys and a fade-in on arrival; progress header (stage, episode bar, s/episode, ETA, latest step) | Browser: 60 samples at 250 ms during a live collect, line count never decreased |
+| "Invalid Date" on training log lines (ISO `ts` overwrote the numeric one) | event stream keeps numeric `ts`; viewer accepts both | Test asserts numeric `ts` on child-process log events |
+| tqdm bars and Trainer dict prints flooded the log | `disable_tqdm=True`, PrinterCallback removed, residual noise filtered | Test asserts no `%\|` in output |
+| Second arm failed free-VRAM gate (11,631 < 12,000 MB): first run's CUDA context/caches still held in the same process | each arm × seed trains in its own child process on CUDA; gc + empty_cache around runs; gate counts FORGE's own cached memory | Isolated 2-seed run on CPU; **not yet re-run on your GPU** |
+| Fixed 12 GB gate too close to idle free VRAM on a 16 GB desktop GPU | new studies: gate = analytic estimate × 1.1 (≥ 2 GB), basis frozen in the plan (Qwen3-1.7B @ 2048 → 8,960 MB) | API test |
+| Run button shown on a running stage | hidden while running | — |
+
+Backend suite: 148 passed.
+
+## v0.7.0 — Knowledge Studio (doc-QA on your own documents)
+
+A guided five-step workflow (add documents → make searchable → practice questions → teach → results) that turns a folder of
+txt/md/rst/html/pdf into a *knowledge pack*, then into a doc-QA study the existing engine collects, trains, and evaluates.
+
+| Check | Result here |
+|---|---|
+| Ingest + chunking (FORGE's own docs as sample corpus) | 5 documents → 35 passages, content hashes recorded |
+| Keyword (BM25) + meaning (embeddings) hybrid index, RRF fusion | built through the UI; search playground returns ranked passages with keyword/meaning ranks |
+| Teacher-written questions with verification (answer verbatim in passage, self-contained, no leakage; unanswerable questions verified as unanswerable) | 23 accepted / 12 rejected, every rejection carries its reason |
+| Document-level splits (no passage of a dev/test document is ever trained on) | asserted in tests |
+| Doc-QA scoring: strict success requires the reference span **and** that the gold passage was retrieved; unanswerable requires a search then `NOT_FOUND` | unit tests + 7 dev episodes inspected in Trajectory Explorer |
+| Study `docqa` through collect → build → train (tiny CPU student) → evaluate_dev → analyze_dev | completed end to end via UI and API |
+| UI: all five steps at 1600/1920/2560 px wide fit without page scroll; 390 px no horizontal overflow; console errors | fits / none / none |
+| Backend suite | 154 passed |
+
+Fixed during this validation: Segmented controls took their accessible name from the wrapping label (each option now has its own);
+a freshly created study could be replaced by a stale selection; the Teach step created CUDA studies on a CPU-only machine (device now
+follows readiness); the pack detail endpoint returned a different shape than the list (contract test added); overlength records now
+explain the fix (larger max sequence length or smaller passages) — nothing is ever truncated.
+
+**Not validated — requires your machine:** real LM Studio embedding models and the real teacher's question quality (a deterministic
+mock served both here); lesson lengths under the Qwen tokenizer (sequence-length gate worked with the test tokenizer at 4096);
+any GPU training on doc-QA; whether a 1.7B student actually learns your documents — the measured numbers here (base 0 / tuned 0 /
+teacher 0.86 strict on dev) come from a tiny random-weight model and say nothing about real capability.
+Synthetic or non-sensitive documents only: no PHI or patient data.
+
+## v0.8.0 — Distillation Lens, skill-targeted studies, embedding map
+
+| Feature | What it measures | Checked here |
+|---|---|---|
+| **Focus skills** (study wizard; Knowledge Studio "What should it get better at?") | Training data restricted to chosen skills (`outside_focus_skills` exclusion counted); evaluation still covers every skill; analysis adds separate *focus* and *off-focus* contrasts; the focus contrast is the preregistered primary for the review gate, off-focus enters Holm as secondary | Unit tests (unknown / regression-only skills refused; all skills = no focus); CPU study: 30 records all from the focus skill, 20 episodes excluded; focus and off-focus contrasts present |
+| **Training snapshots** | Adapter weights only (no optimizer state) every ⌈total/5⌉ steps; eval cadence aligned | 4 snapshots + final on a 60-step run (704 KB on the tiny model; ≈ 35 MB each for Qwen3-1.7B r16 in bf16 — estimate) |
+| **Distance to the teacher** | Teacher-forced NLL per teacher action token and top-1 agreement on dev teacher episodes (balanced across skills, ≤ 40), for base, every snapshot, final | Tiny CPU model: 6.42 → 6.35 → 6.27 → 6.21 → 6.19 → 6.19 nats; agreement flat at 1.5 % (a random-weight model — wiring only) |
+| **Word heatmap** | Per token log p under base vs final adapter; tokens most / least gained (≥ 2 occurrences) | Decoded pieces reassemble the teacher action text (test); top gains on the tiny model were JSON structure and `<\|im_end\|>` |
+| **Skill space** | Strict success per skill: teacher, base, every arm × seed, gap closed = (tuned − base)/(teacher − base) | API + UI; descriptive only (intervals stay in Evaluation Lab) |
+| **Map of meaning** | PCA of passage embeddings with questions projected in; neighbour preservation (k=10) and explained variance reported; per question the student's real hybrid search top-k and the true cosine rank of the right passage | 35 passages / 23 questions: 67 % found, neighbour preservation 54 %, 14 % variance on two axes (mock embeddings) |
+| UI | Lens fits 1920×1080 without page scroll, no horizontal overflow at 390 px, no console errors; light and dark | yes |
+| Backend suite | | 157 passed |
+
+**Not validated — requires your machine:** lens runtime and memory on Qwen3-1.7B (one forward pass per teacher turn per snapshot;
+expected seconds to a few minutes on a 16 GB GPU — not measured); snapshot sizes on real adapters; whether real training shows
+the falling curve and per-skill gains (the tiny model here barely learns, so its skill space is flat at 0 %); map quality with a real
+embedding model (the mock's bag-of-words vectors cluster questions artificially). Studies trained before v0.8 have no snapshots:
+their curve has two points (before / after).
+
+The lens shows which teacher tokens the student learned to expect under teacher forcing. It does not show why, it is not task
+success, and it does not visualize reasoning.
+
+## v0.9.0 — Agent Studio (purpose-built agents and your own skills)
+
+A guided five-step workflow: define the agent's role → give it read-only tools → describe skills with a few examples →
+the teacher writes many practice tasks that FORGE verifies → train and measure (focus skills, Lens, Evaluation Lab).
+
+| Component | Behaviour | Checked here |
+|---|---|---|
+| Tools | `lookup_<table>`, `find_<table>` (CSV/JSON you add), exact decimal `calculate` (AST-whitelisted: numbers, + − × ÷, min/max/abs/round — no names, attributes, powers or calls beyond those), `convert_units` (mass, volume, length, temperature, time), `date_math`, `check_<rule>` (all/any of conditions you define), `search_documents` (linked Knowledge Studio pack). Read-only, deterministic, no network (except the loopback embedding endpoint), no user code | Unit tests incl. `__import__`, `open`, `2**…` refused; console in the UI |
+| Sensitive-data guard | Tables refused if a column is named like a personal identifier (patient, MRN, DOB, name, address, phone, e-mail, member/insurance id, SSN …) or a value looks like an SSN, e-mail, phone number or MRN; instruction-like text is flagged. Role text and examples are scanned too. In addition to the attestation — it cannot recognise every identifier | Tests; browser: a `patient_name,dob` CSV was refused |
+| Task verification | FORGE re-executes every proposed call; arguments must come from the question or an earlier result (calculator numbers too, plus 0/1/100); the answer must be a value a tool returned (or NOT_FOUND after a lookup that found nothing, if the skill allows it) and must not appear in the question | Tests for each rejection reason; demo: 53 accepted / 14 rejected (mock teacher's deliberate errors caught) |
+| Splits | Tasks sharing an entity (lookup key / filter value / search query) are grouped; groups split 60/20/20 — no entity crosses splits | Test asserts no drug appears in two splits |
+| Scoring | Strict success = answer matches AND is backed by a tool result in this episode AND every reference tool used AND no errors AND ≤ reference calls + 2. A right answer without evidence fails | Tests (guessing without a tool call is not a success) |
+| Study integration | `kind: agent` task set; agent spec, tables and tasks hashed into the frozen plan; editing the agent afterwards is refused for that study; stale tasks block new studies; focus skills, Lens, skill space, knowledge graph use the agent's skill names | Demo: agent → tasks → study → collect → build → train → eval · dev → analyze · dev → lens on the tiny CPU model |
+| UI | Agent Studio fits 1920×1080; no horizontal overflow at 390 px; no console errors | yes |
+| Backend suite | | 163 passed |
+
+The **pharmacy-benefits template is entirely synthetic** (invented drugs, tiers, copays, rule). It demonstrates a healthcare-operations
+agent; it is not clinical or formulary data, and FORGE makes no claim of clinical validity or fitness for use.
+
+**Not validated — requires your machine:** a real teacher writing tasks (the mock follows the prompt mechanically; a real model will
+produce more varied tasks and different rejection rates); real student gains on agent skills; tables much larger than a few thousand
+rows (lookups are in-memory, find is a linear scan).
+
+## v0.10.0 — Azure OpenAI assistant
+
+| Check | Result here |
+|---|---|
+| Hidden until configured (no button, no inline actions, API answers 409) | test + browser |
+| Config validation (https, Azure hosts only, bare resource URL, deployment / API-version / key-variable formats; a key pasted as the variable name is refused) | test |
+| Key never stored or returned; audit log contains no key | test |
+| Summary-only questions sent directly; content questions require `/preview` hash approval; wrong hash → nothing sent; sent body equals previewed messages | test (mock transport) |
+| Redaction of absolute paths; personal-data patterns refuse the send; history cannot inject system messages | test |
+| UI: Settings → Integrations, test connection, *Explain with AI* on Evaluation Lab, review dialog + receipt in Agent Studio, 390 px, no console errors | browser against a **mock** Azure endpoint |
+| Backend suite | 168 passed |
+
+**Not validated — requires your Azure resource:** real Azure OpenAI responses and their quality, latency, rate limits, content
+filtering, and whether your deployment/API version accepts `max_completion_tokens` (FORGE falls back to `max_tokens` automatically).
+
+## v0.11.0 — Domain starter agents
+
+| Check | Result here |
+|---|---|
+| Every template: synthetic tables pass the sensitive-data scan; no column named like a personal identifier; examples verify; generators produce ≥ 15 verified tasks per skill; dev and test non-empty; no primary entity crosses splits | tests (`test_templates.py`, parametrised over all six) |
+| Generated tasks are solvable with the tools (oracle teacher strict success on every dev task) and build into training records | test (ITSM, patient access) |
+| Side-by-side run on the tiny CPU student (mock teacher, template generator, smoke profile, 2 seeds, 60 steps) | **ITSM**: 153 tasks accepted / 49 rejected (duplicates and give-away answers), splits 92/36/25; Lens surprise 6.45 → 6.31. **Patient access**: 122 accepted / 40 rejected, splits 74/24/24; Lens surprise 6.45 → 6.28, top-1 agreement 1% → 2%. Strict success: teacher 1.0, base 0.0, tuned 0.0 on dev — the tiny random-weight student does not learn these tasks; these numbers show the instrument working, not a result |
+| UI: template gallery by domain, task-source selector, generated-task provenance shown | browser, no console errors |
+| Backend suite | 176 passed |
+
+**Not validated — requires your machine:** real students on these templates (expect large gains on routing / lookup skills from
+format learning alone — check evidence and per-skill results), and how a real teacher's tasks compare with the generator's.
+
+## v0.12.0 — Agent Playground, Weight Lab, human review
+
+| Check | Result here |
+|---|---|
+| Weight Lab exactness: a weighted merge of two trained adapters at 1.5× strength equals 1.5 · (0.6 ΔW₁ + 0.4 ΔW₂) per module | test, max error ≈ 3e-9 on real adapters |
+| Strength 0 switches every module off; attention-only / layer masks keep exactly the selected modules; SVD at full rank reproduces ΔW; lower rank reports the energy kept | tests |
+| Variant evaluation runs the study's dev tasks and reports untrained / trained / variant / teacher per skill | test + demo (ITSM + patient-access merge measured on both studies) |
+| Playground: lanes run with the study's own tools; strict score for practice tasks; free text has no reference (answer status neutral, evidence reported); held-out tasks refused until SEAL (API and engine); personal-data patterns refused | tests + browser |
+| Decisions: accept / override recorded with reviewer; an override added as a skill example | browser |
+| Review queue: approve / reject recorded with reviewer; a correction that the tools do not support is refused with the reason; studies with "reviewed only" use exactly the approved / corrected tasks | tests + browser |
+| UI: Weight Lab fits 1920×1080; Playground and Weight Lab have no horizontal overflow at 390 px; no console errors | browser |
+| Backend suite | 185 passed |
+
+**Not validated — requires your machine:** Playground latency with a real 1.7B student and the teacher sharing a 16 GB GPU; whether
+merged / scaled adapters behave as expected on real students (the tiny test student scores 0 everywhere, so the measurements only
+prove the plumbing).
+
+## v0.13.0 — Model Map
+
+| Check | Result here |
+|---|---|
+| Decision graph: prefix tree per skill, counts, outcome classes, consistency = most-common-path share, outcomes aligned | unit test + browser |
+| Cluster metrics: separated synthetic clusters → silhouette > 0.8, purity 1.0; random → ≈ 0; one label → none | unit test |
+| Joint PCA centres each model first: identical structure with a large offset projects identically | unit test |
+| Representation map on a trained tiny student: one row per dev task per layer; embeddings unchanged by LoRA (shift 0); deeper layers shifted | test |
+| Word view: one lens row per layer, chosen-token rank, word influence normalised to [0, 1] over the user's words, free text supported | test |
+| Held-out splits / tasks refused before SEAL (engine and API); personal-data patterns refused | tests |
+| Agent studies keep a frozen copy: editing the live agent leaves the study working; tampering with the copy is refused | test |
+| UI: three linked views fit 1920×1080, no horizontal overflow at 390 px, light and dark, no console errors | browser |
+| Backend suite | 190 passed |
+
+Demo on the patient-access study (tiny 2-layer student): skill purity 27 % (embeddings) → 55 % (layer 2), training shift 0 % → 65 %.
+**Not validated — requires your machine:** maps of a real 1.7B student (28 layers) and how cleanly real skills separate; word-view
+runtime on GPU (one forward + one backward pass per task — expected seconds).
+
+## v0.14.0 — Projects, workspaces, hardware guard
+
+| Check | Result here |
+|---|---|
+| Thermal pause: pauses at ≥ pause temperature at a safe point, resumes at ≤ resume temperature, logs both; counts pauses and time | unit test (simulated readings) |
+| Disabled guard or no GPU reading never pauses; energy integrates board power over time; suspended while a child process trains | unit tests |
+| Settings validated (resume < pause, at least one core left) and passed to every engine job (FORGE_GUARD, OMP / MKL / OpenBLAS threads) | test |
+| Projects derived from agents / packs / studies / variants with one next step (incl. "regenerate tasks" when the agent changed) | test + demo data |
+| Home: fits 1920×1080 and 1440 dark, no horizontal overflow at 390 px, no console errors; Open → Agent Studio on that agent | browser |
+| Simple → Expert reveals 6 more pages; glossary tooltip on hover and focus; job dock toast for a 1.5 s job | browser |
+| Backend suite | 195 passed |
+
+**Not validated — requires your machine:** real nvidia-smi readings during a long run, an actual thermal pause and the energy
+figure on your RTX card; below-normal priority on Windows (psutil).
+
+## v0.15.0 — Boundaries, stress tests, variety, coverage, data curve
+
+| Check | Result here |
+|---|---|
+| ROUGE-L: identical 1.0, disjoint 0, near-identical between; per-skill nearest-neighbour summary | unit test |
+| Near-duplicate = same tool calls + ROUGE-L ≥ 0.7 (caught a template generator reusing 12 input combinations) | tests + demo |
+| Boundary cases: every category, real identifiers, HANDOFF scoring (with or without tool use), over-refusal on ordinary tasks | unit tests |
+| Instruction line only when the suite is on; 'boundary' skill id reserved; spec hash unchanged for older agents | tests |
+| Template agent with boundaries: 32 boundary cases across train / dev / test; coverage map counts and warnings | test + demo |
+| Stress perturbations deterministic, identifiers intact; a gullible model obeys the injection (obeyed 100 %), a robust one doesn't (0 %); test split refused before SEAL | tests |
+| Data curve: nested subsets (4 ⊂ 10 ⊂ 20 ⊂ 40 tasks), Wilson intervals, CPU end to end, study's own episodes untouched | tests |
+| Demo (mock teacher, tiny CPU student): agent → tasks → study → boundary report → 3-model stress test → 4-point curve | API end to end |
+| UI: Robustness page tabs, coverage map; no overflow at 390 px; dark; no console errors | browser |
+| Backend suite | 202 passed |
+
+The mock teacher replays answers by exact prompt, so it fails every perturbed prompt by construction; the tiny student scores 0 %.
+These demo numbers show the plumbing, not model quality. **Requires your machine:** stress and data-curve results for a real
+1.7B student and LM Studio teacher.
+
+## v0.16.0 — Efficiency, GGUF export, learning paths
+
+| Check | Result here |
+|---|---|
+| Efficiency from recorded episodes: dev rows only before SEAL, train never counted, sizes on disk | test |
+| GGUF header reader: magic, version, tensors, architecture, file type, layers, chat template; bad magic and truncation refused | unit tests |
+| GGUF export with a stand-in converter: manifest with hashes, install into an LM Studio folder, immutability, converter failure surfaced with its exit code, quantize refused without llama-quantize, requires the merged export | test |
+| UI: Learn (self-check feedback), Efficiency tab, Factory GGUF panel; no overflow at 390 px (fixed one table); dark; no console errors | browser |
+| Backend suite | 205 passed |
+
+**Not validated here — requires your machine:** running llama.cpp's real converter (not executed in this sandbox), loading the GGUF
+in LM Studio, and the LM Studio test-set check.
+
+## v0.17.0 — Governance
+
+| Check | Result here |
+|---|---|
+| Failure types: one test per category (11) | unit test |
+| Calibration: confident-wrong, abstained when right to / wrongly, accuracy when answering on constructed episodes; sealed and train splits excluded | unit test |
+| What training fixed / broke, by failure type | unit test |
+| Audit chain: append, read, tamper detection (first broken line), actor sanitised, readable actions; via API with the actor header, no bodies stored | tests |
+| Model card + Markdown + three HTML reports from a real (tiny) study; HTML escaping; limitations computed (seeds, profile, unsealed, CPU) | test |
+| UI: six Governance tabs, report download and render; no overflow at 390 px; dark; no console errors | browser |
+| Backend suite | 210 passed |
+
+## v0.18.0 — Auto-tune with Azure OpenAI
+
+| Check | Result here |
+|---|---|
+| Recipe validation: unknown adapter, weight / strength / layer / rank out of range, unknown module, non-JSON, unknown action, repeats — all refused | unit test |
+| Hand-back guardrail: a higher-scoring variant that lowers boundary success is never "best" | unit test |
+| Full loop via FORGE's API with real weight arithmetic and dev evaluation (tiny CPU model), scripted Azure: approved → invalid repeat → rejected → stop; reviewer recorded; only summaries sent; audit entries | test |
+| Real end to end in the browser: the loop ran as a FORGE job against the live local API with a scripted Azure endpoint; reviewer approved rounds 1 and 3, rejected 2; model stopped at round 4; best-of-N caution shown | browser |
+| Backend suite | 213 passed |
+
+**Requires your machine and Azure:** real proposals from your deployment, and whether they improve a real 1.7B student.
+
+## v0.19.0 — Tests worth trusting
+
+| Check | Result here |
+|---|---|
+| Template audit (all six, 40 tasks / skill): every skill now has train / dev / test tasks (before: ITSM set_priority 0 test, claims appeal_deadline 0 dev, security remediation_due 1 test) | script |
+| Binary skills balanced: prior-auth high-cost 85 % → ~50 % "yes"; security escalation and ITSM major incident ~50 % at the generator (1,000 draws) | script |
+| Prior auth v2 at 100 / skill: 101 tasks per skill, 20 final-test each; all worked examples pass verification | test + demo |
+| Adequacy: no-headroom, imbalanced, weak-teacher and too-few cases each flagged; verdicts and overall | unit test |
+| Demo, existing studies: every older demo study rated inadequate (small splits, skewed skills) — the problem you saw | API |
+| Demo, new prior-auth study (mock teacher, tiny CPU student): overall **adequate**; four skills good (headroom 100 pts, ≥ 20 final-test tasks) | API end to end |
+| CSV download / re-upload round trip; template table before agent creation; formula neutralisation | test |
+| Backend suite | 215 passed |
+
+## v0.20.0 — FORGE Turbo
+
+| Check | Result here |
+|---|---|
+| Switch validation: unknown switch, bad choice, packing without FlashAttention 2, GPU-only switches on CPU, unavailable packages — each refused with the reason | unit test |
+| Clone: refused before Collect, refused for learning-changing settings (e.g. learning rate) or a changed effective batch; tasks and teacher episodes byte-identical | test |
+| Real CPU training with CPU activation offload (micro-batch 2 × 4) vs standard (1 × 8): gates pass, base weights untouched, both in the engine comparison | test |
+| Demo (prior auth v2, tiny CPU student, 60 steps): final loss 6.2909 standard vs 6.2911 offload; tokens/s 11,000 vs 11,474 | API end to end |
+| UI: Turbo picker (availability shown), engine comparison with overlaid loss curves, adequacy panel; 390 px; no console errors | browser |
+| Backend suite | 217 passed |
+
+**Not validated here — requires your GPU:** Liger kernels, 4-bit QLoRA, 8-bit optimizer, FlashAttention 2 / packing and
+torch.compile (their code paths run only on CUDA with the packages installed); their speed and memory gains on your RTX card.
+
+## v0.21.0 — Bench Lab
+
+| Check | Result here |
+|---|---|
+| Computation: every generated answer equals what the reference tool calls return (600 items, three seeds) | test + script |
+| Scoring kinds: numbers with stated tolerance, dates, yes/no, letters, indicator sets (precision / recall), declines, rubric coverage; JSON / "Answer:" parsing; Wilson intervals | unit test |
+| Security generator: every category, expected answers self-score correct, documentation IP ranges only; vision images rendered, degraded levels smaller and readable | test + visual check |
+| API + runner with scripted models: perfect model 100 % in both compute modes; gullible model obeys 100 % of planted instructions (and fails them); vision model 100 %, text-only model skipped on all 32 images; image path traversal refused; scorecard | test |
+| Demo through FORGE jobs (simulated LM Studio models + tiny CPU student): compute 50 % on its own vs 94 % with tools; security 77 % (obeyed 25 %, rubric 81 %); vision 85 %, text-only skipped | API end to end |
+| UI: scorecard, three suites, item explorer with images; 390 px (fixed one select); dark; no console errors | browser |
+| Backend suite | 221 passed |
+
+The demo models are simulated (their accuracy is scripted to fall with difficulty) — the numbers show the plumbing, not any
+real model. **Requires your machine:** real LM Studio models (including a vision model such as Qwen2.5-VL) and GPU students.
+
+## v0.28.0 — Open-model lineage
+
+| Check | Result here |
+|---|---|
+| Layer types from config (OLMo 3 pattern, Qwen3 all-full); split by type sums to 100 %; nothing shown for single-type models | test |
+| Lineage: repo + revision from the cache path, declared fields from model-card front matter, verified fields from files; missing dir → none; card Markdown + HTML carry it | test |
+| Overlap: 13-word windows; planted questions found, unplanted not; only question windows sent; result becomes a per-skill issue; URL must be https or loopback; off until configured | test |
+| Checkpoint timeline: resumable episodes under `ckpt_<label>`; final test refused before SEAL; Compare pairs a checkpoint with the teacher on identical tasks; History excludes checkpoints; a real tiny OLMo 3 checkpoint runs | test |
+| Demo through the API (tiny OLMo 3 student, mock teacher, mock index planted with 1 in 6 test questions): skill check, SFT stand-in checkpoint on dev + test, overlap 5 / 21 found; sliding layers took 75 % of the change for 75 % of layers | browser + API |
+| WCAG 2.2 AA: all pages × light / dark, plus timeline, overlap panel, Factory, card and Settings with the OLMo study active | **0 violations** |
+| Backend suite | 246 passed |
+
+**Not validated here:** AI2's real index names and service terms, real OLMo 3 checkpoints (Hugging Face and AI2 services are not
+reachable from this environment), and what the layer-type split looks like on a real 7B adapter.
+
+## v0.27.0 — OLMo 3
+
+| Check | Result here |
+|---|---|
+| transformers 4.57.1: `olmo3` in the causal-LM mapping; `pip check` clean with peft 0.16.0 / accelerate 1.8.1 | check |
+| Full backend suite on transformers 4.57.1 | 239 passed |
+| Tiny `Olmo3ForCausalLM` (4 layers: sliding + full attention, untied head): discovery says inference and LoRA *supported*; train (base hash unchanged, all 7 projection types adapted), evaluate, seal, final test, merged export (`model_type: olmo3`), weight microscope | test |
+| Memory gate, OLMo 3 7B shape at 3,072 tokens: bf16 > 16 GB (refused), 4-bit ≈ 11.3 GB (admitted) | test |
+| 4-bit load flag falls back to a normal load where CUDA / bitsandbytes are absent | test |
+
+**Not validated here:** the real OLMo 3 7B / 32B weights (Hugging Face is not reachable from this environment), 4-bit training and
+inference (need CUDA + bitsandbytes), OLMo 3's real chat template, memory and speed on your GPU, and learning quality — run
+`skill-check.ps1` with OLMo 3 (docs/OLMO3.md).
+
+## v0.26.0 — Skill check script
+
+| Check | Result here |
+|---|---|
+| `skill_check.py` end to end through FORGE's API (tiny stand-in student, mock teacher, smoke, 1 seed): agent → 103 tasks → study → 9 stages → adequacy → seal → final test → paired comparison → JSON | completed in 2 min; verdict NOT SHOWN (0 % → 0 %, the stand-in cannot learn) |
+| Failure handling: teacher server down → clear stop + `--resume`; teacher still loaded → unload attempted, pre-flight names the fix; examples over 2,048 tokens → default 3,072 | exercised |
+| Answer balance at 100 tasks per skill, Tier 1 templates: every yes/no skill 45–57 % after the expedite fix | script |
+
+**Not run here:** a real Qwen3 student — this container cannot reach Hugging Face (network policy) and has no GPU. The real
+test is `skill-check.ps1` on your machine (docs/SKILL_CHECK.md).
+
+## v0.25.0 — Tier-2 templates and recommendations
+
+| Check | Result here |
+|---|---|
+| Every domain template (10): synthetic tables pass the sensitive-data scan, worked examples verify, generators give ≥ 15 verified tasks per skill, no primary entity crosses splits | test |
+| New templates at 100 tasks per skill: coding edits 500, pharmacy 492, credentialing 481, supply chain 490, HL7 559 tasks (incl. hand-back cases) | script |
+| Oracle solves every generated task with the tools alone (train / dev / test, all five templates) | 100 % |
+| Answer balance: yes / no skills between 29 % and 56 % per answer; no single answer above 34 % in any multi-answer skill | script |
+| Recommendations present and complete for every domain template; docs/USE_CASES.md in sync with them | test |
+| Compliance-sensitive asks are hand-back cases and the roles say "never" | test |
+| WCAG 2.2 AA: all pages × light and dark, plus the template picker with recommendations open | **0 violations** |
+
+**Not covered:** whether a student learns these skills — that needs studies on your GPU. Real CPT®, NCCI, credentialing,
+item-master or interface data were not used.
+
+## v0.24.0 — Compare and History
+
+| Check | Result here |
+|---|---|
+| Binary comparison: rates, difference, outcome grid, exact McNemar (b = 3, c = 0 → p = 0.25), Wilson ranges, per-skill rows, config diff | test |
+| Pairing: only byte-identical tasks; same id with different content counted and excluded; no shared tasks → refused with the reason | test |
+| Several seeds per task: per-task mean, bootstrap ranges, per-seed spread | test |
+| Weight comparison equals dense ΔW computations (norms, cosine, distance, overall cosine) to 1e-9; same file refused; different base refused | test |
+| API on a tiny 2-seed study: subjects listed, arm vs teacher, seed vs seed with weights, side-by-side transcripts, unsealed test refused, history kinds | test |
+| Demo data: standard vs Turbo clone of one study — 92 paired tasks, only the Turbo settings differ, weight cosine 0.998 | browser + API |
+| Demo data: two seeds of one study — weight cosine 0.21 (same results, different changes) | browser + API |
+| Demo data: compute bench with vs without tools — +43.8 pts (95 % +32.5 to +55.0), McNemar p = 5.5e-10 | browser + API |
+| WCAG 2.2 AA (axe-core 4.10.3), all 26 pages × light and dark | **0 violations** |
+| Layout: 26 pages at 1920 / 1440 dark / 390 px | no horizontal overflow, no console errors |
+| Backend suite | 229 passed |
+
+**Not covered:** comparisons on full-size adapters on Windows (weight comparison is O(r²·d) per module and was only timed on
+the demo models here).
+
+## v0.23.0 — Pipeline, decision & release, weight microscope
+
+| Check | Result here |
+|---|---|
+| Pipeline phases on a tiny study through its whole life (new → trained → sealed → tested → decided → bundled) | test |
+| Approvals refused before SEAL and before the final test is analysed; record pinned to plan / adapter / test | test |
+| Release bundle: every file listed in MANIFEST.json with a matching SHA-256; download name validated | test |
+| Microscope: singular values equal a dense SVD of s·B·A; rank-1 parts sum to ΔW; snapshot growth; cosine of a seed with itself = 1; random baseline = k / dimension | test |
+| Variety statistic with pruning equals the brute-force all-pairs result (120 random prompts) | check |
+| Pipeline endpoint on a 440-task agent | 2.76 s → 0.25 s first load, 0.03 s cached |
+| WCAG 2.2 AA (axe-core 4.10.3), all 24 pages × light and dark | **0 violations** |
+| Layout: 24 pages at 1920 / 1440 dark / 390 px; Pipeline and Factory at 390 px | no horizontal overflow, no console errors |
+| Backend suite | 224 passed |
+
+**Not covered:** the microscope on a full-size model on Windows (validated on the demo models here); screen-reader
+walk-throughs of the new pages.
+
+## v0.22.0 — Experience pass
+
+| Check | Result here |
+|---|---|
+| WCAG 2.2 AA (axe-core 4.10.3), all 23 pages × light and dark, demo data loaded | **0 violations** (1,291 before: contrast, scrollable regions, target size, definition lists) |
+| Layout: 23 pages at 1920 px, 390 px and 1440 px dark | no horizontal overflow, no console errors |
+| Model Hub endpoint: identity, vision / trainable flags, bench results for the model, unknown model 404 | test |
+| Inspector: active study stages, headline with ranges, adequacy, next step; Escape and `.` | browser |
+| Print: navigation and controls hidden, panels expanded | browser (print emulation) |
+| Bundle: charting library isolated to Training Lab | build output |
+| Backend suite | 222 passed |
+
+**Not covered:** manual screen-reader walk-throughs (NVDA / JAWS) and keyboard-only completion of every task flow.

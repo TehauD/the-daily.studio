@@ -1,0 +1,44 @@
+field_id,segment,field_name,data_type,usage_in_spec
+MSH-3,MSH,Sending Application,HD,optional
+MSH-4,MSH,Sending Facility,HD,optional
+MSH-5,MSH,Receiving Application,HD,optional
+MSH-6,MSH,Receiving Facility,HD,optional
+MSH-7,MSH,Date/Time of Message,DTM,required
+MSH-9,MSH,Message Type,MSG,required
+MSH-10,MSH,Message Control ID,ST,required
+MSH-11,MSH,Processing ID,PT,required
+MSH-12,MSH,Version ID,VID,required
+MSH-18,MSH,Character Set,ID,optional
+EVN-1,EVN,Event Type Code,ID,optional
+EVN-2,EVN,Recorded Date/Time,DTM,required
+PID-3,PID,Patient Identifier List,CX,required
+PID-5,PID,Patient Name,XPN,required
+PID-7,PID,Date/Time of Birth,DTM,optional
+PID-8,PID,Administrative Sex,CWE,optional
+PID-11,PID,Patient Address,XAD,optional
+PID-18,PID,Patient Account Number,CX,optional
+PV1-2,PV1,Patient Class,CWE,required
+PV1-3,PV1,Assigned Patient Location,PL,optional
+PV1-7,PV1,Attending Doctor,XCN,optional
+PV1-10,PV1,Hospital Service,CWE,optional
+PV1-19,PV1,Visit Number,CX,optional
+PV1-44,PV1,Admit Date/Time,DTM,optional
+PV1-45,PV1,Discharge Date/Time,DTM,optional
+ORC-1,ORC,Order Control,ID,required
+ORC-2,ORC,Placer Order Number,EI,conditional
+ORC-3,ORC,Filler Order Number,EI,conditional
+ORC-12,ORC,Ordering Provider,XCN,optional
+OBR-4,OBR,Universal Service Identifier,CWE,required
+OBR-7,OBR,Observation Date/Time,DTM,conditional
+OBR-25,OBR,Result Status,ID,conditional
+OBX-2,OBX,Value Type,ID,conditional
+OBX-3,OBX,Observation Identifier,CWE,required
+OBX-5,OBX,Observation Value,varies,conditional
+OBX-6,OBX,Units,CWE,optional
+OBX-8,OBX,Interpretation Codes,CWE,optional
+OBX-11,OBX,Observation Result Status,ID,required
+MSA-1,MSA,Acknowledgment Code,ID,required
+MSA-2,MSA,Message Control ID (acknowledged),ST,required
+ERR-2,ERR,Error Location,ERL,optional
+ERR-3,ERR,HL7 Error Code,CWE,required
+ERR-4,ERR,Severity,ID,required

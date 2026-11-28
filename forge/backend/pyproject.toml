@@ -1,0 +1,10 @@
+[project]
+name = "forge-lab"
+version = "0.31.1"
+description = "FORGE — local-first teacher→student distillation laboratory"
+requires-python = ">=3.12,<3.13"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+filterwarnings = ["ignore::DeprecationWarning"]

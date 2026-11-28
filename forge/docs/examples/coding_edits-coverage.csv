@@ -1,0 +1,329 @@
+policy_id,proc_code,dx_group,supported
+CP-7001,PRC-1001,Musculoskeletal pain,no
+CP-7002,PRC-1001,Joint injury,yes
+CP-7003,PRC-1001,Skin lesion,no
+CP-7004,PRC-1001,Wound,no
+CP-7005,PRC-1001,Digestive symptom,yes
+CP-7006,PRC-1001,Screening,no
+CP-7007,PRC-1001,Neurologic symptom,yes
+CP-7008,PRC-1001,General exam,no
+CP-7009,PRC-1003,Musculoskeletal pain,no
+CP-7010,PRC-1003,Joint injury,no
+CP-7011,PRC-1003,Skin lesion,yes
+CP-7012,PRC-1003,Wound,no
+CP-7013,PRC-1003,Digestive symptom,no
+CP-7014,PRC-1003,Screening,no
+CP-7015,PRC-1003,Neurologic symptom,no
+CP-7016,PRC-1003,General exam,yes
+CP-7017,PRC-1004,Musculoskeletal pain,yes
+CP-7018,PRC-1004,Joint injury,yes
+CP-7019,PRC-1004,Skin lesion,yes
+CP-7020,PRC-1004,Wound,yes
+CP-7021,PRC-1004,Digestive symptom,no
+CP-7022,PRC-1004,Screening,no
+CP-7023,PRC-1004,Neurologic symptom,no
+CP-7024,PRC-1004,General exam,no
+CP-7025,PRC-1005,Musculoskeletal pain,no
+CP-7026,PRC-1005,Joint injury,yes
+CP-7027,PRC-1005,Skin lesion,yes
+CP-7028,PRC-1005,Wound,yes
+CP-7029,PRC-1005,Digestive symptom,yes
+CP-7030,PRC-1005,Screening,yes
+CP-7031,PRC-1005,Neurologic symptom,no
+CP-7032,PRC-1005,General exam,no
+CP-7033,PRC-1006,Musculoskeletal pain,no
+CP-7034,PRC-1006,Joint injury,yes
+CP-7035,PRC-1006,Skin lesion,no
+CP-7036,PRC-1006,Wound,no
+CP-7037,PRC-1006,Digestive symptom,no
+CP-7038,PRC-1006,Screening,no
+CP-7039,PRC-1006,Neurologic symptom,yes
+CP-7040,PRC-1006,General exam,no
+CP-7041,PRC-1007,Musculoskeletal pain,yes
+CP-7042,PRC-1007,Joint injury,yes
+CP-7043,PRC-1007,Skin lesion,no
+CP-7044,PRC-1007,Wound,no
+CP-7045,PRC-1007,Digestive symptom,no
+CP-7046,PRC-1007,Screening,no
+CP-7047,PRC-1007,Neurologic symptom,no
+CP-7048,PRC-1007,General exam,yes
+CP-7049,PRC-1008,Musculoskeletal pain,no
+CP-7050,PRC-1008,Joint injury,yes
+CP-7051,PRC-1008,Skin lesion,no
+CP-7052,PRC-1008,Wound,no
+CP-7053,PRC-1008,Digestive symptom,no
+CP-7054,PRC-1008,Screening,no
+CP-7055,PRC-1008,Neurologic symptom,no
+CP-7056,PRC-1008,General exam,yes
+CP-7057,PRC-1010,Musculoskeletal pain,no
+CP-7058,PRC-1010,Joint injury,no
+CP-7059,PRC-1010,Skin lesion,no
+CP-7060,PRC-1010,Wound,yes
+CP-7061,PRC-1010,Digestive symptom,yes
+CP-7062,PRC-1010,Screening,no
+CP-7063,PRC-1010,Neurologic symptom,yes
+CP-7064,PRC-1010,General exam,yes
+CP-7065,PRC-1012,Musculoskeletal pain,yes
+CP-7066,PRC-1012,Joint injury,no
+CP-7067,PRC-1012,Skin lesion,no
+CP-7068,PRC-1012,Wound,no
+CP-7069,PRC-1012,Digestive symptom,yes
+CP-7070,PRC-1012,Screening,no
+CP-7071,PRC-1012,Neurologic symptom,no
+CP-7072,PRC-1012,General exam,no
+CP-7073,PRC-1013,Musculoskeletal pain,no
+CP-7074,PRC-1013,Joint injury,no
+CP-7075,PRC-1013,Skin lesion,yes
+CP-7076,PRC-1013,Wound,yes
+CP-7077,PRC-1013,Digestive symptom,no
+CP-7078,PRC-1013,Screening,yes
+CP-7079,PRC-1013,Neurologic symptom,no
+CP-7080,PRC-1013,General exam,yes
+CP-7081,PRC-1015,Musculoskeletal pain,no
+CP-7082,PRC-1015,Joint injury,yes
+CP-7083,PRC-1015,Skin lesion,no
+CP-7084,PRC-1015,Wound,yes
+CP-7085,PRC-1015,Digestive symptom,no
+CP-7086,PRC-1015,Screening,yes
+CP-7087,PRC-1015,Neurologic symptom,yes
+CP-7088,PRC-1015,General exam,yes
+CP-7089,PRC-1016,Musculoskeletal pain,yes
+CP-7090,PRC-1016,Joint injury,no
+CP-7091,PRC-1016,Skin lesion,no
+CP-7092,PRC-1016,Wound,yes
+CP-7093,PRC-1016,Digestive symptom,no
+CP-7094,PRC-1016,Screening,no
+CP-7095,PRC-1016,Neurologic symptom,yes
+CP-7096,PRC-1016,General exam,no
+CP-7097,PRC-1017,Musculoskeletal pain,yes
+CP-7098,PRC-1017,Joint injury,yes
+CP-7099,PRC-1017,Skin lesion,yes
+CP-7100,PRC-1017,Wound,yes
+CP-7101,PRC-1017,Digestive symptom,no
+CP-7102,PRC-1017,Screening,no
+CP-7103,PRC-1017,Neurologic symptom,no
+CP-7104,PRC-1017,General exam,yes
+CP-7105,PRC-1019,Musculoskeletal pain,yes
+CP-7106,PRC-1019,Joint injury,no
+CP-7107,PRC-1019,Skin lesion,yes
+CP-7108,PRC-1019,Wound,yes
+CP-7109,PRC-1019,Digestive symptom,no
+CP-7110,PRC-1019,Screening,yes
+CP-7111,PRC-1019,Neurologic symptom,yes
+CP-7112,PRC-1019,General exam,no
+CP-7113,PRC-1020,Musculoskeletal pain,yes
+CP-7114,PRC-1020,Joint injury,no
+CP-7115,PRC-1020,Skin lesion,yes
+CP-7116,PRC-1020,Wound,no
+CP-7117,PRC-1020,Digestive symptom,yes
+CP-7118,PRC-1020,Screening,yes
+CP-7119,PRC-1020,Neurologic symptom,no
+CP-7120,PRC-1020,General exam,no
+CP-7121,PRC-1023,Musculoskeletal pain,yes
+CP-7122,PRC-1023,Joint injury,yes
+CP-7123,PRC-1023,Skin lesion,yes
+CP-7124,PRC-1023,Wound,no
+CP-7125,PRC-1023,Digestive symptom,no
+CP-7126,PRC-1023,Screening,yes
+CP-7127,PRC-1023,Neurologic symptom,no
+CP-7128,PRC-1023,General exam,no
+CP-7129,PRC-1024,Musculoskeletal pain,no
+CP-7130,PRC-1024,Joint injury,yes
+CP-7131,PRC-1024,Skin lesion,yes
+CP-7132,PRC-1024,Wound,no
+CP-7133,PRC-1024,Digestive symptom,no
+CP-7134,PRC-1024,Screening,no
+CP-7135,PRC-1024,Neurologic symptom,no
+CP-7136,PRC-1024,General exam,no
+CP-7137,PRC-1025,Musculoskeletal pain,no
+CP-7138,PRC-1025,Joint injury,no
+CP-7139,PRC-1025,Skin lesion,no
+CP-7140,PRC-1025,Wound,yes
+CP-7141,PRC-1025,Digestive symptom,yes
+CP-7142,PRC-1025,Screening,no
+CP-7143,PRC-1025,Neurologic symptom,yes
+CP-7144,PRC-1025,General exam,yes
+CP-7145,PRC-1027,Musculoskeletal pain,yes
+CP-7146,PRC-1027,Joint injury,no
+CP-7147,PRC-1027,Skin lesion,yes
+CP-7148,PRC-1027,Wound,yes
+CP-7149,PRC-1027,Digestive symptom,yes
+CP-7150,PRC-1027,Screening,yes
+CP-7151,PRC-1027,Neurologic symptom,no
+CP-7152,PRC-1027,General exam,no
+CP-7153,PRC-1028,Musculoskeletal pain,yes
+CP-7154,PRC-1028,Joint injury,no
+CP-7155,PRC-1028,Skin lesion,no
+CP-7156,PRC-1028,Wound,no
+CP-7157,PRC-1028,Digestive symptom,yes
+CP-7158,PRC-1028,Screening,no
+CP-7159,PRC-1028,Neurologic symptom,yes
+CP-7160,PRC-1028,General exam,yes
+CP-7161,PRC-1029,Musculoskeletal pain,no
+CP-7162,PRC-1029,Joint injury,yes
+CP-7163,PRC-1029,Skin lesion,yes
+CP-7164,PRC-1029,Wound,no
+CP-7165,PRC-1029,Digestive symptom,yes
+CP-7166,PRC-1029,Screening,no
+CP-7167,PRC-1029,Neurologic symptom,no
+CP-7168,PRC-1029,General exam,yes
+CP-7169,PRC-1030,Musculoskeletal pain,yes
+CP-7170,PRC-1030,Joint injury,no
+CP-7171,PRC-1030,Skin lesion,yes
+CP-7172,PRC-1030,Wound,no
+CP-7173,PRC-1030,Digestive symptom,yes
+CP-7174,PRC-1030,Screening,no
+CP-7175,PRC-1030,Neurologic symptom,no
+CP-7176,PRC-1030,General exam,yes
+CP-7177,PRC-1031,Musculoskeletal pain,no
+CP-7178,PRC-1031,Joint injury,no
+CP-7179,PRC-1031,Skin lesion,yes
+CP-7180,PRC-1031,Wound,yes
+CP-7181,PRC-1031,Digestive symptom,yes
+CP-7182,PRC-1031,Screening,no
+CP-7183,PRC-1031,Neurologic symptom,no
+CP-7184,PRC-1031,General exam,no
+CP-7185,PRC-1032,Musculoskeletal pain,yes
+CP-7186,PRC-1032,Joint injury,no
+CP-7187,PRC-1032,Skin lesion,no
+CP-7188,PRC-1032,Wound,yes
+CP-7189,PRC-1032,Digestive symptom,no
+CP-7190,PRC-1032,Screening,no
+CP-7191,PRC-1032,Neurologic symptom,yes
+CP-7192,PRC-1032,General exam,no
+CP-7193,PRC-1033,Musculoskeletal pain,no
+CP-7194,PRC-1033,Joint injury,yes
+CP-7195,PRC-1033,Skin lesion,no
+CP-7196,PRC-1033,Wound,no
+CP-7197,PRC-1033,Digestive symptom,yes
+CP-7198,PRC-1033,Screening,yes
+CP-7199,PRC-1033,Neurologic symptom,yes
+CP-7200,PRC-1033,General exam,yes
+CP-7201,PRC-1034,Musculoskeletal pain,no
+CP-7202,PRC-1034,Joint injury,no
+CP-7203,PRC-1034,Skin lesion,yes
+CP-7204,PRC-1034,Wound,yes
+CP-7205,PRC-1034,Digestive symptom,yes
+CP-7206,PRC-1034,Screening,no
+CP-7207,PRC-1034,Neurologic symptom,yes
+CP-7208,PRC-1034,General exam,no
+CP-7209,PRC-1035,Musculoskeletal pain,yes
+CP-7210,PRC-1035,Joint injury,yes
+CP-7211,PRC-1035,Skin lesion,yes
+CP-7212,PRC-1035,Wound,yes
+CP-7213,PRC-1035,Digestive symptom,no
+CP-7214,PRC-1035,Screening,yes
+CP-7215,PRC-1035,Neurologic symptom,no
+CP-7216,PRC-1035,General exam,no
+CP-7217,PRC-1036,Musculoskeletal pain,yes
+CP-7218,PRC-1036,Joint injury,no
+CP-7219,PRC-1036,Skin lesion,no
+CP-7220,PRC-1036,Wound,no
+CP-7221,PRC-1036,Digestive symptom,no
+CP-7222,PRC-1036,Screening,yes
+CP-7223,PRC-1036,Neurologic symptom,yes
+CP-7224,PRC-1036,General exam,no
+CP-7225,PRC-1037,Musculoskeletal pain,yes
+CP-7226,PRC-1037,Joint injury,no
+CP-7227,PRC-1037,Skin lesion,yes
+CP-7228,PRC-1037,Wound,no
+CP-7229,PRC-1037,Digestive symptom,yes
+CP-7230,PRC-1037,Screening,no
+CP-7231,PRC-1037,Neurologic symptom,no
+CP-7232,PRC-1037,General exam,yes
+CP-7233,PRC-1038,Musculoskeletal pain,no
+CP-7234,PRC-1038,Joint injury,no
+CP-7235,PRC-1038,Skin lesion,no
+CP-7236,PRC-1038,Wound,no
+CP-7237,PRC-1038,Digestive symptom,yes
+CP-7238,PRC-1038,Screening,yes
+CP-7239,PRC-1038,Neurologic symptom,no
+CP-7240,PRC-1038,General exam,no
+CP-7241,PRC-1039,Musculoskeletal pain,no
+CP-7242,PRC-1039,Joint injury,no
+CP-7243,PRC-1039,Skin lesion,no
+CP-7244,PRC-1039,Wound,no
+CP-7245,PRC-1039,Digestive symptom,no
+CP-7246,PRC-1039,Screening,no
+CP-7247,PRC-1039,Neurologic symptom,yes
+CP-7248,PRC-1039,General exam,yes
+CP-7249,PRC-1040,Musculoskeletal pain,no
+CP-7250,PRC-1040,Joint injury,yes
+CP-7251,PRC-1040,Skin lesion,yes
+CP-7252,PRC-1040,Wound,yes
+CP-7253,PRC-1040,Digestive symptom,no
+CP-7254,PRC-1040,Screening,no
+CP-7255,PRC-1040,Neurologic symptom,no
+CP-7256,PRC-1040,General exam,no
+CP-7257,PRC-1041,Musculoskeletal pain,no
+CP-7258,PRC-1041,Joint injury,yes
+CP-7259,PRC-1041,Skin lesion,no
+CP-7260,PRC-1041,Wound,no
+CP-7261,PRC-1041,Digestive symptom,yes
+CP-7262,PRC-1041,Screening,no
+CP-7263,PRC-1041,Neurologic symptom,no
+CP-7264,PRC-1041,General exam,no
+CP-7265,PRC-1043,Musculoskeletal pain,yes
+CP-7266,PRC-1043,Joint injury,yes
+CP-7267,PRC-1043,Skin lesion,yes
+CP-7268,PRC-1043,Wound,no
+CP-7269,PRC-1043,Digestive symptom,no
+CP-7270,PRC-1043,Screening,yes
+CP-7271,PRC-1043,Neurologic symptom,no
+CP-7272,PRC-1043,General exam,no
+CP-7273,PRC-1045,Musculoskeletal pain,yes
+CP-7274,PRC-1045,Joint injury,no
+CP-7275,PRC-1045,Skin lesion,no
+CP-7276,PRC-1045,Wound,yes
+CP-7277,PRC-1045,Digestive symptom,yes
+CP-7278,PRC-1045,Screening,yes
+CP-7279,PRC-1045,Neurologic symptom,no
+CP-7280,PRC-1045,General exam,no
+CP-7281,PRC-1048,Musculoskeletal pain,yes
+CP-7282,PRC-1048,Joint injury,yes
+CP-7283,PRC-1048,Skin lesion,no
+CP-7284,PRC-1048,Wound,yes
+CP-7285,PRC-1048,Digestive symptom,no
+CP-7286,PRC-1048,Screening,yes
+CP-7287,PRC-1048,Neurologic symptom,no
+CP-7288,PRC-1048,General exam,no
+CP-7289,PRC-1050,Musculoskeletal pain,yes
+CP-7290,PRC-1050,Joint injury,yes
+CP-7291,PRC-1050,Skin lesion,no
+CP-7292,PRC-1050,Wound,yes
+CP-7293,PRC-1050,Digestive symptom,no
+CP-7294,PRC-1050,Screening,yes
+CP-7295,PRC-1050,Neurologic symptom,no
+CP-7296,PRC-1050,General exam,yes
+CP-7297,PRC-1052,Musculoskeletal pain,no
+CP-7298,PRC-1052,Joint injury,no
+CP-7299,PRC-1052,Skin lesion,yes
+CP-7300,PRC-1052,Wound,yes
+CP-7301,PRC-1052,Digestive symptom,yes
+CP-7302,PRC-1052,Screening,no
+CP-7303,PRC-1052,Neurologic symptom,yes
+CP-7304,PRC-1052,General exam,yes
+CP-7305,PRC-1053,Musculoskeletal pain,yes
+CP-7306,PRC-1053,Joint injury,yes
+CP-7307,PRC-1053,Skin lesion,yes
+CP-7308,PRC-1053,Wound,no
+CP-7309,PRC-1053,Digestive symptom,yes
+CP-7310,PRC-1053,Screening,no
+CP-7311,PRC-1053,Neurologic symptom,yes
+CP-7312,PRC-1053,General exam,no
+CP-7313,PRC-1054,Musculoskeletal pain,no
+CP-7314,PRC-1054,Joint injury,no
+CP-7315,PRC-1054,Skin lesion,yes
+CP-7316,PRC-1054,Wound,yes
+CP-7317,PRC-1054,Digestive symptom,yes
+CP-7318,PRC-1054,Screening,no
+CP-7319,PRC-1054,Neurologic symptom,no
+CP-7320,PRC-1054,General exam,yes
+CP-7321,PRC-1055,Musculoskeletal pain,no
+CP-7322,PRC-1055,Joint injury,yes
+CP-7323,PRC-1055,Skin lesion,no
+CP-7324,PRC-1055,Wound,no
+CP-7325,PRC-1055,Digestive symptom,yes
+CP-7326,PRC-1055,Screening,yes
+CP-7327,PRC-1055,Neurologic symptom,no
+CP-7328,PRC-1055,General exam,yes
