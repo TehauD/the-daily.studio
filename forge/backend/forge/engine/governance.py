@@ -386,9 +386,13 @@ def adequacy(study: Any) -> dict[str, Any]:
     ov_p = root / "reports" / "overlap.json" if root else None
     overlap = json.loads(ov_p.read_text(encoding="utf-8")) if ov_p and ov_p.exists() else None
     skills = []
+    regression_only: list[str] = []
     for fam in sorted({t.family for t in tasks}):
         ts = [t for t in tasks if t.family == fam]
         n = {sp: sum(1 for t in ts if t.split == sp) for sp in ("train", "dev", "test")}
+        if not any(n.values()):  # e.g. 'extraction': a regression check of general ability, never trained or practice-scored
+            regression_only.append(fam)
+            continue
         ans = _C(answer_norm(t.reference_answer) for t in ts)
         top, top_n = ans.most_common(1)[0]
         share = top_n / len(ts)
@@ -414,6 +418,6 @@ def adequacy(study: Any) -> dict[str, Any]:
     measured = bool(base and teacher)
     overall = ("not yet measured — run Collect and Evaluate · dev" if not measured else
                "adequate" if len(good) >= max(1, len(skills) // 2) else "weak" if good else "inadequate")
-    return {"overall": overall, "measured": measured, "skills": skills, "thresholds": ADEQ, "overlap": {k: overlap[k] for k in ("split", "index", "tested", "hits", "share", "generated_at")} if overlap else None,
+    return {"overall": overall, "measured": measured, "skills": skills, "thresholds": ADEQ, "regression_only": regression_only, "overlap": {k: overlap[k] for k in ("split", "index", "tested", "hits", "share", "generated_at")} if overlap else None,
             "note": "A good test needs, per skill: room to improve (untrained well below the teacher), a teacher that succeeds ≥ 80 %, "
                     "balanced answers, and ≥ 20 final-test tasks. Skills that fail can't show a training effect either way."}
