@@ -25,6 +25,11 @@
 - **Reproducibility bundles**: plan, tasks, seal, every raw episode, analyses, logs, manifests (adapters optional), each
   hashed. *Verify* recomputes every analysis from the raw episodes and compares gains, ranges and p-values; a single changed
   measurement is caught even when re-hashed. History → Reproducibility; `python -m forge.engine bundle`.
+- **Validated here (wiring, not a finding)**: the kit ran end to end in the sandbox in 24 min — CPU, mock teacher, tiny OLMo
+  3-architecture student, 2 seeds, 20 training steps. Its preregistered power analysis warned the design could only detect
+  gains ≥ 32.7 pts and that 2 seeds cap the seed test at p = 0.5; the result was *not shown* (+0.0 pts), the prompting
+  baseline and control likewise 0 %, forgetting *lower* (−19.6 %), W8 / W4-aware variants 100 % agreement, bundle verified.
+  The real run needs a GPU and the real models.
 - **Real-request path**: design only, gated on separate approval (docs/REAL_REQUESTS.md). Nothing implemented.
 
 ## 0.29.0 — Evidence (positive and negative controls) and the Quantization Lab backend

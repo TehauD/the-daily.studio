@@ -62,7 +62,7 @@ function Frontier({ d, split }: { d: LabT; split: string }) {
           <g key={p.key}>
             {p.r.ci && <line x1={x(p.size)} x2={x(p.size)} y1={y(p.r.ci[0])} y2={y(p.r.ci[1])} stroke={c} strokeWidth={2} strokeOpacity={0.6} />}
             <circle cx={x(p.size)} cy={y(p.r.rate ?? 0)} r={5.5} fill={p.est ? "var(--surface)" : c} stroke={c} strokeWidth={2}><title>{`${p.key}: ${fmtPct(p.r.rate, 1)} at ${GB(p.size)}${p.est ? " (estimated size)" : ""}`}</title></circle>
-            <text x={x(p.size) + 8} y={labelY.get(p.key)} fontSize={10} fill="var(--ink)" paintOrder="stroke" stroke="var(--surface)" strokeWidth={3}>{p.key}</text>
+            {(() => { const right = x(p.size) > W - R - 130; return <text x={x(p.size) + (right ? -9 : 8)} y={labelY.get(p.key)} textAnchor={right ? "end" : "start"} fontSize={10} fill="var(--ink)" paintOrder="stroke" stroke="var(--surface)" strokeWidth={3}>{p.key}</text>; })()}
           </g>); })}
       </svg>
     </Figure>

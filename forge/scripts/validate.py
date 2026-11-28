@@ -42,6 +42,12 @@ def pct(v) -> str:
     return "—" if v is None else f"{v * 100:.1f}%"
 
 
+def size(b) -> str:
+    if not b:
+        return "—"
+    return f"{b / 1e9:.2f} GB" if b >= 1e9 else f"{b / 1e6:.1f} MB"
+
+
 def step(n: str, text: str) -> None:
     print(f"\n{n}. {text}")
 
@@ -208,10 +214,10 @@ def report(api: Api, a, sid: str, pre: dict, ck: dict, lab: dict | None, t0: flo
     md += [f"- {k}: **{v['status']}**, {v['change'] * 100:+.1f} % (95 % {v['ci'][0] * 100:+.1f} … {v['ci'][1] * 100:+.1f})" for k, v in rec["forgetting"].items()]
     if lab:
         md += ["", "## Quantization (sealed final test)", "", "| variant | size | strict success | agreement | McNemar p |", "|---|---|---|---|---|",
-               f"| unquantized | {(lab.get('bf16_bytes') or 0) / 1e9:.2f} GB | {pct((lab['unquantized'].get('test') or {}).get('rate'))} | — | — |"]
+               f"| unquantized | {size(lab.get('bf16_bytes'))} | {pct((lab['unquantized'].get('test') or {}).get('rate'))} | — | — |"]
         for v in lab["variants"]:
             r = v["results"].get("test") or {}
-            md.append(f"| {v['label']}{' (simulated)' if v['simulated'] else ''} | {(v.get('size_bytes') or 0) / 1e9:.2f} GB | {pct(r.get('rate'))} | {pct(r.get('agreement'))} | {r.get('mcnemar_p')} |")
+            md.append(f"| {v['label']}{' (simulated, size estimated)' if v['simulated'] else ''} | {size(v.get('size_bytes'))} | {pct(r.get('rate'))} | {pct(r.get('agreement'))} | {r.get('mcnemar_p')} |")
     md += ["", "## Reproducibility", "", f"Bundle `{b['path']}` (sha256 `{b['sha256'][:16]}…`): **{'verified' if vr['ok'] else 'NOT verified'}** — "
            "file hashes, frozen plan, and every analysis recomputed from raw episodes.", "",
            "## Limits", "", "Strict success on synthetic tasks from a template agent. It shows whether the student learned these skills and "
