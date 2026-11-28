@@ -24,7 +24,14 @@ async function request<T>(method: string, path: string, body?: unknown, retry = 
     // Who did it, for the audit trail: the reviewer name typed in this browser (a label, not authentication).
     try { const who = localStorage.getItem("forge.reviewer"); if (who) headers["X-Forge-Actor"] = who.replace(/[^\w .,'@-]/g, "").slice(0, 60); } catch { /* storage blocked */ }
   }
-  const res = await fetch(path, { method, headers, body: body !== undefined ? JSON.stringify(body) : undefined });
+  let res: Response;
+  try {
+    res = await fetch(path, { method, headers, body: body !== undefined ? JSON.stringify(body) : undefined });
+  } catch {
+    // The browser says only "Failed to fetch": the FORGE server did not answer at all (stopped, crashed or restarting).
+    throw new ApiError(0, "FORGE's server did not answer. Is the FORGE window (launch.ps1) still open? If it closed, read its last lines — "
+      + "they say why — then start it again with .\\scripts\\launch.ps1. Nothing you entered here was lost.");
+  }
   if (res.status === 403 && method !== "GET" && retry) { token = null; return request<T>(method, path, body, false); }
   if (!res.ok) {
     let detail = res.statusText;

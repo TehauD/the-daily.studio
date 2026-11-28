@@ -47,10 +47,20 @@ def discovery_runs(limit: int = 10, st: AppState = Depends(get_state)):
     return rows
 
 
+def gpu_total_mb() -> float | None:
+    """Memory of the largest NVIDIA GPU, or None when none is visible (pair-check then assumes 16 GB)."""
+    from forge.hardware.probe import query_gpus
+    try:
+        g = [x.vram_total_mb for x in query_gpus() if x.vram_total_mb]
+    except Exception:  # nvidia-smi missing or slow: fall back to the 16 GB assumption
+        return None
+    return float(max(g)) if g else None
+
+
 @router.get("/pair-check")
 def pair_check(teacher: str, student: str, st: AppState = Depends(get_state)):
     try:
-        return st.registry.pair_check(teacher, student)
+        return st.registry.pair_check(teacher, student, gpu_total_mb())
     except RegistryError as e:
         raise HTTPException(404, str(e))
 

@@ -116,7 +116,7 @@ class ModelRegistry:
             c.execute("DELETE FROM model_roles WHERE model_id = ? AND role = ?", (model_id, role))
         return self.get(model_id)
 
-    def pair_check(self, teacher_id: str, student_id: str) -> dict:
+    def pair_check(self, teacher_id: str, student_id: str, vram_total_mb: float | None = None) -> dict:
         t, s = self.get(teacher_id), self.get(student_id)
         tc, sc = t["capabilities"], s["capabilities"]
         checks = []
@@ -151,14 +151,35 @@ class ModelRegistry:
             "Behavioral (sequence-level) distillation only: teacher logits unavailable or vocabularies differ.")
         md = s["metadata"]
         vram = None
+        quant_4bit = False
+        device_mb = float(vram_total_mb) if vram_total_mb else 16376.0   # the GPU's own memory when known; 16 GB otherwise
+        dev = f"{device_mb / 1024:.0f} GB device" + ("" if vram_total_mb else " (assumed: no GPU reported)")
         if sp:
-            est = estimate_lora_memory(EstimateInput(
-                params_b=sp / 1e9, quant="bf16", seq_len=2048, hidden=md.get("hidden_size"), layers=md.get("num_hidden_layers"),
-                intermediate=md.get("intermediate_size"), vocab=md.get("vocab_size"), num_heads=md.get("num_attention_heads"),
-                num_kv_heads=md.get("num_key_value_heads"), head_dim=md.get("head_dim")), 16376)
+            def est_for(quant: str):
+                return estimate_lora_memory(EstimateInput(
+                    params_b=sp / 1e9, quant=quant, seq_len=2048, hidden=md.get("hidden_size"), layers=md.get("num_hidden_layers"),
+                    intermediate=md.get("intermediate_size"), vocab=md.get("vocab_size"), num_heads=md.get("num_attention_heads"),
+                    num_kv_heads=md.get("num_key_value_heads"), head_dim=md.get("head_dim")), device_mb)
+            est = est_for("bf16")
             vram = est.to_dict()
-            add("student_vram_lora_bf16", {"safe": "pass", "tight": "warn"}.get(est.verdict, "fail"),
-                f"Estimated {est.total_mb/1024:.1f} GB peak at seq 2048 vs 16 GB device (analytic, ±25%).")
+            if est.verdict in ("safe", "tight"):
+                add("student_vram_lora_bf16", "pass" if est.verdict == "safe" else "warn",
+                    f"16-bit training: estimated {est.total_mb/1024:.1f} GB peak at seq 2048 vs {dev} (analytic, ±25%).")
+            else:
+                q = est_for("nf4")
+                qlora_ok = sc["qlora"]["status"] in ("supported", "conditional")
+                if q.verdict in ("safe", "tight") and qlora_ok:
+                    quant_4bit = True
+                    vram = {**q.to_dict(), "bf16_total_mb": est.total_mb, "quant": "nf4"}
+                    add("student_vram_lora_bf16", "info",
+                        f"16-bit training would need ≈ {est.total_mb/1024:.1f} GB (more than the {dev}), so FORGE trains on a 4-bit base "
+                        f"(QLoRA) instead: ≈ {q.total_mb/1024:.1f} GB at seq 2048 (analytic, ±25%). Turned on automatically for this pair.")
+                    add("student_vram_qlora_4bit", "pass" if q.verdict == "safe" else "warn",
+                        f"4-bit base: estimated {q.total_mb/1024:.1f} GB peak vs {dev}" + (" — tight: keep sequences short and close other GPU apps." if q.verdict == "tight" else "."))
+                else:
+                    add("student_vram_lora_bf16", "fail",
+                        f"Too large for this GPU: ≈ {est.total_mb/1024:.1f} GB in 16-bit" + (f" and ≈ {q.total_mb/1024:.1f} GB with a 4-bit base" if qlora_ok else
+                        " (4-bit training is not available for this model)") + f" vs {dev}. Choose a smaller student.")
         local_teacher = t["provider"] in ("lmstudio", "ollama") or t["format"] in ("gguf", "ollama")
         if local_teacher:
             add("one_gpu", "info", "Teacher and student share one GPU: the teacher must be unloaded before training "
@@ -169,5 +190,5 @@ class ModelRegistry:
         verdict = "fail" if any(c["status"] == "fail" for c in checks) else (
             "warn" if any(c["status"] == "warn" for c in checks) else "pass")
         return {"teacher": t["name"], "student": s["name"], "teacher_id": t["id"], "student_id": s["id"],
-                "verdict": verdict, "capacity_ratio": ratio, "vram_estimate": vram,
+                "verdict": verdict, "capacity_ratio": ratio, "vram_estimate": vram, "quant_4bit_recommended": quant_4bit,
                 "distillation_modes": ["behavioral"] + (["logit_kd"] if logit_kd else []), "checks": checks}

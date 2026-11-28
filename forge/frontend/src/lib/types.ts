@@ -77,7 +77,7 @@ export interface Estimate {
 
 export interface PairCheck {
   teacher: string; student: string; teacher_id: string; student_id: string; verdict: CheckStatus;
-  capacity_ratio: number | null; vram_estimate: Estimate | null; distillation_modes: string[]; checks: Check[];
+  capacity_ratio: number | null; vram_estimate: Estimate | null; distillation_modes: string[]; checks: Check[]; quant_4bit_recommended?: boolean;
 }
 
 export interface HubResult { id: string; downloads: number | null; likes: number | null; pipeline_tag: string | null; library: string | null; parameters: number | null; gated: boolean | string | null; last_modified: string | null; tags: string[] }

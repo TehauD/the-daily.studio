@@ -84,3 +84,31 @@ def test_logit_kd_requires_matching_vocab(db, tmp_path):
     s2 = _register(db, hf(tmp_path, "s2", vocab=999))
     assert "logit_kd" in reg.pair_check(t, s)["distillation_modes"]
     assert "logit_kd" not in reg.pair_check(t, s2)["distillation_modes"]
+
+
+def _sized(tmp_path, name, params, shape):
+    m = hf(tmp_path, name)
+    m.parameter_count = params
+    m.metadata.update(shape)
+    return m
+
+
+OLMO3_7B = {"hidden_size": 4096, "num_hidden_layers": 32, "intermediate_size": 11008, "vocab_size": 100278,
+            "num_attention_heads": 32, "num_key_value_heads": 32}
+
+
+def test_pair_check_takes_the_4bit_route_when_16bit_does_not_fit(db, tmp_path):
+    """A 7B student on a 16 GB card: 16-bit training does not fit, a 4-bit base does — that is a supported setup, not a failure."""
+    reg = ModelRegistry(db)
+    t = _register(db, _sized(tmp_path, "t32", 32_000_000_000, {}))
+    s = _register(db, _sized(tmp_path, "s7", 7_300_000_000, OLMO3_7B))
+    pc = reg.pair_check(t, s, 16376)
+    checks = {c["check"]: c for c in pc["checks"]}
+    assert pc["verdict"] != "fail" and pc["quant_4bit_recommended"] is True
+    assert checks["student_vram_lora_bf16"]["status"] == "info" and checks["student_vram_qlora_4bit"]["status"] in ("pass", "warn")
+    # A 24 GB card fits 16-bit training of the same student: no 4-bit needed.
+    assert reg.pair_check(t, s, 24 * 1024 * 1.0 + 8000)["quant_4bit_recommended"] is False
+    # Too big even in 4-bit (a 32B student on 16 GB): a real failure, with the reason.
+    big = _register(db, _sized(tmp_path, "s32", 32_000_000_000, {"hidden_size": 5120, "num_hidden_layers": 64, "intermediate_size": 27648, "vocab_size": 100278}))
+    pc2 = reg.pair_check(t, big, 16376)
+    assert pc2["verdict"] == "fail" and "smaller student" in next(c for c in pc2["checks"] if c["check"] == "student_vram_lora_bf16")["reason"]

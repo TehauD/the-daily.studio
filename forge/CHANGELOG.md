@@ -1,5 +1,15 @@
 # FORGE changelog
 
+## 0.31.1 — Fix: a 7B student was refused on a 16 GB GPU
+- **Pair-check no longer fails a student that fits with a 4-bit base.** It only ever estimated 16-bit training, so OLMo 3 7B
+  (≈ 21+ GB in 16-bit) failed `student_vram_lora_bf16` on a 16 GB card and *Create study* was refused — although FORGE trains
+  such students on a 4-bit base (QLoRA, ≈ 10 GB). The pair-check now estimates 16-bit first, then 4-bit; when only 4-bit fits it
+  passes with an explanation and new studies **turn the 4-bit base on automatically** (unless you set it yourself). It fails
+  only when even 4-bit does not fit, and then says to choose a smaller student. Uses the GPU's real memory when nvidia-smi
+  reports it (16 GB assumed otherwise). Test: 7B on 16 GB → 4-bit route; on 24 GB → 16-bit; 32B on 16 GB → fail.
+- **"Failed to fetch" explained**: when the FORGE server does not answer (window closed, crashed, restarting), the app now
+  says so and what to do, instead of the browser's bare message.
+
 ## 0.31.0 — UX pass: answer first, one path, plain words
 - **Evidence answers first**: four tiles — *Did it learn? · Better than just prompting? · Could this study tell? · What did it
   cost?* — each a plain verdict with one number and a line of explanation, linking to its evidence below. Details (parts,

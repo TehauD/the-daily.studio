@@ -144,7 +144,8 @@ def turbo_options():
 @router.post("")
 async def create_study(body: CreateStudy, st: AppState = Depends(get_state)):
     try:
-        pc = st.registry.pair_check(body.teacher_id, body.student_id)
+        from forge.api.routes_models import gpu_total_mb
+        pc = st.registry.pair_check(body.teacher_id, body.student_id, gpu_total_mb())
         t, s = st.registry.get(body.teacher_id), st.registry.get(body.student_id)
     except RegistryError as e:
         raise HTTPException(404, str(e))
@@ -166,7 +167,11 @@ async def create_study(body: CreateStudy, st: AppState = Depends(get_state)):
             train_ov[k] = getattr(body, k)
     if body.rank is not None:
         train_ov |= {"rank": body.rank, "alpha": 2 * body.rank}
-    train_ov["turbo"] = _turbo(body.turbo, body.device, train_ov.get("micro_batch", 1), torch)
+    turbo_in = dict(body.turbo or {})
+    auto_4bit = body.device == "cuda" and pc.get("quant_4bit_recommended") and "quant_4bit" not in turbo_in
+    if auto_4bit:  # 16-bit would not fit this GPU; the pair-check found that a 4-bit base does
+        turbo_in["quant_4bit"] = True
+    train_ov["turbo"] = _turbo(turbo_in or None, body.device, train_ov.get("micro_batch", 1), torch)
     # The free-memory gate must match how the base is loaded: a 4-bit (QLoRA) 7B fits a 16 GB card, a bf16 one does not.
     train_ov.update(vram_gate(s, train_ov.get("max_seq_len", 2048), "nf4" if train_ov["turbo"].get("quant_4bit") else "bf16"))
     pack = None

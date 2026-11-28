@@ -1,4 +1,4 @@
-# FORGE — Local Distillation Lab (v0.31.0)
+# FORGE — Local Distillation Lab (v0.31.1)
 
 A local-first research instrument for **teacher → student LLM distillation on one consumer NVIDIA GPU**.
 A large model you run in LM Studio (the *teacher*) solves tool-use or document-QA tasks. FORGE keeps only its

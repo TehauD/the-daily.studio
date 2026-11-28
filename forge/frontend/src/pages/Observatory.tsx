@@ -294,7 +294,8 @@ function PairBuilder({ models }: { models: Model[] }) {
             <div className="space-y-4">
               <Readout label="capacity ratio" value={pc.capacity_ratio ? pc.capacity_ratio.toFixed(1) : "—"} unit="×" sub="teacher ÷ student unique params" />
               <div><div className="micro mb-1 text-ink-3">Distillation modes</div><div className="flex gap-1.5">{pc.distillation_modes.map((x) => <Badge key={x} tone="accent">{x}</Badge>)}</div></div>
-              {pc.vram_estimate && <Readout label="student LoRA peak (bf16, 2048)" value={fmt.mb(pc.vram_estimate.total_mb)} sub={<Prov kind="estimate" source="analytic ±25%" />} size="sm" />}
+              {pc.vram_estimate && <Readout label={`student training peak (${pc.quant_4bit_recommended ? "4-bit base" : "16-bit"}, seq 2048)`} value={fmt.mb(pc.vram_estimate.total_mb)} sub={<Prov kind="estimate" source="analytic ±25%" />} size="sm" />}
+              {pc.quant_4bit_recommended && <Notice tone="info">16-bit training won't fit this GPU, so studies with this pair train on a <b>4-bit base</b> (QLoRA) — turned on automatically.</Notice>}
               <Button tone="primary" icon="flask" disabled={pc.verdict === "fail"} onClick={() => { sessionStorage.setItem("forge.pair", JSON.stringify({ teacher: pc.teacher_id, student: pc.student_id })); window.location.hash = "/studio"; }}>Create study with this pair</Button>
             </div>
           </div>
