@@ -525,7 +525,8 @@ def get_efficiency(sid: str, st: AppState = Depends(get_state)):
 
 class GGUFBody(BaseModel):
     outtype: Literal["q8_0", "bf16", "f16"] = "q8_0"
-    quant: Literal["Q4_K_M", "Q5_K_M", "Q6_K"] | None = None
+    quant: Literal["Q6_K", "Q5_K_M", "Q4_K_M", "IQ4_XS", "Q4_0", "Q3_K_M"] | None = None
+    imatrix: bool = False      # calibrate with llama-imatrix on training-split prompts
     install: bool = True
     name: str | None = Field(None, max_length=60)
 

@@ -43,7 +43,7 @@ function GainCard({ title, c, tone, sub }: { title: string; c?: Contrast; tone: 
         {g != null && <span className="absolute top-0 h-3 w-[3px] rounded" style={{ left: `calc(${x(g)}% - 1.5px)`, background: tone }} />}
       </div>
       <div className="mt-1 flex justify-between font-mono text-[10.5px] text-ink-3"><span>−100</span><span>95% {pp(lo)} … {pp(hi)}</span><span>+100</span></div>
-      <div className="mt-1.5 text-[11.5px] text-ink-3">{sub}{c?.p_groups != null ? ` · sign-flip p (groups) ${c.p_groups < 0.001 ? "< 0.001" : c.p_groups.toFixed(3)}` : ""}</div>
+      <div className="mt-1.5 text-[11.5px] text-ink-3">{sub}{c?.p_groups != null ? ` · sign-flip p (groups) ${c.p_groups < 0.001 ? "< 0.001" : c.p_groups.toFixed(3)}` : ""}{c?.p_seeds != null ? ` · p (seeds) ${c.p_seeds.toFixed(2)}${c.min_p_seeds != null && c.p_seeds <= c.min_p_seeds ? ` (smallest possible with these seeds — add seeds to go lower)` : ""}` : ""}</div>
     </div>
   );
 }
@@ -52,7 +52,7 @@ function GainCard({ title, c, tone, sub }: { title: string; c?: Contrast; tone: 
 function Parts({ comp, parts, order }: { comp: Record<string, Comp>; parts: EvidenceT["parts"]; order: string[] }) {
   return (
     <Figure title="What changed: the score, part by part" x="share of tasks (95 % range where the part is right / wrong)"
-      legend={order.map((a) => ({ label: `${name(a)} (${(comp[a] as Comp).label})`, color: color(a) }))}
+      legend={order.map((a) => ({ label: a === "base" || a === "teacher" || a === CTRL ? (comp[a] as Comp).label : `trained (${a})`, color: color(a) }))}
       caption={<>Strict success needs every part right. Parts moving while strict success lags is real but incomplete learning — usually arguments (copying the exact ID) are last to come.</>}>
       <div className="space-y-3.5">
         {parts.map((p) => (

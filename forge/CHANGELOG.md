@@ -1,5 +1,22 @@
 # FORGE changelog
 
+## 0.29.0 — Evidence (positive and negative controls) and the Quantization Lab backend
+- **Evidence page** (Measure → Evidence): one verdict on whether the student learned — gain over the untrained student on
+  the sealed test with bootstrap range, the parts of success (tool, arguments, answer, invalid calls) with Wilson ranges,
+  per-seed dots, training and held-out loss curves, by-skill table and tasks that training fixed. `GET /api/studies/{id}/evidence`.
+- **Negative control arm** `shuffled_control`: the same verified examples with completions deranged across tasks. If it gains
+  like the real arm, the metric rewards format, and the verdict says *control failed*. Measured run in docs/EVIDENCE.md:
+  +13.2 pts (95 % +2.8 to +26.4) vs control +0.0 on a small OLMo 3-architecture stand-in; permutation tests not yet
+  significant with 3 seeds (the page shows both p-values and flags when 3 seeds cannot go lower).
+- Study creation accepts `lr` and LoRA `rank`.
+- **Quantization Lab (backend + API)**: FORGE reference quantizer (W8 / W4 / W4 activation-aware / W3 activation-aware,
+  per-layer error), immutable variants measured as study arms with agreement and McNemar vs the unquantized student; vLLM
+  recipes (FP8, W8A8, GPTQ, AWQ) with `scripts/quant_llmc.py` for a separate llm-compressor env; measure any served
+  loopback model. Calibration from the training split only. docs/QUANTIZATION.md.
+- **GGUF**: importance-matrix quantization (`llama-imatrix`), more quant types (Q6_K, Q5_K_M, IQ4_XS, Q4_0, Q3_K_M).
+- Fixes: the GGUF LM Studio check never completed (its arm name had a hyphen, which the study path guard rejects);
+  adequacy no longer flags families that only have regression tasks; positive-gain text colour met contrast only at 4.3:1.
+
 ## 0.28.0 — Open-model lineage: layer types, provenance, training-data overlap, checkpoint timeline
 - **Layer types** (OLMo 3 mixes sliding-window and full-attention layers): Model Factory's per-layer heatmap has an attention
   row (solid = full, dashed = sliding window) and a **Change by attention type** panel — each type's share of layers vs its share

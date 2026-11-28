@@ -78,6 +78,18 @@ def cmd_checkpoint_eval(a: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_quant(a: argparse.Namespace) -> int:
+    """Quantization Lab: make a reference variant, evaluate a variant, or measure a served one."""
+    os.environ.setdefault("HF_HUB_OFFLINE", "1")
+    os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
+    from forge.engine.study import Study
+    from forge.quant import lab
+    s, cfg = Study(Path(a.study)), json.loads(a.config)
+    {"reference": lambda: lab.make_reference(s, cfg, emit), "evaluate": lambda: lab.evaluate(s, cfg["label"], cfg["split"], emit),
+     "served": lambda: lab.register_served(s, cfg, emit)}[cfg["action"]]()
+    return 0
+
+
 def cmd_datacurve(a: argparse.Namespace) -> int:
     """Train on 10/25/50/100 % of the training tasks and measure each on dev (or, as a child, train one share)."""
     os.environ.setdefault("HF_HUB_OFFLINE", "1")
@@ -317,6 +329,10 @@ def main(argv: list[str] | None = None) -> int:
     ce.add_argument("--study", required=True)
     ce.add_argument("--config", required=True)
     ce.set_defaults(fn=cmd_checkpoint_eval)
+    qt = sub.add_parser("quant")
+    qt.add_argument("--study", required=True)
+    qt.add_argument("--config", required=True)
+    qt.set_defaults(fn=cmd_quant)
     dc = sub.add_parser("datacurve")
     dc.add_argument("--study", required=True)
     dc.add_argument("--train-fraction")

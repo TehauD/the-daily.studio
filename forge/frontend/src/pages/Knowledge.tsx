@@ -225,7 +225,7 @@ function Matrix({ g, metric, onSelect, sel }: { g: KnowledgeT; metric: KMetric; 
                       <span className="num w-10 font-mono text-[11px] text-ink">{fmt.pct(v, 0)}</span>
                     </div>
                   )}
-                  {d != null && Math.abs(d) > 1e-9 && <div className={cx("num font-mono text-[10px]", (metric === "invalid_rate" ? d < 0 : d > 0) ? "text-[color:var(--div-pos)]" : "text-[color:var(--div-neg)]")}>{fmt.pp(d, 0)} vs base</div>}
+                  {d != null && Math.abs(d) > 1e-9 && <div className={cx("num font-mono text-[10px]", (metric === "invalid_rate" ? d < 0 : d > 0) ? "text-[color:color-mix(in_oklab,var(--div-pos)_60%,var(--ink))]" : "text-[color:color-mix(in_oklab,var(--div-neg)_60%,var(--ink))]")}>{fmt.pp(d, 0)} vs base</div>}
                 </td>
               );
             })}
@@ -289,7 +289,7 @@ function TunedProfile({ n, sid, measured }: { n: KNode; sid: string; measured: b
           <ul className="space-y-1">
             {[...gains, ...regs].map((x) => (
               <li key={x.skill} className="flex items-center justify-between text-[12px]"><span className="text-ink-2">{x.skill}</span>
-                <span className={cx("num font-mono", x.delta > 0 ? "text-[color:var(--div-pos)]" : "text-[color:var(--div-neg)]")}>{fmt.pp(x.delta, 0)}</span></li>))}
+                <span className={cx("num font-mono", x.delta > 0 ? "text-[color:color-mix(in_oklab,var(--div-pos)_60%,var(--ink))]" : "text-[color:color-mix(in_oklab,var(--div-neg)_60%,var(--ink))]")}>{fmt.pp(x.delta, 0)}</span></li>))}
           </ul>
         )}
       </div>

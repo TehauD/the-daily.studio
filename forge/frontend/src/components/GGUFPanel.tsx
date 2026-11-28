@@ -4,7 +4,7 @@ import { useAction, useApi } from "../lib/hooks";
 import type { StudySummary } from "../lib/types";
 import { Badge, Button, ErrorLine, Field, Hash, Notice, Panel, Prov, Segmented, Status, Toggle, cx, inputCls } from "./ui";
 
-interface Tools { ok: boolean; problems: string[]; convert: string | null; quantize: string | null; commit: string | null; dir?: string }
+interface Tools { ok: boolean; problems: string[]; convert: string | null; quantize: string | null; imatrix?: string | null; commit: string | null; dir?: string }
 interface GExport { file: string; path: string; sha256: string; bytes: number; outtype: string; quant: string | null; created_at: string;
   header: { tensors: number; architecture: string; file_type: string | number; block_count: number | null; has_chat_template: boolean };
   installed: { path: string; lmstudio_id_hint: string } | null; converter: { commit: string | null };
@@ -19,6 +19,7 @@ export function GGUFPanel({ s }: { s: StudySummary }) {
   useEffect(() => { if (llama.data) setDir(llama.data.path); }, [llama.data]);
   const [kind, setKind] = useState<string>("q8_0");
   const [install, setInstall] = useState(true);
+  const [imatrix, setImatrix] = useState(false);
   const [check, setCheck] = useState<Record<string, string>>({});
   const act = useAction();
   const d = g.data;
@@ -35,11 +36,12 @@ export function GGUFPanel({ s }: { s: StudySummary }) {
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <Segmented label="Format" value={kind} onChange={setKind} options={[...(d?.outtypes ?? ["q8_0", "bf16", "f16"]).map((v) => ({ value: v, label: v })), ...(d?.quants ?? []).map((v) => ({ value: v, label: v }))]} />
+          {isQuant && <Toggle checked={imatrix && !!llama.data?.imatrix} onChange={setImatrix} label={llama.data?.imatrix ? "Calibrate (importance matrix, training split)" : "Calibrate (llama-imatrix not built)"} />}
           <Toggle checked={install} onChange={setInstall} label={d?.lmstudio_dir ? "Copy into LM Studio's models folder" : "Copy into LM Studio (folder not found)"} />
           <Button tone="primary" icon="download" busy={act.busy} disabled={!d?.merged_export || !llama.data?.ok || (isQuant && !llama.data?.quantize)}
-            onClick={() => void act.run(async () => { await api.post(`/api/studies/${s.id}/gguf`, isQuant ? { outtype: "f16", quant: kind, install } : { outtype: kind, install }); await g.reload(); })}>Make GGUF</Button>
+            onClick={() => void act.run(async () => { await api.post(`/api/studies/${s.id}/gguf`, isQuant ? { outtype: "f16", quant: kind, install, imatrix: imatrix && !!llama.data?.imatrix } : { outtype: kind, install }); await g.reload(); })}>Make GGUF</Button>
         </div>
-        <div className="text-[11.5px] text-ink-3">q8_0 ≈ half the size of bf16 with very small changes; Q4_K_M ≈ a quarter, faster, and changes behaviour more. Sizes are for the 1.7B student.</div>
+        <div className="text-[11.5px] text-ink-3">q8_0 ≈ half the size of bf16 with very small changes; Q4_K_M / IQ4_XS ≈ a quarter and change behaviour more; Q3_K_M is smaller still. Calibration uses training-split prompts only. Compare every file in the Quantization Lab.</div>
         {!d?.merged_export && <Notice tone="info">Run the study through SEAL, the test analysis and the Export stage first — GGUF is only made from the export that was checked against the adapter.</Notice>}
         {d?.exports.map((x) => (
           <div key={x.file} className="rounded-[var(--radius)] border border-line p-3">

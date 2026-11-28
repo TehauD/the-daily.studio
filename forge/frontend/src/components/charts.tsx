@@ -154,7 +154,7 @@ export function SkillMap({ families }: { families: SkillFamily[] }) {
               className={cx("rounded-[var(--radius)] border p-3 transition", hover === f.family ? "border-accent-line bg-surface-2" : "border-line")}>
               <div className="flex items-start justify-between gap-2">
                 <span className="font-mono text-[11.5px] text-ink">{f.family}</span>
-                {delta != null && <span className={cx("num font-mono text-[11.5px]", delta > 0 ? "text-[color:var(--div-pos)]" : delta < 0 ? "text-[color:var(--div-neg)]" : "text-ink-3")}>{fmt.pp(delta, 0)}</span>}
+                {delta != null && <span className={cx("num font-mono text-[11.5px]", delta > 0 ? "text-[color:color-mix(in_oklab,var(--div-pos)_60%,var(--ink))]" : delta < 0 ? "text-[color:color-mix(in_oklab,var(--div-neg)_60%,var(--ink))]" : "text-ink-3")}>{fmt.pp(delta, 0)}</span>}
               </div>
               <div className="mt-1 flex items-center gap-3">
                 <svg viewBox="-48 -48 96 96" className="h-24 w-24 shrink-0" role="img" aria-label={`${f.family} success rates`}>

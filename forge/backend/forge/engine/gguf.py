@@ -27,8 +27,8 @@ from typing import Any, Callable
 from forge.util import sha256_file, utcnow, write_json_atomic
 
 OUTTYPES = ("q8_0", "bf16", "f16")
-QUANTS = ("Q4_K_M", "Q5_K_M", "Q6_K")
-FILE_TYPES = {0: "F32", 1: "F16", 7: "Q8_0", 15: "Q4_K_M", 17: "Q5_K_M", 18: "Q6_K", 32: "BF16"}
+QUANTS = ("Q6_K", "Q5_K_M", "Q4_K_M", "IQ4_XS", "Q4_0", "Q3_K_M")
+FILE_TYPES = {0: "F32", 1: "F16", 2: "Q4_0", 7: "Q8_0", 12: "Q3_K_M", 15: "Q4_K_M", 17: "Q5_K_M", 18: "Q6_K", 30: "IQ4_XS", 32: "BF16"}
 
 
 class GGUFError(RuntimeError):
@@ -43,8 +43,10 @@ def find_tools(llama_dir: str | None) -> dict[str, Any]:
     conv = d / "convert_hf_to_gguf.py"
     if not conv.is_file():
         problems.append("convert_hf_to_gguf.py not found in that folder")
-    quant = next((p for p in (d / "build" / "bin" / "llama-quantize.exe", d / "build" / "bin" / "Release" / "llama-quantize.exe",
-                              d / "build" / "bin" / "llama-quantize", d / "llama-quantize.exe", d / "llama-quantize") if p.is_file()), None)
+    def _bin(name: str) -> Path | None:
+        return next((p for p in (d / "build" / "bin" / f"{name}.exe", d / "build" / "bin" / "Release" / f"{name}.exe",
+                                 d / "build" / "bin" / name, d / f"{name}.exe", d / name) if p.is_file()), None)
+    quant, imatrix = _bin("llama-quantize"), _bin("llama-imatrix")
     commit = None
     head = d / ".git" / "HEAD"
     try:
@@ -53,7 +55,7 @@ def find_tools(llama_dir: str | None) -> dict[str, Any]:
     except OSError:
         pass
     return {"ok": not problems, "problems": problems, "convert": str(conv) if conv.is_file() else None,
-            "quantize": str(quant) if quant else None, "commit": commit, "dir": str(d)}
+            "quantize": str(quant) if quant else None, "imatrix": str(imatrix) if imatrix else None, "commit": commit, "dir": str(d)}
 
 
 # ---- minimal GGUF header reader (spec: magic 'GGUF', u32 version, u64 tensor count, u64 kv count, then key/values)
@@ -144,19 +146,37 @@ def export(study: Any, spec: dict, emit: Callable[[dict], None] = lambda e: None
         raise GGUFError("Unknown output type")
     if quant and not tools["quantize"]:
         raise GGUFError("llama-quantize was not found (build llama.cpp, or choose q8_0 / bf16 / f16)")
+    use_imatrix = bool(spec.get("imatrix")) and bool(quant)
+    if use_imatrix and not tools["imatrix"]:
+        raise GGUFError("llama-imatrix was not found (build llama.cpp's tools) — or quantize without calibration")
     src = merged_export(study)
     name = slug(spec.get("name") or study.plan["name"])
     out_dir = study.root / "exports" / "gguf"
     out_dir.mkdir(parents=True, exist_ok=True)
-    label = (quant or outtype).lower()
+    label = (quant or outtype).lower() + ("-imatrix" if use_imatrix else "")
     final = out_dir / f"{name}-{label}.gguf"
     if final.exists():
         raise GGUFError(f"{final.name} already exists; exports are immutable")
     base = out_dir / f".{name}-{'f16' if quant else outtype}.tmp.gguf"
     emit({"event": "gguf_start", "source": str(src), "outtype": outtype, "quant": quant, "converter_commit": tools["commit"]})
     _run([sys.executable, tools["convert"], str(src), "--outfile", str(base), "--outtype", "f16" if quant else outtype], tools["dir"], emit)
+    imx = None
     if quant:
-        _run([tools["quantize"], str(base), str(final), quant], tools["dir"], emit)
+        args = [tools["quantize"]]
+        if use_imatrix:
+            # Calibration from the TRAINING split only (never practice or test), written as plain text for llama-imatrix.
+            from forge.quant.reference import calibration_texts
+            texts = calibration_texts(study, int(spec.get("calibration_samples", 128)))
+            if not texts:
+                raise GGUFError("No training records to calibrate with (run Build)")
+            calib = out_dir / f".{name}-calibration.txt"
+            calib.write_text("\n\n".join(texts), encoding="utf-8")
+            imat = out_dir / f"{name}-{quant.lower()}.imatrix"
+            _run([tools["imatrix"], "-m", str(base), "-f", str(calib), "-o", str(imat)], tools["dir"], emit)
+            imx = {"file": imat.name, "sha256": sha256_file(imat), "calibration_sha256": sha256_file(calib), "calibration_samples": len(texts),
+                   "calibration_source": "training split (teacher-verified records)"}
+            args += ["--imatrix", str(imat)]
+        _run(args + [str(base), str(final), quant], tools["dir"], emit)
         base.unlink(missing_ok=True)
     else:
         os.replace(base, final)
@@ -166,7 +186,7 @@ def export(study: Any, spec: dict, emit: Callable[[dict], None] = lambda e: None
     src_manifest = json.loads((src / "forge_export.json").read_text(encoding="utf-8"))
     man = {"file": final.name, "path": str(final), "sha256": sha256_file(final), "bytes": final.stat().st_size, "outtype": outtype, "quant": quant,
            "header": hdr, "source_export": str(src), "source_files": src_manifest["files"], "source_post_merge_eval": src_manifest.get("post_merge_eval"),
-           "converter": {"dir": tools["dir"], "commit": tools["commit"]}, "created_at": utcnow(), "installed": None, "lmstudio_check": None,
+           "converter": {"dir": tools["dir"], "commit": tools["commit"]}, "imatrix": imx, "created_at": utcnow(), "installed": None, "lmstudio_check": None,
            "note": "Local copy for LM Studio. Quantization changes behaviour — run the LM Studio check. Not an approval for any use."}
     lms = spec.get("lmstudio_dir")
     if spec.get("install") and lms:
@@ -188,7 +208,8 @@ def lmstudio_check(study: Any, manifest_path: Path, model_id: str, base_url: str
     if not study.state["sealed"]:
         raise GGUFError("The study must be sealed")
     man = json.loads(manifest_path.read_text(encoding="utf-8"))
-    arm = "gguf-" + re.sub(r"[^a-z0-9]+", "", (man["quant"] or man["outtype"]).lower())
+    # Arm names are path parts ([a-z0-9_] only): "gguf-…" was refused by the study's path guard, so this check never completed.
+    arm = "gguf_" + re.sub(r"[^a-z0-9]+", "_", Path(man["file"]).stem.lower())[:34]
     seed = study.plan["seeds"][0]
     b = backend or OpenAICompatBackend(base_url.rstrip("/") + "/v1", model_id)
     study._evaluate(b, arm, "test", seed, study.tasks(), emit)
