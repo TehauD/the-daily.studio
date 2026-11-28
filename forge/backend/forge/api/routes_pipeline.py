@@ -149,8 +149,8 @@ def pipeline(project: str, study_id: str | None = None, st: AppState = Depends(g
     ph.append(_phase("measure", "locked" if not trained else "done" if mdone else "todo",
                      ([f"practice: untrained {rep['base_rate']:.0%} → trained {a0.get('arm_rate', 0):.0%} · teacher {rep['teacher_rate']:.0%}" if rep and rep.get('base_rate') is not None else "not analysed yet",
                        f"test adequacy: {adq['overall']}" if adq else "test adequacy: after Evaluate · dev", f"robustness checks: {rob}", f"bench runs with this adapter: {bench}"]),
-                     {"label": "Run Evaluate · dev" if stg.get("evaluate_dev") != "completed" else "Analyse dev" if not mdone else "Check robustness & limits",
-                      "route": "studio" if not mdone else "robustness"},
+                     {"label": "Run Evaluate · dev" if stg.get("evaluate_dev") != "completed" else "Analyse dev" if not mdone else "See the evidence: did it learn?",
+                      "route": "studio" if not mdone else "evidence"},
                      [f"Test adequacy is '{adq['overall']}': fix weak skills before reading gains"] if adq and adq["overall"] in ("weak", "inadequate") else []))
     # 7 final
     sealed = summ["state"]["sealed"]

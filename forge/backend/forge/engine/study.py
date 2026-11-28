@@ -58,6 +58,8 @@ TRAIN_ARMS: dict[str, dict[str, Any]] = {
     "rank4": {"data": "teacher_filtered", "train": {"rank": 4, "alpha": 8}},
     "attention_only": {"data": "teacher_filtered", "train": {"target_modules": ["q_proj", "k_proj", "v_proj", "o_proj"]}},
     "all_token_loss": {"data": "teacher_filtered", "train": {"all_token_loss": True}},
+    # Negative control: verified completions shuffled across tasks. Should show no gain; a gain means the measurement is broken.
+    "shuffled_control": {"data": "shuffled_control", "train": {}},
 }
 DEFAULT_TRAIN = {"rank": 16, "alpha": 32, "dropout": 0.05, "lr": 2e-4, "warmup_ratio": 0.03, "micro_batch": 1,
                  "grad_accum": 8, "max_seq_len": 2048, "epochs": 3.0, "max_steps": -1, "target_modules": "all-linear",

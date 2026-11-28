@@ -6,6 +6,6 @@ export const PHASE_OF: Record<string, { n: number; name: string }> = {
   playground: { n: 5, name: "Look inside & steer" }, lens: { n: 5, name: "Look inside & steer" }, modelmap: { n: 5, name: "Look inside & steer" },
   weightlab: { n: 5, name: "Look inside & steer" }, trajectories: { n: 5, name: "Look inside & steer" }, knowledge: { n: 5, name: "Look inside & steer" },
   evaluation: { n: 6, name: "Measure · Final test" }, robustness: { n: 6, name: "Measure" }, bench: { n: 6, name: "Measure" },
-  compare: { n: 6, name: "Measure" }, history: { n: 6, name: "Measure" },
+  compare: { n: 6, name: "Measure" }, evidence: { n: 6, name: "Measure" }, history: { n: 6, name: "Measure" },
   factory: { n: 8, name: "Package" }, governance: { n: 9, name: "Govern & decide" },
 };

@@ -39,6 +39,7 @@ const BenchLab = lazy(() => import("./pages/BenchLab"));
 const ModelHub = lazy(() => import("./pages/ModelHub"));
 const Pipeline = lazy(() => import("./pages/Pipeline"));
 const Compare = lazy(() => import("./pages/Compare"));
+const Evidence = lazy(() => import("./pages/Evidence"));
 const History = lazy(() => import("./pages/History"));
 
 /** Four workspaces, in the order people work: build it, see and steer it, measure it, run the lab. `expert` pages are hidden in Simple mode. */
@@ -58,6 +59,7 @@ const NAV = [
     { key: "trajectories", label: "Trajectory Explorer", icon: "trajectory", expert: true },
     { key: "knowledge", label: "Knowledge Graph", icon: "graph", expert: true }] },
   { group: "Measure", items: [
+    { key: "evidence", label: "Evidence", icon: "check" },
     { key: "evaluation", label: "Evaluation Lab", icon: "evaluation" },
     { key: "robustness", label: "Robustness & limits", icon: "alert" },
     { key: "bench", label: "Bench Lab", icon: "flask" },
@@ -253,7 +255,7 @@ function Shell() {
     { id: "verify", label: "Verify GPU (forward/backward, BF16)", group: "Actions", run: () => { void api.post("/api/jobs/verify-gpu"); go("overview"); } },
   ], [go, set, prefs.sidebarCollapsed]);
   const Page = { home: Home, overview: Overview, observatory: Observatory, studio: Studio, trajectories: Trajectories, datasets: Datasets,
-    training: Training, evaluation: Evaluation, knowledge: Knowledge, "knowledge-studio": KnowledgeStudio, lens: Lens, "agent-studio": AgentStudio, playground: Playground, weightlab: WeightLab, modelmap: ModelMap, robustness: Robustness, learn: Learn, governance: Governance, bench: BenchLab, model: ModelHub, pipeline: Pipeline, compare: Compare, history: History, factory: Factory, settings: Settings, guide: Guide }[route];
+    training: Training, evaluation: Evaluation, knowledge: Knowledge, "knowledge-studio": KnowledgeStudio, lens: Lens, "agent-studio": AgentStudio, playground: Playground, weightlab: WeightLab, modelmap: ModelMap, robustness: Robustness, learn: Learn, governance: Governance, bench: BenchLab, model: ModelHub, pipeline: Pipeline, compare: Compare, evidence: Evidence, history: History, factory: Factory, settings: Settings, guide: Guide }[route];
   return (
     <AssistantProvider route={route}>
     <div className="flex min-h-full">

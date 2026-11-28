@@ -48,7 +48,7 @@ def episode_records(ep: dict[str, Any], last_turn_only: bool = False) -> list[di
 
 @dataclass
 class BuildPolicy:
-    arm: str = "teacher_filtered"   # teacher_raw | teacher_filtered | oracle_sft | quarter_data | last_turn_only
+    arm: str = "teacher_filtered"   # teacher_raw | teacher_filtered | oracle_sft | quarter_data | last_turn_only | shuffled_control
     quarter_fraction: float = 0.25
     seed: int = 1234
 
@@ -78,7 +78,7 @@ def build_arm(policy: BuildPolicy, teacher_eps: list[dict], oracle_eps: list[dic
         if e["task_id"] not in eligible:
             exclusions["task_not_eligible_for_all_arms"] += 1
             continue
-        if policy.arm in ("teacher_filtered", "quarter_data", "last_turn_only") and not e["score"]["strict_success"]:
+        if policy.arm in ("teacher_filtered", "quarter_data", "last_turn_only", "shuffled_control") and not e["score"]["strict_success"]:
             exclusions["teacher_not_strict_success"] += 1
             continue
         if any(ev["type"] == "error" for ev in e["events"]):
@@ -90,6 +90,22 @@ def build_arm(policy: BuildPolicy, teacher_eps: list[dict], oracle_eps: list[dic
         exclusions["outside_quarter_subset"] += sum(1 for e in chosen if e["group_id"] not in keep)
         chosen = [e for e in chosen if e["group_id"] in keep]
     records = [r for e in chosen for r in episode_records(e, last_turn_only=policy.arm == "last_turn_only")]
+    if policy.arm == "shuffled_control":
+        # Negative control: the same verified completions, each moved to a different task (a seeded derangement), so the
+        # model sees perfect format and real tool calls paired with the wrong questions. A sound measurement must show no
+        # skill gain from this arm — if it does, the evaluation is leaking or rewarding format alone.
+        rng = random.Random(f"shuffle:{policy.seed}")
+        n = len(records)
+        if n >= 2:
+            perm = list(range(n))
+            while True:
+                rng.shuffle(perm)
+                if all(perm[i] != i for i in range(n)):
+                    break
+            comps = [records[perm[i]]["completion"] for i in range(n)]
+            for r, c in zip(records, comps):
+                r["completion"], r["control"] = c, "completion shuffled across tasks"
+        exclusions["control_shuffled_records"] = n
     for r in records:
         r["record_sha256"] = sha256_text(canonical_json({k: r[k] for k in ("prompt_messages", "completion")}))
     return {"records": records, "exclusions": dict(exclusions), "eligible_task_ids": sorted(eligible),

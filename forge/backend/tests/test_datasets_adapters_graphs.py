@@ -145,3 +145,22 @@ def test_path_graph_and_comparison():
     c = compare(teacher, bad, teacher)
     assert c["outcome"] == "fixed" and c["lanes"][1]["divergence_from_teacher"] == 0
     assert "Hidden reasoning is not visualized" in c["honesty"]
+
+
+def test_shuffled_control_moves_every_completion():
+    """Negative control: same completions, each on a different task; deterministic; nothing else changes."""
+    from forge.engine.datasets import BuildPolicy, build_arm
+    from forge.engine.runtime import OracleBackend, run_episode
+    from forge.engine.tasks import TaskSetSpec, ToolWorld, build_catalog, generate_taskset
+    tasks = [t for t in generate_taskset(TaskSetSpec(groups_per_family=4)) if t.split == "train"]
+    w = ToolWorld(build_catalog(1234))
+    eps = [run_episode(t, OracleBackend({x.prompt: x for x in tasks}), w) for t in tasks]
+    real = build_arm(BuildPolicy(arm="teacher_filtered"), eps, eps)["records"]
+    ctl = build_arm(BuildPolicy(arm="shuffled_control"), eps, eps)
+    shuf = ctl["records"]
+    assert len(shuf) == len(real) and ctl["exclusions"]["control_shuffled_records"] == len(real)
+    assert sorted(r["completion"] for r in shuf) == sorted(r["completion"] for r in real)          # same content…
+    assert all(a["prompt_messages"] == b["prompt_messages"] for a, b in zip(real, shuf))            # …same prompts…
+    moved = sum(a["completion"] != b["completion"] for a, b in zip(real, shuf))
+    assert moved >= 0.9 * len(real)                                                                 # …paired with other tasks
+    assert [r["completion"] for r in build_arm(BuildPolicy(arm="shuffled_control"), eps, eps)["records"]] == [r["completion"] for r in shuf]

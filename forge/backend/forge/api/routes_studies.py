@@ -82,6 +82,8 @@ class CreateStudy(BaseModel):
     turbo: dict[str, Any] | None = None
     micro_batch: int | None = Field(None, ge=1, le=64)
     grad_accum: int | None = Field(None, ge=1, le=256)
+    lr: float | None = Field(None, gt=0, le=0.05)          # learning rate (default from the profile: 2e-4)
+    rank: int | None = Field(None, ge=1, le=256)           # LoRA rank r; alpha is set to 2·r
     knowledge_pack_id: str | None = Field(None, pattern=r"^pack_[a-z0-9]+$")
     agent_id: str | None = Field(None, pattern=r"^agent_[a-z0-9]+$")
     require_review: bool = False
@@ -156,9 +158,11 @@ async def create_study(body: CreateStudy, st: AppState = Depends(get_state)):
            "numpy": torch.numpy_version, "bf16": torch.bf16_supported}
     train_ov = {k: v for k, v in (("max_steps", body.max_steps), ("epochs", body.epochs),
                                   ("max_seq_len", body.max_seq_len)) if v is not None}
-    for k in ("micro_batch", "grad_accum"):
+    for k in ("micro_batch", "grad_accum", "lr"):
         if getattr(body, k) is not None:
             train_ov[k] = getattr(body, k)
+    if body.rank is not None:
+        train_ov |= {"rank": body.rank, "alpha": 2 * body.rank}
     train_ov["turbo"] = _turbo(body.turbo, body.device, train_ov.get("micro_batch", 1), torch)
     # The free-memory gate must match how the base is loaded: a 4-bit (QLoRA) 7B fits a 16 GB card, a bf16 one does not.
     train_ov.update(vram_gate(s, train_ov.get("max_seq_len", 2048), "nf4" if train_ov["turbo"].get("quant_4bit") else "bf16"))
